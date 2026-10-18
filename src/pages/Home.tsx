@@ -71,7 +71,7 @@ export function Home() {
             <Library size={22} />
             <div>
               <strong>Ouvrir le classeur</strong>
-              <span>Filtrer, chercher, admirer les holos.</span>
+              <span>Filtrer, chercher, admirer les cartes brillantes.</span>
             </div>
             <ArrowRight size={18} />
           </Link>
@@ -98,7 +98,7 @@ export function Home() {
         <div className="modal-backdrop" onClick={() => setLastPack(null)} role="presentation">
           <div className="modal pack-reveal" onClick={(event) => event.stopPropagation()}>
             <p className="eyebrow">Bac à courrier</p>
-            <h2>Cinq nouveaux collègues</h2>
+            <h2>Cinq nouvelles cartes</h2>
             <div className="pack-reveal__cards">
               {lastPack.map((card, index) => (
                 <motion.div
