@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { RotateCcw } from 'lucide-react';
-import { useStore } from '@/store/useStore';
-
-const STORAGE_KEY = 'bureau-des-planques-v1';
+import { STORAGE_KEY, useStore } from '@/store/useStore';
 
 export function Settings() {
   const { name, setName, reducedMotion, setReducedMotion, reset } = useStore();

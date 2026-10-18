@@ -7,7 +7,7 @@ import { CardView } from '@/components/CardView';
 import { CardDetail } from '@/components/CardDetail';
 
 export function Deck() {
-  const { owned, deck, toggleDeck, clearDeck } = useStore();
+  const { owned, deck, toggleDeck, clearDeck, addCard } = useStore();
   const [selected, setSelected] = useState<Card | null>(null);
 
   const legality = useMemo(() => deckLegal(deck), [deck]);
@@ -60,7 +60,7 @@ export function Deck() {
 
       <section className="section">
         <div className="section__head">
-          <h2>Collection ({available.length})</h2>
+          <h2>Galérodex ({available.length})</h2>
         </div>
         {available.length === 0 ? (
           <p className="empty">Aucune carte possédée. Ouvre un bac à courrier depuis l’accueil.</p>
@@ -89,7 +89,7 @@ export function Deck() {
           owned={owned[selected.id] ?? 0}
           onClose={() => setSelected(null)}
           onAddDeck={() => toggleDeck(selected.id)}
-          onAddCard={() => useStore.getState().addCard(selected.id)}
+          onAddCard={() => addCard(selected.id)}
         />
       )}
     </div>

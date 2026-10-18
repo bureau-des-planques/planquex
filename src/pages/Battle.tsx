@@ -41,11 +41,13 @@ const STATUS_LABELS: Record<string, string> = {
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
 
-  const [state, setState] = useState<BattleState>(() =>
-    createBattle(deckLegal(storeDeck).ok ? storeDeck : testDeck(), testDeck())
-  );
+  // Le classeur du joueur est utilisé s'il est légal, sinon on retombe sur un
+  // classeur de test. Calculé une seule fois par rendu : `deckLegal` est appelé
+  // au plus une fois, et l'identité de la référence dit si on a replié.
+  const playerDeck = useMemo(() => (deckLegal(storeDeck).ok ? storeDeck : testDeck()), [storeDeck]);
+  const usedTestDeck = playerDeck !== storeDeck;
 
-  const usedTestDeck = !deckLegal(storeDeck).ok;
+  const [state, setState] = useState<BattleState>(() => createBattle(playerDeck, testDeck()));
 
   const player = state.players.player;
   const ai = state.players.ai;
@@ -53,8 +55,8 @@ export function Battle() {
   const playerCard = player.active ? getCard(player.active.cardId) : undefined;
 
   const restart = useCallback(() => {
-    setState(createBattle(deckLegal(storeDeck).ok ? storeDeck : testDeck(), testDeck()));
-  }, [storeDeck]);
+    setState(createBattle(playerDeck, testDeck()));
+  }, [playerDeck]);
 
   const rows = useMemo(
     () =>

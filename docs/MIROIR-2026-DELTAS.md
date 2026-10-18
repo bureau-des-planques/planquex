@@ -5,6 +5,18 @@
 > Vérification documentaire du **19/10/2026**, par recherche sourcée (aucun fichier
 > du dépôt modifié). Les valeurs du standard restent `AGENTS.md` §4.
 
+## 0. Cadre retenu, et option écartée
+
+**Retenu (D-018)** : suivre le jeu **actuel**. Conséquence : le tableau `AGENTS.md` §4
+reste la cible, mais il doit absorber les écarts du §3 ci-dessous.
+
+**Écarté** : figer le miroir au **lancement (A1, octobre 2024)**. Ce choix aurait eu
+pour effet de faire disparaître les écarts 1 et 2 du §3, au prix d'un jeu qui ne
+ressemble plus à celui de 2026 : pas de Méga-Évolution, pas de Lieux modifiant la
+Faiblesse, pas de double type — donc un set (286 cartes) construit sur des règles que
+les joueurs ne reconnaîtraient pas. Il reste réversible : rouvrir D-018 plutôt que
+modifier les valeurs une par une.
+
 ## 1. Confirmé par une source primaire
 
 | Règle | Vote | Source |

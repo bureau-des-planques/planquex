@@ -82,7 +82,10 @@ describe('endTurn — statut létal', () => {
     expect(after.turn).toBe(lethal.turn);
   });
 
-  it('promeut l’Open-space et continue la partie quand un remplaçant existe', () => {
+  // Attention : ce test décrit le comportement ACTUEL du moteur, qui diverge
+  // d'AGENTS.md §4 (« l'Open-space choisit la relève »). Il n'entérine pas la
+  // règle : il la rend visible. L'écart est suivi en O-009.
+  it('promeut automatiquement l’Open-space (comportement actuel, écart suivi en O-009)', () => {
     const state = freshBattle();
     const lethal = structuredClone(state);
     const active = lethal.players.player.active;
