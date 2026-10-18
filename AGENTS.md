@@ -1,6 +1,6 @@
 # AGENTS.md — Bureau des Planqués
 
-> Projet actif : **`grevomon-tcg/`**. Dernière vérification des commandes : **18/10/2026, 21:30 (CEST)**.
+> Projet actif : **`grevomon-tcg/`**. Dernière vérification des commandes : **19/10/2026 (CEST)**.
 > `grevomon-pocket/` est **legacy** : voir `../grevomon-pocket/LEGACY.md`.
 > Ne jamais l'utiliser comme source de vérité pour les règles, le vocabulaire, le contenu ou un audit.
 
@@ -22,8 +22,11 @@ En cas de conflit, appliquer cet ordre :
 1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale.
 2. **`docs/PROPOSITION.md` §3–5** — règles, contenu, périmètre validés par les décisions D-003, D-005, D-006, D-011, D-014.
 3. **`docs/CARD-SPEC.md` et `docs/FACTIONS.md`** — structure du set, courbes, factions, nommage.
-4. **Le code et les commandes** — ce qui existe réellement. Un écart avec les docs est un bug ou une tâche, pas une nouvelle règle.
-5. **`docs/STATUS.md`** — instantané d'audit daté. Ce n'est pas une vérité live : relancer les commandes.
+4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus entre le tableau §4 et le jeu de référence 2026, avec leurs sources. Décrit ce qui **reste à trancher** (O-008, O-009) : ne pas s'en servir pour modifier une règle sans décision datée.
+5. **Le code et les commandes** — ce qui existe réellement. Un écart avec les docs est un bug ou une tâche, pas une nouvelle règle.
+6. **`docs/STATUS.md` et `docs/AUDIT-*.md`** — instantanés d'audit datés. Ce ne sont pas des vérités live : relancer les commandes.
+
+`docs/MODES-FUTURS.md` **ne fait jamais autorité** : il ne contient que des modes parkés (D-019).
 
 Si deux documents se contredisent, ne pas choisir silencieusement : le signaler, citer les passages, et proposer une correction de doc ou de code.
 
@@ -123,12 +126,15 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Cartes Action | **Objet** : illimité ; **Collègue** : **1 par tour** |
 | Outils / Lieux | Extensions ultérieures, pas au lancement |
 
+**Miroir daté** : le référent est Pocket **dans son état de 2026** (D-018), pas la version de lancement. Trois écarts connus ne sont **pas encore intégrés** au tableau ci-dessus — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type — et deux règles du tableau n'ont aucune source citable. Détail, sources et verdicts : `docs/MIROIR-2026-DELTAS.md`. Tant qu'ils ne sont pas tranchés (**O-008**, **O-009**), la phrase « aucune valeur mathématique ne change » est une **cible**, pas un constat.
+
 ### 4.1 Ce qui n'est pas la règle standard
 
-- **`RULES-4b` est abandonné** comme mode standard : deck 12, main 4, cafés non consommés, résistance −20, défaite par Open-space vide. Il pourra vivre plus tard comme mode alternatif « Café », jamais par défaut.
+- Le standard, c'est **le miroir de Pocket (D-018) plus le mot-clé « Changement de priorité » (D-004)**. Rien d'autre.
+- Les règles maison **`RULES-4b` sont rangées à part** dans `docs/MODES-FUTURS.md` (mode futur « Café », ni acté ni implémenté) : ce n'est ni une référence, ni un mode par défaut. Ne pas les citer comme règles du jeu (D-019).
 - Pas de compteur de stress, pas de ressource maison, pas de règle de deck alternative.
-- **« Changement de priorité »** (D-004) : une fois par tour, au Poste, défausser 1 carte puis piocher 1. Mot-clé porté par les cartes, déactivable par un drapeau global, testé en simulation avant validation. C'est la seule exception.
-- **« Pause café »** désigne le Wonder Pick. Ne pas réutiliser ce terme pour une action de combat de l'ancien système 4b.
+- **« Changement de priorité »** (D-004) : une fois par tour, au Poste, défausser 1 carte puis piocher 1. Mot-clé porté par les cartes, déactivable par un drapeau global, testé en simulation avant validation. C'est la seule exception actée.
+- **« Pause café »** désigne le Wonder Pick. Ne pas réutiliser ce terme pour une action de combat.
 
 ### 4.2 Bacs et contenu
 
@@ -171,10 +177,14 @@ grevomon-tcg/
 ├── src/
 │   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx
 │   ├── data/         index.ts, sse.ts, types.ts
-│   ├── game/         engine.ts
-│   ├── pages/        Home.tsx
-│   └── store/        useStore.ts
-├── scripts/status.mjs
+│   ├── game/         engine.ts, engine.test.ts
+│   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx
+│   ├── store/        useStore.ts, useStore.test.ts
+│   ├── App.tsx       routes (Layout + 5 pages)
+│   ├── main.tsx      point d'entrée, monte App sous BrowserRouter
+│   ├── styles.css    feuille unique de l'application
+│   └── vite-env.d.ts types Vite (imports CSS)
+├── scripts/          status.mjs, etapes-infra-tcg.sh
 └── docs/
 ```
 
@@ -185,8 +195,9 @@ grevomon-tcg/
 - **Store** : Zustand + `persist`, clé `bureau-des-planques-v1`. Toute modification de forme doit être migrée ou versionnée.
 - **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
-- **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` sont référencées mais absentes.
-- **CSS** : aucun fichier CSS ni composant `main.tsx` à ce jour. Ne pas prétendre qu'un écran est rendu sans point d'entrée et sans feuille de style.
+- **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` sont référencées mais **toujours absentes** : `public/` n'existe pas, et le navigateur logue une erreur de manifeste.
+- **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système.
+- **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX. Voir §8.4.
 
 ## 7. Commandes
 
@@ -196,34 +207,34 @@ Toujours depuis `grevomon-tcg/`. Le chemin contient une espace : le quoting est 
 cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 ```
 
-| Commande | Usage | État vérifié le 18/10/2026, 21:30 |
+| Commande | Usage | État vérifié le 19/10/2026 |
 |---|---|---|
-| `npm install` | Installer les dépendances | dépendances déjà présentes |
-| `npm run dev` | Serveur Vite sur `:5178` | l'écran échouera tant que `src/main.tsx` manque (non exécuté) |
-| `npm run check` | `tsc -b` | **échec** : 2 erreurs (voir ci-dessous) |
-| `npm test` | `vitest run` | **échec** : `No test files found` |
-| `npm run test:watch` | Vitest en watch | aucun test à lancer |
-| `npm run build` | `tsc -b && vite build` | **échec** au `tsc`, `vite build` non atteint |
-| `npm run preview` | Servir `dist/` | inutilisable tant que le build échoue |
+| `npm install` | Installer les dépendances | **OK** (`npm ci` ; `@types/node` ajouté en dev) |
+| `npm run dev` | Serveur Vite sur `:5178` | non exécuté dans cette vérification ; `preview` l'a été |
+| `npm run check` | `tsc -b` | **OK**, exit 0 |
+| `npm test` | `vitest run` | **OK** : 2 fichiers, 14 tests, exit 0 |
+| `npm run test:watch` | Vitest en watch | 14 tests à lancer |
+| `npm run build` | `tsc -b && vite build` | **OK**, exit 0 ; `dist/index.html` + `dist/sw.js` produits |
+| `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
 | `npm run status` | Métriques JSON | **OK**, exit 0 |
 | `node scripts/status.mjs` | Même script directement | **OK**, exit 0 |
 
-Erreurs de `check` / `build` observées :
+Les 2 erreurs de `check`/`build` constatées le 18/10 sont **corrigées** :
 
 ```text
-src/game/engine.ts(464,7): error TS2367: This comparison appears to be unintentional because the types '"playing"' and '"ended"' have no overlap.
-vite.config.ts(1,36): error TS2591: Cannot find name 'node:url'. Do you need to install type definitions for node?
+src/game/engine.ts(464,7): TS2367  → checkup retourne l'état ; la garde lit la valeur retournée (la garde elle-même reste nécessaire).
+vite.config.ts(1,36):  TS2591  → dépendance de développement @types/node ajoutée.
 ```
 
-Autres faits vérifiés :
+Autres faits vérifiés le 19/10/2026 :
 
-- `src/main.tsx` **absent** ; `index.html` le référence.
-- `public/` **absent** ; les icônes PWA sont référencées mais manquantes.
-- Aucun fichier `.css`, aucun `App.tsx`, aucun routeur.
-- **0 test** ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement.
-- `dist/sw.js` existe, mais `dist/index.html` est **absent** : ce n'est pas la preuve d'un build réussi.
-- Node `v24.21.0`, npm `11.19.0`, Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`.
-- Le dossier **est** un dépôt git depuis le 18/10/2026 : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
+- `src/main.tsx` et `src/App.tsx` existent ; `index.html` monte l'application sous `BrowserRouter`.
+- `public/` **absent** ; `favicon.svg`, `icon-192.svg`, `icon-512.svg` sont référencées mais manquantes — erreur de manifeste constatée dans la console du navigateur, pas seulement dans les docs.
+- Une seule feuille, `src/styles.css`, importée par `main.tsx`.
+- **14 tests** (2 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement.
+- `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Classeur et Combat.
+- Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
+- Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
 
 ## 8. Audits
 
@@ -266,7 +277,7 @@ grep -c "variant(" src/data/sse.ts
 - **`docs/STATUS.md` est daté du 18/10/2026, 20:57**, avant la correction de `scripts/status.mjs` et de `tsconfig.json`. Ses constats sur le `%20` et `baseUrl` ne sont plus l'état courant ; relancer les commandes.
 - **Les pourcentages de `grevomon-pocket/PLAN.md` ne s'appliquent pas** à ce projet. Ne pas les recopier.
 - `npm test` en échec par absence de tests n'est pas un test réussi.
-- Le dossier a un historique git depuis le 18/10/2026 : ne pas supposer qu'un commit, une branche ou un diff existent au-delà de `main` et du commit initial.
+- Le dossier a un historique git depuis le 18/10/2026, avec plusieurs commits sur `main` : lancer `git log` avant de parler d'un commit, `git worktree list` avant de conclure qu'il n'y a qu'un seul répertoire de travail, et `git status` avant d'affirmer qu'un fichier est à jour.
 - Les alias `@/` sont déclarés dans `tsconfig.json` **et** `vite.config.ts` ; un seul des deux ne suffit pas.
 
 ### 8.4 Definition of done

@@ -1,7 +1,11 @@
 # STATUS — audit factuel « Bureau des Planqués »
 
-> **Instantané historique.** Audit du **18/10/2026, 20:57 (CEST)**. Certains points ont été corrigés depuis
-> (`scripts/status.mjs`, `tsconfig.json`). Pour l'état courant, relancer les commandes de `AGENTS.md` §8.
+> **Instantané historique — plusieurs constats sont périmés.** Audit du **18/10/2026, 20:57 (CEST)**.
+> Corrigé depuis : `scripts/status.mjs`, `tsconfig.json`, puis le **19/10/2026** l'absence de point d'entrée
+> (`src/main.tsx`, `src/App.tsx`, 4 pages, `src/styles.css`), 0 test, et les 2 erreurs de `tsc`
+> (`engine.ts` TS2367, `@types/node` TS2591). `npm run check`, `npm test` et `npm run build` sont verts
+> (voir `AGENTS.md` §7). Trois constats de ce fichier sont donc **faux aujourd'hui** : « App / routeur absent »,
+> « Styles / CSS absent » et « 0 test ». Pour l'état courant, relancer les commandes de `AGENTS.md` §8.
 >
 > Ton neutre. On distingue **observé** (vérifié par commande ou fichier) et **non vérifié** (déduit, non exécuté).
 > Aucun fichier source n'a été modifié pendant cet audit ; rien n'a été corrigé ni installé à ce moment-là.
