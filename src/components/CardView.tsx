@@ -38,7 +38,7 @@ export function CardView({ card, onClick, compact, selected }: Props) {
       </div>
       <div className="card__art" style={{ background: card.palette }}>
         <span className="card__glyph">{card.glyph}</span>
-        {card.ex && <span className="card__ex">ex</span>}
+        {card.ex && <span className="card__ex">Cadre</span>}
         <span className="card__shine" />
       </div>
       <div className="card__attacks">

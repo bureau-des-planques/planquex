@@ -151,7 +151,9 @@ Ordres de grandeur 2026, à revérifier au moment du lancement :
 | Cartes Action | Objet : illimité ; Collègue : **1 par tour** |
 | Outils / Lieux | Ajoutés dans les extensions ultérieures, comme dans l'APK |
 
-> On abandonne donc, pour le **mode standard**, les règles maison `RULES-4b` (deck 12, main 4, cafés non consommés, résistance −20, défaite par banc vide). Elles pourront vivre plus tard comme **mode alternatif « Café »**, mais pas comme règle par défaut.
+> Les règles maison `RULES-4b` (deck 12, main 4, résistance −20, défaite par banc vide) sont **rangées à part** dans `docs/MODES-FUTURS.md` : mode futur « Café », ni acté ni par défaut (D-019). Elles ne font pas partie du mode standard et ne doivent pas être citées comme telles.
+>
+> Le miroir de référence est **daté** : Pocket dans son état de **2026** (D-018). Les écarts connus et les points non sourçables sont listés dans `docs/MIROIR-2026-DELTAS.md` (O-008, O-009).
 
 ### 3.2 Adaptation des termes
 
@@ -246,7 +248,7 @@ Le mode standard reste **mathématiquement identique** à TCG Pocket. La saveur 
 | **Cosmétique** | Noms, textes, art, sons, animations, cadres de rareté, thèmes de bacs, missions, avatars, autocollants | Nul |
 | **Économie** | Recharge des bacs, prix boutique, récompenses de missions, coûts de Pause café | Faible (progression, pas combat) |
 | **Contenu** | Les 286 cartes, leurs stats, attaques, talents | Moyen (méta) — validation par simulation |
-| **Modes séparés** | Mode Carrière, mode Café 4b, draft, scellé | Nul sur le standard |
+| **Modes séparés** | Mode Carrière, mode Café 4b (parké : `docs/MODES-FUTURS.md`), draft, scellé | Nul sur le standard |
 | **Mots-clés de carte** | « Changement de priorité », « Audit », « Prime »… construits sur des primitives existantes | Moyen — simulation obligatoire |
 | **Règles de base** | Deck, main, banc, Primes, énergie/tour, faiblesse, résistance, pioche vide | **Élevé — on n'y touche pas** |
 
@@ -563,7 +565,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 
 ## 9. Questions à trancher
 
-1. **Règles** : on valide le miroir exact de TCG Pocket (20/5/3, zone d'énergie, pas de résistance, pas de défaite par pioche vide) et l'abandon de `RULES-4b` comme mode standard ?
+1. ~~**Règles** : on valide le miroir exact de TCG Pocket (20/5/3, zone d'énergie, pas de résistance, pas de défaite par pioche vide) et l'abandon de `RULES-4b` comme mode standard ?~~ **Tranché** (D-018, D-019) : miroir **daté 2026**, `RULES-4b` rangé dans `docs/MODES-FUTURS.md`. Restent ouverts **O-008** (écarts du miroir) et **O-009** (règles insourçables) — voir `docs/MIROIR-2026-DELTAS.md`.
 2. **Volume** : on valide 286 cartes avec la répartition exacte (226 + 60, 102/67/42/15/24/29/4/3) ?
 3. **Factions** : on valide les 10 noms proposés, ou tu veux en changer certains ?
 4. **Ton** : on valide « punch up, aucun nom réel, la cible est le système » ? Tu veux un degré de férocité plus haut ou plus bas ?

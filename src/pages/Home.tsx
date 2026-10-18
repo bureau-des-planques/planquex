@@ -43,7 +43,7 @@ export function Home() {
 
       <section className="stats-grid">
         <article className="stat-card">
-          <span className="stat-card__label">Collection</span>
+          <span className="stat-card__label">Galérodex</span>
           <strong>{completion}%</strong>
           <span className="muted">{uniqueOwned} cartes uniques</span>
         </article>
@@ -70,8 +70,8 @@ export function Home() {
           <Link className="quick-card" to="/collection">
             <Library size={22} />
             <div>
-              <strong>Ouvrir le classeur</strong>
-              <span>Filtrer, chercher, admirer les holos.</span>
+              <strong>Ouvrir le Galérodex</strong>
+              <span>Filtrer, chercher, admirer les cartes brillantes.</span>
             </div>
             <ArrowRight size={18} />
           </Link>
@@ -98,7 +98,7 @@ export function Home() {
         <div className="modal-backdrop" onClick={() => setLastPack(null)} role="presentation">
           <div className="modal pack-reveal" onClick={(event) => event.stopPropagation()}>
             <p className="eyebrow">Bac à courrier</p>
-            <h2>Cinq nouveaux collègues</h2>
+            <h2>Cinq nouvelles cartes</h2>
             <div className="pack-reveal__cards">
               {lastPack.map((card, index) => (
                 <motion.div
@@ -112,7 +112,7 @@ export function Home() {
               ))}
             </div>
             <button type="button" className="button button--primary" onClick={() => setLastPack(null)}>
-              Ranger dans le classeur
+              Ranger dans le Galérodex
             </button>
           </div>
         </div>

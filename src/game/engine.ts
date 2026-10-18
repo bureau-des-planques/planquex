@@ -426,11 +426,11 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   return next;
 }
 
-function checkup(state: BattleState) {
+function checkup(state: BattleState): BattleState {
   const player = state.players[state.current];
-  if (!player.active) return;
+  if (!player.active) return state;
   const status = player.active.status;
-  if (!status) return;
+  if (!status) return state;
 
   if (status === 'SURCHARGE') {
     player.active.hp -= 10;
@@ -455,13 +455,16 @@ function checkup(state: BattleState) {
   if (player.active.hp <= 0) {
     knockOut(state, state.current === 'player' ? 'ai' : 'player');
   }
+  return state;
 }
 
 export function endTurn(state: BattleState): BattleState {
   const next = clone(state);
   if (next.phase === 'ended') return next;
-  checkup(next);
-  if (next.phase === 'ended') return next;
+  // `checkup` mute l'état et peut le terminer (K.O. par statut) : on lit la
+  // valeur retournée, pas `next`, dont le rétrécissement de type est périmé.
+  const afterCheckup = checkup(next);
+  if (afterCheckup.phase === 'ended') return afterCheckup;
 
   next.current = next.current === 'player' ? 'ai' : 'player';
   next.turn += 1;

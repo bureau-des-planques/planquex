@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #
 # Wizard : infrastructure du TCG (Supabase, Vercel, Brevo) — ticket #8 de
-# Chapax/opencode-config. Décision de référence : D-016 de grevomon-tcg.
+# Chapax/opencode-config. Décisions de référence : D-016 de grevomon-tcg,
+# amendée par D-017 (projet Vercel existant « grevomon » ; clé SMTP Brevo
+# rangée dans la config Custom SMTP de Supabase, jamais dans .env).
 #
 # Everything above the "STAGES" marker is the wizard library: do not hand-edit
 # it. Author the per-step stages below the marker.
@@ -202,7 +204,9 @@ run_wizard() {
 
 TOTAL_STAGES=9
 
-# Les secrets vont hors du dépôt : .gitignore ne couvre pas .env.
+# Les valeurs vont hors du dépôt par défaut. Le .env du dépôt est ignoré par
+# .gitignore, mais D-017 range la clé SMTP Brevo dans Supabase : aucun secret
+# ne doit être écrit ici, quels que soient les noms de clés.
 ENV_FILE="${ENV_FILE:-$HOME/.secrets/grevomon-tcg.env}"
 mkdir -p "$(dirname "$ENV_FILE")"
 chmod 700 "$(dirname "$ENV_FILE")" 2>/dev/null || true
@@ -234,7 +238,7 @@ if [[ "${SUPABASE_OLD_PAUSED:-}" == "1" ]]; then
   note "Déjà fait lors d'une exécution précédente."
 else
   warn "Décision validée : on met en pause la production $OLD_PROD_REF."
-  warn "Conséquence : l'ancien site grevomon.vercel.app cesse de fonctionner."
+  warn "Conséquence : le backend de l'ancien jeu s'arrête. Le projet Vercel « grevomon » et son domaine grevomon.vercel.app sont eux conservés : ils servent désormais le TCG (D-017)."
   open_url "$DASH/project/$OLD_PROD_REF/settings/general"
   step "Descends jusqu'à « Pause project » et confirme la mise en pause."
   step "Attends que le tableau de bord affiche le projet comme « Paused »."
@@ -271,22 +275,19 @@ else
 fi
 
 # ── 4. Projet Vercel ──────────────────────────────────────────────────────
-stage "Vercel : créer le projet grevomon-tcg"
+stage "Vercel : lier le projet existant « grevomon » (D-017)"
 if [[ -n "${VERCEL_URL:-}" ]]; then
   note "Projet déjà enregistré : $VERCEL_PROJECT ($VERCEL_URL) — étape sautée."
 else
-  open_url "https://vercel.com/new"
-  step "Importe le dépôt GitHub Chapax/grevomon-tcg (équipe $VERCEL_TEAM)."
-  step "Framework preset : Vite. Root directory : la racine du dépôt."
-  step "Build command : npm run build. Output directory : dist."
-  step "Lance le déploiement."
-  warn "Le build ÉCHOUE encore : src/main.tsx est absent (AGENTS.md §7). C'est attendu."
-  warn "On veut le projet lié au dépôt, pas un déploiement vert."
-  pause "Projet créé (même si le déploiement échoue) ? Entrée pour continuer"
+  warn "On ne crée PAS de projet Vercel grevomon-tcg : on réutilise le projet existant « grevomon »."
   open_url "https://vercel.com/$VERCEL_TEAM"
-  step "Ouvre le projet, puis Project Settings → General : note le nom exact du projet."
+  step "Ouvre le projet existant, pas « Add New Project »."
+  step "Project Settings → Git : le dépôt lié doit être Chapax/grevomon-tcg."
+  step "Project Settings → Build and Deployment : Framework preset Vite, Root directory la racine, Build command npm run build, Output directory dist."
+  step "Lance un déploiement. Le build passe (src/main.tsx existe) : dist/index.html et dist/sw.js sont produits."
+  pause "Projet lié et déployé ? Entrée pour enregistrer les identifiants"
   ask VERCEL_PROJECT "Nom du projet Vercel :"
-  step "Domains : copie le domaine de production (souvent <projet>.vercel.app)."
+  step "Domains : relève le domaine de production du projet."
   ask VERCEL_URL "URL de production (sans slash final) :"
   write_env VERCEL_PROJECT "$VERCEL_PROJECT"
   write_env VERCEL_URL "${VERCEL_URL%/}"
@@ -294,8 +295,8 @@ fi
 
 # ── 5. Clé SMTP Brevo dédiée ──────────────────────────────────────────────
 stage "Brevo : créer la clé SMTP dédiée"
-if [[ -n "${BREVO_SMTP_KEY:-}" ]]; then
-  note "Clé SMTP déjà enregistrée — étape sautée."
+if [[ -n "${BREVO_SMTP_LOGIN:-}" && -n "${BREVO_SENDER_EMAIL:-}" ]]; then
+  note "Expéditeur SMTP déjà enregistré ($BREVO_SENDER_EMAIL) — étape sautée. La clé n'étant pas conservée (D-017), l'étape 6 reste à faire dans Supabase."
 else
   open_url "https://app.brevo.com/settings/keys/smtp"
   step "Onglet « SMTP » : clique sur « Generate a new SMTP key »."
@@ -308,7 +309,7 @@ else
   step "Vérifie que l'adresse expéditeur du jeu est bien un expéditeur validé."
   ask BREVO_SENDER_EMAIL "Adresse expéditeur :"
   ask BREVO_SENDER_NAME "Nom affiché de l'expéditeur :"
-  write_env BREVO_SMTP_KEY "$BREVO_SMTP_KEY"
+  note "La clé n'est PAS écrite sur disque (D-017) : elle ne sert qu'à l'étape 6, dans Supabase."
   write_env BREVO_SMTP_LOGIN "$BREVO_SMTP_LOGIN"
   write_env BREVO_SENDER_EMAIL "$BREVO_SENDER_EMAIL"
   write_env BREVO_SENDER_NAME "$BREVO_SENDER_NAME"
@@ -343,7 +344,7 @@ write_env SUPABASE_URL "https://${SUPABASE_PROJECT_REF}.supabase.co"
 write_env SUPABASE_ANON_KEY "$SUPABASE_ANON_KEY"
 write_env VERCEL_PROJECT "$VERCEL_PROJECT"
 write_env VERCEL_URL "$VERCEL_URL"
-note "Fichier : $ENV_FILE (mode 0600). La clé SMTP y est aussi ; elle ne doit jamais entrer dans le dépôt."
+note "Fichier : $ENV_FILE (mode 0600). Aucun secret n'y est écrit : la clé SMTP Brevo vit dans la config Custom SMTP de Supabase (D-017)."
 chmod 600 "$ENV_FILE" 2>/dev/null || true
 open_url "$DASH/project/${SUPABASE_PROJECT_REF}/auth/users"
 step "Add user → « Send invitation » vers une adresse que tu consultes."
@@ -361,7 +362,7 @@ say "Valeurs publiques à reporter dans la réponse du ticket :"
 printf '\n    Projet Supabase : %s\n    URL Supabase    : %s\n    Clé publique    : %s\n    Projet Vercel   : %s\n    URL Vercel      : %s\n\n' \
   "$SUPABASE_PROJECT_REF" "https://${SUPABASE_PROJECT_REF}.supabase.co" "$SUPABASE_ANON_KEY" "$VERCEL_PROJECT" "$VERCEL_URL"
 say "Secrets : $ENV_FILE (chmod 600). Aucune valeur secrète n'est affichée ici."
-note "Le build Vercel reste rouge tant que src/main.tsx n'existe pas : c'est le prochain chantier, pas un échec de ce ticket."
+note "Le build passe désormais : npm run check, npm test et npm run build sont verts depuis le 19/10/2026."
 pause "Entrée pour terminer"
 
 finish

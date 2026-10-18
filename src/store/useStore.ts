@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 import { ALL_CARDS, getCard } from '@/data';
 import type { Card, Rarity } from '@/data/types';
 
+/** Clé de persistance. Source unique : `Settings.tsx` l'affiche, `persist` l'écrit. */
+export const STORAGE_KEY = 'bureau-des-planques-v1';
+
 const STARTER_RARITIES: Rarity[] = ['1D', '2D'];
 
 function starterOwned(): Record<string, number> {
@@ -77,7 +80,7 @@ export const useStore = create<AppState>()(
       setReducedMotion: (value) => set({ reducedMotion: value })
     }),
     {
-      name: 'bureau-des-planques-v1',
+      name: STORAGE_KEY,
       partialize: (state) => ({
         name: state.name,
         owned: state.owned,
