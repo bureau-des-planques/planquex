@@ -1,0 +1,320 @@
+# AGENTS.md — Bureau des Planqués
+
+> Projet actif : **`grevomon-tcg/`**. Dernière vérification des commandes : **18/10/2026, 21:30 (CEST)**.
+> `grevomon-pocket/` est **legacy** : voir `../grevomon-pocket/LEGACY.md`.
+> Ne jamais l'utiliser comme source de vérité pour les règles, le vocabulaire, le contenu ou un audit.
+
+## 1. Règles d'or
+
+1. Lire ce fichier et `docs/DECISIONS.md` avant toute modification.
+2. Travailler dans `grevomon-tcg/` sauf demande explicite. Ne pas modifier `grevomon-pocket/`.
+3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
+4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
+5. Ne pas copier le contenu, les règles, les assets ou les pourcentages de `grevomon-pocket/`.
+6. Ne pas ajouter de mécanique maison au mode standard. La seule exception actée est le mot-clé **« Changement de priorité »** (D-004).
+7. Ne pas ajouter de dépendance sans nécessité démontrée et sans le signaler.
+8. Après une modification : lancer au minimum `npm run check` et les tests concernés ; si le build est cassé, le dire explicitement.
+
+## 2. Sources de vérité
+
+En cas de conflit, appliquer cet ordre :
+
+1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale.
+2. **`docs/PROPOSITION.md` §3–5** — règles, contenu, périmètre validés par les décisions D-003, D-005, D-006, D-011, D-014.
+3. **`docs/CARD-SPEC.md` et `docs/FACTIONS.md`** — structure du set, courbes, factions, nommage.
+4. **Le code et les commandes** — ce qui existe réellement. Un écart avec les docs est un bug ou une tâche, pas une nouvelle règle.
+5. **`docs/STATUS.md`** — instantané d'audit daté. Ce n'est pas une vérité live : relancer les commandes.
+
+Si deux documents se contredisent, ne pas choisir silencieusement : le signaler, citer les passages, et proposer une correction de doc ou de code.
+
+## 3. Vocabulaire
+
+Le jeu est en **français**. Le code peut garder des identifiants anglais, mais l'interface, les cartes et les docs emploient les termes du projet.
+
+### 3.1 Termes de base
+
+| Terme TCG / anglais | Terme projet | Code / note |
+|---|---|---|
+| Pokémon | **Planqué** | `Card`, `CardInstance` |
+| Basic / Stage 1 / Stage 2 | **N+1 / N+2 / COMEX** | `Stage` |
+| ex | **Cadre** | `ex: true`, vaut **2 Primes** |
+| HP | **Moral** | `hp` |
+| Energy | **Café** | `energy` |
+| Energy Zone | **Machine à café** | `energyZone` |
+| Attack | **Pression** | `Attack` |
+| Ability | **Talent** | `ability` |
+| Item | **Objet** | carte Action |
+| Supporter | **Collègue** | carte Action |
+| Tool | **Outil** | extension ultérieure |
+| Stadium | **Lieu** | extension ultérieure |
+| Prize / point | **Prime** | `points`, 3 pour gagner |
+| Weakness | **Vulnérabilité** | `weakness`, +20 |
+| Resistance | **— (supprimée)** | aucune |
+| Retreat | **Relève** | `retreat` |
+| Poison | **Surcharge** | `SURCHARGE` |
+| Burn | **Burn-out** | `BURNOUT` |
+| Sleep | **Bloqué** | `BLOQUE` |
+| Paralysis | **Gelé** | `GELE` |
+| Confusion | **Dérive** | `DERIVE` |
+| Deck | **Classeur** | `deck`, 20 cartes |
+| Hand | **Courrier** | `hand`, 5 au départ, 10 max |
+| Discard | **Archive** | `discard` |
+| Bench | **Open-space** | `bench`, 3 places |
+| Active | **Poste** | `active` |
+| Coin flip | **Lancer de tampon** | pile = tampon, face = agrafe |
+| Mulligan | **Reprise de poste** | aucune carte de base en main |
+| Pack | **Bac à courrier** | 5 cartes |
+| Wonder Pick | **Pause café** | 5 cartes, 1 rare minimum |
+| Collection | **Galérodex** | ne pas dire « Classeur » seul |
+| Mission | **Note de service** | |
+| Shop | **Économat / Boutique du CSE** | |
+| Premium Pass | **Cotisation** | |
+| Friend | **Camarade** | |
+| Trade | **Échange de postes** | |
+| Ranked | **Échelon** | |
+| Present Box | **Casier** | |
+| Card Skin | **Autocollant** | |
+| Tutorial | **Journée d'intégration** | |
+
+**Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Grèvomon`, `Pokémon`. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. Le nom propre **Galérodex** est conservé pour la collection ; « Galère » seul ne doit jamais apparaître dans le code, les cartes ou l'UI.
+
+### 3.2 Factions
+
+| Faction (code) | Type | Vulnérable à | Carte signature |
+|---|---|---|---|
+| `SSE` | Plante | `MANAGER` | Médecin du travail |
+| `MANAGER` | Feu | `HAPPINESS` | Directeur général |
+| `HAPPINESS` | Eau | `AMELIORATION` | Chief Happiness Officer |
+| `AMELIORATION` | Électricité | `TECHNICIEN` | Directeur qualité |
+| `RH` | Psy | `DIRECTION` | DRH |
+| `TECHNICIEN` | Combat | `RH` | Chef d'atelier |
+| `DIRECTION` | Obscurité | `TECHNICIEN` | PDG |
+| `SYNDICAT` | Métal | `MANAGER` | Secrétaire général |
+| `INTERIMAIRE` | Dragon | Aucune | Intérimaire légendaire |
+| `SUPPORT` | Incolore | `TECHNICIEN` | Responsable support |
+
+Stades : **N+1 → N+2 → COMEX**. Raretés codées : `1D`, `2D`, `3D`, `4D`, `1S`, `2S`.
+La cible `CARD-SPEC.md` contient aussi **3 étoiles** et **Couronne** : à ajouter aux types, aux métadonnées et aux tests avant de les utiliser.
+
+## 4. Règles du jeu
+
+Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne change ; seuls les noms et les textes changent.
+
+| Règle | Valeur |
+|---|---|
+| Classeur | **20 cartes**, max **2** exemplaires du même nom, au moins **1 Planqué N+1** |
+| Main de départ | **5 cartes** ; si aucun Planqué N+1, on révèle, on remélange et on repioche (l'adversaire pioche 1) |
+| Main maximale | **10 cartes** |
+| Poste | **1** |
+| Open-space | **3** places |
+| Primes | **3** pour gagner ; K.O. normal = 1, Cadre = 2 |
+| Machine à café | **1 café généré par tour**, **1 attachement par tour** ; si le slot du haut est occupé, pas de nouveau café |
+| Types de café | Jusqu'à **3** par classeur, ordre aléatoire ; l'incolore accepte tout |
+| Premier joueur | Ne pioche pas, ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 |
+| Évolution | Impossible au premier tour de chaque joueur |
+| Pression | **1 par tour** ; le café n'est **pas consommé** |
+| Vulnérabilité | **+20 dégâts** |
+| Résistance | **Aucune** |
+| Relève | Défausse autant de cafés que le coût de relève |
+| Pioche vide | **Pas de défaite** |
+| K.O. | L'adversaire marque les Primes ; l'Open-space choisit la relève |
+| Statuts | Surcharge (10/tour), Burn-out (20 + lancer), Bloqué (lancer), Gelé (1 tour), Dérive (lancer avant attaque) |
+| Ordre des statuts | Surcharge → Burn-out → Bloqué → Gelé |
+| Cartes Action | **Objet** : illimité ; **Collègue** : **1 par tour** |
+| Outils / Lieux | Extensions ultérieures, pas au lancement |
+
+### 4.1 Ce qui n'est pas la règle standard
+
+- **`RULES-4b` est abandonné** comme mode standard : deck 12, main 4, cafés non consommés, résistance −20, défaite par Open-space vide. Il pourra vivre plus tard comme mode alternatif « Café », jamais par défaut.
+- Pas de compteur de stress, pas de ressource maison, pas de règle de deck alternative.
+- **« Changement de priorité »** (D-004) : une fois par tour, au Poste, défausser 1 carte puis piocher 1. Mot-clé porté par les cartes, déactivable par un drapeau global, testé en simulation avant validation. C'est la seule exception.
+- **« Pause café »** désigne le Wonder Pick. Ne pas réutiliser ce terme pour une action de combat de l'ancien système 4b.
+
+### 4.2 Bacs et contenu
+
+- Un bac à courrier contient **5 cartes** : 3 communes, 1 peu commune, 1 rare minimum.
+- Cible de lancement : **286 cartes** = 226 de base (215 Planqués + 8 Collègues + 3 Objets) + 60 secrètes.
+- Trois bacs : **Direction**, **Terrain**, **Bureau**.
+- Monétisation v1 : **aucun argent réel** ; la Cotisation se paie en monnaie de jeu.
+- Ton : satire de bureau **punch up**. On ridiculise les postures et le système, jamais une personne réelle, une entreprise existante ou un groupe protégé.
+
+## 5. Écriture des cartes
+
+- **Identifiants** : minuscules, kebab-case, préfixe de faction — `sse-infirmier-site`. Variantes : suffixe `-star` ou `-star2`.
+- **Évolution** : `evolvesFrom` pointe vers l'`id` de la carte précédente. Une variante hérite des stats, attaques, talent et flavour de sa carte de base.
+- **Cadre** : `ex: true`, vaut 2 Primes. L'UI affiche « Cadre », pas « ex ».
+- **Effets** : utiliser uniquement les `AttackEffectKind` existants (`healSelf`, `healAll`, `status`, `draw`, `discardEnergy`, `selfDamage`, `switchSelf`, `reduceDamage`). Toute nouvelle primitive = décision + mise à jour des types + tests.
+- **Textes** : français, phrase complète, « Ce Planqué… », « le Planqué adverse… », noms de statuts capitalisés. Exemple **interdit** : `Cette Galère subit 10 dégâts.` ; écrire `Ce Planqué subit 10 dégâts.`
+- **Flavour** : une scène de bureau, drôle, sans nom réel. La chute vise le système.
+- **Stats** : suivre `CARD-SPEC.md` §2.
+
+| Stade / rareté | Moral | Dégâts typiques | Relève |
+|---|---:|---:|---:|
+| N+1 1◆ | 60–70 | 10–20 | 1 |
+| N+1 2◆ | 60–80 | 10–30 | 1 |
+| N+2 2◆ | 80–100 | 30–50 | 1–2 |
+| N+2 3◆ | 90–110 | 40–60 | 2 |
+| COMEX 3◆ | 120–140 | 50–80 | 2 |
+| COMEX 4◆ (Cadre) | 140–170 | 70–120 | 2–3 |
+
+- Une attaque à 1 café fait 10–30 ; à 2 cafés, 40–60 ou 30 + effet ; à 3 cafés, 70–100 ou 60 + effet fort.
+- Un Talent ne doit pas créer d'avantage de cartes net sans coût.
+- Un Cadre doit être plus fort, pas auto-include.
+- Vulnérabilité : +20. L'Intérimaire n'a aucune vulnérabilité.
+
+## 6. Architecture et conventions
+
+Le projet est encore une **application Vite plate**. Le monorepo décrit dans `PROPOSITION.md` §6.1 est une cible, pas l'état actuel : ne pas restructurer sans décision.
+
+```text
+grevomon-tcg/
+├── src/
+│   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx
+│   ├── data/         index.ts, sse.ts, types.ts
+│   ├── game/         engine.ts
+│   ├── pages/        Home.tsx
+│   └── store/        useStore.ts
+├── scripts/status.mjs
+└── docs/
+```
+
+- **TypeScript strict**. Alias `@/` → `./src`, déclaré dans `tsconfig.json` et `vite.config.ts`.
+- **UI en français**, identifiants de code en anglais. Ne pas dupliquer les textes de cartes hors de `src/data`.
+- **Moteur** : code pur autant que possible, sans React ni DOM. `applyAction(state, action)` et fonctions de transition ; cloner avec `structuredClone`.
+- **Déterminisme** : c'est une cible de `PROPOSITION.md` §6.2. Le moteur utilise encore `Math.random()` ; toute simulation ou tout test doit être seedé avant d'être considéré comme reproductible.
+- **Store** : Zustand + `persist`, clé `bureau-des-planques-v1`. Toute modification de forme doit être migrée ou versionnée.
+- **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées.
+- **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
+- **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` sont référencées mais absentes.
+- **CSS** : aucun fichier CSS ni composant `main.tsx` à ce jour. Ne pas prétendre qu'un écran est rendu sans point d'entrée et sans feuille de style.
+
+## 7. Commandes
+
+Toujours depuis `grevomon-tcg/`. Le chemin contient une espace : le quoting est obligatoire.
+
+```bash
+cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
+```
+
+| Commande | Usage | État vérifié le 18/10/2026, 21:30 |
+|---|---|---|
+| `npm install` | Installer les dépendances | dépendances déjà présentes |
+| `npm run dev` | Serveur Vite sur `:5178` | l'écran échouera tant que `src/main.tsx` manque (non exécuté) |
+| `npm run check` | `tsc -b` | **échec** : 2 erreurs (voir ci-dessous) |
+| `npm test` | `vitest run` | **échec** : `No test files found` |
+| `npm run test:watch` | Vitest en watch | aucun test à lancer |
+| `npm run build` | `tsc -b && vite build` | **échec** au `tsc`, `vite build` non atteint |
+| `npm run preview` | Servir `dist/` | inutilisable tant que le build échoue |
+| `npm run status` | Métriques JSON | **OK**, exit 0 |
+| `node scripts/status.mjs` | Même script directement | **OK**, exit 0 |
+
+Erreurs de `check` / `build` observées :
+
+```text
+src/game/engine.ts(464,7): error TS2367: This comparison appears to be unintentional because the types '"playing"' and '"ended"' have no overlap.
+vite.config.ts(1,36): error TS2591: Cannot find name 'node:url'. Do you need to install type definitions for node?
+```
+
+Autres faits vérifiés :
+
+- `src/main.tsx` **absent** ; `index.html` le référence.
+- `public/` **absent** ; les icônes PWA sont référencées mais manquantes.
+- Aucun fichier `.css`, aucun `App.tsx`, aucun routeur.
+- **0 test** ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement.
+- `dist/sw.js` existe, mais `dist/index.html` est **absent** : ce n'est pas la preuve d'un build réussi.
+- Node `v24.21.0`, npm `11.19.0`, Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`.
+- Le dossier **est** un dépôt git depuis le 18/10/2026 : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
+
+## 8. Audits
+
+Un audit est une **preuve**, pas une opinion. Il se fait toujours sur `grevomon-tcg/`, jamais sur `grevomon-pocket/`.
+
+### 8.1 Protocole
+
+1. Lire `AGENTS.md`, `docs/DECISIONS.md`, puis les docs concernés.
+2. Lancer les commandes de référence et noter **commande exacte, exit code, extrait exact**.
+3. Distinguer explicitement **observé** (commande/fichier) et **non vérifié** (déduit).
+4. Ne jamais conclure « fait » sans test, build, capture ou sortie de commande.
+5. Vérifier le code, pas seulement les docs. `docs/STATUS.md` est un instantané daté.
+6. Signaler les blocages préexistants au lieu de les masquer ou de les attribuer à la modification en cours.
+
+### 8.2 Batterie de référence
+
+```bash
+cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
+npm run status
+npm run check
+npm test
+npm run build
+ls -la dist/index.html dist/sw.js
+find src -name '*.test.*' -o -name '*.spec.*'
+grep -rn "Galère" src || true
+grep -rn "from '@/" src | wc -l
+find src -type f | sort
+```
+
+Pour un audit de contenu, compter aussi les cartes et les variantes :
+
+```bash
+grep -c "base({" src/data/sse.ts
+grep -c "variant(" src/data/sse.ts
+```
+
+### 8.3 Pièges connus
+
+- **`dist/sw.js` seul ne prouve rien** : il peut rester d'un build isolé antérieur. Le build valide produit `dist/index.html` **et** `dist/sw.js`.
+- **`docs/STATUS.md` est daté du 18/10/2026, 20:57**, avant la correction de `scripts/status.mjs` et de `tsconfig.json`. Ses constats sur le `%20` et `baseUrl` ne sont plus l'état courant ; relancer les commandes.
+- **Les pourcentages de `grevomon-pocket/PLAN.md` ne s'appliquent pas** à ce projet. Ne pas les recopier.
+- `npm test` en échec par absence de tests n'est pas un test réussi.
+- Le dossier a un historique git depuis le 18/10/2026 : ne pas supposer qu'un commit, une branche ou un diff existent au-delà de `main` et du commit initial.
+- Les alias `@/` sont déclarés dans `tsconfig.json` **et** `vite.config.ts` ; un seul des deux ne suffit pas.
+
+### 8.4 Definition of done
+
+Pour une modification de code :
+
+- `npm run check` : exit 0.
+- `npm test` : exit 0, avec au moins un test couvrant le changement.
+- `npm run build` : exit 0, `dist/index.html` et `dist/sw.js` présents.
+- Aucune occurrence de `Galère` dans `src/`.
+- Docs mises à jour si une règle, un vocabulaire, un contenu ou une décision change.
+
+Pour une modification de documentation seule :
+
+- Liens et chemins valides.
+- Commandes citées réellement exécutables.
+- Aucune contradiction avec `docs/DECISIONS.md`.
+- Date de vérification mise à jour si l'état des commandes change.
+
+### 8.5 Format de rapport
+
+```markdown
+## Audit — <date>
+
+Périmètre :
+Commandes : <commande> → exit <code> ; extrait :
+Observé :
+Non vérifié :
+Bloquants :
+Prochaine action vérifiable :
+```
+
+## 9. Legacy
+
+`grevomon-pocket/` est conservé comme **référence historique** : ancien univers Grèvomon, vocabulaire « Galère », règles `RULES-4b` (12/4/3), 38 cartes, application plate. Il peut servir à consulter des idées d'UI ou l'inventaire fonctionnel de l'APK, mais **jamais** de source de vérité pour ce projet.
+
+Voir `../grevomon-pocket/LEGACY.md`.
+
+## 10. Agent skills
+
+### Issue tracker
+
+Les tickets vivent dans GitHub Issues sur `Chapax/grevomon-tcg`, piloté par la CLI `gh`. Voir `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Les cinq rôles de triage canoniques utilisent leurs noms par défaut (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). Voir `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Contexte unique. Le vocabulaire est `AGENTS.md` §3, les décisions sont `docs/DECISIONS.md`. Voir `docs/agents/domain.md`.
