@@ -379,6 +379,15 @@ function applyStatus(target: CardInstance, status: Status) {
   if (!hasStatus(target, status)) target.statuses.push(status);
 }
 
+/**
+ * Garde d'exhaustivité (#56) : à appeler dans le `default` d'un `switch` sur une union.
+ * Elle ne compile que si tous les membres de l'union ont leur `case` ; à l'exécution, un
+ * `kind` hors type lève au lieu d'être avalé.
+ */
+function assertNever(value: never): never {
+  throw new Error(`Effet non géré par le moteur : ${String(value)}`);
+}
+
 function applyEffects(
   state: BattleState,
   who: PlayerId,
@@ -424,6 +433,8 @@ function applyEffects(
       case 'reduceDamage':
         attacker.damageReduction = effect.amount ?? 0;
         break;
+      default:
+        assertNever(effect.kind);
     }
   }
 }
@@ -457,8 +468,15 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
       case 'discardEnergy':
         if (opponent.active) opponent.active.energy = Math.max(0, opponent.active.energy - 1);
         break;
-      default:
+      case 'healSelf':
+      case 'selfDamage':
+      case 'switchSelf':
+      case 'reduceDamage':
+        // Sans attaquant, ces primitives n'ont pas de sens ici : elles sont ignorées
+        // **volontairement**, et le `case` explicite est ce qui le prouve (#56).
         break;
+      default:
+        assertNever(effect.kind);
     }
   }
 }

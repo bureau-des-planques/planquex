@@ -11,7 +11,8 @@ import {
   isActionCard,
   isPlanque
 } from '@/data';
-import type { AttackEffectKind, Card, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
+import type { Card, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
+import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
 import { damageBand, hpBand } from '@/game/curves';
 import { isValidCafeCost } from '@/game/rules';
 
@@ -50,24 +51,11 @@ const FORBIDDEN_ANY_CASE = [
  */
 const FORBIDDEN_UPPER = ['BURNOUT', 'BLOQUE', 'GELE', 'MANAGER', 'HAPPINESS', 'TECHNICIEN', 'INTERIMAIRE'];
 
-const EFFECT_KINDS: AttackEffectKind[] = [
-  'healSelf',
-  'healAll',
-  'status',
-  'draw',
-  'discardEnergy',
-  'selfDamage',
-  'switchSelf',
-  'reduceDamage'
-];
-
-const ABILITY_KINDS: NonNullable<PlanqueCard['ability']>['kind'][] = [
-  'heal',
-  'draw',
-  'attachEnergy',
-  'reduceDamage',
-  'antiStatus'
-];
+/**
+ * Les primitives d'effet et de Talent ne sont **pas** recopiées ici (#56) : leur liste
+ * unique vit à côté de leur union, dans `@/data/types`. Ce fichier la consomme, il ne la
+ * redéclare pas — sinon un membre ajouté au type passerait inaperçu.
+ */
 
 /** Les **Planqués** : seuls à porter un stade, un Seuil, des Pressions, une Vulnérabilité. */
 const PLANQUES = ALL_CARDS.filter(isPlanque);
@@ -149,7 +137,7 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
         expect(attack.cost, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
         expect(attack.damage, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
         for (const effect of attack.effects ?? []) {
-          expect(EFFECT_KINDS, `${card.id}/${attack.name}`).toContain(effect.kind);
+          expect(ATTACK_EFFECT_KINDS, `${card.id}/${attack.name}`).toContain(effect.kind);
           if (effect.kind === 'status') {
             expect(effect.status, `${card.id}/${attack.name}`).toBeDefined();
           }
@@ -165,7 +153,7 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
     for (const card of ACTIONS) {
       expect(card.effects.length, card.id).toBeGreaterThan(0);
       for (const effect of card.effects) {
-        expect(EFFECT_KINDS, card.id).toContain(effect.kind);
+        expect(ATTACK_EFFECT_KINDS, card.id).toContain(effect.kind);
         if (effect.kind === 'status') {
           expect(effect.status, card.id).toBeDefined();
         }
