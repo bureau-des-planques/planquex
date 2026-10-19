@@ -284,7 +284,7 @@ const MENSONGES_CONNUS: Readonly<Record<string, string>> = {
     'src/data/direction.ts:71 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
   'direction-chef-cabinet/Note interne':
     'src/data/direction.ts:134 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'direction-directeur-projet/Recette finale':
+  'direction-directeur-programme/Recette finale':
     'src/data/direction.ts:160 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
   'direction-commissaire-comptes/Rapport d\'anomalie':
     'src/data/direction.ts:195 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',

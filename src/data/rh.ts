@@ -256,7 +256,7 @@ export const RH_CARDS: PlanqueCard[] = [
     flavor: "Il a demandé l'aménagement. La direction a acheté une plante."
   }),
   base({
-    id: 'rh-responsable-qvt',
+    id: 'rh-charge-prevention',
     name: 'Chargé de prévention',
     stage: 'ENTRANT',
     rarity: '1D',
