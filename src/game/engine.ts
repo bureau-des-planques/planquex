@@ -9,7 +9,7 @@ import type {
   Status
 } from '@/data/types';
 import { deckLegal } from '@/game/deck';
-import { RULES } from '@/game/rules';
+import { RULES, STATUS_ORDER } from '@/game/rules';
 
 let uidCounter = 0;
 
@@ -42,7 +42,7 @@ export function createInstance(cardId: string, turn = 0): CardInstance {
     hp: card.hp,
     maxHp: card.hp,
     energy: 0,
-    status: null,
+    statuses: [],
     playedTurn: turn,
     evolvedTurn: null,
     damageReduction: 0
@@ -252,7 +252,7 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
   target.cardId = card.id;
   target.maxHp = card.hp;
   target.hp = Math.max(1, card.hp - damage);
-  target.status = null;
+  clearStatuses(target);
   target.evolvedTurn = next.turn;
   next.log.push(`${next.current === 'player' ? 'Tu fais évoluer' : 'L’IA fait évoluer'} ${card.name}.`);
   return next;
@@ -287,7 +287,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   if (!card || player.active.energy < card.retreat) return state;
   player.active.energy -= card.retreat;
   const outgoing = player.active;
-  player.active = { ...bench, status: null };
+  player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
   next.log.push(`${next.current === 'player' ? 'Tu passes en relève' : 'L’IA passe en relève'} : ${getCard(bench.cardId)?.name}.`);
@@ -306,7 +306,7 @@ export function useAbility(state: BattleState): BattleState {
     player.active.hp = Math.min(player.active.maxHp, player.active.hp + (ability.amount ?? 10));
   } else if (ability.kind === 'antiStatus') {
     player.active.hp = Math.min(player.active.maxHp, player.active.hp + (ability.amount ?? 10));
-    player.active.status = null;
+    clearStatuses(player.active);
   } else if (ability.kind === 'draw') {
     draw(next, next.current, ability.amount ?? 1);
   } else if (ability.kind === 'attachEnergy') {
@@ -326,8 +326,22 @@ function attackDamage(attacker: CardInstance, defender: CardInstance, attack: At
   return Math.max(0, attack.damage + weakness - reduction);
 }
 
+function hasStatus(card: CardInstance, status: Status): boolean {
+  return card.statuses.includes(status);
+}
+
+function clearStatus(card: CardInstance, status: Status) {
+  card.statuses = card.statuses.filter((entry) => entry !== status);
+}
+
+/** Une évolution, une relève ou un changement de Poste remettent les conditions à zéro (§4). */
+function clearStatuses(card: CardInstance) {
+  card.statuses = [];
+}
+
+/** Ajoute une condition si elle n'y est pas déjà (on ne cumule pas deux Surcharges). */
 function applyStatus(target: CardInstance, status: Status) {
-  if (!target.status) target.status = status;
+  if (!hasStatus(target, status)) target.statuses.push(status);
 }
 
 function applyEffects(
@@ -367,7 +381,7 @@ function applyEffects(
           const incoming = player.bench[index];
           if (incoming) {
             player.bench[index] = attacker;
-            player.active = { ...incoming, status: null };
+            player.active = { ...incoming, statuses: [] };
           }
         }
         break;
@@ -427,7 +441,7 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
   if (!incoming) return state;
 
   player.bench[benchIndex] = null;
-  player.active = { ...incoming, status: null };
+  player.active = { ...incoming, statuses: [] };
   next.pendingPromotion = null;
   next.log.push(`${who === 'player' ? 'Tu envoies' : 'L’IA envoie'} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
   return next;
@@ -469,20 +483,20 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   const attack = card.attacks[attackIndex];
   if (!attack || player.active.energy < attack.cost) return state;
 
-  if (player.active.status === 'GELE') {
+  if (hasStatus(player.active, 'GELE')) {
     next.log.push('Gelé : impossible d’attaquer.');
     return next;
   }
-  if (player.active.status === 'BLOQUE') {
+  if (hasStatus(player.active, 'BLOQUE')) {
     if (Math.random() < 0.5) {
-      player.active.status = null;
+      clearStatus(player.active, 'BLOQUE');
       next.log.push('Bloqué : réveil sur pile.');
     } else {
       next.log.push('Bloqué : toujours bloqué.');
       return next;
     }
   }
-  if (player.active.status === 'DERIVE' && Math.random() < 0.5) {
+  if (hasStatus(player.active, 'DERIVE') && Math.random() < 0.5) {
     player.active.hp -= 20;
     next.log.push('Dérive : l’attaque échoue, 20 dégâts.');
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
@@ -506,30 +520,34 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
 function checkup(state: BattleState): BattleState {
   const player = state.players[state.current];
   if (!player.active) return state;
-  const status = player.active.status;
-  if (!status) return state;
 
-  if (status === 'SURCHARGE') {
-    player.active.hp -= 10;
-    state.log.push('Surcharge : 10 dégâts.');
-  } else if (status === 'BURNOUT') {
-    player.active.hp -= 20;
-    state.log.push('Burn-out : 20 dégâts.');
-    if (Math.random() < 0.5) {
-      player.active.status = null;
-      state.log.push('Burn-out guéri sur pile.');
+  // Les conditions se résolvent **dans l'ordre de §4** (Surcharge → Burn-out →
+  // Bloqué → Gelé), et un Planqué peut en subir plusieurs. Dérive n'est pas ici :
+  // elle se résout avant l'attaque.
+  for (const status of STATUS_ORDER) {
+    if (!player.active || !hasStatus(player.active, status)) continue;
+    if (status === 'SURCHARGE') {
+      player.active.hp -= 10;
+      state.log.push('Surcharge : 10 dégâts.');
+    } else if (status === 'BURNOUT') {
+      player.active.hp -= 20;
+      state.log.push('Burn-out : 20 dégâts.');
+      if (Math.random() < 0.5) {
+        clearStatus(player.active, 'BURNOUT');
+        state.log.push('Burn-out guéri sur pile.');
+      }
+    } else if (status === 'BLOQUE') {
+      if (Math.random() < 0.5) {
+        clearStatus(player.active, 'BLOQUE');
+        state.log.push('Bloqué guéri sur pile.');
+      }
+    } else if (status === 'GELE') {
+      clearStatus(player.active, 'GELE');
+      state.log.push('Gelé : le tour est passé.');
     }
-  } else if (status === 'BLOQUE') {
-    if (Math.random() < 0.5) {
-      player.active.status = null;
-      state.log.push('Bloqué guéri sur pile.');
-    }
-  } else if (status === 'GELE') {
-    player.active.status = null;
-    state.log.push('Gelé : le tour est passé.');
   }
 
-  if (player.active.hp <= 0) {
+  if (player.active && player.active.hp <= 0) {
     knockOut(state, state.current === 'player' ? 'ai' : 'player');
   }
   return state;

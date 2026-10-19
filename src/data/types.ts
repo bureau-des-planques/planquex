@@ -81,7 +81,8 @@ export interface CardInstance {
   hp: number;
   maxHp: number;
   energy: number;
-  status: Status | null;
+  /** Conditions subies, dans l'ordre d'application de `STATUS_ORDER` (§4). */
+  statuses: Status[];
   playedTurn: number;
   evolvedTurn: number | null;
   damageReduction: number;

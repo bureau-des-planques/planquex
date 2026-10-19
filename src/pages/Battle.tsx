@@ -156,11 +156,11 @@ export function Battle() {
                       {side.active.energy > 0 ? '●'.repeat(side.active.energy) : '○'}
                     </span>
                     <span className="muted">Machine {side.energyZone}</span>
-                    {side.active.status && (
-                      <span className={`status-chip status-chip--${side.active.status.toLowerCase()}`}>
-                        {STATUS_LABELS[side.active.status]}
+                    {side.active.statuses.map((status) => (
+                      <span key={status} className={`status-chip status-chip--${status.toLowerCase()}`}>
+                        {STATUS_LABELS[status]}
                       </span>
-                    )}
+                    ))}
                   </div>
                 </>
               ) : (

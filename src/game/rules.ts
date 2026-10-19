@@ -1,3 +1,5 @@
+import type { Status } from '@/data/types';
+
 /**
  * Drapeaux globaux du moteur.
  *
@@ -8,3 +10,11 @@
 export const RULES = {
   priorityShiftEnabled: true
 };
+
+/**
+ * Ordre de résolution des conditions en fin de tour (`AGENTS.md` §4) :
+ * **Surcharge → Burn-out → Bloqué → Gelé**. Un Planqué peut en subir plusieurs.
+ *
+ * `DERIVE` n'y figure pas : elle se résout **avant l'attaque** (§4), pas au checkup.
+ */
+export const STATUS_ORDER: readonly Status[] = ['SURCHARGE', 'BURNOUT', 'BLOQUE', 'GELE'];

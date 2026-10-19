@@ -116,7 +116,7 @@ describe('endTurn — statut létal', () => {
     const active = lethal.players.player.active;
     if (!active) throw new Error('Aucun Planqué au Poste');
     active.hp = 5;
-    active.status = 'SURCHARGE';
+    active.statuses = ['SURCHARGE'];
     lethal.players.player.bench = [null, null, null];
 
     const after = endTurn(lethal);
@@ -134,7 +134,7 @@ describe('endTurn — statut létal', () => {
     const active = lethal.players.player.active;
     if (!active) throw new Error('Aucun Planqué au Poste');
     active.hp = 5;
-    active.status = 'SURCHARGE';
+    active.statuses = ['SURCHARGE'];
 
     const after = endTurn(lethal);
 
@@ -240,6 +240,57 @@ describe('Évolution', () => {
     expect(isFirstTurnFor(next, 'ai')).toBe(true);
     expect(canEvolve(next, instance.uid, aiActive.uid)).toBe(false);
     expect(evolve(next, instance.uid, aiActive.uid)).toBe(next);
+  });
+});
+
+describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
+  it('résout les conditions dans l’ordre Surcharge → Burn-out → Bloqué → Gelé', () => {
+    const state = structuredClone(freshBattle());
+    const active = state.players.player.active;
+    if (!active) throw new Error('Aucun Planqué au Poste');
+    // Posées dans le désordre : c'est le moteur qui doit les remettre dans l'ordre.
+    active.maxHp = 200;
+    active.hp = 200;
+    active.statuses = ['GELE', 'BURNOUT', 'SURCHARGE'];
+
+    const after = endTurn(state);
+    const journal = after.log.join(' | ');
+
+    expect(journal).toMatch(/Surcharge : 10 dégâts.*Burn-out : 20 dégâts/);
+    expect(after.players.player.active?.hp).toBe(170);
+    // Gelé se dissipe au bout d'un tour ; Surcharge et Burn-out restent
+    // (Burn-out n'est pas guéri sur un « lancer défavorable », 0,5 figé).
+    const restants = after.players.player.active?.statuses ?? [];
+    expect(restants).not.toContain('GELE');
+    expect(restants).toContain('SURCHARGE');
+    expect(restants).toContain('BURNOUT');
+    expect(restants).toHaveLength(2);
+  });
+
+  it('ne cumule pas deux fois la même condition', () => {
+    const state = structuredClone(freshBattle());
+    const active = state.players.player.active;
+    const defender = state.players.ai.active;
+    if (!active || !defender) throw new Error('Poste vide');
+    active.energy = 3;
+    defender.maxHp = 300;
+    defender.hp = 300;
+    defender.statuses = ['SURCHARGE'];
+
+    // La carte frappée inflige aussi Surcharge : la condition ne doit pas s'ajouter deux fois.
+    const card = CARD_BY_ID.get(active.cardId);
+    if (!card) throw new Error('Carte inconnue');
+    const original = card;
+    CARD_BY_ID.set(active.cardId, {
+      ...card,
+      attacks: [{ ...card.attacks[0]!, effects: [{ kind: 'status', status: 'SURCHARGE' }] }]
+    });
+    try {
+      const after = attack(state, 0);
+      expect(after.players.ai.active?.statuses).toEqual(['SURCHARGE']);
+    } finally {
+      CARD_BY_ID.set(active.cardId, original);
+    }
   });
 });
 
