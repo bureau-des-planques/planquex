@@ -70,7 +70,7 @@ tant que l'écart n'est pas traité.
 |---|---|
 | Mulligan : « l'adversaire pioche 1 » | **Non documenté pour Pocket.** C'est la règle du TCG physique. Implémenté dans `engine.ts` (`mulligan`) |
 | Fin de partie quand **plus aucun Planqué** n'est en jeu | **Aucune source trouvée, même secondaire.** Le moteur l'implémente (`engine.ts`, `knockOut`) alors qu'`AGENTS.md` §4 ne liste **aucune** condition de défaite en dehors des 3 Primes |
-| K.O. : **qui choisit la relève** | **Aucune source trouvée.** `AGENTS.md` §4 dit « l'Open-space choisit » ; le moteur **promeut automatiquement** (`engine.ts`, `knockOut`) |
+| K.O. : **qui choisit la relève** | **Aucune source trouvée.** `AGENTS.md` §4 dit « l'Open-space choisit » ; le moteur suit désormais §4 (`pendingPromotion` + `promoteActive()`, 19/10/2026). La règle elle-même reste insourcée |
 | Plafond « 3 types de café » | Deux wikis de fans JP seulement |
 
 Ces quatre points demandent soit une décision datée, soit la capture du §6.

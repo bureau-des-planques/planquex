@@ -40,20 +40,20 @@
 | O-007 | Lancement | Bêta fermée par phases (recommandé) ; big bang | Avant la phase 6 |
 | O-008 | **Écarts du miroir 2026** : Méga-Évolution ex = 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, statut des Outils/Lieux | Intégrer (nouveau stade, nouveau palier de Primes, types multiples) **ou** exclure explicitement du périmètre | Avant l'écriture des 286 textes — voir `docs/MIROIR-2026-DELTAS.md` §3 |
 | O-009 | **Points de règle insourçables** : mulligan (« l'adversaire pioche 1 »), fin de partie sans Planqué, **qui choisit la relève après K.O.**, plafond de 3 types de café | Capturer les « Astuces de jeu » de l'app (preuve horodatée), ou trancher par décision datée | Avant de figer le moteur — le code et la doc se contredisent déjà sur la relève |
-| O-010 | **Écarts code ↔ `AGENTS.md` §4**, relevés le 19/10/2026 et **non corrigés** (chacun est soit un bug, soit une doc à corriger) | Corriger le moteur, ou acter la règle réelle. Liste ci-dessous | Avant de figer le moteur |
+| O-010 | **Écarts code ↔ `AGENTS.md` §4** : 4 sur 8 corrigés le 19/10/2026, 3 **bloqués** faute de contenu, 1 faux positif | Voir l'état ci-dessous | Les 3 restants : après l'écriture des cartes concernées |
 
-Détail d'**O-010** (`grep`/lecture du 19/10/2026) :
+État d'**O-010** (relevé le 19/10/2026, corrigé le même jour sauf mention) :
 
-| Écart | Code | §4 dit |
-|---|---|---|
-| Relève après K.O. **automatique** (premier slot occupé), aucun choix | `src/game/engine.ts:369-376` | « l'Open-space **choisit** la relève » |
-| Évolution refusée au tour **1 global** seulement : le 2ᵉ joueur peut évoluer à son premier tour | `src/game/engine.ts:209`, `:495` | « impossible au premier tour de **chaque** joueur » |
-| **Un seul statut** à la fois (`if (!target.status)`) : l'ordre des statuts documenté est donc inopérant | `src/data/types.ts:77`, `src/game/engine.ts:297` | « Ordre des statuts : Surcharge → Burn-out → Bloqué → Gelé » |
-| `DERIVE` traitée à l'attaque mais **jamais** en `checkup` | `src/game/engine.ts:408` vs `checkup` `:429` | Dérive = « lancer avant attaque » |
-| **Cartes Action absentes** : ni Objet ni Collègue dans les données ni dans `Card` | `src/data/types.ts` | « Objet : illimité ; Collègue : 1 par tour » |
-| **Types de café absents** : aucun type d'énergie, `cost` est un simple nombre | `src/data/types.ts:38` | « Jusqu'à 3 types par classeur » |
-| **« Changement de priorité » absent** : 0 occurrence dans `src/`, aucun drapeau global | — | D-004 : seule exception au standard |
-| Classeur **non validé par le moteur** (`createBattle` accepte tout) : la règle 20/2/1 vit dans le store | `src/store/useStore.ts:106-113` | §4, première ligne |
+| Écart | État |
+|---|---|
+| Relève après K.O. **automatique** au lieu d'un choix du joueur | **Corrigé** : `BattleState.pendingPromotion` + `promoteActive()` ; toute autre action est refusée tant que la relève n'est pas choisie |
+| Évolution refusée au **tour 1 global** au lieu du premier tour de chaque joueur | **Corrigé** : `isFirstTurnFor()` (joueur = tour 1, Direction = tour 2), utilisée par `evolve` et `canEvolve` |
+| **« Changement de priorité » (D-004) absent** | **Corrigé** : type `Keyword`, champ `Card.keywords`, action `priorityShift()`, drapeau `RULES.priorityShiftEnabled` dans `src/game/rules.ts`, une fois par tour |
+| Classeur **non validé par le moteur** | **Corrigé** : les règles 20/2/1 quittent le store pour `src/game/deck.ts` ; `createBattle` **refuse** un classeur illégal |
+| `DERIVE` « jamais traitée en `checkup` » | **Faux positif** : §4 dit « Dérive = lancer **avant attaque** », et l'ordre des statuts documenté ne l'inclut pas. Le code est conforme. Rien à corriger côté moteur |
+| **Un seul statut** à la fois : l'ordre des statuts documenté est inopérant | **Bloqué** : demande de passer `CardInstance.status` en liste de statuts, ce qui touche le type, `applyStatus`, `checkup`, l'UI et 37 cartes. À faire avec une décision |
+| **Cartes Action absentes** (Objet illimité / Collègue 1 par tour) | **Bloqué** : aucune carte Objet ni Collègue n'existe. D-005 en prévoit 8 + 3 : le mécanisme suivra les données |
+| **Types de café absents** (`cost` est un nombre) | **Bloqué** : typage des cafés + génération aléatoire + incolore = réécriture des attaques des 37 cartes. Le plafond « 3 » n'a d'ailleurs pas de source primaire (O-009) |
 
 ## Prochaine étape
 

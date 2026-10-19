@@ -177,13 +177,14 @@ grevomon-tcg/
 ├── src/
 │   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx
 │   ├── data/         index.ts, sse.ts, types.ts
-│   ├── game/         engine.ts, engine.test.ts
+│   ├── game/         engine.ts, engine.test.ts, deck.ts, deck.test.ts, rules.ts
 │   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx
 │   ├── store/        useStore.ts, useStore.test.ts
 │   ├── App.tsx       routes (Layout + 5 pages)
 │   ├── main.tsx      point d'entrée, monte App sous BrowserRouter
 │   ├── styles.css    feuille unique de l'application
 │   └── vite-env.d.ts types Vite (imports CSS)
+├── public/           favicon.svg, icon-192.svg, icon-512.svg (SVG, dessinés à la main)
 ├── scripts/          status.mjs, etapes-infra-tcg.sh
 └── docs/
 ```
@@ -195,7 +196,8 @@ grevomon-tcg/
 - **Store** : Zustand + `persist`, clé `bureau-des-planques-v1`. Toute modification de forme doit être migrée ou versionnée.
 - **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
-- **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` sont référencées mais **toujours absentes** : `public/` n'existe pas, et le navigateur logue une erreur de manifeste.
+- **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` existent depuis le 19/10/2026 (SVG `viewBox="0 0 32 32"`, monogramme « BP » sur fond sombre) : plus d'erreur de manifeste dans la console.
+- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Classeur, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004). Les règles de jeu ne vivent pas dans le store.
 - **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX. Voir §8.4.
 
@@ -212,8 +214,8 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm install` | Installer les dépendances | **OK** (`npm ci` ; `@types/node` ajouté en dev) |
 | `npm run dev` | Serveur Vite sur `:5178` | non exécuté dans cette vérification ; `preview` l'a été |
 | `npm run check` | `tsc -b` | **OK**, exit 0 |
-| `npm test` | `vitest run` | **OK** : 2 fichiers, 14 tests, exit 0 |
-| `npm run test:watch` | Vitest en watch | 14 tests à lancer |
+| `npm test` | `vitest run` | **OK** : 3 fichiers, 27 tests, exit 0 |
+| `npm run test:watch` | Vitest en watch | 27 tests à lancer |
 | `npm run build` | `tsc -b && vite build` | **OK**, exit 0 ; `dist/index.html` + `dist/sw.js` produits |
 | `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
 | `npm run status` | Métriques JSON | **OK**, exit 0 |
@@ -229,9 +231,9 @@ vite.config.ts(1,36):  TS2591  → dépendance de développement @types/node ajo
 Autres faits vérifiés le 19/10/2026 :
 
 - `src/main.tsx` et `src/App.tsx` existent ; `index.html` monte l'application sous `BrowserRouter`.
-- `public/` **absent** ; `favicon.svg`, `icon-192.svg`, `icon-512.svg` sont référencées mais manquantes — erreur de manifeste constatée dans la console du navigateur, pas seulement dans les docs.
+- `public/` **existe** (créé le 19/10/2026) : `favicon.svg`, `icon-192.svg`, `icon-512.svg`. Les trois sont copiés dans `dist/` par le build.
 - Une seule feuille, `src/styles.css`, importée par `main.tsx`.
-- **14 tests** (2 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement.
+- **27 tests** (3 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement.
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Classeur et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
