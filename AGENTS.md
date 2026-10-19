@@ -178,7 +178,7 @@ grevomon-tcg/
 ├── src/
 │   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx
 │   ├── data/         index.ts, sse.ts, types.ts
-│   ├── game/         engine.ts, engine.test.ts, deck.ts, deck.test.ts, rules.ts
+│   ├── game/         engine.ts, engine.test.ts, deck.ts, deck.test.ts, rules.ts, pace.test.ts
 │   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx
 │   ├── store/        useStore.ts, useStore.test.ts
 │   ├── App.tsx       routes (Layout + 5 pages)
@@ -215,8 +215,8 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm install` | Installer les dépendances | **OK** (`npm ci` ; `@types/node` ajouté en dev) |
 | `npm run dev` | Serveur Vite sur `:5178` | non exécuté dans cette vérification ; `preview` l'a été |
 | `npm run check` | `tsc -b` | **OK**, exit 0 |
-| `npm test` | `vitest run` | **OK** : 4 fichiers, 39 tests, exit 0 |
-| `npm run test:watch` | Vitest en watch | 39 tests à lancer |
+| `npm test` | `vitest run` | **OK** : 5 fichiers, 41 tests, exit 0 |
+| `npm run test:watch` | Vitest en watch | 41 tests à lancer |
 | `npm run build` | `tsc -b && vite build` | **OK**, exit 0 ; `dist/index.html` + `dist/sw.js` produits |
 | `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
 | `npm run status` | Métriques JSON | **OK**, exit 0 |
@@ -234,7 +234,7 @@ Autres faits vérifiés le 19/10/2026 :
 - `src/main.tsx` et `src/App.tsx` existent ; `index.html` monte l'application sous `BrowserRouter`.
 - `public/` **existe** (créé le 19/10/2026) : `favicon.svg`, `icon-192.svg`, `icon-512.svg`. Les trois sont copiés dans `dist/` par le build.
 - Une seule feuille, `src/styles.css`, importée par `main.tsx`.
-- **39 tests** (4 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1) et les **bandes de dégâts par café** (D-021).
+- **41 tests** (5 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Moral par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Classeur et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).

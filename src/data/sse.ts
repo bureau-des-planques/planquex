@@ -40,7 +40,7 @@ export const SSE_CARDS: Card[] = [
     name: 'Médecin du travail',
     stage: 'COMEX',
     rarity: '3D',
-    hp: 130,
+    hp: 140,
     retreat: 2,
     attacks: [
       { name: 'Arrêt de travail', cost: 2, damage: 60, text: 'Le Planqué adverse est Bloqué.', effects: [{ kind: 'status', status: 'BLOQUE', target: 'opponent' }] },
@@ -290,7 +290,7 @@ export const SSE_CARDS: Card[] = [
     name: 'Médecin-chef Cadre',
     stage: 'COMEX',
     rarity: '4D',
-    hp: 160,
+    hp: 170,
     retreat: 3,
     ex: true,
     attacks: [

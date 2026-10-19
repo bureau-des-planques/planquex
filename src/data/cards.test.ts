@@ -62,6 +62,16 @@ const DAMAGE_BY_COST: Record<number, [number, number]> = {
   4: [100, 160]
 };
 
+/** Moral par stade et rareté — CARD-SPEC.md §2, aligné sur le jeu réel (D-023). */
+const HP_BAND: Record<string, [number, number]> = {
+  'N+1/1D': [50, 70],
+  'N+1/2D': [60, 80],
+  'N+2/2D': [90, 110],
+  'N+2/3D': [100, 120],
+  'COMEX/3D': [140, 160],
+  'COMEX/4D': [170, 190]
+};
+
 const texts = (card: Card): string[] => [
   card.name,
   card.flavor,
@@ -153,6 +163,19 @@ describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
       expect(variant.ability, variant.id).toEqual(source.ability);
       expect(variant.flavor, variant.id).toBe(source.flavor);
       expect(variant.ex, variant.id).toBe(source.ex);
+    }
+  });
+});
+
+describe('Cartes — Moral par stade (CARD-SPEC.md §2, D-023)', () => {
+  it('place chaque carte dans la bande de Moral de son stade et de sa rareté', () => {
+    // Les variantes héritent du Moral de leur base : couvertes par le test d'héritage.
+    for (const card of ALL_CARDS.filter((entry) => !entry.variantOf)) {
+      const band = HP_BAND[`${card.stage}/${card.rarity}`];
+      expect(band, `${card.id} : ${card.stage}/${card.rarity} non couvert`).toBeDefined();
+      if (!band) continue;
+      expect(card.hp, `${card.id} (${card.stage} ${card.rarity})`).toBeGreaterThanOrEqual(band[0]);
+      expect(card.hp, `${card.id} (${card.stage} ${card.rarity})`).toBeLessThanOrEqual(band[1]);
     }
   });
 });

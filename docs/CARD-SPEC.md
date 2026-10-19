@@ -61,12 +61,18 @@ de 10 pour rester lisibles.
 
 | Stade / rareté | Moral | Attaques | Dégâts indicatifs | Relève |
 |---|---:|---|---:|---:|
-| N+1 1◆ | 60–70 | 1 attaque | 10–20 | 1 |
+| N+1 1◆ | 50–70 | 1 attaque | 10–20 | 1 |
 | N+1 2◆ (ligne) | 60–80 | 1–2 attaques | 10–30 | 1 |
-| N+2 2◆ | 80–100 | 1–2 attaques | 30–50 | 1–2 |
-| N+2 3◆ | 90–110 | 2 attaques | 40–60 | 2 |
-| COMEX 3◆ | 120–140 | 2 attaques | 50–80 | 2 |
-| COMEX 4◆ (ex) | 140–170 | 2 attaques | 70–120 | 2–3 |
+| N+2 2◆ | 90–110 | 1–2 attaques | 30–50 | 1–2 |
+| N+2 3◆ | 100–120 | 2 attaques | 40–60 | 2 |
+| COMEX 3◆ | 140–160 | 2 attaques | 50–80 | 2 |
+| COMEX 4◆ (ex) | 170–190 | 2 attaques | 70–120 | 2–3 |
+
+**Le Moral suit le jeu réel** (D-023), à ±10 près sur chaque borne pour garder une
+progression lisible entre raretés d'un même stade : Basique **50–80**, Stade 1
+**90–120**, Stade 2 **140–160**, ex **170–190** (relevés du 19/10/2026). Notre
+ancienne courbe plafonnait 20 points plus bas, ce qui rendait les K.O. **moins
+chers** que dans le jeu de référence.
 
 ### Dégâts par café — **règle normative** (D-021)
 
