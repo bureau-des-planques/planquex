@@ -276,9 +276,9 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     flavor: 'La formation dure une heure. La licence s’installe en trois.'
   }),
   base({
-    id: 'support-charge-formation',
+    id: 'support-charge-formation-informatique',
     evolvesFrom: 'support-formateur-informatique',
-    name: 'Chargé de formation',
+    name: 'Chargé de formation informatique',
     stage: 'N+1',
     rarity: '2D',
     hp: 90,
