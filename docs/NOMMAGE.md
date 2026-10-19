@@ -212,13 +212,13 @@ ligne**, donc la même identité mécanique.
   (1 à 3 sous-paquets selon l'extension : Genetic Apex en a 3 — Pikachu, Charizard, Mewtwo —
   Space-Time Smackdown 2 — Dialga, Palkia —, Mega Rising 2).
 
-### Un étage manque : le *set*
+### L'étage du dessus : le **Marché**
 
 Les trois viviers sont **à l'intérieur** d'un set, exactement comme les trois paquets de
-*Genetic Apex* sont dans *Genetic Apex*. L'extension elle-même — ce qui sort dans le
-temps — n'a pas encore de mot chez nous. À trancher.
-*(Rappel utile : c'est ce même *Genetic Apex* qui sert de modèle au set de lancement —
-226 ◊ + 60 ☆ = nos 286.)*
+*Genetic Apex* sont dans *Genetic Apex*. Le mot est trouvé : une extension est **un
+Marché** — le contrat décroché, c'est-à-dire *pourquoi* le set existe. Les sets se
+nomment donc « **Marché 01 — Optronique de bord** », « Marché 02 — Remise à niveau »…
+*(C'est le même *Genetic Apex* — 226 ◊ + 60 ☆ — qui sert de modèle au set de lancement.)*
 
 ### Le site, tel que tu le décris (ton site réel)
 
