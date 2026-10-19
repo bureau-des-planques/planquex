@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_ACTION_CARDS, ALL_CARDS, getCard, isPlanque } from '@/data';
+import { ALL_ACTION_CARDS, ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
 import {
   autoDeck,
   DECK_SIZE,
@@ -11,7 +11,7 @@ import {
   deckLegal
 } from '@/game/deck';
 
-const BASICS = ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf && card.stage === 'ENTRANT').map(
+const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
 );
 

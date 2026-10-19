@@ -1,7 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-
-const PALETTE = 'linear-gradient(155deg, #083a3a 0%, #4f9d9d 48%, #071a1a 100%)';
-const GLYPH = '⌘';
+import { planqueBase, secretVariant } from './planque';
 
 /**
  * Faction **Support** (`SUP`) — Incolore, vivier **Étage** (D-024, D-026).
@@ -13,14 +11,9 @@ const GLYPH = '⌘';
  * N+2 ; COMEX `ex: true` en 4D valant 2 Interventions (D-020) ; Seuil par stade/rareté et
  * dégâts par café conformes à `CARD-SPEC.md` §2 (D-021, D-023).
  */
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'SUPPORT',
-  weakness: 'ATELIER',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('SUPPORT');
 
 export const SUPPORT_CARDS: PlanqueCard[] = [
   // Ligne principale (échantillon CARD-SPEC.md) : Agent support → Technicien support → Responsable support
@@ -389,28 +382,15 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = SUPPORT_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte Support introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const SUPPORT_VARIANTS: Card[] = [
-  variant('support-technicien-support', 'support-technicien-support-star', '1S', '⌘'),
-  variant('support-administrateur-systemes', 'support-administrateur-systemes-star', '1S', '✦'),
-  variant('support-charge-documentation', 'support-charge-documentation-star', '1S', '◉'),
-  variant('support-superviseur-support', 'support-superviseur-support-star', '1S', '☁'),
-  variant('support-responsable-support', 'support-responsable-support-star2', '2S', '⌘'),
-  variant('support-ingenieur-systemes', 'support-ingenieur-systemes-star2', '2S', '✦'),
-  variant('support-responsable-documentation', 'support-responsable-documentation-star2', '2S', '◉'),
-  variant('support-responsable-services-generaux', 'support-responsable-services-generaux-star2', '2S', '☁')
+  secretVariant(SUPPORT_CARDS, 'support-technicien-support', 'star', '⌘'),
+  secretVariant(SUPPORT_CARDS, 'support-administrateur-systemes', 'star', '✦'),
+  secretVariant(SUPPORT_CARDS, 'support-charge-documentation', 'star', '◉'),
+  secretVariant(SUPPORT_CARDS, 'support-superviseur-support', 'star', '☁'),
+  secretVariant(SUPPORT_CARDS, 'support-responsable-support', 'star2', '⌘'),
+  secretVariant(SUPPORT_CARDS, 'support-ingenieur-systemes', 'star2', '✦'),
+  secretVariant(SUPPORT_CARDS, 'support-responsable-documentation', 'star2', '◉'),
+  secretVariant(SUPPORT_CARDS, 'support-responsable-services-generaux', 'star2', '☁')
 ];
 
 export const ALL_SUPPORT_CARDS: Card[] = [...SUPPORT_CARDS, ...SUPPORT_VARIANTS];

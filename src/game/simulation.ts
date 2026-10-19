@@ -1,4 +1,4 @@
-import { ALL_CARDS, getCard, isPlanque } from '@/data';
+import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
 import type { BattleAction, BattleState, CardInstance, Faction, PlayerId } from '@/data/types';
 import { DECK_SIZE, deckCanAdd, deckLegal } from '@/game/deck';
 import {
@@ -223,10 +223,7 @@ function nextAction(state: BattleState): BattleAction | null {
   }
 
   // Poser les Entrants : au Poste s'il est vide, sinon au premier Rack libre.
-  const basics = player.hand.filter((handCard) => {
-    const card = getCard(handCard.cardId);
-    return isPlanque(card) && card.stage === 'ENTRANT';
-  });
+  const basics = player.hand.filter((handCard) => isBasic(getCard(handCard.cardId)));
   if (!player.active && basics[0]) return { type: 'playBasic', uid: basics[0].uid, slot: 'active' };
   const freeSlot = player.bench.findIndex((slot) => !slot);
   if (freeSlot >= 0 && basics[0]) return { type: 'playBasic', uid: basics[0].uid, slot: freeSlot };

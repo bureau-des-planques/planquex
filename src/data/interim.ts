@@ -1,7 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-
-const PALETTE = 'linear-gradient(155deg, #1a1e3a 0%, #6f7fd1 48%, #0e1020 100%)';
-const GLYPH = '✧';
+import { planqueBase, secretVariant } from './planque';
 
 /**
  * Faction **Intérim** (`INT`) — Dragon, vivier **Bureaux** (D-024, D-026).
@@ -14,14 +12,9 @@ const GLYPH = '✧';
  * café conformes à `CARD-SPEC.md` §2 (D-021, D-023) ; COMEX `ex: true` en 4D,
  * valant 2 Interventions (D-020).
  */
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'INTERIM',
-  weakness: null,
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('INTERIM');
 
 export const INTERIM_CARDS: PlanqueCard[] = [
   base({

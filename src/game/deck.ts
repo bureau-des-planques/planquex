@@ -1,4 +1,4 @@
-import { ALL_CARDS, getCard, isPlanque } from '@/data';
+import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
 import type { Card, Stage } from '@/data/types';
 
 /** Règles du Chariot (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
@@ -48,7 +48,7 @@ export function deckLegal(deck: string[]): { ok: boolean; reasons: string[] } {
   if (Object.values(counts).some((count) => count > MAX_COPIES_PER_NAME)) {
     reasons.push(`Maximum ${MAX_COPIES_PER_NAME} exemplaires du même nom.`);
   }
-  const hasBasic = deckCards(deck).some((card) => isPlanque(card) && card.stage === 'ENTRANT');
+  const hasBasic = deckCards(deck).some(isBasic);
   if (!hasBasic) reasons.push('Il faut au moins un Planqué Entrant.');
   return { ok: reasons.length === 0, reasons };
 }

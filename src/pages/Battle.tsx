@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
-import { ALL_CARDS, getCard, isPlanque } from '@/data';
+import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
 import type { BattleState, CardInstance, PlayerId } from '@/data/types';
 import { attachEnergy, attack, createBattle, endTurn, promoteActive } from '@/game/engine';
 import { deckLegal } from '@/game/deck';
@@ -13,10 +13,7 @@ import { useStore } from '@/store/useStore';
  */
 function testDeck(): string[] {
   const bases = ALL_CARDS.filter(isPlanque).filter((card) => !card.variantOf);
-  const ordered = [
-    ...bases.filter((card) => card.stage === 'ENTRANT'),
-    ...bases.filter((card) => card.stage !== 'ENTRANT')
-  ];
+  const ordered = [...bases.filter(isBasic), ...bases.filter((card) => !isBasic(card))];
   const deck: string[] = [];
   for (const card of ordered) {
     if (deck.length >= 20) break;

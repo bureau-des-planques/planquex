@@ -1,16 +1,8 @@
 import type { Card, PlanqueCard } from './types';
+import { planqueBase, secretVariant } from './planque';
 
-const PALETTE = 'linear-gradient(155deg, #3d1a5c 0%, #8b5fb0 48%, #1a0a2e 100%)';
-const GLYPH = '◉';
-
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'RH',
-  weakness: 'DIRECTION',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('RH');
 
 export const RH_CARDS: PlanqueCard[] = [
   // Ligne principale : Assistant RH → Chargé de recrutement → DRH
@@ -312,28 +304,15 @@ export const RH_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = RH_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte RH introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const RH_VARIANTS: Card[] = [
-  variant('rh-assistant-rh', 'rh-assistant-rh-star', '1S', '◉'),
-  variant('rh-charge-recrutement', 'rh-charge-recrutement-star', '1S', '✦'),
-  variant('rh-recruteur-embuscade', 'rh-recruteur-embuscade-star', '1S', '☁'),
-  variant('rh-chasseur-tetes', 'rh-chasseur-tetes-star', '1S', '✚'),
-  variant('rh-drh', 'rh-drh-star2', '2S', '◉'),
-  variant('rh-directeur-talents', 'rh-directeur-talents-star2', '2S', '✦'),
-  variant('rh-drh-formation', 'rh-drh-formation-star2', '2S', '✚'),
-  variant('rh-responsable-comp-ben', 'rh-responsable-comp-ben-star2', '2S', '☘')
+  secretVariant(RH_CARDS, 'rh-assistant-rh', 'star', '◉'),
+  secretVariant(RH_CARDS, 'rh-charge-recrutement', 'star', '✦'),
+  secretVariant(RH_CARDS, 'rh-recruteur-embuscade', 'star', '☁'),
+  secretVariant(RH_CARDS, 'rh-chasseur-tetes', 'star', '✚'),
+  secretVariant(RH_CARDS, 'rh-drh', 'star2', '◉'),
+  secretVariant(RH_CARDS, 'rh-directeur-talents', 'star2', '✦'),
+  secretVariant(RH_CARDS, 'rh-drh-formation', 'star2', '✚'),
+  secretVariant(RH_CARDS, 'rh-responsable-comp-ben', 'star2', '☘')
 ];
 
 export const ALL_RH_CARDS: Card[] = [...RH_CARDS, ...RH_VARIANTS];

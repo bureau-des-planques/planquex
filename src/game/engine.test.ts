@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ALL_CARDS, CARD_BY_ID, getCard, isPlanque } from '@/data';
+import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import {
   attack,
   attackPreview,
@@ -28,7 +28,7 @@ import type { BattleState, PlayerId } from '@/data/types';
  */
 const SEED = 1;
 
-const BASICS = ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf && card.stage === 'ENTRANT').map(
+const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
 );
 
@@ -86,10 +86,7 @@ describe('Main de départ — pas de reprise de poste (D-022)', () => {
 
         // La main de départ contient toujours un Planqué N+1 jouable.
         expect(
-          inPlay.some((card) => {
-            const definition = getCard(card?.cardId ?? '');
-            return isPlanque(definition) && definition.stage === 'ENTRANT';
-          }),
+          inPlay.some((card) => isBasic(getCard(card?.cardId ?? ''))),
           `run ${run}, ${who} : aucun N+1`
         ).toBe(true);
         // Cinq cartes au total, donc aucune pioche de compensation.

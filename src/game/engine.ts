@@ -1,4 +1,4 @@
-import { getCard, isPlanque } from '@/data';
+import { ACTION_KIND_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
   Attack,
   AttackEffect,
@@ -155,10 +155,7 @@ function startTurn(state: BattleState) {
 }
 
 function hasBasicInHand(player: PlayerState): boolean {
-  return player.hand.some((card) => {
-    const definition = getCard(card.cardId);
-    return isPlanque(definition) && definition.stage === 'ENTRANT';
-  });
+  return player.hand.some((card) => isBasic(getCard(card.cardId)));
 }
 
 /**
@@ -172,10 +169,7 @@ function hasBasicInHand(player: PlayerState): boolean {
  */
 function ensureBasicInHand(player: PlayerState) {
   if (hasBasicInHand(player)) return;
-  const index = player.deck.findIndex((card) => {
-    const definition = getCard(card.cardId);
-    return isPlanque(definition) && definition.stage === 'ENTRANT';
-  });
+  const index = player.deck.findIndex((card) => isBasic(getCard(card.cardId)));
   if (index < 0) return;
   const [card] = player.deck.splice(index, 1);
   if (!card) return;
@@ -189,10 +183,7 @@ function setupPlayer(state: BattleState, who: PlayerId) {
   draw(state, who, 5);
   ensureBasicInHand(player);
 
-  const basics = player.hand.filter((card) => {
-    const definition = getCard(card.cardId);
-    return isPlanque(definition) && definition.stage === 'ENTRANT';
-  });
+  const basics = player.hand.filter((card) => isBasic(getCard(card.cardId)));
   const active = basics.shift();
   if (active) {
     removeFromHand(player, active.uid);
@@ -250,7 +241,7 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
   const handCard = player.hand.find((card) => card.uid === uid);
   if (!handCard) return state;
   const card = getCard(handCard.cardId);
-  if (!isPlanque(card) || card.stage !== 'ENTRANT') return state;
+  if (!isBasic(card)) return state;
 
   const instance: CardInstance = { ...handCard, playedTurn: next.turn };
   if (slot === 'active') {
@@ -498,7 +489,7 @@ export function playAction(state: BattleState, uid: string): BattleState {
   if (card.kind === 'COLLEAGUE') player.hasPlayedSupporter = true;
   applyActionEffects(next, next.current, card.effects);
   next.log.push(
-    `${next.current === 'player' ? 'Tu joues' : 'L’IA joue'} ${card.name} (${card.kind === 'OBJET' ? 'Objet' : 'Collègue'}).`
+    `${next.current === 'player' ? 'Tu joues' : 'L’IA joue'} ${card.name} (${ACTION_KIND_META[card.kind].label}).`
   );
   return next;
 }

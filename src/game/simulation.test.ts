@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCard, isPlanque } from '@/data';
+import { getCard, isBasic, isPlanque } from '@/data';
 import { DECK_SIZE, deckLegal } from '@/game/deck';
 import {
   FACTION_ORDER,
@@ -113,10 +113,7 @@ describe('Chariots de simulation', () => {
       const deck = factionDeck(faction);
       expect(deck, faction).toHaveLength(DECK_SIZE);
       expect(deckLegal(deck), faction).toEqual({ ok: true, reasons: [] });
-      const hasBasic = deck.some((id) => {
-        const card = getCard(id);
-        return isPlanque(card) && card.stage === 'ENTRANT';
-      });
+      const hasBasic = deck.some((id) => isBasic(getCard(id)));
       expect(hasBasic, `${faction} : au moins un Entrant`).toBe(true);
     }
   });

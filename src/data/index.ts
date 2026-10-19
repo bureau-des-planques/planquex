@@ -1,5 +1,6 @@
-import type { ActionCard, Card, Faction, ItemKind, PlanqueCard, Rarity, Stage, Vivier } from './types';
+import type { ActionCard, Card, ItemKind, PlanqueCard, Rarity, Stage, Vivier } from './types';
 import { ACTION_CARDS } from './actions';
+import { FACTION_META } from './factions';
 import { ALL_SSE_CARDS } from './sse';
 import { ALL_MANAGEMENT_CARDS } from './management';
 import { ALL_AMELIORATION_CARDS } from './amelioration';
@@ -33,6 +34,15 @@ export function isPlanque(card: Card | undefined): card is PlanqueCard {
   return card?.kind === 'PLANQUE';
 }
 
+/**
+ * Vrai pour un **Planqué Entrant** : le seul qu'on peut poser au Poste, et l'unique
+ * exigence légale d'un Chariot (`AGENTS.md` §4). Prédicat unique — il était recopié dans
+ * le moteur, le Chariot, la simulation et l'UI.
+ */
+export function isBasic(card: Card | undefined): card is PlanqueCard {
+  return isPlanque(card) && card.stage === 'ENTRANT';
+}
+
 /** Vrai pour une carte Action (Objet ou Collègue). */
 export function isActionCard(card: Card | undefined): card is ActionCard {
   return card !== undefined && card.kind !== 'PLANQUE';
@@ -41,26 +51,11 @@ export function isActionCard(card: Card | undefined): card is ActionCard {
 export const CARD_BY_ID = new Map(ALL_CARDS.map((card) => [card.id, card]));
 
 /**
- * Une faction = un service ou un collectif (D-024), et **un vivier** — les trois zones du
- * site : l'Atelier, l'Étage, les Bureaux (D-026). Le vivier est porté par la **faction** et
- * non par la carte : dix valeurs au lieu de 286, et une carte ne peut pas se retrouver dans
- * deux zones à la fois.
+ * L'identité des factions vit dans `./factions` : les fichiers de faction la lisent au
+ * chargement, avant que ce module agrégateur n'ait fini de s'évaluer. Ré-export pour que
+ * les appelants continuent d'importer `FACTION_META` depuis `@/data` (`AGENTS.md` §3.2).
  */
-export const FACTION_META: Record<
-  Faction,
-  { name: string; short: string; color: string; glyph: string; vivier: Vivier }
-> = {
-  SSE: { name: 'SSE', short: 'SSE', color: '#1f8a68', glyph: '✚', vivier: 'BUREAUX' },
-  MANAGEMENT: { name: 'Management', short: 'MGT', color: '#d4622a', glyph: '▲', vivier: 'ATELIER' },
-  QVT: { name: 'QVT', short: 'QVT', color: '#2f8fb3', glyph: '☺', vivier: 'BUREAUX' },
-  AMELIORATION: { name: 'Amélioration continue', short: 'AC', color: '#c9a227', glyph: '↻', vivier: 'ETAGE' },
-  RH: { name: 'RH', short: 'RH', color: '#8b5fb0', glyph: '◉', vivier: 'BUREAUX' },
-  ATELIER: { name: 'Atelier', short: 'ATL', color: '#a56a3a', glyph: '⚒', vivier: 'ATELIER' },
-  DIRECTION: { name: 'Direction', short: 'DIR', color: '#5b6472', glyph: '◆', vivier: 'ETAGE' },
-  SYNDICAT: { name: 'Syndicat', short: 'SYN', color: '#b34a4a', glyph: '✊', vivier: 'ATELIER' },
-  INTERIM: { name: 'Intérim', short: 'INT', color: '#6f7fd1', glyph: '✧', vivier: 'BUREAUX' },
-  SUPPORT: { name: 'Support', short: 'SUP', color: '#4f9d9d', glyph: '⌘', vivier: 'ETAGE' }
-};
+export { FACTION_META };
 
 /** Les trois zones du site (D-026). Un futur vivier sera un lieu lui aussi. */
 export const VIVIER_META: Record<Vivier, { label: string; order: number }> = {
@@ -94,10 +89,13 @@ export const RARITY_META: Record<Rarity, { label: string; color: string; order: 
   COU: { label: '♛', color: '#c9a2ff', order: 8 }
 };
 
-/** Nature d'une carte Action, pour l'affichage (Objet / Collègue). */
-export const ACTION_KIND_META: Record<ActionCard['kind'], { label: string; short: string }> = {
-  OBJET: { label: 'Objet', short: 'OBJ' },
-  COLLEAGUE: { label: 'Collègue', short: 'COL' }
+/**
+ * Nature d'une carte Action, pour l'affichage (Objet / Collègue). `rule` est la règle de
+ * pose du tour (`AGENTS.md` §4) : elle est dite ici une fois, pas dans chaque écran.
+ */
+export const ACTION_KIND_META: Record<ActionCard['kind'], { label: string; short: string; rule: string }> = {
+  OBJET: { label: 'Objet', short: 'OBJ', rule: 'Utilisable autant de fois que voulu dans le tour.' },
+  COLLEAGUE: { label: 'Collègue', short: 'COL', rule: '1 par tour.' }
 };
 
 /** Catégorie d'un Objet (D-027) : matériel neuf à installer, ou pièces et outillage. */
