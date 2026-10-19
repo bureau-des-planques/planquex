@@ -1,0 +1,43 @@
+name: CI
+
+# Vérifie la batterie de AGENTS.md §7 à chaque push et pull request vers main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: check + tests + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      # Node 24 : version vérifiée du dépôt (AGENTS.md §7).
+      - name: Installer Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier les types
+        run: npm run check
+
+      - name: Lancer les tests
+        run: npm test
+
+      - name: Construire la production
+        run: npm run build
+
+      # Un build valide produit ces deux fichiers (AGENTS.md §7 et §8.3).
+      - name: Vérifier les artefacts du build
+        run: ls -la dist/index.html dist/sw.js
