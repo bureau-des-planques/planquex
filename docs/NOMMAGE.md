@@ -228,6 +228,12 @@ ligne**, donc la même identité mécanique.
   la séance : le mot vient du **contrôle qualité** (le taux de rebut est un indicateur), il
   se lit sans jamais sonner faux, et il va servir dans les 286 textes. **La Benne** reste
   disponible pour une carte — le contenant et l'état sont deux choses différentes.
+- **Le score devient les Interventions.** Cohérent avec « il craque » : ce qu'on gagne, c'est
+  une **intervention terminée**. Un COMEX en vaut 2.
+- **Le banc (la file d'attente) devient le Rack.** « Banc » est écarté — dans un atelier de
+  MRO, un banc c'est un **banc d'essai** — et « open-space » est le mot du bureau qu'on
+  quitte. `rack` est un anglicisme, mais il est chez lui dans un atelier français, comme
+  `management` et `audit` (D-024).
 - **La main reste telle quelle.** Trois raisons, et une qui tranche : `AGENTS.md` §3.1 garde
   déjà « Ability → **Talent** » avec la mention *inchangé*, donc la règle n'est pas « tout
   détourner » ; le mot est déjà français et compris de tout joueur de cartes ; et dans un
