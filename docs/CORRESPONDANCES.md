@@ -12,8 +12,9 @@
 - **miroir** — même valeur, seul le nom change (c'est le principe de D-003/D-018).
 - **exclu** — le jeu de base le fait, nous non : hors périmètre de lancement (D-020).
 - **maison** — n'existe pas dans le jeu de base (D-004 uniquement).
-- ⚠️ **proposé** — un changement de nom est en attente de ta validation
-  (`docs/NOMMAGE.md` §6). Le tableau montre le nom **actuel**.
+- **proposé** — *statut retiré*. Il servait aux propositions en attente de validation
+  (`docs/NOMMAGE.md` §6) ; elles ont **toutes** été tranchées le 19/10/2026 par D-024,
+  D-026 et D-027. Ce tableau décrit l'état **actuel**, sans renvoi à un « proposé ».
 
 **Une précision qui évite un contresens** : il n'y a **pas de correspondance carte à
 carte**. Le jeu de base a des **créatures** ; nous avons des **postes de travail**.
@@ -29,7 +30,7 @@ La correspondance se fait au niveau des **concepts** (Pokémon → Planqué), de
 | Pokémon TCG Pocket | **Bureau des Planqués** (D-015) | maison |
 | The Pokémon Company | *pas d'équivalent : le jeu est un projet indépendant* | maison |
 | Créatures : Pokémon | **Planqués** — des salariés | miroir |
-| Séries / extensions (ex. *Genetic Apex*) | **Bacs** : Direction, Terrain, Bureau — trois viviers thématiques de factions | miroir |
+| Séries / extensions (ex. *Genetic Apex*) | **Marché** — l'extension, qui contient ses **Viviers** : Atelier, Étage, Bureaux | miroir |
 | Pack / booster | **Arrivage** (5 cartes) | miroir |
 
 ## 2. Les règles, ligne à ligne
@@ -37,7 +38,7 @@ La correspondance se fait au niveau des **concepts** (Pokémon → Planqué), de
 | Règle | Jeu de base | Chez nous | Statut |
 |---|---|---|---|
 | Deck | 20 cartes, 2 exemplaires max du même nom, ≥ 1 Basic | **Chariot** : 20 cartes, max 2 par **nom**, ≥ 1 Entrant | miroir |
-| Main de départ | 5 cartes, toujours un Basic (pas de reprise) | **Courrier** : 5 cartes (D-022) | miroir |
+| Main de départ | 5 cartes, toujours un Basic (pas de reprise) | **main** : 5 cartes (D-022) | miroir |
 | Main maximale | 10 | 10 | miroir |
 | Banc | 3 places | **Rack** : 3 places | miroir |
 | Poste actif | 1 | **Poste** : 1 | miroir |
@@ -69,10 +70,10 @@ La correspondance se fait au niveau des **concepts** (Pokémon → Planqué), de
 | Bench | **Rack** ⚠️ *(aussi un nom de carte Lieu, hors périmètre)* | miroir |
 | Energy Zone | **Machine à café** | miroir |
 | Deck | **Chariot** | miroir |
-| Hand | **Courrier** ⚠️ *proposé : **Bannette*** | miroir |
-| Discard pile | **Archive** | miroir |
+| Hand | **main** | miroir |
+| Discard pile | **Rebut** | miroir |
 | Prize cards | **Interventions** | miroir |
-| Point de victoire | **Prime** | miroir |
+| Point de victoire | **Intervention** | miroir |
 
 ## 4. Stades, COMEX, raretés
 
@@ -89,18 +90,18 @@ La correspondance se fait au niveau des **concepts** (Pokémon → Planqué), de
 Nos **types** sont les mêmes que ceux du jeu de base (traduits) ; les **factions** sont
 le détournement. Chaque faction a le rôle mécanique de son type.
 
-| Type (base) | Type (nous) | Faction | Vulnérable à | Identité | ⚠️ proposé |
-|---|---|---|---|---|---|
-| Grass | Plante | **SSE** | Manager | prévention, soin, arrêts | — |
-| Fire | Feu | **Management** | Happiness Manager | pression, objectifs, deadlines | **Encadrement** |
-| Water | Eau | **QVT** | Amélioration continue | QVT, perks, bien-être | **QVT** |
-| Lightning | Électricité | **Amélioration continue** | Technicien | Lean, audits, KPI | — |
-| Psychiquechic | Psychique | **RH** | Direction | recrutement, entretiens | — |
-| Fighting | Combat | **Atelier** | RH | terrain, maintenance, outils | — |
-| Darkness | Obscurité | **Direction** | Technicien | plans de départ, fusions, N+2 | — |
-| Metal | Métal | **Syndicat** | Manager | CSE, tracts, procédures | — |
-| Dragon | Dragon | **Intérim** | *aucune* | missions courtes, précarité | **Intérim** |
-| Colorless | Incolore | **Support** | Technicien | helpdesk, tickets, FAQ | **Support** |
+| Type (base) | Type (nous) | Faction | Vulnérable à | Identité |
+|---|---|---|---|---|
+| Grass | Plante | **SSE** | Management | prévention, soin, arrêts |
+| Fire | Feu | **Management** | QVT | pression, objectifs, deadlines |
+| Water | Eau | **QVT** | Amélioration continue | QVT, perks, bien-être |
+| Lightning | Électricité | **Amélioration continue** | Atelier | Lean, audits, KPI |
+| Psychic | Psychique | **RH** | Direction | recrutement, entretiens |
+| Fighting | Combat | **Atelier** | RH | terrain, maintenance, outils |
+| Darkness | Obscurité | **Direction** | Atelier | plans de départ, fusions, N+2 |
+| Metal | Métal | **Syndicat** | Management | CSE, tracts, procédures |
+| Dragon | Dragon | **Intérim** | *aucune* | missions courtes, précarité |
+| Colorless | Incolore | **Support** | Atelier | helpdesk, tickets, FAQ |
 
 ## 6. Les conditions spéciales
 
@@ -144,7 +145,7 @@ le détournement. Chaque faction a le rôle mécanique de son type.
 | Deck builder | **Chariot** | miroir |
 | Battle | **Combat** | miroir |
 | Settings | **Réglages** | miroir |
-| Pack opening | **Ouvrir un bac** (bac à courrier) | miroir |
+| Pack opening | **Ouvrir un arrivage** | miroir |
 | Wonder Pick | **Pause café** (5 cartes, 1 rare min.) | miroir |
 | Mission | **Note de service** | miroir |
 | Shop | **Économat / Boutique du CSE** | miroir |
@@ -159,21 +160,19 @@ le détournement. Chaque faction a le rôle mécanique de son type.
 ## 10. Ce qui n'est pas encore nommé
 
 **L'économie.** Le jeu de base a une monnaie payante, des tickets de boutique, des
-minuteurs qui accélèrent les bacs et la Pause café, et des tickets d'événement. Chez
+minuteurs qui accélèrent les Arrivages et la Pause café, et des tickets d'événement. Chez
 nous, **rien de tout ça n'a de nom** : `PROPOSITION.md:19` dit seulement « aucun argent
 réel en v1 ; la Cotisation payée en monnaie de jeu » (**O-005**). À nommer quand
 l'économie sera spécifiée — ça ne bloque pas les cartes.
 
-**Un mot sert à deux choses : « bac ».** `AGENTS.md` §4.2 appelle « bacs » les trois
-viviers thématiques (**Direction**, **Terrain**, **Bureau**) *et* « bac à courrier » le
-paquet de 5 cartes — alors que l'interface dit « Ouvrir un bac » pour ouvrir un paquet.
-Même famille de problème que « Courrier » / « Arrivage » (§3) : à trancher avec
-les 8 points de nommage, ou juste après.
+**« bac » est tranché.** Le mot disparaît (D-026) : les trois zones du site sont les
+**Viviers** — **l'Atelier**, **l'Étage**, **les Bureaux** —, le paquet de 5 cartes est
+l'**Arrivage**, et une extension est un **Marché**. La collision que ce chapitre
+décrivait n'existe plus.
 
 ## 11. Ce qui reste à trancher
 
-Les 8 points de nommage en attente (factions « chefs », Happiness Manager, Service
-Support, Intérimaire, abréviations, « Reprise de poste », Courrier/Arrivage,
-attaques en double) sont chiffrés, avec propositions et coûts, dans
-**`docs/NOMMAGE.md` §6**. Ce document-ci décrit l'état **actuel** ; il devra être mis à
-jour d'un coup quand tu auras validé.
+Rien sur le vocabulaire : les 8 points de nommage sont **tranchés** (D-024, D-026,
+D-027), et leurs propositions restent pour mémoire dans **`docs/NOMMAGE.md` §6**.
+Ce document-ci décrit l'état **actuel** — le tenir à jour à chaque décision de
+vocabulaire, sinon il redevient l'« avant ».

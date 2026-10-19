@@ -85,7 +85,7 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Tutorial | **Journée d'intégration** | |
 | Monnaie / minuteurs | **Tickets** / **Chrono** | la monnaie payante (« Cagnotte ») viendra plus tard (O-005) |
 
-**Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Grèvomon`, `Pokémon`. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. L'ancien nom **Parc** est **abandonné** (il venait de l'univers legacy) : la collection s'appelle **le Parc**.
+**Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Grèvomon`, `Pokémon`. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. L'ancien nom **Galérodex** est **abandonné** (il venait de l'univers legacy) : la collection s'appelle **le Parc**.
 
 ### 3.2 Factions
 
@@ -154,7 +154,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 - **« Changement de priorité »** (D-004) : une fois par tour, au Poste, défausser 1 carte puis piocher 1. Mot-clé porté par les cartes, déactivable par un drapeau global, testé en simulation avant validation. C'est la seule exception actée.
 - **« Pause café »** désigne le Wonder Pick. Ne pas réutiliser ce terme pour une action de combat.
 
-### 4.2 Bacs et contenu
+### 4.2 Viviers et contenu
 
 - Un **Arrivage** contient **5 cartes** : 3 communes, 1 peu commune, 1 rare minimum.
 - Cible de lancement : **286 cartes** = 226 de base (215 Planqués + 8 Collègues + 3 Objets) + 60 secrètes.

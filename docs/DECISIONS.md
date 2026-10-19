@@ -78,37 +78,56 @@ Le décalage est d'environ **20 points** aux stades hauts. Conséquence à ne pa
 le Moral **ralentit** la partie (il faut plus de Pressions par K.O.), donc cela se tranche avec une
 simulation, pas au feeling.
 
-### Propagation faite — 19/10/2026
+### Propagation — 19/10/2026
 
-Les conséquences de D-024, D-025, D-026 et D-027 ont été écrites en **une seule passe** : le
-**code** d'abord (types, moteur, données, UI, tests — `check` 0, **62 tests**, `build` 0), puis
-les **docs vivants** (`AGENTS.md` §3 à §7, `FACTIONS.md`, `CARD-SPEC.md`, `PROPOSITION.md`,
-`MIROIR-2026-DELTAS.md`, `CORRESPONDANCES.md`). La liste des fichiers ci-dessous reste comme
-trace du chantier.
+Les conséquences de D-024, D-025, D-026 et D-027 ont été propagées en **deux passes** :
+
+1. **Le code** — types, moteur, données, UI, tests : `check` 0, **62 tests**, `build` 0. Vérifié :
+   `grep -rniE "MANAGER|HAPPINESS|TECHNICIEN|INTERIMAIRE" src/` → **aucune occurrence**, et
+   `src/data/sse.ts:290` nomme la carte `'Médecin-chef COMEX'`.
+2. **Les docs** — `AGENTS.md` §3 à §7, `CARD-SPEC.md`, `FACTIONS.md`, `PROPOSITION.md`,
+   `CORRESPONDANCES.md`, `docs/agents/domain.md`. La liste des fichiers ci-dessous est la trace
+   du chantier.
+
+> **Correction du 19/10/2026.** La première version de cette note annonçait la passe des docs
+> comme **terminée et vérifiée** — c'était **faux**, et rien ne l'avait re-mesuré. Un relevé a
+> montré que `PROPOSITION.md` §3-§5, `CORRESPONDANCES.md` (dont D-026 fait pourtant « le tableau
+> complet ») et `CARD-SPEC.md` §3-§4 portaient encore les noms d'avant D-024 (`Manager`,
+> `Happiness Manager`, `Technicien`, `Intérimaire`) et le vocabulaire d'avant D-026 (`Courrier`,
+> `Archive`, `Prime`, `Bacs`, `Faiblesse`). Le typo **« Psychiquechic »** y survivait aussi. Tout
+> est corrigé à la main.
+
+> **Le vocabulaire des actes datés n'est pas réécrit.** Les corps des décisions **antérieures à
+> D-024** (et les tableaux d'audit **O-010**/**O-011**) gardent les mots de leur date :
+> « Cadre » pour un COMEX, « Primes » pour les Interventions, « Moral » pour le Seuil, « bacs »
+> pour les Arrivages et les Viviers. Un acte ne se réécrit pas ; **D-024/D-026/D-027** sont
+> l'état courant, et `AGENTS.md` §3 est la table de vocabulaire.
 
 > **Leçon de méthode** : deux passages `perl`/`sed` ont abîmé la prose qui *expliquait* les
-> changements (« le Seuil remplace le Seuil », « Psychiquechique »). Réparé, et vérifié. Sur un
-> document qui *parle* des termes, on édite à la main — le remplacement automatique ne distingue
-> pas le terme de sa définition.
+> changements (« le Seuil remplace le Seuil », « Psychiquechique »). Sur un document qui *parle*
+> des termes, on édite à la main — le remplacement automatique ne distingue pas le terme de sa
+> définition. Et une propagation ne se déclare **pas** vérifiée tant qu'un `grep` ne le prouve pas.
 
-| Fichier | Ce qui reste à propager |
+| Fichier | Ce qui a été propagé |
 |---|---|
-| `AGENTS.md` §3.1 | tout le vocabulaire du plateau — après la famille « vocabulaire » |
+| `AGENTS.md` §3.1 | tout le vocabulaire du plateau ; l'ancien nom de la collection → **Galérodex** |
 | `AGENTS.md` §3.2 | les 10 noms, Psy → Psychique, les deux règles (abréviation, anglicismes) |
-| `docs/FACTIONS.md` | 10 en-têtes, tableau §1, lignes « Faiblesse », identités |
-| `docs/PROPOSITION.md` | §3.2 (les ~40 termes), §3.3 (les factions), §5 (les bacs) |
-| `docs/CORRESPONDANCES.md` | §5 (types et factions), §3-§4 (les termes) |
-| `docs/NOMMAGE.md` | §6 : marquer les propositions comme actées |
+| `docs/FACTIONS.md` | 10 en-têtes, tableau §1, lignes **Vulnérabilité**, identités, lignes d'évolution (`Directeur général`, `Auditeur qualité`, `Technicien de maintenance`) |
+| `docs/CARD-SPEC.md` | §2 (`COMEX`, `Vulnérabilité`), §3 (les 10 archétypes), §4 (les 10 en-têtes) |
+| `docs/PROPOSITION.md` | §0, §3.1 (les règles), §3.2 (les ~40 termes), §3.3 (les factions), §3.6, §4.3-§4.5, §5.2, §10 |
+| `docs/CORRESPONDANCES.md` | §1, §2-§4 (les termes), §5 (types et factions), §9-§11 |
+| `docs/agents/domain.md` | le glossaire cité et le nom de la collection |
+| `docs/NOMMAGE.md` | §6 : les propositions sont marquées **actées** ; §1 et §4 restent l'« avant » |
 | `src/data/types.ts` | union `Faction` — 5 clés renommées |
 | `src/data/index.ts` | `FACTION_META` : noms et étiquettes courtes |
 | `src/data/sse.ts` | `weakness: 'MANAGER'` → `'MANAGEMENT'` |
-| `src/data/cards.test.ts` | table `WEAKNESS` |
+| `src/data/cards.test.ts` | table `WEAKNESS`, libellé du `describe` `COMEX` |
 
 **Aucun identifiant de carte ne bouge** : seule `SSE` a des cartes, et son code ne change pas.
 
 ## Prochaine étape
 
-1. Les noms de factions, le mot-clé, le cadre du miroir et le périmètre du lancement sont actés (D-004, D-006, D-014, D-018, **D-020**). Le set se construit sur 3 stades, Cadre = 2 Primes, une faction par Planqué.
+1. Les noms de factions, le mot-clé, le cadre du miroir et le périmètre du lancement sont actés (D-004, D-006, D-014, D-018, **D-020**). Le set se construit sur 3 stades, COMEX = 2 Interventions, une faction par Planqué.
 2. Trancher **O-009** : fait (D-022). Reste **O-012**, la capture des Astuces de jeu — toi seul peux la produire.
 3. Générer la **spécification des 286 cartes** (lignes, stades, raretés, stats, textes) : le périmètre est figé par D-020, plus rien ne bloque l'écriture.
 4. Produire la **direction artistique** (palette, gabarit, 3 planches).

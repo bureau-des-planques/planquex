@@ -93,14 +93,14 @@ est ce qui permet d'atteindre le haut de la bande.
 *(Ancrage : cartes réelles de TCG Pocket relevées le 19/10/2026. Scyther 30 brut contre
 Venomoth 30 + Empoisonné à 1 énergie — effet gratuit. Dewgong 90 brut contre Vaporeon
 60 + soin 30 à 3 énergies — effet payé. Starmie ex 90 et Greninja ex 100 à 2 énergies :
-la bande des Cadres n'est pas celle des N+1.)*
+la bande des COMEX n'est pas celle des N+1.)*
 
 **Règles de conception** :
 
 - Un effet ne fait donc **jamais** descendre les dégâts sous le bas de la bande de son coût.
 - Une capacité (Talent) ne doit pas créer d’avantage de cartes net sans coût.
 - Une carte ex vaut 2 Interventions ; elle doit être plus forte, mais pas auto-include. Il n'existe **pas** de palier à 3 Interventions : la Méga-Évolution est hors périmètre (D-020).
-- La faiblesse ajoute +20 ; l’Intérimaire n’a pas de faiblesse.
+- La **Vulnérabilité** ajoute +20 ; l'**Intérim** n'a pas de vulnérabilité.
 
 ---
 
@@ -109,14 +109,14 @@ la bande des Cadres n'est pas celle des N+1.)*
 | Faction | Archétype principal | Archétype secondaire | Signature mécanique |
 |---|---|---|---|
 | SSE | Contrôle / soin | Midrange | Soin, anti-statut |
-| Manager | Aggro | Midrange | Épuisement, pression |
-| Happiness Manager | Midrange / tempo | Contrôle | Accélération, soin |
+| Management | Aggro | Midrange | Épuisement, pression |
+| QVT | Midrange / tempo | Contrôle | Accélération, soin |
 | Amélioration continue | Tempo | Contrôle | Dégâts étalés, gel |
 | RH | Contrôle | Combo | Dérive, défausse |
-| Technicien | Aggro | Midrange | Gros dégâts, tank |
+| Atelier | Aggro | Midrange | Gros dégâts, tank |
 | Direction | Contrôle | Combo | Disruption, défausse |
 | Syndicat | Tank | Contrôle | Protection, soin |
-| Intérimaire | Combo | Aggro | Multi-énergie, chaos |
+| Intérim | Combo | Aggro | Multi-énergie, chaos |
 | Support | Midrange | Contrôle | Pioche, polyvalence |
 
 ---
@@ -134,7 +134,7 @@ textes et effets sont là pour valider le ton et les courbes.
 | Infirmière du travail | N+1 | 2◆ | 90 | 1 | **Prévention** (Talent, 1/tour) : soigne 10 d’un Planqué. **Piqûre de rappel** (2 cafés) : 40 | « Elle sait où tu as mal avant toi. » |
 | Médecin du travail | N+2 | 3◆ | 130 | 2 | **Arrêt de travail** (2 cafés) : 60, le Planqué adverse est Sieste. **Bilan de santé** (3 cafés) : 80, soigne 20 de tous tes Planqués | « Il a signé. Tu ne reviens pas avant lundi. » |
 
-### Manager — Feu
+### Management — Feu
 
 | Carte | Stade | Rareté | Seuil | Rotation | Attaque / Talent | Texte |
 |---|---|---|---:|---:|---|---|
@@ -142,12 +142,12 @@ textes et effets sont là pour valider le ton et les courbes.
 | Manager de proximité | N+1 | 2◆ | 90 | 1 | **Pression** (Talent, 1/tour) : défausse 1 carte, 10 dégâts au Planqué adverse actif. **Deadline** (2 cafés) : 50 | « Il manage par mail. Il ne lit pas les réponses. » |
 | Directeur général | N+2 | 3◆ | 140 | 2 | **Restructuration** (2 cafés) : 60, défausse 1 café adverse. **Plan de croissance** (3 cafés) : 100, ce Planqué subit 20 | « La croissance est externe. Les dégâts sont internes. » |
 
-### Happiness Manager — Eau
+### QVT — Eau
 
 | Carte | Stade | Rareté | Seuil | Rotation | Attaque / Talent | Texte |
 |---|---|---|---:|---:|---|---|
 | Chargé QVT | Entrant | 1◆ | 60 | 1 | **Corbeille de fruits** (1 café) : 10, soigne 10 d’un Planqué | « Il a apporté des clémentines. C’est son projet. » |
-| Happiness Manager | N+1 | 2◆ | 90 | 1 | **Bulletin de bonheur** (Talent, 1/tour) : attache 1 café à un Planqué du banc. **Afterwork** (2 cafés) : 40, pioche 1 | « Le bonheur est un KPI comme un autre. » |
+| Happiness Manager | N+1 | 2◆ | 90 | 1 | **Bulletin de bonheur** (Talent, 1/tour) : attache 1 café à un Planqué du Rack. **Afterwork** (2 cafés) : 40, pioche 1 | « Le bonheur est un KPI comme un autre. » |
 | Chief Happiness Officer | N+2 | 3◆ | 130 | 2 | **Team building** (2 cafés) : 60, soigne 20 de tous tes Planqués. **Yoga du rire** (3 cafés) : 80, le Planqué adverse est Dérivé | « Riez. C’est obligatoire. » |
 
 ### Amélioration continue — Électricité
@@ -166,7 +166,7 @@ textes et effets sont là pour valider le ton et les courbes.
 | Chargé de recrutement | N+1 | 2◆ | 90 | 1 | **Sourcing** (Talent, en jouant) : cherche un Planqué dans ton deck, révèle-le, ajoute-le à ta main. **Promesse d’embauche** (2 cafés) : 40 | « Le poste est passionnant. Le salaire est confidentiel. » |
 | DRH | N+2 | 3◆ | 130 | 2 | **Plan de carrière** (2 cafés) : 60, l’adversaire défausse 1 carte. **Entretien annuel** (3 cafés) : 80, le Planqué adverse est Dérivé | « Il a lu ton CV. Il sait où tu habites. » |
 
-### Technicien — Combat
+### Atelier — Combat
 
 | Carte | Stade | Rareté | Seuil | Rotation | Attaque / Talent | Texte |
 |---|---|---|---:|---:|---|---|
@@ -190,13 +190,13 @@ textes et effets sont là pour valider le ton et les courbes.
 | Représentant CSE | N+1 | 2◆ | 100 | 2 | **Heure de délégation** (Talent, 1/tour) : pioche 1. **Motion** (2 cafés) : 40 | « La réunion a duré 4 heures. Elle a été reportée. » |
 | Secrétaire général | N+2 | 3◆ | 150 | 3 | **Convention collective** (2 cafés) : 50, ce Planqué subit 10 de moins au prochain tour. **Grève** (3 cafés) : 80, le Planqué adverse est Immobilisation | « Il a obtenu une réunion. Elle a duré 4 heures. » |
 
-### Intérimaire — Dragon
+### Intérim — Dragon
 
 | Carte | Stade | Rareté | Seuil | Rotation | Attaque / Talent | Texte |
 |---|---|---|---:|---:|---|---|
 | Intérimaire | Entrant | 1◆ | 60 | 1 | **Mission courte** (1 café) : 20 | « Il connaît le site mieux que le directeur. Il part vendredi. » |
 | Intérimaire confirmé | N+1 | 2◆ | 90 | 1 | **Polyvalence** (Talent) : ce Planqué peut utiliser n’importe quel café pour ses attaques. **Démerde** (2 cafés) : 50 | « Il a fait le boulot de trois personnes. Il est payé pour une. » |
-| Chef d’équipe intérimaire | N+2 | 3◆ | 140 | 2 | **Site différent** (2 cafés) : 60, échange ce Planqué avec un Planqué du banc. **Prime de précarité** (3 cafés) : 100, ce Planqué subit 20 | « Il gère l’équipe. Il n’a pas de badge. » |
+| Chef d’équipe intérimaire | N+2 | 3◆ | 140 | 2 | **Site différent** (2 cafés) : 60, échange ce Planqué avec un Planqué du Rack. **Prime de précarité** (3 cafés) : 100, ce Planqué subit 20 | « Il gère l’équipe. Il n’a pas de badge. » |
 
 ### Support — Incolore
 

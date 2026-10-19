@@ -195,7 +195,7 @@ describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021
   });
 });
 
-describe('Cartes — Cadre et Vulnérabilité (AGENTS.md §3.2, §5)', () => {
+describe('Cartes — COMEX et Vulnérabilité (AGENTS.md §3.2, §5)', () => {
   it('vulnérabilise chaque carte selon la table des factions', () => {
     for (const card of ALL_CARDS) {
       expect(card.weakness, card.id).toBe(WEAKNESS[card.faction]);

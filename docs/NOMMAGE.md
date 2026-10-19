@@ -5,6 +5,14 @@
 > Ce document n'acte rien. Il liste ce qui existe, et signale les **incohérences**
 > que j'ai trouvées — c'est à toi de dire lesquelles te gênent.
 > Autorité : `AGENTS.md` §3 pour le vocabulaire, `docs/DECISIONS.md` pour les choix.
+>
+> ⚠️ **Ce document est l'« avant », pas l'état courant.** Il a été relevé le 19/10/2026 pour
+> préparer D-024/D-026/D-027 et il en garde la trace. En particulier : **§1 et §4 décrivent des
+> noms périmés** (`MANAGER`, `HAPPINESS`, `TECHNICIEN`, `INTERIMAIRE`, la carte « Médecin-chef
+> Cadre » — le code dit aujourd'hui `FACTION_META` avec `MANAGEMENT`/`QVT`/`ATELIER`/`INTERIM`,
+> et `'Médecin-chef COMEX'`), et **§6 est une liste de propositions** dont certaines ont été
+> tranchées autrement (P1 proposait « Encadrement », D-024 a retenu **Management**). Pour l'état
+> courant : `AGENTS.md` §3, `docs/DECISIONS.md`, et le tableau vivant `docs/CORRESPONDANCES.md`.
 
 ## 1. Les 10 factions — et leurs quatre façons d'être nommées
 

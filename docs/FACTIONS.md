@@ -1,8 +1,8 @@
 # Factions, cartes et nommage — version finale
 
-> Noms actés le 18/10/2026. Le code utilise des identifiants stables
-> (`SSE`, `MANAGER`, `HAPPINESS`, …) ; les noms sont des données, donc renommables
-> plus tard sans casser le moteur.
+> Noms actés le 18/10/2026, **renommés par D-024** (19/10/2026). Le code utilise des
+> identifiants stables (`SSE`, `MANAGEMENT`, `QVT`, `ATELIER`, `INTERIM`, …) ; les noms
+> sont des données, donc renommables plus tard sans casser le moteur.
 >
 > **Stades** : Entrant → N+1 → **N+2**. Pas de 4ᵉ stade : la Méga-Évolution est hors
 > périmètre (D-020).
@@ -13,18 +13,18 @@
 
 ## 1. Tableau final
 
-| # | Type | Faction | Rôle mécanique | Faiblesse | Carte signature |
+| # | Type | Faction | Rôle mécanique | Vulnérabilité | Carte signature |
 |---|---|---|---|---|---|
-| 1 | Plante | **SSE** | Soin, statuts, résilience | Manager | Médecin du travail |
+| 1 | Plante | **SSE** | Soin, statuts, résilience | Management | Médecin du travail |
 | 2 | Feu | **Management** | Dégâts, burn-out, pression | QVT | Chef des ventes |
 | 3 | Eau | **QVT** | Énergie, relève, flux | Amélioration continue | Chief Happiness Officer |
-| 4 | Électricité | **Amélioration continue** | Dégâts étalés, gel, tempo | Technicien | Directeur qualité |
-| 5 | Psychique | **RH** | Dérive, banc, manipulation | Direction | DRH |
+| 4 | Électricité | **Amélioration continue** | Dégâts étalés, gel, tempo | Atelier | Directeur qualité |
+| 5 | Psychique | **RH** | Dérive, Rack, manipulation | Direction | DRH |
 | 6 | Combat | **Atelier** | Gros dégâts, gros Seuil | RH | Chef d’atelier |
-| 7 | Obscurité | **Direction** | Disruption, contrôle | Technicien | PDG |
-| 8 | Métal | **Syndicat** | Tank, soin, protection | Manager | Secrétaire général |
+| 7 | Obscurité | **Direction** | Disruption, contrôle | Atelier | PDG |
+| 8 | Métal | **Syndicat** | Tank, soin, protection | Management | Secrétaire général |
 | 9 | Dragon | **Intérim** | Multi-énergie, chaos, aucune faiblesse | Aucune | Intérimaire légendaire |
-| 10 | Incolore | **Support** | Polyvalent, pioche, recherche | Technicien | Responsable support |
+| 10 | Incolore | **Support** | Polyvalent, pioche, recherche | Atelier | Responsable support |
 
 **Cycle des faiblesses** :
 
@@ -49,7 +49,7 @@
   Prévention, arrêts, registre des accidents, bilan de santé. On soigne les dégâts
   que les autres infligent.
 - **Rôle** : soin, statuts, lignes d’évolution solides, jeu lent mais increvable.
-- **Faiblesse** : Manager (le burn-out finit par gagner).
+- **Vulnérabilité** : Management (le burn-out finit par gagner).
 - **Ligne d’évolution** : Infirmier de site → Infirmière du travail → Médecin du travail.
 - **COMEX (ex)** : **Médecin du travail** — « Il a lu ton dossier. Il a soupiré. »
 
@@ -66,7 +66,7 @@
 | Arrêt de travail | Objet | Protège un Planqué |
 | Gants de protection | Outil | +20 Seuil |
 | Visite médicale | Collègue | Soin + pioche |
-| Salle de repos | Lieu | +Seuil au banc |
+| Salle de repos | Lieu | +Seuil au Rack |
 | **COMEX : Médecin du travail** | ex | 2 Interventions, soin de zone |
 
 - **Direction artistique** : blanc, vert menthe, infirmerie, lumière froide, plantes.
@@ -78,8 +78,8 @@
 - **Identité** : le management de proximité, les objectifs, les deadlines, les
   réunions d’urgence. Le feu, c’est la pression.
 - **Rôle** : dégâts, burn-out, défausse d’énergie, jeu agressif.
-- **Faiblesse** : Happiness Manager (le bien-être éteint la pression).
-- **Ligne d’évolution** : Jeune manager → Manager de proximité → Directeur.
+- **Vulnérabilité** : QVT (le bien-être éteint la pression).
+- **Ligne d’évolution** : Jeune manager → Manager de proximité → Directeur général.
 - **COMEX (ex)** : **Chef des ventes** — « Il a dit “famille” dans un mail. »
 
 | Carte | Stade | Rôle |
@@ -88,7 +88,7 @@
 | Chef de projet | Entrant | Base, tempo |
 | Ton chef | Entrant | Base, pression |
 | Manager de proximité | N+1 | Évolution, burn-out |
-| Directeur | N+2 | Gros dégâts, contrôle |
+| Directeur général | N+2 | Gros dégâts, contrôle |
 | Réunion d’urgence | Objet | Défausse une énergie |
 | Deadline hier | Objet | +20 dégâts |
 | Objectif irréaliste | Objet | Épuisement |
@@ -106,8 +106,8 @@
 
 - **Identité** : la QVT, les perks, les afterworks, les plantes vertes, la corbeille
   de fruits. Le bonheur comme process. L’eau, c’est le flux et le bien-être.
-- **Rôle** : accélération d’énergie, relève, dégâts au banc, jeu de flux.
-- **Faiblesse** : Amélioration continue (l’audit tue la vibe).
+- **Rôle** : accélération d’énergie, relève, dégâts au Rack, jeu de flux.
+- **Vulnérabilité** : Amélioration continue (l’audit tue la vibe).
 - **Ligne d’évolution** : Chargé QVT → Happiness Manager → Chief Happiness Officer.
 - **COMEX (ex)** : **Chief Happiness Officer** — « Le bonheur est obligatoire, 9 h–18 h. »
 
@@ -136,8 +136,8 @@
 - **Identité** : le Lean, la qualité, les audits, les KPI, les tableaux de bord.
   Chaque petit progrès est une décharge. Le process est partout.
 - **Rôle** : dégâts étalés, gel, tempo, agressivité.
-- **Faiblesse** : Technicien (le terrain casse le process).
-- **Ligne d’évolution** : Chargé qualité → Auditeur → Directeur qualité.
+- **Vulnérabilité** : Atelier (le terrain casse le process).
+- **Ligne d’évolution** : Chargé qualité → Auditeur qualité → Directeur qualité.
 - **COMEX (ex)** : **Directeur qualité** — « On a amélioré le process d’amélioration. »
 
 | Carte | Stade | Rôle |
@@ -164,8 +164,8 @@
 
 - **Identité** : le recrutement, les entretiens, les plans de carrière, la manipulation
   douce. Le sourire est une arme.
-- **Rôle** : dérive, dégâts au banc, contrôle, manipulation.
-- **Faiblesse** : Direction (le pouvoir renvoie la manipulation).
+- **Rôle** : dérive, dégâts au Rack, contrôle, manipulation.
+- **Vulnérabilité** : Direction (le pouvoir renvoie la manipulation).
 - **Ligne d’évolution** : Assistant RH → Chargé de recrutement → DRH.
 - **COMEX (ex)** : **DRH** — « Il a lu ton CV, il sait où tu habites. »
 
@@ -173,7 +173,7 @@
 |---|---|---|
 | Assistant RH | Entrant | Base, dérive |
 | Recruteur en embuscade | Entrant | Base, défausse |
-| Chargé de recrutement | N+1 | Évolution, dégâts au banc |
+| Chargé de recrutement | N+1 | Évolution, dégâts au Rack |
 | DRH | N+2 | Contrôle, gros dégâts |
 | Chasseur de têtes | Entrant | Base, pioche |
 | Entretien annuel | Objet | Défausse |
@@ -182,7 +182,7 @@
 | Badge nominatif | Outil | +10 dégâts |
 | Réunion individuelle | Collègue | Contrôle |
 | Salle d’entretien | Lieu | +10 dégâts aux attaques Psychique |
-| **COMEX : DRH** | ex | 2 Interventions, dégâts au banc |
+| **COMEX : DRH** | ex | 2 Interventions, dégâts au Rack |
 
 - **Direction artistique** : violet, rose poudré, miroirs, sourires trop blancs.
 
@@ -192,9 +192,9 @@
 
 - **Identité** : la maintenance, le terrain, les outils, les pannes. Ça parle fort et
   ça répare. Le physique contre la paperasse.
-- **Rôle** : gros dégâts, gros Seuil, dégâts au banc, jeu direct.
-- **Faiblesse** : RH (la paperasse gagne toujours).
-- **Ligne d’évolution** : Apprenti → Technicien → Chef d’atelier.
+- **Rôle** : gros dégâts, gros Seuil, dégâts au Rack, jeu direct.
+- **Vulnérabilité** : RH (la paperasse gagne toujours).
+- **Ligne d’évolution** : Apprenti → Technicien de maintenance → Chef d’atelier.
 - **COMEX (ex)** : **Chef d’atelier** — « Il a un plan. Le plan est une clé de 12. »
 
 | Carte | Stade | Rôle |
@@ -204,7 +204,7 @@
 | Plombier | Entrant | Base, tank |
 | Ascensoriste | Entrant | Base, relève |
 | Technicien de maintenance | N+1 | Évolution, buff |
-| Chef d’atelier | N+2 | Gros dégâts, banc |
+| Chef d’atelier | N+2 | Gros dégâts, Rack |
 | Tournevis | Objet | +10 dégâts |
 | Multimètre | Outil | +10 dégâts |
 | Échelle | Outil | +20 Seuil |
@@ -222,7 +222,7 @@
 - **Identité** : le N+2, les plans de départ, les consultants, les fusions. Le vide
   organisé. Le pouvoir qui décide sans comprendre.
 - **Rôle** : disruption, contrôle, surcharge, attaques pas chères.
-- **Faiblesse** : Technicien (le réel finit toujours par revenir).
+- **Vulnérabilité** : Atelier (le réel finit toujours par revenir).
 - **Ligne d’évolution** : Chef de projet fantôme → Directeur adjoint → PDG.
 - **COMEX (ex)** : **PDG** — « Il repart avec la prime, tu restes avec le plan. »
 
@@ -251,7 +251,7 @@
 - **Identité** : le CSE, les délégués, les tracts, les heures de délégation. Le
   blindage, c’est la procédure.
 - **Rôle** : tank, soin, protection, anti-statut.
-- **Faiblesse** : Manager (le feu fait fondre le métal).
+- **Vulnérabilité** : Management (le feu fait fondre le métal).
 - **Ligne d’évolution** : Délégué du personnel → Représentant CSE → Secrétaire général.
 - **COMEX (ex)** : **Secrétaire général** — « Il a obtenu une réunion. Elle a duré 4 heures. »
 
@@ -280,7 +280,7 @@
 - **Identité** : la mission courte, l’agence, le badge temporaire, le site qu’on
   découvre. La précarité comme énergie brute. Ils gèrent tout, on ne les garde pas.
 - **Rôle** : multi-énergie, gros dégâts, aucune faiblesse, jeu à haut risque.
-- **Faiblesse** : aucune (comme les Dragons).
+- **Vulnérabilité** : aucune (comme les Dragons).
 - **Ligne d’évolution** : Intérimaire → Intérimaire confirmé → Chef d’équipe intérimaire.
 - **COMEX (ex)** : **Intérimaire légendaire** — « Il connaît le site mieux que le directeur. »
 
@@ -309,7 +309,7 @@
 - **Identité** : le helpdesk, le support N1, les assistants, les tickets, les FAQ,
   les escalades. Toujours poli, jamais écouté.
 - **Rôle** : polyvalent, pioche, recherche, dégâts propres.
-- **Faiblesse** : Technicien (le terrain court-circuite le support).
+- **Vulnérabilité** : Atelier (le terrain court-circuite le support).
 - **Ligne d’évolution** : Agent support → Technicien support → Responsable support.
 - **COMEX (ex)** : **Responsable support** — « Avez-vous essayé de redémarrer votre demande ? »
 
@@ -351,7 +351,7 @@ sans changer les cartes.
 ### Variantes écartées (pour mémoire)
 
 - **Briefing** : regarde les 3 du dessus, prends-en 1, remets les autres dessous.
-- **Débrief** : déplace 1 café vers un Planqué du banc en fin de tour.
+- **Débrief** : déplace 1 café vers un Planqué du Rack en fin de tour.
 
 ---
 
@@ -359,6 +359,6 @@ sans changer les cartes.
 
 1. Générer la **spécification des 286 cartes** à partir de ce vocabulaire :
    lignes d’évolution, stades, raretés, stats, attaques, talents, textes.
-2. Définir les **3 bacs de lancement** et leurs cartes exclusives.
+2. Définir les **3 viviers de lancement** et leurs cartes exclusives.
 3. Produire la **direction artistique** : palette, gabarit de carte, 3 planches.
 4. Scaffolder le monorepo et le design system.
