@@ -1,7 +1,8 @@
 import type { Card, Faction, Rarity, Stage, Vivier } from './types';
 import { ALL_SSE_CARDS } from './sse';
+import { ALL_RH_CARDS } from './rh';
 
-export const ALL_CARDS: Card[] = [...ALL_SSE_CARDS];
+export const ALL_CARDS: Card[] = [...ALL_SSE_CARDS, ...ALL_RH_CARDS];
 
 export const CARD_BY_ID = new Map(ALL_CARDS.map((card) => [card.id, card]));
 
