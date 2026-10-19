@@ -211,6 +211,15 @@ ligne**, donc la même identité mécanique.
   extensible ; une nouvelle zone de site = un nouveau vivier. Le jeu de base fait de même
   (1 à 3 sous-paquets selon l'extension : Genetic Apex en a 3 — Pikachu, Charizard, Mewtwo —
   Space-Time Smackdown 2 — Dialga, Palkia —, Mega Rising 2).
+- **Les trois viviers sont des lieux** — **l'Atelier**, **l'Étage**, **les Bureaux** — et ils
+  le resteront : un futur vivier sera un lieu lui aussi (le Magasin, le Banc d'essai, les
+  Extérieurs). C'est ce qui a écarté la Régie (un mode de facturation), les Moyens (une
+  catégorie de ressources) et l'Intendance (une fonction) : ce sont des *fonctions*, pas des
+  endroits.
+- **« plateau » est écarté** du nommage de la main. Verdict de Bastien : la confusion avec
+  *le plateau de jeu* est réelle, et c'est lui qui lira le mot 286 fois. Le mot reste ce
+  qu'il est — un mot de langue courante pour l'aire de jeu — et **la main reste à nommer**
+  (lot 1 des stocks).
 
 ### L'étage du dessus : le **Marché**
 
