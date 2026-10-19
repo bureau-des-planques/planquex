@@ -164,7 +164,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 ## 5. Écriture des cartes
 
-- **Identifiants** : minuscules, kebab-case, préfixe de faction — `sse-infirmier-site`. Variantes : suffixe `-star` ou `-star2`.
+- **Identifiants** : minuscules, kebab-case, préfixe de faction — `sse-infirmier-site`. Variantes : suffixe `-star` ou `-star2`. **Un id suit le nom** : renommer une carte renomme son id, et un renommage d'id s'accompagne d'une **migration du store** (`version`, cf. §6). L'écart id/nom est un *Mysterious Name* : dans un dépôt lu par des agents, une carte introuvable par son nom ne se trouve plus du tout.
 - **Évolution** : `evolvesFrom` pointe vers l'`id` de la carte précédente. Une variante hérite des stats, attaques, talent et flavour de sa carte de base.
 - **COMEX** : `ex: true`, vaut 2 Interventions. L'UI affiche « COMEX », pas « ex ».
 - **Effets** : utiliser uniquement les `AttackEffectKind` existants (`healSelf`, `healAll`, `status`, `draw`, `discardEnergy`, `selfDamage`, `switchSelf`, `reduceDamage`). Toute nouvelle primitive = décision + mise à jour des types + tests.
