@@ -203,7 +203,7 @@ grevomon-tcg/
 - **TypeScript strict**. Alias `@/` → `./src`, déclaré dans `tsconfig.json` et `vite.config.ts`.
 - **UI en français**, identifiants de code en anglais. Ne pas dupliquer les textes de cartes hors de `src/data`.
 - **Moteur** : code pur autant que possible, sans React ni DOM. `applyAction(state, action)` et fonctions de transition ; cloner avec `structuredClone`.
-- **Déterminisme** : c'est une cible de `PROPOSITION.md` §6.2. Le moteur utilise encore `Math.random()` ; toute simulation ou tout test doit être seedé avant d'être considéré comme reproductible.
+- **Déterminisme** : **fait** (ticket #29, 19/10/2026). Le hasard vient d'un générateur **seedé** — `src/game/rng.ts` (mulberry32) — et son état vit dans la partie (`BattleState.rng`), donc il se clone et se compare comme le reste. `createBattle(decks, seed)` utilise sa graine, le store est persisté en `version: 1` avec migration, et il ne reste **aucun appel à `Math.random()`** dans `src/game/` ni `src/store/`. Reste à faire : **journaliser** la graine (la cible de `PROPOSITION.md` §6.2 dit « seedé **et journalisé** »), avec le journal d'actions.
 - **Store** : Zustand + `persist`, clé `bureau-des-planques-v1`. Toute modification de forme doit être migrée ou versionnée.
 - **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
