@@ -296,7 +296,7 @@ describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
   });
 });
 
-describe('Relève choisie après K.O.', () => {
+describe('Relève choisie après un craquage', () => {
   /** Amène la Direction à 1 Seuil, puis frappe : son Poste tombe. */
   function knockOutAi(state: BattleState): BattleState {
     const next = structuredClone(state);

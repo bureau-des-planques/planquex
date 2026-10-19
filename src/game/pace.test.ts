@@ -12,8 +12,8 @@ import { describe, expect, it } from 'vitest';
  * - l'attaquant joue toujours sa meilleure attaque, définie par la bande
  *   « dégâts indicatifs » de `CARD-SPEC.md` §2 ;
  * - le défenseur ne fait rien : pas de soin, pas de statut, pas de relève ;
- * - 1 Prime par K.O. (cas le plus défavorable au rythme) ;
- * - l'adversaire aligne le même profil à chaque K.O.
+ * - 1 Intervention par craquage (cas le plus défavorable au rythme) ;
+ * - l'adversaire aligne le même profil à chaque craquage.
  *
  * Lancer `PACE_REPORT=1 npx vitest run src/game/pace.test.ts` pour afficher le
  * tableau complet ; `npm test` ne vérifie que la conclusion.
@@ -46,9 +46,9 @@ const REAL_CURVE: Profile[] = [
 
 const PRIZES = 3;
 
-/** Frappes nécessaires pour un K.O. — hypothèse optimiste (peu de Seuil, gros dégâts). */
+/** Frappes nécessaires pour un craquage — hypothèse optimiste (peu de Seuil, gros dégâts). */
 const hitsOptimistic = (p: Profile) => Math.ceil(p.hp[0] / p.damage[1]);
-/** Frappes nécessaires pour un K.O. — hypothèse pessimiste (beaucoup de Seuil, petits dégâts). */
+/** Frappes nécessaires pour un craquage — hypothèse pessimiste (beaucoup de Seuil, petits dégâts). */
 const hitsPessimistic = (p: Profile) => Math.ceil(p.hp[1] / p.damage[0]);
 
 /** Tours pour prendre les 3 Interventions : la montée en café, puis une frappe par tour. */
@@ -62,7 +62,7 @@ const table = (curve: Profile[], hits: (profile: Profile) => number) =>
   }));
 
 const asReport = (name: string, rows: ReturnType<typeof table>) =>
-  rows.map((row) => `${name.padEnd(7)} ${row.profil.padEnd(14)} ${row.frappesParKO} frappe(s)/K.O.  ${row.tours} tours`);
+  rows.map((row) => `${name.padEnd(7)} ${row.profil.padEnd(14)} ${row.frappesParKO} frappe(s)/craquage  ${row.tours} tours`);
 
 describe('O-011 — effet du Seuil sur le rythme', () => {
   it('chiffre le coût en tours de la courbe du jeu réel', () => {

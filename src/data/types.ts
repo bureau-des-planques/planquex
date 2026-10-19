@@ -133,7 +133,7 @@ export interface BattleState {
   log: string[];
   winner: PlayerId | null;
   /**
-   * Joueur dont le Poste vient d'être mis K.O. et qui doit **choisir** sa relève
+   * Joueur dont le Poste vient de craquer et qui doit **choisir** sa relève
    * (AGENTS.md §4 : « le Rack choisit la relève »). Tant que ce champ est
    * renseigné, aucune autre action n'est acceptée : il faut d'abord trancher.
    * `null` quand rien n'est en attente, ou quand le joueur n'a plus de Rack

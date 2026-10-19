@@ -13,7 +13,30 @@ import type { AttackEffectKind, Card, Faction, Stage } from '@/data/types';
  * fragments : `AGENTS.md` §8.4 exige **zéro** occurrence de ce mot dans `src/`,
  * y compris dans les tests. Le test doit donc le chercher sans l'écrire.
  */
-const FORBIDDEN = ['Gal' + 'ère', 'Gal' + 'èreMon', 'Grèvomon', 'Pokémon', 'Open-space'];
+const FORBIDDEN = [
+  'Gal' + 'ère',
+  'Gal' + 'èreMon',
+  'Grèvomon',
+  'Pokémon',
+  // Vocabulaire abandonné (D-024, D-026) : il ne doit pas revenir dans un texte de carte.
+  // Termes non ambigus uniquement : `Cadre`, `Prime`, `Moral`, `Courrier` sont des mots
+  // français courants (un cadre, une prime de rendement, le moral d'une équipe…) et
+  // feraient des faux positifs ; « K.O. » reste un identifiant interne du code.
+  'Open-space',
+  'Classeur',
+  'Galérodex',
+  'Bac à courrier',
+  'Reprise de poste',
+  // Anciens codes de statut et de faction (les nouveaux : EPUISEMENT, SIESTE,
+  // IMMOBILISATION ; MANAGEMENT, QVT, ATELIER, INTERIM).
+  'BURNOUT',
+  'BLOQUE',
+  'GELE',
+  'MANAGER',
+  'HAPPINESS',
+  'TECHNICIEN',
+  'INTERIMAIRE'
+];
 
 const EFFECT_KINDS: AttackEffectKind[] = [
   'healSelf',
