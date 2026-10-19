@@ -2,20 +2,13 @@ import { ALL_CARDS, getCard, isPlanque } from '@/data';
 import type { BattleAction, BattleState, CardInstance, Faction, PlayerId } from '@/data/types';
 import { DECK_SIZE, deckCanAdd, deckLegal } from '@/game/deck';
 import {
-  attack,
+  applyAction,
   attackPreview,
-  attachEnergy,
   canEvolve,
   canPlayAction,
   createBattle,
   endTurn,
-  evolve,
-  playAction,
-  playBasic,
-  priorityShift,
-  promoteActive,
-  retreat,
-  useAbility
+  promoteActive
 } from '@/game/engine';
 import { drawRandom, seedRng } from '@/game/rng';
 
@@ -267,31 +260,11 @@ function chooseAttack(state: BattleState): BattleAction | null {
   return best === null ? null : { type: 'attack', attackIndex: best };
 }
 
-/** `applyAction` local : les transitions du moteur sont exposées une par une. */
-export function applyBattleAction(state: BattleState, action: BattleAction): BattleState {
-  switch (action.type) {
-    case 'playBasic':
-      return playBasic(state, action.uid, action.slot);
-    case 'evolve':
-      return evolve(state, action.uid, action.targetUid);
-    case 'attachEnergy':
-      return attachEnergy(state, action.targetUid);
-    case 'retreat':
-      return retreat(state, action.benchIndex);
-    case 'attack':
-      return attack(state, action.attackIndex);
-    case 'ability':
-      return useAbility(state);
-    case 'priorityShift':
-      return priorityShift(state, action.uid);
-    case 'playAction':
-      return playAction(state, action.uid);
-    case 'promoteActive':
-      return promoteActive(state, action.benchIndex);
-    case 'endTurn':
-      return endTurn(state);
-  }
-}
+/**
+ * L'IA du simulateur joue une action de `applyAction` — le même dispatcher que
+ * l'écran de combat (#58). Les transitions d'avant vivaient ici : elles sont
+ * maintenant dans `@/game/engine`, à côté de `legalActions`.
+ */
 
 /** Relève : le Rack le plus solide, premier index en cas d'égalité. */
 function chooseBench(state: BattleState, who: PlayerId): number {
@@ -318,14 +291,14 @@ function takeTurn(state: BattleState): BattleState {
   for (let guard = 0; guard < 40; guard += 1) {
     const action = nextAction(next);
     if (!action) break;
-    const after = applyBattleAction(next, action);
+    const after = applyAction(next, action);
     if (after === next) break;
     next = after;
     if (next.phase === 'ended' || next.pendingPromotion) return next;
   }
 
   const move = chooseAttack(next);
-  if (move) next = applyBattleAction(next, move);
+  if (move) next = applyAction(next, move);
   if (next.phase === 'ended' || next.pendingPromotion) return next;
 
   return endTurn(next);
