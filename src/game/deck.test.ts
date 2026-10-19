@@ -23,10 +23,31 @@ describe('deckLegal — Classeur', () => {
     expect(result.reasons).toEqual([]);
   });
 
-  it('refuse un classeur qui ne fait pas 20 cartes', () => {
-    const result = deckLegal(LEGAL_DECK.slice(0, 19));
+  it('refuse un classeur de 19 cartes', () => {
+    const result = deckLegal(LEGAL_DECK.slice(0, DECK_SIZE - 1));
     expect(result.ok).toBe(false);
-    expect(result.reasons[0]).toContain(`${DECK_SIZE} cartes`);
+    expect(result.reasons).toEqual([
+      `Le classeur doit contenir ${DECK_SIZE} cartes (${DECK_SIZE - 1}/${DECK_SIZE}).`
+    ]);
+  });
+
+  it('refuse un classeur de 21 cartes', () => {
+    // 10 noms en double + un onzième nom : 21 cartes, aucun autre motif de refus.
+    const deck = [...BASICS.slice(0, 10), ...BASICS.slice(0, 11)];
+    expect(deck).toHaveLength(DECK_SIZE + 1);
+
+    const result = deckLegal(deck);
+    expect(result.ok).toBe(false);
+    expect(result.reasons).toEqual([
+      `Le classeur doit contenir ${DECK_SIZE} cartes (${DECK_SIZE + 1}/${DECK_SIZE}).`
+    ]);
+  });
+
+  it('refuse un classeur vide', () => {
+    const result = deckLegal([]);
+    expect(result.ok).toBe(false);
+    expect(result.reasons).toContain(`Le classeur doit contenir ${DECK_SIZE} cartes (0/${DECK_SIZE}).`);
+    expect(result.reasons).toContain('Il faut au moins un Planqué N+1.');
   });
 
   it('refuse plus de 2 exemplaires du même nom', () => {
@@ -34,10 +55,36 @@ describe('deckLegal — Classeur', () => {
     expect(deckLegal(deck).reasons).toContain(`Maximum ${MAX_COPIES_PER_NAME} exemplaires du même nom.`);
   });
 
+  it('refuse 3 exemplaires du même nom répartis sur la base et une variante', () => {
+    const base = 'sse-psychologue';
+    const variant = 'sse-psychologue-star2';
+    const filler = BASICS.filter((id) => getCard(id)?.name !== getCard(base)?.name);
+    const deck = [base, base, variant, ...filler.slice(0, 9), ...filler.slice(0, 8)];
+    expect(deck).toHaveLength(DECK_SIZE);
+
+    const result = deckLegal(deck);
+    expect(result.ok).toBe(false);
+    expect(result.reasons).toEqual([`Maximum ${MAX_COPIES_PER_NAME} exemplaires du même nom.`]);
+  });
+
+  it('accepte 2 exemplaires du même nom répartis sur la base et une variante', () => {
+    const base = 'sse-psychologue';
+    const variant = 'sse-psychologue-star2';
+    const filler = BASICS.filter((id) => getCard(id)?.name !== getCard(base)?.name);
+    const deck = [base, variant, ...filler.slice(0, 9), ...filler.slice(0, 9)];
+    expect(deck).toHaveLength(DECK_SIZE);
+
+    expect(deckLegal(deck)).toEqual({ ok: true, reasons: [] });
+  });
+
   it('refuse un classeur sans Planqué N+1', () => {
     const evolutions = ALL_CARDS.filter((card) => !card.variantOf && card.stage !== 'N+1').map((card) => card.id);
     const deck = [...evolutions, ...evolutions].slice(0, DECK_SIZE);
-    expect(deckLegal(deck).reasons).toContain('Il faut au moins un Planqué N+1.');
+    expect(deck).toHaveLength(DECK_SIZE);
+
+    const result = deckLegal(deck);
+    expect(result.ok).toBe(false);
+    expect(result.reasons).toEqual(['Il faut au moins un Planqué N+1.']);
   });
 
   it('compte les exemplaires par nom et résout les cartes', () => {
