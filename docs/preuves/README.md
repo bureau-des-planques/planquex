@@ -31,21 +31,26 @@ preuves/
 Une date par lot, un dossier par lot. **Ne pas écraser un lot précédent** : une preuve
 datée ne se remplace pas, elle se complète.
 
-## Déjà capturé — le legacy
+## Attention — les captures du legacy ne sont PAS des preuves
 
-Quatre captures d'interface existent depuis le 18/10/2026 dans le projet legacy
-(`../../grevomon-pocket/docs/`). Elles ne sont **pas** dans ce dossier, mais elles
-couvrent déjà quatre écrans du lot B :
+`grevomon-pocket/docs/screenshot-*.png` (4 images) et `grevomon-pocket/design/qa/`
+(20 images) sont des captures de **notre propre ancienne application**, pas de
+*Pokémon TCG Pocket*. La preuve est dans le script qui les produit :
+`../../grevomon-pocket/scripts/screenshots.mjs` pilote Chromium contre
+`http://localhost:4173` — le `vite preview` de `grevomon-pocket` — et photographie
+**ses** routes (`/`, `/boosters`, `/collection`, `/wonder`, `/shop`, `/missions`,
+`/profile`, `/deck`, `/battle`).
 
-| Fichier | Écran | État |
-|---|---|---|
-| `screenshot-home.png` | Accueil / hub | existe |
-| `screenshot-booster.png` | Ouverture d'un Arrivage | existe |
-| `screenshot-collection.png` | Parc / collection | existe |
-| `screenshot-card.png` | Fiche carte | existe |
+Conséquence, à ne pas confondre :
 
-**Ne pas les refaire** sans raison. Si un écran est repris, la nouvelle capture va
-dans `ui-<date>/` et la raison est écrite dans le `README.md` du lot.
+- elles **ne comptent pas** comme preuve : ni pour les règles (lot A), ni pour la
+  structure de l'application de référence (lot B) ;
+- elles restent utiles comme **idées d'UI** — `AGENTS.md` §9 l'autorise — à condition
+  de se rappeler que leur vocabulaire est l'ancien (« Galère », et des routes comme
+  `/boosters` ou `/wonder` qui ne sont plus nos termes).
+
+**Le lot B n'est donc pas couvert** : les écrans de `docs/CAPTURES-UI.md` sont tous
+à capturer dans l'application de référence.
 
 ## Modèle de README — lot « astuces »
 

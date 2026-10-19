@@ -42,23 +42,24 @@ les règles (voir `docs/preuves/README.md`), mais la colonne de droite devient
 
 ## 2. Lot B — les écrans que nous avons déjà
 
-Ils servent à **affiner** l'existant. **Les quatre premiers ont déjà une capture
-dans le legacy** (`../../grevomon-pocket/docs/screenshot-*.png`) : regarde-la d'abord, et
-ne la refais que si tu la trouves insuffisante ou datée.
+Ils servent à **affiner** l'existant. **Aucun n'est déjà capturé** : les images du
+legacy (`../../grevomon-pocket/design/qa/`) sont des captures de **notre ancienne
+application**, pas de l'application de référence — voir `docs/preuves/README.md`,
+section « les captures du legacy ne sont PAS des preuves ».
 
-| # | Fichier | Écran | Ce que tu cherches | Déjà couvert ? |
-|---|---|---|---|---|
-| B01 | `B01-accueil.png` | Accueil / hub | La place des raccourcis, la devise en haut, ce qui est mis en avant | ✅ `screenshot-home.png` |
-| B02 | `B02-arrivage.png` | Ouverture d'un Arrivage | Le rythme de révélation, le récapitulatif final, le bouton « encore » | ✅ `screenshot-booster.png` |
-| B03 | `B03-parc.png` | Parc / collection | La grille (colonnes, densité), les filtres, le tri, la barre de progression | ✅ `screenshot-collection.png` |
-| B04 | `B04-fiche-carte.png` | Fiche carte (zoom) | Le gabarit lu en grand : ce qui est lisible, ce qui est relégué | ✅ `screenshot-card.png` |
-| B05 | `B05-chariot.png` | Chariot / éditeur | Comment la validité est montrée, le compteur, les filtres | — |
-| B06 | `B06-combat-plateau.png` | Combat — le plateau | La disposition exacte : le Poste au centre, le Rack dessous, la main en bas, la jauge, les états | — |
-| B07 | `B07-combat-choix.png` | Combat — choisir une action | Comment les Pression sont présentées, ce qui est grisé quand c'est impossible | — |
-| B08 | `B08-combat-resultat.png` | Combat — résultat | Ce qui est récapitulé : qui a gagné, comment, ce qu'on gagne | — |
-| B09 | `B09-boutique.png` | Boutique / Économat | La grille, les devises, la place des minuteurs | — |
-| B10 | `B10-missions.png` | Missions / Note de service | La liste, la progression, la récompense, l'état « réclamé » | — |
-| B11 | `B11-profil.png` | Profil | Avatar, niveau, statistiques visibles | — |
+| # | Fichier | Écran | Ce que tu cherches |
+|---|---|---|---|
+| B01 | `B01-accueil.png` | Accueil / hub | La place des raccourcis, la devise en haut, ce qui est mis en avant |
+| B02 | `B02-arrivage.png` | Ouverture d'un Arrivage | Le rythme de révélation, le récapitulatif final, le bouton « encore » |
+| B03 | `B03-parc.png` | Parc / collection | La grille (colonnes, densité), les filtres, le tri, la barre de progression |
+| B04 | `B04-fiche-carte.png` | Fiche carte (zoom) | Le gabarit lu en grand : ce qui est lisible, ce qui est relégué |
+| B05 | `B05-chariot.png` | Chariot / éditeur | Comment la validité est montrée, le compteur, les filtres |
+| B06 | `B06-combat-plateau.png` | Combat — le plateau | La disposition exacte : le Poste au centre, le Rack dessous, la main en bas, la jauge, les états |
+| B07 | `B07-combat-choix.png` | Combat — choisir une action | Comment les Pression sont présentées, ce qui est grisé quand c'est impossible |
+| B08 | `B08-combat-resultat.png` | Combat — résultat | Ce qui est récapitulé : qui a gagné, comment, ce qu'on gagne |
+| B09 | `B09-boutique.png` | Boutique / Économat | La grille, les devises, la place des minuteurs |
+| B10 | `B10-missions.png` | Missions / Note de service | La liste, la progression, la récompense, l'état « réclamé » |
+| B11 | `B11-profil.png` | Profil | Avatar, niveau, statistiques visibles |
 
 ---
 
