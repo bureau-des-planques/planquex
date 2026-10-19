@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
 import { ALL_CARDS, getCard } from '@/data';
 import type { BattleState, CardInstance, PlayerId } from '@/data/types';
@@ -39,6 +40,16 @@ const STATUS_LABELS: Record<string, string> = {
   DERIVE: 'Dérive'
 };
 
+function HpBar({ current, max }: { current: number; max: number }) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((current / max) * 100))) : 0;
+  const level = pct <= 25 ? 'is-low' : pct <= 50 ? 'is-mid' : '';
+  return (
+    <div className="hp" role="img" aria-label={`Moral : ${current} sur ${max}`}>
+      <div className={`hp__fill ${level}`} style={{ width: `${pct}%` }} />
+    </div>
+  );
+}
+
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
 
@@ -56,6 +67,8 @@ export function Battle() {
   // Une relève en attente bloque tout : il faut la choisir d'abord (§4).
   const canAct = isPlayerTurn && state.pendingPromotion === null;
   const playerCard = player.active ? getCard(player.active.cardId) : undefined;
+  /** Dernière ligne du journal : ce qui vient de se passer, mis en avant. */
+  const lastLog = state.log.at(-1) ?? '';
 
   const restart = useCallback(() => {
     setState(createBattle(playerDeck, testDeck()));
@@ -101,22 +114,57 @@ export function Battle() {
         </p>
       )}
 
+      {lastLog && (
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.p
+            key={state.log.length}
+            className={`banner ${/K\.O\./.test(lastLog) ? 'banner--ko' : ''}`}
+            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+          >
+            {lastLog}
+          </motion.p>
+        </AnimatePresence>
+      )}
+
       <section className="board">
         {rows.map(({ id, label, side }) => (
           <article className={`board__side ${state.current === id && state.phase === 'playing' ? 'is-current' : ''}`} key={id}>
             <header className="board__head">
               <h2>{label}</h2>
-              <span className="board__points">{side.points} / 3 Primes</span>
+              <span className={`board__points ${side.points > 0 ? 'is-scored' : ''}`}>
+                {'★'.repeat(side.points)}
+                {'☆'.repeat(Math.max(0, 3 - side.points))}
+              </span>
             </header>
 
             <div className="board__poste">
               <span className="stat-label">Poste</span>
-              <strong>{describe(side.active)}</strong>
-              {side.active && (
-                <span className="muted">
-                  {side.active.energy} café{side.active.energy > 1 ? 's' : ''} · Machine {side.energyZone}
-                  {side.active.status ? ` · ${STATUS_LABELS[side.active.status]}` : ''}
-                </span>
+              {side.active ? (
+                <>
+                  <div className="poste__head">
+                    <strong>{getCard(side.active.cardId)?.name ?? 'Carte inconnue'}</strong>
+                    <span className="poste__hp">
+                      {side.active.hp}/{side.active.maxHp}
+                    </span>
+                  </div>
+                  <HpBar current={side.active.hp} max={side.active.maxHp} />
+                  <div className="poste__meta">
+                    <span className="pips" title={`${side.active.energy} café(s) attaché(s)`}>
+                      {side.active.energy > 0 ? '●'.repeat(side.active.energy) : '○'}
+                    </span>
+                    <span className="muted">Machine {side.energyZone}</span>
+                    {side.active.status && (
+                      <span className={`status-chip status-chip--${side.active.status.toLowerCase()}`}>
+                        {STATUS_LABELS[side.active.status]}
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <strong className="muted">Aucun Planqué — relève à choisir</strong>
               )}
             </div>
 
@@ -194,7 +242,9 @@ export function Battle() {
             disabled={!canAct || player.hasAttacked || (player.active?.energy ?? 0) < attackEntry.cost}
             onClick={() => setState((current) => attack(current, index))}
           >
-            <Swords size={16} /> {attackEntry.name} ({attackEntry.damage})
+            <Swords size={16} /> {attackEntry.name}
+            <span className="pips">{'●'.repeat(attackEntry.cost) || '○'}</span>
+            <span className="attack__dmg">{attackEntry.damage}</span>
           </button>
         ))}
 

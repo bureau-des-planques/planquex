@@ -754,6 +754,149 @@ code {
   gap: 0.5rem;
 }
 
+/* ---------- Ajout rapide au classeur ---------- */
+
+.section__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.card-slot__quick {
+  align-items: center;
+  background: rgb(11 18 32 / 88%);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  height: 26px;
+  justify-content: center;
+  left: 0.45rem;
+  position: absolute;
+  top: 0.45rem;
+  width: 26px;
+}
+
+.card-slot__quick:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.card-slot__quick:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.card-slot.is-full .card {
+  opacity: 0.55;
+}
+
+/* ---------- Retour visuel du combat ---------- */
+
+.banner {
+  background: linear-gradient(90deg, rgb(79 142 247 / 18%), rgb(19 28 46 / 60%));
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+}
+
+.banner--ko {
+  background: linear-gradient(90deg, rgb(224 163 62 / 25%), rgb(19 28 46 / 60%));
+  border-color: var(--warn);
+}
+
+.poste__head {
+  align-items: baseline;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.poste__hp {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.hp {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.hp__fill {
+  background: linear-gradient(90deg, #2f9e77, #6fd3a8);
+  height: 100%;
+  transition: width 320ms ease;
+}
+
+.hp__fill.is-mid {
+  background: linear-gradient(90deg, #d08c2c, #f0c75e);
+}
+
+.hp__fill.is-low {
+  background: linear-gradient(90deg, #c0442e, #f07a5e);
+}
+
+.poste__meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pips {
+  color: var(--accent);
+  font-size: 0.7rem;
+  letter-spacing: -0.05em;
+}
+
+.status-chip {
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.1rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.status-chip--surcharge {
+  background: rgb(155 89 182 / 25%);
+  border: 1px solid #9b59b6;
+}
+
+.status-chip--burnout {
+  background: rgb(224 120 62 / 25%);
+  border: 1px solid #e0783e;
+}
+
+.status-chip--bloque {
+  background: rgb(120 140 170 / 25%);
+  border: 1px solid #788caa;
+}
+
+.status-chip--gele {
+  background: rgb(90 170 220 / 25%);
+  border: 1px solid #5aaadc;
+}
+
+.status-chip--derive {
+  background: rgb(200 160 80 / 25%);
+  border: 1px solid #c8a050;
+}
+
+.board__points.is-scored {
+  color: var(--accent);
+  font-size: 1rem;
+  letter-spacing: 0.12em;
+}
+
 @media (max-width: 620px) {
   .card-detail {
     grid-template-columns: 1fr;

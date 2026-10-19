@@ -1,19 +1,29 @@
 import { useMemo, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Info, Sparkles, Trash2 } from 'lucide-react';
 import { ALL_CARDS, STAGE_META } from '@/data';
 import type { Card } from '@/data/types';
-import { deckCards, deckCounts, deckLegal } from '@/game/deck';
+import {
+  autoDeck,
+  deckCanAdd,
+  deckCards,
+  deckCounts,
+  deckCountsByName,
+  deckLegal,
+  MAX_COPIES_PER_NAME
+} from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { CardView } from '@/components/CardView';
 import { CardDetail } from '@/components/CardDetail';
 
 export function Deck() {
-  const { owned, deck, toggleDeck, clearDeck, addCard } = useStore();
+  const { owned, deck, addToDeck, removeFromDeck, setDeck, clearDeck, addCard } = useStore();
   const [selected, setSelected] = useState<Card | null>(null);
 
   const legality = useMemo(() => deckLegal(deck), [deck]);
   const counts = useMemo(() => deckCounts(deck), [deck]);
+  const byName = useMemo(() => deckCountsByName(deck), [deck]);
   const inDeck = useMemo(() => deckCards(deck), [deck]);
+  const automatic = useMemo(() => autoDeck(owned), [owned]);
 
   const available = useMemo(
     () =>
@@ -30,28 +40,61 @@ export function Deck() {
         <div>
           <p className="eyebrow">Classeur</p>
           <h1>{deck.length}/20 cartes</h1>
-          <p className="muted">2 exemplaires maximum par nom, au moins un Planqué N+1.</p>
+          <p className="muted">
+            Un clic sur une carte l’ajoute, un clic sur une carte du haut la retire.{' '}
+            {MAX_COPIES_PER_NAME} exemplaires maximum par nom.
+          </p>
         </div>
-        <button type="button" className="button" onClick={clearDeck} disabled={deck.length === 0}>
-          <Trash2 size={16} /> Vider
-        </button>
+        <div className="section__actions">
+          <button
+            type="button"
+            className="button button--primary"
+            disabled={automatic.deck.length === 0}
+            onClick={() => setDeck(automatic.deck)}
+            title="Remplace le classeur par 20 cartes prises dans ta collection"
+          >
+            <Sparkles size={16} /> Remplir ({automatic.deck.length})
+          </button>
+          <button type="button" className="button" onClick={clearDeck} disabled={deck.length === 0}>
+            <Trash2 size={16} /> Vider
+          </button>
+        </div>
       </section>
 
+      {automatic.missing > 0 && (
+        <p className="notice notice--warn">
+          Ta collection ne couvre que <strong>{automatic.deck.length}</strong> cartes sur 20 : ouvre des bacs à
+          courrier depuis l’accueil pour compléter.
+        </p>
+      )}
+
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
-        {legality.ok ? 'Classeur valide.' : legality.reasons.join(' ')}
+        {legality.ok ? 'Classeur valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
 
       <section className="section">
         <div className="section__head">
           <h2>Dedans ({inDeck.length})</h2>
+          <span className="muted">clic = retirer un exemplaire</span>
         </div>
         {inDeck.length === 0 ? (
-          <p className="empty">Le classeur est vide. Ajoute des cartes depuis ta collection.</p>
+          <p className="empty">
+            Le classeur est vide. Clique une carte du Galérodex ci-dessous, ou utilise « Remplir ».
+          </p>
         ) : (
           <div className="card-grid">
             {inDeck.map((card, index) => (
               <div className="card-slot" key={`${card.id}-${index}`}>
-                <CardView card={card} compact onClick={() => toggleDeck(card.id)} />
+                <CardView card={card} compact onClick={() => removeFromDeck(card.id)} />
+                <button
+                  type="button"
+                  className="card-slot__quick"
+                  title={`Fiche de ${card.name}`}
+                  aria-label={`Fiche de ${card.name}`}
+                  onClick={() => setSelected(card)}
+                >
+                  <Info size={14} />
+                </button>
                 <span className="card-slot__count">×{counts[card.id] ?? 0}</span>
               </div>
             ))}
@@ -62,24 +105,36 @@ export function Deck() {
       <section className="section">
         <div className="section__head">
           <h2>Galérodex ({available.length})</h2>
+          <span className="muted">clic = ajouter au classeur</span>
         </div>
         {available.length === 0 ? (
           <p className="empty">Aucune carte possédée. Ouvre un bac à courrier depuis l’accueil.</p>
         ) : (
           <div className="card-grid">
-            {available.map((card) => (
-              <div className="card-slot" key={card.id}>
-                <CardView
-                  card={card}
-                  compact
-                  selected={deck.includes(card.id)}
-                  onClick={() => setSelected(card)}
-                />
-                <span className={`card-slot__count ${(counts[card.id] ?? 0) === 0 ? 'is-missing' : ''}`}>
-                  ×{counts[card.id] ?? 0}
-                </span>
-              </div>
-            ))}
+            {available.map((card) => {
+              const used = byName[card.name] ?? 0;
+              const canAdd = deckCanAdd(deck, card.id);
+              return (
+                <div className={`card-slot ${canAdd ? '' : 'is-full'}`} key={card.id}>
+                  <CardView card={card} compact selected={used > 0} onClick={() => addToDeck(card.id)} />
+                  <button
+                    type="button"
+                    className="card-slot__quick"
+                    title={`Fiche de ${card.name}`}
+                    aria-label={`Fiche de ${card.name}`}
+                    onClick={() => setSelected(card)}
+                  >
+                    <Info size={14} />
+                  </button>
+                  <span
+                    className={`card-slot__count ${used === 0 ? 'is-missing' : ''}`}
+                    title={`${used} exemplaire(s) de « ${card.name} » au classeur`}
+                  >
+                    ×{used}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -89,7 +144,7 @@ export function Deck() {
           card={selected}
           owned={owned[selected.id] ?? 0}
           onClose={() => setSelected(null)}
-          onAddDeck={() => toggleDeck(selected.id)}
+          onAddDeck={() => addToDeck(selected.id)}
           onAddCard={() => addCard(selected.id)}
         />
       )}

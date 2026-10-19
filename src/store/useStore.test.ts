@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ALL_CARDS } from '@/data';
+import { ALL_CARDS, getCard } from '@/data';
 import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 
@@ -21,7 +21,7 @@ describe('Bac à courrier', () => {
 });
 
 describe('Classeur du store', () => {
-  it('plafonne à 2 exemplaires du même nom, un 3e retirant les précédents', () => {
+  it('ajoute une carte par clic, puis retire un seul exemplaire au-delà du plafond', () => {
     const id = ALL_CARDS[0].id;
     const { toggleDeck } = useStore.getState();
 
@@ -30,7 +30,23 @@ describe('Classeur du store', () => {
     expect(useStore.getState().deck.filter((entry) => entry === id)).toHaveLength(MAX_COPIES_PER_NAME);
 
     toggleDeck(id);
-    expect(useStore.getState().deck.filter((entry) => entry === id)).toHaveLength(0);
+    expect(useStore.getState().deck.filter((entry) => entry === id)).toHaveLength(MAX_COPIES_PER_NAME - 1);
+  });
+
+  it('plafonne par nom : 2 exemplaires + 2 variantes du même Planqué sont refusés', () => {
+    const base = 'sse-psychologue';
+    const variant = 'sse-psychologue-star2';
+    const baseName = getCard(base)?.name;
+    expect(baseName, 'carte de test absente').toBeTruthy();
+    expect(getCard(variant)?.name).toBe(baseName);
+
+    const { addToDeck } = useStore.getState();
+    addToDeck(base);
+    addToDeck(base);
+    addToDeck(variant);
+
+    expect(useStore.getState().deck.filter((entry) => entry === variant)).toHaveLength(0);
+    expect(useStore.getState().deck).toHaveLength(MAX_COPIES_PER_NAME);
   });
 
   it('ne dépasse jamais la taille du Classeur', () => {

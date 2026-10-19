@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, STAGE_META } from '@/data';
 import type { Card, Faction, Stage } from '@/data/types';
+import { deckCanAdd, deckCountsByName, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { CardView } from '@/components/CardView';
 import { CardDetail } from '@/components/CardDetail';
@@ -9,11 +10,13 @@ import { CardDetail } from '@/components/CardDetail';
 const STAGES: Stage[] = ['N+1', 'N+2', 'COMEX'];
 
 export function Collection() {
-  const { owned, deck, toggleDeck, addCard } = useStore();
+  const { owned, deck, addToDeck, addCard } = useStore();
   const [query, setQuery] = useState('');
   const [faction, setFaction] = useState<Faction | 'ALL'>('ALL');
   const [stage, setStage] = useState<Stage | 'ALL'>('ALL');
   const [selected, setSelected] = useState<Card | null>(null);
+
+  const byName = useMemo(() => deckCountsByName(deck), [deck]);
 
   const factions = useMemo(
     () => (Object.keys(FACTION_META) as Faction[]).sort((a, b) =>
@@ -86,17 +89,26 @@ export function Collection() {
         <div className="card-grid">
           {visible.map((card) => {
             const count = owned[card.id] ?? 0;
+            const used = byName[card.name] ?? 0;
+            const canAdd = deckCanAdd(deck, card.id);
             return (
-              <div className="card-slot" key={card.id}>
-                <CardView
-                  card={card}
-                  compact
-                  selected={deck.includes(card.id)}
-                  onClick={() => setSelected(card)}
-                />
-                <span className={`card-slot__count ${count === 0 ? 'is-missing' : ''}`}>
-                  ×{count}
-                </span>
+              <div className={`card-slot ${canAdd ? '' : 'is-full'}`} key={card.id}>
+                <CardView card={card} compact selected={used > 0} onClick={() => setSelected(card)} />
+                <button
+                  type="button"
+                  className="card-slot__quick"
+                  title={
+                    canAdd
+                      ? `Ajouter « ${card.name} » au classeur (${used}/${MAX_COPIES_PER_NAME})`
+                      : `Classeur complet pour « ${card.name} »`
+                  }
+                  aria-label={`Ajouter ${card.name} au classeur`}
+                  disabled={!canAdd}
+                  onClick={() => addToDeck(card.id)}
+                >
+                  <Plus size={14} />
+                </button>
+                <span className={`card-slot__count ${count === 0 ? 'is-missing' : ''}`}>×{count}</span>
               </div>
             );
           })}
@@ -108,7 +120,7 @@ export function Collection() {
           card={selected}
           owned={owned[selected.id] ?? 0}
           onClose={() => setSelected(null)}
-          onAddDeck={() => toggleDeck(selected.id)}
+          onAddDeck={() => addToDeck(selected.id)}
           onAddCard={() => addCard(selected.id)}
         />
       )}

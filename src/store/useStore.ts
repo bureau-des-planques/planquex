@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ALL_CARDS } from '@/data';
-import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
+import { deckCanAdd } from '@/game/deck';
 import type { Card, Rarity } from '@/data/types';
 
 /** Clé de persistance. Source unique : `Settings.tsx` l'affiche, `persist` l'écrit. */
@@ -36,7 +36,10 @@ export interface AppState {
   reducedMotion: boolean;
   openPack: () => Card[];
   addCard: (cardId: string, amount?: number) => void;
+  addToDeck: (cardId: string) => void;
+  removeFromDeck: (cardId: string) => void;
   toggleDeck: (cardId: string) => void;
+  setDeck: (deck: string[]) => void;
   clearDeck: () => void;
   reset: () => void;
   setName: (name: string) => void;
@@ -65,16 +68,25 @@ export const useStore = create<AppState>()(
           owned: { ...state.owned, [cardId]: (state.owned[cardId] ?? 0) + amount }
         }));
       },
+      addToDeck: (cardId) => {
+        set((state) => (deckCanAdd(state.deck, cardId) ? { deck: [...state.deck, cardId] } : {}));
+      },
+      removeFromDeck: (cardId) => {
+        set((state) => {
+          const index = state.deck.findIndex((id) => id === cardId);
+          if (index < 0) return {};
+          const deck = [...state.deck];
+          deck.splice(index, 1);
+          return { deck };
+        });
+      },
+      /** Un clic : ajoute si c'est possible, sinon retire **un** exemplaire. */
       toggleDeck: (cardId) => {
         const state = get();
-        const count = state.deck.filter((id) => id === cardId).length;
-        if (count >= MAX_COPIES_PER_NAME) {
-          set({ deck: state.deck.filter((id) => id !== cardId) });
-          return;
-        }
-        if (state.deck.length >= DECK_SIZE) return;
-        set({ deck: [...state.deck, cardId] });
+        if (deckCanAdd(state.deck, cardId)) state.addToDeck(cardId);
+        else state.removeFromDeck(cardId);
       },
+      setDeck: (deck) => set({ deck }),
       clearDeck: () => set({ deck: [] }),
       reset: () => set({ owned: starterOwned(), deck: [], packsOpened: 0, name: 'Employé 404' }),
       setName: (name) => set({ name }),
