@@ -252,8 +252,35 @@ Ce qui est **détourné, et le mérite** : Pression (attaque), Moral (points de 
 (ex), Heures (Primes), Rebut (défausse). Dans chaque cas, le mot détourné apporte quelque
 chose que le mot d'origine n'avait pas.
 
-Et deux cas où l'écart est **discutable** — voir la manche ci-dessous : **Vulnérabilité**
-(officiel : Faiblesse) et **Lieu** (officiel : Stade).
+Et deux cas où l'écart est **discutable** — traité en manche, et tranché : **Vulnérabilité**
+est **conservée** (la règle dirait « Faiblesse », mais le mot de l'audit et du risque appliqué
+à une machine gagne sa place), et **Lieu** reste en attente, pour l'extension qui dégèlera les
+Lieux — « le Site » étant le meilleur candidat.
+
+### Le cadrage Stress / Seuil / craquer
+
+Trois mots retrouvés dans le legacy — `grevomon-pocket/docs/RULES-4b.md:40-42` — cités comme
+**idées**, jamais comme règles (`AGENTS.md` §9) :
+
+| Le jeu de base | Nous |
+|---|---|
+| points de vie | **le Seuil** — la limite avant la casse |
+| dégâts subis | **le Stress** — ce que la Pression fait monter |
+| K.O. | **craquer** — le salarié lâche, la carte quitte le jeu |
+| — | l'échelle des stades est complète : **Entrant → N+1 → N+2**, et **COMEX** pour les ex |
+
+C'est une **représentation**, pas une mécanique : `Stress = Seuil − Moral`, même calcul, même
+valeur, même miroir. §4.1 bannit le *mécanisme* 4b — un compteur maison avec ses propres
+règles — pas une façon d'afficher les points de vie. Conséquence : « Moral », « dégâts » et
+« K.O. » quittent le vocabulaire, et les 286 textes diront « **prend 10 de stress** »,
+« **il craque** ».
+
+Pourquoi c'est mieux : un moral qui *descend* décrit une victime ; un **stress qui monte
+jusqu'à ce que le collègue craque** décrit ce que le système fait aux gens. C'est le punch up
+exact — et c'est Bastien qui l'avait en tête.
+
+L'idée du legacy pour la défausse — **le Placard**, « mettre au placard » — a été offerte et
+non retenue : la pile garde **le Rebut**.
 
 ### L'étage du dessus : le **Marché**
 
