@@ -8,6 +8,17 @@ import { describe, expect, it } from 'vitest';
  * Le fichier YAML est lu comme du texte : les assertions portent sur les
  * déclencheurs, sur la version de Node et sur l'enchaînement des commandes de
  * `AGENTS.md` §7. Aucune dépendance d'analyse YAML n'est ajoutée pour ça.
+ *
+ * **Ce que ce test garde, et ce qu'il ne garde pas (ticket #52).** Lire un YAML
+ * comme du texte rend un test fragile dès qu'il recopie une valeur d'implémentation :
+ * chaque montée de version d'une action le faisait échouer sans régression. Les
+ * assertions ci-dessous ne portent donc plus que sur des **invariants du dépôt** :
+ * les déclencheurs, `runs-on`, l'absence de `continue-on-error`/`secrets.`, la
+ * présence de `checkout` et `setup-node` **épinglées par version majeure** (quel que
+ * soit le numéro), et l'ordre des commandes de `AGENTS.md` §7. La version de Node
+ * (`24`) reste en dur : elle est actée dans `AGENTS.md` §7, ce n'est pas un détail
+ * du workflow. Ce qui n'est plus testé : le numéro exact d'une action et la mise en
+ * forme du YAML — un relecteur les voit dans le diff.
  */
 const WORKFLOW_PATH = fileURLToPath(new URL('../.github/workflows/ci.yml', import.meta.url));
 const workflow = readFileSync(WORKFLOW_PATH, 'utf8');
@@ -31,8 +42,10 @@ describe('.github/workflows/ci.yml', () => {
     const uses = [...workflow.matchAll(/uses:\s*(\S+)/g)].map((match) => match[1]);
     expect(uses.length).toBeGreaterThan(0);
     for (const ref of uses) expect(ref, ref).toMatch(/@v\d+$/);
-    expect(uses).toContain('actions/checkout@v7');
-    expect(uses).toContain('actions/setup-node@v7');
+    // Les numéros majeurs ne sont pas figés : seule la présence compte (#52).
+    const names = uses.map((ref) => ref.split('@')[0]);
+    expect(names).toContain('actions/checkout');
+    expect(names).toContain('actions/setup-node');
   });
 
   it('enchaîne npm ci, check, tests puis build, dans cet ordre', () => {
