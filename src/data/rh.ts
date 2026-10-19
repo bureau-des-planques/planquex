@@ -265,12 +265,12 @@ export const RH_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'rh-responsable-qvt',
-    name: 'Responsable QVT',
+    name: 'Chargé de prévention',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Enquête satisfaction', cost: 1, damage: 10, text: "L'adversaire révèle sa main.", effects: [] }],
+    attacks: [{ name: 'Enquête satisfaction', cost: 1, damage: 10 }],
     flavor: "Il a fait l'enquête. Les résultats sont confidentiels."
   }),
   base({
