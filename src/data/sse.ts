@@ -107,7 +107,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Respiration', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Relaxation', cost: 2, damage: 40 }],
-    flavor: 'Respire. L’open-space est encore là.'
+    flavor: 'Respire. Le Rack est encore là.'
   }),
   base({
     id: 'sse-medecin-chef',

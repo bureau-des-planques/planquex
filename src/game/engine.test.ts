@@ -731,3 +731,28 @@ describe('Cartes Action — Objet illimité, Collègue 1 par tour (AGENTS.md §4
     expect(playAction(pending, uids[0] ?? '')).toBe(pending);
   });
 });
+
+describe('Effet reduceDamage — réduction de Stress (ticket #43)', () => {
+  it('attackPreview tient compte d’une réduction d’instance (defender.damageReduction)', () => {
+    const state = structuredClone(freshBattle());
+    state.current = 'player';
+    const before = attackPreview(state, 0);
+    const ai = state.players.ai.active;
+    if (!ai) throw new Error('Poste adverse vide');
+    ai.damageReduction = 10;
+    expect(attackPreview(state, 0)).toBe(Math.max(0, before - 10));
+  });
+
+  it('l’attaque « Aménagement » (Référent handicap) pose une réduction de 10 sur l’attaquant', () => {
+    const state = structuredClone(freshBattle());
+    state.current = 'player';
+    state.pendingPromotion = null;
+    state.players.player.hasAttacked = false;
+    const referent = createInstance('rh-referent-handicap');
+    referent.energy = 5;
+    state.players.player.active = referent;
+
+    const after = attack(state, 0);
+    expect(after.players.player.active?.damageReduction).toBe(10);
+  });
+});

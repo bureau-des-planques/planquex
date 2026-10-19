@@ -71,7 +71,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     ability: { name: 'Écoute active', text: 'Une fois par tour : soigne 10 et retire un statut d\'un de tes Planqués.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Enquête satisfaction', cost: 2, damage: 50, text: 'L\'adversaire révèle sa main.', effects: [] }],
+    attacks: [{ name: 'Enquête satisfaction', cost: 2, damage: 50 }],
     flavor: 'Il a lu les réponses. Il a fait comme si.'
   }),
   base({
@@ -217,7 +217,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 55,
     retreat: 1,
-    attacks: [{ name: 'Posture du lotus', cost: 1, damage: 10, text: 'Ce Planqué ne peut pas être Dérivé au prochain tour.', effects: [] }],
+    attacks: [{ name: 'Posture du lotus', cost: 1, damage: 10 }],
     flavor: 'Elle fait le chien tête en bas. Le PDG fait le paon.'
   }),
   base({
@@ -227,7 +227,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 65,
     retreat: 1,
-    attacks: [{ name: 'Café pour tous', cost: 1, damage: 10, text: 'Attache 1 café à un Planqué de ton Rack.' }],
+    attacks: [{ name: 'Café pour tous', cost: 1, damage: 10 }],
     flavor: 'Il a fait le tour des bureaux. La machine est en panne.'
   }),
   base({
@@ -247,7 +247,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Shiatsu express', cost: 1, damage: 20, text: 'Retire un statut de ce Planqué.' }],
+    attacks: [{ name: 'Shiatsu express', cost: 1, damage: 20 }],
     flavor: 'Il a massé les épaules. Le stress est remonté au cou.'
   })
 ];

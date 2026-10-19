@@ -150,7 +150,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
   base({
     id: 'direction-directeur-projet',
     evolvesFrom: 'direction-secretaire-direction',
-    name: 'Directeur de projet',
+    name: 'Directeur de programme',
     stage: 'N+1',
     rarity: '2D',
     hp: 90,
@@ -175,7 +175,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'direction-auditeur-interne',
-    name: 'Auditeur interne',
+    name: 'Auditeur de direction',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,

@@ -24,12 +24,12 @@ import type { AttackEffectKind, Card, Faction, PlanqueCard, Rarity, Stage } from
  * fragments : `AGENTS.md` §8.4 exige **zéro** occurrence de ce mot dans `src/`,
  * y compris dans les tests. Le test doit donc le chercher sans l'écrire.
  */
-const FORBIDDEN = [
+const FORBIDDEN_ANY_CASE = [
   'Gal' + 'ère',
   'Gal' + 'èreMon',
   'Grèvomon',
   'Pokémon',
-  // Vocabulaire abandonné (D-024, D-026) : il ne doit pas revenir dans un texte de carte.
+  // Vocabulaire abandonné (D-024, D-026), cherché **sans tenir compte de la casse**.
   // Termes non ambigus uniquement : `Cadre`, `Prime`, `Moral`, `Courrier` sont des mots
   // français courants (un cadre, une prime de rendement, le moral d'une équipe…) et
   // feraient des faux positifs ; « K.O. » reste un identifiant interne du code.
@@ -37,17 +37,16 @@ const FORBIDDEN = [
   'Classeur',
   'Galérodex',
   'Bac à courrier',
-  'Reprise de poste',
-  // Anciens codes de statut et de faction (les nouveaux : EPUISEMENT, SIESTE,
-  // IMMOBILISATION ; MANAGEMENT, QVT, ATELIER, INTERIM).
-  'BURNOUT',
-  'BLOQUE',
-  'GELE',
-  'MANAGER',
-  'HAPPINESS',
-  'TECHNICIEN',
-  'INTERIMAIRE'
+  'Reprise de poste'
 ];
+
+/**
+ * Anciens codes de statut et de faction, cherchés en **respectant la casse** : les
+ * minuscules `manager`, `technicien`, `happiness`… sont des mots légitimes (D-024).
+ * Les nouveaux codes : EPUISEMENT, SIESTE, IMMOBILISATION ; MANAGEMENT, QVT, ATELIER,
+ * INTERIM.
+ */
+const FORBIDDEN_UPPER = ['BURNOUT', 'BLOQUE', 'GELE', 'MANAGER', 'HAPPINESS', 'TECHNICIEN', 'INTERIMAIRE'];
 
 const EFFECT_KINDS: AttackEffectKind[] = [
   'healSelf',
@@ -331,11 +330,29 @@ describe('Cartes — textes (AGENTS.md §3, §5)', () => {
   it('écrit les textes en français, sans mot interdit ni « banc »', () => {
     for (const card of ALL_CARDS) {
       for (const text of texts(card)) {
-        for (const word of FORBIDDEN) {
+        for (const word of FORBIDDEN_ANY_CASE) {
+          expect(text.toLowerCase(), `${card.id} : « ${word} »`).not.toContain(word.toLowerCase());
+        }
+        for (const word of FORBIDDEN_UPPER) {
           expect(text, `${card.id} : « ${word} »`).not.toContain(word);
         }
         // §3.1 : Bench → Rack. « banc » n'a rien à faire dans un texte de carte.
         expect(text, `${card.id} : « ${text} »`).not.toMatch(/\bbanc\b/i);
+      }
+    }
+  });
+
+  it('ne donne de texte (d’effet) à une attaque que si elle porte un effet', () => {
+    // Sens inverse du test suivant : un texte qui décrit un effet doit être adossé à un
+    // `effects` réel — sinon la carte promet une mécanique qui n'arrive pas.
+    for (const card of PLANQUES) {
+      for (const attack of card.attacks) {
+        if (attack.text?.trim()) {
+          expect(
+            (attack.effects ?? []).length,
+            `${card.id}/${attack.name} : texte sans effet`,
+          ).toBeGreaterThan(0);
+        }
       }
     }
   });
@@ -354,6 +371,26 @@ describe('Cartes — textes (AGENTS.md §3, §5)', () => {
       }
       expect(card.flavor.trim(), card.id).not.toBe('');
     }
+  });
+});
+
+describe('Cartes — unicité des noms (deck.ts compte par nom)', () => {
+  it('n’a aucun nom partagé par deux cartes de bases différentes', () => {
+    // `deck.ts` limite les exemplaires **par nom**. Une base et ses variantes peuvent
+    // partager un nom (c'est la même carte) ; deux bases distinctes, non — sinon la
+    // limite sauterait silencieusement.
+    const byName = new Map<string, Card[]>();
+    for (const card of ALL_CARDS) {
+      byName.set(card.name, [...(byName.get(card.name) ?? []), card]);
+    }
+    const bad = [...byName.entries()].filter(([, cards]) => {
+      const bases = new Set(cards.map((card) => card.variantOf ?? card.id));
+      return bases.size > 1;
+    });
+    expect(
+      bad.map(([name]) => name),
+      `noms partagés par des bases distinctes : ${JSON.stringify(bad.map(([name, c]) => [name, c.map((x) => x.id)]))}`,
+    ).toEqual([]);
   });
 });
 

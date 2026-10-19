@@ -25,7 +25,14 @@ describe('.github/workflows/ci.yml', () => {
 
   it('aligne Node sur la version du dépôt (v24, AGENTS.md §7)', () => {
     expect(workflow).toMatch(/node-version: 24\b/);
-    expect(workflow).toMatch(/actions\/setup-node@v/);
+  });
+
+  it('épingle la version majeure de chaque action (`@vN`) et nomme les deux attendues', () => {
+    const uses = [...workflow.matchAll(/uses:\s*(\S+)/g)].map((match) => match[1]);
+    expect(uses.length).toBeGreaterThan(0);
+    for (const ref of uses) expect(ref, ref).toMatch(/@v\d+$/);
+    expect(uses).toContain('actions/checkout@v7');
+    expect(uses).toContain('actions/setup-node@v7');
   });
 
   it('enchaîne npm ci, check, tests puis build, dans cet ordre', () => {

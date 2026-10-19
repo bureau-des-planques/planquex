@@ -279,7 +279,7 @@ npm run check
 npm test
 npm run build
 ls -la dist/index.html dist/sw.js
-find src -name '*.test.*' -o -name '*.spec.*'
+find src scripts -name '*.test.*' -o -name '*.spec.*'
 grep -rn "Galère" src || true
 grep -rn "from '@/" src | wc -l
 find src -type f | sort

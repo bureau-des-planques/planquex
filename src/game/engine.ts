@@ -123,6 +123,12 @@ function startTurn(state: BattleState) {
   player.hasUsedPriorityShift = false;
   player.hasPlayedSupporter = false;
 
+  // La réduction de Stress posée par `reduceDamage` ne dure que le tour adverse :
+  // elle expire au début du tour de son propriétaire.
+  for (const card of [player.active, ...player.bench]) {
+    if (card) card.damageReduction = 0;
+  }
+
   const isFirstPlayerFirstTurn = state.turn === 1 && state.current === 'player';
   if (!isFirstPlayerFirstTurn) {
     draw(state, state.current, 1);
@@ -336,8 +342,10 @@ function attackDamage(attacker: CardInstance, defender: CardInstance, attack: At
   const defenderCard = getCard(defender.cardId);
   if (!isPlanque(attackerCard) || !isPlanque(defenderCard)) return 0;
   const weakness = defenderCard.weakness === attackerCard.faction ? 20 : 0;
-  const reduction = defenderCard.ability?.kind === 'reduceDamage' ? defenderCard.ability.amount ?? 0 : 0;
-  return Math.max(0, attack.damage + weakness - reduction);
+  const abilityReduction = defenderCard.ability?.kind === 'reduceDamage' ? defenderCard.ability.amount ?? 0 : 0;
+  // Réduction posée par un effet d'attaque (`reduceDamage`), valable le tour adverse.
+  const instanceReduction = defender.damageReduction ?? 0;
+  return Math.max(0, attack.damage + weakness - abilityReduction - instanceReduction);
 }
 
 function hasStatus(card: CardInstance, status: Status): boolean {
