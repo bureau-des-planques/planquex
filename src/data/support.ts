@@ -379,6 +379,23 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'Revue de tickets', cost: 2, damage: 40 }
     ],
     flavor: 'Il coordonne les files d’attente. Elles ne se rejoignent jamais.'
+  }),
+
+  // Second COMEX (vague 1, #66) : la ligne des systèmes, distincte de la signature.
+  base({
+    id: 'support-ingenieur-systemes-ex',
+    evolvesFrom: 'support-administrateur-systemes',
+    name: 'Ingénieur systèmes COMEX',
+    stage: 'N+2',
+    rarity: '4D',
+    hp: 180,
+    retreat: 3,
+    ex: true,
+    attacks: [
+      { name: 'Bascule', cost: 2, damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Plan de continuité', cost: 3, damage: 110, text: 'Soigne 20 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 20 }, { kind: 'selfDamage', amount: 20 }] }
+    ],
+    flavor: 'Deux Interventions. Le plan de continuité tient sur une seule page.'
   })
 ];
 

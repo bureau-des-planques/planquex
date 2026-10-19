@@ -437,6 +437,23 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Tournoi de babyfoot', cost: 1, damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
     flavor: 'Le tournoi est annulé. La coupe est déjà gravée.'
+  }),
+
+  // Second COMEX (vague 1, #66) : la ligne du responsable QVT, distincte de la signature.
+  base({
+    id: 'qvt-directeur-qvt-ex',
+    evolvesFrom: 'qvt-responsable-qvt',
+    name: 'Directeur QVT COMEX',
+    stage: 'N+2',
+    rarity: '4D',
+    hp: 180,
+    retreat: 3,
+    ex: true,
+    attacks: [
+      { name: 'Plan d\'action', cost: 2, damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Semaine de la QVT', cost: 3, damage: 100, text: 'Soigne 30 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 30 }, { kind: 'selfDamage', amount: 20 }] }
+    ],
+    flavor: 'Deux Interventions. Une semaine entière à ne rien produire.'
   })
 ];
 

@@ -346,6 +346,37 @@ describe('Cartes — COMEX et Vulnérabilité (AGENTS.md §3.2, §5)', () => {
   });
 });
 
+describe('Cartes — les COMEX de la vague 1 (#66)', () => {
+  const COMEX = PLANQUES.filter((card) => card.ex);
+
+  it('compte 15 COMEX : les dix factions en portent au moins un, cinq en portent deux', () => {
+    // CARD-SPEC.md §1 : 15 cartes en 4◆. Les dix signatures (AGENTS.md §3.2) plus les
+    // cinq seconds COMEX de la vague 1 (#66).
+    expect(COMEX).toHaveLength(15);
+    const parFaction = new Map<Faction, number>();
+    for (const card of COMEX) parFaction.set(card.faction, (parFaction.get(card.faction) ?? 0) + 1);
+    expect([...parFaction.keys()].sort()).toEqual((Object.keys(FACTION_META) as Faction[]).sort());
+    expect([...parFaction.values()].sort()).toEqual([1, 1, 1, 1, 1, 2, 2, 2, 2, 2]);
+  });
+
+  it('fait évoluer chaque COMEX d’un N+1 de sa faction, sur une ligne distincte dans une même faction', () => {
+    const lignes = new Map<Faction, string[]>();
+    for (const card of COMEX) {
+      const previous = card.evolvesFrom ? getCard(card.evolvesFrom) : undefined;
+      expect(isPlanque(previous) ? previous.stage : undefined, card.id).toBe('N+1');
+      expect(previous?.faction, card.id).toBe(card.faction);
+      lignes.set(card.faction, [...(lignes.get(card.faction) ?? []), card.evolvesFrom ?? '']);
+    }
+    for (const [faction, parents] of lignes) {
+      expect(new Set(parents).size, `${faction} : deux COMEX sur la même ligne`).toBe(parents.length);
+    }
+  });
+
+  it('suffixe l’identifiant de chaque COMEX par `-ex` (D-027)', () => {
+    for (const card of COMEX) expect(card.id, card.id).toMatch(/-ex$/);
+  });
+});
+
 describe('Cartes — textes (AGENTS.md §3, §5)', () => {
   it('écrit les textes en français, sans mot interdit ni « banc »', () => {
     for (const card of ALL_CARDS) {
