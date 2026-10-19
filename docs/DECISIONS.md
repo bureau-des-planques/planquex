@@ -26,6 +26,7 @@
 | D-017 | 19/10/2026 | **Amendement D-016** : le TCG est déployé sur le **projet Vercel existant `grevomon`** (`https://grevomon.vercel.app`), pas sur un nouveau projet `grevomon-tcg` ; le projet Supabase reste le nouveau `jzlcwnozlzhadatksvgh` (schéma vide) ; la clé SMTP Brevo vit dans la config Custom SMTP de Supabase, **pas** dans `.env` | Le site `grevomon.vercel.app` est mort de toute façon (Supabase de prod en pause, 18/10) ; réutiliser le projet Vercel évite un doublon ; supprimer le secret du dépôt réduit la surface d'exposition |
 | D-018 | 19/10/2026 | **Miroir de référence daté** : le mode standard est le miroir de *Pokémon TCG Pocket* **dans son état de 2026**, et non la version de lancement (A1, 10/2024). Le standard, c'est ce miroir **plus** le seul mot-clé maison « Changement de priorité » (D-004) | D-003 ne datait pas le miroir ; la recherche du 19/10/2026 montre des valeurs qui ont bougé (Méga-Évolution ex = 3 Primes, Faiblesse ×2 par un Lieu, Pokémon à double type). Un miroir non daté rend toute vérification impossible |
 | D-019 | 19/10/2026 | Les règles maison **`RULES-4b` sont rangées hors du standard**, dans `docs/MODES-FUTURS.md` (mode futur « Café », non acté, non implémenté). Elles disparaissent de `AGENTS.md` §4.1 et de `PROPOSITION.md` §3.1 | Mélangées aux règles du standard, elles ont produit de faux constats d'audit, dont une contradiction apparente sur la fin de partie — exactement le genre de confusion que le projet doit éviter |
+| D-020 | 19/10/2026 | **Périmètre du lancement figé (O-008)** : les 4 ajouts du jeu de référence 2025-2026 sont **exclus** du set — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste : 3 stades (N+1 → N+2 → COMEX), Cadre = **2 Primes**, un Planqué = **une** faction, Vulnérabilité **+20** | Le coût de la Méga-Évolution n'est pas le code (3 lignes) mais la **courbe de stats**, qui n'a aucune source publique : l'inventer contredit `CARD-SPEC.md` §2. Le double type casserait « 1 faction = 1 type », socle de §3.2 et de la table de Vulnérabilité. Chiffrage : `docs/ARBITRAGE-O-008.md` |
 
 ## Ouvertes
 
@@ -38,7 +39,7 @@
 | O-005 | Argent réel | Aucun en v1 (recommandé) ; Stripe pour la Cotisation plus tard | Avant la phase 5 |
 | O-006 | Style visuel précis | Corporate dark premium (recommandé) ; cartoon satirique ; rétro bureau | Avant la phase 0 |
 | O-007 | Lancement | Bêta fermée par phases (recommandé) ; big bang | Avant la phase 6 |
-| O-008 | **Écarts du miroir 2026** : Méga-Évolution ex = 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, statut des Outils/Lieux | Intégrer (nouveau stade, nouveau palier de Primes, types multiples) **ou** exclure explicitement du périmètre | Avant l'écriture des 286 textes — voir `docs/MIROIR-2026-DELTAS.md` §3 |
+| O-008 | **Écarts du miroir 2026** : Méga-Évolution ex = 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, statut des Outils/Lieux | **Tranché le 19/10/2026 : exclure les 4 (D-020).** Chiffrage conservé dans `docs/ARBITRAGE-O-008.md` pour une réintroduction en extension | Tranché |
 | O-009 | **Points de règle insourçables** : mulligan (« l'adversaire pioche 1 »), fin de partie sans Planqué, **qui choisit la relève après K.O.**, plafond de 3 types de café | Capturer les « Astuces de jeu » de l'app (preuve horodatée), ou trancher par décision datée | Avant de figer le moteur — le code et la doc se contredisent déjà sur la relève |
 | O-010 | **Écarts code ↔ `AGENTS.md` §4** : 4 sur 8 corrigés le 19/10/2026, 3 **bloqués** faute de contenu, 1 faux positif | Voir l'état ci-dessous | Les 3 restants : après l'écriture des cartes concernées |
 
@@ -57,8 +58,8 @@
 
 ## Prochaine étape
 
-1. Les noms de factions, le mot-clé et le cadre du miroir sont actés (D-004, D-006, D-014, D-018, D-019).
+1. Les noms de factions, le mot-clé, le cadre du miroir et le périmètre du lancement sont actés (D-004, D-006, D-014, D-018, **D-020**). Le set se construit sur 3 stades, Cadre = 2 Primes, une faction par Planqué.
 2. Trancher **O-009** (points de règle insourçables, dont la relève après K.O.) : le moteur contredit déjà la doc.
-3. Générer la **spécification des 286 cartes** (lignes, stades, raretés, stats, textes) — intègre d'abord **O-008**.
+3. Générer la **spécification des 286 cartes** (lignes, stades, raretés, stats, textes) : le périmètre est figé par D-020, plus rien ne bloque l'écriture.
 4. Produire la **direction artistique** (palette, gabarit, 3 planches).
 5. Trancher les points ouverts restants (nom/domaine, satire, argent réel, style, lancement).

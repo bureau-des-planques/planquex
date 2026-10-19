@@ -40,6 +40,9 @@
 | COMEX | 40 |
 | **Total Planqués** | **267** |
 
+Aucun **4ᵉ stade** : la Méga-Évolution (3 Primes) est hors périmètre (D-020). Le set se
+construit sur N+1 → N+2 → COMEX.
+
 ### Lignes d’évolution (Planqués uniques)
 
 | Type de ligne | Nombre de lignes | Cartes |
@@ -71,7 +74,7 @@ de 10 pour rester lisibles.
 - Une attaque à 2 cafés fait 40–60 dégâts, ou 30 + effet.
 - Une attaque à 3 cafés fait 70–100 dégâts, ou 60 + effet fort.
 - Une capacité (Talent) ne doit pas créer d’avantage de cartes net sans coût.
-- Une carte ex vaut 2 Primes ; elle doit être plus forte, mais pas auto-include.
+- Une carte ex vaut 2 Primes ; elle doit être plus forte, mais pas auto-include. Il n'existe **pas** de palier à 3 Primes : la Méga-Évolution est hors périmètre (D-020).
 - La faiblesse ajoute +20 ; l’Intérimaire n’a pas de faiblesse.
 
 ---

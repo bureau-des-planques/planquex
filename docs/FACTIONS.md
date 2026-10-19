@@ -4,8 +4,10 @@
 > (`SSE`, `MANAGER`, `HAPPINESS`, …) ; les noms sont des données, donc renommables
 > plus tard sans casser le moteur.
 >
-> **Stades** : N+1 → N+2 → **COMEX**.
-> **Rareté ex** : Cadre (vaut 2 Primes).
+> **Stades** : N+1 → N+2 → **COMEX**. Pas de 4ᵉ stade : la Méga-Évolution est hors
+> périmètre (D-020).
+> **Rareté ex** : Cadre (vaut 2 Primes). Pas de palier à 3 Primes (D-020).
+> **Types** : **une** faction par Planqué ; le double type est hors périmètre (D-020).
 
 ---
 

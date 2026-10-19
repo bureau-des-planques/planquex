@@ -96,7 +96,7 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | `INTERIMAIRE` | Dragon | Aucune | Intérimaire légendaire |
 | `SUPPORT` | Incolore | `TECHNICIEN` | Responsable support |
 
-Stades : **N+1 → N+2 → COMEX**. Raretés codées : `1D`, `2D`, `3D`, `4D`, `1S`, `2S`.
+Stades : **N+1 → N+2 → COMEX**. Un Planqué porte **une seule** faction : le double type du jeu de 2026 est hors périmètre (D-020). Raretés codées : `1D`, `2D`, `3D`, `4D`, `1S`, `2S`.
 La cible `CARD-SPEC.md` contient aussi **3 étoiles** et **Couronne** : à ajouter aux types, aux métadonnées et aux tests avant de les utiliser.
 
 ## 4. Règles du jeu
@@ -116,7 +116,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Premier joueur | Ne pioche pas, ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 |
 | Évolution | Impossible au premier tour de chaque joueur |
 | Pression | **1 par tour** ; le café n'est **pas consommé** |
-| Vulnérabilité | **+20 dégâts** |
+| Vulnérabilité | **+20 dégâts** — le ×2 n'existe que via un Lieu, hors périmètre (D-020) |
 | Résistance | **Aucune** |
 | Relève | Défausse autant de cafés que le coût de relève |
 | Pioche vide | **Pas de défaite** |
@@ -124,9 +124,9 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Statuts | Surcharge (10/tour), Burn-out (20 + lancer), Bloqué (lancer), Gelé (1 tour), Dérive (lancer avant attaque) |
 | Ordre des statuts | Surcharge → Burn-out → Bloqué → Gelé |
 | Cartes Action | **Objet** : illimité ; **Collègue** : **1 par tour** |
-| Outils / Lieux | Extensions ultérieures, pas au lancement |
+| Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
 
-**Miroir daté** : le référent est Pocket **dans son état de 2026** (D-018), pas la version de lancement. Trois écarts connus ne sont **pas encore intégrés** au tableau ci-dessus — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type — et deux règles du tableau n'ont aucune source citable. Détail, sources et verdicts : `docs/MIROIR-2026-DELTAS.md`. Tant qu'ils ne sont pas tranchés (**O-008**, **O-009**), la phrase « aucune valeur mathématique ne change » est une **cible**, pas un constat.
+**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, Cadre = **2 Primes**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. Réserve qui subsiste : une partie du tableau n'a **aucune source citable** (**O-009**). Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources : `docs/MIROIR-2026-DELTAS.md`.
 
 ### 4.1 Ce qui n'est pas la règle standard
 

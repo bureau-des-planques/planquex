@@ -2,20 +2,22 @@
 
 > Cadre acté par **D-018** : le miroir de référence est *Pokémon TCG Pocket*
 > **dans son état de 2026**, et non la version de lancement (A1, octobre 2024).
-> Vérification documentaire du **19/10/2026**, par recherche sourcée (aucun fichier
-> du dépôt modifié). Les valeurs du standard restent `AGENTS.md` §4.
+> Vérification documentaire du **19/10/2026**, par recherche sourcée. Les valeurs du
+> standard restent `AGENTS.md` §4.
 
-## 0. Cadre retenu, et option écartée
+## 0. Cadre retenu, et ce qui en a été exclu
 
-**Retenu (D-018)** : suivre le jeu **actuel**. Conséquence : le tableau `AGENTS.md` §4
-reste la cible, mais il doit absorber les écarts du §3 ci-dessous.
+**Retenu (D-018)** : les **règles de base** sont celles du jeu **de 2026**, vérifiées à
+jour. La phrase « aucune valeur mathématique ne change » de §4 vaut pour ces règles-là.
 
-**Écarté** : figer le miroir au **lancement (A1, octobre 2024)**. Ce choix aurait eu
-pour effet de faire disparaître les écarts 1 et 2 du §3, au prix d'un jeu qui ne
-ressemble plus à celui de 2026 : pas de Méga-Évolution, pas de Lieux modifiant la
-Faiblesse, pas de double type — donc un set (286 cartes) construit sur des règles que
-les joueurs ne reconnaîtraient pas. Il reste réversible : rouvrir D-018 plutôt que
-modifier les valeurs une par une.
+**Exclu du périmètre (D-020, 19/10/2026)** : les **ajouts 2025-2026** ne sont pas
+implémentés au lancement — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu,
+Pokémon à double type, Outils et Lieux. §3 ci-dessous reste le **chiffrage** de ce qui a
+été écarté, pour une réintroduction en extension (voir `docs/ARBITRAGE-O-008.md`).
+
+Conséquence assumée : sur le contenu, le set de lancement ressemble à celui des règles de
+lancement. C'est un **choix de périmètre daté**, pas un oubli — et c'est précisément ce
+qu'O-008 demandait d'écrire.
 
 ## 1. Confirmé par une source primaire
 
@@ -47,7 +49,7 @@ illimité / Collègue 1 par tour.
 marquée « non vérifié ». Le seul moyen de les passer à « observé » est une
 **capture horodatée des Astuces de jeu** (§6).
 
-## 3. Écarts à intégrer au standard (conséquence de D-018)
+## 3. Écarts **exclus du périmètre** (D-020) — chiffrage conservé
 
 | # | Écart | Détail | Source |
 |---|---|---|---|
