@@ -3,6 +3,7 @@ import { ALL_CARDS, CARD_BY_ID, getCard } from '@/data';
 import {
   attack,
   attackPreview,
+  attachEnergy,
   canEvolve,
   createBattle,
   createInstance,
@@ -11,7 +12,8 @@ import {
   isFirstTurnFor,
   legalAttacks,
   promoteActive,
-  priorityShift
+  priorityShift,
+  retreat
 } from '@/game/engine';
 import { DECK_SIZE } from '@/game/deck';
 import { RULES } from '@/game/rules';
@@ -410,5 +412,177 @@ describe('Changement de priorité (D-004)', () => {
       RULES.priorityShiftEnabled = true;
       restore();
     }
+  });
+});
+
+describe('retreat() — Relève', () => {
+  it('défausse autant de cafés que le coût de relève et échange le Poste avec l\'Open-space', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const benchCard = state.players.player.bench[0];
+    if (!benchCard) throw new Error('Open-space vide');
+
+    // On met assez de café sur le Planqué actif pour couvrir le coût de relève
+    const activeCard = getCard(active.cardId);
+    const retreatCost = activeCard?.retreat ?? 1;
+    active.energy = retreatCost;
+
+    const beforeEnergy = active.energy;
+
+    const after = retreat(state, 0);
+
+    // Le Planqué du Poste a perdu le coût de relève en café
+    expect(after.players.player.active?.energy).toBe(beforeEnergy - retreatCost);
+    // Le Planqué de l'Open-space est maintenant au Poste (sans ses statuts)
+    expect(after.players.player.active?.uid).toBe(benchCard.uid);
+    // L'ancien Planqué du Poste est allé à l'Open-space
+    expect(after.players.player.bench[0]?.uid).toBe(active.uid);
+    // hasRetreated est à true
+    expect(after.players.player.hasRetreated).toBe(true);
+  });
+
+  it('refuse la relève si le Planqué actif n\'a pas assez de café', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const activeCard = getCard(active.cardId);
+    const retreatCost = activeCard?.retreat ?? 1;
+
+    // On met 1 café de moins que le coût
+    active.energy = Math.max(0, retreatCost - 1);
+
+    const after = retreat(state, 0);
+
+    // Rien ne change : on retourne l'état inchangé
+    expect(after).toBe(state);
+  });
+
+  it('refuse une seconde relève dans le même tour', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const benchCard = state.players.player.bench[0];
+    if (!benchCard) throw new Error('Open-space vide');
+    const activeCard = getCard(active.cardId);
+    const retreatCost = activeCard?.retreat ?? 1;
+    active.energy = retreatCost;
+
+    const afterFirst = retreat(state, 0);
+    expect(afterFirst.players.player.hasRetreated).toBe(true);
+
+    // Deuxième tentative : doit échouer
+    const afterSecond = retreat(afterFirst, 1);
+    expect(afterSecond).toBe(afterFirst);
+  });
+
+  it('ne fait rien si l\'emplacement Open-space visé est vide', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const activeCard = getCard(active.cardId);
+    const retreatCost = activeCard?.retreat ?? 1;
+    active.energy = retreatCost;
+
+    // Emplacement 2 est vide (si bench[2] === null)
+    if (state.players.player.bench[2] === null) {
+      const after = retreat(state, 2);
+      expect(after).toBe(state);
+    }
+  });
+});
+
+describe('attachEnergy() — Attachement de café', () => {
+  it('attache 1 café au Planqué visé et décrémente la Machine à café', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+
+    // Premier tour du joueur : pas d'attachement possible
+    // On passe au tour 2 pour tester
+    const nextTurn = structuredClone(state);
+    nextTurn.turn = 2;
+    nextTurn.current = 'player';
+    nextTurn.players.player.energyAttached = false;
+    nextTurn.players.player.energyZone = 1;
+    nextTurn.players.player.active!.energy = 0;
+
+    const beforeZone = nextTurn.players.player.energyZone;
+    const beforeEnergy = nextTurn.players.player.active!.energy;
+
+    const after = attachEnergy(nextTurn, nextTurn.players.player.active!.uid);
+
+    expect(after.players.player.active?.energy).toBe(beforeEnergy + 1);
+    expect(after.players.player.energyZone).toBe(beforeZone - 1);
+    expect(after.players.player.energyAttached).toBe(true);
+  });
+
+  it('refuse un second attachement dans le même tour', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+
+    // Tour 2 pour pouvoir attacher
+    const nextTurn = structuredClone(state);
+    nextTurn.turn = 2;
+    nextTurn.current = 'player';
+    nextTurn.players.player.energyAttached = false;
+    nextTurn.players.player.energyZone = 2;
+    nextTurn.players.player.active!.energy = 0;
+
+    const afterFirst = attachEnergy(nextTurn, nextTurn.players.player.active!.uid);
+    expect(afterFirst.players.player.energyAttached).toBe(true);
+
+    // Deuxième attachement : refusé
+    const afterSecond = attachEnergy(afterFirst, afterFirst.players.player.active!.uid);
+    expect(afterSecond).toBe(afterFirst);
+    expect(afterSecond.players.player.active?.energy).toBe(1);
+    expect(afterSecond.players.player.energyZone).toBe(1);
+  });
+
+  it('refuse l\'attachement au premier tour du joueur', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+
+    // Premier tour : energyAttached = false, energyZone = 1
+    const after = attachEnergy(state, active.uid);
+
+    // L'état est cloné mais l'énergie ne change pas, seul le log s'allonge
+    expect(after.players.player.energyZone).toBe(1);
+    expect(after.players.player.active?.energy).toBe(0);
+    expect(after.log).toContain("Premier tour : pas d\u2019attachement de caf\u00E9.");
+  });
+
+  it('ne fait rien si la Machine à café est vide', () => {
+    const state = freshBattle();
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+
+    // Tour 2 mais energyZone = 0
+    const nextTurn = structuredClone(state);
+    nextTurn.turn = 2;
+    nextTurn.current = 'player';
+    nextTurn.players.player.energyAttached = false;
+    nextTurn.players.player.energyZone = 0;
+    nextTurn.players.player.active!.energy = 0;
+
+    const after = attachEnergy(nextTurn, nextTurn.players.player.active!.uid);
+    expect(after).toBe(nextTurn);
+  });
+
+  it('ne fait rien si le Planqué visé n\'existe pas', () => {
+    const state = freshBattle();
+
+    // Tour 2
+    const nextTurn = structuredClone(state);
+    nextTurn.turn = 2;
+    nextTurn.current = 'player';
+    nextTurn.players.player.energyAttached = false;
+    nextTurn.players.player.energyZone = 1;
+    nextTurn.players.player.active!.energy = 0;
+
+    const after = attachEnergy(nextTurn, 'uid-inexistant');
+    expect(after).toBe(nextTurn);
   });
 });
