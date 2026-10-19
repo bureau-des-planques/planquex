@@ -11,11 +11,26 @@ import type { Card, Rarity } from '@/data/types';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **1** : ajout de `rng`, le générateur seedé du
- * store (ticket #29). Toute nouvelle version exige une branche dans
- * `migratePersisted` (`AGENTS.md` §6).
+ * Version de la forme persistée. **2** : les ids de carte suivent les noms
+ * (ticket #49) — `owned` et `deck` portent des ids, donc un renommage d'id exige
+ * un remappage. **1** : ajout de `rng`, le générateur seedé du store (ticket #29).
+ * Toute nouvelle version exige une branche dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 1;
+export const STORAGE_VERSION = 2;
+
+/**
+ * Ids de carte renommés (ticket #49). `AGENTS.md` §5 : **un id suit le nom**.
+ * Quand un nom ne correspond plus à son id, l'id change au lieu de rester un
+ * alias introuvable — et l'état persisté doit suivre, sinon la carte quitte
+ * silencieusement le Parc et le Chariot.
+ *
+ * Clé : ancien id. Valeur : id courant. Une entrée ne se retire pas sans casser
+ * la migration ; on ajoute, on ne réécrit pas l'histoire.
+ */
+export const CARD_ID_RENAMES: Readonly<Record<string, string>> = {
+  'rh-responsable-qvt': 'rh-charge-prevention',
+  'direction-directeur-projet': 'direction-directeur-programme'
+};
 
 const STARTER_RARITIES: Rarity[] = ['1D', '2D'];
 
@@ -115,7 +130,7 @@ export const useStore = create<AppState>()(
     {
       name: STORAGE_KEY,
       version: STORAGE_VERSION,
-      migrate: (persisted) => migratePersisted(persisted) as AppState,
+      migrate: (persisted, version) => migratePersisted(persisted, version) as AppState,
       partialize: (state) => ({
         name: state.name,
         owned: state.owned,
@@ -131,17 +146,41 @@ export const useStore = create<AppState>()(
 /**
  * Passage d'un état persisté plus ancien à la forme courante.
  *
- * La version 0 (avant le ticket #29) ne contient pas `rng` : sans cette
+ * **v0 → v1** (ticket #29) : la version 0 ne contient pas `rng`. Sans cette
  * migration, `openPack` tirerait d'un générateur `undefined`. Le champ est créé
- * à la volée ; les autres champs sont conservés tels quels (`persist` fusionne
- * ensuite avec l'état initial, qui porte les actions).
+ * à la volée.
+ *
+ * **v1 → v2** (ticket #49) : les ids renommés (`CARD_ID_RENAMES`) sont remappés
+ * dans `owned` et `deck`, les deux champs qui portent des ids. Les autres champs
+ * sont conservés tels quels (`persist` fusionne ensuite avec l'état initial, qui
+ * porte les actions). `version` absent vaut 0, comme le fait `persist`.
  */
-export function migratePersisted(persisted: unknown): Partial<AppState> {
+export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
+  const migrated = version < 2 ? withRenamedCardIds(state) : state;
   return {
-    ...state,
-    rng: typeof state.rng === 'number' ? state.rng : seedRng(Date.now())
+    ...migrated,
+    rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now())
   };
+}
+
+/**
+ * Remappe les anciens ids dans `owned` et `deck`. Les comptes sont **additionnés**
+ * si les deux ids cohabitent (état bricolé à la main) : aucun exemplaire ne
+ * disparaît. L'ordre du Chariot est conservé.
+ */
+function withRenamedCardIds(state: Partial<AppState>): Partial<AppState> {
+  const next: Partial<AppState> = { ...state };
+  if (state.owned) {
+    const owned: Record<string, number> = {};
+    for (const [id, count] of Object.entries(state.owned)) {
+      const current = CARD_ID_RENAMES[id] ?? id;
+      owned[current] = (owned[current] ?? 0) + count;
+    }
+    next.owned = owned;
+  }
+  if (state.deck) next.deck = state.deck.map((id) => CARD_ID_RENAMES[id] ?? id);
+  return next;
 }
 
 // Les règles du Chariot (20 cartes, 2 exemplaires max, ≥ 1 N+1) vivent dans

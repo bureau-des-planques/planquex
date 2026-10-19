@@ -3,7 +3,7 @@ import { ALL_CARDS, getCard } from '@/data';
 import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
-import { migratePersisted, STORAGE_VERSION, useStore } from '@/store/useStore';
+import { migratePersisted, CARD_ID_RENAMES, STORAGE_VERSION, useStore } from '@/store/useStore';
 
 beforeEach(() => {
   useStore.getState().reset();
@@ -118,5 +118,98 @@ describe('Générateur du store (#29)', () => {
   it('garde le générateur d’un état déjà migré', () => {
     const rng = seedRng(1234);
     expect(migratePersisted({ packsOpened: 0, rng }).rng).toBe(rng);
+  });
+});
+
+describe('Migration v2 — les ids suivent les noms (#49)', () => {
+  /** Les deux champs qui portent des ids, plus le reste à conserver. */
+  function stateV1() {
+    const rng = seedRng(4242);
+    const [premier, second] = Object.keys(CARD_ID_RENAMES);
+    return {
+      rng,
+      persisted: {
+        name: 'Employé 404',
+        owned: { [premier]: 2, [second]: 1, 'sse-psychologue': 3 },
+        deck: [second, 'sse-psychologue', premier],
+        packsOpened: 7,
+        reducedMotion: true,
+        rng
+      }
+    };
+  }
+
+  it('déclare la version 2', () => {
+    expect(STORAGE_VERSION).toBe(2);
+  });
+
+  it('remappe les anciens ids de `owned` et de `deck`, sans rien perdre', () => {
+    const { persisted, rng } = stateV1();
+    const migrated = migratePersisted(persisted, 1);
+
+    expect(migrated.owned).toEqual({
+      'rh-charge-prevention': 2,
+      'direction-directeur-programme': 1,
+      'sse-psychologue': 3
+    });
+    expect(migrated.deck).toEqual([
+      'direction-directeur-programme',
+      'sse-psychologue',
+      'rh-charge-prevention'
+    ]);
+    // Le reste de l'état traverse la migration intact.
+    expect(migrated.name).toBe('Employé 404');
+    expect(migrated.packsOpened).toBe(7);
+    expect(migrated.reducedMotion).toBe(true);
+    expect(migrated.rng).toBe(rng);
+  });
+
+  it('ne laisse aucun ancien id, et chaque id remappé existe au catalogue', () => {
+    const [premier, second] = Object.keys(CARD_ID_RENAMES);
+    const migrated = migratePersisted(stateV1().persisted, 1);
+
+    expect(premier).not.toBe(CARD_ID_RENAMES[premier]);
+    expect(getCard(premier), `${premier} ne doit plus exister`).toBeUndefined();
+    expect(getCard(second), `${second} ne doit plus exister`).toBeUndefined();
+    for (const id of [...Object.keys(migrated.owned ?? {}), ...(migrated.deck ?? [])]) {
+      expect(getCard(id), `${id} n’est pas une carte du catalogue`).toBeDefined();
+    }
+  });
+
+  it('le nouvel id suit le nom de la carte (AGENTS.md §5)', () => {
+    // Convention du dépôt : le suffixe de l'id est le nom en mots, dans l'ordre,
+    // sans accents ni mots-outils — `sse-infirmier-site` pour « Infirmier de site »,
+    // `rh-charge-prevention` pour « Chargé de prévention ».
+    const mots = (texte: string) =>
+      texte
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter(Boolean);
+
+    for (const [ancien, courant] of Object.entries(CARD_ID_RENAMES)) {
+      const card = getCard(courant);
+      expect(card, `${courant} absent du catalogue`).toBeDefined();
+      if (!card) continue;
+
+      const prefixe = `${card.faction.toLowerCase()}-`;
+      expect(courant.startsWith(prefixe), `${courant} : préfixe de faction`).toBe(true);
+
+      const attendus = mots(card.name);
+      const restants = [...attendus];
+      for (const mot of courant.slice(prefixe.length).split('-')) {
+        const rang = restants.indexOf(mot);
+        expect(rang, `${ancien} → ${courant} : « ${mot} » ne vient pas de « ${card.name} »`).toBeGreaterThanOrEqual(0);
+        restants.splice(0, rang + 1);
+      }
+    }
+  });
+
+  it('laisse un état déjà en v2 tel quel', () => {
+    const { persisted } = stateV1();
+    const migrated = migratePersisted(persisted, 2);
+    expect(migrated.owned).toEqual(persisted.owned);
+    expect(migrated.deck).toEqual(persisted.deck);
   });
 });

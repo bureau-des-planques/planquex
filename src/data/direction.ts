@@ -129,7 +129,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     flavor: 'Il sait qui voit le patron. Ce n\'est pas toi.'
   }),
 
-  // Ligne 4 (2 stades) : Secrétaire direction → Directeur de projet
+  // Ligne 4 (2 stades) : Secrétaire direction → Directeur de programme
   base({
     id: 'direction-secretaire-direction',
     name: 'Secrétaire direction',
@@ -141,7 +141,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     flavor: 'Elle gère l\'agenda. L\'agenda la gère.'
   }),
   base({
-    id: 'direction-directeur-projet',
+    id: 'direction-directeur-programme',
     evolvesFrom: 'direction-secretaire-direction',
     name: 'Directeur de programme',
     stage: 'N+1',
