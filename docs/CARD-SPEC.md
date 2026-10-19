@@ -64,6 +64,12 @@ produire.*
 Valeurs cibles, à ajuster par simulation. Le Seuil et les dégâts sont des multiples
 de 10 pour rester lisibles.
 
+> **Implémentation** : ce §2 est la référence **normative** ; son unique copie de code est
+> `src/game/curves.ts` — `DAMAGE_BY_COST` pour les dégâts par café, `HP_BAND` pour le Seuil par
+> stade et rareté, et les accès `damageBand()` / `hpBand()`. `src/data/cards.test.ts` et
+> `src/game/pace.test.ts` **lisent** ce module : aucun test ne recopie une bande (ticket #55).
+> Une valeur qui bouge ici se change dans le même commit, à ces deux endroits-là seulement.
+
 | Stade / rareté | Seuil | Attaques | Dégâts indicatifs | Rotation |
 |---|---:|---|---:|---:|
 | Entrant 1◆ | 50–70 | 1 attaque | 10–20 | 1 |

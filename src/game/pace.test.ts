@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { Rarity, Stage } from '@/data/types';
+import { type Band, damageBand, hpBand } from '@/game/curves';
 
 /**
  * Modèle de **rythme** : combien de tours pour prendre 3 Interventions.
@@ -9,8 +11,8 @@ import { describe, expect, it } from 'vitest';
  *
  * - 1 café généré par tour, **non consommé** par la Pression (§4) : l'attaquant
  *   attaque donc à chaque tour dès qu'il a atteint le coût de son attaque ;
- * - l'attaquant joue toujours sa meilleure attaque, définie par la bande
- *   « dégâts indicatifs » de `CARD-SPEC.md` §2 ;
+ * - les bandes de Seuil et de dégâts ne sont **pas** recopiées : elles sont lues
+ *   dans `@/game/curves` (ticket #55), le chiffré de `CARD-SPEC.md` §2 ;
  * - le défenseur ne fait rien : pas de soin, pas de statut, pas de relève ;
  * - 1 Intervention par craquage (cas le plus défavorable au rythme) ;
  * - l'adversaire aligne le même profil à chaque craquage.
@@ -22,21 +24,54 @@ import { describe, expect, it } from 'vitest';
 interface Profile {
   label: string;
   /** Seuil du défenseur, bande basse et haute. */
-  hp: [number, number];
+  hp: Band;
   /** Dégâts de l'attaquant, bande basse et haute. */
-  damage: [number, number];
+  damage: Band;
   /** Coût de son attaque, en cafés. */
   cost: number;
 }
 
-/** Notre courbe (`CARD-SPEC.md` §2) et celle du jeu réel (relevée le 19/10/2026). */
+/** Bande de Seuil d'un stade : l'union des raretés qui y vivent (`CARD-SPEC.md` §2). */
+const stageSeuil = (stage: Stage, rarities: readonly Rarity[]): Band => {
+  const bands = rarities.map((rarity) => {
+    const band = hpBand(stage, rarity);
+    if (!band) throw new Error(`${stage}/${rarity} : bande de Seuil absente de curves.ts`);
+    return band;
+  });
+  return [Math.min(...bands.map((band) => band[0])), Math.max(...bands.map((band) => band[1]))];
+};
+
+/** Bande de dégâts d'un coût en cafés (`CARD-SPEC.md` §2, D-021). */
+const degats = (cost: number): Band => {
+  const band = damageBand(cost);
+  if (!band) throw new Error(`coût ${cost} café(s) : bande de dégâts absente de curves.ts`);
+  return band;
+};
+
+const profile = (label: string, stage: Stage, rarities: readonly Rarity[], cost: number): Profile => ({
+  label,
+  hp: stageSeuil(stage, rarities),
+  damage: degats(cost),
+  cost
+});
+
+/**
+ * **Notre** courbe : celle du module, sans une seule borne recopiée. Le coût retenu
+ * par profil est celui de l'attaque de référence de `CARD-SPEC.md` §2 (1 café pour un
+ * Entrant, 2 pour N+1 et N+2, 3 pour un COMEX).
+ */
 const OUR_CURVE: Profile[] = [
-  { label: 'Entrant → Entrant', hp: [60, 70], damage: [10, 20], cost: 1 },
-  { label: 'N+1 → N+1', hp: [80, 100], damage: [30, 50], cost: 2 },
-  { label: 'N+2 → N+2', hp: [120, 140], damage: [50, 80], cost: 2 },
-  { label: 'COMEX → COMEX', hp: [140, 170], damage: [70, 120], cost: 3 }
+  profile('Entrant → Entrant', 'ENTRANT', ['1D', '2D'], 1),
+  profile('N+1 → N+1', 'N+1', ['2D', '3D'], 2),
+  profile('N+2 → N+2', 'N+2', ['3D'], 2),
+  profile('COMEX → COMEX', 'N+2', ['4D'], 3)
 ];
 
+/**
+ * Mesure du **jeu de référence**, relevée le 19/10/2026 (D-023). Elle reste ici, et
+ * **pas** dans `curves.ts` : c'est une preuve datée du miroir, pas une règle du jeu ;
+ * déplacée dans un module de règles, sa provenance disparaîtrait (ticket #55).
+ */
 const REAL_CURVE: Profile[] = [
   { label: 'Entrant → Entrant', hp: [50, 80], damage: [10, 20], cost: 1 },
   { label: 'N+1 → N+1', hp: [90, 120], damage: [30, 50], cost: 2 },
@@ -65,7 +100,7 @@ const asReport = (name: string, rows: ReturnType<typeof table>) =>
   rows.map((row) => `${name.padEnd(7)} ${row.profil.padEnd(14)} ${row.frappesParKO} frappe(s)/craquage  ${row.tours} tours`);
 
 describe('O-011 — effet du Seuil sur le rythme', () => {
-  it('chiffre le coût en tours de la courbe du jeu réel', () => {
+  it('lit les bandes du jeu et les confronte à la mesure datée du miroir', () => {
     const oursOptimistic = table(OUR_CURVE, hitsOptimistic);
     const realOptimistic = table(REAL_CURVE, hitsOptimistic);
     const oursPessimistic = table(OUR_CURVE, hitsPessimistic);
@@ -87,24 +122,30 @@ describe('O-011 — effet du Seuil sur le rythme', () => {
       );
     }
 
+    // D-023, tenu par le code : le Seuil du module **est** la bande du miroir, stade par
+    // stade. L'écart de rythme qui suit ne vient donc pas du Seuil, mais des dégâts par café.
+    expect(OUR_CURVE.map((profile) => profile.hp)).toEqual(REAL_CURVE.map((profile) => profile.hp));
+
     const deltas = realOptimistic.map((row, index) => ({
       profil: row.profil,
       optimiste: row.tours - (oursOptimistic[index]?.tours ?? 0),
       pessimiste: (realPessimistic[index]?.tours ?? 0) - (oursPessimistic[index]?.tours ?? 0)
     }));
 
-    // Dans la lecture optimiste, les deux courbes ont exactement le même rythme :
-    // le Seuil réel ne franchit aucun palier de frappes.
+    // La bande de dégâts du module est plus large que celle, indicative, du miroir : nos
+    // profils ne sont donc jamais **plus lents**. Un écart positif = nous jouons plus vite.
     for (const delta of deltas) {
-      expect(delta.optimiste, `${delta.profil} (optimiste)`).toBe(0);
+      expect(delta.optimiste, `${delta.profil} (optimiste)`).toBeGreaterThanOrEqual(0);
+      expect(delta.pessimiste, `${delta.profil} (pessimiste)`).toBeGreaterThanOrEqual(0);
     }
 
-    // Dans la lecture pessimiste, la courbe réelle coûte au plus 3 tours, et
-        // seulement là où elle franchit un palier : Entrant (7 → 8 frappes) et COMEX
-    // (3 → 4 frappes). N+1 et N+2 ne bougent pas.
-    const worst = Math.max(...deltas.map((delta) => delta.pessimiste));
-    expect(worst, 'pire écart en tours').toBe(3);
-    const moved = deltas.filter((delta) => delta.pessimiste > 0).map((delta) => delta.profil);
-    expect(moved).toEqual(['Entrant → Entrant', 'N+2 → N+2']);
+    // L'écart reste borné à 3 tours, et ne touche qu'un profil par lecture : Entrant en
+    // optimiste (2 frappes contre 3), N+1 en pessimiste (3 contre 4). Rien sur N+2 ni COMEX.
+    expect(deltas.filter((delta) => delta.optimiste > 0).map((delta) => delta.profil)).toEqual([
+      'Entrant → Entrant'
+    ]);
+    expect(deltas.filter((delta) => delta.pessimiste > 0).map((delta) => delta.profil)).toEqual(['N+1 → N+1']);
+    expect(Math.max(...deltas.map((delta) => delta.optimiste)), 'écart optimiste').toBe(3);
+    expect(Math.max(...deltas.map((delta) => delta.pessimiste)), 'écart pessimiste').toBe(3);
   });
 });

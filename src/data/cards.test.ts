@@ -12,6 +12,7 @@ import {
   isPlanque
 } from '@/data';
 import type { AttackEffectKind, Card, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
+import { damageBand, hpBand } from '@/game/curves';
 import { isValidCafeCost } from '@/game/rules';
 
 /**
@@ -92,26 +93,10 @@ const WEAKNESS: Record<Faction, Faction | null> = {
 const STAGE_ORDER: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
 
 /**
- * Dégâts par coût en café — **règle normative** (CARD-SPEC.md §2, D-021).
- * Bandes ancrées sur les cartes réelles de TCG Pocket, relevées le 19/10/2026.
+ * Les bandes chiffrées de `CARD-SPEC.md` §2 vivent dans `@/game/curves` (ticket #55) :
+ * `damageBand()` pour les dégâts par café, `hpBand()` pour le Seuil par stade et rareté.
+ * Ce fichier ne recopie **aucune** borne : il confronte les cartes réelles au module.
  */
-const DAMAGE_BY_COST: Record<number, [number, number]> = {
-  0: [0, 30],
-  1: [10, 30],
-  2: [40, 80],
-  3: [70, 120],
-  4: [100, 160]
-};
-
-/** Seuil par stade et rareté — CARD-SPEC.md §2, aligné sur le jeu réel (D-023). */
-const HP_BAND: Record<string, [number, number]> = {
-  'ENTRANT/1D': [50, 70],
-  'ENTRANT/2D': [60, 80],
-  'N+1/2D': [90, 110],
-  'N+1/3D': [100, 120],
-  'N+2/3D': [140, 160],
-  'N+2/4D': [170, 190]
-};
 
 const texts = (card: Card): string[] => [
   card.name,
@@ -324,7 +309,7 @@ describe('Cartes — Seuil par stade (CARD-SPEC.md §2, D-023)', () => {
   it('place chaque carte dans la bande de Seuil de son stade et de sa rareté', () => {
     // Les variantes héritent du Seuil de leur base : couvertes par le test d'héritage.
     for (const card of BASE_PLANQUES) {
-      const band = HP_BAND[`${card.stage}/${card.rarity}`];
+      const band = hpBand(card.stage, card.rarity);
       expect(band, `${card.id} : ${card.stage}/${card.rarity} non couvert`).toBeDefined();
       if (!band) continue;
       expect(card.hp, `${card.id} (${card.stage} ${card.rarity})`).toBeGreaterThanOrEqual(band[0]);
@@ -337,7 +322,7 @@ describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021
   it('place chaque attaque dans la bande de son coût', () => {
     for (const card of PLANQUES) {
       for (const attack of card.attacks) {
-        const band = DAMAGE_BY_COST[attack.cost];
+        const band = damageBand(attack.cost);
         expect(band, `${card.id}/${attack.name} : coût ${attack.cost} café(s) non couvert`).toBeDefined();
         if (!band) continue;
         const label = `${card.id}/${attack.name} à ${attack.cost} café(s)`;
