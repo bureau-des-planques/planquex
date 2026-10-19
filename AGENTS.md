@@ -106,13 +106,13 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Règle | Valeur |
 |---|---|
 | Classeur | **20 cartes**, max **2** exemplaires du même nom, au moins **1 Planqué N+1** |
-| Main de départ | **5 cartes** ; si aucun Planqué N+1, on révèle, on remélange et on repioche (l'adversaire pioche 1) |
+| Main de départ | **5 cartes**, avec toujours au moins **1 Planqué N+1** ; **pas de reprise de poste** : ni remélange, ni pioche pour l'adversaire (D-022) |
 | Main maximale | **10 cartes** |
 | Poste | **1** |
 | Open-space | **3** places |
 | Primes | **3** pour gagner ; K.O. normal = 1, Cadre = 2 |
 | Machine à café | **1 café généré par tour**, **1 attachement par tour** ; si le slot du haut est occupé, pas de nouveau café |
-| Types de café | Jusqu'à **3** par classeur, ordre aléatoire ; l'incolore accepte tout |
+| Types de café | Jusqu'à **3** par classeur, ordre aléatoire ; l'incolore accepte tout — **hypothèse assumée**, non sourcée (D-022) |
 | Premier joueur | Ne pioche pas, ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 |
 | Évolution | Impossible au premier tour de chaque joueur |
 | Pression | **1 par tour** ; le café n'est **pas consommé** |
@@ -120,13 +120,14 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Résistance | **Aucune** |
 | Relève | Défausse autant de cafés que le coût de relève |
 | Pioche vide | **Pas de défaite** |
+| Défaite | 3 Primes pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) |
 | K.O. | L'adversaire marque les Primes ; l'Open-space choisit la relève |
 | Statuts | Surcharge (10/tour), Burn-out (20 + lancer), Bloqué (lancer), Gelé (1 tour), Dérive (lancer avant attaque) |
 | Ordre des statuts | Surcharge → Burn-out → Bloqué → Gelé |
 | Cartes Action | **Objet** : illimité ; **Collègue** : **1 par tour** |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
 
-**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, Cadre = **2 Primes**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. Réserve qui subsiste : une partie du tableau n'a **aucune source citable** (**O-009**). Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources : `docs/MIROIR-2026-DELTAS.md`.
+**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, Cadre = **2 Primes**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. Réserve qui subsiste : une partie du tableau n'a **aucune source citable**. Ces règles sont désormais **décidées** (D-022) mais **non observées** — le seul moyen de les faire passer à « observé » est de capturer les Astuces de jeu de l'application : `docs/PROTOCOLE-ASTUCES.md`. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources : `docs/MIROIR-2026-DELTAS.md`.
 
 ### 4.1 Ce qui n'est pas la règle standard
 
@@ -214,8 +215,8 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm install` | Installer les dépendances | **OK** (`npm ci` ; `@types/node` ajouté en dev) |
 | `npm run dev` | Serveur Vite sur `:5178` | non exécuté dans cette vérification ; `preview` l'a été |
 | `npm run check` | `tsc -b` | **OK**, exit 0 |
-| `npm test` | `vitest run` | **OK** : 4 fichiers, 38 tests, exit 0 |
-| `npm run test:watch` | Vitest en watch | 38 tests à lancer |
+| `npm test` | `vitest run` | **OK** : 4 fichiers, 39 tests, exit 0 |
+| `npm run test:watch` | Vitest en watch | 39 tests à lancer |
 | `npm run build` | `tsc -b && vite build` | **OK**, exit 0 ; `dist/index.html` + `dist/sw.js` produits |
 | `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
 | `npm run status` | Métriques JSON | **OK**, exit 0 |
@@ -233,7 +234,7 @@ Autres faits vérifiés le 19/10/2026 :
 - `src/main.tsx` et `src/App.tsx` existent ; `index.html` monte l'application sous `BrowserRouter`.
 - `public/` **existe** (créé le 19/10/2026) : `favicon.svg`, `icon-192.svg`, `icon-512.svg`. Les trois sont copiés dans `dist/` par le build.
 - Une seule feuille, `src/styles.css`, importée par `main.tsx`.
-- **38 tests** (4 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1) et les **bandes de dégâts par café** (D-021).
+- **39 tests** (4 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1) et les **bandes de dégâts par café** (D-021).
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Classeur et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).

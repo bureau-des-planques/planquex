@@ -135,33 +135,30 @@ function hasBasicInHand(player: PlayerState): boolean {
   return player.hand.some((card) => getCard(card.cardId)?.stage === 'N+1');
 }
 
-function mulligan(state: BattleState, who: PlayerId) {
-  const player = state.players[who];
-  player.deck.push(...player.hand);
-  player.hand = [];
-  player.deck = shuffle(player.deck);
-  draw(state, who, 5);
-  const other: PlayerId = who === 'player' ? 'ai' : 'player';
-  draw(state, other, 1);
-  state.log.push(`${who === 'player' ? 'Tu' : 'L’IA'} n’a pas de N+1 : nouvelle main.`);
+/**
+ * Pocket **n'a pas de reprise de poste** (D-022) : la main de départ contient
+ * toujours au moins un N+1, sans remélange et sans pioche pour l'adversaire —
+ * c'est le mulligan du TCG *physique* que §4 reprenait à tort.
+ *
+ * Le classeur étant garanti d'avoir au moins un N+1 (`deckLegal`), il y a
+ * toujours de quoi échanger. L'échange se fait carte pour carte : la main reste
+ * à 5 et le total des cartes du joueur ne bouge pas.
+ */
+function ensureBasicInHand(player: PlayerState) {
+  if (hasBasicInHand(player)) return;
+  const index = player.deck.findIndex((card) => getCard(card.cardId)?.stage === 'N+1');
+  if (index < 0) return;
+  const [card] = player.deck.splice(index, 1);
+  if (!card) return;
+  const swapped = player.hand.pop();
+  if (swapped) player.deck.push(swapped);
+  player.hand.push(card);
 }
 
 function setupPlayer(state: BattleState, who: PlayerId) {
   const player = state.players[who];
   draw(state, who, 5);
-  let guard = 0;
-  while (!hasBasicInHand(player) && guard < 10) {
-    mulligan(state, who);
-    guard += 1;
-  }
-  if (!hasBasicInHand(player)) {
-    // Dernier recours : cherche un N+1 dans le deck.
-    const index = player.deck.findIndex((card) => getCard(card.cardId)?.stage === 'N+1');
-    if (index >= 0) {
-      const [card] = player.deck.splice(index, 1);
-      if (card) player.hand.push(card);
-    }
-  }
+  ensureBasicInHand(player);
 
   const basics = player.hand.filter((card) => getCard(card.cardId)?.stage === 'N+1');
   const active = basics.shift();

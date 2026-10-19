@@ -15,7 +15,7 @@ import {
 } from '@/game/engine';
 import { DECK_SIZE } from '@/game/deck';
 import { RULES } from '@/game/rules';
-import type { BattleState } from '@/data/types';
+import type { BattleState, PlayerId } from '@/data/types';
 
 /**
  * Le moteur utilise encore `Math.random()` (AGENTS.md §6) : chaque test fige
@@ -65,6 +65,47 @@ describe('createBattle — mise en place', () => {
   it('remplit la Machine à café du joueur actif', () => {
     const state = freshBattle();
     expect(state.players.player.energyZone).toBe(1);
+  });
+});
+
+describe('Main de départ — pas de reprise de poste (D-022)', () => {
+  /** Classeur à un seul N+1 : les 5 premières cartes tirées n'en contiennent presque jamais. */
+  const EVOLUTIONS = ALL_CARDS.filter((card) => !card.variantOf && card.stage !== 'N+1').map((card) => card.id);
+  const SPARSE_DECK = [BASICS[0], ...EVOLUTIONS, ...EVOLUTIONS].slice(0, DECK_SIZE);
+
+  it('garantit un N+1 sans remélanger ni faire piocher l’adversaire', () => {
+    // PRNG déterministe : on parcourt plusieurs mélanges plutôt qu'un seul.
+    let state = 1;
+    const random = () => {
+      state = (state * 1103515245 + 12345) % 2147483648;
+      return state / 2147483648;
+    };
+    const spy = vi.spyOn(Math, 'random').mockImplementation(random);
+
+    try {
+      for (let run = 0; run < 40; run += 1) {
+        const battle = createBattle(SPARSE_DECK, SPARSE_DECK);
+        for (const who of ['player', 'ai'] as PlayerId[]) {
+          const player = battle.players[who];
+          const inPlay = [player.active, ...player.bench].filter(Boolean);
+
+          // La main de départ contient toujours un Planqué N+1 jouable.
+          expect(
+            inPlay.some((card) => getCard(card?.cardId ?? '')?.stage === 'N+1'),
+            `run ${run}, ${who} : aucun N+1`
+          ).toBe(true);
+          // Cinq cartes au total, donc aucune pioche de compensation.
+          expect(player.hand.length + inPlay.length, `run ${run}, ${who} : taille de main`).toBe(5);
+          // Aucune carte perdue ni dupliquée par l'échange.
+          expect(
+            player.hand.length + inPlay.length + player.deck.length + player.discard.length,
+            `run ${run}, ${who} : total de cartes`
+          ).toBe(DECK_SIZE);
+        }
+      }
+    } finally {
+      spy.mockRestore();
+    }
   });
 });
 

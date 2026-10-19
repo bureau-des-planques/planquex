@@ -46,8 +46,9 @@ les 5 statuts et leur **ordre** (Surcharge → Burn-out → Bloqué → Gelé), 
 illimité / Collègue 1 par tour.
 
 **Conséquence de méthode** : toute affirmation d'audit sur ces lignes doit rester
-marquée « non vérifié ». Le seul moyen de les passer à « observé » est une
-**capture horodatée des Astuces de jeu** (§6).
+marquée « non vérifié ». Elles sont désormais **décidées** (D-022) — donc implémentées
+avec une règle assumée — mais le seul moyen de les passer à « observé » est une capture
+horodatée des Astuces de jeu : voir `docs/PROTOCOLE-ASTUCES.md`.
 
 ## 3. Écarts **exclus du périmètre** (D-020) — chiffrage conservé
 
@@ -70,10 +71,13 @@ tant que l'écart n'est pas traité.
 
 | Sujet | État des sources |
 |---|---|
-| Mulligan : « l'adversaire pioche 1 » | **Non documenté pour Pocket.** C'est la règle du TCG physique. Implémenté dans `engine.ts` (`mulligan`) |
-| Fin de partie quand **plus aucun Planqué** n'est en jeu | **Aucune source trouvée, même secondaire.** Le moteur l'implémente (`engine.ts`, `knockOut`) alors qu'`AGENTS.md` §4 ne liste **aucune** condition de défaite en dehors des 3 Primes |
-| K.O. : **qui choisit la relève** | **Aucune source trouvée.** `AGENTS.md` §4 dit « l'Open-space choisit » ; le moteur suit désormais §4 (`pendingPromotion` + `promoteActive()`, 19/10/2026). La règle elle-même reste insourcée |
-| Plafond « 3 types de café » | Deux wikis de fans JP seulement |
+| Mulligan : « l'adversaire pioche 1 » | **Démenti en secondaire** : deux sources JP récentes (Game8, MAJ 30/09/2026 ; GameWith, MAJ 19/10/2026) disent que Pocket **n'a pas de reprise de poste** du tout — « マリガン（引き直し）はありません » — la main de départ contenant toujours un N+1. Le « l'adversaire pioche 1 » est la règle du TCG **physique**. Décidé (D-022) et implémenté (`ensureBasicInHand()`, plus de `mulligan`) |
+| Fin de partie quand **plus aucun Planqué** n'est en jeu | **Confirmé en secondaire** : « 自分の場にポケモンがいなくなると、その時点で敗北 » (Game8) ; « ポイント数に関わらず敗北 » (GameWith). Décidé (D-022) et désormais **écrit dans §4**, qui ne listait aucune condition de défaite hors 3 Primes |
+| K.O. : **qui choisit la relève** | **Confirmé en secondaire** : GameWith décrit un écran de choix côté joueur K.O. (avec limite de temps, puis choix aléatoire à l'expiration). `§4` dit « l'Open-space choisit », le moteur suit (`pendingPromotion` + `promoteActive()`). Décidé (D-022) |
+| Plafond « 3 types de café » | Deux wikis de fans JP seulement. **Hypothèse assumée** (D-022) : le principe est officiel, le chiffre ne l'est pas |
+
+Tant que les captures du protocole n'existent pas, ces quatre lignes restent à **confiance
+secondaire** : une décision datée tranche ce qu'on implémente, elle ne prouve pas ce que fait le jeu.
 
 Ces quatre points demandent soit une décision datée, soit la capture du §6.
 
