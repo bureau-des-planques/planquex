@@ -231,6 +231,7 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
 | `npm run status` | Métriques JSON, dont les cartes dérivées d'`ALL_CARDS` | **OK**, exit 0 |
 | `node scripts/status.mjs` | Même script directement | **OK**, exit 0 |
+| `npm run capturer` | Photographie les pages et échoue sur une erreur de console | **OK**, exit 0, 5 images dans `captures/` (sur `dist/`, donc après `npm run build`) |
 
 Les 2 erreurs de `check`/`build` constatées le 18/10 sont **corrigées** :
 
