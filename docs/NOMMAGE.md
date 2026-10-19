@@ -181,9 +181,44 @@ ligne**, donc la même identité mécanique.
 
 ## 7. Trouvé en chemin (hors des 8 points)
 
-- **« Open-space » est aussi un nom de carte** (`FACTIONS.md:97`, un *Lieu* de la
-  faction Manager) alors que c'est le terme du **Banc**. Aucune conséquence au
-  lancement : les Lieux sont **hors périmètre** (D-020). À surveiller quand ils
-  arriveront.
+- **« Open-space » est aussi un nom de carte** (`FACTIONS.md:97`, un *Lieu* de la faction
+  Manager) alors que c'est le terme du **Banc**. Aucune conséquence au lancement : les
+  Lieux sont **hors périmètre** (D-020). À surveiller quand ils arriveront.
 - Les 8 Collègues et 3 Objets du lancement sont **déjà esquissés** dans `FACTIONS.md`
   (un par faction, plus quelques autres). Leurs noms suivront les choix ci-dessus.
+
+## 8. Session de nommage — état au 19/10/2026
+
+**Acté dans `DECISIONS.md`** : D-024 (les 10 factions, les types, les deux règles), D-025
+(référentiel : atelier MRO d'équipement optronique, nom du jeu conservé).
+
+**Acté en séance, à consigner en fin de famille :**
+
+- **Principe du vocabulaire** : chaque terme suit **le flux d'un équipement dans
+  l'atelier** — il arrive, il est diagnostiqué, remis en état, essayé, remis en service.
+- **« Café » et « Machine à café » restent** — décision explicite : l'image tient.
+- **« NEUF / MRO » nomme les deux familles d'Objets** : matériel à installer / pièces et
+  outillage de remise en état. Conséquence : un champ de plus sur les cartes Objet.
+
+### Le site, tel que tu le décris (ton site réel)
+
+| Zone | Qui y est |
+|---|---|
+| **l'Atelier** | techniciens **opto**, **méca**, **système** (électronique-informatique), et **essai** |
+| **le Plateau** *(un étage)* | services support, en open-space : **responsable produit**, **gestionnaire**, **méthodes**, **qualité**, **flux**, **responsable process** |
+| **les Bureaux** | **RH**, **paie**, **SSE** |
+| **N+1** | le **RPO — responsable pôle** ; avec un **assistant RPO** dont « la fiche de poste dit *ingénieur méthodes atelier* » et qui « en réalité ne correspond à rien » |
+
+### En discussion
+
+- **Les trois stades.** Le mapping documenté (`AGENTS.md` §3.1) est *fidèle* — un `ex`
+  n'est pas un stade dans le jeu de base, il existe à tous les stades. Mais sa **lecture**
+  est bancale : une carte de base étiquetée « N+1 » laisse croire à une première
+  promotion. Ton découpage — *base sans rang, puis N+1, N+2, et l'ex = COMEX* — corrige
+  la lecture. Reste à savoir si **COMEX est un stade ou un statut**.
+
+### Matériau pour les 215 noms de Planqués
+
+Vocabulaire réel du site, à exploiter : **RPO**, **assistant RPO**, **responsable
+produit**, **gestionnaire**, **méthodes**, **flux**, **process**, **qualité**, **opto**,
+**méca**, **système**, **essai**, **banc**, **plateau**, **bureaux**.
