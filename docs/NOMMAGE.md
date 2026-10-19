@@ -228,6 +228,32 @@ ligne**, donc la même identité mécanique.
   la séance : le mot vient du **contrôle qualité** (le taux de rebut est un indicateur), il
   se lit sans jamais sonner faux, et il va servir dans les 286 textes. **La Benne** reste
   disponible pour une carte — le contenant et l'état sont deux choses différentes.
+- **La main reste telle quelle.** Trois raisons, et une qui tranche : `AGENTS.md` §3.1 garde
+  déjà « Ability → **Talent** » avec la mention *inchangé*, donc la règle n'est pas « tout
+  détourner » ; le mot est déjà français et compris de tout joueur de cartes ; et dans un
+  atelier, la main **est** l'outil du métier. C'est la raison qui tranche : garder « la
+  main » **libère les mots d'équipement pour les Outils** — les Outils du jeu de base sont
+  du matériel *porté* (Giant Cape, Rocky Helmet), donc chez nous une **Ceinture à outils**,
+  des **Gants**, un **Casque**, des **Chaussures de sécurité**. La Ceinture serait volée au
+  meilleur nom d'Outil du set si elle devenait la main.
+
+### La règle du nom d'origine
+
+> **On garde le nom d'origine quand le mot appartient au langage du jeu de cartes et qu'il
+> ne dit rien du monde du travail ; on détourne quand le mot nomme une chose du travail.**
+
+Ce qui reste donc **inchangé** : **la main**, **la pioche** (et « piocher », qui en français
+familier veut déjà dire travailler dur — le mot travaille pour nous), **les dégâts**, **le
+K.O.**, **le Talent**, **l'Objet**, **l'Outil** — ces deux derniers étant *déjà* les mots
+officiels français du jeu de cartes.
+
+Ce qui est **détourné, et le mérite** : Pression (attaque), Moral (points de vie), Relève
+(retraite), Café (énergie), Chariot (deck), Collègue (supporter), Planqué (Pokémon), COMEX
+(ex), Heures (Primes), Rebut (défausse). Dans chaque cas, le mot détourné apporte quelque
+chose que le mot d'origine n'avait pas.
+
+Et deux cas où l'écart est **discutable** — voir la manche ci-dessous : **Vulnérabilité**
+(officiel : Faiblesse) et **Lieu** (officiel : Stade).
 
 ### L'étage du dessus : le **Marché**
 
