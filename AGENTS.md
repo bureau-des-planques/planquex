@@ -122,7 +122,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Pioche vide | **Pas de défaite** |
 | Défaite | 3 Primes pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) |
 | K.O. | L'adversaire marque les Primes ; l'Open-space choisit la relève |
-| Statuts | Surcharge (10/tour), Burn-out (20 + lancer), Bloqué (lancer), Gelé (1 tour), Dérive (lancer avant attaque) |
+| Statuts | Surcharge (10/tour), Burn-out (20 + lancer), Bloqué (lancer), Gelé (1 tour), Dérive (lancer avant attaque) — **cumulables** |
 | Ordre des statuts | Surcharge → Burn-out → Bloqué → Gelé |
 | Cartes Action | **Objet** : illimité ; **Collègue** : **1 par tour** |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
@@ -198,7 +198,7 @@ grevomon-tcg/
 - **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
 - **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` existent depuis le 19/10/2026 (SVG `viewBox="0 0 32 32"`, monogramme « BP » sur fond sombre) : plus d'erreur de manifeste dans la console.
-- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Classeur, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004). Les règles de jeu ne vivent pas dans le store.
+- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Classeur, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4). Les règles de jeu ne vivent pas dans le store.
 - **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX. Voir §8.4.
 
@@ -215,8 +215,8 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm install` | Installer les dépendances | **OK** (`npm ci` ; `@types/node` ajouté en dev) |
 | `npm run dev` | Serveur Vite sur `:5178` | non exécuté dans cette vérification ; `preview` l'a été |
 | `npm run check` | `tsc -b` | **OK**, exit 0 |
-| `npm test` | `vitest run` | **OK** : 5 fichiers, 47 tests, exit 0 |
-| `npm run test:watch` | Vitest en watch | 47 tests à lancer |
+| `npm test` | `vitest run` | **OK** : 5 fichiers, 49 tests, exit 0 |
+| `npm run test:watch` | Vitest en watch | 49 tests à lancer |
 | `npm run build` | `tsc -b && vite build` | **OK**, exit 0 ; `dist/index.html` + `dist/sw.js` produits |
 | `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
 | `npm run status` | Métriques JSON | **OK**, exit 0 |
@@ -234,7 +234,7 @@ Autres faits vérifiés le 19/10/2026 :
 - `src/main.tsx` et `src/App.tsx` existent ; `index.html` monte l'application sous `BrowserRouter`.
 - `public/` **existe** (créé le 19/10/2026) : `favicon.svg`, `icon-192.svg`, `icon-512.svg`. Les trois sont copiés dans `dist/` par le build.
 - Une seule feuille, `src/styles.css`, importée par `main.tsx`.
-- **47 tests** (5 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Moral par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
+- **49 tests** (5 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Moral par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Classeur et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).

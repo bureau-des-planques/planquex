@@ -45,7 +45,7 @@
 | O-008 | **Écarts du miroir 2026** : Méga-Évolution ex = 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, statut des Outils/Lieux | **Tranché le 19/10/2026 : exclure les 4 (D-020).** Chiffrage conservé dans `docs/ARBITRAGE-O-008.md` pour une réintroduction en extension | Tranché |
 | O-009 | **Points de règle insourçables** : reprise de poste, fin de partie sans Planqué, qui choisit la relève, plafond de 3 types de café | **Tranché le 19/10/2026 par D-022** (décision datée, faute de source primaire). Ce qui reste : la **preuve**, à capturer avec `docs/PROTOCOLE-ASTUCES.md` | Tranché |
 | O-012 | **Preuve primaire des Astuces de jeu** : ~15 lignes de §4 sont décidées mais jamais observées | Capturer les 6 écrans listés dans `docs/PROTOCOLE-ASTUCES.md` et les ranger dans `docs/preuves/`. **Toi seul peux le faire** (application mobile) | Avant de considérer §4 comme vérifié |
-| O-010 | **Écarts code ↔ `AGENTS.md` §4** : 4 sur 8 corrigés le 19/10/2026, 3 **bloqués** faute de contenu, 1 faux positif | Voir l'état ci-dessous | Les 3 restants : après l'écriture des cartes concernées |
+| O-010 | **Écarts code ↔ `AGENTS.md` §4** : 5 sur 8 corrigés le 19/10/2026, 2 **bloqués** faute de contenu, 1 faux positif | Voir l'état ci-dessous | Les 2 restants : après l'écriture des cartes concernées |
 | O-011 | **Courbe de Moral sous celle du jeu réel** d'environ 20 points aux stades hauts | **Tranché le 19/10/2026 : on adopte la courbe du miroir (D-023)**, le coût en rythme étant borné à +3 tours | Tranché |
 
 État d'**O-010** (relevé le 19/10/2026, corrigé le même jour sauf mention) :
@@ -57,7 +57,7 @@
 | **« Changement de priorité » (D-004) absent** | **Corrigé** : type `Keyword`, champ `Card.keywords`, action `priorityShift()`, drapeau `RULES.priorityShiftEnabled` dans `src/game/rules.ts`, une fois par tour |
 | Classeur **non validé par le moteur** | **Corrigé** : les règles 20/2/1 quittent le store pour `src/game/deck.ts` ; `createBattle` **refuse** un classeur illégal |
 | `DERIVE` « jamais traitée en `checkup` » | **Faux positif** : §4 dit « Dérive = lancer **avant attaque** », et l'ordre des statuts documenté ne l'inclut pas. Le code est conforme. Rien à corriger côté moteur |
-| **Un seul statut** à la fois : l'ordre des statuts documenté est inopérant | **Bloqué** : demande de passer `CardInstance.status` en liste de statuts, ce qui touche le type, `applyStatus`, `checkup`, l'UI et 37 cartes. À faire avec une décision |
+| **Un seul statut** à la fois : l'ordre des statuts documenté est inopérant | **Corrigé** : `CardInstance.statuses: Status[]` ; `checkup` les résout **dans l'ordre de §4** (`STATUS_ORDER` dans `src/game/rules.ts`), `Dérive` restant avant l'attaque. Une même condition ne se cumule pas |
 | **Cartes Action absentes** (Objet illimité / Collègue 1 par tour) | **Bloqué** : aucune carte Objet ni Collègue n'existe. D-005 en prévoit 8 + 3 : le mécanisme suivra les données |
 | **Types de café absents** (`cost` est un nombre) | **Bloqué** : typage des cafés + génération aléatoire + incolore = réécriture des attaques des 37 cartes. Le plafond « 3 » n'a d'ailleurs pas de source primaire (O-009) |
 
