@@ -220,6 +220,14 @@ ligne**, donc la même identité mécanique.
   *le plateau de jeu* est réelle, et c'est lui qui lira le mot 286 fois. Le mot reste ce
   qu'il est — un mot de langue courante pour l'aire de jeu — et **la main reste à nommer**
   (lot 1 des stocks).
+- **Le Chariot** remplace « Classeur » : le chariot d'atelier qu'on remplit et qu'on roule
+  jusqu'au poste — la définition même d'un paquet de 20 cartes. **La Sacoche** est libérée
+  par ce choix.
+- **Le Rebut** remplace « Archive » (la pile de défausse), et **« mettre au rebut »**
+  remplace le verbe « défausser » dans les textes de cartes. C'est le gain le plus large de
+  la séance : le mot vient du **contrôle qualité** (le taux de rebut est un indicateur), il
+  se lit sans jamais sonner faux, et il va servir dans les 286 textes. **La Benne** reste
+  disponible pour une carte — le contenant et l'état sont deux choses différentes.
 
 ### L'étage du dessus : le **Marché**
 
