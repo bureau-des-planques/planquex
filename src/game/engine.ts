@@ -8,8 +8,28 @@ import type {
   PlayerState,
   Status
 } from '@/data/types';
+import { deckLegal } from '@/game/deck';
+import { RULES } from '@/game/rules';
 
 let uidCounter = 0;
+
+/**
+ * Premier tour d'un joueur : impossible d'y faire évoluer (AGENTS.md §4).
+ * Le joueur ouvre toujours la partie, donc son premier tour est le tour 1 et
+ * celui de la Direction le tour 2.
+ */
+export function isFirstTurnFor(state: BattleState, who: PlayerId): boolean {
+  return state.turn <= (who === 'player' ? 1 : 2);
+}
+
+/**
+ * Vrai quand un Poste vient d'être mis K.O. et que sa relève reste à choisir
+ * (AGENTS.md §4). Tant que c'est vrai, aucune action n'est acceptée : il faut
+ * résoudre la relève d'abord.
+ */
+function awaitingPromotion(state: BattleState): boolean {
+  return state.pendingPromotion !== null;
+}
 
 const newUid = () => `u${++uidCounter}`;
 
@@ -50,7 +70,8 @@ function emptyPlayer(): PlayerState {
     energyAttached: false,
     hasAttacked: false,
     hasRetreated: false,
-    hasUsedAbility: false
+    hasUsedAbility: false,
+    hasUsedPriorityShift: false
   };
 }
 
@@ -95,6 +116,7 @@ function startTurn(state: BattleState) {
   player.hasAttacked = false;
   player.hasRetreated = false;
   player.hasUsedAbility = false;
+  player.hasUsedPriorityShift = false;
 
   const isFirstPlayerFirstTurn = state.turn === 1 && state.current === 'player';
   if (!isFirstPlayerFirstTurn) {
@@ -156,9 +178,17 @@ function setupPlayer(state: BattleState, who: PlayerId) {
   }
 }
 
+/** Refuse un classeur non conforme : le moteur ne démarre pas une partie illégale. */
+function assertDeckLegal(deck: string[], who: string) {
+  const { ok, reasons } = deckLegal(deck);
+  if (!ok) throw new Error(`Classeur illégal (${who}) : ${reasons.join(' ')}`);
+}
+
 export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date.now()): BattleState {
   // Le seed est conservé pour les futurs tests déterministes.
   void seed;
+  assertDeckLegal(playerDeck, 'Toi');
+  assertDeckLegal(aiDeck, 'la Direction');
   const state: BattleState = {
     turn: 1,
     current: 'player',
@@ -168,7 +198,8 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
       ai: emptyPlayer()
     },
     log: [],
-    winner: null
+    winner: null,
+    pendingPromotion: null
   };
 
   state.players.player.deck = shuffle(playerDeck.map((id) => createInstance(id)));
@@ -183,6 +214,7 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
 }
 
 export function playBasic(state: BattleState, uid: string, slot: 'active' | number): BattleState {
+  if (awaitingPromotion(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   const handCard = player.hand.find((card) => card.uid === uid);
@@ -205,8 +237,9 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
 }
 
 export function evolve(state: BattleState, uid: string, targetUid: string): BattleState {
+  if (awaitingPromotion(state)) return state;
   const next = clone(state);
-  if (next.turn <= 1) return state;
+  if (isFirstTurnFor(next, next.current)) return state;
   const player = next.players[next.current];
   const handCard = player.hand.find((card) => card.uid === uid);
   if (!handCard) return state;
@@ -229,6 +262,7 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
 }
 
 export function attachEnergy(state: BattleState, targetUid: string): BattleState {
+  if (awaitingPromotion(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.energyAttached || player.energyZone <= 0) return state;
@@ -246,6 +280,7 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
 }
 
 export function retreat(state: BattleState, benchIndex: number): BattleState {
+  if (awaitingPromotion(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.hasRetreated || !player.active) return state;
@@ -263,6 +298,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
 }
 
 export function useAbility(state: BattleState): BattleState {
+  if (awaitingPromotion(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.hasUsedAbility || !player.active) return state;
@@ -366,14 +402,13 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
     return;
   }
 
-  const index = defender.bench.findIndex(Boolean);
-  if (index >= 0) {
-    const next = defender.bench[index];
-    if (next) {
-      defender.bench[index] = null;
-      defender.active = { ...next, status: null };
-      state.log.push(`${defenderId === 'player' ? 'Tu envoies' : 'L’IA envoie'} ${getCard(next.cardId)?.name} au Poste.`);
-    }
+  if (defender.bench.some(Boolean)) {
+    // §4 : c'est le joueur dont le Poste est K.O. qui choisit sa relève. Le
+    // moteur ne choisit pas à sa place ; il attend `promoteActive`.
+    state.pendingPromotion = defenderId;
+    state.log.push(
+      defenderId === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.'
+    );
   } else {
     state.phase = 'ended';
     state.winner = attackerId;
@@ -381,7 +416,52 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
   }
 }
 
+/**
+ * Relève après un K.O. : appelable par le joueur dont le Poste est vide, que ce
+ * soit son tour ou non. C'est la seule action acceptée tant qu'une relève
+ * attend d'être choisie.
+ */
+export function promoteActive(state: BattleState, benchIndex: number): BattleState {
+  const who = state.pendingPromotion;
+  if (!who) return state;
+  const next = clone(state);
+  const player = next.players[who];
+  const incoming = player.bench[benchIndex];
+  if (!incoming) return state;
+
+  player.bench[benchIndex] = null;
+  player.active = { ...incoming, status: null };
+  next.pendingPromotion = null;
+  next.log.push(`${who === 'player' ? 'Tu envoies' : 'L’IA envoie'} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
+  return next;
+}
+
+/**
+ * « Changement de priorité » (D-004) : une fois par tour, au Poste, archiver
+ * 1 carte du courrier puis en piocher 1. Le mot-clé est porté par la carte au
+ * Poste ; `RULES.priorityShiftEnabled` coupe le mot-clé sans toucher aux cartes.
+ */
+export function priorityShift(state: BattleState, uid: string): BattleState {
+  if (!RULES.priorityShiftEnabled || awaitingPromotion(state)) return state;
+  const next = clone(state);
+  const player = next.players[next.current];
+  if (player.hasUsedPriorityShift || !player.active) return state;
+  const active = getCard(player.active.cardId);
+  if (!active?.keywords?.includes('priorityShift')) return state;
+
+  const discarded = removeFromHand(player, uid);
+  if (!discarded) return state;
+  putInDiscard(player, discarded);
+  draw(next, next.current, 1);
+  player.hasUsedPriorityShift = true;
+  next.log.push(
+    `${next.current === 'player' ? 'Tu archives' : 'L’IA archive'} ${getCard(discarded.cardId)?.name ?? 'une carte'} : Changement de priorité.`
+  );
+  return next;
+}
+
 export function attack(state: BattleState, attackIndex: number): BattleState {
+  if (awaitingPromotion(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   const opponent = next.players[next.current === 'player' ? 'ai' : 'player'];
@@ -459,12 +539,15 @@ function checkup(state: BattleState): BattleState {
 }
 
 export function endTurn(state: BattleState): BattleState {
+  if (awaitingPromotion(state)) return state;
   const next = clone(state);
   if (next.phase === 'ended') return next;
   // `checkup` mute l'état et peut le terminer (K.O. par statut) : on lit la
   // valeur retournée, pas `next`, dont le rétrécissement de type est périmé.
   const afterCheckup = checkup(next);
   if (afterCheckup.phase === 'ended') return afterCheckup;
+  // Un K.O. de checkup ouvre une relève : le tour ne passe pas avant le choix.
+  if (awaitingPromotion(afterCheckup)) return afterCheckup;
 
   next.current = next.current === 'player' ? 'ai' : 'player';
   next.turn += 1;
@@ -483,6 +566,7 @@ export function attackPreview(state: BattleState, attackIndex: number): number {
 }
 
 export function canEvolve(state: BattleState, handUid: string, targetUid: string): boolean {
+  if (awaitingPromotion(state)) return false;
   const player = state.players[state.current];
   const hand = player.hand.find((card) => card.uid === handUid);
   const target = findInPlay(player, targetUid);
@@ -492,11 +576,12 @@ export function canEvolve(state: BattleState, handUid: string, targetUid: string
     card?.evolvesFrom === target.cardId &&
       target.playedTurn < state.turn &&
       target.evolvedTurn !== state.turn &&
-      state.turn > 1
+      !isFirstTurnFor(state, state.current)
   );
 }
 
 export function legalAttacks(state: BattleState): Attack[] {
+  if (awaitingPromotion(state)) return [];
   const player = state.players[state.current];
   if (!player.active) return [];
   const card = getCard(player.active.cardId);

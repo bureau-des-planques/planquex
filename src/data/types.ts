@@ -33,6 +33,12 @@ export interface AttackEffect {
   target?: 'self' | 'opponent';
 }
 
+/**
+ * Mots-clés maison portés par les cartes. C'est la **seule** exception au miroir
+ * de Pocket (D-004) : aucun autre mot-clé ne doit être ajouté ici sans décision.
+ */
+export type Keyword = 'priorityShift';
+
 export interface Attack {
   name: string;
   cost: number;
@@ -66,6 +72,7 @@ export interface Card {
   ex?: boolean;
   variantOf?: string;
   evolvesFrom?: string;
+  keywords?: Keyword[];
 }
 
 export interface CardInstance {
@@ -94,6 +101,8 @@ export interface PlayerState {
   hasAttacked: boolean;
   hasRetreated: boolean;
   hasUsedAbility: boolean;
+  /** « Changement de priorité » (D-004) : une fois par tour. */
+  hasUsedPriorityShift: boolean;
 }
 
 export type BattleAction =
@@ -103,6 +112,8 @@ export type BattleAction =
   | { type: 'retreat'; benchIndex: number }
   | { type: 'attack'; attackIndex: number }
   | { type: 'ability' }
+  | { type: 'priorityShift'; uid: string }
+  | { type: 'promoteActive'; benchIndex: number }
   | { type: 'endTurn' };
 
 export interface BattleState {
@@ -112,4 +123,12 @@ export interface BattleState {
   players: Record<PlayerId, PlayerState>;
   log: string[];
   winner: PlayerId | null;
+  /**
+   * Joueur dont le Poste vient d'être mis K.O. et qui doit **choisir** sa relève
+   * (AGENTS.md §4 : « l'Open-space choisit la relève »). Tant que ce champ est
+   * renseigné, aucune autre action n'est acceptée : il faut d'abord trancher.
+   * `null` quand rien n'est en attente, ou quand le joueur n'a plus d'Open-space
+   * (la partie est alors terminée).
+   */
+  pendingPromotion: PlayerId | null;
 }

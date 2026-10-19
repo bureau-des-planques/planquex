@@ -7,8 +7,14 @@ import {
   createBattle,
   createInstance,
   endTurn,
-  evolve
+  evolve,
+  isFirstTurnFor,
+  legalAttacks,
+  promoteActive,
+  priorityShift
 } from '@/game/engine';
+import { DECK_SIZE } from '@/game/deck';
+import { RULES } from '@/game/rules';
 import type { BattleState } from '@/data/types';
 
 /**
@@ -25,8 +31,8 @@ afterEach(() => {
 
 const BASICS = ALL_CARDS.filter((card) => !card.variantOf && card.stage === 'N+1').map((card) => card.id);
 
-/** 20 cartes dont au moins un N+1 : suffisant pour `createBattle`. */
-const DECK = [...BASICS, ...BASICS].slice(0, 20);
+/** Classeur légal de 20 cartes (10 noms N+1 en double). */
+const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 function freshBattle(): BattleState {
   return createBattle(DECK, DECK);
@@ -82,12 +88,8 @@ describe('endTurn — statut létal', () => {
     expect(after.turn).toBe(lethal.turn);
   });
 
-  // Attention : ce test décrit le comportement ACTUEL du moteur, qui diverge
-  // d'AGENTS.md §4 (« l'Open-space choisit la relève »). Il n'entérine pas la
-  // règle : il la rend visible. L'écart est suivi en O-009.
-  it('promeut automatiquement l’Open-space (comportement actuel, écart suivi en O-009)', () => {
-    const state = freshBattle();
-    const lethal = structuredClone(state);
+  it('met la relève en attente au lieu de choisir à la place du joueur', () => {
+    const lethal = structuredClone(freshBattle());
     const active = lethal.players.player.active;
     if (!active) throw new Error('Aucun Planqué au Poste');
     active.hp = 5;
@@ -95,11 +97,11 @@ describe('endTurn — statut létal', () => {
 
     const after = endTurn(lethal);
 
-    // Comportement actuel du moteur : promotion automatique, sans choix du
-    // joueur, alors qu'AGENTS.md §4 dit « l'Open-space choisit la relève ».
+    // §4 : « l'Open-space choisit la relève ». Le moteur attend, il ne promeut pas.
     expect(after.phase).toBe('playing');
-    expect(after.players.player.active).not.toBeNull();
-    expect(after.current).toBe('ai');
+    expect(after.pendingPromotion).toBe('player');
+    expect(after.players.player.active).toBeNull();
+    expect(after.current).toBe('player');
   });
 
   it('ne déclare aucune défaite quand le classeur est vide', () => {
@@ -174,5 +176,147 @@ describe('Évolution', () => {
 
     expect(evolve(next, instance.uid, active.uid)).toBe(next);
     expect(canEvolve(next, instance.uid, active.uid)).toBe(false);
+  });
+
+  it('refuse aussi l’évolution au premier tour de la Direction (tour 2)', () => {
+    const start = freshBattle();
+    const aiActive = start.players.ai.active;
+    if (!aiActive) throw new Error('Poste vide côté Direction');
+    const evolution = ALL_CARDS.find((card) => card.evolvesFrom === aiActive.cardId && !card.variantOf);
+    if (!evolution) {
+      expect(isFirstTurnFor(start, 'ai')).toBe(true);
+      return;
+    }
+
+    // Tour 2 = premier tour de la Direction.
+    const next = structuredClone(start);
+    next.turn = 2;
+    next.current = 'ai';
+    next.players.ai.active!.playedTurn = 0;
+    const instance = createInstance(evolution.id, next.turn);
+    next.players.ai.hand.push(instance);
+
+    expect(isFirstTurnFor(next, 'ai')).toBe(true);
+    expect(canEvolve(next, instance.uid, aiActive.uid)).toBe(false);
+    expect(evolve(next, instance.uid, aiActive.uid)).toBe(next);
+  });
+});
+
+describe('Relève choisie après K.O.', () => {
+  /** Amène la Direction à 1 Moral, puis frappe : son Poste tombe. */
+  function knockOutAi(state: BattleState): BattleState {
+    const next = structuredClone(state);
+    const attacker = next.players.player.active;
+    const defender = next.players.ai.active;
+    if (!attacker || !defender) throw new Error('Poste vide');
+    const card = getCard(attacker.cardId);
+    const index = card?.attacks.findIndex((entry) => entry.cost <= 3) ?? -1;
+    if (index < 0) throw new Error('Aucune Pression abordable');
+    attacker.energy = 3;
+    defender.hp = 1;
+    return attack(next, index);
+  }
+
+  it('attend le choix de la Direction au lieu de promouvoir tout seul', () => {
+    const after = knockOutAi(freshBattle());
+
+    expect(after.pendingPromotion).toBe('ai');
+    expect(after.players.ai.active).toBeNull();
+    expect(after.players.ai.bench.filter(Boolean)).toHaveLength(3);
+  });
+
+  it('refuse toute autre action tant que la relève n’est pas choisie', () => {
+    const after = knockOutAi(freshBattle());
+
+    expect(endTurn(after)).toBe(after);
+    expect(legalAttacks({ ...after, current: 'ai' })).toEqual([]);
+    expect(evolve(after, 'peu-importe', 'peu-importe')).toBe(after);
+  });
+
+  it('installe le Planqué choisi au Poste et libère le jeu', () => {
+    const after = knockOutAi(freshBattle());
+    const chosen = after.players.ai.bench[1];
+    if (!chosen) throw new Error('Open-space vide');
+
+    const resolved = promoteActive(after, 1);
+
+    expect(resolved.pendingPromotion).toBeNull();
+    expect(resolved.players.ai.active?.uid).toBe(chosen.uid);
+    expect(resolved.players.ai.bench[1]).toBeNull();
+    expect(endTurn(resolved)).not.toBe(resolved);
+  });
+
+  it('refuse un emplacement vide', () => {
+    const after = knockOutAi(freshBattle());
+    const empty = promoteActive(after, 2);
+    if (after.players.ai.bench[2] === null) {
+      expect(empty).toBe(after);
+    } else {
+      // L'emplacement 2 était occupé : on vérifie un index hors bornes.
+      expect(promoteActive(after, 9)).toBe(after);
+    }
+  });
+});
+
+describe('Classeur imposé au démarrage', () => {
+  it('refuse de démarrer avec un classeur illégal', () => {
+    expect(() => createBattle(DECK.slice(0, DECK_SIZE - 1), DECK)).toThrow(/Classeur illégal/);
+    expect(() => createBattle(DECK, [DECK[0]])).toThrow(/Classeur illégal/);
+  });
+});
+
+describe('Changement de priorité (D-004)', () => {
+  /** Donne le mot-clé à la carte au Poste, sans toucher aux données. */
+  function withKeyword(state: BattleState): { state: BattleState; restore: () => void } {
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const original = CARD_BY_ID.get(active.cardId);
+    if (!original) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(active.cardId, { ...original, keywords: ['priorityShift'] });
+    return { state, restore: () => CARD_BY_ID.set(active.cardId, original) };
+  }
+
+  it('archive 1 carte et en pioche 1, une fois par tour', () => {
+    const state = freshBattle();
+    if (state.players.player.hand.length === 0) throw new Error('Courrier vide');
+    const { restore } = withKeyword(state);
+    try {
+      const discarded = state.players.player.hand[0];
+      if (!discarded) throw new Error('Courrier vide');
+      const handBefore = state.players.player.hand.length;
+
+      const after = priorityShift(state, discarded.uid);
+
+      expect(after.players.player.discard.map((card) => card.uid)).toContain(discarded.uid);
+      expect(after.players.player.hand).toHaveLength(handBefore); // -1 archivée, +1 piochée
+      expect(after.players.player.hasUsedPriorityShift).toBe(true);
+
+      // Deuxième usage dans le même tour : refusé.
+      const again = priorityShift(after, after.players.player.hand[0]?.uid ?? '');
+      expect(again).toBe(after);
+    } finally {
+      restore();
+    }
+  });
+
+  it('ne fait rien sans le mot-clé sur la carte au Poste', () => {
+    const state = freshBattle();
+    const uid = state.players.player.hand[0]?.uid;
+    if (!uid) throw new Error('Courrier vide');
+    expect(priorityShift(state, uid)).toBe(state);
+  });
+
+  it('ne fait rien quand le drapeau global est coupé', () => {
+    const state = freshBattle();
+    const { restore } = withKeyword(state);
+    const uid = state.players.player.hand[0]?.uid;
+    if (!uid) throw new Error('Courrier vide');
+    RULES.priorityShiftEnabled = false;
+    try {
+      expect(priorityShift(state, uid)).toBe(state);
+    } finally {
+      RULES.priorityShiftEnabled = true;
+      restore();
+    }
   });
 });

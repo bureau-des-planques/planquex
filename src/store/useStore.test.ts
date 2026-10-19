@@ -1,38 +1,54 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ALL_CARDS } from '@/data';
-import { deckCards, deckCounts, deckLegal } from '@/store/useStore';
+import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
+import { useStore } from '@/store/useStore';
 
-const BASICS = ALL_CARDS.filter((card) => !card.variantOf && card.stage === 'N+1').map((card) => card.id);
+beforeEach(() => {
+  useStore.getState().reset();
+});
 
-/** 20 cartes légales : 10 noms N+1 en double. */
-const LEGAL_DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
+describe('Bac à courrier', () => {
+  it('distribue 5 cartes, les ajoute au Galérodex et incrémente le compteur', () => {
+    const before = useStore.getState().packsOpened;
+    const cards = useStore.getState().openPack();
 
-describe('deckLegal — Classeur', () => {
-  it('accepte 20 cartes, 2 exemplaires max, au moins un N+1', () => {
-    const result = deckLegal(LEGAL_DECK);
-    expect(result.ok).toBe(true);
-    expect(result.reasons).toEqual([]);
+    expect(cards).toHaveLength(5);
+    expect(useStore.getState().packsOpened).toBe(before + 1);
+    for (const card of cards) {
+      expect(useStore.getState().owned[card.id]).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('Classeur du store', () => {
+  it('plafonne à 2 exemplaires du même nom, un 3e retirant les précédents', () => {
+    const id = ALL_CARDS[0].id;
+    const { toggleDeck } = useStore.getState();
+
+    toggleDeck(id);
+    toggleDeck(id);
+    expect(useStore.getState().deck.filter((entry) => entry === id)).toHaveLength(MAX_COPIES_PER_NAME);
+
+    toggleDeck(id);
+    expect(useStore.getState().deck.filter((entry) => entry === id)).toHaveLength(0);
   });
 
-  it('refuse un classeur qui ne fait pas 20 cartes', () => {
-    const result = deckLegal(LEGAL_DECK.slice(0, 19));
-    expect(result.ok).toBe(false);
-    expect(result.reasons[0]).toContain('20 cartes');
+  it('ne dépasse jamais la taille du Classeur', () => {
+    const { toggleDeck } = useStore.getState();
+    for (const card of ALL_CARDS.slice(0, 12)) {
+      toggleDeck(card.id);
+      toggleDeck(card.id);
+    }
+    expect(useStore.getState().deck.length).toBeLessThanOrEqual(DECK_SIZE);
   });
 
-  it('refuse plus de 2 exemplaires du même nom', () => {
-    const deck = [BASICS[0], BASICS[0], BASICS[0], ...LEGAL_DECK].slice(0, 20);
-    expect(deckLegal(deck).reasons).toContain('Maximum 2 exemplaires du même nom.');
-  });
+  it('vide le Classeur sans toucher au Galérodex', () => {
+    const id = ALL_CARDS[0].id;
+    const ownedBefore = useStore.getState().owned[id];
+    useStore.getState().toggleDeck(id);
+    useStore.getState().clearDeck();
 
-  it('refuse un classeur sans Planqué N+1', () => {
-    const evolutions = ALL_CARDS.filter((card) => !card.variantOf && card.stage !== 'N+1').map((card) => card.id);
-    const deck = [...evolutions, ...evolutions].slice(0, 20);
-    expect(deckLegal(deck).reasons).toContain('Il faut au moins un Planqué N+1.');
-  });
-
-  it('compte les exemplaires et résout les cartes', () => {
-    expect(deckCounts([BASICS[0], BASICS[0], BASICS[1]])).toEqual({ [BASICS[0]]: 2, [BASICS[1]]: 1 });
-    expect(deckCards([BASICS[0], 'identifiant-inconnu'])).toHaveLength(1);
+    expect(useStore.getState().deck).toEqual([]);
+    expect(useStore.getState().owned[id]).toBe(ownedBefore);
   });
 });

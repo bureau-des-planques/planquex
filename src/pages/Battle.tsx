@@ -2,8 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
 import { ALL_CARDS, getCard } from '@/data';
 import type { BattleState, CardInstance, PlayerId } from '@/data/types';
-import { attachEnergy, attack, createBattle, endTurn } from '@/game/engine';
-import { deckLegal, useStore } from '@/store/useStore';
+import { attachEnergy, attack, createBattle, endTurn, promoteActive } from '@/game/engine';
+import { deckLegal } from '@/game/deck';
+import { useStore } from '@/store/useStore';
 
 /**
  * Classeur de test : 10 cartes de base en double, en commençant par les N+1.
@@ -52,6 +53,8 @@ export function Battle() {
   const player = state.players.player;
   const ai = state.players.ai;
   const isPlayerTurn = state.current === 'player' && state.phase === 'playing';
+  // Une relève en attente bloque tout : il faut la choisir d'abord (§4).
+  const canAct = isPlayerTurn && state.pendingPromotion === null;
   const playerCard = player.active ? getCard(player.active.cardId) : undefined;
 
   const restart = useCallback(() => {
@@ -133,11 +136,51 @@ export function Battle() {
         ))}
       </section>
 
+      {state.pendingPromotion && (
+        <section className="notice notice--warn promotion">
+          {state.pendingPromotion === 'player' ? (
+            <>
+              <p>Ton Poste est K.-O. À toi de choisir ta relève.</p>
+              <div className="actions">
+                {player.bench.map((slot, index) =>
+                  slot ? (
+                    <button
+                      key={slot.uid}
+                      type="button"
+                      className="button button--primary"
+                      onClick={() => setState((current) => promoteActive(current, index))}
+                    >
+                      {getCard(slot.cardId)?.name ?? 'Un Planqué'} au Poste
+                    </button>
+                  ) : null
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <p>
+                La Direction doit choisir sa relève. Aucune IA ne joue encore : ce bouton tient sa place et
+                prend le premier Planqué de son Open-space.
+              </p>
+              <button
+                type="button"
+                className="button"
+                onClick={() =>
+                  setState((current) => promoteActive(current, current.players.ai.bench.findIndex(Boolean)))
+                }
+              >
+                Faire choisir la Direction (provisoire)
+              </button>
+            </>
+          )}
+        </section>
+      )}
+
       <section className="actions">
         <button
           type="button"
           className="button"
-          disabled={!isPlayerTurn || !player.active || player.energyAttached || player.energyZone <= 0}
+          disabled={!canAct || !player.active || player.energyAttached || player.energyZone <= 0}
           onClick={() => setState((current) => attachEnergy(current, current.players.player.active?.uid ?? ''))}
         >
           <Coffee size={16} /> Attacher 1 café
@@ -148,7 +191,7 @@ export function Battle() {
             type="button"
             className="button button--primary"
             key={attackEntry.name}
-            disabled={!isPlayerTurn || player.hasAttacked || (player.active?.energy ?? 0) < attackEntry.cost}
+            disabled={!canAct || player.hasAttacked || (player.active?.energy ?? 0) < attackEntry.cost}
             onClick={() => setState((current) => attack(current, index))}
           >
             <Swords size={16} /> {attackEntry.name} ({attackEntry.damage})
@@ -158,7 +201,7 @@ export function Battle() {
         <button
           type="button"
           className="button"
-          disabled={state.phase === 'ended'}
+          disabled={state.phase === 'ended' || state.pendingPromotion !== null}
           onClick={() => setState((current) => endTurn(current))}
         >
           {isPlayerTurn ? 'Fin du tour' : 'Passer le tour de la Direction'}

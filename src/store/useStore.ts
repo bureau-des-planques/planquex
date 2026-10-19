@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ALL_CARDS, getCard } from '@/data';
+import { ALL_CARDS } from '@/data';
+import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 import type { Card, Rarity } from '@/data/types';
 
 /** Clé de persistance. Source unique : `Settings.tsx` l'affiche, `persist` l'écrit. */
@@ -67,11 +68,11 @@ export const useStore = create<AppState>()(
       toggleDeck: (cardId) => {
         const state = get();
         const count = state.deck.filter((id) => id === cardId).length;
-        if (count >= 2) {
+        if (count >= MAX_COPIES_PER_NAME) {
           set({ deck: state.deck.filter((id) => id !== cardId) });
           return;
         }
-        if (state.deck.length >= 20) return;
+        if (state.deck.length >= DECK_SIZE) return;
         set({ deck: [...state.deck, cardId] });
       },
       clearDeck: () => set({ deck: [] }),
@@ -92,23 +93,5 @@ export const useStore = create<AppState>()(
   )
 );
 
-export function deckCounts(deck: string[]): Record<string, number> {
-  return deck.reduce<Record<string, number>>((acc, id) => {
-    acc[id] = (acc[id] ?? 0) + 1;
-    return acc;
-  }, {});
-}
-
-export function deckCards(deck: string[]): Card[] {
-  return deck.map((id) => getCard(id)).filter(Boolean) as Card[];
-}
-
-export function deckLegal(deck: string[]): { ok: boolean; reasons: string[] } {
-  const reasons: string[] = [];
-  if (deck.length !== 20) reasons.push(`Le classeur doit contenir 20 cartes (${deck.length}/20).`);
-  const counts = deckCounts(deck);
-  if (Object.values(counts).some((count) => count > 2)) reasons.push('Maximum 2 exemplaires du même nom.');
-  const hasBasic = deckCards(deck).some((card) => card.stage === 'N+1');
-  if (!hasBasic) reasons.push('Il faut au moins un Planqué N+1.');
-  return { ok: reasons.length === 0, reasons };
-}
+// Les règles du Classeur (20 cartes, 2 exemplaires max, ≥ 1 N+1) vivent dans
+// `@/game/deck` : ce sont des règles de jeu, pas de l'état d'application.

@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { ALL_CARDS, STAGE_META } from '@/data';
 import type { Card } from '@/data/types';
-import { deckCards, deckCounts, deckLegal, useStore } from '@/store/useStore';
+import { deckCards, deckCounts, deckLegal } from '@/game/deck';
+import { useStore } from '@/store/useStore';
 import { CardView } from '@/components/CardView';
 import { CardDetail } from '@/components/CardDetail';
 

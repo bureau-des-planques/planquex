@@ -222,6 +222,16 @@ code {
   border-left-color: var(--warn);
 }
 
+.promotion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.promotion p {
+  margin: 0;
+}
+
 .hero {
   background: linear-gradient(150deg, #182444, var(--bg-raised));
   border: 1px solid var(--line);
