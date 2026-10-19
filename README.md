@@ -20,6 +20,7 @@ npm run test:watch   # tests Vitest en continu
 npm run build        # vérification des types puis build de production dans dist/
 npm run preview      # sert le contenu de dist/
 npm run status       # métriques du projet en JSON, dont le décompte des cartes
+npm run simulate -- --games 100 --seed 42  # N parties headless, rapport reproductible
 ```
 
 Le build valide produit `dist/index.html` et `dist/sw.js` : ce sont les deux fichiers à vérifier après `npm run build`.
