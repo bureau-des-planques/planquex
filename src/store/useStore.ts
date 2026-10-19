@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ALL_CARDS } from '@/data';
 import { deckCanAdd } from '@/game/deck';
-import { drawRandom, seedRng } from '@/game/rng';
+import { openPackCards } from '@/game/pack';
+import { seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
 import type { Card, Rarity } from '@/data/types';
 
@@ -24,23 +25,6 @@ function starterOwned(): Record<string, number> {
     if (STARTER_RARITIES.includes(card.rarity)) owned[card.id] = 1;
   }
   return owned;
-}
-
-function pick(pool: Card[], holder: RngHolder): Card {
-  return pool[Math.floor(drawRandom(holder) * pool.length)] ?? ALL_CARDS[0];
-}
-
-function openPackCards(holder: RngHolder): Card[] {
-  const commons = ALL_CARDS.filter((card) => card.rarity === '1D' || card.rarity === '2D');
-  const uncommons = ALL_CARDS.filter((card) => card.rarity === '3D');
-  const rares = ALL_CARDS.filter((card) => card.rarity === '1S' || card.rarity === '2S' || card.rarity === '4D');
-  return [
-    pick(commons, holder),
-    pick(commons, holder),
-    pick(commons, holder),
-    pick(uncommons, holder),
-    pick(rares, holder)
-  ];
 }
 
 export interface AppState {
@@ -77,7 +61,9 @@ export const useStore = create<AppState>()(
       reducedMotion: false,
       rng: seedRng(Date.now()),
       openPack: () => {
-        // Le tirage avance un générateur local, puis on publie son état : `set`
+        // La composition de l'Arrivage (3 communes, 1 peu commune, 1 rare) est
+        // une règle de jeu : elle vit dans `@/game/pack` (ticket #57). Ici, on ne
+        // fait qu'avancer un générateur local, puis publier son état : `set`
         // reste le seul chemin d'écriture, et un Arrivage est reproductible.
         const holder: RngHolder = { rng: get().rng };
         const cards = openPackCards(holder);

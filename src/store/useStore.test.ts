@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ALL_CARDS, getCard } from '@/data';
 import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
+import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
 import { migratePersisted, STORAGE_VERSION, useStore } from '@/store/useStore';
 
@@ -18,6 +19,15 @@ describe('Arrivage', () => {
     for (const card of cards) {
       expect(useStore.getState().owned[card.id]).toBeGreaterThan(0);
     }
+  });
+
+  it('ne décide plus de la composition : il applique `@/game/pack` (#57)', () => {
+    const expected = openPackCards({ rng: seedRng(7) }).map((card) => card.id);
+
+    useStore.setState({ rng: seedRng(7), owned: {}, packsOpened: 0 });
+    const cards = useStore.getState().openPack().map((card) => card.id);
+
+    expect(cards).toEqual(expected);
   });
 });
 
