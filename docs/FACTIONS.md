@@ -86,7 +86,7 @@
 |---|---|---|
 | Jeune manager | Entrant | Base, dégâts |
 | Chef de projet | Entrant | Base, tempo |
-| Ton chef | Entrant | Base, pression |
+| Responsable d’équipe | Entrant | Base, pression |
 | Manager de proximité | N+1 | Évolution, burn-out |
 | Directeur général | N+2 | Gros dégâts, contrôle |
 | Réunion d’urgence | Objet | Défausse une énergie |
@@ -172,7 +172,7 @@
 | Carte | Stade | Rôle |
 |---|---|---|
 | Assistant RH | Entrant | Base, dérive |
-| Recruteur en embuscade | Entrant | Base, défausse |
+| Chargé de sourcing | Entrant | Base, défausse |
 | Chargé de recrutement | N+1 | Évolution, dégâts au Rack |
 | DRH | N+2 | Contrôle, gros dégâts |
 | Chasseur de têtes | Entrant | Base, pioche |

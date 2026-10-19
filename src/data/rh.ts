@@ -51,10 +51,10 @@ export const RH_CARDS: PlanqueCard[] = [
     flavor: "Il a lu ton CV. Il sait où tu habites."
   }),
 
-  // Deuxième ligne : Recruteur en embuscade → Chasseur de têtes → Directeur des talents
+  // Deuxième ligne : Chargé de sourcing → Chasseur de têtes → Directeur des talents
   base({
     id: 'rh-recruteur-embuscade',
-    name: 'Recruteur en embuscade',
+    name: 'Chargé de sourcing',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
@@ -126,7 +126,7 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Université d\'entreprise', cost: 2, damage: 60, text: "Soigne 10 de tous tes Planqués.", effects: [{ kind: 'healAll', amount: 10 }] },
       { name: 'Montée en compétences', cost: 3, damage: 100, text: "Ce Planqué prend 20 de stress.", effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: "Elle a formé l'équipe. L'équipe a formé la concurrence."
+    flavor: "Elle a formé l'équipe. Le plan de formation a expiré."
   }),
 
   // Quatrième ligne : Chargé paie → Responsable comp & ben → DRH rémunération

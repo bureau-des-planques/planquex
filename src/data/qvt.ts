@@ -60,7 +60,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Pause active', cost: 1, damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il a mis de la musique. Personne n\'a dansé.'
+    flavor: 'Il a mis de la musique. La pause est décomptée.'
   }),
   base({
     id: 'qvt-responsable-qvt',
@@ -112,7 +112,7 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Bilan forme', cost: 2, damage: 50 },
       { name: 'Programme sur mesure', cost: 2, damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
-    flavor: 'Elle a un certificat. Le tapis de gym sert de paillasson.'
+    flavor: 'Elle a un certificat. La salle de sport est devenue un bureau.'
   }),
 
   // Ligne 4 : Gestionnaire flux → Optimiseur process (2 stades)
@@ -148,7 +148,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Relance', cost: 1, damage: 20 }],
-    flavor: 'Il a relancé tout le monde. Personne n\'a répondu.'
+    flavor: 'Il a relancé tout le monde. Le formulaire n\'enregistre rien.'
   }),
   base({
     id: 'qvt-chef-projet-qvt',
@@ -165,10 +165,10 @@ export const QVT_CARDS: PlanqueCard[] = [
     flavor: 'Le projet est livré. Le compte-rendu est en attente.'
   }),
 
-  // Ligne 6 : Ambassadeur bienveillance → Facilitateur (2 stades)
+  // Ligne 6 : Chargé de mission QVT → Facilitateur (2 stades)
   base({
     id: 'qvt-ambassadeur-bienveillance',
-    name: 'Ambassadeur bienveillance',
+    name: 'Chargé de mission QVT',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 55,
@@ -192,7 +192,7 @@ export const QVT_CARDS: PlanqueCard[] = [
   // Entrants seuls (sans évolution)
   base({
     id: 'qvt-cueilleur-fruits',
-    name: 'Cueilleur de fruits',
+    name: 'Chargé de logistique',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 50,
@@ -202,7 +202,7 @@ export const QVT_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'qvt-organisateur-afterwork',
-    name: 'Organisateur afterwork',
+    name: 'Responsable événementiel',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
@@ -212,17 +212,17 @@ export const QVT_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'qvt-yogiste-bureau',
-    name: 'Yogiste de bureau',
+    name: 'Chargé d\'ergonomie',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Posture du lotus', cost: 1, damage: 10 }],
-    flavor: 'Elle fait le chien tête en bas. Le PDG fait le paon.'
+    flavor: 'Elle tient la posture. La charge de travail, non.'
   }),
   base({
     id: 'qvt-animateur-pause',
-    name: 'Animateur pause',
+    name: 'Gestionnaire des moyens généraux',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 65,
@@ -232,7 +232,7 @@ export const QVT_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'qvt-decorateur-plantes',
-    name: 'Décorateur plantes',
+    name: 'Chargé de l\'environnement de travail',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 55,
@@ -242,7 +242,7 @@ export const QVT_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'qvt-masseur-assis',
-    name: 'Masseur assis',
+    name: 'Masseur-kinésithérapeute',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 50,
