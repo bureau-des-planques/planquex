@@ -7,6 +7,7 @@ import { ALL_QVT_CARDS } from './qvt';
 import { ALL_RH_CARDS } from './rh';
 import { ALL_ATELIER_CARDS } from './atelier';
 import { ALL_DIRECTION_CARDS } from './direction';
+import { ALL_SYNDICAT_CARDS } from './syndicat';
 
 export const ALL_CARDS: Card[] = [
   ...ALL_SSE_CARDS,
@@ -16,6 +17,7 @@ export const ALL_CARDS: Card[] = [
   ...ALL_RH_CARDS,
   ...ALL_ATELIER_CARDS,
   ...ALL_DIRECTION_CARDS,
+  ...ALL_SYNDICAT_CARDS,
   ...ACTION_CARDS
 ];
 
