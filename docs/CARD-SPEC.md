@@ -59,7 +59,7 @@ construit sur N+1 → N+2 → COMEX.
 Valeurs cibles, à ajuster par simulation. Le Moral et les dégâts sont des multiples
 de 10 pour rester lisibles.
 
-| Stade / rareté | Moral | Attaques | Dégâts typiques | Relève |
+| Stade / rareté | Moral | Attaques | Dégâts indicatifs | Relève |
 |---|---:|---|---:|---:|
 | N+1 1◆ | 60–70 | 1 attaque | 10–20 | 1 |
 | N+1 2◆ (ligne) | 60–80 | 1–2 attaques | 10–30 | 1 |
@@ -68,11 +68,30 @@ de 10 pour rester lisibles.
 | COMEX 3◆ | 120–140 | 2 attaques | 50–80 | 2 |
 | COMEX 4◆ (ex) | 140–170 | 2 attaques | 70–120 | 2–3 |
 
+### Dégâts par café — **règle normative** (D-021)
+
+Les dégâts se lisent **par coût en café**, pas par rareté. La colonne « Dégâts indicatifs »
+ci-dessus est un repère de lecture ; elle ne plafonne rien.
+
+| Café | Dégâts | Effet porté par l'attaque |
+|---|---:|---|
+| 1 | 10–30 | gratuit |
+| 2 | 40–80 | gratuit |
+| 3 | 70–120 | coûte 20 à 40 dégâts |
+| 4 | 100–160 | coûte 20 à 70 dégâts |
+
+Un **effet** (statut, soin, pioche, défausse, échange) ne coûte **pas** de dégâts à 1 et 2 cafés ;
+à partir de 3 cafés il en coûte 20 à 40. Un **fardeau** (se blesser, défausser ses propres cafés)
+est ce qui permet d'atteindre le haut de la bande.
+
+*(Ancrage : cartes réelles de TCG Pocket relevées le 19/10/2026. Scyther 30 brut contre
+Venomoth 30 + Empoisonné à 1 énergie — effet gratuit. Dewgong 90 brut contre Vaporeon
+60 + soin 30 à 3 énergies — effet payé. Starmie ex 90 et Greninja ex 100 à 2 énergies :
+la bande des Cadres n'est pas celle des N+2.)*
+
 **Règles de conception** :
 
-- Une attaque à 1 café fait 10–30 dégâts.
-- Une attaque à 2 cafés fait 40–60 dégâts, ou 30 + effet.
-- Une attaque à 3 cafés fait 70–100 dégâts, ou 60 + effet fort.
+- Un effet ne fait donc **jamais** descendre les dégâts sous le bas de la bande de son coût.
 - Une capacité (Talent) ne doit pas créer d’avantage de cartes net sans coût.
 - Une carte ex vaut 2 Primes ; elle doit être plus forte, mais pas auto-include. Il n'existe **pas** de palier à 3 Primes : la Méga-Évolution est hors périmètre (D-020).
 - La faiblesse ajoute +20 ; l’Intérimaire n’a pas de faiblesse.

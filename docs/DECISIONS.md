@@ -27,6 +27,7 @@
 | D-018 | 19/10/2026 | **Miroir de référence daté** : le mode standard est le miroir de *Pokémon TCG Pocket* **dans son état de 2026**, et non la version de lancement (A1, 10/2024). Le standard, c'est ce miroir **plus** le seul mot-clé maison « Changement de priorité » (D-004) | D-003 ne datait pas le miroir ; la recherche du 19/10/2026 montre des valeurs qui ont bougé (Méga-Évolution ex = 3 Primes, Faiblesse ×2 par un Lieu, Pokémon à double type). Un miroir non daté rend toute vérification impossible |
 | D-019 | 19/10/2026 | Les règles maison **`RULES-4b` sont rangées hors du standard**, dans `docs/MODES-FUTURS.md` (mode futur « Café », non acté, non implémenté). Elles disparaissent de `AGENTS.md` §4.1 et de `PROPOSITION.md` §3.1 | Mélangées aux règles du standard, elles ont produit de faux constats d'audit, dont une contradiction apparente sur la fin de partie — exactement le genre de confusion que le projet doit éviter |
 | D-020 | 19/10/2026 | **Périmètre du lancement figé (O-008)** : les 4 ajouts du jeu de référence 2025-2026 sont **exclus** du set — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste : 3 stades (N+1 → N+2 → COMEX), Cadre = **2 Primes**, un Planqué = **une** faction, Vulnérabilité **+20** | Le coût de la Méga-Évolution n'est pas le code (3 lignes) mais la **courbe de stats**, qui n'a aucune source publique : l'inventer contredit `CARD-SPEC.md` §2. Le double type casserait « 1 faction = 1 type », socle de §3.2 et de la table de Vulnérabilité. Chiffrage : `docs/ARBITRAGE-O-008.md` |
+| D-021 | 19/10/2026 | **Les dégâts se lisent par coût en café, pas par rareté** : 1 café **10–30**, 2 cafés **40–80**, 3 cafés **70–120**, et un effet ne coûte des dégâts (20 à 40) **qu'à partir de 3 cafés**. La colonne « dégâts » par stade/rareté de `CARD-SPEC.md` §2 devient **indicative** | §2 portait deux règles incompatibles (bande par rareté contre règle par coût) : les 11 écarts relevés sur 7 cartes venaient de là, **pas des cartes**. Bandes ancrées sur les cartes réelles de TCG Pocket relevées le 19/10/2026 — Scyther 30 brut contre Venomoth 30 + Empoisonné à 1 énergie (effet gratuit), Dewgong 90 brut contre Vaporeon 60 + soin 30 à 3 énergies (effet payé), Starmie ex 90 à 2 énergies (un Cadre n'est pas un N+2). **Aucune carte modifiée** : `src/data/cards.test.ts` vérifie les 37 cartes contre ces bandes |
 
 ## Ouvertes
 
@@ -42,6 +43,7 @@
 | O-008 | **Écarts du miroir 2026** : Méga-Évolution ex = 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, statut des Outils/Lieux | **Tranché le 19/10/2026 : exclure les 4 (D-020).** Chiffrage conservé dans `docs/ARBITRAGE-O-008.md` pour une réintroduction en extension | Tranché |
 | O-009 | **Points de règle insourçables** : mulligan (« l'adversaire pioche 1 »), fin de partie sans Planqué, **qui choisit la relève après K.O.**, plafond de 3 types de café | Capturer les « Astuces de jeu » de l'app (preuve horodatée), ou trancher par décision datée | Avant de figer le moteur — le code et la doc se contredisent déjà sur la relève |
 | O-010 | **Écarts code ↔ `AGENTS.md` §4** : 4 sur 8 corrigés le 19/10/2026, 3 **bloqués** faute de contenu, 1 faux positif | Voir l'état ci-dessous | Les 3 restants : après l'écriture des cartes concernées |
+| O-011 | **Courbe de Moral sous celle du jeu réel** d'environ 20 points aux stades hauts | Remonter le Moral (plus proche du miroir, mais ralentit la partie) **ou** garder la courbe actuelle et l'assumer | Avant l'écriture des 286 textes, avec une simulation |
 
 État d'**O-010** (relevé le 19/10/2026, corrigé le même jour sauf mention) :
 
@@ -55,6 +57,19 @@
 | **Un seul statut** à la fois : l'ordre des statuts documenté est inopérant | **Bloqué** : demande de passer `CardInstance.status` en liste de statuts, ce qui touche le type, `applyStatus`, `checkup`, l'UI et 37 cartes. À faire avec une décision |
 | **Cartes Action absentes** (Objet illimité / Collègue 1 par tour) | **Bloqué** : aucune carte Objet ni Collègue n'existe. D-005 en prévoit 8 + 3 : le mécanisme suivra les données |
 | **Types de café absents** (`cost` est un nombre) | **Bloqué** : typage des cafés + génération aléatoire + incolore = réécriture des attaques des 37 cartes. Le plafond « 3 » n'a d'ailleurs pas de source primaire (O-009) |
+
+Détail d'**O-011** (relevé le 19/10/2026, `CARD-SPEC.md` §2 contre les cartes réelles) :
+
+| Stade | Notre bande de Moral | Jeu réel |
+|---|---|---|
+| N+1 (Basique) | 60–70 | 50–80 |
+| N+2 (Stade 1) | 80–100 | 90–120 |
+| COMEX (Stade 2) | 120–140 | 140–160 |
+| Cadre (ex) | 140–170 | 170–190 |
+
+Le décalage est d'environ **20 points** aux stades hauts. Conséquence à ne pas oublier : remonter
+le Moral **ralentit** la partie (il faut plus de Pressions par K.O.), donc cela se tranche avec une
+simulation, pas au feeling.
 
 ## Prochaine étape
 

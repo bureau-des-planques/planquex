@@ -50,6 +50,18 @@ const WEAKNESS: Record<Faction, Faction | null> = {
 
 const STAGE_ORDER: Stage[] = ['N+1', 'N+2', 'COMEX'];
 
+/**
+ * Dégâts par coût en café — **règle normative** (CARD-SPEC.md §2, D-021).
+ * Bandes ancrées sur les cartes réelles de TCG Pocket, relevées le 19/10/2026.
+ */
+const DAMAGE_BY_COST: Record<number, [number, number]> = {
+  0: [0, 30],
+  1: [10, 30],
+  2: [40, 80],
+  3: [70, 120],
+  4: [100, 160]
+};
+
 const texts = (card: Card): string[] => [
   card.name,
   card.flavor,
@@ -141,6 +153,21 @@ describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
       expect(variant.ability, variant.id).toEqual(source.ability);
       expect(variant.flavor, variant.id).toBe(source.flavor);
       expect(variant.ex, variant.id).toBe(source.ex);
+    }
+  });
+});
+
+describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021)', () => {
+  it('place chaque attaque dans la bande de son coût', () => {
+    for (const card of ALL_CARDS) {
+      for (const attack of card.attacks) {
+        const band = DAMAGE_BY_COST[attack.cost];
+        expect(band, `${card.id}/${attack.name} : coût ${attack.cost} café(s) non couvert`).toBeDefined();
+        if (!band) continue;
+        const label = `${card.id}/${attack.name} à ${attack.cost} café(s)`;
+        expect(attack.damage, label).toBeGreaterThanOrEqual(band[0]);
+        expect(attack.damage, label).toBeLessThanOrEqual(band[1]);
+      }
     }
   });
 });
