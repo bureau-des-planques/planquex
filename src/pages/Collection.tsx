@@ -38,11 +38,9 @@ export function Collection() {
     <div className="page collection">
       <section className="section__head">
         <div>
-          <p className="eyebrow">Collection</p>
-          <h1>Galérodex</h1>
-          <p className="muted">
-            {uniqueOwned}/{ALL_CARDS.length} Planqués possédés · {visible.length} affichés
-          </p>
+          <p className="eyebrow">Galérodex</p>
+          <h1>{uniqueOwned}/{ALL_CARDS.length} Planqués</h1>
+          <p className="muted">{visible.length} affichés</p>
         </div>
       </section>
 
