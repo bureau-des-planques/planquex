@@ -31,16 +31,16 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const BASICS = ALL_CARDS.filter((card) => !card.variantOf && card.stage === 'N+1').map((card) => card.id);
+const BASICS = ALL_CARDS.filter((card) => !card.variantOf && card.stage === 'ENTRANT').map((card) => card.id);
 
-/** Classeur légal de 20 cartes (10 noms N+1 en double). */
+/** Chariot légal de 20 cartes (10 noms N+1 en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 function freshBattle(): BattleState {
   return createBattle(DECK, DECK);
 }
 
-/** Cartes en main + au Poste + à l'Open-space. */
+/** Cartes en main + au Poste + à l'Rack. */
 function ownedByPlayer(state: BattleState): number {
   const player = state.players.player;
   const inPlay = [player.active, ...player.bench].filter(Boolean).length;
@@ -51,7 +51,7 @@ describe('createBattle — mise en place', () => {
   it('distribue 5 cartes, pose un N+1 au Poste et ouvre le tour du joueur', () => {
     const state = freshBattle();
     // Les 5 cartes de la main de départ servent aussi à poser le Poste et
-    // l'Open-space : la main ne conserve que les Planqués non posés.
+    // l'Rack : la main ne conserve que les Planqués non posés.
     expect(ownedByPlayer(state)).toBe(5);
     expect(state.players.player.active).not.toBeNull();
     expect(state.current).toBe('player');
@@ -71,8 +71,8 @@ describe('createBattle — mise en place', () => {
 });
 
 describe('Main de départ — pas de reprise de poste (D-022)', () => {
-  /** Classeur à un seul N+1 : les 5 premières cartes tirées n'en contiennent presque jamais. */
-  const EVOLUTIONS = ALL_CARDS.filter((card) => !card.variantOf && card.stage !== 'N+1').map((card) => card.id);
+  /** Chariot à un seul N+1 : les 5 premières cartes tirées n'en contiennent presque jamais. */
+  const EVOLUTIONS = ALL_CARDS.filter((card) => !card.variantOf && card.stage !== 'ENTRANT').map((card) => card.id);
   const SPARSE_DECK = [BASICS[0], ...EVOLUTIONS, ...EVOLUTIONS].slice(0, DECK_SIZE);
 
   it('garantit un N+1 sans remélanger ni faire piocher l’adversaire', () => {
@@ -93,7 +93,7 @@ describe('Main de départ — pas de reprise de poste (D-022)', () => {
 
           // La main de départ contient toujours un Planqué N+1 jouable.
           expect(
-            inPlay.some((card) => getCard(card?.cardId ?? '')?.stage === 'N+1'),
+            inPlay.some((card) => getCard(card?.cardId ?? '')?.stage === 'ENTRANT'),
             `run ${run}, ${who} : aucun N+1`
           ).toBe(true);
           // Cinq cartes au total, donc aucune pioche de compensation.
@@ -140,14 +140,14 @@ describe('endTurn — statut létal', () => {
 
     const after = endTurn(lethal);
 
-    // §4 : « l'Open-space choisit la relève ». Le moteur attend, il ne promeut pas.
+    // §4 : « le Rack choisit la relève ». Le moteur attend, il ne promeut pas.
     expect(after.phase).toBe('playing');
     expect(after.pendingPromotion).toBe('player');
     expect(after.players.player.active).toBeNull();
     expect(after.current).toBe('player');
   });
 
-  it('ne déclare aucune défaite quand le classeur est vide', () => {
+  it('ne déclare aucune défaite quand le Chariot est vide', () => {
     const state = freshBattle();
     let after = structuredClone(state);
     after.players.player.deck = [];
@@ -157,7 +157,7 @@ describe('endTurn — statut létal', () => {
 
     expect(after.phase).toBe('playing');
     expect(after.winner).toBeNull();
-    expect(after.log.some((line) => line.includes('classeur vide'))).toBe(true);
+    expect(after.log.some((line) => line.includes('Chariot vide'))).toBe(true);
   });
 });
 
@@ -246,26 +246,26 @@ describe('Évolution', () => {
 });
 
 describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
-  it('résout les conditions dans l’ordre Surcharge → Burn-out → Bloqué → Gelé', () => {
+  it('résout les conditions dans l’ordre Surcharge → Épuisement → Sieste → Immobilisation', () => {
     const state = structuredClone(freshBattle());
     const active = state.players.player.active;
     if (!active) throw new Error('Aucun Planqué au Poste');
     // Posées dans le désordre : c'est le moteur qui doit les remettre dans l'ordre.
     active.maxHp = 200;
     active.hp = 200;
-    active.statuses = ['GELE', 'BURNOUT', 'SURCHARGE'];
+    active.statuses = ['IMMOBILISATION', 'EPUISEMENT', 'SURCHARGE'];
 
     const after = endTurn(state);
     const journal = after.log.join(' | ');
 
-    expect(journal).toMatch(/Surcharge : 10 dégâts.*Burn-out : 20 dégâts/);
+    expect(journal).toMatch(/Surcharge : 10 de stress.*Épuisement : 20 de stress/);
     expect(after.players.player.active?.hp).toBe(170);
-    // Gelé se dissipe au bout d'un tour ; Surcharge et Burn-out restent
-    // (Burn-out n'est pas guéri sur un « lancer défavorable », 0,5 figé).
+    // Immobilisation se dissipe au bout d'un tour ; Surcharge et Épuisement restent
+    // (Épuisement n'est pas guéri sur un « lancer défavorable », 0,5 figé).
     const restants = after.players.player.active?.statuses ?? [];
-    expect(restants).not.toContain('GELE');
+    expect(restants).not.toContain('IMMOBILISATION');
     expect(restants).toContain('SURCHARGE');
-    expect(restants).toContain('BURNOUT');
+    expect(restants).toContain('EPUISEMENT');
     expect(restants).toHaveLength(2);
   });
 
@@ -297,7 +297,7 @@ describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
 });
 
 describe('Relève choisie après K.O.', () => {
-  /** Amène la Direction à 1 Moral, puis frappe : son Poste tombe. */
+  /** Amène la Direction à 1 Seuil, puis frappe : son Poste tombe. */
   function knockOutAi(state: BattleState): BattleState {
     const next = structuredClone(state);
     const attacker = next.players.player.active;
@@ -330,7 +330,7 @@ describe('Relève choisie après K.O.', () => {
   it('installe le Planqué choisi au Poste et libère le jeu', () => {
     const after = knockOutAi(freshBattle());
     const chosen = after.players.ai.bench[1];
-    if (!chosen) throw new Error('Open-space vide');
+    if (!chosen) throw new Error('Rack vide');
 
     const resolved = promoteActive(after, 1);
 
@@ -352,10 +352,10 @@ describe('Relève choisie après K.O.', () => {
   });
 });
 
-describe('Classeur imposé au démarrage', () => {
-  it('refuse de démarrer avec un classeur illégal', () => {
-    expect(() => createBattle(DECK.slice(0, DECK_SIZE - 1), DECK)).toThrow(/Classeur illégal/);
-    expect(() => createBattle(DECK, [DECK[0]])).toThrow(/Classeur illégal/);
+describe('Chariot imposé au démarrage', () => {
+  it('refuse de démarrer avec un Chariot illégal', () => {
+    expect(() => createBattle(DECK.slice(0, DECK_SIZE - 1), DECK)).toThrow(/Chariot illégal/);
+    expect(() => createBattle(DECK, [DECK[0]])).toThrow(/Chariot illégal/);
   });
 });
 
@@ -372,11 +372,11 @@ describe('Changement de priorité (D-004)', () => {
 
   it('archive 1 carte et en pioche 1, une fois par tour', () => {
     const state = freshBattle();
-    if (state.players.player.hand.length === 0) throw new Error('Courrier vide');
+    if (state.players.player.hand.length === 0) throw new Error('main vide');
     const { restore } = withKeyword(state);
     try {
       const discarded = state.players.player.hand[0];
-      if (!discarded) throw new Error('Courrier vide');
+      if (!discarded) throw new Error('main vide');
       const handBefore = state.players.player.hand.length;
 
       const after = priorityShift(state, discarded.uid);
@@ -396,7 +396,7 @@ describe('Changement de priorité (D-004)', () => {
   it('ne fait rien sans le mot-clé sur la carte au Poste', () => {
     const state = freshBattle();
     const uid = state.players.player.hand[0]?.uid;
-    if (!uid) throw new Error('Courrier vide');
+    if (!uid) throw new Error('main vide');
     expect(priorityShift(state, uid)).toBe(state);
   });
 
@@ -404,7 +404,7 @@ describe('Changement de priorité (D-004)', () => {
     const state = freshBattle();
     const { restore } = withKeyword(state);
     const uid = state.players.player.hand[0]?.uid;
-    if (!uid) throw new Error('Courrier vide');
+    if (!uid) throw new Error('main vide');
     RULES.priorityShiftEnabled = false;
     try {
       expect(priorityShift(state, uid)).toBe(state);
@@ -416,12 +416,12 @@ describe('Changement de priorité (D-004)', () => {
 });
 
 describe('retreat() — Relève', () => {
-  it('défausse autant de cafés que le coût de relève et échange le Poste avec l\'Open-space', () => {
+  it('défausse autant de cafés que le coût de relève et échange le Poste avec l\'Rack', () => {
     const state = freshBattle();
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
     const benchCard = state.players.player.bench[0];
-    if (!benchCard) throw new Error('Open-space vide');
+    if (!benchCard) throw new Error('Rack vide');
 
     // On met assez de café sur le Planqué actif pour couvrir le coût de relève
     const activeCard = getCard(active.cardId);
@@ -434,9 +434,9 @@ describe('retreat() — Relève', () => {
 
     // Le Planqué du Poste a perdu le coût de relève en café
     expect(after.players.player.active?.energy).toBe(beforeEnergy - retreatCost);
-    // Le Planqué de l'Open-space est maintenant au Poste (sans ses statuts)
+    // Le Planqué de l'Rack est maintenant au Poste (sans ses statuts)
     expect(after.players.player.active?.uid).toBe(benchCard.uid);
-    // L'ancien Planqué du Poste est allé à l'Open-space
+    // L'ancien Planqué du Poste est allé à l'Rack
     expect(after.players.player.bench[0]?.uid).toBe(active.uid);
     // hasRetreated est à true
     expect(after.players.player.hasRetreated).toBe(true);
@@ -463,7 +463,7 @@ describe('retreat() — Relève', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
     const benchCard = state.players.player.bench[0];
-    if (!benchCard) throw new Error('Open-space vide');
+    if (!benchCard) throw new Error('Rack vide');
     const activeCard = getCard(active.cardId);
     const retreatCost = activeCard?.retreat ?? 1;
     active.energy = retreatCost;
@@ -476,7 +476,7 @@ describe('retreat() — Relève', () => {
     expect(afterSecond).toBe(afterFirst);
   });
 
-  it('ne fait rien si l\'emplacement Open-space visé est vide', () => {
+  it('ne fait rien si l\'emplacement Rack visé est vide', () => {
     const state = freshBattle();
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');

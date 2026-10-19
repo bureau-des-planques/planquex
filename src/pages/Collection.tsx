@@ -7,7 +7,7 @@ import { useStore } from '@/store/useStore';
 import { CardView } from '@/components/CardView';
 import { CardDetail } from '@/components/CardDetail';
 
-const STAGES: Stage[] = ['N+1', 'N+2', 'COMEX'];
+const STAGES: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
 
 export function Collection() {
   const { owned, deck, addToDeck, addCard } = useStore();
@@ -41,7 +41,7 @@ export function Collection() {
     <div className="page collection">
       <section className="section__head">
         <div>
-          <p className="eyebrow">Galérodex</p>
+          <p className="eyebrow">Parc</p>
           <h1>{uniqueOwned}/{ALL_CARDS.length} Planqués</h1>
           <p className="muted">{visible.length} affichés</p>
         </div>
@@ -99,10 +99,10 @@ export function Collection() {
                   className="card-slot__quick"
                   title={
                     canAdd
-                      ? `Ajouter « ${card.name} » au classeur (${used}/${MAX_COPIES_PER_NAME})`
-                      : `Classeur complet pour « ${card.name} »`
+                      ? `Ajouter « ${card.name} » au chariot (${used}/${MAX_COPIES_PER_NAME})`
+                      : `Chariot complet pour « ${card.name} »`
                   }
-                  aria-label={`Ajouter ${card.name} au classeur`}
+                  aria-label={`Ajouter ${card.name} au chariot`}
                   disabled={!canAdd}
                   onClick={() => addToDeck(card.id)}
                 >

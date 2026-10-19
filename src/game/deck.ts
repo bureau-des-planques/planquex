@@ -1,7 +1,7 @@
 import { ALL_CARDS, getCard } from '@/data';
 import type { Card, Stage } from '@/data/types';
 
-/** Règles du Classeur (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
+/** Règles du Chariot (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
 export const DECK_SIZE = 20;
 export const MAX_COPIES_PER_NAME = 2;
 
@@ -26,7 +26,7 @@ export function deckCountsByName(deck: string[]): Record<string, number> {
   }, {});
 }
 
-/** Cartes réelles du classeur ; les identifiants inconnus sont écartés. */
+/** Cartes réelles du Chariot ; les identifiants inconnus sont écartés. */
 export function deckCards(deck: string[]): Card[] {
   return deck.map((id) => getCard(id)).filter(Boolean) as Card[];
 }
@@ -42,14 +42,14 @@ export function deckCanAdd(deck: string[], cardId: string): boolean {
 export function deckLegal(deck: string[]): { ok: boolean; reasons: string[] } {
   const reasons: string[] = [];
   if (deck.length !== DECK_SIZE) {
-    reasons.push(`Le classeur doit contenir ${DECK_SIZE} cartes (${deck.length}/${DECK_SIZE}).`);
+    reasons.push(`Le Chariot doit contenir ${DECK_SIZE} cartes (${deck.length}/${DECK_SIZE}).`);
   }
   const counts = deckCountsByName(deck);
   if (Object.values(counts).some((count) => count > MAX_COPIES_PER_NAME)) {
     reasons.push(`Maximum ${MAX_COPIES_PER_NAME} exemplaires du même nom.`);
   }
-  const hasBasic = deckCards(deck).some((card) => card.stage === 'N+1');
-  if (!hasBasic) reasons.push('Il faut au moins un Planqué N+1.');
+  const hasBasic = deckCards(deck).some((card) => card.stage === 'ENTRANT');
+  if (!hasBasic) reasons.push('Il faut au moins un Planqué Entrant.');
   return { ok: reasons.length === 0, reasons };
 }
 
@@ -60,15 +60,15 @@ export interface AutoDeck {
 }
 
 /**
- * Remplissage rapide : un classeur **légal** de 20 cartes pris dans ce qu'on possède.
+ * Remplissage rapide : un chariot **légal** de 20 cartes pris dans ce qu'on possède.
  *
  * Ordre volontaire, pour que le résultat soit jouable et pas juste légal :
  * 1. les bases (N+1), une par Planqué possédé ;
- * 2. les évolutions dont la base est déjà au classeur, N+2 puis COMEX ;
+ * 2. les évolutions dont la base est déjà au Chariot, N+1 puis N+2 ;
  * 3. des seconds exemplaires, bases d'abord, pour compléter.
  *
  * Ne remplace pas les règles : le plafond de 2 par nom est respecté via
- * `deckCanAdd`, et le classeur est tronqué à 20 si on possède plus de bases que ça.
+ * `deckCanAdd`, et le Chariot est tronqué à 20 si on possède plus de bases que ça.
  */
 export function autoDeck(owned: Record<string, number>): AutoDeck {
   const ownedCards = ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0);
@@ -79,13 +79,14 @@ export function autoDeck(owned: Record<string, number>): AutoDeck {
   /** On ne met pas plus d'exemplaires qu'on en possède, ni plus de 2 par nom. */
   const canAdd = (id: string) => deckCanAdd(deck, id) && (deckCounts(deck)[id] ?? 0) < (owned[id] ?? 0);
 
-  for (const card of byStage('N+1')) deck.push(card.id);
-  for (const stage of ['N+2', 'COMEX'] as Stage[]) {
+  // 1. les entrantes, 2. les évolutions dont la base est déjà au Chariot, 3. les seconds exemplaires
+  for (const card of byStage('ENTRANT')) deck.push(card.id);
+  for (const stage of ['N+1', 'N+2'] as Stage[]) {
     for (const card of byStage(stage)) {
       if (card.evolvesFrom && deck.includes(card.evolvesFrom)) deck.push(card.id);
     }
   }
-  for (const card of [...byStage('N+1'), ...byStage('N+2'), ...byStage('COMEX')]) {
+  for (const card of [...byStage('ENTRANT'), ...byStage('N+1'), ...byStage('N+2')]) {
     if (deck.length >= DECK_SIZE) break;
     if (canAdd(card.id)) deck.push(card.id);
   }

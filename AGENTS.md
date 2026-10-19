@@ -39,36 +39,41 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Terme TCG / anglais | Terme projet | Code / note |
 |---|---|---|
 | Pokémon | **Planqué** | `Card`, `CardInstance` |
-| Basic / Stage 1 / Stage 2 | **N+1 / N+2 / COMEX** | `Stage` |
-| ex | **Cadre** | `ex: true`, vaut **2 Primes** |
-| HP | **Moral** | `hp` |
+| Basic | **Entrant** | `Stage` — l’échelle est **Entrant → N+1 → N+2** |
+| Stage 1 / Stage 2 | **N+1 / N+2** | `Stage` |
+| ex | **COMEX** | `ex: true`, vaut **2 Interventions** — c'est un **statut**, affiché *avec* le stade (D-026) |
+| HP | **Seuil** | `hp` — la limite avant la casse |
+| dégâts | **Stress** | le Stress **monte** : `Stress = Seuil − hp`. La barre s'inverse (D-026) |
+| K.O. | **craquer** | le Planqué craque, la carte part au **Rebut** |
 | Energy | **Café** | `energy` |
 | Energy Zone | **Machine à café** | `energyZone` |
-| Attack | **Pression** | `Attack` |
+| Attack | **Pression** | `Attack` — 1 par tour, et elle fait monter le Stress |
 | Ability | **Talent** | `ability` |
-| Item | **Objet** | carte Action |
-| Supporter | **Collègue** | carte Action |
+| Item | **Objet** | carte Action, **NEUF** (matériel à installer) ou **MRO** (pièces, outillage) |
+| Supporter | **Collègue** | carte Action, **1 par tour** |
 | Tool | **Outil** | extension ultérieure |
-| Stadium | **Lieu** | extension ultérieure |
-| Prize / point | **Prime** | `points`, 3 pour gagner |
+| Stadium | **Lieu** *(à venir : le Site)* | extension ultérieure |
+| Prize / point | **Intervention** | `points`, 3 pour gagner ; un COMEX en vaut 2 |
 | Weakness | **Vulnérabilité** | `weakness`, +20 |
-| Resistance | **— (supprimée)** | aucune |
-| Retreat | **Relève** | `retreat` |
+| Resistance | — (supprimée) | aucune |
+| Retreat | **Rotation** | `retreat` — le remplacement *après un craquage* reste la **relève** |
 | Poison | **Surcharge** | `SURCHARGE` |
-| Burn | **Burn-out** | `BURNOUT` |
-| Sleep | **Bloqué** | `BLOQUE` |
-| Paralysis | **Gelé** | `GELE` |
+| Burn | **Épuisement** | `EPUISEMENT` — « Burn-out » est le mot des gens : réservé aux noms de cartes |
+| Sleep | **Sieste** | `SIESTE` |
+| Paralysis | **Immobilisation** | `IMMOBILISATION` |
 | Confusion | **Dérive** | `DERIVE` |
-| Deck | **Classeur** | `deck`, 20 cartes |
-| Hand | **Courrier** | `hand`, 5 au départ, 10 max |
-| Discard | **Archive** | `discard` |
-| Bench | **Open-space** | `bench`, 3 places |
+| Deck | **Chariot** | `deck`, 20 cartes |
+| Hand | **main** | `hand`, 5 au départ, 10 max |
+| Discard | **Rebut** | `discard` — le verbe est « **mettre au rebut** » |
+| Bench | **Rack** | `bench`, 3 places |
 | Active | **Poste** | `active` |
 | Coin flip | **Lancer de tampon** | pile = tampon, face = agrafe |
-| Mulligan | **Reprise de poste** | aucune carte de base en main |
-| Pack | **Bac à courrier** | 5 cartes |
+| Mulligan | — | le jeu de base n'en a pas, et nous non plus (D-022) |
+| Pack | **Arrivage** | 5 cartes |
+| Extension / set | **Marché** | il contient ses **Viviers** |
+| Zones de cartes | **Viviers** : Atelier, Étage, Bureaux | un futur vivier sera un lieu (D-026) |
 | Wonder Pick | **Pause café** | 5 cartes, 1 rare minimum |
-| Collection | **Galérodex** | ne pas dire « Classeur » seul |
+| Collection | **Parc** | |
 | Mission | **Note de service** | |
 | Shop | **Économat / Boutique du CSE** | |
 | Premium Pass | **Cotisation** | |
@@ -78,25 +83,36 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Present Box | **Casier** | |
 | Card Skin | **Autocollant** | |
 | Tutorial | **Journée d'intégration** | |
+| Monnaie / minuteurs | **Tickets** / **Chrono** | la monnaie payante (« Cagnotte ») viendra plus tard (O-005) |
 
-**Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Grèvomon`, `Pokémon`. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. Le nom propre **Galérodex** est conservé pour la collection ; « Galère » seul ne doit jamais apparaître dans le code, les cartes ou l'UI.
+**Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Grèvomon`, `Pokémon`. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. L'ancien nom **Parc** est **abandonné** (il venait de l'univers legacy) : la collection s'appelle **le Parc**.
 
 ### 3.2 Factions
 
-| Faction (code) | Type | Vulnérable à | Carte signature |
-|---|---|---|---|
-| `SSE` | Plante | `MANAGER` | Médecin du travail |
-| `MANAGER` | Feu | `HAPPINESS` | Directeur général |
-| `HAPPINESS` | Eau | `AMELIORATION` | Chief Happiness Officer |
-| `AMELIORATION` | Électricité | `TECHNICIEN` | Directeur qualité |
-| `RH` | Psy | `DIRECTION` | DRH |
-| `TECHNICIEN` | Combat | `RH` | Chef d'atelier |
-| `DIRECTION` | Obscurité | `TECHNICIEN` | PDG |
-| `SYNDICAT` | Métal | `MANAGER` | Secrétaire général |
-| `INTERIMAIRE` | Dragon | Aucune | Intérimaire légendaire |
-| `SUPPORT` | Incolore | `TECHNICIEN` | Responsable support |
+Un nom de faction désigne **un service ou un collectif, jamais une personne** (D-024). Chaque
+faction est rangée dans **un vivier** — les trois zones du site (D-026).
 
-Stades : **N+1 → N+2 → COMEX**. Un Planqué porte **une seule** faction : le double type du jeu de 2026 est hors périmètre (D-020). Raretés codées : `1D`, `2D`, `3D`, `4D`, `1S`, `2S`.
+| Faction (code) | Étiquette | Type | Vulnérable à | Vivier | Carte signature |
+|---|---|---|---|---|---|
+| `SSE` | `SSE` | Plante | `MANAGEMENT` | Bureaux | Médecin du travail |
+| `MANAGEMENT` | `MGT` | Feu | `QVT` | Atelier | Chef des ventes |
+| `QVT` | `QVT` | Eau | `AMELIORATION` | Bureaux | Chief Happiness Officer |
+| `AMELIORATION` | `AC` | Électricité | `ATELIER` | Étage | Directeur qualité |
+| `RH` | `RH` | Psychique | `DIRECTION` | Bureaux | DRH |
+| `ATELIER` | `ATL` | Combat | `RH` | Atelier | Chef d'atelier |
+| `DIRECTION` | `DIR` | Obscurité | `ATELIER` | Étage | PDG |
+| `SYNDICAT` | `SYN` | Métal | `MANAGEMENT` | Atelier | Secrétaire général |
+| `INTERIM` | `INT` | Dragon | Aucune | Bureaux | Intérimaire légendaire |
+| `SUPPORT` | `SUP` | Incolore | `ATELIER` | Étage | Responsable support |
+
+**Deux règles de nommage** (D-024) : l'abréviation est **le sigle réel s'il existe** (`SSE`, `RH`,
+`AC`, `QVT`), **sinon trois lettres** tirées du nom ; et les **anglicismes entrés dans le français
+courant** (`management`, `audit`, `rack`) sont admis — les **titres à la mode** (« Happiness
+Manager », « Chief Happiness Officer ») restent **sur les cartes**, jamais sur une faction.
+
+Stades : **Entrant → N+1 → N+2**, et **COMEX** pour le statut des ex. Un Planqué porte **une seule**
+faction : le double type du jeu de 2026 est hors périmètre (D-020). Raretés codées : `1D`, `2D`,
+`3D`, `4D`, `1S`, `2S`.
 La cible `CARD-SPEC.md` contient aussi **3 étoiles** et **Couronne** : à ajouter aux types, aux métadonnées et aux tests avant de les utiliser.
 
 ## 4. Règles du jeu
@@ -105,29 +121,30 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 | Règle | Valeur |
 |---|---|
-| Classeur | **20 cartes**, max **2** exemplaires du même nom, au moins **1 Planqué N+1** |
-| Main de départ | **5 cartes**, avec toujours au moins **1 Planqué N+1** ; **pas de reprise de poste** : ni remélange, ni pioche pour l'adversaire (D-022) |
-| Main maximale | **10 cartes** |
+| Chariot | **20 cartes**, max **2** exemplaires du même nom, au moins **1 Planqué Entrant** |
+| main de départ | **5 cartes**, avec toujours au moins **1 Planqué Entrant** ; **pas de reprise de poste** : ni remélange, ni pioche pour l'adversaire (D-022) |
+| main maximale | **10 cartes** |
 | Poste | **1** |
-| Open-space | **3** places |
-| Primes | **3** pour gagner ; K.O. normal = 1, Cadre = 2 |
+| Rack | **3** places |
+| Interventions | **3** pour gagner ; un craquage normal = 1, un COMEX = 2 |
 | Machine à café | **1 café généré par tour**, **1 attachement par tour** ; si le slot du haut est occupé, pas de nouveau café |
-| Types de café | Jusqu'à **3** par classeur, ordre aléatoire ; l'incolore accepte tout — **hypothèse assumée**, non sourcée (D-022) |
+| Types de café | Jusqu'à **3** par Chariot, ordre aléatoire ; l'incolore accepte tout — **hypothèse assumée**, non sourcée (D-022) |
 | Premier joueur | Ne pioche pas, ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 |
 | Évolution | Impossible au premier tour de chaque joueur |
-| Pression | **1 par tour** ; le café n'est **pas consommé** |
-| Vulnérabilité | **+20 dégâts** — le ×2 n'existe que via un Lieu, hors périmètre (D-020) |
+| Seuil / Stress | le **Seuil** remplace le Moral ; les dégâts deviennent du **Stress** qui monte ; à `Stress ≥ Seuil`, le Planqué **craque** (D-026) |
+| Pression | **1 par tour** ; le café n'est **pas consommé** ; elle fait monter le **Stress** |
+| Vulnérabilité | **+20** — le ×2 n'existe que via un Lieu, hors périmètre (D-020) |
 | Résistance | **Aucune** |
-| Relève | Défausse autant de cafés que le coût de relève |
+| Rotation | Défausse autant de cafés que le coût de rotation |
 | Pioche vide | **Pas de défaite** |
-| Défaite | 3 Primes pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) |
-| K.O. | L'adversaire marque les Primes ; l'Open-space choisit la relève |
-| Statuts | Surcharge (10/tour), Burn-out (20 + lancer), Bloqué (lancer), Gelé (1 tour), Dérive (lancer avant attaque) — **cumulables** |
-| Ordre des statuts | Surcharge → Burn-out → Bloqué → Gelé |
-| Cartes Action | **Objet** : illimité ; **Collègue** : **1 par tour** |
+| Défaite | 3 Interventions pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) |
+| craquage | L'adversaire marque les Interventions ; le Rack fournit la **relève** |
+| Statuts | Surcharge (10 de Stress/tour), Épuisement (20 + lancer), Sieste (lancer), Immobilisation (1 tour), Dérive (lancer avant l'attaque) — **cumulables** |
+| Ordre des statuts | Surcharge → Épuisement → Sieste → Immobilisation |
+| Cartes Action | **Objet** (NEUF ou MRO) : illimité ; **Collègue** : **1 par tour** |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
 
-**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, Cadre = **2 Primes**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. Réserve qui subsiste : une partie du tableau n'a **aucune source citable**. Ces règles sont désormais **décidées** (D-022) mais **non observées** — le seul moyen de les faire passer à « observé » est de capturer les Astuces de jeu de l'application : `docs/PROTOCOLE-ASTUCES.md`. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources : `docs/MIROIR-2026-DELTAS.md`.
+**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, COMEX = **2 Interventions**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. Réserve qui subsiste : une partie du tableau n'a **aucune source citable**. Ces règles sont désormais **décidées** (D-022) mais **non observées** — le seul moyen de les faire passer à « observé » est de capturer les Astuces de jeu de l'application : `docs/PROTOCOLE-ASTUCES.md`. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources : `docs/MIROIR-2026-DELTAS.md`.
 
 ### 4.1 Ce qui n'est pas la règle standard
 
@@ -139,9 +156,9 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 ### 4.2 Bacs et contenu
 
-- Un bac à courrier contient **5 cartes** : 3 communes, 1 peu commune, 1 rare minimum.
+- Un **Arrivage** contient **5 cartes** : 3 communes, 1 peu commune, 1 rare minimum.
 - Cible de lancement : **286 cartes** = 226 de base (215 Planqués + 8 Collègues + 3 Objets) + 60 secrètes.
-- Trois bacs : **Direction**, **Terrain**, **Bureau**.
+- Trois **viviers** (D-026) : **l'Atelier** (Atelier, Management, Syndicat), **l'Étage** (Amélioration continue, Support, Direction), **les Bureaux** (RH, SSE, QVT, Intérim).
 - Monétisation v1 : **aucun argent réel** ; la Cotisation se paie en monnaie de jeu.
 - Ton : satire de bureau **punch up**. On ridiculise les postures et le système, jamais une personne réelle, une entreprise existante ou un groupe protégé.
 
@@ -149,24 +166,17 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 - **Identifiants** : minuscules, kebab-case, préfixe de faction — `sse-infirmier-site`. Variantes : suffixe `-star` ou `-star2`.
 - **Évolution** : `evolvesFrom` pointe vers l'`id` de la carte précédente. Une variante hérite des stats, attaques, talent et flavour de sa carte de base.
-- **Cadre** : `ex: true`, vaut 2 Primes. L'UI affiche « Cadre », pas « ex ».
+- **COMEX** : `ex: true`, vaut 2 Interventions. L'UI affiche « COMEX », pas « ex ».
 - **Effets** : utiliser uniquement les `AttackEffectKind` existants (`healSelf`, `healAll`, `status`, `draw`, `discardEnergy`, `selfDamage`, `switchSelf`, `reduceDamage`). Toute nouvelle primitive = décision + mise à jour des types + tests.
 - **Textes** : français, phrase complète, « Ce Planqué… », « le Planqué adverse… », noms de statuts capitalisés. Exemple **interdit** : `Cette Galère subit 10 dégâts.` ; écrire `Ce Planqué subit 10 dégâts.`
 - **Flavour** : une scène de bureau, drôle, sans nom réel. La chute vise le système.
 - **Stats** : suivre `CARD-SPEC.md` §2.
 
-| Stade / rareté | Moral | Dégâts typiques | Relève |
-|---|---:|---:|---:|
-| N+1 1◆ | 60–70 | 10–20 | 1 |
-| N+1 2◆ | 60–80 | 10–30 | 1 |
-| N+2 2◆ | 80–100 | 30–50 | 1–2 |
-| N+2 3◆ | 90–110 | 40–60 | 2 |
-| COMEX 3◆ | 120–140 | 50–80 | 2 |
-| COMEX 4◆ (Cadre) | 140–170 | 70–120 | 2–3 |
+| Stats | suivre **`CARD-SPEC.md` §2** | la table n'est **pas recopiée ici** : elle y bouge à chaque ajustement, et une copie prend du retard (leçon de la propagation de D-026) |
 
 - Une attaque à 1 café fait 10–30 ; à 2 cafés, 40–60 ou 30 + effet ; à 3 cafés, 70–100 ou 60 + effet fort.
 - Un Talent ne doit pas créer d'avantage de cartes net sans coût.
-- Un Cadre doit être plus fort, pas auto-include.
+- Un COMEX doit être plus fort, pas auto-include.
 - Vulnérabilité : +20. L'Intérimaire n'a aucune vulnérabilité.
 
 ## 6. Architecture et conventions
@@ -198,7 +208,7 @@ grevomon-tcg/
 - **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
 - **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` existent depuis le 19/10/2026 (SVG `viewBox="0 0 32 32"`, monogramme « BP » sur fond sombre) : plus d'erreur de manifeste dans la console.
-- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Classeur, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4). Les règles de jeu ne vivent pas dans le store.
+- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Chariot, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4). Les règles de jeu ne vivent pas dans le store.
 - **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX. Voir §8.4.
 
@@ -234,8 +244,8 @@ Autres faits vérifiés le 19/10/2026 :
 - `src/main.tsx` et `src/App.tsx` existent ; `index.html` monte l'application sous `BrowserRouter`.
 - `public/` **existe** (créé le 19/10/2026) : `favicon.svg`, `icon-192.svg`, `icon-512.svg`. Les trois sont copiés dans `dist/` par le build.
 - Une seule feuille, `src/styles.css`, importée par `main.tsx`.
-- **49 tests** (5 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Moral par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
-- `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Classeur et Combat.
+- **62 tests** (5 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Seuil par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
+- `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Chariot et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
 

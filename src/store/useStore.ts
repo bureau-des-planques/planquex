@@ -105,5 +105,5 @@ export const useStore = create<AppState>()(
   )
 );
 
-// Les règles du Classeur (20 cartes, 2 exemplaires max, ≥ 1 N+1) vivent dans
+// Les règles du Chariot (20 cartes, 2 exemplaires max, ≥ 1 N+1) vivent dans
 // `@/game/deck` : ce sont des règles de jeu, pas de l'état d'application.

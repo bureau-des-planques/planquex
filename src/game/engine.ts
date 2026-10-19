@@ -23,7 +23,7 @@ export function isFirstTurnFor(state: BattleState, who: PlayerId): boolean {
 }
 
 /**
- * Vrai quand un Poste vient d'être mis K.O. et que sa relève reste à choisir
+ * Vrai quand un Poste vient de craquer et que sa relève reste à choisir
  * (AGENTS.md §4). Tant que c'est vrai, aucune action n'est acceptée : il faut
  * résoudre la relève d'abord.
  */
@@ -98,7 +98,7 @@ function draw(state: BattleState, who: PlayerId, amount: number) {
   const player = state.players[who];
   for (let i = 0; i < amount; i += 1) {
     if (player.deck.length === 0) {
-      state.log.push(`${who === 'player' ? 'Tu' : 'L’IA'} ne pioche pas : classeur vide.`);
+      state.log.push(`${who === 'player' ? 'Tu' : 'L’IA'} ne pioche pas : Chariot vide.`);
       break;
     }
     if (player.hand.length >= 10) {
@@ -132,21 +132,21 @@ function startTurn(state: BattleState) {
 }
 
 function hasBasicInHand(player: PlayerState): boolean {
-  return player.hand.some((card) => getCard(card.cardId)?.stage === 'N+1');
+  return player.hand.some((card) => getCard(card.cardId)?.stage === 'ENTRANT');
 }
 
 /**
  * Pocket **n'a pas de reprise de poste** (D-022) : la main de départ contient
- * toujours au moins un N+1, sans remélange et sans pioche pour l'adversaire —
+ * toujours au moins un Entrant, sans remélange et sans pioche pour l'adversaire —
  * c'est le mulligan du TCG *physique* que §4 reprenait à tort.
  *
- * Le classeur étant garanti d'avoir au moins un N+1 (`deckLegal`), il y a
+ * Le Chariot étant garanti d'avoir au moins un Entrant (`deckLegal`), il y a
  * toujours de quoi échanger. L'échange se fait carte pour carte : la main reste
  * à 5 et le total des cartes du joueur ne bouge pas.
  */
 function ensureBasicInHand(player: PlayerState) {
   if (hasBasicInHand(player)) return;
-  const index = player.deck.findIndex((card) => getCard(card.cardId)?.stage === 'N+1');
+  const index = player.deck.findIndex((card) => getCard(card.cardId)?.stage === 'ENTRANT');
   if (index < 0) return;
   const [card] = player.deck.splice(index, 1);
   if (!card) return;
@@ -160,7 +160,7 @@ function setupPlayer(state: BattleState, who: PlayerId) {
   draw(state, who, 5);
   ensureBasicInHand(player);
 
-  const basics = player.hand.filter((card) => getCard(card.cardId)?.stage === 'N+1');
+  const basics = player.hand.filter((card) => getCard(card.cardId)?.stage === 'ENTRANT');
   const active = basics.shift();
   if (active) {
     removeFromHand(player, active.uid);
@@ -175,10 +175,10 @@ function setupPlayer(state: BattleState, who: PlayerId) {
   }
 }
 
-/** Refuse un classeur non conforme : le moteur ne démarre pas une partie illégale. */
+/** Refuse un chariot non conforme : le moteur ne démarre pas une partie illégale. */
 function assertDeckLegal(deck: string[], who: string) {
   const { ok, reasons } = deckLegal(deck);
-  if (!ok) throw new Error(`Classeur illégal (${who}) : ${reasons.join(' ')}`);
+  if (!ok) throw new Error(`Chariot illégal (${who}) : ${reasons.join(' ')}`);
 }
 
 export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date.now()): BattleState {
@@ -205,7 +205,7 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
   setupPlayer(state, 'player');
   setupPlayer(state, 'ai');
 
-  state.log.push('Le bureau ouvre. À toi de jouer.');
+  state.log.push('Le site ouvre. À toi de jouer.');
   startTurn(state);
   return state;
 }
@@ -217,7 +217,7 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
   const handCard = player.hand.find((card) => card.uid === uid);
   if (!handCard) return state;
   const card = getCard(handCard.cardId);
-  if (!card || card.stage !== 'N+1') return state;
+  if (!card || card.stage !== 'ENTRANT') return state;
 
   const instance: CardInstance = { ...handCard, playedTurn: next.turn };
   if (slot === 'active') {
@@ -290,7 +290,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
-  next.log.push(`${next.current === 'player' ? 'Tu passes en relève' : 'L’IA passe en relève'} : ${getCard(bench.cardId)?.name}.`);
+  next.log.push(`${next.current === 'player' ? 'Tu passes en rotation' : 'L’IA passe en rotation'} : ${getCard(bench.cardId)?.name}.`);
   return next;
 }
 
@@ -334,7 +334,7 @@ function clearStatus(card: CardInstance, status: Status) {
   card.statuses = card.statuses.filter((entry) => entry !== status);
 }
 
-/** Une évolution, une relève ou un changement de Poste remettent les conditions à zéro (§4). */
+/** Une évolution, une rotation ou un changement de Poste remettent les conditions à zéro (§4). */
 function clearStatuses(card: CardInstance) {
   card.statuses = [];
 }
@@ -402,19 +402,19 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
   const fallenCard = getCard(fallen.cardId);
   const points = fallenCard?.ex ? 2 : 1;
   state.players[attackerId].points += points;
-  state.log.push(`${fallenCard?.name ?? 'Un Planqué'} est K.O. : ${points} Prime${points > 1 ? 's' : ''}.`);
+  state.log.push(`${fallenCard?.name ?? 'Un Planqué'} craque : ${points} Intervention${points > 1 ? 's' : ''}.`);
   putInDiscard(defender, fallen);
   defender.active = null;
 
   if (state.players[attackerId].points >= 3) {
     state.phase = 'ended';
     state.winner = attackerId;
-    state.log.push(`${attackerId === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Primes.`);
+    state.log.push(`${attackerId === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Interventions.`);
     return;
   }
 
   if (defender.bench.some(Boolean)) {
-    // §4 : c'est le joueur dont le Poste est K.O. qui choisit sa relève. Le
+    // §4 : c'est le joueur dont le Poste a craqué qui choisit sa relève. Le
     // moteur ne choisit pas à sa place ; il attend `promoteActive`.
     state.pendingPromotion = defenderId;
     state.log.push(
@@ -428,7 +428,7 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
 }
 
 /**
- * Relève après un K.O. : appelable par le joueur dont le Poste est vide, que ce
+ * Relève après un craquage : appelable par le joueur dont le Poste est vide, que ce
  * soit son tour ou non. C'est la seule action acceptée tant qu'une relève
  * attend d'être choisie.
  */
@@ -466,7 +466,7 @@ export function priorityShift(state: BattleState, uid: string): BattleState {
   draw(next, next.current, 1);
   player.hasUsedPriorityShift = true;
   next.log.push(
-    `${next.current === 'player' ? 'Tu archives' : 'L’IA archive'} ${getCard(discarded.cardId)?.name ?? 'une carte'} : Changement de priorité.`
+    `${next.current === 'player' ? 'Tu mets' : 'L’IA met'} ${getCard(discarded.cardId)?.name ?? 'une carte'} au rebut : Changement de priorité.`
   );
   return next;
 }
@@ -483,34 +483,34 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   const attack = card.attacks[attackIndex];
   if (!attack || player.active.energy < attack.cost) return state;
 
-  if (hasStatus(player.active, 'GELE')) {
-    next.log.push('Gelé : impossible d’attaquer.');
+  if (hasStatus(player.active, 'IMMOBILISATION')) {
+    next.log.push('Immobilisation : impossible d’attaquer.');
     return next;
   }
-  if (hasStatus(player.active, 'BLOQUE')) {
+  if (hasStatus(player.active, 'SIESTE')) {
     if (Math.random() < 0.5) {
-      clearStatus(player.active, 'BLOQUE');
-      next.log.push('Bloqué : réveil sur pile.');
+      clearStatus(player.active, 'SIESTE');
+      next.log.push('Sieste : réveillé sur pile.');
     } else {
-      next.log.push('Bloqué : toujours bloqué.');
+      next.log.push('Sieste : toujours endormi.');
       return next;
     }
   }
   if (hasStatus(player.active, 'DERIVE') && Math.random() < 0.5) {
     player.active.hp -= 20;
-    next.log.push('Dérive : l’attaque échoue, 20 dégâts.');
+    next.log.push('Dérive : l’attaque échoue, 20 de stress.');
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
     return next;
   }
 
   const damage = attackDamage(player.active, opponent.active, attack);
   opponent.active.hp -= damage;
-  next.log.push(`${card.name} utilise ${attack.name} : ${damage} dégâts.`);
+  next.log.push(`${card.name} utilise ${attack.name} : ${damage} de stress.`);
   applyEffects(next, next.current, player.active, opponent.active, attack);
   player.hasAttacked = true;
 
   knockOut(next, next.current);
-  // Si l'attaquant s'est K.O. lui-même (selfDamage), l'adversaire marque.
+  // Si l'attaquant s'est craqué lui-même (selfDamage), l'adversaire marque.
   if (player.active && player.active.hp <= 0) {
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
   }
@@ -521,29 +521,29 @@ function checkup(state: BattleState): BattleState {
   const player = state.players[state.current];
   if (!player.active) return state;
 
-  // Les conditions se résolvent **dans l'ordre de §4** (Surcharge → Burn-out →
-  // Bloqué → Gelé), et un Planqué peut en subir plusieurs. Dérive n'est pas ici :
+  // Les conditions se résolvent **dans l'ordre de §4** (Surcharge → Épuisement →
+  // Sieste → Immobilisation), et un Planqué peut en subir plusieurs. Dérive n'est pas ici :
   // elle se résout avant l'attaque.
   for (const status of STATUS_ORDER) {
     if (!player.active || !hasStatus(player.active, status)) continue;
     if (status === 'SURCHARGE') {
       player.active.hp -= 10;
-      state.log.push('Surcharge : 10 dégâts.');
-    } else if (status === 'BURNOUT') {
+      state.log.push('Surcharge : 10 de stress.');
+    } else if (status === 'EPUISEMENT') {
       player.active.hp -= 20;
-      state.log.push('Burn-out : 20 dégâts.');
+      state.log.push('Épuisement : 20 de stress.');
       if (Math.random() < 0.5) {
-        clearStatus(player.active, 'BURNOUT');
-        state.log.push('Burn-out guéri sur pile.');
+        clearStatus(player.active, 'EPUISEMENT');
+        state.log.push('Épuisement guéri sur pile.');
       }
-    } else if (status === 'BLOQUE') {
+    } else if (status === 'SIESTE') {
       if (Math.random() < 0.5) {
-        clearStatus(player.active, 'BLOQUE');
-        state.log.push('Bloqué guéri sur pile.');
+        clearStatus(player.active, 'SIESTE');
+        state.log.push('Sieste terminée sur pile.');
       }
-    } else if (status === 'GELE') {
-      clearStatus(player.active, 'GELE');
-      state.log.push('Gelé : le tour est passé.');
+    } else if (status === 'IMMOBILISATION') {
+      clearStatus(player.active, 'IMMOBILISATION');
+      state.log.push('Immobilisation : le tour est passé.');
     }
   }
 
@@ -557,11 +557,11 @@ export function endTurn(state: BattleState): BattleState {
   if (awaitingPromotion(state)) return state;
   const next = clone(state);
   if (next.phase === 'ended') return next;
-  // `checkup` mute l'état et peut le terminer (K.O. par statut) : on lit la
+  // `checkup` mute l'état et peut le terminer (craquage par statut) : on lit la
   // valeur retournée, pas `next`, dont le rétrécissement de type est périmé.
   const afterCheckup = checkup(next);
   if (afterCheckup.phase === 'ended') return afterCheckup;
-  // Un K.O. de checkup ouvre une relève : le tour ne passe pas avant le choix.
+  // Un craquage de checkup ouvre une relève : le tour ne passe pas avant le choix.
   if (awaitingPromotion(afterCheckup)) return afterCheckup;
 
   next.current = next.current === 'player' ? 'ai' : 'player';

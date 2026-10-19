@@ -4,8 +4,8 @@ import { useStore } from '@/store/useStore';
 
 const tabs = [
   { to: '/', label: 'Accueil', icon: Home },
-  { to: '/collection', label: 'Galérodex', icon: Library },
-  { to: '/deck', label: 'Classeur', icon: Layers },
+  { to: '/collection', label: 'Parc', icon: Library },
+  { to: '/deck', label: 'Chariot', icon: Layers },
   { to: '/battle', label: 'Combat', icon: Swords },
   { to: '/settings', label: 'Réglages', icon: Settings }
 ];
@@ -20,7 +20,7 @@ export function Layout() {
           <span className="brand__mark">BP</span>
           <div className="brand__text">
             <strong>Bureau des Planqués</strong>
-            <span>Le TCG de l’open-space</span>
+            <span>Le TCG de l’atelier</span>
           </div>
         </div>
         <div className="topbar__user" title="Profil">

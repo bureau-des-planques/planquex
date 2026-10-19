@@ -1,17 +1,17 @@
 # Miroir de référence — cadre 2026 et écarts connus
 
-> Cadre acté par **D-018** : le miroir de référence est *Pokémon TCG Pocket*
+> COMEX acté par **D-018** : le miroir de référence est *Pokémon TCG Pocket*
 > **dans son état de 2026**, et non la version de lancement (A1, octobre 2024).
 > Vérification documentaire du **19/10/2026**, par recherche sourcée. Les valeurs du
 > standard restent `AGENTS.md` §4.
 
-## 0. Cadre retenu, et ce qui en a été exclu
+## 0. COMEX retenu, et ce qui en a été exclu
 
 **Retenu (D-018)** : les **règles de base** sont celles du jeu **de 2026**, vérifiées à
 jour. La phrase « aucune valeur mathématique ne change » de §4 vaut pour ces règles-là.
 
 **Exclu du périmètre (D-020, 19/10/2026)** : les **ajouts 2025-2026** ne sont pas
-implémentés au lancement — Méga-Évolution ex à 3 Primes, Vulnérabilité ×2 par un Lieu,
+implémentés au lancement — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu,
 Pokémon à double type, Outils et Lieux. §3 ci-dessous reste le **chiffrage** de ce qui a
 été écarté, pour une réintroduction en extension (voir `docs/ARBITRAGE-O-008.md`).
 
@@ -23,9 +23,9 @@ qu'O-008 demandait d'écrire.
 
 | Règle | Vote | Source |
 |---|---|---|
-| Classeur 20 cartes, max 2 exemplaires, ≥ 1 N+1 | ✅ | Pokémon.com, guide de deck, 30/01/2025 |
-| 3 Primes pour gagner, 1 par K.O. | ✅ | Pokémon.com (même page) ; support officiel (FAQ combat) |
-| Primes accordées **uniquement** sur K.O. (pas sur une défausse par effet) | ✅ | FAQ combat officielle |
+| Chariot 20 cartes, max 2 exemplaires, ≥ 1 Entrant | ✅ | Pokémon.com, guide de deck, 30/01/2025 |
+| 3 Interventions pour gagner, 1 par K.O. | ✅ | Pokémon.com (même page) ; support officiel (FAQ combat) |
+| Interventions accordées **uniquement** sur K.O. (pas sur une défausse par effet) | ✅ | FAQ combat officielle |
 | Machine à café : 1 café généré par tour **et** 1 attachement par tour | ✅ | Pokémon.com, guide de deck |
 | Le premier joueur **peut attaquer** si l'attaque coûte 0 | ✅ | FAQ combat officielle, « Battle Rules FAQ » |
 
@@ -37,12 +37,12 @@ règles web**. Le support officiel renvoie aux **« Astuces » internes à l'app
 > « Please find more information about Pokémon TCG Pocket's game rules in **Tips**
 > or by tapping the question mark button […] » — support officiel
 
-Concernées : main de départ 5, main maximale 10, Open-space 3 places, « pas de
+Concernées : main de départ 5, main maximale 10, Rack 3 places, « pas de
 nouveau café si le slot du haut est occupé », « jusqu'à 3 types de café », premier
 joueur qui ne pioche pas / n'attache pas / peut jouer un Collègue, évolution
 impossible au premier tour de **chaque** joueur, 1 Pression par tour, café non
 consommé, aucune Résistance, relève payée en cafés, pas de défaite par pioche vide,
-les 5 statuts et leur **ordre** (Surcharge → Burn-out → Bloqué → Gelé), Objet
+les 5 statuts et leur **ordre** (Surcharge → Épuisement → Sieste → Immobilisation), Objet
 illimité / Collègue 1 par tour.
 
 **Conséquence de méthode** : toute affirmation d'audit sur ces lignes doit rester
@@ -54,7 +54,7 @@ horodatée des Astuces de jeu : voir `docs/PROTOCOLE-ASTUCES.md`.
 
 | # | Écart | Détail | Source |
 |---|---|---|---|
-| 1 | **Méga-Évolution ex = 3 Primes** | « Mega Absol ex gives **three points** upon being Knocked Out—immediately losing you the game » | Pokémon.com, 26/11/2025 |
+| 1 | **Méga-Évolution ex = 3 Interventions** | « Mega Absol ex gives **three points** upon being Knocked Out—immediately losing you the game » | Pokémon.com, 26/11/2025 |
 | 2 | **Vulnérabilité ×2 possible** | Le Lieu **Bounded Field** (série B3) fait passer la Faiblesse de +20 à ×2. Exemple officiel : « 50 × 2 – 20 = 80 » | FAQ officielle (astuces) |
 | 3 | **Pokémon à double type** | « Dual-type Pokémon will also be debuting in the new series » → casse l'hypothèse « une faction = un type » de `AGENTS.md` §3.2 | Lettre aux producteurs, 15/10/2026 |
 | 4 | **Outils et Lieux existent dans le jeu de référence** | Le libellé « extensions ultérieures » est un **choix de périmètre**, pas une description du miroir | Pokémon.com (Rocky Helmet, Giant Cape) ; FAQ (Stade Bounded Field) |
@@ -63,7 +63,7 @@ horodatée des Astuces de jeu : voir `docs/PROTOCOLE-ASTUCES.md`.
 passe par cet exemple **avec le Lieu en jeu**. Elle ne prouve **pas** que la règle de
 base soit ×2. Le « +20 » de base n'est attesté que par des wikis de fans.
 
-⚠️ **Écart 1** : un Cadre à 3 Primes n'existe pas dans `src/data/types.ts`. La phrase
+⚠️ **Écart 1** : un COMEX à 3 Interventions n'existe pas dans `src/data/types.ts`. La phrase
 « aucune valeur mathématique ne change » (`AGENTS.md` §4) est donc **fausse en 2026**
 tant que l'écart n'est pas traité.
 
@@ -71,9 +71,9 @@ tant que l'écart n'est pas traité.
 
 | Sujet | État des sources |
 |---|---|
-| Mulligan : « l'adversaire pioche 1 » | **Démenti en secondaire** : deux sources JP récentes (Game8, MAJ 30/09/2026 ; GameWith, MAJ 19/10/2026) disent que Pocket **n'a pas de reprise de poste** du tout — « マリガン（引き直し）はありません » — la main de départ contenant toujours un N+1. Le « l'adversaire pioche 1 » est la règle du TCG **physique**. Décidé (D-022) et implémenté (`ensureBasicInHand()`, plus de `mulligan`) |
-| Fin de partie quand **plus aucun Planqué** n'est en jeu | **Confirmé en secondaire** : « 自分の場にポケモンがいなくなると、その時点で敗北 » (Game8) ; « ポイント数に関わらず敗北 » (GameWith). Décidé (D-022) et désormais **écrit dans §4**, qui ne listait aucune condition de défaite hors 3 Primes |
-| K.O. : **qui choisit la relève** | **Confirmé en secondaire** : GameWith décrit un écran de choix côté joueur K.O. (avec limite de temps, puis choix aléatoire à l'expiration). `§4` dit « l'Open-space choisit », le moteur suit (`pendingPromotion` + `promoteActive()`). Décidé (D-022) |
+| Mulligan : « l'adversaire pioche 1 » | **Démenti en secondaire** : deux sources JP récentes (Game8, MAJ 30/09/2026 ; GameWith, MAJ 19/10/2026) disent que Pocket **n'a pas de reprise de poste** du tout — « マリガン（引き直し）はありません » — la main de départ contenant toujours un Entrant. Le « l'adversaire pioche 1 » est la règle du TCG **physique**. Décidé (D-022) et implémenté (`ensureBasicInHand()`, plus de `mulligan`) |
+| Fin de partie quand **plus aucun Planqué** n'est en jeu | **Confirmé en secondaire** : « 自分の場にポケモンがいなくなると、その時点で敗北 » (Game8) ; « ポイント数に関わらず敗北 » (GameWith). Décidé (D-022) et désormais **écrit dans §4**, qui ne listait aucune condition de défaite hors 3 Interventions |
+| K.O. : **qui choisit la relève** | **Confirmé en secondaire** : GameWith décrit un écran de choix côté joueur K.O. (avec limite de temps, puis choix aléatoire à l'expiration). `§4` dit « l'Rack choisit », le moteur suit (`pendingPromotion` + `promoteActive()`). Décidé (D-022) |
 | Plafond « 3 types de café » | Deux wikis de fans JP seulement. **Hypothèse assumée** (D-022) : le principe est officiel, le chiffre ne l'est pas |
 
 Tant que les captures du protocole n'existent pas, ces quatre lignes restent à **confiance

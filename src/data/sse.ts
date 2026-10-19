@@ -6,7 +6,7 @@ const GLYPH = '✚';
 const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
   ...card,
   faction: 'SSE',
-  weakness: 'MANAGER',
+  weakness: 'MANAGEMENT',
   palette: PALETTE,
   glyph: card.glyph ?? GLYPH
 });
@@ -15,7 +15,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-infirmier-site',
     name: 'Infirmier de site',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
@@ -26,7 +26,7 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-infirmiere-travail',
     evolvesFrom: 'sse-infirmier-site',
     name: 'Infirmière du travail',
-    stage: 'N+2',
+    stage: 'N+1',
     rarity: '2D',
     hp: 90,
     retreat: 1,
@@ -38,12 +38,12 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-medecin-travail',
     evolvesFrom: 'sse-infirmiere-travail',
     name: 'Médecin du travail',
-    stage: 'COMEX',
+    stage: 'N+2',
     rarity: '3D',
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Arrêt de travail', cost: 2, damage: 60, text: 'Le Planqué adverse est Bloqué.', effects: [{ kind: 'status', status: 'BLOQUE', target: 'opponent' }] },
+      { name: 'Arrêt de travail', cost: 2, damage: 60, text: 'Le Planqué adverse est en Sieste.', effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }] },
       { name: 'Bilan de santé', cost: 3, damage: 80, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
     ],
     flavor: 'Il a signé. Tu ne reviens pas avant lundi.'
@@ -51,7 +51,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-preventeur',
     name: 'Préventeur',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
@@ -62,7 +62,7 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-ergonome',
     evolvesFrom: 'sse-preventeur',
     name: 'Ergonome',
-    stage: 'N+2',
+    stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
@@ -74,12 +74,12 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-responsable-sse',
     evolvesFrom: 'sse-ergonome',
     name: 'Responsable SSE',
-    stage: 'COMEX',
+    stage: 'N+2',
     rarity: '3D',
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Rapport d’incident', cost: 2, damage: 60, text: 'Défausse 1 café du Planqué adverse.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Rapport d’incident', cost: 2, damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Plan de prévention', cost: 3, damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
     flavor: 'Il a écrit le protocole. Personne ne l’applique.'
@@ -87,7 +87,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-kine-travail',
     name: 'Kiné du travail',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
@@ -98,7 +98,7 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-sophrologue',
     evolvesFrom: 'sse-kine-travail',
     name: 'Sophrologue',
-    stage: 'N+2',
+    stage: 'N+1',
     rarity: '2D',
     hp: 90,
     retreat: 1,
@@ -110,20 +110,20 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-medecin-chef',
     evolvesFrom: 'sse-sophrologue',
     name: 'Médecin-chef',
-    stage: 'COMEX',
+    stage: 'N+2',
     rarity: '3D',
     hp: 140,
     retreat: 2,
     attacks: [
       { name: 'Diagnostic', cost: 2, damage: 60 },
-      { name: 'Protocole', cost: 3, damage: 100, text: 'Ce Planqué subit 10 dégâts.', effects: [{ kind: 'selfDamage', amount: 10 }] }
+      { name: 'Protocole', cost: 3, damage: 100, text: 'Ce Planqué prend 10 de stress.', effects: [{ kind: 'selfDamage', amount: 10 }] }
     ],
     flavor: 'Il a diagnostiqué le management. C’est grave.'
   }),
   base({
     id: 'sse-secouriste',
     name: 'Secouriste',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
@@ -134,7 +134,7 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-chef-secours',
     evolvesFrom: 'sse-secouriste',
     name: 'Chef de secours',
-    stage: 'N+2',
+    stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
@@ -144,18 +144,18 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-agent-entretien',
     name: 'Agent d’entretien',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Serpillière', cost: 1, damage: 10, text: 'Défausse 1 café du Planqué adverse.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Serpillière', cost: 1, damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: 'Il a nettoyé. La direction a sali.'
   }),
   base({
     id: 'sse-responsable-hygiene',
     evolvesFrom: 'sse-agent-entretien',
     name: 'Responsable hygiène',
-    stage: 'N+2',
+    stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
@@ -165,7 +165,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-psychologue',
     name: 'Psychologue du travail',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
@@ -176,7 +176,7 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-psychiatre',
     evolvesFrom: 'sse-psychologue',
     name: 'Psychiatre du travail',
-    stage: 'N+2',
+    stage: 'N+1',
     rarity: '2D',
     hp: 90,
     retreat: 1,
@@ -186,7 +186,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-dieteticien',
     name: 'Diététicien',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
@@ -197,7 +197,7 @@ export const SSE_CARDS: Card[] = [
     id: 'sse-nutritionniste',
     evolvesFrom: 'sse-dieteticien',
     name: 'Nutritionniste',
-    stage: 'N+2',
+    stage: 'N+1',
     rarity: '2D',
     hp: 90,
     retreat: 1,
@@ -207,7 +207,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-interne',
     name: 'Interne',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
@@ -217,17 +217,17 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-infirmier-volant',
     name: 'Infirmier volant',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Remplacement', cost: 1, damage: 20, text: 'Échange ce Planqué avec un Planqué de l’Open-space.', effects: [{ kind: 'switchSelf' }] }],
+    attacks: [{ name: 'Remplacement', cost: 1, damage: 20, text: 'Échange ce Planqué avec un Planqué du Rack.', effects: [{ kind: 'switchSelf' }] }],
     flavor: 'Il remplace tout le monde. Personne ne le remplace.'
   }),
   base({
     id: 'sse-pompier-volontaire',
     name: 'Pompier volontaire',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
@@ -237,7 +237,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-medecin-sport',
     name: 'Médecin du sport',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
@@ -247,7 +247,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-assistante-sociale',
     name: 'Assistante sociale',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
@@ -257,7 +257,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-controleur-securite',
     name: 'Contrôleur de sécurité',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
@@ -267,7 +267,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-brancardier',
     name: 'Brancardier',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
@@ -277,7 +277,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-medecin-legiste',
     name: 'Médecin légiste',
-    stage: 'N+1',
+    stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
@@ -287,17 +287,17 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-medecin-chef-ex',
     evolvesFrom: 'sse-sophrologue',
-    name: 'Médecin-chef Cadre',
-    stage: 'COMEX',
+    name: 'Médecin-chef COMEX',
+    stage: 'N+2',
     rarity: '4D',
     hp: 170,
     retreat: 3,
     ex: true,
     attacks: [
       { name: 'Diagnostic', cost: 2, damage: 70 },
-      { name: 'Protocole', cost: 3, damage: 120, text: 'Ce Planqué subit 20 dégâts.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Protocole', cost: 3, damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Primes. Un seul médecin.'
+    flavor: 'Deux Interventions. Un seul médecin.'
   })
 ];
 

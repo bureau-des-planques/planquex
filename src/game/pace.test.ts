@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 /**
- * Modèle de **rythme** : combien de tours pour prendre 3 Primes.
+ * Modèle de **rythme** : combien de tours pour prendre 3 Interventions.
  *
  * Ce n'est pas une simulation de parties — le moteur n'a pas d'IA et l'objectif
- * d'O-011 est de chiffrer l'effet du **Moral** sur la durée d'une partie, pas de
+ * d'O-011 est de chiffrer l'effet du **Seuil** sur la durée d'une partie, pas de
  * jouer. Hypothèses, toutes explicites :
  *
  * - 1 café généré par tour, **non consommé** par la Pression (§4) : l'attaquant
@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 
 interface Profile {
   label: string;
-  /** Moral du défenseur, bande basse et haute. */
+  /** Seuil du défenseur, bande basse et haute. */
   hp: [number, number];
   /** Dégâts de l'attaquant, bande basse et haute. */
   damage: [number, number];
@@ -31,27 +31,27 @@ interface Profile {
 
 /** Notre courbe (`CARD-SPEC.md` §2) et celle du jeu réel (relevée le 19/10/2026). */
 const OUR_CURVE: Profile[] = [
-  { label: 'N+1 → N+1', hp: [60, 70], damage: [10, 20], cost: 1 },
-  { label: 'N+2 → N+2', hp: [80, 100], damage: [30, 50], cost: 2 },
-  { label: 'COMEX → COMEX', hp: [120, 140], damage: [50, 80], cost: 2 },
-  { label: 'Cadre → Cadre', hp: [140, 170], damage: [70, 120], cost: 3 }
+  { label: 'Entrant → Entrant', hp: [60, 70], damage: [10, 20], cost: 1 },
+  { label: 'N+1 → N+1', hp: [80, 100], damage: [30, 50], cost: 2 },
+  { label: 'N+2 → N+2', hp: [120, 140], damage: [50, 80], cost: 2 },
+  { label: 'COMEX → COMEX', hp: [140, 170], damage: [70, 120], cost: 3 }
 ];
 
 const REAL_CURVE: Profile[] = [
-  { label: 'N+1 → N+1', hp: [50, 80], damage: [10, 20], cost: 1 },
-  { label: 'N+2 → N+2', hp: [90, 120], damage: [30, 50], cost: 2 },
-  { label: 'COMEX → COMEX', hp: [140, 160], damage: [50, 80], cost: 2 },
-  { label: 'Cadre → Cadre', hp: [170, 190], damage: [70, 120], cost: 3 }
+  { label: 'Entrant → Entrant', hp: [50, 80], damage: [10, 20], cost: 1 },
+  { label: 'N+1 → N+1', hp: [90, 120], damage: [30, 50], cost: 2 },
+  { label: 'N+2 → N+2', hp: [140, 160], damage: [50, 80], cost: 2 },
+  { label: 'COMEX → COMEX', hp: [170, 190], damage: [70, 120], cost: 3 }
 ];
 
 const PRIZES = 3;
 
-/** Frappes nécessaires pour un K.O. — hypothèse optimiste (peu de Moral, gros dégâts). */
+/** Frappes nécessaires pour un K.O. — hypothèse optimiste (peu de Seuil, gros dégâts). */
 const hitsOptimistic = (p: Profile) => Math.ceil(p.hp[0] / p.damage[1]);
-/** Frappes nécessaires pour un K.O. — hypothèse pessimiste (beaucoup de Moral, petits dégâts). */
+/** Frappes nécessaires pour un K.O. — hypothèse pessimiste (beaucoup de Seuil, petits dégâts). */
 const hitsPessimistic = (p: Profile) => Math.ceil(p.hp[1] / p.damage[0]);
 
-/** Tours pour prendre les 3 Primes : la montée en café, puis une frappe par tour. */
+/** Tours pour prendre les 3 Interventions : la montée en café, puis une frappe par tour. */
 const turns = (p: Profile, hits: (profile: Profile) => number) => p.cost - 1 + PRIZES * hits(p);
 
 const table = (curve: Profile[], hits: (profile: Profile) => number) =>
@@ -64,7 +64,7 @@ const table = (curve: Profile[], hits: (profile: Profile) => number) =>
 const asReport = (name: string, rows: ReturnType<typeof table>) =>
   rows.map((row) => `${name.padEnd(7)} ${row.profil.padEnd(14)} ${row.frappesParKO} frappe(s)/K.O.  ${row.tours} tours`);
 
-describe('O-011 — effet du Moral sur le rythme', () => {
+describe('O-011 — effet du Seuil sur le rythme', () => {
   it('chiffre le coût en tours de la courbe du jeu réel', () => {
     const oursOptimistic = table(OUR_CURVE, hitsOptimistic);
     const realOptimistic = table(REAL_CURVE, hitsOptimistic);
@@ -75,11 +75,11 @@ describe('O-011 — effet du Moral sur le rythme', () => {
       process.stdout.write(
         [
           '',
-          'Optimiste (peu de Moral, gros dégâts) :',
+          'Optimiste (peu de Seuil, gros dégâts) :',
           ...asReport('nôtre', oursOptimistic),
           ...asReport('réelle', realOptimistic),
           '',
-          'Pessimiste (beaucoup de Moral, petits dégâts) :',
+          'Pessimiste (beaucoup de Seuil, petits dégâts) :',
           ...asReport('nôtre', oursPessimistic),
           ...asReport('réelle', realPessimistic),
           ''
@@ -94,17 +94,17 @@ describe('O-011 — effet du Moral sur le rythme', () => {
     }));
 
     // Dans la lecture optimiste, les deux courbes ont exactement le même rythme :
-    // le Moral réel ne franchit aucun palier de frappes.
+    // le Seuil réel ne franchit aucun palier de frappes.
     for (const delta of deltas) {
       expect(delta.optimiste, `${delta.profil} (optimiste)`).toBe(0);
     }
 
     // Dans la lecture pessimiste, la courbe réelle coûte au plus 3 tours, et
-    // seulement là où elle franchit un palier : N+1 (7 → 8 frappes) et COMEX
-    // (3 → 4 frappes). N+2 et Cadre ne bougent pas.
+        // seulement là où elle franchit un palier : Entrant (7 → 8 frappes) et COMEX
+    // (3 → 4 frappes). N+1 et N+2 ne bougent pas.
     const worst = Math.max(...deltas.map((delta) => delta.pessimiste));
     expect(worst, 'pire écart en tours').toBe(3);
     const moved = deltas.filter((delta) => delta.pessimiste > 0).map((delta) => delta.profil);
-    expect(moved).toEqual(['N+1 → N+1', 'COMEX → COMEX']);
+    expect(moved).toEqual(['Entrant → Entrant', 'N+2 → N+2']);
   });
 });

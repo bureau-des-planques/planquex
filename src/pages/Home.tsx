@@ -23,14 +23,14 @@ export function Home() {
     <div className="page home">
       <section className="hero">
         <p className="eyebrow">Bureau des Planqués · Saison 1</p>
-        <h1>Ton open-space.<br />Tes Primes.<br />Ta survie.</h1>
+        <h1>Ton atelier.<br />Tes Interventions.<br />Ta survie.</h1>
         <p className="hero__lead">
-          Ouvre des bacs à courrier, collectionne les Planqués et affronte la Direction.
+          Ouvre des arrivages, collectionne les Planqués et affronte la Direction.
           Le seul TCG où le boss est déjà dans ta main.
         </p>
         <div className="hero__actions">
           <button type="button" className="button button--primary" onClick={handleOpenPack}>
-            <PackageOpen size={18} /> Ouvrir un bac
+            <PackageOpen size={18} /> Ouvrir un arrivage
           </button>
           <Link className="button" to="/battle">
             <Swords size={18} /> Combat test
@@ -43,7 +43,7 @@ export function Home() {
 
       <section className="stats-grid">
         <article className="stat-card">
-          <span className="stat-card__label">Galérodex</span>
+          <span className="stat-card__label">Parc</span>
           <strong>{completion}%</strong>
           <span className="muted">{uniqueOwned} cartes uniques</span>
         </article>
@@ -53,7 +53,7 @@ export function Home() {
           <span className="muted">toutes raretés</span>
         </article>
         <article className="stat-card">
-          <span className="stat-card__label">Classeur</span>
+          <span className="stat-card__label">Chariot</span>
           <strong>{deck.length}/20</strong>
           <span className="muted">cartes équipées</span>
         </article>
@@ -70,7 +70,7 @@ export function Home() {
           <Link className="quick-card" to="/collection">
             <Library size={22} />
             <div>
-              <strong>Ouvrir le Galérodex</strong>
+              <strong>Ouvrir le Parc</strong>
               <span>Filtrer, chercher, admirer les cartes brillantes.</span>
             </div>
             <ArrowRight size={18} />
@@ -78,8 +78,8 @@ export function Home() {
           <Link className="quick-card" to="/deck">
             <Library size={22} />
             <div>
-              <strong>Construire un classeur</strong>
-              <span>20 cartes, 2 exemplaires max, 1 N+1 minimum.</span>
+              <strong>Construire un chariot</strong>
+              <span>20 cartes, 2 exemplaires max, 1 Entrant minimum.</span>
             </div>
             <ArrowRight size={18} />
           </Link>
@@ -87,7 +87,7 @@ export function Home() {
             <Swords size={22} />
             <div>
               <strong>Affronter la Direction</strong>
-              <span>Un prototype de combat, 3 Primes, zéro pitié.</span>
+              <span>Un prototype de combat, 3 Interventions, zéro pitié.</span>
             </div>
             <ArrowRight size={18} />
           </Link>
@@ -97,7 +97,7 @@ export function Home() {
       {lastPack && (
         <div className="modal-backdrop" onClick={() => setLastPack(null)} role="presentation">
           <div className="modal pack-reveal" onClick={(event) => event.stopPropagation()}>
-            <p className="eyebrow">Bac à courrier</p>
+            <p className="eyebrow">Arrivage</p>
             <h2>Cinq nouvelles cartes</h2>
             <div className="pack-reveal__cards">
               {lastPack.map((card, index) => (
@@ -112,7 +112,7 @@ export function Home() {
               ))}
             </div>
             <button type="button" className="button button--primary" onClick={() => setLastPack(null)}>
-              Ranger dans le Galérodex
+              Ranger dans le Parc
             </button>
           </div>
         </div>

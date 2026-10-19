@@ -13,7 +13,7 @@ import type { AttackEffectKind, Card, Faction, Stage } from '@/data/types';
  * fragments : `AGENTS.md` §8.4 exige **zéro** occurrence de ce mot dans `src/`,
  * y compris dans les tests. Le test doit donc le chercher sans l'écrire.
  */
-const FORBIDDEN = ['Gal' + 'ère', 'Gal' + 'èreMon', 'Grèvomon', 'Pokémon'];
+const FORBIDDEN = ['Gal' + 'ère', 'Gal' + 'èreMon', 'Grèvomon', 'Pokémon', 'Open-space'];
 
 const EFFECT_KINDS: AttackEffectKind[] = [
   'healSelf',
@@ -36,19 +36,19 @@ const ABILITY_KINDS: NonNullable<Card['ability']>['kind'][] = [
 
 /** `AGENTS.md` §3.2 : chaque faction est vulnérable à une seule autre. */
 const WEAKNESS: Record<Faction, Faction | null> = {
-  SSE: 'MANAGER',
-  MANAGER: 'HAPPINESS',
-  HAPPINESS: 'AMELIORATION',
-  AMELIORATION: 'TECHNICIEN',
+  SSE: 'MANAGEMENT',
+  MANAGEMENT: 'QVT',
+  QVT: 'AMELIORATION',
+  AMELIORATION: 'ATELIER',
   RH: 'DIRECTION',
-  TECHNICIEN: 'RH',
-  DIRECTION: 'TECHNICIEN',
-  SYNDICAT: 'MANAGER',
-  INTERIMAIRE: null,
-  SUPPORT: 'TECHNICIEN'
+  ATELIER: 'RH',
+  DIRECTION: 'ATELIER',
+  SYNDICAT: 'MANAGEMENT',
+  INTERIM: null,
+  SUPPORT: 'ATELIER'
 };
 
-const STAGE_ORDER: Stage[] = ['N+1', 'N+2', 'COMEX'];
+const STAGE_ORDER: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
 
 /**
  * Dégâts par coût en café — **règle normative** (CARD-SPEC.md §2, D-021).
@@ -62,14 +62,14 @@ const DAMAGE_BY_COST: Record<number, [number, number]> = {
   4: [100, 160]
 };
 
-/** Moral par stade et rareté — CARD-SPEC.md §2, aligné sur le jeu réel (D-023). */
+/** Seuil par stade et rareté — CARD-SPEC.md §2, aligné sur le jeu réel (D-023). */
 const HP_BAND: Record<string, [number, number]> = {
-  'N+1/1D': [50, 70],
-  'N+1/2D': [60, 80],
-  'N+2/2D': [90, 110],
-  'N+2/3D': [100, 120],
-  'COMEX/3D': [140, 160],
-  'COMEX/4D': [170, 190]
+  'ENTRANT/1D': [50, 70],
+  'ENTRANT/2D': [60, 80],
+  'N+1/2D': [90, 110],
+  'N+1/3D': [100, 120],
+  'N+2/3D': [140, 160],
+  'N+2/4D': [170, 190]
 };
 
 const texts = (card: Card): string[] => [
@@ -134,7 +134,7 @@ describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
   it('fait pointer `evolvesFrom` vers la carte du stade précédent', () => {
     for (const card of ALL_CARDS.filter((entry) => !entry.variantOf)) {
       const index = STAGE_ORDER.indexOf(card.stage);
-      if (card.stage === 'N+1') {
+      if (card.stage === 'ENTRANT') {
         expect(card.evolvesFrom, `${card.id} ne doit pas évoluer`).toBeUndefined();
         continue;
       }
@@ -167,9 +167,9 @@ describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
   });
 });
 
-describe('Cartes — Moral par stade (CARD-SPEC.md §2, D-023)', () => {
-  it('place chaque carte dans la bande de Moral de son stade et de sa rareté', () => {
-    // Les variantes héritent du Moral de leur base : couvertes par le test d'héritage.
+describe('Cartes — Seuil par stade (CARD-SPEC.md §2, D-023)', () => {
+  it('place chaque carte dans la bande de Seuil de son stade et de sa rareté', () => {
+    // Les variantes héritent du Seuil de leur base : couvertes par le test d'héritage.
     for (const card of ALL_CARDS.filter((entry) => !entry.variantOf)) {
       const band = HP_BAND[`${card.stage}/${card.rarity}`];
       expect(band, `${card.id} : ${card.stage}/${card.rarity} non couvert`).toBeDefined();
@@ -202,10 +202,11 @@ describe('Cartes — Cadre et Vulnérabilité (AGENTS.md §3.2, §5)', () => {
     }
   });
 
-  it('réserve le Cadre aux COMEX 4 diamants et le nomme « Cadre », pas « ex »', () => {
+  it('réserve le COMEX aux 4 diamants, et le nom ne porte pas la marque « ex »', () => {
     for (const card of ALL_CARDS) {
       if (card.ex) {
-        expect(card.stage, card.id).toBe('COMEX');
+        // D-026 : le COMEX est un **statut**, pas un stade — un ex peut être Entrant, N+1
+        // ou N+2, comme dans le jeu de base. Le seul fait mécanique est la rareté.
         expect(card.rarity, card.id).toBe('4D');
       }
       // L'UI affiche le nom : il ne doit pas porter la marque « ex ».
@@ -221,7 +222,7 @@ describe('Cartes — textes (AGENTS.md §3, §5)', () => {
         for (const word of FORBIDDEN) {
           expect(text, `${card.id} : « ${word} »`).not.toContain(word);
         }
-        // §3.1 : Bench → Open-space. « banc » n'a rien à faire dans un texte de carte.
+        // §3.1 : Bench → Rack. « banc » n'a rien à faire dans un texte de carte.
         expect(text, `${card.id} : « ${text} »`).not.toMatch(/\bbanc\b/i);
       }
     }

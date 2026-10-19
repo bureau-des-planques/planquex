@@ -1,20 +1,28 @@
 export type Faction =
   | 'SSE'
-  | 'MANAGER'
-  | 'HAPPINESS'
+  | 'MANAGEMENT'
+  | 'QVT'
   | 'AMELIORATION'
   | 'RH'
-  | 'TECHNICIEN'
+  | 'ATELIER'
   | 'DIRECTION'
   | 'SYNDICAT'
-  | 'INTERIMAIRE'
+  | 'INTERIM'
   | 'SUPPORT';
 
-export type Stage = 'N+1' | 'N+2' | 'COMEX';
+/** Les trois zones du site (D-026). Un futur vivier sera un lieu lui aussi. */
+export type Vivier = 'ATELIER' | 'ETAGE' | 'BUREAUX';
+
+/**
+ * Stades : **Entrant → N+1 → N+2**. Le **COMEX** n'est pas un stade : c'est le **statut**
+ * des ex (`ex: true`, 2 Interventions), affiché *avec* le stade — un ex peut exister à
+ * n'importe quel stade, comme dans le jeu de base. Voir D-024, D-026.
+ */
+export type Stage = 'ENTRANT' | 'N+1' | 'N+2';
 
 export type Rarity = '1D' | '2D' | '3D' | '4D' | '1S' | '2S';
 
-export type Status = 'SURCHARGE' | 'BURNOUT' | 'BLOQUE' | 'GELE' | 'DERIVE';
+export type Status = 'SURCHARGE' | 'EPUISEMENT' | 'SIESTE' | 'IMMOBILISATION' | 'DERIVE';
 
 export type AttackEffectKind =
   | 'healSelf'
@@ -126,9 +134,9 @@ export interface BattleState {
   winner: PlayerId | null;
   /**
    * Joueur dont le Poste vient d'être mis K.O. et qui doit **choisir** sa relève
-   * (AGENTS.md §4 : « l'Open-space choisit la relève »). Tant que ce champ est
+   * (AGENTS.md §4 : « le Rack choisit la relève »). Tant que ce champ est
    * renseigné, aucune autre action n'est acceptée : il faut d'abord trancher.
-   * `null` quand rien n'est en attente, ou quand le joueur n'a plus d'Open-space
+   * `null` quand rien n'est en attente, ou quand le joueur n'a plus de Rack
    * (la partie est alors terminée).
    */
   pendingPromotion: PlayerId | null;

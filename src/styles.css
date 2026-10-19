@@ -754,7 +754,7 @@ code {
   gap: 0.5rem;
 }
 
-/* ---------- Ajout rapide au classeur ---------- */
+/* ---------- Ajout rapide au Chariot ---------- */
 
 .section__actions {
   display: flex;
@@ -821,7 +821,8 @@ code {
   font-weight: 700;
 }
 
-.hp {
+/* La barre de Stress : elle MONTE. Verte au repos, rouge quand le collègue va craquer. */
+.stress {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -830,17 +831,17 @@ code {
   width: 100%;
 }
 
-.hp__fill {
+.stress__fill {
   background: linear-gradient(90deg, #2f9e77, #6fd3a8);
   height: 100%;
   transition: width 320ms ease;
 }
 
-.hp__fill.is-mid {
+.stress__fill.is-mid {
   background: linear-gradient(90deg, #d08c2c, #f0c75e);
 }
 
-.hp__fill.is-low {
+.stress__fill.is-high {
   background: linear-gradient(90deg, #c0442e, #f07a5e);
 }
 
@@ -871,17 +872,17 @@ code {
   border: 1px solid #9b59b6;
 }
 
-.status-chip--burnout {
+.status-chip--epuisement {
   background: rgb(224 120 62 / 25%);
   border: 1px solid #e0783e;
 }
 
-.status-chip--bloque {
+.status-chip--sieste {
   background: rgb(120 140 170 / 25%);
   border: 1px solid #788caa;
 }
 
-.status-chip--gele {
+.status-chip--immobilisation {
   background: rgb(90 170 220 / 25%);
   border: 1px solid #5aaadc;
 }

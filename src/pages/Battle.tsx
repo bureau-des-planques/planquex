@@ -8,14 +8,14 @@ import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 
 /**
- * Classeur de test : 10 cartes de base en double, en commençant par les N+1.
- * Sert quand le classeur du joueur n'est pas encore valide.
+ * Chariot de test : 10 cartes de base en double, en commençant par les Entrants.
+ * Sert quand le chariot du joueur n'est pas encore valide.
  */
 function testDeck(): string[] {
   const bases = ALL_CARDS.filter((card) => !card.variantOf);
   const ordered = [
-    ...bases.filter((card) => card.stage === 'N+1'),
-    ...bases.filter((card) => card.stage !== 'N+1')
+    ...bases.filter((card) => card.stage === 'ENTRANT'),
+    ...bases.filter((card) => card.stage !== 'ENTRANT')
   ];
   const deck: string[] = [];
   for (const card of ordered) {
@@ -34,18 +34,23 @@ function describe(instance: CardInstance | null): string {
 
 const STATUS_LABELS: Record<string, string> = {
   SURCHARGE: 'Surcharge',
-  BURNOUT: 'Burn-out',
-  BLOQUE: 'Bloqué',
-  GELE: 'Gelé',
+  EPUISEMENT: 'Épuisement',
+  SIESTE: 'Sieste',
+  IMMOBILISATION: 'Immobilisation',
   DERIVE: 'Dérive'
 };
 
-function HpBar({ current, max }: { current: number; max: number }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((current / max) * 100))) : 0;
-  const level = pct <= 25 ? 'is-low' : pct <= 50 ? 'is-mid' : '';
+/**
+ * La barre de **Stress** : elle monte. `hp` reste le champ technique du moteur — c'est
+ * l'affichage qui s'inverse (D-026 : « le Stress remplace les dégâts »). Verte au repos,
+ * rouge quand le collègue va craquer.
+ */
+function StressBar({ stress, max }: { stress: number; max: number }) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((stress / max) * 100))) : 0;
+  const level = pct >= 75 ? 'is-high' : pct >= 50 ? 'is-mid' : '';
   return (
-    <div className="hp" role="img" aria-label={`Moral : ${current} sur ${max}`}>
-      <div className={`hp__fill ${level}`} style={{ width: `${pct}%` }} />
+    <div className="stress" role="img" aria-label={`Stress : ${stress} sur ${max}`}>
+      <div className={`stress__fill ${level}`} style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -53,8 +58,8 @@ function HpBar({ current, max }: { current: number; max: number }) {
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
 
-  // Le classeur du joueur est utilisé s'il est légal, sinon on retombe sur un
-  // classeur de test. Calculé une seule fois par rendu : `deckLegal` est appelé
+  // Le chariot du joueur est utilisé s'il est légal, sinon on retombe sur un
+  // chariot de test. Calculé une seule fois par rendu : `deckLegal` est appelé
   // au plus une fois, et l'identité de la référence dit si on a replié.
   const playerDeck = useMemo(() => (deckLegal(storeDeck).ok ? storeDeck : testDeck()), [storeDeck]);
   const usedTestDeck = playerDeck !== storeDeck;
@@ -100,7 +105,7 @@ export function Battle() {
 
       {usedTestDeck && (
         <p className="notice notice--warn">
-          Ton classeur n’est pas valide (20 cartes, 2 exemplaires max, 1 N+1 minimum) : ce combat utilise un classeur de test.
+          Ton chariot n’est pas valide (20 cartes, 2 exemplaires max, 1 Entrant minimum) : ce combat utilise un chariot de test.
         </p>
       )}
 
@@ -110,7 +115,7 @@ export function Battle() {
 
       {state.phase === 'ended' && (
         <p className={`notice ${state.winner === 'player' ? 'notice--ok' : 'notice--warn'}`}>
-          {state.winner === 'player' ? 'Victoire : 3 Primes.' : 'Défaite : la Direction marque 3 Primes.'}
+          {state.winner === 'player' ? 'Victoire : 3 Interventions.' : 'Défaite : la Direction marque 3 Interventions.'}
         </p>
       )}
 
@@ -150,7 +155,7 @@ export function Battle() {
                       {side.active.hp}/{side.active.maxHp}
                     </span>
                   </div>
-                  <HpBar current={side.active.hp} max={side.active.maxHp} />
+                  <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
                   <div className="poste__meta">
                     <span className="pips" title={`${side.active.energy} café(s) attaché(s)`}>
                       {side.active.energy > 0 ? '●'.repeat(side.active.energy) : '○'}
@@ -169,7 +174,7 @@ export function Battle() {
             </div>
 
             <div className="board__bench">
-              <span className="stat-label">Open-space</span>
+              <span className="stat-label">Rack</span>
               <ul>
                 {side.bench.map((slot, index) => (
                   <li key={index}>{describe(slot)}</li>
@@ -178,7 +183,7 @@ export function Battle() {
             </div>
 
             <p className="muted">
-              Courrier {side.hand.length} · Classeur {side.deck.length} · Archive {side.discard.length}
+              main {side.hand.length} · Chariot {side.deck.length} · Rebut {side.discard.length}
             </p>
           </article>
         ))}
@@ -208,7 +213,7 @@ export function Battle() {
             <>
               <p>
                 La Direction doit choisir sa relève. Aucune IA ne joue encore : ce bouton tient sa place et
-                prend le premier Planqué de son Open-space.
+                prend le premier Planqué de son Rack.
               </p>
               <button
                 type="button"

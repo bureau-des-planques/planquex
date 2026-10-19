@@ -11,9 +11,9 @@
 
 | # | Sujet | Proposition par défaut |
 |---|---|---|
-| 1 | Base de règles | TCG Pocket **à l'identique** : 20 cartes, 5 en main, 3 au banc, 3 Primes, zone d'énergie, pas de résistance, pas de défaite par pioche vide |
+| 1 | Base de règles | TCG Pocket **à l'identique** : 20 cartes, 5 en main, 3 au banc, 3 Interventions, zone d'énergie, pas de résistance, pas de défaite par pioche vide |
 | 2 | Volume | **286 cartes** : 226 de base + 60 secrètes, avec la même répartition de raretés |
-| 3 | Factions | 10 factions corporate (SSE, Manager, Happiness Manager, Amélioration continue, RH, Technicien, Direction, Syndicat, Intérimaire, Service Support) |
+| 3 | Factions | 10 factions corporate (SSE, Manager, Happiness Manager, Amélioration continue, RH, Technicien, Direction, Syndicat, Intérimaire, Support) |
 | 4 | Ton | Satire de bureau, **punch up** : on ridiculise les postures de pouvoir, pas les personnes réelles ni les groupes protégés |
 | 5 | Art | Direction « corporate dark premium » ; production assistée par IA + curation humaine (option à trancher) |
 | 6 | Monétisation | Aucun argent réel en v1 ; « Cotisation » payée en monnaie de jeu ; Stripe plus tard si besoin |
@@ -135,7 +135,7 @@ Ordres de grandeur 2026, à revérifier au moment du lancement :
 | Main maximale | **10 cartes** |
 | Banc | **3 places** |
 | Poste actif | 1 |
-| Points | **3 Primes** ; K.O. normal = 1, Cadre (ex) = 2 |
+| Points | **3 Interventions** ; K.O. normal = 1, COMEX (ex) = 2 |
 | Énergie | **Zone d'énergie** : 1 énergie générée par tour, 1 attachement par tour ; si le slot du haut est occupé, pas de nouvelle énergie |
 | Types d'énergie | Jusqu'à **3** par deck, ordre aléatoire ; l'énergie incolore accepte tout |
 | Premier joueur | Ne pioche pas, ne peut pas attacher d'énergie ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 |
@@ -143,11 +143,11 @@ Ordres de grandeur 2026, à revérifier au moment du lancement :
 | Attaque | 1 par tour ; l'énergie n'est **pas consommée** par l'attaque |
 | Faiblesse | **+20 dégâts** |
 | Résistance | **Aucune** |
-| Retraite | Défausse autant d'énergies que le coût de relève |
+| Retraite | Défausse autant d'énergies que le coût de rotation |
 | Pioche vide | **Pas de défaite** |
-| K.O. | L'adversaire marque les Primes ; le Banc choisit la relève |
-| Statuts | Surcharge (10/tour), Burn-out (20 + flip), Bloqué (flip), Gelé (1 tour), Dérive (flip avant attaque) |
-| Ordre des statuts | Surcharge → Burn-out → Bloqué → Gelé |
+| K.O. | L'adversaire marque les Interventions ; le Banc choisit la relève |
+| Statuts | Surcharge (10/tour), Épuisement (20 + flip), Sieste (flip), Immobilisation (1 tour), Dérive (flip avant attaque) |
+| Ordre des statuts | Surcharge → Épuisement → Sieste → Immobilisation |
 | Cartes Action | Objet : illimité ; Collègue : **1 par tour** |
 | Outils / Lieux | Ajoutés dans les extensions ultérieures, comme dans l'APK |
 
@@ -162,9 +162,9 @@ Aucune valeur mathématique ne change. On renomme, on réécrit, on illustre.
 | TCG Pocket | Bureau des Planqués | Notes |
 |---|---|---|
 | Pokémon | **Planqué** | La créature administrative |
-| Basic / Stage 1 / Stage 2 | **N+1 / N+2 / COMEX** | Progression hiérarchique |
-| ex | **Cadre** | Vaut 2 Primes |
-| HP | **Moral** | Même valeur, même courbe |
+| Basic / Stage 1 / Stage 2 | **Entrant / N+1 / N+2** | Progression hiérarchique |
+| ex | **COMEX** | Vaut 2 Interventions |
+| HP | **Seuil** | Même valeur, même courbe |
 | Energy | **Café** | La ressource |
 | Energy Zone | **Machine à café** | 1 café/tour |
 | Attack | **Pression** | Une par tour |
@@ -172,26 +172,26 @@ Aucune valeur mathématique ne change. On renomme, on réécrit, on illustre.
 | Item | **Objet** | Fournitures, docs, badges |
 | Supporter | **Collègue** | 1 par tour |
 | Tool | **Outil** | Clé USB, badge, gilet |
-| Stadium | **Lieu** | Open-space, cantine, salle de réunion |
+| Stadium | **Lieu** | Rack, cantine, salle de réunion |
 | Prize / point | **Prime** | 3 pour gagner |
 | Weakness | **Vulnérabilité** | +20 |
 | Resistance | — | Supprimée |
-| Retreat | **Relève** | Coût en cafés |
+| Retreat | **Rotation** | Coût en cafés |
 | Poison | **Surcharge** | 10/tour |
-| Burn | **Burn-out** | 20 + flip |
-| Sleep | **Bloqué** | Flip pour se réveiller |
-| Paralysis | **Gelé** | Saute un tour |
+| Burn | **Épuisement** | 20 + flip |
+| Sleep | **Sieste** | Flip pour se réveiller |
+| Paralysis | **Immobilisation** | Saute un tour |
 | Confusion | **Dérive** | Flip avant attaque |
-| Deck | **Classeur** | 20 cartes |
+| Deck | **Chariot** | 20 cartes |
 | Hand | **Courrier** | 5 cartes |
 | Discard | **Archive** | |
-| Bench | **Open-space** | 3 places |
+| Bench | **Rack** | 3 places |
 | Active | **Poste** | |
 | Coin flip | **Lancer de tampon** | Pile = tampon, face = agrafe |
 | Mulligan | **Reprise de poste** | |
-| Pack | **Bac à courrier** | 5 cartes |
+| Pack | **Arrivage** | 5 cartes |
 | Wonder Pick | **Pause café** | 5 cartes, 1 rare minimum |
-| Collection | **Classeur / Galérodex** | |
+| Collection | **Chariot / Parc** | |
 | Mission | **Note de service** | |
 | Shop | **Économat / Boutique du CSE** | |
 | Premium Pass | **Cotisation** | |
@@ -209,24 +209,24 @@ Chaque faction reprend un type TCG Pocket, avec le même rôle mécanique et une
 | Faction | Type | Vulnérable à | Identité | Exemples de cartes |
 |---|---|---|---|---|
 | **SSE** | Plante | Manager | Prévention, soin, arrêts de travail | Médecin du travail, Infirmière, Trousse de secours |
-| **Manager** | Feu | Happiness Manager | Pression, objectifs, deadlines | Directeur général, Deadline hier, Réunion d’urgence |
-| **Happiness Manager** | Eau | Amélioration continue | QVT, perks, flux, bien-être | Chief Happiness Officer, Yoga du rire, Corbeille de fruits |
+| **Management** | Feu | Happiness Manager | Pression, objectifs, deadlines | Directeur général, Deadline hier, Réunion d’urgence |
+| **QVT** | Eau | Amélioration continue | QVT, perks, flux, bien-être | Chief Happiness Officer, Yoga du rire, Corbeille de fruits |
 | **Amélioration continue** | Électricité | Technicien | Lean, audits, KPI, process | Directeur qualité, Tableau de bord, Norme ISO |
-| **RH** | Psy | Direction | Recrutement, entretiens, manipulation | DRH, Entretien annuel, Plan de carrière |
-| **Technicien** | Combat | RH | Terrain, maintenance, outils | Chef d’atelier, Multimètre, Intervention |
-| **Direction** | Obscurité | Technicien | COMEX, plans de départ, politique | PDG, Plan de départ, Réunion qui aurait pu être un mail |
+| **RH** | Psychique | Direction | Recrutement, entretiens, manipulation | DRH, Entretien annuel, Plan de carrière |
+| **Atelier** | Combat | RH | Terrain, maintenance, outils | Chef d’atelier, Multimètre, Intervention |
+| **Direction** | Obscurité | Technicien | N+2, plans de départ, politique | PDG, Plan de départ, Réunion qui aurait pu être un mail |
 | **Syndicat** | Métal | Manager | CSE, protection, rapport de force | Secrétaire général, Tract blindé, Heure de délégation |
-| **Intérimaire** | Dragon | Aucune | Mission courte, précarité, chaos | Intérimaire légendaire, Mission courte, Café renversé |
-| **Service Support** | Incolore | Technicien | Helpdesk, tickets, polyvalence | Responsable support, Ticket, Escalade |
+| **Intérim** | Dragon | Aucune | Mission courte, précarité, chaos | Intérimaire légendaire, Mission courte, Café renversé |
+| **Support** | Incolore | Technicien | Helpdesk, tickets, polyvalence | Responsable support, Ticket, Escalade |
 
-**Pourquoi ces noms** : ils sont immédiatement lisibles, ils permettent des lignes d'évolution naturelles (N+1 → N+2 → COMEX), et ils donnent un vocabulaire de satire sans jamais viser une personne réelle.
+**Pourquoi ces noms** : ils sont immédiatement lisibles, ils permettent des lignes d'évolution naturelles (Entrant → N+1 → N+2), et ils donnent un vocabulaire de satire sans jamais viser une personne réelle.
 
 ### 3.4 Saveur Bureau des Planqués sans casser l'équilibre
 
 Le mode standard reste **mathématiquement identique** à TCG Pocket. La saveur passe par :
 
 1. **Les noms et textes** : chaque carte raconte une scène de bureau.
-2. **Les animations** : tampon qui s'abat, machine à café qui fume, open-space qui tremble.
+2. **Les animations** : tampon qui s'abat, machine à café qui fume, Rack qui tremble.
 3. **Les missions** : « Note de service », « Objectifs annuels », « Plan de départ ».
 4. **Les événements** : « Semaine de la qualité », « Audit surprise », « Grève générale ».
 5. **Le mode Carrière** (optionnel, plus tard) : une campagne solo scénarisée avec des règles locales, sans toucher au standard.
@@ -237,7 +237,7 @@ Le mode standard reste **mathématiquement identique** à TCG Pocket. La saveur 
 
 - On ridiculise **les postures** : réunions inutiles, plans de carrière, notes de service, présentéisme, jargon.
 - On **ne nomme personne** de réel, aucune entreprise existante, aucun groupe protégé.
-- Les cartes « Direction » sont des archétypes (COMEX fantôme, chef de projet fantôme), pas des portraits.
+- Les cartes « Direction » sont des archétypes (N+2 fantôme, chef de projet fantôme), pas des portraits.
 - Les textes sont drôles mais pas haineux ; la victime du gag est toujours le système, pas le salarié.
 - Un comité de lecture (toi + quelques testeurs) valide les 286 textes avant publication.
 
@@ -250,24 +250,24 @@ Le mode standard reste **mathématiquement identique** à TCG Pocket. La saveur 
 | **Contenu** | Les 286 cartes, leurs stats, attaques, talents | Moyen (méta) — validation par simulation |
 | **Modes séparés** | Mode Carrière, mode Café 4b (parké : `docs/MODES-FUTURS.md`), draft, scellé | Nul sur le standard |
 | **Mots-clés de carte** | « Changement de priorité », « Audit », « Prime »… construits sur des primitives existantes | Moyen — simulation obligatoire |
-| **Règles de base** | Deck, main, banc, Primes, énergie/tour, faiblesse, résistance, pioche vide | **Élevé — on n'y touche pas** |
+| **Règles de base** | Deck, main, banc, Interventions, énergie/tour, faiblesse, résistance, pioche vide | **Élevé — on n'y touche pas** |
 
 **Café et stress** :
 
 - **Café = énergie.** La `Energy Zone` devient la **Machine à café** : 1 café/tour, 1 attachement/tour, le café non utilisé reste dans le slot du haut, 3 types max, l'incolore accepte tout. Aucune maths ne change.
-- **Stress = états spéciaux.** Il n'existe pas de ressource « stress » dans TCG Pocket. On renomme les 5 états : Surcharge (poison), Burn-out (burn), Bloqué (sleep), Gelé (paralysis), Dérive (confusion).
+- **Stress = états spéciaux.** Il n'existe pas de ressource « stress » dans TCG Pocket. On renomme les 5 états : Surcharge (poison), Épuisement (burn), Sieste (sleep), Immobilisation (paralysis), Dérive (confusion).
 - Un **compteur de stress** qui s'accumule serait une mécanique maison. On le réserve à un mode alternatif, jamais au standard.
 
 ### 3.7 Noms actés
 
 Les 10 noms sont actés (voir `FACTIONS.md` pour le détail des cartes) :
 
-**SSE · Manager · Happiness Manager · Amélioration continue · RH · Technicien · Direction · Syndicat · Intérimaire · Service Support**
+**SSE · Manager · Happiness Manager · Amélioration continue · RH · Technicien · Direction · Syndicat · Intérimaire · Support**
 
 Deux précisions :
 
 - **SSE** = Service Santé Environnement, avec l’infirmière du travail incluse.
-- Les stades sont **N+1 → N+2 → COMEX** : la hiérarchie jusqu’au comité exécutif.
+- Les stades sont **Entrant → N+1 → N+2** : la hiérarchie jusqu’au comité exécutif.
 
 ---
 
@@ -314,7 +314,7 @@ Deux précisions :
 | Direction | 18 |
 | Syndicat | 5 |
 | Intérimaire | 4 |
-| Service Support | 38 |
+| Support | 38 |
 | **Total** | **267** |
 
 Les 19 entrées restantes sont les Collègues et Objets. Les 60 secrètes sont des variantes d'art de cartes existantes.
@@ -325,7 +325,7 @@ Comme Genetic Apex (Mewtwo / Charizard / Pikachu), trois bacs thématiques :
 
 | Bac | Factions mises en avant | Fantasme |
 |---|---|---|
-| **Bac Direction** | Direction, RH, Service Support | Le pouvoir, les organigrammes, le helpdesk |
+| **Bac Direction** | Direction, RH, Support | Le pouvoir, les organigrammes, le helpdesk |
 | **Bac Terrain** | Technicien, Syndicat, Manager | Le terrain, la sueur, la pression |
 | **Bac Bureau** | SSE, Amélioration continue, Happiness Manager, Intérimaire | Le quotidien, les process, le bien-être, la précarité |
 
@@ -333,7 +333,7 @@ Chaque bac contient 5 cartes : 3 communes, 1 peu commune, 1 rare minimum. Les ta
 
 ### 4.5 Pipeline de production
 
-1. **Gabarit de carte** (Zod) : id, numéro, nom, faction, stade, évolution, Moral, vulnérabilité, relève, attaques, talent, rareté, bacs, texte d'ambiance, art.
+1. **Gabarit de carte** (Zod) : id, numéro, nom, faction, stade, évolution, Seuil, vulnérabilité, relève, attaques, talent, rareté, bacs, texte d'ambiance, art.
 2. **Tableur de set** : 286 lignes, une par carte, avec les 10 factions et les 8 raretés.
 3. **Validation automatique** : lignes d'évolution complètes, coûts d'énergie cohérents, aucune faction orpheline, counts exacts.
 4. **Simulation d'équilibrage** : 10 000 parties par archétype, winrates cibles 45–55 %, détection des cartes auto-incluses.
@@ -365,10 +365,10 @@ Chaque bac contient 5 cartes : 3 communes, 1 peu commune, 1 rare minimum. Les ta
 | Onboarding | Journée d'intégration, tutoriel guidé | 1 |
 | Accueil | Hub, quêtes, événements, raccourcis | 1 |
 | Bacs à courrier | Achat, stock, taux, ouverture animée | 2 |
-| Classeur / Galérodex | Grille, filtres, favoris, fiche, progression | 2 |
+| Chariot / Parc | Grille, filtres, favoris, fiche, progression | 2 |
 | Pause café (Wonder Pick) | 5 cartes, rotation, coûts, relance | 2 |
 | Deck builder | 20 cartes, légalité, decks sauvegardés, deck auto | 3 |
-| Combat solo | Poste, open-space, cafés, attaques, statuts, journal | 3 |
+| Combat solo | Poste, Rack, cafés, attaques, statuts, journal | 3 |
 | IA | Heuristique + plan rejoué, 3 niveaux | 3 |
 | Tutoriel de combat | Pas-à-pas, guidé | 3 |
 | Reprise de combat | Snapshot, « Reprendre » | 3 |
@@ -396,7 +396,7 @@ Chaque bac contient 5 cartes : 3 communes, 1 peu commune, 1 rare minimum. Les ta
 |---|---|---|
 | 0 | Validation de ce document, spécification du set, direction artistique | 1 |
 | 1 | Scaffold, design system, auth, PWA, CI, profil, accueil | 1–2 |
-| 2 | Set 286 cartes, classeur, bacs, pause café, boutique, missions | 2 |
+| 2 | Set 286 cartes, chariot, bacs, pause café, boutique, missions | 2 |
 | 3 | Moteur, IA, combat solo, tutoriel, reprise, replay | 2–3 |
 | 4 | PvP, serveur autoritaire, classé, matchmaking | 2–3 |
 | 5 | Échanges, amis, casier, cotisation, événements | 2 |

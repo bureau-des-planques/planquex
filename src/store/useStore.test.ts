@@ -7,8 +7,8 @@ beforeEach(() => {
   useStore.getState().reset();
 });
 
-describe('Bac à courrier', () => {
-  it('distribue 5 cartes, les ajoute au Galérodex et incrémente le compteur', () => {
+describe('Arrivage', () => {
+  it('distribue 5 cartes, les ajoute au Parc et incrémente le compteur', () => {
     const before = useStore.getState().packsOpened;
     const cards = useStore.getState().openPack();
 
@@ -20,7 +20,7 @@ describe('Bac à courrier', () => {
   });
 });
 
-describe('Classeur du store', () => {
+describe('Chariot du store', () => {
   it('ajoute une carte par clic, puis retire un seul exemplaire au-delà du plafond', () => {
     const id = ALL_CARDS[0].id;
     const { toggleDeck } = useStore.getState();
@@ -49,7 +49,7 @@ describe('Classeur du store', () => {
     expect(useStore.getState().deck).toHaveLength(MAX_COPIES_PER_NAME);
   });
 
-  it('ne dépasse jamais la taille du Classeur', () => {
+  it('ne dépasse jamais la taille du Chariot', () => {
     const { toggleDeck } = useStore.getState();
     for (const card of ALL_CARDS.slice(0, 12)) {
       toggleDeck(card.id);
@@ -58,7 +58,7 @@ describe('Classeur du store', () => {
     expect(useStore.getState().deck.length).toBeLessThanOrEqual(DECK_SIZE);
   });
 
-  it('vide le Classeur sans toucher au Galérodex', () => {
+  it('vide le Chariot sans toucher au Parc', () => {
     const id = ALL_CARDS[0].id;
     const ownedBefore = useStore.getState().owned[id];
     useStore.getState().toggleDeck(id);

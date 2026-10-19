@@ -38,7 +38,7 @@ export function Deck() {
     <div className="page deck">
       <section className="section__head">
         <div>
-          <p className="eyebrow">Classeur</p>
+          <p className="eyebrow">Chariot</p>
           <h1>{deck.length}/20 cartes</h1>
           <p className="muted">
             Un clic sur une carte l’ajoute, un clic sur une carte du haut la retire.{' '}
@@ -51,7 +51,7 @@ export function Deck() {
             className="button button--primary"
             disabled={automatic.deck.length === 0}
             onClick={() => setDeck(automatic.deck)}
-            title="Remplace le classeur par 20 cartes prises dans ta collection"
+            title="Remplace le chariot par 20 cartes prises dans ta collection"
           >
             <Sparkles size={16} /> Remplir ({automatic.deck.length})
           </button>
@@ -63,13 +63,13 @@ export function Deck() {
 
       {automatic.missing > 0 && (
         <p className="notice notice--warn">
-          Ta collection ne couvre que <strong>{automatic.deck.length}</strong> cartes sur 20 : ouvre des bacs à
-          courrier depuis l’accueil pour compléter.
+          Ton Parc ne couvre que <strong>{automatic.deck.length}</strong> cartes sur 20 : ouvre des arrivages depuis
+          l’accueil pour compléter.
         </p>
       )}
 
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
-        {legality.ok ? 'Classeur valide : il peut partir au combat.' : legality.reasons.join(' ')}
+        {legality.ok ? 'Chariot valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
 
       <section className="section">
@@ -79,7 +79,7 @@ export function Deck() {
         </div>
         {inDeck.length === 0 ? (
           <p className="empty">
-            Le classeur est vide. Clique une carte du Galérodex ci-dessous, ou utilise « Remplir ».
+            Le chariot est vide. Clique une carte du Parc ci-dessous, ou utilise « Remplir ».
           </p>
         ) : (
           <div className="card-grid">
@@ -104,8 +104,8 @@ export function Deck() {
 
       <section className="section">
         <div className="section__head">
-          <h2>Galérodex ({available.length})</h2>
-          <span className="muted">clic = ajouter au classeur</span>
+          <h2>Parc ({available.length})</h2>
+          <span className="muted">clic = ajouter au chariot</span>
         </div>
         {available.length === 0 ? (
           <p className="empty">Aucune carte possédée. Ouvre un bac à courrier depuis l’accueil.</p>
@@ -128,7 +128,7 @@ export function Deck() {
                   </button>
                   <span
                     className={`card-slot__count ${used === 0 ? 'is-missing' : ''}`}
-                    title={`${used} exemplaire(s) de « ${card.name} » au classeur`}
+                    title={`${used} exemplaire(s) de « ${card.name} » au chariot`}
                   >
                     ×{used}
                   </span>

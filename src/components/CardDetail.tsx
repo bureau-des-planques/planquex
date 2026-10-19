@@ -30,8 +30,8 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
           <p className="card-detail__flavor">« {card.flavor} »</p>
 
           <div className="stat-row">
-            <div><span className="stat-label">Moral</span><strong>{card.hp}</strong></div>
-            <div><span className="stat-label">Relève</span><strong>{card.retreat}</strong></div>
+            <div><span className="stat-label">Seuil</span><strong>{card.hp}</strong></div>
+            <div><span className="stat-label">Rotation</span><strong>{card.retreat}</strong></div>
             <div><span className="stat-label">Rareté</span><strong style={{ color: rarity.color }}>{rarity.label}</strong></div>
             <div><span className="stat-label">Possédés</span><strong>{owned}</strong></div>
           </div>
@@ -62,7 +62,7 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
           )}
 
           <div className="card-detail__actions">
-            {onAddDeck && <button type="button" className="button button--primary" onClick={onAddDeck}>Ajouter au classeur</button>}
+            {onAddDeck && <button type="button" className="button button--primary" onClick={onAddDeck}>Ajouter au Chariot</button>}
             {onAddCard && <button type="button" className="button" onClick={onAddCard}>Ajouter un exemplaire (test)</button>}
           </div>
         </div>
