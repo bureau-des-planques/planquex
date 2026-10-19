@@ -4,6 +4,7 @@ import { ALL_MANAGEMENT_CARDS } from './management';
 import { ALL_AMELIORATION_CARDS } from './amelioration';
 import { ALL_QVT_CARDS } from './qvt';
 import { ALL_RH_CARDS } from './rh';
+import { ALL_ATELIER_CARDS } from './atelier';
 
 export const ALL_CARDS: Card[] = [
   ...ALL_SSE_CARDS,
@@ -11,6 +12,7 @@ export const ALL_CARDS: Card[] = [
   ...ALL_AMELIORATION_CARDS,
   ...ALL_QVT_CARDS,
   ...ALL_RH_CARDS,
+  ...ALL_ATELIER_CARDS,
 ];
 
 export const CARD_BY_ID = new Map(ALL_CARDS.map((card) => [card.id, card]));
