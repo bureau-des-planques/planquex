@@ -199,6 +199,14 @@ ligne**, donc la même identité mécanique.
 - **« Café » et « Machine à café » restent** — décision explicite : l'image tient.
 - **« NEUF / MRO » nomme les deux familles d'Objets** : matériel à installer / pièces et
   outillage de remise en état. Conséquence : un champ de plus sur les cartes Objet.
+- **Le mot « bac » disparaît.** Le paquet de 5 cartes devient **l'Arrivage** (« ce que le
+  camion a apporté, on ne choisit pas » — le mot *dit* la mécanique du tirage aléatoire),
+  et les trois zones de cartes deviennent des **Viviers** (« le vivier Atelier » — le mot
+  RH pour une réserve de candidats). La collision de `CORRESPONDANCES.md` §10 est résolue.
+- **La règle du rire**, qui gouverne tous les termes restants : *un mot est bon quand
+  c'est celui du système, appliqué à des gens, avec un sérieux imperturbable* — jamais un
+  surnom inventé pour la circonstance. C'est ce qui départage « vivier » (des collègues
+  comptés comme un stock) de « colis » (un mot d'objet, sans mordant).
 
 ### Le site, tel que tu le décris (ton site réel)
 
