@@ -249,6 +249,14 @@ Autres faits vérifiés le 19/10/2026 :
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
 
+### 7.1 Piège connu — le service worker casse le dev sur la même origine
+
+Vite répond **`200` en `Content-Type: text/html`** à **tout** chemin inconnu (son *fallback* SPA) : il ne renvoie jamais `404`.
+
+Conséquence : si le navigateur charge encore la page du **build** — service worker `VitePWA` enregistré sur `localhost:5178`, ou onglet resté ouvert depuis un `preview` — il demande `/assets/index-<hash>.js`, reçoit du HTML, et refuse de l'exécuter comme module. L'écran reste **blanc**, la console dit à peu près *« Expected a JavaScript module script but the server responded with a MIME type of text/html »*, et **le terminal du serveur n'affiche aucune erreur** : il a répondu `200`.
+
+Le réflexe : **DevTools → Application → Service Workers → Unregister**, puis **Storage → Clear site data**, et recharger (une fenêtre privée suffit aussi). Chaque fusion change les *hash* des assets, donc le piège se rejoue à chaque merge tant qu'on ne purge pas. Pour changer d'origine sans purger : `npm run dev -- --port 5199` — un service worker est enregistré **par origine**, et un autre port en est une autre.
+
 ## 8. Audits
 
 Un audit est une **preuve**, pas une opinion. Il se fait toujours sur `grevomon-tcg/`, jamais sur `grevomon-pocket/`.
