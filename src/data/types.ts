@@ -52,9 +52,36 @@ export interface AttackEffect {
  */
 export type Keyword = 'priorityShift';
 
+/**
+ * Type d'un **café** (l'énergie du projet, `AGENTS.md` §3.1). Un type est celui de la
+ * faction (§3.2) : `SSE` = Plante, `MANAGEMENT` = Feu… `SUPPORT` = **Incolore**.
+ *
+ * Un café **incolore** satisfait n'importe quel coût typé (§4).
+ */
+export type CafeType = Faction;
+
+/**
+ * Coût **typé** d'une Pression : `amount` cafés du type `type`. Un coût typé vaut
+ * **au moins 1 café** — un coût typé à 0 n'aurait pas de sens.
+ *
+ * Étape *expand* du refactor (#30) : ce champ vit **à côté** du `cost` numérique, que le
+ * moteur lit toujours. La migration (#33) remplira les deux ensemble, puis le contrat
+ * supprimera l'ancien champ.
+ */
+export interface CafeCost {
+  type: CafeType;
+  amount: number;
+}
+
 export interface Attack {
   name: string;
+  /**
+   * Coût numérique historique, en cafés. Tant que la migration (#33) n'est pas faite,
+   * c'est **lui** que lit le moteur. Ne pas le retirer ici : rien ne casse avant #34.
+   */
   cost: number;
+  /** Coût typé (#30). Absent : seul `cost` fait foi. */
+  cafeCost?: CafeCost;
   damage: number;
   text?: string;
   effects?: AttackEffect[];
