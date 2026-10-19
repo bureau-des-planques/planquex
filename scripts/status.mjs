@@ -13,7 +13,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
-const ignored = new Set(['node_modules', 'dist', 'coverage', '.git']);
+const ignored = new Set(['node_modules', 'dist', 'coverage', 'captures', '.git']);
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });

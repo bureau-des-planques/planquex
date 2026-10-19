@@ -21,6 +21,7 @@ npm run build        # vérification des types puis build de production dans dis
 npm run preview      # sert le contenu de dist/
 npm run status       # métriques du projet en JSON, dont le décompte des cartes
 npm run simulate -- --games 100 --seed 42  # N parties headless, rapport reproductible
+npm run build && npm run capturer  # captures des pages dans captures/ (échec si une page lève une erreur de console)
 ```
 
 Le build valide produit `dist/index.html` et `dist/sw.js` : ce sont les deux fichiers à vérifier après `npm run build`.
