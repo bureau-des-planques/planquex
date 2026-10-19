@@ -243,9 +243,10 @@ ligne**, donc la même identité mécanique.
 > ne dit rien du monde du travail ; on détourne quand le mot nomme une chose du travail.**
 
 Ce qui reste donc **inchangé** : **la main**, **la pioche** (et « piocher », qui en français
-familier veut déjà dire travailler dur — le mot travaille pour nous), **les dégâts**, **le
-K.O.**, **le Talent**, **l'Objet**, **l'Outil** — ces deux derniers étant *déjà* les mots
-officiels français du jeu de cartes.
+familier veut déjà dire travailler dur — le mot travaille pour nous), **le Talent**,
+**l'Objet**, **l'Outil** — ces deux derniers étant *déjà* les mots officiels français du jeu
+de cartes. *« les dégâts » et « le K.O. » figuraient sur cette liste avant qu'on retrouve le
+cadrage Stress / craquer : voir la section suivante.*
 
 Ce qui est **détourné, et le mérite** : Pression (attaque), Moral (points de vie), Relève
 (retraite), Café (énergie), Chariot (deck), Collègue (supporter), Planqué (Pokémon), COMEX
