@@ -1,4 +1,4 @@
-import type { Card } from './types';
+import type { Card, PlanqueCard } from './types';
 
 const PALETTE = 'linear-gradient(155deg, #2d2f33 0%, #5b6472 48%, #1a1c1e 100%)';
 const GLYPH = '◆';
@@ -9,15 +9,16 @@ const GLYPH = '◆';
  * Les intitulés sont des postes réels, les Pressions des tâches ou documents,
  * les Talents des compétences de métier (D-027).
  */
-const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
+const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
   ...card,
+  kind: 'PLANQUE',
   faction: 'DIRECTION',
   weakness: 'ATELIER',
   palette: PALETTE,
   glyph: card.glyph ?? GLYPH
 });
 
-export const DIRECTION_CARDS: Card[] = [
+export const DIRECTION_CARDS: PlanqueCard[] = [
   // Ligne principale (échantillon CARD-SPEC.md) : Chef de projet fantôme → Directeur adjoint → PDG
   base({
     id: 'direction-chef-projet-fantome',
@@ -197,7 +198,7 @@ export const DIRECTION_CARDS: Card[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): Card => {
+const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
   const source = DIRECTION_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte Direction introuvable: ${baseId}`);
   return {

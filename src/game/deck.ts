@@ -1,4 +1,4 @@
-import { ALL_CARDS, getCard } from '@/data';
+import { ALL_CARDS, getCard, isPlanque } from '@/data';
 import type { Card, Stage } from '@/data/types';
 
 /** Règles du Chariot (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
@@ -48,7 +48,7 @@ export function deckLegal(deck: string[]): { ok: boolean; reasons: string[] } {
   if (Object.values(counts).some((count) => count > MAX_COPIES_PER_NAME)) {
     reasons.push(`Maximum ${MAX_COPIES_PER_NAME} exemplaires du même nom.`);
   }
-  const hasBasic = deckCards(deck).some((card) => card.stage === 'ENTRANT');
+  const hasBasic = deckCards(deck).some((card) => isPlanque(card) && card.stage === 'ENTRANT');
   if (!hasBasic) reasons.push('Il faut au moins un Planqué Entrant.');
   return { ok: reasons.length === 0, reasons };
 }
@@ -73,7 +73,10 @@ export interface AutoDeck {
 export function autoDeck(owned: Record<string, number>): AutoDeck {
   const ownedCards = ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0);
   const byStage = (stage: Stage) =>
-    ownedCards.filter((card) => card.stage === stage).sort((a, b) => a.name.localeCompare(b.name));
+    ownedCards
+      .filter(isPlanque)
+      .filter((card) => card.stage === stage)
+      .sort((a, b) => a.name.localeCompare(b.name));
 
   const deck: string[] = [];
   /** On ne met pas plus d'exemplaires qu'on en possède, ni plus de 2 par nom. */

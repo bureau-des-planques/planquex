@@ -1,4 +1,4 @@
-import type { Card } from './types';
+import type { Card, PlanqueCard } from './types';
 
 const PALETTE = 'linear-gradient(155deg, #2a1206 0%, #d4622a 48%, #1a0a02 100%)';
 const GLYPH = '▲';
@@ -9,15 +9,16 @@ const GLYPH = '▲';
  * Les intitulés sont des postes réels, les Pressions des tâches ou documents,
  * les Talents des compétences de métier (D-027).
  */
-const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
+const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
   ...card,
+  kind: 'PLANQUE',
   faction: 'MANAGEMENT',
   weakness: 'QVT',
   palette: PALETTE,
   glyph: card.glyph ?? GLYPH
 });
 
-export const MANAGEMENT_CARDS: Card[] = [
+export const MANAGEMENT_CARDS: PlanqueCard[] = [
   base({
     id: 'management-jeune-manager',
     name: 'Jeune manager',
@@ -289,7 +290,7 @@ export const MANAGEMENT_CARDS: Card[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): Card => {
+const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
   const source = MANAGEMENT_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte Management introuvable: ${baseId}`);
   return {

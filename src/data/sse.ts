@@ -1,17 +1,20 @@
-import type { Card } from './types';
+import type { Card, PlanqueCard } from './types';
 
 const PALETTE = 'linear-gradient(155deg, #0b3d33 0%, #1f8a68 48%, #071421 100%)';
 const GLYPH = '✚';
 
-const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
+const base = (
+  card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }
+): PlanqueCard => ({
   ...card,
+  kind: 'PLANQUE',
   faction: 'SSE',
   weakness: 'MANAGEMENT',
   palette: PALETTE,
   glyph: card.glyph ?? GLYPH
 });
 
-export const SSE_CARDS: Card[] = [
+export const SSE_CARDS: PlanqueCard[] = [
   base({
     id: 'sse-infirmier-site',
     name: 'Infirmier de site',
@@ -301,7 +304,7 @@ export const SSE_CARDS: Card[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): Card => {
+const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
   const source = SSE_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte SSE introuvable: ${baseId}`);
   return {

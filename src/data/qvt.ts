@@ -1,17 +1,18 @@
-import type { Card } from './types';
+import type { Card, PlanqueCard } from './types';
 
 const PALETTE = 'linear-gradient(155deg, #0b3d5c 0%, #2f8fb3 48%, #071421 100%)';
 const GLYPH = '☺';
 
-const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
+const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
   ...card,
+  kind: 'PLANQUE',
   faction: 'QVT',
   weakness: 'AMELIORATION',
   palette: PALETTE,
   glyph: card.glyph ?? GLYPH
 });
 
-export const QVT_CARDS: Card[] = [
+export const QVT_CARDS: PlanqueCard[] = [
   // Ligne 1 : Chargé QVT → Happiness Manager → Chief Happiness Officer (échantillon CARD-SPEC.md)
   base({
     id: 'qvt-charge-qvt',
@@ -251,7 +252,7 @@ export const QVT_CARDS: Card[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): Card => {
+const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
   const source = QVT_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte QVT introuvable: ${baseId}`);
   return {

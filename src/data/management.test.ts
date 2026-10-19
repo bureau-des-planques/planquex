@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_CARDS, vivierOf } from '@/data';
+import { ALL_CARDS, isPlanque, vivierOf } from '@/data';
 
 /**
  * Contrôle de la faction **Management** (`MGT`), issue #15.
  * Le nombre cible vient de `docs/PROPOSITION.md` §4.3 (28 entrées, variantes incluses) ;
  * le vivier de `AGENTS.md` §3.2 et D-026.
  */
-const MANAGEMENT = ALL_CARDS.filter((card) => card.faction === 'MANAGEMENT');
+const MANAGEMENT = ALL_CARDS.filter((card) => isPlanque(card) && card.faction === 'MANAGEMENT');
 
 describe('Cartes — faction Management (PROPOSITION.md §4.3)', () => {
   it('compte 28 entrées : 20 bases et 8 variantes secrètes', () => {

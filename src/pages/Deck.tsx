@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Info, Sparkles, Trash2 } from 'lucide-react';
-import { ALL_CARDS, STAGE_META } from '@/data';
+import { ALL_CARDS, STAGE_META, isPlanque } from '@/data';
 import type { Card } from '@/data/types';
 import {
   autoDeck,
@@ -28,7 +28,9 @@ export function Deck() {
   const available = useMemo(
     () =>
       ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0).sort((a, b) => {
-        const stage = STAGE_META[b.stage].order - STAGE_META[a.stage].order;
+        // Les Planqués d'abord, par stade décroissant ; les cartes Action ensuite.
+        const rank = (card: Card) => (isPlanque(card) ? STAGE_META[card.stage].order : 0);
+        const stage = rank(b) - rank(a);
         return stage !== 0 ? stage : a.name.localeCompare(b.name);
       }),
     [owned]
@@ -108,7 +110,7 @@ export function Deck() {
           <span className="muted">clic = ajouter au chariot</span>
         </div>
         {available.length === 0 ? (
-          <p className="empty">Aucune carte possédée. Ouvre un bac à courrier depuis l’accueil.</p>
+          <p className="empty">Aucune carte possédée. Ouvre un Arrivage depuis l’accueil.</p>
         ) : (
           <div className="card-grid">
             {available.map((card) => {

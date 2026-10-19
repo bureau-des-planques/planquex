@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ALL_CARDS, CARD_BY_ID, getCard } from '@/data';
+import { ALL_CARDS, CARD_BY_ID, getCard, isPlanque } from '@/data';
 import {
   attack,
   attackPreview,
   attachEnergy,
   canEvolve,
+  canPlayAction,
   createBattle,
   createInstance,
   endTurn,
   evolve,
   isFirstTurnFor,
   legalAttacks,
+  playAction,
+  playBasic,
   promoteActive,
   priorityShift,
   retreat
@@ -31,7 +34,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const BASICS = ALL_CARDS.filter((card) => !card.variantOf && card.stage === 'ENTRANT').map((card) => card.id);
+const BASICS = ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf && card.stage === 'ENTRANT').map(
+  (card) => card.id
+);
 
 /** Chariot légal de 20 cartes (10 noms N+1 en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
@@ -72,7 +77,9 @@ describe('createBattle — mise en place', () => {
 
 describe('Main de départ — pas de reprise de poste (D-022)', () => {
   /** Chariot à un seul N+1 : les 5 premières cartes tirées n'en contiennent presque jamais. */
-  const EVOLUTIONS = ALL_CARDS.filter((card) => !card.variantOf && card.stage !== 'ENTRANT').map((card) => card.id);
+  const EVOLUTIONS = ALL_CARDS.filter(
+    (card) => isPlanque(card) && !card.variantOf && card.stage !== 'ENTRANT'
+  ).map((card) => card.id);
   const SPARSE_DECK = [BASICS[0], ...EVOLUTIONS, ...EVOLUTIONS].slice(0, DECK_SIZE);
 
   it('garantit un N+1 sans remélanger ni faire piocher l’adversaire', () => {
@@ -93,7 +100,10 @@ describe('Main de départ — pas de reprise de poste (D-022)', () => {
 
           // La main de départ contient toujours un Planqué N+1 jouable.
           expect(
-            inPlay.some((card) => getCard(card?.cardId ?? '')?.stage === 'ENTRANT'),
+            inPlay.some((card) => {
+              const definition = getCard(card?.cardId ?? '');
+              return isPlanque(definition) && definition.stage === 'ENTRANT';
+            }),
             `run ${run}, ${who} : aucun N+1`
           ).toBe(true);
           // Cinq cartes au total, donc aucune pioche de compensation.
@@ -169,7 +179,7 @@ describe('Pression — dégâts et café', () => {
     if (!attacker || !defender) throw new Error('Poste vide');
     const attackerCard = getCard(attacker.cardId);
     const defenderCard = CARD_BY_ID.get(defender.cardId);
-    if (!attackerCard || !defenderCard) throw new Error('Carte inconnue');
+    if (!attackerCard || !isPlanque(attackerCard) || !isPlanque(defenderCard)) throw new Error('Carte inconnue');
 
     const original = defenderCard;
     CARD_BY_ID.set(defender.cardId, { ...defenderCard, weakness: attackerCard.faction });
@@ -189,7 +199,8 @@ describe('Pression — dégâts et café', () => {
     const attacker = next.players.player.active;
     if (!attacker) throw new Error('Poste vide');
     const card = getCard(attacker.cardId);
-    const index = card?.attacks.findIndex((entry) => entry.cost <= 3) ?? -1;
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    const index = card.attacks.findIndex((entry) => entry.cost <= 3);
     if (index < 0) throw new Error('Aucune Pression abordable');
     attacker.energy = 3;
 
@@ -205,7 +216,9 @@ describe('Évolution', () => {
     const state = freshBattle();
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
-    const evolution = ALL_CARDS.find((card) => card.evolvesFrom === active.cardId && !card.variantOf);
+    const evolution = ALL_CARDS.filter(isPlanque).find(
+      (card) => card.evolvesFrom === active.cardId && !card.variantOf
+    );
     if (!evolution) {
       // Aucune évolution disponible pour ce N+1 : rien à vérifier.
       expect(canEvolve(state, 'inconnu', active.uid)).toBe(false);
@@ -225,7 +238,9 @@ describe('Évolution', () => {
     const start = freshBattle();
     const aiActive = start.players.ai.active;
     if (!aiActive) throw new Error('Poste vide côté Direction');
-    const evolution = ALL_CARDS.find((card) => card.evolvesFrom === aiActive.cardId && !card.variantOf);
+    const evolution = ALL_CARDS.filter(isPlanque).find(
+      (card) => card.evolvesFrom === aiActive.cardId && !card.variantOf
+    );
     if (!evolution) {
       expect(isFirstTurnFor(start, 'ai')).toBe(true);
       return;
@@ -281,7 +296,7 @@ describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
 
     // La carte frappée inflige aussi Surcharge : la condition ne doit pas s'ajouter deux fois.
     const card = CARD_BY_ID.get(active.cardId);
-    if (!card) throw new Error('Carte inconnue');
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
     const original = card;
     CARD_BY_ID.set(active.cardId, {
       ...card,
@@ -304,7 +319,8 @@ describe('Relève choisie après un craquage', () => {
     const defender = next.players.ai.active;
     if (!attacker || !defender) throw new Error('Poste vide');
     const card = getCard(attacker.cardId);
-    const index = card?.attacks.findIndex((entry) => entry.cost <= 3) ?? -1;
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    const index = card.attacks.findIndex((entry) => entry.cost <= 3);
     if (index < 0) throw new Error('Aucune Pression abordable');
     attacker.energy = 3;
     defender.hp = 1;
@@ -365,7 +381,7 @@ describe('Changement de priorité (D-004)', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
     const original = CARD_BY_ID.get(active.cardId);
-    if (!original) throw new Error('Carte inconnue');
+    if (!isPlanque(original)) throw new Error('Carte inconnue');
     CARD_BY_ID.set(active.cardId, { ...original, keywords: ['priorityShift'] });
     return { state, restore: () => CARD_BY_ID.set(active.cardId, original) };
   }
@@ -425,7 +441,7 @@ describe('retreat() — Relève', () => {
 
     // On met assez de café sur le Planqué actif pour couvrir le coût de relève
     const activeCard = getCard(active.cardId);
-    const retreatCost = activeCard?.retreat ?? 1;
+    const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
     active.energy = retreatCost;
 
     const beforeEnergy = active.energy;
@@ -447,7 +463,7 @@ describe('retreat() — Relève', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
     const activeCard = getCard(active.cardId);
-    const retreatCost = activeCard?.retreat ?? 1;
+    const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
 
     // On met 1 café de moins que le coût
     active.energy = Math.max(0, retreatCost - 1);
@@ -465,7 +481,7 @@ describe('retreat() — Relève', () => {
     const benchCard = state.players.player.bench[0];
     if (!benchCard) throw new Error('Rack vide');
     const activeCard = getCard(active.cardId);
-    const retreatCost = activeCard?.retreat ?? 1;
+    const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
     active.energy = retreatCost;
 
     const afterFirst = retreat(state, 0);
@@ -481,7 +497,7 @@ describe('retreat() — Relève', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
     const activeCard = getCard(active.cardId);
-    const retreatCost = activeCard?.retreat ?? 1;
+    const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
     active.energy = retreatCost;
 
     // Emplacement 2 est vide (si bench[2] === null)
@@ -584,5 +600,134 @@ describe('attachEnergy() — Attachement de café', () => {
 
     const after = attachEnergy(nextTurn, 'uid-inexistant');
     expect(after).toBe(nextTurn);
+  });
+});
+
+describe('Cartes Action — Objet illimité, Collègue 1 par tour (AGENTS.md §4)', () => {
+  /** Trois cartes Action aux effets distincts, pour prouver chaque primitive. */
+  const OBJET_SOIN = 'sse-trousse-secours'; // Objet MRO : soigne 10 de tous tes Planqués
+  const OBJET_PIOCHE = 'amelioration-baie-test'; // Objet NEUF : pioche 2
+  const COLLEGUE_PIOCHE = 'support-escalade'; // Collègue : pioche 2
+  const COLLEGUE_STATUT = 'rh-reunion-individuelle'; // Collègue : le Planqué adverse est Dérivé
+  const COLLEGUE_CAFE = 'management-entretien-annuel'; // Collègue : 1 café adverse au rebut
+
+  /** Met les cartes demandées en main (dans l'ordre) côté joueur, et rend leurs uids. */
+  function withHand(state: BattleState, cardIds: string[]): { state: BattleState; uids: string[] } {
+    const next = structuredClone(state);
+    const uids: string[] = [];
+    // `unshift` en ordre inverse : `uids[0]` est la première carte demandée.
+    for (const cardId of [...cardIds].reverse()) {
+      const instance = createInstance(cardId, next.turn);
+      next.players.player.hand.unshift(instance);
+      uids.unshift(instance.uid);
+    }
+    return { state: next, uids };
+  }
+
+  it('accepte autant d’Objets qu’on en a dans le tour', () => {
+    const { state, uids } = withHand(freshBattle(), [OBJET_SOIN, OBJET_PIOCHE, OBJET_PIOCHE]);
+    const handBefore = state.players.player.hand.length;
+
+    const first = playAction(state, uids[0] ?? ''); // trousse de secours : soin
+    const second = playAction(first, uids[1] ?? '');
+    const third = playAction(second, uids[2] ?? '');
+
+    expect(third).not.toBe(second);
+    expect(third.players.player.discard.map((card) => card.cardId)).toEqual([
+      OBJET_SOIN,
+      OBJET_PIOCHE,
+      OBJET_PIOCHE
+    ]);
+    // Les Objets ne consomment pas la limite des Collègues.
+    expect(third.players.player.hasPlayedSupporter).toBe(false);
+    // 3 Objets joués (−3) et 4 cartes piochées (+4).
+    expect(third.players.player.hand).toHaveLength(handBefore + 1);
+    expect(third.log.at(-1)).toContain('(Objet)');
+  });
+
+  it('refuse un second Collègue dans le même tour', () => {
+    const { state, uids } = withHand(freshBattle(), [COLLEGUE_PIOCHE, COLLEGUE_PIOCHE]);
+
+    const first = playAction(state, uids[0] ?? '');
+
+    expect(first).not.toBe(state);
+    expect(first.players.player.hasPlayedSupporter).toBe(true);
+    expect(first.players.player.discard.map((card) => card.cardId)).toContain(COLLEGUE_PIOCHE);
+    expect(first.log.at(-1)).toContain('(Collègue)');
+
+    expect(playAction(first, uids[1] ?? '')).toBe(first);
+  });
+
+  it('autorise un Collègue au premier tour du joueur — §4 ne le prive pas de ça', () => {
+    const { state, uids } = withHand(freshBattle(), [COLLEGUE_PIOCHE]);
+    expect(state.turn).toBe(1);
+
+    expect(playAction(state, uids[0] ?? '')).not.toBe(state);
+  });
+
+  it('libère la limite du Collègue au tour suivant', () => {
+    const { state, uids } = withHand(freshBattle(), [COLLEGUE_PIOCHE, COLLEGUE_PIOCHE]);
+    const afterFirst = playAction(state, uids[0] ?? '');
+    expect(afterFirst.players.player.hasPlayedSupporter).toBe(true);
+
+    // Fin du tour du joueur, puis tour de la Direction, puis retour au joueur.
+    const aiTurn = endTurn(afterFirst);
+    const backToPlayer = endTurn(aiTurn);
+
+    expect(backToPlayer.current).toBe('player');
+    expect(backToPlayer.players.player.hasPlayedSupporter).toBe(false);
+    expect(playAction(backToPlayer, uids[1] ?? '')).not.toBe(backToPlayer);
+  });
+
+  it('résout l’effet d’un Objet sur ses propres Planqués', () => {
+    const { state, uids } = withHand(freshBattle(), [OBJET_SOIN]);
+    const active = state.players.player.active;
+    const bench = state.players.player.bench[0];
+    if (!active || !bench) throw new Error('Rack ou Poste vide');
+    active.hp -= 30;
+    bench.hp -= 20;
+    const activeBefore = active.hp;
+    const benchBefore = bench.hp;
+
+    const after = playAction(state, uids[0] ?? '');
+
+    expect(after.players.player.active?.hp).toBe(activeBefore + 10);
+    expect(after.players.player.bench[0]?.hp).toBe(benchBefore + 10);
+  });
+
+  it('résout un effet de statut et un effet de café sur le Planqué adverse', () => {
+    const status = withHand(freshBattle(), [COLLEGUE_STATUT]);
+    const afterStatus = playAction(status.state, status.uids[0] ?? '');
+    expect(afterStatus.players.ai.active?.statuses).toContain('DERIVE');
+
+    const cafe = withHand(freshBattle(), [COLLEGUE_CAFE]);
+    const defender = cafe.state.players.ai.active;
+    if (!defender) throw new Error('Poste adverse vide');
+    defender.energy = 2;
+
+    const afterCafe = playAction(cafe.state, cafe.uids[0] ?? '');
+    expect(afterCafe.players.ai.active?.energy).toBe(1);
+  });
+
+  it('refuse un Planqué, et refuse qu’une carte Action se pose au Poste', () => {
+    const { state, uids } = withHand(freshBattle(), [COLLEGUE_PIOCHE]);
+    const planque = state.players.player.hand.find((card) => isPlanque(getCard(card.cardId)));
+    if (!planque) throw new Error('aucun Planqué en main');
+
+    expect(canPlayAction(state, planque.uid)).toBe(false);
+    expect(playAction(state, planque.uid)).toBe(state);
+
+    // L'inverse : une carte Action n'est pas un Planqué, `playBasic` la refuse.
+    expect(playBasic(state, uids[0] ?? '', 2)).toBe(state);
+    // Un uid inconnu ne fait rien non plus.
+    expect(playAction(state, 'uid-inexistant')).toBe(state);
+  });
+
+  it('refuse toute carte Action tant qu’une relève attend d’être choisie', () => {
+    const { state, uids } = withHand(freshBattle(), [OBJET_SOIN]);
+    const pending: BattleState = { ...state, pendingPromotion: 'player' };
+
+    expect(canPlayAction(pending, uids[0] ?? '')).toBe(false);
+    expect(playAction(pending, uids[0] ?? '')).toBe(pending);
   });
 });

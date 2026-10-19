@@ -1,4 +1,4 @@
-import type { Card } from './types';
+import type { Card, PlanqueCard } from './types';
 
 const PALETTE = 'linear-gradient(155deg, #3a2410 0%, #a56a3a 48%, #14100a 100%)';
 const GLYPH = '⚒';
@@ -9,15 +9,16 @@ const GLYPH = '⚒';
  * (`CARD-SPEC.md` §3). Les intitulés sont des postes de terrain, les Pressions des gestes
  * et des outils, les Talents des manies de métier (D-027).
  */
-const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
+const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
   ...card,
+  kind: 'PLANQUE',
   faction: 'ATELIER',
   weakness: 'RH',
   palette: PALETTE,
   glyph: card.glyph ?? GLYPH
 });
 
-export const ATELIER_CARDS: Card[] = [
+export const ATELIER_CARDS: PlanqueCard[] = [
   // Ligne principale : Apprenti → Technicien de maintenance → Chef d’atelier
   base({
     id: 'atelier-apprenti',
@@ -333,7 +334,7 @@ export const ATELIER_CARDS: Card[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): Card => {
+const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
   const source = ATELIER_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte Atelier introuvable: ${baseId}`);
   return {

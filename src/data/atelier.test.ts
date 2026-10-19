@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_ATELIER_CARDS, ATELIER_CARDS, ATELIER_VARIANTS } from '@/data/atelier';
-import { ALL_CARDS, CARD_BY_ID, FACTION_META, getCard, vivierOf } from '@/data';
-import type { Card } from '@/data/types';
+import { ALL_CARDS, CARD_BY_ID, FACTION_META, getCard, isPlanque, vivierOf } from '@/data';
+import type { PlanqueCard } from '@/data/types';
 
 /**
  * Contrôles propres à la faction **Atelier** (code `ATL`), ticket #19.
@@ -13,7 +13,10 @@ import type { Card } from '@/data/types';
  * **COMEX** (D-020, D-027).
  */
 
-const byId = (id: string): Card | undefined => getCard(id);
+const byId = (id: string): PlanqueCard | undefined => {
+  const card = getCard(id);
+  return isPlanque(card) ? card : undefined;
+};
 
 const LINE = ['atelier-apprenti', 'atelier-technicien-maintenance', 'atelier-chef-atelier'];
 
@@ -30,7 +33,7 @@ describe('Atelier — enregistrement (ticket #19)', () => {
       expect(CARD_BY_ID.get(card.id), card.id).toBe(card);
     }
     // Le spread de `index.ts` : aucune carte de la faction ne doit manquer.
-    expect(ALL_CARDS.filter((card) => card.faction === 'ATELIER')).toHaveLength(
+    expect(ALL_CARDS.filter((card) => isPlanque(card) && card.faction === 'ATELIER')).toHaveLength(
       ALL_ATELIER_CARDS.length
     );
   });
@@ -62,7 +65,7 @@ describe('Atelier — ligne et COMEX (D-020)', () => {
   });
 
   it('a exactement un COMEX, en 4 diamants, à 2 Interventions', () => {
-    const comex = ALL_ATELIER_CARDS.filter((card) => card.ex);
+    const comex = ALL_ATELIER_CARDS.filter(isPlanque).filter((card) => card.ex);
     expect(comex).toHaveLength(1);
     expect(comex[0]?.id).toBe('atelier-chef-atelier-ex');
     // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
@@ -72,7 +75,7 @@ describe('Atelier — ligne et COMEX (D-020)', () => {
   });
 
   it('ne décline aucune variante de COMEX (le 4D est réservé au statut)', () => {
-    for (const variant of ATELIER_VARIANTS) {
+    for (const variant of ATELIER_VARIANTS.filter(isPlanque)) {
       expect(variant.ex, variant.id).toBeUndefined();
     }
   });

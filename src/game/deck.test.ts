@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_CARDS, getCard } from '@/data';
+import { ALL_ACTION_CARDS, ALL_CARDS, getCard, isPlanque } from '@/data';
 import {
   autoDeck,
   DECK_SIZE,
@@ -11,7 +11,9 @@ import {
   deckLegal
 } from '@/game/deck';
 
-const BASICS = ALL_CARDS.filter((card) => !card.variantOf && card.stage === 'ENTRANT').map((card) => card.id);
+const BASICS = ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf && card.stage === 'ENTRANT').map(
+  (card) => card.id
+);
 
 /** Chariot légal : 10 noms N+1 en double. */
 const LEGAL_DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
@@ -77,8 +79,29 @@ describe('deckLegal — Chariot', () => {
     expect(deckLegal(deck)).toEqual({ ok: true, reasons: [] });
   });
 
+  it('accepte une carte Action au Chariot, sans compter comme Entrant', () => {
+    const [objet] = ALL_ACTION_CARDS;
+    if (!objet) throw new Error('aucune carte Action');
+    expect(deckCanAdd([], objet.id)).toBe(true);
+
+    const deck = [objet.id, ...LEGAL_DECK].slice(0, DECK_SIZE);
+    expect(deck).toHaveLength(DECK_SIZE);
+    expect(deckCards(deck).map((card) => card.id)).toContain(objet.id);
+    expect(deckLegal(deck).ok, deckLegal(deck).reasons.join(' ')).toBe(true);
+  });
+
+  it('refuse un Chariot de cartes Action sans aucun Planqué Entrant', () => {
+    const actions = ALL_ACTION_CARDS.map((card) => card.id);
+    const deck = [...actions, ...actions].slice(0, DECK_SIZE);
+    expect(deck).toHaveLength(DECK_SIZE);
+
+    expect(deckLegal(deck).reasons).toEqual(['Il faut au moins un Planqué Entrant.']);
+  });
+
   it('refuse un Chariot sans Planqué Entrant', () => {
-    const evolutions = ALL_CARDS.filter((card) => !card.variantOf && card.stage !== 'ENTRANT').map((card) => card.id);
+    const evolutions = ALL_CARDS.filter(
+      (card) => isPlanque(card) && !card.variantOf && card.stage !== 'ENTRANT'
+    ).map((card) => card.id);
     const deck = [...evolutions, ...evolutions].slice(0, DECK_SIZE);
     expect(deck).toHaveLength(DECK_SIZE);
 
@@ -127,12 +150,15 @@ describe('autoDeck — remplissage rapide', () => {
     for (const card of ALL_CARDS) owned[card.id] = 1;
 
     const { deck } = autoDeck(owned);
-    const stages = deck.map((id) => getCard(id)?.stage);
+    const stages = deck.map((id) => {
+      const card = getCard(id);
+      return isPlanque(card) ? card.stage : undefined;
+    });
     expect(stages.filter((stage) => stage === 'ENTRANT').length).toBeGreaterThan(0);
     // Chaque évolution présente a sa base dans le même Chariot.
     for (const id of deck) {
       const card = getCard(id);
-      if (card?.evolvesFrom) expect(deck).toContain(card.evolvesFrom);
+      if (card && isPlanque(card) && card.evolvesFrom) expect(deck).toContain(card.evolvesFrom);
     }
   });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_AMELIORATION_CARDS, AMELIORATION_CARDS, AMELIORATION_VARIANTS } from '@/data/amelioration';
-import { ALL_CARDS, CARD_BY_ID, FACTION_META, getCard, vivierOf } from '@/data';
-import type { Card } from '@/data/types';
+import { ALL_CARDS, CARD_BY_ID, FACTION_META, getCard, isPlanque, vivierOf } from '@/data';
+import type { PlanqueCard } from '@/data/types';
 
 /**
  * Contrôles propres à la faction **Amélioration continue** (code `AC`).
@@ -12,7 +12,10 @@ import type { Card } from '@/data/types';
  * **nombre d'entrées**, le **vivier Étage** (D-026) et le **COMEX** (D-020).
  */
 
-const byId = (id: string): Card | undefined => getCard(id);
+const byId = (id: string): PlanqueCard | undefined => {
+  const card = getCard(id);
+  return isPlanque(card) ? card : undefined;
+};
 
 const LINE = ['amelioration-charge-qualite', 'amelioration-auditeur-qualite', 'amelioration-directeur-qualite'];
 
@@ -29,7 +32,7 @@ describe('Amélioration continue — enregistrement (ticket #17)', () => {
       expect(CARD_BY_ID.get(card.id), card.id).toBe(card);
     }
     // Le spread de `index.ts` : aucune carte de la faction ne doit manquer.
-    expect(ALL_CARDS.filter((card) => card.faction === 'AMELIORATION')).toHaveLength(
+    expect(ALL_CARDS.filter((card) => isPlanque(card) && card.faction === 'AMELIORATION')).toHaveLength(
       ALL_AMELIORATION_CARDS.length
     );
   });
@@ -61,7 +64,7 @@ describe('Amélioration continue — ligne et COMEX (D-020)', () => {
   });
 
   it('a exactement un COMEX, en 4 diamants, à 2 Interventions', () => {
-    const comex = ALL_AMELIORATION_CARDS.filter((card) => card.ex);
+    const comex = ALL_AMELIORATION_CARDS.filter(isPlanque).filter((card) => card.ex);
     expect(comex).toHaveLength(1);
     expect(comex[0]?.id).toBe('amelioration-directeur-qualite-ex');
     // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
@@ -71,7 +74,7 @@ describe('Amélioration continue — ligne et COMEX (D-020)', () => {
   });
 
   it('ne décline aucune variante de COMEX (le 4D est réservé au statut)', () => {
-    for (const variant of AMELIORATION_VARIANTS) {
+    for (const variant of AMELIORATION_VARIANTS.filter(isPlanque)) {
       expect(variant.ex, variant.id).toBeUndefined();
     }
   });

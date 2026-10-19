@@ -1,17 +1,18 @@
-import type { Card } from './types';
+import type { Card, PlanqueCard } from './types';
 
 const PALETTE = 'linear-gradient(155deg, #3d1a5c 0%, #8b5fb0 48%, #1a0a2e 100%)';
 const GLYPH = '◉';
 
-const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
+const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
   ...card,
+  kind: 'PLANQUE',
   faction: 'RH',
   weakness: 'DIRECTION',
   palette: PALETTE,
   glyph: card.glyph ?? GLYPH
 });
 
-export const RH_CARDS: Card[] = [
+export const RH_CARDS: PlanqueCard[] = [
   // Ligne principale : Assistant RH → Chargé de recrutement → DRH
   base({
     id: 'rh-assistant-rh',
@@ -311,7 +312,7 @@ export const RH_CARDS: Card[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): Card => {
+const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
   const source = RH_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte RH introuvable: ${baseId}`);
   return {

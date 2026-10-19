@@ -1,10 +1,11 @@
-import type { Card } from './types';
+import type { Card, PlanqueCard } from './types';
 
 const PALETTE = 'linear-gradient(155deg, #3d3208 0%, #c9a227 48%, #101526 100%)';
 const GLYPH = '↻';
 
-const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): Card => ({
+const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
   ...card,
+  kind: 'PLANQUE',
   faction: 'AMELIORATION',
   weakness: 'ATELIER',
   palette: PALETTE,
@@ -19,7 +20,7 @@ const base = (card: Omit<Card, 'faction' | 'weakness' | 'palette' | 'glyph'> & {
  * COMEX `ex: true` en 4D valant 2 Interventions (D-020) ; Seuil par stade/rareté et dégâts
  * par café conformes à `CARD-SPEC.md` §2 (D-021, D-023) ; noms de postes réels (D-027).
  */
-export const AMELIORATION_CARDS: Card[] = [
+export const AMELIORATION_CARDS: PlanqueCard[] = [
   base({
     id: 'amelioration-charge-qualite',
     name: 'Chargé qualité',
@@ -241,7 +242,7 @@ export const AMELIORATION_CARDS: Card[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): Card => {
+const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
   const source = AMELIORATION_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte Amélioration continue introuvable: ${baseId}`);
   return {

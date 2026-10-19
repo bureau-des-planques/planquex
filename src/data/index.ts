@@ -1,4 +1,5 @@
-import type { Card, Faction, Rarity, Stage, Vivier } from './types';
+import type { ActionCard, Card, Faction, ItemKind, PlanqueCard, Rarity, Stage, Vivier } from './types';
+import { ACTION_CARDS } from './actions';
 import { ALL_SSE_CARDS } from './sse';
 import { ALL_MANAGEMENT_CARDS } from './management';
 import { ALL_AMELIORATION_CARDS } from './amelioration';
@@ -15,7 +16,21 @@ export const ALL_CARDS: Card[] = [
   ...ALL_RH_CARDS,
   ...ALL_ATELIER_CARDS,
   ...ALL_DIRECTION_CARDS,
+  ...ACTION_CARDS
 ];
+
+/** Les 8 Collègues et 3 Objets du lancement (D-005), isolés pour les tests et l'UI. */
+export const ALL_ACTION_CARDS: ActionCard[] = ACTION_CARDS;
+
+/** Vrai pour un Planqué — le seul type qui se pose au Poste ou au Rack. */
+export function isPlanque(card: Card | undefined): card is PlanqueCard {
+  return card?.kind === 'PLANQUE';
+}
+
+/** Vrai pour une carte Action (Objet ou Collègue). */
+export function isActionCard(card: Card | undefined): card is ActionCard {
+  return card !== undefined && card.kind !== 'PLANQUE';
+}
 
 export const CARD_BY_ID = new Map(ALL_CARDS.map((card) => [card.id, card]));
 
@@ -73,6 +88,28 @@ export const RARITY_META: Record<Rarity, { label: string; color: string; order: 
   COU: { label: '♛', color: '#c9a2ff', order: 8 }
 };
 
+/** Nature d'une carte Action, pour l'affichage (Objet / Collègue). */
+export const ACTION_KIND_META: Record<ActionCard['kind'], { label: string; short: string }> = {
+  OBJET: { label: 'Objet', short: 'OBJ' },
+  COLLEAGUE: { label: 'Collègue', short: 'COL' }
+};
+
+/** Catégorie d'un Objet (D-027) : matériel neuf à installer, ou pièces et outillage. */
+export const ITEM_KIND_META: Record<ItemKind, { label: string; description: string }> = {
+  NEUF: { label: 'NEUF', description: 'Matériel à installer' },
+  MRO: { label: 'MRO', description: 'Pièces et outillage de remise en état' }
+};
+
+/**
+ * Ce qu'on affiche à la place du stade : « Entrant », « Objet · MRO » ou « Collègue ».
+ * Un Objet annonce sa catégorie, parce que c'est la convention de D-027.
+ */
+export function kindLabel(card: Card): string {
+  if (isPlanque(card)) return STAGE_META[card.stage].label;
+  const kind = ACTION_KIND_META[card.kind].label;
+  return card.itemKind ? `${kind} · ${ITEM_KIND_META[card.itemKind].label}` : kind;
+}
+
 export const SSE_ONLY = ALL_CARDS.filter((card) => card.faction === 'SSE');
 
 export function getCard(id: string): Card | undefined {
@@ -84,7 +121,7 @@ export function isVariant(card: Card): boolean {
 }
 
 export function baseCards(): Card[] {
-  return ALL_CARDS.filter((card) => !card.variantOf);
+  return ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf);
 }
 
 export function variantOf(card: Card): Card | undefined {
