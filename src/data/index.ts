@@ -8,6 +8,7 @@ import { ALL_RH_CARDS } from './rh';
 import { ALL_ATELIER_CARDS } from './atelier';
 import { ALL_DIRECTION_CARDS } from './direction';
 import { ALL_INTERIM_CARDS } from './interim';
+import { ALL_SUPPORT_CARDS } from './support';
 
 export const ALL_CARDS: Card[] = [
   ...ALL_SSE_CARDS,
@@ -18,6 +19,7 @@ export const ALL_CARDS: Card[] = [
   ...ALL_ATELIER_CARDS,
   ...ALL_DIRECTION_CARDS,
   ...ALL_INTERIM_CARDS,
+  ...ALL_SUPPORT_CARDS,
   ...ACTION_CARDS
 ];
 
