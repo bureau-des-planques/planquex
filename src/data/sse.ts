@@ -221,7 +221,7 @@ export const SSE_CARDS: Card[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Remplacement', cost: 1, damage: 20, text: 'Échange ce Planqué avec un Planqué du banc.', effects: [{ kind: 'switchSelf' }] }],
+    attacks: [{ name: 'Remplacement', cost: 1, damage: 20, text: 'Échange ce Planqué avec un Planqué de l’Open-space.', effects: [{ kind: 'switchSelf' }] }],
     flavor: 'Il remplace tout le monde. Personne ne le remplace.'
   }),
   base({
@@ -287,7 +287,7 @@ export const SSE_CARDS: Card[] = [
   base({
     id: 'sse-medecin-chef-ex',
     evolvesFrom: 'sse-sophrologue',
-    name: 'Médecin-chef ex',
+    name: 'Médecin-chef Cadre',
     stage: 'COMEX',
     rarity: '4D',
     hp: 160,
