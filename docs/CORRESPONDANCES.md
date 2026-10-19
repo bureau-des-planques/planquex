@@ -83,7 +83,7 @@ La correspondance se fait au niveau des **concepts** (Pokémon → Planqué), de
 | ex (2 Interventions) | **COMEX** (2 Interventions) | miroir |
 | ◇ ◇◇ ◇◇◇ ◇◇◇◇ | identiques, codés `1D` `2D` `3D` `4D` | miroir |
 | ★ ★★ | identiques, codés `1S` `2S` | miroir |
-| ★★★ et Couronne | prévus par `CARD-SPEC.md` §1, **pas encore dans les types** | miroir |
+| ★★★ et Couronne | identiques, codés `3S` `COU` — socle de type posé, aucune carte encore | miroir |
 
 ## 5. Les 10 types → les 10 factions
 
