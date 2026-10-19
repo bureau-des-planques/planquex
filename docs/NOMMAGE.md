@@ -207,6 +207,18 @@ ligne**, donc la même identité mécanique.
   c'est celui du système, appliqué à des gens, avec un sérieux imperturbable* — jamais un
   surnom inventé pour la circonstance. C'est ce qui départage « vivier » (des collègues
   comptés comme un stock) de « colis » (un mot d'objet, sans mordant).
+- **Le nombre de viviers est ouvert** : le modèle porte un **champ `vivier` par carte**,
+  extensible ; une nouvelle zone de site = un nouveau vivier. Le jeu de base fait de même
+  (1 à 3 sous-paquets selon l'extension : Genetic Apex en a 3 — Pikachu, Charizard, Mewtwo —
+  Space-Time Smackdown 2 — Dialga, Palkia —, Mega Rising 2).
+
+### Un étage manque : le *set*
+
+Les trois viviers sont **à l'intérieur** d'un set, exactement comme les trois paquets de
+*Genetic Apex* sont dans *Genetic Apex*. L'extension elle-même — ce qui sort dans le
+temps — n'a pas encore de mot chez nous. À trancher.
+*(Rappel utile : c'est ce même *Genetic Apex* qui sert de modèle au set de lancement —
+226 ◊ + 60 ☆ = nos 286.)*
 
 ### Le site, tel que tu le décris (ton site réel)
 
