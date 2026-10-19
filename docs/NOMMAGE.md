@@ -7,12 +7,14 @@
 > Autorité : `AGENTS.md` §3 pour le vocabulaire, `docs/DECISIONS.md` pour les choix.
 >
 > ⚠️ **Ce document est l'« avant », pas l'état courant.** Il a été relevé le 19/10/2026 pour
-> préparer D-024/D-026/D-027 et il en garde la trace. En particulier : **§1 et §4 décrivent des
-> noms périmés** (`MANAGER`, `HAPPINESS`, `TECHNICIEN`, `INTERIMAIRE`, la carte « Médecin-chef
+> préparer D-024/D-026/D-027 et il en garde la trace. En particulier : **§1, §2 et §4 contiennent
+> des noms périmés** (`MANAGER`, `HAPPINESS`, `TECHNICIEN`, `INTERIMAIRE`, la carte « Médecin-chef
 > Cadre » — le code dit aujourd'hui `FACTION_META` avec `MANAGEMENT`/`QVT`/`ATELIER`/`INTERIM`,
-> et `'Médecin-chef COMEX'`), et **§6 est une liste de propositions** dont certaines ont été
-> tranchées autrement (P1 proposait « Encadrement », D-024 a retenu **Management**). Pour l'état
-> courant : `AGENTS.md` §3, `docs/DECISIONS.md`, et le tableau vivant `docs/CORRESPONDANCES.md`.
+> et `'Médecin-chef COMEX'` ; **§2** relevait les statuts `BURNOUT`, `BLOQUE`, `GELE`, que D-026
+> a remplacés par `EPUISEMENT`, `SIESTE`, `IMMOBILISATION`), et **§6 est une liste de propositions**
+> dont certaines ont été tranchées autrement (P1 proposait « Encadrement », D-024 a retenu
+> **Management**). Pour l'état courant : `AGENTS.md` §3, `docs/DECISIONS.md`, et le tableau vivant
+> `docs/CORRESPONDANCES.md`.
 
 ## 1. Les 10 factions — et leurs quatre façons d'être nommées
 
@@ -70,7 +72,7 @@ Deux observations supplémentaires, vérifiées dans les docs :
 | Stade (`Stage`) | `N+1`, `N+2`, `COMEX` | mélange une progression chiffrée et un acronyme — mais c'est lisible |
 | Raretés **en code** | `1D` `2D` `3D` `4D` `1S` `2S` `3S` `COU` | `COU` = Couronne, trois lettres tirées du nom (D-024) |
 | Raretés **cibles** (`CARD-SPEC.md` §1) | 3 étoiles (4 cartes) et Couronne (3 cartes) | **socle posé** dans `types.ts` et `RARITY_META` ; **aucune carte de ces raretés n'existe encore** |
-| Statuts | `SURCHARGE`, `BURNOUT`, `BLOQUE`, `GELE`, `DERIVE` | « Burn-out » est le seul nom composé avec trait d'union, et le seul à garder une forme anglaise |
+| Statuts *(relevé le 19/10/2026, **périmé**)* | `SURCHARGE`, ~~`BURNOUT`~~, ~~`BLOQUE`~~, ~~`GELE`~~, `DERIVE` | Noms d'alors ; D-026 a retenu `SURCHARGE`, `EPUISEMENT`, `SIESTE`, `IMMOBILISATION`, `DERIVE` (état courant : `AGENTS.md` §3.1, `docs/CORRESPONDANCES.md` §6) |
 | `Keyword` (maison) | `priorityShift` → **« Changement de priorité »** | seule exception au standard (D-004) |
 
 ## 3. Vocabulaire de jeu : deux points de friction
