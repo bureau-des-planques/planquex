@@ -149,3 +149,50 @@ export const ACTION_CARDS: ActionCard[] = [
     glyph: '⌘'
   })
 ];
+
+/**
+ * Variante d'une carte Action — même motif que `sse.ts` : une autre apparence de la
+ * **même** carte. Le nom, le texte, les effets et, s'il existe, l'`itemKind` sont
+ * hérités de la base (`AGENTS.md` §5) ; seuls l'identifiant (`-star` / `-star2`) et
+ * la rareté changent.
+ */
+const variant = (
+  baseId: string,
+  id: string,
+  rarity: ActionCard['rarity'],
+  glyph?: string
+): ActionCard => {
+  const source = ACTION_CARDS.find((card) => card.id === baseId);
+  if (!source) throw new Error(`Carte Action introuvable: ${baseId}`);
+  return {
+    ...source,
+    id,
+    rarity,
+    variantOf: baseId,
+    glyph: glyph ?? source.glyph,
+    flavor: source.flavor
+  };
+};
+
+/**
+ * Les **8 variantes de Collègues**, les huit dernières cartes des 286 (`CARD-SPEC.md` §1).
+ * Une par Collègue, toutes en `1S` : dans les fichiers de faction, la variante d'une base
+ * `2D` est à **1 étoile** (26 des 30 cas mesurés) — et `3S`/`COU` reviennent aux variantes
+ * de Planqués. Aucune variante d'Objet : CARD-SPEC n'en compte pas.
+ */
+export const ACTION_VARIANTS: ActionCard[] = [
+  variant('sse-visite-medicale', 'sse-visite-medicale-star', '1S'),
+  variant('management-entretien-annuel', 'management-entretien-annuel-star', '1S'),
+  variant('qvt-yoga-du-rire', 'qvt-yoga-du-rire-star', '1S'),
+  variant('amelioration-reunion-de-suivi', 'amelioration-reunion-de-suivi-star', '1S'),
+  variant('rh-reunion-individuelle', 'rh-reunion-individuelle-star', '1S'),
+  variant(
+    'direction-reunion-qui-aurait-pu-etre-un-mail',
+    'direction-reunion-qui-aurait-pu-etre-un-mail-star',
+    '1S'
+  ),
+  variant('syndicat-assemblee-generale', 'syndicat-assemblee-generale-star', '1S'),
+  variant('support-escalade', 'support-escalade-star', '1S')
+];
+
+export const ALL_ACTION_CARDS: ActionCard[] = [...ACTION_CARDS, ...ACTION_VARIANTS];

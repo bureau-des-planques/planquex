@@ -1,5 +1,5 @@
 import type { ActionCard, Card, Faction, ItemKind, PlanqueCard, Rarity, Stage, Vivier } from './types';
-import { ACTION_CARDS } from './actions';
+import { ALL_ACTION_CARDS } from './actions';
 import { ALL_SSE_CARDS } from './sse';
 import { ALL_MANAGEMENT_CARDS } from './management';
 import { ALL_AMELIORATION_CARDS } from './amelioration';
@@ -22,11 +22,11 @@ export const ALL_CARDS: Card[] = [
   ...ALL_INTERIM_CARDS,
   ...ALL_SUPPORT_CARDS,
   ...ALL_SYNDICAT_CARDS,
-  ...ACTION_CARDS
+  ...ALL_ACTION_CARDS
 ];
 
-/** Les 8 Collègues et 3 Objets du lancement (D-005), isolés pour les tests et l'UI. */
-export const ALL_ACTION_CARDS: ActionCard[] = ACTION_CARDS;
+/** Les 8 Collègues, 3 Objets et leurs 8 variantes du lancement (D-005), isolés pour les tests et l'UI. */
+export { ALL_ACTION_CARDS };
 
 /** Vrai pour un Planqué — le seul type qui se pose au Poste ou au Rack. */
 export function isPlanque(card: Card | undefined): card is PlanqueCard {

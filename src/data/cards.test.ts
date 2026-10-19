@@ -72,8 +72,12 @@ const ABILITY_KINDS: NonNullable<PlanqueCard['ability']>['kind'][] = [
 const PLANQUES = ALL_CARDS.filter(isPlanque);
 /** Les Planqués de base (hors variantes) : les seuls à définir une ligne d'évolution. */
 const BASE_PLANQUES = PLANQUES.filter((card) => !card.variantOf);
-/** Les **cartes Action** : 8 Collègues et 3 Objets (D-005). */
+/** Les **cartes Action** : 8 Collègues, 3 Objets et leurs variantes secrètes (D-005). */
 const ACTIONS = ALL_CARDS.filter(isActionCard);
+/** Les cartes Action de **base** : 8 Collègues et 3 Objets (CARD-SPEC.md §1). */
+const BASE_ACTIONS = ACTIONS.filter((card) => !card.variantOf);
+/** Les **variantes de Collègues** : les 8 dernières cartes des 286 (CARD-SPEC.md §1). */
+const ACTION_VARIANTS = ACTIONS.filter((card) => card.variantOf);
 
 /** `AGENTS.md` §3.2 : chaque faction est vulnérable à une seule autre. */
 const WEAKNESS: Record<Faction, Faction | null> = {
@@ -437,10 +441,14 @@ describe('Cartes — unicité des noms (deck.ts compte par nom)', () => {
 });
 
 describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)', () => {
-  it('compte 8 Collègues et 3 Objets au lancement (CARD-SPEC.md §1)', () => {
-    expect(ACTIONS.filter((card) => card.kind === 'COLLEAGUE')).toHaveLength(8);
-    expect(ACTIONS.filter((card) => card.kind === 'OBJET')).toHaveLength(3);
-    expect(ACTIONS).toHaveLength(11);
+  it('compte 8 Collègues et 3 Objets au lancement, plus 8 variantes de Collègues (CARD-SPEC.md §1)', () => {
+    expect(BASE_ACTIONS.filter((card) => card.kind === 'COLLEAGUE')).toHaveLength(8);
+    expect(BASE_ACTIONS.filter((card) => card.kind === 'OBJET')).toHaveLength(3);
+    expect(BASE_ACTIONS).toHaveLength(11);
+    // Les 8 variantes des 60 cartes secrètes : une par Collègue, aucune pour un Objet.
+    expect(ACTION_VARIANTS).toHaveLength(8);
+    expect(ACTION_VARIANTS.filter((card) => card.kind === 'COLLEAGUE')).toHaveLength(8);
+    expect(ACTIONS).toHaveLength(19);
   });
 
   it('n’attribue jamais à une carte Action les champs d’un Planqué', () => {
@@ -475,5 +483,32 @@ describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)',
         expect(source?.kind, card.id).toBe(card.kind);
       }
     }
+  });
+
+  it('fait hériter chaque variante de Collègue de sa base, sans variante de variante (AGENTS.md §5)', () => {
+    const seen = new Set<string>();
+    for (const variant of ACTION_VARIANTS) {
+      const source = variant.variantOf ? getCard(variant.variantOf) : undefined;
+      expect(source, variant.id).toBeDefined();
+      if (!source || !isActionCard(source)) continue;
+      expect(source.variantOf, `${variant.id} : une variante de variante`).toBeUndefined();
+      expect(seen.has(source.id), `${source.id} a plus d’une variante`).toBe(false);
+      seen.add(source.id);
+      expect([`${source.id}-star`, `${source.id}-star2`], variant.id).toContain(variant.id);
+      expect(variant.kind, variant.id).toBe(source.kind);
+      expect(variant.faction, variant.id).toBe(source.faction);
+      expect(variant.name, variant.id).toBe(source.name);
+      expect(variant.text, variant.id).toBe(source.text);
+      expect(variant.effects, variant.id).toEqual(source.effects);
+      expect(variant.itemKind, variant.id).toBe(source.itemKind);
+      expect(variant.flavor, variant.id).toBe(source.flavor);
+      expect(variant.palette, variant.id).toBe(source.palette);
+      expect(variant.glyph, variant.id).toBe(source.glyph);
+      expect(['1S', '2S', '3S', 'COU'], variant.id).toContain(variant.rarity);
+    }
+    // Une variante par Collègue de base, et aucune pour un Objet.
+    expect(seen).toEqual(
+      new Set(BASE_ACTIONS.filter((card) => card.kind === 'COLLEAGUE').map((card) => card.id))
+    );
   });
 });
