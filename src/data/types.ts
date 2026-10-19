@@ -179,4 +179,10 @@ export interface BattleState {
    * (la partie est alors terminée).
    */
   pendingPromotion: PlayerId | null;
+  /**
+   * État du générateur seedé de la partie (ticket #29). Un entier 32 bits, donc
+   * clonable par `structuredClone` et comparable : la partie rejoue à l'identique
+   * tant qu'aucune action ne l'a fait avancer. Voir `@/game/rng`.
+   */
+  rng: number;
 }

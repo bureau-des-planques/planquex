@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ALL_CARDS, getCard } from '@/data';
 import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
-import { useStore } from '@/store/useStore';
+import { seedRng } from '@/game/rng';
+import { migratePersisted, STORAGE_VERSION, useStore } from '@/store/useStore';
 
 beforeEach(() => {
   useStore.getState().reset();
@@ -66,5 +67,46 @@ describe('Chariot du store', () => {
 
     expect(useStore.getState().deck).toEqual([]);
     expect(useStore.getState().owned[id]).toBe(ownedBefore);
+  });
+});
+
+describe('Générateur du store (#29)', () => {
+  /** Ouvre un Arrivage depuis une graine connue, en repartant de la même base. */
+  function packFrom(seed: number): string[] {
+    useStore.setState({ rng: seedRng(seed), owned: {}, packsOpened: 0 });
+    return useStore.getState().openPack().map((card) => card.id);
+  }
+
+  it('même graine → même Arrivage ; graines différentes → Arrivages différents', () => {
+    expect(packFrom(7)).toEqual(packFrom(7));
+    expect(packFrom(7)).not.toEqual(packFrom(99));
+  });
+
+  it('avance son générateur à chaque Arrivage', () => {
+    useStore.setState({ rng: seedRng(7) });
+    const before = useStore.getState().rng;
+    useStore.getState().openPack();
+    expect(useStore.getState().rng).not.toBe(before);
+  });
+
+  it('migre un état v0 sans générateur, sans perdre le reste', () => {
+    expect(STORAGE_VERSION).toBeGreaterThan(0);
+    const migrated = migratePersisted({
+      name: 'Employé 404',
+      owned: { [ALL_CARDS[0].id]: 3 },
+      deck: [ALL_CARDS[0].id],
+      packsOpened: 2,
+      reducedMotion: true
+    });
+
+    expect(typeof migrated.rng).toBe('number');
+    expect(migrated.packsOpened).toBe(2);
+    expect(migrated.reducedMotion).toBe(true);
+    expect(migrated.owned?.[ALL_CARDS[0].id]).toBe(3);
+  });
+
+  it('garde le générateur d’un état déjà migré', () => {
+    const rng = seedRng(1234);
+    expect(migratePersisted({ packsOpened: 0, rng }).rng).toBe(rng);
   });
 });
