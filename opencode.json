@@ -10,14 +10,6 @@
         "type": "remote",
         "url": "https://mcp.vercel.com"
       },
-      "playwright": {
-        "type": "local",
-        "command": [
-          "npx",
-          "-y",
-          "@playwright/mcp"
-        ]
-      },
       "cloudflare": {
         "type": "remote",
         "url": "https://mcp.cloudflare.com/mcp",
