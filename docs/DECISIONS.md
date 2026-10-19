@@ -30,6 +30,8 @@
 | D-021 | 19/10/2026 | **Les dégâts se lisent par coût en café, pas par rareté** : 1 café **10–30**, 2 cafés **40–80**, 3 cafés **70–120**, et un effet ne coûte des dégâts (20 à 40) **qu'à partir de 3 cafés**. La colonne « dégâts » par stade/rareté de `CARD-SPEC.md` §2 devient **indicative** | §2 portait deux règles incompatibles (bande par rareté contre règle par coût) : les 11 écarts relevés sur 7 cartes venaient de là, **pas des cartes**. Bandes ancrées sur les cartes réelles de TCG Pocket relevées le 19/10/2026 — Scyther 30 brut contre Venomoth 30 + Empoisonné à 1 énergie (effet gratuit), Dewgong 90 brut contre Vaporeon 60 + soin 30 à 3 énergies (effet payé), Starmie ex 90 à 2 énergies (un Cadre n'est pas un N+2). **Aucune carte modifiée** : `src/data/cards.test.ts` vérifie les 37 cartes contre ces bandes |
 | D-022 | 19/10/2026 | **O-009 tranché, faute de source primaire** : (1) **pas de reprise de poste** — la main de départ contient toujours un N+1, sans remélange ni pioche adverse (le mulligan de §4 était celui du TCG *physique*) ; (2) la partie se perd aussi **quand plus aucun Planqué n'est en jeu**, désormais écrit dans §4 ; (3) la relève après K.O. est **choisie** par le joueur K.O. (déjà implémenté) ; (4) le plafond de **3 types de café** et son tirage aléatoire restent des **hypothèses assumées**, marquées comme telles dans §4 | Aucune version web des « Astuces de jeu » n'existe : deux recherches n'ont trouvé que du secondaire. Les points 1 à 3 sont concordants chez deux sources japonaises récentes (Game8 MAJ 30/09/2026, GameWith MAJ 19/10/2026) ; le point 4 n'a que des wikis. Le point 1 change le moteur : `mulligan()` supprimé, remplacé par `ensureBasicInHand()` (échange carte pour carte, main à 5, total conservé). Preuve à capturer : `docs/PROTOCOLE-ASTUCES.md` |
 | D-023 | 19/10/2026 | **Le Moral suit le jeu réel (O-011)** : Basique **50–80**, Stade 1 **90–120**, Stade 2 **140–160**, ex **170–190**, resserrés à ±10 par rareté pour garder une progression lisible. Deux cartes remontent : `sse-medecin-travail` **130 → 140** et `sse-medecin-chef-ex` **160 → 170**. La Relève reste un choix maison | Notre courbe plafonnait 20 points sous le jeu de référence : les K.O. y étaient donc **moins chers** que dans le jeu qu'on copie, c'est-à-dire une partie plus rapide. Effet chiffré par `src/game/pace.test.ts` (modèle de rythme, `PACE_REPORT=1` pour le tableau) : **0 tour** d'écart dans la lecture optimiste, au plus **+3 tours** dans la pessimiste (N+1 21 → 24, COMEX 10 → 13), rien sur N+2 ni Cadre. Coût borné, donc on adopte la courbe du miroir plutôt que de garder une courbe inventée |
+| D-024 | 19/10/2026 | **Nommage des factions et des types (amende D-006)** : les 10 factions deviennent **SSE, Management, QVT, Amélioration continue, RH, Atelier, Direction, Syndicat, Intérim, Support**. Un nom de faction désigne **un service ou un collectif, jamais une personne**. Abréviation : **sigle réel s'il existe, sinon trois lettres** → `SSE`, `MGT`, `QVT`, `AC`, `RH`, `ATL`, `DIR`, `SYN`, `INT`, `SUP`. Les **anglicismes entrés dans le français courant** (management, audit) sont admis dans un nom de faction ; les **titres à la mode** (Happiness Manager, Chief Happiness Officer) restent **sur les cartes**. Le type **Psy devient Psychique**. La collision faction/carte de « Atelier » (« Chef d'atelier », Lieu « Atelier ») est **assumée** | Quatre registres se mélangeaient — services (SSE, RH), domaines (Amélioration continue), collectifs (Direction, Syndicat) et **personnes** (Manager, Technicien, Intérimaire) : une faction doit pouvoir *contenir* des gens, pas *être* un poste. La règle d'abréviation évite d'inventer `RHS` et `AMC` pour deux sigles réels, et huit codes sur dix sont identiques dans les deux règles possibles |
+| D-025 | 19/10/2026 | **Référentiel du contenu : le site devient un atelier MRO d'équipement optronique.** Le **nom du jeu est conservé** — « Bureau des Planqués » se relit en *bureau d'études / bureau des méthodes*. Les **règles et le miroir** sont intouchés ; les **factions survivent** (une société de MRO a bien un SSE, un CSE, une Direction, une Qualité) ; le **vocabulaire du plateau** (open-space, machine à café, courrier, classeur, bacs…) sera **réécrit en termes d'atelier** ; l'**équipement optronique est la marchandise** du site (Objets, Outils) et **le Planqué reste un salarié** | « Et du plateau qui va avec » désignait le vocabulaire de jeu, pas la saveur d'un bac : (A) est retenu plutôt que (B) un registre réservé à un seul bac. Coût nul en structure : les factions sont des fonctions d'entreprise, le SSE et le CSE sont même des fonctions *industrielles*, et les 37 cartes SSE — métiers de site — tiennent dans les deux univers |
 
 ## Ouvertes
 
@@ -73,6 +75,28 @@ Détail d'**O-011** (relevé le 19/10/2026, `CARD-SPEC.md` §2 contre les cartes
 Le décalage est d'environ **20 points** aux stades hauts. Conséquence à ne pas oublier : remonter
 le Moral **ralentit** la partie (il faut plus de Pressions par K.O.), donc cela se tranche avec une
 simulation, pas au feeling.
+
+### Propagation en attente (D-024, D-025)
+
+Les deux décisions sont **actées**, mais leurs conséquences s'écrivent en **une seule
+passe** à la fin de la session de nommage — plutôt que de rééditer dix fois les mêmes
+fichiers. D'ici là, les fichiers ci-dessous portent encore les anciens noms : ce n'est
+pas une contradiction silencieuse, c'est un chantier listé.
+
+| Fichier | Ce qui reste à propager |
+|---|---|
+| `AGENTS.md` §3.1 | tout le vocabulaire du plateau — après la famille « vocabulaire » |
+| `AGENTS.md` §3.2 | les 10 noms, Psy → Psychique, les deux règles (abréviation, anglicismes) |
+| `docs/FACTIONS.md` | 10 en-têtes, tableau §1, lignes « Faiblesse », identités |
+| `docs/PROPOSITION.md` | §3.2 (les ~40 termes), §3.3 (les factions), §5 (les bacs) |
+| `docs/CORRESPONDANCES.md` | §5 (types et factions), §3-§4 (les termes) |
+| `docs/NOMMAGE.md` | §6 : marquer les propositions comme actées |
+| `src/data/types.ts` | union `Faction` — 5 clés renommées |
+| `src/data/index.ts` | `FACTION_META` : noms et étiquettes courtes |
+| `src/data/sse.ts` | `weakness: 'MANAGER'` → `'MANAGEMENT'` |
+| `src/data/cards.test.ts` | table `WEAKNESS` |
+
+**Aucun identifiant de carte ne bouge** : seule `SSE` a des cartes, et son code ne change pas.
 
 ## Prochaine étape
 
