@@ -1,16 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-
-const PALETTE = 'linear-gradient(155deg, #3d3208 0%, #c9a227 48%, #101526 100%)';
-const GLYPH = '↻';
-
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'AMELIORATION',
-  weakness: 'ATELIER',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+import { planqueBase, secretVariant } from './planque';
 
 /**
  * Amélioration continue (code `AC`, vivier **Étage**, D-024/D-026) — Électricité.
@@ -20,6 +9,9 @@ const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette
  * COMEX `ex: true` en 4D valant 2 Interventions (D-020) ; Seuil par stade/rareté et dégâts
  * par café conformes à `CARD-SPEC.md` §2 (D-021, D-023) ; noms de postes réels (D-027).
  */
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('AMELIORATION');
+
 export const AMELIORATION_CARDS: PlanqueCard[] = [
   base({
     id: 'amelioration-charge-qualite',
@@ -242,27 +234,14 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = AMELIORATION_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte Amélioration continue introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const AMELIORATION_VARIANTS: Card[] = [
-  variant('amelioration-auditeur-qualite', 'amelioration-auditeur-qualite-star', '1S', '↻'),
-  variant('amelioration-responsable-process', 'amelioration-responsable-process-star', '1S', '⌁'),
-  variant('amelioration-responsable-audit', 'amelioration-responsable-audit-star', '1S', '☰'),
-  variant('amelioration-chef-projet-qualite', 'amelioration-chef-projet-qualite-star', '1S', '✦'),
-  variant('amelioration-directeur-qualite', 'amelioration-directeur-qualite-star2', '2S', '↻'),
-  variant('amelioration-responsable-amelioration-continue', 'amelioration-responsable-amelioration-continue-star2', '2S', '◉'),
-  variant('amelioration-directeur-flux', 'amelioration-directeur-flux-star2', '2S', '⌁')
+  secretVariant(AMELIORATION_CARDS, 'amelioration-auditeur-qualite', 'star', '↻'),
+  secretVariant(AMELIORATION_CARDS, 'amelioration-responsable-process', 'star', '⌁'),
+  secretVariant(AMELIORATION_CARDS, 'amelioration-responsable-audit', 'star', '☰'),
+  secretVariant(AMELIORATION_CARDS, 'amelioration-chef-projet-qualite', 'star', '✦'),
+  secretVariant(AMELIORATION_CARDS, 'amelioration-directeur-qualite', 'star2', '↻'),
+  secretVariant(AMELIORATION_CARDS, 'amelioration-responsable-amelioration-continue', 'star2', '◉'),
+  secretVariant(AMELIORATION_CARDS, 'amelioration-directeur-flux', 'star2', '⌁')
 ];
 
 export const ALL_AMELIORATION_CARDS: Card[] = [...AMELIORATION_CARDS, ...AMELIORATION_VARIANTS];

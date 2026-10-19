@@ -1,7 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-
-const PALETTE = 'linear-gradient(155deg, #2a1010 0%, #b34a4a 48%, #140f0f 100%)';
-const GLYPH = '✊';
+import { planqueBase, secretVariant } from './planque';
 
 /**
  * Faction **Syndicat** (`SYN`) — Métal, vivier **Atelier** (D-024, D-026).
@@ -9,14 +7,9 @@ const GLYPH = '✊';
  * Les intitulés sont des postes réels, les Pressions des tâches ou documents,
  * les Talents des compétences de métier (D-027).
  */
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'SYNDICAT',
-  weakness: 'MANAGEMENT',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('SYNDICAT');
 
 export const SYNDICAT_CARDS: PlanqueCard[] = [
   // Ligne principale (échantillon CARD-SPEC.md §4, FACTIONS.md §9) :
@@ -107,21 +100,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = SYNDICAT_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte Syndicat introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const SYNDICAT_VARIANTS: Card[] = [
-  variant('syndicat-secretaire-general', 'syndicat-secretaire-general-star2', '2S', '✦')
+  secretVariant(SYNDICAT_CARDS, 'syndicat-secretaire-general', 'star2', '✦')
 ];
 
 export const ALL_SYNDICAT_CARDS: Card[] = [...SYNDICAT_CARDS, ...SYNDICAT_VARIANTS];

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
+import { ACTION_KIND_META, FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
 import { CardView } from './CardView';
 
@@ -66,13 +66,9 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
             </section>
           ) : (
             <section className="detail-section">
-              <h3>{card.kind === 'OBJET' ? 'Effet de l’Objet' : 'Effet du Collègue'}</h3>
+              <h3>{ACTION_KIND_META[card.kind].label}</h3>
               <p>{card.text}</p>
-              <p className="muted">
-                {card.kind === 'OBJET'
-                  ? 'Objet : utilisable autant de fois que voulu dans le tour.'
-                  : 'Collègue : 1 par tour.'}
-              </p>
+              <p className="muted">{ACTION_KIND_META[card.kind].rule}</p>
             </section>
           )}
 

@@ -1,7 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-
-const PALETTE = 'linear-gradient(155deg, #3a2410 0%, #a56a3a 48%, #14100a 100%)';
-const GLYPH = '⚒';
+import { planqueBase, secretVariant } from './planque';
 
 /**
  * Faction **Atelier** (`ATL`) — Combat, vivier **Atelier** (D-024, D-026).
@@ -9,14 +7,9 @@ const GLYPH = '⚒';
  * (`CARD-SPEC.md` §3). Les intitulés sont des postes de terrain, les Pressions des gestes
  * et des outils, les Talents des manies de métier (D-027).
  */
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'ATELIER',
-  weakness: 'RH',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('ATELIER');
 
 export const ATELIER_CARDS: PlanqueCard[] = [
   // Ligne principale : Apprenti → Technicien de maintenance → Chef d’atelier
@@ -334,28 +327,15 @@ export const ATELIER_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = ATELIER_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte Atelier introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const ATELIER_VARIANTS: Card[] = [
-  variant('atelier-technicien-maintenance', 'atelier-technicien-maintenance-star', '1S', '⚒'),
-  variant('atelier-electromecanicien', 'atelier-electromecanicien-star', '1S', '⌁'),
-  variant('atelier-depanneur-ascenseur', 'atelier-depanneur-ascenseur-star', '1S', '✦'),
-  variant('atelier-tuyauteur', 'atelier-tuyauteur-star', '1S', '◉'),
-  variant('atelier-chef-atelier', 'atelier-chef-atelier-star2', '2S', '⚒'),
-  variant('atelier-responsable-maintenance', 'atelier-responsable-maintenance-star2', '2S', '✦'),
-  variant('atelier-chef-chantier', 'atelier-chef-chantier-star2', '2S', '⚒'),
-  variant('atelier-apprenti', 'atelier-apprenti-star2', '2S', '◉')
+  secretVariant(ATELIER_CARDS, 'atelier-technicien-maintenance', 'star', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-electromecanicien', 'star', '⌁'),
+  secretVariant(ATELIER_CARDS, 'atelier-depanneur-ascenseur', 'star', '✦'),
+  secretVariant(ATELIER_CARDS, 'atelier-tuyauteur', 'star', '◉'),
+  secretVariant(ATELIER_CARDS, 'atelier-chef-atelier', 'star2', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-responsable-maintenance', 'star2', '✦'),
+  secretVariant(ATELIER_CARDS, 'atelier-chef-chantier', 'star2', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-apprenti', 'star2', '◉')
 ];
 
 export const ALL_ATELIER_CARDS: Card[] = [...ATELIER_CARDS, ...ATELIER_VARIANTS];

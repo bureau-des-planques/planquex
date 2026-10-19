@@ -1,7 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-
-const PALETTE = 'linear-gradient(155deg, #2d2f33 0%, #5b6472 48%, #1a1c1e 100%)';
-const GLYPH = '◆';
+import { planqueBase, secretVariant } from './planque';
 
 /**
  * Faction **Direction** (`DIR`) — Obscurité, vivier **Étage** (D-024, D-026).
@@ -9,14 +7,9 @@ const GLYPH = '◆';
  * Les intitulés sont des postes réels, les Pressions des tâches ou documents,
  * les Talents des compétences de métier (D-027).
  */
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'DIRECTION',
-  weakness: 'ATELIER',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('DIRECTION');
 
 export const DIRECTION_CARDS: PlanqueCard[] = [
   // Ligne principale (échantillon CARD-SPEC.md) : Chef de projet fantôme → Directeur adjoint → PDG
@@ -198,24 +191,11 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = DIRECTION_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte Direction introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const DIRECTION_VARIANTS: Card[] = [
-  variant('direction-chef-projet-fantome', 'direction-chef-projet-fantome-star', '1S', '◆'),
-  variant('direction-directeur-adjoint', 'direction-directeur-adjoint-star', '1S', '✦'),
-  variant('direction-pdg', 'direction-pdg-star2', '2S', '◆'),
-  variant('direction-directeur-general', 'direction-directeur-general-star', '1S', '✦')
+  secretVariant(DIRECTION_CARDS, 'direction-chef-projet-fantome', 'star', '◆'),
+  secretVariant(DIRECTION_CARDS, 'direction-directeur-adjoint', 'star', '✦'),
+  secretVariant(DIRECTION_CARDS, 'direction-pdg', 'star2', '◆'),
+  secretVariant(DIRECTION_CARDS, 'direction-directeur-general', 'star', '✦')
 ];
 
 export const ALL_DIRECTION_CARDS: Card[] = [...DIRECTION_CARDS, ...DIRECTION_VARIANTS];

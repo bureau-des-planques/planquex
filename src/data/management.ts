@@ -1,7 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-
-const PALETTE = 'linear-gradient(155deg, #2a1206 0%, #d4622a 48%, #1a0a02 100%)';
-const GLYPH = '▲';
+import { planqueBase, secretVariant } from './planque';
 
 /**
  * Faction **Management** (`MGT`) — Feu, vivier **Atelier** (D-024, D-026).
@@ -9,14 +7,9 @@ const GLYPH = '▲';
  * Les intitulés sont des postes réels, les Pressions des tâches ou documents,
  * les Talents des compétences de métier (D-027).
  */
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'MANAGEMENT',
-  weakness: 'QVT',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('MANAGEMENT');
 
 export const MANAGEMENT_CARDS: PlanqueCard[] = [
   base({
@@ -290,28 +283,15 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = MANAGEMENT_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte Management introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const MANAGEMENT_VARIANTS: Card[] = [
-  variant('management-manager-proximite', 'management-manager-proximite-star', '1S', '▲'),
-  variant('management-responsable-projet', 'management-responsable-projet-star', '1S', '✦'),
-  variant('management-responsable-commercial', 'management-responsable-commercial-star', '1S', '▲'),
-  variant('management-manager-adjoint', 'management-manager-adjoint-star', '1S', '◉'),
-  variant('management-chef-des-ventes', 'management-chef-des-ventes-star2', '2S', '▲'),
-  variant('management-directeur-projet', 'management-directeur-projet-star2', '2S', '✦'),
-  variant('management-directeur-production', 'management-directeur-production-star2', '2S', '▲'),
-  variant('management-jeune-manager', 'management-jeune-manager-star2', '2S', '◉')
+  secretVariant(MANAGEMENT_CARDS, 'management-manager-proximite', 'star', '▲'),
+  secretVariant(MANAGEMENT_CARDS, 'management-responsable-projet', 'star', '✦'),
+  secretVariant(MANAGEMENT_CARDS, 'management-responsable-commercial', 'star', '▲'),
+  secretVariant(MANAGEMENT_CARDS, 'management-manager-adjoint', 'star', '◉'),
+  secretVariant(MANAGEMENT_CARDS, 'management-chef-des-ventes', 'star2', '▲'),
+  secretVariant(MANAGEMENT_CARDS, 'management-directeur-projet', 'star2', '✦'),
+  secretVariant(MANAGEMENT_CARDS, 'management-directeur-production', 'star2', '▲'),
+  secretVariant(MANAGEMENT_CARDS, 'management-jeune-manager', 'star2', '◉')
 ];
 
 export const ALL_MANAGEMENT_CARDS: Card[] = [...MANAGEMENT_CARDS, ...MANAGEMENT_VARIANTS];

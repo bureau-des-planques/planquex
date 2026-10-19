@@ -68,20 +68,6 @@ const BASE_ACTIONS = ACTIONS.filter((card) => !card.variantOf);
 /** Les **variantes de Collègues** : les 8 dernières cartes des 286 (CARD-SPEC.md §1). */
 const ACTION_VARIANTS = ACTIONS.filter((card) => card.variantOf);
 
-/** `AGENTS.md` §3.2 : chaque faction est vulnérable à une seule autre. */
-const WEAKNESS: Record<Faction, Faction | null> = {
-  SSE: 'MANAGEMENT',
-  MANAGEMENT: 'QVT',
-  QVT: 'AMELIORATION',
-  AMELIORATION: 'ATELIER',
-  RH: 'DIRECTION',
-  ATELIER: 'RH',
-  DIRECTION: 'ATELIER',
-  SYNDICAT: 'MANAGEMENT',
-  INTERIM: null,
-  SUPPORT: 'ATELIER'
-};
-
 const STAGE_ORDER: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
 
 /**
@@ -326,9 +312,24 @@ describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021
 });
 
 describe('Cartes — COMEX et Vulnérabilité (AGENTS.md §3.2, §5)', () => {
-  it('vulnérabilise chaque carte selon la table des factions', () => {
-    for (const card of PLANQUES) {
-      expect(card.weakness, card.id).toBe(WEAKNESS[card.faction]);
+  /**
+   * La vulnérabilité est portée par `FACTION_META` (`src/data/factions.ts`), pas par la
+   * carte. Ce test ne relit donc pas les cartes — il vérifierait la même source que le
+   * code — il vérifie la **forme du cycle** : dix factions, une seule vulnérabilité
+   * chacune, aucune tournée vers elle-même, et l'Intérim à aucune.
+   */
+  it('forme le cycle des Vulnérabilités : dix factions, une chacune, l’Intérim aucune', () => {
+    const factions = Object.keys(FACTION_META) as Faction[];
+    expect(factions).toHaveLength(10);
+
+    const sansVulnerabilite = factions.filter((faction) => FACTION_META[faction].weakness === null);
+    expect(sansVulnerabilite).toEqual(['INTERIM']);
+
+    for (const faction of factions) {
+      const { weakness } = FACTION_META[faction];
+      if (weakness === null) continue;
+      expect(weakness, `${faction} ne peut pas être vulnérable à elle-même`).not.toBe(faction);
+      expect(factions, `${faction} → ${weakness} : faction inconnue`).toContain(weakness);
     }
   });
 

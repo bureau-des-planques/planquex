@@ -1,18 +1,8 @@
 import type { Card, PlanqueCard } from './types';
+import { planqueBase, secretVariant } from './planque';
 
-const PALETTE = 'linear-gradient(155deg, #0b3d33 0%, #1f8a68 48%, #071421 100%)';
-const GLYPH = '✚';
-
-const base = (
-  card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }
-): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'SSE',
-  weakness: 'MANAGEMENT',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('SSE');
 
 export const SSE_CARDS: PlanqueCard[] = [
   base({
@@ -304,31 +294,18 @@ export const SSE_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = SSE_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte SSE introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const SSE_VARIANTS: Card[] = [
-  variant('sse-infirmiere-travail', 'sse-infirmiere-travail-star', '1S', '✚'),
-  variant('sse-ergonome', 'sse-ergonome-star', '1S', '⌁'),
-  variant('sse-sophrologue', 'sse-sophrologue-star', '1S', '☁'),
-  variant('sse-chef-secours', 'sse-chef-secours-star', '1S', '✚'),
-  variant('sse-responsable-hygiene', 'sse-responsable-hygiene-star', '1S', '✦'),
-  variant('sse-psychiatre', 'sse-psychiatre-star', '1S', '◉'),
-  variant('sse-medecin-travail', 'sse-medecin-travail-star2', '2S', '✚'),
-  variant('sse-responsable-sse', 'sse-responsable-sse-star2', '2S', '✦'),
-  variant('sse-medecin-chef', 'sse-medecin-chef-star2', '2S', '✚'),
-  variant('sse-psychologue', 'sse-psychologue-star2', '2S', '◉'),
-  variant('sse-nutritionniste', 'sse-nutritionniste-star2', '2S', '☘')
+  secretVariant(SSE_CARDS, 'sse-infirmiere-travail', 'star', '✚'),
+  secretVariant(SSE_CARDS, 'sse-ergonome', 'star', '⌁'),
+  secretVariant(SSE_CARDS, 'sse-sophrologue', 'star', '☁'),
+  secretVariant(SSE_CARDS, 'sse-chef-secours', 'star', '✚'),
+  secretVariant(SSE_CARDS, 'sse-responsable-hygiene', 'star', '✦'),
+  secretVariant(SSE_CARDS, 'sse-psychiatre', 'star', '◉'),
+  secretVariant(SSE_CARDS, 'sse-medecin-travail', 'star2', '✚'),
+  secretVariant(SSE_CARDS, 'sse-responsable-sse', 'star2', '✦'),
+  secretVariant(SSE_CARDS, 'sse-medecin-chef', 'star2', '✚'),
+  secretVariant(SSE_CARDS, 'sse-psychologue', 'star2', '◉'),
+  secretVariant(SSE_CARDS, 'sse-nutritionniste', 'star2', '☘')
 ];
 
 export const ALL_SSE_CARDS: Card[] = [...SSE_CARDS, ...SSE_VARIANTS];

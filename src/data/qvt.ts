@@ -1,16 +1,8 @@
 import type { Card, PlanqueCard } from './types';
+import { planqueBase, secretVariant } from './planque';
 
-const PALETTE = 'linear-gradient(155deg, #0b3d5c 0%, #2f8fb3 48%, #071421 100%)';
-const GLYPH = '☺';
-
-const base = (card: Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & { glyph?: string }): PlanqueCard => ({
-  ...card,
-  kind: 'PLANQUE',
-  faction: 'QVT',
-  weakness: 'AMELIORATION',
-  palette: PALETTE,
-  glyph: card.glyph ?? GLYPH
-});
+/** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
+const base = planqueBase('QVT');
 
 export const QVT_CARDS: PlanqueCard[] = [
   // Ligne 1 : Chargé QVT → Happiness Manager → Chief Happiness Officer (échantillon CARD-SPEC.md)
@@ -445,32 +437,19 @@ export const QVT_CARDS: PlanqueCard[] = [
   })
 ];
 
-const variant = (baseId: string, id: string, rarity: Card['rarity'], glyph?: string): PlanqueCard => {
-  const source = QVT_CARDS.find((card) => card.id === baseId);
-  if (!source) throw new Error(`Carte QVT introuvable: ${baseId}`);
-  return {
-    ...source,
-    id,
-    rarity,
-    variantOf: baseId,
-    glyph: glyph ?? source.glyph,
-    flavor: source.flavor
-  };
-};
-
 export const QVT_VARIANTS: Card[] = [
-  variant('qvt-happiness-manager', 'qvt-happiness-manager-star', '1S', '✦'),
-  variant('qvt-chief-happiness-officer', 'qvt-chief-happiness-officer-star2', '2S', '☺'),
-  variant('qvt-responsable-qvt', 'qvt-responsable-qvt-star', '1S', '☁'),
-  variant('qvt-directeur-qvt', 'qvt-directeur-qvt-star2', '2S', '✧'),
-  variant('qvt-charge-integration', 'qvt-charge-integration-star', '1S', '✦'),
-  variant('qvt-consultant-qvt', 'qvt-consultant-qvt-star', '1S', '☁'),
-  variant('qvt-charge-formation', 'qvt-charge-formation-star', '1S', '✧'),
-  variant('qvt-charge-communication-interne', 'qvt-charge-communication-interne-star', '1S', '☺'),
-  variant('qvt-responsable-integration', 'qvt-responsable-integration-star2', '2S', '✦'),
-  variant('qvt-responsable-developpement-competences', 'qvt-responsable-developpement-competences-star2', '2S', '◉'),
-  variant('qvt-responsable-engagement', 'qvt-responsable-engagement-star2', '2S', '◆'),
-  variant('qvt-responsable-experience-collaborateur', 'qvt-responsable-experience-collaborateur-star2', '2S', '✚')
+  secretVariant(QVT_CARDS, 'qvt-happiness-manager', 'star', '✦'),
+  secretVariant(QVT_CARDS, 'qvt-chief-happiness-officer', 'star2', '☺'),
+  secretVariant(QVT_CARDS, 'qvt-responsable-qvt', 'star', '☁'),
+  secretVariant(QVT_CARDS, 'qvt-directeur-qvt', 'star2', '✧'),
+  secretVariant(QVT_CARDS, 'qvt-charge-integration', 'star', '✦'),
+  secretVariant(QVT_CARDS, 'qvt-consultant-qvt', 'star', '☁'),
+  secretVariant(QVT_CARDS, 'qvt-charge-formation', 'star', '✧'),
+  secretVariant(QVT_CARDS, 'qvt-charge-communication-interne', 'star', '☺'),
+  secretVariant(QVT_CARDS, 'qvt-responsable-integration', 'star2', '✦'),
+  secretVariant(QVT_CARDS, 'qvt-responsable-developpement-competences', 'star2', '◉'),
+  secretVariant(QVT_CARDS, 'qvt-responsable-engagement', 'star2', '◆'),
+  secretVariant(QVT_CARDS, 'qvt-responsable-experience-collaborateur', 'star2', '✚')
 ];
 
 export const ALL_QVT_CARDS: Card[] = [...QVT_CARDS, ...QVT_VARIANTS];
