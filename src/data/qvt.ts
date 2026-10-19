@@ -127,7 +127,10 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 105,
     retreat: 1,
     ability: { name: 'Flux tendu', text: 'Une fois par tour : attache 1 café à ce Planqué.', kind: 'attachEnergy', oncePerTurn: true },
-    attacks: [{ name: 'Kaizen', cost: 2, damage: 50, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }],
+    attacks: [
+      { name: 'Kaizen', cost: 2, damage: 50, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] },
+      { name: 'Chronométrage', cost: 2, damage: 40, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
+    ],
     flavor: 'Il a optimisé la réunion. Elle dure maintenant 55 minutes.'
   }),
 
