@@ -95,3 +95,95 @@ Deux observations supplémentaires, vérifiées dans les docs :
 Aucun nom ne change sans ta réponse. Les 226 cartes de base se répartissent en
 **215 Planqués + 8 Collègues + 3 Objets** (`CARD-SPEC.md` §1) : les 11 noms de
 Collègues et d'Objets seront tirés de ce que tu auras tranché ici.
+
+## 6. Propositions (à valider)
+
+Chaque proposition est chiffrée : **[gratuit]** = aucun identifiant existant ne bouge,
+**[cartes]** = des noms de cartes changent, **[code]** = un code de faction change
+(et donc le préfixe des identifiants).
+
+> **Règle d'or du moment** : aucune carte n'existe en dehors de **SSE**. Renommer les
+> neuf autres factions est **gratuit** aujourd'hui. Après les 286 cartes, chaque
+> renommage devient une migration de sauvegarde.
+
+### P1 — Les trois axes « chefs »
+
+Le chevauchement est **voulu** (`FACTIONS.md:222` : la Direction, c'est « le COMEX »),
+mais il produit trois collisions concrètes.
+
+| Proposition | Détail | Coût |
+|---|---|---|
+| Faction `MANAGER` → **« Encadrement »** | Sépare l'encadrement de proximité (Feu) des dirigeants (`DIRECTION`) et du stade COMEX | **[code]** `manager-` → `encadrement-` (gratuit : 0 carte) |
+| Cadre « Directeur général » → **« Chef des ventes »** | Garde le thème Feu (quotas, pression) sans reprendre « Directeur », déjà pris par Direction | **[cartes]** |
+| Carte N+1 « Ton N+1 » → **« Ton chef »** | Un nom de carte ne doit pas être un nom de stade | **[cartes]** |
+| Carte N+1 « COMEX fantôme » → **« Plaque de porte »** | Même raison ; la plaque dit un nom, il n'y a personne derrière | **[cartes]** |
+
+`DIRECTION` **garde son nom** : c'est bien le COMEX, et sa ligne (« Directeur adjoint »,
+« PDG ») est déjà cohérente avec son identité.
+
+### P2 — « Happiness Manager » (faction *et* carte)
+
+| Proposition | Détail | Coût |
+|---|---|---|
+| Faction → **« QVT »** *(recommandé)* | Le service, pas le titre. La ligne existe déjà : « **Chargé QVT** → Happiness Manager → Chief Happiness Officer ». Sigle réel de 3 lettres, comme SSE et RH | **[code]** `happiness-` → `qvt-` (gratuit) |
+| Faction → **« Bien-être »** | Plus explicite, moins corporate, abréviation `BIE` | **[code]** |
+
+Les cartes ne changent pas : « Happiness Manager » redevient un **titre**, ce qu'il est.
+
+### P3 — « Service Support »
+
+| Proposition | Détail | Coût |
+|---|---|---|
+| Faction → **« Support »** *(recommandé)* | Supprime la redondance (« Service Service »), garde `SUP`, et les trois cartes de la ligne disent déjà « support ». Le code de faction ne bouge pas : seul le nom affiché change | **[gratuit]** |
+| Garder tel quel | C'est bien le *helpdesk* : la redondance est défendable | — |
+
+### P4 — « Intérimaire »
+
+| Proposition | Détail | Coût |
+|---|---|---|
+| Faction → **« Intérim »** *(recommandé)* | Le **secteur**, pas la personne : les cartes gardent « Intérimaire », « Intérimaire confirmé », « Chef d'équipe intérimaire » — comme la ligne l'écrit déjà | **[code]** `interimaire-` → `interim-` (gratuit) |
+| Faction → **« Renforts »** | Insiste sur « ils comblent les trous », colle au chaos multi-énergie | **[code]** |
+
+### P5 — Abréviations hétérogènes
+
+Pas de renommage : on **écrit la règle** qui rend l'ensemble cohérent.
+
+> **L'abréviation est le sigle réel quand il existe (SSE, RH, AC, QVT) ; sinon, trois
+> lettres tirées du nom (MGR, HAP, TEC, DIR, SYN, SUP).**
+
+`AC` cesse d'être une anomalie : « Amélioration continue » a bien un sigle de deux
+lettres. Coût : **[gratuit]**, une ligne dans `AGENTS.md` §3.2 (et dans `FACTION_META`).
+
+### P6 — « Reprise de poste » orphelin
+
+| Proposition | Détail | Coût |
+|---|---|---|
+| **Retirer** le terme *(recommandé)* | D-022 a supprimé la reprise de poste : le terme n'a plus de référent. « Relève » reste le seul mot pour l'après-K.O. | **[gratuit]** |
+| Le réaffecter | « Reprise de poste » deviendrait le *titre de l'écran* de choix après K.O. — mais ça ferait deux mots pour une seule chose | **[gratuit]**, non recommandé |
+
+### P7 — « Courrier » (main) contre « Bac à courrier » (paquet)
+
+| Proposition | Détail | Coût |
+|---|---|---|
+| La main → **« Bannette »** *(recommandé)* | La bannette, c'est la corbeille à courrier **sur ton bureau** : le paquet reste « Bac à courrier », l'image est la même famille et les deux ne se confondent plus | **[gratuit]** : le code garde `hand`, seule l'interface change |
+| Le paquet → « Tournée » | Renommer le paquet marche aussi, mais « bac » est déjà installé dans l'interface (« Ouvrir un bac ») | **[gratuit]** |
+
+### P8 — Noms d'attaque en double
+
+| Proposition | Détail | Coût |
+|---|---|---|
+| **Écrire la règle** | Une **ligne** garde ses noms d'attaque (le Cadre d'un Planqué garde les siens, comme le fait le jeu réel) ; **deux lignes différentes ne partagent pas un nom** | **[gratuit]** |
+| Psychiatre : « Diagnostic » → **« Entretien »** | Garde le double sens (entretien d'embauche / entretien thérapeutique) et libère le doublon avec Médecin-chef | **[cartes]** |
+| Responsable hygiène : « Protocole » → **« Désinfection »** | Plus concret, et libère le doublon | **[cartes]** |
+
+Médecin-chef et son Cadre gardent « Diagnostic » et « Protocole » : c'est la **même
+ligne**, donc la même identité mécanique.
+
+## 7. Trouvé en chemin (hors des 8 points)
+
+- **« Open-space » est aussi un nom de carte** (`FACTIONS.md:97`, un *Lieu* de la
+  faction Manager) alors que c'est le terme du **Banc**. Aucune conséquence au
+  lancement : les Lieux sont **hors périmètre** (D-020). À surveiller quand ils
+  arriveront.
+- Les 8 Collègues et 3 Objets du lancement sont **déjà esquissés** dans `FACTIONS.md`
+  (un par faction, plus quelques autres). Leurs noms suivront les choix ci-dessus.
