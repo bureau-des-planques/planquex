@@ -249,6 +249,199 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Shiatsu express', cost: 1, damage: 20 }],
     flavor: 'Il a massé les épaules. Le stress est remonté au cou.'
+  }),
+
+  // Ligne 7 : Chargé d'intégration → Responsable intégration (2 stades)
+  base({
+    id: 'qvt-charge-integration',
+    name: 'Chargé d\'intégration',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 60,
+    retreat: 1,
+    attacks: [{ name: 'Livret d\'accueil', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'Le livret d\'accueil fait 80 pages. La journée d\'intégration dure une heure.'
+  }),
+  base({
+    id: 'qvt-responsable-integration',
+    evolvesFrom: 'qvt-charge-integration',
+    name: 'Responsable intégration',
+    stage: 'N+1',
+    rarity: '2D',
+    hp: 100,
+    retreat: 1,
+    ability: { name: 'Parrainage', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
+    attacks: [{ name: 'Journée d\'intégration', cost: 2, damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'L\'intégration est réussie. Le poste est supprimé.'
+  }),
+
+  // Ligne 8 : Conseiller en évolution professionnelle → Responsable développement des compétences
+  base({
+    id: 'qvt-conseiller-evolution-professionnelle',
+    name: 'Conseiller en évolution professionnelle',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 60,
+    retreat: 1,
+    attacks: [{ name: 'Bilan de compétences', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'Les compétences sont reconnues. Le budget ne l\'est pas.'
+  }),
+  base({
+    id: 'qvt-responsable-developpement-competences',
+    evolvesFrom: 'qvt-conseiller-evolution-professionnelle',
+    name: 'Responsable développement des compétences',
+    stage: 'N+1',
+    rarity: '3D',
+    hp: 110,
+    retreat: 2,
+    attacks: [
+      { name: 'Plan de formation', cost: 2, damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Attestation de formation', cost: 3, damage: 70, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
+    ],
+    flavor: 'Le plan de formation est validé. Les formations sont reportées.'
+  }),
+
+  // Ligne 9 : Consultant QVT → Responsable de l'expérience collaborateur
+  base({
+    id: 'qvt-consultant-qvt',
+    name: 'Consultant QVT',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 55,
+    retreat: 1,
+    attacks: [{ name: 'Diagnostic', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'Le diagnostic est livré. La solution est une autre mission.'
+  }),
+  base({
+    id: 'qvt-responsable-experience-collaborateur',
+    evolvesFrom: 'qvt-consultant-qvt',
+    name: 'Responsable de l\'expérience collaborateur',
+    stage: 'N+1',
+    rarity: '2D',
+    hp: 105,
+    retreat: 1,
+    ability: { name: 'Point d\'étape', text: 'Une fois par tour : soigne 10 et retire un statut de ce Planqué.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
+    attacks: [{ name: 'Entretien de parcours', cost: 2, damage: 50 }],
+    flavor: 'Le parcours est fluide. Il traverse trois directions.'
+  }),
+
+  // Ligne 10 : Chargé de formation → Chef de projet formation
+  base({
+    id: 'qvt-charge-formation',
+    name: 'Chargé de formation',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 60,
+    retreat: 1,
+    attacks: [{ name: 'Convocation', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'La formation est annulée. La convocation est partie.'
+  }),
+  base({
+    id: 'qvt-chef-projet-formation',
+    evolvesFrom: 'qvt-charge-formation',
+    name: 'Chef de projet formation',
+    stage: 'N+1',
+    rarity: '2D',
+    hp: 95,
+    retreat: 1,
+    attacks: [
+      { name: 'Catalogue', cost: 2, damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Évaluation à froid', cost: 2, damage: 50 }
+    ],
+    flavor: 'Le projet est livré. L\'évaluation ne l\'est jamais.'
+  }),
+
+  // Ligne 11 : Chargé de l'engagement → Responsable de l'engagement → Chief Happiness Officer COMEX
+  base({
+    id: 'qvt-charge-engagement',
+    name: 'Chargé de l\'engagement',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 55,
+    retreat: 1,
+    attacks: [{ name: 'Baromètre', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'Le baromètre progresse. Le taux de réponse, non.'
+  }),
+  base({
+    id: 'qvt-responsable-engagement',
+    evolvesFrom: 'qvt-charge-engagement',
+    name: 'Responsable de l\'engagement',
+    stage: 'N+1',
+    rarity: '3D',
+    hp: 110,
+    retreat: 2,
+    attacks: [
+      { name: 'Semaine de l\'engagement', cost: 2, damage: 50 },
+      { name: 'Action collective', cost: 3, damage: 80, text: 'Le Planqué adverse est Immobilisation.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
+    ],
+    flavor: 'L\'engagement est mesuré. La mesure n\'engage personne.'
+  }),
+  base({
+    id: 'qvt-chief-happiness-officer-ex',
+    evolvesFrom: 'qvt-responsable-engagement',
+    name: 'Chief Happiness Officer COMEX',
+    stage: 'N+2',
+    rarity: '4D',
+    hp: 180,
+    retreat: 3,
+    ex: true,
+    attacks: [
+      { name: 'Certification du bonheur', cost: 2, damage: 80 },
+      { name: 'Facture du bonheur', cost: 3, damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+    ],
+    flavor: 'Le bonheur est obligatoire. Il est aussi facturé.'
+  }),
+
+  // Entrants seuls (suite)
+  base({
+    id: 'qvt-assistant-qvt',
+    name: 'Assistant QVT',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 60,
+    retreat: 1,
+    attacks: [{ name: 'Commande groupée', cost: 1, damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
+    flavor: 'Il commande les fruits. La facture arrive avant eux.'
+  }),
+  base({
+    id: 'qvt-charge-communication-interne',
+    name: 'Chargé de communication interne',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 55,
+    retreat: 1,
+    attacks: [{ name: 'Newsletter', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'L\'article est publié. L\'outil d\'envoi est en maintenance.'
+  }),
+  base({
+    id: 'qvt-charge-evenements-internes',
+    name: 'Chargé d\'événements internes',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 60,
+    retreat: 1,
+    attacks: [{ name: 'Pot de départ', cost: 1, damage: 20 }],
+    flavor: 'La salle est réservée. Le budget est en attente de validation.'
+  }),
+  base({
+    id: 'qvt-charge-mobilite-interne',
+    name: 'Chargé de mobilité interne',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 65,
+    retreat: 1,
+    attacks: [{ name: 'Mutation', cost: 1, damage: 10, text: 'Échange ce Planqué avec un Planqué du Rack.', effects: [{ kind: 'switchSelf' }] }],
+    flavor: 'Le poste est ouvert. La mobilité est gelée.'
+  }),
+  base({
+    id: 'qvt-charge-vie-associative',
+    name: 'Chargé de vie associative',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 55,
+    retreat: 1,
+    attacks: [{ name: 'Tournoi de babyfoot', cost: 1, damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
+    flavor: 'Le tournoi est annulé. La coupe est déjà gravée.'
   })
 ];
 
@@ -269,7 +462,15 @@ export const QVT_VARIANTS: Card[] = [
   variant('qvt-happiness-manager', 'qvt-happiness-manager-star', '1S', '✦'),
   variant('qvt-chief-happiness-officer', 'qvt-chief-happiness-officer-star2', '2S', '☺'),
   variant('qvt-responsable-qvt', 'qvt-responsable-qvt-star', '1S', '☁'),
-  variant('qvt-directeur-qvt', 'qvt-directeur-qvt-star2', '2S', '✧')
+  variant('qvt-directeur-qvt', 'qvt-directeur-qvt-star2', '2S', '✧'),
+  variant('qvt-charge-integration', 'qvt-charge-integration-star', '1S', '✦'),
+  variant('qvt-consultant-qvt', 'qvt-consultant-qvt-star', '1S', '☁'),
+  variant('qvt-charge-formation', 'qvt-charge-formation-star', '1S', '✧'),
+  variant('qvt-charge-communication-interne', 'qvt-charge-communication-interne-star', '1S', '☺'),
+  variant('qvt-responsable-integration', 'qvt-responsable-integration-star2', '2S', '✦'),
+  variant('qvt-responsable-developpement-competences', 'qvt-responsable-developpement-competences-star2', '2S', '◉'),
+  variant('qvt-responsable-engagement', 'qvt-responsable-engagement-star2', '2S', '◆'),
+  variant('qvt-responsable-experience-collaborateur', 'qvt-responsable-experience-collaborateur-star2', '2S', '✚')
 ];
 
 export const ALL_QVT_CARDS: Card[] = [...QVT_CARDS, ...QVT_VARIANTS];
