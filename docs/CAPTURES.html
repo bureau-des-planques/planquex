@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>Captures — Bureau des Planqués</title>
+<style>
+  :root{
+    --bg:#0b1220; --panel:#121c2e; --panel2:#17233a; --line:#243351;
+    --ink:#e8eef8; --dim:#93a4c0; --accent:#ffd76e; --ok:#4ade80; --warn:#fbbf24;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    padding:0 0 8rem;
+  }
+  header{padding:1.1rem 1rem .7rem; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#101a2c,var(--bg));}
+  h1{margin:0 0 .3rem; font-size:1.35rem; letter-spacing:.01em}
+  .sub{margin:0; color:var(--dim); font-size:.86rem}
+  .bar{margin-top:.8rem; height:8px; background:var(--panel2); border-radius:99px; overflow:hidden}
+  .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,#4ade80,#ffd76e); transition:width .25s}
+  .count{margin:.45rem 0 0; font-size:.8rem; color:var(--dim); display:flex; gap:.6rem; flex-wrap:wrap}
+  .count b{color:var(--ink); font-weight:600}
+  main{padding:0 .7rem}
+  .lot{margin:1.4rem 0 .4rem; font-size:.82rem; text-transform:uppercase; letter-spacing:.09em; color:var(--accent)}
+  .lotnote{margin:.2rem 0 .8rem; font-size:.82rem; color:var(--dim)}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    padding:.85rem .9rem; margin-bottom:.7rem;
+  }
+  .card.done{background:var(--panel2); border-color:#2f6b45}
+  .row{display:flex; gap:.75rem; align-items:flex-start}
+  .row input[type=checkbox]{
+    flex:0 0 auto; width:26px; height:26px; margin:.15rem 0 0; accent-color:#4ade80;
+  }
+  .body{flex:1 1 auto; min-width:0}
+  .name{font-weight:600; font-size:.97rem; margin:0 0 .2rem}
+  .fid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.74rem; color:var(--dim); word-break:break-all}
+  .look{margin:.5rem 0 0; font-size:.88rem}
+  .cand{margin:.4rem 0 0; font-size:.82rem; color:var(--dim)}
+  .proves{margin:.45rem 0 0; font-size:.82rem; color:var(--dim)}
+  .proves b{color:#cfe0f5; font-weight:600}
+  .tag{
+    display:inline-block; font-size:.7rem; padding:.12rem .45rem; border-radius:99px;
+    background:#1d3a2a; color:var(--ok); margin-left:.4rem; vertical-align:.08em;
+  }
+  .tag.miss{background:#3a2a1d; color:var(--warn)}
+  input[type=text]{
+    width:100%; margin-top:.55rem; padding:.6rem .7rem; font-size:.9rem;
+    background:#0d1524; color:var(--ink); border:1px solid var(--line); border-radius:9px;
+  }
+  input[type=text]::placeholder{color:#5f708d}
+  footer{
+    position:fixed; left:0; right:0; bottom:0; padding:.7rem .8rem calc(.7rem + env(safe-area-inset-bottom));
+    background:linear-gradient(180deg,transparent,var(--bg) 28%); display:flex; gap:.5rem; flex-wrap:wrap;
+  }
+  button{
+    font:inherit; font-size:.88rem; padding:.7rem 1rem; border-radius:11px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--ink);
+  }
+  button.primary{background:#2f6b45; border-color:#3f8a5b}
+  textarea{
+    width:100%; min-height:11rem; margin-top:.6rem; padding:.6rem; font-size:.78rem;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:#0d1524; color:var(--ink);
+    border:1px solid var(--line); border-radius:9px;
+  }
+  .warn{font-size:.8rem; color:var(--warn); margin:.6rem 0 0}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Captures — guide de terrain</h1>
+  <p class="sub">Touche une carte pour la cocher. La progression et les intitulés restent sur cet appareil.</p>
+  <div class="bar"><i id="fill"></i></div>
+  <p class="count" id="count"></p>
+</header>
+
+<main id="lots"></main>
+
+<footer>
+  <button class="primary" id="mk">Récapitulatif</button>
+  <button id="clr">Tout décocher</button>
+</footer>
+
+<script>
+const ITEMS = [
+  {lot:"A", id:"01-menu-astuces.png", name:"L'entrée de l'aide",
+   look:"L'écran de menu où figure l'entrée qui mène aux règles, avec son intitulé visible.",
+   cand:"FR « Astuces du jeu », « Aide », « Règles » · EN « Tips », « Help », « How to play » · JP ゲームのヒント",
+   proves:"Prouve l'accès, pas une règle.", covered:false},
+  {lot:"A", id:"02-tour.png", name:"Le déroulé d'un tour",
+   look:"Une page qui dit qui commence, ce qu'on pioche, quand on attache, quand on attaque.",
+   cand:"FR « Déroulement d'un tour », « Comment jouer » · EN « Turn flow » · JP ターンの流れ",
+   proves:"Premier joueur · Pression (1/tour, café non consommé) · Évolution impossible au 1er tour.", covered:false},
+  {lot:"A", id:"03-zone-energie.png", name:"La zone d'énergie",
+   look:"Combien d'énergie par tour, l'attachement, et ce que fait l'incolore.",
+   cand:"FR « Zone d'énergie » · EN « Energy zone » · JP エネルギーゾーン",
+   proves:"Machine à café (1 généré + 1 attaché) · Types de café · incolore accepte tout.", covered:false},
+  {lot:"A", id:"04-statuts.png", name:"Les conditions spéciales",
+   look:"La liste des états, leur effet, ET l'ordre dans lequel ils se résolvent.",
+   cand:"FR « Conditions spéciales », « États spéciaux » · EN « Special conditions » · JP 特殊状態",
+   proves:"Statuts et ordre des statuts · cumul.", covered:false},
+  {lot:"A", id:"05-ko-defaite.png", name:"K.O., points, victoire",
+   look:"Combien de points pour gagner, ce qui arrive quand un Planqué est K.O., qui choisit le suivant.",
+   cand:"FR « K.O. », « Points », « Conditions de victoire » · EN « Knock Out », « Points » · JP きぜつ / 勝敗",
+   proves:"Défaite (3 Interventions, ou plus aucun Planqué) · craquage · qui fournit la relève.", covered:false},
+  {lot:"A", id:"06-types-energie.png", name:"Le choix des types d'énergie",
+   look:"L'écran d'édition du Chariot, là où on coche les types d'énergie — compte les emplacements.",
+   cand:"Dans « Modifier le Chariot » / « Éditer le classeur »",
+   proves:"LE PLUS IMPORTANT : le plafond de 3 types de café. Il bloque le ticket #30.", covered:false},
+  {lot:"A", id:"07-releve.png", name:"Bonus — « choisis un Planqué »",
+   look:"L'écran de choix après un K.O., si tu tombes dessus en jouant.",
+   cand:"—",
+   proves:"Prouve qu'un joueur choisit sa relève (D-022 l'a tranché sans source).", covered:false},
+  {lot:"A", id:"08-chariot-valide.png", name:"Bonus — la validité du Chariot",
+   look:"Un écran qui compte les cartes ou signale un Chariot invalide.",
+   cand:"—",
+   proves:"20 cartes, max 2 par nom.", covered:false},
+  {lot:"A", id:"09-main-depart.png", name:"Bonus — la main de départ",
+   look:"Si le jeu propose quelque chose au départ : remélange, choix, reprise.",
+   cand:"—",
+   proves:"La « reprise de poste ». Une capture qui l'ABSENCE confirme clôt O-009.", covered:false},
+
+  {lot:"B", id:"B01-accueil.png", name:"Accueil / hub",
+   look:"La place des raccourcis, la devise en haut, ce qui est mis en avant.",
+   cand:"", proves:"Refaire l'écran d'accueil.", covered:true},
+  {lot:"B", id:"B02-arrivage.png", name:"Ouverture d'un Arrivage",
+   look:"Le rythme de révélation, le récapitulatif final, le bouton « encore ».",
+   cand:"", proves:"L'animation d'ouverture.", covered:true},
+  {lot:"B", id:"B03-parc.png", name:"Parc / collection",
+   look:"La grille (colonnes, densité), les filtres, le tri, la barre de progression.",
+   cand:"", proves:"La densité de la collection.", covered:true},
+  {lot:"B", id:"B04-fiche-carte.png", name:"Fiche carte (zoom)",
+   look:"Le gabarit lu en grand : ce qui est lisible, ce qui est relégué.",
+   cand:"", proves:"Notre CardDetail.", covered:true},
+  {lot:"B", id:"B05-chariot.png", name:"Chariot / éditeur",
+   look:"Comment la validité est montrée, le compteur, les filtres.",
+   cand:"", proves:"Notre écran Chariot.", covered:false},
+  {lot:"B", id:"B06-combat-plateau.png", name:"Combat — le plateau",
+   look:"La disposition exacte : Poste au centre, Rack dessous, main en bas, jauge, états.",
+   cand:"", proves:"La mise en page du combat.", covered:false},
+  {lot:"B", id:"B07-combat-choix.png", name:"Combat — choisir une action",
+   look:"Comment les attaques sont présentées, ce qui est grisé quand c'est impossible.",
+   cand:"", proves:"Le choix d'action.", covered:false},
+  {lot:"B", id:"B08-combat-resultat.png", name:"Combat — résultat",
+   look:"Ce qui est récapitulé : qui a gagné, comment, ce qu'on gagne.",
+   cand:"", proves:"L'écran de fin de combat.", covered:false},
+  {lot:"B", id:"B09-boutique.png", name:"Boutique / Économat",
+   look:"La grille, les devises, la place des minuteurs.",
+   cand:"", proves:"Notre futur Économat.", covered:false},
+  {lot:"B", id:"B10-missions.png", name:"Missions / Note de service",
+   look:"La liste, la progression, la récompense, l'état « réclamé ».",
+   cand:"", proves:"Nos Notes de service.", covered:false},
+  {lot:"B", id:"B11-profil.png", name:"Profil",
+   look:"Avatar, niveau, statistiques visibles.",
+   cand:"", proves:"Notre profil.", covered:false},
+
+  {lot:"C", id:"C01-titre.png", name:"Écran titre / connexion",
+   look:"Le premier écran, avant tout.", cand:"",
+   proves:"Première impression — nous n'avons aucun écran de démarrage.", covered:false},
+  {lot:"C", id:"C02-onboarding-1.png", name:"Onboarding — écran 1",
+   look:"Le premier des écrans d'introduction du premier lancement.", cand:"",
+   proves:"« Journée d'intégration » : rien ne présente le jeu aujourd'hui.", covered:false},
+  {lot:"C", id:"C03-onboarding-2.png", name:"Onboarding — écran 2",
+   look:"La suite du fil d'introduction.", cand:"", proves:"Le rythme et la longueur de l'introduction.", covered:false},
+  {lot:"C", id:"C04-onboarding-3.png", name:"Onboarding — écran 3",
+   look:"La fin du fil, et ce qu'il offre pour démarrer.", cand:"",
+   proves:"Ce qu'on donne au joueur au départ.", covered:false},
+  {lot:"C", id:"C05-tutoriel-combat.png", name:"Tutoriel de combat guidé",
+   look:"Le combat pas-à-pas qui enseigne. Priorité haute de l'inventaire.",
+   cand:"", proves:"Les règles ne sont pas découvrables sans lui.", covered:false},
+  {lot:"C", id:"C06-reprise-combat.png", name:"Reprise d'un combat",
+   look:"L'écran ou le bouton « Reprendre » après une interruption. Priorité haute.",
+   cand:"", proves:"Un combat interrompu est perdu chez nous.", covered:false},
+  {lot:"C", id:"C07-missions-theme.png", name:"Séries thématiques de missions",
+   look:"Une collection liée à une série de missions. Priorité haute.",
+   cand:"", proves:"La collection n'a aucun objectif long terme chez nous.", covered:false},
+  {lot:"C", id:"C08-present-box.png", name:"Boîte de récompenses différées",
+   look:"Là où s'accumulent les cadeaux non réclamés.", cand:"",
+   proves:"Notre futur « Casier ».", covered:false},
+  {lot:"C", id:"C09-inventaire.png", name:"Inventaire d'objets",
+   look:"La liste des objets possédés.", cand:"", proves:"Nous n'avons pas d'écran d'inventaire.", covered:false},
+  {lot:"C", id:"C10-skins.png", name:"Variantes cosmétiques de cartes",
+   look:"Les apparences alternatives d'une carte.", cand:"",
+   proves:"Nos futurs « Autocollants ».", covered:false},
+  {lot:"C", id:"C11-echange.png", name:"Échange de cartes",
+   look:"Le rituel d'échange entre joueurs.", cand:"",
+   proves:"Nos futurs « Échanges de postes » (hors périmètre de lancement).", covered:false},
+  {lot:"C", id:"C12-amis.png", name:"Amis / fil social",
+   look:"La liste de camarades et le fil d'activité.", cand:"",
+   proves:"Nos futurs « Camarades » (hors périmètre).", covered:false},
+  {lot:"C", id:"C13-arene.png", name:"Classement / Échelon",
+   look:"Le rang, la progression, la saison.", cand:"",
+   proves:"Notre futur mode classé (hors périmètre).", covered:false},
+  {lot:"C", id:"C14-aide.png", name:"Aide contextuelle",
+   look:"Le « ? » en jeu, ou le centre d'aide.", cand:"",
+   proves:"Nous n'avons aucune aide en jeu.", covered:false}
+];
+
+const LOTS = {
+  A:{title:"Lot A — les règles", note:"Le seul lot bloquant : les pages « Astuces du jeu ». Il débloque le ticket #30 et clôt O-012."},
+  B:{title:"Lot B — l'UI que nous avons déjà", note:"Pour affiner nos écrans. Les quatre marqués « legacy » ont déjà une capture : regarde-la avant de la refaire."},
+  C:{title:"Lot C — l'UI que nous n'avons pas", note:"Pour concevoir. À faire en dernier : plusieurs sont hors périmètre de lancement."}
+};
+
+const KEY = 'captures-bdp-v1';
+let st = {};
+try { st = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { st = {}; }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(st)); } catch(e){} }
+const get = id => st[id] || {done:false, label:''};
+const set = (id,v) => { st[id] = Object.assign({}, get(id), v); save(); };
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function render(){
+  const root = document.getElementById('lots');
+  root.innerHTML = '';
+  for (const lot of ['A','B','C']){
+    const h = document.createElement('h2');
+    h.className = 'lot'; h.textContent = LOTS[lot].title;
+    root.appendChild(h);
+    const n = document.createElement('p');
+    n.className = 'lotnote'; n.textContent = LOTS[lot].note;
+    root.appendChild(n);
+
+    ITEMS.filter(i => i.lot === lot).forEach(it => {
+      const s = get(it.id);
+      const c = document.createElement('div');
+      c.className = 'card' + (s.done ? ' done' : '');
+      c.innerHTML =
+        '<div class="row">' +
+          '<input type="checkbox" ' + (s.done ? 'checked' : '') + ' aria-label="' + esc(it.name) + '">' +
+          '<div class="body">' +
+            '<p class="name">' + esc(it.name) +
+              (it.covered ? '<span class="tag">legacy</span>' : '') + '</p>' +
+            '<div class="fid">' + esc(it.id) + '</div>' +
+            (it.look ? '<p class="look">' + esc(it.look) + '</p>' : '') +
+            (it.cand ? '<p class="cand">' + esc(it.cand) + '</p>' : '') +
+            (it.proves ? '<p class="proves"><b>Prouve :</b> ' + esc(it.proves) + '</p>' : '') +
+            '<input type="text" placeholder="intitulé réel vu dans le jeu…" value="' + esc(s.label) + '">' +
+          '</div>' +
+        '</div>';
+      const cb = c.querySelector('input[type=checkbox]');
+      cb.addEventListener('change', () => { set(it.id, {done: cb.checked}); refresh(); });
+      const tx = c.querySelector('input[type=text]');
+      tx.addEventListener('input', () => set(it.id, {label: tx.value}));
+      root.appendChild(c);
+    });
+  }
+  refresh();
+}
+
+function refresh(){
+  let done = 0, tot = 0;
+  const per = {A:[0,0], B:[0,0], C:[0,0]};
+  ITEMS.forEach(i => {
+    tot++; per[i.lot][1]++;
+    if (get(i.id).done){ done++; per[i.lot][0]++; }
+  });
+  document.getElementById('fill').style.width = (100*done/tot) + '%';
+  document.getElementById('count').innerHTML =
+    '<span><b>' + done + '</b> / ' + tot + ' captures</span>' +
+    '<span>A : <b>' + per.A[0] + '/' + per.A[1] + '</b></span>' +
+    '<span>B : <b>' + per.B[0] + '/' + per.B[1] + '</b></span>' +
+    '<span>C : <b>' + per.C[0] + '/' + per.C[1] + '</b></span>';
+}
+
+function recap(){
+  const d = new Date().toISOString().slice(0,10);
+  let out = '<!-- généré par docs/CAPTURES.html le ' + d + ' -->\n';
+  for (const lot of ['A','B','C']){
+    const rows = ITEMS.filter(i => i.lot === lot).map(i => {
+      const s = get(i.id);
+      return '| `' + i.id + '` | ' + (s.label ? s.label : 'à remplir') + ' | ' +
+             (s.done ? '✅ capturé' : 'à faire') + ' |';
+    });
+    out += '\n## ' + LOTS[lot].title + '\n\n| Fichier | Intitulé réel vu dans le jeu | État |\n|---|---|---|\n' + rows.join('\n') + '\n';
+  }
+  out += '\n> Version de l\'application : \n> Appareil / OS : \n> Langue de l\'interface : \n';
+  return out;
+}
+
+document.getElementById('mk').addEventListener('click', () => {
+  const ta = document.createElement('textarea');
+  ta.value = recap();
+  const w = document.createElement('p');
+  w.className = 'warn';
+  w.innerHTML = 'Sélectionne tout et copie — ou utilise la touche <em>copier</em> si elle apparaît.';
+  const main = document.getElementById('lots');
+  main.appendChild(w); main.appendChild(ta);
+  ta.focus(); ta.select();
+  try { if (navigator.clipboard) navigator.clipboard.writeText(ta.value); } catch(e){}
+  window.scrollTo(0, document.body.scrollHeight);
+});
+
+document.getElementById('clr').addEventListener('click', () => {
+  if (!confirm('Tout décocher ? Les intitulés écrits sont conservés.')) return;
+  Object.keys(st).forEach(k => { st[k].done = false; });
+  save(); render();
+});
+
+render();
+</script>
+</body>
+</html>
