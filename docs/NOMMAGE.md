@@ -96,7 +96,11 @@ Aucun nom ne change sans ta réponse. Les 226 cartes de base se répartissent en
 **215 Planqués + 8 Collègues + 3 Objets** (`CARD-SPEC.md` §1) : les 11 noms de
 Collègues et d'Objets seront tirés de ce que tu auras tranché ici.
 
-## 6. Propositions (à valider)
+## 6. Propositions — **actées le 19/10/2026**
+
+> Ces propositions ont toutes été **validées** en séance : le vocabulaire par **D-026**, les
+> conventions de noms de cartes par **D-027**, le déroulé complet étant en §8. Ce qui suit reste
+> pour mémoire — c'est la trace de ce qui a été arbitré, et les raisons de chaque choix.
 
 Chaque proposition est chiffrée : **[gratuit]** = aucun identifiant existant ne bouge,
 **[cartes]** = des noms de cartes changent, **[code]** = un code de faction change

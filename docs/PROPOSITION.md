@@ -325,9 +325,9 @@ Comme Genetic Apex (Mewtwo / Charizard / Pikachu), trois bacs thématiques :
 
 | Bac | Factions mises en avant | Fantasme |
 |---|---|---|
-| **Bac Direction** | Direction, RH, Support | Le pouvoir, les organigrammes, le helpdesk |
-| **Bac Terrain** | Technicien, Syndicat, Manager | Le terrain, la sueur, la pression |
-| **Bac Bureau** | SSE, Amélioration continue, Happiness Manager, Intérimaire | Le quotidien, les process, le bien-être, la précarité |
+| **Vivier Atelier** | Atelier, Management, Syndicat | les pôles, les techniciens, le terrain |
+| **Vivier Étage** | Amélioration continue, Support, Direction | la qualité, le process, le gestionnaire — et la Direction au-dessus |
+| **Vivier Bureaux** | RH, SSE, QVT, Intérim | la paie, la santé, le bien-être, la précarité |
 
 Chaque bac contient 5 cartes : 3 communes, 1 peu commune, 1 rare minimum. Les taux exacts seront calibrés par simulation et affichés dans l'écran « Taux d'obtention ».
 

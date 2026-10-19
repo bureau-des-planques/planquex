@@ -16,7 +16,7 @@
 | # | Type | Faction | Rôle mécanique | Faiblesse | Carte signature |
 |---|---|---|---|---|---|
 | 1 | Plante | **SSE** | Soin, statuts, résilience | Manager | Médecin du travail |
-| 2 | Feu | **Management** | Dégâts, burn-out, pression | Happiness Manager | Directeur général |
+| 2 | Feu | **Management** | Dégâts, burn-out, pression | QVT | Chef des ventes |
 | 3 | Eau | **QVT** | Énergie, relève, flux | Amélioration continue | Chief Happiness Officer |
 | 4 | Électricité | **Amélioration continue** | Dégâts étalés, gel, tempo | Technicien | Directeur qualité |
 | 5 | Psychique | **RH** | Dérive, banc, manipulation | Direction | DRH |
@@ -30,16 +30,16 @@
 
 | Faction | Vulnérable à |
 |---|---|
-| SSE | Manager |
-| Manager | Happiness Manager |
-| Happiness Manager | Amélioration continue |
-| Amélioration continue | Technicien |
+| SSE | Management |
+| Management | QVT |
+| QVT | Amélioration continue |
+| Amélioration continue | Atelier |
 | RH | Direction |
-| Technicien | RH |
-| Direction | Technicien |
-| Syndicat | Manager |
-| Intérimaire | Aucune |
-| Support | Technicien |
+| Atelier | RH |
+| Direction | Atelier |
+| Syndicat | Management |
+| Intérim | Aucune |
+| Support | Atelier |
 
 ---
 
@@ -80,13 +80,13 @@
 - **Rôle** : dégâts, burn-out, défausse d’énergie, jeu agressif.
 - **Faiblesse** : Happiness Manager (le bien-être éteint la pression).
 - **Ligne d’évolution** : Jeune manager → Manager de proximité → Directeur.
-- **COMEX (ex)** : **Directeur général** — « Il a dit “famille” dans un mail. »
+- **COMEX (ex)** : **Chef des ventes** — « Il a dit “famille” dans un mail. »
 
 | Carte | Stade | Rôle |
 |---|---|---|
 | Jeune manager | Entrant | Base, dégâts |
 | Chef de projet | Entrant | Base, tempo |
-| Ton Entrant | Entrant | Base, pression |
+| Ton chef | Entrant | Base, pression |
 | Manager de proximité | N+1 | Évolution, burn-out |
 | Directeur | N+2 | Gros dégâts, contrôle |
 | Réunion d’urgence | Objet | Défausse une énergie |
@@ -94,9 +94,9 @@
 | Objectif irréaliste | Objet | Épuisement |
 | Tableau Excel | Outil | +10 dégâts |
 | Entretien annuel | Collègue | Défausse + pioche |
-| Rack | Lieu | +10 dégâts aux attaques Feu |
+| Bureau partagé | Lieu | +10 dégâts aux attaques Feu |
 | Prime variable | Objet | Pioche / défausse |
-| **COMEX : Directeur général** | ex | 2 Interventions, attaque de zone |
+| **COMEX : Chef des ventes** | ex | 2 Interventions, attaque de zone |
 
 - **Direction artistique** : orange, rouge, cravates, tableaux de bord, néons.
 
@@ -229,7 +229,7 @@
 | Carte | Stade | Rôle |
 |---|---|---|
 | Chef de projet fantôme | Entrant | Base, esquive |
-| N+2 fantôme | Entrant | Base, surcharge |
+| Plaque de porte | Entrant | Base, surcharge |
 | Consultant externe | Entrant | Base, pioche |
 | Directeur adjoint | N+1 | Évolution, disruption |
 | PDG | N+2 | Gros dégâts, contrôle |

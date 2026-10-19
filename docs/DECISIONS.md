@@ -78,12 +78,18 @@ Le décalage est d'environ **20 points** aux stades hauts. Conséquence à ne pa
 le Moral **ralentit** la partie (il faut plus de Pressions par K.O.), donc cela se tranche avec une
 simulation, pas au feeling.
 
-### Propagation en attente (D-024, D-025)
+### Propagation faite — 19/10/2026
 
-Les deux décisions sont **actées**, mais leurs conséquences s'écrivent en **une seule
-passe** à la fin de la session de nommage — plutôt que de rééditer dix fois les mêmes
-fichiers. D'ici là, les fichiers ci-dessous portent encore les anciens noms : ce n'est
-pas une contradiction silencieuse, c'est un chantier listé.
+Les conséquences de D-024, D-025, D-026 et D-027 ont été écrites en **une seule passe** : le
+**code** d'abord (types, moteur, données, UI, tests — `check` 0, **62 tests**, `build` 0), puis
+les **docs vivants** (`AGENTS.md` §3 à §7, `FACTIONS.md`, `CARD-SPEC.md`, `PROPOSITION.md`,
+`MIROIR-2026-DELTAS.md`, `CORRESPONDANCES.md`). La liste des fichiers ci-dessous reste comme
+trace du chantier.
+
+> **Leçon de méthode** : deux passages `perl`/`sed` ont abîmé la prose qui *expliquait* les
+> changements (« le Seuil remplace le Seuil », « Psychiquechique »). Réparé, et vérifié. Sur un
+> document qui *parle* des termes, on édite à la main — le remplacement automatique ne distingue
+> pas le terme de sa définition.
 
 | Fichier | Ce qui reste à propager |
 |---|---|
