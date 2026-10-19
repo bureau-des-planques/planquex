@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import {
+  applyAction,
   attack,
   attackPreview,
   attachEnergy,
@@ -11,6 +12,7 @@ import {
   endTurn,
   evolve,
   isFirstTurnFor,
+  legalActions,
   legalAttacks,
   playAction,
   playBasic,
@@ -44,6 +46,19 @@ function ownedByPlayer(state: BattleState): number {
   const player = state.players.player;
   const inPlay = [player.active, ...player.bench].filter(Boolean).length;
   return player.hand.length + inPlay;
+}
+
+/** Met les cartes demandées en main (dans l'ordre) côté joueur, et rend leurs uids. */
+function withHand(state: BattleState, cardIds: string[]): { state: BattleState; uids: string[] } {
+  const next = structuredClone(state);
+  const uids: string[] = [];
+  // `unshift` en ordre inverse : `uids[0]` est la première carte demandée.
+  for (const cardId of [...cardIds].reverse()) {
+    const instance = createInstance(cardId, next.turn);
+    next.players.player.hand.unshift(instance);
+    uids.unshift(instance.uid);
+  }
+  return { state: next, uids };
 }
 
 describe('createBattle — mise en place', () => {
@@ -591,19 +606,6 @@ describe('Cartes Action — Objet illimité, Collègue 1 par tour (AGENTS.md §4
   const COLLEGUE_STATUT = 'rh-reunion-individuelle'; // Collègue : le Planqué adverse est Dérivé
   const COLLEGUE_CAFE = 'management-entretien-annuel'; // Collègue : 1 café adverse au rebut
 
-  /** Met les cartes demandées en main (dans l'ordre) côté joueur, et rend leurs uids. */
-  function withHand(state: BattleState, cardIds: string[]): { state: BattleState; uids: string[] } {
-    const next = structuredClone(state);
-    const uids: string[] = [];
-    // `unshift` en ordre inverse : `uids[0]` est la première carte demandée.
-    for (const cardId of [...cardIds].reverse()) {
-      const instance = createInstance(cardId, next.turn);
-      next.players.player.hand.unshift(instance);
-      uids.unshift(instance.uid);
-    }
-    return { state: next, uids };
-  }
-
   it('accepte autant d’Objets qu’on en a dans le tour', () => {
     const { state, uids } = withHand(freshBattle(), [OBJET_SOIN, OBJET_PIOCHE, OBJET_PIOCHE]);
     const handBefore = state.players.player.hand.length;
@@ -790,5 +792,152 @@ describe('Déterminisme — le hasard vient d’une graine (#29)', () => {
     // doivent pas forcément donner le même ordre de Chariot (comportement d’avant).
     const deck = (state: BattleState) => state.players.player.deck.map((card) => card.cardId);
     expect(deck(createBattle(DECK, DECK, 1))).not.toEqual(deck(createBattle(DECK, DECK, 2)));
+  });
+});
+
+describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
+  /** Le tour du joueur **après** l'ouverture : café attachable, évolution possible. */
+  function afterOpening(state: BattleState = freshBattle()): BattleState {
+    return endTurn(endTurn(state));
+  }
+
+  /** Ce que le moteur voit au Poste du joueur, quand il y a un Planqué. */
+  function activeCard(state: BattleState) {
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const card = getCard(active.cardId);
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    return card;
+  }
+
+  it('ne propose que des actions que applyAction exécute', () => {
+    const state = afterOpening();
+
+    const actions = legalActions(state);
+
+    expect(actions.length).toBeGreaterThan(0);
+    for (const action of actions) {
+      // Une action offerte **change** l'état : c'est le critère que l'écran
+      // exploite. Une action refusée rendrait l'état reçu tel quel.
+      expect(applyAction(state, action), JSON.stringify(action)).not.toEqual(state);
+    }
+  });
+
+  it('ne propose jamais deux fois la même action', () => {
+    const { state } = withHand(afterOpening(), ['sse-trousse-secours', 'support-escalade']);
+
+    const keys = legalActions(state).map((action) => JSON.stringify(action));
+
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('interdit l’attachement de café au premier tour — dans la liste comme au moteur', () => {
+    const state = freshBattle();
+    expect(state.turn).toBe(1);
+
+    expect(legalActions(state).some((action) => action.type === 'attachEnergy')).toBe(false);
+
+    // Le moteur refuse aussi : la liste ne ment pas dans les deux sens.
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    expect(attachEnergy(state, active.uid).players.player.active?.energy).toBe(0);
+  });
+
+  it('n’offre aucune Pression que le café ne couvre pas', () => {
+    const state = freshBattle();
+    const free = activeCard(state).attacks.filter((entry) => entry.cost === 0).length;
+
+    const attacks = legalActions(state).filter((action) => action.type === 'attack');
+
+    expect(attacks).toHaveLength(free);
+  });
+
+  it('offre l’attachement dès le tour suivant, une fois par Planqué en jeu', () => {
+    const state = afterOpening();
+    const player = state.players.player;
+    const inPlay = [player.active, ...player.bench].filter(Boolean).length;
+
+    const attaches = legalActions(state).filter((action) => action.type === 'attachEnergy');
+
+    expect(attaches).toHaveLength(inPlay);
+    // Une fois attaché, la liste n'en propose plus.
+    const attached = attachEnergy(state, player.active?.uid ?? '');
+    expect(legalActions(attached).some((action) => action.type === 'attachEnergy')).toBe(false);
+  });
+
+  it('retire les Pressions d’un tour déjà attaqué', () => {
+    const state = structuredClone(afterOpening());
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    active.energy = 5;
+
+    expect(legalActions(state).some((action) => action.type === 'attack')).toBe(true);
+
+    state.players.player.hasAttacked = true;
+    expect(legalActions(state).some((action) => action.type === 'attack')).toBe(false);
+  });
+
+  it('rend les cinq transitions que l’écran ne savait pas atteindre', () => {
+    const base = afterOpening();
+    const active = base.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const originalActive = CARD_BY_ID.get(active.cardId);
+    if (!isPlanque(originalActive)) throw new Error('Carte inconnue');
+
+    // Un Planqué de test au Poste : Talent, mot-clé D-004, rotation payée par 1 café.
+    CARD_BY_ID.set(active.cardId, {
+      ...originalActive,
+      retreat: 1,
+      ability: { name: 'Talent de test', text: 'Test.', kind: 'heal', amount: 10 },
+      keywords: ['priorityShift']
+    });
+
+    // Une évolution du Poste de test : on ne dépend d'aucune carte de données.
+    const evolution = ALL_CARDS.filter(isPlanque).find(
+      (card) => card.stage !== 'ENTRANT' && !card.variantOf
+    );
+    if (!evolution) throw new Error('Aucune évolution dans les données');
+    const originalEvolution = CARD_BY_ID.get(evolution.id);
+    if (!isPlanque(originalEvolution)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(evolution.id, { ...originalEvolution, evolvesFrom: active.cardId });
+
+    try {
+      const state = structuredClone(base);
+      const poste = state.players.player.active;
+      if (!poste) throw new Error('Poste vide');
+      poste.energy = 1;
+      poste.playedTurn = 0;
+      state.players.player.hand = [
+        createInstance(evolution.id, state.turn),
+        createInstance('sse-trousse-secours', state.turn),
+        createInstance('support-escalade', state.turn)
+      ];
+
+      const types = new Set(legalActions(state).map((action) => action.type));
+
+      for (const transition of ['evolve', 'playAction', 'retreat', 'ability', 'priorityShift']) {
+        expect(types, `transition ${transition}`).toContain(transition);
+      }
+    } finally {
+      CARD_BY_ID.set(active.cardId, originalActive);
+      CARD_BY_ID.set(evolution.id, originalEvolution);
+    }
+  });
+
+  it('n’offre que la relève quand un Poste a craqué', () => {
+    const state = structuredClone(freshBattle());
+    state.players.ai.active = null;
+    state.pendingPromotion = 'ai';
+
+    const actions = legalActions(state);
+
+    expect(actions.every((action) => action.type === 'promoteActive')).toBe(true);
+    expect(actions).toHaveLength(state.players.ai.bench.filter(Boolean).length);
+  });
+
+  it('ne rend plus rien quand la partie est terminée', () => {
+    const state = structuredClone(freshBattle());
+    state.phase = 'ended';
+    expect(legalActions(state)).toEqual([]);
   });
 });

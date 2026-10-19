@@ -2,6 +2,7 @@ import { ACTION_KIND_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
   Attack,
   AttackEffect,
+  BattleAction,
   BattleState,
   CardInstance,
   PlayerId,
@@ -22,6 +23,18 @@ let uidCounter = 0;
  */
 export function isFirstTurnFor(state: BattleState, who: PlayerId): boolean {
   return state.turn <= (who === 'player' ? 1 : 2);
+}
+
+/**
+ * Le **premier tour de la partie**, tenu par le joueur : ni pioche, ni attachement
+ * de café (`AGENTS.md` §4). La Direction, elle, attache dès son premier tour (tour 2),
+ * c'est pourquoi ce n'est pas `isFirstTurnFor` qui sert ici.
+ *
+ * Une seule définition : `startTurn`, `attachEnergy` et `legalActions` lisent celle-ci,
+ * sinon l'écran et le moteur finiraient par ne plus dire la même chose (#58).
+ */
+function isOpeningTurn(state: BattleState): boolean {
+  return state.turn === 1 && state.current === 'player';
 }
 
 /**
@@ -141,7 +154,7 @@ function startTurn(state: BattleState) {
     if (card) card.damageReduction = 0;
   }
 
-  const isFirstPlayerFirstTurn = state.turn === 1 && state.current === 'player';
+  const isFirstPlayerFirstTurn = isOpeningTurn(state);
   if (!isFirstPlayerFirstTurn) {
     draw(state, state.current, 1);
   } else {
@@ -287,7 +300,7 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
   const next = clone(state);
   const player = next.players[next.current];
   if (player.energyAttached || player.energyZone <= 0) return state;
-  if (next.turn === 1 && next.current === 'player') {
+  if (isOpeningTurn(next)) {
     next.log.push('Premier tour : pas d’attachement de café.');
     return next;
   }
@@ -567,18 +580,29 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
 }
 
 /**
+ * « Changement de priorité » est-il disponible maintenant (D-004) ?
+ *
+ * Une fois par tour, au Poste, mot-clé porté par la carte au Poste, au moins une
+ * carte en main à archiver, et le drapeau global ouvert. `priorityShift` et
+ * `legalActions` lisent cette même garde : l'écran ne peut pas proposer le
+ * mot-clé quand le moteur le refuse.
+ */
+export function canPriorityShift(state: BattleState): boolean {
+  if (!RULES.priorityShiftEnabled || awaitingPromotion(state)) return false;
+  const player = state.players[state.current];
+  if (player.hasUsedPriorityShift || !player.active || player.hand.length === 0) return false;
+  const active = getCard(player.active.cardId);
+  return isPlanque(active) && Boolean(active.keywords?.includes('priorityShift'));
+}
+
+/**
  * « Changement de priorité » (D-004) : une fois par tour, au Poste, archiver
- * 1 carte du courrier puis en piocher 1. Le mot-clé est porté par la carte au
- * Poste ; `RULES.priorityShiftEnabled` coupe le mot-clé sans toucher aux cartes.
+ * 1 carte du courrier puis en piocher 1.
  */
 export function priorityShift(state: BattleState, uid: string): BattleState {
-  if (!RULES.priorityShiftEnabled || awaitingPromotion(state)) return state;
+  if (!canPriorityShift(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
-  if (player.hasUsedPriorityShift || !player.active) return state;
-  const active = getCard(player.active.cardId);
-  if (!isPlanque(active) || !active.keywords?.includes('priorityShift')) return state;
-
   const discarded = removeFromHand(player, uid);
   if (!discarded) return state;
   putInDiscard(player, discarded);
@@ -689,6 +713,40 @@ export function endTurn(state: BattleState): BattleState {
   return next;
 }
 
+/**
+ * Exécute **une** action de `legalActions`. C'est le seul chemin d'exécution de
+ * l'écran de combat (ticket #58) : la liste rendue et cette fonction parlent du
+ * même type `BattleAction`, donc un bouton ne peut pas offrir autre chose que ce
+ * que le moteur sait faire. Le `switch` est exhaustif : un nouveau membre de
+ * l'union sans branche ici rend `tsc` rouge.
+ */
+export function applyAction(state: BattleState, action: BattleAction): BattleState {
+  switch (action.type) {
+    case 'playBasic':
+      return playBasic(state, action.uid, action.slot);
+    case 'evolve':
+      return evolve(state, action.uid, action.targetUid);
+    case 'attachEnergy':
+      return attachEnergy(state, action.targetUid);
+    case 'retreat':
+      return retreat(state, action.benchIndex);
+    case 'attack':
+      return attack(state, action.attackIndex);
+    case 'ability':
+      return useAbility(state);
+    case 'priorityShift':
+      return priorityShift(state, action.uid);
+    case 'playAction':
+      return playAction(state, action.uid);
+    case 'promoteActive':
+      return promoteActive(state, action.benchIndex);
+    case 'endTurn':
+      return endTurn(state);
+    default:
+      return assertNever(action);
+  }
+}
+
 export function attackPreview(state: BattleState, attackIndex: number): number {
   const player = state.players[state.current];
   const opponent = state.players[state.current === 'player' ? 'ai' : 'player'];
@@ -723,3 +781,103 @@ export function legalAttacks(state: BattleState): Attack[] {
   if (!isPlanque(card)) return [];
   return card.attacks.filter((attack) => player.active && player.active.energy >= attack.cost);
 }
+
+/** Les Planqués du camp, Poste et Rack, dans cet ordre. */
+function inPlay(player: PlayerState): CardInstance[] {
+  return [player.active, ...player.bench].filter(Boolean) as CardInstance[];
+}
+
+/**
+ * **Toutes** les actions que le moteur accepterait maintenant, et rien d'autre
+ * (ticket #58).
+ *
+ * C'est l'inverse exact d'`applyAction` : l'écran de combat rend cette liste au
+ * lieu de recalculer la légalité, donc il ne peut pas oublier une transition, et
+ * aucun de ses boutons ne peut être refusé par le moteur. Conséquence : chaque
+ * critère de jeu (premier tour, Collègue déjà joué, relève en attente…) n'a plus
+ * qu'une seule écriture, celle d'ici.
+ *
+ * Deux cas particuliers :
+ * - une **relève en attente** ne laisse que `promoteActive`, pour le camp dont le
+ *   Poste a craqué — c'est `pendingPromotion` qui le dit, pas `current` ;
+ * - `endTurn` est toujours offert tant que la partie vit, y compris quand il ne
+ *   reste rien d'autre à faire.
+ */
+export function legalActions(state: BattleState): BattleAction[] {
+  if (state.phase === 'ended') return [];
+
+  const pending = state.pendingPromotion;
+  if (pending) {
+    const bench = state.players[pending].bench;
+    return bench.flatMap((card, benchIndex) =>
+      card ? [{ type: 'promoteActive', benchIndex } satisfies BattleAction] : []
+    );
+  }
+
+  const player = state.players[state.current];
+  const actions: BattleAction[] = [];
+
+  // Main : cartes Action, évolutions, Changement de priorité (archiver une carte).
+  for (const handCard of player.hand) {
+    if (canPlayAction(state, handCard.uid)) actions.push({ type: 'playAction', uid: handCard.uid });
+    const card = getCard(handCard.cardId);
+    if (!isPlanque(card) || !card.evolvesFrom) continue;
+    for (const target of inPlay(player)) {
+      if (canEvolve(state, handCard.uid, target.uid)) {
+        actions.push({ type: 'evolve', uid: handCard.uid, targetUid: target.uid });
+      }
+    }
+  }
+  if (canPriorityShift(state)) {
+    for (const handCard of player.hand) actions.push({ type: 'priorityShift', uid: handCard.uid });
+  }
+
+  // Poser un Entrant : au Poste s'il est vide, ailleurs sur chaque place libre du Rack.
+  const freeSlots: ('active' | number)[] = player.active ? [] : ['active'];
+  player.bench.forEach((card, index) => {
+    if (!card) freeSlots.push(index);
+  });
+  for (const handCard of player.hand) {
+    const card = getCard(handCard.cardId);
+    if (!isPlanque(card) || card.stage !== 'ENTRANT') continue;
+    for (const slot of freeSlots) actions.push({ type: 'playBasic', uid: handCard.uid, slot });
+  }
+
+  // Talent du Poste, une fois par tour.
+  if (!player.hasUsedAbility && player.active) {
+    const card = getCard(player.active.cardId);
+    if (isPlanque(card) && card.ability) actions.push({ type: 'ability' });
+  }
+
+  // Café : 1 par tour, un par Planqué en jeu — et rien au premier tour (§4).
+  if (!player.energyAttached && player.energyZone > 0 && !isOpeningTurn(state)) {
+    for (const target of inPlay(player)) actions.push({ type: 'attachEnergy', targetUid: target.uid });
+  }
+
+  // Rotation : une fois par tour, vers un Rack occupé, si le Poste peut payer.
+  if (!player.hasRetreated && player.active) {
+    const activeCard = getCard(player.active.cardId);
+    if (isPlanque(activeCard)) {
+      player.bench.forEach((card, benchIndex) => {
+        if (card && player.active && player.active.energy >= activeCard.retreat) {
+          actions.push({ type: 'retreat', benchIndex });
+        }
+      });
+    }
+  }
+
+  // Pressions : `legalAttacks` dit ce que le café couvre, le tour dit s'il est déjà porté.
+  if (!player.hasAttacked && player.active) {
+    const card = getCard(player.active.cardId);
+    if (isPlanque(card)) {
+      for (const entry of legalAttacks(state)) {
+        const attackIndex = card.attacks.indexOf(entry);
+        if (attackIndex >= 0) actions.push({ type: 'attack', attackIndex });
+      }
+    }
+  }
+
+  actions.push({ type: 'endTurn' });
+  return actions;
+}
+

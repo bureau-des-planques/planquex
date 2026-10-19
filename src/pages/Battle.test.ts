@@ -1,0 +1,59 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+
+/**
+ * Garde-fou de l'**écran de combat** — ticket #58.
+ *
+ * Le défaut corrigé : `Battle.tsx` recalculait la légalité à la main
+ * (`player.hasAttacked || energy < cost`), alors que le moteur savait déjà. Résultat
+ * visible : le premier tour interdisait l'attachement **dans le moteur** et l'écran
+ * laissait cliquer. Cinq transitions n'atteignaient aucun écran.
+ *
+ * La correction est une contrainte de forme, pas une valeur : l'écran doit rendre
+ * `legalActions` et exécuter par `applyAction`. Ce test lit la source et échoue si
+ * un état `disabled` ou un appel direct à une transition revient — sans lui, la
+ * régression se réintroduit silencieusement, un bouton à la fois.
+ *
+ * Même technique que `scripts/compteurs.test.ts` : le contrat porte sur la source,
+ * donc c'est la source qu'on lit.
+ */
+const source = readFileSync(fileURLToPath(new URL('./Battle.tsx', import.meta.url)), 'utf8');
+
+describe('Battle.tsx — l’écran rend ce que le moteur autorise (#58)', () => {
+  it('consomme legalActions et exécute par applyAction', () => {
+    expect(source).toMatch(/legalActions\(/);
+    expect(source).toMatch(/applyAction\(/);
+  });
+
+  it('ne recalcule plus aucun état désactivé : plus un seul disabled', () => {
+    expect(source).not.toMatch(/\bdisabled\b/);
+  });
+
+  it('n’appelle plus les transitions une par une', () => {
+    const transitions = [
+      'attack',
+      'attachEnergy',
+      'endTurn',
+      'evolve',
+      'playAction',
+      'playBasic',
+      'promoteActive',
+      'retreat',
+      'useAbility'
+    ];
+    for (const transition of transitions) {
+      expect(source, `appel direct à ${transition}()`).not.toMatch(new RegExp(`\\b${transition}\\(`));
+    }
+  });
+
+  it('affiche la main du joueur', () => {
+    expect(source).toMatch(/player\.hand\.map\(/);
+  });
+
+  it('lit les Pressions à portée de café dans le moteur, pas à la main', () => {
+    expect(source).toMatch(/legalAttacks\(/);
+    expect(source).not.toMatch(/hasAttacked \|\|/);
+    expect(source).not.toMatch(/energy \?\? 0\) < /);
+  });
+});
