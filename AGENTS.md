@@ -225,11 +225,11 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm install` | Installer les dépendances | **OK** (`npm ci` ; `@types/node` ajouté en dev) |
 | `npm run dev` | Serveur Vite sur `:5178` | non exécuté dans cette vérification ; `preview` l'a été |
 | `npm run check` | `tsc -b` | **OK**, exit 0 |
-| `npm test` | `vitest run` | **OK** : 5 fichiers, 49 tests, exit 0 |
-| `npm run test:watch` | Vitest en watch | 49 tests à lancer |
+| `npm test` | `vitest run` | **OK**, exit 0 ; le nombre de fichiers et de tests est celui que la commande affiche |
+| `npm run test:watch` | Vitest en watch | lance la suite complète |
 | `npm run build` | `tsc -b && vite build` | **OK**, exit 0 ; `dist/index.html` + `dist/sw.js` produits |
 | `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
-| `npm run status` | Métriques JSON | **OK**, exit 0 |
+| `npm run status` | Métriques JSON, dont les cartes dérivées d'`ALL_CARDS` | **OK**, exit 0 |
 | `node scripts/status.mjs` | Même script directement | **OK**, exit 0 |
 
 Les 2 erreurs de `check`/`build` constatées le 18/10 sont **corrigées** :
@@ -244,10 +244,18 @@ Autres faits vérifiés le 19/10/2026 :
 - `src/main.tsx` et `src/App.tsx` existent ; `index.html` monte l'application sous `BrowserRouter`.
 - `public/` **existe** (créé le 19/10/2026) : `favicon.svg`, `icon-192.svg`, `icon-512.svg`. Les trois sont copiés dans `dist/` par le build.
 - Une seule feuille, `src/styles.css`, importée par `main.tsx`.
-- **62 tests** (5 fichiers) ; **37 cartes** en code (26 bases SSE + 11 variantes), faction SSE uniquement. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Seuil par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
+- **Les décomptes ne sont pas recopiés ici** : le nombre de fichiers de test et de tests est celui qu'affiche `npm test` ; le nombre de cartes, de bases, de variantes et de factions est celui qu'affiche `npm run status` (`cards`), **dérivé d'`ALL_CARDS`** (`src/data/index.ts`), seule source de ce nombre. `scripts/compteurs.test.ts` échoue si un décompte en dur revient dans ce §7 ou dans `README.md`. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Seuil par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Chariot et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
+
+### 7.1 Piège connu — le service worker casse le dev sur la même origine
+
+Vite répond **`200` en `Content-Type: text/html`** à **tout** chemin inconnu (son *fallback* SPA) : il ne renvoie jamais `404`.
+
+Conséquence : si le navigateur charge encore la page du **build** — service worker `VitePWA` enregistré sur `localhost:5178`, ou onglet resté ouvert depuis un `preview` — il demande `/assets/index-<hash>.js`, reçoit du HTML, et refuse de l'exécuter comme module. L'écran reste **blanc**, la console dit à peu près *« Expected a JavaScript module script but the server responded with a MIME type of text/html »*, et **le terminal du serveur n'affiche aucune erreur** : il a répondu `200`.
+
+Le réflexe : **DevTools → Application → Service Workers → Unregister**, puis **Storage → Clear site data**, et recharger (une fenêtre privée suffit aussi). Chaque fusion change les *hash* des assets, donc le piège se rejoue à chaque merge tant qu'on ne purge pas. Pour changer d'origine sans purger : `npm run dev -- --port 5199` — un service worker est enregistré **par origine**, et un autre port en est une autre.
 
 ## 8. Audits
 

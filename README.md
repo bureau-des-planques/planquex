@@ -2,7 +2,7 @@
 
 Refonte complète du jeu, dans un dossier neuf et indépendant de `grevomon-pocket`.
 
-- **Statut** : prototype. Le code existe (37 cartes SSE, moteur, store) et l’application est démarrable (`src/main.tsx` présent). Voir [`AGENTS.md`](AGENTS.md) pour l’état vérifié, les règles et les commandes.
+- **Statut** : prototype. Le code existe (cartes dans `src/data`, moteur, store) et l’application est démarrable (`src/main.tsx` présent). Le décompte réel des cartes se lit dans `npm run status` (`cards`) : il n'est pas recopié ici. Voir [`AGENTS.md`](AGENTS.md) pour l’état vérifié, les règles et les commandes.
 - **Référence fonctionnelle** : `../sources/` et `../resources/` (Pokémon TCG Pocket 1.7.5), analysés dans `../grevomon-pocket/docs/INVENTAIRE-PTCGP.md`.
 - **Contenu** : univers corporate original (Bureau des Planqués). Aucun asset, nom ou texte Pokémon n'est réutilisé.
 - **Cible** : PWA mobile-first, 100+ utilisateurs simultanés, backend Supabase, déploiement Vercel/Cloudflare, emails Brevo.
@@ -19,10 +19,12 @@ npm test             # tests Vitest, une passe
 npm run test:watch   # tests Vitest en continu
 npm run build        # vérification des types puis build de production dans dist/
 npm run preview      # sert le contenu de dist/
-npm run status       # métriques du projet en JSON
+npm run status       # métriques du projet en JSON, dont le décompte des cartes
 ```
 
 Le build valide produit `dist/index.html` et `dist/sw.js` : ce sont les deux fichiers à vérifier après `npm run build`.
+
+Les décomptes de cartes et de tests ne sont **pas recopiés** dans ce fichier : `npm run status` affiche `cards.total`, `cards.base`, `cards.variants` et `cards.factions`, dérivés d'`ALL_CARDS` (`src/data/index.ts`) ; `npm test` affiche le nombre de tests. Un décompte en dur qui revient ici ou dans [`AGENTS.md`](AGENTS.md) §7 est refusé par `scripts/compteurs.test.ts`.
 
 ## Décisions déjà actées
 

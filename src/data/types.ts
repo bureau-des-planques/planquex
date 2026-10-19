@@ -20,7 +20,12 @@ export type Vivier = 'ATELIER' | 'ETAGE' | 'BUREAUX';
  */
 export type Stage = 'ENTRANT' | 'N+1' | 'N+2';
 
-export type Rarity = '1D' | '2D' | '3D' | '4D' | '1S' | '2S';
+/**
+ * Raretés de `CARD-SPEC.md` §1 : diamants (`1D`–`4D`), étoiles (`1S`–`3S`) et
+ * **Couronne** (`COU`). `COU` suit la règle d'abréviation de D-024 : trois lettres
+ * tirées du nom.
+ */
+export type Rarity = '1D' | '2D' | '3D' | '4D' | '1S' | '2S' | '3S' | 'COU';
 
 export type Status = 'SURCHARGE' | 'EPUISEMENT' | 'SIESTE' | 'IMMOBILISATION' | 'DERIVE';
 

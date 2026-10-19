@@ -68,8 +68,8 @@ Deux observations supplémentaires, vérifiées dans les docs :
 | Famille | Valeurs | Remarque |
 |---|---|---|
 | Stade (`Stage`) | `N+1`, `N+2`, `COMEX` | mélange une progression chiffrée et un acronyme — mais c'est lisible |
-| Raretés **en code** | `1D` `2D` `3D` `4D` `1S` `2S` | |
-| Raretés **cibles** (`CARD-SPEC.md` §1) | + **3 étoiles** (4 cartes) et **Couronne** (3 cartes) | **absentes de `types.ts`** : à ajouter aux types et aux métadonnées avant de les utiliser (§3.2 d'AGENTS le rappelle) |
+| Raretés **en code** | `1D` `2D` `3D` `4D` `1S` `2S` `3S` `COU` | `COU` = Couronne, trois lettres tirées du nom (D-024) |
+| Raretés **cibles** (`CARD-SPEC.md` §1) | 3 étoiles (4 cartes) et Couronne (3 cartes) | **socle posé** dans `types.ts` et `RARITY_META` ; **aucune carte de ces raretés n'existe encore** |
 | Statuts | `SURCHARGE`, `BURNOUT`, `BLOQUE`, `GELE`, `DERIVE` | « Burn-out » est le seul nom composé avec trait d'union, et le seul à garder une forme anglaise |
 | `Keyword` (maison) | `priorityShift` → **« Changement de priorité »** | seule exception au standard (D-004) |
 

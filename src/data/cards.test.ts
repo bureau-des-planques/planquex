@@ -11,7 +11,7 @@ import {
   isActionCard,
   isPlanque
 } from '@/data';
-import type { AttackEffectKind, Card, Faction, PlanqueCard, Stage } from '@/data/types';
+import type { AttackEffectKind, Card, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
 
 /**
  * Fichier de contrôle des conventions d'écriture des cartes.
@@ -188,6 +188,54 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
         // (`healSelf`, `selfDamage`, `switchSelf`, `reduceDamage`) ne sont pas employées.
         expect(['draw', 'healAll', 'status', 'discardEnergy'], card.id).toContain(effect.kind);
       }
+    }
+  });
+});
+
+/**
+ * Socle des raretés hautes — `CARD-SPEC.md` §1 et `AGENTS.md` §3.2.
+ * Aucune carte réelle de ces raretés n'existe encore : les cartes ci-dessous sont
+ * **synthétiques** et ne sont jamais enregistrées dans `ALL_CARDS`. Elles servent
+ * uniquement à prouver que le type et les métadonnées acceptent les nouveaux paliers.
+ */
+const RARITES_HAUTES: Rarity[] = ['3S', 'COU'];
+const TOUTES_LES_RARETES: Rarity[] = ['1D', '2D', '3D', '4D', '1S', '2S', '3S', 'COU'];
+
+const carteSynthetique = (rarity: Rarity): Card => ({
+  id: `sse-socle-${rarity.toLowerCase()}`,
+  name: `Carte de test ${rarity}`,
+  kind: 'PLANQUE',
+  faction: 'SSE',
+  stage: 'ENTRANT',
+  rarity,
+  hp: 60,
+  retreat: 1,
+  weakness: 'MANAGEMENT',
+  attacks: [{ name: 'Pression de test', cost: 1, damage: 10 }],
+  flavor: 'Carte synthétique : elle n’entre jamais dans le Parc.',
+  glyph: '✦',
+  palette: '#24303c'
+});
+
+describe('Raretés hautes — socle de type (CARD-SPEC.md §1, AGENTS.md §3.2)', () => {
+  it('accepte `3S` et `COU` dans `Rarity` et `RARITY_META`, après `2S`', () => {
+    expect(Object.keys(RARITY_META).sort()).toEqual([...TOUTES_LES_RARETES].sort());
+    for (const rarity of RARITES_HAUTES) {
+      const meta = RARITY_META[rarity];
+      expect(meta, rarity).toBeDefined();
+      expect(meta.label.trim(), rarity).not.toBe('');
+      expect(meta.color, rarity).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(meta.order, rarity).toBeGreaterThan(RARITY_META['2S'].order);
+    }
+    expect(RARITY_META['3S'].order).toBeLessThan(RARITY_META.COU.order);
+  });
+
+  it('déclare une carte synthétique de chaque nouvelle rareté sans l’enregistrer', () => {
+    for (const rarity of RARITES_HAUTES) {
+      const card = carteSynthetique(rarity);
+      expect(card.rarity, card.id).toBe(rarity);
+      expect(RARITY_META[card.rarity], card.id).toBeDefined();
+      expect(CARD_BY_ID.has(card.id), card.id).toBe(false);
     }
   });
 });

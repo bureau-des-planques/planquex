@@ -1,8 +1,23 @@
 import type { ActionCard, Card, Faction, ItemKind, PlanqueCard, Rarity, Stage, Vivier } from './types';
 import { ACTION_CARDS } from './actions';
 import { ALL_SSE_CARDS } from './sse';
+import { ALL_MANAGEMENT_CARDS } from './management';
+import { ALL_AMELIORATION_CARDS } from './amelioration';
+import { ALL_QVT_CARDS } from './qvt';
+import { ALL_RH_CARDS } from './rh';
+import { ALL_ATELIER_CARDS } from './atelier';
+import { ALL_DIRECTION_CARDS } from './direction';
 
-export const ALL_CARDS: Card[] = [...ALL_SSE_CARDS, ...ACTION_CARDS];
+export const ALL_CARDS: Card[] = [
+  ...ALL_SSE_CARDS,
+  ...ALL_MANAGEMENT_CARDS,
+  ...ALL_AMELIORATION_CARDS,
+  ...ALL_QVT_CARDS,
+  ...ALL_RH_CARDS,
+  ...ALL_ATELIER_CARDS,
+  ...ALL_DIRECTION_CARDS,
+  ...ACTION_CARDS
+];
 
 /** Les 8 Collègues et 3 Objets du lancement (D-005), isolés pour les tests et l'UI. */
 export const ALL_ACTION_CARDS: ActionCard[] = ACTION_CARDS;
@@ -66,7 +81,11 @@ export const RARITY_META: Record<Rarity, { label: string; color: string; order: 
   '3D': { label: '◆◆◆', color: '#c9a227', order: 3 },
   '4D': { label: '◆◆◆◆', color: '#f0c75e', order: 4 },
   '1S': { label: '★', color: '#e8b54a', order: 5 },
-  '2S': { label: '★★', color: '#f2d27a', order: 6 }
+  '2S': { label: '★★', color: '#f2d27a', order: 6 },
+  // Haut de l'échelle (CARD-SPEC.md §1) : 3 étoiles, puis la Couronne — holo violette
+  // sur le fond sombre, pour la distinguer des ors des étoiles.
+  '3S': { label: '★★★', color: '#ffd76e', order: 7 },
+  COU: { label: '♛', color: '#c9a2ff', order: 8 }
 };
 
 /** Nature d'une carte Action, pour l'affichage (Objet / Collègue). */
