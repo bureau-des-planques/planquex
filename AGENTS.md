@@ -188,7 +188,7 @@ grevomon-tcg/
 ├── src/
 │   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx
 │   ├── data/         index.ts, sse.ts, types.ts
-│   ├── game/         engine.ts, engine.test.ts, deck.ts, deck.test.ts, rules.ts, pace.test.ts
+│   ├── game/         engine.ts, deck.ts, rules.ts, curves.ts, rng.ts, pack.ts, simulation.ts (+ leurs tests, pace.test.ts)
 │   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx
 │   ├── store/        useStore.ts, useStore.test.ts
 │   ├── App.tsx       routes (Layout + 5 pages)
@@ -208,7 +208,7 @@ grevomon-tcg/
 - **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
 - **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` existent depuis le 19/10/2026 (SVG `viewBox="0 0 32 32"`, monogramme « BP » sur fond sombre) : plus d'erreur de manifeste dans la console.
-- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Chariot, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4). Les règles de jeu ne vivent pas dans le store.
+- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Chariot, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4), `curves.ts` (le chiffré de `CARD-SPEC.md` §2 — dégâts par café et Seuil par stade/rareté — dont `cards.test.ts` et `pace.test.ts` sont les appelants), `rng.ts` (le hasard seedé, état porté par la partie), `pack.ts` (la composition d'un Arrivage, générateur en paramètre), `simulation.ts` (le simulateur headless). Les règles de jeu ne vivent pas dans le store.
 - **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX. Voir §8.4.
 
