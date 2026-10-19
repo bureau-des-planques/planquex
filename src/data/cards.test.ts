@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_CARDS, CARD_BY_ID, FACTION_META, RARITY_META, STAGE_META, getCard } from '@/data';
-import type { AttackEffectKind, Card, Faction, Stage } from '@/data/types';
+import {
+  ACTION_KIND_META,
+  ALL_CARDS,
+  CARD_BY_ID,
+  FACTION_META,
+  ITEM_KIND_META,
+  RARITY_META,
+  STAGE_META,
+  getCard,
+  isActionCard,
+  isPlanque
+} from '@/data';
+import type { AttackEffectKind, Card, Faction, PlanqueCard, Stage } from '@/data/types';
 
 /**
  * Fichier de contrôle des conventions d'écriture des cartes.
@@ -49,13 +60,20 @@ const EFFECT_KINDS: AttackEffectKind[] = [
   'reduceDamage'
 ];
 
-const ABILITY_KINDS: NonNullable<Card['ability']>['kind'][] = [
+const ABILITY_KINDS: NonNullable<PlanqueCard['ability']>['kind'][] = [
   'heal',
   'draw',
   'attachEnergy',
   'reduceDamage',
   'antiStatus'
 ];
+
+/** Les **Planqués** : seuls à porter un stade, un Seuil, des Pressions, une Vulnérabilité. */
+const PLANQUES = ALL_CARDS.filter(isPlanque);
+/** Les Planqués de base (hors variantes) : les seuls à définir une ligne d'évolution. */
+const BASE_PLANQUES = PLANQUES.filter((card) => !card.variantOf);
+/** Les **cartes Action** : 8 Collègues et 3 Objets (D-005). */
+const ACTIONS = ALL_CARDS.filter(isActionCard);
 
 /** `AGENTS.md` §3.2 : chaque faction est vulnérable à une seule autre. */
 const WEAKNESS: Record<Faction, Faction | null> = {
@@ -98,9 +116,13 @@ const HP_BAND: Record<string, [number, number]> = {
 const texts = (card: Card): string[] => [
   card.name,
   card.flavor,
-  ...card.attacks.flatMap((attack) => [attack.name, attack.text ?? '']),
-  card.ability?.name ?? '',
-  card.ability?.text ?? ''
+  ...(isPlanque(card)
+    ? [
+        ...card.attacks.flatMap((attack) => [attack.name, attack.text ?? '']),
+        card.ability?.name ?? '',
+        card.ability?.text ?? ''
+      ]
+    : [card.text])
 ];
 
 describe('Cartes — structure (CARD-SPEC.md §1)', () => {
@@ -122,20 +144,22 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
 
   it('a un stade, une rareté et des métadonnées connues', () => {
     for (const card of ALL_CARDS) {
-      expect(STAGE_ORDER, card.id).toContain(card.stage);
-      expect(STAGE_META[card.stage], card.id).toBeDefined();
       expect(RARITY_META[card.rarity], card.id).toBeDefined();
       expect(FACTION_META[card.faction], card.id).toBeDefined();
+      expect(card.palette.length, card.id).toBeGreaterThan(0);
+      expect(card.glyph.length, card.id).toBeGreaterThan(0);
+    }
+    for (const card of PLANQUES) {
+      expect(STAGE_ORDER, card.id).toContain(card.stage);
+      expect(STAGE_META[card.stage], card.id).toBeDefined();
       expect(card.hp, card.id).toBeGreaterThan(0);
       expect(card.retreat, card.id).toBeGreaterThanOrEqual(0);
       expect(card.attacks.length, card.id).toBeGreaterThan(0);
-      expect(card.palette.length, card.id).toBeGreaterThan(0);
-      expect(card.glyph.length, card.id).toBeGreaterThan(0);
     }
   });
 
   it('n’utilise que les primitives d’effet et de talent déclarées (AGENTS.md §5)', () => {
-    for (const card of ALL_CARDS) {
+    for (const card of PLANQUES) {
       for (const attack of card.attacks) {
         expect(attack.cost, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
         expect(attack.damage, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
@@ -151,11 +175,26 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
       }
     }
   });
+
+  it('n’utilise, pour un effet de carte Action, que les primitives existantes (AGENTS.md §5)', () => {
+    for (const card of ACTIONS) {
+      expect(card.effects.length, card.id).toBeGreaterThan(0);
+      for (const effect of card.effects) {
+        expect(EFFECT_KINDS, card.id).toContain(effect.kind);
+        if (effect.kind === 'status') {
+          expect(effect.status, card.id).toBeDefined();
+        }
+        // Une carte Action n'a pas d'attaquant : les primitives qui en supposent un
+        // (`healSelf`, `selfDamage`, `switchSelf`, `reduceDamage`) ne sont pas employées.
+        expect(['draw', 'healAll', 'status', 'discardEnergy'], card.id).toContain(effect.kind);
+      }
+    }
+  });
 });
 
 describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
   it('fait pointer `evolvesFrom` vers la carte du stade précédent', () => {
-    for (const card of ALL_CARDS.filter((entry) => !entry.variantOf)) {
+    for (const card of BASE_PLANQUES) {
       const index = STAGE_ORDER.indexOf(card.stage);
       if (card.stage === 'ENTRANT') {
         expect(card.evolvesFrom, `${card.id} ne doit pas évoluer`).toBeUndefined();
@@ -164,17 +203,19 @@ describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
       expect(card.evolvesFrom, `${card.id} doit évoluer`).toBeTruthy();
       const previous = card.evolvesFrom ? getCard(card.evolvesFrom) : undefined;
       expect(previous, `${card.id} → ${card.evolvesFrom}`).toBeDefined();
-      expect(previous?.stage, `${card.id} → ${card.evolvesFrom}`).toBe(STAGE_ORDER[index - 1]);
+      expect(isPlanque(previous) ? previous.stage : undefined, `${card.id} → ${card.evolvesFrom}`).toBe(
+        STAGE_ORDER[index - 1]
+      );
     }
   });
 
   it('fait hériter une variante de sa carte de base', () => {
-    const variants = ALL_CARDS.filter((card) => card.variantOf);
+    const variants = PLANQUES.filter((card) => card.variantOf);
     expect(variants.length).toBeGreaterThan(0);
     for (const variant of variants) {
       const source = variant.variantOf ? getCard(variant.variantOf) : undefined;
       expect(source, variant.id).toBeDefined();
-      if (!source) continue;
+      if (!source || !isPlanque(source)) continue;
       expect(source.variantOf, `${variant.id} : une variante de variante`).toBeUndefined();
       expect(variant.id, variant.id).toMatch(/-star2?$/);
       expect(variant.faction, variant.id).toBe(source.faction);
@@ -193,7 +234,7 @@ describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
 describe('Cartes — Seuil par stade (CARD-SPEC.md §2, D-023)', () => {
   it('place chaque carte dans la bande de Seuil de son stade et de sa rareté', () => {
     // Les variantes héritent du Seuil de leur base : couvertes par le test d'héritage.
-    for (const card of ALL_CARDS.filter((entry) => !entry.variantOf)) {
+    for (const card of BASE_PLANQUES) {
       const band = HP_BAND[`${card.stage}/${card.rarity}`];
       expect(band, `${card.id} : ${card.stage}/${card.rarity} non couvert`).toBeDefined();
       if (!band) continue;
@@ -205,7 +246,7 @@ describe('Cartes — Seuil par stade (CARD-SPEC.md §2, D-023)', () => {
 
 describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021)', () => {
   it('place chaque attaque dans la bande de son coût', () => {
-    for (const card of ALL_CARDS) {
+    for (const card of PLANQUES) {
       for (const attack of card.attacks) {
         const band = DAMAGE_BY_COST[attack.cost];
         expect(band, `${card.id}/${attack.name} : coût ${attack.cost} café(s) non couvert`).toBeDefined();
@@ -220,13 +261,13 @@ describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021
 
 describe('Cartes — COMEX et Vulnérabilité (AGENTS.md §3.2, §5)', () => {
   it('vulnérabilise chaque carte selon la table des factions', () => {
-    for (const card of ALL_CARDS) {
+    for (const card of PLANQUES) {
       expect(card.weakness, card.id).toBe(WEAKNESS[card.faction]);
     }
   });
 
   it('réserve le COMEX aux 4 diamants, et le nom ne porte pas la marque « ex »', () => {
-    for (const card of ALL_CARDS) {
+    for (const card of PLANQUES) {
       if (card.ex) {
         // D-026 : le COMEX est un **statut**, pas un stade — un ex peut être Entrant, N+1
         // ou N+2, comme dans le jeu de base. Le seul fait mécanique est la rareté.
@@ -252,7 +293,7 @@ describe('Cartes — textes (AGENTS.md §3, §5)', () => {
   });
 
   it('donne un texte à toute attaque portant un effet', () => {
-    for (const card of ALL_CARDS) {
+    for (const card of PLANQUES) {
       for (const attack of card.attacks) {
         expect(attack.name.trim(), card.id).not.toBe('');
         if ((attack.effects ?? []).length > 0) {
@@ -264,6 +305,48 @@ describe('Cartes — textes (AGENTS.md §3, §5)', () => {
         expect(card.ability.text.trim(), card.id).not.toBe('');
       }
       expect(card.flavor.trim(), card.id).not.toBe('');
+    }
+  });
+});
+
+describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)', () => {
+  it('compte 8 Collègues et 3 Objets au lancement (CARD-SPEC.md §1)', () => {
+    expect(ACTIONS.filter((card) => card.kind === 'COLLEAGUE')).toHaveLength(8);
+    expect(ACTIONS.filter((card) => card.kind === 'OBJET')).toHaveLength(3);
+    expect(ACTIONS).toHaveLength(11);
+  });
+
+  it('n’attribue jamais à une carte Action les champs d’un Planqué', () => {
+    for (const card of ACTIONS) {
+      expect(card.kind, card.id).not.toBe('PLANQUE');
+      expect('stage' in card, card.id).toBe(false);
+      expect('hp' in card, card.id).toBe(false);
+      expect('retreat' in card, card.id).toBe(false);
+      expect('weakness' in card, card.id).toBe(false);
+      expect('attacks' in card, card.id).toBe(false);
+    }
+  });
+
+  it('donne à chaque Objet sa catégorie NEUF ou MRO, et à aucun Collègue (D-027)', () => {
+    for (const card of ACTIONS) {
+      if (card.kind === 'OBJET') {
+        expect(card.itemKind, card.id).toBeDefined();
+        expect(Object.keys(ITEM_KIND_META), card.id).toContain(card.itemKind);
+      } else {
+        expect(card.itemKind, card.id).toBeUndefined();
+      }
+    }
+  });
+
+  it('décrit son effet en français, et la variante d’un Collègue hérite de sa base', () => {
+    for (const card of ACTIONS) {
+      expect(card.text.trim(), card.id).not.toBe('');
+      expect(ACTION_KIND_META[card.kind], card.id).toBeDefined();
+      if (card.variantOf) {
+        const source = getCard(card.variantOf);
+        expect(source, card.id).toBeDefined();
+        expect(source?.kind, card.id).toBe(card.kind);
+      }
     }
   });
 });

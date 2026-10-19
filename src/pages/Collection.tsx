@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Plus, Search } from 'lucide-react';
-import { ALL_CARDS, FACTION_META, STAGE_META } from '@/data';
+import { ALL_CARDS, FACTION_META, STAGE_META, isPlanque } from '@/data';
 import type { Card, Faction, Stage } from '@/data/types';
 import { deckCanAdd, deckCountsByName, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { useStore } from '@/store/useStore';
@@ -29,7 +29,9 @@ export function Collection() {
     const needle = query.trim().toLowerCase();
     return ALL_CARDS.filter((card) => {
       if (faction !== 'ALL' && card.faction !== faction) return false;
-      if (stage !== 'ALL' && card.stage !== stage) return false;
+      // Le filtre porte sur le stade : il ne concerne que les Planqués, une carte Action
+      // n'a pas de stade (elle est rangée dans son vivier, via sa faction).
+      if (stage !== 'ALL' && (!isPlanque(card) || card.stage !== stage)) return false;
       if (needle && !card.name.toLowerCase().includes(needle)) return false;
       return true;
     });
@@ -42,7 +44,7 @@ export function Collection() {
       <section className="section__head">
         <div>
           <p className="eyebrow">Parc</p>
-          <h1>{uniqueOwned}/{ALL_CARDS.length} Planqués</h1>
+          <h1>{uniqueOwned}/{ALL_CARDS.length} cartes</h1>
           <p className="muted">{visible.length} affichés</p>
         </div>
       </section>
@@ -53,7 +55,7 @@ export function Collection() {
           <input
             type="search"
             value={query}
-            placeholder="Chercher un Planqué"
+            placeholder="Chercher une carte"
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
@@ -84,7 +86,7 @@ export function Collection() {
       </div>
 
       {visible.length === 0 ? (
-        <p className="empty">Aucun Planqué ne correspond à cette recherche.</p>
+        <p className="empty">Aucune carte ne correspond à cette recherche.</p>
       ) : (
         <div className="card-grid">
           {visible.map((card) => {

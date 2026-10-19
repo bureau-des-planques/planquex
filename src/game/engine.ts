@@ -1,8 +1,8 @@
-import { getCard } from '@/data';
+import { getCard, isPlanque } from '@/data';
 import type {
   Attack,
+  AttackEffect,
   BattleState,
-  Card,
   CardInstance,
   PlayerId,
   PlayerState,
@@ -36,11 +36,14 @@ const newUid = () => `u${++uidCounter}`;
 export function createInstance(cardId: string, turn = 0): CardInstance {
   const card = getCard(cardId);
   if (!card) throw new Error(`Carte inconnue: ${cardId}`);
+  // Une carte Action ne se pose jamais : son instance n'a pas de Seuil, mais elle vit
+  // au Chariot et dans la main comme les autres (0 = pas de Seuil à afficher).
+  const hp = isPlanque(card) ? card.hp : 0;
   return {
     uid: newUid(),
     cardId,
-    hp: card.hp,
-    maxHp: card.hp,
+    hp,
+    maxHp: hp,
     energy: 0,
     statuses: [],
     playedTurn: turn,
@@ -71,7 +74,8 @@ function emptyPlayer(): PlayerState {
     hasAttacked: false,
     hasRetreated: false,
     hasUsedAbility: false,
-    hasUsedPriorityShift: false
+    hasUsedPriorityShift: false,
+    hasPlayedSupporter: false
   };
 }
 
@@ -117,6 +121,7 @@ function startTurn(state: BattleState) {
   player.hasRetreated = false;
   player.hasUsedAbility = false;
   player.hasUsedPriorityShift = false;
+  player.hasPlayedSupporter = false;
 
   const isFirstPlayerFirstTurn = state.turn === 1 && state.current === 'player';
   if (!isFirstPlayerFirstTurn) {
@@ -132,7 +137,10 @@ function startTurn(state: BattleState) {
 }
 
 function hasBasicInHand(player: PlayerState): boolean {
-  return player.hand.some((card) => getCard(card.cardId)?.stage === 'ENTRANT');
+  return player.hand.some((card) => {
+    const definition = getCard(card.cardId);
+    return isPlanque(definition) && definition.stage === 'ENTRANT';
+  });
 }
 
 /**
@@ -146,7 +154,10 @@ function hasBasicInHand(player: PlayerState): boolean {
  */
 function ensureBasicInHand(player: PlayerState) {
   if (hasBasicInHand(player)) return;
-  const index = player.deck.findIndex((card) => getCard(card.cardId)?.stage === 'ENTRANT');
+  const index = player.deck.findIndex((card) => {
+    const definition = getCard(card.cardId);
+    return isPlanque(definition) && definition.stage === 'ENTRANT';
+  });
   if (index < 0) return;
   const [card] = player.deck.splice(index, 1);
   if (!card) return;
@@ -160,7 +171,10 @@ function setupPlayer(state: BattleState, who: PlayerId) {
   draw(state, who, 5);
   ensureBasicInHand(player);
 
-  const basics = player.hand.filter((card) => getCard(card.cardId)?.stage === 'ENTRANT');
+  const basics = player.hand.filter((card) => {
+    const definition = getCard(card.cardId);
+    return isPlanque(definition) && definition.stage === 'ENTRANT';
+  });
   const active = basics.shift();
   if (active) {
     removeFromHand(player, active.uid);
@@ -217,7 +231,7 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
   const handCard = player.hand.find((card) => card.uid === uid);
   if (!handCard) return state;
   const card = getCard(handCard.cardId);
-  if (!card || card.stage !== 'ENTRANT') return state;
+  if (!isPlanque(card) || card.stage !== 'ENTRANT') return state;
 
   const instance: CardInstance = { ...handCard, playedTurn: next.turn };
   if (slot === 'active') {
@@ -241,7 +255,7 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
   const handCard = player.hand.find((card) => card.uid === uid);
   if (!handCard) return state;
   const card = getCard(handCard.cardId);
-  if (!card || !card.evolvesFrom) return state;
+  if (!isPlanque(card) || !card.evolvesFrom) return state;
   const target = findInPlay(player, targetUid);
   if (!target || target.cardId !== card.evolvesFrom) return state;
   if (target.playedTurn >= next.turn) return state;
@@ -284,7 +298,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   const bench = player.bench[benchIndex];
   if (!bench) return state;
   const card = getCard(player.active.cardId);
-  if (!card || player.active.energy < card.retreat) return state;
+  if (!isPlanque(card) || player.active.energy < card.retreat) return state;
   player.active.energy -= card.retreat;
   const outgoing = player.active;
   player.active = { ...bench, statuses: [] };
@@ -300,7 +314,7 @@ export function useAbility(state: BattleState): BattleState {
   const player = next.players[next.current];
   if (player.hasUsedAbility || !player.active) return state;
   const card = getCard(player.active.cardId);
-  if (!card?.ability) return state;
+  if (!isPlanque(card) || !card.ability) return state;
   const ability = card.ability;
   if (ability.kind === 'heal') {
     player.active.hp = Math.min(player.active.maxHp, player.active.hp + (ability.amount ?? 10));
@@ -320,7 +334,7 @@ export function useAbility(state: BattleState): BattleState {
 function attackDamage(attacker: CardInstance, defender: CardInstance, attack: Attack): number {
   const attackerCard = getCard(attacker.cardId);
   const defenderCard = getCard(defender.cardId);
-  if (!attackerCard || !defenderCard) return 0;
+  if (!isPlanque(attackerCard) || !isPlanque(defenderCard)) return 0;
   const weakness = defenderCard.weakness === attackerCard.faction ? 20 : 0;
   const reduction = defenderCard.ability?.kind === 'reduceDamage' ? defenderCard.ability.amount ?? 0 : 0;
   return Math.max(0, attack.damage + weakness - reduction);
@@ -393,6 +407,81 @@ function applyEffects(
   }
 }
 
+/**
+ * Effets d'une carte Action jouée depuis la main (`AGENTS.md` §4).
+ *
+ * Les cartes Action se résolvent avec les mêmes primitives que les Pressions, mais sans
+ * attaquant : `healAll` et `draw` visent le camp qui joue, `status` et `discardEnergy`
+ * visent le Planqué au Poste d'en face. Les primitives qui supposent un attaquant ou une
+ * cible (`healSelf`, `selfDamage`, `switchSelf`, `reduceDamage`) n'ont pas de sens ici et
+ * sont ignorées — aucune carte du lancement ne les emploie.
+ */
+function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEffect[]) {
+  const player = state.players[who];
+  const opponent = state.players[who === 'player' ? 'ai' : 'player'];
+  for (const effect of effects) {
+    switch (effect.kind) {
+      case 'draw':
+        draw(state, who, effect.amount ?? 1);
+        break;
+      case 'healAll': {
+        const amount = effect.amount ?? 10;
+        const cards = [player.active, ...player.bench].filter(Boolean) as CardInstance[];
+        for (const card of cards) card.hp = Math.min(card.maxHp, card.hp + amount);
+        break;
+      }
+      case 'status':
+        if (effect.status && opponent.active) applyStatus(opponent.active, effect.status);
+        break;
+      case 'discardEnergy':
+        if (opponent.active) opponent.active.energy = Math.max(0, opponent.active.energy - 1);
+        break;
+      default:
+        break;
+    }
+  }
+}
+
+/**
+ * Une carte Action est-elle jouable maintenant ?
+ *
+ * Règles (`AGENTS.md` §4) : un **Objet** est **illimité** dans le tour ; un **Collègue**
+ * est limité à **1 par tour**. La carte doit être en main et ne pas être un Planqué.
+ */
+export function canPlayAction(state: BattleState, uid: string): boolean {
+  if (awaitingPromotion(state)) return false;
+  const player = state.players[state.current];
+  const handCard = player.hand.find((card) => card.uid === uid);
+  if (!handCard) return false;
+  const card = getCard(handCard.cardId);
+  if (!card || isPlanque(card)) return false;
+  return card.kind === 'OBJET' || !player.hasPlayedSupporter;
+}
+
+/**
+ * Jouer une carte Action depuis la main : elle part au Rebut et son effet se résout.
+ * Objet illimité, Collègue 1 par tour (`AGENTS.md` §4). Le premier joueur peut jouer un
+ * Collègue à son premier tour — §4 ne l'en prive pas, contrairement à la pioche et au café.
+ */
+export function playAction(state: BattleState, uid: string): BattleState {
+  if (!canPlayAction(state, uid)) return state;
+  const next = clone(state);
+  const player = next.players[next.current];
+  const handCard = player.hand.find((card) => card.uid === uid);
+  if (!handCard) return state;
+  const card = getCard(handCard.cardId);
+  if (!card || isPlanque(card)) return state;
+
+  removeFromHand(player, uid);
+  putInDiscard(player, handCard);
+  if (card.kind === 'COLLEAGUE') player.hasPlayedSupporter = true;
+  applyActionEffects(next, next.current, card.effects);
+  next.log.push(
+    `${next.current === 'player' ? 'Tu joues' : 'L’IA joue'} ${card.name} (${card.kind === 'OBJET' ? 'Objet' : 'Collègue'}).`
+  );
+  return next;
+}
+
 function knockOut(state: BattleState, attackerId: PlayerId) {
   const defenderId: PlayerId = attackerId === 'player' ? 'ai' : 'player';
   const defender = state.players[defenderId];
@@ -400,7 +489,7 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
 
   const fallen = defender.active;
   const fallenCard = getCard(fallen.cardId);
-  const points = fallenCard?.ex ? 2 : 1;
+  const points = isPlanque(fallenCard) && fallenCard.ex ? 2 : 1;
   state.players[attackerId].points += points;
   state.log.push(`${fallenCard?.name ?? 'Un Planqué'} craque : ${points} Intervention${points > 1 ? 's' : ''}.`);
   putInDiscard(defender, fallen);
@@ -458,7 +547,7 @@ export function priorityShift(state: BattleState, uid: string): BattleState {
   const player = next.players[next.current];
   if (player.hasUsedPriorityShift || !player.active) return state;
   const active = getCard(player.active.cardId);
-  if (!active?.keywords?.includes('priorityShift')) return state;
+  if (!isPlanque(active) || !active.keywords?.includes('priorityShift')) return state;
 
   const discarded = removeFromHand(player, uid);
   if (!discarded) return state;
@@ -479,7 +568,7 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   if (player.hasAttacked || !player.active || !opponent.active) return state;
   const card = getCard(player.active.cardId);
   const targetCard = getCard(opponent.active.cardId);
-  if (!card || !targetCard) return state;
+  if (!isPlanque(card) || !isPlanque(targetCard)) return state;
   const attack = card.attacks[attackIndex];
   if (!attack || player.active.energy < attack.cost) return state;
 
@@ -575,7 +664,7 @@ export function attackPreview(state: BattleState, attackIndex: number): number {
   const opponent = state.players[state.current === 'player' ? 'ai' : 'player'];
   if (!player.active || !opponent.active) return 0;
   const card = getCard(player.active.cardId);
-  const attack = card?.attacks[attackIndex];
+  const attack = isPlanque(card) ? card.attacks[attackIndex] : undefined;
   if (!attack) return 0;
   return attackDamage(player.active, opponent.active, attack);
 }
@@ -588,7 +677,8 @@ export function canEvolve(state: BattleState, handUid: string, targetUid: string
   if (!hand || !target) return false;
   const card = getCard(hand.cardId);
   return Boolean(
-    card?.evolvesFrom === target.cardId &&
+    isPlanque(card) &&
+      card.evolvesFrom === target.cardId &&
       target.playedTurn < state.turn &&
       target.evolvedTurn !== state.turn &&
       !isFirstTurnFor(state, state.current)
@@ -600,6 +690,6 @@ export function legalAttacks(state: BattleState): Attack[] {
   const player = state.players[state.current];
   if (!player.active) return [];
   const card = getCard(player.active.cardId);
-  if (!card) return [];
+  if (!isPlanque(card)) return [];
   return card.attacks.filter((attack) => player.active && player.active.energy >= attack.cost);
 }

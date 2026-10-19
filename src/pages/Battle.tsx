@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
-import { ALL_CARDS, getCard } from '@/data';
+import { ALL_CARDS, getCard, isPlanque } from '@/data';
 import type { BattleState, CardInstance, PlayerId } from '@/data/types';
 import { attachEnergy, attack, createBattle, endTurn, promoteActive } from '@/game/engine';
 import { deckLegal } from '@/game/deck';
@@ -12,7 +12,7 @@ import { useStore } from '@/store/useStore';
  * Sert quand le chariot du joueur n'est pas encore valide.
  */
 function testDeck(): string[] {
-  const bases = ALL_CARDS.filter((card) => !card.variantOf);
+  const bases = ALL_CARDS.filter(isPlanque).filter((card) => !card.variantOf);
   const ordered = [
     ...bases.filter((card) => card.stage === 'ENTRANT'),
     ...bases.filter((card) => card.stage !== 'ENTRANT')
@@ -239,7 +239,7 @@ export function Battle() {
           <Coffee size={16} /> Attacher 1 café
         </button>
 
-        {(playerCard?.attacks ?? []).map((attackEntry, index) => (
+        {(playerCard && isPlanque(playerCard) ? playerCard.attacks : []).map((attackEntry, index) => (
           <button
             type="button"
             className="button button--primary"

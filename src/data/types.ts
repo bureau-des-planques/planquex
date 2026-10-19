@@ -63,25 +63,56 @@ export interface Ability {
   oncePerTurn?: boolean;
 }
 
-export interface Card {
+/**
+ * Nature de la carte. Un **Planqué** se pose au Poste ou au Rack ; une **carte Action**
+ * se joue depuis la main puis part au Rebut : **Objet** (illimité par tour) ou
+ * **Collègue** (1 par tour) — `AGENTS.md` §4.
+ */
+export type CardKind = 'PLANQUE' | 'OBJET' | 'COLLEAGUE';
+
+/** Un Objet est **NEUF** (matériel à installer) ou **MRO** (pièces et outillage), D-027. */
+export type ItemKind = 'NEUF' | 'MRO';
+
+interface CardBase {
   id: string;
   name: string;
   faction: Faction;
-  stage: Stage;
   rarity: Rarity;
+  flavor: string;
+  glyph: string;
+  palette: string;
+}
+
+/** Un Planqué : la carte qui se bat. Seul type à porter un Seuil et des Pressions. */
+export interface PlanqueCard extends CardBase {
+  kind: 'PLANQUE';
+  stage: Stage;
   hp: number;
   retreat: number;
   weakness: Faction | null;
   attacks: Attack[];
   ability?: Ability;
-  flavor: string;
-  glyph: string;
-  palette: string;
   ex?: boolean;
   variantOf?: string;
   evolvesFrom?: string;
   keywords?: Keyword[];
 }
+
+/**
+ * Une carte Action. Les effets réutilisent les primitives d'attaque (`AttackEffect`) :
+ * aucune primitive maison n'est ajoutée (`AGENTS.md` §5).
+ */
+export interface ActionCard extends CardBase {
+  kind: 'OBJET' | 'COLLEAGUE';
+  /** Texte de l'effet, affiché sur la carte. */
+  text: string;
+  effects: AttackEffect[];
+  /** Catégorie d'Objet (D-027) ; absent sur un Collègue. */
+  itemKind?: ItemKind;
+  variantOf?: string;
+}
+
+export type Card = PlanqueCard | ActionCard;
 
 export interface CardInstance {
   uid: string;
@@ -112,6 +143,8 @@ export interface PlayerState {
   hasUsedAbility: boolean;
   /** « Changement de priorité » (D-004) : une fois par tour. */
   hasUsedPriorityShift: boolean;
+  /** Collègue : 1 par tour (`AGENTS.md` §4). Les Objets restent illimités. */
+  hasPlayedSupporter: boolean;
 }
 
 export type BattleAction =
@@ -122,6 +155,7 @@ export type BattleAction =
   | { type: 'attack'; attackIndex: number }
   | { type: 'ability' }
   | { type: 'priorityShift'; uid: string }
+  | { type: 'playAction'; uid: string }
   | { type: 'promoteActive'; benchIndex: number }
   | { type: 'endTurn' };
 

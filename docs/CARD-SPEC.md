@@ -43,6 +43,11 @@
 Aucun **4ᵉ stade** : la Méga-Évolution (3 Interventions) est hors périmètre (D-020). Le set se
 construit sur Entrant → N+1 → N+2.
 
+*État au 19/10/2026 : les **3 Objets** et **8 Collègues** sont écrits (`src/data/actions.ts`,
+enregistrés dans `src/data/index.ts`), et le moteur applique « Objet illimité » et « Collègue
+1 par tour » (`playAction`, `src/game/engine.ts`). Les 215 Planqués et les variantes restent à
+produire.*
+
 ### Lignes d’évolution (Planqués uniques)
 
 | Type de ligne | Nombre de lignes | Cartes |

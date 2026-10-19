@@ -37,7 +37,7 @@ export function Home() {
           </Link>
         </div>
         <div className="hero__hint">
-          <Coffee size={14} /> {packsOpened} bac{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} · {uniqueOwned}/{ALL_CARDS.length} Planqués
+          <Coffee size={14} /> {packsOpened} bac{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} · {uniqueOwned}/{ALL_CARDS.length} cartes
         </div>
       </section>
 

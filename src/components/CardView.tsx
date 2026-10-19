@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
-import { FACTION_META, RARITY_META, STAGE_META } from '@/data';
+import { FACTION_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
 export function CardView({ card, onClick, compact, selected }: Props) {
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
+  const planque = isPlanque(card);
   const style = {
     '--accent': faction.color,
     '--card-palette': card.palette
@@ -30,25 +31,31 @@ export function CardView({ card, onClick, compact, selected }: Props) {
     >
       <div className="card__top">
         <span className="card__name">{card.name}</span>
-        <span className="card__hp">{card.hp}</span>
+        {planque && <span className="card__hp">{card.hp}</span>}
       </div>
       <div className="card__meta">
-        <span className="card__stage">{STAGE_META[card.stage].label}</span>
+        <span className="card__stage">{kindLabel(card)}</span>
         <span className="card__faction">{faction.short}</span>
       </div>
       <div className="card__art" style={{ background: card.palette }}>
         <span className="card__glyph">{card.glyph}</span>
-        {card.ex && <span className="card__ex">COMEX</span>}
+        {planque && card.ex && <span className="card__ex">COMEX</span>}
         <span className="card__shine" />
       </div>
       <div className="card__attacks">
-        {card.attacks.map((attack) => (
-          <div className="attack" key={attack.name}>
-            <span className="attack__cost">{'●'.repeat(attack.cost)}</span>
-            <span className="attack__name">{attack.name}</span>
-            <span className="attack__dmg">{attack.damage}</span>
+        {planque ? (
+          card.attacks.map((attack) => (
+            <div className="attack" key={attack.name}>
+              <span className="attack__cost">{'●'.repeat(attack.cost)}</span>
+              <span className="attack__name">{attack.name}</span>
+              <span className="attack__dmg">{attack.damage}</span>
+            </div>
+          ))
+        ) : (
+          <div className="attack">
+            <span className="attack__name">{card.text}</span>
           </div>
-        ))}
+        )}
       </div>
       {!compact && <p className="card__flavor">{card.flavor}</p>}
       <div className="card__footer">

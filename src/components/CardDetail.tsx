@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { FACTION_META, RARITY_META, STAGE_META } from '@/data';
+import { FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
 import { CardView } from './CardView';
 
@@ -14,6 +14,7 @@ interface Props {
 export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props) {
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
+  const planque = isPlanque(card);
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
@@ -25,39 +26,57 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
           <CardView card={card} />
         </div>
         <div className="card-detail__body">
-          <p className="eyebrow">{faction.name} · {STAGE_META[card.stage].label}</p>
+          <p className="eyebrow">{faction.name} · {kindLabel(card)}</p>
           <h2>{card.name}</h2>
           <p className="card-detail__flavor">« {card.flavor} »</p>
 
           <div className="stat-row">
-            <div><span className="stat-label">Seuil</span><strong>{card.hp}</strong></div>
-            <div><span className="stat-label">Rotation</span><strong>{card.retreat}</strong></div>
+            {planque && <div><span className="stat-label">Seuil</span><strong>{card.hp}</strong></div>}
+            {planque && <div><span className="stat-label">Rotation</span><strong>{card.retreat}</strong></div>}
+            {!planque && card.itemKind && (
+              <div title={ITEM_KIND_META[card.itemKind].description}>
+                <span className="stat-label">Catégorie</span>
+                <strong>{ITEM_KIND_META[card.itemKind].label}</strong>
+              </div>
+            )}
             <div><span className="stat-label">Rareté</span><strong style={{ color: rarity.color }}>{rarity.label}</strong></div>
             <div><span className="stat-label">Possédés</span><strong>{owned}</strong></div>
           </div>
 
-          {card.ability && (
+          {planque && card.ability && (
             <section className="detail-section">
               <h3>Talent</h3>
               <p><strong>{card.ability.name}</strong> — {card.ability.text}</p>
             </section>
           )}
 
-          <section className="detail-section">
-            <h3>Pressions</h3>
-            {card.attacks.map((attack) => (
-              <div className="detail-attack" key={attack.name}>
-                <div className="detail-attack__head">
-                  <span className="attack__cost">{'●'.repeat(attack.cost)}</span>
-                  <strong>{attack.name}</strong>
-                  <span className="detail-attack__dmg">{attack.damage}</span>
+          {planque ? (
+            <section className="detail-section">
+              <h3>Pressions</h3>
+              {card.attacks.map((attack) => (
+                <div className="detail-attack" key={attack.name}>
+                  <div className="detail-attack__head">
+                    <span className="attack__cost">{'●'.repeat(attack.cost)}</span>
+                    <strong>{attack.name}</strong>
+                    <span className="detail-attack__dmg">{attack.damage}</span>
+                  </div>
+                  {attack.text && <p>{attack.text}</p>}
                 </div>
-                {attack.text && <p>{attack.text}</p>}
-              </div>
-            ))}
-          </section>
+              ))}
+            </section>
+          ) : (
+            <section className="detail-section">
+              <h3>{card.kind === 'OBJET' ? 'Effet de l’Objet' : 'Effet du Collègue'}</h3>
+              <p>{card.text}</p>
+              <p className="muted">
+                {card.kind === 'OBJET'
+                  ? 'Objet : utilisable autant de fois que voulu dans le tour.'
+                  : 'Collègue : 1 par tour.'}
+              </p>
+            </section>
+          )}
 
-          {card.weakness && (
+          {planque && card.weakness && (
             <p className="muted">Vulnérable à : <strong>{FACTION_META[card.weakness].name}</strong> (+20)</p>
           )}
 
