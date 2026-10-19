@@ -12,6 +12,7 @@ import {
   isPlanque
 } from '@/data';
 import type { AttackEffectKind, Card, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
+import { isValidCafeCost } from '@/game/rules';
 
 /**
  * Fichier de contrôle des conventions d'écriture des cartes.
@@ -235,6 +236,47 @@ describe('Raretés hautes — socle de type (CARD-SPEC.md §1, AGENTS.md §3.2)'
       expect(card.rarity, card.id).toBe(rarity);
       expect(RARITY_META[card.rarity], card.id).toBeDefined();
       expect(CARD_BY_ID.has(card.id), card.id).toBe(false);
+    }
+  });
+});
+
+/**
+ * Socle du coût de café typé — ticket #30, étape *expand*. Cette carte est
+ * **synthétique** : aucune carte réelle ne porte `cafeCost` tant que #33 n'a pas migré.
+ */
+const CARTE_CAFE_TYPE: PlanqueCard = {
+  id: 'sse-socle-cafe-type',
+  name: 'Carte de test à café typé',
+  kind: 'PLANQUE',
+  faction: 'SSE',
+  stage: 'ENTRANT',
+  rarity: '2D',
+  hp: 60,
+  retreat: 1,
+  weakness: 'MANAGEMENT',
+  attacks: [{ name: 'Pression de test', cost: 2, cafeCost: { type: 'QVT', amount: 2 }, damage: 40 }],
+  flavor: 'Carte synthétique : elle n’entre jamais dans le Parc.',
+  glyph: '✦',
+  palette: '#24303c'
+};
+
+describe('Coût de café typé — expand (#30)', () => {
+  it('accepte un coût typé à côté du coût numérique, avec au moins 1 café', () => {
+    const attack = CARTE_CAFE_TYPE.attacks[0];
+    expect(attack.cost).toBe(2);
+    expect(attack.cafeCost).toEqual({ type: 'QVT', amount: 2 });
+    expect(CARD_BY_ID.has(CARTE_CAFE_TYPE.id)).toBe(false);
+  });
+
+  it('garde le coût numérique des cartes existantes et valide tout coût typé présent', () => {
+    for (const card of PLANQUES) {
+      for (const attack of card.attacks) {
+        expect(Number.isInteger(attack.cost), `${card.id}/${attack.name}`).toBe(true);
+        expect(attack.cost, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
+        if (attack.cafeCost) {
+          expect(isValidCafeCost(attack.cafeCost), `${card.id}/${attack.name}`).toBe(true);
+        }
+      }
     }
   });
 });
