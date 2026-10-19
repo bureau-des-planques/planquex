@@ -9,6 +9,8 @@ import type {
   Status
 } from '@/data/types';
 import { deckLegal } from '@/game/deck';
+import { drawRandom, seedRng } from '@/game/rng';
+import type { RngHolder } from '@/game/rng';
 import { RULES, STATUS_ORDER } from '@/game/rules';
 
 let uidCounter = 0;
@@ -33,14 +35,14 @@ function awaitingPromotion(state: BattleState): boolean {
 
 const newUid = () => `u${++uidCounter}`;
 
-export function createInstance(cardId: string, turn = 0): CardInstance {
+export function createInstance(cardId: string, turn = 0, uid = newUid()): CardInstance {
   const card = getCard(cardId);
   if (!card) throw new Error(`Carte inconnue: ${cardId}`);
   // Une carte Action ne se pose jamais : son instance n'a pas de Seuil, mais elle vit
   // au Chariot et dans la main comme les autres (0 = pas de Seuil à afficher).
   const hp = isPlanque(card) ? card.hp : 0;
   return {
-    uid: newUid(),
+    uid,
     cardId,
     hp,
     maxHp: hp,
@@ -52,10 +54,20 @@ export function createInstance(cardId: string, turn = 0): CardInstance {
   };
 }
 
-function shuffle<T>(items: T[]): T[] {
+/**
+ * Instances d'un Chariot neuf. L'`uid` dérive de la **place dans le Chariot**
+ * (`p12`, `a3`) et non d'un compteur global : deux parties de même graine
+ * doivent produire des états strictement identiques (ticket #29), ce qu'un
+ * compteur module rendrait impossible dès la deuxième partie.
+ */
+function deckInstances(deck: string[], prefix: 'p' | 'a'): CardInstance[] {
+  return deck.map((id, index) => createInstance(id, 0, `${prefix}${index}`));
+}
+
+function shuffle<T>(items: T[], holder: RngHolder): T[] {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(drawRandom(holder) * (i + 1));
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
   return copy;
@@ -202,8 +214,6 @@ function assertDeckLegal(deck: string[], who: string) {
 }
 
 export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date.now()): BattleState {
-  // Le seed est conservé pour les futurs tests déterministes.
-  void seed;
   assertDeckLegal(playerDeck, 'Toi');
   assertDeckLegal(aiDeck, 'la Direction');
   const state: BattleState = {
@@ -216,11 +226,14 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
     },
     log: [],
     winner: null,
-    pendingPromotion: null
+    pendingPromotion: null,
+    // Toute la suite de la partie tire de cet état : la graine devient la seule
+    // source de hasard, et `Date.now()` n'en est que la valeur par défaut (UI).
+    rng: seedRng(seed)
   };
 
-  state.players.player.deck = shuffle(playerDeck.map((id) => createInstance(id)));
-  state.players.ai.deck = shuffle(aiDeck.map((id) => createInstance(id)));
+  state.players.player.deck = shuffle(deckInstances(playerDeck, 'p'), state);
+  state.players.ai.deck = shuffle(deckInstances(aiDeck, 'a'), state);
 
   setupPlayer(state, 'player');
   setupPlayer(state, 'ai');
@@ -585,7 +598,7 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
     return next;
   }
   if (hasStatus(player.active, 'SIESTE')) {
-    if (Math.random() < 0.5) {
+    if (drawRandom(next) < 0.5) {
       clearStatus(player.active, 'SIESTE');
       next.log.push('Sieste : réveillé sur pile.');
     } else {
@@ -593,7 +606,7 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
       return next;
     }
   }
-  if (hasStatus(player.active, 'DERIVE') && Math.random() < 0.5) {
+  if (hasStatus(player.active, 'DERIVE') && drawRandom(next) < 0.5) {
     player.active.hp -= 20;
     next.log.push('Dérive : l’attaque échoue, 20 de stress.');
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
@@ -629,12 +642,12 @@ function checkup(state: BattleState): BattleState {
     } else if (status === 'EPUISEMENT') {
       player.active.hp -= 20;
       state.log.push('Épuisement : 20 de stress.');
-      if (Math.random() < 0.5) {
+      if (drawRandom(state) < 0.5) {
         clearStatus(player.active, 'EPUISEMENT');
         state.log.push('Épuisement guéri sur pile.');
       }
     } else if (status === 'SIESTE') {
-      if (Math.random() < 0.5) {
+      if (drawRandom(state) < 0.5) {
         clearStatus(player.active, 'SIESTE');
         state.log.push('Sieste terminée sur pile.');
       }

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { ALL_CARDS, CARD_BY_ID, getCard, isPlanque } from '@/data';
 import {
   attack,
@@ -23,16 +23,10 @@ import { RULES } from '@/game/rules';
 import type { BattleState, PlayerId } from '@/data/types';
 
 /**
- * Le moteur utilise encore `Math.random()` (AGENTS.md §6) : chaque test fige
- * le générateur pour être reproductible.
+ * Le moteur est **seedé** (ticket #29) : les tests choisissent une graine
+ * explicite au lieu de figer `Math.random()`. Même graine, même partie.
  */
-beforeEach(() => {
-  vi.spyOn(Math, 'random').mockReturnValue(0.5);
-});
-
-afterEach(() => {
-  vi.restoreAllMocks();
-});
+const SEED = 1;
 
 const BASICS = ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf && card.stage === 'ENTRANT').map(
   (card) => card.id
@@ -41,8 +35,8 @@ const BASICS = ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf && 
 /** Chariot légal de 20 cartes (10 noms N+1 en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
-function freshBattle(): BattleState {
-  return createBattle(DECK, DECK);
+function freshBattle(seed = SEED): BattleState {
+  return createBattle(DECK, DECK, seed);
 }
 
 /** Cartes en main + au Poste + à l'Rack. */
@@ -83,40 +77,29 @@ describe('Main de départ — pas de reprise de poste (D-022)', () => {
   const SPARSE_DECK = [BASICS[0], ...EVOLUTIONS, ...EVOLUTIONS].slice(0, DECK_SIZE);
 
   it('garantit un N+1 sans remélanger ni faire piocher l’adversaire', () => {
-    // PRNG déterministe : on parcourt plusieurs mélanges plutôt qu'un seul.
-    let state = 1;
-    const random = () => {
-      state = (state * 1103515245 + 12345) % 2147483648;
-      return state / 2147483648;
-    };
-    const spy = vi.spyOn(Math, 'random').mockImplementation(random);
+    // Quarante graines : on parcourt plusieurs mélanges plutôt qu'un seul.
+    for (let run = 0; run < 40; run += 1) {
+      const battle = createBattle(SPARSE_DECK, SPARSE_DECK, run + 1);
+      for (const who of ['player', 'ai'] as PlayerId[]) {
+        const player = battle.players[who];
+        const inPlay = [player.active, ...player.bench].filter(Boolean);
 
-    try {
-      for (let run = 0; run < 40; run += 1) {
-        const battle = createBattle(SPARSE_DECK, SPARSE_DECK);
-        for (const who of ['player', 'ai'] as PlayerId[]) {
-          const player = battle.players[who];
-          const inPlay = [player.active, ...player.bench].filter(Boolean);
-
-          // La main de départ contient toujours un Planqué N+1 jouable.
-          expect(
-            inPlay.some((card) => {
-              const definition = getCard(card?.cardId ?? '');
-              return isPlanque(definition) && definition.stage === 'ENTRANT';
-            }),
-            `run ${run}, ${who} : aucun N+1`
-          ).toBe(true);
-          // Cinq cartes au total, donc aucune pioche de compensation.
-          expect(player.hand.length + inPlay.length, `run ${run}, ${who} : taille de main`).toBe(5);
-          // Aucune carte perdue ni dupliquée par l'échange.
-          expect(
-            player.hand.length + inPlay.length + player.deck.length + player.discard.length,
-            `run ${run}, ${who} : total de cartes`
-          ).toBe(DECK_SIZE);
-        }
+        // La main de départ contient toujours un Planqué N+1 jouable.
+        expect(
+          inPlay.some((card) => {
+            const definition = getCard(card?.cardId ?? '');
+            return isPlanque(definition) && definition.stage === 'ENTRANT';
+          }),
+          `run ${run}, ${who} : aucun N+1`
+        ).toBe(true);
+        // Cinq cartes au total, donc aucune pioche de compensation.
+        expect(player.hand.length + inPlay.length, `run ${run}, ${who} : taille de main`).toBe(5);
+        // Aucune carte perdue ni dupliquée par l'échange.
+        expect(
+          player.hand.length + inPlay.length + player.deck.length + player.discard.length,
+          `run ${run}, ${who} : total de cartes`
+        ).toBe(DECK_SIZE);
       }
-    } finally {
-      spy.mockRestore();
     }
   });
 });
@@ -276,7 +259,7 @@ describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
     expect(journal).toMatch(/Surcharge : 10 de stress.*Épuisement : 20 de stress/);
     expect(after.players.player.active?.hp).toBe(170);
     // Immobilisation se dissipe au bout d'un tour ; Surcharge et Épuisement restent
-    // (Épuisement n'est pas guéri sur un « lancer défavorable », 0,5 figé).
+    // (le lancer d'Épuisement est perdu avec `SEED` — plus de `Math.random()` figé à 0,5).
     const restants = after.players.player.active?.statuses ?? [];
     expect(restants).not.toContain('IMMOBILISATION');
     expect(restants).toContain('SURCHARGE');
@@ -754,5 +737,61 @@ describe('Effet reduceDamage — réduction de Stress (ticket #43)', () => {
 
     const after = attack(state, 0);
     expect(after.players.player.active?.damageReduction).toBe(10);
+  });
+});
+
+describe('Déterminisme — le hasard vient d’une graine (#29)', () => {
+  /** Interdit le hasard global le temps d’un appel : le moteur ne doit tirer que de sa graine. */
+  function withoutMathRandom<T>(run: () => T): T {
+    const spy = vi.spyOn(Math, 'random').mockImplementation(() => {
+      throw new Error('Le moteur a appelé Math.random() : il n’est plus seedé.');
+    });
+    try {
+      return run();
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  /**
+   * Séquence qui consomme le hasard du moteur : mélange des deux Chariots, puis
+   * six fins de tour avec Épuisement et Sieste au Poste — les lancers de guérison.
+   * Les Seuils sont montés pour qu’aucun craquage ne vienne couper la séquence.
+   */
+  function scripted(seed: number): BattleState {
+    const state = createBattle(DECK, DECK, seed);
+    for (const who of ['player', 'ai'] as PlayerId[]) {
+      const active = state.players[who].active;
+      if (!active) throw new Error('Poste vide');
+      active.maxHp = 500;
+      active.hp = 500;
+      active.statuses = ['EPUISEMENT', 'SIESTE'];
+    }
+    let next = state;
+    for (let turn = 0; turn < 6; turn += 1) next = endTurn(next);
+    return next;
+  }
+
+  it('ne tire plus au hasard global, même pour mélanger un Chariot', () => {
+    // Le simple fait de créer une partie mélange deux Chariots : sans graine,
+    // l’appel lève ici.
+    const state = withoutMathRandom(() => createBattle(DECK, DECK, 1));
+    expect(state.players.player.deck.length).toBeGreaterThan(0);
+  });
+
+  it('même graine → même état, graine différente → états différents', () => {
+    const first = withoutMathRandom(() => scripted(7));
+    const sameSeed = withoutMathRandom(() => scripted(7));
+    const otherSeed = withoutMathRandom(() => scripted(8));
+
+    expect(sameSeed).toStrictEqual(first);
+    expect(otherSeed).not.toStrictEqual(first);
+  });
+
+  it('sans graine explicite, deux parties restent indépendantes', () => {
+    // `Date.now()` sert de graine par défaut : deux créations rapprochées ne
+    // doivent pas forcément donner le même ordre de Chariot (comportement d’avant).
+    const deck = (state: BattleState) => state.players.player.deck.map((card) => card.cardId);
+    expect(deck(createBattle(DECK, DECK, 1))).not.toEqual(deck(createBattle(DECK, DECK, 2)));
   });
 });
