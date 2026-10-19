@@ -62,7 +62,11 @@ export const RARITY_META: Record<Rarity, { label: string; color: string; order: 
   '3D': { label: '◆◆◆', color: '#c9a227', order: 3 },
   '4D': { label: '◆◆◆◆', color: '#f0c75e', order: 4 },
   '1S': { label: '★', color: '#e8b54a', order: 5 },
-  '2S': { label: '★★', color: '#f2d27a', order: 6 }
+  '2S': { label: '★★', color: '#f2d27a', order: 6 },
+  // Haut de l'échelle (CARD-SPEC.md §1) : 3 étoiles, puis la Couronne — holo violette
+  // sur le fond sombre, pour la distinguer des ors des étoiles.
+  '3S': { label: '★★★', color: '#ffd76e', order: 7 },
+  COU: { label: '♛', color: '#c9a2ff', order: 8 }
 };
 
 export const SSE_ONLY = ALL_CARDS.filter((card) => card.faction === 'SSE');
