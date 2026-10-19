@@ -67,11 +67,11 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Briefing', cost: 1, damage: 20 }],
-    flavor: 'Il a briefé l’équipe. L’équipe a compris le contraire.'
+    flavor: 'Il a briefé l’équipe. Le compte-rendu dit l’inverse.'
   }),
   base({
     id: 'management-ton-chef',
-    name: 'Ton chef',
+    name: 'Responsable d’équipe',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
@@ -87,7 +87,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Relance', cost: 1, damage: 20 }],
-    flavor: 'Elle relance les impayés. Personne ne la relance.'
+    flavor: 'Elle relance les impayés. La relance attend une validation.'
   }),
   base({
     id: 'management-planificateur',
@@ -117,7 +117,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Consigne', cost: 1, damage: 20 }],
-    flavor: 'Il relaie la consigne. La consigne s’arrête à lui.'
+    flavor: 'Il relaie la consigne. Le circuit l’a déjà remplacée.'
   }),
   base({
     id: 'management-charge-affaires',

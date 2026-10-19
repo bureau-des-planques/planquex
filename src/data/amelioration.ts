@@ -223,7 +223,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Relevé', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Relevé terminé. Le stage aussi.'
+    flavor: 'Relevé terminé. L’action corrective est reportée.'
   }),
   base({
     id: 'amelioration-directeur-qualite-ex',
