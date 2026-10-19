@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Bureau des Planqués">
+  <defs>
+    <linearGradient id="bp-favicon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f8ef7" />
+      <stop offset="1" stop-color="#7a5cf0" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#0b1220" />
+  <rect x="2.5" y="2.5" width="27" height="27" rx="5.5" fill="url(#bp-favicon)" opacity="0.22" />
+  <text x="16" y="21" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#e8eef8">BP</text>
+</svg>
