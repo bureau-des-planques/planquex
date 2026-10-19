@@ -39,6 +39,25 @@ export type AttackEffectKind =
   | 'switchSelf'
   | 'reduceDamage';
 
+/**
+ * Les membres d'`AttackEffectKind`, **une seule fois** dans le code (#56).
+ *
+ * Cette liste vit à côté du type, pas dans un test : `cards.test.ts` la consomme, et
+ * `src/data/types.test.ts` vérifie par le type qu'elle ne diverge pas de l'union. Les
+ * deux `switch` du moteur (`applyEffects`, `applyActionEffects`) finissent sur un
+ * `assertNever` : ajouter un membre à l'union sans lui écrire de `case` rend `tsc` rouge.
+ */
+export const ATTACK_EFFECT_KINDS = [
+  'healSelf',
+  'healAll',
+  'status',
+  'draw',
+  'discardEnergy',
+  'selfDamage',
+  'switchSelf',
+  'reduceDamage'
+] as const satisfies readonly AttackEffectKind[];
+
 export interface AttackEffect {
   kind: AttackEffectKind;
   amount?: number;
@@ -87,10 +106,27 @@ export interface Attack {
   effects?: AttackEffect[];
 }
 
+/**
+ * Les primitives d'un **Talent**. Taxonomie **distincte** de celle des effets de
+ * Pression (#56) : 6 membres, dont 4 noms communs avec `AttackEffectKind` (`draw`,
+ * `reduceDamage`…) qui ne veulent pas dire la même chose. Un resolver unique serait une
+ * fausse abstraction ; deux `switch`, une liste runtime par union.
+ */
+export type AbilityKind = 'heal' | 'draw' | 'attachEnergy' | 'reduceDamage' | 'antiStatus';
+
+/** Les membres d'`AbilityKind`, source unique (#56) — même contrat qu'`ATTACK_EFFECT_KINDS`. */
+export const ABILITY_KINDS = [
+  'heal',
+  'draw',
+  'attachEnergy',
+  'reduceDamage',
+  'antiStatus'
+] as const satisfies readonly AbilityKind[];
+
 export interface Ability {
   name: string;
   text: string;
-  kind: 'heal' | 'draw' | 'attachEnergy' | 'reduceDamage' | 'antiStatus';
+  kind: AbilityKind;
   amount?: number;
   oncePerTurn?: boolean;
 }
