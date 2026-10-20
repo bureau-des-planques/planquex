@@ -21,12 +21,13 @@ const byId = (id: string): PlanqueCard | undefined => {
 const LINE = ['atelier-apprenti', 'atelier-technicien-maintenance', 'atelier-chef-atelier'];
 
 describe('Atelier — enregistrement (ticket #19)', () => {
-  it('compte 33 entrées, dont 25 bases et 8 variantes (vague 1, #66 : +1 COMEX)', () => {
+  it('compte 34 entrées, dont 26 bases et 8 variantes (vague 1, #66 : +1 COMEX ; vague 2, #86 : +1 carte 3◆)', () => {
     // PROPOSITION.md §4.3 : 32 entrées à la cible. La vague 1 (#66) ajoute le second
-    // COMEX ; les vagues 2 à 4 ramènent le total à 286.
-    expect(ATELIER_CARDS).toHaveLength(25);
+    // COMEX ; la vague 2 (#86) ajoute une carte en 3◆ (Chef d'usine) pour la cible de
+    // rareté `CARD-SPEC.md` §1 ; les vagues 3 et 4 ramènent le total à 286.
+    expect(ATELIER_CARDS).toHaveLength(26);
     expect(ATELIER_VARIANTS).toHaveLength(8);
-    expect(ALL_ATELIER_CARDS).toHaveLength(33);
+    expect(ALL_ATELIER_CARDS).toHaveLength(34);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {

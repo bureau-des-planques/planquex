@@ -49,11 +49,34 @@ async function cardReport() {
   try {
     const { ALL_CARDS: all } = await server.ssrLoadModule('/src/data/index.ts');
     const cards = all ?? [];
+    const factions = [...new Set(cards.map((card) => card.faction))].sort();
+    const rareties = [...new Set(cards.map((card) => card.rarity))].sort();
+    const de = (f) => cards.filter((card) => card.faction === f);
     return {
       total: cards.length,
       base: cards.filter((card) => !card.variantOf).length,
       variants: cards.filter((card) => card.variantOf).length,
-      factions: [...new Set(cards.map((card) => card.faction))].sort()
+      factions,
+      // Décompte par **rareté** : la cible de `CARD-SPEC.md` §1 (42 cartes en 3◆)
+      // se lit ici, sans littéral (#86).
+      rarities: Object.fromEntries(
+        rareties.map((rarete) => [rarete, cards.filter((card) => card.rarity === rarete).length])
+      ),
+      // Décompte par **faction** : où est le déficit, en bases comme en rareté (#86).
+      byFaction: Object.fromEntries(
+        factions.map((faction) => {
+          const list = de(faction);
+          return [
+            faction,
+            {
+              total: list.length,
+              base: list.filter((card) => !card.variantOf).length,
+              variants: list.filter((card) => card.variantOf).length,
+              '3D': list.filter((card) => card.rarity === '3D').length
+            }
+          ];
+        })
+      )
     };
   } finally {
     await server.close();

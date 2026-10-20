@@ -244,6 +244,29 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     flavor: 'Il a suivi le gabarit. Le gabarit ne suivait rien.'
   }),
 
+  // Ligne 7 complétée en N+2 (vague 2, #86) : Chaudronnier → Chef de fabrication →
+  // Chef d’usine.
+  base({
+    id: 'atelier-chef-usine',
+    evolvesFrom: 'atelier-chef-fabrication',
+    name: 'Chef d’usine',
+    stage: 'N+2',
+    rarity: '3D',
+    hp: 150,
+    retreat: 3,
+    attacks: [
+      { name: 'Ordre de fabrication', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      {
+        name: 'Ligne de production',
+        cost: ['ATELIER', 'INCOLORE', 'INCOLORE'],
+        damage: 100,
+        text: 'Ce Planqué prend 20 de stress.',
+        effects: [{ kind: 'selfDamage', amount: 20 }]
+      }
+    ],
+    flavor: 'Il a mis les équipes en cadence. Le carnet de commandes, il ne l’a pas ouvert.'
+  }),
+
   // Ligne 8 : Cariste → Chef de quai (2 stades)
   base({
     id: 'atelier-cariste',

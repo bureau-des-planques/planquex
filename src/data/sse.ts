@@ -258,6 +258,24 @@ export const SSE_CARDS: PlanqueCard[] = [
     attacks: [{ name: 'Vérification', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il vérifie les issues de secours. Elles sont bloquées.'
   }),
+
+  // Ligne complétée en N+1 (vague 2, #86) : Contrôleur de sécurité → Responsable
+  // sécurité.
+  base({
+    id: 'sse-responsable-securite',
+    evolvesFrom: 'sse-controleur-securite',
+    name: 'Responsable sécurité',
+    stage: 'N+1',
+    rarity: '3D',
+    hp: 105,
+    retreat: 2,
+    ability: { name: 'Anticipation', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
+    attacks: [
+      { name: 'Consigne de sécurité', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] },
+      { name: 'Rapport de sécurité', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }
+    ],
+    flavor: 'Il a tout vérifié. Le tableau de bord est vide.'
+  }),
   base({
     id: 'sse-brancardier',
     name: 'Brancardier',

@@ -224,8 +224,15 @@ describe('Raretés hautes — socle de type (CARD-SPEC.md §1, AGENTS.md §3.2)'
 /** Les types de café que la Machine peut **produire**, dans l'ordre des factions. */
 const PRODUITS: CafeSymbol[] = ['SSE', 'MANAGEMENT', 'QVT', 'AMELIORATION', 'RH', 'ATELIER', 'DIRECTION', 'SYNDICAT'];
 
-/** Total des cafés de toutes les Pressions **de base**, avant et après migration (#33). */
-const TOTAL_CAFES_BASES = 477;
+/**
+ * Total des cafés de toutes les Pressions **de base**, avant et après migration (#33).
+ *
+ * Le nombre est un **instantané** du contenu : il change quand une carte est écrite
+ * (la vague 2, #86, ajoute 9 cartes en 3◆ et 45 cafés) et quand une Pression change
+ * de coût. Il sert à prouver que la migration au café typé (D-037) n'a pas changé le
+ * **nombre** de cafés d'une Pression — pas à figer un contenu.
+ */
+const TOTAL_CAFES_BASES = 522;
 
 describe('Coût en café typé — forme (D-037 (1), #35)', () => {
   it('chaque Pression porte une liste de symboles : type produit ou `INCOLORE`', () => {
@@ -446,6 +453,23 @@ describe('Cartes — les COMEX de la vague 1 (#66)', () => {
 
   it('suffixe l’identifiant de chaque COMEX par `-ex` (D-027)', () => {
     for (const card of COMEX) expect(card.id, card.id).toMatch(/-ex$/);
+  });
+});
+
+describe('Cartes — rareté 3◆ (CARD-SPEC.md §1, vague 2, #86)', () => {
+  it('compte 42 cartes en 3 diamants, comme la cible du set', () => {
+    // CARD-SPEC.md §1 : 42 cartes en 3◆. La vague 1 en ammenait 33 ; la vague 2 (#86)
+    // en ajoute 9 — une par faction qui était en déficit de 3◆.
+    const troisD = PLANQUES.filter((card) => card.rarity === '3D');
+    expect(troisD).toHaveLength(42);
+  });
+
+  it('ne place aucune carte en 3◆ au stade Entrant', () => {
+    // Les bandes de Seuil de `curves.ts` (D-023) ne couvrent que `N+1/3D` et
+    // `N+2/3D` : une carte en 3◆ qui serait Entrante n'aurait pas de bande.
+    for (const card of PLANQUES.filter((c) => c.rarity === '3D')) {
+      expect(['N+1', 'N+2'], card.id).toContain(card.stage);
+    }
   });
 });
 

@@ -21,10 +21,14 @@ const byId = (id: string): PlanqueCard | undefined => {
 const LINE = ['syndicat-delegue-personnel', 'syndicat-representant-cse', 'syndicat-secretaire-general'];
 
 describe('Syndicat — enregistrement (ticket #21)', () => {
-  it('compte 5 entrées, dont 4 bases et 1 variante secrète (PROPOSITION.md §4.3)', () => {
-    expect(SYNDICAT_CARDS).toHaveLength(4);
+  it('compte 7 entrées, dont 6 bases et 1 variante secrète (vague 2, #86 : +1 ligne en 3◆)', () => {
+    // La vague 2 (#86) ajoute une ligne à 3 stades (Trésorier CSE → Président CSE)
+    // pour atteindre la cible de rareté `CARD-SPEC.md` §1 : 42 cartes en 3◆. Le quota
+    // de `PROPOSITION.md` §4.3 (5 entrées) est dépassé de 2 : l'écart est signalé au
+    // ticket #63.
+    expect(SYNDICAT_CARDS).toHaveLength(6);
     expect(SYNDICAT_VARIANTS).toHaveLength(1);
-    expect(ALL_SYNDICAT_CARDS).toHaveLength(5);
+    expect(ALL_SYNDICAT_CARDS).toHaveLength(7);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {
