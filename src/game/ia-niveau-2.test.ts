@@ -13,8 +13,10 @@ import { factionDeck, simulate } from '@/game/simulation';
  * - le niveau 2 ne propose **jamais** une action illégale : il part de `legalActions` ;
  * - il ne joue **jamais** pour le camp `player` ;
  * - il est **déterministe par graine** : même graine → même partie ;
- * - sa **mesure est consignée** telle qu'elle est : depuis #108, le niveau 2 n'est
- *   plus devant le niveau 1 (le chiffre et la graine sont dans le test).
+ * - sa **mesure est consignée** telle qu'elle est : depuis #108 le niveau 2 n'est plus
+ *   devant le niveau 1, et la mesure a été **refaite après #113** — les Chariots
+ *   `SUPPORT` et `INTERIM` du simulateur sont désormais **armés**, donc la mesure d'avant
+ *   n'était pas comparable. Le chiffre, la graine et la commande sont dans le test.
  *
  * **Protocole de mesure (#111), écrit ici pour être rejoué :**
  *
@@ -25,6 +27,7 @@ import { factionDeck, simulate } from '@/game/simulation';
  *
  * Le camp de niveau 2 est `ai` dans la première série, `player` dans la seconde ; on
  * agrège `results[].winner` sur les deux (60 parties par siège et par graine).
+ * Depuis #113, `npm run pesage` exécute ce protocole d'un coup, avec les seuils.
  *
  * - **Entraînement** (recherche de poids) : graines `1, 7, 42, 11, 23`.
  * - **Contrôle** (hors échantillon) : graines `99, 1234, 2024, 777, 31337`.
@@ -147,7 +150,7 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
   });
 
   it(
-    'consigne la mesure après #111 : le niveau 2 n’est toujours pas devant le niveau 1',
+    'consigne la mesure après #111 et #113 : le niveau 2 n’est toujours pas devant le niveau 1',
     () => {
       const games = 100;
       const seed = 42;
@@ -165,15 +168,12 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
         (result) => result.winner === null
       ).length;
 
-      // Mesure consignée le 21/10/2026, **après** la correction du modèle par #111 :
-      // le niveau 2 perd 70 à 87 (43 nulles) à la graine 42. Le modèle précédent
-      // (#108) donnait 67 / 89 / 44 ; il comptait la menace deux fois et son bonus de
-      // fin de tour lisait `hand`. Le re-pesage de #111 n'a **rien** adopté (aucun
-      // candidat n'atteint 55 % des décidées au contrôle). Ces chiffres sont la
-      // référence à battre : tant qu'un re-pesage mesuré ne les fait pas passer
-      // devant, le niveau 2 n'est **pas** démontré meilleur, et le niveau 1 reste le
-      // défaut (écran et simulateur).
-      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 70, niveau1: 87, nulles: 43 });
+      // Mesure consignée le 21/10/2026, **après** les corrections du modèle (#111) *et* du
+      // harnais (#113 : Chariots `SUPPORT` et `INTERIM` armés). Les chiffres d'avant ne
+      // sont pas comparables : un match sur trois opposait un Chariot incapable d'attaquer.
+      // Tant qu'un re-pesage mesuré ne fait pas passer le niveau 2 devant, il n'est pas
+      // démontré meilleur, et le niveau 1 reste le défaut (écran et simulateur).
+      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 71, niveau1: 91, nulles: 38 });
     },
     60000
   );

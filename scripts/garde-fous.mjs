@@ -112,7 +112,7 @@ export const MUTATIONS = [
     garde: 'sans fermeture, une régression de contenu (3 cartes 3◆ disparues) passe inaperçue'
   },
   {
-    ticket: 118,
+ticket: 118,
     titre: 'le nettoyage d’une mutation de la table globale ne restaure plus rien',
     fichier: 'src/game/cafe-type.test.ts',
     motif: 'for (const { id, original } of PATCHES.splice(0).reverse()) CARD_BY_ID.set(id, original);',
@@ -129,6 +129,16 @@ export const MUTATIONS = [
     remplacement: "cost: ['QVT', 'AMELIORATION'],",
     tests: ['src/data/interim.test.ts'],
     garde: 'une ligne payable en 3 types au plus (D-034) redevient injouable en cours d’évolution'
+  },
+  {
+    ticket: 113,
+    titre: 'le simulateur repasse par la dérivation des types de café',
+    fichier: 'src/game/simulation.ts',
+    motif: 'playerCafeTypes: cafeTypes.get(player),',
+    remplacement: 'playerCafeTypes: undefined,',
+    tests: ['src/game/simulation.test.ts'],
+    garde:
+      'sans le choix explicite, le Chariot SUPPORT ne produit aucun café et ne lance aucune Pression : la mesure du niveau 2 est biaisée'
   }
 ];
 
