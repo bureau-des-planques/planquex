@@ -144,8 +144,9 @@ describe('D-033 §3 — Dérive : échec = tour terminé, aucun Stress', () => {
     const defender = state.players.ai.active;
     if (!active || !defender) throw new Error('Poste vide');
     active.statuses = ['DERIVE'];
-    // `stepRng(0).value = 0.266` : le lancer de Dérive échoue.
-    state.rng = 0;
+    // `stepRng(1).value = 0.627` (≥ 0.5) : le lancer de tampon donne **pile**, donc
+    // la Pression n'est pas lancée (#82, face = succès).
+    state.rng = 1;
     const index = affordableAttack(active);
     const attackerHp = active.hp;
     const defenderHp = defender.hp;
@@ -168,8 +169,9 @@ describe('D-033 §3 — Dérive : échec = tour terminé, aucun Stress', () => {
     const defender = state.players.ai.active;
     if (!active || !defender) throw new Error('Poste vide');
     active.statuses = ['DERIVE'];
-    // `stepRng(1).value = 0.627` : le lancer de Dérive réussit.
-    state.rng = 1;
+    // `stepRng(0).value = 0.266` (< 0.5) : le lancer de tampon donne **face**, donc
+    // la Pression part normalement (#82, face = succès).
+    state.rng = 0;
     const index = affordableAttack(active);
     const defenderHp = defender.hp;
 
@@ -184,6 +186,7 @@ describe('D-033 — le lancer seedé reste lisible', () => {
   it('stepRng donne bien les valeurs des deux cas ci-dessus', () => {
     // Ces deux assertions documentent le choix de graines des tests : si `rng.ts`
     // changeait de suite, les cas Dérive ne testeraient plus les mêmes branches.
+    // `face` = `< 0.5`, `pile` = `≥ 0.5` (#82).
     expect(stepRng(0).value).toBeLessThan(0.5);
     expect(stepRng(1).value).toBeGreaterThanOrEqual(0.5);
   });

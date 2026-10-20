@@ -50,3 +50,20 @@ export function drawRandom(holder: RngHolder): number {
   holder.rng = step.state;
   return step.value;
 }
+
+/** Les deux côtés du **lancer de tampon** (`AGENTS.md` §3.1). */
+export type StampSide = 'face' | 'pile';
+
+/**
+ * **Lancer de tampon** : une pièce à deux côtés, l'**agrafe** (`face`) et le
+ * **tampon** (`pile`). Consomme **exactement un** tirage `drawRandom`, seuil
+ * `< 0.5` → `face` ; la probabilité 1/2 est inchangée.
+ *
+ * **`face` = succès**, sans exception, comme la capture `07` le prescrit :
+ * « Si c'est face, le Pokémon est guéri » (Épuisement, Sieste) et
+ * « Si c'est face, l'attaque fonctionne normalement » (Dérive). Avant #82, chaque
+ * statut réécrivait son propre seuil, et la Dérive avait le sens inverse.
+ */
+export function flipStamp(holder: RngHolder): StampSide {
+  return drawRandom(holder) < 0.5 ? 'face' : 'pile';
+}

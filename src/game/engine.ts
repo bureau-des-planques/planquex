@@ -10,7 +10,7 @@ import type {
   Status
 } from '@/data/types';
 import { deckLegal } from '@/game/deck';
-import { drawRandom, seedRng } from '@/game/rng';
+import { drawRandom, flipStamp, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
 import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT } from '@/game/rules';
 
@@ -788,12 +788,14 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
     next.log.push('Sieste : impossible d’attaquer.');
     return next;
   }
-  // Dérive (D-033 §3, capture `07`) : « Si c'est pile, l'attaque n'est pas lancée
-  // et le tour du joueur prend fin. » Aucun Stress — les 20 que le moteur infligeait
-  // n'avaient aucune source. Le tour est consommé, comme après une Pression réussie.
-  if (hasStatus(player.active, 'DERIVE') && drawRandom(next) < 0.5) {
+  // Dérive (D-033 §3, capture `07`) : « Si c'est face, l'attaque fonctionne
+  // normalement. Si c'est pile, l'attaque n'est pas lancée et le tour du joueur
+  // prend fin. » **face = succès** (le lancer de tampon, #82) : on ne refuse que
+  // sur `pile`. Aucun Stress — les 20 que le moteur infligeait n'avaient aucune
+  // source. Le tour est consommé, comme après une Pression réussie.
+  if (hasStatus(player.active, 'DERIVE') && flipStamp(next) === 'pile') {
     player.hasAttacked = true;
-    next.log.push('Dérive : l’attaque n’est pas lancée, le tour prend fin.');
+    next.log.push('Dérive : tampon, la Pression n’est pas lancée, le tour prend fin.');
     return next;
   }
 
@@ -849,14 +851,19 @@ function controlStatuses(state: BattleState, who: PlayerId) {
     } else if (status === 'EPUISEMENT') {
       active.hp -= 20;
       state.log.push(`Épuisement : 20 de stress (${label}).`);
-      if (drawRandom(state) < 0.5) {
+      // Capture `07` : « Si c'est face, le Pokémon est guéri » — face = succès (#82).
+      if (flipStamp(state) === 'face') {
         clearStatus(active, 'EPUISEMENT');
-        state.log.push(`Épuisement guéri sur pile (${label}).`);
+        state.log.push(`Épuisement guéri : agrafe (${label}).`);
       }
     } else if (status === 'SIESTE') {
-      if (drawRandom(state) < 0.5) {
+      // Capture `07` : « Si c'est face, le Pokémon est guéri, mais si c'est pile,
+      // il reste Endormi » — face = succès (#82).
+      if (flipStamp(state) === 'face') {
         clearStatus(active, 'SIESTE');
-        state.log.push(`Sieste terminée sur pile (${label}).`);
+        state.log.push(`Sieste guérie : agrafe (${label}).`);
+      } else {
+        state.log.push(`Sieste : tampon, toujours endormi (${label}).`);
       }
     } else if (status === 'IMMOBILISATION') {
       if (who === state.current) {
