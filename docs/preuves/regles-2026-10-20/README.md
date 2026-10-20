@@ -104,7 +104,7 @@ de preuves.
 
 | Sujet | Pourquoi |
 |---|---|
-| Le **texte exact** des Astuces | Le masterdata du jeu (`gamedata_master_tips.aladin`) est **chiffré** ; les clés ne sont pas publiques. Voir `d-datamining`. |
+| Le **texte exact** des Astuces | Le masterdata du jeu (`gamedata_master_tips.aladin`) est **chiffré** ; les clés ne sont pas publiques. Voir le rapport brut `d-datamining.md`, **hors dépôt** (§5). |
 | Le **plafond de 3 types de café** | Confirmé par TVTropes + Game8 + le code de deckgym, mais **aucune source primaire** — l'écran **d'édition du deck** de l'app (choix des **types d'Énergie**) reste à capturer. Débloque le ticket #30. |
 | **Statuts : cumul ou non** | La transcription dit l'inverse de §4 ; la capture de « Contrôle Pokémon et États Spéciaux » trancherait. |
 | **Pioche du premier joueur** | La transcription dit l'inverse de §4 ; la capture de « Déroulement d'un tour » trancherait. |
