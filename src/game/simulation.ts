@@ -1,14 +1,8 @@
-import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
-import type { BattleAction, BattleState, CardInstance, Faction, PlayerId } from '@/data/types';
+import { ALL_CARDS, isPlanque } from '@/data';
+import type { BattleState, Faction, PlayerId } from '@/data/types';
 import { DECK_SIZE, deckCanAdd, deckLegal } from '@/game/deck';
-import {
-  applyAction,
-  attackPreview,
-  canEvolve,
-  canPlayAction,
-  isOpeningTurn,
-  createBattle
-} from '@/game/engine';
+import { applyAction, createBattle } from '@/game/engine';
+import { nextAction } from '@/game/ia';
 import { drawRandom, seedRng } from '@/game/rng';
 
 /**
@@ -186,124 +180,13 @@ export function pairFactions(factions: readonly Faction[], index: number): [Fact
 /* Politique                                                           */
 /* ------------------------------------------------------------------ */
 
-function inPlay(player: BattleState['players'][PlayerId]): CardInstance[] {
-  return [player.active, ...player.bench].filter(Boolean) as CardInstance[];
-}
-
 /**
- * Prochaine action **non terminale** du camp au trait : évolution, carte Action,
- * pose d'un Entrant, Talent, puis attachement de café. `null` quand il n'y a plus
- * rien à faire — l'attaque est traitée séparément, une seule fois par tour.
+ * La politique vit **une seule fois**, dans `@/game/ia` (`nextAction`) : le
+ * simulateur et l'écran de combat la lisent tous les deux. Ici, chaque camp joue
+ * une action à la fois jusqu'à la fin du tour — c'est le même dispatcher
+ * `applyAction` que l'écran (#58), et le forfait, décision humaine (D-030), n'est
+ * jamais produit par la politique (`nextAction` ne l'énumère pas).
  */
-function nextAction(state: BattleState): BattleAction | null {
-  const player = state.players[state.current];
-
-  // Une carte Action d'abord : elle peut piocher l'évolution qu'on attend.
-  for (const handCard of player.hand) {
-    if (canPlayAction(state, handCard.uid)) return { type: 'playAction', uid: handCard.uid };
-  }
-
-  // Évoluer, en préférant le Poste au Rack.
-  for (const handCard of player.hand) {
-    const card = getCard(handCard.cardId);
-    if (!isPlanque(card) || !card.evolvesFrom) continue;
-    for (const target of inPlay(player)) {
-      if (canEvolve(state, handCard.uid, target.uid)) {
-        return { type: 'evolve', uid: handCard.uid, targetUid: target.uid };
-      }
-    }
-  }
-
-  // Poser les Entrants : au Poste s'il est vide, sinon au premier Rack libre.
-  const basics = player.hand.filter((handCard) => isBasic(getCard(handCard.cardId)));
-  if (!player.active && basics[0]) return { type: 'playBasic', uid: basics[0].uid, slot: 'active' };
-  const freeSlot = player.bench.findIndex((slot) => !slot);
-  if (freeSlot >= 0 && basics[0]) return { type: 'playBasic', uid: basics[0].uid, slot: freeSlot };
-
-  // Talent du Poste : les primitives existantes du moteur rendent toujours service.
-  if (!player.hasUsedAbility && player.active) {
-    const card = getCard(player.active.cardId);
-    if (isPlanque(card) && card.ability) return { type: 'ability' };
-  }
-
-  // Un café par tour, sur le Poste. Le premier tour du premier joueur tiré au sort
-  // (D-033 (6)) en est privé (§4, D-030) : la règle est celle du moteur, pas une copie.
-  if (!player.energyAttached && player.energyZone > 0 && player.active && !isOpeningTurn(state)) {
-    return { type: 'attachEnergy', targetUid: player.active.uid };
-  }
-
-  return null;
-}
-
-/** Meilleure attaque légale, au sens des dégâts effectifs (`attackPreview`). */
-function chooseAttack(state: BattleState): BattleAction | null {
-  const player = state.players[state.current];
-  if (player.hasAttacked || !player.active) return null;
-  const card = getCard(player.active.cardId);
-  if (!isPlanque(card)) return null;
-
-  let best: number | null = null;
-  let bestDamage = -1;
-  for (let index = 0; index < card.attacks.length; index += 1) {
-    const move = card.attacks[index];
-    if (!move || player.active.energy < move.cost.length) continue;
-    const damage = attackPreview(state, index);
-    if (damage > bestDamage) {
-      best = index;
-      bestDamage = damage;
-    }
-  }
-  return best === null ? null : { type: 'attack', attackIndex: best };
-}
-
-/**
- * L'IA du simulateur joue une action de `applyAction` — le même dispatcher que
- * l'écran de combat (#58). Les transitions d'avant vivaient ici : elles sont
- * maintenant dans `@/game/engine`, à côté de `legalActions`.
- */
-
-/** Relève : le Rack le plus solide, premier index en cas d'égalité. */
-function chooseBench(state: BattleState, who: PlayerId): number {
-  const bench = state.players[who].bench;
-  let best = -1;
-  let bestHp = -1;
-  for (let index = 0; index < bench.length; index += 1) {
-    const card = bench[index];
-    if (card && card.hp > bestHp) {
-      best = index;
-      bestHp = card.hp;
-    }
-  }
-  return best < 0 ? bench.findIndex(Boolean) : best;
-}
-
-/**
- * Joue un tour complet : toutes les actions non terminales jusqu'à épuisement,
- * **une** tentative d'attaque, puis la fin du tour. Le garde-fou évite qu'une
- * action acceptée mais sans effet ne boucle.
- */
-function takeTurn(state: BattleState): BattleState {
-  let next = state;
-  for (let guard = 0; guard < 40; guard += 1) {
-    const action = nextAction(next);
-    // D-030 : le forfait est une décision humaine. La politique du simulateur ne le
-    // construit jamais (`nextAction` ne l'énumère pas) ; cette garde le rend explicite,
-    // pour que la simulation ne s'abandonne pas même si `legalActions` l'offrait un jour.
-    if (!action || action.type === 'forfeit') break;
-    const after = applyAction(next, action);
-    if (after === next) break;
-    next = after;
-    if (next.phase === 'ended' || next.pendingPromotion) return next;
-  }
-
-  const move = chooseAttack(next);
-  if (move) next = applyAction(next, move);
-  if (next.phase === 'ended' || next.pendingPromotion) return next;
-
-  // `endTurn` passe par `applyAction` (ticket #83) : sinon la fin de chaque tour
-  // échapperait au journal d'actions, et le rejeu divergerait.
-  return applyAction(next, { type: 'endTurn' });
-}
 
 /* ------------------------------------------------------------------ */
 /* Rapport                                                             */
@@ -312,8 +195,13 @@ function takeTurn(state: BattleState): BattleState {
 export const DEFAULT_MAX_TURNS = 200;
 
 /**
- * Joue **une** partie headless avec la politique du module et renvoie l'état final.
- * `state.turn` vaut `maxTurns + 1` quand la partie est arrêtée sans vainqueur.
+ * Joue **une** partie headless avec la politique partagée (`@/game/ia`) et renvoie
+ * l'état final. `state.turn` vaut `maxTurns + 1` quand la partie est arrêtée sans
+ * vainqueur.
+ *
+ * Chaque itération applique **une** action de la politique, relève comprise. Une
+ * action qui ne change rien (`applyAction` rend l'état d'entrée) arrête la partie :
+ * c'est le même garde-fou qu'avant, action par action au lieu d'un tour à la fois.
  */
 export function playGame(
   playerDeck: string[],
@@ -323,21 +211,11 @@ export function playGame(
 ): BattleState {
   let state = createBattle(playerDeck, aiDeck, seed);
   while (state.phase === 'playing' && state.turn <= maxTurns) {
-    if (state.pendingPromotion) {
-      const who = state.pendingPromotion;
-      const benchIndex = chooseBench(state, who);
-      // Le moteur ne pose `pendingPromotion` que si le Rack n'est pas vide ; cette
-      // garde évite une boucle si une future règle changeait ce contrat.
-      if (benchIndex < 0) break;
-      // La relève passe par `applyAction` (ticket #83) : la politique ne change pas,
-      // mais l'action entre dans le journal pour que le rejeu la rejoue.
-      state = applyAction(state, { type: 'promoteActive', benchIndex });
-      continue;
-    }
-    const before = state;
-    state = takeTurn(state);
-    // Sécurité : une transition qui ne change rien arrête la partie.
-    if (state === before) break;
+    const action = nextAction(state);
+    if (!action) break;
+    const after = applyAction(state, action);
+    if (after === state) break;
+    state = after;
   }
   return state;
 }
