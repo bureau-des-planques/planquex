@@ -1,9 +1,33 @@
 import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
-import type { Card, Stage } from '@/data/types';
+import type { Card, CafeType, Stage } from '@/data/types';
 
 /** Règles du Chariot (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
 export const DECK_SIZE = 20;
 export const MAX_COPIES_PER_NAME = 2;
+
+/**
+ * Plafond de types de café d'un Chariot (**1 à 3**, D-034/D-037 (4)) : la Machine ne
+ * tire un café que dans ces types.
+ */
+export const MAX_DECK_CAFE_TYPES = 3;
+
+/**
+ * Les **types de café** qu'un Chariot peut produire (D-037 (4)), dérivés des factions
+ * de ses Planqués : l'union des factions présentes, **plafonnée à 3**, dans l'ordre du
+ * Chariot. `SUPPORT` (Incolore) et `INTERIM` (Dragon) n'en sont **jamais** : la Machine
+ * ne produit pas ces types (D-034). En dessous de 3 types distincts, le joueur pourra
+ * plus tard en choisir d'autres à la main (éditeur manuel : hors de ce ticket).
+ */
+export function deckCafeTypes(deck: string[]): CafeType[] {
+  const types: CafeType[] = [];
+  for (const card of deckCards(deck)) {
+    if (!isPlanque(card)) continue;
+    if (card.faction === 'SUPPORT' || card.faction === 'INTERIM') continue;
+    if (!types.includes(card.faction)) types.push(card.faction);
+    if (types.length >= MAX_DECK_CAFE_TYPES) break;
+  }
+  return types;
+}
 
 /** Nombre d'exemplaires par **identifiant** de carte (affichage). */
 export function deckCounts(deck: string[]): Record<string, number> {

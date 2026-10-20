@@ -59,7 +59,7 @@ function battleForAttack(): BattleState {
 function affordableAttack(active: CardInstance): number {
   const card = getCard(active.cardId);
   if (!isPlanque(card)) throw new Error('Carte inconnue');
-  const index = card.attacks.findIndex((entry) => entry.cost <= active.energy);
+  const index = card.attacks.findIndex((entry) => entry.cost.length <= active.energy);
   if (index < 0) throw new Error('Aucune Pression abordable');
   return index;
 }

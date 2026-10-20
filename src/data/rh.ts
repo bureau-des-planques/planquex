@@ -13,7 +13,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Entretien', cost: 1, damage: 10, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
+    attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
     flavor: "Il a posé la question. Il n'a pas écouté la réponse."
   }),
   base({
@@ -25,7 +25,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Sourcing', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
-    attacks: [{ name: "Promesse d'embauche", cost: 2, damage: 40 }],
+    attacks: [{ name: "Promesse d'embauche", cost: ['RH', 'INCOLORE'], damage: 40 }],
     flavor: "Le poste est passionnant. Le salaire est confidentiel."
   }),
   base({
@@ -37,8 +37,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Plan de carrière', cost: 2, damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: "Entretien annuel", cost: 3, damage: 80, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
+      { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: "Entretien annuel", cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 80, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
     flavor: "Il a lu ton CV. Il sait où tu habites."
   }),
@@ -51,7 +51,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Approche discrète', cost: 1, damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Approche discrète', cost: ['RH'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: "Il t'a repéré sur LinkedIn. Tu n'es pas en recherche."
   }),
   base({
@@ -63,8 +63,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [
-      { name: 'Offre mirobolante', cost: 1, damage: 20, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Contre-offre', cost: 2, damage: 50 }
+      { name: 'Offre mirobolante', cost: ['RH'], damage: 20, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Contre-offre', cost: ['RH', 'INCOLORE'], damage: 50 }
     ],
     flavor: "Il double ton salaire. La direction triple son budget café."
   }),
@@ -77,8 +77,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Marque employeur', cost: 2, damage: 60, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] },
-      { name: 'Rétention', cost: 3, damage: 90, text: "Échange ce Planqué avec un Planqué du Rack.", effects: [{ kind: 'switchSelf' }] }
+      { name: 'Marque employeur', cost: ['RH', 'INCOLORE'], damage: 60, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] },
+      { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 90, text: "Échange ce Planqué avec un Planqué du Rack.", effects: [{ kind: 'switchSelf' }] }
     ],
     flavor: "Il garde les meilleurs. Les autres partent en intérim."
   }),
@@ -91,7 +91,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Module e-learning', cost: 1, damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Module e-learning', cost: ['RH'], damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: "Il a validé ta formation. Le lien est mort depuis 2019."
   }),
   base({
@@ -103,7 +103,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     ability: { name: 'Plan de développement', text: "Une fois par tour : soigne 10 d'un Planqué.", kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Certification', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Certification', cost: ['RH', 'INCOLORE'], damage: 50 }],
     flavor: "Il a un budget. Il l'a dépensé en licences inutilisées."
   }),
   base({
@@ -115,8 +115,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Université d\'entreprise', cost: 2, damage: 60, text: "Soigne 10 de tous tes Planqués.", effects: [{ kind: 'healAll', amount: 10 }] },
-      { name: 'Montée en compétences', cost: 3, damage: 100, text: "Ce Planqué prend 20 de stress.", effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Université d\'entreprise', cost: ['RH', 'INCOLORE'], damage: 60, text: "Soigne 10 de tous tes Planqués.", effects: [{ kind: 'healAll', amount: 10 }] },
+      { name: 'Montée en compétences', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: "Ce Planqué prend 20 de stress.", effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: "Elle a formé l'équipe. Le plan de formation a expiré."
   }),
@@ -130,8 +130,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [
-      { name: 'Prime variable', cost: 1, damage: 20, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Avantages sociaux', cost: 2, damage: 40, text: "Soigne 10 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 10 }] }
+      { name: 'Prime variable', cost: ['RH'], damage: 20, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Avantages sociaux', cost: ['RH', 'INCOLORE'], damage: 40, text: "Soigne 10 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 10 }] }
     ],
     flavor: "Il a négocié la mutuelle. Elle ne rembourse pas les lunettes."
   }),
@@ -144,7 +144,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Clause', cost: 1, damage: 10, text: "Le Planqué adverse est Immobilisé.", effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }],
+    attacks: [{ name: 'Clause', cost: ['RH'], damage: 10, text: "Le Planqué adverse est Immobilisé.", effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }],
     flavor: "Il a lu le code du travail. Il l'utilise comme oreiller."
   }),
   base({
@@ -156,8 +156,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     attacks: [
-      { name: 'Négociation', cost: 2, damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Accord d\'entreprise', cost: 2, damage: 50, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] }
+      { name: 'Négociation', cost: ['RH', 'INCOLORE'], damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Accord d\'entreprise', cost: ['RH', 'INCOLORE'], damage: 50, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
     flavor: "Il a signé l'accord. Les syndicats ont signé le procès-verbal."
   }),
@@ -170,8 +170,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Contentieux', cost: 2, damage: 60, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] },
-      { name: 'Conformité', cost: 3, damage: 90, text: "Ce Planqué subit 10 de moins au prochain tour.", effects: [{ kind: 'reduceDamage', amount: 10 }] }
+      { name: 'Contentieux', cost: ['RH', 'INCOLORE'], damage: 60, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] },
+      { name: 'Conformité', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 90, text: "Ce Planqué subit 10 de moins au prochain tour.", effects: [{ kind: 'reduceDamage', amount: 10 }] }
     ],
     flavor: "Il a gagné le procès. L'entreprise a payé les frais."
   }),
@@ -184,7 +184,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Atelier biais', cost: 1, damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Atelier biais', cost: ['RH'], damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: "Il a fait l'atelier. Les biais sont revenus au café."
   }),
   base({
@@ -196,7 +196,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     ability: { name: 'Parité', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
-    attacks: [{ name: 'Index égalité', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Index égalité', cost: ['RH', 'INCOLORE'], damage: 50 }],
     flavor: "Elle a publié l'index. La direction a fêté les 99/100."
   }),
   base({
@@ -208,8 +208,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Mixité', cost: 2, damage: 60, text: "Soigne 10 de tous tes Planqués.", effects: [{ kind: 'healAll', amount: 10 }] },
-      { name: 'Inclusion réelle', cost: 3, damage: 100, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
+      { name: 'Mixité', cost: ['RH', 'INCOLORE'], damage: 60, text: "Soigne 10 de tous tes Planqués.", effects: [{ kind: 'healAll', amount: 10 }] },
+      { name: 'Inclusion réelle', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
     flavor: "Elle a changé les panneaux. Les portes sont restées fermées."
   }),
@@ -222,7 +222,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Mutation', cost: 1, damage: 20, text: "Échange ce Planqué avec un Planqué du Rack.", effects: [{ kind: 'switchSelf' }] }],
+    attacks: [{ name: 'Mutation', cost: ['RH'], damage: 20, text: "Échange ce Planqué avec un Planqué du Rack.", effects: [{ kind: 'switchSelf' }] }],
     flavor: "Il a validé ta mutation. Le carton est prêt depuis trois mois."
   }),
   base({
@@ -232,7 +232,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Dossier', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Dossier', cost: ['RH'], damage: 20 }],
     flavor: "Il a classé le dossier. L'archive a brûlé."
   }),
   base({
@@ -242,7 +242,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Virement', cost: 1, damage: 10, text: "Soigne 10 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 10 }] }],
+    attacks: [{ name: 'Virement', cost: ['RH'], damage: 10, text: "Soigne 10 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 10 }] }],
     flavor: "Il a fait le virement. La banque a bloqué le compte."
   }),
   base({
@@ -252,7 +252,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Aménagement', cost: 1, damage: 20, text: "Ce Planqué subit 10 de moins au prochain tour.", effects: [{ kind: 'reduceDamage', amount: 10 }] }],
+    attacks: [{ name: 'Aménagement', cost: ['RH'], damage: 20, text: "Ce Planqué subit 10 de moins au prochain tour.", effects: [{ kind: 'reduceDamage', amount: 10 }] }],
     flavor: "Il a demandé l'aménagement. La direction a acheté une plante."
   }),
   base({
@@ -262,7 +262,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Enquête satisfaction', cost: 1, damage: 10 }],
+    attacks: [{ name: 'Enquête satisfaction', cost: ['RH'], damage: 10 }],
     flavor: "Il a fait l'enquête. Les résultats sont confidentiels."
   }),
   base({
@@ -272,7 +272,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Entretien départ', cost: 1, damage: 20, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Entretien départ', cost: ['RH'], damage: 20, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: "Il a fait l'entretien. Le badge est déjà désactivé."
   }),
   base({
@@ -282,7 +282,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Export', cost: 1, damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Export', cost: ['RH'], damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: "Il a fait l'export. Le fichier fait 2 Go."
   }),
 
@@ -297,8 +297,8 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Plan de carrière', cost: 2, damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: "Entretien annuel", cost: 3, damage: 120, text: "Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: "Entretien annuel", cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 120, text: "Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: "Deux Interventions. Un seul dossier."
   }),
@@ -314,8 +314,8 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Marque employeur', cost: 2, damage: 70, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] },
-      { name: 'Rétention', cost: 3, damage: 100, text: 'Échange ce Planqué avec un Planqué du Rack. Le Planqué adverse est Dérivé.', effects: [{ kind: 'switchSelf' }, { kind: 'status', status: 'DERIVE', target: 'opponent' }] }
+      { name: 'Marque employeur', cost: ['RH', 'INCOLORE'], damage: 70, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] },
+      { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Échange ce Planqué avec un Planqué du Rack. Le Planqué adverse est Dérivé.', effects: [{ kind: 'switchSelf' }, { kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
     flavor: 'Deux Interventions. Le talent est parti avant la signature.'
   })

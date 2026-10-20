@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Info, Sparkles, Trash2 } from 'lucide-react';
-import { ALL_CARDS, STAGE_META, isPlanque } from '@/data';
+import { ALL_CARDS, FACTION_META, STAGE_META, isPlanque } from '@/data';
 import type { Card } from '@/data/types';
 import {
   autoDeck,
   deckCanAdd,
+  deckCafeTypes,
   deckCards,
   deckCounts,
   deckCountsByName,
@@ -24,6 +25,7 @@ export function Deck() {
   const byName = useMemo(() => deckCountsByName(deck), [deck]);
   const inDeck = useMemo(() => deckCards(deck), [deck]);
   const automatic = useMemo(() => autoDeck(owned), [owned]);
+  const cafeTypes = useMemo(() => deckCafeTypes(deck), [deck]);
 
   const available = useMemo(
     () =>
@@ -72,6 +74,14 @@ export function Deck() {
 
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
         {legality.ok ? 'Chariot valide : il peut partir au combat.' : legality.reasons.join(' ')}
+      </p>
+
+      <p className="muted">
+        Types de café du Chariot :{' '}
+        {cafeTypes.length > 0
+          ? cafeTypes.map((type) => FACTION_META[type].short).join(', ')
+          : 'aucun — ce Chariot ne produira pas de café'}
+        .
       </p>
 
       <section className="section">

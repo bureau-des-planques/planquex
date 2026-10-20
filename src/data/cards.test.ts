@@ -11,10 +11,9 @@ import {
   isActionCard,
   isPlanque
 } from '@/data';
-import type { Card, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
+import type { Card, CafeSymbol, Faction, Rarity, Stage } from '@/data/types';
 import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
 import { damageBand, hpBand } from '@/game/curves';
-import { isValidCafeCost } from '@/game/rules';
 
 /**
  * Fichier de contrôle des conventions d'écriture des cartes.
@@ -124,7 +123,7 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
   it('n’utilise que les primitives d’effet et de talent déclarées (AGENTS.md §5)', () => {
     for (const card of PLANQUES) {
       for (const attack of card.attacks) {
-        expect(attack.cost, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
+        expect(attack.cost.length, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
         expect(attack.damage, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
         for (const effect of attack.effects ?? []) {
           expect(ATTACK_EFFECT_KINDS, `${card.id}/${attack.name}`).toContain(effect.kind);
@@ -174,7 +173,7 @@ const carteSynthetique = (rarity: Rarity): Card => ({
   hp: 60,
   retreat: 1,
   weakness: 'MANAGEMENT',
-  attacks: [{ name: 'Pression de test', cost: 1, damage: 10 }],
+  attacks: [{ name: 'Pression de test', cost: ['SSE'], damage: 10 }],
   flavor: 'Carte synthétique : elle n’entre jamais dans le Parc.',
   glyph: '✦',
   palette: '#24303c'
@@ -204,41 +203,71 @@ describe('Raretés hautes — socle de type (CARD-SPEC.md §1, AGENTS.md §3.2)'
 });
 
 /**
- * Socle du coût de café typé — ticket #30, étape *expand*. Cette carte est
- * **synthétique** : aucune carte réelle ne porte `cafeCost` tant que #33 n'a pas migré.
+ * Forme et attribution du coût en café typé — D-037, tickets #30/#33/#35.
+ *
+ * Le coût d'une Pression est une **liste de symboles** (`CafeSymbol`) : un type de
+ * faction produit, ou `INCOLORE` — qui n'est **pas** `SUPPORT`. La **longueur** de la
+ * liste = l'ancien coût numérique, donc l'équilibrage de D-021 est intact.
  */
-const CARTE_CAFE_TYPE: PlanqueCard = {
-  id: 'sse-socle-cafe-type',
-  name: 'Carte de test à café typé',
-  kind: 'PLANQUE',
-  faction: 'SSE',
-  stage: 'ENTRANT',
-  rarity: '2D',
-  hp: 60,
-  retreat: 1,
-  weakness: 'MANAGEMENT',
-  attacks: [{ name: 'Pression de test', cost: 2, cafeCost: { type: 'QVT', amount: 2 }, damage: 40 }],
-  flavor: 'Carte synthétique : elle n’entre jamais dans le Parc.',
-  glyph: '✦',
-  palette: '#24303c'
-};
 
-describe('Coût de café typé — expand (#30)', () => {
-  it('accepte un coût typé à côté du coût numérique, avec au moins 1 café', () => {
-    const attack = CARTE_CAFE_TYPE.attacks[0];
-    expect(attack.cost).toBe(2);
-    expect(attack.cafeCost).toEqual({ type: 'QVT', amount: 2 });
-    expect(CARD_BY_ID.has(CARTE_CAFE_TYPE.id)).toBe(false);
-  });
+/** Les types de café que la Machine peut **produire**, dans l'ordre des factions. */
+const PRODUITS: CafeSymbol[] = ['SSE', 'MANAGEMENT', 'QVT', 'AMELIORATION', 'RH', 'ATELIER', 'DIRECTION', 'SYNDICAT'];
 
-  it('garde le coût numérique des cartes existantes et valide tout coût typé présent', () => {
+/** Total des cafés de toutes les Pressions **de base**, avant et après migration (#33). */
+const TOTAL_CAFES_BASES = 477;
+
+describe('Coût en café typé — forme (D-037 (1), #35)', () => {
+  it('chaque Pression porte une liste de symboles : type produit ou `INCOLORE`', () => {
     for (const card of PLANQUES) {
       for (const attack of card.attacks) {
-        expect(Number.isInteger(attack.cost), `${card.id}/${attack.name}`).toBe(true);
-        expect(attack.cost, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
-        if (attack.cafeCost) {
-          expect(isValidCafeCost(attack.cafeCost), `${card.id}/${attack.name}`).toBe(true);
+        expect(Array.isArray(attack.cost), `${card.id}/${attack.name}`).toBe(true);
+        for (const symbol of attack.cost) {
+          expect([...PRODUITS, 'INCOLORE'], `${card.id}/${attack.name} → ${symbol}`).toContain(symbol);
         }
+        // `INCOLORE` n'est pas `SUPPORT` : aucun coût ne porte le symbole `SUPPORT` (D-037 (1)).
+        expect(attack.cost, `${card.id}/${attack.name}`).not.toContain('SUPPORT' as never);
+      }
+    }
+  });
+
+  it('garde le nombre de cafés par Pression — total inchangé (D-021, #33)', () => {
+    let total = 0;
+    for (const card of BASE_PLANQUES) {
+      for (const attack of card.attacks) total += attack.cost.length;
+    }
+    expect(total).toBe(TOTAL_CAFES_BASES);
+  });
+});
+
+describe('Coût en café typé — attribution (D-037 (3), #33)', () => {
+  it('un Planqué typé met ≥ 1 café de son type, le reste incolore', () => {
+    for (const card of BASE_PLANQUES) {
+      if (card.faction === 'SUPPORT' || card.faction === 'INTERIM') continue;
+      for (const attack of card.attacks) {
+        if (attack.cost.length === 0) continue;
+        const label = `${card.id}/${attack.name}`;
+        expect(attack.cost[0], label).toBe(card.faction);
+        expect(attack.cost.slice(1).every((symbol) => symbol === 'INCOLORE'), label).toBe(true);
+      }
+    }
+  });
+
+  it('`SUPPORT` n’a que des coûts incolores', () => {
+    for (const card of BASE_PLANQUES.filter((entry) => entry.faction === 'SUPPORT')) {
+      for (const attack of card.attacks) {
+        expect(attack.cost.every((symbol) => symbol === 'INCOLORE'), `${card.id}/${attack.name}`).toBe(true);
+      }
+    }
+  });
+
+  it('`INTERIM` mêle deux types produits distincts, jamais `INTERIM` ni incolore seul', () => {
+    for (const card of BASE_PLANQUES.filter((entry) => entry.faction === 'INTERIM')) {
+      for (const attack of card.attacks) {
+        const label = `${card.id}/${attack.name}`;
+        const types = new Set(attack.cost);
+        expect(attack.cost, label).not.toContain('INTERIM' as never);
+        expect(attack.cost.some((symbol) => PRODUITS.includes(symbol)), label).toBe(true);
+        if (attack.cost.length >= 2) expect(types.size, label).toBe(2);
       }
     }
   });
@@ -300,10 +329,10 @@ describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021
   it('place chaque attaque dans la bande de son coût', () => {
     for (const card of PLANQUES) {
       for (const attack of card.attacks) {
-        const band = damageBand(attack.cost);
-        expect(band, `${card.id}/${attack.name} : coût ${attack.cost} café(s) non couvert`).toBeDefined();
+        const band = damageBand(attack.cost.length);
+        expect(band, `${card.id}/${attack.name} : coût ${attack.cost.length} café(s) non couvert`).toBeDefined();
         if (!band) continue;
-        const label = `${card.id}/${attack.name} à ${attack.cost} café(s)`;
+        const label = `${card.id}/${attack.name} à ${attack.cost.length} café(s)`;
         expect(attack.damage, label).toBeGreaterThanOrEqual(band[0]);
         expect(attack.damage, label).toBeLessThanOrEqual(band[1]);
       }

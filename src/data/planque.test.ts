@@ -84,7 +84,7 @@ describe('Socle — secretVariant', () => {
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Pression', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Pression', cost: ['SSE', 'INCOLORE'], damage: 40 }],
     ability: { name: 'Talent', text: 'Test.', kind: 'draw', amount: 1 },
     flavor: 'Une scène de bureau.',
     glyph: '✚'

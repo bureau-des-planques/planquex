@@ -72,35 +72,29 @@ export interface AttackEffect {
 export type Keyword = 'priorityShift';
 
 /**
- * Type d'un **café** (l'énergie du projet, `AGENTS.md` §3.1). Un type est celui de la
- * faction (§3.2) : `SSE` = Plante, `MANAGEMENT` = Feu… `SUPPORT` = **Incolore**.
- *
- * Un café **incolore** satisfait n'importe quel coût typé (§4).
+ * Type d'un **café** (l'énergie du projet, `AGENTS.md` §3.1) : celui d'une **faction**
+ * (§3.2). `SSE` = Plante, `MANAGEMENT` = Feu… Ces types sont ceux que la Machine à café
+ * peut **produire** ; `INTERIM` (Dragon) et `SUPPORT` (Incolore) n'en produisent jamais
+ * (D-034).
  */
 export type CafeType = Faction;
 
 /**
- * Coût **typé** d'une Pression : `amount` cafés du type `type`. Un coût typé vaut
- * **au moins 1 café** — un coût typé à 0 n'aurait pas de sens.
- *
- * Étape *expand* du refactor (#30) : ce champ vit **à côté** du `cost` numérique, que le
- * moteur lit toujours. La migration (#33) remplira les deux ensemble, puis le contrat
- * supprimera l'ancien champ.
+ * **Symbole** d'un coût de Pression (D-037) : soit un **type de faction**, soit
+ * **`INCOLORE`** — qui n'est **pas** `SUPPORT` (D-037 (1)). Un symbole typé exige un
+ * café de ce type ; un symbole incolore accepte n'importe quel café.
  */
-export interface CafeCost {
-  type: CafeType;
-  amount: number;
-}
+export type CafeSymbol = CafeType | 'INCOLORE';
 
 export interface Attack {
   name: string;
   /**
-   * Coût numérique historique, en cafés. Tant que la migration (#33) n'est pas faite,
-   * c'est **lui** que lit le moteur. Ne pas le retirer ici : rien ne casse avant #34.
+   * Coût d'une Pression, en **cafés typés** (D-037) : une **liste de symboles**. Une
+   * liste vide est une attaque **gratuite** ; le **nombre** de symboles = l'ancien coût
+   * numérique, donc les bandes de dégâts de D-021 ne bougent pas. Un symbole `INCOLORE`
+   * accepte n'importe quel café ; un symbole typé en exige un de ce type.
    */
-  cost: number;
-  /** Coût typé (#30). Absent : seul `cost` fait foi. */
-  cafeCost?: CafeCost;
+  cost: CafeSymbol[];
   damage: number;
   text?: string;
   effects?: AttackEffect[];

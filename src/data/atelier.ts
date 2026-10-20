@@ -20,7 +20,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Coup de clé', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Coup de clé', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il a serré dans le bon sens. Presque.'
   }),
   base({
@@ -32,7 +32,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     ability: { name: 'Dépannage', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Multimètre', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Multimètre', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a réparé la machine. Elle marche moins bien.'
   }),
   base({
@@ -44,8 +44,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Intervention', cost: 2, damage: 70 },
-      { name: 'Gros œuvre', cost: 3, damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il a un plan. Le plan est une clé de 12.'
   }),
@@ -58,7 +58,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Dénudage', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Dénudage', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il a remis le courant. Le compteur tourne à l’envers.'
   }),
   base({
@@ -69,7 +69,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Bobinage', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Bobinage', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a rebobiné le moteur. Il a rendu l’âme au premier essai.'
   }),
   base({
@@ -81,8 +81,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Plan de maintenance', cost: 2, damage: 60 },
-      { name: 'Révision générale', cost: 3, damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 60 },
+      { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il planifie la maintenance. La machine attend depuis mars.'
   }),
@@ -95,7 +95,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Soudure', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Soudure', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il a colmaté la fuite. Le plafond est tombé.'
   }),
   base({
@@ -106,7 +106,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Raccordement', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Raccordement', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a tiré la ligne. Elle arrive dans le mur.'
   }),
   base({
@@ -118,8 +118,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Coulage', cost: 2, damage: 70 },
-      { name: 'Levage', cost: 3, damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Coulage', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      { name: 'Levage', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il a tenu les délais. Le chantier, lui, est en retard.'
   }),
@@ -135,7 +135,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Déblocage',
-        cost: 1,
+        cost: ['ATELIER'],
         damage: 10,
         text: 'Échange ce Planqué avec un Planqué du Rack.',
         effects: [{ kind: 'switchSelf' }]
@@ -152,7 +152,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     attacks: [
-      { name: 'Remise en service', cost: 2, damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }
+      { name: 'Remise en service', cost: ['ATELIER', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
     flavor: 'Il a changé le câble. L’ascenseur monte encore plus lentement.'
   }),
@@ -165,7 +165,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Clé à chocs', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Clé à chocs', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il connaît le bruit par cœur. Il ne connaît pas la référence.'
   }),
   base({
@@ -176,7 +176,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Usinage', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Usinage', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a refait la pièce. La pièce n’existe plus au catalogue.'
   }),
 
@@ -188,7 +188,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Arc électrique', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Arc électrique', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il a soudé les deux fers. Il a soudé aussi son gant.'
   }),
   base({
@@ -200,10 +200,10 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 110,
     retreat: 2,
     attacks: [
-      { name: 'Soudure fine', cost: 2, damage: 50 },
+      { name: 'Soudure fine', cost: ['ATELIER', 'INCOLORE'], damage: 50 },
       {
         name: 'Contrôle radio',
-        cost: 3,
+        cost: ['ATELIER', 'INCOLORE', 'INCOLORE'],
         damage: 80,
         text: 'Envoie 1 café du Planqué adverse au rebut.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
@@ -223,7 +223,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Pliage',
-        cost: 1,
+        cost: ['ATELIER'],
         damage: 10,
         text: 'Ce Planqué subit 10 de moins au prochain tour.',
         effects: [{ kind: 'reduceDamage', amount: 10 }]
@@ -239,7 +239,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Gabarit', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Gabarit', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a suivi le gabarit. Le gabarit ne suivait rien.'
   }),
 
@@ -251,7 +251,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Chariot élévateur', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Chariot élévateur', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il a empilé six palettes. La septième est tombée.'
   }),
   base({
@@ -262,7 +262,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Chargement', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Chargement', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a chargé le camion en avance. Ce n’était pas le bon camion.'
   }),
 
@@ -275,7 +275,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     ability: { name: 'Vigilance', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
-    attacks: [{ name: 'Ronde de nuit', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Ronde de nuit', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il fait le tour du site. Personne ne fait le tour de lui.'
   }),
   base({
@@ -285,7 +285,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Inventaire', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Inventaire', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a tout rangé. Il ne trouve plus rien.'
   }),
   base({
@@ -295,7 +295,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Coup de main', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Coup de main', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a tenu le tournevis. C’est déjà un stage.'
   }),
   base({
@@ -305,7 +305,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Graissage', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Graissage', cost: ['ATELIER'], damage: 20 }],
     flavor: 'Il graisse la chaîne. Elle est à sec dans deux jours.'
   }),
 
@@ -320,8 +320,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Intervention', cost: 2, damage: 70 },
-      { name: 'Gros œuvre', cost: 3, damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Une seule clé de 12.'
   }),
@@ -337,8 +337,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Plan de maintenance', cost: 2, damage: 80 },
-      { name: 'Révision générale', cost: 3, damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 80 },
+      { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. La machine est révisée. La demande de pièces, non.'
   })

@@ -24,7 +24,7 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Tract',
-        cost: 1,
+        cost: ['SYNDICAT'],
         damage: 10,
         text: 'Soigne 10 de ce Planqué.',
         effects: [{ kind: 'healSelf', amount: 10 }]
@@ -41,7 +41,7 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     ability: { name: 'Heure de délégation', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
-    attacks: [{ name: 'Motion', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Motion', cost: ['SYNDICAT', 'INCOLORE'], damage: 40 }],
     flavor: 'La réunion a duré 4 heures. Elle a été reportée.'
   }),
   base({
@@ -55,14 +55,14 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Convention collective',
-        cost: 2,
+        cost: ['SYNDICAT', 'INCOLORE'],
         damage: 50,
         text: 'Ce Planqué subit 10 de moins au prochain tour.',
         effects: [{ kind: 'reduceDamage', amount: 10 }]
       },
       {
         name: 'Grève',
-        cost: 3,
+        cost: ['SYNDICAT', 'INCOLORE', 'INCOLORE'],
         damage: 80,
         text: 'Le Planqué adverse est Immobilisé.',
         effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }]
@@ -83,14 +83,14 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Convention collective',
-        cost: 2,
+        cost: ['SYNDICAT', 'INCOLORE'],
         damage: 60,
         text: 'Ce Planqué subit 20 de moins au prochain tour.',
         effects: [{ kind: 'reduceDamage', amount: 20 }]
       },
       {
         name: 'Grève',
-        cost: 3,
+        cost: ['SYNDICAT', 'INCOLORE', 'INCOLORE'],
         damage: 110,
         text: 'Le Planqué adverse est Immobilisé.',
         effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }]

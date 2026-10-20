@@ -19,7 +19,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Objectif', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Objectif', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Il a un plan. Le plan est un post-it.'
   }),
   base({
@@ -29,7 +29,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Rétroplanning', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Rétroplanning', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a trois rétroplanings. Aucun ne parle du même projet.'
   }),
   base({
@@ -39,7 +39,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Prospection', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Prospection', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Il a signé un devis. Le client attend la livraison depuis mars.'
   }),
   base({
@@ -49,7 +49,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Reporting', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Reporting', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il prépare le tableau de bord qui prépare le tableau de bord.'
   }),
   base({
@@ -59,7 +59,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Briefing', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Briefing', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Il a briefé l’équipe. Le compte-rendu dit l’inverse.'
   }),
   base({
@@ -69,7 +69,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Point de suivi', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Point de suivi', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Il veut juste un point. Le point dure deux heures.'
   }),
   base({
@@ -79,7 +79,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Relance', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Relance', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Elle relance les impayés. La relance attend une validation.'
   }),
   base({
@@ -89,7 +89,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Planning', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Planning', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Le planning est à jour. Le site a changé de plan.'
   }),
   base({
@@ -99,7 +99,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Écart budgétaire', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Écart budgétaire', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Il a trouvé l’écart. Il l’a mis dans un autre tableau.'
   }),
   base({
@@ -109,7 +109,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Consigne', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Consigne', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Il relaie la consigne. Le circuit l’a déjà remplacée.'
   }),
   base({
@@ -119,7 +119,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Devis', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Devis', cost: ['MANAGEMENT'], damage: 20 }],
     flavor: 'Le devis est parti. La marge est restée au bureau.'
   }),
 
@@ -132,7 +132,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Pression', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
-    attacks: [{ name: 'Deadline', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Deadline', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50 }],
     flavor: 'Il manage par mail. Il ne lit pas les réponses.'
   }),
   base({
@@ -143,7 +143,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Jalon', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Jalon', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a validé le jalon. Le jalon n’existait pas.'
   }),
   base({
@@ -154,7 +154,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Négociation', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Négociation', cost: ['MANAGEMENT', 'INCOLORE'], damage: 40 }],
     flavor: 'Il a négocié une remise. Le client en a négocié une autre.'
   }),
   base({
@@ -168,7 +168,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Entretien individuel',
-        cost: 2,
+        cost: ['MANAGEMENT', 'INCOLORE'],
         damage: 40,
         text: 'Le Planqué adverse est en Sieste.',
         effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }]
@@ -184,7 +184,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Cadence', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Cadence', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50 }],
     flavor: 'La cadence est tenue. Les gens, non.'
   }),
 
@@ -199,14 +199,14 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Restructuration',
-        cost: 2,
+        cost: ['MANAGEMENT', 'INCOLORE'],
         damage: 60,
         text: 'Envoie 1 café du Planqué adverse au rebut.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       },
       {
         name: 'Plan de croissance',
-        cost: 3,
+        cost: ['MANAGEMENT', 'INCOLORE', 'INCOLORE'],
         damage: 100,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
@@ -223,10 +223,10 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Revue de jalons', cost: 2, damage: 60 },
+      { name: 'Revue de jalons', cost: ['MANAGEMENT', 'INCOLORE'], damage: 60 },
       {
         name: 'Recette finale',
-        cost: 3,
+        cost: ['MANAGEMENT', 'INCOLORE', 'INCOLORE'],
         damage: 90,
         text: 'Soigne 10 de tous tes Planqués.',
         effects: [{ kind: 'healAll', amount: 10 }]
@@ -243,10 +243,10 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Objectif de rendement', cost: 2, damage: 60 },
+      { name: 'Objectif de rendement', cost: ['MANAGEMENT', 'INCOLORE'], damage: 60 },
       {
         name: 'Ligne complète',
-        cost: 3,
+        cost: ['MANAGEMENT', 'INCOLORE', 'INCOLORE'],
         damage: 100,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
@@ -266,14 +266,14 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Restructuration',
-        cost: 2,
+        cost: ['MANAGEMENT', 'INCOLORE'],
         damage: 70,
         text: 'Envoie 1 café du Planqué adverse au rebut.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       },
       {
         name: 'Plan de croissance',
-        cost: 3,
+        cost: ['MANAGEMENT', 'INCOLORE', 'INCOLORE'],
         damage: 120,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]

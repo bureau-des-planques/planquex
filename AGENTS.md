@@ -130,7 +130,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Rack | **3** places |
 | Interventions | **3** pour gagner ; un craquage normal = 1, un COMEX = 2 |
 | Machine à café | **1 café généré par tour**, **1 attachement par tour** ; si le slot du haut est occupé, pas de nouveau café — la zone ne contient donc jamais plus d'un café (D-034) |
-| Types de café | Jusqu'à **3** par Chariot, ordre aléatoire ; la Machine ne produit jamais de café incolore ; l'incolore, dans un **coût**, accepte tout (D-034) — **pas encore codé** (#61) |
+| Types de café | Le coût d'une Pression est une **liste de symboles** (un type de faction, ou **`INCOLORE`** — distinct de `SUPPORT`) ; un symbole typé exige un café de ce type, un symbole incolore accepte tout, et un café incolore (jamais produit) paie un coût typé (D-037). Jusqu'à **3** types par Chariot, dérivés des factions présentes, `SUPPORT`/`INTERIM` jamais retenus (D-034, D-037) |
 | Premier joueur | **Tiré au sort** par un lancer de tampon (D-033) ; **pioche** ; ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 (D-030) |
 | Évolution | Impossible au premier tour de chaque joueur |
 | Seuil / Stress | le **Seuil** remplace le Moral ; les dégâts deviennent du **Stress** qui monte ; à `Stress ≥ Seuil`, le Planqué **craque** (D-026) |

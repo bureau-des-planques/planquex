@@ -1,4 +1,4 @@
-import type { CafeCost, CafeType, Status } from '@/data/types';
+import type { CafeSymbol, Status } from '@/data/types';
 
 /**
  * Drapeaux globaux du moteur.
@@ -43,29 +43,34 @@ export const STATUS_ORDER: readonly Status[] = ['SURCHARGE', 'EPUISEMENT', 'SIES
 export const EXCLUSIVE_STATUSES: readonly Status[] = ['SIESTE', 'IMMOBILISATION', 'DERIVE'];
 
 /**
- * Le café **incolore** satisfait n'importe quel coût typé (`AGENTS.md` §4). C'est le type
- * de la faction `SUPPORT` (§3.2).
+ * Le café **incolore** satisfait n'importe quel coût typé (`AGENTS.md` §4). C'est le
+ * **symbole** `INCOLORE`, distinct de la faction `SUPPORT` (D-037 (1)) — la Machine
+ * n'en produit jamais (D-034), mais un tel café, s'il existait, paierait tout.
  */
-export const COLORLESS_CAFE: CafeType = 'SUPPORT';
+export const COLORLESS_CAFE: CafeSymbol = 'INCOLORE';
 
-/** Un coût typé exige **au moins un** café, en nombre entier. */
-export function isValidCafeCost(cost: CafeCost): boolean {
-  return Number.isInteger(cost.amount) && cost.amount >= 1;
-}
-
-/** Vrai si un café du type `available` paie une exigence `required`. */
-export function cafeSatisfies(available: CafeType, required: CafeType): boolean {
-  return available === COLORLESS_CAFE || available === required;
+/** Vrai si un café de type `available` paie une exigence `required` (D-037 (2)). */
+export function cafeSatisfies(available: CafeSymbol, required: CafeSymbol): boolean {
+  // Un symbole incolore accepte n'importe quel café ; un café incolore paie tout coût.
+  return required === COLORLESS_CAFE || available === COLORLESS_CAFE || available === required;
 }
 
 /**
- * Vrai si les cafés `available` couvrent `cost`. Chaque café ne paie qu'une fois.
+ * Vrai si les cafés `available` couvrent la **liste** de symboles `cost` (D-037).
+ * Chaque café ne paie qu'**une fois**.
  *
- * Aucun plafond sur le nombre de **types** de café **pour l'instant** : la règle des
- * « 3 types par Chariot » est établie par la recherche (D-034) mais pas encore codée —
- * elle arrive avec le café typé (#61 → #33 → #35), pas dans #30.
+ * Les symboles **typés** sont pourvus d'abord, par un café de leur type à défaut un
+ * café incolore ; les symboles **incolores** se contentent ensuite de ce qui reste.
+ * Cet ordre est **optimal** : un café typé rare ne se gaspille pas sur un incolore.
  */
-export function satisfiesCafeCost(available: readonly CafeType[], cost: CafeCost): boolean {
-  if (!isValidCafeCost(cost)) return false;
-  return available.filter((type) => cafeSatisfies(type, cost.type)).length >= cost.amount;
+export function satisfiesCafeCost(available: readonly CafeSymbol[], cost: readonly CafeSymbol[]): boolean {
+  const pool = [...available];
+  for (const symbol of cost) {
+    if (symbol === COLORLESS_CAFE) continue;
+    const exact = pool.indexOf(symbol);
+    const index = exact >= 0 ? exact : pool.indexOf(COLORLESS_CAFE);
+    if (index < 0) return false;
+    pool.splice(index, 1);
+  }
+  return pool.length >= cost.filter((symbol) => symbol === COLORLESS_CAFE).length;
 }

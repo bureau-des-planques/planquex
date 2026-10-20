@@ -144,7 +144,7 @@ function describeAction(state: BattleState, action: BattleAction): ActionView {
       const entry = activeCard && isPlanque(activeCard) ? activeCard.attacks[action.attackIndex] : undefined;
       return {
         label: entry?.name ?? 'Pression',
-        cost: entry?.cost,
+        cost: entry?.cost.length,
         damage: entry?.damage,
         icon: 'swords'
       };
@@ -514,7 +514,7 @@ export function Battle() {
                     ? 'Toutes tes Pressions sont à portée de café.'
                     : `Hors de portée du café : ${playerCard.attacks
                         .filter((entry) => !inReach.includes(entry))
-                        .map((entry) => `${entry.name} (${entry.cost} café${entry.cost > 1 ? 's' : ''})`)
+                        .map((entry) => `${entry.name} (${entry.cost.length} café${entry.cost.length > 1 ? 's' : ''})`)
                         .join(', ')}.`}
               </p>
             )}
