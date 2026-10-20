@@ -2,14 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { ALL_ACTION_CARDS, ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
 import {
   autoDeck,
+  CAFE_FACTIONS,
   DECK_SIZE,
   MAX_COPIES_PER_NAME,
+  MAX_DECK_CAFE_TYPES,
   deckCanAdd,
+  deckCafeTypes,
   deckCards,
   deckCounts,
   deckCountsByName,
-  deckLegal
+  deckLegal,
+  normalizeCafeTypes,
+  resolveCafeTypes
 } from '@/game/deck';
+import type { CafeType } from '@/data/types';
 
 const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
@@ -167,5 +173,66 @@ describe('autoDeck — remplissage rapide', () => {
     const { deck, missing } = autoDeck(owned);
     expect(deck).toEqual([BASICS[0]]);
     expect(missing).toBe(DECK_SIZE - 1);
+  });
+});
+
+/**
+ * **Le joueur choisit les types de café de son Chariot** (#91, D-037 (4)) : 1 à 3
+ * types, avec la dérivation automatique pour proposition par défaut. `SUPPORT` et
+ * `INTERIM` ne sont **jamais** des types de zone (D-034) — ni proposés, ni acceptés,
+ * même dans un état trafiqué.
+ */
+describe('Types de café choisis — Chariot (#91)', () => {
+  /** Un Chariot jouet : une carte par faction, sans souci de légalité. */
+  const MULTI = [
+    'sse-infirmier-site',
+    'interim-interimaire',
+    'support-agent-support',
+    'management-jeune-manager',
+    'qvt-charge-qvt'
+  ];
+
+  it('ne propose que les huit factions productrices : ni Support ni Intérim', () => {
+    expect(CAFE_FACTIONS).toHaveLength(8);
+    expect(CAFE_FACTIONS).not.toContain('SUPPORT');
+    expect(CAFE_FACTIONS).not.toContain('INTERIM');
+    expect(new Set(CAFE_FACTIONS).size).toBe(CAFE_FACTIONS.length);
+    expect(CAFE_FACTIONS).toContain('SSE');
+  });
+
+  it('sans choix, garde la proposition automatique dérivée du Chariot', () => {
+    expect(resolveCafeTypes(MULTI)).toEqual(deckCafeTypes(MULTI));
+    expect(resolveCafeTypes(MULTI, [])).toEqual(deckCafeTypes(MULTI));
+    expect(deckCafeTypes(MULTI)).toEqual(['SSE', 'MANAGEMENT', 'QVT']);
+  });
+
+  it('accepte un choix manuel, même un type absent du Chariot', () => {
+    expect(resolveCafeTypes(MULTI, ['RH'])).toEqual(['RH']);
+    expect(resolveCafeTypes([], ['ATELIER'])).toEqual(['ATELIER']);
+  });
+
+  it('plafonne le choix à 3 types, dans l’ordre choisi', () => {
+    expect(MAX_DECK_CAFE_TYPES).toBe(3);
+    expect(resolveCafeTypes(MULTI, ['RH', 'SSE', 'QVT', 'ATELIER'])).toEqual(['RH', 'SSE', 'QVT']);
+    expect(normalizeCafeTypes(['RH', 'SSE', 'QVT', 'ATELIER'])).toEqual(['RH', 'SSE', 'QVT']);
+  });
+
+  it('dédoublonne le choix', () => {
+    expect(normalizeCafeTypes(['SSE', 'SSE', 'RH'])).toEqual(['SSE', 'RH']);
+  });
+
+  it('refuse Support et Intérim, même dans un état trafiqué', () => {
+    // Une valeur forgée traverse le typage : c'est le cas d'un état persisté bricolé.
+    const forged = ['SUPPORT', 'INTERIM', 'SSE', 'RH', 'QVT', 'ATELIER'] as unknown as CafeType[];
+    expect(normalizeCafeTypes(forged)).toEqual(['SSE', 'RH', 'QVT']);
+    expect(normalizeCafeTypes(['SUPPORT'] as unknown as CafeType[])).toEqual([]);
+    // Un choix qui ne contient que des types interdits retombe sur la proposition.
+    expect(resolveCafeTypes(MULTI, ['SUPPORT', 'INTERIM'] as unknown as CafeType[])).toEqual(
+      deckCafeTypes(MULTI)
+    );
+  });
+
+  it('ignore une valeur qui n’est pas une faction', () => {
+    expect(normalizeCafeTypes(['POKEMON', 42, null] as unknown as CafeType[])).toEqual([]);
   });
 });
