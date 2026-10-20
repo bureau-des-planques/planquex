@@ -75,5 +75,22 @@ describe('`npm run status` — décompte dérivé d’ALL_CARDS', () => {
     expect(report.cards.base).toBe(ALL_CARDS.filter((card) => !card.variantOf).length);
     expect(report.cards.variants).toBe(ALL_CARDS.filter((card) => card.variantOf).length);
     expect(report.cards.factions).toEqual([...new Set(ALL_CARDS.map((card) => card.faction))].sort());
+    // Le décompte par rareté et par faction est lui aussi **dérivé** : la cible de
+    // `CARD-SPEC.md` §1 et les paliers hauts (#87) se lisent dans `npm run status`.
+    const raretes = [...new Set(ALL_CARDS.map((card) => card.rarity))].sort();
+    expect(Object.keys(report.cards.rarities)).toEqual(raretes);
+    for (const rarete of raretes) {
+      expect(report.cards.rarities[rarete], rarete).toBe(
+        ALL_CARDS.filter((card) => card.rarity === rarete).length
+      );
+    }
+    for (const faction of report.cards.factions) {
+      const list = ALL_CARDS.filter((card) => card.faction === faction);
+      const parFaction = report.cards.byFaction[faction];
+      expect(parFaction.total, faction).toBe(list.length);
+      expect(parFaction.base, faction).toBe(list.filter((card) => !card.variantOf).length);
+      expect(parFaction.variants, faction).toBe(list.filter((card) => card.variantOf).length);
+      expect(parFaction['3D'], faction).toBe(list.filter((card) => card.rarity === '3D').length);
+    }
   }, 30_000);
 });
