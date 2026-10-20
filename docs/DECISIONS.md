@@ -75,10 +75,14 @@
 | O-013 | **Trois écarts entre `AGENTS.md` §4 et les captures** du 20/10/2026 : (1) « le premier joueur **ne pioche pas** » ; (2) « statuts **cumulables** » ; (3) « **1 attachement** de café par tour » | **Tranché le 20/10/2026 par D-030** pour les points 1 et 2. Le point 3 devient **O-014** | Tranché (1, 2) |
 | O-014 | **Nombre d'attachements de café par tour** : §4 dit « 1 attachement par tour », la capture dit « autant que vous le souhaitez » | La capture (`05`) est **primaire** mais **ambiguë** : elle ne dit pas si la Machine à café **accumule** l'Énergie non attachée. Le §1 citait par ailleurs une source web (« 1 par tour »). **Tranché le 20/10/2026 par D-034** : capture et recherche se lisent ensemble — la zone ne contient jamais plus d'un café, donc **1 attachement par tour**. Aucun changement de moteur, aucun essai en jeu nécessaire | Tranché |
 | O-015 | **Texte exact du jeu (masterdata)** : le texte des Astuces vit dans `gamedata_master_tips.aladin`, **chiffré** | Il faut les clés `ALADIN_KEY` / `ALADIN_HASH`, **non publiques** — générées au runtime par Unity. Trois voies : (a) appareil rooté + Frida, ~3 h ; (b) accès au dépôt privé de RaenonX (masterdata déjà déchiffré) ; (c) s'en passer, les captures suffisant. Détail : rapport brut `d-datamining.md`, **hors dépôt** (voir `docs/preuves/regles-2026-10-20/README.md` §5) | **Sans objet (D-034)** : la voie (c) est retenue, captures et recherche font foi |
-| O-010 | **Écarts code ↔ `AGENTS.md` §4** : 5 sur 8 corrigés le 19/10/2026, 2 **bloqués** faute de contenu, 1 faux positif | Voir l'état ci-dessous | Les 2 restants : après l'écriture des cartes concernées |
+| O-010 | **Écarts code ↔ `AGENTS.md` §4** : 5 sur 8 corrigés le 19/10/2026, 2 **bloqués** faute de contenu, 1 faux positif | Voir l'état ci-dessous | **Clos** (20/10/2026) : les 2 lignes « Bloqué » sont corrigées, voir le relevé ci-dessous |
 | O-011 | **Courbe de Moral sous celle du jeu réel** d'environ 20 points aux stades hauts | **Tranché le 19/10/2026 : on adopte la courbe du miroir (D-023)**, le coût en rythme étant borné à +3 tours | Tranché |
 
 État d'**O-010** (relevé le 19/10/2026, corrigé le même jour sauf mention) :
+
+> **Fermeture du 20/10/2026 (ticket #98).** Les deux lignes **« Bloqué »** sont levées :
+> les cartes Action existent (`src/data/actions.ts`) et le café typé est acté par **D-037**.
+> Le mot de l'époque et le libellé des écarts sont conservés ; seul l'état est mis à jour.
 
 | Écart | État |
 |---|---|
@@ -88,8 +92,8 @@
 | Classeur **non validé par le moteur** | **Corrigé** : les règles 20/2/1 quittent le store pour `src/game/deck.ts` ; `createBattle` **refuse** un classeur illégal |
 | `DERIVE` « jamais traitée en `checkup` » | **Faux positif** : §4 dit « Dérive = lancer **avant attaque** », et l'ordre des statuts documenté ne l'inclut pas. Le code est conforme. Rien à corriger côté moteur |
 | **Un seul statut** à la fois : l'ordre des statuts documenté est inopérant | **Corrigé** : `CardInstance.statuses: Status[]` ; `checkup` les résout **dans l'ordre de §4** (`STATUS_ORDER` dans `src/game/rules.ts`), `Dérive` restant avant l'attaque. Une même condition ne se cumule pas |
-| **Cartes Action absentes** (Objet illimité / Collègue 1 par tour) | **Bloqué** : aucune carte Objet ni Collègue n'existe. D-005 en prévoit 8 + 3 : le mécanisme suivra les données |
-| **Types de café absents** (`cost` est un nombre) | **Bloqué** : typage des cafés + génération aléatoire + incolore = réécriture des attaques des 37 cartes. Le plafond « 3 » n'a d'ailleurs pas de source primaire (O-009) |
+| **Cartes Action absentes** (Objet illimité / Collègue 1 par tour) | **Bloqué** : aucune carte Objet ni Collègue n'existe. D-005 en prévoit 8 + 3 : le mécanisme suivra les données — **corrigé** (20/10/2026) : les cartes Action (Objets NEUF/MRO et Collègues) sont écrites et enregistrées dans `src/data/actions.ts` (`AGENTS.md` §6) |
+| **Types de café absents** (`cost` est un nombre) | **Bloqué** : typage des cafés + génération aléatoire + incolore = réécriture des attaques des 37 cartes. Le plafond « 3 » n'a d'ailleurs pas de source primaire (O-009) — **corrigé** (20/10/2026) : le café typé est acté par **D-037**, `Attack.cost` est une liste de symboles (`CafeSymbol[]`, `src/data/types.ts`) et les cartes portent ces coûts ; le plafond « 3 » est désormais sourcé (D-034, D-037). **Les données** sont donc corrigées ; **l'application en jeu** — la Machine qui tire un type, le café attaché qui garde le sien, la Pression payée **par symbole** et non au comptage — reste le ticket **#88** (spec, enfants #89/#90), ouverte |
 
 Détail d'**O-011** (relevé le 19/10/2026, `CARD-SPEC.md` §2 contre les cartes réelles) :
 
