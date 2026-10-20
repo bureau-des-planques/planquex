@@ -20,10 +20,12 @@ const byId = (id: string): PlanqueCard | undefined => {
 const LINE = ['support-agent-support', 'support-technicien-support', 'support-responsable-support'];
 
 describe('Support — enregistrement (ticket #23)', () => {
-  it('compte 38 entrées, dont 30 bases et 8 variantes (PROPOSITION.md §4.3)', () => {
-    expect(SUPPORT_CARDS).toHaveLength(30);
+  it('compte 39 entrées, dont 31 bases et 8 variantes (vague 1, #66 : +1 COMEX)', () => {
+    // PROPOSITION.md §4.3 : 38 entrées à la cible. La vague 1 (#66) ajoute le second
+    // COMEX ; les vagues 2 à 4 ramènent le total à 286.
+    expect(SUPPORT_CARDS).toHaveLength(31);
     expect(SUPPORT_VARIANTS).toHaveLength(8);
-    expect(ALL_SUPPORT_CARDS).toHaveLength(38);
+    expect(ALL_SUPPORT_CARDS).toHaveLength(39);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {
@@ -63,14 +65,21 @@ describe('Support — ligne et COMEX (D-020)', () => {
     expect(n2?.evolvesFrom).toBe(LINE[1]);
   });
 
-  it('a exactement un COMEX, en 4 diamants, à 2 Interventions', () => {
+  it('a deux COMEX, en 4 diamants, à 2 Interventions, sur deux lignes distinctes', () => {
     const comex = ALL_SUPPORT_CARDS.filter(isPlanque).filter((card) => card.ex);
-    expect(comex).toHaveLength(1);
-    expect(comex[0]?.id).toBe('support-responsable-support-ex');
-    // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
-    expect(comex[0]?.rarity).toBe('4D');
-    expect(comex[0]?.stage).toBe('N+2');
-    expect(comex[0]?.evolvesFrom).toBe('support-technicien-support');
+    expect(comex.map((card) => card.id)).toEqual([
+      'support-responsable-support-ex',
+      'support-ingenieur-systemes-ex'
+    ]);
+    for (const card of comex) {
+      // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
+      expect(card.rarity, card.id).toBe('4D');
+      expect(card.stage, card.id).toBe('N+2');
+    }
+    expect(comex.map((card) => card.evolvesFrom)).toEqual([
+      'support-technicien-support',
+      'support-administrateur-systemes'
+    ]);
   });
 
   it('ne décline aucune variante de COMEX (le 4D est réservé au statut)', () => {

@@ -324,6 +324,23 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Gros œuvre', cost: 3, damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Une seule clé de 12.'
+  }),
+
+  // Second COMEX (vague 1, #66) : la ligne de maintenance, distincte de la signature.
+  base({
+    id: 'atelier-responsable-maintenance-ex',
+    evolvesFrom: 'atelier-electromecanicien',
+    name: 'Responsable maintenance COMEX',
+    stage: 'N+2',
+    rarity: '4D',
+    hp: 190,
+    retreat: 3,
+    ex: true,
+    attacks: [
+      { name: 'Plan de maintenance', cost: 2, damage: 80 },
+      { name: 'Révision générale', cost: 3, damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
+    ],
+    flavor: 'Deux Interventions. La machine est révisée. La demande de pièces, non.'
   })
 ];
 

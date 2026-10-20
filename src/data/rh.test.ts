@@ -21,10 +21,12 @@ const byId = (id: string): PlanqueCard | undefined => {
 const LINE = ['rh-assistant-rh', 'rh-charge-recrutement', 'rh-drh'];
 
 describe('RH — enregistrement (ticket #50)', () => {
-  it('compte 32 entrées, dont 24 bases et 8 variantes (PROPOSITION.md §4.3)', () => {
-    expect(RH_CARDS).toHaveLength(24);
+  it('compte 33 entrées, dont 25 bases et 8 variantes (vague 1, #66 : +1 COMEX)', () => {
+    // PROPOSITION.md §4.3 : 32 entrées à la cible. La vague 1 (#66) ajoute le second
+    // COMEX ; les vagues 2 à 4 ramènent le total à 286.
+    expect(RH_CARDS).toHaveLength(25);
     expect(RH_VARIANTS).toHaveLength(8);
-    expect(ALL_RH_CARDS).toHaveLength(32);
+    expect(ALL_RH_CARDS).toHaveLength(33);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {
@@ -64,14 +66,18 @@ describe('RH — ligne et COMEX (D-020)', () => {
     expect(n2?.evolvesFrom).toBe(LINE[1]);
   });
 
-  it('a exactement un COMEX, en 4 diamants, à 2 Interventions', () => {
+  it('a deux COMEX, en 4 diamants, à 2 Interventions, sur deux lignes distinctes', () => {
     const comex = ALL_RH_CARDS.filter(isPlanque).filter((card) => card.ex);
-    expect(comex).toHaveLength(1);
-    expect(comex[0]?.id).toBe('rh-drh-ex');
-    // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
-    expect(comex[0]?.rarity).toBe('4D');
-    expect(comex[0]?.stage).toBe('N+2');
-    expect(comex[0]?.evolvesFrom).toBe('rh-charge-recrutement');
+    expect(comex.map((card) => card.id)).toEqual(['rh-drh-ex', 'rh-directeur-talents-ex']);
+    for (const card of comex) {
+      // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
+      expect(card.rarity, card.id).toBe('4D');
+      expect(card.stage, card.id).toBe('N+2');
+    }
+    expect(comex.map((card) => card.evolvesFrom)).toEqual([
+      'rh-charge-recrutement',
+      'rh-chasseur-tetes'
+    ]);
   });
 
   it('ne décline aucune variante de COMEX (le 4D est réservé au statut)', () => {
@@ -80,10 +86,12 @@ describe('RH — ligne et COMEX (D-020)', () => {
     }
   });
 
-  it('fait pointer le COMEX vers un N+1 de la même faction', () => {
-    const comex = byId('rh-drh-ex');
-    const previous = comex?.evolvesFrom ? byId(comex.evolvesFrom) : undefined;
-    expect(previous?.stage).toBe('N+1');
-    expect(previous?.faction).toBe('RH');
+  it('fait pointer chaque COMEX vers un N+1 de la même faction', () => {
+    for (const id of ['rh-drh-ex', 'rh-directeur-talents-ex']) {
+      const comex = byId(id);
+      const previous = comex?.evolvesFrom ? byId(comex.evolvesFrom) : undefined;
+      expect(previous?.stage, id).toBe('N+1');
+      expect(previous?.faction, id).toBe('RH');
+    }
   });
 });

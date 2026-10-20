@@ -18,10 +18,12 @@ const byId = (id: string): PlanqueCard | undefined => {
 };
 
 describe('QVT — enregistrement (tickets #23/#24)', () => {
-  it('compte 48 entrées, dont 36 bases et 12 variantes (PROPOSITION.md §4.3)', () => {
-    expect(QVT_CARDS).toHaveLength(36);
+  it('compte 49 entrées, dont 37 bases et 12 variantes (vague 1, #66 : +1 COMEX)', () => {
+    // PROPOSITION.md §4.3 : 48 entrées à la cible. La vague 1 (#66) ajoute le second
+    // COMEX ; les vagues 2 à 4 ramènent le total à 286.
+    expect(QVT_CARDS).toHaveLength(37);
     expect(QVT_VARIANTS).toHaveLength(12);
-    expect(ALL_QVT_CARDS).toHaveLength(48);
+    expect(ALL_QVT_CARDS).toHaveLength(49);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {
@@ -51,14 +53,21 @@ describe('QVT — enregistrement (tickets #23/#24)', () => {
 });
 
 describe('QVT — COMEX (D-020)', () => {
-  it('a exactement un COMEX, en 4 diamants, à 2 Interventions', () => {
+  it('a deux COMEX, en 4 diamants, à 2 Interventions, sur deux lignes distinctes', () => {
     const comex = ALL_QVT_CARDS.filter(isPlanque).filter((card) => card.ex);
-    expect(comex).toHaveLength(1);
-    expect(comex[0]?.id).toBe('qvt-chief-happiness-officer-ex');
-    // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
-    expect(comex[0]?.rarity).toBe('4D');
-    expect(comex[0]?.stage).toBe('N+2');
-    expect(comex[0]?.evolvesFrom).toBe('qvt-responsable-engagement');
+    expect(comex.map((card) => card.id)).toEqual([
+      'qvt-chief-happiness-officer-ex',
+      'qvt-directeur-qvt-ex'
+    ]);
+    for (const card of comex) {
+      // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
+      expect(card.rarity, card.id).toBe('4D');
+      expect(card.stage, card.id).toBe('N+2');
+    }
+    expect(comex.map((card) => card.evolvesFrom)).toEqual([
+      'qvt-responsable-engagement',
+      'qvt-responsable-qvt'
+    ]);
   });
 
   it('ne décline aucune variante de COMEX (le 4D est réservé au statut)', () => {
@@ -67,10 +76,12 @@ describe('QVT — COMEX (D-020)', () => {
     }
   });
 
-  it('fait pointer le COMEX vers un N+1 de la même faction', () => {
-    const comex = byId('qvt-chief-happiness-officer-ex');
-    const previous = comex?.evolvesFrom ? byId(comex.evolvesFrom) : undefined;
-    expect(previous?.stage).toBe('N+1');
-    expect(previous?.faction).toBe('QVT');
+  it('fait pointer chaque COMEX vers un N+1 de la même faction', () => {
+    for (const id of ['qvt-chief-happiness-officer-ex', 'qvt-directeur-qvt-ex']) {
+      const comex = byId(id);
+      const previous = comex?.evolvesFrom ? byId(comex.evolvesFrom) : undefined;
+      expect(previous?.stage, id).toBe('N+1');
+      expect(previous?.faction, id).toBe('QVT');
+    }
   });
 });

@@ -301,6 +301,23 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: "Entretien annuel", cost: 3, damage: 120, text: "Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: "Deux Interventions. Un seul dossier."
+  }),
+
+  // Second COMEX (vague 1, #66) : la ligne du recrutement, distincte de la signature.
+  base({
+    id: 'rh-directeur-talents-ex',
+    evolvesFrom: 'rh-chasseur-tetes',
+    name: 'Directeur des talents COMEX',
+    stage: 'N+2',
+    rarity: '4D',
+    hp: 180,
+    retreat: 3,
+    ex: true,
+    attacks: [
+      { name: 'Marque employeur', cost: 2, damage: 70, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] },
+      { name: 'Rétention', cost: 3, damage: 100, text: 'Échange ce Planqué avec un Planqué du Rack. Le Planqué adverse est Dérivé.', effects: [{ kind: 'switchSelf' }, { kind: 'status', status: 'DERIVE', target: 'opponent' }] }
+    ],
+    flavor: 'Deux Interventions. Le talent est parti avant la signature.'
   })
 ];
 

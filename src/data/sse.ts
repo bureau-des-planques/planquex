@@ -291,6 +291,23 @@ export const SSE_CARDS: PlanqueCard[] = [
       { name: 'Protocole', cost: 3, damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Un seul médecin.'
+  }),
+
+  // Second COMEX (vague 1, #66) : la ligne de prévention, distincte de la signature.
+  base({
+    id: 'sse-responsable-sse-ex',
+    evolvesFrom: 'sse-ergonome',
+    name: 'Responsable SSE COMEX',
+    stage: 'N+2',
+    rarity: '4D',
+    hp: 180,
+    retreat: 3,
+    ex: true,
+    attacks: [
+      { name: 'Rapport d’incident', cost: 2, damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Plan de prévention', cost: 3, damage: 100, text: 'Soigne 30 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 30 }, { kind: 'selfDamage', amount: 20 }] }
+    ],
+    flavor: 'Deux Interventions. Le plan de prévention est arrivé après l’incident.'
   })
 ];
 
