@@ -42,14 +42,26 @@ function inPlayCount(state: BattleState, who: PlayerId): number {
   return [player.active, ...player.bench].filter(Boolean).length;
 }
 
-/** Une évolution de la carte au Poste de `who`, s'il en existe une dans le set. */
-function evolutionOf(state: BattleState, who: PlayerId): string | null {
+/**
+ * Un couple **Entrant → N+1** réel du set. Les tests d'évolution placent cet Entrant
+ * au Poste plutôt que de dépendre de la carte tirée : sinon ils passeraient sans rien
+ * vérifier dès que la carte au Poste n'a pas d'évolution.
+ */
+const EVOLUTION_PAIR = (() => {
+  for (const card of ALL_CARDS) {
+    if (!isPlanque(card) || card.variantOf || !card.evolvesFrom) continue;
+    const base = ALL_CARDS.find((entry) => entry.id === card.evolvesFrom);
+    if (base && isBasic(base)) return { basicId: base.id, evolutionId: card.id };
+  }
+  throw new Error('Le set ne contient aucune évolution d’Entrant.');
+})();
+
+/** Place l'Entrant du couple au Poste de `who` et rend l'id de son évolution. */
+function withEvolvableActive(state: BattleState, who: PlayerId): string {
   const active = state.players[who].active;
-  if (!active) return null;
-  const evolution = ALL_CARDS.find(
-    (card) => isPlanque(card) && !card.variantOf && card.evolvesFrom === active.cardId
-  );
-  return evolution?.id ?? null;
+  if (!active) throw new Error('Poste vide');
+  active.cardId = EVOLUTION_PAIR.basicId;
+  return EVOLUTION_PAIR.evolutionId;
 }
 
 describe('Tirage du premier joueur (D-033 (6))', () => {
@@ -125,12 +137,9 @@ describe('Tirage du premier joueur (D-033 (6))', () => {
     it(`interdit l’évolution au premier tour de ${label}`, () => {
       const state = create(seed);
       expect(isFirstTurnFor(state, opener)).toBe(true);
-      const evolutionId = evolutionOf(state, opener);
-      // Le set n'a pas forcément d'évolution pour cette carte au Poste : on le signale
-      // en vérifiant au moins `isFirstTurnFor`, comme le fait `engine.test.ts`.
-      if (!evolutionId) return;
 
       const next = structuredClone(state);
+      const evolutionId = withEvolvableActive(next, opener);
       const instance = createInstance(evolutionId, next.turn);
       next.players[opener].hand.push(instance);
       const target = next.players[opener].active;
@@ -142,10 +151,9 @@ describe('Tirage du premier joueur (D-033 (6))', () => {
 
     it(`autorise l’évolution au tour suivant de ${label}`, () => {
       const state = create(seed);
-      const evolutionId = evolutionOf(state, opener);
-      if (!evolutionId) return;
 
       const prepared = structuredClone(state);
+      const evolutionId = withEvolvableActive(prepared, opener);
       const instance = createInstance(evolutionId, prepared.turn);
       prepared.players[opener].hand.push(instance);
 

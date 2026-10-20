@@ -272,9 +272,9 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
   // D-033 (6), capture `04` : « Une pièce est lancée automatiquement. Le joueur qui
   // obtient le côté face a la main, tandis que celui qui obtient le côté pile joue en
   // deuxième. » Le lancer passe par le générateur seedé de la partie : une même graine
-  // ouvre donc toujours sur le même camp. Le sens pile/face exact (`04`) est traité par
-  // #82 ; ici, `drawRandom < 0.5` (pile) = le joueur ouvre, sinon la Direction.
-  const firstPlayer: PlayerId = drawRandom(state) < 0.5 ? 'player' : 'ai';
+  // ouvre donc toujours sur le même camp. C'est le lancer de tampon de #82 : le joueur
+  // ouvre sur **face** (agrafe), la Direction sur **pile** (tampon).
+  const firstPlayer: PlayerId = flipStamp(state) === 'face' ? 'player' : 'ai';
   state.firstPlayer = firstPlayer;
   state.current = firstPlayer;
   state.log.push(
