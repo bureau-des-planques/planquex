@@ -35,6 +35,12 @@ jobs:
       - name: Lancer les tests
         run: npm test
 
+      # Garde-fous (ticket #112) : mute un invariant critique et EXIGE que la suite échoue.
+      # Une mutation qui passe inaperçue désigne une assertion qui ne garde rien — trois
+      # cas ont été trouvés en une session (#101, #107, #103), d'où ce harnais.
+      - name: Vérifier que les garde-fous peuvent échouer
+        run: npm run garde-fous
+
       # Garde-fou visuel (Impeccable, Apache-2.0) : tells d'UI générée par IA,
       # 61 règles déterministes, sans IA ni clé. Voir DESIGN.md et .opencode/skills/impeccable.
       - name: Détecter les anti-patterns d'interface
