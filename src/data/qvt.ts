@@ -40,7 +40,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Team building', cost: ['QVT', 'INCOLORE'], damage: 60, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] },
       { name: 'Yoga du rire', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
-    flavor: 'Riez. C\'est obligatoire.'
+    flavor: 'Riez. C\'est obligatoire.',
+    art: 'qvt-chief-happiness-officer.webp'
   }),
 
   // Ligne 2 : Animateur bien-être → Responsable QVT → Directeur QVT

@@ -16,6 +16,7 @@ import { FACTION_META } from './factions';
  */
 export type PlanqueInput = Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | 'palette' | 'glyph'> & {
   glyph?: string;
+  art?: string;
 };
 
 /** Suffixes des variantes secrètes (CARD-SPEC.md §1) : `-star` et `-star2`. */

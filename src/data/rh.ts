@@ -40,7 +40,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: "Entretien annuel", cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 80, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
-    flavor: "Il a lu ton CV. Il sait où tu habites."
+    flavor: "Il a lu ton CV. Il sait où tu habites.",
+    art: 'rh-drh.webp'
   }),
 
   // Deuxième ligne : Chargé de sourcing → Chasseur de têtes → Directeur des talents
