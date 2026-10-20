@@ -593,6 +593,16 @@ function hasPlanques(player: PlayerState): boolean {
 }
 
 /**
+ * Ouvre la relève d'un camp : `pendingPromotion` la retient, le message la montre.
+ * Le plateau porte la file — un Poste vide avec un Rack garni reste à pourvoir —
+ * donc un seul identifiant suffit, y compris après un double craquage (D-032).
+ */
+function awaitPromotion(state: BattleState, who: PlayerId) {
+  state.pendingPromotion = who;
+  state.log.push(who === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.');
+}
+
+/**
  * Tranche la fin de partie, dans l'ordre de **D-032** :
  *
  * 1. le **plateau vide** — ce joueur perd « quel que soit le nombre de points »,
@@ -631,17 +641,14 @@ function resolveEnd(state: BattleState) {
     return;
   }
 
-  // Le dernier craquage de l'action est celui de l'attaquant : c'est lui qui reste
-  // en attente ici. L'ordre complet des relèves (l'attaquant choisit en premier,
-  // D-032) appartient au ticket de la relève.
+  // D-032 : sur un double craquage, **l'attaquant choisit en premier**, quel que
+  // soit le siège. `resolveEnd` est appelée dans le tour du camp qui a agi : en
+  // attaque comme en `checkup`, `state.current` est donc l'attaquant.
   const emptyActives: PlayerId[] = [];
   if (!player.active && player.bench.some(Boolean)) emptyActives.push('player');
   if (!ai.active && ai.bench.some(Boolean)) emptyActives.push('ai');
   if (emptyActives.length > 0) {
-    state.pendingPromotion = emptyActives[emptyActives.length - 1] ?? null;
-    state.log.push(
-      state.pendingPromotion === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.'
-    );
+    awaitPromotion(state, emptyActives.includes(state.current) ? state.current : emptyActives[0]);
   }
 }
 
@@ -662,6 +669,13 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
   player.active = { ...incoming, statuses: [] };
   next.pendingPromotion = null;
   next.log.push(`${who === 'player' ? 'Tu envoies' : 'L’IA envoie'} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
+
+  // Double craquage (D-032) : l'attaquant a choisi en premier, c'est au tour de
+  // l'autre camp. Le plateau porte la file — un Poste vide avec un Rack garni
+  // reste à pourvoir — donc aucun champ supplémentaire n'est nécessaire.
+  const opponent: PlayerId = who === 'player' ? 'ai' : 'player';
+  const other = next.players[opponent];
+  if (!other.active && other.bench.some(Boolean)) awaitPromotion(next, opponent);
   return next;
 }
 

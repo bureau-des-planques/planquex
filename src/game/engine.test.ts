@@ -713,6 +713,68 @@ describe('Relève choisie après un craquage', () => {
   });
 });
 
+describe('Relève après un double craquage (D-032)', () => {
+  /**
+   * Une même Pression vide les deux Postes : la cible tombe, puis l'attaquant se
+   * craque lui-même (`selfDamage`). L'effet est posé sur la carte de l'attaquant,
+   * sans dépendre d'une carte du set qui le porterait.
+   */
+  function doubleKnockOut(state: BattleState, attackerId: PlayerId): BattleState {
+    const next = structuredClone(state);
+    next.current = attackerId;
+    const defenderId: PlayerId = attackerId === 'player' ? 'ai' : 'player';
+    const attacker = next.players[attackerId].active;
+    const defender = next.players[defenderId].active;
+    if (!attacker || !defender) throw new Error('Poste vide');
+
+    const original = CARD_BY_ID.get(attacker.cardId);
+    if (!isPlanque(original)) throw new Error('Carte inconnue');
+    const pressure: Attack = {
+      name: 'Double casse',
+      cost: 1,
+      damage: 10,
+      effects: [{ kind: 'selfDamage', amount: 999 }]
+    };
+    CARD_BY_ID.set(attacker.cardId, { ...original, attacks: [pressure] });
+    try {
+      next.players[attackerId].hasAttacked = false;
+      attacker.energy = 1;
+      defender.hp = 1;
+      return attack(next, 0);
+    } finally {
+      CARD_BY_ID.set(attacker.cardId, original);
+    }
+  }
+
+  it('invite l’attaquant en premier quand les deux Postes se vident', () => {
+    const after = doubleKnockOut(freshBattle(), 'player');
+
+    expect(after.players.player.active).toBeNull();
+    expect(after.players.ai.active).toBeNull();
+    // D-032 : l'attaquant choisit en premier, quel que soit le siège.
+    expect(after.pendingPromotion).toBe('player');
+
+    // Une fois l'attaquant relevé, c'est à la Direction de choisir.
+    const first = promoteActive(after, 0);
+    expect(first.players.player.active).not.toBeNull();
+    expect(first.pendingPromotion).toBe('ai');
+
+    const second = promoteActive(first, 0);
+    expect(second.players.ai.active).not.toBeNull();
+    expect(second.pendingPromotion).toBeNull();
+  });
+
+  it('garde l’attaquant en premier quand c’est la Direction qui attaque', () => {
+    const after = doubleKnockOut(freshBattle(), 'ai');
+
+    expect(after.pendingPromotion).toBe('ai');
+
+    const first = promoteActive(after, 0);
+    expect(first.players.ai.active).not.toBeNull();
+    expect(first.pendingPromotion).toBe('player');
+  });
+});
+
 describe('Chariot imposé au démarrage', () => {
   it('refuse de démarrer avec un Chariot illégal', () => {
     expect(() => createBattle(DECK.slice(0, DECK_SIZE - 1), DECK)).toThrow(/Chariot illégal/);
