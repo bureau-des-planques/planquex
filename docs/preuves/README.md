@@ -59,9 +59,10 @@ PY
 ## État au 20/10/2026
 
 Le lot `astuces-2026-10-20/` est **rangé et transcrit** : **12 lignes** de `AGENTS.md` §4
-sont passées de « supposé » à **observé**, et **2 ont été corrigées** (D-030). Restent à
-capturer : l'**écran d'édition du deck** (le plafond des types d'Énergie — il débloque le
-ticket #30), la **main de départ** (son nombre de cartes), et un **test en jeu** pour O-014.
+sont passées de « supposé » à **observé**, et **2 ont été corrigées** (D-030). Les lignes
+non capturées sont **établies par le lot de recherche** `regles-2026-10-20/`, qui fait foi au
+même titre (D-034) : **plus aucune capture n'est requise** pour `AGENTS.md` §4, et O-014 est
+tranché sans essai en jeu.
 
 ## Attention — les captures du legacy ne sont PAS des preuves
 

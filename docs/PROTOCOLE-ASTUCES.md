@@ -149,10 +149,10 @@ La colonne « après capture » dit ce que la capture a **effectivement** montr�
 | Collègue 1 par tour, Objet illimité | Supposé | ✅ **observé** (`05`) |
 | Statuts **cumulables** | Supposé | ⚠️ **corrigé** : seuls Surcharge et Épuisement se cumulent (D-030, `07`) |
 | Premier joueur : **ne pioche pas** | Supposé | ⚠️ **corrigé** : le premier joueur pioche (D-030, `05`) |
-| Machine à café : slot occupé → pas de nouveau café | Supposé | ❔ **toujours non observé** |
-| **Plafond de 3 types de café**, ordre aléatoire | Supposé — **bloque le ticket #30** | ❔ **toujours non observé** — il faut l'éditeur de deck |
-| Main de départ **5** | Supposé | ❔ **toujours non observé** |
-| Pas de reprise de poste | Décidé (D-022), non observé | ❔ **par absence** (`04` ne décrit aucun remélange) |
+| Machine à café : slot occupé → pas de nouveau café | Supposé | ❔ non capturé — ✅ **établi par la recherche** (D-034) |
+| **Plafond de 3 types de café**, ordre aléatoire | Supposé | ❔ non capturé — ✅ **établi par la recherche** (D-034) ; capture de l'éditeur de deck plus nécessaire |
+| Main de départ **5** | Supposé | ❔ non capturé — ✅ **établi par la recherche** (D-034) |
+| Pas de reprise de poste | Décidé (D-022), non observé | ❔ **par absence** (`04`) — ✅ **établi par la recherche** (D-034) |
 
 **Le plafond de 3 reste la ligne à capturer** : c'est elle qui débloque le ticket #30.
 

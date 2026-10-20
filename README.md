@@ -45,5 +45,5 @@ Les noms de factions et le mot-clé sont actés (voir `docs/DECISIONS.md`).
 
 1. Générer la **spécification des 286 cartes** (lignes, stades, raretés, stats, textes).
 2. Produire la **direction artistique** (palette, gabarit, 3 planches).
-3. Points encore ouverts (voir `docs/DECISIONS.md`) : le **plafond des 3 types de café** (O-012), le **nombre d'attachements de café par tour** (O-014) ; **D-033** reste à valider.
+3. Règles : captures et recherche font foi (D-034), §4 n'a plus de point ouvert. Reste à **coder** le plafond des 3 types de café, avec le café typé (#61 → #33 → #35).
 4. Scaffolder le monorepo et le design system.

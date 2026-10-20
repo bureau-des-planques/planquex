@@ -236,11 +236,11 @@ règles : **« À propos des règles de combat »** et **« FAQ détaillée sur 
 | Premier joueur : ne peut pas attacher de café | `05` | ✅ cohérent (aucune Énergie générée) |
 | **Premier joueur : « ne pioche pas »** | `05` | ⚠️ **§4 est faux** — seule l'Énergie est exceptée |
 | **Statuts : « cumulables »** | `07` | ⚠️ **§4 est imprécis** — Sieste, Immobilisation et Dérive **s'excluent** |
-| **Machine à café : « 1 attachement par tour »** | `05` | ⚠️ **à trancher** — le jeu écrit « autant que vous le souhaitez » |
-| Machine à café : « pas de nouveau café si le slot du haut est occupé » | — | ❔ **non observé** |
-| Main de départ **5 cartes** | `04` | ❔ **non observé** |
-| Pas de reprise de poste | `04` | ❔ **par absence** |
-| Types de café : jusqu'à **3**, ordre aléatoire | — | ❔ **non observé** — demande l'éditeur de deck |
+| **Machine à café : « 1 attachement par tour »** | `05` | ⚠️ à trancher — le jeu écrit « autant que vous le souhaitez » · **tranché par D-034** : la zone ne contient jamais plus d'un café, donc 1 par tour |
+| Machine à café : « pas de nouveau café si le slot du haut est occupé » | — | ❔ **non observé** ici · établi par la recherche (D-034) |
+| Main de départ **5 cartes** | `04` | ❔ **non observé** ici · établi par la recherche (D-034) |
+| Pas de reprise de poste | `04` | ❔ **par absence** · établi par la recherche (D-034) |
+| Types de café : jusqu'à **3**, ordre aléatoire | — | ❔ **non observé** ici · établi par la recherche (D-034) |
 
 ## 4. Règles du jeu **absentes de `§4`** et désormais observées
 

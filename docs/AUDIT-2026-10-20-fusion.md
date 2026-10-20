@@ -62,6 +62,10 @@ reste à valider » (`README.md`) est exact.
 
 ## À valider par Bastien
 
+> **Mise à jour, même jour** : Bastien a tranché — les **captures et les règles établies par la
+> recherche font foi** (D-034). D-033 est donc **validée**, O-014 tranché, O-012 clos. Reste la
+> fusion dans `main`.
+
 - **D-033** (`docs/DECISIONS.md`) : chaque point cite sa capture mot pour mot, mais la décision
   a été écrite par l'agent. Si un point est refusé, les commits sont séparés par ticket et se
   retirent un à un.
@@ -82,9 +86,9 @@ reste à valider » (`README.md`) est exact.
 
 | Sujet | Où |
 |---|---|
-| O-014 : 1 attachement de café par tour, ou autant qu'on veut ? — **essai en jeu** | `docs/DECISIONS.md` |
-| Capture de l'**éditeur de deck** (plafond des types de café) → débloque #61 → #33 → #35 | #31 |
-| Renommage de la plomberie `grevomon`, licence — **D-034** | #75 |
+| ~~O-014~~ — tranché par D-034, sans changement de moteur | `docs/DECISIONS.md` |
+| Décider la **forme du coût** en café (#61) → #33 → #35 ; plus aucune capture requise (D-034) | #61 |
+| Renommage de la plomberie `grevomon`, licence — **D-035** (D-034 est prise) | #75 |
 | Infrastructure de la bêta | #10 |
 
 ## Prochaine action vérifiable

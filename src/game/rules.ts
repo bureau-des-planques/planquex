@@ -61,8 +61,9 @@ export function cafeSatisfies(available: CafeType, required: CafeType): boolean 
 /**
  * Vrai si les cafés `available` couvrent `cost`. Chaque café ne paie qu'une fois.
  *
- * Aucun plafond sur le nombre de **types** de café : la règle des « 3 types par
- * Chariot » reste une hypothèse non sourcée (D-022, O-012) et n'entre pas dans #30.
+ * Aucun plafond sur le nombre de **types** de café **pour l'instant** : la règle des
+ * « 3 types par Chariot » est établie par la recherche (D-034) mais pas encore codée —
+ * elle arrive avec le café typé (#61 → #33 → #35), pas dans #30.
  */
 export function satisfiesCafeCost(available: readonly CafeType[], cost: CafeCost): boolean {
   if (!isValidCafeCost(cost)) return false;

@@ -44,7 +44,7 @@ La correspondance se fait au niveau des **concepts** (Pokémon → Planqué), de
 | Poste actif | 1 | **Poste** : 1 | miroir |
 | Interventions | 3 pour gagner, 1 par K.O., 2 pour un ex | **Interventions** : 3, 1 par K.O., 2 pour un **COMEX** | miroir |
 | Énergie | Zone d'énergie : 1 générée + 1 attachée par tour | **Machine à café** → **Café** | miroir |
-| Types d'énergie | jusqu'à 3, aléatoires ; l'incolore accepte tout | idem — **hypothèse** (D-022, non sourcée) | miroir |
+| Types d'énergie | jusqu'à 3, aléatoires ; l'incolore accepte tout | idem — **établi par la recherche** (D-034) | miroir |
 | Premier joueur | ne pioche pas, n'attache pas, peut jouer un Supporter, peut attaquer à 0 énergie | idem | miroir |
 | Évolution | impossible au premier tour de chaque joueur | idem (D-022) | miroir |
 | Attaque | 1 par tour, l'énergie n'est pas consommée | **Pression** | miroir |

@@ -137,7 +137,7 @@ Ordres de grandeur 2026, à revérifier au moment du lancement :
 | Poste | 1 |
 | Interventions | **3** pour gagner ; un craquage normal = 1, un COMEX = 2 |
 | Café | **Machine à café** : 1 café généré par tour, 1 attachement par tour ; si le slot du haut est occupé, pas de nouveau café |
-| Types de café | Jusqu'à **3** par Chariot, ordre aléatoire ; le café incolore accepte tout — **hypothèse assumée**, non sourcée (D-022) |
+| Types de café | Jusqu'à **3** par Chariot, ordre aléatoire ; le café incolore accepte tout — **établi par la recherche** (D-034) |
 | Premier joueur | Ne pioche pas, ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 |
 | Évolution | Impossible au premier tour de chaque joueur |
 | Pression | 1 par tour ; le café n'est **pas consommé** ; elle fait monter le **Stress** |

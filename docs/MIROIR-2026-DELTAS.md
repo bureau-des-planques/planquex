@@ -45,9 +45,10 @@ Paralysé (`07`) · effets des 5 statuts (`07`) · défaite par **plateau vide**
 choisit la relève** : le joueur K.O. (`06`) · **pas de défaite par pioche vide** (`06`) ·
 COMEX = 2 points, dits « **Pokémon avec un encadré Règle** » (`06`).
 
-**Restent non observés** : le **plafond de 3 types de café** et son ordre aléatoire (il faut
-l'éditeur de deck) ; la **main de départ à 5** ; la règle « pas de nouveau café si le slot du
-haut est occupé » ; la **reprise de poste** (rien ne la décrit, mais rien ne l'exclut).
+**Non capturés, mais établis par la recherche** (qui fait foi, D-034) : le **plafond de 3 types
+de café** et son ordre aléatoire ; la **main de départ à 5** ; la règle « pas de nouveau café si le
+slot du haut est occupé » ; la **reprise de poste** (absente). Citations :
+`docs/preuves/regles-2026-10-20/README.md` §2.
 
 ### ⚠️ Trois écarts entre `AGENTS.md` §4 et les captures
 
@@ -65,7 +66,9 @@ Le troisième est le plus délicat : il **oppose une capture** à une source dé
 au moteur.
 
 **État** : les deux premiers sont **tranchés par D-030** et le moteur les applique depuis la
-fusion du 20/10/2026 ; le troisième reste ouvert (**O-014**). La revue de sources du même jour
+fusion du 20/10/2026 ; le troisième est **tranché par D-034** sans changer le moteur : la capture
+dit « tant que vous disposez d'Énergie dans votre zone », et la recherche établit que la zone n'en
+contient jamais plus d'une — donc 1 attachement par tour. La revue de sources du même jour
 a ajouté les règles de **D-031** (Vulnérabilité hors Rack, ordre du calcul des dégâts, double
 craquage, nombre de tours).
 
@@ -80,9 +83,8 @@ seulement « non vérifié » (terminologie de `docs/preuves/regles-2026-10-20/R
 | **Transcription** | quelqu'un a recopié le texte du jeu et **le cite** | `deckgym-core` : « per the in-app Tips panel, transcribed 2026-09-08 » — chaque test cite la phrase qu'il applique |
 | **Secondaire** | un tiers décrit le jeu | wikis (Game8, GameWith, Bulbapedia), simulateurs, articles de presse |
 
-Les lignes encore non observées ne sont pas « sans source » : plusieurs ont des sources
-secondaires nommées (lot `docs/preuves/regles-2026-10-20/`). Elles sont **insourçables en
-primaire**, pas insourçables tout court.
+Depuis **D-034**, une règle établie par la recherche **fait foi** au même titre qu'une capture ;
+le niveau de preuve reste à citer, et **la capture l'emporte** si les deux se contredisent.
 
 ### Pourquoi ces lignes n'étaient pas sourçables par URL
 
@@ -121,11 +123,10 @@ tant que l'écart n'est pas traité.
 | Mulligan : « l'adversaire pioche 1 » | **Démenti** : deux sources JP récentes (Game8, MAJ 30/09/2026 ; GameWith, MAJ 19/10/2026) disent que Pocket **n'a pas de reprise de poste** — « マリガン（引き直し）はありません ». Décidé (D-022) et implémenté (`ensureBasicInHand()`, plus de `mulligan`). **Non observé** : la capture de la préparation (`04`) décrit « des cartes sont piochées » sans nombre et sans remélange — argument **par absence** |
 | Fin de partie quand **plus aucun Planqué** n'est en jeu | ✅ **Observé le 20/10/2026** (`docs/preuves/astuces-2026-10-20/06`) : « Si un joueur n'a plus de Pokémon en jeu, il perd le combat **indépendamment du nombre de points** que chaque joueur possède. » Décidé (D-022), écrit dans §4 |
 | K.O. : **qui choisit la relève** | ✅ **Observé le 20/10/2026** (même capture) : « Si le Pokémon sur le Poste Actif est mis K.O., **le joueur le remplace** avec un de ses Pokémon de Banc. » Décidé (D-022) ; le moteur suit (`pendingPromotion` + `promoteActive()`) |
-| Plafond « 3 types de café » | Deux wikis de fans JP seulement. **Hypothèse assumée** (D-022) : le principe est officiel, le chiffre ne l'est pas. Toujours **non observé** — il faut l'éditeur de deck |
+| Plafond « 3 types de café » | Deux wikis de fans JP seulement. **Hypothèse assumée** (D-022) : le principe est officiel, le chiffre ne l'est pas. **Établi par la recherche (D-034)** : `deckgym-core` (`roll_energy`, 1 à 3 types), TVTropes, Game8 — la capture de l'éditeur de deck n'est plus nécessaire |
 
-Ces quatre points demandent soit une décision datée, soit la capture du §6 : **deux sont
-tranchés par capture** (fin de partie, relève), deux restent ouverts (mulligan, plafond des
-types de café).
+Les quatre points sont réglés : **deux par capture** (fin de partie, relève), **deux par la
+recherche** (pas de reprise de poste, plafond des types de café), qui fait foi (D-034).
 
 ## 5. Sources
 
@@ -166,9 +167,8 @@ Code du même moteur (niveau 3, mais vérifiable) — `src/state/mod.rs`, `src/d
 
 ## 6. Prochaine action vérifiable
 
-1. **Trancher O-014** (1 attachement de café par tour, ou autant qu'on veut) : c'est le seul
-   écart du §2 encore ouvert — D-030 a tranché les deux autres, et le moteur les applique.
+1. ~~Trancher O-014~~ : **fait** (D-034) — 1 attachement par tour, le moteur était déjà juste.
 2. **Intégrer ou exclure** explicitement les écarts du §3 dans `AGENTS.md` §4 et
    `src/data/types.ts` (une décision datée par écart).
-3. **Capturer l'éditeur de deck** (plafond des 3 types de café) et, si possible, l'écran de
-   main de départ — les deux dernières lignes non observées. Débloque le ticket #30.
+3. **Coder le plafond des 3 types de café** (établi par la recherche, D-034) : chaîne du café typé
+   #61 → #33 → #35. Plus aucune capture n'est requise pour §4.
