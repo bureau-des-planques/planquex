@@ -2,10 +2,11 @@ import { useCallback, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
 import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
-import type { BattleAction, BattleState, Card, CardInstance, PlayerId } from '@/data/types';
+import type { BattleAction, BattleState, Card, CardInstance, PlayerId, Status } from '@/data/types';
 import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
+import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 
 /**
  * Chariot de test, quand le chariot du joueur n'est pas encore valide : 8 cartes
@@ -62,13 +63,8 @@ function describe(instance: CardInstance | null): string {
   return `${cardName(instance.cardId)} · ${stress}/${instance.maxHp} de Stress`;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  SURCHARGE: 'Surcharge',
-  EPUISEMENT: 'Épuisement',
-  SIESTE: 'Sieste',
-  IMMOBILISATION: 'Immobilisation',
-  DERIVE: 'Dérive'
-};
+/** Les cinq conditions, dans l'ordre d'affichage de la légende. */
+const STATUS_LIST = Object.keys(STATUS_META) as Status[];
 
 /**
  * La barre de **Stress** : elle monte. `hp` reste le champ technique du moteur — c'est
@@ -369,9 +365,7 @@ export function Battle() {
                     </span>
                     <span className="muted">Machine {side.energyZone}</span>
                     {side.active.statuses.map((status) => (
-                      <span key={status} className={`status-chip status-chip--${status.toLowerCase()}`}>
-                        {STATUS_LABELS[status]}
-                      </span>
+                      <StatusBadge key={status} status={status} />
                     ))}
                   </div>
                 </>
@@ -394,6 +388,21 @@ export function Battle() {
             </p>
           </article>
         ))}
+      </section>
+
+      <section className="section">
+        <div className="section__head">
+          <h2>Conditions</h2>
+          <span className="muted">ce qu’un Planqué au Poste peut subir</span>
+        </div>
+        <ul className="status-legend">
+          {STATUS_LIST.map((status) => (
+            <li key={status}>
+              <StatusBadge status={status} />
+              <span className="muted">{STATUS_META[status].description}</span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {state.pendingPromotion && (

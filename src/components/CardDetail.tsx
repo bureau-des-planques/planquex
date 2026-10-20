@@ -1,6 +1,8 @@
+import type { CSSProperties } from 'react';
 import { X } from 'lucide-react';
 import { ACTION_KIND_META, FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
+import { CafePips } from './CafePips';
 import { CardView } from './CardView';
 
 interface Props {
@@ -15,10 +17,14 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
+  const style = {
+    '--accent': faction.color,
+    '--rarity': rarity.color
+  } as CSSProperties;
 
   return (
     <div className="modal-backdrop" onClick={onClose} role="presentation">
-      <div className="modal card-detail" onClick={(event) => event.stopPropagation()}>
+      <div className="modal card-detail" style={style} onClick={(event) => event.stopPropagation()}>
         <button type="button" className="icon-button modal__close" onClick={onClose} aria-label="Fermer">
           <X size={18} />
         </button>
@@ -26,7 +32,14 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
           <CardView card={card} />
         </div>
         <div className="card-detail__body">
-          <p className="eyebrow">{faction.name} · {kindLabel(card)}</p>
+          <p className="eyebrow">
+            <span className="card-detail__faction">
+              <i className="card__faction-dot" aria-hidden />
+              {faction.name}
+            </span>
+            {' · '}
+            {kindLabel(card)}
+          </p>
           <h2>{card.name}</h2>
           <p className="card-detail__flavor">« {card.flavor} »</p>
 
@@ -39,7 +52,7 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
                 <strong>{ITEM_KIND_META[card.itemKind].label}</strong>
               </div>
             )}
-            <div><span className="stat-label">Rareté</span><strong style={{ color: rarity.color }}>{rarity.label}</strong></div>
+            <div><span className="stat-label">Rareté</span><strong className="card__rarity">{rarity.label}</strong></div>
             <div><span className="stat-label">Possédés</span><strong>{owned}</strong></div>
           </div>
 
@@ -56,7 +69,7 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
               {card.attacks.map((attack) => (
                 <div className="detail-attack" key={attack.name}>
                   <div className="detail-attack__head">
-                    <span className="attack__cost">{'●'.repeat(attack.cost)}</span>
+                    <CafePips cost={attack.cost} />
                     <strong>{attack.name}</strong>
                     <span className="detail-attack__dmg">{attack.damage}</span>
                   </div>
@@ -73,7 +86,13 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
           )}
 
           {planque && card.weakness && (
-            <p className="muted">Vulnérable à : <strong>{FACTION_META[card.weakness].name}</strong> (+20)</p>
+            <p className="muted card-detail__weakness">
+              Vulnérable à
+              <strong style={{ color: FACTION_META[card.weakness].color }}>
+                {FACTION_META[card.weakness].name}
+              </strong>
+              (+20)
+            </p>
           )}
 
           <div className="card-detail__actions">
