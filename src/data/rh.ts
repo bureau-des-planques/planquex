@@ -327,7 +327,7 @@ export const RH_VARIANTS: Card[] = [
   secretVariant(RH_CARDS, 'rh-charge-recrutement', 'star', '✦'),
   secretVariant(RH_CARDS, 'rh-recruteur-embuscade', 'star', '☁'),
   secretVariant(RH_CARDS, 'rh-chasseur-tetes', 'star', '✚'),
-  secretVariant(RH_CARDS, 'rh-drh', 'star2', '◉'),
+  secretVariant(RH_CARDS, 'rh-drh', 'crown', '◉'),
   secretVariant(RH_CARDS, 'rh-directeur-talents', 'star2', '✦'),
   secretVariant(RH_CARDS, 'rh-drh-formation', 'star2', '✚'),
   secretVariant(RH_CARDS, 'rh-responsable-comp-ben', 'star2', '☘')

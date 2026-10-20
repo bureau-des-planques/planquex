@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, FACTION_META, isPlanque } from '.';
-import { planqueBase, planquePalette, secretVariant } from './planque';
+import { isSecretSuffix, planqueBase, planquePalette, secretSuffix, secretVariant } from './planque';
 import type { Faction, PlanqueCard } from './types';
 
 /**
@@ -93,11 +93,14 @@ describe('Socle — secretVariant', () => {
   it('hérite de tout et ne change que l’identifiant, la rareté et le lien de variante', () => {
     for (const [suffix, rarity] of [
       ['star', '1S'],
-      ['star2', '2S']
+      ['star2', '2S'],
+      ['star3', '3S'],
+      ['crown', 'COU']
     ] as const) {
       const variant = secretVariant([source], 'sse-socle', suffix);
       expect(variant.id, suffix).toBe(`sse-socle-${suffix}`);
       expect(variant.rarity, suffix).toBe(rarity);
+      expect(secretSuffix(rarity), suffix).toBe(suffix);
       expect(variant.variantOf, suffix).toBe('sse-socle');
       expect(variant.stage).toBe(source.stage);
       expect(variant.hp).toBe(source.hp);
@@ -112,6 +115,13 @@ describe('Socle — secretVariant', () => {
 
   it('accepte un glyphe propre à la variante', () => {
     expect(secretVariant([source], 'sse-socle', 'star', '✦').glyph).toBe('✦');
+  });
+
+  it('n’attribue de suffixe qu’aux raretés secrètes', () => {
+    expect(secretSuffix('4D')).toBeUndefined();
+    expect(isSecretSuffix('star3')).toBe(true);
+    expect(isSecretSuffix('crown')).toBe(true);
+    expect(isSecretSuffix('ex')).toBe(false);
   });
 
   it('échoue clairement si la carte de base n’existe pas', () => {

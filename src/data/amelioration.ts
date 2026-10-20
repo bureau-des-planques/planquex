@@ -240,7 +240,7 @@ export const AMELIORATION_VARIANTS: Card[] = [
   secretVariant(AMELIORATION_CARDS, 'amelioration-responsable-process', 'star', '⌁'),
   secretVariant(AMELIORATION_CARDS, 'amelioration-responsable-audit', 'star', '☰'),
   secretVariant(AMELIORATION_CARDS, 'amelioration-chef-projet-qualite', 'star', '✦'),
-  secretVariant(AMELIORATION_CARDS, 'amelioration-directeur-qualite', 'star2', '↻'),
+  secretVariant(AMELIORATION_CARDS, 'amelioration-directeur-qualite', 'star3', '↻'),
   secretVariant(AMELIORATION_CARDS, 'amelioration-responsable-amelioration-continue', 'star2', '◉'),
   secretVariant(AMELIORATION_CARDS, 'amelioration-directeur-flux', 'star2', '⌁')
 ];

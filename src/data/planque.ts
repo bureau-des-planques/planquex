@@ -19,11 +19,41 @@ export type PlanqueInput = Omit<PlanqueCard, 'kind' | 'faction' | 'weakness' | '
   art?: string;
 };
 
-/** Suffixes des variantes secrètes (CARD-SPEC.md §1) : `-star` et `-star2`. */
-export type SecretSuffix = 'star' | 'star2';
+/**
+ * Raretés qu'une **variante secrète** peut porter (`CARD-SPEC.md` §1) : les deux
+ * étoiles basses, 3 étoiles (#87), et la Couronne.
+ */
+export type SecretRarity = '1S' | '2S' | '3S' | 'COU';
 
-/** Une variante secrète ne change que la rareté : 1 étoile, puis 2. */
-const SECRET_RARITY: Record<SecretSuffix, Rarity> = { star: '1S', star2: '2S' };
+/**
+ * Suffixes des variantes secrètes. Le suffixe **porte** la rareté (un id de variante
+ * se lit donc sans consulter le catalogue) : `-star`, `-star2`, `-star3`, `-crown`.
+ * `crown` est le mot de code de la Couronne (`COU`), comme `star` celui de l'étoile.
+ */
+export type SecretSuffix = 'star' | 'star2' | 'star3' | 'crown';
+
+/** La rareté portée par chaque suffixe de variante : source unique de `secretVariant`. */
+export const SECRET_RARITY: Record<SecretSuffix, SecretRarity> = {
+  star: '1S',
+  star2: '2S',
+  star3: '3S',
+  crown: 'COU'
+};
+
+/** L'inverse de `SECRET_RARITY`, dérivé pour ne pas tenir deux tables à jour. */
+const RARITY_SUFFIX = Object.fromEntries(
+  Object.entries(SECRET_RARITY).map(([suffix, rarity]) => [rarity, suffix])
+) as Record<SecretRarity, SecretSuffix>;
+
+/** Le suffixe d'une rareté secrète, ou `undefined` pour une rareté sans variante. */
+export function secretSuffix(rarity: Rarity): SecretSuffix | undefined {
+  return (RARITY_SUFFIX as Partial<Record<Rarity, SecretSuffix>>)[rarity];
+}
+
+/** Vrai pour un suffixe de variante secrète connu — employé par les tests de nommage. */
+export function isSecretSuffix(value: string): value is SecretSuffix {
+  return Object.hasOwn(SECRET_RARITY, value);
+}
 
 /** Un dégradé à trois arrêts, en degrés : c'est l'angle des cartes existantes. */
 const GRADIENT_ANGLE = 155;
@@ -113,7 +143,8 @@ export function planqueBase(faction: Faction): (card: PlanqueInput) => PlanqueCa
 /**
  * Une **variante secrète** d'une carte : elle hérite de tout (stats, Pressions, Talent,
  * flavour) et ne change que son identifiant, sa rareté et, au besoin, son glyphe.
- * Le suffixe porte les deux : `star` → `1S`, `star2` → `2S`.
+ * Le suffixe porte la rareté : `star` → `1S`, `star2` → `2S`, `star3` → `3S`,
+ * `crown` → `COU` (#87).
  */
 export function secretVariant(
   cards: readonly PlanqueCard[],

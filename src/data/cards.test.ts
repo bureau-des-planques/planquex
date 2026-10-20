@@ -13,6 +13,7 @@ import {
 } from '@/data';
 import type { Card, CafeSymbol, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
 import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
+import { secretSuffix } from '@/data/planque';
 import { damageBand, hpBand } from '@/game/curves';
 
 /**
@@ -163,9 +164,10 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
 
 /**
  * Socle des raretés hautes — `CARD-SPEC.md` §1 et `AGENTS.md` §3.2.
- * Aucune carte réelle de ces raretés n'existe encore : les cartes ci-dessous sont
- * **synthétiques** et ne sont jamais enregistrées dans `ALL_CARDS`. Elles servent
- * uniquement à prouver que le type et les métadonnées acceptent les nouveaux paliers.
+ * Les cartes ci-dessous sont **synthétiques** et ne sont jamais enregistrées dans
+ * `ALL_CARDS` : elles prouvent que le type et les métadonnées acceptent les paliers
+ * **avant** qu'une carte réelle ne les emploie. Les variantes réelles sont contrôlées
+ * dans le `describe` suivant (#87).
  */
 const RARITES_HAUTES: Rarity[] = ['3S', 'COU'];
 const TOUTES_LES_RARETES: Rarity[] = ['1D', '2D', '3D', '4D', '1S', '2S', '3S', 'COU'];
@@ -209,6 +211,36 @@ describe('Raretés hautes — socle de type (CARD-SPEC.md §1, AGENTS.md §3.2)'
       expect(card.rarity, card.id).toBe(rarity);
       expect(RARITY_META[card.rarity], card.id).toBeDefined();
       expect(CARD_BY_ID.has(card.id), card.id).toBe(false);
+    }
+  });
+});
+
+describe('Raretés hautes — les variantes réelles (#87)', () => {
+  const VARIANTS = PLANQUES.filter((card) => card.variantOf);
+  const variantesDe = (rarity: Rarity) => VARIANTS.filter((card) => card.rarity === rarity);
+
+  it('porte 4 variantes `3S` et 3 variantes `COU`, sans créer de variante', () => {
+    // Q14 : la vague 3 **re-raréfie** des variantes existantes. Le set garde donc ses
+    // 67 variantes de Planqués ; seuls leurs paliers changent.
+    expect(VARIANTS).toHaveLength(67);
+    expect(variantesDe('3S')).toHaveLength(4);
+    expect(variantesDe('COU')).toHaveLength(3);
+  });
+
+  it('n’a aucune rareté déclarée mais inutilisée dans le catalogue', () => {
+    const utilisees = new Set(ALL_CARDS.map((card) => card.rarity));
+    expect([...utilisees].sort()).toEqual([...TOUTES_LES_RARETES].sort());
+  });
+
+  it('suffixe chaque variante haute par le suffixe de sa rareté, et la rattache à une base', () => {
+    for (const card of [...variantesDe('3S'), ...variantesDe('COU')]) {
+      const suffix = secretSuffix(card.rarity);
+      expect(suffix, card.id).toBeDefined();
+      expect(card.id, card.id).toMatch(new RegExp(`-${suffix}$`));
+      const source = card.variantOf ? getCard(card.variantOf) : undefined;
+      expect(isPlanque(source), card.id).toBe(true);
+      expect(source?.variantOf, `${card.id} : une variante de variante`).toBeUndefined();
+      expect(source?.rarity, card.id).toBe('3D');
     }
   });
 });
@@ -348,7 +380,9 @@ describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
       expect(source, variant.id).toBeDefined();
       if (!source || !isPlanque(source)) continue;
       expect(source.variantOf, `${variant.id} : une variante de variante`).toBeUndefined();
-      expect(variant.id, variant.id).toMatch(/-star2?$/);
+      const suffix = secretSuffix(variant.rarity);
+      expect(suffix, `${variant.id} : rareté sans suffixe de variante`).toBeDefined();
+      expect(variant.id, variant.id).toMatch(new RegExp(`-${suffix}$`));
       expect(variant.faction, variant.id).toBe(source.faction);
       expect(variant.stage, variant.id).toBe(source.stage);
       expect(variant.hp, variant.id).toBe(source.hp);
