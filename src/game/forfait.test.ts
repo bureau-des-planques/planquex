@@ -104,10 +104,11 @@ describe('Simulateur — jamais de forfait (#79)', () => {
   });
 
   it('la politique ne construit jamais d’action de forfait', () => {
-    const source = readFileSync(fileURLToPath(new URL('./simulation.ts', import.meta.url)), 'utf8');
+    // La politique vit dans `@/game/ia` : c'est là que la garde se lit. Elle choisit
+    // dans `legalActions` et n'énumère jamais de forfait.
+    const source = readFileSync(fileURLToPath(new URL('./ia.ts', import.meta.url)), 'utf8');
 
-    // La seule mention de `forfeit` est la garde explicite : la politique ne le choisit pas.
-    expect(source).toMatch(/action\.type === 'forfeit'/);
+    expect(source).toMatch(/legalActions\(/);
     expect(source).not.toMatch(/type: 'forfeit'/);
   });
 });

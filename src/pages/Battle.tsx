@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
 import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
 import type { BattleAction, BattleState, Card, CardInstance, PlayerId, Status } from '@/data/types';
 import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
+import { nextAiAction } from '@/game/ia';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
@@ -257,6 +258,26 @@ export function Battle() {
   );
 
   /**
+   * **IA de niveau 1** : quand c'est à la Direction de jouer — ou de choisir sa
+   * relève après un craquage —, ses actions s'enchaînent seules, une par un court
+   * délai pour rester lisibles. `prefers-reduced-motion` supprime le délai, comme
+   * pour les animations de l'écran. La politique vit dans `@/game/ia` : l'écran ne
+   * décide rien, il applique ce que `nextAiAction` rend, comme pour ses boutons.
+   */
+  const reduceMotion = useReducedMotion();
+  const aiTurn =
+    state.phase === 'playing' &&
+    (state.pendingPromotion === 'ai' || (state.current === 'ai' && state.pendingPromotion === null));
+
+  useEffect(() => {
+    if (!aiTurn) return;
+    const action = nextAiAction(state);
+    if (!action) return;
+    const timer = window.setTimeout(() => play(action), reduceMotion ? 0 : 600);
+    return () => window.clearTimeout(timer);
+  }, [state, aiTurn, reduceMotion, play]);
+
+  /**
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
    * vient de `legalActions` (le moteur dit si la partie vit encore, relève comprise) —
    * l'écran ne décide rien — et elle passe par `applyAction` comme les autres boutons.
@@ -337,8 +358,8 @@ export function Battle() {
       )}
 
       <p className="notice">
-        La Direction ne joue pas encore : son tour se termine tout seul. Tous les boutons ci-dessous viennent de la
-        liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
+        La Direction joue toute seule (IA de niveau 1) : son tour s’enchaîne automatiquement. Tous les boutons
+        ci-dessous viennent de la liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
       </p>
 
       {state.phase === 'ended' && (
@@ -438,10 +459,7 @@ export function Battle() {
           {state.pendingPromotion === 'player' ? (
             <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
           ) : (
-            <p>
-              La Direction doit choisir sa relève. Aucune IA ne joue encore : ces boutons tiennent sa place et
-              t’évitent un blocage.
-            </p>
+            <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
           )}
           <div className="actions">
             {promotions.map((action) => (
