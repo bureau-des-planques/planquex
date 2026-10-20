@@ -195,7 +195,7 @@ grevomon-tcg/
 │   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx, StatusBadge.tsx, CafePips.tsx
 │   ├── components/ui/  shadcn/ui (D-035) : button.tsx, dialog.tsx — composants génériques seuls
 │   ├── data/         index.ts, types.ts, actions.ts, planque.ts, factions.ts, un fichier par faction (sse.ts, management.ts, …) (+ leurs tests)
-│   ├── game/         engine.ts, deck.ts, rules.ts, curves.ts, rng.ts, pack.ts, simulation.ts (+ leurs tests, pace.test.ts)
+│   ├── game/         engine.ts, deck.ts, rules.ts, curves.ts, rng.ts, pack.ts, simulation.ts, ia.ts (+ leurs tests, pace.test.ts)
 │   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx
 │   ├── lib/          utils.ts — `cn()` de shadcn/ui (D-035)
 │   ├── store/        useStore.ts, useStore.test.ts
