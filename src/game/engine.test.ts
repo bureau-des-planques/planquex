@@ -63,20 +63,37 @@ function withHand(state: BattleState, cardIds: string[]): { state: BattleState; 
 }
 
 describe('createBattle — mise en place', () => {
-  it('distribue 5 cartes, pose un N+1 au Poste et ouvre le tour du joueur', () => {
+  it('distribue 5 cartes, pose un N+1 et ouvre le tour par la pioche d’ouverture', () => {
     const state = freshBattle();
     // Les 5 cartes de la main de départ servent aussi à poser le Poste et
-    // l'Rack : la main ne conserve que les Planqués non posés.
-    expect(ownedByPlayer(state)).toBe(5);
+    // l'Rack : la main ne conserve que les Planqués non posés. Le joueur y
+    // ajoute sa pioche d'ouverture (D-030).
+    expect(ownedByPlayer(state)).toBe(6);
     expect(state.players.player.active).not.toBeNull();
     expect(state.current).toBe('player');
     expect(state.turn).toBe(1);
   });
 
-  it('empêche le premier joueur de piocher à son premier tour', () => {
+  it('donne la pioche d’ouverture et refuse le café au premier joueur (D-030)', () => {
     const state = freshBattle();
-    expect(state.log).toContain('Premier tour : tu ne pioches pas.');
-    expect(ownedByPlayer(state)).toBe(5);
+    const player = state.players.player;
+
+    // 5 cartes de départ (main + Poste + Rack), **plus** la pioche d'ouverture :
+    // la ligne « le premier joueur ne pioche pas » venait du TCG physique, pas de Pocket.
+    expect(ownedByPlayer(state)).toBe(6);
+    expect(player.deck).toHaveLength(DECK_SIZE - 6);
+    // Rien n'est perdu ni dupliqué par la pioche d'ouverture.
+    const inPlay = [player.active, ...player.bench].filter(Boolean).length;
+    expect(player.hand.length + player.deck.length + inPlay + player.discard.length).toBe(DECK_SIZE);
+    expect(state.log).not.toContain('Premier tour : tu ne pioches pas.');
+
+    // La seule exception au premier tour reste le café : aucune attache possible.
+    const active = player.active;
+    if (!active) throw new Error('Poste vide');
+    const after = attachEnergy(state, active.uid);
+    expect(after.players.player.active?.energy).toBe(0);
+    expect(after.players.player.energyZone).toBe(1);
+    expect(after.log).toContain('Premier tour : pas d’attachement de café.');
   });
 
   it('remplit la Machine à café du joueur actif', () => {
@@ -105,8 +122,13 @@ describe('Main de départ — pas de reprise de poste (D-022)', () => {
           inPlay.some((card) => isBasic(getCard(card?.cardId ?? ''))),
           `run ${run}, ${who} : aucun N+1`
         ).toBe(true);
-        // Cinq cartes au total, donc aucune pioche de compensation.
-        expect(player.hand.length + inPlay.length, `run ${run}, ${who} : taille de main`).toBe(5);
+        // Cinq cartes de départ : pas de pioche de compensation (D-022). S'y ajoute
+        // la pioche d'ouverture du premier joueur (D-030) ; la Direction, dont le tour
+        // n'a pas commencé, reste à 5.
+        expect(
+          player.hand.length + inPlay.length,
+          `run ${run}, ${who} : taille de main`
+        ).toBe(who === 'player' ? 6 : 5);
         // Aucune carte perdue ni dupliquée par l'échange.
         expect(
           player.hand.length + inPlay.length + player.deck.length + player.discard.length,

@@ -26,12 +26,15 @@ export function isFirstTurnFor(state: BattleState, who: PlayerId): boolean {
 }
 
 /**
- * Le **premier tour de la partie**, tenu par le joueur : ni pioche, ni attachement
- * de café (`AGENTS.md` §4). La Direction, elle, attache dès son premier tour (tour 2),
+ * Le **premier tour de la partie**, tenu par le joueur : aucun café ne s'y attache
+ * (`AGENTS.md` §4, D-030). La Direction, elle, attache dès son premier tour (tour 2),
  * c'est pourquoi ce n'est pas `isFirstTurnFor` qui sert ici.
  *
- * Une seule définition : `startTurn`, `attachEnergy` et `legalActions` lisent celle-ci,
- * sinon l'écran et le moteur finiraient par ne plus dire la même chose (#58).
+ * Le joueur **pioche**, en revanche : la ligne « le premier joueur ne pioche pas »
+ * venait du TCG **physique**, pas de Pocket (D-030). L'énergie est la seule exception.
+ *
+ * Une seule définition : `attachEnergy` et `legalActions` lisent celle-ci, sinon
+ * l'écran et le moteur finiraient par ne plus dire la même chose (#58).
  */
 function isOpeningTurn(state: BattleState): boolean {
   return state.turn === 1 && state.current === 'player';
@@ -154,12 +157,9 @@ function startTurn(state: BattleState) {
     if (card) card.damageReduction = 0;
   }
 
-  const isFirstPlayerFirstTurn = isOpeningTurn(state);
-  if (!isFirstPlayerFirstTurn) {
-    draw(state, state.current, 1);
-  } else {
-    state.log.push('Premier tour : tu ne pioches pas.');
-  }
+  // Le premier joueur pioche comme l'autre (D-030) : seule l'énergie est une
+  // exception à son premier tour, et elle se joue dans `attachEnergy`.
+  draw(state, state.current, 1);
 
   if (player.energyZone === 0) {
     player.energyZone = 1;
@@ -535,7 +535,7 @@ export function canPlayAction(state: BattleState, uid: string): boolean {
 /**
  * Jouer une carte Action depuis la main : elle part au Rebut et son effet se résout.
  * Objet illimité, Collègue 1 par tour (`AGENTS.md` §4). Le premier joueur peut jouer un
- * Collègue à son premier tour — §4 ne l'en prive pas, contrairement à la pioche et au café.
+ * Collègue à son premier tour — §4 ne l'en prive pas, contrairement au café (D-030).
  */
 export function playAction(state: BattleState, uid: string): BattleState {
   if (!canPlayAction(state, uid)) return state;
@@ -880,7 +880,7 @@ export function legalActions(state: BattleState): BattleAction[] {
     if (isPlanque(card) && card.ability) actions.push({ type: 'ability' });
   }
 
-  // Café : 1 par tour, un par Planqué en jeu — et rien au premier tour (§4).
+  // Café : 1 par tour, un par Planqué en jeu — mais aucun attachement au premier tour (§4, D-030).
   if (!player.energyAttached && player.energyZone > 0 && !isOpeningTurn(state)) {
     for (const target of inPlay(player)) actions.push({ type: 'attachEnergy', targetUid: target.uid });
   }
