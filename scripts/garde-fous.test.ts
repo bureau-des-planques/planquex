@@ -17,7 +17,7 @@ import { describe, expect, it } from 'vitest';
 const LANCER = 'scripts/garde-fous.mjs';
 
 /** Les gardes attendues, une par invariant **critique** déjà pris en défaut dans le dépôt. */
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 101, 103];
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 101, 103, 116];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {
