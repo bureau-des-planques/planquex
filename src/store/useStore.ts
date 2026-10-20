@@ -71,6 +71,21 @@ export interface AppState {
    * normalisée à l'écriture (`normalizeCafeTypes`) **et** à la lecture
    * (`resolveCafeTypes`), donc un état trafiqué ne fait jamais produire `SUPPORT` ni
    * `INTERIM`, ni plus de 3 types (D-034).
+   *
+   * **Le choix est un attribut du Chariot, pas du joueur** (#117). Critère retenu :
+   * *le choix décrit un contenu ; il ne survit pas au remplacement de ce contenu.*
+   * Remplacer le Chariot (`setDeck`, donc « Remplir »), le vider (`clearDeck`), le
+   * vider en retirant sa dernière carte (`removeFromDeck`) ou tout réinitialiser
+   * (`reset`) **efface** le choix : `[]` repart en proposition automatique, dérivée
+   * du **nouveau** contenu. Ajuster le Chariot carte par carte (`addToDeck`,
+   * `toggleDeck`) le **garde** : c'est le même Chariot qu'on édite.
+   *
+   * Pourquoi « attribut du Chariot » plutôt que « du joueur » : `AGENTS.md` §4 dit
+   * « Jusqu'à 3 types **par Chariot**, choisis par le joueur » et §6 parle des
+   * « types de café choisis **du Chariot** » ; `resolveCafeTypes(deck, chosen)` prend
+   * déjà le Chariot en premier argument. Le laisser survivre à un remplacement
+   * faisait appliquer à un Chariot neuf les types d'un autre — et, à l'écran de
+   * combat, à un Chariot de test (#117).
    */
   cafeTypes: CafeType[];
   packsOpened: number;
@@ -158,7 +173,10 @@ export const useStore = create<AppState>()(
           if (index < 0) return {};
           const deck = [...state.deck];
           deck.splice(index, 1);
-          return { deck };
+          // Vider le Chariot à la main laisse le même état que `clearDeck` : le choix
+          // tombe avec le contenu qui le portait (#117). Retirer une carte d'un
+          // Chariot qui en garde d'autres ne touche pas au choix.
+          return deck.length === 0 ? { deck, cafeTypes: [] } : { deck };
         });
       },
       /** Un clic : ajoute si c'est possible, sinon retire **un** exemplaire. */
@@ -167,8 +185,17 @@ export const useStore = create<AppState>()(
         if (deckCanAdd(state.deck, cardId)) state.addToDeck(cardId);
         else state.removeFromDeck(cardId);
       },
-      setDeck: (deck) => set({ deck }),
-      /** Un Chariot vide n'a plus de types de café : le choix repart en automatique. */
+      /**
+       * **Remplir** (« Remplir » de l'écran Chariot : `setDeck(autoDeck(owned).deck)`)
+       * **efface** le choix de types de café : il décrivait le contenu précédent, et
+       * `[]` repart en proposition automatique du nouveau Chariot (#117). C'est le
+       * même geste que `clearDeck`, donc le même effet sur le choix.
+       */
+      setDeck: (deck) => set({ deck, cafeTypes: [] }),
+      /**
+       * Un Chariot vide n'a plus de types de café : le choix repart en automatique
+       * (#117 — même règle que `setDeck`, vue depuis un contenu vide).
+       */
       clearDeck: () => set({ deck: [], cafeTypes: [] }),
       setCafeTypes: (types) => set({ cafeTypes: normalizeCafeTypes(types) }),
       toggleCafeType: (type) => {

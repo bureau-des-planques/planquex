@@ -66,4 +66,22 @@ describe('Battle.tsx — l’écran rend ce que le moteur autorise (#58)', () =>
     // Comme les autres transitions, le forfait passe par `applyAction`, pas par un appel direct.
     expect(source).not.toMatch(/\bforfeit\(/);
   });
+
+  /**
+   * #117 — **le choix de types de café appartient au Chariot du joueur**, pas au
+   * combat. Sur un chariot de test (Chariot illégal remplacé), il décrivait un
+   * contenu qui n'était pas le sien : l'écran annonçait des types que la Machine ne
+   * pouvait pas tirer de ce chariot-là. Le choix appliqué passe donc par le repli
+   * (`usedTestDeck`) — `[]` = proposition automatique du chariot de test — et les
+   * **deux** `createBattle` (montage et « Nouveau combat ») lisent la même valeur,
+   * sinon ils divergent.
+   */
+  it('n’applique pas les types du Chariot du joueur à un chariot de test (#117)', () => {
+    expect(source).toMatch(/usedTestDeck \? \[\] : storedCafeTypes/);
+    expect(source).not.toMatch(/playerCafeTypes: storedCafeTypes/);
+
+    const passed = source.match(/playerCafeTypes:\s*([A-Za-z_$][\w$]*)/g) ?? [];
+    expect(passed, 'deux `playerCafeTypes` attendus : montage et reprise').toHaveLength(2);
+    expect(new Set(passed)).toEqual(new Set(['playerCafeTypes: chosenCafeTypes']));
+  });
 });
