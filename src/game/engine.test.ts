@@ -3,6 +3,7 @@ import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import {
   applyAction,
   attack,
+  attackDamage,
   attackPreview,
   attachEnergy,
   canEvolve,
@@ -21,8 +22,8 @@ import {
   retreat
 } from '@/game/engine';
 import { DECK_SIZE } from '@/game/deck';
-import { RULES } from '@/game/rules';
-import type { BattleState, PlayerId } from '@/data/types';
+import { RULES, TURN_LIMIT } from '@/game/rules';
+import type { Attack, BattleState, PlayerId, Status } from '@/data/types';
 
 /**
  * Le moteur est **seedé** (ticket #29) : les tests choisissent une graine
@@ -62,20 +63,37 @@ function withHand(state: BattleState, cardIds: string[]): { state: BattleState; 
 }
 
 describe('createBattle — mise en place', () => {
-  it('distribue 5 cartes, pose un N+1 au Poste et ouvre le tour du joueur', () => {
+  it('distribue 5 cartes, pose un N+1 et ouvre le tour par la pioche d’ouverture', () => {
     const state = freshBattle();
     // Les 5 cartes de la main de départ servent aussi à poser le Poste et
-    // l'Rack : la main ne conserve que les Planqués non posés.
-    expect(ownedByPlayer(state)).toBe(5);
+    // l'Rack : la main ne conserve que les Planqués non posés. Le joueur y
+    // ajoute sa pioche d'ouverture (D-030).
+    expect(ownedByPlayer(state)).toBe(6);
     expect(state.players.player.active).not.toBeNull();
     expect(state.current).toBe('player');
     expect(state.turn).toBe(1);
   });
 
-  it('empêche le premier joueur de piocher à son premier tour', () => {
+  it('donne la pioche d’ouverture et refuse le café au premier joueur (D-030)', () => {
     const state = freshBattle();
-    expect(state.log).toContain('Premier tour : tu ne pioches pas.');
-    expect(ownedByPlayer(state)).toBe(5);
+    const player = state.players.player;
+
+    // 5 cartes de départ (main + Poste + Rack), **plus** la pioche d'ouverture :
+    // la ligne « le premier joueur ne pioche pas » venait du TCG physique, pas de Pocket.
+    expect(ownedByPlayer(state)).toBe(6);
+    expect(player.deck).toHaveLength(DECK_SIZE - 6);
+    // Rien n'est perdu ni dupliqué par la pioche d'ouverture.
+    const inPlay = [player.active, ...player.bench].filter(Boolean).length;
+    expect(player.hand.length + player.deck.length + inPlay + player.discard.length).toBe(DECK_SIZE);
+    expect(state.log).not.toContain('Premier tour : tu ne pioches pas.');
+
+    // La seule exception au premier tour reste le café : aucune attache possible.
+    const active = player.active;
+    if (!active) throw new Error('Poste vide');
+    const after = attachEnergy(state, active.uid);
+    expect(after.players.player.active?.energy).toBe(0);
+    expect(after.players.player.energyZone).toBe(1);
+    expect(after.log).toContain('Premier tour : pas d’attachement de café.');
   });
 
   it('remplit la Machine à café du joueur actif', () => {
@@ -104,8 +122,13 @@ describe('Main de départ — pas de reprise de poste (D-022)', () => {
           inPlay.some((card) => isBasic(getCard(card?.cardId ?? ''))),
           `run ${run}, ${who} : aucun N+1`
         ).toBe(true);
-        // Cinq cartes au total, donc aucune pioche de compensation.
-        expect(player.hand.length + inPlay.length, `run ${run}, ${who} : taille de main`).toBe(5);
+        // Cinq cartes de départ : pas de pioche de compensation (D-022). S'y ajoute
+        // la pioche d'ouverture du premier joueur (D-030) ; la Direction, dont le tour
+        // n'a pas commencé, reste à 5.
+        expect(
+          player.hand.length + inPlay.length,
+          `run ${run}, ${who} : taille de main`
+        ).toBe(who === 'player' ? 6 : 5);
         // Aucune carte perdue ni dupliquée par l'échange.
         expect(
           player.hand.length + inPlay.length + player.deck.length + player.discard.length,
@@ -166,6 +189,98 @@ describe('endTurn — statut létal', () => {
   });
 });
 
+describe('Fin de partie (D-032)', () => {
+  /** Remplace la Pression du Poste par une attaque de test qui craque aussi l'attaquant. */
+  function withSelfDamage(state: BattleState): () => void {
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const card = CARD_BY_ID.get(active.cardId);
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(active.cardId, {
+      ...card,
+      attacks: [
+        { name: 'Test', cost: 0, damage: 100, effects: [{ kind: 'selfDamage', amount: 100 }] }
+      ]
+    });
+    return () => CARD_BY_ID.set(active.cardId, card);
+  }
+
+  it('déclare l’égalité au 31ᵉ tour', () => {
+    const state = structuredClone(freshBattle());
+    state.turn = TURN_LIMIT;
+
+    const after = endTurn(state);
+
+    expect(after.phase).toBe('ended');
+    expect(after.winner).toBeNull();
+    expect(after.turn).toBe(TURN_LIMIT + 1);
+    expect(after.log.at(-1)).toContain('égalité');
+
+    // Le tour de la limite n'est pas encore le dernier : la partie continue.
+    const avant = structuredClone(state);
+    avant.turn = TURN_LIMIT - 1;
+    expect(endTurn(avant).phase).toBe('playing');
+  });
+
+  it('fait perdre le camp au plateau vide, même s’il atteint 3 Interventions sur l’action', () => {
+    const base = structuredClone(freshBattle());
+    const restore = withSelfDamage(base);
+    try {
+      const state = structuredClone(base);
+      const me = state.players.player;
+      if (!me.active) throw new Error('Poste vide');
+      me.active.hp = 10;
+      me.active.energy = 0;
+      me.points = 2; // le craquage adverse le porte à 3 Interventions
+      me.bench = [null, null, null]; // ... et son propre plateau se vide
+      const foe = state.players.ai;
+      if (!foe.active) throw new Error('Poste vide');
+      foe.active.hp = 10;
+      if (!foe.bench.some(Boolean)) {
+        foe.bench[0] = createInstance(BASICS[0] ?? foe.active.cardId, state.turn);
+      }
+
+      const after = attack(state, 0);
+      const decisions = after.log.filter((line) => line.includes('gagne'));
+
+      expect(after.phase).toBe('ended');
+      // « that player loses the battle regardless of the number of points ».
+      expect(after.winner).toBe('ai');
+      // Une seule décision, et c'est le plateau vide : l'ordre inverse (3 Interventions
+      // d'abord) aurait donné la victoire au joueur.
+      expect(decisions).toEqual(['L’IA gagne : plus aucun Planqué.']);
+    } finally {
+      restore();
+    }
+  });
+
+  it('n’ouvre pas de relève quand la partie est déjà terminée', () => {
+    const base = structuredClone(freshBattle());
+    const restore = withSelfDamage(base);
+    try {
+      const state = structuredClone(base);
+      const me = state.players.player;
+      if (!me.active) throw new Error('Poste vide');
+      me.active.hp = 10;
+      me.active.energy = 0;
+      me.points = 2;
+      // Un Rack plein : la relève serait légitime si la partie continuait.
+      me.bench[0] = createInstance(BASICS[0] ?? me.active.cardId, state.turn);
+      const foe = state.players.ai;
+      if (!foe.active) throw new Error('Poste vide');
+      foe.active.hp = 10;
+
+      const after = attack(state, 0);
+
+      expect(after.phase).toBe('ended');
+      expect(after.winner).toBe('player');
+      expect(after.pendingPromotion).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+});
+
 describe('Pression — dégâts et café', () => {
   it('ajoute +20 dégâts quand la Vulnérabilité correspond à la faction attaquante', () => {
     const state = freshBattle();
@@ -188,6 +303,41 @@ describe('Pression — dégâts et café', () => {
     }
   });
 
+  /**
+   * D-032 : la Vulnérabilité (+20) ne vaut **qu'au Poste**. La même Pression portée
+   * sur un Planqué du Rack n'y ajoute **rien**. Aucune Pression du set ne touche le
+   * Rack aujourd'hui : c'est la résolution des dégâts qu'on interroge, emplacement
+   * par emplacement, pour que le jour où une telle Pression arrive elle n'hérite pas
+   * de la Vulnérabilité.
+   */
+  it('n’ajoute pas la Vulnérabilité à un Planqué du Rack (D-032)', () => {
+    const state = freshBattle();
+    const attacker = state.players.player.active;
+    if (!attacker) throw new Error('Poste vide');
+    const attackerCard = getCard(attacker.cardId);
+    if (!isPlanque(attackerCard)) throw new Error('Carte inconnue');
+    const pression = attackerCard.attacks[0];
+    if (!pression) throw new Error('Aucune Pression');
+
+    // Un Planqué posable au Rack, sans Talent : seule la Vulnérabilité entre en jeu.
+    const benchCard = ALL_CARDS.find(
+      (card) => isPlanque(card) && !card.ability && !card.variantOf && card.stage === 'ENTRANT'
+    );
+    if (!benchCard) throw new Error('Aucun Planqué de Rack');
+    const benched = createInstance(benchCard.id);
+
+    // Vulnérable à la faction qui attaque : au Poste, cela vaudrait +20.
+    const original = CARD_BY_ID.get(benchCard.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(benchCard.id, { ...original, weakness: attackerCard.faction });
+    try {
+      expect(attackDamage(attacker, benched, pression, 'poste')).toBe(pression.damage + 20);
+      expect(attackDamage(attacker, benched, pression, 'rack')).toBe(pression.damage);
+    } finally {
+      CARD_BY_ID.set(benchCard.id, original);
+    }
+  });
+
   it('ne consomme pas le café attaché', () => {
     const state = freshBattle();
     const next = structuredClone(state);
@@ -203,6 +353,102 @@ describe('Pression — dégâts et café', () => {
 
     expect(after.players.player.active?.energy).toBe(3);
     expect(after.players.player.hasAttacked).toBe(true);
+  });
+});
+
+/**
+ * D-032, l'ordre officiel (FAQ, article `57286049312665`) :
+ * 1. les dégâts de la Pression · 2. les effets sur l'attaquant · 3. la Vulnérabilité ·
+ * 4. les effets sur le défenseur. Aucun plancher avant la dernière étape : une
+ * réduction ne doit pas être rognée à 0 avant que la Vulnérabilité ne s'ajoute.
+ *
+ * Les cas ci-dessous sont choisis pour qu'un calcul qui appliquerait la réduction
+ * **avant** la Vulnérabilité, avec un plancher à 0, donne un total différent.
+ */
+describe('Ordre du calcul des dégâts (D-032)', () => {
+  /** 10 de dégâts ; avec la Vulnérabilité (+20) et une réduction de 20, l'ordre donne 10. */
+  const TEST_ATTACK: Attack = { name: 'Pression témoin', cost: 0, damage: 10 };
+
+  /** Le Poste du joueur, et sa carte : l'attaquant de référence. */
+  function referenceAttacker(state: BattleState) {
+    const instance = state.players.player.active;
+    if (!instance) throw new Error('Poste vide');
+    const card = getCard(instance.cardId);
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    return { instance, card };
+  }
+
+  /** Un Planqué sans Talent : seul ce que le test pose entre dans le calcul. */
+  function plainPlanque() {
+    const card = ALL_CARDS.find(
+      (entry) => isPlanque(entry) && !entry.ability && !entry.variantOf && entry.stage === 'ENTRANT'
+    );
+    if (!card) throw new Error('Aucun Planqué témoin');
+    return card;
+  }
+
+  it('applique une réduction d’instance du défenseur après la Vulnérabilité (D-032)', () => {
+    const state = freshBattle();
+    const { instance: attacker, card: attackerCard } = referenceAttacker(state);
+    const plain = plainPlanque();
+    const defender = createInstance(plain.id);
+    defender.damageReduction = 20;
+
+    // Vulnérable à la faction qui attaque : +20 au Poste.
+    const original = CARD_BY_ID.get(plain.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(plain.id, { ...original, weakness: attackerCard.faction });
+    try {
+      // 10 (Pression) + 20 (Vulnérabilité) − 20 (réduction) = 10.
+      // Réduction avant Vulnérabilité avec plancher : max(0, 10 − 20) + 20 = 20.
+      expect(attackDamage(attacker, defender, TEST_ATTACK, 'poste')).toBe(10);
+    } finally {
+      CARD_BY_ID.set(plain.id, original);
+    }
+  });
+
+  it('applique un Talent de réduction du défenseur après la Vulnérabilité (D-032)', () => {
+    const state = freshBattle();
+    const { instance: attacker, card: attackerCard } = referenceAttacker(state);
+    const plain = plainPlanque();
+
+    const original = CARD_BY_ID.get(plain.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(plain.id, {
+      ...original,
+      weakness: attackerCard.faction,
+      ability: {
+        name: 'Réduction témoin',
+        text: 'Ce Planqué subit 20 dégâts de moins.',
+        kind: 'reduceDamage',
+        amount: 20
+      }
+    });
+    try {
+      // Même total que ci-dessus : le Talent est un effet *du défenseur* (étape 4).
+      expect(attackDamage(attacker, createInstance(plain.id), TEST_ATTACK, 'poste')).toBe(10);
+    } finally {
+      CARD_BY_ID.set(plain.id, original);
+    }
+  });
+
+  it('ne déduit pas la défense de l’attaquant des dégâts qu’il inflige (D-032)', () => {
+    const state = freshBattle();
+    const { instance: attacker } = referenceAttacker(state);
+    const plain = plainPlanque();
+
+    const original = CARD_BY_ID.get(plain.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(plain.id, { ...original, weakness: null });
+    try {
+      // Sans Vulnérabilité : 10 de Pression, et rien d'autre. `damageReduction` protège
+      // son porteur quand il est *la cible* (étape 4) ; ce n'est pas un malus des
+      // dégâts sortants (étape 2), donc les 10 ne changent pas.
+      attacker.damageReduction = 20;
+      expect(attackDamage(attacker, createInstance(plain.id), TEST_ATTACK, 'poste')).toBe(10);
+    } finally {
+      CARD_BY_ID.set(plain.id, original);
+    }
   });
 });
 
@@ -306,6 +552,110 @@ describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
   });
 });
 
+describe('Statuts — exclusivité et portée (D-031)', () => {
+  /**
+   * Frappe le Poste adverse avec une Pression dont les effets appliquent `statuses`
+   * **dans l'ordre donné**. Le Seuil est monté pour qu'aucun craquage ne coupe la
+   * séquence, et la carte est restaurée même si l'appel échoue.
+   */
+  function strikeWith(state: BattleState, statuses: Status[]): BattleState {
+    const active = state.players.player.active;
+    const defender = state.players.ai.active;
+    if (!active || !defender) throw new Error('Poste vide');
+    active.energy = 3;
+    defender.maxHp = 300;
+    defender.hp = 300;
+    const card = CARD_BY_ID.get(active.cardId);
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(active.cardId, {
+      ...card,
+      attacks: [
+        {
+          ...card.attacks[0]!,
+          effects: statuses.map((status) => ({ kind: 'status' as const, status }))
+        }
+      ]
+    });
+    try {
+      return attack(state, 0);
+    } finally {
+      CARD_BY_ID.set(active.cardId, card);
+    }
+  }
+
+  it('Sieste puis Immobilisation : la seconde remplace la première', () => {
+    // « Asleep, Paralyzed, and Confused cannot stack with each other. If one of
+    // these Special Conditions is applied, it replaces any of the others. »
+    const after = strikeWith(structuredClone(freshBattle()), ['SIESTE', 'IMMOBILISATION']);
+
+    expect(after.players.ai.active?.statuses).toEqual(['IMMOBILISATION']);
+  });
+
+  it('Sieste puis Surcharge : les deux restent, Surcharge se cumule avec tout', () => {
+    const after = strikeWith(structuredClone(freshBattle()), ['SIESTE', 'SURCHARGE']);
+
+    expect(after.players.ai.active?.statuses).toEqual(['SIESTE', 'SURCHARGE']);
+  });
+
+  it('Dérive puis Sieste : la Sieste remplace aussi la Dérive', () => {
+    const after = strikeWith(structuredClone(freshBattle()), ['DERIVE', 'SIESTE']);
+
+    expect(after.players.ai.active?.statuses).toEqual(['SIESTE']);
+  });
+
+  it('la Rotation purge les statuts : le sortant les perd en rejoignant le Rack', () => {
+    const state = structuredClone(freshBattle());
+    const player = state.players.player;
+    const active = player.active;
+    const slot = player.bench.findIndex(Boolean);
+    if (!active || slot < 0) throw new Error('Poste ou Rack vide');
+    active.energy = 5; // la rotation est payée
+    active.statuses = ['SURCHARGE', 'SIESTE'];
+    const outgoingUid = active.uid;
+
+    const after = retreat(state, slot);
+
+    expect(after.players.player.active?.uid).not.toBe(outgoingUid);
+    expect(after.players.player.active?.statuses).toEqual([]);
+    const outgoing = after.players.player.bench[slot];
+    expect(outgoing?.uid).toBe(outgoingUid);
+    expect(outgoing?.statuses).toEqual([]);
+  });
+
+  it('l’évolution purge les statuts du Planqué qui évolue', () => {
+    const state = structuredClone(freshBattle());
+    const player = state.players.player;
+    const active = player.active;
+    if (!active) throw new Error('Poste vide');
+    // Une évolution de test : on ne dépend d'aucune carte de données.
+    const evolution = ALL_CARDS.filter(isPlanque).find(
+      (card) => card.stage !== 'ENTRANT' && !card.variantOf
+    );
+    if (!evolution) throw new Error('Aucune évolution dans les données');
+    const originalEvolution = CARD_BY_ID.get(evolution.id);
+    if (!isPlanque(originalEvolution)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(evolution.id, { ...originalEvolution, evolvesFrom: active.cardId });
+
+    try {
+      // Tour 3 : l'évolution n'est plus interdite, et la carte n'a pas encore évolué.
+      state.turn = 3;
+      state.current = 'player';
+      active.playedTurn = 0;
+      active.evolvedTurn = null;
+      active.statuses = ['SURCHARGE', 'SIESTE'];
+      const instance = createInstance(evolution.id, state.turn);
+      player.hand.push(instance);
+
+      const after = evolve(state, instance.uid, active.uid);
+
+      expect(after.players.player.active?.cardId).toBe(evolution.id);
+      expect(after.players.player.active?.statuses).toEqual([]);
+    } finally {
+      CARD_BY_ID.set(evolution.id, originalEvolution);
+    }
+  });
+});
+
 describe('Relève choisie après un craquage', () => {
   /** Amène la Direction à 1 Seuil, puis frappe : son Poste tombe. */
   function knockOutAi(state: BattleState): BattleState {
@@ -360,6 +710,68 @@ describe('Relève choisie après un craquage', () => {
       // L'emplacement 2 était occupé : on vérifie un index hors bornes.
       expect(promoteActive(after, 9)).toBe(after);
     }
+  });
+});
+
+describe('Relève après un double craquage (D-032)', () => {
+  /**
+   * Une même Pression vide les deux Postes : la cible tombe, puis l'attaquant se
+   * craque lui-même (`selfDamage`). L'effet est posé sur la carte de l'attaquant,
+   * sans dépendre d'une carte du set qui le porterait.
+   */
+  function doubleKnockOut(state: BattleState, attackerId: PlayerId): BattleState {
+    const next = structuredClone(state);
+    next.current = attackerId;
+    const defenderId: PlayerId = attackerId === 'player' ? 'ai' : 'player';
+    const attacker = next.players[attackerId].active;
+    const defender = next.players[defenderId].active;
+    if (!attacker || !defender) throw new Error('Poste vide');
+
+    const original = CARD_BY_ID.get(attacker.cardId);
+    if (!isPlanque(original)) throw new Error('Carte inconnue');
+    const pressure: Attack = {
+      name: 'Double casse',
+      cost: 1,
+      damage: 10,
+      effects: [{ kind: 'selfDamage', amount: 999 }]
+    };
+    CARD_BY_ID.set(attacker.cardId, { ...original, attacks: [pressure] });
+    try {
+      next.players[attackerId].hasAttacked = false;
+      attacker.energy = 1;
+      defender.hp = 1;
+      return attack(next, 0);
+    } finally {
+      CARD_BY_ID.set(attacker.cardId, original);
+    }
+  }
+
+  it('invite l’attaquant en premier quand les deux Postes se vident', () => {
+    const after = doubleKnockOut(freshBattle(), 'player');
+
+    expect(after.players.player.active).toBeNull();
+    expect(after.players.ai.active).toBeNull();
+    // D-032 : l'attaquant choisit en premier, quel que soit le siège.
+    expect(after.pendingPromotion).toBe('player');
+
+    // Une fois l'attaquant relevé, c'est à la Direction de choisir.
+    const first = promoteActive(after, 0);
+    expect(first.players.player.active).not.toBeNull();
+    expect(first.pendingPromotion).toBe('ai');
+
+    const second = promoteActive(first, 0);
+    expect(second.players.ai.active).not.toBeNull();
+    expect(second.pendingPromotion).toBeNull();
+  });
+
+  it('garde l’attaquant en premier quand c’est la Direction qui attaque', () => {
+    const after = doubleKnockOut(freshBattle(), 'ai');
+
+    expect(after.pendingPromotion).toBe('ai');
+
+    const first = promoteActive(after, 0);
+    expect(first.players.ai.active).not.toBeNull();
+    expect(first.pendingPromotion).toBe('player');
   });
 });
 

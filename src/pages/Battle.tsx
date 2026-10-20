@@ -270,7 +270,11 @@ export function Battle() {
 
       {state.phase === 'ended' && (
         <p className={`notice ${state.winner === 'player' ? 'notice--ok' : 'notice--warn'}`}>
-          {state.winner === 'player' ? 'Victoire : 3 Interventions.' : 'Défaite : la Direction marque 3 Interventions.'}
+          {state.winner === 'player'
+            ? 'Victoire : 3 Interventions.'
+            : state.winner === 'ai'
+              ? 'Défaite : la Direction marque 3 Interventions.'
+              : 'Égalité : la limite de tours est atteinte.'}
         </p>
       )}
 
