@@ -354,11 +354,23 @@ export function useAbility(state: BattleState): BattleState {
   return next;
 }
 
-function attackDamage(attacker: CardInstance, defender: CardInstance, attack: Attack): number {
+/**
+ * Stress qu'une Pression inflige à un Planqué, selon l'emplacement où il se trouve.
+ *
+ * La **Vulnérabilité** vaut +20 **au Poste seulement** : un Planqué du Rack n'encaisse
+ * jamais la Vulnérabilité, même frappé par la même Pression (D-032). `slot` est donc
+ * obligatoire — un appelant qui ignore où se trouve sa cible ne compile pas.
+ */
+export function attackDamage(
+  attacker: CardInstance,
+  defender: CardInstance,
+  attack: Attack,
+  slot: 'poste' | 'rack'
+): number {
   const attackerCard = getCard(attacker.cardId);
   const defenderCard = getCard(defender.cardId);
   if (!isPlanque(attackerCard) || !isPlanque(defenderCard)) return 0;
-  const weakness = defenderCard.weakness === attackerCard.faction ? 20 : 0;
+  const weakness = slot === 'poste' && defenderCard.weakness === attackerCard.faction ? 20 : 0;
   const abilityReduction = defenderCard.ability?.kind === 'reduceDamage' ? defenderCard.ability.amount ?? 0 : 0;
   // Réduction posée par un effet d'attaque (`reduceDamage`), valable le tour adverse.
   const instanceReduction = defender.damageReduction ?? 0;
@@ -646,7 +658,7 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
     return next;
   }
 
-  const damage = attackDamage(player.active, opponent.active, attack);
+  const damage = attackDamage(player.active, opponent.active, attack, 'poste');
   opponent.active.hp -= damage;
   next.log.push(`${card.name} utilise ${attack.name} : ${damage} de stress.`);
   applyEffects(next, next.current, player.active, opponent.active, attack);
@@ -754,7 +766,7 @@ export function attackPreview(state: BattleState, attackIndex: number): number {
   const card = getCard(player.active.cardId);
   const attack = isPlanque(card) ? card.attacks[attackIndex] : undefined;
   if (!attack) return 0;
-  return attackDamage(player.active, opponent.active, attack);
+  return attackDamage(player.active, opponent.active, attack, 'poste');
 }
 
 export function canEvolve(state: BattleState, handUid: string, targetUid: string): boolean {

@@ -3,6 +3,7 @@ import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import {
   applyAction,
   attack,
+  attackDamage,
   attackPreview,
   attachEnergy,
   canEvolve,
@@ -185,6 +186,41 @@ describe('Pression — dégâts et café', () => {
       expect(attackPreview(state, 0)).toBe(base.damage + 20);
     } finally {
       CARD_BY_ID.set(defender.cardId, original);
+    }
+  });
+
+  /**
+   * D-032 : la Vulnérabilité (+20) ne vaut **qu'au Poste**. La même Pression portée
+   * sur un Planqué du Rack n'y ajoute **rien**. Aucune Pression du set ne touche le
+   * Rack aujourd'hui : c'est la résolution des dégâts qu'on interroge, emplacement
+   * par emplacement, pour que le jour où une telle Pression arrive elle n'hérite pas
+   * de la Vulnérabilité.
+   */
+  it('n’ajoute pas la Vulnérabilité à un Planqué du Rack (D-032)', () => {
+    const state = freshBattle();
+    const attacker = state.players.player.active;
+    if (!attacker) throw new Error('Poste vide');
+    const attackerCard = getCard(attacker.cardId);
+    if (!isPlanque(attackerCard)) throw new Error('Carte inconnue');
+    const pression = attackerCard.attacks[0];
+    if (!pression) throw new Error('Aucune Pression');
+
+    // Un Planqué posable au Rack, sans Talent : seule la Vulnérabilité entre en jeu.
+    const benchCard = ALL_CARDS.find(
+      (card) => isPlanque(card) && !card.ability && !card.variantOf && card.stage === 'ENTRANT'
+    );
+    if (!benchCard) throw new Error('Aucun Planqué de Rack');
+    const benched = createInstance(benchCard.id);
+
+    // Vulnérable à la faction qui attaque : au Poste, cela vaudrait +20.
+    const original = CARD_BY_ID.get(benchCard.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(benchCard.id, { ...original, weakness: attackerCard.faction });
+    try {
+      expect(attackDamage(attacker, benched, pression, 'poste')).toBe(pression.damage + 20);
+      expect(attackDamage(attacker, benched, pression, 'rack')).toBe(pression.damage);
+    } finally {
+      CARD_BY_ID.set(benchCard.id, original);
     }
   });
 
