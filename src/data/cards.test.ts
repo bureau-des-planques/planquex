@@ -123,10 +123,14 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
   it('n’utilise que les primitives d’effet et de talent déclarées (AGENTS.md §5)', () => {
     for (const card of PLANQUES) {
       for (const attack of card.attacks) {
-        // D-037 (3) : chacune des Pressions d'un Planqué typé porte ≥ 1 café de son
-        // type. Un coût vide n'est donc pas admis (#101) : l'assertion mord, elle ne
-        // se contente plus d'un `≥ 0` toujours vrai.
-        expect(attack.cost.length, `${card.id}/${attack.name}`).toBeGreaterThan(0);
+        // La contrainte de coût ne vit **pas** ici : ce `describe` porte sur les
+        // primitives d'effet et de talent (AGENTS.md §5). Le refus du coût vide pour un
+        // Planqué **typé** (D-037 (3)) est affirmé dans le `describe` dédié
+        // « Coût en café typé — attribution », par le prédicat `coutTypeConforme`.
+        // On ne l'étend pas à `SUPPORT` : `Attack.cost` documente la liste vide comme
+        // une **Pression gratuite** (`src/data/types.ts`), `DAMAGE_BY_COST[0]` existe
+        // (`src/game/curves.ts`) et §4 parle d'une attaque qui « coûte 0 ». La règle
+        // générale sur le coût 0 est ouverte (ticket #102) — un test ne la tranche pas.
         expect(attack.damage, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
         for (const effect of attack.effects ?? []) {
           expect(ATTACK_EFFECT_KINDS, `${card.id}/${attack.name}`).toContain(effect.kind);
