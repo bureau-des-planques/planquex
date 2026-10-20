@@ -49,5 +49,21 @@ et dans `DESIGN.md` §6.
   que le socle l'interdit : à reprendre au moment de la curation (§8 de `DESIGN.md`).
 - Style **illustré** plutôt que « semi-réaliste peint » : à resserrer avec des prompts plus
   contraints et un négatif commun.
-- Aucune image n'est encore **branchée** dans l'application : les cartes affichent toujours
-  l'aplat de palette et le glyphe.
+- Les 8 images sont **branchées** : les cartes portent `art: '<id>.webp'`
+  (`src/data/*.ts`) et `CardView` les sert depuis `public/design/illustrations/`.
+
+## Registre et fichiers servis — deux jeux à garder alignés (#120)
+
+`CardView` construit une **chaîne d'URL** (`url('/design/illustrations/…')`), donc Vite ne sert
+que `public/` : ce dossier-ci est le **registre**, l'application lit sa **copie** dans
+`public/design/illustrations/`. Une regénération faite ici (c'est ici qu'elle doit se faire) ne
+change rien à l'écran tant que le fichier n'est pas copié.
+
+`scripts/illustrations-servies.test.ts` compare les deux jeux : **même liste** de fichiers dans
+les deux sens, et **même contenu** (SHA-256). Il nomme le fichier coupable.
+
+**Alternative consignée, non implémentée — c'est une décision** : servir les images par
+`import.meta.glob('../design/illustrations/*.webp', { eager: true, query: '?url' })`. Une seule
+source, empreinte calculée par Vite, et **erreur au build** sur un `art` inconnu. Coût : le champ
+`art` cesse d'être la chaîne nue `art: 'x.webp'` (il devient une URL de module, donc
+`src/data/art.test.ts` et les conventions de #96 changent) ; le registre sort de `public/`.
