@@ -156,31 +156,55 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
   });
 
   it(
-    'consigne la mesure après #111 et #113 : le niveau 2 n’est toujours pas devant le niveau 1',
+    'consigne la mesure après #111, #113 et #114 : le niveau 2 reste derrière le niveau 1',
     () => {
-      const games = 100;
-      const seed = 42;
-      // Deux séries miroir : le niveau 2 joue la Direction dans l'une, le joueur dans
-      // l'autre. Même graine maîtresse, mêmes appariements de factions.
-      const directionEnNiveau2 = simulate({ games, seed, playerLevel: 1, aiLevel: 2 });
-      const joueurEnNiveau2 = simulate({ games, seed, playerLevel: 2, aiLevel: 1 });
-      const niveau2 =
-        directionEnNiveau2.results.filter((result) => result.winner === 'ai').length +
-        joueurEnNiveau2.results.filter((result) => result.winner === 'player').length;
-      const niveau1 =
-        directionEnNiveau2.results.filter((result) => result.winner === 'player').length +
-        joueurEnNiveau2.results.filter((result) => result.winner === 'ai').length;
-      const nulles = [...directionEnNiveau2.results, ...joueurEnNiveau2.results].filter(
-        (result) => result.winner === null
-      ).length;
+      // Protocole allégé pour le test unitaire : 3 graines × 10 parties × 2 sièges = 60 parties.
+      // La mesure complète (5 graines × 60 parties × 2 sièges, seuil 55 % et ratio 1,15 ×,
+      // intervalle de confiance à 95 %) est dans `npm run pesage` (§2 de
+      // `docs/IA-PESAGE-111.md`). Ce test **constate** seulement que le niveau 2 ne gagne pas.
+      const gamesPerSeries = 10;
+      const seeds = [1, 7, 42];
+      let niveau2 = 0;
+      let niveau1 = 0;
+      let nulles = 0;
 
-      // Mesure consignée le 21/10/2026, **après** les corrections du modèle (#111) *et* du
-      // harnais (#113 : Chariots `SUPPORT` et `INTERIM` armés). Les chiffres d'avant ne
-      // sont pas comparables : un match sur trois opposait un Chariot incapable d'attaquer.
-      // Tant qu'un re-pesage mesuré ne fait pas passer le niveau 2 devant, il n'est pas
-      // démontré meilleur, et le niveau 1 reste le défaut (écran et simulateur).
-      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 71, niveau1: 91, nulles: 38 });
+      for (const seed of seeds) {
+        const directionEnNiveau2 = simulate({
+          games: gamesPerSeries,
+          seed,
+          playerLevel: 1,
+          aiLevel: 2
+        });
+        const joueurEnNiveau2 = simulate({
+          games: gamesPerSeries,
+          seed,
+          playerLevel: 2,
+          aiLevel: 1
+        });
+        niveau2 +=
+          directionEnNiveau2.results.filter((r) => r.winner === 'ai').length +
+          joueurEnNiveau2.results.filter((r) => r.winner === 'player').length;
+        niveau1 +=
+          directionEnNiveau2.results.filter((r) => r.winner === 'player').length +
+          joueurEnNiveau2.results.filter((r) => r.winner === 'ai').length;
+        nulles += [...directionEnNiveau2.results, ...joueurEnNiveau2.results].filter(
+          (r) => r.winner === null
+        ).length;
+      }
+
+      const decidees = niveau2 + niveau1;
+      const taux = decidees === 0 ? 0 : niveau2 / decidees;
+
+      // Le niveau 2 **perd** (contrôle ≈ 44 %, seuil 55 %) : on constate qu'il est
+      // **strictement en-dessous de 50 %**, pas qu'il est « pas devant ». Une assertion
+      // de supériorité non étayée serait un faux garde-fou.
+      expect(taux).toBeLessThan(0.5);
+      expect(niveau2).toBeLessThan(niveau1);
+
+      // Garde-fou « le contrôle mord » : si on inverse l'assertion, le test doit échouer.
+      // (On ne l'écrit pas ici, mais la condition `taux < 0.5` est bien celle qui
+      // fait échouer le test si le niveau 2 repasse devant.)
     },
-    60000
+    30000
   );
 });

@@ -68,4 +68,30 @@ describe('scripts/simulate.mjs — commande headless', () => {
       expect(result.stderr).toContain('--games doit être un entier ≥ 1');
     }
   );
+
+  it('accepte --player-level 1 et 2 et le propage dans le rapport', { timeout: 30_000 }, () => {
+    for (const level of [1, 2]) {
+      const result = run(['--games', '1', '--seed', '42', '--json', '--player-level', String(level)]);
+      expect(result.status).toBe(0);
+      const report = JSON.parse(result.stdout);
+      expect(report.playerLevel).toBe(level);
+    }
+  });
+
+  it('accepte --ai-level 1 et 2 et le propage dans le rapport', { timeout: 30_000 }, () => {
+    for (const level of [1, 2]) {
+      const result = run(['--games', '1', '--seed', '42', '--json', '--ai-level', String(level)]);
+      expect(result.status).toBe(0);
+      const report = JSON.parse(result.stdout);
+      expect(report.aiLevel).toBe(level);
+    }
+  });
+
+  it('refuse un niveau invalide (3) avec le code 2 et un message clair', { timeout: 30_000 }, () => {
+    for (const flag of ['--player-level', '--ai-level']) {
+      const result = run(['--games', '1', '--seed', '42', flag, '3']);
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain(`${flag} attend 1 ou 2, reçu 3.`);
+    }
+  });
 });
