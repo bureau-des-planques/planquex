@@ -13,7 +13,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Entretien', cost: 1, damage: 10, text: "L'adversaire révèle une carte de sa main.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
+    attacks: [{ name: 'Entretien', cost: 1, damage: 10, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
     flavor: "Il a posé la question. Il n'a pas écouté la réponse."
   }),
   base({
@@ -24,7 +24,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Sourcing', text: "Une fois par tour, en jouant : cherche un Planqué dans ton deck, révèle-le, ajoute-le à ta main.", kind: 'draw', amount: 1, oncePerTurn: true },
+    ability: { name: 'Sourcing', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
     attacks: [{ name: "Promesse d'embauche", cost: 2, damage: 40 }],
     flavor: "Le poste est passionnant. Le salaire est confidentiel."
   }),
@@ -37,7 +37,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Plan de carrière', cost: 2, damage: 60, text: "L'adversaire défausse 1 carte.", effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Plan de carrière', cost: 2, damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: "Entretien annuel", cost: 3, damage: 80, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
     flavor: "Il a lu ton CV. Il sait où tu habites."
@@ -51,7 +51,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Approche discrète', cost: 1, damage: 10, text: "L'adversaire défausse 1 carte.", effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Approche discrète', cost: 1, damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: "Il t'a repéré sur LinkedIn. Tu n'es pas en recherche."
   }),
   base({
@@ -156,7 +156,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     attacks: [
-      { name: 'Négociation', cost: 2, damage: 40, text: "L'adversaire défausse 1 carte.", effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Négociation', cost: 2, damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Accord d\'entreprise', cost: 2, damage: 50, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
     flavor: "Il a signé l'accord. Les syndicats ont signé le procès-verbal."
@@ -195,7 +195,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 1,
-    ability: { name: 'Parité', text: "Une fois par tour : échange 1 carte de ta main avec le dessus de ton deck.", kind: 'draw', amount: 1, oncePerTurn: true },
+    ability: { name: 'Parité', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
     attacks: [{ name: 'Index égalité', cost: 2, damage: 50 }],
     flavor: "Elle a publié l'index. La direction a fêté les 99/100."
   }),
@@ -272,7 +272,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Entretien départ', cost: 1, damage: 20, text: "L'adversaire défausse 1 carte.", effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Entretien départ', cost: 1, damage: 20, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: "Il a fait l'entretien. Le badge est déjà désactivé."
   }),
   base({
@@ -297,7 +297,7 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Plan de carrière', cost: 2, damage: 70, text: "L'adversaire défausse 1 carte.", effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Plan de carrière', cost: 2, damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: "Entretien annuel", cost: 3, damage: 120, text: "Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: "Deux Interventions. Un seul dossier."

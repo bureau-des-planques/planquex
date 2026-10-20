@@ -31,7 +31,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Cabinet', text: 'En jouant : défausse 1 carte, l\'adversaire défausse 1 carte.', kind: 'draw', amount: 1, oncePerTurn: false },
+    ability: { name: 'Cabinet', text: 'Pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: false },
     attacks: [{ name: 'Note de service', cost: 2, damage: 40 }],
     flavor: 'Il a délégué. À personne.'
   }),
@@ -45,7 +45,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 2,
     attacks: [
       { name: 'Plan de départ', cost: 2, damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Fusion-acquisition', cost: 3, damage: 100, text: 'L\'adversaire défausse 1 carte.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
+      { name: 'Fusion-acquisition', cost: 3, damage: 100, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Il repart avec la prime. Tu restes avec le plan.'
   }),
@@ -61,7 +61,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     ex: true,
     attacks: [
       { name: 'Plan de départ', cost: 2, damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Fusion-acquisition', cost: 3, damage: 120, text: 'L\'adversaire défausse 1 carte. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Fusion-acquisition', cost: 3, damage: 120, text: 'Envoie 1 café du Planqué adverse au rebut. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Un seul bureau.'
   }),
@@ -124,7 +124,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [
       { name: 'Porte fermée', cost: 2, damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Note interne', cost: 2, damage: 40, text: 'L\'adversaire défausse 1 carte.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
+      { name: 'Note interne', cost: 2, damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Il sait qui voit le patron. Ce n\'est pas toi.'
   }),
@@ -150,7 +150,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [
       { name: 'Jalons', cost: 2, damage: 50 },
-      { name: 'Recette finale', cost: 3, damage: 80, text: 'L\'adversaire défausse 1 carte.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
+      { name: 'Recette finale', cost: 3, damage: 80, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Le projet est livré. La recette est signée demain.'
   }),
@@ -185,7 +185,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [
       { name: 'Certification', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Rapport d\'anomalie', cost: 2, damage: 40, text: 'L\'adversaire défausse 1 carte.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
+      { name: 'Rapport d\'anomalie', cost: 2, damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Il a certifié les comptes. L\'anomalie est dans le tiroir.'
   })
