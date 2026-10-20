@@ -30,9 +30,10 @@ export interface PackSlot {
 /**
  * Composition de l'Arrivage, du plus courant au plus rare.
  *
- * Les raretés non listées ici (`3S`, `COU`) n'ont pas encore de cartes dans le
- * set : quand il y en aura, c'est **cette table** qu'on ajuste, et le test de
- * composition suit.
+ * Les raretés hautes (`3S`, `COU`) ont désormais des cartes (#87) mais restent hors
+ * de cette table : sa composition est une **règle de tirage**, et l'y ajouter est une
+ * décision d'équilibrage, pas une conséquence du catalogue. Quand elle sera prise,
+ * c'est **cette table** qu'on ajuste, et le test de composition suit.
  */
 export const PACK_COMPOSITION: readonly PackSlot[] = [
   { count: 3, rarities: ['1D', '2D'] },

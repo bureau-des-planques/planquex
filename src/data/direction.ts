@@ -194,7 +194,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
 export const DIRECTION_VARIANTS: Card[] = [
   secretVariant(DIRECTION_CARDS, 'direction-chef-projet-fantome', 'star', '◆'),
   secretVariant(DIRECTION_CARDS, 'direction-directeur-adjoint', 'star', '✦'),
-  secretVariant(DIRECTION_CARDS, 'direction-pdg', 'star2', '◆'),
+  secretVariant(DIRECTION_CARDS, 'direction-pdg', 'crown', '◆'),
   secretVariant(DIRECTION_CARDS, 'direction-directeur-general', 'star', '✦')
 ];
 

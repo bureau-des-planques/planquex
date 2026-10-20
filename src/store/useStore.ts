@@ -11,18 +11,20 @@ import type { Card, Rarity } from '@/data/types';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **2** : les ids de carte suivent les noms
- * (ticket #49) — `owned` et `deck` portent des ids, donc un renommage d'id exige
- * un remappage. **1** : ajout de `rng`, le générateur seedé du store (ticket #29).
- * Toute nouvelle version exige une branche dans `migratePersisted` (`AGENTS.md` §6).
+ * Version de la forme persistée. **3** : sept variantes secrètes changent de suffixe
+ * d'id en passant aux raretés hautes (ticket #87) — `owned` et `deck` portent des
+ * ids, donc ces re-suffixages exigent un remappage. **2** : les ids de carte suivent
+ * les noms (ticket #49) — même raison. **1** : ajout de `rng`, le générateur seedé
+ * du store (ticket #29). Toute nouvelle version exige une branche dans
+ * `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 2;
+export const STORAGE_VERSION = 3;
 
 /**
- * Ids de carte renommés (ticket #49). `AGENTS.md` §5 : **un id suit le nom**.
- * Quand un nom ne correspond plus à son id, l'id change au lieu de rester un
- * alias introuvable — et l'état persisté doit suivre, sinon la carte quitte
- * silencieusement le Parc et le Chariot.
+ * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
+ * suit le nom** — et, pour une variante, la rareté. Quand l'un des deux change, l'id
+ * change au lieu de rester un alias introuvable, et l'état persisté doit suivre,
+ * sinon la carte quitte silencieusement le Parc et le Chariot.
  *
  * Clé : ancien id. Valeur : id courant. Une entrée ne se retire pas sans casser
  * la migration ; on ajoute, on ne réécrit pas l'histoire.
@@ -35,7 +37,16 @@ export const CARD_ID_RENAMES: Readonly<Record<string, string>> = {
   'management-chef-des-ventes-ex': 'management-responsable-unite-ex',
   'management-ton-chef': 'management-animateur-equipe',
   'management-manager-adjoint': 'management-chef-service',
-  'management-commercial': 'management-technico-commercial'
+  'management-commercial': 'management-technico-commercial',
+  // #87 : quatre variantes passent en 3 étoiles, trois en Couronne. Le suffixe de
+  // l'id porte la rareté (`secretVariant`), donc il change avec elle.
+  'sse-medecin-travail-star2': 'sse-medecin-travail-star3',
+  'qvt-chief-happiness-officer-star2': 'qvt-chief-happiness-officer-star3',
+  'amelioration-directeur-qualite-star2': 'amelioration-directeur-qualite-star3',
+  'atelier-chef-atelier-star2': 'atelier-chef-atelier-star3',
+  'rh-drh-star2': 'rh-drh-crown',
+  'direction-pdg-star2': 'direction-pdg-crown',
+  'syndicat-secretaire-general-star2': 'syndicat-secretaire-general-crown'
 };
 
 const STARTER_RARITIES: Rarity[] = ['1D', '2D'];
@@ -157,13 +168,17 @@ export const useStore = create<AppState>()(
  * à la volée.
  *
  * **v1 → v2** (ticket #49) : les ids renommés (`CARD_ID_RENAMES`) sont remappés
- * dans `owned` et `deck`, les deux champs qui portent des ids. Les autres champs
- * sont conservés tels quels (`persist` fusionne ensuite avec l'état initial, qui
- * porte les actions). `version` absent vaut 0, comme le fait `persist`.
+ * dans `owned` et `deck`, les deux champs qui portent des ids.
+ *
+ * **v2 → v3** (#87) : les variantes re-raréfiées changent de suffixe d'id ; elles
+ * passent par la même table, donc un état v2 encore porteur de l'ancien suffixe est
+ * remappé comme un état v1. Les autres champs sont conservés tels quels (`persist`
+ * fusionne ensuite avec l'état initial, qui porte les actions). `version` absent vaut
+ * 0, comme le fait `persist`.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
-  const migrated = version < 2 ? withRenamedCardIds(state) : state;
+  const migrated = version < 3 ? withRenamedCardIds(state) : state;
   return {
     ...migrated,
     rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now())

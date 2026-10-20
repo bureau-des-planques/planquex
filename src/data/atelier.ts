@@ -349,7 +349,7 @@ export const ATELIER_VARIANTS: Card[] = [
   secretVariant(ATELIER_CARDS, 'atelier-electromecanicien', 'star', '⌁'),
   secretVariant(ATELIER_CARDS, 'atelier-depanneur-ascenseur', 'star', '✦'),
   secretVariant(ATELIER_CARDS, 'atelier-tuyauteur', 'star', '◉'),
-  secretVariant(ATELIER_CARDS, 'atelier-chef-atelier', 'star2', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-chef-atelier', 'star3', '⚒'),
   secretVariant(ATELIER_CARDS, 'atelier-responsable-maintenance', 'star2', '✦'),
   secretVariant(ATELIER_CARDS, 'atelier-chef-chantier', 'star2', '⚒'),
   secretVariant(ATELIER_CARDS, 'atelier-apprenti', 'star2', '◉')

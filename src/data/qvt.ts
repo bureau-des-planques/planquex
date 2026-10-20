@@ -459,7 +459,7 @@ export const QVT_CARDS: PlanqueCard[] = [
 
 export const QVT_VARIANTS: Card[] = [
   secretVariant(QVT_CARDS, 'qvt-happiness-manager', 'star', '✦'),
-  secretVariant(QVT_CARDS, 'qvt-chief-happiness-officer', 'star2', '☺'),
+  secretVariant(QVT_CARDS, 'qvt-chief-happiness-officer', 'star3', '☺'),
   secretVariant(QVT_CARDS, 'qvt-responsable-qvt', 'star', '☁'),
   secretVariant(QVT_CARDS, 'qvt-directeur-qvt', 'star2', '✧'),
   secretVariant(QVT_CARDS, 'qvt-charge-integration', 'star', '✦'),

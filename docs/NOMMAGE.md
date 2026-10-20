@@ -71,7 +71,7 @@ Deux observations supplémentaires, vérifiées dans les docs :
 |---|---|---|
 | Stade (`Stage`) | `N+1`, `N+2`, `COMEX` | mélange une progression chiffrée et un acronyme — mais c'est lisible |
 | Raretés **en code** | `1D` `2D` `3D` `4D` `1S` `2S` `3S` `COU` | `COU` = Couronne, trois lettres tirées du nom (D-024) |
-| Raretés **cibles** (`CARD-SPEC.md` §1) | 3 étoiles (4 cartes) et Couronne (3 cartes) | **socle posé** dans `types.ts` et `RARITY_META` ; **aucune carte de ces raretés n'existe encore** |
+| Raretés **hautes** (`CARD-SPEC.md` §1) | 3 étoiles (4 variantes) et Couronne (3 variantes) | portées depuis #87 par des variantes **re-raréfiées**, pas par de nouvelles cartes |
 | Statuts *(relevé le 19/10/2026, **périmé**)* | `SURCHARGE`, ~~`BURNOUT`~~, ~~`BLOQUE`~~, ~~`GELE`~~, `DERIVE` | Noms d'alors ; D-026 a retenu `SURCHARGE`, `EPUISEMENT`, `SIESTE`, `IMMOBILISATION`, `DERIVE` (état courant : `AGENTS.md` §3.1, `docs/CORRESPONDANCES.md` §6) |
 | `Keyword` (maison) | `priorityShift` → **« Changement de priorité »** | seule exception au standard (D-004) |
 
@@ -91,7 +91,8 @@ Deux observations supplémentaires, vérifiées dans les docs :
 ## 4. Nommage des cartes
 
 - **Identifiants** : kebab-case préfixé faction — `sse-medecin-travail`. Les variantes
-  portent `-star` / `-star2`.
+  portent le suffixe de leur rareté : `-star` (`1S`), `-star2` (`2S`), `-star3` (`3S`),
+  `-crown` (`COU`) — #87.
 - **Marque du Cadre** : le **nom** affiché dit « **Cadre** » (`Médecin-chef Cadre`,
   corrigé le 19/10), mais l'**identifiant** garde `-ex` (`sse-medecin-chef-ex`) : c'est
   un identifiant de code **persisté** dans les sauvegardes, donc non renommable sans
