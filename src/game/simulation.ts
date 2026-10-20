@@ -6,9 +6,7 @@ import {
   attackPreview,
   canEvolve,
   canPlayAction,
-  createBattle,
-  endTurn,
-  promoteActive
+  createBattle
 } from '@/game/engine';
 import { drawRandom, seedRng } from '@/game/rng';
 
@@ -301,7 +299,9 @@ function takeTurn(state: BattleState): BattleState {
   if (move) next = applyAction(next, move);
   if (next.phase === 'ended' || next.pendingPromotion) return next;
 
-  return endTurn(next);
+  // `endTurn` passe par `applyAction` (ticket #83) : sinon la fin de chaque tour
+  // échapperait au journal d'actions, et le rejeu divergerait.
+  return applyAction(next, { type: 'endTurn' });
 }
 
 /* ------------------------------------------------------------------ */
@@ -328,7 +328,9 @@ export function playGame(
       // Le moteur ne pose `pendingPromotion` que si le Rack n'est pas vide ; cette
       // garde évite une boucle si une future règle changeait ce contrat.
       if (benchIndex < 0) break;
-      state = promoteActive(state, benchIndex);
+      // La relève passe par `applyAction` (ticket #83) : la politique ne change pas,
+      // mais l'action entre dans le journal pour que le rejeu la rejoue.
+      state = applyAction(state, { type: 'promoteActive', benchIndex });
       continue;
     }
     const before = state;

@@ -261,4 +261,18 @@ export interface BattleState {
    * tant qu'aucune action ne l'a fait avancer. Voir `@/game/rng`.
    */
   rng: number;
+  /**
+   * **Graine d'origine** de la partie (ticket #83), telle que reçue par
+   * `createBattle`. `rng` en est l'état **courant** après les tirages : les deux
+   * diffèrent dès le premier mélange. C'est la valeur que `replayBattle` réinjecte.
+   */
+  seed: number;
+  /**
+   * **Journal des actions réellement appliquées** (ticket #83), dans l'ordre. Seul
+   * `applyAction` l'alimente, et uniquement quand la transition a changé l'état :
+   * une action **refusée** n'y figure pas. C'est la suite **rejouable** — même graine
+   * + mêmes actions = même partie (`PROPOSITION.md` §6.2) ; `log`, lui, reste le
+   * journal **texte** destiné à l'écran. Voir `replayBattle`.
+   */
+  actionLog: BattleAction[];
 }

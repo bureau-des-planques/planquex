@@ -245,7 +245,11 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
     pendingPromotion: null,
     // Toute la suite de la partie tire de cet état : la graine devient la seule
     // source de hasard, et `Date.now()` n'en est que la valeur par défaut (UI).
-    rng: seedRng(seed)
+    rng: seedRng(seed),
+    // La graine d'origine est conservée (ticket #83) : `rng` va avancer, `seed` non.
+    seed,
+    // Aucune action appliquée au départ ; `applyAction` remplit ce journal.
+    actionLog: []
   };
 
   state.players.player.deck = shuffle(deckInstances(playerDeck, 'p'), state);
@@ -956,8 +960,39 @@ export function endTurn(state: BattleState): BattleState {
  * même type `BattleAction`, donc un bouton ne peut pas offrir autre chose que ce
  * que le moteur sait faire. Le `switch` est exhaustif : un nouveau membre de
  * l'union sans branche ici rend `tsc` rouge.
+ *
+ * C'est aussi le **seul point qui journalise** (ticket #83). Chaque transition
+ * rend l'état d'entrée **tel quel** (`===`) quand elle refuse : l'action n'est donc
+ * pas journalisée. Quand elle accepte, elle rend un **clone** — `after.actionLog.push`
+ * ne touche jamais l'état d'entrée.
  */
 export function applyAction(state: BattleState, action: BattleAction): BattleState {
+  const after = transition(state, action);
+  if (after === state) return state;
+  after.actionLog.push(action);
+  return after;
+}
+
+/**
+ * Reconstruit une partie depuis sa **graine** et son **journal d'actions**
+ * (ticket #83) : même graine + mêmes actions = même partie (`PROPOSITION.md` §6.2).
+ * Chaque action passe par `applyAction`, donc le rejeu journalise à son tour et
+ * l'état final est **strictement égal** (`toEqual`) à l'original — à condition que
+ * le journal soit celui d'une partie jouée **entièrement** via `applyAction`.
+ */
+export function replayBattle(
+  playerDeck: string[],
+  aiDeck: string[],
+  seed: number,
+  actions: readonly BattleAction[]
+): BattleState {
+  let state = createBattle(playerDeck, aiDeck, seed);
+  for (const action of actions) state = applyAction(state, action);
+  return state;
+}
+
+/** Le `switch` exhaustif des transitions de combat. `applyAction` est son seul appelant. */
+function transition(state: BattleState, action: BattleAction): BattleState {
   switch (action.type) {
     case 'playBasic':
       return playBasic(state, action.uid, action.slot);
