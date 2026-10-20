@@ -22,7 +22,7 @@ En cas de conflit, appliquer cet ordre :
 1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale.
 2. **`docs/PROPOSITION.md` §3–5** — règles, contenu, périmètre validés par les décisions D-003, D-005, D-006, D-011, D-014.
 3. **`docs/CARD-SPEC.md` et `docs/FACTIONS.md`** — structure du set, courbes, factions, nommage.
-4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus entre le tableau §4 et le jeu de référence 2026, avec leurs sources. Décrit ce qui **reste à trancher** (O-008, O-009) : ne pas s'en servir pour modifier une règle sans décision datée.
+4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus entre le tableau §4 et le jeu de référence 2026, avec leurs sources. Décrit les écarts **et leurs verdicts** (O-008 → D-020, O-009 → D-022) ; ce qui reste ouvert y est signalé (aujourd'hui O-014, le nombre d'attachements de café) : ne pas s'en servir pour modifier une règle sans décision datée.
 5. **Le code et les commandes** — ce qui existe réellement. Un écart avec les docs est un bug ou une tâche, pas une nouvelle règle.
 6. **`docs/STATUS.md` et `docs/AUDIT-*.md`** — instantanés d'audit datés. Ce ne sont pas des vérités live : relancer les commandes.
 
@@ -191,7 +191,7 @@ Le projet est encore une **application Vite plate**. Le monorepo décrit dans `P
 grevomon-tcg/
 ├── src/
 │   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx
-│   ├── data/         index.ts, sse.ts, types.ts
+│   ├── data/         index.ts, types.ts, actions.ts, planque.ts, factions.ts, un fichier par faction (sse.ts, management.ts, …) (+ leurs tests)
 │   ├── game/         engine.ts, deck.ts, rules.ts, curves.ts, rng.ts, pack.ts, simulation.ts (+ leurs tests, pace.test.ts)
 │   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx
 │   ├── store/        useStore.ts, useStore.test.ts
@@ -200,7 +200,7 @@ grevomon-tcg/
 │   ├── styles.css    feuille unique de l'application
 │   └── vite-env.d.ts types Vite (imports CSS)
 ├── public/           favicon.svg, icon-192.svg, icon-512.svg (SVG, dessinés à la main)
-├── scripts/          status.mjs, etapes-infra-tcg.sh
+├── scripts/          status.mjs, simulate.mjs, capturer.mjs, etapes-infra-tcg.sh (+ leurs tests)
 └── docs/
 ```
 
@@ -209,7 +209,7 @@ grevomon-tcg/
 - **Moteur** : code pur autant que possible, sans React ni DOM. `applyAction(state, action)` et fonctions de transition ; cloner avec `structuredClone`.
 - **Déterminisme** : **fait** (ticket #29, 19/10/2026). Le hasard vient d'un générateur **seedé** — `src/game/rng.ts` (mulberry32) — et son état vit dans la partie (`BattleState.rng`), donc il se clone et se compare comme le reste. `createBattle(decks, seed)` utilise sa graine, le store est persisté en `version: 1` avec migration, et il ne reste **aucun appel à `Math.random()`** dans `src/game/` ni `src/store/`. Reste à faire : **journaliser** la graine (la cible de `PROPOSITION.md` §6.2 dit « seedé **et journalisé** »), avec le journal d'actions.
 - **Store** : Zustand + `persist`, clé `bureau-des-planques-v1`. Toute modification de forme doit être migrée ou versionnée.
-- **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées. Le **socle de faction** vit dans `src/data/planque.ts` (`planqueBase`, `secretVariant`, `planquePalette`) et l'identité des factions dans `src/data/factions.ts` (`FACTION_META` : seule source de la Vulnérabilité et de la couleur unique dont le dégradé est dérivé) ; un fichier de faction ne déclare que ses cartes.
+- **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées. Les **cartes Action** (Collègues, Objets) vivent dans `src/data/actions.ts`. Le **socle de faction** vit dans `src/data/planque.ts` (`planqueBase`, `secretVariant`, `planquePalette`) et l'identité des factions dans `src/data/factions.ts` (`FACTION_META` : seule source de la Vulnérabilité et de la couleur unique dont le dégradé est dérivé) ; un fichier de faction ne déclare que ses cartes.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
 - **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` existent depuis le 19/10/2026 (SVG `viewBox="0 0 32 32"`, monogramme « BP » sur fond sombre) : plus d'erreur de manifeste dans la console.
 - **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Chariot, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4), `curves.ts` (le chiffré de `CARD-SPEC.md` §2 — dégâts par café et Seuil par stade/rareté — dont `cards.test.ts` et `pace.test.ts` sont les appelants), `rng.ts` (le hasard seedé, état porté par la partie), `pack.ts` (la composition d'un Arrivage, générateur en paramètre), `simulation.ts` (le simulateur headless). Les règles de jeu ne vivent pas dans le store.
@@ -236,6 +236,7 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm run status` | Métriques JSON, dont les cartes dérivées d'`ALL_CARDS` | **OK**, exit 0 |
 | `node scripts/status.mjs` | Même script directement | **OK**, exit 0 |
 | `npm run capturer` | Photographie les pages et échoue sur une erreur de console | **OK**, exit 0, 5 images dans `captures/` (sur `dist/`, donc après `npm run build`) |
+| `npm run simulate` | Simulateur headless seedé ; usage `npm run simulate -- --games 100 --seed 42` | **OK**, exit 0 (20/10/2026, `--games 100 --seed 42`) ; rapport par faction, voir `scripts/simulate.mjs` |
 
 Les 2 erreurs de `check`/`build` constatées le 18/10 sont **corrigées** :
 

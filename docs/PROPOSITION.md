@@ -565,7 +565,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 
 ## 9. Questions à trancher
 
-1. ~~**Règles** : on valide le miroir exact de TCG Pocket (20/5/3, zone d'énergie, pas de résistance, pas de défaite par pioche vide) et l'abandon de `RULES-4b` comme mode standard ?~~ **Tranché** (D-018, D-019) : miroir **daté 2026**, `RULES-4b` rangé dans `docs/MODES-FUTURS.md`. Restent ouverts **O-008** (écarts du miroir) et **O-009** (règles insourçables) — voir `docs/MIROIR-2026-DELTAS.md`.
+1. ~~**Règles** : on valide le miroir exact de TCG Pocket (20/5/3, zone d'énergie, pas de résistance, pas de défaite par pioche vide) et l'abandon de `RULES-4b` comme mode standard ?~~ **Tranché** (D-018, D-019) : miroir **daté 2026**, `RULES-4b` rangé dans `docs/MODES-FUTURS.md`. **O-008** (écarts du miroir) et **O-009** (règles insourçables) sont désormais **tranchés** — O-008 par **D-020**, O-009 par **D-022** — voir `docs/DECISIONS.md`.
 2. **Volume** : on valide 286 cartes avec la répartition exacte (226 + 60, 102/67/42/15/24/29/4/3) ?
 3. **Factions** : on valide les 10 noms proposés, ou tu veux en changer certains ?
 4. **Ton** : on valide « punch up, aucun nom réel, la cible est le système » ? Tu veux un degré de férocité plus haut ou plus bas ?
