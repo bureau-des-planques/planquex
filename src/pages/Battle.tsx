@@ -244,14 +244,26 @@ function endBanner(state: BattleState): string {
 
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
-  /** Les types de café choisis au Chariot (#91) : la Machine du joueur n'y tire que. */
-  const chosenCafeTypes = useStore((state) => state.cafeTypes);
+  /** Les types de café choisis au Chariot (#91), lus bruts dans le store. */
+  const storedCafeTypes = useStore((state) => state.cafeTypes);
 
   // Le chariot du joueur est utilisé s'il est légal, sinon on retombe sur un
   // chariot de test. Calculé une seule fois par rendu : `deckLegal` est appelé
   // au plus une fois, et l'identité de la référence dit si on a replié.
   const playerDeck = useMemo(() => (deckLegal(storeDeck).ok ? storeDeck : testDeck()), [storeDeck]);
   const usedTestDeck = playerDeck !== storeDeck;
+
+  /**
+   * Le choix **appliqué à ce combat** (#117). Il appartient au Chariot du joueur
+   * (`useStore`, `cafeTypes`) : le poser sur un **chariot de test** ferait afficher
+   * les types d'un contenu à la place d'un autre. Replié sur le chariot de test, le
+   * combat repart donc en **proposition automatique** (`[]`), dérivée de ce chariot —
+   * ce que dit aussi le bandeau « ce combat utilise un chariot de test ».
+   */
+  const chosenCafeTypes = useMemo<CafeType[]>(
+    () => (usedTestDeck ? [] : storedCafeTypes),
+    [usedTestDeck, storedCafeTypes]
+  );
 
   const [state, setState] = useState<BattleState>(() =>
     createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes })

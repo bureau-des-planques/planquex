@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ALL_CARDS, getCard, isPlanque } from '@/data';
-import { DECK_SIZE, MAX_COPIES_PER_NAME, MAX_DECK_CAFE_TYPES } from '@/game/deck';
+import {
+  autoDeck,
+  DECK_SIZE,
+  deckCafeTypes,
+  MAX_COPIES_PER_NAME,
+  MAX_DECK_CAFE_TYPES,
+  resolveCafeTypes
+} from '@/game/deck';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
 import {
@@ -383,6 +390,51 @@ describe('Types de café du Chariot — store (#91)', () => {
     expect(useStore.getState().cafeTypes).toEqual(['SSE']);
 
     useStore.getState().clearDeck();
+    expect(useStore.getState().cafeTypes).toEqual([]);
+  });
+
+  /**
+   * #117 — **le choix est un attribut du Chariot, pas du joueur**. Tout remplacement
+   * en bloc du contenu l'efface (`[]` = proposition automatique du **nouveau**
+   * contenu) ; une édition carte par carte le garde. Avant ce correctif, `setDeck`
+   * laissait sur un Chariot neuf les types de l'ancien, alors que `clearDeck` les
+   * effaçait : le même geste avait deux comportements.
+   */
+  it('efface le choix quand le Chariot est remplacé en bloc (setDeck, donc « Remplir »)', () => {
+    expect(getCard('atelier-chef-atelier'), 'carte de test absente').toBeTruthy();
+    useStore.getState().setCafeTypes(['SSE', 'RH']);
+    useStore.getState().setDeck(['atelier-chef-atelier']);
+
+    expect(useStore.getState().deck).toEqual(['atelier-chef-atelier']);
+    expect(useStore.getState().cafeTypes).toEqual([]);
+  });
+
+  it('« Remplir » repart de la proposition automatique du Chariot rempli', () => {
+    const automatic = autoDeck(useStore.getState().owned);
+    expect(automatic.deck.length, 'le Parc de départ doit permettre de remplir').toBeGreaterThan(0);
+
+    // Exactement ce que fait le bouton « Remplir » de `Deck.tsx` : `setDeck(autoDeck(...).deck)`.
+    useStore.getState().setCafeTypes(['SSE']);
+    useStore.getState().setDeck(automatic.deck);
+
+    const { deck, cafeTypes } = useStore.getState();
+    expect(cafeTypes).toEqual([]);
+    expect(resolveCafeTypes(deck, cafeTypes)).toEqual(deckCafeTypes(automatic.deck));
+  });
+
+  it('garde le choix quand on ajuste le Chariot carte par carte, et le perd s’il devient vide', () => {
+    expect(getCard('sse-psychologue'), 'carte de test absente').toBeTruthy();
+    useStore.getState().setDeck(['sse-psychologue', 'atelier-chef-atelier']);
+    useStore.getState().setCafeTypes(['SSE', 'RH']);
+
+    // Une carte retirée, il en reste : c'est le même Chariot, le choix tient.
+    useStore.getState().removeFromDeck('sse-psychologue');
+    expect(useStore.getState().deck).toEqual(['atelier-chef-atelier']);
+    expect(useStore.getState().cafeTypes).toEqual(['SSE', 'RH']);
+
+    // Dernière carte retirée : Chariot vide, donc plus de types — comme `clearDeck`.
+    useStore.getState().removeFromDeck('atelier-chef-atelier');
+    expect(useStore.getState().deck).toEqual([]);
     expect(useStore.getState().cafeTypes).toEqual([]);
   });
 
