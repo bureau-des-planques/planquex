@@ -118,6 +118,14 @@ seul coût, voir §6).
   benchmark a fait décrocher `nemotron-ultra` (TTFT 2,6 s → 8,8 s, coupé).
 - Un `429` se lit **« réessaie plus tard »**, jamais « le modèle ne sait pas faire » — et on
   **espace** les tentatives d'au moins une minute sur une même clé.
+- **Une limite de débit coupe le FOURNISSEUR, pas seulement la session** (constaté le
+  21/10/2026 : deux agents lancés sur le maillon 1 sont tombés ensemble en `Rate limit
+  exceeded`). Le repli **n'est pas** de relancer avec un prompt réécrit : on **reprend la même
+  session** en changeant de modèle — `subagent({ sessionID, model, prompt: « la tentative
+  précédente a été coupée, reprends la mission à l'identique » })` — le contexte de mission est
+  déjà dans la session, et l'agent ne repart pas de zéro. L'ordre de repli est celui du
+  benchmark : `opencode/deepseek-v4.1-flash-free` → `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`
+  → `openrouter/thinkingmachines/inkling:free`.
 
 ## 7. Ce qui ne se délègue pas à un agent
 
