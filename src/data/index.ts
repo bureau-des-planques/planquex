@@ -114,18 +114,8 @@ export function kindLabel(card: Card): string {
   return card.itemKind ? `${kind} · ${ITEM_KIND_META[card.itemKind].label}` : kind;
 }
 
-export const SSE_ONLY = ALL_CARDS.filter((card) => card.faction === 'SSE');
-
 export function getCard(id: string): Card | undefined {
   return CARD_BY_ID.get(id);
-}
-
-export function isVariant(card: Card): boolean {
-  return Boolean(card.variantOf);
-}
-
-export function baseCards(): Card[] {
-  return ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf);
 }
 
 export function variantOf(card: Card): Card | undefined {
