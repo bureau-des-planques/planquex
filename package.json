@@ -15,6 +15,7 @@
     "simulate": "node scripts/simulate.mjs",
     "capturer": "node scripts/capturer.mjs",
     "garde-fous": "node scripts/garde-fous.mjs",
+    "pesage": "node scripts/pesage.mjs",
     "detect:ui": "npx impeccable detect src/"
   },
   "dependencies": {
