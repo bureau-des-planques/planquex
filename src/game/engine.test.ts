@@ -610,7 +610,9 @@ describe('Statuts — exclusivité et portée (D-030)', () => {
     const slot = player.bench.findIndex(Boolean);
     if (!active || slot < 0) throw new Error('Poste ou Rack vide');
     active.energy = 5; // la rotation est payée
-    active.statuses = ['SURCHARGE', 'SIESTE'];
+    // Surcharge et Épuisement se cumulent et **n'interdisent pas** la Rotation (D-033).
+    // Sieste et Immobilisation, elles, la bloqueraient : c'est `rotation.test.ts` qui le couvre.
+    active.statuses = ['SURCHARGE', 'EPUISEMENT'];
     const outgoingUid = active.uid;
 
     const after = retreat(state, slot);

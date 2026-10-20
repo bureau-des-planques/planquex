@@ -289,7 +289,8 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
   target.cardId = card.id;
   target.maxHp = card.hp;
   target.hp = Math.max(1, card.hp - damage);
-  clearStatuses(target);
+  // D-033 (4) : l'évolution purge aussi les effets d'attaque, pas seulement les statuts.
+  clearAttackEffects(target);
   target.evolvedTurn = next.turn;
   next.log.push(`${next.current === 'player' ? 'Tu fais évoluer' : 'L’IA fait évoluer'} ${card.name}.`);
   return next;
@@ -318,6 +319,8 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   const next = clone(state);
   const player = next.players[next.current];
   if (player.hasRetreated || !player.active) return state;
+  // D-033 (2) : Sieste et Immobilisation interdisent la Rotation, comme la Pression.
+  if (retreatBlockedByStatus(player.active)) return state;
   const bench = player.bench[benchIndex];
   if (!bench) return state;
   const card = getCard(player.active.cardId);
@@ -325,9 +328,9 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   player.active.energy -= card.retreat;
   const outgoing = player.active;
   // Seul le Poste peut porter un statut (D-030) : le sortant les perd en rejoignant le
-  // Rack, et l'entrant n'en porte aucun. Sans ça, une Sieste continuait de peser sur
-  // une carte au Rack que `checkup` ne lit plus — un statut fantôme.
-  clearStatuses(outgoing);
+  // Rack, et l'entrant n'en porte aucun. D-033 (4) : il perd aussi les **effets
+  // d'attaque** (ex. `damageReduction`), pas ses dégâts ni ses cafés.
+  clearAttackEffects(outgoing);
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
@@ -411,9 +414,42 @@ function clearStatus(card: CardInstance, status: Status) {
 /**
  * Une évolution ou une rotation purgent les conditions (D-030 : seul le Planqué au
  * **Poste** en porte ; retourner au Rack ou évoluer les efface).
+ *
+ * Elle ne touche **que** les conditions : le Talent `antiStatus` et le réveil de la
+ * Sieste s'en servent, et ils ne doivent pas effacer une réduction de Stress.
  */
 function clearStatuses(card: CardInstance) {
   card.statuses = [];
+}
+
+/**
+ * Purge **statuts + effets d'attaque** d'une instance (D-033 (4)). Les effets
+ * d'attaque temporaires de `CardInstance` sont la `damageReduction` posée par
+ * `reduceDamage` (les autres champs — `hp`, `energy`, `playedTurn`, `evolvedTurn` —
+ * ne sont pas des effets d'attaque). Capture `05` : « Lorsqu'un Pokémon évolue, tous
+ * les effets d'attaques […] ou les États Spéciaux qui l'affectent disparaissent » et
+ * « Quand le Pokémon Actif est envoyé sur le Banc, tous les effets d'attaques […]
+ * disparaissent ».
+ *
+ * Le **Stress** (dégâts, `maxHp − hp`) et les **cafés** (`energy`) sont conservés :
+ * la même capture dit que le Planqué « garde tous les dégâts subis ainsi que toutes
+ * les Énergies ». C'est la Rotation (sur le sortant) et l'évolution qui appellent
+ * celle-ci ; `startTurn` garde par ailleurs son expire de `damageReduction` au début
+ * du tour de son propriétaire.
+ */
+function clearAttackEffects(card: CardInstance) {
+  clearStatuses(card);
+  card.damageReduction = 0;
+}
+
+/**
+ * Sieste et Immobilisation interdisent la Rotation, comme la Pression (D-033 (2),
+ * capture `07` : « Les Pokémon Endormis ne peuvent ni attaquer ni battre en
+ * retraite » — même phrase pour les Paralysés). `retreat` et le bloc Rotation de
+ * `legalActions` lisent cette même garde pour ne pas se contredire.
+ */
+function retreatBlockedByStatus(card: CardInstance): boolean {
+  return hasStatus(card, 'SIESTE') || hasStatus(card, 'IMMOBILISATION');
 }
 
 /** Ajoute une condition si elle n'y est pas déjà (on ne cumule pas deux Surcharges). */
@@ -969,7 +1005,9 @@ export function legalActions(state: BattleState): BattleAction[] {
   }
 
   // Rotation : une fois par tour, vers un Rack occupé, si le Poste peut payer.
-  if (!player.hasRetreated && player.active) {
+  // Sieste et Immobilisation la bloquent aussi (D-033 (2)) : la liste ne propose pas
+  // ce que `retreat` refuse.
+  if (!player.hasRetreated && player.active && !retreatBlockedByStatus(player.active)) {
     const activeCard = getCard(player.active.cardId);
     if (isPlanque(activeCard)) {
       player.bench.forEach((card, benchIndex) => {
