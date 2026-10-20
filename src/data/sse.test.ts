@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_SSE_CARDS, SSE_CARDS, SSE_VARIANTS } from '@/data/sse';
 import { ALL_CARDS, CARD_BY_ID, FACTION_META, getCard, isPlanque, vivierOf } from '@/data';
+import { secretSuffix } from '@/data/planque';
 import type { CafeSymbol, PlanqueCard, Stage } from '@/data/types';
 
 /**
@@ -67,12 +68,14 @@ describe('SSE — enregistrement (ticket #99)', () => {
 });
 
 describe('SSE — conventions de nom (AGENTS.md §5, D-026)', () => {
-  it('suffixe chaque variante par `-star` ou `-star2`, et lui laisse le nom de sa base', () => {
+  it('suffixe chaque variante par le suffixe de sa rareté, et lui laisse le nom de sa base', () => {
     for (const variant of SSE_VARIANTS.filter(isPlanque)) {
       const source = variant.variantOf ? byId(variant.variantOf) : undefined;
       expect(source, variant.id).toBeDefined();
       if (!source) continue;
-      expect(variant.id, variant.id).toBe(`${source.id}-${variant.rarity === '1S' ? 'star' : 'star2'}`);
+      const suffix = secretSuffix(variant.rarity);
+      expect(suffix, variant.id).toBeDefined();
+      expect(variant.id, variant.id).toBe(`${source.id}-${suffix}`);
       expect(variant.name, variant.id).toBe(source.name);
     }
   });
@@ -213,7 +216,7 @@ describe('SSE — unicité (deck.ts compte par nom)', () => {
       expect(variant.flavor, variant.id).toBe(source.flavor);
       expect(variant.palette, variant.id).toBe(source.palette);
       expect(variant.ex, variant.id).toBe(source.ex);
-      expect(['1S', '2S'], variant.id).toContain(variant.rarity);
+      expect(secretSuffix(variant.rarity), variant.id).toBeDefined();
     }
   });
 });

@@ -4,6 +4,7 @@ import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
 import { migratePersisted, CARD_ID_RENAMES, STORAGE_VERSION, useStore } from '@/store/useStore';
+import { isSecretSuffix, secretSuffix } from '@/data/planque';
 
 beforeEach(() => {
   useStore.getState().reset();
@@ -121,7 +122,7 @@ describe('Générateur du store (#29)', () => {
   });
 });
 
-describe('Migration v2 — les ids suivent les noms (#49, #67)', () => {
+describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)', () => {
   /**
    * Les anciens ids ne sont écrits **qu'une fois dans le dépôt**, dans
    * `CARD_ID_RENAMES` (#49) : la table est lue depuis le store, jamais recopiée ici.
@@ -150,8 +151,8 @@ describe('Migration v2 — les ids suivent les noms (#49, #67)', () => {
     };
   }
 
-  it('déclare la version 2', () => {
-    expect(STORAGE_VERSION).toBe(2);
+  it('déclare la version 3', () => {
+    expect(STORAGE_VERSION).toBe(3);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -197,6 +198,29 @@ describe('Migration v2 — les ids suivent les noms (#49, #67)', () => {
     for (const id of [...Object.keys(migrated.owned ?? {}), ...(migrated.deck ?? [])]) {
       expect(getCard(id), `${id} n’est pas une carte du catalogue`).toBeDefined();
     }
+  });
+
+  it('déclare les sept variantes re-raréfiées de #87, et elles seules', () => {
+    const variantes = Object.entries(CARD_ID_RENAMES).filter(([ancien]) => ancien.endsWith('-star2'));
+    expect(variantes).toHaveLength(7);
+    for (const [ancien, courant] of variantes) {
+      expect(getCard(ancien), `${ancien} ne doit plus exister`).toBeUndefined();
+      const card = getCard(courant);
+      expect(isPlanque(card), `${courant} doit rester un Planqué`).toBe(true);
+      expect(['3S', 'COU'], `${courant} : rareté haute attendue`).toContain(card?.rarity);
+      expect(card?.variantOf, `${courant} : base de variante`).toBe(ancien.replace(/-star2$/, ''));
+    }
+  });
+
+  it('remappe les variantes re-raréfiées d’un état déjà en v2 (#87)', () => {
+    const rng = seedRng(4321);
+    const ancien = 'rh-drh-star2';
+    const migrated = migratePersisted({ owned: { [ancien]: 2 }, deck: [ancien], packsOpened: 1, rng }, 2);
+
+    expect(migrated.owned).toEqual({ 'rh-drh-crown': 2 });
+    expect(migrated.deck).toEqual(['rh-drh-crown']);
+    expect(getCard('rh-drh-crown')?.rarity).toBe('COU');
+    expect(migrated.rng).toBe(rng);
   });
 
   it('donne aux cinq cartes de Management leur nom de D-029 (#67)', () => {
@@ -256,6 +280,16 @@ describe('Migration v2 — les ids suivent les noms (#49, #67)', () => {
         segments.pop();
       }
 
+      // Le suffixe d'une variante secrète (`-star`, `-star2`, `-star3`, `-crown`)
+      // vient de sa **rareté** (#87), pas de son nom : on le retire comme `-ex`,
+      // après avoir vérifié qu'il dit bien la rareté de la carte.
+      const dernier = segments.at(-1);
+      if (dernier && isSecretSuffix(dernier)) {
+        expect(card.variantOf, `${courant} : suffixe ${dernier} sans variante`).toBeDefined();
+        expect(secretSuffix(card.rarity), `${courant} : suffixe et rareté`).toBe(dernier);
+        segments.pop();
+      }
+
       const attendus = mots(card.name);
       const restants = [...attendus];
       for (const mot of segments) {
@@ -266,9 +300,10 @@ describe('Migration v2 — les ids suivent les noms (#49, #67)', () => {
     }
   });
 
-  it('laisse un état déjà en v2 tel quel', () => {
-    const { persisted } = stateV1();
-    const migrated = migratePersisted(persisted, 2);
+  it('laisse un état déjà en v3 tel quel', () => {
+    const rng = seedRng(777);
+    const persisted = { owned: { 'rh-drh-crown': 2 }, deck: ['rh-drh-crown'], rng };
+    const migrated = migratePersisted(persisted, 3);
     expect(migrated.owned).toEqual(persisted.owned);
     expect(migrated.deck).toEqual(persisted.deck);
   });
