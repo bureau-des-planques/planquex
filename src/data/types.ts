@@ -143,6 +143,7 @@ interface CardBase {
   flavor: string;
   glyph: string;
   palette: string;
+  art?: string;
 }
 
 /** Un Planqué : la carte qui se bat. Seul type à porter un Seuil et des Pressions. */

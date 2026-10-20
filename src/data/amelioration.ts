@@ -47,7 +47,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Tableau de bord', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Norme ISO', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
-    flavor: 'Le process est conforme. Le produit est cassé.'
+    flavor: 'Le process est conforme. Le produit est cassé.',
+    art: 'amelioration-directeur-qualite.webp'
   }),
   base({
     id: 'amelioration-consultant-lean',

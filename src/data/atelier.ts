@@ -47,7 +47,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
       { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a un plan. Le plan est une clé de 12.'
+    flavor: 'Il a un plan. Le plan est une clé de 12.',
+    art: 'atelier-chef-atelier.webp'
   }),
 
   // Ligne 2 : Électricien → Électromécanicien → Responsable maintenance

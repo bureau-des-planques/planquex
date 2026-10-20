@@ -212,7 +212,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'La croissance est externe. Les dégâts sont internes.'
+    flavor: 'La croissance est externe. Les dégâts sont internes.',
+    art: 'management-responsable-unite.webp'
   }),
   base({
     id: 'management-directeur-projet',

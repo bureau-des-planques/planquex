@@ -66,7 +66,15 @@ export function CardView({ card, onClick, compact, selected }: Props) {
         </span>
       </div>
 
-      <div className="card__art" style={{ background: card.palette }}>
+      <div
+        className="card__art"
+        style={{
+          background: card.art ? undefined : card.palette,
+          backgroundImage: card.art ? `url('/design/illustrations/${card.art}')` : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
         <span className="card__glyph">{card.glyph}</span>
         <span className="card__shine" />
       </div>

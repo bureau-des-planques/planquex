@@ -39,7 +39,8 @@ export const SSE_CARDS: PlanqueCard[] = [
       { name: 'Arrêt de travail', cost: ['SSE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est en Sieste.', effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }] },
       { name: 'Bilan de santé', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
     ],
-    flavor: 'Il a signé. Tu ne reviens pas avant lundi.'
+    flavor: 'Il a signé. Tu ne reviens pas avant lundi.',
+    art: 'sse-medecin-travail.webp'
   }),
   base({
     id: 'sse-preventeur',

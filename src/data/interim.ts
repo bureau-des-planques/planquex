@@ -96,7 +96,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Il a sauvé la production. Le badge a expiré avant les remerciements.'
+    flavor: 'Il a sauvé la production. Le badge a expiré avant les remerciements.',
+    art: 'interim-interimaire-legendaire-ex.webp'
   })
 ];
 
