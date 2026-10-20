@@ -6,6 +6,7 @@ import {
   attackPreview,
   canEvolve,
   canPlayAction,
+  isOpeningTurn,
   createBattle
 } from '@/game/engine';
 import { drawRandom, seedRng } from '@/game/rng';
@@ -225,10 +226,9 @@ function nextAction(state: BattleState): BattleAction | null {
     if (isPlanque(card) && card.ability) return { type: 'ability' };
   }
 
-  // Un café par tour, sur le Poste. Le premier tour de la partie — celui du premier
-  // joueur tiré au sort (D-033 (6)) — en est privé (§4, D-030) : c'est le tour 1.
-  const openingTurn = state.turn === 1;
-  if (!player.energyAttached && player.energyZone > 0 && player.active && !openingTurn) {
+  // Un café par tour, sur le Poste. Le premier tour du premier joueur tiré au sort
+  // (D-033 (6)) en est privé (§4, D-030) : la règle est celle du moteur, pas une copie.
+  if (!player.energyAttached && player.energyZone > 0 && player.active && !isOpeningTurn(state)) {
     return { type: 'attachEnergy', targetUid: player.active.uid };
   }
 

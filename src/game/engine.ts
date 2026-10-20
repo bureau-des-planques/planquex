@@ -38,10 +38,11 @@ export function isFirstTurnFor(state: BattleState, who: PlayerId): boolean {
  * pas » venait du TCG **physique**, pas de Pocket (D-030). L'énergie est la seule
  * exception de son premier tour.
  *
- * Une seule définition : `startTurn`, `attachEnergy` et `legalActions` lisent
- * celle-ci, sinon l'écran et le moteur finiraient par ne plus dire la même chose (#58).
+ * Une seule définition : `startTurn`, `attachEnergy`, `legalActions` et la politique
+ * du simulateur lisent celle-ci, sinon l'écran, le simulateur et le moteur finiraient
+ * par ne plus dire la même chose (#58).
  */
-function isOpeningTurn(state: BattleState): boolean {
+export function isOpeningTurn(state: BattleState): boolean {
   return state.turn === 1 && state.current === state.firstPlayer;
 }
 
@@ -371,6 +372,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   // Rack, et l'entrant n'en porte aucun. D-033 (4) : il perd aussi les **effets
   // d'attaque** (ex. `damageReduction`), pas ses dégâts ni ses cafés.
   clearAttackEffects(outgoing);
+  // L'entrant arrive du Rack, où aucun effet d'attaque ne se pose : rien d'autre à purger.
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
