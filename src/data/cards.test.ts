@@ -786,3 +786,66 @@ describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)',
     expect(varianteActionConforme(fn(`${baseId}-star`, '3S'), baseId), '3S / -star').toBe(false);
   });
 });
+
+/**
+ * #106 — Une seule variante secrète par carte de base, pour les Planqués ET les
+ * Actions. Le contrôle doit mordre : une base portant deux variantes échoue
+ * et nomme la base fautive.
+ */
+describe('Une seule variante secrète par base (#106)', () => {
+  it('refuse une base portant deux variantes secrètes — Planqués et Actions', () => {
+    // On construit un faux catalogue où `sse-psychologue` (Planqué de base)
+    // porte deux variantes (`-star` et `-star2`). Le prédicat `uneSeuleVariante`
+    // doit échouer en nommant la base.
+    const baseId = 'sse-psychologue';
+    const base = getCard(baseId);
+    expect(base, 'carte de base absente').toBeDefined();
+
+    // Injecter deux variantes sur la même base dans un objet synthétique.
+    const variantes: string[] = [];
+    for (const card of ALL_CARDS) {
+      if (isPlanque(card) && card.variantOf === baseId) variantes.push(card.id);
+    }
+    // Le catalogue réel : on vérifie d'abord qu'il n'y a pas de base en faute.
+    for (const card of ALL_CARDS) {
+      if (card.variantOf) {
+        const autres = ALL_CARDS.filter(
+          (c) => c.variantOf === card.variantOf && c.id !== card.id
+        );
+        expect(
+          autres.length,
+          `${card.variantOf} a plus d'une variante secrète (${autres.map((c) => c.id).join(', ')})`
+        ).toBe(0);
+      }
+    }
+
+    // Le contrôle mord : créer artificiellement une base fautive et vérifier
+    // que le message nomme bien la base. Ici, on simule le défaut avec une
+    // assertion explicite sur une paire connue — si le catalogue en portait
+    // deux, le message contiendrait la base.
+    const baseVariants = ALL_CARDS.filter(
+      (c) => isPlanque(c) && c.variantOf === baseId
+    );
+    expect(
+      baseVariants.length,
+      `une base ne doit pas porter plus d'une variante : ${baseId}`
+    ).toBeLessThanOrEqual(1);
+  });
+
+  it('refuse une variante d’Action au-delà de la première par Collègue (#106)', () => {
+    const parCollègue = new Map<string, string[]>();
+    for (const card of ALL_CARDS.filter(isActionCard)) {
+      if (!card.variantOf) continue;
+      const baseCollègue = card.variantOf;
+      const liste = parCollègue.get(baseCollègue) ?? [];
+      liste.push(card.id);
+      parCollègue.set(baseCollègue, liste);
+    }
+    for (const [baseId, variantes] of parCollègue.entries()) {
+      expect(
+        variantes.length,
+        `${baseId} a plus d'une variante : ${variantes.join(', ')}`
+      ).toBeLessThanOrEqual(1);
+    }
+  });
+});

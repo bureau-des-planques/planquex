@@ -320,6 +320,30 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     expect(migrated.owned).toEqual(persisted.owned);
     expect(migrated.deck).toEqual(persisted.deck);
   });
+
+  it('additionne ancien et nouveau id si les deux cohabitent — voulu, mais le total peut dépasser 2', () => {
+    // #106 — cohabitation : la migration `withRenamedCardIds` additionne
+    // (`owned[current] += count`) au lieu de remplacer. C'est voulu : aucun
+    // exemplaire ne disparaît. Mais rien ne borne `owned`, donc le total peut
+    // dépasser le plafond de 2 copies par nom imposé au Chariot (`deck`).
+    const ancien = 'rh-drh-star2';
+    const nouveau = 'rh-drh-crown';
+    const persisted = {
+      owned: { [ancien]: 1, [nouveau]: 2 },
+      deck: [ancien, nouveau],
+      packsOpened: 0,
+      rng: seedRng(106)
+    };
+    const migrated = migratePersisted(persisted, 2);
+    // Addition voulue : 1 (ancien) + 2 (nouveau) = 3
+    expect(migrated.owned).toEqual({ [nouveau]: 3 });
+    expect(migrated.owned?.[nouveau]).toBe(3);
+    // Le deck conserve l'ordre et remplace l'ancien par le nouveau.
+    expect(migrated.deck).toEqual([nouveau, nouveau]);
+    // Choix explicite : le total additionné est voulu (rien ne se perd),
+    // mais il dépasse le plafond `MAX_COPIES_PER_NAME` du Chariot (2).
+    // Aucune borne n'existe sur `owned` : c'est un choix, pas un bug caché.
+  });
 });
 
 /**
