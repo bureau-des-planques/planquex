@@ -19,7 +19,8 @@ const LANCER = 'scripts/garde-fous.mjs';
 /** Les gardes attendues, une par invariant **critique** déjà pris en défaut dans le dépôt. */
 // #113, #116 et #118 sont arrivées en parallèle : toutes les entrées sont conservées, et
 // la liste est ce que `scripts/garde-fous.test.ts` compare — l'oublier ferait échouer `npm test`.
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 101, 103, 113, 116, 118];
+// #114 : l'évaluation du niveau 2 ne doit pas repartir du flux de hasard de la partie.
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 101, 103, 113, 114, 116, 118];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {
