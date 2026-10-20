@@ -79,8 +79,16 @@ Taux des décidées : **44,11 %** — verdict : **pas tenu**.
 
 Taux des décidées : **43,76 %** — verdict : **pas tenu**.
 
-À la graine 42 et sur 100 parties par série, ce modèle donne **70 / 87 / 43** (le test
-`ia-niveau-2.test.ts` fige ce chiffre ; l'ancien modèle donnait 67 / 89 / 44).
+Le test unitaire `src/game/ia-niveau-2.test.ts` **ne fige plus un triplet exact**.
+Il exécute un protocole miroir allégé (3 graines de **contrôle** : 99, 1234, 2024 × 10 parties/série)
+et vérifie les **invariants de comptage** :
+- chaque série a le bon nombre de parties ;
+- même graine + même index → même appariement de factions ;
+- total parties = niveau2 + niveau1 + nulles.
+
+La question de supériorité (seuil 55 % des décidées + ratio 1,15×, IC 95 %) est tranchée par
+`npm run pesage` (ce document, §2–3). Le test unitaire ne parie **pas** sur le résultat —
+l'échantillon (~60 décidées) n'a pas la puissance pour distinguer 50 % de 54 %.
 
 ## 4. Le meilleur candidat du re-pesage
 
