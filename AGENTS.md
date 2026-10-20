@@ -192,16 +192,19 @@ Le projet est encore une **application Vite plate**. Le monorepo décrit dans `P
 ```text
 grevomon-tcg/
 ├── src/
-│   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx
+│   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx, StatusBadge.tsx, CafePips.tsx
+│   ├── components/ui/  shadcn/ui (D-035) : button.tsx, dialog.tsx — composants génériques seuls
 │   ├── data/         index.ts, types.ts, actions.ts, planque.ts, factions.ts, un fichier par faction (sse.ts, management.ts, …) (+ leurs tests)
 │   ├── game/         engine.ts, deck.ts, rules.ts, curves.ts, rng.ts, pack.ts, simulation.ts (+ leurs tests, pace.test.ts)
 │   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx
+│   ├── lib/          utils.ts — `cn()` de shadcn/ui (D-035)
 │   ├── store/        useStore.ts, useStore.test.ts
 │   ├── App.tsx       routes (Layout + 5 pages)
 │   ├── main.tsx      point d'entrée, monte App sous BrowserRouter
-│   ├── styles.css    feuille unique de l'application
+│   ├── styles.css    feuille unique de l'application (importe Tailwind, mode CSS-first)
 │   └── vite-env.d.ts types Vite (imports CSS)
 ├── public/           favicon.svg, icon-192.svg, icon-512.svg (SVG, dessinés à la main)
+├── components.json   config shadcn/ui (alias `@/`, CSS `src/styles.css` ; D-035)
 ├── scripts/          status.mjs, simulate.mjs, capturer.mjs, etapes-infra-tcg.sh (+ leurs tests)
 └── docs/
 ```
@@ -215,7 +218,7 @@ grevomon-tcg/
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
 - **PWA** : manifeste et Workbox dans `vite.config.ts`. Les icônes `public/favicon.svg`, `icon-192.svg`, `icon-512.svg` existent depuis le 19/10/2026 (SVG `viewBox="0 0 32 32"`, monogramme « BP » sur fond sombre) : plus d'erreur de manifeste dans la console.
 - **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Chariot, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4), `curves.ts` (le chiffré de `CARD-SPEC.md` §2 — dégâts par café et Seuil par stade/rareté — dont `cards.test.ts` et `pace.test.ts` sont les appelants), `rng.ts` (le hasard seedé, état porté par la partie), `pack.ts` (la composition d'un Arrivage, générateur en paramètre), `simulation.ts` (le simulateur headless). Les règles de jeu ne vivent pas dans le store.
-- **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système. Le **système visuel** — palette et jetons, gabarit de carte, cadre de rareté, badges de statut, mascotte, planches de style — vit dans **`DESIGN.md`** à la racine : c'est la source du visuel, comme `src/styles.css` l'est du style. **Style (D-035)** : **Tailwind v4** (mode CSS-first, `@theme` dans `src/styles.css`) est le **moteur de style** ; les jetons de `DESIGN.md` en sont le thème. L'identité du jeu (carte, plateau, Parc) reste **maison**. **shadcn/ui** ne s'emploie que pour les **composants génériques** (dialogue, tiroir, onglet, formulaire, tableau), jamais pour l'identité.
+- **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système. Le **système visuel** — palette et jetons, gabarit de carte, cadre de rareté, badges de statut, mascotte, planches de style — vit dans **`DESIGN.md`** à la racine : c'est la source du visuel, comme `src/styles.css` l'est du style. **Style (D-035)** : **Tailwind v4** (mode CSS-first) est le **moteur de style**. `src/styles.css` **reste la feuille unique** : elle ouvre sur `@import "tailwindcss"` et un bloc `@theme inline` dont les valeurs **référencent les jetons de `:root`** (une seule source : `--color-bg` → `var(--bg)`, `--font-sans` → `var(--font-body)`, etc.), donc les utilitaires lisent `DESIGN.md` sans recopier un hex. Le `preflight` de Tailwind s'applique : nos règles maison le suivent et le corrigent ponctuellement (`h1,h2,h3` rétablit `font-weight: 700`). L'identité du jeu (carte, plateau, Parc) reste **maison**. **shadcn/ui** ne s'emploie que pour les **composants génériques** (dialogue, tiroir, onglet, formulaire, tableau), jamais pour l'identité ; ses **variables CSS sont mappées sur nos jetons** dans `:root` (`--background` → `var(--bg)`, `--primary` → `var(--accent)`, …) au lieu de ses valeurs « SaaS ». Config : `components.json`, `cn()` dans `src/lib/utils.ts`, composants dans `src/components/ui/`. Premier composant posé : `dialog` (règles des Conditions dans `Battle.tsx`). Le plugin `@tailwindcss/vite` est branché dans `vite.config.ts`.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX. Voir §8.4.
 
 ## 7. Commandes

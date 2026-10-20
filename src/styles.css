@@ -1,3 +1,64 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/*
+ * D-035 — Tailwind v4 (mode CSS-first) est le **moteur de style**. Ce bloc `@theme`
+ * expose les jetons de `DESIGN.md` aux utilitaires Tailwind ; l'identité du jeu (carte,
+ * plateau, Parc) reste maison et vit plus bas en classes `.card*`, `.stress*`, etc.
+ *
+ * Les valeurs **référencent** les variables du bloc `:root` ci-dessous : le `@theme`
+ * n'est pas une seconde source, c'est une **porte** vers la source unique. `inline` fait
+ * que l'utilitaire lit la variable directement (`.bg-bg { background-color: var(--bg) }`).
+ */
+@theme inline {
+  /* Couleurs — les jetons de `DESIGN.md` §1 */
+  --color-bg: var(--bg);
+  --color-bg-deep: var(--bg-deep);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--text);
+  --color-ink-muted: var(--text-muted);
+  --color-ink-dim: var(--text-dim);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-deep: var(--gold-deep);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  /* Polices — Inter pour le corps, Outfit pour les titres (`DESIGN.md` §1.6) */
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
+
+  /* Échelle typographique */
+  --text-2xs: var(--fs-2xs);
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-md: var(--fs-md);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: var(--fs-2xl);
+  --text-3xl: var(--fs-3xl);
+
+  /* Espacement — seuls `--sp-5` et `--sp-6` s'écartent des pas par défaut */
+  --spacing-5: var(--sp-5);
+  --spacing-6: var(--sp-6);
+
+  /* Rayons — `rounded-*` lit les jetons maison */
+  --radius-xs: var(--radius-sm);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-lg);
+}
+
+@custom-variant dark (&:is(.dark *));
+
 /*
  * Jetons de design — « corporate dark premium », bleu nuit + or.
  * Le bleu (`--accent`) reste le primaire ; l'or (`--gold`) est l'accent
@@ -56,6 +117,44 @@
 
   --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
   --font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
+
+  /*
+   * D-035 — shadcn/ui. Ses variables sont **mappées sur nos jetons**, pas laissées aux
+   * valeurs par défaut « SaaS » : le fond, le texte, les bordures et le primaire viennent
+   * de `DESIGN.md` §1. `--primary` est le bleu maison ; `--primary-foreground` est le texte
+   * posé dessus (bleu nuit, contraste AA). Les composants génériques (dialogues, …) héritent
+   * ainsi de l'identité du jeu.
+   */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--bg-raised);
+  --card-foreground: var(--text);
+  --popover: var(--bg-raised);
+  --popover-foreground: var(--text);
+  --primary: var(--accent);
+  --primary-foreground: #06111f;
+  --secondary: var(--bg-sunken);
+  --secondary-foreground: var(--text);
+  --muted: var(--bg-sunken);
+  --muted-foreground: var(--text-muted);
+  --accent-foreground: #06111f;
+  --destructive: var(--danger);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--accent);
+  --chart-1: var(--accent);
+  --chart-2: var(--gold);
+  --chart-3: var(--ok);
+  --chart-4: var(--warn);
+  --chart-5: var(--danger);
+  --sidebar: var(--bg-raised);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: #06111f;
+  --sidebar-accent: var(--bg-sunken);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--accent);
 }
 
 * {
@@ -85,6 +184,9 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
+  /* Le `preflight` de Tailwind remet les titres à `font-weight: inherit` : on rétablit
+   * le gras par défaut du navigateur pour ne rien changer au rendu d'avant D-035. */
+  font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0 0 0.35rem;
 }
@@ -1234,7 +1336,6 @@ code {
   opacity: 0.75;
 }
 
-
 @media (max-width: 620px) {
   .card-detail {
     grid-template-columns: 1fr;
@@ -1257,5 +1358,55 @@ code {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
+  }
+}
+/*
+ ---break---
+ */
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+}
+/*
+ ---break---
+ */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
