@@ -691,7 +691,9 @@ function resolveEnd(state: BattleState) {
 
   // D-031 : sur un double craquage, **l'attaquant choisit en premier**, quel que
   // soit le siège. `resolveEnd` est appelée dans le tour du camp qui a agi : en
-  // attaque comme en `checkup`, `state.current` est donc l'attaquant.
+  // attaque, `state.current` est l'attaquant ; au `checkup`, c'est le camp dont le
+  // tour vient de finir (D-033 §5) — celui qui a contrôlé en premier, et qui relève
+  // donc en premier.
   const emptyActives: PlayerId[] = [];
   if (!player.active && player.bench.some(Boolean)) emptyActives.push('player');
   if (!ai.active && ai.bench.some(Boolean)) emptyActives.push('ai');
@@ -812,41 +814,91 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   return next;
 }
 
-function checkup(state: BattleState): BattleState {
-  const player = state.players[state.current];
-  if (!player.active) return state;
-
-  // Les conditions se résolvent **dans l'ordre de §4** (Surcharge → Épuisement →
-  // Sieste → Immobilisation). Un Planqué peut en subir plusieurs, sauf les trois
-  // exclusives qui ne vont pas ensemble (D-030). Dérive n'est pas ici : elle se
-  // résout avant l'attaque.
+/**
+ * Contrôle d'**un** Poste (D-033 §5) : résout les États Spéciaux du Planqué au Poste
+ * de `who`, **dans l'ordre de `STATUS_ORDER`** (Surcharge → Épuisement → Sieste →
+ * Immobilisation), et **sans trancher la fin de partie** — c'est `checkup` qui empile
+ * les craquages des deux Contrôles avant `resolveEnd` (même esprit que D-031 dans
+ * `attack`). La Dérive n'est pas ici : elle se résout **avant l'attaque** (§4).
+ *
+ * **Immobilisation** : la capture `07` dit « Après le prochain tour de la personne à
+ * laquelle il appartient, il guérit au cours du Contrôle Pokémon ». Au Contrôle, le
+ * propriétaire est `who`, et le tour qui vient de finir est celui de `state.current` :
+ * elle guérit donc **seulement** quand `who === state.current`, c'est-à-dire au Contrôle
+ * qui suit le tour de son propriétaire.
+ *
+ * Aucun champ de `BattleState` n'est nécessaire pour savoir quand elle a été posée,
+ * parce qu'un État Spécial n'est **jamais posé sur le Poste de celui qui l'inflige** :
+ * `applyEffects` vise `defender` et `applyActionEffects` vise `opponent.active`, tous
+ * deux pendant le tour de l'autre camp. À l'application, le propriétaire est donc
+ * toujours le camp qui **n'est pas** `state.current`, et son « prochain tour » est bien
+ * le tour à venir — que le Contrôle de fin de tour courant ne doit pas guérir. Le cas
+ * limite (un statut posé sur son propre Poste) n'est pas atteignable ; s'il le devenait,
+ * il faudrait mémoriser le tour de pose (#78).
+ */
+function controlStatuses(state: BattleState, who: PlayerId) {
+  // Étiquette de camp : le Contrôle porte désormais sur les deux Postes, le journal
+  // doit dire lequel — c'est aussi ce qui rend l'ordre des Contrôles vérifiable.
+  const label = who === 'player' ? 'ton Poste' : 'Poste adverse';
   for (const status of STATUS_ORDER) {
-    if (!player.active || !hasStatus(player.active, status)) continue;
+    const active = state.players[who].active;
+    if (!active || !hasStatus(active, status)) continue;
     if (status === 'SURCHARGE') {
-      player.active.hp -= 10;
-      state.log.push('Surcharge : 10 de stress.');
+      active.hp -= 10;
+      state.log.push(`Surcharge : 10 de stress (${label}).`);
     } else if (status === 'EPUISEMENT') {
-      player.active.hp -= 20;
-      state.log.push('Épuisement : 20 de stress.');
+      active.hp -= 20;
+      state.log.push(`Épuisement : 20 de stress (${label}).`);
       if (drawRandom(state) < 0.5) {
-        clearStatus(player.active, 'EPUISEMENT');
-        state.log.push('Épuisement guéri sur pile.');
+        clearStatus(active, 'EPUISEMENT');
+        state.log.push(`Épuisement guéri sur pile (${label}).`);
       }
     } else if (status === 'SIESTE') {
       if (drawRandom(state) < 0.5) {
-        clearStatus(player.active, 'SIESTE');
-        state.log.push('Sieste terminée sur pile.');
+        clearStatus(active, 'SIESTE');
+        state.log.push(`Sieste terminée sur pile (${label}).`);
       }
     } else if (status === 'IMMOBILISATION') {
-      clearStatus(player.active, 'IMMOBILISATION');
-      state.log.push('Immobilisation : le tour est passé.');
+      if (who === state.current) {
+        clearStatus(active, 'IMMOBILISATION');
+        state.log.push(`Immobilisation : le tour est passé (${label}).`);
+      }
     }
   }
+}
 
-  if (player.active && player.active.hp <= 0) {
-    knockOut(state, state.current === 'player' ? 'ai' : 'player');
-    resolveEnd(state);
+/**
+ * Le **Contrôle Pokémon** a lieu après **chaque** tour et porte sur **les deux** Postes
+ * (D-033 §5, capture `07`) : « le joueur dont le tour vient de prendre fin procède
+ * d'abord au contrôle ».
+ *
+ * Comme `attack` (D-031), on applique **tous** les craquages de la fin de tour **avant**
+ * de trancher la fin de partie : un plateau vidé l'emporte alors sur les Interventions
+ * gagnées dans la foulée, et les deux Contrôles d'un même tour ne peuvent pas déclarer
+ * un vainqueur que l'autre dément.
+ *
+ * Ordre de relève sur un **double craquage au Contrôle** : le camp dont le tour vient de
+ * finir a contrôlé en premier, c'est donc lui que `resolveEnd` invite à relever en
+ * premier — le prolongement de « l'attaquant choisit en premier » (D-031), où
+ * `state.current` désigne ici l'acteur du tour qui s'achève.
+ */
+function checkup(state: BattleState): BattleState {
+  const ending = state.current;
+  const opponent: PlayerId = ending === 'player' ? 'ai' : 'player';
+
+  controlStatuses(state, ending);
+  controlStatuses(state, opponent);
+
+  // Un craquage au Poste du camp qui finit rapporte les Interventions à l'adversaire,
+  // et réciproquement : `knockOut(state, X)` fait marquer `X` et vide le Poste d'en face.
+  if (state.players[ending].active && state.players[ending].active.hp <= 0) {
+    knockOut(state, opponent);
   }
+  if (state.players[opponent].active && state.players[opponent].active.hp <= 0) {
+    knockOut(state, ending);
+  }
+
+  resolveEnd(state);
   return state;
 }
 
