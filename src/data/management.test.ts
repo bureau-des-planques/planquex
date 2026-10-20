@@ -9,9 +9,11 @@ import { ALL_CARDS, isPlanque, vivierOf } from '@/data';
 const MANAGEMENT = ALL_CARDS.filter((card) => isPlanque(card) && card.faction === 'MANAGEMENT');
 
 describe('Cartes — faction Management (PROPOSITION.md §4.3)', () => {
-  it('compte 28 entrées : 20 bases et 8 variantes secrètes', () => {
-    expect(MANAGEMENT).toHaveLength(28);
-    expect(MANAGEMENT.filter((card) => !card.variantOf)).toHaveLength(20);
+  it('compte 29 entrées : 21 bases et 8 variantes secrètes (vague 2, #86 : +1 carte 3◆)', () => {
+    // La vague 2 (#86) ajoute une carte en 3◆ (Directeur de service) pour la cible de
+    // rareté `CARD-SPEC.md` §1.
+    expect(MANAGEMENT).toHaveLength(29);
+    expect(MANAGEMENT.filter((card) => !card.variantOf)).toHaveLength(21);
     expect(MANAGEMENT.filter((card) => card.variantOf)).toHaveLength(8);
   });
 

@@ -7,10 +7,12 @@ import { planqueBase } from './planque';
  * (`CARD-SPEC.md` §3). Les intitulés sont des postes réels, les Pressions des
  * tâches ou documents de mission, les Talents des compétences de métier (D-027).
  *
- * 4 entrées (`PROPOSITION.md` §4.3), toutes des bases : la ligne à 3 stades plus
- * la carte signature COMEX épuise le quota. Seuil par stade/rareté et dégâts par
- * café conformes à `CARD-SPEC.md` §2 (D-021, D-023) ; COMEX `ex: true` en 4D,
- * valant 2 Interventions (D-020).
+ * 6 entrées, toutes des bases : la ligne à 3 stades, la carte signature COMEX, et
+ * la ligne à 3 stades de la vague 2 (#86, les 9 cartes `3D` manquantes). Le quota
+ * de `PROPOSITION.md` §4.3 (4 entrées) est dépassé : la cible de rareté
+ * `CARD-SPEC.md` §1 (42 cartes en 3◆) prime, l'écart est signalé au ticket #63.
+ * Seuil par stade/rareté et dégâts par café conformes à `CARD-SPEC.md` §2 (D-021,
+ * D-023) ; COMEX `ex: true` en 4D, valant 2 Interventions (D-020).
  */
 
 /** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
@@ -97,6 +99,62 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       }
     ],
     flavor: 'Il a sauvé la production. Le badge a expiré avant les remerciements.'
+  }),
+
+  // Ligne 2 (vague 2, #86) : Intérimaire → Consultant intérimaire → Responsable
+  // d’intérim. Le coût d'une Pression de l'Intérim mêle deux types produits
+  // distincts (D-037 (3)).
+  base({
+    id: 'interim-consultant-interimaire',
+    evolvesFrom: 'interim-interimaire',
+    name: 'Consultant intérimaire',
+    stage: 'N+1',
+    rarity: '3D',
+    hp: 110,
+    retreat: 1,
+    ability: {
+      name: 'Mise à disposition',
+      text: 'Une fois par tour : attache 1 café à ce Planqué.',
+      kind: 'attachEnergy',
+      oncePerTurn: true
+    },
+    attacks: [
+      { name: 'Mission d’appui', cost: ['MANAGEMENT', 'QVT'], damage: 50 },
+      {
+        name: 'Renvoi express',
+        cost: ['RH', 'ATELIER', 'RH'],
+        damage: 80,
+        text: 'Échange ce Planqué avec un Planqué du Rack.',
+        effects: [{ kind: 'switchSelf' }]
+      }
+    ],
+    flavor: 'Il remplace trois personnes. Il n’en a rencontré aucune.'
+  }),
+  base({
+    id: 'interim-responsable-interim',
+    evolvesFrom: 'interim-consultant-interimaire',
+    name: 'Responsable d’intérim',
+    stage: 'N+2',
+    rarity: '3D',
+    hp: 150,
+    retreat: 2,
+    attacks: [
+      {
+        name: 'Contrat-cadre',
+        cost: ['MANAGEMENT', 'QVT'],
+        damage: 60,
+        text: 'Pioche 1 carte.',
+        effects: [{ kind: 'draw', amount: 1 }]
+      },
+      {
+        name: 'Affectation d’urgence',
+        cost: ['RH', 'ATELIER', 'RH'],
+        damage: 100,
+        text: 'Envoie 1 café du Planqué adverse au rebut. Ce Planqué prend 20 de stress.',
+        effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }]
+      }
+    ],
+    flavor: 'Il fournit du personnel. Le personnel ne sait pas où il va.'
   })
 ];
 

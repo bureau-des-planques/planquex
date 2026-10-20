@@ -21,12 +21,14 @@ const byId = (id: string): PlanqueCard | undefined => {
 const LINE = ['interim-interimaire', 'interim-interimaire-confirme', 'interim-chef-equipe-interimaire'];
 
 describe('Intérim — enregistrement (ticket #22)', () => {
-  it('compte 4 entrées, toutes des bases (PROPOSITION.md §4.3)', () => {
-    // Les 4 entrées sont la ligne à 3 stades + la carte signature COMEX : il ne
-    // reste aucune place pour une variante secrète.
-    expect(INTERIM_CARDS).toHaveLength(4);
+  it('compte 6 entrées, toutes des bases (vague 2, #86 : +1 ligne à 3 stades)', () => {
+    // Les 4 entrées de `PROPOSITION.md` §4.3 (la ligne à 3 stades + la carte signature
+    // COMEX) sont dépassées de 2 : la vague 2 (#86) ajoute une ligne à 3 stades pour
+    // atteindre la cible de rareté `CARD-SPEC.md` §1 (42 cartes en 3◆). L'écart avec le
+    // quota de faction est signalé au ticket #63.
+    expect(INTERIM_CARDS).toHaveLength(6);
     expect(INTERIM_VARIANTS).toHaveLength(0);
-    expect(ALL_INTERIM_CARDS).toHaveLength(4);
+    expect(ALL_INTERIM_CARDS).toHaveLength(6);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {

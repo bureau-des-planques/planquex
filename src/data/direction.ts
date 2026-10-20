@@ -155,6 +155,64 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     flavor: 'Le projet est livré. La recette est signée demain.'
   }),
 
+  // Ligne 3 complétée en N+2 (vague 2, #86) : Assistant direction → Chef de cabinet
+  // → Directeur de cabinet.
+  base({
+    id: 'direction-directeur-cabinet',
+    evolvesFrom: 'direction-chef-cabinet',
+    name: 'Directeur de cabinet',
+    stage: 'N+2',
+    rarity: '3D',
+    hp: 140,
+    retreat: 2,
+    attacks: [
+      {
+        name: 'Porte fermée',
+        cost: ['DIRECTION', 'INCOLORE'],
+        damage: 60,
+        text: 'Envoie 1 café du Planqué adverse au rebut.',
+        effects: [{ kind: 'discardEnergy', target: 'opponent' }]
+      },
+      {
+        name: 'Contre-ordre',
+        cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'],
+        damage: 80,
+        text: 'Le Planqué adverse est Immobilisé.',
+        effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }]
+      }
+    ],
+    flavor: 'Trois bureaux, deux secrétaires, aucun dossier.'
+  }),
+
+  // Ligne 4 complétée en N+2 (vague 2, #86) : Secrétaire direction → Directeur de
+  // programme → Directeur de la stratégie.
+  base({
+    id: 'direction-directeur-strategie',
+    evolvesFrom: 'direction-directeur-programme',
+    name: 'Directeur de la stratégie',
+    stage: 'N+2',
+    rarity: '3D',
+    hp: 150,
+    retreat: 2,
+    attacks: [
+      {
+        name: 'Feuille de route',
+        cost: ['DIRECTION', 'INCOLORE'],
+        damage: 60,
+        text: 'Pioche 1 carte.',
+        effects: [{ kind: 'draw', amount: 1 }]
+      },
+      {
+        name: 'Arbitrage stratégique',
+        cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'],
+        damage: 90,
+        text: 'Envoie 1 café du Planqué adverse au rebut.',
+        effects: [{ kind: 'discardEnergy', target: 'opponent' }]
+      }
+    ],
+    flavor: 'Le cap est fixé. Le budget suivra, un jour.'
+  }),
+
   // Entrants seuls (sans évolution)
   base({
     id: 'direction-stagiaire-direction',

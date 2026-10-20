@@ -254,6 +254,29 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     ],
     flavor: 'Il a optimisé la ligne. Il a oublié les gens dessus.'
   }),
+
+  // Ligne complétée en N+2 (vague 2, #86) : Assistant manager → Chef de service →
+  // Directeur de service.
+  base({
+    id: 'management-directeur-service',
+    evolvesFrom: 'management-chef-service',
+    name: 'Directeur de service',
+    stage: 'N+2',
+    rarity: '3D',
+    hp: 140,
+    retreat: 2,
+    attacks: [
+      { name: 'Objectifs du service', cost: ['MANAGEMENT', 'INCOLORE'], damage: 60 },
+      {
+        name: 'Revue de performance',
+        cost: ['MANAGEMENT', 'INCOLORE', 'INCOLORE'],
+        damage: 90,
+        text: 'Le Planqué adverse est en Épuisement.',
+        effects: [{ kind: 'status', status: 'EPUISEMENT', target: 'opponent' }]
+      }
+    ],
+    flavor: 'Trois objectifs. Le sien est atteignable. Les deux autres, non.'
+  }),
   base({
     id: 'management-responsable-unite-ex',
     evolvesFrom: 'management-manager-proximite',

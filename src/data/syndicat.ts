@@ -97,6 +97,60 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
       }
     ],
     flavor: 'Deux Interventions. Le compte rendu fait 40 pages.'
+  }),
+
+  // Ligne 2 (vague 2, #86) : Délégué du personnel → Trésorier CSE → Président CSE.
+  base({
+    id: 'syndicat-tresorier-cse',
+    evolvesFrom: 'syndicat-delegue-personnel',
+    name: 'Trésorier CSE',
+    stage: 'N+1',
+    rarity: '3D',
+    hp: 100,
+    retreat: 1,
+    attacks: [
+      {
+        name: 'Relevé de trésorerie',
+        cost: ['SYNDICAT', 'INCOLORE'],
+        damage: 40,
+        text: 'Soigne 10 de ce Planqué.',
+        effects: [{ kind: 'healSelf', amount: 10 }]
+      },
+      {
+        name: 'Note de frais',
+        cost: ['SYNDICAT', 'INCOLORE', 'INCOLORE'],
+        damage: 70,
+        text: 'Pioche 1 carte.',
+        effects: [{ kind: 'draw', amount: 1 }]
+      }
+    ],
+    flavor: 'Il tient la caisse du café. Le reste n’est pas budgété.'
+  }),
+  base({
+    id: 'syndicat-president-cse',
+    evolvesFrom: 'syndicat-tresorier-cse',
+    name: 'Président CSE',
+    stage: 'N+2',
+    rarity: '3D',
+    hp: 150,
+    retreat: 2,
+    attacks: [
+      {
+        name: 'Résolution',
+        cost: ['SYNDICAT', 'INCOLORE'],
+        damage: 60,
+        text: 'Le Planqué adverse est en Sieste.',
+        effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }]
+      },
+      {
+        name: 'Réquisition générale',
+        cost: ['SYNDICAT', 'INCOLORE', 'INCOLORE'],
+        damage: 90,
+        text: 'Envoie 1 café du Planqué adverse au rebut.',
+        effects: [{ kind: 'discardEnergy', target: 'opponent' }]
+      }
+    ],
+    flavor: 'Il préside une réunion de deux personnes. Le procès-verbal fait douze pages.'
   })
 ];
 
