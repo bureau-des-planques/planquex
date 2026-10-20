@@ -850,6 +850,29 @@ function checkup(state: BattleState): BattleState {
   return state;
 }
 
+/**
+ * **Forfait** (D-030) : abandonner est une **défaite quel que soit le score** —
+ * les Interventions déjà marquées ne sauvent pas celui qui se couche. C'est le seul
+ * chemin qui termine une partie sans craquage, et il est **déclenché par un humain** :
+ * `who` est donc un paramètre, et non `state.current`, parce que le joueur peut
+ * abandonner pendant le tour de la Direction ou pendant une relève en attente.
+ *
+ * Idempotente sur une partie finie : une partie déjà terminée est rendue **telle
+ * quelle** (`===`), sans nouvelle ligne de journal.
+ */
+export function forfeit(state: BattleState, who: PlayerId): BattleState {
+  if (state.phase === 'ended') return state;
+  const next = clone(state);
+  next.phase = 'ended';
+  next.winner = who === 'player' ? 'ai' : 'player';
+  // La relève en attente n'a plus d'objet : le plateau est figé.
+  next.pendingPromotion = null;
+  next.log.push(
+    who === 'player' ? 'Tu déclares forfait : la Direction l’emporte.' : 'L’IA déclare forfait : tu l’emportes.'
+  );
+  return next;
+}
+
 export function endTurn(state: BattleState): BattleState {
   if (awaitingPromotion(state)) return state;
   const next = clone(state);
@@ -902,6 +925,8 @@ export function applyAction(state: BattleState, action: BattleAction): BattleSta
       return playAction(state, action.uid);
     case 'promoteActive':
       return promoteActive(state, action.benchIndex);
+    case 'forfeit':
+      return forfeit(state, action.who);
     case 'endTurn':
       return endTurn(state);
     default:
@@ -974,9 +999,11 @@ export function legalActions(state: BattleState): BattleAction[] {
   const pending = state.pendingPromotion;
   if (pending) {
     const bench = state.players[pending].bench;
-    return bench.flatMap((card, benchIndex) =>
+    const promotions = bench.flatMap((card, benchIndex) =>
       card ? [{ type: 'promoteActive', benchIndex } satisfies BattleAction] : []
     );
+    // Le forfait reste offert pendant une relève : la partie vit encore (D-030, #79).
+    return [...promotions, { type: 'forfeit', who: 'player' }];
   }
 
   // D-033 §1 : une Pression lancée consomme le reste du tour. Seule la fin du
@@ -1049,6 +1076,10 @@ export function legalActions(state: BattleState): BattleAction[] {
   }
 
   actions.push({ type: 'endTurn' });
+  // Le forfait est toujours offert tant que la partie vit, même quand il ne reste
+  // plus rien d'autre à faire (D-030, #79). Le camp qui se couche est l'humain : il
+  // n'y a pas d'IA qui déclare forfait.
+  actions.push({ type: 'forfeit', who: 'player' });
   return actions;
 }
 

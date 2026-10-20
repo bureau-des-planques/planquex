@@ -56,4 +56,14 @@ describe('Battle.tsx — l’écran rend ce que le moteur autorise (#58)', () =>
     expect(source).not.toMatch(/hasAttacked \|\|/);
     expect(source).not.toMatch(/energy \?\? 0\) < /);
   });
+
+  it('offre un abandon confirmé, sans appeler la transition en direct (#79)', () => {
+    // Le bouton vient de `legalActions` (le moteur dit si la partie vit), pas d'une
+    // liste écrite à la main : il est donc filtré sur le camp du joueur.
+    expect(source).toMatch(/action\.type === 'forfeit'/);
+    expect(source).toMatch(/window\.confirm\(/);
+    expect(source).toMatch(/Abandonner/);
+    // Comme les autres transitions, le forfait passe par `applyAction`, pas par un appel direct.
+    expect(source).not.toMatch(/\bforfeit\(/);
+  });
 });

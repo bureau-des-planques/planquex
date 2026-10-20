@@ -149,6 +149,8 @@ function describeAction(state: BattleState, action: BattleAction): ActionView {
       const prefix = who === 'player' ? '' : 'Direction · ';
       return { label: 'Relève', detail: `${prefix}${instanceName(state.players[who].bench[action.benchIndex])} au Poste` };
     }
+    case 'forfeit':
+      return { label: 'Abandonner' };
     case 'endTurn':
       return { label: state.current === 'player' ? 'Fin du tour' : 'Passer le tour de la Direction' };
   }
@@ -229,6 +231,29 @@ export function Battle() {
     []
   );
 
+  /**
+   * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
+   * vient de `legalActions` (le moteur dit si la partie vit encore, relève comprise) —
+   * l'écran ne décide rien — et elle passe par `applyAction` comme les autres boutons.
+   * Le camp qui se couche est toujours l'humain : d'où le filtre sur les actions du
+   * joueur, même pendant le tour de la Direction.
+   */
+  const forfeitAction = useMemo(
+    () =>
+      legal.find(
+        (action): action is Extract<BattleAction, { type: 'forfeit' }> =>
+          action.type === 'forfeit' && action.who === 'player'
+      ),
+    [legal]
+  );
+
+  const abandon = useCallback(
+    (action: BattleAction) => {
+      if (window.confirm('Déclarer forfait ? La Direction l’emporte, quel que soit le score.')) play(action);
+    },
+    [play]
+  );
+
   const restart = useCallback(() => {
     setState(createBattle(playerDeck, testDeck()));
   }, [playerDeck]);
@@ -252,9 +277,16 @@ export function Battle() {
             Tour {state.turn} · {state.phase === 'ended' ? 'partie terminée' : isPlayerTurn ? 'à toi' : 'à la Direction'}
           </p>
         </div>
-        <button type="button" className="button" onClick={restart}>
-          <RotateCcw size={16} /> Nouveau combat
-        </button>
+        <div className="actions actions--tight">
+          {forfeitAction && (
+            <button type="button" className="button" onClick={() => abandon(forfeitAction)}>
+              Abandonner
+            </button>
+          )}
+          <button type="button" className="button" onClick={restart}>
+            <RotateCcw size={16} /> Nouveau combat
+          </button>
+        </div>
       </section>
 
       {usedTestDeck && (

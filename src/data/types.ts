@@ -230,6 +230,13 @@ export type BattleAction =
   | { type: 'priorityShift'; uid: string }
   | { type: 'playAction'; uid: string }
   | { type: 'promoteActive'; benchIndex: number }
+  /**
+   * **Forfait** (D-030) : abandonner est une défaite, quel que soit le score. `who`
+   * est **explicite** parce que `state.current` ne l'est pas : le joueur humain peut
+   * abandonner pendant le tour de la Direction ou pendant une relève en attente, donc
+   * le camp qui se couche n'est pas celui au trait.
+   */
+  | { type: 'forfeit'; who: PlayerId }
   | { type: 'endTurn' };
 
 export interface BattleState {

@@ -1338,15 +1338,18 @@ describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
     }
   });
 
-  it('n’offre que la relève quand un Poste a craqué', () => {
+  it('n’offre que la relève — plus le forfait (D-030, #79) — quand un Poste a craqué', () => {
     const state = structuredClone(freshBattle());
     state.players.ai.active = null;
     state.pendingPromotion = 'ai';
 
     const actions = legalActions(state);
+    const promotions = actions.filter((action) => action.type === 'promoteActive');
 
-    expect(actions.every((action) => action.type === 'promoteActive')).toBe(true);
-    expect(actions).toHaveLength(state.players.ai.bench.filter(Boolean).length);
+    expect(promotions).toHaveLength(state.players.ai.bench.filter(Boolean).length);
+    // Rien d'autre que la relève… et le forfait, que la partie encore vivante laisse ouvert.
+    expect(actions.filter((action) => action.type !== 'forfeit')).toEqual(promotions);
+    expect(actions).toContainEqual({ type: 'forfeit', who: 'player' });
   });
 
   it('ne rend plus rien quand la partie est terminée', () => {
