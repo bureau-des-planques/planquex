@@ -7,6 +7,7 @@ import type {
   PlayerState
 } from '@/data/types';
 import { applyAction, attackDamage, attackPreview, legalActions } from '@/game/engine';
+import { satisfiesCafeCost } from '@/game/rules';
 
 /**
  * **L'IA du Bureau des Planqués** — la Direction.
@@ -181,11 +182,15 @@ export interface EvaluationWeights {
 }
 
 /**
- * Poids **par défaut** de l'évaluation. Ils sont **mesurés**, pas choisis à l'aveugle :
- * le simulateur (`npm run simulate -- --games 100 --seed 42 --ai-level 2`) compare le
- * niveau 2 au niveau 1, et ce sont ces chiffres qui rendent le niveau 2 devantable
- * (ticket #93). La mesure : sur 1 000 parties seedées (5 graines maîtresses), le
- * camp de niveau 2 l'emporte **56 %** des parties, contre 44 % au niveau 1.
+ * Poids **par défaut** de l'évaluation.
+ *
+ * Ils viennent de #93, réglés sur une mesure qui comptait les cafés **au nombre**.
+ * #108 a corrigé cette mesure (`satisfiesCafeCost`) : **le gain de #93 n'est plus
+ * démontré**. Sur 600 parties appariées (graines 1, 7, 42, 99, 1234 ; 60 parties par
+ * série), le camp de niveau 2 gagne **203** parties contre **254** au niveau 1, avec
+ * 143 nulles (ratio 0,799). Les poids restent ceux de #93 : un re-pesage mesuré, y
+ * compris sur des graines de contrôle, est un travail distinct (rapport #108), et le
+ * niveau 1 reste le défaut de l'écran comme du simulateur.
  *
  * Trois réglages méritent une explication :
  *
@@ -212,25 +217,25 @@ function opponentOf(who: PlayerId): PlayerId {
 }
 
 /**
- * Les cafés attachés qui **servent à une Pression**.
+ * Les cafés attachés qui **paient réellement** une Pression du Planqué.
  *
- * C'est le nombre de cafés engagés vers la Pression la plus chère du Planqué : un
- * café qui ne sert à rien ne vaut rien, et un café au-delà du coût maximal non
- * plus. Un café qui ne paie pas encore une Pression compte quand même : il s'y
- * engage.
- *
- * ⚠️ **Approximation assumée** : depuis #88/#90, le moteur exige
- * `satisfiesCafeCost` (un symbole typé n'est payé que par un café **de ce type**),
- * alors que cette estimation compte les cafés **au nombre**. Elle **surestime**
- * donc la menace et la sécurité quand les types ne correspondent pas. Changer la
- * mesure changerait le niveau 2 tel qu'il a été pesé — c'est le ticket #108.
+ * C'est le plus grand coût, **en nombre de cafés**, parmi les Pressions que les cafés
+ * attachés couvrent — et c'est `satisfiesCafeCost` qui tranche, la **même** décision
+ * que le moteur (`legalAttacks`, `attack`, `attackPreview`). Conséquences (ticket #108) :
+ * un café d'un **autre type** ne compte pas, un café **au-delà** du coût maximal non
+ * plus, et un Planqué dont aucun coût n'est payable ne compte aucun café utile — son
+ * avancement partiel n'est pas encore une Pression.
  */
 function paidCafes(instance: CardInstance): number {
   const card = getCard(instance.cardId);
   if (!isPlanque(card)) return 0;
-  const maxCost = card.attacks.reduce((max, attack) => Math.max(max, attack.cost.length), 0);
-  if (maxCost === 0) return 0;
-  return Math.min(instance.energy.length, maxCost);
+  let best = 0;
+  for (const attack of card.attacks) {
+    if (satisfiesCafeCost(instance.energy, attack.cost)) {
+      best = Math.max(best, attack.cost.length);
+    }
+  }
+  return best;
 }
 
 /**
@@ -269,7 +274,9 @@ function threatOf(player: PlayerState, defender: CardInstance | null): number {
 
   let best = 0;
   for (const attack of card.attacks) {
-    if (player.active.energy.length < attack.cost.length) continue;
+    // Un café d'un autre type ne paie pas le coût (D-037) : `satisfiesCafeCost` est la
+    // seule décision, celle que lit aussi le moteur (ticket #108).
+    if (!satisfiesCafeCost(player.active.energy, attack.cost)) continue;
     const damage = attackDamage(player.active, defender, attack, 'poste');
     if (damage > best) best = damage;
   }
