@@ -14,7 +14,7 @@ import type {
 import { deckCafeTypes, deckLegal } from '@/game/deck';
 import { drawRandom, flipStamp, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
-import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT } from '@/game/rules';
+import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT, satisfiesCafeCost } from '@/game/rules';
 
 let uidCounter = 0;
 
@@ -866,9 +866,11 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   const targetCard = getCard(opponent.active.cardId);
   if (!isPlanque(card) || !isPlanque(targetCard)) return state;
   const attack = card.attacks[attackIndex];
-  // #89 (cadrage) : le paiement reste **au nombre** ; #90 le convertit au coût
-  // typé (`satisfiesCafeCost`).
-  if (!attack || player.active.energy.length < attack.cost.length) return state;
+  // Le paiement suit le coût **typé** (D-037) : chaque symbole du coût exige un café
+  // de son type, un symbole incolore accepte tout ; le café n'est **pas consommé**.
+  // Une seule fonction décide (`satisfiesCafeCost`, rules.ts) : `legalAttacks`,
+  // `attackPreview` et cette garde en lisent la même réponse.
+  if (!attack || !satisfiesCafeCost(player.active.energy, attack.cost)) return state;
 
   // Sieste et Immobilisation interdisent la Pression (D-033 §2, capture `07` :
   // « Les Pokémon Endormis ne peuvent ni attaquer ni battre en retraite. »). Le
@@ -1128,6 +1130,9 @@ export function attackPreview(state: BattleState, attackIndex: number): number {
   const card = getCard(player.active.cardId);
   const attack = isPlanque(card) ? card.attacks[attackIndex] : undefined;
   if (!attack) return 0;
+  // Un poste qui ne paye pas le coût **typé** n'attaque pas (D-037) : la prévisualisation
+  // lit la même décision que `legalAttacks` et `attack` (`satisfiesCafeCost`).
+  if (!satisfiesCafeCost(player.active.energy, attack.cost)) return 0;
   return attackDamage(player.active, opponent.active, attack, 'poste');
 }
 
@@ -1156,8 +1161,11 @@ export function legalAttacks(state: BattleState): Attack[] {
   const card = getCard(player.active.cardId);
   if (!isPlanque(card)) return [];
   if (hasStatus(player.active, 'SIESTE') || hasStatus(player.active, 'IMMOBILISATION')) return [];
-  // #89 (cadrage) : le paiement reste **au nombre** ; #90 le convertit au coût typé.
-  return card.attacks.filter((attack) => player.active && player.active.energy.length >= attack.cost.length);
+  // Le paiement suit le coût **typé** (D-037) : une seule fonction décide
+  // (`satisfiesCafeCost`) — `attack` et `attackPreview` lisent la même réponse.
+  return card.attacks.filter(
+    (attack) => player.active && satisfiesCafeCost(player.active.energy, attack.cost)
+  );
 }
 
 /** Les Planqués du camp, Poste et Rack, dans cet ordre. */

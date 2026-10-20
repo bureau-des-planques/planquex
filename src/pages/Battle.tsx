@@ -122,7 +122,8 @@ function MachinePips({ zone, cafeTypes }: { zone: CafeSymbol | null; cafeTypes: 
 interface ActionView {
   label: string;
   detail?: string;
-  cost?: number;
+  /** Le coût **typé** d'une Pression (D-037) : pastilles de `CafePips`, pas des points. */
+  cafes?: readonly CafeSymbol[];
   damage?: number;
   icon?: 'coffee' | 'swords';
 }
@@ -172,7 +173,7 @@ function describeAction(state: BattleState, action: BattleAction): ActionView {
       const entry = activeCard && isPlanque(activeCard) ? activeCard.attacks[action.attackIndex] : undefined;
       return {
         label: entry?.name ?? 'Pression',
-        cost: entry?.cost.length,
+        cafes: entry?.cost,
         damage: entry?.damage,
         icon: 'swords'
       };
@@ -214,7 +215,7 @@ function ActionButton({
       {view.icon === 'coffee' && <Coffee size={16} />}
       {view.icon === 'swords' && <Swords size={16} />}
       <span>{view.label}</span>
-      {view.cost !== undefined && <span className="pips">{'●'.repeat(view.cost) || '○'}</span>}
+      {view.cafes && <CafePips symbols={view.cafes} />}
       {view.damage !== undefined && <span className="attack__dmg">{view.damage}</span>}
       {view.detail && <span className="button__detail">{view.detail}</span>}
     </button>
@@ -557,7 +558,7 @@ export function Battle() {
                     ? 'Toutes tes Pressions sont à portée de café.'
                     : `Hors de portée du café : ${playerCard.attacks
                         .filter((entry) => !inReach.includes(entry))
-                        .map((entry) => `${entry.name} (${entry.cost.length} café${entry.cost.length > 1 ? 's' : ''})`)
+                        .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
                         .join(', ')}.`}
               </p>
             )}
