@@ -25,9 +25,9 @@
  * `AGENTS.md` §1.7 : pas de dépendance sans nécessité démontrée. Une table **courte et
  * choisie** de mutations, sur les invariants qui portent une **règle** (le café typé, la
  * rareté portée par le suffixe, la migration du store, la position du café, la table des
- * écarts), suffit à répondre à la question posée, se lit, et **site le ticket** de chaque
- * garde. Une couverture exhaustive (Stryker) reste une option documentée, à trancher par
- * décision si le besoin grandit.
+ * écarts, la payabilité d'une ligne d'évolution), suffit à répondre à la question posée,
+ * se lit, et **site le ticket** de chaque garde. Une couverture exhaustive (Stryker)
+ * reste une option documentée, à trancher par décision si le besoin grandit.
  *
  * ## Contrat
  *
@@ -112,7 +112,7 @@ export const MUTATIONS = [
     garde: 'sans fermeture, une régression de contenu (3 cartes 3◆ disparues) passe inaperçue'
   },
   {
-    ticket: 118,
+ticket: 118,
     titre: 'le nettoyage d’une mutation de la table globale ne restaure plus rien',
     fichier: 'src/game/cafe-type.test.ts',
     motif: 'for (const { id, original } of PATCHES.splice(0).reverse()) CARD_BY_ID.set(id, original);',
@@ -120,6 +120,15 @@ export const MUTATIONS = [
     tests: ['src/game/cafe-type.test.ts'],
     garde:
       'sans restauration, la carte patchée survit au test : le détecteur de `beforeEach` la nomme'
+  },
+  {
+    ticket: 116,
+    titre: 'une ligne d’évolution de l’Intérim réclame un quatrième type',
+    fichier: 'src/data/interim.ts',
+    motif: "cost: ['QVT', 'MANAGEMENT'],",
+    remplacement: "cost: ['QVT', 'AMELIORATION'],",
+    tests: ['src/data/interim.test.ts'],
+    garde: 'une ligne payable en 3 types au plus (D-034) redevient injouable en cours d’évolution'
   }
 ];
 

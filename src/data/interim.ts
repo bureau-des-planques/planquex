@@ -13,6 +13,12 @@ import { planqueBase } from './planque';
  * `CARD-SPEC.md` §1 (42 cartes en 3◆) prime, l'écart est signalé au ticket #63.
  * Seuil par stade/rareté et dégâts par café conformes à `CARD-SPEC.md` §2 (D-021,
  * D-023) ; COMEX `ex: true` en 4D, valant 2 Interventions (D-020).
+ *
+ * **Types de café (#116)** : `INTERIM` n'est pas un type produit, donc chaque Pression
+ * mêle **deux types produits distincts** (D-037 (3)). Une **ligne d'évolution** doit
+ * rester payable avec le plafond de **3 types** d'un Chariot (D-034, D-037 (4)) : chaque
+ * ligne garde donc **une paire stable**, et l'Entrant (`SSE`) est le troisième type.
+ * `interim.test.ts` le contrôle **par ligne**, pas carte par carte.
  */
 
 /** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
@@ -57,14 +63,14 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Site différent',
-        cost: ['QVT', 'AMELIORATION'],
+        cost: ['QVT', 'MANAGEMENT'],
         damage: 60,
         text: 'Échange ce Planqué avec un Planqué du Rack.',
         effects: [{ kind: 'switchSelf' }]
       },
       {
         name: 'Prime de précarité',
-        cost: ['AMELIORATION', 'AMELIORATION', 'RH'],
+        cost: ['QVT', 'QVT', 'MANAGEMENT'],
         damage: 100,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
@@ -85,14 +91,14 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Renfort express',
-        cost: ['RH', 'ATELIER'],
+        cost: ['MANAGEMENT', 'QVT'],
         damage: 70,
         text: 'Envoie 1 café du Planqué adverse au rebut.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       },
       {
         name: 'Prime de précarité',
-        cost: ['ATELIER', 'ATELIER', 'DIRECTION'],
+        cost: ['QVT', 'QVT', 'MANAGEMENT'],
         damage: 120,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
@@ -104,7 +110,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
 
   // Ligne 2 (vague 2, #86) : Intérimaire → Consultant intérimaire → Responsable
   // d’intérim. Le coût d'une Pression de l'Intérim mêle deux types produits
-  // distincts (D-037 (3)).
+  // distincts (D-037 (3)) ; cette ligne garde la paire `RH` + `ATELIER`, la ligne 1
+  // `MANAGEMENT` + `QVT` (#116 : trois types par ligne au plus, Entrant compris).
   base({
     id: 'interim-consultant-interimaire',
     evolvesFrom: 'interim-interimaire',
@@ -120,7 +127,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       oncePerTurn: true
     },
     attacks: [
-      { name: 'Mission d’appui', cost: ['MANAGEMENT', 'QVT'], damage: 50 },
+      { name: 'Mission d’appui', cost: ['RH', 'ATELIER'], damage: 50 },
       {
         name: 'Renvoi express',
         cost: ['RH', 'ATELIER', 'RH'],
@@ -142,7 +149,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Contrat-cadre',
-        cost: ['MANAGEMENT', 'QVT'],
+        cost: ['RH', 'ATELIER'],
         damage: 60,
         text: 'Pioche 1 carte.',
         effects: [{ kind: 'draw', amount: 1 }]

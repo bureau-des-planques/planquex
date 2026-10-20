@@ -17,7 +17,10 @@ import { describe, expect, it } from 'vitest';
 const LANCER = 'scripts/garde-fous.mjs';
 
 /** Les gardes attendues, une par invariant **critique** déjà pris en défaut dans le dépôt. */
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 101, 103, 118];
+// #116 (une ligne d'Intérim payable en 3 types) et #118 (le nettoyage des mutations de la
+// table globale) sont arrivés **en parallèle** : les deux entrées sont conservées, et la
+// liste est ce que `scripts/garde-fous.test.ts` compare — l'oublier ferait échouer `npm test`.
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 101, 103, 116, 118];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {

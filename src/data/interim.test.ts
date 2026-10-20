@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_INTERIM_CARDS, INTERIM_CARDS, INTERIM_VARIANTS } from '@/data/interim';
 import { ALL_CARDS, CARD_BY_ID, FACTION_META, getCard, isPlanque, vivierOf } from '@/data';
-import type { PlanqueCard } from '@/data/types';
+import { MAX_DECK_CAFE_TYPES } from '@/game/deck';
+import type { CafeSymbol, PlanqueCard } from '@/data/types';
 
 /**
  * Contrôles propres à la faction **Intérim** (code `INT`), ticket #22.
@@ -90,5 +91,111 @@ describe('Intérim — ligne et COMEX (D-020)', () => {
     for (const variant of INTERIM_VARIANTS.filter(isPlanque)) {
       expect(variant.ex, variant.id).toBeUndefined();
     }
+  });
+});
+
+/**
+ * Ticket **#116** : une **ligne d'évolution** doit rester payable avec les types de café
+ * d'un Chariot, donc avec **au plus `MAX_DECK_CAFE_TYPES`** symboles typés distincts
+ * (D-034, D-037 (4)). Le contrôle est **par ligne**, pas carte par carte : une ligne joue
+ * ses trois stades avec le même Chariot, et c'est l'union qui décide si le joueur peut
+ * évoluer sans perdre l'accès à ses Pressions.
+ *
+ * Le contrôle est un **prédicat nommé** (`typesExiges`, `pairesDeLigne`) pour qu'un test
+ * « le contrôle mord » puisse le confronter aux coûts d'avant le correctif — une assertion
+ * qui ne peut pas échouer ne garde rien (AGENTS.md §6, #112).
+ */
+const PLANQUES_INTERIM: PlanqueCard[] = ALL_INTERIM_CARDS.filter(isPlanque);
+
+/**
+ * Les **lignes d'évolution** de la faction : chaque chemin d'une racine (Entrant) à une
+ * feuille (une carte sans successeur). Le graphe en compte **trois** : la N+1
+ * `interim-interimaire-confirme` se ramifie vers le N+2 et vers le COMEX.
+ */
+function lignesDEvolution(cards: readonly PlanqueCard[]): PlanqueCard[][] {
+  const enfants = new Map<string, PlanqueCard[]>();
+  for (const card of cards) {
+    if (!card.evolvesFrom) continue;
+    enfants.set(card.evolvesFrom, [...(enfants.get(card.evolvesFrom) ?? []), card]);
+  }
+  const lignes: PlanqueCard[][] = [];
+  const descendre = (chemin: PlanqueCard[]): void => {
+    const suite = enfants.get(chemin[chemin.length - 1].id) ?? [];
+    if (suite.length === 0) {
+      lignes.push(chemin);
+      return;
+    }
+    for (const enfant of suite) descendre([...chemin, enfant]);
+  };
+  for (const card of cards.filter((entry) => !entry.evolvesFrom)) descendre([card]);
+  return lignes;
+}
+
+/** Les symboles **typés** exigés par une liste de coûts, sans doublon ni `INCOLORE`. */
+const typesExiges = (couts: readonly (readonly CafeSymbol[])[]): string[] =>
+  [...new Set(couts.flat())].filter((symbol) => symbol !== 'INCOLORE');
+
+/** Les types distincts qu'une ligne exige, **tous stades confondus**. */
+const typesDeLigne = (ligne: readonly PlanqueCard[]): string[] =>
+  typesExiges(ligne.flatMap((card) => card.attacks.map((attack) => attack.cost)));
+
+/**
+ * Les paires de types des Pressions à 2 cafés et plus, sur les stades **N+1 et N+2** :
+ * c'est là que D-037 (3) impose deux types produits distincts. Une ligne doit garder la
+ * **même** paire d'un stade à l'autre — sinon chaque évolution réclame un nouveau type.
+ */
+const pairesDeLigne = (ligne: readonly PlanqueCard[]): string[] =>
+  ligne
+    .filter((card) => card.stage !== 'ENTRANT')
+    .flatMap((card) => card.attacks)
+    .filter((attack) => attack.cost.length >= 2)
+    .map((attack) => typesExiges([attack.cost]).sort().join(' + '));
+
+describe('Intérim — lignes payables avec les types du Chariot (#116, D-034, D-037 (4))', () => {
+  const LIGNES = lignesDEvolution(PLANQUES_INTERIM);
+  const etiquette = (ligne: readonly PlanqueCard[]): string => ligne.map((card) => card.id).join(' → ');
+
+  it('décrit trois lignes : deux partagent la N+1, la troisième a sa propre N+1', () => {
+    expect(LIGNES).toHaveLength(3);
+    expect(new Set(LIGNES.map((ligne) => ligne[ligne.length - 1].id))).toEqual(
+      new Set([
+        'interim-chef-equipe-interimaire',
+        'interim-interimaire-legendaire-ex',
+        'interim-responsable-interim'
+      ])
+    );
+    expect(LIGNES.filter((ligne) => ligne[1]?.id === 'interim-interimaire-confirme')).toHaveLength(2);
+  });
+
+  it(`n’exige pas plus de ${MAX_DECK_CAFE_TYPES} types par ligne, tous stades confondus`, () => {
+    for (const ligne of LIGNES) {
+      const types = typesDeLigne(ligne);
+      expect(types.length, `${etiquette(ligne)} : ${types.join(', ')}`).toBeLessThanOrEqual(
+        MAX_DECK_CAFE_TYPES
+      );
+    }
+  });
+
+  it('garde la même paire de types du N+1 au N+2', () => {
+    for (const ligne of LIGNES) {
+      const paires = pairesDeLigne(ligne);
+      expect(paires.length, etiquette(ligne)).toBeGreaterThan(0);
+      for (const paire of paires) expect(paire.split(' + '), etiquette(ligne)).toHaveLength(2);
+      expect(new Set(paires).size, `${etiquette(ligne)} : ${paires.join(' | ')}`).toBe(1);
+    }
+  });
+
+  it('le contrôle mord : les coûts d’avant #116 (cinq types sur une ligne) sont refusés', () => {
+    // La ligne `interim-interimaire → …-confirme → …-chef-equipe-interimaire` avant le
+    // correctif : `SSE`, `MANAGEMENT`, `QVT`, `AMELIORATION` et `RH` — cinq types pour
+    // trois stades, donc aucun Chariot plafonné à trois ne peut payer la ligne entière.
+    const avant: CafeSymbol[][] = [
+      ['SSE'],
+      ['MANAGEMENT', 'QVT'],
+      ['QVT', 'AMELIORATION'],
+      ['AMELIORATION', 'AMELIORATION', 'RH']
+    ];
+    expect(typesExiges(avant)).toHaveLength(5);
+    expect(typesExiges(avant).length).toBeGreaterThan(MAX_DECK_CAFE_TYPES);
   });
 });
