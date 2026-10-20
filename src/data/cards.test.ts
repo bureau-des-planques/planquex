@@ -162,6 +162,72 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
   });
 });
 
+describe('Cartes — cibles par rareté (CARD-SPEC.md §1, ticket #103)', () => {
+  /** Les **bases** seules : les cibles de §1 portent sur elles, pas sur les variantes. */
+  const BASES = ALL_CARDS.filter((card) => !card.variantOf);
+  const bases = (rarity: RareteBase) => BASES.filter((card) => card.rarity === rarity).length;
+
+  it('ne range aucune base dans une rareté de variante', () => {
+    for (const card of BASES) {
+      expect(RARETES_BASES, card.id).toContain(card.rarity);
+    }
+  });
+
+  it('atteint chaque cible de rareté, à l’écart connu près', () => {
+    for (const rarity of RARETES_BASES) {
+      const cible = CIBLES_BASES[rarity];
+      const observe = bases(rarity);
+      const ecart = observe - cible;
+      const attendu = ECARTS_CONNUS[rarity] ?? 0;
+      expect(
+        ecart,
+        `rareté ${rarity} (${RARITY_META[rarity].label}) : ${observe} bases observées pour une cible de ${cible} — écart ${ecart >= 0 ? '+' : ''}${ecart}, attendu ${attendu >= 0 ? '+' : ''}${attendu}`
+      ).toBe(attendu);
+    }
+  });
+
+  it('affirme l’écart 1◆ et le referme avec #104', () => {
+    // Un écart connu qui ne se referme jamais est un test désarmé : quand la cible est
+    // atteinte, c'est cette assertion qui réclame le retrait de l'exception.
+    const ecart = bases('1D') - CIBLES_BASES['1D'];
+    if (ecart === 0) {
+      expect(ECARTS_CONNUS['1D'], 'la cible 1◆ est atteinte : retirer l’écart connu (#104)').toBeUndefined();
+    } else {
+      expect(ECARTS_CONNUS['1D'], `écart 1◆ non déclaré : ${ecart} base(s) d’écart`).toBe(ecart);
+    }
+  });
+});
+
+/**
+ * Cibles de structure des **cartes de base** — `docs/CARD-SPEC.md` §1, tableau « Raretés » :
+ *
+ * ```text
+ * | 1 diamant  | 102 |
+ * | 2 diamants |  67 |
+ * | 3 diamants |  42 |
+ * | 4 diamants |  15 |
+ * ```
+ *
+ * **Recopie assumée, la seule légitime** : ces nombres sont des **cibles normatives** du
+ * document, pas un décompte du code. L'observé, lui, se dérive d'`ALL_CARDS` ci-dessous —
+ * il reste la source unique de ce que le dépôt contient (`scripts/compteurs.test.ts`,
+ * ticket #36). Un test qui recopierait les deux côtés ne prouverait rien.
+ */
+const CIBLES_BASES = { '1D': 102, '2D': 67, '3D': 42, '4D': 15 } as const;
+type RareteBase = keyof typeof CIBLES_BASES;
+const RARETES_BASES = Object.keys(CIBLES_BASES) as RareteBase[];
+
+/**
+ * Écarts **constatés et suivis** : une entrée ici est une dette, pas une tolérance.
+ *
+ * `1D` : **101** bases pour **102** attendues. La carte manquante ne peut pas être écrite
+ * sans trancher les quotas par faction de `PROPOSITION.md` §4.3 — les dix factions sont à
+ * leur quota ou au-dessus (281 entrées pour 267). La décision est suivie par le ticket
+ * **#104** (`ready-for-human`). L'écart reste donc **affirmé**, et le test « referme
+ * l'écart 1◆ » réclame le retrait de cette exception dès que la carte arrive.
+ */
+const ECARTS_CONNUS: Partial<Record<RareteBase, number>> = { '1D': -1 };
+
 /**
  * Socle des raretés hautes — `CARD-SPEC.md` §1 et `AGENTS.md` §3.2.
  * Les cartes ci-dessous sont **synthétiques** et ne sont jamais enregistrées dans
