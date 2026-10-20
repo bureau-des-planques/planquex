@@ -95,7 +95,7 @@ faction est rangée dans **un vivier** — les trois zones du site (D-026).
 | Faction (code) | Étiquette | Type | Vulnérable à | Vivier | Carte signature |
 |---|---|---|---|---|---|
 | `SSE` | `SSE` | Plante | `MANAGEMENT` | Bureaux | Médecin du travail |
-| `MANAGEMENT` | `MGT` | Feu | `QVT` | Atelier | Chef des ventes |
+| `MANAGEMENT` | `MGT` | Feu | `QVT` | Atelier | Responsable d'unité |
 | `QVT` | `QVT` | Eau | `AMELIORATION` | Bureaux | Chief Happiness Officer |
 | `AMELIORATION` | `AC` | Électricité | `ATELIER` | Étage | Directeur qualité |
 | `RH` | `RH` | Psychique | `DIRECTION` | Bureaux | DRH |

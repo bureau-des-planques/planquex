@@ -79,16 +79,16 @@
   réunions d’urgence. Le feu, c’est la pression.
 - **Rôle** : dégâts, burn-out, défausse d’énergie, jeu agressif.
 - **Vulnérabilité** : QVT (le bien-être éteint la pression).
-- **Ligne d’évolution** : Jeune manager → Manager de proximité → Directeur général.
-- **COMEX (ex)** : **Chef des ventes** — « Il a dit “famille” dans un mail. »
+- **Ligne d’évolution** : Jeune manager → Manager de proximité → Responsable d’unité.
+- **COMEX (ex)** : **Responsable d’unité** — « Il a dit “famille” dans un mail. »
 
 | Carte | Stade | Rôle |
 |---|---|---|
 | Jeune manager | Entrant | Base, dégâts |
 | Chef de projet | Entrant | Base, tempo |
-| Responsable d’équipe | Entrant | Base, pression |
+| Animateur d’équipe | Entrant | Base, pression |
 | Manager de proximité | N+1 | Évolution, burn-out |
-| Directeur général | N+2 | Gros dégâts, contrôle |
+| Responsable d’unité | N+2 | Gros dégâts, contrôle |
 | Réunion d’urgence | Objet | Défausse une énergie |
 | Deadline hier | Objet | +20 dégâts |
 | Objectif irréaliste | Objet | Épuisement |
