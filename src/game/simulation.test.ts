@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCard, isBasic, isPlanque } from '@/data';
+import { getCard, isBasic } from '@/data';
 import { DECK_SIZE, deckLegal } from '@/game/deck';
 import {
   FACTION_ORDER,
