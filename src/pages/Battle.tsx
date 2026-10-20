@@ -188,6 +188,26 @@ function ActionButton({
   );
 }
 
+/**
+ * Le bandeau de fin dit **pourquoi** la partie s'arrête (#84) : le moteur pose la raison
+ * (`endReason`), l'écran ne la déduit plus du seul vainqueur.
+ */
+function endBanner(state: BattleState): string {
+  const won = state.winner === 'player';
+  switch (state.endReason) {
+    case 'interventions':
+      return won ? 'Victoire : 3 Interventions.' : 'Défaite : la Direction marque 3 Interventions.';
+    case 'plateauVide':
+      return won ? 'Victoire : la Direction n’a plus aucun Planqué.' : 'Défaite : tu n’as plus aucun Planqué.';
+    case 'forfait':
+      return won ? 'Victoire : la Direction déclare forfait.' : 'Défaite : tu as déclaré forfait.';
+    case 'limiteDeTours':
+      return 'Égalité : la limite de tours est atteinte.';
+    default:
+      return won ? 'Victoire.' : state.winner === 'ai' ? 'Défaite.' : 'Égalité.';
+  }
+}
+
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
 
@@ -302,11 +322,7 @@ export function Battle() {
 
       {state.phase === 'ended' && (
         <p className={`notice ${state.winner === 'player' ? 'notice--ok' : 'notice--warn'}`}>
-          {state.winner === 'player'
-            ? 'Victoire : 3 Interventions.'
-            : state.winner === 'ai'
-              ? 'Défaite : la Direction marque 3 Interventions.'
-              : 'Égalité : la limite de tours est atteinte.'}
+          {endBanner(state)}
         </p>
       )}
 

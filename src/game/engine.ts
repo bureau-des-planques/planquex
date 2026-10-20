@@ -253,6 +253,7 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
     },
     log: [],
     winner: null,
+    endReason: null,
     pendingPromotion: null,
     // Toute la suite de la partie tire de cet état : la graine devient la seule
     // source de hasard, et `Date.now()` n'en est que la valeur par défaut (UI).
@@ -700,6 +701,7 @@ function resolveEnd(state: BattleState) {
     // l'attaquant — faisait perdre l'attaquant.
     state.phase = 'ended';
     state.winner = playerOut ? (aiOut ? opponent : 'ai') : 'player';
+    state.endReason = 'plateauVide';
     state.log.push(`${state.winner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : plus aucun Planqué.`);
     return;
   }
@@ -712,6 +714,7 @@ function resolveEnd(state: BattleState) {
   if (pointsWinner) {
     state.phase = 'ended';
     state.winner = pointsWinner;
+    state.endReason = 'interventions';
     state.log.push(`${pointsWinner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Interventions.`);
     return;
   }
@@ -951,6 +954,7 @@ export function forfeit(state: BattleState, who: PlayerId): BattleState {
   const next = clone(state);
   next.phase = 'ended';
   next.winner = who === 'player' ? 'ai' : 'player';
+  next.endReason = 'forfait';
   // La relève en attente n'a plus d'objet : le plateau est figé.
   next.pendingPromotion = null;
   next.log.push(
@@ -978,6 +982,7 @@ export function endTurn(state: BattleState): BattleState {
   if (next.turn > TURN_LIMIT) {
     next.phase = 'ended';
     next.winner = null;
+    next.endReason = 'limiteDeTours';
     next.log.push(`Limite de partie : ${TURN_LIMIT} tours, égalité.`);
     return next;
   }

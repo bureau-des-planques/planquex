@@ -239,6 +239,9 @@ export type BattleAction =
   | { type: 'forfeit'; who: PlayerId }
   | { type: 'endTurn' };
 
+/** Les quatre façons dont une partie s'arrête (`AGENTS.md` §4, #84). */
+export type EndReason = 'interventions' | 'plateauVide' | 'forfait' | 'limiteDeTours';
+
 export interface BattleState {
   turn: number;
   current: PlayerId;
@@ -254,6 +257,13 @@ export interface BattleState {
   players: Record<PlayerId, PlayerState>;
   log: string[];
   winner: PlayerId | null;
+  /**
+   * **Pourquoi** la partie s'est arrêtée (#84) — `null` tant qu'elle vit. Posée par le
+   * moteur au moment où il la termine, pour que l'écran n'ait pas à la déduire du seul
+   * vainqueur : 3 Interventions, plus aucun Planqué en jeu (D-022), forfait (D-030),
+   * limite de tours (D-031).
+   */
+  endReason: EndReason | null;
   /**
    * Joueur dont le Poste vient de craquer et qui doit **choisir** sa relève
    * (AGENTS.md §4, D-031 : la relève est choisie par le camp dont le Planqué a
