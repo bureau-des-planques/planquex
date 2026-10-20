@@ -1,5 +1,5 @@
 import type { Card, PlanqueCard } from './types';
-import { planqueBase, secretVariant } from './planque';
+import { planqueBase } from './planque';
 
 /**
  * Faction **Intérim** (`INT`) — Dragon, vivier **Bureaux** (D-024, D-026).

@@ -188,7 +188,12 @@ export interface CardInstance {
   hp: number;
   maxHp: number;
   energy: number;
-  /** Conditions subies, dans l'ordre d'application de `STATUS_ORDER` (§4). */
+  /**
+   * Conditions subies, dans l'ordre d'application de `STATUS_ORDER` (§4).
+   * Seul le Planqué au **Poste** en porte, et la rotation comme l'évolution les
+   * purgent (D-030). Sieste, Immobilisation et Dérive s'excluent entre eux ;
+   * Surcharge et Épuisement se cumulent avec tout (`EXCLUSIVE_STATUSES`, `src/game/rules.ts`).
+   */
   statuses: Status[];
   playedTurn: number;
   evolvedTurn: number | null;
@@ -236,10 +241,11 @@ export interface BattleState {
   winner: PlayerId | null;
   /**
    * Joueur dont le Poste vient de craquer et qui doit **choisir** sa relève
-   * (AGENTS.md §4 : « le Rack choisit la relève »). Tant que ce champ est
-   * renseigné, aucune autre action n'est acceptée : il faut d'abord trancher.
-   * `null` quand rien n'est en attente, ou quand le joueur n'a plus de Rack
-   * (la partie est alors terminée).
+   * (AGENTS.md §4, D-031 : la relève est choisie par le camp dont le Planqué a
+   * craqué, et l'attaquant choisit en premier sur un double craquage). Tant que
+   * ce champ est renseigné, aucune autre action n'est acceptée : il faut d'abord
+   * trancher. `null` quand rien n'est en attente, ou quand le joueur n'a plus de
+   * Rack (la partie est alors terminée).
    */
   pendingPromotion: PlayerId | null;
   /**

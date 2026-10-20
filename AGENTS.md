@@ -133,20 +133,21 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Évolution | Impossible au premier tour de chaque joueur |
 | Seuil / Stress | le **Seuil** remplace le Moral ; les dégâts deviennent du **Stress** qui monte ; à `Stress ≥ Seuil`, le Planqué **craque** (D-026) |
 | Pression | **1 par tour** ; le café n'est **pas consommé** ; elle fait monter le **Stress** |
-| Vulnérabilité | **+20** — le ×2 n'existe que via un Lieu, hors périmètre (D-020) |
+| Ordre des dégâts | dégâts de la Pression → effets sur l'attaquant → **Vulnérabilité** → effets sur le défenseur (D-031) |
+| Vulnérabilité | **+20** — le ×2 n'existe que via un Lieu, hors périmètre (D-020) ; **ne s'applique pas au Rack** (D-031) |
 | Résistance | **Aucune** |
 | Rotation | Défausse autant de cafés que le coût de rotation |
 | Pioche vide | **Pas de défaite** |
-| Défaite | 3 Interventions pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) ; le **forfait** est une défaite quel que soit le score (D-030) |
-| Limite de tours | Atteinte, le combat se solde par une **égalité** (D-030) |
-| craquage | L'adversaire marque les Interventions ; le Rack fournit la **relève** |
-| Statuts | Surcharge (10 de Stress/tour), Épuisement (20 + lancer), Sieste (lancer), Immobilisation (1 tour), Dérive (lancer avant l'attaque) — **Surcharge et Épuisement se cumulent** ; **Sieste, Immobilisation et Dérive s'excluent** et se remplacent (D-030) |
+| Défaite | 3 Interventions pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) ; le **forfait** est une défaite quel que soit le score (D-030) ; à 3 Interventions sur l'action qui vide le plateau, la défaite l'emporte (D-031) |
+| Limite de partie | Atteinte, le combat se solde par une **égalité** (D-030, observé) ; **30 tours** en Échelon (PvP), **50** en solo (D-031 — nombre de source secondaire, non observé) |
+| craquage | L'adversaire marque les Interventions ; la **relève est choisie** par le joueur dont le Planqué a craqué (D-030) — l'attaquant choisit en premier après un double craquage (D-031) |
+| Statuts | Surcharge (10 de Stress/tour), Épuisement (20 + lancer), Sieste (lancer), Immobilisation (1 tour), Dérive (lancer avant l'attaque) — **Surcharge et Épuisement se cumulent** avec tout ; **Sieste, Immobilisation et Dérive s'excluent** et se remplacent (D-030) |
 | Statuts — portée | Seul le Planqué **au Poste** en porte ; la **Rotation** et l'**évolution** les purgent (D-030) |
 | Ordre des statuts | Surcharge → Épuisement → Sieste → Immobilisation |
 | Cartes Action | **Objet** (NEUF ou MRO) : illimité ; **Collègue** : **1 par tour** |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
 
-**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, COMEX = **2 Interventions**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. **État des preuves (20/10/2026)** : les « Astuces de jeu » ont été capturées — 9 écrans, `docs/preuves/astuces-2026-10-20/` — et **douze lignes de ce tableau passent à « observé »** (D-030). Restent non observés : le **plafond de 3 types de café**, la **main de départ à 5**, la règle du « slot occupé » et la **reprise de poste**. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources et verdicts : `docs/MIROIR-2026-DELTAS.md`.
+**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, COMEX = **2 Interventions**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. **État des preuves (20/10/2026)** : les « Astuces de jeu » ont été capturées — 9 écrans, `docs/preuves/astuces-2026-10-20/` — et **douze lignes de ce tableau passent à « observé »** (D-030). Restent non observés : le **plafond de 3 types de café**, la **main de départ à 5**, la règle du « slot occupé » et la **reprise de poste**. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources et verdicts : `docs/MIROIR-2026-DELTAS.md`. La revue de sources du même jour (`docs/preuves/regles-2026-10-20/`, D-032) recoupe ces lignes par une transcription datée et apporte les ajouts de **D-031** (ordre des dégâts, Vulnérabilité hors Rack, double craquage, nombre de tours).
 
 ### 4.1 Ce qui n'est pas la règle standard
 

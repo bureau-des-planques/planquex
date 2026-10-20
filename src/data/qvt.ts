@@ -24,7 +24,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Bulletin de bonheur', text: 'Une fois par tour : attache 1 café à un Planqué de ton Rack.', kind: 'attachEnergy', oncePerTurn: true },
+    ability: { name: 'Bulletin de bonheur', text: 'Une fois par tour : attache 1 café à ce Planqué.', kind: 'attachEnergy', oncePerTurn: true },
     attacks: [{ name: 'Afterwork', cost: 2, damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Le bonheur est un KPI comme un autre.'
   }),

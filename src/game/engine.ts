@@ -12,7 +12,7 @@ import type {
 import { deckLegal } from '@/game/deck';
 import { drawRandom, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
-import { RULES, STATUS_ORDER } from '@/game/rules';
+import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT } from '@/game/rules';
 
 let uidCounter = 0;
 
@@ -26,12 +26,15 @@ export function isFirstTurnFor(state: BattleState, who: PlayerId): boolean {
 }
 
 /**
- * Le **premier tour de la partie**, tenu par le joueur : ni pioche, ni attachement
- * de café (`AGENTS.md` §4). La Direction, elle, attache dès son premier tour (tour 2),
+ * Le **premier tour de la partie**, tenu par le joueur : aucun café ne s'y attache
+ * (`AGENTS.md` §4, D-030). La Direction, elle, attache dès son premier tour (tour 2),
  * c'est pourquoi ce n'est pas `isFirstTurnFor` qui sert ici.
  *
- * Une seule définition : `startTurn`, `attachEnergy` et `legalActions` lisent celle-ci,
- * sinon l'écran et le moteur finiraient par ne plus dire la même chose (#58).
+ * Le joueur **pioche**, en revanche : la ligne « le premier joueur ne pioche pas »
+ * venait du TCG **physique**, pas de Pocket (D-030). L'énergie est la seule exception.
+ *
+ * Une seule définition : `attachEnergy` et `legalActions` lisent celle-ci, sinon
+ * l'écran et le moteur finiraient par ne plus dire la même chose (#58).
  */
 function isOpeningTurn(state: BattleState): boolean {
   return state.turn === 1 && state.current === 'player';
@@ -154,12 +157,9 @@ function startTurn(state: BattleState) {
     if (card) card.damageReduction = 0;
   }
 
-  const isFirstPlayerFirstTurn = isOpeningTurn(state);
-  if (!isFirstPlayerFirstTurn) {
-    draw(state, state.current, 1);
-  } else {
-    state.log.push('Premier tour : tu ne pioches pas.');
-  }
+  // Le premier joueur pioche comme l'autre (D-030) : seule l'énergie est une
+  // exception à son premier tour, et elle se joue dans `attachEnergy`.
+  draw(state, state.current, 1);
 
   if (player.energyZone === 0) {
     player.energyZone = 1;
@@ -324,6 +324,10 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   if (!isPlanque(card) || player.active.energy < card.retreat) return state;
   player.active.energy -= card.retreat;
   const outgoing = player.active;
+  // Seul le Poste peut porter un statut (D-030) : le sortant les perd en rejoignant le
+  // Rack, et l'entrant n'en porte aucun. Sans ça, une Sieste continuait de peser sur
+  // une carte au Rack que `checkup` ne lit plus — un statut fantôme.
+  clearStatuses(outgoing);
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
@@ -354,15 +358,46 @@ export function useAbility(state: BattleState): BattleState {
   return next;
 }
 
-function attackDamage(attacker: CardInstance, defender: CardInstance, attack: Attack): number {
+/**
+ * Stress qu'une Pression inflige à un Planqué, selon l'emplacement où il se trouve.
+ *
+ * L'ordre du calcul est celui de D-031 (FAQ officielle) : les dégâts de la Pression,
+ * les effets qui affectent l'attaquant, la **Vulnérabilité**, puis les effets qui
+ * affectent le défenseur. Un seul plancher, à la dernière étape : une réduction ne doit
+ * pas être rognée à 0 avant que la Vulnérabilité ne s'ajoute.
+ *
+ * La **Vulnérabilité** vaut +20 **au Poste seulement** : un Planqué du Rack n'encaisse
+ * jamais la Vulnérabilité, même frappé par la même Pression (D-031). `slot` est donc
+ * obligatoire — un appelant qui ignore où se trouve sa cible ne compile pas.
+ */
+export function attackDamage(
+  attacker: CardInstance,
+  defender: CardInstance,
+  attack: Attack,
+  slot: 'poste' | 'rack'
+): number {
   const attackerCard = getCard(attacker.cardId);
   const defenderCard = getCard(defender.cardId);
   if (!isPlanque(attackerCard) || !isPlanque(defenderCard)) return 0;
-  const weakness = defenderCard.weakness === attackerCard.faction ? 20 : 0;
+
+  // 1. Les dégâts de la Pression.
+  let damage = attack.damage;
+
+  // 2. Les effets qui affectent l'attaquant. Aucune primitive du set ne modifie les
+  //    dégâts sortants aujourd'hui : c'est ici qu'un tel effet s'insérerait. La
+  //    `damageReduction` de l'attaquant n'en est pas un — c'est une défense, lue à
+  //    l'étape 4 quand ce Planqué est la cible.
+
+  // 3. La Vulnérabilité : +20, **au Poste seulement** (#70).
+  if (slot === 'poste' && defenderCard.weakness === attackerCard.faction) damage += 20;
+
+  // 4. Les effets qui affectent le défenseur : son Talent `reduceDamage`, puis la
+  //    réduction d'instance posée par une Pression, valable le tour adverse.
   const abilityReduction = defenderCard.ability?.kind === 'reduceDamage' ? defenderCard.ability.amount ?? 0 : 0;
-  // Réduction posée par un effet d'attaque (`reduceDamage`), valable le tour adverse.
-  const instanceReduction = defender.damageReduction ?? 0;
-  return Math.max(0, attack.damage + weakness - abilityReduction - instanceReduction);
+  damage -= abilityReduction;
+  damage -= defender.damageReduction ?? 0;
+
+  return Math.max(0, damage);
 }
 
 function hasStatus(card: CardInstance, status: Status): boolean {
@@ -373,13 +408,21 @@ function clearStatus(card: CardInstance, status: Status) {
   card.statuses = card.statuses.filter((entry) => entry !== status);
 }
 
-/** Une évolution, une rotation ou un changement de Poste remettent les conditions à zéro (§4). */
+/**
+ * Une évolution ou une rotation purgent les conditions (D-030 : seul le Planqué au
+ * **Poste** en porte ; retourner au Rack ou évoluer les efface).
+ */
 function clearStatuses(card: CardInstance) {
   card.statuses = [];
 }
 
 /** Ajoute une condition si elle n'y est pas déjà (on ne cumule pas deux Surcharges). */
 function applyStatus(target: CardInstance, status: Status) {
+  // Sieste, Immobilisation et Dérive s'excluent (D-030) : en appliquer une remplace
+  // les autres. Surcharge et Épuisement, eux, se cumulent avec tout.
+  if (EXCLUSIVE_STATUSES.includes(status)) {
+    target.statuses = target.statuses.filter((entry) => !EXCLUSIVE_STATUSES.includes(entry));
+  }
   if (!hasStatus(target, status)) target.statuses.push(status);
 }
 
@@ -504,7 +547,7 @@ export function canPlayAction(state: BattleState, uid: string): boolean {
 /**
  * Jouer une carte Action depuis la main : elle part au Rebut et son effet se résout.
  * Objet illimité, Collègue 1 par tour (`AGENTS.md` §4). Le premier joueur peut jouer un
- * Collègue à son premier tour — §4 ne l'en prive pas, contrairement à la pioche et au café.
+ * Collègue à son premier tour — §4 ne l'en prive pas, contrairement au café (D-030).
  */
 export function playAction(state: BattleState, uid: string): BattleState {
   if (!canPlayAction(state, uid)) return state;
@@ -525,6 +568,11 @@ export function playAction(state: BattleState, uid: string): BattleState {
   return next;
 }
 
+/**
+ * Applique **un** craquage : Interventions pour l'adversaire, carte au rebut, Poste
+ * vidé. Ne décide **pas** de la fin : c'est `resolveEnd` qui tranche, **après** tous
+ * les craquages de l'action (D-031).
+ */
 function knockOut(state: BattleState, attackerId: PlayerId) {
   const defenderId: PlayerId = attackerId === 'player' ? 'ai' : 'player';
   const defender = state.players[defenderId];
@@ -537,25 +585,70 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
   state.log.push(`${fallenCard?.name ?? 'Un Planqué'} craque : ${points} Intervention${points > 1 ? 's' : ''}.`);
   putInDiscard(defender, fallen);
   defender.active = null;
+}
 
-  if (state.players[attackerId].points >= 3) {
+/** Un camp a-t-il encore un Planqué en jeu ? Sans Planqué, il perd (D-022). */
+function hasPlanques(player: PlayerState): boolean {
+  return Boolean(player.active) || player.bench.some(Boolean);
+}
+
+/**
+ * Ouvre la relève d'un camp : `pendingPromotion` la retient, le message la montre.
+ * Le plateau porte la file — un Poste vide avec un Rack garni reste à pourvoir —
+ * donc un seul identifiant suffit, y compris après un double craquage (D-031).
+ */
+function awaitPromotion(state: BattleState, who: PlayerId) {
+  state.pendingPromotion = who;
+  state.log.push(who === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.');
+}
+
+/**
+ * Tranche la fin de partie, dans l'ordre de **D-031** :
+ *
+ * 1. le **plateau vide** — ce joueur perd « quel que soit le nombre de points »,
+ *    donc même s'il vient d'en marquer trois sur l'action qui vide le plateau ;
+ * 2. les **3 Interventions** ;
+ * 3. sinon, la relève du camp dont le Poste est vide reste à choisir.
+ *
+ * L'ordre compte : appelée après **tous** les craquages d'une action, cette fonction
+ * ne peut pas déclarer une victoire aux points qu'un craquage simultané dément.
+ */
+function resolveEnd(state: BattleState) {
+  const { player, ai } = state.players;
+  const playerOut = !hasPlanques(player);
+  const aiOut = !hasPlanques(ai);
+
+  if (playerOut || aiOut) {
+    const opponent: PlayerId = state.current === 'player' ? 'ai' : 'player';
+    // Si les deux plateaux sont vides sur la même action, D-031 ne tranche pas :
+    // le moteur garde son issue d'avant #72, où le dernier craquage — celui de
+    // l'attaquant — faisait perdre l'attaquant.
     state.phase = 'ended';
-    state.winner = attackerId;
-    state.log.push(`${attackerId === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Interventions.`);
+    state.winner = playerOut ? (aiOut ? opponent : 'ai') : 'player';
+    state.log.push(`${state.winner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : plus aucun Planqué.`);
     return;
   }
 
-  if (defender.bench.some(Boolean)) {
-    // §4 : c'est le joueur dont le Poste a craqué qui choisit sa relève. Le
-    // moteur ne choisit pas à sa place ; il attend `promoteActive`.
-    state.pendingPromotion = defenderId;
-    state.log.push(
-      defenderId === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.'
-    );
-  } else {
+  // À 3 Interventions des deux côtés sur la même action, on garde l'issue d'avant
+  // #72 : le dernier craquage (celui de l'attaquant) départage.
+  const last: PlayerId = state.current === 'player' ? 'ai' : 'player';
+  const pointsWinner =
+    state.players[last].points >= 3 ? last : state.players[state.current].points >= 3 ? state.current : null;
+  if (pointsWinner) {
     state.phase = 'ended';
-    state.winner = attackerId;
-    state.log.push(`${attackerId === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : plus aucun Planqué.`);
+    state.winner = pointsWinner;
+    state.log.push(`${pointsWinner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Interventions.`);
+    return;
+  }
+
+  // D-031 : sur un double craquage, **l'attaquant choisit en premier**, quel que
+  // soit le siège. `resolveEnd` est appelée dans le tour du camp qui a agi : en
+  // attaque comme en `checkup`, `state.current` est donc l'attaquant.
+  const emptyActives: PlayerId[] = [];
+  if (!player.active && player.bench.some(Boolean)) emptyActives.push('player');
+  if (!ai.active && ai.bench.some(Boolean)) emptyActives.push('ai');
+  if (emptyActives.length > 0) {
+    awaitPromotion(state, emptyActives.includes(state.current) ? state.current : emptyActives[0]);
   }
 }
 
@@ -576,6 +669,13 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
   player.active = { ...incoming, statuses: [] };
   next.pendingPromotion = null;
   next.log.push(`${who === 'player' ? 'Tu envoies' : 'L’IA envoie'} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
+
+  // Double craquage (D-031) : l'attaquant a choisi en premier, c'est au tour de
+  // l'autre camp. Le plateau porte la file — un Poste vide avec un Rack garni
+  // reste à pourvoir — donc aucun champ supplémentaire n'est nécessaire.
+  const opponent: PlayerId = who === 'player' ? 'ai' : 'player';
+  const other = next.players[opponent];
+  if (!other.active && other.bench.some(Boolean)) awaitPromotion(next, opponent);
   return next;
 }
 
@@ -643,10 +743,11 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
     player.active.hp -= 20;
     next.log.push('Dérive : l’attaque échoue, 20 de stress.');
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
+    resolveEnd(next);
     return next;
   }
 
-  const damage = attackDamage(player.active, opponent.active, attack);
+  const damage = attackDamage(player.active, opponent.active, attack, 'poste');
   opponent.active.hp -= damage;
   next.log.push(`${card.name} utilise ${attack.name} : ${damage} de stress.`);
   applyEffects(next, next.current, player.active, opponent.active, attack);
@@ -657,6 +758,9 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   if (player.active && player.active.hp <= 0) {
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
   }
+  // D-031 : les deux craquages de l'action sont appliqués **avant** de trancher ;
+  // un plateau vide l'emporte alors sur les Interventions gagnées dans la foulée.
+  resolveEnd(next);
   return next;
 }
 
@@ -665,8 +769,9 @@ function checkup(state: BattleState): BattleState {
   if (!player.active) return state;
 
   // Les conditions se résolvent **dans l'ordre de §4** (Surcharge → Épuisement →
-  // Sieste → Immobilisation), et un Planqué peut en subir plusieurs. Dérive n'est pas ici :
-  // elle se résout avant l'attaque.
+  // Sieste → Immobilisation). Un Planqué peut en subir plusieurs, sauf les trois
+  // exclusives qui ne vont pas ensemble (D-030). Dérive n'est pas ici : elle se
+  // résout avant l'attaque.
   for (const status of STATUS_ORDER) {
     if (!player.active || !hasStatus(player.active, status)) continue;
     if (status === 'SURCHARGE') {
@@ -692,6 +797,7 @@ function checkup(state: BattleState): BattleState {
 
   if (player.active && player.active.hp <= 0) {
     knockOut(state, state.current === 'player' ? 'ai' : 'player');
+    resolveEnd(state);
   }
   return state;
 }
@@ -709,6 +815,14 @@ export function endTurn(state: BattleState): BattleState {
 
   next.current = next.current === 'player' ? 'ai' : 'player';
   next.turn += 1;
+  // Limite de partie (D-031) : au-delà de `TURN_LIMIT`, égalité. La garde passe
+  // **avant** `startTurn` : le tour 31 ne commence jamais.
+  if (next.turn > TURN_LIMIT) {
+    next.phase = 'ended';
+    next.winner = null;
+    next.log.push(`Limite de partie : ${TURN_LIMIT} tours, égalité.`);
+    return next;
+  }
   startTurn(next);
   return next;
 }
@@ -754,7 +868,7 @@ export function attackPreview(state: BattleState, attackIndex: number): number {
   const card = getCard(player.active.cardId);
   const attack = isPlanque(card) ? card.attacks[attackIndex] : undefined;
   if (!attack) return 0;
-  return attackDamage(player.active, opponent.active, attack);
+  return attackDamage(player.active, opponent.active, attack, 'poste');
 }
 
 export function canEvolve(state: BattleState, handUid: string, targetUid: string): boolean {
@@ -849,7 +963,7 @@ export function legalActions(state: BattleState): BattleAction[] {
     if (isPlanque(card) && card.ability) actions.push({ type: 'ability' });
   }
 
-  // Café : 1 par tour, un par Planqué en jeu — et rien au premier tour (§4).
+  // Café : 1 par tour, un par Planqué en jeu — mais aucun attachement au premier tour (§4, D-030).
   if (!player.energyAttached && player.energyZone > 0 && !isOpeningTurn(state)) {
     for (const target of inPlay(player)) actions.push({ type: 'attachEnergy', targetUid: target.uid });
   }

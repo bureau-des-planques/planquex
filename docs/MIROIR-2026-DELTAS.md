@@ -64,6 +64,26 @@ Le troisième est le plus délicat : il **oppose une capture** à une source dé
 §1 (« Pokémon.com, guide de deck : 1 attachement par tour »). À trancher avant de toucher
 au moteur.
 
+**État** : les deux premiers sont **tranchés par D-030** et le moteur les applique depuis la
+fusion du 20/10/2026 ; le troisième reste ouvert (**O-014**). La revue de sources du même jour
+a ajouté les règles de **D-031** (Vulnérabilité hors Rack, ordre du calcul des dégâts, double
+craquage, nombre de tours).
+
+### Niveaux de preuve
+
+Toute affirmation d'audit sur ces lignes porte son **niveau de preuve** exact, jamais
+seulement « non vérifié » (terminologie de `docs/preuves/regles-2026-10-20/README.md` §0) :
+
+| Niveau | Ce que c'est | Exemple |
+|---|---|---|
+| **Primaire** | le texte du jeu lui-même | les captures des Astuces (`docs/preuves/astuces-2026-10-20/`) ; le masterdata du jeu |
+| **Transcription** | quelqu'un a recopié le texte du jeu et **le cite** | `deckgym-core` : « per the in-app Tips panel, transcribed 2026-09-08 » — chaque test cite la phrase qu'il applique |
+| **Secondaire** | un tiers décrit le jeu | wikis (Game8, GameWith, Bulbapedia), simulateurs, articles de presse |
+
+Les lignes encore non observées ne sont pas « sans source » : plusieurs ont des sources
+secondaires nommées (lot `docs/preuves/regles-2026-10-20/`). Elles sont **insourçables en
+primaire**, pas insourçables tout court.
+
 ### Pourquoi ces lignes n'étaient pas sourçables par URL
 
 Le jeu **ne publie pas de livre de règles web**. Le support officiel renvoie aux
@@ -112,7 +132,9 @@ types de café).
 **Primaire, capturée le 20/10/2026** — les « Astuces de jeu » de l'app, 9 écrans :
 `docs/preuves/astuces-2026-10-20/` (transcription mot pour mot dans son `README.md`).
 
-Primaires (éditeur, consultées le 19/10/2026) :
+**Lot de recherche complet** — `docs/preuves/regles-2026-10-20/` (ouvert le 20/10/2026 sur la branche `preuves/regles-2026-10-20`) : le verdict ligne par ligne, la transcription `deckgym-core`, et toutes les URL citées ci-dessous.
+
+Primaires (éditeur, consultées les 19 et 20/10/2026) :
 
 - FAQ gameplay officielle — <https://support.pokemon.com/hc/en-us/articles/30330309361172-Pok%C3%A9mon-TCG-Pocket-Gameplay-FAQ> (version FR : `…/hc/fr/articles/30330309361172-…`)
 - FAQ combat officielle — <https://support.pokemon.com/hc/en-us/articles/38906248102292-Pok%C3%A9mon-TCG-Pocket-Battle-Rules-FAQ>
@@ -121,6 +143,8 @@ Primaires (éditeur, consultées le 19/10/2026) :
 - Calcul des dégâts (Faiblesse) — <https://app-ptcgpt.pokemon-support.com/hc/en-us/articles/57286049312665>
 - Lettre aux producteurs, 15/10/2026 — <https://www.pokemon.com/us/news/read-the-pokemon-tcg-pocket-october-2026-producer-letter>
 - Comment jouer (site officiel JP) — <https://www.pokemontcgpocket.com/ja/howtoplay/battle/>
+- **Miroir web officiel de la FAQ détaillée** — <https://app-ptcgpt.pokemon-support.com/hc/fr/sections/53604902813209>
+- **Où trouver les règles (chemin in-app)** — <https://app-ptcgp.pokemon-support.com/hc/en-us/articles/61745874022553> → « Menu (bouton tout à droite en bas) > Astuces > À propos des règles de combat » et « > FAQ détaillée sur les combats »
 
 Fournies le 20/10/2026, **sans règle de base** (vérifié) :
 
@@ -132,13 +156,18 @@ Fournies le 20/10/2026, **sans règle de base** (vérifié) :
 
 Secondaires (wikis de fans, fiabilité décroissante, dont une page datée du
 26/09/2024 qui ignore les Méga ex) : Game8, GameWith, Pokémon-Zone, Bulbapedia.
-Le rapport complet, avec les verdicts ligne à ligne et les URL de ces sources,
-n'est pas dans le dépôt.
+
+Transcription (niveau 2, datée 2026-09-08) — `bcollazo/deckgym-core`, `tests/rules/*` :
+<https://github.com/bcollazo/deckgym-core/tree/main/tests/rules>
+
+Code du même moteur (niveau 3, mais vérifiable) — `src/state/mod.rs`, `src/deck.rs`,
+`src/hooks/core.rs`, `src/hooks/retreat.rs`, `src/move_generation/` :
+<https://github.com/bcollazo/deckgym-core/tree/main/src>
 
 ## 6. Prochaine action vérifiable
 
-1. **Trancher les trois écarts du §2** par une décision datée (le plus mûr : le premier
-   joueur pioche) — et **propager** la décision dans `AGENTS.md` §4 et le moteur.
+1. **Trancher O-014** (1 attachement de café par tour, ou autant qu'on veut) : c'est le seul
+   écart du §2 encore ouvert — D-030 a tranché les deux autres, et le moteur les applique.
 2. **Intégrer ou exclure** explicitement les écarts du §3 dans `AGENTS.md` §4 et
    `src/data/types.ts` (une décision datée par écart).
 3. **Capturer l'éditeur de deck** (plafond des 3 types de café) et, si possible, l'écran de

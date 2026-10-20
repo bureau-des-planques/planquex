@@ -12,12 +12,35 @@ export const RULES = {
 };
 
 /**
+ * Limite de partie (D-031) : **30 tours** en Échelon (PvP), puis **égalité**.
+ *
+ * Le solo s'arrête à **50** tours, mais il n'existe pas dans notre périmètre
+ * (`AGENTS.md` §4) et le moteur ne connaît **aucune notion de mode** : 50 est donc
+ * une valeur inatteignable aujourd'hui, notée ici pour le jour où un mode solo
+ * arrivera. Ne pas ajouter un champ `mode` que rien ne remplit (#59).
+ */
+export const TURN_LIMIT = 30;
+
+/**
  * Ordre de résolution des conditions en fin de tour (`AGENTS.md` §4) :
- * **Surcharge → Épuisement → Sieste → Immobilisation**. Un Planqué peut en subir plusieurs.
+ * **Surcharge → Épuisement → Sieste → Immobilisation**. Un Planqué peut en subir plusieurs,
+ * mais pas de toutes : voir `EXCLUSIVE_STATUSES` (D-030).
  *
  * `DERIVE` n'y figure pas : elle se résout **avant l'attaque** (§4), pas au checkup.
  */
 export const STATUS_ORDER: readonly Status[] = ['SURCHARGE', 'EPUISEMENT', 'SIESTE', 'IMMOBILISATION'];
+
+/**
+ * Les conditions qui s'**excluent** mutuellement (D-030) : **Sieste, Immobilisation,
+ * Dérive**. En appliquer une **remplace** les autres — « Asleep, Paralyzed, and
+ * Confused cannot stack with each other. If one of these Special Conditions is
+ * applied, it replaces any of the others. »
+ *
+ * Surcharge et Épuisement n'y sont pas : ils se cumulent **entre eux et avec tout**.
+ * `DERIVE` est ici alors qu'elle n'est pas dans `STATUS_ORDER` : l'ordre de résolution
+ * et l'exclusivité sont deux règles distinctes.
+ */
+export const EXCLUSIVE_STATUSES: readonly Status[] = ['SIESTE', 'IMMOBILISATION', 'DERIVE'];
 
 /**
  * Le café **incolore** satisfait n'importe quel coût typé (`AGENTS.md` §4). C'est le type

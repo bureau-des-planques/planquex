@@ -1,12 +1,13 @@
 # Preuves — captures qui rendent une règle « observée »
 
 Ce dossier reçoit les **preuves primaires** : des captures d'écran horodatées, faites
-dans l'application *Pokémon TCG Pocket* elle-même. Deux usages, deux dossiers :
+dans l'application *Pokémon TCG Pocket* elle-même. **Trois usages, trois dossiers** :
 
 | Dossier | Ce qu'il prouve | Protocole |
 |---|---|---|
 | `astuces-<AAAA-MM-JJ>/` | Les **règles** — les pages « Astuces du jeu ». Seul moyen de faire passer une ligne de `AGENTS.md` §4 de **supposé** à **observé** (O-012). | `docs/PROTOCOLE-ASTUCES.md` |
 | `ui-<AAAA-MM-JJ>/` | La **structure de l'interface** — la composition des écrans de l'application d'origine, pour relire les nôtres. | `docs/CAPTURES-UI.md` |
+| `regles-<AAAA-MM-JJ>/` | La **recherche documentaire** — verdict ligne par ligne contre `AGENTS.md` §4, avec citations exactes, niveaux de preuve (primaire / transcription / secondaire) et URL. **Ne contient pas de capture** : c'est un lot de recherche, qui peut ne contenir **aucune preuve primaire**, et doit alors le dire explicitement (§0 du README du lot). | `docs/preuves/regles-<date>/README.md` (modèle implicite : méthode §0, verdict §2, sources §5) |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
 
@@ -14,17 +15,20 @@ Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`
 
 ```
 preuves/
-└── astuces-<AAAA-MM-JJ>/
-    ├── README.md                    ← transcrit le jeu MOT POUR MOT
-    ├── 01-menu-astuces.png          le menu « Astuces »
-    ├── 02-regles-de-combat.png      les 7 sous-entrées de « À propos des règles de combat »
-    ├── 03-zones-de-combat.png
-    ├── 04-preparation-dun-combat.png
-    ├── 05-deroulement-dun-tour.png
-    ├── 06-ko-et-issue-dun-combat.png
-    ├── 07-controle-pokemon-etats-speciaux.png
-    ├── 08-tours-et-temps-imparti.png
-    └── 09-erreurs-de-connexion.png
+├── astuces-<AAAA-MM-JJ>/
+│   ├── README.md                    ← transcrit le jeu MOT POUR MOT
+│   ├── 01-menu-astuces.png          le menu « Astuces »
+│   ├── 02-regles-de-combat.png      les 7 sous-entrées de « À propos des règles de combat »
+│   ├── 03-zones-de-combat.png
+│   ├── 04-preparation-dun-combat.png
+│   ├── 05-deroulement-dun-tour.png
+│   ├── 06-ko-et-issue-dun-combat.png
+│   ├── 07-controle-pokemon-etats-speciaux.png
+│   ├── 08-tours-et-temps-imparti.png
+│   └── 09-erreurs-de-connexion.png
+└── regles-<AAAA-MM-JJ>/
+    ├── README.md                    ← verdict ligne par ligne, citations, niveaux de preuve
+    └── (rapports bruts optionnels : a-deckgym.md, b-donnees-fr.md, …)
 ```
 
 Un lot « ui » suit la même règle (`ui-<AAAA-MM-JJ>/`, avec `B01-accueil.png`…).

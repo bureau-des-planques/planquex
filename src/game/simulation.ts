@@ -227,7 +227,7 @@ function nextAction(state: BattleState): BattleAction | null {
     if (isPlanque(card) && card.ability) return { type: 'ability' };
   }
 
-  // Un café par tour, sur le Poste. Le premier tour du joueur en est privé (§4).
+  // Un café par tour, sur le Poste. Le premier tour du joueur en est privé (§4, D-030).
   const firstPlayerFirstTurn = state.turn === 1 && state.current === 'player';
   if (!player.energyAttached && player.energyZone > 0 && player.active && !firstPlayerFirstTurn) {
     return { type: 'attachEnergy', targetUid: player.active.uid };
