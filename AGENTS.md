@@ -129,20 +129,21 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Interventions | **3** pour gagner ; un craquage normal = 1, un COMEX = 2 |
 | Machine à café | **1 café généré par tour**, **1 attachement par tour** ; si le slot du haut est occupé, pas de nouveau café |
 | Types de café | Jusqu'à **3** par Chariot, ordre aléatoire ; l'incolore accepte tout — **hypothèse assumée**, non sourcée (D-022) |
-| Premier joueur | **Pioche** ; ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 (D-030) |
+| Premier joueur | **Tiré au sort** par un lancer de tampon (D-033) ; **pioche** ; ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 (D-030) |
 | Évolution | Impossible au premier tour de chaque joueur |
 | Seuil / Stress | le **Seuil** remplace le Moral ; les dégâts deviennent du **Stress** qui monte ; à `Stress ≥ Seuil`, le Planqué **craque** (D-026) |
-| Pression | **1 par tour** ; le café n'est **pas consommé** ; elle fait monter le **Stress** |
+| Pression | **1 par tour** ; le café n'est **pas consommé** ; elle fait monter le **Stress** ; elle **termine le tour** (D-033) |
 | Ordre des dégâts | dégâts de la Pression → effets sur l'attaquant → **Vulnérabilité** → effets sur le défenseur (D-031) |
 | Vulnérabilité | **+20** — le ×2 n'existe que via un Lieu, hors périmètre (D-020) ; **ne s'applique pas au Rack** (D-031) |
 | Résistance | **Aucune** |
-| Rotation | Défausse autant de cafés que le coût de rotation |
+| Rotation | Défausse autant de cafés que le coût de rotation ; **une fois par tour** ; **impossible** sous Sieste ou Immobilisation (D-033) |
 | Pioche vide | **Pas de défaite** |
 | Défaite | 3 Interventions pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) ; le **forfait** est une défaite quel que soit le score (D-030) ; à 3 Interventions sur l'action qui vide le plateau, la défaite l'emporte (D-031) |
 | Limite de partie | Atteinte, le combat se solde par une **égalité** (D-030, observé) ; **30 tours** en Échelon (PvP), **50** en solo (D-031 — nombre de source secondaire, non observé) |
 | craquage | L'adversaire marque les Interventions ; la **relève est choisie** par le joueur dont le Planqué a craqué (D-030) — l'attaquant choisit en premier après un double craquage (D-031) |
-| Statuts | Surcharge (10 de Stress/tour), Épuisement (20 + lancer), Sieste (lancer), Immobilisation (1 tour), Dérive (lancer avant l'attaque) — **Surcharge et Épuisement se cumulent** avec tout ; **Sieste, Immobilisation et Dérive s'excluent** et se remplacent (D-030) |
-| Statuts — portée | Seul le Planqué **au Poste** en porte ; la **Rotation** et l'**évolution** les purgent (D-030) |
+| Statuts | Surcharge (10 de Stress par Contrôle), Épuisement (20 + lancer), Sieste (ni Pression ni Rotation ; lancer au Contrôle), Immobilisation (ni Pression ni Rotation ; guérit au Contrôle qui suit le tour de son propriétaire), Dérive (lancer avant la Pression : sur un échec, la Pression n'est pas lancée et le tour prend fin, **sans Stress**) — **Surcharge et Épuisement se cumulent** avec tout ; **Sieste, Immobilisation et Dérive s'excluent** et se remplacent (D-030, D-033) |
+| Statuts — portée | Seul le Planqué **au Poste** en porte ; la **Rotation** et l'**évolution** les purgent (D-030), **ainsi que les effets d'attaque** qui le visent (D-033) |
+| Contrôle | Après **chaque** tour, les **deux** Postes sont contrôlés ; le joueur dont le tour vient de finir passe **d'abord** (D-033) |
 | Ordre des statuts | Surcharge → Épuisement → Sieste → Immobilisation |
 | Cartes Action | **Objet** (NEUF ou MRO) : illimité ; **Collègue** : **1 par tour** |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
