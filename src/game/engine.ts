@@ -11,7 +11,7 @@ import type {
   PlayerState,
   Status
 } from '@/data/types';
-import { deckCafeTypes, deckLegal } from '@/game/deck';
+import { deckLegal, resolveCafeTypes } from '@/game/deck';
 import { drawRandom, flipStamp, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
 import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT, satisfiesCafeCost } from '@/game/rules';
@@ -268,7 +268,22 @@ function assertDeckLegal(deck: string[], who: string) {
   if (!ok) throw new Error(`Chariot illégal (${who}) : ${reasons.join(' ')}`);
 }
 
-export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date.now()): BattleState {
+/**
+ * Les **types de café choisis** pour chaque camp (#91, D-037 (4)) : absents ou vides,
+ * la proposition automatique du Chariot s'applique (`resolveCafeTypes`). Le simulateur
+ * et l'écran de combat qui ne passent rien gardent donc le comportement d'avant.
+ */
+export interface BattleCafeTypes {
+  playerCafeTypes?: readonly CafeType[];
+  aiCafeTypes?: readonly CafeType[];
+}
+
+export function createBattle(
+  playerDeck: string[],
+  aiDeck: string[],
+  seed = Date.now(),
+  cafeTypes: BattleCafeTypes = {}
+): BattleState {
   assertDeckLegal(playerDeck, 'Toi');
   assertDeckLegal(aiDeck, 'la Direction');
   const state: BattleState = {
@@ -298,9 +313,10 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
   state.players.ai.deck = shuffle(deckInstances(aiDeck, 'a'), state);
 
   // Les types de café de chaque Chariot, dressés une fois (D-034) : la Machine
-  // d'un camp ne tire que dans les siens, jusqu'à 3 types (D-037 (4)).
-  state.players.player.cafeTypes = deckCafeTypes(playerDeck);
-  state.players.ai.cafeTypes = deckCafeTypes(aiDeck);
+  // d'un camp ne tire que dans les siens, jusqu'à 3 types (D-037 (4)). Le joueur
+  // peut les avoir choisis (#91) ; sans choix, la dérivation reste la proposition.
+  state.players.player.cafeTypes = resolveCafeTypes(playerDeck, cafeTypes.playerCafeTypes);
+  state.players.ai.cafeTypes = resolveCafeTypes(aiDeck, cafeTypes.aiCafeTypes);
 
   setupPlayer(state, 'player');
   setupPlayer(state, 'ai');
@@ -1078,6 +1094,8 @@ export function applyAction(state: BattleState, action: BattleAction): BattleSta
 /**
  * Reconstruit une partie depuis sa **graine** et son **journal d'actions**
  * (ticket #83) : même graine + mêmes actions = même partie (`PROPOSITION.md` §6.2).
+ * Les **types de café choisis** (#91) font partie de la mise en place comme les
+ * Chariots : un rejeu qui ne les redonne pas retomberait sur la dérivation.
  * Chaque action passe par `applyAction`, donc le rejeu journalise à son tour et
  * l'état final est **strictement égal** (`toEqual`) à l'original — à condition que
  * le journal soit celui d'une partie jouée **entièrement** via `applyAction`.
@@ -1086,9 +1104,10 @@ export function replayBattle(
   playerDeck: string[],
   aiDeck: string[],
   seed: number,
-  actions: readonly BattleAction[]
+  actions: readonly BattleAction[],
+  cafeTypes: BattleCafeTypes = {}
 ): BattleState {
-  let state = createBattle(playerDeck, aiDeck, seed);
+  let state = createBattle(playerDeck, aiDeck, seed, cafeTypes);
   for (const action of actions) state = applyAction(state, action);
   return state;
 }

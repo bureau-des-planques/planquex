@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
-import { attachEnergy, createBattle, endTurn } from '@/game/engine';
+import { applyAction, attachEnergy, createBattle, endTurn, replayBattle } from '@/game/engine';
 import { deckCafeTypes } from '@/game/deck';
-import type { BattleState } from '@/data/types';
+import type { BattleState, CafeType } from '@/data/types';
 
 /**
  * **Le café de la Machine à café a un type** (ticket #88/#89, D-034/D-037).
@@ -91,6 +91,51 @@ describe('Machine à café — les types du Chariot', () => {
 
     expect(after.players.player.energyZone).toBeNull();
     expect(after.players.player.active?.energy).toEqual([zone]);
+  });
+});
+
+/**
+ * **Le joueur choisit les types de café de son Chariot** (#91, D-037 (4)). Le choix
+ * traverse `createBattle` (4ᵉ argument) jusqu'à `PlayerState.cafeTypes`, et c'est
+ * cette liste-là que la Machine tire — pas la dérivation.
+ */
+describe('Machine à café — les types choisis par le joueur (#91)', () => {
+  it('dresse les types choisis pour le joueur, et la dérivation pour l’autre camp', () => {
+    const state = createBattle(DECK, DECK, SEED, { playerCafeTypes: ['RH'] });
+
+    expect(state.players.player.cafeTypes).toEqual(['RH']);
+    expect(state.players.ai.cafeTypes).toEqual(deckCafeTypes(DECK));
+  });
+
+  it('ne tire que dans les types choisis, même un type absent du Chariot', () => {
+    expect(deckCafeTypes(DECK)).not.toContain('RH');
+
+    for (let seed = 1; seed <= 12; seed += 1) {
+      const battle = createBattle(DECK, DECK, seed, { playerCafeTypes: ['RH'] });
+      const zone = endTurn(endTurn(battle)).players.player.energyZone;
+      expect(zone, `graine ${seed}`).toBe('RH');
+    }
+  });
+
+  it('refuse SUPPORT et INTERIM dans le choix : retombe sur la proposition', () => {
+    const forged = ['SUPPORT', 'INTERIM'] as unknown as CafeType[];
+    const state = createBattle(DECK, DECK, SEED, { playerCafeTypes: forged });
+
+    expect(state.players.player.cafeTypes).toEqual(deckCafeTypes(DECK));
+    expect(state.players.player.cafeTypes).not.toContain('SUPPORT');
+    expect(state.players.player.cafeTypes).not.toContain('INTERIM');
+  });
+
+  it('fait partie de la mise en place : le rejeu le reprend (ticket #83)', () => {
+    const chosen: CafeType[] = ['RH', 'QVT'];
+    let state = createBattle(DECK, DECK, SEED, { playerCafeTypes: chosen });
+    state = applyAction(state, { type: 'endTurn' });
+    state = applyAction(state, { type: 'endTurn' });
+
+    const replayed = replayBattle(DECK, DECK, state.seed, state.actionLog, {
+      playerCafeTypes: chosen
+    });
+    expect(replayed).toEqual(state);
   });
 });
 

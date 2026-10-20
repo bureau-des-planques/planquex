@@ -244,6 +244,8 @@ function endBanner(state: BattleState): string {
 
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
+  /** Les types de café choisis au Chariot (#91) : la Machine du joueur n'y tire que. */
+  const chosenCafeTypes = useStore((state) => state.cafeTypes);
 
   // Le chariot du joueur est utilisé s'il est légal, sinon on retombe sur un
   // chariot de test. Calculé une seule fois par rendu : `deckLegal` est appelé
@@ -251,7 +253,9 @@ export function Battle() {
   const playerDeck = useMemo(() => (deckLegal(storeDeck).ok ? storeDeck : testDeck()), [storeDeck]);
   const usedTestDeck = playerDeck !== storeDeck;
 
-  const [state, setState] = useState<BattleState>(() => createBattle(playerDeck, testDeck()));
+  const [state, setState] = useState<BattleState>(() =>
+    createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes })
+  );
 
   const player = state.players.player;
   const ai = state.players.ai;
@@ -329,8 +333,8 @@ export function Battle() {
   );
 
   const restart = useCallback(() => {
-    setState(createBattle(playerDeck, testDeck()));
-  }, [playerDeck]);
+    setState(createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }));
+  }, [playerDeck, chosenCafeTypes]);
 
   const rows = useMemo(
     () =>
