@@ -10,7 +10,7 @@
 Branche **`fusion/2026-10-20`**, partie de `main` (`45cc899`). **`main` n'est pas modifiée** :
 la fusion attend la validation de Bastien.
 
-## Commandes (sur `fusion/2026-10-20`, tête `8e7659e`)
+## Commandes (sur `fusion/2026-10-20`, après la revue pré-fusion)
 
 | Commande | Exit | Extrait |
 |---|---:|---|
@@ -50,6 +50,15 @@ la fusion attend la validation de Bastien.
    clone sur une partie finie, donc journalisé à tort (#83) ; le tirage du premier joueur écrit à
    la main, attrapé par le garde-fou de #82 (#81 × #82) ; deux tests d'évolution qui pouvaient
    passer sans rien vérifier (`return` silencieux) dans `premier-joueur.test.ts`.
+
+## Revue pré-fusion indépendante
+
+Auditeur en lecture seule (DeepSeek v4 pro, autre modèle que les codeurs), sur tout
+`git diff main...fusion/2026-10-20` : **0 bloquant**. Les 8 points de spec (D-030 à D-033)
+et leurs cas croisés sont vérifiés sans écart. Deux constats retenus et corrigés (le
+simulateur lit `isOpeningTurn` du moteur au lieu d'une copie, rapport `simulate` identique
+avant/après ; un commentaire sur l'entrant de la Rotation). Un constat **rejeté** : « D-033
+reste à valider » (`README.md`) est exact.
 
 ## À valider par Bastien
 
