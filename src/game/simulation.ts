@@ -287,7 +287,10 @@ function takeTurn(state: BattleState): BattleState {
   let next = state;
   for (let guard = 0; guard < 40; guard += 1) {
     const action = nextAction(next);
-    if (!action) break;
+    // D-030 : le forfait est une décision humaine. La politique du simulateur ne le
+    // construit jamais (`nextAction` ne l'énumère pas) ; cette garde le rend explicite,
+    // pour que la simulation ne s'abandonne pas même si `legalActions` l'offrait un jour.
+    if (!action || action.type === 'forfeit') break;
     const after = applyAction(next, action);
     if (after === next) break;
     next = after;
