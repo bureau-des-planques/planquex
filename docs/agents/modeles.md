@@ -70,14 +70,24 @@ donné ne se relit pas lui-même.
 `Thinking budget is not supported for this model`. Gemma 4 n'accepte que `#none`
 (essai raté le 20/10/2026).
 
-⚠️ **Quota du palier gratuit (mesuré le 20/10/2026)** : sur le fournisseur `google`, un
-`429` tombe sur `Quota exceeded … limit: 16000, model: gemma-4-26b` — des jetons d'entrée
-**par minute**, **par clé**. La cause n'est **pas** la taille de la tâche : une salve de
-**tentatives rapprochées** sature à elle seule le plafond (« Please retry in 58 s »). Donc :
-**une tentative par minute au maximum**, et un `429` se lit comme « réessaie plus tard », **pas**
-comme « le modèle ne sait pas faire ». Pour une relecture **large**, ne pas compter sur ce
-palier : prendre un maillon de la chaîne du benchmark, avec un modèle **différent de celui qui
-a implémenté** (jamais le même : un modèle ne se relit pas lui-même).
+⚠️ **Quota du palier gratuit (mesuré le 20/10/2026, six tentatives)** : sur le fournisseur
+`google`, un `429` tombe sur `Quota exceeded … limit: 16000, model: gemma-4-26b`, des jetons
+d'entrée **par minute et par clé**.
+
+Cause **structurelle**, pas conjoncturelle : dans ce dépôt, `AGENTS.md` est **injecté dans
+chaque requête** (~10–12 k jetons). **Une seule requête** consomme donc presque tout le
+plafond de 16 k/minute, et une relecture qui enchaîne plusieurs appels d'outils se fait
+couper dès le deuxième. Une analyse antérieure attribuait le `429` à une salve de
+tentatives : **c'était faux**, la cause est le contexte injecté.
+
+Conséquence : **Gemma 4 ne peut pas mener une relecture multi-étapes dans ce dépôt**.
+
+**Décision de Bastien (20/10/2026)** : Gemma 4 reste le relecteur pour des **contrôles
+ponctuels autoportants** (un extrait collé, une question fermée, aucun outil) ; les
+**relectures larges** passent sur un **autre** maillon gratuit de la chaîne du benchmark —
+`openrouter/thinkingmachines/inkling:free` (3/3 au benchmark) ou
+`openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` (3/3, plus lent) — **jamais** le modèle
+qui a implémenté.
 
 ## Protocole de commande pour un relecteur — à recopier dans le brief
 
