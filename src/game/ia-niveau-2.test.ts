@@ -13,7 +13,8 @@ import { factionDeck, simulate } from '@/game/simulation';
  * - le niveau 2 ne propose **jamais** une action illégale : il part de `legalActions` ;
  * - il ne joue **jamais** pour le camp `player` ;
  * - il est **déterministe par graine** : même graine → même partie ;
- * - il **bat le niveau 1**, mesuré par le simulateur (le chiffre est dans le test).
+ * - sa **mesure est consignée** telle qu'elle est : depuis #108, le niveau 2 n'est
+ *   plus devant le niveau 1 (le chiffre et la graine sont dans le test).
  */
 
 const PLAYER_DECK = factionDeck('SSE');
@@ -122,7 +123,7 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
   });
 
   it(
-    'bat le niveau 1 sur des parties seedées (mesuré par le simulateur)',
+    'consigne la mesure après #108 : le niveau 2 n’est plus devant le niveau 1',
     () => {
       const games = 100;
       const seed = 42;
@@ -136,14 +137,17 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
       const niveau1 =
         directionEnNiveau2.results.filter((result) => result.winner === 'player').length +
         joueurEnNiveau2.results.filter((result) => result.winner === 'ai').length;
+      const nulles = [...directionEnNiveau2.results, ...joueurEnNiveau2.results].filter(
+        (result) => result.winner === null
+      ).length;
 
-      // Le chiffre mesuré : 56 % de victoires pour le niveau 2 sur 1 000 parties
-      // (5 graines maîtresses). Sur cette graine et ce nombre de parties, il doit
-      // gagner — c'est la preuve que le niveau 2 vaut mieux que le niveau 1.
-      expect(niveau2, `niveau 2 : ${niveau2} victoires, niveau 1 : ${niveau1}`).toBeGreaterThan(
-        niveau1
-      );
-      expect(niveau2 + niveau1).toBeGreaterThanOrEqual(2 * games - 40);
+      // Mesure consignée le 20/10/2026, **après** la correction du ticket #108 : le
+      // niveau 2 perd 67 à 89 (44 nulles). Il gagnait avant (284 contre 205 sur 600
+      // parties), mais cette mesure comptait les cafés au nombre et #108 l'a invalidée.
+      // Ces chiffres sont la référence à battre : tant qu'un re-pesage mesuré ne les
+      // fait pas passer devant, le niveau 2 n'est **pas** démontré meilleur, et le
+      // niveau 1 reste le défaut (écran et simulateur).
+      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 67, niveau1: 89, nulles: 44 });
     },
     60000
   );
