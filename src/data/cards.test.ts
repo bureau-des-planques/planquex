@@ -11,7 +11,7 @@ import {
   isActionCard,
   isPlanque
 } from '@/data';
-import type { Card, CafeSymbol, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
+import type { ActionCard, Card, CafeSymbol, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
 import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
 import { secretSuffix } from '@/data/planque';
 import { damageBand, hpBand } from '@/game/curves';
@@ -575,6 +575,29 @@ describe('Cartes — unicité des noms (deck.ts compte par nom)', () => {
   });
 });
 
+/**
+ * Les raretés ouvertes à une **variante de Collègue** : les deux étoiles basses, les
+ * seules dont le suffixe d'id existe pour une Action (`actions.ts`). `3S` et `COU`
+ * reviennent aux variantes de **Planqués** — une Action ne les porte pas (#107).
+ */
+const RARETES_VARIANTE_ACTION: Rarity[] = ['1S', '2S'];
+
+/**
+ * Une variante d'Action est conforme quand sa **rareté** est ouverte aux Actions **et**
+ * que son id est exactement celui que cette rareté impose. Le suffixe est **dérivé** de
+ * la rareté (`SECRET_RARITY`, `planque.ts`) : les deux ne peuvent donc plus se
+ * contredire — c'est l'écart que le ticket #107 a corrigé, où la rareté autorisait
+ * `3S`/`COU` pendant que l'id restait borné à `-star`/`-star2`.
+ *
+ * Un prédicat nommé, et non des `expect` en ligne : le test « le contrôle mord » le
+ * confronte à une variante jetable, il ne se contente pas de relire les cartes réelles.
+ */
+const varianteActionConforme = (variant: ActionCard, sourceId: string): boolean => {
+  if (!RARETES_VARIANTE_ACTION.includes(variant.rarity)) return false;
+  const suffix = secretSuffix(variant.rarity);
+  return suffix !== undefined && variant.id === `${sourceId}-${suffix}`;
+};
+
 describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)', () => {
   it('compte 8 Collègues et 3 Objets au lancement, plus 8 variantes de Collègues (CARD-SPEC.md §1)', () => {
     expect(BASE_ACTIONS.filter((card) => card.kind === 'COLLEAGUE')).toHaveLength(8);
@@ -629,7 +652,9 @@ describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)',
       expect(source.variantOf, `${variant.id} : une variante de variante`).toBeUndefined();
       expect(seen.has(source.id), `${source.id} a plus d’une variante`).toBe(false);
       seen.add(source.id);
-      expect([`${source.id}-star`, `${source.id}-star2`], variant.id).toContain(variant.id);
+      // La rareté choisit le suffixe : une seule assertion dit les deux, donc une
+      // variante `3S`/`COU` ou un id qui contredit sa rareté est refusé (#107).
+      expect(varianteActionConforme(variant, source.id), `${variant.id} : ${variant.rarity} et suffixe`).toBe(true);
       expect(variant.kind, variant.id).toBe(source.kind);
       expect(variant.faction, variant.id).toBe(source.faction);
       expect(variant.name, variant.id).toBe(source.name);
@@ -639,11 +664,30 @@ describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)',
       expect(variant.flavor, variant.id).toBe(source.flavor);
       expect(variant.palette, variant.id).toBe(source.palette);
       expect(variant.glyph, variant.id).toBe(source.glyph);
-      expect(['1S', '2S', '3S', 'COU'], variant.id).toContain(variant.rarity);
     }
     // Une variante par Collègue de base, et aucune pour un Objet.
     expect(seen).toEqual(
       new Set(BASE_ACTIONS.filter((card) => card.kind === 'COLLEAGUE').map((card) => card.id))
     );
+  });
+
+  it('refuse `3S`/`COU` sur une Action, et un suffixe qui contredit la rareté : le contrôle mord', () => {
+    const source = ACTION_VARIANTS.find((card) => card.variantOf);
+    const baseId = source?.variantOf;
+    expect(baseId, 'aucune variante de Collègue pour éprouver le contrôle').toBeDefined();
+    if (!source || !baseId) return;
+    // La variante jetable : même carte, id et rareté paramétrés, jamais enregistrée.
+    const fn = (id: string, rarity: Rarity): ActionCard => ({ ...source, id, rarity });
+
+    // Ce que la règle ouvre : les deux étoiles basses, chacune avec son suffixe.
+    expect(varianteActionConforme(fn(`${baseId}-star`, '1S'), baseId), '1S / -star').toBe(true);
+    expect(varianteActionConforme(fn(`${baseId}-star2`, '2S'), baseId), '2S / -star2').toBe(true);
+    // Les paliers hauts sont ceux des Planqués : refusés, même au suffixe de leur rareté.
+    expect(varianteActionConforme(fn(`${baseId}-star3`, '3S'), baseId), '3S / -star3').toBe(false);
+    expect(varianteActionConforme(fn(`${baseId}-crown`, 'COU'), baseId), 'COU / -crown').toBe(false);
+    // La rareté choisit le suffixe : un `2S` déguisé en `-star` — l'écart du ticket #107 —
+    // et un `3S` au suffixe `-star` sont refusés eux aussi.
+    expect(varianteActionConforme(fn(`${baseId}-star`, '2S'), baseId), '2S / -star').toBe(false);
+    expect(varianteActionConforme(fn(`${baseId}-star`, '3S'), baseId), '3S / -star').toBe(false);
   });
 });
