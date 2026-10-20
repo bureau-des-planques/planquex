@@ -15,6 +15,30 @@ import { factionDeck, simulate } from '@/game/simulation';
  * - il est **déterministe par graine** : même graine → même partie ;
  * - sa **mesure est consignée** telle qu'elle est : depuis #108, le niveau 2 n'est
  *   plus devant le niveau 1 (le chiffre et la graine sont dans le test).
+ *
+ * **Protocole de mesure (#111), écrit ici pour être rejoué :**
+ *
+ * ```bash
+ * node scripts/simulate.mjs --games 60 --seed <S> --json --player-level 1 --ai-level 2
+ * node scripts/simulate.mjs --games 60 --seed <S> --json --player-level 2 --ai-level 1
+ * ```
+ *
+ * Le camp de niveau 2 est `ai` dans la première série, `player` dans la seconde ; on
+ * agrège `results[].winner` sur les deux (60 parties par siège et par graine).
+ *
+ * - **Entraînement** (recherche de poids) : graines `1, 7, 42, 11, 23`.
+ * - **Contrôle** (hors échantillon) : graines `99, 1234, 2024, 777, 31337`.
+ * - **Seuil d'adoption** : ≥ **55 %** des parties **décidées** *et* ≥ **1,15 ×** les
+ *   victoires du niveau 1. Un gain d'entraînement qui s'évapore au contrôle est du
+ *   bruit, et n'est pas adopté.
+ *
+ * **Modèle corrigé par #111** (bonus de fin de tour à poids propre, menace comptée
+ * une seule fois), poids par défaut, contrôle : 200 victoires du niveau 2, 257 du
+ * niveau 1, 143 nulles (43,76 %, ratio 0,778). **Meilleur candidat** du re-pesage
+ * (#111) : 252 / 214 / 134 au contrôle (54,08 %, ratio 1,178) et 267 / 228 / 105 à
+ * l'entraînement (53,94 %, ratio 1,171). Le ratio passe, le **taux de décidées ne
+ * passe pas** : aucun poids n'est adopté, les défauts restent ceux du modèle corrigé.
+ * Détail des 435 candidats explorés : `docs/IA-PESAGE-111.md`.
  */
 
 const PLAYER_DECK = factionDeck('SSE');
@@ -123,7 +147,7 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
   });
 
   it(
-    'consigne la mesure après #108 : le niveau 2 n’est plus devant le niveau 1',
+    'consigne la mesure après #111 : le niveau 2 n’est toujours pas devant le niveau 1',
     () => {
       const games = 100;
       const seed = 42;
@@ -141,13 +165,15 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
         (result) => result.winner === null
       ).length;
 
-      // Mesure consignée le 20/10/2026, **après** la correction du ticket #108 : le
-      // niveau 2 perd 67 à 89 (44 nulles). Il gagnait avant (284 contre 205 sur 600
-      // parties), mais cette mesure comptait les cafés au nombre et #108 l'a invalidée.
-      // Ces chiffres sont la référence à battre : tant qu'un re-pesage mesuré ne les
-      // fait pas passer devant, le niveau 2 n'est **pas** démontré meilleur, et le
-      // niveau 1 reste le défaut (écran et simulateur).
-      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 67, niveau1: 89, nulles: 44 });
+      // Mesure consignée le 21/10/2026, **après** la correction du modèle par #111 :
+      // le niveau 2 perd 70 à 87 (43 nulles) à la graine 42. Le modèle précédent
+      // (#108) donnait 67 / 89 / 44 ; il comptait la menace deux fois et son bonus de
+      // fin de tour lisait `hand`. Le re-pesage de #111 n'a **rien** adopté (aucun
+      // candidat n'atteint 55 % des décidées au contrôle). Ces chiffres sont la
+      // référence à battre : tant qu'un re-pesage mesuré ne les fait pas passer
+      // devant, le niveau 2 n'est **pas** démontré meilleur, et le niveau 1 reste le
+      // défaut (écran et simulateur).
+      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 70, niveau1: 87, nulles: 43 });
     },
     60000
   );
