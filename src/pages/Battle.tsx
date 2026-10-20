@@ -7,6 +7,15 @@ import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/en
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
 
 /**
  * Chariot de test, quand le chariot du joueur n'est pas encore valide : 8 cartes
@@ -283,6 +292,22 @@ export function Battle() {
     [ai, player]
   );
 
+  /**
+   * La légende des Conditions, rendue **deux fois** : dans la page, et dans le dialogue
+   * « Règles » (D-035, composant shadcn `dialog`). Une seule source de JSX, donc un
+   * libellé ajouté à `STATUS_META` apparaît dans les deux sans être recopié.
+   */
+  const conditionsLegend = (
+    <ul className="status-legend">
+      {STATUS_LIST.map((status) => (
+        <li key={status}>
+          <StatusBadge status={status} />
+          <span className="muted">{STATUS_META[status].description}</span>
+        </li>
+      ))}
+    </ul>
+  );
+
   return (
     <div className="page battle">
       <section className="section__head">
@@ -393,16 +418,19 @@ export function Battle() {
       <section className="section">
         <div className="section__head">
           <h2>Conditions</h2>
+          <Dialog>
+            <DialogTrigger render={<Button variant="outline" size="sm" />}>Règles</DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Conditions</DialogTitle>
+                <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
+              </DialogHeader>
+              {conditionsLegend}
+            </DialogContent>
+          </Dialog>
           <span className="muted">ce qu’un Planqué au Poste peut subir</span>
         </div>
-        <ul className="status-legend">
-          {STATUS_LIST.map((status) => (
-            <li key={status}>
-              <StatusBadge status={status} />
-              <span className="muted">{STATUS_META[status].description}</span>
-            </li>
-          ))}
-        </ul>
+        {conditionsLegend}
       </section>
 
       {state.pendingPromotion && (
