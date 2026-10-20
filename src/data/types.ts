@@ -218,9 +218,10 @@ export interface PlayerState {
   energyZone: CafeSymbol | null;
   /**
    * Les **types de café du Chariot** (D-034/D-037 (4), 1 à 3) : la seule liste d'où la
-   * Machine tire. Dressée une fois par `createBattle` à partir de `deckCafeTypes`
-   * (`@/game/deck`) ; le choix manuel du joueur viendra plus tard (#91). `SUPPORT`
-   * (Incolore) et `INTERIM` (Dragon) n'y figurent jamais (D-034).
+   * Machine tire. Dressée une fois par `createBattle` : le **choix du joueur** (#91)
+   * s'il existe, sinon la proposition dérivée du Chariot (`resolveCafeTypes`,
+   * `@/game/deck`). Dans les deux cas, `SUPPORT` (Incolore) et `INTERIM` (Dragon) n'y
+   * figurent jamais (D-034).
    */
   cafeTypes: CafeType[];
   points: number;

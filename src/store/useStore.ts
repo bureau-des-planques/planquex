@@ -1,24 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ALL_CARDS } from '@/data';
-import { deckCanAdd } from '@/game/deck';
+import { deckCanAdd, normalizeCafeTypes } from '@/game/deck';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
-import type { Card, Rarity } from '@/data/types';
+import type { Card, CafeType, Rarity } from '@/data/types';
 
 /** Clé de persistance. Source unique : `Settings.tsx` l'affiche, `persist` l'écrit. */
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **3** : sept variantes secrètes changent de suffixe
- * d'id en passant aux raretés hautes (ticket #87) — `owned` et `deck` portent des
- * ids, donc ces re-suffixages exigent un remappage. **2** : les ids de carte suivent
- * les noms (ticket #49) — même raison. **1** : ajout de `rng`, le générateur seedé
- * du store (ticket #29). Toute nouvelle version exige une branche dans
- * `migratePersisted` (`AGENTS.md` §6).
+ * Version de la forme persistée. **4** : le Chariot gagne ses **types de café
+ * choisis** (`cafeTypes`, ticket #91) — absents d'un état v3, ils valent `[]`,
+ * c'est-à-dire la proposition automatique. **3** : sept variantes secrètes changent
+ * de suffixe d'id en passant aux raretés hautes (ticket #87) — `owned` et `deck`
+ * portent des ids, donc ces re-suffixages exigent un remappage. **2** : les ids de
+ * carte suivent les noms (ticket #49) — même raison. **1** : ajout de `rng`, le
+ * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
+ * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 3;
+export const STORAGE_VERSION = 4;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -63,6 +65,14 @@ export interface AppState {
   name: string;
   owned: Record<string, number>;
   deck: string[];
+  /**
+   * Les **types de café choisis** pour le Chariot (1 à 3, D-037 (4), ticket #91) :
+   * `[]` = proposition automatique, dérivée des factions du Chariot. La liste est
+   * normalisée à l'écriture (`normalizeCafeTypes`) **et** à la lecture
+   * (`resolveCafeTypes`), donc un état trafiqué ne fait jamais produire `SUPPORT` ni
+   * `INTERIM`, ni plus de 3 types (D-034).
+   */
+  cafeTypes: CafeType[];
   packsOpened: number;
   reducedMotion: boolean;
   /**
@@ -78,9 +88,36 @@ export interface AppState {
   toggleDeck: (cardId: string) => void;
   setDeck: (deck: string[]) => void;
   clearDeck: () => void;
+  /** Remplace le choix de types de café ; une liste vide repasse en automatique. */
+  setCafeTypes: (types: CafeType[]) => void;
+  /** Coche/décoche un type de café ; plafonné à 3, `SUPPORT`/`INTERIM` ignorés. */
+  toggleCafeType: (type: CafeType) => void;
   reset: () => void;
   setName: (name: string) => void;
   setReducedMotion: (value: boolean) => void;
+}
+
+/**
+ * Les champs **persistés** (`AGENTS.md` §6) : l'état de jeu, jamais les actions (elles
+ * sont recréées par le store) ni un `BattleState`. Exporté pour être testé sans
+ * `localStorage` : le stockage de `persist` n'existe pas sous Node, donc le test lit
+ * cette fonction au lieu de passer par le middleware.
+ */
+export type PersistedState = Pick<
+  AppState,
+  'name' | 'owned' | 'deck' | 'cafeTypes' | 'packsOpened' | 'reducedMotion' | 'rng'
+>;
+
+export function partializeState(state: AppState): PersistedState {
+  return {
+    name: state.name,
+    owned: state.owned,
+    deck: state.deck,
+    cafeTypes: state.cafeTypes,
+    packsOpened: state.packsOpened,
+    reducedMotion: state.reducedMotion,
+    rng: state.rng
+  };
 }
 
 export const useStore = create<AppState>()(
@@ -89,6 +126,7 @@ export const useStore = create<AppState>()(
       name: 'Employé 404',
       owned: starterOwned(),
       deck: [],
+      cafeTypes: [],
       packsOpened: 0,
       reducedMotion: false,
       rng: seedRng(Date.now()),
@@ -130,11 +168,22 @@ export const useStore = create<AppState>()(
         else state.removeFromDeck(cardId);
       },
       setDeck: (deck) => set({ deck }),
-      clearDeck: () => set({ deck: [] }),
+      /** Un Chariot vide n'a plus de types de café : le choix repart en automatique. */
+      clearDeck: () => set({ deck: [], cafeTypes: [] }),
+      setCafeTypes: (types) => set({ cafeTypes: normalizeCafeTypes(types) }),
+      toggleCafeType: (type) => {
+        const current = get().cafeTypes;
+        const next = current.includes(type)
+          ? current.filter((entry) => entry !== type)
+          : [...current, type];
+        // La normalisation écarte `SUPPORT`/`INTERIM` et ignore un 4ᵉ type (#91).
+        set({ cafeTypes: normalizeCafeTypes(next) });
+      },
       reset: () =>
         set({
           owned: starterOwned(),
           deck: [],
+          cafeTypes: [],
           packsOpened: 0,
           name: 'Employé 404',
           // Un nouveau départ change la suite des Arrivages : sinon le premier
@@ -148,14 +197,7 @@ export const useStore = create<AppState>()(
       name: STORAGE_KEY,
       version: STORAGE_VERSION,
       migrate: (persisted, version) => migratePersisted(persisted, version) as AppState,
-      partialize: (state) => ({
-        name: state.name,
-        owned: state.owned,
-        deck: state.deck,
-        packsOpened: state.packsOpened,
-        reducedMotion: state.reducedMotion,
-        rng: state.rng
-      })
+      partialize: partializeState
     }
   )
 );
@@ -172,15 +214,21 @@ export const useStore = create<AppState>()(
  *
  * **v2 → v3** (#87) : les variantes re-raréfiées changent de suffixe d'id ; elles
  * passent par la même table, donc un état v2 encore porteur de l'ancien suffixe est
- * remappé comme un état v1. Les autres champs sont conservés tels quels (`persist`
- * fusionne ensuite avec l'état initial, qui porte les actions). `version` absent vaut
- * 0, comme le fait `persist`.
+ * remappé comme un état v1.
+ *
+ * **v3 → v4** (#91) : le Chariot gagne ses **types de café choisis**. Un état v3 n'en
+ * a pas : `[]` vaut « proposition automatique », donc la dérivation d'avant reste le
+ * défaut. Un choix trafiqué est normalisé au passage (ni `SUPPORT` ni `INTERIM`,
+ * 3 types au plus). Les autres champs sont conservés tels quels (`persist` fusionne
+ * ensuite avec l'état initial, qui porte les actions). `version` absent vaut 0, comme
+ * le fait `persist`.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
   const migrated = version < 3 ? withRenamedCardIds(state) : state;
   return {
     ...migrated,
+    cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now())
   };
 }
