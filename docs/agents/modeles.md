@@ -62,9 +62,22 @@ benchmark est la source de ce qui **tient**.
 
 ## Relecteurs — Gemma 4 (décision de Bastien, 20/10/2026)
 
-L'agent `auditeur` (relecture indépendante) emploie **`google/gemma-4-26b-a4b-it#thinking`**
+L'agent `auditeur` (relecture indépendante) emploie **`google/gemma-4-26b-a4b-it#none`**
 (fournisseur `google`, gratuit). Les **implémenteurs** restent sur le maillon 1 : un modèle
 donné ne se relit pas lui-même.
+
+⚠️ **Variante obligatoire** : passer `#thinking` fait **échouer le lancement** —
+`Thinking budget is not supported for this model`. Gemma 4 n'accepte que `#none`
+(essai raté le 20/10/2026).
+
+⚠️ **Quota du palier gratuit (mesuré le 20/10/2026)** : sur le fournisseur `google`, une
+relecture de ce dépôt échoue en `429` — `Quota exceeded … limit: 16000,
+model: gemma-4-26b` (jetons d'entrée **par minute**). Le contexte d'une relecture de dépôt
+(`AGENTS.md` pèse à lui seul ~10 k jetons, plus les fichiers lus) **dépasse ce plafond**.
+Conséquence pratique : Gemma 4 ne peut relire qu'un **diff borné** (un commit, un fichier),
+pas un dépôt entier en une passe. Pour une relecture large, prendre un maillon de la chaîne
+du benchmark avec un **modèle différent de celui qui a implémenté** (jamais le même : un
+modèle ne se relit pas lui-même).
 
 ## Protocole de commande pour un relecteur — à recopier dans le brief
 
