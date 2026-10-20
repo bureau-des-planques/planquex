@@ -112,7 +112,7 @@ export const MUTATIONS = [
     garde: 'sans fermeture, une régression de contenu (3 cartes 3◆ disparues) passe inaperçue'
   },
   {
-ticket: 118,
+    ticket: 118,
     titre: 'le nettoyage d’une mutation de la table globale ne restaure plus rien',
     fichier: 'src/game/cafe-type.test.ts',
     motif: 'for (const { id, original } of PATCHES.splice(0).reverse()) CARD_BY_ID.set(id, original);',
