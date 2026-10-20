@@ -32,9 +32,14 @@ export function isCafeType(type: unknown): type is CafeType {
  * sont écartés **même s'ils viennent d'un état trafiqué** — la Machine ne les produit
  * jamais (D-034). Une liste vide signifie « proposition automatique ».
  */
-export function normalizeCafeTypes(types: readonly unknown[] | undefined | null): CafeType[] {
+export function normalizeCafeTypes(types: unknown): CafeType[] {
+  // `Array.isArray` et **non** `types ?? []` : un `localStorage` modifié à la main peut
+  // porter un nombre ou un objet, qu'une boucle `for…of` refuse en levant une
+  // `TypeError` — **pendant la migration**, donc au chargement de l'application
+  // (relecture lourde de #91, Sonnet 5.5). On rend `[]` : la proposition automatique.
+  if (!Array.isArray(types)) return [];
   const kept: CafeType[] = [];
-  for (const type of types ?? []) {
+  for (const type of types) {
     if (!isCafeType(type) || kept.includes(type)) continue;
     kept.push(type);
     if (kept.length >= MAX_DECK_CAFE_TYPES) break;

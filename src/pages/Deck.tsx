@@ -13,6 +13,7 @@ import {
   deckLegal,
   MAX_COPIES_PER_NAME,
   MAX_DECK_CAFE_TYPES,
+  normalizeCafeTypes,
   resolveCafeTypes
 } from '@/game/deck';
 import { useStore } from '@/store/useStore';
@@ -23,7 +24,7 @@ export function Deck() {
   const {
     owned,
     deck,
-    cafeTypes: chosenCafeTypes,
+    cafeTypes: storedCafeTypes,
     addToDeck,
     removeFromDeck,
     setDeck,
@@ -33,6 +34,14 @@ export function Deck() {
     toggleCafeType
   } = useStore();
   const [selected, setSelected] = useState<Card | null>(null);
+
+  /**
+   * Le choix **normalisé**, lu ici et pas seul dans le moteur : l'écran est le dernier à
+   * lire la valeur brute du store, et un état trafiqué (`localStorage` modifié à la main)
+   * ferait planter `cafeLabel` sur `FACTION_META[d'une valeur inconnue]` — ou afficherait
+   * « SUP » pour un type que la Machine n'utilise pas (relecture lourde de #91).
+   */
+  const chosenCafeTypes = useMemo(() => normalizeCafeTypes(storedCafeTypes), [storedCafeTypes]);
 
   const legality = useMemo(() => deckLegal(deck), [deck]);
   const counts = useMemo(() => deckCounts(deck), [deck]);

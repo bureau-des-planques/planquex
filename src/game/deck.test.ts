@@ -235,4 +235,17 @@ describe('Types de café choisis — Chariot (#91)', () => {
   it('ignore une valeur qui n’est pas une faction', () => {
     expect(normalizeCafeTypes(['POKEMON', 42, null] as unknown as CafeType[])).toEqual([]);
   });
+
+  it('survit à un choix qui n’est même pas une liste', () => {
+    // Le cas d'un `localStorage` modifié à la main : `cafeTypes` peut y valoir n'importe
+    // quoi. Une boucle `for…of` sur un nombre ou un objet lève une `TypeError` **pendant la
+    // migration** — donc au chargement de l'application. La garde doit rendre `[]` sans
+    // lever (relecture lourde de #91, Sonnet 5.5).
+    for (const forged of [42, {}, 'SSE', true, undefined, null]) {
+      expect(() => normalizeCafeTypes(forged), JSON.stringify(forged)).not.toThrow();
+      expect(normalizeCafeTypes(forged), JSON.stringify(forged)).toEqual([]);
+    }
+    // …et un choix valide traverse toujours.
+    expect(normalizeCafeTypes(['SSE', 'RH'])).toEqual(['SSE', 'RH']);
+  });
 });
