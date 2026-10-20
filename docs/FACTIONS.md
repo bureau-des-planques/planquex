@@ -16,7 +16,7 @@
 | # | Type | Faction | Rôle mécanique | Vulnérabilité | Carte signature |
 |---|---|---|---|---|---|
 | 1 | Plante | **SSE** | Soin, statuts, résilience | Management | Médecin du travail |
-| 2 | Feu | **Management** | Dégâts, burn-out, pression | QVT | Chef des ventes |
+| 2 | Feu | **Management** | Dégâts, burn-out, pression | QVT | Responsable d’unité |
 | 3 | Eau | **QVT** | Énergie, relève, flux | Amélioration continue | Chief Happiness Officer |
 | 4 | Électricité | **Amélioration continue** | Dégâts étalés, gel, tempo | Atelier | Directeur qualité |
 | 5 | Psychique | **RH** | Dérive, Rack, manipulation | Direction | DRH |
@@ -96,7 +96,7 @@
 | Entretien annuel | Collègue | Défausse + pioche |
 | Bureau partagé | Lieu | +10 dégâts aux attaques Feu |
 | Prime variable | Objet | Pioche / défausse |
-| **COMEX : Chef des ventes** | ex | 2 Interventions, attaque de zone |
+| **COMEX : Responsable d’unité** | ex | 2 Interventions, attaque de zone |
 
 - **Direction artistique** : orange, rouge, cravates, tableaux de bord, néons.
 
