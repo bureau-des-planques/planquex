@@ -14,22 +14,50 @@ Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`
 
 ```
 preuves/
-├── astuces-<AAAA-MM-JJ>/
-│   ├── README.md          ← à remplir (modèle ci-dessous)
-│   ├── 01-menu-astuces.png
-│   ├── 02-tour.png
-│   ├── 03-zone-energie.png
-│   ├── 04-statuts.png
-│   ├── 05-ko-defaite.png
-│   └── 06-types-energie.png
-└── ui-<AAAA-MM-JJ>/
-    ├── README.md
-    ├── B01-accueil.png
-    └── C01-titre.png
+└── astuces-<AAAA-MM-JJ>/
+    ├── README.md                    ← transcrit le jeu MOT POUR MOT
+    ├── 01-menu-astuces.png          le menu « Astuces »
+    ├── 02-regles-de-combat.png      les 7 sous-entrées de « À propos des règles de combat »
+    ├── 03-zones-de-combat.png
+    ├── 04-preparation-dun-combat.png
+    ├── 05-deroulement-dun-tour.png
+    ├── 06-ko-et-issue-dun-combat.png
+    ├── 07-controle-pokemon-etats-speciaux.png
+    ├── 08-tours-et-temps-imparti.png
+    └── 09-erreurs-de-connexion.png
 ```
+
+Un lot « ui » suit la même règle (`ui-<AAAA-MM-JJ>/`, avec `B01-accueil.png`…).
+
+**Les noms suivent les écrans réels de l'app**, pas la liste du protocole : le protocole
+visait 6 captures, l'app en a **9**. Un fichier = un écran, numéroté dans l'ordre du menu.
 
 Une date par lot, un dossier par lot. **Ne pas écraser un lot précédent** : une preuve
 datée ne se remplace pas, elle se complète.
+
+### Lire une capture de l'app
+
+Les écrans de règles font jusqu'à **8 600 px de haut**. Rendues entières, elles sont
+**illisibles** — et une capture illisible n'est pas une preuve. Il faut les **découper en
+tranches d'environ 1 500 px** avant de transcrire, sinon on paraphrase de mémoire :
+
+```bash
+python3 - <<'PY'
+from PIL import Image; import glob, math, os
+for p in sorted(glob.glob("*.png")):
+    im = Image.open(p).convert("RGB"); W, H = im.size
+    n = max(1, math.ceil(H / 1500)); h = math.ceil(H / n)
+    for i in range(n):
+        im.crop((0, i*h, W, min(H, i*h+h))).save(f"/tmp/crops/{os.path.splitext(p)[0]}__{i+1}sur{n}.png")
+PY
+```
+
+## État au 20/10/2026
+
+Le lot `astuces-2026-10-20/` est **rangé et transcrit** : **12 lignes** de `AGENTS.md` §4
+sont passées de « supposé » à **observé**, et **2 ont été corrigées** (D-030). Restent à
+capturer : l'**écran d'édition du deck** (le plafond des types d'Énergie — il débloque le
+ticket #30), la **main de départ** (son nombre de cartes), et un **test en jeu** pour O-014.
 
 ## Attention — les captures du legacy ne sont PAS des preuves
 
@@ -54,28 +82,32 @@ Conséquence, à ne pas confondre :
 
 ## Modèle de README — lot « astuces »
 
+Le modèle **rempli** est `astuces-2026-10-20/README.md` : c'est lui qu'il faut copier, pas
+un squelette vide. Ce qu'il doit contenir :
+
 ```markdown
 # Astuces de jeu — capturé le <AAAA-MM-JJ>
 
 - **Application** : Pokémon TCG Pocket, version <x.y.z>
 - **Appareil** : <modèle>, <OS et version>
 - **Langue de l'interface** : <français / anglais / japonais / autre>
-- **Note sur les intitulés** : <les libellés réels diffèrent-ils de ceux que le
-  protocole listait ? lesquels, et comment ? >
+- **Chemin** : menu du bas → « Astuces » → « À propos des règles de combat »
 
-| Fichier | Ce qu'on y voit — **formulation exacte du jeu** | Ligne de `AGENTS.md` §4 concernée | Confirme ou contredit |
-|---|---|---|---|
-| `01-menu-astuces.png` | <recopier l'intitulé réel de l'entrée> | — | — |
-| `02-tour.png` | <recopier la phrase du jeu> | Premier joueur · Pression | à remplir |
-| `03-zone-energie.png` | <recopier> | Machine à café · Types de café | à remplir |
-| `04-statuts.png` | <recopier, **et l'ordre**> | Statuts · Ordre des statuts | à remplir |
-| `05-ko-defaite.png` | <recopier> | Défaite · craquage · relève | à remplir |
-| `06-types-energie.png` | <recopier, **et le nombre d'emplacements**> | Types de café (plafond) | à remplir |
+## Les entrées réelles du menu
+<la liste des sous-entrées, dans l'ordre affiché par l'app>
 
-## Ce qui reste non observé après ce lot
+## Transcription, page par page
+<une section par fichier, avec le texte du jeu RECOPIÉ, pas résumé>
 
-<les lignes de §4 qui n'ont pas de capture, et pourquoi : page absente, intitulé
-introuvable, question hors des Astuces…>
+## Verdict, ligne par ligne contre `AGENTS.md` §4
+| Ligne de §4 | Capture | Verdict |
+|---|---|---|
+| <la règle> | `05` | ✅ observé / ⚠️ §4 est faux / ❔ non observé |
+
+## Règles absentes de §4 et désormais observées
+## Vocabulaire relevé dans l'app
+## Sources web complémentaires
+## Reste à capturer
 ```
 
 ## Modèle de README — lot « ui »
