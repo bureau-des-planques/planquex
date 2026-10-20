@@ -70,14 +70,14 @@ donné ne se relit pas lui-même.
 `Thinking budget is not supported for this model`. Gemma 4 n'accepte que `#none`
 (essai raté le 20/10/2026).
 
-⚠️ **Quota du palier gratuit (mesuré le 20/10/2026)** : sur le fournisseur `google`, une
-relecture de ce dépôt échoue en `429` — `Quota exceeded … limit: 16000,
-model: gemma-4-26b` (jetons d'entrée **par minute**). Le contexte d'une relecture de dépôt
-(`AGENTS.md` pèse à lui seul ~10 k jetons, plus les fichiers lus) **dépasse ce plafond**.
-Conséquence pratique : Gemma 4 ne peut relire qu'un **diff borné** (un commit, un fichier),
-pas un dépôt entier en une passe. Pour une relecture large, prendre un maillon de la chaîne
-du benchmark avec un **modèle différent de celui qui a implémenté** (jamais le même : un
-modèle ne se relit pas lui-même).
+⚠️ **Quota du palier gratuit (mesuré le 20/10/2026)** : sur le fournisseur `google`, un
+`429` tombe sur `Quota exceeded … limit: 16000, model: gemma-4-26b` — des jetons d'entrée
+**par minute**, **par clé**. La cause n'est **pas** la taille de la tâche : une salve de
+**tentatives rapprochées** sature à elle seule le plafond (« Please retry in 58 s »). Donc :
+**une tentative par minute au maximum**, et un `429` se lit comme « réessaie plus tard », **pas**
+comme « le modèle ne sait pas faire ». Pour une relecture **large**, ne pas compter sur ce
+palier : prendre un maillon de la chaîne du benchmark, avec un modèle **différent de celui qui
+a implémenté** (jamais le même : un modèle ne se relit pas lui-même).
 
 ## Protocole de commande pour un relecteur — à recopier dans le brief
 
