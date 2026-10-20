@@ -113,6 +113,25 @@ la bande des COMEX n'est pas celle des N+1.)*
 - Une carte ex vaut 2 Interventions ; elle doit être plus forte, mais pas auto-include. Il n'existe **pas** de palier à 3 Interventions : la Méga-Évolution est hors périmètre (D-020).
 - La **Vulnérabilité** ajoute +20 ; l'**Intérim** n'a pas de vulnérabilité.
 
+### Le coût en café — forme et attribution (D-037)
+
+Le coût d'une Pression est une **liste de symboles**. Un symbole est un **type de faction**
+(`SSE`, `MANAGEMENT`, …) ou **`INCOLORE`** — qui n'est **pas** `SUPPORT`. Le nombre total de
+symboles = l'ancien coût numérique ; les bandes de dégâts de D-021 ne bougent pas.
+
+| Règle | Valeur |
+|---|---|
+| Symbole **typé** | exige un café de **ce type** |
+| Symbole **incolore** | accepte **n'importe quel** café |
+| Café **incolore** (jamais produit, D-034) | satisfait n'importe quel **coût typé** |
+| Planqué typé | **≥ 1 café de son type** par Pression, le reste incolore |
+| `SUPPORT` | uniquement des coûts **incolores** |
+| `INTERIM` | **deux types produits distincts** par Pression |
+| Chariot | **1 à 3 types** choisis (proposition automatique) ; ni `SUPPORT` ni `INTERIM` |
+
+Le moteur lit cette forme seule après #35. `cafeSatisfies` gère les deux sens : un café
+incolore paie un coût typé, un symbole incolore accepte tout café.
+
 ---
 
 ## 3. Archétypes par faction
