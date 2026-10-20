@@ -110,6 +110,16 @@ export const MUTATIONS = [
     remplacement: "  '1D': { ecart: -1, ticket: 104 },\n  '3D': { ecart: -1, ticket: 999 }",
     tests: ['src/data/cards.test.ts'],
     garde: 'sans fermeture, une régression de contenu (3 cartes 3◆ disparues) passe inaperçue'
+  },
+  {
+    ticket: 113,
+    titre: 'le simulateur repasse par la dérivation des types de café',
+    fichier: 'src/game/simulation.ts',
+    motif: 'playerCafeTypes: cafeTypes.get(player),',
+    remplacement: 'playerCafeTypes: undefined,',
+    tests: ['src/game/simulation.test.ts'],
+    garde:
+      'sans le choix explicite, le Chariot SUPPORT ne produit aucun café et ne lance aucune Pression : la mesure du niveau 2 est biaisée'
   }
 ];
 

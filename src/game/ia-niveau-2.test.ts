@@ -13,8 +13,9 @@ import { factionDeck, simulate } from '@/game/simulation';
  * - le niveau 2 ne propose **jamais** une action illégale : il part de `legalActions` ;
  * - il ne joue **jamais** pour le camp `player` ;
  * - il est **déterministe par graine** : même graine → même partie ;
- * - sa **mesure est consignée** telle qu'elle est : depuis #108, le niveau 2 n'est
- *   plus devant le niveau 1 (le chiffre et la graine sont dans le test).
+ * - sa **mesure est consignée** telle qu'elle est : le niveau 2 n'est **toujours pas**
+ *   devant le niveau 1 (le chiffre, la graine et la commande sont dans le test), et la
+ *   mesure a été refaite après #113 (Chariots `SUPPORT`/`INTERIM` armés).
  */
 
 const PLAYER_DECK = factionDeck('SSE');
@@ -141,13 +142,15 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
         (result) => result.winner === null
       ).length;
 
-      // Mesure consignée le 20/10/2026, **après** la correction du ticket #108 : le
-      // niveau 2 perd 67 à 89 (44 nulles). Il gagnait avant (284 contre 205 sur 600
-      // parties), mais cette mesure comptait les cafés au nombre et #108 l'a invalidée.
-      // Ces chiffres sont la référence à battre : tant qu'un re-pesage mesuré ne les
-      // fait pas passer devant, le niveau 2 n'est **pas** démontré meilleur, et le
-      // niveau 1 reste le défaut (écran et simulateur).
-      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 67, niveau1: 89, nulles: 44 });
+      // Mesure consignée le 21/10/2026, **après** le ticket #113 : les Chariots
+      // `SUPPORT` et `INTERIM` du simulateur sont désormais **armés** (types de café
+      // explicites). Le niveau 2 perd 65 à 97 (38 nulles). La mesure d'#108, sur les
+      // mêmes graines et les mêmes séries, donnait 67 à 89 (44 nulles) — mais un match
+      // sur trois opposait alors un Chariot incapable d'attaquer, donc elle n'était pas
+      // comparable : les chiffres d'#113 sont la référence à battre.
+      // Tant qu'un re-pesage mesuré ne fait pas passer le niveau 2 devant, il n'est pas
+      // démontré meilleur, et le niveau 1 reste le défaut (écran et simulateur).
+      expect({ niveau2, niveau1, nulles }).toEqual({ niveau2: 65, niveau1: 97, nulles: 38 });
     },
     60000
   );

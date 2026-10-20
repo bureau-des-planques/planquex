@@ -185,12 +185,16 @@ export interface EvaluationWeights {
  * Poids **par défaut** de l'évaluation.
  *
  * Ils viennent de #93, réglés sur une mesure qui comptait les cafés **au nombre**.
- * #108 a corrigé cette mesure (`satisfiesCafeCost`) : **le gain de #93 n'est plus
- * démontré**. Sur 600 parties appariées (graines 1, 7, 42, 99, 1234 ; 60 parties par
- * série), le camp de niveau 2 gagne **203** parties contre **254** au niveau 1, avec
- * 143 nulles (ratio 0,799). Les poids restent ceux de #93 : un re-pesage mesuré, y
- * compris sur des graines de contrôle, est un travail distinct (rapport #108), et le
- * niveau 1 reste le défaut de l'écran comme du simulateur.
+ * #108 a corrigé cette mesure (`satisfiesCafeCost`), puis #113 a armé les Chariots
+ * `SUPPORT` et `INTERIM` du simulateur (types de café explicites) : **le gain de #93
+ * n'est pas démontré**. Sur 600 parties appariées (graines 1, 7, 42, 99, 1234 ;
+ * 60 parties par série et par sens), le camp de niveau 2 gagne **206** parties contre
+ * **279** au niveau 1, avec 115 nulles (ratio 0,738). La mesure d'#108, sur les mêmes
+ * graines, donnait 203 / 254 et 143 nulles — mais environ une partie sur trois
+ * opposait alors un Chariot **incapable d'attaquer**, donc elle ne mesurait pas la même
+ * chose. Les poids restent ceux de #93 : un re-pesage mesuré, y compris sur des graines
+ * de contrôle, est un travail distinct (rapports #108 et #113), et le niveau 1 reste le
+ * défaut de l'écran comme du simulateur.
  *
  * Trois réglages méritent une explication :
  *
