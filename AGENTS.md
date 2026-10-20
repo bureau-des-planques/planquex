@@ -368,3 +368,9 @@ Les cinq rôles de triage canoniques utilisent leurs noms par défaut (`needs-tr
 ### Domain docs
 
 Contexte unique. Le vocabulaire est `AGENTS.md` §3, les décisions sont `docs/DECISIONS.md`. Voir `docs/agents/domain.md`.
+
+### Parallélisme
+
+Quand plusieurs agents travaillent en même temps : **zones** de fichiers, **modèle adapté à la
+tâche**, vagues disjointes, protocole de fusion et ses pièges. Voir
+**`docs/agents/parallelisme.md`** — lire avant de lancer plus d'un agent.
