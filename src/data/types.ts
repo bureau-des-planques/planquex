@@ -242,6 +242,14 @@ export type BattleAction =
 export interface BattleState {
   turn: number;
   current: PlayerId;
+  /**
+   * Camp qui **ouvre la partie**, tiré au sort à la création (D-033 (6), capture
+   * `04`) : le lancer de tampon passe par le générateur seedé (`@/game/rng`), donc
+   * une même graine ouvre toujours sur le même camp. Sert à situer le **premier
+   * tour de chaque joueur** — le tour 1 pour `firstPlayer`, le tour 2 pour l'autre :
+   * évolution interdite et, pour `firstPlayer`, aucune génération de café (D-030).
+   */
+  firstPlayer: PlayerId;
   phase: 'playing' | 'ended';
   players: Record<PlayerId, PlayerState>;
   log: string[];

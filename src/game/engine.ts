@@ -18,26 +18,31 @@ let uidCounter = 0;
 
 /**
  * Premier tour d'un joueur : impossible d'y faire évoluer (AGENTS.md §4).
- * Le joueur ouvre toujours la partie, donc son premier tour est le tour 1 et
- * celui de la Direction le tour 2.
+ *
+ * Le **premier joueur** est tiré au sort (D-033 (6)) et son tout premier tour est le
+ * tour 1 ; le second joueur joue donc son premier tour au tour 2. Un tour de table
+ * ajoute ensuite 2 au numéro de tour, si bien que « tour 1 pour l'un, tour 2 pour
+ * l'autre » reste vrai quel que soit le camp qui ouvre.
  */
 export function isFirstTurnFor(state: BattleState, who: PlayerId): boolean {
-  return state.turn <= (who === 'player' ? 1 : 2);
+  return state.turn <= (who === state.firstPlayer ? 1 : 2);
 }
 
 /**
- * Le **premier tour de la partie**, tenu par le joueur : aucun café ne s'y attache
- * (`AGENTS.md` §4, D-030). La Direction, elle, attache dès son premier tour (tour 2),
- * c'est pourquoi ce n'est pas `isFirstTurnFor` qui sert ici.
+ * Le **premier tour de la partie**, tenu par le premier joueur tiré au sort : aucun
+ * café ne s'y génère ni ne s'y attache (D-030, D-033 (6), capture `05`). Le second
+ * joueur, lui, génère et attache dès son premier tour (tour 2), c'est pourquoi ce
+ * n'est pas `isFirstTurnFor` qui sert ici.
  *
- * Le joueur **pioche**, en revanche : la ligne « le premier joueur ne pioche pas »
- * venait du TCG **physique**, pas de Pocket (D-030). L'énergie est la seule exception.
+ * Le premier joueur **pioche**, en revanche : la ligne « le premier joueur ne pioche
+ * pas » venait du TCG **physique**, pas de Pocket (D-030). L'énergie est la seule
+ * exception de son premier tour.
  *
- * Une seule définition : `attachEnergy` et `legalActions` lisent celle-ci, sinon
- * l'écran et le moteur finiraient par ne plus dire la même chose (#58).
+ * Une seule définition : `startTurn`, `attachEnergy` et `legalActions` lisent
+ * celle-ci, sinon l'écran et le moteur finiraient par ne plus dire la même chose (#58).
  */
 function isOpeningTurn(state: BattleState): boolean {
-  return state.turn === 1 && state.current === 'player';
+  return state.turn === 1 && state.current === state.firstPlayer;
 }
 
 /**
@@ -173,7 +178,11 @@ function startTurn(state: BattleState) {
   // exception à son premier tour, et elle se joue dans `attachEnergy`.
   draw(state, state.current, 1);
 
-  if (player.energyZone === 0) {
+  // D-033 (6), capture `05` : « durant le premier tour de la personne qui joue en
+  // premier, aucune Énergie n'est générée ». Le premier tour de la partie (tour 1,
+  // tenu par le premier joueur tiré au sort) ne remplit donc pas la Machine à café :
+  // la génération reprend au tour suivant de ce joueur.
+  if (!isOpeningTurn(state) && player.energyZone === 0) {
     player.energyZone = 1;
     state.log.push(`${state.current === 'player' ? 'La machine à café' : 'La machine à café adverse'} produit 1 café.`);
   }
@@ -235,6 +244,8 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
   const state: BattleState = {
     turn: 1,
     current: 'player',
+    // Renseigné juste après le tirage ci-dessous ; valeur initiale sans effet.
+    firstPlayer: 'player',
     phase: 'playing',
     players: {
       player: emptyPlayer(),
@@ -254,7 +265,18 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
   setupPlayer(state, 'player');
   setupPlayer(state, 'ai');
 
-  state.log.push('Le site ouvre. À toi de jouer.');
+  // D-033 (6), capture `04` : « Une pièce est lancée automatiquement. Le joueur qui
+  // obtient le côté face a la main, tandis que celui qui obtient le côté pile joue en
+  // deuxième. » Le lancer passe par le générateur seedé de la partie : une même graine
+  // ouvre donc toujours sur le même camp. Le sens pile/face exact (`04`) est traité par
+  // #82 ; ici, `drawRandom < 0.5` (pile) = le joueur ouvre, sinon la Direction.
+  const firstPlayer: PlayerId = drawRandom(state) < 0.5 ? 'player' : 'ai';
+  state.firstPlayer = firstPlayer;
+  state.current = firstPlayer;
+  state.log.push(
+    firstPlayer === 'player' ? 'Lancer de tampon : tu ouvres.' : 'Lancer de tampon : la Direction ouvre.'
+  );
+
   startTurn(state);
   return state;
 }
@@ -312,11 +334,12 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
   if (awaitingPromotion(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
-  if (player.energyAttached || player.energyZone <= 0) return state;
+  if (player.energyAttached) return state;
   if (isOpeningTurn(next)) {
     next.log.push('Premier tour : pas d’attachement de café.');
     return next;
   }
+  if (player.energyZone <= 0) return state;
   const target = findInPlay(player, targetUid);
   if (!target) return state;
   target.energy += 1;
