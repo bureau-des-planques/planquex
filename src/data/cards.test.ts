@@ -178,7 +178,7 @@ describe('Cartes — cibles par rareté (CARD-SPEC.md §1, ticket #103)', () => 
       const cible = CIBLES_BASES[rarity];
       const observe = bases(rarity);
       const ecart = observe - cible;
-      const attendu = ECARTS_CONNUS[rarity] ?? 0;
+      const attendu = ECARTS_CONNUS[rarity]?.ecart ?? 0;
       expect(
         ecart,
         `rareté ${rarity} (${RARITY_META[rarity].label}) : ${observe} bases observées pour une cible de ${cible} — écart ${ecart >= 0 ? '+' : ''}${ecart}, attendu ${attendu >= 0 ? '+' : ''}${attendu}`
@@ -186,14 +186,35 @@ describe('Cartes — cibles par rareté (CARD-SPEC.md §1, ticket #103)', () => 
     }
   });
 
-  it('affirme l’écart 1◆ et le referme avec #104', () => {
+  it('referme chaque écart connu dès que sa cible est atteinte', () => {
     // Un écart connu qui ne se referme jamais est un test désarmé : quand la cible est
     // atteinte, c'est cette assertion qui réclame le retrait de l'exception.
-    const ecart = bases('1D') - CIBLES_BASES['1D'];
-    if (ecart === 0) {
-      expect(ECARTS_CONNUS['1D'], 'la cible 1◆ est atteinte : retirer l’écart connu (#104)').toBeUndefined();
-    } else {
-      expect(ECARTS_CONNUS['1D'], `écart 1◆ non déclaré : ${ecart} base(s) d’écart`).toBe(ecart);
+    // Elle boucle sur **toutes** les entrées, pas sur `1D` : une garde codée en dur sur
+    // une seule clé laisserait les autres se refermer en silence (#103, relecture).
+    for (const rarity of RARETES_BASES) {
+      const exception = ECARTS_CONNUS[rarity];
+      if (!exception) continue;
+      const ecart = bases(rarity) - CIBLES_BASES[rarity];
+      expect(
+        ecart,
+        `rareté ${rarity} : écart soldé, retirer l’exception (ticket #${exception.ticket})`
+      ).not.toBe(0);
+      expect(
+        ecart,
+        `rareté ${rarity} : écart ${ecart} pour une exception de ${exception.ecart} (ticket #${exception.ticket})`
+      ).toBe(exception.ecart);
+    }
+  });
+
+  it('garde la table des écarts connus fermée, et chaque entrée citée par un ticket', () => {
+    // **Fermer la table est ce qui empêche une régression de contenu d'être silenciée** :
+    // sans cela, un futur agent pourrait écrire `{ '1D': -1, '3D': -5 }` et faire passer
+    // la disparition de trois cartes `3◆`. Ajouter une clé exige donc de venir ici — un
+    // acte délibéré, visible en revue (relecture de #103).
+    expect(Object.keys(ECARTS_CONNUS), 'table des écarts connus').toEqual(['1D']);
+    for (const [rarity, exception] of Object.entries(ECARTS_CONNUS)) {
+      expect(Number.isInteger(exception.ticket), `${rarity} : un ticket entier est requis`).toBe(true);
+      expect(exception.ticket, `${rarity} : ticket`).toBeGreaterThan(0);
     }
   });
 });
@@ -223,10 +244,18 @@ const RARETES_BASES = Object.keys(CIBLES_BASES) as RareteBase[];
  * `1D` : **101** bases pour **102** attendues. La carte manquante ne peut pas être écrite
  * sans trancher les quotas par faction de `PROPOSITION.md` §4.3 — les dix factions sont à
  * leur quota ou au-dessus (281 entrées pour 267). La décision est suivie par le ticket
- * **#104** (`ready-for-human`). L'écart reste donc **affirmé**, et le test « referme
- * l'écart 1◆ » réclame le retrait de cette exception dès que la carte arrive.
+ * **#104** (`ready-for-human`).
+ *
+ * **Chaque entrée cite son ticket, et la table est fermée** (relecture de #103) : sans ces
+ * deux gardes, cette table serait un **faux garde-fou** — un futur agent pourrait y ajouter
+ * `'3D': -5` et faire passer la disparition de trois cartes `3◆` sans que rien ne bronche.
+ * Deux tests la tiennent : « garde la table des écarts connus fermée » (la liste des clés
+ * est affirmée, et chaque entrée doit porter un ticket) et « referme chaque écart connu »
+ * (qui réclame le retrait de **toute** entrée dont la cible est atteinte).
  */
-const ECARTS_CONNUS: Partial<Record<RareteBase, number>> = { '1D': -1 };
+const ECARTS_CONNUS: Partial<Record<RareteBase, { ecart: number; ticket: number }>> = {
+  '1D': { ecart: -1, ticket: 104 }
+};
 
 /**
  * Socle des raretés hautes — `CARD-SPEC.md` §1 et `AGENTS.md` §3.2.
