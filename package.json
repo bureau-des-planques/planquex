@@ -16,6 +16,7 @@
     "capturer": "node scripts/capturer.mjs",
     "garde-fous": "node scripts/garde-fous.mjs",
     "pesage": "node scripts/pesage.mjs",
+    "isolation": "node scripts/isolation.mjs",
     "detect:ui": "npx impeccable detect src/"
   },
   "dependencies": {

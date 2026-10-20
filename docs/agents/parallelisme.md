@@ -89,6 +89,15 @@ seul coût, voir §6).
    `scripts/garde-fous.mjs` (`AGENTS.md` §6).
 6. **La doc de la zone se met à jour dans la même branche** si une règle, une forme ou une
    commande change.
+7. **Après chaque agent, l'orchestrateur lance `npm run isolation`** — c'est **le** contrôle qui
+   ne dépend pas de la bonne volonté de l'agent. Il exige que le dépôt principal soit **propre**
+   et qu'aucun worktree ne soit en **HEAD détaché**. Un brief qui dit « chemins absolus » ne
+   suffit pas : il a été donné aux **deux** agents qui ont écrit dans le mauvais arbre
+   (`art-96`, 11 fichiers + 8 binaires commités sur `main` ; `arbitrages-infra`, un dossier de
+   115 lignes déposé dans `main`). Un agent **sans shell** (rédacteur) est le plus exposé : il
+   n'a aucun `git -C` pour s'ancrer, et **aucun moyen de s'auto-contrôler** — son travail se
+   **sauve** après coup (déplacer le fichier dans son worktree, commiter, nettoyer `main`),
+   jamais en le croyant sur parole.
 
 ## 5. Fusion — le protocole, et ses deux pièges
 
