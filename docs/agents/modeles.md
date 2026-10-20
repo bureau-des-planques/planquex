@@ -89,6 +89,35 @@ ponctuels autoportants** (un extrait collé, une question fermée, aucun outil) 
 `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` (3/3, plus lent) — **jamais** le modèle
 qui a implémenté.
 
+### La piste « abonnement Google » — vérifiée le 20/10/2026, et elle est fermée
+
+Quatre plugins npm exposent une authentification Google OAuth, le pendant exact de
+`opencode-claude-auth` : `opencode-gemini-auth` (2.0.1), `opencode-google-auth` (0.0.9),
+`opencode-antigravity-auth` (1.6.0), `opencode-gemini-cli-auth` (0.0.1). Tous promettent
+« utiliser votre offre Google existante au lieu de la facturation à l'API ».
+
+Mais le README du plus maintenu (`opencode-gemini-auth` 2.0.1) porte l'avertissement qui
+tranche : **Google a déprécié l'accès Gemini Code Assist pour les comptes particuliers le
+18 juin 2026**. Le flux OAuth **ne fonctionne plus** pour *Gemini Code Assist for
+individuals*, **Google AI Pro** ni **Google AI Ultra** — Google a cessé de servir ces paliers
+et retiré « Login with Google ». Le même README qualifie l'usage de l'OAuth Gemini CLI avec
+un **logiciel tiers** de **cas d'usage contraire à la politique**, pouvant déclencher une
+**détection d'abus** ou une **restriction de compte**. Restent `Gemini Code Assist Standard` /
+`Enterprise` (adossés à une organisation) et le flux **clé API**.
+
+Donc, pour un compte Google **personnel**, la voie propre est la **clé API Gemini avec
+facturation** — le palier gratuit étant précisément celui qui plafonne à 16 k jetons
+d'entrée/minute. Trois routes propres, à choisir côté humain :
+
+| Route | Ce qu'elle change | Coût |
+|---|---|---|
+| Clé API Gemini + facturation activée | `google/gemma-4-26b-a4b-it` (et `google/gemini-*`) prennent le quota payant | à l'usage, Google |
+| **Vercel AI Gateway** (`vercel/google/gemma-4-26b-a4b-it`) | clé `AI_GATEWAY_API_KEY` **déjà configurée** dans `~/.config/opencode/opencode.json` — mais testé le 20/10/2026 : **échec**, « AI Gateway requires a valid credit card on file » (la carte est exigée même pour débloquer les crédits offerts) | à l'usage, Vercel |
+| Gemini Code Assist Standard/Enterprise | `opencode-gemini-auth` redevient fonctionnel | abonnement organisation |
+
+Un abonnement **Google AI Pro/Ultra personnel ne débloque donc rien** : ni la route OAuth
+(fermée), ni la route API (le quota gratuit reste le quota gratuit).
+
 ## Protocole de commande pour un relecteur — à recopier dans le brief
 
 Le profil `auditeur` **refuse le shell par défaut** et n'autorise qu'une **liste blanche**,
