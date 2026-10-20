@@ -1,23 +1,37 @@
 import { useMemo, useState } from 'react';
 import { Info, Sparkles, Trash2 } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, STAGE_META, isPlanque } from '@/data';
-import type { Card } from '@/data/types';
+import type { Card, CafeType } from '@/data/types';
 import {
   autoDeck,
+  CAFE_FACTIONS,
   deckCanAdd,
   deckCafeTypes,
   deckCards,
   deckCounts,
   deckCountsByName,
   deckLegal,
-  MAX_COPIES_PER_NAME
+  MAX_COPIES_PER_NAME,
+  MAX_DECK_CAFE_TYPES,
+  resolveCafeTypes
 } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { CardView } from '@/components/CardView';
 import { CardDetail } from '@/components/CardDetail';
 
 export function Deck() {
-  const { owned, deck, addToDeck, removeFromDeck, setDeck, clearDeck, addCard } = useStore();
+  const {
+    owned,
+    deck,
+    cafeTypes: chosenCafeTypes,
+    addToDeck,
+    removeFromDeck,
+    setDeck,
+    clearDeck,
+    addCard,
+    setCafeTypes,
+    toggleCafeType
+  } = useStore();
   const [selected, setSelected] = useState<Card | null>(null);
 
   const legality = useMemo(() => deckLegal(deck), [deck]);
@@ -25,7 +39,17 @@ export function Deck() {
   const byName = useMemo(() => deckCountsByName(deck), [deck]);
   const inDeck = useMemo(() => deckCards(deck), [deck]);
   const automatic = useMemo(() => autoDeck(owned), [owned]);
-  const cafeTypes = useMemo(() => deckCafeTypes(deck), [deck]);
+  /** La proposition automatique : les factions que le Chariot porte déjà (D-037 (4)). */
+  const proposed = useMemo(() => deckCafeTypes(deck), [deck]);
+  /** Ce que la Machine produira : le choix validé, sinon la proposition. */
+  const cafeTypes = useMemo(() => resolveCafeTypes(deck, chosenCafeTypes), [deck, chosenCafeTypes]);
+  /** Les types présents au Chariot d'abord, les autres factions produisibles ensuite. */
+  const cafeProposals = useMemo(
+    () => [...proposed, ...CAFE_FACTIONS.filter((type) => !proposed.includes(type))],
+    [proposed]
+  );
+  const cafeLabel = (types: readonly CafeType[]) =>
+    types.map((type) => FACTION_META[type].short).join(', ');
 
   const available = useMemo(
     () =>
@@ -76,13 +100,65 @@ export function Deck() {
         {legality.ok ? 'Chariot valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
 
-      <p className="muted">
-        Types de café du Chariot :{' '}
-        {cafeTypes.length > 0
-          ? cafeTypes.map((type) => FACTION_META[type].short).join(', ')
-          : 'aucun — ce Chariot ne produira pas de café'}
-        .
-      </p>
+      <section className="section panel cafe-picker">
+        <div className="section__head">
+          <div>
+            <h2>Machine à café</h2>
+            <p className="muted">
+              Choisis de 1 à {MAX_DECK_CAFE_TYPES} types de café : la Machine ne tire que dans ceux-là.
+              Support et Intérim n’en produisent jamais.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="button"
+            onClick={() => setCafeTypes([])}
+            disabled={chosenCafeTypes.length === 0}
+            title="Revenir aux factions présentes dans le Chariot"
+          >
+            Proposition automatique
+          </button>
+        </div>
+
+        <div className="cafe-picker__types" role="group" aria-label="Types de café du Chariot">
+          {cafeProposals.map((type) => {
+            const chosen = chosenCafeTypes.includes(type);
+            const inDeck = proposed.includes(type);
+            // Trois types déjà choisis : les autres cases se ferment, comme le plafond.
+            const full = !chosen && chosenCafeTypes.length >= MAX_DECK_CAFE_TYPES;
+            return (
+              <button
+                key={type}
+                type="button"
+                className={`cafe-picker__type ${chosen ? 'is-chosen' : ''} ${inDeck ? 'is-proposed' : ''}`}
+                aria-pressed={chosen}
+                disabled={full}
+                title={`${FACTION_META[type].name}${inDeck ? ' — présent au Chariot' : ''}`}
+                onClick={() => toggleCafeType(type)}
+              >
+                <span
+                  className="cafe-picker__glyph"
+                  aria-hidden="true"
+                  style={{ background: FACTION_META[type].color }}
+                >
+                  {FACTION_META[type].glyph}
+                </span>
+                {FACTION_META[type].short}
+                {inDeck && <span className="cafe-picker__tag">au Chariot</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <p className="muted">
+          {chosenCafeTypes.length > 0
+            ? `Choix manuel : ${cafeLabel(chosenCafeTypes)}.`
+            : proposed.length > 0
+              ? `Proposition automatique : ${cafeLabel(proposed)}.`
+              : 'Aucun type : ce Chariot ne produira pas de café.'}
+          {cafeTypes.length > 0 && ` La Machine tirera dans ${cafeLabel(cafeTypes)}.`}
+        </p>
+      </section>
 
       <section className="section">
         <div className="section__head">
