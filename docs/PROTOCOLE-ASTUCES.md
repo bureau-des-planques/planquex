@@ -28,6 +28,13 @@ Pour chaque capture, ce document donne :
 - et une case pour **l'intitulé réel** : celui que *tu* vois s'écrit dans le
   `README.md` du lot. C'est cette formulation qui fait la preuve, pas la mienne.
 
+> **Mise à jour du 20/10/2026.** Le chemin a été retrouvé et **sourcé** : *Menu (bouton
+> tout à droite en bas de l'écran) > **Astuces** > **À propos des règles de combat***
+> (article support `61745874022553`). Le principe « on cherche un contenu » reste — les
+> intitulés changent d'une version à l'autre — mais on sait maintenant **où** chercher.
+> Les intitulés relevés le 20/10/2026 sont marqués ✔ dans le tableau §2. Détail :
+> `docs/preuves/regles-2026-10-20/README.md`.
+
 ### Où chercher, en général
 
 Trois portes donnent presque toujours accès aux règles de combat :
@@ -73,24 +80,30 @@ de l'interface**. Sans ces quatre-là, une capture est inexploitable dans six mo
 
 ## 2. Les 6 captures du lot A
 
-| # | Fichier | Ce que tu cherches (par le contenu) | Intitulés candidats | Ligne de `§4` que ça prouve |
+> **Deux colonnes, deux langues.** « Intitulés candidats » emploie les mots de **l'app** —
+> c'est ce que tu chercheras à l'écran. La dernière colonne désigne **nos** lignes de
+> `AGENTS.md` §4 : elle garde le vocabulaire du projet (*Chariot*, *café*, *Rack*…), et ce
+> n'est **pas** ce qu'il faut chercher dans l'app.
+> Les intitulés marqués **✔ relevé le 20/10/2026** sont ceux qui ont été vus sur l'écran.
+
+| # | Fichier | Ce que tu cherches (par le contenu) | Intitulé dans l'app — **à chercher tel quel** | Ligne de `§4` que ça prouve |
 |---|---|---|---|---|
-| 1 | `01-menu-astuces.png` | **L'entrée qui mène à l'aide**, avec son intitulé visible | FR « Astuces du jeu », « Aide », « Règles » · EN « Tips », « Help », « How to play » · JP ゲームのヒント | — (elle prouve l'accès, pas une règle) |
-| 2 | `02-tour.png` | Une page qui décrit **le déroulé d'un tour** : qui commence, ce qu'on pioche, quand on attache, quand on attaque | FR « Déroulement d'un tour », « Comment jouer » · EN « Turn flow », « How to play » · JP ターンの流れ | Premier joueur · Pression (1/tour, café non consommé) · Évolution impossible au premier tour |
-| 3 | `03-zone-energie.png` | Une page qui décrit la **zone d'énergie** : combien par tour, l'attachement, l'incolore | FR « Zone d'énergie » · EN « Energy zone » · JP エネルギーゾーン | Machine à café (1 généré + 1 attaché) · Types de café · incolore accepte tout |
-| 4 | `04-statuts.png` | Une page qui liste les **conditions spéciales** — leur nom, leur effet, **et l'ordre** dans lequel elles se résolvent | FR « Conditions spéciales », « États spéciaux » · EN « Special conditions » · JP 特殊状態 | Statuts et **ordre des statuts** · cumul |
-| 5 | `05-ko-defaite.png` | Une page sur le **K.O., les points et la victoire** : combien de points pour gagner, ce qui arrive quand un Planqué est K.O., qui choisit le suivant | FR « K.O. », « Points », « Conditions de victoire » · EN « Knock Out », « Points », « Victory » · JP きぜつ / 勝敗 | Défaite (3 Interventions, ou plus aucun Planqué) · craquage · **qui fournit la relève** |
-| 6 | `06-types-energie.png` | L'écran d'édition du **Chariot**, là où on **choisit les types d'énergie** — et le **nombre d'emplacements** | (dans « Modifier le Chariot », « Éditer le classeur ») | **Types de café : le plafond de 3** ← la ligne la plus importante du lot |
+| 1 | `01-menu-astuces.png` | **L'entrée qui mène à l'aide**, avec son intitulé visible | FR **« Astuces »** ✔ puis **« À propos des règles de combat »** ✔ · EN « Tips » / « About Battle Rules » · JP ゲームのヒント | — (elle prouve l'accès, pas une règle) |
+| 2 | `02-tour.png` | Une page qui décrit **le déroulé d'un tour** : qui commence, ce qu'on pioche, quand on attache, quand on attaque | FR **« Déroulement d'un tour »** ✔ · EN « Turn flow », « How to play » · JP ターンの流れ | Premier joueur · Pression (1/tour, café non consommé) · Évolution impossible au premier tour |
+| 3 | `03-zone-energie.png` | Une page qui décrit la **zone d'énergie** : combien par tour, l'attachement, l'incolore | FR **« zone Énergie »** ✔ · EN « Energy Zone » · JP エネルギーゾーン | Machine à café (1 généré + 1 attaché) · Types de café · incolore accepte tout |
+| 4 | `04-statuts.png` | Une page qui liste les **conditions spéciales** — leur nom, leur effet, **et l'ordre** dans lequel elles se résolvent | FR **« Contrôle Pokémon et États Spéciaux »** ✔ · EN « Special Conditions » · JP 特殊状態 | Statuts et **ordre des statuts** · cumul |
+| 5 | `05-ko-defaite.png` | Une page sur le **K.O., les points et la victoire** : combien de points pour gagner, ce qui arrive quand un Pokémon est K.O., qui choisit le suivant | FR **« Mettre un Pokémon K.O. et issue d'un combat »** ✔ · EN « Knock Out », « Victory » · JP きぜつ / 勝敗 | Défaite (3 Interventions, ou plus aucun Planqué) · craquage · **qui fournit la relève** |
+| 6 | `06-types-energie.png` | L'écran **d'édition du deck**, là où on **choisit les types d'Énergie** de la zone Énergie — et le **nombre** qu'on peut en prendre | FR « deck » (l'app dit **deck**, vu ✔ dans « Déroulement d'un tour ») · EN « deck » · JP デッキ | **Types de café : le plafond de 3** ← la ligne la plus importante du lot |
 
 ### Le bonus qui vaut de l'or
 
-Si tu tombes dessus en jouant : **l'écran « choisis un Planqué » après un K.O.**
+Si tu tombes dessus en jouant : **l'écran où l'on choisit le nouveau Pokémon après un K.O.**
 C'est la preuve la plus directe qu'**un joueur choisit sa relève** — une ligne que
 D-022 a tranchée sans source. Range-la en `07-releve.png`.
 
 Deux autres, si elles se présentent sans effort :
 
-- l'écran de **validité du Chariot** (20 cartes, max 2 par nom) → `08-chariot-valide.png` ;
+- l'écran de **validité du deck** (20 cartes, max 2 par nom) → `08-deck-valide.png` ;
 - l'écran de **main de départ** s'il propose quelque chose (remélange ? choix ?) →
   `09-main-depart.png`. C'est la question de la « reprise de poste », que D-022 dit
   absente — une capture qui le **confirme** clôt O-009 pour de bon.
