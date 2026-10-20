@@ -129,7 +129,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Interventions | **3** pour gagner ; un craquage normal = 1, un COMEX = 2 |
 | Machine à café | **1 café généré par tour**, **1 attachement par tour** ; si le slot du haut est occupé, pas de nouveau café |
 | Types de café | Jusqu'à **3** par Chariot, ordre aléatoire ; l'incolore accepte tout — **hypothèse assumée**, non sourcée (D-022) |
-| Premier joueur | Ne pioche pas, ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 |
+| Premier joueur | **Pioche** ; ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 (D-030) |
 | Évolution | Impossible au premier tour de chaque joueur |
 | Seuil / Stress | le **Seuil** remplace le Moral ; les dégâts deviennent du **Stress** qui monte ; à `Stress ≥ Seuil`, le Planqué **craque** (D-026) |
 | Pression | **1 par tour** ; le café n'est **pas consommé** ; elle fait monter le **Stress** |
@@ -137,14 +137,16 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Résistance | **Aucune** |
 | Rotation | Défausse autant de cafés que le coût de rotation |
 | Pioche vide | **Pas de défaite** |
-| Défaite | 3 Interventions pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) |
+| Défaite | 3 Interventions pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) ; le **forfait** est une défaite quel que soit le score (D-030) |
+| Limite de tours | Atteinte, le combat se solde par une **égalité** (D-030) |
 | craquage | L'adversaire marque les Interventions ; le Rack fournit la **relève** |
-| Statuts | Surcharge (10 de Stress/tour), Épuisement (20 + lancer), Sieste (lancer), Immobilisation (1 tour), Dérive (lancer avant l'attaque) — **cumulables** |
+| Statuts | Surcharge (10 de Stress/tour), Épuisement (20 + lancer), Sieste (lancer), Immobilisation (1 tour), Dérive (lancer avant l'attaque) — **Surcharge et Épuisement se cumulent** ; **Sieste, Immobilisation et Dérive s'excluent** et se remplacent (D-030) |
+| Statuts — portée | Seul le Planqué **au Poste** en porte ; la **Rotation** et l'**évolution** les purgent (D-030) |
 | Ordre des statuts | Surcharge → Épuisement → Sieste → Immobilisation |
 | Cartes Action | **Objet** (NEUF ou MRO) : illimité ; **Collègue** : **1 par tour** |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
 
-**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, COMEX = **2 Interventions**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. Réserve qui subsiste : une partie du tableau n'a **aucune source citable**. Ces règles sont désormais **décidées** (D-022) mais **non observées** — le seul moyen de les faire passer à « observé » est de capturer les Astuces de jeu de l'application : `docs/PROTOCOLE-ASTUCES.md`. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources : `docs/MIROIR-2026-DELTAS.md`.
+**Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, COMEX = **2 Interventions**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. **État des preuves (20/10/2026)** : les « Astuces de jeu » ont été capturées — 9 écrans, `docs/preuves/astuces-2026-10-20/` — et **douze lignes de ce tableau passent à « observé »** (D-030). Restent non observés : le **plafond de 3 types de café**, la **main de départ à 5**, la règle du « slot occupé » et la **reprise de poste**. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources et verdicts : `docs/MIROIR-2026-DELTAS.md`.
 
 ### 4.1 Ce qui n'est pas la règle standard
 

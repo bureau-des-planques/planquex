@@ -29,26 +29,53 @@ qu'O-008 demandait d'écrire.
 | Machine à café : 1 café généré par tour **et** 1 attachement par tour | ✅ | Pokémon.com, guide de deck |
 | Le premier joueur **peut attaquer** si l'attaque coûte 0 | ✅ | FAQ combat officielle, « Battle Rules FAQ » |
 
-## 2. Conforme, mais **insourçable par URL** (~15 lignes sur 20)
+## 2. Observé par capture — 20/10/2026
 
-Ces valeurs ne sont ni fausses ni confirmées : le jeu **ne publie pas de livre de
-règles web**. Le support officiel renvoie aux **« Astuces » internes à l'app** :
+> **Mise à jour du 20/10/2026.** Les « Astuces de jeu » ont été capturées : 9 écrans,
+> rangés dans `docs/preuves/astuces-2026-10-20/` (README transcrit **mot pour mot**).
+> Une grande partie de ce §2 passe donc de « non confirmé » à **observé**. Ce qui suit
+> est le relevé ; la transcription fait foi, pas ce résumé.
+
+**Passent à « observé »** (capture entre parenthèses) : main maximale **10** (`03`) ·
+Rack **3 places** (`05`) · évolution impossible au **premier tour de chaque joueur** (`05`) ·
+1 Pression par tour et café **non consommé** (`05`) · Vulnérabilité **+20**, **jamais au
+Banc** (`05`) · Rotation payée en cafés, **n'importe quel type** (`05`) · Objet illimité /
+Collègue **1 par tour** (`05`) · **ordre des statuts** Empoisonné → Brûlé → Endormi →
+Paralysé (`07`) · effets des 5 statuts (`07`) · défaite par **plateau vide** (`06`) · **qui
+choisit la relève** : le joueur K.O. (`06`) · **pas de défaite par pioche vide** (`06`) ·
+COMEX = 2 points, dits « **Pokémon avec un encadré Règle** » (`06`).
+
+**Restent non observés** : le **plafond de 3 types de café** et son ordre aléatoire (il faut
+l'éditeur de deck) ; la **main de départ à 5** ; la règle « pas de nouveau café si le slot du
+haut est occupé » ; la **reprise de poste** (rien ne la décrit, mais rien ne l'exclut).
+
+### ⚠️ Trois écarts entre `AGENTS.md` §4 et les captures
+
+Une capture qui **contredit** `§4` vaut plus qu'une qui la confirme : elle évite
+d'implémenter une règle inventée. Trois points appellent une **décision datée**.
+
+| Ligne de `§4` | Ce que dit le jeu | Capture |
+|---|---|---|
+| Premier joueur : « **Ne pioche pas** » | Seule l'**Énergie** est exceptée au premier tour du premier joueur ; la pioche est la règle générale du début de tour | `05` |
+| Statuts : « **cumulables** » | Empoisonné et Brûlé se cumulent ; **Endormi, Paralysé et Confus s'excluent** et se remplacent | `07` |
+| Machine à café : « **1 attachement par tour** » | « Tant que vous disposez d'Énergie dans votre zone Énergie, vous pouvez en **attacher autant que vous le souhaitez** » | `05` |
+
+Le troisième est le plus délicat : il **oppose une capture** à une source déjà citée en
+§1 (« Pokémon.com, guide de deck : 1 attachement par tour »). À trancher avant de toucher
+au moteur.
+
+### Pourquoi ces lignes n'étaient pas sourçables par URL
+
+Le jeu **ne publie pas de livre de règles web**. Le support officiel renvoie aux
+**« Astuces » internes à l'app** :
 
 > « Please find more information about Pokémon TCG Pocket's game rules in **Tips**
 > or by tapping the question mark button […] » — support officiel
 
-Concernées : main de départ 5, main maximale 10, Rack 3 places, « pas de
-nouveau café si le slot du haut est occupé », « jusqu'à 3 types de café », premier
-joueur qui ne pioche pas / n'attache pas / peut jouer un Collègue, évolution
-impossible au premier tour de **chaque** joueur, 1 Pression par tour, café non
-consommé, aucune Résistance, relève payée en cafés, pas de défaite par pioche vide,
-les 5 statuts et leur **ordre** (Surcharge → Épuisement → Sieste → Immobilisation), Objet
-illimité / Collègue 1 par tour.
-
-**Conséquence de méthode** : toute affirmation d'audit sur ces lignes doit rester
-marquée « non vérifié ». Elles sont désormais **décidées** (D-022) — donc implémentées
-avec une règle assumée — mais le seul moyen de les passer à « observé » est une capture
-horodatée des Astuces de jeu : voir `docs/PROTOCOLE-ASTUCES.md`.
+Vérifié le 20/10/2026 : la « FAQ détaillée sur les combats » du support ne traite que des
+**cas particuliers** (calcul des dégâts, points sur défausse par effet…), et la page
+« Articles et stratégies » de Pokémon.com n'est qu'un **index de 40 articles de deck** —
+aucune règle de base. C'est bien la capture qui fait la preuve : `docs/PROTOCOLE-ASTUCES.md`.
 
 ## 3. Écarts **exclus du périmètre** (D-020) — chiffrage conservé
 
@@ -71,17 +98,19 @@ tant que l'écart n'est pas traité.
 
 | Sujet | État des sources |
 |---|---|
-| Mulligan : « l'adversaire pioche 1 » | **Démenti en secondaire** : deux sources JP récentes (Game8, MAJ 30/09/2026 ; GameWith, MAJ 19/10/2026) disent que Pocket **n'a pas de reprise de poste** du tout — « マリガン（引き直し）はありません » — la main de départ contenant toujours un Entrant. Le « l'adversaire pioche 1 » est la règle du TCG **physique**. Décidé (D-022) et implémenté (`ensureBasicInHand()`, plus de `mulligan`) |
-| Fin de partie quand **plus aucun Planqué** n'est en jeu | **Confirmé en secondaire** : « 自分の場にポケモンがいなくなると、その時点で敗北 » (Game8) ; « ポイント数に関わらず敗北 » (GameWith). Décidé (D-022) et désormais **écrit dans §4**, qui ne listait aucune condition de défaite hors 3 Interventions |
-| K.O. : **qui choisit la relève** | **Confirmé en secondaire** : GameWith décrit un écran de choix côté joueur K.O. (avec limite de temps, puis choix aléatoire à l'expiration). `§4` dit « l'Rack choisit », le moteur suit (`pendingPromotion` + `promoteActive()`). Décidé (D-022) |
-| Plafond « 3 types de café » | Deux wikis de fans JP seulement. **Hypothèse assumée** (D-022) : le principe est officiel, le chiffre ne l'est pas |
+| Mulligan : « l'adversaire pioche 1 » | **Démenti** : deux sources JP récentes (Game8, MAJ 30/09/2026 ; GameWith, MAJ 19/10/2026) disent que Pocket **n'a pas de reprise de poste** — « マリガン（引き直し）はありません ». Décidé (D-022) et implémenté (`ensureBasicInHand()`, plus de `mulligan`). **Non observé** : la capture de la préparation (`04`) décrit « des cartes sont piochées » sans nombre et sans remélange — argument **par absence** |
+| Fin de partie quand **plus aucun Planqué** n'est en jeu | ✅ **Observé le 20/10/2026** (`docs/preuves/astuces-2026-10-20/06`) : « Si un joueur n'a plus de Pokémon en jeu, il perd le combat **indépendamment du nombre de points** que chaque joueur possède. » Décidé (D-022), écrit dans §4 |
+| K.O. : **qui choisit la relève** | ✅ **Observé le 20/10/2026** (même capture) : « Si le Pokémon sur le Poste Actif est mis K.O., **le joueur le remplace** avec un de ses Pokémon de Banc. » Décidé (D-022) ; le moteur suit (`pendingPromotion` + `promoteActive()`) |
+| Plafond « 3 types de café » | Deux wikis de fans JP seulement. **Hypothèse assumée** (D-022) : le principe est officiel, le chiffre ne l'est pas. Toujours **non observé** — il faut l'éditeur de deck |
 
-Tant que les captures du protocole n'existent pas, ces quatre lignes restent à **confiance
-secondaire** : une décision datée tranche ce qu'on implémente, elle ne prouve pas ce que fait le jeu.
-
-Ces quatre points demandent soit une décision datée, soit la capture du §6.
+Ces quatre points demandent soit une décision datée, soit la capture du §6 : **deux sont
+tranchés par capture** (fin de partie, relève), deux restent ouverts (mulligan, plafond des
+types de café).
 
 ## 5. Sources
+
+**Primaire, capturée le 20/10/2026** — les « Astuces de jeu » de l'app, 9 écrans :
+`docs/preuves/astuces-2026-10-20/` (transcription mot pour mot dans son `README.md`).
 
 Primaires (éditeur, consultées le 19/10/2026) :
 
@@ -93,6 +122,14 @@ Primaires (éditeur, consultées le 19/10/2026) :
 - Lettre aux producteurs, 15/10/2026 — <https://www.pokemon.com/us/news/read-the-pokemon-tcg-pocket-october-2026-producer-letter>
 - Comment jouer (site officiel JP) — <https://www.pokemontcgpocket.com/ja/howtoplay/battle/>
 
+Fournies le 20/10/2026, **sans règle de base** (vérifié) :
+
+- FAQ détaillée sur les combats — <https://app-ptcgpt.pokemon-support.com/hc/fr/sections/53604902813209>
+  → miroir web de l'entrée « FAQ détaillée sur les combats » de l'app ; **cas particuliers
+  seulement** (7 articles).
+- Articles et stratégies Pokémon.com — <https://www.pokemon.com/fr/articles/tous/content-products_vg-and-apps-product-names.pokemon-tcg-pocket>
+  → index de 40 articles de **stratégie de deck** ; aucune règle.
+
 Secondaires (wikis de fans, fiabilité décroissante, dont une page datée du
 26/09/2024 qui ignore les Méga ex) : Game8, GameWith, Pokémon-Zone, Bulbapedia.
 Le rapport complet, avec les verdicts ligne à ligne et les URL de ces sources,
@@ -100,10 +137,9 @@ n'est pas dans le dépôt.
 
 ## 6. Prochaine action vérifiable
 
-1. **Intégrer ou exclure** explicitement les écarts du §3 dans `AGENTS.md` §4 et
+1. **Trancher les trois écarts du §2** par une décision datée (le plus mûr : le premier
+   joueur pioche) — et **propager** la décision dans `AGENTS.md` §4 et le moteur.
+2. **Intégrer ou exclure** explicitement les écarts du §3 dans `AGENTS.md` §4 et
    `src/data/types.ts` (une décision datée par écart).
-2. **Trancher** les quatre points du §4 — le plus urgent étant la relève après K.O.,
-   où le moteur et la doc se contredisent déjà.
-3. **Capturer les Astuces de jeu** de l'app (menu → Game Tips → Battle Rules),
-   horodatée, et la ranger dans le dépôt : elle fait passer les ~15 lignes du §2 de
-   « non confirmé » à « observé ».
+3. **Capturer l'éditeur de deck** (plafond des 3 types de café) et, si possible, l'écran de
+   main de départ — les deux dernières lignes non observées. Débloque le ticket #30.

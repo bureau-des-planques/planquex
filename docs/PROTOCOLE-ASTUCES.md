@@ -110,23 +110,28 @@ Le guide de terrain pour le téléphone est dans `docs/CAPTURES.html`.
 
 ## 4. Ce que ça débloque, ligne par ligne
 
-| Ligne de `AGENTS.md` §4 | Aujourd'hui | Après capture |
-|---|---|---|
-| Main de départ, **pas de reprise de poste** | Décidé (D-022), non observé | Observé |
-| Premier joueur : ne pioche pas, n'attache pas de café | Supposé | Observé |
-| Ordre des statuts (Surcharge → Épuisement → Sieste → Immobilisation) | Supposé | Observé |
-| Statuts **cumulables** | Supposé | Observé |
-| Évolution impossible au premier tour de **chaque** joueur | Supposé | Observé |
-| Café **non consommé** par la Pression | Supposé | Observé |
-| Machine à café : slot occupé → pas de nouveau café | Supposé | Observé |
-| Défaite si plus aucun Planqué | Décidé (D-022), non observé | Observé |
-| **Qui choisit la relève** | Décidé (D-022), non observé | Observé |
-| **Plafond de 3 types de café**, ordre aléatoire | Supposé — **bloque le ticket #30** | Observé |
-| Collègue 1 par tour, Objet illimité | Supposé | Observé |
+**État au 20/10/2026** : les captures sont faites (`docs/preuves/astuces-2026-10-20/`).
+La colonne « après capture » dit ce que la capture a **effectivement** montré.
 
-**Le plafond de 3 est la ligne la plus urgente du lot** : le ticket #30 (le type de
-café) s'arrête délibérément avant de le graver, justement parce qu'aucune source ne
-le soutient. Ces deux captures (n° 3 et n° 6) le débloquent.
+| Ligne de `AGENTS.md` §4 | Avant | Après capture du 20/10/2026 |
+|---|---|---|
+| Main maximale **10** | Supposé | ✅ **observé** (`03`) |
+| Rack **3 places** | Supposé | ✅ **observé** (`05`) |
+| Évolution impossible au premier tour de **chaque** joueur | Supposé | ✅ **observé** (`05`) |
+| Café **non consommé** par la Pression | Supposé | ✅ **observé** (`05`) |
+| 1 Pression par tour | Supposé | ✅ **observé** (`05`) |
+| Ordre des statuts (Surcharge → Épuisement → Sieste → Immobilisation) | Supposé | ✅ **observé** (`07`) |
+| Défaite si plus aucun Planqué | Décidé (D-022), non observé | ✅ **observé** (`06`) |
+| **Qui choisit la relève** | Décidé (D-022), non observé | ✅ **observé** (`06`) |
+| Collègue 1 par tour, Objet illimité | Supposé | ✅ **observé** (`05`) |
+| Statuts **cumulables** | Supposé | ⚠️ **corrigé** : seuls Surcharge et Épuisement se cumulent (D-030, `07`) |
+| Premier joueur : **ne pioche pas** | Supposé | ⚠️ **corrigé** : le premier joueur pioche (D-030, `05`) |
+| Machine à café : slot occupé → pas de nouveau café | Supposé | ❔ **toujours non observé** |
+| **Plafond de 3 types de café**, ordre aléatoire | Supposé — **bloque le ticket #30** | ❔ **toujours non observé** — il faut l'éditeur de deck |
+| Main de départ **5** | Supposé | ❔ **toujours non observé** |
+| Pas de reprise de poste | Décidé (D-022), non observé | ❔ **par absence** (`04` ne décrit aucun remélange) |
+
+**Le plafond de 3 reste la ligne à capturer** : c'est elle qui débloque le ticket #30.
 
 ---
 
