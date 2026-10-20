@@ -69,13 +69,19 @@ export function CardView({ card, onClick, compact, selected }: Props) {
       <div
         className="card__art"
         style={{
-          background: card.art ? undefined : card.palette,
-          backgroundImage: card.art ? `url('/design/illustrations/${card.art}')` : undefined,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          // **Un seul** chemin de fond, le raccourci `background`. Mélanger le raccourci
+          // et `backgroundImage` fait **annuler** l'aplat par React — il écrit `""` sur le
+          // longhand, ce qui retire la couche image posée par le raccourci (React signale
+          // lui-même ce mélange comme source de bugs de style). Les ~276 cartes sans
+          // illustration perdaient donc leur fond de faction.
+          background: card.art
+            ? `url('/design/illustrations/${card.art}') center / cover no-repeat`
+            : card.palette
         }}
       >
-        <span className="card__glyph">{card.glyph}</span>
+        {/* Spec #95 : « l'image **si elle existe** ; sinon l'aplat **+ glyphe** ». Le
+            glyphe ne se superpose donc pas à une illustration. */}
+        {!card.art && <span className="card__glyph">{card.glyph}</span>}
         <span className="card__shine" />
       </div>
 
