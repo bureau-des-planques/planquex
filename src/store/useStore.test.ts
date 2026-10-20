@@ -246,7 +246,8 @@ describe('Migration v2 — les ids suivent les noms (#49, #67)', () => {
       expect(courant.startsWith(prefixe), `${courant} : préfixe de faction`).toBe(true);
 
       // Le suffixe `-ex` vient du **statut** COMEX (`ex: true`, D-026/D-027), pas du
-      // nom : le nom porte « COMEX », l'id porte `ex` (CARD-SPEC.md §1). On le retire
+      // nom : le nom porte « COMEX », l'id porte `ex` (AGENTS.md §5, et les 15 cartes
+      // COMEX s'y conforment). On le retire
       // avant de confronter les mots de l'id à ceux du nom.
       const segments = courant.slice(prefixe.length).split('-');
       if (segments.at(-1) === 'ex') {

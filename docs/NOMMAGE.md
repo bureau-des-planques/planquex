@@ -128,7 +128,7 @@ mais il produit trois collisions concrètes.
 | Proposition | Détail | Coût |
 |---|---|---|
 | Faction `MANAGER` → **« Encadrement »** | Sépare l'encadrement de proximité (Feu) des dirigeants (`DIRECTION`) et du stade COMEX | **[code]** `manager-` → `encadrement-` (gratuit : 0 carte) |
-| Cadre « Directeur général » → **« Chef des ventes »** | Garde le thème Feu (quotas, pression) sans reprendre « Directeur », déjà pris par Direction | **[cartes]** |
+| Cadre « Directeur général » → **« Chef des ventes »** | Garde le thème Feu (quotas, pression) sans reprendre « Directeur », déjà pris par Direction | **[cartes]** — **périmé, voir D-029** : la carte signature est « Responsable d'unité » |
 | Carte N+1 « Ton N+1 » → **« Ton chef »** | Un nom de carte ne doit pas être un nom de stade | **[cartes]** |
 | Carte N+1 « COMEX fantôme » → **« Plaque de porte »** | Même raison ; la plaque dit un nom, il n'y a personne derrière | **[cartes]** |
 
