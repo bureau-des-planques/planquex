@@ -214,6 +214,12 @@ même socle ; seuls le sujet et le cadrage changent.
 > brillance plastique. Composition centrée, sujet isolé du fond, **aucun texte, aucun
 > logo, aucune marque lisible, aucune personne réelle identifiable**. Format carré,
 > 2048×2048, sujet occupant 70 % du cadre, fond légèrement plus sombre que le sujet.
+>
+> **Lumière du visage** (leçon du 20/10/2026) : une **lumière principale douce et chaude
+> éclaire le VISAGE** — peau bien exposée, traits lisibles, pas d'ombre sur les yeux.
+> L'**or** n'est qu'un **liseré** sur les épaules et les cheveux. Un socle qui ne demande
+> qu'un contre-jour (« rim light ») **laisse les visages dans le noir** : c'est l'erreur de
+> la première vague (`design/illustrations/`, à regénérer).
 
 ### 6.2 Planche 1 — Le portrait du Planqué (illustrations de Planqués)
 

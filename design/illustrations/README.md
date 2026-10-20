@@ -12,6 +12,10 @@
   > centered, isolated on a darker background, deep midnight-blue palette, single warm gold
   > rim light, one muted saturated faction accent, subtle film grain, matte surfaces,
   > square 1:1. No text, no logo, no watermark, no real person.
+  >
+  > ⚠️ **Défaut constaté** : ce socle ne demande qu'un **contre-jour**, d'où des **visages trop
+  > sombres**. La version corrigée (`DESIGN.md` §6.1) impose une **lumière principale sur le
+  > visage**. Les 8 images ci-dessous sont donc à **regénérer** avec elle.
 
 ## Cartes produites (8 sur 10)
 
