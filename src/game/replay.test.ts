@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { BattleAction } from '@/data/types';
+import type { BattleAction, BattleState } from '@/data/types';
 import { applyAction, createBattle, replayBattle } from '@/game/engine';
 import { FACTION_ORDER, factionDeck, playGame } from '@/game/simulation';
 
@@ -130,5 +130,17 @@ describe('actionLog — ne contient que des BattleAction valides (#83)', () => {
     for (const action of played.actionLog) {
       expect(hasFields(action), JSON.stringify(action)).toBe(true);
     }
+  });
+});
+
+describe('Journal d’actions — une partie finie refuse la fin de tour (#83)', () => {
+  it('rend l’état tel quel et ne journalise rien', () => {
+    const state = createBattle(factionDeck('SSE'), factionDeck('RH'), 7);
+    const ended: BattleState = { ...state, phase: 'ended', winner: 'player' };
+
+    const after = applyAction(ended, { type: 'endTurn' });
+
+    expect(after).toBe(ended);
+    expect(after.actionLog).toEqual([]);
   });
 });

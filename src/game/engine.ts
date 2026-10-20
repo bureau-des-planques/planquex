@@ -937,9 +937,10 @@ export function forfeit(state: BattleState, who: PlayerId): BattleState {
 }
 
 export function endTurn(state: BattleState): BattleState {
-  if (awaitingPromotion(state)) return state;
+  // Une partie finie **refuse** la fin de tour : l'état est rendu tel quel (`===`),
+  // comme toute transition refusée, sinon `applyAction` la journaliserait (#83).
+  if (awaitingPromotion(state) || state.phase === 'ended') return state;
   const next = clone(state);
-  if (next.phase === 'ended') return next;
   // `checkup` mute l'état et peut le terminer (craquage par statut) : on lit la
   // valeur retournée, pas `next`, dont le rétrécissement de type est périmé.
   const afterCheckup = checkup(next);
