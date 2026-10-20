@@ -3,6 +3,7 @@ import type { BattleState, Faction, PlayerId } from '@/data/types';
 import { DECK_SIZE, deckCanAdd, deckLegal } from '@/game/deck';
 import { applyAction, createBattle } from '@/game/engine';
 import { nextAction } from '@/game/ia';
+import type { AiLevel } from '@/game/ia';
 import { drawRandom, seedRng } from '@/game/rng';
 
 /**
@@ -18,7 +19,10 @@ import { drawRandom, seedRng } from '@/game/rng';
  *   partie (tirage `drawRandom`), et rien d'autre n'apporte de hasard ;
  * - **aucun accès au navigateur ni au DOM** : le moteur est pur, la simulation l'est aussi ;
  * - **politique déterministe** : chaque camp joue la même heuristique simple, sans
- *   aucun tirage hors du générateur seedé de la partie.
+ *   aucun tirage hors du générateur seedé de la partie ;
+ * - **niveaux mesurables** : les deux camps peuvent jouer des **niveaux d'IA**
+ *   différents (`playerLevel`, `aiLevel`, ticket #93). C'est ainsi qu'on compare le
+ *   niveau 2 au niveau 1 à graine, appariement et Chariots identiques.
  *
  * Ce n'est **pas** une IA de jeu : la politique sert à faire avancer les parties
  * jusqu'à un vainqueur, pas à mesurer la force d'un archétype.
@@ -49,6 +53,15 @@ export interface SimulationOptions {
    * Ce n'est pas une règle du jeu, seulement un arrêt d'urgence pour la simulation.
    */
   maxTurns?: number;
+  /**
+   * Niveau de la Direction **du joueur** (`player`). 1 (défaut) : la Direction
+   * scriptée. 2 : la Direction qui évalue (ticket #93). Les deux camps peuvent
+   * jouer des niveaux différents : c'est ainsi qu'on **mesure** le niveau 2 contre
+   * le niveau 1, à graine et appariement identiques.
+   */
+  playerLevel?: AiLevel;
+  /** Niveau de la Direction **adverse** (`ai`). 1 (défaut), 2 : la Direction qui évalue. */
+  aiLevel?: AiLevel;
 }
 
 export interface GameResult {
@@ -83,6 +96,10 @@ export interface SimulationReport {
   seed: number;
   games: number;
   maxTurns: number;
+  /** Niveau joué par le camp `player` dans ce rapport. */
+  playerLevel: AiLevel;
+  /** Niveau joué par le camp `ai` dans ce rapport. */
+  aiLevel: AiLevel;
   factions: FactionResult[];
   results: GameResult[];
 }
@@ -202,16 +219,24 @@ export const DEFAULT_MAX_TURNS = 200;
  * Chaque itération applique **une** action de la politique, relève comprise. Une
  * action qui ne change rien (`applyAction` rend l'état d'entrée) arrête la partie :
  * c'est le même garde-fou qu'avant, action par action au lieu d'un tour à la fois.
+ *
+ * `levels` donne le **niveau de chaque camp** (1 : la Direction scriptée, 2 : la
+ * Direction qui évalue, ticket #93). Le niveau est celui du camp **qui joue** : lors
+ * d'une relève, c'est le camp qui relève qui tranche, donc c'est son niveau qui
+ * compte.
  */
 export function playGame(
   playerDeck: string[],
   aiDeck: string[],
   seed: number,
-  maxTurns = DEFAULT_MAX_TURNS
+  maxTurns = DEFAULT_MAX_TURNS,
+  levels: { player?: AiLevel; ai?: AiLevel } = {}
 ): BattleState {
   let state = createBattle(playerDeck, aiDeck, seed);
   while (state.phase === 'playing' && state.turn <= maxTurns) {
-    const action = nextAction(state);
+    const who = state.pendingPromotion ?? state.current;
+    const level = who === 'ai' ? (levels.ai ?? 1) : (levels.player ?? 1);
+    const action = nextAction(state, level);
     if (!action) break;
     const after = applyAction(state, action);
     if (after === state) break;
@@ -226,12 +251,17 @@ export function playGame(
  */
 export function simulate(options: SimulationOptions): SimulationReport {
   const { games, seed, maxTurns = DEFAULT_MAX_TURNS } = options;
+  const playerLevel = options.playerLevel ?? 1;
+  const aiLevel = options.aiLevel ?? 1;
   if (!Number.isInteger(games) || games <= 0) {
     throw new Error(`Nombre de parties invalide : ${games}. Il faut un entier ≥ 1.`);
   }
   if (!Number.isFinite(seed)) throw new Error(`Graine invalide : ${seed}.`);
   if (!Number.isInteger(maxTurns) || maxTurns < 1) {
     throw new Error(`Limite de tours invalide : ${maxTurns}. Il faut un entier ≥ 1.`);
+  }
+  if (![1, 2].includes(playerLevel) || ![1, 2].includes(aiLevel)) {
+    throw new Error(`Niveau d'IA invalide : ${playerLevel}/${aiLevel}. Les niveaux sont 1 et 2.`);
   }
 
   const factions = [
@@ -250,7 +280,10 @@ export function simulate(options: SimulationOptions): SimulationReport {
   for (let index = 0; index < games; index += 1) {
     const [player, ai] = pairFactions(factions, index);
     const gameSeed = Math.floor(drawRandom(master) * 0x100000000) >>> 0;
-    const state = playGame(decks.get(player) ?? [], decks.get(ai) ?? [], gameSeed, maxTurns);
+    const state = playGame(decks.get(player) ?? [], decks.get(ai) ?? [], gameSeed, maxTurns, {
+      player: playerLevel,
+      ai: aiLevel
+    });
 
     const winnerFaction =
       state.winner === 'player' ? player : state.winner === 'ai' ? ai : null;
@@ -269,6 +302,8 @@ export function simulate(options: SimulationOptions): SimulationReport {
     seed,
     games,
     maxTurns,
+    playerLevel,
+    aiLevel,
     factions: aggregateFactions(factions, results),
     results
   };
@@ -302,6 +337,7 @@ export function formatReport(report: SimulationReport): string {
 
   const lines = [
     `Simulation — ${report.games} partie(s), graine ${report.seed}, limite ${report.maxTurns} tours`,
+    `Niveaux — joueur : niveau ${report.playerLevel}, Direction : niveau ${report.aiLevel}`,
     '',
     `${'N°'.padEnd(4)}${'graine'.padEnd(12)}${'Poste'.padEnd(22)}${'Rack'.padEnd(22)}${'Vainqueur'.padEnd(22)}Tours`,
     '-'.repeat(88)

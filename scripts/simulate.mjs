@@ -22,11 +22,15 @@ const USAGE = `Usage : npm run simulate -- [options]
   -s, --seed <entier>   graine maîtresse (défaut : 1)
       --max-turns <N>   arrêt d'urgence d'une partie, comptée nulle (défaut : 200)
       --factions <liste> factions à opposer, séparées par des virgules
+      --player-level <N> niveau d'IA du camp joueur (1 ou 2, défaut : 1)
+      --ai-level <N>     niveau d'IA de la Direction (1 ou 2, défaut : 1)
       --json            rapport JSON au lieu du tableau console
   -h, --help            cette aide
 
 Exemples :
   npm run simulate -- --games 100 --seed 42
+  npm run simulate -- --games 100 --seed 42 --ai-level 2
+  npm run simulate -- --games 100 --seed 42 --player-level 2 --ai-level 1
   npm run simulate -- --games 10 --seed 42 --json
 `;
 
@@ -41,8 +45,24 @@ function readInteger(raw, name) {
   return Number(raw);
 }
 
+/** Un niveau d'IA : 1 (la Direction scriptée) ou 2 (la Direction qui évalue). */
+function readLevel(raw, name) {
+  const level = readInteger(raw, name);
+  if (level !== 1 && level !== 2) throw new Error(`${name} attend 1 ou 2, reçu ${level}.`);
+  return level;
+}
+
 function parseArgs(argv) {
-  const options = { games: 20, seed: 1, maxTurns: 200, factions: null, json: false, help: false };
+  const options = {
+    games: 20,
+    seed: 1,
+    maxTurns: 200,
+    factions: null,
+    playerLevel: 1,
+    aiLevel: 1,
+    json: false,
+    help: false
+  };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     const [name, inline] = arg.includes('=') ? [arg.slice(0, arg.indexOf('=')), arg.slice(arg.indexOf('=') + 1)] : [arg, undefined];
@@ -57,6 +77,8 @@ function parseArgs(argv) {
     else if (name === '--games' || name === '-n') options.games = readInteger(value(), '--games');
     else if (name === '--seed' || name === '-s') options.seed = readInteger(value(), '--seed');
     else if (name === '--max-turns') options.maxTurns = readInteger(value(), '--max-turns');
+    else if (name === '--player-level') options.playerLevel = readLevel(value(), '--player-level');
+    else if (name === '--ai-level') options.aiLevel = readLevel(value(), '--ai-level');
     else if (name === '--factions') {
       options.factions = (value() ?? '')
         .split(',')
@@ -104,7 +126,9 @@ if (!options) {
         games: options.games,
         seed: options.seed,
         maxTurns: options.maxTurns,
-        factions: options.factions ?? undefined
+        factions: options.factions ?? undefined,
+        playerLevel: options.playerLevel,
+        aiLevel: options.aiLevel
       });
       process.stdout.write(options.json ? `${JSON.stringify(report, null, 2)}\n` : `${simulation.formatReport(report)}\n`);
     }
