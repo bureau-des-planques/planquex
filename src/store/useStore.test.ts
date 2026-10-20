@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ALL_CARDS, getCard } from '@/data';
+import { ALL_CARDS, getCard, isPlanque } from '@/data';
 import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
@@ -121,17 +121,28 @@ describe('Générateur du store (#29)', () => {
   });
 });
 
-describe('Migration v2 — les ids suivent les noms (#49)', () => {
-  /** Les deux champs qui portent des ids, plus le reste à conserver. */
+describe('Migration v2 — les ids suivent les noms (#49, #67)', () => {
+  /**
+   * Les anciens ids ne sont écrits **qu'une fois dans le dépôt**, dans
+   * `CARD_ID_RENAMES` (#49) : la table est lue depuis le store, jamais recopiée ici.
+   * Le contrat vérifié est celui qui compte — chaque ancien id a quitté le catalogue,
+   * chaque id courant existe, et la migration ne perd ni un exemplaire de `owned` ni
+   * une place de `deck`.
+   */
+  const ANCIENS = Object.keys(CARD_ID_RENAMES);
+
+  /**
+   * L'état persisté qui porte des ids (`owned`, `deck`) contient **tous** les anciens
+   * ids, plus une carte jamais renommée, et le reste des champs à conserver.
+   */
   function stateV1() {
     const rng = seedRng(4242);
-    const [premier, second] = Object.keys(CARD_ID_RENAMES);
     return {
       rng,
       persisted: {
         name: 'Employé 404',
-        owned: { [premier]: 2, [second]: 1, 'sse-psychologue': 3 },
-        deck: [second, 'sse-psychologue', premier],
+        owned: { ...Object.fromEntries(ANCIENS.map((ancien) => [ancien, 2])), 'sse-psychologue': 3 },
+        deck: [...ANCIENS, 'sse-psychologue'],
         packsOpened: 7,
         reducedMotion: true,
         rng
@@ -143,20 +154,30 @@ describe('Migration v2 — les ids suivent les noms (#49)', () => {
     expect(STORAGE_VERSION).toBe(2);
   });
 
+  it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
+    expect(Object.values(CARD_ID_RENAMES).filter((id) => id.startsWith('management-'))).toEqual([
+      'management-responsable-unite',
+      'management-responsable-unite-ex',
+      'management-animateur-equipe',
+      'management-chef-service',
+      'management-technico-commercial'
+    ]);
+    for (const ancien of ANCIENS) {
+      // Aucun id courant ne sert d'ancien id : la migration s'applique en une passe,
+      // sans chaîne à dérouler.
+      expect(Object.values(CARD_ID_RENAMES), `${ancien} : chaîne de renommages`).not.toContain(ancien);
+    }
+  });
+
   it('remappe les anciens ids de `owned` et de `deck`, sans rien perdre', () => {
     const { persisted, rng } = stateV1();
     const migrated = migratePersisted(persisted, 1);
 
     expect(migrated.owned).toEqual({
-      'rh-charge-prevention': 2,
-      'direction-directeur-programme': 1,
+      ...Object.fromEntries(ANCIENS.map((ancien) => [CARD_ID_RENAMES[ancien], 2])),
       'sse-psychologue': 3
     });
-    expect(migrated.deck).toEqual([
-      'direction-directeur-programme',
-      'sse-psychologue',
-      'rh-charge-prevention'
-    ]);
+    expect(migrated.deck).toEqual([...ANCIENS.map((ancien) => CARD_ID_RENAMES[ancien]), 'sse-psychologue']);
     // Le reste de l'état traverse la migration intact.
     expect(migrated.name).toBe('Employé 404');
     expect(migrated.packsOpened).toBe(7);
@@ -165,14 +186,42 @@ describe('Migration v2 — les ids suivent les noms (#49)', () => {
   });
 
   it('ne laisse aucun ancien id, et chaque id remappé existe au catalogue', () => {
-    const [premier, second] = Object.keys(CARD_ID_RENAMES);
     const migrated = migratePersisted(stateV1().persisted, 1);
 
-    expect(premier).not.toBe(CARD_ID_RENAMES[premier]);
-    expect(getCard(premier), `${premier} ne doit plus exister`).toBeUndefined();
-    expect(getCard(second), `${second} ne doit plus exister`).toBeUndefined();
+    for (const ancien of ANCIENS) {
+      const courant = CARD_ID_RENAMES[ancien];
+      expect(ancien, `${ancien} : un renommage qui ne renomme rien`).not.toBe(courant);
+      expect(getCard(ancien), `${ancien} ne doit plus exister`).toBeUndefined();
+      expect(getCard(courant), `${courant} absent du catalogue`).toBeDefined();
+    }
     for (const id of [...Object.keys(migrated.owned ?? {}), ...(migrated.deck ?? [])]) {
       expect(getCard(id), `${id} n’est pas une carte du catalogue`).toBeDefined();
+    }
+  });
+
+  it('donne aux cinq cartes de Management leur nom de D-029 (#67)', () => {
+    const attendus: Readonly<Record<string, string>> = {
+      'management-responsable-unite': 'Responsable d’unité',
+      'management-responsable-unite-ex': 'Responsable d’unité COMEX',
+      'management-animateur-equipe': 'Animateur d’équipe',
+      'management-chef-service': 'Chef de service',
+      'management-technico-commercial': 'Technico-commercial'
+    };
+    for (const [id, nom] of Object.entries(attendus)) {
+      const card = getCard(id);
+      expect(card?.faction, id).toBe('MANAGEMENT');
+      expect(card?.name, id).toBe(nom);
+    }
+
+    // La carte COMEX garde son statut et sa rareté (D-026) : seul le nom change.
+    const comex = getCard('management-responsable-unite-ex');
+    expect(isPlanque(comex) ? comex.ex : undefined, 'management-responsable-unite-ex').toBe(true);
+    expect(comex?.rarity, 'management-responsable-unite-ex').toBe('4D');
+
+    // Aucun ancien nom ne survit dans le catalogue.
+    const noms = new Set(ALL_CARDS.map((card) => card.name));
+    for (const ancien of ['Chef des ventes', 'Chef des ventes COMEX', 'Responsable d’équipe', 'Manager adjoint', 'Commercial']) {
+      expect(noms.has(ancien), `« ${ancien} » ne doit plus exister`).toBe(false);
     }
   });
 
@@ -196,9 +245,19 @@ describe('Migration v2 — les ids suivent les noms (#49)', () => {
       const prefixe = `${card.faction.toLowerCase()}-`;
       expect(courant.startsWith(prefixe), `${courant} : préfixe de faction`).toBe(true);
 
+      // Le suffixe `-ex` vient du **statut** COMEX (`ex: true`, D-026/D-027), pas du
+      // nom : le nom porte « COMEX », l'id porte `ex` (CARD-SPEC.md §1). On le retire
+      // avant de confronter les mots de l'id à ceux du nom.
+      const segments = courant.slice(prefixe.length).split('-');
+      if (segments.at(-1) === 'ex') {
+        expect(isPlanque(card) && card.ex, `${courant} : suffixe -ex sans statut COMEX`).toBe(true);
+        expect(card.name, `${courant} : le nom doit finir par « COMEX »`).toMatch(/COMEX$/);
+        segments.pop();
+      }
+
       const attendus = mots(card.name);
       const restants = [...attendus];
-      for (const mot of courant.slice(prefixe.length).split('-')) {
+      for (const mot of segments) {
         const rang = restants.indexOf(mot);
         expect(rang, `${ancien} → ${courant} : « ${mot} » ne vient pas de « ${card.name} »`).toBeGreaterThanOrEqual(0);
         restants.splice(0, rang + 1);
