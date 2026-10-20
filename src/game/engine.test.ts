@@ -22,7 +22,7 @@ import {
   retreat
 } from '@/game/engine';
 import { DECK_SIZE } from '@/game/deck';
-import { RULES } from '@/game/rules';
+import { RULES, TURN_LIMIT } from '@/game/rules';
 import type { Attack, BattleState, PlayerId, Status } from '@/data/types';
 
 /**
@@ -186,6 +186,98 @@ describe('endTurn — statut létal', () => {
     expect(after.phase).toBe('playing');
     expect(after.winner).toBeNull();
     expect(after.log.some((line) => line.includes('Chariot vide'))).toBe(true);
+  });
+});
+
+describe('Fin de partie (D-032)', () => {
+  /** Remplace la Pression du Poste par une attaque de test qui craque aussi l'attaquant. */
+  function withSelfDamage(state: BattleState): () => void {
+    const active = state.players.player.active;
+    if (!active) throw new Error('Poste vide');
+    const card = CARD_BY_ID.get(active.cardId);
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(active.cardId, {
+      ...card,
+      attacks: [
+        { name: 'Test', cost: 0, damage: 100, effects: [{ kind: 'selfDamage', amount: 100 }] }
+      ]
+    });
+    return () => CARD_BY_ID.set(active.cardId, card);
+  }
+
+  it('déclare l’égalité au 31ᵉ tour', () => {
+    const state = structuredClone(freshBattle());
+    state.turn = TURN_LIMIT;
+
+    const after = endTurn(state);
+
+    expect(after.phase).toBe('ended');
+    expect(after.winner).toBeNull();
+    expect(after.turn).toBe(TURN_LIMIT + 1);
+    expect(after.log.at(-1)).toContain('égalité');
+
+    // Le tour de la limite n'est pas encore le dernier : la partie continue.
+    const avant = structuredClone(state);
+    avant.turn = TURN_LIMIT - 1;
+    expect(endTurn(avant).phase).toBe('playing');
+  });
+
+  it('fait perdre le camp au plateau vide, même s’il atteint 3 Interventions sur l’action', () => {
+    const base = structuredClone(freshBattle());
+    const restore = withSelfDamage(base);
+    try {
+      const state = structuredClone(base);
+      const me = state.players.player;
+      if (!me.active) throw new Error('Poste vide');
+      me.active.hp = 10;
+      me.active.energy = 0;
+      me.points = 2; // le craquage adverse le porte à 3 Interventions
+      me.bench = [null, null, null]; // ... et son propre plateau se vide
+      const foe = state.players.ai;
+      if (!foe.active) throw new Error('Poste vide');
+      foe.active.hp = 10;
+      if (!foe.bench.some(Boolean)) {
+        foe.bench[0] = createInstance(BASICS[0] ?? foe.active.cardId, state.turn);
+      }
+
+      const after = attack(state, 0);
+      const decisions = after.log.filter((line) => line.includes('gagne'));
+
+      expect(after.phase).toBe('ended');
+      // « that player loses the battle regardless of the number of points ».
+      expect(after.winner).toBe('ai');
+      // Une seule décision, et c'est le plateau vide : l'ordre inverse (3 Interventions
+      // d'abord) aurait donné la victoire au joueur.
+      expect(decisions).toEqual(['L’IA gagne : plus aucun Planqué.']);
+    } finally {
+      restore();
+    }
+  });
+
+  it('n’ouvre pas de relève quand la partie est déjà terminée', () => {
+    const base = structuredClone(freshBattle());
+    const restore = withSelfDamage(base);
+    try {
+      const state = structuredClone(base);
+      const me = state.players.player;
+      if (!me.active) throw new Error('Poste vide');
+      me.active.hp = 10;
+      me.active.energy = 0;
+      me.points = 2;
+      // Un Rack plein : la relève serait légitime si la partie continuait.
+      me.bench[0] = createInstance(BASICS[0] ?? me.active.cardId, state.turn);
+      const foe = state.players.ai;
+      if (!foe.active) throw new Error('Poste vide');
+      foe.active.hp = 10;
+
+      const after = attack(state, 0);
+
+      expect(after.phase).toBe('ended');
+      expect(after.winner).toBe('player');
+      expect(after.pendingPromotion).toBeNull();
+    } finally {
+      restore();
+    }
   });
 });
 

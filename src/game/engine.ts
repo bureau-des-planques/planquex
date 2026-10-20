@@ -12,7 +12,7 @@ import type {
 import { deckLegal } from '@/game/deck';
 import { drawRandom, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
-import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER } from '@/game/rules';
+import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT } from '@/game/rules';
 
 let uidCounter = 0;
 
@@ -568,6 +568,11 @@ export function playAction(state: BattleState, uid: string): BattleState {
   return next;
 }
 
+/**
+ * Applique **un** craquage : Interventions pour l'adversaire, carte au rebut, Poste
+ * vidé. Ne décide **pas** de la fin : c'est `resolveEnd` qui tranche, **après** tous
+ * les craquages de l'action (D-032).
+ */
 function knockOut(state: BattleState, attackerId: PlayerId) {
   const defenderId: PlayerId = attackerId === 'player' ? 'ai' : 'player';
   const defender = state.players[defenderId];
@@ -580,25 +585,63 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
   state.log.push(`${fallenCard?.name ?? 'Un Planqué'} craque : ${points} Intervention${points > 1 ? 's' : ''}.`);
   putInDiscard(defender, fallen);
   defender.active = null;
+}
 
-  if (state.players[attackerId].points >= 3) {
+/** Un camp a-t-il encore un Planqué en jeu ? Sans Planqué, il perd (D-022). */
+function hasPlanques(player: PlayerState): boolean {
+  return Boolean(player.active) || player.bench.some(Boolean);
+}
+
+/**
+ * Tranche la fin de partie, dans l'ordre de **D-032** :
+ *
+ * 1. le **plateau vide** — ce joueur perd « quel que soit le nombre de points »,
+ *    donc même s'il vient d'en marquer trois sur l'action qui vide le plateau ;
+ * 2. les **3 Interventions** ;
+ * 3. sinon, la relève du camp dont le Poste est vide reste à choisir.
+ *
+ * L'ordre compte : appelée après **tous** les craquages d'une action, cette fonction
+ * ne peut pas déclarer une victoire aux points qu'un craquage simultané dément.
+ */
+function resolveEnd(state: BattleState) {
+  const { player, ai } = state.players;
+  const playerOut = !hasPlanques(player);
+  const aiOut = !hasPlanques(ai);
+
+  if (playerOut || aiOut) {
+    const opponent: PlayerId = state.current === 'player' ? 'ai' : 'player';
+    // Si les deux plateaux sont vides sur la même action, D-032 ne tranche pas :
+    // le moteur garde son issue d'avant #72, où le dernier craquage — celui de
+    // l'attaquant — faisait perdre l'attaquant.
     state.phase = 'ended';
-    state.winner = attackerId;
-    state.log.push(`${attackerId === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Interventions.`);
+    state.winner = playerOut ? (aiOut ? opponent : 'ai') : 'player';
+    state.log.push(`${state.winner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : plus aucun Planqué.`);
     return;
   }
 
-  if (defender.bench.some(Boolean)) {
-    // §4 : c'est le joueur dont le Poste a craqué qui choisit sa relève. Le
-    // moteur ne choisit pas à sa place ; il attend `promoteActive`.
-    state.pendingPromotion = defenderId;
-    state.log.push(
-      defenderId === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.'
-    );
-  } else {
+  // À 3 Interventions des deux côtés sur la même action, on garde l'issue d'avant
+  // #72 : le dernier craquage (celui de l'attaquant) départage.
+  const last: PlayerId = state.current === 'player' ? 'ai' : 'player';
+  const pointsWinner =
+    state.players[last].points >= 3 ? last : state.players[state.current].points >= 3 ? state.current : null;
+  if (pointsWinner) {
     state.phase = 'ended';
-    state.winner = attackerId;
-    state.log.push(`${attackerId === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : plus aucun Planqué.`);
+    state.winner = pointsWinner;
+    state.log.push(`${pointsWinner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Interventions.`);
+    return;
+  }
+
+  // Le dernier craquage de l'action est celui de l'attaquant : c'est lui qui reste
+  // en attente ici. L'ordre complet des relèves (l'attaquant choisit en premier,
+  // D-032) appartient au ticket de la relève.
+  const emptyActives: PlayerId[] = [];
+  if (!player.active && player.bench.some(Boolean)) emptyActives.push('player');
+  if (!ai.active && ai.bench.some(Boolean)) emptyActives.push('ai');
+  if (emptyActives.length > 0) {
+    state.pendingPromotion = emptyActives[emptyActives.length - 1] ?? null;
+    state.log.push(
+      state.pendingPromotion === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.'
+    );
   }
 }
 
@@ -686,6 +729,7 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
     player.active.hp -= 20;
     next.log.push('Dérive : l’attaque échoue, 20 de stress.');
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
+    resolveEnd(next);
     return next;
   }
 
@@ -700,6 +744,9 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   if (player.active && player.active.hp <= 0) {
     knockOut(next, next.current === 'player' ? 'ai' : 'player');
   }
+  // D-032 : les deux craquages de l'action sont appliqués **avant** de trancher ;
+  // un plateau vide l'emporte alors sur les Interventions gagnées dans la foulée.
+  resolveEnd(next);
   return next;
 }
 
@@ -736,6 +783,7 @@ function checkup(state: BattleState): BattleState {
 
   if (player.active && player.active.hp <= 0) {
     knockOut(state, state.current === 'player' ? 'ai' : 'player');
+    resolveEnd(state);
   }
   return state;
 }
@@ -753,6 +801,14 @@ export function endTurn(state: BattleState): BattleState {
 
   next.current = next.current === 'player' ? 'ai' : 'player';
   next.turn += 1;
+  // Limite de partie (D-032) : au-delà de `TURN_LIMIT`, égalité. La garde passe
+  // **avant** `startTurn` : le tour 31 ne commence jamais.
+  if (next.turn > TURN_LIMIT) {
+    next.phase = 'ended';
+    next.winner = null;
+    next.log.push(`Limite de partie : ${TURN_LIMIT} tours, égalité.`);
+    return next;
+  }
   startTurn(next);
   return next;
 }

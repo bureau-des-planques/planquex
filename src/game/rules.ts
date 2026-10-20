@@ -12,6 +12,16 @@ export const RULES = {
 };
 
 /**
+ * Limite de partie (D-032) : **30 tours** en Échelon (PvP), puis **égalité**.
+ *
+ * Le solo s'arrête à **50** tours, mais il n'existe pas dans notre périmètre
+ * (`AGENTS.md` §4) et le moteur ne connaît **aucune notion de mode** : 50 est donc
+ * une valeur inatteignable aujourd'hui, notée ici pour le jour où un mode solo
+ * arrivera. Ne pas ajouter un champ `mode` que rien ne remplit (#59).
+ */
+export const TURN_LIMIT = 30;
+
+/**
  * Ordre de résolution des conditions en fin de tour (`AGENTS.md` §4) :
  * **Surcharge → Épuisement → Sieste → Immobilisation**. Un Planqué peut en subir plusieurs,
  * mais pas de toutes : voir `EXCLUSIVE_STATUSES` (D-031).
