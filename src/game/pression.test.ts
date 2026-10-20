@@ -25,7 +25,7 @@ import type { BattleState, CardInstance, Status } from '@/data/types';
  * ce fichier dédié (ticket #76).
  */
 
-const SEED = 1;
+const SEED = 5;
 
 const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id

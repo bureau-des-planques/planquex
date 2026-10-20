@@ -16,7 +16,7 @@ import type { BattleState } from '@/data/types';
  *
  * Le moteur est seedé : on choisit une graine explicite (comme `engine.test.ts`).
  */
-const SEED = 1;
+const SEED = 5;
 
 const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id

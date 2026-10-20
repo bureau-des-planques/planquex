@@ -15,7 +15,7 @@ import type { BattleState, PlayerId } from '@/data/types';
  * ni `evolve`, ni `legalActions` (d'autres agents les modifient en parallèle).
  */
 
-const SEED = 1;
+const SEED = 5;
 
 const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map((card) => card.id);
 const FIRST_BASIC = BASICS[0];

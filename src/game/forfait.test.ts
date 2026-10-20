@@ -18,7 +18,7 @@ import { factionDeck, playGame } from '@/game/simulation';
 const PLAYER_DECK = factionDeck('SSE');
 const AI_DECK = factionDeck('MANAGEMENT');
 
-function freshBattle(seed = 1): BattleState {
+function freshBattle(seed = 5): BattleState {
   return createBattle(PLAYER_DECK, AI_DECK, seed);
 }
 

@@ -28,8 +28,12 @@ import type { Attack, BattleState, PlayerId, Status } from '@/data/types';
 /**
  * Le moteur est **seedé** (ticket #29) : les tests choisissent une graine
  * explicite au lieu de figer `Math.random()`. Même graine, même partie.
+ *
+ * Graine **5** : le premier joueur y est **tiré au sort** (D-033 (6)) ; elle est
+ * choisie pour que ce soit **le joueur**, comme le supposaient ces tests. Le test
+ * des deux issues du tirage vit dans `premier-joueur.test.ts`.
  */
-const SEED = 1;
+const SEED = 5;
 
 const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
@@ -87,18 +91,28 @@ describe('createBattle — mise en place', () => {
     expect(player.hand.length + player.deck.length + inPlay + player.discard.length).toBe(DECK_SIZE);
     expect(state.log).not.toContain('Premier tour : tu ne pioches pas.');
 
-    // La seule exception au premier tour reste le café : aucune attache possible.
+    // La seule exception au premier tour reste le café : aucune attache possible,
+    // et aucune génération non plus (D-033 (6), capture `05`) : la Machine reste vide.
     const active = player.active;
     if (!active) throw new Error('Poste vide');
     const after = attachEnergy(state, active.uid);
     expect(after.players.player.active?.energy).toBe(0);
-    expect(after.players.player.energyZone).toBe(1);
+    expect(after.players.player.energyZone).toBe(0);
     expect(after.log).toContain('Premier tour : pas d’attachement de café.');
   });
 
-  it('remplit la Machine à café du joueur actif', () => {
+  it('laisse la Machine à café vide au premier tour, puis la remplit au suivant (D-033 (6))', () => {
     const state = freshBattle();
-    expect(state.players.player.energyZone).toBe(1);
+    // Tour 1 = premier tour du premier joueur : aucune Énergie générée (capture `05`).
+    expect(state.turn).toBe(1);
+    expect(state.players.player.energyZone).toBe(0);
+
+    // Deux fins de tour ramènent au premier joueur, à son deuxième tour : la
+    // génération normale y reprend.
+    const next = endTurn(endTurn(state));
+    expect(next.current).toBe('player');
+    expect(next.turn).toBe(3);
+    expect(next.players.player.energyZone).toBe(1);
   });
 });
 
@@ -123,12 +137,12 @@ describe('Main de départ — pas de reprise de poste (D-022)', () => {
           `run ${run}, ${who} : aucun N+1`
         ).toBe(true);
         // Cinq cartes de départ : pas de pioche de compensation (D-022). S'y ajoute
-        // la pioche d'ouverture du premier joueur (D-030) ; la Direction, dont le tour
-        // n'a pas commencé, reste à 5.
+        // la pioche d'ouverture du **premier joueur tiré au sort** (D-030, D-033 (6)) ;
+        // l'autre camp, dont le tour n'a pas commencé, reste à 5.
         expect(
           player.hand.length + inPlay.length,
           `run ${run}, ${who} : taille de main`
-        ).toBe(who === 'player' ? 6 : 5);
+        ).toBe(who === battle.firstPlayer ? 6 : 5);
         // Aucune carte perdue ni dupliquée par l'échange.
         expect(
           player.hand.length + inPlay.length + player.deck.length + player.discard.length,
@@ -347,11 +361,17 @@ describe('Pression — dégâts et café', () => {
     if (!isPlanque(card)) throw new Error('Carte inconnue');
     const index = card.attacks.findIndex((entry) => entry.cost <= 3);
     if (index < 0) throw new Error('Aucune Pression abordable');
+    const uid = attacker.uid;
     attacker.energy = 3;
 
     const after = attack(next, index);
 
-    expect(after.players.player.active?.energy).toBe(3);
+    // L'instance attaquante garde ses 3 cafés, qu'elle reste au Poste ou rejoigne le
+    // Rack (une Pression `switchSelf` la déplace sans dépenser de café).
+    const attacked = [after.players.player.active, ...after.players.player.bench].find(
+      (entry) => entry?.uid === uid
+    );
+    expect(attacked?.energy).toBe(3);
     expect(after.players.player.hasAttacked).toBe(true);
   });
 });
@@ -970,11 +990,11 @@ describe('attachEnergy() — Attachement de café', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
 
-    // Premier tour : energyAttached = false, energyZone = 1
+    // Premier tour : energyAttached = false, energyZone = 0 (aucune génération, D-033 (6))
     const after = attachEnergy(state, active.uid);
 
     // L'état est cloné mais l'énergie ne change pas, seul le log s'allonge
-    expect(after.players.player.energyZone).toBe(1);
+    expect(after.players.player.energyZone).toBe(0);
     expect(after.players.player.active?.energy).toBe(0);
     expect(after.log).toContain("Premier tour : pas d\u2019attachement de caf\u00E9.");
   });
