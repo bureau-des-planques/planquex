@@ -82,12 +82,17 @@ tentatives : **c'était faux**, la cause est le contexte injecté.
 
 Conséquence : **Gemma 4 ne peut pas mener une relecture multi-étapes dans ce dépôt**.
 
-**Décision de Bastien (20/10/2026)** : Gemma 4 reste le relecteur pour des **contrôles
-ponctuels autoportants** (un extrait collé, une question fermée, aucun outil) ; les
-**relectures larges** passent sur un **autre** maillon gratuit de la chaîne du benchmark —
-`openrouter/thinkingmachines/inkling:free` (3/3 au benchmark) ou
-`openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` (3/3, plus lent) — **jamais** le modèle
-qui a implémenté.
+**Décision de Bastien (20/10/2026)** — trois paliers, et **jamais le modèle qui a implémenté** :
+
+| Charge | Modèle | Coût |
+|---|---|---|
+| relecture **courante** | chaîne **gratuite** du benchmark : `openrouter/thinkingmachines/inkling:free` (3/3) ou `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` (3/3, plus lent) | 0 |
+| relecture **lourde** (migration de store, moteur, spec) | **abonnement Claude Pro**, déjà authentifié par `opencode-claude-auth` : `anthropic/claude-opus-5-5` ou `anthropic/claude-sonnet-5-5` (moins cher) | abonnement existant |
+| contrôle **ponctuel autoportant** | **Gemma 4** (un extrait collé, une question fermée, **aucun outil**) | 0 |
+
+La voie « abonnement Claude Pro » est **la seule à restrictions faibles qui existe déjà** dans
+cet environnement : aucune carte ni clé nouvelle n'a été nécessaire pour lancer la revue Opus 5.5
+du 20/10/2026.
 
 ### La piste « abonnement Google » — vérifiée le 20/10/2026, et elle est fermée
 
