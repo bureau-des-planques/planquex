@@ -114,8 +114,10 @@ Manager », « Chief Happiness Officer ») restent **sur les cartes**, jamais su
 
 Stades : **Entrant → N+1 → N+2**, et **COMEX** pour le statut des ex. Un Planqué porte **une seule**
 faction : le double type du jeu de 2026 est hors périmètre (D-020). Raretés codées : `1D`, `2D`,
-`3D`, `4D`, `1S`, `2S`.
-La cible `CARD-SPEC.md` contient aussi **3 étoiles** et **Couronne** : à ajouter aux types, aux métadonnées et aux tests avant de les utiliser.
+`3D`, `4D`, `1S`, `2S`, `3S`, `COU`.
+Les deux dernières — **3 étoiles** et **Couronne** — sont **codées** depuis le 20/10/2026 (#87) :
+présentes dans le type `Rarity`, dans `RARITY_META` (`src/data/index.ts`) et couvertes par les
+tests. Aucune carte de **base** ne les porte : elles vivent sur des **variantes**.
 
 ## 4. Règles du jeu
 
@@ -170,7 +172,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 ## 5. Écriture des cartes
 
-- **Identifiants** : minuscules, kebab-case, préfixe de faction — `sse-infirmier-site`. Variantes : suffixe `-star` ou `-star2`. **COMEX : suffixe `-ex`** — le nom porte « COMEX », l'id porte `ex`, et les 15 cartes COMEX s'y conforment ; c'est la seule entorse au point suivant, et elle vient du **statut** (D-026), pas du nom. **Un id suit le nom** : renommer une carte renomme son id, et un renommage d'id s'accompagne d'une **migration du store** (`version`, cf. §6). L'écart id/nom est un *Mysterious Name* : dans un dépôt lu par des agents, une carte introuvable par son nom ne se trouve plus du tout.
+- **Identifiants** : minuscules, kebab-case, préfixe de faction — `sse-infirmier-site`. Variantes : le suffixe **porte la rareté** — `-star` (`1S`), `-star2` (`2S`), `-star3` (`3S`), `-crown` (`COU`) ; la table est unique (`SECRET_RARITY`, `src/data/planque.ts`) et un test la lit dans les deux sens. **COMEX : suffixe `-ex`** — le nom porte « COMEX », l'id porte `ex`, et les 15 cartes COMEX s'y conforment ; c'est la seule entorse au point suivant, et elle vient du **statut** (D-026), pas du nom. **Un id suit le nom** : renommer une carte renomme son id, et un renommage d'id s'accompagne d'une **migration du store** (`version`, cf. §6). L'écart id/nom est un *Mysterious Name* : dans un dépôt lu par des agents, une carte introuvable par son nom ne se trouve plus du tout.
 - **Évolution** : `evolvesFrom` pointe vers l'`id` de la carte précédente. Une variante hérite des stats, attaques, talent et flavour de sa carte de base.
 - **COMEX** : `ex: true`, vaut 2 Interventions. L'UI affiche « COMEX », pas « ex ».
 - **Effets** : utiliser uniquement les `AttackEffectKind` existants (`healSelf`, `healAll`, `status`, `draw`, `discardEnergy`, `selfDamage`, `switchSelf`, `reduceDamage`). Toute nouvelle primitive = décision + mise à jour des types + tests.
@@ -212,7 +214,7 @@ grevomon-tcg/
 - **TypeScript strict**. Alias `@/` → `./src`, déclaré dans `tsconfig.json` et `vite.config.ts`.
 - **UI en français**, identifiants de code en anglais. Ne pas dupliquer les textes de cartes hors de `src/data`.
 - **Moteur** : code pur autant que possible, sans React ni DOM. `applyAction(state, action)` et fonctions de transition ; cloner avec `structuredClone`.
-- **Déterminisme** : **fait** (ticket #29, 19/10/2026). Le hasard vient d'un générateur **seedé** — `src/game/rng.ts` (mulberry32) — et son état vit dans la partie (`BattleState.rng`), donc il se clone et se compare comme le reste. `createBattle(decks, seed)` utilise sa graine, le store est persisté en `version: 2` avec migration (renommages d'id de D-029), et il ne reste **aucun appel à `Math.random()`** dans `src/game/` ni `src/store/`. **Journal d'actions et rejeu** : **fait** (ticket #83, 20/10/2026). `BattleState` porte sa **graine d'origine** (`seed`) et le journal des actions **appliquées** (`actionLog`) ; `applyAction` est le seul point qui journalise (une action refusée ne l'est pas), et `replayBattle(deck, deck, seed, actions)` reconstruit la partie — la cible de `PROPOSITION.md` §6.2 est donc atteinte : seedé **et journalisé**. `BattleState` n'est pas persisté par le store (`partialize`, `src/store/useStore.ts`), donc aucune migration n'était requise.
+- **Déterminisme** : **fait** (ticket #29, 19/10/2026). Le hasard vient d'un générateur **seedé** — `src/game/rng.ts` (mulberry32) — et son état vit dans la partie (`BattleState.rng`), donc il se clone et se compare comme le reste. `createBattle(decks, seed)` utilise sa graine, le store est persisté en `version: 3` avec migration (renommages d'id de D-029, puis re-suffixages de rareté de #87), et il ne reste **aucun appel à `Math.random()`** dans `src/game/` ni `src/store/`. **Journal d'actions et rejeu** : **fait** (ticket #83, 20/10/2026). `BattleState` porte sa **graine d'origine** (`seed`) et le journal des actions **appliquées** (`actionLog`) ; `applyAction` est le seul point qui journalise (une action refusée ne l'est pas), et `replayBattle(deck, deck, seed, actions)` reconstruit la partie — la cible de `PROPOSITION.md` §6.2 est donc atteinte : seedé **et journalisé**. `BattleState` n'est pas persisté par le store (`partialize`, `src/store/useStore.ts`), donc aucune migration n'était requise.
 - **Store** : Zustand + `persist`, clé `bureau-des-planques-v1`. Toute modification de forme doit être migrée ou versionnée.
 - **Données** : un fichier par faction, puis enregistrement dans `src/data/index.ts`. Ne pas oublier `ALL_CARDS`, `CARD_BY_ID` et les métadonnées. Les **cartes Action** (Collègues, Objets) vivent dans `src/data/actions.ts`. Le **socle de faction** vit dans `src/data/planque.ts` (`planqueBase`, `secretVariant`, `planquePalette`) et l'identité des factions dans `src/data/factions.ts` (`FACTION_META` : seule source de la Vulnérabilité et de la couleur unique dont le dégradé est dérivé) ; un fichier de faction ne déclare que ses cartes.
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.

@@ -142,12 +142,12 @@ le CSS ne fait que les lire par `--rarity`.
 | `4D` | ◆◆◆◆ | `#f0c75e` | filet or vif ; les 4◆ sont les COMEX (`card--comex`, cadre or) |
 | `1S` | ★ | `#e8b54a` | filet or + voile holographique |
 | `2S` | ★★ | `#f2d27a` | filet or clair + voile holographique |
-| `3S` | ★★★ | `#ffd76e` | **prévue, non utilisée** (CARD-SPEC §1) ; filet or + holo |
-| `COU` | ♛ | `#c9a2ff` | **prévue, non utilisée** ; filet violet + holo |
+| `3S` | ★★★ | `#ffd76e` | filet or + holo ; **4 variantes** depuis #87 |
+| `COU` | ♛ | `#c9a2ff` | filet violet + holo ; **3 variantes** depuis #87 |
 
-Les raretés hautes (`3S`, `COU`) sont acceptées par le type et les métadonnées mais
-**aucune carte réelle** ne les porte encore (`src/data/cards.test.ts`). Le traitement
-holographique est déjà prévu : il s'appliquera dès qu'une carte existera.
+Les raretés hautes (`3S`, `COU`) sont portées **uniquement par des variantes
+re-raréfiées** (#87, `npm run status` → `"3S": 4, "COU": 3`). Le traitement
+holographique s'applique déjà : `HOLO_RARITIES` les inclut (`src/components/CardView.tsx`).
 
 ---
 
@@ -309,7 +309,7 @@ détourage (`not-lain/background-removal`).
   `glyph` des données. Les planches §6 décrivent le travail d'illustration à venir.
 - Les textures (papier, métal, grain) et les effets holographiques sont **simplifiés** :
   voile en dégradé, pas de vraie feuille métallisée.
-- Les raretés `3S` et `COU` sont stylées mais **aucune carte ne les porte** encore.
+- Les raretés `3S` et `COU` sont stylées et **portées par 7 variantes re-raréfiées** (#87).
 - Le contraste est vérifié pour les paires de texte ; le contraste des pips décoratifs et
   des voiles n'est pas un critère (l'information est portée par le texte).
 - Aucune dépendance n'a été ajoutée pour cette passe (`AGENTS.md` §1.7).
