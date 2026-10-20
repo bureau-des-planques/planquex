@@ -33,8 +33,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     flavor: 'Il a trois rétroplanings. Aucun ne parle du même projet.'
   }),
   base({
-    id: 'management-commercial',
-    name: 'Commercial',
+    id: 'management-technico-commercial',
+    name: 'Technico-commercial',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
@@ -63,8 +63,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     flavor: 'Il a briefé l’équipe. Le compte-rendu dit l’inverse.'
   }),
   base({
-    id: 'management-ton-chef',
-    name: 'Responsable d’équipe',
+    id: 'management-animateur-equipe',
+    name: 'Animateur d’équipe',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
@@ -148,7 +148,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'management-responsable-commercial',
-    evolvesFrom: 'management-commercial',
+    evolvesFrom: 'management-technico-commercial',
     name: 'Responsable commercial',
     stage: 'N+1',
     rarity: '2D',
@@ -158,9 +158,9 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     flavor: 'Il a négocié une remise. Le client en a négocié une autre.'
   }),
   base({
-    id: 'management-manager-adjoint',
+    id: 'management-chef-service',
     evolvesFrom: 'management-assistant-manager',
-    name: 'Manager adjoint',
+    name: 'Chef de service',
     stage: 'N+1',
     rarity: '2D',
     hp: 90,
@@ -189,9 +189,9 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
   }),
 
   base({
-    id: 'management-chef-des-ventes',
+    id: 'management-responsable-unite',
     evolvesFrom: 'management-manager-proximite',
-    name: 'Chef des ventes',
+    name: 'Responsable d’unité',
     stage: 'N+2',
     rarity: '3D',
     hp: 140,
@@ -255,9 +255,9 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     flavor: 'Il a optimisé la ligne. Il a oublié les gens dessus.'
   }),
   base({
-    id: 'management-chef-des-ventes-ex',
+    id: 'management-responsable-unite-ex',
     evolvesFrom: 'management-manager-proximite',
-    name: 'Chef des ventes COMEX',
+    name: 'Responsable d’unité COMEX',
     stage: 'N+2',
     rarity: '4D',
     hp: 170,
@@ -287,8 +287,8 @@ export const MANAGEMENT_VARIANTS: Card[] = [
   secretVariant(MANAGEMENT_CARDS, 'management-manager-proximite', 'star', '▲'),
   secretVariant(MANAGEMENT_CARDS, 'management-responsable-projet', 'star', '✦'),
   secretVariant(MANAGEMENT_CARDS, 'management-responsable-commercial', 'star', '▲'),
-  secretVariant(MANAGEMENT_CARDS, 'management-manager-adjoint', 'star', '◉'),
-  secretVariant(MANAGEMENT_CARDS, 'management-chef-des-ventes', 'star2', '▲'),
+  secretVariant(MANAGEMENT_CARDS, 'management-chef-service', 'star', '◉'),
+  secretVariant(MANAGEMENT_CARDS, 'management-responsable-unite', 'star2', '▲'),
   secretVariant(MANAGEMENT_CARDS, 'management-directeur-projet', 'star2', '✦'),
   secretVariant(MANAGEMENT_CARDS, 'management-directeur-production', 'star2', '▲'),
   secretVariant(MANAGEMENT_CARDS, 'management-jeune-manager', 'star2', '◉')

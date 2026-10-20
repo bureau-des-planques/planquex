@@ -29,7 +29,13 @@ export const STORAGE_VERSION = 2;
  */
 export const CARD_ID_RENAMES: Readonly<Record<string, string>> = {
   'rh-responsable-qvt': 'rh-charge-prevention',
-  'direction-directeur-projet': 'direction-directeur-programme'
+  'direction-directeur-projet': 'direction-directeur-programme',
+  // D-029 (#67) : le Management renommé, chaque nom vérifié libre dans le catalogue.
+  'management-chef-des-ventes': 'management-responsable-unite',
+  'management-chef-des-ventes-ex': 'management-responsable-unite-ex',
+  'management-ton-chef': 'management-animateur-equipe',
+  'management-manager-adjoint': 'management-chef-service',
+  'management-commercial': 'management-technico-commercial'
 };
 
 const STARTER_RARITIES: Rarity[] = ['1D', '2D'];
