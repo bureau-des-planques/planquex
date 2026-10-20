@@ -844,6 +844,12 @@ code {
   box-shadow: none;
 }
 
+/* Café typé (D-037) : la pastille prend la couleur de la faction, donnée par
+   la variable `--cafe` que `CafeDot` pose en style inline. */
+.pip--typed {
+  background: var(--cafe);
+}
+
 .card__flavor {
   color: var(--text-muted);
   font-size: 0.75rem;

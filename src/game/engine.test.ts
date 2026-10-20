@@ -95,24 +95,28 @@ describe('createBattle — mise en place', () => {
     // et aucune génération non plus (D-033 (6), capture `05`) : la Machine reste vide.
     const active = player.active;
     if (!active) throw new Error('Poste vide');
-    const after = attachEnergy(state, active.uid);
-    expect(after.players.player.active?.energy).toBe(0);
-    expect(after.players.player.energyZone).toBe(0);
-    expect(after.log).toContain('Premier tour : pas d’attachement de café.');
+    const end = attachEnergy(state, active.uid);
+    expect(end.players.player.active?.energy).toEqual([]);
+    expect(end.players.player.energyZone).toBeNull();
+    expect(end.log).toContain('Premier tour : pas d’attachement de café.');
   });
 
   it('laisse la Machine à café vide au premier tour, puis la remplit au suivant (D-033 (6))', () => {
     const state = freshBattle();
     // Tour 1 = premier tour du premier joueur : aucune Énergie générée (capture `05`).
     expect(state.turn).toBe(1);
-    expect(state.players.player.energyZone).toBe(0);
+    expect(state.players.player.energyZone).toBeNull();
 
     // Deux fins de tour ramènent au premier joueur, à son deuxième tour : la
     // génération normale y reprend.
     const next = endTurn(endTurn(state));
     expect(next.current).toBe('player');
     expect(next.turn).toBe(3);
-    expect(next.players.player.energyZone).toBe(1);
+    // La Machine y a produit un café **typé** (D-034) : non nul, et tiré dans les
+    // types du Chariot — même graine, même café.
+    const zone = next.players.player.energyZone;
+    expect(zone).not.toBeNull();
+    expect(next.players.player.cafeTypes).toContain(zone);
   });
 });
 
@@ -244,7 +248,7 @@ describe('Fin de partie (D-031)', () => {
       const me = state.players.player;
       if (!me.active) throw new Error('Poste vide');
       me.active.hp = 10;
-      me.active.energy = 0;
+      me.active.energy = [];
       me.points = 2; // le craquage adverse le porte à 3 Interventions
       me.bench = [null, null, null]; // ... et son propre plateau se vide
       const foe = state.players.ai;
@@ -276,7 +280,7 @@ describe('Fin de partie (D-031)', () => {
       const me = state.players.player;
       if (!me.active) throw new Error('Poste vide');
       me.active.hp = 10;
-      me.active.energy = 0;
+      me.active.energy = [];
       me.points = 2;
       // Un Rack plein : la relève serait légitime si la partie continuait.
       me.bench[0] = createInstance(BASICS[0] ?? me.active.cardId, state.turn);
@@ -308,9 +312,10 @@ describe('Pression — dégâts et café', () => {
     const original = defenderCard;
     CARD_BY_ID.set(defender.cardId, { ...defenderCard, weakness: attackerCard.faction });
     try {
-      attacker.energy = 10;
       const base = attackerCard.attacks[0];
       if (!base) throw new Error('Aucune Pression');
+      // Le Poste paie le coût **typé** de la Pression essayée (D-037).
+      attacker.energy = [...base.cost];
       expect(attackPreview(state, 0)).toBe(base.damage + 20);
     } finally {
       CARD_BY_ID.set(defender.cardId, original);
@@ -362,16 +367,17 @@ describe('Pression — dégâts et café', () => {
     const index = card.attacks.findIndex((entry) => entry.cost.length <= 3);
     if (index < 0) throw new Error('Aucune Pression abordable');
     const uid = attacker.uid;
-    attacker.energy = 3;
+    const paid = card.attacks[index]!.cost;
+    attacker.energy = [...paid];
 
     const after = attack(next, index);
 
-    // L'instance attaquante garde ses 3 cafés, qu'elle reste au Poste ou rejoigne le
+    // L'instance attaquante garde ses cafés, qu'elle reste au Poste ou rejoigne le
     // Rack (une Pression `switchSelf` la déplace sans dépenser de café).
     const attacked = [after.players.player.active, ...after.players.player.bench].find(
       (entry) => entry?.uid === uid
     );
-    expect(attacked?.energy).toBe(3);
+    expect(attacked?.energy).toEqual([...paid]);
     expect(after.players.player.hasAttacked).toBe(true);
   });
 });
@@ -550,7 +556,10 @@ describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
     const active = state.players.player.active;
     const defender = state.players.ai.active;
     if (!active || !defender) throw new Error('Poste vide');
-    active.energy = 3;
+    const base = CARD_BY_ID.get(active.cardId);
+    if (!isPlanque(base)) throw new Error('Carte inconnue');
+    // Le Poste paie le coût **typé** de sa Pression d'essai (D-037).
+    active.energy = [...base.attacks[0]!.cost];
     defender.maxHp = 300;
     defender.hp = 300;
     defender.statuses = ['SURCHARGE'];
@@ -582,11 +591,12 @@ describe('Statuts — exclusivité et portée (D-030)', () => {
     const active = state.players.player.active;
     const defender = state.players.ai.active;
     if (!active || !defender) throw new Error('Poste vide');
-    active.energy = 3;
     defender.maxHp = 300;
     defender.hp = 300;
     const card = CARD_BY_ID.get(active.cardId);
     if (!isPlanque(card)) throw new Error('Carte inconnue');
+    // Le Poste paie le coût **typé** de sa Pression remplacée (D-037).
+    active.energy = [...card.attacks[0]!.cost];
     CARD_BY_ID.set(active.cardId, {
       ...card,
       attacks: [
@@ -629,7 +639,11 @@ describe('Statuts — exclusivité et portée (D-030)', () => {
     const active = player.active;
     const slot = player.bench.findIndex(Boolean);
     if (!active || slot < 0) throw new Error('Poste ou Rack vide');
-    active.energy = 5; // la rotation est payée
+    // La rotation est payée **au nombre** de cafés (`AGENTS.md` §4) : une liste du
+    // coût de relève suffit, sans exigence de type.
+    const activeCard = getCard(active.cardId);
+    if (!isPlanque(activeCard)) throw new Error('Carte inconnue');
+    active.energy = Array(activeCard.retreat).fill('SSE');
     // Surcharge et Épuisement se cumulent et **n'interdisent pas** la Rotation (D-033).
     // Sieste et Immobilisation, elles, la bloqueraient : c'est `rotation.test.ts` qui le couvre.
     active.statuses = ['SURCHARGE', 'EPUISEMENT'];
@@ -689,7 +703,8 @@ describe('Relève choisie après un craquage', () => {
     if (!isPlanque(card)) throw new Error('Carte inconnue');
     const index = card.attacks.findIndex((entry) => entry.cost.length <= 3);
     if (index < 0) throw new Error('Aucune Pression abordable');
-    attacker.energy = 3;
+    // Le Poste paie le coût **typé** de la Pression trouvée (D-037).
+    attacker.energy = [...card.attacks[index]!.cost];
     defender.hp = 1;
     return attack(next, index);
   }
@@ -760,7 +775,8 @@ describe('Relève après un double craquage (D-031)', () => {
     CARD_BY_ID.set(attacker.cardId, { ...original, attacks: [pressure] });
     try {
       next.players[attackerId].hasAttacked = false;
-      attacker.energy = 1;
+      // Le Poste paie le coût **typé** de la Pression de test (D-037).
+      attacker.energy = [...pressure.cost];
       defender.hp = 1;
       return attack(next, 0);
     } finally {
@@ -868,17 +884,19 @@ describe('retreat() — Relève', () => {
     const benchCard = state.players.player.bench[0];
     if (!benchCard) throw new Error('Rack vide');
 
-    // On met assez de café sur le Planqué actif pour couvrir le coût de relève
+    // On met assez de café sur le Planqué actif pour couvrir le coût de relève :
+    // la Rotation se paye **au nombre** de cafés (`AGENTS.md` §4).
     const activeCard = getCard(active.cardId);
     const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
-    active.energy = retreatCost;
+    active.energy = Array(retreatCost).fill('SSE');
 
-    const beforeEnergy = active.energy;
+    const beforeCafes = [...active.energy];
 
     const after = retreat(state, 0);
 
-    // Le Planqué du Poste a perdu le coût de relève en café
-    expect(after.players.player.active?.energy).toBe(beforeEnergy - retreatCost);
+    // Le Planqué du Poste a perdu le coût de relève en café : les premiers de la
+    // liste partent (défausse déterministe, `discardFirstCafes`).
+    expect(after.players.player.active?.energy).toEqual(beforeCafes.slice(retreatCost));
     // Le Planqué de l'Rack est maintenant au Poste (sans ses statuts)
     expect(after.players.player.active?.uid).toBe(benchCard.uid);
     // L'ancien Planqué du Poste est allé à l'Rack
@@ -894,8 +912,8 @@ describe('retreat() — Relève', () => {
     const activeCard = getCard(active.cardId);
     const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
 
-    // On met 1 café de moins que le coût
-    active.energy = Math.max(0, retreatCost - 1);
+    // On met 1 café de moins que le coût : la liste reste **au nombre** insuffisant.
+    active.energy = Array(Math.max(0, retreatCost - 1)).fill('SSE');
 
     const after = retreat(state, 0);
 
@@ -911,7 +929,7 @@ describe('retreat() — Relève', () => {
     if (!benchCard) throw new Error('Rack vide');
     const activeCard = getCard(active.cardId);
     const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
-    active.energy = retreatCost;
+    active.energy = Array(retreatCost).fill('SSE');
 
     const afterFirst = retreat(state, 0);
     expect(afterFirst.players.player.hasRetreated).toBe(true);
@@ -927,7 +945,7 @@ describe('retreat() — Relève', () => {
     if (!active) throw new Error('Poste vide');
     const activeCard = getCard(active.cardId);
     const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
-    active.energy = retreatCost;
+    active.energy = Array(retreatCost).fill('SSE');
 
     // Emplacement 2 est vide (si bench[2] === null)
     if (state.players.player.bench[2] === null) {
@@ -949,16 +967,16 @@ describe('attachEnergy() — Attachement de café', () => {
     nextTurn.turn = 2;
     nextTurn.current = 'player';
     nextTurn.players.player.energyAttached = false;
-    nextTurn.players.player.energyZone = 1;
-    nextTurn.players.player.active!.energy = 0;
-
-    const beforeZone = nextTurn.players.player.energyZone;
-    const beforeEnergy = nextTurn.players.player.active!.energy;
+    // La Machine a produit un café typé (D-034) ; le Poste n'a rien d'attaché.
+    nextTurn.players.player.energyZone = 'SSE';
+    nextTurn.players.player.active!.energy = [];
 
     const after = attachEnergy(nextTurn, nextTurn.players.player.active!.uid);
 
-    expect(after.players.player.active?.energy).toBe(beforeEnergy + 1);
-    expect(after.players.player.energyZone).toBe(beforeZone - 1);
+    // Le café quitte la Machine (elle se vide) et rejoint l'instance avec son
+    // type (D-037) — l'exigence « décrémente » devient ici « la zone se vide ».
+    expect(after.players.player.active?.energy).toEqual(['SSE']);
+    expect(after.players.player.energyZone).toBeNull();
     expect(after.players.player.energyAttached).toBe(true);
   });
 
@@ -972,8 +990,8 @@ describe('attachEnergy() — Attachement de café', () => {
     nextTurn.turn = 2;
     nextTurn.current = 'player';
     nextTurn.players.player.energyAttached = false;
-    nextTurn.players.player.energyZone = 2;
-    nextTurn.players.player.active!.energy = 0;
+    nextTurn.players.player.energyZone = 'SSE';
+    nextTurn.players.player.active!.energy = [];
 
     const afterFirst = attachEnergy(nextTurn, nextTurn.players.player.active!.uid);
     expect(afterFirst.players.player.energyAttached).toBe(true);
@@ -981,8 +999,8 @@ describe('attachEnergy() — Attachement de café', () => {
     // Deuxième attachement : refusé
     const afterSecond = attachEnergy(afterFirst, afterFirst.players.player.active!.uid);
     expect(afterSecond).toBe(afterFirst);
-    expect(afterSecond.players.player.active?.energy).toBe(1);
-    expect(afterSecond.players.player.energyZone).toBe(1);
+    expect(afterSecond.players.player.active?.energy).toEqual(['SSE']);
+    expect(afterSecond.players.player.energyZone).toBeNull();
   });
 
   it('refuse l\'attachement au premier tour du joueur', () => {
@@ -990,12 +1008,12 @@ describe('attachEnergy() — Attachement de café', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
 
-    // Premier tour : energyAttached = false, energyZone = 0 (aucune génération, D-033 (6))
+    // Premier tour : energyAttached = false, Machine vide (aucune génération, D-033 (6))
     const after = attachEnergy(state, active.uid);
 
-    // L'état est cloné mais l'énergie ne change pas, seul le log s'allonge
-    expect(after.players.player.energyZone).toBe(0);
-    expect(after.players.player.active?.energy).toBe(0);
+    // L'état est cloné mais le café ne change pas, seul le log s'allonge
+    expect(after.players.player.energyZone).toBeNull();
+    expect(after.players.player.active?.energy).toEqual([]);
     expect(after.log).toContain("Premier tour : pas d\u2019attachement de caf\u00E9.");
   });
 
@@ -1004,13 +1022,13 @@ describe('attachEnergy() — Attachement de café', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
 
-    // Tour 2 mais energyZone = 0
+    // Tour 2 mais la Machine est vide : aucun café produit
     const nextTurn = structuredClone(state);
     nextTurn.turn = 2;
     nextTurn.current = 'player';
     nextTurn.players.player.energyAttached = false;
-    nextTurn.players.player.energyZone = 0;
-    nextTurn.players.player.active!.energy = 0;
+    nextTurn.players.player.energyZone = null;
+    nextTurn.players.player.active!.energy = [];
 
     const after = attachEnergy(nextTurn, nextTurn.players.player.active!.uid);
     expect(after).toBe(nextTurn);
@@ -1024,8 +1042,8 @@ describe('attachEnergy() — Attachement de café', () => {
     nextTurn.turn = 2;
     nextTurn.current = 'player';
     nextTurn.players.player.energyAttached = false;
-    nextTurn.players.player.energyZone = 1;
-    nextTurn.players.player.active!.energy = 0;
+    nextTurn.players.player.energyZone = 'SSE';
+    nextTurn.players.player.active!.energy = [];
 
     const after = attachEnergy(nextTurn, 'uid-inexistant');
     expect(after).toBe(nextTurn);
@@ -1119,10 +1137,12 @@ describe('Cartes Action — Objet illimité, Collègue 1 par tour (AGENTS.md §4
     const cafe = withHand(freshBattle(), [COLLEGUE_CAFE]);
     const defender = cafe.state.players.ai.active;
     if (!defender) throw new Error('Poste adverse vide');
-    defender.energy = 2;
+    // Deux cafés typés : le Collègue n'en couche qu'**un** au rebut, le premier de
+    // la liste (défausse déterministe, `discardFirstCafes`).
+    defender.energy = ['SSE', 'QVT'];
 
     const afterCafe = playAction(cafe.state, cafe.uids[0] ?? '');
-    expect(afterCafe.players.ai.active?.energy).toBe(1);
+    expect(afterCafe.players.ai.active?.energy).toEqual(['QVT']);
   });
 
   it('refuse un Planqué, et refuse qu’une carte Action se pose au Poste', () => {
@@ -1165,7 +1185,8 @@ describe('Effet reduceDamage — réduction de Stress (ticket #43)', () => {
     state.pendingPromotion = null;
     state.players.player.hasAttacked = false;
     const referent = createInstance('rh-referent-handicap');
-    referent.energy = 5;
+    // « Aménagement » coûte 1 café RH : le Poste paie son coût **typé** (D-037).
+    referent.energy = ['RH'];
     state.players.player.active = referent;
 
     const after = attack(state, 0);
@@ -1274,7 +1295,7 @@ describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
     // Le moteur refuse aussi : la liste ne ment pas dans les deux sens.
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
-    expect(attachEnergy(state, active.uid).players.player.active?.energy).toBe(0);
+    expect(attachEnergy(state, active.uid).players.player.active?.energy).toEqual([]);
   });
 
   it('n’offre aucune Pression que le café ne couvre pas', () => {
@@ -1303,7 +1324,11 @@ describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
     const state = structuredClone(afterOpening());
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
-    active.energy = 5;
+    const activeCard = getCard(active.cardId);
+    if (!isPlanque(activeCard)) throw new Error('Carte inconnue');
+    // Le Poste paie un superset des coûts de ses Pressions : la liste, comme le
+    // moteur, doit d'abord en proposer.
+    active.energy = activeCard.attacks.flatMap((entry) => entry.cost);
 
     expect(legalActions(state).some((action) => action.type === 'attack')).toBe(true);
 
@@ -1339,7 +1364,9 @@ describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
       const state = structuredClone(base);
       const poste = state.players.player.active;
       if (!poste) throw new Error('Poste vide');
-      poste.energy = 1;
+      // 1 café de plus que rien : la rotation (coût 1 sur la carte de test) est
+      // payée **au nombre** de cafés.
+      poste.energy = ['SSE'];
       poste.playedTurn = 0;
       state.players.player.hand = [
         createInstance(evolution.id, state.turn),

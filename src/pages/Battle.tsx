@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
-import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
-import type { BattleAction, BattleState, Card, CardInstance, PlayerId, Status } from '@/data/types';
+import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
+import type { BattleAction, BattleState, CafeSymbol, CafeType, Card, CardInstance, PlayerId, Status } from '@/data/types';
 import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
 import { nextAiAction } from '@/game/ia';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
+import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -91,11 +92,38 @@ function StressBar({ stress, max }: { stress: number; max: number }) {
   );
 }
 
+/**
+ * Les cafés **attachés** d'un Planqué, en pastilles typées (D-037) : chaque pastille
+ * porte la couleur de sa faction, vide si rien n'est attaché.
+ */
+function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
+  const names = cafes.map((cafe) => cafeLabel(cafe));
+  return <CafePips symbols={cafes} label={names.length > 0 ? `Cafés attachés : ${names.join(' · ')}` : 'Aucun café attaché'} />;
+}
+
+/**
+ * La **Machine à café** d'un camp : au plus un café typé (D-034) — pastille colorée
+ * du type produit, ou pastille vide quand rien n'est à attacher. Le survol rappelle
+ * les **types du Chariot** (1 à 3, D-037 (4)) dont la Machine tire le café.
+ */
+function MachinePips({ zone, cafeTypes }: { zone: CafeSymbol | null; cafeTypes: readonly CafeType[] }) {
+  const types = cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
+  return (
+    <span
+      className="muted"
+      title={`Machine à café : ${zone ? cafeLabel(zone) : `vide (types du Chariot : ${types || 'aucun'})`}`}
+    >
+      Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" title="Machine à café : vide" />}
+    </span>
+  );
+}
+
 /** Ce qu'un bouton d'action affiche, dérivé de l'action elle-même et de l'état. */
 interface ActionView {
   label: string;
   detail?: string;
-  cost?: number;
+  /** Le coût **typé** d'une Pression (D-037) : pastilles de `CafePips`, pas des points. */
+  cafes?: readonly CafeSymbol[];
   damage?: number;
   icon?: 'coffee' | 'swords';
 }
@@ -145,7 +173,7 @@ function describeAction(state: BattleState, action: BattleAction): ActionView {
       const entry = activeCard && isPlanque(activeCard) ? activeCard.attacks[action.attackIndex] : undefined;
       return {
         label: entry?.name ?? 'Pression',
-        cost: entry?.cost.length,
+        cafes: entry?.cost,
         damage: entry?.damage,
         icon: 'swords'
       };
@@ -187,7 +215,7 @@ function ActionButton({
       {view.icon === 'coffee' && <Coffee size={16} />}
       {view.icon === 'swords' && <Swords size={16} />}
       <span>{view.label}</span>
-      {view.cost !== undefined && <span className="pips">{'●'.repeat(view.cost) || '○'}</span>}
+      {view.cafes && <CafePips symbols={view.cafes} />}
       {view.damage !== undefined && <span className="attack__dmg">{view.damage}</span>}
       {view.detail && <span className="button__detail">{view.detail}</span>}
     </button>
@@ -406,10 +434,8 @@ export function Battle() {
                   </div>
                   <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
                   <div className="poste__meta">
-                    <span className="pips" title={`${side.active.energy} café(s) attaché(s)`}>
-                      {side.active.energy > 0 ? '●'.repeat(side.active.energy) : '○'}
-                    </span>
-                    <span className="muted">Machine {side.energyZone}</span>
+                    <CafesPips cafes={side.active.energy} />
+                    <MachinePips zone={side.energyZone} cafeTypes={side.cafeTypes} />
                     {side.active.statuses.map((status) => (
                       <StatusBadge key={status} status={status} />
                     ))}
@@ -532,7 +558,7 @@ export function Battle() {
                     ? 'Toutes tes Pressions sont à portée de café.'
                     : `Hors de portée du café : ${playerCard.attacks
                         .filter((entry) => !inReach.includes(entry))
-                        .map((entry) => `${entry.name} (${entry.cost.length} café${entry.cost.length > 1 ? 's' : ''})`)
+                        .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
                         .join(', ')}.`}
               </p>
             )}

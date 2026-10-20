@@ -182,7 +182,14 @@ export interface CardInstance {
   cardId: string;
   hp: number;
   maxHp: number;
-  energy: number;
+  /**
+   * Les cafés attachés à cette instance, **typés** (D-037) : un café en jeu est un
+   * `CafeSymbol`. La Machine à café ne produit jamais d'`INCOLORE` ni de type non
+   * produit (D-034) ; un café `INCOLORE` — jamais produit — paierait pourtant tout
+   * coût typé, d'où la forme `CafeSymbol` et non `CafeType`. Le **nombre** de cafés
+   * d'une Pression ne change pas (D-037 (3)) : c'est le type qui devient lisible.
+   */
+  energy: CafeSymbol[];
   /**
    * Conditions subies, dans l'ordre d'application de `STATUS_ORDER` (§4).
    * Seul le Planqué au **Poste** en porte, et la rotation comme l'évolution les
@@ -203,7 +210,19 @@ export interface PlayerState {
   discard: CardInstance[];
   active: CardInstance | null;
   bench: (CardInstance | null)[];
-  energyZone: number;
+  /**
+   * La **Machine à café** : au plus **un** café typé (D-034, capture `05` — la zone ne
+   * s'accumule pas, donc un seul attachement possible par tour). `null` = rien à
+   * attacher : première ouverture, slot occupé, ou Chariot sans type de café.
+   */
+  energyZone: CafeSymbol | null;
+  /**
+   * Les **types de café du Chariot** (D-034/D-037 (4), 1 à 3) : la seule liste d'où la
+   * Machine tire. Dressée une fois par `createBattle` à partir de `deckCafeTypes`
+   * (`@/game/deck`) ; le choix manuel du joueur viendra plus tard (#91). `SUPPORT`
+   * (Incolore) et `INTERIM` (Dragon) n'y figurent jamais (D-034).
+   */
+  cafeTypes: CafeType[];
   points: number;
   energyAttached: boolean;
   hasAttacked: boolean;
