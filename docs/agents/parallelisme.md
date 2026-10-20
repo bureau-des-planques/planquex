@@ -126,6 +126,16 @@ seul coût, voir §6).
   déjà dans la session, et l'agent ne repart pas de zéro. L'ordre de repli est celui du
   benchmark : `opencode/deepseek-v4.1-flash-free` → `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`
   → `openrouter/thinkingmachines/inkling:free`.
+- **`npm run garde-fous` MUTE les fichiers sources en place** (`scripts/garde-fous.mjs`) : il
+  écrit la mutation, lance `vitest run`, puis restaure. Donc **un seul processus par worktree**
+  — jamais `garde-fous` pendant qu'un autre lit ou compile le même arbre. Constaté le
+  21/10/2026 : un relecteur a vu **195 tests échouer** (`TypeError: types is not iterable`) parce
+  que l'orchestrateur lançait `garde-fous` dans **son** worktree au même moment — le fichier
+  muté était revenu intact ensuite, et l'erreur était **un artefact**, pas un défaut.
+  Corollaire : **l'orchestrateur ne vérifie pas une branche pendant qu'un relecteur la lit** —
+  il attend son verdict, ou lui donne un autre worktree.
+- **`npm run status` et `npm run build` ne se lancent pas ensemble** (déjà en §5) : `vite` vide
+  `dist/`.
 
 ## 7. Ce qui ne se délègue pas à un agent
 
