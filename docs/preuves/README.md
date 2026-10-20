@@ -1,12 +1,13 @@
 # Preuves — captures qui rendent une règle « observée »
 
 Ce dossier reçoit les **preuves primaires** : des captures d'écran horodatées, faites
-dans l'application *Pokémon TCG Pocket* elle-même. Deux usages, deux dossiers :
+dans l'application *Pokémon TCG Pocket* elle-même. **Trois usages, trois dossiers** :
 
 | Dossier | Ce qu'il prouve | Protocole |
 |---|---|---|
 | `astuces-<AAAA-MM-JJ>/` | Les **règles** — les pages « Astuces du jeu ». Seul moyen de faire passer une ligne de `AGENTS.md` §4 de **supposé** à **observé** (O-012). | `docs/PROTOCOLE-ASTUCES.md` |
 | `ui-<AAAA-MM-JJ>/` | La **structure de l'interface** — la composition des écrans de l'application d'origine, pour relire les nôtres. | `docs/CAPTURES-UI.md` |
+| `regles-<AAAA-MM-JJ>/` | La **recherche documentaire** — verdict ligne par ligne contre `AGENTS.md` §4, avec citations exactes, niveaux de preuve (primaire / transcription / secondaire) et URL. **Ne contient pas de capture** : c'est un lot de recherche, qui peut ne contenir **aucune preuve primaire**, et doit alors le dire explicitement (§0 du README du lot). | `docs/preuves/regles-<date>/README.md` (modèle implicite : méthode §0, verdict §2, sources §5) |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
 
@@ -22,10 +23,13 @@ preuves/
 │   ├── 04-statuts.png
 │   ├── 05-ko-defaite.png
 │   └── 06-types-energie.png
-└── ui-<AAAA-MM-JJ>/
-    ├── README.md
-    ├── B01-accueil.png
-    └── C01-titre.png
+├── ui-<AAAA-MM-JJ>/
+│   ├── README.md
+│   ├── B01-accueil.png
+│   └── C01-titre.png
+└── regles-<AAAA-MM-JJ>/
+    ├── README.md          ← verdict ligne par ligne, citations, niveaux de preuve
+    └── (rapports bruts optionnels : a-deckgym.md, b-donnees-fr.md, …)
 ```
 
 Une date par lot, un dossier par lot. **Ne pas écraser un lot précédent** : une preuve

@@ -29,26 +29,45 @@ qu'O-008 demandait d'écrire.
 | Machine à café : 1 café généré par tour **et** 1 attachement par tour | ✅ | Pokémon.com, guide de deck |
 | Le premier joueur **peut attaquer** si l'attaque coûte 0 | ✅ | FAQ combat officielle, « Battle Rules FAQ » |
 
-## 2. Conforme, mais **insourçable par URL** (~15 lignes sur 20)
+## 2. Conforme, mais **insourçable en primaire** — distinguer les niveaux de preuve (~15 lignes sur 20)
 
-Ces valeurs ne sont ni fausses ni confirmées : le jeu **ne publie pas de livre de
-règles web**. Le support officiel renvoie aux **« Astuces » internes à l'app** :
+Ces valeurs ne sont ni fausses ni confirmées par une **preuve primaire** : le jeu
+**ne publie pas de livre de règles web**. Le support officiel renvoie aux **« Astuces » internes à l'app** :
 
 > « Please find more information about Pokémon TCG Pocket's game rules in **Tips**
 > or by tapping the question mark button […] » — support officiel
 
 Concernées : main de départ 5, main maximale 10, Rack 3 places, « pas de
 nouveau café si le slot du haut est occupé », « jusqu'à 3 types de café », premier
-joueur qui ne pioche pas / n'attache pas / peut jouer un Collègue, évolution
+joueur qui pioche / n'attache pas / peut jouer un Collègue, évolution
 impossible au premier tour de **chaque** joueur, 1 Pression par tour, café non
 consommé, aucune Résistance, relève payée en cafés, pas de défaite par pioche vide,
 les 5 statuts et leur **ordre** (Surcharge → Épuisement → Sieste → Immobilisation), Objet
 illimité / Collègue 1 par tour.
 
-**Conséquence de méthode** : toute affirmation d'audit sur ces lignes doit rester
-marquée « non vérifié ». Elles sont désormais **décidées** (D-022) — donc implémentées
-avec une règle assumée — mais le seul moyen de les passer à « observé » est une capture
-horodatée des Astuces de jeu : voir `docs/PROTOCOLE-ASTUCES.md`.
+⚠️ **Trois de ces lignes ont été corrigées** le 20/10/2026 par une décision datée, sans
+preuve primaire pour autant : **D-030** (le premier joueur **pioche** — la ligne
+« ne pioche pas » venait du TCG **physique**), **D-031** (les statuts ne sont pas tous
+cumulables) et **D-032** (Vulnérabilité hors Rack, ordre du calcul des dégâts, fin de
+partie, relève choisie). `AGENTS.md` §4 fait foi et porte ces corrections.
+
+**Niveaux de preuve** (terminologie exacte de `docs/preuves/regles-2026-10-20/README.md` §0) :
+
+| Niveau | Ce que c'est | Exemple pour ces lignes |
+|---|---|---|
+| **Primaire** | le texte du jeu lui-même | capture des Astuces in-app ; masterdata du jeu |
+| **Transcription** | quelqu'un a recopié le texte du jeu et **le cite** | `deckgym-core` : « per the in-app Tips panel, transcribed 2026-09-08 » — chaque test cite la phrase qu'il applique |
+| **Secondaire** | un tiers décrit le jeu | wikis (Game8, GameWith, Bulbapedia), simulateurs, articles de presse |
+
+**Plusieurs de ces lignes ont maintenant des sources secondaires nommées** (voir §4 et le lot
+`docs/preuves/regles-2026-10-20/`) : ne pas laisser croire qu'elles sont sans source. Elles
+sont **insourçables en primaire** — pas « insourçables » tout court.
+
+**Conséquence de méthode** : toute affirmation d'audit sur ces lignes doit porter le
+niveau de preuve exact (**primaire** / **transcription** / **secondaire**), jamais
+seulement « non vérifié ». Elles sont désormais **décidées** (D-022) — donc implémentées
+avec une règle assumée — mais le seul moyen de les passer à « observé » (niveau **primaire**)
+est une capture horodatée des Astuces de jeu : voir `docs/PROTOCOLE-ASTUCES.md`.
 
 ## 3. Écarts **exclus du périmètre** (D-020) — chiffrage conservé
 
@@ -83,7 +102,9 @@ Ces quatre points demandent soit une décision datée, soit la capture du §6.
 
 ## 5. Sources
 
-Primaires (éditeur, consultées le 19/10/2026) :
+**Lot de recherche complet** — `docs/preuves/regles-2026-10-20/` (ouvert le 20/10/2026 sur la branche `preuves/regles-2026-10-20`). Ce dossier contient le verdict ligne par ligne, la transcription `deckgym-core`, et toutes les URL citées ci-dessous.
+
+Primaires (éditeur, consultées le 20/10/2026) :
 
 - FAQ gameplay officielle — <https://support.pokemon.com/hc/en-us/articles/30330309361172-Pok%C3%A9mon-TCG-Pocket-Gameplay-FAQ> (version FR : `…/hc/fr/articles/30330309361172-…`)
 - FAQ combat officielle — <https://support.pokemon.com/hc/en-us/articles/38906248102292-Pok%C3%A9mon-TCG-Pocket-Battle-Rules-FAQ>
@@ -92,11 +113,18 @@ Primaires (éditeur, consultées le 19/10/2026) :
 - Calcul des dégâts (Faiblesse) — <https://app-ptcgpt.pokemon-support.com/hc/en-us/articles/57286049312665>
 - Lettre aux producteurs, 15/10/2026 — <https://www.pokemon.com/us/news/read-the-pokemon-tcg-pocket-october-2026-producer-letter>
 - Comment jouer (site officiel JP) — <https://www.pokemontcgpocket.com/ja/howtoplay/battle/>
+- **Miroir web officiel de la FAQ détaillée** — <https://app-ptcgpt.pokemon-support.com/hc/fr/sections/53604902813209>
+- **Où trouver les règles (chemin in-app)** — <https://app-ptcgp.pokemon-support.com/hc/en-us/articles/61745874022553> → « Menu (bouton tout à droite en bas) > Astuces > À propos des règles de combat » et « > FAQ détaillée sur les combats »
 
 Secondaires (wikis de fans, fiabilité décroissante, dont une page datée du
 26/09/2024 qui ignore les Méga ex) : Game8, GameWith, Pokémon-Zone, Bulbapedia.
-Le rapport complet, avec les verdicts ligne à ligne et les URL de ces sources,
-n'est pas dans le dépôt.
+
+Transcription (niveau 2, datée 2026-09-08) — `bcollazo/deckgym-core`, `tests/rules/*` :
+<https://github.com/bcollazo/deckgym-core/tree/main/tests/rules>
+
+Code du même moteur (niveau 3, mais vérifiable) — `src/state/mod.rs`, `src/deck.rs`,
+`src/hooks/core.rs`, `src/hooks/retreat.rs`, `src/move_generation/` :
+<https://github.com/bcollazo/deckgym-core/tree/main/src>
 
 ## 6. Prochaine action vérifiable
 
@@ -104,6 +132,7 @@ n'est pas dans le dépôt.
    `src/data/types.ts` (une décision datée par écart).
 2. **Trancher** les quatre points du §4 — le plus urgent étant la relève après K.O.,
    où le moteur et la doc se contredisent déjà.
-3. **Capturer les Astuces de jeu** de l'app (menu → Game Tips → Battle Rules),
+3. **Capturer les Astuces de jeu** de l'app (**Menu (bouton tout à droite en bas) >
+   Astuces > À propos des règles de combat** — chemin sourcé et daté, `docs/PROTOCOLE-ASTUCES.md` §0),
    horodatée, et la ranger dans le dépôt : elle fait passer les ~15 lignes du §2 de
    « non confirmé » à « observé ».
