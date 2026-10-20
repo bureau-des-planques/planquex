@@ -821,7 +821,10 @@ describe('Chariot imposé au démarrage', () => {
 });
 
 describe('Changement de priorité (D-004)', () => {
-  /** Donne le mot-clé à la carte au Poste, sans toucher aux données. */
+  /**
+   * Donne le mot-clé au Poste en patchant la carte de données : l'appelant doit
+   * garder le `restore()` dans un `finally` (aucune carte du set ne porte le mot-clé).
+   */
   function withKeyword(state: BattleState): { state: BattleState; restore: () => void } {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
@@ -863,9 +866,10 @@ describe('Changement de priorité (D-004)', () => {
 
   it('ne fait rien quand le drapeau global est coupé', () => {
     const state = freshBattle();
-    const { restore } = withKeyword(state);
     const uid = state.players.player.hand[0]?.uid;
     if (!uid) throw new Error('main vide');
+    // Rien entre la mutation et le `try` ne peut lever : le `finally` la défait (#118).
+    const { restore } = withKeyword(state);
     RULES.priorityShiftEnabled = false;
     try {
       expect(priorityShift(state, uid)).toBe(state);
@@ -1343,14 +1347,6 @@ describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
     const originalActive = CARD_BY_ID.get(active.cardId);
     if (!isPlanque(originalActive)) throw new Error('Carte inconnue');
 
-    // Un Planqué de test au Poste : Talent, mot-clé D-004, rotation payée par 1 café.
-    CARD_BY_ID.set(active.cardId, {
-      ...originalActive,
-      retreat: 1,
-      ability: { name: 'Talent de test', text: 'Test.', kind: 'heal', amount: 10 },
-      keywords: ['priorityShift']
-    });
-
     // Une évolution du Poste de test : on ne dépend d'aucune carte de données.
     const evolution = ALL_CARDS.filter(isPlanque).find(
       (card) => card.stage !== 'ENTRANT' && !card.variantOf
@@ -1358,6 +1354,15 @@ describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
     if (!evolution) throw new Error('Aucune évolution dans les données');
     const originalEvolution = CARD_BY_ID.get(evolution.id);
     if (!isPlanque(originalEvolution)) throw new Error('Carte inconnue');
+
+    // Les deux mutations suivent **immédiatement** le `try` (#118) : aucun `throw`
+    // entre elles et le `finally` qui les restaure, sinon la table globale fuit.
+    CARD_BY_ID.set(active.cardId, {
+      ...originalActive,
+      retreat: 1,
+      ability: { name: 'Talent de test', text: 'Test.', kind: 'heal', amount: 10 },
+      keywords: ['priorityShift']
+    });
     CARD_BY_ID.set(evolution.id, { ...originalEvolution, evolvesFrom: active.cardId });
 
     try {
