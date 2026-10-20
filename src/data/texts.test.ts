@@ -23,9 +23,11 @@ import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
  * tient déjà `ATTACK_EFFECT_KINDS` / `ABILITY_KINDS` alignées sur les unions.
  *
  * **Ce que le garde-fou ne tranche pas.** Il ne dit pas ce que le jeu *devrait* faire :
- * c'est #47. Les mensonges recensés sont donc dans `MENSONGES_CONNUS`, avec leur raison.
- * Corriger une carte (ou son texte) fait échouer le dernier test tant que l'entrée n'est
- * pas retirée : la liste ne peut pas survivre à la correction.
+ * c'est #47. Les mensonges recensés vivaient donc dans `MENSONGES_CONNUS`, avec leur
+ * raison. L'inventaire est **clos** (#65) : les 22 textes ont été réécrits, la liste est
+ * vide, et le garde-fou mord désormais sans exception. Corriger une carte fait toujours
+ * échouer le dernier test tant qu'une entrée n'est pas retirée : la liste ne peut pas
+ * survivre à la correction.
  *
  * **Choix de fichier.** Le garde-fou vit ici et non dans `cards.test.ts` : ce dernier est
  * modifié en parallèle (#54, l'oracle `WEAKNESS`), et l'adéquation texte ⇔ effet est une
@@ -255,70 +257,20 @@ const SUJETS: Sujet[] = ALL_CARDS.flatMap((card) => {
 const MENSONGES = SUJETS.filter((sujet) => sujet.problemes.length > 0);
 
 /**
- * **Inventaire de #47** : les mensonges texte ⇔ mécanique du contenu actuel.
+ * **Inventaire de #47 — clos le 20/10/2026 (#65).**
  *
- * Ce ne sont pas des exceptions de confort : chacun est un texte qui annonce une
- * mécanique que le moteur ne fait pas. #47 tranche — corriger le texte, ou décider la
- * primitive qui manque (et alors retirer l'entrée). Tant que la décision n'est pas
- * prise, le garde-fou ne peut pas être plus strict que cette liste.
+ * Les 22 textes recensés annonçaient une mécanique que le moteur ne fait pas ; ils ont
+ * été réécrits (décision Q47.1 : on réécrit, on ne construit pas les primitives). La
+ * liste est donc **vide**, et c'est l'état visé : le garde-fou n'a plus d'exception.
  *
- * Clé stable : `id/attaque` ou `id#talent`. Les `fichier:ligne` sont ceux du 20/10/2026
- * (commit de #48) : c'est un relevé, pas une adresse à maintenir. Le test vérifie que le
- * fichier cité est bien celui de la faction de la carte.
+ * Une entrée ne s'ajoute ici que sur une décision datée de #47 — un texte qu'on garde
+ * en l'état le temps de construire sa primitive — jamais pour faire passer un test.
+ *
+ * Clé stable : `id/attaque` ou `id#talent`. Le format `fichier:ligne — raison` reste
+ * celui attendu si une entrée revient : le test vérifie que le fichier cité est bien
+ * celui de la faction de la carte.
  */
-const MENSONGES_CONNUS: Readonly<Record<string, string>> = {
-  // 10 Pressions qui annoncent une carte défaussée là où `discardEnergy` retire un café.
-  'rh-drh/Plan de carrière':
-    'src/data/rh.ts:48 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'rh-recruteur-embuscade/Approche discrète':
-    'src/data/rh.ts:62 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'rh-responsable-relations-sociales/Négociation':
-    'src/data/rh.ts:167 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'rh-charge-offboarding/Entretien départ':
-    'src/data/rh.ts:283 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'rh-drh-ex/Plan de carrière':
-    'src/data/rh.ts:308 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'direction-pdg/Fusion-acquisition':
-    'src/data/direction.ts:55 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'direction-pdg-ex/Fusion-acquisition':
-    'src/data/direction.ts:71 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'direction-chef-cabinet/Note interne':
-    'src/data/direction.ts:134 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'direction-directeur-programme/Recette finale':
-    'src/data/direction.ts:160 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  'direction-commissaire-comptes/Rapport d\'anomalie':
-    'src/data/direction.ts:195 — « L’adversaire défausse 1 carte » : discardEnergy retire un café, pas une carte.',
-  // Une Pression qui annonce une révélation de main et applique Dérive.
-  'rh-assistant-rh/Entretien':
-    'src/data/rh.ts:24 — « révèle une carte de sa main » : l’effet applique Dérive, rien n’est révélé.',
-  // Quatre Talents qui promettent ce que leur `kind` ne fait pas.
-  'qvt-happiness-manager#talent':
-    'src/data/qvt.ts:35 — « attache 1 café à un Planqué de ton Rack » : attachEnergy attache au Poste.',
-  'rh-charge-recrutement#talent':
-    'src/data/rh.ts:35 — « cherche dans ton deck, révèle, ajoute à ta main » : draw pioche le dessus.',
-  'rh-responsable-inclusion#talent':
-    'src/data/rh.ts:206 — « échange 1 carte de ta main avec le dessus de ton deck » : draw pioche le dessus.',
-  'direction-directeur-adjoint#talent':
-    'src/data/direction.ts:41 — « défausse 1 carte » : draw pioche une carte, rien n’est défaussé.',
-
-  // Sept variantes qui héritent du texte et des effets de leur base (`cards.test.ts`
-  // l’assure) : c’est le même mensonge, sur une autre carte. Chacune a son entrée : une
-  // clé de base ne doit pas pouvoir couvrir un mensonge qui lui serait propre.
-  'rh-assistant-rh-star/Entretien':
-    'src/data/rh.ts:329 — variante de rh-assistant-rh : Dérive annoncée comme une révélation de main.',
-  'rh-charge-recrutement-star#talent':
-    'src/data/rh.ts:330 — variante de rh-charge-recrutement : draw annoncé comme une recherche.',
-  'rh-recruteur-embuscade-star/Approche discrète':
-    'src/data/rh.ts:331 — variante de rh-recruteur-embuscade : discardEnergy annoncé comme une carte.',
-  'rh-drh-star2/Plan de carrière':
-    'src/data/rh.ts:333 — variante de rh-drh : discardEnergy annoncé comme une carte.',
-  'qvt-happiness-manager-star#talent':
-    'src/data/qvt.ts:462 — variante de qvt-happiness-manager : le café annoncé au Rack va au Poste.',
-  'direction-directeur-adjoint-star#talent':
-    'src/data/direction.ts:216 — variante de direction-directeur-adjoint : draw annoncé comme une défausse.',
-  'direction-pdg-star2/Fusion-acquisition':
-    'src/data/direction.ts:217 — variante de direction-pdg : discardEnergy annoncé comme une carte.'
-};
+const MENSONGES_CONNUS: Readonly<Record<string, string>> = {};
 
 describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
   it('ne recopie aucune liste : les attentes couvrent exactement les primitives déclarées', () => {
