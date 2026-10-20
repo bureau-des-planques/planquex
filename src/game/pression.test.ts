@@ -65,7 +65,7 @@ function affordableAttack(active: CardInstance): number {
 }
 
 describe('D-033 §1 — une Pression termine le tour', () => {
-  it('met hasAttacked, puis ne laisse que endTurn dans legalActions', () => {
+  it('met hasAttacked, puis ne laisse que endTurn (et le forfait) dans legalActions', () => {
     const state = battleForAttack();
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
@@ -74,7 +74,8 @@ describe('D-033 §1 — une Pression termine le tour', () => {
 
     expect(after.players.player.hasAttacked).toBe(true);
     expect(after.pendingPromotion).toBeNull();
-    expect(legalActions(after)).toEqual([{ type: 'endTurn' }]);
+    // Seuls restent la fin du tour et le forfait, que D-030 laisse ouvert tant que la partie vit.
+    expect(legalActions(after)).toEqual([{ type: 'endTurn' }, { type: 'forfeit', who: 'player' }]);
   });
 
   it('refuse toutes les autres actions, en renvoyant l’état tel quel', () => {
@@ -157,7 +158,8 @@ describe('D-033 §3 — Dérive : échec = tour terminé, aucun Stress', () => {
     // Le tour est terminé, comme après une Pression réussie.
     expect(after.players.player.hasAttacked).toBe(true);
     expect(after.log.join(' ')).toContain('le tour prend fin');
-    expect(legalActions(after)).toEqual([{ type: 'endTurn' }]);
+    // Seuls restent la fin du tour et le forfait, que D-030 laisse ouvert tant que la partie vit.
+    expect(legalActions(after)).toEqual([{ type: 'endTurn' }, { type: 'forfeit', who: 'player' }]);
   });
 
   it('sur face, la Pression part normalement', () => {

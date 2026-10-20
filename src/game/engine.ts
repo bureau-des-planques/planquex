@@ -1007,8 +1007,9 @@ export function legalActions(state: BattleState): BattleAction[] {
   }
 
   // D-033 §1 : une Pression lancée consomme le reste du tour. Seule la fin du
-  // tour reste offerte — sauf relève en attente, traitée juste au-dessus.
-  if (turnFinished(state)) return [{ type: 'endTurn' }];
+  // tour reste offerte — sauf relève en attente, traitée juste au-dessus — avec le
+  // forfait, que D-030 laisse ouvert tant que la partie vit (#79).
+  if (turnFinished(state)) return [{ type: 'endTurn' }, { type: 'forfeit', who: 'player' }];
 
   const player = state.players[state.current];
   const actions: BattleAction[] = [];
