@@ -162,6 +162,101 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
   });
 });
 
+describe('Cartes — cibles par rareté (CARD-SPEC.md §1, ticket #103)', () => {
+  /** Les **bases** seules : les cibles de §1 portent sur elles, pas sur les variantes. */
+  const BASES = ALL_CARDS.filter((card) => !card.variantOf);
+  const bases = (rarity: RareteBase) => BASES.filter((card) => card.rarity === rarity).length;
+
+  it('ne range aucune base dans une rareté de variante', () => {
+    for (const card of BASES) {
+      expect(RARETES_BASES, card.id).toContain(card.rarity);
+    }
+  });
+
+  it('atteint chaque cible de rareté, à l’écart connu près', () => {
+    for (const rarity of RARETES_BASES) {
+      const cible = CIBLES_BASES[rarity];
+      const observe = bases(rarity);
+      const ecart = observe - cible;
+      const attendu = ECARTS_CONNUS[rarity]?.ecart ?? 0;
+      expect(
+        ecart,
+        `rareté ${rarity} (${RARITY_META[rarity].label}) : ${observe} bases observées pour une cible de ${cible} — écart ${ecart >= 0 ? '+' : ''}${ecart}, attendu ${attendu >= 0 ? '+' : ''}${attendu}`
+      ).toBe(attendu);
+    }
+  });
+
+  it('referme chaque écart connu dès que sa cible est atteinte', () => {
+    // Un écart connu qui ne se referme jamais est un test désarmé : quand la cible est
+    // atteinte, c'est cette assertion qui réclame le retrait de l'exception.
+    // Elle boucle sur **toutes** les entrées, pas sur `1D` : une garde codée en dur sur
+    // une seule clé laisserait les autres se refermer en silence (#103, relecture).
+    for (const rarity of RARETES_BASES) {
+      const exception = ECARTS_CONNUS[rarity];
+      if (!exception) continue;
+      const ecart = bases(rarity) - CIBLES_BASES[rarity];
+      expect(
+        ecart,
+        `rareté ${rarity} : écart soldé, retirer l’exception (ticket #${exception.ticket})`
+      ).not.toBe(0);
+      expect(
+        ecart,
+        `rareté ${rarity} : écart ${ecart} pour une exception de ${exception.ecart} (ticket #${exception.ticket})`
+      ).toBe(exception.ecart);
+    }
+  });
+
+  it('garde la table des écarts connus fermée, et chaque entrée citée par un ticket', () => {
+    // **Fermer la table est ce qui empêche une régression de contenu d'être silenciée** :
+    // sans cela, un futur agent pourrait écrire `{ '1D': -1, '3D': -5 }` et faire passer
+    // la disparition de trois cartes `3◆`. Ajouter une clé exige donc de venir ici — un
+    // acte délibéré, visible en revue (relecture de #103).
+    expect(Object.keys(ECARTS_CONNUS), 'table des écarts connus').toEqual(['1D']);
+    for (const [rarity, exception] of Object.entries(ECARTS_CONNUS)) {
+      expect(Number.isInteger(exception.ticket), `${rarity} : un ticket entier est requis`).toBe(true);
+      expect(exception.ticket, `${rarity} : ticket`).toBeGreaterThan(0);
+    }
+  });
+});
+
+/**
+ * Cibles de structure des **cartes de base** — `docs/CARD-SPEC.md` §1, tableau « Raretés » :
+ *
+ * ```text
+ * | 1 diamant  | 102 |
+ * | 2 diamants |  67 |
+ * | 3 diamants |  42 |
+ * | 4 diamants |  15 |
+ * ```
+ *
+ * **Recopie assumée, la seule légitime** : ces nombres sont des **cibles normatives** du
+ * document, pas un décompte du code. L'observé, lui, se dérive d'`ALL_CARDS` ci-dessous —
+ * il reste la source unique de ce que le dépôt contient (`scripts/compteurs.test.ts`,
+ * ticket #36). Un test qui recopierait les deux côtés ne prouverait rien.
+ */
+const CIBLES_BASES = { '1D': 102, '2D': 67, '3D': 42, '4D': 15 } as const;
+type RareteBase = keyof typeof CIBLES_BASES;
+const RARETES_BASES = Object.keys(CIBLES_BASES) as RareteBase[];
+
+/**
+ * Écarts **constatés et suivis** : une entrée ici est une dette, pas une tolérance.
+ *
+ * `1D` : **101** bases pour **102** attendues. La carte manquante ne peut pas être écrite
+ * sans trancher les quotas par faction de `PROPOSITION.md` §4.3 — les dix factions sont à
+ * leur quota ou au-dessus (281 entrées pour 267). La décision est suivie par le ticket
+ * **#104** (`ready-for-human`).
+ *
+ * **Chaque entrée cite son ticket, et la table est fermée** (relecture de #103) : sans ces
+ * deux gardes, cette table serait un **faux garde-fou** — un futur agent pourrait y ajouter
+ * `'3D': -5` et faire passer la disparition de trois cartes `3◆` sans que rien ne bronche.
+ * Deux tests la tiennent : « garde la table des écarts connus fermée » (la liste des clés
+ * est affirmée, et chaque entrée doit porter un ticket) et « referme chaque écart connu »
+ * (qui réclame le retrait de **toute** entrée dont la cible est atteinte).
+ */
+const ECARTS_CONNUS: Partial<Record<RareteBase, { ecart: number; ticket: number }>> = {
+  '1D': { ecart: -1, ticket: 104 }
+};
+
 /**
  * Socle des raretés hautes — `CARD-SPEC.md` §1 et `AGENTS.md` §3.2.
  * Les cartes ci-dessous sont **synthétiques** et ne sont jamais enregistrées dans
