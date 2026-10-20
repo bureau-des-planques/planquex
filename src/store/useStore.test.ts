@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ALL_CARDS, getCard, isPlanque } from '@/data';
-import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
+import { DECK_SIZE, MAX_COPIES_PER_NAME, MAX_DECK_CAFE_TYPES } from '@/game/deck';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
-import { migratePersisted, CARD_ID_RENAMES, STORAGE_VERSION, useStore } from '@/store/useStore';
+import {
+  migratePersisted,
+  CARD_ID_RENAMES,
+  partializeState,
+  STORAGE_VERSION,
+  useStore
+} from '@/store/useStore';
 import { isSecretSuffix, secretSuffix } from '@/data/planque';
 
 beforeEach(() => {
@@ -151,8 +157,8 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 3', () => {
-    expect(STORAGE_VERSION).toBe(3);
+  it('déclare la version 4', () => {
+    expect(STORAGE_VERSION).toBe(4);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -306,5 +312,85 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     const migrated = migratePersisted(persisted, 3);
     expect(migrated.owned).toEqual(persisted.owned);
     expect(migrated.deck).toEqual(persisted.deck);
+  });
+});
+
+/**
+ * **Les types de café du Chariot sont choisis et persistés avec lui** (#91,
+ * D-037 (4)). `[]` vaut « proposition automatique » : un état v3 sans ce champ
+ * continue donc de fonctionner, et la dérivation reste le défaut.
+ */
+describe('Types de café du Chariot — store (#91)', () => {
+  it('part de la proposition automatique (choix vide)', () => {
+    expect(useStore.getState().cafeTypes).toEqual([]);
+  });
+
+  it('migre un état v3 sans ce champ vers « automatique », sans perdre le reste', () => {
+    const rng = seedRng(91);
+    const migrated = migratePersisted(
+      { name: 'Employé 404', deck: ['sse-psychologue'], packsOpened: 3, rng },
+      3
+    );
+
+    expect(migrated.cafeTypes).toEqual([]);
+    expect(migrated.deck).toEqual(['sse-psychologue']);
+    expect(migrated.packsOpened).toBe(3);
+    expect(migrated.rng).toBe(rng);
+  });
+
+  it('nettoie un choix trafiqué : ni Support ni Intérim, 3 au plus', () => {
+    // Une valeur forgée traverse le typage : c'est le cas d'un état persisté bricolé.
+    const forged = ['SUPPORT', 'INTERIM', 'SSE', 'RH', 'QVT', 'ATELIER'];
+    const migrated = migratePersisted({ deck: [], cafeTypes: forged }, 3);
+
+    expect(migrated.cafeTypes).toEqual(['SSE', 'RH', 'QVT']);
+  });
+
+  it('garde un choix déjà valide d’un état v4', () => {
+    const migrated = migratePersisted({ cafeTypes: ['ATELIER', 'DIRECTION'] }, 4);
+    expect(migrated.cafeTypes).toEqual(['ATELIER', 'DIRECTION']);
+  });
+
+  it('setCafeTypes normalise à l’écriture', () => {
+    const { setCafeTypes } = useStore.getState();
+    setCafeTypes(['SSE', 'SSE', 'RH', 'QVT', 'ATELIER', 'SUPPORT']);
+    expect(useStore.getState().cafeTypes).toEqual(['SSE', 'RH', 'QVT']);
+
+    setCafeTypes(['SUPPORT', 'INTERIM']);
+    expect(useStore.getState().cafeTypes).toEqual([]);
+  });
+
+  it('toggleCafeType ajoute, retire, plafonne à 3 et ignore les types non produits', () => {
+    const { toggleCafeType } = useStore.getState();
+
+    toggleCafeType('SUPPORT');
+    toggleCafeType('INTERIM');
+    expect(useStore.getState().cafeTypes).toEqual([]);
+
+    toggleCafeType('SSE');
+    toggleCafeType('RH');
+    toggleCafeType('QVT');
+    toggleCafeType('ATELIER');
+    expect(useStore.getState().cafeTypes).toEqual(['SSE', 'RH', 'QVT']);
+    expect(useStore.getState().cafeTypes).toHaveLength(MAX_DECK_CAFE_TYPES);
+
+    toggleCafeType('RH');
+    expect(useStore.getState().cafeTypes).toEqual(['SSE', 'QVT']);
+  });
+
+  it('vide le choix avec le Chariot', () => {
+    useStore.getState().toggleCafeType('SSE');
+    expect(useStore.getState().cafeTypes).toEqual(['SSE']);
+
+    useStore.getState().clearDeck();
+    expect(useStore.getState().cafeTypes).toEqual([]);
+  });
+
+  it('persiste le choix avec le Chariot', () => {
+    useStore.getState().setCafeTypes(['SSE', 'RH']);
+    const persisted = partializeState(useStore.getState());
+
+    expect(persisted.deck).toEqual(useStore.getState().deck);
+    expect(persisted.cafeTypes).toEqual(['SSE', 'RH']);
   });
 });
