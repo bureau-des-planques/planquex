@@ -167,10 +167,16 @@ function chooseBench(state: BattleState, who: PlayerId): number {
  *   C'est le terme le plus lourd : 3 Interventions gagnent la partie.
  * - `board` : le **Seuil restant × cafés utiles** de **mon** plateau (Poste et Rack).
  * - `rival` : le plateau **adverse**, un risque : son poids est **négatif**.
- * - `safety` : la **sécurité de mon Poste** — le Seuil au Poste moins les dégâts que
- *   le camp adverse peut me porter.
+ * - `safety` : le **Seuil restant au Poste** — ce que mon Poste peut encore encaisser.
+ *   La menace entrante n'y est **pas** soustraite : elle est comptée une seule fois,
+ *   par `threat` (ticket #111).
  * - `hand` : la **taille de main** — une carte de plus, c'est une option de plus.
- * - `threat` : la **menace** — les dégâts que je peux porter, moins ceux que je subis.
+ * - `threat` : l'**échange de menace** — les dégâts que je peux porter **moins** ceux
+ *   que je subis, au même poids : c'est une différence symétrique, pas un risque caché.
+ * - `endTurn` : le **bonus de fin de tour** — l'anticipation de la carte que je piocherai
+ *   au début de mon prochain tour. Il a son **propre** poids (ticket #111) : régler la
+ *   valeur d'une carte en main ne doit pas déplacer l'arbitrage « jouer un coup de plus
+ *   ou finir son tour ».
  */
 export interface EvaluationWeights {
   points: number;
@@ -179,6 +185,7 @@ export interface EvaluationWeights {
   safety: number;
   hand: number;
   threat: number;
+  endTurn: number;
 }
 
 /**
@@ -201,6 +208,17 @@ export interface EvaluationWeights {
  * - `threat` est **modeste** : une Direction qui ne pense qu'à frapper cesse de
  *   développer, et les parties s'éternisent en égalité.
  * - `board` est **fort** : le plateau est ce qui gagne les parties.
+ *
+ * **Deux défauts de modèle corrigés par #111**, avant tout re-pesage :
+ *
+ * - le bonus de fin de tour était `weights.hand` : régler la valeur d'une carte en main
+ *   déplaçait **silencieusement** l'arbitrage « jouer un coup de plus ou finir son
+ *   tour ». Il a désormais son poids propre (`endTurn`) et il est **nul quand la main
+ *   est pleine** (10 cartes), puisque le camp qui termine ne piochera alors pas ;
+ * - `safety` **et** `threat` soustrayaient tous deux la menace adverse (poids 4 + 3) :
+ *   l'asymétrie n'était pas un choix, c'était la somme de deux réglages. `safety` ne
+ *   compte plus que le **Seuil restant au Poste**, et `threat` est une différence
+ *   **symétrique** (ma menace moins la sienne). Chaque menace est comptée **une fois**.
  */
 export const DEFAULT_EVALUATION_WEIGHTS: EvaluationWeights = {
   points: 300,
@@ -208,7 +226,8 @@ export const DEFAULT_EVALUATION_WEIGHTS: EvaluationWeights = {
   rival: -0.8,
   safety: 4,
   hand: 4,
-  threat: 3
+  threat: 3,
+  endTurn: 4
 };
 
 /** Le camp adverse. */
@@ -288,12 +307,14 @@ function threatOf(player: PlayerState, defender: CardInstance | null): number {
 }
 
 /**
- * **Sécurité du Poste** d'un camp : le Seuil restant au Poste moins la menace
- * adverse. Positive, le Poste tient ; négative, il va craquer au prochain tour.
+ * **Sécurité du Poste** d'un camp : le **Seuil restant** au Poste, rien de plus.
+ *
+ * La menace adverse n'est **pas** soustraite ici (ticket #111) : elle est déjà dans
+ * le terme `threat`, en différence symétrique. La soustraire aussi ici la comptait
+ * deux fois, avec un poids 4 + 3 que personne n'avait choisi.
  */
-function safetyOf(player: PlayerState, opponent: PlayerState): number {
-  const hp = player.active ? player.active.hp : 0;
-  return hp - threatOf(opponent, player.active);
+function safetyOf(player: PlayerState): number {
+  return player.active ? player.active.hp : 0;
 }
 
 /**
@@ -305,10 +326,10 @@ function safetyOf(player: PlayerState, opponent: PlayerState): number {
  *
  * 1. les **Interventions** marquées (écart entre les deux camps) ;
  * 2. le **Seuil restant × cafés utiles** (mon plateau, moins le risque du leur) ;
- * 3. la **sécurité du Poste** (Seuil au Poste moins les dégâts adverses) ;
+ * 3. la **sécurité du Poste** (Seuil restant au Poste) ;
  * 4. la **taille de main** (écart) ;
  * 5. la **menace** (les dégâts que je peux porter, moins ceux que l'adversaire peut
- *    me porter).
+ *    me porter — chaque menace comptée une seule fois, ticket #111).
  *
  * Le score est **relatif à un camp** : les deux camps ne sont donc pas notés de la
  * même façon, et c'est volontaire — on compare des positions pour **un** camp.
@@ -331,10 +352,28 @@ export function evaluatePosition(
     weights.points * (me.points - opponent.points) +
     weights.board * boardValue(me) +
     weights.rival * boardValue(opponent) +
-    weights.safety * safetyOf(me, opponent) +
+    weights.safety * safetyOf(me) +
     weights.hand * (me.hand.length - opponent.hand.length) +
     weights.threat * (myThreat - opponentThreat)
   );
+}
+
+/** La main pleine (10 cartes) — la même limite que `draw` dans le moteur (§4). */
+const HAND_LIMIT = 10;
+
+/**
+ * **Bonus de fin de tour** : la carte que le camp qui termine **piochera** au début de
+ * son prochain tour. Après `endTurn`, l'adversaire a déjà pioché au début du sien ;
+ * sans cette anticipation, finir son tour paraîtrait toujours moins bon que jouer un
+ * coup de plus.
+ *
+ * Le bonus vaut `weights.endTurn`, et **zéro quand la main est pleine** : un camp à
+ * 10 cartes ne piochera pas, le bonus serait faux (ticket #111). Il ne lit **pas**
+ * `weights.hand` : la valeur d'une carte en main et l'arbitrage de fin de tour sont
+ * deux réglages distincts.
+ */
+export function endTurnBonus(player: PlayerState, weights: EvaluationWeights): number {
+  return player.hand.length >= HAND_LIMIT ? 0 : weights.endTurn;
 }
 
 /* ------------------------------------------------------------------ */
@@ -373,8 +412,9 @@ function bestEvaluatedAction(
     // **Finir son tour** : l'adversaire pioche au début du sien, nous piocherons au
     // début du nôtre. Sans cette anticipation, « finir son tour » paraîtrait toujours
     // moins bien que « jouer un coup de plus » — alors que les deux camps piochent
-    // autant. On rend donc la comparaison honnête.
-    if (action.type === 'endTurn') score += weights.hand;
+    // autant. On rend donc la comparaison honnête, avec un poids **propre** et un
+    // bonus **nul** quand la main est pleine (ticket #111, cf. `endTurnBonus`).
+    if (action.type === 'endTurn') score += endTurnBonus(after.players[who], weights);
 
     // Premier arrivé, premier servi : à score égal, l'ordre de `legalActions` tranche.
     // C'est ce qui rend le niveau 2 déterministe.

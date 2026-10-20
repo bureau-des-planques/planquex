@@ -50,7 +50,7 @@ function withTestActive(
 
 /** Les poids par défaut, sauf les termes passés : une mesure isolée. */
 function only(weights: Partial<EvaluationWeights>): EvaluationWeights {
-  return { points: 0, board: 0, rival: 0, safety: 0, hand: 0, threat: 0, ...weights };
+  return { points: 0, board: 0, rival: 0, safety: 0, hand: 0, threat: 0, endTurn: 0, ...weights };
 }
 
 describe('IA de niveau 2 — la menace compte les cafés typés (ticket #108)', () => {
