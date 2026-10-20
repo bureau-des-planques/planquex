@@ -357,6 +357,11 @@ export function useAbility(state: BattleState): BattleState {
 /**
  * Stress qu'une Pression inflige à un Planqué, selon l'emplacement où il se trouve.
  *
+ * L'ordre du calcul est celui de D-032 (FAQ officielle) : les dégâts de la Pression,
+ * les effets qui affectent l'attaquant, la **Vulnérabilité**, puis les effets qui
+ * affectent le défenseur. Un seul plancher, à la dernière étape : une réduction ne doit
+ * pas être rognée à 0 avant que la Vulnérabilité ne s'ajoute.
+ *
  * La **Vulnérabilité** vaut +20 **au Poste seulement** : un Planqué du Rack n'encaisse
  * jamais la Vulnérabilité, même frappé par la même Pression (D-032). `slot` est donc
  * obligatoire — un appelant qui ignore où se trouve sa cible ne compile pas.
@@ -370,11 +375,25 @@ export function attackDamage(
   const attackerCard = getCard(attacker.cardId);
   const defenderCard = getCard(defender.cardId);
   if (!isPlanque(attackerCard) || !isPlanque(defenderCard)) return 0;
-  const weakness = slot === 'poste' && defenderCard.weakness === attackerCard.faction ? 20 : 0;
+
+  // 1. Les dégâts de la Pression.
+  let damage = attack.damage;
+
+  // 2. Les effets qui affectent l'attaquant. Aucune primitive du set ne modifie les
+  //    dégâts sortants aujourd'hui : c'est ici qu'un tel effet s'insérerait. La
+  //    `damageReduction` de l'attaquant n'en est pas un — c'est une défense, lue à
+  //    l'étape 4 quand ce Planqué est la cible.
+
+  // 3. La Vulnérabilité : +20, **au Poste seulement** (#70).
+  if (slot === 'poste' && defenderCard.weakness === attackerCard.faction) damage += 20;
+
+  // 4. Les effets qui affectent le défenseur : son Talent `reduceDamage`, puis la
+  //    réduction d'instance posée par une Pression, valable le tour adverse.
   const abilityReduction = defenderCard.ability?.kind === 'reduceDamage' ? defenderCard.ability.amount ?? 0 : 0;
-  // Réduction posée par un effet d'attaque (`reduceDamage`), valable le tour adverse.
-  const instanceReduction = defender.damageReduction ?? 0;
-  return Math.max(0, attack.damage + weakness - abilityReduction - instanceReduction);
+  damage -= abilityReduction;
+  damage -= defender.damageReduction ?? 0;
+
+  return Math.max(0, damage);
 }
 
 function hasStatus(card: CardInstance, status: Status): boolean {

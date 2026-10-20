@@ -23,7 +23,7 @@ import {
 } from '@/game/engine';
 import { DECK_SIZE } from '@/game/deck';
 import { RULES } from '@/game/rules';
-import type { BattleState, PlayerId } from '@/data/types';
+import type { Attack, BattleState, PlayerId } from '@/data/types';
 
 /**
  * Le moteur est **seedé** (ticket #29) : les tests choisissent une graine
@@ -239,6 +239,102 @@ describe('Pression — dégâts et café', () => {
 
     expect(after.players.player.active?.energy).toBe(3);
     expect(after.players.player.hasAttacked).toBe(true);
+  });
+});
+
+/**
+ * D-032, l'ordre officiel (FAQ, article `57286049312665`) :
+ * 1. les dégâts de la Pression · 2. les effets sur l'attaquant · 3. la Vulnérabilité ·
+ * 4. les effets sur le défenseur. Aucun plancher avant la dernière étape : une
+ * réduction ne doit pas être rognée à 0 avant que la Vulnérabilité ne s'ajoute.
+ *
+ * Les cas ci-dessous sont choisis pour qu'un calcul qui appliquerait la réduction
+ * **avant** la Vulnérabilité, avec un plancher à 0, donne un total différent.
+ */
+describe('Ordre du calcul des dégâts (D-032)', () => {
+  /** 10 de dégâts ; avec la Vulnérabilité (+20) et une réduction de 20, l'ordre donne 10. */
+  const TEST_ATTACK: Attack = { name: 'Pression témoin', cost: 0, damage: 10 };
+
+  /** Le Poste du joueur, et sa carte : l'attaquant de référence. */
+  function referenceAttacker(state: BattleState) {
+    const instance = state.players.player.active;
+    if (!instance) throw new Error('Poste vide');
+    const card = getCard(instance.cardId);
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    return { instance, card };
+  }
+
+  /** Un Planqué sans Talent : seul ce que le test pose entre dans le calcul. */
+  function plainPlanque() {
+    const card = ALL_CARDS.find(
+      (entry) => isPlanque(entry) && !entry.ability && !entry.variantOf && entry.stage === 'ENTRANT'
+    );
+    if (!card) throw new Error('Aucun Planqué témoin');
+    return card;
+  }
+
+  it('applique une réduction d’instance du défenseur après la Vulnérabilité (D-032)', () => {
+    const state = freshBattle();
+    const { instance: attacker, card: attackerCard } = referenceAttacker(state);
+    const plain = plainPlanque();
+    const defender = createInstance(plain.id);
+    defender.damageReduction = 20;
+
+    // Vulnérable à la faction qui attaque : +20 au Poste.
+    const original = CARD_BY_ID.get(plain.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(plain.id, { ...original, weakness: attackerCard.faction });
+    try {
+      // 10 (Pression) + 20 (Vulnérabilité) − 20 (réduction) = 10.
+      // Réduction avant Vulnérabilité avec plancher : max(0, 10 − 20) + 20 = 20.
+      expect(attackDamage(attacker, defender, TEST_ATTACK, 'poste')).toBe(10);
+    } finally {
+      CARD_BY_ID.set(plain.id, original);
+    }
+  });
+
+  it('applique un Talent de réduction du défenseur après la Vulnérabilité (D-032)', () => {
+    const state = freshBattle();
+    const { instance: attacker, card: attackerCard } = referenceAttacker(state);
+    const plain = plainPlanque();
+
+    const original = CARD_BY_ID.get(plain.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(plain.id, {
+      ...original,
+      weakness: attackerCard.faction,
+      ability: {
+        name: 'Réduction témoin',
+        text: 'Ce Planqué subit 20 dégâts de moins.',
+        kind: 'reduceDamage',
+        amount: 20
+      }
+    });
+    try {
+      // Même total que ci-dessus : le Talent est un effet *du défenseur* (étape 4).
+      expect(attackDamage(attacker, createInstance(plain.id), TEST_ATTACK, 'poste')).toBe(10);
+    } finally {
+      CARD_BY_ID.set(plain.id, original);
+    }
+  });
+
+  it('ne déduit pas la défense de l’attaquant des dégâts qu’il inflige (D-032)', () => {
+    const state = freshBattle();
+    const { instance: attacker } = referenceAttacker(state);
+    const plain = plainPlanque();
+
+    const original = CARD_BY_ID.get(plain.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(plain.id, { ...original, weakness: null });
+    try {
+      // Sans Vulnérabilité : 10 de Pression, et rien d'autre. `damageReduction` protège
+      // son porteur quand il est *la cible* (étape 4) ; ce n'est pas un malus des
+      // dégâts sortants (étape 2), donc les 10 ne changent pas.
+      attacker.damageReduction = 20;
+      expect(attackDamage(attacker, createInstance(plain.id), TEST_ATTACK, 'poste')).toBe(10);
+    } finally {
+      CARD_BY_ID.set(plain.id, original);
+    }
   });
 });
 
