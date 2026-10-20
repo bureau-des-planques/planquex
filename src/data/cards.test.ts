@@ -11,7 +11,7 @@ import {
   isActionCard,
   isPlanque
 } from '@/data';
-import type { Card, CafeSymbol, Faction, Rarity, Stage } from '@/data/types';
+import type { Card, CafeSymbol, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
 import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
 import { damageBand, hpBand } from '@/game/curves';
 
@@ -123,7 +123,10 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
   it('n’utilise que les primitives d’effet et de talent déclarées (AGENTS.md §5)', () => {
     for (const card of PLANQUES) {
       for (const attack of card.attacks) {
-        expect(attack.cost.length, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
+        // D-037 (3) : chacune des Pressions d'un Planqué typé porte ≥ 1 café de son
+        // type. Un coût vide n'est donc pas admis (#101) : l'assertion mord, elle ne
+        // se contente plus d'un `≥ 0` toujours vrai.
+        expect(attack.cost.length, `${card.id}/${attack.name}`).toBeGreaterThan(0);
         expect(attack.damage, `${card.id}/${attack.name}`).toBeGreaterThanOrEqual(0);
         for (const effect of attack.effects ?? []) {
           expect(ATTACK_EFFECT_KINDS, `${card.id}/${attack.name}`).toContain(effect.kind);
@@ -163,7 +166,11 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
 const RARITES_HAUTES: Rarity[] = ['3S', 'COU'];
 const TOUTES_LES_RARETES: Rarity[] = ['1D', '2D', '3D', '4D', '1S', '2S', '3S', 'COU'];
 
-const carteSynthetique = (rarity: Rarity): Card => ({
+/**
+ * Le coût est paramétrable : les contrôles d'attribution (D-037 (3)) l'emploient pour
+ * prouver qu'ils **mordent** — une carte valide acceptée, une carte fautive refusée.
+ */
+const carteSynthetique = (rarity: Rarity, cost: CafeSymbol[] = ['SSE']): PlanqueCard => ({
   id: `sse-socle-${rarity.toLowerCase()}`,
   name: `Carte de test ${rarity}`,
   kind: 'PLANQUE',
@@ -173,7 +180,7 @@ const carteSynthetique = (rarity: Rarity): Card => ({
   hp: 60,
   retreat: 1,
   weakness: 'MANAGEMENT',
-  attacks: [{ name: 'Pression de test', cost: ['SSE'], damage: 10 }],
+  attacks: [{ name: 'Pression de test', cost, damage: 10 }],
   flavor: 'Carte synthétique : elle n’entre jamais dans le Parc.',
   glyph: '✦',
   palette: '#24303c'
@@ -239,17 +246,49 @@ describe('Coût en café typé — forme (D-037 (1), #35)', () => {
   });
 });
 
-describe('Coût en café typé — attribution (D-037 (3), #33)', () => {
-  it('un Planqué typé met ≥ 1 café de son type, le reste incolore', () => {
+/**
+ * D-037 (3) : un Planqué **typé** met **au moins un café de son type** dans chacune de
+ * ses Pressions, **le reste en `INCOLORE`**. La règle ne fixe **aucune position** ;
+ * un coût **vide** est refusé, il ne porte aucun café de son type (ticket #101).
+ *
+ * Un prédicat nommé, et non des `expect` en ligne : le test « le contrôle mord » le
+ * confronte à des cartes jetables, il ne se contente pas de relire les cartes réelles.
+ */
+const coutTypeConforme = (cost: readonly CafeSymbol[], faction: Faction): boolean =>
+  cost.length > 0 &&
+  cost.includes(faction) &&
+  cost.every((symbol) => symbol === faction || symbol === 'INCOLORE');
+
+describe('Coût en café typé — attribution (D-037 (3), #33, #101)', () => {
+  it('un Planqué typé met ≥ 1 café de son type, le reste incolore, sans position imposée', () => {
     for (const card of BASE_PLANQUES) {
       if (card.faction === 'SUPPORT' || card.faction === 'INTERIM') continue;
       for (const attack of card.attacks) {
-        if (attack.cost.length === 0) continue;
-        const label = `${card.id}/${attack.name}`;
-        expect(attack.cost[0], label).toBe(card.faction);
-        expect(attack.cost.slice(1).every((symbol) => symbol === 'INCOLORE'), label).toBe(true);
+        expect(
+          coutTypeConforme(attack.cost, card.faction),
+          `${card.id}/${attack.name} : ${JSON.stringify(attack.cost)}`
+        ).toBe(true);
       }
     }
+  });
+
+  it('refuse un coût vide : le contrôle mord', () => {
+    // La carte jetable de ce fichier : elle n'entre jamais dans `ALL_CARDS`.
+    const cout = (cost: CafeSymbol[]): CafeSymbol[] => carteSynthetique('1D', cost).attacks[0].cost;
+
+    // Un coût vide ne porte aucun café de son type : il est refusé, pas sauté.
+    expect(coutTypeConforme(cout([]), 'SSE'), 'coût vide').toBe(false);
+    // « le reste en incolore » : un second café typé étranger est refusé.
+    expect(coutTypeConforme(cout(['SSE', 'MANAGEMENT']), 'SSE'), 'coût [SSE, MANAGEMENT]').toBe(false);
+  });
+
+  it('accepte le café typé à toute position : le contrôle mord', () => {
+    const cout = (cost: CafeSymbol[]): CafeSymbol[] => carteSynthetique('1D', cost).attacks[0].cost;
+
+    // D-037 (3) n'impose aucune position : le café typé peut être ailleurs qu'en tête.
+    expect(coutTypeConforme(cout(['SSE']), 'SSE'), 'coût [SSE]').toBe(true);
+    expect(coutTypeConforme(cout(['INCOLORE', 'SSE']), 'SSE'), 'coût [INCOLORE, SSE]').toBe(true);
+    expect(coutTypeConforme(cout(['SSE', 'INCOLORE']), 'SSE'), 'coût [SSE, INCOLORE]').toBe(true);
   });
 
   it('`SUPPORT` n’a que des coûts incolores', () => {

@@ -117,13 +117,15 @@ describe('SSE — coût en café typé (D-037)', () => {
     }
   });
 
-  it('met ≥ 1 café `SSE` en tête et le reste en `INCOLORE` (D-037 (3))', () => {
+  it('met ≥ 1 café `SSE` et le reste en `INCOLORE`, sans position imposée (D-037 (3), #101)', () => {
     for (const card of ALL_SSE_CARDS.filter(isPlanque)) {
       for (const attack of card.attacks) {
         const label = `${card.id}/${attack.name}`;
-        if (attack.cost.length === 0) continue;
-        expect(attack.cost[0], label).toBe('SSE');
-        expect(attack.cost.slice(1).every((symbol) => symbol === 'INCOLORE'), label).toBe(true);
+        // Un coût vide ne porte aucun café `SSE` : il est refusé, pas sauté.
+        expect(attack.cost.length, `${label} : coût vide`).toBeGreaterThan(0);
+        // La règle ne fixe aucune position : on teste l'appartenance, pas `cost[0]`.
+        expect(attack.cost, label).toContain('SSE');
+        expect(attack.cost.every((symbol) => symbol === 'SSE' || symbol === 'INCOLORE'), label).toBe(true);
       }
     }
   });
