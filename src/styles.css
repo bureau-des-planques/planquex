@@ -365,19 +365,20 @@ code {
 
 .notice {
   background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
+  /* Le ton passe par la couleur de la **bordure entière** : une bordure latérale épaisse
+     est l'un des tells d'UI générée par IA que le détecteur d'Impeccable signale. */
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
   border-radius: var(--radius-sm);
   margin: 0;
   padding: 0.7rem 0.9rem;
 }
 
 .notice--ok {
-  border-left-color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 55%, var(--line));
 }
 
 .notice--warn {
-  border-left-color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
 }
 
 .promotion {
@@ -627,7 +628,8 @@ code {
 .card {
   --rarity: var(--line);
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%);
-  border: 1px solid var(--line);
+  /* La rareté colore la **bordure entière**, pas un filet sur un seul côté (tell d'UI IA). */
+  border: 1px solid color-mix(in srgb, var(--rarity) 55%, var(--line));
   border-radius: var(--radius);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%), 0 8px 20px rgb(0 0 0 / 28%);
   color: inherit;
@@ -641,19 +643,6 @@ code {
   position: relative;
   text-align: left;
   width: 100%;
-}
-
-/* Le cadre de rareté : un filet haut qui prend la couleur de la rareté. */
-.card::before {
-  background: linear-gradient(90deg, transparent, var(--rarity), transparent);
-  content: '';
-  height: 3px;
-  left: 0;
-  opacity: 0.8;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  top: 0;
 }
 
 .card--selected {

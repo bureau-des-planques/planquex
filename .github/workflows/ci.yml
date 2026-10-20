@@ -35,6 +35,11 @@ jobs:
       - name: Lancer les tests
         run: npm test
 
+      # Garde-fou visuel (Impeccable, Apache-2.0) : tells d'UI générée par IA,
+      # 61 règles déterministes, sans IA ni clé. Voir DESIGN.md et .opencode/skills/impeccable.
+      - name: Détecter les anti-patterns d'interface
+        run: npx --yes impeccable detect src/
+
       - name: Construire la production
         run: npm run build
 
