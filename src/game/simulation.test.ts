@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getCard, isBasic } from '@/data';
 import { DECK_SIZE, deckLegal } from '@/game/deck';
+import type { AiLevel } from '@/game/ia';
 import {
   FACTION_ORDER,
   aggregateFactions,
@@ -104,6 +105,30 @@ describe('simulate — contenu du rapport', () => {
     expect(() =>
       simulate({ games: 1, seed: SEED, factions: ['NOPE' as (typeof FACTION_ORDER)[number]] })
     ).toThrow(/inconnue/);
+    expect(() =>
+      simulate({ games: 1, seed: SEED, aiLevel: 3 as unknown as AiLevel })
+    ).toThrow(/Niveau d'IA invalide/);
+  });
+
+  it('porte les niveaux d\'IA dans le rapport, et par défaut le niveau 1', () => {
+    const parDefaut = simulate({ games: 2, seed: SEED });
+    expect(parDefaut.playerLevel).toBe(1);
+    expect(parDefaut.aiLevel).toBe(1);
+
+    const niveaux = simulate({ games: 2, seed: SEED, playerLevel: 2, aiLevel: 1 });
+    expect(niveaux.playerLevel).toBe(2);
+    expect(niveaux.aiLevel).toBe(1);
+  });
+
+  it('change de rapport quand un camp change de niveau', () => {
+    const niveau1 = simulate({ games: 6, seed: SEED, playerLevel: 1, aiLevel: 1 });
+    const niveau2 = simulate({ games: 6, seed: SEED, playerLevel: 1, aiLevel: 2 });
+
+    // Mêmes graines, mêmes Chariots : seul le niveau de la Direction change.
+    expect(niveau2.results.map((result) => result.seed)).toEqual(
+      niveau1.results.map((result) => result.seed)
+    );
+    expect(niveau2.results).not.toEqual(niveau1.results);
   });
 });
 
