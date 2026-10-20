@@ -1,15 +1,17 @@
-import { ACTION_KIND_META, getCard, isBasic, isPlanque } from '@/data';
+import { ACTION_KIND_META, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
   Attack,
   AttackEffect,
   BattleAction,
   BattleState,
+  CafeSymbol,
+  CafeType,
   CardInstance,
   PlayerId,
   PlayerState,
   Status
 } from '@/data/types';
-import { deckLegal } from '@/game/deck';
+import { deckCafeTypes, deckLegal } from '@/game/deck';
 import { drawRandom, flipStamp, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
 import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT } from '@/game/rules';
@@ -80,7 +82,7 @@ export function createInstance(cardId: string, turn = 0, uid = newUid()): CardIn
     cardId,
     hp,
     maxHp: hp,
-    energy: 0,
+    energy: [],
     statuses: [],
     playedTurn: turn,
     evolvedTurn: null,
@@ -107,6 +109,27 @@ function shuffle<T>(items: T[], holder: RngHolder): T[] {
   return copy;
 }
 
+/**
+ * Tire **un type de café** dans ceux du Chariot de `who` (D-034) : c'est ainsi que la
+ * Machine à café produit, et qu'un Talent qui attache un café choisit son type — un
+ * seul tirage, par le générateur **seedé** de la partie, donc reproductible.
+ *
+ * `null` si le Chariot n'a **aucun** type produit (`SUPPORT`/`INTERIM` seuls,
+ * D-034) : la Machine ne produit jamais de café incolore.
+ */
+function drawCafeType(state: BattleState, who: PlayerId): CafeType | null {
+  const types = state.players[who].cafeTypes;
+  if (types.length === 0) return null;
+  return types[Math.floor(drawRandom(state) * types.length)] ?? types[0] ?? null;
+}
+
+/** Le libellé français d'un café, pour le journal (AGENTS.md §3.2). */
+function cafeLabel(type: CafeSymbol): string {
+  // Un café INCOLORE n'est jamais produit (D-034) ; le libellé reste juste s'il
+  // l'était un jour.
+  return type === 'INCOLORE' ? 'Incolore' : FACTION_META[type].name;
+}
+
 function emptyPlayer(): PlayerState {
   return {
     deck: [],
@@ -114,7 +137,8 @@ function emptyPlayer(): PlayerState {
     discard: [],
     active: null,
     bench: [null, null, null],
-    energyZone: 0,
+    energyZone: null,
+    cafeTypes: [],
     points: 0,
     energyAttached: false,
     hasAttacked: false,
@@ -179,13 +203,18 @@ function startTurn(state: BattleState) {
   // exception à son premier tour, et elle se joue dans `attachEnergy`.
   draw(state, state.current, 1);
 
-  // D-033 (6), capture `05` : « durant le premier tour de la personne qui joue en
-  // premier, aucune Énergie n'est générée ». Le premier tour de la partie (tour 1,
-  // tenu par le premier joueur tiré au sort) ne remplit donc pas la Machine à café :
-  // la génération reprend au tour suivant de ce joueur.
-  if (!isOpeningTurn(state) && player.energyZone === 0) {
-    player.energyZone = 1;
-    state.log.push(`${state.current === 'player' ? 'La machine à café' : 'La machine à café adverse'} produit 1 café.`);
+  // Machine à café (D-034, capture `05`) : au premier tour de la partie, aucun café
+  // n'est généré ; au tour suivant, si le slot du haut est libre — la zone ne
+  // contient donc **jamais plus d'un café** — la Machine tire **un type** parmi ceux
+  // du Chariot (jusqu'à 3, D-034/D-037 (4)) avec le générateur seedé de la partie.
+  // Un Chariot sans type produit (`SUPPORT`/`INTERIM` seuls, D-034) ne produit rien.
+  if (!isOpeningTurn(state) && player.energyZone === null) {
+    const type = drawCafeType(state, state.current);
+    if (type) {
+      player.energyZone = type;
+      const label = state.current === 'player' ? 'La machine à café' : 'La machine à café adverse';
+      state.log.push(`${label} produit 1 café ${cafeLabel(type)}.`);
+    }
   }
 }
 
@@ -268,6 +297,11 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
   state.players.player.deck = shuffle(deckInstances(playerDeck, 'p'), state);
   state.players.ai.deck = shuffle(deckInstances(aiDeck, 'a'), state);
 
+  // Les types de café de chaque Chariot, dressés une fois (D-034) : la Machine
+  // d'un camp ne tire que dans les siens, jusqu'à 3 types (D-037 (4)).
+  state.players.player.cafeTypes = deckCafeTypes(playerDeck);
+  state.players.ai.cafeTypes = deckCafeTypes(aiDeck);
+
   setupPlayer(state, 'player');
   setupPlayer(state, 'ai');
 
@@ -345,13 +379,19 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
     next.log.push('Premier tour : pas d’attachement de café.');
     return next;
   }
-  if (player.energyZone <= 0) return state;
+  // La zone contient au plus un café typé (D-034) : rien n'est attachable si elle
+  // est vide — première ouverture, slot occupé, Chariot sans type produit.
+  if (player.energyZone === null) return state;
   const target = findInPlay(player, targetUid);
   if (!target) return state;
-  target.energy += 1;
-  player.energyZone -= 1;
+  const cafe = player.energyZone;
+  // Le café **conserve son type** (D-037) : l'instance porte la liste de ses cafés typés.
+  target.energy.push(cafe);
+  player.energyZone = null;
   player.energyAttached = true;
-  next.log.push(`${next.current === 'player' ? 'Tu attaches' : 'L’IA attache'} 1 café à ${getCard(target.cardId)?.name ?? 'un Planqué'}.`);
+  next.log.push(
+    `${next.current === 'player' ? 'Tu attaches' : 'L’IA attache'} 1 café ${cafeLabel(cafe)} à ${getCard(target.cardId)?.name ?? 'un Planqué'}.`
+  );
   return next;
 }
 
@@ -365,8 +405,12 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   const bench = player.bench[benchIndex];
   if (!bench) return state;
   const card = getCard(player.active.cardId);
-  if (!isPlanque(card) || player.active.energy < card.retreat) return state;
-  player.active.energy -= card.retreat;
+  if (!isPlanque(card) || player.active.energy.length < card.retreat) return state;
+  // Le café n'est **pas consommé** par une Pression, mais la Rotation défausse
+  // autant de cafés que son coût (`AGENTS.md` §4). Les cafés sont typés
+  // (D-037) : le tirage des premiers de la liste est un choix **au nombre** —
+  // le coût de Rotation n'est pas un coût typé.
+  discardFirstCafes(player.active, card.retreat);
   const outgoing = player.active;
   // Seul le Poste peut porter un statut (D-030) : le sortant les perd en rejoignant le
   // Rack, et l'entrant n'en porte aucun. D-033 (4) : il perd aussi les **effets
@@ -396,7 +440,11 @@ export function useAbility(state: BattleState): BattleState {
   } else if (ability.kind === 'draw') {
     draw(next, next.current, ability.amount ?? 1);
   } else if (ability.kind === 'attachEnergy') {
-    player.active.energy += 1;
+    // Le café du Talent est typé comme un café produit : il se tire dans les types
+    // du Chariot (D-034) par le générateur seedé — même graine, même café. Un
+    // Chariot sans type produit ne peut rien attacher.
+    const cafe = drawCafeType(next, next.current);
+    if (cafe) player.active.energy.push(cafe);
   }
   player.hasUsedAbility = true;
   next.log.push(`${next.current === 'player' ? 'Tu utilises' : 'L’IA utilise'} ${ability.name}.`);
@@ -443,6 +491,17 @@ export function attackDamage(
   damage -= defender.damageReduction ?? 0;
 
   return Math.max(0, damage);
+}
+
+/**
+ * Défausse les **premiers** cafés d'une instance (au nombre, `AGENTS.md` §4) : le
+ * coût de Rotation défausse autant de cafés, et l'effet `discardEnergy` un seul.
+ * Les cafés ne sont pas des cartes : ils disparaissent, sans rejoindre le Rebut.
+ * Le choix `premiers de la liste` est déterministe ; un choix manuel du café
+ * défaussé serait une règle nouvelle — hors du périmètre.
+ */
+function discardFirstCafes(card: CardInstance, amount: number) {
+  card.energy = card.energy.slice(amount);
 }
 
 function hasStatus(card: CardInstance, status: Status): boolean {
@@ -539,7 +598,8 @@ function applyEffects(
         draw(state, who, effect.amount ?? 1);
         break;
       case 'discardEnergy':
-        defender.energy = Math.max(0, defender.energy - 1);
+        // La défausse retire le café typé de l'instance, sans restaurer la Machine.
+        discardFirstCafes(defender, 1);
         break;
       case 'selfDamage':
         attacker.hp -= effect.amount ?? 10;
@@ -591,7 +651,7 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
         if (effect.status && opponent.active) applyStatus(opponent.active, effect.status);
         break;
       case 'discardEnergy':
-        if (opponent.active) opponent.active.energy = Math.max(0, opponent.active.energy - 1);
+        if (opponent.active) discardFirstCafes(opponent.active, 1);
         break;
       case 'healSelf':
       case 'selfDamage':
@@ -806,7 +866,9 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   const targetCard = getCard(opponent.active.cardId);
   if (!isPlanque(card) || !isPlanque(targetCard)) return state;
   const attack = card.attacks[attackIndex];
-  if (!attack || player.active.energy < attack.cost.length) return state;
+  // #89 (cadrage) : le paiement reste **au nombre** ; #90 le convertit au coût
+  // typé (`satisfiesCafeCost`).
+  if (!attack || player.active.energy.length < attack.cost.length) return state;
 
   // Sieste et Immobilisation interdisent la Pression (D-033 §2, capture `07` :
   // « Les Pokémon Endormis ne peuvent ni attaquer ni battre en retraite. »). Le
@@ -1094,7 +1156,8 @@ export function legalAttacks(state: BattleState): Attack[] {
   const card = getCard(player.active.cardId);
   if (!isPlanque(card)) return [];
   if (hasStatus(player.active, 'SIESTE') || hasStatus(player.active, 'IMMOBILISATION')) return [];
-  return card.attacks.filter((attack) => player.active && player.active.energy >= attack.cost.length);
+  // #89 (cadrage) : le paiement reste **au nombre** ; #90 le convertit au coût typé.
+  return card.attacks.filter((attack) => player.active && player.active.energy.length >= attack.cost.length);
 }
 
 /** Les Planqués du camp, Poste et Rack, dans cet ordre. */
@@ -1172,7 +1235,8 @@ export function legalActions(state: BattleState): BattleAction[] {
   }
 
   // Café : 1 par tour, un par Planqué en jeu — mais aucun attachement au premier tour (§4, D-030).
-  if (!player.energyAttached && player.energyZone > 0 && !isOpeningTurn(state)) {
+  // La zone porte au plus un café typé (D-034) : rien à attacher tant qu'elle est vide.
+  if (!player.energyAttached && player.energyZone !== null && !isOpeningTurn(state)) {
     for (const target of inPlay(player)) actions.push({ type: 'attachEnergy', targetUid: target.uid });
   }
 
@@ -1183,7 +1247,7 @@ export function legalActions(state: BattleState): BattleAction[] {
     const activeCard = getCard(player.active.cardId);
     if (isPlanque(activeCard)) {
       player.bench.forEach((card, benchIndex) => {
-        if (card && player.active && player.active.energy >= activeCard.retreat) {
+        if (card && player.active && player.active.energy.length >= activeCard.retreat) {
           actions.push({ type: 'retreat', benchIndex });
         }
       });

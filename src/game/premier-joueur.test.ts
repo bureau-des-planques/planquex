@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_CARDS, isBasic, isPlanque } from '@/data';
+import { ALL_CARDS, FACTION_META, isBasic, isPlanque } from '@/data';
 import {
   attachEnergy,
   canEvolve,
@@ -109,7 +109,7 @@ describe('Tirage du premier joueur (D-033 (6))', () => {
 
     it(`n’a aucun café généré ni attachable au premier tour de ${label}`, () => {
       const state = create(seed);
-      expect(state.players[opener].energyZone).toBe(0);
+      expect(state.players[opener].energyZone).toBeNull();
       // Aucune ligne de génération, ni pour l'un ni pour l'autre (capture `05`).
       expect(state.log.some((line) => line.includes('produit 1 café'))).toBe(false);
 
@@ -120,18 +120,22 @@ describe('Tirage du premier joueur (D-033 (6))', () => {
       const active = state.players[opener].active;
       if (!active) throw new Error('Poste vide');
       const after = attachEnergy(state, active.uid);
-      expect(after.players[opener].active?.energy).toBe(0);
-      expect(after.players[opener].energyZone).toBe(0);
+      expect(after.players[opener].active?.energy).toEqual([]);
+      expect(after.players[opener].energyZone).toBeNull();
     });
 
     it(`génère normalement dès le premier tour du second joueur (${label} ouvre)`, () => {
       const state = endTurn(create(seed));
       expect(state.turn).toBe(2);
       expect(state.current).toBe(other);
-      expect(state.players[other].energyZone).toBe(1);
-      expect(state.log).toContain(
-        other === 'player' ? 'La machine à café produit 1 café.' : 'La machine à café adverse produit 1 café.'
-      );
+      // La Machine y a produit un café **typé** (D-034) : non nul, tiré dans les
+      // types du Chariot, et nommé au journal avec son libellé.
+      const zone = state.players[other].energyZone;
+      // L'incolore est dans la garde : la Machine n'en produit jamais (D-034).
+      if (!zone || zone === 'INCOLORE') throw new Error('Aucun café de type produit');
+      expect(state.players[other].cafeTypes).toContain(zone);
+      const machine = other === 'player' ? 'La machine à café' : 'La machine à café adverse';
+      expect(state.log).toContain(`${machine} produit 1 café ${FACTION_META[zone].name}.`);
     });
 
     it(`interdit l’évolution au premier tour de ${label}`, () => {

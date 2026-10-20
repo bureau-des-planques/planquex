@@ -15,6 +15,7 @@ import {
   useAbility
 } from '@/game/engine';
 import { stepRng } from '@/game/rng';
+import { satisfiesCafeCost } from '@/game/rules';
 import type { BattleState, CardInstance, Status } from '@/data/types';
 
 /**
@@ -45,7 +46,10 @@ function battleForAttack(): BattleState {
   const active = player.active;
   const defender = state.players.ai.active;
   if (!active || !defender) throw new Error('Poste vide');
-  active.energy = 10;
+  const activeCard = getCard(active.cardId);
+  if (!isPlanque(activeCard)) throw new Error('Carte inconnue');
+  // Le Poste paie un superset des coûts **typés** de ses Pressions (D-037).
+  active.energy = activeCard.attacks.flatMap((entry) => entry.cost);
   // Seuils montés : aucune Pression du set ne craque ici, donc pas de relève.
   active.maxHp = 300;
   active.hp = 300;
@@ -59,7 +63,7 @@ function battleForAttack(): BattleState {
 function affordableAttack(active: CardInstance): number {
   const card = getCard(active.cardId);
   if (!isPlanque(card)) throw new Error('Carte inconnue');
-  const index = card.attacks.findIndex((entry) => entry.cost.length <= active.energy);
+  const index = card.attacks.findIndex((entry) => satisfiesCafeCost(active.energy, entry.cost));
   if (index < 0) throw new Error('Aucune Pression abordable');
   return index;
 }

@@ -85,7 +85,7 @@ export function CardView({ card, onClick, compact, selected }: Props) {
         {planque ? (
           card.attacks.map((attack) => (
             <div className="attack" key={attack.name}>
-              <CafePips cost={attack.cost.length} />
+              <CafePips symbols={attack.cost} />
               <span className="attack__name">{attack.name}</span>
               <span className="attack__dmg">{attack.damage}</span>
             </div>

@@ -56,7 +56,7 @@ interface Cue<K extends string> {
  * ou décider la primitive qui manque).
  */
 const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
-  // `discardEnergy` retire un café au Planqué d'en face (engine.ts : `defender.energy -= 1`).
+  // `discardEnergy` retire un café au Planqué d'en face (engine.ts : `discardFirstCafes(defender, 1)`).
   { label: 'café', pattern: /cafes?\b/, kinds: ['discardEnergy'] },
   // Aucune primitive ne défausse une carte de la main : le seul rebut est le café.
   { label: 'défausse 1 carte', pattern: /defausse (?:\d+|une) carte/, kinds: [] },
@@ -77,8 +77,9 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
  * Les mots d'un **Talent**, avec le `AbilityKind` qui peut les réaliser.
  *
  * Un Talent n'a pas accès aux primitives d'attaque : `Rack`, `défausse`, `cherche`,
- * `main`, `deck` n'ont donc aucune primitive de Talent. `attachEnergy` attache au
- * **Poste** (`engine.ts` : `player.active.energy += 1`) et `heal` / `antiStatus` ne
+ * `main`, `deck` n'ont donc aucune primitive de Talent. `attachEnergy` attache un
+ * café tiré dans le Chariot au **Poste** (engine.ts : `player.active.energy.push(cafe)`),
+ * et `heal` / `antiStatus` ne
  * soignent que le Poste : viser le Rack ou la main est un mensonge.
  */
 const CUES_TALENT: readonly Cue<AbilityKind>[] = [

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ALL_CARDS, isBasic } from '@/data';
+import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
 import { attack, createBattle, endTurn } from '@/game/engine';
 import { drawRandom, flipStamp, seedRng } from '@/game/rng';
 import type { BattleState, Status } from '@/data/types';
@@ -78,7 +78,10 @@ function battleForDerive(rng: number): BattleState {
   const state = battleWith('DERIVE', rng);
   const mine = state.players.player.active;
   if (!mine) throw new Error('Poste vide');
-  mine.energy = 10;
+  const mineCard = getCard(mine.cardId);
+  if (!isPlanque(mineCard)) throw new Error('Carte inconnue');
+  // Un superset des coûts **typés** (D-037) : la Dérive, pas le café, décide ici.
+  mine.energy = mineCard.attacks.flatMap((entry) => entry.cost);
   return state;
 }
 

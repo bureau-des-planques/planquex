@@ -100,7 +100,11 @@ describe('Contrôle des deux Postes après chaque tour (D-033 §5)', () => {
     const foeDuring = { ...afterMine, current: 'ai' as PlayerId };
     const aiActive = foeDuring.players.ai.active;
     if (!aiActive) throw new Error('Poste adverse vide');
-    aiActive.energy = 9;
+    const aiCard = getCard(aiActive.cardId);
+    if (!isPlanque(aiCard)) throw new Error('Carte inconnue');
+    // Le Poste paie le coût **typé** de sa Pression (D-037) : c'est le statut,
+    // pas un café manquant, qui doit la refuser au journal.
+    aiActive.energy = [...aiCard.attacks[0]!.cost];
     foeDuring.players.ai.hasAttacked = false;
     const hpBefore = foeDuring.players.player.active?.hp;
     const attacked = attack(foeDuring, 0);

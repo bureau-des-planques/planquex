@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Coffee, RotateCcw, Swords } from 'lucide-react';
-import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
-import type { BattleAction, BattleState, Card, CardInstance, PlayerId, Status } from '@/data/types';
+import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
+import type { BattleAction, BattleState, CafeSymbol, CafeType, Card, CardInstance, PlayerId, Status } from '@/data/types';
 import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
 import { nextAiAction } from '@/game/ia';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
+import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -88,6 +89,32 @@ function StressBar({ stress, max }: { stress: number; max: number }) {
     <div className="stress" role="img" aria-label={`Stress : ${stress} sur ${max}`}>
       <div className={`stress__fill ${level}`} style={{ width: `${pct}%` }} />
     </div>
+  );
+}
+
+/**
+ * Les cafés **attachés** d'un Planqué, en pastilles typées (D-037) : chaque pastille
+ * porte la couleur de sa faction, vide si rien n'est attaché.
+ */
+function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
+  const names = cafes.map((cafe) => cafeLabel(cafe));
+  return <CafePips symbols={cafes} label={names.length > 0 ? `Cafés attachés : ${names.join(' · ')}` : 'Aucun café attaché'} />;
+}
+
+/**
+ * La **Machine à café** d'un camp : au plus un café typé (D-034) — pastille colorée
+ * du type produit, ou pastille vide quand rien n'est à attacher. Le survol rappelle
+ * les **types du Chariot** (1 à 3, D-037 (4)) dont la Machine tire le café.
+ */
+function MachinePips({ zone, cafeTypes }: { zone: CafeSymbol | null; cafeTypes: readonly CafeType[] }) {
+  const types = cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
+  return (
+    <span
+      className="muted"
+      title={`Machine à café : ${zone ? cafeLabel(zone) : `vide (types du Chariot : ${types || 'aucun'})`}`}
+    >
+      Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" title="Machine à café : vide" />}
+    </span>
   );
 }
 
@@ -406,10 +433,8 @@ export function Battle() {
                   </div>
                   <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
                   <div className="poste__meta">
-                    <span className="pips" title={`${side.active.energy} café(s) attaché(s)`}>
-                      {side.active.energy > 0 ? '●'.repeat(side.active.energy) : '○'}
-                    </span>
-                    <span className="muted">Machine {side.energyZone}</span>
+                    <CafesPips cafes={side.active.energy} />
+                    <MachinePips zone={side.energyZone} cafeTypes={side.cafeTypes} />
                     {side.active.statuses.map((status) => (
                       <StatusBadge key={status} status={status} />
                     ))}

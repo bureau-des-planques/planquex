@@ -69,7 +69,7 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
               {card.attacks.map((attack) => (
                 <div className="detail-attack" key={attack.name}>
                   <div className="detail-attack__head">
-                    <CafePips cost={attack.cost.length} />
+                    <CafePips symbols={attack.cost} />
                     <strong>{attack.name}</strong>
                     <span className="detail-attack__dmg">{attack.damage}</span>
                   </div>
