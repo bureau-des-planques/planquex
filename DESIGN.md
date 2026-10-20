@@ -1,5 +1,10 @@
-# Direction artistique — Bureau des Planqués
+# DESIGN.md — Bureau des Planqués
 
+> **Système de design du projet** : palette, gabarit de carte, cadre de rareté, badges,
+> mascotte et planches de style. Ce fichier est le **`DESIGN.md`** attendu à la racine par
+> les agents de design (`create-design-md`) ; il **remplace** l'ancien
+> `docs/DIRECTION-ARTISTIQUE.md`, fusionné dedans le 20/10/2026 pour n'avoir qu'une source.
+>
 > État : **première passe** (20/10/2026). Elle fixe les jetons de couleur, le gabarit de
 > carte et les planches de style ; la **curation carte par carte** viendra ensuite.
 > Ce document ne crée **aucune règle de jeu** : les règles vivent dans `AGENTS.md` §4 et
@@ -267,7 +272,32 @@ même socle ; seuls le sujet et le cadrage changent.
 
 ---
 
-## 7. Ce qui reste à curer (première passe assumée)
+## 7. Le tuyau d'illustration — testé le 20/10/2026
+
+Le premier test de génération a été fait depuis un **Space Hugging Face** branché en MCP
+(`mcp-tools/FLUX.1-Krea-dev`), avec le socle §6.1 et la Planche 1 (§6.2).
+
+- **Prompt** (§6.1 + §6.2, en anglais — ces modèles répondent mieux ainsi) :
+  « Editorial corporate dark-premium character illustration: a tired but placid office
+  worker, waist-up portrait, slumped at his desk holding a gold ceramic coffee mug. Deep
+  midnight-blue palette, single warm gold rim light from a desk lamp, one muted saturated
+  faction accent. Semi-realistic painterly rendering, soft single side light, subtle film
+  grain, matte surfaces, square 1:1 composition, subject centered on a darker background.
+  No text, no logo, no watermark. »
+- **Négatif** (Space `Qwen-Image`, quand il est utilisé) : `text, watermark, copyright,
+  blurry, low resolution`.
+- **Réglages** : `width`/`height` 1024, `num_inference_steps` 24, `guidance_scale` 4.5.
+- **Graine** : `1692146197` — **à noter par carte** dans le ticket de curation (§6.5).
+- **Résultat** : `design/tests/planque-portrait-01.webp` (1024×1024). Il confirme la
+  direction : bleu nuit, or sur la lampe et la tasse, posture avachie, aucun texte.
+
+**Ce tuyau est la voie de production** des 286 illustrations (option A, D-007). Les Spaces
+disponibles en MCP : `mcp-tools/FLUX.1-Krea-dev` (rendu naturel, retenu pour les
+portraits), `mcp-tools/Qwen-Image` (meilleur pour le texte — utile aux Objets étiquetés),
+`evalstate/flux1_schnell` (essais rapides), plus l'édition (`FLUX.1-Kontext-Dev`) et le
+détourage (`not-lain/background-removal`).
+
+## 8. Ce qui reste à curer (première passe assumée)
 
 - Les illustrations réelles n'existent pas : les cartes affichent l'aplat `palette` et le
   `glyph` des données. Les planches §6 décrivent le travail d'illustration à venir.
