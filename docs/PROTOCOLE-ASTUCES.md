@@ -8,7 +8,7 @@
 > **Réécrit le 19/10/2026** après une première tentative : les chemins de menu
 > donnés d'origine ne correspondaient pas.
 
-## 0. Comment lire ce document — et pourquoi il ne donne plus de chemins
+## 0. Comment lire ce document — et pourquoi il ne donne plus de chemins… mais en donne un, désormais sourcé
 
 La première version donnait **un** chemin : *« Menu ☰ → Astuces du jeu (JP : メニュー
 → ゲームのヒント) → Règles de combat »*. Il est tombé à côté, pour trois raisons :
@@ -18,7 +18,10 @@ La première version donnait **un** chemin : *« Menu ☰ → Astuces du jeu (JP
 3. il décrivait une **arborescence**, pas un **contenu** — donc si l'entrée s'appelle
    autrement, rien ne permet de savoir qu'on est au bon endroit.
 
-**Le principe, désormais : on ne cherche pas un chemin, on cherche un contenu.**
+Cette histoire reste vraie et vaut la peine d'être gardée : elle explique **pourquoi** on a
+changé de méthode. Mais elle ne doit plus servir de **renoncement**.
+
+**Le principe demeure : on ne cherche pas un chemin, on cherche un contenu.**
 Pour chaque capture, ce document donne :
 
 - **ce que tu cherches**, décrit par ce que la page *dit* ;
@@ -27,6 +30,19 @@ Pour chaque capture, ce document donne :
 - **où ça se trouve probablement** ;
 - et une case pour **l'intitulé réel** : celui que *tu* vois s'écrit dans le
   `README.md` du lot. C'est cette formulation qui fait la preuve, pas la mienne.
+
+### Chemin in-app désormais sourcé (20/10/2026)
+
+La source officielle indique le chemin suivant pour accéder aux règles de combat dans
+l'application (article support `61745874022553`) :
+
+> **Menu (bouton tout à droite en bas) > Astuces > À propos des règles de combat**
+> et **> FAQ détaillée sur les combats**
+
+Ce chemin est **daté** (consulté le 20/10/2026) et **sourcé** (support officiel). Il ne
+remplace pas le principe « contenu avant chemin » : il sert de **point de départ
+fiable** pour qui capture, sans garantir que les intitulés soient identiques dans ta
+version.
 
 ### Où chercher, en général
 
