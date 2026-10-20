@@ -458,7 +458,7 @@ describe('Cartes — les COMEX de la vague 1 (#66)', () => {
 
 describe('Cartes — rareté 3◆ (CARD-SPEC.md §1, vague 2, #86)', () => {
   it('compte 42 cartes en 3 diamants, comme la cible du set', () => {
-    // CARD-SPEC.md §1 : 42 cartes en 3◆. La vague 1 en ammenait 33 ; la vague 2 (#86)
+    // CARD-SPEC.md §1 : 42 cartes en 3◆. La vague 1 en amenait 33 ; la vague 2 (#86)
     // en ajoute 9 — une par faction qui était en déficit de 3◆.
     const troisD = PLANQUES.filter((card) => card.rarity === '3D');
     expect(troisD).toHaveLength(42);

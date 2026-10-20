@@ -31,12 +31,13 @@ const STAGE_ORDER: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
 const LINE = ['sse-infirmier-site', 'sse-infirmiere-travail', 'sse-medecin-travail'];
 
 describe('SSE — enregistrement (ticket #99)', () => {
-  it('compte 38 entrées, dont 27 bases et 11 variantes (PROPOSITION.md §4.3 : 37, +1 COMEX en vague 1)', () => {
+  it('compte 39 entrées, dont 28 bases et 11 variantes (PROPOSITION.md §4.3 : 37, +1 COMEX en vague 1, +1 en vague 2)', () => {
     // PROPOSITION.md §4.3 : 37 entrées à la cible. La vague 1 (#66) ajoute le second
-    // COMEX ; les vagues 2 à 4 ramènent le total à 286.
-    expect(SSE_CARDS).toHaveLength(27);
+    // COMEX, la vague 2 (#86) ajoute « Responsable sécurité » ; les vagues suivantes
+    // ramènent le total à 286.
+    expect(SSE_CARDS).toHaveLength(28);
     expect(SSE_VARIANTS).toHaveLength(11);
-    expect(ALL_SSE_CARDS).toHaveLength(38);
+    expect(ALL_SSE_CARDS).toHaveLength(39);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {
