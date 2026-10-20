@@ -110,6 +110,16 @@ export const MUTATIONS = [
     remplacement: "  '1D': { ecart: -1, ticket: 104 },\n  '3D': { ecart: -1, ticket: 999 }",
     tests: ['src/data/cards.test.ts'],
     garde: 'sans fermeture, une régression de contenu (3 cartes 3◆ disparues) passe inaperçue'
+  },
+  {
+    ticket: 118,
+    titre: 'le nettoyage d’une mutation de la table globale ne restaure plus rien',
+    fichier: 'src/game/cafe-type.test.ts',
+    motif: 'for (const { id, original } of PATCHES.splice(0).reverse()) CARD_BY_ID.set(id, original);',
+    remplacement: 'PATCHES.splice(0);',
+    tests: ['src/game/cafe-type.test.ts'],
+    garde:
+      'sans restauration, la carte patchée survit au test : le détecteur de `beforeEach` la nomme'
   }
 ];
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import {
   applyAction,
@@ -12,7 +12,7 @@ import {
 } from '@/game/engine';
 import { satisfiesCafeCost } from '@/game/rules';
 import { nextAiAction } from '@/game/ia';
-import type { Attack, BattleState } from '@/data/types';
+import type { Attack, BattleState, Card, PlanqueCard } from '@/data/types';
 
 /**
  * **Le paiement des Pressions suit le coût typé** (ticket #88/#90, D-037) : chaque
@@ -35,26 +35,58 @@ function freshBattle(seed = SEED): BattleState {
 }
 
 /**
- * Remplace les Pressions du Poste du camp au trait par des opération d'essai, le
- * temps d'un test ; la carte de données est restaurée à la sortie.
+ * **Mutations de la table globale, rendues réversibles** (#118).
+ *
+ * Les Pressions d'essai ne peuvent pas vivre dans le `BattleState` : `CardInstance`
+ * ne porte ni `attacks` ni `retreat` — `legalAttacks`, `attack`, `attackPreview` et
+ * `retreat` lisent tous la carte par `getCard(cardId)`, donc dans `CARD_BY_ID`. Le
+ * test doit donc patcher la table, et c'est le **nettoyage** qu'il
+ * faut rendre infaillible : chaque patch est enregistré ici et `afterEach` remet la
+ * carte d'origine, **même si une assertion échoue avant la fin du test**. Le
+ * nettoyage ne dépend plus de l'auteur du test : un `restore()` oublié en fin de
+ * `it` — il y en avait un, sur la Rotation — ne peut plus fuir vers les suivants.
  */
-function withPressions(
-  state: BattleState,
-  pressions: Attack[]
-): { state: BattleState; restore: () => void } {
+const PATCHES: { id: string; original: Card }[] = [];
+
+/** Remplace des champs d'un Planqué de test, en retenant l'original pour `afterEach`. */
+function patchPlanque(id: string, patch: Partial<PlanqueCard>): void {
+  const original = CARD_BY_ID.get(id);
+  if (!isPlanque(original)) throw new Error(`Carte inconnue : ${id}`);
+  PATCHES.push({ id, original });
+  CARD_BY_ID.set(id, { ...original, ...patch });
+}
+
+/** Remet toutes les cartes patchées dans l'ordre inverse, puis vide le registre. */
+afterEach(() => {
+  for (const { id, original } of PATCHES.splice(0).reverse()) CARD_BY_ID.set(id, original);
+});
+
+/**
+ * **Détecteur de fuite** : une mutation qui aurait survécu à un test précédent fait
+ * échouer le suivant **en nommant la carte fautive**, au lieu de fausser une
+ * assertion plus loin. C'est ce que #118 reprochait au `restore()` hors `finally`.
+ */
+beforeEach(() => {
+  for (const card of ALL_CARDS) {
+    expect(CARD_BY_ID.get(card.id), `carte mutée par un test précédent : ${card.id}`).toBe(card);
+  }
+});
+
+/**
+ * Remplace les Pressions du Poste du camp au trait par des Pressions d'essai, le
+ * temps du test : `afterEach` restaure la carte de données.
+ */
+function withPressions(state: BattleState, pressions: Attack[]): BattleState {
   const player = state.players[state.current];
   const active = player.active;
   if (!active) throw new Error('Poste vide');
-  const original = CARD_BY_ID.get(active.cardId);
-  if (!isPlanque(original)) throw new Error('Carte inconnue');
-  CARD_BY_ID.set(active.cardId, { ...original, attacks: pressions });
-  return { state, restore: () => CARD_BY_ID.set(active.cardId, original) };
+  patchPlanque(active.cardId, { attacks: pressions });
+  return state;
 }
 
 describe('Paiement typé — le contrat d’une Pression (D-037)', () => {
   it('refuse une Pression dont le type exigé n’est pas dans les cafés du Poste', () => {
-    const state = freshBattle();
-    const { restore } = withPressions(state, [
+    const state = withPressions(freshBattle(), [
       { name: 'Pression test', cost: ['QVT'], damage: 10 }
     ]);
     const player = state.players[state.current];
@@ -66,12 +98,10 @@ describe('Paiement typé — le contrat d’une Pression (D-037)', () => {
     expect(attackPreview(state, 0)).toBe(0);
     const after = attack(state, 0);
     expect(after).toBe(state);
-    restore();
   });
 
   it('paie un symbole incolore avec n’importe quel café, et une fois seulement', () => {
-    const state = freshBattle();
-    const { restore } = withPressions(state, [
+    const state = withPressions(freshBattle(), [
       { name: 'Pression incolore', cost: ['INCOLORE'], damage: 10 },
       { name: 'Pression double', cost: ['INCOLORE', 'INCOLORE'], damage: 20 }
     ]);
@@ -88,12 +118,10 @@ describe('Paiement typé — le contrat d’une Pression (D-037)', () => {
       'Pression incolore',
       'Pression double'
     ]);
-    restore();
   });
 
   it('exige le nombre exact de cafés quand le coût mélange types et incolore', () => {
-    const state = freshBattle();
-    const { restore } = withPressions(state, [
+    const state = withPressions(freshBattle(), [
       { name: 'Pression mixte', cost: ['QVT', 'INCOLORE'], damage: 20 }
     ]);
     const player = state.players[state.current];
@@ -107,7 +135,6 @@ describe('Paiement typé — le contrat d’une Pression (D-037)', () => {
     // Un QVT paie le symbole QVT, le second café (peu importe lequel) paie l'incolore.
     player.active!.energy = ['QVT', 'SSE'];
     expect(legalAttacks(state)).toHaveLength(1);
-    restore();
   });
 
   it('l’IA ne joue jamais une Pression non payable, sur plusieurs graines (#90)', () => {
@@ -154,11 +181,10 @@ describe('Rotation — le seul paiement au nombre', () => {
     const active = player.active;
     const slot = player.bench.findIndex(Boolean);
     if (!active || slot < 0) throw new Error('Poste ou Rack vide');
-    const original = CARD_BY_ID.get(active.cardId);
-    if (!isPlanque(original)) throw new Error('Carte inconnue');
     // Une relève à 2 : trois cafés typés sans ordre requis — la relève se paye au
     // nombre, les **premiers** de la liste partent (défausse déterministe).
-    CARD_BY_ID.set(active.cardId, { ...original, retreat: 2 });
+    // `patchPlanque` retient l'original : `afterEach` le remet (#118).
+    patchPlanque(active.cardId, { retreat: 2 });
     active.energy = ['QVT', 'RH', 'SSE'];
 
     const after = retreat(state, slot);
@@ -169,8 +195,7 @@ describe('Rotation — le seul paiement au nombre', () => {
 
 describe('Effet discardEnergy — un seul café au rebut', () => {
   it('retire le premier café du Planqué frappé, sans restaurer la Machine d’en face', () => {
-    const state = freshBattle();
-    const { restore } = withPressions(state, [
+    const state = withPressions(freshBattle(), [
       {
         name: 'Pression saisie',
         cost: ['SSE'],
@@ -195,7 +220,6 @@ describe('Effet discardEnergy — un seul café au rebut', () => {
 
     expect(after.players[foeId].active?.energy).toEqual(['SSE']);
     expect(after.players[foeId].energyZone).toBeNull();
-    restore();
   });
 
   it('un Poste sans café n’offre aucune Pression : la liste est déjà filtrée', () => {
