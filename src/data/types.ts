@@ -188,7 +188,12 @@ export interface CardInstance {
   hp: number;
   maxHp: number;
   energy: number;
-  /** Conditions subies, dans l'ordre d'application de `STATUS_ORDER` (§4). */
+  /**
+   * Conditions subies, dans l'ordre d'application de `STATUS_ORDER` (§4).
+   * Seul le Planqué au **Poste** en porte, et la rotation comme l'évolution les
+   * purgent (D-031). Sieste, Immobilisation et Dérive s'excluent entre eux ;
+   * Surcharge et Épuisement se cumulent avec tout (`EXCLUSIVE_STATUSES`, `src/game/rules.ts`).
+   */
   statuses: Status[];
   playedTurn: number;
   evolvedTurn: number | null;

@@ -23,7 +23,7 @@ import {
 } from '@/game/engine';
 import { DECK_SIZE } from '@/game/deck';
 import { RULES } from '@/game/rules';
-import type { Attack, BattleState, PlayerId } from '@/data/types';
+import type { Attack, BattleState, PlayerId, Status } from '@/data/types';
 
 /**
  * Le moteur est **seedé** (ticket #29) : les tests choisissent une graine
@@ -456,6 +456,110 @@ describe('Statuts — plusieurs conditions, et leur ordre (§4)', () => {
       expect(after.players.ai.active?.statuses).toEqual(['SURCHARGE']);
     } finally {
       CARD_BY_ID.set(active.cardId, original);
+    }
+  });
+});
+
+describe('Statuts — exclusivité et portée (D-031)', () => {
+  /**
+   * Frappe le Poste adverse avec une Pression dont les effets appliquent `statuses`
+   * **dans l'ordre donné**. Le Seuil est monté pour qu'aucun craquage ne coupe la
+   * séquence, et la carte est restaurée même si l'appel échoue.
+   */
+  function strikeWith(state: BattleState, statuses: Status[]): BattleState {
+    const active = state.players.player.active;
+    const defender = state.players.ai.active;
+    if (!active || !defender) throw new Error('Poste vide');
+    active.energy = 3;
+    defender.maxHp = 300;
+    defender.hp = 300;
+    const card = CARD_BY_ID.get(active.cardId);
+    if (!isPlanque(card)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(active.cardId, {
+      ...card,
+      attacks: [
+        {
+          ...card.attacks[0]!,
+          effects: statuses.map((status) => ({ kind: 'status' as const, status }))
+        }
+      ]
+    });
+    try {
+      return attack(state, 0);
+    } finally {
+      CARD_BY_ID.set(active.cardId, card);
+    }
+  }
+
+  it('Sieste puis Immobilisation : la seconde remplace la première', () => {
+    // « Asleep, Paralyzed, and Confused cannot stack with each other. If one of
+    // these Special Conditions is applied, it replaces any of the others. »
+    const after = strikeWith(structuredClone(freshBattle()), ['SIESTE', 'IMMOBILISATION']);
+
+    expect(after.players.ai.active?.statuses).toEqual(['IMMOBILISATION']);
+  });
+
+  it('Sieste puis Surcharge : les deux restent, Surcharge se cumule avec tout', () => {
+    const after = strikeWith(structuredClone(freshBattle()), ['SIESTE', 'SURCHARGE']);
+
+    expect(after.players.ai.active?.statuses).toEqual(['SIESTE', 'SURCHARGE']);
+  });
+
+  it('Dérive puis Sieste : la Sieste remplace aussi la Dérive', () => {
+    const after = strikeWith(structuredClone(freshBattle()), ['DERIVE', 'SIESTE']);
+
+    expect(after.players.ai.active?.statuses).toEqual(['SIESTE']);
+  });
+
+  it('la Rotation purge les statuts : le sortant les perd en rejoignant le Rack', () => {
+    const state = structuredClone(freshBattle());
+    const player = state.players.player;
+    const active = player.active;
+    const slot = player.bench.findIndex(Boolean);
+    if (!active || slot < 0) throw new Error('Poste ou Rack vide');
+    active.energy = 5; // la rotation est payée
+    active.statuses = ['SURCHARGE', 'SIESTE'];
+    const outgoingUid = active.uid;
+
+    const after = retreat(state, slot);
+
+    expect(after.players.player.active?.uid).not.toBe(outgoingUid);
+    expect(after.players.player.active?.statuses).toEqual([]);
+    const outgoing = after.players.player.bench[slot];
+    expect(outgoing?.uid).toBe(outgoingUid);
+    expect(outgoing?.statuses).toEqual([]);
+  });
+
+  it('l’évolution purge les statuts du Planqué qui évolue', () => {
+    const state = structuredClone(freshBattle());
+    const player = state.players.player;
+    const active = player.active;
+    if (!active) throw new Error('Poste vide');
+    // Une évolution de test : on ne dépend d'aucune carte de données.
+    const evolution = ALL_CARDS.filter(isPlanque).find(
+      (card) => card.stage !== 'ENTRANT' && !card.variantOf
+    );
+    if (!evolution) throw new Error('Aucune évolution dans les données');
+    const originalEvolution = CARD_BY_ID.get(evolution.id);
+    if (!isPlanque(originalEvolution)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(evolution.id, { ...originalEvolution, evolvesFrom: active.cardId });
+
+    try {
+      // Tour 3 : l'évolution n'est plus interdite, et la carte n'a pas encore évolué.
+      state.turn = 3;
+      state.current = 'player';
+      active.playedTurn = 0;
+      active.evolvedTurn = null;
+      active.statuses = ['SURCHARGE', 'SIESTE'];
+      const instance = createInstance(evolution.id, state.turn);
+      player.hand.push(instance);
+
+      const after = evolve(state, instance.uid, active.uid);
+
+      expect(after.players.player.active?.cardId).toBe(evolution.id);
+      expect(after.players.player.active?.statuses).toEqual([]);
+    } finally {
+      CARD_BY_ID.set(evolution.id, originalEvolution);
     }
   });
 });

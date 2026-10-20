@@ -12,7 +12,7 @@ import type {
 import { deckLegal } from '@/game/deck';
 import { drawRandom, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
-import { RULES, STATUS_ORDER } from '@/game/rules';
+import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER } from '@/game/rules';
 
 let uidCounter = 0;
 
@@ -324,6 +324,10 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   if (!isPlanque(card) || player.active.energy < card.retreat) return state;
   player.active.energy -= card.retreat;
   const outgoing = player.active;
+  // Seul le Poste peut porter un statut (D-031) : le sortant les perd en rejoignant le
+  // Rack, et l'entrant n'en porte aucun. Sans ça, une Sieste continuait de peser sur
+  // une carte au Rack que `checkup` ne lit plus — un statut fantôme.
+  clearStatuses(outgoing);
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
@@ -404,13 +408,21 @@ function clearStatus(card: CardInstance, status: Status) {
   card.statuses = card.statuses.filter((entry) => entry !== status);
 }
 
-/** Une évolution, une rotation ou un changement de Poste remettent les conditions à zéro (§4). */
+/**
+ * Une évolution ou une rotation purgent les conditions (D-031 : seul le Planqué au
+ * **Poste** en porte ; retourner au Rack ou évoluer les efface).
+ */
 function clearStatuses(card: CardInstance) {
   card.statuses = [];
 }
 
 /** Ajoute une condition si elle n'y est pas déjà (on ne cumule pas deux Surcharges). */
 function applyStatus(target: CardInstance, status: Status) {
+  // Sieste, Immobilisation et Dérive s'excluent (D-031) : en appliquer une remplace
+  // les autres. Surcharge et Épuisement, eux, se cumulent avec tout.
+  if (EXCLUSIVE_STATUSES.includes(status)) {
+    target.statuses = target.statuses.filter((entry) => !EXCLUSIVE_STATUSES.includes(entry));
+  }
   if (!hasStatus(target, status)) target.statuses.push(status);
 }
 
@@ -696,8 +708,9 @@ function checkup(state: BattleState): BattleState {
   if (!player.active) return state;
 
   // Les conditions se résolvent **dans l'ordre de §4** (Surcharge → Épuisement →
-  // Sieste → Immobilisation), et un Planqué peut en subir plusieurs. Dérive n'est pas ici :
-  // elle se résout avant l'attaque.
+  // Sieste → Immobilisation). Un Planqué peut en subir plusieurs, sauf les trois
+  // exclusives qui ne vont pas ensemble (D-031). Dérive n'est pas ici : elle se
+  // résout avant l'attaque.
   for (const status of STATUS_ORDER) {
     if (!player.active || !hasStatus(player.active, status)) continue;
     if (status === 'SURCHARGE') {
