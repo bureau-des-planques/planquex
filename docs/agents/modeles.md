@@ -59,3 +59,33 @@ d'un run à l'autre (charge du fournisseur, quotas `:free`) ne sont pas séparé
 de la qualité du modèle. Un modèle `:free` peut disparaître du catalogue :
 `tools.opencode.models` est la source de ce qui existe **aujourd'hui**, le
 benchmark est la source de ce qui **tient**.
+
+## Relecteurs — Gemma 4 (décision de Bastien, 20/10/2026)
+
+L'agent `auditeur` (relecture indépendante) emploie **`google/gemma-4-26b-a4b-it#thinking`**
+(fournisseur `google`, gratuit). Les **implémenteurs** restent sur le maillon 1 : un modèle
+donné ne se relit pas lui-même.
+
+## Protocole de commande pour un relecteur — à recopier dans le brief
+
+Le profil `auditeur` **refuse le shell par défaut** et n'autorise qu'une **liste blanche**,
+appariée sur la **commande entière** (`~/.config/opencode/agents/auditeur.md`). Conséquence
+observée le 20/10/2026 : deux relecteurs ont conclu « shell refusé » et rendu une revue
+**statique** — donc sans aucune preuve exécutée — parce qu'ils lançaient des commandes
+**composées** (`cd <worktree> && git log …`), qui ne correspondent à aucun motif.
+
+À écrire noir sur blanc dans le brief d'un relecteur :
+
+- **une commande = une seule chaîne**, avec le champ `workdir` = le worktree ; **jamais**
+  `cd … && …`, jamais `;`, jamais `echo $?` (le code de sortie se lit à l'absence du marqueur
+  d'échec du harnais, et ce fait doit être signalé comme tel) ;
+- **autorisés** : `npm run status`, `npm run check`, `npm test`, `npm run build`,
+  `git -C <abs>|git status|log|diff|show|branch|rev-parse`, `ls`, `cat`, `head`, `tail`,
+  `find`, `grep`, `wc` ;
+- **non autorisés** — leur exécution revient à la personne qui orchestre, qui doit produire
+  la preuve elle-même : `npm run simulate`, `npm run capturer`, `npm run detect:ui`, `npx`,
+  `sha256sum`, `file`, `diff`, `sed`, `git merge-tree`.
+
+Un relecteur qui n'a pas pu exécuter doit le **dire** et séparer « vérifié par lecture » de
+« non vérifié » : une revue statique est utile, une revue statique qui se présente comme
+mesurée ne l'est pas.
