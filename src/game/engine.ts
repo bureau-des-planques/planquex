@@ -806,7 +806,7 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   const targetCard = getCard(opponent.active.cardId);
   if (!isPlanque(card) || !isPlanque(targetCard)) return state;
   const attack = card.attacks[attackIndex];
-  if (!attack || player.active.energy < attack.cost) return state;
+  if (!attack || player.active.energy < attack.cost.length) return state;
 
   // Sieste et Immobilisation interdisent la Pression (D-033 §2, capture `07` :
   // « Les Pokémon Endormis ne peuvent ni attaquer ni battre en retraite. »). Le
@@ -1094,7 +1094,7 @@ export function legalAttacks(state: BattleState): Attack[] {
   const card = getCard(player.active.cardId);
   if (!isPlanque(card)) return [];
   if (hasStatus(player.active, 'SIESTE') || hasStatus(player.active, 'IMMOBILISATION')) return [];
-  return card.attacks.filter((attack) => player.active && player.active.energy >= attack.cost);
+  return card.attacks.filter((attack) => player.active && player.active.energy >= attack.cost.length);
 }
 
 /** Les Planqués du camp, Poste et Rack, dans cet ordre. */

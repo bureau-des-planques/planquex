@@ -20,7 +20,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Checklist', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Checklist', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a coché la case. La case ne sert à rien.'
   }),
   base({
@@ -32,7 +32,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Audit', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Non-conformité', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Non-conformité', cost: ['AMELIORATION', 'INCOLORE'], damage: 40 }],
     flavor: 'Il a trouvé un problème. Le problème, c’est le process.'
   }),
   base({
@@ -44,8 +44,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Tableau de bord', cost: 2, damage: 60, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Norme ISO', cost: 3, damage: 90, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
+      { name: 'Tableau de bord', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Norme ISO', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
     flavor: 'Le process est conforme. Le produit est cassé.'
   }),
@@ -56,7 +56,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Diagnostic', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Diagnostic', cost: ['AMELIORATION'], damage: 20 }],
     flavor: 'Il a tout vu en deux jours. Le rapport était écrit avant.'
   }),
   base({
@@ -68,7 +68,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     ability: { name: 'Standardisation', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
-    attacks: [{ name: 'Revue de processus', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Revue de processus', cost: ['AMELIORATION', 'INCOLORE'], damage: 50 }],
     flavor: 'Il a écrit le process. Le process a écrit sa journée.'
   }),
   base({
@@ -80,8 +80,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Chantier Lean', cost: 2, damage: 60 },
-      { name: 'Zéro défaut', cost: 3, damage: 90, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
+      { name: 'Chantier Lean', cost: ['AMELIORATION', 'INCOLORE'], damage: 60 },
+      { name: 'Zéro défaut', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
     ],
     flavor: 'Zéro défaut. Zéro production.'
   }),
@@ -92,7 +92,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Lissage', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Lissage', cost: ['AMELIORATION'], damage: 20 }],
     flavor: 'Il a lissé la charge. Le planning a doublé tout seul.'
   }),
   base({
@@ -104,8 +104,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [
-      { name: 'Ordonnancement', cost: 2, damage: 40 },
-      { name: 'Rattrapage', cost: 3, damage: 80 }
+      { name: 'Ordonnancement', cost: ['AMELIORATION', 'INCOLORE'], damage: 40 },
+      { name: 'Rattrapage', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 80 }
     ],
     flavor: 'Il a débloqué la ligne. Le client avait annulé.'
   }),
@@ -118,8 +118,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Plan de charge', cost: 2, damage: 60 },
-      { name: 'Accélération', cost: 3, damage: 90, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Plan de charge', cost: ['AMELIORATION', 'INCOLORE'], damage: 60 },
+      { name: 'Accélération', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il a accéléré le flux. Le stock attend devant.'
   }),
@@ -130,7 +130,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Prélèvement', cost: 1, damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Prélèvement', cost: ['AMELIORATION'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: 'Il a prélevé un échantillon. L’échantillon est introuvable.'
   }),
   base({
@@ -142,7 +142,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Plan d’actions', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Écart majeur', cost: 2, damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Écart majeur', cost: ['AMELIORATION', 'INCOLORE'], damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: 'Il a ouvert un écart. L’écart est resté ouvert.'
   }),
   base({
@@ -154,8 +154,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Revue de direction', cost: 2, damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Écart critique', cost: 3, damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Revue de direction', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Écart critique', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il a audité l’audit. L’audit a été reporté.'
   }),
@@ -166,7 +166,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Kaizen', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Kaizen', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Le progrès continue. Le poste, non.'
   }),
   base({
@@ -178,8 +178,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [
-      { name: 'Analyse de la valeur', cost: 2, damage: 40 },
-      { name: 'Goulot d’étranglement', cost: 3, damage: 70, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
+      { name: 'Analyse de la valeur', cost: ['AMELIORATION', 'INCOLORE'], damage: 40 },
+      { name: 'Goulot d’étranglement', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
     flavor: 'Il a supprimé une étape. On en a ajouté deux.'
   }),
@@ -190,7 +190,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Contrôle', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Contrôle', cost: ['AMELIORATION'], damage: 20 }],
     flavor: 'Il a contrôlé quarante pièces. Il en reste quatre cents.'
   }),
   base({
@@ -202,8 +202,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [
-      { name: 'Jalons', cost: 2, damage: 50 },
-      { name: 'Recette', cost: 3, damage: 80 }
+      { name: 'Jalons', cost: ['AMELIORATION', 'INCOLORE'], damage: 50 },
+      { name: 'Recette', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 80 }
     ],
     flavor: 'Le jalon est passé. Le dossier, non.'
   }),
@@ -214,7 +214,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Relevé', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Relevé', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Relevé terminé. L’action corrective est reportée.'
   }),
   base({
@@ -227,8 +227,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Audit flash', cost: 2, damage: 70 },
-      { name: 'Certification', cost: 3, damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Audit flash', cost: ['AMELIORATION', 'INCOLORE'], damage: 70 },
+      { name: 'Certification', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'On a amélioré le process d’amélioration.'
   })

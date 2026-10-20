@@ -12,7 +12,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Pansement', cost: 1, damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
+    attacks: [{ name: 'Pansement', cost: ['SSE'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
     flavor: 'Il a lu la notice. En diagonale.'
   }),
   base({
@@ -24,7 +24,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Prévention', text: 'Une fois par tour : soigne 10 d’un Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Piqûre de rappel', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Piqûre de rappel', cost: ['SSE', 'INCOLORE'], damage: 40 }],
     flavor: 'Elle sait où tu as mal avant toi.'
   }),
   base({
@@ -36,8 +36,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Arrêt de travail', cost: 2, damage: 60, text: 'Le Planqué adverse est en Sieste.', effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }] },
-      { name: 'Bilan de santé', cost: 3, damage: 80, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
+      { name: 'Arrêt de travail', cost: ['SSE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est en Sieste.', effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }] },
+      { name: 'Bilan de santé', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
     ],
     flavor: 'Il a signé. Tu ne reviens pas avant lundi.'
   }),
@@ -48,7 +48,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Inspection', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Inspection', cost: ['SSE'], damage: 20 }],
     flavor: 'Il a coché la case. La case ne sert à rien.'
   }),
   base({
@@ -60,7 +60,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     ability: { name: 'Posture', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
-    attacks: [{ name: 'Réglage', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Réglage', cost: ['SSE', 'INCOLORE'], damage: 40 }],
     flavor: 'Il a réglé la chaise. Ton dos attend encore.'
   }),
   base({
@@ -72,8 +72,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Rapport d’incident', cost: 2, damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Plan de prévention', cost: 3, damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
+      { name: 'Rapport d’incident', cost: ['SSE', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Plan de prévention', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
     flavor: 'Il a écrit le protocole. Personne ne l’applique.'
   }),
@@ -84,7 +84,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Manipulation', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Manipulation', cost: ['SSE'], damage: 20 }],
     flavor: 'Il a massé l’épaule. Le problème est ailleurs.'
   }),
   base({
@@ -96,7 +96,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Respiration', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Relaxation', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Relaxation', cost: ['SSE', 'INCOLORE'], damage: 40 }],
     flavor: 'Respire. Le Rack est encore là.'
   }),
   base({
@@ -108,8 +108,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Diagnostic', cost: 2, damage: 60 },
-      { name: 'Protocole', cost: 3, damage: 100, text: 'Ce Planqué prend 10 de stress.', effects: [{ kind: 'selfDamage', amount: 10 }] }
+      { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 60 },
+      { name: 'Protocole', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 10 de stress.', effects: [{ kind: 'selfDamage', amount: 10 }] }
     ],
     flavor: 'Il a diagnostiqué le management. C’est grave.'
   }),
@@ -120,7 +120,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Massage cardiaque', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Massage cardiaque', cost: ['SSE'], damage: 20 }],
     flavor: 'Il a couru. L’ascenseur était en panne.'
   }),
   base({
@@ -131,7 +131,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Intervention', cost: 2, damage: 50, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
+    attacks: [{ name: 'Intervention', cost: ['SSE', 'INCOLORE'], damage: 50, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
     flavor: 'Il a sauvé la réunion. Pas le patient.'
   }),
   base({
@@ -141,7 +141,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Serpillière', cost: 1, damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
+    attacks: [{ name: 'Serpillière', cost: ['SSE'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: 'Il a nettoyé. La direction a sali.'
   }),
   base({
@@ -152,7 +152,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Protocole', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Protocole', cost: ['SSE', 'INCOLORE'], damage: 40 }],
     flavor: 'Il a écrit le protocole d’hygiène. En trois exemplaires.'
   }),
   base({
@@ -162,7 +162,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Écoute', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Écoute', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a écouté. C’était déjà beaucoup.'
   }),
   base({
@@ -173,7 +173,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Diagnostic', cost: 2, damage: 40, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
+    attacks: [{ name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
     flavor: 'Il a prescrit des vacances. Refusées.'
   }),
   base({
@@ -183,7 +183,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Menu équilibré', cost: 1, damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
+    attacks: [{ name: 'Menu équilibré', cost: ['SSE'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
     flavor: 'Il a équilibré le menu. La cantine a ajouté du gras.'
   }),
   base({
@@ -194,7 +194,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Régime', cost: 2, damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }],
+    attacks: [{ name: 'Régime', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }],
     flavor: 'Il a remplacé le sucre par la stevia. Personne n’a vu la différence.'
   }),
   base({
@@ -204,7 +204,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Garde', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Garde', cost: ['SSE'], damage: 20 }],
     flavor: 'Il est interne. Il fait le travail de trois médecins.'
   }),
   base({
@@ -214,7 +214,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Remplacement', cost: 1, damage: 20, text: 'Échange ce Planqué avec un Planqué du Rack.', effects: [{ kind: 'switchSelf' }] }],
+    attacks: [{ name: 'Remplacement', cost: ['SSE'], damage: 20, text: 'Échange ce Planqué avec un Planqué du Rack.', effects: [{ kind: 'switchSelf' }] }],
     flavor: 'Il remplace tout le monde. Personne ne le remplace.'
   }),
   base({
@@ -224,7 +224,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Extincteur', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Extincteur', cost: ['SSE'], damage: 20 }],
     flavor: 'Il éteint les incendies. On lui demande de les prévenir.'
   }),
   base({
@@ -234,7 +234,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Bandage', cost: 1, damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
+    attacks: [{ name: 'Bandage', cost: ['SSE'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
     flavor: 'Il soigne les entorses des autres.'
   }),
   base({
@@ -244,7 +244,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Dossier', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Dossier', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Elle a ouvert le dossier. Le dossier s’est refermé.'
   }),
   base({
@@ -254,7 +254,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Vérification', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Vérification', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il vérifie les issues de secours. Elles sont bloquées.'
   }),
   base({
@@ -264,7 +264,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Transport', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Transport', cost: ['SSE'], damage: 20 }],
     flavor: 'Il transporte. Il ne juge pas.'
   }),
   base({
@@ -274,7 +274,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Autopsie', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Autopsie', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a vu pire. C’était la réunion d’hier.'
   }),
   base({
@@ -287,8 +287,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Diagnostic', cost: 2, damage: 70 },
-      { name: 'Protocole', cost: 3, damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 70 },
+      { name: 'Protocole', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Un seul médecin.'
   }),
@@ -304,8 +304,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Rapport d’incident', cost: 2, damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Plan de prévention', cost: 3, damage: 100, text: 'Soigne 30 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 30 }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Rapport d’incident', cost: ['SSE', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Plan de prévention', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Soigne 30 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 30 }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Le plan de prévention est arrivé après l’incident.'
   })

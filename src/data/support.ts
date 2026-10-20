@@ -24,7 +24,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Ticket', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Ticket', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a ouvert le ticket. Il l’a fermé. Sans réponse.'
   }),
   base({
@@ -36,7 +36,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Prise en main', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Procédure', cost: 2, damage: 40 }],
+    attacks: [{ name: 'Procédure', cost: ['INCOLORE', 'INCOLORE'], damage: 40 }],
     flavor: 'Avez-vous essayé de redémarrer votre demande ?'
   }),
   base({
@@ -48,8 +48,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'FAQ', cost: 2, damage: 50, text: 'Pioche 2 cartes.', effects: [{ kind: 'draw', amount: 2 }] },
-      { name: 'Chatbot', cost: 3, damage: 80, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
+      { name: 'FAQ', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Pioche 2 cartes.', effects: [{ kind: 'draw', amount: 2 }] },
+      { name: 'Chatbot', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
     flavor: 'Le chatbot a compris. Personne n’a compris le chatbot.'
   }),
@@ -63,8 +63,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'FAQ', cost: 2, damage: 70, text: 'Pioche 2 cartes.', effects: [{ kind: 'draw', amount: 2 }] },
-      { name: 'Chatbot', cost: 3, damage: 120, text: 'Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'FAQ', cost: ['INCOLORE', 'INCOLORE'], damage: 70, text: 'Pioche 2 cartes.', effects: [{ kind: 'draw', amount: 2 }] },
+      { name: 'Chatbot', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Une seule réponse automatique.'
   }),
@@ -77,7 +77,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Transfert d’appel', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Transfert d’appel', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'L’appel est transféré. Le dossier reste sur la ligne.'
   }),
   base({
@@ -88,7 +88,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Compte rendu', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Compte rendu', cost: ['INCOLORE', 'INCOLORE'], damage: 50 }],
     flavor: 'Le compte rendu est diffusé. Il n’est pas lu.'
   }),
   base({
@@ -100,8 +100,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Appel d’offres', cost: 2, damage: 60 },
-      { name: 'Plan de reprise', cost: 3, damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
+      { name: 'Appel d’offres', cost: ['INCOLORE', 'INCOLORE'], damage: 60 },
+      { name: 'Plan de reprise', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
     flavor: 'Il a renouvelé tous les contrats. Le service, lui, n’a pas changé.'
   }),
@@ -114,7 +114,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Réinstallation', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Réinstallation', cost: ['INCOLORE'], damage: 20 }],
     flavor: 'La sauvegarde est incluse. Elle n’a jamais tourné.'
   }),
   base({
@@ -125,7 +125,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Sauvegarde', cost: 2, damage: 40, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
+    attacks: [{ name: 'Sauvegarde', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
     flavor: 'La sauvegarde est quotidienne. La restauration, jamais testée.'
   }),
   base({
@@ -137,8 +137,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Bascule', cost: 2, damage: 60 },
-      { name: 'Plan de continuité', cost: 3, damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
+      { name: 'Bascule', cost: ['INCOLORE', 'INCOLORE'], damage: 60 },
+      { name: 'Plan de continuité', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
     flavor: 'Le plan de continuité tient en une page. La panne, en trois.'
   }),
@@ -151,7 +151,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Mode d’emploi', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Mode d’emploi', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a écrit la procédure. Elle décrit une version qui n’existe plus.'
   }),
   base({
@@ -162,7 +162,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Base de connaissances', cost: 2, damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Base de connaissances', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'La base de connaissances est complète. Elle documente l’ancien logiciel.'
   }),
   base({
@@ -174,8 +174,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Mise à jour', cost: 2, damage: 50 },
-      { name: 'Refonte', cost: 3, damage: 90, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }
+      { name: 'Mise à jour', cost: ['INCOLORE', 'INCOLORE'], damage: 50 },
+      { name: 'Refonte', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }
     ],
     flavor: 'La documentation est validée. Le produit est déjà en v2.'
   }),
@@ -188,7 +188,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Câblage', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Câblage', cost: ['INCOLORE'], damage: 20 }],
     flavor: 'Le câble est neuf. La prise, non.'
   }),
   base({
@@ -202,7 +202,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Filtrage',
-        cost: 2,
+        cost: ['INCOLORE', 'INCOLORE'],
         damage: 40,
         text: 'Ce Planqué subit 10 de moins au prochain tour.',
         effects: [{ kind: 'reduceDamage', amount: 10 }]
@@ -219,7 +219,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Relais', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Relais', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il remonte l’information. Elle redescend en procédure.'
   }),
   base({
@@ -230,7 +230,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Assistance', cost: 2, damage: 40, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }],
+    attacks: [{ name: 'Assistance', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }],
     flavor: 'Il connaît la solution. Elle n’est pas dans le catalogue.'
   }),
 
@@ -242,7 +242,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Gamme', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Gamme', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'La gamme est à jour. L’atelier travaille sur l’ancienne.'
   }),
   base({
@@ -253,7 +253,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Mode opératoire', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Mode opératoire', cost: ['INCOLORE', 'INCOLORE'], damage: 50 }],
     flavor: 'Le mode opératoire est validé. Il n’a pas été essayé.'
   }),
 
@@ -265,7 +265,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Initiation', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Initiation', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'La formation dure une heure. La licence s’installe en trois.'
   }),
   base({
@@ -276,7 +276,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Parcours', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Parcours', cost: ['INCOLORE', 'INCOLORE'], damage: 50 }],
     flavor: 'Le parcours est personnalisé. Tout le monde suit le même.'
   }),
 
@@ -288,7 +288,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Tri', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Tri', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a trié les tickets. Le plus ancien a deux ans.'
   }),
   base({
@@ -300,8 +300,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 110,
     retreat: 2,
     attacks: [
-      { name: 'Reporting', cost: 2, damage: 50, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Escalade', cost: 3, damage: 80, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
+      { name: 'Reporting', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Escalade', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Le ticket est escaladé. Il redescend sans réponse.'
   }),
@@ -314,7 +314,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Saisie', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Saisie', cost: ['INCOLORE'], damage: 20 }],
     flavor: 'Il saisit les demandes. Le formulaire les perd.'
   }),
   base({
@@ -324,7 +324,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Archivage', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Archivage', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Tout est archivé. Plus rien n’est retrouvé.'
   }),
   base({
@@ -334,7 +334,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Accueil', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Accueil', cost: ['INCOLORE'], damage: 20 }],
     flavor: 'Il accueille les visiteurs. Le badge ne s’ouvre pas.'
   }),
   base({
@@ -344,7 +344,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Script', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Script', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Le script prévoit tout. Sauf la question.'
   }),
   base({
@@ -354,7 +354,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Frappe', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Frappe', cost: ['INCOLORE'], damage: 20 }],
     flavor: 'Il tape plus vite que le système ne répond.'
   }),
   base({
@@ -364,7 +364,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Recette', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Recette', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a testé le cas normal. La production, non.'
   }),
   base({
@@ -375,8 +375,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [
-      { name: 'Planning', cost: 1, damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Revue de tickets', cost: 2, damage: 40 }
+      { name: 'Planning', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Revue de tickets', cost: ['INCOLORE', 'INCOLORE'], damage: 40 }
     ],
     flavor: 'Il coordonne les files d’attente. Elles ne se rejoignent jamais.'
   }),
@@ -392,8 +392,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Bascule', cost: 2, damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Plan de continuité', cost: 3, damage: 110, text: 'Soigne 20 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 20 }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Bascule', cost: ['INCOLORE', 'INCOLORE'], damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
+      { name: 'Plan de continuité', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 20 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 20 }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Le plan de continuité tient sur une seule page.'
   })

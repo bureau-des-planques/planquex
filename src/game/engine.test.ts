@@ -213,7 +213,7 @@ describe('Fin de partie (D-031)', () => {
     CARD_BY_ID.set(active.cardId, {
       ...card,
       attacks: [
-        { name: 'Test', cost: 0, damage: 100, effects: [{ kind: 'selfDamage', amount: 100 }] }
+        { name: 'Test', cost: [], damage: 100, effects: [{ kind: 'selfDamage', amount: 100 }] }
       ]
     });
     return () => CARD_BY_ID.set(active.cardId, card);
@@ -359,7 +359,7 @@ describe('Pression — dégâts et café', () => {
     if (!attacker) throw new Error('Poste vide');
     const card = getCard(attacker.cardId);
     if (!isPlanque(card)) throw new Error('Carte inconnue');
-    const index = card.attacks.findIndex((entry) => entry.cost <= 3);
+    const index = card.attacks.findIndex((entry) => entry.cost.length <= 3);
     if (index < 0) throw new Error('Aucune Pression abordable');
     const uid = attacker.uid;
     attacker.energy = 3;
@@ -387,7 +387,7 @@ describe('Pression — dégâts et café', () => {
  */
 describe('Ordre du calcul des dégâts (D-031)', () => {
   /** 10 de dégâts ; avec la Vulnérabilité (+20) et une réduction de 20, l'ordre donne 10. */
-  const TEST_ATTACK: Attack = { name: 'Pression témoin', cost: 0, damage: 10 };
+  const TEST_ATTACK: Attack = { name: 'Pression témoin', cost: [], damage: 10 };
 
   /** Le Poste du joueur, et sa carte : l'attaquant de référence. */
   function referenceAttacker(state: BattleState) {
@@ -687,7 +687,7 @@ describe('Relève choisie après un craquage', () => {
     if (!attacker || !defender) throw new Error('Poste vide');
     const card = getCard(attacker.cardId);
     if (!isPlanque(card)) throw new Error('Carte inconnue');
-    const index = card.attacks.findIndex((entry) => entry.cost <= 3);
+    const index = card.attacks.findIndex((entry) => entry.cost.length <= 3);
     if (index < 0) throw new Error('Aucune Pression abordable');
     attacker.energy = 3;
     defender.hp = 1;
@@ -753,7 +753,7 @@ describe('Relève après un double craquage (D-031)', () => {
     if (!isPlanque(original)) throw new Error('Carte inconnue');
     const pressure: Attack = {
       name: 'Double casse',
-      cost: 1,
+      cost: ['SSE'],
       damage: 10,
       effects: [{ kind: 'selfDamage', amount: 999 }]
     };
@@ -1279,7 +1279,7 @@ describe('legalActions — la liste que l’écran rend (ticket #58)', () => {
 
   it('n’offre aucune Pression que le café ne couvre pas', () => {
     const state = freshBattle();
-    const free = activeCard(state).attacks.filter((entry) => entry.cost === 0).length;
+    const free = activeCard(state).attacks.filter((entry) => entry.cost.length === 0).length;
 
     const attacks = legalActions(state).filter((action) => action.type === 'attack');
 

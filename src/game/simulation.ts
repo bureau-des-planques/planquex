@@ -246,7 +246,7 @@ function chooseAttack(state: BattleState): BattleAction | null {
   let bestDamage = -1;
   for (let index = 0; index < card.attacks.length; index += 1) {
     const move = card.attacks[index];
-    if (!move || player.active.energy < move.cost) continue;
+    if (!move || player.active.energy < move.cost.length) continue;
     const damage = attackPreview(state, index);
     if (damage > bestDamage) {
       best = index;

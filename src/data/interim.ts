@@ -24,7 +24,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Mission courte', cost: 1, damage: 20 }],
+    attacks: [{ name: 'Mission courte', cost: ['SSE'], damage: 20 }],
     flavor: 'Il connaît le site mieux que le directeur. Il part vendredi.'
   }),
   base({
@@ -41,7 +41,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       kind: 'attachEnergy',
       oncePerTurn: true
     },
-    attacks: [{ name: 'Démerde', cost: 2, damage: 50 }],
+    attacks: [{ name: 'Démerde', cost: ['MANAGEMENT', 'QVT'], damage: 50 }],
     flavor: 'Il a fait le boulot de trois personnes. Il est payé pour une.'
   }),
   base({
@@ -55,14 +55,14 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Site différent',
-        cost: 2,
+        cost: ['QVT', 'AMELIORATION'],
         damage: 60,
         text: 'Échange ce Planqué avec un Planqué du Rack.',
         effects: [{ kind: 'switchSelf' }]
       },
       {
         name: 'Prime de précarité',
-        cost: 3,
+        cost: ['AMELIORATION', 'AMELIORATION', 'RH'],
         damage: 100,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
@@ -83,14 +83,14 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Renfort express',
-        cost: 2,
+        cost: ['RH', 'ATELIER'],
         damage: 70,
         text: 'Envoie 1 café du Planqué adverse au rebut.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       },
       {
         name: 'Prime de précarité',
-        cost: 3,
+        cost: ['ATELIER', 'ATELIER', 'DIRECTION'],
         damage: 120,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
