@@ -98,6 +98,12 @@ seul coût, voir §6).
    n'a aucun `git -C` pour s'ancrer, et **aucun moyen de s'auto-contrôler** — son travail se
    **sauve** après coup (déplacer le fichier dans son worktree, commiter, nettoyer `main`),
    jamais en le croyant sur parole.
+8. **Un agent peut écraser un fichier APRÈS la fusion** (constaté le 21/10/2026 : le dossier
+   `structure-et-infra.md`, sauvé puis fusionné, a été **remplacé par un fichier vide** par
+   l'agent qui a rendu son rapport plus tard). La **version commitée est la vérité** : un
+   `git status` non vide sur un fichier déjà fusionné se lit `git checkout -- <fichier>` pour
+   restaurer la version de l'historique — et l'agent doit avoir **rendu** avant qu'on fusionne
+   son travail. Le contrôle `npm run isolation` détecte les deux formes.
 
 ## 5. Fusion — le protocole, et ses deux pièges
 
