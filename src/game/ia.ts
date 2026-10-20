@@ -7,6 +7,8 @@ import type {
   PlayerState
 } from '@/data/types';
 import { applyAction, attackDamage, attackPreview, legalActions } from '@/game/engine';
+import { seedRng } from '@/game/rng';
+import type { RngState } from '@/game/rng';
 import { satisfiesCafeCost } from '@/game/rules';
 
 /**
@@ -39,9 +41,24 @@ import { satisfiesCafeCost } from '@/game/rules';
  * `nextAction` ne construit jamais une action « à la main » : elle part de
  * `legalActions(state)` et choisit dedans, donc elle ne peut pas produire une action
  * que le moteur refuserait. Aucun `Math.random()` : le hasard de la partie reste dans
- * l'`rng` seedé de `BattleState`. Le niveau 2 n'en tire pas davantage : il **applique**
- * des actions sur des clones (`structuredClone`), et seul le générateur **du clone**
- * avance — jamais celui de la partie.
+ * l'`rng` seedé de `BattleState`.
+ *
+ * **Ce que le niveau 2 fait du hasard (ticket #114).** Il **applique** chaque coup sur
+ * une copie dont le générateur est une **sous-graine dérivée** (`evaluationRng`), jamais
+ * le flux de la partie : le générateur du clone **n'avance pas** avec celui de la partie.
+ * Sans cela, le clone reprenait le flux au même endroit, et le lancer de **Dérive** tiré
+ * pendant l'évaluation d'une Pression était **exactement** celui que la Pression réelle
+ * allait tirer : la Direction savait d'avance qu'elle échouerait et renonçait à frapper.
+ * La sous-graine ne dépend que de la **position visible** et de l'**index du coup** —
+ * jamais de `state.rng` — donc à position égale le choix ne bouge pas quand la graine de
+ * la partie change. Même traitement pour le **type de café** d'un Talent `attachEnergy`,
+ * les **lancers du Contrôle** et le **café que la Machine adverse produit** dans
+ * `endTurn`.
+ *
+ * Limite **assumée** : la politique évalue **un** côté du lancer, pas son espérance.
+ * Une évaluation par espérance demanderait de connaître chaque lancer *à l'intérieur* du
+ * moteur (Dérive, Contrôle, café du Talent, café adverse), donc de dupliquer ses
+ * transitions ou d'en changer la sémantique : c'est une autre décision que ce ticket.
  */
 
 /**
@@ -381,8 +398,27 @@ export function endTurnBonus(player: PlayerState, weights: EvaluationWeights): n
 }
 
 /* ------------------------------------------------------------------ */
-/* Niveau 2 — la Direction qui évaluate                               */
+/* Niveau 2 — la Direction qui évalue                                 */
 /* ------------------------------------------------------------------ */
+
+/**
+ * **Sous-graine d'évaluation** (ticket #114) : l'état de générateur que reçoit la copie
+ * sur laquelle on essaie un coup.
+ *
+ * Elle ne dépend **jamais** de `state.rng` — c'est tout le point. Tant que l'évaluation
+ * repartait du flux de la partie, le clone consommait **exactement** les tirages que
+ * l'action réelle allait consommer : le lancer de **Dérive** de la Pression évaluée était
+ * le lancer réel, et la politique savait d'avance si elle échouait. Elle ne dépend que de
+ * la **position visible** (tour, Interventions) et de l'**index du coup** évalué, donc :
+ * même position → même sous-graine → même évaluation, et le choix ne bouge pas quand la
+ * **graine de la partie** change. La reproductibilité par graine reste donc entière
+ * (`replayBattle` retombe sur la même partie).
+ */
+function evaluationRng(state: BattleState, index: number): RngState {
+  const signature =
+    state.turn * 31 + state.players.player.points * 7 + state.players.ai.points * 101 + index;
+  return seedRng(signature);
+}
 
 /**
  * **Le meilleur coup évalué** : pour chaque action légale, on l'applique, on évalue
@@ -393,9 +429,10 @@ export function endTurnBonus(player: PlayerState, weights: EvaluationWeights): n
  * - le **forfait** est exclu : c'est une décision humaine (D-030) ;
  * - une action **refusée** par le moteur (`applyAction` rend l'état d'entrée) est
  *   ignorée : elle ne change rien, elle ne peut pas être « la meilleure » ;
- * - `applyAction` **clone** l'état (`structuredClone`, la convention du moteur) :
- *   le clone est modifié, la partie ne l'est pas. Aucun tirage n'est consommé dans
- *   le générateur de la partie : le niveau 2 est **déterministe par graine**.
+ * - `applyAction` **clone** l'état (`structuredClone`, la convention du moteur) : la
+ *   copie est modifiée, la partie ne l'est pas. Et cette copie porte une **sous-graine
+ *   dérivée** (`evaluationRng`) : l'évaluation ne consomme jamais le flux du jeu, donc
+ *   elle ne peut pas lire le lancer que l'action réelle tirera (ticket #114).
  */
 function bestEvaluatedAction(
   state: BattleState,
@@ -406,10 +443,14 @@ function bestEvaluatedAction(
   let best: BattleAction | null = null;
   let bestScore = -Infinity;
 
-  for (const action of legal) {
+  for (const [index, action] of legal.entries()) {
     if (action.type === 'forfeit') continue;
-    const after = applyAction(state, action);
-    if (after === state) continue;
+    // La copie d'essai **remplace** le générateur par une sous-graine dérivée : le
+    // clone n'hérite donc pas du flux de la partie (ticket #114).
+    const probe: BattleState = { ...state, rng: evaluationRng(state, index) };
+    const after = applyAction(probe, action);
+    // Refusée : `applyAction` rend **son** argument, c'est-à-dire la copie d'essai.
+    if (after === probe) continue;
 
     let score = evaluatePosition(after, who, weights);
 

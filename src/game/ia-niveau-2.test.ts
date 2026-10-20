@@ -42,6 +42,12 @@ import { factionDeck, simulate } from '@/game/simulation';
  * l'entraînement (53,94 %, ratio 1,171). Le ratio passe, le **taux de décidées ne
  * passe pas** : aucun poids n'est adopté, les défauts restent ceux du modèle corrigé.
  * Détail des 435 candidats explorés : `docs/IA-PESAGE-111.md`.
+ *
+ * **Mesure après #114** (l'évaluation ne lit plus le flux de hasard de la partie, elle
+ * porte une sous-graine dérivée — voir `ia-hasard.test.ts`) : au **contrôle**, 220 / 280 /
+ * 100 (44,00 %, ratio 0,786) ; à l'entraînement, 223 / 271 / 106 (45,14 %, ratio 0,823).
+ * Retirer la triche ne renverse pas le verdict : le niveau 2 reste derrière le niveau 1, et
+ * c'est un fait mesuré — pas un argument pour rétablir la lecture de l'avenir.
  */
 
 const PLAYER_DECK = factionDeck('SSE');

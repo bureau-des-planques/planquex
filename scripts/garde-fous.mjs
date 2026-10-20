@@ -139,6 +139,16 @@ export const MUTATIONS = [
     tests: ['src/game/simulation.test.ts'],
     garde:
       'sans le choix explicite, le Chariot SUPPORT ne produit aucun café et ne lance aucune Pression : la mesure du niveau 2 est biaisée'
+  },
+  {
+    ticket: 114,
+    titre: 'l’évaluation du niveau 2 repart du flux de hasard de la partie',
+    fichier: 'src/game/ia.ts',
+    motif: 'rng: evaluationRng(state, index)',
+    remplacement: 'rng: state.rng',
+    tests: ['src/game/ia-hasard.test.ts'],
+    garde:
+      'sans la sous-graine dérivée, le clone tire le lancer que l’action réelle tirera : la Direction sait d’avance que sa Pression sous Dérive échoue'
   }
 ];
 
