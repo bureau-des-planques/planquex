@@ -124,11 +124,8 @@ function unreadExportLines(): string[] {
  * être morte : dès qu'un appelant apparaît, le test réclame la suppression de la ligne.
  */
 const EXCEPTIONS: Readonly<Record<string, string>> = {
-  VIVIER_META: 'mort : les libellés de vivier ne sont lus par aucun écran, à câbler ou supprimer avec le ticket #60',
-  SSE_ONLY: 'mort : aucun appelant, à supprimer par le ticket #60',
-  isVariant: 'mort : aucun appelant, à supprimer par le ticket #60',
-  baseCards: 'mort : aucun appelant, à supprimer par le ticket #60',
-  CardKind: 'type mort : les deux formes de carte réécrivent leur union de genre en clair, à supprimer avec le ticket #60'
+  VIVIER_META: 'mort : les libellés de vivier ne sont lus par aucun écran — à câbler ou à supprimer, décision de conception hors du ticket #60',
+  CardKind: 'type mort : les deux formes de carte réécrivent leur union de genre en clair — hors du périmètre du ticket #60'
 };
 
 const readSource = (file: string): Source => ({ file, text: withoutComments(readFileSync(file, 'utf8')) });
