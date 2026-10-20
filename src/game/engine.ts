@@ -49,6 +49,18 @@ function awaitingPromotion(state: BattleState): boolean {
   return state.pendingPromotion !== null;
 }
 
+/**
+ * La Pression **termine le tour** (D-033 §1, capture `05` : « Une fois l'attaque
+ * lancée, votre tour est terminé. »). Dès que le camp au trait a porté sa Pression,
+ * il n'a plus qu'à finir le tour : toute autre action est refusée.
+ *
+ * Garde **unique** : chaque fonction d'action et `legalActions` la lisent, sinon
+ * l'écran finirait par proposer une action que le moteur refuse (#58).
+ */
+function turnFinished(state: BattleState): boolean {
+  return state.players[state.current].hasAttacked;
+}
+
 const newUid = () => `u${++uidCounter}`;
 
 export function createInstance(cardId: string, turn = 0, uid = newUid()): CardInstance {
@@ -248,7 +260,7 @@ export function createBattle(playerDeck: string[], aiDeck: string[], seed = Date
 }
 
 export function playBasic(state: BattleState, uid: string, slot: 'active' | number): BattleState {
-  if (awaitingPromotion(state)) return state;
+  if (awaitingPromotion(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   const handCard = player.hand.find((card) => card.uid === uid);
@@ -271,7 +283,7 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
 }
 
 export function evolve(state: BattleState, uid: string, targetUid: string): BattleState {
-  if (awaitingPromotion(state)) return state;
+  if (awaitingPromotion(state) || turnFinished(state)) return state;
   const next = clone(state);
   if (isFirstTurnFor(next, next.current)) return state;
   const player = next.players[next.current];
@@ -296,7 +308,7 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
 }
 
 export function attachEnergy(state: BattleState, targetUid: string): BattleState {
-  if (awaitingPromotion(state)) return state;
+  if (awaitingPromotion(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.energyAttached || player.energyZone <= 0) return state;
@@ -314,7 +326,7 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
 }
 
 export function retreat(state: BattleState, benchIndex: number): BattleState {
-  if (awaitingPromotion(state)) return state;
+  if (awaitingPromotion(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.hasRetreated || !player.active) return state;
@@ -336,7 +348,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
 }
 
 export function useAbility(state: BattleState): BattleState {
-  if (awaitingPromotion(state)) return state;
+  if (awaitingPromotion(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.hasUsedAbility || !player.active) return state;
@@ -535,7 +547,7 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
  * est limité à **1 par tour**. La carte doit être en main et ne pas être un Planqué.
  */
 export function canPlayAction(state: BattleState, uid: string): boolean {
-  if (awaitingPromotion(state)) return false;
+  if (awaitingPromotion(state) || turnFinished(state)) return false;
   const player = state.players[state.current];
   const handCard = player.hand.find((card) => card.uid === uid);
   if (!handCard) return false;
@@ -688,7 +700,7 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
  * mot-clé quand le moteur le refuse.
  */
 export function canPriorityShift(state: BattleState): boolean {
-  if (!RULES.priorityShiftEnabled || awaitingPromotion(state)) return false;
+  if (!RULES.priorityShiftEnabled || awaitingPromotion(state) || turnFinished(state)) return false;
   const player = state.players[state.current];
   if (player.hasUsedPriorityShift || !player.active || player.hand.length === 0) return false;
   const active = getCard(player.active.cardId);
@@ -719,31 +731,31 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   const next = clone(state);
   const player = next.players[next.current];
   const opponent = next.players[next.current === 'player' ? 'ai' : 'player'];
-  if (player.hasAttacked || !player.active || !opponent.active) return state;
+  if (turnFinished(state) || !player.active || !opponent.active) return state;
   const card = getCard(player.active.cardId);
   const targetCard = getCard(opponent.active.cardId);
   if (!isPlanque(card) || !isPlanque(targetCard)) return state;
   const attack = card.attacks[attackIndex];
   if (!attack || player.active.energy < attack.cost) return state;
 
+  // Sieste et Immobilisation interdisent la Pression (D-033 §2, capture `07` :
+  // « Les Pokémon Endormis ne peuvent ni attaquer ni battre en retraite. »). Le
+  // lancer de guérison de la Sieste a lieu **au Contrôle** (`checkup`), jamais ici :
+  // on refuse sans tirer.
   if (hasStatus(player.active, 'IMMOBILISATION')) {
     next.log.push('Immobilisation : impossible d’attaquer.');
     return next;
   }
   if (hasStatus(player.active, 'SIESTE')) {
-    if (drawRandom(next) < 0.5) {
-      clearStatus(player.active, 'SIESTE');
-      next.log.push('Sieste : réveillé sur pile.');
-    } else {
-      next.log.push('Sieste : toujours endormi.');
-      return next;
-    }
+    next.log.push('Sieste : impossible d’attaquer.');
+    return next;
   }
+  // Dérive (D-033 §3, capture `07`) : « Si c'est pile, l'attaque n'est pas lancée
+  // et le tour du joueur prend fin. » Aucun Stress — les 20 que le moteur infligeait
+  // n'avaient aucune source. Le tour est consommé, comme après une Pression réussie.
   if (hasStatus(player.active, 'DERIVE') && drawRandom(next) < 0.5) {
-    player.active.hp -= 20;
-    next.log.push('Dérive : l’attaque échoue, 20 de stress.');
-    knockOut(next, next.current === 'player' ? 'ai' : 'player');
-    resolveEnd(next);
+    player.hasAttacked = true;
+    next.log.push('Dérive : l’attaque n’est pas lancée, le tour prend fin.');
     return next;
   }
 
@@ -872,7 +884,7 @@ export function attackPreview(state: BattleState, attackIndex: number): number {
 }
 
 export function canEvolve(state: BattleState, handUid: string, targetUid: string): boolean {
-  if (awaitingPromotion(state)) return false;
+  if (awaitingPromotion(state) || turnFinished(state)) return false;
   const player = state.players[state.current];
   const hand = player.hand.find((card) => card.uid === handUid);
   const target = findInPlay(player, targetUid);
@@ -890,9 +902,12 @@ export function canEvolve(state: BattleState, handUid: string, targetUid: string
 export function legalAttacks(state: BattleState): Attack[] {
   if (awaitingPromotion(state)) return [];
   const player = state.players[state.current];
-  if (!player.active) return [];
+  // Une Pression termine le tour (D-033 §1) ; la Sieste et l'Immobilisation
+  // l'interdisent (D-033 §2). Dans les trois cas, aucune Pression n'est légale.
+  if (turnFinished(state) || !player.active) return [];
   const card = getCard(player.active.cardId);
   if (!isPlanque(card)) return [];
+  if (hasStatus(player.active, 'SIESTE') || hasStatus(player.active, 'IMMOBILISATION')) return [];
   return card.attacks.filter((attack) => player.active && player.active.energy >= attack.cost);
 }
 
@@ -927,6 +942,10 @@ export function legalActions(state: BattleState): BattleAction[] {
       card ? [{ type: 'promoteActive', benchIndex } satisfies BattleAction] : []
     );
   }
+
+  // D-033 §1 : une Pression lancée consomme le reste du tour. Seule la fin du
+  // tour reste offerte — sauf relève en attente, traitée juste au-dessus.
+  if (turnFinished(state)) return [{ type: 'endTurn' }];
 
   const player = state.players[state.current];
   const actions: BattleAction[] = [];
