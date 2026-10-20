@@ -212,20 +212,25 @@ function opponentOf(who: PlayerId): PlayerId {
 }
 
 /**
- * Les cafés attachés qui **servent à une Pression** (D-037 : le coût est une liste de
- * symboles, et le moteur compte encore les cafés par nombre).
+ * Les cafés attachés qui **servent à une Pression**.
  *
  * C'est le nombre de cafés engagés vers la Pression la plus chère du Planqué : un
  * café qui ne sert à rien ne vaut rien, et un café au-delà du coût maximal non
  * plus. Un café qui ne paie pas encore une Pression compte quand même : il s'y
  * engage.
+ *
+ * ⚠️ **Approximation assumée** : depuis #88/#90, le moteur exige
+ * `satisfiesCafeCost` (un symbole typé n'est payé que par un café **de ce type**),
+ * alors que cette estimation compte les cafés **au nombre**. Elle **surestime**
+ * donc la menace et la sécurité quand les types ne correspondent pas. Changer la
+ * mesure changerait le niveau 2 tel qu'il a été pesé — c'est le ticket #108.
  */
 function paidCafes(instance: CardInstance): number {
   const card = getCard(instance.cardId);
   if (!isPlanque(card)) return 0;
   const maxCost = card.attacks.reduce((max, attack) => Math.max(max, attack.cost.length), 0);
   if (maxCost === 0) return 0;
-  return Math.min(instance.energy, maxCost);
+  return Math.min(instance.energy.length, maxCost);
 }
 
 /**
@@ -264,7 +269,7 @@ function threatOf(player: PlayerState, defender: CardInstance | null): number {
 
   let best = 0;
   for (const attack of card.attacks) {
-    if (player.active.energy < attack.cost.length) continue;
+    if (player.active.energy.length < attack.cost.length) continue;
     const damage = attackDamage(player.active, defender, attack, 'poste');
     if (damage > best) best = damage;
   }
