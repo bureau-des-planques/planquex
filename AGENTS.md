@@ -259,7 +259,7 @@ Autres faits vérifiés le 19/10/2026 :
 - **Les décomptes ne sont pas recopiés ici** : le nombre de fichiers de test et de tests est celui qu'affiche `npm test` ; le nombre de cartes, de bases, de variantes et de factions est celui qu'affiche `npm run status` (`cards`), **dérivé d'`ALL_CARDS`** (`src/data/index.ts`), seule source de ce nombre. `scripts/compteurs.test.ts` échoue si un décompte en dur revient dans ce §7 ou dans `README.md`. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Seuil par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Chariot et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
-- Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/grevomon-tcg` (privé).
+- Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/planquex` (privé). Le dossier local garde `grevomon-tcg` (D-038) : le chemin de §7 est inchangé.
 
 ### 7.1 Piège connu — le service worker casse le dev sur la même origine
 
@@ -353,7 +353,7 @@ Voir `../grevomon-pocket/LEGACY.md`.
 
 ### Issue tracker
 
-Les tickets vivent dans GitHub Issues sur `Chapax/grevomon-tcg`, piloté par la CLI `gh`. Voir `docs/agents/issue-tracker.md`.
+Les tickets vivent dans GitHub Issues sur `Chapax/planquex`, piloté par la CLI `gh`. Voir `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
