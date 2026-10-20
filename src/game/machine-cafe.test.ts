@@ -162,4 +162,13 @@ describe('Battle.tsx — le plateau rend les cafés typés', () => {
     expect(battleSource).toMatch(/<CafesPips\b/);
     expect(battleSource).toMatch(/<MachinePips\b/);
   });
+
+  it('passe au moteur les types de café choisis du Chariot (#91)', () => {
+    // Sans ce passage, l'écran de combat jouerait la dérivation alors que le joueur
+    // a choisi ses types au Chariot : le défaut serait invisible côté moteur.
+    expect(battleSource).toMatch(/state\.cafeTypes/);
+    expect(battleSource).toMatch(
+      /createBattle\(playerDeck, testDeck\(\), undefined, \{ playerCafeTypes: chosenCafeTypes \}\)/
+    );
+  });
 });
