@@ -1360,6 +1360,13 @@ h2 {
   color: var(--danger);
 }
 
+.settings__version {
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+}
+
 /* ---------- Ajout rapide au Chariot ---------- */
 
 .section__actions {

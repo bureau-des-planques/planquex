@@ -1,27 +1,35 @@
 /**
- * La version de l'application, et son étape.
+ * La version de l'application, et l'étape où elle en est.
  *
- * **Une seule source** : `package.json` (injecté au build par `vite.config.ts`).
- * On ne recopie jamais un numéro de version dans un composant — `version.test.ts`
- * échoue si quelqu'un le fait.
+ * **Une seule source** : `package.json` — `version` et `stage`, tous deux injectés au
+ * build par `vite.config.ts`. On ne recopie jamais ni un numéro ni un mot d'étape dans
+ * un composant : `version.test.ts` échoue si quelqu'un le fait.
  *
- * L'étape se **déduit** du numéro, elle ne se saisit pas : `0.2.0-alpha.1` est une
- * alpha, `0.2.0-beta.3` une bêta, `0.2.0` une release. C'est ce qui empêche le mot
- * affiché et le numéro de diverger (décision D-048).
+ * **Pourquoi l'étape n'est pas dans le numéro** (D-050) : `0.2.0-alpha.2` se lisait
+ * « alpha deux », ce que personne ne veut dire. Le numéro est donc une version
+ * ordinaire, et l'étape est un mot à côté — `Alpha · 0.2.0`. Une nouvelle build donnée
+ * aux testeurs se distingue par **sa version** (une correction monte `0.2.1`), pas par
+ * un compteur d'alphas.
  */
 
-export const APP_VERSION = __APP_VERSION__;
-
+/** L'étape, dérivée de `package.json` et validée : le doute retombe sur la plus prudente. */
 export type AppStage = 'alpha' | 'beta' | 'release';
 
-/** Dérivée du suffixe de préversion semver : `-alpha.1`, `-beta.2`, ou rien. */
-export function stageOf(version: string): AppStage {
-  const match = /^\d+\.\d+\.\d+-([a-z]+)/.exec(version);
-  const stage = match?.[1];
-  return stage === 'alpha' || stage === 'beta' ? stage : 'release';
+const ETAPES: AppStage[] = ['alpha', 'beta', 'release'];
+
+export function asStage(value: string): AppStage {
+  return ETAPES.includes(value as AppStage) ? (value as AppStage) : 'alpha';
 }
 
-export const APP_STAGE: AppStage = stageOf(APP_VERSION);
+export const APP_VERSION = __APP_VERSION__;
+export const APP_STAGE: AppStage = asStage(__APP_STAGE__);
 
-/** Ce qu'on affiche à l'écran, et ce qu'un testeur doit pouvoir recopier tel quel. */
-export const APP_VERSION_LABEL = `v${APP_VERSION}`;
+/** Le mot d'étape tel qu'il s'affiche. */
+export const APP_STAGE_LABEL: Record<AppStage, string> = {
+  alpha: 'Alpha',
+  beta: 'Bêta',
+  release: 'Version finale'
+};
+
+/** Le libellé complet : « Alpha · 0.2.0 ». */
+export const APP_LABEL = `${APP_STAGE_LABEL[APP_STAGE]} · ${APP_VERSION}`;

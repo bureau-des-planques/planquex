@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import { join } from 'node:path';
-import { APP_STAGE, APP_VERSION, APP_VERSION_LABEL, stageOf } from './version';
+import { APP_LABEL, APP_STAGE, APP_VERSION, asStage } from './version';
 
 const SRC = fileURLToPath(new URL('.', import.meta.url));
 
 /** Le paquet lu sur le disque : c'est lui la source, pas la constante injectée. */
 const pkg = JSON.parse(
   readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
-) as { version: string };
+) as { version: string; stage: string };
 
 /** Tous les fichiers source, hors tests. */
 function fichiersSource(dossier = SRC): string[] {
@@ -48,15 +48,23 @@ function versionsEnDurDansSrc(): string[] {
 describe('version de l’application', () => {
   it('vient de package.json, et de nulle part ailleurs', () => {
     expect(APP_VERSION).toBe(pkg.version);
-    expect(APP_VERSION_LABEL).toBe(`v${pkg.version}`);
+    expect(APP_LABEL).toBe(`${APP_STAGE === 'alpha' ? 'Alpha' : APP_STAGE === 'beta' ? 'Bêta' : 'Version finale'} · ${pkg.version}`);
   });
 
-  it('déduit l’étape du numéro, elle ne se saisit pas', () => {
-    expect(stageOf('0.2.0-alpha.1')).toBe('alpha');
-    expect(stageOf('0.2.0-beta.12')).toBe('beta');
-    expect(stageOf('0.2.0')).toBe('release');
-    expect(stageOf('1.0.0')).toBe('release');
-    expect(APP_STAGE).toBe(stageOf(pkg.version));
+  it('porte l’étape en clair, à côté du numéro (D-050)', () => {
+    // Le numéro reste une version ordinaire : aucun `-alpha.N` dedans.
+    expect(pkg.version).toMatch(/^\d+\.\d+\.\d+$/);
+    expect(['alpha', 'beta', 'release']).toContain(APP_STAGE);
+    expect(APP_STAGE).toBe(pkg.stage);
+  });
+
+  it('retombe sur l’étape la plus prudente si le mot est inconnu', () => {
+    expect(asStage('alpha')).toBe('alpha');
+    expect(asStage('beta')).toBe('beta');
+    expect(asStage('release')).toBe('release');
+    // Un mot inventé ne doit jamais faire croire à une version finale.
+    expect(asStage('gamma')).toBe('alpha');
+    expect(asStage('')).toBe('alpha');
   });
 
   it('n’a aucun numéro de version écrit à la main dans src/', () => {
@@ -68,8 +76,8 @@ describe('version de l’application', () => {
     expect(versionsEnDur('faux.ts', 'const affichee = "9.9.9";')).toEqual([
       'faux.ts : 9.9.9',
     ]);
-    expect(versionsEnDur('faux.tsx', '<span>v1.2.3-beta.4</span>')).toEqual([
-      'faux.tsx : v1.2.3-beta.4',
+    expect(versionsEnDur('faux.tsx', '<span>v1.2.3</span>')).toEqual([
+      'faux.tsx : v1.2.3',
     ]);
   });
 });

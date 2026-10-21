@@ -1,14 +1,7 @@
 import { useState } from 'react';
 import { ClipboardPaste, Copy, RotateCcw } from 'lucide-react';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
-import { APP_STAGE, APP_VERSION_LABEL } from '@/version';
-
-/** L'étape se déduit du numéro de version — elle ne se saisit pas (D-048). */
-const STAGE_LABELS = {
-  alpha: 'alpha',
-  beta: 'bêta',
-  release: 'version finale'
-} as const;
+import { APP_LABEL } from '@/version';
 
 export function Settings() {
   const { name, setName, reducedMotion, setReducedMotion, reset, setTutorielVu } = useStore();
@@ -130,7 +123,7 @@ export function Settings() {
       <section className="section panel">
         <h2>Version</h2>
         <p className="muted">
-          <code>{APP_VERSION_LABEL}</code> · {STAGE_LABELS[APP_STAGE]} — dis-moi ce numéro si
+          <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si
           quelque chose ne va pas : c’est lui qui dit quelle version tu as sous les yeux.
         </p>
       </section>

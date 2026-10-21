@@ -1,7 +1,8 @@
 /// <reference types="vite/client" />
 
 /**
- * La version de l'application, injectée au build depuis `package.json`
+ * La version de l'application et son étape, injectées au build depuis `package.json`
  * (voir le bloc `define` de `vite.config.ts`). Une seule source, jamais recopiée.
  */
 declare const __APP_VERSION__: string;
+declare const __APP_STAGE__: string;
