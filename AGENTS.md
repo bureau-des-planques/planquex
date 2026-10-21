@@ -133,14 +133,14 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Interventions | **3** pour gagner ; un craquage normal = 1, un COMEX = 2 |
 | Machine à café | **1 café généré par tour**, **1 attachement par tour** ; si le slot du haut est occupé, pas de nouveau café — la zone ne contient donc jamais plus d'un café (D-034) |
 | Types de café | Le coût d'une Pression est une **liste de symboles** (un type de faction, ou **`INCOLORE`** — distinct de `SUPPORT`) ; un symbole typé exige un café de ce type, un symbole incolore accepte tout, et un café incolore (jamais produit) paie un coût typé (D-037). Jusqu'à **3** types par Chariot, **choisis par le joueur (1 à 3, proposition automatique d'après les factions présentes)**, `SUPPORT`/`INTERIM` jamais proposés ni retenus (D-034, D-037 ; #91) |
-| Premier joueur | **Tiré au sort** par un lancer de tampon (D-033) ; **pioche** ; ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 (D-030) |
+| Premier joueur | **Tiré au sort** par un lancer de tampon (D-033) ; **pioche** ; ne peut pas attacher de café ; peut jouer un Collègue ; peut attaquer si l'attaque coûte 0 (D-030, D-039 — écart assumé : le coût `0` existe dans le code `DAMAGE_BY_COST`, aucune carte ne le porte) |
 | Évolution | Impossible au premier tour de chaque joueur |
 | Seuil / Stress | le **Seuil** remplace le Moral ; les dégâts deviennent du **Stress** qui monte ; à `Stress ≥ Seuil`, le Planqué **craque** (D-026) |
 | Pression | **1 par tour** ; le café n'est **pas consommé** ; elle fait monter le **Stress** ; elle **termine le tour** (D-033) |
 | Ordre des dégâts | dégâts de la Pression → effets sur l'attaquant → **Vulnérabilité** → effets sur le défenseur (D-031) |
 | Vulnérabilité | **+20** — le ×2 n'existe que via un Lieu, hors périmètre (D-020) ; **ne s'applique pas au Rack** (D-031) |
 | Résistance | **Aucune** |
-| Rotation | Défausse autant de cafés que le coût de rotation ; **une fois par tour** ; **impossible** sous Sieste ou Immobilisation (D-033) |
+| Rotation | Défausse autant de cafés que le coût de rotation (**les premiers de la liste d'attachement**, `slice(amount)` dans `engine.ts:519-521`, pas de choix du joueur) ; **une fois par tour** ; **impossible** sous Sieste ou Immobilisation (D-033, D-041) |
 | Pioche vide | **Pas de défaite** |
 | Défaite | 3 Interventions pour l'adversaire, **ou** plus aucun Planqué en jeu (D-022) ; le **forfait** est une défaite quel que soit le score (D-030) ; à 3 Interventions sur l'action qui vide le plateau, la défaite l'emporte (D-031) |
 | Limite de partie | Atteinte, le combat se solde par une **égalité** (D-030, observé) ; **30 tours** en Échelon (PvP), **50** en solo (D-031, établi par la recherche, D-034) |
@@ -150,6 +150,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Contrôle | Après **chaque** tour, les **deux** Postes sont contrôlés ; le joueur dont le tour vient de finir passe **d'abord** (D-033) |
 | Ordre des statuts | Surcharge → Épuisement → Sieste → Immobilisation |
 | Cartes Action | **Objet** (NEUF ou MRO) : illimité ; **Collègue** : **1 par tour** |
+| Talent `attachEnergy` | Attache **un café tiré au hasard dans le Chariot du joueur** (même générateur seedé que la Machine, `drawCafeType`, `engine.ts:458-463`, `state.players[who].cafeTypes`) — D-040, #110 (a) |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
 
 **Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, COMEX = **2 Interventions**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. **État des preuves (20/10/2026)** : les « Astuces de jeu » ont été capturées — 9 écrans, `docs/preuves/astuces-2026-10-20/` — et **douze lignes de ce tableau passent à « observé »** (D-030). Les quatre lignes non capturées — le **plafond de 3 types de café**, la **main de départ à 5**, la règle du « slot occupé » et la **reprise de poste** — sont **établies par la recherche**, qui fait foi au même titre que les captures (D-034) : §4 n'a plus de ligne non sourcée. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources et verdicts : `docs/MIROIR-2026-DELTAS.md`. La revue de sources du même jour (`docs/preuves/regles-2026-10-20/`, D-032) recoupe ces lignes par une transcription datée et apporte les ajouts de **D-031** (ordre des dégâts, Vulnérabilité hors Rack, double craquage, nombre de tours).
@@ -172,6 +173,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 ## 5. Écriture des cartes
 
+- **Raretés hautes (`3S`, `COU`)** : portées **uniquement par des variantes de Planqués** (les variantes d'Action restent `1S`/`2S`) — D-044 (#105 (a)). Les 7 variantes hautes (`3S` × 4, `COU` × 3) **ne sortent d'aucun Arrivage** (`PACK_COMPOSITION`, `src/game/pack.ts`) : elles sont au catalogue (`CARD_BY_ID`, `src/data/index.ts`), pas dans le tirage.
 - **Identifiants** : minuscules, kebab-case, préfixe de faction — `sse-infirmier-site`. Variantes : le suffixe **porte la rareté** — `-star` (`1S`), `-star2` (`2S`), `-star3` (`3S`), `-crown` (`COU`) ; la table est unique (`SECRET_RARITY`, `src/data/planque.ts`) et un test la lit dans les deux sens. **COMEX : suffixe `-ex`** — le nom porte « COMEX », l'id porte `ex`, et les 15 cartes COMEX s'y conforment ; c'est la seule entorse au point suivant, et elle vient du **statut** (D-026), pas du nom. **Un id suit le nom** : renommer une carte renomme son id, et un renommage d'id s'accompagne d'une **migration du store** (`version`, cf. §6). L'écart id/nom est un *Mysterious Name* : dans un dépôt lu par des agents, une carte introuvable par son nom ne se trouve plus du tout.
 - **Évolution** : `evolvesFrom` pointe vers l'`id` de la carte précédente. Une variante hérite des stats, attaques, talent et flavour de sa carte de base.
 - **COMEX** : `ex: true`, vaut 2 Interventions. L'UI affiche « COMEX », pas « ex ».
