@@ -19,6 +19,14 @@
         "type": "remote",
         "url": "https://mcp.sentry.dev/mcp",
         "disabled": true
+      },
+      "gflow": {
+        "type": "local",
+        "command": ["gflow", "mcp", "run"],
+        "cwd": ".",
+        "environment": {
+          "GFLOW_CLI_OUTPUT_DIR": ".scratch/gflow"
+        }
       }
     }
   }
