@@ -29,7 +29,7 @@
 > | 1. Décider | **fait** — `D-036` (nom) et `D-038` (licence, publication, retrait du site) ; l'acte annoncé `D-034` dans ce dossier est devenu **D-036** |
 > | 2. Documentation | **fait** — dépôt, `remote`, `AGENTS.md` §7, `docs/agents/issue-tracker.md` |
 > | 3. Dépôt GitHub | **fait** — `Chapax/planquex` (privé), `origin` aligné |
-> | 5. Vercel | **fait, sauf la suppression du domaine** — projet renommé `planquex`, **sorti de pause** et **en production** (`Alpha · 0.1.1`, commit `59d53a1`) ; `planquex.vercel.app` répond **`200`**. `grevomon.vercel.app` est **toujours attaché** : il ne sert plus l'ancien jeu, il sert le **nouveau**. Sa suppression reste un geste de tableau de bord (D-053) |
+> | 5. Vercel | **fait, sauf la suppression du domaine** — projet renommé `planquex`, **sorti de pause** et **en production** (le premier déploiement de production est le commit `59d53a1`) ; `planquex.vercel.app` répond **`200`**. `grevomon.vercel.app` est **toujours attaché** : il ne sert plus l'ancien jeu, il sert le **nouveau**. Sa suppression reste un geste de tableau de bord (D-053) |
 > | 6. Supabase / Brevo | **partiel** — libellé du projet `jzlcwnozlzhadatksvgh` à renommer (tableau de bord) ; nom d'expéditeur Brevo déjà « Bureau des Planqués », **adresse** encore `grevomon.game@gmail.com` |
 > | 7. Mascotte | **hors périmètre** — le §6 la proposait ; `public/` porte trois SVG au monogramme « BP » (#97) |
 > | — | `LICENSE` (MIT) **présent** ; `scripts/etapes-infra-tcg.sh` aligné sur `planquex` le 21/10 |
