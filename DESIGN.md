@@ -312,4 +312,4 @@ détourage (`not-lain/background-removal`).
 - Les raretés `3S` et `COU` sont stylées et **portées par 7 variantes re-raréfiées** (#87).
 - Le contraste est vérifié pour les paires de texte ; le contraste des pips décoratifs et
   des voiles n'est pas un critère (l'information est portée par le texte).
-- Aucune dépendance n'a été ajoutée pour cette passe (`AGENTS.md` §1.7).
+- Aucune dépendance n'a été ajoutée pour cette passe (`AGENTS.md` §1, règle 7).
