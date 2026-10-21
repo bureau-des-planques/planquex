@@ -251,6 +251,65 @@ socle() {
        f && /^```/ { n++; if (n == 2) exit; next }
        f && n == 1 { print }' "$PROMPTS"
 }
+# socle_ligne() : le même, aplati sur une ligne. Le socle est un bloc de code
+# multiligne ; `$(socle)` quoté garde ses retours à la ligne, et un prompt
+# multiligne ne se journalise pas, ne se compare pas et ne se cherche pas.
+socle_ligne() { socle | tr '\n' ' ' | tr -s ' ' | sed -e 's/^ //' -e 's/ $//'; }
+
+# ── Les modèles : noms humains ↔ alias gflow ──────────────────────────────
+#
+# **La seule source du mapping.** gflow n'accepte que ses alias internes
+# (`--model nano2|nano-pro|nano2-lite|image4|imagen4`) et le refuse net :
+#
+#     Error: Invalid value for '--model': 'nano2.1' is not one of 'nano2', …
+#
+# Or personne ne connaît ces alias : on connaît « Nano Banana 2.1 ». La
+# résolution se fait donc **ici**, avant l'appel — jamais dans gflow.
+#
+# `nano2` EST Nano Banana 2.1 sur `flow.google.com` : Flow y a remplacé
+# Nano Banana 2, et gflow a suivi sous le même alias (gflow, `docs/INDEX.md:174`
+# et `docs/PROJECT_STATUS.md:96`, #958 — la vérification a été faite le
+# 21/10/2026 sur cette machine). Sur `labs.google`, `nano2` reste Nano Banana 2 :
+# l'équivalence dépend de l'hôte, et le compte de Bastien est servi par
+# `flow.google.com` (`gflow auth status` le dit).
+modele_alias() {
+  local v="${1,,}"
+  v="${v#"${v%%[![:space:]]*}"}"; v="${v%"${v##*[![:space:]]}"}"   # trim
+  v="${v//  / }"
+  case "$v" in
+    nano2|nano2.1|nano2,1|beluga|2|2.1|2,1|"nano banana 2"|"nano banana 2.1"|"nano banana 2,1")
+      printf 'nano2' ;;
+    nano-pro|gem_pix_2|pro|"nano banana pro"|"nano banana pro 1")
+      printf 'nano-pro' ;;
+    nano2-lite|harbor_seal|lite|"nano banana 2 lite"|"nano banana lite")
+      printf 'nano2-lite' ;;
+    image4|imagen4|imagen_3_5|imagen|4|"imagen 4")
+      printf 'image4' ;;
+    *) return 2 ;;
+  esac
+}
+# La même table, pour les messages — jamais recopiée ailleurs.
+modeles_lisibles() {
+  printf '%s\n' \
+    '  Nano Banana 2.1      →  --model nano2       (défaut)' \
+    '  Nano Banana 2 Lite   →  --model nano2-lite' \
+    '  Nano Banana Pro      →  --model nano-pro' \
+    '  Imagen 4             →  --model image4'
+}
+
+# demander VAR "invite" [défaut] : `ask` gardé. À EOF, `ask` renvoie 1 et un
+# `return 1` nu fait sortir le script sous `set -e` avec le code 1 et **aucun
+# message** — observé en vrai. Ici on sort en 130 (128 + SIGINT), après avoir
+# dit pourquoi.
+demander() {
+  local var="$1" invite="$2" defaut="${3:-}"
+  if ! ask "$var" "$invite"; then
+    _clear
+    warn "Entrée interrompue (Ctrl-D ou tube épuisé) — rien n'a été écrit."
+    exit 130
+  fi
+  if [[ -z "${!var}" && -n "$defaut" ]]; then printf -v "$var" '%s' "$defaut"; fi
+}
 
 # etat_de ID : l'image est-elle au registre, servie, et la carte câblée ?
 etat_de() {
@@ -369,6 +428,20 @@ ligne_journal() {
   grep -qF "$motif" "$README"
 }
 
+# Point d'entrée non interactif : `--modele <nom>` résout et sort. C'est le seam
+# que scripts/illustration-vague.test.ts exerce, et il sert aussi à la personne
+# qui veut juste savoir quel alias correspond à « Nano Banana 2.1 ».
+if [[ "${1:-}" == "--modele" ]]; then
+  if alias=$(modele_alias "${2:-}"); then
+    printf '%s\n' "$alias"
+    exit 0
+  fi
+  printf 'Modèle inconnu : « %s »\n\n' "${2:-}" >&2
+  printf 'Noms acceptés (et leur alias gflow) :\n' >&2
+  modeles_lisibles >&2
+  exit 2
+fi
+
 banner "Produire une illustration par gflow-cli (#97)"
 
 # ── 1. Préconditions ──────────────────────────────────────────────────────
@@ -420,7 +493,7 @@ note "Les deux doivent dire oui : c'est ce que garde illustrations-servies.test.
 
 CARTE="${1:-}"
 if [[ -z "$CARTE" ]]; then
-  ask CARTE "id de la carte à produire :"
+  demander CARTE "id de la carte à produire :"
 fi
 if [[ -z "$CARTE" ]] || ! connue "$CARTE"; then
   warn "« ${CARTE:-<vide>} » n'est pas dans la Planche 1 de $PROMPTS."
@@ -437,15 +510,34 @@ pause "Entrée pour générer"
 
 # ── 3. Générer ────────────────────────────────────────────────────────────
 stage "Générer avec gflow"
-PROMPT="$(socle) $(sujet_de "$CARTE"), muted $(accent_de "$CARTE") accent."
-say "Prompt envoyé (socle §6.1 + sujet) :"
+PROMPT="$(socle_ligne) $(sujet_de "$CARTE"), muted $(accent_de "$CARTE") accent."
+say "Prompt envoyé (socle §6.1 + sujet), aplati sur une seule ligne :"
 printf '\n%s\n\n' "$PROMPT" | fold -s -w 96 | sed 's/^/    /'
 note "Le socle impose la lumière principale sur le VISAGE : c'est le correctif de la"
 note "première vague, dont les 8 images ont les visages dans l'ombre. Ne l'enlève pas."
 printf '\n'
-ask MODELE "Modèle [nano2|nano-pro|nano2-lite|image4] :"
-MODELE="${MODELE:-nano2}"
-ask NB "Combien de variantes (1-4) :"
+say "Quel modèle ? gflow n'accepte que ses alias internes — on traduit pour toi :"
+modeles_lisibles
+printf '\n'
+ALIAS=""
+for essai in 1 2 3; do
+  demander MODELE "Modèle :" "Nano Banana 2.1"
+  if ALIAS=$(modele_alias "$MODELE"); then break; fi
+  warn "« $MODELE » n'est pas un modèle connu."
+  ALIAS=""
+done
+if [[ -z "$ALIAS" ]]; then
+  warn "Trois essais sans un modèle valide — rien n'a été envoyé à gflow."
+  pause "Entrée pour abandonner"
+  finish
+  return
+fi
+note "« $MODELE » → --model $ALIAS"
+if [[ "$ALIAS" == "nano2" ]]; then
+  note "Sur flow.google.com, nano2 EST Nano Banana 2.1 : Flow y a remplacé NB2 (#958)."
+fi
+printf '\n'
+demander NB "Combien de variantes (1-4) :" "1"
 NB="${NB:-1}"
 case "$NB" in ''|*[!0-9]*) NB=1 ;; esac
 if (( NB < 1 || NB > 4 )); then NB=1; fi
@@ -456,14 +548,27 @@ note "Les images sont gratuites côté Flow ; seuls les outils vidéo dépensent
 printf '\n'
 say "Lancement — 30 à 90 s au premier appel, le temps que Chromium chauffe."
 JSON=""
-if JSON=$(gflow image t2i "$PROMPT" --model "$MODELE" --aspect 1:1 -n "$NB" \
+if JSON=$(gflow image t2i "$PROMPT" --model "$ALIAS" --aspect 1:1 -n "$NB" \
             --out "$SCRATCH/$CARTE" --json 2>/tmp/gflow-illustration.err); then
   printf '  %s✓%s génération terminée\n' "$GREEN" "$RESET"
 else
-  warn "gflow a échoué — lis /tmp/gflow-illustration.err."
-  note "Codes distincts : 23 = dérive de sélecteur (l'UI de Flow a bougé),"
-  note "28 = l'interface classique n'a pas été atteinte. Aucun crédit n'est dépensé"
-  note "par une génération d'image : une casse ne coûte rien."
+  CODE=$?
+  case "$CODE" in
+    2)
+      warn "gflow a refusé nos arguments — erreur d'usage (exit 2)."
+      note "Ce n'est PAS une dérive de Flow ni un problème de navigateur : un argument"
+      note "est mal formé. /tmp/gflow-illustration.err nomme l'option fautive. C'est le"
+      note "message qu'on recevait avant que le modèle soit résolu." ;;
+    23)
+      warn "Dérive de sélecteur (exit 23) : l'interface de Flow a bougé."
+      note "Rien à corriger ici — c'est gflow qui doit suivre l'UI de Flow." ;;
+    28)
+      warn "Interface classique inatteignable (exit 28, réessayable)."
+      note "L'aspect 1:1 a besoin de l'arm « classic » de Flow." ;;
+    *)
+      warn "gflow a échoué (exit $CODE) — lis /tmp/gflow-illustration.err." ;;
+  esac
+  note "Aucun crédit n'est dépensé par une génération d'image : une casse ne coûte rien."
   pause "Entrée pour abandonner"
   finish
   return
@@ -499,7 +604,7 @@ if (( ${#FICHIERS[@]} == 1 )); then
   CHOIX=1
   note "Une seule variante : elle est retenue."
 else
-  ask CHOIX "Numéro de la variante à garder (1-${#FICHIERS[@]}) :"
+  demander CHOIX "Numéro de la variante à garder (1-${#FICHIERS[@]}) :"
   case "$CHOIX" in ''|*[!0-9]*) CHOIX=1 ;; esac
   if (( CHOIX < 1 || CHOIX > ${#FICHIERS[@]} )); then CHOIX=1; fi
 fi
