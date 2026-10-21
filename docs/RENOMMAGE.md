@@ -36,15 +36,20 @@
 >
 > **Reste, et c'est le ticket #100** : le libellé du projet Supabase, le détachement du domaine
 > Vercel, l'adresse de l'expéditeur Brevo. **Dossier local** : toujours `grevomon-tcg`, à renommer
-> **en dernier** (D-038) — 25 worktrees ouverts au 21/10, donc l'étape est hors d'atteinte.
+> **en dernier** (D-036) ; il n'est **plus retenu** — les worktrees ont été élagués le 21/10
+> (`git worktree list` → **1**, le dépôt principal ; 25 branches fusionnées supprimées, et
+> `agent/75-renommage`, morte, retirée elle aussi, son seul fichier vivant déjà dans `main`).
+> L'étape n'attend donc plus qu'une chose : **l'ordre du §8**, qui la place après Vercel et
+> Supabase/Brevo.
 >
 > **Comptes du §0 :** il annonçait « 59 lignes / 15 fichiers ». Mesuré sur `main` le 21/10/2026
 > **avant l'ajout de ce dossier** : `git grep -niI "grevomon" | wc -l` → **66 lignes**, et
 > `git grep -niI -l "grevomon" | wc -l` → **16 fichiers**. L'écart vient des actes et des
 > dossiers d'audit postérieurs au 20/10, pas d'un renommage à refaire.
 >
-> **Le §8 reste le plan de référence** : les étapes 1 à 3 sont derrière, 4 est en dernier, 5 et 6
-> sont le sujet de #100, 7 attend #97, 8 est la vérification finale.
+> **Le §8 reste le plan de référence** : les étapes 1 à 3 sont derrière, 4 n'attend plus que
+> l'ordre (les worktrees ne la retiennent plus), 5 et 6 sont le sujet de #100, 7 attend #97,
+> 8 est la vérification finale.
 
 ## 0. Résumé pour décider
 
