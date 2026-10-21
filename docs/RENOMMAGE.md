@@ -29,13 +29,14 @@
 > | 1. Décider | **fait** — `D-036` (nom) et `D-038` (licence, publication, retrait du site) ; l'acte annoncé `D-034` dans ce dossier est devenu **D-036** |
 > | 2. Documentation | **fait** — dépôt, `remote`, `AGENTS.md` §7, `docs/agents/issue-tracker.md` |
 > | 3. Dépôt GitHub | **fait** — `Chapax/planquex` (privé), `origin` aligné |
-> | 5. Vercel | **partiel** — projet renommé `planquex`, **en pause** ; le domaine `grevomon.vercel.app` est **toujours attaché** (`503 DEPLOYMENT_PAUSED`) et `planquex.vercel.app` répond `404` |
+> | 5. Vercel | **fait, sauf la suppression du domaine** — projet renommé `planquex`, **sorti de pause** et **en production** (`Alpha · 0.1.1`, commit `59d53a1`) ; `planquex.vercel.app` répond **`200`**. `grevomon.vercel.app` est **toujours attaché** : il ne sert plus l'ancien jeu, il sert le **nouveau**. Sa suppression reste un geste de tableau de bord (D-053) |
 > | 6. Supabase / Brevo | **partiel** — libellé du projet `jzlcwnozlzhadatksvgh` à renommer (tableau de bord) ; nom d'expéditeur Brevo déjà « Bureau des Planqués », **adresse** encore `grevomon.game@gmail.com` |
 > | 7. Mascotte | **hors périmètre** — le §6 la proposait ; `public/` porte trois SVG au monogramme « BP » (#97) |
 > | — | `LICENSE` (MIT) **présent** ; `scripts/etapes-infra-tcg.sh` aligné sur `planquex` le 21/10 |
 >
-> **Reste, et c'est le ticket #100** : le libellé du projet Supabase, le détachement du domaine
-> Vercel, l'adresse de l'expéditeur Brevo.
+> **Reste, et c'est le ticket #100** : le libellé du projet Supabase, la **suppression** du domaine
+> Vercel `grevomon.vercel.app`, l'adresse de l'expéditeur Brevo, et les URL de retour de Supabase
+> Auth. Le **déploiement**, lui, est fait (D-053) : le projet est sorti de pause et sert `main`.
 >
 > **Étape 4 — faite le 21/10/2026, avant l'heure (D-047).** Le dossier local s'appelle
 > **`planquex`** et vit dans `~/Documents/opencode/gamedev/planquex/` ; les versions mortes sont
@@ -55,9 +56,9 @@
 > `git grep -niI -l "grevomon" | wc -l` → **16 fichiers**. L'écart vient des actes et des
 > dossiers d'audit postérieurs au 20/10, pas d'un renommage à refaire.
 >
-> **Le §8 reste le plan de référence** : les étapes 1 à 3 sont derrière, 4 n'attend plus que
-> l'ordre (les worktrees ne la retiennent plus), 5 et 6 sont le sujet de #100, 7 attend #97,
-> 8 est la vérification finale.
+> **Le §8 reste le plan de référence** : les étapes 1 à 4 sont derrière, 5 est faite **sauf la
+> suppression du domaine**, 6 reste le sujet de #100 (libellé Supabase, Brevo, URL d'Auth), 7
+> attend #97, 8 est la vérification finale.
 
 ## 0. Résumé pour décider
 
