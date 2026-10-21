@@ -109,7 +109,7 @@ D-0xx | <date> | `#100/#75/#10` — site `grevomon.vercel.app` retiré (`503`, D
 
 *Vérifications de fermeture (reprises au moment du commit) :*
 - `git -C "/home/chapax/.local/share/opencode/worktree/fdabfa/arbitrages-infra" rev-parse --abbrev-ref HEAD` → `agent/arbitrages-infra` (pas `HEAD` détaché).
-- `git -C "/home/chapax/Documents/grevemon/REA pp/grevomon-tcg" status --porcelain` → vide (le dépôt principal n'est pas touché).
+- `git -C "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg" status --porcelain` → vide (le dépôt principal n'est pas touché).
 - Fichier écrit : `docs/arbitrages/structure-et-infra.md` (existe dans le worktree, pas dans le dépôt principal — le worktree est isolé).
 - Aucun autre fichier modifié (`glob` sur le worktree montre uniquement le nouveau fichier dans `docs/arbitrages/` et `.git` inchangé).
 - Aucune commande shell lancée, aucune dépendance ajoutée, `AGENTS.md` et `docs/DECISIONS.md` non modifiés.

@@ -514,10 +514,10 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 
 À créer pour ce projet :
 
-- **`grevomon-card-design`** : gabarit, ton, règles de nommage, validation des 286 cartes.
-- **`grevomon-balance`** : lancer les simulations, lire les winrates, proposer des ajustements.
-- **`grevomon-ui-qa`** : captures 360/1280, vérifs de débordement, contrastes, reduced motion.
-- **`grevomon-lore`** : cohérence de l'univers, personnages, factions, textes.
+- **`planquex-card-design`** : gabarit, ton, règles de nommage, validation des 286 cartes.
+- **`planquex-balance`** : lancer les simulations, lire les winrates, proposer des ajustements.
+- **`planquex-ui-qa`** : captures 360/1280, vérifs de débordement, contrastes, reduced motion.
+- **`planquex-lore`** : cohérence de l'univers, personnages, factions, textes.
 
 ### 7.3 Librairies et outils
 

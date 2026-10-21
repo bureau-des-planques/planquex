@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 #
 # Wizard : infrastructure du TCG (Supabase, Vercel, Brevo) — ticket #8 de
-# Chapax/opencode-config. Décisions de référence : D-016 de grevomon-tcg,
-# amendée par D-017 (projet Vercel existant « grevomon » ; clé SMTP Brevo
-# rangée dans la config Custom SMTP de Supabase, jamais dans .env).
+# Chapax/opencode-config. Décisions de référence : D-016 de ce dépôt, amendée
+# par D-017 (le projet Vercel est réutilisé, pas recréé ; clé SMTP Brevo rangée
+# dans la config Custom SMTP de Supabase, jamais dans .env).
+#
+# Nommage : le nom technique du projet est « planquex » (D-036) et le site
+# legacy est retiré (D-038). Ce wizard écrit donc « planquex » partout où il
+# désigne le projet actif ; les actes datés antérieurs (D-016, D-017) gardent
+# « grevomon », qui ne survit plus que dans le dossier local (D-038).
 #
 # Everything above the "STAGES" marker is the wizard library: do not hand-edit
 # it. Author the per-step stages below the marker.
@@ -207,7 +212,7 @@ TOTAL_STAGES=9
 # Les valeurs vont hors du dépôt par défaut. Le .env du dépôt est ignoré par
 # .gitignore, mais D-017 range la clé SMTP Brevo dans Supabase : aucun secret
 # ne doit être écrit ici, quels que soient les noms de clés.
-ENV_FILE="${ENV_FILE:-$HOME/.secrets/grevomon-tcg.env}"
+ENV_FILE="${ENV_FILE:-$HOME/.secrets/planquex.env}"
 mkdir -p "$(dirname "$ENV_FILE")"
 chmod 700 "$(dirname "$ENV_FILE")" 2>/dev/null || true
 if [[ -f "$ENV_FILE" ]]; then
@@ -238,7 +243,7 @@ if [[ "${SUPABASE_OLD_PAUSED:-}" == "1" ]]; then
   note "Déjà fait lors d'une exécution précédente."
 else
   warn "Décision validée : on met en pause la production $OLD_PROD_REF."
-  warn "Conséquence : le backend de l'ancien jeu s'arrête. Le projet Vercel « grevomon » et son domaine grevomon.vercel.app sont eux conservés : ils servent désormais le TCG (D-017)."
+  warn "Conséquence : le backend de l'ancien jeu s'arrête. Le projet Vercel « planquex » est conservé mais reste en pause, et son ancien domaine grevomon.vercel.app est retiré (D-038)."
   open_url "$DASH/project/$OLD_PROD_REF/settings/general"
   step "Descends jusqu'à « Pause project » et confirme la mise en pause."
   step "Attends que le tableau de bord affiche le projet comme « Paused »."
@@ -250,12 +255,12 @@ else
 fi
 
 # ── 3. Projet Supabase du TCG ─────────────────────────────────────────────
-stage "Supabase : créer le projet grevomon-tcg (schéma vide)"
+stage "Supabase : créer le projet planquex (schéma vide)"
 if [[ -n "${SUPABASE_PROJECT_REF:-}" && -n "${SUPABASE_ANON_KEY:-}" ]]; then
   note "Projet déjà enregistré : $SUPABASE_PROJECT_REF — étape sautée."
 else
   open_url "$DASH/new/$ORG_ID?region=eu-west-3"
-  step "Nom du projet : grevomon-tcg"
+  step "Nom du projet : planquex"
   step "Mot de passe de la base : génère-en un et range-le dans ton gestionnaire de mots de passe."
   step "Région : Europe (Paris) — eu-west-3. Offre : Free."
   step "Crée le projet, puis attends la fin du provisioning."
@@ -275,14 +280,14 @@ else
 fi
 
 # ── 4. Projet Vercel ──────────────────────────────────────────────────────
-stage "Vercel : lier le projet existant « grevomon » (D-017)"
+stage "Vercel : lier le projet existant « planquex » (D-017, renommé par D-036)"
 if [[ -n "${VERCEL_URL:-}" ]]; then
   note "Projet déjà enregistré : $VERCEL_PROJECT ($VERCEL_URL) — étape sautée."
 else
-  warn "On ne crée PAS de projet Vercel grevomon-tcg : on réutilise le projet existant « grevomon »."
+  warn "On ne crée PAS de nouveau projet Vercel : on réutilise le projet existant « planquex »."
   open_url "https://vercel.com/$VERCEL_TEAM"
   step "Ouvre le projet existant, pas « Add New Project »."
-  step "Project Settings → Git : le dépôt lié doit être Chapax/grevomon-tcg."
+  step "Project Settings → Git : le dépôt lié doit être Chapax/planquex."
   step "Project Settings → Build and Deployment : Framework preset Vite, Root directory la racine, Build command npm run build, Output directory dist."
   step "Lance un déploiement. Le build passe (src/main.tsx existe) : dist/index.html et dist/sw.js sont produits."
   pause "Projet lié et déployé ? Entrée pour enregistrer les identifiants"
@@ -300,7 +305,7 @@ if [[ -n "${BREVO_SMTP_LOGIN:-}" && -n "${BREVO_SENDER_EMAIL:-}" ]]; then
 else
   open_url "https://app.brevo.com/settings/keys/smtp"
   step "Onglet « SMTP » : clique sur « Generate a new SMTP key »."
-  step "Nomme-la supabase-grevomon-tcg (clé dédiée, pas celle de l'ancien jeu)."
+  step "Nomme-la supabase-planquex (clé dédiée, pas celle de l'ancien jeu)."
   step "Copie la clé affichée : elle ne sera plus jamais montrée."
   ask_secret BREVO_SMTP_KEY "Clé SMTP Brevo :"
   step "Sur la même page, relève le « Login » du relais SMTP (souvent l'adresse du compte)."
