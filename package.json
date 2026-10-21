@@ -15,6 +15,7 @@
     "status": "node scripts/status.mjs",
     "simulate": "node scripts/simulate.mjs",
     "capturer": "node scripts/capturer.mjs",
+    "icones": "node scripts/icones.mjs",
     "garde-fous": "node scripts/garde-fous.mjs",
     "pesage": "node scripts/pesage.mjs",
     "isolation": "node scripts/isolation.mjs",
