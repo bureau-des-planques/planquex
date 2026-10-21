@@ -8,6 +8,13 @@
 # celui-là la FINIT (#100). Les étapes déjà faites par le premier — projet
 # Supabase créé, projet Vercel lié — ne sont pas répétées ici.
 #
+# Depuis le 21/10/2026, le DÉPLOIEMENT n'est plus un geste de tableau de bord :
+# la session `planquex-infra` l'a fait par l'API (MCP Vercel, D-053) — le projet
+# est sorti de pause et `main` est en production sur planquex.vercel.app. Ce
+# wizard ne garde donc que ce qu'aucune API ne fait : le libellé du projet
+# Supabase, la suppression du domaine legacy, l'expéditeur Brevo, et les URL de
+# retour de Supabase Auth.
+#
 # Everything above the "STAGES" marker is the wizard library: do not hand-edit
 # it. Author the per-step stages below the marker.
 
@@ -228,14 +235,21 @@ banner "Finir le renommage planquex — le tableau de bord (#100)"
 
 # ── 1. L'état de départ, mesuré ───────────────────────────────────────────
 stage "L'état de départ, mesuré"
-say "Deux domaines, deux réponses attendues AVANT qu'on touche à quoi que ce soit :"
+say "Deux domaines, mesurés AVANT qu'on touche à quoi que ce soit :"
 LEGACY_CODE=$(http_code "https://$LEGACY_DOMAIN")
 NEW_CODE=$(http_code "https://$VERCEL_PROJECT.vercel.app")
 printf '\n    %-30s → HTTP %s\n' "$LEGACY_DOMAIN" "$LEGACY_CODE"
 printf '    %-30s → HTTP %s\n\n' "$VERCEL_PROJECT.vercel.app" "$NEW_CODE"
-note "503 sur le legacy = il est encore attaché au projet (D-038). 404 sur planquex = le domaine n'est pas encore le sien."
-if [[ "$LEGACY_CODE" != "503" ]]; then
-  warn "Le legacy ne répond plus 503 : soit le domaine est déjà retiré, soit le projet a changé d'état. Vérifie au tableau avant de continuer — sinon les étapes 3 et 4 n'ont plus d'objet."
+note "État visé depuis le 21/10/2026 (D-053) : 200 sur $VERCEL_PROJECT.vercel.app (la production sert main), et le legacy DÉTACHÉ — donc 404, plus 503 comme du temps où le projet était en pause."
+if [[ "$LEGACY_CODE" == "200" ]]; then
+  note "Le legacy répond 200 : le domaine est encore attaché au projet. Il ne sert plus l'ancien jeu — il sert le NOUVEAU — mais il porte encore le vieux nom. C'est l'étape 3 qui le retire."
+elif [[ "$LEGACY_CODE" == "503" ]]; then
+  warn "503 : le domaine est détaché mais le projet est en pause. Remets-le en production (Settings → Pause), sinon les testeurs tombent sur 503."
+else
+  note "Le legacy ne répond plus : le domaine est détaché. L'étape 3 n'a plus d'objet."
+fi
+if [[ "$NEW_CODE" != "200" ]]; then
+  warn "$VERCEL_PROJECT.vercel.app ne répond pas 200 (HTTP $NEW_CODE) : regarde l'état du projet et de son dernier déploiement avant de continuer."
 fi
 pause "Entrée pour continuer"
 
@@ -251,7 +265,7 @@ pause "Renommé ? Entrée pour continuer"
 # ── 3. Vercel : retirer le domaine legacy ─────────────────────────────────
 stage "Vercel : retirer le domaine legacy"
 warn "Irréversible depuis ce wizard : une fois retiré, le domaine ne revient qu'en l'ajoutant à la main."
-say "Le projet $VERCEL_PROJECT reste EN PAUSE (D-038) : on retire le domaine, on ne réactive pas le projet."
+say "Le projet $VERCEL_PROJECT est EN PRODUCTION (D-053) : on retire le domaine legacy, on ne met pas le projet en pause."
 open_url "https://vercel.com/$VERCEL_TEAM/$VERCEL_PROJECT/settings/domains"
 step "Trouve la ligne  $LEGACY_DOMAIN  (elle porte la mention du domaine de production)."
 step "Menu « ⋯ » à droite de la ligne →  Remove."
@@ -259,18 +273,20 @@ step "Confirme la suppression dans la boîte de dialogue."
 if confirm "Le domaine $LEGACY_DOMAIN est retiré du projet ?"; then
   note "Bien. Vercel réattribue alors au projet son domaine par défaut."
 else
-  warn "Sans ce retrait, le site legacy reste attaché et le critère de #100 n'est pas satisfait. L'étape 4 le mesurera."
+  warn "Sans ce retrait, le vieux nom reste attaché au projet et le critère de #100 n'est pas satisfait. L'étape 7 le mesurera."
 fi
 
 # ── 4. Vercel : vérifier l'URL du projet ──────────────────────────────────
-stage "Vercel : vérifier que $VERCEL_PROJECT.vercel.app est devenu l'URL du projet"
+stage "Vercel : vérifier que $VERCEL_PROJECT.vercel.app est bien l'URL de production"
 say "Mesure après retrait :"
 NEW_CODE=$(http_code "https://$VERCEL_PROJECT.vercel.app")
 printf '\n    %-30s → HTTP %s\n\n' "$VERCEL_PROJECT.vercel.app" "$NEW_CODE"
-if [[ "$NEW_CODE" == "503" ]]; then
-  note "503 = le domaine appartient bien au projet, qui est en pause. C'est l'état visé (D-038)."
+if [[ "$NEW_CODE" == "200" ]]; then
+  note "200 : le domaine sert le jeu — c'est l'état visé (D-053)."
+elif [[ "$NEW_CODE" == "503" ]]; then
+  warn "503 : le domaine appartient au projet, qui est en pause. Réactive-le avant de donner l'URL aux testeurs."
 elif [[ "$NEW_CODE" == "404" ]]; then
-  warn "Toujours 404 : le domaine n'est pas encore rattaché. Vercel met parfois quelques minutes — relance ce wizard plus tard."
+  warn "404 : le domaine n'est pas encore rattaché. Vercel met parfois quelques minutes — relance ce wizard plus tard."
 else
   note "HTTP $NEW_CODE — à interpréter selon ce que le tableau Vercel affiche pour ce domaine."
 fi
@@ -311,13 +327,20 @@ LEGACY_CODE=$(http_code "https://$LEGACY_DOMAIN")
 NEW_CODE=$(http_code "https://$VERCEL_PROJECT.vercel.app")
 printf '\n    %-30s → HTTP %s\n' "$LEGACY_DOMAIN" "$LEGACY_CODE"
 printf '    %-30s → HTTP %s\n\n' "$VERCEL_PROJECT.vercel.app" "$NEW_CODE"
-if [[ "$LEGACY_CODE" == "503" ]]; then
-  warn "Le legacy répond encore 503 : le domaine n'est pas détaché. Reprends l'étape 3."
+if [[ "$LEGACY_CODE" == "200" ]]; then
+  warn "Le legacy répond encore 200 : le domaine est toujours attaché. Reprends l'étape 3."
+elif [[ "$LEGACY_CODE" == "503" ]]; then
+  warn "Le legacy répond 503 : le domaine est détaché, mais le projet est en pause. Remets-le en production."
 else
-  note "Le legacy ne répond plus 503 : il ne sert plus le projet."
+  note "Le legacy ne répond plus : $LEGACY_DOMAIN est détaché du projet."
+fi
+if [[ "$NEW_CODE" != "200" ]]; then
+  warn "$VERCEL_PROJECT.vercel.app ne répond pas 200 (HTTP $NEW_CODE) : c'est l'URL donnée aux testeurs (docs/ALPHA-TESTEURS.md)."
 fi
 say "Pour le dossier local, il n'y a plus rien à faire :"
 note "« grevomon-tcg » est devenu « planquex » le 21/10/2026 (D-047) — dépôt, dossier et URL portent le même nom."
+say "Reste, et ce wizard ne le fait pas : le LIEN GIT du projet Vercel pointe encore sur Chapax/grevomon (D-053)."
+note "Settings → Git : connecte Chapax/planquex, sinon un push sur main ne déploie rien, et un push sur la branche dev de l'archive publierait l'ancien jeu."
 say "Et le reste de #10 (domaine + Cloudflare, Sentry, R2, Figma) est un autre chantier, « le moment venu »."
 pause "Entrée pour terminer"
 
