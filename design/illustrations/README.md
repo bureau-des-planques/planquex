@@ -30,32 +30,36 @@
 | `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `1286126774` | `syndicat-secretaire-general.webp` |
 | `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `64234642` | `interim-interimaire-legendaire-ex.webp` |
 
-## Non produites — quota
+## Reste à produire — les 215 autres
 
-Le **quota gratuit ZeroGPU** du compte Hugging Face a été épuisé en fin de série.
+Les **10 cartes signature sont produites** (voir le journal, en bas). Restent les **215 autres
+cartes de base** : `node scripts/status.mjs` en compte **225** au total, dont 10 faites. Les
+**75 variantes** n'en demandent **aucune** — `secretVariant` recopie `art` de sa base, et
+`src/data/art.test.ts` l'impose.
 
-| Carte (`id`) | Faction | Sujet | Accent | État |
-|---|---|---|---|---|
+Pour ces 215, **le sujet et l'accent de chaque carte n'existent nulle part** : `PROMPTS-flow.md`
+ne décrit que la Planche 1, ses 10 cartes signature. C'est l'obstacle ouvert de #97 — le schéma
+proposé (une table de sujets dans `design/illustrations/`, l'accent résolu **par faction** et non
+par carte) attend une décision, et deux points doivent être tranchés **avant la première image** :
+où vit le sujet, et si l'on garde les deux copies (~100 Mo pour 225 images) ou la source unique
+déjà consignée au §« Registre et fichiers servis ».
 
-Pour la produire (et les 276 suivantes) :
+## À curer
 
-```bash
-bash scripts/illustration-vague.sh support-responsable-support
-```
+Ce qui reste **assumé** après le passage du 21/10/2026, où le set des 10 signature a été refait
+avec le socle corrigé (`DESIGN.md` §6.1) :
 
-Le tuyau passe par **`gflow-cli`**, qui pilote Google Flow sur le compte de Bastien et rend la
-**graine** dans son `--json` — c'est elle qui rend une image reproductible. Les modèles se
-choisissent par **nom humain** (« Nano Banana 2.1 »), que le wizard traduit en alias gflow
-(`nano2`). Les prompts restent ci-dessus et dans `DESIGN.md` §6.
-
-## À curer (première passe assumée)
-
-- Quelques rendus portent du **texte parasite** (« HAPPINESS », « HR », « PROCÉDURE ») alors
-  que le socle l'interdit : à reprendre au moment de la curation (§8 de `DESIGN.md`).
-- Style **illustré** plutôt que « semi-réaliste peint » : à resserrer avec des prompts plus
-  contraints et un négatif commun.
-- Les 8 images sont **branchées** : les cartes portent `art: '<id>.webp'`
-  (`src/data/*.ts`) et `CardView` les sert depuis `public/design/illustrations/`.
+- **Texte parasite** : les 8 rendus du 20/10 en portaient du **lisible** (« HAPPINESS », « HR »,
+  « PROCÉDURE »). Les 10 rendus du 21/10 n'en montrent **aucun lisible** — mais c'est un jugement
+  **sur vignettes**, pas un audit au plein format : à revérifier à la taille réelle avant de le
+  déclarer réglé.
+- **Le négatif du socle n'est pas transmis** : `gflow image t2i` n'a **aucune** option de prompt
+  négatif (vérifié, `--help` n'en liste pas). Le « no text, no logo » ne tient donc que par le
+  socle **positif** — et il devra tenir 215 fois de plus.
+- **Style** : le rendu reste **illustré-peint**, pas « semi-réaliste » au sens strict ; à
+  resserrer avec des prompts plus contraints.
+- Les **10** images sont **branchées** : les cartes portent `art: '<id>.webp'` (`src/data/*.ts`)
+  et `CardView` les sert depuis `public/design/illustrations/`.
 
 ## Registre et fichiers servis — deux copies à garder alignées (#120)
 
