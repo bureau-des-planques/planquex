@@ -1,6 +1,20 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
+The skills speak in terms of **five canonical triage roles** and **two categories**. Ce fichier
+les mappe sur les étiquettes réellement employées dans le tracker du projet.
+
+**Deux catégories** — tout ticket trié en porte exactement une, avec son état :
+
+| Rôle (mattpocock/skills) | Notre étiquette | Sens |
+| --- | --- | --- |
+| `bug` | `bug` | quelque chose est cassé |
+| `enhancement` | `enhancement` | une fonctionnalité ou une amélioration |
+
+Le **domaine** (art, IA, infra, PvP, UI…) n'est pas une étiquette : il est porté par le
+**préfixe du titre** (`PvP — …`, `Infra — …`), et lisible dans la liste. On filtre par
+`gh issue list --search "PvP in:title"` plutôt que par une étiquette de plus à tenir.
+
+**Cinq états** :
 
 | Label in mattpocock/skills | Label in our tracker | Meaning                                  |
 | -------------------------- | -------------------- | ---------------------------------------- |
