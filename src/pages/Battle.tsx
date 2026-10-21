@@ -377,7 +377,7 @@ export function Battle() {
     <div className="page battle">
       <section className="section__head">
         <div>
-          <p className="eyebrow">Prototype</p>
+          <p className="eyebrow">Combat · contre la Direction</p>
           <h1>Combat</h1>
           <p className="muted">
             Tour {state.turn} · {state.phase === 'ended' ? 'partie terminée' : isPlayerTurn ? 'à toi' : 'à la Direction'}

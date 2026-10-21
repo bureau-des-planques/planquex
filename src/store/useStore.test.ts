@@ -164,8 +164,8 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 4', () => {
-    expect(STORAGE_VERSION).toBe(4);
+  it('déclare la version 5', () => {
+    expect(STORAGE_VERSION).toBe(5);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -468,5 +468,104 @@ describe('Types de café du Chariot — store (#91)', () => {
 
     expect(persisted.deck).toEqual(useStore.getState().deck);
     expect(persisted.cafeTypes).toEqual(['SSE', 'RH']);
+  });
+});
+
+describe('Journée d’intégration (#v5)', () => {
+  it('se montre sur une partie neuve, et disparaît une fois vue', () => {
+    expect(useStore.getState().tutorielVu).toBe(false);
+    useStore.getState().setTutorielVu(true);
+    expect(useStore.getState().tutorielVu).toBe(true);
+  });
+
+  it('se remontre après une réinitialisation de la progression', () => {
+    useStore.getState().setTutorielVu(true);
+    useStore.getState().reset();
+    expect(useStore.getState().tutorielVu).toBe(false);
+  });
+
+  it('migre un état v4 en le considérant déjà vu — il a déjà joué', () => {
+    const migre = migratePersisted({ name: 'Ancien', owned: {}, deck: [] }, 4);
+    expect(migre.tutorielVu).toBe(true);
+  });
+
+  it('respecte un `tutorielVu` déjà écrit, même à `false`', () => {
+    expect(migratePersisted({ tutorielVu: false }, 5).tutorielVu).toBe(false);
+    expect(migratePersisted({ tutorielVu: true }, 5).tutorielVu).toBe(true);
+  });
+
+  it('persiste le drapeau', () => {
+    useStore.getState().setTutorielVu(true);
+    expect(partializeState(useStore.getState()).tutorielVu).toBe(true);
+  });
+});
+
+describe('Sauvegarde — export et import', () => {
+  it('fait l’aller-retour sans rien perdre', () => {
+    useStore.getState().setName('Bastien');
+    useStore.getState().setCafeTypes(['SSE', 'RH']);
+    useStore.getState().setTutorielVu(true);
+    const avant = partializeState(useStore.getState());
+
+    const texte = useStore.getState().exporterSauvegarde();
+    useStore.getState().reset();
+    expect(useStore.getState().name).not.toBe('Bastien');
+
+    const resultat = useStore.getState().importerSauvegarde(texte);
+
+    expect(resultat).toEqual({ ok: true });
+    expect(partializeState(useStore.getState())).toEqual(avant);
+  });
+
+  it('nomme le jeu et la version dans le texte exporté', () => {
+    const fichier = JSON.parse(useStore.getState().exporterSauvegarde()) as {
+      jeu: string;
+      version: number;
+    };
+    expect(fichier.jeu).toBe('bureau-des-planques');
+    expect(fichier.version).toBe(STORAGE_VERSION);
+  });
+
+  it('refuse un texte illisible, un autre jeu, une sauvegarde incomplète', () => {
+    const avant = partializeState(useStore.getState());
+
+    expect(useStore.getState().importerSauvegarde('pas du json')).toMatchObject({ ok: false });
+    expect(
+      useStore.getState().importerSauvegarde(JSON.stringify({ jeu: 'un-autre-jeu', version: 5 }))
+    ).toMatchObject({ ok: false });
+    expect(
+      useStore
+        .getState()
+        .importerSauvegarde(JSON.stringify({ jeu: 'bureau-des-planques', version: 5, etat: {} }))
+    ).toMatchObject({ ok: false });
+
+    // Rien n'a bougé : c'est la garantie qui compte, pas le message.
+    expect(partializeState(useStore.getState())).toEqual(avant);
+  });
+
+  it('refuse une sauvegarde plus récente que ce build', () => {
+    const futur = JSON.stringify({
+      jeu: 'bureau-des-planques',
+      version: STORAGE_VERSION + 1,
+      etat: { name: 'Futur', owned: {}, deck: [] }
+    });
+
+    const resultat = useStore.getState().importerSauvegarde(futur);
+
+    expect(resultat.ok).toBe(false);
+    expect(useStore.getState().name).not.toBe('Futur');
+  });
+
+  it('accepte une sauvegarde plus ancienne, et la migre', () => {
+    const ancienne = JSON.stringify({
+      jeu: 'bureau-des-planques',
+      version: 2,
+      etat: { name: 'Vétéran', owned: { 'rh-responsable-qvt': 2 }, deck: [] }
+    });
+
+    expect(useStore.getState().importerSauvegarde(ancienne)).toEqual({ ok: true });
+    // L'id renommé par #49 est remappé par la migration, pas chargé tel quel.
+    expect(useStore.getState().owned['rh-charge-prevention']).toBe(2);
+    expect(useStore.getState().owned['rh-responsable-qvt']).toBeUndefined();
   });
 });

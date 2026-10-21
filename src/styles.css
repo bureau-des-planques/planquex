@@ -1153,6 +1153,25 @@ code {
   gap: 0.5rem;
 }
 
+/* La zone de sauvegarde : un texte qu'un joueur copie ou colle à la main. */
+.settings__save {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  color: var(--text);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--fs-2xs);
+  line-height: 1.5;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  resize: vertical;
+  width: 100%;
+}
+
+.settings__message--ko {
+  color: var(--danger);
+}
+
 /* ---------- Ajout rapide au Chariot ---------- */
 
 .section__actions {

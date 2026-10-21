@@ -22,7 +22,7 @@ export function Home() {
   return (
     <div className="page home">
       <section className="hero">
-        <p className="eyebrow">Bureau des Planqués · Saison 1</p>
+        <p className="eyebrow">Bureau des Planqués</p>
         <h1>Ton atelier.<br />Tes Interventions.<br />Ta survie.</h1>
         <p className="hero__lead">
           Ouvre des arrivages, collectionne les Planqués et affronte la Direction.

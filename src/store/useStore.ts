@@ -11,7 +11,10 @@ import type { Card, CafeType, Rarity } from '@/data/types';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **4** : le Chariot gagne ses **types de café
+ * Version de la forme persistée. **5** : le store gagne `tutorielVu` (la « Journée
+ * d'intégration » se montre une fois) — absent d'un état v4, il vaut **`true`** :
+ * quelqu'un qui a déjà une partie en cours a déjà joué, on ne lui remontre pas le
+ * tutoriel ; seule une partie neuve le voit. **4** : le Chariot gagne ses **types de café
  * choisis** (`cafeTypes`, ticket #91) — absents d'un état v3, ils valent `[]`,
  * c'est-à-dire la proposition automatique. **3** : sept variantes secrètes changent
  * de suffixe d'id en passant aux raretés hautes (ticket #87) — `owned` et `deck`
@@ -20,7 +23,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 4;
+export const STORAGE_VERSION = 5;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -96,6 +99,12 @@ export interface AppState {
    * même séquence. Voir `@/game/rng`.
    */
   rng: number;
+  /**
+   * La « Journée d'intégration » (le tutoriel) a-t-elle été vue ? Une partie neuve la
+   * montre ; un état migré d'avant sa création la considère vue (`migratePersisted`),
+   * et « Réinitialiser la progression » la remontre.
+   */
+  tutorielVu: boolean;
   openPack: () => Card[];
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
@@ -110,6 +119,16 @@ export interface AppState {
   reset: () => void;
   setName: (name: string) => void;
   setReducedMotion: (value: boolean) => void;
+  /** Marque la « Journée d'intégration » comme vue (`true`) ou à revoir (`false`). */
+  setTutorielVu: (value: boolean) => void;
+  /** La sauvegarde locale, telle qu'un joueur peut la copier et la coller ailleurs. */
+  exporterSauvegarde: () => string;
+  /**
+   * Remplace l'état par une sauvegarde collée. Ne lève jamais : un texte invalide, un
+   * fichier d'un autre jeu ou une sauvegarde d'une version plus récente laisse l'état
+   * **intact** et rend la raison, que l'écran affiche.
+   */
+  importerSauvegarde: (texte: string) => ImportResult;
 }
 
 /**
@@ -120,7 +139,7 @@ export interface AppState {
  */
 export type PersistedState = Pick<
   AppState,
-  'name' | 'owned' | 'deck' | 'cafeTypes' | 'packsOpened' | 'reducedMotion' | 'rng'
+  'name' | 'owned' | 'deck' | 'cafeTypes' | 'packsOpened' | 'reducedMotion' | 'rng' | 'tutorielVu'
 >;
 
 export function partializeState(state: AppState): PersistedState {
@@ -131,9 +150,24 @@ export function partializeState(state: AppState): PersistedState {
     cafeTypes: state.cafeTypes,
     packsOpened: state.packsOpened,
     reducedMotion: state.reducedMotion,
-    rng: state.rng
+    rng: state.rng,
+    tutorielVu: state.tutorielVu
   };
 }
+
+/**
+ * Le format du texte exporté. Il se **nomme**, pour qu'une sauvegarde d'un autre jeu
+ * collée par erreur soit refusée avec un message clair au lieu d'être chargée à moitié.
+ */
+export const SAVE_FORMAT = 'bureau-des-planques';
+
+export interface SaveFile {
+  jeu: string;
+  version: number;
+  etat: PersistedState;
+}
+
+export type ImportResult = { ok: true } | { ok: false; raison: string };
 
 export const useStore = create<AppState>()(
   persist(
@@ -145,6 +179,7 @@ export const useStore = create<AppState>()(
       packsOpened: 0,
       reducedMotion: false,
       rng: seedRng(Date.now()),
+      tutorielVu: false,
       openPack: () => {
         // La composition de l'Arrivage (3 communes, 1 peu commune, 1 rare) est
         // une règle de jeu : elle vit dans `@/game/pack` (ticket #57). Ici, on ne
@@ -213,12 +248,60 @@ export const useStore = create<AppState>()(
           cafeTypes: [],
           packsOpened: 0,
           name: 'Employé 404',
+          // Une progression remise à zéro repart d'un joueur neuf : la Journée
+          // d'intégration se remontre.
+          tutorielVu: false,
           // Un nouveau départ change la suite des Arrivages : sinon le premier
           // Arrivage d'après remise à zéro rejouerait le précédent.
           rng: seedRng(Date.now())
         }),
       setName: (name) => set({ name }),
-      setReducedMotion: (value) => set({ reducedMotion: value })
+      setReducedMotion: (value) => set({ reducedMotion: value }),
+      setTutorielVu: (value) => set({ tutorielVu: value }),
+      exporterSauvegarde: () =>
+        JSON.stringify(
+          { jeu: SAVE_FORMAT, version: STORAGE_VERSION, etat: partializeState(get()) },
+          null,
+          2
+        ),
+      importerSauvegarde: (texte) => {
+        let brut: unknown;
+        try {
+          brut = JSON.parse(texte);
+        } catch {
+          return { ok: false, raison: 'Ce texte n’est pas lisible : vérifie que tu as tout copié.' };
+        }
+        if (typeof brut !== 'object' || brut === null) {
+          return { ok: false, raison: 'Ce texte n’est pas une sauvegarde.' };
+        }
+        const fichier = brut as Partial<SaveFile>;
+        if (fichier.jeu !== SAVE_FORMAT) {
+          return { ok: false, raison: 'Ce texte ne vient pas de Bureau des Planqués.' };
+        }
+        if (typeof fichier.version !== 'number') {
+          return { ok: false, raison: 'Cette sauvegarde n’indique pas sa version.' };
+        }
+        if (fichier.version > STORAGE_VERSION) {
+          return {
+            ok: false,
+            raison: 'Cette sauvegarde vient d’une version plus récente du jeu : recharge la page, puis réessaie.'
+          };
+        }
+        const etat = fichier.etat as Partial<AppState> | undefined;
+        if (!etat || typeof etat !== 'object') {
+          return { ok: false, raison: 'Cette sauvegarde est vide.' };
+        }
+        if (typeof etat.owned !== 'object' || etat.owned === null || !Array.isArray(etat.deck)) {
+          return {
+            ok: false,
+            raison: 'Cette sauvegarde est incomplète : le Parc ou le Chariot manque.'
+          };
+        }
+        // Les migrations font le reste : ids renommés, types de café normalisés,
+        // générateur recréé s'il manque. On ne charge jamais un état brut.
+        set(migratePersisted(etat, fichier.version));
+        return { ok: true };
+      }
     }),
     {
       name: STORAGE_KEY,
@@ -256,7 +339,11 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
   return {
     ...migrated,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
-    rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now())
+    rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now()),
+    // **v4 → v5** : un état v4 a **déjà été joué** (on ne lui remontre pas la Journée
+    // d'intégration, `true` d'office) ; une partie neuve n'a aucun état à migrer et
+    // part de `false`.
+    tutorielVu: typeof migrated.tutorielVu === 'boolean' ? migrated.tutorielVu : version < STORAGE_VERSION
   };
 }
 

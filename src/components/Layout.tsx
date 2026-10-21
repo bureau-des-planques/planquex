@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import { Home, Library, Layers, Settings, Swords } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { JourneeIntegration } from '@/components/JourneeIntegration';
 
 const tabs = [
   { to: '/', label: 'Accueil', icon: Home },
@@ -66,6 +67,9 @@ export function Layout() {
       <main className="main">
         <Outlet />
       </main>
+
+      {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). */}
+      <JourneeIntegration />
 
       <nav className="bottom-nav" aria-label="Navigation principale">
         {tabs.map((tab) => {
