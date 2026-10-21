@@ -4,7 +4,7 @@
 # consigner — tickets #97 / #95. Décisions de référence : D-007 (IA + curation),
 # D-028 (direction artistique).
 #
-# Pourquoi ce wizard existe : les illustrations vivent en **deux jeux**.
+# Pourquoi ce wizard existe : les illustrations vivent en **deux copies**.
 #   design/illustrations/        le registre (versionné, README + prompts)
 #   public/design/illustrations/ ce que Vite sert réellement
 # Une regénération faite au registre ne change **rien** à l'écran tant que le
@@ -507,7 +507,7 @@ installer() {
   # d'un `local` avant d'exécuter la moindre affectation, donc `reg="$REGISTRE/$id.webp"`
   # sur la même ligne lit un `id` encore vide — le fichier s'appelait `.webp`, et
   # le message de succès affichait le bon nom. Trouvé à la première génération
-  # réelle (le test des deux jeux l'a attrapé).
+  # réelle (le test des deux copies l'a attrapé).
   local reg="$REGISTRE/$id.webp" serv="$SERVI/$id.webp"
   mkdir -p "$REGISTRE" "$SERVI"
   python3 - "$src" "$reg" <<'PY'
@@ -683,9 +683,29 @@ if ! command -v gflow >/dev/null 2>&1; then
   note "Et si ~/.local/bin n'est pas dans le PATH : export PATH=\"\$HOME/.local/bin:\$PATH\""
   pause "Entrée pour abandonner"
   finish
-  return
+  return 1
 fi
 note "gflow trouvé : $(command -v gflow)"
+# Pillow : le wizard convertit les rendus de gflow (JPEG) en webp — la convention
+# du registre. Sans lui, `installer` échoue au milieu du travail. On le dit donc
+# AVANT, avec la commande d'installation, plutôt que de laisser une image à moitié
+# rangée. Dépendance signalée dans `AGENTS.md` §6, et installée par la CI
+# (`.github/workflows/ci.yml`) : sans elle, 8 tests tombent en
+# `ModuleNotFoundError: No module named 'PIL'` — constaté le 21/10/2026.
+if ! python3 -c 'import PIL' >/dev/null 2>&1; then
+  warn "Pillow est introuvable : impossible de convertir les rendus en webp."
+  say "Installe-le, puis relance :"
+  printf '\n'
+  step "Debian / Ubuntu :  sudo apt install python3-pil"
+  step "macOS, ou autre :  python3 -m pip install Pillow"
+  printf '\n'
+  note "C'est la seule dépendance du wizard en dehors de gflow-cli."
+  pause "Entrée pour abandonner"
+  finish
+  return 1
+fi
+printf '  %s✓%s Pillow %s\n' "$GREEN" "$RESET" \
+  "$(python3 -c 'import PIL; print(PIL.__version__)' 2>/dev/null)"
 if gflow auth status >/dev/null 2>&1; then
   printf '  %s✓%s un profil Flow est authentifié\n' "$GREEN" "$RESET"
 else
@@ -703,7 +723,7 @@ else
   step "gflow auth status   # pour confirmer ensuite"
   pause "Entrée pour abandonner et faire ça"
   finish
-  return
+  return 1
 fi
 
 # ── 2. La carte ───────────────────────────────────────────────────────────
@@ -724,7 +744,7 @@ if [[ -z "$CARTE" ]] || ! connue "$CARTE"; then
   warn "« ${CARTE:-<vide>} » n'est pas dans la Planche 1 de $PROMPTS."
   pause "Entrée pour abandonner"
   finish
-  return
+  return 1
 fi
 say ""
 say "Carte retenue : $CARTE"
@@ -744,7 +764,7 @@ if [[ -n "$INSTALLE" ]]; then
     warn "Fichier introuvable : $INSTALLE"
     pause "Entrée pour abandonner"
     finish
-    return
+    return 1
   fi
   FICHIERS=("$INSTALLE")
   PAYLOAD="$SCRATCH/$CARTE/payload.json"
@@ -795,7 +815,7 @@ if [[ -z "$ALIAS" ]]; then
   warn "Trois essais sans un modèle valide — rien n'a été envoyé à gflow."
   pause "Entrée pour abandonner"
   finish
-  return
+  return 1
 fi
 note "« $MODELE » → --model $ALIAS"
 if [[ "$ALIAS" == "nano2" ]]; then
@@ -839,7 +859,7 @@ else
   note "Aucun crédit n'est dépensé par une génération d'image : une casse ne coûte rien."
   pause "Entrée pour abandonner"
   finish
-  return
+  return 1
 fi
 
 GRAINES=$(graines_du_run "$JSON")
@@ -861,7 +881,7 @@ if (( ${#FICHIERS[@]} == 0 )); then
   warn "Aucun fichier trouvé dans $SCRATCH/$CARTE — rien à ranger."
   pause "Entrée pour abandonner"
   finish
-  return
+  return 1
 fi
 for i in "${!FICHIERS[@]}"; do
   printf '    %d) %-44s graine %s\n' \
@@ -872,7 +892,7 @@ pause "Entrée pour choisir laquelle garder"
 fi
 
 # ── 4. Choisir et ranger ──────────────────────────────────────────────────
-stage "Choisir, et ranger les DEUX jeux"
+stage "Choisir, et ranger les DEUX copies"
 if [[ -n "$INSTALLE" ]]; then
   CHOIX=1
   note "Variante fournie : rien à choisir."
@@ -895,7 +915,7 @@ note "  $REGISTRE/$CARTE.webp   ← le registre (versionné)"
 note "  $SERVI/$CARTE.webp   ← ce que l'application sert"
 printf '\n'
 if installer "$RETENU" "$CARTE"; then
-  note "Les deux jeux portent le même fichier, octet pour octet."
+  note "Les deux copies portent le même fichier, octet pour octet."
 else
   warn "Les deux copies diffèrent — c'est exactement ce que le test refuse."
 fi

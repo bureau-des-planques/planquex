@@ -378,6 +378,17 @@ describe('Wizard d’illustration — ce qui part vers gflow (#97)', () => {
     expect(r.stdout + r.stderr).toContain('nano2');
   }, DELAI);
 
+  it('un abandon sort en erreur, jamais en succès', () => {
+    // Les sept sorties anticipées — gflow absent, Pillow absent, pas
+    // d'authentification Flow, carte inconnue, modèle invalide, génération
+    // ratée, aucun fichier produit — renvoient 1. Constaté le 21/10/2026 :
+    // elles renvoyaient **0**, donc un script qui appelle le wizard croyait
+    // avoir réussi alors qu'il n'avait rien produit. Même classe de défaut que
+    // « le message de succès affichait le bon nom de fichier ».
+    const r = wizard([CARTE], `\n\ntruc\ntruc\ntruc\n`);
+    expect(r.status, 'le wizard a abandonné mais annonce un succès').not.toBe(0);
+  }, DELAI);
+
   it('le prompt part sur une seule ligne', () => {
     // Le socle est un bloc de code multiligne ; `$(socle)` quoté garde ses
     // retours à la ligne. Un prompt d'une seule ligne reste comparable, se
@@ -515,14 +526,14 @@ describe('Wizard d’illustration — rejeu du payload réel (#97)', () => {
 /**
  * **De bout en bout, sur disque** (#97, revue adversariale du 21/10/2026).
  *
- * Les étapes 4 à 6 — ranger dans les deux jeux, consigner, câbler — n'étaient
+ * Les étapes 4 à 6 — ranger dans les deux copies, consigner, câbler — n'étaient
  * exercées par **aucun** test : le faux gflow n'écrivait aucun fichier, donc le
  * wizard s'arrêtait avant « Choisir et ranger ». C'est ainsi qu'un bug réel a
  * échappé à la boucle (le nom du fichier rangé était vide). Ces tests regardent
  * donc **le disque**, pas la sortie.
  */
 describe('Wizard d’illustration — de bout en bout, sur disque (#97)', () => {
-  it('le contrôle mord : l’image atterrit dans les DEUX jeux, identique octet pour octet', () => {
+  it('le contrôle mord : l’image atterrit dans les DEUX copies, identique octet pour octet', () => {
     // Le bug historique : `local src="$1" id="$2" reg="$REGISTRE/$id.webp"` sur
     // une ligne — bash évalue toutes les expansions avant la moindre
     // affectation, donc le fichier s'appelait `.webp` et le message de succès
@@ -535,7 +546,7 @@ describe('Wizard d’illustration — de bout en bout, sur disque (#97)', () => 
     expect(existsSync(auServi), `pas d'image dans le servi : ${auServi}`).toBe(true);
     expect(
       readFileSync(auRegistre).equals(readFileSync(auServi)),
-      'les deux jeux doivent porter le même fichier, octet pour octet (règle #120)'
+      'les deux copies doivent porter le même fichier, octet pour octet (règle #120)'
     ).toBe(true);
     // et c'est bien un webp : la conversion a eu lieu
     expect(readFileSync(auRegistre).subarray(8, 12).toString('latin1')).toBe('WEBP');

@@ -57,14 +57,14 @@ choisissent par **nom humain** (« Nano Banana 2.1 »), que le wizard traduit en
 - Les 8 images sont **branchées** : les cartes portent `art: '<id>.webp'`
   (`src/data/*.ts`) et `CardView` les sert depuis `public/design/illustrations/`.
 
-## Registre et fichiers servis — deux jeux à garder alignés (#120)
+## Registre et fichiers servis — deux copies à garder alignées (#120)
 
 `CardView` construit une **chaîne d'URL** (`url('/design/illustrations/…')`), donc Vite ne sert
 que `public/` : ce dossier-ci est le **registre**, l'application lit sa **copie** dans
 `public/design/illustrations/`. Une regénération faite ici (c'est ici qu'elle doit se faire) ne
 change rien à l'écran tant que le fichier n'est pas copié.
 
-`scripts/illustrations-servies.test.ts` compare les deux jeux : **même liste** de fichiers dans
+`scripts/illustrations-servies.test.ts` compare les deux copies : **même liste** de fichiers dans
 les deux sens, et **même contenu** (SHA-256). Il nomme le fichier coupable.
 
 **Alternative consignée, non implémentée — c'est une décision** : servir les images par

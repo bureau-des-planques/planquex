@@ -29,6 +29,18 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
+      # Pillow — dépendance du tuyau d'illustration (AGENTS.md §6) : le wizard
+      # `scripts/illustration-vague.sh` convertit les rendus de gflow (JPEG) en
+      # webp, et son test fabrique de vraies images. Le paquet `python3-pil`
+      # fournit `PIL` au python3 du runner, sans heurter PEP 668 (`pip` y refuse
+      # l'installation système). Sans cette étape, 8 tests tombent en
+      # `ModuleNotFoundError: No module named 'PIL'` — constaté le 21/10/2026.
+      - name: Installer Pillow (conversion webp du tuyau d'illustration)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3-pil
+          python3 -c "import PIL; print('Pillow', PIL.__version__)"
+
       - name: Vérifier les types
         run: npm run check
 

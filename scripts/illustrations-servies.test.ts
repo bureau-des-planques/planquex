@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest';
  * `DESIGN.md` §6.1) et une regénération se fait dans `design/`. Sans ce test, l'application
  * continuerait de servir les anciennes et **rien** ne le dirait : le build passe, les captures
  * aussi. `src/data/art.test.ts` vérifie que le fichier cité par une carte **existe** côté
- * servi ; il ne compare pas les deux jeux.
+ * servi ; il ne compare pas les deux copies.
  *
  * **Alternative consignée, non implémentée — c'est une décision, pas un correctif** : servir
  * les images par `import.meta.glob('../design/illustrations/*.webp', { eager: true,
@@ -36,24 +36,24 @@ const SERVI = 'public/design/illustrations';
 const IMAGE = /\.(webp|png|jpe?g|avif)$/i;
 
 /** Un jeu d'images : nom de fichier → empreinte SHA-256 de son contenu. */
-type Jeu = Map<string, string>;
+type Empreintes = Map<string, string>;
 
-function empreintes(dir: string): Jeu {
-  const jeu: Jeu = new Map();
+function empreintes(dir: string): Empreintes {
+  const empreintesDuDossier: Empreintes = new Map();
   for (const fichier of readdirSync(join(root, dir)).filter((nom) => IMAGE.test(nom))) {
     const contenu = readFileSync(join(root, dir, fichier));
-    jeu.set(fichier, createHash('sha256').update(contenu).digest('hex'));
+    empreintesDuDossier.set(fichier, createHash('sha256').update(contenu).digest('hex'));
   }
-  return jeu;
+  return empreintesDuDossier;
 }
 
 /**
- * Les trois écarts possibles entre deux jeux, chacun avec les **noms** des fichiers fautifs.
+ * Les trois écarts possibles entre les deux copies, chacun avec les **noms** des fichiers fautifs.
  * Fonction pure : le test « le contrôle mord » la confronte à un jeu fautif synthétique, donc
  * la garde est prouvée même quand le dépôt est sain.
  */
-function ecarts(registre: Jeu, servi: Jeu) {
-  const noms = (jeu: Jeu) => [...jeu.keys()].sort();
+function ecarts(registre: Empreintes, servi: Empreintes) {
+  const noms = (copies: Empreintes) => [...copies.keys()].sort();
   return {
     /** Regénérée dans `design/`, jamais copiée dans `public/`. */
     manquantes: noms(registre).filter((fichier) => !servi.has(fichier)),
@@ -72,12 +72,12 @@ describe('Illustrations — registre vs fichiers servis (#120)', () => {
   it('le contrôle mord : un fichier absent, orphelin ou divergent est nommé', () => {
     // Cas fautif synthétique : le registre a deux images, le servi en a trois, dont une
     // au contenu différent et une que le registre ignore.
-    const registre: Jeu = new Map([
+    const registre: Empreintes = new Map([
       ['identique.webp', 'aaaa'],
       ['regeneree.webp', 'bbbb'],
       ['jamais-copiee.webp', 'cccc']
     ]);
-    const servi: Jeu = new Map([
+    const servi: Empreintes = new Map([
       ['identique.webp', 'aaaa'],
       ['regeneree.webp', 'ANCIENNE'],
       ['orpheline.webp', 'dddd']
