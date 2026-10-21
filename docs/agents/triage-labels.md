@@ -14,6 +14,11 @@ Le **domaine** (art, IA, infra, PvP, UI…) n'est pas une étiquette : il est po
 **préfixe du titre** (`PvP — …`, `Infra — …`), et lisible dans la liste. On filtre par
 `gh issue list --search "PvP in:title"` plutôt que par une étiquette de plus à tenir.
 
+Seule exception, **gardée parce qu'elle sert** : `documentation` — sept tickets la portent. Les sept
+autres étiquettes que GitHub installe par défaut (`accessibility`, `duplicate`, `good first issue`,
+`help wanted`, `invalid`, `question`) ont été **retirées** le 21/10/2026 : elles n'avaient jamais
+servi, et elles encombraient le filtre. Une étiquette qui revient se recrée en une commande.
+
 **Cinq états** :
 
 | Label in mattpocock/skills | Label in our tracker | Meaning                                  |
