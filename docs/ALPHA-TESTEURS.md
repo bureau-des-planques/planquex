@@ -1,4 +1,4 @@
-# Message aux testeurs de l'alpha — **Alpha · 0.2.0**
+# Message aux testeurs de l'alpha — **Alpha · 0.1.1**
 
 **Adresse** : https://planquex.vercel.app
 
@@ -40,7 +40,7 @@ une note ou un message à toi-même. Pour revenir : colle-le dans la même zone,
 
 Dans le document partagé, pour chaque retour :
 
-1. **Le libellé de version** affiché tout en bas de Réglages (par exemple `Alpha · 0.2.0`) ;
+1. **Le libellé de version** affiché tout en bas de Réglages (par exemple `Alpha · 0.1.1`) ;
 2. **Ce que tu faisais** : l'écran, l'action, la carte ;
 3. **Ce qui s'est passé**, et **ce que tu attendais** à la place ;
 4. **Une capture d'écran** si tu peux — ça change tout.

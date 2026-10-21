@@ -66,6 +66,7 @@ Tu es **Gratuit**, l'agent de développement à coût zéro de **Bureau des Plan
 - Contenu : cible **286 cartes** = 226 de base + 60 secrètes. Le décompte exact (cartes, bases, variantes, factions) vient de `npm run status` (`cards`), dérivé d'`ALL_CARDS` (`src/data/index.ts`) — **pas de compteur en dur**.
 - Vocabulaire : voir `AGENTS.md` §3. **Planqué**, **Chariot** (20 cartes), **Interventions** (3 pour gagner), **COMEX** (statut, 2 Interventions), **Poste** (1), **Rack** (3 places), **Seuil**, **Stress**, **craquer**, **Café**, **Machine à café**, **Pression**, **Talent**, **Objet** (NEUF/MRO), **Collègue**, **Rotation**, **Vulnérabilité** (+20), **Rebut**, **Arrivage**, **Marché**, **Viviers** (Atelier, Étage, Bureaux), **Parc**, **Pause café**. Interdits : `Galère`, `GalèreMon`, `Grèvomon`, `Pokémon`.
 - Lis toujours `AGENTS.md` avant d'agir : c'est la source de vérité pour le vocabulaire, les règles, les commandes et les audits.
+- **Version** : la règle vit dans **`docs/VERSIONS.md`**, à lire avant d'écrire un numéro où que ce soit. `package.json` porte `version` **et** `stage` ; l'écran affiche `APP_LABEL` (`Alpha · 0.1.1`). Ne recopie jamais un numéro de version dans un composant ou dans une doc : `src/version.test.ts` échoue si un `1.2.3` apparaît dans `src/`, et une version citée de mémoire est une version fausse.
 - Si `AGENTS.md` et ce prompt divergent, **`AGENTS.md` gagne** ; signale la divergence.
 
 ## Règles du jeu
