@@ -100,11 +100,11 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 
 | Zone | Classe | Contenu |
 |---|---|---|
-| Filet de rareté | `.card::before` | un dégradé horizontal de `--rarity`, 3 px, en haut de la carte |
-| Nom | `.card__name` | nom de la carte, Outfit 600. Le coin haut-droit est réservé au bouton rapide dans une grille |
+| Cadre | `.card` | la **rareté colore la bordure entière** — pas de filet séparé : un filet sur un seul côté est un tell d'UI générée, et le cadre entier se lit mieux en grille (passe du 21/10/2026) |
+| Nom | `.card__top` / `.card__name` | barre pleine largeur teintée de la faction, nom en Outfit 700, capitales, **deux lignes réservées** (au-delà, il s'abrège) ; le **Seuil** est une pastille dorée à droite de la barre |
 | Bandeau | `.card__meta` | pastille de **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action), badge **COMEX** (`.card__comex`, or), puis la **faction** (`.card__faction`) : point de couleur + sigle, calé à droite |
 | Illustration | `.card__art` | aplat `card.palette` + glyphe, voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`) |
-| Seuil / Stress | `.card__seuil` | libellé `SEUIL`, valeur en or, barre **pleine** (`.stress` + `.stress__fill`) : la carte montre la **capacité**. Au combat, la même barre montre le **Stress qui monte** (D-026) |
+| Seuil / Stress | `.card__seuil` | **la barre seule**, dix crans, pleine sur la carte : elle montre la **capacité**. Le chiffre du Seuil est en pastille dans la barre de nom. Au combat, la même barre montre le **Stress qui monte** (D-026) |
 | Pressions | `.card__attacks` | une ligne par Pression : pastilles de café (`.pips` / `.pip`), nom, dégâts |
 | Ambiance | `.card__flavor` | le texte de flavour, masqué en mode compact |
 | Pied | `.card__footer` | rareté (diamants/étoiles, couleur `--rarity`) et identifiant court |
@@ -112,9 +112,9 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 ### 2.2 Grille et marges
 
 - Grille du Parc : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem.
-- Carte : padding 0.6rem, `gap` 0.4rem, rayon 14px, bordure 1 px `--line`.
-- Illustration : hauteur 92 px, rayon 9px, filet interne `rgb(255 255 255 / 7%)`.
-- Barre de Seuil : hauteur 7 px sur la carte, 10 px au combat (`.stress`).
+- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **0** (chaque bloc interne porte son propre espacement), `gap` 0.35rem, rayon 8 px, bordure teintée par la rareté.
+- Illustration : **elle prend l'espace restant** (`flex`), rayon 4 px, filet interne double (noir à l'extérieur, clair à l'intérieur), cadrage **haut** (`50% 28%`) — les illustrations sont des portraits.
+- Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
 - Pips de café : 8 px, `gap` 2 px.
 
 ### 2.3 États
@@ -122,7 +122,7 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 | Classe | Effet |
 |---|---|
 | `.card--selected` | bordure `--accent` + halo `color-mix(--accent 18%)` |
-| `.card--comex` | bordure `--gold-deep`, filet or — le statut COMEX (D-026) |
+| `.card--comex` | bordure `--gold-deep` — le statut COMEX (D-026). Le filet `.card--comex::before` est déclaré **sans `content`** : il ne rend rien, et c'est un bug (#131) |
 | `.card--holo` | voile holographique sur l'illustration (1S, 2S, 3S, COU) |
 | `.card--compact` | masque la flavour (grilles) |
 | `.card-slot.is-full` | carte à 55 % d'opacité (plus d'exemplaire possible au Chariot) |
