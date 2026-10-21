@@ -33,4 +33,4 @@ Changing base rules, vocabulary or scope requires a **new dated decision**, not 
 
 ## Never treat these as domain docs
 
-`../grevomon-pocket/` is **legacy** (`AGENTS.md` §9). It may inform UI ideas or an inventory of the old APK, but it is never a source of truth for rules, vocabulary, content or percentages.
+`../grevomon/grevomon-pocket/` is **legacy** (`AGENTS.md` §9). It may inform UI ideas or an inventory of the old APK, but it is never a source of truth for rules, vocabulary, content or percentages.

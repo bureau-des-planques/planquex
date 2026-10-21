@@ -316,8 +316,8 @@ if [[ "$LEGACY_CODE" == "503" ]]; then
 else
   note "Le legacy ne répond plus 503 : il ne sert plus le projet."
 fi
-say "Il reste UNE chose que ce wizard ne fait pas :"
-note "le dossier local « grevomon-tcg » → « planquex ». Il est débloqué depuis le 21/10 (0 worktree), mais c'est un travail d'agent : demande-le, il s'en charge."
+say "Pour le dossier local, il n'y a plus rien à faire :"
+note "« grevomon-tcg » est devenu « planquex » le 21/10/2026 (D-047) — dépôt, dossier et URL portent le même nom."
 say "Et le reste de #10 (domaine + Cloudflare, Sentry, R2, Figma) est un autre chantier, « le moment venu »."
 pause "Entrée pour terminer"
 

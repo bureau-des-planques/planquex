@@ -35,12 +35,20 @@
 > | — | `LICENSE` (MIT) **présent** ; `scripts/etapes-infra-tcg.sh` aligné sur `planquex` le 21/10 |
 >
 > **Reste, et c'est le ticket #100** : le libellé du projet Supabase, le détachement du domaine
-> Vercel, l'adresse de l'expéditeur Brevo. **Dossier local** : toujours `grevomon-tcg`, à renommer
-> **en dernier** (D-036) ; il n'est **plus retenu** — les worktrees ont été élagués le 21/10
-> (`git worktree list` → **1**, le dépôt principal ; 25 branches fusionnées supprimées, et
-> `agent/75-renommage`, morte, retirée elle aussi, son seul fichier vivant déjà dans `main`).
-> L'étape n'attend donc plus qu'une chose : **l'ordre du §8**, qui la place après Vercel et
-> Supabase/Brevo.
+> Vercel, l'adresse de l'expéditeur Brevo.
+>
+> **Étape 4 — faite le 21/10/2026, avant l'heure (D-047).** Le dossier local s'appelle
+> **`planquex`** et vit dans `~/Documents/opencode/gamedev/planquex/` ; les versions mortes sont
+> rangées dans `~/Documents/opencode/gamedev/grevomon/` (`grevomon-v1-js`, son worktree
+> `grevomon-v1-prototype`, `grevomon-pocket`, `rea-pocket-apk`). Le §8 la plaçait **après** les
+> étapes 5-6 : l'écart est **assumé et consigné dans D-047**, le rangement étant purement local.
+> Les worktrees ont été réparés (`git worktree repair`) et les citations de chemin vivantes mises
+> à jour ; les instantanés datés (`STATUS.md`, `AUDIT-*`, `arbitrages/*`) gardent l'ancien chemin,
+> c'est leur valeur de preuve.
+>
+> Les worktrees, eux, ne retenaient plus rien depuis le 21/10 : `git worktree list` → **1** (le
+> dépôt principal), 25 branches fusionnées supprimées, et `agent/75-renommage`, morte, retirée elle
+> aussi, son seul fichier vivant déjà dans `main`.
 >
 > **Comptes du §0 :** il annonçait « 59 lignes / 15 fichiers ». Mesuré sur `main` le 21/10/2026
 > **avant l'ajout de ce dossier** : `git grep -niI "grevomon" | wc -l` → **66 lignes**, et

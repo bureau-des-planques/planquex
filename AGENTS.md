@@ -1,13 +1,13 @@
 # AGENTS.md — Bureau des Planqués
 
-> Projet actif : **`grevomon-tcg/`**. Dernière vérification des commandes : **19/10/2026 (CEST)**.
-> `grevomon-pocket/` est **legacy** : voir `../grevomon-pocket/LEGACY.md`.
+> Projet actif : **`planquex/`** — le dossier local porte le nom du dépôt depuis le 21/10/2026 (D-047). Dernière vérification des commandes : **19/10/2026 (CEST)**.
+> `grevomon-pocket/` est **legacy** : voir `../grevomon/grevomon-pocket/LEGACY.md`.
 > Ne jamais l'utiliser comme source de vérité pour les règles, le vocabulaire, le contenu ou un audit.
 
 ## 1. Règles d'or
 
 1. Lire ce fichier et `docs/DECISIONS.md` avant toute modification.
-2. Travailler dans `grevomon-tcg/` sauf demande explicite. Ne pas modifier `grevomon-pocket/`.
+2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier `grevomon-pocket/` (`../grevomon/grevomon-pocket/`).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
 5. Ne pas copier le contenu, les règles, les assets ou les pourcentages de `grevomon-pocket/`.
@@ -194,7 +194,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 Le projet est encore une **application Vite plate**. Le monorepo décrit dans `PROPOSITION.md` §6.1 est une cible, pas l'état actuel : ne pas restructurer sans décision.
 
 ```text
-grevomon-tcg/
+planquex/
 ├── src/
 │   ├── components/   CardDetail.tsx, CardView.tsx, Layout.tsx, StatusBadge.tsx, CafePips.tsx
 │   ├── components/ui/  shadcn/ui (D-035) : button.tsx, dialog.tsx — composants génériques seuls
@@ -241,10 +241,10 @@ grevomon-tcg/
 
 ## 7. Commandes
 
-Toujours depuis `grevomon-tcg/`. Le chemin contient une espace : le quoting est obligatoire.
+Toujours depuis `planquex/`. Le chemin ne contient plus d'espace depuis le déménagement du 21/10/2026 (D-047) ; le quoting reste une bonne habitude.
 
 ```bash
-cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
+cd /home/chapax/Documents/opencode/gamedev/planquex
 ```
 
 | Commande | Usage | État vérifié le 19/10/2026 |
@@ -282,7 +282,7 @@ Autres faits vérifiés le 19/10/2026 :
 - **Les décomptes ne sont pas recopiés ici** : le nombre de fichiers de test et de tests est celui qu'affiche `npm test` ; le nombre de cartes, de bases, de variantes et de factions est celui qu'affiche `npm run status` (`cards`), **dérivé d'`ALL_CARDS`** (`src/data/index.ts`), seule source de ce nombre. `scripts/compteurs.test.ts` échoue si un décompte en dur revient dans ce §7 ou dans `README.md`. `src/data/cards.test.ts` vérifie les conventions d'écriture (§3, §5, CARD-SPEC §1), le **Seuil par stade** (D-023) et les **bandes de dégâts par café** (D-021) ; `src/game/pace.test.ts` chiffre le rythme (`PACE_REPORT=1`).
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Chariot et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
-- Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/planquex` (privé). Le dossier local garde `grevomon-tcg` (D-038) : le chemin de §7 est inchangé.
+- Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/planquex` (privé). Le dossier local porte lui aussi `planquex` depuis le 21/10/2026 (D-047, qui clôt l'étape 4 de `RENOMMAGE.md` §8) : le nom du dossier, celui du dépôt et celui de l'URL se lisent enfin pareil.
 
 ### 7.1 Piège connu — le service worker casse le dev sur la même origine
 
@@ -294,7 +294,7 @@ Le réflexe : **DevTools → Application → Service Workers → Unregister**, p
 
 ## 8. Audits
 
-Un audit est une **preuve**, pas une opinion. Il se fait toujours sur `grevomon-tcg/`, jamais sur `grevomon-pocket/`.
+Un audit est une **preuve**, pas une opinion. Il se fait toujours sur `planquex/`, jamais sur `grevomon-pocket/`.
 
 ### 8.1 Protocole
 
@@ -308,7 +308,7 @@ Un audit est une **preuve**, pas une opinion. Il se fait toujours sur `grevomon-
 ### 8.2 Batterie de référence
 
 ```bash
-cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
+cd /home/chapax/Documents/opencode/gamedev/planquex
 npm run status
 npm run check
 npm test
@@ -371,7 +371,7 @@ Prochaine action vérifiable :
 
 `grevomon-pocket/` est conservé comme **référence historique** : ancien univers Grèvomon, vocabulaire « Galère », règles `RULES-4b` (12/4/3), 38 cartes, application plate. Il peut servir à consulter des idées d'UI ou l'inventaire fonctionnel de l'APK, mais **jamais** de source de vérité pour ce projet.
 
-Voir `../grevomon-pocket/LEGACY.md`.
+Voir `../grevomon/grevomon-pocket/LEGACY.md`.
 
 ## 10. Agent skills
 
