@@ -39,6 +39,16 @@ Les décomptes de cartes et de tests ne sont **pas recopiés** dans ce fichier :
 | Backend | Supabase (Postgres, Auth, Realtime, Edge Functions) |
 | Infra | GitHub + Vercel + Cloudflare + Brevo + domaine |
 
+## Route alpha → beta → release
+
+| Étape | Critères (D-048) |
+|---|---|
+| **alpha** | Solo jouable entre invités, contenu incomplet, casse assumée — on teste si la boucle tient |
+| **beta** | Solo complet (Journée d'intégration, Réglages, export/import), **PvP jouable** (D-049), URL stable (domaine tranché, O-003), 286 cartes illustrées *ou* décision assumée de ne pas l'être, aucune perte de données possible |
+| **release** | Beta + le reste de `PROPOSITION.md` §5.1 (classé, économie, missions, échanges, notifications, polish, localisation) |
+
+La version porte l'étape : `0.2.0-alpha.1` → `0.2.0-beta.1` → `0.2.0`. Source unique `package.json`, injectée au build (`vite.config.ts` → `__APP_VERSION__`), lue par `src/version.ts`, affichée dans **Réglages**.
+
 ## Prochaine étape
 
 Les noms de factions et le mot-clé sont actés (voir `docs/DECISIONS.md`).

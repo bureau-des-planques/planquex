@@ -557,7 +557,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 |---|---|---|
 | 286 illustrations | Blocage du lancement | IA + curation, placeholders dès la phase 2 |
 | Équilibrage | Méta cassée | simulation dès la phase 3, patchs de set |
-| Portée « tout l'APK » | Dérive | phases verrouillées, bêta fermée |
+| Portée « tout l'APK » | Dérive | phases verrouillées, **beta** (voir D-048) |
 | PvP serveur | Triche / désync | moteur partagé, autorité serveur, journal |
 | Satire | Bad buzz | punch up, relecture, aucun nom réel |
 | Supabase free | Pause 7 jours | Pro dès la bêta publique |
@@ -575,7 +575,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 6. **Argent réel** : aucun en v1, ou Stripe dès la Cotisation ?
 7. **PvP** : serveur autoritaire temps réel + reprise asynchrone, timer 90 s — ou plus simple (asynchrone pur) pour la v1 ?
 8. **Stack** : React PWA confirmé ? Et « 100 » = 100 utilisateurs simultanés ou 100 utilisateurs au total ?
-9. **Lancement** : bêta fermée par phases, ou tentative de tout livrer d'un coup ?
+9. **Lancement** : **beta** par phases (voir D-048), ou tentative de tout livrer d'un coup ?
 10. **Nom / domaine** : « Bureau des Planqués » te va, ou tu as un autre nom ?
 
 ---
