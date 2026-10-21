@@ -51,7 +51,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'FAQ', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Pioche 2 cartes.', effects: [{ kind: 'draw', amount: 2 }] },
       { name: 'Chatbot', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
-    flavor: 'Le chatbot a compris. Personne n’a compris le chatbot.'
+    flavor: 'Le chatbot a compris. Personne n’a compris le chatbot.',
+    art: 'support-responsable-support.webp'
   }),
   base({
     id: 'support-responsable-support-ex',

@@ -21,14 +21,14 @@
 
 | Carte (`id`) | Faction | Sujet | Graine | Fichier |
 |---|---|---|---|---|
-| `sse-medecin-travail` | SSE | médecin du travail, blouse, porte-bloc | `1704499335` | `sse-medecin-travail.webp` |
-| `management-responsable-unite` | Management | responsable d'unité, porte-bloc, sourire en coin | `716107998` | `management-responsable-unite.webp` |
-| `qvt-chief-happiness-officer` | QVT | chief happiness officer, ballons et autocollants | `597664813` | `qvt-chief-happiness-officer.webp` |
-| `amelioration-directeur-qualite` | Amélioration continue | directeur qualité, classeur de procédures | `484642457` | `amelioration-directeur-qualite.webp` |
-| `rh-drh` | RH | DRH devant un organigramme | `600082756` | `rh-drh.webp` |
-| `atelier-chef-atelier` | Atelier | chef d'atelier, combinaison tachée, clé | `1777646571` | `atelier-chef-atelier.webp` |
-| `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `434211236` | `syndicat-secretaire-general.webp` |
-| `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `632167755` | `interim-interimaire-legendaire-ex.webp` |
+| `sse-medecin-travail` | SSE | médecin du travail, blouse, porte-bloc | `37109154` | `sse-medecin-travail.webp` |
+| `management-responsable-unite` | Management | responsable d'unité, porte-bloc, sourire en coin | `1323131255` | `management-responsable-unite.webp` |
+| `qvt-chief-happiness-officer` | QVT | chief happiness officer, ballons et autocollants | `1867736723` | `qvt-chief-happiness-officer.webp` |
+| `amelioration-directeur-qualite` | Amélioration continue | directeur qualité, classeur de procédures | `1325355317` | `amelioration-directeur-qualite.webp` |
+| `rh-drh` | RH | DRH devant un organigramme | `245800676` | `rh-drh.webp` |
+| `atelier-chef-atelier` | Atelier | chef d'atelier, combinaison tachée, clé | `1491963894` | `atelier-chef-atelier.webp` |
+| `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `1286126774` | `syndicat-secretaire-general.webp` |
+| `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `64234642` | `interim-interimaire-legendaire-ex.webp` |
 
 ## Non produites — quota
 
@@ -36,7 +36,6 @@ Le **quota gratuit ZeroGPU** du compte Hugging Face a été épuisé en fin de s
 
 | Carte (`id`) | Faction | Sujet | Accent | État |
 |---|---|---|---|---|
-| `support-responsable-support` | Support | responsable support, casque, patient | blanc argenté | **à générer** |
 
 Pour la produire (et les 276 suivantes) :
 
@@ -82,3 +81,12 @@ source, empreinte calculée par Vite, et **erreur au build** sur un `art` inconn
 
 - 2026-10-21 · `direction-pdg` · modèle `NARWHAL` · graine `147016633` · `direction-pdg.webp`
 - 2026-10-21 · `direction-pdg` · modèle `NARWHAL` · graine `1180968490` · `direction-pdg.webp`
+- 2026-10-21 · `sse-medecin-travail` · modèle `NARWHAL` · graine `37109154` · `sse-medecin-travail.webp`
+- 2026-10-21 · `management-responsable-unite` · modèle `NARWHAL` · graine `1323131255` · `management-responsable-unite.webp`
+- 2026-10-21 · `qvt-chief-happiness-officer` · modèle `NARWHAL` · graine `1867736723` · `qvt-chief-happiness-officer.webp`
+- 2026-10-21 · `amelioration-directeur-qualite` · modèle `NARWHAL` · graine `1325355317` · `amelioration-directeur-qualite.webp`
+- 2026-10-21 · `rh-drh` · modèle `NARWHAL` · graine `245800676` · `rh-drh.webp`
+- 2026-10-21 · `atelier-chef-atelier` · modèle `NARWHAL` · graine `1491963894` · `atelier-chef-atelier.webp`
+- 2026-10-21 · `syndicat-secretaire-general` · modèle `NARWHAL` · graine `1286126774` · `syndicat-secretaire-general.webp`
+- 2026-10-21 · `interim-interimaire-legendaire-ex` · modèle `NARWHAL` · graine `64234642` · `interim-interimaire-legendaire-ex.webp`
+- 2026-10-21 · `support-responsable-support` · modèle `NARWHAL` · graine `1602293889` · `support-responsable-support.webp`
