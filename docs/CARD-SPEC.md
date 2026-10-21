@@ -97,6 +97,8 @@ ci-dessus est un repère de lecture ; elle ne plafonne rien.
 | 3 | 70–120 | coûte 20 à 40 dégâts |
 | 4 | 100–160 | coûte 20 à 70 dégâts |
 
+> **Écart assumé (D-039, #102 (c))** : le coût de Pression `0` (`cost: []`) est **autorisé par le code** (`DAMAGE_BY_COST[0] = [0, 30]`, commentaire `src/data/types.ts` « une liste vide est une attaque gratuite »), mais **aucune carte du set ne le porte** (`grep -r "cost: \[\]" src/data/` → 0 résultat). La table normative commence au **1 café** (`CARD-SPEC.md` §2) et reste inchangée ; le premier joueur conserve son droit d'attaquer au tour 1 (`AGENTS.md` §4), sans contradiction.
+
 Un **effet** (statut, soin, pioche, défausse, échange) ne coûte **pas** de dégâts à 1 et 2 cafés ;
 à partir de 3 cafés il en coûte 20 à 40. Un **fardeau** (se blesser, défausser ses propres cafés)
 est ce qui permet d'atteindre le haut de la bande.
@@ -225,7 +227,7 @@ textes et effets sont là pour valider le ton et les courbes.
 | Carte | Stade | Rareté | Seuil | Rotation | Attaque / Talent | Texte |
 |---|---|---|---:|---:|---|---|
 | Intérimaire | Entrant | 1◆ | 60 | 1 | **Mission courte** (1 café) : 20 | « Il connaît le site mieux que le directeur. Il part vendredi. » |
-| Intérimaire confirmé | N+1 | 2◆ | 90 | 1 | **Polyvalence** (Talent) : ce Planqué peut utiliser n’importe quel café pour ses attaques. **Démerde** (2 cafés) : 50 | « Il a fait le boulot de trois personnes. Il est payé pour une. » |
+| Intérimaire confirmé | N+1 | 2◆ | 90 | 1 | **Polyvalence** (Talent, 1/tour) : attache 1 café à ce Planqué (`attachEnergy`). **Démerde** (2 cafés) : 50 | « Il a fait le boulot de trois personnes. Il est payé pour une. » |
 | Chef d’équipe intérimaire | N+2 | 3◆ | 140 | 2 | **Site différent** (2 cafés) : 60, échange ce Planqué avec un Planqué du Rack. **Prime de précarité** (3 cafés) : 100, ce Planqué subit 20 | « Il gère l’équipe. Il n’a pas de badge. » |
 
 ### Support — Incolore

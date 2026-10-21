@@ -317,6 +317,8 @@ Deux précisions :
 | Support | 38 |
 | **Total** | **267** |
 
+> **Note (D-043, #104 (b))** : le nombre **267** est la valeur annoncée dans ce document (18/10/2026) ; le set réel en compte **281** (`npm run status` → `cards.byFaction`, dépassement antérieur et inévitable pour combler le déficit `3◆`, D-023/D-026). La **seule source** du nombre actuel est la commande `npm run status` (`cards.byFaction`), pas cette table.
+
 Les 19 entrées restantes sont les Collègues et Objets. Les 60 secrètes sont des variantes d'art de cartes existantes.
 
 ### 4.4 Trois viviers de lancement
