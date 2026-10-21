@@ -17,7 +17,7 @@
   > sombres**. La version corrigée (`DESIGN.md` §6.1) impose une **lumière principale sur le
   > visage**. Les 8 images ci-dessous sont donc à **regénérer** avec elle.
 
-## Cartes produites (8 sur 10)
+## Cartes produites
 
 | Carte (`id`) | Faction | Sujet | Graine | Fichier |
 |---|---|---|---|---|
@@ -30,18 +30,24 @@
 | `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `434211236` | `syndicat-secretaire-general.webp` |
 | `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `632167755` | `interim-interimaire-legendaire-ex.webp` |
 
-## Non produites (2) — quota
+## Non produites — quota
 
 Le **quota gratuit ZeroGPU** du compte Hugging Face a été épuisé en fin de série.
 
 | Carte (`id`) | Faction | Sujet | Accent | État |
 |---|---|---|---|---|
-| `direction-pdg` | Direction | PDG avachi dans un grand fauteuil, bras croisés | indigo profond | **à générer** |
 | `support-responsable-support` | Support | responsable support, casque, patient | blanc argenté | **à générer** |
 
-Pour les produire (et les 276 suivantes), trois voies : **HF PRO** (quota étendu), le modèle
-**« nano banana »** de Gemini, ou un modèle d'image **OpenRouter**. Les prompts sont ci-dessus
-et dans `DESIGN.md` §6.
+Pour la produire (et les 276 suivantes) :
+
+```bash
+bash scripts/illustration-vague.sh support-responsable-support
+```
+
+Le tuyau passe par **`gflow-cli`**, qui pilote Google Flow sur le compte de Bastien et rend la
+**graine** dans son `--json` — c'est elle qui rend une image reproductible. Les modèles se
+choisissent par **nom humain** (« Nano Banana 2.1 »), que le wizard traduit en alias gflow
+(`nano2`). Les prompts restent ci-dessus et dans `DESIGN.md` §6.
 
 ## À curer (première passe assumée)
 
@@ -67,3 +73,12 @@ les deux sens, et **même contenu** (SHA-256). Il nomme le fichier coupable.
 source, empreinte calculée par Vite, et **erreur au build** sur un `art` inconnu. Coût : le champ
 `art` cesse d'être la chaîne nue `art: 'x.webp'` (il devient une URL de module, donc
 `src/data/art.test.ts` et les conventions de #96 changent) ; le registre sort de `public/`.
+
+## Journal des productions
+
+> Tenu par `scripts/illustration-vague.sh` : une ligne par image produite ou
+> regénérée, la plus récente en bas. Les deux tableaux ci-dessus sont
+> l'instantané du 20/10/2026 ; **ce journal est le registre vivant**.
+
+- 2026-10-21 · `direction-pdg` · modèle `NARWHAL` · graine `147016633` · `direction-pdg.webp`
+- 2026-10-21 · `direction-pdg` · modèle `NARWHAL` · graine `1180968490` · `direction-pdg.webp`

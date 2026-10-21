@@ -47,7 +47,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Plan de départ', cost: ['DIRECTION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Il repart avec la prime. Tu restes avec le plan.'
+    flavor: 'Il repart avec la prime. Tu restes avec le plan.',
+    art: 'direction-pdg.webp'
   }),
   // COMEX : PDG ex
   base({
