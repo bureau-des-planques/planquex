@@ -1,0 +1,5 @@
+{
+  "_lisez_moi": "Le mur de la Boîte à idées (D-058). Le jeu LIT ce fichier et n'écrit jamais dedans : il est tenu à la main au fil du tri. Champs et statuts : docs/BOITE-A-IDEES.md. Le jeu le lit par import (Vite le bundle), donc une modification change le mur au déploiement suivant.",
+  "formulaire": null,
+  "postits": []
+}
