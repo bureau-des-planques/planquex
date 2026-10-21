@@ -225,6 +225,31 @@ code {
   text-transform: uppercase;
 }
 
+/* ---------- Surfaces du navigateur ----------
+   Les morceaux qu'on ne dessine pas portent quand même le jeu : sélection, curseur
+   de saisie, anneau de focus, barres de défilement, chiffres alignés des compteurs. */
+
+body {
+  caret-color: var(--gold);
+  font-variant-numeric: tabular-nums;
+  scrollbar-color: var(--line-strong) var(--bg-deep);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--gold) 38%, transparent);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+h1,
+h2 {
+  letter-spacing: -0.02em;
+}
+
 /* ---------- Coquille ---------- */
 
 .app-shell {
@@ -320,9 +345,26 @@ code {
   text-decoration: none;
 }
 
+.bottom-nav__item {
+  position: relative;
+  transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* L'onglet actif : un témoin doré au bord, comme un voyant de console. */
 .bottom-nav__item.is-active {
-  background: var(--bg-raised);
-  color: var(--text);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 14%, transparent), transparent 70%);
+  color: var(--gold);
+}
+
+.bottom-nav__item.is-active::before {
+  background: var(--gold);
+  border-radius: 0 0 2px 2px;
+  content: '';
+  height: 3px;
+  left: 22%;
+  position: absolute;
+  right: 22%;
+  top: -0.5rem;
 }
 
 /* ---------- Blocs de page ---------- */
@@ -347,10 +389,16 @@ code {
   justify-content: space-between;
 }
 
+/* Le cadre de jeu : un panneau usiné, pas une carte de tableau de bord. Biseau doré
+   en haut, ombre de bas de plaque, rayon court — une console, pas une app SaaS. */
 .panel {
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
+    inset 0 -2px 0 rgb(0 0 0 / 30%),
+    0 8px 18px -10px rgb(0 0 0 / 70%);
   padding: 1rem 1.15rem;
 }
 
@@ -460,11 +508,16 @@ code {
 }
 
 .hero {
-  background: linear-gradient(150deg, #16233f, var(--bg-raised));
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 55%),
+    linear-gradient(150deg, #16233f, var(--bg-raised) 60%, var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 30%, transparent),
+    0 14px 30px -16px rgb(0 0 0 / 80%);
   overflow: hidden;
-  padding: 1.5rem;
+  padding: 1.75rem 1.5rem 1.5rem;
   position: relative;
 }
 
@@ -479,10 +532,14 @@ code {
   top: 0;
 }
 
+/* Le titre d'écran-titre : capitales lourdes, serrées, comme une affiche de jeu. */
 .hero h1 {
   font-size: var(--fs-3xl);
-  line-height: 1.1;
-  margin-bottom: 0.6rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-bottom: 0.9rem;
+  text-transform: uppercase;
 }
 
 .hero__lead {
@@ -513,14 +570,20 @@ code {
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
+/* Compteurs de HUD : une plaque sombre encastrée, le chiffre en or. */
 .stat-card {
-  background: var(--bg-raised);
+  background: var(--bg-sunken);
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: 6px;
+  box-shadow: inset 0 2px 6px rgb(0 0 0 / 45%);
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.9rem 1rem;
+}
+
+.stat-card strong {
+  color: var(--gold);
 }
 
 .stat-card__label {
@@ -560,35 +623,82 @@ code {
 
 /* ---------- Contrôles ---------- */
 
+/* Les boutons de jeu : une touche physique — biseau clair en haut, ombre portée en
+   bas, et un vrai enfoncement au clic. Plus de pilule de formulaire. */
 .button {
   align-items: center;
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 80%, var(--line-strong)), var(--bg-raised));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 3px 6px -2px rgb(0 0 0 / 60%);
   color: var(--text);
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: 0.88rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
   gap: 0.45rem;
-  padding: 0.55rem 1rem;
+  letter-spacing: 0.01em;
+  padding: 0.6rem 1.05rem;
   text-decoration: none;
+  transition:
+    transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 120ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 160ms ease;
+}
+
+.button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--line-strong));
+  transform: translateY(-1px);
+}
+
+.button:active:not(:disabled) {
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 45%);
+  transform: translateY(1px);
+}
+
+/* Le grand bouton d'action principale d'un écran : celui qu'on presse sans réfléchir. */
+.button--big {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0.85rem 1.35rem;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .button:hover:not(:disabled),
+  .button:active:not(:disabled) {
+    transform: none;
+    transition: none;
+  }
 }
 
 .button--primary {
   /* Le dégradé dérive de `--accent` : bleu par défaut, couleur de la faction dans
      la fiche d'une carte. Un seul système, aucune couleur recopiée. */
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 58%, #04080f));
-  border-color: transparent;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent) 45%, color-mix(in srgb, var(--accent) 58%, #04080f));
+  border-color: color-mix(in srgb, var(--accent) 50%, #04080f);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 30%),
+    0 4px 10px -3px color-mix(in srgb, var(--accent) 55%, transparent);
   color: #fff;
-  font-weight: 600;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 35%);
 }
 
 .button--gold {
-  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
-  border-color: transparent;
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold) 45%, var(--gold-deep));
+  border-color: var(--gold-deep);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    0 4px 12px -3px color-mix(in srgb, var(--gold) 50%, transparent);
   color: #1c1304;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .button:disabled {
@@ -695,19 +805,26 @@ code {
  */
 .card {
   --rarity: var(--line);
+  /* **Le format d'une carte** : 63 × 88 mm, le ratio du jeu de référence. C'est lui qui
+     garantit que toutes les cartes font la même taille, quel que soit le nombre de
+     Pressions, la longueur du nom ou celle de la flavour. */
+  aspect-ratio: 63 / 88;
   background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%);
   /* La rareté colore la **bordure entière**, pas un filet sur un seul côté (tell d'UI IA). */
   border: 1px solid color-mix(in srgb, var(--rarity) 55%, var(--line));
-  border-radius: var(--radius);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%), 0 8px 20px rgb(0 0 0 / 28%);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 45%),
+    inset 0 1px 0 rgb(255 255 255 / 5%),
+    0 8px 20px rgb(0 0 0 / 28%);
   color: inherit;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   font: inherit;
-  gap: 0.4rem;
+  gap: 0.35rem;
   overflow: hidden;
-  padding: 0.6rem;
+  padding: 0;
   position: relative;
   text-align: left;
   width: 100%;
@@ -728,28 +845,60 @@ code {
   opacity: 0.95;
 }
 
+/* La barre de nom : pleine largeur, teintée de la faction — la première chose qu'on lit
+   sur une carte. Le Seuil la ferme à droite, comme une jauge de vie. */
 .card__top {
-  align-items: baseline;
+  align-items: flex-start;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 26%, var(--bg-raised)),
+    color-mix(in srgb, var(--accent) 12%, var(--bg-raised))
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--rarity) 40%, var(--line));
   display: flex;
   gap: 0.4rem;
   justify-content: space-between;
+  padding: 0.4rem 0.5rem;
 }
 
-.card__name {
+.card__seuil-badge {
+  color: var(--gold-soft);
+  flex: none;
   font-family: var(--font-display);
-  font-size: 0.92rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
   line-height: 1.2;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 60%);
+}
+
+/* Le nom a **deux lignes, toujours** : il tient en entier à cette hauteur-là (les
+   « Responsable d'unité COMEX » compris), et la réserve fixe garde les cartes toutes
+   identiques. Au-delà de deux lignes, il s'abrège — aucune carte ne s'allonge. */
+.card__name {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  min-height: 2.4em;
+  overflow: hidden;
+  text-transform: uppercase;
 }
 
 .card__meta {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
   font-size: var(--fs-2xs);
   gap: 0.3rem;
   letter-spacing: 0.06em;
+  overflow: hidden;
+  padding-inline: 0.5rem;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .card__stage {
@@ -796,13 +945,19 @@ code {
   width: 7px;
 }
 
+/* La fenêtre d'illustration : elle prend **tout l'espace qui reste**, donc deux cartes du
+   même format ont exactement la même image, que le texte soit long ou court. */
 .card__art {
   align-items: center;
-  border: 1px solid rgb(255 255 255 / 7%);
-  border-radius: var(--radius-sm);
-  box-shadow: inset 0 0 26px rgb(0 0 0 / 34%);
+  border: 1px solid rgb(0 0 0 / 55%);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 8%),
+    inset 0 0 26px rgb(0 0 0 / 34%);
   display: grid;
-  height: 92px;
+  flex: 1 1 auto;
+  margin-inline: 0.45rem;
+  min-height: 0;
   overflow: hidden;
   place-items: center;
   position: relative;
@@ -835,9 +990,8 @@ code {
    barre `.stress` montre le Stress qui monte (D-026). */
 .card__seuil {
   align-items: center;
-  display: grid;
-  gap: 0.35rem;
-  grid-template-columns: auto auto minmax(28px, 1fr);
+  display: flex;
+  padding-inline: 0.5rem;
 }
 
 .card__seuil-label {
@@ -862,6 +1016,13 @@ code {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  padding-inline: 0.5rem;
+}
+
+.card__attacks .attack__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .attack,
@@ -918,11 +1079,19 @@ code {
   background: var(--cafe);
 }
 
+/* La flavour : deux lignes au plus, coupées proprement — c'est ce qui garde les cartes
+   de la même hauteur sans lui interdire d'exister. */
 .card__flavor {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   color: var(--text-muted);
-  font-size: 0.75rem;
+  display: -webkit-box;
+  font-size: 0.72rem;
   font-style: italic;
+  line-height: 1.3;
   margin: 0;
+  overflow: hidden;
+  padding-inline: 0.5rem;
 }
 
 .card__footer {
@@ -931,7 +1100,10 @@ code {
   display: flex;
   font-size: var(--fs-xs);
   justify-content: space-between;
-  padding-top: 0.35rem;
+  /* Collé au bas de la carte : c'est ce qui aligne les pieds de toutes les cartes,
+     quelle que soit la longueur du texte au-dessus. */
+  margin-top: auto;
+  padding: 0.3rem 0.5rem 0.35rem;
 }
 
 .card__rarity {
@@ -1071,18 +1243,34 @@ code {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+/* Les deux camps du combat : le même cadre usiné que les panneaux. Le camp qui a la
+   main s'allume — liseré coloré et halo porté vers le bas, pas un simple filet bleu. */
 .board__side {
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 18%, transparent),
+    0 8px 18px -10px rgb(0 0 0 / 70%);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
   padding: 1rem;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
 .board__side.is-current {
   border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--accent) 45%, transparent),
+    0 10px 24px -10px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.board__head strong,
+.board__head h3 {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .board__head {
@@ -1188,18 +1376,24 @@ code {
   color: var(--text);
   cursor: pointer;
   display: flex;
-  height: 26px;
+  height: 24px;
   justify-content: center;
   position: absolute;
-  right: 0.45rem;
-  top: 0.45rem;
-  width: 26px;
+  right: 0.4rem;
+  top: 0.4rem;
+  width: 24px;
 }
 
 /* Le bouton rapide occupe le coin haut-droit : le nom réserve la place, sinon il
    passe dessous (le coin droit est libre depuis que le Seuil vit sous l'art). */
 .card-slot .card__top {
-  padding-right: 2.1rem;
+  /* De la place pour le bouton « ajouter au Chariot », qui vit au coin haut-droit. */
+  padding-right: 2.5rem;
+}
+
+.card-slot .card__footer {
+  /* Et pour le compteur d'exemplaires, au coin bas-droit. */
+  padding-right: 2.5rem;
 }
 
 .card-slot__quick:hover:not(:disabled) {
@@ -1246,14 +1440,26 @@ code {
 }
 
 /* La barre de Stress : elle MONTE. Verte au repos, rouge quand le collègue va craquer. */
+/* La jauge de Stress : dix crans, comme une barre de vie de jeu — on lit d'un coup
+   d'œil combien il reste avant que le Planqué craque. */
 .stress {
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  background: var(--bg-deep);
+  border: 1px solid var(--line-strong);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 60%);
   display: block;
-  height: 10px;
+  height: 12px;
   overflow: hidden;
+  position: relative;
   width: 100%;
+}
+
+.stress::after {
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 2px), var(--bg-deep) calc(10% - 2px) 10%);
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
 }
 
 .stress__fill {

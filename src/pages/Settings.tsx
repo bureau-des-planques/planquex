@@ -42,7 +42,6 @@ export function Settings() {
     <div className="page settings">
       <section className="section__head">
         <div>
-          <p className="eyebrow">Réglages</p>
           <h1>Ton poste de travail</h1>
         </div>
       </section>

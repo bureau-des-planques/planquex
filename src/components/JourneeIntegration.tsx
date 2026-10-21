@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -74,19 +73,23 @@ export function JourneeIntegration() {
         <p>{courante.texte}</p>
 
         <div className="actions actions--tight">
-          <Button variant="outline" onClick={terminer}>
+          <button type="button" className="button" onClick={terminer}>
             Passer
-          </Button>
+          </button>
           {derniere ? (
-            <Button onClick={terminer}>C’est parti</Button>
+            <button type="button" className="button button--gold" onClick={terminer}>
+              C’est parti
+            </button>
           ) : (
-            <Button
+            <button
+              type="button"
+              className="button button--primary"
               onClick={() => {
                 setEtape((courant) => courant + 1);
               }}
             >
               Suivant
-            </Button>
+            </button>
           )}
         </div>
       </DialogContent>

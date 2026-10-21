@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Coffee, Library, PackageOpen, Swords } from 'lucide-react';
+import { Coffee, PackageOpen, Swords } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
 import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
@@ -22,22 +22,21 @@ export function Home() {
   return (
     <div className="page home">
       <section className="hero">
-        <p className="eyebrow">Bureau des Planqués</p>
         <h1>Ton atelier.<br />Tes Interventions.<br />Ta survie.</h1>
         <p className="hero__lead">
-          Ouvre des arrivages, collectionne les Planqués et affronte la Direction.
+          Ouvre des Arrivages, collectionne les Planqués et affronte la Direction.
           Le seul TCG où le boss est déjà dans ta main.
         </p>
         <div className="hero__actions">
-          <button type="button" className="button button--primary" onClick={handleOpenPack}>
-            <PackageOpen size={18} /> Ouvrir un arrivage
+          <button type="button" className="button button--gold button--big" onClick={handleOpenPack}>
+            <PackageOpen size={20} /> Ouvrir un Arrivage
           </button>
-          <Link className="button" to="/battle">
-            <Swords size={18} /> Combat test
+          <Link className="button button--primary button--big" to="/battle">
+            <Swords size={20} /> Affronter la Direction
           </Link>
         </div>
         <div className="hero__hint">
-          <Coffee size={14} /> {packsOpened} bac{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} · {uniqueOwned}/{ALL_CARDS.length} cartes
+          <Coffee size={14} /> {packsOpened} Arrivage{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} · {uniqueOwned}/{ALL_CARDS.length} cartes
         </div>
       </section>
 
@@ -59,46 +58,10 @@ export function Home() {
         </article>
       </section>
 
-      <section className="section">
-        <div className="section__head">
-          <div>
-            <p className="eyebrow">Raccourcis</p>
-            <h2>Le bureau t’attend</h2>
-          </div>
-        </div>
-        <div className="quick-grid">
-          <Link className="quick-card" to="/collection">
-            <Library size={22} />
-            <div>
-              <strong>Ouvrir le Parc</strong>
-              <span>Filtrer, chercher, admirer les cartes brillantes.</span>
-            </div>
-            <ArrowRight size={18} />
-          </Link>
-          <Link className="quick-card" to="/deck">
-            <Library size={22} />
-            <div>
-              <strong>Construire un chariot</strong>
-              <span>20 cartes, 2 exemplaires max, 1 Entrant minimum.</span>
-            </div>
-            <ArrowRight size={18} />
-          </Link>
-          <Link className="quick-card" to="/battle">
-            <Swords size={22} />
-            <div>
-              <strong>Affronter la Direction</strong>
-              <span>Un prototype de combat, 3 Interventions, zéro pitié.</span>
-            </div>
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-      </section>
-
       {lastPack && (
         <div className="modal-backdrop" onClick={() => setLastPack(null)} role="presentation">
           <div className="modal pack-reveal" onClick={(event) => event.stopPropagation()}>
-            <p className="eyebrow">Arrivage</p>
-            <h2>Cinq nouvelles cartes</h2>
+            <h2>Arrivage : cinq nouvelles cartes</h2>
             <div className="pack-reveal__cards">
               {lastPack.map((card, index) => (
                 <motion.div

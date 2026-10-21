@@ -49,6 +49,13 @@ export function CardView({ card, onClick, compact, selected }: Props) {
     >
       <header className="card__top">
         <span className="card__name">{card.name}</span>
+        {/* Le Seuil en pastille, en haut à droite : la place d'une jauge de vie sur une
+            carte. La barre plus bas reste la même que celle du combat (`.stress`). */}
+        {planque && (
+          <span className="card__seuil-badge" title="Seuil">
+            {card.hp}
+          </span>
+        )}
       </header>
 
       <div className="card__meta">
@@ -74,8 +81,10 @@ export function CardView({ card, onClick, compact, selected }: Props) {
           // longhand, ce qui retire la couche image posée par le raccourci (React signale
           // lui-même ce mélange comme source de bugs de style). Les ~276 cartes sans
           // illustration perdaient donc leur fond de faction.
+          // Cadrage **haut** (50% 28%) : les illustrations sont des portraits, un cadrage
+          // centré leur coupe la tête dès que la fenêtre est plus large que haute.
           background: card.art
-            ? `url('/design/illustrations/${card.art}') center / cover no-repeat`
+            ? `url('/design/illustrations/${card.art}') 50% 28% / cover no-repeat`
             : card.palette
         }}
       >
@@ -87,8 +96,6 @@ export function CardView({ card, onClick, compact, selected }: Props) {
 
       {planque && (
         <div className="card__seuil">
-          <span className="card__seuil-label">Seuil</span>
-          <span className="card__seuil-value">{card.hp}</span>
           <span className="stress card__seuil-bar" aria-hidden>
             <span className="stress__fill" style={{ width: '100%' }} />
           </span>

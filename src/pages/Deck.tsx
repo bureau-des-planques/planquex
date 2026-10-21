@@ -75,7 +75,6 @@ export function Deck() {
     <div className="page deck">
       <section className="section__head">
         <div>
-          <p className="eyebrow">Chariot</p>
           <h1>{deck.length}/20 cartes</h1>
           <p className="muted">
             Un clic sur une carte l’ajoute, un clic sur une carte du haut la retire.{' '}

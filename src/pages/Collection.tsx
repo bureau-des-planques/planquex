@@ -43,7 +43,6 @@ export function Collection() {
     <div className="page collection">
       <section className="section__head">
         <div>
-          <p className="eyebrow">Parc</p>
           <h1>{uniqueOwned}/{ALL_CARDS.length} cartes</h1>
           <p className="muted">{visible.length} affichés</p>
         </div>
