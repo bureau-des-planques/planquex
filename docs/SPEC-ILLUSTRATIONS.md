@@ -79,7 +79,7 @@ Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
 3. **La table des sujets** — les 10 signature migrés, puis les 105 lignes. Passe LLM, puis
    **relecture humaine d'un échantillon** : c'est le point d'arrêt humain de cette vague.
 4. **La table des accents** (10 lignes) et **la garde** qui remplace #120.
-5. **Le pilote sur une faction** — Support (32 bases) ou Atelier (27).
+5. **Le pilote sur une faction** — Support (32 bases) ou Atelier (26).
 6. **Les 214**, puis les 3 viviers.
 
 ## 6. Ce que ça change dans le code

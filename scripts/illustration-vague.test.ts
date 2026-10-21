@@ -337,6 +337,21 @@ con.commit()
   if (r.status !== 0) throw new Error(`base de test impossible : ${r.stderr}`);
 }
 
+/**
+ * Le wizard lance des commandes de vérification dont les cibles par défaut sont des
+ * **chemins** (`npm test -- <fichier>`). D-045 a supprimé un de ces fichiers, et rien
+ * ne l'a vu : le wizard aurait échoué à sa dernière étape, sur un test disparu.
+ * Cette garde relit les valeurs par défaut dans le script et exige que chaque chemin
+ * existe. Elle mord : remettre un fichier supprimé la fait tomber.
+ */
+function cheminsDesCommandesParDefaut(): string[] {
+  const source = readFileSync(join(racine, WIZARD), 'utf8');
+  const defauts = [...source.matchAll(/GFLOW_ILLUSTRATION_(?:TEST|CHECK)_CMD:-([^}"]+)/g)].map((m) => m[1]);
+  return defauts
+    .flatMap((commande) => commande.split(/\s+/))
+    .filter((mot) => mot.includes('/') && !mot.startsWith('-'));
+}
+
 describe('Wizard d’illustration — ce qui part vers gflow (#97)', () => {
   it('le contrôle mord : un nom humain non résolu atteindrait gflow', () => {
     // Décrit ce qui NE DOIT PAS arriver. Échoue si le nom brut part tel quel.
@@ -677,4 +692,12 @@ describe('Wizard d’illustration — la graine retrouvée dans la base de gflow
     expect(r.status, r.stdout + r.stderr).toBe(0);
     expect(readFileSync(readme, 'utf8')).toMatch(/graine `inconnue`/);
   }, DELAI);
+
+  it('les commandes par défaut du wizard visent des fichiers qui existent', () => {
+    const chemins = cheminsDesCommandesParDefaut();
+    expect(chemins.length, 'aucun chemin trouvé dans les commandes par défaut').toBeGreaterThan(0);
+    for (const chemin of chemins) {
+      expect(existsSync(join(racine, chemin)), `le wizard vise un fichier disparu : ${chemin}`).toBe(true);
+    }
+  });
 });

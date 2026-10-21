@@ -237,7 +237,7 @@ DONNEES="${GFLOW_ILLUSTRATION_DONNEES:-src/data}"
 # lance le wizard dans un bac temporaire, et y déclencherait `npm test` — donc
 # `vitest` dans `vitest`.
 CHECK_CMD="${GFLOW_ILLUSTRATION_CHECK_CMD:-npm run check}"
-TEST_CMD="${GFLOW_ILLUSTRATION_TEST_CMD:-npm test -- scripts/illustrations-servies.test.ts src/data/art.test.ts}"
+TEST_CMD="${GFLOW_ILLUSTRATION_TEST_CMD:-npm test -- src/data/art.test.ts}"
 CHECK_LOG="${GFLOW_ILLUSTRATION_CHECK_LOG:-/tmp/illustration-check.log}"
 TEST_LOG="${GFLOW_ILLUSTRATION_TEST_LOG:-/tmp/illustration-test.log}"
 #
