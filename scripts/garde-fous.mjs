@@ -22,7 +22,7 @@
  *
  * ## Pourquoi ce harnais plutôt qu'une bibliothèque de mutation testing
  *
- * `AGENTS.md` §1.7 : pas de dépendance sans nécessité démontrée. Une table **courte et
+ * `AGENTS.md` §1, règle 7 : pas de dépendance sans nécessité démontrée. Une table **courte et
  * choisie** de mutations, sur les invariants qui portent une **règle** (le café typé, la
  * rareté portée par le suffixe, la migration du store, la position du café, la table des
  * écarts, la payabilité d'une ligne d'évolution), suffit à répondre à la question posée,
@@ -149,6 +149,39 @@ export const MUTATIONS = [
     tests: ['src/game/ia-hasard.test.ts'],
     garde:
       'sans la sous-graine dérivée, le clone tire le lancer que l’action réelle tirera : la Direction sait d’avance que sa Pression sous Dérive échoue'
+  },
+  {
+    ticket: 97,
+    titre: 'l’image rangée ne porte plus le nom de la carte',
+    fichier: 'scripts/illustration-vague.sh',
+    motif: '  local reg="$REGISTRE/$id.webp" serv="$SERVI/$id.webp"',
+    remplacement: '  local reg="$REGISTRE/.webp" serv="$SERVI/.webp"',
+    tests: ['scripts/illustration-vague.test.ts'],
+    garde:
+      'le nom venait d’un `local` groupé, dont bash évalue toutes les expansions avant la moindre affectation : l’image s’appelait `.webp` et le message de succès affichait le bon nom (observé à la première génération réelle)'
+  },
+  {
+    ticket: 97,
+    titre: 'le wizard n’arrête plus sur une vérification ratée',
+    fichier: 'scripts/illustration-vague.sh',
+    motif: 'if (( ECHEC )); then',
+    remplacement: 'if (( 0 )); then',
+    tests: ['scripts/illustration-vague.test.ts'],
+    garde:
+      'un échec de `npm run check` ou des tests n’était qu’un avertissement : le wizard continuait et invitait à commiter un état cassé'
+  },
+  {
+    ticket: 97,
+    titre: 'le registre prétend avoir corrigé un tableau qu’il n’a pas touché',
+    fichier: 'scripts/illustration-vague.sh',
+    motif: `        note "Aucun tableau touché : cette carte n'est dans ni « Cartes produites » ni"
+        note "« Non produites » (ces deux tableaux ne couvrent que la Planche 1)."
+        note "Seule la ligne de journal ci-dessus a été ajoutée." ;;`,
+    remplacement:
+      '        note "Et la graine des tableaux est à jour : « Cartes produites » corrigée, « Non produites » retirée." ;;',
+    tests: ['scripts/illustration-vague.test.ts'],
+    garde:
+      'les deux tableaux ne couvrent que la Planche 1 : pour les autres cartes, le journal seul change — l’ancien message annonçait une mise à jour qui n’avait pas eu lieu'
   }
 ];
 

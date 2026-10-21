@@ -20,7 +20,9 @@ const LANCER = 'scripts/garde-fous.mjs';
 // #113, #116 et #118 sont arrivées en parallèle : toutes les entrées sont conservées, et
 // la liste est ce que `scripts/garde-fous.test.ts` compare — l'oublier ferait échouer `npm test`.
 // #114 : l'évaluation du niveau 2 ne doit pas repartir du flux de hasard de la partie.
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 101, 103, 113, 114, 116, 118];
+// #97 : le wizard d'illustration — le nom du fichier rangé, l'arrêt sur une vérification
+// ratée, et le message du registre, qui ne doit pas annoncer ce qui n'a pas eu lieu.
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {

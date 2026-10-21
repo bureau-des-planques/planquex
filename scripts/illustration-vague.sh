@@ -225,10 +225,24 @@ TOTAL_STAGES=6
 
 cd "$(dirname "$0")/.." 2>/dev/null || true
 
-PROMPTS="design/illustrations/PROMPTS-flow.md"
-REGISTRE="design/illustrations"
-SERVI="public/design/illustrations"
-README="$REGISTRE/README.md"
+# Tous les chemins sont **surchargeables par l'environnement**, sur le modèle de
+# `GFLOW_ILLUSTRATION_SCRATCH`. Sans ça, le wizard n'est testable qu'à moitié : il
+# s'arrêtait toujours avant « Choisir et ranger », donc `installer`, `consigner` et
+# `cabler` n'étaient **jamais** exercés — et c'est ainsi qu'un bug réel a échappé
+# à la boucle (#97 : le nom du fichier rangé était vide).
+PROMPTS="${GFLOW_ILLUSTRATION_PROMPTS:-design/illustrations/PROMPTS-flow.md}"
+REGISTRE="${GFLOW_ILLUSTRATION_REGISTRE:-design/illustrations}"
+SERVI="${GFLOW_ILLUSTRATION_SERVI:-public/design/illustrations}"
+README="${GFLOW_ILLUSTRATION_README:-$REGISTRE/README.md}"
+DONNEES="${GFLOW_ILLUSTRATION_DONNEES:-src/data}"
+# Les deux vérifications du dernier stage. Surchargeables : la suite de tests
+# lance le wizard dans un bac temporaire, et y déclencherait `npm test` — donc
+# `vitest` dans `vitest`.
+CHECK_CMD="${GFLOW_ILLUSTRATION_CHECK_CMD:-npm run check}"
+TEST_CMD="${GFLOW_ILLUSTRATION_TEST_CMD:-npm test -- scripts/illustrations-servies.test.ts src/data/art.test.ts}"
+CHECK_LOG="${GFLOW_ILLUSTRATION_CHECK_LOG:-/tmp/illustration-check.log}"
+TEST_LOG="${GFLOW_ILLUSTRATION_TEST_LOG:-/tmp/illustration-test.log}"
+#
 # Où tombent les variantes. Surchargeable par l'environnement **exprès** : sans
 # ça, scripts/illustration-vague.test.ts lisait le vrai `.scratch/` du dépôt, et
 # passait tant que personne n'avait généré — puis cassait dès la première vraie
@@ -236,6 +250,8 @@ README="$REGISTRE/README.md"
 # qu'il ne pouvait pas donner. Un test qui dépend de l'état du développeur ne
 # garde rien.
 SCRATCH="${GFLOW_ILLUSTRATION_SCRATCH:-.scratch/gflow}"
+# Ce que `consigner` a **réellement** touché : « produites », « non », ou « aucun ».
+CONSIGNER_TABLE="aucun"
 
 # ── outils du tuyau ───────────────────────────────────────────────────────
 
@@ -322,7 +338,7 @@ etat_de() {
   local id="$1" r="non" s="non" a="non"
   if [[ -f "$REGISTRE/$id.webp" ]]; then r="oui"; fi
   if [[ -f "$SERVI/$id.webp" ]]; then s="oui"; fi
-  if grep -rqF "art: '$id.webp'" src/data 2>/dev/null; then a="oui"; fi
+  if grep -rqF "art: '$id.webp'" "$DONNEES" 2>/dev/null; then a="oui"; fi
   printf 'registre %s · servi %s · art %s' "$r" "$s" "$a"
 }
 
@@ -386,6 +402,103 @@ if isinstance(d, dict):
 ' 2>/dev/null || true
 }
 
+# ── La graine, quand le `--json` est absent : la base locale de gflow ──────
+#
+# Le CLI `gflow image t2i` rend la graine dans son `--json` — et le **MCP** gflow,
+# non : une image produite par le MCP n'a donc aucune graine **dans la sortie**.
+# Mais la graine est **en base** : gflow note chaque fichier qu'il produit, dans
+# sa base SQLite locale, avec sa graine.
+#
+# Le chemin de cette base n'est pas le même partout : gflow accepte
+# `~/.gflow/gflow.db`, mais l'installation XDG (celle de `uv tool install`, donc
+# celle de cette machine) range la sienne dans
+# `~/.local/share/gflow-cli/gflow.db`. On essaie les deux, et le premier qui
+# répond gagne.
+#
+# La requête (chemin **absolu**) :
+#
+#   select a.seed from local_files lf join assets a on a.id = lf.asset_id
+#   where lf.path = ?
+#
+# Toute panne — base absente, verrouillée, schéma différent, fichier illisible —
+# se traduit par « graine inconnue ». **Jamais** une erreur fatale, **jamais** une
+# graine inventée : une graine fausse au registre est pire qu'une graine absente.
+
+# Les bases à interroger, dans l'ordre. Surchargeable (liste séparée par « : »).
+bases_gflow() {
+  if [[ -n "${GFLOW_ILLUSTRATION_DB:-}" ]]; then
+    local IFS=':'
+    local -a _bases=()
+    read -r -a _bases <<< "$GFLOW_ILLUSTRATION_DB"
+    printf '%s\n' "${_bases[@]}"
+    return
+  fi
+  printf '%s\n' "$HOME/.gflow/gflow.db" "$HOME/.local/share/gflow-cli/gflow.db"
+}
+
+# graine_de_la_base IMAGE : la graine (et le modèle, s'il y est) de CE fichier,
+# lus dans la base locale de gflow. Rend « graine<TAB>modèle », ou rien.
+graine_de_la_base() {
+  local image="$1" db sortie
+  while IFS= read -r db; do
+    [[ -n "$db" && -f "$db" ]] || continue
+    sortie=$(python3 - "$db" "$image" <<'PY' 2>/dev/null || true
+import os
+import sqlite3
+import sys
+
+db, image = sys.argv[1], sys.argv[2]
+
+
+def formes(chemin):
+    """Les écritures possibles du même chemin : brut, absolu, réel."""
+    vues = []
+    for p in (chemin, os.path.abspath(chemin), os.path.realpath(chemin)):
+        if p not in vues:
+            vues.append(p)
+    return vues
+
+
+def lire(con, colonnes, chemin):
+    return con.execute(
+        "select %s from local_files lf join assets a on a.id = lf.asset_id "
+        "where lf.path = ?" % colonnes,
+        (chemin,),
+    ).fetchone()
+
+
+for chemin in formes(image):
+    try:
+        con = sqlite3.connect("file:%s?mode=ro" % db, uri=True)
+    except Exception:
+        continue
+    try:
+        try:
+            ligne = lire(con, "a.seed, a.model", chemin)
+        except Exception:
+            # Schéma plus pauvre : la graine seule, sans le modèle.
+            ligne = lire(con, "a.seed", chemin)
+        if ligne and ligne[0] is not None:
+            modele = ligne[1] if len(ligne) > 1 and ligne[1] else ""
+            print("%s\t%s" % (ligne[0], modele))
+            sys.exit(0)
+    except Exception:
+        pass
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
+PY
+)
+    if [[ -n "$sortie" ]]; then
+      printf '%s' "$sortie"
+      return 0
+    fi
+  done < <(bases_gflow)
+  return 1
+}
+
 # installer SRC ID : convertit en webp, écrit le registre, copie le servi, et
 # **vérifie** que les deux sont identiques à l'octet — la règle du test #120.
 installer() {
@@ -396,6 +509,7 @@ installer() {
   # le message de succès affichait le bon nom. Trouvé à la première génération
   # réelle (le test des deux jeux l'a attrapé).
   local reg="$REGISTRE/$id.webp" serv="$SERVI/$id.webp"
+  mkdir -p "$REGISTRE" "$SERVI"
   python3 - "$src" "$reg" <<'PY'
 import sys
 from PIL import Image
@@ -417,16 +531,29 @@ PY
 # consigner ID MODELE GRAINE DATE : tient le README — remet la graine à jour si
 # la carte est dans « Cartes produites », retire sa ligne si elle est dans « Non
 # produites » (ce n'est plus vrai), et ajoute une ligne au journal vivant.
+#
+# Elle rend aussi **ce qu'elle a réellement touché**, dans `CONSIGNER_TABLE` :
+# « produites », « non », ou « aucun ». Les deux tableaux ne couvrent que les dix
+# cartes de la Planche 1 : une carte hors de ce tableau (les 276 suivantes) n'a
+# **aucun** tableau à corriger, et c'est très bien — le journal est le registre
+# vivant. Dire l'inverse serait mentir.
 consigner() {
-  local id="$1" modele="$2" graine="$3" date="$4" tmp
+  local id="$1" modele="$2" graine="$3" date="$4" tmp rapport
+  CONSIGNER_TABLE="aucun"
+  if [[ ! -f "$README" ]]; then
+    mkdir -p "$(dirname "$README")"
+    printf '# Journal des illustrations\n' > "$README"
+  fi
   tmp=$(mktemp)
-  awk -F'|' -v OFS='|' -v id="$id" -v graine="$graine" -v fichier="$id.webp" '
+  rapport=$(mktemp)
+  awk -F'|' -v OFS='|' -v id="$id" -v graine="$graine" -v fichier="$id.webp" -v rapport="$rapport" '
+    BEGIN { print "aucun" > rapport }
     /^## Cartes produites/ { section = "produites"; print; next }
     /^## Non produites/    { section = "non"; print; next }
     /^## /                 { section = ""; print; next }
     $0 ~ ("^\\| `" id "`") {
-      if (section == "produites") { $5 = " `" graine "` "; $6 = " `" fichier "` "; print; next }
-      if (section == "non")       { next }
+      if (section == "produites") { $5 = " `" graine "` "; $6 = " `" fichier "` "; print; print "produites" > rapport; next }
+      if (section == "non")       { print "non" > rapport; next }
     }
     { print }
   ' "$README" > "$tmp"
@@ -442,13 +569,21 @@ consigner() {
 
   cat "$tmp" > "$README"
   rm -f "$tmp"
+  # Le rapport porte une ligne par décision : la **dernière** est la bonne
+  # (« aucun » d'abord, puis « produites » ou « non » si un tableau a été vu).
+  CONSIGNER_TABLE=$(tail -n1 "$rapport" 2>/dev/null || echo "aucun")
+  rm -f "$rapport"
+  case "$CONSIGNER_TABLE" in
+    produites|non|aucun) ;;
+    *) CONSIGNER_TABLE="aucun" ;;
+  esac
 }
 
 # cabler ID : ajoute « art: '<id>.webp' » en **dernière** propriété de l'objet de
 # la carte — la convention des cartes déjà câblées. Rend le chemin, ou un code.
 cabler() {
   local id="$1" fichier tmp
-  fichier=$(grep -rlF "id: '$id'" src/data --include='*.ts' 2>/dev/null | head -n1)
+  fichier=$(grep -rlF "id: '$id'" "$DONNEES" --include='*.ts' 2>/dev/null | head -n1)
   if [[ -z "$fichier" ]]; then return 2; fi
   tmp=$(mktemp)
   if ! awk -v id="$id" -v art="$id.webp" '
@@ -502,6 +637,19 @@ if [[ "${1:-}" == "--lit-json" ]]; then
   if [[ "${2:-}" == "-" || -z "${2:-}" ]]; then payload=$(cat); else payload=$(cat "$2"); fi
   printf 'modele\t%s\n' "$(modele_du_run "$payload")"
   graines_du_run "$payload" | awk -F'\t' '{ printf "graine\t%s\t%s\n", $1, $2 }'
+  exit 0
+fi
+
+# Troisième point d'entrée non interactif : `--lit-base <image>` cherche la graine
+# d'une image dans la base locale de gflow. C'est le seam du mode `--installe` :
+# une image déjà produite — par le **MCP** gflow, qui ne rend pas la graine — se
+# consigne quand même, si gflow a écrit sa ligne dans sa base.
+if [[ "${1:-}" == "--lit-base" ]]; then
+  if [[ -n "${2:-}" ]] && sortie=$(graine_de_la_base "${2}"); then
+    printf 'graine\t%s\t%s\n' "${sortie%%$'\t'*}" "${sortie#*$'\t'}"
+  else
+    printf 'graine\tinconnue\t\n'
+  fi
   exit 0
 fi
 
@@ -589,6 +737,7 @@ pause "Entrée pour générer"
 stage "Générer avec gflow"
 GRAINES=""
 MODELE_OBS=""
+BASE_LUE=""
 if [[ -n "$INSTALLE" ]]; then
   say "Image fournie — pas de génération : $INSTALLE"
   if [[ ! -f "$INSTALLE" ]]; then
@@ -604,11 +753,26 @@ if [[ -n "$INSTALLE" ]]; then
     MODELE_OBS=$(modele_du_run "$(cat "$PAYLOAD")")
     note "Graine et modèle relus dans $PAYLOAD (génération antérieure)."
   else
-    warn "Aucun payload pour cette carte : la graine sera « inconnue » au registre."
-    note "C'est le cas d'une image produite ailleurs — y compris par le MCP gflow, qui"
-    note "ne rend PAS la graine : gflow ne la donne qu'au moment de la génération, par"
-    note "--json. Une image du MCP ne peut donc pas être consignée reproductible."
-    MODELE_OBS="(non rapporté)"
+    # Pas de payload : la graine est peut-être **en base**. gflow note chaque
+    # fichier qu'il produit, avec sa graine, dans sa base SQLite locale — donc
+    # même une image venue du MCP gflow (qui ne rend pas de graine) est
+    # consignable, si gflow l'a bien écrite dans sa base.
+    BASE_LUE=$(graine_de_la_base "$INSTALLE" || true)
+    if [[ -n "$BASE_LUE" ]]; then
+      GRAINES="$INSTALLE	${BASE_LUE%%	*}"
+      MODELE_OBS="${BASE_LUE#*	}"
+      [[ -n "$MODELE_OBS" ]] || MODELE_OBS="(non rapporté)"
+      note "Graine retrouvée dans la base locale de gflow : ${GRAINES##*	}."
+      note "Source : la base SQLite de gflow (elle enregistre chaque fichier produit),"
+      note "pas le --json — le MCP gflow, lui, ne rend pas la graine."
+    else
+      warn "Graine inconnue : ni payload --json, ni trace de ce fichier dans la base de gflow."
+      note "Bases interrogées : $(bases_gflow | tr '\n' ' ')"
+      note "Une image produite **ailleurs** que par gflow ne peut donc pas être consignée"
+      note "reproductible : c'est une limite de la source, pas du registre. Copie l'image"
+      note "dans le dossier de gflow (ou regénère-la) pour la consigner."
+      MODELE_OBS="(non rapporté)"
+    fi
   fi
 else
 PROMPT="$(socle_ligne) $(sujet_de "$CARTE"), muted $(accent_de "$CARTE") accent."
@@ -746,7 +910,20 @@ if confirm "Écrire ces valeurs dans $README ?"; then
   consigner "$CARTE" "$MODELE_OBS" "$GRAINE" "$(date +%Y-%m-%d)"
   if ligne_journal "$CARTE"; then
     note "Ligne ajoutée au journal vivant."
-    note "Et la graine des tableaux est à jour : « Cartes produites » corrigée, « Non produites » retirée."
+    # Le message dit **ce qui s'est réellement passé**. Les deux tableaux ne
+    # couvrent que les dix cartes de la Planche 1 : pour les 276 autres, aucun
+    # tableau n'est touché — et c'est normal. Affirmer le contraire ferait
+    # croire à une mise à jour qui n'a pas eu lieu.
+    case "$CONSIGNER_TABLE" in
+      produites)
+        note "Le tableau « Cartes produites » a été corrigé : graine et fichier à jour." ;;
+      non)
+        note "La carte a été **retirée** du tableau « Non produites » : elle est produite." ;;
+      *)
+        note "Aucun tableau touché : cette carte n'est dans ni « Cartes produites » ni"
+        note "« Non produites » (ces deux tableaux ne couvrent que la Planche 1)."
+        note "Seule la ligne de journal ci-dessus a été ajoutée." ;;
+    esac
   else
     warn "La ligne n'a pas été écrite — le README n'a pas été touché comme prévu."
   fi
@@ -756,7 +933,7 @@ fi
 
 # ── 6. Câbler et vérifier ─────────────────────────────────────────────────
 stage "Câbler « art: », puis vérifier"
-if grep -rqF "art: '$CARTE.webp'" src/data 2>/dev/null; then
+if grep -rqF "art: '$CARTE.webp'" "$DONNEES" 2>/dev/null; then
   note "Déjà câblé : la carte porte art: '$CARTE.webp'."
 else
   say "La carte ne porte pas encore d'illustration : sans cette ligne, l'image est"
@@ -777,16 +954,34 @@ say "Les gardes qui existent déjà, et ce qu'elles regardent :"
 note "  scripts/illustrations-servies.test.ts  — même liste, mêmes octets (SHA-256)"
 note "  src/data/art.test.ts                   — le fichier cité par une carte existe"
 printf '\n'
-if npm run check >/tmp/illustration-check.log 2>&1; then
-  note "npm run check : exit 0"
+# **Le wizard ne conclut pas sur un échec.** Un `warn` suivi d'un « quand tout est
+# vert, commit » conduit droit à commiter un état cassé : les deux vérifications
+# ci-dessous sont le **dernier** filtre, donc un échec doit arrêter le script,
+# avec le code de sortie qui le dit. (Défaut trouvé en revue le 21/10/2026.)
+ECHEC=0
+if $CHECK_CMD >"$CHECK_LOG" 2>&1; then
+  note "$CHECK_CMD : exit 0"
 else
-  warn "npm run check a échoué — lis /tmp/illustration-check.log."
-  note "Pour revenir en arrière : git checkout -- src/data/"
+  warn "« $CHECK_CMD » a échoué — lis $CHECK_LOG."
+  ECHEC=1
 fi
-if npm test -- scripts/illustrations-servies.test.ts src/data/art.test.ts >/tmp/illustration-test.log 2>&1; then
+if $TEST_CMD >"$TEST_LOG" 2>&1; then
   printf '  %s✓%s les deux tests passent\n' "$GREEN" "$RESET"
 else
-  warn "Un test a échoué — lis /tmp/illustration-test.log : il nomme le fichier coupable."
+  warn "Les tests ont échoué — lis $TEST_LOG : il nomme le fichier coupable."
+  ECHEC=1
+fi
+if (( ECHEC )); then
+  printf '\n'
+  say "Les vérifications ont échoué : ce qui est sur le disque n'est pas prêt à être"
+  say "commité, et le wizard s'arrête ici — il ne t'invite pas à commiter."
+  note "Pour revenir en arrière :"
+  note "  git checkout -- $REGISTRE $SERVI $DONNEES"
+  note "  git status --porcelain $REGISTRE $SERVI $DONNEES"
+  note "  (une image neuve n'est pas suivie par git : supprime-la à la main si le"
+  note "  fichier n'existait pas avant — « git status » la montre.)"
+  note "Logs : $CHECK_LOG et $TEST_LOG"
+  return 1
 fi
 printf '\n'
 say "Quand tout est vert, commit les trois choses ENSEMBLE : l'image du registre, sa"
@@ -798,4 +993,9 @@ pause "Entrée pour terminer"
 finish
 }
 
-run_wizard "$@"; exit
+# Le code de sortie EST la réponse du wizard : 0 si tout est vert, 1 si une
+# vérification a échoué. `set +e` autour de l'appel pour que `exit $?` rende ce
+# code-là, et non le dernier `warn` affiché.
+set +e
+run_wizard "$@"
+exit $?
