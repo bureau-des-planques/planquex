@@ -57,8 +57,15 @@
 > dossiers d'audit postérieurs au 20/10, pas d'un renommage à refaire.
 >
 > **Le §8 reste le plan de référence** : les étapes 1 à 4 sont derrière, 5 est faite **sauf la
-> suppression du domaine**, 6 reste le sujet de #100 (libellé Supabase, Brevo, URL d'Auth), 7
-> attend #97, 8 est la vérification finale.
+> suppression du domaine** (faite depuis : alias `grevomon.vercel.app` retiré, mesuré `404`),
+> 6 reste le sujet de #100 (libellé Supabase, Brevo, URL d'Auth), 7 attend #97, 8 est la
+> vérification finale.
+>
+> **Cible de domaine (D-055)** : le jeu doit être servi sur **`planquex.4k7.org`** (zone Cloudflare
+> `4k7.org`). La bascule est **bloquée** : l'autorisation OAuth du MCP Cloudflare couvre le compte
+> mais **pas la zone** (`get_zones` et `get_zones_dns_records` refusés, `403` sur `get_user_tokens`),
+> donc aucun enregistrement n'a été lu ni ajouté. Elle touche l'**origine**, donc le stockage local
+> des testeurs : `docs/ALPHA-TESTEURS.md` doit leur demander d'**exporter leur sauvegarde** avant.
 
 ## 0. Résumé pour décider
 
