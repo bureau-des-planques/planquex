@@ -229,7 +229,13 @@ PROMPTS="design/illustrations/PROMPTS-flow.md"
 REGISTRE="design/illustrations"
 SERVI="public/design/illustrations"
 README="$REGISTRE/README.md"
-SCRATCH=".scratch/gflow"
+# Où tombent les variantes. Surchargeable par l'environnement **exprès** : sans
+# ça, scripts/illustration-vague.test.ts lisait le vrai `.scratch/` du dépôt, et
+# passait tant que personne n'avait généré — puis cassait dès la première vraie
+# génération, parce qu'il trouvait quatre variantes réelles et attendait un choix
+# qu'il ne pouvait pas donner. Un test qui dépend de l'état du développeur ne
+# garde rien.
+SCRATCH="${GFLOW_ILLUSTRATION_SCRATCH:-.scratch/gflow}"
 
 # ── outils du tuyau ───────────────────────────────────────────────────────
 
@@ -320,32 +326,76 @@ etat_de() {
   printf 'registre %s · servi %s · art %s' "$r" "$s" "$a"
 }
 
-# champ JSON DEFAUT : lit un champ de l'objet rendu par `gflow … --json`.
-# Le CLI peut rendre un objet ou une liste (une entrée par image) ; on prend la
-# première. Toute panne de lecture rend le défaut — jamais une exception, parce
-# qu'un wizard ne doit pas mourir sur une réponse inattendue.
-champ_json() {
-  local json="$1" champ="$2" defaut="$3"
-  printf '%s' "$json" | python3 -c '
+# ── Lecture du `--json` de gflow ──────────────────────────────────────────
+#
+# La forme **réelle** (capturée le 21/10/2026, `.scratch/gflow/essais/`) n'est
+# pas un `GeneratedImage` à plat, contrairement à ce que laissait croire la doc :
+#
+#   { "status": "ok", "command": "image t2i", "model": "NARWHAL", "count": 1,
+#     "images": [ { "seed": 651010515, "local_path": "…/x_1.jpg",
+#                   "model_name_type": null, … }, … ] }
+#
+# Trois conséquences, toutes vérifiées sur une vraie génération :
+#   - la graine est dans `images[]`, **pas** au premier niveau ;
+#   - `model_name_type` est `null` sur `flow.google.com` — le modèle est dans le
+#     `model` du **haut** (`NARWHAL`) ;
+#   - avec `-n 4`, `images[]` porte **quatre graines distinctes**, et l'ordre des
+#     fichiers sur disque (noms d'UUID) **ne suit pas** l'ordre du tableau. Relier
+#     la variante gardée à sa graine se fait donc par `local_path`, jamais par
+#     l'indice : un registre qui se trompe de graine est un registre qui ment.
+
+# graines_du_run JSON : une ligne « <chemin>\t<graine> » par image produite.
+# Toute panne de lecture rend une sortie vide — un wizard ne meurt pas sur une
+# réponse inattendue.
+graines_du_run() {
+  printf '%s' "$1" | python3 -c '
 import json, sys
-champ, defaut = sys.argv[1], sys.argv[2]
 try:
     d = json.load(sys.stdin)
 except Exception:
-    print(defaut); raise SystemExit
-if isinstance(d, list):
-    d = d[0] if d else {}
-if not isinstance(d, dict):
-    print(defaut); raise SystemExit
-v = d.get(champ)
-print(defaut if v is None or v == "" else v)
-' "$champ" "$defaut" 2>/dev/null || printf '%s' "$defaut"
+    raise SystemExit
+imgs = d.get("images") if isinstance(d, dict) else d
+if isinstance(imgs, dict):
+    imgs = [imgs]
+for i in imgs or []:
+    if not isinstance(i, dict):
+        continue
+    g = i.get("seed")
+    print("%s\t%s" % (i.get("local_path") or "", "inconnue" if g is None else g))
+' 2>/dev/null || true
+}
+
+# graine_de CARTE_GRAINES CHEMIN : la graine de **ce** fichier, par son nom.
+graine_de() {
+  local carte="$1" chemin="$2" base
+  base="${chemin##*/}"
+  printf '%s\n' "$carte" | awk -F'\t' -v b="$base" '
+    { n = $1; sub(/^.*\//, "", n); if (n == b && $2 != "") { print $2; exit } }'
+}
+
+# modele_du_run JSON : le modèle tel que gflow l'a rapporté (jamais deviné).
+modele_du_run() {
+  printf '%s' "$1" | python3 -c '
+import json, sys
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    raise SystemExit
+if isinstance(d, dict):
+    print(d.get("model") or "")
+' 2>/dev/null || true
 }
 
 # installer SRC ID : convertit en webp, écrit le registre, copie le servi, et
 # **vérifie** que les deux sont identiques à l'octet — la règle du test #120.
 installer() {
-  local src="$1" id="$2" reg="$REGISTRE/$id.webp" serv="$SERVI/$id.webp"
+  local src="$1" id="$2"
+  # Deux `local` séparés, et pas un seul : bash évalue **toutes** les expansions
+  # d'un `local` avant d'exécuter la moindre affectation, donc `reg="$REGISTRE/$id.webp"`
+  # sur la même ligne lit un `id` encore vide — le fichier s'appelait `.webp`, et
+  # le message de succès affichait le bon nom. Trouvé à la première génération
+  # réelle (le test des deux jeux l'a attrapé).
+  local reg="$REGISTRE/$id.webp" serv="$SERVI/$id.webp"
   python3 - "$src" "$reg" <<'PY'
 import sys
 from PIL import Image
@@ -442,6 +492,34 @@ if [[ "${1:-}" == "--modele" ]]; then
   exit 2
 fi
 
+# Second point d'entrée non interactif : `--lit-json <fichier|->` relit un
+# `--json` de gflow et rend ce que le wizard en tire — le modèle et la table
+# « chemin → graine ». C'est le **rejeu d'une trace capturée** : la forme réelle
+# du payload a déjà déjoué une supposition (elle est imbriquée sous `images[]`,
+# là où la doc laissait croire à plat), et une graine fausse au registre est pire
+# qu'une graine absente.
+if [[ "${1:-}" == "--lit-json" ]]; then
+  if [[ "${2:-}" == "-" || -z "${2:-}" ]]; then payload=$(cat); else payload=$(cat "$2"); fi
+  printf 'modele\t%s\n' "$(modele_du_run "$payload")"
+  graines_du_run "$payload" | awk -F'\t' '{ printf "graine\t%s\t%s\n", $1, $2 }'
+  exit 0
+fi
+
+# Arguments de la session : l'id de la carte, et `--installe <image>` pour
+# ranger une image **déjà produite** au lieu d'en générer une. C'est ce qui rend
+# la curation praticable (D-007 : IA **+ curation**) : on génère quatre variantes,
+# on les regarde, on n'installe que la meilleure. Sans ça, il faudrait choisir
+# dans la même session que la génération — donc à l'aveugle.
+CARTE=""
+INSTALLE=""
+while (( $# )); do
+  case "$1" in
+    --installe) INSTALLE="${2:-}"; shift 2 ;;
+    --) shift; break ;;
+    *) CARTE="$1"; shift ;;
+  esac
+done
+
 banner "Produire une illustration par gflow-cli (#97)"
 
 # ── 1. Préconditions ──────────────────────────────────────────────────────
@@ -491,7 +569,6 @@ printf '\n'
 note "registre = l'image existe dans $REGISTRE/ ; servi = aussi dans $SERVI/."
 note "Les deux doivent dire oui : c'est ce que garde illustrations-servies.test.ts."
 
-CARTE="${1:-}"
 if [[ -z "$CARTE" ]]; then
   demander CARTE "id de la carte à produire :"
 fi
@@ -510,6 +587,30 @@ pause "Entrée pour générer"
 
 # ── 3. Générer ────────────────────────────────────────────────────────────
 stage "Générer avec gflow"
+GRAINES=""
+MODELE_OBS=""
+if [[ -n "$INSTALLE" ]]; then
+  say "Image fournie — pas de génération : $INSTALLE"
+  if [[ ! -f "$INSTALLE" ]]; then
+    warn "Fichier introuvable : $INSTALLE"
+    pause "Entrée pour abandonner"
+    finish
+    return
+  fi
+  FICHIERS=("$INSTALLE")
+  PAYLOAD="$SCRATCH/$CARTE/payload.json"
+  if [[ -f "$PAYLOAD" ]]; then
+    GRAINES=$(graines_du_run "$(cat "$PAYLOAD")")
+    MODELE_OBS=$(modele_du_run "$(cat "$PAYLOAD")")
+    note "Graine et modèle relus dans $PAYLOAD (génération antérieure)."
+  else
+    warn "Aucun payload pour cette carte : la graine sera « inconnue » au registre."
+    note "C'est le cas d'une image produite ailleurs — y compris par le MCP gflow, qui"
+    note "ne rend PAS la graine : gflow ne la donne qu'au moment de la génération, par"
+    note "--json. Une image du MCP ne peut donc pas être consignée reproductible."
+    MODELE_OBS="(non rapporté)"
+  fi
+else
 PROMPT="$(socle_ligne) $(sujet_de "$CARTE"), muted $(accent_de "$CARTE") accent."
 say "Prompt envoyé (socle §6.1 + sujet), aplati sur une seule ligne :"
 printf '\n%s\n\n' "$PROMPT" | fold -s -w 96 | sed 's/^/    /'
@@ -551,6 +652,9 @@ JSON=""
 if JSON=$(gflow image t2i "$PROMPT" --model "$ALIAS" --aspect 1:1 -n "$NB" \
             --out "$SCRATCH/$CARTE" --json 2>/tmp/gflow-illustration.err); then
   printf '  %s✓%s génération terminée\n' "$GREEN" "$RESET"
+  mkdir -p "$SCRATCH/$CARTE"
+  printf '%s' "$JSON" > "$SCRATCH/$CARTE/payload.json"
+  note "Payload conservé : $SCRATCH/$CARTE/payload.json (graine comprise)."
 else
   CODE=$?
   case "$CODE" in
@@ -574,18 +678,20 @@ else
   return
 fi
 
-GRAINE=$(champ_json "$JSON" seed "inconnue")
-MODELE_OBS=$(champ_json "$JSON" model_name_type "")
-if [[ -z "$MODELE_OBS" || "$MODELE_OBS" == "inconnue" ]]; then
+GRAINES=$(graines_du_run "$JSON")
+MODELE_OBS=$(modele_du_run "$JSON")
+if [[ -z "$MODELE_OBS" ]]; then
   MODELE_OBS="$MODELE"
-  note "model_name_type est nul — normal sur flow.google.com : le compte est servi par"
-  note "cet hôte, dont la réponse ne porte pas de champ modèle. On consigne l'alias demandé."
+  note "gflow n'a pas rapporté de modèle : on consigne « $MODELE », la valeur demandée."
+fi
+if [[ -z "$GRAINES" ]]; then
+  warn "gflow n'a rapporté aucune graine — le registre ne pourra pas dire comment refaire l'image."
+  note "La lecture du --json attend un objet portant « images[] » ; si la forme a changé, dis-le."
 fi
 printf '\n'
-note "Graine  : $GRAINE"
-note "Modèle  : $MODELE_OBS"
+say "Modèle : $MODELE_OBS"
 printf '\n'
-say "Fichiers produits :"
+say "Fichiers produits, chacun avec SA graine :"
 mapfile -t FICHIERS < <(find "$SCRATCH/$CARTE" -type f \( -name '*.png' -o -name '*.webp' -o -name '*.jpg' \) | sort)
 if (( ${#FICHIERS[@]} == 0 )); then
   warn "Aucun fichier trouvé dans $SCRATCH/$CARTE — rien à ranger."
@@ -594,13 +700,19 @@ if (( ${#FICHIERS[@]} == 0 )); then
   return
 fi
 for i in "${!FICHIERS[@]}"; do
-  printf '    %d) %s\n' "$((i + 1))" "$(basename "${FICHIERS[$i]}")"
+  printf '    %d) %-44s graine %s\n' \
+    "$((i + 1))" "$(basename "${FICHIERS[$i]}")" "$(graine_de "$GRAINES" "${FICHIERS[$i]}")"
 done
 pause "Entrée pour choisir laquelle garder"
 
+fi
+
 # ── 4. Choisir et ranger ──────────────────────────────────────────────────
 stage "Choisir, et ranger les DEUX jeux"
-if (( ${#FICHIERS[@]} == 1 )); then
+if [[ -n "$INSTALLE" ]]; then
+  CHOIX=1
+  note "Variante fournie : rien à choisir."
+elif (( ${#FICHIERS[@]} == 1 )); then
   CHOIX=1
   note "Une seule variante : elle est retenue."
 else
@@ -609,8 +721,11 @@ else
   if (( CHOIX < 1 || CHOIX > ${#FICHIERS[@]} )); then CHOIX=1; fi
 fi
 RETENU="${FICHIERS[$((CHOIX - 1))]}"
+GRAINE=$(graine_de "$GRAINES" "$RETENU")
+if [[ -z "$GRAINE" ]]; then GRAINE="inconnue"; fi
 say ""
 say "Retenue : $(basename "$RETENU")"
+note "Sa graine : $GRAINE"
 note "Elle va dans deux dossiers, sinon l'écran ne change pas :"
 note "  $REGISTRE/$CARTE.webp   ← le registre (versionné)"
 note "  $SERVI/$CARTE.webp   ← ce que l'application sert"
