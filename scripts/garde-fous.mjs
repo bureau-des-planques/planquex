@@ -154,8 +154,11 @@ export const MUTATIONS = [
     ticket: 97,
     titre: 'l’image rangée ne porte plus le nom de la carte',
     fichier: 'scripts/illustration-vague.sh',
-    motif: '  local reg="$REGISTRE/$id.webp" serv="$SERVI/$id.webp"',
-    remplacement: '  local reg="$REGISTRE/.webp" serv="$SERVI/.webp"',
+    // Réancré le 21/10/2026 (D-045) : le motif vivait sur la ligne du `local` groupé, que
+    // la source unique a supprimée (`serv` a disparu). La mutation garde la même règle —
+    // le fichier rangé doit porter l'id de la carte — sur la ligne qui la porte aujourd'hui.
+    motif: '  local reg="$REGISTRE/$id.webp"',
+    remplacement: '  local reg="$REGISTRE/.webp"',
     tests: ['scripts/illustration-vague.test.ts'],
     garde:
       'le nom venait d’un `local` groupé, dont bash évalue toutes les expansions avant la moindre affectation : l’image s’appelait `.webp` et le message de succès affichait le bon nom (observé à la première génération réelle)'

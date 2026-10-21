@@ -40,9 +40,11 @@ cartes de base** : `node scripts/status.mjs` en compte **225** au total, dont 10
 Pour ces 215, **le sujet et l'accent de chaque carte n'existent nulle part** : `PROMPTS-flow.md`
 ne décrit que la Planche 1, ses 10 cartes signature. C'est l'obstacle ouvert de #97 — le schéma
 proposé (une table de sujets dans `design/illustrations/`, l'accent résolu **par faction** et non
-par carte) attend une décision, et deux points doivent être tranchés **avant la première image** :
-où vit le sujet, et si l'on garde les deux copies (~100 Mo pour 225 images) ou la source unique
-déjà consignée au §« Registre et fichiers servis ».
+par carte) attend une décision, et deux points devaient être tranchés **avant la première image** :
+où vit le sujet, et si l'on garde deux copies (~100 Mo pour 225 images) ou une source unique.
+**La seconde est tranchée** — source unique, D-045, exécutée le 21/10/2026 (voir le §« Une seule
+source » ci-dessus). Reste la table des sujets, qui est le plan de travail de `#121`
+(`docs/SPEC-ILLUSTRATIONS.md`).
 
 ## À curer
 
@@ -59,23 +61,22 @@ avec le socle corrigé (`DESIGN.md` §6.1) :
 - **Style** : le rendu reste **illustré-peint**, pas « semi-réaliste » au sens strict ; à
   resserrer avec des prompts plus contraints.
 - Les **10** images sont **branchées** : les cartes portent `art: '<id>.webp'` (`src/data/*.ts`)
-  et `CardView` les sert depuis `public/design/illustrations/`.
+  et `CardView` les sert **depuis ce registre**, par `src/art.ts` (Vite, D-045).
 
-## Registre et fichiers servis — deux copies à garder alignées (#120)
+## Une seule source — ce dossier, et Vite s'occupe du reste (D-045, exécutée le 21/10/2026)
 
-`CardView` construit une **chaîne d'URL** (`url('/design/illustrations/…')`), donc Vite ne sert
-que `public/` : ce dossier-ci est le **registre**, l'application lit sa **copie** dans
-`public/design/illustrations/`. Une regénération faite ici (c'est ici qu'elle doit se faire) ne
-change rien à l'écran tant que le fichier n'est pas copié.
+**Ce dossier est la seule copie.** `src/art.ts` les embarque dans le graphe de modules
+(`import.meta.glob('../design/illustrations/*.webp', { eager: true, query: '?url' })`) : Vite
+calcule une empreinte, l'écrit dans `dist/assets/` et le service worker les **précache**
+(`vite.config.ts`). Une regénération faite ici **change l'écran au build suivant**, sans étape
+de copie.
 
-`scripts/illustrations-servies.test.ts` compare les deux copies : **même liste** de fichiers dans
-les deux sens, et **même contenu** (SHA-256). Il nomme le fichier coupable.
-
-**Alternative consignée, non implémentée — c'est une décision** : servir les images par
-`import.meta.glob('../design/illustrations/*.webp', { eager: true, query: '?url' })`. Une seule
-source, empreinte calculée par Vite, et **erreur au build** sur un `art` inconnu. Coût : le champ
-`art` cesse d'être la chaîne nue `art: 'x.webp'` (il devient une URL de module, donc
-`src/data/art.test.ts` et les conventions de #96 changent) ; le registre sort de `public/`.
+Ce qui a disparu avec cette exécution : la copie `public/design/illustrations/`, et
+`scripts/illustrations-servies.test.ts` (#120) qui comparait les deux. Son rôle est repris par
+`src/data/art.test.ts` : fichier présent, nom = id de la carte de base, aucune orpheline, et
+**résolution par le glob de `src/art.ts`** — une image que Vite ne voit pas fait échouer le test
+au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier**
+(`art: 'x.webp'`) : c'est une donnée, la résolution en URL vit dans `src/art.ts`.
 
 ## Journal des productions
 

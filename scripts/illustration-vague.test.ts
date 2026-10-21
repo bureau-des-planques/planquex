@@ -59,7 +59,6 @@ let bac = '';
 let journal = '';
 let scratch = '';
 let registre = '';
-let servi = '';
 let donnees = '';
 let readme = '';
 
@@ -185,11 +184,9 @@ beforeEach(() => {
   journal = join(bac, 'journal.txt');
   scratch = join(bac, 'scratch');
   registre = join(bac, 'registre');
-  servi = join(bac, 'servi');
   donnees = join(bac, 'donnees');
   readme = join(registre, 'README.md');
   mkdirSync(registre, { recursive: true });
-  mkdirSync(servi, { recursive: true });
   mkdirSync(donnees, { recursive: true });
   writeFileSync(readme, README_BAC);
   writeFileSync(join(donnees, 'direction.ts'), DONNEES_BAC);
@@ -202,7 +199,7 @@ afterEach(() => {
 
 /**
  * Lance le wizard avec le faux gflow en tête de PATH, **dans le bac** : registre,
- * fichiers servis, données et README y sont — jamais dans le dépôt. Les deux
+ * données et README y sont — jamais dans le dépôt. Une seule copie (D-045). Les deux
  * vérifications du dernier stage sont neutralisées (`true`) : le wizard les
  * déclenche ici, et y lancer `npm test` serait `vitest` dans `vitest`.
  */
@@ -217,7 +214,6 @@ function wizard(args: string[] = [], stdin = '', extra: Record<string, string> =
       GFLOW_JOURNAL: journal,
       GFLOW_ILLUSTRATION_SCRATCH: scratch,
       GFLOW_ILLUSTRATION_REGISTRE: registre,
-      GFLOW_ILLUSTRATION_SERVI: servi,
       GFLOW_ILLUSTRATION_README: readme,
       GFLOW_ILLUSTRATION_DONNEES: donnees,
       GFLOW_ILLUSTRATION_CHECK_CMD: 'true',
@@ -533,7 +529,7 @@ describe('Wizard d’illustration — rejeu du payload réel (#97)', () => {
  * donc **le disque**, pas la sortie.
  */
 describe('Wizard d’illustration — de bout en bout, sur disque (#97)', () => {
-  it('le contrôle mord : l’image atterrit dans les DEUX copies, identique octet pour octet', () => {
+  it('le contrôle mord : l’image atterrit au registre, et une seule fois (D-045)', () => {
     // Le bug historique : `local src="$1" id="$2" reg="$REGISTRE/$id.webp"` sur
     // une ligne — bash évalue toutes les expansions avant la moindre
     // affectation, donc le fichier s'appelait `.webp` et le message de succès
@@ -541,13 +537,10 @@ describe('Wizard d’illustration — de bout en bout, sur disque (#97)', () => 
     const r = wizard([CARTE], stdinComplet());
     expect(r.status, r.stdout + r.stderr).toBe(0);
     const auRegistre = join(registre, `${CARTE}.webp`);
-    const auServi = join(servi, `${CARTE}.webp`);
     expect(existsSync(auRegistre), `pas d'image dans le registre : ${auRegistre}`).toBe(true);
-    expect(existsSync(auServi), `pas d'image dans le servi : ${auServi}`).toBe(true);
-    expect(
-      readFileSync(auRegistre).equals(readFileSync(auServi)),
-      'les deux copies doivent porter le même fichier, octet pour octet (règle #120)'
-    ).toBe(true);
+    // **Une seule copie** (D-045) : le wizard ne doit plus rien écrire dans un `servi`,
+    // sinon la duplication que la décision supprime revient par la porte de service.
+    expect(existsSync(join(bac, 'servi')), 'le wizard a recréé une copie servie (D-045)').toBe(false);
     // et c'est bien un webp : la conversion a eu lieu
     expect(readFileSync(auRegistre).subarray(8, 12).toString('latin1')).toBe('WEBP');
   }, DELAI);

@@ -4,12 +4,11 @@
 # consigner — tickets #97 / #95. Décisions de référence : D-007 (IA + curation),
 # D-028 (direction artistique).
 #
-# Pourquoi ce wizard existe : les illustrations vivent en **deux copies**.
-#   design/illustrations/        le registre (versionné, README + prompts)
-#   public/design/illustrations/ ce que Vite sert réellement
-# Une regénération faite au registre ne change **rien** à l'écran tant que le
-# fichier n'est pas copié : le build passe, les captures passent, et rien ne le
-# dit. C'est la seule règle que garde scripts/illustrations-servies.test.ts
+# Les illustrations vivent en **une seule copie** : design/illustrations/
+# (registre versionné, README + prompts). Depuis D-045, Vite les embarque dans le
+# graphe de modules (`src/art.ts`, `import.meta.glob`) et les hache dans
+# `dist/assets/` : il n'y a plus de copie à recopier dans `public/`, donc plus
+# d'écart possible entre ce qu'on génère et ce que l'écran sert.
 # (#120). Le wizard range les deux copies, puis lance le test qui le vérifie.
 #
 # La production passe par **gflow-cli** (https://github.com/ffroliva/gflow-cli),
@@ -232,7 +231,6 @@ cd "$(dirname "$0")/.." 2>/dev/null || true
 # à la boucle (#97 : le nom du fichier rangé était vide).
 PROMPTS="${GFLOW_ILLUSTRATION_PROMPTS:-design/illustrations/PROMPTS-flow.md}"
 REGISTRE="${GFLOW_ILLUSTRATION_REGISTRE:-design/illustrations}"
-SERVI="${GFLOW_ILLUSTRATION_SERVI:-public/design/illustrations}"
 README="${GFLOW_ILLUSTRATION_README:-$REGISTRE/README.md}"
 DONNEES="${GFLOW_ILLUSTRATION_DONNEES:-src/data}"
 # Les deux vérifications du dernier stage. Surchargeables : la suite de tests
@@ -335,11 +333,10 @@ demander() {
 
 # etat_de ID : l'image est-elle au registre, servie, et la carte câblée ?
 etat_de() {
-  local id="$1" r="non" s="non" a="non"
+  local id="$1" r="non" a="non"
   if [[ -f "$REGISTRE/$id.webp" ]]; then r="oui"; fi
-  if [[ -f "$SERVI/$id.webp" ]]; then s="oui"; fi
   if grep -rqF "art: '$id.webp'" "$DONNEES" 2>/dev/null; then a="oui"; fi
-  printf 'registre %s · servi %s · art %s' "$r" "$s" "$a"
+  printf 'registre %s · art %s' "$r" "$a"
 }
 
 # ── Lecture du `--json` de gflow ──────────────────────────────────────────
@@ -508,8 +505,8 @@ installer() {
   # sur la même ligne lit un `id` encore vide — le fichier s'appelait `.webp`, et
   # le message de succès affichait le bon nom. Trouvé à la première génération
   # réelle (le test des deux copies l'a attrapé).
-  local reg="$REGISTRE/$id.webp" serv="$SERVI/$id.webp"
-  mkdir -p "$REGISTRE" "$SERVI"
+  local reg="$REGISTRE/$id.webp"
+  mkdir -p "$REGISTRE"
   python3 - "$src" "$reg" <<'PY'
 import sys
 from PIL import Image
@@ -519,12 +516,10 @@ if im.mode not in ("RGB", "RGBA"):
     im = im.convert("RGBA")
 im.save(dst, "WEBP", quality=90, method=6)
 PY
-  cp "$reg" "$serv"
-  if cmp -s "$reg" "$serv"; then
-    printf '  %s✓%s %s — %s o, empreinte %s\n' "$GREEN" "$RESET" "$id.webp" \
-      "$(stat -c%s "$reg")" "$(sha256sum "$reg" | cut -c1-12)"
-    return 0
-  fi
+  # Une seule copie (D-045) : plus de `cp` vers un dossier servi, donc plus rien à comparer.
+  printf '  %s✓%s %s — %s o, empreinte %s\n' "$GREEN" "$RESET" "$id.webp" \
+    "$(stat -c%s "$reg")" "$(sha256sum "$reg" | cut -c1-12)"
+  return 0
   return 1
 }
 
@@ -734,8 +729,8 @@ while IFS=$'\t' read -r id sujet accent; do
   printf '    %-34s %s\n' "$id" "$(etat_de "$id")"
 done < <(cartes)
 printf '\n'
-note "registre = l'image existe dans $REGISTRE/ ; servi = aussi dans $SERVI/."
-note "Les deux doivent dire oui : c'est ce que garde illustrations-servies.test.ts."
+note "registre = l'image existe dans $REGISTRE/ ; art = une carte la référence."
+note "Les deux doivent dire oui : c'est ce que gardent src/data/art.test.ts et le build."
 
 if [[ -z "$CARTE" ]]; then
   demander CARTE "id de la carte à produire :"
@@ -910,14 +905,13 @@ if [[ -z "$GRAINE" ]]; then GRAINE="inconnue"; fi
 say ""
 say "Retenue : $(basename "$RETENU")"
 note "Sa graine : $GRAINE"
-note "Elle va dans deux dossiers, sinon l'écran ne change pas :"
-note "  $REGISTRE/$CARTE.webp   ← le registre (versionné)"
-note "  $SERVI/$CARTE.webp   ← ce que l'application sert"
+note "Elle va au registre, et Vite s'occupe du reste (D-045) :"
+note "  $REGISTRE/$CARTE.webp   ← le registre (versionné), seule source"
 printf '\n'
 if installer "$RETENU" "$CARTE"; then
-  note "Les deux copies portent le même fichier, octet pour octet."
+  note "Image rangée au registre — elle part au build par src/art.ts (D-045)."
 else
-  warn "Les deux copies diffèrent — c'est exactement ce que le test refuse."
+  warn "Le fichier rangé ne correspond pas à ce qui a été produit : le wizard s'arrête."
 fi
 note "Le reste des variantes reste dans $SCRATCH/$CARTE/ : gitignoré, tu peux y revenir."
 
@@ -996,8 +990,8 @@ if (( ECHEC )); then
   say "Les vérifications ont échoué : ce qui est sur le disque n'est pas prêt à être"
   say "commité, et le wizard s'arrête ici — il ne t'invite pas à commiter."
   note "Pour revenir en arrière :"
-  note "  git checkout -- $REGISTRE $SERVI $DONNEES"
-  note "  git status --porcelain $REGISTRE $SERVI $DONNEES"
+  note "  git checkout -- $REGISTRE $DONNEES"
+  note "  git status --porcelain $REGISTRE $DONNEES"
   note "  (une image neuve n'est pas suivie par git : supprime-la à la main si le"
   note "  fichier n'existait pas avant — « git status » la montre.)"
   note "Logs : $CHECK_LOG et $TEST_LOG"

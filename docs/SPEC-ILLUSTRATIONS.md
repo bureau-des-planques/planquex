@@ -42,7 +42,7 @@ cible dépassée, pas une erreur de comptage — mais elle mérite d'être réé
 | **Q11** | **Pilote sur une faction** avant les 214 | ~30 images pour juger le style, contre 214 à refaire |
 | **Q12** | Les viviers dorment au registre ; **aucun écran** n'est ajouté | Les brancher est un travail d'UI qui mérite son ticket |
 | **Q13** | Un vivier prend la couleur de sa faction **éponyme** | La seule règle qui ne demande aucune table nouvelle, et elle est déjà vraie pour l'Atelier |
-| **Q14** | `illustrations-servies.test.ts` (#120) **devient la garde de la table** | On ne supprime pas une garde sans la remplacer — et celle-là est déjà écrite et comprise |
+| **Q14** | `illustrations-servies.test.ts` (#120) **devient la garde de la table** — **exécuté autrement le 21/10/2026** : le test a disparu avec la copie servie (D-045), et son rôle est tenu par **`src/data/art.test.ts`** (fichier présent, convention de nom, aucune orpheline, résolution par le glob) | On ne supprime pas une garde sans la remplacer : celle-là est déjà écrite et comprise, et la garde de la table des sujets viendra **en plus**, pas à la place |
 | **Q15** | Quatre accents changent : DIRECTION *slate blue*, SYNDICAT *brick red*, INTERIM *periwinkle blue*, SUPPORT *teal* | Conséquence de Q3 |
 
 ## 3. Les trois tables
@@ -70,8 +70,10 @@ Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
 
 ## 5. L'ordre du travail
 
-1. **Le refactor source unique** (D-045) — il **doit** passer avant la première image : changer la
-   forme du champ `art` se paie une fois, pas 225 fois.
+1. **Le refactor source unique** (D-045) — ~~il doit passer avant la première image~~ **fait le
+   21/10/2026** : `src/art.ts`, copie `public/design/illustrations/` supprimée, test #120 remplacé
+   par `src/data/art.test.ts`, et les `webp` entrent dans le précache. Il fallait qu'il passe avant
+   la première image : changer la forme du champ `art` se paie une fois, pas 225 fois.
 2. **Le renommage des planches** — Portrait / Objet / Lieu, dans `DESIGN.md` §6,
    `PROMPTS-flow.md` et le registre.
 3. **La table des sujets** — les 10 signature migrés, puis les 105 lignes. Passe LLM, puis
@@ -88,7 +90,8 @@ Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
   `accent_de()` ne connaissent que la Planche 1.
 - **`support-responsable-support` est à refaire** : installée en argent-blanc, elle devient
   turquoise (conséquence assumée de Q3 + Q15).
-- **`scripts/illustrations-servies.test.ts`** change d'objet (Q14).
+- **`scripts/illustrations-servies.test.ts`** a disparu ; son rôle est tenu par
+  `src/data/art.test.ts` (Q14) — et la garde de la table des sujets s'y ajoutera.
 
 ## 7. Déjà vérifié — à ne pas refaire
 

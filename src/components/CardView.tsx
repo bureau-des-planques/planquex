@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { FACTION_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card, Rarity } from '@/data/types';
+import { artUrl } from '@/art';
 import { CafePips } from './CafePips';
 
 interface Props {
@@ -83,8 +84,11 @@ export function CardView({ card, onClick, compact, selected }: Props) {
           // illustration perdaient donc leur fond de faction.
           // Cadrage **haut** (50% 28%) : les illustrations sont des portraits, un cadrage
           // centré leur coupe la tête dès que la fenêtre est plus large que haute.
-          background: card.art
-            ? `url('/design/illustrations/${card.art}') 50% 28% / cover no-repeat`
+          //
+          // L'URL vient de `@/art` (D-045) : Vite la résout et la hache. Il n'y a plus de
+          // copie servie dans `public/` — une image du registre est servie, ou rien.
+          background: artUrl(card.art)
+            ? `url('${artUrl(card.art)}') 50% 28% / cover no-repeat`
             : card.palette
         }}
       >
