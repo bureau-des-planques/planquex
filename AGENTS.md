@@ -209,7 +209,7 @@ grevomon-tcg/
 │   └── vite-env.d.ts types Vite (imports CSS)
 ├── public/           favicon.svg, icon-192.svg, icon-512.svg (SVG, dessinés à la main)
 ├── components.json   config shadcn/ui (alias `@/`, CSS `src/styles.css` ; D-035)
-├── scripts/          status.mjs, simulate.mjs, capturer.mjs, etapes-infra-tcg.sh (+ leurs tests)
+├── scripts/          status.mjs, simulate.mjs, capturer.mjs, etapes-infra-tcg.sh, finir-renommage-planquex.sh (+ leurs tests)
 └── docs/
 ```
 
@@ -251,6 +251,7 @@ cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
 | `npm run garde-fous` | **Mute** un invariant critique et **exige que la suite échoue** — un test qui ne peut pas échouer ne garde rien (#112). Sort 1 si une mutation passe inaperçue, ou si un motif a disparu du code (entrée à réancrer). `--verifie` fait le contrôle statique de la table, sans rien muter | **OK**, exit 0 (21/10/2026) ; `scripts/garde-fous.mjs` et sa table commentée |
 | `npm run pesage` | **Le niveau 2 bat-il le niveau 1 ?** Graines d'entraînement et de **contrôle** (disjointes, #111), **seuil décidé d'avance** (≥ 55 % des décidées *et* ≥ 1,15×), miroir apparié, intervalle de confiance à 95 %. Usage : `npm run pesage -- --games 100 --json` | **OK**, exit 0 (21/10/2026) ; reproduit les chiffres de #111 à l'identique — `scripts/pesage.mjs` |
 | `npm run isolation` | **L'agent a-t-il écrit dans SON worktree ?** Contrôle exécutable : le dépôt principal doit être **propre**, aucun worktree en **HEAD détaché** (un commit y serait perdu pour toute branche), et `--attendu <nom>` exige que **seul** ce worktree porte du travail. À lancer **après chaque agent** | **OK**, exit 1 **détecte la fuite** (21/10/2026 : démonstration sur une fuite réelle) — `scripts/isolation.mjs` |
+| `bash scripts/finir-renommage-planquex.sh` | **Wizard #100** — les actions de tableau de bord que l'agent ne peut pas faire : renommer le projet Supabase, retirer le domaine `grevomon.vercel.app`, l'expéditeur Brevo. Il **mesure** les deux domaines au `curl` avant et après, donc il dit lui-même s'il a réussi. Complète `etapes-infra-tcg.sh` (#10), ne le répète pas | `bash -n` **OK** (21/10/2026) ; **non exécuté** : interactif, il ouvre des navigateurs et attend la personne |
 
 Les 2 erreurs de `check`/`build` constatées le 18/10 sont **corrigées** :
 
