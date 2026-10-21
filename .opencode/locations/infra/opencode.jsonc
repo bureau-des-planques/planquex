@@ -1,0 +1,26 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // ── profil « infra » : déployer, configurer, pas coder ──
+  //
+  // Ouvert depuis le dossier de ce fichier (voir README.md à côté) : la session reçoit
+  // les configs de la maison, de gamedev/ et de planquex/, PLUS ces deux serveurs.
+  //
+  // vercel   : 200+ outils (déploiements, journaux, domaine, variables, DNS/TLS).
+  // supabase : 7 outils (tables, migrations, extensions), projet en LECTURE SEULE.
+  //
+  // C'est le seul endroit qui paie ces outils. Une session de développement ouverte à la
+  // racine de planquex/ ne les voit pas : c'est voulu (ticket #100, domaine et base).
+  "mcp": {
+    "servers": {
+      "supabase": {
+        "type": "remote",
+        "url": "https://mcp.supabase.com/mcp?project_ref=jzlcwnozlzhadatksvgh&features=docs%2Cdatabase%2Cdebugging&read_only=true"
+      },
+      "vercel": {
+        "type": "remote",
+        "url": "https://mcp.vercel.com"
+      }
+    }
+  }
+}

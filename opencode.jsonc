@@ -1,0 +1,41 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  // ── planquex : le projet actif ──
+  //
+  // Le projet parle à un seul serveur MCP : gflow, qui produit les illustrations
+  // (ticket #97, `scripts/illustration-vague.sh`). Il expose 18 outils, dont 3 qui
+  // dépensent des crédits Veo : seuls les outils image sont autorisés (AGENTS.md §6).
+  //
+  // Ce qui ne se fait pas tous les jours est ailleurs :
+  //   vercel + supabase → .opencode/locations/infra/   (déploiement, base, domaine, #100)
+  //   context7         → gamedev/opencode.jsonc        (hérité : documentation des bibliothèques)
+  "mcp": {
+    "servers": {
+      "gflow": {
+        "type": "local",
+        "command": ["gflow", "mcp", "run"],
+        "cwd": ".",
+        "environment": {
+          "GFLOW_CLI_OUTPUT_DIR": ".scratch/gflow"
+        }
+      }
+    }
+  },
+
+  // ── Skills : on retire de l'affichage ceux qui visent des outils que ce dépôt n'a pas ──
+  //
+  // Vérifié le 21/10/2026 dans `package.json` : ni `@total-typescript/shoehorn`, ni Husky,
+  // ni lint-staged, ni dependency-cruiser. Ces cinq skills ne peuvent donc rien faire ici,
+  // et chacun coûte deux lignes de contexte à chaque session. `deny` les cache au modèle
+  // et refuse leur chargement ; **aucun fichier n'est supprimé** — retirer une ligne suffit
+  // à les rouvrir. (`AGENTS.md` §6 interdit par ailleurs de restructurer ce dépôt en
+  // monorepo, ce que `setup-ts-deep-modules` propose.)
+  "permissions": [
+    { "action": "skill", "resource": "migrate-to-shoehorn", "effect": "deny" },
+    { "action": "skill", "resource": "setup-pre-commit", "effect": "deny" },
+    { "action": "skill", "resource": "setup-ts-deep-modules", "effect": "deny" },
+    { "action": "skill", "resource": "git-guardrails-claude-code", "effect": "deny" },
+    { "action": "skill", "resource": "scaffold-exercises", "effect": "deny" }
+  ]
+}
