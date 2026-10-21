@@ -209,6 +209,7 @@ planquex/
 │   └── vite-env.d.ts types Vite (imports CSS)
 ├── public/           favicon.svg, icon-192.svg, icon-512.svg (SVG, dessinés à la main)
 ├── components.json   config shadcn/ui (alias `@/`, CSS `src/styles.css` ; D-035)
+├── vercel.json       réécriture SPA de l'hébergement (D-053) : sans elle, une visite directe sur `/parc` répond `404`
 ├── scripts/          status.mjs, simulate.mjs, capturer.mjs, etapes-infra-tcg.sh, finir-renommage-planquex.sh, illustration-vague.sh (+ leurs tests)
 └── docs/
 ```
@@ -285,6 +286,7 @@ Autres faits vérifiés le 19/10/2026 :
 - `npm run build` produit `dist/index.html` **et** `dist/sw.js` : c'est la preuve d'un build valide. `preview` + inspection navigateur ont confirmé le rendu des pages Accueil, Chariot et Combat.
 - Node `v24.21.0` / npm `11.19.0` : **non revérifiés** dans cette passe. `package.json` déclare Vite `8.3.4`, TypeScript `7.0.2`, Vitest `5.0.5`, React `19.3.1`, `@types/node` `26.6.5`.
 - Le dossier **est** un dépôt git : branche `main`, remote `origin` → `https://github.com/Chapax/planquex` (privé). Le dossier local porte lui aussi `planquex` depuis le 21/10/2026 (D-047, qui clôt l'étape 4 de `RENOMMAGE.md` §8) : le nom du dossier, celui du dépôt et celui de l'URL se lisent enfin pareil.
+- **Déploiement (21/10/2026, D-053)** : la **production** du projet Vercel `planquex` sert `main` sur `https://planquex.vercel.app` (`Alpha · 0.1.1`) — c'est le banc d'essai externe annoncé par D-048. `vercel.json` porte la **réécriture SPA** : sans elle, une visite **directe** sur `/parc` (comme `/chariot`, `/combat`, `/reglages`) répond `404` — Vercel ne fait pas de repli pour un site statique, et le service worker ne masque le défaut qu'après la première visite. **Le projet n'est pas lié à ce dépôt** (le lien Git pointe encore sur `Chapax/grevomon`, D-017) : un push sur `main` **ne déploie rien**, et le lien se refait au **tableau de bord** — l'API ne l'expose pas. Tant qu'il en est là, la production se déploie à la main, par l'API (session `planquex-infra`).
 
 ### 7.1 Piège connu — le service worker casse le dev sur la même origine
 
