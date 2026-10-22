@@ -83,6 +83,17 @@ done
 # Pas de --out : ce n'est pas une génération (auth status, doctor…). Rien à faire.
 if [[ -z "$out" ]]; then exit 0; fi
 
+# Échecs simulés (#156) : les GFLOW_FAUX_ECHECS premières générations rendent
+# GFLOW_FAUX_CODE, sans rien produire. Le compteur vit dans GFLOW_FAUX_COMPTEUR.
+if [[ -n "$GFLOW_FAUX_ECHECS" ]]; then
+  compte=$(cat "$GFLOW_FAUX_COMPTEUR" 2>/dev/null || echo 0)
+  if (( compte < GFLOW_FAUX_ECHECS )); then
+    printf '%s\n' $(( compte + 1 )) > "$GFLOW_FAUX_COMPTEUR"
+    echo "TransportTimeoutError (simulé)" >&2
+    exit "$GFLOW_FAUX_CODE"
+  fi
+fi
+
 mkdir -p "$out"
 python3 - "$out" "$n" <<'PY'
 import json, os, sys
@@ -1104,4 +1115,106 @@ describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
     expect(prompt).toContain(sujet);
     expect(prompt).toContain(`muted ${accent} accent.`);
   }, DELAI);
+});
+
+/**
+ * Réessais sur échec de transport, mode direct, et prompt assemblé (#156).
+ *
+ * Le faux gflow échoue **N fois** (`GFLOW_FAUX_ECHECS`) avec un code donné
+ * (`GFLOW_FAUX_CODE`), puis réussit. Chaque appel reçu est journalisé : c'est
+ * le compte des `CALL` qui dit combien de tentatives ont eu lieu.
+ */
+describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', () => {
+  const generations = () => appels().filter((c) => c[0] === 'image' && c[1] === 't2i');
+  const echecs = (n: number, code: number, extra: Record<string, string> = {}) => ({
+    GFLOW_FAUX_ECHECS: String(n),
+    GFLOW_FAUX_CODE: String(code),
+    GFLOW_FAUX_COMPTEUR: join(bac, 'compteur'),
+    GFLOW_ILLUSTRATION_TENTATIVES: '3',
+    GFLOW_ILLUSTRATION_DELAI: '0',
+    ...extra
+  });
+
+  it('le contrôle mord : un exit 9 est réessayé, et le succès au 3ᵉ essai est gardé', () => {
+    // Deux timeouts puis une image : sans la boucle de réessai, le premier exit 9
+    // arrête tout (exit 1) et le test échoue — c'est ce qu'on attend de lui.
+    const r = wizard([CARTE], stdinComplet(), echecs(2, 9));
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(generations(), 'trois tentatives attendues : deux échecs puis un succès').toHaveLength(3);
+    expect(existsSync(join(registre, `${CARTE}.webp`))).toBe(true);
+  }, DELAI);
+
+  it('chaque tentative est consignée, avec son code de sortie', () => {
+    wizard([CARTE], stdinComplet(), echecs(2, 9));
+    const log = readFileSync(join(scratch, CARTE, 'tentatives.log'), 'utf8').trim().split('\n');
+    expect(log).toHaveLength(3);
+    expect(log[0]).toMatch(/tentative 1\/3 · exit 9$/);
+    expect(log[1]).toMatch(/tentative 2\/3 · exit 9$/);
+    expect(log[2]).toMatch(/tentative 3\/3 · exit 0$/);
+  }, DELAI);
+
+  it('après le dernier essai raté, le wizard sort en erreur et le dit', () => {
+    const r = wizard([CARTE], stdinComplet(), echecs(10, 9));
+    expect(r.status, 'un échec de transport persistant doit sortir en erreur').not.toBe(0);
+    expect(generations()).toHaveLength(3);
+    expect(r.stdout + r.stderr).toContain('Échec de transport (exit 9');
+    expect(r.stdout + r.stderr).not.toContain('commit les trois choses');
+  }, DELAI);
+
+  it('un exit 2 (usage) n’est jamais réessayé', () => {
+    // Même avec des essais disponibles, un argument mal formé ne se corrige pas
+    // en relançant la commande : une seule tentative, puis sortie.
+    const r = wizard([CARTE], stdinComplet(), echecs(10, 2));
+    expect(r.status).not.toBe(0);
+    expect(generations(), 'un exit 2 ne doit produire qu’un seul appel').toHaveLength(1);
+  }, DELAI);
+
+  it('le nombre de tentatives se règle par l’environnement', () => {
+    wizard([CARTE], stdinComplet(), echecs(10, 9, { GFLOW_ILLUSTRATION_TENTATIVES: '2' }));
+    expect(generations()).toHaveLength(2);
+  }, DELAI);
+
+  it('le mode direct écrit le payload, sans rien ranger ni consigner', () => {
+    const avant = readFileSync(readme, 'utf8');
+    const r = wizard(['--direct', CARTE]);
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(option(generations()[0], '--model')).toBe('nano2');
+    expect(existsSync(join(scratch, CARTE, 'payload.json')), 'le payload doit être écrit').toBe(true);
+    expect(existsSync(join(registre, `${CARTE}.webp`)), 'le mode direct ne range rien').toBe(false);
+    expect(readFileSync(readme, 'utf8')).toBe(avant);
+  }, DELAI);
+
+  it('le payload du mode direct se relit par --installe : la graine n’est pas touchée', () => {
+    wizard(['--direct', CARTE]);
+    const image = join(scratch, CARTE, 'fake_1.png');
+    const r = wizard([CARTE, '--installe', image], stdinInstalle(), {
+      GFLOW_ILLUSTRATION_DB: join(bac, 'gflow-absente.db')
+    });
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(readFileSync(readme, 'utf8')).toMatch(/graine `651010515`/);
+  }, DELAI);
+
+  it('le mode direct refuse une carte inconnue sans appeler gflow', () => {
+    const r = wizard(['--direct', 'carte-qui-nexiste-pas']);
+    expect(r.status).toBe(2);
+    expect(generations()).toHaveLength(0);
+  }, DELAI);
+
+  it('le prompt de atelier-cariste est celui qu’on a relevé (773 caractères)', () => {
+    // Golden : socle + sujet + accent, tels que la table les donne. Si le socle ou
+    // la table bougent, ce test le dit — c'est voulu : le prompt envoyé à Flow a changé.
+    const attendu =
+      'Editorial trading-card illustration for a corporate-satire deck, semi-realistic painterly rendering, ' +
+      'end-of-day office mood, satirical but never mean. Deep midnight-blue palette (#0b1220, #131c2e) with one ' +
+      'muted saturated faction accent. A soft warm KEY light fully illuminates the FACE — well-exposed skin, ' +
+      'clearly visible features, no shadow over the eyes; only a subtle gold (#e6b64c) rim light on the shoulders ' +
+      'and hair. Matte surfaces, subtle film grain, subject centered and isolated on a darker background, ' +
+      'occupying ~70% of the frame, waist-up, square 1:1. No text, no logo, no watermark, no brand, no real person. ' +
+      'a forklift driver, in a hi-vis vest over a fleece, holding a pallet list, climbing into a forklift, ' +
+      'cheerful and unbothered, muted rust bronze accent.';
+    expect([...attendu]).toHaveLength(773);
+    const r = wizard(['--prompt', 'atelier-cariste']);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout.replace(/\n$/, '')).toBe(attendu);
+  });
 });
