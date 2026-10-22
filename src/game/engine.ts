@@ -1,12 +1,16 @@
 import { ACTION_KIND_META, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
+  Ability,
   Attack,
+  Card,
+  CardFilter,
   AttackEffect,
   BattleAction,
   BattleState,
   CafeSymbol,
   CafeType,
   CardInstance,
+  PendingChoice,
   PlayerId,
   PlayerState,
   Status
@@ -49,12 +53,12 @@ export function isOpeningTurn(state: BattleState): boolean {
 }
 
 /**
- * Vrai quand un Poste vient de craquer et que sa relève reste à choisir
- * (AGENTS.md §4). Tant que c'est vrai, aucune action n'est acceptée : il faut
- * résoudre la relève d'abord.
+ * Vrai quand une **décision** attend : une relève (un Poste a craqué, AGENTS.md §4) ou un
+ * **choix** du joueur (D-076). Tant que c'est vrai, aucune action du tour n'est acceptée :
+ * il faut résoudre la décision d'abord. Une seule garde pour toutes les transitions.
  */
-function awaitingPromotion(state: BattleState): boolean {
-  return state.pendingPromotion !== null;
+function awaitingDecision(state: BattleState): boolean {
+  return state.pendingPromotion !== null || state.pendingChoice !== null;
 }
 
 /**
@@ -343,6 +347,7 @@ export function createBattle(
     winner: null,
     endReason: null,
     pendingPromotion: null,
+    pendingChoice: null,
     // Toute la suite de la partie tire de cet état : la graine devient la seule
     // source de hasard, et `Date.now()` n'en est que la valeur par défaut (UI).
     rng: seedRng(seed),
@@ -385,7 +390,7 @@ export function createBattle(
 }
 
 export function playBasic(state: BattleState, uid: string, slot: 'active' | number): BattleState {
-  if (awaitingPromotion(state) || turnFinished(state)) return state;
+  if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   const handCard = player.hand.find((card) => card.uid === uid);
@@ -404,11 +409,12 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
     player.bench[slot] = instance;
   }
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'poses', 'pose')} ${card.name}.`);
+  declencheALaPose(next, next.current, instance);
   return next;
 }
 
 export function evolve(state: BattleState, uid: string, targetUid: string): BattleState {
-  if (awaitingPromotion(state) || turnFinished(state)) return state;
+  if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   if (isFirstTurnFor(next, next.current)) return state;
   const player = next.players[next.current];
@@ -430,11 +436,12 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
   clearAttackEffects(target);
   target.evolvedTurn = next.turn;
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'fais', 'fait')} évoluer ${card.name}.`);
+  declencheALaPose(next, next.current, target);
   return next;
 }
 
 export function attachEnergy(state: BattleState, targetUid: string): BattleState {
-  if (awaitingPromotion(state) || turnFinished(state)) return state;
+  if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.energyAttached) return state;
@@ -459,7 +466,7 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
 }
 
 export function retreat(state: BattleState, benchIndex: number): BattleState {
-  if (awaitingPromotion(state) || turnFinished(state)) return state;
+  if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.hasRetreated || !player.active) return state;
@@ -487,31 +494,98 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   return next;
 }
 
+/**
+ * Talent « en jouant » (D-081) : résolu **une fois**, juste après la mise en jeu du Planqué
+ * `instance` (pose au Poste ou au Rack, évolution). Une instance n'entre en jeu qu'une fois,
+ * donc aucun drapeau n'est nécessaire. Il ne figure jamais parmi les actions `ability`.
+ */
+function declencheALaPose(state: BattleState, who: PlayerId, instance: CardInstance) {
+  const card = getCard(instance.cardId);
+  const ability = isPlanque(card) ? card.ability : undefined;
+  if (!ability || ability.trigger !== 'onPlay') return;
+  resolveAbility(state, who, instance, ability);
+  state.log.push(`${sujet(state, who)} ${verbe(state, who, 'utilises', 'utilise')} ${ability.name}.`);
+}
+
 export function useAbility(state: BattleState): BattleState {
-  if (awaitingPromotion(state) || turnFinished(state)) return state;
+  if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   if (player.hasUsedAbility || !player.active) return state;
   const card = getCard(player.active.cardId);
   if (!isPlanque(card) || !card.ability) return state;
   const ability = card.ability;
-  if (ability.kind === 'heal') {
-    player.active.hp = Math.min(player.active.maxHp, player.active.hp + (ability.amount ?? 10));
-  } else if (ability.kind === 'antiStatus') {
-    player.active.hp = Math.min(player.active.maxHp, player.active.hp + (ability.amount ?? 10));
-    clearStatuses(player.active);
-  } else if (ability.kind === 'draw') {
-    draw(next, next.current, ability.amount ?? 1);
-  } else if (ability.kind === 'attachEnergy') {
-    // Le café du Talent est typé comme un café produit : il se tire dans les types
-    // du Deck (D-034) par le générateur seedé — même graine, même café. Un
-    // Deck sans type produit ne peut rien attacher.
-    const cafe = drawCafeType(next, next.current);
-    if (cafe) player.active.energy.push(cafe);
-  }
+  // Un Talent « en jouant » ne se déclenche jamais à la demande (D-081).
+  if (ability.trigger === 'onPlay') return state;
+  // Un Talent vers le Rack n'a rien à viser s'il n'y a pas de Planqué au Rack (D-082).
+  if (ability.target === 'rack' && !player.bench.some(Boolean)) return state;
+  // Défausse de sa propre main sur une main vide : le Talent n'est pas proposé (D-076).
+  if (defausseImpossible(player, ability.effects)) return state;
+  resolveAbility(next, next.current, player.active, ability);
   player.hasUsedAbility = true;
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'utilises', 'utilise')} ${ability.name}.`);
   return next;
+}
+
+/**
+ * Résout le corps d'un Talent sur le Planqué `instance` du camp `who` (D-077). Une seule
+ * écriture pour le Talent à la demande (`useAbility`) et pour le Talent « en jouant »
+ * (D-081) : les deux lisent les mêmes primitives.
+ */
+function resolveAbility(state: BattleState, who: PlayerId, instance: CardInstance, ability: Ability) {
+  switch (ability.kind) {
+    case 'heal':
+      instance.hp = Math.min(instance.maxHp, instance.hp + (ability.amount ?? 10));
+      break;
+    case 'antiStatus':
+      instance.hp = Math.min(instance.maxHp, instance.hp + (ability.amount ?? 10));
+      clearStatuses(instance);
+      break;
+    case 'draw':
+      draw(state, who, ability.amount ?? 1);
+      break;
+    case 'attachEnergy': {
+      // Le café du Talent est typé comme un café produit : il se tire dans les types du
+      // Deck (D-034) par le générateur seedé — même graine, même café. Un Deck sans type
+      // produit ne peut rien attacher.
+      const cafe = drawCafeType(state, who);
+      if (!cafe) break;
+      if (ability.target === 'rack') {
+        // Vers le Rack (D-082) : le joueur choisit le Planqué qui reçoit le café. Pas de Planqué
+        // au Rack : rien à viser, donc rien à attacher (le Talent n'est pas proposé, `legalActions`).
+        if (state.players[who].bench.some(Boolean)) ouvrirChoix(state, { kind: 'attacher', who, cafe });
+        break;
+      }
+      instance.energy.push(cafe);
+      break;
+    }
+    case 'reduceDamage':
+      // Passif : `attackDamage` lit la réduction quand le Planqué est visé. Le Talent n'agit pas.
+      break;
+    case 'effects':
+      applyTalentEffects(state, who, instance, ability.effects ?? []);
+      break;
+    default:
+      assertNever(ability.kind);
+  }
+}
+
+/**
+ * Le corps d'un Talent `effects` (D-077) : chaque primitive est résolue comme celle d'une
+ * Pression, dans l'ordre de la liste. Un Talent **n'est pas une Pression** : il ne termine
+ * pas le tour et ne consomme pas la Pression. Un craquage qu'il provoque suit le chemin
+ * ordinaire (Interventions, relève). Pas de Poste adverse : pas de cible, rien à résoudre.
+ */
+function applyTalentEffects(state: BattleState, who: PlayerId, attacker: CardInstance, effects: AttackEffect[]) {
+  const defender = state.players[other(who)].active;
+  if (!defender) return;
+  for (const effect of ordreD031(effects)) {
+    applyEffects(state, who, attacker, defender, { name: 'Talent', cost: [], damage: 0, effects: [effect] });
+  }
+  if (defender.hp <= 0) {
+    knockOut(state, who);
+    resolveEnd(state);
+  }
 }
 
 /**
@@ -635,6 +709,194 @@ function assertNever(value: never): never {
   throw new Error(`Effet non géré par le moteur : ${String(value)}`);
 }
 
+/**
+ * Ordre des effets d'une Pression ou d'un Talent (D-031, réponse Q6 de #159) : les dégâts
+ * passent avant la défausse et les autres effets ; le reste garde l'ordre de la liste.
+ */
+function ordreD031(effects: readonly AttackEffect[]): AttackEffect[] {
+  return [...effects.filter((effect) => effect.kind === 'damage'), ...effects.filter((effect) => effect.kind !== 'damage')];
+}
+
+/** Le camp adverse de `who`. */
+const other = (who: PlayerId): PlayerId => (who === 'player' ? 'ai' : 'player');
+
+/**
+ * Ouvre un **choix** du joueur (D-076). Un seul par résolution : un second choix
+ * écraserait le premier, c'est une erreur de conception, pas une situation de jeu.
+ */
+function ouvrirChoix(state: BattleState, choix: PendingChoice) {
+  if (state.pendingChoice) throw new Error('Deux choix dans une même résolution (D-076).');
+  state.pendingChoice = choix;
+}
+
+/** Une carte du Deck correspond-elle au filtre de recherche (D-080) ? */
+function correspondFiltre(instance: CardInstance, filtre: CardFilter): boolean {
+  const card = getCard(instance.cardId);
+  return filtre === 'PLANQUE' ? isPlanque(card) : card?.kind === 'COLLEAGUE';
+}
+
+/**
+ * Primitives de **main** et de **Deck** (D-076, D-078 à D-080), communes aux Pressions,
+ * aux cartes Action et aux Talents : une seule écriture de chaque règle.
+ *
+ * Un effet **sans choix** s'exécute tout de suite ; un effet **avec choix** ouvre un
+ * `pendingChoice` et laisse les effets suivants de la même résolution s'exécuter.
+ */
+function applyHandDeckEffect(state: BattleState, who: PlayerId, effect: AttackEffect) {
+  const player = state.players[who];
+  const adversaire = other(who);
+  const opponent = state.players[adversaire];
+  switch (effect.kind) {
+    case 'discardHand': {
+      if (effect.target === 'opponent') {
+        // Imposée : l'adversaire perd `amount` cartes **au hasard**, par le générateur
+        // seedé de la partie (D-076) — il ne choisit pas, et sa main reste cachée.
+        const n = effect.amount ?? 1;
+        let defausses = 0;
+        for (let i = 0; i < n && opponent.hand.length > 0; i += 1) {
+          const index = Math.floor(drawRandom(state) * opponent.hand.length);
+          const [card] = opponent.hand.splice(index, 1);
+          if (card) {
+            putInDiscard(opponent, card);
+            defausses += 1;
+          }
+        }
+        if (defausses > 0) {
+          state.log.push(
+            `${sujet(state, adversaire)} ${verbe(state, adversaire, 'défausses', 'défausse')} ${defausses} carte${defausses > 1 ? 's' : ''} au hasard.`
+          );
+        }
+        break;
+      }
+      // Choisie : c'est le joueur qui désigne la carte (D-076). Main vide : rien à défausser.
+      if (player.hand.length === 0) break;
+      ouvrirChoix(state, { kind: 'defausse', who, restant: effect.amount ?? 1 });
+      state.log.push(`${sujet(state, who)} ${verbe(state, who, 'choisis', 'choisit')} une carte à défausser.`);
+      break;
+    }
+    case 'reveal': {
+      // Révélation (D-078) : la carte, ou toute la main si `amount` est absent, est écrite dans
+      // le journal. Aucun changement d'état ; seul un tirage partiel avance le générateur.
+      if (opponent.hand.length === 0) break;
+      const montrees =
+        effect.amount === undefined ? opponent.hand : shuffle(opponent.hand, state).slice(0, effect.amount);
+      const noms = montrees.map((card) => getCard(card.cardId)?.name ?? 'une carte').join(', ');
+      const dans = estDeuxCamps(state)
+        ? `la main du ${CAMP_DUO[adversaire]}`
+        : adversaire === 'player'
+          ? 'ta main'
+          : 'la main de la Direction';
+      state.log.push(`Révélé dans ${dans} : ${noms}.`);
+      break;
+    }
+    case 'search': {
+      // Recherche (D-080) : le joueur choisit une carte du filtre dans son Deck. Sans carte à
+      // trouver, ou main pleine, pas de choix : le Deck est mélangé tout de suite.
+      const filtre = effect.filter ?? 'PLANQUE';
+      const trouvable = player.deck.some((card) => correspondFiltre(card, filtre));
+      if (trouvable && player.hand.length < 10) {
+        ouvrirChoix(state, { kind: 'chercher', who, filtre });
+        state.log.push(`${sujet(state, who)} ${verbe(state, who, 'cherches', 'cherche')} une carte dans le Deck.`);
+      } else {
+        player.deck = shuffle(player.deck, state);
+        state.log.push(`${sujet(state, who)} ${verbe(state, who, 'mélanges', 'mélange')} le Deck.`);
+      }
+      break;
+    }
+    case 'peek':
+      // Regarder le dessus (D-079) : lecture pure. Ni changement d'état, ni ligne de journal :
+      // l'information est lue par `dessusDuDeck`, et seul le joueur qui l'a déclenchée la voit.
+      break;
+    default:
+      // Les autres primitives de main et de Deck ne passent pas par ici (voir D-080).
+      break;
+  }
+}
+
+/**
+ * Le dessus du Deck de `who`, pour le **seul** joueur qui a regardé (D-079). Lecture pure :
+ * rien ne bouge, l'ordre du Deck reste celui qu'il était.
+ */
+export function dessusDuDeck(state: BattleState, who: PlayerId): Card | undefined {
+  const dessus = state.players[who].deck[0];
+  return dessus ? getCard(dessus.cardId) : undefined;
+}
+
+/**
+ * Les cartes qu'un choix en attente accepte (D-076). Vide si rien n'attend.
+ * `legalActions` et `choose` lisent cette même liste : un bouton ne peut pas offrir une
+ * carte que la résolution refuserait.
+ */
+function choixPossibles(state: BattleState): string[] {
+  const choix = state.pendingChoice;
+  if (!choix) return [];
+  const player = state.players[choix.who];
+  if (choix.kind === 'defausse') return player.hand.map((card) => card.uid);
+  if (choix.kind === 'chercher') {
+    return player.deck.filter((card) => correspondFiltre(card, choix.filtre)).map((card) => card.uid);
+  }
+  return player.bench.flatMap((card) => (card ? [card.uid] : []));
+}
+
+/**
+ * Une Pression qui défausse **sa propre** main n'est pas proposée quand cette main est vide
+ * (D-076, réponse Q3 bis). Une défausse imposée à l'adversaire reste proposée : son effet
+ * ne fait rien sur une main vide, sans erreur.
+ */
+function defausseImpossible(player: PlayerState, effects: readonly AttackEffect[] | undefined): boolean {
+  const defausseDeSoi = (effects ?? []).some(
+    (effect) => effect.kind === 'discardHand' && effect.target !== 'opponent'
+  );
+  return defausseDeSoi && player.hand.length === 0;
+}
+
+/**
+ * Résout le **choix en attente** (D-076) : la carte `uid` est celle que le joueur
+ * désigne. Refusé — état rendu tel quel — si rien n'attend ou si la carte n'est pas une
+ * option du choix. La défausse se répète tant qu'il reste des cartes à défausser.
+ */
+export function choose(state: BattleState, uid: string): BattleState {
+  const choix = state.pendingChoice;
+  if (!choix) return state;
+  if (!choixPossibles(state).includes(uid)) return state;
+  const next = clone(state);
+  const player = next.players[choix.who];
+  next.pendingChoice = null;
+
+  if (choix.kind === 'defausse') {
+    const card = removeFromHand(player, uid);
+    if (!card) return state;
+    putInDiscard(player, card);
+    next.log.push(
+      `${sujet(next, choix.who)} ${verbe(next, choix.who, 'mets', 'met')} ${getCard(card.cardId)?.name ?? 'une carte'} au rebut.`
+    );
+    const restant = choix.restant - 1;
+    if (restant > 0 && player.hand.length > 0) next.pendingChoice = { ...choix, restant };
+    return next;
+  }
+
+  if (choix.kind === 'chercher') {
+    // La carte passe du Deck à la main, puis le Deck est mélangé par le générateur seedé (D-080).
+    const index = player.deck.findIndex((card) => card.uid === uid);
+    const [card] = player.deck.splice(index, 1);
+    if (!card) return state;
+    player.hand.push(card);
+    player.deck = shuffle(player.deck, next);
+    next.log.push(
+      `${sujet(next, choix.who)} ${verbe(next, choix.who, 'ajoutes', 'ajoute')} ${getCard(card.cardId)?.name ?? 'une carte'} à la main.`
+    );
+    return next;
+  }
+  // Attacher au Rack (D-082) : le café va au Planqué du Rack désigné.
+  const cible = player.bench.find((card) => card?.uid === uid);
+  if (!cible) return state;
+  cible.energy.push(choix.cafe);
+  next.log.push(
+    `${sujet(next, choix.who)} ${verbe(next, choix.who, 'attaches', 'attache')} 1 café ${cafeLabel(choix.cafe)} à ${getCard(cible.cardId)?.name ?? 'un Planqué'}.`
+  );
+  return next;
+}
+
 function applyEffects(
   state: BattleState,
   who: PlayerId,
@@ -643,7 +905,7 @@ function applyEffects(
   attack: Attack
 ) {
   const player = state.players[who];
-  for (const effect of attack.effects ?? []) {
+  for (const effect of ordreD031(attack.effects ?? [])) {
     switch (effect.kind) {
       case 'healSelf':
         attacker.hp = Math.min(attacker.maxHp, attacker.hp + (effect.amount ?? 10));
@@ -681,6 +943,19 @@ function applyEffects(
       case 'reduceDamage':
         attacker.damageReduction = effect.amount ?? 0;
         break;
+      case 'discardHand':
+      case 'reveal':
+      case 'peek':
+      case 'search':
+        applyHandDeckEffect(state, who, effect);
+        break;
+      case 'damage': {
+        // Dégâts (D-077) : même calcul que la Pression (D-031), Vulnérabilité au Poste comprise.
+        const extra = attackDamage(attacker, defender, { name: 'Talent', cost: [], damage: effect.amount ?? 0 }, 'poste');
+        defender.hp -= extra;
+        state.log.push(`${getCard(attacker.cardId)?.name ?? 'Le Planqué'} : ${extra} de stress.`);
+        break;
+      }
       default:
         assertNever(effect.kind);
     }
@@ -716,6 +991,15 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
       case 'discardEnergy':
         if (opponent.active) discardFirstCafes(opponent.active, 1);
         break;
+      case 'discardHand':
+      case 'reveal':
+      case 'peek':
+      case 'search':
+        applyHandDeckEffect(state, who, effect);
+        break;
+      case 'damage':
+        // Une carte Action n'a pas de Planqué attaquant : elle ne frappe pas (D-077).
+        break;
       case 'healSelf':
       case 'selfDamage':
       case 'switchSelf':
@@ -736,7 +1020,7 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
  * est limité à **1 par tour**. La carte doit être en main et ne pas être un Planqué.
  */
 export function canPlayAction(state: BattleState, uid: string): boolean {
-  if (awaitingPromotion(state) || turnFinished(state)) return false;
+  if (awaitingDecision(state) || turnFinished(state)) return false;
   const player = state.players[state.current];
   const handCard = player.hand.find((card) => card.uid === uid);
   if (!handCard) return false;
@@ -897,7 +1181,7 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
  * mot-clé quand le moteur le refuse.
  */
 export function canPriorityShift(state: BattleState): boolean {
-  if (!RULES.priorityShiftEnabled || awaitingPromotion(state) || turnFinished(state)) return false;
+  if (!RULES.priorityShiftEnabled || awaitingDecision(state) || turnFinished(state)) return false;
   const player = state.players[state.current];
   if (player.hasUsedPriorityShift || !player.active || player.hand.length === 0) return false;
   const active = getCard(player.active.cardId);
@@ -924,7 +1208,7 @@ export function priorityShift(state: BattleState, uid: string): BattleState {
 }
 
 export function attack(state: BattleState, attackIndex: number): BattleState {
-  if (awaitingPromotion(state)) return state;
+  if (awaitingDecision(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
   const opponent = next.players[next.current === 'player' ? 'ai' : 'player'];
@@ -938,6 +1222,8 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   // Une seule fonction décide (`satisfiesCafeCost`, rules.ts) : `legalAttacks`,
   // `attackPreview` et cette garde en lisent la même réponse.
   if (!attack || !satisfiesCafeCost(player.active.energy, attack.cost)) return state;
+  // Défausse de sa propre main sur une main vide : la Pression n'est pas proposée (D-076).
+  if (defausseImpossible(player, attack.effects)) return state;
 
   // Sieste et Immobilisation interdisent la Pression (D-033 §2, capture `07` :
   // « Les Pokémon Endormis ne peuvent ni attaquer ni battre en retraite. »). Le
@@ -1096,6 +1382,7 @@ export function forfeit(state: BattleState, who: PlayerId): BattleState {
   next.endReason = 'forfait';
   // La relève en attente n'a plus d'objet : le plateau est figé.
   next.pendingPromotion = null;
+  next.pendingChoice = null;
   const gagnant: PlayerId = who === 'player' ? 'ai' : 'player';
   next.log.push(
     estDeuxCamps(next)
@@ -1110,14 +1397,14 @@ export function forfeit(state: BattleState, who: PlayerId): BattleState {
 export function endTurn(state: BattleState): BattleState {
   // Une partie finie **refuse** la fin de tour : l'état est rendu tel quel (`===`),
   // comme toute transition refusée, sinon `applyAction` la journaliserait (#83).
-  if (awaitingPromotion(state) || state.phase === 'ended') return state;
+  if (awaitingDecision(state) || state.phase === 'ended') return state;
   const next = clone(state);
   // `checkup` mute l'état et peut le terminer (craquage par statut) : on lit la
   // valeur retournée, pas `next`, dont le rétrécissement de type est périmé.
   const afterCheckup = checkup(next);
   if (afterCheckup.phase === 'ended') return afterCheckup;
   // Un craquage de checkup ouvre une relève : le tour ne passe pas avant le choix.
-  if (awaitingPromotion(afterCheckup)) return afterCheckup;
+  if (awaitingDecision(afterCheckup)) return afterCheckup;
 
   next.current = next.current === 'player' ? 'ai' : 'player';
   next.turn += 1;
@@ -1196,6 +1483,8 @@ function transition(state: BattleState, action: BattleAction): BattleState {
       return playAction(state, action.uid);
     case 'promoteActive':
       return promoteActive(state, action.benchIndex);
+    case 'choose':
+      return choose(state, action.uid);
     case 'forfeit':
       return forfeit(state, action.who);
     case 'endTurn':
@@ -1219,7 +1508,7 @@ export function attackPreview(state: BattleState, attackIndex: number): number {
 }
 
 export function canEvolve(state: BattleState, handUid: string, targetUid: string): boolean {
-  if (awaitingPromotion(state) || turnFinished(state)) return false;
+  if (awaitingDecision(state) || turnFinished(state)) return false;
   const player = state.players[state.current];
   const hand = player.hand.find((card) => card.uid === handUid);
   const target = findInPlay(player, targetUid);
@@ -1235,7 +1524,7 @@ export function canEvolve(state: BattleState, handUid: string, targetUid: string
 }
 
 export function legalAttacks(state: BattleState): Attack[] {
-  if (awaitingPromotion(state)) return [];
+  if (awaitingDecision(state)) return [];
   const player = state.players[state.current];
   // Une Pression termine le tour (D-033 §1) ; la Sieste et l'Immobilisation
   // l'interdisent (D-033 §2). Dans les trois cas, aucune Pression n'est légale.
@@ -1246,7 +1535,10 @@ export function legalAttacks(state: BattleState): Attack[] {
   // Le paiement suit le coût **typé** (D-037) : une seule fonction décide
   // (`satisfiesCafeCost`) — `attack` et `attackPreview` lisent la même réponse.
   return card.attacks.filter(
-    (attack) => player.active && satisfiesCafeCost(player.active.energy, attack.cost)
+    (attack) =>
+      player.active &&
+      satisfiesCafeCost(player.active.energy, attack.cost) &&
+      !defausseImpossible(player, attack.effects)
   );
 }
 
@@ -1290,13 +1582,16 @@ export function legalActions(state: BattleState): BattleAction[] {
   if (state.phase === 'ended') return [];
 
   const pending = state.pendingPromotion;
-  if (pending) {
-    const bench = state.players[pending].bench;
-    const promotions = bench.flatMap((card, benchIndex) =>
-      card ? [{ type: 'promoteActive', benchIndex } satisfies BattleAction] : []
-    );
-    // Le forfait reste offert pendant une relève : la partie vit encore (D-030, #79).
-    return [...promotions, forfeitOffer(state)];
+  const choix = state.pendingChoice;
+  if (pending || choix) {
+    const promotions = pending
+      ? state.players[pending].bench.flatMap((card, benchIndex) =>
+          card ? [{ type: 'promoteActive', benchIndex } satisfies BattleAction] : []
+        )
+      : [];
+    const choices = choixPossibles(state).map((uid) => ({ type: 'choose', uid }) satisfies BattleAction);
+    // Le forfait reste offert pendant une décision : la partie vit encore (D-030, #79).
+    return [...promotions, ...choices, forfeitOffer(state)];
   }
 
   // D-033 §1 : une Pression lancée consomme le reste du tour. Seule la fin du
@@ -1336,7 +1631,15 @@ export function legalActions(state: BattleState): BattleAction[] {
   // Talent du Poste, une fois par tour.
   if (!player.hasUsedAbility && player.active) {
     const card = getCard(player.active.cardId);
-    if (isPlanque(card) && card.ability) actions.push({ type: 'ability' });
+    if (
+      isPlanque(card) &&
+      card.ability &&
+      card.ability.trigger !== 'onPlay' &&
+      (card.ability.target !== 'rack' || player.bench.some(Boolean)) &&
+      !defausseImpossible(player, card.ability.effects)
+    ) {
+      actions.push({ type: 'ability' });
+    }
   }
 
   // Café : 1 par tour, un par Planqué en jeu — mais aucun attachement au premier tour (§4, D-030).

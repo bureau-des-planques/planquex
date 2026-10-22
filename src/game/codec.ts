@@ -105,7 +105,8 @@ const ACTION_TAGS = {
   playAction: 8,
   promoteActive: 9,
   forfeit: 10,
-  endTurn: 11
+  endTurn: 11,
+  choose: 12
 } as const;
 
 /** Une action sur le fil : `[étiquette, …arguments]`. `string | number` seulement. */
@@ -218,6 +219,8 @@ function wireAction(action: BattleAction): WireAction {
       return [ACTION_TAGS.promoteActive, action.benchIndex];
     case 'forfeit':
       return [ACTION_TAGS.forfeit, action.who === 'player' ? 0 : 1];
+    case 'choose':
+      return [ACTION_TAGS.choose, action.uid];
     case 'endTurn':
       return [ACTION_TAGS.endTurn];
     default:
@@ -323,6 +326,11 @@ function readAction(raw: unknown): BattleAction | null {
     case ACTION_TAGS.forfeit: {
       if (args.length !== 1 || (args[0] !== 0 && args[0] !== 1)) return null;
       return { type: 'forfeit', who: args[0] === 0 ? 'player' : 'ai' };
+    }
+    case ACTION_TAGS.choose: {
+      if (args.length !== 1) return null;
+      const uid = readUid(args[0]);
+      return uid === null ? null : { type: 'choose', uid };
     }
     case ACTION_TAGS.endTurn:
       return args.length === 0 ? { type: 'endTurn' } : null;
