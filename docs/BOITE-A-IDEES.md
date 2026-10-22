@@ -136,30 +136,55 @@ fait la différence).
 
 ### 4.3 L'état du formulaire au 22/10/2026
 
-Relevé sur le formulaire public (`viewform`, **HTTP 200** — il est bien ouvert aux visiteurs).
+Relevé sur le formulaire public (`viewform`, **HTTP 200** : ouvert aux visiteurs).
 
-**En place :** version ; type (Remonter un bug / Proposer une feature / Gueuler) ; une section
-**Post-it OUF** complète (titre, ce que tu faisais, ce qui s'est passé, ce que tu attendais, écran,
-lien vers une image) ; une section **Post-it IP** complète (titre, l'idée, à quoi ça servirait, écran,
-lien vers une image). L'envoi de fichier a disparu : la capture se demande en **lien**.
+**Il ouvre sur quatre chemins**, après la question de version :
 
-**Deux écarts avec la cible, assumés ou à trancher :**
+| Choix | Ce qui suit |
+|---|---|
+| **Remonter un bug** | section **Post-it OUF** — titre, ce que tu faisais, ce qui s'est passé, ce que tu attendais, écran, lien |
+| **Proposer une feature** | section **Post-it IP** — titre, l'idée, à quoi ça servirait, écran, lien |
+| **Gueuler** | **« Pourquoi qu'on Gueule »** : un champ libre (« Exprime toi »), puis « Envie d'aider ? » — *Remonter un bug* → OUF, *Proposer une idée* → IP, ou **« Non j'ai déjà assez gueulé comme ça »** qui envoie le message tel quel |
+| **Donner ton avis sur le Jeux** | **« Avis sur le jeux »** — ce que tu as aimé, ce que tu n'as pas aimé |
 
-1. **« Gueuler » a sa propre section**, « Pourquoi qu'on Gueule », avec un seul champ libre
-   (« Exprime toi ») : ni titre, ni écran. Un post-it de ce type arrive donc **sans structure**, et
-   il faudra deviner de quoi il parle. Deux issues : l'**aiguiller vers la section IP** (la réponse
-   « Gueuler » reste enregistrée, donc le tri saura que c'était un coup de gueule), ou lui **ajouter
-   le titre et l'écran**. Sur le mur, « Gueuler » se range de toute façon dans les **IP** (D-058).
-2. **Le titre de la question « Capture » porte tout le texte d'aide** (« Colle un lien vers une
-   image… »). C'est le libellé qui se retrouve en en-tête de colonne dans les réponses : mieux vaut
-   le raccourcir à « Capture », et laisser la phrase dans l'**aide**.
+**Pourquoi ce chemin « gueuler » est bon** : il prend l'émotion d'abord, et ne demande la structure
+qu'**ensuite** — avec une sortie volontaire (« assez gueulé ») qui n'oblige personne à classer sa
+colère. C'est ce qui manquait : un post-it sans titre ni écran était intriable, celui-ci offre de
+le devenir sans le réclamer.
 
-**Le ton est celui du projet** — « Recueille avis Alpha », « Tu veux quoi ? », « Exprime toi », et
-les coquilles qui vont avec : on n'y touche pas, c'est la satire.
+**Le chemin « avis »** est la donnée la plus précieuse de l'alpha : la question qu'on se pose est
+« est-ce que la boucle tient », et « ce que tu as aimé / pas aimé » y répond mieux qu'un rapport de bug.
 
-**Non vérifiable depuis l'extérieur :** les cases **« Obligatoire »**. Les deux qui comptent —
-**la version** et **le type** — doivent l'être, sinon un retour sans version ne dit pas s'il concerne
-encore la build courante.
+**Ce qui reste à améliorer :**
+
+1. **Le pseudo n'est demandé nulle part.** Le mur affiche un **auteur** : sans pseudo, tous les
+   post-its sont anonymes, et suivre un testeur devient impossible. Une question courte, *facultative* —
+   « Ton pseudo dans le jeu, comme dans Réglages » — suffit (vide = « anonyme » sur le mur).
+2. **Les cases « Obligatoire »** ne se lisent pas de l'extérieur : la **version** et la **question
+   d'entrée** doivent l'être ; ensuite le **titre** et **la description** de chaque chemin.
+3. **Le libellé de la question « Capture »** porte tout le texte d'aide, et deviendra l'en-tête de
+   colonne dans les réponses : mettre « Capture » en titre, la phrase en **aide**.
+4. **L'aide de la question d'entrée** gagnerait une ligne, parce qu'il y a maintenant quatre chemins :
+   « Un bug = ça casse. Une feature = ça manque. Gueuler = ça t'énerve. Un avis = ce que tu as aimé ou pas. »
+5. La section **« Avis sur le jeux »** pourrait demander l'**écran**, comme les deux autres : un avis
+   dit souvent *où* (« la lisibilité du Parc »). Facultatif, une ligne.
+
+**Le ton est celui du projet** — « Recueille avis Alpha », « Pourquoi qu'on Gueule », « Exprime toi »,
+« Non j'ai déja assez gueuler comme ça », et les coquilles qui vont avec : on n'y touche pas, c'est la
+satire.
+
+### 4.3 bis La règle de rangement sur le mur
+
+Le mur ne connaît que **deux familles** (D-058) ; le formulaire en propose quatre. Le rangement est
+donc mécanique, et il n'y a rien à décider au tri :
+
+| Chemin du formulaire | Famille sur le mur |
+|---|---|
+| Remonter un bug — et le « Remonter un bug » du chemin gueuler | **OUF** |
+| Proposer une feature, **Donner ton avis**, et un gueulage sans suite | **IP** |
+
+Un gueulage sans suite n'a **pas de titre** : au tri, on en fabrique un avec ses premiers mots, et
+c'est écrit comme tel dans le post-it (jamais un titre inventé qui trahirait le propos).
 
 ### 4.4 Si l'envoi de fichier devient nécessaire
 
