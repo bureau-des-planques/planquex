@@ -79,6 +79,11 @@ elle remplace une réunion de conception.
 | C07 | `C07-missions-theme.png` | Séries thématiques de missions | Priorité haute : la collection n'a aucun objectif long terme |
 | C08 | `C08-present-box.png` | Boîte de récompenses différées | Notre futur « Casier » |
 | C09 | `C09-inventaire.png` | Inventaire d'objets | Nous n'avons pas d'écran d'inventaire |
+
+> **`C09` — hors périmètre** (22/10/2026). Chez nous, les **Objets** sont des **cartes Action jouables**
+> (NEUF ou MRO) : elles se jouent depuis la main et partent au Rebut. Il n'y a **rien à inventorier**,
+> donc pas d'écran à construire — le jeu de référence en a un parce que sa structure d'objets est
+> différente. Décision et raison : `.out-of-scope/inventaire-objets.md`.
 | C10 | `C10-skins.png` | Variantes cosmétiques de cartes | Nos futurs « Autocollants » : monétisation sans toucher à l'équilibrage |
 | C11 | `C11-echange.png` | Échange de cartes | Nos futurs « Échanges de postes » |
 | C12 | `C12-amis.png` | Amis / fil social | Nos futurs « Camarades » |
