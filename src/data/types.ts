@@ -39,7 +39,8 @@ export type AttackEffectKind =
   | 'switchSelf'
   | 'reduceDamage'
   | 'discardHand'
-  | 'damage';
+  | 'damage'
+  | 'reveal';
 
 /**
  * Les membres d'`AttackEffectKind`, **une seule fois** dans le code (#56).
@@ -59,7 +60,8 @@ export const ATTACK_EFFECT_KINDS = [
   'switchSelf',
   'reduceDamage',
   'discardHand',
-  'damage'
+  'damage',
+  'reveal'
 ] as const satisfies readonly AttackEffectKind[];
 
 /** Filtre d'une recherche dans le Deck (D-080) : un Planqué, ou un Collègue. */

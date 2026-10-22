@@ -740,8 +740,23 @@ function applyHandDeckEffect(state: BattleState, who: PlayerId, effect: AttackEf
       state.log.push(`${sujet(state, who)} ${verbe(state, who, 'choisis', 'choisit')} une carte à défausser.`);
       break;
     }
+    case 'reveal': {
+      // Révélation (D-078) : la carte, ou toute la main si `amount` est absent, est écrite dans
+      // le journal. Aucun changement d'état ; seul un tirage partiel avance le générateur.
+      if (opponent.hand.length === 0) break;
+      const montrees =
+        effect.amount === undefined ? opponent.hand : shuffle(opponent.hand, state).slice(0, effect.amount);
+      const noms = montrees.map((card) => getCard(card.cardId)?.name ?? 'une carte').join(', ');
+      const dans = estDeuxCamps(state)
+        ? `la main du ${CAMP_DUO[adversaire]}`
+        : adversaire === 'player'
+          ? 'ta main'
+          : 'la main de la Direction';
+      state.log.push(`Révélé dans ${dans} : ${noms}.`);
+      break;
+    }
     default:
-      // Les autres primitives de main et de Deck ne passent pas par ici (voir D-078 à D-080).
+      // Les autres primitives de main et de Deck ne passent pas par ici (voir D-079, D-080).
       break;
   }
 }
@@ -845,6 +860,7 @@ function applyEffects(
         attacker.damageReduction = effect.amount ?? 0;
         break;
       case 'discardHand':
+      case 'reveal':
         applyHandDeckEffect(state, who, effect);
         break;
       case 'damage': {
@@ -890,6 +906,7 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
         if (opponent.active) discardFirstCafes(opponent.active, 1);
         break;
       case 'discardHand':
+      case 'reveal':
         applyHandDeckEffect(state, who, effect);
         break;
       case 'damage':

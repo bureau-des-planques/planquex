@@ -81,7 +81,9 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   // `switchSelf` échange le Poste avec le premier Planqué du Rack (engine.ts).
   { label: 'Rack', pattern: /\bracks?\b/, kinds: ['switchSelf'] },
   // La main n'est touchée que par une défausse (D-076) ; révéler et chercher viendront (D-078, D-080).
-  { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand'] },
+  { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand', 'reveal'] },
+  // `reveal` écrit la carte, ou la main, dans le journal (D-078).
+  { label: 'révèle', pattern: /\brevel/, kinds: ['reveal'] },
   { label: 'deck', pattern: /\bdecks?\b/, kinds: [] }
 ];
 
@@ -136,7 +138,8 @@ const ATTENTES_EFFET: Record<AttackEffectKind, Attente | null> = {
   switchSelf: { pattern: /rack/ },
   reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
   discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 },
-  damage: { pattern: /(\d+) degats? au/, montantGroupe: 1 }
+  damage: { pattern: /(\d+) degats? au/, montantGroupe: 1 },
+  reveal: { pattern: /revel/ }
 };
 
 const ATTENTES_TALENT: Record<AbilityKind, Attente | null> = {
