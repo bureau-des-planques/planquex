@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
-import type { EtapeCombat } from '@/components/pas-a-pas-combat-etapes';
+import type { CibleCombat, EtapeCombat } from '@/components/pas-a-pas-combat-etapes';
 import { useStore } from '@/store/useStore';
 
 /**
@@ -35,6 +35,14 @@ export interface PasAPasCombatEtat {
    * sélecteur d'attribut `~=` ne peut alors rien mettre en avant.
    */
   readonly cibles: string;
+  /**
+   * La valeur de `data-pas-a-pas` d'un élément : `cible` quand l'étape courante la
+   * **désigne**, `undefined` sinon. L'appartenance est **exacte** — `'poste'` n'est pas
+   * dans `'poste-actions'` —, ce que la recherche d'une sous-chaîne dans `cibles` ne
+   * garantissait pas. Le contour de `styles.css` ne s'applique qu'aux éléments qui
+   * portent l'attribut : un élément non désigné n'a donc **jamais** de contour.
+   */
+  readonly designe: (cible: CibleCombat) => CibleCombat | undefined;
   readonly suivante: () => void;
   readonly precedente: () => void;
   /**
@@ -42,6 +50,19 @@ export interface PasAPasCombatEtat {
    * réouverture depuis Réglages reparte du début.
    */
   readonly terminer: () => void;
+}
+
+/**
+ * Le défilement de l'écran de combat : **animé**, sauf si le système (`prefers-reduced-motion`)
+ * ou le réglage « Mouvement réduit » de l'application demandent un saut net. Lu à l'appel,
+ * jamais en dépendance d'effet : changer le réglage ne doit pas refaire défiler la page.
+ */
+export function comportementDeDefilement(): ScrollBehavior {
+  const reduit =
+    useStore.getState().reducedMotion ||
+    (typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  return reduit ? 'auto' : 'smooth';
 }
 
 export function usePasAPasCombat(): PasAPasCombatEtat {
@@ -69,23 +90,30 @@ export function usePasAPasCombat(): PasAPasCombatEtat {
 
   /**
    * **Désigner, c'est amener l'élément sous les yeux.** Sur un téléphone (420 × 900,
-   * D-060), le Poste est sous la ligne de flottaison : une étape qui le nomme sans
-   * l'amener à l'écran ne le désigne pas. On cadre donc la **première** cible de
-   * l'étape — les autres sont dans le même voisinage.
+   * D-060), le panneau est en haut et la cible parfois bien plus bas : une étape qui la
+   * nomme sans l'amener à l'écran ne la désigne pas (#169). À chaque changement d'étape,
+   * « Suivant » comme « Précédent », on cadre donc la **première** cible, **au centre**
+   * de l'écran — les autres sont dans le même voisinage.
    *
-   * `behavior: 'auto'` plutôt que `'smooth'`, à dessein : un saut net ne dépend pas de
-   * `prefers-reduced-motion`, et une capture prise pendant un défilement animé ne
-   * montrerait pas l'écran qu'elle nomme (#153).
+   * Le défilement est **animé**, sauf demande contraire : `prefers-reduced-motion` du
+   * système **ou** le réglage « Mouvement réduit » de l'application donnent un saut net
+   * (`'auto'`). La valeur se lit **dans l'effet**, pas en dépendance : changer le réglage
+   * ne doit pas refaire défiler la page.
    */
   useEffect(() => {
     if (!ouvert) return;
     const cible = courante.cibles[0];
     if (!cible) return;
     document.querySelector(`[data-pas-a-pas="${cible}"]`)?.scrollIntoView({
-      behavior: 'auto',
+      behavior: comportementDeDefilement(),
       block: 'center'
     });
   }, [ouvert, courante]);
+
+  const designe = useCallback(
+    (cible: CibleCombat) => (ouvert && courante.cibles.includes(cible) ? cible : undefined),
+    [ouvert, courante]
+  );
 
   return {
     ouvert,
@@ -93,6 +121,7 @@ export function usePasAPasCombat(): PasAPasCombatEtat {
     courante,
     derniere: index === ETAPES_COMBAT.length - 1,
     cibles: ouvert ? courante.cibles.join(' ') : '',
+    designe,
     suivante,
     precedente,
     terminer

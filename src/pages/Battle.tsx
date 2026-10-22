@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ClipboardPaste, Coffee, Copy, RotateCcw, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
@@ -31,7 +31,8 @@ import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
-import { usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
+import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
+import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -180,19 +181,20 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
   const activeCard = side.active ? getCard(side.active.cardId) : undefined;
 
   switch (action.type) {
+    /*
+     * **Poser, c'est un geste à deux temps** (#169) : on choisit la carte dans la main, puis
+     * on dit **où** elle va. Le libellé porte donc le lieu — « Poser au Poste », « Mettre
+     * au Rack 2 » — et plus le nom de la carte, que le panneau de pose rappelle déjà.
+     */
     case 'playBasic':
-      return {
-        label: 'Poser',
-        detail: `${instanceName(handCard(action.uid))} ${action.slot === 'active' ? 'au Poste' : `au Rack ${Number(action.slot) + 1}`}`
-      };
+      return { label: action.slot === 'active' ? 'Poser au Poste' : `Mettre au Rack ${Number(action.slot) + 1}` };
     case 'playAction':
       return {
-        label: 'Jouer',
-        detail: `${instanceName(handCard(action.uid))} · ${kindLabel(handDefinition(action.uid))}`
+        label: kindLabel(handDefinition(action.uid)) === 'Objet' ? 'Jouer cet Objet' : 'Jouer ce Collègue'
       };
     case 'evolve':
       return {
-        label: 'Évolution',
+        label: 'Faire évoluer',
         detail: `${instanceName(posted(action.targetUid))} → ${instanceName(handCard(action.uid))}`
       };
     case 'priorityShift':
@@ -257,6 +259,120 @@ function ActionButton({
       {view.damage !== undefined && <span className="attack__dmg">{view.damage}</span>}
       {view.detail && <span className="button__detail">{view.detail}</span>}
     </button>
+  );
+}
+
+/**
+ * **Un camp du plateau** (#169) : l'ordre est celui d'un jeu de cartes à deux joueurs —
+ * le camp adverse en haut, **Rack puis Poste**, le mien en bas, **Poste puis Rack** : les
+ * deux Postes se font face au milieu. Tout tient dans une carte compacte, pour que les
+ * deux camps, la main et les actions se voient d'un coup sur un téléphone.
+ *
+ * Le pas-à-pas désigne le Poste, la Machine et les Interventions **du joueur seulement**
+ * (`mine`) : l'adversaire n'a jamais d'attribut `data-pas-a-pas`.
+ */
+function Camp({
+  label,
+  side,
+  current,
+  mine,
+  pendingPromotion,
+  pasAPas
+}: {
+  label: string;
+  side: PlayerState;
+  /** Le camp qui a la main : son cadre s'allume. */
+  current: boolean;
+  mine: boolean;
+  /** Vrai quand ce camp attend de choisir sa relève. */
+  pendingPromotion: boolean;
+  pasAPas: PasAPasCombatEtat;
+}) {
+  const poste = (
+    <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
+      <span className="stat-label">Poste</span>
+      <div className="board__content">
+        {side.active ? (
+          <>
+            <div className="poste__head">
+              <strong>{cardName(side.active.cardId)}</strong>
+              <span className="poste__hp">
+                {side.active.maxHp - side.active.hp}/{side.active.maxHp} de Stress
+              </span>
+            </div>
+            <div className="poste__gauge">
+              <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
+              <div className="poste__meta">
+                <CafesPips cafes={side.active.energy} />
+                <MachinePips
+                  zone={side.energyZone}
+                  cafeTypes={side.cafeTypes}
+                  designe={mine && pasAPas.designe('machine') !== undefined}
+                />
+                {side.active.statuses.map((status) => (
+                  <StatusBadge key={status} status={status} />
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <strong className="muted">{pendingPromotion ? 'Aucun Planqué — relève à choisir' : 'Poste libre'}</strong>
+        )}
+      </div>
+    </div>
+  );
+
+  const rack = (
+    <div className="board__bench">
+      <span className="stat-label">Rack</span>
+      <ul className="rack board__content">
+        {side.bench.map((slot, index) => (
+          <li className={`rack__slot ${slot ? '' : 'is-free'}`} key={index} title={describe(slot)}>
+            {slot ? (
+              <>
+                <strong className="rack__name">{cardName(slot.cardId)}</strong>
+                <span className="rack__stress muted">
+                  {slot.maxHp - slot.hp}/{slot.maxHp} de Stress
+                </span>
+              </>
+            ) : (
+              <span className="muted">Place libre</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  return (
+    <article className={`board__side ${current ? 'is-current' : ''}`}>
+      <header className="board__head">
+        <h2>{label}</h2>
+        <span className="board__counts muted">
+          main {side.hand.length} · Deck {side.deck.length} · Rebut {side.discard.length}
+        </span>
+        <span
+          className={`board__points ${side.points > 0 ? 'is-scored' : ''}`}
+          role="img"
+          aria-label={`Interventions : ${side.points} sur 3`}
+          data-pas-a-pas={mine ? pasAPas.designe('interventions') : undefined}
+        >
+          {'★'.repeat(side.points)}
+          {'☆'.repeat(Math.max(0, 3 - side.points))}
+        </span>
+      </header>
+      {mine ? (
+        <>
+          {poste}
+          {rack}
+        </>
+      ) : (
+        <>
+          {rack}
+          {poste}
+        </>
+      )}
+    </article>
   );
 }
 
@@ -377,10 +493,29 @@ export function Battle() {
   /** Les Pressions que le café couvre, selon le moteur (`legalAttacks`, testée). */
   const inReach = useMemo(() => legalAttacks(state), [state]);
 
-  const play = useCallback(
-    (action: BattleAction) => setState((current) => applyAction(current, action)),
-    []
-  );
+  /**
+   * **La carte choisie dans la main** (#169). Poser est un geste à deux temps : on touche
+   * la carte, puis on choisit **où** elle va. La sélection reste visible (cadre accentué,
+   * panneau de pose) tant qu'aucune action ne l'a consommée : `play` la vide, et une
+   * sélection dont la carte a quitté la main ne montre plus rien (`selected`, plus bas).
+   */
+  const [selectedUid, setSelectedUid] = useState<string | null>(null);
+
+  /**
+   * Le panneau de pose vient sous la main : choisir une carte le **cadre** (`nearest` —
+   * rien ne bouge s'il est déjà tout entier à l'écran), pour que le geste suivant soit
+   * sous le doigt. La marge basse de `.pose` laisse la barre de navigation à sa place.
+   */
+  const poseRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!selectedUid) return;
+    poseRef.current?.scrollIntoView({ behavior: comportementDeDefilement(), block: 'nearest' });
+  }, [selectedUid]);
+
+  const play = useCallback((action: BattleAction) => {
+    setSelectedUid(null);
+    setState((current) => applyAction(current, action));
+  }, []);
 
   /**
    * **IA de niveau 1, en solo seulement** : quand c'est à la Direction de jouer — ou de
@@ -431,6 +566,7 @@ export function Battle() {
   );
 
   const restart = useCallback(() => {
+    setSelectedUid(null);
     setMatch(null);
     setCodeMessage(null);
     setIncoming('');
@@ -447,6 +583,7 @@ export function Battle() {
    */
   const startTwoPlayer = useCallback(() => {
     const created = createMatch(playerDeck, testDeck(), Date.now(), { playerCafeTypes: chosenCafeTypes });
+    setSelectedUid(null);
     setMatch(created.match);
     setState(created.state);
     setCodeMessage(null);
@@ -475,26 +612,26 @@ export function Battle() {
       setCodeMessage({ ton: 'ko', texte: joined.raison });
       return;
     }
+    setSelectedUid(null);
     setMatch(joined.match);
     setState(joined.state);
     setIncoming('');
     setCodeMessage({ ton: 'ok', texte: `Partie reprise : tu joues le ${CAMP_NAME[joined.match.camp]}.` });
   }, [incoming]);
 
-  const rows = useMemo(() => {
-    const label = (id: PlayerId) =>
-      match
-        ? `${id === myCamp ? 'Toi' : 'Adversaire'} · ${CAMP_NAME[id]}`
-        : id === 'player'
-          ? 'Toi'
-          : 'La Direction';
-    const ordered = [otherCamp(myCamp), myCamp];
-    return ordered.map((id) => ({
-      id,
-      label: label(id),
-      side: state.players[id]
-    })) satisfies { id: PlayerId; label: string; side: PlayerState }[];
-  }, [state, myCamp, match]);
+  const campLabel = (id: PlayerId) =>
+    match
+      ? `${id === myCamp ? 'Toi' : 'Adversaire'} · ${CAMP_NAME[id]}`
+      : id === 'player'
+        ? 'Toi'
+        : 'La Direction';
+
+  /** La carte choisie, **si elle est encore dans la main** : sinon la sélection est vide. */
+  const selected = mySide.hand.find((card) => card.uid === selectedUid) ?? null;
+  const selectedDefinition = selected ? getCard(selected.cardId) : undefined;
+  const selectedActions = selected
+    ? handActions.filter((action) => 'uid' in action && action.uid === selected.uid)
+    : [];
 
   /**
    * Ce que dit la section « Au Poste » quand elle est vide : la partie est finie, ou
@@ -525,12 +662,12 @@ export function Battle() {
     <div
       className={`page battle${pasAPas.ouvert ? ' battle--pas-a-pas' : ''}`}
       /* Les cibles de l'étape courante : `styles.css` met en avant l'élément qui porte
-         le `data-pas-a-pas` correspondant. Fermé, l'attribut est vide — `~=` ne peut
-         donc rien surligner. */
+         le `data-pas-a-pas` correspondant (`pasAPas.designe`). Fermé, aucun élément ne
+         porte l'attribut — donc aucun contour. */
       data-pas-a-pas-cibles={pasAPas.cibles}
     >
-      <section className="section__head">
-        <div>
+      <section className="battle__head">
+        <div className="battle__title">
           <h1>Combat</h1>
           <p className="muted">
             Tour {state.turn} ·{' '}
@@ -545,26 +682,25 @@ export function Battle() {
         </div>
         <div className="actions actions--tight">
           {forfeitAction && (
-            <button type="button" className="button" onClick={() => abandon(forfeitAction)}>
+            <button type="button" className="button button--small" onClick={() => abandon(forfeitAction)}>
               Abandonner
             </button>
           )}
-          <button type="button" className="button" onClick={restart}>
-            <RotateCcw size={16} /> Nouveau combat
+          <button type="button" className="button button--small" onClick={restart}>
+            <RotateCcw size={14} /> Nouveau combat
           </button>
         </div>
       </section>
 
-      {usedTestDeck && (
-        <p className="notice notice--warn">
-          Ton deck n’est pas valide (20 cartes, 2 exemplaires max, 1 Entrant minimum) : ce combat utilise un deck de test.
-        </p>
-      )}
+      {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
+      <PasAPasCombat pasAPas={pasAPas} />
 
-      {match === null && (
-        <p className="notice">
-          La Direction joue toute seule (IA de niveau 1) : son tour s’enchaîne automatiquement. Tous les boutons
-          ci-dessous viennent de la liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
+      {usedTestDeck && (
+        <p
+          className="notice notice--warn notice--compact"
+          title="Un deck valide : 20 cartes, 2 exemplaires max, 1 Entrant minimum."
+        >
+          Ton deck n’est pas valide : ce combat utilise un deck de test.
         </p>
       )}
 
@@ -590,139 +726,169 @@ export function Battle() {
       )}
 
       {/*
-        La partie à deux (#125) : créer, transmettre le code, le coller. Les commandes de
-        jeu restent celles du moteur, plus bas — cette section ne fait que passer la main.
+        **La table** (#169) : le plateau des deux camps, puis la console du joueur — relève,
+        actions de la Pression, main. Sur téléphone, tout s'empile et tient dans l'écran ;
+        sur un écran large, la console passe à côté du plateau. Ce qui est secondaire
+        (Conditions, Partie à deux, Journal) est replié plus bas.
       */}
-      <section className="section panel">
-        <div className="section__head">
-          <h2>Partie à deux</h2>
-          <span className="muted">un code à se passer, sans serveur</span>
-        </div>
+      <div className="battle__table">
+        <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
+          {[otherCamp(myCamp), myCamp].map((id) => (
+            <Camp
+              key={id}
+              label={campLabel(id)}
+              side={state.players[id]}
+              current={state.current === id && state.phase === 'playing'}
+              mine={id === myCamp}
+              pendingPromotion={state.pendingPromotion === id}
+              pasAPas={pasAPas}
+            />
+          ))}
+        </section>
 
-        {match === null ? (
-          <>
-            <p className="muted">
-              Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
-              joueur. Un code apparaît à la fin de ton tour.
-            </p>
-            <div className="actions actions--tight">
-              <button type="button" className="button button--primary" onClick={startTwoPlayer}>
-                <Users size={16} /> Créer une partie à deux
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="notice">{campLine(state, match)}</p>
-            <p className="muted">
-              Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
-              les mêmes boutons que toi.
-            </p>
-            {transfer?.ready ? (
-              <>
-                <p className="muted">
-                  Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
-                  reprend ici, avec le camp adverse.
+        <div className="battle__console">
+          {state.pendingPromotion && (
+            <section className="notice notice--warn promotion">
+              {state.pendingPromotion === myCamp ? (
+                <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
+              ) : match === null ? (
+                <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
+              ) : (
+                <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
+              )}
+              <div className="actions actions--tight">
+                {promotions.map((action) => (
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="section actions-panel" data-pas-a-pas={pasAPas.designe('poste-actions')}>
+            <div className="section__head">
+              <h2>Au Poste</h2>
+              {/* `legalAttacks` lit le camp qui a la main : ce paragraphe ne parle donc que
+                  quand c'est mon tour (en solo, il ne décrit plus le Poste de la Direction). */}
+              {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (
+                <p className="muted actions-panel__portee">
+                  {mySide.hasAttacked
+                    ? 'Pression déjà portée ce tour.'
+                    : inReach.length === myCard.attacks.length
+                      ? 'Toutes tes Pressions sont à portée de café.'
+                      : `Hors de portée du café : ${myCard.attacks
+                          .filter((entry) => !inReach.includes(entry))
+                          .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
+                          .join(', ')}.`}
                 </p>
-                <div className="actions actions--tight">
-                  <button type="button" className="button" onClick={copyCode}>
-                    <Copy size={16} /> Copier le code
-                  </button>
-                </div>
-                <textarea
-                  className="pvp__code"
-                  readOnly
-                  value={code}
-                  rows={4}
-                  aria-label="Code de la partie, à transmettre"
-                />
-              </>
+              )}
+            </div>
+            {boardActions.length === 0 && pressions.length === 0 && turnActions.length === 0 ? (
+              <p className="muted">{idleLine}</p>
             ) : (
-              <p className="muted">{transfer?.raison}</p>
-            )}
-            <p className="muted">« Nouveau combat » quitte la partie à deux et rend le combat solo.</p>
-          </>
-        )}
-
-        <label className="field">
-          <span className="field__label">Coller un code reçu</span>
-          <textarea
-            className="pvp__code"
-            value={incoming}
-            onChange={(event) => setIncoming(event.target.value)}
-            placeholder="PLQ1.…"
-            rows={3}
-            aria-label="Code reçu, à coller"
-          />
-        </label>
-        <div className="actions actions--tight">
-          <button type="button" className="button" onClick={join}>
-            <ClipboardPaste size={16} /> Prendre le camp adverse
-          </button>
-        </div>
-        <p className="muted">
-          Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
-          laissée, et tu prends le camp qui doit jouer.
-        </p>
-        {codeMessage && (
-          <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
-        )}
-      </section>
-
-      <section className="board" data-pas-a-pas={pasAPas.ouvert && pasAPas.cibles.includes('plateau') ? 'plateau' : undefined}>
-        {rows.map(({ id, label, side }) => (
-          <article className={`board__side ${state.current === id && state.phase === 'playing' ? 'is-current' : ''}`} key={id}>
-            <header className="board__head">
-              <h2>{label}</h2>
-              <span className={`board__points ${side.points > 0 ? 'is-scored' : ''}`}>
-                {'★'.repeat(side.points)}
-                {'☆'.repeat(Math.max(0, 3 - side.points))}
-              </span>
-            </header>
-
-            <div className="board__poste" data-pas-a-pas={pasAPas.ouvert && pasAPas.cibles.includes('poste') && myCamp === id ? 'poste' : undefined}>
-              <span className="stat-label">Poste</span>
-              {side.active ? (
-                <>
-                  <div className="poste__head">
-                    <strong>{cardName(side.active.cardId)}</strong>
-                    <span className="poste__hp">
-                      {side.active.maxHp - side.active.hp}/{side.active.maxHp} de Stress
-                    </span>
+              <>
+                {boardActions.length > 0 && (
+                  <div className="actions actions--tight">
+                    {boardActions.map((action) => (
+                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                    ))}
                   </div>
-                  <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
-                  <div className="poste__meta">
-                    <CafesPips cafes={side.active.energy} />
-                    <MachinePips zone={side.energyZone} cafeTypes={side.cafeTypes} designe={pasAPas.ouvert && pasAPas.cibles.includes('machine') && myCamp === id} />
-                    {side.active.statuses.map((status) => (
-                      <StatusBadge key={status} status={status} />
+                )}
+                {(pressions.length > 0 || turnActions.length > 0) && (
+                  <div className="actions actions--tight actions--pressions">
+                    {pressions.map((action) => (
+                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                    ))}
+                    {turnActions.map((action) => (
+                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          <section className="section hand-panel" data-pas-a-pas={pasAPas.designe('main')}>
+            <div className="section__head">
+              {/* En partie à deux, « ta main » est celle du camp que je tiens : l'autre joueur,
+                  lui, n'en voit jamais que le compte (bandeau du plateau). */}
+              <h2>{match === null ? 'Ta main' : `Ta main · ${CAMP_NAME[myCamp]}`}</h2>
+              <span className="muted">
+                {mySide.hand.length} / 10
+                {myMove && handActions.length > 0 && !selected ? ' · touche une carte pour la jouer' : ''}
+              </span>
+            </div>
+            {mySide.hand.length === 0 ? (
+              <p className="muted">Main vide.</p>
+            ) : (
+              <ul className="hand">
+                {mySide.hand.map((card) => {
+                  const definition = getCard(card.cardId);
+                  const isSelected = selected?.uid === card.uid;
+                  const jouable = handActions.some((action) => 'uid' in action && action.uid === card.uid);
+                  return (
+                    <li key={card.uid}>
+                      <button
+                        type="button"
+                        className={`hand__card${isSelected ? ' is-selected' : ''}${jouable ? ' is-playable' : ''}`}
+                        aria-pressed={isSelected}
+                        onClick={() => setSelectedUid(isSelected ? null : card.uid)}
+                      >
+                        <strong className="hand__name">{cardName(card.cardId)}</strong>
+                        <span className="hand__meta">
+                          <span className="hand__kind">{kindLabel(definition)}</span>
+                          {jouable && <span className="hand__tag">Jouable</span>}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {/*
+            **La pose** (#169) : la carte choisie reste sous les yeux — nommée, avec son texte —
+            tant qu'on ne l'a pas posée, et chaque geste dit **où** : « Poser au Poste »,
+            « Mettre au Rack 2 », « Jouer cet Objet ». Il vient **sous la main** et la page le
+            cadre dès qu'une carte est choisie (`poseRef`) : sur téléphone il ne reste jamais
+            sous la barre de navigation.
+          */}
+          {selected && (
+            <section className="pose panel" aria-label="Poser la carte choisie" ref={poseRef}>
+              <p className="pose__titre">
+                <span className="muted">Carte choisie</span> <strong>{cardName(selected.cardId)}</strong>{' '}
+                <span className="hand__kind">{kindLabel(selectedDefinition)}</span>
+              </p>
+              {selectedDefinition && !isPlanque(selectedDefinition) && (
+                <p className="hand__text muted">{selectedDefinition.text}</p>
+              )}
+              {selectedActions.length > 0 ? (
+                <>
+                  <p className="muted pose__aide">Touche un geste pour la jouer :</p>
+                  <div className="actions actions--tight">
+                    {selectedActions.map((action) => (
+                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
                     ))}
                   </div>
                 </>
               ) : (
-                <strong className="muted">Aucun Planqué — relève à choisir</strong>
+                <p className="muted">
+                  {myMove ? 'Cette carte ne peut pas être jouée maintenant.' : 'Ce n’est pas ton tour de jouer.'}
+                </p>
               )}
-            </div>
+              <button type="button" className="link-button" onClick={() => setSelectedUid(null)}>
+                Reprendre une autre carte
+              </button>
+            </section>
+          )}
+        </div>
+      </div>
 
-            <div className="board__bench">
-              <span className="stat-label">Rack</span>
-              <ul>
-                {side.bench.map((slot, index) => (
-                  <li key={index}>{describe(slot)}</li>
-                ))}
-              </ul>
-            </div>
-
-            <p className="muted">
-              main {side.hand.length} · Deck {side.deck.length} · Rebut {side.discard.length}
-            </p>
-          </article>
-        ))}
-      </section>
-
-      <section className="section" data-pas-a-pas="conditions">
-        <div className="section__head">
-          <h2>Conditions</h2>
+      <details className="fold" data-pas-a-pas={pasAPas.designe('conditions')} open={pasAPas.designe('conditions') ? true : undefined}>
+        <summary>
+          <span>Conditions</span> <span className="muted">ce qu’un Planqué au Poste peut subir</span>
+        </summary>
+        <div className="fold__body">
           <Dialog>
             <DialogTrigger render={<Button variant="outline" size="sm" />}>Règles</DialogTrigger>
             <DialogContent>
@@ -733,121 +899,109 @@ export function Battle() {
               {conditionsLegend}
             </DialogContent>
           </Dialog>
-          <span className="muted">ce qu’un Planqué au Poste peut subir</span>
+          {conditionsLegend}
         </div>
-        {conditionsLegend}
-      </section>
+      </details>
 
-      {state.pendingPromotion && (
-        <section className="notice notice--warn promotion">
-          {state.pendingPromotion === myCamp ? (
-            <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
-          ) : match === null ? (
-            <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
-          ) : (
-            <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
-          )}
-          <div className="actions">
-            {promotions.map((action) => (
-              <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="section">
-        <div className="section__head">
-          {/* En partie à deux, « ta main » est celle du camp que je tiens : l'autre joueur,
-              lui, n'en voit jamais que le compte (bandeau du plateau, plus haut). */}
-          <h2>{match === null ? 'Ta main' : `Ta main · ${CAMP_NAME[myCamp]}`}</h2>
-          <span className="muted">{mySide.hand.length} / 10</span>
-        </div>
-        {mySide.hand.length === 0 ? (
-          <p className="muted">Main vide.</p>
-        ) : (
-          <ul className="hand" data-pas-a-pas="main">
-            {mySide.hand.map((card) => {
-              const definition = getCard(card.cardId);
-              const mine = handActions.filter((action) => 'uid' in action && action.uid === card.uid);
-              return (
-                <li className="hand__card" key={card.uid}>
-                  <div className="hand__head">
-                    <strong>{cardName(card.cardId)}</strong>
-                    <span className="hand__kind">{kindLabel(definition)}</span>
-                  </div>
-                  {definition && !isPlanque(definition) && <p className="hand__text muted">{definition.text}</p>}
-                  {mine.length > 0 && (
-                    <div className="actions actions--tight">
-                      {mine.map((action) => (
-                        <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                      ))}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className="section" data-pas-a-pas="interventions">
-        <div className="section__head">
-          <h2>Au Poste</h2>
-        </div>
-        {boardActions.length === 0 && pressions.length === 0 && turnActions.length === 0 ? (
-          <p className="muted">{idleLine}</p>
-        ) : (
-          <>
-            {boardActions.length > 0 && (
-              <div className="actions" data-pas-a-pas={pasAPas.ouvert && pasAPas.cibles.includes('poste-actions') ? 'poste-actions' : undefined}>
-                {boardActions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                ))}
-              </div>
-            )}
-            {pressions.length > 0 && (
-              <div className="actions actions--pressions">
-                {pressions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                ))}
-              </div>
-            )}
-            {/* `legalAttacks` lit le camp qui a la main : ce paragraphe ne parle donc que
-                quand c'est mon tour (en solo, il ne décrit plus le Poste de la Direction). */}
-            {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (
+      {/*
+        La partie à deux (#125) : créer, transmettre le code, le coller. Repliée tant qu'aucune
+        partie à deux n'est en cours — elle s'ouvre seule dès qu'il y a un code à passer. Les
+        commandes de jeu restent celles du moteur, plus haut : cette section ne fait que
+        passer la main.
+      */}
+      <details className="fold" open={match !== null ? true : undefined}>
+        <summary>
+          <span>Partie à deux</span> <span className="muted">un code à se passer, sans serveur</span>
+        </summary>
+        <div className="fold__body">
+          {match === null ? (
+            <>
               <p className="muted">
-                {mySide.hasAttacked
-                  ? 'Pression déjà portée ce tour.'
-                  : inReach.length === myCard.attacks.length
-                    ? 'Toutes tes Pressions sont à portée de café.'
-                    : `Hors de portée du café : ${myCard.attacks
-                        .filter((entry) => !inReach.includes(entry))
-                        .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
-                        .join(', ')}.`}
+                Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
+                joueur. Un code apparaît à la fin de ton tour.
               </p>
-            )}
-            {turnActions.length > 0 && (
-              <div className="actions actions--turn">
-                {turnActions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                ))}
+              <div className="actions actions--tight">
+                <button type="button" className="button button--primary" onClick={startTwoPlayer}>
+                  <Users size={16} /> Créer une partie à deux
+                </button>
               </div>
-            )}
-          </>
-        )}
-      </section>
+            </>
+          ) : (
+            <>
+              <p className="notice">{campLine(state, match)}</p>
+              <p className="muted">
+                Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
+                les mêmes boutons que toi.
+              </p>
+              {transfer?.ready ? (
+                <>
+                  <p className="muted">
+                    Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
+                    reprend ici, avec le camp adverse.
+                  </p>
+                  <div className="actions actions--tight">
+                    <button type="button" className="button" onClick={copyCode}>
+                      <Copy size={16} /> Copier le code
+                    </button>
+                  </div>
+                  <textarea
+                    className="pvp__code"
+                    readOnly
+                    value={code}
+                    rows={4}
+                    aria-label="Code de la partie, à transmettre"
+                  />
+                </>
+              ) : (
+                <p className="muted">{transfer?.raison}</p>
+              )}
+              <p className="muted">« Nouveau combat » quitte la partie à deux et rend le combat solo.</p>
+            </>
+          )}
 
-      <section className="section">
-        <div className="section__head">
-          <h2>Journal</h2>
+          <label className="field">
+            <span className="field__label">Coller un code reçu</span>
+            <textarea
+              className="pvp__code"
+              value={incoming}
+              onChange={(event) => setIncoming(event.target.value)}
+              placeholder="PLQ1.…"
+              rows={3}
+              aria-label="Code reçu, à coller"
+            />
+          </label>
+          <div className="actions actions--tight">
+            <button type="button" className="button" onClick={join}>
+              <ClipboardPaste size={16} /> Prendre le camp adverse
+            </button>
+          </div>
+          <p className="muted">
+            Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
+            laissée, et tu prends le camp qui doit jouer.
+          </p>
+          {codeMessage && (
+            <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
+          )}
         </div>
-        <ol className="log">
+      </details>
+
+      <details className="fold">
+        <summary>
+          <span>Journal</span>
+        </summary>
+        <ol className="log fold__body">
           {state.log.slice(-14).map((line, index) => (
             <li key={`${index}-${line}`}>{line}</li>
           ))}
         </ol>
-      </section>
-      <PasAPasCombat pasAPas={pasAPas} />
+      </details>
+
+      {match === null && (
+        <p className="muted battle__note">
+          La Direction joue toute seule (IA de niveau 1) : son tour s’enchaîne automatiquement. Tous les
+          boutons viennent de la liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
+        </p>
+      )}
     </div>
   );
 }
