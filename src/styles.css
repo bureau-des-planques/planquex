@@ -1235,6 +1235,28 @@ h2 {
   margin-top: 1rem;
 }
 
+/* ---------- Journée d'intégration (D-066, #130) ---------- */
+
+/* La sortie de la visite, sous les actions : un lien discret, pas un troisième bouton —
+   « Suivant » doit rester lisible à côté du geste de l'étape. */
+.journee__passer {
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  width: fit-content;
+}
+
+.journee__passer:hover {
+  color: var(--text);
+}
+
 /* ---------- Combat ---------- */
 
 .board {
