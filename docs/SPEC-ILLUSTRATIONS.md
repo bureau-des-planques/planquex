@@ -31,9 +31,12 @@ couvrent **toutes** les cartes de base, et le nombre qui fait foi est celui de
 `npm run status` (`cards`) — pas un chiffre écrit ici. Le chiffre n'est pas corrigé ici pour ne
 pas réécrire un plan daté : il est **signalé** (constat du 22/10/2026, #121).
 
-**Une cible périmée à ne pas confondre avec un compte** : `AGENTS.md` §4.2 annonce « cible de
-lancement : 286 cartes = 226 de base + 60 secrètes ». Le dépôt en contient **300**. C'est une
-cible dépassée, pas une erreur de comptage — mais elle mérite d'être réécrite un jour.
+**Une cible qui a changé, et un `AGENTS.md` qui a suivi** : `AGENTS.md` §4.2 n'annonce plus de
+compte. Depuis **D-063** (22/10/2026), la cible est **autour de 300** — 225 bases + 75 variantes,
+**sans compter** —, et ce qui compte est ce qu'on peut jouer. L'ancienne cible chiffrée (celle de
+**D-005**, acte daté qui ne se réécrit pas) n'est plus citée ici : c'est **ce document** qui avait
+pris du retard, pas `AGENTS.md` (constat du 22/10/2026, #148). Le décompte réel n'est écrit dans
+cette spec que dans le tableau ci-dessus, et il se lit dans `npm run status`.
 
 ## 2. Les douze décisions
 

@@ -3,7 +3,9 @@
 > Version de travail — 18/10/2026. Document de décision, pas de code.
 > Objectif : reproduire **le jeu complet de l'APK** (Pokémon TCG Pocket 1.7.5) avec
 > l'univers Bureau des Planqués, sans réutiliser les versions abandonnées (`AGENTS.md` §9), et avec la même profondeur
-> de contenu au lancement : **286 cartes**, tous les écrans, tous les systèmes.
+> de contenu au lancement : **autour de 300 cartes** — 225 bases + 75 variantes, **sans
+> compter** (**D-063**) —, tous les écrans, tous les systèmes. Les décomptes réels se lisent
+> dans `npm run status`, jamais ici.
 
 ---
 
@@ -12,7 +14,7 @@
 | # | Sujet | Proposition par défaut |
 |---|---|---|
 | 1 | Base de règles | TCG Pocket **à l'identique** : 20 cartes, 5 en main, 3 au Rack, 3 Interventions, Machine à café, pas de résistance, pas de défaite par pioche vide |
-| 2 | Volume | **286 cartes** : 226 de base + 60 secrètes, avec la même répartition de raretés |
+| 2 | Volume | **Autour de 300 cartes** — 225 bases + 75 variantes, **sans compter** (**D-063**) : une bonne idée entre, une carte faite pour remplir un compte n'entre pas. Les décomptes se lisent dans `npm run status` ; la répartition de raretés suit le miroir |
 | 3 | Factions | 10 factions corporate (SSE, Management, QVT, Amélioration continue, RH, Atelier, Direction, Syndicat, Intérim, Support) |
 | 4 | Ton | Satire de bureau, **punch up** : on ridiculise les postures de pouvoir, pas les personnes réelles ni les groupes protégés |
 | 5 | Art | Direction « corporate dark premium » ; production assistée par IA + curation humaine (option à trancher) |
