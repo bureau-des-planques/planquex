@@ -260,7 +260,7 @@ function readUid(value: unknown): string | null {
   return typeof value === 'string' && UID_SHAPE.test(value) ? value : null;
 }
 
-/** Un entier dans `[0, max]` — index de Rack, de Pression, de relève. */
+/** Un entier dans `[0, max]` — index de Banc, de Pression, de relève. */
 function readIndex(value: unknown, max: number): number | null {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= max
     ? value

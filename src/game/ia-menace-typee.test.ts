@@ -20,7 +20,7 @@ const PLAYER_DECK = factionDeck('SSE');
 const AI_DECK = factionDeck('MANAGEMENT');
 
 /**
- * Un état où `who` a **exactement** le Planqué voulu au Poste, Rack vide, avec les
+ * Un état où `who` a **exactement** le Planqué voulu au Poste, Banc vide, avec les
  * cafés passés — de quoi isoler une mesure d'évaluation sans dépendre du tirage.
  */
 function withTestActive(

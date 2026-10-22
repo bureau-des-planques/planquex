@@ -46,7 +46,7 @@ function freshBattle(seed = SEED): BattleState {
   return createBattle(DECK, DECK, seed);
 }
 
-/** Cartes en main + au Poste + à l'Rack. */
+/** Cartes en main + au Poste + au Banc. */
 function ownedByPlayer(state: BattleState): number {
   const player = state.players.player;
   const inPlay = [player.active, ...player.bench].filter(Boolean).length;
@@ -70,7 +70,7 @@ describe('createBattle — mise en place', () => {
   it('distribue 5 cartes, pose un N+1 et ouvre le tour par la pioche d’ouverture', () => {
     const state = freshBattle();
     // Les 5 cartes de la main de départ servent aussi à poser le Poste et
-    // l'Rack : la main ne conserve que les Planqués non posés. Le joueur y
+    // le Banc : la main ne conserve que les Planqués non posés. Le joueur y
     // ajoute sa pioche d'ouverture (D-030).
     expect(ownedByPlayer(state)).toBe(6);
     expect(state.players.player.active).not.toBeNull();
@@ -82,7 +82,7 @@ describe('createBattle — mise en place', () => {
     const state = freshBattle();
     const player = state.players.player;
 
-    // 5 cartes de départ (main + Poste + Rack), **plus** la pioche d'ouverture :
+    // 5 cartes de départ (main + Poste + Banc), **plus** la pioche d'ouverture :
     // la ligne « le premier joueur ne pioche pas » venait du TCG physique, pas de Pocket.
     expect(ownedByPlayer(state)).toBe(6);
     expect(player.deck).toHaveLength(DECK_SIZE - 6);
@@ -186,7 +186,7 @@ describe('endTurn — statut létal', () => {
 
     const after = endTurn(lethal);
 
-    // §4 : « le Rack choisit la relève ». Le moteur attend, il ne promeut pas.
+    // §4 : « le Banc choisit la relève ». Le moteur attend, il ne promeut pas.
     expect(after.phase).toBe('playing');
     expect(after.pendingPromotion).toBe('player');
     expect(after.players.player.active).toBeNull();
@@ -282,7 +282,7 @@ describe('Fin de partie (D-031)', () => {
       me.active.hp = 10;
       me.active.energy = [];
       me.points = 2;
-      // Un Rack plein : la relève serait légitime si la partie continuait.
+      // Un Banc plein : la relève serait légitime si la partie continuait.
       me.bench[0] = createInstance(BASICS[0] ?? me.active.cardId, state.turn);
       const foe = state.players.ai;
       if (!foe.active) throw new Error('Poste vide');
@@ -324,12 +324,12 @@ describe('Pression — dégâts et café', () => {
 
   /**
    * D-031 : la Vulnérabilité (+20) ne vaut **qu'au Poste**. La même Pression portée
-   * sur un Planqué du Rack n'y ajoute **rien**. Aucune Pression du set ne touche le
-   * Rack aujourd'hui : c'est la résolution des dégâts qu'on interroge, emplacement
+   * sur un Planqué du Banc n'y ajoute **rien**. Aucune Pression du set ne touche le
+   * Banc aujourd'hui : c'est la résolution des dégâts qu'on interroge, emplacement
    * par emplacement, pour que le jour où une telle Pression arrive elle n'hérite pas
    * de la Vulnérabilité.
    */
-  it('n’ajoute pas la Vulnérabilité à un Planqué du Rack (D-031)', () => {
+  it('n’ajoute pas la Vulnérabilité à un Planqué du Banc (D-031)', () => {
     const state = freshBattle();
     const attacker = state.players.player.active;
     if (!attacker) throw new Error('Poste vide');
@@ -338,11 +338,11 @@ describe('Pression — dégâts et café', () => {
     const pression = attackerCard.attacks[0];
     if (!pression) throw new Error('Aucune Pression');
 
-    // Un Planqué posable au Rack, sans Talent : seule la Vulnérabilité entre en jeu.
+    // Un Planqué posable au Banc, sans Talent : seule la Vulnérabilité entre en jeu.
     const benchCard = ALL_CARDS.find(
       (card) => isPlanque(card) && !card.ability && !card.variantOf && card.stage === 'ENTRANT'
     );
-    if (!benchCard) throw new Error('Aucun Planqué de Rack');
+    if (!benchCard) throw new Error('Aucun Planqué de Banc');
     const benched = createInstance(benchCard.id);
 
     // Vulnérable à la faction qui attaque : au Poste, cela vaudrait +20.
@@ -373,7 +373,7 @@ describe('Pression — dégâts et café', () => {
     const after = attack(next, index);
 
     // L'instance attaquante garde ses cafés, qu'elle reste au Poste ou rejoigne le
-    // Rack (une Pression `switchSelf` la déplace sans dépenser de café).
+    // Banc (une Pression `switchSelf` la déplace sans dépenser de café).
     const attacked = [after.players.player.active, ...after.players.player.bench].find(
       (entry) => entry?.uid === uid
     );
@@ -633,12 +633,12 @@ describe('Statuts — exclusivité et portée (D-030)', () => {
     expect(after.players.ai.active?.statuses).toEqual(['SIESTE']);
   });
 
-  it('la Rotation purge les statuts : le sortant les perd en rejoignant le Rack', () => {
+  it('la Rotation purge les statuts : le sortant les perd en rejoignant le Banc', () => {
     const state = structuredClone(freshBattle());
     const player = state.players.player;
     const active = player.active;
     const slot = player.bench.findIndex(Boolean);
-    if (!active || slot < 0) throw new Error('Poste ou Rack vide');
+    if (!active || slot < 0) throw new Error('Poste ou Banc vide');
     // La rotation est payée **au nombre** de cafés (`AGENTS.md` §4) : une liste du
     // coût de relève suffit, sans exigence de type.
     const activeCard = getCard(active.cardId);
@@ -728,7 +728,7 @@ describe('Relève choisie après un craquage', () => {
   it('installe le Planqué choisi au Poste et libère le jeu', () => {
     const after = knockOutAi(freshBattle());
     const chosen = after.players.ai.bench[1];
-    if (!chosen) throw new Error('Rack vide');
+    if (!chosen) throw new Error('Banc vide');
 
     const resolved = promoteActive(after, 1);
 
@@ -881,12 +881,12 @@ describe('Changement de priorité (D-004)', () => {
 });
 
 describe('retreat() — Relève', () => {
-  it('défausse autant de cafés que le coût de relève et échange le Poste avec l\'Rack', () => {
+  it('défausse autant de cafés que le coût de relève et échange le Poste avec l\'Banc', () => {
     const state = freshBattle();
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
     const benchCard = state.players.player.bench[0];
-    if (!benchCard) throw new Error('Rack vide');
+    if (!benchCard) throw new Error('Banc vide');
 
     // On met assez de café sur le Planqué actif pour couvrir le coût de relève :
     // la Rotation se paye **au nombre** de cafés (`AGENTS.md` §4).
@@ -901,9 +901,9 @@ describe('retreat() — Relève', () => {
     // Le Planqué du Poste a perdu le coût de relève en café : les premiers de la
     // liste partent (défausse déterministe, `discardFirstCafes`).
     expect(after.players.player.active?.energy).toEqual(beforeCafes.slice(retreatCost));
-    // Le Planqué de l'Rack est maintenant au Poste (sans ses statuts)
+    // Le Planqué de le Banc est maintenant au Poste (sans ses statuts)
     expect(after.players.player.active?.uid).toBe(benchCard.uid);
-    // L'ancien Planqué du Poste est allé à l'Rack
+    // L'ancien Planqué du Poste est allé au Banc
     expect(after.players.player.bench[0]?.uid).toBe(active.uid);
     // hasRetreated est à true
     expect(after.players.player.hasRetreated).toBe(true);
@@ -930,7 +930,7 @@ describe('retreat() — Relève', () => {
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
     const benchCard = state.players.player.bench[0];
-    if (!benchCard) throw new Error('Rack vide');
+    if (!benchCard) throw new Error('Banc vide');
     const activeCard = getCard(active.cardId);
     const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
     active.energy = Array(retreatCost).fill('SSE');
@@ -943,7 +943,7 @@ describe('retreat() — Relève', () => {
     expect(afterSecond).toBe(afterFirst);
   });
 
-  it('ne fait rien si l\'emplacement Rack visé est vide', () => {
+  it('ne fait rien si l\'emplacement Banc visé est vide', () => {
     const state = freshBattle();
     const active = state.players.player.active;
     if (!active) throw new Error('Poste vide');
@@ -1121,7 +1121,7 @@ describe('Cartes Action — Objet illimité, Collègue 1 par tour (AGENTS.md §4
     const { state, uids } = withHand(freshBattle(), [OBJET_SOIN]);
     const active = state.players.player.active;
     const bench = state.players.player.bench[0];
-    if (!active || !bench) throw new Error('Rack ou Poste vide');
+    if (!active || !bench) throw new Error('Banc ou Poste vide');
     active.hp -= 30;
     bench.hp -= 20;
     const activeBefore = active.hp;

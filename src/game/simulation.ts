@@ -442,7 +442,7 @@ export function formatReport(report: SimulationReport): string {
     `Simulation — ${report.games} partie(s), graine ${report.seed}, limite ${report.maxTurns} tours`,
     `Niveaux — joueur : niveau ${report.playerLevel}, Direction : niveau ${report.aiLevel}`,
     '',
-    `${'N°'.padEnd(4)}${'graine'.padEnd(12)}${'Poste'.padEnd(22)}${'Rack'.padEnd(22)}${'Vainqueur'.padEnd(22)}Tours`,
+    `${'N°'.padEnd(4)}${'graine'.padEnd(12)}${'Poste'.padEnd(22)}${'Banc'.padEnd(22)}${'Vainqueur'.padEnd(22)}Tours`,
     '-'.repeat(88)
   ];
 

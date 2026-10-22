@@ -19,7 +19,7 @@
 | 2 | Feu | **Management** | Dégâts, burn-out, pression | QVT | Responsable d’unité |
 | 3 | Eau | **QVT** | Énergie, relève, flux | Amélioration continue | Chief Happiness Officer |
 | 4 | Électricité | **Amélioration continue** | Dégâts étalés, gel, tempo | Atelier | Directeur qualité |
-| 5 | Psychique | **RH** | Dérive, Rack, manipulation | Direction | DRH |
+| 5 | Psychique | **RH** | Dérive, Banc, manipulation | Direction | DRH |
 | 6 | Combat | **Atelier** | Gros dégâts, gros Seuil | RH | Chef d’atelier |
 | 7 | Obscurité | **Direction** | Disruption, contrôle | Atelier | PDG |
 | 8 | Métal | **Syndicat** | Tank, soin, protection | Management | Secrétaire général |
@@ -66,7 +66,7 @@
 | Arrêt de travail | Objet | Protège un Planqué |
 | Gants de protection | Outil | +20 Seuil |
 | Visite médicale | Collègue | Soin + pioche |
-| Salle de repos | Lieu | +Seuil au Rack |
+| Salle de repos | Lieu | +Seuil au Banc |
 | **COMEX : Médecin du travail** | ex | 2 Interventions, soin de zone |
 
 - **Direction artistique** : blanc, vert menthe, infirmerie, lumière froide, plantes.
@@ -106,7 +106,7 @@
 
 - **Identité** : la QVT, les perks, les afterworks, les plantes vertes, la corbeille
   de fruits. Le bonheur comme process. L’eau, c’est le flux et le bien-être.
-- **Rôle** : accélération d’énergie, relève, dégâts au Rack, jeu de flux.
+- **Rôle** : accélération d’énergie, relève, dégâts au Banc, jeu de flux.
 - **Vulnérabilité** : Amélioration continue (l’audit tue la vibe).
 - **Ligne d’évolution** : Chargé QVT → Happiness Manager → Chief Happiness Officer.
 - **COMEX (ex)** : **Chief Happiness Officer** — « Le bonheur est obligatoire, 9 h–18 h. »
@@ -164,7 +164,7 @@
 
 - **Identité** : le recrutement, les entretiens, les plans de carrière, la manipulation
   douce. Le sourire est une arme.
-- **Rôle** : dérive, dégâts au Rack, contrôle, manipulation.
+- **Rôle** : dérive, dégâts au Banc, contrôle, manipulation.
 - **Vulnérabilité** : Direction (le pouvoir renvoie la manipulation).
 - **Ligne d’évolution** : Assistant RH → Chargé de recrutement → DRH.
 - **COMEX (ex)** : **DRH** — « Il a lu ton CV, il sait où tu habites. »
@@ -173,7 +173,7 @@
 |---|---|---|
 | Assistant RH | Entrant | Base, dérive |
 | Chargé de sourcing | Entrant | Base, défausse |
-| Chargé de recrutement | N+1 | Évolution, dégâts au Rack |
+| Chargé de recrutement | N+1 | Évolution, dégâts au Banc |
 | DRH | N+2 | Contrôle, gros dégâts |
 | Chasseur de têtes | Entrant | Base, pioche |
 | Entretien annuel | Objet | Défausse |
@@ -182,7 +182,7 @@
 | Badge nominatif | Outil | +10 dégâts |
 | Réunion individuelle | Collègue | Contrôle |
 | Salle d’entretien | Lieu | +10 dégâts aux attaques Psychique |
-| **COMEX : DRH** | ex | 2 Interventions, dégâts au Rack |
+| **COMEX : DRH** | ex | 2 Interventions, dégâts au Banc |
 
 - **Direction artistique** : violet, rose poudré, miroirs, sourires trop blancs.
 
@@ -192,7 +192,7 @@
 
 - **Identité** : la maintenance, le terrain, les outils, les pannes. Ça parle fort et
   ça répare. Le physique contre la paperasse.
-- **Rôle** : gros dégâts, gros Seuil, dégâts au Rack, jeu direct.
+- **Rôle** : gros dégâts, gros Seuil, dégâts au Banc, jeu direct.
 - **Vulnérabilité** : RH (la paperasse gagne toujours).
 - **Ligne d’évolution** : Apprenti → Technicien de maintenance → Chef d’atelier.
 - **COMEX (ex)** : **Chef d’atelier** — « Il a un plan. Le plan est une clé de 12. »
@@ -204,7 +204,7 @@
 | Plombier | Entrant | Base, tank |
 | Ascensoriste | Entrant | Base, relève |
 | Technicien de maintenance | N+1 | Évolution, buff |
-| Chef d’atelier | N+2 | Gros dégâts, Rack |
+| Chef d’atelier | N+2 | Gros dégâts, Banc |
 | Tournevis | Objet | +10 dégâts |
 | Multimètre | Outil | +10 dégâts |
 | Échelle | Outil | +20 Seuil |
@@ -351,7 +351,7 @@ sans changer les cartes.
 ### Variantes écartées (pour mémoire)
 
 - **Briefing** : regarde les 3 du dessus, prends-en 1, remets les autres dessous.
-- **Débrief** : déplace 1 café vers un Planqué du Rack en fin de tour.
+- **Débrief** : déplace 1 café vers un Planqué du Banc en fin de tour.
 
 ---
 

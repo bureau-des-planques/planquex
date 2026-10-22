@@ -39,13 +39,13 @@ describe('Battle — écran de combat', () => {
     expect(campHeadings.length).toBe(2);
   });
 
-  it('affiche le Poste et le Rack (labels)', () => {
+  it('affiche le Poste et le Banc (labels)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     const posteLabels = screen.getAllByText(/Poste/);
-    const rackLabels = screen.getAllByText(/Rack/);
+    const bancLabels = screen.getAllByText(/Banc/);
     expect(posteLabels.length).toBeGreaterThanOrEqual(2);
-    expect(rackLabels.length).toBeGreaterThanOrEqual(2);
+    expect(bancLabels.length).toBeGreaterThanOrEqual(2);
   });
 
   it('affiche la Machine à café pour chaque camp', () => {
@@ -284,7 +284,7 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
   });
 
   /** Les libellés de pose : le lieu ou l'effet, jamais un « Poser » nu. */
-  const LIBELLES_DE_POSE = /^(Poser au Poste|Mettre au Rack \d|Jouer cet Objet|Jouer ce Collègue|Faire évoluer|Changement de priorité)/;
+  const LIBELLES_DE_POSE = /^(Poser au Poste|Mettre au Banc \d|Jouer cet Objet|Jouer ce Collègue|Faire évoluer|Changement de priorité)/;
 
   async function premiereCarteJouable(): Promise<HTMLElement> {
     return waitFor(() => {

@@ -104,7 +104,7 @@ describe('Talent qui inflige des dégâts — primitive `damage` (#164, D-077)',
 
   it('un craquage provoqué par le Talent suit le chemin ordinaire : Intervention, relève', () => {
     const avant = scene({ effects: [{ kind: 'damage', amount: 10 }], joueur: 0, pvCible: 10 });
-    // La mise en place garnit le Rack adverse : le craquage ouvre donc une relève, il ne vide pas le plateau.
+    // La mise en place garnit le Banc adverse : le craquage ouvre donc une relève, il ne vide pas le plateau.
     const apres = applyAction(avant, TALENT);
     expect(apres.players.ai.active).toBeNull();
     expect(apres.players.player.points).toBe(1);

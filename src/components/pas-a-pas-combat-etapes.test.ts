@@ -25,7 +25,7 @@ describe('les cinq choses du premier combat (#143)', () => {
 
   it('couvre le Poste, le café, la Pression, les Conditions, la fin', () => {
     const textes = ETAPES_COMBAT.map((e) => `${e.titre} ${e.texte}`);
-    expect(textes.some((t) => /Poste|Rack/i.test(t))).toBe(true);
+    expect(textes.some((t) => /Poste|Banc/i.test(t))).toBe(true);
     expect(textes.some((t) => /café/i.test(t))).toBe(true);
     expect(textes.some((t) => /Pression/i.test(t))).toBe(true);
     expect(textes.some((t) => /Condition/i.test(t))).toBe(true);

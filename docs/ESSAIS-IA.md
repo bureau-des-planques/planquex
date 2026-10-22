@@ -42,11 +42,11 @@ Pour une décision de `who` (la Direction, ou le joueur au siège B) :
 
 ## 4. Protocole d'équité (règle centrale)
 
-**Ce que la décision lit de l'adversaire** : uniquement des **comptes** (`hand.length`, `deck.length`) et ses **champs publics** (Postes, Racks, défausse, points, Machine).
+**Ce que la décision lit de l'adversaire** : uniquement des **comptes** (`hand.length`, `deck.length`) et ses **champs publics** (Postes, Bancs, défausse, points, Machine).
 
 **Ce qu'elle ne lit jamais** : le **contenu** de sa main et de son Deck, ni son ordre de pioche.
 
-**Le pool des cartes inconnues** (`unknownPool`, vu du camp `who`) : chaque carte du catalogue, à `MAX_COPIES_PER_NAME` = 2 exemplaires, **moins** les cartes que `who` voit : sa main, son Deck, les Postes et Racks des **deux** camps, les défausses des **deux** camps. Il reste exactement ce que l'adversaire peut tenir. Ordre : celui de `ALL_CARDS` (déterministe).
+**Le pool des cartes inconnues** (`unknownPool`, vu du camp `who`) : chaque carte du catalogue, à `MAX_COPIES_PER_NAME` = 2 exemplaires, **moins** les cartes que `who` voit : sa main, son Deck, les Postes et Bancs des **deux** camps, les défausses des **deux** camps. Il reste exactement ce que l'adversaire peut tenir. Ordre : celui de `ALL_CARDS` (déterministe).
 - Approximation assumée : la règle des exemplaires est **par nom** (`deck.ts`), le pool la compte **par identifiant**.
 - Le pool **ne lit pas** la main ni le Deck de l'adversaire (test `le pool des cartes inconnues…`).
 

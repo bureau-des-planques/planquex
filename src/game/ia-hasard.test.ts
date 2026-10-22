@@ -30,7 +30,7 @@ const PLAYER_DECK = factionDeck('SSE');
 /**
  * Position contrôlée, **identique** quel que soit l'état du générateur : la Direction a
  * le trait, son Poste est sous **Dérive** et peut payer sa Pression (`Piqûre de rappel`,
- * 40 de stress), son Talent (`Prévention`, +10 de Seuil) reste disponible, un Rack
+ * 40 de stress), son Talent (`Prévention`, +10 de Seuil) reste disponible, un Banc
  * permet la Rotation, et le Poste adverse est à 10 de Seuil — une Pression réussie le
  * craque, donc une Intervention à la clé.
  *

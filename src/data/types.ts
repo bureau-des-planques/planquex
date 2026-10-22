@@ -152,13 +152,13 @@ export interface Ability {
   trigger?: 'onPlay';
   /**
    * Cible d'un `attachEnergy` (D-082). Absent : le Poste (Polyvalence de l'intérim, inchangé).
-   * `rack` : le joueur choisit le Planqué du Rack qui reçoit le café.
+   * `rack` : le joueur choisit le Planqué du Banc qui reçoit le café.
    */
   target?: 'rack';
 }
 
 /**
- * Nature de la carte. Un **Planqué** se pose au Poste ou au Rack ; une **carte Action**
+ * Nature de la carte. Un **Planqué** se pose au Poste ou au Banc ; une **carte Action**
  * se joue depuis la main puis part au Rebut : **Objet** (illimité par tour) ou
  * **Collègue** (1 par tour) — `AGENTS.md` §4.
  */
@@ -286,7 +286,7 @@ export type BattleAction =
   | { type: 'forfeit'; who: PlayerId }
   /**
    * Résout le **choix en attente** (`pendingChoice`, D-076) : la carte `uid` est celle que
-   * le joueur désigne — en main (défausse), dans le Deck (recherche), au Rack (café).
+   * le joueur désigne — en main (défausse), dans le Deck (recherche), au Banc (café).
    */
   | { type: 'choose'; uid: string }
   | { type: 'endTurn' };
@@ -300,7 +300,7 @@ export type PendingChoice =
   | { kind: 'defausse'; who: PlayerId; restant: number }
   /** Chercher une carte du filtre dans son Deck, puis l'ajouter à sa main (D-080). */
   | { kind: 'chercher'; who: PlayerId; filtre: CardFilter }
-  /** Choisir le Planqué du Rack qui reçoit le café `cafe` (D-082). */
+  /** Choisir le Planqué du Banc qui reçoit le café `cafe` (D-082). */
   | { kind: 'attacher'; who: PlayerId; cafe: CafeSymbol };
 
 /** Les quatre façons dont une partie s'arrête (`AGENTS.md` §4, #84). */
@@ -334,7 +334,7 @@ export interface BattleState {
    * craqué, et l'attaquant choisit en premier sur un double craquage). Tant que
    * ce champ est renseigné, aucune autre action n'est acceptée : il faut d'abord
    * trancher. `null` quand rien n'est en attente, ou quand le joueur n'a plus de
-   * Rack (la partie est alors terminée).
+   * Banc (la partie est alors terminée).
    */
   pendingPromotion: PlayerId | null;
   /**

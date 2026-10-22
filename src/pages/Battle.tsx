@@ -91,7 +91,7 @@ function kindLabel(definition: Card | undefined): string {
 }
 
 /**
- * Un Planqué du Rack, **en Stress** : `hp` reste le champ technique du moteur, le
+ * Un Planqué du Banc, **en Stress** : `hp` reste le champ technique du moteur, le
  * Stress est ce que le joueur lit (D-026). Le Seuil est rappelé pour situer la barre.
  */
 function describe(instance: CardInstance | null): string {
@@ -186,10 +186,10 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     /*
      * **Poser, c'est un geste à deux temps** (#169) : on choisit la carte dans la main, puis
      * on dit **où** elle va. Le libellé porte donc le lieu — « Poser au Poste », « Mettre
-     * au Rack 2 » — et plus le nom de la carte, que le panneau de pose rappelle déjà.
+     * au Banc 2 » — et plus le nom de la carte, que le panneau de pose rappelle déjà.
      */
     case 'playBasic':
-      return { label: action.slot === 'active' ? 'Poser au Poste' : `Mettre au Rack ${Number(action.slot) + 1}` };
+      return { label: action.slot === 'active' ? 'Poser au Poste' : `Mettre au Banc ${Number(action.slot) + 1}` };
     case 'playAction':
       return {
         label: kindLabel(handDefinition(action.uid)) === 'Objet' ? 'Jouer cet Objet' : 'Jouer ce Collègue'
@@ -269,7 +269,7 @@ function ActionButton({
 
 /**
  * **Un camp du plateau** (#169) : l'ordre est celui d'un jeu de cartes à deux joueurs —
- * le camp adverse en haut, **Rack puis Poste**, le mien en bas, **Poste puis Rack** : les
+ * le camp adverse en haut, **Banc puis Poste**, le mien en bas, **Poste puis Banc** : les
  * deux Postes se font face au milieu. Tout tient dans une carte compacte, pour que les
  * deux camps, la main et les actions se voient d'un coup sur un téléphone.
  *
@@ -327,16 +327,16 @@ function Camp({
     </div>
   );
 
-  const rack = (
+  const banc = (
     <div className="board__bench">
-      <span className="stat-label">Rack</span>
-      <ul className="rack board__content">
+      <span className="stat-label">Banc</span>
+      <ul className="bench board__content">
         {side.bench.map((slot, index) => (
-          <li className={`rack__slot ${slot ? '' : 'is-free'}`} key={index} title={describe(slot)}>
+          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index} title={describe(slot)}>
             {slot ? (
               <>
-                <strong className="rack__name">{cardName(slot.cardId)}</strong>
-                <span className="rack__stress muted">
+                <strong className="bench__name">{cardName(slot.cardId)}</strong>
+                <span className="bench__stress muted">
                   {slot.maxHp - slot.hp}/{slot.maxHp} de Stress
                 </span>
               </>
@@ -369,11 +369,11 @@ function Camp({
       {mine ? (
         <>
           {poste}
-          {rack}
+          {banc}
         </>
       ) : (
         <>
-          {rack}
+          {banc}
           {poste}
         </>
       )}
@@ -888,7 +888,7 @@ export function Battle() {
           {/*
             **La pose** (#169) : la carte choisie reste sous les yeux — nommée, avec son texte —
             tant qu'on ne l'a pas posée, et chaque geste dit **où** : « Poser au Poste »,
-            « Mettre au Rack 2 », « Jouer cet Objet ». Il vient **sous la main** et la page le
+            « Mettre au Banc 2 », « Jouer cet Objet ». Il vient **sous la main** et la page le
             cadre dès qu'une carte est choisie (`poseRef`) : sur téléphone il ne reste jamais
             sous la barre de navigation.
           */}

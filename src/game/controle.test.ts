@@ -28,7 +28,7 @@ function freshBattle(seed = SEED): BattleState {
   return createBattle(DECK, DECK, seed);
 }
 
-/** Garnit la première place du Rack : de quoi relever après un craquage. */
+/** Garnit la première place du Banc : de quoi relever après un craquage. */
 function withBench(state: BattleState, who: PlayerId): void {
   state.players[who].bench[0] = createInstance(FIRST_BASIC, state.turn);
 }
@@ -217,17 +217,17 @@ describe('Surcharge, Épuisement et Sieste à chaque Contrôle (D-033 §5)', () 
 });
 
 /** La tour de contrôle n'altère pas les cartes : elle n'existe que pour lire le Poste. */
-describe('checkup — le Poste du Rack n’est jamais contrôlé (D-030)', () => {
-  it('ignore les statuts portés au Rack', () => {
+describe('checkup — le Poste du Banc n’est jamais contrôlé (D-030)', () => {
+  it('ignore les statuts portés au Banc', () => {
     const state = freshBattle();
     brace(state, 'ai');
     const benched = state.players.ai.bench.find(Boolean);
     if (!benched) {
-      // Rack vide : on en pose un, avec un statut — il ne doit rien subir.
+      // Banc vide : on en pose un, avec un statut — il ne doit rien subir.
       state.players.ai.bench[0] = createInstance(FIRST_BASIC, state.turn);
     }
     const card = state.players.ai.bench.find(Boolean);
-    if (!card) throw new Error('Rack vide');
+    if (!card) throw new Error('Banc vide');
     card.statuses = ['SURCHARGE'];
     const hpBefore = card.hp;
 

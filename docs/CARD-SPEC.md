@@ -191,7 +191,7 @@ textes et effets sont là pour valider le ton et les courbes.
 | Carte | Stade | Rareté | Seuil | Rotation | Attaque / Talent | Texte |
 |---|---|---|---:|---:|---|---|
 | Chargé QVT | Entrant | 1◆ | 60 | 1 | **Corbeille de fruits** (1 café) : 10, soigne 10 d’un Planqué | « Il a apporté des clémentines. C’est son projet. » |
-| Happiness Manager | N+1 | 2◆ | 90 | 1 | **Bulletin de bonheur** (Talent, 1/tour) : attache 1 café à un Planqué du Rack. **Afterwork** (2 cafés) : 40, pioche 1 | « Le bonheur est un KPI comme un autre. » |
+| Happiness Manager | N+1 | 2◆ | 90 | 1 | **Bulletin de bonheur** (Talent, 1/tour) : attache 1 café à un Planqué du Banc. **Afterwork** (2 cafés) : 40, pioche 1 | « Le bonheur est un KPI comme un autre. » |
 | Chief Happiness Officer | N+2 | 3◆ | 130 | 2 | **Team building** (2 cafés) : 60, soigne 20 de tous tes Planqués. **Yoga du rire** (3 cafés) : 80, le Planqué adverse est Dérivé | « Riez. C’est obligatoire. » |
 
 ### Amélioration continue — Électricité
@@ -240,7 +240,7 @@ textes et effets sont là pour valider le ton et les courbes.
 |---|---|---|---:|---:|---|---|
 | Intérimaire | Entrant | 1◆ | 60 | 1 | **Mission courte** (1 café) : 20 | « Il connaît le site mieux que le directeur. Il part vendredi. » |
 | Intérimaire confirmé | N+1 | 2◆ | 90 | 1 | **Polyvalence** (Talent, 1/tour) : attache 1 café à ce Planqué (`attachEnergy`). **Démerde** (2 cafés) : 50 | « Il a fait le boulot de trois personnes. Il est payé pour une. » |
-| Chef d’équipe intérimaire | N+2 | 3◆ | 140 | 2 | **Site différent** (2 cafés) : 60, échange ce Planqué avec un Planqué du Rack. **Prime de précarité** (3 cafés) : 100, ce Planqué subit 20 | « Il gère l’équipe. Il n’a pas de badge. » |
+| Chef d’équipe intérimaire | N+2 | 3◆ | 140 | 2 | **Site différent** (2 cafés) : 60, échange ce Planqué avec un Planqué du Banc. **Prime de précarité** (3 cafés) : 100, ce Planqué subit 20 | « Il gère l’équipe. Il n’a pas de badge. » |
 
 ### Support — Incolore
 

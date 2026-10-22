@@ -35,7 +35,7 @@ function readyToRetreat(state: BattleState): { state: BattleState; slot: number 
   const player = next.players.player;
   if (!player.active) throw new Error('Poste vide');
   const slot = player.bench.findIndex(Boolean);
-  if (slot < 0) throw new Error('Rack vide');
+  if (slot < 0) throw new Error('Banc vide');
   const activeCard = getCard(player.active.cardId);
   if (!isPlanque(activeCard)) throw new Error('Carte inconnue');
   // La Rotation se paye **au nombre** de cafés (`AGENTS.md` §4) : une liste de son
@@ -169,7 +169,7 @@ describe('Rotation et évolution purgent les effets d’attaque (D-033 (4))', ()
 
     // 30 de dégâts (Stress) subis, et le coût de Rotation couché en **premier**
     // parmi les cafés (défausse déterministe) : les 5 suivants suivent la carte
-    // sur le Rack.
+    // sur le Banc.
     outgoing.hp = outgoing.maxHp - 30;
     outgoing.energy = [...Array(retreatCost).fill('SSE'), ...Array(5).fill('QVT')];
     outgoing.damageReduction = 20;
@@ -180,7 +180,7 @@ describe('Rotation et évolution purgent les effets d’attaque (D-033 (4))', ()
     // Le Stress (Seuil − hp) est intact : la capture dit que le Planqué « garde tous
     // les dégâts subis ainsi que toutes les Énergies ».
     expect(benched?.hp).toBe(outgoing.maxHp - 30);
-    // Les cafés restants suivent la carte sur le Rack (5 non dépensés).
+    // Les cafés restants suivent la carte sur le Banc (5 non dépensés).
     expect(benched?.energy).toEqual(Array(5).fill('QVT'));
   });
 });
