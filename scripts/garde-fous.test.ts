@@ -24,7 +24,9 @@ const LANCER = 'scripts/garde-fous.mjs';
 // ratée, et le message du registre, qui ne doit pas annoncer ce qui n'a pas eu lieu.
 // #123 : le forfait suit le camp qui a la main — une entrée de plus, et une seule, pour
 // le préfacteur du PvP (#122).
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123];
+// #124 : le codec du PvP — sans son empreinte, un code altéré rejoue une autre partie
+// en silence ; la mutation tombe sur la comparaison, pas sur la fonction.
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {

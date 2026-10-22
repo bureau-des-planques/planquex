@@ -198,6 +198,16 @@ export const MUTATIONS = [
     tests: ['src/game/forfait.test.ts'],
     garde:
       'un forfait émis en dur pour `player` fait abandonner au nom de son adversaire la personne qui tient la Direction (#122) : `state.current` est le seul camp qui a la main, relève comprise'
+  },
+  {
+    ticket: 124,
+    titre: 'le décodeur ne vérifie plus l’empreinte du code',
+    fichier: 'src/game/codec.ts',
+    motif: 'if (codeFingerprint(payload) !== checksum) {',
+    remplacement: 'if (codeFingerprint(payload) !== checksum && false) {',
+    tests: ['src/game/codec.test.ts'],
+    garde:
+      'sans l’empreinte, un base64 altéré peut redonner un JSON valide dont un champ a changé : on rejouerait une autre partie en silence, sans un mot — la classe de faux garde-fou de #112'
   }
 ];
 
