@@ -166,7 +166,7 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
     expect(css).not.toMatch(/\.pas-a-pas[^{]*\{[^}]*(position:\s*fixed|inset:\s*0)/);
   });
 
-  it('le défilement suit chaque étape : Suivant et Précédent cadrent la première cible au centre', () => {
+  it('le défilement suit chaque étape : Suivant et Précédent amènent la première cible sous le pas-à-pas', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
 
     // À l'ouverture : la première cible de l'étape 1.
@@ -174,13 +174,44 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
 
     fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     expect(elementsDefiles().at(-1)).toBe(cibleDe('machine'));
-    expect(scroll.mock.calls.at(-1)?.[0]).toMatchObject({ block: 'center' });
+    // **En haut, pas au centre** (#170) : le pas-à-pas occupe le haut de l'écran ; un
+    // centrage plaçait la main sous la ligne de flottaison sur téléphone.
+    expect(scroll.mock.calls.at(-1)?.[0]).toMatchObject({ block: 'start' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     expect(elementsDefiles().at(-1)).toBe(cibleDe('poste-actions'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Précédent' }));
     expect(elementsDefiles().at(-1)).toBe(cibleDe('machine'));
+  });
+
+  it('la cible se place sous le pas-à-pas : la marge de défilement suit sa hauteur (#170)', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    // Une cible défilée en haut est cachée par le pas-à-pas collé : `scroll-margin-top`
+    // réserve sa hauteur, mesurée à l'exécution dans `--pas-a-pas-hauteur`.
+    expect(css).toMatch(/\[data-pas-a-pas\]\s*\{[^}]*scroll-margin-top:[^;]*--pas-a-pas-hauteur/);
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
+    // jsdom n'a pas de mise en page : la hauteur vaut 0, mais la propriété est posée.
+    expect(document.documentElement.style.getPropertyValue('--pas-a-pas-hauteur')).toMatch(/px$/);
+  });
+
+  it('sur téléphone, le détail du pas-à-pas se replie : le titre reste, « Lire le détail » le déplie (#170)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
+    const panneau = screen.getByRole('complementary', { name: /Pas-à-pas du combat/i });
+    // Le repli ne vaut que sur téléphone : sur un écran large, le détail reste lu d'office.
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(css).toMatch(
+      /@media \(max-width: 899px\)\s*\{[\s\S]*?\.pas-a-pas--replie \.pas-a-pas__texte\s*\{\s*display:\s*none/
+    );
+
+    expect(panneau).toHaveClass('pas-a-pas--replie');
+    const lire = within(panneau).getByRole('button', { name: 'Lire le détail' });
+    expect(lire).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(lire);
+    expect(panneau).not.toHaveClass('pas-a-pas--replie');
+    expect(within(panneau).getByRole('button', { name: 'Replier' })).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('défile en douceur, sauf mouvement réduit : alors le saut est instantané', () => {

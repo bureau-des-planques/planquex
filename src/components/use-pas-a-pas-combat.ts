@@ -92,8 +92,14 @@ export function usePasAPasCombat(): PasAPasCombatEtat {
    * **Désigner, c'est amener l'élément sous les yeux.** Sur un téléphone (420 × 900,
    * D-060), le panneau est en haut et la cible parfois bien plus bas : une étape qui la
    * nomme sans l'amener à l'écran ne la désigne pas (#169). À chaque changement d'étape,
-   * « Suivant » comme « Précédent », on cadre donc la **première** cible, **au centre**
-   * de l'écran — les autres sont dans le même voisinage.
+   * « Suivant » comme « Précédent », on amène donc la **première** cible **en haut** de
+   * l'écran, **sous** le panneau.
+   *
+   * Pas au centre (#170) : centrer le plateau laissait la main sous la barre de
+   * navigation sur un téléphone. En haut, la cible descend dans l'écran et la console
+   * qui suit (actions, main) reste visible. La marge qui la garde sous le panneau est la
+   * hauteur réelle du panneau (`--pas-a-pas-hauteur`, `styles.css` → `scroll-margin-top`) :
+   * elle suit le repli du détail, sans nombre recopié.
    *
    * Le défilement est **animé**, sauf demande contraire : `prefers-reduced-motion` du
    * système **ou** le réglage « Mouvement réduit » de l'application donnent un saut net
@@ -104,9 +110,13 @@ export function usePasAPasCombat(): PasAPasCombatEtat {
     if (!ouvert) return;
     const cible = courante.cibles[0];
     if (!cible) return;
+    const panneau = document.querySelector<HTMLElement>('.pas-a-pas');
+    if (panneau) {
+      document.documentElement.style.setProperty('--pas-a-pas-hauteur', `${panneau.offsetHeight}px`);
+    }
     document.querySelector(`[data-pas-a-pas="${cible}"]`)?.scrollIntoView({
       behavior: comportementDeDefilement(),
-      block: 'center'
+      block: 'start'
     });
   }, [ouvert, courante]);
 

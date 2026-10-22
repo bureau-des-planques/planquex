@@ -69,6 +69,46 @@ const PAGES = [
  */
 const PREMIERE_VISITE = ['premiere-visite', '/'];
 
+/** La route du combat : la seule photographiée à son arrivée, pas remise à zéro (#170). */
+const ROUTE_COMBAT = '/battle';
+
+/**
+ * Les instants figés qui fixent la graine d'une partie (`createBattle`, seed = `Date.now()`) :
+ * plusieurs donnes, pour que la garde de rendu ne se fie pas à une seule main (#170).
+ * Le premier sert à la capture `combat.png`.
+ */
+const INSTANTS_COMBAT = [
+  Date.UTC(2026, 9, 22, 9, 0),
+  Date.UTC(2026, 9, 22, 14, 30),
+  Date.UTC(2026, 9, 22, 20, 5),
+  Date.UTC(2026, 9, 23, 7, 45)
+];
+
+/** Attend le tour du joueur (« à toi ») — l'IA joue seule — puis le défilement d'arrivée (smooth). */
+async function arriveeAuTourDuJoueur(page) {
+  await page.waitForFunction(() => document.querySelector('.battle__head')?.textContent.includes('à toi'), null, {
+    timeout: 60000
+  });
+  await page.waitForTimeout(1200);
+}
+
+/**
+ * La **main est-elle visible sans défiler** ? (#170) Elle l'est si son bord bas tient
+ * au-dessus de la barre de navigation fixe (qui masque le bas de l'écran), et si son
+ * bord haut est dans l'écran. Lu dans le navigateur, à l'arrivée sur le combat.
+ */
+function mesureMain() {
+  const main = document.querySelector('.hand')?.getBoundingClientRect();
+  const nav = document.querySelector('.bottom-nav')?.getBoundingClientRect();
+  const bas = Math.round(nav ? nav.top : window.innerHeight);
+  return {
+    mainHaut: main ? Math.round(main.top) : null,
+    mainBas: main ? Math.round(main.bottom) : null,
+    bas,
+    visible: !!main && main.top >= 0 && main.bottom <= bas
+  };
+}
+
 /** La clé du store persisté — `STORAGE_KEY`, `src/store/useStore.ts`. */
 const STORAGE_KEY = 'bureau-des-planques-v1';
 
@@ -196,10 +236,48 @@ try {
     });
     page.on('pageerror', (error) => problems.push(`${route} · pageerror : ${error.message}`));
 
-    await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
-    await page.evaluate(() => window.scrollTo(0, 0));
-    await page.waitForTimeout(450);
+    if (route === ROUTE_COMBAT) {
+      // Le combat se photographie **à l'arrivée**, au tour du joueur (#170) : la graine de
+      // la partie vient de l'horloge, donc on la fige (`page.clock`) pour une capture
+      // reproductible. On ne remet pas la page à zéro : ce qu'on juge, c'est ce que voit
+      // l'invité sans toucher.
+      await page.clock.setFixedTime(INSTANTS_COMBAT[0]);
+      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+      await arriveeAuTourDuJoueur(page);
+      const main = await page.evaluate(mesureMain);
+      console.log(`combat · ${slug} · ${JSON.stringify(main)}`);
+      if (!main.visible) {
+        problems.push(
+          `${route} · la main n'est pas visible sans défiler (${VIEWPORT.width} × ${VIEWPORT.height}) : ` +
+            `bas de la main à ${main.mainBas} px, barre de navigation à ${main.bas} px`
+        );
+      }
+    } else {
+      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(450);
+    }
     await page.screenshot({ path: join(outDir, `${slug}.png`), fullPage: PLEINE_PAGE });
+    await context.close();
+  }
+
+  // La garde de rendu (#170) ne se fie pas à **une** donne : la graine change avec
+  // l'heure, donc la main change de hauteur. On mesure sur chaque instant figé.
+  for (const instant of INSTANTS_COMBAT.slice(1)) {
+    const context = await browser.newContext({ viewport: VIEWPORT, isMobile: true, storageState: amorcageStore(origine) });
+    const page = await context.newPage();
+    page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
+    await page.clock.setFixedTime(instant);
+    await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
+    await arriveeAuTourDuJoueur(page);
+    const main = await page.evaluate(mesureMain);
+    console.log(`combat · ${new Date(instant).toISOString()} · ${JSON.stringify(main)}`);
+    if (!main.visible) {
+      problems.push(
+        `${ROUTE_COMBAT} · la main n'est pas visible sans défiler (${VIEWPORT.width} × ${VIEWPORT.height}, ` +
+          `${new Date(instant).toISOString()}) : bas de la main à ${main.mainBas} px, barre de navigation à ${main.bas} px`
+      );
+    }
     await context.close();
   }
 } finally {
