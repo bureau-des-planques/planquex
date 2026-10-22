@@ -64,7 +64,7 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Sleep | **Sieste** | `SIESTE` |
 | Paralysis | **Immobilisation** | `IMMOBILISATION` |
 | Confusion | **Dérive** | `DERIVE` |
-| Deck | **Chariot** | `deck`, 20 cartes |
+| Deck | **Deck** | `deck`, 20 cartes — « Chariot » depuis D-026 jusqu'à D-075 |
 | Hand | **main** | `hand`, 5 au départ, 10 max |
 | Discard | **Rebut** | `discard` — le verbe est « **mettre au rebut** » |
 | Bench | **Rack** | `bench`, 3 places |
@@ -75,7 +75,7 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Extension / set | **Marché** | il contient ses **Viviers** |
 | Zones de cartes | **Viviers** : Atelier, Étage, Bureaux | un futur vivier sera un lieu (D-026) |
 | Wonder Pick | **Pause café** | 5 cartes, 1 rare minimum |
-| Collection | **Parc** | |
+| Collection | **Collection** | « Parc » depuis D-026 jusqu'à D-075 ; les routes sont `/collection` et `/deck`, `/parc` et `/chariot` redirigent (D-075) |
 | Mission | **Note de service** | |
 | Shop | **Économat / Boutique du CSE** | |
 | Premium Pass | **Cotisation** | |
@@ -129,7 +129,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 | Règle | Valeur |
 |---|---|
-| Chariot | **20 cartes**, max **2** exemplaires du même nom, au moins **1 Planqué Entrant** |
+| Deck | **20 cartes**, max **2** exemplaires du même nom, au moins **1 Planqué Entrant** |
 | main de départ | **5 cartes**, avec toujours au moins **1 Planqué Entrant** ; **pas de reprise de poste** : ni remélange, ni pioche pour l'adversaire (D-022) |
 | main maximale | **10 cartes** |
 | Poste | **1** |
@@ -154,7 +154,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 | Contrôle | Après **chaque** tour, les **deux** Postes sont contrôlés ; le joueur dont le tour vient de finir passe **d'abord** (D-033) |
 | Ordre des statuts | Surcharge → Épuisement → Sieste → Immobilisation |
 | Cartes Action | **Objet** (NEUF ou MRO) : illimité ; **Collègue** : **1 par tour** |
-| Talent `attachEnergy` | Attache **un café tiré au hasard dans le Chariot du joueur** (même générateur seedé que la Machine, `drawCafeType`, `engine.ts:458-463`, `state.players[who].cafeTypes`) — D-040, #110 (a) |
+| Talent `attachEnergy` | Attache **un café tiré au hasard dans le Deck du joueur** (même générateur seedé que la Machine, `drawCafeType`, `engine.ts:458-463`, `state.players[who].cafeTypes`) — D-040, #110 (a) |
 | Outils / Lieux | **Hors périmètre du lancement** : le jeu de référence les a déjà, c'est un choix de périmètre (D-020), pas une description du miroir |
 
 **Miroir daté et borné** : le référent est Pocket **dans son état de 2026** (D-018) pour les **règles de base** ; les **ajouts 2025-2026 sont exclus du périmètre** (D-020) — Méga-Évolution ex à 3 Interventions, Vulnérabilité ×2 par un Lieu, Pokémon à double type, Outils et Lieux. Le projet reste donc à 3 stades, COMEX = **2 Interventions**, un Planqué = **une** faction. « Aucune valeur mathématique ne change » vaut **pour ce périmètre annoncé**, et non comme description du jeu de 2026. **État des preuves (20/10/2026)** : les « Astuces de jeu » ont été capturées — 9 écrans, `docs/preuves/astuces-2026-10-20/` — et **douze lignes de ce tableau passent à « observé »** (D-030). Les quatre lignes non capturées — le **plafond de 3 types de café**, la **main de départ à 5**, la règle du « slot occupé » et la **reprise de poste** — sont **établies par la recherche**, qui fait foi au même titre que les captures (D-034) : §4 n'a plus de ligne non sourcée. Chiffrage des écarts : `docs/ARBITRAGE-O-008.md` ; sources et verdicts : `docs/MIROIR-2026-DELTAS.md`. La revue de sources du même jour (`docs/preuves/regles-2026-10-20/`, D-032) recoupe ces lignes par une transcription datée et apporte les ajouts de **D-031** (ordre des dégâts, Vulnérabilité hors Rack, double craquage, nombre de tours).
@@ -173,7 +173,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 - Un **Arrivage** contient **5 cartes** : 3 communes, 1 peu commune, 1 rare minimum.
 - **Cible de contenu : autour de 300 cartes** — le set compte **225 bases + 75 variantes**, et le
   chiffre **n'est pas un objectif** (D-063) : une bonne idée entre, une carte faite pour remplir un compte
-  n'entre pas. Ce qui compte est ce que le contenu permet de **jouer** : des Chariots et des stratégies.
+  n'entre pas. Ce qui compte est ce que le contenu permet de **jouer** : des Decks et des stratégies.
 - Trois **viviers** (D-026) : **l'Atelier** (Atelier, Management, Syndicat), **l'Étage** (Amélioration continue, Support, Direction), **les Bureaux** (RH, SSE, QVT, Intérim).
 - Monétisation v1 : **aucun argent réel** ; la Cotisation se paie en monnaie de jeu.
 - Ton : satire de bureau **punch up**. On ridiculise les postures et le système, jamais une personne réelle, une entreprise existante ou un groupe protégé.
@@ -216,7 +216,7 @@ planquex/
 │   └── vite-env.d.ts types Vite (imports CSS)
 ├── public/           favicon.svg, icon-192/512.svg (SVG), icon-192/512.png + icon-maskable-512.png (générés par `npm run icones`)
 ├── components.json   config shadcn/ui (alias `@/`, CSS `src/styles.css` ; D-035)
-├── vercel.json       réécriture SPA de l'hébergement (D-053) : sans elle, une visite directe sur `/parc` répond `404`
+├── vercel.json       réécriture SPA de l'hébergement (D-053) : sans elle, une visite directe sur `/collection` répond `404` (les anciennes adresses redirigent, D-075)
 ├── scripts/          status.mjs, simulate.mjs, capturer.mjs, etapes-infra-tcg.sh, finir-renommage-planquex.sh, illustration-vague.sh (+ leurs tests)
 └── docs/
 ```
@@ -231,7 +231,7 @@ planquex/
 - **Tests** : Vitest, fichiers `*.test.ts` / `*.spec.ts` à côté du code testé. Pas de test = pas de preuve.
 - **Garde-fous** : une assertion qui garde une **règle** doit **pouvoir échouer** — une assertion qui passe quoi qu'il arrive ne garde rien, et trois cas ont été trouvés en une session (#101 le coût typé, #107 la rareté des variantes d'Action, #103 la table des écarts connus ; ticket #112). Deux moyens, et le second est celui qui manque le plus souvent : (1) un test « **le contrôle mord** » qui confronte le contrôle à un **cas fautif** ; (2) une entrée dans **`scripts/garde-fous.mjs`** (table **courte, choisie, commentée** : chaque entrée cite son **ticket**, la **règle** qu'elle garde et les **tests ciblés**), mutée par `npm run garde-fous`, lancé par la CI. Ce qui peut être **désarmé** — la table elle-même — est surveillé par `scripts/garde-fous.test.ts`, qui la compare à une liste attendue.
 - **PWA** : manifeste et Workbox dans `vite.config.ts`. `favicon.svg` est le monogramme « BP » de l'onglet ; l'icône d'application est l'illustration `public/icon-512.svg`, **rastérisée en PNG** (192, 512, 512 *maskable*) par `npm run icones` (`scripts/icones.mjs`, Chromium de `ms-playwright`). Sans PNG, Chromium/Brave n'installe qu'un raccourci avec son badge (D-054) ; garde : `scripts/icones.test.ts`. Le libellé sous l'icône (`short_name`) est **« Planquex »**, le nom du jeu (`name`) reste « Bureau des Planqués » (D-054).
-- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Chariot, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4), `curves.ts` (le chiffré de `CARD-SPEC.md` §2 — dégâts par café et Seuil par stade/rareté — dont `cards.test.ts` et `pace.test.ts` sont les appelants), `rng.ts` (le hasard seedé, état porté par la partie), `pack.ts` (la composition d'un Arrivage, générateur en paramètre), `simulation.ts` (le simulateur headless), `ia.ts` (la politique de la Direction — **deux niveaux** : niveau 1 scripté, niveau 2 glouton 1 coup sur `evaluatePosition`, qui vit **hors** du moteur ; le niveau est un **paramètre** dont le défaut est **1**, donc l'écran joue encore le niveau 1 ; employée par `nextAiAction` à l'écran **et** par `nextAction` dans le simulateur). Les règles de jeu ne vivent pas dans le store.
+- **Moteur — modules** : `engine.ts` (transitions), `deck.ts` (règles du Deck, partagées par le moteur et l'UI), `rules.ts` (drapeaux globaux, dont le mot-clé de D-004, **et `STATUS_ORDER`**, l'ordre de résolution des conditions de §4), `curves.ts` (le chiffré de `CARD-SPEC.md` §2 — dégâts par café et Seuil par stade/rareté — dont `cards.test.ts` et `pace.test.ts` sont les appelants), `rng.ts` (le hasard seedé, état porté par la partie), `pack.ts` (la composition d'un Arrivage, générateur en paramètre), `simulation.ts` (le simulateur headless), `ia.ts` (la politique de la Direction — **deux niveaux** : niveau 1 scripté, niveau 2 glouton 1 coup sur `evaluatePosition`, qui vit **hors** du moteur ; le niveau est un **paramètre** dont le défaut est **1**, donc l'écran joue encore le niveau 1 ; employée par `nextAiAction` à l'écran **et** par `nextAction` dans le simulateur). Les règles de jeu ne vivent pas dans le store.
 - **CSS** : une seule feuille, `src/styles.css`, importée par `main.tsx`. Toute nouvelle page utilise les classes déjà définies plutôt que d'inventer un second système. Le **système visuel** — palette et jetons, gabarit de carte, cadre de rareté, badges de statut, mascotte, planches de style — vit dans **`DESIGN.md`** à la racine : c'est la source du visuel, comme `src/styles.css` l'est du style. **Style (D-035)** : **Tailwind v4** (mode CSS-first) est le **moteur de style**. `src/styles.css` **reste la feuille unique** : elle ouvre sur `@import "tailwindcss"` et un bloc `@theme inline` dont les valeurs **référencent les jetons de `:root`** (une seule source : `--color-bg` → `var(--bg)`, `--font-sans` → `var(--font-body)`, etc.), donc les utilitaires lisent `DESIGN.md` sans recopier un hex. Le `preflight` de Tailwind s'applique : nos règles maison le suivent et le corrigent ponctuellement (`h1,h2,h3` rétablit `font-weight: 700`). L'identité du jeu (carte, plateau, Parc) reste **maison**. **shadcn/ui** ne s'emploie que pour les **composants génériques** (dialogue, tiroir, onglet, formulaire, tableau), jamais pour l'identité ; ses **variables CSS sont mappées sur nos jetons** dans `:root` (`--background` → `var(--bg)`, `--primary` → `var(--accent)`, …) au lieu de ses valeurs « SaaS ». Config : `components.json`, `cn()` dans `src/lib/utils.ts`, composants dans `src/components/ui/`. Premier composant posé : `dialog` (règles des Conditions dans `Battle.tsx`). Le plugin `@tailwindcss/vite` est branché dans `vite.config.ts`.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX. Voir §8.4.
 - **La Boîte à idées (D-058, D-059)** : les retours des invités entrent **dans le jeu** — une **bulle** partout (sauf en combat) ouvre **le mur**, qui est une **page** (D-068) — l'écart à D-058 est assumé, un tableau ne tient pas dans un panneau. Dans l'alpha le mur est **en lecture seule** : il lit **`docs/boite-a-idees.json`** (importé par Vite, donc bundlé ; le jeu n'écrit jamais dedans) et la seule porte d'écriture est un formulaire externe. Les deux familles de post-its (**IP** / **OUF**), les statuts, les champs du formulaire et le tri de fin de journée sont écrits dans **`docs/BOITE-A-IDEES.md`**. Le mur complet (poster, voter, commenter) est la **première fonctionnalité Supabase**, et il vient **après le PvP**. Son socle est posé (#135) : `src/lib/supabase.ts` charge `@supabase/supabase-js` **à la demande** et reste **inerte** sans configuration — l'alpha fonctionne sans backend ; `supabase/mur.test.ts` applique la **migration réelle** (`supabase/migrations/`) dans **`@electric-sql/pglite`** (devDependency, PostgreSQL en WASM, RLS comprise), la machine n'ayant ni Docker ni CLI Supabase.
