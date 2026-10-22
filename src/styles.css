@@ -1313,6 +1313,44 @@ h2 {
   border-radius: 4px;
   outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent);
   outline-offset: 2px;
+  /* Une cible amenée en haut (#170) passe **sous** le pas-à-pas collé, pas derrière lui :
+     la marge est sa hauteur réelle, posée par `usePasAPasCombat` à chaque défilement. */
+  scroll-margin-top: calc(var(--pas-a-pas-hauteur, 0px) + 0.75rem);
+}
+
+.pas-a-pas__titre-ligne {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  justify-content: space-between;
+}
+
+/* « Lire le détail » n'existe que pour le repli du téléphone : sur un écran large, le texte
+   est toujours lu et le bouton n'a rien à déplier. */
+.pas-a-pas__lire {
+  display: none;
+}
+
+/* Sur téléphone (D-060, 420 × 900), le détail se replie : le titre et les commandes restent
+   à l'écran, la console et la main aussi (#170). Le texte se déplie d'un geste. */
+@media (max-width: 899px) {
+  .pas-a-pas--replie .pas-a-pas__texte {
+    display: none;
+  }
+
+  .pas-a-pas__lire {
+    background: none;
+    border: 0;
+    color: var(--gold);
+    cursor: pointer;
+    display: inline;
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 /* Un lien discret, pas un troisième bouton : la sortie du pas-à-pas, et « reprendre une
