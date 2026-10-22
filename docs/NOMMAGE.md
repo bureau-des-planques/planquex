@@ -281,7 +281,7 @@ Lieux — « le Site » étant le meilleur candidat.
 
 ### Le cadrage Stress / Seuil / craquer
 
-Trois mots retrouvés dans le legacy — `grevomon-pocket/docs/RULES-4b.md:40-42` — cités comme
+Trois mots retrouvés dans le legacy — `docs/RULES-4b.md:40-42` des versions abandonnées, lecture seule (`AGENTS.md` §9) — cités comme
 **idées**, jamais comme règles (`AGENTS.md` §9) :
 
 | Le jeu de base | Nous |

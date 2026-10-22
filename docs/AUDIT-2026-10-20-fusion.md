@@ -88,7 +88,7 @@ reste à valider » (`README.md`) est exact.
 |---|---|
 | ~~O-014~~ — tranché par D-034, sans changement de moteur | `docs/DECISIONS.md` |
 | Décider la **forme du coût** en café (#61) → #33 → #35 ; plus aucune capture requise (D-034) | #61 |
-| Renommage de la plomberie `grevomon`, licence — **D-035** (D-034 est prise) | #75 |
+| Renommage de la plomberie technique du projet, licence — **D-035** (D-034 est prise) | #75 |
 | Infrastructure de la bêta | #10 |
 
 ## Prochaine action vérifiable

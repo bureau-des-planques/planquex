@@ -8,7 +8,7 @@
 # Nommage : le nom technique du projet est « planquex » (D-036) et le site
 # legacy est retiré (D-038). Ce wizard écrit donc « planquex » partout où il
 # désigne le projet actif ; les actes datés antérieurs (D-016, D-017) gardent
-# « grevomon », qui ne survit plus que dans le dossier local (D-038).
+# l'ancien nom, qui ne survit plus que dans le dossier local (D-038).
 #
 # Everything above the "STAGES" marker is the wizard library: do not hand-edit
 # it. Author the per-step stages below the marker.
@@ -243,7 +243,7 @@ if [[ "${SUPABASE_OLD_PAUSED:-}" == "1" ]]; then
   note "Déjà fait lors d'une exécution précédente."
 else
   warn "Décision validée : on met en pause la production $OLD_PROD_REF."
-  warn "Conséquence : le backend de l'ancien jeu s'arrête. Le projet Vercel « planquex » est conservé mais reste en pause, et son ancien domaine grevomon.vercel.app est retiré (D-038)."
+  warn "Conséquence : le backend de l'ancien jeu s'arrête. Le projet Vercel « planquex » est conservé mais reste en pause, et son ancien domaine est retiré (D-038)."
   open_url "$DASH/project/$OLD_PROD_REF/settings/general"
   step "Descends jusqu'à « Pause project » et confirme la mise en pause."
   step "Attends que le tableau de bord affiche le projet comme « Paused »."

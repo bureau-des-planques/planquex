@@ -66,11 +66,11 @@ tranché sans essai en jeu.
 
 ## Attention — les captures du legacy ne sont PAS des preuves
 
-`grevomon-pocket/docs/screenshot-*.png` (4 images) et `grevomon-pocket/design/qa/`
-(20 images) sont des captures de **notre propre ancienne application**, pas de
+`docs/screenshot-*.png` (4 images) et `design/qa/`
+(20 images) des **versions abandonnées** (`AGENTS.md` §9) sont des captures de **notre propre ancienne application**, pas de
 *Pokémon TCG Pocket*. La preuve est dans le script qui les produit :
-`../../grevomon-pocket/scripts/screenshots.mjs` pilote Chromium contre
-`http://localhost:4173` — le `vite preview` de `grevomon-pocket` — et photographie
+`scripts/screenshots.mjs`, dans le même dossier, pilote Chromium contre
+`http://localhost:4173` — le `vite preview` de cette application — et photographie
 **ses** routes (`/`, `/boosters`, `/collection`, `/wonder`, `/shop`, `/missions`,
 `/profile`, `/deck`, `/battle`).
 
