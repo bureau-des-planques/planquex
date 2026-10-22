@@ -22,7 +22,8 @@ const LINE = ['support-agent-support', 'support-technicien-support', 'support-re
 describe('Support — enregistrement (ticket #23)', () => {
   it('compte 39 entrées, dont 31 bases et 8 variantes (vague 1, #66 : +1 COMEX)', () => {
     // PROPOSITION.md §4.3 : 38 entrées à la cible. La vague 1 (#66) ajoute le second
-    // COMEX ; les vagues 2 à 4 ramènent le total à 286.
+    // COMEX ; les vagues suivantes complètent le set, dont le volume suit D-063
+    // (« autour de 300 », sans compter) et se lit dans `npm run status`.
     expect(SUPPORT_CARDS).toHaveLength(31);
     expect(SUPPORT_VARIANTS).toHaveLength(8);
     expect(ALL_SUPPORT_CARDS).toHaveLength(39);

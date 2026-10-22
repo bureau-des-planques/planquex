@@ -35,7 +35,8 @@ describe('SSE — enregistrement (ticket #99)', () => {
   it('compte 39 entrées, dont 28 bases et 11 variantes (PROPOSITION.md §4.3 : 37, +1 COMEX en vague 1, +1 en vague 2)', () => {
     // PROPOSITION.md §4.3 : 37 entrées à la cible. La vague 1 (#66) ajoute le second
     // COMEX, la vague 2 (#86) ajoute « Responsable sécurité » ; les vagues suivantes
-    // ramènent le total à 286.
+    // complètent le set, dont le volume suit D-063 (« autour de 300 », sans compter)
+    // et se lit dans `npm run status`.
     expect(SSE_CARDS).toHaveLength(28);
     expect(SSE_VARIANTS).toHaveLength(11);
     expect(ALL_SSE_CARDS).toHaveLength(39);

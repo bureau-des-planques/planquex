@@ -24,7 +24,8 @@ describe('Direction — enregistrement (ticket #50)', () => {
   it('compte 20 entrées, dont 16 bases et 4 variantes (vague 2, #86 : +2 cartes 3◆)', () => {
     // `PROPOSITION.md` §4.3 : 18 entrées à la cible. La vague 2 (#86) ajoute deux
     // cartes en 3◆ (Directeur de cabinet, Directeur de la stratégie) pour la cible de
-    // rareté `CARD-SPEC.md` §1 ; les vagues suivantes ramènent le total à 286.
+    // rareté `CARD-SPEC.md` §1 ; les vagues suivantes complètent le set, dont le
+    // volume suit D-063 (« autour de 300 », sans compter) et se lit dans `npm run status`.
     expect(DIRECTION_CARDS).toHaveLength(16);
     expect(DIRECTION_VARIANTS).toHaveLength(4);
     expect(ALL_DIRECTION_CARDS).toHaveLength(20);

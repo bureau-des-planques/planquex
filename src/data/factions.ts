@@ -27,8 +27,8 @@ export interface FactionMeta {
 /**
  * Une faction = un service ou un collectif (D-024), et **un vivier** — les trois zones du
  * site : l'Atelier, l'Étage, les Bureaux (D-026). Le vivier est porté par la **faction** et
- * non par la carte : dix valeurs au lieu de 286, et une carte ne peut pas se retrouver dans
- * deux zones à la fois.
+ * non par la carte : dix valeurs au lieu d'une par carte, et une carte ne peut pas se
+ * retrouver dans deux zones à la fois.
  */
 export const FACTION_META: Record<Faction, FactionMeta> = {
   SSE: { name: 'SSE', short: 'SSE', color: '#1f8a68', glyph: '✚', vivier: 'BUREAUX', weakness: 'MANAGEMENT' },

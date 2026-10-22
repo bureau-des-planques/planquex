@@ -175,7 +175,7 @@ const variant = (
 };
 
 /**
- * Les **8 variantes de Collègues**, les huit dernières cartes des 286 (`CARD-SPEC.md` §1).
+ * Les **8 variantes de Collègues** (`CARD-SPEC.md` §1).
  * Une par Collègue, toutes en `1S` : dans les fichiers de faction, la variante d'une base
  * `2D` est à **1 étoile** (26 des 30 cas mesurés) — et `3S`/`COU` reviennent aux variantes
  * de Planqués. Aucune variante d'Objet : CARD-SPEC n'en compte pas.

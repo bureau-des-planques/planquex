@@ -9,7 +9,7 @@ import { artUrl } from '@/art';
  *
  * Le test de rendu n'existe pas ici — il vit dans les captures (`npm run capturer`,
  * `AGENTS.md` §6). On vérifie ici les **conventions** du champ `art`, celles qu'une
- * revue humaine ne peut pas tenir à jour sur 286 cartes.
+ * revue humaine ne peut pas tenir à jour sur l'ensemble du set.
  */
 const SERVED = 'design/illustrations';
 
