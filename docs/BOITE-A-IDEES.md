@@ -228,29 +228,24 @@ le devenir sans le réclamer.
 **Le chemin « avis »** est la donnée la plus précieuse de l'alpha : la question qu'on se pose est
 « est-ce que la boucle tient », et « ce que tu as aimé / pas aimé » y répond mieux qu'un rapport de bug.
 
-**Ce qui reste à améliorer :**
+**Les cinq corrections — état arrêté au 22/10/2026** (acte : **D-070**) :
 
-1. **Le pseudo n'est demandé nulle part.** Le mur affiche un **auteur** : sans pseudo, tous les
-   post-its sont anonymes, et suivre un testeur devient impossible. Une question courte, *facultative* —
-   « Ton pseudo dans le jeu, comme dans Réglages » — suffit (vide = « anonyme » sur le mur).
-2. **Les cases « Obligatoire »** ne se lisent pas de l'extérieur : la **version** et la **question
-   d'entrée** doivent l'être ; ensuite le **titre** et **la description** de chaque chemin.
-3. **Le libellé de la question « Capture »** porte tout le texte d'aide, et deviendra l'en-tête de
-   colonne dans les réponses : mettre « Capture » en titre, la phrase en **aide**.
-4. **L'aide de la question d'entrée** gagnerait une ligne, parce qu'il y a maintenant quatre chemins :
-   « Un bug = ça casse. Une feature = ça manque. Gueuler = ça t'énerve. Un avis = ce que tu as aimé ou pas. »
-5. La section **« Avis sur le jeux »** pourrait demander l'**écran**, comme les deux autres : un avis
-   dit souvent *où* (« la lisibilité du Parc »). Facultatif, une ligne.
+| # | Correction | État |
+|---|---|---|
+| 1 | Le pseudo, demandé nulle part | **Fait** — question « Pseudo », *réponse courte*, **facultative**, en **tête** du formulaire. Vide = « anonyme » sur le mur |
+| 2 | La version et la question d'entrée **obligatoires** | **Déjà satisfait** — le drapeau se lit dans `FB_PUBLIC_LOAD_DATA_[4][0][2]` (`1`) |
+| 3 | « Capture » en **titre**, la phrase en **aide** | **Fait** — sur les deux chemins |
+| 4 | Une **aide** sur la question d'entrée | **Écartée** (22/10/2026) |
+| 5 | L'**écran** sur le chemin « avis » | **Écartée** (22/10/2026) |
 
 > **Relevé du 22/10/2026 (session `planquex-infra`).** La structure du formulaire se lit **de
-> l'extérieur** : `viewform` expose `FB_PUBLIC_LOAD_DATA_`, où `[4][0][2]` est le drapeau
-> **obligatoire** (`1`/`0`). Mesuré sur le formulaire public : **21 champs**, **la version et la
-> question d'entrée sont déjà obligatoires**, tous les champs marqués « oui » en §4.1 le sont aussi,
-> et **aucun champ « Importer un fichier »** n'existe. La phrase du point 2 ci-dessus — « les cases
-> “Obligatoire” ne se lisent pas de l'extérieur » — est donc **fausse** : elles se lisent, et elles
-> sont déjà cochées. Restent à faire le **pseudo** (nulle part, point 1), **« Capture » en titre**
-> (× 2, point 3), l'**aide** de la question d'entrée (point 4) et l'**écran** sur le chemin avis
-> (point 5). Mesure : `curl` sur le `viewform`, puis lecture du `FB_PUBLIC_LOAD_DATA_` embarqué.
+> l'extérieur** : le `viewform` expose `FB_PUBLIC_LOAD_DATA_`, où `[4][0][2]` est le drapeau
+> **obligatoire** (`1`/`0`). Contrairement à ce qu'écrivait le point 2, les cases **se lisent** :
+> la version et la question d'entrée étaient **déjà** obligatoires, comme tous les champs marqués
+> « oui » en §4.1. Aucun champ « Importer un fichier » n'existe, et le formulaire reste **public**
+> (`curl` sur le `viewform` → `200` **hors connexion**). Les points 4 et 5 sont **écartés**, et
+> **D-070** le dit : ils ne changent rien au tri, alors que le pseudo en était le seul point
+> **bloquant**.
 
 **Le ton est celui du projet** — « Recueille avis Alpha », « Pourquoi qu'on Gueule », « Exprime toi »,
 « Non j'ai déja assez gueuler comme ça », et les coquilles qui vont avec : on n'y touche pas, c'est la
