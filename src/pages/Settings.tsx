@@ -4,7 +4,7 @@ import { STORAGE_KEY, useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
 
 export function Settings() {
-  const { name, setName, reducedMotion, setReducedMotion, reset, setTutorielVu } = useStore();
+  const { name, setName, reducedMotion, setReducedMotion, reset, setTutorielVu, setPasAPasCombatVu } = useStore();
   const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
   const importerSauvegarde = useStore((state) => state.importerSauvegarde);
   const [draft, setDraft] = useState(name);
@@ -79,6 +79,17 @@ export function Settings() {
         </p>
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
+        </button>
+      </section>
+
+      <section className="section panel">
+        <h2>Pas-à-pas du combat</h2>
+        <p className="muted">
+          Cinq étapes sur le premier combat : le Poste, le Rack, le café, la Pression,
+          les Conditions et la fin. À revoir quand tu veux.
+        </p>
+        <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
+          Revoir le pas-à-pas du combat
         </button>
       </section>
 

@@ -1257,6 +1257,67 @@ h2 {
   color: var(--text);
 }
 
+/* ---------- Pas-à-pas du combat (#143) ---------- */
+
+/* Discret : la même surface que le panneau du combat, pas un dialogue. */
+.pas-a-pas {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
+    0 8px 18px -10px rgb(0 0 0 / 50%);
+  padding: 0.75rem 1rem;
+}
+
+.pas-a-pas__compte {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  margin: 0 0 0.35rem;
+}
+
+.pas-a-pas__etape h2 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0 0 0.3rem;
+}
+
+.pas-a-pas__texte {
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  margin: 0;
+}
+
+/* La désignation des éléments : un contour doré discret, jamais un bouton qui
+   remplacerait l'interaction. Un seul contour actif : la première cible de l'étape. */
+[data-pas-a-pas~="machine"] { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+[data-pas-a-pas~="poste-actions"] { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+[data-pas-a-pas~="conditions"] { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+[data-pas-a-pas~="interventions"] { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+[data-pas-a-pas~="plateau"] { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+[data-pas-a-pas~="main"] { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+[data-pas-a-pas~="poste"] { outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent); outline-offset: 2px; border-radius: 4px; }
+
+.pas-a-pas__passer {
+  background: none;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  width: fit-content;
+}
+
+.pas-a-pas__passer:hover {
+  color: var(--text);
+}
+
 /* ---------- Combat ---------- */
 
 .board {

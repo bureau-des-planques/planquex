@@ -30,6 +30,8 @@ import {
 import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
+import { PasAPasCombat } from '@/components/PasAPasCombat';
+import { usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -127,11 +129,21 @@ function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
  * du type produit, ou pastille vide quand rien n'est à attacher. Le survol rappelle
  * les **types du Chariot** (1 à 3, D-037 (4)) dont la Machine tire le café.
  */
-function MachinePips({ zone, cafeTypes }: { zone: CafeSymbol | null; cafeTypes: readonly CafeType[] }) {
+function MachinePips({
+  zone,
+  cafeTypes,
+  designe = false
+}: {
+  zone: CafeSymbol | null;
+  cafeTypes: readonly CafeType[];
+  /** Le pas-à-pas du combat (#143) désigne la Machine du joueur, pas celle de la Direction. */
+  designe?: boolean;
+}) {
   const types = cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
   return (
     <span
       className="muted"
+      data-pas-a-pas={designe ? 'machine' : undefined}
       title={`Machine à café : ${zone ? cafeLabel(zone) : `vide (types du Chariot : ${types || 'aucun'})`}`}
     >
       Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" title="Machine à café : vide" />}
@@ -280,6 +292,12 @@ export function Battle() {
   const storeDeck = useStore((state) => state.deck);
   /** Les types de café choisis au Chariot (#91), lus bruts dans le store. */
   const storedCafeTypes = useStore((state) => state.cafeTypes);
+  /**
+   * Le **pas-à-pas du premier combat** (#143) : son ouverture, son cran et ses cibles
+   * vivent dans un seul module (`usePasAPasCombat`) — la page ne fait que poser
+   * l'attribut qui met l'élément désigné en avant, et rendre le panneau.
+   */
+  const pasAPas = usePasAPasCombat();
 
   // Le chariot du joueur est utilisé s'il est légal, sinon on retombe sur un
   // chariot de test. Calculé une seule fois par rendu : `deckLegal` est appelé
@@ -504,7 +522,13 @@ export function Battle() {
   );
 
   return (
-    <div className="page battle">
+    <div
+      className={`page battle${pasAPas.ouvert ? ' battle--pas-a-pas' : ''}`}
+      /* Les cibles de l'étape courante : `styles.css` met en avant l'élément qui porte
+         le `data-pas-a-pas` correspondant. Fermé, l'attribut est vide — `~=` ne peut
+         donc rien surligner. */
+      data-pas-a-pas-cibles={pasAPas.cibles}
+    >
       <section className="section__head">
         <div>
           <h1>Combat</h1>
@@ -645,7 +669,7 @@ export function Battle() {
         )}
       </section>
 
-      <section className="board">
+      <section className="board" data-pas-a-pas={pasAPas.ouvert && pasAPas.cibles.includes('plateau') ? 'plateau' : undefined}>
         {rows.map(({ id, label, side }) => (
           <article className={`board__side ${state.current === id && state.phase === 'playing' ? 'is-current' : ''}`} key={id}>
             <header className="board__head">
@@ -656,7 +680,7 @@ export function Battle() {
               </span>
             </header>
 
-            <div className="board__poste">
+            <div className="board__poste" data-pas-a-pas={pasAPas.ouvert && pasAPas.cibles.includes('poste') && myCamp === id ? 'poste' : undefined}>
               <span className="stat-label">Poste</span>
               {side.active ? (
                 <>
@@ -669,7 +693,7 @@ export function Battle() {
                   <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
                   <div className="poste__meta">
                     <CafesPips cafes={side.active.energy} />
-                    <MachinePips zone={side.energyZone} cafeTypes={side.cafeTypes} />
+                    <MachinePips zone={side.energyZone} cafeTypes={side.cafeTypes} designe={pasAPas.ouvert && pasAPas.cibles.includes('machine') && myCamp === id} />
                     {side.active.statuses.map((status) => (
                       <StatusBadge key={status} status={status} />
                     ))}
@@ -696,7 +720,7 @@ export function Battle() {
         ))}
       </section>
 
-      <section className="section">
+      <section className="section" data-pas-a-pas="conditions">
         <div className="section__head">
           <h2>Conditions</h2>
           <Dialog>
@@ -741,7 +765,7 @@ export function Battle() {
         {mySide.hand.length === 0 ? (
           <p className="muted">Main vide.</p>
         ) : (
-          <ul className="hand">
+          <ul className="hand" data-pas-a-pas="main">
             {mySide.hand.map((card) => {
               const definition = getCard(card.cardId);
               const mine = handActions.filter((action) => 'uid' in action && action.uid === card.uid);
@@ -766,7 +790,7 @@ export function Battle() {
         )}
       </section>
 
-      <section className="section">
+      <section className="section" data-pas-a-pas="interventions">
         <div className="section__head">
           <h2>Au Poste</h2>
         </div>
@@ -775,7 +799,7 @@ export function Battle() {
         ) : (
           <>
             {boardActions.length > 0 && (
-              <div className="actions">
+              <div className="actions" data-pas-a-pas={pasAPas.ouvert && pasAPas.cibles.includes('poste-actions') ? 'poste-actions' : undefined}>
                 {boardActions.map((action) => (
                   <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
                 ))}
@@ -823,6 +847,7 @@ export function Battle() {
           ))}
         </ol>
       </section>
+      <PasAPasCombat pasAPas={pasAPas} />
     </div>
   );
 }

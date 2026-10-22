@@ -11,10 +11,14 @@ import type { Card, CafeType, Rarity } from '@/data/types';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **5** : le store gagne `tutorielVu` (la « Journée
- * d'intégration » se montre une fois) — absent d'un état v4, il vaut **`true`** :
- * quelqu'un qui a déjà une partie en cours a déjà joué, on ne lui remontre pas le
- * tutoriel ; seule une partie neuve le voit. **4** : le Chariot gagne ses **types de café
+ * Version de la forme persistée. **6** : le store gagne `pasAPasCombatVu` (le
+ * pas-à-pas de la **première partie** se montre une fois, #143) — absent d'un état v5,
+ * il vaut **`true`**, pour la même raison que `tutorielVu` : qui a déjà une partie en
+ * cours a déjà joué, on ne lui remontre pas les règles du combat ; seule une partie
+ * neuve le voit. **5** : le store gagne `tutorielVu` (la « Journée d'intégration » se
+ * montre une fois) — absent d'un état v4, il vaut `true` : quelqu'un qui a déjà une
+ * partie en cours a déjà joué, on ne lui remontre pas le tutoriel ; seule une partie
+ * neuve le voit. **4** : le Chariot gagne ses **types de café
  * choisis** (`cafeTypes`, ticket #91) — absents d'un état v3, ils valent `[]`,
  * c'est-à-dire la proposition automatique. **3** : sept variantes secrètes changent
  * de suffixe d'id en passant aux raretés hautes (ticket #87) — `owned` et `deck`
@@ -23,7 +27,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 5;
+export const STORAGE_VERSION = 6;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -105,6 +109,14 @@ export interface AppState {
    * et « Réinitialiser la progression » la remontre.
    */
   tutorielVu: boolean;
+  /**
+   * Le **pas-à-pas de la première partie** (#143) a-t-il été vu ? Il ne se montre
+   * qu'une fois : sur la première partie, et pas avant que la Journée d'intégration
+   * soit finie. Un état migré d'avant sa création le considère vu
+   * (`migratePersisted`), « Réinitialiser la progression » le remontre, et Réglages
+   * le rouvre à la demande.
+   */
+  pasAPasCombatVu: boolean;
   openPack: () => Card[];
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
@@ -121,6 +133,8 @@ export interface AppState {
   setReducedMotion: (value: boolean) => void;
   /** Marque la « Journée d'intégration » comme vue (`true`) ou à revoir (`false`). */
   setTutorielVu: (value: boolean) => void;
+  /** Marque le **pas-à-pas du combat** comme vu (`true`) ou à revoir (`false`). */
+  setPasAPasCombatVu: (value: boolean) => void;
   /** La sauvegarde locale, telle qu'un joueur peut la copier et la coller ailleurs. */
   exporterSauvegarde: () => string;
   /**
@@ -139,7 +153,15 @@ export interface AppState {
  */
 export type PersistedState = Pick<
   AppState,
-  'name' | 'owned' | 'deck' | 'cafeTypes' | 'packsOpened' | 'reducedMotion' | 'rng' | 'tutorielVu'
+  | 'name'
+  | 'owned'
+  | 'deck'
+  | 'cafeTypes'
+  | 'packsOpened'
+  | 'reducedMotion'
+  | 'rng'
+  | 'tutorielVu'
+  | 'pasAPasCombatVu'
 >;
 
 export function partializeState(state: AppState): PersistedState {
@@ -151,7 +173,8 @@ export function partializeState(state: AppState): PersistedState {
     packsOpened: state.packsOpened,
     reducedMotion: state.reducedMotion,
     rng: state.rng,
-    tutorielVu: state.tutorielVu
+    tutorielVu: state.tutorielVu,
+    pasAPasCombatVu: state.pasAPasCombatVu
   };
 }
 
@@ -180,6 +203,7 @@ export const useStore = create<AppState>()(
       reducedMotion: false,
       rng: seedRng(Date.now()),
       tutorielVu: false,
+      pasAPasCombatVu: false,
       openPack: () => {
         // La composition de l'Arrivage (3 communes, 1 peu commune, 1 rare) est
         // une règle de jeu : elle vit dans `@/game/pack` (ticket #57). Ici, on ne
@@ -249,8 +273,9 @@ export const useStore = create<AppState>()(
           packsOpened: 0,
           name: 'Employé 404',
           // Une progression remise à zéro repart d'un joueur neuf : la Journée
-          // d'intégration se remontre.
+          // d'intégration et le pas-à-pas du combat se remontrent.
           tutorielVu: false,
+          pasAPasCombatVu: false,
           // Un nouveau départ change la suite des Arrivages : sinon le premier
           // Arrivage d'après remise à zéro rejouerait le précédent.
           rng: seedRng(Date.now())
@@ -258,6 +283,7 @@ export const useStore = create<AppState>()(
       setName: (name) => set({ name }),
       setReducedMotion: (value) => set({ reducedMotion: value }),
       setTutorielVu: (value) => set({ tutorielVu: value }),
+      setPasAPasCombatVu: (value) => set({ pasAPasCombatVu: value }),
       exporterSauvegarde: () =>
         JSON.stringify(
           { jeu: SAVE_FORMAT, version: STORAGE_VERSION, etat: partializeState(get()) },
@@ -332,6 +358,11 @@ export const useStore = create<AppState>()(
  * 3 types au plus). Les autres champs sont conservés tels quels (`persist` fusionne
  * ensuite avec l'état initial, qui porte les actions). `version` absent vaut 0, comme
  * le fait `persist`.
+ *
+ * **v5 → v6** (#143) : le store gagne `pasAPasCombatVu`, le drapeau du **pas-à-pas de
+ * la première partie**. Un état v5 vient de quelqu'un qui a déjà joué : `true`, on ne
+ * lui remontre pas les règles du combat. Une partie neuve n'a aucun état à migrer et
+ * part de `false` (l'état initial du store).
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
@@ -343,7 +374,13 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // **v4 → v5** : un état v4 a **déjà été joué** (on ne lui remontre pas la Journée
     // d'intégration, `true` d'office) ; une partie neuve n'a aucun état à migrer et
     // part de `false`.
-    tutorielVu: typeof migrated.tutorielVu === 'boolean' ? migrated.tutorielVu : version < STORAGE_VERSION
+    tutorielVu: typeof migrated.tutorielVu === 'boolean' ? migrated.tutorielVu : version < STORAGE_VERSION,
+    // **v5 → v6** : même règle pour le pas-à-pas du combat — un état d'avant sa
+    // création vient d'un invité qui a déjà combattu.
+    pasAPasCombatVu:
+      typeof migrated.pasAPasCombatVu === 'boolean'
+        ? migrated.pasAPasCombatVu
+        : version < STORAGE_VERSION
   };
 }
 
