@@ -1,7 +1,8 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Library, Layers, Settings, Swords } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
+import { BulleBoiteAIdees } from '@/components/BulleBoiteAIdees';
 
 const tabs = [
   { to: '/', label: 'Accueil', icon: Home },
@@ -13,6 +14,17 @@ const tabs = [
 
 export function Layout() {
   const name = useStore((state) => state.name);
+  const { pathname } = useLocation();
+
+  /**
+   * La bulle de la Boîte à idées (D-058) est **absente pendant un combat** : c'est ce
+   * qui permet au mur d'être une **page** (D-068) sans risquer une partie en cours — on
+   * ne la quitte pas pour aller lire des post-its. Elle revient dès qu'on quitte l'écran
+   * de combat, fin de partie ou retour au bureau. Sur le mur lui-même, elle n'a rien à
+   * ouvrir : elle s'efface.
+   */
+  const enCombat = pathname.startsWith('/battle');
+  const surLeMur = pathname.startsWith('/idees');
 
   return (
     <div className="app-shell">
@@ -70,6 +82,9 @@ export function Layout() {
 
       {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). */}
       <JourneeIntegration />
+
+      {/* L'entrée du mur (D-058) : partout, sauf en combat et sur le mur. */}
+      {!enCombat && !surLeMur && <BulleBoiteAIdees />}
 
       <nav className="bottom-nav" aria-label="Navigation principale">
         {tabs.map((tab) => {
