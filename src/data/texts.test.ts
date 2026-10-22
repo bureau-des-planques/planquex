@@ -55,22 +55,32 @@ interface Cue<K extends string> {
  * aujourd'hui. C'est exactement l'inventaire que #47 doit trancher (changer le texte,
  * ou décider la primitive qui manque).
  */
+/*
+ * Frontières de mot (#166). Un motif sans `\b` trouve son mot **dans un autre** : « demain »,
+ * « maintenance » ou « mainmise » déclenchaient `main`, « recherche » déclenchait `cherche`.
+ * Règle : un mot **entier** (`main`, `deck`, `rack`, `café`) porte `\b` des deux côtés ; une
+ * **racine** ne porte que le `\b` de début, parce que la fin varie (conjugaison, accord,
+ * dérivé) : `défauss` couvre défausse / défausser, `cherch` couvre cherche / cherchent,
+ * `immobilis` couvre immobilisé / immobilisation, `deriv` couvre dérivé / dérive.
+ * Les mots pluriels sont explicites (`mains?`, `racks?`) plutôt que supposés.
+ */
 const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   // `discardEnergy` retire un café au Planqué d'en face (engine.ts : `discardFirstCafes(defender, 1)`).
-  { label: 'café', pattern: /cafes?\b/, kinds: ['discardEnergy'] },
+  { label: 'café', pattern: /\bcafes?\b/, kinds: ['discardEnergy'] },
   // Aucune primitive ne défausse une carte de la main : le seul rebut est le café.
-  { label: 'défausse 1 carte', pattern: /defausse (?:\d+|une) carte/, kinds: [] },
-  { label: 'pioche N cartes', pattern: /pioche (\d+) carte/, kinds: ['draw'] },
-  { label: 'soigne N de tous tes Planqués', pattern: /soigne (\d+)[^.]*tous tes planques/, kinds: ['healAll'] },
-  { label: 'soigne N de ce Planqué', pattern: /soigne (\d+)[^.]*ce planque/, kinds: ['healSelf'] },
-  { label: 'subit N de moins', pattern: /subit (\d+)[^.]*de moins/, kinds: ['reduceDamage'] },
-  { label: 'prend N de stress', pattern: /prend (\d+)[^.]*stress/, kinds: ['selfDamage'] },
-  { label: 'statut nommé', pattern: /surcharge|epuisement|sieste|immobilis|deriv/, kinds: ['status'] },
+  { label: 'défausse 1 carte', pattern: /\bdefausse (?:\d+|une) carte/, kinds: [] },
+  { label: 'pioche N cartes', pattern: /\bpioche (\d+) carte/, kinds: ['draw'] },
+  { label: 'soigne N de tous tes Planqués', pattern: /\bsoigne (\d+)[^.]*tous tes planques/, kinds: ['healAll'] },
+  { label: 'soigne N de ce Planqué', pattern: /\bsoigne (\d+)[^.]*ce planque/, kinds: ['healSelf'] },
+  { label: 'subit N de moins', pattern: /\bsubit (\d+)[^.]*de moins/, kinds: ['reduceDamage'] },
+  { label: 'prend N de stress', pattern: /\bprend (\d+)[^.]*stress/, kinds: ['selfDamage'] },
+  // Racines : `surcharg` couvre surchargé, `epuisement` reste le nom (EPUISEMENT).
+  { label: 'statut nommé', pattern: /\b(?:surcharg|epuisement|sieste|immobilis|deriv)/, kinds: ['status'] },
   // `switchSelf` échange le Poste avec le premier Planqué du Rack (engine.ts).
-  { label: 'Rack', pattern: /rack/, kinds: ['switchSelf'] },
+  { label: 'Rack', pattern: /\bracks?\b/, kinds: ['switchSelf'] },
   // Aucune primitive ne touche la main ni ne cherche dans le Deck.
-  { label: 'main', pattern: /main/, kinds: [] },
-  { label: 'deck', pattern: /deck/, kinds: [] }
+  { label: 'main', pattern: /\bmains?\b/, kinds: [] },
+  { label: 'deck', pattern: /\bdecks?\b/, kinds: [] }
 ];
 
 /**
@@ -83,19 +93,21 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
  * soignent que le Poste : viser le Rack ou la main est un mensonge.
  */
 const CUES_TALENT: readonly Cue<AbilityKind>[] = [
-  { label: 'café', pattern: /cafes?\b/, kinds: ['attachEnergy'] },
-  { label: 'pioche N cartes', pattern: /pioche (\d+) carte/, kinds: ['draw'] },
-  { label: 'soigne N', pattern: /soigne (\d+)/, kinds: ['heal', 'antiStatus'] },
-  { label: 'retire un statut', pattern: /retire un statut/, kinds: ['antiStatus'] },
-  { label: 'subit N de moins', pattern: /subit (\d+)[^.]*de moins/, kinds: ['reduceDamage'] },
+  { label: 'café', pattern: /\bcafes?\b/, kinds: ['attachEnergy'] },
+  { label: 'pioche N cartes', pattern: /\bpioche (\d+) carte/, kinds: ['draw'] },
+  { label: 'soigne N', pattern: /\bsoigne (\d+)/, kinds: ['heal', 'antiStatus'] },
+  { label: 'retire un statut', pattern: /\bretire un statut/, kinds: ['antiStatus'] },
+  { label: 'subit N de moins', pattern: /\bsubit (\d+)[^.]*de moins/, kinds: ['reduceDamage'] },
   // Aucune primitive de Talent ne défausse, ne cherche, ne touche la main, le deck ou le
   // Rack, et aucune ne se déclenche « en jouant » : `useAbility` est une action du tour.
-  { label: 'défausse', pattern: /defauss/, kinds: [] },
-  { label: 'cherche', pattern: /cherche/, kinds: [] },
-  { label: 'main', pattern: /main/, kinds: [] },
-  { label: 'deck', pattern: /deck/, kinds: [] },
-  { label: 'Rack', pattern: /rack/, kinds: [] },
-  { label: 'en jouant', pattern: /en jouant/, kinds: [] }
+  // Racines (#166) : `defauss` et `cherch` ne portent que le `\b` de début, pour que
+  // « recherche » ne déclenche pas `cherche`.
+  { label: 'défausse', pattern: /\bdefauss/, kinds: [] },
+  { label: 'cherche', pattern: /\bcherch/, kinds: [] },
+  { label: 'main', pattern: /\bmains?\b/, kinds: [] },
+  { label: 'deck', pattern: /\bdecks?\b/, kinds: [] },
+  { label: 'Rack', pattern: /\bracks?\b/, kinds: [] },
+  { label: 'en jouant', pattern: /\ben jouant\b/, kinds: [] }
 ];
 
 interface Attente {
@@ -133,11 +145,12 @@ const ATTENTES_TALENT: Record<AbilityKind, Attente> = {
 
 /** Les mots par lesquels un texte annonce un statut (`AGENTS.md` §3.1). */
 const MOTS_STATUT: Record<Status, RegExp> = {
-  SURCHARGE: /surcharge/,
-  EPUISEMENT: /epuisement/,
-  SIESTE: /sieste/,
-  IMMOBILISATION: /immobilis/,
-  DERIVE: /deriv/
+  // Mêmes règles que `CUES_EFFET` (#166) : racines, `\b` de début seulement.
+  SURCHARGE: /\bsurcharg/,
+  EPUISEMENT: /\bepuisement/,
+  SIESTE: /\bsieste/,
+  IMMOBILISATION: /\bimmobilis/,
+  DERIVE: /\bderiv/
 };
 
 /** Sens « texte ⇒ effet » : chaque mot mécanique doit avoir sa primitive. */
@@ -315,6 +328,26 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     );
     // Et le témoin : un texte honnête passe.
     expect(verifierTalent('Une fois par tour : soigne 10 de ce Planqué.', { kind: 'heal', amount: 10 })).toEqual([]);
+  });
+
+  it('mord : les motifs respectent les frontières de mot (#166)', () => {
+    // Le motif `main` doit trouver « main » et ne pas trouver « demain » ni « maintenance ».
+    for (const table of [CUES_EFFET, CUES_TALENT]) {
+      const motif = table.find((cue) => cue.label === 'main');
+      expect(motif, 'motif « main » introuvable').toBeDefined();
+      expect(motif?.pattern.test(normaliser('La recette est signée demain.')), '« demain »').toBe(false);
+      expect(motif?.pattern.test(normaliser('Un plan de maintenance.')), '« maintenance »').toBe(false);
+      expect(motif?.pattern.test(normaliser('Pioche la main.')), '« main »').toBe(true);
+    }
+    // Le contrôle complet : un texte où `main` n'est qu'un fragment passe, un texte où il est un mot est refusé.
+    expect(verifierPression('La recette est signée demain.', [])).toEqual([]);
+    expect(verifierPression('Ce Planqué prend la main.', [])).not.toEqual([]);
+  });
+
+  it('ne déclenche pas les motifs sur une sous-chaîne : « recherche », « semaines », « demain » (#166)', () => {
+    expect(verifierPression('Ce Planqué fait de la recherche.', [])).toEqual([]);
+    expect(verifierPression('Trois semaines de maintenance.', [])).toEqual([]);
+    expect(verifierPression('Rendez-vous demain.', [])).toEqual([]);
   });
 
   it('donne un texte à chaque Pression de chaque Planqué (#158, D-074)', () => {
