@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 
@@ -21,10 +22,17 @@ import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
  * et n'en entend plus parler.
  */
 export function PasAPasCombat({ pasAPas }: { pasAPas: PasAPasCombatEtat }) {
+  // Le détail se **replie sur téléphone** (#170) : le titre et les commandes restent, le
+  // texte se déplie d'un geste. Hauteur fixe, donc la main reste à l'écran. Sur un écran
+  // large, `styles.css` ignore le repli : le texte se lit d'office.
+  const [detailOuvert, setDetailOuvert] = useState(false);
   if (!pasAPas.ouvert) return null;
 
   return (
-    <aside className="pas-a-pas" aria-label="Pas-à-pas du combat">
+    <aside
+      className={`pas-a-pas${detailOuvert ? '' : ' pas-a-pas--replie'}`}
+      aria-label="Pas-à-pas du combat"
+    >
       <div className="pas-a-pas__entete">
         <p className="pas-a-pas__compte">
           Pas-à-pas · étape {pasAPas.etape + 1} sur {ETAPES_COMBAT.length}
@@ -34,7 +42,17 @@ export function PasAPasCombat({ pasAPas }: { pasAPas: PasAPasCombatEtat }) {
         </button>
       </div>
       <div className="pas-a-pas__etape" aria-live="polite">
-        <h2 className="pas-a-pas__titre">{pasAPas.courante.titre}</h2>
+        <div className="pas-a-pas__titre-ligne">
+          <h2 className="pas-a-pas__titre">{pasAPas.courante.titre}</h2>
+          <button
+            type="button"
+            className="pas-a-pas__lire"
+            aria-expanded={detailOuvert}
+            onClick={() => setDetailOuvert((ouvert) => !ouvert)}
+          >
+            {detailOuvert ? 'Replier' : 'Lire le détail'}
+          </button>
+        </div>
         <p className="pas-a-pas__texte">{pasAPas.courante.texte}</p>
       </div>
       <div className="actions actions--tight">

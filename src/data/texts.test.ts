@@ -58,17 +58,19 @@ interface Cue<K extends string> {
 /*
  * Frontières de mot (#166). Un motif sans `\b` trouve son mot **dans un autre** : « demain »,
  * « maintenance » ou « mainmise » déclenchaient `main`, « recherche » déclenchait `cherche`.
- * Règle : un mot **entier** (`main`, `deck`, `rack`, `café`) porte `\b` des deux côtés ; une
+ * Règle : un mot **entier** (`main`, `deck`, `banc`, `café`) porte `\b` des deux côtés ; une
  * **racine** ne porte que le `\b` de début, parce que la fin varie (conjugaison, accord,
  * dérivé) : `défauss` couvre défausse / défausser, `cherch` couvre cherche / cherchent,
  * `immobilis` couvre immobilisé / immobilisation, `deriv` couvre dérivé / dérive.
- * Les mots pluriels sont explicites (`mains?`, `racks?`) plutôt que supposés.
+ * Les mots pluriels sont explicites (`mains?`, `bancs?`) plutôt que supposés.
  */
 const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   // `discardEnergy` retire un café au Planqué d'en face (engine.ts : `discardFirstCafes(defender, 1)`).
   { label: 'café', pattern: /\bcafes?\b/, kinds: ['discardEnergy'] },
-  // Aucune primitive ne défausse une carte de la main : le seul rebut est le café.
-  { label: 'défausse 1 carte', pattern: /\bdefausse (?:\d+|une) carte/, kinds: [] },
+  // `discardHand` défausse une carte de la main, au hasard (adversaire) ou par choix (D-076).
+  { label: 'défausse N carte', pattern: /\bdefausse (?:\d+|une) carte/, kinds: ['discardHand'] },
+  // `damage` : les dégâts d'un Talent ou d'une Pression, au Planqué adverse (D-077).
+  { label: 'N dégâts au Planqué', pattern: /\b\d+ degats? au\b/, kinds: ['damage'] },
   { label: 'pioche N cartes', pattern: /\bpioche (\d+) carte/, kinds: ['draw'] },
   { label: 'soigne N de tous tes Planqués', pattern: /\bsoigne (\d+)[^.]*tous tes planques/, kinds: ['healAll'] },
   { label: 'soigne N de ce Planqué', pattern: /\bsoigne (\d+)[^.]*ce planque/, kinds: ['healSelf'] },
@@ -76,21 +78,27 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   { label: 'prend N de stress', pattern: /\bprend (\d+)[^.]*stress/, kinds: ['selfDamage'] },
   // Racines : `surcharg` couvre surchargé, `epuisement` reste le nom (EPUISEMENT).
   { label: 'statut nommé', pattern: /\b(?:surcharg|epuisement|sieste|immobilis|deriv)/, kinds: ['status'] },
-  // `switchSelf` échange le Poste avec le premier Planqué du Rack (engine.ts).
-  { label: 'Rack', pattern: /\bracks?\b/, kinds: ['switchSelf'] },
-  // Aucune primitive ne touche la main ni ne cherche dans le Deck.
-  { label: 'main', pattern: /\bmains?\b/, kinds: [] },
-  { label: 'deck', pattern: /\bdecks?\b/, kinds: [] }
+  // `switchSelf` échange le Poste avec le premier Planqué du Banc (engine.ts).
+  { label: 'Banc', pattern: /\bbancs?\b/, kinds: ['switchSelf'] },
+  // La main n'est touchée que par une défausse (D-076) ; révéler et chercher viendront (D-078, D-080).
+  { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand', 'reveal', 'search'] },
+  // `reveal` écrit la carte, ou la main, dans le journal (D-078).
+  { label: 'révèle', pattern: /\brevel/, kinds: ['reveal'] },
+  // `peek` lit le dessus du Deck sans le modifier (D-079) ; la recherche y cherchera (D-080).
+  { label: 'regarde le dessus', pattern: /\bregarde la carte du dessus/, kinds: ['peek'] },
+  // `search` cherche une carte du filtre dans le Deck, puis la prend en main (D-080).
+  { label: 'cherche', pattern: /\bcherch/, kinds: ['search'] },
+  { label: 'deck', pattern: /\bdecks?\b/, kinds: ['search', 'peek'] }
 ];
 
 /**
  * Les mots d'un **Talent**, avec le `AbilityKind` qui peut les réaliser.
  *
- * Un Talent n'a pas accès aux primitives d'attaque : `Rack`, `défausse`, `cherche`,
+ * Un Talent n'a pas accès aux primitives d'attaque : `Banc`, `défausse`, `cherche`,
  * `main`, `deck` n'ont donc aucune primitive de Talent. `attachEnergy` attache un
  * café tiré dans le Deck au **Poste** (engine.ts : `player.active.energy.push(cafe)`),
  * et `heal` / `antiStatus` ne
- * soignent que le Poste : viser le Rack ou la main est un mensonge.
+ * soignent que le Poste : viser le Banc ou la main est un mensonge.
  */
 const CUES_TALENT: readonly Cue<AbilityKind>[] = [
   { label: 'café', pattern: /\bcafes?\b/, kinds: ['attachEnergy'] },
@@ -99,15 +107,14 @@ const CUES_TALENT: readonly Cue<AbilityKind>[] = [
   { label: 'retire un statut', pattern: /\bretire un statut/, kinds: ['antiStatus'] },
   { label: 'subit N de moins', pattern: /\bsubit (\d+)[^.]*de moins/, kinds: ['reduceDamage'] },
   // Aucune primitive de Talent ne défausse, ne cherche, ne touche la main, le deck ou le
-  // Rack, et aucune ne se déclenche « en jouant » : `useAbility` est une action du tour.
+  // Banc. Le déclenchement « en jouant » se vérifie à part (`verifierTalent`, D-081).
   // Racines (#166) : `defauss` et `cherch` ne portent que le `\b` de début, pour que
   // « recherche » ne déclenche pas `cherche`.
   { label: 'défausse', pattern: /\bdefauss/, kinds: [] },
   { label: 'cherche', pattern: /\bcherch/, kinds: [] },
   { label: 'main', pattern: /\bmains?\b/, kinds: [] },
   { label: 'deck', pattern: /\bdecks?\b/, kinds: [] },
-  { label: 'Rack', pattern: /\bracks?\b/, kinds: [] },
-  { label: 'en jouant', pattern: /\ben jouant\b/, kinds: [] }
+  { label: 'Banc', pattern: /\bbancs?\b/, kinds: [] },
 ];
 
 interface Attente {
@@ -131,16 +138,23 @@ const ATTENTES_EFFET: Record<AttackEffectKind, Attente | null> = {
   draw: { pattern: /pioche (\d+) carte/, montantGroupe: 1 },
   discardEnergy: { pattern: /cafes?\b/ },
   selfDamage: { pattern: /prend (\d+)[^.]*stress/, montantGroupe: 1 },
-  switchSelf: { pattern: /rack/ },
-  reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 }
+  switchSelf: { pattern: /banc/ },
+  reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
+  discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 },
+  damage: { pattern: /(\d+) degats? au/, montantGroupe: 1 },
+  reveal: { pattern: /revel/ },
+  peek: { pattern: /regarde la carte du dessus/ },
+  search: { pattern: /cherch/ }
 };
 
-const ATTENTES_TALENT: Record<AbilityKind, Attente> = {
+const ATTENTES_TALENT: Record<AbilityKind, Attente | null> = {
   heal: { pattern: /soigne (\d+)/, montantGroupe: 1 },
   draw: { pattern: /pioche (\d+) carte/, montantGroupe: 1 },
   attachEnergy: { pattern: /attache 1 cafes?\b/ },
   reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
-  antiStatus: { pattern: /soigne (\d+)[^.]*retire un statut/, montantGroupe: 1 }
+  antiStatus: { pattern: /soigne (\d+)[^.]*retire un statut/, montantGroupe: 1 },
+  // Un Talent `effects` s'annonce primitive par primitive, comme une Pression (D-077) : `verifierTalent`.
+  effects: null
 };
 
 /** Les mots par lesquels un texte annonce un statut (`AGENTS.md` §3.1). */
@@ -219,9 +233,29 @@ function verifierPression(texte: string, effects: readonly AttackEffect[]): stri
 }
 
 /** Contrôle d'un texte de **Talent** contre son `kind`. */
-function verifierTalent(texte: string, ability: Pick<Ability, 'kind' | 'amount'>): string[] {
+function verifierTalent(
+  texte: string,
+  ability: Pick<Ability, 'kind' | 'amount' | 'effects' | 'trigger' | 'target'>
+): string[] {
   const normalise = normaliser(texte);
-  const problemes = verifierCues(normalise, new Set([ability.kind]), CUES_TALENT);
+  // « en jouant » et le déclenchement à la mise en jeu doivent se répondre (D-081).
+  const enJouant = /\ben jouant\b/.test(normalise);
+  if (enJouant !== (ability.trigger === 'onPlay')) {
+    return [enJouant ? '« en jouant » sans déclenchement à la mise en jeu' : 'déclenchement à la mise en jeu sans « en jouant »'];
+  }
+  // Un Talent `effects` porte le vocabulaire des Pressions : chaque primitive doit être annoncée (D-077).
+  if (ability.kind === 'effects') {
+    const problemes = verifierPression(texte, ability.effects ?? []);
+    if (!CUES_EFFET.some((cue) => cue.pattern.test(normalise))) problemes.push('texte de Talent sans mécanique');
+    return problemes;
+  }
+  // Un café attaché au Banc (D-082) est le seul cas où « Banc » désigne une primitive de Talent.
+  const versBanc = ability.kind === 'attachEnergy' && ability.target === 'rack';
+  const cues = versBanc ? CUES_TALENT.filter((cue) => cue.label !== 'Banc') : CUES_TALENT;
+  const problemes = verifierCues(normalise, new Set([ability.kind]), cues);
+  if (ability.kind === 'attachEnergy' && /\bbancs?\b/.test(normalise) !== versBanc) {
+    problemes.push('« Banc » annoncé sans cible Banc, ou cible Banc sans « Banc » dans le texte');
+  }
   // Un Talent qui n'annonce aucune mécanique n'est pas vérifiable : il est refusé.
   if (!CUES_TALENT.some((cue) => cue.pattern.test(normalise))) {
     problemes.push('texte de Talent sans mécanique : rien à comparer au `kind`');
@@ -271,20 +305,34 @@ const SUJETS: Sujet[] = ALL_CARDS.flatMap((card) => {
 const MENSONGES = SUJETS.filter((sujet) => sujet.problemes.length > 0);
 
 /**
- * **Inventaire de #47 — clos le 20/10/2026 (#65).**
+ * **Inventaire des écarts connus.** Né de #47 (les 22 textes qui annonçaient une mécanique
+ * absente). #65 les avait réécrits pour les aligner sur le moteur ; **D-074 rejette cette voie** :
+ * une carte vend ce qu'elle dit faire, le moteur rattrape. #167 rétablit les quatre Pressions
+ * concernées et inscrit leur écart ici, avec le ticket qui construit la mécanique manquante.
  *
- * Les 22 textes recensés annonçaient une mécanique que le moteur ne fait pas ; ils ont
- * été réécrits (décision Q47.1 : on réécrit, on ne construit pas les primitives). La
- * liste est donc **vide**, et c'est l'état visé : le garde-fou n'a plus d'exception.
+ * Une entrée ne s'ajoute ici que sur une décision datée (D-074) — un texte vendu dont le
+ * moteur ne réalise pas encore la mécanique — jamais pour faire passer un test. Elle se
+ * retire dès que la primitive existe (le test « l'inventaire ne survit pas » le dit).
  *
- * Une entrée ne s'ajoute ici que sur une décision datée de #47 — un texte qu'on garde
- * en l'état le temps de construire sa primitive — jamais pour faire passer un test.
- *
- * Clé stable : `id/attaque` ou `id#talent`. Le format `fichier:ligne — raison` reste
- * celui attendu si une entrée revient : le test vérifie que le fichier cité est bien
- * celui de la faction de la carte.
+ * Clé stable : `id/attaque` ou `id#talent`. Format `src/data/<faction>.ts:<ligne> — #<ticket>` :
+ * le test vérifie que le fichier cité est celui de la faction de la carte. Les variantes
+ * (`-star`, `-crown`, `-ex`) héritent de l'attaque de leur carte de base : leur ligne est
+ * celle de la source.
  */
-const MENSONGES_CONNUS: Readonly<Record<string, string>> = {};
+const MENSONGES_CONNUS: Readonly<Record<string, string>> = {
+  // « L’adversaire révèle une carte de sa main » : aucune révélation (#160) ; le statut
+  // Dérivé de l'effet n'est pas annoncé par le texte.
+  'rh-assistant-rh/Entretien': 'src/data/rh.ts:16 — #160',
+  'rh-assistant-rh-star/Entretien': 'src/data/rh.ts:16 — #160',
+  // « Regarde la carte du dessus de ton deck » : aucune primitive ne regarde le dessus (#162) ;
+  // l'effet `draw` pioche réellement, et le texte ne l'annonce pas.
+  'amelioration-charge-qualite/Checklist': 'src/data/amelioration.ts:23 — #162',
+  // « L’adversaire défausse 1 carte » : aucune défausse de la main (#159) ; l'effet
+  // `discardEnergy` retire un café, et le texte ne le dit pas.
+  'direction-pdg/Fusion-acquisition': 'src/data/direction.ts:48 — #159',
+  'direction-pdg-ex/Fusion-acquisition': 'src/data/direction.ts:65 — #159',
+  'direction-pdg-crown/Fusion-acquisition': 'src/data/direction.ts:48 — #159'
+};
 
 /**
  * Les Pressions d'un Planqué qui n'ont **aucun texte** (#158) : absent, vide, ou blanc.
@@ -328,6 +376,43 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     );
     // Et le témoin : un texte honnête passe.
     expect(verifierTalent('Une fois par tour : soigne 10 de ce Planqué.', { kind: 'heal', amount: 10 })).toEqual([]);
+  });
+
+  it('mord : une défausse de carte doit être annoncée et réalisée (#159, D-076)', () => {
+    // Un texte qui annonce une défausse sans primitive de main : refusé.
+    expect(verifierPression('Ce Planqué défausse 1 carte.', [{ kind: 'draw', amount: 1 }])).not.toEqual([]);
+    // La primitive sans texte qui l'annonce : refusée.
+    expect(verifierPression('Pioche 1 carte.', [{ kind: 'discardHand', target: 'opponent', amount: 1 }])).not.toEqual([]);
+    // Le témoin : une défausse annoncée et réalisée passe.
+    expect(
+      verifierPression('L’adversaire défausse 1 carte.', [{ kind: 'discardHand', target: 'opponent', amount: 1 }])
+    ).toEqual([]);
+  });
+
+  it('mord : un Talent composé annonce chacune de ses primitives, montant compris (#164, D-077)', () => {
+    const talent = 'Une fois par tour : défausse 1 carte, 10 dégâts au Planqué adverse actif.';
+    expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }, { kind: 'damage', amount: 10 }] })).toEqual([]);
+    // Le montant annoncé (10) doit être celui de l'effet.
+    expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }, { kind: 'damage', amount: 20 }] })).not.toEqual([]);
+    // Des dégâts annoncés sans primitive : refusés.
+    expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }] })).not.toEqual([]);
+  });
+
+  it('mord : « en jouant » et le déclenchement à la mise en jeu se répondent (#163, D-081)', () => {
+    // Le texte annonce « en jouant » sans déclencheur : refusé.
+    expect(verifierTalent('En jouant : pioche 1 carte.', { kind: 'draw', amount: 1 })).not.toEqual([]);
+    // Un déclencheur sans « en jouant » dans le texte : refusé.
+    expect(verifierTalent('Une fois par tour : pioche 1 carte.', { kind: 'draw', amount: 1, trigger: 'onPlay' })).not.toEqual([]);
+    // Le témoin : les deux se répondent.
+    expect(verifierTalent('En jouant : pioche 1 carte.', { kind: 'draw', amount: 1, trigger: 'onPlay' })).toEqual([]);
+  });
+
+  it('mord : un café vers le Banc doit dire Banc, et seulement lui (#165, D-082)', () => {
+    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Banc.', { kind: 'attachEnergy', target: 'rack' })).toEqual([]);
+    // Le Talent de Polyvalence (au Poste) ne doit pas parler du Banc.
+    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Banc.', { kind: 'attachEnergy' })).not.toEqual([]);
+    // Une cible Banc sans le mot : refusée.
+    expect(verifierTalent('Une fois par tour : attache 1 café à ce Planqué.', { kind: 'attachEnergy', target: 'rack' })).not.toEqual([]);
   });
 
   it('mord : les motifs respectent les frontières de mot (#166)', () => {

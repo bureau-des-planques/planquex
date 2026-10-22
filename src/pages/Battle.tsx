@@ -16,6 +16,8 @@ import type {
 import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
+import { partieSauvegardee, reprendrePartie } from '@/store/partie';
+import type { Decks, Reprise } from '@/store/partie';
 import {
   aiTurnAction,
   CAMP_NAME,
@@ -89,7 +91,7 @@ function kindLabel(definition: Card | undefined): string {
 }
 
 /**
- * Un Planqué du Rack, **en Stress** : `hp` reste le champ technique du moteur, le
+ * Un Planqué du Banc, **en Stress** : `hp` reste le champ technique du moteur, le
  * Stress est ce que le joueur lit (D-026). Le Seuil est rappelé pour situer la barre.
  */
 function describe(instance: CardInstance | null): string {
@@ -184,10 +186,10 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     /*
      * **Poser, c'est un geste à deux temps** (#169) : on choisit la carte dans la main, puis
      * on dit **où** elle va. Le libellé porte donc le lieu — « Poser au Poste », « Mettre
-     * au Rack 2 » — et plus le nom de la carte, que le panneau de pose rappelle déjà.
+     * au Banc 2 » — et plus le nom de la carte, que le panneau de pose rappelle déjà.
      */
     case 'playBasic':
-      return { label: action.slot === 'active' ? 'Poser au Poste' : `Mettre au Rack ${Number(action.slot) + 1}` };
+      return { label: action.slot === 'active' ? 'Poser au Poste' : `Mettre au Banc ${Number(action.slot) + 1}` };
     case 'playAction':
       return {
         label: kindLabel(handDefinition(action.uid)) === 'Objet' ? 'Jouer cet Objet' : 'Jouer ce Collègue'
@@ -223,6 +225,9 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     }
     case 'forfeit':
       return { label: 'Abandonner' };
+    // Un choix en attente (D-076). Le nom de la carte ne s'affiche pas encore : dette UI.
+    case 'choose':
+      return { label: 'Choisir cette carte' };
     case 'endTurn':
       return { label: state.current === myCamp ? 'Fin du tour' : 'Passer le tour de la Direction' };
   }
@@ -264,7 +269,7 @@ function ActionButton({
 
 /**
  * **Un camp du plateau** (#169) : l'ordre est celui d'un jeu de cartes à deux joueurs —
- * le camp adverse en haut, **Rack puis Poste**, le mien en bas, **Poste puis Rack** : les
+ * le camp adverse en haut, **Banc puis Poste**, le mien en bas, **Poste puis Banc** : les
  * deux Postes se font face au milieu. Tout tient dans une carte compacte, pour que les
  * deux camps, la main et les actions se voient d'un coup sur un téléphone.
  *
@@ -322,16 +327,16 @@ function Camp({
     </div>
   );
 
-  const rack = (
+  const banc = (
     <div className="board__bench">
-      <span className="stat-label">Rack</span>
-      <ul className="rack board__content">
+      <span className="stat-label">Banc</span>
+      <ul className="bench board__content">
         {side.bench.map((slot, index) => (
-          <li className={`rack__slot ${slot ? '' : 'is-free'}`} key={index} title={describe(slot)}>
+          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index} title={describe(slot)}>
             {slot ? (
               <>
-                <strong className="rack__name">{cardName(slot.cardId)}</strong>
-                <span className="rack__stress muted">
+                <strong className="bench__name">{cardName(slot.cardId)}</strong>
+                <span className="bench__stress muted">
                   {slot.maxHp - slot.hp}/{slot.maxHp} de Stress
                 </span>
               </>
@@ -364,11 +369,11 @@ function Camp({
       {mine ? (
         <>
           {poste}
-          {rack}
+          {banc}
         </>
       ) : (
         <>
-          {rack}
+          {banc}
           {poste}
         </>
       )}
@@ -433,17 +438,28 @@ export function Battle() {
     [usedTestDeck, storedCafeTypes]
   );
 
-  const [state, setState] = useState<BattleState>(() =>
-    createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes })
+  /**
+   * **La partie reprise** (#126) : la partie rangée dans le store, rejouée depuis sa graine
+   * et son journal. À défaut (rien de rangé, partie terminée, journal qui ne rejoue pas),
+   * un combat neuf contre la Direction, comme avant.
+   */
+  const [depart] = useState<Reprise>(
+    () =>
+      reprendrePartie(useStore.getState().partie) ?? {
+        state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
+        match: null,
+        decksSolo: { playerDeck, aiDeck: testDeck() }
+      }
   );
+  const [state, setState] = useState<BattleState>(depart.state);
+  /** Les Decks du combat solo : une partie à deux porte les siens dans son `Match`. */
+  const [decksSolo, setDecksSolo] = useState<Decks>(depart.decksSolo);
 
   /**
-   * **La partie à deux** (#125) : `null` en solo. Elle ne vit que dans cet onglet —
-   * `BattleState` n'est pas persisté (`partialize`, `useStore.ts`) — et le **code** est
-   * le seul objet qui la fait passer d'un onglet à l'autre. La reprise après
-   * rechargement est le ticket #126, pas celui-ci.
+   * **La partie à deux** (#125) : `null` en solo. Le **code** reste le moyen de la passer
+   * d'un onglet à l'autre ; la reprise après rechargement passe par le store (#126).
    */
-  const [match, setMatch] = useState<Match | null>(null);
+  const [match, setMatch] = useState<Match | null>(depart.match);
   /** Ce que le champ de code dit : la raison d'un refus (telle quelle), ou la reprise. */
   const [codeMessage, setCodeMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
   /** Le code collé par l'autre joueur. */
@@ -488,6 +504,7 @@ export function Battle() {
   );
   const pressions = playable.filter((action) => action.type === 'attack');
   const promotions = playable.filter((action) => action.type === 'promoteActive');
+  const choices = playable.filter((action) => action.type === 'choose');
   const turnActions = playable.filter((action) => action.type === 'endTurn');
 
   /** Les Pressions que le café couvre, selon le moteur (`legalAttacks`, testée). */
@@ -570,6 +587,7 @@ export function Battle() {
     setMatch(null);
     setCodeMessage(null);
     setIncoming('');
+    setDecksSolo({ playerDeck, aiDeck: testDeck() });
     setState(createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }));
   }, [playerDeck, chosenCafeTypes]);
 
@@ -589,6 +607,16 @@ export function Battle() {
     setCodeMessage(null);
     setIncoming('');
   }, [playerDeck, chosenCafeTypes]);
+
+  /**
+   * **Ranger la partie** (#126) : à chaque état, le store garde de quoi la rejouer. Une
+   * partie terminée n'y reste pas (`partieSauvegardee` rend `null`). Le store ne fait
+   * qu'écrire ; l'écran reste seul maître de l'état.
+   */
+  const enregistrerPartie = useStore((store) => store.enregistrerPartie);
+  useEffect(() => {
+    enregistrerPartie(partieSauvegardee(state, match, decksSolo));
+  }, [state, match, decksSolo, enregistrerPartie]);
 
   /** Le code de la partie, recalculé à chaque état : il décrit ce qui est à l'écran. */
   const code = useMemo(() => (match ? matchCode(state, match) : ''), [state, match]);
@@ -764,6 +792,17 @@ export function Battle() {
             </section>
           )}
 
+          {choices.length > 0 && (
+            <section className="notice notice--warn choix">
+              <p>Un effet te demande de désigner une carte.</p>
+              <div className="actions actions--tight">
+                {choices.map((action) => (
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="section actions-panel" data-pas-a-pas={pasAPas.designe('poste-actions')}>
             <div className="section__head">
               <h2>Au Poste</h2>
@@ -849,7 +888,7 @@ export function Battle() {
           {/*
             **La pose** (#169) : la carte choisie reste sous les yeux — nommée, avec son texte —
             tant qu'on ne l'a pas posée, et chaque geste dit **où** : « Poser au Poste »,
-            « Mettre au Rack 2 », « Jouer cet Objet ». Il vient **sous la main** et la page le
+            « Mettre au Banc 2 », « Jouer cet Objet ». Il vient **sous la main** et la page le
             cadre dès qu'une carte est choisie (`poseRef`) : sur téléphone il ne reste jamais
             sous la barre de navigation.
           */}

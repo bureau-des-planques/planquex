@@ -13,7 +13,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
+    attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'L’adversaire révèle une carte de sa main.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
     flavor: "Il a posé la question. Il n'a pas écouté la réponse."
   }),
   base({
@@ -79,7 +79,7 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 2,
     attacks: [
       { name: 'Marque employeur', cost: ['RH', 'INCOLORE'], damage: 60, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] },
-      { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 90, text: "Échange ce Planqué avec un Planqué du Rack.", effects: [{ kind: 'switchSelf' }] }
+      { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 90, text: "Échange ce Planqué avec un Planqué du Banc.", effects: [{ kind: 'switchSelf' }] }
     ],
     flavor: "Il garde les meilleurs. Les autres partent en intérim."
   }),
@@ -223,7 +223,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Mutation', cost: ['RH'], damage: 20, text: "Échange ce Planqué avec un Planqué du Rack.", effects: [{ kind: 'switchSelf' }] }],
+    attacks: [{ name: 'Mutation', cost: ['RH'], damage: 20, text: "Échange ce Planqué avec un Planqué du Banc.", effects: [{ kind: 'switchSelf' }] }],
     flavor: "Il a validé ta mutation. Le carton est prêt depuis trois mois."
   }),
   base({
@@ -316,7 +316,7 @@ export const RH_CARDS: PlanqueCard[] = [
     ex: true,
     attacks: [
       { name: 'Marque employeur', cost: ['RH', 'INCOLORE'], damage: 70, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] },
-      { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Échange ce Planqué avec un Planqué du Rack. Le Planqué adverse est Dérivé.', effects: [{ kind: 'switchSelf' }, { kind: 'status', status: 'DERIVE', target: 'opponent' }] }
+      { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Échange ce Planqué avec un Planqué du Banc. Le Planqué adverse est Dérivé.', effects: [{ kind: 'switchSelf' }, { kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
     flavor: 'Deux Interventions. Le talent est parti avant la signature.'
   })

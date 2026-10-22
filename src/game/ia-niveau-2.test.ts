@@ -41,7 +41,7 @@ import { factionDeck, simulate, type SimulationReport } from '@/game/simulation'
  * (#111) : 252 / 214 / 134 au contrôle (54,08 %, ratio 1,178) et 267 / 228 / 105 à
  * l'entraînement (53,94 %, ratio 1,171). Le ratio passe, le **taux de décidées ne
  * passe pas** : aucun poids n'est adopté, les défauts restent ceux du modèle corrigé.
- * Détail des 435 candidats explorés : `docs/IA-PESAGE-111.md`.
+ * Détail des 435 candidats explorés : `docs/ia/111-pesage.md`.
  *
  * **Mesure après #114** (l'évaluation ne lit plus le flux de hasard de la partie, elle
  * porte une sous-graine dérivée — voir `ia-hasard.test.ts`) : au **contrôle**, 220 / 280 /
@@ -294,7 +294,7 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
     () => {
       // On utilise des graines de CONTRÔLE (99, 1234, 2024) pour lever le biais
       // d'ajustement. Le protocole complet (5 graines × 60 parties, seuils, IC 95 %)
-      // est dans `npm run pesage` et `docs/IA-PESAGE-111.md`.
+      // est dans `npm run pesage` et `docs/ia/111-pesage.md`.
       const gamesPerSeries = 10;
       const seeds = [99, 1234, 2024]; // graines de contrôle, disjointes de l'entraînement
       let totalGames = 0;

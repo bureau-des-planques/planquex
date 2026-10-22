@@ -37,7 +37,12 @@ export type AttackEffectKind =
   | 'discardEnergy'
   | 'selfDamage'
   | 'switchSelf'
-  | 'reduceDamage';
+  | 'reduceDamage'
+  | 'discardHand'
+  | 'damage'
+  | 'reveal'
+  | 'peek'
+  | 'search';
 
 /**
  * Les membres d'`AttackEffectKind`, **une seule fois** dans le code (#56).
@@ -55,14 +60,24 @@ export const ATTACK_EFFECT_KINDS = [
   'discardEnergy',
   'selfDamage',
   'switchSelf',
-  'reduceDamage'
+  'reduceDamage',
+  'discardHand',
+  'damage',
+  'reveal',
+  'peek',
+  'search'
 ] as const satisfies readonly AttackEffectKind[];
+
+/** Filtre d'une recherche dans le Deck (D-080) : un Planqué, ou un Collègue. */
+export type CardFilter = 'PLANQUE' | 'COLLEAGUE';
 
 export interface AttackEffect {
   kind: AttackEffectKind;
   amount?: number;
   status?: Status;
   target?: 'self' | 'opponent';
+  /** Ce que cherche la primitive `search` (D-080). */
+  filter?: CardFilter;
 }
 
 /**
@@ -106,7 +121,7 @@ export interface Attack {
  * `reduceDamage`…) qui ne veulent pas dire la même chose. Un resolver unique serait une
  * fausse abstraction ; deux `switch`, une liste runtime par union.
  */
-export type AbilityKind = 'heal' | 'draw' | 'attachEnergy' | 'reduceDamage' | 'antiStatus';
+export type AbilityKind = 'heal' | 'draw' | 'attachEnergy' | 'reduceDamage' | 'antiStatus' | 'effects';
 
 /** Les membres d'`AbilityKind`, source unique (#56) — même contrat qu'`ATTACK_EFFECT_KINDS`. */
 export const ABILITY_KINDS = [
@@ -114,7 +129,8 @@ export const ABILITY_KINDS = [
   'draw',
   'attachEnergy',
   'reduceDamage',
-  'antiStatus'
+  'antiStatus',
+  'effects'
 ] as const satisfies readonly AbilityKind[];
 
 export interface Ability {
@@ -123,10 +139,26 @@ export interface Ability {
   kind: AbilityKind;
   amount?: number;
   oncePerTurn?: boolean;
+  /**
+   * Corps d'un Talent `kind: 'effects'` (D-077) : la liste des primitives, avec les mêmes
+   * `AttackEffect` que les Pressions. Un Talent n'est pas une Pression : il ne termine pas
+   * le tour.
+   */
+  effects?: AttackEffect[];
+  /**
+   * Déclenchement (D-081). Absent : Talent à la demande, une fois par tour (`useAbility`).
+   * `onPlay` : Talent « en jouant », résolu une fois, à la mise en jeu (pose ou évolution).
+   */
+  trigger?: 'onPlay';
+  /**
+   * Cible d'un `attachEnergy` (D-082). Absent : le Poste (Polyvalence de l'intérim, inchangé).
+   * `rack` : le joueur choisit le Planqué du Banc qui reçoit le café.
+   */
+  target?: 'rack';
 }
 
 /**
- * Nature de la carte. Un **Planqué** se pose au Poste ou au Rack ; une **carte Action**
+ * Nature de la carte. Un **Planqué** se pose au Poste ou au Banc ; une **carte Action**
  * se joue depuis la main puis part au Rebut : **Objet** (illimité par tour) ou
  * **Collègue** (1 par tour) — `AGENTS.md` §4.
  */
@@ -252,7 +284,24 @@ export type BattleAction =
    * le camp qui se couche n'est pas celui au trait.
    */
   | { type: 'forfeit'; who: PlayerId }
+  /**
+   * Résout le **choix en attente** (`pendingChoice`, D-076) : la carte `uid` est celle que
+   * le joueur désigne — en main (défausse), dans le Deck (recherche), au Banc (café).
+   */
+  | { type: 'choose'; uid: string }
   | { type: 'endTurn' };
+
+/**
+ * Un **choix** que le moteur attend du joueur (D-076, D-080, D-082). Tant qu'il est
+ * ouvert, seul `choose` (et le forfait) est accepté pour ce joueur.
+ */
+export type PendingChoice =
+  /** Défausser une carte de sa main ; `restant` cartes à défausser encore. */
+  | { kind: 'defausse'; who: PlayerId; restant: number }
+  /** Chercher une carte du filtre dans son Deck, puis l'ajouter à sa main (D-080). */
+  | { kind: 'chercher'; who: PlayerId; filtre: CardFilter }
+  /** Choisir le Planqué du Banc qui reçoit le café `cafe` (D-082). */
+  | { kind: 'attacher'; who: PlayerId; cafe: CafeSymbol };
 
 /** Les quatre façons dont une partie s'arrête (`AGENTS.md` §4, #84). */
 export type EndReason = 'interventions' | 'plateauVide' | 'forfait' | 'limiteDeTours';
@@ -285,9 +334,14 @@ export interface BattleState {
    * craqué, et l'attaquant choisit en premier sur un double craquage). Tant que
    * ce champ est renseigné, aucune autre action n'est acceptée : il faut d'abord
    * trancher. `null` quand rien n'est en attente, ou quand le joueur n'a plus de
-   * Rack (la partie est alors terminée).
+   * Banc (la partie est alors terminée).
    */
   pendingPromotion: PlayerId | null;
+  /**
+   * Choix en attente du joueur (D-076) : `null` quand rien n'est à choisir. Comme la
+   * relève, il bloque toute autre action du joueur tant qu'il n'est pas résolu.
+   */
+  pendingChoice: PendingChoice | null;
   /**
    * État du générateur seedé de la partie (ticket #29). Un entier 32 bits, donc
    * clonable par `structuredClone` et comparable : la partie rejoue à l'identique

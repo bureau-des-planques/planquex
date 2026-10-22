@@ -603,7 +603,7 @@ describe('Cartes — rareté 3◆ (CARD-SPEC.md §1, vague 2, #86)', () => {
 });
 
 describe('Cartes — textes (AGENTS.md §3, §5)', () => {
-  it('écrit les textes en français, sans mot interdit ni « banc »', () => {
+  it('écrit les textes en français, sans mot interdit ni « rack »', () => {
     for (const card of ALL_CARDS) {
       for (const text of texts(card)) {
         for (const word of FORBIDDEN_ANY_CASE) {
@@ -612,8 +612,9 @@ describe('Cartes — textes (AGENTS.md §3, §5)', () => {
         for (const word of FORBIDDEN_UPPER) {
           expect(text, `${card.id} : « ${word} »`).not.toContain(word);
         }
-        // §3.1 : Bench → Rack. « banc » n'a rien à faire dans un texte de carte.
-        expect(text, `${card.id} : « ${text} »`).not.toMatch(/\bbanc\b/i);
+        // §3.1 (D-083) : Bench → Banc. « Rack » est l'ancien nom, il n'a plus rien à faire
+        // dans un texte de carte.
+        expect(text, `${card.id} : « ${text} »`).not.toMatch(/\bracks?\b/i);
       }
     }
   });

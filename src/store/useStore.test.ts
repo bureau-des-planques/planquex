@@ -164,8 +164,8 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 6', () => {
-    expect(STORAGE_VERSION).toBe(6);
+  it('déclare la version 7', () => {
+    expect(STORAGE_VERSION).toBe(7);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -596,5 +596,59 @@ describe('Sauvegarde — export et import', () => {
     // L'id renommé par #49 est remappé par la migration, pas chargé tel quel.
     expect(useStore.getState().owned['rh-charge-prevention']).toBe(2);
     expect(useStore.getState().owned['rh-responsable-qvt']).toBeUndefined();
+  });
+});
+
+/** Une partie rangée minimale mais de forme valide (la forme, pas le jeu : cf. `partie.test.ts`). */
+const partieRangee = {
+  mode: 'solo' as const,
+  camp: 'player' as const,
+  seed: 77,
+  playerDeck: ['rh-charge-prevention'],
+  aiDeck: ['rh-charge-prevention'],
+  playerCafeTypes: [],
+  aiCafeTypes: [],
+  actions: []
+};
+
+describe('Partie en cours — store (#126, forme v7)', () => {
+  it('ne range aucune partie par défaut', () => {
+    expect(useStore.getState().partie).toBeNull();
+  });
+
+  it('range la partie et la persiste avec le reste', () => {
+    useStore.getState().enregistrerPartie(partieRangee);
+    expect(partializeState(useStore.getState()).partie).toEqual(partieRangee);
+  });
+
+  it('migre un état v6 sans partie : rien à reprendre, sans perdre le reste', () => {
+    const migre = migratePersisted({ name: 'Vétéran', tutorielVu: true, owned: {}, deck: [] }, 6);
+    expect(migre.partie).toBeNull();
+    expect(migre.name).toBe('Vétéran');
+    expect(migre.tutorielVu).toBe(true);
+  });
+
+  it('garde une partie bien formée d’un état v7, et écarte une partie mal formée', () => {
+    expect(migratePersisted({ partie: partieRangee }, 7).partie).toEqual(partieRangee);
+    expect(migratePersisted({ partie: { mode: 'n’importe quoi' } }, 7).partie).toBeNull();
+  });
+
+  it('une sauvegarde importée sans partie ne touche pas à la partie en cours', () => {
+    useStore.getState().enregistrerPartie(partieRangee);
+    const ancienne = JSON.stringify({
+      jeu: 'bureau-des-planques',
+      version: 6,
+      etat: { name: 'Importé', owned: {}, deck: [] }
+    });
+
+    expect(useStore.getState().importerSauvegarde(ancienne)).toEqual({ ok: true });
+    expect(useStore.getState().name).toBe('Importé');
+    expect(useStore.getState().partie).toEqual(partieRangee);
+  });
+
+  it('« Réinitialiser la progression » efface la partie en cours', () => {
+    useStore.getState().enregistrerPartie(partieRangee);
+    useStore.getState().reset();
+    expect(useStore.getState().partie).toBeNull();
   });
 });

@@ -15,9 +15,10 @@
  *    qui a fait échouer le premier essai, la Direction jouant à la place du second
  *    joueur parce que l'écran appelait `nextAiAction` sur le camp `ai`.
  *
- * **Pur** : ni React, ni store, ni réseau. `BattleState` n'est pas persisté (`partialize`,
- * `useStore.ts`) : une partie à deux vit dans l'onglet, et le code est le seul objet qui
- * la fait passer de l'un à l'autre. La reprise après rechargement est le ticket #126.
+ * **Pur** : ni React, ni store, ni réseau. Une partie à deux vit dans l'onglet, et le code
+ * est le seul objet qui la fait passer de l'un à l'autre. La reprise après rechargement
+ * passe par `@/store/partie` (ticket #126), qui range la même graine, les mêmes Decks et
+ * le même journal.
  */
 import type { BattleAction, BattleState, PlayerId } from '@/data/types';
 import { decodeMatch, encodeMatch } from '@/game/codec';

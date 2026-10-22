@@ -6,12 +6,16 @@ import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
 import type { Card, CafeType, Rarity } from '@/data/types';
+import { lirePartie } from '@/store/partie';
+import type { PartieSauvegardee } from '@/store/partie';
 
 /** Clé de persistance. Source unique : `Settings.tsx` l'affiche, `persist` l'écrit. */
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **6** : le store gagne `pasAPasCombatVu` (le
+ * Version de la forme persistée. **7** : le store gagne `partie` (la partie en cours,
+ * rejouable depuis sa graine et son journal, ticket #126) — absente d'un état v6, elle
+ * vaut `null` : aucune partie n'était rangée. **6** : le store gagne `pasAPasCombatVu` (le
  * pas-à-pas de la **première partie** se montre une fois, #143) — absent d'un état v5,
  * il vaut **`true`**, pour la même raison que `tutorielVu` : qui a déjà une partie en
  * cours a déjà joué, on ne lui remontre pas les règles du combat ; seule une partie
@@ -27,7 +31,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 6;
+export const STORAGE_VERSION = 7;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -117,6 +121,13 @@ export interface AppState {
    * le rouvre à la demande.
    */
   pasAPasCombatVu: boolean;
+  /**
+   * La **partie en cours** (ticket #126) : de quoi la rejouer à l'identique au
+   * rechargement — la graine, les Decks, les types de café et le journal. `null` = aucune
+   * partie à reprendre (rien de joué, ou partie terminée). Écrite par l'écran de combat,
+   * jamais recalculée ici : les règles restent dans `@/game/engine`.
+   */
+  partie: PartieSauvegardee | null;
   openPack: () => Card[];
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
@@ -135,6 +146,8 @@ export interface AppState {
   setTutorielVu: (value: boolean) => void;
   /** Marque le **pas-à-pas du combat** comme vu (`true`) ou à revoir (`false`). */
   setPasAPasCombatVu: (value: boolean) => void;
+  /** Range la partie en cours (`null` pour n'en garder aucune). */
+  enregistrerPartie: (partie: PartieSauvegardee | null) => void;
   /** La sauvegarde locale, telle qu'un joueur peut la copier et la coller ailleurs. */
   exporterSauvegarde: () => string;
   /**
@@ -162,6 +175,7 @@ export type PersistedState = Pick<
   | 'rng'
   | 'tutorielVu'
   | 'pasAPasCombatVu'
+  | 'partie'
 >;
 
 export function partializeState(state: AppState): PersistedState {
@@ -174,7 +188,8 @@ export function partializeState(state: AppState): PersistedState {
     reducedMotion: state.reducedMotion,
     rng: state.rng,
     tutorielVu: state.tutorielVu,
-    pasAPasCombatVu: state.pasAPasCombatVu
+    pasAPasCombatVu: state.pasAPasCombatVu,
+    partie: state.partie
   };
 }
 
@@ -204,6 +219,7 @@ export const useStore = create<AppState>()(
       rng: seedRng(Date.now()),
       tutorielVu: false,
       pasAPasCombatVu: false,
+      partie: null,
       openPack: () => {
         // La composition de l'Arrivage (3 communes, 1 peu commune, 1 rare) est
         // une règle de jeu : elle vit dans `@/game/pack` (ticket #57). Ici, on ne
@@ -276,6 +292,8 @@ export const useStore = create<AppState>()(
           // d'intégration et le pas-à-pas du combat se remontrent.
           tutorielVu: false,
           pasAPasCombatVu: false,
+          // La partie en cours fait partie de la progression remise à zéro (#126).
+          partie: null,
           // Un nouveau départ change la suite des Arrivages : sinon le premier
           // Arrivage d'après remise à zéro rejouerait le précédent.
           rng: seedRng(Date.now())
@@ -284,6 +302,7 @@ export const useStore = create<AppState>()(
       setReducedMotion: (value) => set({ reducedMotion: value }),
       setTutorielVu: (value) => set({ tutorielVu: value }),
       setPasAPasCombatVu: (value) => set({ pasAPasCombatVu: value }),
+      enregistrerPartie: (partie) => set({ partie }),
       exporterSauvegarde: () =>
         JSON.stringify(
           { jeu: SAVE_FORMAT, version: STORAGE_VERSION, etat: partializeState(get()) },
@@ -325,7 +344,11 @@ export const useStore = create<AppState>()(
         }
         // Les migrations font le reste : ids renommés, types de café normalisés,
         // générateur recréé s'il manque. On ne charge jamais un état brut.
-        set(migratePersisted(etat, fichier.version));
+        const migre = migratePersisted(etat, fichier.version);
+        // Une sauvegarde sans `partie` (d'avant #126) n'efface pas la partie en cours :
+        // importer une progression ne touche pas au combat qu'on est en train de jouer.
+        if (!('partie' in etat)) migre.partie = get().partie;
+        set(migre);
         return { ok: true };
       }
     }),
@@ -363,6 +386,10 @@ export const useStore = create<AppState>()(
  * la première partie**. Un état v5 vient de quelqu'un qui a déjà joué : `true`, on ne
  * lui remontre pas les règles du combat. Une partie neuve n'a aucun état à migrer et
  * part de `false` (l'état initial du store).
+ *
+ * **v6 → v7** (#126) : le store gagne `partie`, la partie en cours. Un état v6 n'en a
+ * pas : `null`, rien à reprendre. Une partie mal formée est écartée (`lirePartie`) plutôt
+ * que chargée à moitié ; sa validité de jeu, c'est `reprendrePartie` qui la juge.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
@@ -371,6 +398,7 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     ...migrated,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now()),
+    partie: lirePartie(migrated.partie),
     // **v4 → v5** : un état v4 a **déjà été joué** (on ne lui remontre pas la Journée
     // d'intégration, `true` d'office) ; une partie neuve n'a aucun état à migrer et
     // part de `false`.

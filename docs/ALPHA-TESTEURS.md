@@ -15,7 +15,7 @@ donne envie de refaire une partie ?**
   de chaque carte.
 - **Deck** : 20 cartes, au moins un Planqué Entrant, 2 exemplaires maximum du même nom.
   Le bouton « Remplir » en compose un tout seul. Tu choisis aussi jusqu'à 3 types de café.
-- **Combat** contre la Direction (l'adversaire est joué par l'ordinateur) : Poste, Rack,
+- **Combat** contre la Direction (l'adversaire est joué par l'ordinateur) : Poste, Banc,
   cafés, Pressions, statuts. Trois Interventions pour gagner.
 
 Tu commences avec une Collection déjà garnie : tu peux composer un Deck et te battre tout de suite.

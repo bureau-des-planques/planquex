@@ -180,7 +180,7 @@ describe('Rotation — le seul paiement au nombre', () => {
     const player = state.players.player;
     const active = player.active;
     const slot = player.bench.findIndex(Boolean);
-    if (!active || slot < 0) throw new Error('Poste ou Rack vide');
+    if (!active || slot < 0) throw new Error('Poste ou Banc vide');
     // Une relève à 2 : trois cafés typés sans ordre requis — la relève se paye au
     // nombre, les **premiers** de la liste partent (défausse déterministe).
     // `patchPlanque` retient l'original : `afterEach` le remet (#118).

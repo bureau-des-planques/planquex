@@ -116,6 +116,8 @@ describe('actionLog — ne contient que des BattleAction valides (#83)', () => {
         return typeof action.benchIndex === 'number';
       case 'forfeit':
         return action.who === 'player' || action.who === 'ai';
+      case 'choose':
+        return typeof action.uid === 'string';
       case 'endTurn':
         return true;
       default:

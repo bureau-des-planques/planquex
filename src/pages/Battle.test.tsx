@@ -6,6 +6,12 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
+import { ALL_CARDS } from '@/data';
+import type { BattleState } from '@/data/types';
+import { autoDeck } from '@/game/deck';
+import { applyAction, createBattle, legalActions } from '@/game/engine';
+import { partieSauvegardee } from '@/store/partie';
+import { useStore } from '@/store/useStore';
 
 describe('Battle — écran de combat', () => {
   beforeEach(() => {
@@ -33,13 +39,13 @@ describe('Battle — écran de combat', () => {
     expect(campHeadings.length).toBe(2);
   });
 
-  it('affiche le Poste et le Rack (labels)', () => {
+  it('affiche le Poste et le Banc (labels)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     const posteLabels = screen.getAllByText(/Poste/);
-    const rackLabels = screen.getAllByText(/Rack/);
+    const bancLabels = screen.getAllByText(/Banc/);
     expect(posteLabels.length).toBeGreaterThanOrEqual(2);
-    expect(rackLabels.length).toBeGreaterThanOrEqual(2);
+    expect(bancLabels.length).toBeGreaterThanOrEqual(2);
   });
 
   it('affiche la Machine à café pour chaque camp', () => {
@@ -160,7 +166,7 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
     expect(css).not.toMatch(/\.pas-a-pas[^{]*\{[^}]*(position:\s*fixed|inset:\s*0)/);
   });
 
-  it('le défilement suit chaque étape : Suivant et Précédent cadrent la première cible au centre', () => {
+  it('le défilement suit chaque étape : Suivant et Précédent amènent la première cible sous le pas-à-pas', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
 
     // À l'ouverture : la première cible de l'étape 1.
@@ -168,13 +174,44 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
 
     fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     expect(elementsDefiles().at(-1)).toBe(cibleDe('machine'));
-    expect(scroll.mock.calls.at(-1)?.[0]).toMatchObject({ block: 'center' });
+    // **En haut, pas au centre** (#170) : le pas-à-pas occupe le haut de l'écran ; un
+    // centrage plaçait la main sous la ligne de flottaison sur téléphone.
+    expect(scroll.mock.calls.at(-1)?.[0]).toMatchObject({ block: 'start' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     expect(elementsDefiles().at(-1)).toBe(cibleDe('poste-actions'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Précédent' }));
     expect(elementsDefiles().at(-1)).toBe(cibleDe('machine'));
+  });
+
+  it('la cible se place sous le pas-à-pas : la marge de défilement suit sa hauteur (#170)', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    // Une cible défilée en haut est cachée par le pas-à-pas collé : `scroll-margin-top`
+    // réserve sa hauteur, mesurée à l'exécution dans `--pas-a-pas-hauteur`.
+    expect(css).toMatch(/\[data-pas-a-pas\]\s*\{[^}]*scroll-margin-top:[^;]*--pas-a-pas-hauteur/);
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
+    // jsdom n'a pas de mise en page : la hauteur vaut 0, mais la propriété est posée.
+    expect(document.documentElement.style.getPropertyValue('--pas-a-pas-hauteur')).toMatch(/px$/);
+  });
+
+  it('sur téléphone, le détail du pas-à-pas se replie : le titre reste, « Lire le détail » le déplie (#170)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
+    const panneau = screen.getByRole('complementary', { name: /Pas-à-pas du combat/i });
+    // Le repli ne vaut que sur téléphone : sur un écran large, le détail reste lu d'office.
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(css).toMatch(
+      /@media \(max-width: 899px\)\s*\{[\s\S]*?\.pas-a-pas--replie \.pas-a-pas__texte\s*\{\s*display:\s*none/
+    );
+
+    expect(panneau).toHaveClass('pas-a-pas--replie');
+    const lire = within(panneau).getByRole('button', { name: 'Lire le détail' });
+    expect(lire).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(lire);
+    expect(panneau).not.toHaveClass('pas-a-pas--replie');
+    expect(within(panneau).getByRole('button', { name: 'Replier' })).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('défile en douceur, sauf mouvement réduit : alors le saut est instantané', () => {
@@ -247,7 +284,7 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
   });
 
   /** Les libellés de pose : le lieu ou l'effet, jamais un « Poser » nu. */
-  const LIBELLES_DE_POSE = /^(Poser au Poste|Mettre au Rack \d|Jouer cet Objet|Jouer ce Collègue|Faire évoluer|Changement de priorité)/;
+  const LIBELLES_DE_POSE = /^(Poser au Poste|Mettre au Banc \d|Jouer cet Objet|Jouer ce Collègue|Faire évoluer|Changement de priorité)/;
 
   async function premiereCarteJouable(): Promise<HTMLElement> {
     return waitFor(() => {
@@ -318,5 +355,32 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
 
     const panneau = screen.getByRole('region', { name: /Poser la carte choisie/i });
     expect((Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>).mock.contexts).toContain(panneau);
+  });
+  it('reprend la partie rangée au rechargement : même tour, même dernière ligne (#126)', () => {
+    // Une partie jouée à la main, rangée dans le store : c'est ce que l'écran écrit.
+    const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+    const deck = autoDeck(owned).deck;
+    let jouee: BattleState = createBattle(deck, deck, 31337);
+    // Au moins 20 coups, puis on s'arrête au tour du joueur (pour que rien ne joue seul).
+    for (let i = 0; i < 200; i += 1) {
+      const auTourDuJoueur = jouee.current === 'player' && jouee.pendingPromotion === null;
+      if (i >= 20 && auTourDuJoueur) break;
+      const action = legalActions(jouee).find((a) => a.type !== 'forfeit');
+      if (!action) break;
+      jouee = applyAction(jouee, action);
+    }
+    expect(jouee.actionLog.length).toBeGreaterThan(5);
+    const decksSolo = { playerDeck: deck, aiDeck: deck };
+
+    renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      partie: partieSauvegardee(jouee, null, decksSolo)
+    });
+
+    expect(screen.getByText(new RegExp(`Tour ${jouee.turn}\\b`))).toBeInTheDocument();
+    expect(screen.getAllByText(jouee.log.at(-1) ?? '').length).toBeGreaterThan(0);
+    // Le store garde la partie reprise : la prochaine ouverture la retrouvera encore.
+    expect(useStore.getState().partie?.actions.length).toBe(jouee.actionLog.length);
   });
 });

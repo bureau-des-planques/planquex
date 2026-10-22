@@ -1313,6 +1313,44 @@ h2 {
   border-radius: 4px;
   outline: 2px solid color-mix(in srgb, var(--gold) 55%, transparent);
   outline-offset: 2px;
+  /* Une cible amenée en haut (#170) passe **sous** le pas-à-pas collé, pas derrière lui :
+     la marge est sa hauteur réelle, posée par `usePasAPasCombat` à chaque défilement. */
+  scroll-margin-top: calc(var(--pas-a-pas-hauteur, 0px) + 0.75rem);
+}
+
+.pas-a-pas__titre-ligne {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+  justify-content: space-between;
+}
+
+/* « Lire le détail » n'existe que pour le repli du téléphone : sur un écran large, le texte
+   est toujours lu et le bouton n'a rien à déplier. */
+.pas-a-pas__lire {
+  display: none;
+}
+
+/* Sur téléphone (D-060, 420 × 900), le détail se replie : le titre et les commandes restent
+   à l'écran, la console et la main aussi (#170). Le texte se déplie d'un geste. */
+@media (max-width: 899px) {
+  .pas-a-pas--replie .pas-a-pas__texte {
+    display: none;
+  }
+
+  .pas-a-pas__lire {
+    background: none;
+    border: 0;
+    color: var(--gold);
+    cursor: pointer;
+    display: inline;
+    font: inherit;
+    font-size: 0.78rem;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 }
 
 /* Un lien discret, pas un troisième bouton : la sortie du pas-à-pas, et « reprendre une
@@ -1505,7 +1543,7 @@ h2 {
   gap: 0.2rem 0.6rem;
 }
 
-/* Le Poste est la pièce maîtresse du camp : un cadre à lui, plus marqué que le Rack. */
+/* Le Poste est la pièce maîtresse du camp : un cadre à lui, plus marqué que le Banc. */
 .board__poste {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
@@ -1513,8 +1551,8 @@ h2 {
   padding: 0.35rem 0.55rem;
 }
 
-/* Le Rack : trois places, côte à côte. Une place libre est en pointillé. */
-.rack {
+/* Le Banc : trois places, côte à côte. Une place libre est en pointillé. */
+.bench {
   display: grid;
   gap: 0.35rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1523,7 +1561,7 @@ h2 {
   padding: 0;
 }
 
-.rack__slot {
+.bench__slot {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1537,18 +1575,18 @@ h2 {
   padding: 0.3rem 0.45rem;
 }
 
-.rack__slot.is-free {
+.bench__slot.is-free {
   align-items: center;
   border-style: dashed;
 }
 
-.rack__name {
+.bench__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.rack__stress {
+.bench__stress {
   font-size: 0.68rem;
 }
 
