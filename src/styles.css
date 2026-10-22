@@ -1364,7 +1364,10 @@ h2 {
 }
 
 /* La zone de sauvegarde : un texte qu'un joueur copie ou colle à la main. */
-.settings__save {
+.settings__save,
+/* Le champ du code de partie (#125) : même forme, parce que c'est le même geste — un
+   texte long à copier ou coller à la main. */
+.pvp__code {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: 0.5rem;
@@ -1378,7 +1381,8 @@ h2 {
   width: 100%;
 }
 
-.settings__message--ko {
+.settings__message--ko,
+.pvp__message--ko {
   color: var(--danger);
 }
 

@@ -1,12 +1,33 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Coffee, RotateCcw, Swords } from 'lucide-react';
+import { ClipboardPaste, Coffee, Copy, RotateCcw, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
-import type { BattleAction, BattleState, CafeSymbol, CafeType, Card, CardInstance, PlayerId, Status } from '@/data/types';
+import type {
+  BattleAction,
+  BattleState,
+  CafeSymbol,
+  CafeType,
+  Card,
+  CardInstance,
+  PlayerId,
+  PlayerState,
+  Status
+} from '@/data/types';
 import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
-import { nextAiAction } from '@/game/ia';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
+import {
+  aiTurnAction,
+  CAMP_NAME,
+  campLine,
+  campToAct,
+  createMatch,
+  handover,
+  joinMatch,
+  matchCode,
+  otherCamp
+} from '@/store/pvp';
+import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { Button } from '@/components/ui/button';
@@ -132,8 +153,11 @@ interface ActionView {
  * Le libellé d'une action, **à partir de l'action seule** : l'écran n'a pas de liste
  * écrite à la main, donc une transition ajoutée au moteur apparaît ici sans être
  * oubliée (ticket #58). Les noms viennent du vocabulaire d'`AGENTS.md` §3.
+ *
+ * `myCamp` sert aux deux libellés qui nomment un camp — la relève et la fin de tour
+ * (#125) : en solo il vaut `player`, donc le texte d'avant ne bouge pas.
  */
-function describeAction(state: BattleState, action: BattleAction): ActionView {
+function describeAction(state: BattleState, action: BattleAction, myCamp: PlayerId): ActionView {
   const side = state.players[state.current];
   const handCard = (uid: string) => side.hand.find((card) => card.uid === uid);
   const handDefinition = (uid: string) => {
@@ -180,13 +204,13 @@ function describeAction(state: BattleState, action: BattleAction): ActionView {
     }
     case 'promoteActive': {
       const who = state.pendingPromotion ?? state.current;
-      const prefix = who === 'player' ? '' : 'Direction · ';
+      const prefix = who === myCamp ? '' : 'Direction · ';
       return { label: 'Relève', detail: `${prefix}${instanceName(state.players[who].bench[action.benchIndex])} au Poste` };
     }
     case 'forfeit':
       return { label: 'Abandonner' };
     case 'endTurn':
-      return { label: state.current === 'player' ? 'Fin du tour' : 'Passer le tour de la Direction' };
+      return { label: state.current === myCamp ? 'Fin du tour' : 'Passer le tour de la Direction' };
   }
 }
 
@@ -199,13 +223,15 @@ function describeAction(state: BattleState, action: BattleAction): ActionView {
 function ActionButton({
   state,
   action,
+  myCamp,
   onAction
 }: {
   state: BattleState;
   action: BattleAction;
+  myCamp: PlayerId;
   onAction: (action: BattleAction) => void;
 }) {
-  const view = describeAction(state, action);
+  const view = describeAction(state, action, myCamp);
   return (
     <button
       type="button"
@@ -225,20 +251,28 @@ function ActionButton({
 /**
  * Le bandeau de fin dit **pourquoi** la partie s'arrête (#84) : le moteur pose la raison
  * (`endReason`), l'écran ne la déduit plus du seul vainqueur.
+ *
+ * `myCamp` vaut `null` en solo et le camp que je tiens en partie à deux (#125) : « tu »
+ * et « la Direction » y deviennent « je » et « l'autre camp », sinon le bandeau dirait à
+ * l'un des deux joueurs qu'il est la Direction.
  */
-function endBanner(state: BattleState): string {
-  const won = state.winner === 'player';
+function endBanner(state: BattleState, myCamp: PlayerId | null): string {
+  const versus = myCamp !== null;
+  const won = state.winner === (myCamp ?? 'player');
+  const other = versus ? 'l’autre camp' : 'la Direction';
   switch (state.endReason) {
     case 'interventions':
-      return won ? 'Victoire : 3 Interventions.' : 'Défaite : la Direction marque 3 Interventions.';
+      return won
+        ? 'Victoire : 3 Interventions.'
+        : `Défaite : ${versus ? 'le camp adverse' : 'la Direction'} marque 3 Interventions.`;
     case 'plateauVide':
-      return won ? 'Victoire : la Direction n’a plus aucun Planqué.' : 'Défaite : tu n’as plus aucun Planqué.';
+      return won ? `Victoire : ${other} n’a plus aucun Planqué.` : 'Défaite : tu n’as plus aucun Planqué.';
     case 'forfait':
-      return won ? 'Victoire : la Direction déclare forfait.' : 'Défaite : tu as déclaré forfait.';
+      return won ? `Victoire : ${other} déclare forfait.` : 'Défaite : tu as déclaré forfait.';
     case 'limiteDeTours':
       return 'Égalité : la limite de tours est atteinte.';
     default:
-      return won ? 'Victoire.' : state.winner === 'ai' ? 'Défaite.' : 'Égalité.';
+      return won ? 'Victoire.' : state.winner === null ? 'Égalité.' : 'Défaite.';
   }
 }
 
@@ -269,19 +303,48 @@ export function Battle() {
     createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes })
   );
 
-  const player = state.players.player;
-  const ai = state.players.ai;
+  /**
+   * **La partie à deux** (#125) : `null` en solo. Elle ne vit que dans cet onglet —
+   * `BattleState` n'est pas persisté (`partialize`, `useStore.ts`) — et le **code** est
+   * le seul objet qui la fait passer d'un onglet à l'autre. La reprise après
+   * rechargement est le ticket #126, pas celui-ci.
+   */
+  const [match, setMatch] = useState<Match | null>(null);
+  /** Ce que le champ de code dit : la raison d'un refus (telle quelle), ou la reprise. */
+  const [codeMessage, setCodeMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
+  /** Le code collé par l'autre joueur. */
+  const [incoming, setIncoming] = useState('');
+
+  /**
+   * Le camp que **je** tiens. En solo c'est `player` ; en partie à deux, celui que le
+   * code m'a donné (`match.camp`). C'est le seul endroit où l'écran se nomme un siège —
+   * tout le reste en dérive, y compris le forfait et la main affichée.
+   */
+  const myCamp: PlayerId = match?.camp ?? 'player';
+  const mySide = state.players[myCamp];
+  /** Le camp qui doit agir : la relève en attente d'abord (moteur, `campToAct`). */
+  const actor = campToAct(state);
+  /** Mon tour ? Sinon l'écran attend l'autre joueur — et ne lui prête aucun bouton. */
+  const myMove = state.phase === 'playing' && actor === myCamp;
+
   const isPlayerTurn = state.current === 'player' && state.phase === 'playing';
-  const playerCard = player.active ? getCard(player.active.cardId) : undefined;
+  const myCard = mySide.active ? getCard(mySide.active.cardId) : undefined;
   /** Dernière ligne du journal : ce qui vient de se passer, mis en avant. */
   const lastLog = state.log.at(-1) ?? '';
 
   /** Le moteur dit ce qui est possible ; l'écran ne fait que le rendre. */
   const legal = useMemo(() => legalActions(state), [state]);
-  // Le camp : seul le joueur dont c'est le tour agit. La Direction n'a pas d'IA, donc
-  // hors relève l'écran ne montre que la fin de son tour. Ce n'est pas une garde de
-  // légalité — la liste ci-dessus la porte déjà — mais une garde de camp.
-  const playable = state.pendingPromotion || isPlayerTurn ? legal : legal.filter((action) => action.type === 'endTurn');
+  // Le camp : seul le joueur dont c'est le tour agit. C'est une garde de **camp**, pas de
+  // légalité — la liste du moteur la porte déjà. En solo, la Direction n'a pas de main
+  // humaine : hors relève, l'écran ne montre que la fin de son tour. En partie à deux,
+  // le camp adverse est tenu par quelqu'un : on ne montre **rien** de ses actions.
+  const playable = match
+    ? myMove
+      ? legal.filter((action) => action.type !== 'forfeit')
+      : []
+    : state.pendingPromotion || isPlayerTurn
+      ? legal
+      : legal.filter((action) => action.type === 'endTurn');
 
   const handActions = playable.filter(
     (action) => action.type === 'playAction' || action.type === 'playBasic' || action.type === 'evolve' || action.type === 'priorityShift'
@@ -302,24 +365,23 @@ export function Battle() {
   );
 
   /**
-   * **IA de niveau 1** : quand c'est à la Direction de jouer — ou de choisir sa
-   * relève après un craquage —, ses actions s'enchaînent seules, une par un court
-   * délai pour rester lisibles. `prefers-reduced-motion` supprime le délai, comme
-   * pour les animations de l'écran. La politique vit dans `@/game/ia` : l'écran ne
-   * décide rien, il applique ce que `nextAiAction` rend, comme pour ses boutons.
+   * **IA de niveau 1, en solo seulement** : quand c'est à la Direction de jouer — ou de
+   * choisir sa relève après un craquage —, ses actions s'enchaînent seules, une par un
+   * court délai pour rester lisibles. `prefers-reduced-motion` supprime le délai, comme
+   * pour les animations de l'écran.
+   *
+   * La décision appartient à `aiTurnAction` (`@/store/pvp`) : en **partie à deux**, elle
+   * rend `null` **sans appeler** la politique — le camp `ai` est tenu par quelqu'un, et
+   * l'écran ne doit pas jouer son tour à sa place (critère du #125).
    */
   const reduceMotion = useReducedMotion();
-  const aiTurn =
-    state.phase === 'playing' &&
-    (state.pendingPromotion === 'ai' || (state.current === 'ai' && state.pendingPromotion === null));
 
   useEffect(() => {
-    if (!aiTurn) return;
-    const action = nextAiAction(state);
+    const action = aiTurnAction(state, match);
     if (!action) return;
     const timer = window.setTimeout(() => play(action), reduceMotion ? 0 : 600);
     return () => window.clearTimeout(timer);
-  }, [state, aiTurn, reduceMotion, play]);
+  }, [state, match, reduceMotion, play]);
 
   /**
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
@@ -328,39 +390,102 @@ export function Battle() {
    *
    * Deux questions distinctes, deux réponses (#123) : le **moteur** dit *si* le forfait
    * est ouvert (`forfeitOffer`), et il le nomme au camp qui a la main ; l'**écran** dit
-   * *qui* se couche, et en solo c'est toujours l'humain, `player`, même pendant le tour
-   * de la Direction ou pendant une relève. On lit donc la présence de l'action, pas son
-   * camp : s'arrêter au camp ferait disparaître le bouton pendant le tour de la Direction,
-   * ce que D-030 / #79 a justement ouvert. Le forfait du siège `player` est accepté tant
-   * que la partie vit, donc ce bouton ne peut pas être refusé par le moteur (#58).
+   * *qui* se couche — mon camp, `myCamp`, qui vaut `player` en solo. On lit donc la
+   * présence de l'action, pas son camp : s'arrêter au camp ferait disparaître le bouton
+   * pendant le tour de la Direction, ce que D-030 / #79 a justement ouvert. Le forfait de
+   * mon siège est accepté tant que la partie vit, donc ce bouton ne peut pas être refusé
+   * par le moteur (#58).
    */
   const forfeitAction = useMemo(
     () =>
       legal.some((action) => action.type === 'forfeit')
-        ? ({ type: 'forfeit', who: 'player' } as const)
+        ? ({ type: 'forfeit', who: myCamp } as const)
         : undefined,
-    [legal]
+    [legal, myCamp]
   );
 
   const abandon = useCallback(
     (action: BattleAction) => {
-      if (window.confirm('Déclarer forfait ? La Direction l’emporte, quel que soit le score.')) play(action);
+      const lost = match ? 'l’autre camp' : 'La Direction';
+      if (window.confirm(`Déclarer forfait ? ${lost} l’emporte, quel que soit le score.`)) play(action);
     },
-    [play]
+    [play, match]
   );
 
   const restart = useCallback(() => {
+    setMatch(null);
+    setCodeMessage(null);
+    setIncoming('');
     setState(createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }));
   }, [playerDeck, chosenCafeTypes]);
 
-  const rows = useMemo(
-    () =>
-      [
-        { id: 'ai' as PlayerId, label: 'La Direction', side: ai },
-        { id: 'player' as PlayerId, label: 'Toi', side: player }
-      ] satisfies { id: PlayerId; label: string; side: typeof ai }[],
-    [ai, player]
-  );
+  /**
+   * **Créer une partie à deux** : elle a sa **graine** (l'horloge, comme le `createBattle`
+   * par défaut d'un combat solo), **mon Chariot** au siège `player`, et le Chariot de
+   * démonstration pour le camp adverse — l'échange des deux Chariots est le ticket
+   * suivant, le code porte déjà les deux. Le lancer de tampon décide qui ouvre (D-033) :
+   * si la Direction ouvre, le code est prêt tout de suite, et c'est à l'autre joueur de
+   * commencer.
+   */
+  const startTwoPlayer = useCallback(() => {
+    const created = createMatch(playerDeck, testDeck(), Date.now(), { playerCafeTypes: chosenCafeTypes });
+    setMatch(created.match);
+    setState(created.state);
+    setCodeMessage(null);
+    setIncoming('');
+  }, [playerDeck, chosenCafeTypes]);
+
+  /** Le code de la partie, recalculé à chaque état : il décrit ce qui est à l'écran. */
+  const code = useMemo(() => (match ? matchCode(state, match) : ''), [state, match]);
+  /** Peut-on transmettre ? La règle est dans `@/store/pvp`, l'écran n'en décide pas. */
+  const transfer = useMemo(() => (match ? handover(state, match) : null), [state, match]);
+
+  const copyCode = useCallback(() => {
+    // Le presse-papier peut être refusé (contexte non sécurisé, permission) : le code
+    // reste dans la zone, il suffit de le sélectionner. On ne ment pas dans le message.
+    navigator.clipboard?.writeText(code).then(
+      () => setCodeMessage({ ton: 'ok', texte: 'Code copié : donne-le à l’autre joueur.' }),
+      () => setCodeMessage({ ton: 'ok', texte: 'Code prêt ci-dessus — recopie-le à la main.' })
+    );
+  }, [code]);
+
+  /** **Coller un code** : la partie reprend, et je prends le camp qui doit jouer. */
+  const join = useCallback(() => {
+    const joined = joinMatch(incoming);
+    if (!joined.ok) {
+      // La raison du codec est déjà une phrase française : on l'affiche telle quelle.
+      setCodeMessage({ ton: 'ko', texte: joined.raison });
+      return;
+    }
+    setMatch(joined.match);
+    setState(joined.state);
+    setIncoming('');
+    setCodeMessage({ ton: 'ok', texte: `Partie reprise : tu joues le ${CAMP_NAME[joined.match.camp]}.` });
+  }, [incoming]);
+
+  const rows = useMemo(() => {
+    const label = (id: PlayerId) =>
+      match
+        ? `${id === myCamp ? 'Toi' : 'Adversaire'} · ${CAMP_NAME[id]}`
+        : id === 'player'
+          ? 'Toi'
+          : 'La Direction';
+    const ordered = [otherCamp(myCamp), myCamp];
+    return ordered.map((id) => ({
+      id,
+      label: label(id),
+      side: state.players[id]
+    })) satisfies { id: PlayerId; label: string; side: PlayerState }[];
+  }, [state, myCamp, match]);
+
+  /**
+   * Ce que dit la section « Au Poste » quand elle est vide : la partie est finie, ou
+   * c'est à l'autre joueur d'agir (partie à deux).
+   */
+  const idleLine =
+    match !== null && state.phase === 'playing' && !myMove
+      ? `Rien à faire de ton côté : c’est au ${CAMP_NAME[actor]} de jouer.`
+      : 'Rien à faire : la partie est terminée.';
 
   /**
    * La légende des Conditions, rendue **deux fois** : dans la page, et dans le dialogue
@@ -384,7 +509,14 @@ export function Battle() {
         <div>
           <h1>Combat</h1>
           <p className="muted">
-            Tour {state.turn} · {state.phase === 'ended' ? 'partie terminée' : isPlayerTurn ? 'à toi' : 'à la Direction'}
+            Tour {state.turn} ·{' '}
+            {match
+              ? campLine(state, match)
+              : state.phase === 'ended'
+                ? 'partie terminée'
+                : isPlayerTurn
+                  ? 'à toi'
+                  : 'à la Direction'}
           </p>
         </div>
         <div className="actions actions--tight">
@@ -405,14 +537,16 @@ export function Battle() {
         </p>
       )}
 
-      <p className="notice">
-        La Direction joue toute seule (IA de niveau 1) : son tour s’enchaîne automatiquement. Tous les boutons
-        ci-dessous viennent de la liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
-      </p>
+      {match === null && (
+        <p className="notice">
+          La Direction joue toute seule (IA de niveau 1) : son tour s’enchaîne automatiquement. Tous les boutons
+          ci-dessous viennent de la liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
+        </p>
+      )}
 
       {state.phase === 'ended' && (
-        <p className={`notice ${state.winner === 'player' ? 'notice--ok' : 'notice--warn'}`}>
-          {endBanner(state)}
+        <p className={`notice ${state.winner === myCamp ? 'notice--ok' : 'notice--warn'}`}>
+          {endBanner(state, match ? myCamp : null)}
         </p>
       )}
 
@@ -430,6 +564,86 @@ export function Battle() {
           </motion.p>
         </AnimatePresence>
       )}
+
+      {/*
+        La partie à deux (#125) : créer, transmettre le code, le coller. Les commandes de
+        jeu restent celles du moteur, plus bas — cette section ne fait que passer la main.
+      */}
+      <section className="section panel">
+        <div className="section__head">
+          <h2>Partie à deux</h2>
+          <span className="muted">un code à se passer, sans serveur</span>
+        </div>
+
+        {match === null ? (
+          <>
+            <p className="muted">
+              Crée la partie ici : sa graine, ton Chariot, et le camp adverse tenu par l’autre
+              joueur. Un code apparaît à la fin de ton tour.
+            </p>
+            <div className="actions actions--tight">
+              <button type="button" className="button button--primary" onClick={startTwoPlayer}>
+                <Users size={16} /> Créer une partie à deux
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="notice">{campLine(state, match)}</p>
+            <p className="muted">
+              Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
+              les mêmes boutons que toi.
+            </p>
+            {transfer?.ready ? (
+              <>
+                <p className="muted">
+                  Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
+                  reprend ici, avec le camp adverse.
+                </p>
+                <div className="actions actions--tight">
+                  <button type="button" className="button" onClick={copyCode}>
+                    <Copy size={16} /> Copier le code
+                  </button>
+                </div>
+                <textarea
+                  className="pvp__code"
+                  readOnly
+                  value={code}
+                  rows={4}
+                  aria-label="Code de la partie, à transmettre"
+                />
+              </>
+            ) : (
+              <p className="muted">{transfer?.raison}</p>
+            )}
+            <p className="muted">« Nouveau combat » quitte la partie à deux et rend le combat solo.</p>
+          </>
+        )}
+
+        <label className="field">
+          <span className="field__label">Coller un code reçu</span>
+          <textarea
+            className="pvp__code"
+            value={incoming}
+            onChange={(event) => setIncoming(event.target.value)}
+            placeholder="PLQ1.…"
+            rows={3}
+            aria-label="Code reçu, à coller"
+          />
+        </label>
+        <div className="actions actions--tight">
+          <button type="button" className="button" onClick={join}>
+            <ClipboardPaste size={16} /> Prendre le camp adverse
+          </button>
+        </div>
+        <p className="muted">
+          Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
+          laissée, et tu prends le camp qui doit jouer.
+        </p>
+        {codeMessage && (
+          <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
+        )}
+      </section>
 
       <section className="board">
         {rows.map(({ id, label, side }) => (
@@ -502,14 +716,16 @@ export function Battle() {
 
       {state.pendingPromotion && (
         <section className="notice notice--warn promotion">
-          {state.pendingPromotion === 'player' ? (
+          {state.pendingPromotion === myCamp ? (
             <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
-          ) : (
+          ) : match === null ? (
             <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
+          ) : (
+            <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
           )}
           <div className="actions">
             {promotions.map((action) => (
-              <ActionButton key={JSON.stringify(action)} state={state} action={action} onAction={play} />
+              <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
             ))}
           </div>
         </section>
@@ -517,14 +733,16 @@ export function Battle() {
 
       <section className="section">
         <div className="section__head">
-          <h2>Ta main</h2>
-          <span className="muted">{player.hand.length} / 10</span>
+          {/* En partie à deux, « ta main » est celle du camp que je tiens : l'autre joueur,
+              lui, n'en voit jamais que le compte (bandeau du plateau, plus haut). */}
+          <h2>{match === null ? 'Ta main' : `Ta main · ${CAMP_NAME[myCamp]}`}</h2>
+          <span className="muted">{mySide.hand.length} / 10</span>
         </div>
-        {player.hand.length === 0 ? (
+        {mySide.hand.length === 0 ? (
           <p className="muted">Main vide.</p>
         ) : (
           <ul className="hand">
-            {player.hand.map((card) => {
+            {mySide.hand.map((card) => {
               const definition = getCard(card.cardId);
               const mine = handActions.filter((action) => 'uid' in action && action.uid === card.uid);
               return (
@@ -537,7 +755,7 @@ export function Battle() {
                   {mine.length > 0 && (
                     <div className="actions actions--tight">
                       {mine.map((action) => (
-                        <ActionButton key={JSON.stringify(action)} state={state} action={action} onAction={play} />
+                        <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
                       ))}
                     </div>
                   )}
@@ -553,30 +771,32 @@ export function Battle() {
           <h2>Au Poste</h2>
         </div>
         {boardActions.length === 0 && pressions.length === 0 && turnActions.length === 0 ? (
-          <p className="muted">Rien à faire : la partie est terminée.</p>
+          <p className="muted">{idleLine}</p>
         ) : (
           <>
             {boardActions.length > 0 && (
               <div className="actions">
                 {boardActions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} onAction={play} />
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
                 ))}
               </div>
             )}
             {pressions.length > 0 && (
               <div className="actions actions--pressions">
                 {pressions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} onAction={play} />
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
                 ))}
               </div>
             )}
-            {state.pendingPromotion === null && playerCard && isPlanque(playerCard) && playerCard.attacks.length > 0 && (
+            {/* `legalAttacks` lit le camp qui a la main : ce paragraphe ne parle donc que
+                quand c'est mon tour (en solo, il ne décrit plus le Poste de la Direction). */}
+            {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (
               <p className="muted">
-                {player.hasAttacked
+                {mySide.hasAttacked
                   ? 'Pression déjà portée ce tour.'
-                  : inReach.length === playerCard.attacks.length
+                  : inReach.length === myCard.attacks.length
                     ? 'Toutes tes Pressions sont à portée de café.'
-                    : `Hors de portée du café : ${playerCard.attacks
+                    : `Hors de portée du café : ${myCard.attacks
                         .filter((entry) => !inReach.includes(entry))
                         .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
                         .join(', ')}.`}
@@ -585,7 +805,7 @@ export function Battle() {
             {turnActions.length > 0 && (
               <div className="actions actions--turn">
                 {turnActions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} onAction={play} />
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
                 ))}
               </div>
             )}

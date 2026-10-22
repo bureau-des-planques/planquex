@@ -47,8 +47,10 @@ describe('Battle.tsx — l’écran rend ce que le moteur autorise (#58)', () =>
     }
   });
 
-  it('affiche la main du joueur', () => {
-    expect(source).toMatch(/player\.hand\.map\(/);
+  it('affiche la main du camp que je tiens', () => {
+    // En partie à deux (#125), le camp n'est pas toujours `player` : c'est `mySide`,
+    // le camp que le code m'a donné — jamais la main du camp d'en face.
+    expect(source).toMatch(/mySide\.hand\.map\(/);
   });
 
   it('lit les Pressions à portée de café dans le moteur, pas à la main', () => {
@@ -80,8 +82,10 @@ describe('Battle.tsx — l’écran rend ce que le moteur autorise (#58)', () =>
     expect(source).toMatch(/usedTestDeck \? \[\] : storedCafeTypes/);
     expect(source).not.toMatch(/playerCafeTypes: storedCafeTypes/);
 
+    // **Trois** `createBattle` depuis #125 : le montage, « Nouveau combat », et « Créer
+    // une partie à deux ». Tous lisent la même valeur, sinon ils divergent.
     const passed = source.match(/playerCafeTypes:\s*([A-Za-z_$][\w$]*)/g) ?? [];
-    expect(passed, 'deux `playerCafeTypes` attendus : montage et reprise').toHaveLength(2);
+    expect(passed, 'trois `playerCafeTypes` attendus : montage, reprise et partie à deux').toHaveLength(3);
     expect(new Set(passed)).toEqual(new Set(['playerCafeTypes: chosenCafeTypes']));
   });
 });
