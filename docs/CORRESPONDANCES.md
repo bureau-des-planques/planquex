@@ -1,6 +1,6 @@
 # Correspondances — le jeu de base ↔ Bureau des Planqués
 
-> **But** : un comparatif unique, à relire avant d'écrire les 286 cartes. Chaque ligne
+> **But** : un comparatif unique, à relire avant d'écrire les cartes du set. Chaque ligne
 > donne le terme du **jeu de base** (*Pokémon TCG Pocket*, cité comme référence externe
 > conformément à `AGENTS.md` §3.1) et le terme **détourné**.
 > Relevé le 19/10/2026. Sources : `AGENTS.md` §3-§4, `PROPOSITION.md` §3.2-3.3,

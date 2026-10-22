@@ -1,7 +1,12 @@
-# Spécification du set — 286 cartes
+# Spécification du set
 
 > État : cadre + échantillon de 30 cartes. Le set complet sera généré après validation
 > du ton, des noms et des courbes de stats.
+
+> **Note d'autorité (D-063, #152)** : la cible de contenu est celle de **D-063** — **autour de
+> 300** cartes, **sans compter** (le set est à 225 bases + 75 variantes) — et les décomptes
+> réels se lisent dans `npm run status`. La table de §1 est l'**instantané daté de D-005**
+> (18/10/2026) : elle n'est pas un engagement, et ses chiffres ne se recopient pas.
 
 ---
 
@@ -246,5 +251,5 @@ textes et effets sont là pour valider le ton et les courbes.
 2. Générer les **215 Planqués uniques** (25 lignes à 3 stades, 49 à 2 stades, 42 Entrant seuls).
 3. Ajouter les **11 Collègues/Objets** de base et les **52 variantes de Planqués + 8 variantes de Collègues**.
 4. Calibrer les raretés et les taux de drop.
-5. Passer les 286 cartes dans la simulation d’équilibrage.
+5. Passer les cartes du set dans la simulation d’équilibrage.
 6. Produire la direction artistique et les prompts d’illustration.
