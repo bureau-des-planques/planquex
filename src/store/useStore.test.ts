@@ -164,8 +164,8 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 5', () => {
-    expect(STORAGE_VERSION).toBe(5);
+  it('déclare la version 6', () => {
+    expect(STORAGE_VERSION).toBe(6);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -497,6 +497,35 @@ describe('Journée d’intégration (#v5)', () => {
   it('persiste le drapeau', () => {
     useStore.getState().setTutorielVu(true);
     expect(partializeState(useStore.getState()).tutorielVu).toBe(true);
+  });
+});
+
+describe('Pas-à-pas du premier combat (#143, forme v6)', () => {
+  it('se montre sur une partie neuve, et disparaît une fois vu', () => {
+    expect(useStore.getState().pasAPasCombatVu).toBe(false);
+    useStore.getState().setPasAPasCombatVu(true);
+    expect(useStore.getState().pasAPasCombatVu).toBe(true);
+  });
+
+  it('se remontre après une réinitialisation de la progression', () => {
+    useStore.getState().setPasAPasCombatVu(true);
+    useStore.getState().reset();
+    expect(useStore.getState().pasAPasCombatVu).toBe(false);
+  });
+
+  it('migre un état v5 en le considérant déjà vu — il a déjà combattu', () => {
+    const migre = migratePersisted({ name: 'Ancien', owned: {}, deck: [] }, 5);
+    expect(migre.pasAPasCombatVu).toBe(true);
+  });
+
+  it('respecte un `pasAPasCombatVu` déjà écrit, même à `false`', () => {
+    expect(migratePersisted({ pasAPasCombatVu: false }, 6).pasAPasCombatVu).toBe(false);
+    expect(migratePersisted({ pasAPasCombatVu: true }, 6).pasAPasCombatVu).toBe(true);
+  });
+
+  it('persiste le drapeau', () => {
+    useStore.getState().setPasAPasCombatVu(true);
+    expect(partializeState(useStore.getState()).pasAPasCombatVu).toBe(true);
   });
 });
 
