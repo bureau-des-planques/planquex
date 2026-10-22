@@ -228,7 +228,7 @@ le devenir sans le réclamer.
 **Le chemin « avis »** est la donnée la plus précieuse de l'alpha : la question qu'on se pose est
 « est-ce que la boucle tient », et « ce que tu as aimé / pas aimé » y répond mieux qu'un rapport de bug.
 
-**Les cinq corrections — état arrêté au 22/10/2026** (acte : **D-070**) :
+**Les cinq corrections — état arrêté au 22/10/2026** (acte : **D-073**) :
 
 | # | Correction | État |
 |---|---|---|
@@ -244,7 +244,7 @@ le devenir sans le réclamer.
 > la version et la question d'entrée étaient **déjà** obligatoires, comme tous les champs marqués
 > « oui » en §4.1. Aucun champ « Importer un fichier » n'existe, et le formulaire reste **public**
 > (`curl` sur le `viewform` → `200` **hors connexion**). Les points 4 et 5 sont **écartés**, et
-> **D-070** le dit : ils ne changent rien au tri, alors que le pseudo en était le seul point
+> **D-073** le dit : ils ne changent rien au tri, alors que le pseudo en était le seul point
 > **bloquant**.
 
 **Le ton est celui du projet** — « Recueille avis Alpha », « Pourquoi qu'on Gueule », « Exprime toi »,
