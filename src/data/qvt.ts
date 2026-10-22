@@ -64,7 +64,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     ability: { name: 'Écoute active', text: 'Une fois par tour : soigne 10 et retire un statut d\'un de tes Planqués.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Enquête satisfaction', cost: ['QVT', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Enquête satisfaction', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est sondé sur son bien-être. Les réponses sont anonymes, sauf la sienne.' }],
     flavor: 'Il a lu les réponses. Il a fait comme si.'
   }),
   base({
@@ -90,7 +90,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Étirement', cost: ['QVT'], damage: 20 }],
+    attacks: [{ name: 'Étirement', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse est étiré jusqu’à la limite. Le dos craque ; le planning, non.' }],
     flavor: 'Il a compté jusqu\'à dix. Le dos craque encore.'
   }),
   base({
@@ -102,7 +102,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 110,
     retreat: 1,
     attacks: [
-      { name: 'Bilan forme', cost: ['QVT', 'INCOLORE'], damage: 50 },
+      { name: 'Bilan forme', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse passe un bilan de forme. La salle de sport est devenue un bureau, mais le bilan est positif.' },
       { name: 'Programme sur mesure', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
     flavor: 'Elle a un certificat. La salle de sport est devenue un bureau.'
@@ -143,7 +143,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Relance', cost: ['QVT'], damage: 20 }],
+    attacks: [{ name: 'Relance', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse est relancé pour remplir le formulaire. Le formulaire n’enregistre rien.' }],
     flavor: 'Il a relancé tout le monde. Le formulaire n\'enregistre rien.'
   }),
   base({
@@ -156,7 +156,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [
       { name: 'Atelier créatif', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Restitution', cost: ['QVT', 'INCOLORE'], damage: 50 }
+      { name: 'Restitution', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse assiste à la restitution du projet. Le compte rendu est en attente de validation.' }
     ],
     flavor: 'Le projet est livré. Le compte-rendu est en attente.'
   }),
@@ -213,7 +213,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 55,
     retreat: 1,
-    attacks: [{ name: 'Posture du lotus', cost: ['QVT'], damage: 10 }],
+    attacks: [{ name: 'Posture du lotus', cost: ['QVT'], damage: 10, text: 'Le Planqué adverse est prié de tenir la posture du lotus. La charge de travail, elle, ne se tient pas.' }],
     flavor: 'Elle tient la posture. La charge de travail, non.'
   }),
   base({
@@ -223,7 +223,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 65,
     retreat: 1,
-    attacks: [{ name: 'Café pour tous', cost: ['QVT'], damage: 10 }],
+    attacks: [{ name: 'Café pour tous', cost: ['QVT'], damage: 10, text: 'Le Planqué adverse a droit à sa tournée. La machine est en panne depuis l’inauguration.' }],
     flavor: 'Il a fait le tour des bureaux. La machine est en panne.'
   }),
   base({
@@ -243,7 +243,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Shiatsu express', cost: ['QVT'], damage: 20 }],
+    attacks: [{ name: 'Shiatsu express', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse reçoit un shiatsu de cinq minutes. Le stress descend des épaules et remonte au cou.' }],
     flavor: 'Il a massé les épaules. Le stress est remonté au cou.'
   }),
 
@@ -317,7 +317,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 105,
     retreat: 1,
     ability: { name: 'Point d\'étape', text: 'Une fois par tour : soigne 10 et retire un statut de ce Planqué.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Entretien de parcours', cost: ['QVT', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Entretien de parcours', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est reçu pour son entretien de parcours. Le parcours traverse trois directions et aucun bureau.' }],
     flavor: 'Le parcours est fluide. Il traverse trois directions.'
   }),
 
@@ -342,7 +342,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [
       { name: 'Catalogue', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Évaluation à froid', cost: ['QVT', 'INCOLORE'], damage: 50 }
+      { name: 'Évaluation à froid', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse remplit une évaluation à froid. Le projet est livré ; l’évaluation, jamais lue.' }
     ],
     flavor: 'Le projet est livré. L\'évaluation ne l\'est jamais.'
   }),
@@ -367,7 +367,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 110,
     retreat: 2,
     attacks: [
-      { name: 'Semaine de l\'engagement', cost: ['QVT', 'INCOLORE'], damage: 50 },
+      { name: 'Semaine de l\'engagement', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est engagé de force dans l’opération d’engagement. La mesure ne l’engage à rien.' },
       { name: 'Action collective', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est Immobilisation.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
     flavor: 'L\'engagement est mesuré. La mesure n\'engage personne.'
@@ -382,7 +382,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Certification du bonheur', cost: ['QVT', 'INCOLORE'], damage: 80 },
+      { name: 'Certification du bonheur', cost: ['QVT', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse reçoit sa certification du bonheur. Elle est obligatoire et facturée au service.' },
       { name: 'Facture du bonheur', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Le bonheur est obligatoire. Il est aussi facturé.'
@@ -416,7 +416,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Pot de départ', cost: ['QVT'], damage: 20 }],
+    attacks: [{ name: 'Pot de départ', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse est convié à un pot de départ. La salle est réservée ; le budget attend toujours sa validation.' }],
     flavor: 'La salle est réservée. Le budget est en attente de validation.'
   }),
   base({

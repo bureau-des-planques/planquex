@@ -41,7 +41,7 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     ability: { name: 'Heure de délégation', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
-    attacks: [{ name: 'Motion', cost: ['SYNDICAT', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: 'Motion', cost: ['SYNDICAT', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse essuie une motion votée à l’unanimité. La réunion a duré quatre heures et elle sera reportée.' }],
     flavor: 'La réunion a duré 4 heures. Elle a été reportée.'
   }),
   base({

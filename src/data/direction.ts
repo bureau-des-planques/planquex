@@ -32,7 +32,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Cabinet', text: 'Pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: false },
-    attacks: [{ name: 'Note de service', cost: ['DIRECTION', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: 'Note de service', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit une note de service. Elle a été signée, puis déléguée à personne.' }],
     flavor: 'Il a délégué. À personne.'
   }),
   base({
@@ -150,7 +150,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [
-      { name: 'Jalons', cost: ['DIRECTION', 'INCOLORE'], damage: 50 },
+      { name: 'Jalons', cost: ['DIRECTION', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est sommé de tenir les jalons du programme. Le programme n’a pas encore de budget.' },
       { name: 'Recette finale', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Le projet est livré. La recette est signée demain.'

@@ -20,7 +20,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Coup de clé', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Coup de clé', cost: ['ATELIER'], damage: 20, text: 'Un coup de clé sur le Planqué adverse. Le serrage, lui, est à reprendre.' }],
     flavor: 'Il a serré dans le bon sens. Presque.'
   }),
   base({
@@ -32,7 +32,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     ability: { name: 'Dépannage', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Multimètre', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Multimètre', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mesuré sous toutes les coutures. La valeur affichée change à chaque mesure.' }],
     flavor: 'Il a réparé la machine. Elle marche moins bien.'
   }),
   base({
@@ -44,7 +44,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse subit une intervention de terrain. Aucune demande de travaux n’a été déposée.' },
       { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il a un plan. Le plan est une clé de 12.',
@@ -59,7 +59,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Dénudage', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Dénudage', cost: ['ATELIER'], damage: 20, text: 'Le fil du Planqué adverse est mis à nu. Le schéma électrique restera dans le tiroir.' }],
     flavor: 'Il a remis le courant. Le compteur tourne à l’envers.'
   }),
   base({
@@ -70,7 +70,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Bobinage', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Bobinage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est rebobiné de force. Le bon de garantie est introuvable.' }],
     flavor: 'Il a rebobiné le moteur. Il a rendu l’âme au premier essai.'
   }),
   base({
@@ -82,7 +82,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 60 },
+      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est inscrit au planning de révision. La machine attend toujours son créneau.' },
       { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il planifie la maintenance. La machine attend depuis mars.'
@@ -96,7 +96,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Soudure', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Soudure', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est soudé à son poste. Le chalumeau est en prêt depuis le printemps.' }],
     flavor: 'Il a colmaté la fuite. Le plafond est tombé.'
   }),
   base({
@@ -107,7 +107,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Raccordement', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Raccordement', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est raccordé de force au réseau. Le plan annonçait pourtant un mur plein.' }],
     flavor: 'Il a tiré la ligne. Elle arrive dans le mur.'
   }),
   base({
@@ -119,7 +119,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Coulage', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      { name: 'Coulage', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Une dalle de béton est coulée sur le Planqué adverse. Elle sera conforme aux plans à la prochaine révision.' },
       { name: 'Levage', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Il a tenu les délais. Le chantier, lui, est en retard.'
@@ -166,7 +166,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Clé à chocs', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Clé à chocs', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse reçoit une rafale de clé à chocs. Le bruit est connu ; la référence de la pièce, non.' }],
     flavor: 'Il connaît le bruit par cœur. Il ne connaît pas la référence.'
   }),
   base({
@@ -177,7 +177,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Usinage', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Usinage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est usiné à la cote. La cote vient d’être révisée.' }],
     flavor: 'Il a refait la pièce. La pièce n’existe plus au catalogue.'
   }),
 
@@ -189,7 +189,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Arc électrique', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Arc électrique', cost: ['ATELIER'], damage: 20, text: 'Un arc électrique frappe le Planqué adverse. Le gant de soudeur n’en réchappera pas non plus.' }],
     flavor: 'Il a soudé les deux fers. Il a soudé aussi son gant.'
   }),
   base({
@@ -201,7 +201,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 110,
     retreat: 2,
     attacks: [
-      { name: 'Soudure fine', cost: ['ATELIER', 'INCOLORE'], damage: 50 },
+      { name: 'Soudure fine', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit une soudure invisible. Elle l’est aussi sur le rapport de contrôle.' },
       {
         name: 'Contrôle radio',
         cost: ['ATELIER', 'INCOLORE', 'INCOLORE'],
@@ -240,7 +240,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Gabarit', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Gabarit', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mis au gabarit. Le gabarit n’a jamais été mis à jour.' }],
     flavor: 'Il a suivi le gabarit. Le gabarit ne suivait rien.'
   }),
 
@@ -255,7 +255,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Ordre de fabrication', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      { name: 'Ordre de fabrication', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Un ordre de fabrication tombe sur le Planqué adverse. Il est daté d’hier et déjà périmé.' },
       {
         name: 'Ligne de production',
         cost: ['ATELIER', 'INCOLORE', 'INCOLORE'],
@@ -275,7 +275,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Chariot élévateur', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Chariot élévateur', cost: ['ATELIER'], damage: 20, text: 'Les fourches soulèvent le Planqué adverse puis le reposent sans ménagement. Le bon de livraison n’a pas suivi.' }],
     flavor: 'Il a empilé six palettes. La septième est tombée.'
   }),
   base({
@@ -286,7 +286,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Chargement', cost: ['ATELIER', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Chargement', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est chargé à bord du camion. Le quai d’à côté attendait ce camion.' }],
     flavor: 'Il a chargé le camion en avance. Ce n’était pas le bon camion.'
   }),
 
@@ -299,7 +299,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     ability: { name: 'Vigilance', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
-    attacks: [{ name: 'Ronde de nuit', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Ronde de nuit', cost: ['ATELIER'], damage: 20, text: 'Une ronde de nuit tombe sur le Planqué adverse. Le registre de passage est signé, et vide.' }],
     flavor: 'Il fait le tour du site. Personne ne fait le tour de lui.'
   }),
   base({
@@ -329,7 +329,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Graissage', cost: ['ATELIER'], damage: 20 }],
+    attacks: [{ name: 'Graissage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse glisse sur une couche de graisse. Le bidon était resté ouvert sur l’établi.' }],
     flavor: 'Il graisse la chaîne. Elle est à sec dans deux jours.'
   }),
 
@@ -344,7 +344,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70 },
+      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse subit une intervention de terrain. Aucune demande de travaux n’a été déposée.' },
       { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Une seule clé de 12.'
@@ -361,7 +361,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 80 },
+      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est inscrit au planning de révision. La machine attend toujours son créneau.' },
       { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. La machine est révisée. La demande de pièces, non.'

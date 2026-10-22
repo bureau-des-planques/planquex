@@ -32,7 +32,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Mission courte', cost: ['SSE'], damage: 20 }],
+    attacks: [{ name: 'Mission courte', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse subit une mission courte et intense. L’intérimaire part vendredi, la consigne reste.' }],
     flavor: 'Il connaît le site mieux que le directeur. Il part vendredi.'
   }),
   base({
@@ -49,7 +49,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       kind: 'attachEnergy',
       oncePerTurn: true
     },
-    attacks: [{ name: 'Démerde', cost: ['MANAGEMENT', 'QVT'], damage: 50 }],
+    attacks: [{ name: 'Démerde', cost: ['MANAGEMENT', 'QVT'], damage: 50, text: 'Le Planqué adverse se fait déborder par un débrouillard. Il fait le travail de trois personnes, payé pour une.' }],
     flavor: 'Il a fait le boulot de trois personnes. Il est payé pour une.'
   }),
   base({
@@ -127,7 +127,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       oncePerTurn: true
     },
     attacks: [
-      { name: 'Mission d’appui', cost: ['RH', 'ATELIER'], damage: 50 },
+      { name: 'Mission d’appui', cost: ['RH', 'ATELIER'], damage: 50, text: 'Le Planqué adverse reçoit un appui qu’il n’a pas demandé. Le consultant remplace trois personnes sans en avoir croisé une.' },
       {
         name: 'Renvoi express',
         cost: ['RH', 'ATELIER', 'RH'],

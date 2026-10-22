@@ -25,7 +25,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Sourcing', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
-    attacks: [{ name: "Promesse d'embauche", cost: ['RH', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: "Promesse d'embauche", cost: ['RH', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit une promesse d’embauche. Le poste est passionnant ; le salaire est confidentiel.' }],
     flavor: "Le poste est passionnant. Le salaire est confidentiel."
   }),
   base({
@@ -65,7 +65,7 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [
       { name: 'Offre mirobolante', cost: ['RH'], damage: 20, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Contre-offre', cost: ['RH', 'INCOLORE'], damage: 50 }
+      { name: 'Contre-offre', cost: ['RH', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit une contre-offre inespérée. Elle expirera avant la fin de son préavis.' }
     ],
     flavor: "Il double ton salaire. La direction triple son budget café."
   }),
@@ -104,7 +104,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     ability: { name: 'Plan de développement', text: "Une fois par tour : soigne 10 d'un Planqué.", kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Certification', cost: ['RH', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Certification', cost: ['RH', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est envoyé en certification. Le budget a servi à acheter des licences que personne n’utilise.' }],
     flavor: "Il a un budget. Il l'a dépensé en licences inutilisées."
   }),
   base({
@@ -197,7 +197,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 1,
     ability: { name: 'Parité', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
-    attacks: [{ name: 'Index égalité', cost: ['RH', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Index égalité', cost: ['RH', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est classé dans l’index égalité. La direction fête déjà les 99 sur 100.' }],
     flavor: "Elle a publié l'index. La direction a fêté les 99/100."
   }),
   base({
@@ -233,7 +233,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Dossier', cost: ['RH'], damage: 20 }],
+    attacks: [{ name: 'Dossier', cost: ['RH'], damage: 20, text: 'Le Planqué adverse est classé au dossier. L’archive a brûlé, mais la procédure de classement est intacte.' }],
     flavor: "Il a classé le dossier. L'archive a brûlé."
   }),
   base({
@@ -263,7 +263,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Enquête satisfaction', cost: ['RH'], damage: 10 }],
+    attacks: [{ name: 'Enquête satisfaction', cost: ['RH'], damage: 10, text: 'Le Planqué adverse répond à l’enquête de satisfaction. Les résultats sont confidentiels, même pour lui.' }],
     flavor: "Il a fait l'enquête. Les résultats sont confidentiels."
   }),
   base({
