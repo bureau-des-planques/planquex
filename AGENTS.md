@@ -163,6 +163,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 - Le standard, c'est **le miroir de Pocket (D-018) plus le mot-clé « Changement de priorité » (D-004)**. Rien d'autre.
 - Les règles maison **`RULES-4b` sont rangées à part** dans `docs/MODES-FUTURS.md` (mode futur « Café », ni acté ni implémenté) : ce n'est ni une référence, ni un mode par défaut. Ne pas les citer comme règles du jeu (D-019).
+- Le texte d'une carte décrit la carte vendue, pas l'état du moteur : voir **D-074**.
 - Pas de compteur de stress, pas de ressource maison, pas de règle de deck alternative.
 - **« Changement de priorité »** (D-004) : une fois par tour, au Poste, défausser 1 carte puis piocher 1. Mot-clé porté par les cartes, déactivable par un drapeau global, testé en simulation avant validation. C'est la seule exception actée.
 - **« Pause café »** désigne le Wonder Pick. Ne pas réutiliser ce terme pour une action de combat.
@@ -184,7 +185,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 - **Évolution** : `evolvesFrom` pointe vers l'`id` de la carte précédente. Une variante hérite des stats, attaques, talent et flavour de sa carte de base.
 - **COMEX** : `ex: true`, vaut 2 Interventions. L'UI affiche « COMEX », pas « ex ».
 - **Effets** : utiliser uniquement les `AttackEffectKind` existants (`healSelf`, `healAll`, `status`, `draw`, `discardEnergy`, `selfDamage`, `switchSelf`, `reduceDamage`). Toute nouvelle primitive = décision + mise à jour des types + tests.
-- **Textes** : français, phrase complète, « Ce Planqué… », « le Planqué adverse… », noms de statuts capitalisés. Exemple **interdit** : `Cette Galère subit 10 dégâts.` ; écrire `Ce Planqué subit 10 dégâts.`
+- **Textes (D-074)** : le texte décrit la carte vendue, pas l'état du moteur ; un écart s'inscrit dans `MENSONGES_CONNUS`. Français, phrase complète, « Ce Planqué… », « le Planqué adverse… », noms de statuts capitalisés. Exemple **interdit** : `Cette Galère subit 10 dégâts.` ; écrire `Ce Planqué subit 10 dégâts.`
 - **Flavour** : une scène de bureau, drôle, sans nom réel. La chute vise le système.
 - **Stats** : suivre `CARD-SPEC.md` §2.
 
