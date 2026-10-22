@@ -3,6 +3,7 @@ import type {
   Ability,
   Attack,
   Card,
+  CardFilter,
   AttackEffect,
   BattleAction,
   BattleState,
@@ -702,6 +703,12 @@ function ouvrirChoix(state: BattleState, choix: PendingChoice) {
   state.pendingChoice = choix;
 }
 
+/** Une carte du Deck correspond-elle au filtre de recherche (D-080) ? */
+function correspondFiltre(instance: CardInstance, filtre: CardFilter): boolean {
+  const card = getCard(instance.cardId);
+  return filtre === 'PLANQUE' ? isPlanque(card) : card?.kind === 'COLLEAGUE';
+}
+
 /**
  * Primitives de **main** et de **Deck** (D-076, D-078 à D-080), communes aux Pressions,
  * aux cartes Action et aux Talents : une seule écriture de chaque règle.
@@ -756,6 +763,20 @@ function applyHandDeckEffect(state: BattleState, who: PlayerId, effect: AttackEf
       state.log.push(`Révélé dans ${dans} : ${noms}.`);
       break;
     }
+    case 'search': {
+      // Recherche (D-080) : le joueur choisit une carte du filtre dans son Deck. Sans carte à
+      // trouver, ou main pleine, pas de choix : le Deck est mélangé tout de suite.
+      const filtre = effect.filter ?? 'PLANQUE';
+      const trouvable = player.deck.some((card) => correspondFiltre(card, filtre));
+      if (trouvable && player.hand.length < 10) {
+        ouvrirChoix(state, { kind: 'chercher', who, filtre });
+        state.log.push(`${sujet(state, who)} ${verbe(state, who, 'cherches', 'cherche')} une carte dans le Deck.`);
+      } else {
+        player.deck = shuffle(player.deck, state);
+        state.log.push(`${sujet(state, who)} ${verbe(state, who, 'mélanges', 'mélange')} le Deck.`);
+      }
+      break;
+    }
     case 'peek':
       // Regarder le dessus (D-079) : lecture pure. Ni changement d'état, ni ligne de journal :
       // l'information est lue par `dessusDuDeck`, et seul le joueur qui l'a déclenchée la voit.
@@ -785,6 +806,9 @@ function choixPossibles(state: BattleState): string[] {
   if (!choix) return [];
   const player = state.players[choix.who];
   if (choix.kind === 'defausse') return player.hand.map((card) => card.uid);
+  if (choix.kind === 'chercher') {
+    return player.deck.filter((card) => correspondFiltre(card, choix.filtre)).map((card) => card.uid);
+  }
   return [];
 }
 
@@ -822,6 +846,19 @@ export function choose(state: BattleState, uid: string): BattleState {
     );
     const restant = choix.restant - 1;
     if (restant > 0 && player.hand.length > 0) next.pendingChoice = { ...choix, restant };
+    return next;
+  }
+
+  if (choix.kind === 'chercher') {
+    // La carte passe du Deck à la main, puis le Deck est mélangé par le générateur seedé (D-080).
+    const index = player.deck.findIndex((card) => card.uid === uid);
+    const [card] = player.deck.splice(index, 1);
+    if (!card) return state;
+    player.hand.push(card);
+    player.deck = shuffle(player.deck, next);
+    next.log.push(
+      `${sujet(next, choix.who)} ${verbe(next, choix.who, 'ajoutes', 'ajoute')} ${getCard(card.cardId)?.name ?? 'une carte'} à la main.`
+    );
     return next;
   }
   return state;
@@ -876,6 +913,7 @@ function applyEffects(
       case 'discardHand':
       case 'reveal':
       case 'peek':
+      case 'search':
         applyHandDeckEffect(state, who, effect);
         break;
       case 'damage': {
@@ -923,6 +961,7 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
       case 'discardHand':
       case 'reveal':
       case 'peek':
+      case 'search':
         applyHandDeckEffect(state, who, effect);
         break;
       case 'damage':

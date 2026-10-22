@@ -81,12 +81,14 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   // `switchSelf` échange le Poste avec le premier Planqué du Rack (engine.ts).
   { label: 'Rack', pattern: /\bracks?\b/, kinds: ['switchSelf'] },
   // La main n'est touchée que par une défausse (D-076) ; révéler et chercher viendront (D-078, D-080).
-  { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand', 'reveal'] },
+  { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand', 'reveal', 'search'] },
   // `reveal` écrit la carte, ou la main, dans le journal (D-078).
   { label: 'révèle', pattern: /\brevel/, kinds: ['reveal'] },
   // `peek` lit le dessus du Deck sans le modifier (D-079) ; la recherche y cherchera (D-080).
   { label: 'regarde le dessus', pattern: /\bregarde la carte du dessus/, kinds: ['peek'] },
-  { label: 'deck', pattern: /\bdecks?\b/, kinds: ['peek'] }
+  // `search` cherche une carte du filtre dans le Deck, puis la prend en main (D-080).
+  { label: 'cherche', pattern: /\bcherch/, kinds: ['search'] },
+  { label: 'deck', pattern: /\bdecks?\b/, kinds: ['search', 'peek'] }
 ];
 
 /**
@@ -142,7 +144,8 @@ const ATTENTES_EFFET: Record<AttackEffectKind, Attente | null> = {
   discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 },
   damage: { pattern: /(\d+) degats? au/, montantGroupe: 1 },
   reveal: { pattern: /revel/ },
-  peek: { pattern: /regarde la carte du dessus/ }
+  peek: { pattern: /regarde la carte du dessus/ },
+  search: { pattern: /cherch/ }
 };
 
 const ATTENTES_TALENT: Record<AbilityKind, Attente | null> = {

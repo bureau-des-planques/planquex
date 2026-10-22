@@ -41,7 +41,8 @@ export type AttackEffectKind =
   | 'discardHand'
   | 'damage'
   | 'reveal'
-  | 'peek';
+  | 'peek'
+  | 'search';
 
 /**
  * Les membres d'`AttackEffectKind`, **une seule fois** dans le code (#56).
@@ -63,11 +64,12 @@ export const ATTACK_EFFECT_KINDS = [
   'discardHand',
   'damage',
   'reveal',
-  'peek'
+  'peek',
+  'search'
 ] as const satisfies readonly AttackEffectKind[];
 
 /** Filtre d'une recherche dans le Deck (D-080) : un Planqué, ou un Collègue. */
-export type CardFilter = 'PLANQUE' | 'COLLEGUE';
+export type CardFilter = 'PLANQUE' | 'COLLEAGUE';
 
 export interface AttackEffect {
   kind: AttackEffectKind;
