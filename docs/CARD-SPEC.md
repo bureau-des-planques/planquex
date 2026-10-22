@@ -134,7 +134,7 @@ symboles = l'ancien coût numérique ; les bandes de dégâts de D-021 ne bougen
 | Planqué typé | **≥ 1 café de son type** par Pression, le reste incolore |
 | `SUPPORT` | uniquement des coûts **incolores** |
 | `INTERIM` | **deux types produits distincts** par Pression |
-| Chariot | **1 à 3 types** choisis (proposition automatique) ; ni `SUPPORT` ni `INTERIM` |
+| Deck | **1 à 3 types** choisis (proposition automatique) ; ni `SUPPORT` ni `INTERIM` |
 
 Le moteur lit cette forme seule après #35. `cafeSatisfies` gère les deux sens : un café
 incolore paie un coût typé, un symbole incolore accepte tout café.

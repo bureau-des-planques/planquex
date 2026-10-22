@@ -151,8 +151,8 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
  *
  * Deux écarts préexistants, constatés le 22/10/2026 en fermant #150 : le script
  * capturait en `360 × 800` quand le critère (4) de D-060 dit `420 × 900`, et il
- * photographiait la page **entière** — le Parc sortait en `360 × 141 460`, le
- * Chariot en `360 × 80 064`, ce qui ne se regarde pas.
+ * photographiait la page **entière** — la Collection sortait en `360 × 141 460`, le
+ * Deck en `360 × 80 064`, ce qui ne se regarde pas.
  *
  * La garde lit le **plan réel** (`--plan`) : la taille et le cadrage y sont publiés,
  * donc les changer fait tomber les assertions. La taille attendue n'est **pas

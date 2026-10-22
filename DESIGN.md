@@ -53,8 +53,8 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 
 | Jeton | Hex | Rôle |
 |---|---|---|
-| `--ok` | `#46b98a` | validation (Chariot valide, fin gagnée) |
-| `--warn` | `#e0a33e` | avertissement (chariot de test, fin perdue) |
+| `--ok` | `#46b98a` | validation (Deck valide, fin gagnée) |
+| `--warn` | `#e0a33e` | avertissement (deck de test, fin perdue) |
 | `--danger` | `#e06a4e` | erreur |
 
 ### 1.5 Contraste (Vérifié le 20/10/2026)
@@ -111,7 +111,7 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 
 ### 2.2 Grille et marges
 
-- Grille du Parc : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem.
+- Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem.
 - Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **0** (chaque bloc interne porte son propre espacement), `gap` 0.35rem, rayon 8 px, bordure teintée par la rareté.
 - Illustration : **elle prend l'espace restant** (`flex`), rayon 4 px, filet interne double (noir à l'extérieur, clair à l'intérieur), cadrage **haut** (`50% 28%`) — les illustrations sont des portraits.
 - Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
@@ -125,7 +125,7 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 | `.card--comex` | bordure `--gold-deep` — le statut COMEX (D-026). Le filet `.card--comex::before` est déclaré **sans `content`** : il ne rend rien, et c'est un bug (#131) |
 | `.card--holo` | voile holographique sur l'illustration (1S, 2S, 3S, COU) |
 | `.card--compact` | masque la flavour (grilles) |
-| `.card-slot.is-full` | carte à 55 % d'opacité (plus d'exemplaire possible au Chariot) |
+| `.card-slot.is-full` | carte à 55 % d'opacité (plus d'exemplaire possible au Deck) |
 
 ---
 
@@ -263,7 +263,7 @@ socle ; seuls le sujet et le cadrage changent.
 - **Lumière** : éclairage mixte fin de journée — lumière froide des néons, lumière chaude
   des lampes et du couchant aux fenêtres.
 - **Palette** : bleu nuit dominant, ors en petits plans (lampes, poignées, reflets),
-  une pointe de couleur de faction sur un objet signal (affiche, casque, chariot).
+  une pointe de couleur de faction sur un objet signal (affiche, casque, deck).
 - **Ambiance** : vide, silencieux, un peu trop propre — le calme avant la réunion.
 - **À éviter** : personnages, visages au fond, texte d'affichage lisible, décor
   reconnaissable d'une entreprise réelle.

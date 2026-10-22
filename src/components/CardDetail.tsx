@@ -96,7 +96,7 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
           )}
 
           <div className="card-detail__actions">
-            {onAddDeck && <button type="button" className="button button--primary" onClick={onAddDeck}>Ajouter au Chariot</button>}
+            {onAddDeck && <button type="button" className="button button--primary" onClick={onAddDeck}>Ajouter au Deck</button>}
             {onAddCard && <button type="button" className="button" onClick={onAddCard}>Ajouter un exemplaire (test)</button>}
           </div>
         </div>

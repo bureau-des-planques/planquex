@@ -91,7 +91,7 @@ export const MUTATIONS = [
     motif: 'const migrated = version < 3 ? withRenamedCardIds(state) : state;',
     remplacement: 'const migrated = state;',
     tests: ['src/store/useStore.test.ts'],
-    garde: 'une carte renommée quitterait le Parc et le Chariot du joueur, en silence'
+    garde: 'une carte renommée quitterait la Collection et le Deck du joueur, en silence'
   },
   {
     ticket: 101,
@@ -138,7 +138,7 @@ export const MUTATIONS = [
     remplacement: 'playerCafeTypes: undefined,',
     tests: ['src/game/simulation.test.ts'],
     garde:
-      'sans le choix explicite, le Chariot SUPPORT ne produit aucun café et ne lance aucune Pression : la mesure du niveau 2 est biaisée'
+      'sans le choix explicite, le Deck SUPPORT ne produit aucun café et ne lance aucune Pression : la mesure du niveau 2 est biaisée'
   },
   {
     ticket: 114,

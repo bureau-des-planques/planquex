@@ -30,8 +30,8 @@
  * ```
  *
  * ⚠️ Depuis #113, le **simulateur** est la pièce à vérifier avant de croire un chiffre : tant
- * qu'un Chariot d'archétype ne peut pas payer ses Pressions, la mesure compare des politiques
- * sur des Chariots **désarmés**. Ce script ne corrige pas cela — il le dit.
+ * qu'un Deck d'archétype ne peut pas payer ses Pressions, la mesure compare des politiques
+ * sur des Decks **désarmés**. Ce script ne corrige pas cela — il le dit.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';

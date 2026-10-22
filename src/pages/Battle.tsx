@@ -43,12 +43,12 @@ import {
 } from '@/components/ui/dialog';
 
 /**
- * Chariot de test, quand le chariot du joueur n'est pas encore valide : 8 cartes
+ * Deck de test, quand le deck du joueur n'est pas encore valide : 8 cartes
  * Action (2 Objets et 2 Collègues distincts, en double) puis des Planqués, en
  * commençant par les Entrants.
  *
  * Les cartes Action y sont volontairement : depuis le ticket #58 la main est
- * affichée et ses cartes se jouent, et un chariot de démonstration sans aucun
+ * affichée et ses cartes se jouent, et un deck de démonstration sans aucun
  * Objet ne montrerait jamais cette partie de l'écran.
  */
 function testDeck(): string[] {
@@ -127,7 +127,7 @@ function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
 /**
  * La **Machine à café** d'un camp : au plus un café typé (D-034) — pastille colorée
  * du type produit, ou pastille vide quand rien n'est à attacher. Le survol rappelle
- * les **types du Chariot** (1 à 3, D-037 (4)) dont la Machine tire le café.
+ * les **types du Deck** (1 à 3, D-037 (4)) dont la Machine tire le café.
  */
 function MachinePips({
   zone,
@@ -144,7 +144,7 @@ function MachinePips({
     <span
       className="muted"
       data-pas-a-pas={designe ? 'machine' : undefined}
-      title={`Machine à café : ${zone ? cafeLabel(zone) : `vide (types du Chariot : ${types || 'aucun'})`}`}
+      title={`Machine à café : ${zone ? cafeLabel(zone) : `vide (types du Deck : ${types || 'aucun'})`}`}
     >
       Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" title="Machine à café : vide" />}
     </span>
@@ -290,7 +290,7 @@ function endBanner(state: BattleState, myCamp: PlayerId | null): string {
 
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
-  /** Les types de café choisis au Chariot (#91), lus bruts dans le store. */
+  /** Les types de café choisis au Deck (#91), lus bruts dans le store. */
   const storedCafeTypes = useStore((state) => state.cafeTypes);
   /**
    * Le **pas-à-pas du premier combat** (#143) : son ouverture, son cran et ses cibles
@@ -299,18 +299,18 @@ export function Battle() {
    */
   const pasAPas = usePasAPasCombat();
 
-  // Le chariot du joueur est utilisé s'il est légal, sinon on retombe sur un
-  // chariot de test. Calculé une seule fois par rendu : `deckLegal` est appelé
+  // Le deck du joueur est utilisé s'il est légal, sinon on retombe sur un
+  // deck de test. Calculé une seule fois par rendu : `deckLegal` est appelé
   // au plus une fois, et l'identité de la référence dit si on a replié.
   const playerDeck = useMemo(() => (deckLegal(storeDeck).ok ? storeDeck : testDeck()), [storeDeck]);
   const usedTestDeck = playerDeck !== storeDeck;
 
   /**
-   * Le choix **appliqué à ce combat** (#117). Il appartient au Chariot du joueur
-   * (`useStore`, `cafeTypes`) : le poser sur un **chariot de test** ferait afficher
-   * les types d'un contenu à la place d'un autre. Replié sur le chariot de test, le
-   * combat repart donc en **proposition automatique** (`[]`), dérivée de ce chariot —
-   * ce que dit aussi le bandeau « ce combat utilise un chariot de test ».
+   * Le choix **appliqué à ce combat** (#117). Il appartient au Deck du joueur
+   * (`useStore`, `cafeTypes`) : le poser sur un **deck de test** ferait afficher
+   * les types d'un contenu à la place d'un autre. Replié sur le deck de test, le
+   * combat repart donc en **proposition automatique** (`[]`), dérivée de ce deck —
+   * ce que dit aussi le bandeau « ce combat utilise un deck de test ».
    */
   const chosenCafeTypes = useMemo<CafeType[]>(
     () => (usedTestDeck ? [] : storedCafeTypes),
@@ -439,8 +439,8 @@ export function Battle() {
 
   /**
    * **Créer une partie à deux** : elle a sa **graine** (l'horloge, comme le `createBattle`
-   * par défaut d'un combat solo), **mon Chariot** au siège `player`, et le Chariot de
-   * démonstration pour le camp adverse — l'échange des deux Chariots est le ticket
+   * par défaut d'un combat solo), **mon Deck** au siège `player`, et le Deck de
+   * démonstration pour le camp adverse — l'échange des deux Decks est le ticket
    * suivant, le code porte déjà les deux. Le lancer de tampon décide qui ouvre (D-033) :
    * si la Direction ouvre, le code est prêt tout de suite, et c'est à l'autre joueur de
    * commencer.
@@ -557,7 +557,7 @@ export function Battle() {
 
       {usedTestDeck && (
         <p className="notice notice--warn">
-          Ton chariot n’est pas valide (20 cartes, 2 exemplaires max, 1 Entrant minimum) : ce combat utilise un chariot de test.
+          Ton deck n’est pas valide (20 cartes, 2 exemplaires max, 1 Entrant minimum) : ce combat utilise un deck de test.
         </p>
       )}
 
@@ -602,7 +602,7 @@ export function Battle() {
         {match === null ? (
           <>
             <p className="muted">
-              Crée la partie ici : sa graine, ton Chariot, et le camp adverse tenu par l’autre
+              Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
               joueur. Un code apparaît à la fin de ton tour.
             </p>
             <div className="actions actions--tight">
@@ -714,7 +714,7 @@ export function Battle() {
             </div>
 
             <p className="muted">
-              main {side.hand.length} · Chariot {side.deck.length} · Rebut {side.discard.length}
+              main {side.hand.length} · Deck {side.deck.length} · Rebut {side.discard.length}
             </p>
           </article>
         ))}

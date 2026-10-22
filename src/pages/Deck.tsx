@@ -48,11 +48,11 @@ export function Deck() {
   const byName = useMemo(() => deckCountsByName(deck), [deck]);
   const inDeck = useMemo(() => deckCards(deck), [deck]);
   const automatic = useMemo(() => autoDeck(owned), [owned]);
-  /** La proposition automatique : les factions que le Chariot porte déjà (D-037 (4)). */
+  /** La proposition automatique : les factions que le Deck porte déjà (D-037 (4)). */
   const proposed = useMemo(() => deckCafeTypes(deck), [deck]);
   /** Ce que la Machine produira : le choix validé, sinon la proposition. */
   const cafeTypes = useMemo(() => resolveCafeTypes(deck, chosenCafeTypes), [deck, chosenCafeTypes]);
-  /** Les types présents au Chariot d'abord, les autres factions produisibles ensuite. */
+  /** Les types présents au Deck d'abord, les autres factions produisibles ensuite. */
   const cafeProposals = useMemo(
     () => [...proposed, ...CAFE_FACTIONS.filter((type) => !proposed.includes(type))],
     [proposed]
@@ -87,7 +87,7 @@ export function Deck() {
             className="button button--primary"
             disabled={automatic.deck.length === 0}
             onClick={() => setDeck(automatic.deck)}
-            title="Remplace le chariot par 20 cartes prises dans ta collection"
+            title="Remplace le deck par 20 cartes prises dans ta collection"
           >
             <Sparkles size={16} /> Remplir ({automatic.deck.length})
           </button>
@@ -99,13 +99,13 @@ export function Deck() {
 
       {automatic.missing > 0 && (
         <p className="notice notice--warn">
-          Ton Parc ne couvre que <strong>{automatic.deck.length}</strong> cartes sur 20 : ouvre des arrivages depuis
+          Ta Collection ne couvre que <strong>{automatic.deck.length}</strong> cartes sur 20 : ouvre des arrivages depuis
           l’accueil pour compléter.
         </p>
       )}
 
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
-        {legality.ok ? 'Chariot valide : il peut partir au combat.' : legality.reasons.join(' ')}
+        {legality.ok ? 'Deck valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
 
       <section className="section panel cafe-picker">
@@ -122,13 +122,13 @@ export function Deck() {
             className="button"
             onClick={() => setCafeTypes([])}
             disabled={chosenCafeTypes.length === 0}
-            title="Revenir aux factions présentes dans le Chariot"
+            title="Revenir aux factions présentes dans le Deck"
           >
             Proposition automatique
           </button>
         </div>
 
-        <div className="cafe-picker__types" role="group" aria-label="Types de café du Chariot">
+        <div className="cafe-picker__types" role="group" aria-label="Types de café du Deck">
           {cafeProposals.map((type) => {
             const chosen = chosenCafeTypes.includes(type);
             const inDeck = proposed.includes(type);
@@ -141,7 +141,7 @@ export function Deck() {
                 className={`cafe-picker__type ${chosen ? 'is-chosen' : ''} ${inDeck ? 'is-proposed' : ''}`}
                 aria-pressed={chosen}
                 disabled={full}
-                title={`${FACTION_META[type].name}${inDeck ? ' — présent au Chariot' : ''}`}
+                title={`${FACTION_META[type].name}${inDeck ? ' — présent au Deck' : ''}`}
                 onClick={() => toggleCafeType(type)}
               >
                 <span
@@ -152,7 +152,7 @@ export function Deck() {
                   {FACTION_META[type].glyph}
                 </span>
                 {FACTION_META[type].short}
-                {inDeck && <span className="cafe-picker__tag">au Chariot</span>}
+                {inDeck && <span className="cafe-picker__tag">au Deck</span>}
               </button>
             );
           })}
@@ -163,7 +163,7 @@ export function Deck() {
             ? `Choix manuel : ${cafeLabel(chosenCafeTypes)}.`
             : proposed.length > 0
               ? `Proposition automatique : ${cafeLabel(proposed)}.`
-              : 'Aucun type : ce Chariot ne produira pas de café.'}
+              : 'Aucun type : ce Deck ne produira pas de café.'}
           {cafeTypes.length > 0 && ` La Machine tirera dans ${cafeLabel(cafeTypes)}.`}
         </p>
       </section>
@@ -175,7 +175,7 @@ export function Deck() {
         </div>
         {inDeck.length === 0 ? (
           <p className="empty">
-            Le chariot est vide. Clique une carte du Parc ci-dessous, ou utilise « Remplir ».
+            Le deck est vide. Clique une carte de la Collection ci-dessous, ou utilise « Remplir ».
           </p>
         ) : (
           <div className="card-grid">
@@ -200,8 +200,8 @@ export function Deck() {
 
       <section className="section">
         <div className="section__head">
-          <h2>Parc ({available.length})</h2>
-          <span className="muted">clic = ajouter au chariot</span>
+          <h2>Collection ({available.length})</h2>
+          <span className="muted">clic = ajouter au deck</span>
         </div>
         {available.length === 0 ? (
           <p className="empty">Aucune carte possédée. Ouvre un Arrivage depuis l’accueil.</p>
@@ -224,7 +224,7 @@ export function Deck() {
                   </button>
                   <span
                     className={`card-slot__count ${used === 0 ? 'is-missing' : ''}`}
-                    title={`${used} exemplaire(s) de « ${card.name} » au chariot`}
+                    title={`${used} exemplaire(s) de « ${card.name} » au deck`}
                   >
                     ×{used}
                   </span>

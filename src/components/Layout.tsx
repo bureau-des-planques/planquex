@@ -6,8 +6,8 @@ import { BulleBoiteAIdees } from '@/components/BulleBoiteAIdees';
 
 const tabs = [
   { to: '/', label: 'Accueil', icon: Home },
-  { to: '/collection', label: 'Parc', icon: Library },
-  { to: '/deck', label: 'Chariot', icon: Layers },
+  { to: '/collection', label: 'Collection', icon: Library },
+  { to: '/deck', label: 'Deck', icon: Layers },
   { to: '/battle', label: 'Combat', icon: Swords },
   { to: '/settings', label: 'Réglages', icon: Settings }
 ];

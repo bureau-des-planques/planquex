@@ -36,14 +36,14 @@ const SEEDS = [1, 7, 42, 2026] as const;
 /** Affiche la taille des codes produits (comme `PACE_REPORT` pour le rythme). */
 const REPORT = process.env.CODEC_REPORT === '1';
 
-/** Deux Chariots légaux, distincts, dérivés de la graine. */
+/** Deux Decks légaux, distincts, dérivés de la graine. */
 function decksFor(seed: number): [string[], string[]] {
   const player = FACTION_ORDER[seed % FACTION_ORDER.length] ?? FACTION_ORDER[0];
   const ai = FACTION_ORDER[(seed + 3) % FACTION_ORDER.length] ?? FACTION_ORDER[1];
   return [factionDeck(player), factionDeck(ai)];
 }
 
-/** Le match tel qu'un écran de combat le remettrait au codec (graine, Chariots, journal). */
+/** Le match tel qu'un écran de combat le remettrait au codec (graine, Decks, journal). */
 function matchOf(state: BattleState, playerDeck: string[], aiDeck: string[]): MatchCode {
   return {
     seed: state.seed,
@@ -116,7 +116,7 @@ describe('Codec — encoder puis décoder redonne le même match (#124)', () => 
 
     expect(decoded.ok, decoded.ok ? '' : decoded.raison).toBe(true);
     if (!decoded.ok) return;
-    // Égalité **stricte** : graine, ordre des deux Chariots, types de café, journal.
+    // Égalité **stricte** : graine, ordre des deux Decks, types de café, journal.
     expect(decoded.match).toEqual(match);
   });
 
@@ -239,17 +239,17 @@ describe('Codec — chaque refus a sa raison, en français (#124)', () => {
     expect(resultat.raison).toContain('version inconnue');
   });
 
-  it('refuse un Chariot illégal avant de rejouer', () => {
+  it('refuse un Deck illégal avant de rejouer', () => {
     const forge = encodeMatch({ ...match, playerDeck: match.playerDeck.slice(0, 19) });
     const resultat = decodeMatch(forge);
     expect(resultat.ok).toBe(false);
     if (resultat.ok) return;
-    expect(resultat.kind).toBe('chariot');
-    expect(resultat.raison).toContain('Chariot illégal (Toi)');
+    expect(resultat.kind).toBe('deck');
+    expect(resultat.raison).toContain('Deck illégal (Toi)');
     expect(resultat.raison).toContain('20 cartes');
   });
 
-  it('refuse une carte inconnue dans un Chariot (le moteur ne lève pas)', () => {
+  it('refuse une carte inconnue dans un Deck (le moteur ne lève pas)', () => {
     const forge = encodeMatch({
       ...match,
       aiDeck: [...match.aiDeck.slice(1), 'carte-qui-nexiste-pas']
@@ -257,11 +257,11 @@ describe('Codec — chaque refus a sa raison, en français (#124)', () => {
     const resultat = decodeMatch(forge);
     expect(resultat.ok).toBe(false);
     if (resultat.ok) return;
-    expect(resultat.kind).toBe('chariot');
+    expect(resultat.kind).toBe('deck');
     expect(resultat.raison).toContain('carte-qui-nexiste-pas');
   });
 
-  it('refuse des types de café qu’un Chariot ne peut pas produire', () => {
+  it('refuse des types de café qu’un Deck ne peut pas produire', () => {
     // `SUPPORT` et `INTERIM` ne sont jamais des types de café (D-034) : les normaliser en
     // silence changerait la partie rejouée, donc on refuse.
     const forge = encodeMatch({ ...match, playerCafeTypes: ['SUPPORT'] });

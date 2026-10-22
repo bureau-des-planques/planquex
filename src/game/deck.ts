@@ -1,12 +1,12 @@
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type { Card, CafeType, Faction, Stage } from '@/data/types';
 
-/** Règles du Chariot (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
+/** Règles du Deck (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
 export const DECK_SIZE = 20;
 export const MAX_COPIES_PER_NAME = 2;
 
 /**
- * Plafond de types de café d'un Chariot (**1 à 3**, D-034/D-037 (4)) : la Machine ne
+ * Plafond de types de café d'un Deck (**1 à 3**, D-034/D-037 (4)) : la Machine ne
  * tire un café que dans ces types.
  */
 export const MAX_DECK_CAFE_TYPES = 3;
@@ -14,7 +14,7 @@ export const MAX_DECK_CAFE_TYPES = 3;
 /**
  * Les factions qui peuvent être un **type de café** (D-034) : toutes sauf `SUPPORT`
  * (Incolore) et `INTERIM` (Dragon), que la Machine ne produit jamais. Source unique de
- * ce qu'un Chariot peut **proposer ou accepter** (#91) : `FACTION_META` tient
+ * ce qu'un Deck peut **proposer ou accepter** (#91) : `FACTION_META` tient
  * l'identité des dix factions, ce tableau n'en retire que les deux non produites.
  */
 export const CAFE_FACTIONS: readonly CafeType[] = (
@@ -48,13 +48,13 @@ export function normalizeCafeTypes(types: unknown): CafeType[] {
 }
 
 /**
- * Les **types de café qu'un Chariot peut produire** (D-037 (4)), dérivés des factions
+ * Les **types de café qu'un Deck peut produire** (D-037 (4)), dérivés des factions
  * de ses Planqués : l'union des factions présentes, **plafonnée à 3**, dans l'ordre du
- * Chariot. `SUPPORT` (Incolore) et `INTERIM` (Dragon) n'en sont **jamais** : la Machine
+ * Deck. `SUPPORT` (Incolore) et `INTERIM` (Dragon) n'en sont **jamais** : la Machine
  * ne produit pas ces types (D-034).
  *
  * C'est la **proposition automatique** : le joueur peut la remplacer par un choix
- * manuel de 1 à 3 types (`resolveCafeTypes`), persisté avec son Chariot (#91).
+ * manuel de 1 à 3 types (`resolveCafeTypes`), persisté avec son Deck (#91).
  */
 export function deckCafeTypes(deck: readonly string[]): CafeType[] {
   const types: CafeType[] = [];
@@ -68,7 +68,7 @@ export function deckCafeTypes(deck: readonly string[]): CafeType[] {
 }
 
 /**
- * Les types **effectifs** d'un Chariot : le choix validé s'il existe, sinon la
+ * Les types **effectifs** d'un Deck : le choix validé s'il existe, sinon la
  * proposition automatique. C'est le seul chemin par lequel le moteur et l'écran
  * lisent la liste (#91) — un état trafiqué ne peut donc pas faire produire `SUPPORT`
  * ni `INTERIM` à la Machine, ni dépasser 3 types.
@@ -102,7 +102,7 @@ export function deckCountsByName(deck: string[]): Record<string, number> {
   }, {});
 }
 
-/** Cartes réelles du Chariot ; les identifiants inconnus sont écartés. */
+/** Cartes réelles du Deck ; les identifiants inconnus sont écartés. */
 export function deckCards(deck: readonly string[]): Card[] {
   return deck.map((id) => getCard(id)).filter(Boolean) as Card[];
 }
@@ -118,7 +118,7 @@ export function deckCanAdd(deck: string[], cardId: string): boolean {
 export function deckLegal(deck: string[]): { ok: boolean; reasons: string[] } {
   const reasons: string[] = [];
   if (deck.length !== DECK_SIZE) {
-    reasons.push(`Le Chariot doit contenir ${DECK_SIZE} cartes (${deck.length}/${DECK_SIZE}).`);
+    reasons.push(`Le Deck doit contenir ${DECK_SIZE} cartes (${deck.length}/${DECK_SIZE}).`);
   }
   const counts = deckCountsByName(deck);
   if (Object.values(counts).some((count) => count > MAX_COPIES_PER_NAME)) {
@@ -136,15 +136,15 @@ export interface AutoDeck {
 }
 
 /**
- * Remplissage rapide : un chariot **légal** de 20 cartes pris dans ce qu'on possède.
+ * Remplissage rapide : un deck **légal** de 20 cartes pris dans ce qu'on possède.
  *
  * Ordre volontaire, pour que le résultat soit jouable et pas juste légal :
  * 1. les bases (N+1), une par Planqué possédé ;
- * 2. les évolutions dont la base est déjà au Chariot, N+1 puis N+2 ;
+ * 2. les évolutions dont la base est déjà au Deck, N+1 puis N+2 ;
  * 3. des seconds exemplaires, bases d'abord, pour compléter.
  *
  * Ne remplace pas les règles : le plafond de 2 par nom est respecté via
- * `deckCanAdd`, et le Chariot est tronqué à 20 si on possède plus de bases que ça.
+ * `deckCanAdd`, et le Deck est tronqué à 20 si on possède plus de bases que ça.
  */
 export function autoDeck(owned: Record<string, number>): AutoDeck {
   const ownedCards = ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0);
@@ -158,7 +158,7 @@ export function autoDeck(owned: Record<string, number>): AutoDeck {
   /** On ne met pas plus d'exemplaires qu'on en possède, ni plus de 2 par nom. */
   const canAdd = (id: string) => deckCanAdd(deck, id) && (deckCounts(deck)[id] ?? 0) < (owned[id] ?? 0);
 
-  // 1. les entrantes, 2. les évolutions dont la base est déjà au Chariot, 3. les seconds exemplaires
+  // 1. les entrantes, 2. les évolutions dont la base est déjà au Deck, 3. les seconds exemplaires
   for (const card of byStage('ENTRANT')) deck.push(card.id);
   for (const stage of ['N+1', 'N+2'] as Stage[]) {
     for (const card of byStage(stage)) {

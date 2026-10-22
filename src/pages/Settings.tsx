@@ -26,7 +26,7 @@ export function Settings() {
     const resultat = importerSauvegarde(sauvegarde);
     setMessage(
       resultat.ok
-        ? { ton: 'ok', texte: 'Sauvegarde restaurée : ton Parc et ton Chariot sont revenus.' }
+        ? { ton: 'ok', texte: 'Sauvegarde restaurée : ta Collection et ton Deck sont revenus.' }
         : { ton: 'ko', texte: resultat.raison }
     );
   };
@@ -75,7 +75,7 @@ export function Settings() {
         <h2>Journée d’intégration</h2>
         <p className="muted">
           Quatre étapes, et chacune ouvre son écran : le Seuil et le Stress, l’Arrivage, le
-          Chariot, la fin d’un combat. À revoir quand tu veux.
+          Deck, la fin d’un combat. À revoir quand tu veux.
         </p>
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
@@ -98,7 +98,7 @@ export function Settings() {
         <p className="muted">
           Ta progression vit dans ce navigateur sous la clé <code>{STORAGE_KEY}</code> : rien n’est
           envoyé à un serveur, et **vider les données du navigateur l’efface**. Copie ce texte
-          quelque part avant, il contient tout — Parc, Chariot, nom.
+          quelque part avant, il contient tout — Collection, Deck, nom.
         </p>
         <textarea
           className="settings__save"

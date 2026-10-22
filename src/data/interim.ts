@@ -16,7 +16,7 @@ import { planqueBase } from './planque';
  *
  * **Types de café (#116)** : `INTERIM` n'est pas un type produit, donc chaque Pression
  * mêle **deux types produits distincts** (D-037 (3)). Une **ligne d'évolution** doit
- * rester payable avec le plafond de **3 types** d'un Chariot (D-034, D-037 (4)) : chaque
+ * rester payable avec le plafond de **3 types** d'un Deck (D-034, D-037 (4)) : chaque
  * ligne garde donc **une paire stable**, et l'Entrant (`SSE`) est le troisième type.
  * `interim.test.ts` le contrôle **par ligne**, pas carte par carte.
  */

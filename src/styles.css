@@ -5,7 +5,7 @@
 /*
  * D-035 — Tailwind v4 (mode CSS-first) est le **moteur de style**. Ce bloc `@theme`
  * expose les jetons de `DESIGN.md` aux utilitaires Tailwind ; l'identité du jeu (carte,
- * plateau, Parc) reste maison et vit plus bas en classes `.card*`, `.stress*`, etc.
+ * plateau, Collection) reste maison et vit plus bas en classes `.card*`, `.stress*`, etc.
  *
  * Les valeurs **référencent** les variables du bloc `:root` ci-dessous : le `@theme`
  * n'est pas une seconde source, c'est une **porte** vers la source unique. `inline` fait
@@ -430,8 +430,8 @@ h2 {
 }
 
 /*
- * Machine à café du Chariot (#91) : un bouton par faction produisible, le type
- * présent au Chariot marqué, le choix manuel en surbrillance. Les couleurs de
+ * Machine à café du Deck (#91) : un bouton par faction produisible, le type
+ * présent au Deck marqué, le choix manuel en surbrillance. Les couleurs de
  * faction viennent de `FACTION_META`, jamais d'un hex recopié ici.
  */
 .cafe-picker {
@@ -1454,7 +1454,7 @@ h2 {
   letter-spacing: 0.02em;
 }
 
-/* ---------- Ajout rapide au Chariot ---------- */
+/* ---------- Ajout rapide au Deck ---------- */
 
 .section__actions {
   display: flex;
@@ -1481,7 +1481,7 @@ h2 {
 /* Le bouton rapide occupe le coin haut-droit : le nom réserve la place, sinon il
    passe dessous (le coin droit est libre depuis que le Seuil vit sous l'art). */
 .card-slot .card__top {
-  /* De la place pour le bouton « ajouter au Chariot », qui vit au coin haut-droit. */
+  /* De la place pour le bouton « ajouter au Deck », qui vit au coin haut-droit. */
   padding-right: 2.5rem;
 }
 

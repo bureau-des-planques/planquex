@@ -106,7 +106,7 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
       "kind": "IP",               // « IP » ou « OUF », et rien d'autre
       "titre": "Une ligne, à l'impératif ou nominative",
       "texte": "Le retour tel qu'il a été écrit, à peine nettoyé",
-      "ecran": "Combat",          // Accueil | Parc | Chariot | Combat | Réglages | Autre
+      "ecran": "Combat",          // Accueil | Collection | Deck | Combat | Réglages | Autre
       "pseudo": "Employé 404",    // le nom local du posteur
       "version": "Alpha · 0.1.2", // ce que Réglages affichait chez lui
       "statut": "en attente",     // en attente | retenu | en cours | fait | écarté
@@ -182,7 +182,7 @@ fait la différence).
 | 4 | **Ce que tu faisais** | Paragraphe | **oui** | « L'écran, l'action, la carte. Exemple : “j'étais au combat, j'ai cliqué sur Pansement”. » |
 | 5 | **Ce qui s'est passé** | Paragraphe | **oui** | « Le fait, sans jugement. Un message d'erreur ? Recopie-le. » |
 | 6 | **Ce que tu attendais** | Paragraphe | **oui** | « Ce qui aurait dû se passer, à ton avis. » |
-| 7 | **Écran** | Choix multiples (une seule) | non | « Accueil, Parc, Chariot, Combat, Réglages, autre. » |
+| 7 | **Écran** | Choix multiples (une seule) | non | « Accueil, Collection, Deck, Combat, Réglages, autre. » |
 | 8 | **Capture** | Réponse courte | non | « Colle un **lien** vers une image (ton cloud, un message à toi-même). L'envoi de fichier oblige à ouvrir un compte Google, on ne l'impose pas. » |
 
 **Section « Post-it IP »** (une idée, une amélioration — aiguillage : *Proposer une feature*)

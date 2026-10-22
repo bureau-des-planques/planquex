@@ -14,7 +14,7 @@ import { factionDeck, simulate, type SimulationReport } from '@/game/simulation'
  * - il ne joue **jamais** pour le camp `player` ;
  * - il est **déterministe par graine** : même graine → même partie ;
  * - sa **mesure est consignée** telle qu'elle est : depuis #108 le niveau 2 n'est plus
- *   devant le niveau 1, et la mesure a été **refaite après #113** — les Chariots
+ *   devant le niveau 1, et la mesure a été **refaite après #113** — les Decks
  *   `SUPPORT` et `INTERIM` du simulateur sont désormais **armés**, donc la mesure d'avant
  *   n'était pas comparable. Le chiffre, la graine et la commande sont dans le test.
  *
@@ -330,7 +330,7 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
           expect(a.seed).toBe(b.seed); // même graine de partie
         }
 
-        // Invariant 3 : les Chariots sont identiques (mêmes factions = mêmes decks)
+        // Invariant 3 : les Decks sont identiques (mêmes factions = mêmes decks)
         // (vérifié implicitement par le test ci-dessus : mêmes factions aux mêmes sièges)
 
         const agg = aggregateMirror(directionEnNiveau2, joueurEnNiveau2);

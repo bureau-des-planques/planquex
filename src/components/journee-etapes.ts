@@ -7,7 +7,7 @@
  * (D-066) et ne se code pas ici.
  *
  * Les quatre choses qu'un invité ne devine pas (ticket #130) : le **Seuil** et le
- * **Stress**, l'**Arrivage**, le **Chariot**, la **fin d'un combat**. Les textes
+ * **Stress**, l'**Arrivage**, le **Deck**, la **fin d'un combat**. Les textes
  * emploient le vocabulaire du jeu (`AGENTS.md` §3) et aucun mot interdit.
  *
  * Le plafond de lecture vient du ticket : **trente secondes par étape**. `secondesDeLecture`
@@ -28,23 +28,23 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   {
     titre: 'Le Seuil et le Stress',
     texte:
-      'Le Seuil est la limite avant la casse. Le Stress, lui, monte à chaque Pression : le Planqué craque quand il atteint son Seuil. La barre montre le Seuil au Parc, et le Stress qui monte au combat.',
+      'Le Seuil est la limite avant la casse. Le Stress, lui, monte à chaque Pression : le Planqué craque quand il atteint son Seuil. La barre montre le Seuil à la Collection, et le Stress qui monte au combat.',
     cible: '/collection',
-    action: 'Voir mon Parc'
+    action: 'Voir ma Collection'
   },
   {
     titre: 'L’Arrivage',
     texte:
-      'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Le bouton de l’accueil l’ouvre, et les cartes rejoignent ton Parc.',
+      'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Le bouton de l’accueil l’ouvre, et les cartes rejoignent ta Collection.',
     cible: '/',
     action: 'Ouvrir un Arrivage'
   },
   {
-    titre: 'Le Chariot',
+    titre: 'Le Deck',
     texte:
-      'Un Chariot, c’est vingt cartes, deux exemplaires maximum du même nom, et au moins un Planqué Entrant. Choisis aussi de un à trois types de café : ce sont eux qui paient tes Pressions.',
+      'Un Deck, c’est vingt cartes, deux exemplaires maximum du même nom, et au moins un Planqué Entrant. Choisis aussi de un à trois types de café : ce sont eux qui paient tes Pressions.',
     cible: '/deck',
-    action: 'Composer mon Chariot'
+    action: 'Composer mon Deck'
   },
   {
     titre: 'La fin d’un combat',

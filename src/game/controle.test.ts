@@ -21,7 +21,7 @@ const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
 const FIRST_BASIC = BASICS[0];
 if (!FIRST_BASIC) throw new Error('Aucun Entrant dans les données');
 
-/** Chariot légal de 20 cartes, comme `engine.test.ts`. */
+/** Deck légal de 20 cartes, comme `engine.test.ts`. */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 function freshBattle(seed = SEED): BattleState {
@@ -241,7 +241,7 @@ describe('checkup — le Poste du Rack n’est jamais contrôlé (D-030)', () =>
 
 /** Garde-fou : les données employées par ces tests restent cohérentes. */
 describe('support des tests', () => {
-  it('le premier Entrant du Chariot est un Planqué de stade ENTRANT', () => {
+  it('le premier Entrant du Deck est un Planqué de stade ENTRANT', () => {
     const card = getCard(FIRST_BASIC);
     expect(isPlanque(card) && card.stage === 'ENTRANT').toBe(true);
   });

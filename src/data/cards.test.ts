@@ -282,7 +282,7 @@ const carteSynthetique = (rarity: Rarity, cost: CafeSymbol[] = ['SSE']): Planque
   retreat: 1,
   weakness: 'MANAGEMENT',
   attacks: [{ name: 'Pression de test', cost, damage: 10 }],
-  flavor: 'Carte synthétique : elle n’entre jamais dans le Parc.',
+  flavor: 'Carte synthétique : elle n’entre jamais dans la Collection.',
   glyph: '✦',
   palette: '#24303c'
 });

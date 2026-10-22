@@ -39,7 +39,7 @@ const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
 );
 
-/** Chariot légal de 20 cartes (10 noms N+1 en double). */
+/** Deck légal de 20 cartes (10 noms N+1 en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 function freshBattle(seed = SEED): BattleState {
@@ -113,7 +113,7 @@ describe('createBattle — mise en place', () => {
     expect(next.current).toBe('player');
     expect(next.turn).toBe(3);
     // La Machine y a produit un café **typé** (D-034) : non nul, et tiré dans les
-    // types du Chariot — même graine, même café.
+    // types du Deck — même graine, même café.
     const zone = next.players.player.energyZone;
     expect(zone).not.toBeNull();
     expect(next.players.player.cafeTypes).toContain(zone);
@@ -121,7 +121,7 @@ describe('createBattle — mise en place', () => {
 });
 
 describe('Main de départ — pas de reprise de poste (D-022)', () => {
-  /** Chariot à un seul N+1 : les 5 premières cartes tirées n'en contiennent presque jamais. */
+  /** Deck à un seul N+1 : les 5 premières cartes tirées n'en contiennent presque jamais. */
   const EVOLUTIONS = ALL_CARDS.filter(
     (card) => isPlanque(card) && !card.variantOf && card.stage !== 'ENTRANT'
   ).map((card) => card.id);
@@ -193,7 +193,7 @@ describe('endTurn — statut létal', () => {
     expect(after.current).toBe('player');
   });
 
-  it('ne déclare aucune défaite quand le Chariot est vide', () => {
+  it('ne déclare aucune défaite quand le Deck est vide', () => {
     const state = freshBattle();
     let after = structuredClone(state);
     after.players.player.deck = [];
@@ -203,7 +203,7 @@ describe('endTurn — statut létal', () => {
 
     expect(after.phase).toBe('playing');
     expect(after.winner).toBeNull();
-    expect(after.log.some((line) => line.includes('Chariot vide'))).toBe(true);
+    expect(after.log.some((line) => line.includes('Deck vide'))).toBe(true);
   });
 });
 
@@ -813,10 +813,10 @@ describe('Relève après un double craquage (D-031)', () => {
   });
 });
 
-describe('Chariot imposé au démarrage', () => {
-  it('refuse de démarrer avec un Chariot illégal', () => {
-    expect(() => createBattle(DECK.slice(0, DECK_SIZE - 1), DECK)).toThrow(/Chariot illégal/);
-    expect(() => createBattle(DECK, [DECK[0]])).toThrow(/Chariot illégal/);
+describe('Deck imposé au démarrage', () => {
+  it('refuse de démarrer avec un Deck illégal', () => {
+    expect(() => createBattle(DECK.slice(0, DECK_SIZE - 1), DECK)).toThrow(/Deck illégal/);
+    expect(() => createBattle(DECK, [DECK[0]])).toThrow(/Deck illégal/);
   });
 });
 
@@ -1212,7 +1212,7 @@ describe('Déterminisme — le hasard vient d’une graine (#29)', () => {
   }
 
   /**
-   * Séquence qui consomme le hasard du moteur : mélange des deux Chariots, puis
+   * Séquence qui consomme le hasard du moteur : mélange des deux Decks, puis
    * six fins de tour avec Épuisement et Sieste au Poste — les lancers de guérison.
    * Les Seuils sont montés pour qu’aucun craquage ne vienne couper la séquence.
    */
@@ -1230,8 +1230,8 @@ describe('Déterminisme — le hasard vient d’une graine (#29)', () => {
     return next;
   }
 
-  it('ne tire plus au hasard global, même pour mélanger un Chariot', () => {
-    // Le simple fait de créer une partie mélange deux Chariots : sans graine,
+  it('ne tire plus au hasard global, même pour mélanger un Deck', () => {
+    // Le simple fait de créer une partie mélange deux Decks : sans graine,
     // l’appel lève ici.
     const state = withoutMathRandom(() => createBattle(DECK, DECK, 1));
     expect(state.players.player.deck.length).toBeGreaterThan(0);
@@ -1248,7 +1248,7 @@ describe('Déterminisme — le hasard vient d’une graine (#29)', () => {
 
   it('sans graine explicite, deux parties restent indépendantes', () => {
     // `Date.now()` sert de graine par défaut : deux créations rapprochées ne
-    // doivent pas forcément donner le même ordre de Chariot (comportement d’avant).
+    // doivent pas forcément donner le même ordre de Deck (comportement d’avant).
     const deck = (state: BattleState) => state.players.player.deck.map((card) => card.cardId);
     expect(deck(createBattle(DECK, DECK, 1))).not.toEqual(deck(createBattle(DECK, DECK, 2)));
   });

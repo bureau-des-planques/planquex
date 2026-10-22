@@ -11,14 +11,14 @@ donne envie de refaire une partie ?**
 - **Journée d'intégration** : quatre écrans pour les bases, au premier lancement. On peut la
   revoir depuis Réglages.
 - **Arrivages** : 5 cartes à chaque ouverture — 3 communes, 1 peu commune, 1 rare au minimum.
-- **Parc** : toutes tes cartes, avec recherche, filtres par faction et par stade, et la fiche
+- **Collection** : toutes tes cartes, avec recherche, filtres par faction et par stade, et la fiche
   de chaque carte.
-- **Chariot** : 20 cartes, au moins un Planqué Entrant, 2 exemplaires maximum du même nom.
+- **Deck** : 20 cartes, au moins un Planqué Entrant, 2 exemplaires maximum du même nom.
   Le bouton « Remplir » en compose un tout seul. Tu choisis aussi jusqu'à 3 types de café.
 - **Combat** contre la Direction (l'adversaire est joué par l'ordinateur) : Poste, Rack,
   cafés, Pressions, statuts. Trois Interventions pour gagner.
 
-Tu commences avec un Parc déjà garni : tu peux composer un Chariot et te battre tout de suite.
+Tu commences avec une Collection déjà garnie : tu peux composer un Deck et te battre tout de suite.
 
 ## Ce qui n'existe pas encore
 
@@ -29,7 +29,7 @@ Tu commences avec un Parc déjà garni : tu peux composer un Chariot et te battr
 
 ## ⚠️ Ta sauvegarde
 
-**Vider les données de ton navigateur efface tout** : ton Parc, ton Chariot, ton nom. Pareil si
+**Vider les données de ton navigateur efface tout** : ta Collection, ton Deck, ton nom. Pareil si
 tu changes de navigateur ou d'appareil.
 
 Avant : **Réglages → « Créer ma sauvegarde »**. Le texte qui apparaît est copié ; colle-le dans

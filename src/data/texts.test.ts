@@ -68,7 +68,7 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   { label: 'statut nommé', pattern: /surcharge|epuisement|sieste|immobilis|deriv/, kinds: ['status'] },
   // `switchSelf` échange le Poste avec le premier Planqué du Rack (engine.ts).
   { label: 'Rack', pattern: /rack/, kinds: ['switchSelf'] },
-  // Aucune primitive ne touche la main ni ne cherche dans le Chariot.
+  // Aucune primitive ne touche la main ni ne cherche dans le Deck.
   { label: 'main', pattern: /main/, kinds: [] },
   { label: 'deck', pattern: /deck/, kinds: [] }
 ];
@@ -78,7 +78,7 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
  *
  * Un Talent n'a pas accès aux primitives d'attaque : `Rack`, `défausse`, `cherche`,
  * `main`, `deck` n'ont donc aucune primitive de Talent. `attachEnergy` attache un
- * café tiré dans le Chariot au **Poste** (engine.ts : `player.active.energy.push(cafe)`),
+ * café tiré dans le Deck au **Poste** (engine.ts : `player.active.energy.push(cafe)`),
  * et `heal` / `antiStatus` ne
  * soignent que le Poste : viser le Rack ou la main est un mensonge.
  */

@@ -8,8 +8,8 @@ import type { RngHolder } from '@/game/rng';
  * « 3 communes, 1 peu commune, 1 rare minimum ».
  *
  * C'est une **règle de jeu**, et elle vit donc dans `src/game/`, à côté du
- * Chariot (`deck.ts`) et des drapeaux (`rules.ts`) — pas dans le store, qui
- * persiste un Parc et n'a pas à décider ce que contient un paquet (ticket #57).
+ * Deck (`deck.ts`) et des drapeaux (`rules.ts`) — pas dans le store, qui
+ * persiste une Collection et n'a pas à décider ce que contient un paquet (ticket #57).
  *
  * Le générateur est **passé en paramètre**, jamais créé ici : c'est la convention
  * du moteur depuis le ticket #29 (`@/game/rng`). Un Arrivage se rejoue donc avec

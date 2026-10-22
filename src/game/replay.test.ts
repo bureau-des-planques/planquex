@@ -18,7 +18,7 @@ import { FACTION_ORDER, factionDeck, playGame } from '@/game/simulation';
  */
 const SEEDS = [1, 7, 42, 99, 123, 456, 555, 789, 1000, 2026] as const;
 
-/** Deux Chariots légaux, distincts, dérivés de la graine. */
+/** Deux Decks légaux, distincts, dérivés de la graine. */
 function decksFor(seed: number): [string[], string[]] {
   const player = FACTION_ORDER[seed % FACTION_ORDER.length] ?? FACTION_ORDER[0];
   const ai = FACTION_ORDER[(seed + 3) % FACTION_ORDER.length] ?? FACTION_ORDER[1];

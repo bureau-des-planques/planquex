@@ -21,25 +21,25 @@ const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
 );
 
-/** Chariot légal : 10 noms N+1 en double. */
+/** Deck légal : 10 noms N+1 en double. */
 const LEGAL_DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
-describe('deckLegal — Chariot', () => {
+describe('deckLegal — Deck', () => {
   it('accepte 20 cartes, 2 exemplaires max, au moins un Entrant', () => {
     const result = deckLegal(LEGAL_DECK);
     expect(result.ok).toBe(true);
     expect(result.reasons).toEqual([]);
   });
 
-  it('refuse un Chariot de 19 cartes', () => {
+  it('refuse un Deck de 19 cartes', () => {
     const result = deckLegal(LEGAL_DECK.slice(0, DECK_SIZE - 1));
     expect(result.ok).toBe(false);
     expect(result.reasons).toEqual([
-      `Le Chariot doit contenir ${DECK_SIZE} cartes (${DECK_SIZE - 1}/${DECK_SIZE}).`
+      `Le Deck doit contenir ${DECK_SIZE} cartes (${DECK_SIZE - 1}/${DECK_SIZE}).`
     ]);
   });
 
-  it('refuse un Chariot de 21 cartes', () => {
+  it('refuse un Deck de 21 cartes', () => {
     // 10 noms en double + un onzième nom : 21 cartes, aucun autre motif de refus.
     const deck = [...BASICS.slice(0, 10), ...BASICS.slice(0, 11)];
     expect(deck).toHaveLength(DECK_SIZE + 1);
@@ -47,14 +47,14 @@ describe('deckLegal — Chariot', () => {
     const result = deckLegal(deck);
     expect(result.ok).toBe(false);
     expect(result.reasons).toEqual([
-      `Le Chariot doit contenir ${DECK_SIZE} cartes (${DECK_SIZE + 1}/${DECK_SIZE}).`
+      `Le Deck doit contenir ${DECK_SIZE} cartes (${DECK_SIZE + 1}/${DECK_SIZE}).`
     ]);
   });
 
-  it('refuse un Chariot vide', () => {
+  it('refuse un Deck vide', () => {
     const result = deckLegal([]);
     expect(result.ok).toBe(false);
-    expect(result.reasons).toContain(`Le Chariot doit contenir ${DECK_SIZE} cartes (0/${DECK_SIZE}).`);
+    expect(result.reasons).toContain(`Le Deck doit contenir ${DECK_SIZE} cartes (0/${DECK_SIZE}).`);
     expect(result.reasons).toContain('Il faut au moins un Planqué Entrant.');
   });
 
@@ -85,7 +85,7 @@ describe('deckLegal — Chariot', () => {
     expect(deckLegal(deck)).toEqual({ ok: true, reasons: [] });
   });
 
-  it('accepte une carte Action au Chariot, sans compter comme Entrant', () => {
+  it('accepte une carte Action au Deck, sans compter comme Entrant', () => {
     const [objet] = ALL_ACTION_CARDS;
     if (!objet) throw new Error('aucune carte Action');
     expect(deckCanAdd([], objet.id)).toBe(true);
@@ -96,7 +96,7 @@ describe('deckLegal — Chariot', () => {
     expect(deckLegal(deck).ok, deckLegal(deck).reasons.join(' ')).toBe(true);
   });
 
-  it('refuse un Chariot de cartes Action sans aucun Planqué Entrant', () => {
+  it('refuse un Deck de cartes Action sans aucun Planqué Entrant', () => {
     const actions = ALL_ACTION_CARDS.map((card) => card.id);
     const deck = [...actions, ...actions].slice(0, DECK_SIZE);
     expect(deck).toHaveLength(DECK_SIZE);
@@ -104,7 +104,7 @@ describe('deckLegal — Chariot', () => {
     expect(deckLegal(deck).reasons).toEqual(['Il faut au moins un Planqué Entrant.']);
   });
 
-  it('refuse un Chariot sans Planqué Entrant', () => {
+  it('refuse un Deck sans Planqué Entrant', () => {
     const evolutions = ALL_CARDS.filter(
       (card) => isPlanque(card) && !card.variantOf && card.stage !== 'ENTRANT'
     ).map((card) => card.id);
@@ -129,7 +129,7 @@ describe('deckLegal — Chariot', () => {
     expect(deckCanAdd([base, variant], variant)).toBe(false);
   });
 
-  it('refuse un Chariot où 2 exemplaires + 2 variantes dépassent le plafond par nom', () => {
+  it('refuse un Deck où 2 exemplaires + 2 variantes dépassent le plafond par nom', () => {
     const base = 'sse-psychologue';
     const variant = 'sse-psychologue-star2';
     const deck = [base, base, variant, variant, ...LEGAL_DECK].slice(0, DECK_SIZE);
@@ -140,7 +140,7 @@ describe('deckLegal — Chariot', () => {
 });
 
 describe('autoDeck — remplissage rapide', () => {
-  it('produit un Chariot légal de 20 cartes avec ce qu’on possède', () => {
+  it('produit un Deck légal de 20 cartes avec ce qu’on possède', () => {
     const owned: Record<string, number> = {};
     for (const card of ALL_CARDS) owned[card.id] = 1;
 
@@ -161,14 +161,14 @@ describe('autoDeck — remplissage rapide', () => {
       return isPlanque(card) ? card.stage : undefined;
     });
     expect(stages.filter((stage) => stage === 'ENTRANT').length).toBeGreaterThan(0);
-    // Chaque évolution présente a sa base dans le même Chariot.
+    // Chaque évolution présente a sa base dans le même Deck.
     for (const id of deck) {
       const card = getCard(id);
       if (card && isPlanque(card) && card.evolvesFrom) expect(deck).toContain(card.evolvesFrom);
     }
   });
 
-  it('annonce ce qui manque quand le Parc est trop pauvre', () => {
+  it('annonce ce qui manque quand la Collection est trop pauvre', () => {
     const owned = { [BASICS[0]]: 1 };
     const { deck, missing } = autoDeck(owned);
     expect(deck).toEqual([BASICS[0]]);
@@ -177,13 +177,13 @@ describe('autoDeck — remplissage rapide', () => {
 });
 
 /**
- * **Le joueur choisit les types de café de son Chariot** (#91, D-037 (4)) : 1 à 3
+ * **Le joueur choisit les types de café de son Deck** (#91, D-037 (4)) : 1 à 3
  * types, avec la dérivation automatique pour proposition par défaut. `SUPPORT` et
  * `INTERIM` ne sont **jamais** des types de zone (D-034) — ni proposés, ni acceptés,
  * même dans un état trafiqué.
  */
-describe('Types de café choisis — Chariot (#91)', () => {
-  /** Un Chariot jouet : une carte par faction, sans souci de légalité. */
+describe('Types de café choisis — Deck (#91)', () => {
+  /** Un Deck jouet : une carte par faction, sans souci de légalité. */
   const MULTI = [
     'sse-infirmier-site',
     'interim-interimaire',
@@ -200,13 +200,13 @@ describe('Types de café choisis — Chariot (#91)', () => {
     expect(CAFE_FACTIONS).toContain('SSE');
   });
 
-  it('sans choix, garde la proposition automatique dérivée du Chariot', () => {
+  it('sans choix, garde la proposition automatique dérivée du Deck', () => {
     expect(resolveCafeTypes(MULTI)).toEqual(deckCafeTypes(MULTI));
     expect(resolveCafeTypes(MULTI, [])).toEqual(deckCafeTypes(MULTI));
     expect(deckCafeTypes(MULTI)).toEqual(['SSE', 'MANAGEMENT', 'QVT']);
   });
 
-  it('accepte un choix manuel, même un type absent du Chariot', () => {
+  it('accepte un choix manuel, même un type absent du Deck', () => {
     expect(resolveCafeTypes(MULTI, ['RH'])).toEqual(['RH']);
     expect(resolveCafeTypes([], ['ATELIER'])).toEqual(['ATELIER']);
   });

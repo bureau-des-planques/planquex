@@ -36,8 +36,8 @@ export function isPlanque(card: Card | undefined): card is PlanqueCard {
 
 /**
  * Vrai pour un **Planqué Entrant** : le seul qu'on peut poser au Poste, et l'unique
- * exigence légale d'un Chariot (`AGENTS.md` §4). Prédicat unique — il était recopié dans
- * le moteur, le Chariot, la simulation et l'UI.
+ * exigence légale d'un Deck (`AGENTS.md` §4). Prédicat unique — il était recopié dans
+ * le moteur, le Deck, la simulation et l'UI.
  */
 export function isBasic(card: Card | undefined): card is PlanqueCard {
   return isPlanque(card) && card.stage === 'ENTRANT';

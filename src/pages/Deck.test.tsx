@@ -6,12 +6,12 @@ import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS } from '@/data';
 
-describe('Deck — écran du Chariot', () => {
+describe('Deck — écran du Deck', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('affiche le titre avec le nombre de cartes dans le Chariot', () => {
+  it('affiche le titre avec le nombre de cartes dans le Deck', () => {
     const deck = ['sse-infirmier-site', 'management-responsable-unite'];
     renderWithStore(<Deck />, { deck, tutorielVu: true, pasAPasCombatVu: true });
 
@@ -35,7 +35,7 @@ describe('Deck — écran du Chariot', () => {
   it('permet de cocher et décocher un type de café via le groupe café-picker', () => {
     renderWithStore(<Deck />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const group = screen.getByRole('group', { name: /Types de café du Chariot/i });
+    const group = screen.getByRole('group', { name: /Types de café du Deck/i });
     const buttons = within(group).getAllByRole('button');
     expect(buttons.length).toBeGreaterThan(0);
 
@@ -53,7 +53,7 @@ describe('Deck — écran du Chariot', () => {
   it('plafonne à 3 types de café', () => {
     renderWithStore(<Deck />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const group = screen.getByRole('group', { name: /Types de café du Chariot/i });
+    const group = screen.getByRole('group', { name: /Types de café du Deck/i });
     const buttons = within(group).getAllByRole('button');
 
     let checked = 0;
@@ -70,14 +70,14 @@ describe('Deck — écran du Chariot', () => {
     expect(remainingEnabled.length).toBe(0);
   });
 
-  it('affiche la proposition automatique basée sur le Chariot', () => {
+  it('affiche la proposition automatique basée sur le Deck', () => {
     const deck = ['sse-infirmier-site', 'management-responsable-unite'];
     renderWithStore(<Deck />, { deck, tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Proposition automatique : SSE, MGT/i)).toBeInTheDocument();
   });
 
-  it('remplit le Chariot via le bouton Remplir', () => {
+  it('remplit le Deck via le bouton Remplir', () => {
     const owned: Record<string, number> = {};
     for (const card of ALL_CARDS) {
       if (['1D', '2D'].includes(card.rarity)) {
@@ -96,7 +96,7 @@ describe('Deck — écran du Chariot', () => {
     expect(state.deck.length).toBe(20);
   });
 
-  it('vide le Chariot via le bouton Vider', () => {
+  it('vide le Deck via le bouton Vider', () => {
     const deck = ['sse-infirmier-site', 'management-responsable-unite'];
     renderWithStore(<Deck />, { deck, tutorielVu: true, pasAPasCombatVu: true });
 
@@ -114,7 +114,7 @@ describe('Deck — écran du Chariot', () => {
     expect(screen.getByText(/Dedans \(1\)/i)).toBeInTheDocument();
   });
 
-  it('affiche les erreurs de validation pour un Chariot vide', () => {
+  it('affiche les erreurs de validation pour un Deck vide', () => {
     renderWithStore(<Deck />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Il faut au moins un Planqué Entrant/i)).toBeInTheDocument();
