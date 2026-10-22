@@ -4,6 +4,8 @@
 
 Ce journal consigne la **recherche à deux coups** (piste 2 de `docs/recherche-amelioration-ia-niveau2.md`), essayée après l'échec de la piste 1 (`docs/ESSAIS-IA-NIVEAU2.md`, branche `ia-niveau2-essais`, contrôle à 43,68 %). Il sert au **niveau 3** (PIMC, déterminisations) : il dit ce qui a marché, ce qui est réutilisable, et les pièges.
 
+> **Base des mesures : `9c49b47`.** `origin/dev` a depuis avancé de 14 commits (`dd04694`, mécaniques du moteur #159–#165 : `pendingChoice` et l'action `choose`, chercher et regarder dans le Deck, révélations). **Les mesures de ce journal valent pour `9c49b47`, pas pour `dev` actuel.** La branche n'a pas été rebasée, pour que le contrôle reste celui qui a été lancé. Vérification sur `dev` + cette branche (fusion temporaire, non committée) : `tsc -b` exit 0, **74 fichiers, 845 tests passent**, dont 24 tests d'IA. **Rien n'a été remesuré sur ce `dev`** : le contrôle est déjà consommé, et les nouvelles règles de caché (révélations, Deck) n'ont pas été prises en compte par `sampleWorld`.
+
 > **Statut.** Expérimental. La recherche **n'est branchée nulle part** dans l'écran ni dans `nextAction` : le niveau 2 (`nextAction(state, 2)`, référence #93/#111) et le niveau 1 (défaut de l'écran) sont **inchangés**. Rien n'est fusionné.
 
 ## 1. Verdict
