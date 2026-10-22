@@ -28,36 +28,33 @@ frame, waist-up, square 1:1. No text, no logo, no watermark, no brand, no real p
 
 ---
 
-## Planche 1 — Les 10 cartes signature (portraits)
+## Planche Portrait — les cartes de base
 
-Ajoute au socle le sujet, puis l'accent de faction.
+Les sujets **ne vivent plus ici** : ils sont dans **`SUJETS-flow.md`**, une ligne par carte
+de base — les Planqués en cinq créneaux (`<rôle>, <tenue>, holding <objet>, <geste>,
+<expression>`), les cartes Action en objet unique. L'accent n'est pas sur la ligne : il est
+**par faction**, dans **`ACCENTS-flow.md`** (D-046).
 
-| Carte (`id`) | Sujet à ajouter | Accent |
-|---|---|---|
-| `sse-medecin-travail` | a workplace doctor in a white coat holding a clipboard, calm and weary | emerald green |
-| `management-responsable-unite` | a middle manager with a clipboard and a slightly smug smile | burnt orange |
-| `qvt-chief-happiness-officer` | an over-enthusiastic happiness officer holding balloons (no text on them) | turquoise blue |
-| `amelioration-directeur-qualite` | a quality director clutching a plain thick binder of procedures (blank cover) | electric yellow |
-| `rh-drh` | an HR director standing in front of a plain blank org chart on the wall | violet purple |
-| `atelier-chef-atelier` | a workshop foreman in an oil-stained jacket holding a wrench | rust bronze |
-| `direction-pdg` | a CEO leaning back in a large executive chair, arms crossed, confident | deep indigo |
-| `syndicat-secretaire-general` | a union general secretary with a small plain flag and a badge, determined | steel grey |
-| `interim-interimaire-legendaire-ex` | a legendary temp worker wearing several stacked blank visitor badges, holding a mug | teal and gold |
-| `support-responsable-support` | a support team lead wearing a headset, patient expression | silver white |
+Le prompt se compose donc : `<socle aplati> <sujet>, muted <accent> accent.` — c'est
+exactement ce que `scripts/illustration-vague.sh` envoie.
+
+> Ce fichier ne gardait qu'une table de dix signature ; elle est retirée (#121) parce que
+> `SUJETS-flow.md` la couvre, et une seconde source de sujets dériverait.
 
 ---
 
-## Planche 2 — Les objets (Collègues et Objets), pour plus tard
+## Planche Objet — les cartes Action (Collègues et Objets)
 
-```
+```text
 Nature morte sur un plan de travail sombre, objet unique au tiers inférieur, macro douce.
 ```
-Sujets : une **tasse de café** ébrichée, un **dossier à sangle** badgé, une **baie de test**,
-un **paquet de gâteaux de réunion**. Un seul objet par image, **aucun texte imprimé lisible**.
+Sujets : dans **`SUJETS-flow.md`** aussi, à la forme d'un objet unique (une **tasse de café**
+ébrichée, un **dossier à sangle** badgé, une **baie de test**…). Un seul objet par image,
+**aucun texte imprimé lisible**, aucune personne.
 
-## Planche 3 — Les trois viviers (illustrations de zone), pour plus tard
+## Planche Lieu — les trois viviers (illustrations de zone), pour plus tard
 
-```
+```text
 Wide shot of an empty workplace, strong one-point perspective, shoulder height, mixed
 end-of-day lighting (cold neon + warm lamps), midnight-blue dominant, small gold accents,
 no people, no faces, no readable signage. Square 1:1.

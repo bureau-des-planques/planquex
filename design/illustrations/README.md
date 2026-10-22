@@ -1,8 +1,12 @@
-# Illustrations — première vague (10 cartes signature)
+# Illustrations — la planche **Portrait** (les cartes de base)
 
-> **Première passe, sans curation fine** (Q16, D-007 : IA + curation). Ces dix images
-> valident la chaîne à l'échelle avant les 286. Graine notée par carte pour être
-> reproductible (`DESIGN.md` §6.5).
+> **Première passe, sans curation fine** (Q16, D-007 : IA + curation). Les dix images
+> ci-dessous valident la chaîne à l'échelle avant le reste du set. Graine notée par carte
+> pour être reproductible (`DESIGN.md` §6.5).
+>
+> Les trois planches s'appellent désormais **Portrait / Objet / Lieu** (#121) : ce dossier
+> tient le **registre** des images produites, `SUJETS-flow.md` les **sujets** (une ligne par
+> carte de base) et `ACCENTS-flow.md` l'**accent par faction** (D-046).
 
 - **Modèle** : Space Hugging Face `mcp-tools/FLUX.1-Krea-dev`, 1024×1024,
   `num_inference_steps` 24, `guidance_scale` 4.5.
@@ -30,21 +34,24 @@
 | `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `1286126774` | `syndicat-secretaire-general.webp` |
 | `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `64234642` | `interim-interimaire-legendaire-ex.webp` |
 
-## Reste à produire — les 215 autres
+## Reste à produire — les cartes de base sans illustration
 
-Les **10 cartes signature sont produites** (voir le journal, en bas). Restent les **215 autres
-cartes de base** : `node scripts/status.mjs` en compte **225** au total, dont 10 faites. Les
-**75 variantes** n'en demandent **aucune** — `secretVariant` recopie `art` de sa base, et
-`src/data/art.test.ts` l'impose.
+Les **dix cartes signature sont produites** (voir le journal, en bas). Les autres cartes de
+base restent à faire : `npm run status` en donne le compte (`cards`), et la liste des lignes
+de sujets est celle de **`SUJETS-flow.md`**. Les **variantes** n'en demandent **aucune** —
+`secretVariant` recopie `art` de sa base, et `src/data/art.test.ts` l'impose.
 
-Pour ces 215, **le sujet et l'accent de chaque carte n'existent nulle part** : `PROMPTS-flow.md`
-ne décrit que la Planche 1, ses 10 cartes signature. C'est l'obstacle ouvert de #97 — le schéma
-proposé (une table de sujets dans `design/illustrations/`, l'accent résolu **par faction** et non
-par carte) attend une décision, et deux points devaient être tranchés **avant la première image** :
-où vit le sujet, et si l'on garde deux copies (~100 Mo pour 225 images) ou une source unique.
-**La seconde est tranchée** — source unique, D-045, exécutée le 21/10/2026 (voir le §« Une seule
-source » ci-dessus). Reste la table des sujets, qui est le plan de travail de `#121`
-(`docs/SPEC-ILLUSTRATIONS.md`).
+Pour ces cartes, **le sujet et l'accent sont désormais écrits**, et l'obstacle ouvert de #97
+est levé par #121 :
+
+- **le sujet**, une ligne par carte de base, dans **`SUJETS-flow.md`** (Q10, planche
+  Portrait ; les cartes Action en objet unique, planche Objet) ;
+- **l'accent**, une ligne par faction, dans **`ACCENTS-flow.md`** : `FACTION_META.color`
+  reste la seule source, l'accent en est **ré-dérivé** et la dérivation est **testée**, donc
+  une couleur qui bouge sans son mot fait échouer la garde (D-046) ;
+- **la garde** qui vérifie les deux tables, dans `scripts/illustration-vague.test.ts`. Elle
+  remplace le second rôle de #120 (comparer deux copies) : la source unique a supprimé la
+  seconde copie, il restait à vérifier que **chaque** carte de base a un sujet utilisable.
 
 ## À curer
 
@@ -57,7 +64,7 @@ avec le socle corrigé (`DESIGN.md` §6.1) :
   déclarer réglé.
 - **Le négatif du socle n'est pas transmis** : `gflow image t2i` n'a **aucune** option de prompt
   négatif (vérifié, `--help` n'en liste pas). Le « no text, no logo » ne tient donc que par le
-  socle **positif** — et il devra tenir 215 fois de plus.
+  socle **positif** — et il devra tenir sur **toutes** les cartes restantes.
 - **Style** : le rendu reste **illustré-peint**, pas « semi-réaliste » au sens strict ; à
   resserrer avec des prompts plus contraints.
 - Les **10** images sont **branchées** : les cartes portent `art: '<id>.webp'` (`src/data/*.ts`)

@@ -221,7 +221,7 @@ même socle ; seuls le sujet et le cadrage changent.
 > qu'un contre-jour (« rim light ») **laisse les visages dans le noir** : c'est l'erreur de
 > la première vague (`design/illustrations/`, à regénérer).
 
-### 6.2 Planche 1 — Le portrait du Planqué (illustrations de Planqués)
+### 6.2 Planche **Portrait** — Le portrait du Planqué (illustrations de Planqués)
 
 - **Sujet** : un employé de bureau, seul, cadré du buste à mi-cuisse. Il **pose** sa
   posture pour la photo de trombinoscope du service.
@@ -236,7 +236,7 @@ même socle ; seuls le sujet et le cadrage changent.
 - **À éviter** : visage d'illustration générique sans caractère, surcharge de détails,
   texte, filigrane, marque, uniforme d'entreprise existante.
 
-### 6.3 Planche 2 — L'objet du service (illustrations de Collègues et d'Objets)
+### 6.3 Planche **Objet** — L'objet du service (illustrations de Collègues et d'Objets)
 
 - **Sujet** : **une** relique de bureau posée sur un plan de travail sombre : par
   exemple une **tasse de café** ébréchée, un **dossier à sangle** badgé, une **baie de
@@ -251,7 +251,7 @@ même socle ; seuls le sujet et le cadrage changent.
 - **À éviter** : plusieurs objets concurrents, cadres superposés, texte imprimé lisible,
   marque d'entreprise réelle.
 
-### 6.4 Planche 3 — Le vivier (illustrations de zone)
+### 6.4 Planche **Lieu** — Le vivier (illustrations de zone)
 
 - **Sujet** : **un lieu de travail vide de tout visage**, vu de loin : un atelier, un
   étage de bureaux ou une aile administrative. Trois variantes = les trois viviers
@@ -281,7 +281,7 @@ même socle ; seuls le sujet et le cadrage changent.
 ## 7. Le tuyau d'illustration — testé le 20/10/2026
 
 Le premier test de génération a été fait depuis un **Space Hugging Face** branché en MCP
-(`mcp-tools/FLUX.1-Krea-dev`), avec le socle §6.1 et la Planche 1 (§6.2).
+(`mcp-tools/FLUX.1-Krea-dev`), avec le socle §6.1 et la planche Portrait (§6.2).
 
 - **Prompt** (§6.1 + §6.2, en anglais — ces modèles répondent mieux ainsi) :
   « Editorial corporate dark-premium character illustration: a tired but placid office

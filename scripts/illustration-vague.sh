@@ -230,6 +230,12 @@ cd "$(dirname "$0")/.." 2>/dev/null || true
 # `cabler` n'étaient **jamais** exercés — et c'est ainsi qu'un bug réel a échappé
 # à la boucle (#97 : le nom du fichier rangé était vide).
 PROMPTS="${GFLOW_ILLUSTRATION_PROMPTS:-design/illustrations/PROMPTS-flow.md}"
+# Les deux tables de #121, et **deux chemins** parce qu'elles ne portent pas la même chose :
+# le **sujet** est une ligne par carte (`SUJETS-flow.md`), l'**accent** une ligne par
+# faction (`ACCENTS-flow.md`, dix — D-046). Un accent par carte serait la
+# seconde source que D-046 supprime, et la recopier ici la ferait revenir.
+SUJETS="${GFLOW_ILLUSTRATION_SUJETS:-design/illustrations/SUJETS-flow.md}"
+ACCENTS="${GFLOW_ILLUSTRATION_ACCENTS:-design/illustrations/ACCENTS-flow.md}"
 REGISTRE="${GFLOW_ILLUSTRATION_REGISTRE:-design/illustrations}"
 README="${GFLOW_ILLUSTRATION_README:-$REGISTRE/README.md}"
 DONNEES="${GFLOW_ILLUSTRATION_DONNEES:-src/data}"
@@ -253,17 +259,35 @@ CONSIGNER_TABLE="aucun"
 
 # ── outils du tuyau ───────────────────────────────────────────────────────
 
-# cartes : id <TAB> sujet <TAB> accent — la table « Planche 1 » de PROMPTS-flow.md
+# cartes : id <TAB> sujet — la table de SUJETS-flow.md, **une ligne par carte de base**.
+# Elle a remplacé la table « Planche 1 » de PROMPTS-flow.md (#121) : le sujet n'est plus
+# réservé aux dix signature, il couvre **toutes** les bases, et le rang n'est qu'un
+# modificateur.
+# Les blocs de code (```) montrent le **format** (`| `FACTION` | accent |`) : ils ne
+# sont pas des données. Les lire comme une ligne de table a déjà donné une faction
+# fantôme (« FACTION »), donc `cartes` et `accent_de` sautent les blocs.
 cartes() {
-  awk -F'|' '/^\| `/{ id=$2; sujet=$3; accent=$4
+  awk -F'|' '/^```/ { bloc = !bloc; next }
+    !bloc && /^\| `/{ id=$2; sujet=$3
     gsub(/^[ `]+|[ `]+$/, "", id)
     gsub(/^ +| +$/, "", sujet)
-    gsub(/^ +| +$/, "", accent)
-    printf "%s\t%s\t%s\n", id, sujet, accent }' "$PROMPTS"
+    printf "%s\t%s\n", id, sujet }' "$SUJETS"
 }
 connue()   { cartes | awk -F'\t' -v id="$1" '$1 == id { f = 1 } END { exit !f }'; }
 sujet_de() { cartes | awk -F'\t' -v id="$1" '$1 == id { print $2 }'; }
-accent_de(){ cartes | awk -F'\t' -v id="$1" '$1 == id { print $3 }'; }
+
+# faction_de ID : **le préfixe de l'id est la faction** (`AGENTS.md` §5 : `sse-…`,
+# `direction-…`). C'est ce qui permet de résoudre l'accent **par faction** au lieu de le
+# recopier sur toutes les lignes de sujets (D-046).
+faction_de() { printf '%s' "${1%%-*}" | tr '[:lower:]' '[:upper:]'; }
+
+# accent_de ID : l'accent de la faction de la carte, dans ACCENTS-flow.md.
+accent_de() {
+  local faction; faction=$(faction_de "$1")
+  awk -F'|' -v f="$faction" '/^```/ { bloc = !bloc; next }
+    !bloc && /^\| `/{ gsub(/^[ `]+|[ `]+$/, "", $2)
+    if ($2 == f) { gsub(/^ +| +$/, "", $3); print $3 } }' "$ACCENTS"
+}
 
 # socle() : le bloc de code de « ## Socle commun » — le seul endroit où il vit.
 socle() {
@@ -528,10 +552,10 @@ PY
 # produites » (ce n'est plus vrai), et ajoute une ligne au journal vivant.
 #
 # Elle rend aussi **ce qu'elle a réellement touché**, dans `CONSIGNER_TABLE` :
-# « produites », « non », ou « aucun ». Les deux tableaux ne couvrent que les dix
-# cartes de la Planche 1 : une carte hors de ce tableau (les 276 suivantes) n'a
-# **aucun** tableau à corriger, et c'est très bien — le journal est le registre
-# vivant. Dire l'inverse serait mentir.
+# « produites », « non », ou « aucun ». Les deux tableaux ne couvrent que la planche
+# **Portrait** (les dix cartes signature, `README.md`) : une carte hors de ce tableau — les
+# autres bases — n'a **aucun** tableau à corriger, et c'est très bien — le journal est le
+# registre vivant. Dire l'inverse serait mentir.
 consigner() {
   local id="$1" modele="$2" graine="$3" date="$4" tmp rapport
   CONSIGNER_TABLE="aucun"
@@ -723,11 +747,17 @@ fi
 
 # ── 2. La carte ───────────────────────────────────────────────────────────
 stage "Quelle carte ?"
-say "Les 10 cartes signature, avec leur état réel (mesuré, pas déclaré) :"
+note "La table des sujets ($SUJETS) couvre $(cartes | wc -l | tr -d ' ') cartes de base."
+say "Déjà au registre, avec leur état réel (mesuré, pas déclaré) :"
 printf '\n'
-while IFS=$'\t' read -r id sujet accent; do
-  printf '    %-34s %s\n' "$id" "$(etat_de "$id")"
+DEJA=0
+while IFS=$'\t' read -r id sujet; do
+  if [[ -f "$REGISTRE/$id.webp" ]]; then
+    printf '    %-34s %s\n' "$id" "$(etat_de "$id")"
+    DEJA=$(( DEJA + 1 ))
+  fi
 done < <(cartes)
+if (( DEJA == 0 )); then note "  aucune image pour l'instant : le registre est vide."; fi
 printf '\n'
 note "registre = l'image existe dans $REGISTRE/ ; art = une carte la référence."
 note "Les deux doivent dire oui : c'est ce que gardent src/data/art.test.ts et le build."
@@ -736,7 +766,7 @@ if [[ -z "$CARTE" ]]; then
   demander CARTE "id de la carte à produire :"
 fi
 if [[ -z "$CARTE" ]] || ! connue "$CARTE"; then
-  warn "« ${CARTE:-<vide>} » n'est pas dans la Planche 1 de $PROMPTS."
+  warn "« ${CARTE:-<vide>} » n'est pas dans la table des sujets ($SUJETS)."
   pause "Entrée pour abandonner"
   finish
   return 1
@@ -925,17 +955,17 @@ if confirm "Écrire ces valeurs dans $README ?"; then
   if ligne_journal "$CARTE"; then
     note "Ligne ajoutée au journal vivant."
     # Le message dit **ce qui s'est réellement passé**. Les deux tableaux ne
-    # couvrent que les dix cartes de la Planche 1 : pour les 276 autres, aucun
-    # tableau n'est touché — et c'est normal. Affirmer le contraire ferait
-    # croire à une mise à jour qui n'a pas eu lieu.
+    # couvrent que la planche Portrait (les dix cartes signature) : pour les autres
+    # bases, aucun tableau n'est touché — et c'est normal. Affirmer le contraire
+    # ferait croire à une mise à jour qui n'a pas eu lieu.
     case "$CONSIGNER_TABLE" in
       produites)
         note "Le tableau « Cartes produites » a été corrigé : graine et fichier à jour." ;;
       non)
         note "La carte a été **retirée** du tableau « Non produites » : elle est produite." ;;
       *)
-        note "Aucun tableau touché : cette carte n'est dans ni « Cartes produites » ni"
-        note "« Non produites » (ces deux tableaux ne couvrent que la Planche 1)."
+        note "Aucun tableau touché : cette carte n'est ni dans « Cartes produites » ni"
+        note "dans « Non produites » (ces deux tableaux ne couvrent que la planche Portrait)."
         note "Seule la ligne de journal ci-dessus a été ajoutée." ;;
     esac
   else

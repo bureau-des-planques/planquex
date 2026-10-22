@@ -177,14 +177,17 @@ export const MUTATIONS = [
     ticket: 97,
     titre: 'le registre prétend avoir corrigé un tableau qu’il n’a pas touché',
     fichier: 'scripts/illustration-vague.sh',
-    motif: `        note "Aucun tableau touché : cette carte n'est dans ni « Cartes produites » ni"
-        note "« Non produites » (ces deux tableaux ne couvrent que la Planche 1)."
+    // Réancré le 22/10/2026 (#121) : les planches sont renommées par rôle (Q9), et
+    // « Planche 1 » est devenue la planche **Portrait**. La règle est la même — le message
+    // des cartes hors tableaux ne doit pas annoncer une mise à jour qui n'a pas eu lieu.
+    motif: `        note "Aucun tableau touché : cette carte n'est ni dans « Cartes produites » ni"
+        note "dans « Non produites » (ces deux tableaux ne couvrent que la planche Portrait)."
         note "Seule la ligne de journal ci-dessus a été ajoutée." ;;`,
     remplacement:
       '        note "Et la graine des tableaux est à jour : « Cartes produites » corrigée, « Non produites » retirée." ;;',
     tests: ['scripts/illustration-vague.test.ts'],
     garde:
-      'les deux tableaux ne couvrent que la Planche 1 : pour les autres cartes, le journal seul change — l’ancien message annonçait une mise à jour qui n’avait pas eu lieu'
+      'les deux tableaux ne couvrent que la planche Portrait : pour les autres cartes, le journal seul change — l’ancien message annonçait une mise à jour qui n’avait pas eu lieu'
   }
 ];
 
