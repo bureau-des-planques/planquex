@@ -1,6 +1,6 @@
-# Message aux testeurs de l'alpha — **Alpha · 0.1.1**
+# Message aux testeurs de l'alpha — **Alpha · 0.1.2**
 
-**Adresse** : https://planquex.vercel.app
+**Adresse** : https://planquex.4k7.org
 
 Salut, et merci de tester le Bureau des Planqués. C'est une **alpha** : le jeu en solo se joue
 de bout en bout, le reste arrive. Ce qu'on cherche ce soir, c'est surtout : **est-ce que ça
