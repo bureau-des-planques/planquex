@@ -110,12 +110,26 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
       "pseudo": "Employé 404",    // le nom local du posteur
       "version": "Alpha · 0.1.2", // ce que Réglages affichait chez lui
       "statut": "en attente",     // en attente | retenu | en cours | fait | écarté
-      "raison": "",               // obligatoire dès que le statut vaut « ecarte »
-      "ticket": null              // le numéro d'issue GitHub dès qu'il y en a un
+      "raison": "",               // obligatoire dès que le statut vaut « écarté »
+      "ticket": null,             // le numéro d'issue GitHub dès qu'il y en a un
+      // Un gueulage s'affiche blanc et plus grand, même s'il finit en IP ou en OUF :
+      // c'est l'apparence qui change, jamais la famille (D-068).
+      "gueulage": false,
+      // Disposition « collée main », en POURCENTAGE du tableau — jamais en pixels, il
+      // change de taille selon l'écran. `x` et `y` vont de 0 à 100, `angle` de -5 à +5.
+      "position": { "x": 12, "y": 34, "angle": -2 },
+      // Les compteurs du pouce levé et du pouce baissé, remplis par la base (#136, #137).
+      // À zéro dans l'alpha, qui n'a aucun état partagé : un appareil ne vote qu'une fois
+      // par post-it, et personne ne vote dans l'alpha.
+      "votes": { "up": 0, "down": 0 }
     }
   ]
 }
 ```
+
+Un post-it **retiré** par son auteur (#139) **disparaît du fichier** : il n'existe pas de statut
+« retiré », et un mur qui garderait une ligne barrée dirait ce que personne n'a écrit. Le jeu ne
+connaît donc que les **cinq** statuts de la liste.
 
 Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **à la main** au fil du tri
 — c'est le prix de l'absence de backend, et il est assumé (D-058).
