@@ -134,6 +134,47 @@ fait la différence).
 5. **La version est le premier champ, et obligatoire** : un retour sans version ne dit pas s'il
    concerne encore la build courante.
 
+### 4.3 L'état du formulaire au 22/10/2026
+
+Relevé sur le formulaire public (`viewform`, **HTTP 200** — il est bien ouvert aux visiteurs).
+
+**En place :** version ; type (Remonter un bug / Proposer une feature / Gueuler) ; une section
+**Post-it OUF** complète (titre, ce que tu faisais, ce qui s'est passé, ce que tu attendais, écran,
+lien vers une image) ; une section **Post-it IP** complète (titre, l'idée, à quoi ça servirait, écran,
+lien vers une image). L'envoi de fichier a disparu : la capture se demande en **lien**.
+
+**Deux écarts avec la cible, assumés ou à trancher :**
+
+1. **« Gueuler » a sa propre section**, « Pourquoi qu'on Gueule », avec un seul champ libre
+   (« Exprime toi ») : ni titre, ni écran. Un post-it de ce type arrive donc **sans structure**, et
+   il faudra deviner de quoi il parle. Deux issues : l'**aiguiller vers la section IP** (la réponse
+   « Gueuler » reste enregistrée, donc le tri saura que c'était un coup de gueule), ou lui **ajouter
+   le titre et l'écran**. Sur le mur, « Gueuler » se range de toute façon dans les **IP** (D-058).
+2. **Le titre de la question « Capture » porte tout le texte d'aide** (« Colle un lien vers une
+   image… »). C'est le libellé qui se retrouve en en-tête de colonne dans les réponses : mieux vaut
+   le raccourcir à « Capture », et laisser la phrase dans l'**aide**.
+
+**Le ton est celui du projet** — « Recueille avis Alpha », « Tu veux quoi ? », « Exprime toi », et
+les coquilles qui vont avec : on n'y touche pas, c'est la satire.
+
+**Non vérifiable depuis l'extérieur :** les cases **« Obligatoire »**. Les deux qui comptent —
+**la version** et **le type** — doivent l'être, sinon un retour sans version ne dit pas s'il concerne
+encore la build courante.
+
+### 4.4 Si l'envoi de fichier devient nécessaire
+
+La question a été posée le 22/10/2026, et la réponse est courte : **Tally**. Sa propre
+documentation annonce « file uploads are free for all Tally users » (10 Mo par fichier sur l'offre
+gratuite) et sa procédure se lit « build a file upload form (**without login**) » — soit exactement
+ce que Google refuse. À noter : plusieurs comparateurs tiers disent l'inverse (upload réservé à
+l'offre Pro) ; **deux minutes de test tranchent**, un formulaire vide et une fenêtre privée.
+
+Microsoft Forms exige la connexion ; Framaforms n'a pas de champ fichier ; Airtable sait le faire
+mais ajoute un compte et des limites.
+
+**Mais le formulaire est un palliatif d'alpha.** La version complète du mur (D-058, #136) fait
+**poster depuis le jeu**, capture comprise : le tiers disparaît alors, avec ses réglages.
+
 ### 4.3 Une fois le formulaire modifié
 
 L'adresse **ne change pas** (seul le contenu change) : `docs/boite-a-idees.json` n'a rien à recevoir.
