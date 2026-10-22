@@ -65,7 +65,7 @@ const BASE_PLANQUES = PLANQUES.filter((card) => !card.variantOf);
 const ACTIONS = ALL_CARDS.filter(isActionCard);
 /** Les cartes Action de **base** : 8 Collègues et 3 Objets (CARD-SPEC.md §1). */
 const BASE_ACTIONS = ACTIONS.filter((card) => !card.variantOf);
-/** Les **variantes de Collègues** : les 8 dernières cartes des 286 (CARD-SPEC.md §1). */
+/** Les **variantes de Collègues** : les 8 secrètes, une par Collègue (CARD-SPEC.md §1). */
 const ACTION_VARIANTS = ACTIONS.filter((card) => card.variantOf);
 
 const STAGE_ORDER: Stage[] = ['ENTRANT', 'N+1', 'N+2'];

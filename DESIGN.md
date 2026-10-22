@@ -202,8 +202,10 @@ bureau, **tasse de café or** fumante, plante d'angle, puis le nom en bas.
 ## 6. Planches de style
 
 Trois descriptions **reproductibles**, à copier telles quelles dans un modèle d'image
-pour produire les **286 illustrations** (option A : IA + curation). Elles partagent le
-même socle ; seuls le sujet et le cadrage changent.
+pour produire les illustrations (option A : IA + curation, **D-007**) — une par Planqué
+de base, les variantes héritant de la leur. La cible suit **D-063** : **autour de 300**,
+**sans compter** ; le volume réel se lit dans `npm run status`. Elles partagent le même
+socle ; seuls le sujet et le cadrage changent.
 
 ### 6.1 Socle commun (à coller avant chaque planche)
 
@@ -297,11 +299,12 @@ Le premier test de génération a été fait depuis un **Space Hugging Face** br
 - **Résultat** : `design/tests/planque-portrait-01.webp` (1024×1024). Il confirme la
   direction : bleu nuit, or sur la lampe et la tasse, posture avachie, aucun texte.
 
-**Ce tuyau est la voie de production** des 286 illustrations (option A, D-007). Les Spaces
-disponibles en MCP : `mcp-tools/FLUX.1-Krea-dev` (rendu naturel, retenu pour les
-portraits), `mcp-tools/Qwen-Image` (meilleur pour le texte — utile aux Objets étiquetés),
-`evalstate/flux1_schnell` (essais rapides), plus l'édition (`FLUX.1-Kontext-Dev`) et le
-détourage (`not-lain/background-removal`).
+**Ce tuyau est la voie de production** des illustrations (option A, D-007) : la cible et le
+volume sont ceux du §6 (**D-063**, `npm run status`). Les Spaces disponibles en MCP :
+`mcp-tools/FLUX.1-Krea-dev` (rendu
+naturel, retenu pour les portraits), `mcp-tools/Qwen-Image` (meilleur pour le texte —
+utile aux Objets étiquetés), `evalstate/flux1_schnell` (essais rapides), plus l'édition
+(`FLUX.1-Kontext-Dev`) et le détourage (`not-lain/background-removal`).
 
 ## 8. Ce qui reste à curer (première passe assumée)
 
