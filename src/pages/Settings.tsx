@@ -73,7 +73,10 @@ export function Settings() {
 
       <section className="section panel">
         <h2>Journée d’intégration</h2>
-        <p className="muted">Les quatre gestes de la première partie, à revoir quand tu veux.</p>
+        <p className="muted">
+          Quatre étapes, et chacune ouvre son écran : le Seuil et le Stress, l’Arrivage, le
+          Chariot, la fin d’un combat. À revoir quand tu veux.
+        </p>
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
         </button>
