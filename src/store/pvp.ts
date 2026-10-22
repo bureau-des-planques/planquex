@@ -65,7 +65,7 @@ export function createMatch(
   cafeTypes: BattleCafeTypes = {}
 ): { state: BattleState; match: Match } {
   return {
-    state: createBattle(playerDeck, aiDeck, seed, cafeTypes),
+    state: createBattle(playerDeck, aiDeck, seed, cafeTypes, { deuxCamps: true }),
     match: { camp: 'player', playerDeck: [...playerDeck], aiDeck: [...aiDeck] }
   };
 }
@@ -154,7 +154,8 @@ export function joinMatch(code: string): JoinResult {
     {
       playerCafeTypes: decoded.match.playerCafeTypes,
       aiCafeTypes: decoded.match.aiCafeTypes
-    }
+    },
+    { deuxCamps: true }
   );
   return {
     ok: true,

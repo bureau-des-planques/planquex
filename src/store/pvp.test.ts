@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ALL_CARDS } from '@/data';
 import type { BattleState, PlayerId } from '@/data/types';
 import { autoDeck, deckLegal } from '@/game/deck';
-import { applyAction, createBattle } from '@/game/engine';
+import { applyAction, createBattle, legalActions } from '@/game/engine';
 
 /**
  * La partie à deux (#125) — et surtout **le contrôle qui mord** : la Direction ne joue
@@ -221,5 +221,53 @@ describe('pvp — gardes de l’écran de combat', () => {
     expect(battle).not.toMatch(/who: 'player'/);
     expect(battle).toMatch(/handover\(state, match\)/);
     expect(battle).toMatch(/joinMatch\(/);
+  });
+});
+
+/**
+ * Ticket #154 — le journal d'une partie à deux ne dit jamais « l’IA » : les deux camps
+ * sont tenus par des humains. Le **témoin** est le solo, où « L’IA » doit rester écrit :
+ * sans lui, un journal vide ou une partie qui ne joue pas passerait ce test pour rien.
+ *
+ * Le contrôle mord : sans l’option `deuxCamps` passée par `createMatch` et `joinMatch`,
+ * le journal d’une partie PvP contient « L’IA » et ces tests échouent.
+ */
+describe('pvp — le journal ne dit jamais « l’IA » à deux (#154)', () => {
+  const MOT_IA = /\bIA\b/;
+
+  /** Joue jusqu'au bout, les deux camps, première action légale non-forfait. */
+  function jouer(state: BattleState, maxCoups = 400): BattleState {
+    let s = state;
+    for (let i = 0; i < maxCoups && s.phase === 'playing'; i += 1) {
+      const action = legalActions(s).find((a) => a.type !== 'forfeit');
+      if (!action) break;
+      s = applyAction(s, action);
+    }
+    return s;
+  }
+
+  it('une partie créée à deux nomme les camps, sans « l’IA »', () => {
+    const { state } = createMatch(testDeck(), testDeck(), seedFor('player'));
+    const after = jouer(state);
+
+    // Témoin : les deux camps ont bien joué, sinon le test ne prouve rien.
+    expect(after.log.some((l) => l.includes('camp Direction'))).toBe(true);
+    expect(after.log.filter((l) => MOT_IA.test(l))).toEqual([]);
+  });
+
+  it('une partie rejointe par code ne dit pas « l’IA » non plus, et garde le même journal', () => {
+    const { state, match } = createMatch(testDeck(), testDeck(), seedFor('player'));
+    const played = jouer(state);
+    const joined = joinMatch(matchCode(played, match));
+
+    expect(joined.ok).toBe(true);
+    if (!joined.ok) return;
+    expect(joined.state.log.filter((l) => MOT_IA.test(l))).toEqual([]);
+    expect(joined.state.log).toEqual(played.log);
+  });
+
+  it('le solo écrit toujours « L’IA » (témoin)', () => {
+    const solo = jouer(createBattle(testDeck(), testDeck(), seedFor('player')));
+    expect(solo.log.some((l) => MOT_IA.test(l))).toBe(true);
   });
 });
