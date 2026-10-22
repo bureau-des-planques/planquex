@@ -242,6 +242,16 @@ le devenir sans le réclamer.
 5. La section **« Avis sur le jeux »** pourrait demander l'**écran**, comme les deux autres : un avis
    dit souvent *où* (« la lisibilité du Parc »). Facultatif, une ligne.
 
+> **Relevé du 22/10/2026 (session `planquex-infra`).** La structure du formulaire se lit **de
+> l'extérieur** : `viewform` expose `FB_PUBLIC_LOAD_DATA_`, où `[4][0][2]` est le drapeau
+> **obligatoire** (`1`/`0`). Mesuré sur le formulaire public : **21 champs**, **la version et la
+> question d'entrée sont déjà obligatoires**, tous les champs marqués « oui » en §4.1 le sont aussi,
+> et **aucun champ « Importer un fichier »** n'existe. La phrase du point 2 ci-dessus — « les cases
+> “Obligatoire” ne se lisent pas de l'extérieur » — est donc **fausse** : elles se lisent, et elles
+> sont déjà cochées. Restent à faire le **pseudo** (nulle part, point 1), **« Capture » en titre**
+> (× 2, point 3), l'**aide** de la question d'entrée (point 4) et l'**écran** sur le chemin avis
+> (point 5). Mesure : `curl` sur le `viewform`, puis lecture du `FB_PUBLIC_LOAD_DATA_` embarqué.
+
 **Le ton est celui du projet** — « Recueille avis Alpha », « Pourquoi qu'on Gueule », « Exprime toi »,
 « Non j'ai déja assez gueuler comme ça », et les coquilles qui vont avec : on n'y touche pas, c'est la
 satire.
