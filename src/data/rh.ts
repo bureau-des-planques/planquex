@@ -13,7 +13,7 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
+    attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'L’adversaire révèle une carte de sa main.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
     flavor: "Il a posé la question. Il n'a pas écouté la réponse."
   }),
   base({
