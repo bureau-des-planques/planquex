@@ -65,7 +65,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         name: 'Site différent',
         cost: ['QVT', 'MANAGEMENT'],
         damage: 60,
-        text: 'Échange ce Planqué avec un Planqué du Rack.',
+        text: 'Échange ce Planqué avec un Planqué du Banc.',
         effects: [{ kind: 'switchSelf' }]
       },
       {
@@ -132,7 +132,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         name: 'Renvoi express',
         cost: ['RH', 'ATELIER', 'RH'],
         damage: 80,
-        text: 'Échange ce Planqué avec un Planqué du Rack.',
+        text: 'Échange ce Planqué avec un Planqué du Banc.',
         effects: [{ kind: 'switchSelf' }]
       }
     ],

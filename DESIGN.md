@@ -136,10 +136,10 @@ secondaire (Conditions, Partie à deux, Journal) est **replié après**.
 | Zone | Classe | Règle |
 |---|---|---|
 | Pas-à-pas | `.pas-a-pas` | **en haut**, sous l'en-tête, `position: sticky` ; pas de fond assombri. « Suivant » et « Précédent » **font défiler** la page vers la première cible (au centre) ; le contour doré `[data-pas-a-pas]` ne marque que les cibles de l'étape. Défilement instantané sous `prefers-reduced-motion` ou « Mouvement réduit » |
-| Plateau | `.board`, `.board__side` | le camp adverse **en haut** (Rack puis Poste), le mien **en bas** (Poste puis Rack) : les deux Postes se font face. L'étiquette (« Poste », « Rack ») est à gauche, le contenu à droite |
+| Plateau | `.board`, `.board__side` | le camp adverse **en haut** (Banc puis Poste), le mien **en bas** (Poste puis Banc) : les deux Postes se font face. L'étiquette (« Poste », « Banc ») est à gauche, le contenu à droite |
 | Actions | `.actions-panel` | « Au Poste » : café, Rotation, Talent, puis Pressions et « Fin du tour » |
 | Main | `.hand`, `.hand__card` | une **bande** de cartes-boutons ; la marque « Jouable » dit lesquelles ont un geste |
-| Pose | `.pose` | une carte **choisie** (`aria-pressed`, bordure `--accent`) ouvre un panneau qui la nomme ; les gestes disent **où** : « Poser au Poste », « Mettre au Rack 2 », « Jouer cet Objet » |
+| Pose | `.pose` | une carte **choisie** (`aria-pressed`, bordure `--accent`) ouvre un panneau qui la nomme ; les gestes disent **où** : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet » |
 | Écran large (≥ 900 px) | `.battle__table` | le plateau à gauche, la console du joueur à droite |
 
 ---

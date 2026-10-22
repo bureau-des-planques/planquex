@@ -1543,7 +1543,7 @@ h2 {
   gap: 0.2rem 0.6rem;
 }
 
-/* Le Poste est la pièce maîtresse du camp : un cadre à lui, plus marqué que le Rack. */
+/* Le Poste est la pièce maîtresse du camp : un cadre à lui, plus marqué que le Banc. */
 .board__poste {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
@@ -1551,8 +1551,8 @@ h2 {
   padding: 0.35rem 0.55rem;
 }
 
-/* Le Rack : trois places, côte à côte. Une place libre est en pointillé. */
-.rack {
+/* Le Banc : trois places, côte à côte. Une place libre est en pointillé. */
+.bench {
   display: grid;
   gap: 0.35rem;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1561,7 +1561,7 @@ h2 {
   padding: 0;
 }
 
-.rack__slot {
+.bench__slot {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -1575,18 +1575,18 @@ h2 {
   padding: 0.3rem 0.45rem;
 }
 
-.rack__slot.is-free {
+.bench__slot.is-free {
   align-items: center;
   border-style: dashed;
 }
 
-.rack__name {
+.bench__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.rack__stress {
+.bench__stress {
   font-size: 0.68rem;
 }
 

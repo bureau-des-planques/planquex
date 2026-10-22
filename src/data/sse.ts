@@ -98,7 +98,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Respiration', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Relaxation', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est invité à relâcher les épaules. L’échéance, elle, reste serrée.' }],
-    flavor: 'Respire. Le Rack est encore là.'
+    flavor: 'Respire. Le Banc est encore là.'
   }),
   base({
     id: 'sse-medecin-chef',
@@ -215,7 +215,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Remplacement', cost: ['SSE'], damage: 20, text: 'Échange ce Planqué avec un Planqué du Rack.', effects: [{ kind: 'switchSelf' }] }],
+    attacks: [{ name: 'Remplacement', cost: ['SSE'], damage: 20, text: 'Échange ce Planqué avec un Planqué du Banc.', effects: [{ kind: 'switchSelf' }] }],
     flavor: 'Il remplace tout le monde. Personne ne le remplace.'
   }),
   base({

@@ -426,7 +426,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 65,
     retreat: 1,
-    attacks: [{ name: 'Mutation', cost: ['QVT'], damage: 10, text: 'Échange ce Planqué avec un Planqué du Rack.', effects: [{ kind: 'switchSelf' }] }],
+    attacks: [{ name: 'Mutation', cost: ['QVT'], damage: 10, text: 'Échange ce Planqué avec un Planqué du Banc.', effects: [{ kind: 'switchSelf' }] }],
     flavor: 'Le poste est ouvert. La mobilité est gelée.'
   }),
   base({

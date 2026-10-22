@@ -29,7 +29,7 @@ export const ALL_CARDS: Card[] = [
 /** Les 8 Collègues, 3 Objets et leurs 8 variantes du lancement (D-005), isolés pour les tests et l'UI. */
 export { ALL_ACTION_CARDS };
 
-/** Vrai pour un Planqué — le seul type qui se pose au Poste ou au Rack. */
+/** Vrai pour un Planqué — le seul type qui se pose au Poste ou au Banc. */
 export function isPlanque(card: Card | undefined): card is PlanqueCard {
   return card?.kind === 'PLANQUE';
 }

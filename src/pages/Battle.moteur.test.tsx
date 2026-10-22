@@ -79,7 +79,7 @@ function collegue(slug: string, nom: string, effects: AttackEffect[]): string {
 const NOM_COLLEGUE_DEFAUSSE = 'Fixture Circulaire';
 const NOM_TALENT_DEGATS = 'Fixture Pression Manager';
 const NOM_EN_JOUANT = 'Fixture Sourcing';
-const NOM_RACK = 'Fixture Polyvalence';
+const NOM_BANC = 'Fixture Polyvalence';
 
 const COLLEGUE_DEFAUSSE = collegue('defausse', NOM_COLLEGUE_DEFAUSSE, [{ kind: 'discardHand', target: 'self', amount: 1 }]);
 const COLLEGUE_REVELE = collegue('revele', 'Fixture Audit', [{ kind: 'reveal' }]);
@@ -107,9 +107,9 @@ const EVOLUTION = (() => {
   };
   return enregistrer(carte);
 })();
-const RACK = planque('rack', NOM_RACK, {
+const BANC = planque('banc', NOM_BANC, {
   name: 'Fixture Polyvalence',
-  text: 'Fixture : un café vers un Planqué du Rack.',
+  text: 'Fixture : un café vers un Planqué du Banc.',
   kind: 'attachEnergy',
   target: 'rack'
 });
@@ -317,7 +317,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
   describe('6 · Talent « en jouant » (#163)', () => {
     /**
      * Par **évolution** : la pose d'un Entrant depuis la main d'ouverture n'est pas atteignable
-     * (la mise en place remplit le Poste et le Rack), et D-081 range l'évolution parmi les mises
+     * (la mise en place remplit le Poste et le Banc), et D-081 range l'évolution parmi les mises
      * en jeu. Le N+1 porte le Talent, l'Entrant est déjà au Poste (mise en place).
      */
     it('le journal indique le déclenchement une seule fois, et aucun bouton Talent n’est proposé', () => {
@@ -335,40 +335,40 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
     });
   });
 
-  // ── 7 · Café vers le Rack (#165, D-082) ────────────────────────────────────
-  describe('7 · café vers un Planqué du Rack (#165)', () => {
-    const deck = [RACK, RACK, BASICS[0], ...NON_ENTRANTS_REELS];
-    const auPoste = (e: BattleState) => e.players.player.active?.cardId === RACK;
-    const rackVide = (e: BattleState) => e.players.player.bench.every((c) => c === null);
-    const rackPlein = (e: BattleState) => e.players.player.bench.some((c) => c !== null);
+  // ── 7 · Café vers le Banc (#165, D-082) ────────────────────────────────────
+  describe('7 · café vers un Planqué du Banc (#165)', () => {
+    const deck = [BANC, BANC, BASICS[0], ...NON_ENTRANTS_REELS];
+    const auPoste = (e: BattleState) => e.players.player.active?.cardId === BANC;
+    const bancVide = (e: BattleState) => e.players.player.bench.every((c) => c === null);
+    const bancPlein = (e: BattleState) => e.players.player.bench.some((c) => c !== null);
 
-    it('sans Planqué au Rack, le Talent n’est pas proposé', () => {
-      const s = nouvellePartie(deck, (e) => auPoste(e) && rackVide(e));
+    it('sans Planqué au Banc, le Talent n’est pas proposé', () => {
+      const s = nouvellePartie(deck, (e) => auPoste(e) && bancVide(e));
       ouvrir(s, deck);
       expect(boutonsTalent()).toHaveLength(0);
     });
 
-    it('avec un Planqué au Rack, le Talent est proposé, puis le choix du Planqué est affiché', () => {
-      const s = nouvellePartie(deck, (e) => auPoste(e) && rackPlein(e));
+    it('avec un Planqué au Banc, le Talent est proposé, puis le choix du Planqué est affiché', () => {
+      const s = nouvellePartie(deck, (e) => auPoste(e) && bancPlein(e));
       const attendus = s.players.player.bench.filter(Boolean).length;
       ouvrir(s, deck);
 
       const talent = boutonsTalent();
-      expect(talent, 'le Talent vers le Rack est proposé').toHaveLength(1);
+      expect(talent, 'le Talent vers le Banc est proposé').toHaveLength(1);
       fireEvent.click(talent[0] as HTMLElement);
 
-      expect(encartDeChoix(), 'le choix du Planqué du Rack est affiché').not.toBeNull();
+      expect(encartDeChoix(), 'le choix du Planqué du Banc est affiché').not.toBeNull();
       expect(boutonsDeChoix()).toHaveLength(attendus);
     });
 
-    it.fails('… et le bouton nomme le Planqué du Rack — MANQUE À L’ÉCRAN : « Choisir cette carte » sans nom (dette #165)', () => {
-      const s = nouvellePartie(deck, (e) => auPoste(e) && rackPlein(e));
+    it.fails('… et le bouton nomme le Planqué du Banc — MANQUE À L’ÉCRAN : « Choisir cette carte » sans nom (dette #165)', () => {
+      const s = nouvellePartie(deck, (e) => auPoste(e) && bancPlein(e));
       ouvrir(s, deck);
       fireEvent.click(boutonsTalent()[0] as HTMLElement);
 
-      const nomsDuRack = s.players.player.bench.flatMap((c) => (c ? [getCard(c.cardId)?.name ?? ''] : []));
+      const nomsDuBanc = s.players.player.bench.flatMap((c) => (c ? [getCard(c.cardId)?.name ?? ''] : []));
       for (const bouton of boutonsDeChoix()) {
-        expect(nomsDuRack.some((nom) => bouton.textContent?.includes(nom))).toBe(true);
+        expect(nomsDuBanc.some((nom) => bouton.textContent?.includes(nom))).toBe(true);
       }
     });
   });

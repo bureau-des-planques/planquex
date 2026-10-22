@@ -59,12 +59,12 @@ describe('Talent « en jouant » — déclenchement à la mise en jeu (#163, D-0
     expect(apres.log.at(-1)).toContain('Sourcing');
   });
 
-  it('poser au Rack déclenche le Talent aussi', () => {
+  it('poser au Banc déclenche le Talent aussi', () => {
     enregistrerEntrant([{ kind: 'draw', amount: 1 }]);
     const avant = scene();
     avant.players.player.bench[0] = null;
-    avant.players.player.hand = [createInstance('test-entrant-en-jouant', 0, 'jouant-rack')];
-    const apres = applyAction(avant, { type: 'playBasic', uid: 'jouant-rack', slot: 0 });
+    avant.players.player.hand = [createInstance('test-entrant-en-jouant', 0, 'jouant-banc')];
+    const apres = applyAction(avant, { type: 'playBasic', uid: 'jouant-banc', slot: 0 });
     expect(apres.players.player.hand).toHaveLength(1);
   });
 

@@ -85,7 +85,7 @@ export function Settings() {
       <section className="section panel">
         <h2>Pas-à-pas du combat</h2>
         <p className="muted">
-          Cinq étapes sur le premier combat : le Poste, le Rack, le café, la Pression,
+          Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression,
           les Conditions et la fin. À revoir quand tu veux.
         </p>
         <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>

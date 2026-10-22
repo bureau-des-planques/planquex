@@ -3,7 +3,7 @@ import { planqueBase, secretVariant } from './planque';
 
 /**
  * Faction **Atelier** (`ATL`) — Combat, vivier **Atelier** (D-024, D-026).
- * Archétype : aggro / midrange, « gros dégâts, gros Seuil, dégâts au Rack, jeu direct »
+ * Archétype : aggro / midrange, « gros dégâts, gros Seuil, dégâts au Banc, jeu direct »
  * (`CARD-SPEC.md` §3). Les intitulés sont des postes de terrain, les Pressions des gestes
  * et des outils, les Talents des manies de métier (D-027).
  */
@@ -138,7 +138,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         name: 'Déblocage',
         cost: ['ATELIER'],
         damage: 10,
-        text: 'Échange ce Planqué avec un Planqué du Rack.',
+        text: 'Échange ce Planqué avec un Planqué du Banc.',
         effects: [{ kind: 'switchSelf' }]
       }
     ],

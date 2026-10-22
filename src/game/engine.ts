@@ -483,10 +483,10 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   discardFirstCafes(player.active, card.retreat);
   const outgoing = player.active;
   // Seul le Poste peut porter un statut (D-030) : le sortant les perd en rejoignant le
-  // Rack, et l'entrant n'en porte aucun. D-033 (4) : il perd aussi les **effets
+  // Banc, et l'entrant n'en porte aucun. D-033 (4) : il perd aussi les **effets
   // d'attaque** (ex. `damageReduction`), pas ses dégâts ni ses cafés.
   clearAttackEffects(outgoing);
-  // L'entrant arrive du Rack, où aucun effet d'attaque ne se pose : rien d'autre à purger.
+  // L'entrant arrive du Banc, où aucun effet d'attaque ne se pose : rien d'autre à purger.
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
@@ -496,7 +496,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
 
 /**
  * Talent « en jouant » (D-081) : résolu **une fois**, juste après la mise en jeu du Planqué
- * `instance` (pose au Poste ou au Rack, évolution). Une instance n'entre en jeu qu'une fois,
+ * `instance` (pose au Poste ou au Banc, évolution). Une instance n'entre en jeu qu'une fois,
  * donc aucun drapeau n'est nécessaire. Il ne figure jamais parmi les actions `ability`.
  */
 function declencheALaPose(state: BattleState, who: PlayerId, instance: CardInstance) {
@@ -517,7 +517,7 @@ export function useAbility(state: BattleState): BattleState {
   const ability = card.ability;
   // Un Talent « en jouant » ne se déclenche jamais à la demande (D-081).
   if (ability.trigger === 'onPlay') return state;
-  // Un Talent vers le Rack n'a rien à viser s'il n'y a pas de Planqué au Rack (D-082).
+  // Un Talent vers le Banc n'a rien à viser s'il n'y a pas de Planqué au Banc (D-082).
   if (ability.target === 'rack' && !player.bench.some(Boolean)) return state;
   // Défausse de sa propre main sur une main vide : le Talent n'est pas proposé (D-076).
   if (defausseImpossible(player, ability.effects)) return state;
@@ -551,8 +551,8 @@ function resolveAbility(state: BattleState, who: PlayerId, instance: CardInstanc
       const cafe = drawCafeType(state, who);
       if (!cafe) break;
       if (ability.target === 'rack') {
-        // Vers le Rack (D-082) : le joueur choisit le Planqué qui reçoit le café. Pas de Planqué
-        // au Rack : rien à viser, donc rien à attacher (le Talent n'est pas proposé, `legalActions`).
+        // Vers le Banc (D-082) : le joueur choisit le Planqué qui reçoit le café. Pas de Planqué
+        // au Banc : rien à viser, donc rien à attacher (le Talent n'est pas proposé, `legalActions`).
         if (state.players[who].bench.some(Boolean)) ouvrirChoix(state, { kind: 'attacher', who, cafe });
         break;
       }
@@ -596,7 +596,7 @@ function applyTalentEffects(state: BattleState, who: PlayerId, attacker: CardIns
  * affectent le défenseur. Un seul plancher, à la dernière étape : une réduction ne doit
  * pas être rognée à 0 avant que la Vulnérabilité ne s'ajoute.
  *
- * La **Vulnérabilité** vaut +20 **au Poste seulement** : un Planqué du Rack n'encaisse
+ * La **Vulnérabilité** vaut +20 **au Poste seulement** : un Planqué du Banc n'encaisse
  * jamais la Vulnérabilité, même frappé par la même Pression (D-031). `slot` est donc
  * obligatoire — un appelant qui ignore où se trouve sa cible ne compile pas.
  */
@@ -651,7 +651,7 @@ function clearStatus(card: CardInstance, status: Status) {
 
 /**
  * Une évolution ou une rotation purgent les conditions (D-030 : seul le Planqué au
- * **Poste** en porte ; retourner au Rack ou évoluer les efface).
+ * **Poste** en porte ; retourner au Banc ou évoluer les efface).
  *
  * Elle ne touche **que** les conditions : le Talent `antiStatus` et le réveil de la
  * Sieste s'en servent, et ils ne doivent pas effacer une réduction de Stress.
@@ -887,7 +887,7 @@ export function choose(state: BattleState, uid: string): BattleState {
     );
     return next;
   }
-  // Attacher au Rack (D-082) : le café va au Planqué du Rack désigné.
+  // Attacher au Banc (D-082) : le café va au Planqué du Banc désigné.
   const cible = player.bench.find((card) => card?.uid === uid);
   if (!cible) return state;
   cible.energy.push(choix.cafe);
@@ -1079,7 +1079,7 @@ function hasPlanques(player: PlayerState): boolean {
 
 /**
  * Ouvre la relève d'un camp : `pendingPromotion` la retient, le message la montre.
- * Le plateau porte la file — un Poste vide avec un Rack garni reste à pourvoir —
+ * Le plateau porte la file — un Poste vide avec un Banc garni reste à pourvoir —
  * donc un seul identifiant suffit, y compris après un double craquage (D-031).
  */
 function awaitPromotion(state: BattleState, who: PlayerId) {
@@ -1164,7 +1164,7 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
   next.log.push(`${sujet(next, who)} ${verbe(next, who, 'envoies', 'envoie')} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
 
   // Double craquage (D-031) : l'attaquant a choisi en premier, c'est au tour de
-  // l'autre camp. Le plateau porte la file — un Poste vide avec un Rack garni
+  // l'autre camp. Le plateau porte la file — un Poste vide avec un Banc garni
   // reste à pourvoir — donc aucun champ supplémentaire n'est nécessaire.
   const opponent: PlayerId = who === 'player' ? 'ai' : 'player';
   const other = next.players[opponent];
@@ -1542,7 +1542,7 @@ export function legalAttacks(state: BattleState): Attack[] {
   );
 }
 
-/** Les Planqués du camp, Poste et Rack, dans cet ordre. */
+/** Les Planqués du camp, Poste et Banc, dans cet ordre. */
 function inPlay(player: PlayerState): CardInstance[] {
   return [player.active, ...player.bench].filter(Boolean) as CardInstance[];
 }
@@ -1617,7 +1617,7 @@ export function legalActions(state: BattleState): BattleAction[] {
     for (const handCard of player.hand) actions.push({ type: 'priorityShift', uid: handCard.uid });
   }
 
-  // Poser un Entrant : au Poste s'il est vide, ailleurs sur chaque place libre du Rack.
+  // Poser un Entrant : au Poste s'il est vide, ailleurs sur chaque place libre du Banc.
   const freeSlots: ('active' | number)[] = player.active ? [] : ['active'];
   player.bench.forEach((card, index) => {
     if (!card) freeSlots.push(index);
@@ -1648,7 +1648,7 @@ export function legalActions(state: BattleState): BattleAction[] {
     for (const target of inPlay(player)) actions.push({ type: 'attachEnergy', targetUid: target.uid });
   }
 
-  // Rotation : une fois par tour, vers un Rack occupé, si le Poste peut payer.
+  // Rotation : une fois par tour, vers un Banc occupé, si le Poste peut payer.
   // Sieste et Immobilisation la bloquent aussi (D-033 (2)) : la liste ne propose pas
   // ce que `retreat` refuse.
   if (!player.hasRetreated && player.active && !retreatBlockedByStatus(player.active)) {

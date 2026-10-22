@@ -5,7 +5,7 @@ import { MOTS_PAR_MINUTE } from '@/components/journee-etapes';
  * d'intégration (#130), qui couvre le premier lancement ; celui-ci couvre la première
  * partie.
  *
- * Cinq choses qu'un invité ne devine pas en jouant : le **Poste** et le **Rack**, le
+ * Cinq choses qu'un invité ne devine pas en jouant : le **Poste** et le **Banc**, le
  * **café**, la **Pression**, les **Conditions**, la **fin**. Chaque étape **désigne**
  * l'élément dont elle parle (`cibles`) au lieu de le décrire de loin : la valeur est le
  * `data-pas-a-pas` que `Battle.tsx` pose sur l'élément, et `styles.css` le met en
@@ -22,7 +22,7 @@ import { MOTS_PAR_MINUTE } from '@/components/journee-etapes';
 
 /** Les éléments de l'écran de combat qu'une étape peut désigner. */
 export type CibleCombat =
-  /** Le plateau : le Poste et le Rack (les deux rangées du Planqué). */
+  /** Le plateau : le Poste et le Banc (les deux rangées du Planqué). */
   | 'plateau'
   /** La main du joueur, d'où partent « Poser » et « Évolution ». */
   | 'main'
@@ -48,9 +48,9 @@ export interface EtapeCombat {
 
 export const ETAPES_COMBAT: readonly EtapeCombat[] = [
   {
-    titre: 'Le Poste et le Rack',
+    titre: 'Le Poste et le Banc',
     texte:
-      'Le plateau a deux rangées : le Poste, un seul Planqué, celui qui prend les Pressions ; et le Rack, trois places pour préparer la suite. Tu poses depuis ta main : un Planqué Entrant au Poste ou au Rack, un N+1 ou un N+2 sur son prédécesseur.',
+      'Le plateau a deux rangées : le Poste, un seul Planqué, celui qui prend les Pressions ; et le Banc, trois places pour préparer la suite. Tu poses depuis ta main : un Planqué Entrant au Poste ou au Banc, un N+1 ou un N+2 sur son prédécesseur.',
     cibles: ['plateau', 'main']
   },
   {
@@ -74,7 +74,7 @@ export const ETAPES_COMBAT: readonly EtapeCombat[] = [
   {
     titre: 'La fin',
     texte:
-      'Trois Interventions et la partie est gagnée : un Planqué qui craque en rapporte une à l’adversaire, un COMEX deux. Quand ton Poste craque, tu choisis ta relève dans le Rack ; sans Planqué en jeu, c’est la défaite.',
+      'Trois Interventions et la partie est gagnée : un Planqué qui craque en rapporte une à l’adversaire, un COMEX deux. Quand ton Poste craque, tu choisis ta relève dans le Banc ; sans Planqué en jeu, c’est la défaite.',
     cibles: ['interventions', 'poste']
   }
 ];

@@ -28,7 +28,7 @@ import { satisfiesCafeCost } from '@/game/rules';
  *
  *   1. jouer une **carte Action** utile (un Objet illimité ou le Collègue du tour) ;
  *   2. **évoluer**, en préférant le Poste ;
- *   3. **poser un Entrant** si le Poste est vide, sinon au premier Rack libre ;
+ *   3. **poser un Entrant** si le Poste est vide, sinon au premier Banc libre ;
  *   4. le **Talent** du Poste, une fois par tour ;
  *   5. **attacher un café** au Poste ;
  *   6. jouer la **meilleure Pression** abordable (dégâts effectifs) ;
@@ -86,12 +86,12 @@ export function nextAction(state: BattleState, level: AiLevel = 1): BattleAction
   if (state.pendingPromotion) {
     const who = state.pendingPromotion;
     if (level === 2) {
-      // La relève se tranche par évaluation : chaque Rack garni est un candidat,
+      // La relève se tranche par évaluation : chaque Banc garni est un candidat,
       // et l'on garde celui qui donne la meilleure position au camp qui relève.
       return bestEvaluatedAction(state, legalActions(state), who);
     }
     const benchIndex = chooseBench(state, who);
-    // Le moteur ne pose `pendingPromotion` que si le Rack n'est pas vide ; cette garde
+    // Le moteur ne pose `pendingPromotion` que si le Banc n'est pas vide ; cette garde
     // évite une boucle si une future règle changeait ce contrat.
     if (benchIndex < 0) return null;
     return { type: 'promoteActive', benchIndex };
@@ -165,7 +165,7 @@ function chooseAttack(state: BattleState, legal: readonly BattleAction[]): Battl
   return best;
 }
 
-/** Relève : le Rack le plus solide, premier index en cas d'égalité. */
+/** Relève : le Banc le plus solide, premier index en cas d'égalité. */
 function chooseBench(state: BattleState, who: PlayerId): number {
   const bench = state.players[who].bench;
   let best = -1;
@@ -190,7 +190,7 @@ function chooseBench(state: BattleState, who: PlayerId): number {
  *
  * - `points` : une **Intervention** marquée vaut ce nombre de points d'évaluation.
  *   C'est le terme le plus lourd : 3 Interventions gagnent la partie.
- * - `board` : le **Seuil restant × cafés utiles** de **mon** plateau (Poste et Rack).
+ * - `board` : le **Seuil restant × cafés utiles** de **mon** plateau (Poste et Banc).
  * - `rival` : le plateau **adverse**, un risque : son poids est **négatif**.
  * - `safety` : le **Seuil restant au Poste** — ce que mon Poste peut encore encaisser.
  *   La menace entrante n'y est **pas** soustraite : elle est comptée une seule fois,
@@ -230,7 +230,7 @@ export interface EvaluationWeights {
  *
  * Trois réglages méritent une explication :
  *
- * - `rival` est **négatif et plus léger** que `board` : un Planqué gagné au Rack vaut
+ * - `rival` est **négatif et plus léger** que `board` : un Planqué gagné au Banc vaut
  *   plus qu'un Seuil pris sur l'adversaire. Un dégât peut être soigné, un Planqué
  *   reste. C'est aussi ce qui fait que la Direction **développe son plateau avant de
  *   frapper** — une Pression termine le tour (D-033), développer est gratuit.
@@ -298,7 +298,7 @@ function planqueValue(instance: CardInstance): number {
 
 /**
  * Valeur du plateau d'un camp : la somme des **Seuils restants × cafés utiles** de ses
- * Planqués, Poste et Rack. Le Rack ne vaut pas moins que le Poste : un Planqué
+ * Planqués, Poste et Banc. Le Banc ne vaut pas moins que le Poste : un Planqué
  * préparé vaut son Seuil et ses cafés — c'est la mesure qui l'a décidé.
  */
 function boardValue(player: PlayerState): number {
@@ -310,7 +310,7 @@ function boardValue(player: PlayerState): number {
 /**
  * **Menace** d'un camp : les dégâts qu'il peut porter au Poste adverse **avec les
  * cafés qu'il a**. C'est ce qui rend la Direction **concentrée** : un café au Poste
- * qui débloque une Pression vaut bien plus qu'un café réparti sur le Rack.
+ * qui débloque une Pression vaut bien plus qu'un café réparti sur le Banc.
  *
  * Les conditions réduisent la menace : l'**Immobilisation** interdit toute Pression,
  * la **Sieste** et la **Dérive** la font échouer une fois sur deux (D-033).
@@ -518,7 +518,7 @@ function bestEvaluatedAction(
  * - la décision ne lit **jamais** `state.players[adversaire].hand` ni `.deck` (contenu) :
  *   seuls leurs **comptes** (`hand.length`, `deck.length`), déjà visibles de la table ;
  * - le pool (`unknownPool`) est construit sans lire la main ni le Deck adverses : il ne
- *   retire que mes cartes (main, Deck) et les cartes **publiques** (Postes, Racks,
+ *   retire que mes cartes (main, Deck) et les cartes **publiques** (Postes, Bancs,
  *   défausses des deux camps) ;
  * - les tirages passent par un générateur **seedé** dérivé de la **graine de la partie**
  *   (`state.seed`) et du tour, jamais de `state.rng` : aucun tirage ne consomme le flux réel
@@ -555,7 +555,7 @@ interface ScoredMove {
 /**
  * **Pool des cartes inconnues** du camp `who`, vu de sa place : chaque carte que le
  * catalogue permet (`MAX_COPIES_PER_NAME` exemplaires de chaque carte), **moins** celles
- * qu'il voit — sa main, son Deck, les Postes et Racks des deux camps, les défausses des
+ * qu'il voit — sa main, son Deck, les Postes et Bancs des deux camps, les défausses des
  * deux camps. Il reste donc exactement les cartes que l'adversaire peut tenir en main ou
  * en Deck. Ordre : celui de `ALL_CARDS`, donc déterministe.
  *
@@ -591,7 +591,7 @@ function searchSeed(state: BattleState, salt: number): RngState {
 /**
  * **Monde** : copie de `state` où la main et le Deck du camp adverse sont tirés dans le
  * pool (`unknownPool`). Seuls les **comptes** de la main et du Deck adverses sont lus.
- * Les autres champs adverses (Postes, Racks, défausse, points, Machine) sont publics et
+ * Les autres champs adverses (Postes, Bancs, défausse, points, Machine) sont publics et
  * repris tels quels. Exporté pour le test d'équité (`ia-recherche.test.ts`) : le monde
  * tiré ne doit jamais dépendre du **contenu** de la main réelle de l'adversaire.
  */

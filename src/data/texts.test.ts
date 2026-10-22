@@ -58,11 +58,11 @@ interface Cue<K extends string> {
 /*
  * Frontières de mot (#166). Un motif sans `\b` trouve son mot **dans un autre** : « demain »,
  * « maintenance » ou « mainmise » déclenchaient `main`, « recherche » déclenchait `cherche`.
- * Règle : un mot **entier** (`main`, `deck`, `rack`, `café`) porte `\b` des deux côtés ; une
+ * Règle : un mot **entier** (`main`, `deck`, `banc`, `café`) porte `\b` des deux côtés ; une
  * **racine** ne porte que le `\b` de début, parce que la fin varie (conjugaison, accord,
  * dérivé) : `défauss` couvre défausse / défausser, `cherch` couvre cherche / cherchent,
  * `immobilis` couvre immobilisé / immobilisation, `deriv` couvre dérivé / dérive.
- * Les mots pluriels sont explicites (`mains?`, `racks?`) plutôt que supposés.
+ * Les mots pluriels sont explicites (`mains?`, `bancs?`) plutôt que supposés.
  */
 const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   // `discardEnergy` retire un café au Planqué d'en face (engine.ts : `discardFirstCafes(defender, 1)`).
@@ -78,8 +78,8 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   { label: 'prend N de stress', pattern: /\bprend (\d+)[^.]*stress/, kinds: ['selfDamage'] },
   // Racines : `surcharg` couvre surchargé, `epuisement` reste le nom (EPUISEMENT).
   { label: 'statut nommé', pattern: /\b(?:surcharg|epuisement|sieste|immobilis|deriv)/, kinds: ['status'] },
-  // `switchSelf` échange le Poste avec le premier Planqué du Rack (engine.ts).
-  { label: 'Rack', pattern: /\bracks?\b/, kinds: ['switchSelf'] },
+  // `switchSelf` échange le Poste avec le premier Planqué du Banc (engine.ts).
+  { label: 'Banc', pattern: /\bbancs?\b/, kinds: ['switchSelf'] },
   // La main n'est touchée que par une défausse (D-076) ; révéler et chercher viendront (D-078, D-080).
   { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand', 'reveal', 'search'] },
   // `reveal` écrit la carte, ou la main, dans le journal (D-078).
@@ -94,11 +94,11 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
 /**
  * Les mots d'un **Talent**, avec le `AbilityKind` qui peut les réaliser.
  *
- * Un Talent n'a pas accès aux primitives d'attaque : `Rack`, `défausse`, `cherche`,
+ * Un Talent n'a pas accès aux primitives d'attaque : `Banc`, `défausse`, `cherche`,
  * `main`, `deck` n'ont donc aucune primitive de Talent. `attachEnergy` attache un
  * café tiré dans le Deck au **Poste** (engine.ts : `player.active.energy.push(cafe)`),
  * et `heal` / `antiStatus` ne
- * soignent que le Poste : viser le Rack ou la main est un mensonge.
+ * soignent que le Poste : viser le Banc ou la main est un mensonge.
  */
 const CUES_TALENT: readonly Cue<AbilityKind>[] = [
   { label: 'café', pattern: /\bcafes?\b/, kinds: ['attachEnergy'] },
@@ -107,14 +107,14 @@ const CUES_TALENT: readonly Cue<AbilityKind>[] = [
   { label: 'retire un statut', pattern: /\bretire un statut/, kinds: ['antiStatus'] },
   { label: 'subit N de moins', pattern: /\bsubit (\d+)[^.]*de moins/, kinds: ['reduceDamage'] },
   // Aucune primitive de Talent ne défausse, ne cherche, ne touche la main, le deck ou le
-  // Rack. Le déclenchement « en jouant » se vérifie à part (`verifierTalent`, D-081).
+  // Banc. Le déclenchement « en jouant » se vérifie à part (`verifierTalent`, D-081).
   // Racines (#166) : `defauss` et `cherch` ne portent que le `\b` de début, pour que
   // « recherche » ne déclenche pas `cherche`.
   { label: 'défausse', pattern: /\bdefauss/, kinds: [] },
   { label: 'cherche', pattern: /\bcherch/, kinds: [] },
   { label: 'main', pattern: /\bmains?\b/, kinds: [] },
   { label: 'deck', pattern: /\bdecks?\b/, kinds: [] },
-  { label: 'Rack', pattern: /\bracks?\b/, kinds: [] },
+  { label: 'Banc', pattern: /\bbancs?\b/, kinds: [] },
 ];
 
 interface Attente {
@@ -138,7 +138,7 @@ const ATTENTES_EFFET: Record<AttackEffectKind, Attente | null> = {
   draw: { pattern: /pioche (\d+) carte/, montantGroupe: 1 },
   discardEnergy: { pattern: /cafes?\b/ },
   selfDamage: { pattern: /prend (\d+)[^.]*stress/, montantGroupe: 1 },
-  switchSelf: { pattern: /rack/ },
+  switchSelf: { pattern: /banc/ },
   reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
   discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 },
   damage: { pattern: /(\d+) degats? au/, montantGroupe: 1 },
@@ -249,12 +249,12 @@ function verifierTalent(
     if (!CUES_EFFET.some((cue) => cue.pattern.test(normalise))) problemes.push('texte de Talent sans mécanique');
     return problemes;
   }
-  // Un café attaché au Rack (D-082) est le seul cas où « Rack » désigne une primitive de Talent.
-  const versRack = ability.kind === 'attachEnergy' && ability.target === 'rack';
-  const cues = versRack ? CUES_TALENT.filter((cue) => cue.label !== 'Rack') : CUES_TALENT;
+  // Un café attaché au Banc (D-082) est le seul cas où « Banc » désigne une primitive de Talent.
+  const versBanc = ability.kind === 'attachEnergy' && ability.target === 'rack';
+  const cues = versBanc ? CUES_TALENT.filter((cue) => cue.label !== 'Banc') : CUES_TALENT;
   const problemes = verifierCues(normalise, new Set([ability.kind]), cues);
-  if (ability.kind === 'attachEnergy' && /\bracks?\b/.test(normalise) !== versRack) {
-    problemes.push('« Rack » annoncé sans cible Rack, ou cible Rack sans « Rack » dans le texte');
+  if (ability.kind === 'attachEnergy' && /\bbancs?\b/.test(normalise) !== versBanc) {
+    problemes.push('« Banc » annoncé sans cible Banc, ou cible Banc sans « Banc » dans le texte');
   }
   // Un Talent qui n'annonce aucune mécanique n'est pas vérifiable : il est refusé.
   if (!CUES_TALENT.some((cue) => cue.pattern.test(normalise))) {
@@ -407,11 +407,11 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     expect(verifierTalent('En jouant : pioche 1 carte.', { kind: 'draw', amount: 1, trigger: 'onPlay' })).toEqual([]);
   });
 
-  it('mord : un café vers le Rack doit dire Rack, et seulement lui (#165, D-082)', () => {
-    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Rack.', { kind: 'attachEnergy', target: 'rack' })).toEqual([]);
-    // Le Talent de Polyvalence (au Poste) ne doit pas parler du Rack.
-    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Rack.', { kind: 'attachEnergy' })).not.toEqual([]);
-    // Une cible Rack sans le mot : refusée.
+  it('mord : un café vers le Banc doit dire Banc, et seulement lui (#165, D-082)', () => {
+    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Banc.', { kind: 'attachEnergy', target: 'rack' })).toEqual([]);
+    // Le Talent de Polyvalence (au Poste) ne doit pas parler du Banc.
+    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Banc.', { kind: 'attachEnergy' })).not.toEqual([]);
+    // Une cible Banc sans le mot : refusée.
     expect(verifierTalent('Une fois par tour : attache 1 café à ce Planqué.', { kind: 'attachEnergy', target: 'rack' })).not.toEqual([]);
   });
 

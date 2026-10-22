@@ -5,7 +5,7 @@ import { applyAction, choose, createBattle, createInstance, endTurn, legalAction
 import type { BattleState } from '@/data/types';
 
 /**
- * Un Talent qui attache un café à un Planqué **du Rack** (#165, D-082). Le joueur choisit la
+ * Un Talent qui attache un café à un Planqué **du Banc** (#165, D-082). Le joueur choisit la
  * cible ; le Talent de Polyvalence (au Poste) reste inchangé.
  */
 
@@ -19,14 +19,14 @@ function basePlanque(): PlanqueCard {
   return base;
 }
 
-/** Un Talent « Bulletin de bonheur » : 1 par tour, un café vers le Rack. */
-function enregistrerTalentRack() {
-  CARD_BY_ID.set('test-talent-rack', {
+/** Un Talent « Bulletin de bonheur » : 1 par tour, un café vers le Banc. */
+function enregistrerTalentVersBanc() {
+  CARD_BY_ID.set('test-talent-banc', {
     ...basePlanque(),
-    id: 'test-talent-rack',
+    id: 'test-talent-banc',
     ability: {
       name: 'Bulletin de bonheur',
-      text: 'Une fois par tour : attache 1 café à un Planqué du Rack.',
+      text: 'Une fois par tour : attache 1 café à un Planqué du Banc.',
       kind: 'attachEnergy',
       target: 'rack',
       oncePerTurn: true
@@ -48,7 +48,7 @@ function enregistrerTalentPoste() {
   });
 }
 
-/** Une partie où le joueur (qui ouvre) a `id` au Poste ; le Rack garde sa mise en place. */
+/** Une partie où le joueur (qui ouvre) a `id` au Poste ; le Banc garde sa mise en place. */
 function scene(id: string): BattleState {
   const state = structuredClone(createBattle(DECK, DECK, SEED));
   expect(state.current).toBe('player');
@@ -56,48 +56,48 @@ function scene(id: string): BattleState {
   return state;
 }
 
-describe('Café vers le Rack — Talent `attachEnergy` avec `target: rack` (#165, D-082)', () => {
-  it('le Talent ouvre un choix : le joueur désigne le Planqué du Rack qui reçoit le café', () => {
-    enregistrerTalentRack();
-    const avant = scene('test-talent-rack');
+describe('Café vers le Banc — Talent `attachEnergy` avec `target: rack` (#165, D-082)', () => {
+  it('le Talent ouvre un choix : le joueur désigne le Planqué du Banc qui reçoit le café', () => {
+    enregistrerTalentVersBanc();
+    const avant = scene('test-talent-banc');
     const apres = applyAction(avant, { type: 'ability' });
 
     expect(apres.pendingChoice?.kind).toBe('attacher');
     const cafe = apres.pendingChoice?.kind === 'attacher' ? apres.pendingChoice.cafe : undefined;
     expect(avant.players.player.cafeTypes).toContain(cafe);
-    // Seules les cartes du Rack sont offertes, jamais le Poste.
+    // Seules les cartes du Banc sont offertes, jamais le Poste.
     const offertes = legalActions(apres)
       .flatMap((action) => (action.type === 'choose' ? [action.uid] : []))
       .sort();
-    const rack = avant.players.player.bench.flatMap((card) => (card ? [card.uid] : [])).sort();
-    expect(offertes).toEqual(rack);
+    const banc = avant.players.player.bench.flatMap((card) => (card ? [card.uid] : [])).sort();
+    expect(offertes).toEqual(banc);
     expect(offertes).not.toContain('poste-talent');
   });
 
-  it('le café part au Planqué du Rack désigné, pas au Poste', () => {
-    enregistrerTalentRack();
-    const avant = scene('test-talent-rack');
+  it('le café part au Planqué du Banc désigné, pas au Poste', () => {
+    enregistrerTalentVersBanc();
+    const avant = scene('test-talent-banc');
     const apres = applyAction(avant, { type: 'ability' });
     const cible = avant.players.player.bench.find((card) => card !== null)?.uid ?? '';
 
     const fin = applyAction(apres, { type: 'choose', uid: cible });
     expect(fin.pendingChoice).toBeNull();
     const cibleApres = fin.players.player.bench.find((card) => card?.uid === cible);
-    // Mord : sans la cible Rack, le café irait au Poste et la cible resterait vide.
+    // Mord : sans la cible Banc, le café irait au Poste et la cible resterait vide.
     expect(cibleApres?.energy).toHaveLength(1);
     expect(fin.players.player.active?.energy).toHaveLength(0);
     expect(fin.players.player.hasUsedAbility).toBe(true);
   });
 
-  it('`choose` refuse le Poste : la cible doit être au Rack', () => {
-    enregistrerTalentRack();
-    const apres = applyAction(scene('test-talent-rack'), { type: 'ability' });
+  it('`choose` refuse le Poste : la cible doit être au Banc', () => {
+    enregistrerTalentVersBanc();
+    const apres = applyAction(scene('test-talent-banc'), { type: 'ability' });
     expect(choose(apres, 'poste-talent')).toBe(apres);
   });
 
-  it('sans Planqué au Rack, le Talent n’est pas proposé', () => {
-    enregistrerTalentRack();
-    const avant = scene('test-talent-rack');
+  it('sans Planqué au Banc, le Talent n’est pas proposé', () => {
+    enregistrerTalentVersBanc();
+    const avant = scene('test-talent-banc');
     avant.players.player.bench = [null, null, null];
     expect(legalActions(avant).some((action) => action.type === 'ability')).toBe(false);
     // Mord : la demande directe est refusée aussi.
@@ -105,8 +105,8 @@ describe('Café vers le Rack — Talent `attachEnergy` avec `target: rack` (#165
   });
 
   it('le Talent reste 1 par tour, et la fin de tour reste possible après le choix', () => {
-    enregistrerTalentRack();
-    const avant = scene('test-talent-rack');
+    enregistrerTalentVersBanc();
+    const avant = scene('test-talent-banc');
     const apres = applyAction(avant, { type: 'ability' });
     const cible = avant.players.player.bench.find((card) => card !== null)?.uid ?? '';
     const fin = applyAction(apres, { type: 'choose', uid: cible });
