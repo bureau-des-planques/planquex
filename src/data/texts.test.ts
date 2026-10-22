@@ -84,7 +84,9 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand', 'reveal'] },
   // `reveal` écrit la carte, ou la main, dans le journal (D-078).
   { label: 'révèle', pattern: /\brevel/, kinds: ['reveal'] },
-  { label: 'deck', pattern: /\bdecks?\b/, kinds: [] }
+  // `peek` lit le dessus du Deck sans le modifier (D-079) ; la recherche y cherchera (D-080).
+  { label: 'regarde le dessus', pattern: /\bregarde la carte du dessus/, kinds: ['peek'] },
+  { label: 'deck', pattern: /\bdecks?\b/, kinds: ['peek'] }
 ];
 
 /**
@@ -139,7 +141,8 @@ const ATTENTES_EFFET: Record<AttackEffectKind, Attente | null> = {
   reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
   discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 },
   damage: { pattern: /(\d+) degats? au/, montantGroupe: 1 },
-  reveal: { pattern: /revel/ }
+  reveal: { pattern: /revel/ },
+  peek: { pattern: /regarde la carte du dessus/ }
 };
 
 const ATTENTES_TALENT: Record<AbilityKind, Attente | null> = {

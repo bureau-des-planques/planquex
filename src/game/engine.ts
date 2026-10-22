@@ -2,6 +2,7 @@ import { ACTION_KIND_META, FACTION_META, getCard, isBasic, isPlanque } from '@/d
 import type {
   Ability,
   Attack,
+  Card,
   AttackEffect,
   BattleAction,
   BattleState,
@@ -755,10 +756,23 @@ function applyHandDeckEffect(state: BattleState, who: PlayerId, effect: AttackEf
       state.log.push(`Révélé dans ${dans} : ${noms}.`);
       break;
     }
+    case 'peek':
+      // Regarder le dessus (D-079) : lecture pure. Ni changement d'état, ni ligne de journal :
+      // l'information est lue par `dessusDuDeck`, et seul le joueur qui l'a déclenchée la voit.
+      break;
     default:
-      // Les autres primitives de main et de Deck ne passent pas par ici (voir D-079, D-080).
+      // Les autres primitives de main et de Deck ne passent pas par ici (voir D-080).
       break;
   }
+}
+
+/**
+ * Le dessus du Deck de `who`, pour le **seul** joueur qui a regardé (D-079). Lecture pure :
+ * rien ne bouge, l'ordre du Deck reste celui qu'il était.
+ */
+export function dessusDuDeck(state: BattleState, who: PlayerId): Card | undefined {
+  const dessus = state.players[who].deck[0];
+  return dessus ? getCard(dessus.cardId) : undefined;
 }
 
 /**
@@ -861,6 +875,7 @@ function applyEffects(
         break;
       case 'discardHand':
       case 'reveal':
+      case 'peek':
         applyHandDeckEffect(state, who, effect);
         break;
       case 'damage': {
@@ -907,6 +922,7 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
         break;
       case 'discardHand':
       case 'reveal':
+      case 'peek':
         applyHandDeckEffect(state, who, effect);
         break;
       case 'damage':
