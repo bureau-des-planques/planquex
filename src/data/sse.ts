@@ -24,7 +24,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Prévention', text: 'Une fois par tour : soigne 10 d’un Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Piqûre de rappel', cost: ['SSE', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: 'Piqûre de rappel', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit sa piqûre de rappel. Le rappel suivant est déjà planifié, sans date.' }],
     flavor: 'Elle sait où tu as mal avant toi.'
   }),
   base({
@@ -49,7 +49,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Inspection', cost: ['SSE'], damage: 20 }],
+    attacks: [{ name: 'Inspection', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est inspecté de la tête aux pieds. La case est cochée ; le danger reste en place.' }],
     flavor: 'Il a coché la case. La case ne sert à rien.'
   }),
   base({
@@ -61,7 +61,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     ability: { name: 'Posture', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
-    attacks: [{ name: 'Réglage', cost: ['SSE', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: 'Réglage', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est réglé à sa hauteur. La chaise, elle, a été réglée pour quelqu’un d’autre.' }],
     flavor: 'Il a réglé la chaise. Ton dos attend encore.'
   }),
   base({
@@ -85,7 +85,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Manipulation', cost: ['SSE'], damage: 20 }],
+    attacks: [{ name: 'Manipulation', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est manipulé avec fermeté. Le problème n’est pas à l’épaule, mais personne ne le dira.' }],
     flavor: 'Il a massé l’épaule. Le problème est ailleurs.'
   }),
   base({
@@ -97,7 +97,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Respiration', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Relaxation', cost: ['SSE', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: 'Relaxation', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est invité à relâcher les épaules. L’échéance, elle, reste serrée.' }],
     flavor: 'Respire. Le Rack est encore là.'
   }),
   base({
@@ -109,7 +109,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 60 },
+      { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse reçoit un diagnostic sévère. Le traitement n’est pas remboursé par le service.' },
       { name: 'Protocole', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 10 de stress.', effects: [{ kind: 'selfDamage', amount: 10 }] }
     ],
     flavor: 'Il a diagnostiqué le management. C’est grave.'
@@ -121,7 +121,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Massage cardiaque', cost: ['SSE'], damage: 20 }],
+    attacks: [{ name: 'Massage cardiaque', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse reçoit un massage cardiaque en règle. Le défibrillateur est à l’étage, sous clé.' }],
     flavor: 'Il a couru. L’ascenseur était en panne.'
   }),
   base({
@@ -153,7 +153,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Protocole', cost: ['SSE', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: 'Protocole', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est soumis au protocole d’hygiène. Trois exemplaires signés ; aucun appliqué.' }],
     flavor: 'Il a écrit le protocole d’hygiène. En trois exemplaires.'
   }),
   base({
@@ -205,7 +205,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Garde', cost: ['SSE'], damage: 20 }],
+    attacks: [{ name: 'Garde', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse tombe sur une garde de trente heures. Le planning prévoyait pourtant du repos.' }],
     flavor: 'Il est interne. Il fait le travail de trois médecins.'
   }),
   base({
@@ -225,7 +225,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Extincteur', cost: ['SSE'], damage: 20 }],
+    attacks: [{ name: 'Extincteur', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est arrosé à l’extincteur. Le contrôle annuel est périmé depuis la dernière alerte.' }],
     flavor: 'Il éteint les incendies. On lui demande de les prévenir.'
   }),
   base({
@@ -283,7 +283,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Transport', cost: ['SSE'], damage: 20 }],
+    attacks: [{ name: 'Transport', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est transporté sans ménagement. L’ascenseur est réservé aux marchandises.' }],
     flavor: 'Il transporte. Il ne juge pas.'
   }),
   base({
@@ -306,7 +306,7 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 70 },
+      { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse reçoit un diagnostic sévère. Le traitement n’est pas remboursé par le service.' },
       { name: 'Protocole', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Un seul médecin.'
