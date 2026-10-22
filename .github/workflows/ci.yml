@@ -55,8 +55,31 @@ jobs:
 
       # Garde-fou visuel (Impeccable, Apache-2.0) : tells d'UI générée par IA,
       # 61 règles déterministes, sans IA ni clé. Voir DESIGN.md et .opencode/skills/impeccable.
+      # La version est épinglée en devDependency (`package.json`, exacte, sans ^ ni ~) ;
+      # `--no` refuse de télécharger : sans `npm ci`, l'étape ÉCHOUE au lieu d'aller
+      # prendre ce que le registre donne ce jour-là (ticket #146).
+      # Garde de l'épinglage (#146), qui doit pouvoir échouer : remplacer la version par
+      # `"latest"` dans package.json, ou `--no` par `--yes` ci-dessous → exit 1.
+      - name: Vérifier que le détecteur d'UI reste épinglé
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const pkg = require("./package.json");
+            const version = pkg.devDependencies && pkg.devDependencies.impeccable;
+            if (!/^\d+\.\d+\.\d+$/.test(version || "")) {
+              console.error("impeccable doit être épinglé en version exacte (sans ^ ni ~) en devDependencies — trouvé :", version);
+              process.exit(1);
+            }
+            const ci = fs.readFileSync(".github/workflows/ci.yml", "utf8");
+            if (/npx\s+(--yes|-y)\s+impeccable/.test(ci)) {
+              console.error("la CI ne doit plus retélécharger le détecteur au moment du contrôle (npx --yes)");
+              process.exit(1);
+            }
+            console.log("impeccable épinglé en " + version + " et lancé sans réseau par la CI");
+          '
+
       - name: Détecter les anti-patterns d'interface
-        run: npx --yes impeccable detect src/
+        run: npm exec --no -- impeccable detect src/
 
       - name: Construire la production
         run: npm run build
