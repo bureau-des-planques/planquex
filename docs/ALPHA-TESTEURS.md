@@ -42,13 +42,17 @@ une note ou un message à toi-même. Pour revenir : colle-le dans la même zone,
 tu y vois ce que les autres ont signalé, avec un statut — en attente, retenu, en cours, fait, ou
 écarté avec sa raison. Ça évite de signaler vingt fois la même chose.
 
-**Pour écrire, il y a un formulaire.** Il te demande quatre choses, et il y a quatre façons d'entrer :
+**Pour écrire, il y a un formulaire.** Il te pose quelques questions, et il y a quatre façons d'entrer :
 
 1. **Remonter un bug** — quelque chose casse ou ment ;
 2. **Proposer une feature** — quelque chose manque, ou ferait mieux ;
 3. **Gueuler** — ça t'énerve : dis-le, et si tu veux, on t'aidera ensuite à en faire un bug ou une idée ;
 4. **Donner ton avis** — ce que tu as aimé, ce que tu n'as pas aimé. **C'est le plus précieux** : la
    question qu'on se pose est « est-ce que ça donne envie de refaire une partie ».
+
+**Écris ton pseudo en haut du formulaire** — le même que dans Réglages. C'est lui qui s'affiche
+sous ton post-it sur le mur, et c'est ce qui nous permet de **suivre ce que tu remontes** d'une
+fois à l'autre. Il est **facultatif** : sans lui, ton post-it est anonyme.
 
 Et le point qui compte le plus :
 
