@@ -283,10 +283,60 @@ mais ajoute un compte et des limites.
 L'adresse **ne change pas** (seul le contenu change) : `docs/boite-a-idees.json` n'a rien à recevoir.
 Si l'adresse venait à changer, c'est **ce champ** qu'on met à jour — et rien d'autre, le mur la lit.
 
+## 4.5 L'import des réponses — le palliatif sans backend (#177)
+
+Le formulaire n'écrit pas dans le jeu : ses réponses vivent dans **Google Forms**. Tant que le
+mur complet (#136) n'existe pas, un script comble le trou — il lit la feuille de réponses
+**publiée en CSV** et ajoute au fichier du mur les post-its **absents**.
+
+**L'adresse** est le champ `reponses` de `docs/boite-a-idees.json` (mesurée le 23/10/2026) :
+
+```
+https://docs.google.com/spreadsheets/d/1WUvB3q0CjEbs7Z-cWXqPUU834Wh1X-nhw1oBWFlhugw/gviz/tq?tqx=out:csv
+```
+
+C'est l'endpoint **gviz** de la feuille, pas `pub?output=csv` : la feuille n'est pas « publiée sur
+le Web », elle est seulement **partagée en lecture par lien**, ce qui suffit — donc **aucune
+marche humaine supplémentaire** aujourd'hui. Il répond `200` et rend le **premier onglet** en CSV ;
+un `gid` ne serait nécessaire que pour un autre onglet. La variable d'environnement
+`MUR_REPONSES_CSV` surcharge l'adresse (dépannage, ou test d'une autre feuille).
+
+**Si un jour l'adresse casse**, le geste humain est celui de Google : lier le formulaire à une
+feuille de réponses (*Réponses → Associer à une feuille de calcul*), garder le partage en lecture
+par lien, et recopier l'adresse gviz de la feuille dans `reponses`. Une feuille partagée ainsi
+est **publique** : ne rien y mettre de personnel, et ne pas collecter les adresses e-mail (§4.2).
+
+Les **19 colonnes réelles** suivent l'ordre du formulaire (mesuré le 23/10/2026) :
+`Horodateur, Pseudo, Quelle Version du Jeux, Tu veux quoi ?, Exprime toi, Envie d'aider ?,
+Titre, Ce que tu faisais ?, Ce qui c'est passé ?, Ce que tu attendais ?, Écran, Capture,
+Titre, L'idée, À quoi ça servirait ?, Écran, Capture, Ce que tu as aimé ?, Ce que tu n'as pas aimé ?`.
+Les colonnes **7 à 12** sont celles du chemin **bug**, **13 à 17** celles du chemin **idée** : les
+trois questions en double (`Titre`, `Écran`, `Capture`) se lisent donc **par position**, jamais par
+nom — c'est ce que fait le script.
+
+**La commande** : `npm run mur:import` (en lecture seule, `--fichier <csv>` lit un CSV local).
+
+- `--dry-run` affiche ce qui serait ajouté et **n'écrit rien** ;
+- l'**idempotence** tient à la clé **horodatage + titre** : deux imports du même CSV donnent un
+  seul post-it ;
+- un post-it **existant n'est jamais modifié** : `statut`, `ticket`, `raison` et `position` sont
+  le travail humain du tri (§5) ;
+- un CSV **vide, illisible ou sans l'en-tête attendu** fait sortir en erreur, **fichier intact**.
+
+Le post-it produit porte les champs de §3. Le **pseudo vide** devient « anonyme », et la
+**capture** (un lien, jamais un fichier) rejoint le **texte** : le post-it n'a pas de champ pour
+elle, et on n'en invente pas. Un **gueulage sans suite** (comme un avis) n'a pas de titre : le
+script en fabrique un avec ses **premiers mots**, et le **dit** en tête du texte (« Titre
+fabriqué… ») — jamais un titre inventé qui trahirait le propos (§4.3 bis). Comme la clé vit dans
+l'`id`, celui-ci porte l'horodatage
+(`p-23-10-2026-14-05-32-le-bouton-fin-du-tour`) : **ne pas le renommer**, sinon le prochain
+import le croira absent — §3 demande déjà un id *stable*.
+
 ## 5. Le tri, en fin de journée
 
-1. Lire ce qui est arrivé dans le formulaire.
-2. Créer les post-its correspondants dans le fichier, statut **`en attente`**, `id` neuf.
+1. Lancer `npm run mur:import` (d'abord avec `--dry-run`) : il ajoute au fichier les réponses
+   absentes, statut **`en attente`** (§4.5).
+2. Lire ce qui est arrivé dans le formulaire, y compris ce que l'import laisse de côté.
 3. Pour chacun : **retenu** (et on ouvre un ticket, `ticket` rempli, statut **`en cours`**), ou
    **écarté** avec sa **raison écrite**.
 4. Un **bug** qui casse la boucle passe devant tout le reste : c'est le critère (b) de sortie

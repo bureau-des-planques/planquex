@@ -481,14 +481,16 @@ function bestEvaluatedAction(
 }
 
 /* ------------------------------------------------------------------ */
-/* Recherche à deux coups — expérimentale (piste 2, `docs/ia/111-essais-recherche-2-coups.md`) */
+/* Recherche à deux coups — le niveau 2 de l'alpha (D-084) (piste 2, `docs/ia/111-essais-recherche-2-coups.md`) */
 /* ------------------------------------------------------------------ */
 
 /**
- * **Recherche à deux coups au niveau du tour**, expérimentale. Elle n'est **pas** le
- * niveau 2 : `nextAction(state, 2)` reste la référence mesurée (#93, #111). Elle n'est
- * branchée nulle part dans l'écran ; seul `scripts/pesage.mjs --direction recherche`
- * l'emploie, pour la mesurer dans le même harnais.
+ * **Recherche à deux coups au niveau du tour** — c'est **le niveau 2 acté** (D-084, 23/10/2026).
+ * Elle gagne 60,4 % contre le niveau 1 sur des graines neuves, contre 44 % pour le glouton.
+ * **Elle n'est pas encore branchée** : le défaut de `nextAiAction` reste le niveau 1 tant que
+ * **#172** n'a pas ramené les pics de temps sous le budget (138 ms mesurés, 100 ms visés).
+ * Le glouton (`nextAction(state, 2)`) reste le **repli**. Seul `scripts/pesage.mjs --direction
+ * recherche` l'emploie aujourd'hui, pour la mesurer dans le même harnais.
  *
  * **Pourquoi « au niveau du tour »** : une Pression, une fin de tour ou une relève ne
  * laissent pas la main à l'adversaire à chaque action ; un coup de la Direction n'est
@@ -709,7 +711,7 @@ function lineValue(world: BattleState, action: BattleAction, who: PlayerId, opti
 }
 
 /**
- * **Prochaine action de la recherche à deux coups** (expérimentale). Même contrat que
+ * **Prochaine action de la recherche à deux coups** (le niveau 2 acté, D-084). Même contrat que
  * `nextAction` : rend une action de `legalActions` ou `null`. Une relève en attente est
  * tranchée par le niveau 2 (1 coup), la recherche ne porte que sur le tour.
  */

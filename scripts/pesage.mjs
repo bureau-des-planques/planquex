@@ -64,7 +64,7 @@ function lireArguments(argv) {
     seuilRatio: 1.15,
     maxTurns: 200,
     // La Direction : `niveau2` (la référence #93/#111, le CLI du simulateur) ou `recherche`
-    // (la recherche à deux coups, expérimentale — `docs/ia/111-essais-recherche-2-coups.md`).
+    // (le niveau 2 acté (D-084) — `docs/ia/111-essais-recherche-2-coups.md`).
     direction: 'niveau2',
     enProcessus: false,
     recherche: { candidates: 6, worlds: 3, replies: 4 }

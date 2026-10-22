@@ -12,10 +12,12 @@ dans `docs/DECISIONS.md` ; les chiffres vivent ici.
 | `111-essais-recherche-2-coups.md` | **Piste 2, recherche à deux coups** : ce qui a été retenu, le protocole d'équité, les pièges, et ce qui est réutilisable pour un niveau 3 |
 | `111-recherche-pistes.md` | **La recherche bibliographique** : les pistes possibles (évaluation, recherche, PIMC, ISMCTS, MCTS, évaluation apprise), leurs coûts et leurs risques, avec les sources |
 
-**Ce qui a été retenu** : la **recherche à deux coups** est le niveau 2 de l'alpha. Elle gagne
-**60,4 %** contre le niveau 1 sur des graines neuves (ratio 1,53). Deux réserves, écrites ici :
-la mesure n'a été faite **que contre le niveau 1**, et des **pics de temps** dépassent le budget
-(138 ms mesurés) — c'est le ticket **#172**.
+**Ce qui a été retenu** (D-084) : la **recherche à deux coups** est **le niveau 2 acté** de l'alpha.
+Elle gagne **60,4 %** contre le niveau 1 sur des graines neuves (ratio 1,53), là où le glouton
+faisait 44 %. Deux réserves, écrites ici : la mesure n'a été faite **que contre le niveau 1**
+(jamais contre un humain), et des **pics de temps** dépassent le budget (138 ms mesurés, 100 ms
+visés) — c'est le ticket **#172**. **L'écran joue encore le niveau 1** : le passage se fait en
+une ligne, quand #172 est clos.
 
 **Le niveau 3** (expectiminimax avec déterminisations, ticket #94) repart de
 `111-essais-recherche-2-coups.md` : le pool des cartes inconnues, le tirage de monde, la
