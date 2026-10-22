@@ -166,6 +166,10 @@ Les conséquences de D-024, D-025, D-026 et D-027 ont été propagées en **deux
 > « Cadre » pour un COMEX, « Primes » pour les Interventions, « Moral » pour le Seuil, « bacs »
 > pour les Arrivages et les Viviers. Un acte ne se réécrit pas ; **D-024/D-026/D-027** sont
 > l'état courant, et `AGENTS.md` §3 est la table de vocabulaire.
+>
+> **Une exception, et une seule, datée** : **D-070** (22/10/2026) a reformulé la **désignation de
+> l'ancien projet** dans les actes et les instantanés datés — **à substance constante**, sur
+> décision de Bastien, et consignée avec son coût. Le principe ci-dessus vaut pour tout le reste.
 
 > **Leçon de méthode** : deux passages `perl`/`sed` ont abîmé la prose qui *expliquait* les
 > changements (« le Seuil remplace le Seuil », « Psychiquechique »). Sur un document qui *parle*
