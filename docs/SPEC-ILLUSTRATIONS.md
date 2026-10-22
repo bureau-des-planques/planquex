@@ -19,10 +19,17 @@
 | Restent | **214 bases** + **3 viviers** (Planche 3) |
 | Variantes | **0 image** : `secretVariant` (`src/data/planque.ts`) recopie `art` de sa base, et `src/data/art.test.ts` l'impose |
 
-**L'obstacle** : le sujet et l'accent des 214 n'existent nulle part.
-`design/illustrations/PROMPTS-flow.md` ne décrit que la **Planche 1**, ses 10 cartes signature, et
-`scripts/illustration-vague.sh` (`cartes()`, `accent_de()`) ne connaît qu'elles — c'est ce qui
-bloque, pas la génération.
+**L'obstacle** (levé le **22/10/2026** par #121) : le sujet et l'accent des cartes restantes
+n'existaient nulle part — `design/illustrations/PROMPTS-flow.md` ne décrivait que la
+**Planche 1** (devenue **Portrait**), ses 10 cartes signature, et `scripts/illustration-vague.sh`
+(`cartes()`, `accent_de()`) ne connaissait qu'elles. Les deux tables sont désormais écrites
+(`SUJETS-flow.md`, `ACCENTS-flow.md`), le wizard les lit, et une garde les vérifie.
+
+**Un compte à vérifier, pas à recopier** : « les 214 » vaut pour `225 bases − 10 faites = 215`,
+donc le titre de ce document et le tableau ci-dessus sont **d'un cran court**. Les deux tables
+couvrent **toutes** les cartes de base, et le nombre qui fait foi est celui de
+`npm run status` (`cards`) — pas un chiffre écrit ici. Le chiffre n'est pas corrigé ici pour ne
+pas réécrire un plan daté : il est **signalé** (constat du 22/10/2026, #121).
 
 **Une cible périmée à ne pas confondre avec un compte** : `AGENTS.md` §4.2 annonce « cible de
 lancement : 286 cartes = 226 de base + 60 secrètes ». Le dépôt en contient **300**. C'est une
@@ -51,12 +58,16 @@ Toutes dans `design/illustrations/`, à côté du registre et du socle.
 
 - **`SUJETS-flow.md`** — une ligne par **carte de base** : `` | `id` | sujet | ``. Le sujet est
   **en anglais** (les modèles répondent mieux), avec les **5 créneaux** du §4.
-- **`ACCENTS-flow.md`** — une ligne par **faction** : `` | faction | accent | ``. Dix lignes, et
-  elles seules : l'accent n'est **jamais** recopié sur les 225 lignes de sujets.
+- **`ACCENTS-flow.md`** — une ligne par **faction** : `` | `FACTION` | accent | ``. Dix lignes, et
+  elles seules : l'accent n'est **jamais** recopié sur les lignes de sujets.
 - **`PROMPTS-flow.md`** — garde le **socle** (`socle()`, `scripts/illustration-vague.sh`) et perd
   sa table des 10 signature, qui part dans `SUJETS-flow.md`.
 
 Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
+
+Les deux tables sont lues **hors des blocs de code** : un bloc ```text montre le *format*
+(`` | `FACTION` | accent | ``), pas une donnée. Lire le format comme une ligne a déjà produit une
+faction fantôme (`FACTION`) — le wizard et la garde sautent donc les blocs, tous les deux.
 
 ## 4. Le critère opposable des sujets (Q10)
 
@@ -64,7 +75,7 @@ Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
 
 - **5 créneaux obligatoires** : rôle, tenue, **objet tenu**, geste, expression ;
 - **aucun doublon** du couple *objet + geste* entre deux sujets ;
-- **longueur bornée** ;
+- **longueur bornée** — 200 caractères au plus ;
 - un test exige **une ligne par carte de base** *et* **aucune ligne orpheline** — la dérive dans
   les deux sens, comme `art.test.ts` le fait déjà pour `art`.
 
@@ -75,10 +86,17 @@ Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
    par `src/data/art.test.ts`, et les `webp` entrent dans le précache. Il fallait qu'il passe avant
    la première image : changer la forme du champ `art` se paie une fois, pas 225 fois.
 2. **Le renommage des planches** — Portrait / Objet / Lieu, dans `DESIGN.md` §6,
-   `PROMPTS-flow.md` et le registre.
+   `PROMPTS-flow.md` et le registre. ~~à faire~~ **fait le 22/10/2026** (#121) : `DESIGN.md`
+   §6.2–6.4, `PROMPTS-flow.md` et `design/illustrations/README.md` disent ces trois noms.
 3. **La table des sujets** — les 10 signature migrés, puis les 105 lignes. Passe LLM, puis
    **relecture humaine d'un échantillon** : c'est le point d'arrêt humain de cette vague.
-4. **La table des accents** (10 lignes) et **la garde** qui remplace #120.
+   ~~à faire~~ **écrit le 22/10/2026** (#121) : `SUJETS-flow.md` couvre **toutes** les cartes
+   de base (les Planqués en cinq créneaux, les cartes Action en objet unique). La
+   **relecture humaine d'un échantillon reste à faire** — c'est le point d'arrêt.
+4. **La table des accents** (10 lignes) et **la garde** qui remplace #120. ~~à faire~~ **fait
+   le 22/10/2026** (#121) : `ACCENTS-flow.md`, et la garde dans
+   `scripts/illustration-vague.test.ts` (une ligne par base, critère du §4, accent **ré-dérivé**
+   de `FACTION_META.color`). Chaque règle y est confrontée à un **cas fautif fabriqué** (#112).
 5. **Le pilote sur une faction** — Support (32 bases) ou Atelier (26).
 6. **Les 214**, puis les 3 viviers.
 
@@ -86,17 +104,21 @@ Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
 
 - **`art` change de nature** : d'une chaîne nue (`'sse-medecin-travail.webp'`) à une **URL de
   module**. Donc `src/components/CardView.tsx`, `src/data/art.test.ts` et la convention de #96.
-- **`scripts/illustration-vague.sh`** se recâble sur les nouvelles tables — `cartes()` et
-  `accent_de()` ne connaissent que la Planche 1.
+- **`scripts/illustration-vague.sh`** se recâble sur les nouvelles tables — `cartes()` lit
+  `SUJETS-flow.md` et `accent_de()` `ACCENTS-flow.md` ~~connaissent~~ **connaissaient** seulement
+  la Planche 1. Fait le 22/10/2026 (#121) : l'`id` donne la faction par son préfixe, l'accent suit
+  la faction.
 - **`support-responsable-support` est à refaire** : installée en argent-blanc, elle devient
   turquoise (conséquence assumée de Q3 + Q15).
 - **`scripts/illustrations-servies.test.ts`** a disparu ; son rôle est tenu par
-  `src/data/art.test.ts` (Q14) — et la garde de la table des sujets s'y ajoutera.
+  `src/data/art.test.ts` (Q14) — et la garde de la table des sujets est **écrite** :
+  `scripts/illustration-vague.test.ts` (22/10/2026, #121).
 
 ## 7. Déjà vérifié — à ne pas refaire
 
 - **`gflow image t2i` n'a aucune option de prompt négatif** (vérifié : `--help` n'en liste pas).
-  Le « no text, no logo » du socle ne tient donc que par le **positif** — et devra tenir 214 fois.
+  Le « no text, no logo » du socle ne tient donc que par le **positif** — et devra tenir sur
+  toutes les cartes restantes.
 - **Le poids est mesuré, pas estimé** : 1,2 Mo pour 10 images en 1024² → 26 Mo par copie, 53 Mo
   les deux. En 1024² (Q8), et non 2048² comme `DESIGN.md` §6.5 l'annonce encore.
 - **Workbox ne précache pas les webp** (`vite.config.ts:30`, `globPatterns` = `js,css,html,svg,woff2`) :

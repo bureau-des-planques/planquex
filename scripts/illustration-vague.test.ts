@@ -5,6 +5,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ALL_CARDS } from '../src/data/index';
+import { FACTION_META } from '../src/data/factions';
+import type { Faction } from '../src/data/types';
 
 /**
  * Wizard d'illustration — ce qui part vers `gflow` doit être **résolu** (#97).
@@ -116,8 +119,8 @@ exit 0
 
 /**
  * Le README du bac : la **forme** du registre réel (deux tableaux, puis le
- * journal). Les tableaux ne couvrent que la Planche 1 — `direction-pdg` n'est
- * dans aucun des deux, c'est le cas des 276 cartes suivantes.
+ * journal). Les tableaux ne couvrent que la planche **Portrait** — `direction-pdg`
+ * n'est dans aucun des deux, c'est le cas des autres cartes.
  */
 const README_BAC = `# Illustrations — bac de test
 
@@ -700,4 +703,405 @@ describe('Wizard d’illustration — la graine retrouvée dans la base de gflow
       expect(existsSync(join(racine, chemin)), `le wizard vise un fichier disparu : ${chemin}`).toBe(true);
     }
   });
+});
+
+/* ────────────────────────────────────────────────────────────────────────────────
+ * Les deux tables de #121 — sujets et accents — et leur garde (Q10, Q14, D-046)
+ *
+ * La garde de la table des sujets remplace celle de #120 (Q14) : l'ancien test
+ * comparait deux copies d'images, la source unique a supprimé la seconde. Le rôle
+ * de `src/data/art.test.ts` est de dire « le fichier cité existe » ; **celui-ci**
+ * dit « chaque carte de base a un sujet, et ce sujet est utilisable » — deux
+ * gardes différentes, aucune ne remplace l'autre.
+ *
+ * **Elle doit pouvoir échouer** (#112) : chaque règle est confrontée plus bas à un
+ * cas fautif fabriqué — une carte manquante, une ligne orpheline, un créneau en
+ * trop, un couple objet+geste recopié, un accent qui ne dérive pas de la couleur.
+ * Une garde qui passerait quoi qu'il arrive ne garderait rien.
+ * ──────────────────────────────────────────────────────────────────────────────── */
+
+const SUJETS_FICHIER = 'design/illustrations/SUJETS-flow.md';
+const ACCENTS_FICHIER = 'design/illustrations/ACCENTS-flow.md';
+
+/** Une ligne de `SUJETS-flow.md` : `| `id` | sujet |`, et rien d'autre. */
+type LigneSujet = { id: string; sujet: string };
+
+/**
+ * Les lignes **hors bloc de code** d'une table. Un bloc ```text montre le *format*
+ * (`| `FACTION` | accent |`) : le lire comme une donnée a déjà produit une faction
+ * fantôme, donc les deux lecteurs sautent les blocs — comme `cartes()` et
+ * `accent_de()` dans le wizard.
+ */
+function lignesDeTable(chemin: string): string[] {
+  const lignes: string[] = [];
+  let dansUnBloc = false;
+  for (const brute of readFileSync(chemin, 'utf8').split('\n')) {
+    if (/^\s*```/.test(brute)) {
+      dansUnBloc = !dansUnBloc;
+      continue;
+    }
+    if (!dansUnBloc) lignes.push(brute);
+  }
+  return lignes;
+}
+
+function lireSujets(chemin = join(racine, SUJETS_FICHIER)): LigneSujet[] {
+  const lignes: LigneSujet[] = [];
+  for (const brute of lignesDeTable(chemin)) {
+    const m = /^\| `([a-z0-9-]+)` \| (.+?) \|$/.exec(brute.trim());
+    if (m) lignes.push({ id: m[1], sujet: m[2] });
+  }
+  return lignes;
+}
+
+/** Une ligne de `ACCENTS-flow.md` : `| `FACTION` | accent |`, et rien d'autre. */
+type LigneAccent = { faction: string; accent: string };
+
+function lireAccents(chemin = join(racine, ACCENTS_FICHIER)): LigneAccent[] {
+  const lignes: LigneAccent[] = [];
+  for (const brute of lignesDeTable(chemin)) {
+    const m = /^\| `([A-Z]+)` \| (.+?) \|$/.exec(brute.trim());
+    if (m) lignes.push({ faction: m[1], accent: m[2] });
+  }
+  return lignes;
+}
+
+/** Les cinq créneaux du sujet (Q10, `docs/SPEC-ILLUSTRATIONS.md` §4). */
+const SEGMENTS_DU_SUJET = 5;
+const LONGUEUR_MAX = 200;
+
+/**
+ * Les mots de **tenue** admis. Une liste courte et lisible plutôt qu'un jugement :
+ * le critère doit être **testable**, pas déclaratif. Elle couvre le vocabulaire
+ * employé par la table et se complète quand la vague suivante en a besoin.
+ */
+const TENUES = [
+  'apron',
+  'blazer',
+  'blouse',
+  'boiler suit',
+  'cap',
+  'cardigan',
+  'coat',
+  'coveralls',
+  'dungarees',
+  'fleece',
+  'gloves',
+  'gown',
+  'helmet',
+  'hi-vis',
+  'hoodie',
+  'jacket',
+  'jumpsuit',
+  'overall',
+  'overalls',
+  'polo',
+  'robe',
+  'scrubs',
+  'shirt',
+  'skirt',
+  'smock',
+  'suit',
+  'sweater',
+  'sweatshirt',
+  'tabard',
+  'tie',
+  'trousers',
+  'tunic',
+  'uniform',
+  'vest',
+  'waistcoat'
+];
+
+/** Les mots d'**expression** admis : le cinquième créneau doit dire un visage. */
+const EXPRESSIONS = [
+  'alarmed',
+  'apologetic',
+  'blank',
+  'bored',
+  'bright',
+  'brisk',
+  'calm',
+  'cheerful',
+  'confident',
+  'content',
+  'deadpan',
+  'defiant',
+  'detached',
+  'determined',
+  'distracted',
+  'doubtful',
+  'dry',
+  'eager',
+  'earnest',
+  'encouraging',
+  'exhausted',
+  'flat',
+  'focused',
+  'glazed',
+  'grave',
+  'grim',
+  'hopeful',
+  'imperious',
+  'impatient',
+  'kind',
+  'knowing',
+  'late',
+  'methodical',
+  'mildly smug',
+  'nervous',
+  'overworked',
+  'patient',
+  'pained',
+  'placid',
+  'polite',
+  'precise',
+  'proud',
+  'puzzled',
+  'resigned',
+  'sad',
+  'serene',
+  'severe',
+  'sheepish',
+  'sleepy',
+  'smiling',
+  'smug',
+  'sour',
+  'stern',
+  'stoic',
+  'suspicious',
+  'sympathetic',
+  'tired',
+  'unbothered',
+  'under pressure',
+  'unimpressed',
+  'unshockable',
+  'vigilant',
+  'watchful',
+  'weary',
+  'worried',
+  'wry'
+];
+
+/** Un mot de la liste est présent, en mot entier (pas « retired » pour « tired »). */
+function contientMot(texte: string, liste: readonly string[]): boolean {
+  return liste.some((mot) => new RegExp(`(^|[^a-z-])${mot.replace(/-/g, '\\-')}([^a-z-]|$)`, 'i').test(texte));
+}
+
+/** Les problèmes d'**une** ligne ; vide = la ligne tient le critère. */
+function problemesDunSujet(id: string, sujet: string, action: boolean): string[] {
+  const problemes: string[] = [];
+  if (sujet.length > LONGUEUR_MAX) problemes.push(`${id} : ${sujet.length} caractères (max ${LONGUEUR_MAX})`);
+
+  if (action) {
+    // Planche **Objet** (Q4′) : un objet symbolique unique, sans personne — donc
+    // sans les cinq créneaux, et sans rien à tenir.
+    if (!/^an? /i.test(sujet)) problemes.push(`${id} : un objet commence par un article`);
+    if (/\bholding\b/i.test(sujet)) problemes.push(`${id} : un objet ne tient rien — pas de personne`);
+    return problemes;
+  }
+
+  const segments = sujet.split(', ');
+  if (segments.length !== SEGMENTS_DU_SUJET) {
+    problemes.push(`${id} : ${segments.length} créneaux au lieu de ${SEGMENTS_DU_SUJET} — « ${sujet} »`);
+    return problemes;
+  }
+  if (!/^(a|an|the) /i.test(segments[0])) problemes.push(`${id} : le rôle commence par un article`);
+  if (!contientMot(segments[1], TENUES)) problemes.push(`${id} : aucune tenue — « ${segments[1]} »`);
+  if (!segments[2].startsWith('holding ')) problemes.push(`${id} : l'objet s'écrit « holding … » — « ${segments[2]} »`);
+  else if (segments[2].slice('holding '.length).trim() === '') problemes.push(`${id} : l'objet tenu est vide`);
+  if (!segments[3].split(' ').some((mot) => /\w+ing$/.test(mot)))
+    problemes.push(`${id} : le geste demande un verbe en -ing — « ${segments[3]} »`);
+  if (!contientMot(segments[4], EXPRESSIONS)) problemes.push(`${id} : aucune expression — « ${segments[4]} »`);
+  return problemes;
+}
+
+/**
+ * Le contrôle complet de la table des sujets : une ligne par **carte de base**,
+ * aucune orpheline, le critère du §4, et **l'accent jamais recopié**.
+ */
+function controlerSujets(lignes: LigneSujet[]): string[] {
+  const problemes: string[] = [];
+  const bases = ALL_CARDS.filter((carte) => !carte.variantOf);
+  const parId = new Map(lignes.map((ligne) => [ligne.id, ligne.sujet]));
+  if (parId.size !== lignes.length) problemes.push('une même carte a deux lignes de sujet');
+
+  for (const carte of bases) {
+    if (!parId.has(carte.id)) problemes.push(`${carte.id} : carte de base sans sujet`);
+    else {
+      problemes.push(...problemesDunSujet(carte.id, parId.get(carte.id) ?? '', carte.kind !== 'PLANQUE'));
+      if (contientMot(parId.get(carte.id) ?? '', lireAccents().map((ligne) => ligne.accent)))
+        problemes.push(`${carte.id} : l'accent est recopié sur la ligne de sujet (il vit dans ACCENTS-flow.md)`);
+    }
+  }
+  const connues = new Set(bases.map((carte) => carte.id));
+  for (const ligne of lignes) {
+    if (!connues.has(ligne.id)) problemes.push(`${ligne.id} : ligne orpheline (aucune carte de base)`);
+  }
+
+  const vues = new Map<string, string>();
+  for (const carte of bases) {
+    if (carte.kind !== 'PLANQUE') continue;
+    const segments = (parId.get(carte.id) ?? '').split(', ');
+    if (segments.length !== SEGMENTS_DU_SUJET) continue;
+    const paire = `${segments[2]} / ${segments[3]}`.toLowerCase();
+    const deja = vues.get(paire);
+    if (deja) problemes.push(`${carte.id} : couple objet + geste déjà pris par ${deja} — « ${paire} »`);
+    else vues.set(paire, carte.id);
+  }
+  return problemes;
+}
+
+/** HSL d'une couleur de `FACTION_META` : la seule source de l'accent (D-046). */
+function teinteEtSaturation(hex: string): { teinte: number; saturation: number } {
+  const entier = Number.parseInt(hex.slice(1), 16);
+  const r = ((entier >> 16) & 0xff) / 255;
+  const g = ((entier >> 8) & 0xff) / 255;
+  const b = (entier & 0xff) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const delta = max - min;
+  if (delta === 0) return { teinte: 0, saturation: 0 };
+  const saturation = delta / (1 - Math.abs(2 * l - 1));
+  const brut =
+    max === r ? 60 * (((g - b) / delta) % 6) : max === g ? 60 * ((b - r) / delta + 2) : 60 * ((r - g) / delta + 4);
+  return { teinte: (brut + 360) % 360, saturation };
+}
+
+/**
+ * L'accent **ré-dérivé** de la couleur d'une faction : la teinte donne la famille,
+ * la saturation sépare les deux oranges (`burnt orange` brûlant contre `rust
+ * bronze` patiné) et `slate blue` (très désaturé) de `periwinkle blue`.
+ *
+ * C'est la **codification** de D-046 et de Q15 : les dix mots sont ceux de la
+ * décision, et cette fonction est ce qui les rattache à `FACTION_META.color`.
+ * Changer une couleur sans changer son mot fait donc échouer la garde — et c'est
+ * tout l'objet de D-046.
+ */
+function accentDepuisCouleur(hex: string): string | undefined {
+  const { teinte, saturation } = teinteEtSaturation(hex);
+  if (teinte < 12 || teinte >= 345) return 'brick red';
+  if (teinte < 24) return 'burnt orange';
+  if (teinte < 36) return 'rust bronze';
+  if (teinte >= 40 && teinte < 55) return 'electric yellow';
+  if (teinte >= 150 && teinte < 175) return 'emerald green';
+  if (teinte >= 175 && teinte < 192) return 'teal';
+  if (teinte >= 192 && teinte < 205) return 'turquoise blue';
+  if (teinte >= 205 && teinte < 228 && saturation < 0.35) return 'slate blue';
+  if (teinte >= 228 && teinte < 250) return 'periwinkle blue';
+  if (teinte >= 250 && teinte < 290) return 'violet purple';
+  return undefined;
+}
+
+/** Le contrôle de la table des accents : dix factions, et elles seules (D-046). */
+function controlerAccents(lignes: LigneAccent[]): string[] {
+  const problemes: string[] = [];
+  const factions = Object.keys(FACTION_META) as Faction[];
+  const parFaction = new Map(lignes.map((ligne) => [ligne.faction, ligne.accent]));
+  if (parFaction.size !== lignes.length) problemes.push('une même faction a deux accents');
+
+  for (const faction of factions) {
+    const accent = parFaction.get(faction);
+    if (accent === undefined) {
+      problemes.push(`${faction} : faction sans accent`);
+      continue;
+    }
+    const attendu = accentDepuisCouleur(FACTION_META[faction].color);
+    if (!attendu) problemes.push(`${faction} : la couleur ${FACTION_META[faction].color} ne donne aucun accent`);
+    else if (accent !== attendu)
+      problemes.push(`${faction} : « ${accent} » ne dérive pas de ${FACTION_META[faction].color} (attendu « ${attendu} »)`);
+  }
+  for (const ligne of lignes) {
+    if (!(factions as string[]).includes(ligne.faction)) problemes.push(`${ligne.faction} : ligne orpheline`);
+  }
+  return problemes;
+}
+
+describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
+  it('une ligne par carte de base, aucune orpheline, et le critère du §4', () => {
+    const problemes = controlerSujets(lireSujets());
+    expect(problemes, problemes.join('\n')).toEqual([]);
+  });
+
+  it('les dix factions ont un accent, et il dérive de `FACTION_META.color`', () => {
+    const problemes = controlerAccents(lireAccents());
+    expect(problemes, problemes.join('\n')).toEqual([]);
+  });
+
+  it('le préfixe de l’id est la faction — c’est ce que le wizard lit pour l’accent', () => {
+    // `faction_de()` (`scripts/illustration-vague.sh`) ne lit que le préfixe : si une
+    // carte changeait de faction sans changer d'id, elle porterait l'accent d'une autre.
+    const fautives = ALL_CARDS.filter((carte) => carte.id.split('-')[0].toUpperCase() !== carte.faction);
+    expect(fautives.map((carte) => carte.id)).toEqual([]);
+  });
+
+  it('le contrôle mord : une carte de base sans sujet est refusée', () => {
+    const sans = lireSujets().filter((ligne) => ligne.id !== 'atelier-cariste');
+    expect(controlerSujets(sans).join('\n')).toContain('atelier-cariste');
+  });
+
+  it('le contrôle mord : une ligne orpheline est refusée', () => {
+    const avec = [...lireSujets(), { id: 'sse-carte-fantome', sujet: 'a ghost, in a coat, holding a file, haunting a desk, blank and calm' }];
+    expect(controlerSujets(avec).join('\n')).toContain('sse-carte-fantome');
+  });
+
+  it('le contrôle mord : un sujet à quatre ou six créneaux est refusé', () => {
+    const sujets = lireSujets();
+    const remplacer = (id: string, sujet: string) =>
+      controlerSujets(sujets.map((ligne) => (ligne.id === id ? { id, sujet } : ligne))).join('\n');
+    expect(remplacer('atelier-cariste', 'a forklift driver, in a hi-vis vest, holding a pallet list, cheerful')).toContain(
+      'créneaux'
+    );
+    expect(
+      remplacer('atelier-cariste', 'a forklift driver, in a hi-vis vest, holding a pallet list, climbing in, cheerful, calm')
+    ).toContain('créneaux');
+  });
+
+  it('le contrôle mord : un couple objet + geste recopié est refusé', () => {
+    const sujets = lireSujets();
+    const source = sujets.find((ligne) => ligne.id === 'direction-pdg');
+    expect(source).toBeDefined();
+    const copie = sujets.map((ligne) => (ligne.id === 'atelier-cariste' ? { id: ligne.id, sujet: source?.sujet ?? '' } : ligne));
+    expect(controlerSujets(copie).join('\n')).toContain('couple objet + geste');
+  });
+
+  it('le contrôle mord : un accent qui ne dérive pas de la couleur est refusé', () => {
+    // « silver white » est l'ancien accent de SUPPORT : il ne se dérive pas de `#4f9d9d`.
+    const accents = lireAccents().map((ligne) => (ligne.faction === 'SUPPORT' ? { faction: 'SUPPORT', accent: 'silver white' } : ligne));
+    expect(controlerAccents(accents).join('\n')).toContain('SUPPORT');
+  });
+
+  it('le contrôle mord : une faction manquante ou une ligne de trop est refusée', () => {
+    const sansSupport = lireAccents().filter((ligne) => ligne.faction !== 'SUPPORT');
+    expect(controlerAccents(sansSupport).join('\n')).toContain('SUPPORT');
+    const avec = [...lireAccents(), { faction: 'BUREAU', accent: 'grey' }];
+    expect(controlerAccents(avec).join('\n')).toContain('BUREAU');
+  });
+
+  it('le wizard prend le sujet dans SUJETS-flow.md et l’accent dans ACCENTS-flow.md', () => {
+    // Les deux chemins sont **paramétrables** : c'est ce qui rend le bac possible, et
+    // ce qui prouve que le prompt ne vient pas d'une constante du script.
+    const sujets = join(bac, 'sujets.md');
+    writeFileSync(sujets, '| `direction-pdg` | a test subject, in a test coat, holding a test object, testing a test gesture, calm |\n');
+    const accents = join(bac, 'accents.md');
+    writeFileSync(accents, '| `DIRECTION` | test accent |\n');
+    wizard([CARTE], stdinPour('nano2'), {
+      GFLOW_ILLUSTRATION_SUJETS: sujets,
+      GFLOW_ILLUSTRATION_ACCENTS: accents
+    });
+    const prompt = generation()?.[2] ?? '';
+    expect(prompt).toContain('a test subject, in a test coat');
+    expect(prompt).toContain('muted test accent accent.');
+  }, DELAI);
+
+  it('les tables livrées alimentent le prompt, sans recopie dans le script', () => {
+    wizard([CARTE], stdinPour('nano2'));
+    const prompt = generation()?.[2] ?? '';
+    const sujet = lireSujets().find((ligne) => ligne.id === CARTE)?.sujet ?? '';
+    const accent = lireAccents().find((ligne) => ligne.faction === 'DIRECTION')?.accent ?? '';
+    expect(sujet, `${CARTE} doit avoir un sujet`).not.toBe('');
+    expect(prompt).toContain(sujet);
+    expect(prompt).toContain(`muted ${accent} accent.`);
+  }, DELAI);
 });
