@@ -69,6 +69,21 @@ faisais* et *ce que tu attendais* reçoit de quoi corriger.
 
 **Adresse** : dans `docs/boite-a-idees.json` (`formulaire`). Le jeu la lit et l'ouvre depuis la bulle.
 
+> ### ⚠️ Le piège qui a déjà mordu (22/10/2026)
+>
+> **Un champ « Importer un fichier » ferme le formulaire.** Google impose la connexion à un compte
+> pour *tous* les répondants dès qu'une question accepte un fichier — ce n'est pas un réglage qu'on
+> peut désactiver, c'est la règle. Le formulaire s'est retrouvé en **401** (« Vous devez vous
+> connecter ») pour n'importe quel visiteur, y compris sans lien avec le reste des réglages.
+>
+> **On demande donc un lien, jamais un fichier** : la question « Capture » est une **réponse courte**
+> où la personne colle l'adresse d'une image. Le contrôle qui vaut, dix secondes : ouvrir le
+> formulaire dans une **fenêtre privée**, sans être connecté — s'il demande de se connecter, il est fermé.
+>
+> Deux autres réglages ferment un formulaire sans prévenir : **« Limiter à 1 réponse »** et
+> **« Collecter les adresses e-mail → Vérifié »**. Les trois se ressemblent : ils réclament une
+> identité, donc ils exigent une connexion.
+
 ### 4.1 La forme cible
 
 Un **préambule**, puis un **aiguillage** vers deux sections. Chaque ligne dit le **type** du champ,
