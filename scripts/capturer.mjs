@@ -15,6 +15,11 @@
  * (`premiere-visite.png`), nue. C'est l'exigence (4) de D-060 qui tient à ce prix :
  * une capture doit montrer l'écran qu'elle nomme.
  *
+ * Depuis le ticket #153, la capture tient enfin dans une image qu'on **regarde** : elle
+ * est prise à la taille que D-060 nomme (**420 × 900**) et sur la **fenêtre**, jamais
+ * sur la page entière — le Parc sortait en 141 460 px de haut, le Chariot en 80 064.
+ * Ce qu'on perd, et pourquoi c'est le bon compromis, est écrit sur `PLEINE_PAGE`.
+ *
  * Usage :
  *   npm run build && npm run capturer
  *   BASE_URL=http://localhost:5178 npm run capturer
@@ -87,7 +92,32 @@ function amorcageStore(origin) {
   };
 }
 
-const VIEWPORT = { width: 360, height: 800 };
+/**
+ * La **fenêtre d'un téléphone**, telle que le critère (4) de **D-060** la nomme :
+ * « on regarde les captures à la taille d'un téléphone (420×900) ». C'est un acte
+ * daté, et `AGENTS.md` §2 met les actes au-dessus du code : l'écart
+ * `360 × 800` du script était un bug, donc on suit la décision (#153).
+ */
+const VIEWPORT = { width: 420, height: 900 };
+
+/**
+ * Capture de la **fenêtre**, jamais de la page entière (#153).
+ *
+ * `fullPage: true` photographiait tout le document : le Parc mesurait ainsi
+ * **141 460 px de haut** et le Chariot **80 064** (mesuré le 22/10/2026, à 360 de
+ * large). Une capture de 141 000 px ne se regarde pas, et D-060 dit justement qu'on
+ * **regarde** les captures : une capture sert à juger **l'écran qu'un invité voit**,
+ * et cet écran est la fenêtre, pas un rouleau.
+ *
+ * Ce qu'on **gagne** : une image par page, toujours à 420 × 900, qu'on ouvre et qu'on
+ * juge ; c'est la taille que nomme D-060, donc l'écart doc/code ferme des deux côtés.
+ * Ce qu'on **perd** : ce qui vit sous la ligne de flottaison — le bas du Parc, les
+ * rangées du Chariot, le pied de page. Ce contenu se regarde en faisant défiler dans
+ * le navigateur ; il ne se jugeait pas dans un rouleau de 141 000 px. Si une planche
+ * de contrôle des grilles devient nécessaire, ce sera **un autre artefact**, avec sa
+ * commande : la capture d'écran reste « ce que voit un invité ».
+ */
+const PLEINE_PAGE = false;
 const PORT = Number(process.env.PORT ?? 4180);
 const base = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 /** L'origine où `storageState` dépose le store : Playwright range le `localStorage` par origine. */
@@ -118,7 +148,15 @@ function stop(message) {
 // navigateur ni serveur. La garde lit donc le vrai plan, elle ne cherche pas une
 // chaîne dans ce fichier.
 if (process.argv.includes('--plan')) {
-  console.log(JSON.stringify({ amorcage: amorcageStore(origine), captures: shots }));
+  // La **taille** et le **cadrage** sont dans le plan (#153) : la garde les lit ici,
+  // au lieu de chercher des nombres dans le source, et une régression les fait tomber.
+  console.log(
+    JSON.stringify({
+      amorcage: amorcageStore(origine),
+      capture: { viewport: VIEWPORT, pleinePage: PLEINE_PAGE },
+      captures: shots
+    })
+  );
   process.exit(0);
 }
 
@@ -161,7 +199,7 @@ try {
     await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.waitForTimeout(450);
-    await page.screenshot({ path: join(outDir, `${slug}.png`), fullPage: true });
+    await page.screenshot({ path: join(outDir, `${slug}.png`), fullPage: PLEINE_PAGE });
     await context.close();
   }
 } finally {

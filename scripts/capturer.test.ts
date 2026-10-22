@@ -145,3 +145,63 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
     expect(capturedRoutes().slugs).not.toContain(nues[0].slug);
   });
 });
+
+/**
+ * Ticket #153 — **la taille suit D-060, et une capture se regarde**.
+ *
+ * Deux écarts préexistants, constatés le 22/10/2026 en fermant #150 : le script
+ * capturait en `360 × 800` quand le critère (4) de D-060 dit `420 × 900`, et il
+ * photographiait la page **entière** — le Parc sortait en `360 × 141 460`, le
+ * Chariot en `360 × 80 064`, ce qui ne se regarde pas.
+ *
+ * La garde lit le **plan réel** (`--plan`) : la taille et le cadrage y sont publiés,
+ * donc les changer fait tomber les assertions. La taille attendue n'est **pas
+ * recopiée** ici : elle est relue dans la ligne D-060 de `docs/DECISIONS.md`, pour que
+ * l'acte et le code ne puissent pas diverger en silence.
+ */
+describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
+  interface Capture {
+    viewport: { width: number; height: number };
+    pleinePage: boolean;
+  }
+
+  /** La taille et le cadrage que le script exécute vraiment, sans navigateur. */
+  function capture(): Capture {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const output = execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+      cwd: root,
+      encoding: 'utf8',
+      env
+    });
+    return (JSON.parse(output) as { capture: Capture }).capture;
+  }
+
+  /** La taille que D-060 nomme — `(420×900)` —, lue dans l'acte, pas recopiée. */
+  function tailleDeD060(): { width: number; height: number } {
+    const lignes = read('docs/DECISIONS.md')
+      .split('\n')
+      .filter((ligne) => ligne.startsWith('| D-060 |'));
+    expect(lignes, 'ligne D-060 introuvable dans docs/DECISIONS.md').toHaveLength(1);
+    const taille = lignes[0].match(/\((\d+)×(\d+)\)/);
+    expect(taille, 'D-060 ne nomme plus de taille de téléphone « (L×H) »').not.toBeNull();
+    return { width: Number(taille![1]), height: Number(taille![2]) };
+  }
+
+  it('capture à la taille que D-060 nomme', () => {
+    expect(capture().viewport).toEqual(tailleDeD060());
+  });
+
+  it('capture la fenêtre, pas la page entière', () => {
+    expect(capture().pleinePage).toBe(false);
+  });
+
+  it('relie le plan au contexte et à la capture', () => {
+    const source = read('scripts/capturer.mjs');
+    // Sans ces liens, le plan pourrait annoncer une belle taille et un cadrage
+    // fenêtré, et la capture réelle continuerait en `fullPage: true`.
+    expect(source).toContain('viewport: VIEWPORT');
+    expect(source).toContain('fullPage: PLEINE_PAGE');
+  });
+});
