@@ -268,7 +268,7 @@ cd /home/chapax/Documents/opencode/gamedev/planquex
 | `npm run preview` | Servir `dist/` | **OK** (utilisé sur `:4180` pour la vérification navigateur) |
 | `npm run status` | Métriques JSON, dont les cartes dérivées d'`ALL_CARDS` | **OK**, exit 0 |
 | `node scripts/status.mjs` | Même script directement | **OK**, exit 0 |
-| `npm run capturer` | Photographie les pages et échoue sur une erreur de console | **OK**, exit 0, 5 images dans `captures/` (sur `dist/`, donc après `npm run build`) |
+| `npm run capturer` | Photographie les pages **amorcées** de la visite (`tutorielVu: true`, #150), plus la première visite elle-même ; échoue sur une erreur de console | **OK**, exit 0, une image par page dans `captures/` (sur `dist/`, donc après `npm run build`) |
 | `npm run simulate` | Simulateur headless seedé ; usage `npm run simulate -- --games 100 --seed 42` | **OK**, exit 0 (20/10/2026, `--games 100 --seed 42`) ; rapport par faction, voir `scripts/simulate.mjs` |
 | `npm run garde-fous` | **Mute** un invariant critique et **exige que la suite échoue** — un test qui ne peut pas échouer ne garde rien (#112). Sort 1 si une mutation passe inaperçue, ou si un motif a disparu du code (entrée à réancrer). `--verifie` fait le contrôle statique de la table, sans rien muter | **OK**, exit 0 (21/10/2026) ; `scripts/garde-fous.mjs` et sa table commentée |
 | `npm run pesage` | **Le niveau 2 bat-il le niveau 1 ?** Graines d'entraînement et de **contrôle** (disjointes, #111), **seuil décidé d'avance** (≥ 55 % des décidées *et* ≥ 1,15×), miroir apparié, intervalle de confiance à 95 %. Usage : `npm run pesage -- --games 100 --json` | **OK**, exit 0 (21/10/2026) ; reproduit les chiffres de #111 à l'identique — `scripts/pesage.mjs` |
