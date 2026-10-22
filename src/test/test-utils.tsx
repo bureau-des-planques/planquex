@@ -3,7 +3,7 @@ import { render, RenderOptions } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { seedRng } from '@/game/rng';
-import { ALL_CARDS, isPlanque } from '@/data';
+import { ALL_CARDS } from '@/data';
 import type { Faction } from '@/data/types';
 
 /**
@@ -72,14 +72,4 @@ export function renderWithStore(
 ) {
   setupTestStore(initialState);
   return render(ui, { wrapper: TestWrapper, ...options });
-}
-
-/**
- * Trouve un Entrant valide dans le deck ou la collection pour les tests.
- */
-export function findValidEntrant(deck: string[] = []): string | undefined {
-  return deck.find((id) => {
-    const card = ALL_CARDS.find((c) => c.id === id);
-    return card && isPlanque(card) && card.stage === 'ENTRANT' && !card.ex;
-  });
 }
