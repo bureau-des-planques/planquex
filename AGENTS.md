@@ -170,7 +170,9 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 ### 4.2 Viviers et contenu
 
 - Un **Arrivage** contient **5 cartes** : 3 communes, 1 peu commune, 1 rare minimum.
-- Cible de lancement : **286 cartes** = 226 de base (215 Planqués + 8 Collègues + 3 Objets) + 60 secrètes.
+- **Cible de contenu : autour de 300 cartes** — le set compte **225 bases + 75 variantes**, et le
+  chiffre **n'est pas un objectif** (D-063) : une bonne idée entre, une carte faite pour remplir un compte
+  n'entre pas. Ce qui compte est ce que le contenu permet de **jouer** : des Chariots et des stratégies.
 - Trois **viviers** (D-026) : **l'Atelier** (Atelier, Management, Syndicat), **l'Étage** (Amélioration continue, Support, Direction), **les Bureaux** (RH, SSE, QVT, Intérim).
 - Monétisation v1 : **aucun argent réel** ; la Cotisation se paie en monnaie de jeu.
 - Ton : satire de bureau **punch up**. On ridiculise les postures et le système, jamais une personne réelle, une entreprise existante ou un groupe protégé.

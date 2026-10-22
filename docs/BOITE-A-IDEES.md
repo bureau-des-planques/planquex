@@ -63,8 +63,19 @@ Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **à la 
 
 ## 4. Le formulaire
 
-La seule porte d'écriture de l'alpha. Les champs, dans cet ordre — **c'est ce formulaire qui
-décide de la qualité des retours** :
+La seule porte d'écriture de l'alpha, et elle existe : **« Recueille avis Alpha »**, un Google Form
+dont l'adresse est dans `docs/boite-a-idees.json` (`formulaire`). Il fonctionne en trois temps :
+**la version** (champ obligatoire), **le type** (Remonter un bug / Proposer une feature / **Gueuler**),
+puis **un champ libre** dans la section correspondante.
+
+> **« Gueuler » se range dans les IP.** C'est un avis, pas un défaut constaté : le mur ne connaît que
+> deux familles (D-058), et trois colonnes, c'est déjà le maximum qu'on lit sur un mur.
+
+Ce qu'il **ne** demande pas encore, et qui manque pour trier vite : l'**écran**, ce que la personne
+**faisait** et ce qu'elle **attendait**, et une **capture**. C'est noté comme reste à faire — le
+formulaire actuel suffit à recevoir des retours, pas à les qualifier sans aller-retour.
+
+Les champs visés, dans l'ordre — **c'est ce formulaire qui décide de la qualité des retours** :
 
 1. **IP ou OUF** (obligatoire) — le choix qui fait tout.
 2. **Titre** (obligatoire, une ligne).
