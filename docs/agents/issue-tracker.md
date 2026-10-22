@@ -14,6 +14,33 @@ Issues and specs for this repo live as GitHub issues on **`Chapax/planquex`** (p
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
 
+## Tenir un ticket à jour, et le fermer
+
+**Un ticket suit son travail.** Un agent qui travaille sur `#n` écrit dans `#n` ce qu'il a fait, à la
+fin — et pas seulement dans son rapport de session, qui disparaît. Trois moments d'écriture :
+
+1. **Pendant** : si le ticket change (une décision tranchée, un périmètre corrigé, une dépendance
+   levée), `gh issue comment <n>` et, si le corps est faux, `gh issue edit <n> --body-file <fichier>`.
+   Un corps périmé fait perdre plus de temps qu'un corps absent.
+2. **À la fin** : un commentaire qui dit **ce qui est fait**, avec la **preuve** (commande exacte et
+   extrait, ou fichier:ligne), et le **commit** (`git log --oneline --grep="#n"`).
+3. **À la fermeture** : `gh issue close <n> --comment "..."` — jamais une fermeture muette.
+
+**On ne ferme que ce qui est fait *et* vérifié.** Si une partie manque, deux cas, et deux seulement :
+
+- **Le reste est un autre travail** → ouvrir le ticket qui le porte, le citer dans le commentaire de
+  fermeture, puis fermer. (Exemple : les sept mécaniques du moteur ont été closes en renvoyant à
+  #175, qui câble les cartes.)
+- **Le reste appartient au même ticket** → **ne pas fermer** ; commenter l'état, et dire ce qui
+  manque. Une fermeture partielle est un mensonge qui se paie au ticket suivant.
+
+**Un ticket fermé sans preuve n'est pas fermé.** La preuve est une sortie de commande, un fichier
+cité, ou une capture — pas « ça doit marcher ».
+
+**Une dépendance se vérifie, elle ne se suppose pas.** `#140` a porté pendant une journée un
+« Blocked by #136 » faux : le script de statut lit un fichier JSON, pas la base. Avant de laisser un
+ticket bloqué, lire ce qu'il fait *réellement*.
+
 ## Pull requests as a triage surface
 
 **PRs as a request surface: no.** _(Set to `yes` if this repo treats external PRs as feature requests; `/triage` reads this flag.)_
