@@ -357,7 +357,7 @@ sans changer les cartes.
 
 ## 13. Prochaine étape
 
-1. Générer la **spécification des 286 cartes** à partir de ce vocabulaire :
+1. Générer la **spécification du set** à partir de ce vocabulaire :
    lignes d’évolution, stades, raretés, stats, attaques, talents, textes.
 2. Définir les **3 viviers de lancement** et leurs cartes exclusives.
 3. Produire la **direction artistique** : palette, gabarit de carte, 3 planches.

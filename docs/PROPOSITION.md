@@ -113,7 +113,7 @@ Ordres de grandeur 2026, à revérifier au moment du lancement :
 
 **Lecture pour 100 joueurs simultanés** : Supabase Free suffit (200 connexions), mais le plafond de 2 M messages/mois peut devenir juste si les joueurs enchaînent les combats. Pour une bêta publique, **Supabase Pro à 25 $/mois** est le choix sûr. Appwrite Free (250 connexions, pas de pause) est une alternative crédible.
 
-**Combien de joueurs au total** : la limite contraignante n'est pas le nombre d'inscrits (50 000 MAU), c'est la **taille de la base**. Avec 286 cartes par joueur, compte ~10–20 Ko de collection par joueur ; 500 Mo tiennent donc quelques milliers à ~10 000 collectionneurs, avant les logs de combat. Les logs doivent partir vers R2.
+**Combien de joueurs au total** : la limite contraignante n'est pas le nombre d'inscrits (50 000 MAU), c'est la **taille de la base**. Avec un set de l'ordre de 300 cartes par joueur, compte ~10–20 Ko de collection par joueur ; 500 Mo tiennent donc quelques milliers à ~10 000 collectionneurs, avant les logs de combat. Les logs doivent partir vers R2.
 
 **Homelab Proxmox + Cloudflare Tunnel** :
 
@@ -122,7 +122,7 @@ Ordres de grandeur 2026, à revérifier au moment du lancement :
 - **Production** : le risque est la coupure internet, l'électricité, les backups et la sécurité. Pour 100 joueurs, un petit VPS Hetzner (~5 €/mois) sera plus fiable que le salon.
 - **Option self-host complète** : **PocketBase** (un binaire, SQLite, auth, realtime, admin) sur une VM Proxmox 4 vCPU / 4–8 Go, derrière Cloudflare Tunnel, backups Litestream vers R2. Viable pour 100–500 joueurs simultanés.
 - **Supabase self-hosted** : possible sur Proxmox, mais ~10 conteneurs et 8–16 Go de RAM ; plus lourd à maintenir que PocketBase.
-- **Hybride recommandé** : Supabase managé pour l'auth/DB/realtime, **Cloudflare R2** pour les 286 illustrations (zéro egress), **homelab** pour staging/backups/CI.
+- **Hybride recommandé** : Supabase managé pour l'auth/DB/realtime, **Cloudflare R2** pour les illustrations du set (zéro egress), **homelab** pour staging/backups/CI.
 
 ---
 
@@ -241,7 +241,7 @@ Le mode standard reste **mathématiquement identique** à TCG Pocket. La saveur 
 - On **ne nomme personne** de réel, aucune entreprise existante, aucun groupe protégé.
 - Les cartes « Direction » sont des archétypes (N+2 fantôme, chef de projet fantôme), pas des portraits.
 - Les textes sont drôles mais pas haineux ; la victime du gag est toujours le système, pas le salarié.
-- Un comité de lecture (toi + quelques testeurs) valide les 286 textes avant publication.
+- Un comité de lecture (toi + quelques testeurs) valide les textes du set avant publication.
 
 ### 3.6 Ce qu'on peut modifier sans casser le miroir
 
@@ -249,7 +249,7 @@ Le mode standard reste **mathématiquement identique** à TCG Pocket. La saveur 
 |---|---|---|
 | **Cosmétique** | Noms, textes, art, sons, animations, cadres de rareté, thèmes de viviers, missions, avatars, autocollants | Nul |
 | **Économie** | Recharge des Arrivages, prix boutique, récompenses de missions, coûts de Pause café | Faible (progression, pas combat) |
-| **Contenu** | Les 286 cartes, leurs stats, attaques, talents | Moyen (méta) — validation par simulation |
+| **Contenu** | Les cartes du set, leurs stats, attaques, talents | Moyen (méta) — validation par simulation |
 | **Modes séparés** | Mode Carrière, mode Café 4b (parké : `docs/MODES-FUTURS.md`), draft, scellé | Nul sur le standard |
 | **Mots-clés de carte** | « Changement de priorité », « Audit », « Prime »… construits sur des primitives existantes | Moyen — simulation obligatoire |
 | **Règles de base** | Chariot, main, Rack, Interventions, café/tour, Vulnérabilité, résistance, pioche vide | **Élevé — on n'y touche pas** |
@@ -273,7 +273,14 @@ Deux précisions :
 
 ---
 
-## 4. Contenu : 286 cartes au lancement
+## 4. Contenu : la structure du set
+
+> **Note d'autorité (D-063, #152)** : la cible de contenu **n'est plus un chiffre**. Le volume
+> est celui de **D-063** — le set est à **225 bases + 75 variantes**, et on vise **autour de
+> 300** **sans compter** : une bonne idée entre, une carte faite pour remplir un compte n'entre
+> pas. Les **décomptes réels** se lisent dans `npm run status`, jamais ici. Ce qui suit
+> (§4.1 à §4.6) est un **instantané daté de D-005** (18/10/2026) : ces tables ne sont **pas un
+> engagement**, et leurs chiffres ne se recopient dans aucun autre document.
 
 ### 4.1 Structure exacte (miroir de Genetic Apex)
 
@@ -338,16 +345,16 @@ Chaque **Arrivage** contient 5 cartes : 3 communes, 1 peu commune, 1 rare minimu
 ### 4.5 Pipeline de production
 
 1. **Gabarit de carte** (Zod) : id, numéro, nom, faction, stade, évolution, Seuil, vulnérabilité, relève, attaques, talent, rareté, viviers, texte d'ambiance, art.
-2. **Tableur de set** : 286 lignes, une par carte, avec les 10 factions et les 8 raretés.
+2. **Tableur de set** : une ligne par carte, avec les 10 factions et les 8 raretés.
 3. **Validation automatique** : lignes d'évolution complètes, coûts d'énergie cohérents, aucune faction orpheline, counts exacts.
 4. **Simulation d'équilibrage** : 10 000 parties par archétype, winrates cibles 45–55 %, détection des cartes auto-incluses.
-5. **Textes** : 286 noms + 286 textes d'ambiance + 19 règles de cartes Action.
-6. **Art** : 286 illustrations + 3 visuels de vivier + icônes de factions + cadres de rareté.
+5. **Textes** : un nom et un texte d'ambiance par carte + 19 règles de cartes Action.
+6. **Art** : une illustration par Planqué de base, les variantes héritant de la leur (**D-063**) + 3 visuels de vivier + icônes de factions + cadres de rareté.
 7. **Intégration** : build du set en JSON versionné, seed Supabase, tests de rendu.
 
 ### 4.6 Art : la vraie difficulté
 
-286 illustrations, c'est le poste le plus long. Trois options :
+L'illustration des bases, c'est le poste le plus long. Trois options :
 
 | Option | Coût | Qualité | Délai |
 |---|---|---|---|
@@ -400,7 +407,7 @@ Chaque **Arrivage** contient 5 cartes : 3 communes, 1 peu commune, 1 rare minimu
 |---|---|---|
 | 0 | Validation de ce document, spécification du set, direction artistique | 1 |
 | 1 | Scaffold, design system, auth, PWA, CI, profil, accueil | 1–2 |
-| 2 | Set 286 cartes, chariot, viviers, pause café, boutique, missions | 2 |
+| 2 | Set de cartes, chariot, viviers, pause café, boutique, missions | 2 |
 | 3 | Moteur, IA, combat solo, tutoriel, reprise, replay | 2–3 |
 | 4 | PvP, serveur autoritaire, classé, matchmaking | 2–3 |
 | 5 | Échanges, amis, casier, cotisation, événements | 2 |
@@ -421,7 +428,7 @@ planquex/
 │   └── web/                 # React 19 + Vite 8 + PWA
 ├── packages/
 │   ├── engine/              # moteur pur, déterministe, partagé client/serveur
-│   ├── content/             # 286 cartes, schémas Zod, textes, art
+│   ├── content/             # le set, schémas Zod, textes, art
 │   ├── ui/                  # design system, cartes, animations
 │   └── config/              # tsconfig, eslint, tailwind
 ├── supabase/
@@ -516,7 +523,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 
 À créer pour ce projet :
 
-- **`planquex-card-design`** : gabarit, ton, règles de nommage, validation des 286 cartes.
+- **`planquex-card-design`** : gabarit, ton, règles de nommage, validation du set.
 - **`planquex-balance`** : lancer les simulations, lire les winrates, proposer des ajustements.
 - **`planquex-ui-qa`** : captures 360/1280, vérifs de débordement, contrastes, reduced motion.
 - **`planquex-lore`** : cohérence de l'univers, personnages, factions, textes.
@@ -557,7 +564,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 
 | Risque | Impact | Mitigation |
 |---|---|---|
-| 286 illustrations | Blocage du lancement | IA + curation, placeholders dès la phase 2 |
+| Illustrations des bases | Blocage du lancement | IA + curation, placeholders dès la phase 2 |
 | Équilibrage | Méta cassée | simulation dès la phase 3, patchs de set |
 | Portée « tout l'APK » | Dérive | phases verrouillées, **beta** (voir D-048) |
 | PvP serveur | Triche / désync | moteur partagé, autorité serveur, journal |
@@ -570,7 +577,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 ## 9. Questions à trancher
 
 1. ~~**Règles** : on valide le miroir exact de TCG Pocket (20/5/3, zone d'énergie, pas de résistance, pas de défaite par pioche vide) et l'abandon de `RULES-4b` comme mode standard ?~~ **Tranché** (D-018, D-019) : miroir **daté 2026**, `RULES-4b` rangé dans `docs/MODES-FUTURS.md`. **O-008** (écarts du miroir) et **O-009** (règles insourçables) sont désormais **tranchés** — O-008 par **D-020**, O-009 par **D-022** — voir `docs/DECISIONS.md`.
-2. **Volume** : on valide 286 cartes avec la répartition exacte (226 + 60, 102/67/42/15/24/29/4/3) ?
+2. ~~**Volume** : on valide 286 cartes avec la répartition exacte (226 + 60, 102/67/42/15/24/29/4/3) ?~~ **Tranché** (D-005, puis **D-063**) : la cible n'est plus un compte — **autour de 300** cartes, **sans compter**, les décomptes réels se lisant dans `npm run status`.
 3. **Factions** : on valide les 10 noms proposés, ou tu veux en changer certains ?
 4. **Ton** : on valide « punch up, aucun nom réel, la cible est le système » ? Tu veux un degré de férocité plus haut ou plus bas ?
 5. **Art** : IA + curation, placeholders stylés, ou commande à un illustrateur ?
@@ -585,7 +592,7 @@ Déjà disponibles et utiles : `tdd`, `code-review`, `diagnosing-bugs`, `prototy
 ## 10. Ce que je fais dès que tu réponds
 
 1. Je fige les décisions dans `docs/DECISIONS.md`.
-2. Je produis la **spécification du set** : 286 lignes, factions, raretés, lignes d'évolution, archétypes.
+2. Je produis la **spécification du set** : une ligne par carte, factions, raretés, lignes d'évolution, archétypes.
 3. Je produis la **direction artistique** : palette, gabarit de carte, 3 planches de style.
 4. Je scaffolde le monorepo et le design system, sans moteur de combat.
 5. On attaque la phase 2 (contenu + collection + viviers) avec des captures à chaque étape.

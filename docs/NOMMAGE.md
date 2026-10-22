@@ -1,6 +1,6 @@
 # Inventaire du nommage — points à trancher
 
-> Relevé le 19/10/2026, **avant** l'écriture des 286 cartes : c'est le bon moment, parce
+> Relevé le 19/10/2026, **avant** l'écriture des cartes du set : c'est le bon moment, parce
 > que les noms des 8 Collègues, des 3 Objets et de 226 Planqués en dépendent.
 > Ce document n'acte rien. Il liste ce qui existe, et signale les **incohérences**
 > que j'ai trouvées — c'est à toi de dire lesquelles te gênent.
@@ -118,7 +118,7 @@ Chaque proposition est chiffrée : **[gratuit]** = aucun identifiant existant ne
 (et donc le préfixe des identifiants).
 
 > **Règle d'or du moment** : aucune carte n'existe en dehors de **SSE**. Renommer les
-> neuf autres factions est **gratuit** aujourd'hui. Après les 286 cartes, chaque
+> neuf autres factions est **gratuit** aujourd'hui. Une fois les cartes écrites, chaque
 > renommage devient une migration de sauvegarde.
 
 ### P1 — Les trois axes « chefs »
@@ -232,7 +232,7 @@ ligne**, donc la même identité mécanique.
   catégorie de ressources) et l'Intendance (une fonction) : ce sont des *fonctions*, pas des
   endroits.
 - **« plateau » est écarté** du nommage de la main. Verdict de Bastien : la confusion avec
-  *le plateau de jeu* est réelle, et c'est lui qui lira le mot 286 fois. Le mot reste ce
+  *le plateau de jeu* est réelle, et c'est lui qui lira le mot à chaque carte. Le mot reste ce
   qu'il est — un mot de langue courante pour l'aire de jeu — et **la main reste à nommer**
   (lot 1 des stocks).
 - **Le Chariot** remplace « Classeur » : le chariot d'atelier qu'on remplit et qu'on roule
@@ -241,7 +241,7 @@ ligne**, donc la même identité mécanique.
 - **Le Rebut** remplace « Archive » (la pile de défausse), et **« mettre au rebut »**
   remplace le verbe « défausser » dans les textes de cartes. C'est le gain le plus large de
   la séance : le mot vient du **contrôle qualité** (le taux de rebut est un indicateur), il
-  se lit sans jamais sonner faux, et il va servir dans les 286 textes. **La Benne** reste
+  se lit sans jamais sonner faux, et il va servir dans les textes de cartes. **La Benne** reste
   disponible pour une carte — le contenant et l'état sont deux choses différentes.
 - **Le score devient les Interventions.** Cohérent avec « il craque » : ce qu'on gagne, c'est
   une **intervention terminée**. Un COMEX en vaut 2.
@@ -294,7 +294,7 @@ Trois mots retrouvés dans le legacy — `docs/RULES-4b.md:40-42` des versions a
 C'est une **représentation**, pas une mécanique : `Stress = Seuil − Moral`, même calcul, même
 valeur, même miroir. §4.1 bannit le *mécanisme* 4b — un compteur maison avec ses propres
 règles — pas une façon d'afficher les points de vie. Conséquence : « Moral », « dégâts » et
-« K.O. » quittent le vocabulaire, et les 286 textes diront « **prend 10 de stress** »,
+« K.O. » quittent le vocabulaire, et les textes de cartes diront « **prend 10 de stress** »,
 « **il craque** ».
 
 Pourquoi c'est mieux : un moral qui *descend* décrit une victime ; un **stress qui monte

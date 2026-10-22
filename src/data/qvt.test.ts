@@ -20,7 +20,8 @@ const byId = (id: string): PlanqueCard | undefined => {
 describe('QVT — enregistrement (tickets #23/#24)', () => {
   it('compte 49 entrées, dont 37 bases et 12 variantes (vague 1, #66 : +1 COMEX)', () => {
     // PROPOSITION.md §4.3 : 48 entrées à la cible. La vague 1 (#66) ajoute le second
-    // COMEX ; les vagues 2 à 4 ramènent le total à 286.
+    // COMEX ; les vagues suivantes complètent le set, dont le volume suit D-063
+    // (« autour de 300 », sans compter) et se lit dans `npm run status`.
     expect(QVT_CARDS).toHaveLength(37);
     expect(QVT_VARIANTS).toHaveLength(12);
     expect(ALL_QVT_CARDS).toHaveLength(49);
