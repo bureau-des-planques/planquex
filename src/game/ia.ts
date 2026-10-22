@@ -1,4 +1,4 @@
-import { getCard, isPlanque } from '@/data';
+import { ALL_CARDS, getCard, isPlanque } from '@/data';
 import type {
   BattleAction,
   BattleState,
@@ -6,8 +6,9 @@ import type {
   PlayerId,
   PlayerState
 } from '@/data/types';
-import { applyAction, attackDamage, attackPreview, legalActions } from '@/game/engine';
-import { seedRng } from '@/game/rng';
+import { applyAction, attackDamage, attackPreview, createInstance, legalActions } from '@/game/engine';
+import { MAX_COPIES_PER_NAME } from '@/game/deck';
+import { drawRandom, seedRng } from '@/game/rng';
 import type { RngState } from '@/game/rng';
 import { satisfiesCafeCost } from '@/game/rules';
 
@@ -469,5 +470,268 @@ function bestEvaluatedAction(
     }
   }
 
+  return best;
+}
+
+/* ------------------------------------------------------------------ */
+/* Recherche à deux coups — expérimentale (piste 2, `docs/ESSAIS-IA.md`) */
+/* ------------------------------------------------------------------ */
+
+/**
+ * **Recherche à deux coups au niveau du tour**, expérimentale. Elle n'est **pas** le
+ * niveau 2 : `nextAction(state, 2)` reste la référence mesurée (#93, #111). Elle n'est
+ * branchée nulle part dans l'écran ; seul `scripts/pesage.mjs --direction recherche`
+ * l'emploie, pour la mesurer dans le même harnais.
+ *
+ * **Pourquoi « au niveau du tour »** : une Pression, une fin de tour ou une relève ne
+ * laissent pas la main à l'adversaire à chaque action ; un coup de la Direction n'est
+ * donc pas suivi d'un coup adverse immédiat. La réponse adverse est **un tour entier** :
+ * son premier coup légal, puis sa politique scriptée (`nextAction(…, 1)`) jusqu'à
+ * sa fin de tour.
+ *
+ * Pour chaque décision de la Direction (`who`) :
+ *
+ * 1. **Élagage à un coup** : les actions légales sont notées comme le niveau 2 (même
+ *    `evaluatePosition`, même `endTurnBonus`) ; on garde les `candidates` meilleures.
+ * 2. **Mondes** : pour chaque candidat, on joue sur `worlds` mondes. Chaque monde remplace
+ *    la **main** et le **Deck** de l'adversaire par un tirage dans le **pool des cartes
+ *    inconnues** (`unknownPool`, §ci-dessous) — jamais par ses vraies cartes.
+ * 3. **Ma suite** : le candidat, puis mon tour terminé par la politique scriptée.
+ * 4. **Réponse adverse** : parmi ses coups légals dans le monde, les `replies` plus
+ *    nocifs à un coup (évalués pour moi) sont joués **en entier** (politique scriptée).
+ *    Le camp de la Direction prend le **pire** de ces tours pour lui (minimum).
+ * 5. **Feuille** : la position au début de mon prochain tour, notée par
+ *    `evaluatePosition` (le bonus de fin de tour n'a plus lieu d'être : la pioche est faite).
+ *    Une partie finie vaut ±`SEARCH_WIN` (gagnée / perdue).
+ *
+ * La valeur d'un candidat est la **moyenne** des valeurs sur les mondes ; le meilleur
+ * candidat gagne, à égalité le premier de l'élagage (déterministe).
+ *
+ * **Équité (règle centrale, `docs/ESSAIS-IA.md` §Équité)** :
+ * - la décision ne lit **jamais** `state.players[adversaire].hand` ni `.deck` (contenu) :
+ *   seuls leurs **comptes** (`hand.length`, `deck.length`), déjà visibles de la table ;
+ * - le pool (`unknownPool`) est construit sans lire la main ni le Deck adverses : il ne
+ *   retire que mes cartes (main, Deck) et les cartes **publiques** (Postes, Racks,
+ *   défausses des deux camps) ;
+ * - les tirages passent par un générateur **seedé** dérivé de la **graine de la partie**
+ *   (`state.seed`) et du tour, jamais de `state.rng` : aucun tirage ne consomme le flux réel
+ *   (même raison que #114 — la politique ne doit pas deviner le prochain lancer) ;
+ * - aucun `Math.random()`, aucun uid nouveau dans le compteur global du moteur.
+ */
+
+/** Réglages de la recherche (le harnais en fait varier un par essai). */
+export interface SearchOptions {
+  /** Nombre de mes coups retenus après l'élagage à un coup. */
+  candidates: number;
+  /** Nombre de mondes tirés dans le pool des cartes inconnues. */
+  worlds: number;
+  /** Nombre de tours adverses joués en entier par monde (les plus nocifs à un coup). */
+  replies: number;
+}
+
+/** Réglages par défaut de la recherche. Choisis avant toute mesure du contrôle (protocole). */
+export const DEFAULT_SEARCH_OPTIONS: SearchOptions = { candidates: 6, worlds: 3, replies: 4 };
+
+/** Valeur d'une victoire (ou défaite) dans la recherche : elle écrase toute évaluation. */
+const SEARCH_WIN = 1_000_000;
+
+/** Garde-fou : nombre maximal de coups joués dans un tour scripté. */
+const CONTINUATION_CAP = 60;
+
+/** Un coup noté à un coup : son score pour le camp `who`. */
+interface ScoredMove {
+  action: BattleAction;
+  index: number;
+  score: number;
+}
+
+/**
+ * **Pool des cartes inconnues** du camp `who`, vu de sa place : chaque carte que le
+ * catalogue permet (`MAX_COPIES_PER_NAME` exemplaires de chaque carte), **moins** celles
+ * qu'il voit — sa main, son Deck, les Postes et Racks des deux camps, les défausses des
+ * deux camps. Il reste donc exactement les cartes que l'adversaire peut tenir en main ou
+ * en Deck. Ordre : celui de `ALL_CARDS`, donc déterministe.
+ *
+ * Approximation assumée : la règle des exemplaires est **par nom** (`deck.ts`), le pool la
+ * compte **par identifiant** (une variante et sa base ne partagent pas leur quota ici).
+ */
+export function unknownPool(state: BattleState, who: PlayerId): string[] {
+  const me = state.players[who];
+  const opponent = state.players[opponentOf(who)];
+  const seen = new Map<string, number>();
+  const see = (card: CardInstance | null | undefined) => {
+    if (card) seen.set(card.cardId, (seen.get(card.cardId) ?? 0) + 1);
+  };
+  me.hand.forEach(see);
+  me.deck.forEach(see);
+  [me.active, ...me.bench, opponent.active, ...opponent.bench].forEach(see);
+  me.discard.forEach(see);
+  opponent.discard.forEach(see);
+
+  const pool: string[] = [];
+  for (const card of ALL_CARDS) {
+    const left = MAX_COPIES_PER_NAME - (seen.get(card.id) ?? 0);
+    for (let copy = 0; copy < left; copy += 1) pool.push(card.id);
+  }
+  return pool;
+}
+
+/** Graine d'un tirage de la recherche : dérivée de la graine de la partie, jamais de `state.rng`. */
+function searchSeed(state: BattleState, salt: number): RngState {
+  return seedRng(Math.trunc(state.seed) + salt * 7919 + state.turn * 104729);
+}
+
+/**
+ * **Monde** : copie de `state` où la main et le Deck du camp adverse sont tirés dans le
+ * pool (`unknownPool`). Seuls les **comptes** de la main et du Deck adverses sont lus.
+ * Les autres champs adverses (Postes, Racks, défausse, points, Machine) sont publics et
+ * repris tels quels. Exporté pour le test d'équité (`ia-recherche.test.ts`) : le monde
+ * tiré ne doit jamais dépendre du **contenu** de la main réelle de l'adversaire.
+ */
+export function sampleWorld(state: BattleState, who: PlayerId, index: number): BattleState {
+  const opponentId = opponentOf(who);
+  const hidden = state.players[opponentId];
+  const handSize = hidden.hand.length;
+  const deckSize = hidden.deck.length;
+
+  const pool = unknownPool(state, who);
+  const need = Math.min(pool.length, handSize + deckSize);
+  // Tirage sans remise (Fisher–Yates partiel) : une carte ne sort jamais deux fois.
+  const drawing = { rng: searchSeed(state, 2 * index + 1) };
+  for (let i = 0; i < need; i += 1) {
+    const j = i + Math.floor(drawRandom(drawing) * (pool.length - i));
+    const kept = pool[i];
+    pool[i] = pool[j] as string;
+    pool[j] = kept as string;
+  }
+
+  const drawn = pool.slice(0, need);
+  const hand = drawn
+    .slice(0, handSize)
+    .map((cardId, i) => createInstance(cardId, state.turn, `w${index}h${i}`));
+  const deck = drawn
+    .slice(handSize)
+    .map((cardId, i) => createInstance(cardId, state.turn, `w${index}d${i}`));
+
+  return {
+    ...state,
+    // Le monde joue avec son propre générateur : il ne consomme pas `state.rng`.
+    rng: searchSeed(state, 2 * index + 2),
+    log: [],
+    actionLog: [],
+    players: { ...state.players, [opponentId]: { ...hidden, hand, deck } }
+  };
+}
+
+/**
+ * Note chaque action légale **à un coup** pour le camp `who` (même critère que le niveau 2).
+ * Le forfait est exclu ; une action refusée n'est pas notée. `bonus` ajoute le bonus de
+ * fin de tour à la seule fin de tour (utile pour élaguer mes coups, pas pour les réponses).
+ */
+function scoreMoves(
+  state: BattleState,
+  legal: readonly BattleAction[],
+  who: PlayerId,
+  bonus: boolean
+): ScoredMove[] {
+  const moves: ScoredMove[] = [];
+  legal.forEach((action, index) => {
+    if (action.type === 'forfeit') return;
+    const probe: BattleState = { ...state, rng: evaluationRng(state, index), log: [], actionLog: [] };
+    const after = applyAction(probe, action);
+    if (after === probe) return;
+    let score = evaluatePosition(after, who);
+    if (bonus && action.type === 'endTurn') {
+      score += endTurnBonus(after.players[who], DEFAULT_EVALUATION_WEIGHTS);
+    }
+    moves.push({ action, index, score });
+  });
+  return moves;
+}
+
+/**
+ * Joue la politique scriptée (niveau 1) **tant que** c'est au camp `side` de jouer, ou
+ * tant qu'une relève est en attente (c'est alors `nextAction` qui tranche, pour l'un ou
+ * l'autre camp). Rend l'état à la fin du tour, ou à la fin de la partie.
+ */
+function playOutTurn(state: BattleState, side: PlayerId): BattleState {
+  let current = state;
+  for (let step = 0; step < CONTINUATION_CAP; step += 1) {
+    if (current.phase === 'ended') break;
+    if (!current.pendingPromotion && current.current !== side) break;
+    const action = nextAction(current, 1);
+    if (!action) break;
+    const after = applyAction(current, action);
+    if (after === current) break;
+    current = after;
+  }
+  return current;
+}
+
+/** Valeur d'une position pour `who` : la fin de partie l'emporte sur l'évaluation. */
+function valueOf(state: BattleState, who: PlayerId): number {
+  const outcome =
+    state.phase !== 'ended' ? 0 : state.winner === who ? SEARCH_WIN : state.winner === null ? 0 : -SEARCH_WIN;
+  return outcome + evaluatePosition(state, who);
+}
+
+/**
+ * Valeur d'**un** coup `action` de `who` dans **un** monde : mon tour (coup + suite
+ * scriptée), puis le pire tour adverse parmi les `replies` plus nocifs à un coup.
+ */
+function lineValue(world: BattleState, action: BattleAction, who: PlayerId, options: SearchOptions): number {
+  const first = applyAction(world, action);
+  if (first === world) return -Infinity;
+  const mine = playOutTurn(first, who);
+  // Partie finie, ou tour de `who` qui ne rend pas la main (garde-fou atteint) : pas de réponse.
+  if (mine.phase === 'ended' || mine.current === who) return valueOf(mine, who);
+
+  const opponentId = opponentOf(who);
+  const replies = scoreMoves(mine, legalActions(mine), who, false)
+    .sort((a, b) => a.score - b.score || a.index - b.index)
+    .slice(0, options.replies);
+
+  let worst = Infinity;
+  for (const reply of replies) {
+    const next = applyAction(mine, reply.action);
+    if (next === mine) continue;
+    const leaf = playOutTurn(next, opponentId);
+    worst = Math.min(worst, valueOf(leaf, who));
+  }
+  return worst === Infinity ? valueOf(mine, who) : worst;
+}
+
+/**
+ * **Prochaine action de la recherche à deux coups** (expérimentale). Même contrat que
+ * `nextAction` : rend une action de `legalActions` ou `null`. Une relève en attente est
+ * tranchée par le niveau 2 (1 coup), la recherche ne porte que sur le tour.
+ */
+export function nextSearchAction(
+  state: BattleState,
+  options: SearchOptions = DEFAULT_SEARCH_OPTIONS
+): BattleAction | null {
+  if (state.phase === 'ended') return null;
+  if (state.pendingPromotion) return nextAction(state, 2);
+
+  const who = state.current;
+  const candidates = scoreMoves(state, legalActions(state), who, true)
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, options.candidates);
+  const only = candidates[0];
+  if (!only) return null;
+  if (candidates.length === 1) return only.action;
+
+  const worlds = Array.from({ length: options.worlds }, (_, index) => sampleWorld(state, who, index));
+  let best: BattleAction = only.action;
+  let bestValue = -Infinity;
+  for (const candidate of candidates) {
+    let total = 0;
+    for (const world of worlds) total += lineValue(world, candidate.action, who, options);
+    const value = total / worlds.length;
+    if (value > bestValue) {
+      best = candidate.action;
+      bestValue = value;
+    }
+  }
   return best;
 }
