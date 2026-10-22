@@ -36,7 +36,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     ability: { name: 'Prise en main', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Procédure', cost: ['INCOLORE', 'INCOLORE'], damage: 40 }],
+    attacks: [{ name: 'Procédure', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est renvoyé à la procédure. Avez-vous essayé de redémarrer votre demande ?' }],
     flavor: 'Avez-vous essayé de redémarrer votre demande ?'
   }),
   base({
@@ -89,7 +89,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Compte rendu', cost: ['INCOLORE', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Compte rendu', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit le compte rendu en copie. Il est diffusé à tous et lu par personne.' }],
     flavor: 'Le compte rendu est diffusé. Il n’est pas lu.'
   }),
   base({
@@ -101,7 +101,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Appel d’offres', cost: ['INCOLORE', 'INCOLORE'], damage: 60 },
+      { name: 'Appel d’offres', cost: ['INCOLORE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est mis en concurrence. Tous les contrats sont renouvelés ; le service ne change pas.' },
       { name: 'Plan de reprise', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
     flavor: 'Il a renouvelé tous les contrats. Le service, lui, n’a pas changé.'
@@ -115,7 +115,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Réinstallation', cost: ['INCOLORE'], damage: 20 }],
+    attacks: [{ name: 'Réinstallation', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est réinstallé de zéro. La sauvegarde est incluse ; elle n’a jamais tourné.' }],
     flavor: 'La sauvegarde est incluse. Elle n’a jamais tourné.'
   }),
   base({
@@ -138,7 +138,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Bascule', cost: ['INCOLORE', 'INCOLORE'], damage: 60 },
+      { name: 'Bascule', cost: ['INCOLORE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est basculé sur le site de secours. Le plan de continuité tient en une page, la panne en trois.' },
       { name: 'Plan de continuité', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
     flavor: 'Le plan de continuité tient en une page. La panne, en trois.'
@@ -175,7 +175,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Mise à jour', cost: ['INCOLORE', 'INCOLORE'], damage: 50 },
+      { name: 'Mise à jour', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit une mise à jour de la documentation. Le produit est déjà passé à la version suivante.' },
       { name: 'Refonte', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }
     ],
     flavor: 'La documentation est validée. Le produit est déjà en v2.'
@@ -189,7 +189,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Câblage', cost: ['INCOLORE'], damage: 20 }],
+    attacks: [{ name: 'Câblage', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est branché sur un câble neuf. La prise, elle, date de l’ouverture du site.' }],
     flavor: 'Le câble est neuf. La prise, non.'
   }),
   base({
@@ -254,7 +254,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Mode opératoire', cost: ['INCOLORE', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Mode opératoire', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse suit le mode opératoire à la lettre. Il a été validé sans avoir été essayé.' }],
     flavor: 'Le mode opératoire est validé. Il n’a pas été essayé.'
   }),
 
@@ -277,7 +277,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Parcours', cost: ['INCOLORE', 'INCOLORE'], damage: 50 }],
+    attacks: [{ name: 'Parcours', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse suit un parcours personnalisé. C’est le même pour tout le monde.' }],
     flavor: 'Le parcours est personnalisé. Tout le monde suit le même.'
   }),
 
@@ -315,7 +315,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Saisie', cost: ['INCOLORE'], damage: 20 }],
+    attacks: [{ name: 'Saisie', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est saisi dans le formulaire. Le formulaire perd la demande, pas la rancune.' }],
     flavor: 'Il saisit les demandes. Le formulaire les perd.'
   }),
   base({
@@ -335,7 +335,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Accueil', cost: ['INCOLORE'], damage: 20 }],
+    attacks: [{ name: 'Accueil', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est accueilli au comptoir. Son badge ne s’ouvre sur aucune porte.' }],
     flavor: 'Il accueille les visiteurs. Le badge ne s’ouvre pas.'
   }),
   base({
@@ -355,7 +355,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Frappe', cost: ['INCOLORE'], damage: 20 }],
+    attacks: [{ name: 'Frappe', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse encaisse une frappe rapide. Le système répond moins vite que le clavier.' }],
     flavor: 'Il tape plus vite que le système ne répond.'
   }),
   base({
@@ -377,7 +377,7 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [
       { name: 'Planning', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
-      { name: 'Revue de tickets', cost: ['INCOLORE', 'INCOLORE'], damage: 40 }
+      { name: 'Revue de tickets', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse passe en revue de tickets. Les files d’attente avancent en parallèle et ne se rejoignent jamais.' }
     ],
     flavor: 'Il coordonne les files d’attente. Elles ne se rejoignent jamais.'
   }),
