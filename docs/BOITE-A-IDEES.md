@@ -63,36 +63,66 @@ Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **à la 
 
 ## 4. Le formulaire
 
-La seule porte d'écriture de l'alpha, et elle existe : **« Recueille avis Alpha »**, un Google Form
-dont l'adresse est dans `docs/boite-a-idees.json` (`formulaire`). Il fonctionne en trois temps :
-**la version** (champ obligatoire), **le type** (Remonter un bug / Proposer une feature / **Gueuler**),
-puis **un champ libre** dans la section correspondante.
+La seule porte d'écriture de l'alpha. C'est lui qui décide de la **qualité** des retours : un
+formulaire qui demande « décris ton bug » reçoit « ça bug » ; un formulaire qui demande *ce que tu
+faisais* et *ce que tu attendais* reçoit de quoi corriger.
 
-> **« Gueuler » se range dans les IP.** C'est un avis, pas un défaut constaté : le mur ne connaît que
-> deux familles (D-058), et trois colonnes, c'est déjà le maximum qu'on lit sur un mur.
+**Adresse** : dans `docs/boite-a-idees.json` (`formulaire`). Le jeu la lit et l'ouvre depuis la bulle.
 
-Ce qu'il **ne** demande pas encore, et qui manque pour trier vite : l'**écran**, ce que la personne
-**faisait** et ce qu'elle **attendait**, et une **capture**. C'est noté comme reste à faire — le
-formulaire actuel suffit à recevoir des retours, pas à les qualifier sans aller-retour.
+### 4.1 La forme cible
 
-Les champs visés, dans l'ordre — **c'est ce formulaire qui décide de la qualité des retours** :
+Un **préambule**, puis un **aiguillage** vers deux sections. Chaque ligne dit le **type** du champ,
+s'il est **obligatoire**, et le **texte d'aide** (le petit texte gris sous la question — c'est lui qui
+fait la différence).
 
-1. **IP ou OUF** (obligatoire) — le choix qui fait tout.
-2. **Titre** (obligatoire, une ligne).
-3. **Description** (obligatoire).
-4. **Écran** (choix : Accueil, Parc, Chariot, Combat, Réglages, Autre).
-5. **Ce que tu faisais** (obligatoire, court).
-6. **Ce que tu attendais** (obligatoire, court) — les deux champs qui manquent le plus dans un
-   retour de bug.
-7. **Ton pseudo** (comme dans Réglages).
-8. **La version affichée** (obligatoire : `Alpha · 0.1.2`, à recopier en bas de Réglages) — le
-   formulaire ne peut pas la lire tout seul, et c'est la seule chose qui dit si un bug d'hier
-   existe encore aujourd'hui.
-9. **Une capture** (facultatif, pièce jointe).
+**Préambule** (titre + description du formulaire)
 
-**Le formulaire est à créer par Bastien** : il vit chez l'hébergeur de son choix (Google Form est
-le plus court chemin), et son adresse est posée dans `docs/boite-a-idees.json` (`"formulaire"`),
-pour que le mur puisse l'ouvrir depuis le jeu.
+> Bureau des Planqués — alpha. Dis-nous ce qui marche, ce qui casse, ce qui manque.
+> **La version est en bas de l'écran Réglages** : recopie-la telle quelle. Sans elle, on ne saura pas
+> si ce que tu signales existe encore.
+
+| # | Champ | Type | Obligatoire | Texte d'aide |
+|---|---|---|---|---|
+| 1 | **Version du jeu** | Réponse courte | **oui** | « En bas de Réglages, par exemple `Alpha · 0.1.2`. Recopie-la telle quelle. » |
+| 2 | **Tu veux quoi ?** | Choix multiples (une seule) | **oui** | « Un bug = quelque chose casse ou ment. Une idée = quelque chose manque ou ferait mieux. Gueuler = les deux à la fois. » |
+
+**Section « Post-it OUF »** (un signalement — aiguillage : *Remonter un bug*, *Gueuler*)
+
+| # | Champ | Type | Obligatoire | Texte d'aide |
+|---|---|---|---|---|
+| 3 | **Titre** | Réponse courte | **oui** | « Une ligne. Exemple : “le bouton Fin du tour reste grisé”. » |
+| 4 | **Ce que tu faisais** | Paragraphe | **oui** | « L'écran, l'action, la carte. Exemple : “j'étais au combat, j'ai cliqué sur Pansement”. » |
+| 5 | **Ce qui s'est passé** | Paragraphe | **oui** | « Le fait, sans jugement. Un message d'erreur ? Recopie-le. » |
+| 6 | **Ce que tu attendais** | Paragraphe | **oui** | « Ce qui aurait dû se passer, à ton avis. » |
+| 7 | **Écran** | Choix multiples (une seule) | non | « Accueil, Parc, Chariot, Combat, Réglages, autre. » |
+| 8 | **Capture** | Réponse courte | non | « Colle un **lien** vers une image (ton cloud, un message à toi-même). L'envoi de fichier oblige à ouvrir un compte Google, on ne l'impose pas. » |
+
+**Section « Post-it IP »** (une idée, une amélioration — aiguillage : *Proposer une feature*)
+
+| # | Champ | Type | Obligatoire | Texte d'aide |
+|---|---|---|---|---|
+| 9 | **Titre** | Réponse courte | **oui** | « Une ligne. Exemple : “voir combien d'Arrivages il me reste à ouvrir”. » |
+| 10 | **L'idée** | Paragraphe | **oui** | « Ce que tu voudrais, et dans quelle situation ça te servirait. » |
+| 11 | **À quoi ça servirait** | Paragraphe | non | « Ce que ça change pour toi. Si tu ne sais pas, laisse vide. » |
+| 12 | **Écran** | Choix multiples (une seule) | non | idem (7) |
+| 13 | **Capture** | Réponse courte | non | idem (8) |
+
+### 4.2 Les cinq réglages qui ne se voient pas
+
+1. **Ne pas collecter les adresses e-mail** (Paramètres → Réponses → *Collecter les adresses
+   e-mail* : désactivé). L'invité n'a pas de compte, et on lui a promis qu'on n'en demanderait pas.
+2. **Ne pas limiter à une réponse** (le même invité doit pouvoir signaler trois choses en trois fois).
+3. **Ne pas utiliser le champ « Importer un fichier »** : il **oblige** à se connecter à un compte
+   Google. D'où le champ 8, qui demande un **lien**.
+4. **Aiguillage** : sur la question 2, *Aller à la section en fonction de la réponse* — « Remonter un
+   bug » et « Gueuler » vers **Post-it OUF**, « Proposer une feature » vers **Post-it IP**.
+5. **La version est le premier champ, et obligatoire** : un retour sans version ne dit pas s'il
+   concerne encore la build courante.
+
+### 4.3 Une fois le formulaire modifié
+
+L'adresse **ne change pas** (seul le contenu change) : `docs/boite-a-idees.json` n'a rien à recevoir.
+Si l'adresse venait à changer, c'est **ce champ** qu'on met à jour — et rien d'autre, le mur la lit.
 
 ## 5. Le tri, en fin de journée
 
