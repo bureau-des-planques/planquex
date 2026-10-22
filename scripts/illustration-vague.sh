@@ -632,6 +632,95 @@ ligne_journal() {
   grep -qF "$motif" "$README"
 }
 
+# construire_prompt ID : le prompt complet — socle + sujet + accent — sur une seule
+# ligne. Une seule source : la génération interactive et le mode direct l'appellent,
+# et `--prompt` le rend tel quel (le test le compare à une chaîne attendue, #156).
+construire_prompt() {
+  printf '%s %s, muted %s accent.' "$(socle_ligne)" "$(sujet_de "$1")" "$(accent_de "$1")"
+}
+
+# gflow_generer CARTE ALIAS PROMPT NB : lance `gflow image t2i --json` et rend son
+# JSON sur stdout. Code de sortie = celui de la dernière tentative.
+#
+# **Seul l'exit 9 (TransportTimeoutError) est réessayé** : c'est un échec de
+# transport, Flow a pu répondre après le délai. Un exit 2 (usage) ne se réessaie
+# jamais : la même commande donnerait la même erreur. Les autres codes (23, 28…)
+# ne sont pas réessayés non plus — ce sont des dérives à corriger, pas du bruit.
+# Nombre de tentatives : GFLOW_ILLUSTRATION_TENTATIVES (défaut 3) ; délai entre
+# deux : GFLOW_ILLUSTRATION_DELAI (défaut 5 s). Chaque tentative est consignée dans
+# $SCRATCH/CARTE/tentatives.log. Une tentative en timeout peut avoir produit des
+# images sans rendre de JSON : elles restent dans le dossier, sans graine dans le
+# payload — elles se consignent par --installe (base locale de gflow), jamais inventées.
+gflow_generer() {
+  local carte="$1" alias="$2" prompt="$3" nb="$4"
+  local max="${GFLOW_ILLUSTRATION_TENTATIVES:-3}" delai="${GFLOW_ILLUSTRATION_DELAI:-5}"
+  local journal_tent="$SCRATCH/$carte/tentatives.log" n=1 code=0 sortie
+  case "$max" in ''|*[!0-9]*) max=3 ;; esac
+  if (( max < 1 )); then max=1; fi
+  case "$delai" in ''|*[!0-9]*) delai=5 ;; esac
+  mkdir -p "$SCRATCH/$carte"
+  while :; do
+    code=0
+    sortie=$(gflow image t2i "$prompt" --model "$alias" --aspect 1:1 -n "$nb" \
+               --out "$SCRATCH/$carte" --json 2>/tmp/gflow-illustration.err) || code=$?
+    printf '%s · tentative %d/%d · exit %s\n' "$(date +%Y-%m-%dT%H:%M:%S)" "$n" "$max" "$code" >> "$journal_tent"
+    if (( code == 0 )); then
+      printf '%s' "$sortie"
+      return 0
+    fi
+    if (( code != 9 )) || (( n >= max )); then
+      return "$code"
+    fi
+    warn "Transport en échec (exit 9, TransportTimeoutError) — tentative $n/$max."
+    note "Nouvel essai dans ${delai} s. Une tentative en timeout peut avoir produit une image : elle reste dans $SCRATCH/$carte/."
+    sleep "$delai"
+    n=$(( n + 1 ))
+  done
+}
+
+# mode_direct CARTE : génération **sans invite** — pour une session non interactive
+# (ou un agent). Modèle : GFLOW_ILLUSTRATION_MODELE (nom humain, défaut « Nano Banana
+# 2.1 ») ; variantes : GFLOW_ILLUSTRATION_VARIANTES (1-4, défaut 1). Écrit
+# $SCRATCH/CARTE/payload.json **comme le fait le mode interactif**, puis s'arrête :
+# le rangement se fait ensuite par `--installe <image>`, qui relit la graine du
+# payload sans rien changer. Ne range rien au registre, ne consigne rien.
+mode_direct() {
+  local carte="$1" modele alias nb json code=0 prompt
+  if [[ -z "$carte" ]] || ! connue "$carte"; then
+    warn "« ${carte:-<vide>} » n'est pas dans la table des sujets ($SUJETS)."
+    return 2
+  fi
+  if ! command -v gflow >/dev/null 2>&1; then
+    warn "gflow est introuvable dans le PATH."
+    return 1
+  fi
+  modele="${GFLOW_ILLUSTRATION_MODELE:-Nano Banana 2.1}"
+  if ! alias=$(modele_alias "$modele"); then
+    warn "Modèle inconnu : « $modele »."
+    modeles_lisibles >&2
+    return 2
+  fi
+  nb="${GFLOW_ILLUSTRATION_VARIANTES:-1}"
+  case "$nb" in ''|*[!0-9]*) nb=1 ;; esac
+  if (( nb < 1 || nb > 4 )); then nb=1; fi
+  prompt=$(construire_prompt "$carte")
+  mkdir -p "$SCRATCH/$carte"
+  say "Génération directe : $carte · --model $alias · $nb variante(s)"
+  note "Les images sont gratuites côté Flow ; seuls les outils vidéo dépensent."
+  if json=$(gflow_generer "$carte" "$alias" "$prompt" "$nb"); then
+    printf '%s' "$json" > "$SCRATCH/$carte/payload.json"
+    say "✓ payload écrit : $SCRATCH/$carte/payload.json"
+    say "Fichiers, chacun avec SA graine :"
+    graines_du_run "$json" | awk -F'\t' '{ n = $1; sub(/^.*\//, "", n); printf "    %s  graine %s\n", n, $2 }'
+    note "Rangement : bash scripts/illustration-vague.sh $carte --installe <image>"
+    return 0
+  else
+    code=$?
+  fi
+  warn "Génération directe échouée (exit $code). Journal des tentatives : $SCRATCH/$carte/tentatives.log"
+  return "$code"
+}
+
 # Point d'entrée non interactif : `--modele <nom>` résout et sort. C'est le seam
 # que scripts/illustration-vague.test.ts exerce, et il sert aussi à la personne
 # qui veut juste savoir quel alias correspond à « Nano Banana 2.1 ».
@@ -672,6 +761,18 @@ if [[ "${1:-}" == "--lit-base" ]]; then
   exit 0
 fi
 
+# Quatrième point d'entrée non interactif : `--prompt <carte>` rend le prompt exact
+# que le wizard enverrait à gflow (socle + sujet + accent). Sans génération ni invite.
+if [[ "${1:-}" == "--prompt" ]]; then
+  if [[ -z "${2:-}" ]] || ! connue "${2}"; then
+    printf 'Carte inconnue : « %s » (table : %s)\n' "${2:-}" "$SUJETS" >&2
+    exit 2
+  fi
+  construire_prompt "$2"
+  printf '\n'
+  exit 0
+fi
+
 # Arguments de la session : l'id de la carte, et `--installe <image>` pour
 # ranger une image **déjà produite** au lieu d'en générer une. C'est ce qui rend
 # la curation praticable (D-007 : IA **+ curation**) : on génère quatre variantes,
@@ -679,13 +780,26 @@ fi
 # dans la même session que la génération — donc à l'aveugle.
 CARTE=""
 INSTALLE=""
+DIRECT=0
 while (( $# )); do
   case "$1" in
     --installe) INSTALLE="${2:-}"; shift 2 ;;
+    --direct) DIRECT=1; shift ;;
     --) shift; break ;;
     *) CARTE="$1"; shift ;;
   esac
 done
+
+# Mode direct (#156) : génération sans invite, payload écrit, pas de pause. Il sort
+# avant la bannière, qui attend une touche.
+if (( DIRECT )); then
+  if [[ -n "$INSTALLE" ]]; then
+    warn "--direct et --installe ne se combinent pas : --direct génère, --installe range."
+    return 2
+  fi
+  mode_direct "$CARTE"
+  return $?
+fi
 
 banner "Produire une illustration par gflow-cli (#97)"
 
@@ -820,7 +934,7 @@ if [[ -n "$INSTALLE" ]]; then
     fi
   fi
 else
-PROMPT="$(socle_ligne) $(sujet_de "$CARTE"), muted $(accent_de "$CARTE") accent."
+PROMPT="$(construire_prompt "$CARTE")"
 say "Prompt envoyé (socle §6.1 + sujet), aplati sur une seule ligne :"
 printf '\n%s\n\n' "$PROMPT" | fold -s -w 96 | sed 's/^/    /'
 note "Le socle impose la lumière principale sur le VISAGE : c'est le correctif de la"
@@ -858,8 +972,7 @@ note "Les images sont gratuites côté Flow ; seuls les outils vidéo dépensent
 printf '\n'
 say "Lancement — 30 à 90 s au premier appel, le temps que Chromium chauffe."
 JSON=""
-if JSON=$(gflow image t2i "$PROMPT" --model "$ALIAS" --aspect 1:1 -n "$NB" \
-            --out "$SCRATCH/$CARTE" --json 2>/tmp/gflow-illustration.err); then
+if JSON=$(gflow_generer "$CARTE" "$ALIAS" "$PROMPT" "$NB"); then
   printf '  %s✓%s génération terminée\n' "$GREEN" "$RESET"
   mkdir -p "$SCRATCH/$CARTE"
   printf '%s' "$JSON" > "$SCRATCH/$CARTE/payload.json"
@@ -872,6 +985,11 @@ else
       note "Ce n'est PAS une dérive de Flow ni un problème de navigateur : un argument"
       note "est mal formé. /tmp/gflow-illustration.err nomme l'option fautive. C'est le"
       note "message qu'on recevait avant que le modèle soit résolu." ;;
+    9)
+      warn "Échec de transport (exit 9, TransportTimeoutError) après les réessais."
+      note "Tentatives consignées : $SCRATCH/$CARTE/tentatives.log"
+      note "Une image a pu être produite sans que son JSON revienne : regarde $SCRATCH/$CARTE/,"
+      note "puis range-la avec --installe (la graine se lit dans la base de gflow)." ;;
     23)
       warn "Dérive de sélecteur (exit 23) : l'interface de Flow a bougé."
       note "Rien à corriger ici — c'est gflow qui doit suivre l'UI de Flow." ;;
