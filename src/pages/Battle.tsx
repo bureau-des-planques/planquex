@@ -325,15 +325,20 @@ export function Battle() {
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
    * vient de `legalActions` (le moteur dit si la partie vit encore, relève comprise) —
    * l'écran ne décide rien — et elle passe par `applyAction` comme les autres boutons.
-   * Le camp qui se couche est toujours l'humain : d'où le filtre sur les actions du
-   * joueur, même pendant le tour de la Direction.
+   *
+   * Deux questions distinctes, deux réponses (#123) : le **moteur** dit *si* le forfait
+   * est ouvert (`forfeitOffer`), et il le nomme au camp qui a la main ; l'**écran** dit
+   * *qui* se couche, et en solo c'est toujours l'humain, `player`, même pendant le tour
+   * de la Direction ou pendant une relève. On lit donc la présence de l'action, pas son
+   * camp : s'arrêter au camp ferait disparaître le bouton pendant le tour de la Direction,
+   * ce que D-030 / #79 a justement ouvert. Le forfait du siège `player` est accepté tant
+   * que la partie vit, donc ce bouton ne peut pas être refusé par le moteur (#58).
    */
   const forfeitAction = useMemo(
     () =>
-      legal.find(
-        (action): action is Extract<BattleAction, { type: 'forfeit' }> =>
-          action.type === 'forfeit' && action.who === 'player'
-      ),
+      legal.some((action) => action.type === 'forfeit')
+        ? ({ type: 'forfeit', who: 'player' } as const)
+        : undefined,
     [legal]
   );
 

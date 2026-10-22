@@ -185,6 +185,16 @@ export const MUTATIONS = [
     tests: ['scripts/illustration-vague.test.ts'],
     garde:
       'les deux tableaux ne couvrent que la Planche 1 : pour les autres cartes, le journal seul change — l’ancien message annonçait une mise à jour qui n’avait pas eu lieu'
+  },
+  {
+    ticket: 123,
+    titre: 'le forfait ne suit plus le camp qui a la main',
+    fichier: 'src/game/engine.ts',
+    motif: "  return { type: 'forfeit', who: state.current };",
+    remplacement: "  return { type: 'forfeit', who: 'player' };",
+    tests: ['src/game/forfait.test.ts'],
+    garde:
+      'un forfait émis en dur pour `player` fait abandonner au nom de son adversaire la personne qui tient la Direction (#122) : `state.current` est le seul camp qui a la main, relève comprise'
   }
 ];
 

@@ -95,6 +95,79 @@ describe('Forfait — branché au moteur (#79)', () => {
   });
 });
 
+describe('Forfait — le camp qui a la main, et lui seul (#123)', () => {
+  /**
+   * Le préfacteur de la partie à deux (#122) : le forfait proposé porte le **camp qui
+   * joue**, donc celui qui le déclare. La version d'avant l'écrivait en dur à `player`,
+   * si bien qu'une personne tenant la Direction aurait abandonné au nom de son adversaire.
+   */
+  it('offre le forfait à la Direction quand c’est à elle de jouer, et le lui attribue', () => {
+    const state = freshBattle();
+    // Un tour de la Direction : c'est elle qui a la main.
+    state.current = 'ai';
+
+    const actions = legalActions(state);
+
+    expect(actions).toContainEqual({ type: 'forfeit', who: 'ai' });
+    expect(actions).not.toContainEqual({ type: 'forfeit', who: 'player' });
+
+    // La défaite est celle du camp qui se couche : ici la Direction, donc `player` gagne.
+    const after = applyAction(state, { type: 'forfeit', who: 'ai' });
+    expect(after.phase).toBe('ended');
+    expect(after.winner).toBe('player');
+    expect(after.endReason).toBe('forfait');
+    expect(after.log.at(-1)).toBe('L’IA déclare forfait : tu l’emportes.');
+  });
+
+  it('le suit pendant une relève : `current` reste l’attaquant, pas `pendingPromotion`', () => {
+    const state = freshBattle();
+    // La Direction attaque, ton Poste a craqué : c'est à toi de relever…
+    state.current = 'ai';
+    state.players.player.active = null;
+    state.pendingPromotion = 'player';
+
+    const actions = legalActions(state);
+
+    // …mais la main reste à la Direction, et c'est donc elle que le forfait nomme.
+    expect(actions).toContainEqual({ type: 'forfeit', who: 'ai' });
+    expect(actions).not.toContainEqual({ type: 'forfeit', who: 'player' });
+
+    const after = applyAction(state, { type: 'forfeit', who: 'ai' });
+    expect(after.winner).toBe('player');
+    expect(after.endReason).toBe('forfait');
+  });
+
+  it('le suit aussi quand le tour est fini (Pression déjà lancée)', () => {
+    const state = freshBattle();
+    state.current = 'ai';
+    state.players.ai.hasAttacked = true;
+
+    // Le seul autre chemin de `legalActions` : la fin du tour et le forfait.
+    expect(legalActions(state)).toEqual([
+      { type: 'endTurn' },
+      { type: 'forfeit', who: 'ai' }
+    ]);
+  });
+
+  /**
+   * Le contrat dont dépend le bouton « Abandonner » de `Battle.tsx` (D-030, #79) : le
+   * forfait est **ouvert** tant que la partie vit — donc le moteur en propose un, quel que
+   * soit le camp qui a la main — et l'action du siège de l'humain est **toujours acceptée**.
+   * C'est ce qui permet à l'écran de nommer `player` sans risquer un refus.
+   */
+  it('garde le forfait ouvert quand c’est à la Direction de jouer', () => {
+    const state = freshBattle();
+    state.current = 'ai';
+
+    // L'écran lit « le moteur propose un forfait » pour afficher son bouton…
+    expect(legalActions(state).some((action) => action.type === 'forfeit')).toBe(true);
+    // …et exécute le sien, qui reste accepté même si la main est à la Direction.
+    const after = applyAction(state, { type: 'forfeit', who: 'player' });
+    expect(after.phase).toBe('ended');
+    expect(after.winner).toBe('ai');
+  });
+});
+
 describe('Simulateur — jamais de forfait (#79)', () => {
   it('ne journalise aucun forfait sur vingt parties', () => {
     for (let seed = 1; seed <= 20; seed += 1) {

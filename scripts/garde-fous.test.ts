@@ -22,7 +22,9 @@ const LANCER = 'scripts/garde-fous.mjs';
 // #114 : l'évaluation du niveau 2 ne doit pas repartir du flux de hasard de la partie.
 // #97 : le wizard d'illustration — le nom du fichier rangé, l'arrêt sur une vérification
 // ratée, et le message du registre, qui ne doit pas annoncer ce qui n'a pas eu lieu.
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118];
+// #123 : le forfait suit le camp qui a la main — une entrée de plus, et une seule, pour
+// le préfacteur du PvP (#122).
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {

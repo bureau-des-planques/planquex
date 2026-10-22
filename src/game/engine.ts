@@ -1024,9 +1024,15 @@ function checkup(state: BattleState): BattleState {
 /**
  * **Forfait** (D-030) : abandonner est une **défaite quel que soit le score** —
  * les Interventions déjà marquées ne sauvent pas celui qui se couche. C'est le seul
- * chemin qui termine une partie sans craquage, et il est **déclenché par un humain** :
- * `who` est donc un paramètre, et non `state.current`, parce que le joueur peut
- * abandonner pendant le tour de la Direction ou pendant une relève en attente.
+ * chemin qui termine une partie sans craquage.
+ *
+ * `who` est un **paramètre**, et il ne vaut pas `state.current` par construction : le
+ * siège de l'humain n'est pas toujours le camp qui a la main. En solo, l'humain tient
+ * `player` et peut se coucher **pendant le tour de la Direction** comme pendant une
+ * relève (#79) ; une partie à deux (#122) aura la même forme, chaque écran nommant son
+ * siège. `legalActions` propose, lui, le forfait du **camp qui a la main**
+ * (`forfeitOffer`, #123) : « le camp qui joue peut abandonner ». Les deux ne se
+ * contredisent pas — l'un dit qui est invité, l'autre accepte n'importe quel siège.
  *
  * Idempotente sur une partie finie : une partie déjà terminée est rendue **telle
  * quelle** (`===`), sans nouvelle ligne de journal.
@@ -1193,6 +1199,21 @@ function inPlay(player: PlayerState): CardInstance[] {
 }
 
 /**
+ * Le forfait **du camp qui a la main** — celui qui peut se coucher (#123).
+ *
+ * `state.current` est bien « le camp qui joue, relève comprise » : `endTurn` ne le
+ * bascule qu'une fois la relève résolue, donc pendant une relève c'est l'attaquant,
+ * qui a encore la main. `pendingPromotion` dit qui doit relever, pas qui décide — les
+ * deux divergent, et c'est `current` que le forfait suit (D-030).
+ *
+ * Une seule définition pour les trois chemins de `legalActions` (relève, tour fini,
+ * tour courant) : le camp du forfait se lit ici, et nulle part ailleurs.
+ */
+function forfeitOffer(state: BattleState): BattleAction {
+  return { type: 'forfeit', who: state.current };
+}
+
+/**
  * **Toutes** les actions que le moteur accepterait maintenant, et rien d'autre
  * (ticket #58).
  *
@@ -1218,13 +1239,13 @@ export function legalActions(state: BattleState): BattleAction[] {
       card ? [{ type: 'promoteActive', benchIndex } satisfies BattleAction] : []
     );
     // Le forfait reste offert pendant une relève : la partie vit encore (D-030, #79).
-    return [...promotions, { type: 'forfeit', who: 'player' }];
+    return [...promotions, forfeitOffer(state)];
   }
 
   // D-033 §1 : une Pression lancée consomme le reste du tour. Seule la fin du
   // tour reste offerte — sauf relève en attente, traitée juste au-dessus — avec le
   // forfait, que D-030 laisse ouvert tant que la partie vit (#79).
-  if (turnFinished(state)) return [{ type: 'endTurn' }, { type: 'forfeit', who: 'player' }];
+  if (turnFinished(state)) return [{ type: 'endTurn' }, forfeitOffer(state)];
 
   const player = state.players[state.current];
   const actions: BattleAction[] = [];
@@ -1294,9 +1315,8 @@ export function legalActions(state: BattleState): BattleAction[] {
 
   actions.push({ type: 'endTurn' });
   // Le forfait est toujours offert tant que la partie vit, même quand il ne reste
-  // plus rien d'autre à faire (D-030, #79). Le camp qui se couche est l'humain : il
-  // n'y a pas d'IA qui déclare forfait.
-  actions.push({ type: 'forfeit', who: 'player' });
+  // plus rien d'autre à faire (D-030, #79) — et il porte le camp qui a la main (#123).
+  actions.push(forfeitOffer(state));
   return actions;
 }
 
