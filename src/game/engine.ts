@@ -1,5 +1,6 @@
 import { ACTION_KIND_META, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
+  Ability,
   Attack,
   AttackEffect,
   BattleAction,
@@ -497,23 +498,66 @@ export function useAbility(state: BattleState): BattleState {
   const card = getCard(player.active.cardId);
   if (!isPlanque(card) || !card.ability) return state;
   const ability = card.ability;
-  if (ability.kind === 'heal') {
-    player.active.hp = Math.min(player.active.maxHp, player.active.hp + (ability.amount ?? 10));
-  } else if (ability.kind === 'antiStatus') {
-    player.active.hp = Math.min(player.active.maxHp, player.active.hp + (ability.amount ?? 10));
-    clearStatuses(player.active);
-  } else if (ability.kind === 'draw') {
-    draw(next, next.current, ability.amount ?? 1);
-  } else if (ability.kind === 'attachEnergy') {
-    // Le café du Talent est typé comme un café produit : il se tire dans les types
-    // du Deck (D-034) par le générateur seedé — même graine, même café. Un
-    // Deck sans type produit ne peut rien attacher.
-    const cafe = drawCafeType(next, next.current);
-    if (cafe) player.active.energy.push(cafe);
-  }
+  // Défausse de sa propre main sur une main vide : le Talent n'est pas proposé (D-076).
+  if (defausseImpossible(player, ability.effects)) return state;
+  resolveAbility(next, next.current, player.active, ability);
   player.hasUsedAbility = true;
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'utilises', 'utilise')} ${ability.name}.`);
   return next;
+}
+
+/**
+ * Résout le corps d'un Talent sur le Planqué `instance` du camp `who` (D-077). Une seule
+ * écriture pour le Talent à la demande (`useAbility`) et pour le Talent « en jouant »
+ * (D-081) : les deux lisent les mêmes primitives.
+ */
+function resolveAbility(state: BattleState, who: PlayerId, instance: CardInstance, ability: Ability) {
+  switch (ability.kind) {
+    case 'heal':
+      instance.hp = Math.min(instance.maxHp, instance.hp + (ability.amount ?? 10));
+      break;
+    case 'antiStatus':
+      instance.hp = Math.min(instance.maxHp, instance.hp + (ability.amount ?? 10));
+      clearStatuses(instance);
+      break;
+    case 'draw':
+      draw(state, who, ability.amount ?? 1);
+      break;
+    case 'attachEnergy': {
+      // Le café du Talent est typé comme un café produit : il se tire dans les types du
+      // Deck (D-034) par le générateur seedé — même graine, même café. Un Deck sans type
+      // produit ne peut rien attacher.
+      const cafe = drawCafeType(state, who);
+      if (cafe) instance.energy.push(cafe);
+      break;
+    }
+    case 'reduceDamage':
+      // Passif : `attackDamage` lit la réduction quand le Planqué est visé. Le Talent n'agit pas.
+      break;
+    case 'effects':
+      applyTalentEffects(state, who, instance, ability.effects ?? []);
+      break;
+    default:
+      assertNever(ability.kind);
+  }
+}
+
+/**
+ * Le corps d'un Talent `effects` (D-077) : chaque primitive est résolue comme celle d'une
+ * Pression, dans l'ordre de la liste. Un Talent **n'est pas une Pression** : il ne termine
+ * pas le tour et ne consomme pas la Pression. Un craquage qu'il provoque suit le chemin
+ * ordinaire (Interventions, relève). Pas de Poste adverse : pas de cible, rien à résoudre.
+ */
+function applyTalentEffects(state: BattleState, who: PlayerId, attacker: CardInstance, effects: AttackEffect[]) {
+  const defender = state.players[other(who)].active;
+  if (!defender) return;
+  for (const effect of ordreD031(effects)) {
+    applyEffects(state, who, attacker, defender, { name: 'Talent', cost: [], damage: 0, effects: [effect] });
+  }
+  if (defender.hp <= 0) {
+    knockOut(state, who);
+    resolveEnd(state);
+  }
 }
 
 /**
@@ -637,6 +681,14 @@ function assertNever(value: never): never {
   throw new Error(`Effet non géré par le moteur : ${String(value)}`);
 }
 
+/**
+ * Ordre des effets d'une Pression ou d'un Talent (D-031, réponse Q6 de #159) : les dégâts
+ * passent avant la défausse et les autres effets ; le reste garde l'ordre de la liste.
+ */
+function ordreD031(effects: readonly AttackEffect[]): AttackEffect[] {
+  return [...effects.filter((effect) => effect.kind === 'damage'), ...effects.filter((effect) => effect.kind !== 'damage')];
+}
+
 /** Le camp adverse de `who`. */
 const other = (who: PlayerId): PlayerId => (who === 'player' ? 'ai' : 'player');
 
@@ -754,7 +806,7 @@ function applyEffects(
   attack: Attack
 ) {
   const player = state.players[who];
-  for (const effect of attack.effects ?? []) {
+  for (const effect of ordreD031(attack.effects ?? [])) {
     switch (effect.kind) {
       case 'healSelf':
         attacker.hp = Math.min(attacker.maxHp, attacker.hp + (effect.amount ?? 10));
@@ -795,6 +847,13 @@ function applyEffects(
       case 'discardHand':
         applyHandDeckEffect(state, who, effect);
         break;
+      case 'damage': {
+        // Dégâts (D-077) : même calcul que la Pression (D-031), Vulnérabilité au Poste comprise.
+        const extra = attackDamage(attacker, defender, { name: 'Talent', cost: [], damage: effect.amount ?? 0 }, 'poste');
+        defender.hp -= extra;
+        state.log.push(`${getCard(attacker.cardId)?.name ?? 'Le Planqué'} : ${extra} de stress.`);
+        break;
+      }
       default:
         assertNever(effect.kind);
     }
@@ -832,6 +891,9 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
         break;
       case 'discardHand':
         applyHandDeckEffect(state, who, effect);
+        break;
+      case 'damage':
+        // Une carte Action n'a pas de Planqué attaquant : elle ne frappe pas (D-077).
         break;
       case 'healSelf':
       case 'selfDamage':
@@ -1464,7 +1526,9 @@ export function legalActions(state: BattleState): BattleAction[] {
   // Talent du Poste, une fois par tour.
   if (!player.hasUsedAbility && player.active) {
     const card = getCard(player.active.cardId);
-    if (isPlanque(card) && card.ability) actions.push({ type: 'ability' });
+    if (isPlanque(card) && card.ability && !defausseImpossible(player, card.ability.effects)) {
+      actions.push({ type: 'ability' });
+    }
   }
 
   // Café : 1 par tour, un par Planqué en jeu — mais aucun attachement au premier tour (§4, D-030).

@@ -38,7 +38,8 @@ export type AttackEffectKind =
   | 'selfDamage'
   | 'switchSelf'
   | 'reduceDamage'
-  | 'discardHand';
+  | 'discardHand'
+  | 'damage';
 
 /**
  * Les membres d'`AttackEffectKind`, **une seule fois** dans le code (#56).
@@ -57,7 +58,8 @@ export const ATTACK_EFFECT_KINDS = [
   'selfDamage',
   'switchSelf',
   'reduceDamage',
-  'discardHand'
+  'discardHand',
+  'damage'
 ] as const satisfies readonly AttackEffectKind[];
 
 /** Filtre d'une recherche dans le Deck (D-080) : un Planqué, ou un Collègue. */
@@ -113,7 +115,7 @@ export interface Attack {
  * `reduceDamage`…) qui ne veulent pas dire la même chose. Un resolver unique serait une
  * fausse abstraction ; deux `switch`, une liste runtime par union.
  */
-export type AbilityKind = 'heal' | 'draw' | 'attachEnergy' | 'reduceDamage' | 'antiStatus';
+export type AbilityKind = 'heal' | 'draw' | 'attachEnergy' | 'reduceDamage' | 'antiStatus' | 'effects';
 
 /** Les membres d'`AbilityKind`, source unique (#56) — même contrat qu'`ATTACK_EFFECT_KINDS`. */
 export const ABILITY_KINDS = [
@@ -121,7 +123,8 @@ export const ABILITY_KINDS = [
   'draw',
   'attachEnergy',
   'reduceDamage',
-  'antiStatus'
+  'antiStatus',
+  'effects'
 ] as const satisfies readonly AbilityKind[];
 
 export interface Ability {
@@ -130,6 +133,12 @@ export interface Ability {
   kind: AbilityKind;
   amount?: number;
   oncePerTurn?: boolean;
+  /**
+   * Corps d'un Talent `kind: 'effects'` (D-077) : la liste des primitives, avec les mêmes
+   * `AttackEffect` que les Pressions. Un Talent n'est pas une Pression : il ne termine pas
+   * le tour.
+   */
+  effects?: AttackEffect[];
 }
 
 /**

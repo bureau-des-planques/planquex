@@ -69,6 +69,8 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   { label: 'café', pattern: /\bcafes?\b/, kinds: ['discardEnergy'] },
   // `discardHand` défausse une carte de la main, au hasard (adversaire) ou par choix (D-076).
   { label: 'défausse N carte', pattern: /\bdefausse (?:\d+|une) carte/, kinds: ['discardHand'] },
+  // `damage` : les dégâts d'un Talent ou d'une Pression, au Planqué adverse (D-077).
+  { label: 'N dégâts au Planqué', pattern: /\b\d+ degats? au\b/, kinds: ['damage'] },
   { label: 'pioche N cartes', pattern: /\bpioche (\d+) carte/, kinds: ['draw'] },
   { label: 'soigne N de tous tes Planqués', pattern: /\bsoigne (\d+)[^.]*tous tes planques/, kinds: ['healAll'] },
   { label: 'soigne N de ce Planqué', pattern: /\bsoigne (\d+)[^.]*ce planque/, kinds: ['healSelf'] },
@@ -133,15 +135,18 @@ const ATTENTES_EFFET: Record<AttackEffectKind, Attente | null> = {
   selfDamage: { pattern: /prend (\d+)[^.]*stress/, montantGroupe: 1 },
   switchSelf: { pattern: /rack/ },
   reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
-  discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 }
+  discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 },
+  damage: { pattern: /(\d+) degats? au/, montantGroupe: 1 }
 };
 
-const ATTENTES_TALENT: Record<AbilityKind, Attente> = {
+const ATTENTES_TALENT: Record<AbilityKind, Attente | null> = {
   heal: { pattern: /soigne (\d+)/, montantGroupe: 1 },
   draw: { pattern: /pioche (\d+) carte/, montantGroupe: 1 },
   attachEnergy: { pattern: /attache 1 cafes?\b/ },
   reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
-  antiStatus: { pattern: /soigne (\d+)[^.]*retire un statut/, montantGroupe: 1 }
+  antiStatus: { pattern: /soigne (\d+)[^.]*retire un statut/, montantGroupe: 1 },
+  // Un Talent `effects` s'annonce primitive par primitive, comme une Pression (D-077) : `verifierTalent`.
+  effects: null
 };
 
 /** Les mots par lesquels un texte annonce un statut (`AGENTS.md` §3.1). */
@@ -220,8 +225,14 @@ function verifierPression(texte: string, effects: readonly AttackEffect[]): stri
 }
 
 /** Contrôle d'un texte de **Talent** contre son `kind`. */
-function verifierTalent(texte: string, ability: Pick<Ability, 'kind' | 'amount'>): string[] {
+function verifierTalent(texte: string, ability: Pick<Ability, 'kind' | 'amount' | 'effects'>): string[] {
   const normalise = normaliser(texte);
+  // Un Talent `effects` porte le vocabulaire des Pressions : chaque primitive doit être annoncée (D-077).
+  if (ability.kind === 'effects') {
+    const problemes = verifierPression(texte, ability.effects ?? []);
+    if (!CUES_EFFET.some((cue) => cue.pattern.test(normalise))) problemes.push('texte de Talent sans mécanique');
+    return problemes;
+  }
   const problemes = verifierCues(normalise, new Set([ability.kind]), CUES_TALENT);
   // Un Talent qui n'annonce aucune mécanique n'est pas vérifiable : il est refusé.
   if (!CUES_TALENT.some((cue) => cue.pattern.test(normalise))) {
@@ -340,6 +351,15 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     expect(
       verifierPression('L’adversaire défausse 1 carte.', [{ kind: 'discardHand', target: 'opponent', amount: 1 }])
     ).toEqual([]);
+  });
+
+  it('mord : un Talent composé annonce chacune de ses primitives, montant compris (#164, D-077)', () => {
+    const talent = 'Une fois par tour : défausse 1 carte, 10 dégâts au Planqué adverse actif.';
+    expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }, { kind: 'damage', amount: 10 }] })).toEqual([]);
+    // Le montant annoncé (10) doit être celui de l'effet.
+    expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }, { kind: 'damage', amount: 20 }] })).not.toEqual([]);
+    // Des dégâts annoncés sans primitive : refusés.
+    expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }] })).not.toEqual([]);
   });
 
   it('mord : les motifs respectent les frontières de mot (#166)', () => {
