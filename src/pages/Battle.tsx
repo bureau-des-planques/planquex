@@ -16,6 +16,8 @@ import type {
 import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
+import { partieSauvegardee, reprendrePartie } from '@/store/partie';
+import type { Decks, Reprise } from '@/store/partie';
 import {
   aiTurnAction,
   CAMP_NAME,
@@ -433,17 +435,28 @@ export function Battle() {
     [usedTestDeck, storedCafeTypes]
   );
 
-  const [state, setState] = useState<BattleState>(() =>
-    createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes })
+  /**
+   * **La partie reprise** (#126) : la partie rangée dans le store, rejouée depuis sa graine
+   * et son journal. À défaut (rien de rangé, partie terminée, journal qui ne rejoue pas),
+   * un combat neuf contre la Direction, comme avant.
+   */
+  const [depart] = useState<Reprise>(
+    () =>
+      reprendrePartie(useStore.getState().partie) ?? {
+        state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
+        match: null,
+        decksSolo: { playerDeck, aiDeck: testDeck() }
+      }
   );
+  const [state, setState] = useState<BattleState>(depart.state);
+  /** Les Decks du combat solo : une partie à deux porte les siens dans son `Match`. */
+  const [decksSolo, setDecksSolo] = useState<Decks>(depart.decksSolo);
 
   /**
-   * **La partie à deux** (#125) : `null` en solo. Elle ne vit que dans cet onglet —
-   * `BattleState` n'est pas persisté (`partialize`, `useStore.ts`) — et le **code** est
-   * le seul objet qui la fait passer d'un onglet à l'autre. La reprise après
-   * rechargement est le ticket #126, pas celui-ci.
+   * **La partie à deux** (#125) : `null` en solo. Le **code** reste le moyen de la passer
+   * d'un onglet à l'autre ; la reprise après rechargement passe par le store (#126).
    */
-  const [match, setMatch] = useState<Match | null>(null);
+  const [match, setMatch] = useState<Match | null>(depart.match);
   /** Ce que le champ de code dit : la raison d'un refus (telle quelle), ou la reprise. */
   const [codeMessage, setCodeMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
   /** Le code collé par l'autre joueur. */
@@ -570,6 +583,7 @@ export function Battle() {
     setMatch(null);
     setCodeMessage(null);
     setIncoming('');
+    setDecksSolo({ playerDeck, aiDeck: testDeck() });
     setState(createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }));
   }, [playerDeck, chosenCafeTypes]);
 
@@ -589,6 +603,16 @@ export function Battle() {
     setCodeMessage(null);
     setIncoming('');
   }, [playerDeck, chosenCafeTypes]);
+
+  /**
+   * **Ranger la partie** (#126) : à chaque état, le store garde de quoi la rejouer. Une
+   * partie terminée n'y reste pas (`partieSauvegardee` rend `null`). Le store ne fait
+   * qu'écrire ; l'écran reste seul maître de l'état.
+   */
+  const enregistrerPartie = useStore((store) => store.enregistrerPartie);
+  useEffect(() => {
+    enregistrerPartie(partieSauvegardee(state, match, decksSolo));
+  }, [state, match, decksSolo, enregistrerPartie]);
 
   /** Le code de la partie, recalculé à chaque état : il décrit ce qui est à l'écran. */
   const code = useMemo(() => (match ? matchCode(state, match) : ''), [state, match]);
