@@ -127,6 +127,21 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 | `.card--compact` | masque la flavour (grilles) |
 | `.card-slot.is-full` | carte à 55 % d'opacité (plus d'exemplaire possible au Deck) |
 
+### 2.4 L'écran de combat (#169)
+
+L'écran se lit **d'un coup** à 420 × 900 (D-060) : le plateau des deux camps, la main et les
+actions de la Pression tiennent dans la fenêtre pour un tour courant, sans défiler. Ce qui est
+secondaire (Conditions, Partie à deux, Journal) est **replié après**.
+
+| Zone | Classe | Règle |
+|---|---|---|
+| Pas-à-pas | `.pas-a-pas` | **en haut**, sous l'en-tête, `position: sticky` ; pas de fond assombri. « Suivant » et « Précédent » **font défiler** la page vers la première cible (au centre) ; le contour doré `[data-pas-a-pas]` ne marque que les cibles de l'étape. Défilement instantané sous `prefers-reduced-motion` ou « Mouvement réduit » |
+| Plateau | `.board`, `.board__side` | le camp adverse **en haut** (Rack puis Poste), le mien **en bas** (Poste puis Rack) : les deux Postes se font face. L'étiquette (« Poste », « Rack ») est à gauche, le contenu à droite |
+| Actions | `.actions-panel` | « Au Poste » : café, Rotation, Talent, puis Pressions et « Fin du tour » |
+| Main | `.hand`, `.hand__card` | une **bande** de cartes-boutons ; la marque « Jouable » dit lesquelles ont un geste |
+| Pose | `.pose` | une carte **choisie** (`aria-pressed`, bordure `--accent`) ouvre un panneau qui la nomme ; les gestes disent **où** : « Poser au Poste », « Mettre au Rack 2 », « Jouer cet Objet » |
+| Écran large (≥ 900 px) | `.battle__table` | le plateau à gauche, la console du joueur à droite |
+
 ---
 
 ## 3. Cadre de rareté, rareté par rareté
