@@ -163,6 +163,13 @@ incolore paie un coût typé, un symbole incolore accepte tout café.
 Trois cartes par faction : un Entrant, un N+1, un N+2. Les noms,
 textes et effets sont là pour valider le ton et les courbes.
 
+> **Textes de Pression (#158)** : la spec ne donne que le nom, le coût et les dégâts de la
+> plupart des Pressions (une Pression de ce tableau écrite « : 40 » est vendue **sans effet**).
+> Le texte descriptif des 133 Pressions qui n'en avaient pas vit dans `src/data/<faction>.ts`,
+> **seule source** (`AGENTS.md` §6 : ne pas dupliquer les textes de cartes hors de `src/data`) —
+> il n'est pas recopié ici. Il décrit le geste et ce qu'il fait au Planqué adverse, sans
+> inventer d'effet que la spec ne vend pas. Garde : `src/data/texts.test.ts`.
+
 ### SSE — Plante
 
 | Carte | Stade | Rareté | Seuil | Rotation | Attaque / Talent | Texte |

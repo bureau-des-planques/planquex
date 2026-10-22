@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, isPlanque } from '@/data';
-import type { Ability, AbilityKind, AttackEffect, AttackEffectKind, Status } from '@/data/types';
+import type { Ability, AbilityKind, Attack, AttackEffect, AttackEffectKind, PlanqueCard, Status } from '@/data/types';
 import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
 
 /**
@@ -273,6 +273,20 @@ const MENSONGES = SUJETS.filter((sujet) => sujet.problemes.length > 0);
  */
 const MENSONGES_CONNUS: Readonly<Record<string, string>> = {};
 
+/**
+ * Les Pressions d'un Planqué qui n'ont **aucun texte** (#158) : absent, vide, ou blanc.
+ * Le gabarit (`CardDetail.tsx`) n'affiche rien pour elles, et la carte « vendue » est
+ * alors muette. Fonction pure, appelée sur le catalogue **et** sur une carte fautive
+ * synthétique : c'est ce qui permet au contrôle de mordre.
+ */
+function pressionsSansTexte(cartes: readonly PlanqueCard[]): string[] {
+  return cartes.flatMap((carte) =>
+    carte.attacks
+      .filter((attaque: Attack) => !attaque.text?.trim())
+      .map((attaque: Attack) => `${carte.id}/${attaque.name}`)
+  );
+}
+
 describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
   it('ne recopie aucune liste : les attentes couvrent exactement les primitives déclarées', () => {
     expect(Object.keys(ATTENTES_EFFET).sort()).toEqual([...ATTACK_EFFECT_KINDS].sort());
@@ -301,6 +315,31 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     );
     // Et le témoin : un texte honnête passe.
     expect(verifierTalent('Une fois par tour : soigne 10 de ce Planqué.', { kind: 'heal', amount: 10 })).toEqual([]);
+  });
+
+  it('donne un texte à chaque Pression de chaque Planqué (#158, D-074)', () => {
+    expect(
+      pressionsSansTexte(ALL_CARDS.filter(isPlanque)),
+      'Une Pression sans texte : le gabarit ne l’affiche pas. Écrire le texte de la carte telle ' +
+        'qu’elle est vendue ; si le moteur ne sait pas la réaliser, inscrire l’écart dans MENSONGES_CONNUS.'
+    ).toEqual([]);
+  });
+
+  it('mord : une Pression sans texte, vide ou blanche est refusée', () => {
+    const fautive = {
+      id: 'atelier-synthetique',
+      attacks: [
+        { name: 'Sans texte', cost: ['ATELIER'], damage: 20 },
+        { name: 'Texte vide', cost: ['ATELIER'], damage: 20, text: '' },
+        { name: 'Texte blanc', cost: ['ATELIER'], damage: 20, text: '   ' },
+        { name: 'Avec texte', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse encaisse.' }
+      ]
+    } as unknown as PlanqueCard;
+    expect(pressionsSansTexte([fautive])).toEqual([
+      'atelier-synthetique/Sans texte',
+      'atelier-synthetique/Texte vide',
+      'atelier-synthetique/Texte blanc'
+    ]);
   });
 
   it('« une fois par tour » est réservé aux Talents qui déclarent `oncePerTurn`', () => {
