@@ -34,7 +34,7 @@ Les décomptes de cartes et de tests ne sont **pas recopiés** dans ce fichier :
 |---|---|
 | Dossier | `planquex/` (nouveau, autonome ; renommé le 21/10/2026, D-047) |
 | Base de règles | TCG Pocket à l'identique (20 cartes, 5 en main, 3 Interventions, Machine à café) |
-| Volume | 286 cartes au lancement (226 + 60 secrètes) |
+| Volume | autour de 300, sans compte imposé (D-063) : ce qui compte est ce qu'on peut jouer |
 | Périmètre | Tout le jeu et toutes les features de l'APK |
 | Backend | Supabase (Postgres, Auth, Realtime, Edge Functions) |
 | Infra | GitHub + Vercel + Cloudflare + Brevo + domaine |
@@ -44,7 +44,7 @@ Les décomptes de cartes et de tests ne sont **pas recopiés** dans ce fichier :
 | Étape | Critères (D-048) |
 |---|---|
 | **alpha** | Solo jouable entre invités, contenu incomplet, casse assumée — on teste si la boucle tient |
-| **beta** | Solo complet (Journée d'intégration, Réglages, export/import), **PvP jouable** (D-049), URL stable (domaine tranché, O-003), 286 cartes illustrées *ou* décision assumée de ne pas l'être, aucune perte de données possible |
+| **beta** | Solo complet (Journée d'intégration, Réglages, export/import), **PvP jouable** (D-049), URL stable (domaine tranché, O-003), les **bases** illustrées — les variantes en héritent — *ou* la décision assumée de ne pas les illustrer, sans compte imposé (D-063), aucune perte de données possible |
 | **release** | Beta + le reste de `PROPOSITION.md` §5.1 (classé, économie, missions, échanges, notifications, polish, localisation) |
 
 La version porte l'étape : `0.2.0-alpha.1` → `0.2.0-beta.1` → `0.2.0`. Source unique `package.json`, injectée au build (`vite.config.ts` → `__APP_VERSION__`), lue par `src/version.ts`, affichée dans **Réglages**.
@@ -53,7 +53,7 @@ La version porte l'étape : `0.2.0-alpha.1` → `0.2.0-beta.1` → `0.2.0`. Sour
 
 Les noms de factions et le mot-clé sont actés (voir `docs/DECISIONS.md`).
 
-1. Générer la **spécification des 286 cartes** (lignes, stades, raretés, stats, textes).
+1. Générer la **spécification du set** (lignes, stades, raretés, stats, textes), au rythme de ce qui est **jouable** : D-063 ne fixe plus de compte à atteindre (voir aussi `docs/SPEC-ILLUSTRATIONS.md`).
 2. Produire la **direction artistique** (palette, gabarit, 3 planches).
 3. Règles : captures et recherche font foi (D-034), §4 n'a plus de point ouvert. Reste à **coder** le plafond des 3 types de café, avec le café typé (#61 → #33 → #35).
 4. Scaffolder le monorepo et le design system.

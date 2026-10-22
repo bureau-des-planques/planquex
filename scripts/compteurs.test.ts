@@ -14,7 +14,8 @@ import { ALL_CARDS } from '@/data';
  *
  * Le nombre réel se dérive d'`ALL_CARDS` en un seul endroit : `scripts/status.mjs`
  * (champ `cards`). `AGENTS.md` §7 et `README.md` y renvoient, et n'ont le droit de
- * citer que les volumes qui sont des règles ou des cibles, jamais un décompte du code.
+ * citer que les volumes qui sont des **règles** — une **cible** se dit sans le nom juste
+ * après le nombre (voir `RULE_VOLUMES`), jamais un décompte du code.
  *
  * `docs/STATUS.md` est un **instantané daté** : il garde ses chiffres et n'est pas lu ici.
  */
@@ -23,12 +24,20 @@ const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.ur
 
 /**
  * Nombres qu'un document vivant peut écrire sans mentir sur l'état du code :
- * - `20` : la taille du Chariot (AGENTS.md §4) ;
- * - `226` et `286` : la cible de lancement (AGENTS.md §4.2, CARD-SPEC.md §2).
+ * - `20` : la taille du Chariot (AGENTS.md §4).
+ * Rien d'autre : `226` et `286` étaient la **cible de lancement** de D-005, que D-063 a
+ * retirée. Les blanchir protégeait une cible morte et refusait celle qui la remplace (#151).
+ *
  * Tout autre nombre devant « cartes », « variantes », « tests » ou « bases » est un
  * décompte recopié : il doit se lire dans `npm run status` ou `npm test`.
+ *
+ * **La cible de D-063 reste dicible**, mais **sans le nom juste après le nombre** : on écrit
+ * « autour de 300 » (le motif `\b\d+\s+(cartes?|…)` ne matche pas, donc la phrase passe),
+ * jamais « 300 cartes » — indistinguable d'un décompte recopié, et donc refusé. C'est la
+ * seule façon de dire une cible sans blanchir un nombre, et le commentaire en tient lieu
+ * de règle : ajouter un nombre ici, c'est blanchir un décompte qui divergera (#112).
  */
-const RULE_VOLUMES = new Set([20, 226, 286]);
+const RULE_VOLUMES = new Set([20]);
 
 const COUNT = /\b(\d+)\s+(cartes?|variantes?|tests?|bases?)\b/gi;
 
@@ -61,6 +70,28 @@ describe('Documents vivants — décomptes (ticket #36)', () => {
   it('les deux renvoient à `npm run status`, la source unique', () => {
     expect(agentsSection7()).toContain('npm run status');
     expect(read('README.md')).toContain('npm run status');
+  });
+});
+
+/**
+ * Le contrôle **mord** (#112) : la garde est confrontée à des textes fabriqués, pas seulement
+ * aux fichiers du dépôt. Sans ce bloc, remettre `286` dans `RULE_VOLUMES` passerait inaperçu —
+ * c'est exactement ce qui est arrivé jusqu'à #151, où `README.md` portait trois « 286 » en
+ * passant au vert.
+ */
+describe('La garde des décomptes mord — cible retirée (ticket #151)', () => {
+  it('refuse les anciennes cibles de D-005, retirées par D-063', () => {
+    // Les formulations que `README.md` portait avant #151.
+    expect(hardCounts('286 cartes au lancement (226 + 60 secrètes)')).toEqual(['286 cartes']);
+    expect(hardCounts('la spécification des 286 cartes')).toEqual(['286 cartes']);
+    expect(hardCounts('226 bases illustrées')).toEqual(['226 bases']);
+  });
+
+  it('refuse une cible écrite comme un décompte, et accepte « autour de 300 »', () => {
+    // Écrire la cible avec le nom juste après le nombre est indistinguable d'un décompte
+    // recopié : c'est refusé, et c'est pourquoi D-063 se dit « autour de 300 ».
+    expect(hardCounts('300 cartes au lancement')).toEqual(['300 cartes']);
+    expect(hardCounts('un set autour de 300, sans compte imposé')).toEqual([]);
   });
 });
 
