@@ -71,6 +71,46 @@ function turnFinished(state: BattleState): boolean {
 
 const newUid = () => `u${++uidCounter}`;
 
+/**
+ * Options de la partie qui ne sont **pas** des règles (#154) : la façon de nommer les
+ * camps dans le journal. Portées par l'état, donc un rejeu les retrouve.
+ */
+export interface BattleOptions {
+  /**
+   * Partie à **deux humains** : le journal nomme les camps (« le camp Toi », « le camp
+   * Direction ») au lieu de « Tu » et « L’IA ». Solo : `false`, et le journal est
+   * inchangé (la Direction y est bien une IA).
+   */
+  deuxCamps?: boolean;
+}
+
+/** Le nom d'un camp dans une partie à deux (AGENTS.md §3, `CAMP_NAME` de `store/pvp.ts`). */
+const CAMP_DUO: Readonly<Record<PlayerId, string>> = { player: 'camp Toi', ai: 'camp Direction' };
+
+/** Vrai quand le journal doit nommer les camps (partie à deux). */
+function estDeuxCamps(state: BattleState): boolean {
+  return (state as BattleState & BattleOptions).deuxCamps === true;
+}
+
+/**
+ * Le sujet d'une phrase du journal pour le camp `who`. Solo : « Tu » / « L’IA » (la
+ * Direction est une IA). À deux : « Le camp Toi » / « Le camp Direction », car aucun
+ * des deux camps n'est une IA et « Tu » ne dit pas qui joue.
+ */
+function sujet(state: BattleState, who: PlayerId): string {
+  if (estDeuxCamps(state)) return `Le ${CAMP_DUO[who]}`;
+  return who === 'player' ? 'Tu' : 'L’IA';
+}
+
+/**
+ * Le verbe qui suit le sujet. En solo, « Tu » prend la 2<sup>e</sup> personne ; un camp
+ * nommé (à deux, ou l'IA) prend la 3e. Une seule écriture, donc un verbe
+ * n'est pas oublié dans une branche.
+ */
+function verbe(state: BattleState, who: PlayerId, toi: string, lui: string): string {
+  return !estDeuxCamps(state) && who === 'player' ? toi : lui;
+}
+
 export function createInstance(cardId: string, turn = 0, uid = newUid()): CardInstance {
   const card = getCard(cardId);
   if (!card) throw new Error(`Carte inconnue: ${cardId}`);
@@ -172,11 +212,12 @@ function draw(state: BattleState, who: PlayerId, amount: number) {
   const player = state.players[who];
   for (let i = 0; i < amount; i += 1) {
     if (player.deck.length === 0) {
-      state.log.push(`${who === 'player' ? 'Tu' : 'L’IA'} ne pioche pas : Deck vide.`);
+      state.log.push(`${sujet(state, who)} ne pioche pas : Deck vide.`);
       break;
     }
     if (player.hand.length >= 10) {
-      state.log.push(`${who === 'player' ? 'Ta' : 'La'} main est pleine (10).`);
+      const main = estDeuxCamps(state) ? `La main du ${CAMP_DUO[who]}` : who === 'player' ? 'Ta main' : 'La main';
+      state.log.push(`${main} est pleine (10).`);
       break;
     }
     const card = player.deck.shift();
@@ -282,11 +323,13 @@ export function createBattle(
   playerDeck: string[],
   aiDeck: string[],
   seed = Date.now(),
-  cafeTypes: BattleCafeTypes = {}
+  cafeTypes: BattleCafeTypes = {},
+  options: BattleOptions = {}
 ): BattleState {
   assertDeckLegal(playerDeck, 'Toi');
   assertDeckLegal(aiDeck, 'la Direction');
-  const state: BattleState = {
+  const state: BattleState & BattleOptions = {
+    deuxCamps: options.deuxCamps === true,
     turn: 1,
     current: 'player',
     // Renseigné juste après le tirage ci-dessous ; valeur initiale sans effet.
@@ -330,7 +373,11 @@ export function createBattle(
   state.firstPlayer = firstPlayer;
   state.current = firstPlayer;
   state.log.push(
-    firstPlayer === 'player' ? 'Lancer de tampon : tu ouvres.' : 'Lancer de tampon : la Direction ouvre.'
+    estDeuxCamps(state)
+      ? `Lancer de tampon : le ${CAMP_DUO[firstPlayer]} ouvre.`
+      : firstPlayer === 'player'
+        ? 'Lancer de tampon : tu ouvres.'
+        : 'Lancer de tampon : la Direction ouvre.'
   );
 
   startTurn(state);
@@ -356,7 +403,7 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
     removeFromHand(player, uid);
     player.bench[slot] = instance;
   }
-  next.log.push(`${next.current === 'player' ? 'Tu poses' : 'L’IA pose'} ${card.name}.`);
+  next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'poses', 'pose')} ${card.name}.`);
   return next;
 }
 
@@ -382,7 +429,7 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
   // D-033 (4) : l'évolution purge aussi les effets d'attaque, pas seulement les statuts.
   clearAttackEffects(target);
   target.evolvedTurn = next.turn;
-  next.log.push(`${next.current === 'player' ? 'Tu fais évoluer' : 'L’IA fait évoluer'} ${card.name}.`);
+  next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'fais', 'fait')} évoluer ${card.name}.`);
   return next;
 }
 
@@ -406,7 +453,7 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
   player.energyZone = null;
   player.energyAttached = true;
   next.log.push(
-    `${next.current === 'player' ? 'Tu attaches' : 'L’IA attache'} 1 café ${cafeLabel(cafe)} à ${getCard(target.cardId)?.name ?? 'un Planqué'}.`
+    `${sujet(next, next.current)} ${verbe(next, next.current, 'attaches', 'attache')} 1 café ${cafeLabel(cafe)} à ${getCard(target.cardId)?.name ?? 'un Planqué'}.`
   );
   return next;
 }
@@ -436,7 +483,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
-  next.log.push(`${next.current === 'player' ? 'Tu passes en rotation' : 'L’IA passe en rotation'} : ${getCard(bench.cardId)?.name}.`);
+  next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'passes', 'passe')} en rotation : ${getCard(bench.cardId)?.name}.`);
   return next;
 }
 
@@ -463,7 +510,7 @@ export function useAbility(state: BattleState): BattleState {
     if (cafe) player.active.energy.push(cafe);
   }
   player.hasUsedAbility = true;
-  next.log.push(`${next.current === 'player' ? 'Tu utilises' : 'L’IA utilise'} ${ability.name}.`);
+  next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'utilises', 'utilise')} ${ability.name}.`);
   return next;
 }
 
@@ -717,7 +764,7 @@ export function playAction(state: BattleState, uid: string): BattleState {
   if (card.kind === 'COLLEAGUE') player.hasPlayedSupporter = true;
   applyActionEffects(next, next.current, card.effects);
   next.log.push(
-    `${next.current === 'player' ? 'Tu joues' : 'L’IA joue'} ${card.name} (${ACTION_KIND_META[card.kind].label}).`
+    `${sujet(next, next.current)} ${verbe(next, next.current, 'joues', 'joue')} ${card.name} (${ACTION_KIND_META[card.kind].label}).`
   );
   return next;
 }
@@ -753,6 +800,10 @@ function hasPlanques(player: PlayerState): boolean {
  */
 function awaitPromotion(state: BattleState, who: PlayerId) {
   state.pendingPromotion = who;
+  if (estDeuxCamps(state)) {
+    state.log.push(`${sujet(state, who)} doit choisir sa relève.`);
+    return;
+  }
   state.log.push(who === 'player' ? 'Tu dois choisir ta relève.' : 'La Direction doit choisir sa relève.');
 }
 
@@ -780,7 +831,7 @@ function resolveEnd(state: BattleState) {
     state.phase = 'ended';
     state.winner = playerOut ? (aiOut ? opponent : 'ai') : 'player';
     state.endReason = 'plateauVide';
-    state.log.push(`${state.winner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : plus aucun Planqué.`);
+    state.log.push(`${sujet(state, state.winner)} ${verbe(state, state.winner, 'gagnes', 'gagne')} : plus aucun Planqué.`);
     return;
   }
 
@@ -793,7 +844,7 @@ function resolveEnd(state: BattleState) {
     state.phase = 'ended';
     state.winner = pointsWinner;
     state.endReason = 'interventions';
-    state.log.push(`${pointsWinner === 'player' ? 'Tu gagnes' : 'L’IA gagne'} : 3 Interventions.`);
+    state.log.push(`${sujet(state, pointsWinner)} ${verbe(state, pointsWinner, 'gagnes', 'gagne')} : 3 Interventions.`);
     return;
   }
 
@@ -826,7 +877,7 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
   player.bench[benchIndex] = null;
   player.active = { ...incoming, statuses: [] };
   next.pendingPromotion = null;
-  next.log.push(`${who === 'player' ? 'Tu envoies' : 'L’IA envoie'} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
+  next.log.push(`${sujet(next, who)} ${verbe(next, who, 'envoies', 'envoie')} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
 
   // Double craquage (D-031) : l'attaquant a choisi en premier, c'est au tour de
   // l'autre camp. Le plateau porte la file — un Poste vide avec un Rack garni
@@ -867,7 +918,7 @@ export function priorityShift(state: BattleState, uid: string): BattleState {
   draw(next, next.current, 1);
   player.hasUsedPriorityShift = true;
   next.log.push(
-    `${next.current === 'player' ? 'Tu mets' : 'L’IA met'} ${getCard(discarded.cardId)?.name ?? 'une carte'} au rebut : Changement de priorité.`
+    `${sujet(next, next.current)} ${verbe(next, next.current, 'mets', 'met')} ${getCard(discarded.cardId)?.name ?? 'une carte'} au rebut : Changement de priorité.`
   );
   return next;
 }
@@ -1045,8 +1096,13 @@ export function forfeit(state: BattleState, who: PlayerId): BattleState {
   next.endReason = 'forfait';
   // La relève en attente n'a plus d'objet : le plateau est figé.
   next.pendingPromotion = null;
+  const gagnant: PlayerId = who === 'player' ? 'ai' : 'player';
   next.log.push(
-    who === 'player' ? 'Tu déclares forfait : la Direction l’emporte.' : 'L’IA déclare forfait : tu l’emportes.'
+    estDeuxCamps(next)
+      ? `${sujet(next, who)} déclare forfait : le ${CAMP_DUO[gagnant]} l’emporte.`
+      : who === 'player'
+        ? 'Tu déclares forfait : la Direction l’emporte.'
+        : 'L’IA déclare forfait : tu l’emportes.'
   );
   return next;
 }
@@ -1111,9 +1167,10 @@ export function replayBattle(
   aiDeck: string[],
   seed: number,
   actions: readonly BattleAction[],
-  cafeTypes: BattleCafeTypes = {}
+  cafeTypes: BattleCafeTypes = {},
+  options: BattleOptions = {}
 ): BattleState {
-  let state = createBattle(playerDeck, aiDeck, seed, cafeTypes);
+  let state = createBattle(playerDeck, aiDeck, seed, cafeTypes, options);
   for (const action of actions) state = applyAction(state, action);
   return state;
 }
