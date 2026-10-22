@@ -2,5 +2,50 @@
   "_lisez_moi": "Le mur de la Boîte à idées (D-058). Le jeu LIT ce fichier et n'écrit jamais dedans : le tri se fait à la main. `npm run mur:import` ajoute seulement les réponses absentes du formulaire, sans jamais modifier un post-it existant. Champs et statuts : docs/BOITE-A-IDEES.md. Le jeu le lit par import (Vite le bundle), donc une modification change le mur au déploiement suivant.",
   "formulaire": "https://docs.google.com/forms/d/e/1FAIpQLSeu6DH8Us6-Fd4UQ0yMm3sToZpzAFV-QIpdF5y8XRUFXRFIEw/viewform",
   "reponses": "https://docs.google.com/spreadsheets/d/1WUvB3q0CjEbs7Z-cWXqPUU834Wh1X-nhw1oBWFlhugw/gviz/tq?tqx=out:csv",
-  "postits": []
+  "postits": [
+    {
+      "id": "p-23-10-2026-01-36-03-c-est-de-la-merde-ton-jeux",
+      "kind": "IP",
+      "titre": "c'est de la merde ton jeux",
+      "texte": "Titre fabriqué avec les premiers mots du message : le formulaire n’en demandait pas.\n\nc'est de la merde ton jeux\nBastien",
+      "ecran": "",
+      "pseudo": "Moi",
+      "version": "je sais pas",
+      "statut": "en attente",
+      "raison": "",
+      "ticket": null,
+      "gueulage": true,
+      "position": {
+        "x": 8,
+        "y": 6,
+        "angle": 1
+      },
+      "votes": {
+        "up": 0,
+        "down": 0
+      }
+    },
+    {
+      "id": "p-23-10-2026-01-37-45-papi",
+      "kind": "OUF",
+      "titre": "papi",
+      "texte": "Ce que tu faisais : rien\n\nCe qui s’est passé : rien\n\nCe que tu attendais : du fun",
+      "ecran": "",
+      "pseudo": "L'autre",
+      "version": "0.1.4",
+      "statut": "en attente",
+      "raison": "",
+      "ticket": null,
+      "gueulage": false,
+      "position": {
+        "x": 30,
+        "y": 6,
+        "angle": -2
+      },
+      "votes": {
+        "up": 0,
+        "down": 0
+      }
+    }
+  ]
 }
