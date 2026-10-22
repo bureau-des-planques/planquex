@@ -43,7 +43,10 @@ const PAGES = [
   ['parc', '/collection'],
   ['chariot', '/deck'],
   ['combat', '/battle'],
-  ['reglages', '/settings']
+  ['reglages', '/settings'],
+  // Le mur de la Boîte à idées (#129) : une page hors barre de navigation, menée
+  // par la bulle — donc capturée en dernier.
+  ['idees', '/idees']
 ];
 
 const VIEWPORT = { width: 360, height: 800 };
