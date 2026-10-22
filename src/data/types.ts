@@ -150,6 +150,11 @@ export interface Ability {
    * `onPlay` : Talent « en jouant », résolu une fois, à la mise en jeu (pose ou évolution).
    */
   trigger?: 'onPlay';
+  /**
+   * Cible d'un `attachEnergy` (D-082). Absent : le Poste (Polyvalence de l'intérim, inchangé).
+   * `rack` : le joueur choisit le Planqué du Rack qui reçoit le café.
+   */
+  target?: 'rack';
 }
 
 /**

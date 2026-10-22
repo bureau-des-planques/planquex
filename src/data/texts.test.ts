@@ -235,7 +235,7 @@ function verifierPression(texte: string, effects: readonly AttackEffect[]): stri
 /** Contrôle d'un texte de **Talent** contre son `kind`. */
 function verifierTalent(
   texte: string,
-  ability: Pick<Ability, 'kind' | 'amount' | 'effects' | 'trigger'>
+  ability: Pick<Ability, 'kind' | 'amount' | 'effects' | 'trigger' | 'target'>
 ): string[] {
   const normalise = normaliser(texte);
   // « en jouant » et le déclenchement à la mise en jeu doivent se répondre (D-081).
@@ -249,7 +249,13 @@ function verifierTalent(
     if (!CUES_EFFET.some((cue) => cue.pattern.test(normalise))) problemes.push('texte de Talent sans mécanique');
     return problemes;
   }
-  const problemes = verifierCues(normalise, new Set([ability.kind]), CUES_TALENT);
+  // Un café attaché au Rack (D-082) est le seul cas où « Rack » désigne une primitive de Talent.
+  const versRack = ability.kind === 'attachEnergy' && ability.target === 'rack';
+  const cues = versRack ? CUES_TALENT.filter((cue) => cue.label !== 'Rack') : CUES_TALENT;
+  const problemes = verifierCues(normalise, new Set([ability.kind]), cues);
+  if (ability.kind === 'attachEnergy' && /\bracks?\b/.test(normalise) !== versRack) {
+    problemes.push('« Rack » annoncé sans cible Rack, ou cible Rack sans « Rack » dans le texte');
+  }
   // Un Talent qui n'annonce aucune mécanique n'est pas vérifiable : il est refusé.
   if (!CUES_TALENT.some((cue) => cue.pattern.test(normalise))) {
     problemes.push('texte de Talent sans mécanique : rien à comparer au `kind`');
@@ -385,6 +391,14 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     expect(verifierTalent('Une fois par tour : pioche 1 carte.', { kind: 'draw', amount: 1, trigger: 'onPlay' })).not.toEqual([]);
     // Le témoin : les deux se répondent.
     expect(verifierTalent('En jouant : pioche 1 carte.', { kind: 'draw', amount: 1, trigger: 'onPlay' })).toEqual([]);
+  });
+
+  it('mord : un café vers le Rack doit dire Rack, et seulement lui (#165, D-082)', () => {
+    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Rack.', { kind: 'attachEnergy', target: 'rack' })).toEqual([]);
+    // Le Talent de Polyvalence (au Poste) ne doit pas parler du Rack.
+    expect(verifierTalent('Une fois par tour : attache 1 café à un Planqué du Rack.', { kind: 'attachEnergy' })).not.toEqual([]);
+    // Une cible Rack sans le mot : refusée.
+    expect(verifierTalent('Une fois par tour : attache 1 café à ce Planqué.', { kind: 'attachEnergy', target: 'rack' })).not.toEqual([]);
   });
 
   it('mord : les motifs respectent les frontières de mot (#166)', () => {

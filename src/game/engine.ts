@@ -517,6 +517,8 @@ export function useAbility(state: BattleState): BattleState {
   const ability = card.ability;
   // Un Talent « en jouant » ne se déclenche jamais à la demande (D-081).
   if (ability.trigger === 'onPlay') return state;
+  // Un Talent vers le Rack n'a rien à viser s'il n'y a pas de Planqué au Rack (D-082).
+  if (ability.target === 'rack' && !player.bench.some(Boolean)) return state;
   // Défausse de sa propre main sur une main vide : le Talent n'est pas proposé (D-076).
   if (defausseImpossible(player, ability.effects)) return state;
   resolveAbility(next, next.current, player.active, ability);
@@ -547,7 +549,14 @@ function resolveAbility(state: BattleState, who: PlayerId, instance: CardInstanc
       // Deck (D-034) par le générateur seedé — même graine, même café. Un Deck sans type
       // produit ne peut rien attacher.
       const cafe = drawCafeType(state, who);
-      if (cafe) instance.energy.push(cafe);
+      if (!cafe) break;
+      if (ability.target === 'rack') {
+        // Vers le Rack (D-082) : le joueur choisit le Planqué qui reçoit le café. Pas de Planqué
+        // au Rack : rien à viser, donc rien à attacher (le Talent n'est pas proposé, `legalActions`).
+        if (state.players[who].bench.some(Boolean)) ouvrirChoix(state, { kind: 'attacher', who, cafe });
+        break;
+      }
+      instance.energy.push(cafe);
       break;
     }
     case 'reduceDamage':
@@ -826,7 +835,7 @@ function choixPossibles(state: BattleState): string[] {
   if (choix.kind === 'chercher') {
     return player.deck.filter((card) => correspondFiltre(card, choix.filtre)).map((card) => card.uid);
   }
-  return [];
+  return player.bench.flatMap((card) => (card ? [card.uid] : []));
 }
 
 /**
@@ -878,7 +887,14 @@ export function choose(state: BattleState, uid: string): BattleState {
     );
     return next;
   }
-  return state;
+  // Attacher au Rack (D-082) : le café va au Planqué du Rack désigné.
+  const cible = player.bench.find((card) => card?.uid === uid);
+  if (!cible) return state;
+  cible.energy.push(choix.cafe);
+  next.log.push(
+    `${sujet(next, choix.who)} ${verbe(next, choix.who, 'attaches', 'attache')} 1 café ${cafeLabel(choix.cafe)} à ${getCard(cible.cardId)?.name ?? 'un Planqué'}.`
+  );
+  return next;
 }
 
 function applyEffects(
@@ -1619,6 +1635,7 @@ export function legalActions(state: BattleState): BattleAction[] {
       isPlanque(card) &&
       card.ability &&
       card.ability.trigger !== 'onPlay' &&
+      (card.ability.target !== 'rack' || player.bench.some(Boolean)) &&
       !defausseImpossible(player, card.ability.effects)
     ) {
       actions.push({ type: 'ability' });
