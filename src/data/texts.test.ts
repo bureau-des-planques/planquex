@@ -271,20 +271,34 @@ const SUJETS: Sujet[] = ALL_CARDS.flatMap((card) => {
 const MENSONGES = SUJETS.filter((sujet) => sujet.problemes.length > 0);
 
 /**
- * **Inventaire de #47 — clos le 20/10/2026 (#65).**
+ * **Inventaire des écarts connus.** Né de #47 (les 22 textes qui annonçaient une mécanique
+ * absente). #65 les avait réécrits pour les aligner sur le moteur ; **D-074 rejette cette voie** :
+ * une carte vend ce qu'elle dit faire, le moteur rattrape. #167 rétablit les quatre Pressions
+ * concernées et inscrit leur écart ici, avec le ticket qui construit la mécanique manquante.
  *
- * Les 22 textes recensés annonçaient une mécanique que le moteur ne fait pas ; ils ont
- * été réécrits (décision Q47.1 : on réécrit, on ne construit pas les primitives). La
- * liste est donc **vide**, et c'est l'état visé : le garde-fou n'a plus d'exception.
+ * Une entrée ne s'ajoute ici que sur une décision datée (D-074) — un texte vendu dont le
+ * moteur ne réalise pas encore la mécanique — jamais pour faire passer un test. Elle se
+ * retire dès que la primitive existe (le test « l'inventaire ne survit pas » le dit).
  *
- * Une entrée ne s'ajoute ici que sur une décision datée de #47 — un texte qu'on garde
- * en l'état le temps de construire sa primitive — jamais pour faire passer un test.
- *
- * Clé stable : `id/attaque` ou `id#talent`. Le format `fichier:ligne — raison` reste
- * celui attendu si une entrée revient : le test vérifie que le fichier cité est bien
- * celui de la faction de la carte.
+ * Clé stable : `id/attaque` ou `id#talent`. Format `src/data/<faction>.ts:<ligne> — #<ticket>` :
+ * le test vérifie que le fichier cité est celui de la faction de la carte. Les variantes
+ * (`-star`, `-crown`, `-ex`) héritent de l'attaque de leur carte de base : leur ligne est
+ * celle de la source.
  */
-const MENSONGES_CONNUS: Readonly<Record<string, string>> = {};
+const MENSONGES_CONNUS: Readonly<Record<string, string>> = {
+  // « L’adversaire révèle une carte de sa main » : aucune révélation (#160) ; le statut
+  // Dérivé de l'effet n'est pas annoncé par le texte.
+  'rh-assistant-rh/Entretien': 'src/data/rh.ts:16 — #160',
+  'rh-assistant-rh-star/Entretien': 'src/data/rh.ts:16 — #160',
+  // « Regarde la carte du dessus de ton deck » : aucune primitive ne regarde le dessus (#162) ;
+  // l'effet `draw` pioche réellement, et le texte ne l'annonce pas.
+  'amelioration-charge-qualite/Checklist': 'src/data/amelioration.ts:23 — #162',
+  // « L’adversaire défausse 1 carte » : aucune défausse de la main (#159) ; l'effet
+  // `discardEnergy` retire un café, et le texte ne le dit pas.
+  'direction-pdg/Fusion-acquisition': 'src/data/direction.ts:48 — #159',
+  'direction-pdg-ex/Fusion-acquisition': 'src/data/direction.ts:65 — #159',
+  'direction-pdg-crown/Fusion-acquisition': 'src/data/direction.ts:48 — #159'
+};
 
 /**
  * Les Pressions d'un Planqué qui n'ont **aucun texte** (#158) : absent, vide, ou blanc.

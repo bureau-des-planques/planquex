@@ -20,7 +20,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Checklist', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Checklist', cost: ['AMELIORATION'], damage: 10, text: 'Regarde la carte du dessus de ton deck.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il a coché la case. La case ne sert à rien.'
   }),
   base({

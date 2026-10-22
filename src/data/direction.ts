@@ -45,7 +45,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 2,
     attacks: [
       { name: 'Plan de départ', cost: ['DIRECTION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
+      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'L’adversaire défausse 1 carte.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Il repart avec la prime. Tu restes avec le plan.',
     art: 'direction-pdg.webp'
@@ -62,7 +62,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     ex: true,
     attacks: [
       { name: 'Plan de départ', cost: ['DIRECTION', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Envoie 1 café du Planqué adverse au rebut. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'L’adversaire défausse 1 carte. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Un seul bureau.'
   }),

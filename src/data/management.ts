@@ -201,7 +201,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         name: 'Restructuration',
         cost: ['MANAGEMENT', 'INCOLORE'],
         damage: 60,
-        text: 'Envoie 1 café du Planqué adverse au rebut.',
+        text: 'Le Planqué adverse défausse 1 café.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       },
       {
@@ -292,7 +292,7 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         name: 'Restructuration',
         cost: ['MANAGEMENT', 'INCOLORE'],
         damage: 70,
-        text: 'Envoie 1 café du Planqué adverse au rebut.',
+        text: 'Le Planqué adverse défausse 1 café.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       },
       {
