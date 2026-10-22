@@ -6,7 +6,7 @@
 
 ## Contexte
 
-Le niveau 2 actuel est un **glouton à 1 coup** : il évalue chaque action légale avec `evaluatePosition` (écart Seuil/Stress, Interventions, Poste, Rack, cafés) et choisit la meilleure. Mesure headless (graines d'entraînement et de contrôle disjointes, seuil de décision 55 % des parties décidées + ratio ≥ 1,15) : **44 % de victoires** contre le niveau 1, IC 95 % [40,7 ; 47,4] %, taux de nulles ≈ 18 % (limite 200 tours). Il **ne bat pas** le niveau 1.
+Le niveau 2 actuel est un **glouton à 1 coup** : il évalue chaque action légale avec `evaluatePosition` (écart Seuil/Stress, Interventions, Poste, Banc, cafés) et choisit la meilleure. Mesure headless (graines d'entraînement et de contrôle disjointes, seuil de décision 55 % des parties décidées + ratio ≥ 1,15) : **44 % de victoires** contre le niveau 1, IC 95 % [40,7 ; 47,4] %, taux de nulles ≈ 18 % (limite 200 tours). Il **ne bat pas** le niveau 1.
 
 Objectif : faire passer le niveau 2 au-dessus de 55 % (sur graines de contrôle, protocole inchangé) **avant d'envisager un niveau 3**.
 
@@ -26,7 +26,7 @@ Un tour = séquence d'actions (piocher, poser, attacher, Talent, Objets, Collèg
 
 ### 1. Fonction d'évaluation plus fine (coût ~0 ms, effort faible)
 
-**Principe** : enrichir `evaluatePosition` avec des termes connus en théorie TCG : **avantage en cartes** (main + Rack − main adverse estimée), **tempo** (cafés attachés prêts à presser), **menace de KO** (Stress adverse ≥ Seuil − 30), **valeur des Interventions** (COMEX = 2), **contrôle de statut** (Sieste/Immobilisation/Dérive sur l'adversaire), **potentiel d'évolution** (Entrant → N+1 dispo en main).
+**Principe** : enrichir `evaluatePosition` avec des termes connus en théorie TCG : **avantage en cartes** (main + Banc − main adverse estimée), **tempo** (cafés attachés prêts à presser), **menace de KO** (Stress adverse ≥ Seuil − 30), **valeur des Interventions** (COMEX = 2), **contrôle de statut** (Sieste/Immobilisation/Dérive sur l'adversaire), **potentiel d'évolution** (Entrant → N+1 dispo en main).
 
 **Coût** : O(1) par évaluation, **< 1 ms** par coup.
 
@@ -114,7 +114,7 @@ Un tour = séquence d'actions (piocher, poser, attacher, Talent, Objets, Collèg
 
 **Coût** : entraînement **quelques heures** sur CPU (simulateur ~1 000 parties/s → 1M parties en ~15 min ; entraînement < 1 h). Inférence : **< 0,1 ms**.
 
-**Risque** : **sur-ajustement** à la politique actuelle (niveau 2) → ne généralise pas à d'autres decks/stratégies. **Triche** si les features encodent l'information cachée. **Solution** : features = état public uniquement (Poste, Rack visible, Interventions, cafés zone, défausses, compteurs) ; main adverse *exclue*.
+**Risque** : **sur-ajustement** à la politique actuelle (niveau 2) → ne généralise pas à d'autres decks/stratégies. **Triche** si les features encodent l'information cachée. **Solution** : features = état public uniquement (Poste, Banc visible, Interventions, cafés zone, défausses, compteurs) ; main adverse *exclue*.
 
 **Mesure** : même protocole. Critère : ≥ 55 % *et* robustesse cross-deck (tester sur 10 decks différents non vus à l'entraînement).
 

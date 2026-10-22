@@ -55,7 +55,7 @@ Aucun terme ne lit `deck` ni le contenu de `hand` adverse, et aucun ne lit `stat
 
 ## Limites et choix de lecture
 
-- (a) suit la formule de la consigne, **asymétrique** : `main + Rack` **de moi** − `main adverse`, sans le Rack adverse. Une version symétrique est une autre expérience, non faite.
+- (a) suit la formule de la consigne, **asymétrique** : `main + Banc` **de moi** − `main adverse`, sans le Banc adverse. Une version symétrique est une autre expérience, non faite.
 - (c) n'utilise qu'un seuil (2 Interventions). Un seuil plus fin n'a pas été essayé.
 - (d) : « pénaliser les statuts subis par le Poste adverse » a été lu comme un **bonus** pour moi quand l'adversaire a des statuts, moins mes propres statuts. C'est la lecture qui sert la politique ; elle n'est pas la seule possible.
 - Les poids (100, 150, 30, 4) ne sont pas réglés : un seul essai par terme.
