@@ -618,20 +618,10 @@ describe('Cartes — textes (AGENTS.md §3, §5)', () => {
     }
   });
 
-  it('ne donne de texte (d’effet) à une attaque que si elle porte un effet', () => {
-    // Sens inverse du test suivant : un texte qui décrit un effet doit être adossé à un
-    // `effects` réel — sinon la carte promet une mécanique qui n'arrive pas.
-    for (const card of PLANQUES) {
-      for (const attack of card.attacks) {
-        if (attack.text?.trim()) {
-          expect(
-            (attack.effects ?? []).length,
-            `${card.id}/${attack.name} : texte sans effet`,
-          ).toBeGreaterThan(0);
-        }
-      }
-    }
-  });
+  // D-074 : une Pression porte un texte même sans `effects` — le texte décrit la carte
+  // telle qu'elle est vendue, et l'écart avec le moteur s'inscrit dans `MENSONGES_CONNUS`
+  // (`texts.test.ts`) au lieu d'être interdit ici. Le sens « un texte sans effet est un
+  // mensonge » vit donc dans `texts.test.ts`, mot par mot, pas en bloc.
 
   it('donne un texte à toute attaque portant un effet', () => {
     for (const card of PLANQUES) {
