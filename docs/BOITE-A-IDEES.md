@@ -74,13 +74,24 @@ il y en a un.
 > n'a aucun backend. Ils arrivent avec la base (#135) et le mur complet (#137). Dans l'alpha, le mur
 > montre les post-its, leurs couleurs, leurs statuts et leur disposition — **pas** de compteur.
 
-### Sur téléphone
+### Sur téléphone — des post-its quand même, empilés
 
-Le tableau libre ne fonctionne **pas** sur un écran de 360 px : les post-its s'y recouvriraient pour
-de bon, et on ne pourrait plus lire. Les testeurs sont sur téléphone, donc : **une colonne** de
-post-its — même contenu, mêmes couleurs, inclinaison légère, **sans chevauchement** — et le tableau
-libre pour les écrans larges, là où on le consulte et où on le range. Le **mode de placement** est un
-travail de bureau : il ne se fait pas au doigt sur un téléphone.
+Le tableau **libre** ne fonctionne pas sur 360 px : les post-its s'y recouvriraient pour de bon. Mais
+l'écran étroit **garde des post-its** — il ne se contente pas d'une liste de texte :
+
+- **un post-it par ligne** entre 360 et 420 px, **deux par ligne** au-delà : c'est le seul changement
+  de mise en page ;
+- chaque post-it **garde son papier** : sa couleur de famille, sa **légère inclinaison**, et l'air
+  d'être collé — incliné oui, **recouvert non** : la règle « le texte d'un autre n'est jamais caché »
+  devient ici « deux post-its ne se recouvrent pas » ;
+- **ils s'empilent**, la page **grandit** avec eux et **défile** : le mur n'a pas de hauteur fixe, il
+  s'allonge tant qu'il y a des post-its ;
+- **une pression agrandit un post-it** : sa taille de lecture — et c'est là que se rangent les choses
+  qui ne tiennent pas sur un post-it de téléphone, c'est-à-dire **le statut, le lien vers le ticket, et
+  plus tard les pouces** (qui arrivent avec la base, #135 → #137). Sur écran large, ces éléments
+  vivent **sur** le post-it.
+
+Le **mode de placement** reste un travail de **bureau** : il ne se fait pas au doigt sur un téléphone.
 
 ## 3. Le fichier du mur
 
