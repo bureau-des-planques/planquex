@@ -21,7 +21,7 @@ import {
  * Ticket #34 — le simulateur headless seedé.
  *
  * Les tests vérifient l'**outil**, pas l'équilibre : même graine → même rapport,
- * rapport complet par partie et par faction, Chariots légaux. Aucun seuil de
+ * rapport complet par partie et par faction, Decks légaux. Aucun seuil de
  * winrate ici : les valeurs cibles viendront avec le contenu.
  */
 
@@ -129,7 +129,7 @@ describe('simulate — contenu du rapport', () => {
     const niveau1 = simulate({ games: 6, seed: SEED, playerLevel: 1, aiLevel: 1 });
     const niveau2 = simulate({ games: 6, seed: SEED, playerLevel: 1, aiLevel: 2 });
 
-    // Mêmes graines, mêmes Chariots : seul le niveau de la Direction change.
+    // Mêmes graines, mêmes Decks : seul le niveau de la Direction change.
     expect(niveau2.results.map((result) => result.seed)).toEqual(
       niveau1.results.map((result) => result.seed)
     );
@@ -137,8 +137,8 @@ describe('simulate — contenu du rapport', () => {
   });
 });
 
-describe('Chariots de simulation', () => {
-  it('construit un Chariot légal de 20 cartes pour chacune des dix factions', () => {
+describe('Decks de simulation', () => {
+  it('construit un Deck légal de 20 cartes pour chacune des dix factions', () => {
     for (const faction of FACTION_ORDER) {
       const deck = factionDeck(faction);
       expect(deck, faction).toHaveLength(DECK_SIZE);
@@ -165,11 +165,11 @@ describe('Chariots de simulation', () => {
   });
 });
 
-describe('types de café des Chariots simulés (#113)', () => {
+describe('types de café des Decks simulés (#113)', () => {
   /**
    * Le défaut du ticket : `createBattle` recevait la **dérivation**, qui ne donne
    * aucun type à `SUPPORT` (exclu de `CAFE_FACTIONS`, D-034) ni de type utile à
-   * `INTERIM`. Ces tests **mordent** : sans la table explicite, le Chariot `SUPPORT`
+   * `INTERIM`. Ces tests **mordent** : sans la table explicite, le Deck `SUPPORT`
    * ne produit aucun café et ne lance aucune Pression, et `simulate` le montre.
    */
   it('donne un type productible à SUPPORT et une paire distincte à INTERIM', () => {
@@ -190,7 +190,7 @@ describe('types de café des Chariots simulés (#113)', () => {
     }
   });
 
-  it('un Chariot SUPPORT du simulateur produit un café', () => {
+  it('un Deck SUPPORT du simulateur produit un café', () => {
     const deck = factionDeck('SUPPORT');
     let state = createBattle(deck, factionDeck('SSE'), SEED, {
       playerCafeTypes: factionCafeTypes('SUPPORT')
@@ -214,7 +214,7 @@ describe('types de café des Chariots simulés (#113)', () => {
     expect(state.players.player.energyZone).toBe('SSE');
   });
 
-  it('un Chariot SUPPORT du simulateur lance des Pressions dans chaque partie', () => {
+  it('un Deck SUPPORT du simulateur lance des Pressions dans chaque partie', () => {
     const report = simulate({ games: 6, seed: SEED, factions: ['SUPPORT', 'SSE'] });
     const supportGames = report.results.filter(
       (result) => result.player === 'SUPPORT' || result.ai === 'SUPPORT'
@@ -229,7 +229,7 @@ describe('types de café des Chariots simulés (#113)', () => {
     expect(armed.every((count) => count > 0), `Pressions SUPPORT : ${armed.join(', ')}`).toBe(true);
   });
 
-  it('un Chariot INTERIM peut payer chaque stade de sa ligne', () => {
+  it('un Deck INTERIM peut payer chaque stade de sa ligne', () => {
     const types = factionCafeTypes('INTERIM') ?? [];
     // Ce que la Machine peut produire en quelques tours : un stock de chaque type choisi.
     const payable = (cost: readonly CafeSymbol[]) =>

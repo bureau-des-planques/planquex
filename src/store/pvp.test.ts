@@ -33,11 +33,11 @@ import {
 
 const mockedAi = vi.mocked(nextAiAction);
 
-/** Un Chariot **légal** de 20 cartes, pris dans tout le catalogue (`autoDeck`). */
+/** Un Deck **légal** de 20 cartes, pris dans tout le catalogue (`autoDeck`). */
 function testDeck(): string[] {
   const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
   const built = autoDeck(owned).deck;
-  expect(deckLegal(built).ok, 'Chariot de test légal').toBe(true);
+  expect(deckLegal(built).ok, 'Deck de test légal').toBe(true);
   return built;
 }
 
@@ -53,7 +53,7 @@ function seedFor(first: PlayerId): number {
 }
 
 describe('pvp — ouvrir une partie à deux', () => {
-  it('porte sa graine, mon Chariot, et le Chariot du camp adverse', () => {
+  it('porte sa graine, mon Deck, et le Deck du camp adverse', () => {
     const mine = testDeck();
     const theirs = testDeck().slice().reverse();
     const { state, match } = createMatch(mine, theirs, 4242);

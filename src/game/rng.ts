@@ -7,7 +7,7 @@
  * comparable — un générateur à closure ne le serait pas.
  *
  * Algorithme : **mulberry32**, 32 bits, un seul mot d'état. Il suffit largement
- * à un lancer de tampon ou à un mélange de Chariot, et il est reproductible
+ * à un lancer de tampon ou à un mélange de Deck, et il est reproductible
  * entre navigateurs (pas de dépendance à un état interne du moteur JS).
  */
 

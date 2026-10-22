@@ -22,7 +22,7 @@ const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
 );
 
-/** Chariot légal de 20 cartes (10 noms d'Entrants en double). */
+/** Deck légal de 20 cartes (10 noms d'Entrants en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 function freshBattle(seed = SEED): BattleState {

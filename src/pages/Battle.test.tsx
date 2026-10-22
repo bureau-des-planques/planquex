@@ -102,9 +102,9 @@ describe('Battle — écran de combat', () => {
     expect(screen.getByText(/Tour 1/)).toBeInTheDocument();
   });
 
-  it('affiche le message d\'avertissement si le chariot n\'est pas valide', () => {
+  it('affiche le message d\'avertissement si le deck n\'est pas valide', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/chariot de test/i)).toBeInTheDocument();
+    expect(screen.getByText(/deck de test/i)).toBeInTheDocument();
   });
 });

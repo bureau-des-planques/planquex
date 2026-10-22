@@ -129,7 +129,7 @@ describe('Tirage du premier joueur (D-033 (6))', () => {
       expect(state.turn).toBe(2);
       expect(state.current).toBe(other);
       // La Machine y a produit un café **typé** (D-034) : non nul, tiré dans les
-      // types du Chariot, et nommé au journal avec son libellé.
+      // types du Deck, et nommé au journal avec son libellé.
       const zone = state.players[other].energyZone;
       // L'incolore est dans la garde : la Machine n'en produit jamais (D-034).
       if (!zone || zone === 'INCOLORE') throw new Error('Aucun café de type produit');

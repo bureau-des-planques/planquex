@@ -22,7 +22,7 @@ export const STATUTS = ['en attente', 'retenu', 'en cours', 'fait', 'écarté'] 
 export type Statut = (typeof STATUTS)[number];
 
 /** Les écrans du formulaire (§4.1) — « Autre » existe parce qu'on ne devine pas. */
-export const ECRANS = ['Accueil', 'Parc', 'Chariot', 'Combat', 'Réglages', 'Autre'] as const;
+export const ECRANS = ['Accueil', 'Collection', 'Deck', 'Combat', 'Réglages', 'Autre'] as const;
 export type Ecran = (typeof ECRANS)[number];
 
 /** Une place sur le tableau : en **pourcentage**, jamais en pixels (D-068). */

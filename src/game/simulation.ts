@@ -23,10 +23,10 @@ import { drawRandom, seedRng } from '@/game/rng';
  *   aucun tirage hors du générateur seedé de la partie ;
  * - **niveaux mesurables** : les deux camps peuvent jouer des **niveaux d'IA**
  *   différents (`playerLevel`, `aiLevel`, ticket #93). C'est ainsi qu'on compare le
- *   niveau 2 au niveau 1 à graine, appariement et Chariots identiques.
- * - **Chariots armés** : les archétypes dont la dérivation ne donne aucun café payable
+ *   niveau 2 au niveau 1 à graine, appariement et Decks identiques.
+ * - **Decks armés** : les archétypes dont la dérivation ne donne aucun café payable
  *   (`SUPPORT`, `INTERIM`) reçoivent des **types explicites** (`factionCafeTypes`,
- *   ticket #113) — sinon un match sur trois opposait un Chariot incapable d'attaquer.
+ *   ticket #113) — sinon un match sur trois opposait un Deck incapable d'attaquer.
  *
  * Ce n'est **pas** une IA de jeu : la politique sert à faire avancer les parties
  * jusqu'à un vainqueur, pas à mesurer la force d'un archétype.
@@ -85,8 +85,8 @@ export interface GameResult {
   turns: number;
   /**
    * **Pressions lancées** par chaque camp pendant la partie (harnais, ticket #113).
-   * Un compteur, pas un jugement : il sert à voir si un Chariot était **armé** — un
-   * camp à `0` n'a jamais attaqué, ce qui est le symptôme d'un Chariot sans café
+   * Un compteur, pas un jugement : il sert à voir si un Deck était **armé** — un
+   * camp à `0` n'a jamais attaqué, ce qui est le symptôme d'un Deck sans café
    * payable. Consigné pour que la mesure du niveau 2 reste auditable.
    */
   attacks: Record<PlayerId, number>;
@@ -116,10 +116,10 @@ export interface SimulationReport {
 }
 
 /* ------------------------------------------------------------------ */
-/* Chariots                                                            */
+/* Decks                                                            */
 /* ------------------------------------------------------------------ */
 
-/** Entrant → N+1 → N+2 (D-026) ; sert uniquement à ordonner un Chariot. */
+/** Entrant → N+1 → N+2 (D-026) ; sert uniquement à ordonner un Deck. */
 const STAGE_ORDER = { ENTRANT: 0, 'N+1': 1, 'N+2': 2 } as const;
 
 function addCard(deck: string[], cardId: string) {
@@ -128,9 +128,9 @@ function addCard(deck: string[], cardId: string) {
 }
 
 /**
- * Chariot d'archétype d'une faction : ses cartes d'abord, complétées si besoin.
+ * Deck d'archétype d'une faction : ses cartes d'abord, complétées si besoin.
  *
- * Deux factions n'ont pas encore 20 cartes (Syndicat, Intérim) : leur Chariot est
+ * Deux factions n'ont pas encore 20 cartes (Syndicat, Intérim) : leur Deck est
  * complété par des cartes des autres factions, dans l'ordre de `ALL_CARDS`. Il
  * reste **légal** (20 cartes, 2 par nom, au moins un Entrant) et il est étiqueté
  * par sa faction d'origine — c'est l'archétype mesuré, pas une liste figée.
@@ -151,7 +151,7 @@ export function factionDeck(faction: Faction): string[] {
           (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
       );
 
-    // 1. un Entrant de chaque, socle du Chariot.
+    // 1. un Entrant de chaque, socle du Deck.
     for (const card of planques) {
       if (card.stage === 'ENTRANT') addCard(deck, card.id);
     }
@@ -181,21 +181,21 @@ export function factionDeck(faction: Faction): string[] {
 
   const trimmed = deck.slice(0, DECK_SIZE);
   const { ok, reasons } = deckLegal(trimmed);
-  if (!ok) throw new Error(`Chariot de simulation illégal (${faction}) : ${reasons.join(' ')}`);
+  if (!ok) throw new Error(`Deck de simulation illégal (${faction}) : ${reasons.join(' ')}`);
   return trimmed;
 }
 
-/** Les Chariots des factions demandées, construits une fois par exécution. */
+/** Les Decks des factions demandées, construits une fois par exécution. */
 export function factionDecks(factions: readonly Faction[] = FACTION_ORDER): Map<Faction, string[]> {
   return new Map(factions.map((faction) => [faction, factionDeck(faction)]));
 }
 
 /* ------------------------------------------------------------------ */
-/* Types de café des Chariots simulés (ticket #113)                    */
+/* Types de café des Decks simulés (ticket #113)                    */
 /* ------------------------------------------------------------------ */
 
 /**
- * Les **types de café choisis** pour les archétypes que la dérivation du Chariot ne
+ * Les **types de café choisis** pour les archétypes que la dérivation du Deck ne
  * sait pas armer (ticket #113, D-037 (4)). Absente, une faction garde la
  * **dérivation** (`deckCafeTypes`), qui suffit à ses propres coûts.
  *
@@ -203,7 +203,7 @@ export function factionDecks(factions: readonly Faction[] = FACTION_ORDER): Map<
  *
  * - **`SUPPORT`** n'a que des coûts **incolores**, mais la dérivation jette `SUPPORT`
  *   (`CAFE_FACTIONS` exclut les types que la Machine ne produit jamais, D-034) : un
- *   Chariot exclusivement `SUPPORT` n'avait donc **aucun type**, la Machine ne
+ *   Deck exclusivement `SUPPORT` n'avait donc **aucun type**, la Machine ne
  *   produisait **aucun café**, et aucune de ses Pressions n'était payable. Un seul
  *   type productible suffit à tout payer (D-037 (2) : l'incolore accepte n'importe
  *   quel café) ; `SSE` est le premier de `CAFE_FACTIONS`, donc le choix est stable.
@@ -226,9 +226,9 @@ export const SIMULATION_CAFE_TYPES: Partial<Record<Faction, readonly CafeType[]>
 };
 
 /**
- * Le **choix de types** d'un Chariot de simulation : la table ci-dessus quand
+ * Le **choix de types** d'un Deck de simulation : la table ci-dessus quand
  * l'archétype en a besoin, `undefined` sinon — et `undefined` laisse `createBattle`
- * appliquer la dérivation du Chariot, c'est-à-dire le comportement d'avant #113.
+ * appliquer la dérivation du Deck, c'est-à-dire le comportement d'avant #113.
  */
 export function factionCafeTypes(faction: Faction): CafeType[] | undefined {
   const chosen = SIMULATION_CAFE_TYPES[faction];
@@ -288,9 +288,9 @@ export interface GameOutcome {
  * d'une relève, c'est le camp qui relève qui tranche, donc c'est son niveau qui
  * compte.
  *
- * `cafeTypes` porte les **types de café explicites** des deux Chariots (ticket #113),
+ * `cafeTypes` porte les **types de café explicites** des deux Decks (ticket #113),
  * ceux que `simulate` tire de `factionCafeTypes`. Omis, `createBattle` applique la
- * dérivation du Chariot — le comportement d'avant #113, que gardent les autres
+ * dérivation du Deck — le comportement d'avant #113, que gardent les autres
  * appelants.
  */
 export function playGameWithStats(
@@ -358,13 +358,13 @@ export function simulate(options: SimulationOptions): SimulationReport {
   const decks = factionDecks(factions);
   // Le **choix de types explicite** des archétypes que la dérivation n'arme pas
   // (`SUPPORT`, `INTERIM`, ticket #113) : sans lui, `createBattle` dérive les types du
-  // Chariot, et ces deux Chariots n'ont alors **aucun café à payer** — la Machine ne
+  // Deck, et ces deux Decks n'ont alors **aucun café à payer** — la Machine ne
   // produit rien pour `SUPPORT` (la dérivation exclut `SUPPORT`, D-034) et `INTERIM`
-  // hérite de types qui ne couvrent aucune de ses Pressions. Un Chariot désarmé ne
+  // hérite de types qui ne couvrent aucune de ses Pressions. Un Deck désarmé ne
   // lance jamais de Pression, et la mesure du niveau 2 s'en trouvait biaisée. Les
   // autres factions passent `undefined` et gardent la dérivation.
   const cafeTypes = new Map(factions.map((faction) => [faction, factionCafeTypes(faction)]));
-  // Une graine par partie, tirée de la graine maîtresse : les Chariots sont
+  // Une graine par partie, tirée de la graine maîtresse : les Decks sont
   // différents d'une partie à l'autre, mais la suite entière se rejoue.
   const master = { rng: seedRng(seed) };
   const results: GameResult[] = [];

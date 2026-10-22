@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 describe('Arrivage', () => {
-  it('distribue 5 cartes, les ajoute au Parc et incrémente le compteur', () => {
+  it('distribue 5 cartes, les ajoute à la Collection et incrémente le compteur', () => {
     const before = useStore.getState().packsOpened;
     const cards = useStore.getState().openPack();
 
@@ -45,7 +45,7 @@ describe('Arrivage', () => {
   });
 });
 
-describe('Chariot du store', () => {
+describe('Deck du store', () => {
   it('ajoute une carte par clic, puis retire un seul exemplaire au-delà du plafond', () => {
     const id = ALL_CARDS[0].id;
     const { toggleDeck } = useStore.getState();
@@ -74,7 +74,7 @@ describe('Chariot du store', () => {
     expect(useStore.getState().deck).toHaveLength(MAX_COPIES_PER_NAME);
   });
 
-  it('ne dépasse jamais la taille du Chariot', () => {
+  it('ne dépasse jamais la taille du Deck', () => {
     const { toggleDeck } = useStore.getState();
     for (const card of ALL_CARDS.slice(0, 12)) {
       toggleDeck(card.id);
@@ -83,7 +83,7 @@ describe('Chariot du store', () => {
     expect(useStore.getState().deck.length).toBeLessThanOrEqual(DECK_SIZE);
   });
 
-  it('vide le Chariot sans toucher au Parc', () => {
+  it('vide le Deck sans toucher à la Collection', () => {
     const id = ALL_CARDS[0].id;
     const ownedBefore = useStore.getState().owned[id];
     useStore.getState().toggleDeck(id);
@@ -325,7 +325,7 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     // #106 — cohabitation : la migration `withRenamedCardIds` additionne
     // (`owned[current] += count`) au lieu de remplacer. C'est voulu : aucun
     // exemplaire ne disparaît. Mais rien ne borne `owned`, donc le total peut
-    // dépasser le plafond de 2 copies par nom imposé au Chariot (`deck`).
+    // dépasser le plafond de 2 copies par nom imposé au Deck (`deck`).
     const ancien = 'rh-drh-star2';
     const nouveau = 'rh-drh-crown';
     const persisted = {
@@ -341,17 +341,17 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     // Le deck conserve l'ordre et remplace l'ancien par le nouveau.
     expect(migrated.deck).toEqual([nouveau, nouveau]);
     // Choix explicite : le total additionné est voulu (rien ne se perd),
-    // mais il dépasse le plafond `MAX_COPIES_PER_NAME` du Chariot (2).
+    // mais il dépasse le plafond `MAX_COPIES_PER_NAME` du Deck (2).
     // Aucune borne n'existe sur `owned` : c'est un choix, pas un bug caché.
   });
 });
 
 /**
- * **Les types de café du Chariot sont choisis et persistés avec lui** (#91,
+ * **Les types de café du Deck sont choisis et persistés avec lui** (#91,
  * D-037 (4)). `[]` vaut « proposition automatique » : un état v3 sans ce champ
  * continue donc de fonctionner, et la dérivation reste le défaut.
  */
-describe('Types de café du Chariot — store (#91)', () => {
+describe('Types de café du Deck — store (#91)', () => {
   it('part de la proposition automatique (choix vide)', () => {
     expect(useStore.getState().cafeTypes).toEqual([]);
   });
@@ -409,7 +409,7 @@ describe('Types de café du Chariot — store (#91)', () => {
     expect(useStore.getState().cafeTypes).toEqual(['SSE', 'QVT']);
   });
 
-  it('vide le choix avec le Chariot', () => {
+  it('vide le choix avec le Deck', () => {
     useStore.getState().toggleCafeType('SSE');
     expect(useStore.getState().cafeTypes).toEqual(['SSE']);
 
@@ -418,13 +418,13 @@ describe('Types de café du Chariot — store (#91)', () => {
   });
 
   /**
-   * #117 — **le choix est un attribut du Chariot, pas du joueur**. Tout remplacement
+   * #117 — **le choix est un attribut du Deck, pas du joueur**. Tout remplacement
    * en bloc du contenu l'efface (`[]` = proposition automatique du **nouveau**
    * contenu) ; une édition carte par carte le garde. Avant ce correctif, `setDeck`
-   * laissait sur un Chariot neuf les types de l'ancien, alors que `clearDeck` les
+   * laissait sur un Deck neuf les types de l'ancien, alors que `clearDeck` les
    * effaçait : le même geste avait deux comportements.
    */
-  it('efface le choix quand le Chariot est remplacé en bloc (setDeck, donc « Remplir »)', () => {
+  it('efface le choix quand le Deck est remplacé en bloc (setDeck, donc « Remplir »)', () => {
     expect(getCard('atelier-chef-atelier'), 'carte de test absente').toBeTruthy();
     useStore.getState().setCafeTypes(['SSE', 'RH']);
     useStore.getState().setDeck(['atelier-chef-atelier']);
@@ -433,9 +433,9 @@ describe('Types de café du Chariot — store (#91)', () => {
     expect(useStore.getState().cafeTypes).toEqual([]);
   });
 
-  it('« Remplir » repart de la proposition automatique du Chariot rempli', () => {
+  it('« Remplir » repart de la proposition automatique du Deck rempli', () => {
     const automatic = autoDeck(useStore.getState().owned);
-    expect(automatic.deck.length, 'le Parc de départ doit permettre de remplir').toBeGreaterThan(0);
+    expect(automatic.deck.length, 'la Collection de départ doit permettre de remplir').toBeGreaterThan(0);
 
     // Exactement ce que fait le bouton « Remplir » de `Deck.tsx` : `setDeck(autoDeck(...).deck)`.
     useStore.getState().setCafeTypes(['SSE']);
@@ -446,23 +446,23 @@ describe('Types de café du Chariot — store (#91)', () => {
     expect(resolveCafeTypes(deck, cafeTypes)).toEqual(deckCafeTypes(automatic.deck));
   });
 
-  it('garde le choix quand on ajuste le Chariot carte par carte, et le perd s’il devient vide', () => {
+  it('garde le choix quand on ajuste le Deck carte par carte, et le perd s’il devient vide', () => {
     expect(getCard('sse-psychologue'), 'carte de test absente').toBeTruthy();
     useStore.getState().setDeck(['sse-psychologue', 'atelier-chef-atelier']);
     useStore.getState().setCafeTypes(['SSE', 'RH']);
 
-    // Une carte retirée, il en reste : c'est le même Chariot, le choix tient.
+    // Une carte retirée, il en reste : c'est le même Deck, le choix tient.
     useStore.getState().removeFromDeck('sse-psychologue');
     expect(useStore.getState().deck).toEqual(['atelier-chef-atelier']);
     expect(useStore.getState().cafeTypes).toEqual(['SSE', 'RH']);
 
-    // Dernière carte retirée : Chariot vide, donc plus de types — comme `clearDeck`.
+    // Dernière carte retirée : Deck vide, donc plus de types — comme `clearDeck`.
     useStore.getState().removeFromDeck('atelier-chef-atelier');
     expect(useStore.getState().deck).toEqual([]);
     expect(useStore.getState().cafeTypes).toEqual([]);
   });
 
-  it('persiste le choix avec le Chariot', () => {
+  it('persiste le choix avec le Deck', () => {
     useStore.getState().setCafeTypes(['SSE', 'RH']);
     const persisted = partializeState(useStore.getState());
 

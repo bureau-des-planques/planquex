@@ -100,10 +100,10 @@ export function Collection() {
                   className="card-slot__quick"
                   title={
                     canAdd
-                      ? `Ajouter « ${card.name} » au chariot (${used}/${MAX_COPIES_PER_NAME})`
-                      : `Chariot complet pour « ${card.name} »`
+                      ? `Ajouter « ${card.name} » au deck (${used}/${MAX_COPIES_PER_NAME})`
+                      : `Deck complet pour « ${card.name} »`
                   }
-                  aria-label={`Ajouter ${card.name} au chariot`}
+                  aria-label={`Ajouter ${card.name} au deck`}
                   disabled={!canAdd}
                   onClick={() => addToDeck(card.id)}
                 >

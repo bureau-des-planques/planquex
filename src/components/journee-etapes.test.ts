@@ -49,8 +49,8 @@ describe('les quatre choses qu’un invité ne devine pas (#130)', () => {
     expect(texteDe(1)).toMatch(/rare/);
   });
 
-  it('explique le Chariot : vingt cartes, deux exemplaires, un Entrant, les types de café', () => {
-    expect(texteDe(2)).toMatch(/Chariot/);
+  it('explique le Deck : vingt cartes, deux exemplaires, un Entrant, les types de café', () => {
+    expect(texteDe(2)).toMatch(/Deck/);
     expect(texteDe(2)).toMatch(/vingt cartes/);
     expect(texteDe(2)).toMatch(/deux exemplaires/);
     expect(texteDe(2)).toMatch(/Planqué Entrant/);
@@ -123,16 +123,16 @@ describe('le vocabulaire est celui du jeu, aucun mot interdit (AGENTS.md §3)', 
     }
   });
 
-  it('n’emploie pas le vocabulaire d’avant le renommage (HP, deck, onboarding, PV)', () => {
+  it('n’emploie pas le vocabulaire d’avant le renommage (HP, onboarding, PV, K.O.) — « Deck » n’en fait plus partie (D-075)', () => {
     for (const etape of ETAPES_JOURNEE) {
       const texte = texteDe(ETAPES_JOURNEE.indexOf(etape));
-      expect(texte).not.toMatch(/\bHP\b|\bPV\b|\bdeck\b|onboarding|\bK\.O\./i);
+      expect(texte).not.toMatch(/\bHP\b|\bPV\b|onboarding|\bK\.O\./i);
     }
   });
 
-  it('nomme les écrans comme le jeu : Parc, Arrivage, Chariot, Combat', () => {
-    expect(texteDe(0)).toMatch(/Parc/);
-    expect(texteDe(2)).toMatch(/Chariot/);
+  it('nomme les écrans comme le jeu : Collection, Arrivage, Deck, Combat', () => {
+    expect(texteDe(0)).toMatch(/Collection/);
+    expect(texteDe(2)).toMatch(/Deck/);
     expect(texteDe(3)).toMatch(/combat/);
   });
 });

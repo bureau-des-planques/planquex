@@ -20,12 +20,12 @@ describe('Home — écran d\'accueil', () => {
     expect(screen.getByRole('link', { name: /Affronter la Direction/i })).toBeInTheDocument();
   });
 
-  it('affiche les statistiques du Parc et du Chariot', () => {
+  it('affiche les statistiques de la Collection et du Deck', () => {
     const owned = { 'sse-psychologue': 2, 'management-responsable-unite': 1 };
     renderWithStore(<Home />, { owned, deck: ['sse-psychologue'], tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/Parc/)).toBeInTheDocument();
-    expect(screen.getByText(/Chariot/)).toBeInTheDocument();
+    expect(screen.getByText(/Collection/)).toBeInTheDocument();
+    expect(screen.getByText(/Deck/)).toBeInTheDocument();
     expect(screen.getByText(/1\/20/)).toBeInTheDocument();
   });
 
@@ -43,7 +43,7 @@ describe('Home — écran d\'accueil', () => {
     const cards = packReveal?.querySelectorAll('.card') ?? [];
     expect(cards.length).toBe(5);
 
-    const closeButton = screen.getByRole('button', { name: /Ranger dans le Parc/i });
+    const closeButton = screen.getByRole('button', { name: /Ranger dans la Collection/i });
     fireEvent.click(closeButton);
 
     await waitFor(() => {

@@ -32,7 +32,7 @@ forme du contrat, `position` et `votes` compris.
 | `id` | `id text` | clé primaire, 1 à 32 caractères — court, stable, jamais réutilisé |
 | `kind` | `kind text` | `check (kind in ('IP', 'OUF'))` |
 | `titre` / `texte` | `titre` / `texte text` | non vides |
-| `ecran` | `ecran text` | `Accueil` \| `Parc` \| `Chariot` \| `Combat` \| `Réglages` \| `Autre`, ou nul |
+| `ecran` | `ecran text` | `Accueil` \| `Collection` \| `Deck` \| `Combat` \| `Réglages` \| `Autre`, ou nul |
 | `pseudo` | `pseudo text` | défaut `'anonyme'` (D-059 : le nom local de Réglages) |
 | `version` | `version text` | non vide — un retour sans version ne dit pas s'il est encore vrai |
 | `statut` | `statut text` | `en attente` \| `retenu` \| `en cours` \| `fait` \| `écarté` |

@@ -17,7 +17,7 @@
  *
  * Depuis le ticket #153, la capture tient enfin dans une image qu'on **regarde** : elle
  * est prise à la taille que D-060 nomme (**420 × 900**) et sur la **fenêtre**, jamais
- * sur la page entière — le Parc sortait en 141 460 px de haut, le Chariot en 80 064.
+ * sur la page entière — la Collection sortait en 141 460 px de haut, le Deck en 80 064.
  * Ce qu'on perd, et pourquoi c'est le bon compromis, est écrit sur `PLEINE_PAGE`.
  *
  * Usage :
@@ -53,8 +53,8 @@ const executablePath =
 /** Une page par route de `src/App.tsx`, dans l'ordre de la barre de navigation. */
 const PAGES = [
   ['accueil', '/'],
-  ['parc', '/collection'],
-  ['chariot', '/deck'],
+  ['collection', '/collection'],
+  ['deck', '/deck'],
   ['combat', '/battle'],
   ['reglages', '/settings'],
   // Le mur de la Boîte à idées (#129) : une page hors barre de navigation, menée
@@ -103,16 +103,16 @@ const VIEWPORT = { width: 420, height: 900 };
 /**
  * Capture de la **fenêtre**, jamais de la page entière (#153).
  *
- * `fullPage: true` photographiait tout le document : le Parc mesurait ainsi
- * **141 460 px de haut** et le Chariot **80 064** (mesuré le 22/10/2026, à 360 de
+ * `fullPage: true` photographiait tout le document : la Collection mesurait ainsi
+ * **141 460 px de haut** et le Deck **80 064** (mesuré le 22/10/2026, à 360 de
  * large). Une capture de 141 000 px ne se regarde pas, et D-060 dit justement qu'on
  * **regarde** les captures : une capture sert à juger **l'écran qu'un invité voit**,
  * et cet écran est la fenêtre, pas un rouleau.
  *
  * Ce qu'on **gagne** : une image par page, toujours à 420 × 900, qu'on ouvre et qu'on
  * juge ; c'est la taille que nomme D-060, donc l'écart doc/code ferme des deux côtés.
- * Ce qu'on **perd** : ce qui vit sous la ligne de flottaison — le bas du Parc, les
- * rangées du Chariot, le pied de page. Ce contenu se regarde en faisant défiler dans
+ * Ce qu'on **perd** : ce qui vit sous la ligne de flottaison — le bas de la Collection, les
+ * rangées du Deck, le pied de page. Ce contenu se regarde en faisant défiler dans
  * le navigateur ; il ne se jugeait pas dans un rouleau de 141 000 px. Si une planche
  * de contrôle des grilles devient nécessaire, ce sera **un autre artefact**, avec sa
  * commande : la capture d'écran reste « ce que voit un invité ».

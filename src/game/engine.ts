@@ -75,7 +75,7 @@ export function createInstance(cardId: string, turn = 0, uid = newUid()): CardIn
   const card = getCard(cardId);
   if (!card) throw new Error(`Carte inconnue: ${cardId}`);
   // Une carte Action ne se pose jamais : son instance n'a pas de Seuil, mais elle vit
-  // au Chariot et dans la main comme les autres (0 = pas de Seuil à afficher).
+  // au Deck et dans la main comme les autres (0 = pas de Seuil à afficher).
   const hp = isPlanque(card) ? card.hp : 0;
   return {
     uid,
@@ -91,7 +91,7 @@ export function createInstance(cardId: string, turn = 0, uid = newUid()): CardIn
 }
 
 /**
- * Instances d'un Chariot neuf. L'`uid` dérive de la **place dans le Chariot**
+ * Instances d'un Deck neuf. L'`uid` dérive de la **place dans le Deck**
  * (`p12`, `a3`) et non d'un compteur global : deux parties de même graine
  * doivent produire des états strictement identiques (ticket #29), ce qu'un
  * compteur module rendrait impossible dès la deuxième partie.
@@ -110,11 +110,11 @@ function shuffle<T>(items: T[], holder: RngHolder): T[] {
 }
 
 /**
- * Tire **un type de café** dans ceux du Chariot de `who` (D-034) : c'est ainsi que la
+ * Tire **un type de café** dans ceux du Deck de `who` (D-034) : c'est ainsi que la
  * Machine à café produit, et qu'un Talent qui attache un café choisit son type — un
  * seul tirage, par le générateur **seedé** de la partie, donc reproductible.
  *
- * `null` si le Chariot n'a **aucun** type produit (`SUPPORT`/`INTERIM` seuls,
+ * `null` si le Deck n'a **aucun** type produit (`SUPPORT`/`INTERIM` seuls,
  * D-034) : la Machine ne produit jamais de café incolore.
  */
 function drawCafeType(state: BattleState, who: PlayerId): CafeType | null {
@@ -172,7 +172,7 @@ function draw(state: BattleState, who: PlayerId, amount: number) {
   const player = state.players[who];
   for (let i = 0; i < amount; i += 1) {
     if (player.deck.length === 0) {
-      state.log.push(`${who === 'player' ? 'Tu' : 'L’IA'} ne pioche pas : Chariot vide.`);
+      state.log.push(`${who === 'player' ? 'Tu' : 'L’IA'} ne pioche pas : Deck vide.`);
       break;
     }
     if (player.hand.length >= 10) {
@@ -206,8 +206,8 @@ function startTurn(state: BattleState) {
   // Machine à café (D-034, capture `05`) : au premier tour de la partie, aucun café
   // n'est généré ; au tour suivant, si le slot du haut est libre — la zone ne
   // contient donc **jamais plus d'un café** — la Machine tire **un type** parmi ceux
-  // du Chariot (jusqu'à 3, D-034/D-037 (4)) avec le générateur seedé de la partie.
-  // Un Chariot sans type produit (`SUPPORT`/`INTERIM` seuls, D-034) ne produit rien.
+  // du Deck (jusqu'à 3, D-034/D-037 (4)) avec le générateur seedé de la partie.
+  // Un Deck sans type produit (`SUPPORT`/`INTERIM` seuls, D-034) ne produit rien.
   if (!isOpeningTurn(state) && player.energyZone === null) {
     const type = drawCafeType(state, state.current);
     if (type) {
@@ -227,7 +227,7 @@ function hasBasicInHand(player: PlayerState): boolean {
  * toujours au moins un Entrant, sans remélange et sans pioche pour l'adversaire —
  * c'est le mulligan du TCG *physique* que §4 reprenait à tort.
  *
- * Le Chariot étant garanti d'avoir au moins un Entrant (`deckLegal`), il y a
+ * Le Deck étant garanti d'avoir au moins un Entrant (`deckLegal`), il y a
  * toujours de quoi échanger. L'échange se fait carte pour carte : la main reste
  * à 5 et le total des cartes du joueur ne bouge pas.
  */
@@ -262,15 +262,15 @@ function setupPlayer(state: BattleState, who: PlayerId) {
   }
 }
 
-/** Refuse un chariot non conforme : le moteur ne démarre pas une partie illégale. */
+/** Refuse un deck non conforme : le moteur ne démarre pas une partie illégale. */
 function assertDeckLegal(deck: string[], who: string) {
   const { ok, reasons } = deckLegal(deck);
-  if (!ok) throw new Error(`Chariot illégal (${who}) : ${reasons.join(' ')}`);
+  if (!ok) throw new Error(`Deck illégal (${who}) : ${reasons.join(' ')}`);
 }
 
 /**
  * Les **types de café choisis** pour chaque camp (#91, D-037 (4)) : absents ou vides,
- * la proposition automatique du Chariot s'applique (`resolveCafeTypes`). Le simulateur
+ * la proposition automatique du Deck s'applique (`resolveCafeTypes`). Le simulateur
  * et l'écran de combat qui ne passent rien gardent donc le comportement d'avant.
  */
 export interface BattleCafeTypes {
@@ -312,7 +312,7 @@ export function createBattle(
   state.players.player.deck = shuffle(deckInstances(playerDeck, 'p'), state);
   state.players.ai.deck = shuffle(deckInstances(aiDeck, 'a'), state);
 
-  // Les types de café de chaque Chariot, dressés une fois (D-034) : la Machine
+  // Les types de café de chaque Deck, dressés une fois (D-034) : la Machine
   // d'un camp ne tire que dans les siens, jusqu'à 3 types (D-037 (4)). Le joueur
   // peut les avoir choisis (#91) ; sans choix, la dérivation reste la proposition.
   state.players.player.cafeTypes = resolveCafeTypes(playerDeck, cafeTypes.playerCafeTypes);
@@ -396,7 +396,7 @@ export function attachEnergy(state: BattleState, targetUid: string): BattleState
     return next;
   }
   // La zone contient au plus un café typé (D-034) : rien n'est attachable si elle
-  // est vide — première ouverture, slot occupé, Chariot sans type produit.
+  // est vide — première ouverture, slot occupé, Deck sans type produit.
   if (player.energyZone === null) return state;
   const target = findInPlay(player, targetUid);
   if (!target) return state;
@@ -457,8 +457,8 @@ export function useAbility(state: BattleState): BattleState {
     draw(next, next.current, ability.amount ?? 1);
   } else if (ability.kind === 'attachEnergy') {
     // Le café du Talent est typé comme un café produit : il se tire dans les types
-    // du Chariot (D-034) par le générateur seedé — même graine, même café. Un
-    // Chariot sans type produit ne peut rien attacher.
+    // du Deck (D-034) par le générateur seedé — même graine, même café. Un
+    // Deck sans type produit ne peut rien attacher.
     const cafe = drawCafeType(next, next.current);
     if (cafe) player.active.energy.push(cafe);
   }
@@ -1101,7 +1101,7 @@ export function applyAction(state: BattleState, action: BattleAction): BattleSta
  * Reconstruit une partie depuis sa **graine** et son **journal d'actions**
  * (ticket #83) : même graine + mêmes actions = même partie (`PROPOSITION.md` §6.2).
  * Les **types de café choisis** (#91) font partie de la mise en place comme les
- * Chariots : un rejeu qui ne les redonne pas retomberait sur la dérivation.
+ * Decks : un rejeu qui ne les redonne pas retomberait sur la dérivation.
  * Chaque action passe par `applyAction`, donc le rejeu journalise à son tour et
  * l'état final est **strictement égal** (`toEqual`) à l'original — à condition que
  * le journal soit celui d'une partie jouée **entièrement** via `applyAction`.

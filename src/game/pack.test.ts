@@ -44,7 +44,7 @@ describe('Composition d’un Arrivage (§4.2)', () => {
     expect(holder.rng).not.toBe(start);
   });
 
-  it('ne tire que des cartes du Parc', () => {
+  it('ne tire que des cartes de la Collection', () => {
     const known = new Set(ALL_CARDS.map((card) => card.id));
     for (const id of packFromSeed(7)) expect(known.has(id)).toBe(true);
   });

@@ -24,7 +24,7 @@ const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.ur
 
 /**
  * Nombres qu'un document vivant peut écrire sans mentir sur l'état du code :
- * - `20` : la taille du Chariot (AGENTS.md §4).
+ * - `20` : la taille du Deck (AGENTS.md §4).
  * Rien d'autre : `226` et `286` étaient la **cible de lancement** de D-005, que D-063 a
  * retirée. Les blanchir protégeait une cible morte et refusait celle qui la remplace (#151).
  *

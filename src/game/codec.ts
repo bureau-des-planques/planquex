@@ -7,7 +7,7 @@ import { replayBattle } from '@/game/engine';
  * **Codec de partie** — ticket #124 (PvP par code, D-049).
  *
  * Le PvP de la beta échange **un code** plutôt que des actions en temps réel : la partie
- * est déterministe et journalisée (#29, #83), donc « graine + deux Chariots + types de
+ * est déterministe et journalisée (#29, #83), donc « graine + deux Decks + types de
  * café + journal des actions » suffit à la reconstruire (`replayBattle`). Ce module est
  * **pur** : ni React, ni store, ni réseau — et il n'ajoute aucune couture au moteur.
  *
@@ -36,7 +36,7 @@ import { replayBattle } from '@/game/engine';
  *
  * `decodeMatch` ne lève jamais : il rend `{ ok: false, kind, raison }` avec une raison
  * **en français, affichable**. Il ne touche aucun `BattleState` — un refus ne mute donc
- * rien, comme une action refusée par `applyAction`. Il valide les Chariots (`deckLegal`)
+ * rien, comme une action refusée par `applyAction`. Il valide les Decks (`deckLegal`)
  * **avant** de rejouer : un code forgé ne fait pas lever `createBattle`.
  */
 
@@ -46,7 +46,7 @@ export interface MatchCode {
   seed: number;
   playerDeck: string[];
   aiDeck: string[];
-  /** Types de café **effectifs** du Chariot (`BattleState.players[who].cafeTypes`). */
+  /** Types de café **effectifs** du Deck (`BattleState.players[who].cafeTypes`). */
   playerCafeTypes: CafeType[];
   aiCafeTypes: CafeType[];
   /** Journal des actions **appliquées** (`BattleState.actionLog`). */
@@ -63,7 +63,7 @@ export type RefusalKind =
   | 'base64'
   | 'json'
   | 'charge'
-  | 'chariot'
+  | 'deck'
   | 'cafe'
   | 'rejeu';
 
@@ -115,7 +115,7 @@ type WireAction = Array<string | number>;
 interface WireMatch {
   /** graine */
   s: number;
-  /** Chariots : `[Toi, la Direction]` */
+  /** Decks : `[Toi, la Direction]` */
   d: [string[], string[]];
   /** types de café : `[Toi, la Direction]` (vide = proposition automatique) */
   c: [string[], string[]];
@@ -227,7 +227,7 @@ function wireAction(action: BattleAction): WireAction {
 
 /**
  * Un match → un code. **Total** : il encode ce qu'on lui donne, sans juger — c'est
- * `decodeMatch` qui valide (Chariots, types de café, rejeu). Les tests s'appuient sur ce
+ * `decodeMatch` qui valide (Decks, types de café, rejeu). Les tests s'appuient sur ce
  * partage pour **forger** des codes à empreinte valide et vérifier que le refus vient du
  * bon étage.
  */
@@ -344,7 +344,7 @@ function readStringList(value: unknown): string[] | null {
 /**
  * Un `CafeType[]` **tel qu'il a été écrit** : factions productrices, sans doublon, 3 au
  * plus (D-034/D-037). Une liste vide est valide — c'est la proposition automatique du
- * Chariot. On refuse plutôt que de normaliser : normaliser en silence changerait la
+ * Deck. On refuse plutôt que de normaliser : normaliser en silence changerait la
  * partie rejouée sans le dire.
  */
 function readCafeTypes(value: unknown): CafeType[] | null {
@@ -359,16 +359,16 @@ function readCafeTypes(value: unknown): CafeType[] | null {
   return types;
 }
 
-/** Le Chariot doit être **légal** (D-022/§4) *et* ne contenir que des cartes connues. */
+/** Le Deck doit être **légal** (D-022/§4) *et* ne contenir que des cartes connues. */
 function readDeck(value: unknown, who: string): { deck: string[] } | Refusal {
   const deck = readStringList(value);
-  if (deck === null) return refus('chariot', `Chariot illégal (${who}) : ce n’est pas une liste d’identifiants.`);
+  if (deck === null) return refus('deck', `Deck illégal (${who}) : ce n’est pas une liste d’identifiants.`);
   const unknown = deck.find((id) => !getCard(id));
   if (unknown !== undefined) {
-    return refus('chariot', `Chariot illégal (${who}) : la carte « ${unknown} » n’existe pas.`);
+    return refus('deck', `Deck illégal (${who}) : la carte « ${unknown} » n’existe pas.`);
   }
   const { ok, reasons } = deckLegal(deck);
-  if (!ok) return refus('chariot', `Chariot illégal (${who}) : ${reasons.join(' ')}`);
+  if (!ok) return refus('deck', `Deck illégal (${who}) : ${reasons.join(' ')}`);
   return { deck };
 }
 
@@ -376,7 +376,7 @@ function readDeck(value: unknown, who: string): { deck: string[] } | Refusal {
  * Un code → un match, ou un **refus motivé**. Ne lève jamais, ne mute rien.
  *
  * L'ordre des contrôles est celui des raisons : préfixe, version, forme, **empreinte**,
- * base64, JSON, charge, Chariots, types de café, puis **rejeu**. L'empreinte passe avant
+ * base64, JSON, charge, Decks, types de café, puis **rejeu**. L'empreinte passe avant
  * le décodage : c'est elle qui empêche une altération de produire une autre partie
  * silencieusement valide.
  */
@@ -444,7 +444,7 @@ export function decodeMatch(code: string): DecodeResult {
     return refus('charge', 'Ce JSON n’est pas une partie de ce jeu : la graine manque.');
   }
   if (!Array.isArray(d) || d.length !== 2 || !Array.isArray(c) || c.length !== 2) {
-    return refus('charge', 'Ce JSON n’est pas une partie de ce jeu : les deux Chariots manquent.');
+    return refus('charge', 'Ce JSON n’est pas une partie de ce jeu : les deux Decks manquent.');
   }
   if (!Array.isArray(a)) {
     return refus('charge', 'Ce JSON n’est pas une partie de ce jeu : le journal des actions manque.');
@@ -473,7 +473,7 @@ export function decodeMatch(code: string): DecodeResult {
     actions.push(action);
   }
 
-  // Les Chariots sont légaux, les cartes connues : `createBattle` ne doit plus lever.
+  // Les Decks sont légaux, les cartes connues : `createBattle` ne doit plus lever.
   // Le `try` couvre quand même le rejeu — un refus ne lève pas, il se motive.
   let replayed;
   try {

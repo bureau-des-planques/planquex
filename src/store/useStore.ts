@@ -18,7 +18,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * neuve le voit. **5** : le store gagne `tutorielVu` (la « Journée d'intégration » se
  * montre une fois) — absent d'un état v4, il vaut `true` : quelqu'un qui a déjà une
  * partie en cours a déjà joué, on ne lui remontre pas le tutoriel ; seule une partie
- * neuve le voit. **4** : le Chariot gagne ses **types de café
+ * neuve le voit. **4** : le Deck gagne ses **types de café
  * choisis** (`cafeTypes`, ticket #91) — absents d'un état v3, ils valent `[]`,
  * c'est-à-dire la proposition automatique. **3** : sept variantes secrètes changent
  * de suffixe d'id en passant aux raretés hautes (ticket #87) — `owned` et `deck`
@@ -33,7 +33,7 @@ export const STORAGE_VERSION = 6;
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
  * suit le nom** — et, pour une variante, la rareté. Quand l'un des deux change, l'id
  * change au lieu de rester un alias introuvable, et l'état persisté doit suivre,
- * sinon la carte quitte silencieusement le Parc et le Chariot.
+ * sinon la carte quitte silencieusement la Collection et le Deck.
  *
  * Clé : ancien id. Valeur : id courant. Une entrée ne se retire pas sans casser
  * la migration ; on ajoute, on ne réécrit pas l'histoire.
@@ -73,26 +73,26 @@ export interface AppState {
   owned: Record<string, number>;
   deck: string[];
   /**
-   * Les **types de café choisis** pour le Chariot (1 à 3, D-037 (4), ticket #91) :
-   * `[]` = proposition automatique, dérivée des factions du Chariot. La liste est
+   * Les **types de café choisis** pour le Deck (1 à 3, D-037 (4), ticket #91) :
+   * `[]` = proposition automatique, dérivée des factions du Deck. La liste est
    * normalisée à l'écriture (`normalizeCafeTypes`) **et** à la lecture
    * (`resolveCafeTypes`), donc un état trafiqué ne fait jamais produire `SUPPORT` ni
    * `INTERIM`, ni plus de 3 types (D-034).
    *
-   * **Le choix est un attribut du Chariot, pas du joueur** (#117). Critère retenu :
+   * **Le choix est un attribut du Deck, pas du joueur** (#117). Critère retenu :
    * *le choix décrit un contenu ; il ne survit pas au remplacement de ce contenu.*
-   * Remplacer le Chariot (`setDeck`, donc « Remplir »), le vider (`clearDeck`), le
+   * Remplacer le Deck (`setDeck`, donc « Remplir »), le vider (`clearDeck`), le
    * vider en retirant sa dernière carte (`removeFromDeck`) ou tout réinitialiser
    * (`reset`) **efface** le choix : `[]` repart en proposition automatique, dérivée
-   * du **nouveau** contenu. Ajuster le Chariot carte par carte (`addToDeck`,
-   * `toggleDeck`) le **garde** : c'est le même Chariot qu'on édite.
+   * du **nouveau** contenu. Ajuster le Deck carte par carte (`addToDeck`,
+   * `toggleDeck`) le **garde** : c'est le même Deck qu'on édite.
    *
-   * Pourquoi « attribut du Chariot » plutôt que « du joueur » : `AGENTS.md` §4 dit
-   * « Jusqu'à 3 types **par Chariot**, choisis par le joueur » et §6 parle des
-   * « types de café choisis **du Chariot** » ; `resolveCafeTypes(deck, chosen)` prend
-   * déjà le Chariot en premier argument. Le laisser survivre à un remplacement
-   * faisait appliquer à un Chariot neuf les types d'un autre — et, à l'écran de
-   * combat, à un Chariot de test (#117).
+   * Pourquoi « attribut du Deck » plutôt que « du joueur » : `AGENTS.md` §4 dit
+   * « Jusqu'à 3 types **par Deck**, choisis par le joueur » et §6 parle des
+   * « types de café choisis **du Deck** » ; `resolveCafeTypes(deck, chosen)` prend
+   * déjà le Deck en premier argument. Le laisser survivre à un remplacement
+   * faisait appliquer à un Deck neuf les types d'un autre — et, à l'écran de
+   * combat, à un Deck de test (#117).
    */
   cafeTypes: CafeType[];
   packsOpened: number;
@@ -232,9 +232,9 @@ export const useStore = create<AppState>()(
           if (index < 0) return {};
           const deck = [...state.deck];
           deck.splice(index, 1);
-          // Vider le Chariot à la main laisse le même état que `clearDeck` : le choix
+          // Vider le Deck à la main laisse le même état que `clearDeck` : le choix
           // tombe avec le contenu qui le portait (#117). Retirer une carte d'un
-          // Chariot qui en garde d'autres ne touche pas au choix.
+          // Deck qui en garde d'autres ne touche pas au choix.
           return deck.length === 0 ? { deck, cafeTypes: [] } : { deck };
         });
       },
@@ -245,14 +245,14 @@ export const useStore = create<AppState>()(
         else state.removeFromDeck(cardId);
       },
       /**
-       * **Remplir** (« Remplir » de l'écran Chariot : `setDeck(autoDeck(owned).deck)`)
+       * **Remplir** (« Remplir » de l'écran Deck : `setDeck(autoDeck(owned).deck)`)
        * **efface** le choix de types de café : il décrivait le contenu précédent, et
-       * `[]` repart en proposition automatique du nouveau Chariot (#117). C'est le
+       * `[]` repart en proposition automatique du nouveau Deck (#117). C'est le
        * même geste que `clearDeck`, donc le même effet sur le choix.
        */
       setDeck: (deck) => set({ deck, cafeTypes: [] }),
       /**
-       * Un Chariot vide n'a plus de types de café : le choix repart en automatique
+       * Un Deck vide n'a plus de types de café : le choix repart en automatique
        * (#117 — même règle que `setDeck`, vue depuis un contenu vide).
        */
       clearDeck: () => set({ deck: [], cafeTypes: [] }),
@@ -320,7 +320,7 @@ export const useStore = create<AppState>()(
         if (typeof etat.owned !== 'object' || etat.owned === null || !Array.isArray(etat.deck)) {
           return {
             ok: false,
-            raison: 'Cette sauvegarde est incomplète : le Parc ou le Chariot manque.'
+            raison: 'Cette sauvegarde est incomplète : la Collection ou le Deck manque.'
           };
         }
         // Les migrations font le reste : ids renommés, types de café normalisés,
@@ -352,7 +352,7 @@ export const useStore = create<AppState>()(
  * passent par la même table, donc un état v2 encore porteur de l'ancien suffixe est
  * remappé comme un état v1.
  *
- * **v3 → v4** (#91) : le Chariot gagne ses **types de café choisis**. Un état v3 n'en
+ * **v3 → v4** (#91) : le Deck gagne ses **types de café choisis**. Un état v3 n'en
  * a pas : `[]` vaut « proposition automatique », donc la dérivation d'avant reste le
  * défaut. Un choix trafiqué est normalisé au passage (ni `SUPPORT` ni `INTERIM`,
  * 3 types au plus). Les autres champs sont conservés tels quels (`persist` fusionne
@@ -387,7 +387,7 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
 /**
  * Remappe les anciens ids dans `owned` et `deck`. Les comptes sont **additionnés**
  * si les deux ids cohabitent (état bricolé à la main) : aucun exemplaire ne
- * disparaît. L'ordre du Chariot est conservé.
+ * disparaît. L'ordre du Deck est conservé.
  */
 function withRenamedCardIds(state: Partial<AppState>): Partial<AppState> {
   const next: Partial<AppState> = { ...state };
@@ -403,5 +403,5 @@ function withRenamedCardIds(state: Partial<AppState>): Partial<AppState> {
   return next;
 }
 
-// Les règles du Chariot (20 cartes, 2 exemplaires max, ≥ 1 N+1) vivent dans
+// Les règles du Deck (20 cartes, 2 exemplaires max, ≥ 1 N+1) vivent dans
 // `@/game/deck` : ce sont des règles de jeu, pas de l'état d'application.

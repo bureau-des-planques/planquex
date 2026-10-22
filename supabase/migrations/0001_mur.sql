@@ -40,8 +40,8 @@ create table public.postits (
   titre          text            not null check (char_length(btrim(titre)) > 0),
   texte          text            not null check (char_length(btrim(texte)) > 0),
 
-  -- Accueil | Parc | Chariot | Combat | Réglages | Autre ; vide tant que le formulaire ne le dit pas.
-  ecran          text            check (ecran in ('Accueil', 'Parc', 'Chariot', 'Combat', 'Réglages', 'Autre')),
+  -- Accueil | Collection | Deck | Combat | Réglages | Autre ; vide tant que le formulaire ne le dit pas.
+  ecran          text            check (ecran in ('Accueil', 'Collection', 'Deck', 'Combat', 'Réglages', 'Autre')),
 
   -- Le nom local du posteur (Réglages), « anonyme » s'il n'en a pas (D-059).
   pseudo         text            not null default 'anonyme',

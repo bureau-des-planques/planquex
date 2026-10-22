@@ -10,7 +10,7 @@ import type { BattleState, CafeType } from '@/data/types';
  * **Le café de la Machine à café a un type** (ticket #88/#89, D-034/D-037).
  *
  * La Machine ne produit plus « un café » abstrait : elle tire **un type** parmi
- * ceux du Chariot (jusqu'à 3, `deckCafeTypes`), par le générateur **seedé** de la
+ * ceux du Deck (jusqu'à 3, `deckCafeTypes`), par le générateur **seedé** de la
  * partie — même graine, même café. L'attachement déplace ce café vers l'instance,
  * qui **conserve son type**.
  */
@@ -20,32 +20,32 @@ const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
   (card) => card.id
 );
 
-/** Chariot légal de 20 cartes (10 noms N+1 en double). */
+/** Deck légal de 20 cartes (10 noms N+1 en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 function freshBattle(seed = SEED): BattleState {
   return createBattle(DECK, DECK, seed);
 }
 
-describe('Machine à café — les types du Chariot', () => {
-  it('dresse cafeTypes des deux camps à la création, dérivés du Chariot', () => {
+describe('Machine à café — les types du Deck', () => {
+  it('dresse cafeTypes des deux camps à la création, dérivés du Deck', () => {
     const state = freshBattle();
 
     expect(state.players.player.cafeTypes).toEqual(deckCafeTypes(DECK));
     expect(state.players.ai.cafeTypes).toEqual(deckCafeTypes(DECK));
-    // Le Chariot d'essai produit quelque chose : sinon la suite ne testerait rien.
+    // Le Deck d'essai produit quelque chose : sinon la suite ne testerait rien.
     expect(state.players.player.cafeTypes.length).toBeGreaterThan(0);
   });
 
   it('ne retient ni SUPPORT ni INTERIM, et plafonne à 3 types (D-034)', () => {
-    // Un Chariot Sprinter : les factions, dans l'ordre où le Chariot les porte,
+    // Un Deck Sprinter : les factions, dans l'ordre où le Deck les porte,
     // sont échantillonnées à 3 — au-delà, les suivantes n'entrent pas.
     const types = deckCafeTypes(DECK);
     expect(types.length).toBeLessThanOrEqual(3);
     expect(types).not.toContain('SUPPORT');
     expect(types).not.toContain('INTERIM');
-    // Toujours dans le Chariot d'essai : chaque type annoncé est bien celui d'un
-    // Planqué présent dans le Chariot.
+    // Toujours dans le Deck d'essai : chaque type annoncé est bien celui d'un
+    // Planqué présent dans le Deck.
     const factions = new Set(
       DECK.map((id) => getCard(id))
         .filter(isPlanque)
@@ -54,7 +54,7 @@ describe('Machine à café — les types du Chariot', () => {
     for (const type of types) expect(factions.has(type)).toBe(true);
   });
 
-  it('produit un café tiré dans les types du Chariot, dès son deuxième tour (D-034)', () => {
+  it('produit un café tiré dans les types du Deck, dès son deuxième tour (D-034)', () => {
     const state = freshBattle();
     // Premier tour de la partie : aucune génération (capture `05`).
     expect(state.players.player.energyZone).toBeNull();
@@ -74,7 +74,7 @@ describe('Machine à café — les types du Chariot', () => {
 
     expect(zoneOf(SEED)).toBe(zoneOf(SEED));
     // Le tirage dépend de la graine : on vérifie seulement que l'ensemble des
-    // graines reste dans les types du Chariot, jamais hors d'eux.
+    // graines reste dans les types du Deck, jamais hors d'eux.
     const types = deckCafeTypes(DECK);
     expect(types).toContain(zoneOf(1));
     expect(types).toContain(zoneOf(2));
@@ -95,7 +95,7 @@ describe('Machine à café — les types du Chariot', () => {
 });
 
 /**
- * **Le joueur choisit les types de café de son Chariot** (#91, D-037 (4)). Le choix
+ * **Le joueur choisit les types de café de son Deck** (#91, D-037 (4)). Le choix
  * traverse `createBattle` (4ᵉ argument) jusqu'à `PlayerState.cafeTypes`, et c'est
  * cette liste-là que la Machine tire — pas la dérivation.
  */
@@ -107,7 +107,7 @@ describe('Machine à café — les types choisis par le joueur (#91)', () => {
     expect(state.players.ai.cafeTypes).toEqual(deckCafeTypes(DECK));
   });
 
-  it('ne tire que dans les types choisis, même un type absent du Chariot', () => {
+  it('ne tire que dans les types choisis, même un type absent du Deck', () => {
     expect(deckCafeTypes(DECK)).not.toContain('RH');
 
     for (let seed = 1; seed <= 12; seed += 1) {
@@ -163,9 +163,9 @@ describe('Battle.tsx — le plateau rend les cafés typés', () => {
     expect(battleSource).toMatch(/<MachinePips\b/);
   });
 
-  it('passe au moteur les types de café choisis du Chariot (#91)', () => {
+  it('passe au moteur les types de café choisis du Deck (#91)', () => {
     // Sans ce passage, l'écran de combat jouerait la dérivation alors que le joueur
-    // a choisi ses types au Chariot : le défaut serait invisible côté moteur.
+    // a choisi ses types au Deck : le défaut serait invisible côté moteur.
     expect(battleSource).toMatch(/state\.cafeTypes/);
     expect(battleSource).toMatch(
       /createBattle\(playerDeck, testDeck\(\), undefined, \{ playerCafeTypes: chosenCafeTypes \}\)/

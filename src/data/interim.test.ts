@@ -96,9 +96,9 @@ describe('Intérim — ligne et COMEX (D-020)', () => {
 
 /**
  * Ticket **#116** : une **ligne d'évolution** doit rester payable avec les types de café
- * d'un Chariot, donc avec **au plus `MAX_DECK_CAFE_TYPES`** symboles typés distincts
+ * d'un Deck, donc avec **au plus `MAX_DECK_CAFE_TYPES`** symboles typés distincts
  * (D-034, D-037 (4)). Le contrôle est **par ligne**, pas carte par carte : une ligne joue
- * ses trois stades avec le même Chariot, et c'est l'union qui décide si le joueur peut
+ * ses trois stades avec le même Deck, et c'est l'union qui décide si le joueur peut
  * évoluer sans perdre l'accès à ses Pressions.
  *
  * Le contrôle est un **prédicat nommé** (`typesExiges`, `pairesDeLigne`) pour qu'un test
@@ -151,7 +151,7 @@ const pairesDeLigne = (ligne: readonly PlanqueCard[]): string[] =>
     .filter((attack) => attack.cost.length >= 2)
     .map((attack) => typesExiges([attack.cost]).sort().join(' + '));
 
-describe('Intérim — lignes payables avec les types du Chariot (#116, D-034, D-037 (4))', () => {
+describe('Intérim — lignes payables avec les types du Deck (#116, D-034, D-037 (4))', () => {
   const LIGNES = lignesDEvolution(PLANQUES_INTERIM);
   const etiquette = (ligne: readonly PlanqueCard[]): string => ligne.map((card) => card.id).join(' → ');
 
@@ -188,7 +188,7 @@ describe('Intérim — lignes payables avec les types du Chariot (#116, D-034, D
   it('le contrôle mord : les coûts d’avant #116 (cinq types sur une ligne) sont refusés', () => {
     // La ligne `interim-interimaire → …-confirme → …-chef-equipe-interimaire` avant le
     // correctif : `SSE`, `MANAGEMENT`, `QVT`, `AMELIORATION` et `RH` — cinq types pour
-    // trois stades, donc aucun Chariot plafonné à trois ne peut payer la ligne entière.
+    // trois stades, donc aucun Deck plafonné à trois ne peut payer la ligne entière.
     const avant: CafeSymbol[][] = [
       ['SSE'],
       ['MANAGEMENT', 'QVT'],

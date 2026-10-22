@@ -213,13 +213,13 @@ export interface PlayerState {
   /**
    * La **Machine à café** : au plus **un** café typé (D-034, capture `05` — la zone ne
    * s'accumule pas, donc un seul attachement possible par tour). `null` = rien à
-   * attacher : première ouverture, slot occupé, ou Chariot sans type de café.
+   * attacher : première ouverture, slot occupé, ou Deck sans type de café.
    */
   energyZone: CafeSymbol | null;
   /**
-   * Les **types de café du Chariot** (D-034/D-037 (4), 1 à 3) : la seule liste d'où la
+   * Les **types de café du Deck** (D-034/D-037 (4), 1 à 3) : la seule liste d'où la
    * Machine tire. Dressée une fois par `createBattle` : le **choix du joueur** (#91)
-   * s'il existe, sinon la proposition dérivée du Chariot (`resolveCafeTypes`,
+   * s'il existe, sinon la proposition dérivée du Deck (`resolveCafeTypes`,
    * `@/game/deck`). Dans les deux cas, `SUPPORT` (Incolore) et `INTERIM` (Dragon) n'y
    * figurent jamais (D-034).
    */

@@ -2,12 +2,12 @@
  * **La partie à deux** — ticket #125, la tranche qui prouve le PvP par code (D-049).
  *
  * Le PvP de la beta n'a **aucun serveur** : la partie est déterministe et journalisée
- * (#29, #83), donc « graine + deux Chariots + journal des actions » suffit à la
+ * (#29, #83), donc « graine + deux Decks + journal des actions » suffit à la
  * reconstruire. `@/game/codec` (#124) porte ce format ; ce module-ci tient ce que
  * l'**écran** ajoute par-dessus, et rien de plus :
  *
  * 1. **quel camp je tiens** — le code ne le dit pas (il n'a que la graine, les deux
- *    Chariots et les actions). Il se **déduit** : on transmet le code quand l'autre camp
+ *    Decks et les actions). Il se **déduit** : on transmet le code quand l'autre camp
  *    doit jouer, donc celui qui le colle prend le camp qui a la main
  *    (`campToAct`, relève comprise) ;
  * 2. **quand** le code se transmet (`handover`) — à la fin de mon tour, et pas avant ;
@@ -42,7 +42,7 @@ export function otherCamp(camp: PlayerId): PlayerId {
 }
 
 /**
- * Ce que l'écran retient d'une partie à deux : **mon camp** et les **deux Chariots**
+ * Ce que l'écran retient d'une partie à deux : **mon camp** et les **deux Decks**
  * tels qu'ils ont été posés. La graine, les types de café et le journal des actions se
  * lisent dans le `BattleState` : une seule source, donc un code qui ne peut pas mentir
  * sur une copie qui aurait divergé.
@@ -54,8 +54,8 @@ export interface Match {
 }
 
 /**
- * Ouvre une partie à deux : sa **graine**, mon Chariot au camp `player` (je crée, donc
- * j'ouvre le siège `player`), et le Chariot adverse. Le camp n'est pas choisi par le
+ * Ouvre une partie à deux : sa **graine**, mon Deck au camp `player` (je crée, donc
+ * j'ouvre le siège `player`), et le Deck adverse. Le camp n'est pas choisi par le
  * joueur : c'est le siège du moteur, et le code le redistribuera à l'autre.
  */
 export function createMatch(

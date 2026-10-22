@@ -42,7 +42,7 @@ export function Home() {
 
       <section className="stats-grid">
         <article className="stat-card">
-          <span className="stat-card__label">Parc</span>
+          <span className="stat-card__label">Collection</span>
           <strong>{completion}%</strong>
           <span className="muted">{uniqueOwned} cartes uniques</span>
         </article>
@@ -52,7 +52,7 @@ export function Home() {
           <span className="muted">toutes raretés</span>
         </article>
         <article className="stat-card">
-          <span className="stat-card__label">Chariot</span>
+          <span className="stat-card__label">Deck</span>
           <strong>{deck.length}/20</strong>
           <span className="muted">cartes équipées</span>
         </article>
@@ -75,7 +75,7 @@ export function Home() {
               ))}
             </div>
             <button type="button" className="button button--primary" onClick={() => setLastPack(null)}>
-              Ranger dans le Parc
+              Ranger dans la Collection
             </button>
           </div>
         </div>

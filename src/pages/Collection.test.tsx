@@ -6,7 +6,7 @@ import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS, isPlanque } from '@/data';
 
-describe('Collection — écran du Parc', () => {
+describe('Collection — écran de la Collection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -69,7 +69,7 @@ describe('Collection — écran du Parc', () => {
     expect(screen.getByText(/Aucune carte ne correspond/i)).toBeInTheDocument();
   });
 
-  it('ajoute une carte au Chariot via le bouton +', () => {
+  it('ajoute une carte au Deck via le bouton +', () => {
     const entrant = ALL_CARDS.find((c) => isPlanque(c) && c.stage === 'ENTRANT' && !c.ex && c.id === 'sse-infirmier-site');
     expect(entrant).toBeTruthy();
 
@@ -97,7 +97,7 @@ describe('Collection — écran du Parc', () => {
     expect(screen.getByText(/Seuil/)).toBeInTheDocument();
   });
 
-  it('indique les cartes déjà dans le Chariot', () => {
+  it('indique les cartes déjà dans le Deck', () => {
     const entrant = ALL_CARDS.find((c) => isPlanque(c) && c.stage === 'ENTRANT' && !c.ex && c.id === 'sse-infirmier-site');
     expect(entrant).toBeTruthy();
 
