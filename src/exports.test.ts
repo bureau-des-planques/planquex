@@ -125,7 +125,8 @@ function unreadExportLines(): string[] {
  */
 const EXCEPTIONS: Readonly<Record<string, string>> = {
   VIVIER_META: 'mort : les libellés de vivier ne sont lus par aucun écran — à câbler ou à supprimer, décision de conception hors du ticket #60',
-  CardKind: 'type mort : les deux formes de carte réécrivent leur union de genre en clair — hors du périmètre du ticket #60'
+  CardKind: 'type mort : les deux formes de carte réécrivent leur union de genre en clair — hors du périmètre du ticket #60',
+  findValidEntrant: 'utilitaire de test : utilisé par les tests d\'écran pour trouver un Entrant valide — hors code de production'
 };
 
 const readSource = (file: string): Source => ({ file, text: withoutComments(readFileSync(file, 'utf8')) });
