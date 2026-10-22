@@ -67,8 +67,8 @@ interface Cue<K extends string> {
 const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   // `discardEnergy` retire un café au Planqué d'en face (engine.ts : `discardFirstCafes(defender, 1)`).
   { label: 'café', pattern: /\bcafes?\b/, kinds: ['discardEnergy'] },
-  // Aucune primitive ne défausse une carte de la main : le seul rebut est le café.
-  { label: 'défausse 1 carte', pattern: /\bdefausse (?:\d+|une) carte/, kinds: [] },
+  // `discardHand` défausse une carte de la main, au hasard (adversaire) ou par choix (D-076).
+  { label: 'défausse N carte', pattern: /\bdefausse (?:\d+|une) carte/, kinds: ['discardHand'] },
   { label: 'pioche N cartes', pattern: /\bpioche (\d+) carte/, kinds: ['draw'] },
   { label: 'soigne N de tous tes Planqués', pattern: /\bsoigne (\d+)[^.]*tous tes planques/, kinds: ['healAll'] },
   { label: 'soigne N de ce Planqué', pattern: /\bsoigne (\d+)[^.]*ce planque/, kinds: ['healSelf'] },
@@ -78,8 +78,8 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   { label: 'statut nommé', pattern: /\b(?:surcharg|epuisement|sieste|immobilis|deriv)/, kinds: ['status'] },
   // `switchSelf` échange le Poste avec le premier Planqué du Rack (engine.ts).
   { label: 'Rack', pattern: /\bracks?\b/, kinds: ['switchSelf'] },
-  // Aucune primitive ne touche la main ni ne cherche dans le Deck.
-  { label: 'main', pattern: /\bmains?\b/, kinds: [] },
+  // La main n'est touchée que par une défausse (D-076) ; révéler et chercher viendront (D-078, D-080).
+  { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand'] },
   { label: 'deck', pattern: /\bdecks?\b/, kinds: [] }
 ];
 
@@ -132,7 +132,8 @@ const ATTENTES_EFFET: Record<AttackEffectKind, Attente | null> = {
   discardEnergy: { pattern: /cafes?\b/ },
   selfDamage: { pattern: /prend (\d+)[^.]*stress/, montantGroupe: 1 },
   switchSelf: { pattern: /rack/ },
-  reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 }
+  reduceDamage: { pattern: /subit (\d+)[^.]*de moins/, montantGroupe: 1 },
+  discardHand: { pattern: /defausse (\d+) carte/, montantGroupe: 1 }
 };
 
 const ATTENTES_TALENT: Record<AbilityKind, Attente> = {
@@ -328,6 +329,17 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     );
     // Et le témoin : un texte honnête passe.
     expect(verifierTalent('Une fois par tour : soigne 10 de ce Planqué.', { kind: 'heal', amount: 10 })).toEqual([]);
+  });
+
+  it('mord : une défausse de carte doit être annoncée et réalisée (#159, D-076)', () => {
+    // Un texte qui annonce une défausse sans primitive de main : refusé.
+    expect(verifierPression('Ce Planqué défausse 1 carte.', [{ kind: 'draw', amount: 1 }])).not.toEqual([]);
+    // La primitive sans texte qui l'annonce : refusée.
+    expect(verifierPression('Pioche 1 carte.', [{ kind: 'discardHand', target: 'opponent', amount: 1 }])).not.toEqual([]);
+    // Le témoin : une défausse annoncée et réalisée passe.
+    expect(
+      verifierPression('L’adversaire défausse 1 carte.', [{ kind: 'discardHand', target: 'opponent', amount: 1 }])
+    ).toEqual([]);
   });
 
   it('mord : les motifs respectent les frontières de mot (#166)', () => {

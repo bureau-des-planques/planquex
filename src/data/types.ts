@@ -37,7 +37,8 @@ export type AttackEffectKind =
   | 'discardEnergy'
   | 'selfDamage'
   | 'switchSelf'
-  | 'reduceDamage';
+  | 'reduceDamage'
+  | 'discardHand';
 
 /**
  * Les membres d'`AttackEffectKind`, **une seule fois** dans le code (#56).
@@ -55,14 +56,20 @@ export const ATTACK_EFFECT_KINDS = [
   'discardEnergy',
   'selfDamage',
   'switchSelf',
-  'reduceDamage'
+  'reduceDamage',
+  'discardHand'
 ] as const satisfies readonly AttackEffectKind[];
+
+/** Filtre d'une recherche dans le Deck (D-080) : un Planqué, ou un Collègue. */
+export type CardFilter = 'PLANQUE' | 'COLLEGUE';
 
 export interface AttackEffect {
   kind: AttackEffectKind;
   amount?: number;
   status?: Status;
   target?: 'self' | 'opponent';
+  /** Ce que cherche la primitive `search` (D-080). */
+  filter?: CardFilter;
 }
 
 /**
@@ -252,7 +259,24 @@ export type BattleAction =
    * le camp qui se couche n'est pas celui au trait.
    */
   | { type: 'forfeit'; who: PlayerId }
+  /**
+   * Résout le **choix en attente** (`pendingChoice`, D-076) : la carte `uid` est celle que
+   * le joueur désigne — en main (défausse), dans le Deck (recherche), au Rack (café).
+   */
+  | { type: 'choose'; uid: string }
   | { type: 'endTurn' };
+
+/**
+ * Un **choix** que le moteur attend du joueur (D-076, D-080, D-082). Tant qu'il est
+ * ouvert, seul `choose` (et le forfait) est accepté pour ce joueur.
+ */
+export type PendingChoice =
+  /** Défausser une carte de sa main ; `restant` cartes à défausser encore. */
+  | { kind: 'defausse'; who: PlayerId; restant: number }
+  /** Chercher une carte du filtre dans son Deck, puis l'ajouter à sa main (D-080). */
+  | { kind: 'chercher'; who: PlayerId; filtre: CardFilter }
+  /** Choisir le Planqué du Rack qui reçoit le café `cafe` (D-082). */
+  | { kind: 'attacher'; who: PlayerId; cafe: CafeSymbol };
 
 /** Les quatre façons dont une partie s'arrête (`AGENTS.md` §4, #84). */
 export type EndReason = 'interventions' | 'plateauVide' | 'forfait' | 'limiteDeTours';
@@ -288,6 +312,11 @@ export interface BattleState {
    * Rack (la partie est alors terminée).
    */
   pendingPromotion: PlayerId | null;
+  /**
+   * Choix en attente du joueur (D-076) : `null` quand rien n'est à choisir. Comme la
+   * relève, il bloque toute autre action du joueur tant qu'il n'est pas résolu.
+   */
+  pendingChoice: PendingChoice | null;
   /**
    * État du générateur seedé de la partie (ticket #29). Un entier 32 bits, donc
    * clonable par `structuredClone` et comparable : la partie rejoue à l'identique

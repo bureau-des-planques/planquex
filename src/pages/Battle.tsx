@@ -223,6 +223,9 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     }
     case 'forfeit':
       return { label: 'Abandonner' };
+    // Un choix en attente (D-076). Le nom de la carte ne s'affiche pas encore : dette UI.
+    case 'choose':
+      return { label: 'Choisir cette carte' };
     case 'endTurn':
       return { label: state.current === myCamp ? 'Fin du tour' : 'Passer le tour de la Direction' };
   }
@@ -488,6 +491,7 @@ export function Battle() {
   );
   const pressions = playable.filter((action) => action.type === 'attack');
   const promotions = playable.filter((action) => action.type === 'promoteActive');
+  const choices = playable.filter((action) => action.type === 'choose');
   const turnActions = playable.filter((action) => action.type === 'endTurn');
 
   /** Les Pressions que le café couvre, selon le moteur (`legalAttacks`, testée). */
@@ -758,6 +762,17 @@ export function Battle() {
               )}
               <div className="actions actions--tight">
                 {promotions.map((action) => (
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {choices.length > 0 && (
+            <section className="notice notice--warn choix">
+              <p>Un effet te demande de désigner une carte.</p>
+              <div className="actions actions--tight">
+                {choices.map((action) => (
                   <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
                 ))}
               </div>

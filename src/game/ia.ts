@@ -96,6 +96,13 @@ export function nextAction(state: BattleState, level: AiLevel = 1): BattleAction
     return { type: 'promoteActive', benchIndex };
   }
 
+  // Un choix en attente (D-076) : la Direction en désigne la première option. Le choix
+  // est déterministe ; une politique plus fine ne change pas le contrat du moteur.
+  if (state.pendingChoice) {
+    const choice = legalActions(state).find((action) => action.type === 'choose');
+    return choice ?? null;
+  }
+
   const legal = legalActions(state);
 
   if (level === 2) {
