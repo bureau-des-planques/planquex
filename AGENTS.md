@@ -247,7 +247,7 @@ planquex/
   | Imagen 4 | `image4` | |
 
   Un agent à qui on demande « Nano Banana 2.1 » doit donc passer `model: "nano2"` — jamais le nom humain, que gflow rejetterait.
-- **Garde-fou visuel** : **Impeccable** (`.opencode/skills/impeccable/`, Apache-2.0) — un détecteur **déterministe** de 61 tells d'UI générée par IA, sans IA ni clé. `npm run detect:ui` (`npx impeccable detect src/`) ; la **CI** le lance après les tests. Un refus se corrige ou se **désactive explicitement** avec la raison (`<!-- impeccable-disable <règle> -->`), jamais en silence.
+- **Garde-fou visuel** : **Impeccable** (`.opencode/skills/impeccable/`, Apache-2.0) — un détecteur **déterministe** de 61 tells d'UI générée par IA, sans IA ni clé. `npm run detect:ui` (`impeccable detect src/`, binaire **installé** — sa version est épinglée exacte en devDependency, #146) ; la **CI** le lance après les tests. Un refus se corrige ou se **désactive explicitement** avec la raison (`<!-- impeccable-disable <règle> -->`), jamais en silence.
 
 ## 7. Commandes
 

@@ -19,7 +19,7 @@
     "garde-fous": "node scripts/garde-fous.mjs",
     "pesage": "node scripts/pesage.mjs",
     "isolation": "node scripts/isolation.mjs",
-    "detect:ui": "npx impeccable detect src/"
+    "detect:ui": "impeccable detect src/"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -45,6 +45,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "impeccable": "4.7.0",
     "playwright-core": "^1.64.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
