@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore';
 import { seedRng } from '@/game/rng';
 import { ALL_CARDS } from '@/data';
 import type { Faction } from '@/data/types';
+import type { PartieSauvegardee } from '@/store/partie';
 
 /**
  * État de store préconfiguré pour les tests d'écran.
@@ -20,6 +21,8 @@ export interface TestStoreState {
   rng?: number;
   tutorielVu?: boolean;
   pasAPasCombatVu?: boolean;
+  /** La partie en cours à reprendre (#126) ; absente = aucune. */
+  partie?: PartieSauvegardee | null;
 }
 
 /**
@@ -46,7 +49,8 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     packsOpened: initialState.packsOpened ?? 0,
     rng: initialState.rng ?? seedRng(12345),
     tutorielVu: initialState.tutorielVu ?? true,
-    pasAPasCombatVu: initialState.pasAPasCombatVu ?? true
+    pasAPasCombatVu: initialState.pasAPasCombatVu ?? true,
+    partie: initialState.partie ?? null
   });
 }
 

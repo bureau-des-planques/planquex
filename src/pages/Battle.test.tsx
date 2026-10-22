@@ -6,6 +6,12 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
+import { ALL_CARDS } from '@/data';
+import type { BattleState } from '@/data/types';
+import { autoDeck } from '@/game/deck';
+import { applyAction, createBattle, legalActions } from '@/game/engine';
+import { partieSauvegardee } from '@/store/partie';
+import { useStore } from '@/store/useStore';
 
 describe('Battle — écran de combat', () => {
   beforeEach(() => {
@@ -318,5 +324,32 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
 
     const panneau = screen.getByRole('region', { name: /Poser la carte choisie/i });
     expect((Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>).mock.contexts).toContain(panneau);
+  });
+  it('reprend la partie rangée au rechargement : même tour, même dernière ligne (#126)', () => {
+    // Une partie jouée à la main, rangée dans le store : c'est ce que l'écran écrit.
+    const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+    const deck = autoDeck(owned).deck;
+    let jouee: BattleState = createBattle(deck, deck, 31337);
+    // Au moins 20 coups, puis on s'arrête au tour du joueur (pour que rien ne joue seul).
+    for (let i = 0; i < 200; i += 1) {
+      const auTourDuJoueur = jouee.current === 'player' && jouee.pendingPromotion === null;
+      if (i >= 20 && auTourDuJoueur) break;
+      const action = legalActions(jouee).find((a) => a.type !== 'forfeit');
+      if (!action) break;
+      jouee = applyAction(jouee, action);
+    }
+    expect(jouee.actionLog.length).toBeGreaterThan(5);
+    const decksSolo = { playerDeck: deck, aiDeck: deck };
+
+    renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      partie: partieSauvegardee(jouee, null, decksSolo)
+    });
+
+    expect(screen.getByText(new RegExp(`Tour ${jouee.turn}\\b`))).toBeInTheDocument();
+    expect(screen.getAllByText(jouee.log.at(-1) ?? '').length).toBeGreaterThan(0);
+    // Le store garde la partie reprise : la prochaine ouverture la retrouvera encore.
+    expect(useStore.getState().partie?.actions.length).toBe(jouee.actionLog.length);
   });
 });
