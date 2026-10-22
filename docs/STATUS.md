@@ -24,7 +24,7 @@ puis `npx vite build` (isolé, pour lever l'ambiguïté tsc/vite).
 
 | Commande | Résultat | Extrait |
 |---|---|---|
-| `npm run status` | **Échec (exit 1)** | `Error: ENOENT: no such file or directory, scandir '/home/chapax/Documents/grevomon/REA%20pp/grevomon-tcg/'` |
+| `npm run status` | **Échec (exit 1)** | `Error: ENOENT: no such file or directory, scandir '<ancien chemin du projet>/'` — le dossier de l'époque contenait une espace, d'où le `%20` |
 | `npm run check` | **Échec (exit 1)** | `tsconfig.json(18,5): error TS5102: Option 'baseUrl' has been removed.` + `(20,15): error TS5090: Non-relative paths are not allowed.` |
 | `npm test` | **Échec (exit 1)** | `No test files found, exiting with code 1` |
 | `npm run build` | **Échec (exit 1)** | s'arrête sur `tsc -b` (mêmes erreurs TS5102 / TS5090 que `check`), `vite build` non atteint |
@@ -93,7 +93,7 @@ aucune vérification de rendu n'est possible.
 ## 8. Comment relancer cet audit
 
 ```bash
-cd "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg"
+cd "<ancien chemin du projet>"   # le dossier de l'époque contenait une espace, d'où le %20
 npm run status           # attendu : échec ENOENT %20 (sauf correction)
 npm run check            # attendu : TS5102/TS5090 (sauf correction)
 npm test                 # attendu : No test files found (sauf ajout de tests)

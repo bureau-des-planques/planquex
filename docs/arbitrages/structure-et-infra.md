@@ -1,8 +1,8 @@
 # Arbitrages — structure et infra
 
-> Préparé pour décision humaine (`AGENTS.md` §1.4). Aucune ligne ne tranche : chaque option a sa conséquence concrète. Vérifié sur le dépôt (`agent/arbitrages-infra`) et sur `../grevomon-tcg/` (le dépôt principal, dont le `.git/HEAD` reste `main`, non touché).
+> Préparé pour décision humaine (`AGENTS.md` §1.4). Aucune ligne ne tranche : chaque option a sa conséquence concrète. Vérifié sur le dépôt (`agent/arbitrages-infra`) et sur le dossier de travail principal de l'époque (dont le `.git/HEAD` reste `main`, non touché).
 
-**Faits corrigés du brief en lecture** : le ticket #105 cite un « store v3 » ; `src/store/useStore.ts:23` montre `STORAGE_VERSION = 4` (migrations `v0 → v4`, dont `#91` café typé). La version du store a donc avancé : le point est à reformuler en « ratifier le suffixe `-crown` et l'acquisition des 7 variantes hautes au niveau du store v4 ». Le projet Vercel est renommé `planquex` (`D-036`, `.env:9`) mais l'URL reste `https://grevomon.vercel.app` (`.env:10`) — le site répond **503** (le projet a été mis en pause, `D-038`), et le projet Supabase `jzlcwnozlzhadatksvgh` (`.env:6`) porte encore le nom du nouveau projet (schéma vide depuis `D-017`).
+**Faits corrigés du brief en lecture** : le ticket #105 cite un « store v3 » ; `src/store/useStore.ts:23` montre `STORAGE_VERSION = 4` (migrations `v0 → v4`, dont `#91` café typé). La version du store a donc avancé : le point est à reformuler en « ratifier le suffixe `-crown` et l'acquisition des 7 variantes hautes au niveau du store v4 ». Le projet Vercel est renommé `planquex` (`D-036`, `.env:9`) mais l'URL reste celle de l'ancien domaine (`.env:10`) — le site répond **503** (le projet a été mis en pause, `D-038`), et le projet Supabase `jzlcwnozlzhadatksvgh` (`.env:6`) porte encore le nom du nouveau projet (schéma vide depuis `D-017`).
 
 ---
 
@@ -65,24 +65,24 @@ Trois tickets qui se recouvrent (`#100` plomberie, `#75` nom `planquex`, `#10` i
 
 **État des lieux (vérifié)** :
 - **Fait** : dépôt privé `Chapax/planquex` (`D-036`, `.git/config` du dépôt), `LICENSE` MIT (`LICENSE`), `STORAGE_VERSION = 4`, migration `v3 → v4`, moteur seedé (`rng.ts`), journal (`BattleState.actionLog`), `PACK_COMPOSITION` valide, `planque.ts` avec suffixes `star3`/`crown`, 10 factions nommées (`D-024`), vocabulaire arrêté (`D-026`), captures `docs/preuves/astuces-2026-10-20/` (9 écrans, `README.md`), révision `docs/preuves/regles-2026-10-20/` (`D-032`), `DESIGN.md` (palette, jetons, gabarit), `styles.css` avec `@theme inline`, shadcn/ui (`dialog` posé), PWA (`vite.config.ts`), `public/icon-192.svg` et `icon-512.svg` (icônes maison, pas placeholder). `npm run check` et `npm run build` passent (`docs/AGENTS.md` §7, vérifiés le 19/10).
-- **Fait partiel** : `.env` (`.env`) porte `VERCEL_PROJECT=planquex`, `VERCEL_URL='https://grevomon.vercel.app'`, `SUPABASE_PROJECT_REF='jzlcwnozlzhadatksvgh'`, `BREVO_SMTP_KEY=''` (vide), `BREVO_SMTP_LOGIN='be0b24001@smtp-brevo.com'`. Le projet Vercel `grevomon` est renommé `planquex` et mis en pause (`D-038`, site `503`). Le projet Supabase `jzlcwnozlzhadatksvgh` est le nouveau (`D-017`, schéma vide). Le `.env` n'est pas suivi (`D-038`, `.gitignore` le couvre probablement).
-- **Non fait / non vérifiable depuis ici** : le `curl -sI https://grevomon.vercel.app | head -1` (le site est en `503`, mais le `curl` n'a pas été lancé depuis ce sandbox — il était demandé par le brief, pas exécutable ici). Le tableau de bord Vercel (`planquex`) et le tableau de bord Supabase (`jzlcwnozlzhadatksvgh`) ne sont pas accessibles sans clé. La base Supabase réelle (schéma, données, RLS) est vide (`D-017`). La clé SMTP Brevo (`BREVO_SMTP_KEY`) est vide (`.env:3`) : le mail ne part pas.
+- **Fait partiel** : `.env` (`.env`) porte `VERCEL_PROJECT=planquex`, `VERCEL_URL` = l'ancien domaine (`.env:10`), `SUPABASE_PROJECT_REF='jzlcwnozlzhadatksvgh'`, `BREVO_SMTP_KEY=''` (vide), `BREVO_SMTP_LOGIN='be0b24001@smtp-brevo.com'`. Le projet Vercel de l'ancien jeu est renommé `planquex` et mis en pause (`D-038`, site `503`). Le projet Supabase `jzlcwnozlzhadatksvgh` est le nouveau (`D-017`, schéma vide). Le `.env` n'est pas suivi (`D-038`, `.gitignore` le couvre probablement).
+- **Non fait / non vérifiable depuis ici** : le `curl -sI` sur l'ancien domaine (`.env:10`), `head -1` (le site est en `503`, mais le `curl` n'a pas été lancé depuis ce sandbox — il était demandé par le brief, pas exécutable ici). Le tableau de bord Vercel (`planquex`) et le tableau de bord Supabase (`jzlcwnozlzhadatksvgh`) ne sont pas accessibles sans clé. La base Supabase réelle (schéma, données, RLS) est vide (`D-017`). La clé SMTP Brevo (`BREVO_SMTP_KEY`) est vide (`.env:3`) : le mail ne part pas.
 
 **Liste d'actions (tableau de bord) — chaque ligne : action, écran où elle se fait, état.**
 
 | Action | Écran / commande | État | Ce qui manque pour la débloquer |
 |---|---|---|---|
-| Confirmer le `503` sur `grevomon.vercel.app` | `curl -sI https://grevomon.vercel.app \| head -1` | Non lancé (hors sandbox) | Un `curl` exécuté manuellement, ou la lecture du tableau Vercel |
+| Confirmer le `503` sur l'ancien domaine (`.env:10`) | `curl -sI "$VERCEL_URL" \| head -1` | Non lancé (hors sandbox) | Un `curl` exécuté manuellement, ou la lecture du tableau Vercel |
 | Vérifier que le projet Vercel `planquex` existe et est en pause | Tableau Vercel (non accessible ici) | Non vérifiable | Clé Vercel / accès au compte `Chapax` |
 | Vérifier le projet Supabase `jzlcwnozlzhadatksvgh` (schéma vide) | Tableau Supabase (non accessible ici) | Non vérifiable | Clé Supabase / accès au compte |
 | Remplir `BREVO_SMTP_KEY` (`.env:3`) | Fichier `.env` (non suivi) | Vide (`''`) | Une clé SMTP Brevo valide (`D-017`) |
-| Publier le site (`planquex` ou `grevomon`) | `npm run build` → `npm run preview` (déjà `OK`) | Build passe (`dist/index.html` + `sw.js`) | Un projet Vercel non en pause et un domaine actif |
+| Publier le site (`planquex` ou l'ancien projet) | `npm run build` → `npm run preview` (déjà `OK`) | Build passe (`dist/index.html` + `sw.js`) | Un projet Vercel non en pause et un domaine actif |
 | Vérifier que le dépôt GitHub est privé (`Chapax/planquex`) | `gh repo view Chapax/planquex` (hors sandbox) | Non lancé | Une clé `gh` et un accès au compte |
 | Activer la bêta fermée (phases `D-028`) | `docs/DECISIONS.md` + `docs/PROPOSITION.md` §5.2 | Définie (phases 0→6) | Un environnement déployé et des utilisateurs invités |
 
 **Options et conséquences** :
 - **Site (`503`)** : (a) laisser le projet `planquex` en pause et le site `503` (`D-038` le prévoit) ; (b) réactiver le projet et republier. **(a)** est le choix `D-038` (le site legacy reste retiré) ; (b) débloque la bêta mais expose un site sans backend fonctionnel (Supabase vide, SMTP vide).
-- **Domaine** : `grevomon.vercel.app` reste attaché au projet renommé (`.env:10`) ; changer le domaine casse le `.env` et le lien du dépôt. **Garder le domaine dans `.env`**, changer l'URL affichée dans le document uniquement si le projet est réactivé.
+- **Domaine** : l'ancien domaine reste attaché au projet renommé (`.env:10`) ; changer le domaine casse le `.env` et le lien du dépôt. **Garder le domaine dans `.env`**, changer l'URL affichée dans le document uniquement si le projet est réactivé.
 - **SMTP (`BREVO_SMTP_KEY` vide)** : le mail ne part pas (`.env:3`). **Le remplir** est le blocage pour `Notification` (phase 6, `PROPOSITION.md` §5.1) et pour `Profile / Auth`. Coût : une ligne `.env`, aucune migration de code.
 - **Dépôt (`Chapax/planquex`, privé)** : `D-036` et `D-038` confirment le nom et la visibilité. **Ne pas changer** avant la bêta (`D-028`).
 
@@ -90,7 +90,7 @@ Trois tickets qui se recouvrent (`#100` plomberie, `#75` nom `planquex`, `#10` i
 
 **Case à cocher** :
 ```
-D-0xx | <date> | `#100/#75/#10` — site `grevomon.vercel.app` retiré (`503`, D-036/D-038), projet `planquex` en pause ; `.env` (`VERCEL_PROJECT`, `VERCEL_URL`, `SUPABASE_PROJECT_REF`) conservé mais `BREVO_SMTP_KEY` vide (`.env:3`) — à remplir avant phase 1 (`D-028`). Dépôt privé (`Chapax/planquex`), nom technique `planquex`, nom affiché `Bureau des Planqués`. Aucune action sur le dépôt, le domaine ou le projet Vercel avant la bêta.
+D-0xx | <date> | `#100/#75/#10` — site de l'ancien jeu retiré (`503`, D-036/D-038), projet `planquex` en pause ; `.env` (`VERCEL_PROJECT`, `VERCEL_URL`, `SUPABASE_PROJECT_REF`) conservé mais `BREVO_SMTP_KEY` vide (`.env:3`) — à remplir avant phase 1 (`D-028`). Dépôt privé (`Chapax/planquex`), nom technique `planquex`, nom affiché `Bureau des Planqués`. Aucune action sur le dépôt, le domaine ou le projet Vercel avant la bêta.
 ```
 
 ---
@@ -109,7 +109,7 @@ D-0xx | <date> | `#100/#75/#10` — site `grevomon.vercel.app` retiré (`503`, D
 
 *Vérifications de fermeture (reprises au moment du commit) :*
 - `git -C "/home/chapax/.local/share/opencode/worktree/fdabfa/arbitrages-infra" rev-parse --abbrev-ref HEAD` → `agent/arbitrages-infra` (pas `HEAD` détaché).
-- `git -C "/home/chapax/Documents/grevomon/REA pp/grevomon-tcg" status --porcelain` → vide (le dépôt principal n'est pas touché).
+- `git -C "<chemin du dépôt principal à l'époque>" status --porcelain` → vide (le dépôt principal n'est pas touché).
 - Fichier écrit : `docs/arbitrages/structure-et-infra.md` (existe dans le worktree, pas dans le dépôt principal — le worktree est isolé).
 - Aucun autre fichier modifié (`glob` sur le worktree montre uniquement le nouveau fichier dans `docs/arbitrages/` et `.git` inchangé).
 - Aucune commande shell lancée, aucune dépendance ajoutée, `AGENTS.md` et `docs/DECISIONS.md` non modifiés.

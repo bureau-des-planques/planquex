@@ -2,7 +2,7 @@
 
 > Version de travail — 18/10/2026. Document de décision, pas de code.
 > Objectif : reproduire **le jeu complet de l'APK** (Pokémon TCG Pocket 1.7.5) avec
-> l'univers Bureau des Planqués, sans réutiliser `grevomon-pocket`, et avec la même profondeur
+> l'univers Bureau des Planqués, sans réutiliser les versions abandonnées (`AGENTS.md` §9), et avec la même profondeur
 > de contenu au lancement : **286 cartes**, tous les écrans, tous les systèmes.
 
 ---
@@ -32,7 +32,7 @@ Faits observés dans `../sources/` et `../resources/` :
 - Les **données de cartes, illustrations et textes ne sont pas dans l'APK** : elles sont téléchargées.
 - `global-metadata.dat` est chiffré ; les 545 Mo de `split_bundledtree.apk` sont des blobs `.aladin` chiffrés.
 - Le code Java de `sources/` est le pont Unity + les SDK (DeNA, Adjust, Firebase, NPlay, CriWare), pas la logique du jeu.
-- L'inventaire fonctionnel (écrans, modules, systèmes) est dans `../grevomon-pocket/docs/INVENTAIRE-PTCGP.md`.
+- L'inventaire fonctionnel (écrans, modules, systèmes) est dans l'inventaire des versions abandonnées (`AGENTS.md` §9).
 
 **Conséquence** : on peut reproduire les **règles, les écrans, les systèmes et l'économie**, pas copier le contenu. C'est exactement ce que ce projet fait, avec un univers original.
 
@@ -414,7 +414,7 @@ Ce n'est pas un week-end. C'est un projet de plusieurs semaines, avec des palier
 ### 6.1 Monorepo
 
 ```
-grevomon-tcg/
+planquex/
 ├── apps/
 │   └── web/                 # React 19 + Vite 8 + PWA
 ├── packages/

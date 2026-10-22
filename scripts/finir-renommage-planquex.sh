@@ -224,6 +224,8 @@ DASH="https://supabase.com/dashboard"
 SB_REF="jzlcwnozlzhadatksvgh"
 VERCEL_TEAM="chapaxs-projects"
 VERCEL_PROJECT="planquex"
+# Ce n'est pas une citation : c'est l'identifiant que l'outil agit (le domaine à
+# retirer, mesuré au curl avant et après). Le retirer casserait le wizard (#100).
 LEGACY_DOMAIN="grevomon.vercel.app"
 
 # http_code URL → le code HTTP, ou 000 si le domaine ne répond pas du tout.
@@ -307,6 +309,8 @@ ask BREVO_SENDER_NAME "Nom affiché de l'expéditeur :"
 write_env BREVO_SENDER_EMAIL "$BREVO_SENDER_EMAIL"
 write_env BREVO_SENDER_NAME "$BREVO_SENDER_NAME"
 note "Rappel D-017 : la clé SMTP vit dans la config Custom SMTP de Supabase, jamais dans un fichier."
+# Ce n'est pas une citation : c'est la valeur que l'outil doit **reconnaître**
+# (l'adresse expéditeur d'origine) pour dire si le critère de #100 est satisfait.
 if [[ "$BREVO_SENDER_EMAIL" == "grevomon.game@gmail.com" ]]; then
   warn "Adresse inchangée : le critère « expéditeur renommé » de #100 n'est alors satisfait qu'au sens du nom affiché. À écrire noir sur blanc dans le ticket, sinon la case cochée ment."
 fi
@@ -338,8 +342,8 @@ if [[ "$NEW_CODE" != "200" ]]; then
   warn "$VERCEL_PROJECT.vercel.app ne répond pas 200 (HTTP $NEW_CODE) : c'est l'URL donnée aux testeurs (docs/ALPHA-TESTEURS.md)."
 fi
 say "Pour le dossier local, il n'y a plus rien à faire :"
-note "« grevomon-tcg » est devenu « planquex » le 21/10/2026 (D-047) — dépôt, dossier et URL portent le même nom."
-say "Reste, et ce wizard ne le fait pas : le LIEN GIT du projet Vercel pointe encore sur Chapax/grevomon (D-053)."
+note "Le dossier local porte « planquex » depuis le 21/10/2026 (D-047) — dépôt, dossier et URL portent le même nom."
+say "Reste, et ce wizard ne le fait pas : le LIEN GIT du projet Vercel pointe encore sur l'ancien dépôt (D-053)."
 note "Settings → Git : connecte Chapax/planquex, sinon un push sur main ne déploie rien, et un push sur la branche dev de l'archive publierait l'ancien jeu."
 say "Et le reste de #10 (domaine + Cloudflare, Sentry, R2, Figma) est un autre chantier, « le moment venu »."
 pause "Entrée pour terminer"

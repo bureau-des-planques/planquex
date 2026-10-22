@@ -6,6 +6,6 @@ subagent: false
 
 $ARGUMENTS
 
-Contexte : nous travaillons sur **Bureau des Planqués**, la PWA TypeScript située dans `planquex/` (racine du dépôt). Lis `AGENTS.md` avant d'agir : c'est la source de vérité pour le vocabulaire, les règles, les commandes et les audits. `../grevomon/grevomon-pocket/` est legacy : ne pas y travailler.
+Contexte : nous travaillons sur **Bureau des Planqués**, la PWA TypeScript située dans `planquex/` (racine du dépôt). Lis `AGENTS.md` avant d'agir : c'est la source de vérité pour le vocabulaire, les règles, les commandes et les audits. Les **versions abandonnées** vivent dans un dossier frère, hors du dépôt (`AGENTS.md` §9) : ne pas y travailler.
 
 Si je n'ai pas précisé de tâche, demande-moi ce que je veux faire, puis propose un plan court avant de modifier quoi que ce soit.

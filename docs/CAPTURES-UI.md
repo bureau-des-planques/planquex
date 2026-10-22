@@ -3,7 +3,7 @@
 > **À qui** : à toi, sur ton téléphone.
 > **Pourquoi** : nos cinq écrans (Accueil, Parc, Chariot, Combat, Réglages) ont été
 > dessinés sans référence visuelle. L'application d'origine en a une vingtaine, et
-> `../../grevomon-pocket/docs/INVENTAIRE-PTCGP.md` §5 en donne la **liste des modules** —
+> l'inventaire fonctionnel des versions abandonnées (`AGENTS.md` §9), §5, en donne la **liste des modules** —
 > mais un nom de module ne dit pas comment l'écran est **composé**.
 > Créé le 19/10/2026.
 
@@ -43,7 +43,7 @@ les règles (voir `docs/preuves/README.md`), mais la colonne de droite devient
 ## 2. Lot B — les écrans que nous avons déjà
 
 Ils servent à **affiner** l'existant. **Aucun n'est déjà capturé** : les images du
-legacy (`../../grevomon-pocket/design/qa/`) sont des captures de **notre ancienne
+legacy (dossier `design/qa/` des versions abandonnées) sont des captures de **notre ancienne
 application**, pas de l'application de référence — voir `docs/preuves/README.md`,
 section « les captures du legacy ne sont PAS des preuves ».
 

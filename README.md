@@ -1,9 +1,9 @@
 # Bureau des Planqués
 
-Refonte complète du jeu, dans un dossier neuf et indépendant de `grevomon-pocket` (`../grevomon/grevomon-pocket/`).
+Refonte complète du jeu, dans un dossier neuf, indépendant des **versions abandonnées** (`AGENTS.md` §9).
 
 - **Statut** : prototype. Le code existe (cartes dans `src/data`, moteur, store) et l’application est démarrable (`src/main.tsx` présent). Le décompte réel des cartes se lit dans `npm run status` (`cards`) : il n'est pas recopié ici. Voir [`AGENTS.md`](AGENTS.md) pour l’état vérifié, les règles et les commandes.
-- **Référence fonctionnelle** : `../grevomon/rea-pocket-apk/sources/` et `../grevomon/rea-pocket-apk/resources/` (Pokémon TCG Pocket 1.7.5), analysés dans `../grevomon/grevomon-pocket/docs/INVENTAIRE-PTCGP.md`.
+- **Référence fonctionnelle** : l'APK décompilé de *Pokémon TCG Pocket* 1.7.5 (`sources/` et `resources/`), analysé dans l'inventaire fonctionnel qui vit avec les versions abandonnées (`AGENTS.md` §9).
 - **Contenu** : univers corporate original (Bureau des Planqués). Aucun asset, nom ou texte Pokémon n'est réutilisé.
 - **Cible** : PWA mobile-first, 100+ utilisateurs simultanés, backend Supabase, déploiement Vercel/Cloudflare, emails Brevo.
 

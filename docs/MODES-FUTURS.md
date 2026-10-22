@@ -12,7 +12,7 @@ ont attribué au standard des règles qui n'en font pas partie, et une contradic
 apparente a été signalée sur la fin de partie quand plus aucun Planqué n'est en jeu
 (voir `docs/MIROIR-2026-DELTAS.md`, « à vérifier »). Elles sont donc rangées ici.
 
-Origine : moteur de `../grevomon-pocket/` (legacy, `RULES-4b`). Voir `AGENTS.md` §9.
+Origine : le moteur des versions abandonnées (legacy, `RULES-4b`). Voir `AGENTS.md` §9.
 
 ## Mode « Café » (ex-`RULES-4b`)
 
