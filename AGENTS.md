@@ -12,7 +12,7 @@
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
 5. Ne pas copier le contenu, les règles, les assets ou les pourcentages des **versions abandonnées** (§9).
 6. Ne pas ajouter de mécanique maison au mode standard. La seule exception actée est le mot-clé **« Changement de priorité »** (D-004).
-7. Ne pas ajouter de dépendance sans nécessité démontrée et sans le signaler. **Dépendances signalées** : `@supabase/supabase-js` (runtime — le client du mur, chargé à la demande) et `@electric-sql/pglite` (**devDependency** — les tests du mur jouent un PostgreSQL réel en WASM, RLS comprise, parce que la machine n'a ni Docker ni CLI Supabase ; #135) et `impeccable` (**devDependency**, version **exacte** — le détecteur d'UI, qui doit tourner sur le binaire installé et **sans réseau**, #146).
+7. Ne pas ajouter de dépendance sans nécessité démontrée et sans le signaler. **Dépendances signalées** : `@supabase/supabase-js` (runtime — le client du mur, chargé à la demande) et `@electric-sql/pglite` (**devDependency** — les tests du mur jouent un PostgreSQL réel en WASM, RLS comprise, parce que la machine n'a ni Docker ni CLI Supabase ; #135) et `impeccable` (**devDependency**, version **exacte** — le détecteur d'UI, qui doit tourner sur le binaire installé et **sans réseau**, #146) et les **outils de test d'écran** (**devDependencies** — `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@types/jsdom` : les cinq écrans se **rendent** dans un test, #145).
 8. Après une modification : lancer au minimum `npm run check` et les tests concernés ; si le build est cassé, le dire explicitement.
 
 ## 2. Sources de vérité
