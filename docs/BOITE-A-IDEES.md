@@ -34,6 +34,54 @@ en attente → retenu → en cours → fait
 Le mur affiche ces statuts, donc les invités voient ceux qui sont **validés**, ceux qui sont **en
 attente**, et où en sont les retenus.
 
+## 2 bis. Le mur, à l'écran
+
+**C'est une page**, pas un panneau : un grand **tableau** sur lequel les post-its sont collés. La
+**bulle** y mène, et elle est **absente pendant un combat** — donc on ne quitte jamais une partie en
+cours pour aller lire le mur.
+
+### Les trois apparences, pour deux familles
+
+| Apparence | Quand | Ce que ça dit |
+|---|---|---|
+| **jaune** | famille **IP** | une idée, une amélioration, un avis |
+| **rouge** | famille **OUF** | un signalement |
+| **blanc, plus grand** | un **gueulage** (le texte brut, tel qu'écrit) | on l'a lu, et on ne le classe pas de force |
+
+Un gueulage **reste** une IP ou un OUF pour le tri — l'apparence ne remplace pas la famille, elle
+montre d'où vient le message. Un gueulage **sans suite** garde son texte brut, et c'est là qu'il est
+le plus utile.
+
+### La disposition fait humaine
+
+Les post-its sont **légèrement inclinés** et **se chevauchent un peu** — jamais assez pour cacher le
+texte d'un autre. Chaque post-it porte sa **position** dans le fichier du mur (`position`), en
+pourcentage du tableau : ainsi tout le monde voit **la même** disposition, et elle survit au changement
+d'écran.
+
+**Une interface pour les placer** : un mode où on les **glisse** à la main, et qui **écrit la position**
+dans le fichier — c'est ce qui rend la disposition partagée sans backend. L'export de ce mode (le
+fichier à committer) est le mécanisme de l'alpha ; quand la base existera, la même interface écrira
+directement dedans.
+
+### Ce que chaque post-it porte
+
+En bas, comme sur un réseau social : **un pouce levé et un pouce baissé**, avec leurs comptes, et
+**mon** vote distinct du total. Puis l'**auteur**, le **statut**, et le **lien vers le ticket** quand
+il y en a un.
+
+> **Les votes n'existent pas dans l'alpha** : ils supposent un état partagé entre appareils, et le jeu
+> n'a aucun backend. Ils arrivent avec la base (#135) et le mur complet (#137). Dans l'alpha, le mur
+> montre les post-its, leurs couleurs, leurs statuts et leur disposition — **pas** de compteur.
+
+### Sur téléphone
+
+Le tableau libre ne fonctionne **pas** sur un écran de 360 px : les post-its s'y recouvriraient pour
+de bon, et on ne pourrait plus lire. Les testeurs sont sur téléphone, donc : **une colonne** de
+post-its — même contenu, mêmes couleurs, inclinaison légère, **sans chevauchement** — et le tableau
+libre pour les écrans larges, là où on le consulte et où on le range. Le **mode de placement** est un
+travail de bureau : il ne se fait pas au doigt sur un téléphone.
+
 ## 3. Le fichier du mur
 
 `design/…` non : le mur vit dans **`docs/boite-a-idees.json`**, versionné avec le dépôt, parce que
