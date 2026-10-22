@@ -49,7 +49,7 @@ Ces deux jeux **n'ont servi ni à régler ni au contrôle** ; le seuil n'a pas �
 
 - Le gain de #93 reste un artefact : rien de positif ne survit, ni au contrôle, ni sur les graines neuves.
 - Le niveau 2 est **derrière** le niveau 1 de façon stable (taux entre 42 % et 44 % selon le jeu), et l'écart n'est pas dans le bruit d'un jeu isolé.
-- Le seuil de 55 % n'est atteint **par aucun** jeu, ni aucun candidat de #111 (meilleur contrôle : 54,08 %, voir `docs/IA-PESAGE-111.md` §5).
+- Le seuil de 55 % n'est atteint **par aucun** jeu, ni aucun candidat de #111 (meilleur contrôle : 54,08 %, voir `docs/ia/111-pesage.md` §5).
 - **Recommandation de la mesure** (non tranchée ici) : la preuve va dans le sens de (b) retirer le niveau 2 ou (c) l'assumer en l'écrivant. Re-peser (a) n'a plus de signal à exploiter sur ce harnais.
 
 ## 5. Non vérifié / limites

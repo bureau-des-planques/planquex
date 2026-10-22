@@ -2,7 +2,7 @@
 
 *Date : 22/10/2026 · Branche : `ia-niveau2-recherche` (worktree `/tmp/opencode/wt-ia3`) · Base : `dev` 9c49b47*
 
-Ce journal consigne la **recherche à deux coups** (piste 2 de `docs/recherche-amelioration-ia-niveau2.md`), essayée après l'échec de la piste 1 (`docs/ESSAIS-IA-NIVEAU2.md`, branche `ia-niveau2-essais`, contrôle à 43,68 %). Il sert au **niveau 3** (PIMC, déterminisations) : il dit ce qui a marché, ce qui est réutilisable, et les pièges.
+Ce journal consigne la **recherche à deux coups** (piste 2 de `docs/ia/111-recherche-pistes.md`), essayée après l'échec de la piste 1 (`docs/ia/111-essais-evaluation.md`, branche `ia-niveau2-essais`, contrôle à 43,68 %). Il sert au **niveau 3** (PIMC, déterminisations) : il dit ce qui a marché, ce qui est réutilisable, et les pièges.
 
 > **Base des mesures : `9c49b47`.** `origin/dev` a depuis avancé de 14 commits (`dd04694`, mécaniques du moteur #159–#165 : `pendingChoice` et l'action `choose`, chercher et regarder dans le Deck, révélations). **Les mesures de ce journal valent pour `9c49b47`, pas pour `dev` actuel.** La branche n'a pas été rebasée, pour que le contrôle reste celui qui a été lancé. Vérification sur `dev` + cette branche (fusion temporaire, non committée) : `tsc -b` exit 0, **74 fichiers, 845 tests passent**, dont 24 tests d'IA. **Rien n'a été remesuré sur ce `dev`** : le contrôle est déjà consommé, et les nouvelles règles de caché (révélations, Deck) n'ont pas été prises en compte par `sampleWorld`.
 
@@ -21,7 +21,7 @@ Ce journal consigne la **recherche à deux coups** (piste 2 de `docs/recherche-a
 | `src/game/ia.ts` | **Ajout seulement** : `nextSearchAction`, `unknownPool`, `sampleWorld` (exporté pour le test), `playOutTurn`, `lineValue`, `scoreMoves`, `SearchOptions`, `DEFAULT_SEARCH_OPTIONS`. `nextAction`, `nextAiAction`, `evaluatePosition` et leurs poids : **inchangés**. |
 | `src/game/ia-recherche.test.ts` | **Nouveau** : 8 tests (légalité, déterminisme, non-altération, équité). |
 | `scripts/pesage.mjs` | Option `--direction recherche` (+ `--candidats`, `--mondes`, `--reponses`, `--en-processus`). Le **chemin par défaut** (CLI du simulateur) est inchangé ; la sortie JSON gagne 4 champs (`direction`, `coupsRecherche`, `msParCoup`, `msMaxCoup`). |
-| `docs/ESSAIS-IA.md` | Ce journal. |
+| `docs/ia/111-essais-recherche-2-coups.md` | Ce journal. |
 
 Non touchés : `src/game/engine.ts`, les règles, `src/game/simulation.ts`, le niveau 1, `AGENTS.md`, `docs/DECISIONS.md`.
 
@@ -66,7 +66,7 @@ Protocole : **entraînement** graines 1, 7, 42, 11, 23 — **100 parties par gra
 | V1 | 6 | 6 | 4 | 520 | 332 | 148 | 61,03 % | 1,566 | 27,6 ms / 318 ms |
 | V2 | 10 | 3 | 8 | 519 | 326 | 155 | 61,42 % | 1,592 | 25,4 ms / 206 ms |
 
-Référence (niveau 2 actuel, #111, graines d'entraînement) : 359 / 463 / 178, soit 43,67 %, ratio 0,775 — **non rejouée ici**, chiffre de `docs/MESURE-IA-111.md`.
+Référence (niveau 2 actuel, #111, graines d'entraînement) : 359 / 463 / 178, soit 43,67 %, ratio 0,775 — **non rejouée ici**, chiffre de `docs/ia/111-mesure.md`.
 
 **Lecture des essais** :
 - Les trois variantes donnent le **même niveau** (61,0 à 61,4 %) : l'écart (0,4 pt) est dans le bruit (IC 95 % ≈ ±3,3 pt). Le nombre de mondes et de réponses ne change pas le verdict.

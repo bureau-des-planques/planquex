@@ -481,7 +481,7 @@ function bestEvaluatedAction(
 }
 
 /* ------------------------------------------------------------------ */
-/* Recherche à deux coups — expérimentale (piste 2, `docs/ESSAIS-IA.md`) */
+/* Recherche à deux coups — expérimentale (piste 2, `docs/ia/111-essais-recherche-2-coups.md`) */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -514,7 +514,7 @@ function bestEvaluatedAction(
  * La valeur d'un candidat est la **moyenne** des valeurs sur les mondes ; le meilleur
  * candidat gagne, à égalité le premier de l'élagage (déterministe).
  *
- * **Équité (règle centrale, `docs/ESSAIS-IA.md` §Équité)** :
+ * **Équité (règle centrale, `docs/ia/111-essais-recherche-2-coups.md` §Équité)** :
  * - la décision ne lit **jamais** `state.players[adversaire].hand` ni `.deck` (contenu) :
  *   seuls leurs **comptes** (`hand.length`, `deck.length`), déjà visibles de la table ;
  * - le pool (`unknownPool`) est construit sans lire la main ni le Deck adverses : il ne

@@ -37,7 +37,7 @@
  * le même protocole que `simulate.mjs` (graine maîtresse, appariement, graine de partie), seule
  * la politique change. Le chiffre de la Direction est donc comparable à la référence du CLI.
  * Les réglages (`--candidats`, `--mondes`, `--reponses`) et le temps par coup sont consignés
- * dans `docs/ESSAIS-IA.md`.
+ * dans `docs/ia/111-essais-recherche-2-coups.md`.
  *
  * ⚠️ Depuis #113, le **simulateur** est la pièce à vérifier avant de croire un chiffre : tant
  * qu'un Deck d'archétype ne peut pas payer ses Pressions, la mesure compare des politiques
@@ -64,7 +64,7 @@ function lireArguments(argv) {
     seuilRatio: 1.15,
     maxTurns: 200,
     // La Direction : `niveau2` (la référence #93/#111, le CLI du simulateur) ou `recherche`
-    // (la recherche à deux coups, expérimentale — `docs/ESSAIS-IA.md`).
+    // (la recherche à deux coups, expérimentale — `docs/ia/111-essais-recherche-2-coups.md`).
     direction: 'niveau2',
     enProcessus: false,
     recherche: { candidates: 6, worlds: 3, replies: 4 }

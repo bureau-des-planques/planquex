@@ -5,7 +5,7 @@ import { nextAction, nextSearchAction, sampleWorld, unknownPool } from '@/game/i
 import { factionDeck } from '@/game/simulation';
 
 /**
- * **Recherche à deux coups** (expérimentale, `src/game/ia.ts`, `docs/ESSAIS-IA.md`).
+ * **Recherche à deux coups** (expérimentale, `src/game/ia.ts`, `docs/ia/111-essais-recherche-2-coups.md`).
  *
  * Ce que ces tests tiennent :
  *
@@ -97,7 +97,7 @@ describe('recherche à deux coups — équité', () => {
 
   it("le monde tiré ne reprend jamais la main ni le Deck réels de l'adversaire", () => {
     // Le test qui **mord** : la décision, elle, bouge rarement quand la main adverse change
-    // (1 position sur 77 — `docs/ESSAIS-IA.md`). Le contenu du monde, lui, doit être le même.
+    // (1 position sur 77 — `docs/ia/111-essais-recherche-2-coups.md`). Le contenu du monde, lui, doit être le même.
     for (const state of positions) {
       const swapped: BattleState = structuredClone(state);
       swapped.players.player.hand = reshuffleIds(state.players.player.hand, 4);

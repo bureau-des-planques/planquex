@@ -2,7 +2,7 @@
 
 *Date : 22/10/2026 · Branche : `ia-niveau2-essais` (worktree `/tmp/opencode/wt-ia2`) · Base : `main` 9c49b47*
 
-Suite de `docs/recherche-amelioration-ia-niveau2.md` (piste 1 : évaluation enrichie) et de la remesure #111 (`docs/MESURE-IA-111.md`, branche `111-remesure-ia`).
+Suite de `docs/ia/111-recherche-pistes.md` (piste 1 : évaluation enrichie) et de la remesure #111 (`docs/ia/111-mesure.md`, branche `111-remesure-ia`).
 
 ## Verdict
 
@@ -85,4 +85,4 @@ $ npm run garde-fous       → exit 0 ; 15/15 mutations font échouer la suite
 
 ## Conclusion
 
-La piste 1 (évaluation enrichie, termes publics) **ne fait pas passer le niveau 2 au-dessus de 55 %**, ni au-dessus de la référence de façon démontrée. Au regard du critère de `docs/recherche-amelioration-ia-niveau2.md` (≥ 52 % sur contrôle), elle **échoue aussi**. Le choix entre retirer le niveau 2 et l'assumer reste une décision humaine, et ces essais n'en tranchent pas la suite.
+La piste 1 (évaluation enrichie, termes publics) **ne fait pas passer le niveau 2 au-dessus de 55 %**, ni au-dessus de la référence de façon démontrée. Au regard du critère de `docs/ia/111-recherche-pistes.md` (≥ 52 % sur contrôle), elle **échoue aussi**. Le choix entre retirer le niveau 2 et l'assumer reste une décision humaine, et ces essais n'en tranchent pas la suite.
