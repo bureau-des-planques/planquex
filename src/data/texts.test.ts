@@ -107,7 +107,7 @@ const CUES_TALENT: readonly Cue<AbilityKind>[] = [
   { label: 'retire un statut', pattern: /\bretire un statut/, kinds: ['antiStatus'] },
   { label: 'subit N de moins', pattern: /\bsubit (\d+)[^.]*de moins/, kinds: ['reduceDamage'] },
   // Aucune primitive de Talent ne défausse, ne cherche, ne touche la main, le deck ou le
-  // Rack, et aucune ne se déclenche « en jouant » : `useAbility` est une action du tour.
+  // Rack. Le déclenchement « en jouant » se vérifie à part (`verifierTalent`, D-081).
   // Racines (#166) : `defauss` et `cherch` ne portent que le `\b` de début, pour que
   // « recherche » ne déclenche pas `cherche`.
   { label: 'défausse', pattern: /\bdefauss/, kinds: [] },
@@ -115,7 +115,6 @@ const CUES_TALENT: readonly Cue<AbilityKind>[] = [
   { label: 'main', pattern: /\bmains?\b/, kinds: [] },
   { label: 'deck', pattern: /\bdecks?\b/, kinds: [] },
   { label: 'Rack', pattern: /\bracks?\b/, kinds: [] },
-  { label: 'en jouant', pattern: /\ben jouant\b/, kinds: [] }
 ];
 
 interface Attente {
@@ -234,8 +233,16 @@ function verifierPression(texte: string, effects: readonly AttackEffect[]): stri
 }
 
 /** Contrôle d'un texte de **Talent** contre son `kind`. */
-function verifierTalent(texte: string, ability: Pick<Ability, 'kind' | 'amount' | 'effects'>): string[] {
+function verifierTalent(
+  texte: string,
+  ability: Pick<Ability, 'kind' | 'amount' | 'effects' | 'trigger'>
+): string[] {
   const normalise = normaliser(texte);
+  // « en jouant » et le déclenchement à la mise en jeu doivent se répondre (D-081).
+  const enJouant = /\ben jouant\b/.test(normalise);
+  if (enJouant !== (ability.trigger === 'onPlay')) {
+    return [enJouant ? '« en jouant » sans déclenchement à la mise en jeu' : 'déclenchement à la mise en jeu sans « en jouant »'];
+  }
   // Un Talent `effects` porte le vocabulaire des Pressions : chaque primitive doit être annoncée (D-077).
   if (ability.kind === 'effects') {
     const problemes = verifierPression(texte, ability.effects ?? []);
@@ -369,6 +376,15 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
     expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }, { kind: 'damage', amount: 20 }] })).not.toEqual([]);
     // Des dégâts annoncés sans primitive : refusés.
     expect(verifierTalent(talent, { kind: 'effects', effects: [{ kind: 'discardHand', target: 'self', amount: 1 }] })).not.toEqual([]);
+  });
+
+  it('mord : « en jouant » et le déclenchement à la mise en jeu se répondent (#163, D-081)', () => {
+    // Le texte annonce « en jouant » sans déclencheur : refusé.
+    expect(verifierTalent('En jouant : pioche 1 carte.', { kind: 'draw', amount: 1 })).not.toEqual([]);
+    // Un déclencheur sans « en jouant » dans le texte : refusé.
+    expect(verifierTalent('Une fois par tour : pioche 1 carte.', { kind: 'draw', amount: 1, trigger: 'onPlay' })).not.toEqual([]);
+    // Le témoin : les deux se répondent.
+    expect(verifierTalent('En jouant : pioche 1 carte.', { kind: 'draw', amount: 1, trigger: 'onPlay' })).toEqual([]);
   });
 
   it('mord : les motifs respectent les frontières de mot (#166)', () => {

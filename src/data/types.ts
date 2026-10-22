@@ -145,6 +145,11 @@ export interface Ability {
    * le tour.
    */
   effects?: AttackEffect[];
+  /**
+   * Déclenchement (D-081). Absent : Talent à la demande, une fois par tour (`useAbility`).
+   * `onPlay` : Talent « en jouant », résolu une fois, à la mise en jeu (pose ou évolution).
+   */
+  trigger?: 'onPlay';
 }
 
 /**

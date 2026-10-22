@@ -409,6 +409,7 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
     player.bench[slot] = instance;
   }
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'poses', 'pose')} ${card.name}.`);
+  declencheALaPose(next, next.current, instance);
   return next;
 }
 
@@ -435,6 +436,7 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
   clearAttackEffects(target);
   target.evolvedTurn = next.turn;
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'fais', 'fait')} évoluer ${card.name}.`);
+  declencheALaPose(next, next.current, target);
   return next;
 }
 
@@ -492,6 +494,19 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   return next;
 }
 
+/**
+ * Talent « en jouant » (D-081) : résolu **une fois**, juste après la mise en jeu du Planqué
+ * `instance` (pose au Poste ou au Rack, évolution). Une instance n'entre en jeu qu'une fois,
+ * donc aucun drapeau n'est nécessaire. Il ne figure jamais parmi les actions `ability`.
+ */
+function declencheALaPose(state: BattleState, who: PlayerId, instance: CardInstance) {
+  const card = getCard(instance.cardId);
+  const ability = isPlanque(card) ? card.ability : undefined;
+  if (!ability || ability.trigger !== 'onPlay') return;
+  resolveAbility(state, who, instance, ability);
+  state.log.push(`${sujet(state, who)} ${verbe(state, who, 'utilises', 'utilise')} ${ability.name}.`);
+}
+
 export function useAbility(state: BattleState): BattleState {
   if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
@@ -500,6 +515,8 @@ export function useAbility(state: BattleState): BattleState {
   const card = getCard(player.active.cardId);
   if (!isPlanque(card) || !card.ability) return state;
   const ability = card.ability;
+  // Un Talent « en jouant » ne se déclenche jamais à la demande (D-081).
+  if (ability.trigger === 'onPlay') return state;
   // Défausse de sa propre main sur une main vide : le Talent n'est pas proposé (D-076).
   if (defausseImpossible(player, ability.effects)) return state;
   resolveAbility(next, next.current, player.active, ability);
@@ -1598,7 +1615,12 @@ export function legalActions(state: BattleState): BattleAction[] {
   // Talent du Poste, une fois par tour.
   if (!player.hasUsedAbility && player.active) {
     const card = getCard(player.active.cardId);
-    if (isPlanque(card) && card.ability && !defausseImpossible(player, card.ability.effects)) {
+    if (
+      isPlanque(card) &&
+      card.ability &&
+      card.ability.trigger !== 'onPlay' &&
+      !defausseImpossible(player, card.ability.effects)
+    ) {
       actions.push({ type: 'ability' });
     }
   }
