@@ -151,11 +151,18 @@ connaît donc que les **cinq** statuts de la liste.
 Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **à la main** au fil du tri
 — c'est le prix de l'absence de backend, et il est assumé (D-058).
 
+**Depuis #136**, quand la base est configurée (`VITE_SUPABASE_URL` et
+`VITE_SUPABASE_ANON_KEY`), le jeu lit la vue `postits_avec_votes` et **poste directement**
+depuis le mur. Le fichier reste le **contrat de données** et la **source de secours** : sans
+variables, ou si la base ne répond pas, le mur affiche ce fichier, sans écran cassé. Dans ce
+cas, le formulaire (§4) reste la porte d'écriture.
+
 ## 4. Le formulaire
 
-La seule porte d'écriture de l'alpha. C'est lui qui décide de la **qualité** des retours : un
-formulaire qui demande « décris ton bug » reçoit « ça bug » ; un formulaire qui demande *ce que tu
-faisais* et *ce que tu attendais* reçoit de quoi corriger.
+La porte d'écriture de l'alpha **sans backend** (avec la base configurée, #136 fait poster
+depuis le mur). C'est lui qui décide de la **qualité** des retours : un formulaire qui demande
+« décris ton bug » reçoit « ça bug » ; un formulaire qui demande *ce que tu faisais* et *ce que
+tu attendais* reçoit de quoi corriger.
 
 **Adresse** : dans `docs/boite-a-idees.json` (`formulaire`). Le jeu la lit et l'ouvre depuis la bulle.
 

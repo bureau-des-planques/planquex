@@ -14,15 +14,31 @@
  * écrit en bas de page plutôt que laissé à deviner.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Copy, Download, ExternalLink, Move, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Copy, Download, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
 import { PAPIERS, PostitDuMur } from '@/components/PostitDuMur';
 import type { GlisserPostit } from '@/components/PostitDuMur';
-import { DOCUMENT_MUR, exporterMur, lireMur } from '@/store/mur';
-import type { Mur, PositionPostit } from '@/store/mur';
+import { chargerPostitsDuMur, murEstConfigure, posterPostit } from '@/lib/murBase';
+import { DOCUMENT_MUR, ECRANS, exporterMur, lireMur } from '@/store/mur';
+import type { Ecran, Mur, PositionPostit } from '@/store/mur';
+import { useStore } from '@/store/useStore';
+import { APP_LABEL } from '@/version';
 
 /** Le fichier est lu une fois : il ne change pas sans un nouveau déploiement. */
 const LECTURE = lireMur(DOCUMENT_MUR);
+
+/** Les trois natures du formulaire : deux familles, et le gueulage à part (D-085). */
+const NATURES = [
+  ['IP', 'Une idée, une amélioration, un avis'],
+  ['OUF', 'Un signalement : ça casse, ça ment'],
+  ['GUEULAGE', 'Gueuler, sans classer']
+] as const;
+type Nature = (typeof NATURES)[number][0];
+
+function messageDe(erreur: unknown): string {
+  return erreur instanceof Error ? erreur.message : String(erreur);
+}
 
 /** La légende des trois papiers, dans l'ordre où ils se lisent (D-068). */
 const LEGENDE: Array<[keyof typeof PAPIERS, string]> = [
@@ -39,8 +55,24 @@ function positionsDuMur(mur: Mur | null): Record<string, PositionPostit> {
 const borner = (valeur: number) => Math.min(100, Math.max(0, Math.round(valeur * 10) / 10));
 
 export function BoiteAIdees() {
-  const { mur, erreurs } = LECTURE;
-  const [positions, setPositions] = useState(() => positionsDuMur(mur));
+  const branche = murEstConfigure();
+  const pseudo = useStore((state) => state.name);
+
+  /**
+   * La source du mur (#136) : la **base** quand elle est configurée, le **fichier** sinon.
+   * La page ne connaît que `Mur` : c'est `src/lib/murBase.ts` qui parle au réseau.
+   *
+   * Sur une base configurée, on n'affiche pas le fichier d'abord : un post-it qui
+   * disparaîtrait à l'arrivée de la réponse serait pire qu'un court « le mur se charge ».
+   * Si la base ne répond pas, on retombe sur le fichier **entier**, avec un message.
+   */
+  const [mur, setMur] = useState<Mur | null>(() => (branche ? null : LECTURE.mur));
+  const [erreurs, setErreurs] = useState<string[]>(() => (branche ? [] : LECTURE.erreurs));
+  const [source, setSource] = useState<'base' | 'fichier'>('fichier');
+  const [chargement, setChargement] = useState(branche);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const [positions, setPositions] = useState(() => positionsDuMur(LECTURE.mur));
   const [placement, setPlacement] = useState(false);
   const [agrandi, setAgrandi] = useState<string | null>(null);
   const [message, setMessage] = useState<{ texte: string; alerte?: boolean } | null>(null);
@@ -48,6 +80,51 @@ export function BoiteAIdees() {
   const [lachers, setLachers] = useState(0);
   const tableau = useRef<HTMLDivElement>(null);
   const saisie = useRef<{ id: string; dx: number; dy: number } | null>(null);
+
+  // Le formulaire de dépôt : ouvert à la demande, fermé au succès.
+  const [depot, setDepot] = useState(false);
+  const [nature, setNature] = useState<Nature>('IP');
+  const [titre, setTitre] = useState('');
+  const [texte, setTexte] = useState('');
+  const [ecran, setEcran] = useState<Ecran | ''>('');
+  const [capture, setCapture] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const [depotMessage, setDepotMessage] = useState<{ texte: string; alerte?: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!branche) return;
+    let vivant = true;
+
+    chargerPostitsDuMur()
+      .then((postits) => {
+        if (!vivant) return;
+        if (postits === null) throw new Error('La base n’est pas configurée.');
+        setMur({ formulaire: LECTURE.mur?.formulaire ?? '', postits });
+        setPositions(positionsDuMur({ formulaire: '', postits }));
+        setErreurs([]);
+        setSource('base');
+        setNotice(null);
+      })
+      .catch((erreur: unknown) => {
+        if (!vivant) return;
+        // Pas d'écran cassé : le fichier est la source de secours, et on le dit.
+        setMur(LECTURE.mur);
+        setErreurs(LECTURE.erreurs);
+        setSource('fichier');
+        setNotice(
+          `La base n’a pas répondu : le mur affiche le fichier du dépôt. (${messageDe(erreur)})`
+        );
+      })
+      .finally(() => {
+        if (vivant) setChargement(false);
+      });
+
+    return () => {
+      vivant = false;
+    };
+    // `branche` et `LECTURE` sont fixes pour la vie de l'écran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
    * Le placement laisse faire un vrai tableau : on peut se tromper. Ce contrôle dit
@@ -177,6 +254,50 @@ export function BoiteAIdees() {
     );
   };
 
+  /** Un gueulage n'a pas de titre : la base en fabrique un avec ses premiers mots (D-085). */
+  const gueulage = nature === 'GUEULAGE';
+
+  const coller = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEnvoi(true);
+    setDepotMessage(null);
+
+    try {
+      const postit = await posterPostit(
+        {
+          famille: gueulage ? null : nature,
+          gueulage,
+          titre,
+          texte,
+          ecran,
+          capture
+        },
+        { pseudo }
+      );
+
+      setMur((courant) => ({
+        formulaire: courant?.formulaire ?? LECTURE.mur?.formulaire ?? '',
+        postits: [...(courant?.postits ?? []), postit]
+      }));
+      setPositions((courantes) => ({ ...courantes, [postit.id]: postit.position }));
+      setTitre('');
+      setTexte('');
+      setEcran('');
+      setCapture('');
+      setNature('IP');
+      setDepot(false);
+      setDepotMessage({
+        texte: 'Ton post-it est collé au mur. Merci — il est signé de ton pseudo, sans compte.'
+      });
+    } catch (erreur) {
+      setDepotMessage({ alerte: true, texte: messageDe(erreur) });
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  const formulaireExterne = mur?.formulaire ?? LECTURE.mur?.formulaire ?? '';
+
   return (
     <div className="page">
       <section className="section">
@@ -185,15 +306,31 @@ export function BoiteAIdees() {
             <h1>La Boîte à idées</h1>
             <p className="muted max-w-[62ch]">
               Le mur des retours d’alpha : ce que les invités proposent (<strong>IP</strong>) et
-              signalent (<strong>OUF</strong>). Le jeu le lit et n’y écrit pas — pour laisser un
-              post-it, passe par le formulaire.
+              signalent (<strong>OUF</strong>).{' '}
+              {branche
+                ? 'Tu peux y coller un post-it depuis le jeu, sans compte.'
+                : 'Le jeu le lit et n’y écrit pas — pour laisser un post-it, passe par le formulaire.'}
             </p>
           </div>
           <div className="actions">
-            {mur?.formulaire ? (
+            {branche ? (
+              <button
+                type="button"
+                className="button button--gold"
+                aria-expanded={depot}
+                aria-controls="depot-form"
+                disabled={chargement}
+                onClick={() => {
+                  setDepot((ouvert) => !ouvert);
+                  setDepotMessage(null);
+                }}
+              >
+                <Send size={16} /> {depot ? 'Fermer le formulaire' : 'Poster une idée'}
+              </button>
+            ) : formulaireExterne ? (
               <a
                 className="button button--gold"
-                href={mur.formulaire}
+                href={formulaireExterne}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -229,6 +366,119 @@ export function BoiteAIdees() {
         </ul>
       </section>
 
+      {depotMessage && (
+        <section className={depotMessage.alerte ? 'notice notice--warn' : 'notice notice--ok'}>
+          <p className="m-0 max-w-[70ch]">{depotMessage.texte}</p>
+        </section>
+      )}
+
+      {branche && depot && (
+        <section className="section panel" id="depot-form" aria-labelledby="depot-titre">
+          <h2 id="depot-titre">Poster une idée</h2>
+          <p className="muted max-w-[64ch]">
+            Deux familles, et le gueulage à part (D-085). Pas de compte, pas de courriel : seul
+            ton pseudo local est recopié sur le post-it, et tu peux laisser vide.
+          </p>
+
+          <form className="flex flex-col gap-4" onSubmit={coller}>
+            <fieldset className="field m-0 border-0 p-0">
+              <legend className="field__label">Tu veux quoi ?</legend>
+              <div className="flex flex-col gap-2 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:gap-4">
+                {NATURES.map(([valeur, aide]) => (
+                  <label className="flex items-start gap-2 text-[0.86rem]" key={valeur}>
+                    <input
+                      type="radio"
+                      name="nature"
+                      value={valeur}
+                      checked={nature === valeur}
+                      onChange={() => setNature(valeur)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <strong>{valeur === 'GUEULAGE' ? 'Gueulage' : valeur}</strong>
+                      <span className="block text-[0.78rem] text-ink-muted">{aide}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            {!gueulage && (
+              <label className="field">
+                <span className="field__label">Titre</span>
+                <input
+                  value={titre}
+                  onChange={(event) => setTitre(event.target.value)}
+                  maxLength={120}
+                  required
+                  placeholder="Une ligne. Exemple : le bouton Fin du tour reste grisé."
+                />
+              </label>
+            )}
+
+            <label className="field">
+              <span className="field__label">
+                {gueulage ? 'Exprime-toi' : nature === 'OUF' ? 'Ce qui s’est passé' : 'L’idée'}
+              </span>
+              <textarea
+                rows={5}
+                value={texte}
+                onChange={(event) => setTexte(event.target.value)}
+                required
+                placeholder={
+                  gueulage
+                    ? 'Le texte brut, tel qu’il vient. Personne ne te demande de le classer.'
+                    : nature === 'OUF'
+                      ? 'L’écran, l’action, la carte. Le fait, sans jugement — recopie le message d’erreur.'
+                      : 'Ce que tu voudrais, et dans quelle situation ça te servirait.'
+                }
+              />
+            </label>
+
+            <div className="flex flex-col gap-4 min-[480px]:flex-row">
+              <label className="field flex-1">
+                <span className="field__label">Écran</span>
+                <select value={ecran} onChange={(event) => setEcran(event.target.value as Ecran | '')}>
+                  <option value="">—</option>
+                  {ECRANS.map((valeur) => (
+                    <option value={valeur} key={valeur}>
+                      {valeur}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field flex-[2]">
+                <span className="field__label">Capture — un lien, pas un fichier</span>
+                <input
+                  type="url"
+                  value={capture}
+                  onChange={(event) => setCapture(event.target.value)}
+                  placeholder="https://…"
+                />
+              </label>
+            </div>
+
+            <p className="m-0 max-w-[64ch] text-[0.8rem] text-ink-muted">
+              Tu seras signé <strong>{pseudo || 'anonyme'}</strong> · {APP_LABEL}. Le post-it
+              arrive <strong>en attente</strong> : c’est le tri qui le fait avancer, pas le posteur.
+            </p>
+
+            <div className="actions actions--tight">
+              <button
+                type="submit"
+                className="button button--primary"
+                disabled={envoi || !texte.trim() || (!gueulage && !titre.trim())}
+              >
+                <Send size={16} /> {envoi ? 'Envoi…' : 'Coller le post-it'}
+              </button>
+              <button type="button" className="button" onClick={() => setDepot(false)}>
+                Annuler
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
       {erreurs.length > 0 && (
         <section className="notice notice--warn">
           <h2>Le fichier du mur n’a pas pu être lu</h2>
@@ -245,31 +495,50 @@ export function BoiteAIdees() {
         </section>
       )}
 
-      {mur && mur.postits.length === 0 && (
+      {notice && (
+        <section className="notice notice--warn">
+          <p className="m-0 max-w-[70ch]">{notice}</p>
+        </section>
+      )}
+
+      {chargement && (
+        <section className="section panel">
+          <p className="m-0 text-[0.9rem] text-ink-muted">Le mur se charge…</p>
+        </section>
+      )}
+
+      {!chargement && mur && mur.postits.length === 0 && (
         <section className="section">
           <div className="empty">
             <p className="m-0 font-heading text-[1.15rem] font-bold text-ink">
               Le mur est encore vide.
             </p>
             <p className="mx-auto mt-1 mb-0 max-w-[52ch]">
-              Les post-its arrivent par le formulaire : ils apparaîtront ici avec leur papier et
-              leur place sur le tableau.
+              {branche
+                ? 'Sois le premier à coller un post-it : il apparaîtra ici, avec son papier et sa place.'
+                : 'Les post-its arrivent par le formulaire : ils apparaîtront ici avec leur papier et leur place sur le tableau.'}
             </p>
-            {mur.formulaire && (
-              <a
-                className="button button--gold mt-4"
-                href={mur.formulaire}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Laisser le premier post-it <ExternalLink size={16} />
-              </a>
+            {branche ? (
+              <button type="button" className="button button--gold mt-4" onClick={() => setDepot(true)}>
+                <Send size={16} /> Laisser le premier post-it
+              </button>
+            ) : (
+              mur.formulaire && (
+                <a
+                  className="button button--gold mt-4"
+                  href={mur.formulaire}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Laisser le premier post-it <ExternalLink size={16} />
+                </a>
+              )
             )}
           </div>
         </section>
       )}
 
-      {mur && mur.postits.length > 0 && (
+      {!chargement && mur && mur.postits.length > 0 && (
         <section className="panel">
           <div
             ref={tableau}
@@ -301,6 +570,13 @@ export function BoiteAIdees() {
           écran large, au glisser — pas au doigt.
         </p>
 
+        {source === 'base' ? (
+          <p className="m-0 max-w-[66ch] text-[0.9rem]">
+            La base porte la position de chaque post-it, mais l’interface de placement (glisser à
+            la souris) n’écrit encore que le fichier du dépôt : elle est donc masquée ici. Les
+            post-its gardent la place que la base leur donne, et cette interface viendra ensuite.
+          </p>
+        ) : (
         <div className="flex max-[899px]:hidden flex-col gap-3">
           <p className="m-0 max-w-[66ch] text-[0.9rem]">
             En mode placement, un post-it se <strong>glisse</strong> à la souris et sa position
@@ -377,11 +653,13 @@ export function BoiteAIdees() {
             </p>
           )}
         </div>
+        )}
       </section>
 
       <p className="m-0 text-[0.78rem] text-ink-dim">
-        Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi
-        hors ligne. Aucun compteur ici — les pouces arrivent avec la base (#135, puis #137).
+        {source === 'base'
+          ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Aucun compteur ici — les pouces arrivent avec #137.'
+          : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Aucun compteur ici — les pouces arrivent avec la base (#135, puis #137).'}
       </p>
     </div>
   );

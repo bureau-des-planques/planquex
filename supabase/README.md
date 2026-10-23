@@ -10,6 +10,8 @@ s'appuyer dessus.
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
 | `src/lib/supabase.ts` | la configuration et l'identité anonyme côté jeu (inerte sans `.env`) |
 | `src/lib/supabase.test.ts` | la garde de la clé : publique seulement, et l'alpha inerte sans backend |
+| `src/lib/murBase.ts` | la **couture** du mur (#136) : lit `postits_avec_votes`, poste dans `postits`, retombe sur le fichier sans configuration |
+| `src/lib/murBase.test.ts` | la garde de la couture : lecture, écriture sans `auteur`, gueulage sans famille, panne qui lève |
 | `.env.example` | les deux noms de variables, avec des valeurs **fausses** |
 
 Les décisions : **D-058** (le mur et ses deux familles), **D-059** (statuts, identité), **D-068**
@@ -93,8 +95,9 @@ migration. Le jeu signe d'abord (identité anonyme, rôle `authenticated`), puis
 - la bibliothèque est chargée **à la demande** : sans configuration, son code ne part même pas
   dans le premier chargement.
 
-Aucun écran ne l'appelle encore : c'est **le socle**. Le mur complet (#137) branchera
-`identiteAppareil()` puis les requêtes.
+Depuis #136, **le mur s'en sert** : `src/lib/murBase.ts` signe l'appareil avec
+`identiteAppareil()` puis lit la vue, et le formulaire du mur poste dans `postits`. Le socle
+reste inerte sans configuration.
 
 ## 3. Les variables d'environnement
 
@@ -112,13 +115,23 @@ VITE_SUPABASE_ANON_KEY=<clé publique : sb_publishable_… ou le JWT anon>
 
 Sans ces variables, le jeu fonctionne comme aujourd'hui (mur en lecture seule sur le JSON).
 
+Les **tests** chargent `.env.test` (versionné, variables **vides**) : `npm test` ne contacte
+jamais la base, même sur un poste où `.env` porte les vraies valeurs. C'est ce qui garde le
+résultat identique entre la machine de développement et la CI.
+
 ## 4. L'étape humaine — appliquer les migrations
 
-> **Ce n'est pas fait.** La machine de développement n'a **ni Docker ni CLI Supabase**
-> (`docker info` → commande absente), et cette session n'a **aucun accès** au projet Supabase
-> (pas de MCP : la politique de la maison réserve `supabase` à une session d'infrastructure).
-> La migration a donc été **écrite et éprouvée sur PGlite**, jamais appliquée à un vrai projet.
-> Les commandes ci-dessous sont celles à jouer, une fois, par une personne.
+> **État au 23/10/2026, mesuré par la session d'infrastructure** : la migration **est
+> appliquée** sur le projet `jzlcwnozlzhadatksvgh`, et les connexions anonymes sont
+> **activées**. Une session anonyme lit les quatre objets (`200`, vide) ; sans session, la
+> requête est refusée — c'est voulu, les droits sont donnés à `authenticated` seul. Les
+> variables sont posées dans le `.env` local ; **elles ne le sont pas encore sur Vercel**, donc
+> la production reste inerte et le mur lit le fichier.
+>
+> La machine de développement n'a **ni Docker ni CLI Supabase**, et la session de
+> développement n'a **aucun accès** au projet Supabase (pas de MCP : la politique de la maison
+> réserve `supabase` à une session d'infrastructure). Les commandes ci-dessous restent la
+> procédure pour **un autre projet**, ou pour rejouer une migration future.
 
 ### 4.1 Créer (ou retrouver) le projet, et activer l'identité anonyme
 
@@ -207,7 +220,7 @@ npx vitest run supabase/mur.test.ts
 
 ## 5. La garde, et ce qu'elle prouve
 
-`supabase/mur.test.ts` (11 tests) :
+`supabase/mur.test.ts` (12 tests) :
 
 1. il **lit les fichiers de `supabase/migrations/`** et les joue dans PGlite — PostgreSQL 18,
    RLS comprise. Rien n'est recopié : la garde garde la migration qu'on applique ;
@@ -226,10 +239,11 @@ Pourquoi muter la **condition** et non **supprimer** la politique : une politiqu
 
 ## 6. Ce qui reste humain, précisément
 
-- **Créer ou choisir le projet Supabase** et donner son `project-ref` (rien de tout cela
-  n'existe dans cette session) ;
-- **activer les connexions anonymes** (§4.1) — sinon `signInAnonymously` est refusé ;
-- **appliquer la migration** (§4.2 ou §4.3), et vérifier (§4.4) ;
-- **poser les deux variables** en local et sur Vercel ;
+- **Créer ou choisir le projet Supabase** et donner son `project-ref` — fait (#135) ;
+- **activer les connexions anonymes** (§4.1) — fait le 23/10/2026 ;
+- **appliquer la migration** (§4.2 ou §4.3), et vérifier (§4.4) — fait le 23/10/2026 ;
+- **poser les deux variables** en local et sur Vercel — local fait, **Vercel pas encore** ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
-- **brancher l'écran** sur `src/lib/supabase.ts` : c'est #137, pas ce ticket.
+- **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
+  l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;
+  restent les votes (#137), les commentaires (#138) et la modification/retrait (#139).

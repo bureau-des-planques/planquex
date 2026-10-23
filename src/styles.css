@@ -732,13 +732,20 @@ h2 {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
   font: inherit;
   padding: 0.5rem 0.65rem;
+}
+
+/* Le formulaire de dépôt du mur (#136) : un texte de prose, pas un code à copier. */
+.field textarea {
+  min-height: 6rem;
+  resize: vertical;
 }
 
 .field--search {
