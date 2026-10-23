@@ -154,8 +154,9 @@ export function lirePostitsDeLaBase(lignes: unknown): {
  * « garde ton fichier ». Toute autre panne **lève**, pour que la page puisse retomber sur
  * le fichier sans afficher un mur vide qui aurait l'air vrai.
  *
- * L'identité anonyme est signée **avant** la lecture : les droits sont donnés au rôle
- * `authenticated`, pas à `anon` (migration #135). Sans session, la base refuse — c'est voulu.
+ * Une session est signée **avant** la lecture : les droits sont donnés au rôle
+ * `authenticated`, pas à `anon` (migration #135). Sans session, `identiteAppareil` en signe
+ * une anonyme (lecture seule depuis D-088) ; sans identité du tout, la base refuse.
  */
 export async function chargerPostitsDuMur(
   chargerClient: () => Promise<ClientMur | null> = clientMur,
@@ -165,7 +166,7 @@ export async function chargerPostitsDuMur(
 
   const identite = await identiteAppareil(chargerClient);
   if (!identite) {
-    throw new Error('Identité anonyme indisponible : la base refuse la lecture du mur.');
+    throw new Error('Aucune session : la base refuse la lecture du mur.');
   }
 
   const { data, error } = await client
@@ -282,7 +283,7 @@ export async function voterPourPostit(
   if (!client) throw new Error('Le mur n’est pas configuré : on ne vote pas.');
 
   const identite = await identiteAppareil(chargerClient);
-  if (!identite) throw new Error('Identité anonyme indisponible : le vote ne peut pas être signé.');
+  if (!identite) throw new Error('Aucune session : le vote ne peut pas être signé.');
 
   const { geste, apres } = gesteDeVote(actuel, demande);
 
@@ -425,7 +426,7 @@ export async function posterPostit(
 
   const identite = await identiteAppareil(chargerClient);
   if (!identite) {
-    throw new Error('Identité anonyme indisponible : le post-it ne peut pas être signé.');
+    throw new Error('Aucune session : le post-it ne peut pas être signé.');
   }
 
   const ligne = composerLignePostit(brouillon, options);

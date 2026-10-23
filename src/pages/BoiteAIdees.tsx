@@ -4,13 +4,14 @@
  * **C'est une page**, pas un panneau : la bulle y mène, et elle est absente pendant un
  * combat — donc on ne quitte jamais une partie en cours pour venir lire le mur (D-068).
  *
- * L'alpha est en **lecture seule** : le mur affiche ce que porte `docs/boite-a-idees.json`,
- * et rien d'autre. Pas de compteur, pas de commentaire, pas d'écriture (D-058, D-068).
- * **Branché sur la base** (#136, #137), le mur ajoute les pouces : 👍 / 👎 par post-it, un vote
- * par appareil, jamais pour le sien. Sans configuration — ou quand la base ne répond pas et que
- * la page retombe sur le fichier — il n'y a ni bouton ni compteur, et rien n'est contacté.
- * La seule écriture possible est l'**export** des positions du mode de placement : un site
- * statique ne peut pas écrire dans son dépôt, donc le fichier se télécharge et se commite.
+ * Sans base, l'alpha est en **lecture seule** : le mur affiche ce que porte
+ * `docs/boite-a-idees.json`, et rien d'autre. **Branché sur la base** (#136, #137), il ouvre
+ * l'écriture : poster un post-it, et voter 👍 / 👎 par post-it, un vote par compte, jamais
+ * pour le sien. **Depuis D-088 (#181)**, cette écriture exige un compte **approuvé** : un
+ * compte en attente lit et joue, l'écran ne lui propose ni le formulaire ni les pouces — et la
+ * base les refuserait de toute façon (migration 0005). Sans configuration — ou quand la base
+ * ne répond pas et que la page retombe sur le fichier — il n'y a ni bouton ni compteur, et
+ * rien n'est contacté. Le mode de placement, lui, n'écrit toujours que le fichier du dépôt.
  *
  * États (D-060) : **vide**, **erreur** et **chargement** sont rendus. Le chargement n'existe
  * que branché sur la base (sans elle, le fichier est bundlé par Vite : aucune requête) ; et
@@ -31,6 +32,8 @@ import {
   posterPostit,
   voterPourPostit
 } from '@/lib/murBase';
+import { estApprouve } from '@/lib/comptes';
+import { useComptes } from '@/store/comptes';
 import { DOCUMENT_MUR, ECRANS, exporterMur, lireMur } from '@/store/mur';
 import type { Ecran, Mur, Postit, PositionPostit, SensVote } from '@/store/mur';
 import { useStore } from '@/store/useStore';
@@ -68,6 +71,15 @@ const borner = (valeur: number) => Math.min(100, Math.max(0, Math.round(valeur *
 export function BoiteAIdees() {
   const branche = murEstConfigure();
   const pseudo = useStore((state) => state.name);
+  /**
+   * L'écriture exige un **compte approuvé** (D-088). Sans configuration de comptes, on ne
+   * change rien (c'est l'alpha d'avant, et les tests du mur) ; avec elle, l'écran n'offre
+   * que ce que la base accepterait.
+   */
+  const configureComptes = useComptes((state) => state.configure);
+  const sessionCompte = useComptes((state) => state.session);
+  const compte = useComptes((state) => state.compte);
+  const peutEcrire = !configureComptes || estApprouve(compte);
 
   /**
    * La source du mur (#136) : la **base** quand elle est configurée, le **fichier** sinon.
@@ -340,7 +352,7 @@ export function BoiteAIdees() {
       setNature('IP');
       setDepot(false);
       setDepotMessage({
-        texte: 'Ton post-it est collé au mur. Merci — il est signé de ton pseudo, sans compte.'
+        texte: 'Ton post-it est collé au mur. Merci — il est signé de ton pseudo et de ton compte.'
       });
     } catch (erreur) {
       setDepotMessage({ alerte: true, texte: messageDe(erreur) });
@@ -361,12 +373,14 @@ export function BoiteAIdees() {
               Le mur des retours d’alpha : ce que les invités proposent (<strong>IP</strong>) et
               signalent (<strong>OUF</strong>).{' '}
               {branche
-                ? 'Tu peux y coller un post-it depuis le jeu, sans compte.'
+                ? peutEcrire
+                  ? 'Tu peux y coller un post-it depuis le jeu, avec ton compte.'
+                  : 'Tu peux lire le mur ; poster un post-it s’ouvrira quand ton compte sera validé.'
                 : 'Le jeu le lit et n’y écrit pas — pour laisser un post-it, passe par le formulaire.'}
             </p>
           </div>
           <div className="actions">
-            {branche ? (
+            {branche && peutEcrire ? (
               <button
                 type="button"
                 className="button button--gold"
@@ -380,6 +394,21 @@ export function BoiteAIdees() {
               >
                 <Send size={16} /> {depot ? 'Fermer le formulaire' : 'Poster une idée'}
               </button>
+            ) : branche ? (
+              <p className="notice notice--warn m-0 max-w-[46ch]" role="status">
+                {sessionCompte ? (
+                  <>
+                    Ton compte attend d’être validé : tu peux lire et voter dès qu’il sera
+                    approuvé.{' '}
+                    <Link to="/attente">Voir mon compte</Link>
+                  </>
+                ) : (
+                  <>
+                    Il faut un compte pour poster ou voter.{' '}
+                    <Link to="/connexion">Se connecter</Link>
+                  </>
+                )}
+              </p>
             ) : formulaireExterne ? (
               <a
                 className="button button--gold"
@@ -425,12 +454,13 @@ export function BoiteAIdees() {
         </section>
       )}
 
-      {branche && depot && (
+      {branche && peutEcrire && depot && (
         <section className="section panel" id="depot-form" aria-labelledby="depot-titre">
           <h2 id="depot-titre">Poster une idée</h2>
           <p className="muted max-w-[64ch]">
-            Deux familles, et le gueulage à part (D-085). Pas de compte, pas de courriel : seul
-            ton pseudo local est recopié sur le post-it, et tu peux laisser vide.
+            Deux familles, et le gueulage à part (D-085). Ton pseudo local est recopié sur le
+            post-it (tu peux le laisser vide), et la base sait quel compte l’a écrit : c’est
+            ce qui permet de te répondre.
           </p>
 
           <form className="flex flex-col gap-4" onSubmit={coller}>
@@ -567,14 +597,23 @@ export function BoiteAIdees() {
               Le mur est encore vide.
             </p>
             <p className="mx-auto mt-1 mb-0 max-w-[52ch]">
-              {branche
+              {branche && peutEcrire
                 ? 'Sois le premier à coller un post-it : il apparaîtra ici, avec son papier et sa place.'
-                : 'Les post-its arrivent par le formulaire : ils apparaîtront ici avec leur papier et leur place sur le tableau.'}
+                : branche
+                  ? 'Aucun post-it pour l’instant : le mur s’ouvrira à l’écriture quand ton compte sera validé.'
+                  : 'Les post-its arrivent par le formulaire : ils apparaîtront ici avec leur papier et leur place sur le tableau.'}
             </p>
-            {branche ? (
+            {branche && peutEcrire ? (
               <button type="button" className="button button--gold mt-4" onClick={() => setDepot(true)}>
                 <Send size={16} /> Laisser le premier post-it
               </button>
+            ) : branche ? (
+              <p className="m-0">
+                <Link to={sessionCompte ? '/attente' : '/connexion'}>
+                  {sessionCompte ? 'Ton compte attend d’être validé' : 'Se connecter pour écrire'}
+                </Link>{' '}
+                — la lecture, elle, est ouverte.
+              </p>
             ) : (
               mur.formulaire && (
                 <a
@@ -610,7 +649,7 @@ export function BoiteAIdees() {
                   onAgrandir={(id) => setAgrandi((courant) => (courant === id ? null : id))}
                   glisser={glisser}
                   pouces={
-                    source === 'base'
+                    source === 'base' && peutEcrire
                       ? {
                           occupe: votesEnVol.has(postit.id),
                           erreur: erreursVote[postit.id] ?? null,

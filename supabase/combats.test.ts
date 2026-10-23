@@ -23,7 +23,7 @@ import {
   APPAREIL_A,
   APPAREIL_B,
   avecAppareil,
-  base,
+  baseAvecAppareils,
   fichiersMigrations,
   migrations,
   type Base,
@@ -93,7 +93,7 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
   let db: Base;
 
   beforeAll(async () => {
-    db = await base();
+    db = await baseAvecAppareils();
   });
 
   afterAll(async () => {
@@ -234,13 +234,19 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
   /** Toutes les migrations, celle des combats remplacée par sa version mutée. */
   function migrationsMutees(): string {
     const combatsMute = muter(MIGRATION_COMBATS);
-    return migrations().replace(MIGRATION_COMBATS, () => combatsMute);
+    // La 0005 (D-088) remplace la politique d'insertion des combats : la neutralisation de
+    // la 0002 seule serait annulée par elle. On l'applique donc à toutes les copies.
+    return migrations()
+      .replace(MIGRATION_COMBATS, () => combatsMute)
+      // `p.auteur` d'abord : sans cela, le remplacement global laisserait `p.true`.
+      .replaceAll('p.auteur = auth.uid()', 'true')
+      .replaceAll('auteur = auth.uid()', 'true');
   }
 
   let db: Base;
 
   beforeAll(async () => {
-    db = await base(migrationsMutees());
+    db = await baseAvecAppareils(migrationsMutees());
   });
 
   afterAll(async () => {

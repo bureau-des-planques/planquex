@@ -48,6 +48,14 @@ export const SHIM = `
   create or replace function auth.uid() returns uuid
     language sql stable
     as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  -- Depuis la 0005 (D-088), les comptes vivent dans public.comptes, avec une clé étrangère
+  -- vers auth.users et un déclencheur posé sur cette table : le shim doit donc la fournir.
+  -- Deux colonnes suffisent — celles que la migration lit (id, email) — et elles sont
+  -- celles que GoTrue remplit à l'inscription.
+  create table if not exists auth.users (
+    id    uuid primary key,
+    email text
+  );
   create role authenticated noinherit;
   create role anon noinherit;
   grant usage on schema auth to authenticated;
@@ -59,6 +67,63 @@ export const SHIM = `
 export const APPAREIL_A = '11111111-1111-4111-8111-111111111111';
 export const APPAREIL_B = '22222222-2222-4222-8222-222222222222';
 
+/** Un compte d'administration, pour les scénarios d'approbation (#181). */
+export const ADMIN = '33333333-3333-4333-8333-333333333333';
+/** Un troisième compte, en attente, pour les scénarios d'écriture refusée (#181). */
+export const APPAREIL_C = '44444444-4444-4444-8444-444444444444';
+
+export interface EtatCompteBanc {
+  /**
+   * L'état de la demande. `approuve` (le défaut) : c'est ce qu'il faut aux gardes
+   * antérieures à la 0005, qui écrivent sans se soucier de l'approbation. `en attente` et
+   * `refuse` servent aux scénarios de refus (#181).
+   */
+  etat?: 'en attente' | 'approuve' | 'refuse';
+  administrateur?: boolean;
+  courriel?: string;
+}
+
+/**
+ * Crée un compte dans `auth.users` — donc, par le déclencheur de la 0005, une ligne
+ * `public.comptes` **en attente** — puis pose son état. On passe par `auth.users` et non par
+ * un `insert` direct dans `comptes` : c'est le chemin réel de la première connexion, et il
+ * éprouve le déclencheur au passage.
+ */
+export async function creerCompte(
+  db: Base,
+  appareil: string,
+  options: EtatCompteBanc = {},
+): Promise<void> {
+  await db.query(
+    `insert into auth.users (id, email) values ($1, $2)
+     on conflict (id) do update set email = excluded.email`,
+    [appareil, options.courriel ?? `${appareil.slice(0, 8)}@exemple.test`],
+  );
+
+  const existe = await db.query<{ id: string }>('select id from public.comptes where id = $1', [
+    appareil,
+  ]);
+  if (existe.rows.length === 0) {
+    throw new Error(`le déclencheur n’a pas créé de compte pour ${appareil}`);
+  }
+
+  await db.query(
+    `update public.comptes
+        set etat = $2,
+            administrateur = $3,
+            raison = case when $2 = 'refuse' then coalesce(nullif($4, ''), 'Refusé par le test.') else '' end
+      where id = $1`,
+    [appareil, options.etat ?? 'approuve', options.administrateur ?? false, ''],
+  );
+}
+
+/** Le raccourci des gardes écrites avant la 0005 : leurs deux appareils sont approuvés. */
+export async function approuverAppareils(db: Base): Promise<void> {
+  for (const appareil of [APPAREIL_A, APPAREIL_B]) {
+    await creerCompte(db, appareil, { etat: 'approuve' });
+  }
+}
+
 export type Base = PGlite;
 
 /** Une base neuve, shim puis migrations : l'état d'un projet Supabase juste après `db push`. */
@@ -66,6 +131,18 @@ export async function base(sql: string = migrations()): Promise<Base> {
   const db = new PGlite();
   await db.exec(SHIM);
   await db.exec(sql);
+  return db;
+}
+
+/**
+ * Une base neuve, puis **deux appareils approuvés**. C'est ce que demandent les gardes du
+ * mur et des combats, écrites avant D-088 : elles éprouvent « chacun n'écrit que les
+ * siennes », pas l'approbation. Les scénarios d'approbation (`comptes.test.ts`) partent de
+ * `base()` et créent leurs comptes eux-mêmes, en attente ou refusés.
+ */
+export async function baseAvecAppareils(sql: string = migrations()): Promise<Base> {
+  const db = await base(sql);
+  await approuverAppareils(db);
   return db;
 }
 

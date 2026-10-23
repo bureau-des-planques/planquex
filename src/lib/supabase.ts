@@ -1,5 +1,6 @@
 /**
- * Supabase — la configuration du mur et l'identité anonyme de l'appareil (#135).
+ * Supabase — la configuration du mur, la session du compte (#181, D-088) et l'identité
+ * anonyme héritée de l'alpha d'avant (#135).
  *
  * **La contrainte qui commande tout ce fichier** : l'alpha **fonctionne sans backend** — le mur
  * lit `docs/boite-a-idees.json` (D-058). Ce module est donc **inerte** quand la configuration
@@ -17,11 +18,13 @@
  * `.env.example` porte les deux noms, avec des valeurs **fausses**. Le fichier versionné
  * n'accueille jamais une vraie clé.
  *
- * **Identité** (D-059) : pas de compte, pas de mot de passe, pas de courriel. La bibliothèque
- * `@supabase/supabase-js` signe l'appareil **anonymement** à sa première visite et persiste la
- * session (localStorage) ; l'utilisateur anonyme est un `auth.uid()` comme un autre, donc les
- * politiques de `supabase/migrations/0001_mur.sql` suffisent à dire « chacun lit tout, chacun
- * n'écrit que les siens ».
+ * **Identité** : depuis **D-088** (#181), l'alpha s'ouvre par un **compte** (Google ou
+ * courriel) validé à la main — c'est `@/lib/comptes` qui porte la connexion et
+ * `supabase/migrations/0005_comptes.sql` qui décide qui écrit. L'**identité anonyme** de
+ * D-059 reste le chemin de **lecture** sans session (et l'auteur des deux post-its d'avant
+ * la migration) : `identiteAppareil` continue de signer un appareil qui n'a pas de compte,
+ * mais un tel appareil ne peut plus **écrire** — les politiques de la 0005 exigent un
+ * compte approuvé, pas seulement une session.
  *
  * La bibliothèque est chargée **à la demande** (`import()` dynamique) : sans configuration, son
  * code ne part même pas dans le premier chargement.
@@ -189,8 +192,9 @@ async function clientSupabase(): Promise<SupabaseClient | null> {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        // Le mur n'est pas une page de retour OAuth : rien à lire dans l'URL.
-        detectSessionInUrl: false,
+        // Le retour de Google arrive avec la session dans l'URL (#181, D-088) : sans cette
+        // détection, la connexion OAuth se terminerait sur un écran sans session.
+        detectSessionInUrl: true,
       },
     });
   }
@@ -206,7 +210,8 @@ export async function clientMur(): Promise<ClientMur | null> {
 }
 
 /**
- * Écrit **une** ligne dans une table, au nom de l'identité anonyme de l'appareil.
+ * Écrit **une** ligne dans une table, au nom de la session en cours (le compte, D-088 ; ou
+ * l'identité anonyme d'un appareil d'avant, qui sera refusée à l'écriture par la 0005).
  *
  * Rend l'erreur que la base ou le réseau a donnée (`null` si la ligne est passée) ; **ne
  * décide pas** de ce que l'appelant en fait — `@/store/combats` choisit de ne jamais
@@ -228,8 +233,9 @@ export async function ecrireLigne(
 }
 
 /**
- * L'identité anonyme de l'appareil : celle de la session persistée si elle existe, sinon une
- * signature anonyme neuve (première visite). Rend `null` quand le backend n'est pas configuré.
+ * L'identité de la session persistée si elle existe (un compte, D-088), sinon une signature
+ * anonyme neuve (première visite, lecture seule). Rend `null` quand le backend n'est pas
+ * configuré.
  *
  * `chargerClient` est un paramètre pour que le test puisse injecter un faux appareil, sans
  * réseau ni navigateur.

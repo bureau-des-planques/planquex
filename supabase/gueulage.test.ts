@@ -17,7 +17,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { APPAREIL_A, APPAREIL_B, avecAppareil, base, fichiersMigrations, migrations, type Base } from './pglite';
+import { APPAREIL_A, APPAREIL_B, avecAppareil, base, baseAvecAppareils, fichiersMigrations, migrations, type Base } from './pglite';
 
 const MIGRATION_GUEULAGE = fichiersMigrations().find((sql) => sql.includes('D-085') && sql.includes('postits_lie_hors_gueulage'));
 if (!MIGRATION_GUEULAGE) throw new Error('supabase/migrations/0003_gueulage.sql introuvable');
@@ -91,7 +91,7 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
   let db: Base;
 
   beforeAll(async () => {
-    db = await base();
+    db = await baseAvecAppareils();
   });
   afterAll(async () => {
     await db.close();
@@ -223,7 +223,9 @@ describe('la 0003 sur une base qui a déjà des lignes (celle de #135)', () => {
   it('remet à null la famille de substitution d’un gueulage, et se rejoue sans erreur', async () => {
     // Le projet réel : 0001 (et 0002) appliquées, un gueulage posté depuis le jeu avec `kind = 'IP'`
     // — exactement ce que `src/lib/murBase.ts` envoyait avant D-085.
-    const avant = fichiersMigrations().filter((sql) => sql !== MIGRATION_GUEULAGE).join('\n');
+    // L'état historique : les migrations écrites **avant** la 0003, elle seule manquante.
+    const toutes = fichiersMigrations();
+    const avant = toutes.slice(0, toutes.indexOf(MIGRATION_GUEULAGE)).join('\n');
     const db = await base(avant);
     try {
       const pose = await tenter(
@@ -345,7 +347,7 @@ describe('le contrôle mord — chaque contrôle de la 0003, neutralisé, laisse
 
   for (const m of MUTATIONS) {
     it(m.nom, async () => {
-      const db = await base(avecMutation(m.mutee()));
+      const db = await baseAvecAppareils(avecMutation(m.mutee()));
       try {
         const issue = await m.geste(db);
         expect(issue.accepte).toBe(m.attendu === 'accepte');

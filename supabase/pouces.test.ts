@@ -18,7 +18,7 @@
  * bruyamment au lieu de se décaler en silence.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { APPAREIL_A, APPAREIL_B, avecAppareil, base, fichiersMigrations, migrations, type Base } from './pglite';
+import { APPAREIL_A, APPAREIL_B, avecAppareil, base, baseAvecAppareils, fichiersMigrations, migrations, type Base } from './pglite';
 
 const MIGRATION_POUCES = fichiersMigrations().find((sql) => sql.includes('on public.votes for insert') && sql.includes('drop policy if exists'));
 if (!MIGRATION_POUCES) throw new Error('supabase/migrations/0004_pouces.sql introuvable');
@@ -126,7 +126,7 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
   let db: Base;
 
   beforeAll(async () => {
-    db = await base();
+    db = await baseAvecAppareils();
     await monde(db);
   });
   afterAll(async () => {
@@ -228,7 +228,9 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
 
 describe('la 0004 sur une base qui a déjà des lignes (celle de #135 à #173)', () => {
   it('retire le vote d’un auteur sur son propre post-it, garde les autres, et se rejoue sans erreur', async () => {
-    const avant = fichiersMigrations().filter((sql) => sql !== MIGRATION_POUCES).join('\n');
+    // L'état historique : les migrations écrites **avant** la 0004, elle seule manquante.
+    const toutes = fichiersMigrations();
+    const avant = toutes.slice(0, toutes.indexOf(MIGRATION_POUCES)).join('\n');
     const db = await base(avant);
     try {
       await monde(db);
@@ -270,6 +272,14 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
   const avecPouces = (mutee: string) => migrations().replace(MIGRATION_POUCES!, () => mutee);
   const avecMur = (mutee: string) => migrations().replace(MIGRATION_MUR!, () => mutee);
 
+  /**
+   * La 0005 (D-088) **remplace** les politiques de vote avec la condition d'approbation :
+   * neutraliser la seule 0004 serait annulé par elle. La même neutralisation est donc
+   * appliquée à toutes les copies du motif, où qu'elles vivent.
+   */
+  const aussi0005 = (sql: string, motif: string, remplacement: string) =>
+    sql.replaceAll(motif, remplacement);
+
   const MUTATIONS: Array<{
     nom: string;
     sql: () => string;
@@ -284,33 +294,52 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
     },
     {
       nom: 'sans la condition à l’insertion → l’auteur vote pour lui-même (b)',
-      sql: () => avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 0, 'and false')),
+      sql: () =>
+        aussi0005(
+          avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 0, 'and false')),
+          PREUVE_SOI,
+          'and false',
+        ),
       geste: GESTES.pourSoi,
       attendu: 'accepte',
     },
     {
       nom: 'sans la condition à la modification → il déplace son vote vers son propre post-it (b)',
-      sql: () => avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 1, 'and false')),
+      sql: () =>
+        aussi0005(
+          avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 1, 'and false')),
+          PREUVE_SOI,
+          'and false',
+        ),
       geste: GESTES.deplacerVersSoi,
       attendu: 'accepte',
     },
     {
       nom: 'sans `votant = auth.uid()` à l’insertion → on vote au nom d’un autre (c)',
-      sql: () => avecPouces(muterNieme(MIGRATION_POUCES!, VOTANT_A_L_INSERTION, 2, 0, 'with check (\n    true')),
+      sql: () =>
+        aussi0005(
+          avecPouces(muterNieme(MIGRATION_POUCES!, VOTANT_A_L_INSERTION, 2, 0, 'with check (\n    true')),
+          VOTANT_A_L_INSERTION,
+          'with check (\n    true',
+        ),
       geste: GESTES.auNomDUnAutre,
       attendu: 'accepte',
     },
     {
       nom: 'sans la politique de suppression → le vote ne se défait pas, le compteur ne revient pas (d)',
       sql: () =>
-        avecMur(
-          muterNieme(
-            MIGRATION_MUR!,
-            'on public.votes for delete to authenticated\n  using (votant = auth.uid())',
-            1,
-            0,
-            'on public.votes for delete to authenticated\n  using (false)',
+        aussi0005(
+          avecMur(
+            muterNieme(
+              MIGRATION_MUR!,
+              'on public.votes for delete to authenticated\n  using (votant = auth.uid())',
+              1,
+              0,
+              'on public.votes for delete to authenticated\n  using (false)',
+            ),
           ),
+          'using (votant = auth.uid() and public.compte_approuve())',
+          'using (false)',
         ),
       geste: GESTES.defaire,
       attendu: 'refuse',
@@ -318,6 +347,8 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
   ];
 
   // Le geste, sur la vraie base : l'issue que chaque mutation doit inverser.
+  // Cinq bases PGlite de suite : large au-delà du défaut de 20 s quand la suite tourne en
+  // parallèle (ajout de la 0005, #181), et le temps n'est pas ce que ce test mesure.
   it('sur la vraie base, chaque geste fautif est refusé et le geste (d) est accepté', async () => {
     const attendus: Array<[keyof typeof GESTES, 'accepte' | 'refuse']> = [
       ['deuxFoisLeMemePostit', 'refuse'],
@@ -327,7 +358,7 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
       ['defaire', 'accepte'],
     ];
     for (const [nom, attendu] of attendus) {
-      const db = await base();
+      const db = await baseAvecAppareils();
       try {
         const issue = await GESTES[nom](db);
         expect(issue.accepte, nom).toBe(attendu === 'accepte');
@@ -335,10 +366,10 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
         await db.close();
       }
     }
-  });
+  }, 90_000);
 
   it('(d) sur la vraie base, le compteur revient à zéro après le vote défait', async () => {
-    const db = await base();
+    const db = await baseAvecAppareils();
     try {
       accepte(await GESTES.defaire(db));
       expect(await compteurs(db, 'p-a')).toEqual({ up: 0, down: 0 });
@@ -349,7 +380,7 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
 
   for (const m of MUTATIONS) {
     it(m.nom, async () => {
-      const db = await base(m.sql());
+      const db = await baseAvecAppareils(m.sql());
       try {
         const issue = await m.geste(db);
         expect(issue.accepte).toBe(m.attendu === 'accepte');
