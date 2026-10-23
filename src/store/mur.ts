@@ -38,10 +38,17 @@ export interface VotesPostit {
   down: number;
 }
 
-/** Un post-it tel que le fichier le porte, une fois normalisé. */
+/**
+ * Un post-it tel que le fichier le porte, une fois normalisé.
+ *
+ * `kind` vaut `null` pour un **gueulage** : depuis D-085 il n'est **ni une IP ni un OUF**,
+ * c'est une nature à part, et le fichier n'écrit pas de famille (`kind` absent). `lie`
+ * porte l'`id` du post-it (IP ou OUF) que la même réponse a produit et qu'on lui **colle**
+ * dessus ; `null` quand le gueulage est seul.
+ */
 export interface Postit {
   id: string;
-  kind: Famille;
+  kind: Famille | null;
   titre: string;
   texte: string;
   ecran: Ecran | '';
@@ -51,6 +58,7 @@ export interface Postit {
   raison: string;
   ticket: number | null;
   gueulage: boolean;
+  lie: string | null;
   position: PositionPostit;
   votes: VotesPostit;
 }
@@ -114,6 +122,8 @@ export function lireMur(source: unknown): { mur: Mur | null; erreurs: string[] }
 
   const vus = new Set<string>();
   const postits: Postit[] = [];
+  /** Les `lie` à résoudre **après** la boucle : l'ordre du fichier ne compte pas. */
+  const liens: Array<{ ou: string; lie: string }> = [];
 
   source.postits.forEach((entree, index) => {
     const ou = `postits[${index}]`;
@@ -131,9 +141,27 @@ export function lireMur(source: unknown): { mur: Mur | null; erreurs: string[] }
       vus.add(id);
     }
 
-    const kind = dansListe(FAMILLES, entree.kind) ? entree.kind : null;
-    if (!kind) {
+    // La nature d'abord : depuis D-085, `kind` dépend de `gueulage`.
+    const gueulage = entree.gueulage === true;
+    if (typeof entree.gueulage !== 'boolean') {
+      erreurs.push(`${ou}.gueulage : doit être un booléen`);
+    }
+
+    let kind: Famille | null = null;
+    if (gueulage) {
+      // Un gueulage **ne porte pas de famille** : ni « IP » ni « OUF » (D-085).
+      if (Object.hasOwn(entree, 'kind') && entree.kind !== undefined) {
+        erreurs.push(`${ou}.kind : un gueulage ne porte pas de famille (D-085 : retire « kind »)`);
+      }
+    } else if (dansListe(FAMILLES, entree.kind)) {
+      kind = entree.kind;
+    } else {
       erreurs.push(`${ou}.kind : « ${String(entree.kind)} » n’est pas une famille admise (${FAMILLES.join(', ')})`);
+    }
+
+    const lieBrut = estTexte(entree.lie) ? entree.lie.trim() : '';
+    if (entree.lie !== undefined && entree.lie !== null && !lieBrut) {
+      erreurs.push(`${ou}.lie : doit valoir null ou l’identifiant du post-it collé (une chaîne non vide)`);
     }
 
     const titre = estTexte(entree.titre) ? entree.titre.trim() : '';
@@ -160,8 +188,8 @@ export function lireMur(source: unknown): { mur: Mur | null; erreurs: string[] }
       erreurs.push(`${ou}.ticket : doit valoir null ou un numéro d’issue`);
     }
 
-    if (typeof entree.gueulage !== 'boolean') {
-      erreurs.push(`${ou}.gueulage : doit être un booléen`);
+    if (lieBrut) {
+      liens.push({ ou, lie: lieBrut });
     }
 
     const position = estObjet(entree.position) ? entree.position : null;
@@ -182,7 +210,7 @@ export function lireMur(source: unknown): { mur: Mur | null; erreurs: string[] }
 
     postits.push({
       id,
-      kind: kind ?? 'IP',
+      kind,
       titre,
       texte,
       ecran: dansListe(ECRANS, entree.ecran) ? entree.ecran : '',
@@ -191,7 +219,8 @@ export function lireMur(source: unknown): { mur: Mur | null; erreurs: string[] }
       statut: statut ?? 'en attente',
       raison,
       ticket: estEntier(entree.ticket) ? entree.ticket : null,
-      gueulage: entree.gueulage === true,
+      gueulage,
+      lie: lieBrut || null,
       position: { x, y, angle },
       votes: {
         up: votes && estEntier(votes.up) ? votes.up : 0,
@@ -199,6 +228,18 @@ export function lireMur(source: unknown): { mur: Mur | null; erreurs: string[] }
       }
     });
   });
+
+  // `lie` se résout **après** la boucle : l'ordre du fichier ne compte pas, et un
+  // gueulage peut désigner un post-it qui le suit.
+  const parId = new Map(postits.map((postit) => [postit.id, postit]));
+  for (const { ou, lie } of liens) {
+    const cible = parId.get(lie);
+    if (!cible) {
+      erreurs.push(`${ou}.lie : « ${lie} » ne désigne aucun post-it du fichier`);
+    } else if (cible.gueulage) {
+      erreurs.push(`${ou}.lie : « ${lie} » est un gueulage — un gueulage ne se colle pas sur un gueulage`);
+    }
+  }
 
   return erreurs.length ? { mur: null, erreurs } : { mur: { formulaire, postits }, erreurs };
 }

@@ -1,10 +1,11 @@
 /**
  * Un post-it du mur (#129) — le papier, la famille, et ce qu'il porte.
  *
- * Trois apparences pour deux familles (D-068) : **jaune** = IP, **rouge** = OUF,
- * **blanc et plus grand** = un gueulage. Un gueulage **reste** une IP ou un OUF : le
- * papier dit d'où vient le message, la famille conduit le tri — l'étiquette du haut
- * porte donc les deux (« Gueulage · OUF »).
+ * Trois apparences pour **deux familles et une nature à part** : **jaune** = IP,
+ * **rouge** = OUF, **blanc et plus grand** = un gueulage. Depuis D-085, un gueulage
+ * n'est **ni une IP ni un OUF** : il ne porte pas de famille, son étiquette dit
+ * « Gueulage », et rien de plus. Quand la même réponse a produit un post-it (une IP ou
+ * un OUF), il **se colle** sur le gueulage : c'est le prop `associe`.
  *
  * Le papier est une **surface colorée**, pas un composant de l'identité : sa teinte
  * vient des jetons (`--gold-soft`, `--danger`, `--text`), et l'encre est
@@ -51,10 +52,22 @@ interface Props {
   agrandi: boolean;
   onAgrandir: (id: string) => void;
   glisser: GlisserPostit;
+  /** Le post-it (IP ou OUF) que la même réponse a produit, **collé** sur le gueulage. */
+  associe?: Postit | null;
 }
 
-export function PostitDuMur({ postit, position, ordre, placement, agrandi, onAgrandir, glisser }: Props) {
+export function PostitDuMur({
+  postit,
+  position,
+  ordre,
+  placement,
+  agrandi,
+  onAgrandir,
+  glisser,
+  associe
+}: Props) {
   const papier = PAPIERS[apparenceDe(postit)];
+  const papierAssocie = associe ? PAPIERS[apparenceDe(associe)] : null;
 
   const cadre: CSSProperties = {
     left: `${position.x}%`,
@@ -71,7 +84,8 @@ export function PostitDuMur({ postit, position, ordre, placement, agrandi, onAgr
   const contenu = (
     <>
       <span className="flex items-baseline justify-between gap-3 text-[0.64rem] font-bold uppercase tracking-[0.13em]">
-        <span>{postit.gueulage ? `${papier.nom} · ${postit.kind}` : papier.nom}</span>
+        {/* Un gueulage ne porte **aucune** famille : « Gueulage », jamais « · IP » (D-085). */}
+        <span>{papier.nom}</span>
         <span className="text-[0.7rem] font-medium normal-case tracking-normal opacity-80">
           {postit.pseudo || 'anonyme'}
         </span>
@@ -163,6 +177,42 @@ export function PostitDuMur({ postit, position, ordre, placement, agrandi, onAgr
             <span className="block text-[0.7rem] opacity-70">Écrit en {postit.version}</span>
           )}
         </div>
+
+        {/* Le post-it associé (D-085) : petit, incliné, avec son scotch — il se lit
+            **collé sur** le gueulage, jamais comme un second post-it libre. Sa teinte
+            est celle de sa famille : l'OUF reste rouge, l'IP reste jaune. */}
+        {associe && papierAssocie && (
+          <div
+            data-associe={associe.id}
+            className="relative -mt-2 ml-auto mr-0.5 w-[86%] max-w-[240px] -rotate-2 rounded-[2px] px-3 pt-3 pb-2 text-left shadow-[3px_5px_12px_rgba(0,0,0,0.5)]"
+            style={{
+              background: papierAssocie.teinte,
+              color: 'var(--primary-foreground)'
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="absolute -top-1.5 left-1/2 h-3 w-9 -translate-x-1/2 -rotate-3 bg-white/25"
+            />
+            <span className="flex items-baseline justify-between gap-2 text-[0.56rem] font-bold uppercase tracking-[0.13em]">
+              <span>{papierAssocie.nom}</span>
+              <span className="text-[0.62rem] font-medium normal-case tracking-normal opacity-80">
+                {associe.pseudo || 'anonyme'}
+              </span>
+            </span>
+            <span className="mt-1.5 block font-heading text-[0.86rem] font-bold leading-tight">
+              {associe.titre}
+            </span>
+            <span className="mt-1 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em]">
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 rounded-full"
+                style={{ background: TEINTE_STATUT[associe.statut] }}
+              />
+              {associe.statut}
+            </span>
+          </div>
+        )}
       </article>
     </div>
   );

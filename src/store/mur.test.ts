@@ -27,10 +27,22 @@ function postit(extra: Record<string, unknown> = {}): Record<string, unknown> {
     raison: '',
     ticket: null,
     gueulage: false,
+    lie: null,
     position: { x: 12, y: 34, angle: -2 },
     votes: { up: 0, down: 0 },
     ...extra
   };
+}
+
+/**
+ * Un gueulage conforme **depuis D-085** : `gueulage: true`, **pas de `kind`** (une
+ * famille n'est pas la sienne), et `lie` nul ou l'id du post-it collé dessus.
+ */
+function gueulage(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  const entree = postit({ gueulage: true, lie: null, ...extra });
+  // `extra` peut **ajouter** une famille : c'est le cas fautif que le contrôle doit mordre.
+  if (!('kind' in extra)) delete entree.kind;
+  return entree;
 }
 
 function doc(...entrees: Array<Record<string, unknown>>) {
@@ -103,6 +115,61 @@ describe('lireMur — le contrôle mord sur un fichier fabriqué', () => {
   });
 });
 
+/**
+ * D-085 : un gueulage n'est **ni une IP ni un OUF**, c'est une nature à part. Il ne porte
+ * aucune famille (`kind` absent du fichier), et peut porter `lie`, l'id du post-it
+ * (IP ou OUF) qu'on lui a collé dessus.
+ */
+describe('un gueulage est à part — D-085', () => {
+  it('accepte un gueulage sans famille, et le lit avec `kind === null`', () => {
+    const { mur, erreurs } = lireMur(doc(gueulage()));
+    expect(erreurs).toEqual([]);
+    expect(mur?.postits[0].kind).toBeNull();
+    expect(mur?.postits[0].gueulage).toBe(true);
+  });
+
+  it('refuse une famille portée par un gueulage — la règle de D-068 §2 est amendée', () => {
+    const erreurs = erreursDe(doc(gueulage({ kind: 'IP' })));
+    expect(
+      erreurs.some((erreur) => erreur.includes('.kind') && erreur.includes('un gueulage ne porte pas de famille'))
+    ).toBe(true);
+    expect(lireMur(doc(gueulage({ kind: 'OUF' }))).mur).toBeNull();
+  });
+
+  it('exige toujours une famille sur un post-it ordinaire', () => {
+    const sansFamille = postit();
+    delete sansFamille.kind;
+    expect(erreursDe(doc(sansFamille)).some((erreur) => erreur.includes('.kind'))).toBe(true);
+    expect(erreursDe(doc(postit({ kind: null }))).some((erreur) => erreur.includes('.kind'))).toBe(true);
+  });
+
+  it('lit un `lie` valide, quelle que soit la place du post-it collé dans le fichier', () => {
+    // Le post-it collé **précède** le gueulage : le contrôle passe après la boucle.
+    const { mur, erreurs } = lireMur(
+      doc(postit({ id: 'p-002', kind: 'OUF', titre: 'Le bouton reste grisé' }), gueulage({ lie: 'p-002' }))
+    );
+    expect(erreurs).toEqual([]);
+    expect(mur?.postits[1].lie).toBe('p-002');
+    expect(mur?.postits[1].kind).toBeNull();
+  });
+
+  it('refuse un `lie` qui ne désigne aucun post-it du fichier', () => {
+    const erreurs = erreursDe(doc(gueulage({ lie: 'p-absent' })));
+    expect(erreurs.some((erreur) => erreur.includes('.lie') && erreur.includes('p-absent'))).toBe(true);
+    expect(lireMur(doc(gueulage({ lie: 'p-absent' }))).mur).toBeNull();
+  });
+
+  it('refuse un `lie` qui désigne un gueulage — un gueulage ne se colle pas sur un gueulage', () => {
+    const erreurs = erreursDe(doc(gueulage({ id: 'p-001', lie: 'p-002' }), gueulage({ id: 'p-002' })));
+    expect(erreurs.some((erreur) => erreur.includes('.lie') && erreur.includes('gueulage'))).toBe(true);
+  });
+
+  it('refuse un `lie` vide ou qui n’est pas un texte', () => {
+    expect(erreursDe(doc(gueulage({ lie: '   ' }))).some((e) => e.includes('.lie'))).toBe(true);
+    expect(erreursDe(doc(gueulage({ lie: 42 }))).some((e) => e.includes('.lie'))).toBe(true);
+  });
+});
+
 describe('exporterMur — le seul mécanisme d’écriture de l’alpha', () => {
   it('ne remplace que `position`, et rend le reste du fichier tel quel', () => {
     const source = {
@@ -124,6 +191,22 @@ describe('exporterMur — le seul mécanisme d’écriture de l’alpha', () => 
     expect(lu.postits[0].titre).toBe('Voir combien d’Arrivages il reste à ouvrir');
     // L'entrée d'origine n'est pas modifiée : l'export travaille sur une copie.
     expect(source.postits[0].position).toEqual({ x: 1, y: 2, angle: 0 });
+  });
+
+  it('ne fabrique pas de famille, et laisse `lie` traverser tel quel (D-085)', () => {
+    const source = {
+      formulaire: '',
+      postits: [
+        gueulage({ id: 'p-gueule', lie: 'p-002' }),
+        postit({ id: 'p-002', kind: 'OUF' })
+      ]
+    };
+
+    const lu = JSON.parse(exporterMur({}, source)) as { postits: Array<Record<string, unknown>> };
+    // Le gueulage garde `kind` **absent** : l'export ne le réécrit pas en « IP ».
+    expect(lu.postits[0]).not.toHaveProperty('kind');
+    expect(lu.postits[0].lie).toBe('p-002');
+    expect(lu.postits[1].kind).toBe('OUF');
   });
 
   it('rend un document relisible, et garde le fichier vide vide', () => {

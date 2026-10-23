@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -91,6 +91,25 @@ const REEL_GUEULAGE = rangee({
   [H.envie]: "Non j'ai déja assez gueuler comme ça"
 });
 
+/**
+ * Le **même** gueulage, mais la personne a ensuite répondu « Remonter un bug » : le
+ * formulaire a rempli le chemin bug, et D-085 veut alors **deux** post-its — le gueulage,
+ * et l'OUF qu'on lui colle dessus par `lie`.
+ */
+const REEL_GUEULAGE_AVEC_BUG = rangee({
+  [H.horodateur]: '23/10/2026 01:36:03',
+  [H.pseudo]: 'Moi',
+  [H.version]: 'je sais pas',
+  [H.entree]: 'Gueuler',
+  [H.gueule]: "c'est de la merde ton jeux\nBastien",
+  [H.envie]: 'Remonter un bug',
+  [H.titreBug]: 'Le jeu plante au lancement',
+  [H.faisais]: 'J’ai ouvert le jeu.',
+  [H.passe]: 'Rien ne s’est passé.',
+  [H.attendais]: 'Le bureau.',
+  [H.ecranBug]: 'Accueil'
+});
+
 const REEL_BUG = rangee({
   [H.horodateur]: '23/10/2026 01:37:45',
   [H.pseudo]: "L'autre",
@@ -123,11 +142,20 @@ type Document = { formulaire: string; reponses?: string; postits: Postit[] };
 
 let compteur = 0;
 
-/** Un bac temporaire : une copie du fichier du mur, et des CSV à côté. */
+/**
+ * Un bac temporaire : une copie du fichier du mur **sans ses post-its**, et des CSV à côté.
+ *
+ * `postits` est vidé parce que le vrai fichier contient **déjà** les deux réponses réelles
+ * (commit cf5eadb, #177) : recopié tel quel, le premier import dirait « déjà là : 2 » et
+ * ces tests ne testeraient plus l'ajout. Le reste du document (`formulaire`, `reponses`,
+ * `_lisez_moi`) est le vrai : c'est la forme que le script doit savoir lire.
+ */
 function bac(): { dossier: string; mur: string; texteInitial: string } {
   const dossier = mkdtempSync(join(tmpdir(), 'mur-import-'));
   const mur = join(dossier, 'boite-a-idees.json');
-  copyFileSync(MUR_SOURCE, mur);
+  const document = JSON.parse(readFileSync(MUR_SOURCE, 'utf8')) as Document;
+  document.postits = [];
+  writeFileSync(mur, `${JSON.stringify(document, null, 2)}\n`, 'utf8');
   return { dossier, mur, texteInitial: readFileSync(mur, 'utf8') };
 }
 
@@ -151,7 +179,7 @@ function lancer(args: string[], env: Record<string, string> = {}) {
 const lireMurEcrit = (chemin: string): Document => JSON.parse(readFileSync(chemin, 'utf8')) as Document;
 
 describe('les deux réponses réelles du 23/10/2026', () => {
-  it('un gueulage sans titre devient une IP au titre fabriqué, le bug devient un OUF « papi »', () => {
+  it('le gueulage reste à part (sans famille), le bug devient un OUF « papi »', () => {
     const { dossier, mur } = bac();
     const fichier = ecrireCsv(dossier, FIXTURE);
 
@@ -163,9 +191,10 @@ describe('les deux réponses réelles du 23/10/2026', () => {
     const postits = lireMurEcrit(mur).postits;
     expect(postits).toHaveLength(2);
 
-    // Le gueulage sans suite : IP, gueulage, et le formulaire ne demandait pas de titre.
+    // Le gueulage sans suite : **aucune famille** (D-085), et rien de collé dessus.
     const gueulage = postits[0];
-    expect(gueulage).toMatchObject({ kind: 'IP', gueulage: true, pseudo: 'Moi', version: 'je sais pas' });
+    expect(gueulage).toMatchObject({ gueulage: true, pseudo: 'Moi', version: 'je sais pas', lie: null });
+    expect(gueulage).not.toHaveProperty('kind');
     expect(gueulage.titre).toBe("c'est de la merde ton jeux");
     // Le post-it dit que le titre est fabriqué — et le texte brut n'est pas trahi.
     expect(gueulage.texte).toContain('Titre fabriqué avec les premiers mots du message');
@@ -189,6 +218,37 @@ describe('les deux réponses réelles du 23/10/2026', () => {
     const [gueulage] = lireMurEcrit(mur).postits;
     // Les premiers mots du message, au mot près (le retour à la ligne arrête le titre).
     expect("c'est de la merde ton jeux\nBastien".startsWith(gueulage.titre)).toBe(true);
+  });
+
+  it('un gueulage suivi d’un bug produit l’OUF, et le colle dessus par `lie`', () => {
+    const { dossier, mur } = bac();
+    const fichier = ecrireCsv(dossier, csv(REEL_GUEULAGE_AVEC_BUG, REEL_BUG));
+
+    const resultat = lancer(['--fichier', fichier, '--mur', mur]);
+    expect(resultat.stderr).toBe('');
+    expect(resultat.status).toBe(0);
+    expect(resultat.stdout).toContain('lus : 2 — ajoutés : 3 — déjà là : 0');
+
+    const postits = lireMurEcrit(mur).postits;
+    expect(postits).toHaveLength(3);
+
+    const gueulage = postits[0];
+    const ouf = postits[1];
+    // Le gueulage reste **sans famille**, et porte l'id de l'OUF qu'on lui colle.
+    expect(gueulage).toMatchObject({ gueulage: true });
+    expect(gueulage).not.toHaveProperty('kind');
+    expect(gueulage.lie).toBe(ouf.id);
+
+    // L'OUF, lui, garde sa famille : c'est **ce post-it** qui se trie séparément.
+    expect(ouf).toMatchObject({ kind: 'OUF', gueulage: false, titre: 'Le jeu plante au lancement' });
+    expect(ouf.texte).toContain('Ce que tu faisais : J’ai ouvert le jeu.');
+    expect(ouf.texte).toContain('Ce que tu attendais : Le bureau.');
+
+    // Le gueulage garde le texte brut : les détails du bug vivent sur l'OUF.
+    expect(gueulage.texte).not.toContain('Ce que tu faisais');
+
+    // Le document produit passe le contrat du mur, `lie` compris.
+    expect(lireMur(lireMurEcrit(mur)).erreurs).toEqual([]);
   });
 });
 
@@ -267,8 +327,10 @@ describe('scripts/mur-import.mjs — le CSV publié devient des post-its', () =>
     });
     expect(postits[0].texte).toContain('L’idée : Un compteur dans la Collection.');
 
-    // Gueuler puis choisir « Remonter un bug » : OUF, et toujours un gueulage.
-    expect(postits[1]).toMatchObject({ kind: 'OUF', gueulage: true });
+    // Gueuler puis choisir « Remonter un bug » **sans remplir le chemin bug** : le
+    // gueulage reste seul et sans famille — il n'y a rien à coller dessus (D-085).
+    expect(postits[1]).toMatchObject({ gueulage: true, lie: null });
+    expect(postits[1]).not.toHaveProperty('kind');
     expect(postits[1].titre.startsWith('Le jeu plante au lancement')).toBe(true);
 
     // Avis : IP, et les deux champs libres ne sont pas perdus.
@@ -331,6 +393,24 @@ describe('l’idempotence tient à la clé horodatage + titre', () => {
     expect(second.stdout).toContain('lus : 2 — ajoutés : 0 — déjà là : 2');
     expect(lireMurEcrit(mur).postits).toHaveLength(2);
     expect(readFileSync(mur, 'utf8')).not.toContain('p-23-10-2026-01-36-03-c-est-de-la-merde-ton-jeux-2');
+  });
+
+  it('l’idempotence tient aussi avec un gueulage et l’OUF collé dessus (D-085)', () => {
+    const { dossier, mur } = bac();
+    const fichier = ecrireCsv(dossier, csv(REEL_GUEULAGE_AVEC_BUG, REEL_BUG));
+
+    expect(lancer(['--fichier', fichier, '--mur', mur]).stdout).toContain(
+      'lus : 2 — ajoutés : 3 — déjà là : 0'
+    );
+    const second = lancer(['--fichier', fichier, '--mur', mur]);
+    expect(second.status).toBe(0);
+    expect(second.stdout).toContain('lus : 2 — ajoutés : 0 — déjà là : 3');
+
+    const postits = lireMurEcrit(mur).postits;
+    expect(postits).toHaveLength(3);
+    // Le gueulage n'a pas gagné un second OUF, et son `lie` désigne toujours le même.
+    expect(postits.filter((postit) => postit.gueulage)).toHaveLength(1);
+    expect(postits[0].lie).toBe(postits[1].id);
   });
 
   it('deux réponses au même titre à des heures différentes restent deux post-its', () => {
@@ -491,7 +571,9 @@ describe('--dry-run', () => {
     const resultat = lancer(['--fichier', fichier, '--mur', mur, '--dry-run']);
     expect(resultat.status).toBe(0);
     expect(resultat.stdout).toContain('lus : 2 — ajoutés : 2 — déjà là : 0');
-    expect(resultat.stdout).toContain('IP (gueulage)');
+    // Un gueulage ne s'annonce pas « IP » : il s'annonce « Gueulage » (D-085).
+    expect(resultat.stdout).toContain('Gueulage — ');
+    expect(resultat.stdout).not.toContain('IP — ');
     expect(resultat.stdout).toContain('OUF — papi');
     expect(resultat.stdout).toContain('Rien n’a été écrit (--dry-run)');
     expect(readFileSync(mur, 'utf8')).toBe(texteInitial);
