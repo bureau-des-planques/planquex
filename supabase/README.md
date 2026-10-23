@@ -11,10 +11,12 @@ s'appuyer dessus.
 | `supabase/migrations/0003_gueulage.sql` | le gueulage (D-085) : `kind` nullable, `lie`, l'identifiant jusqu'à 80 caractères — ni table, ni politique, ni droit |
 | `supabase/migrations/0004_pouces.sql` | les pouces (#137) : les politiques d'insertion et de modification de `votes` refusent un vote pour **son propre** post-it — pas de table, pas de droit |
 | `supabase/migrations/0005_comptes.sql` | les comptes (#181, D-088) : la table `comptes`, la ligne créée à la première connexion (`auth.users`), et les politiques d'**écriture** de `postits`, `votes`, `commentaires` et `combats` qui exigent un compte **approuvé** |
+| `supabase/migrations/0006_tri_et_corrections.sql` | le tri, la correction et le retrait (#138, #139, D-088) : `statut`/`raison`/`ticket` écrits par un **administrateur** seul, le retrait par l'auteur tant que le post-it est `en attente`, et `public.corriger_postit(id, titre, texte)` pour le titre et le texte — la base n'en donne plus l'écriture directe |
 | `supabase/comptes.test.ts` | la garde des comptes : en attente refusé, approuvé accepté, non-administrateur sans pouvoir, pas d'auto-approbation, drapeau protégé — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/pouces.test.ts` | la garde des pouces : un seul vote par appareil, pas pour soi, pas au nom d'un autre, un vote défait remet le compteur — et chaque contrôle, neutralisé, laisse passer le fautif |
 | `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
+| `supabase/mur-ecriture.test.ts` | la garde des écritures du mur (#138, #139) : commenter, corriger, retirer, trier — un compte en attente refusé, un administrateur qui trie sans réécrire, et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/combats.test.ts` | la même garde pour les combats : un autre appareil ne lit pas, `anon` n'a rien, un auteur forgé est refusé, et la migration mutée fuit |
 | `src/lib/supabase.ts` | la configuration, l'identité anonyme et l'écriture d'une ligne côté jeu (inerte sans `.env`) |
 | `src/lib/supabase.test.ts` | la garde de la clé : publique seulement, et l'alpha inerte sans backend |
@@ -77,7 +79,7 @@ partent en **cascade** quand un post-it est retiré par son auteur (#139).
 
 | Table | Lecture | Écriture |
 |---|---|---|
-| `postits` | **tout le monde** (`using (true)`) | `auteur = auth.uid()` en insertion, modification et suppression, **et** `public.compte_approuve()` (0005, D-088) |
+| `postits` | **tout le monde** (`using (true)`) | **insertion** : `auteur = auth.uid()` **et** `public.compte_approuve()` (0005) ; **modification** : un **administrateur** seul, et sur `statut`, `raison` et `ticket` seulement (0006) — le titre et le texte passent par `public.corriger_postit(...)`, par leur auteur et tant que le post-it est `en attente` ; **suppression** : par son auteur, tant qu'il est `en attente` (0006) |
 | `votes` | **tout le monde** | `votant = auth.uid()`, pas pour son propre post-it (0004), et `public.compte_approuve()` (0005) |
 | `commentaires` | **tout le monde** | `auteur = auth.uid()` **et** `public.compte_approuve()` (0005) |
 | `combats` | son **auteur** seul | `auteur = auth.uid()` **et** `public.compte_approuve()` (0005) |
@@ -315,6 +317,30 @@ select public.compte_approuve();
 Puis, côté jeu : se connecter avec un compte neuf, constater « ton compte attend d'être
 validé », tenter de poster (le bouton n'est pas proposé, et la base refuserait), approuver
 depuis `/administration`, recharger, poster.
+
+### 5.6 Appliquer la 0006 — le tri, la correction et le retrait (#138, #139)
+
+La 0006 est **à appliquer par Bastien**, **après** la 0005 (elle appelle `est_administrateur()`
+et `compte_approuve()`). Avant elle, l'écran d'administration n'a pas le droit d'écrire le tri,
+et l'auteur ne peut ni corriger ni retirer son post-it.
+
+1. *SQL Editor* → coller **tout** `supabase/migrations/0006_tri_et_corrections.sql` → *Run*.
+2. Pour que le CLI ne la rejoue pas : `supabase migration repair --status applied 0006`.
+
+Ce qu'elle change, et ce qui se vérifie tout de suite :
+
+```sql
+-- Le client ne réécrit plus le texte : la correction passe par la fonction.
+select has_column_privilege('authenticated', 'public.postits', 'texte',  'update');  -- false
+select has_column_privilege('authenticated', 'public.postits', 'statut', 'update');  -- true
+-- La fonction existe et n'est ouverte qu'aux comptes connectés.
+select proname, prosecdef from pg_proc where proname = 'corriger_postit';            -- t
+```
+
+Un **administrateur** trie depuis `/administration` ; un autre compte est refusé **par la
+base** : sa modification porte sur **0 ligne**, sans erreur, et `trierPostit` la refuse au lieu
+de la croire passée. `npm run statut`, lui, ne touche que `docs/boite-a-idees.json` — la source
+de secours — et **le dit** dans sa sortie.
 
 ## 6. La garde, et ce qu'elle prouve
 
