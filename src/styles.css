@@ -2431,3 +2431,182 @@ h2 {
     padding: 0.1rem 0.6rem;
   }
 }
+
+/* ---------- Le fil d'un post-it (#138) et sa relecture (#139) ----------
+ * Le fil vit **dans** le post-it agrandi (D-068), sur tous les écrans. Ses couleurs sont
+ * dérivées de `currentColor` — l'encre du papier, `--primary-foreground` — et des jetons
+ * existants : aucun hex ici, et le jaune, le rouge et le blanc restent lisibles sans un
+ * second système de couleurs.
+ */
+.fil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  text-align: left;
+}
+
+.fil__titre {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.fil__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fil__item {
+  margin: 0;
+}
+
+.fil__entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.fil__texte {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.fil__retirer {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.fil__retirer:hover {
+  opacity: 1;
+}
+
+.fil__note {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  opacity: 0.88;
+}
+
+.fil__note--erreur {
+  font-weight: 700;
+  opacity: 1;
+}
+
+.fil__compte {
+  margin: 0.55rem 0 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.fil__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fil__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fil__etiquette {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.fil__champ {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--primary-foreground) 22%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.fil__champ::placeholder {
+  color: currentColor;
+  opacity: 0.55;
+}
+
+.fil__champ:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+.fil__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.fil__bouton {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.7rem;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fil__bouton:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.fil__bouton:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.fil__bouton--retirer {
+  border-style: dashed;
+}
+
+@media (min-width: 900px) {
+  .fil__bouton {
+    min-height: 1.9rem;
+  }
+}

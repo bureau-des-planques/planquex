@@ -39,6 +39,20 @@ async function tenter(db: Base, appareil: string, sql: string, params: unknown[]
 
 const VERSION = 'Alpha · 0.1.6';
 
+/**
+ * Un geste **hors du rôle** `authenticated` — en superutilisateur, donc sans RLS ni grant.
+ * Depuis la 0006, l'écriture de `statut`, `kind` ou `position_*` n'est plus ouverte au
+ * client : les contraintes de la 0001 et de la 0003 s'éprouvent encore ainsi.
+ */
+async function tenterEnBase(db: Base, sql: string, params: unknown[] = []): Promise<Issue> {
+  try {
+    const res = await db.query<Record<string, unknown>>(sql, params);
+    return { accepte: true, ligne: res.rows[0] ?? {} };
+  } catch (erreur) {
+    return { accepte: false, message: erreur instanceof Error ? erreur.message : String(erreur) };
+  }
+}
+
 /** Insère un post-it : les colonnes passées, les obligatoires complétées. */
 function inserer(
   db: Base,
@@ -80,7 +94,16 @@ const GESTES = {
   devenirGueulageDesigne: async (db: Base) => {
     await inserer(db, { id: 'p-designe', kind: 'OUF' });
     await inserer(db, { id: 'g-designeur', gueulage: true, lie: 'p-designe' });
-    return tenter(db, APPAREIL_A, `update public.postits set gueulage = true, kind = null where id = 'p-designe' returning *`);
+    // En superutilisateur : depuis la 0006, `kind` et `gueulage` ne sont plus dans le grant
+    // d'écriture du client (#139). C'est le **déclencheur** de la 0003 qu'on éprouve ici.
+    try {
+      const res = await db.query<Record<string, unknown>>(
+        `update public.postits set gueulage = true, kind = null where id = 'p-designe' returning *`,
+      );
+      return { accepte: true, ligne: res.rows[0] ?? {} } as Issue;
+    } catch (erreur) {
+      return { accepte: false, message: erreur instanceof Error ? erreur.message : String(erreur) };
+    }
   },
   id48: (db: Base) => inserer(db, { id: `p-${'a'.repeat(46)}`, kind: 'IP' }),
   id80: (db: Base) => inserer(db, { id: `p-${'b'.repeat(78)}`, kind: 'IP' }),
@@ -183,22 +206,27 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
   });
 
   it('un post-it écarté sans raison reste refusé (régression de 0001)', async () => {
+    // En superutilisateur : depuis la 0006, écrire `statut` est réservé à l'administrateur
+    // (D-088). C'est la **contrainte** de la 0001 qu'on éprouve ici ; le droit est gardé par
+    // `mur-ecriture.test.ts`.
     refuse(
-      await tenter(db, APPAREIL_A, `update public.postits set statut = 'écarté' where id = 'g-sans-kind' returning *`),
+      await tenterEnBase(db, `update public.postits set statut = 'écarté' where id = 'g-sans-kind' returning *`),
       /postits_ecarte_a_sa_raison/,
     );
     accepte(
-      await tenter(
+      await tenterEnBase(
         db,
-        APPAREIL_A,
         `update public.postits set statut = 'écarté', raison = 'Hors périmètre.' where id = 'g-sans-kind' returning *`,
       ),
     );
   });
 
   it('la RLS est intacte : B ne modifie ni ne supprime le gueulage de A, et ne signe pas à son nom', async () => {
-    const modif = await tenter(db, APPAREIL_B, `update public.postits set titre = 'Pirate' where id = 'g-sans-kind' returning *`);
-    expect(modif).toEqual({ accepte: true, ligne: {} });
+    // Le refus est plus tôt qu'en 0001 : `titre` n'est plus dans le grant du client (0006).
+    refuse(
+      await tenter(db, APPAREIL_B, `update public.postits set titre = 'Pirate' where id = 'g-sans-kind' returning *`),
+      /permission denied for table postits/,
+    );
     const usurpe = await tenter(
       db,
       APPAREIL_B,

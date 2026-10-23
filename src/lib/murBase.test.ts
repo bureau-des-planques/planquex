@@ -2,17 +2,29 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { ClientMur, RequeteMur, ReponseMur } from '@/lib/supabase';
 import {
+  chargerCommentaires,
   chargerPostitsDuMur,
+  commenterPostit,
   compterApres,
   composerLignePostit,
+  corrigerPostit,
   gesteDeVote,
+  grouperCommentaires,
   idPostit,
+  lireCommentaires,
   lirePostitsDeLaBase,
+  LIMITE_COMMENTAIRE,
+  messageDeTri,
   murEstConfigure,
   positionDepuisId,
   posterPostit,
+  retirerPostit,
+  supprimerCommentaire,
   texteAvecCapture,
   titreDepuisTexte,
+  trierPostit,
+  verifierCommentaire,
+  verifierTri,
   voterPourPostit,
 } from '@/lib/murBase';
 
@@ -63,6 +75,21 @@ interface Reponses {
   erreurVote?: string;
   /** Le nombre de lignes qu'une modification ou un retrait de vote touche (défaut : 1). */
   lignesTouchees?: number;
+  /** Les lignes de `commentaires` rendues à la lecture, et l'erreur éventuelle (#138). */
+  commentaires?: unknown[];
+  erreurCommentaires?: string;
+  /** La ligne rendue par l'insertion d'un commentaire, et l'erreur éventuelle. */
+  commentaire?: unknown;
+  erreurCommentaire?: string;
+  /** Le nombre de commentaires qu'un retrait touche (défaut : 1). */
+  commentairesRetires?: number;
+  /** Ce que rend `rpc('corriger_postit', …)` (#139), et son erreur. */
+  correction?: unknown;
+  erreurCorrection?: string;
+  /** La ligne que rend le tri d'un post-it (`statut, raison, ticket`), ou `null` (#0006). */
+  tri?: unknown;
+  /** L'erreur que la base rend au tri (grant, politique, contrainte). */
+  erreurTri?: string;
 }
 
 /** Tout ce qui part vers la base en écriture : la table, le geste, les valeurs, les filtres. */
@@ -70,14 +97,21 @@ interface Ecriture {
   table: string;
   geste: 'insert' | 'update' | 'delete';
   valeurs?: Record<string, unknown>;
-  filtres: Array<[string, string]>;
+  filtres: Array<[string, string | number]>;
+}
+
+/** Un appel de fonction SQL : c'est par là que passe la correction (#139). */
+interface AppelRpc {
+  nom: string;
+  params: Record<string, unknown> | undefined;
 }
 
 /** Un faux client : il note les écritures et rend les lignes (ou l'erreur) demandées. */
 function fauxClient(reponses: Reponses = {}) {
   const insertions: Array<{ table: string; ligne: Record<string, unknown> }> = [];
   const ecritures: Ecriture[] = [];
-  const lectures: Array<{ table: string; filtres: Array<[string, string]> }> = [];
+  const lectures: Array<{ table: string; filtres: Array<[string, string | number]> }> = [];
+  const appelsRpc: AppelRpc[] = [];
   const signIn = vi.fn(async () => ({
     data: { user: { id: 'appareil-neuf' } },
     error: null,
@@ -88,11 +122,20 @@ function fauxClient(reponses: Reponses = {}) {
     },
   }));
 
+  const rpc = vi.fn(async (nom: string, params?: Record<string, unknown>) => {
+    appelsRpc.push({ nom, params });
+    return {
+      data: reponses.correction ?? null,
+      error: reponses.erreurCorrection ? { message: reponses.erreurCorrection } : null,
+    };
+  });
+
   const client = {
     auth: { getSession, signInAnonymously: signIn },
+    rpc,
     from(table: string): RequeteMur {
       let ecriture: Ecriture | null = null;
-      const filtres: Array<[string, string]> = [];
+      const filtres: Array<[string, string | number]> = [];
       const requete: RequeteMur = {
         select: () => requete,
         order: () => requete,
@@ -118,7 +161,25 @@ function fauxClient(reponses: Reponses = {}) {
         },
         then: (onfulfilled, onrejected) => {
           let reponse: ReponseMur<unknown>;
-          if (table === 'votes' && ecriture) {
+          if (table === 'commentaires') {
+            lectures.push({ table, filtres });
+            reponse = ecriture
+              ? {
+                  data:
+                    ecriture.geste === 'delete'
+                      ? Array.from({ length: reponses.commentairesRetires ?? 1 }, () => ({ id: 1 }))
+                      : (reponses.commentaire ?? null),
+                  error: reponses.erreurCommentaire
+                    ? { message: reponses.erreurCommentaire }
+                    : null,
+                }
+              : {
+                  data: reponses.commentaires ?? [],
+                  error: reponses.erreurCommentaires
+                    ? { message: reponses.erreurCommentaires }
+                    : null,
+                };
+          } else if (table === 'votes' && ecriture) {
             reponse = {
               data:
                 ecriture.geste === 'insert'
@@ -133,9 +194,23 @@ function fauxClient(reponses: Reponses = {}) {
               error: reponses.erreurLectureVotes ? { message: reponses.erreurLectureVotes } : null,
             };
           } else if (table === 'postits') {
+            // Le dépôt d'un post-it ne rend rien (il n'écrit pas `select`) ; un retrait
+            // rend ses lignes, un tri rend `statut, raison, ticket` (0006).
             reponse = {
-              data: null,
-              error: reponses.erreurInsertion ? { message: reponses.erreurInsertion } : null,
+              data:
+                ecriture?.geste === 'delete'
+                  ? Array.from({ length: reponses.lignesTouchees ?? 1 }, () => ({ id: 'x' }))
+                  : ecriture?.geste === 'update'
+                    ? // Un `update(…).select(…)` rend une **liste** de lignes.
+                      reponses.tri
+                      ? [reponses.tri]
+                      : null
+                    : null,
+              error: reponses.erreurInsertion
+                ? { message: reponses.erreurInsertion }
+                : reponses.erreurTri
+                  ? { message: reponses.erreurTri }
+                  : null,
             };
           } else {
             reponse = {
@@ -150,7 +225,15 @@ function fauxClient(reponses: Reponses = {}) {
     },
   };
 
-  return { client: client as unknown as ClientMur, insertions, ecritures, lectures, signIn, getSession };
+  return {
+    client: client as unknown as ClientMur,
+    insertions,
+    ecritures,
+    lectures,
+    appelsRpc,
+    signIn,
+    getSession,
+  };
 }
 
 describe('la lecture du mur passe par la base quand elle est configurée (#136)', () => {
@@ -519,5 +602,274 @@ describe('les pouces : lecture de mon vote et écriture du vote (#137)', () => {
     expect(compterApres(vote, 'up', 'down')).toEqual({ up: 2, down: 2, mon: 'down' });
     // Jamais sous zéro.
     expect(compterApres({ up: 0, down: 0, mon: 'up' }, 'up', null)).toEqual({ up: 0, down: 0, mon: null });
+  });
+});
+
+describe('le fil d’un post-it (#138)', () => {
+  const LIGNE_COMMENTAIRE = {
+    id: 7,
+    postit_id: 'p-001',
+    texte: 'Pareil chez moi.',
+    pseudo: 'Employé 404',
+    auteur: 'appareil-A',
+    created_at: '2026-10-23T09:00:00.000Z',
+  };
+
+  it('lit les commentaires du plus ancien au plus récent, et distingue les miens sans donner l’identité d’un autre', async () => {
+    const faux = fauxClient({
+      commentaires: [
+        LIGNE_COMMENTAIRE,
+        { ...LIGNE_COMMENTAIRE, id: 8, auteur: 'appareil-B', pseudo: 'Anonyme' },
+      ],
+    });
+    const liste = await chargerCommentaires(async () => faux.client);
+
+    expect(liste).toHaveLength(2);
+    expect(liste[0]).toMatchObject({ id: 7, postitId: 'p-001', mien: true, pseudo: 'Employé 404' });
+    expect(liste[1]).toMatchObject({ id: 8, mien: false });
+    // La lecture est ordonnée par la base, du plus ancien au plus récent.
+    expect(faux.lectures[0]).toEqual({ table: 'commentaires', filtres: [] });
+    // `auteur` ne sort pas du module : l'écran n'a que la réponse à « est-ce le mien ? ».
+    expect(liste[0]).not.toHaveProperty('auteur');
+  });
+
+  it('écarte une ligne illisible au lieu de l’afficher à moitié', () => {
+    const lus = lireCommentaires(
+      [LIGNE_COMMENTAIRE, { id: 'sept', postit_id: 'p-001', texte: 'x' }, { id: 9, postit_id: '' }],
+      'appareil-A',
+    );
+    expect(lus).toHaveLength(1);
+    expect(lus[0].id).toBe(7);
+  });
+
+  it('range le fil par post-it, dans l’ordre reçu', () => {
+    const parPostit = grouperCommentaires([
+      { id: 1, postitId: 'p-a', texte: 'un', pseudo: '', creeLe: '', mien: false },
+      { id: 2, postitId: 'p-b', texte: 'deux', pseudo: '', creeLe: '', mien: false },
+      { id: 3, postitId: 'p-a', texte: 'trois', pseudo: '', creeLe: '', mien: false },
+    ]);
+    expect(parPostit['p-a'].map((c) => c.texte)).toEqual(['un', 'trois']);
+    expect(parPostit['p-b'].map((c) => c.texte)).toEqual(['deux']);
+  });
+
+  it('sans configuration, aucun commentaire et rien n’est contacté', async () => {
+    const charger = vi.fn(async () => null);
+    await expect(chargerCommentaires(charger)).resolves.toEqual([]);
+    expect(charger).toHaveBeenCalledTimes(1);
+  });
+
+  it('une panne de lecture lève, pour que l’écran le dise sans jeter le mur', async () => {
+    const faux = fauxClient({ erreurCommentaires: 'TypeError: Failed to fetch' });
+    await expect(chargerCommentaires(async () => faux.client)).rejects.toThrow(
+      /Lecture des commentaires impossible/,
+    );
+  });
+
+  it('commente sans jamais écrire `auteur`, et signe le pseudo local', async () => {
+    const faux = fauxClient({ commentaire: LIGNE_COMMENTAIRE });
+    const commentaire = await commenterPostit('p-001', '  Pareil chez moi.  ', {
+      chargerClient: async () => faux.client,
+      pseudo: 'Employé 404',
+    });
+
+    expect(faux.ecritures).toHaveLength(1);
+    expect(faux.ecritures[0]).toMatchObject({ table: 'commentaires', geste: 'insert' });
+    expect(faux.ecritures[0].valeurs).toEqual({
+      postit_id: 'p-001',
+      texte: 'Pareil chez moi.',
+      pseudo: 'Employé 404',
+    });
+    expect(faux.ecritures[0].valeurs).not.toHaveProperty('auteur');
+    expect(commentaire).toMatchObject({ id: 7, postitId: 'p-001', mien: true });
+  });
+
+  it('signe « anonyme » quand le pseudo local est vide', async () => {
+    const faux = fauxClient({ commentaire: LIGNE_COMMENTAIRE });
+    await commenterPostit('p-001', 'Pareil.', {
+      chargerClient: async () => faux.client,
+      pseudo: '   ',
+    });
+    expect(faux.ecritures[0].valeurs?.pseudo).toBe('anonyme');
+  });
+
+  it('refuse un commentaire vide ou trop long, avant tout réseau', async () => {
+    const faux = fauxClient({ commentaire: LIGNE_COMMENTAIRE });
+    await expect(
+      commenterPostit('p-001', '   ', { chargerClient: async () => faux.client }),
+    ).rejects.toThrow(/vide ne dit rien/);
+    await expect(
+      commenterPostit('p-001', 'x'.repeat(LIMITE_COMMENTAIRE + 1), {
+        chargerClient: async () => faux.client,
+      }),
+    ).rejects.toThrow(/au plus 500 caractères \(le tien en fait 501\)/);
+    expect(faux.ecritures).toHaveLength(0);
+
+    expect(verifierCommentaire('x'.repeat(LIMITE_COMMENTAIRE))).toBeNull();
+    expect(verifierCommentaire('   ')).toMatch(/vide/);
+  });
+
+  it('les refus de la base sont dits en français', async () => {
+    const refus = fauxClient({ erreurCommentaire: 'new row violates row-level security policy' });
+    await expect(
+      commenterPostit('p-001', 'Pareil.', { chargerClient: async () => refus.client }),
+    ).rejects.toThrow(/ton compte doit être approuvé/);
+
+    const disparu = fauxClient({ erreurCommentaire: 'violates foreign key constraint' });
+    await expect(
+      commenterPostit('p-001', 'Pareil.', { chargerClient: async () => disparu.client }),
+    ).rejects.toThrow(/n’existe plus/);
+  });
+
+  it('ne retire que le mien : la requête vise l’id et mon identité', async () => {
+    const faux = fauxClient();
+    await supprimerCommentaire(7, { chargerClient: async () => faux.client });
+
+    expect(faux.ecritures).toEqual([
+      {
+        table: 'commentaires',
+        geste: 'delete',
+        filtres: [
+          ['id', 7],
+          ['auteur', 'appareil-A'],
+        ],
+      },
+    ]);
+  });
+
+  it('un retrait qui ne touche aucune ligne est une erreur, pas un succès', async () => {
+    const faux = fauxClient({ commentairesRetires: 0 });
+    await expect(
+      supprimerCommentaire(7, { chargerClient: async () => faux.client }),
+    ).rejects.toThrow(/plus le tien/);
+  });
+});
+
+describe('corriger ou retirer son post-it (#139)', () => {
+  it('corrige par la fonction SQL, jamais par un update direct', async () => {
+    const faux = fauxClient({
+      correction: { ...LIGNE, titre: 'Corrigé', texte: 'Texte corrigé.' },
+    });
+    const corrige = await corrigerPostit(
+      'p-001',
+      { titre: '  Corrigé  ', texte: '  Texte corrigé.  ' },
+      { chargerClient: async () => faux.client },
+    );
+
+    expect(faux.appelsRpc).toEqual([
+      { nom: 'corriger_postit', params: { p_id: 'p-001', p_titre: 'Corrigé', p_texte: 'Texte corrigé.' } },
+    ]);
+    // Aucune écriture de table : le droit direct sur `titre` et `texte` n'existe plus (0006).
+    expect(faux.ecritures).toHaveLength(0);
+    expect(corrige).toEqual({ titre: 'Corrigé', texte: 'Texte corrigé.' });
+  });
+
+  it('refuse un titre ou un texte vide sans appeler la base', async () => {
+    const faux = fauxClient();
+    await expect(
+      corrigerPostit('p-001', { titre: '  ', texte: 'Texte.' }, { chargerClient: async () => faux.client }),
+    ).rejects.toThrow(/ne peuvent pas être vides/);
+    expect(faux.appelsRpc).toHaveLength(0);
+  });
+
+  it('un refus nommé de la base est traduit : statut bougé, post-it d’un autre, disparu', async () => {
+    const traduit = async (erreurCorrection: string) => {
+      const faux = fauxClient({ erreurCorrection });
+      return corrigerPostit('p-001', { titre: 'T', texte: 'X.' }, {
+        chargerClient: async () => faux.client,
+      }).catch((erreur: Error) => erreur.message);
+    };
+
+    expect(
+      await traduit('postit_corrige_trop_tard : le post-it a bougé de statut (« retenu »)'),
+    ).toMatch(/a bougé de statut/);
+    expect(await traduit('postit_corrige_refuse : ce post-it n’est pas le tien')).toMatch(
+      /n’est pas le tien/,
+    );
+    expect(await traduit('postit_corrige_inconnu : ce post-it n’existe plus')).toMatch(
+      /n’existe plus/,
+    );
+  });
+
+  it('retire mon post-it : une suppression visée par l’id et mon identité', async () => {
+    const faux = fauxClient();
+    await retirerPostit('p-001', { chargerClient: async () => faux.client });
+
+    expect(faux.ecritures).toEqual([
+      {
+        table: 'postits',
+        geste: 'delete',
+        filtres: [
+          ['id', 'p-001'],
+          ['auteur', 'appareil-A'],
+        ],
+      },
+    ]);
+  });
+
+  it('un retrait refusé par la base (0 ligne) est une erreur, et le dit', async () => {
+    const faux = fauxClient({ lignesTouchees: 0 });
+    // Le faux client ne rend « 1 ligne » que sur `votes` / `commentaires` ; une suppression
+    // de `postits` y rend `null`, ce qui est exactement le cas « la base n'a rien retiré ».
+    await expect(retirerPostit('p-001', { chargerClient: async () => faux.client })).rejects.toThrow(
+      /n’a retiré aucun post-it/,
+    );
+  });
+});
+
+describe('le tri par l’administration (0006)', () => {
+  it('écarter exige une raison, un ticket est un entier positif, un statut existe', () => {
+    expect(verifierTri({ statut: 'écarté', raison: '  ', ticket: null })).toMatch(/raison écrite/);
+    expect(verifierTri({ statut: 'retenu', raison: '', ticket: 0 })).toMatch(/entier strictement positif/);
+    expect(verifierTri({ statut: 'peut-être' as never, raison: '', ticket: null })).toMatch(
+      /n’est pas un statut/,
+    );
+    expect(verifierTri({ statut: 'écarté', raison: 'Hors périmètre.', ticket: 140 })).toBeNull();
+    expect(verifierTri({ statut: 'fait', raison: '', ticket: null })).toBeNull();
+  });
+
+  it('envoie statut, raison et ticket sur la ligne visée, et rend ce que la base a écrit', async () => {
+    const faux = fauxClient({ tri: { statut: 'en cours', raison: '', ticket: 140 } });
+    const tri = await trierPostit(
+      'p-001',
+      { statut: 'en cours', raison: '  ', ticket: 140 },
+      { chargerClient: async () => faux.client },
+    );
+
+    expect(faux.ecritures).toEqual([
+      {
+        table: 'postits',
+        geste: 'update',
+        valeurs: { statut: 'en cours', raison: '', ticket: 140 },
+        filtres: [['id', 'p-001']],
+      },
+    ]);
+    expect(tri).toEqual({ statut: 'en cours', raison: '', ticket: 140 });
+  });
+
+  it('un tri refusé par la base ne se déclare jamais réussi (0 ligne)', async () => {
+    const faux = fauxClient();
+    await expect(
+      trierPostit('p-001', { statut: 'retenu', raison: '', ticket: null }, {
+        chargerClient: async () => faux.client,
+      }),
+    ).rejects.toThrow(/n’est peut-être pas administrateur/);
+  });
+
+  it('un refus de permission est dit en français', async () => {
+    expect(messageDeTri('permission denied for table postits')).toMatch(/seul un administrateur/);
+    expect(messageDeTri('violates check constraint "postits_ecarte_a_sa_raison"')).toMatch(
+      /doit dire pourquoi/,
+    );
+    expect(messageDeTri('violates check constraint "postits_statut_check"')).toMatch(
+      /Ce statut n’existe pas/,
+    );
+  });
+
+  it('sans configuration, trier lève avant tout appel', async () => {
+    await expect(
+      trierPostit('p-001', { statut: 'retenu', raison: '', ticket: null }, {
+        chargerClient: async () => null,
+      }),
+    ).rejects.toThrow(/pas configuré/);
   });
 });

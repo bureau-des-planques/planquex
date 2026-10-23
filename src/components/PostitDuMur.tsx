@@ -14,6 +14,8 @@
  */
 import type { CSSProperties, PointerEvent } from 'react';
 import { ExternalLink, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { CorrectionDuPostit, FilDuPostit } from '@/components/FilDuPostit';
+import type { CorrectionPostit, FilPostit } from '@/components/FilDuPostit';
 import type { Postit, PositionPostit, SensVote, Statut } from '@/store/mur';
 
 /** Les trois papiers. Exporté pour la légende de la page : une seule source. */
@@ -67,6 +69,13 @@ interface Props {
   pouces?: PoucesDuPostit;
   /** Le post-it (IP ou OUF) que la même réponse a produit, **collé** sur le gueulage. */
   associe?: Postit | null;
+  /**
+   * Le fil du post-it (#138). Comme les pouces, la page ne le donne **que** lorsque la base
+   * a répondu : le fichier du dépôt ne porte pas de commentaires.
+   */
+  fil?: FilPostit;
+  /** La relecture (#139), seulement sur **mon** post-it et seulement branché sur la base. */
+  correction?: CorrectionPostit;
 }
 
 export function PostitDuMur({
@@ -78,7 +87,9 @@ export function PostitDuMur({
   onAgrandir,
   glisser,
   pouces,
-  associe
+  associe,
+  fil,
+  correction
 }: Props) {
   const papier = PAPIERS[apparenceDe(postit)];
   const papierAssocie = associe ? PAPIERS[apparenceDe(associe)] : null;
@@ -193,6 +204,24 @@ export function PostitDuMur({
             <span className="block text-[0.7rem] opacity-80">Écrit en {postit.version}</span>
           )}
         </div>
+
+        {/* Un post-it qui a des commentaires le dit **même replié** : sans ça, personne
+            n'irait les chercher derrière une pression (D-068). Ce n'est pas un compteur de
+            vanité comme les pouces : c'est du texte déjà là, et la ligne mène au fil. */}
+        {!agrandi && fil && fil.commentaires.length > 0 && (
+          <p className="fil__compte">
+            {fil.commentaires.length} commentaire{fil.commentaires.length > 1 ? 's' : ''} — ouvrir
+            pour lire
+          </p>
+        )}
+
+        {/* Le fil et la relecture vivent **dans** le post-it agrandi, sur tous les écrans :
+            c'est la place que D-068 leur donne, et elle ne dépend pas du mode de placement
+            (qui n'écrit que le fichier). */}
+        {agrandi && !placement && correction && (
+          <CorrectionDuPostit postit={postit} correction={correction} />
+        )}
+        {agrandi && !placement && fil && <FilDuPostit postit={postit} fil={fil} />}
 
         {/* Le post-it associé (D-085) : petit, incliné, avec son scotch — il se lit
             **collé sur** le gueulage, jamais comme un second post-it libre. Sa teinte

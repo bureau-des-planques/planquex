@@ -7,6 +7,8 @@
 >
 > **Depuis D-088**, poster **depuis le jeu** exige un compte **approuvé** : Google ou courriel,
 > puis validation manuelle par Bastien. Un compte en attente lit le mur et joue, il n'écrit pas.
+> Le mur complet est là : **poster** (#136), **voter** (#137), **commenter** (#138), **corriger ou
+> retirer** son post-it (#139), et **trier** depuis l'écran d'administration (`0006`).
 > Le formulaire externe reste le palliatif de l'alpha d'avant — il ne demande pas de compte.
 > Le vocabulaire est dans `AGENTS.md` §3 : **la Boîte à idées** (l'entrée, la bulle), **le mur**
 > (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un invité**.
@@ -88,6 +90,23 @@ En bas, comme sur un réseau social : **un pouce levé et un pouce baissé**, av
 **mon** vote distinct du total. Puis l'**auteur**, le **statut**, et le **lien vers le ticket** quand
 il y en a un.
 
+**Le fil (#138)** : sous chaque post-it, ses **commentaires** — du **plus ancien au plus récent**,
+**sans imbrication**, chacun avec son **pseudo** et sa **date**. Un commentaire précise un cas
+(« pareil chez moi, au deuxième tour ») sans ouvrir un post-it concurrent ; il est limité à
+**500 caractères**, et l'écran le dit pendant la frappe. On **retire les siens**, jamais ceux d'un
+autre. La **lecture** est ouverte à tout compte, même **en attente** ; l'**écriture** exige un compte
+**approuvé** (D-088), et c'est la base qui refuse, pas seulement l'écran. Le fil vit **dans le
+post-it agrandi** (une pression), comme le statut et les pouces ; un post-it qui a des commentaires
+le dit même replié (« 2 commentaires — ouvrir pour lire »).
+
+**La relecture (#139)** : tant que mon post-it est **`en attente`**, je peux corriger son **titre** et
+son **texte**, ou le **retirer**. Après, non — et l'écran **dit pourquoi** : dès qu'un statut a bougé,
+le mur doit dire la même chose à tout le monde, et le tri (une raison, un ticket) ne s'efface pas.
+Le retrait passe par une **confirmation**, et il **supprime** le post-it (§3). Le titre et le texte
+ne passent pas par un `update` direct : la base les donne à une **fonction** qui vérifie l'auteur et
+le statut (`0006_tri_et_corrections.sql`), parce qu'un droit de colonne ne sait pas distinguer
+l'auteur d'un administrateur.
+
 > **Les votes n'existent pas sans la base** : ils supposent un état partagé entre appareils. Sans
 > configuration (ou quand la base ne répond pas et que le mur retombe sur le fichier), le mur montre
 > les post-its, leurs couleurs, leurs statuts et leur disposition — **ni bouton ni compteur**, et
@@ -165,7 +184,10 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
 
 Un post-it **retiré** par son auteur (#139) **disparaît du fichier** : il n'existe pas de statut
 « retiré », et un mur qui garderait une ligne barrée dirait ce que personne n'a écrit. Le jeu ne
-connaît donc que les **cinq** statuts de la liste.
+connaît donc que les **cinq** statuts de la liste. **En base, c'est la même règle** : le retrait est
+une **suppression** (`delete`), qui emporte les votes et les commentaires du post-it
+(`on delete cascade`), et la base ne l'autorise que **tant que le post-it est `en attente`**
+(`0006`) — après, il porte un tri que le geste effacerait.
 
 Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **hors du jeu** :
 `npm run mur:import` ajoute les réponses du formulaire (§4.5), `npm run statut` déplace le tri
@@ -406,11 +428,20 @@ import le croira absent — §3 demande déjà un id *stable*.
 Ce tri est un travail **avec l'agent**, pas sur son dos : c'est lui qui tient le fichier et qui
 ouvre les tickets (D-059).
 
-### 5.1 Déplacer un statut — `npm run statut`
+### 5.1 Déplacer un statut — l'écran d'administration, ou `npm run statut`
 
-Le fichier se déplace par le **script**, pas à la main : c'est le tri sans tableau de bord
-d'administration (#140), et le mur affiche ensuite le statut, le ticket et la raison d'un
-écarté.
+**Quand la base est configurée, le tri se fait dans l'écran d'administration** (`/administration`,
+réservé aux comptes marqués administrateurs) : chaque post-it y a son **statut**, la **raison** d'un
+écarté et son **ticket**. La migration `0006_tri_et_corrections.sql` donne à un administrateur le
+droit d'écrire ces **trois colonnes** sur **n'importe quel** post-it — et **celles-là seulement** :
+le titre et le texte restent à leur auteur, et la base refuse un administrateur qui les viserait
+(`permission denied`, parce que ces colonnes ne sont pas dans le grant). Un **non-administrateur**
+est refusé par la base : sa modification porte sur **0 ligne**, sans erreur.
+
+**Sans base configurée, le fichier se déplace par le script** — c'est le tri de l'alpha sans
+backend (#140) : quand la base n'est pas configurée, c'est ce fichier que le mur lit, et le script
+**le dit**. Quand elle l'est, le script continue de fonctionner sur le fichier (la **source de
+secours**) mais rappelle que le tri des post-its de la base se fait dans l'écran.
 
 ```bash
 npm run statut <post-it> <statut>            # en attente | retenu | en cours | fait | écarté

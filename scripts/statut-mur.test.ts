@@ -92,6 +92,30 @@ describe('npm run statut — déplacer un post-it', () => {
     expect(texteInitial).not.toBe(texte);
   });
 
+  it('dit dans quel monde il a trié : sans base, c’est le fichier que le mur lit', () => {
+    const { mur } = bac();
+    // L'environnement du test ne porte pas les variables Supabase (elles vivent dans `.env`,
+    // que Vite lit et que ce script ne lit pas) : le message doit donc dire « fichier ».
+    const resultat = lancer([ID, 'retenu', '--fichier', mur], {
+      VITE_SUPABASE_URL: '',
+      VITE_SUPABASE_ANON_KEY: ''
+    });
+    expect(resultat.status).toBe(0);
+    expect(resultat.stdout).toContain('La base n’est pas configurée');
+    expect(resultat.stdout).toContain('ce fichier est ce que le mur lit');
+  });
+
+  it('dit aussi quand la base est configurée : le fichier n’est plus que le secours', () => {
+    const { mur } = bac();
+    const resultat = lancer([ID, 'retenu', '--fichier', mur], {
+      VITE_SUPABASE_URL: 'https://exemple.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'cle-publique-de-test'
+    });
+    expect(resultat.status).toBe(0);
+    expect(resultat.stdout).toContain('La base est configurée');
+    expect(resultat.stdout).toContain('/administration');
+  });
+
   it('un gueulage se déplace comme les autres, et reste sans famille (D-085)', () => {
     const { mur } = bac();
     const resultat = lancer([GUEULAGE, 'retenu', '--fichier', mur]);
