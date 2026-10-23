@@ -736,13 +736,29 @@ export function Battle() {
   /** Peut-on transmettre ? La règle est dans `@/store/pvp`, l'écran n'en décide pas. */
   const transfer = useMemo(() => (match ? handover(state, match) : null), [state, match]);
 
-  const copyCode = useCallback(() => {
-    // Le presse-papier peut être refusé (contexte non sécurisé, permission) : le code
-    // reste dans la zone, il suffit de le sélectionner. On ne ment pas dans le message.
-    navigator.clipboard?.writeText(code).then(
-      () => setCodeMessage({ ton: 'ok', texte: 'Code copié : donne-le à l’autre joueur.' }),
-      () => setCodeMessage({ ton: 'ok', texte: 'Code prêt ci-dessus — recopie-le à la main.' })
-    );
+  /**
+   * La copie du code (#128), **sans mentir** : le presse-papier peut manquer (page servie
+   * en clair, navigateur de téléphone ancien — `navigator.clipboard` est alors `undefined`)
+   * ou être refusé (permission, geste non reconnu). Les deux cas sont traités : promettre
+   * « copié » sans succès ferait perdre le code, et `navigator.clipboard?.writeText(...).then`
+   * levait un `TypeError` quand l'API manquait, donc le message ne venait jamais.
+   *
+   * Le repli est **le code lui-même** : il reste dans la zone, sélectionné d'office, et
+   * l'invité le recopie à la main.
+   */
+  const codeRef = useRef<HTMLTextAreaElement | null>(null);
+  const copyCode = useCallback(async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('presse-papier indisponible');
+      await navigator.clipboard.writeText(code);
+      setCodeMessage({ ton: 'ok', texte: 'Code copié : donne-le à l’autre joueur.' });
+    } catch {
+      codeRef.current?.select();
+      setCodeMessage({
+        ton: 'ok',
+        texte: 'Le presse-papier a refusé : le code est sélectionné, recopie-le à la main.'
+      });
+    }
   }, [code]);
 
   /** **Coller un code** : la partie reprend, et je prends le camp qui doit jouer. */
@@ -1105,12 +1121,16 @@ export function Battle() {
                       <Copy size={16} /> Copier le code
                     </button>
                   </div>
+                  {/* Un appui sélectionne le code entier : sur téléphone, c'est le repli
+                      quand la copie automatique est refusée (#128). */}
                   <textarea
                     className="pvp__code"
+                    ref={codeRef}
                     readOnly
                     value={code}
                     rows={4}
                     aria-label="Code de la partie, à transmettre"
+                    onFocus={(event) => event.currentTarget.select()}
                   />
                 </>
               ) : (
@@ -1122,6 +1142,9 @@ export function Battle() {
 
           <label className="field">
             <span className="field__label">Coller un code reçu</span>
+            {/* Sur téléphone, le clavier corrige : un code base64url n'a ni majuscules
+                initiales à deviner ni mots à corriger, et une correction le casse en
+                silence (#128). Le champ grandit vers le bas, la page ne bouge pas. */}
             <textarea
               className="pvp__code"
               value={incoming}
@@ -1129,6 +1152,10 @@ export function Battle() {
               placeholder="PLQ1.…"
               rows={3}
               aria-label="Code reçu, à coller"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
           </label>
           <div className="actions actions--tight">

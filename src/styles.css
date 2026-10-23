@@ -1922,6 +1922,16 @@ h2 {
   width: 100%;
 }
 
+/* Le code d'une partie à deux (#128) : long, sans espace, souvent collé depuis un
+   téléphone. Il se replie dans sa zone au lieu d'élargir la page — à 420 de large, un
+   code de 2 000 caractères sortirait de l'écran. */
+.pvp__code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .settings__message--ko,
 .pvp__message--ko {
   color: var(--danger);
