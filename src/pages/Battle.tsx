@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ClipboardPaste, Coffee, Copy, RotateCcw, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
+  AttackEffect,
   BattleAction,
   BattleState,
   CafeSymbol,
@@ -13,7 +14,7 @@ import type {
   PlayerState,
   Status
 } from '@/data/types';
-import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
+import { applyAction, createBattle, dessusDuDeck, legalActions, legalAttacks } from '@/game/engine';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
@@ -79,6 +80,16 @@ function cardName(cardId: string): string {
 /** Le nom d'une instance, sans mentir quand elle a disparu de l'état. */
 function instanceName(instance: CardInstance | null | undefined): string {
   return instance ? cardName(instance.cardId) : 'un Planqué';
+}
+
+/**
+ * La carte qu'une action `choose` **désigne** (#171, D-076, D-080, D-082) : elle vit
+ * là où le choix en attente la cherche — la main (défausse), le Banc (café) ou le
+ * Deck (recherche). Le nom est ce que le bouton montre ; `undefined` s'il a disparu.
+ */
+function choixName(side: PlayerState, uid: string): string | undefined {
+  const instance = [...side.hand, ...side.bench, ...side.deck].find((carte) => carte?.uid === uid);
+  return instance ? cardName(instance.cardId) : undefined;
 }
 
 function kindLabel(definition: Card | undefined): string {
@@ -225,9 +236,15 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     }
     case 'forfeit':
       return { label: 'Abandonner' };
-    // Un choix en attente (D-076). Le nom de la carte ne s'affiche pas encore : dette UI.
-    case 'choose':
-      return { label: 'Choisir cette carte' };
+    /*
+     * Un choix en attente (D-076, D-080, D-082) : le bouton **nomme la carte qu'il
+     * désigne** (#171) — la carte de la main, le Planqué du Deck, celui du Banc. Le
+     * choix appartient à `pendingChoice.who`, qui n'est pas forcément le camp au trait.
+     */
+    case 'choose': {
+      const who = state.pendingChoice?.who ?? state.current;
+      return { label: 'Choisir cette carte', detail: choixName(state.players[who], action.uid) };
+    }
     case 'endTurn':
       return { label: state.current === myCamp ? 'Fin du tour' : 'Passer le tour de la Direction' };
   }
@@ -264,6 +281,67 @@ function ActionButton({
       {view.damage !== undefined && <span className="attack__dmg">{view.damage}</span>}
       {view.detail && <span className="button__detail">{view.detail}</span>}
     </button>
+  );
+}
+
+/** Une liste d'effets porte-t-elle le regard `peek` (D-079) ? */
+const porteUnRegard = (effects: readonly AttackEffect[] | undefined) =>
+  (effects ?? []).some((effect) => effect.kind === 'peek');
+
+/**
+ * **Le dessus du Deck, tel que le joueur vient de le regarder** (#162, D-079, #171).
+ *
+ * Le moteur ne garde **aucune trace** d'un regard : ni champ d'état, ni ligne de
+ * journal — c'est le prix de la confidentialité, et D-079 le veut ainsi. L'écran le
+ * déduit donc du **dernier geste appliqué** (`actionLog`, qui rejoue à l'identique
+ * après un rechargement) :
+ * - un Collègue qui regarde est au **Rebut de son propriétaire**, avec son uid : le
+ *   Rebut de l'autre camp ne le porte pas, donc rien ne fuit ;
+ * - une Pression qui regarde termine le tour : l'attaquant est le camp qui vient de
+ *   passer la main, et il est encore au Poste (une Pression part du Poste).
+ *
+ * Un regard dure le temps de ce geste : le geste suivant l'efface. `dessusDuDeck` ne
+ * rend toujours que le Deck du camp demandé.
+ */
+function regardDuDernierGeste(state: BattleState, who: PlayerId): Card | undefined {
+  const geste = state.actionLog.at(-1);
+  if (!geste) return undefined;
+  const side = state.players[who];
+
+  if (geste.type === 'playAction') {
+    const jouee = side.discard.find((carte) => carte.uid === geste.uid);
+    const definition = jouee ? getCard(jouee.cardId) : undefined;
+    return definition && !isPlanque(definition) && porteUnRegard(definition.effects)
+      ? dessusDuDeck(state, who)
+      : undefined;
+  }
+
+  if (geste.type === 'attack') {
+    if (state.current === who) return undefined;
+    const definition = side.active ? getCard(side.active.cardId) : undefined;
+    const regarde =
+      definition &&
+      isPlanque(definition) &&
+      porteUnRegard(definition.attacks[geste.attackIndex]?.effects);
+    return regarde ? dessusDuDeck(state, who) : undefined;
+  }
+
+  return undefined;
+}
+
+/**
+ * **Ce que tu viens de regarder** (#162, D-079) : le dessus de **ton** Deck, nommé, dans
+ * une section privée — hors de la main et hors du journal, qui sont lus des deux camps.
+ * La section ne dit rien de l'adversaire : `dessusDuDeck` ne rend que le Deck demandé.
+ */
+function RegardDuDessus({ carte }: { carte: Card }) {
+  return (
+    <section className="notice regard" aria-label="Dessus de ton Deck, que tu viens de regarder">
+      <p>
+        <span className="muted">Dessus de ton Deck, pour toi seul :</span> <strong>{carte.name}</strong>
+      </p>
+      <p className="muted">{kindLabel(carte)}</p>
+    </section>
   );
 }
 
@@ -509,6 +587,12 @@ export function Battle() {
 
   /** Les Pressions que le café couvre, selon le moteur (`legalAttacks`, testée). */
   const inReach = useMemo(() => legalAttacks(state), [state]);
+
+  /**
+   * **Le dessus de mon Deck, regardé** (#162, D-079) : `undefined` quand mon dernier
+   * geste n'était pas un regard. C'est *mon* Deck — l'adversaire n'y a jamais accès.
+   */
+  const regard = useMemo(() => regardDuDernierGeste(state, myCamp), [state, myCamp]);
 
   /**
    * **La carte choisie dans la main** (#169). Poser est un geste à deux temps : on touche
@@ -775,6 +859,8 @@ export function Battle() {
         </section>
 
         <div className="battle__console">
+          {regard && <RegardDuDessus carte={regard} />}
+
           {state.pendingPromotion && (
             <section className="notice notice--warn promotion">
               {state.pendingPromotion === myCamp ? (
