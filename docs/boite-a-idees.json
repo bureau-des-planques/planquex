@@ -5,7 +5,6 @@
   "postits": [
     {
       "id": "p-23-10-2026-01-36-03-c-est-de-la-merde-ton-jeux",
-      "kind": "IP",
       "titre": "c'est de la merde ton jeux",
       "texte": "Titre fabriqué avec les premiers mots du message : le formulaire n’en demandait pas.\n\nc'est de la merde ton jeux\nBastien",
       "ecran": "",
@@ -15,6 +14,7 @@
       "raison": "",
       "ticket": null,
       "gueulage": true,
+      "lie": null,
       "position": {
         "x": 8,
         "y": 6,

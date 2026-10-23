@@ -1,11 +1,12 @@
 # La Boîte à idées — ce que les invités remontent, et ce qu'on en fait
 
 > Référence d'exploitation du mur de post-its. Les **décisions** qui l'ont écrit : **D-058** (le
-> mur et ses deux familles), **D-059** (le tri, les statuts, l'identité), **D-060** (l'UI).
+> mur et ses deux familles), **D-059** (le tri, les statuts, l'identité), **D-060** (l'UI), **D-085**
+> (le gueulage est une nature à part, sans famille).
 > Le vocabulaire est dans `AGENTS.md` §3 : **la Boîte à idées** (l'entrée, la bulle), **le mur**
 > (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un invité**.
 
-## 1. Les deux familles, et rien d'autre
+## 1. Les deux familles, et le gueulage à part
 
 | Famille | Ce qu'on y met | Comment on le reconnaît |
 |---|---|---|
@@ -14,6 +15,17 @@
 
 Trois familles, c'est déjà trop pour un mur qu'on lit en trente secondes : un avis neutre se range
 dans les **IP**.
+
+**Le gueulage n'est ni l'une ni l'autre** (D-085) : c'est une **nature propre**, sans famille. La
+personne gueule d'abord ; c'est la **réponse d'après** — « tu veux remonter un bug ou proposer une
+idée ? » — qui produit une IP ou un OUF, jamais le gueulage lui-même. Deux formes en découlent :
+
+1. le **gueulage seul**, quand la personne n'a rien ajouté (« Non j'ai déjà assez gueulé ») ;
+2. le **gueulage avec le post-it associé collé dessus**, quand la même réponse a produit une IP ou
+   un OUF : le gueulage porte alors `lie`, l'`id` de ce post-it, et l'écran le colle sur lui (§3).
+
+Le gueulage se trie comme les autres (`en attente`, `retenu`, `écarté` avec sa raison) ; le post-it
+associé, lui, se trie **séparément** et garde sa famille.
 
 ## 2. Les statuts, et qui les fait avancer
 
@@ -40,7 +52,7 @@ attente**, et où en sont les retenus.
 **bulle** y mène, et elle est **absente pendant un combat** — donc on ne quitte jamais une partie en
 cours pour aller lire le mur.
 
-### Les trois apparences, pour deux familles
+### Les trois apparences : deux familles, et le gueulage à part
 
 | Apparence | Quand | Ce que ça dit |
 |---|---|---|
@@ -48,9 +60,10 @@ cours pour aller lire le mur.
 | **rouge** | famille **OUF** | un signalement |
 | **blanc, plus grand** | un **gueulage** (le texte brut, tel qu'écrit) | on l'a lu, et on ne le classe pas de force |
 
-Un gueulage **reste** une IP ou un OUF pour le tri — l'apparence ne remplace pas la famille, elle
-montre d'où vient le message. Un gueulage **sans suite** garde son texte brut, et c'est là qu'il est
-le plus utile.
+Le gueulage **ne porte aucune famille** (D-085) : son étiquette dit « Gueulage », jamais
+« Gueulage · OUF ». Quand la même réponse a produit un post-it, celui-ci est **collé sur** le
+gueulage — sa teinte de famille, son titre, son statut — et il ne s'affiche pas en plus à côté. Un
+gueulage **sans suite** garde son texte brut, et c'est là qu'il est le plus utile.
 
 ### La disposition fait humaine
 
@@ -103,7 +116,8 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
   "postits": [
     {
       "id": "p-001",              // court, stable, jamais réutilisé
-      "kind": "IP",               // « IP » ou « OUF », et rien d'autre
+      // « IP » ou « OUF », et rien d'autre — ABSENT pour un gueulage (D-085).
+      "kind": "IP",
       "titre": "Une ligne, à l'impératif ou nominative",
       "texte": "Le retour tel qu'il a été écrit, à peine nettoyé",
       "ecran": "Combat",          // Accueil | Collection | Deck | Combat | Réglages | Autre
@@ -112,9 +126,12 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
       "statut": "en attente",     // en attente | retenu | en cours | fait | écarté
       "raison": "",               // obligatoire dès que le statut vaut « écarté »
       "ticket": null,             // le numéro d'issue GitHub dès qu'il y en a un
-      // Un gueulage s'affiche blanc et plus grand, même s'il finit en IP ou en OUF :
-      // c'est l'apparence qui change, jamais la famille (D-068).
+      // Un gueulage s'affiche blanc et plus grand, et ne porte AUCUNE famille :
+      // `kind` est alors ABSENT du fichier, jamais « IP » (D-085).
       "gueulage": false,
+      // Sur un gueulage : l'id du post-it (IP ou OUF) que la même réponse a produit,
+      // et que l'écran colle dessus. `null` quand le gueulage est seul.
+      "lie": null,
       // Disposition « collée main », en POURCENTAGE du tableau — jamais en pixels, il
       // change de taille selon l'écran. `x` et `y` vont de 0 à 100, `angle` de -5 à +5.
       "position": { "x": 12, "y": 34, "angle": -2 },
@@ -253,16 +270,25 @@ satire.
 
 ### 4.3 bis La règle de rangement sur le mur
 
-Le mur ne connaît que **deux familles** (D-058) ; le formulaire en propose quatre. Le rangement est
-donc mécanique, et il n'y a rien à décider au tri :
+Le mur ne connaît que **deux familles** (D-058) ; le formulaire en propose quatre, et le gueulage
+n'est **aucune des deux** (D-085). Le rangement est donc mécanique, et il n'y a rien à décider au
+tri :
 
-| Chemin du formulaire | Famille sur le mur |
+| Chemin du formulaire | Ce qu'on met sur le mur |
 |---|---|
-| Remonter un bug — et le « Remonter un bug » du chemin gueuler | **OUF** |
-| Proposer une feature, **Donner ton avis**, et un gueulage sans suite | **IP** |
+| Remonter un bug | un **OUF** |
+| Proposer une feature, **Donner ton avis** | une **IP** |
+| Gueuler | un **gueulage**, **sans famille** |
 
-Un gueulage sans suite n'a **pas de titre** : au tri, on en fabrique un avec ses premiers mots, et
-c'est écrit comme tel dans le post-it (jamais un titre inventé qui trahirait le propos).
+Le chemin « Gueuler » ne se range **plus** en IP : le gueulage est à part, et c'est la **réponse
+d'après** qui produit le post-it structuré — *Remonter un bug* remplit la colonne 7 « Titre » de la
+même ligne, *Proposer une idée* remplit la colonne 13. Le gueulage porte alors l'`id` de ce post-it
+dans `lie`, et l'écran le **colle dessus** ; s'il n'y a pas de suite (« Non j'ai déjà assez gueulé
+comme ça »), le gueulage reste **seul**. Le gueulage garde le texte brut ; les détails du bug ou de
+l'idée vivent sur le post-it associé.
+
+Un gueulage n'a **pas de titre** : au tri, on en fabrique un avec ses premiers mots, et c'est écrit
+comme tel dans le post-it (jamais un titre inventé qui trahirait le propos).
 
 ### 4.4 Si l'envoi de fichier devient nécessaire
 
@@ -317,18 +343,23 @@ nom — c'est ce que fait le script.
 **La commande** : `npm run mur:import` (en lecture seule, `--fichier <csv>` lit un CSV local).
 
 - `--dry-run` affiche ce qui serait ajouté et **n'écrit rien** ;
-- l'**idempotence** tient à la clé **horodatage + titre** : deux imports du même CSV donnent un
-  seul post-it ;
+- l'**idempotence** tient à la clé **horodatage + titre** : deux imports du même CSV ne dupliquent
+  ni le gueulage ni le post-it collé dessus ;
 - un post-it **existant n'est jamais modifié** : `statut`, `ticket`, `raison` et `position` sont
   le travail humain du tri (§5) ;
 - un CSV **vide, illisible ou sans l'en-tête attendu** fait sortir en erreur, **fichier intact**.
 
 Le post-it produit porte les champs de §3. Le **pseudo vide** devient « anonyme », et la
 **capture** (un lien, jamais un fichier) rejoint le **texte** : le post-it n'a pas de champ pour
-elle, et on n'en invente pas. Un **gueulage sans suite** (comme un avis) n'a pas de titre : le
-script en fabrique un avec ses **premiers mots**, et le **dit** en tête du texte (« Titre
-fabriqué… ») — jamais un titre inventé qui trahirait le propos (§4.3 bis). Comme la clé vit dans
-l'`id`, celui-ci porte l'horodatage
+elle, et on n'en invente pas. Un **gueulage** n'a pas de titre : le script en fabrique un avec ses
+**premiers mots**, et le **dit** en tête du texte (« Titre fabriqué… ») — jamais un titre inventé
+qui trahirait le propos (§4.3 bis). Il est importé **sans famille** (`kind` absent, `gueulage:
+true`) ; si la même ligne a rempli une section de bug ou d'idée, le script crée **en plus** l'OUF
+ou l'IP correspondant, et met son `id` dans le `lie` du gueulage (D-085). Cet associé porte un id
+suffixé par sa famille (`…-ouf`, `…-ip`) : il ne peut pas heurter celui du gueulage, qui partage
+l'horodatage. Un **avis** garde sa famille **IP**.
+
+Comme la clé vit dans l'`id`, chaque post-it porte l'horodatage
 (`p-23-10-2026-14-05-32-le-bouton-fin-du-tour`) : **ne pas le renommer**, sinon le prochain
 import le croira absent — §3 demande déjà un id *stable*.
 

@@ -195,21 +195,20 @@ function valeurSection(ligne, roles, champ, kind) {
   return valeurDe(ligne, roles[principale]) || valeurDe(ligne, roles[autre]);
 }
 
-/** « Remonter un bug » → OUF, « Proposer une feature » → IP, le reste → IP (§4.3 bis). */
-export function famille(entree, envie) {
+/**
+ * « Remonter un bug » → OUF, « Proposer une feature » → IP, le reste → IP (§4.3 bis).
+ *
+ * **« Gueuler » n'a pas de famille** (D-085) : `kind` vaut `null`. C'est la réponse
+ * d'après — la section bug ou idée de la **même ligne** — qui produit un post-it, et le
+ * gueulage le porte collé (`lie`).
+ */
+export function famille(entree) {
   const chemin = normaliser(entree);
-  const renvoi = normaliser(envie);
   const gueulage = chemin.includes('gueul');
   const connu = /bug|feature|idee|avis|gueul/.test(chemin);
 
-  let kind = 'IP';
-  if (gueulage) {
-    kind = renvoi.includes('bug') ? 'OUF' : 'IP';
-  } else if (chemin.includes('bug')) {
-    kind = 'OUF';
-  }
-
-  return { kind, gueulage, connu };
+  if (gueulage) return { kind: null, gueulage, connu };
+  return { kind: chemin.includes('bug') ? 'OUF' : 'IP', gueulage, connu };
 }
 
 /** Les premiers mots d'un texte, quand le formulaire n'a pas donné de titre (§4.3 bis). */
@@ -254,14 +253,123 @@ function positionDe(id, numero) {
   };
 }
 
-/** Une ligne du CSV, traduite en réponse du mur — ou `null` si elle n'a ni titre ni texte. */
-function reponseDe(ligne, roles) {
-  const horodatage = valeurDe(ligne, roles.horodatage);
-  const entree = valeurDe(ligne, roles.entree);
-  const envie = valeurDe(ligne, roles.envie);
-  const { kind, gueulage, connu } = famille(entree, envie);
+/**
+ * Le post-it d'une **section structurée** — celle que la réponse d'après du gueulage a
+ * remplie : la colonne 7 « Titre » (bug → OUF) ou 13 « Titre » (idée → IP), sans repli
+ * sur l'autre section (contrairement à `valeurSection`) : le repli ferait naître un OUF
+ * d'une réponse d'idée. Son id porte le suffixe de sa famille, pour ne pas heurter celui
+ * du gueulage, qui partage l'horodatage.
+ */
+function postitSection(ligne, roles, kind, horodatage, pseudo, version) {
+  const suffixe = kind === 'OUF' ? 'Bug' : 'Idee';
+  const titre = valeurDe(ligne, roles[`titre${suffixe}`]);
+  if (!titre) return null;
 
+  const blocs = [];
+  if (kind === 'OUF') {
+    const faisais = valeurDe(ligne, roles.faisais);
+    const passe = valeurDe(ligne, roles.passe);
+    const attendais = valeurDe(ligne, roles.attendais);
+    if (faisais) blocs.push(`Ce que tu faisais : ${faisais}`);
+    if (passe) blocs.push(`Ce qui s’est passé : ${passe}`);
+    if (attendais) blocs.push(`Ce que tu attendais : ${attendais}`);
+  } else {
+    const idee = valeurDe(ligne, roles.idee);
+    const servirait = valeurDe(ligne, roles.servirait);
+    if (idee) blocs.push(`L’idée : ${idee}`);
+    if (servirait) blocs.push(`À quoi ça servirait : ${servirait}`);
+  }
+  const capture = valeurDe(ligne, roles[`capture${suffixe}`]);
+  if (capture) blocs.push(`Capture : ${capture}`);
+
+  const ecranBrut = valeurDe(ligne, roles[`ecran${suffixe}`]);
+  const ecran = ecranDe(ecranBrut);
+
+  return {
+    avertissements: ecranBrut && !ecran ? [`écran « ${ecranBrut} » inconnu : laissé vide`] : [],
+    postit: {
+      id: `${idDeReponse(horodatage, titre)}-${kind.toLowerCase()}`,
+      kind,
+      titre,
+      // Sans détail, le titre tient lieu de texte : on n'invente pas de contenu.
+      texte: blocs.join('\n\n').trim() || titre,
+      ecran,
+      pseudo,
+      version,
+      statut: 'en attente',
+      raison: '',
+      ticket: null,
+      gueulage: false,
+      lie: null,
+      position: { x: 0, y: 0, angle: 0 },
+      votes: { up: 0, down: 0 }
+    }
+  };
+}
+
+/**
+ * Un **gueulage** (D-085) : aucune famille (`kind` absent du fichier), et — si la même
+ * ligne a rempli une section de bug ou d'idée — le post-it correspondant, **collé**
+ * dessus par `lie`. Sans suite (« Non j'ai déjà assez gueulé »), le gueulage reste seul.
+ */
+function reponseGueulage(ligne, roles, { horodatage, entree, connu }) {
   const gueule = valeurDe(ligne, roles.gueule);
+  const aime = valeurDe(ligne, roles.aime);
+  const aimePas = valeurDe(ligne, roles.aimePas);
+  const pseudo = valeurDe(ligne, roles.pseudo) || 'anonyme';
+  const version = valeurDe(ligne, roles.version);
+
+  const blocs = [];
+  if (gueule) blocs.push(gueule);
+  if (aime) blocs.push(`Ce que tu as aimé : ${aime}`);
+  if (aimePas) blocs.push(`Ce que tu n’as pas aimé : ${aimePas}`);
+
+  // Un gueulage n'a pas de titre : les premiers mots du retour en tiennent lieu
+  // (§4.3 bis) — jamais un titre inventé qui trahirait le propos.
+  const titre = titreDepuisTexte(gueule || aime || aimePas || blocs.join(' '));
+  if (!titre || blocs.length === 0) return null;
+  blocs.unshift('Titre fabriqué avec les premiers mots du message : le formulaire n’en demandait pas.');
+
+  const avertissements = connu
+    ? []
+    : [`chemin « ${entree || '(vide)'} » inconnu : importé comme gueulage`];
+
+  // La **réponse d'après** : c'est elle qui produit une IP ou un OUF, jamais le gueulage.
+  const bug = postitSection(ligne, roles, 'OUF', horodatage, pseudo, version);
+  const idee = postitSection(ligne, roles, 'IP', horodatage, pseudo, version);
+  if (bug && idee) {
+    avertissements.push('les deux sections sont remplies : le gueulage porte le bug, l’idée reste libre');
+  }
+  for (const section of [bug, idee]) {
+    if (section) avertissements.push(...section.avertissements);
+  }
+
+  // `kind` est **absent** de cet objet, pas `null` : le fichier ne doit pas porter de
+  // famille sur un gueulage (D-085).
+  const postit = {
+    id: idDeReponse(horodatage, titre),
+    titre,
+    texte: blocs.join('\n\n').trim(),
+    ecran: '',
+    pseudo,
+    version,
+    statut: 'en attente',
+    raison: '',
+    ticket: null,
+    gueulage: true,
+    lie: (bug ?? idee)?.postit.id ?? null,
+    position: { x: 0, y: 0, angle: 0 },
+    votes: { up: 0, down: 0 }
+  };
+
+  return {
+    avertissements,
+    postits: [postit, ...(bug ? [bug.postit] : []), ...(idee ? [idee.postit] : [])]
+  };
+}
+
+/** Une réponse ordinaire : un post-it IP ou OUF, comme avant D-085. */
+function reponseOrdinaire(ligne, roles, { horodatage, entree, kind, connu }) {
   const faisais = valeurDe(ligne, roles.faisais);
   const passe = valeurDe(ligne, roles.passe);
   const attendais = valeurDe(ligne, roles.attendais);
@@ -273,7 +381,6 @@ function reponseDe(ligne, roles) {
   const capture = valeurSection(ligne, roles, 'capture', kind);
 
   const blocs = [];
-  if (gueulage && gueule) blocs.push(gueule);
   if (kind === 'OUF') {
     if (faisais) blocs.push(`Ce que tu faisais : ${faisais}`);
     if (passe) blocs.push(`Ce qui s’est passé : ${passe}`);
@@ -290,11 +397,10 @@ function reponseDe(ligne, roles) {
   // pas perdu, et le mur n'affiche aucun champ qu'il ne connaît pas.
   if (capture) blocs.push(`Capture : ${capture}`);
 
-  // Un gueulage sans suite, ou un avis, n'a pas de titre : les premiers mots du retour
-  // en tiennent lieu (§4.3 bis) — jamais un titre inventé qui trahirait le propos. Et
-  // le post-it **dit** que le titre est fabriqué, pour que le tri ne le prenne pas pour
-  // un titre de l'invité.
-  const sourceDuTitre = gueule || idee || aime || aimePas || faisais || passe || attendais || servirait || avis;
+  // Un avis n'a pas de titre : les premiers mots du retour en tiennent lieu (§4.3 bis).
+  // Et le post-it **dit** que le titre est fabriqué, pour que le tri ne le prenne pas
+  // pour un titre de l'invité.
+  const sourceDuTitre = idee || aime || aimePas || faisais || passe || attendais || servirait || avis;
   const titreExplicite = valeurSection(ligne, roles, 'titre', kind);
   const titre = titreExplicite || titreDepuisTexte(sourceDuTitre) || titreDepuisTexte(blocs.join(' '));
   if (!titre || blocs.length === 0) return null;
@@ -310,25 +416,39 @@ function reponseDe(ligne, roles) {
 
   return {
     avertissements: [
-      ...(connu ? [] : [`chemin « ${entree || '(vide)'} » inconnu : classé IP`]),
+      ...(connu ? [] : [`chemin « ${entree || '(vide)'} » inconnu : classé ${kind}`]),
       ...(ecranBrut && !ecran ? [`écran « ${ecranBrut} » inconnu : laissé vide`] : [])
     ],
-    postit: {
-      id: idDeReponse(horodatage, titre),
-      kind,
-      titre,
-      texte,
-      ecran,
-      pseudo,
-      version,
-      statut: 'en attente',
-      raison: '',
-      ticket: null,
-      gueulage,
-      position: { x: 0, y: 0, angle: 0 },
-      votes: { up: 0, down: 0 }
-    }
+    postits: [
+      {
+        id: idDeReponse(horodatage, titre),
+        kind,
+        titre,
+        texte,
+        ecran,
+        pseudo,
+        version,
+        statut: 'en attente',
+        raison: '',
+        ticket: null,
+        gueulage: false,
+        lie: null,
+        position: { x: 0, y: 0, angle: 0 },
+        votes: { up: 0, down: 0 }
+      }
+    ]
   };
+}
+
+/** Une ligne du CSV, traduite en une ou deux réponses du mur — `null` si rien à dire. */
+function reponseDe(ligne, roles) {
+  const horodatage = valeurDe(ligne, roles.horodatage);
+  const entree = valeurDe(ligne, roles.entree);
+  const { kind, gueulage, connu } = famille(entree);
+
+  return gueulage
+    ? reponseGueulage(ligne, roles, { horodatage, entree, connu })
+    : reponseOrdinaire(ligne, roles, { horodatage, entree, kind, connu });
 }
 
 /**
@@ -385,16 +505,20 @@ export function rapprocher(existants, reponses) {
   let deja = 0;
 
   for (const reponse of reponses) {
-    const id = reponse.postit.id;
-    if (vus.has(id)) {
-      deja += 1;
-      continue;
-    }
-    vus.add(id);
+    // Une ligne peut produire **deux** post-its depuis D-085 : le gueulage, et celui
+    // qu'il porte collé. Chacun a son id, donc son idempotence.
+    for (const brut of reponse.postits) {
+      const id = brut.id;
+      if (vus.has(id)) {
+        deja += 1;
+        continue;
+      }
+      vus.add(id);
 
-    const postit = { ...reponse.postit };
-    postit.position = positionDe(id, existants.length + ajouts.length);
-    ajouts.push({ postit, avertissements: reponse.avertissements });
+      const postit = { ...brut };
+      postit.position = positionDe(id, existants.length + ajouts.length);
+      ajouts.push({ postit, avertissements: reponse.avertissements });
+    }
   }
 
   return { ajouts, deja, lus: reponses.length };
@@ -529,8 +653,10 @@ async function principal(ligne = process.argv.slice(2)) {
     for (const avertissement of avertissements) {
       console.warn(`  ! ${postit.id} — ${avertissement}`);
     }
+    // Un gueulage n'annonce **pas** de famille : « Gueulage », jamais « IP » (D-085).
+    const etiquette = postit.gueulage ? 'Gueulage' : postit.kind;
     console.log(
-      `  + ${postit.id} — ${postit.kind}${postit.gueulage ? ' (gueulage)' : ''} — ${postit.titre}`
+      `  + ${postit.id} — ${etiquette}${postit.lie ? ` (collé sur ${postit.lie})` : ''} — ${postit.titre}`
     );
   }
 
