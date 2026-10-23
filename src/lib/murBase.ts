@@ -19,6 +19,13 @@
  * peut donc ni se faire passer pour un autre, ni choisir son statut (`en attente` est la
  * seule valeur écrite ici). Le statut avance par le tri (D-059), pas par le posteur.
  *
+ * **Les pouces (#137)** : le compteur `up`/`down` vient de la vue ; **mon** vote se lit dans
+ * `votes`, filtré sur mon identité. Le client écrit `postit_id` et `sens` — **jamais `votant`** :
+ * la base le remplit par `auth.uid()` (`0001_mur.sql`), et sa politique le refuse autrement.
+ * « Pas pour soi » et « une fois par post-it » sont tenus **par la base** (clé primaire de
+ * `votes`, migration `0004_pouces.sql`) ; l'écran ne fait que ne pas proposer ce que la base
+ * refuserait.
+ *
  * **Le gueulage (D-085)** n'a pas de famille : il s'écrit avec `kind` nul, ce que la
  * migration 0003 permet (à appliquer avant le premier dépôt d'un gueulage). Une ancienne
  * ligne `IP` reste lisible : la lecture retire la famille d'un gueulage.
@@ -37,6 +44,8 @@ import {
   type Famille,
   type Postit,
   type PositionPostit,
+  type SensVote,
+  type VotesPostit,
 } from '@/store/mur';
 
 /** La seule écriture que le jeu produit : le contenu saisi, et rien de plus. */
@@ -169,7 +178,136 @@ export async function chargerPostitsDuMur(
   if (!postits) {
     throw new Error(`Le mur de la base n’a pas la forme du contrat : ${erreurs.join(' ; ')}`);
   }
-  return postits;
+
+  // Mon vote se distingue du total (#137). Si je ne peux pas le lire, je ne peux pas non plus
+  // proposer de voter sans risquer un doublon : la panne lève, la page retombe sur le fichier.
+  const { data: mesLignes, error: erreurVotes } = await client
+    .from('votes')
+    .select('postit_id, sens')
+    .eq('votant', identite);
+  if (erreurVotes) throw new Error(`Lecture de tes votes impossible : ${erreurVotes.message}`);
+  const mesVotes = lireMesVotes(mesLignes ?? []);
+
+  const auteurs = new Map<string, unknown>(
+    (Array.isArray(data) ? data : []).flatMap((ligne): Array<[string, unknown]> =>
+      estObjet(ligne) && typeof ligne.id === 'string' ? [[ligne.id, ligne.auteur]] : [],
+    ),
+  );
+  return postits.map((postit) => ({
+    ...postit,
+    votes: { ...postit.votes, mon: mesVotes.get(postit.id) ?? null },
+    mien: auteurs.get(postit.id) === identite,
+  }));
+}
+
+/** Mes votes, par post-it. Une ligne illisible est ignorée : elle ne peut pas s'afficher. */
+export function lireMesVotes(lignes: unknown): Map<string, SensVote> {
+  const votes = new Map<string, SensVote>();
+  if (!Array.isArray(lignes)) return votes;
+  for (const ligne of lignes) {
+    if (!estObjet(ligne)) continue;
+    if (typeof ligne.postit_id !== 'string') continue;
+    if (ligne.sens === 'up' || ligne.sens === 'down') votes.set(ligne.postit_id, ligne.sens);
+  }
+  return votes;
+}
+
+/**
+ * Ce que devient le compteur quand mon vote passe de `avant` à `apres` : on retire l'ancien
+ * pouce, on ajoute le nouveau. Pure et sans plancher caché — un compteur ne descend pas sous
+ * zéro, mais c'est la base qui compte, pas ce calcul : il ne sert qu'à l'affichage immédiat.
+ */
+export function compterApres(
+  votes: VotesPostit,
+  avant: SensVote | null,
+  apres: SensVote | null,
+): VotesPostit {
+  const compte = { up: votes.up, down: votes.down };
+  if (avant) compte[avant] = Math.max(0, compte[avant] - 1);
+  if (apres) compte[apres] += 1;
+  return { ...compte, mon: apres };
+}
+
+/**
+ * Ce que donne un clic sur un pouce, **dans cet ordre de priorité** :
+ *
+ * 1. le même pouce que mon vote → je **retire** mon vote ;
+ * 2. l'autre pouce → je **change** mon vote (une modification de ma ligne, jamais une seconde) ;
+ * 3. aucun vote → j'**insère** le mien.
+ */
+export function gesteDeVote(
+  actuel: SensVote | null,
+  demande: SensVote,
+): { geste: 'inserer' | 'changer' | 'retirer'; apres: SensVote | null } {
+  if (actuel === demande) return { geste: 'retirer', apres: null };
+  if (actuel) return { geste: 'changer', apres: demande };
+  return { geste: 'inserer', apres: demande };
+}
+
+/** Un refus de la base, dit en français : l'écran affiche ce message, discrètement. */
+export function messageDeVote(message: string): string {
+  if (/row-level security/i.test(message)) {
+    return 'La base refuse ce vote : on ne vote pas pour son propre post-it.';
+  }
+  if (/foreign key/i.test(message)) return 'Ce post-it n’existe plus : recharge le mur.';
+  if (/duplicate key/i.test(message)) {
+    return 'Tu as déjà voté pour ce post-it : recharge le mur pour voir ton vote.';
+  }
+  return `Le vote n’est pas passé (${message}).`;
+}
+
+/**
+ * Vote, change ou retire mon pouce sur un post-it. Rend mon vote **après** le geste.
+ *
+ * - **sans configuration, rien n'est contacté** : on lève avant même de créer un client
+ *   (la page ne propose d'ailleurs aucun bouton dans ce cas, mais une garde qui ne vit que
+ *   dans l'interface est une garde qu'un autre appelant contourne) ;
+ * - **le client n'écrit jamais `votant`** : à l'insertion, `{ postit_id, sens }` seulement ;
+ *   à la modification et au retrait, la ligne est visée par `postit_id` **et** `votant`
+ *   (un filtre, pas une écriture) ;
+ * - une modification ou un retrait qui ne touche **aucune ligne** (le vote a disparu entre-temps)
+ *   est une erreur : une RLS qui refuse ne lève rien, elle rend 0 ligne — sans ce contrôle
+ *   l'écran croirait avoir voté.
+ *
+ * L'appelant garde l'ancien état et le rétablit si la promesse est rejetée (erreur réseau).
+ */
+export async function voterPourPostit(
+  postitId: string,
+  demande: SensVote,
+  actuel: SensVote | null,
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+): Promise<SensVote | null> {
+  const chargerClient = options.chargerClient ?? clientMur;
+  const client = await chargerClient();
+  if (!client) throw new Error('Le mur n’est pas configuré : on ne vote pas.');
+
+  const identite = await identiteAppareil(chargerClient);
+  if (!identite) throw new Error('Identité anonyme indisponible : le vote ne peut pas être signé.');
+
+  const { geste, apres } = gesteDeVote(actuel, demande);
+
+  const reponse =
+    geste === 'inserer'
+      ? await client.from('votes').insert({ postit_id: postitId, sens: demande })
+      : geste === 'changer'
+        ? await client
+            .from('votes')
+            .update({ sens: demande })
+            .eq('postit_id', postitId)
+            .eq('votant', identite)
+            .select('postit_id')
+        : await client
+            .from('votes')
+            .delete()
+            .eq('postit_id', postitId)
+            .eq('votant', identite)
+            .select('postit_id');
+
+  if (reponse.error) throw new Error(messageDeVote(reponse.error.message));
+  if (geste !== 'inserer' && (!Array.isArray(reponse.data) || reponse.data.length === 0)) {
+    throw new Error('Ton vote n’existe plus : recharge le mur pour voir où il en est.');
+  }
+  return apres;
 }
 
 const ALPHABET = '0123456789abcdefghijklmnopqrstuvwxyz';
@@ -309,5 +447,6 @@ export async function posterPostit(
   if (!postits) {
     throw new Error(`Le post-it écrit n’a pas la forme du contrat : ${erreurs.join(' ; ')}`);
   }
-  return postits[0];
+  // Il est à moi : pas de pouce sur mon propre post-it (#137).
+  return { ...postits[0], votes: { up: 0, down: 0, mon: null }, mien: true };
 }

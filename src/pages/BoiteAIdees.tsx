@@ -6,6 +6,9 @@
  *
  * L'alpha est en **lecture seule** : le mur affiche ce que porte `docs/boite-a-idees.json`,
  * et rien d'autre. Pas de compteur, pas de commentaire, pas d'écriture (D-058, D-068).
+ * **Branché sur la base** (#136, #137), le mur ajoute les pouces : 👍 / 👎 par post-it, un vote
+ * par appareil, jamais pour le sien. Sans configuration — ou quand la base ne répond pas et que
+ * la page retombe sur le fichier — il n'y a ni bouton ni compteur, et rien n'est contacté.
  * La seule écriture possible est l'**export** des positions du mode de placement : un site
  * statique ne peut pas écrire dans son dépôt, donc le fichier se télécharge et se commite.
  *
@@ -19,9 +22,15 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, Copy, Download, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
 import { PAPIERS, PostitDuMur } from '@/components/PostitDuMur';
 import type { GlisserPostit } from '@/components/PostitDuMur';
-import { chargerPostitsDuMur, murEstConfigure, posterPostit } from '@/lib/murBase';
+import {
+  chargerPostitsDuMur,
+  compterApres,
+  murEstConfigure,
+  posterPostit,
+  voterPourPostit
+} from '@/lib/murBase';
 import { DOCUMENT_MUR, ECRANS, exporterMur, lireMur } from '@/store/mur';
-import type { Ecran, Mur, PositionPostit } from '@/store/mur';
+import type { Ecran, Mur, Postit, PositionPostit, SensVote } from '@/store/mur';
 import { useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
 
@@ -71,6 +80,9 @@ export function BoiteAIdees() {
   const [source, setSource] = useState<'base' | 'fichier'>('fichier');
   const [chargement, setChargement] = useState(branche);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Les votes en vol et les votes perdus, par post-it (#137). */
+  const [votesEnVol, setVotesEnVol] = useState<ReadonlySet<string>>(() => new Set());
+  const [erreursVote, setErreursVote] = useState<Record<string, string>>({});
 
   const [positions, setPositions] = useState(() => positionsDuMur(LECTURE.mur));
   const [placement, setPlacement] = useState(false);
@@ -205,6 +217,45 @@ export function BoiteAIdees() {
   }, [lachers]);
 
   const fichier = useMemo(() => exporterMur(positions), [positions]);
+
+  /**
+   * Un clic sur un pouce (#137). Le compte bouge **tout de suite** ; si la base ou le réseau
+   * refuse, l'affichage revient exactement à l'état d'avant, avec un message discret sur le
+   * post-it — jamais une page cassée. Un post-it ne porte qu'un vote en vol à la fois.
+   */
+  const voter = async (postit: Postit, demande: SensVote) => {
+    if (votesEnVol.has(postit.id) || postit.mien) return;
+    const avant = postit.votes;
+    const monVote = avant.mon ?? null;
+    const apres = monVote === demande ? null : demande;
+
+    const poser = (votes: Postit['votes']) =>
+      setMur((courant) =>
+        courant
+          ? {
+              ...courant,
+              postits: courant.postits.map((p) => (p.id === postit.id ? { ...p, votes } : p))
+            }
+          : courant
+      );
+
+    setErreursVote(({ [postit.id]: _, ...reste }) => reste);
+    setVotesEnVol((courants) => new Set(courants).add(postit.id));
+    poser(compterApres(avant, monVote, apres));
+
+    try {
+      await voterPourPostit(postit.id, demande, monVote);
+    } catch (erreur) {
+      poser(avant);
+      setErreursVote((courantes) => ({ ...courantes, [postit.id]: messageDe(erreur) }));
+    } finally {
+      setVotesEnVol((courants) => {
+        const reste = new Set(courants);
+        reste.delete(postit.id);
+        return reste;
+      });
+    }
+  };
 
   /**
    * Le post-it collé sur un gueulage (D-085). Il **existe** dans le fichier — c'est lui
@@ -556,6 +607,15 @@ export function BoiteAIdees() {
                   agrandi={agrandi === postit.id}
                   onAgrandir={(id) => setAgrandi((courant) => (courant === id ? null : id))}
                   glisser={glisser}
+                  pouces={
+                    source === 'base'
+                      ? {
+                          occupe: votesEnVol.has(postit.id),
+                          erreur: erreursVote[postit.id] ?? null,
+                          onVoter: voter
+                        }
+                      : undefined
+                  }
                   associe={postit.gueulage && postit.lie ? parId.get(postit.lie) ?? null : null}
                 />
               ))}
@@ -658,8 +718,8 @@ export function BoiteAIdees() {
 
       <p className="m-0 text-[0.78rem] text-ink-dim">
         {source === 'base'
-          ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Aucun compteur ici — les pouces arrivent avec #137.'
-          : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Aucun compteur ici — les pouces arrivent avec la base (#135, puis #137).'}
+          ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Les pouces comptent un vote par appareil et par post-it ; on ne vote pas pour le sien.'
+          : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Aucun compteur ici : les pouces ne s’ouvrent qu’avec la base partagée.'}
       </p>
     </div>
   );

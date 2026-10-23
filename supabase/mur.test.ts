@@ -130,8 +130,9 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
   });
 
   it('B ne touche ni aux votes ni aux commentaires de A', async () => {
+    // A vote pour le post-it de B (p-003) : on ne vote pas pour le sien (0004, pouces.test.ts).
     const vote = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`insert into public.votes (postit_id, sens) values ('p-001', 'up') returning *`),
+      db.query(`insert into public.votes (postit_id, sens) values ('p-003', 'up') returning *`),
     );
     expect(vote.rows[0].votant).toBe(APPAREIL_A);
     const commentaire = await avecAppareil(db, APPAREIL_A, () =>
@@ -148,11 +149,11 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
 
     // … mais ne réécrit ni ne supprime les lignes de A.
     const voteVolé = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.votes set sens = 'down' where postit_id = 'p-001' returning *`),
+      db.query(`update public.votes set sens = 'down' where postit_id = 'p-003' returning *`),
     );
     expect(voteVolé.rows).toHaveLength(0);
     const voteSupprimé = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`delete from public.votes where postit_id = 'p-001' returning *`),
+      db.query(`delete from public.votes where postit_id = 'p-003' returning *`),
     );
     expect(voteSupprimé.rows).toHaveLength(0);
     const commentaireSupprimé = await avecAppareil(db, APPAREIL_B, () =>
@@ -190,8 +191,9 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
       db.query(`select id, position, votes from public.postits_avec_votes where id = 'p-001'`),
     );
     expect(mur.rows[0].position).toEqual({ x: 50, y: 50, angle: 0 });
-    // Un vote « up » de A et un « up » de B (après son changement d'avis).
-    expect(mur.rows[0].votes).toEqual({ up: 2, down: 0 });
+    // Le seul vote de p-001 : le « up » de B (après son changement d'avis). A n'a pas le droit
+    // de voter pour son propre post-it (0004).
+    expect(mur.rows[0].votes).toEqual({ up: 1, down: 0 });
   });
 
   it('les contraintes du contrat tiennent : statuts, raison d’un écarté, position, famille', async () => {

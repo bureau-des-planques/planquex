@@ -32,10 +32,19 @@ export interface PositionPostit {
   angle: number;
 }
 
-/** Les compteurs du mur complet, à zéro dans l'alpha (ils attendent la base, #135). */
+/** Un pouce : levé (`up`) ou baissé (`down`). */
+export type SensVote = 'up' | 'down';
+
+/**
+ * Les compteurs du mur. Le fichier du dépôt les tient à zéro (aucun état partagé) ; la base
+ * les compte (#137). `mon` est **mon** vote, distinct du total : il n'est jamais écrit dans
+ * le fichier, il n'existe que lu en base — `undefined` dans le fichier, `null` si je n'ai
+ * pas voté.
+ */
 export interface VotesPostit {
   up: number;
   down: number;
+  mon?: SensVote | null;
 }
 
 /**
@@ -61,6 +70,8 @@ export interface Postit {
   lie: string | null;
   position: PositionPostit;
   votes: VotesPostit;
+  /** `true` quand ce post-it a été écrit par cet appareil (lu en base, #137) : on ne vote pas pour soi. */
+  mien?: boolean;
 }
 
 /** Le document entier : l'adresse du formulaire, puis les post-its. */
