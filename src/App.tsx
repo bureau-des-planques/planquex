@@ -7,6 +7,7 @@ import { Deck } from '@/pages/Deck';
 import { Battle } from '@/pages/Battle';
 import { Settings } from '@/pages/Settings';
 import { BoiteAIdees } from '@/pages/BoiteAIdees';
+import { Confidentialite } from '@/pages/Confidentialite';
 import { Connexion } from '@/pages/Connexion';
 import { Attente } from '@/pages/Attente';
 import { Administration } from '@/pages/Administration';
@@ -26,6 +27,10 @@ export function App() {
       {/* La connexion est **hors** du `Layout` : ni barre de navigation ni bulle du mur
           tant qu'on n'est pas entré. Les autres pages passent par la garde, dans `Layout`. */}
       <Route path="connexion" element={<Connexion />} />
+      {/* La confidentialité est **publique** : elle doit se lire sans compte, sinon un
+          visiteur devrait s'inscrire pour savoir ce qu'on collecte. Elle est donc hors
+          de la garde, comme la connexion. */}
+      <Route path="confidentialite" element={<Confidentialite />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="collection" element={<Collection />} />

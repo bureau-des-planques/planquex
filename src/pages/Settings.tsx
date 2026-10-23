@@ -219,6 +219,14 @@ export function Settings() {
       />
 
       <section className="section panel">
+        <h2>Confidentialité</h2>
+        <p className="muted">
+          Ce que le jeu garde de toi — un compte, ce que tu écris sur le mur, et le
+          déroulé de tes parties solo : <Link to="/confidentialite">la page de confidentialité</Link>.
+        </p>
+      </section>
+
+      <section className="section panel">
         <h2>Version</h2>
         <p className="muted">
           <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si

@@ -59,6 +59,8 @@ const PAGES = [
   ['reglages', '/settings'],
   // Les trois écrans de compte (D-088) : sans configuration, ils montrent leur état
   // inerte — c'est aussi un état d'écran que D-060 demande de voir.
+  // La confidentialité est publique et hors garde : elle doit se lire sans compte.
+  ['confidentialite', '/confidentialite'],
   ['connexion', '/connexion'],
   ['attente', '/attente'],
   ['administration', '/administration'],

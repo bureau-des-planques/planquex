@@ -199,7 +199,9 @@ export function Connexion() {
 
       <p className="m-0 text-[0.78rem] text-ink-dim">
         Ton mot de passe ne transite que vers Supabase Auth ; le jeu ne le garde pas. Le
-        courriel sert à te reconnaître et à te prévenir de la validation.{' '}
+        courriel sert à te reconnaître et à te prévenir de la validation. Ce qui est gardé
+        de toi est écrit dans{' '}
+        <Link to="/confidentialite">la page de confidentialité</Link>.{' '}
         <Link to="/">Retour au bureau</Link>
       </p>
     </div>
