@@ -1,8 +1,13 @@
 # La Boîte à idées — ce que les invités remontent, et ce qu'on en fait
 
 > Référence d'exploitation du mur de post-its. Les **décisions** qui l'ont écrit : **D-058** (le
-> mur et ses deux familles), **D-059** (le tri, les statuts, l'identité), **D-060** (l'UI), **D-085**
-> (le gueulage est une nature à part, sans famille).
+> mur et ses deux familles), **D-059** (le tri, les statuts) — **amendée par D-088** (l'identité
+> est un compte authentifié, validé à la main) —, **D-060** (l'UI), **D-085** (le gueulage est une
+> nature à part, sans famille).
+>
+> **Depuis D-088**, poster **depuis le jeu** exige un compte **approuvé** : Google ou courriel,
+> puis validation manuelle par Bastien. Un compte en attente lit le mur et joue, il n'écrit pas.
+> Le formulaire externe reste le palliatif de l'alpha d'avant — il ne demande pas de compte.
 > Le vocabulaire est dans `AGENTS.md` §3 : **la Boîte à idées** (l'entrée, la bulle), **le mur**
 > (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un invité**.
 
@@ -238,10 +243,11 @@ fait la différence).
 ### 4.2 Les cinq réglages qui ne se voient pas
 
 1. **Ne pas collecter les adresses e-mail** (Paramètres → Réponses → *Collecter les adresses
-   e-mail* : désactivé). L'invité n'a pas de compte, et on lui a promis qu'on n'en demanderait pas.
+   e-mail* : désactivé). Depuis **D-088**, le compte de l'invité porte déjà son courriel : ce
+   formulaire n'est qu'un palliatif, et redemander l'adresse créerait une seconde liste à tenir.
 2. **Ne pas limiter à une réponse** (le même invité doit pouvoir signaler trois choses en trois fois).
-3. **Ne pas utiliser le champ « Importer un fichier »** : il **oblige** à se connecter à un compte
-   Google. D'où le champ 8, qui demande un **lien**.
+3. **Ne pas utiliser le champ « Importer un fichier »** : il **oblige** à une connexion Google
+   supplémentaire et à un stockage chez le tiers. D'où le champ 8, qui demande un **lien**.
 4. **Aiguillage** : sur la question 2, *Aller à la section en fonction de la réponse* — « Remonter un
    bug » et « Gueuler » vers **Post-it OUF**, « Proposer une feature » vers **Post-it IP**.
 5. **La version est le premier champ, et obligatoire** : un retour sans version ne dit pas s'il

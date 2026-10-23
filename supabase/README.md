@@ -10,6 +10,8 @@ s'appuyer dessus.
 | `supabase/migrations/0002_combats.sql` | la trace des combats : la table `combats`, les droits et les politiques RLS (#173, D-086) |
 | `supabase/migrations/0003_gueulage.sql` | le gueulage (D-085) : `kind` nullable, `lie`, l'identifiant jusqu'à 80 caractères — ni table, ni politique, ni droit |
 | `supabase/migrations/0004_pouces.sql` | les pouces (#137) : les politiques d'insertion et de modification de `votes` refusent un vote pour **son propre** post-it — pas de table, pas de droit |
+| `supabase/migrations/0005_comptes.sql` | les comptes (#181, D-088) : la table `comptes`, la ligne créée à la première connexion (`auth.users`), et les politiques d'**écriture** de `postits`, `votes`, `commentaires` et `combats` qui exigent un compte **approuvé** |
+| `supabase/comptes.test.ts` | la garde des comptes : en attente refusé, approuvé accepté, non-administrateur sans pouvoir, pas d'auto-approbation, drapeau protégé — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/pouces.test.ts` | la garde des pouces : un seul vote par appareil, pas pour soi, pas au nom d'un autre, un vote défait remet le compteur — et chaque contrôle, neutralisé, laisse passer le fautif |
 | `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
@@ -75,9 +77,11 @@ partent en **cascade** quand un post-it est retiré par son auteur (#139).
 
 | Table | Lecture | Écriture |
 |---|---|---|
-| `postits` | **tout le monde** (`using (true)`) | `auteur = auth.uid()` en insertion, modification et suppression |
-| `votes` | **tout le monde** | `votant = auth.uid()` |
-| `commentaires` | **tout le monde** | `auteur = auth.uid()` |
+| `postits` | **tout le monde** (`using (true)`) | `auteur = auth.uid()` en insertion, modification et suppression, **et** `public.compte_approuve()` (0005, D-088) |
+| `votes` | **tout le monde** | `votant = auth.uid()`, pas pour son propre post-it (0004), et `public.compte_approuve()` (0005) |
+| `commentaires` | **tout le monde** | `auteur = auth.uid()` **et** `public.compte_approuve()` (0005) |
+| `combats` | son **auteur** seul | `auteur = auth.uid()` **et** `public.compte_approuve()` (0005) |
+| `comptes` | sa ligne, ou tout pour un **administrateur** | `etat` et `raison` par un **administrateur** seul ; `administrateur` jamais par le client |
 
 Une politique par commande, et non une politique `for all` : les politiques permissives
 s'additionnent en **OU**, donc la lecture reste ouverte pendant que l'écriture reste fermée.
@@ -87,7 +91,7 @@ C'est cette condition (`auteur = auth.uid()`, `votant = auth.uid()`) que la gard
 Le rôle **`anon`** (appareil non identifié) n'a **aucun** privilège : `revoke all` dans la
 migration. Le jeu signe d'abord (identité anonyme, rôle `authenticated`), puis lit.
 
-## 2. L'identité anonyme, côté jeu
+## 2. L'identité, côté jeu
 
 `src/lib/supabase.ts` :
 
@@ -106,6 +110,13 @@ migration. Le jeu signe d'abord (identité anonyme, rôle `authenticated`), puis
 Depuis #136, **le mur s'en sert** : `src/lib/murBase.ts` signe l'appareil avec
 `identiteAppareil()` puis lit la vue, et le formulaire du mur poste dans `postits`. Le socle
 reste inerte sans configuration.
+
+**Depuis D-088 (#181)**, l'identité d'écriture est un **compte** : `src/lib/comptes.ts` porte
+la connexion (Google ou courriel + mot de passe), `src/store/comptes.ts` garde la session et
+l'état de la demande, et les écrans `Connexion`, `Attente` et `Administration` s'en servent.
+L'identité anonyme reste le chemin de **lecture** sans session (et l'auteur des deux post-its
+d'avant la 0005) ; un appareil anonyme ne peut plus écrire, puisque la 0005 exige un compte
+approuvé.
 
 ## 3. Les variables d'environnement
 
@@ -143,14 +154,14 @@ résultat identique entre la machine de développement et la CI.
 
 ### 4.1 Créer (ou retrouver) le projet, et activer l'identité anonyme
 
-**Avant tout** : dans le tableau de bord Supabase, *Authentication → Sign In / Providers →
-**Anonymous sign-ins** → activé*. Sans ce réglage, `signInAnonymously()` répond
-`Anonymous sign-ins are disabled` — et la garde de `src/lib/supabase.test.ts` le dit dans son
-message d'erreur. Supabase a annoncé vouloir le désactiver par défaut : vérifier, ne pas
-supposer.
+**Avant D-088**, il fallait activer *Authentication → Sign In / Providers → **Anonymous
+sign-ins*** : sans ce réglage, `signInAnonymously()` répond `Anonymous sign-ins are disabled`,
+et la garde de `src/lib/supabase.test.ts` le dit. Depuis **D-088**, l'identité anonyme n'est
+plus le chemin normal — c'est le **compte** qui écrit — mais elle reste le repli de **lecture**
+sans session : la laisser active ne gêne pas, la couper est acceptable dès lors que le jeu
+passe par la connexion.
 
-Le même écran sert à **désactiver** les fournisseurs dont on ne veut pas (courriel, etc.) : le
-jeu promet « pas de compte », un fournisseur ouvert par défaut le contredirait.
+Le même écran active les fournisseurs voulus (**Google**, **Email**) : voir §5.
 
 ### 4.2 Chemin normal : le CLI
 
@@ -226,9 +237,89 @@ Enfin, le contrôle qui compte : **la garde**. Elle rejoue la migration sur Post
 npx vitest run supabase/mur.test.ts
 ```
 
-## 5. La garde, et ce qu'elle prouve
+## 5. Les comptes (D-088, #181) — la marche à suivre
 
-`supabase/mur.test.ts` (12 tests) :
+La 0005 est **à appliquer par Bastien** dans le SQL Editor, comme 0001 à 0004. Avant elle, rien
+ne change (l'identité anonyme écrit encore) ; après elle, **seul un compte approuvé écrit**.
+
+### 5.1 Côté Google Cloud
+
+1. *APIs & Services → OAuth consent screen* : type **External**, nom « Planquex » ; l'écran
+   restera en mode *Testing* tant que l'alpha dure (ajouter les invités comme *test users* si
+   Google l'exige).
+2. *Credentials → Create credentials → OAuth client ID*, type **Web application**.
+   - **Authorized JavaScript origins** : `https://planquex.4k7.org` (et
+     `http://localhost:5178` pour le développement).
+   - **Authorized redirect URIs** : `https://<project-ref>.supabase.co/auth/v1/callback` —
+     c'est Supabase qui reçoit le retour de Google, pas le jeu.
+3. Copier **Client ID** et **Client secret**.
+
+### 5.2 Côté Supabase
+
+1. *Authentication → Providers → **Google*** : activer, coller l'ID et le secret.
+2. *Authentication → Providers → **Email*** : activé. **« Confirm email »** : au choix —
+   la garde d'entrée n'est **pas** la confirmation, c'est l'approbation manuelle. Le couper
+   évite d'attendre un SMTP pour tester ; le laisser impose un serveur d'envoi.
+3. *Authentication → URL Configuration* :
+   - **Site URL** : `https://planquex.4k7.org` ;
+   - **Redirect URLs** : `https://planquex.4k7.org/connexion` et
+     `http://localhost:5178/connexion` (le retour OAuth revient sur cette page).
+4. **SMTP** (facultatif mais nécessaire aux courriels de confirmation / mot de passe oublié) :
+   *Authentication → SMTP Settings*, hôte Brevo (`smtp-relay.brevo.com`, port 587), l'identifiant
+   et la clé SMTP Brevo. Les accès Brevo existent déjà.
+5. *SQL Editor* → coller **tout** `supabase/migrations/0005_comptes.sql` → *Run*. Puis, pour le
+   CLI : `supabase migration repair --status applied 0005`.
+
+### 5.3 Marquer le compte administrateur (une fois)
+
+Se connecter **une première fois** au jeu avec son compte (Google ou courriel) : le déclencheur
+crée la ligne `public.comptes` en attente. Puis, dans le SQL Editor :
+
+```sql
+-- Le compte de Bastien : approuvé et administrateur.
+update public.comptes
+   set administrateur = true, etat = 'approuve', raison = ''
+ where courriel = 'son@courriel';
+-- 1 ligne attendue. Si elle est à 0, le compte ne s'est pas encore connecté.
+```
+
+L'écran `/administration` apparaît alors dans Réglages. Le SQL Editor reste le repli pour
+approuver à la main :
+
+```sql
+update public.comptes set etat = 'approuve' where courriel = 'invite@exemple.fr';
+update public.comptes set etat = 'refuse', raison = 'Pas un invité.' where courriel = '…';
+```
+
+### 5.4 Les deux post-its déjà en base
+
+Ils restent **lisibles** et **figés** : leur auteur est une identité anonyme, sans courriel,
+donc sans compte. La migration ne les supprime pas et ne les rattache à personne (ce serait
+inventer un auteur). Pour les rendre modifiables, un geste explicite :
+
+```sql
+update public.postits set auteur = '<uid du compte>' where id in ('…', '…');
+```
+
+### 5.5 Ce qu'il faut vérifier après
+
+```sql
+-- La table et son RLS
+select relname, relrowsecurity, relforcerowsecurity from pg_class where relname = 'comptes';
+select courriel, etat, administrateur from public.comptes order by created_at;
+
+-- Un compte non approuvé n'a pas le droit d'écrire (attendu : false)
+select public.compte_approuve();
+```
+
+Puis, côté jeu : se connecter avec un compte neuf, constater « ton compte attend d'être
+validé », tenter de poster (le bouton n'est pas proposé, et la base refuserait), approuver
+depuis `/administration`, recharger, poster.
+
+## 6. La garde, et ce qu'elle prouve
+
+`supabase/mur.test.ts` (12 tests), puis `combats.test.ts`, `gueulage.test.ts`, `pouces.test.ts`
+et `comptes.test.ts` :
 
 1. il **lit les fichiers de `supabase/migrations/`** et les joue dans PGlite — PostgreSQL 18,
    RLS comprise. Rien n'est recopié : la garde garde la migration qu'on applique ;
@@ -245,12 +336,12 @@ npx vitest run supabase/mur.test.ts
 Pourquoi muter la **condition** et non **supprimer** la politique : une politique supprimée est
 *default-deny* en RLS, donc le scénario passerait et ne prouverait rien (mesuré le 21/10/2026).
 
-## 6. La trace des combats (#173, D-086)
+## 7. La trace des combats (#173, D-086)
 
 À la fin d'une partie **solo** terminée, le jeu dépose en arrière-plan de quoi la **rejouer** :
 la graine, les deux Decks, les types de café et le journal d'actions. **Rien d'autre** — ni le
 pseudo de Réglages, ni un texte libre, ni un identifiant d'appareil : `auteur` est `auth.uid()`,
-l'identité **anonyme** (D-059). Le PvP n'est **pas** gardé (beta).
+le compte connecté (D-088 ; D-059 pour les traces d'avant). Le PvP n'est **pas** gardé (beta).
 
 `src/store/combats.ts` construit la ligne (`combatTermine`, `ligneDe`) et l'envoie
 (`tracerCombat`) ; `Battle.tsx` l'appelle une fois, à la fin. **L'échec réseau ne bloque
@@ -327,7 +418,7 @@ Le contrôle qui compte : `npx vitest run supabase/pouces.test.ts`. **Tant qu'el
 appliquée**, l'écran propose quand même les pouces et la base accepterait un vote pour soi
 (l'écran, lui, ne propose pas le bouton sur ses propres post-its).
 
-## 7. Ce qui reste humain, précisément
+## 8. Ce qui reste humain, précisément
 
 - **Créer ou choisir le projet Supabase** et donner son `project-ref` — fait (#135) ;
 - **activer les connexions anonymes** (§4.1) — fait le 23/10/2026 ;

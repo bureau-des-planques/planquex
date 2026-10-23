@@ -31,7 +31,7 @@ import {
   APPAREIL_A,
   APPAREIL_B,
   avecAppareil,
-  base,
+  baseAvecAppareils,
   fichiersMigrations,
   migrations,
   type Base,
@@ -57,7 +57,7 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
   let db: Base;
 
   beforeAll(async () => {
-    db = await base();
+    db = await baseAvecAppareils();
   });
 
   afterAll(async () => {
@@ -302,13 +302,21 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
   /** Toutes les migrations, celle du mur remplacée par sa version mutée. */
   function migrationsMutees(): string {
     const murMute = muter(MIGRATION_MUR);
-    return migrations().replace(MIGRATION_MUR, () => murMute);
+    // Depuis la 0005 (D-088), les politiques d'écriture du mur sont **remplacées** avec la
+    // condition d'approbation. Muter la 0001 seule laisserait la 0005 décider : on applique
+    // donc la même neutralisation à toutes les copies du motif, où qu'elles vivent.
+    return migrations()
+      .replace(MIGRATION_MUR, () => murMute)
+      // `p.auteur` d'abord : sans cela, le remplacement global laisserait `p.true`.
+      .replaceAll('p.auteur = auth.uid()', 'true')
+      .replaceAll('auteur = auth.uid()', 'true')
+      .replaceAll('votant = auth.uid()', 'true');
   }
 
   let db: Base;
 
   beforeAll(async () => {
-    db = await base(migrationsMutees());
+    db = await baseAvecAppareils(migrationsMutees());
   });
 
   afterAll(async () => {

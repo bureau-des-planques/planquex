@@ -57,6 +57,11 @@ const PAGES = [
   ['deck', '/deck'],
   ['combat', '/battle'],
   ['reglages', '/settings'],
+  // Les trois écrans de compte (D-088) : sans configuration, ils montrent leur état
+  // inerte — c'est aussi un état d'écran que D-060 demande de voir.
+  ['connexion', '/connexion'],
+  ['attente', '/attente'],
+  ['administration', '/administration'],
   // Le mur de la Boîte à idées (#129) : une page hors barre de navigation, menée
   // par la bulle — donc capturée en dernier.
   ['idees', '/idees']

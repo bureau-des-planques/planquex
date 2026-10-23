@@ -5,7 +5,8 @@
  * **rejouer** : la graine, les deux Decks, les types de café et le journal d'actions.
  * C'est exactement le contrat de `replayBattle` (#83) — la ligne ne porte donc **rien
  * d'autre** : ni le pseudo de Réglages, ni un texte libre, ni un identifiant d'appareil.
- * `auteur` est rempli par la base (`auth.uid()`, une identité anonyme, D-059).
+ * `auteur` est rempli par la base (`auth.uid()` : le compte connecté depuis D-088, ou
+ * l'identité anonyme d'avant la migration 0005).
  *
  * **Ce module ne bloque jamais le jeu.** `envoyerCombat` rend toujours un résultat, ne lève
  * jamais : sans configuration (`configurerMur()` → `null`), rien n'est envoyé ; une erreur

@@ -116,10 +116,10 @@ describe('Settings — écran des Réglages', () => {
     });
   });
 
-  it('dit que les parties solo terminées sont gardées anonymement, sans case à cocher (D-086)', () => {
+  it('dit que les parties solo terminées sont gardées sous le compte, sans case à cocher (D-086, D-088)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/parties solo terminées sont gardées anonymement/i)).toBeInTheDocument();
+    expect(screen.getByText(/parties solo terminées sont gardées sous ton compte/i)).toBeInTheDocument();
     // D-086 : une **mention**, pas un consentement par combat — aucune case à cocher.
     expect(screen.getAllByRole('checkbox')).toHaveLength(1);
     expect(screen.getByRole('checkbox')).toHaveAccessibleName(/Réduire les animations/i);
