@@ -25,7 +25,12 @@
  *
  * La bibliothèque est chargée **à la demande** (`import()` dynamique) : sans configuration, son
  * code ne part même pas dans le premier chargement.
+ *
+ * **La trace des combats** (#173, D-086) se dépose par `ecrireLigne` — même configuration,
+ * même identité anonyme, et **inerte sans configuration**. Ce module ne décide pas *quoi*
+ * envoyer : la ligne est construite par `@/store/combats`, seule source de ce qui est gardé.
  */
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Le nom de la variable qui porte l'adresse du projet Supabase. */
 export const VARIABLE_URL = 'VITE_SUPABASE_URL';
@@ -137,19 +142,19 @@ export function configurerMur(env: Environnement = import.meta.env): Configurati
 }
 
 let configuration: ConfigurationMur | null | undefined;
-let appareil: AppareilAnonyme | null = null;
+let client: SupabaseClient | null = null;
 
 /**
  * Le client Supabase, ou `null` si le backend n'est pas configuré (alpha). Créé au premier
  * usage, puis gardé : la bibliothèque garde elle-même la session de l'appareil.
  */
-export async function clientMur(): Promise<AppareilAnonyme | null> {
+async function clientSupabase(): Promise<SupabaseClient | null> {
   if (configuration === undefined) configuration = configurerMur();
   if (!configuration) return null;
 
-  if (!appareil) {
+  if (!client) {
     const { createClient } = await import('@supabase/supabase-js');
-    appareil = createClient(configuration.url, configuration.clePublique, {
+    client = createClient(configuration.url, configuration.clePublique, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -158,7 +163,37 @@ export async function clientMur(): Promise<AppareilAnonyme | null> {
       },
     });
   }
-  return appareil;
+  return client;
+}
+
+/**
+ * Le client, réduit à ce que le mur en demande (session et signature anonyme). Le test
+ * injecte un faux appareil : c'est ce qui rend `identiteAppareil` éprouvable **sans réseau**.
+ */
+export async function clientMur(): Promise<AppareilAnonyme | null> {
+  return clientSupabase();
+}
+
+/**
+ * Écrit **une** ligne dans une table, au nom de l'identité anonyme de l'appareil.
+ *
+ * Rend l'erreur que la base ou le réseau a donnée (`null` si la ligne est passée) ; **ne
+ * décide pas** de ce que l'appelant en fait — `@/store/combats` choisit de ne jamais
+ * interrompre le jeu. Sans configuration, rien n'est contacté et la raison est rendue.
+ *
+ * L'insertion s'appuie sur `auth.uid()` (`auteur` a cette valeur par défaut dans
+ * `0002_combats.sql`) : on signe donc **avant** d'écrire, sinon la RLS refuserait la ligne.
+ */
+export async function ecrireLigne(
+  table: string,
+  ligne: Record<string, unknown>,
+): Promise<{ erreur: string | null }> {
+  const supabase = await clientSupabase();
+  if (!supabase) return { erreur: 'Supabase n’est pas configuré.' };
+
+  await identiteAppareil(async () => supabase);
+  const { error } = await supabase.from(table).insert(ligne);
+  return { erreur: error ? error.message : null };
 }
 
 /**
