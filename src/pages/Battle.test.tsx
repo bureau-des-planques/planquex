@@ -7,9 +7,12 @@ import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
 import { ALL_CARDS } from '@/data';
-import type { BattleState } from '@/data/types';
+import type { BattleAction, BattleState } from '@/data/types';
+import { encodeMatch } from '@/game/codec';
 import { autoDeck } from '@/game/deck';
 import { applyAction, createBattle, legalActions } from '@/game/engine';
+import { nextAiAction } from '@/game/ia';
+import { factionDeck } from '@/game/simulation';
 import { partieSauvegardee } from '@/store/partie';
 import { useStore } from '@/store/useStore';
 
@@ -382,5 +385,212 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
     expect(screen.getAllByText(jouee.log.at(-1) ?? '').length).toBeGreaterThan(0);
     // Le store garde la partie reprise : la prochaine ouverture la retrouvera encore.
     expect(useStore.getState().partie?.actions.length).toBe(jouee.actionLog.length);
+  });
+});
+
+/**
+ * **La fin d'une partie à deux, des deux côtés** (#127).
+ *
+ * Une partie à deux se termine comme une partie solo, et le bandeau doit le dire **sans
+ * ambiguïté** : « tu » et « l'autre camp », jamais « la Direction », qui est le mot du
+ * solo (D-049 impose un PvP sans serveur : le camp de celui qui lit vient du code, pas
+ * d'une session).
+ *
+ * Comment l'écran est mis dans l'état voulu : une partie **terminée** ne se range pas
+ * (`partieSauvegardee` rend `null`), donc elle ne se reprend pas. Le chemin réel est
+ * celui du #128 — un **code de partie** collé, que `joinMatch` rejoue (D-049). On
+ * construit donc un code par le moteur, en jouant la Direction avec sa politique
+ * (`nextAiAction`, seedé), et l'écran l'affiche comme le ferait un invité.
+ */
+describe('Battle — la fin d’une partie à deux (#127)', () => {
+  /** Deux Decks légaux, ceux du simulateur : le codec les valide avant de rejouer. */
+  const MINE = factionDeck('MANAGEMENT');
+  const THEIRS = factionDeck('ATELIER');
+
+  /** Le code d'une partie à deux, dans l'état qu'elle décrit (vivant ou terminé). */
+  function codeDe(state: BattleState): string {
+    return encodeMatch({
+      seed: state.seed,
+      playerDeck: MINE,
+      aiDeck: THEIRS,
+      playerCafeTypes: state.players.player.cafeTypes,
+      aiCafeTypes: state.players.ai.cafeTypes,
+      actions: state.actionLog
+    });
+  }
+
+  /**
+   * Le code d'une partie **terminée pour `raison` par le camp qui gagne** : la graine
+   * est figée, donc la partie est la même à chaque exécution. Si le moteur ou la
+   * politique change et que plus aucune partie ne finit ainsi, le test dit de
+   * réancrer la graine au lieu d'échouer sur une assertion incompréhensible.
+   */
+  function codeDuneFin(raison: 'interventions' | 'plateauVide', seed: number): string {
+    let state: BattleState = createBattle(MINE, THEIRS, seed, {}, { deuxCamps: true });
+    for (let etape = 0; etape < 400; etape += 1) {
+      const legal = legalActions(state).filter((action) => action.type !== 'forfeit');
+      for (const action of legal) {
+        const apres = applyAction(state, action);
+        // `winner === current` : c'est le coup du camp qui gagne, donc le code collé
+        // me donne son camp — le point de vue du vainqueur.
+        if (apres.phase === 'ended' && apres.endReason === raison && apres.winner === state.current) {
+          return codeDe(apres);
+        }
+      }
+      if (state.phase === 'ended') break;
+      const next: BattleAction = nextAiAction(state) ?? legal[0];
+      const applied = applyAction(state, next);
+      if (applied === state) break;
+      state = applied;
+    }
+    throw new Error(`aucune fin « ${raison} » à la graine ${seed} : réancrer la graine de ce test`);
+  }
+
+  /** Coller un code, comme l'invité : le champ, puis le bouton (#128). */
+  function coller(code: string) {
+    fireEvent.change(screen.getByLabelText(/Code reçu/), { target: { value: code } });
+    fireEvent.click(screen.getByRole('button', { name: /Prendre le camp adverse/i }));
+  }
+
+  it('trois Interventions terminent la partie, et le bandeau nomme le vainqueur', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    coller(codeDuneFin('interventions', 1));
+
+    // Le vainqueur, la raison, et **le vocabulaire du PvP** : « la Direction » n'apparaît
+    // pas dans le bandeau d'une partie à deux.
+    const bandeau = screen.getByText('Victoire : 3 Interventions.');
+    expect(bandeau).toHaveClass('notice--ok');
+    expect(bandeau.textContent).not.toMatch(/Direction/);
+  });
+
+  it('une partie sans aucun Planqué se termine aussi, et le bandeau dit pourquoi', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    coller(codeDuneFin('plateauVide', 153));
+
+    expect(screen.getByText('Victoire : l’autre camp n’a plus aucun Planqué.')).toBeInTheDocument();
+  });
+
+  it('l’abandon tombe sur le camp qui le déclare, et l’écran le dit des deux côtés', () => {
+    // Une graine figée : la partie à deux se crée depuis l'horloge.
+    vi.spyOn(Date, 'now').mockReturnValue(42);
+    try {
+      // **Le camp Toi se couche.** « la Direction » n'est pas mentionnée : en partie à
+      // deux, l'adversaire est quelqu'un, et c'est *lui* qui gagne.
+      const mienne = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+      fireEvent.click(screen.getByRole('button', { name: /Créer une partie à deux/i }));
+      fireEvent.click(screen.getByRole('button', { name: /^Abandonner$/ }));
+      fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Abandonner/ }));
+
+      const defaite = screen.getByText('Défaite : tu as déclaré forfait.');
+      expect(defaite).toHaveClass('notice--warn');
+      expect(defaite.textContent).not.toMatch(/Direction/);
+      mienne.unmount();
+
+      // **L'autre camp se couche**, et je tiens `player` : la partie terminée arrive par
+      // le code, la défaite est celle du camp adverse, la victoire est la mienne.
+      renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+      let vivante: BattleState | null = null;
+      for (let seed = 1; seed < 500 && vivante === null; seed += 1) {
+        const essai = createBattle(MINE, THEIRS, seed, {}, { deuxCamps: true });
+        if (essai.current === 'player') vivante = essai;
+      }
+      // La garde n'est pas décorative : sans partie au tour du joueur, `forfeit` qui
+      // nomme `ai` n'est plus la défaite de l'autre camp.
+      expect(vivante, 'aucune graine ne laisse la main au joueur').not.toBeNull();
+      const finie = applyAction(vivante as BattleState, { type: 'forfeit', who: 'ai' });
+      expect(finie.winner).toBe('player');
+      expect(finie.endReason).toBe('forfait');
+
+      coller(codeDe(finie));
+
+      expect(screen.getByText('Victoire : l’autre camp déclare forfait.')).toBeInTheDocument();
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+});
+
+/**
+ * **Le code d'une partie à deux sur un téléphone** (#128) : un geste pour copier, et un
+ * message qui ne mente pas quand le presse-papier refuse.
+ *
+ * Le presse-papier n'est pas un détail d'ergonomie : `navigator.clipboard` **manque**
+ * sur une page servie en clair et sur des navigateurs de téléphone anciens, et un
+ * `writeText` peut être **refusé** (permission, geste non reconnu). L'ancien code faisait
+ * `navigator.clipboard?.writeText(code).then(…)` : sans l'API, l'expression vaut
+ * `undefined` et `.then` **lève**, donc l'invité ne recevait ni code copié ni message —
+ * juste une erreur. Ces deux tests tiennent les deux branches.
+ */
+describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(42);
+  });
+  /** Le presse-papier du navigateur : `setup-jsdom.ts` en pose un, on le remplace. */
+  function pressePapier(valeur: unknown) {
+    (navigator as unknown as Record<string, unknown>).clipboard = valeur;
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    // On rend le presse-papier que `src/test/setup-jsdom.ts` installe.
+    pressePapier({ writeText: vi.fn().mockResolvedValue(undefined) });
+  });
+
+  /** Crée une partie à deux et va jusqu'au code à transmettre (fin de mon tour). */
+  function codeATransmettre(): HTMLTextAreaElement {
+    fireEvent.click(screen.getByRole('button', { name: /Créer une partie à deux/i }));
+    const finDuTour = screen.queryByRole('button', { name: /Fin du tour/i });
+    if (finDuTour) fireEvent.click(finDuTour);
+    return screen.getByLabelText(/Code de la partie, à transmettre/i) as HTMLTextAreaElement;
+  }
+
+  it('copie le code en un geste quand le presse-papier accepte', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    pressePapier({ writeText });
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const zone = codeATransmettre();
+    expect(zone.value).toMatch(/^PLQ1\./);
+
+    fireEvent.click(screen.getByRole('button', { name: /Copier le code/i }));
+
+    await waitFor(() => expect(screen.getByText(/Code copié/)).toBeInTheDocument());
+    // C'est **le code affiché** qui part, pas une copie recomposée ailleurs.
+    expect(writeText).toHaveBeenCalledWith(zone.value);
+  });
+
+  it('sans presse-papier, ne prétend pas avoir copié et sélectionne le code', () => {
+    // Le cas d'une page servie en clair : l'API n'existe pas.
+    pressePapier(undefined);
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const zone = codeATransmettre();
+
+    fireEvent.click(screen.getByRole('button', { name: /Copier le code/i }));
+
+    const message = screen.getByText(/presse-papier a refusé/i);
+    expect(message.textContent).not.toMatch(/Code copié/);
+    expect(message.textContent).toMatch(/recopie-le à la main/i);
+    // Le repli est le code lui-même : il est sélectionné, prêt à être copié à la main.
+    expect(zone.selectionStart).toBe(0);
+    expect(zone.selectionEnd).toBe(zone.value.length);
+  });
+
+  it('un code long se colle entier, et le clavier du téléphone ne le corrige pas', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const champ = screen.getByLabelText(/Code reçu, à coller/i) as HTMLTextAreaElement;
+    // Les attributs qui empêchent un clavier de téléphone de « corriger » le code.
+    expect(champ).toHaveAttribute('autocapitalize', 'off');
+    expect(champ).toHaveAttribute('autocorrect', 'off');
+    expect(champ).toHaveAttribute('spellcheck', 'false');
+
+    // Un code d'une partie entière fait plus de 2 000 caractères : il doit tenir entier
+    // dans le champ (la mise en page, elle, se juge sur la capture, #128).
+    const long = `PLQ1.${'a'.repeat(2100)}`;
+    fireEvent.change(champ, { target: { value: long } });
+    expect(champ.value).toHaveLength(long.length);
   });
 });

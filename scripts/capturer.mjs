@@ -73,6 +73,22 @@ const PREMIERE_VISITE = ['premiere-visite', '/'];
 const ROUTE_COMBAT = '/battle';
 
 /**
+ * **Les états dédiés** (#128) — des captures qu'aucune page ne montre à l'arrivée.
+ *
+ * Le code d'une partie à deux vit dans la section « Partie à deux », **repliée** tant
+ * qu'aucune partie n'existe (#125) : une capture d'arrivée ne le montrait donc jamais,
+ * et le critère (4) de D-060 (« on regarde les captures ») n'avait rien à regarder pour
+ * #128. Cette capture-ci **prépare** l'état dans le navigateur — même geste qu'un invité —
+ * et la garde plus bas **échoue** si le code n'est pas à l'écran, ou si la page déborde.
+ *
+ * Liste à part, et non dans `PAGES` : « une page par route » reste vrai (le contrat de
+ * `scripts/capturer.test.ts`), et `/battle` est déjà photographiée à son arrivée.
+ */
+const PREPARATIONS = [
+  { slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' }
+];
+
+/**
  * Les instants figés qui fixent la graine d'une partie (`createBattle`, seed = `Date.now()`) :
  * plusieurs donnes, pour que la garde de rendu ne se fie pas à une seule main (#170).
  * Le premier sert à la capture `combat.png`.
@@ -107,6 +123,64 @@ function mesureMain() {
     bas,
     visible: !!main && main.top >= 0 && main.bottom <= bas
   };
+}
+
+/**
+ * **Préparer le code d'une partie à deux** (#128) et le mesurer.
+ *
+ * Les gestes sont ceux des deux invités : ouvrir la section (repliée tant qu'aucune
+ * partie n'existe), créer la partie, passer la main — le code n'apparaît qu'à la fin du
+ * tour (`handover`, `src/store/pvp.ts`) —, puis le coller dans le champ d'en face, qui
+ * reçoit donc un code **long**. Enfin la section est amenée à l'écran : la capture
+ * photographie la **fenêtre**, donc ce qui n'est pas défilé n'existe pas.
+ *
+ * La mesure est la **garde** : un code absent, un bouton hors de l'écran ou une page qui
+ * déborde en largeur font échouer `npm run capturer` — la capture ne peut donc pas
+ * « prouver » #128 sans rien montrer.
+ */
+async function preparerCodePvp(page) {
+  await page.locator('summary', { hasText: 'Partie à deux' }).click();
+  await page.getByRole('button', { name: 'Créer une partie à deux' }).click();
+  const finDuTour = page.getByRole('button', { name: 'Fin du tour', exact: true });
+  if ((await finDuTour.count()) > 0) await finDuTour.click();
+  await page.waitForSelector('textarea[aria-label="Code de la partie, à transmettre"]', { timeout: 15000 });
+  // Le **champ de collage** reçoit le même code long (#128, « sans casser la mise en
+  // page ») : c'est le geste du second joueur, et la mesure ci-dessous le vérifie.
+  const code = await page.inputValue('textarea[aria-label="Code de la partie, à transmettre"]');
+  await page.fill('textarea[aria-label="Code reçu, à coller"]', code);
+  // Après le collage, le curseur est à la fin : la zone regarde la queue du code. On la
+  // remet sur son début, sinon les deux zones ne se lisent pas comme le même code.
+  await page.evaluate(() => {
+    const champ = document.querySelector('textarea[aria-label="Code reçu, à coller"]');
+    champ?.blur();
+    if (champ) champ.scrollTop = 0;
+  });
+  // La section, **sous** le pas-à-pas collé en haut (#169) : sinon son titre passe
+  // derrière le panneau et la capture commence au milieu d'une phrase.
+  await page.evaluate(() => {
+    const zone = document.querySelector('textarea[aria-label="Code de la partie, à transmettre"]');
+    const section = zone?.closest('details');
+    if (!section) return;
+    const panneau = document.querySelector('.pas-a-pas')?.getBoundingClientRect().height ?? 0;
+    window.scrollTo({ top: window.scrollY + section.getBoundingClientRect().top - panneau - 12 });
+  });
+  await page.waitForTimeout(450);
+  return page.evaluate(() => {
+    const zone = document.querySelector('textarea[aria-label="Code de la partie, à transmettre"]');
+    const cadre = zone ? zone.getBoundingClientRect() : null;
+    const copier = [...document.querySelectorAll('button')].find((bouton) =>
+      /Copier le code/.test(bouton.textContent ?? '')
+    );
+    const bouton = copier ? copier.getBoundingClientRect() : null;
+    return {
+      // Le code réellement affiché : c'est lui que la capture doit montrer.
+      caracteres: zone ? zone.value.length : 0,
+      zoneDansEcran: !!cadre && cadre.top >= 0 && cadre.bottom <= window.innerHeight && cadre.right <= window.innerWidth,
+      boutonDansEcran: !!bouton && bouton.top >= 0 && bouton.bottom <= window.innerHeight,
+      // Une page qui déborde en largeur « casse la mise en page » : c'est le critère de #128.
+      debordement: document.documentElement.scrollWidth - document.documentElement.clientWidth
+    };
+  });
 }
 
 /** La clé du store persisté — `STORAGE_KEY`, `src/store/useStore.ts`. */
@@ -183,6 +257,13 @@ function stop(message) {
   process.exit(1);
 }
 
+// Deux captures qui porteraient le même nom d'image s'écraseraient en silence : les
+// pages et les états dédiés partagent donc un seul espace de noms.
+const slugs = [...shots, ...PREPARATIONS].map((shot) => shot.slug);
+if (new Set(slugs).size !== slugs.length) {
+  stop(`deux captures portent le même nom d’image : ${slugs.sort().join(', ')}`);
+}
+
 // Sonde de `scripts/capturer.test.ts` : imprime le **plan** réel des captures —
 // l'état amorcé et la liste des couples (slug, route, amorce) — puis sort, sans
 // navigateur ni serveur. La garde lit donc le vrai plan, elle ne cherche pas une
@@ -194,7 +275,8 @@ if (process.argv.includes('--plan')) {
     JSON.stringify({
       amorcage: amorcageStore(origine),
       capture: { viewport: VIEWPORT, pleinePage: PLEINE_PAGE },
-      captures: shots
+      captures: shots,
+      preparations: PREPARATIONS
     })
   );
   process.exit(0);
@@ -221,7 +303,7 @@ mkdirSync(outDir, { recursive: true });
 const browser = await chromium.launch({ executablePath, args: ['--no-sandbox'] });
 
 try {
-  for (const { slug, route, amorce } of shots) {
+  for (const { slug, route, amorce, preparation } of [...shots, ...PREPARATIONS]) {
     const context = await browser.newContext({
       viewport: VIEWPORT,
       isMobile: true,
@@ -236,7 +318,25 @@ try {
     });
     page.on('pageerror', (error) => problems.push(`${route} · pageerror : ${error.message}`));
 
-    if (route === ROUTE_COMBAT) {
+    if (preparation === 'code-pvp') {
+      // L'état dédié (#128) : la partie à deux préparée dans le navigateur, à la même
+      // graine que le combat — donc reproductible, et sans IA qui joue à la place de
+      // l'autre camp (une partie à deux n'en a pas).
+      await page.clock.setFixedTime(INSTANTS_COMBAT[0]);
+      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+      await arriveeAuTourDuJoueur(page);
+      const code = await preparerCodePvp(page);
+      console.log(`code-pvp · ${slug} · ${JSON.stringify(code)}`);
+      if (code.caracteres < 100) {
+        problems.push(`${slug} · aucun code de partie à l’écran (${code.caracteres} caractères) : la capture ne prouve pas #128`);
+      }
+      if (!code.zoneDansEcran || !code.boutonDansEcran) {
+        problems.push(`${slug} · le code ou son bouton Copier sort de la fenêtre (${VIEWPORT.width} × ${VIEWPORT.height})`);
+      }
+      if (code.debordement > 0) {
+        problems.push(`${slug} · la page déborde de ${code.debordement} px en largeur : la mise en page casse`);
+      }
+    } else if (route === ROUTE_COMBAT) {
       // Le combat se photographie **à l'arrivée**, au tour du joueur (#170) : la graine de
       // la partie vient de l'horloge, donc on la fige (`page.clock`) pour une capture
       // reproductible. On ne remet pas la page à zéro : ce qu'on juge, c'est ce que voit
@@ -291,4 +391,7 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log(`✔ ${shots.length} captures dans captures/ (${base}) — dont la première visite`);
+console.log(
+  `✔ ${shots.length + PREPARATIONS.length} captures dans captures/ (${base}) — dont la première visite ` +
+    `et ${PREPARATIONS.length} état(s) dédié(s)`
+);
