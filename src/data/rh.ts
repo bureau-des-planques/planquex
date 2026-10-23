@@ -13,7 +13,9 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'L’adversaire révèle une carte de sa main.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
+    // L’effet vendu (CARD-SPEC.md §4) est la révélation d’une carte de la main adverse
+    // (#160, D-078) ; le statut Dérivé n’était pas annoncé par le texte.
+    attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'L’adversaire révèle une carte de sa main.', effects: [{ kind: 'reveal', target: 'opponent', amount: 1 }] }],
     flavor: "Il a posé la question. Il n'a pas écouté la réponse."
   }),
   base({
@@ -24,7 +26,16 @@ export const RH_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Sourcing', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
+    // Talent vendu « en jouant » par `CARD-SPEC.md` §4 (D-074) : recherche d’un Planqué
+    // dans le Deck (#161, D-080), la carte trouvée étant révélée au journal, et
+    // déclenchement à la mise en jeu (#163, D-081).
+    ability: {
+      name: 'Sourcing',
+      text: 'En jouant : cherche un Planqué dans ton deck, révèle-le, ajoute-le à ta main.',
+      kind: 'effects',
+      trigger: 'onPlay',
+      effects: [{ kind: 'search', filter: 'PLANQUE' }]
+    },
     attacks: [{ name: "Promesse d'embauche", cost: ['RH', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit une promesse d’embauche. Le poste est passionnant ; le salaire est confidentiel.' }],
     flavor: "Le poste est passionnant. Le salaire est confidentiel."
   }),
@@ -37,7 +48,9 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 140,
     retreat: 2,
     attacks: [
-      { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      // « L’adversaire défausse 1 carte » (CARD-SPEC.md §4) : une carte de la main, au hasard
+      // (#159, D-076) — plus un café comme avant.
+      { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 60, text: 'L’adversaire défausse 1 carte.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }] },
       { name: "Entretien annuel", cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 80, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
     flavor: "Il a lu ton CV. Il sait où tu habites.",
@@ -298,7 +311,7 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
+      { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 70, text: 'L’adversaire défausse 1 carte.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }] },
       { name: "Entretien annuel", cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 120, text: "Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: "Deux Interventions. Un seul dossier."
