@@ -148,8 +148,10 @@ Un post-it **retiré** par son auteur (#139) **disparaît du fichier** : il n'ex
 « retiré », et un mur qui garderait une ligne barrée dirait ce que personne n'a écrit. Le jeu ne
 connaît donc que les **cinq** statuts de la liste.
 
-Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **à la main** au fil du tri
-— c'est le prix de l'absence de backend, et il est assumé (D-058).
+Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **hors du jeu** :
+`npm run mur:import` ajoute les réponses du formulaire (§4.5), `npm run statut` déplace le tri
+(§5.1), et la disposition s'écrit à la main (§2 bis). C'est le prix de l'absence de backend, et
+il est assumé (D-058).
 
 ## 4. Le formulaire
 
@@ -376,3 +378,25 @@ import le croira absent — §3 demande déjà un id *stable*.
 
 Ce tri est un travail **avec l'agent**, pas sur son dos : c'est lui qui tient le fichier et qui
 ouvre les tickets (D-059).
+
+### 5.1 Déplacer un statut — `npm run statut`
+
+Le fichier se déplace par le **script**, pas à la main : c'est le tri sans tableau de bord
+d'administration (#140), et le mur affiche ensuite le statut, le ticket et la raison d'un
+écarté.
+
+```bash
+npm run statut <post-it> <statut>            # en attente | retenu | en cours | fait | écarté
+npm run statut <post-it> --ticket <numéro>   # lie l'issue GitHub ; l'écran affiche le lien
+npm run statut <post-it> écarté --raison "…" # écarter exige la raison (D-059)
+```
+
+Le script refuse, **sans rien écrire** : un statut hors des cinq, un ticket qui n'est pas un
+entier strictement positif, un `id` inconnu, une raison vide, et un fichier déjà invalide. Il
+**relit** ce qu'il a écrit avec `lireMur` (`src/store/mur.ts`) et, si le fichier relu ne passe
+plus, **remet l'original** : il n'écrit rien d'illisible. L'écriture est **atomique** (fichier
+temporaire puis renommage), au format du dépôt (`JSON.stringify(…, null, 2)` et saut de ligne
+final), et les champs qu'il ne connaît pas traversent intacts.
+
+`--fichier <json>` n'existe que pour les tests : il évite d'écrire dans le vrai fichier du mur
+(`scripts/statut-mur.test.ts`).

@@ -20,6 +20,7 @@
     "pesage": "node scripts/pesage.mjs",
     "isolation": "node scripts/isolation.mjs",
     "mur:import": "node scripts/mur-import.mjs",
+    "statut": "node scripts/statut-mur.mjs",
     "detect:ui": "impeccable detect src/"
   },
   "dependencies": {
