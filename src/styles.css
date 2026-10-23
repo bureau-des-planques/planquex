@@ -2610,3 +2610,48 @@ h2 {
     min-height: 1.9rem;
   }
 }
+
+/* ---------- Nouveautés — les notes de version dans le jeu ---------- */
+
+/* Le bloc de la version courante est **mis en avant** : c'est ce qu'un invité vient lire,
+   l'historique vient après. La mise en avant passe par la **chaleur** du panneau (fond et
+   bordure teintés d'or, titre en display) et **pas** par un liseré sur un côté — c'est le
+   tell d'UI générée qu'Impeccable refuse, et il ne dit rien de plus. Jetons uniquement,
+   aucun hex (D-035). */
+.nouveautes__courante {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 46%),
+    var(--bg-raised);
+  border-color: color-mix(in srgb, var(--gold) 42%, var(--line-strong));
+}
+
+.nouveautes__courante .nouveautes__titre {
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+}
+
+.nouveautes__label {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.nouveautes__titre {
+  font-size: 0.95rem;
+  margin: 0.5rem 0;
+}
+
+.nouveautes__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Le `preflight` de Tailwind pose `list-style: none` sur les listes : nos listes à puces
+   le rétablissent explicitement, sinon une note se lit comme une suite de paragraphes et
+   les points ne se distinguent plus (constaté sur la capture du 24/10/2026). */
+.nouveautes__points {
+  list-style: disc;
+}
+
+.nouveautes__points li::marker {
+  color: var(--gold-soft);
+}

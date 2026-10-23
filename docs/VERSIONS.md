@@ -3,7 +3,8 @@
 > Référence unique du projet sur le nom des versions. Elle **ne crée aucune règle de jeu** :
 > les règles vivent dans `AGENTS.md` §4 et `docs/DECISIONS.md`. Les actes datés qui l'ont
 > écrite : **D-048** (trois étapes nommées), **D-050** (l'étape est un mot, le numéro est la
-> version), **D-051** (une ligne de version par étape).
+> version), **D-051** (une ligne de version par étape), **D-090** (la note de version vit
+> aussi **dans l'application**, prise aux releases GitHub).
 >
 > Un agent qui touche au code, à la doc ou à une publication lit cette page **avant** d'écrire
 > un numéro quelque part.
@@ -57,29 +58,64 @@ croire à une version finale par accident.
 
 **Ne jamais écrire un numéro ni un mot d'étape dans un composant** : `src/version.test.ts`
 échoue si un `1.2.3` apparaît quelque part dans `src/`. Une seule source, `package.json`.
+**Une exception nommée** : `src/data/versions.ts` — l'historique des notes, **généré** depuis
+les releases GitHub (`npm run notes:versions`, §4). C'est l'historique, donc il nomme les
+versions passées ; la version **courante**, elle, ne s'y lit pas non plus — elle vient
+d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
 
 ## 4. Publier une build
 
-1. **Monter la version** : `npm version 0.1.2 --no-git-tag-version` (dans `planquex/`), puis
+1. **Écrire la note** de la version à venir dans `src/data/versions.ts` — c'est ce que
+   l'écran `/nouveautes` affiche, et c'est **le geste qui rend la règle tenable** : le tag
+   part **avant** la release GitHub, donc la note est écrite d'abord, avec son
+   `brouillon: true`. `src/data/versions.test.ts` **échoue** si la version de
+   `package.json` n'a pas sa note : on ne publie pas une version sans dire ce qu'elle
+   contient.
+2. **Monter la version** : `npm version 0.1.2 --no-git-tag-version` (dans `planquex/`), puis
    changer `stage` à la main si l'étape change.
-2. **Vérifier** : `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` — et
+3. **Vérifier** : `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` — et
    regarder la version rendue (`grep -o "$(node -p 'require("./package.json").version')"
    dist/assets/*.js`).
-3. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
-4. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
+4. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
+5. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
    message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.
-5. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
+6. **Reprendre la release dans l'application** : `npm run notes:versions` relit les releases
+   GitHub et réécrit `src/data/versions.ts` — le texte publié remplace la note écrite
+   d'avance, et son `brouillon` tombe. C'est la seule fois où la note change après coup, et
+   elle devient alors **la même des deux côtés**.
+7. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
 Un `git tag -a v0.1.2` sur un commit, c'est un point de retour ; un tag déplacé à la main après
 coup, c'est un mensonge. Si la build était fausse, on monte la version et on refait un tag.
+
+### 4.1 Les deux endroits, et pourquoi les deux
+
+| Endroit | Ce qu'il porte | Qui le lit |
+|---|---|---|
+| **La release GitHub** | le journal complet, daté, avec le message aux testeurs | le dépôt, l'historique, `npm run notes:versions` |
+| **`/nouveautés`** (dans le jeu) | la version courante mise en avant, puis l'historique | **l'invité**, sans compte, sans sortir du jeu |
+
+**Pourquoi le fichier de données est embarqué au build et pas lu en direct** : le dépôt est
+**privé**, l'API GitHub répond `404` sans jeton (mesuré le 24/10/2026), et un jeton dans le
+bundle se lit dans les DevTools. L'application lit donc `src/data/versions.ts`, pris aux
+releases par `npm run notes:versions` — elle marche **hors ligne**, et il n'y a rien à
+configurer. Le script tourne **avant de taguer**, jamais pendant `npm run build` : la CI n'a
+ni `gh` ni accès à GitHub, et un build qui dépend du réseau ne se rejoue pas.
 
 ## 5. Ce qu'un agent doit faire, et ne pas faire
 
 - **Avant** de citer une version quelque part : la lire dans `package.json` (ou `APP_LABEL` à
   l'écran) — jamais de mémoire, jamais recopiée d'un message précédent.
-- **Après** un changement qui part chez quelqu'un : une ligne de plus dans `CHANGELOG` ? Non —
-  **le corps de la release GitHub** est le journal, et il est daté. Pas de fichier de plus.
+- **Après** un changement qui part chez quelqu'un : **deux** écritures, et elles disent la
+  même chose — la note dans `src/data/versions.ts` (lue par l'écran `/nouveautes`), et le
+  corps de la **release GitHub** (le journal public, daté). `npm run notes:versions` les
+  réconcilie à la publication : c'est la release qui a le dernier mot, et
+  `src/data/versions.test.ts` refuse une version sans note.
+- **Ne pas** éditer `src/data/versions.ts` à la main au-delà de la note à venir : le fichier
+  est **généré** (`scripts/notes-versions.mjs`), et `npm run notes:versions -- --verifie`
+  (relayé hors ligne par `scripts/notes-versions.test.ts`) dit s'il a divergé.
 - **Ne pas** inventer un numéro pour « faire beau » (un saut de `0.1.3` à `0.5.0` ne dit rien).
 - **Ne pas** renommer un tag publié : on monte la version.
 - Les testeurs citent **ce que Réglages affiche** (`Alpha · 0.1.2`) : c'est ce que
-  `docs/ALPHA-TESTEURS.md` leur demande de recopier.
+  `docs/ALPHA-TESTEURS.md` leur demande de recopier, et c'est aussi le libellé mis en avant
+  sur `/nouveautés`.

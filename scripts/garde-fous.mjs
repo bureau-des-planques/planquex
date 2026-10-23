@@ -208,6 +208,16 @@ export const MUTATIONS = [
     tests: ['src/game/codec.test.ts'],
     garde:
       'sans l’empreinte, un base64 altéré peut redonner un JSON valide dont un champ a changé : on rejouerait une autre partie en silence, sans un mot — la classe de faux garde-fou de #112'
+  },
+  {
+    ticket: 182,
+    titre: 'la note de la version courante ne se trouve plus',
+    fichier: 'src/data/versions.ts',
+    motif: 'return notes.find((note) => note.version === version);',
+    remplacement: 'return undefined;',
+    tests: ['src/data/versions.test.ts'],
+    garde:
+      'sans cette recherche, la garde « on ne publie pas une version sans sa note » (D-090) ne trouve plus rien : elle refuserait toute version, ou — pire, si elle était écrite à l’envers — laisserait partir une build chez les invités sans que personne ne puisse lire ce qu’elle contient'
   }
 ];
 

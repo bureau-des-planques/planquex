@@ -45,7 +45,9 @@ const SCRIPT = join(racine, LANCER);
 // le préfacteur du PvP (#122).
 // #124 : le codec du PvP — sans son empreinte, un code altéré rejoue une autre partie
 // en silence ; la mutation tombe sur la comparaison, pas sur la fonction.
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124];
+// #182 : la note de version (D-090) — sans la recherche de la note courante, la garde
+// « on ne publie pas une version sans sa note » ne garde plus rien.
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {

@@ -138,4 +138,13 @@ describe('Settings — écran des Réglages', () => {
     expect(screen.getByText(/Version/)).toBeInTheDocument();
     expect(screen.getByText(APP_LABEL)).toBeInTheDocument();
   });
+
+  it('mène à la page des nouveautés depuis la section Version (D-090)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le libellé seul ne dit pas ce que la version contient : la section Version doit
+    // mener à l'écran qui le dit, sinon la note reste invisible depuis le jeu.
+    const lien = screen.getByRole('link', { name: /la page des nouveautés/i });
+    expect(lien).toHaveAttribute('href', '/nouveautes');
+  });
 });

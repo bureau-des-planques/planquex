@@ -61,6 +61,9 @@ const PAGES = [
   // inerte — c'est aussi un état d'écran que D-060 demande de voir.
   // La confidentialité est publique et hors garde : elle doit se lire sans compte.
   ['confidentialite', '/confidentialite'],
+  // Les nouveautés aussi (elles se lisent avant de s'inscrire) : une version qu'on ne
+  // peut pas lire depuis le jeu ne sert à rien, donc la capture le prouve.
+  ['nouveautes', '/nouveautes'],
   ['connexion', '/connexion'],
   ['attente', '/attente'],
   ['administration', '/administration'],
