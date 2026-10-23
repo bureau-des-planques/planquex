@@ -1,5 +1,8 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -13,8 +16,24 @@ import { describe, expect, it } from 'vitest';
  * Le harnais lui-même n'est **pas** lancé ici (il mute des fichiers et prend plusieurs
  * minutes) : c'est `npm run garde-fous`, en local et dans la CI. Ici, seul le contrôle
  * statique `--verifie` est invoqué.
+ *
+ * #176 : les deux ordres ne doivent **pas** se chevaucher — `npm run garde-fous` mute un
+ * fichier que `npm test` lit. C'est pourquoi le contrôle statique est lancé par son
+ * **chemin absolu**, et qu'un test vérifie qu'il ne touche à **aucun** fichier de la
+ * table : la cohabitation reste une règle de lancement (la CI enchaîne les deux), et
+ * l'état lu par `npm test` ne dépend plus d'un `cwd` ni d'une écriture.
  */
 const LANCER = 'scripts/garde-fous.mjs';
+
+/**
+ * La racine du dépôt, et **non le répertoire courant** du worker : un sous-processus
+ * lancé avec un chemin relatif dépend du `cwd` que `vitest` a bien voulu donner.
+ * Depuis #176, le harnais est lancé par son **chemin absolu**, dans la racine — un
+ * test qui lançait `node scripts/garde-fous.mjs` héritait du `cwd` et pouvait lire un
+ * autre fichier que celui du dépôt testé.
+ */
+const racine = fileURLToPath(new URL('..', import.meta.url));
+const SCRIPT = join(racine, LANCER);
 
 /** Les gardes attendues, une par invariant **critique** déjà pris en défaut dans le dépôt. */
 // #113, #116 et #118 sont arrivées en parallèle : toutes les entrées sont conservées, et
@@ -30,11 +49,20 @@ const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 1
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {
-    const sortie = execFileSync('node', [LANCER, ...args], { encoding: 'utf8' });
+    // `process.execPath` et non `'node'` : le nœud qui exécute la suite, pas celui que
+    // le `PATH` du moment désigne. Un chemin **absolu**, un `cwd` explicite, et un
+    // délai borné : un enfant qui se bloque doit rendre un échec nommé, jamais
+    // suspendre la suite (constat de #176 : deux ordres pouvaient se bloquer l'un
+    // l'autre sans un mot).
+    const sortie = execFileSync(process.execPath, [SCRIPT, ...args], {
+      cwd: racine,
+      encoding: 'utf8',
+      timeout: 120_000
+    });
     return { ok: true, sortie };
   } catch (erreur) {
-    const e = erreur as { stdout?: string; stderr?: string };
-    return { ok: false, sortie: `${e.stdout ?? ''}${e.stderr ?? ''}` };
+    const e = erreur as { stdout?: string; stderr?: string; message?: string };
+    return { ok: false, sortie: `${e.stdout ?? ''}${e.stderr ?? ''}${e.stdout || e.stderr ? '' : e.message ?? ''}` };
   }
 }
 
@@ -63,7 +91,7 @@ describe('Garde-fous — la table est ancrée et bornée (#112)', () => {
     // faux, car la mutation de #103 porte `ticket: 104` et `ticket: 999` **dans ses
     // propres chaînes**. (Trouvé en écrivant ce test — une garde qui compte mal est une
     // garde qui ment.)
-    const source = readFileSync(LANCER, 'utf8');
+    const source = readFileSync(SCRIPT, 'utf8');
     const bloc = source.slice(source.indexOf('export const MUTATIONS'), source.indexOf('const VERIFIE'));
     const compter = (champ: string) => (bloc.match(new RegExp(`^\\s{4}${champ}:`, 'gm')) ?? []).length;
     const entrees = compter('ticket');
@@ -71,5 +99,31 @@ describe('Garde-fous — la table est ancrée et bornée (#112)', () => {
     for (const champ of ['titre', 'garde', 'tests', 'motif', 'remplacement']) {
       expect(compter(champ), `champ ${champ} par entrée`).toBe(entrees);
     }
+  });
+
+  /**
+   * Le contrôle **mord** (#176) : `npm test` ne doit lire que du code stable.
+   *
+   * `--verifie` est présenté comme « ne mute rien ». C'était une promesse de
+   * commentaire, pas une garde : ce test prend l'empreinte des fichiers que la table
+   * vise, lance le contrôle statique, et exige que **rien** ait bougé. Rendre le
+   * contrôle mutant (ou lui faire écrire un fichier de cache) le fait tomber.
+   *
+   * La liste vient du rapport `--json` du script : elle n'est pas recopiée ici, donc
+   * elle ne peut pas prendre du retard sur la table.
+   */
+  it('le contrôle statique ne mute aucun fichier de la table', () => {
+    const { ok, sortie } = verifier(['--verifie', '--json']);
+    expect(ok, `le contrôle statique a échoué :\n${sortie}`).toBe(true);
+    const { fichiers } = JSON.parse(sortie) as { fichiers: string[] };
+    const empreinte = () =>
+      [...new Set(fichiers)]
+        .sort()
+        .map((fichier) => `${fichier}:${createHash('sha1').update(readFileSync(join(racine, fichier))).digest('hex')}`)
+        .join('\n');
+
+    const avant = empreinte();
+    verifier(['--verifie']);
+    expect(empreinte(), 'le contrôle statique a modifié un fichier qu’un autre test lit').toBe(avant);
   });
 });
