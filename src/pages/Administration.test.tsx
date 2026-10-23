@@ -17,7 +17,18 @@ import type { Compte, EtatCompte } from '@/lib/comptes';
 const mocks = vi.hoisted(() => ({
   lister: vi.fn(),
   decider: vi.fn(),
+  chargerMur: vi.fn(),
+  trier: vi.fn(),
 }));
+
+vi.mock('@/lib/murBase', async () => {
+  const vrai = await vi.importActual<typeof import('@/lib/murBase')>('@/lib/murBase');
+  return {
+    ...vrai,
+    chargerPostitsDuMur: mocks.chargerMur,
+    trierPostit: mocks.trier,
+  };
+});
 
 vi.mock('@/lib/comptes', async () => {
   const vrai = await vi.importActual<typeof import('@/lib/comptes')>('@/lib/comptes');
@@ -48,6 +59,24 @@ const APPROUVE: Compte = {
   administrateur: false,
   created_at: '2026-10-22T09:00:00.000Z',
 };
+const POSTIT = {
+  id: 'p-autre',
+  kind: 'IP' as const,
+  titre: 'Le bouton Fin du tour reste grisé',
+  texte: 'Au combat, au deuxième tour.',
+  ecran: 'Combat' as const,
+  pseudo: 'Employé 404',
+  version: 'Alpha · 0.1.8',
+  statut: 'en attente' as const,
+  raison: '',
+  ticket: null,
+  gueulage: false,
+  lie: null,
+  position: { x: 10, y: 10, angle: 0 },
+  votes: { up: 2, down: 0, mon: null },
+  mien: false,
+};
+
 const ADMIN: Compte = {
   id: 'compte-admin',
   courriel: 'bastien@exemple.test',
@@ -99,6 +128,10 @@ beforeEach(() => {
     etat,
     raison,
   }));
+  mocks.chargerMur.mockReset();
+  mocks.chargerMur.mockResolvedValue([{ ...POSTIT }]);
+  mocks.trier.mockReset();
+  mocks.trier.mockImplementation(async (_id: string, tri: unknown) => tri);
   poser();
 });
 afterEach(cleanup);
@@ -222,5 +255,99 @@ describe('les états de D-060', () => {
     mocks.lister.mockResolvedValue([APPROUVE]);
     rendre();
     expect(await screen.findByText(/Aucun compte en attente/)).toBeInTheDocument();
+  });
+});
+
+describe('le tri du mur par l’administration (#0006, D-088)', () => {
+  it('liste les post-its avec leur statut, leur raison et leur ticket', async () => {
+    rendre();
+    expect(await screen.findByRole('heading', { name: /Le mur — le tri \(1\)/ })).toBeInTheDocument();
+    expect(screen.getByText('Le bouton Fin du tour reste grisé')).toBeInTheDocument();
+    expect(screen.getByLabelText('Statut de « Le bouton Fin du tour reste grisé »')).toHaveValue(
+      'en attente',
+    );
+    // Rien à enregistrer tant que rien n'a bougé.
+    expect(screen.getByRole('button', { name: /Enregistrer le tri/ })).toBeDisabled();
+  });
+
+  it('le titre et le texte ne se modifient pas ici — ils sont à leur auteur (#139)', async () => {
+    rendre();
+    await screen.findByText('Le bouton Fin du tour reste grisé');
+    expect(screen.queryByLabelText(/Corriger le titre/)).toBeNull();
+    expect(screen.queryByLabelText(/Corriger le texte/)).toBeNull();
+  });
+
+  it('écarter exige une raison, puis envoie le statut, la raison et le ticket', async () => {
+    rendre();
+    await screen.findByText('Le bouton Fin du tour reste grisé');
+
+    fireEvent.change(screen.getByLabelText('Statut de « Le bouton Fin du tour reste grisé »'), {
+      target: { value: 'écarté' },
+    });
+    const enregistrer = screen.getByRole('button', { name: /Enregistrer le tri/ });
+    expect(enregistrer).toBeDisabled();
+    expect(screen.getByText(/Écarter exige une raison écrite/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Raison de l’écart de « Le bouton Fin du tour reste grisé »'), {
+      target: { value: 'Hors périmètre du lancement.' },
+    });
+    fireEvent.change(screen.getByLabelText('Ticket de « Le bouton Fin du tour reste grisé »'), {
+      target: { value: '140' },
+    });
+    expect(enregistrer).not.toBeDisabled();
+    fireEvent.click(enregistrer);
+
+    await waitFor(() =>
+      expect(mocks.trier).toHaveBeenCalledWith(POSTIT.id, {
+        statut: 'écarté',
+        raison: 'Hors périmètre du lancement.',
+        ticket: 140,
+      }),
+    );
+    expect(
+      screen.getByLabelText('Raison de l’écart de « Le bouton Fin du tour reste grisé »'),
+    ).toHaveValue('Hors périmètre du lancement.');
+    expect(await screen.findByText(/« Le bouton Fin du tour reste grisé » : écarté/)).toBeInTheDocument();
+  });
+
+  it('un refus de la base se lit, et rien ne prétend avoir été trié', async () => {
+    mocks.trier.mockRejectedValue(
+      new Error('La base refuse : seul un administrateur trie le mur (D-088, migration 0006).'),
+    );
+    rendre();
+    await screen.findByText('Le bouton Fin du tour reste grisé');
+
+    fireEvent.change(screen.getByLabelText('Statut de « Le bouton Fin du tour reste grisé »'), {
+      target: { value: 'retenu' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer le tri/ }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/seul un administrateur trie le mur/);
+    // La ligne du mur, elle, n'a pas bougé : le brouillon de l'écran attend, le mur non.
+    expect(document.querySelector('[data-tri="p-autre"]')).toHaveTextContent(
+      'IP · Employé 404 · en attente',
+    );
+  });
+
+  it('un mur vide le dit, et une erreur de lecture s’affiche avec « Réessayer »', async () => {
+    mocks.chargerMur.mockResolvedValueOnce([]);
+    rendre();
+    expect(await screen.findByText(/Aucun post-it sur le mur pour l’instant/)).toBeInTheDocument();
+
+    cleanup();
+    mocks.chargerMur.mockReset();
+    mocks.chargerMur.mockRejectedValueOnce(new Error('Lecture du mur impossible : réseau.'));
+    rendre();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/réseau/);
+
+    mocks.chargerMur.mockResolvedValueOnce([{ ...POSTIT }]);
+    fireEvent.click(screen.getByRole('button', { name: /Réessayer la lecture du mur/ }));
+    expect(await screen.findByText('Le bouton Fin du tour reste grisé')).toBeInTheDocument();
+  });
+
+  it('la lecture du mur patiente visiblement (D-060)', async () => {
+    mocks.chargerMur.mockReturnValue(new Promise(() => {}));
+    rendre();
+    expect(await screen.findByText(/Le mur se charge…/)).toBeInTheDocument();
   });
 });

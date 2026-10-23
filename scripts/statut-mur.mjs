@@ -7,6 +7,12 @@
  * changer le statut, lier un ticket, écarter avec une raison. Ce script les fait à la
  * place d'un tableau de bord d'administration, que le mur n'aura pas.
  *
+ * **Depuis le tri en base (0006, D-088)**, ce script n'est plus la seule porte : quand la
+ * base est configurée, le mur lit la base et le tri s'y fait depuis l'écran
+ * d'administration, où un administrateur seul passe. Le fichier reste la **source de
+ * secours**, et le script le dit à chaque écriture (`mondeDuTri`) plutôt que de laisser
+ * croire qu'il a trié ce que les invités voient.
+ *
  * Il **réutilise le contrat** : les statuts admis et le contrôle du fichier viennent de
  * `src/store/mur.ts` (`STATUTS`, `lireMur`), jamais d'une copie — une liste recopiée
  * prendrait du retard, et un fichier écrit dans une forme que l'écran refuse serait un
@@ -170,6 +176,26 @@ export function ecrireEtControler(
   );
 }
 
+/**
+ * Le monde du tri, dit à voix haute (#0006).
+ *
+ * Depuis que la base peut être la source du mur, ce script n'est plus **la** porte du tri :
+ * quand `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` sont posés, le mur lit
+ * `postits_avec_votes` et le tri se fait dans l'écran d'administration
+ * (`/administration`), où la base vérifie que le compte est administrateur. Le fichier,
+ * lui, reste la source de secours — ce script continue donc de le déplacer, et **le dit**.
+ *
+ * L'environnement est un paramètre : la phrase se vérifie sans toucher au poste.
+ */
+export function mondeDuTri(env = process.env) {
+  const url = String(env.VITE_SUPABASE_URL ?? '').trim();
+  const cle = String(env.VITE_SUPABASE_ANON_KEY ?? '').trim();
+  if (!url && !cle) {
+    return 'La base n’est pas configurée : ce fichier est ce que le mur lit, le tri est à jour.';
+  }
+  return 'La base est configurée : le mur lit la base, et ce tri ne vaut que pour le fichier de secours. Le tri des post-its de la base se fait dans l’écran d’administration (/administration).';
+}
+
 function trouverPostit(document, id) {
   return (document.postits ?? []).find(
     (postit) => postit && typeof postit === 'object' && String(postit.id ?? '').trim() === id
@@ -320,6 +346,7 @@ async function principal(ligne = process.argv.slice(2)) {
 
   console.log(`${options.id} — ${changements.join(', ')}`);
   console.log(`Écrit : ${chemin}`);
+  console.log(mondeDuTri());
   return 0;
 }
 
