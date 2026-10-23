@@ -188,7 +188,7 @@ async function clientSupabase(): Promise<SupabaseClient | null> {
         // Le mur n'est pas une page de retour OAuth : rien à lire dans l'URL.
         detectSessionInUrl: false,
       },
-    }) as unknown as ClientMur;
+    });
   }
   return client;
 }
