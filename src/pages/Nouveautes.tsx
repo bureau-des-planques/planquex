@@ -36,7 +36,7 @@ function dateLongue(jour: string): string {
 
 function Points({ note }: { note: NoteVersion }) {
   return (
-    <ul className="nouveautes__points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
+    <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
       {note.points.map((point) => (
         <li key={`${point.groupe ?? ''}·${point.texte}`}>
           {/* Le groupe de la release (« Jeu », « Le mur ») reste lisible : c'est le

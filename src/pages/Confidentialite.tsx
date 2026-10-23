@@ -94,7 +94,7 @@ function Bloc({ rubrique }: { rubrique: Rubrique }) {
   return (
     <section className="section panel">
       <h2>{rubrique.titre}</h2>
-      <ul className="m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
+      <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
         {rubrique.lignes.map((ligne) => (
           <li key={ligne}>{ligne}</li>
         ))}

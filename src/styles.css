@@ -2648,10 +2648,10 @@ h2 {
 /* Le `preflight` de Tailwind pose `list-style: none` sur les listes : nos listes à puces
    le rétablissent explicitement, sinon une note se lit comme une suite de paragraphes et
    les points ne se distinguent plus (constaté sur la capture du 24/10/2026). */
-.nouveautes__points {
+.liste-points {
   list-style: disc;
 }
 
-.nouveautes__points li::marker {
+.liste-points li::marker {
   color: var(--gold-soft);
 }
