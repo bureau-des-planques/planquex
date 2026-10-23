@@ -114,8 +114,15 @@ describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
 
 describe('l’identité anonyme de l’appareil (D-059 : ni compte, ni mot de passe, ni courriel)', () => {
   it('rend null sans backend configuré, sans lever', async () => {
-    await expect(identiteAppareil(async () => null)).resolves.toBeNull();
-    await expect(clientMur()).resolves.toBeNull();
+    // Le test ne doit pas dépendre du `.env` local : on vide les deux variables explicitement.
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
+    try {
+      await expect(identiteAppareil(async () => null)).resolves.toBeNull();
+      await expect(clientMur()).resolves.toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('signe anonymement un appareil neuf, à sa première visite', async () => {
