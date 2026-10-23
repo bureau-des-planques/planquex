@@ -35,7 +35,16 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Prise en main', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
+    // Talent vendu « en jouant » par `CARD-SPEC.md` §4 (D-074) : recherche d’un Collègue
+    // dans le Deck (#161, D-080), la carte trouvée étant révélée au journal, et
+    // déclenchement à la mise en jeu (#163, D-081).
+    ability: {
+      name: 'Escalade',
+      text: 'En jouant : cherche un Collègue dans ton deck, révèle-le, ajoute-le à ta main.',
+      kind: 'effects',
+      trigger: 'onPlay',
+      effects: [{ kind: 'search', filter: 'COLLEAGUE' }]
+    },
     attacks: [{ name: 'Procédure', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est renvoyé à la procédure. Avez-vous essayé de redémarrer votre demande ?' }],
     flavor: 'Avez-vous essayé de redémarrer votre demande ?'
   }),

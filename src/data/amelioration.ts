@@ -20,7 +20,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Checklist', cost: ['AMELIORATION'], damage: 10, text: 'Regarde la carte du dessus de ton deck.', effects: [{ kind: 'draw', amount: 1 }] }],
+    attacks: [{ name: 'Checklist', cost: ['AMELIORATION'], damage: 10, text: 'Regarde la carte du dessus de ton deck.', effects: [{ kind: 'peek' }] }],
     flavor: 'Il a coché la case. La case ne sert à rien.'
   }),
   base({
@@ -31,7 +31,19 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Audit', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
+    // Talent vendu « en jouant » par `CARD-SPEC.md` §4 (D-074) : défausse de la main
+    // (#159, D-076), révélation de la main adverse (#160, D-078) et déclenchement à la
+    // mise en jeu (#163, D-081).
+    ability: {
+      name: 'Audit',
+      text: 'En jouant : défausse 1 carte, l’adversaire révèle sa main.',
+      kind: 'effects',
+      trigger: 'onPlay',
+      effects: [
+        { kind: 'discardHand', target: 'self', amount: 1 },
+        { kind: 'reveal', target: 'opponent' }
+      ]
+    },
     attacks: [{ name: 'Non-conformité', cost: ['AMELIORATION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est déclaré non conforme. La fiche d’écart le désigne ; le process, lui, reste hors de cause.' }],
     flavor: 'Il a trouvé un problème. Le problème, c’est le process.'
   }),

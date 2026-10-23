@@ -131,7 +131,18 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Pression', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
+    // Le Talent vendu par `CARD-SPEC.md` §4 (D-074) : défausse de la main (#159, D-076) et
+    // dégâts d'un Talent (#164, D-077) ; il reste à la demande, une fois par tour.
+    ability: {
+      name: 'Pression',
+      text: 'Une fois par tour : défausse 1 carte, 10 dégâts au Planqué adverse actif.',
+      kind: 'effects',
+      oncePerTurn: true,
+      effects: [
+        { kind: 'discardHand', target: 'self', amount: 1 },
+        { kind: 'damage', amount: 10 }
+      ]
+    },
     attacks: [{ name: 'Deadline', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse tombe sur une échéance impossible. Elle a été fixée par courriel, sans accusé de lecture.' }],
     flavor: 'Il manage par mail. Il ne lit pas les réponses.'
   }),
