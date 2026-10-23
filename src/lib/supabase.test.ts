@@ -115,10 +115,16 @@ describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
 
 describe('écrire une ligne (#173 : la trace des combats passe par ici)', () => {
   it('sans configuration, rien n’est contacté et la raison est rendue', async () => {
-    // Le projet de test n’a pas de `.env` : c’est l’état de l’alpha (par défaut, inerte).
-    await expect(ecrireLigne('combats', { graine: 1 })).resolves.toEqual({
-      erreur: 'Supabase n’est pas configuré.',
-    });
+    // Comme pour l’identité : on ne dépend pas du `.env` local, on vide les deux variables.
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
+    try {
+      await expect(ecrireLigne('combats', { graine: 1 })).resolves.toEqual({
+        erreur: 'Supabase n’est pas configuré.',
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
 
