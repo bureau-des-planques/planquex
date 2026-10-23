@@ -62,6 +62,30 @@ export interface AppareilAnonyme {
   };
 }
 
+/** Ce que rend une requête Supabase : la donnée, ou l'erreur — jamais les deux. */
+export interface ReponseMur<T> {
+  data: T | null;
+  error: { message: string } | null;
+}
+
+/**
+ * Le sous-ensemble du constructeur de requêtes de `supabase-js` dont le mur a besoin.
+ * Il est `PromiseLike`, comme le vrai : `await client.from(…).select(…)` suffit.
+ *
+ * Le déclarer **ici** garde `src/lib/murBase.ts` testable sans réseau : un faux client à
+ * trois méthodes rend les lignes qu'on veut, ou l'erreur qu'on veut.
+ */
+export interface RequeteMur<T = unknown> extends PromiseLike<ReponseMur<T>> {
+  select(colonnes?: string): RequeteMur<T>;
+  order(colonnes: string, options?: { ascending?: boolean }): RequeteMur<T>;
+  insert(ligne: Record<string, unknown>): RequeteMur<T>;
+}
+
+/** Un client Supabase : l'identité anonyme, et l'accès aux tables. */
+export interface ClientMur extends AppareilAnonyme {
+  from(table: string): RequeteMur;
+}
+
 type Environnement = Record<string, string | boolean | undefined>;
 
 function texte(valeur: string | boolean | undefined): string {
@@ -147,6 +171,9 @@ let client: SupabaseClient | null = null;
 /**
  * Le client Supabase, ou `null` si le backend n'est pas configuré (alpha). Créé au premier
  * usage, puis gardé : la bibliothèque garde elle-même la session de l'appareil.
+ *
+ * Le client réel est plus large que `ClientMur` (toutes les tables, tous les filtres) : la
+ * conversion est le prix du sous-ensemble structurel qui rend le mur testable sans réseau.
  */
 async function clientSupabase(): Promise<SupabaseClient | null> {
   if (configuration === undefined) configuration = configurerMur();
@@ -161,7 +188,7 @@ async function clientSupabase(): Promise<SupabaseClient | null> {
         // Le mur n'est pas une page de retour OAuth : rien à lire dans l'URL.
         detectSessionInUrl: false,
       },
-    });
+    }) as unknown as ClientMur;
   }
   return client;
 }
@@ -170,8 +197,8 @@ async function clientSupabase(): Promise<SupabaseClient | null> {
  * Le client, réduit à ce que le mur en demande (session et signature anonyme). Le test
  * injecte un faux appareil : c'est ce qui rend `identiteAppareil` éprouvable **sans réseau**.
  */
-export async function clientMur(): Promise<AppareilAnonyme | null> {
-  return clientSupabase();
+export async function clientMur(): Promise<ClientMur | null> {
+  return (await clientSupabase()) as ClientMur | null;
 }
 
 /**

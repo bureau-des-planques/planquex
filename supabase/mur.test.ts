@@ -229,9 +229,48 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
     await db.exec('set role anon');
     try {
       await expect(db.query('select count(*) from public.postits')).rejects.toThrow(/permission denied/);
+      // Sans signature, on n'écrit pas non plus : les droits sont donnés à `authenticated`.
+      await expect(
+        db.query(
+          `insert into public.postits (id, kind, titre, texte, version)
+           values ('p-anon', 'IP', 'Anonyme', 'Texte.', 'Alpha · 0.1.6') returning *`,
+        ),
+      ).rejects.toThrow(/permission denied/);
     } finally {
       await db.exec('reset role');
     }
+  });
+
+  it('sans identité (`authenticated` sans `auth.uid()`), l’insertion est refusée (#136)', async () => {
+    // Le client signe l'appareil *avant* d'écrire (`identiteAppareil`) : cette garde prouve
+    // que l'ordre compte. Sans sujet, `auteur` retombe sur `auth.uid()` = null, et la
+    // politique d'insertion ne peut pas être satisfaite.
+    await db.exec(`set role authenticated; set request.jwt.claim.sub = '';`);
+    try {
+      // 1. Sans `auteur` explicite, la colonne `not null` retombe sur `auth.uid()` = null.
+      await expect(
+        db.query(
+          `insert into public.postits (id, kind, titre, texte, version)
+           values ('p-sans-identite', 'IP', 'Sans identité', 'Texte.', 'Alpha · 0.1.6') returning *`,
+        ),
+      ).rejects.toThrow(/null value in column "auteur"|row-level security/);
+
+      // 2. Avec un `auteur` choisi, la politique refuse de signer au nom d'un autre.
+      await expect(
+        db.query(
+          `insert into public.postits (id, kind, titre, texte, version, auteur)
+           values ('p-usurpe-sans-session', 'IP', 'Sans identité', 'Texte.', 'Alpha · 0.1.6', $1) returning *`,
+          [APPAREIL_A],
+        ),
+      ).rejects.toThrow(/row-level security/);
+    } finally {
+      await db.exec('reset role; reset request.jwt.claim.sub;');
+    }
+
+    const reste = await avecAppareil(db, APPAREIL_A, () =>
+      db.query(`select id from public.postits where id = 'p-sans-identite'`),
+    );
+    expect(reste.rows).toHaveLength(0);
   });
 });
 
