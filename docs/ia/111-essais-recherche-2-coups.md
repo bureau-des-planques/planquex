@@ -114,9 +114,36 @@ Sur 2 graines × 10 parties, le même protocole joué par le **CLI** du simulate
 | V0, entraînement, dans le contrôle final (un build tournait en parallèle) | 14 607 | 14,5 ms | — | — | — | 100,1 ms |
 | V0, contrôle, dans le même lancement (même build en parallèle) | 15 048 | 13,9 ms | — | — | — | 50,4 ms |
 
-**Lecture** : la **moyenne** tient le budget (14 ms pour V0). La **queue** est plus large que la moyenne : le plafond de 100 ms est **atteint ou dépassé** sur des coups isolés (V0 : maximum de 100,06 ms sur 14 607 coups d'entraînement, dans un run partagé avec un build ; 94 ms et 49 ms dans les mesures séquentielles). Les maxima des runs parallèles (185 à 318 ms) sont **gonflés** par la contention CPU et ne sont **pas** une mesure. **La cause des pics n'est pas identifiée** : le pire coup mesuré (94 ms) n'avait que 10 coups légaux, donc le nombre de coups légaux ne l'explique pas à lui seul. Pistes : le GC (les clones `structuredClone` s'accumulent) ; un `replies` plus large dans certains états. À vérifier avant tout branchement.
+**Lecture** : la **moyenne** tient le budget (14 ms pour V0). La **queue** est plus large que la moyenne : le plafond de 100 ms est **atteint ou dépassé** sur des coups isolés (V0 : maximum de 100,06 ms sur 14 607 coups d'entraînement, dans un run partagé avec un build ; 94 ms et 49 ms dans les mesures séquentielles). Les maxima des runs parallèles (185 à 318 ms) sont **gonflés** par la contention CPU et ne sont **pas** une mesure. **La cause des pics est identifiée en §6.3 (#172)** ; avant elle, elle n'était pas identifiée : le pire coup mesuré (94 ms) n'avait que 10 coups légaux, donc le nombre de coups légaux ne l'explique pas à lui seul. Pistes : le GC (les clones `structuredClone` s'accumulent) ; un `replies` plus large dans certains états. À vérifier avant tout branchement.
 
 Coût unitaire : `applyAction` (clone `structuredClone`) ≈ **60 µs** (mesuré sur une partie scriptée, `apply_us=59.5`). Le nombre d'appels par décision n'a pas été compté.
+
+### 6.3 Les pics (#172) : cause, budget, mesure
+
+**Cause (mesurée le 23/10/2026, graine 42, 1 175 décisions, machine calme).**
+- Le temps d'une décision est **linéaire en nombre d'`applyAction`** (corrélation nœuds/durée **0,995**), soit ~**0,058 ms par nœud**. Fichier `src/game/ia.ts`, fonctions `lineValue` → `playOutTurn` / `scoreMoves` (les réponses adverses) : c'est là que passent **98 %** du temps (phases chronométrées : élagage à un coup 0,6 s, tirage des mondes 0,1 s, évaluation des lignes 32,9 s sur ~33,7 s).
+- Dans un nœud, **`structuredClone` de l'état fait ~98 %** d'`applyAction` (0,0485 ms de clone seul sur 0,0495 ms ; `engine.ts:197`, un état ≈ 9,3 ko en JSON). La piste « nombre de mondes tiré » est **écartée** : `sampleWorld` × 3 coûte **0,075 ms** par décision (0,5 %).
+- Le **travail** a donc une queue bornée : le maximum observé est de **777 nœuds ≈ 45 ms** (15 000 coups, graines 1/7/42 : max 45 à 54 ms, aucune coïncidence avec le GC — 10 événements, le plus long 9 ms).
+- Les **138 ms** ne viennent **pas** du travail : les pires décisions mesurées avaient 390 à 513 nœuds (attendus ~25-30 ms) pour 100 à 114 ms. C'est la **contention CPU** de la machine (charge 7 à 16 au moment de ces mesures). Reproduit sciemment : avec 14 boucles actives sur 12 cœurs, la même décision passe à p50 35 ms, **max 160 ms pour 451 nœuds**, corrélation nœuds/durée 0,89. Aucun plafond de nœuds ne borne cela : seule une **échéance murale** le fait.
+
+**Le budget, par construction** (`SearchOptions`, `searchDecision`) :
+1. `maxNodes = 800` : plafond **déterministe** d'`applyAction` dans l'évaluation des lignes (~55 ms au coût mesuré). Atteint, la recherche abandonne et rend `nextAction(state, 2)` (le glouton), jamais une erreur ni un coup nul. Il ne mord pas sur les parties réelles (max 777), il borne la forme du pire cas.
+2. `maxMs = 60` : **échéance murale**, comptée depuis l'entrée de la fonction (élagage compris), vérifiée avant **chaque** nœud. Même repli. C'est **le seul terme non déterministe** de la décision ; il ne mord que sur une machine surchargée ou un état pathologique. Le rejeu des parties n'en dépend pas (il rejoue le journal d'actions, pas les décisions). Les tests de déterminisme et d'équité le neutralisent (`maxMs: Infinity`).
+3. État pathologique (mains et Decks pleins, Objets « pioche 2 » : 15 actions légales, 10 candidats × 6 mondes × 8 réponses) : **3 368 nœuds, ~1 000 ms** sans plafond ; **~62-69 ms** avec (6 essais, repli glouton). Les nœuds y coûtent ~0,4 ms (7 × plus que sur une partie réelle) : le plafond de nœuds seul ne tiendrait **pas** 100 ms, c'est la garde de temps qui le tient.
+
+**Mesure avant / après** — mêmes 5 graines neuves (112358, 132134, 314314, 555777, 808017), 110 parties chacune, 16 510 coups de la Direction, en série :
+
+```text
+$ npm run pesage -- --seeds 112358,132134,314314,555777,808017 --games 110 --json --direction recherche --noeuds 100000000 --ms Infinity   # avant : plafonds neutralisés
+$ npm run pesage -- --seeds 112358,132134,314314,555777,808017 --games 110 --json --direction recherche                                   # après : défauts
+```
+
+| | Coups | Moyenne | p50 | p95 | p99 | **Max** | Replis | Décidées | Taux | Ratio |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Avant (sans plafond) | 16 510 | 14,40 | 16,81 | 30,90 | 43,20 | **148,89** | 0 | 938 | 59,4 % | 1,46 |
+| Après (800 nœuds, 60 ms) | 16 510 | 13,77 | 16,48 | 29,42 | 33,25 | **47,92** | 1 | 938 | 59,4 % | 1,46 |
+
+Le lancement « avant » a démarré avec une charge machine de 16 : son maximum est le pic de contention décrit plus haut, pas un maximum de travail. Un seul repli sur 16 510 coups, et les résultats de partie sont identiques : la force ne recule pas (intervalle à 95 % [56,2 % ; 62,5 %]).
 
 ## 7. Limites — à lire avant toute conclusion
 

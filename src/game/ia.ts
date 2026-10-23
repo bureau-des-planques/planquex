@@ -516,6 +516,14 @@ function bestEvaluatedAction(
  * La valeur d'un candidat est la **moyenne** des valeurs sur les mondes ; le meilleur
  * candidat gagne, à égalité le premier de l'élagage (déterministe).
  *
+ * **Budget (#172).** Le coût d'une décision est **linéaire en `applyAction`** (mesuré :
+ * corrélation 0,997 entre nœuds et durée) et la queue venait de décisions qui empilaient
+ * des tours scriptés longs × `candidates` × `worlds` × (1 + `replies`), chaque action
+ * clonant tout l'état (`structuredClone`). `SearchOptions.maxNodes` **plafonne par
+ * construction** les nœuds d'une décision ; atteint, il fait **abandonner** la recherche
+ * au profit du **niveau 2 glouton** (`fallbackAction`), jamais une erreur ni un coup nul.
+ * Le compte est déterministe (état + options), donc le rejeu reste exact.
+ *
  * **Équité (règle centrale, `docs/ia/111-essais-recherche-2-coups.md` §Équité)** :
  * - la décision ne lit **jamais** `state.players[adversaire].hand` ni `.deck` (contenu) :
  *   seuls leurs **comptes** (`hand.length`, `deck.length`), déjà visibles de la table ;
@@ -536,10 +544,51 @@ export interface SearchOptions {
   worlds: number;
   /** Nombre de tours adverses joués en entier par monde (les plus nocifs à un coup). */
   replies: number;
+  /**
+   * **Plafond de travail d'une décision**, en **nœuds** — un nœud est un appel
+   * d'`applyAction` dans l'évaluation des lignes (élagage à un coup exclu, il est borné
+   * par le nombre d'actions légales). Au-delà, la recherche **abandonne** et rend le coup
+   * du **niveau 2 glouton** (`nextAction(state, 2)`), jamais une erreur ni un coup nul.
+   *
+   * C'est un **compte**, pas un temps : la décision reste rejouable (même état + mêmes
+   * options → même coup), ce qu'un seuil en millisecondes casserait. Le plafond borne le
+   * coût **par construction** : le pic mesuré avant #172 (138 ms) venait de décisions qui
+   * empilaient des tours scriptés longs (jusqu'à `CONTINUATION_CAP`) × `candidates` ×
+   * `worlds` × (1 + `replies`), chaque action clonant tout l'état (`structuredClone`).
+   */
+  maxNodes: number;
+  /**
+   * **Garde de temps** d'une décision, en millisecondes : filet de sécurité pour les
+   * machines chargées, où un `applyAction` peut coûter plusieurs fois son prix normal
+   * (mesuré : 70 µs en régime, jusqu'à ~200 µs sur un pic d'ordonnanceur). Au-delà, la
+   * recherche abandonne et rend le même repli glouton que le plafond de nœuds.
+   *
+   * Ce garde est **le seul terme non déterministe** de la décision : sur une machine
+   * calme il ne mord jamais (toutes les mesures sont bien en dessous), et quand il mord
+   * le coup reste légal et glouton. `Infinity` le neutralise — les tests qui mesurent le
+   * **travail** de la recherche le font pour rester reproductibles.
+   */
+  maxMs: number;
 }
 
-/** Réglages par défaut de la recherche. Choisis avant toute mesure du contrôle (protocole). */
-export const DEFAULT_SEARCH_OPTIONS: SearchOptions = { candidates: 6, worlds: 3, replies: 4 };
+/**
+ * Réglages par défaut de la recherche. Choisis avant toute mesure du contrôle (protocole).
+ *
+ * `maxNodes` : 800 nœuds, soit ~55 ms au coût mesuré d'un `applyAction` (~70 µs sur les
+ * états de partie, `docs/ia/111-essais-recherche-2-coups.md` §6). La médiane d'une décision
+ * en consomme ~200, le p99 avant #172 ~500 et le maximum observé ~700 : le plafond ne mord
+ * que sur la queue, et le repli glouton prend alors la main.
+ *
+ * `maxMs` : 60 ms, sous le budget de 100 ms, pour que même un nœud anormalement lent ne
+ * pousse pas la décision au-delà.
+ */
+export const DEFAULT_SEARCH_OPTIONS: SearchOptions = {
+  candidates: 6,
+  worlds: 3,
+  replies: 4,
+  maxNodes: 800,
+  maxMs: 60
+};
 
 /** Valeur d'une victoire (ou défaite) dans la recherche : elle écrase toute évaluation. */
 const SEARCH_WIN = 1_000_000;
@@ -633,44 +682,88 @@ export function sampleWorld(state: BattleState, who: PlayerId, index: number): B
 }
 
 /**
+ * **Budget d'une décision** (#172) : le nombre de nœuds (`applyAction`) qu'il reste.
+ * Un compte, jamais un temps — la décision doit rester rejouable.
+ */
+interface SearchBudget {
+  left: number;
+  /** Échéance murale (`performance.now()`), `Infinity` quand la garde est neutralisée. */
+  deadline: number;
+}
+
+/** Le budget est-il épuisé ? Les deux bornes sont lues au même endroit. */
+function budgetExhausted(budget: SearchBudget): boolean {
+  return budget.left <= 0 || performance.now() >= budget.deadline;
+}
+
+/**
+ * Applique une action **si le budget le permet**. Rend `null` quand le budget est épuisé
+ * (nœuds ou échéance) : c'est le signal d'abandon qui remonte jusqu'à `searchDecision`,
+ * laquelle rend alors le coup du niveau 2 glouton. Aucun appelant ne joue un état `null`.
+ */
+function applyWithin(
+  state: BattleState,
+  action: BattleAction,
+  budget: SearchBudget
+): BattleState | null {
+  if (budgetExhausted(budget)) return null;
+  budget.left -= 1;
+  return applyAction(state, action);
+}
+
+/**
  * Note chaque action légale **à un coup** pour le camp `who` (même critère que le niveau 2).
  * Le forfait est exclu ; une action refusée n'est pas notée. `bonus` ajoute le bonus de
  * fin de tour à la seule fin de tour (utile pour élaguer mes coups, pas pour les réponses).
+ *
+ * `budget` (facultatif) : quand il est fourni et épuisé en cours de route, rend `null` —
+ * la décision sera abandonnée, pas tronquée en silence.
  */
 function scoreMoves(
   state: BattleState,
   legal: readonly BattleAction[],
   who: PlayerId,
-  bonus: boolean
-): ScoredMove[] {
+  bonus: boolean,
+  budget?: SearchBudget
+): ScoredMove[] | null {
   const moves: ScoredMove[] = [];
-  legal.forEach((action, index) => {
-    if (action.type === 'forfeit') return;
+  for (const [index, action] of legal.entries()) {
+    if (action.type === 'forfeit') continue;
+    if (budget) {
+      if (budgetExhausted(budget)) return null;
+      budget.left -= 1;
+    }
     const probe: BattleState = { ...state, rng: evaluationRng(state, index), log: [], actionLog: [] };
     const after = applyAction(probe, action);
-    if (after === probe) return;
+    if (after === probe) continue;
     let score = evaluatePosition(after, who);
     if (bonus && action.type === 'endTurn') {
       score += endTurnBonus(after.players[who], DEFAULT_EVALUATION_WEIGHTS);
     }
     moves.push({ action, index, score });
-  });
+  }
   return moves;
 }
 
 /**
  * Joue la politique scriptée (niveau 1) **tant que** c'est au camp `side` de jouer, ou
  * tant qu'une relève est en attente (c'est alors `nextAction` qui tranche, pour l'un ou
- * l'autre camp). Rend l'état à la fin du tour, ou à la fin de la partie.
+ * l'autre camp). Rend l'état à la fin du tour, ou à la fin de la partie — et `null` si
+ * le budget s'épuise en route (#172).
  */
-function playOutTurn(state: BattleState, side: PlayerId): BattleState {
+function playOutTurn(
+  state: BattleState,
+  side: PlayerId,
+  budget?: SearchBudget
+): BattleState | null {
   let current = state;
   for (let step = 0; step < CONTINUATION_CAP; step += 1) {
     if (current.phase === 'ended') break;
     if (!current.pendingPromotion && current.current !== side) break;
     const action = nextAction(current, 1);
     if (!action) break;
-    const after = applyAction(current, action);
+    const after = budget ? applyWithin(current, action, budget) : applyAction(current, action);
+    if (after === null) return null;
     if (after === current) break;
     current = after;
   }
@@ -687,27 +780,119 @@ function valueOf(state: BattleState, who: PlayerId): number {
 /**
  * Valeur d'**un** coup `action` de `who` dans **un** monde : mon tour (coup + suite
  * scriptée), puis le pire tour adverse parmi les `replies` plus nocifs à un coup.
+ * Rend `null` si le budget s'épuise : la ligne n'est alors **pas** notée.
  */
-function lineValue(world: BattleState, action: BattleAction, who: PlayerId, options: SearchOptions): number {
-  const first = applyAction(world, action);
+function lineValue(
+  world: BattleState,
+  action: BattleAction,
+  who: PlayerId,
+  options: SearchOptions,
+  budget: SearchBudget
+): number | null {
+  const first = applyWithin(world, action, budget);
+  if (first === null) return null;
   if (first === world) return -Infinity;
-  const mine = playOutTurn(first, who);
+  const mine = playOutTurn(first, who, budget);
+  if (mine === null) return null;
   // Partie finie, ou tour de `who` qui ne rend pas la main (garde-fou atteint) : pas de réponse.
   if (mine.phase === 'ended' || mine.current === who) return valueOf(mine, who);
 
   const opponentId = opponentOf(who);
-  const replies = scoreMoves(mine, legalActions(mine), who, false)
+  const scored = scoreMoves(mine, legalActions(mine), who, false, budget);
+  if (scored === null) return null;
+  const replies = scored
     .sort((a, b) => a.score - b.score || a.index - b.index)
     .slice(0, options.replies);
 
   let worst = Infinity;
   for (const reply of replies) {
-    const next = applyAction(mine, reply.action);
+    const next = applyWithin(mine, reply.action, budget);
+    if (next === null) return null;
     if (next === mine) continue;
-    const leaf = playOutTurn(next, opponentId);
+    const leaf = playOutTurn(next, opponentId, budget);
+    if (leaf === null) return null;
     worst = Math.min(worst, valueOf(leaf, who));
   }
   return worst === Infinity ? valueOf(mine, who) : worst;
+}
+
+/**
+ * **Le repli** : le niveau 2 glouton (`nextAction(state, 2)`), et à défaut la politique
+ * scriptée. Il ne peut pas rendre un coup que le moteur refuserait, et ne coûte que le
+ * nombre d'actions légales — il est donc toujours dans le budget.
+ */
+function fallbackAction(state: BattleState): BattleAction | null {
+  return nextAction(state, 2) ?? nextAction(state, 1);
+}
+
+/** Ce qu'une décision de recherche a fait : le coup, son travail, et s'il y a eu repli (#172). */
+export interface SearchDecision {
+  action: BattleAction | null;
+  /** Nœuds (`applyAction`) consommés par l'évaluation des lignes — jamais plus que `maxNodes`. */
+  nodes: number;
+  /** `true` quand le plafond a mordu : `action` est alors le coup du niveau 2 glouton. */
+  fallback: boolean;
+}
+
+/**
+ * **Décision de la recherche à deux coups**, avec son compte de travail (#172).
+ *
+ * Le plafond `maxNodes` borne le coût **par construction** : dès qu'il est atteint, la
+ * ligne en cours est abandonnée et la décision rend le coup du **niveau 2 glouton**
+ * (`fallbackAction`). Jamais une erreur, jamais un coup nul, et le choix reste
+ * **déterministe** (le compte de nœuds ne dépend que de l'état et des options).
+ *
+ * Une relève en attente est tranchée par le niveau 2 (1 coup) et ne consomme pas de nœud :
+ * la recherche ne porte que sur le tour.
+ */
+export function searchDecision(
+  state: BattleState,
+  options: SearchOptions = DEFAULT_SEARCH_OPTIONS
+): SearchDecision {
+  // L'échéance court depuis l'**entrée** : l'élagage à un coup et le repli comptent aussi.
+  const started = performance.now();
+  if (state.phase === 'ended') return { action: null, nodes: 0, fallback: false };
+  if (state.pendingPromotion) {
+    return { action: nextAction(state, 2), nodes: 0, fallback: false };
+  }
+
+  const who = state.current;
+  const pruned = scoreMoves(state, legalActions(state), who, true) ?? [];
+  const candidates = pruned
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, options.candidates);
+  const only = candidates[0];
+  if (!only) return { action: null, nodes: 0, fallback: false };
+  if (candidates.length === 1) return { action: only.action, nodes: 0, fallback: false };
+
+  const budget: SearchBudget = {
+    left: options.maxNodes,
+    deadline: options.maxMs === Infinity ? Infinity : started + options.maxMs
+  };
+  const worlds = Array.from({ length: options.worlds }, (_, index) => sampleWorld(state, who, index));
+  let best: BattleAction = only.action;
+  let bestValue = -Infinity;
+  for (const candidate of candidates) {
+    let total = 0;
+    for (const world of worlds) {
+      const value = lineValue(world, candidate.action, who, options, budget);
+      if (value === null) {
+        // Budget épuisé : repli glouton, et le compte est plafonné par construction.
+        return {
+          action: fallbackAction(state),
+          nodes: options.maxNodes - budget.left,
+          fallback: true
+        };
+      }
+      total += value;
+    }
+    const value = total / worlds.length;
+    if (value > bestValue) {
+      best = candidate.action;
+      bestValue = value;
+    }
+  }
+  return { action: best, nodes: options.maxNodes - budget.left, fallback: false };
 }
 
 /**
@@ -719,28 +904,5 @@ export function nextSearchAction(
   state: BattleState,
   options: SearchOptions = DEFAULT_SEARCH_OPTIONS
 ): BattleAction | null {
-  if (state.phase === 'ended') return null;
-  if (state.pendingPromotion) return nextAction(state, 2);
-
-  const who = state.current;
-  const candidates = scoreMoves(state, legalActions(state), who, true)
-    .sort((a, b) => b.score - a.score || a.index - b.index)
-    .slice(0, options.candidates);
-  const only = candidates[0];
-  if (!only) return null;
-  if (candidates.length === 1) return only.action;
-
-  const worlds = Array.from({ length: options.worlds }, (_, index) => sampleWorld(state, who, index));
-  let best: BattleAction = only.action;
-  let bestValue = -Infinity;
-  for (const candidate of candidates) {
-    let total = 0;
-    for (const world of worlds) total += lineValue(world, candidate.action, who, options);
-    const value = total / worlds.length;
-    if (value > bestValue) {
-      best = candidate.action;
-      bestValue = value;
-    }
-  }
-  return best;
+  return searchDecision(state, options).action;
 }

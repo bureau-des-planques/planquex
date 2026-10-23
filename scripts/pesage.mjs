@@ -29,6 +29,8 @@
  * npm run pesage -- --seuil-taux 0.55 --seuil-ratio 1.15
  * npm run pesage -- --direction recherche          # la recherche à deux coups (expérimentale)
  * npm run pesage -- --direction recherche --candidats 6 --mondes 3 --reponses 4
+ * npm run pesage -- --direction recherche --noeuds 1000  # le plafond de nœuds (#172)
+ * npm run pesage -- --direction recherche --noeuds 100000000 --ms Infinity  # plafonds neutralisés (témoin)
  * npm run pesage -- --en-processus                 # le niveau 2 joué en processus (contrôle du harnais)
  * ```
  *
@@ -67,7 +69,9 @@ function lireArguments(argv) {
     // (le niveau 2 acté (D-084) — `docs/ia/111-essais-recherche-2-coups.md`).
     direction: 'niveau2',
     enProcessus: false,
-    recherche: { candidates: 6, worlds: 3, replies: 4 }
+    // `maxNodes` : le plafond de nœuds d'une décision (#172), repli glouton au-delà.
+    // `maxMs` : la garde de temps de la même décision (filet pour les machines chargées).
+    recherche: { candidates: 6, worlds: 3, replies: 4, maxNodes: 800, maxMs: 60 }
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -89,6 +93,8 @@ function lireArguments(argv) {
     else if (arg === '--candidats') options.recherche.candidates = Number(valeur());
     else if (arg === '--mondes') options.recherche.worlds = Number(valeur());
     else if (arg === '--reponses') options.recherche.replies = Number(valeur());
+    else if (arg === '--noeuds') options.recherche.maxNodes = Number(valeur());
+    else if (arg === '--ms') options.recherche.maxMs = Number(valeur());
     else if (arg === '--aide' || arg === '-h') {
       console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('*/')[0].replace('/**', ''));
       process.exit(0);
@@ -126,10 +132,17 @@ async function chargerModules() {
 /** Modules chargés à la demande de `main` (null tant que le mode en processus n'est pas requis). */
 let MODULES = null;
 
-/** Un coup de la politique demandée : `1`, `2` (référence) ou `recherche` (expérimentale). */
+/**
+ * Un coup de la politique demandée : `1`, `2` (référence) ou `recherche` (le niveau 2 acté).
+ * La recherche rend aussi son **travail** : le repli sur le glouton quand le plafond de
+ * nœuds mord (#172) est compté et publié, pour que la mesure dise si le budget contraint.
+ */
 function choisir(niveau, state, options) {
-  if (niveau === 'recherche') return MODULES.ia.nextSearchAction(state, options.recherche);
-  return MODULES.ia.nextAction(state, niveau);
+  if (niveau === 'recherche') {
+    const decision = MODULES.ia.searchDecision(state, options.recherche);
+    return { action: decision.action, repli: decision.fallback };
+  }
+  return { action: MODULES.ia.nextAction(state, niveau), repli: false };
 }
 
 /**
@@ -145,9 +158,11 @@ function executerEnProcessus(seed, niveaux, options) {
   const cafeTypes = new Map(factions.map((faction) => [faction, simulation.factionCafeTypes(faction)]));
   const master = { rng: rng.seedRng(seed) };
   const results = [];
+  const durees = [];
   let coups = 0;
   let tempsMs = 0;
   let tempsMaxMs = 0;
+  let replis = 0;
 
   for (let index = 0; index < options.games; index += 1) {
     const [player, ai] = simulation.pairFactions(factions, index);
@@ -160,13 +175,16 @@ function executerEnProcessus(seed, niveaux, options) {
       const who = state.pendingPromotion ?? state.current;
       const niveau = who === 'ai' ? niveaux.direction : niveaux.joueur;
       const debut = performance.now();
-      const action = choisir(niveau, state, options);
+      const decision = choisir(niveau, state, options);
       const duree = performance.now() - debut;
       if (niveau === 'recherche' && who === 'ai') {
         coups += 1;
         tempsMs += duree;
         tempsMaxMs = Math.max(tempsMaxMs, duree);
+        durees.push(duree);
+        if (decision.repli) replis += 1;
       }
+      const action = decision.action;
       if (!action) break;
       const after = engine.applyAction(state, action);
       if (after === state) break;
@@ -174,7 +192,7 @@ function executerEnProcessus(seed, niveaux, options) {
     }
     results.push({ game: index + 1, seed: gameSeed, player, ai, winner: state.winner });
   }
-  return { results, coups, tempsMs, tempsMaxMs };
+  return { results, coups, tempsMs, tempsMaxMs, durees, replis };
 }
 
 /**
@@ -215,6 +233,8 @@ function peser(seeds, options) {
   let coups = 0;
   let tempsMs = 0;
   let tempsMaxMs = 0;
+  let replis = 0;
+  const durees = [];
   const parGraine = [];
   // La politique « niveau 2 » du protocole : le niveau 2 (référence) ou la recherche.
   const deux = options.direction === 'recherche' ? 'recherche' : 2;
@@ -227,6 +247,8 @@ function peser(seeds, options) {
       coups += jeu.coups ?? 0;
       tempsMs += jeu.tempsMs ?? 0;
       tempsMaxMs = Math.max(tempsMaxMs, jeu.tempsMaxMs ?? 0);
+      replis += jeu.replis ?? 0;
+      if (jeu.durees) durees.push(...jeu.durees);
     }
     let g2 = 0;
     let g1 = 0;
@@ -252,13 +274,25 @@ function peser(seeds, options) {
   // Intervalle de confiance à 95 % de Wald sur le taux des décidées : un gain qui ne sort pas
   // de l'intervalle n'est pas un gain.
   const marge = decidees === 0 ? 0 : 1.96 * Math.sqrt((taux * (1 - taux)) / decidees);
+  // Quantiles du temps par décision (#172) : la moyenne ne suffit pas, c'est la queue
+  // (p95, p99, max) qui décide du budget perçu à l'écran.
+  durees.sort((x, y) => x - y);
+  const quantile = (q) =>
+    durees.length === 0 ? null : Number(durees[Math.min(durees.length - 1, Math.floor(q * durees.length))].toFixed(2));
   return {
     seeds,
     direction: options.direction,
     // Temps de la Direction (mode en processus) : coups joués par la recherche et leur coût.
     coupsRecherche: coups,
     msParCoup: coups === 0 ? null : Number((tempsMs / coups).toFixed(2)),
+    msP50Coup: quantile(0.5),
+    msP95Coup: quantile(0.95),
+    msP99Coup: quantile(0.99),
     msMaxCoup: coups === 0 ? null : Number(tempsMaxMs.toFixed(2)),
+    // Décisions où le plafond de nœuds a mordu : le glouton a rendu le coup (#172).
+    replisBudget: replis,
+    maxNoeuds: options.recherche.maxNodes,
+    maxMs: options.recherche.maxMs,
     parties: n2 + n1 + nulles,
     decidees,
     niveau2: n2,
