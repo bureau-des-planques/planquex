@@ -23,15 +23,24 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Copy, Download, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
+import { Confirmation } from '@/components/Confirmation';
 import { PAPIERS, PostitDuMur } from '@/components/PostitDuMur';
 import type { GlisserPostit } from '@/components/PostitDuMur';
 import {
+  chargerCommentaires,
   chargerPostitsDuMur,
+  commenterPostit,
   compterApres,
+  corrigerPostit,
+  grouperCommentaires,
   murEstConfigure,
   posterPostit,
+  retirerPostit,
+  supprimerCommentaire,
+  verifierCommentaire,
   voterPourPostit
 } from '@/lib/murBase';
+import type { Commentaire } from '@/lib/murBase';
 import { estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 import { DOCUMENT_MUR, ECRANS, exporterMur, lireMur } from '@/store/mur';
@@ -98,6 +107,20 @@ export function BoiteAIdees() {
   const [votesEnVol, setVotesEnVol] = useState<ReadonlySet<string>>(() => new Set());
   const [erreursVote, setErreursVote] = useState<Record<string, string>>({});
 
+  /** Le fil de chaque post-it, et l'état de sa lecture (#138). */
+  const [commentaires, setCommentaires] = useState<Record<string, Commentaire[]>>({});
+  const [chargementCommentaires, setChargementCommentaires] = useState(false);
+  const [erreurCommentaires, setErreurCommentaires] = useState<string | null>(null);
+  const [commentaireEnVol, setCommentaireEnVol] = useState<string | null>(null);
+  const [erreursFil, setErreursFil] = useState<Record<string, string>>({});
+
+  /** La relecture de **mon** post-it (#139). */
+  const [correctionEnVol, setCorrectionEnVol] = useState<string | null>(null);
+  const [erreursCorrection, setErreursCorrection] = useState<Record<string, string>>({});
+  /** Le post-it dont on demande le retrait : la confirmation est rendue par la page. */
+  const [aRetirer, setARetirer] = useState<Postit | null>(null);
+  const [retraitEnVol, setRetraitEnVol] = useState(false);
+
   const [positions, setPositions] = useState(() => positionsDuMur(LECTURE.mur));
   const [placement, setPlacement] = useState(false);
   const [agrandi, setAgrandi] = useState<string | null>(null);
@@ -117,6 +140,26 @@ export function BoiteAIdees() {
   const [envoi, setEnvoi] = useState(false);
   const [depotMessage, setDepotMessage] = useState<{ texte: string; alerte?: boolean } | null>(null);
 
+  /**
+   * Le fil du mur (#138) se lit **après** les post-its, et à part : un fil qu'on ne peut pas
+   * lire ne doit pas faire retomber tout le mur sur le fichier. C'est un état d'erreur à
+   * lui (D-060), affiché dans le fil et non sur la page.
+   */
+  const lireLesFils = () => {
+    setChargementCommentaires(true);
+    chargerCommentaires()
+      .then((liste) => {
+        setCommentaires(grouperCommentaires(liste));
+        setErreurCommentaires(null);
+      })
+      .catch((erreur: unknown) => {
+        setErreurCommentaires(
+          `Les commentaires n’ont pas pu être lus (${messageDe(erreur)}). Le mur reste lisible.`
+        );
+      })
+      .finally(() => setChargementCommentaires(false));
+  };
+
   useEffect(() => {
     if (!branche) return;
     let vivant = true;
@@ -130,6 +173,7 @@ export function BoiteAIdees() {
         setErreurs([]);
         setSource('base');
         setNotice(null);
+        lireLesFils();
       })
       .catch((erreur: unknown) => {
         if (!vivant) return;
@@ -272,6 +316,105 @@ export function BoiteAIdees() {
   };
 
   /**
+   * Commenter (#138). Le commentaire s'ajoute au fil **après** la réponse de la base — à la
+   * différence du pouce, rien ne s'affiche avant d'exister : un commentaire n'a pas de
+   * compteur à faire bouger, et un texte qu'on retire aussitôt serait pire qu'une attente.
+   * Le refus (compte en attente, post-it disparu) se dit **sur le post-it**.
+   */
+  const commenter = async (postit: Postit, texte: string) => {
+    const refus = verifierCommentaire(texte);
+    setErreursFil(({ [postit.id]: _ancien, ...reste }) => reste);
+    if (refus) {
+      setErreursFil((courants) => ({ ...courants, [postit.id]: refus }));
+      return;
+    }
+
+    setCommentaireEnVol(postit.id);
+    try {
+      const commentaire = await commenterPostit(postit.id, texte, { pseudo });
+      setCommentaires((courants) => ({
+        ...courants,
+        [postit.id]: [...(courants[postit.id] ?? []), commentaire],
+      }));
+    } catch (erreur) {
+      setErreursFil((courants) => ({ ...courants, [postit.id]: messageDe(erreur) }));
+    } finally {
+      setCommentaireEnVol(null);
+    }
+  };
+
+  /** Retirer **mon** commentaire (#138) : la base refuse celui d'un autre. */
+  const retirerCommentaire = async (commentaire: Commentaire) => {
+    setCommentaireEnVol(commentaire.postitId);
+    setErreursFil(({ [commentaire.postitId]: _ancien, ...reste }) => reste);
+    try {
+      await supprimerCommentaire(commentaire.id);
+      setCommentaires((courants) => ({
+        ...courants,
+        [commentaire.postitId]: (courants[commentaire.postitId] ?? []).filter(
+          (autre) => autre.id !== commentaire.id
+        ),
+      }));
+    } catch (erreur) {
+      setErreursFil((courants) => ({ ...courants, [commentaire.postitId]: messageDe(erreur) }));
+    } finally {
+      setCommentaireEnVol(null);
+    }
+  };
+
+  /** Corriger le titre et le texte de **mon** post-it, tant qu'il est en attente (#139). */
+  const corriger = async (postit: Postit, titre: string, texte: string) => {
+    setCorrectionEnVol(postit.id);
+    setErreursCorrection(({ [postit.id]: _ancien, ...reste }) => reste);
+    try {
+      const corrige = await corrigerPostit(postit.id, { titre, texte });
+      setMur((courant) =>
+        courant
+          ? {
+              ...courant,
+              postits: courant.postits.map((autre) =>
+                autre.id === postit.id ? { ...autre, ...corrige } : autre
+              )
+            }
+          : courant
+      );
+    } catch (erreur) {
+      setErreursCorrection((courants) => ({ ...courants, [postit.id]: messageDe(erreur) }));
+    } finally {
+      setCorrectionEnVol(null);
+    }
+  };
+
+  /**
+   * Retirer **mon** post-it (#139) : il est **supprimé**, avec ses votes et ses
+   * commentaires (voir `retirerPostit`). La confirmation est passée avant : ce n'est pas
+   * un geste qu'on défait.
+   */
+  const retirer = async () => {
+    const cible = aRetirer;
+    if (!cible || retraitEnVol) return;
+    setRetraitEnVol(true);
+    try {
+      await retirerPostit(cible.id);
+      setMur((courant) =>
+        courant ? { ...courant, postits: courant.postits.filter((autre) => autre.id !== cible.id) } : courant
+      );
+      setCommentaires(({ [cible.id]: _fil, ...reste }) => reste);
+      setPositions(({ [cible.id]: _place, ...reste }) => reste);
+      setARetirer(null);
+      setDepotMessage({
+        texte:
+          'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
+      });
+    } catch (erreur) {
+      setARetirer(null);
+      setDepotMessage({ alerte: true, texte: messageDe(erreur) });
+    } finally {
+      setRetraitEnVol(false);
+    }
+  };
+
+  /**
    * Le post-it collé sur un gueulage (D-085). Il **existe** dans le fichier — c'est lui
    * qui se trie, avec sa famille — mais l'écran ne le montre **que** collé : s'il
    * s'affichait aussi à côté, le mur compterait deux fois la même réponse.
@@ -374,8 +517,8 @@ export function BoiteAIdees() {
               signalent (<strong>OUF</strong>).{' '}
               {branche
                 ? peutEcrire
-                  ? 'Tu peux y coller un post-it depuis le jeu, avec ton compte.'
-                  : 'Tu peux lire le mur ; poster un post-it s’ouvrira quand ton compte sera validé.'
+                  ? 'Tu peux y coller un post-it et commenter sous ceux des autres, avec ton compte.'
+                  : 'Tu peux lire le mur et ses commentaires ; écrire s’ouvrira quand ton compte sera validé.'
                 : 'Le jeu le lit et n’y écrit pas — pour laisser un post-it, passe par le formulaire.'}
             </p>
           </div>
@@ -658,6 +801,36 @@ export function BoiteAIdees() {
                       : undefined
                   }
                   associe={postit.gueulage && postit.lie ? parId.get(postit.lie) ?? null : null}
+                  fil={
+                    source === 'base'
+                      ? {
+                          chargement: chargementCommentaires,
+                          // Le refus de ce post-it d'abord ; sinon la panne de lecture,
+                          // qui vaut pour tout le mur.
+                          erreur: erreursFil[postit.id] ?? erreurCommentaires,
+                          commentaires: commentaires[postit.id] ?? [],
+                          occupe: commentaireEnVol === postit.id,
+                          peutCommenter: peutEcrire,
+                          motifSansEcriture: sessionCompte
+                            ? 'Ton compte attend d’être validé : tu lis le fil dès maintenant, et tu pourras le commenter une fois approuvé.'
+                            : 'Il faut un compte pour commenter : la lecture du fil, elle, est ouverte.',
+                          onCommenter: commenter,
+                          onSupprimer: retirerCommentaire
+                        }
+                      : undefined
+                  }
+                  correction={
+                    source === 'base' && peutEcrire && postit.mien
+                      ? {
+                          gele: postit.statut !== 'en attente',
+                          raisonGele: `Ce post-it a bougé de statut (« ${postit.statut} ») : on ne le corrige plus, sinon le mur ne dirait plus la même chose à tout le monde.`,
+                          occupe: correctionEnVol === postit.id,
+                          erreur: erreursCorrection[postit.id] ?? null,
+                          onCorriger: corriger,
+                          onRetirer: (cible) => setARetirer(cible)
+                        }
+                      : undefined
+                  }
                 />
               ))}
           </div>
@@ -759,9 +932,20 @@ export function BoiteAIdees() {
 
       <p className="m-0 text-[0.78rem] text-ink-dim">
         {source === 'base'
-          ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Les pouces comptent un vote par appareil et par post-it ; on ne vote pas pour le sien.'
-          : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Aucun compteur ici : les pouces ne s’ouvrent qu’avec la base partagée.'}
+          ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Les pouces comptent un vote par compte et par post-it, et l’on ne vote pas pour le sien ; chaque post-it porte son fil de commentaires.'
+          : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Ni pouces ni commentaires ici : ils ne s’ouvrent qu’avec la base partagée.'}
       </p>
+
+      {/* Le retrait d'un post-it ne se défait pas (#139) : il passe par la confirmation du
+          jeu, jamais par `window.confirm` (D-035). */}
+      <Confirmation
+        open={aRetirer !== null}
+        titre="Retirer ce post-it ?"
+        texte="Il sera supprimé du mur, avec ses commentaires — pas seulement barré, et il n’en restera aucune trace. C’est définitif. Le retrait n’est possible que tant que le post-it est en attente : dès qu’il a bougé de statut, il ne s’efface plus."
+        confirmer={retraitEnVol ? 'Retrait…' : 'Retirer le post-it'}
+        onConfirm={() => void retirer()}
+        onCancel={() => setARetirer(null)}
+      />
     </div>
   );
 }

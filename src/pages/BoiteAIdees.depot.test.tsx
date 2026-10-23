@@ -52,11 +52,18 @@ vi.mock('@/store/mur', async () => {
   return { ...vrai, DOCUMENT_MUR: DOCUMENT };
 });
 
-vi.mock('@/lib/murBase', () => ({
-  murEstConfigure: mocks.murEstConfigure,
-  chargerPostitsDuMur: mocks.charger,
-  posterPostit: mocks.poster
-}));
+vi.mock('@/lib/murBase', async () => {
+  // Les vraies fonctions restent : un faux module **entier** rendrait `chargerCommentaires`
+  // indéfini, et la page retomberait sur le fichier pour une raison qui n'a rien à voir
+  // avec ce que ce test mesure (#138).
+  const vrai = await vi.importActual<typeof import('@/lib/murBase')>('@/lib/murBase');
+  return {
+    ...vrai,
+    murEstConfigure: mocks.murEstConfigure,
+    chargerPostitsDuMur: mocks.charger,
+    posterPostit: mocks.poster
+  };
+});
 
 import { BoiteAIdees } from './BoiteAIdees';
 import { useStore } from '@/store/useStore';
