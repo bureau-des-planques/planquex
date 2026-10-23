@@ -83,9 +83,23 @@ En bas, comme sur un réseau social : **un pouce levé et un pouce baissé**, av
 **mon** vote distinct du total. Puis l'**auteur**, le **statut**, et le **lien vers le ticket** quand
 il y en a un.
 
-> **Les votes n'existent pas dans l'alpha** : ils supposent un état partagé entre appareils, et le jeu
-> n'a aucun backend. Ils arrivent avec la base (#135) et le mur complet (#137). Dans l'alpha, le mur
-> montre les post-its, leurs couleurs, leurs statuts et leur disposition — **pas** de compteur.
+> **Les votes n'existent pas sans la base** : ils supposent un état partagé entre appareils. Sans
+> configuration (ou quand la base ne répond pas et que le mur retombe sur le fichier), le mur montre
+> les post-its, leurs couleurs, leurs statuts et leur disposition — **ni bouton ni compteur**, et
+> rien n'est contacté. **Avec la base** (#137) :
+>
+> - **un appareil, un pouce par post-it** (la clé primaire de `votes`, côté base) ;
+> - **un clic sur un pouce** : si je n'ai pas voté, j'**ajoute** mon vote ; si j'ai déjà levé **ce**
+>   pouce, je le **retire** ; si j'ai levé **l'autre**, je **change** mon vote (une modification de ma
+>   ligne, jamais une seconde) — dans cet ordre de priorité ;
+> - **mon** vote est un pouce **plein** avec l'étiquette « ton vote » : le total le comprend, il ne
+>   s'y ajoute pas ;
+> - **pas pour soi** : sur son propre post-it on voit les comptes, on ne vote pas. L'écran ne propose
+>   pas le bouton, mais la règle est **dans la base** (`0004_pouces.sql`), pas dans l'écran ;
+> - le compte bouge **tout de suite** ; si le réseau ou la base refuse, il **revient** à l'état d'avant,
+>   avec un message discret sur le post-it. Un post-it écarté reste votable ; un post-it effacé ne
+>   l'est plus (le message le dit) ;
+> - le client n'écrit **jamais** `votant` : la base le remplit par `auth.uid()`.
 
 ### Sur téléphone — des post-its quand même, empilés
 
@@ -101,7 +115,7 @@ l'écran étroit **garde des post-its** — il ne se contente pas d'une liste de
   s'allonge tant qu'il y a des post-its ;
 - **une pression agrandit un post-it** : sa taille de lecture — et c'est là que se rangent les choses
   qui ne tiennent pas sur un post-it de téléphone, c'est-à-dire **le statut, le lien vers le ticket, et
-  plus tard les pouces** (qui arrivent avec la base, #135 → #137). Sur écran large, ces éléments
+  les pouces** (avec la base, #137). Sur écran large, ces éléments
   vivent **sur** le post-it.
 
 Le **mode de placement** reste un travail de **bureau** : il ne se fait pas au doigt sur un téléphone.
@@ -136,8 +150,8 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
       // change de taille selon l'écran. `x` et `y` vont de 0 à 100, `angle` de -5 à +5.
       "position": { "x": 12, "y": 34, "angle": -2 },
       // Les compteurs du pouce levé et du pouce baissé, remplis par la base (#136, #137).
-      // À zéro dans l'alpha, qui n'a aucun état partagé : un appareil ne vote qu'une fois
-      // par post-it, et personne ne vote dans l'alpha.
+      // Le fichier les tient à zéro : il n'a aucun état partagé. Mon vote (`mon`, « up » ou
+      // « down » ou nul) n'existe que lu en base ; il n'est jamais écrit dans ce fichier.
       "votes": { "up": 0, "down": 0 }
     }
   ]

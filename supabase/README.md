@@ -9,6 +9,8 @@ s'appuyer dessus.
 | `supabase/migrations/0001_mur.sql` | le schéma : `postits`, `votes`, `commentaires`, la vue `postits_avec_votes`, les droits et les politiques RLS |
 | `supabase/migrations/0002_combats.sql` | la trace des combats : la table `combats`, les droits et les politiques RLS (#173, D-086) |
 | `supabase/migrations/0003_gueulage.sql` | le gueulage (D-085) : `kind` nullable, `lie`, l'identifiant jusqu'à 80 caractères — ni table, ni politique, ni droit |
+| `supabase/migrations/0004_pouces.sql` | les pouces (#137) : les politiques d'insertion et de modification de `votes` refusent un vote pour **son propre** post-it — pas de table, pas de droit |
+| `supabase/pouces.test.ts` | la garde des pouces : un seul vote par appareil, pas pour soi, pas au nom d'un autre, un vote défait remet le compteur — et chaque contrôle, neutralisé, laisse passer le fautif |
 | `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
 | `supabase/combats.test.ts` | la même garde pour les combats : un autre appareil ne lit pas, `anon` n'a rien, un auteur forgé est refusé, et la migration mutée fuit |
@@ -58,7 +60,8 @@ recopié sur la ligne, c'est lui que le mur affiche.
 ### `public.votes`
 
 `(postit_id, votant, sens, created_at)`, clé primaire `(postit_id, votant)` : **un appareil, un
-vote par post-it**. Changer d'avis est un `UPDATE` de sa ligne, pas une seconde ligne.
+vote par post-it**. Changer d'avis est un `UPDATE` de sa ligne, pas une seconde ligne. Depuis
+`0004_pouces.sql`, un auteur **ne vote pas pour son propre post-it** (insertion comme modification).
 
 ### `public.commentaires`
 
@@ -308,6 +311,22 @@ supabase migration repair --status applied 0003
 
 Le contrôle qui compte : `npx vitest run supabase/gueulage.test.ts`.
 
+### Appliquer 0004
+
+Les pouces (#137) : un auteur ne vote pas pour son propre post-it. Comme 0001 : coller **tout**
+`supabase/migrations/0004_pouces.sql` dans *SQL Editor* → *Run*. Elle est **idempotente**
+(`drop policy if exists`, puis `create policy`), ne touche ni aux tables, ni aux droits, ni à la
+vue, et retire — s'il en existe — les votes qu'un auteur aurait déjà posés sur son propre post-it.
+Puis :
+
+```bash
+supabase migration repair --status applied 0004
+```
+
+Le contrôle qui compte : `npx vitest run supabase/pouces.test.ts`. **Tant qu'elle n'est pas
+appliquée**, l'écran propose quand même les pouces et la base accepterait un vote pour soi
+(l'écran, lui, ne propose pas le bouton sur ses propres post-its).
+
 ## 7. Ce qui reste humain, précisément
 
 - **Créer ou choisir le projet Supabase** et donner son `project-ref` — fait (#135) ;
@@ -316,7 +335,8 @@ Le contrôle qui compte : `npx vitest run supabase/gueulage.test.ts`.
 - **poser les deux variables** en local et sur Vercel — local fait, **Vercel pas encore** ;
 - **appliquer la migration 0002** (§6, la table des combats, #173) — pas encore appliquée ;
 - **appliquer la migration 0003** (§6, le gueulage, D-085) — pas encore appliquée ;
+- **appliquer la migration 0004** (§6, les pouces, #137) ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
 - **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
   l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;
-  restent les votes (#137), les commentaires (#138) et la modification/retrait (#139).
+  restent les commentaires (#138) et la modification/retrait (#139).

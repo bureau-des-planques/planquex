@@ -3,7 +3,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ClientMur, RequeteMur, ReponseMur } from '@/lib/supabase';
 import {
   chargerPostitsDuMur,
+  compterApres,
   composerLignePostit,
+  gesteDeVote,
   idPostit,
   lirePostitsDeLaBase,
   murEstConfigure,
@@ -11,6 +13,7 @@ import {
   posterPostit,
   texteAvecCapture,
   titreDepuisTexte,
+  voterPourPostit,
 } from '@/lib/murBase';
 
 /**
@@ -53,11 +56,28 @@ interface Reponses {
   erreurLecture?: string;
   erreurInsertion?: string;
   session?: boolean;
+  /** Les lignes de `votes` rendues à une lecture filtrée sur mon identité (#137). */
+  mesVotes?: unknown[];
+  erreurLectureVotes?: string;
+  /** L'erreur que la base rend à un vote (insertion, modification ou retrait). */
+  erreurVote?: string;
+  /** Le nombre de lignes qu'une modification ou un retrait de vote touche (défaut : 1). */
+  lignesTouchees?: number;
 }
 
-/** Un faux client : il note les insertions et rend les lignes (ou l'erreur) demandées. */
+/** Tout ce qui part vers la base en écriture : la table, le geste, les valeurs, les filtres. */
+interface Ecriture {
+  table: string;
+  geste: 'insert' | 'update' | 'delete';
+  valeurs?: Record<string, unknown>;
+  filtres: Array<[string, string]>;
+}
+
+/** Un faux client : il note les écritures et rend les lignes (ou l'erreur) demandées. */
 function fauxClient(reponses: Reponses = {}) {
   const insertions: Array<{ table: string; ligne: Record<string, unknown> }> = [];
+  const ecritures: Ecriture[] = [];
+  const lectures: Array<{ table: string; filtres: Array<[string, string]> }> = [];
   const signIn = vi.fn(async () => ({
     data: { user: { id: 'appareil-neuf' } },
     error: null,
@@ -71,28 +91,58 @@ function fauxClient(reponses: Reponses = {}) {
   const client = {
     auth: { getSession, signInAnonymously: signIn },
     from(table: string): RequeteMur {
+      let ecriture: Ecriture | null = null;
+      const filtres: Array<[string, string]> = [];
       const requete: RequeteMur = {
         select: () => requete,
         order: () => requete,
+        eq: (colonne, valeur) => {
+          filtres.push([colonne, valeur]);
+          return requete;
+        },
         insert: (ligne) => {
           insertions.push({ table, ligne });
+          ecriture = { table, geste: 'insert', valeurs: ligne, filtres };
+          ecritures.push(ecriture);
+          return requete;
+        },
+        update: (valeurs) => {
+          ecriture = { table, geste: 'update', valeurs, filtres };
+          ecritures.push(ecriture);
+          return requete;
+        },
+        delete: () => {
+          ecriture = { table, geste: 'delete', filtres };
+          ecritures.push(ecriture);
           return requete;
         },
         then: (onfulfilled, onrejected) => {
-          const reponse: ReponseMur<unknown> =
-            table === 'postits'
-              ? {
-                  data: null,
-                  error: reponses.erreurInsertion
-                    ? { message: reponses.erreurInsertion }
-                    : null,
-                }
-              : {
-                  data: reponses.lignes ?? [],
-                  error: reponses.erreurLecture
-                    ? { message: reponses.erreurLecture }
-                    : null,
-                };
+          let reponse: ReponseMur<unknown>;
+          if (table === 'votes' && ecriture) {
+            reponse = {
+              data:
+                ecriture.geste === 'insert'
+                  ? null
+                  : Array.from({ length: reponses.lignesTouchees ?? 1 }, () => ({ postit_id: 'x' })),
+              error: reponses.erreurVote ? { message: reponses.erreurVote } : null,
+            };
+          } else if (table === 'votes') {
+            lectures.push({ table, filtres });
+            reponse = {
+              data: reponses.mesVotes ?? [],
+              error: reponses.erreurLectureVotes ? { message: reponses.erreurLectureVotes } : null,
+            };
+          } else if (table === 'postits') {
+            reponse = {
+              data: null,
+              error: reponses.erreurInsertion ? { message: reponses.erreurInsertion } : null,
+            };
+          } else {
+            reponse = {
+              data: reponses.lignes ?? [],
+              error: reponses.erreurLecture ? { message: reponses.erreurLecture } : null,
+            };
+          }
           return Promise.resolve(reponse).then(onfulfilled, onrejected);
         },
       };
@@ -100,7 +150,7 @@ function fauxClient(reponses: Reponses = {}) {
     },
   };
 
-  return { client: client as unknown as ClientMur, insertions, signIn, getSession };
+  return { client: client as unknown as ClientMur, insertions, ecritures, lectures, signIn, getSession };
 }
 
 describe('la lecture du mur passe par la base quand elle est configurée (#136)', () => {
@@ -338,5 +388,136 @@ describe('les petits morceaux du contrat', () => {
     );
     expect(ligne.ecran).toBeNull();
     expect(ligne.version).toBe('Alpha · 0.1.6');
+  });
+});
+
+describe('les pouces : lecture de mon vote et écriture du vote (#137)', () => {
+  const AUTRE = { ...LIGNE, id: 'p-002', auteur: 'appareil-B', votes: { up: 0, down: 0 } };
+
+  it('distingue mon vote du total, et reconnaît mes post-its', async () => {
+    const faux = fauxClient({
+      lignes: [LIGNE, AUTRE],
+      mesVotes: [{ postit_id: 'p-002', sens: 'up' }],
+    });
+    const postits = await chargerPostitsDuMur(async () => faux.client);
+
+    // Le total vient de la vue ; mon vote, de mes lignes de `votes` — jamais mélangés.
+    expect(postits?.[0]).toMatchObject({ id: 'p-001', votes: { up: 2, down: 1, mon: null }, mien: true });
+    expect(postits?.[1]).toMatchObject({ id: 'p-002', votes: { up: 0, down: 0, mon: 'up' }, mien: false });
+  });
+
+  it('ne lit que MES votes : la lecture est filtrée sur mon identité', async () => {
+    const faux = fauxClient({ lignes: [LIGNE] });
+    await chargerPostitsDuMur(async () => faux.client);
+    expect(faux.lectures).toEqual([{ table: 'votes', filtres: [['votant', 'appareil-A']] }]);
+    // Aucune écriture à la lecture.
+    expect(faux.ecritures).toHaveLength(0);
+  });
+
+  it('une panne de lecture de mes votes lève : la page retombe sur le fichier, sans pouces', async () => {
+    const faux = fauxClient({ lignes: [LIGNE], erreurLectureVotes: 'TypeError: Failed to fetch' });
+    await expect(chargerPostitsDuMur(async () => faux.client)).rejects.toThrow(
+      /Lecture de tes votes impossible/,
+    );
+  });
+
+  it('sans configuration, voter n’écrit rien et le dit', async () => {
+    await expect(voterPourPostit('p-001', 'up', null, { chargerClient: async () => null })).rejects.toThrow(
+      /pas configuré/,
+    );
+  });
+
+  it('un premier vote est une insertion de `postit_id` et `sens` — jamais de `votant`', async () => {
+    const faux = fauxClient();
+    const apres = await voterPourPostit('p-001', 'up', null, { chargerClient: async () => faux.client });
+
+    expect(apres).toBe('up');
+    expect(faux.ecritures).toEqual([
+      { table: 'votes', geste: 'insert', valeurs: { postit_id: 'p-001', sens: 'up' }, filtres: [] },
+    ]);
+    expect(faux.ecritures[0].valeurs).not.toHaveProperty('votant');
+  });
+
+  it('l’autre pouce change mon vote : une modification de MA ligne, pas une seconde ligne', async () => {
+    const faux = fauxClient();
+    const apres = await voterPourPostit('p-001', 'down', 'up', { chargerClient: async () => faux.client });
+
+    expect(apres).toBe('down');
+    expect(faux.ecritures).toHaveLength(1);
+    expect(faux.ecritures[0]).toMatchObject({
+      table: 'votes',
+      geste: 'update',
+      valeurs: { sens: 'down' },
+      filtres: [
+        ['postit_id', 'p-001'],
+        ['votant', 'appareil-A'],
+      ],
+    });
+    expect(faux.ecritures[0].valeurs).not.toHaveProperty('votant');
+  });
+
+  it('le même pouce retire mon vote', async () => {
+    const faux = fauxClient();
+    const apres = await voterPourPostit('p-001', 'up', 'up', { chargerClient: async () => faux.client });
+
+    expect(apres).toBeNull();
+    expect(faux.ecritures).toEqual([
+      {
+        table: 'votes',
+        geste: 'delete',
+        filtres: [
+          ['postit_id', 'p-001'],
+          ['votant', 'appareil-A'],
+        ],
+      },
+    ]);
+  });
+
+  it('une erreur réseau lève : l’appelant rétablit l’affichage', async () => {
+    const faux = fauxClient({ erreurVote: 'TypeError: Failed to fetch' });
+    await expect(voterPourPostit('p-001', 'up', null, { chargerClient: async () => faux.client })).rejects.toThrow(
+      /Le vote n’est pas passé \(TypeError: Failed to fetch\)/,
+    );
+  });
+
+  it('les refus de la base sont dits en français : pour soi, post-it effacé, double vote', async () => {
+    const refus = async (erreurVote: string) => {
+      const faux = fauxClient({ erreurVote });
+      return voterPourPostit('p-001', 'up', null, { chargerClient: async () => faux.client }).catch(
+        (erreur: Error) => erreur.message,
+      );
+    };
+    expect(await refus('new row violates row-level security policy for table "votes"')).toMatch(/propre post-it/);
+    expect(await refus('insert or update on table "votes" violates foreign key constraint')).toMatch(/n’existe plus/);
+    expect(await refus('duplicate key value violates unique constraint "votes_pkey"')).toMatch(/déjà voté/);
+  });
+
+  it('un retrait ou un changement qui ne touche aucune ligne est une erreur, pas un succès', async () => {
+    const faux = fauxClient({ lignesTouchees: 0 });
+    await expect(voterPourPostit('p-001', 'up', 'up', { chargerClient: async () => faux.client })).rejects.toThrow(
+      /n’existe plus/,
+    );
+    await expect(voterPourPostit('p-001', 'down', 'up', { chargerClient: async () => faux.client })).rejects.toThrow(
+      /n’existe plus/,
+    );
+  });
+
+  it('l’ordre de priorité d’un clic : même pouce = retirer, autre pouce = changer, rien = voter', () => {
+    expect(gesteDeVote(null, 'up')).toEqual({ geste: 'inserer', apres: 'up' });
+    expect(gesteDeVote('up', 'up')).toEqual({ geste: 'retirer', apres: null });
+    expect(gesteDeVote('up', 'down')).toEqual({ geste: 'changer', apres: 'down' });
+    expect(gesteDeVote('down', 'up')).toEqual({ geste: 'changer', apres: 'up' });
+  });
+
+  it('(d) un vote défait remet le compteur ; changer d’avis le déplace, sans le doubler', () => {
+    const depart = { up: 2, down: 1, mon: null };
+    const vote = compterApres(depart, null, 'up');
+    expect(vote).toEqual({ up: 3, down: 1, mon: 'up' });
+    // Défait : on retombe exactement sur le compteur de départ.
+    expect(compterApres(vote, 'up', null)).toEqual(depart);
+    // Changé : un pouce de moins d'un côté, un de plus de l'autre.
+    expect(compterApres(vote, 'up', 'down')).toEqual({ up: 2, down: 2, mon: 'down' });
+    // Jamais sous zéro.
+    expect(compterApres({ up: 0, down: 0, mon: 'up' }, 'up', null)).toEqual({ up: 0, down: 0, mon: null });
   });
 });

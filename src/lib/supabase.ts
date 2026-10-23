@@ -79,6 +79,10 @@ export interface RequeteMur<T = unknown> extends PromiseLike<ReponseMur<T>> {
   select(colonnes?: string): RequeteMur<T>;
   order(colonnes: string, options?: { ascending?: boolean }): RequeteMur<T>;
   insert(ligne: Record<string, unknown>): RequeteMur<T>;
+  /** Filtre : la colonne vaut la valeur. Sert à lire ses propres votes et à viser sa ligne (#137). */
+  eq(colonne: string, valeur: string): RequeteMur<T>;
+  update(valeurs: Record<string, unknown>): RequeteMur<T>;
+  delete(): RequeteMur<T>;
 }
 
 /** Un client Supabase : l'identité anonyme, et l'accès aux tables. */
