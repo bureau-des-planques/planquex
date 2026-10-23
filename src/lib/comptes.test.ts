@@ -169,7 +169,11 @@ describe('la lecture d’un compte', () => {
 
   it('sans session, rend une session nulle et aucun compte', async () => {
     const faux = fauxClient({ session: null });
-    await expect(lireMonCompte(faux.charger)).resolves.toEqual({ session: null, compte: null });
+    await expect(lireMonCompte(faux.charger)).resolves.toEqual({
+      session: null,
+      compte: null,
+      erreur: null,
+    });
     // Aucune lecture de `comptes` n'a été tentée.
     expect(faux.lectures).toHaveLength(0);
   });
@@ -190,9 +194,14 @@ describe('la lecture d’un compte', () => {
     expect(lu?.compte).toBeNull();
   });
 
-  it('une erreur de lecture lève, avec le message de la base', async () => {
-    const faux = fauxClient({ erreurLecture: 'permission denied' });
-    await expect(lireMonCompte(faux.charger)).rejects.toThrow(/Lecture de ton compte impossible/);
+  it('une erreur de lecture garde la session, et dit l’erreur', async () => {
+    // Sans cette distinction, une base qui n'a pas encore la 0005 fermerait l'entrée à tout
+    // le monde : lire et jouer ne dépendent pourtant pas de la table `comptes`.
+    const faux = fauxClient({ erreurLecture: 'relation "comptes" does not exist' });
+    const lu = await lireMonCompte(faux.charger);
+    expect(lu?.session?.id).toBe('compte-a');
+    expect(lu?.compte).toBeNull();
+    expect(lu?.erreur).toMatch(/Lecture de ton compte impossible/);
   });
 });
 

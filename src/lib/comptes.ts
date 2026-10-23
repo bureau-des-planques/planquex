@@ -170,29 +170,47 @@ export function messageDeConnexion(message: string): string {
   return `La connexion n’a pas abouti (${message}).`;
 }
 
+/** Ce que rend la lecture du compte : la session, sa ligne, et l'échec éventuel de la ligne. */
+export interface LectureCompte {
+  session: SessionCompte | null;
+  compte: Compte | null;
+  /** Renseignée si la **ligne** n'a pas pu être lue ; la session, elle, reste valable. */
+  erreur: string | null;
+}
+
 /**
  * La session et la ligne de compte de l'appelant. Rend `null` quand le backend n'est pas
  * configuré ; `{ session: null, compte: null }` quand personne n'est connecté.
  *
- * Un compte connecté dont la ligne manque (déclencheur non appliqué, migration oubliée) rend
- * `compte: null` : l'écran le dit, il n'invente pas un état.
+ * Un compte connecté dont la ligne manque (déclencheur non appliqué, migration 0005 pas
+ * encore jouée) rend `compte: null` : l'écran le dit, il n'invente pas un état. Une **erreur
+ * de lecture** ne fait pas perdre la session : sans cette distinction, une base en retard
+ * fermerait l'entrée à tout le monde, alors que lire et jouer ne dépendent pas de `comptes`.
  */
 export async function lireMonCompte(
   chargerClient: () => Promise<ClientComptes | null> = clientComptes,
-): Promise<{ session: SessionCompte | null; compte: Compte | null } | null> {
+): Promise<LectureCompte | null> {
   const client = await chargerClient();
   if (!client) return null;
 
   const { data } = await client.auth.getSession();
   const user = data.session?.user;
-  if (!user) return { session: null, compte: null };
+  if (!user) return { session: null, compte: null, erreur: null };
 
+  const session = { id: user.id, courriel: user.email ?? '' };
   const { data: lignes, error } = await client.from('comptes').select('*').eq('id', user.id);
-  if (error) throw new Error(`Lecture de ton compte impossible : ${error.message}`);
+  if (error) {
+    return {
+      session,
+      compte: null,
+      erreur: `Lecture de ton compte impossible : ${error.message}`,
+    };
+  }
 
   return {
-    session: { id: user.id, courriel: user.email ?? '' },
+    session,
     compte: Array.isArray(lignes) ? lireCompte(lignes[0]) : null,
+    erreur: null,
   };
 }
 

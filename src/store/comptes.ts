@@ -77,6 +77,9 @@ export const useComptes = create<ComptesState>((set, get) => ({
         chargement: false,
         session: lu?.session ?? null,
         compte: lu?.compte ?? null,
+        // Une ligne illisible ne ferme pas l'entrée : la session reste valable, l'écran
+        // d'attente dit ce qui manque.
+        erreur: lu?.erreur ?? null,
       });
     } catch (erreur) {
       set({ chargement: false, erreur: messageDe(erreur) });
