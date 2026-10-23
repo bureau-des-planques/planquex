@@ -8,6 +8,7 @@ s'appuyer dessus.
 |---|---|
 | `supabase/migrations/0001_mur.sql` | le schéma : `postits`, `votes`, `commentaires`, la vue `postits_avec_votes`, les droits et les politiques RLS |
 | `supabase/migrations/0002_combats.sql` | la trace des combats : la table `combats`, les droits et les politiques RLS (#173, D-086) |
+| `supabase/migrations/0003_gueulage.sql` | le gueulage (D-085) : `kind` nullable, `lie`, l'identifiant jusqu'à 80 caractères — ni table, ni politique, ni droit |
 | `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
 | `supabase/combats.test.ts` | la même garde pour les combats : un autre appareil ne lit pas, `anon` n'a rien, un auteur forgé est refusé, et la migration mutée fuit |
@@ -293,6 +294,20 @@ Après application, le contrôle qui compte :
 npx vitest run supabase/combats.test.ts
 ```
 
+### Appliquer 0003
+
+Le gueulage de D-085 n'a pas de famille et son identifiant dépasse 32 caractères : sans cette
+migration, la base refuse son import et son dépôt depuis le jeu. Comme 0001 : coller **tout**
+`supabase/migrations/0003_gueulage.sql` dans *SQL Editor* → *Run*. Elle est **idempotente**
+(rejouable sans erreur) et remet à `null` le `kind` de tout gueulage déjà posté avec la famille de
+substitution `IP` (le jeu l'envoyait avant D-085). Puis :
+
+```bash
+supabase migration repair --status applied 0003
+```
+
+Le contrôle qui compte : `npx vitest run supabase/gueulage.test.ts`.
+
 ## 7. Ce qui reste humain, précisément
 
 - **Créer ou choisir le projet Supabase** et donner son `project-ref` — fait (#135) ;
@@ -300,6 +315,7 @@ npx vitest run supabase/combats.test.ts
 - **appliquer la migration** (§4.2 ou §4.3), et vérifier (§4.4) — fait le 23/10/2026 ;
 - **poser les deux variables** en local et sur Vercel — local fait, **Vercel pas encore** ;
 - **appliquer la migration 0002** (§6, la table des combats, #173) — pas encore appliquée ;
+- **appliquer la migration 0003** (§6, le gueulage, D-085) — pas encore appliquée ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
 - **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
   l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;
