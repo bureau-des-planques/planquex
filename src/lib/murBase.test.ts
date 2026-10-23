@@ -224,8 +224,8 @@ describe('le dépôt d’un post-it depuis le jeu (#136)', () => {
     );
 
     const ligne = faux.insertions[0].ligne;
-    // La base appliquée de #135 exige `kind not null` : elle reçoit « IP », que la lecture retire.
-    expect(ligne.kind).toBe('IP');
+    // Un gueulage s'écrit sans famille (D-085, migration 0003).
+    expect(ligne.kind).toBeNull();
     expect(ligne.gueulage).toBe(true);
     expect(ligne.titre).toBe('Non mais ça va pas la tête de');
     expect(postit.kind).toBeNull();

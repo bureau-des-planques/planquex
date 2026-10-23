@@ -19,10 +19,9 @@
  * peut donc ni se faire passer pour un autre, ni choisir son statut (`en attente` est la
  * seule valeur écrite ici). Le statut avance par le tri (D-059), pas par le posteur.
  *
- * **Le gueulage (D-085)** n'a pas de famille. Le schéma appliqué de #135 a encore
- * `kind not null` ; un gueulage posté depuis le jeu range donc `IP` **en base**, et la
- * lecture le retire (`kind` absent du contrat). Aucune migration nouvelle n'est ajoutée ici :
- * elle ne serait pas appliquée au projet. Le mur ne montre jamais de famille à un gueulage.
+ * **Le gueulage (D-085)** n'a pas de famille : il s'écrit avec `kind` nul, ce que la
+ * migration 0003 permet (à appliquer avant le premier dépôt d'un gueulage). Une ancienne
+ * ligne `IP` reste lisible : la lecture retire la famille d'un gueulage.
  */
 import {
   clientMur,
@@ -251,8 +250,8 @@ export function composerLignePostit(
 
   return {
     id,
-    // Le schéma appliqué de #135 exige `kind` ; la lecture retire la famille d'un gueulage.
-    kind: gueulage ? 'IP' : brouillon.famille,
+    // Un gueulage n'a pas de famille (D-085, migration 0003) : `kind` est nul.
+    kind: gueulage ? null : brouillon.famille,
     titre,
     texte,
     ecran: brouillon.ecran || null,
