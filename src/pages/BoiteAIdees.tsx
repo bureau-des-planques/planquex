@@ -12,9 +12,11 @@
  * La seule écriture possible est l'**export** des positions du mode de placement : un site
  * statique ne peut pas écrire dans son dépôt, donc le fichier se télécharge et se commite.
  *
- * États (D-060) : **vide** et **erreur** sont rendus ; **chargement** et **hors ligne**
- * n'ont pas lieu d'être — le fichier est bundlé par Vite, il n'y a aucune requête. C'est
- * écrit en bas de page plutôt que laissé à deviner.
+ * États (D-060) : **vide**, **erreur** et **chargement** sont rendus. Le chargement n'existe
+ * que branché sur la base (sans elle, le fichier est bundlé par Vite : aucune requête) ; et
+ * **hors ligne**, une base qui ne répond pas fait retomber le mur sur le fichier, avec la
+ * notice « la base n'a pas répondu » — l'écran ne reste jamais sans mur. Le bandeau
+ * hors ligne du Layout le dit en plus, pour toute l'application.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';

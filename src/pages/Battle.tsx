@@ -34,6 +34,7 @@ import {
 import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
+import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
@@ -631,12 +632,19 @@ export function Battle() {
    */
   const reduceMotion = useReducedMotion();
 
+  /**
+   * Ce que la Direction va jouer, ou `null` quand ce n'est pas à elle (ou en partie à deux).
+   * Lu au rendu, et pas seulement dans l'effet : sa **présence** est l'attente que l'écran
+   * montre (« La Direction réfléchit… », #131) — sans elle, 600 ms de silence par action
+   * ressemblaient à un écran figé.
+   */
+  const aiAction = useMemo(() => aiTurnAction(state, match), [state, match]);
+
   useEffect(() => {
-    const action = aiTurnAction(state, match);
-    if (!action) return;
-    const timer = window.setTimeout(() => play(action), reduceMotion ? 0 : 600);
+    if (!aiAction) return;
+    const timer = window.setTimeout(() => play(aiAction), reduceMotion ? 0 : 600);
     return () => window.clearTimeout(timer);
-  }, [state, match, reduceMotion, play]);
+  }, [aiAction, reduceMotion, play]);
 
   /**
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
@@ -659,13 +667,13 @@ export function Battle() {
     [legal, myCamp]
   );
 
-  const abandon = useCallback(
-    (action: BattleAction) => {
-      const lost = match ? 'l’autre camp' : 'La Direction';
-      if (window.confirm(`Déclarer forfait ? ${lost} l’emporte, quel que soit le score.`)) play(action);
-    },
-    [play, match]
-  );
+  /**
+   * Le forfait **demande confirmation**, avec le composant du jeu (`Confirmation`, #131) :
+   * c'est le même que « Réinitialiser la progression » dans Réglages, et il remplace
+   * `window.confirm`. La question vit ici ; `forfaitDemande` garde l'action à jouer.
+   */
+  const [forfaitDemande, setForfaitDemande] = useState<BattleAction | null>(null);
+  const gagnantDuForfait = match ? 'L’autre camp' : 'La Direction';
 
   const restart = useCallback(() => {
     setSelectedUid(null);
@@ -812,10 +820,17 @@ export function Battle() {
                   ? 'à toi'
                   : 'à la Direction'}
           </p>
+          {/* L'attente de la Direction (#131) : annoncée au lecteur d'écran, et elle disparaît
+              dès que le coup est joué. Aucun point animé : le mouvement réduit n'a rien à couper. */}
+          {aiAction && (
+            <p className="battle__attente" role="status">
+              La Direction réfléchit…
+            </p>
+          )}
         </div>
         <div className="actions actions--tight">
           {forfeitAction && (
-            <button type="button" className="button button--small" onClick={() => abandon(forfeitAction)}>
+            <button type="button" className="button button--small" onClick={() => setForfaitDemande(forfeitAction)}>
               Abandonner
             </button>
           )}
@@ -1142,12 +1157,17 @@ export function Battle() {
         </ol>
       </details>
 
-      {match === null && (
-        <p className="muted battle__note">
-          La Direction joue toute seule (IA de niveau 1) : son tour s’enchaîne automatiquement. Tous les
-          boutons viennent de la liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
-        </p>
-      )}
+      <Confirmation
+        open={forfaitDemande !== null && forfeitAction !== undefined}
+        titre="Déclarer forfait ?"
+        texte={`${gagnantDuForfait} l’emporte, quel que soit le score. Tu ne pourras pas reprendre cette partie.`}
+        confirmer="Abandonner"
+        onConfirm={() => {
+          if (forfaitDemande) play(forfaitDemande);
+          setForfaitDemande(null);
+        }}
+        onCancel={() => setForfaitDemande(null)}
+      />
     </div>
   );
 }

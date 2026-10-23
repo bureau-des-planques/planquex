@@ -6,6 +6,8 @@ import { deckCanAdd, deckCountsByName, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
+import { causeDuVide } from '@/components/cause-du-vide';
+import { HORS_ARRIVAGE, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { TriCartes } from '@/components/TriCartes';
 import { TRI_DEFAUT, trierCartes } from '@/components/tri-cartes';
 import type { Tri } from '@/components/tri-cartes';
@@ -44,12 +46,23 @@ export function Collection() {
 
   const uniqueOwned = ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0).length;
 
+  /** Pourquoi la grille est vide : ce que le message accuse (`causeDuVide`). */
+  const videParce = causeDuVide(query, faction !== 'ALL' || stage !== 'ALL');
+  const toutEffacer = () => {
+    setQuery('');
+    setFaction('ALL');
+    setStage('ALL');
+  };
+
   return (
     <div className="page collection">
       <section className="section__head">
         <div>
           <h1>{uniqueOwned}/{ALL_CARDS.length} cartes</h1>
-          <p className="muted">{visible.length} affichés</p>
+          <p className="muted">
+            {visible.length} affichés · {HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum
+            à tirer est {PLAFOND_TIRABLE}
+          </p>
         </div>
       </section>
 
@@ -91,8 +104,20 @@ export function Collection() {
         <TriCartes value={tri} onChange={setTri} />
       </div>
 
+      {uniqueOwned === 0 && (
+        <p className="notice notice--warn">
+          Ta Collection est vide : ouvre un Arrivage depuis l’accueil. Les cartes ci-dessous sont
+          celles qu’il te reste à trouver.
+        </p>
+      )}
+
       {visible.length === 0 ? (
-        <p className="empty">Aucune carte ne correspond à cette recherche.</p>
+        <div className="empty" role="status">
+          <p className="m-0">Aucune carte ne correspond à {videParce}.</p>
+          <button type="button" className="button mt-3" onClick={toutEffacer}>
+            Tout effacer
+          </button>
+        </div>
       ) : (
         <div className="card-grid">
           {visible.map((card) => {

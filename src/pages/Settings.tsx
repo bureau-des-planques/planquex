@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ClipboardPaste, Copy, RotateCcw } from 'lucide-react';
+import { Confirmation } from '@/components/Confirmation';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
 
@@ -10,6 +11,8 @@ export function Settings() {
   const [draft, setDraft] = useState(name);
   const [sauvegarde, setSauvegarde] = useState('');
   const [message, setMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
+  /** La réinitialisation efface tout, sans retour : elle passe par la confirmation du jeu (#131). */
+  const [confirmeReset, setConfirmeReset] = useState(false);
 
   const creerSauvegarde = () => {
     const texte = exporterSauvegarde();
@@ -97,7 +100,7 @@ export function Settings() {
         <h2>Sauvegarde</h2>
         <p className="muted">
           Ta progression vit dans ce navigateur sous la clé <code>{STORAGE_KEY}</code> : rien n’est
-          envoyé à un serveur, et **vider les données du navigateur l’efface**. Copie ce texte
+          envoyé à un serveur, et <strong>vider les données du navigateur l’efface</strong>. Copie ce texte
           quelque part avant, il contient tout — Collection, Deck, nom.
         </p>
         <textarea
@@ -120,8 +123,12 @@ export function Settings() {
             <ClipboardPaste size={16} /> Restaurer ce texte
           </button>
         </div>
+        {/* Le message est annoncé : un refus d'import se lit aussi au lecteur d'écran. */}
         {message && (
-          <p className={message.ton === 'ok' ? 'muted' : 'muted settings__message--ko'}>
+          <p
+            className={message.ton === 'ok' ? 'muted' : 'muted settings__message--ko'}
+            role={message.ton === 'ok' ? 'status' : 'alert'}
+          >
             {message.texte}
           </p>
         )}
@@ -138,10 +145,23 @@ export function Settings() {
 
       <section className="section panel">
         <h2>Données locales</h2>
-        <button type="button" className="button" onClick={reset}>
+        <button type="button" className="button" onClick={() => setConfirmeReset(true)}>
           <RotateCcw size={16} /> Réinitialiser la progression
         </button>
       </section>
+
+      <Confirmation
+        open={confirmeReset}
+        titre="Réinitialiser la progression ?"
+        texte="Ta Collection, ton Deck, ton nom et ta partie en cours sont effacés de ce navigateur, sans retour possible. Crée d’abord ta sauvegarde si tu veux pouvoir revenir."
+        confirmer="Tout effacer"
+        onConfirm={() => {
+          reset();
+          setDraft(useStore.getState().name);
+          setConfirmeReset(false);
+        }}
+        onCancel={() => setConfirmeReset(false)}
+      />
 
       <section className="section panel">
         <h2>Version</h2>

@@ -29,7 +29,7 @@ export default defineConfig({
         name: 'Bureau des Planqués',
         // Le libellé sous l'icône installée : le nom technique (D-036), choisi par Bastien (D-054).
         short_name: 'Planquex',
-        description: 'Collectionne les Planqués, ouvre des bacs à courrier, affronte la Direction.',
+        description: 'Collectionne les Planqués, ouvre des Arrivages, affronte la Direction.',
         theme_color: '#0b1220',
         background_color: '#0b1220',
         display: 'standalone',

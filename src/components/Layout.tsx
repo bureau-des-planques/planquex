@@ -3,6 +3,8 @@ import { Home, Library, Layers, Settings, Swords } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
 import { BulleBoiteAIdees } from '@/components/BulleBoiteAIdees';
+import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
+import { ErreurDeRendu } from '@/components/ErreurDeRendu';
 
 const tabs = [
   { to: '/', label: 'Accueil', icon: Home },
@@ -71,13 +73,19 @@ export function Layout() {
             <span>Le TCG de l’atelier</span>
           </div>
         </div>
-        <div className="topbar__user" title="Profil">
+        <div className="topbar__user" title={name}>
           {name}
         </div>
       </header>
 
+      <BandeauHorsLigne />
+
       <main className="main">
-        <Outlet />
+        {/* Un écran qui plante ne prend pas la barre de navigation avec lui, et changer
+            d'écran referme l'erreur (`reinitialiseSur`). */}
+        <ErreurDeRendu reinitialiseSur={pathname}>
+          <Outlet />
+        </ErreurDeRendu>
       </main>
 
       {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). */}

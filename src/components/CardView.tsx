@@ -89,8 +89,12 @@ export function CardView({ card, onClick, compact, selected }: Props) {
             //
             // L'URL vient de `@/art` (D-045) : Vite la résout et la hache. Il n'y a plus de
             // copie servie dans `public/` — une image du registre est servie, ou rien.
+            //
+            // **Chargement** (#131) : sous l'image, l'aplat de faction (`card.palette`, un
+            // dégradé) en seconde couche — le temps que l'illustration arrive, ou si elle ne
+            // vient pas (hors ligne, hors précache), la carte garde son fond au lieu d'un trou.
             background: artUrl(card.art)
-              ? `url('${artUrl(card.art)}') 50% 28% / cover no-repeat`
+              ? `url('${artUrl(card.art)}') 50% 28% / cover no-repeat, ${card.palette}`
               : card.palette
           }}
         >
