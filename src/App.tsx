@@ -6,6 +6,7 @@ import { Deck } from '@/pages/Deck';
 import { Battle } from '@/pages/Battle';
 import { Settings } from '@/pages/Settings';
 import { BoiteAIdees } from '@/pages/BoiteAIdees';
+import { Introuvable } from '@/pages/Introuvable';
 import { REDIRECTIONS } from '@/redirections';
 
 export function App() {
@@ -22,7 +23,8 @@ export function App() {
         {Object.entries(REDIRECTIONS).map(([ancienne, nouvelle]) => (
           <Route key={ancienne} path={ancienne.slice(1)} element={<Navigate to={nouvelle} replace />} />
         ))}
-        <Route path="*" element={<Home />} />
+        {/* Une adresse inconnue le dit : elle ne se fait plus passer pour l'Accueil (#131). */}
+        <Route path="*" element={<Introuvable />} />
       </Route>
     </Routes>
   );

@@ -97,7 +97,7 @@ export function PostitDuMur({
 
   const contenu = (
     <>
-      <span className="flex items-baseline justify-between gap-3 text-[0.64rem] font-bold uppercase tracking-[0.13em]">
+      <span className="flex items-baseline justify-between gap-3 text-[0.7rem] font-bold uppercase tracking-[0.13em]">
         {/* Un gueulage ne porte **aucune** famille : « Gueulage », jamais « · IP » (D-085). */}
         <span>{papier.nom}</span>
         <span className="text-[0.7rem] font-medium normal-case tracking-normal opacity-80">
@@ -162,7 +162,7 @@ export function PostitDuMur({
         >
           {pouces && <PoucesDuMur postit={postit} pouces={pouces} />}
 
-          <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+          <span className="flex items-center gap-2 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
             <span
               aria-hidden="true"
               className="h-2 w-2 rounded-full"
@@ -190,7 +190,7 @@ export function PostitDuMur({
           )}
 
           {postit.version && (
-            <span className="block text-[0.7rem] opacity-70">Écrit en {postit.version}</span>
+            <span className="block text-[0.7rem] opacity-80">Écrit en {postit.version}</span>
           )}
         </div>
 
@@ -210,16 +210,16 @@ export function PostitDuMur({
               aria-hidden="true"
               className="absolute -top-1.5 left-1/2 h-3 w-9 -translate-x-1/2 -rotate-3 bg-white/25"
             />
-            <span className="flex items-baseline justify-between gap-2 text-[0.56rem] font-bold uppercase tracking-[0.13em]">
+            <span className="flex items-baseline justify-between gap-2 text-[0.7rem] font-bold uppercase tracking-[0.13em]">
               <span>{papierAssocie.nom}</span>
-              <span className="text-[0.62rem] font-medium normal-case tracking-normal opacity-80">
+              <span className="text-[0.7rem] font-medium normal-case tracking-normal opacity-80">
                 {associe.pseudo || 'anonyme'}
               </span>
             </span>
             <span className="mt-1.5 block font-heading text-[0.86rem] font-bold leading-tight">
               {associe.titre}
             </span>
-            <span className="mt-1 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em]">
+            <span className="mt-1 flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
               <span
                 aria-hidden="true"
                 className="h-1.5 w-1.5 rounded-full"

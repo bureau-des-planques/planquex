@@ -309,7 +309,14 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 0.82rem;
+  /* Une ligne, toujours : un nom de 24 caractères (le maximum de Réglages) se coupe d'une
+     ellipse au lieu de se casser en deux. Le nom complet reste au survol (`title`). */
+  flex: none;
+  max-width: 11rem;
+  overflow: hidden;
   padding: 0.35rem 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .main {
@@ -400,6 +407,41 @@ h2 {
     inset 0 -2px 0 rgb(0 0 0 / 30%),
     0 8px 18px -10px rgb(0 0 0 / 70%);
   padding: 1rem 1.15rem;
+}
+
+/* Hors ligne (#131) : sous l'en-tête, avant la page — un état du produit, pas d'un écran. */
+.bandeau-hors-ligne {
+  align-items: flex-start;
+  background: var(--bg-raised);
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line));
+  border-radius: var(--radius-sm);
+  display: flex;
+  font-size: 0.84rem;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0.55rem 0.8rem;
+}
+
+.bandeau-hors-ligne svg {
+  color: var(--warn);
+  flex: none;
+  margin-top: 0.15rem;
+}
+
+/* Erreur de rendu et adresse inconnue (#131) : deux écrans de repli, une seule mise en page. */
+.erreur-ecran,
+.introuvable {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.erreur-ecran__detail {
+  font-size: 0.78rem;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .empty {
@@ -507,9 +549,10 @@ h2 {
   margin: 0;
 }
 
+/* Le halo doré d'angle a été retiré (#131) : un voile radial de couleur sur page sombre est un
+   tell d'UI générée ; le filet or du haut (`.hero::after`) suffit à dire « apparat ». */
 .hero {
   background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 55%),
     linear-gradient(150deg, #16233f, var(--bg-raised) 60%, var(--bg-sunken));
   border: 1px solid var(--line-strong);
   border-radius: 6px;
@@ -681,11 +724,20 @@ h2 {
 .button--primary {
   /* Le dégradé dérive de `--accent` : bleu par défaut, couleur de la faction dans
      la fiche d'une carte. Un seul système, aucune couleur recopiée. */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent) 45%, color-mix(in srgb, var(--accent) 58%, #04080f));
+  /* Le haut du dégradé est le point **le plus clair** sous le texte blanc : à 80 % d'accent
+     (le reste en `#04080f`), le bleu primaire donne 4,65:1 (AA) — l'ancien haut, éclairci au
+     blanc, en donnait 3,1 (relevé en navigateur, #131). La lueur colorée est remplacée par
+     une ombre neutre : un halo de couleur sur fond sombre est un tell d'UI générée. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 80%, #04080f),
+    color-mix(in srgb, var(--accent) 76%, #04080f) 45%,
+    color-mix(in srgb, var(--accent) 52%, #04080f)
+  );
   border-color: color-mix(in srgb, var(--accent) 50%, #04080f);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 30%),
-    0 4px 10px -3px color-mix(in srgb, var(--accent) 55%, transparent);
+    0 4px 10px -3px rgb(0 0 0 / 55%);
   color: #fff;
   font-weight: 700;
   text-shadow: 0 1px 1px rgb(0 0 0 / 35%);
@@ -696,26 +748,21 @@ h2 {
   border-color: var(--gold-deep);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 45%),
-    0 4px 12px -3px color-mix(in srgb, var(--gold) 50%, transparent);
+    0 4px 12px -3px rgb(0 0 0 / 50%);
   color: #1c1304;
+  font-weight: 700;
+}
+
+.button--danger {
+  background: color-mix(in srgb, var(--danger) 22%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--danger) 70%, var(--line));
+  color: var(--text);
   font-weight: 700;
 }
 
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
-}
-
-.icon-button {
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--text);
-  cursor: pointer;
-  display: grid;
-  height: 32px;
-  place-items: center;
-  width: 32px;
 }
 
 .field {
@@ -803,6 +850,15 @@ h2 {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+
+/* Un téléphone : **deux** colonnes, toujours. À 360 px la page offre 328 px, et deux cartes
+   de 160 px avec leur gouttière en demandent 332 : `auto-fill` retombait à une colonne, et
+   la Collection devenait un rouleau de cartes plein écran (#131). */
+@media (max-width: 420px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .card-slot {
@@ -927,15 +983,11 @@ h2 {
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-/* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. */
+/* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. L'or **est** l'anneau (`--frame`) :
+   il n'y a pas de second filet — l'ancien `::before`, sans `content`, ne rendait rien (#131). */
 .card--comex {
   --frame: var(--gold);
   border-color: var(--gold-deep);
-}
-
-.card--comex::before {
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: 0.95;
 }
 
 /* La barre de nom : pleine largeur, teintée de la faction — la première chose qu'on lit
@@ -1260,36 +1312,47 @@ h2 {
   margin-left: auto;
 }
 
-/* ---------- Modales ---------- */
+/* ---------- Dialogues ----------
+ * Tous passent par `components/ui/dialog.tsx` (D-035, #131) : fond, rôle, Échap et focus
+ * piégé viennent de lui. Ces règles ne règlent que la **taille** des deux grands : la fiche
+ * d'une carte et l'Arrivage. */
 
-.modal-backdrop {
-  align-items: center;
-  backdrop-filter: blur(4px);
-  background: rgb(4 8 16 / 70%);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 1rem;
-  position: fixed;
-  z-index: 40;
-}
-
-.modal {
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.card-detail-dialog,
+.pack-reveal {
   max-height: 90vh;
-  overflow: auto;
-  padding: 1.25rem;
-  position: relative;
-  width: min(560px, 100%);
+  overflow-y: auto;
 }
 
-.modal__close {
+.card-detail-dialog {
+  max-width: min(760px, calc(100% - 2rem));
+  /* La croix du dialogue vit dans le coin haut-droit : on lui laisse sa ligne, elle ne
+     recouvre plus le Seuil de la carte. */
+  padding-top: 2.5rem;
+}
+
+.pack-reveal {
+  max-width: min(560px, calc(100% - 2rem));
+}
+
+.pack-reveal__card {
+  position: relative;
+}
+
+/* « Nouvelle » : la carte que l'Arrivage ajoute à la Collection, jamais possédée avant. */
+.pack-reveal__neuve {
+  background: var(--gold);
+  border-radius: 999px;
+  color: #1c1304;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.1rem 0.5rem;
   position: absolute;
-  right: 0.9rem;
-  top: 0.9rem;
+  right: 0.35rem;
+  text-transform: uppercase;
+  top: -0.4rem;
+  z-index: 1;
 }
 
 .pack-reveal__cards {
@@ -1303,7 +1366,6 @@ h2 {
   display: grid;
   gap: 1.25rem;
   grid-template-columns: minmax(180px, 220px) 1fr;
-  width: min(760px, 100%);
 }
 
 .card-detail__flavor {
@@ -1563,9 +1625,10 @@ h2 {
   margin: 0;
 }
 
-.battle__note {
-  font-size: 0.78rem;
-  margin: 0;
+.battle__attente {
+  color: var(--gold-soft);
+  font-size: 0.82rem;
+  margin: 0.15rem 0 0;
 }
 
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
@@ -1617,7 +1680,7 @@ h2 {
   border-color: var(--accent);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--accent) 45%, transparent),
-    0 10px 24px -10px color-mix(in srgb, var(--accent) 45%, transparent);
+    0 10px 24px -10px rgb(0 0 0 / 70%);
 }
 
 .board__head h2 {
@@ -2210,6 +2273,14 @@ h2 {
 @media (max-width: 620px) {
   .card-detail {
     grid-template-columns: 1fr;
+  }
+
+  /* Une colonne : la carte garde sa taille de carte, centrée, au lieu de prendre toute la
+     largeur du téléphone et de repousser le texte sous la ligne de flottaison (#131). */
+  .card-detail__visual {
+    margin-inline: auto;
+    max-width: 220px;
+    width: 100%;
   }
 
   .hero h1 {

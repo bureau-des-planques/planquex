@@ -1,13 +1,14 @@
 # Preuves — captures qui rendent une règle « observée »
 
 Ce dossier reçoit les **preuves primaires** : des captures d'écran horodatées, faites
-dans l'application *Pokémon TCG Pocket* elle-même. **Trois usages, trois dossiers** :
+dans l'application *Pokémon TCG Pocket* elle-même. **Quatre usages, quatre dossiers** :
 
 | Dossier | Ce qu'il prouve | Protocole |
 |---|---|---|
 | `astuces-<AAAA-MM-JJ>/` | Les **règles** — les pages « Astuces du jeu ». Seul moyen de faire passer une ligne de `AGENTS.md` §4 de **supposé** à **observé** (O-012). | `docs/PROTOCOLE-ASTUCES.md` |
 | `ui-<AAAA-MM-JJ>/` | La **structure de l'interface** — la composition des écrans de l'application d'origine, pour relire les nôtres. | `docs/CAPTURES-UI.md` |
 | `regles-<AAAA-MM-JJ>/` | La **recherche documentaire** — verdict ligne par ligne contre `AGENTS.md` §4, avec citations exactes, niveaux de preuve (primaire / transcription / secondaire) et URL. **Ne contient pas de capture** : c'est un lot de recherche, qui peut ne contenir **aucune preuve primaire**, et doit alors le dire explicitement (§0 du README du lot). | `docs/preuves/regles-<date>/README.md` (modèle implicite : méthode §0, verdict §2, sources §5) |
+| `finition-<étape>-<AAAA-MM-JJ>/` | Les **captures de notre propre application** à la fin d'une étape (D-060, critère 4) : taille d'un téléphone, **avant** et **après** la passe, avec les états provoqués. Ce ne sont pas des preuves de règle. | `README.md` du lot (comment chaque image a été prise, ce qu'elle ne prouve pas) |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
 

@@ -82,4 +82,13 @@ describe('CardView — le gabarit à cadre', () => {
     expect(grande.container.querySelector('.card__flavor')).toHaveTextContent(carte.flavor);
     expect(grande.container.querySelector('.card__id')).not.toBeNull();
   });
+
+  it('chargement : l’illustration repose sur l’aplat de faction, qui reste dessous (#131)', () => {
+    const { container } = render(<CardView card={avecArt!} compact />);
+    const art = container.querySelector('.card__art') as HTMLElement;
+    // Deux couches : l'image, puis la palette — sans la seconde, la fenêtre reste un trou
+    // tant que l'image n'est pas arrivée (ou si elle n'arrive pas, hors ligne).
+    expect(art.style.background).toContain('url(');
+    expect(art.style.background).toContain('linear-gradient');
+  });
 });

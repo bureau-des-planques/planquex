@@ -12,7 +12,7 @@
  * `src/store/combats.test.ts` (un `envoyer` qui rejette doit ressortir en `{ envoye: false }`).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
 
@@ -34,7 +34,6 @@ describe('Battle — la trace d’un combat ne bloque pas la fin de partie (#173
   beforeEach(() => {
     envoyerCombat.mockReset();
     envoyerCombat.mockRejectedValue(new Error('Failed to fetch'));
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   afterEach(() => {
@@ -44,7 +43,10 @@ describe('Battle — la trace d’un combat ne bloque pas la fin de partie (#173
   it('un rejet réseau laisse l’écran de fin à l’écran, et l’envoi n’a reçu que le combat', async () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, name: 'Employé 404' });
 
+    // Le forfait passe par la confirmation du jeu (#131), plus par `window.confirm`.
     fireEvent.click(screen.getByRole('button', { name: /Abandonner/i }));
+    const confirmation = await screen.findByRole('dialog', { name: /forfait/i });
+    fireEvent.click(within(confirmation).getByRole('button', { name: /^Abandonner$/ }));
 
     await waitFor(() => expect(screen.getByText(/partie terminée/)).toBeInTheDocument());
     await waitFor(() => expect(envoyerCombat).toHaveBeenCalledTimes(1));
