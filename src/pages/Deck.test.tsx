@@ -120,3 +120,63 @@ describe('Deck — écran du Deck', () => {
     expect(screen.getByText(/Il faut au moins un Planqué Entrant/i)).toBeInTheDocument();
   });
 });
+
+/** Les ids des cartes d'une section du Deck, dans l'ordre où l'écran les range. */
+function ordreDe(section: HTMLElement): string[] {
+  return Array.from(section.querySelectorAll<HTMLElement>('.card-slot')).map((slot) => slot.dataset.cardId ?? '');
+}
+
+describe('Deck — tri et gabarit (#179)', () => {
+  // Quatre cartes possédées, dans un ordre qui n'est ni celui du nom ni celui de la rareté.
+  const choisies = ALL_CARDS.filter((carte) => ['1D', '2D', '3D'].includes(carte.rarity)).slice(0, 40);
+  const owned = Object.fromEntries(choisies.map((carte) => [carte.id, 1]));
+  const deck = [choisies[30].id, choisies[3].id, choisies[17].id, choisies[9].id];
+  const reglage = { owned, deck, tutorielVu: true, pasAPasCombatVu: true };
+
+  const sectionDedans = () => screen.getByRole('heading', { name: /Dedans/ }).closest('section') as HTMLElement;
+  const sectionCollection = () => screen.getByRole('heading', { name: /^Collection/ }).closest('section') as HTMLElement;
+
+  it('le tri range « Dedans » et « Collection » avec le même choix', () => {
+    renderWithStore(<Deck />, reglage);
+    const dedansAvant = ordreDe(sectionDedans());
+    const collectionAvant = ordreDe(sectionCollection());
+    expect(dedansAvant).toEqual(deck);
+
+    fireEvent.change(screen.getByLabelText(/Trier par/i), { target: { value: 'nom' } });
+
+    const dedans = ordreDe(sectionDedans());
+    const collection = ordreDe(sectionCollection());
+    expect(dedans).not.toEqual(dedansAvant);
+    expect(collection).not.toEqual(collectionAvant);
+    for (const ordre of [dedans, collection]) {
+      const noms = ordre.map((id) => ALL_CARDS.find((c) => c.id === id)!.name);
+      expect(noms).toEqual([...noms].sort((a, b) => a.localeCompare(b, 'fr')));
+    }
+  });
+
+  it('« Réinitialiser » rend l’ordre du Deck et celui de la Collection', () => {
+    renderWithStore(<Deck />, reglage);
+    const dedansAvant = ordreDe(sectionDedans());
+    const collectionAvant = ordreDe(sectionCollection());
+    const reinit = screen.getByRole('button', { name: /Réinitialiser le tri/i });
+    expect(reinit).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/Trier par/i), { target: { value: 'rarete' } });
+    expect(reinit).toBeEnabled();
+    fireEvent.click(reinit);
+
+    expect(screen.getByLabelText(/Trier par/i)).toHaveValue('defaut');
+    expect(ordreDe(sectionDedans())).toEqual(dedansAvant);
+    expect(ordreDe(sectionCollection())).toEqual(collectionAvant);
+  });
+
+  it('les cartes du Deck portent la pastille « Deck » ; celles de la Collection, leur possession', () => {
+    renderWithStore(<Deck />, reglage);
+    const slot = sectionDedans().querySelector<HTMLElement>(`.card-slot[data-card-id="${deck[0]}"]`)!;
+    expect(within(slot).getByText('Deck ×1')).toBeInTheDocument();
+
+    const enCollection = sectionCollection().querySelector<HTMLElement>(`.card-slot[data-card-id="${choisies[0].id}"]`)!;
+    expect(within(enCollection).getByText('×1')).toBeInTheDocument();
+    expect(enCollection).not.toHaveClass('is-missing');
+  });
+});

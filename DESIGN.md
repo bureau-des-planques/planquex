@@ -98,21 +98,26 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 
 ### 2.1 Anatomie (de haut en bas)
 
+Depuis #179 (23/10/2026) la carte est un **cadre** et une **face** : `.card` est l'anneau de
+rareté, `.card__face` est la carte elle-même.
+
 | Zone | Classe | Contenu |
 |---|---|---|
-| Cadre | `.card` | la **rareté colore la bordure entière** — pas de filet séparé : un filet sur un seul côté est un tell d'UI générée, et le cadre entier se lit mieux en grille (passe du 21/10/2026) |
-| Nom | `.card__top` / `.card__name` | barre pleine largeur teintée de la faction, nom en Outfit 700, capitales, **deux lignes réservées** (au-delà, il s'abrège) ; le **Seuil** est une pastille dorée à droite de la barre |
-| Bandeau | `.card__meta` | pastille de **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action), badge **COMEX** (`.card__comex`, or), puis la **faction** (`.card__faction`) : point de couleur + sigle, calé à droite |
-| Illustration | `.card__art` | aplat `card.palette` + glyphe, voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`) |
-| Seuil / Stress | `.card__seuil` | **la barre seule**, dix crans, pleine sur la carte : elle montre la **capacité**. Le chiffre du Seuil est en pastille dans la barre de nom. Au combat, la même barre montre le **Stress qui monte** (D-026) |
+| Cadre | `.card` | un **anneau plein de 4 px** en dégradé de `--rarity` (de `--gold` pour un COMEX, `--frame`) — la rareté colore l'anneau **entier**, pas un filet sur un seul côté (tell d'UI générée) |
+| Titre | `.card__top` / `.card__title` | barre pleine largeur teintée de la faction. En haut, le **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action) et le badge **COMEX** (`.card__comex`, or) ; dessous le **nom** (`.card__name`, Outfit 700, capitales, **deux lignes réservées**, un mot trop long se coupe) |
+| Seuil | `.card__seuil-badge` | **plaque dorée** à droite du titre : le mot « Seuil » (dessiné par `data-label`) au-dessus du chiffre |
+| Illustration | `.card__art` | l'image du registre, sinon l'aplat `card.palette` + glyphe (`.card__glyph`) ; voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`) |
+| Emblème | `.card__emblem` | médaillon de la **faction** (couleur et glyphe de `FACTION_META`) au coin bas-gauche de l'illustration — **seulement quand il y a une illustration** : sans elle, le glyphe du fond tient ce rôle |
+| Barre de Seuil | `.card__seuil` | **la barre seule**, dix crans, pleine sur la carte : elle montre la **capacité**. Au combat, la même barre montre le **Stress qui monte** (D-026) |
 | Pressions | `.card__attacks` | une ligne par Pression : pastilles de café (`.pips` / `.pip`), nom, dégâts |
 | Ambiance | `.card__flavor` | le texte de flavour, masqué en mode compact |
-| Pied | `.card__footer` | rareté (diamants/étoiles, couleur `--rarity`) et identifiant court |
+| Pied | `.card__footer` | rareté (diamants/étoiles, couleur `--rarity`), faction (point + sigle) ; l'identifiant court (`.card__id`) **seulement sur la carte en grand** |
 
 ### 2.2 Grille et marges
 
-- Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem.
-- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **0** (chaque bloc interne porte son propre espacement), `gap` 0.35rem, rayon 8 px, bordure teintée par la rareté.
+- Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem — **deux colonnes** à 420 px (cartes de 188 × 263 px).
+- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **4 px** (l'anneau), rayon 10 px.
+- Face : rayon 6 px, filet noir intérieur, `gap` 0.3rem ; chaque bloc porte son propre espacement horizontal (0.4rem).
 - Illustration : **elle prend l'espace restant** (`flex`), rayon 4 px, filet interne double (noir à l'extérieur, clair à l'intérieur), cadrage **haut** (`50% 28%`) — les illustrations sont des portraits.
 - Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
 - Pips de café : 8 px, `gap` 2 px.
@@ -122,10 +127,15 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 | Classe | Effet |
 |---|---|
 | `.card--selected` | bordure `--accent` + halo `color-mix(--accent 18%)` |
-| `.card--comex` | bordure `--gold-deep` — le statut COMEX (D-026). Le filet `.card--comex::before` est déclaré **sans `content`** : il ne rend rien, et c'est un bug (#131) |
+| `.card--comex` | `--frame` = `--gold` : l'anneau est or — le statut COMEX (D-026). Le filet `.card--comex::before` est déclaré **sans `content`** : il ne rend rien, et c'est un bug (#131) |
 | `.card--holo` | voile holographique sur l'illustration (1S, 2S, 3S, COU) |
-| `.card--compact` | masque la flavour (grilles) |
-| `.card-slot.is-full` | carte à 55 % d'opacité (plus d'exemplaire possible au Deck) |
+| `.card--compact` | masque la flavour et l'identifiant (grilles) |
+| `.card-slot.is-full` | carte à 60 % d'opacité (plus d'exemplaire possible au Deck) |
+| `.card-slot.is-missing` | carte **non possédée** : grisée (`grayscale`) et à 40 % d'opacité, plus pâle que `.is-full` pour que les deux ne se confondent pas. Sa pastille « ×0 » (pointillés) et la mention « Non possédée » restent **hors de `.card`** : elles ne s'éteignent pas avec elle |
+
+**Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : un bouton rond au coin haut-droit (ajouter, ou ouvrir la fiche), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
+
+**Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
 ### 2.4 L'écran de combat (#169)
 

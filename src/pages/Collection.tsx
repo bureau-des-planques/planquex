@@ -4,8 +4,11 @@ import { ALL_CARDS, FACTION_META, STAGE_META, isPlanque } from '@/data';
 import type { Card, Faction, Stage } from '@/data/types';
 import { deckCanAdd, deckCountsByName, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { useStore } from '@/store/useStore';
-import { CardView } from '@/components/CardView';
+import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
+import { TriCartes } from '@/components/TriCartes';
+import { TRI_DEFAUT, trierCartes } from '@/components/tri-cartes';
+import type { Tri } from '@/components/tri-cartes';
 
 const STAGES: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
 
@@ -14,6 +17,7 @@ export function Collection() {
   const [query, setQuery] = useState('');
   const [faction, setFaction] = useState<Faction | 'ALL'>('ALL');
   const [stage, setStage] = useState<Stage | 'ALL'>('ALL');
+  const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
   const [selected, setSelected] = useState<Card | null>(null);
 
   const byName = useMemo(() => deckCountsByName(deck), [deck]);
@@ -27,7 +31,7 @@ export function Collection() {
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return ALL_CARDS.filter((card) => {
+    const gardees = ALL_CARDS.filter((card) => {
       if (faction !== 'ALL' && card.faction !== faction) return false;
       // Le filtre porte sur le stade : il ne concerne que les Planqués, une carte Action
       // n'a pas de stade (elle est rangée dans son vivier, via sa faction).
@@ -35,7 +39,8 @@ export function Collection() {
       if (needle && !card.name.toLowerCase().includes(needle)) return false;
       return true;
     });
-  }, [query, faction, stage]);
+    return trierCartes(gardees, tri, owned);
+  }, [query, faction, stage, tri, owned]);
 
   const uniqueOwned = ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0).length;
 
@@ -82,6 +87,8 @@ export function Collection() {
             ))}
           </select>
         </label>
+
+        <TriCartes value={tri} onChange={setTri} />
       </div>
 
       {visible.length === 0 ? (
@@ -89,28 +96,27 @@ export function Collection() {
       ) : (
         <div className="card-grid">
           {visible.map((card) => {
-            const count = owned[card.id] ?? 0;
             const used = byName[card.name] ?? 0;
             const canAdd = deckCanAdd(deck, card.id);
             return (
-              <div className={`card-slot ${canAdd ? '' : 'is-full'}`} key={card.id}>
-                <CardView card={card} compact selected={used > 0} onClick={() => setSelected(card)} />
-                <button
-                  type="button"
-                  className="card-slot__quick"
-                  title={
-                    canAdd
-                      ? `Ajouter « ${card.name} » au deck (${used}/${MAX_COPIES_PER_NAME})`
-                      : `Deck complet pour « ${card.name} »`
-                  }
-                  aria-label={`Ajouter ${card.name} au deck`}
-                  disabled={!canAdd}
-                  onClick={() => addToDeck(card.id)}
-                >
-                  <Plus size={14} />
-                </button>
-                <span className={`card-slot__count ${count === 0 ? 'is-missing' : ''}`}>×{count}</span>
-              </div>
+              <CardSlot
+                key={card.id}
+                card={card}
+                owned={owned[card.id] ?? 0}
+                inDeck={used}
+                full={!canAdd}
+                selected={used > 0}
+                onClick={() => setSelected(card)}
+                quick={{
+                  icon: <Plus size={14} />,
+                  label: `Ajouter ${card.name} au deck`,
+                  title: canAdd
+                    ? `Ajouter « ${card.name} » au deck (${used}/${MAX_COPIES_PER_NAME})`
+                    : `Deck complet pour « ${card.name} »`,
+                  disabled: !canAdd,
+                  onClick: () => addToDeck(card.id)
+                }}
+              />
             );
           })}
         </div>
