@@ -34,13 +34,25 @@ function versionsEnDur(nom: string, source: string): string[] {
 }
 
 /**
- * `version.ts` est le seul fichier autorisé à manipuler la version, et il ne la
- * contient jamais en dur : il la reçoit au build. Tout le reste doit passer par lui.
+ * Le **journal des versions** (`src/data/versions.ts`) : le seul fichier de `src/`
+ * autorisé à porter des numéros, avec `version.ts` qui, lui, n'en porte aucun.
+ *
+ * Ce n'est pas une entorse à la règle, c'est son objet : `docs/VERSIONS.md` demande
+ * qu'une version publiée ait **sa note dans l'application**, donc l'historique nomme
+ * forcément les versions passées. Ce fichier n'est pas une copie de la version
+ * courante — `src/data/versions.test.ts` vérifie que celle de `package.json` y figure,
+ * et un composant qui recopierait un numéro tombe toujours ici.
+ */
+const JOURNAL_DES_VERSIONS = 'data/versions.ts';
+
+/**
+ * `version.ts` manipule la version, et `data/versions.ts` la raconte : tout le reste
+ * doit passer par `APP_VERSION` / `APP_LABEL`.
  */
 function versionsEnDurDansSrc(): string[] {
   return fichiersSource().flatMap((fichier) => {
     const nom = fichier.slice(SRC.length);
-    if (nom === 'version.ts') return [];
+    if (nom === 'version.ts' || nom === JOURNAL_DES_VERSIONS) return [];
     return versionsEnDur(nom, readFileSync(fichier, 'utf8'));
   });
 }

@@ -8,6 +8,7 @@ import { Battle } from '@/pages/Battle';
 import { Settings } from '@/pages/Settings';
 import { BoiteAIdees } from '@/pages/BoiteAIdees';
 import { Confidentialite } from '@/pages/Confidentialite';
+import { Nouveautes } from '@/pages/Nouveautes';
 import { Connexion } from '@/pages/Connexion';
 import { Attente } from '@/pages/Attente';
 import { Administration } from '@/pages/Administration';
@@ -31,6 +32,9 @@ export function App() {
           visiteur devrait s'inscrire pour savoir ce qu'on collecte. Elle est donc hors
           de la garde, comme la connexion. */}
       <Route path="confidentialite" element={<Confidentialite />} />
+      {/* Les nouveautés aussi : un testeur doit pouvoir lire ce qu'une version apporte
+          **avant** de s'inscrire. Même raison, même place, hors de la garde. */}
+      <Route path="nouveautes" element={<Nouveautes />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="collection" element={<Collection />} />
