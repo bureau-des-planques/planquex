@@ -45,8 +45,8 @@ interface Reponses {
 }
 
 function fauxClient(reponses: Reponses = {}) {
-  const lectures: Array<{ table: string; filtres: Array<[string, string]> }> = [];
-  const ecritures: Array<{ table: string; valeurs?: Record<string, unknown>; filtres: Array<[string, string]> }> = [];
+  const lectures: Array<{ table: string; filtres: Array<[string, string | number]> }> = [];
+  const ecritures: Array<{ table: string; valeurs?: Record<string, unknown>; filtres: Array<[string, string | number]> }> = [];
   const ordres: Array<{ colonne: string; ascendant?: boolean }> = [];
 
   const getSession = vi.fn(async () => ({
@@ -90,7 +90,7 @@ function fauxClient(reponses: Reponses = {}) {
     },
     from(table: string): RequeteMur {
       let geste: 'select' | 'update' = 'select';
-      const filtres: Array<[string, string]> = [];
+      const filtres: Array<[string, string | number]> = [];
       const requete: RequeteMur = {
         select: () => requete,
         order: (colonne, options) => {

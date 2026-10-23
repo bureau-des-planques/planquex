@@ -90,16 +90,27 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
   });
 
   it('B ne peut pas modifier le post-it de A — RETURNING * rend 0 ligne, sans erreur', async () => {
+    // La colonne `statut` est bien dans le grant (0006, le tri), donc le refus vient de la
+    // **politique** : c'est celui que ce test garde.
     const attaque = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.postits set titre = 'Pirate' where id = 'p-001' returning *`),
+      db.query(`update public.postits set statut = 'fait' where id = 'p-001' returning *`),
     );
     expect(attaque.rows).toHaveLength(0);
 
+    // Les colonnes du texte, elles, ne sont plus données à `authenticated` du tout (0006) :
+    // le refus tombe avant la RLS, et c'est ce qui empêche un administrateur de réécrire
+    // le post-it de quelqu'un d'autre (#139).
+    await expect(
+      avecAppareil(db, APPAREIL_B, () =>
+        db.query(`update public.postits set titre = 'Pirate' where id = 'p-001' returning *`),
+      ),
+    ).rejects.toThrow(/permission denied for table postits/);
+
     // La ligne est intacte : le refus n'a rien changé en douce.
     const relu = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select titre from public.postits where id = 'p-001'`),
+      db.query(`select titre, statut from public.postits where id = 'p-001'`),
     );
-    expect(relu.rows[0].titre).toBe('Le bouton Fin du tour reste grise');
+    expect(relu.rows[0]).toEqual({ titre: 'Le bouton Fin du tour reste grise', statut: 'en attente' });
   });
 
   it('B ne peut pas supprimer le post-it de A', async () => {
@@ -114,16 +125,18 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
     expect(reste.rows).toHaveLength(1);
   });
 
-  it('A modifie le sien, et B modifie le sien', async () => {
+  it('A corrige le sien, et B corrige le sien — par `corriger_postit` (#139)', async () => {
+    // Depuis la 0006, un auteur ne modifie plus sa ligne directement : le titre et le texte
+    // passent par la fonction, qui vérifie l'auteur **et** le statut.
     const sienA = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`update public.postits set statut = 'retenu' where id = 'p-001' returning *`),
+      db.query(`select * from public.corriger_postit('p-001', 'Corrigé par A', 'Le texte corrigé.')`),
     );
     expect(sienA.rows).toHaveLength(1);
-    expect(sienA.rows[0].statut).toBe('retenu');
+    expect(sienA.rows[0]).toMatchObject({ titre: 'Corrigé par A', texte: 'Le texte corrigé.' });
 
     await coller(db, APPAREIL_B, 'p-003');
     const sienB = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.postits set titre = 'Le mien' where id = 'p-003' returning *`),
+      db.query(`select * from public.corriger_postit('p-003', 'Le mien', 'Texte du mien.')`),
     );
     expect(sienB.rows).toHaveLength(1);
     expect(sienB.rows[0].titre).toBe('Le mien');
@@ -197,7 +210,11 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
   });
 
   it('les contraintes du contrat tiennent : statuts, raison d’un écarté, position, famille', async () => {
-    const casse = (sql: string) => avecAppareil(db, APPAREIL_A, () => db.query(sql));
+    // Les contraintes se vérifient **en superutilisateur** : depuis la 0006, seul un
+    // administrateur écrit `statut`, et plus personne n'écrit `position_*` depuis le client
+    // (le placement n'écrit que le fichier). Ce sont les `check` de la 0001 qu'on éprouve
+    // ici, pas un droit — les droits sont dans `mur-ecriture.test.ts`.
+    const casse = (sql: string) => db.query(sql);
 
     await expect(
       casse(`update public.postits set statut = 'ecarte' where id = 'p-001'`),
@@ -221,10 +238,17 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
 
     await expect(
       casse(
-        `insert into public.postits (id, kind, titre, texte, version)
-         values ('p-005', 'BUG', 'Famille inconnue', 'Texte.', 'Alpha · 0.1.2') returning *`,
+        `insert into public.postits (id, kind, titre, texte, version, auteur)
+         values ('p-006', 'BUG', 'Famille inconnue', 'Texte.', 'Alpha · 0.1.2', '${APPAREIL_A}') returning *`,
       ),
     ).rejects.toThrow(/postits_kind_check/);
+
+    // Et la règle de la 0006 tient : un auteur qui n'est pas administrateur ne déplace plus
+    // son propre statut — 0 ligne, sans erreur (le piège de RLS).
+    const sien = await avecAppareil(db, APPAREIL_A, () =>
+      db.query(`update public.postits set statut = 'retenu' where id = 'p-004' returning *`),
+    );
+    expect(sien.rows).toHaveLength(0);
   });
 
   it('un appareil non identifié (anon) n’a aucun accès aux tables', async () => {
@@ -305,12 +329,33 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
     // Depuis la 0005 (D-088), les politiques d'écriture du mur sont **remplacées** avec la
     // condition d'approbation. Muter la 0001 seule laisserait la 0005 décider : on applique
     // donc la même neutralisation à toutes les copies du motif, où qu'elles vivent.
+    //
+    // Depuis la 0006, le **grant de colonnes** refuse `titre` avant même la RLS : une
+    // mutation des seules conditions ne prouverait plus rien (B serait refusé par les
+    // droits, pas par la politique). On rétablit donc le grant large de la 0001, et c'est
+    // bien la politique qu'on mesure.
     return migrations()
       .replace(MIGRATION_MUR, () => murMute)
       // `p.auteur` d'abord : sans cela, le remplacement global laisserait `p.true`.
       .replaceAll('p.auteur = auth.uid()', 'true')
       .replaceAll('auteur = auth.uid()', 'true')
-      .replaceAll('votant = auth.uid()', 'true');
+      .replaceAll('votant = auth.uid()', 'true')
+      .replaceAll(
+        `grant update (statut, raison, ticket) on public.postits to authenticated;`,
+        'grant update on public.postits to authenticated;',
+      )
+      // Et la politique de la 0006, seule rescapée : elle refuse l'`update` à qui n'est pas
+      // administrateur, donc une mutation des conditions de la 0001 ne suffirait pas.
+      .replace(
+        `create policy "postits : l'administration trie"
+  on public.postits for update to authenticated
+  using (public.est_administrateur())
+  with check (public.est_administrateur());`,
+        `create policy "postits : l'administration trie"
+  on public.postits for update to authenticated
+  using (true)
+  with check (true);`,
+      );
   }
 
   let db: Base;

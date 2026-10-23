@@ -210,9 +210,18 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
     accepte(await voter(db, APPAREIL_B, 'p-ecarte', 'down'));
     refuse(await voter(db, APPAREIL_B, 'p-fantome', 'up'), /foreign key|votes_postit_id_fkey/);
 
-    // L'auteur retire son post-it : les votes qu'il portait partent avec lui (cascade).
-    accepte(await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-ecarte' returning *`));
-    const reste = await avecAppareil(db, APPAREIL_B, () => db.query(`select 1 from public.votes where postit_id = 'p-ecarte'`));
+    // Un post-it qui a bougé de statut ne se retire plus par son auteur (#139, 0006) : le tri
+    // — une raison, un ticket — partirait avec lui. Le refus est un `0 ligne` de RLS.
+    expect(
+      await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-ecarte' returning *`),
+    ).toEqual({ accepte: true, ligne: {} });
+
+    // Tant qu'il est « en attente », l'auteur le retire, et les votes qu'il portait partent
+    // avec lui (cascade).
+    accepte(await coller(db, APPAREIL_A, 'p-jetable'));
+    accepte(await voter(db, APPAREIL_B, 'p-jetable', 'up'));
+    accepte(await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-jetable' returning *`));
+    const reste = await avecAppareil(db, APPAREIL_B, () => db.query(`select 1 from public.votes where postit_id = 'p-jetable'`));
     expect(reste.rows).toHaveLength(0);
   });
 

@@ -378,6 +378,8 @@ describe('les post-its déjà en base (23/10/2026) restent lisibles et deviennen
       const sansCompte = await db.query(`select count(*) as n from public.comptes`);
       expect(Number(sansCompte.rows[0].n)).toBe(0);
 
+      // Le refus de 0005 : l'auteur n'a pas de compte approuvé. Cette base s'arrête à la
+      // 0005 (pas de 0006 : elle n'a donc pas le grant restreint de #139).
       zeroLigne(
         await tenter(
           db,

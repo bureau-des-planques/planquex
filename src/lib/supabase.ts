@@ -82,15 +82,25 @@ export interface RequeteMur<T = unknown> extends PromiseLike<ReponseMur<T>> {
   select(colonnes?: string): RequeteMur<T>;
   order(colonnes: string, options?: { ascending?: boolean }): RequeteMur<T>;
   insert(ligne: Record<string, unknown>): RequeteMur<T>;
-  /** Filtre : la colonne vaut la valeur. Sert à lire ses propres votes et à viser sa ligne (#137). */
-  eq(colonne: string, valeur: string): RequeteMur<T>;
+  /**
+   * Filtre : la colonne vaut la valeur. Sert à lire ses propres votes et à viser sa ligne
+   * (#137) — et, depuis #138, à viser un commentaire par son `id`, qui est un `bigint` :
+   * d'où le nombre accepté ici comme la chaîne.
+   */
+  eq(colonne: string, valeur: string | number): RequeteMur<T>;
   update(valeurs: Record<string, unknown>): RequeteMur<T>;
   delete(): RequeteMur<T>;
 }
 
-/** Un client Supabase : l'identité anonyme, et l'accès aux tables. */
+/** Un client Supabase : l'identité anonyme, l'accès aux tables, et les fonctions SQL. */
 export interface ClientMur extends AppareilAnonyme {
   from(table: string): RequeteMur;
+  /**
+   * Appelle une fonction SQL (`public.corriger_postit`, 0006). C'est le seul chemin
+   * d'écriture du titre et du texte d'un post-it : un grant de colonnes ne sait pas
+   * distinguer l'auteur d'un administrateur (#139, `0006_tri_et_corrections.sql`).
+   */
+  rpc(nom: string, params?: Record<string, unknown>): PromiseLike<ReponseMur<unknown>>;
 }
 
 type Environnement = Record<string, string | boolean | undefined>;
