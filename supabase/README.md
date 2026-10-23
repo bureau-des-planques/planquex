@@ -7,9 +7,13 @@ s'appuyer dessus.
 | Fichier | Ce qu'il porte |
 |---|---|
 | `supabase/migrations/0001_mur.sql` | le schéma : `postits`, `votes`, `commentaires`, la vue `postits_avec_votes`, les droits et les politiques RLS |
+| `supabase/migrations/0002_combats.sql` | la trace des combats : la table `combats`, les droits et les politiques RLS (#173, D-086) |
+| `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
-| `src/lib/supabase.ts` | la configuration et l'identité anonyme côté jeu (inerte sans `.env`) |
+| `supabase/combats.test.ts` | la même garde pour les combats : un autre appareil ne lit pas, `anon` n'a rien, un auteur forgé est refusé, et la migration mutée fuit |
+| `src/lib/supabase.ts` | la configuration, l'identité anonyme et l'écriture d'une ligne côté jeu (inerte sans `.env`) |
 | `src/lib/supabase.test.ts` | la garde de la clé : publique seulement, et l'alpha inerte sans backend |
+| `src/store/combats.ts` | ce qui est gardé d'un combat solo terminé, et l'envoi silencieux (#173) |
 | `.env.example` | les deux noms de variables, avec des valeurs **fausses** |
 
 Les décisions : **D-058** (le mur et ses deux familles), **D-059** (statuts, identité), **D-068**
@@ -224,12 +228,64 @@ npx vitest run supabase/mur.test.ts
 Pourquoi muter la **condition** et non **supprimer** la politique : une politique supprimée est
 *default-deny* en RLS, donc le scénario passerait et ne prouverait rien (mesuré le 21/10/2026).
 
-## 6. Ce qui reste humain, précisément
+## 6. La trace des combats (#173, D-086)
+
+À la fin d'une partie **solo** terminée, le jeu dépose en arrière-plan de quoi la **rejouer** :
+la graine, les deux Decks, les types de café et le journal d'actions. **Rien d'autre** — ni le
+pseudo de Réglages, ni un texte libre, ni un identifiant d'appareil : `auteur` est `auth.uid()`,
+l'identité **anonyme** (D-059). Le PvP n'est **pas** gardé (beta).
+
+`src/store/combats.ts` construit la ligne (`combatTermine`, `ligneDe`) et l'envoie
+(`tracerCombat`) ; `Battle.tsx` l'appelle une fois, à la fin. **L'échec réseau ne bloque
+jamais le jeu** : sans configuration, rien n'est contacté ; un rejet est avalé, et la partie
+n'a jamais dépendu de l'envoi. Une **mention** dans Réglages le dit au joueur, sans case à
+cocher (D-086).
+
+### `public.combats`
+
+| Colonne | Contrainte |
+|---|---|
+| `id` | `bigint identity` — le client ne choisit pas l'identité de sa ligne |
+| `auteur` | `uuid`, défaut `auth.uid()` ; pas de FK vers `auth.users` (une trace survit à la purge d'une identité) |
+| `mode` | `check (mode = 'solo')` — le PvP attend la beta, une migration élargira la contrainte |
+| `graine` | `bigint >= 0` (`BattleState.seed`) |
+| `decks` | `jsonb` : `playerDeck` et `aiDeck` sont des tableaux |
+| `types_cafe` | `jsonb` : `playerCafeTypes` et `aiCafeTypes` sont des tableaux |
+| `journal` | `jsonb` : un tableau d'actions, exactement ce que `replayBattle` rejoue |
+| `created_at` | `now()` |
+
+**Règles d'accès** : `authenticated` **insère** ses lignes (`auteur = auth.uid()`) et **lit
+les siennes** (`using (auteur = auth.uid())`) ; `anon` n'a **rien** (`revoke all`). Aucune
+politique `update` / `delete` : une trace est un **ajout**, elle ne se réécrit pas.
+
+**Taille mesurée** le 23/10/2026, sur 20 combats simulés (le simulateur headless, puis
+`combatTermine` + `ligneDe` + une insertion PGlite) : **3 409 octets de JSON en moyenne**
+(médiane 3 494 ; 2 337 à
+4 554), soit une ligne PostgreSQL de **1 819 octets** en moyenne (médiane 1 872 ; 1 344 à
+2 008) — `jsonb` range les clés répétées une fois. Vingt combats tiennent donc en ~68 ko de
+JSON, et un millier de combats en ~3,4 Mo.
+
+### Appliquer 0002
+
+Comme 0001 : coller **tout** `supabase/migrations/0002_combats.sql` dans *SQL Editor* → *Run*
+(ou `supabase db push`). Puis, pour que le CLI ne la rejoue pas :
+
+```bash
+supabase migration repair --status applied 0002
+```
+
+Après application, le contrôle qui compte :
+
+```bash
+npx vitest run supabase/combats.test.ts
+```
+
+## 7. Ce qui reste humain, précisément
 
 - **Créer ou choisir le projet Supabase** et donner son `project-ref` (rien de tout cela
   n'existe dans cette session) ;
 - **activer les connexions anonymes** (§4.1) — sinon `signInAnonymously` est refusé ;
-- **appliquer la migration** (§4.2 ou §4.3), et vérifier (§4.4) ;
+- **appliquer les migrations** (§4.2 ou §4.3, puis §6 pour 0002), et vérifier (§4.4) ;
 - **poser les deux variables** en local et sur Vercel ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
 - **brancher l'écran** sur `src/lib/supabase.ts` : c'est #137, pas ce ticket.

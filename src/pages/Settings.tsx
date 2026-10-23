@@ -128,6 +128,15 @@ export function Settings() {
       </section>
 
       <section className="section panel">
+        <h2>Traces de combat</h2>
+        <p className="muted">
+          Les parties solo terminées sont gardées anonymement — la graine, les deux Decks, les
+          types de café et le journal des coups — pour voir comment le jeu se joue et
+          l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé.
+        </p>
+      </section>
+
+      <section className="section panel">
         <h2>Données locales</h2>
         <button type="button" className="button" onClick={reset}>
           <RotateCcw size={16} /> Réinitialiser la progression

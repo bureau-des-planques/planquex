@@ -26,58 +26,20 @@
  * (les conditions des politiques remplacées par `true`) et **exige** d'y constater la fuite.
  * Une garde qui passerait quoi qu'il arrive ne garderait rien (#112).
  */
-import { readdirSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { PGlite } from '@electric-sql/pglite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+  APPAREIL_A,
+  APPAREIL_B,
+  avecAppareil,
+  base,
+  fichiersMigrations,
+  migrations,
+  type Base,
+} from './pglite';
 
-const DOSSIER_MIGRATIONS = fileURLToPath(new URL('./migrations/', import.meta.url));
-
-/** Les migrations, dans l'ordre de leur nom : c'est ce que `supabase db push` applique. */
-function migrations(): string {
-  const fichiers = readdirSync(DOSSIER_MIGRATIONS)
-    .filter((nom) => nom.endsWith('.sql'))
-    .sort();
-  expect(fichiers.length).toBeGreaterThan(0);
-  return fichiers
-    .map((nom) => readFileSync(new URL(`./migrations/${nom}`, import.meta.url), 'utf8'))
-    .join('\n');
-}
-
-/** Ce que Supabase fournit déjà : `auth.uid()` lit le sujet du JWT, et les deux rôles existent. */
-const SHIM = `
-  create schema if not exists auth;
-  create or replace function auth.uid() returns uuid
-    language sql stable
-    as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-  create role authenticated noinherit;
-  create role anon noinherit;
-  grant usage on schema auth to authenticated;
-  grant execute on function auth.uid() to authenticated;
-`;
-
-const APPAREIL_A = '11111111-1111-4111-8111-111111111111';
-const APPAREIL_B = '22222222-2222-4222-8222-222222222222';
-
-type Base = PGlite;
-
-/** Une base neuve, shim puis migrations : l'état d'un projet Supabase juste après `db push`. */
-async function base(sql: string = migrations()): Promise<Base> {
-  const db = new PGlite();
-  await db.exec(SHIM);
-  await db.exec(sql);
-  return db;
-}
-
-/** Joue un geste en tant qu'appareil (identité anonyme), puis rend le rôle et le sujet. */
-async function avecAppareil<T>(db: Base, appareil: string, geste: () => Promise<T>): Promise<T> {
-  await db.exec(`set role authenticated; set request.jwt.claim.sub = '${appareil}';`);
-  try {
-    return await geste();
-  } finally {
-    await db.exec('reset role; reset request.jwt.claim.sub;');
-  }
-}
+/** La migration du mur, seule : une nouvelle migration ne doit pas décaler ses motifs. */
+const MIGRATION_MUR = fichiersMigrations().find((sql) => sql.includes('create table public.postits'));
+if (!MIGRATION_MUR) throw new Error('supabase/migrations/0001_mur.sql introuvable');
 
 /** Colle un post-it au nom de l'appareil, avec les champs du contrat (`docs/BOITE-A-IDEES.md` §3). */
 function coller(db: Base, appareil: string, id: string, titre = 'Le bouton Fin du tour reste grise') {
@@ -284,7 +246,9 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
   function muter(sql: string): string {
     let mutee = sql;
     // Le compte est une ancre : si les conditions changent de forme, la mutation se décale en
-    // silence et la garde ne garde plus rien. On préfère un échec explicite.
+    // silence et la garde ne garde plus rien. On préfère un échec explicite. Il se compte sur
+    // **la migration du mur seule** : une migration suivante (les combats, #173) porte elle
+    // aussi `auteur = auth.uid()` et décalerait le compte sans rien dire du mur.
     expect(sql.split(MOTIFS[0]).length - 1).toBe(8);
     expect(sql.split(MOTIFS[1]).length - 1).toBe(4);
     for (const motif of MOTIFS) {
@@ -294,10 +258,16 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
     return mutee;
   }
 
+  /** Toutes les migrations, celle du mur remplacée par sa version mutée. */
+  function migrationsMutees(): string {
+    const murMute = muter(MIGRATION_MUR);
+    return migrations().replace(MIGRATION_MUR, () => murMute);
+  }
+
   let db: Base;
 
   beforeAll(async () => {
-    db = await base(muter(migrations()));
+    db = await base(migrationsMutees());
   });
 
   afterAll(async () => {

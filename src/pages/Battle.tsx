@@ -19,6 +19,7 @@ import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
 import type { Decks, Reprise } from '@/store/partie';
+import { combatTermine, tracerCombat } from '@/store/combats';
 import {
   aiTurnAction,
   CAMP_NAME,
@@ -701,6 +702,26 @@ export function Battle() {
   useEffect(() => {
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
   }, [state, match, decksSolo, enregistrerPartie]);
+
+  /**
+   * **La trace du combat** (#173, D-086) : une partie **solo terminée** part en arrière-plan,
+   * une seule fois. Sans configuration, rien ne part ; un échec réseau ne touche pas l'écran
+   * — la partie n'a jamais été perdue, elle vit dans le store (`partieSauvegardee` ci-dessus).
+   *
+   * La clé évite un second envoi : la fin d'une partie peut re-rendre l'écran (choix, relève),
+   * et la même trace ne se dépose qu'une fois. Un combat à deux n'est pas envoyé (beta).
+   */
+  const tracesEnvoyees = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const combat = combatTermine(state, match, decksSolo);
+    if (combat === null) return;
+    const cle = `${combat.graine}:${combat.journal.length}`;
+    if (tracesEnvoyees.current.has(cle)) return;
+    tracesEnvoyees.current.add(cle);
+    // `tracerCombat` avale le rejet : une trace perdue ne change rien à la fin de partie
+    // affichée, et un rejet non traité ne doit jamais remonter d'un simple effet.
+    void tracerCombat(combat);
+  }, [state, match, decksSolo]);
 
   /** Le code de la partie, recalculé à chaque état : il décrit ce qui est à l'écran. */
   const code = useMemo(() => (match ? matchCode(state, match) : ''), [state, match]);

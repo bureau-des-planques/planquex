@@ -5,6 +5,7 @@ import {
   cleEstDeService,
   clientMur,
   configurerMur,
+  ecrireLigne,
   identiteAppareil,
   VARIABLE_CLE,
   VARIABLE_URL,
@@ -109,6 +110,21 @@ describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
     // passerait à côté du scan ci-dessus : on la refuse aussi.
     expect(source).not.toMatch(/import\.meta\.env\s*\[/);
     expect(source).not.toMatch(/process\.env/);
+  });
+});
+
+describe('écrire une ligne (#173 : la trace des combats passe par ici)', () => {
+  it('sans configuration, rien n’est contacté et la raison est rendue', async () => {
+    // Comme pour l’identité : on ne dépend pas du `.env` local, on vide les deux variables.
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
+    try {
+      await expect(ecrireLigne('combats', { graine: 1 })).resolves.toEqual({
+        erreur: 'Supabase n’est pas configuré.',
+      });
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 });
 
