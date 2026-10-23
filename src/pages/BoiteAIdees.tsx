@@ -129,6 +129,25 @@ export function BoiteAIdees() {
 
   const fichier = useMemo(() => exporterMur(positions), [positions]);
 
+  /**
+   * Le post-it collé sur un gueulage (D-085). Il **existe** dans le fichier — c'est lui
+   * qui se trie, avec sa famille — mais l'écran ne le montre **que** collé : s'il
+   * s'affichait aussi à côté, le mur compterait deux fois la même réponse.
+   *
+   * Un `lie` qui ne résout pas (id absent) rend `undefined` : la page l'ignore et le
+   * gueulage s'affiche seul. Le contrat du fichier, lui, l'a déjà signalé.
+   */
+  const parId = new Map((mur?.postits ?? []).map((postit) => [postit.id, postit]));
+  const colles = new Set(
+    (mur?.postits ?? [])
+      .filter((postit) => {
+        if (!postit.gueulage || !postit.lie) return false;
+        const cible = parId.get(postit.lie);
+        return cible !== undefined && !cible.gueulage;
+      })
+      .map((postit) => postit.lie as string)
+  );
+
   const telecharger = () => {
     const url = URL.createObjectURL(new Blob([fichier], { type: 'application/json' }));
     const lien = document.createElement('a');
@@ -203,7 +222,10 @@ export function BoiteAIdees() {
               {texte}
             </li>
           ))}
-          <li>Un gueulage reste une IP ou un OUF : le papier dit d’où il vient.</li>
+          <li>
+            Un gueulage est à part : s’il a donné lieu à un signalement ou à une idée, ce post-it est
+            collé dessus (D-085).
+          </li>
         </ul>
       </section>
 
@@ -253,18 +275,21 @@ export function BoiteAIdees() {
             ref={tableau}
             className="relative max-[899px]:grid max-[899px]:grid-cols-1 max-[899px]:gap-4 min-[421px]:max-[899px]:grid-cols-2 min-[900px]:min-h-[600px]"
           >
-            {mur.postits.map((postit, ordre) => (
-              <PostitDuMur
-                key={postit.id}
-                postit={postit}
-                position={positions[postit.id] ?? postit.position}
-                ordre={ordre}
-                placement={placement}
-                agrandi={agrandi === postit.id}
-                onAgrandir={(id) => setAgrandi((courant) => (courant === id ? null : id))}
-                glisser={glisser}
-              />
-            ))}
+            {mur.postits
+              .filter((postit) => !colles.has(postit.id))
+              .map((postit, ordre) => (
+                <PostitDuMur
+                  key={postit.id}
+                  postit={postit}
+                  position={positions[postit.id] ?? postit.position}
+                  ordre={ordre}
+                  placement={placement}
+                  agrandi={agrandi === postit.id}
+                  onAgrandir={(id) => setAgrandi((courant) => (courant === id ? null : id))}
+                  glisser={glisser}
+                  associe={postit.gueulage && postit.lie ? parId.get(postit.lie) ?? null : null}
+                />
+              ))}
           </div>
         </section>
       )}

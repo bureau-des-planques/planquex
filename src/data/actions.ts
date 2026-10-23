@@ -50,7 +50,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Le Planqué adverse est Immobilisé.',
     effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }],
     flavor: 'La pièce est collée. La réunion aussi.',
-    glyph: '⚒'
+    glyph: '⚒',
+    art: 'atelier-colle-cyanoacrylate.webp'
   }),
 
   // ——— Collègues : 1 par tour, un par faction (huit factions) ———

@@ -21,7 +21,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Coup de clé', cost: ['ATELIER'], damage: 20, text: 'Un coup de clé sur le Planqué adverse. Le serrage, lui, est à reprendre.' }],
-    flavor: 'Il a serré dans le bon sens. Presque.'
+    flavor: 'Il a serré dans le bon sens. Presque.',
+    art: 'atelier-apprenti.webp'
   }),
   base({
     id: 'atelier-technicien-maintenance',
@@ -33,7 +34,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 2,
     ability: { name: 'Dépannage', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Multimètre', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mesuré sous toutes les coutures. La valeur affichée change à chaque mesure.' }],
-    flavor: 'Il a réparé la machine. Elle marche moins bien.'
+    flavor: 'Il a réparé la machine. Elle marche moins bien.',
+    art: 'atelier-technicien-maintenance.webp'
   }),
   base({
     id: 'atelier-chef-atelier',
@@ -60,7 +62,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Dénudage', cost: ['ATELIER'], damage: 20, text: 'Le fil du Planqué adverse est mis à nu. Le schéma électrique restera dans le tiroir.' }],
-    flavor: 'Il a remis le courant. Le compteur tourne à l’envers.'
+    flavor: 'Il a remis le courant. Le compteur tourne à l’envers.',
+    art: 'atelier-electricien.webp'
   }),
   base({
     id: 'atelier-electromecanicien',
@@ -71,7 +74,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Bobinage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est rebobiné de force. Le bon de garantie est introuvable.' }],
-    flavor: 'Il a rebobiné le moteur. Il a rendu l’âme au premier essai.'
+    flavor: 'Il a rebobiné le moteur. Il a rendu l’âme au premier essai.',
+    art: 'atelier-electromecanicien.webp'
   }),
   base({
     id: 'atelier-responsable-maintenance',
@@ -85,7 +89,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est inscrit au planning de révision. La machine attend toujours son créneau.' },
       { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il planifie la maintenance. La machine attend depuis mars.'
+    flavor: 'Il planifie la maintenance. La machine attend depuis mars.',
+    art: 'atelier-responsable-maintenance.webp'
   }),
 
   // Ligne 3 : Plombier → Tuyauteur → Chef de chantier
@@ -97,7 +102,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Soudure', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est soudé à son poste. Le chalumeau est en prêt depuis le printemps.' }],
-    flavor: 'Il a colmaté la fuite. Le plafond est tombé.'
+    flavor: 'Il a colmaté la fuite. Le plafond est tombé.',
+    art: 'atelier-plombier.webp'
   }),
   base({
     id: 'atelier-tuyauteur',
@@ -108,7 +114,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Raccordement', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est raccordé de force au réseau. Le plan annonçait pourtant un mur plein.' }],
-    flavor: 'Il a tiré la ligne. Elle arrive dans le mur.'
+    flavor: 'Il a tiré la ligne. Elle arrive dans le mur.',
+    art: 'atelier-tuyauteur.webp'
   }),
   base({
     id: 'atelier-chef-chantier',
@@ -122,7 +129,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Coulage', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Une dalle de béton est coulée sur le Planqué adverse. Elle sera conforme aux plans à la prochaine révision.' },
       { name: 'Levage', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a tenu les délais. Le chantier, lui, est en retard.'
+    flavor: 'Il a tenu les délais. Le chantier, lui, est en retard.',
+    art: 'atelier-chef-chantier.webp'
   }),
 
   // Ligne 4 : Ascensoriste → Dépanneur ascenseur (2 stades)
@@ -142,7 +150,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'switchSelf' }]
       }
     ],
-    flavor: 'Il a débloqué la cabine. Elle est bloquée au troisième.'
+    flavor: 'Il a débloqué la cabine. Elle est bloquée au troisième.',
+    art: 'atelier-ascensoriste.webp'
   }),
   base({
     id: 'atelier-depanneur-ascenseur',
@@ -155,7 +164,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     attacks: [
       { name: 'Remise en service', cost: ['ATELIER', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
-    flavor: 'Il a changé le câble. L’ascenseur monte encore plus lentement.'
+    flavor: 'Il a changé le câble. L’ascenseur monte encore plus lentement.',
+    art: 'atelier-depanneur-ascenseur.webp'
   }),
 
   // Ligne 5 : Mécanicien → Mécanicien outilleur (2 stades)
@@ -167,7 +177,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Clé à chocs', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse reçoit une rafale de clé à chocs. Le bruit est connu ; la référence de la pièce, non.' }],
-    flavor: 'Il connaît le bruit par cœur. Il ne connaît pas la référence.'
+    flavor: 'Il connaît le bruit par cœur. Il ne connaît pas la référence.',
+    art: 'atelier-mecanicien.webp'
   }),
   base({
     id: 'atelier-mecanicien-outilleur',
@@ -178,7 +189,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Usinage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est usiné à la cote. La cote vient d’être révisée.' }],
-    flavor: 'Il a refait la pièce. La pièce n’existe plus au catalogue.'
+    flavor: 'Il a refait la pièce. La pièce n’existe plus au catalogue.',
+    art: 'atelier-mecanicien-outilleur.webp'
   }),
 
   // Ligne 6 : Soudeur → Soudeur TIG (2 stades)
@@ -190,7 +202,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Arc électrique', cost: ['ATELIER'], damage: 20, text: 'Un arc électrique frappe le Planqué adverse. Le gant de soudeur n’en réchappera pas non plus.' }],
-    flavor: 'Il a soudé les deux fers. Il a soudé aussi son gant.'
+    flavor: 'Il a soudé les deux fers. Il a soudé aussi son gant.',
+    art: 'atelier-soudeur.webp'
   }),
   base({
     id: 'atelier-soudeur-tig',
@@ -210,7 +223,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       }
     ],
-    flavor: 'Il a fait une soudure invisible. Le contrôle aussi.'
+    flavor: 'Il a fait une soudure invisible. Le contrôle aussi.',
+    art: 'atelier-soudeur-tig.webp'
   }),
 
   // Ligne 7 : Chaudronnier → Chef de fabrication (2 stades)
@@ -230,7 +244,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'reduceDamage', amount: 10 }]
       }
     ],
-    flavor: 'Il a plié la tôle au millimètre. Le plan, lui, était faux.'
+    flavor: 'Il a plié la tôle au millimètre. Le plan, lui, était faux.',
+    art: 'atelier-chaudronnier.webp'
   }),
   base({
     id: 'atelier-chef-fabrication',
@@ -241,7 +256,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Gabarit', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mis au gabarit. Le gabarit n’a jamais été mis à jour.' }],
-    flavor: 'Il a suivi le gabarit. Le gabarit ne suivait rien.'
+    flavor: 'Il a suivi le gabarit. Le gabarit ne suivait rien.',
+    art: 'atelier-chef-fabrication.webp'
   }),
 
   // Ligne 7 complétée en N+2 (vague 2, #86) : Chaudronnier → Chef de fabrication →
@@ -264,7 +280,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Il a mis les équipes en cadence. Le carnet de commandes, il ne l’a pas ouvert.'
+    flavor: 'Il a mis les équipes en cadence. Le carnet de commandes, il ne l’a pas ouvert.',
+    art: 'atelier-chef-usine.webp'
   }),
 
   // Ligne 8 : Cariste → Chef de quai (2 stades)
@@ -276,7 +293,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Chariot élévateur', cost: ['ATELIER'], damage: 20, text: 'Les fourches soulèvent le Planqué adverse puis le reposent sans ménagement. Le bon de livraison n’a pas suivi.' }],
-    flavor: 'Il a empilé six palettes. La septième est tombée.'
+    flavor: 'Il a empilé six palettes. La septième est tombée.',
+    art: 'atelier-cariste.webp'
   }),
   base({
     id: 'atelier-chef-quai',
@@ -287,7 +305,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Chargement', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est chargé à bord du camion. Le quai d’à côté attendait ce camion.' }],
-    flavor: 'Il a chargé le camion en avance. Ce n’était pas le bon camion.'
+    flavor: 'Il a chargé le camion en avance. Ce n’était pas le bon camion.',
+    art: 'atelier-chef-quai.webp'
   }),
 
   // Entrants seuls (sans évolution)
@@ -300,7 +319,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Vigilance', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
     attacks: [{ name: 'Ronde de nuit', cost: ['ATELIER'], damage: 20, text: 'Une ronde de nuit tombe sur le Planqué adverse. Le registre de passage est signé, et vide.' }],
-    flavor: 'Il fait le tour du site. Personne ne fait le tour de lui.'
+    flavor: 'Il fait le tour du site. Personne ne fait le tour de lui.',
+    art: 'atelier-gardien-usine.webp'
   }),
   base({
     id: 'atelier-magasinier',
@@ -310,7 +330,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Inventaire', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a tout rangé. Il ne trouve plus rien.'
+    flavor: 'Il a tout rangé. Il ne trouve plus rien.',
+    art: 'atelier-magasinier.webp'
   }),
   base({
     id: 'atelier-stagiaire-atelier',
@@ -320,7 +341,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Coup de main', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a tenu le tournevis. C’est déjà un stage.'
+    flavor: 'Il a tenu le tournevis. C’est déjà un stage.',
+    art: 'atelier-stagiaire-atelier.webp'
   }),
   base({
     id: 'atelier-agent-maintenance',
@@ -330,7 +352,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Graissage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse glisse sur une couche de graisse. Le bidon était resté ouvert sur l’établi.' }],
-    flavor: 'Il graisse la chaîne. Elle est à sec dans deux jours.'
+    flavor: 'Il graisse la chaîne. Elle est à sec dans deux jours.',
+    art: 'atelier-agent-maintenance.webp'
   }),
 
   // COMEX : Chef d’atelier ex
@@ -347,7 +370,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse subit une intervention de terrain. Aucune demande de travaux n’a été déposée.' },
       { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Une seule clé de 12.'
+    flavor: 'Deux Interventions. Une seule clé de 12.',
+    art: 'atelier-chef-atelier-ex.webp'
   }),
 
   // Second COMEX (vague 1, #66) : la ligne de maintenance, distincte de la signature.
@@ -364,7 +388,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est inscrit au planning de révision. La machine attend toujours son créneau.' },
       { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. La machine est révisée. La demande de pièces, non.'
+    flavor: 'Deux Interventions. La machine est révisée. La demande de pièces, non.',
+    art: 'atelier-responsable-maintenance-ex.webp'
   })
 ];
 
