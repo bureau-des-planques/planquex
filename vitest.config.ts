@@ -39,6 +39,16 @@ export default defineConfig({
     }
   },
   test: {
+    // Des délais **tolérants à la charge** (#176). Le défaut de `vitest` (5 s par test,
+    // 10 s par `beforeAll`) mesure le temps **mural** : quand plusieurs suites partagent
+    // la machine — cinq `npx vitest run` en parallèle, ou un agent qui simule à côté —
+    // les tests d'écran (`jsdom`, 8 s à eux seuls) et la migration du mur (`pglite`,
+    // 2,4 s) dépassent le seuil alors que rien n'est cassé. Mesuré le 23/10/2026 :
+    // 5 exécutions simultanées échouaient **uniquement** sur des délais, dans quatre
+    // fichiers hors du périmètre de #176. Un délai plus large ne masque pas une boucle
+    // infinie : il la fait durer 20 s au lieu de 5, et le test garde son échec nommé.
+    testTimeout: 20_000,
+    hookTimeout: 30_000,
     projects: [
       {
         name: 'node',

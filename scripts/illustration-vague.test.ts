@@ -1218,3 +1218,42 @@ describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', ()
     expect(r.stdout.replace(/\n$/, '')).toBe(attendu);
   });
 });
+
+/**
+ * L'isolation du bac (#176) : **aucun chemin partagé**.
+ *
+ * Le wizard écrivait trois fichiers à côté du bac : `/tmp/illustration-check.log`,
+ * `/tmp/illustration-test.log`, et le `stderr` de gflow dans
+ * `/tmp/gflow-illustration.err`. Deux exécutions concurrentes — deux agents, ou
+ * `npm test` et `npm run garde-fous` (qui relance ce fichier pour ses trois
+ * mutations #97) — écrivaient donc les mêmes chemins, et un échec ne disait plus
+ * laquelle des deux avait parlé. Les trois vivent maintenant sous `$SCRATCH`, que
+ * le test pointe dans son bac : il n'y a plus rien de partagé à observer.
+ */
+describe('Wizard d’illustration — aucun chemin partagé (#176)', () => {
+  it('les trois logs d’une exécution tombent dans le bac', () => {
+    // Les overrides vides font retomber le wizard sur ses **défauts** : c'est
+    // exactement ce que le test doit regarder, pas la valeur que le harnais impose.
+    const r = wizard([CARTE], stdinComplet(), {
+      GFLOW_ILLUSTRATION_CHECK_LOG: '',
+      GFLOW_ILLUSTRATION_TEST_LOG: '',
+      GFLOW_ILLUSTRATION_ERR: ''
+    });
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    for (const nom of ['gflow.err', 'check.log', 'test.log']) {
+      expect(existsSync(join(scratch, nom)), `${nom} devrait vivre dans le bac : ${scratch}`).toBe(true);
+    }
+  }, DELAI);
+
+  it('le contrôle mord : le script ne nomme aucun chemin en dur hors du dépôt', () => {
+    // Les bibliothèques standard les écrivent dans un répertoire temporaire du
+    // système ; les chemins `mktemp` sont uniques par construction. Ce qui est
+    // interdit, c'est un chemin **fixe** — celui que deux exécutions se partagent.
+    // Les commentaires sont sautés : ils citent les anciens chemins pour mémoire.
+    const lignes = readFileSync(join(racine, WIZARD), 'utf8')
+      .split('\n')
+      .filter((ligne) => !/^\s*#/.test(ligne));
+    const fixes = [...lignes.join('\n').matchAll(/\/tmp\/[^\s"'`)]+/g)].map((m) => m[0]);
+    expect(fixes, `chemins partagés dans ${WIZARD}`).toEqual([]);
+  });
+});
