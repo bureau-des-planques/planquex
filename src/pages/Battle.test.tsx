@@ -1111,7 +1111,7 @@ describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-C
     expect(regle).toMatch(/overflow:\s*hidden/);
     // La **hauteur fixe** est le contrat (les cartes se rognent dedans) ; sa valeur exacte ne
     // l'est pas : #203 l'a fait passer de 4,5 à 4 rem pour rendre de la marge de hauteur.
-    expect(regle).toMatch(/height:\s*[\d.]+rem/);
+    expect(regle).toMatch(/height:\s*(calc\([^)]*\)|[\d.]+rem)/);
   });
 
   it('la carte du Poste reste plus large qu’une carte de la main (hiérarchie, R4)', () => {

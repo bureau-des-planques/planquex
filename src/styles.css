@@ -485,11 +485,22 @@ h2 {
   list-style: none;
 }
 
+/* Sur un téléphone, le texte du Chariot prend toute la largeur et « Charger » passe dessous : à côté,
+   il prenait la moitié de la ligne et la stratégie se coupait en colonne étroite. */
 .chariots__item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+@media (min-width: 560px) {
+  .chariots__item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
 }
 
 .chariots__item h3,
@@ -1181,6 +1192,15 @@ h2 {
   /* Un mot plus long que la ligne (« Électromécanicien ») se coupe au lieu d'être rogné. */
   overflow-wrap: anywhere;
   text-transform: uppercase;
+}
+
+/* Sur un téléphone, le nom de la carte cède un cran : la pastille du Seuil réduit sa colonne, et
+   « PRÉVENTEUR » se coupait en « PRÉVENTEU / R ». Le nom reste entier, à deux lignes au plus. Cette
+   règle vient **après** `.card__name` : à même spécificité, la dernière l'emporte. */
+@media (max-width: 420px) {
+  .card__name {
+    font-size: 0.72rem;
+  }
 }
 
 .card__stage {
@@ -1916,6 +1936,15 @@ h2 {
   z-index: 16;
 }
 
+/* Sur un téléphone, la barre ne se colle plus : collée, elle remontait par-dessus le bas de la main
+   (la main est dans la fenêtre avec un deck valide). Elle se range sous la main, et son geste se fait
+   en défilant. */
+@media (max-width: 639px) {
+  .combat-barre {
+    position: static;
+  }
+}
+
 .combat-barre .actions {
   margin-top: 0;
 }
@@ -2133,6 +2162,24 @@ h2 {
   gap: 0.25rem;
 }
 
+/* Sur un téléphone, la table se resserre : le Banc et les écarts entre zones cèdent la place à la main
+   (choix du 25/10 : compacter le plateau). Le Poste ne bouge pas : il reste plus grand que la main (R4). */
+@media (max-width: 639px) {
+  .board {
+    gap: 0.1rem;
+    padding: 0.15rem;
+  }
+
+  .board__zone {
+    --banc-w: 3rem;
+    gap: 0.1rem;
+  }
+
+  .bench {
+    gap: 0.2rem;
+  }
+}
+
 /* Le Poste et ce qui s'y passe, côte à côte : la carte garde la place du centre. */
 .board__poste-ligne {
   align-items: center;
@@ -2270,6 +2317,7 @@ h2 {
 
 .hand-panel .section__head {
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 0.1rem 0.75rem;
 }
 
@@ -3016,13 +3064,16 @@ h2 {
    soulèvement de la carte choisie. Le **pas** entre deux cartes se réduit quand la main grandit,
    pour que dix cartes tiennent dans la largeur d'un téléphone. */
 .hand {
-  --carte-w: 4rem;
-  /* #203 : le conteneur perd 4 px ; les cartes de l'éventail se rognent un peu plus bas. */
-  /* Le pas : deux cartes se chevauchent d'au plus 2,6 rem, et moins quand il faut tenir dans la largeur. */
-  --pas: min(2.6rem, calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
+  /* Une carte de la main se lit : 5,2 rem de large, soit ~83 px (64 px auparavant, où le nom était
+     illisible). Elle reste plus étroite que le Poste (R4). Le conteneur est assez haut pour la carte
+     entière et son inclinaison : rien n'est plus rogné en bas. */
+  --carte-w: 5.2rem;
+  /* Le pas : deux cartes ne se chevauchent pas quand la largeur le permet (leurs noms restent lisibles),
+     et se recouvrent juste assez pour tenir dans la largeur quand la main grandit. */
+  --pas: min(calc(var(--carte-w) + 0.2rem), calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
   align-items: flex-start;
   display: flex;
-  height: 4rem;
+  height: calc(var(--carte-w) * 88 / 63 + 1.6rem);
   justify-content: center;
   list-style: none;
   margin: 0;

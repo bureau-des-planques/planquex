@@ -1497,8 +1497,8 @@ export function Battle() {
                       data-uid={card.uid}
                       style={
                         {
-                          '--rot': `${decalage * 3}deg`,
-                          '--dec': `${decalage * decalage * 1.5}px`
+                          '--rot': `${decalage * 2}deg`,
+                          '--dec': `${decalage * decalage * 0.8}px`
                         } as CSSProperties
                       }
                       /* Sous « Mouvement réduit », la carte ne se soulève pas : c'est

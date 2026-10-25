@@ -929,14 +929,14 @@ export function BoiteAIdees() {
         </p>
 
         {source === 'base' ? (
-          <p className="m-0 max-w-[66ch] text-[0.9rem]">
+          <p className="m-0 max-w-[66ch] text-[0.9rem] max-[899px]:hidden">
             La base porte la place de chaque post-it : en mode placement, un post-it se{' '}
             <strong>glisse</strong> à la souris et sa place s’écrit <strong>tout de suite</strong>{' '}
             en base — tout le monde la voit, sans commit. Chacun ne range que <strong>ses</strong>{' '}
             post-its : ceux des autres restent là où leur auteur les a mis.
           </p>
         ) : (
-          <p className="m-0 max-w-[66ch] text-[0.9rem]">
+          <p className="m-0 max-w-[66ch] text-[0.9rem] max-[899px]:hidden">
             En mode placement, un post-it se <strong>glisse</strong> à la souris et sa position
             s’écrit en pourcentage du tableau : tout le monde verra la même disposition, quel que
             soit l’écran. L’application est un <strong>site statique</strong> — elle ne peut pas
