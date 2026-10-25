@@ -13,10 +13,14 @@ import type { PartieSauvegardee } from '@/store/partie';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **7** : le store gagne `partie` (la partie en cours,
- * rejouable depuis sa graine et son journal, ticket #126) — absente d'un état v6, elle
- * vaut `null` : aucune partie n'était rangée. **6** : le store gagne `pasAPasCombatVu` (le
- * pas-à-pas de la **première partie** se montre une fois, #143) — absent d'un état v5,
+ * Version de la forme persistée. **8** : le store gagne la **densité du combat**
+ * (`combatDetaille`, #189) et les **raccourcis clavier du combat** (`raccourcisCombat`,
+ * #189) — absents d'un état v7, ils valent `false` (sobre) et `true` (raccourcis actifs),
+ * les défauts que `AGENTS.md` §6 et `SPEC-COMBAT-UI` §4.2 fixent. **7** : le store gagne
+ * `partie` (la partie en cours, rejouable depuis sa graine et son journal, ticket #126) —
+ * absente d'un état v6, elle vaut `null` : aucune partie n'était rangée. **6** : le store
+ * gagne `pasAPasCombatVu` (le pas-à-pas de la **première partie** se montre une fois, #143)
+ * — absent d'un état v5,
  * il vaut **`true`**, pour la même raison que `tutorielVu` : qui a déjà une partie en
  * cours a déjà joué, on ne lui remontre pas les règles du combat ; seule une partie
  * neuve le voit. **5** : le store gagne `tutorielVu` (la « Journée d'intégration » se
@@ -31,7 +35,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 7;
+export const STORAGE_VERSION = 8;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -102,6 +106,19 @@ export interface AppState {
   packsOpened: number;
   reducedMotion: boolean;
   /**
+   * **La densité de l'écran de combat** (#189, `SPEC-COMBAT-UI` §4.3) : `false` = `sobre`
+   * (le défaut, la redite coupée), `true` = `détaillé` (les annotations remises). Ce n'est
+   * qu'un réglage d'affichage : il ne cache **aucune valeur qui change une décision** — le
+   * Poste, le Stress, les Interventions et le tour restent visibles dans les deux modes.
+   */
+  combatDetaille: boolean;
+  /**
+   * **Les raccourcis clavier du combat** (#189, `SPEC-COMBAT-UI` §4.2) : `true` par défaut.
+   * Décoché dans Réglages, `I` **et** `Ctrl`+`I` ne font plus rien — c'est la désactivation
+   * qu'exige le critère WCAG sur les raccourcis à une touche.
+   */
+  raccourcisCombat: boolean;
+  /**
    * État du générateur seedé des Arrivages (ticket #29). Persisté : la suite de
    * tirages continue après un rechargement, et deux Arrivages ne rejouent pas la
    * même séquence. Voir `@/game/rng`.
@@ -142,6 +159,12 @@ export interface AppState {
   reset: () => void;
   setName: (name: string) => void;
   setReducedMotion: (value: boolean) => void;
+  /** Pose la densité du combat (`true` = détaillé, `false` = sobre). */
+  setCombatDetaille: (value: boolean) => void;
+  /** Bascule `sobre` ↔ `détaillé` — le geste du bouton `ⓘ` et des raccourcis (#189). */
+  basculerCombatDetaille: () => void;
+  /** Active ou coupe les raccourcis clavier du combat (Réglages, #189). */
+  setRaccourcisCombat: (value: boolean) => void;
   /** Marque la « Journée d'intégration » comme vue (`true`) ou à revoir (`false`). */
   setTutorielVu: (value: boolean) => void;
   /** Marque le **pas-à-pas du combat** comme vu (`true`) ou à revoir (`false`). */
@@ -172,6 +195,8 @@ export type PersistedState = Pick<
   | 'cafeTypes'
   | 'packsOpened'
   | 'reducedMotion'
+  | 'combatDetaille'
+  | 'raccourcisCombat'
   | 'rng'
   | 'tutorielVu'
   | 'pasAPasCombatVu'
@@ -186,6 +211,8 @@ export function partializeState(state: AppState): PersistedState {
     cafeTypes: state.cafeTypes,
     packsOpened: state.packsOpened,
     reducedMotion: state.reducedMotion,
+    combatDetaille: state.combatDetaille,
+    raccourcisCombat: state.raccourcisCombat,
     rng: state.rng,
     tutorielVu: state.tutorielVu,
     pasAPasCombatVu: state.pasAPasCombatVu,
@@ -216,6 +243,8 @@ export const useStore = create<AppState>()(
       cafeTypes: [],
       packsOpened: 0,
       reducedMotion: false,
+      combatDetaille: false,
+      raccourcisCombat: true,
       rng: seedRng(Date.now()),
       tutorielVu: false,
       pasAPasCombatVu: false,
@@ -289,7 +318,10 @@ export const useStore = create<AppState>()(
           packsOpened: 0,
           name: 'Employé 404',
           // Une progression remise à zéro repart d'un joueur neuf : la Journée
-          // d'intégration et le pas-à-pas du combat se remontrent.
+          // d'intégration et le pas-à-pas du combat se remontrent, et l'affichage du
+          // combat reprend ses défauts (`sobre`, raccourcis actifs — #189).
+          combatDetaille: false,
+          raccourcisCombat: true,
           tutorielVu: false,
           pasAPasCombatVu: false,
           // La partie en cours fait partie de la progression remise à zéro (#126).
@@ -300,6 +332,9 @@ export const useStore = create<AppState>()(
         }),
       setName: (name) => set({ name }),
       setReducedMotion: (value) => set({ reducedMotion: value }),
+      setCombatDetaille: (value) => set({ combatDetaille: value }),
+      basculerCombatDetaille: () => set((state) => ({ combatDetaille: !state.combatDetaille })),
+      setRaccourcisCombat: (value) => set({ raccourcisCombat: value }),
       setTutorielVu: (value) => set({ tutorielVu: value }),
       setPasAPasCombatVu: (value) => set({ pasAPasCombatVu: value }),
       enregistrerPartie: (partie) => set({ partie }),
@@ -390,6 +425,11 @@ export const useStore = create<AppState>()(
  * **v6 → v7** (#126) : le store gagne `partie`, la partie en cours. Un état v6 n'en a
  * pas : `null`, rien à reprendre. Une partie mal formée est écartée (`lirePartie`) plutôt
  * que chargée à moitié ; sa validité de jeu, c'est `reprendrePartie` qui la juge.
+ *
+ * **v7 → v8** (#189) : le store gagne la **densité du combat** (`combatDetaille`) et les
+ * **raccourcis clavier** (`raccourcisCombat`). Un état v7 n'en a pas : `false` (le mode
+ * `sobre`, défaut de `SPEC-COMBAT-UI` §4.3) et `true` (les raccourcis actifs, défaut de la
+ * case des Réglages). Une valeur forgée n'est pas crue : seul un booléen passe.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
@@ -399,6 +439,11 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now()),
     partie: lirePartie(migrated.partie),
+    // **v7 → v8** : l'affichage du combat reprend ses défauts — `sobre`, et les raccourcis
+    // actifs. Une valeur d'un autre type est écartée comme une absence.
+    combatDetaille: typeof migrated.combatDetaille === 'boolean' ? migrated.combatDetaille : false,
+    raccourcisCombat:
+      typeof migrated.raccourcisCombat === 'boolean' ? migrated.raccourcisCombat : true,
     // **v4 → v5** : un état v4 a **déjà été joué** (on ne lui remontre pas la Journée
     // d'intégration, `true` d'office) ; une partie neuve n'a aucun état à migrer et
     // part de `false`.

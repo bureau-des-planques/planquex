@@ -15,6 +15,7 @@ import { Administration } from '@/pages/Administration';
 import { Introuvable } from '@/pages/Introuvable';
 import { REDIRECTIONS } from '@/redirections';
 import { useComptes } from '@/store/comptes';
+import { useMouvementReduitGlobal } from '@/components/use-mouvement-reduit';
 
 export function App() {
   // La session persistée est relue **une fois** au démarrage (D-088). Sans backend,
@@ -22,6 +23,10 @@ export function App() {
   useEffect(() => {
     void useComptes.getState().rafraichir();
   }, []);
+
+  // « Mouvement réduit » (store **et** `prefers-reduced-motion`) relié au CSS par un
+  // attribut de la racine : le réglage existait, aucun CSS ne le lisait (#192).
+  useMouvementReduitGlobal();
 
   return (
     <Routes>

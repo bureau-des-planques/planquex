@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ClipboardPaste, Coffee, Copy, RotateCcw, Swords, Users } from 'lucide-react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, Info, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
   AttackEffect,
@@ -34,11 +35,18 @@ import {
 import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
+import { CardView } from '@/components/CardView';
+import { CarteSurvolable, FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
 import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
-import { Button } from '@/components/ui/button';
+import { MenuCombat } from '@/components/MenuCombat';
+import { PisteInterventions } from '@/components/PisteInterventions';
+import { useEffetsDeCombat } from '@/components/effets-combat';
+import type { EffetCombat } from '@/components/effets-combat';
+import { useMouvementReduit } from '@/components/use-mouvement-reduit';
+import type { EtatMenu } from '@/components/MenuCombat';
 import {
   Dialog,
   DialogContent,
@@ -104,32 +112,125 @@ function kindLabel(definition: Card | undefined): string {
 }
 
 /**
- * Un Planqué du Banc, **en Stress** : `hp` reste le champ technique du moteur, le
- * Stress est ce que le joueur lit (D-026). Le Seuil est rappelé pour situer la barre.
+ * Un Planqué **sur le plateau** (D-093, #187) : la carte du gabarit, figée, avec son Stress
+ * vivant (`hp` reste le champ technique du moteur ; le Stress est ce que le joueur lit, D-026).
+ * Le groupe porte le **nom** du Planqué : c'est par lui qu'on le retrouve, au Poste comme au
+ * Banc. Sans définition connue, le nom seul reste lisible.
  */
-function describe(instance: CardInstance | null): string {
-  if (!instance) return 'Place libre';
-  const stress = instance.maxHp - instance.hp;
-  return `${cardName(instance.cardId)} · ${stress}/${instance.maxHp} de Stress`;
+function CartePlateau({
+  instance,
+  className,
+  machine,
+  inspectee,
+  annotations = false,
+  effets = [],
+  onInspecter
+}: {
+  instance: CardInstance;
+  className: string;
+  /** Le texte de la Machine du camp, pour le Poste : il entre dans l'inspecteur (#188). */
+  machine?: string;
+  /** Cette carte est celle que le panneau montre. */
+  inspectee: boolean;
+  /** Le mode `détaillé` du combat (#189) : les Pressions et le chiffre du Stress reviennent. */
+  annotations?: boolean;
+  /** Les effets de la scène qui visent cette instance (#192) : un chiffre de Stress, pas plus. */
+  effets?: readonly EffetCombat[];
+  onInspecter: () => void;
+}) {
+  const nom = cardName(instance.cardId);
+  const definition = getCard(instance.cardId);
+  if (!definition) return <span className="muted">{nom}</span>;
+  return (
+    <CarteSurvolable
+      uid={instance.uid}
+      nom={nom}
+      className={className}
+      inspectee={inspectee}
+      onInspecter={onInspecter}
+      fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
+    >
+      <CardView
+        card={definition}
+        figee
+        plateau
+        annotations={annotations}
+        stress={instance.maxHp - instance.hp}
+        seuil={instance.maxHp}
+      />
+      {/* Le chiffre de Stress (#192) : il naît avec l'instance touchée, vit 700 ms et quitte le
+          DOM. `aria-hidden` : l'information est déjà dans la barre de Stress et au journal. */}
+      {effets.map((effet) => (
+        <span
+          key={effet.id}
+          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
+          aria-hidden="true"
+        >
+          +{effet.valeur}
+        </span>
+      ))}
+    </CarteSurvolable>
+  );
+}
+
+/**
+ * Localiser une instance **sur le plateau** : son camp, et si elle est au Poste ou au Banc (et
+ * à quelle place). `null` si elle n'y est plus — la carte est morte ou a changé de zone.
+ */
+function localiser(
+  state: BattleState,
+  uid: string
+): { camp: PlayerId; carte: CardInstance; auPoste: boolean; rang: number } | null {
+  for (const camp of ['player', 'ai'] as const) {
+    const side = state.players[camp];
+    if (side.active?.uid === uid) return { camp, carte: side.active, auPoste: true, rang: -1 };
+    const rang = side.bench.findIndex((carte) => carte?.uid === uid);
+    const carte = side.bench[rang];
+    if (rang >= 0 && carte) return { camp, carte, auPoste: false, rang };
+  }
+  return null;
+}
+
+/**
+ * Les gestes qu'une carte **porte**, pris dans la liste du moteur : attacher un café, évoluer,
+ * Talent (au Poste), Rotation (vers elle, ou depuis le Poste), relève (depuis le Banc). Rien d'autre :
+ * un geste qui n'est pas dans la liste n'est pas offert (SPEC-COMBAT-UI §6.4).
+ */
+function gestesDeLaCarte(actions: readonly BattleAction[], uid: string, auPoste: boolean, rang: number): BattleAction[] {
+  return actions.filter((action) => {
+    switch (action.type) {
+      case 'attachEnergy':
+      case 'evolve':
+        return action.targetUid === uid;
+      case 'ability':
+        return auPoste;
+      case 'retreat':
+        return auPoste || action.benchIndex === rang;
+      case 'promoteActive':
+        return action.benchIndex === rang;
+      default:
+        return false;
+    }
+  });
 }
 
 /** Les cinq conditions, dans l'ordre d'affichage de la légende. */
 const STATUS_LIST = Object.keys(STATUS_META) as Status[];
 
 /**
- * La barre de **Stress** : elle monte. `hp` reste le champ technique du moteur — c'est
- * l'affichage qui s'inverse (D-026 : « le Stress remplace les dégâts »). Verte au repos,
- * rouge quand le collègue va craquer.
+ * **La leçon du critère WCAG sur les raccourcis à une touche** (#189, `SPEC-COMBAT-UI` §4.2) : un raccourci à une touche est
+ * neutralisé dans un champ de saisie, sinon « i » devient une commande au milieu d'un code
+ * de partie à deux. Le test couvre les deux zones de texte du code.
  */
-function StressBar({ stress, max }: { stress: number; max: number }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((stress / max) * 100))) : 0;
-  const level = pct >= 75 ? 'is-high' : pct >= 50 ? 'is-mid' : '';
+function dansUnChampDeSaisie(cible: EventTarget | null): boolean {
   return (
-    <div className="stress" role="img" aria-label={`Stress : ${stress} sur ${max}`}>
-      <div className={`stress__fill ${level}`} style={{ width: `${pct}%` }} />
-    </div>
+    cible instanceof Element &&
+    cible.closest('input, textarea, select, [contenteditable="true"]') !== null
   );
 }
+
+/** Le menu `⋯` au repos : fermé, sur sa liste. */
+const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
 
 /**
  * Les cafés **attachés** d'un Planqué, en pastilles typées (D-037) : chaque pastille
@@ -146,25 +247,35 @@ function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
  * les **types du Deck** (1 à 3, D-037 (4)) dont la Machine tire le café.
  */
 function MachinePips({
-  zone,
-  cafeTypes,
-  designe = false
+  side,
+  designe = false,
+  detaille = false
 }: {
-  zone: CafeSymbol | null;
-  cafeTypes: readonly CafeType[];
+  side: PlayerState;
   /** Le pas-à-pas du combat (#143) désigne la Machine du joueur, pas celle de la Direction. */
   designe?: boolean;
+  /** Le mode `détaillé` (#189) remet les **types du Deck** à côté de la pastille. */
+  detaille?: boolean;
 }) {
-  const types = cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
+  const zone = side.energyZone;
+  const types = side.cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
+  // La Machine se **lit** dans l'inspecteur du Poste (#188) : sur le plateau, seule sa pastille
+  // reste — sans le mot « Machine », qui ne dit plus rien à côté de la carte. Le texte est lu
+  // par le nom accessible, comme l'ancien `title` (SPEC-COMBAT-UI §6.7). En `détaillé`, les
+  // types du Deck sont une annotation visible (#189).
   return (
-    <span
-      className="muted"
-      data-pas-a-pas={designe ? 'machine' : undefined}
-      title={`Machine à café : ${zone ? cafeLabel(zone) : `vide (types du Deck : ${types || 'aucun'})`}`}
-    >
-      Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" title="Machine à café : vide" />}
+    <span className="poste__machine" data-pas-a-pas={designe ? 'machine' : undefined}>
+      <span aria-hidden="true">{zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" />}</span>
+      <span className="sr-only">{texteMachine(side)}</span>
+      {detaille && <span className="poste__machine-types">{types || 'aucun type particulier'}</span>}
     </span>
   );
+}
+
+/** La Machine à café d'un camp, dite en une phrase : le café produit, les types du Deck (D-037 (4)). */
+function texteMachine(side: PlayerState): string {
+  const types = side.cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
+  return `Machine à café : ${side.energyZone ? cafeLabel(side.energyZone) : 'vide'} (types du Deck : ${types || 'aucun'})`;
 }
 
 /** Ce qu'un bouton d'action affiche, dérivé de l'action elle-même et de l'état. */
@@ -270,10 +381,12 @@ function ActionButton({
   onAction: (action: BattleAction) => void;
 }) {
   const view = describeAction(state, action, myCamp);
+  /* « Fin du tour » porte l'état de la main (#190) : vert quand c'est à toi, rouge sinon. */
+  const fin = action.type === 'endTurn' ? ` button--fin ${state.current === myCamp ? 'is-a-toi' : 'is-direction'}` : '';
   return (
     <button
       type="button"
-      className={`button ${action.type === 'attack' ? 'button--primary' : ''}`}
+      className={`button ${action.type === 'attack' ? 'button--primary' : ''}${fin}`}
       onClick={() => onAction(action)}
     >
       {view.icon === 'coffee' && <Coffee size={16} />}
@@ -348,10 +461,10 @@ function RegardDuDessus({ carte }: { carte: Card }) {
 }
 
 /**
- * **Un camp du plateau** (#169) : l'ordre est celui d'un jeu de cartes à deux joueurs —
- * le camp adverse en haut, **Banc puis Poste**, le mien en bas, **Poste puis Banc** : les
- * deux Postes se font face au milieu. Tout tient dans une carte compacte, pour que les
- * deux camps, la main et les actions se voient d'un coup sur un téléphone.
+ * **Un camp du plateau** (#169, #187) : le Poste (une carte) et le Banc (trois cartes) se
+ * côtoient sur une ligne, le Poste à gauche, pour les deux camps : les deux Postes sont sur
+ * le même axe vertical. La hauteur est comptée : il faut que les deux camps, la main et les
+ * actions se voient d'un coup sur un téléphone (`npm run capturer`).
  *
  * Le pas-à-pas désigne le Poste, la Machine et les Interventions **du joueur seulement**
  * (`mine`) : l'adversaire n'a jamais d'attribut `data-pas-a-pas`.
@@ -362,7 +475,11 @@ function Camp({
   current,
   mine,
   pendingPromotion,
-  pasAPas
+  pasAPas,
+  inspecte,
+  detaille,
+  effets = [],
+  onInspecter
 }: {
   label: string;
   side: PlayerState;
@@ -372,56 +489,120 @@ function Camp({
   /** Vrai quand ce camp attend de choisir sa relève. */
   pendingPromotion: boolean;
   pasAPas: PasAPasCombatEtat;
+  /** Le `uid` de la carte que le panneau montre, ou `null` (#188). */
+  inspecte: string | null;
+  /** La densité du combat (#189) : annotations sur le Poste et sur la Machine. */
+  detaille: boolean;
+  /** Les effets de la scène qui touchent **ce** camp (#192). */
+  effets?: readonly EffetCombat[];
+  onInspecter: (uid: string) => void;
 }) {
+  const effetsStress = effets.filter((effet) => effet.nature === 'stress');
+  const craquage = effets.find((effet) => effet.nature === 'craquage');
+  const pioche = effets.some((effet) => effet.nature === 'pioche');
+  const uidsEnJeu = new Set([side.active, ...side.bench].filter(Boolean).map((carte) => carte!.uid));
+  // Un Planqué qui vient de craquer n'a plus de carte au Poste : son chiffre de Stress reste
+  // à la place de la carte, sur le fantôme désaturé, plutôt que de disparaître avec elle.
+  const stressHorsCarte = effetsStress.filter(
+    (effet) => effet.auPoste && (!effet.uid || !uidsEnJeu.has(effet.uid))
+  );
+  const craquageDefinition = craquage ? getCard(craquage.carte?.cardId ?? '') : undefined;
+  // Le Poste : la carte, en grand, au centre du camp (R4). Le nom et la barre de Stress sont
+  // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
+  // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
+  const posteActif = side.active;
   const poste = (
     <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
-      <span className="stat-label">Poste</span>
-      <div className="board__content">
-        {side.active ? (
-          <>
-            <div className="poste__head">
-              <strong>{cardName(side.active.cardId)}</strong>
-              <span className="poste__hp">
-                {side.active.maxHp - side.active.hp}/{side.active.maxHp} de Stress
-              </span>
-            </div>
-            <div className="poste__gauge">
-              <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
-              <div className="poste__meta">
-                <CafesPips cafes={side.active.energy} />
-                <MachinePips
-                  zone={side.energyZone}
-                  cafeTypes={side.cafeTypes}
-                  designe={mine && pasAPas.designe('machine') !== undefined}
-                />
-                {side.active.statuses.map((status) => (
-                  <StatusBadge key={status} status={status} />
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
-          <strong className="muted">{pendingPromotion ? 'Aucun Planqué — relève à choisir' : 'Poste libre'}</strong>
-        )}
-      </div>
+      <span className="sr-only">Poste</span>
+      {posteActif ? (
+        <CartePlateau
+          instance={posteActif}
+          className="poste__carte"
+          machine={texteMachine(side)}
+          inspectee={inspecte === posteActif.uid}
+          annotations={detaille}
+          effets={effetsStress.filter((effet) => effet.uid === posteActif.uid)}
+          onInspecter={() => onInspecter(posteActif.uid)}
+        />
+      ) : (
+        <strong className="muted poste__libre">
+          {pendingPromotion ? 'Aucun Planqué — relève à choisir' : 'Poste libre'}
+        </strong>
+      )}
+      {/* Le craquage (#192) : la carte tombée reste une fraction de seconde, désaturée, à la
+          place qu'elle occupait — et son chiffre de Stress avec elle. Le bandeau « a craqué »
+          et le journal restent les porteurs de l'information sous mouvement réduit. */}
+      {craquage && craquage.auPoste && (
+        <div className="craquage__carte" aria-hidden="true">
+          {craquageDefinition && <CardView card={craquageDefinition} figee plateau />}
+        </div>
+      )}
+      {stressHorsCarte.map((effet) => (
+        <span
+          key={effet.id}
+          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
+          aria-hidden="true"
+        >
+          +{effet.valeur}
+        </span>
+      ))}
     </div>
   );
 
+  // La fiche du camp, **à côté** de la carte du Poste et non au-dessus (#199) : le nom du camp, ses
+  // piles, puis ce qui se passe au Poste (Stress écrit, cafés, Machine, Conditions). Le camp tient
+  // ainsi en deux rangées, et non en trois : c'est ce qui rend la hauteur au plateau.
+  const fiche = (
+    <div className="board__fiche">
+      <header className="board__head">
+        <h2>{label}</h2>
+        <span className="board__counts muted">main {side.hand.length}</span>
+        {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
+            Rebut ne s'ouvre pas encore : son panneau arrive avec #188, et d'ici là ce n'est pas un bouton. */}
+        <span className="piles">
+          <span className={`pile pile--deck${pioche ? ' is-piochante' : ''}`}>
+            Deck <strong>{side.deck.length}</strong>
+          </span>
+          <span className="pile pile--rebut">
+            Rebut <strong>{side.discard.length}</strong>
+          </span>
+        </span>
+      </header>
+      {side.active && (
+        <div className="poste__info">
+          {/* Le chiffre du Stress et le mot « Machine » sont dans l'inspecteur (#188) : la carte
+              porte la barre, et la pastille de la Machine reste seule, pour le pas-à-pas. */}
+          <CafesPips cafes={side.active.energy} />
+          <MachinePips
+            side={side}
+            designe={mine && pasAPas.designe('machine') !== undefined}
+            detaille={detaille}
+          />
+          {side.active.statuses.map((status) => (
+            <StatusBadge key={status} status={status} nomAffiche={detaille} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  // Le Banc : trois places, sur une seule rangée. Une place libre garde la forme d'une carte.
   const banc = (
     <div className="board__bench">
-      <span className="stat-label">Banc</span>
-      <ul className="bench board__content">
+      <span className="sr-only">Banc</span>
+      <ul className="bench">
         {side.bench.map((slot, index) => (
-          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index} title={describe(slot)}>
+          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index}>
             {slot ? (
-              <>
-                <strong className="bench__name">{cardName(slot.cardId)}</strong>
-                <span className="bench__stress muted">
-                  {slot.maxHp - slot.hp}/{slot.maxHp} de Stress
-                </span>
-              </>
+              <CartePlateau
+                instance={slot}
+                className="bench__carte"
+                inspectee={inspecte === slot.uid}
+                effets={effetsStress.filter((effet) => effet.uid === slot.uid)}
+                onInspecter={() => onInspecter(slot.uid)}
+              />
             ) : (
-              <span className="muted">Place libre</span>
+              <span className="sr-only">Place libre</span>
             )}
           </li>
         ))}
@@ -429,34 +610,32 @@ function Camp({
     </div>
   );
 
+  // La pile du camp (#199) : le camp adverse lit **Banc puis Poste**, le mien **Poste puis Banc**.
+  // Ainsi les deux Postes se font face, au centre du plateau.
+  const ligneDuPoste = (
+    <div className="board__poste-ligne">
+      {poste}
+      {fiche}
+    </div>
+  );
+
+  // Empilés (#199) : le Poste et le Banc du camp, dans l'ordre qui met les deux Postes face à face.
+  // Le camp qui a la main est porté par le cadre du camp.
   return (
-    <article className={`board__side ${current ? 'is-current' : ''}`}>
-      <header className="board__head">
-        <h2>{label}</h2>
-        <span className="board__counts muted">
-          main {side.hand.length} · Deck {side.deck.length} · Rebut {side.discard.length}
-        </span>
-        <span
-          className={`board__points ${side.points > 0 ? 'is-scored' : ''}`}
-          role="img"
-          aria-label={`Interventions : ${side.points} sur 3`}
-          data-pas-a-pas={mine ? pasAPas.designe('interventions') : undefined}
-        >
-          {'★'.repeat(side.points)}
-          {'☆'.repeat(Math.max(0, 3 - side.points))}
-        </span>
-      </header>
-      {mine ? (
-        <>
-          {poste}
-          {banc}
-        </>
-      ) : (
-        <>
-          {banc}
-          {poste}
-        </>
-      )}
+    <article className={`board__side ${current ? 'is-current' : ''} ${mine ? '' : 'is-direction'}`}>
+      <div className="board__zone">
+        {mine ? (
+          <>
+            {ligneDuPoste}
+            {banc}
+          </>
+        ) : (
+          <>
+            {banc}
+            {ligneDuPoste}
+          </>
+        )}
+      </div>
     </article>
   );
 }
@@ -493,6 +672,14 @@ export function Battle() {
   const storeDeck = useStore((state) => state.deck);
   /** Les types de café choisis au Deck (#91), lus bruts dans le store. */
   const storedCafeTypes = useStore((state) => state.cafeTypes);
+  /**
+   * **La densité d'infos** (#189, `SPEC-COMBAT-UI` §4.3) : `sobre` par défaut, `détaillé`
+   * sur geste. Elle vit dans le store persisté : le choix survit au rechargement.
+   */
+  const combatDetaille = useStore((state) => state.combatDetaille);
+  const basculerCombatDetaille = useStore((state) => state.basculerCombatDetaille);
+  /** Les raccourcis clavier du combat, réglés dans Réglages (#189). */
+  const raccourcisCombat = useStore((state) => state.raccourcisCombat);
   /**
    * Le **pas-à-pas du premier combat** (#143) : son ouverture, son cran et ses cibles
    * vivent dans un seul module (`usePasAPasCombat`) — la page ne fait que poser
@@ -544,6 +731,15 @@ export function Battle() {
   const [codeMessage, setCodeMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
   /** Le code collé par l'autre joueur. */
   const [incoming, setIncoming] = useState('');
+
+  /**
+   * **Le menu `⋯`** (D-093, #191) : ouvert ou non, et laquelle de ses trois vues il montre.
+   * `codeAnnonce` est le dernier code que le menu a **annoncé** en s'ouvrant seul — voir plus bas.
+   */
+  const [menu, setMenu] = useState<EtatMenu>(MENU_FERME);
+  const [codeAnnonce, setCodeAnnonce] = useState<string | null>(null);
+  /** « Nouveau combat » sur une partie commencée demande confirmation (comme le forfait). */
+  const [nouveauDemande, setNouveauDemande] = useState(false);
 
   /**
    * Le camp que **je** tiens. En solo c'est `player` ; en partie à deux, celui que le
@@ -630,7 +826,35 @@ export function Battle() {
    * rend `null` **sans appeler** la politique — le camp `ai` est tenu par quelqu'un, et
    * l'écran ne doit pas jouer son tour à sa place (critère du #125).
    */
-  const reduceMotion = useReducedMotion();
+  const sansMouvement = useMouvementReduit();
+
+  /**
+   * **Les effets de la scène** (#192) : le chiffre de Stress, la traînée de craquage, la pile
+   * qui s'allume, l'Intervention qui se remplit. Le compteur (quatre au plus) et la durée
+   * (800 ms au plus) vivent dans `effets-combat.ts`, pas dans le CSS.
+   */
+  const effets = useEffetsDeCombat(state, sansMouvement);
+
+  /**
+   * **Le raccourci de la bascule d'infos** (#189, `SPEC-COMBAT-UI` §4.6) : `I` et son alias
+   * `Ctrl`+`I` (le « remap avec un modificateur » du critère WCAG sur les raccourcis à une touche). Les deux se coupent ensemble
+   * depuis Réglages — c'est la **désactivation** qu'exige le critère — et aucun des deux ne
+   * réagit dans un champ de saisie. `Ctrl`+`Maj`+`I` est laissé au navigateur (outils de
+   * développement) : ce n'est pas l'alias.
+   */
+  useEffect(() => {
+    if (!raccourcisCombat) return;
+    const surTouche = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || event.altKey || event.isComposing) return;
+      if (event.key !== 'i' && event.key !== 'I') return;
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey) return;
+      if (dansUnChampDeSaisie(event.target)) return;
+      event.preventDefault();
+      basculerCombatDetaille();
+    };
+    document.addEventListener('keydown', surTouche);
+    return () => document.removeEventListener('keydown', surTouche);
+  }, [raccourcisCombat, basculerCombatDetaille]);
 
   /**
    * Ce que la Direction va jouer, ou `null` quand ce n'est pas à elle (ou en partie à deux).
@@ -642,9 +866,9 @@ export function Battle() {
 
   useEffect(() => {
     if (!aiAction) return;
-    const timer = window.setTimeout(() => play(aiAction), reduceMotion ? 0 : 600);
+    const timer = window.setTimeout(() => play(aiAction), sansMouvement ? 0 : 600);
     return () => window.clearTimeout(timer);
-  }, [aiAction, reduceMotion, play]);
+  }, [aiAction, sansMouvement, play]);
 
   /**
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
@@ -680,6 +904,9 @@ export function Battle() {
     setMatch(null);
     setCodeMessage(null);
     setIncoming('');
+    setMenu(MENU_FERME);
+    setCodeAnnonce(null);
+    setNouveauDemande(false);
     setDecksSolo({ playerDeck, aiDeck: testDeck() });
     setState(createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }));
   }, [playerDeck, chosenCafeTypes]);
@@ -699,6 +926,9 @@ export function Battle() {
     setState(created.state);
     setCodeMessage(null);
     setIncoming('');
+    // La table est rendue au joueur : c'est à lui de jouer. Si un code est déjà à passer (la
+    // Direction ouvrait), le menu se rouvre seul au rendu qui suit.
+    setMenu(MENU_FERME);
   }, [playerDeck, chosenCafeTypes]);
 
   /**
@@ -737,6 +967,18 @@ export function Battle() {
   const transfer = useMemo(() => (match ? handover(state, match) : null), [state, match]);
 
   /**
+   * **La Partie à deux s'ouvre seule** quand un code est prêt à transmettre (D-093, #191) : c'est
+   * le seul moment où l'invité a quelque chose à faire dans le menu. On l'annonce **une fois par
+   * code** — l'invité qui referme le menu n'est pas rouvert à chaque rendu —, par un ajustement
+   * d'état pendant le rendu (la forme que React recommande pour un état dérivé d'un autre) et non
+   * par un effet, qui laisserait passer un rendu sans le menu.
+   */
+  if (transfer?.ready && codeAnnonce !== code) {
+    setCodeAnnonce(code);
+    setMenu({ ouvert: true, vue: 'pvp' });
+  }
+
+  /**
    * La copie du code (#128), **sans mentir** : le presse-papier peut manquer (page servie
    * en clair, navigateur de téléphone ancien — `navigator.clipboard` est alors `undefined`)
    * ou être refusé (permission, geste non reconnu). Les deux cas sont traités : promettre
@@ -773,6 +1015,8 @@ export function Battle() {
     setMatch(joined.match);
     setState(joined.state);
     setIncoming('');
+    // La partie est reprise : la table redevient l'écran (le menu se rouvre seul si un code est prêt).
+    setMenu(MENU_FERME);
     setCodeMessage({ ton: 'ok', texte: `Partie reprise : tu joues le ${CAMP_NAME[joined.match.camp]}.` });
   }, [incoming]);
 
@@ -782,6 +1026,54 @@ export function Battle() {
       : id === 'player'
         ? 'Toi'
         : 'La Direction';
+  /* Le nom court d'un camp, pour la piste d'Interventions (#190) : sans le nom du siège. */
+  const pisteLabel = (id: PlayerId) => (match ? (id === myCamp ? 'Toi' : 'Adversaire') : campLabel(id));
+
+  /**
+   * **L'inspecteur** (#188) : la carte que le panneau montre, par son `uid`. Il se ferme de lui-même
+   * quand la carte n'est plus sur le plateau (`localiser` rend `null`). Ses gestes viennent de la
+   * même liste que la barre d'action (`playable`) — rien de grisé, et seulement mon camp.
+   */
+  const [inspecte, setInspecte] = useState<string | null>(null);
+  /**
+   * L'inspecteur lit **le plateau et la main** (#192) : sous mouvement réduit, une carte de la
+   * main ne se soulève pas — c'est le panneau qui s'ouvre au survol et au focus. Une carte de
+   * main n'a ni Poste ni rang ; ses gestes sont ceux que la main porte déjà (`playable`).
+   */
+  const inspecteurPlateau = inspecte ? localiser(state, inspecte) : null;
+  const carteEnMain = inspecte ? mySide.hand.find((carte) => carte.uid === inspecte) ?? null : null;
+  const inspecteur = inspecteurPlateau
+    ? { ...inspecteurPlateau, enMain: false }
+    : carteEnMain
+      ? { camp: myCamp, carte: carteEnMain, auPoste: false, rang: -1, enMain: true }
+      : null;
+  const inspecteurDefinition = inspecteur ? getCard(inspecteur.carte.cardId) : undefined;
+  const gestesInspectes = inspecteur && inspecteur.camp === myCamp
+    ? inspecteur.enMain
+      ? playable.filter((action) => 'uid' in action && action.uid === inspecteur.carte.uid)
+      : gestesDeLaCarte(playable, inspecteur.carte.uid, inspecteur.auPoste, inspecteur.rang)
+    : [];
+  const gestesDuPanneau =
+    inspecteur && inspecteur.camp === myCamp ? (
+      gestesInspectes.length > 0 ? (
+        <div className="actions actions--tight">
+          {gestesInspectes.map((action) => (
+            <ActionButton
+              key={JSON.stringify(action)}
+              state={state}
+              action={action}
+              myCamp={myCamp}
+              onAction={(geste) => {
+                setInspecte(null);
+                play(geste);
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="muted">Aucun geste pour cette carte ce tour.</p>
+      )
+    ) : undefined;
 
   /** La carte choisie, **si elle est encore dans la main** : sinon la sélection est vide. */
   const selected = mySide.hand.find((card) => card.uid === selectedUid) ?? null;
@@ -791,18 +1083,30 @@ export function Battle() {
     : [];
 
   /**
-   * Ce que dit la section « Au Poste » quand elle est vide : la partie est finie, ou
-   * c'est à l'autre joueur d'agir (partie à deux).
+   * Ce que dit la barre d'action quand elle n'a rien à offrir : la partie est finie, c'est à
+   * l'autre joueur d'agir (partie à deux), ou — le temps d'un rendu — rien n'est ouvert.
    */
-  const idleLine =
-    match !== null && state.phase === 'playing' && !myMove
-      ? `Rien à faire de ton côté : c’est au ${CAMP_NAME[actor]} de jouer.`
-      : 'Rien à faire : la partie est terminée.';
+  const attendLAutre = match !== null && state.phase === 'playing' && !myMove;
+  const idleLine = attendLAutre
+    ? `C’est au ${CAMP_NAME[actor]} de jouer.`
+    : state.phase === 'ended'
+      ? 'Rien à faire : la partie est terminée.'
+      : 'Rien à faire pour le moment.';
 
   /**
-   * La légende des Conditions, rendue **deux fois** : dans la page, et dans le dialogue
-   * « Règles » (D-035, composant shadcn `dialog`). Une seule source de JSX, donc un
-   * libellé ajouté à `STATUS_META` apparaît dans les deux sans être recopié.
+   * « Nouveau combat » jette la partie affichée : sur une partie **commencée** il demande
+   * confirmation, comme le forfait (T6 : le menu ne détruit rien sans dialogue). Une partie
+   * neuve, ou finie, n'a rien à perdre : le geste est direct.
+   */
+  const demanderNouveauCombat = () => {
+    if (state.phase === 'playing' && state.actionLog.length > 0) setNouveauDemande(true);
+    else restart();
+  };
+
+  /**
+   * La légende des Conditions : une seule source de JSX, pour les deux dialogues qui la montrent —
+   * « Conditions » (le lien de la barre d'état, #199) et « Règles » (le menu `⋯`). Composant
+   * `dialog` (D-035). Un libellé ajouté à `STATUS_META` y apparaît sans être recopié.
    */
   const conditionsLegend = (
     <ul className="status-legend">
@@ -815,9 +1119,103 @@ export function Battle() {
     </ul>
   );
 
+  /**
+   * La vue « Partie à deux » du menu (#125) : créer, transmettre le code, le coller. Les
+   * commandes de jeu restent celles du moteur, dans la barre d'action : cette vue ne fait que
+   * passer la main. Elle s'ouvre seule dès qu'il y a un code à passer (voir plus haut).
+   */
+  const partieADeux = (
+    <div className="combat-menu__corps">
+      {match === null ? (
+        <>
+          <p className="muted">
+            Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
+            joueur. Un code apparaît à la fin de ton tour.
+          </p>
+          <div className="actions actions--tight">
+            <button type="button" className="button button--primary" onClick={startTwoPlayer}>
+              <Users size={16} /> Créer une partie à deux
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="notice">{campLine(state, match)}</p>
+          <p className="muted">
+            Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
+            les mêmes boutons que toi.
+          </p>
+          {transfer?.ready ? (
+            <>
+              <p className="muted">
+                Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
+                reprend ici, avec le camp adverse.
+              </p>
+              <div className="actions actions--tight">
+                <button type="button" className="button" onClick={copyCode}>
+                  <Copy size={16} /> Copier le code
+                </button>
+              </div>
+              {/* Un appui sélectionne le code entier : sur téléphone, c'est le repli
+                  quand la copie automatique est refusée (#128). */}
+              <textarea
+                className="pvp__code"
+                ref={codeRef}
+                readOnly
+                value={code}
+                rows={4}
+                aria-label="Code de la partie, à transmettre"
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </>
+          ) : (
+            <p className="muted">{transfer?.raison}</p>
+          )}
+          <p className="muted">« Nouveau combat » quitte la partie à deux et rend le combat solo.</p>
+        </>
+      )}
+
+      <label className="field">
+        <span className="field__label">Coller un code reçu</span>
+        {/* Sur téléphone, le clavier corrige : un code base64url n'a ni majuscules
+            initiales à deviner ni mots à corriger, et une correction le casse en
+            silence (#128). Le champ grandit vers le bas, la page ne bouge pas. */}
+        <textarea
+          className="pvp__code"
+          value={incoming}
+          onChange={(event) => setIncoming(event.target.value)}
+          placeholder="PLQ1.…"
+          rows={3}
+          aria-label="Code reçu, à coller"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+      </label>
+      <div className="actions actions--tight">
+        <button type="button" className="button" onClick={join}>
+          <ClipboardPaste size={16} /> Prendre le camp adverse
+        </button>
+      </div>
+      <p className="muted">
+        Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
+        laissée, et tu prends le camp qui doit jouer.
+      </p>
+      {codeMessage && (
+        <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
+      )}
+    </div>
+  );
+
   return (
     <div
-      className={`page battle${pasAPas.ouvert ? ' battle--pas-a-pas' : ''}`}
+      className={`page battle battle--${combatDetaille ? 'detaille' : 'sobre'}${
+        pasAPas.ouvert ? ' battle--pas-a-pas' : ''
+      }${sansMouvement ? ' battle--mouvement-reduit' : ''}`}
+      /* Le CSS lit aussi cet attribut local : le réglage du store passait jusque-là inaperçu
+         (#192), seul `prefers-reduced-motion` coupait le soulèvement des cartes. */
+      data-mouvement-reduit={sansMouvement ? 'true' : 'false'}
       /* Les cibles de l'étape courante : `styles.css` met en avant l'élément qui porte
          le `data-pas-a-pas` correspondant (`pasAPas.designe`). Fermé, aucun élément ne
          porte l'attribut — donc aucun contour. */
@@ -844,16 +1242,103 @@ export function Battle() {
             </p>
           )}
         </div>
-        <div className="actions actions--tight">
-          {forfeitAction && (
-            <button type="button" className="button button--small" onClick={() => setForfaitDemande(forfeitAction)}>
-              Abandonner
-            </button>
-          )}
-          <button type="button" className="button button--small" onClick={restart}>
-            <RotateCcw size={14} /> Nouveau combat
-          </button>
-        </div>
+        {/* Les Conditions (#199) : la rangée des cinq a quitté le plateau. Elle tient ici en un lien,
+            qui ouvre la même légende que « Règles » dans le menu ; c'est la cible « conditions » du
+            pas-à-pas, et elle reste à l'écran. La place du `ⓘ` (#189) reste libre. */}
+        <Dialog>
+          <DialogTrigger
+            render={
+              <button
+                type="button"
+                className="battle__conditions"
+                data-pas-a-pas={pasAPas.designe('conditions')}
+              />
+            }
+          >
+            Conditions
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Conditions</DialogTitle>
+              <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
+            </DialogHeader>
+            {conditionsLegend}
+          </DialogContent>
+        </Dialog>
+        {/* La **bascule d'infos** (#189) : c'est elle qui possède cette place dans la barre
+            d'état, le `⋯` appartient au menu (#191). Le bouton visible est l'équivalent tactile
+            du raccourci (le critère WCAG sur les raccourcis à une touche), `aria-pressed` dit le mode, `aria-keyshortcuts` le geste. */}
+        <button
+          type="button"
+          className="battle__infos"
+          aria-pressed={combatDetaille}
+          aria-keyshortcuts="I"
+          aria-label="Infos détaillées"
+          title={`Infos détaillées — I (${combatDetaille ? 'détaillé' : 'sobre'})`}
+          onClick={basculerCombatDetaille}
+        >
+          <Info size={18} aria-hidden="true" />
+        </button>
+        <MenuCombat etat={menu} onChange={setMenu}>
+          {(menuApi) => {
+            if (menu.vue === 'journal') {
+              return (
+                <ol className="log combat-menu__corps">
+                  {state.log.slice(-14).map((line, index) => (
+                    <li key={`${index}-${line}`}>{line}</li>
+                  ))}
+                </ol>
+              );
+            }
+            if (menu.vue === 'pvp') return partieADeux;
+            return (
+              <ul className="combat-menu__liste">
+                <li>
+                  <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('journal')}>
+                    <ScrollText size={16} aria-hidden="true" /> Journal
+                  </button>
+                </li>
+                <li>
+                  <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('pvp')}>
+                    <Users size={16} aria-hidden="true" /> Partie à deux
+                    <span className="muted">un code à se passer, sans serveur</span>
+                  </button>
+                </li>
+                <li>
+                  <Dialog>
+                    <DialogTrigger render={<button type="button" className="combat-menu__entree" />}>
+                      <BookOpen size={16} aria-hidden="true" /> Règles
+                      <span className="muted">les Conditions</span>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Conditions</DialogTitle>
+                        <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
+                      </DialogHeader>
+                      {conditionsLegend}
+                    </DialogContent>
+                  </Dialog>
+                </li>
+                {forfeitAction && (
+                  <li>
+                    <button
+                      type="button"
+                      className="combat-menu__entree"
+                      onClick={() => setForfaitDemande(forfeitAction)}
+                    >
+                      <Flag size={16} aria-hidden="true" /> Abandonner
+                    </button>
+                  </li>
+                )}
+                <li>
+                  <button type="button" className="combat-menu__entree" onClick={demanderNouveauCombat}>
+                    <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
+                  </button>
+                </li>
+              </ul>
+            );
+          }}
+        </MenuCombat>
       </section>
 
       {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
@@ -874,115 +1359,85 @@ export function Battle() {
         </p>
       )}
 
-      {lastLog && (
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.p
-            key={state.log.length}
-            className={`banner ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-          >
-            {lastLog}
-          </motion.p>
-        </AnimatePresence>
-      )}
-
       {/*
-        **La table** (#169) : le plateau des deux camps, puis la console du joueur — relève,
-        actions de la Pression, main. Sur téléphone, tout s'empile et tient dans l'écran ;
-        sur un écran large, la console passe à côté du plateau. Ce qui est secondaire
-        (Conditions, Partie à deux, Journal) est replié plus bas.
+        **La table** (#169) : le plateau des deux camps, puis la console du joueur — la main et la
+        pose. Sur téléphone, tout s'empile et tient dans l'écran ; sur un écran large, la console
+        passe à côté du plateau. Les actions sont dans la barre collée plus bas, et tout ce qui est
+        secondaire (Journal, Partie à deux, Règles, Abandonner, Nouveau combat) dans le menu `⋯`.
       */}
       <div className="battle__table">
         <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
-          {[otherCamp(myCamp), myCamp].map((id) => (
-            <Camp
-              key={id}
-              label={campLabel(id)}
-              side={state.players[id]}
-              current={state.current === id && state.phase === 'playing'}
-              mine={id === myCamp}
-              pendingPromotion={state.pendingPromotion === id}
-              pasAPas={pasAPas}
-            />
+          {/* La piste d'Interventions (#190) sépare les deux camps : elle est **une** seule cible du
+              pas-à-pas (son conteneur), jamais une par camp. */}
+          {[otherCamp(myCamp), myCamp].map((id, index) => (
+            <Fragment key={id}>
+              {index === 1 && (
+                <PisteInterventions
+                  camps={[otherCamp(myCamp), myCamp].map((camp) => ({
+                    label: pisteLabel(camp),
+                    points: state.players[camp].points,
+                    /* Les crans qui viennent d'être acquis (#192) : leur hexagone rebondit
+                       une fois ; sous mouvement réduit, il est simplement déjà rempli. */
+                    fraiches: effets
+                      .filter((effet) => effet.nature === 'intervention' && effet.camp === camp)
+                      .map((effet) => effet.numero ?? 0)
+                  }))}
+                  designe={pasAPas.designe('interventions')}
+                />
+              )}
+              <Camp
+                label={campLabel(id)}
+                side={state.players[id]}
+                current={state.current === id && state.phase === 'playing'}
+                mine={id === myCamp}
+                pendingPromotion={state.pendingPromotion === id}
+                pasAPas={pasAPas}
+                inspecte={inspecte}
+                detaille={combatDetaille}
+                effets={effets.filter((effet) => effet.camp === id)}
+                onInspecter={setInspecte}
+              />
+            </Fragment>
           ))}
+          {/* La traînée de craquage (#192) : une seule, entre l'attaquant et sa cible. Elle ne
+              traverse **jamais** sous mouvement réduit — le fantôme désaturé et le bandeau
+              « a craqué » disent tout, sans mouvement. */}
+          {!sansMouvement &&
+            effets
+              .filter((effet) => effet.nature === 'craquage')
+              .map((effet) => (
+                <span
+                  key={`train-${effet.id}`}
+                  className={`craquage__train ${
+                    effet.camp === myCamp ? 'craquage__train--vers-le-bas' : 'craquage__train--vers-le-haut'
+                  }`}
+                  aria-hidden="true"
+                />
+              ))}
         </section>
 
         <div className="battle__console">
+          {/* L'inspecteur (#188) : la colonne de droite à partir de 900 px, une feuille basse sur
+              téléphone. Il ne recouvre pas la carte qu'il décrit (`InspecteurCombat`). */}
+          <InspecteurCombat
+            ouvert={inspecteur !== null}
+            onOpenChange={(ouvert) => {
+              if (!ouvert) setInspecte(null);
+            }}
+            nom={inspecteur ? cardName(inspecteur.carte.cardId) : ''}
+            ancre={inspecte}
+            fiche={
+              inspecteur && inspecteurDefinition ? (
+                <FicheCarte
+                  instance={inspecteur.carte}
+                  card={inspecteurDefinition}
+                  machine={inspecteur.auPoste ? texteMachine(state.players[inspecteur.camp]) : undefined}
+                />
+              ) : null
+            }
+            gestes={gestesDuPanneau}
+          />
           {regard && <RegardDuDessus carte={regard} />}
-
-          {state.pendingPromotion && (
-            <section className="notice notice--warn promotion">
-              {state.pendingPromotion === myCamp ? (
-                <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
-              ) : match === null ? (
-                <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
-              ) : (
-                <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
-              )}
-              <div className="actions actions--tight">
-                {promotions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {choices.length > 0 && (
-            <section className="notice notice--warn choix">
-              <p>Un effet te demande de désigner une carte.</p>
-              <div className="actions actions--tight">
-                {choices.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          <section className="section actions-panel" data-pas-a-pas={pasAPas.designe('poste-actions')}>
-            <div className="section__head">
-              <h2>Au Poste</h2>
-              {/* `legalAttacks` lit le camp qui a la main : ce paragraphe ne parle donc que
-                  quand c'est mon tour (en solo, il ne décrit plus le Poste de la Direction). */}
-              {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (
-                <p className="muted actions-panel__portee">
-                  {mySide.hasAttacked
-                    ? 'Pression déjà portée ce tour.'
-                    : inReach.length === myCard.attacks.length
-                      ? 'Toutes tes Pressions sont à portée de café.'
-                      : `Hors de portée du café : ${myCard.attacks
-                          .filter((entry) => !inReach.includes(entry))
-                          .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
-                          .join(', ')}.`}
-                </p>
-              )}
-            </div>
-            {boardActions.length === 0 && pressions.length === 0 && turnActions.length === 0 ? (
-              <p className="muted">{idleLine}</p>
-            ) : (
-              <>
-                {boardActions.length > 0 && (
-                  <div className="actions actions--tight">
-                    {boardActions.map((action) => (
-                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                    ))}
-                  </div>
-                )}
-                {(pressions.length > 0 || turnActions.length > 0) && (
-                  <div className="actions actions--tight actions--pressions">
-                    {pressions.map((action) => (
-                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                    ))}
-                    {turnActions.map((action) => (
-                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </section>
 
           <section className="section hand-panel" data-pas-a-pas={pasAPas.designe('main')}>
             <div className="section__head">
@@ -997,21 +1452,52 @@ export function Battle() {
             {mySide.hand.length === 0 ? (
               <p className="muted">Main vide.</p>
             ) : (
-              <ul className="hand">
-                {mySide.hand.map((card) => {
+              // **L'éventail** (#200, SPEC-COMBAT-UI §6.8 R1) : chaque carte est le gabarit (`CardView`),
+              // inclinée et chevauchée, rognée par le conteneur `.hand`. Le **bouton** est posé par-dessus
+              // la carte : il porte le geste, `aria-pressed` et le nom lu par un lecteur d'écran.
+              <ul className="hand" style={{ '--n': mySide.hand.length } as CSSProperties}>
+                {mySide.hand.map((card, index) => {
                   const definition = getCard(card.cardId);
                   const isSelected = selected?.uid === card.uid;
                   const jouable = handActions.some((action) => 'uid' in action && action.uid === card.uid);
+                  // L'éventail se déploie autour du centre : les cartes du bord s'inclinent et s'abaissent.
+                  const decalage = index - (mySide.hand.length - 1) / 2;
+                  const etat = `${isSelected ? ' is-selected' : ''}${jouable ? ' is-playable' : ''}`;
                   return (
-                    <li key={card.uid}>
+                    <li
+                      key={card.uid}
+                      className={`hand__carte${etat}`}
+                      data-uid={card.uid}
+                      style={
+                        {
+                          '--rot': `${decalage * 3}deg`,
+                          '--dec': `${decalage * decalage * 1.5}px`
+                        } as CSSProperties
+                      }
+                      /* Sous « Mouvement réduit », la carte ne se soulève pas : c'est
+                         l'inspecteur qui s'ouvre au survol et au focus (#192, #188). */
+                      onPointerEnter={(evenement) => {
+                        if (!sansMouvement || evenement.pointerType !== 'mouse') return;
+                        setInspecte(card.uid);
+                      }}
+                      onFocus={() => {
+                        if (sansMouvement) setInspecte(card.uid);
+                      }}
+                    >
+                      {definition && (
+                        <div className="hand__visuel" aria-hidden>
+                          <CardView card={definition} figee plateau compact />
+                        </div>
+                      )}
                       <button
                         type="button"
-                        className={`hand__card${isSelected ? ' is-selected' : ''}${jouable ? ' is-playable' : ''}`}
+                        className={`hand__card${etat}`}
                         aria-pressed={isSelected}
                         onClick={() => setSelectedUid(isSelected ? null : card.uid)}
                       >
-                        <strong className="hand__name">{cardName(card.cardId)}</strong>
-                        <span className="hand__meta">
+                        {/* Le nom et l'état, lus à voix haute : la carte visible est `aria-hidden`. */}
+                        <span className="hand__name sr-only">{cardName(card.cardId)}</span>
+                        <span className="hand__meta sr-only">
                           <span className="hand__kind">{kindLabel(definition)}</span>
                           {jouable && <span className="hand__tag">Jouable</span>}
                         </span>
@@ -1061,128 +1547,116 @@ export function Battle() {
         </div>
       </div>
 
-      <details className="fold" data-pas-a-pas={pasAPas.designe('conditions')} open={pasAPas.designe('conditions') ? true : undefined}>
-        <summary>
-          <span>Conditions</span> <span className="muted">ce qu’un Planqué au Poste peut subir</span>
-        </summary>
-        <div className="fold__body">
-          <Dialog>
-            <DialogTrigger render={<Button variant="outline" size="sm" />}>Règles</DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Conditions</DialogTitle>
-                <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
-              </DialogHeader>
-              {conditionsLegend}
-            </DialogContent>
-          </Dialog>
-          {conditionsLegend}
-        </div>
-      </details>
-
       {/*
-        La partie à deux (#125) : créer, transmettre le code, le coller. Repliée tant qu'aucune
-        partie à deux n'est en cours — elle s'ouvre seule dès qu'il y a un code à passer. Les
-        commandes de jeu restent celles du moteur, plus haut : cette section ne fait que
-        passer la main.
+        **La barre d'action** (D-093, #191) : collée au-dessus de la navigation, elle porte ce qui
+        se joue au Poste — café, Rotation, Talent, les Pressions, « Fin du tour » — et, quand le
+        moteur l'ouvre, la relève ou le choix en attente. Elle est **toujours là** (`.combat-barre`,
+        mesurée par `npm run capturer`) : c'est la cible « poste-actions » du pas-à-pas, et c'est
+        elle qui libère la hauteur dont la main a besoin. Elle ne rend que ce que dit la liste du
+        moteur : en partie à deux, le tour de l'autre ne lui prête aucun bouton (#125).
       */}
-      <details className="fold" open={match !== null ? true : undefined}>
-        <summary>
-          <span>Partie à deux</span> <span className="muted">un code à se passer, sans serveur</span>
-        </summary>
-        <div className="fold__body">
-          {match === null ? (
-            <>
-              <p className="muted">
-                Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
-                joueur. Un code apparaît à la fin de ton tour.
-              </p>
-              <div className="actions actions--tight">
-                <button type="button" className="button button--primary" onClick={startTwoPlayer}>
-                  <Users size={16} /> Créer une partie à deux
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="notice">{campLine(state, match)}</p>
-              <p className="muted">
-                Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
-                les mêmes boutons que toi.
-              </p>
-              {transfer?.ready ? (
-                <>
-                  <p className="muted">
-                    Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
-                    reprend ici, avec le camp adverse.
-                  </p>
-                  <div className="actions actions--tight">
-                    <button type="button" className="button" onClick={copyCode}>
-                      <Copy size={16} /> Copier le code
-                    </button>
-                  </div>
-                  {/* Un appui sélectionne le code entier : sur téléphone, c'est le repli
-                      quand la copie automatique est refusée (#128). */}
-                  <textarea
-                    className="pvp__code"
-                    ref={codeRef}
-                    readOnly
-                    value={code}
-                    rows={4}
-                    aria-label="Code de la partie, à transmettre"
-                    onFocus={(event) => event.currentTarget.select()}
-                  />
-                </>
-              ) : (
-                <p className="muted">{transfer?.raison}</p>
-              )}
-              <p className="muted">« Nouveau combat » quitte la partie à deux et rend le combat solo.</p>
-            </>
-          )}
+      <section
+        className="combat-barre"
+        aria-label="Actions du tour"
+        data-pas-a-pas={pasAPas.designe('poste-actions')}
+      >
+        {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
+            qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
+            information temporaire n'a pas à occuper une bande de plus. */}
+        {lastLog && (
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.p
+              key={state.log.length}
+              className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            >
+              {lastLog}
+            </motion.p>
+          </AnimatePresence>
+        )}
 
-          <label className="field">
-            <span className="field__label">Coller un code reçu</span>
-            {/* Sur téléphone, le clavier corrige : un code base64url n'a ni majuscules
-                initiales à deviner ni mots à corriger, et une correction le casse en
-                silence (#128). Le champ grandit vers le bas, la page ne bouge pas. */}
-            <textarea
-              className="pvp__code"
-              value={incoming}
-              onChange={(event) => setIncoming(event.target.value)}
-              placeholder="PLQ1.…"
-              rows={3}
-              aria-label="Code reçu, à coller"
-              autoComplete="off"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </label>
-          <div className="actions actions--tight">
-            <button type="button" className="button" onClick={join}>
-              <ClipboardPaste size={16} /> Prendre le camp adverse
-            </button>
-          </div>
-          <p className="muted">
-            Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
-            laissée, et tu prends le camp qui doit jouer.
+        {state.pendingPromotion && (
+          <section className="notice notice--warn promotion">
+            {state.pendingPromotion === myCamp ? (
+              <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
+            ) : match === null ? (
+              <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
+            ) : (
+              <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
+            )}
+            <div className="actions actions--tight">
+              {promotions.map((action) => (
+                <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {choices.length > 0 && (
+          <section className="notice notice--warn choix">
+            <p>Un effet te demande de désigner une carte.</p>
+            <div className="actions actions--tight">
+              {choices.map((action) => (
+                <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* `legalAttacks` lit le camp qui a la main : cette ligne ne parle donc que quand c'est
+            mon tour (en solo, elle ne décrit plus le Poste de la Direction). */}
+        {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (mySide.hasAttacked || inReach.length < myCard.attacks.length) && (
+          <p className="muted combat-barre__portee">
+            {mySide.hasAttacked
+              ? 'Pression déjà portée ce tour.'
+              : `Hors de portée du café : ${myCard.attacks
+                  .filter((entry) => !inReach.includes(entry))
+                  .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
+                  .join(', ')}.`}
           </p>
-          {codeMessage && (
-            <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
-          )}
-        </div>
-      </details>
+        )}
 
-      <details className="fold">
-        <summary>
-          <span>Journal</span>
-        </summary>
-        <ol className="log fold__body">
-          {state.log.slice(-14).map((line, index) => (
-            <li key={`${index}-${line}`}>{line}</li>
-          ))}
-        </ol>
-      </details>
+        {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
+            Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
+            font pas quatre lignes), et les Pressions avec « Fin du tour » viennent à côté ou
+            dessous. La barre ne doit jamais recouvrir la main (`npm run capturer` le mesure). */}
+        {(boardActions.length > 0 || pressions.length > 0 || turnActions.length > 0) && (
+          <div className="combat-barre__gestes">
+            {boardActions.length > 0 && (
+              <div className="actions actions--tight combat-barre__rang">
+                {boardActions.map((action) => (
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                ))}
+              </div>
+            )}
+            {pressions.map((action) => (
+              <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+            ))}
+            {turnActions.map((action) => (
+              <span className="combat-barre__fin" key={JSON.stringify(action)}>
+                <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
+              </span>
+            ))}
+          </div>
+        )}
+
+        {playable.length === 0 && (
+          <p className="muted combat-barre__repos">
+            {idleLine}
+            {attendLAutre && (
+              <>
+                {' '}
+                <button type="button" className="link-button" onClick={() => setMenu({ ouvert: true, vue: 'pvp' })}>
+                  Coller un code
+                </button>
+              </>
+            )}
+          </p>
+        )}
+      </section>
 
       <Confirmation
         open={forfaitDemande !== null && forfeitAction !== undefined}
@@ -1192,8 +1666,18 @@ export function Battle() {
         onConfirm={() => {
           if (forfaitDemande) play(forfaitDemande);
           setForfaitDemande(null);
+          // La partie est finie : le menu qui portait « Abandonner » n'a plus rien à offrir.
+          setMenu(MENU_FERME);
         }}
         onCancel={() => setForfaitDemande(null)}
+      />
+      <Confirmation
+        open={nouveauDemande}
+        titre="Recommencer un combat ?"
+        texte="La partie en cours est jetée, et un combat neuf commence. Tu ne pourras pas la reprendre."
+        confirmer="Nouveau combat"
+        onConfirm={restart}
+        onCancel={() => setNouveauDemande(false)}
       />
     </div>
   );

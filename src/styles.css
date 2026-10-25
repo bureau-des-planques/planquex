@@ -627,8 +627,7 @@ h2 {
   margin-top: 1rem;
 }
 
-.stats-grid,
-.quick-grid {
+.stats-grid {
   display: grid;
   gap: 0.75rem;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -660,29 +659,6 @@ h2 {
 .stat-card strong {
   font-family: var(--font-display);
   font-size: 1.5rem;
-}
-
-.quick-card {
-  align-items: center;
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  color: inherit;
-  display: flex;
-  gap: 0.8rem;
-  padding: 0.9rem 1rem;
-  text-decoration: none;
-}
-
-.quick-card div {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-}
-
-.quick-card span {
-  color: var(--text-muted);
-  font-size: 0.82rem;
 }
 
 /* ---------- Contrôles ---------- */
@@ -1004,6 +980,116 @@ h2 {
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+/* **Figée** — la carte du plateau de combat (D-093, #187) : elle ne se soulève pas au
+   survol et ne se comprime pas au tap. Le survol y sert à **lire** (l'inspecteur), pas à
+   décorer ; et huit cartes qui bougent au passage du pointeur font du bruit. */
+.card--figee {
+  cursor: default;
+  transition: none;
+}
+
+/* **Au plateau** (D-093, #187) : la carte se dépouille pour tenir à 64 px de large. Elle
+   garde ce qui décide — illustration, nom, Seuil, Stress — et laisse le reste à
+   l'inspecteur (#188). Un nom tronqué (« SE-CH… ») n'est pas une carte, c'est un débris. */
+.card--plateau .card__kind,
+.card--plateau .card__attacks,
+.card--plateau .card__footer,
+.card--plateau .card__flavor {
+  display: none;
+}
+
+/* Sur le plateau, la carte est **une** surface : l'anneau de rareté et le corps sont deux fonds de
+   la même boîte (le corps sur `padding-box`, l'anneau sur `border-box`, bordure transparente de 4 px).
+   La face n'a plus de fond ni de cadre : une face qui porte un fond **dans** la carte est une carte dans
+   une carte (`nested-cards`, `impeccable detect`, relevé sur `/battle`). Hors plateau, rien ne change. */
+.card--plateau {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%) padding-box,
+    linear-gradient(
+      150deg,
+      color-mix(in srgb, var(--frame) 88%, white),
+      color-mix(in srgb, var(--frame) 46%, var(--bg-deep)) 52%,
+      color-mix(in srgb, var(--frame) 78%, var(--bg-deep))
+    )
+      border-box;
+  border: 4px solid transparent;
+  padding: 0;
+}
+
+.card--plateau .card__face {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.card--plateau .card__top {
+  padding: 0.2rem 0.22rem 0.22rem;
+}
+
+/* Trois lignes, et non deux : à 61 px de large, « Agent d'entretien » se coupe en deux lignes
+   sur « AGENT D'ENTR… ». Le cadre reste à 63 × 88 : c'est l'illustration qui cède la place. */
+.card--plateau .card__name {
+  /* #201 : au-dessus du plancher `--fs-xs` (0,7rem = 11,2 px). Le nom d'un Planqué est ce
+     qui décide si on joue la carte ; à 8,6 px il ne servait qu'à décorer. Deux lignes, pas
+     trois : la carte du Poste fait 88 px de large. */
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  /* Trois lignes : à 11,2 px, « Psychologue du travail » en prend trois dans 84 px. Deux
+     lignes avec ellipse ne montraient plus que « PSYCHOLOGUE DU… » — un nom tronqué au
+     milieu d'une information qui décide. */
+  -webkit-line-clamp: 3;
+  /* #200 : la coupure se fait **sur les espaces** (et à la césure de la langue, `hyphens: auto` hérité
+     de `.card__name`). `anywhere` coupait « TRAVAIL » au milieu du mot : c'est ce qui donnait « TRA-VAIL ». */
+  overflow-wrap: break-word;
+}
+
+/* Le Seuil sort de la ligne du nom : sur 61 ou 92 px, la pastille prenait la moitié de la ligne et le
+   nom se réduisait à « KI. » (constaté, `npm run capturer`, #187). Il se pose en coin de l'illustration,
+   au-dessus de la barre de Stress ; le nom reprend toute la largeur. */
+.card--plateau .card__seuil-badge {
+  bottom: 1.1rem;
+  border-radius: 4px;
+  /* #201 : le Seuil est une décision (combien de Stress avant de craquer), pas un ornement. */
+  font-size: var(--fs-xs);
+  padding: 0.05rem 0.16rem;
+  position: absolute;
+  right: 0.3rem;
+  z-index: 1;
+}
+
+.card--plateau .card__seuil-badge::before {
+  font-size: 0.42rem;
+  letter-spacing: 0.06em;
+}
+
+.card--plateau .card__seuil {
+  gap: 0.25rem;
+  padding: 0.14rem 0.22rem 0.2rem;
+}
+
+/* La densité du combat (#189, SPEC-COMBAT-UI §4.3) : en `détaillé`, la carte du Poste remet
+   les annotations que `sobre` coupe — le chiffre du Stress, le nom des Conditions, les types
+   de café. **Pas les Pressions** : à 88 px de large, deux rangées d'attaque cassaient la carte
+   (mesuré le 25/10 : le nom chevauchait la plaque de Seuil). Elles vivent dans la barre
+   d'action, avec leur coût, et dans l'inspecteur. Une annotation ne remplace jamais une
+   décision : le nom, le Seuil et la barre restent dans les deux modes. */
+
+.card__stress-chiffre {
+  color: var(--text);
+  flex: none;
+  font-family: var(--font-display);
+  /* #201 : le chiffre du Stress est une mesure, pas une annotation — il passe au plancher. */
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.card--plateau .card__emblem {
+  font-size: 0.55rem;
+}
+
 /* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. L'or **est** l'anneau (`--frame`) :
    il n'y a pas de second filet — l'ancien `::before`, sans `content`, ne rendait rien (#131). */
 .card--comex {
@@ -1210,20 +1296,6 @@ h2 {
   padding-inline: 0.4rem;
 }
 
-.card__seuil-label {
-  color: var(--text-muted);
-  font-size: var(--fs-2xs);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.card__seuil-value {
-  color: var(--gold-soft);
-  font-family: var(--font-display);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-}
-
 .card__seuil-bar {
   height: 7px;
 }
@@ -1247,12 +1319,6 @@ h2 {
   display: flex;
   gap: 0.4rem;
   justify-content: space-between;
-}
-
-.attack__cost {
-  color: var(--gold);
-  font-size: 0.6rem;
-  letter-spacing: -0.1em;
 }
 
 .attack__name {
@@ -1499,38 +1565,91 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  padding: 0.6rem 0.8rem;
+  padding: 0.4rem 0.6rem;
   position: sticky;
   top: 0.4rem;
   z-index: 15;
 }
 
-.pas-a-pas__entete {
-  align-items: baseline;
+/* **Une seule ligne** (#199) : le numéro, le titre, « Suivant » et « Plus ». Le reste ne vit que
+   derrière « Plus » — la hauteur rendue au plateau. */
+.pas-a-pas__ligne {
+  align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.75rem;
-  justify-content: space-between;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .pas-a-pas__compte {
   color: var(--text-muted);
+  flex: none;
   font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   margin: 0;
 }
 
-.pas-a-pas__etape h2 {
+.pas-a-pas__titre {
+  flex: 1 1 auto;
   font-size: 0.92rem;
   font-weight: 700;
-  margin: 0 0 0.2rem;
+  line-height: 1.2;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pas-a-pas__suivant {
+  flex: none;
+}
+
+.pas-a-pas__plus {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  flex: none;
+  font: inherit;
+  font-size: 0.78rem;
+  min-height: 2.25rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.pas-a-pas__plus[aria-expanded='true'] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* Le reste du panneau est replié tant que « Plus » ne le déplie pas (hors de l'arbre visuel, pas
+   de l'arbre d'accessibilité : les pièces restent rendues). */
+.pas-a-pas__reste {
+  display: none;
+}
+
+.pas-a-pas--plus .pas-a-pas__reste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pas-a-pas__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
 }
 
 .pas-a-pas__texte {
   color: var(--text);
+  display: none;
   font-size: 0.8rem;
   line-height: 1.35;
   margin: 0;
+}
+
+.pas-a-pas--detail .pas-a-pas__texte {
+  display: block;
 }
 
 /* La désignation des éléments : un contour doré discret, jamais un bouton qui
@@ -1545,39 +1664,18 @@ h2 {
   scroll-margin-top: calc(var(--pas-a-pas-hauteur, 0px) + 0.75rem);
 }
 
-.pas-a-pas__titre-ligne {
-  align-items: baseline;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.6rem;
-  justify-content: space-between;
-}
-
-/* « Lire le détail » n'existe que pour le repli du téléphone : sur un écran large, le texte
-   est toujours lu et le bouton n'a rien à déplier. */
+/* « Lire le détail » : un lien discret, dans le reste replié. Le texte se déplie d'un geste, et la
+   hauteur reste celle de la ligne tant qu'on ne le demande pas (#170, #199). */
 .pas-a-pas__lire {
-  display: none;
-}
-
-/* Sur téléphone (D-060, 420 × 900), le détail se replie : le titre et les commandes restent
-   à l'écran, la console et la main aussi (#170). Le texte se déplie d'un geste. */
-@media (max-width: 899px) {
-  .pas-a-pas--replie .pas-a-pas__texte {
-    display: none;
-  }
-
-  .pas-a-pas__lire {
-    background: none;
-    border: 0;
-    color: var(--gold);
-    cursor: pointer;
-    display: inline;
-    font: inherit;
-    font-size: 0.78rem;
-    padding: 0;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
+  background: none;
+  border: 0;
+  color: var(--gold);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Un lien discret, pas un troisième bouton : la sortie du pas-à-pas, et « reprendre une
@@ -1606,7 +1704,25 @@ h2 {
 
 /* La page de combat est plus serrée que les autres : le plateau, la main et les actions
    doivent tenir dans un téléphone (420 × 900, D-060) sans défiler (#169). */
+/* **La scène de combat** (D-093, #190 ; DESIGN.md §2.6). Les jetons `--scene-*` vivent sur
+   l'écran et **par-dessus** `:root` : aucun jeton global n'est réécrit ici. Le bleu nuit du
+   projet reste la famille ; le feutre n'en est qu'une version éclaircie au centre. */
 .battle {
+  --scene-felt: #16202c;
+  --scene-felt-deep: #0d1420;
+  --scene-felt-lit: #214d69;
+  --scene-card: #1b222c;
+  --scene-neon: #61d5df;
+  --scene-neon-core: #9ef5fb;
+  --scene-go: #46c78c;
+  --scene-danger: #e0563f;
+  --scene-gold-hot: #f7e264;
+  --scene-parch: #b18a60;
+  --scene-parch-dark: #664d38;
+  --scene-ink-parch: #241a0c;
+  --scene-chalk: #f4e6cc;
+  --scene-steel: #8a93a8;
+  --scene-steel-deep: #4a5468;
   gap: 0.5rem;
 }
 
@@ -1620,36 +1736,286 @@ h2 {
   padding-top: 0.6rem;
 }
 
+/* La barre d'état (D-093, #191) : une ligne — le titre, le tour, et le bouton `⋯` à droite. Le
+   panneau du menu s'y accroche (`position: relative`) et passe par-dessus le plateau. */
 .battle__head {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
   gap: 0.4rem 0.75rem;
   justify-content: space-between;
+  min-height: 2.75rem;
+  position: relative;
 }
 
 .battle__title {
+  align-items: baseline;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0 0.7rem;
+  min-width: 0;
 }
 
 .battle__title h1 {
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   line-height: 1.15;
+  margin: 0;
 }
 
 .battle__title p {
   font-size: 0.8rem;
-}
-
-.battle__title p {
   margin: 0;
 }
 
+/* L'attente de la Direction prend la ligne du dessous, le temps qu'elle dure. */
 .battle__attente {
   color: var(--gold-soft);
+  flex-basis: 100%;
   font-size: 0.82rem;
-  margin: 0.15rem 0 0;
+}
+
+/* ---------- Le menu `⋯` (D-093, #191) ---------- */
+
+.combat-menu {
+  flex: none;
+}
+
+/* La cible de doigt : 44 px (SPEC-COMBAT-UI §5.1). */
+.combat-menu__bouton {
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.combat-menu__bouton[aria-expanded='true'] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.combat-menu__panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: calc(100dvh - 14rem);
+  overflow-y: auto;
+  padding: 0.6rem 0.75rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  /* Au-dessus du pas-à-pas collé (15) et de la barre d'action (16), sous la navigation (20) et
+     les dialogues (50). */
+  width: min(24rem, 100%);
+  z-index: 17;
+}
+
+.combat-menu__entete {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.75rem;
+}
+
+.combat-menu__titre {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.combat-menu__retour {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--gold);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.8rem;
+  gap: 0.3rem;
+  min-height: 2.75rem;
+  padding: 0;
+}
+
+.combat-menu__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.combat-menu__entree {
+  align-items: center;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 0.55rem;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.7rem;
+  text-align: left;
+  width: 100%;
+}
+
+.combat-menu__entree .muted {
+  font-size: var(--fs-xs);
+  margin-left: auto;
+  text-align: right;
+}
+
+.combat-menu__entree:hover {
+  border-color: var(--line-strong);
+}
+
+.combat-menu__corps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.combat-menu__corps p {
+  margin: 0;
+}
+
+.combat-menu__panneau .log {
+  max-height: none;
+}
+
+/* ---------- La barre d'action (D-093, #191) ---------- */
+
+/* Collée **au-dessus** de la navigation fixe : `bottom` est la hauteur de la barre de navigation
+   (padding 0.5rem + icône et libellé) et un peu d'air. Plus bas que la navigation (20) pour ne
+   jamais passer devant elle ; plus haut que la table. `sticky` (et non `fixed`) garde la barre
+   dans le flux : quand tout tient dans la fenêtre, elle est simplement sous la main. */
+.combat-barre {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  bottom: 4.7rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
+    0 -8px 18px -10px rgb(0 0 0 / 60%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
+     lieu de recouvrir le plateau. */
+  max-height: 42dvh;
+  overflow-y: auto;
+  padding: 0.25rem 0.6rem;
+  position: sticky;
+  z-index: 16;
+}
+
+.combat-barre .actions {
+  margin-top: 0;
+}
+
+.combat-barre .button {
+  font-size: 0.8rem;
+  /* #203 : 40 px de haut suffisaient visuellement, et la marge de hauteur ne pardonnait rien.
+     36 px reste au-dessus de la cible tactile de 24 px (SC 2.5.8) et rend 4 px par rangée. */
+  min-height: 2.25rem;
+  padding: 0.3rem 0.7rem;
+}
+
+/* Les gestes du Poste : une ligne quand ils tiennent, deux sinon. */
+.combat-barre__gestes {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* La rangée café / Rotation / Talent défile plutôt que de passer à la ligne : la barre garde sa
+   hauteur. Elle prend la place que « Fin du tour » et les Pressions lui laissent. */
+.combat-barre .combat-barre__rang {
+  flex: 1 1 9rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+}
+
+.combat-barre__rang .button {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* « Fin du tour » reste à droite de sa ligne. */
+.combat-barre__fin {
+  margin-left: auto;
+}
+
+.combat-barre .notice {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.combat-barre .notice p {
+  margin: 0 0 0.3rem;
+}
+
+.combat-barre__portee,
+.combat-barre__repos {
+  font-size: 0.76rem;
+  margin: 0;
+}
+
+/* « Conditions » (#199) : un lien de la barre d'état, qui ouvre la légende des cinq. Il tient dans la
+   ligne du titre, et c'est la cible « conditions » du pas-à-pas. */
+.battle__conditions {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  flex: none;
+  font: inherit;
+  font-size: 0.78rem;
+  margin-left: auto;
+  min-height: 2.75rem;
+  padding: 0.3rem 0.6rem;
+}
+
+/* La **bascule d'infos** (#189) : la cible de doigt de 44 px du menu `⋯`, sa place dans la
+   barre d'état. Elle porte `aria-pressed` (le mode) et `aria-keyshortcuts="I"` (le raccourci). */
+.battle__infos {
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.battle__infos[aria-pressed='true'] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* La ligne de journal de la barre d'action (#199) : une phrase entière, lisible, qui passe à la ligne
+   plutôt que de se tronquer. */
+.combat-barre .combat-barre__journal {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 0.1rem 0.55rem;
 }
 
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
@@ -1657,7 +2023,7 @@ h2 {
 .battle__table {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .battle__console {
@@ -1675,33 +2041,62 @@ h2 {
   }
 }
 
+/* La table (plan 1, DESIGN.md §2.6 règle 1) : **une** lumière, entre les deux Postes, et une
+   vignette en ombre interne. Les quatre coins sont les plus sombres de l'écran. */
 .board {
+  background: radial-gradient(
+    120% 90% at 50% 46%,
+    var(--scene-felt-lit) 0%,
+    var(--scene-felt) 52%,
+    var(--scene-felt-deep) 100%
+  );
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  position: relative;
 }
 
-/* Les deux camps du combat : le même cadre usiné que les panneaux. Le camp qui a la
-   main s'allume — liseré coloré et halo porté vers le bas, pas un simple filet bleu. */
+/* Le vignettage de la table (DESIGN.md §2.6, règle 1) est une ombre **intérieure** posée sur un
+   pseudo-élément sans fond ni rayon. Sur la table elle-même, un rayon et une ombre faisaient de la
+   table une « carte » : chaque Planqué posé dessus était une carte dans une carte (`nested-cards`). */
+.board::before {
+  box-shadow: inset 0 0 18vmin rgb(0 0 0 / 55%);
+  content: '';
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* Rien d'atténué sur la table (DESIGN.md §1.5, #198) : le centre du feutre est la seule lumière, et
+   `--text-muted` y tombe à 3,79:1 (sous les 4,5:1 de l'AA). Tout `.muted` posé sur le plateau — la
+   Machine et les cafés, le compte de main, le « Poste libre » — reprend donc l'encre principale
+   (7,73:1 sur le même pic). La lumière reste franche : c'est le texte qui change, pas le halo. */
+.board .muted,
+.board .board__counts {
+  color: var(--text);
+}
+
+/* Les deux camps du combat sont des **zones**, pas des cartes : aucun cadre, un filet de
+   séparation. Les seules cartes du plateau sont les Planqués (`CardView`) — un cadre autour d'une
+   carte, c'est une carte dans une carte (le détecteur `nested-cards`, D-093 #187). */
 .board__side {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--gold) 18%, transparent),
-    0 8px 18px -10px rgb(0 0 0 / 70%);
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.55rem 0.7rem;
-  transition: border-color 200ms ease, box-shadow 200ms ease;
+  gap: 0.3rem;
+  padding: 0.1rem 0.2rem;
+  transition: border-color 200ms ease;
 }
 
+/* Le néon est un **état** (DESIGN.md §2.6 règle 3) : il n'allume que le camp qui a la main, en
+   **filet** (pas de halo). Au repos, aucun camp ne se distingue. Chez la Direction, l'état est le
+   danger, pas le néon. */
 .board__side.is-current {
-  border-color: var(--accent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--accent) 45%, transparent),
-    0 10px 24px -10px rgb(0 0 0 / 70%);
+  box-shadow: inset 2px 0 0 var(--scene-neon);
+}
+
+.board__side.is-current.is-direction {
+  box-shadow: inset 2px 0 0 var(--scene-danger);
 }
 
 .board__head h2 {
@@ -1724,98 +2119,99 @@ h2 {
   font-size: 0.72rem;
 }
 
-.board__points {
-  color: var(--text-muted);
-  font-size: 0.82rem;
-}
-
-.board__poste,
-.board__bench {
-  align-items: start;
-  display: grid;
-  gap: 0 0.5rem;
-  grid-template-columns: 2.4rem minmax(0, 1fr);
-}
-
-.board__poste .stat-label,
-.board__bench .stat-label {
-  font-size: 0.64rem;
-  padding-top: 0.15rem;
-}
-
-.board__content {
+/* Les deux camps sont **empilés** (#199, SPEC-COMBAT-UI §6.8.1) : le camp adverse lit Banc puis Poste,
+   le mien Poste puis Banc, et les deux Postes se font face au centre. Les tailles sont des variables,
+   mesurées par `npm run capturer` : la garde décide de la plus grande qui tient. */
+.board__zone {
+  /* Le Banc passe à 64 px (#188, mesuré) : le Poste garde un rapport de 1,5 à 1,8 avec lui. Le Stress
+     et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur. */
+  --poste-w: 5.5rem;
+  --banc-w: 3.5rem;
+  align-items: center;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.25rem;
+}
+
+/* Le Poste et ce qui s'y passe, côte à côte : la carte garde la place du centre. */
+.board__poste-ligne {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+/* Le Poste : une carte en grand. Sa largeur est `--poste-w`, sa hauteur suit le format 63 × 88. */
+.board__poste {
+  flex: none;
+  width: var(--poste-w);
+}
+
+.board__bench {
+  display: flex;
+  justify-content: center;
   min-width: 0;
 }
 
-/* La jauge de Stress et ce qui se passe au Poste (cafés, Machine, Conditions) tiennent sur
-   une ligne : sur téléphone, chaque ligne gagnée laisse la main visible (#169). */
-.poste__gauge {
-  align-items: center;
+/* La fiche du camp, à côté de la carte du Poste (#199) : son nom et ses piles, puis ce qui se passe
+   au Poste (Stress écrit, cafés, Machine, Conditions). */
+.board__fiche {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.6rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 11rem;
+  min-width: 0;
 }
 
-.poste__gauge .stress {
-  flex: 1 1 6rem;
-  width: auto;
-}
-
-.poste__meta {
+.board__fiche .board__head {
   align-items: center;
+  gap: 0.15rem 0.4rem;
+}
+
+/* Ce qui se passe au Poste (Stress écrit, cafés, Machine, Conditions), sous le nom du camp. */
+.poste__info {
+  align-items: flex-start;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.6rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
 }
 
-/* Le Poste est la pièce maîtresse du camp : un cadre à lui, plus marqué que le Banc. */
-.board__poste {
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 0.35rem 0.55rem;
+/* Les **types de café du Deck**, annotation du mode `détaillé` (#189) : en `sobre`, la
+   Machine ne montre que sa pastille, et la phrase reste lue par le `sr-only` de `MachinePips`. */
+.poste__machine-types {
+  color: var(--text);
+  font-size: var(--fs-2xs);
+  line-height: 1.2;
 }
 
-/* Le Banc : trois places, côte à côte. Une place libre est en pointillé. */
+/* Le Banc : trois places de `--banc-w`, sur une rangée. Une place libre garde la forme d'une carte,
+   en pointillé. */
 .bench {
   display: grid;
-  gap: 0.35rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.3rem;
+  grid-template-columns: repeat(3, var(--banc-w));
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .bench__slot {
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  display: flex;
-  flex-direction: column;
-  font-size: 0.78rem;
-  gap: 0.1rem;
-  justify-content: center;
-  min-height: 2.6rem;
   min-width: 0;
-  padding: 0.3rem 0.45rem;
+}
+
+.bench__carte {
+  width: var(--banc-w);
 }
 
 .bench__slot.is-free {
+  aspect-ratio: 63 / 88;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  display: flex;
   align-items: center;
-  border-style: dashed;
-}
-
-.bench__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bench__stress {
-  font-size: 0.68rem;
+  justify-content: center;
+  width: var(--banc-w);
 }
 
 /* Les sections repliées du combat (Conditions, Partie à deux, Journal) : une ligne chacune
@@ -1855,35 +2251,26 @@ h2 {
 
 .notice--compact {
   font-size: 0.78rem;
-  padding: 0.4rem 0.7rem;
+  padding: 0.3rem 0.7rem;
 }
 
-.button--small,
-.actions-panel .button {
+.button--small {
   font-size: 0.8rem;
   padding: 0.38rem 0.7rem;
 }
 
-.actions-panel,
 .hand-panel {
   gap: 0.4rem;
 }
 
-.actions-panel h2,
 .hand-panel h2 {
   font-size: 0.95rem;
   margin: 0;
 }
 
-.actions-panel .section__head,
 .hand-panel .section__head {
   align-items: baseline;
   gap: 0.1rem 0.75rem;
-}
-
-.actions-panel__portee {
-  font-size: 0.76rem;
-  margin: 0;
 }
 
 .actions {
@@ -2043,17 +2430,139 @@ h2 {
   border-color: var(--warn);
 }
 
-.poste__head {
-  align-items: baseline;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: space-between;
+/* ---------- L'inspecteur (SPEC-COMBAT-UI §3, §6.4 ; #188) ---------- */
+
+/* La carte du plateau se désigne : curseur, et un anneau de focus qui ne disparaît pas (SC 2.4.7). */
+.battle .poste__carte,
+.battle .bench__carte {
+  cursor: pointer;
+  position: relative;
 }
 
-.poste__hp {
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
+.battle .poste__carte:focus-visible,
+.battle .bench__carte:focus-visible {
+  border-radius: 10px;
+  outline: 2px solid var(--scene-neon);
+  outline-offset: 3px;
+}
+
+/* L'infobulle de lecture : posée sous la carte. Sa marge haute n'est pas un vide : le pointeur passe
+   de la carte à l'infobulle sans la perdre (SC 1.4.13, survolable). Aucun bouton n'y vit. */
+.battle .infobulle {
+  left: 50%;
+  padding-top: 0.45rem;
+  position: absolute;
+  top: 100%;
+  transform: translateX(-50%);
+  width: min(17rem, 80vw);
+  z-index: 40;
+}
+
+.battle .infobulle__corps {
+  background: var(--scene-card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 24px -8px rgb(0 0 0 / 70%);
+  color: var(--text);
+  display: block;
+  font-size: 0.8rem;
+  padding: 0.6rem 0.75rem;
+}
+
+/* Le panneau non modal (#188) : une feuille basse au-dessus de la barre de navigation, sous la carte
+   décrite (`--inspecteur-haut`, posé par l'écran). Il n'a aucun voile : le plateau reste lisible. */
+.battle .inspecteur {
+  background: var(--scene-card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  bottom: 4.7rem;
+  box-shadow: 0 -12px 28px -12px rgb(0 0 0 / 75%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  left: 0.5rem;
+  overflow-y: auto;
+  padding: 0.75rem 0.9rem;
+  position: fixed;
+  right: 0.5rem;
+  top: var(--inspecteur-haut, 45dvh);
+  z-index: 30;
+}
+
+.battle .inspecteur[hidden] {
+  display: none;
+}
+
+/* Sur écran large, le panneau est une colonne de la console, collée en haut : il ne recouvre rien. */
+@media (min-width: 900px) {
+  .battle .inspecteur {
+    bottom: auto;
+    left: auto;
+    position: sticky;
+    right: auto;
+    top: 0.5rem;
+    width: 100%;
+  }
+}
+
+.battle .inspecteur__titre {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  hyphens: manual;
+  line-height: 1.15;
+  margin: 0;
+  overflow-wrap: break-word;
+  text-transform: uppercase;
+}
+
+.battle .inspecteur__fiche {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  gap: 0.3rem;
+}
+
+.battle .inspecteur__nom {
   font-weight: 700;
+  margin: 0;
+}
+
+.battle .inspecteur__ligne,
+.battle .inspecteur__machine {
+  margin: 0;
+}
+
+.battle .inspecteur__regle {
+  margin: 0;
+  padding-left: 0.5rem;
+}
+
+.battle .inspecteur__gestes {
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+}
+
+.battle .inspecteur__fermer {
+  align-self: flex-end;
+}
+
+/* Le Banc à 64 px : un nom sur deux lignes, coupé **entre** les mots. La césure automatique est
+   coupée sur le plateau, et la taille du nom suit la place : « Agent d’entretien » tient sans se
+   couper au milieu d'un mot (reçu de #200). */
+.battle .card--plateau .card__name {
+  hyphens: manual;
+}
+
+.battle .bench__carte .card--plateau .card__name {
+  /* Deux lignes, jamais trois : à 56 px de place, une troisième ligne ne montre qu'une
+     syllabe (« D'ENTRETIEN N »). Mieux vaut une ellipse qu'un mot amputé.
+     #201 : la place du Banc ne permet pas `--fs-xs` (0,7rem) — « TRAVAIL » y prendrait
+     trois lignes. On monte au plancher documenté `--fs-2xs` (0,62rem), et l'écart est
+     inscrit dans `DESIGN.md` §2.4 plutôt que masqué. */
+  -webkit-line-clamp: 2;
+  font-size: var(--fs-2xs);
+  hyphens: manual;
+  line-height: 1.12;
 }
 
 /* La barre de Stress : elle MONTE. Verte au repos, rouge quand le collègue va craquer. */
@@ -2094,13 +2603,6 @@ h2 {
   background: linear-gradient(90deg, #c0442e, #f07a5e);
 }
 
-.poste__meta {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
 .pips {
   color: var(--accent);
   font-size: 0.7rem;
@@ -2111,7 +2613,8 @@ h2 {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
-  font-size: var(--fs-2xs);
+  /* #201 : au-dessus du plancher — la règle d'une Condition se lit, elle ne se devine pas. */
+  font-size: var(--fs-xs);
   font-weight: 700;
   gap: 0.25rem;
   letter-spacing: 0.04em;
@@ -2178,58 +2681,429 @@ h2 {
   font-size: var(--fs-xs);
 }
 
-.board__points.is-scored {
-  color: var(--accent);
-  font-size: 1rem;
-  letter-spacing: 0.12em;
+/* ---------- La scène : piles, piste, état (D-093, #190) ---------- */
+
+/* Les piles de Deck et de Rebut : des **objets posés** (parchemin), un compte dans une pastille.
+   Visibles des deux camps. Le Rebut ne s'ouvre pas encore (#188). */
+.piles {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
 }
 
-/* ---------- Main du joueur (ticket #58, #169) ---------- */
+.pile {
+  align-items: center;
+  background: var(--scene-parch);
+  border: 2px solid var(--scene-parch-dark);
+  border-radius: 6px;
+  box-shadow: 0 6px 14px rgb(0 0 0 / 45%);
+  color: var(--scene-ink-parch);
+  display: inline-flex;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  gap: 0.3rem;
+  letter-spacing: 0.12em;
+  padding: 0.12rem 0.3rem 0.12rem 0.4rem;
+  text-transform: uppercase;
+}
 
-/* La main est une **bande** : cinq cartes tiennent côte à côte, la dixième se trouve en
-   la faisant glisser. Une carte est un bouton — on la touche, puis on dit où elle va. */
-.hand {
+.pile strong {
+  background: var(--scene-ink-parch);
+  border-radius: 999px;
+  color: var(--scene-chalk);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0;
+  min-width: 1.5rem;
+  padding: 0 0.3rem;
+  text-align: center;
+}
+
+/* La piste d'Interventions : six hexagones, trois par camp, remplis dans l'ordre ; l'or pour
+   ceux qui sont acquis (l'or répond à celui du COMEX). Posés sur le feutre, sans fond. */
+.piste {
+  align-items: center;
   display: flex;
-  gap: 0.45rem;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  justify-content: space-between;
+}
+
+.piste__camp {
+  align-items: center;
+  display: flex;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* Le nom du camp est posé sur la table, près du centre éclairé : encre principale (#198, voir `.board .muted`). */
+.piste__nom {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.piste__hex {
+  background: var(--line-strong);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  display: block;
+  height: 1.1rem;
+  position: relative;
+  width: 0.95rem;
+}
+
+.piste__hex::after {
+  background: var(--scene-felt-deep);
+  bottom: 1.5px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  content: '';
+  left: 1.5px;
+  position: absolute;
+  right: 1.5px;
+  top: 1.5px;
+}
+
+.piste__hex.is-acquise {
+  background: var(--gold-deep);
+}
+
+.piste__hex.is-acquise::after {
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+}
+
+/* ---------- Les effets de la scène (#192, SPEC-COMBAT-UI §6.8) ---------- */
+
+/* Le chiffre de Stress : doré, près de la carte touchée, **une fois**, 700 ms, puis le
+   composant le retire du DOM. `transform` et `opacity` seulement : aucun `filter: blur`,
+   et la carte n'est jamais décalée (le chiffre est en position absolue). */
+.stress-flottant {
+  animation: stress-monte 700ms ease-out 1 both;
+  color: var(--scene-gold-hot);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  left: 50%;
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+  top: -0.35rem;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+@keyframes stress-monte {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(1.4);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px) scale(1);
+  }
+}
+
+/* Le repli sans mouvement : le chiffre est là, immobile, puis il part à la même échéance.
+   L'information n'a jamais vécu dans l'animation. */
+.stress-flottant.is-fixe {
+  animation: none;
+  opacity: 1;
+  transform: translateX(-50%);
+}
+
+/* L'Intervention qui se remplit : un seul rebond de 200 ms. Le remplissage, lui, est l'état
+   `is-acquise` — il ne bouge pas. */
+.piste__hex.is-fraiche {
+  animation: intervention-rebond 200ms ease-out 1;
+}
+
+@keyframes intervention-rebond {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* La pile de Deck qui s'allume à la pioche : un liseré néon de 150 ms sur un pseudo-élément,
+   donc sans faire bouger la pile ni son compte. */
+.pile--deck {
+  position: relative;
+}
+
+.pile--deck.is-piochante::after {
+  animation: piochante-lueur 150ms ease-out 1 both;
+  border: 2px solid var(--scene-neon);
+  border-radius: 8px;
+  content: '';
+  inset: -3px;
+  pointer-events: none;
+  position: absolute;
+}
+
+@keyframes piochante-lueur {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* La traînée de craquage : une seule bande entre l'attaquant et sa cible, 500 ms, sans flou.
+   Elle est purement décorative — le bandeau « a craqué » et le journal la disent en mots. */
+.craquage__train {
+  animation: train-craquage 500ms ease-out 1 both;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--scene-danger) 65%, transparent) 32%,
+    var(--scene-gold-hot) 55%,
+    transparent 100%
+  );
+  clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%);
+  height: 46%;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 27%;
+  transform: translateX(-50%);
+  width: 3rem;
+  z-index: 2;
+}
+
+@keyframes train-craquage {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -12px) scaleY(0.4);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0) scaleY(1);
+  }
+}
+
+/* La carte qui craque : elle reste une fraction de seconde à sa place, **désaturée**, puis
+   s'efface. Aucun flou : seule la saturation et l'opacité changent. */
+.board__poste {
+  position: relative;
+}
+
+.craquage__carte {
+  animation: craquage-desature 500ms ease-out 1 both;
+  filter: grayscale(1) saturate(0.15);
+  inset: 0;
+  opacity: 0.35;
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+}
+
+@keyframes craquage-desature {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+
+/* Sous « Mouvement réduit » (le store **et** le système), le mouvement part et l'information
+   reste : le chiffre s'affiche sans bouger, l'hexagone est déjà rempli, la pile garde son
+   liseré fixe, et la carte craquée reste désaturée. */
+@media (prefers-reduced-motion: reduce) {
+  .stress-flottant,
+  .stress-flottant.is-fixe {
+    animation: none !important;
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+
+  .piste__hex.is-fraiche {
+    animation: none !important;
+  }
+
+  .pile--deck.is-piochante::after {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  .craquage__carte {
+    animation: none !important;
+    opacity: 0.35;
+  }
+}
+
+:root[data-mouvement-reduit='true'] .stress-flottant,
+:root[data-mouvement-reduit='true'] .stress-flottant.is-fixe,
+.battle--mouvement-reduit .stress-flottant,
+.battle--mouvement-reduit .stress-flottant.is-fixe {
+  animation: none !important;
+  opacity: 1;
+  transform: translateX(-50%);
+}
+
+:root[data-mouvement-reduit='true'] .piste__hex.is-fraiche,
+.battle--mouvement-reduit .piste__hex.is-fraiche {
+  animation: none !important;
+}
+
+:root[data-mouvement-reduit='true'] .pile--deck.is-piochante::after,
+.battle--mouvement-reduit .pile--deck.is-piochante::after {
+  animation: none !important;
+  opacity: 1;
+}
+
+:root[data-mouvement-reduit='true'] .craquage__carte,
+.battle--mouvement-reduit .craquage__carte {
+  animation: none !important;
+  opacity: 0.35;
+}
+
+/* La barre de Stress est **dorée** (DESIGN.md §2.6) : le rouge reste le danger d'état, quand le
+   Planqué va craquer. */
+.battle .stress__fill {
+  background: linear-gradient(90deg, var(--gold-deep), var(--scene-gold-hot));
+}
+
+.battle .stress__fill.is-high {
+  background: linear-gradient(90deg, #c0442e, var(--scene-danger));
+}
+
+/* Le cadre des cartes **standard** de la scène : métal ardoise, teinté de la rareté (l'anneau
+   garde sa couleur). Le COMEX garde son or (`.card--comex`, plus loin). */
+.battle .card:not(.card--comex) {
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--frame) 22%, var(--scene-steel)),
+    var(--scene-steel-deep) 55%,
+    color-mix(in srgb, var(--frame) 14%, var(--scene-steel))
+  );
+}
+
+/* « Fin du tour » porte l'état de la main : vert quand c'est à toi (l'état), filet rouge quand
+   c'est à la Direction. */
+.battle .button--fin.is-a-toi {
+  background: var(--scene-go);
+  border-color: var(--scene-go);
+  color: #0b1220;
+}
+
+.battle .button--fin.is-direction {
+  border: 2px solid var(--scene-danger);
+}
+
+/* ---------- Main du joueur : l'éventail (#200, SPEC-COMBAT-UI §6.8 R1) ---------- */
+
+/* La main est un **éventail** de cartes du gabarit (`CardView`), inclinées et chevauchées. Elle est
+   **rognée par son conteneur** : `.hand` a une hauteur fixe (72 px, celle de l'ancienne bande) et
+   `overflow: hidden`, donc le pied des cartes sort de la fenêtre **dans** la main, jamais sous la
+   barre de navigation (`npm run capturer` le mesure). Le haut (`padding-top`) garde la place du
+   soulèvement de la carte choisie. Le **pas** entre deux cartes se réduit quand la main grandit,
+   pour que dix cartes tiennent dans la largeur d'un téléphone. */
+.hand {
+  --carte-w: 4rem;
+  /* #203 : le conteneur perd 4 px ; les cartes de l'éventail se rognent un peu plus bas. */
+  /* Le pas : deux cartes se chevauchent d'au plus 2,6 rem, et moins quand il faut tenir dans la largeur. */
+  --pas: min(2.6rem, calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
+  align-items: flex-start;
+  display: flex;
+  height: 4rem;
+  justify-content: center;
   list-style: none;
   margin: 0;
-  overflow-x: auto;
-  padding: 0.2rem 0.15rem 0.2rem;
-  scroll-snap-type: x proximity;
+  overflow: hidden;
+  padding: 0.6rem 0.4rem 0;
+  position: relative;
 }
 
+/* Une carte de la main : le gabarit à 64 px (la carte du Poste fait 84 px, R4), incliné autour d'un
+   pivot sous la main, et rogné par le haut de `.hand`. `--rot` et `--dec` viennent de l'écran. */
 .hand > li {
-  flex: 0 0 7.4rem;
-  scroll-snap-align: start;
+  flex: 0 0 var(--carte-w);
+  height: calc(var(--carte-w) * 88 / 63);
+  position: relative;
+  transform: translateY(var(--dec, 0)) rotate(var(--rot, 0deg));
+  transform-origin: 50% 240%;
+  transition: transform 160ms ease;
 }
 
-.hand__card {
-  align-items: flex-start;
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  font: inherit;
-  gap: 0.2rem;
-  height: 100%;
-  min-height: 4.2rem;
-  padding: 0.4rem 0.55rem;
-  text-align: left;
+.hand > li + li {
+  margin-left: calc(var(--pas) - var(--carte-w));
+}
+
+/* Au survol, au focus ou une fois choisie, la carte se redresse et passe devant ses voisines. */
+.hand > li:is(:hover, :focus-within, .is-selected) {
+  transform: translateY(-0.5rem) rotate(0deg);
+  z-index: 1;
+}
+
+/* Le gabarit ne reçoit aucun clic : c'est le bouton posé par-dessus qui le reçoit. */
+.hand__visuel {
+  pointer-events: none;
   width: 100%;
 }
 
-.hand__card.is-playable {
-  border-color: var(--line-strong);
+/* Le bouton couvre la carte. Il est transparent : la carte se lit, le bouton agit. */
+.hand__card {
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  height: 100%;
+  inset: 0;
+  padding: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
 }
 
-/* La carte choisie : bordure accentuée et halo, comme `.card--selected`. */
-.hand__card.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
-  transform: translateY(-3px);
+.hand__card:focus-visible {
+  outline: 3px solid var(--scene-neon-core);
+  outline-offset: 2px;
+}
+
+/* Une carte jouable porte un **filet** néon ; l'état choisi, un filet plus épais. La forme du filet
+   dit l'état, la couleur seule ne le dit pas : le texte « Jouable » reste dans le nom accessible. */
+.hand__carte.is-playable .hand__visuel .card {
+  outline: 2px solid var(--scene-neon);
+  outline-offset: 1px;
+}
+
+.hand__carte.is-selected .hand__visuel .card {
+  outline: 3px solid var(--scene-neon-core);
+  outline-offset: 2px;
+}
+
+/* Sous « Mouvement réduit », la carte choisie ne se soulève pas : elle reste à sa place, et c'est son
+   filet qui la désigne. L'inclinaison de l'éventail n'est pas un mouvement, elle reste. */
+@media (prefers-reduced-motion: reduce) {
+  .hand > li:is(:hover, :focus-within, .is-selected) {
+    transform: rotate(var(--rot, 0deg));
+  }
+}
+
+/* Le réglage « Mouvement réduit » du store n'était relié à aucun CSS (#192) : il l'est
+   maintenant par la classe de l'écran et par l'attribut posé sur la racine. */
+:root[data-mouvement-reduit='true'] .hand > li:is(:hover, :focus-within, .is-selected),
+.battle--mouvement-reduit .hand > li:is(:hover, :focus-within, .is-selected) {
+  transform: rotate(var(--rot, 0deg));
 }
 
 .hand__name {
@@ -2275,9 +3149,9 @@ h2 {
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.6rem 0.8rem;
-  /* La page cadre ce panneau (`scrollIntoView`) : la marge basse laisse la barre de
-     navigation fixe à sa place. */
-  scroll-margin-bottom: 5.5rem;
+  /* La page cadre ce panneau (`scrollIntoView`) : la marge basse laisse à leur place la barre
+     de navigation fixe et la barre d'action collée au-dessus d'elle (#191). */
+  scroll-margin-bottom: 11rem;
 }
 
 .pose__titre,
@@ -2288,11 +3162,6 @@ h2 {
 .actions--tight {
   gap: 0.35rem;
   margin-top: 0.15rem;
-}
-
-.actions--pressions,
-.actions--turn {
-  margin-top: 0.5rem;
 }
 
 .button__detail {
@@ -2332,6 +3201,25 @@ h2 {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/*
+ * Le même repli, pour le réglage **du store** (#192) : `App` pose
+ * `data-mouvement-reduit="true"` sur la racine, et le CSS s'en sert partout. Le store
+ * existait depuis longtemps, mais un réglage que seul JavaScript lit ne coupe rien :
+ * c'est exactement le défaut que ce ticket répare.
+ *
+ * Les effets de la scène ont leurs propres règles plus haut (`animation: none` explicite) :
+ * elles ont une spécificité supérieure et gardent le chiffre de Stress **visible**, là où
+ * une durée de 0,001 ms le laisserait sur son état final, donc invisible.
+ */
+:root[data-mouvement-reduit='true'] *,
+:root[data-mouvement-reduit='true'] *::before,
+:root[data-mouvement-reduit='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
 }
 /*
  ---break---

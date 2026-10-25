@@ -14,6 +14,29 @@ function aLAdresse(chemin: string) {
   );
 }
 
+describe('App — le mouvement réduit relié au CSS (#192)', () => {
+  it('le réglage du store pose l’attribut que `styles.css` lit sur la racine', () => {
+    setupTestStore({ tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+    const premier = render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(document.documentElement).toHaveAttribute('data-mouvement-reduit', 'true');
+    premier.unmount();
+  });
+
+  it('sans le réglage, l’attribut dit faux — et le média reste la seconde demande', () => {
+    setupTestStore({ tutorielVu: true, pasAPasCombatVu: true, reducedMotion: false });
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <App />
+      </MemoryRouter>
+    );
+    expect(document.documentElement).toHaveAttribute('data-mouvement-reduit', 'false');
+  });
+});
+
 describe('App — les adresses (#131)', () => {
   it('une adresse inconnue le dit, et ne se fait pas passer pour l’Accueil', () => {
     aLAdresse('/couloir-inexistant');

@@ -228,6 +228,30 @@ export const MUTATIONS = [
     tests: ['tools/admin/suivi.test.ts'],
     garde:
       'sans la comparaison, une approbation (3 → 2) ferait clignoter le bandeau « 1 nouvelle inscription » : la règle « ne pas crier pour rien » du poste de pilotage (#184)'
+  },
+  {
+    ticket: 188,
+    titre: 'une infobulle de l’inspecteur porte un bouton',
+    fichier: 'src/components/InspecteurCombat.tsx',
+    // L'infobulle (`role="tooltip"`) ne reçoit jamais le focus : le patron ARIA l'interdit (SPEC-COMBAT-UI §3.1).
+    // La mutation ajoute un bouton dans son corps ; la suite doit tomber sur « aucun bouton dans l'infobulle ».
+    motif: '<span className="infobulle__corps">',
+    remplacement: '<span className="infobulle__corps"><button type="button" />',
+    tests: ['src/components/InspecteurCombat.test.tsx'],
+    garde:
+      'un bouton dans une infobulle est un élément focusable qui se dérobe au survol : le lecteur d’écran ne l’atteint plus, et l’APG le proscrit — une régression silencieuse, sans aucun test visuel pour la voir'
+  },
+  {
+    ticket: 192,
+    titre: 'une animation d’effet de combat dure plus de 800 ms',
+    fichier: 'src/styles.css',
+    // SPEC-COMBAT-UI §6.8.3 : le chiffre de Stress ne recouvre jamais une cible plus de 700 ms,
+    // et aucun effet ne dépasse 800 ms. Le test lit **toutes** les durées d'`animation` de la feuille.
+    motif: 'animation: stress-monte 700ms ease-out 1 both;',
+    remplacement: 'animation: stress-monte 1600ms ease-out 1 both;',
+    tests: ['src/components/effets-combat.test.ts'],
+    garde:
+      'au-delà de 800 ms, un chiffre flottant recouvre le nom de la carte et retarde la lecture du geste suivant — la borne est dans le CSS, pas seulement dans la constante du composant'
   }
 ];
 

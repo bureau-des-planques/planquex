@@ -8,7 +8,17 @@ import { STORAGE_KEY, useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
 
 export function Settings() {
-  const { name, setName, reducedMotion, setReducedMotion, reset, setTutorielVu, setPasAPasCombatVu } = useStore();
+  const {
+    name,
+    setName,
+    reducedMotion,
+    setReducedMotion,
+    raccourcisCombat,
+    setRaccourcisCombat,
+    reset,
+    setTutorielVu,
+    setPasAPasCombatVu
+  } = useStore();
   const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
   const importerSauvegarde = useStore((state) => state.importerSauvegarde);
   const configure = useComptes((state) => state.configure);
@@ -124,6 +134,22 @@ export function Settings() {
           />
           <span>Réduire les animations</span>
         </label>
+        {/* Le critère WCAG sur les raccourcis à une touche (#189, SPEC-COMBAT-UI §4.2) : la case **désactive** les deux gestes,
+            `I` comme `Ctrl`+`I`. Cochée par défaut, et c'est aussi le rappel des commandes
+            du combat (GAG : « allowance reminder of controls »). */}
+        <label className="settings__toggle">
+          <input
+            type="checkbox"
+            checked={raccourcisCombat}
+            onChange={(event) => setRaccourcisCombat(event.target.checked)}
+          />
+          <span>Raccourcis clavier au combat</span>
+        </label>
+        <p className="muted">
+          Cochée, « I » ou « Ctrl+I » bascule les infos du combat entre sobre et détaillé. Décochée,
+          les deux ne font plus rien — taper « i » dans le code d’une partie à deux reste toujours
+          un « i ».
+        </p>
       </section>
 
       <section className="section panel">

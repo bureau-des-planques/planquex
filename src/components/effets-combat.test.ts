@@ -1,0 +1,173 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { ALL_CARDS, isBasic, isPlanque } from '@/data';
+import type { BattleState } from '@/data/types';
+import { createBattle } from '@/game/engine';
+import {
+  ajouterEffet,
+  DUREE_MAX_MS,
+  DUREE_STRESS_MS,
+  effetsEntre,
+  fusionnerEffets,
+  MAX_EFFETS_SIMULTANES,
+  MAX_TOURS_BOUCLE
+} from './effets-combat';
+import type { EffetCombat } from './effets-combat';
+
+/** Un deck légal : deux exemplaires de dix Entrants, commençant par un Entrant. */
+function deckDeTest(): string[] {
+  const entrants = ALL_CARDS.filter((card) => isPlanque(card) && isBasic(card) && !card.variantOf).slice(0, 10);
+  return entrants.flatMap((card) => [card.id, card.id]);
+}
+
+function partie(): BattleState {
+  return createBattle(deckDeTest(), deckDeTest(), 42);
+}
+
+const css = () => readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+
+const effet = (id: number): EffetCombat => ({
+  id,
+  nature: 'stress',
+  duree: DUREE_STRESS_MS,
+  anime: true,
+  valeur: 10
+});
+
+describe('effets-combat — ce qui vient de changer (#192)', () => {
+  it('le Stress qui monte se lit sur la carte touchée, avec sa valeur', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    apres.players.ai.active!.hp -= 30;
+
+    const effets = effetsEntre(avant, apres);
+    const stress = effets.find((e) => e.nature === 'stress' && e.camp === 'ai');
+
+    expect(stress?.valeur).toBe(30);
+    expect(stress?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+    expect(stress?.uid).toBe(avant.players.ai.active!.uid);
+    expect(stress?.anime).toBe(true);
+  });
+
+  it('le craquage se reconnaît à la carte qui quitte le jeu pour le Rebut, et garde son dernier état', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    const tombee = apres.players.ai.active!;
+    const hpRestant = tombee.hp;
+    tombee.hp = 0;
+    apres.players.ai.active = null;
+    apres.players.ai.discard.push(tombee);
+    apres.players.player.points += 1;
+
+    const effets = effetsEntre(avant, apres);
+    const craquage = effets.find((e) => e.nature === 'craquage');
+
+    expect(craquage?.camp).toBe('ai');
+    expect(craquage?.carte?.uid).toBe(tombee.uid);
+    expect(craquage?.auPoste).toBe(true);
+    // Le Stress s'est monté jusqu'au Seuil : c'est ce que le chiffre dit, pas les 30 de l'exemple.
+    expect(effets.find((e) => e.nature === 'stress')?.valeur).toBe(hpRestant);
+    expect(effets.filter((e) => e.nature === 'intervention').map((e) => e.numero)).toEqual([1]);
+  });
+
+  it('la pioche s’allume sur le Deck du camp qui a pioché', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    apres.players.player.deck.pop();
+
+    const pioche = effetsEntre(avant, apres).find((e) => e.nature === 'pioche');
+    expect(pioche?.camp).toBe('player');
+    expect(pioche?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+  });
+
+  it('un COMEX qui vaut deux Interventions remplit deux hexagones', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    const depart = avant.players.ai.points;
+    apres.players.ai.points = depart + 2;
+
+    const numeros = effetsEntre(avant, apres)
+      .filter((e) => e.nature === 'intervention')
+      .map((e) => e.numero);
+    expect(numeros).toEqual([depart + 1, depart + 2]);
+  });
+
+  it('un second coup sur la même carte remplace son chiffre, il ne l’empile pas', () => {
+    const premier = { ...effet(1), valeur: 10 };
+    const second = { ...effet(2), valeur: 20 };
+    const troisieme = { ...effet(3), valeur: 30 };
+
+    let courants = fusionnerEffets([], [premier]);
+    courants = fusionnerEffets(courants, [second]);
+    courants = fusionnerEffets(courants, [troisieme]);
+
+    expect(courants).toHaveLength(1);
+    expect(courants[0].valeur).toBe(30);
+  });
+
+  it('refuse la cinquième demande : quatre éléments animés au plus', () => {
+    let courants: EffetCombat[] = [];
+    for (let index = 0; index < MAX_EFFETS_SIMULTANES; index += 1) {
+      courants = ajouterEffet(courants, effet(index));
+    }
+    expect(courants).toHaveLength(MAX_EFFETS_SIMULTANES);
+
+    const refuse = ajouterEffet(courants, effet(99));
+    expect(refuse).toBe(courants);
+    expect(refuse).toHaveLength(MAX_EFFETS_SIMULTANES);
+  });
+});
+
+/**
+ * Les bornes de `SPEC-COMBAT-UI` §6.8, vérifiées sur **la feuille servie** : aucune
+ * `animation` de plus de 800 ms, aucune boucle de plus de deux tours, aucun flou en
+ * mouvement. C'est cette garde que `scripts/garde-fous.mjs` mute (#192).
+ */
+describe('styles.css — les bornes des effets (#192, SPEC-COMBAT-UI §6.8)', () => {
+  const animations = () =>
+    [...css().matchAll(/animation:\s*([^;]+);/g)]
+      .map((declaration) => declaration[1].trim())
+      .filter((declaration) => declaration !== 'none' && !declaration.includes('none'));
+
+  it('aucune animation ne dure plus de 800 ms', () => {
+    for (const declaration of animations()) {
+      const durees = [...declaration.matchAll(/(\d+)ms/g)].map((duree) => Number(duree[1]));
+      expect(durees.length, declaration).toBeGreaterThan(0);
+      expect(Math.max(...durees), declaration).toBeLessThanOrEqual(DUREE_MAX_MS);
+    }
+  });
+
+  it('aucune animation ne boucle plus de deux fois', () => {
+    for (const declaration of animations()) {
+      const iterations = [...declaration.matchAll(/(?:^|\s)(\d+)(?=\s|;|$)/g)].map((nombre) => Number(nombre[1]));
+      expect(Math.max(0, ...iterations), declaration).toBeLessThanOrEqual(MAX_TOURS_BOUCLE);
+    }
+  });
+
+  it('aucun flou en mouvement, aucun backdrop-filter sur une surface animée', () => {
+    for (const bloc of css().matchAll(/@keyframes\s+[\w-]+\s*\{([\s\S]*?)\n\}/g)) {
+      expect(bloc[1]).not.toMatch(/blur\(|backdrop-filter/);
+    }
+    for (const selecteur of ['.stress-flottant', '.craquage__train', '.craquage__carte', '.piste__hex.is-fraiche']) {
+      const regle = css().match(new RegExp(`\\${selecteur}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
+      expect(regle).not.toMatch(/blur\(|backdrop-filter/);
+    }
+  });
+
+  it('le store « Mouvement réduit » coupe les quatre effets, sans cacher leur information', () => {
+    const feuille = css();
+    // Le réglage est relié : le CSS lit l'attribut posé par `App`.
+    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \*/);
+    // Le chiffre est figé, pas éteint : une durée de 0,001 ms le rendrait invisible (opacité finale).
+    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \.stress-flottant[\s\S]*?animation:\s*none !important/);
+    expect(feuille).toMatch(/\.stress-flottant\.is-fixe\s*\{[^}]*animation:\s*none/);
+    // L'hexagone et la pile gardent leur état (rempli / allumé), sans pulsation.
+    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \.piste__hex\.is-fraiche[\s\S]*?animation:\s*none !important/);
+    expect(feuille).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.pile--deck\.is-piochante::after[\s\S]*?animation:\s*none !important/
+    );
+    // Le craquage garde la désaturation ; la traînée, elle, n'est pas créée (`Battle.tsx`).
+    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \.craquage__carte[\s\S]*?animation:\s*none !important/);
+  });
+});

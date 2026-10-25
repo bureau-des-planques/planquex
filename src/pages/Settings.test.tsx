@@ -62,6 +62,18 @@ describe('Settings — écran des Réglages', () => {
     expect(state.reducedMotion).toBe(true);
   });
 
+  it('coche « Raccourcis clavier au combat » par défaut, et la décoche (#189)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const checkbox = screen.getByRole('checkbox', { name: /Raccourcis clavier au combat/i });
+    expect(checkbox).toBeChecked();
+    expect(useStore.getState().raccourcisCombat).toBe(true);
+
+    fireEvent.click(checkbox);
+    expect(checkbox).not.toBeChecked();
+    expect(useStore.getState().raccourcisCombat).toBe(false);
+  });
+
   it('affiche la section Journée d\'intégration', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
@@ -120,9 +132,13 @@ describe('Settings — écran des Réglages', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/parties solo terminées sont gardées sous ton compte/i)).toBeInTheDocument();
-    // D-086 : une **mention**, pas un consentement par combat — aucune case à cocher.
-    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
-    expect(screen.getByRole('checkbox')).toHaveAccessibleName(/Réduire les animations/i);
+    // D-086 : une **mention**, pas un consentement par combat — aucune case ne concerne
+    // les traces. Les deux cases de l'écran sont des réglages d'affichage : le mouvement
+    // réduit, et les raccourcis clavier du combat (#189).
+    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
+    for (const nom of [/Réduire les animations/i, /Raccourcis clavier au combat/i]) {
+      expect(screen.getByRole('checkbox', { name: nom })).toBeInTheDocument();
+    }
   });
 
   it('affiche la section Données locales avec le bouton Réinitialiser', () => {

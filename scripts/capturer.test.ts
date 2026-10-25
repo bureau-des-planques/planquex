@@ -205,3 +205,158 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     expect(source).toContain('fullPage: PLEINE_PAGE');
   });
 });
+
+/**
+ * Ticket #194 — **la garde de hauteur s'étend au combat qu'on refait** (D-093).
+ *
+ * La refonte #191/#190 ajoute deux surfaces : la **barre d'action** (`.combat-barre`,
+ * `docs/SPEC-COMBAT-UI.md` T9 — livrée par #191) et la **piste d'Interventions**
+ * (`data-pas-a-pas="interventions"`, le contrat du pas-à-pas — attendue de #190). La garde
+ * de #170 ne mesurait que la main : une barre d'action qui déborde passerait donc inaperçue.
+ *
+ * Un élément **absent** ne fait rien échouer — le test l'exige, sinon la garde casserait un
+ * écran qui n'a pas encore la surface —, et le contrôle doit **mordre** dès qu'un élément
+ * présent sort de la fenêtre, en **nommant l'élément fautif**. Depuis #191 il mord aussi quand
+ * la barre **recouvre** la main sans sortir de la fenêtre. Le contrôle est joué par la
+ * sonde `--controle-hauteur`, sans navigateur : le test confronte le vrai code à une
+ * géométrie fautive, il ne relit pas une chaîne du source.
+ */
+describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
+  interface HauteurCible {
+    nom: string;
+    selecteur: string;
+  }
+
+  interface Mesure {
+    nom: string;
+    selecteur: string;
+    present: boolean;
+    haut: number | null;
+    bas: number | null;
+  }
+
+  /** L'environnement des sondes, sans les variables que `vitest` exporte pour lui. */
+  function sansEnvDeVitest(): NodeJS.ProcessEnv {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    return env;
+  }
+
+  /** Les cibles que le script surveille vraiment (publiées dans `--plan`). */
+  function cibles(): HauteurCible[] {
+    const output = execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+      cwd: root,
+      encoding: 'utf8',
+      env: sansEnvDeVitest()
+    });
+    return (JSON.parse(output) as { hauteur: HauteurCible[] }).hauteur;
+  }
+
+  /** Le contrôle de géométrie que le script applique, sur une géométrie construite à la main. */
+  function controle(mesures: Mesure[], limite = 830, pasAPasOuvert = false): string[] {
+    const output = execFileSync(
+      process.execPath,
+      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, pasAPasOuvert })],
+      { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+    );
+    return JSON.parse(output) as string[];
+  }
+
+  /** Une cible à sa place, sauf celles qu'on fait déborder. */
+  function geometrie({ mainBas = 760, barreActionHaut = 760, barreActionBas = 820, pisteBas = 400 } = {}): Mesure[] {
+    return [
+      { nom: 'la main', selecteur: '.hand', present: true, haut: 640, bas: mainBas },
+      { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: barreActionHaut, bas: barreActionBas },
+      { nom: "la piste d'Interventions", selecteur: '.piste', present: true, haut: 100, bas: pisteBas }
+    ];
+  }
+
+  it('suit la main, la barre d’action et la piste d’Interventions', () => {
+    expect(cibles().map((cible) => cible.selecteur)).toEqual(['.hand', '.combat-barre', '.piste']);
+  });
+
+  it('ne dit rien tant qu’une surface est absente', () => {
+    // La main existe, les deux autres non : la garde doit dormir, sans fausse alarme.
+    const mesures = geometrie().map((mesure) => ({ ...mesure, present: mesure.selecteur === '.hand' }));
+    expect(controle(mesures)).toEqual([]);
+  });
+
+  it('suit la piste par sa classe, jamais par l’attribut du pas-à-pas (#202)', () => {
+    // `data-pas-a-pas="interventions"` n'existe **que** quand une étape désigne la piste : la
+    // garde mesurait donc un élément absent dans l'état de référence, et ne pouvait pas échouer.
+    const piste = cibles().find((cible) => cible.nom.includes('piste'));
+    expect(piste?.selecteur).toBe('.piste');
+    expect(piste?.selecteur).not.toContain('data-pas-a-pas');
+  });
+
+  it('nomme la piste quand c’est elle qui déborde', () => {
+    const problemes = controle(geometrie({ pisteBas: 900 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la piste d'Interventions");
+  });
+
+  it('laisse passer une géométrie qui tient dans la fenêtre', () => {
+    expect(controle(geometrie())).toEqual([]);
+  });
+
+  it('nomme la main quand elle sort de la fenêtre', () => {
+    const problemes = controle(geometrie({ mainBas: 906 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain('la main');
+    expect(problemes[0]).toContain('bas de la main à 906 px');
+  });
+
+  it('nomme la barre d’action quand c’est elle qui déborde, pas « la main »', () => {
+    const problemes = controle(geometrie({ barreActionBas: 940 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la barre d'action du combat");
+    expect(problemes[0]).not.toContain('la main');
+  });
+
+  it('nomme la piste d’Interventions quand c’est elle qui déborde, pas « la main »', () => {
+    const problemes = controle(geometrie({ pisteBas: 880 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la piste d'Interventions");
+    expect(problemes[0]).not.toContain('la main');
+  });
+
+  it('nomme la barre d’action quand elle recouvre la main, alors que les deux sont dans la fenêtre (#191)', () => {
+    // La barre collée tient à l'écran (haut 700, bas 820) et la main aussi (640 → 760) : le
+    // contrôle de fenêtre seul les laisse passer, et la barre cache pourtant le bas des cartes.
+    const problemes = controle(geometrie({ barreActionHaut: 700 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la barre d'action du combat recouvre la main");
+    expect(problemes[0]).toContain('haut de la barre à 700 px');
+    expect(problemes[0]).toContain('bas de la main à 760 px');
+  });
+
+  it('ne reproche pas le recouvrement pendant le pas-à-pas : la page y déborde par construction (#191)', () => {
+    // Même géométrie fautive que ci-dessus : ouverte, le pas-à-pas rallonge la page, et la barre
+    // collée recouvre la main jusqu'au défilement. Le passage « pas-à-pas terminé » est celui qui mord.
+    expect(controle(geometrie({ barreActionHaut: 700 }), 830, true)).toEqual([]);
+    expect(controle(geometrie({ barreActionHaut: 700 }), 830, false)).toHaveLength(1);
+  });
+
+  it('joue aussi le combat pas-à-pas terminé, là où le recouvrement est jugé (#191)', () => {
+    const source = read('scripts/capturer.mjs');
+    expect(source).toContain('amorcageStore(origine, { pasAPasCombatVu: true })');
+    expect(source).toContain('(pas-à-pas terminé)');
+  });
+
+  it('ne double pas le message quand la main sort déjà de la fenêtre (#191)', () => {
+    // Main 640 → 906 : hors fenêtre, nommée une fois ; la barre qui la chevauche n'ajoute rien.
+    const problemes = controle(geometrie({ mainBas: 906, barreActionHaut: 700 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain('bas de la main à 906 px');
+  });
+
+  it('relie le contrôle au passage réel sur le combat', () => {
+    const source = read('scripts/capturer.mjs');
+    // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer
+    // à ne mesurer que la main.
+    expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT })');
+    expect(source).toContain("problems.push(`${route} · ${probleme}`)");
+  });
+});
