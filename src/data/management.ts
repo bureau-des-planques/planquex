@@ -50,7 +50,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Reporting', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il prépare le tableau de bord qui prépare le tableau de bord.'
+    flavor: 'Il prépare le tableau de bord qui prépare le tableau de bord.',
+    art: 'management-assistant-manager.webp'
   }),
   base({
     id: 'management-superviseur',
