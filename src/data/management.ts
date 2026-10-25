@@ -114,7 +114,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Consigne', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse reçoit la consigne du jour. Elle sera remplacée avant la fin du poste.' }],
-    flavor: 'Il relaie la consigne. Le circuit l’a déjà remplacée.'
+    flavor: 'Il relaie la consigne. Le circuit l’a déjà remplacée.',
+    art: 'management-chef-equipe.webp'
   }),
   base({
     id: 'management-charge-affaires',
