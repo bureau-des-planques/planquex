@@ -191,7 +191,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }]
       }
     ],
-    flavor: 'Il a pris les décisions. Le chef les a signées.'
+    flavor: 'Il a pris les décisions. Le chef les a signées.',
+    art: 'management-chef-service.webp'
   }),
   base({
     id: 'management-responsable-production',
