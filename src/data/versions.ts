@@ -62,8 +62,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.8',
     date: '2026-10-25',
-    titre: 'Le mur se range, et les Chariots arrivent',
-    brouillon: true,
+    titre: 'Le mur se range, les Chariots arrivent',
     points: [
       {
         groupe: 'Le mur',
@@ -79,11 +78,19 @@ export const NOTES_VERSIONS: NoteVersion[] = [
       },
       {
         groupe: 'Le Deck',
-        texte: 'Cinq Chariots proposés, chargés en un geste avec leurs types de café, quelle que soit ta Collection (#141).'
+        texte: 'Cinq Chariots proposés, chargés en un geste avec leurs types de café, quelle que soit ta Collection (#141). Les listes de cartes sont provisoires : D-069 réserve leur fabrication à après la vague d’illustrations.'
       },
       {
         groupe: 'Le jeu',
-        texte: 'La Direction joue son niveau 2 : elle regarde un coup plus loin, et sa recherche est bornée (#172, D-084).'
+        texte: 'La Direction joue son niveau 2 : elle regarde un coup plus loin, et sa recherche est bornée pour rester sous les 100 ms (#172, D-084).'
+      },
+      {
+        groupe: 'Outillage (hors jeu)',
+        texte: 'Deux gardes de l’IA ne flottent plus : le fichier du niveau 1 joue bien le niveau 1, et le déterminisme se mesure horloge gelée (#172).'
+      },
+      {
+        groupe: 'Outillage (hors jeu)',
+        texte: 'Le poste de pilotage local retient son jeton par cookie, rafraîchit sa page et laisse le rôle lecteur lire par politique (#184).'
       }
     ]
   },
