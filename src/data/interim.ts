@@ -76,7 +76,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: "Il gère l'équipe. Il n'a pas de badge."
+    flavor: "Il gère l'équipe. Il n'a pas de badge.",
+    art: 'interim-chef-equipe-interimaire.webp'
   }),
   // COMEX : carte signature de la faction, 2 Interventions (D-020, D-026).
   base({
