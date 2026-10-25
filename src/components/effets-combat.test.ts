@@ -106,6 +106,54 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     expect(courants[0].valeur).toBe(30);
   });
 
+  // **La Pression en quatre temps** (#207) : le trait part d'une action `attack`, et il porte
+  // les deux uid — sans eux, un second coup sur une autre carte ne pourrait pas avoir « sa »
+  // séquence distincte.
+  it('une attaque journalisée devient le trait, avec l’attaquant et sa cible', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    apres.actionLog = [
+      ...avant.actionLog,
+      { type: 'attack', player: 'player', attackIndex: 0 } as never
+    ];
+    const effets = effetsEntre(avant, apres);
+    const attaque = effets.find((effet) => effet.nature === 'attaque');
+    expect(attaque).toBeDefined();
+    expect(attaque?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+    expect(attaque?.uid).toBe(avant.players.ai.active?.uid);
+    expect(attaque?.uidCible).toBe(avant.players.player.active?.uid);
+  });
+
+  it('une attaque sur une autre paire a sa propre séquence ; la même paire est remplacée', () => {
+    const a = {
+      id: 1,
+      nature: 'attaque' as const,
+      duree: 350,
+      anime: true,
+      camp: 'player' as const,
+      uid: 'x',
+      uidCible: 'y'
+    };
+    const b = { ...a, id: 2, uidCible: 'z' };
+    const c = { ...a, id: 3 };
+    expect(fusionnerEffets([a], [b])).toHaveLength(2);
+    const fusion = fusionnerEffets([a, b], [c]);
+    expect(fusion).toHaveLength(2);
+    expect(fusion.some((effet) => effet.uidCible === 'z')).toBe(true);
+  });
+
+  it('une Condition qui apparaît devient l’après (le badge naît), sous le plafond', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    const cible = apres.players.player.active!;
+    cible.statuses = [...cible.statuses, 'SURCHARGE'] as never;
+    const effets = effetsEntre(avant, apres);
+    const condition = effets.find((effet) => effet.nature === 'condition');
+    expect(condition).toBeDefined();
+    expect(condition?.uid).toBe(cible.uid);
+    expect(condition?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+  });
+
   it('refuse la cinquième demande : quatre éléments animés au plus', () => {
     let courants: EffetCombat[] = [];
     for (let index = 0; index < MAX_EFFETS_SIMULTANES; index += 1) {

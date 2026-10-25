@@ -60,6 +60,25 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.10',
+    date: '2026-10-25',
+    titre: 'Le combat se voit partir',
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'Une Pression se voit en quatre temps : la carte se cabre, un trait relie les deux Postes, la cible prend un anneau, et la Condition qui tombe voit son badge naître. Tout tient sous 1,3 s, et l’état est déjà joué quand ça se voit — rien ne retarde le geste suivant (#207).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Sous « Mouvement réduit », la séquence se tait : pas de cabrage, pas de trait, pas d’anneau. Le chiffre de Stress reste affiché, figé, et le badge est là (#207).'
+      },
+      {
+        groupe: 'Le reste',
+        texte: 'Un test n’ouvre plus de fenêtre de navigateur à chaque exécution (#184).'
+      }
+    ]
+  },
+  {
     version: '0.1.9',
     date: '2026-10-25',
     titre: 'L’écran de combat, refait',

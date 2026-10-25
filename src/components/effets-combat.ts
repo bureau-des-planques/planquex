@@ -34,7 +34,16 @@ export const MAX_TOURS_BOUCLE = 2;
 /** Aucun effet ne dépasse 800 ms (`SPEC-COMBAT-UI` §6.8 borne 3). */
 export const DUREE_MAX_MS = 800;
 
-export type NatureEffet = 'stress' | 'craquage' | 'pioche' | 'intervention';
+/**
+ * **La Pression en quatre temps** (#207, direction §8.2) : anticipation, trait, impact et
+ * après forment **un seul** effet — s'ils étaient quatre, la séquence mangerait à elle seule
+ * le plafond de quatre effets simultanés. `condition` est l'après : le badge nommé qui
+ * apparaît.
+ */
+export const DUREE_ATTAQUE_MS = 350;
+export const DUREE_CONDITION_MS = 200;
+
+export type NatureEffet = 'stress' | 'craquage' | 'pioche' | 'intervention' | 'attaque' | 'condition';
 
 export interface EffetCombat {
   readonly id: number;
@@ -55,6 +64,8 @@ export interface EffetCombat {
   readonly carte?: CardInstance;
   /** La carte était au Poste : le chiffre peut rester à sa place quand elle a quitté le jeu. */
   readonly auPoste?: boolean;
+  /** L'attaque : la carte visée. Le trait relie l'attaquant à elle (nature `attaque`). */
+  readonly uidCible?: string;
 }
 
 export function dureeEffet(nature: NatureEffet): number {
@@ -67,6 +78,10 @@ export function dureeEffet(nature: NatureEffet): number {
       return DUREE_PIOCHE_MS;
     case 'intervention':
       return DUREE_INTERVENTION_MS;
+    case 'attaque':
+      return DUREE_ATTAQUE_MS;
+    case 'condition':
+      return DUREE_CONDITION_MS;
   }
 }
 
@@ -81,7 +96,9 @@ export function ajouterEffet(courants: EffetCombat[], effet: EffetCombat): Effet
 
 /** Ce qui fait deux effets « le même » : la même cible, le même cran, la même nature. */
 function identite(effet: EffetCombat): string {
-  return [effet.nature, effet.camp ?? '', effet.uid ?? '', effet.numero ?? ''].join('|');
+  // Une attaque s'identifie par le **couple** attaquant → cible : un second coup sur la même
+  // paire remplace la séquence en cours, un coup sur une autre carte a la sienne.
+  return [effet.nature, effet.camp ?? '', effet.uid ?? '', effet.uidCible ?? '', effet.numero ?? ''].join('|');
 }
 
 /**
@@ -173,6 +190,30 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
     // remplit deux, donc deux rebonds — et le compteur les refusera au-delà de quatre.
     for (let numero = avant.players[camp].points + 1; numero <= apres.players[camp].points; numero += 1) {
       ajouter({ nature: 'intervention', camp, numero });
+    }
+  }
+
+  // **La Pression en quatre temps** (#207) : une action `attack` vient d'être journalisée.
+  // L'état est déjà final — l'effet ne retarde rien, il raconte. Le camp qui attaque vient du
+  // journal ; la cible est le Poste d'en face, au moment d'avant.
+  const dernier = apres.actionLog[apres.actionLog.length - 1];
+  if (apres.actionLog.length > avant.actionLog.length && dernier?.type === 'attack') {
+    const attaquant = apres.current === 'player' ? 'ai' : 'player';
+    const source = avant.players[attaquant].active;
+    const cible = avant.players[attaquant === 'player' ? 'ai' : 'player'].active;
+    if (source) {
+      ajouter({ nature: 'attaque', camp: attaquant, uid: source.uid, uidCible: cible?.uid });
+    }
+  }
+
+  // L'après : une Condition **apparaît** sur une carte en jeu. Le badge existe déjà ; cet
+  // effet ne fait que le faire naître (`badge-pop`), et il est refusé au-delà du plafond.
+  for (const camp of CAMPS) {
+    for (const carte of enJeu(apres.players[camp])) {
+      const avantCarte = enJeu(avant.players[camp]).find((autre) => autre.uid === carte.uid);
+      if (!avantCarte) continue;
+      const nouvelles = carte.statuses.filter((statut) => !avantCarte.statuses.includes(statut));
+      if (nouvelles.length > 0) ajouter({ nature: 'condition', camp, uid: carte.uid });
     }
   }
 

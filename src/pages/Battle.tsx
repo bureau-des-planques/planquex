@@ -511,13 +511,19 @@ function Camp({
   // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
   // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
   const posteActif = side.active;
+  // **La Pression en quatre temps** (#207) : l'attaquant se cabre (200 ms), la cible prend
+  // l'anneau d'impact (150 ms). Un seul effet porte les deux — l'état est déjà final.
+  const elanPoste = effets.some((effet) => effet.nature === 'attaque' && effet.uid === posteActif?.uid);
+  const impactPoste = effets.some(
+    (effet) => effet.nature === 'attaque' && effet.uidCible === posteActif?.uid
+  );
   const poste = (
     <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
       <span className="sr-only">Poste</span>
       {posteActif ? (
         <CartePlateau
           instance={posteActif}
-          className="poste__carte"
+          className={`poste__carte${elanPoste ? ' is-elan' : ''}${impactPoste ? ' is-impactee' : ''}`}
           machine={texteMachine(side)}
           inspectee={inspecte === posteActif.uid}
           annotations={detaille}
@@ -1399,6 +1405,21 @@ export function Battle() {
               />
             </Fragment>
           ))}
+          {/* Le trait de la Pression (#207) : la deuxième ligne de la séquence. Il ne traverse
+              **jamais** sous mouvement réduit — l'anneau d'impact et le chiffre de Stress
+              disent la même chose sans mouvement. */}
+          {!sansMouvement &&
+            effets
+              .filter((effet) => effet.nature === 'attaque')
+              .map((effet) => (
+                <span
+                  key={`trait-${effet.id}`}
+                  className={`attaque__trait ${
+                    effet.camp === myCamp ? 'attaque__trait--vers-le-bas' : 'attaque__trait--vers-le-haut'
+                  }`}
+                  aria-hidden="true"
+                />
+              ))}
           {/* La traînée de craquage (#192) : une seule, entre l'attaquant et sa cible. Elle ne
               traverse **jamais** sous mouvement réduit — le fantôme désaturé et le bandeau
               « a craqué » disent tout, sans mouvement. */}

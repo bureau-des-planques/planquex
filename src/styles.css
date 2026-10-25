@@ -3564,3 +3564,106 @@ h2 {
 .liste-points li::marker {
   color: var(--gold-soft);
 }
+
+/* ---------- La Pression en quatre temps (#207, direction §8.2) ---------- */
+
+/* 1. L'anticipation (200 ms) : la carte de l'attaquant se cabre, une fois. Elle ne se **déplace**
+   pas d'assez pour décaler quoi que ce soit — la garde de hauteur ne la voit même pas. */
+@keyframes attaque-elan {
+  0% { transform: none; }
+  40% { transform: translateY(-6px) scale(1.03); }
+  100% { transform: none; }
+}
+
+.battle .poste__carte.is-elan {
+  animation: attaque-elan 200ms ease-out 1;
+}
+
+/* 2. Le trait (350 ms) : une bande qui relie les deux Postes, `neon-core` vers l'or du Stress.
+   La géométrie est celle du craquage (#192) — une seule bande à la fois, jamais deux. */
+@keyframes trait-attaque {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.35);
+  }
+  30% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(1);
+  }
+}
+
+.attaque__trait {
+  animation: trait-attaque 350ms ease-out 1 both;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--scene-neon) 60%, transparent) 34%,
+    var(--scene-gold-hot) 58%,
+    transparent 100%
+  );
+  clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%);
+  height: 38%;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 31%;
+  width: 2.4rem;
+  z-index: 12;
+}
+
+/* 3. L'impact (150 ms) : un anneau sur la carte touchée, en `opacity` seule — **pas de flou**,
+   et surtout pas un `transform` qui déplacerait une cible de clic. */
+@keyframes impact-anneau {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.battle .poste__carte.is-impactee::after {
+  animation: impact-anneau 150ms ease-out 1 both;
+  border-radius: inherit;
+  box-shadow: 0 0 0 3px var(--scene-neon-core);
+  content: '';
+  inset: -2px;
+  pointer-events: none;
+  position: absolute;
+}
+
+/* 4. L'après : le badge de Condition naît d'un coup de pouce (`scale .8 → 1`), puis devient un
+   état — il ne boucle pas. Le repère est son apparition, pas son animation. */
+@keyframes badge-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.battle .badge-condition,
+.battle .status-chip {
+  animation: badge-pop 200ms ease-out 1;
+}
+
+/* Sous mouvement réduit — le réglage du store **et** la préférence du système — la séquence se
+   tait : pas de cabrage, pas de trait, pas d'anneau, pas de pop. L'information reste (anneau
+   absent, chiffre figé, badge présent, bandeau « a craqué »). */
+@media (prefers-reduced-motion: reduce) {
+  .battle .poste__carte.is-elan,
+  .attaque__trait,
+  .battle .poste__carte.is-impactee::after,
+  .battle .badge-condition,
+  .battle .status-chip {
+    animation: none;
+  }
+}
+
+:root[data-mouvement-reduit='true'] .battle .poste__carte.is-elan,
+:root[data-mouvement-reduit='true'] .attaque__trait,
+:root[data-mouvement-reduit='true'] .battle .poste__carte.is-impactee::after,
+:root[data-mouvement-reduit='true'] .battle .badge-condition,
+:root[data-mouvement-reduit='true'] .battle .status-chip {
+  animation: none;
+}
