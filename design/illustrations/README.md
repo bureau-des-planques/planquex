@@ -32,7 +32,7 @@
 | `rh-drh` | RH | DRH devant un organigramme | `245800676` | `rh-drh.webp` |
 | `atelier-chef-atelier` | Atelier | chef d'atelier, combinaison tachée, clé | `1491963894` | `atelier-chef-atelier.webp` |
 | `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `1286126774` | `syndicat-secretaire-general.webp` |
-| `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `64234642` | `interim-interimaire-legendaire-ex.webp` |
+| `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `625426660` | `interim-interimaire-legendaire-ex.webp` |
 
 ## Reste à produire — les cartes de base sans illustration
 
@@ -178,3 +178,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-25 · `direction-directeur-cabinet` · modèle `NARWHAL` · graine `1874062206` · `direction-directeur-cabinet.webp`
 - 2026-10-25 · `direction-directeur-fantome` · modèle `NARWHAL` · graine `1469060728` · `direction-directeur-fantome.webp`
 - 2026-10-26 · `atelier-rpo` · modèle `NARWHAL` · graine `2145855204` · `atelier-rpo.webp`
+- 2026-10-26 · `interim-interimaire-legendaire-ex` · modèle `NARWHAL` · graine `625426660` · `interim-interimaire-legendaire-ex.webp`
