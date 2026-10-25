@@ -252,7 +252,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'healAll', amount: 10 }]
       }
     ],
-    flavor: 'Le projet est livré. La recette est signée demain.'
+    flavor: 'Le projet est livré. La recette est signée demain.',
+    art: 'management-directeur-projet.webp'
   }),
   base({
     id: 'management-directeur-production',
