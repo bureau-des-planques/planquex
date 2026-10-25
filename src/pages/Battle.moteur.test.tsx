@@ -18,9 +18,9 @@ import { partieSauvegardee } from '@/store/partie';
  * sont des **fixtures** (aucune du catalogue ne porte ces mécaniques), enregistrées dans
  * `CARD_BY_ID` comme `talent-en-jouant.test.ts`, et retirées à la fin du fichier.
  *
- * Un point marqué `it.fails` est un **manque à l'écran** : l'assertion d'affichage échoue
- * pour une absence réelle, et le motif est écrit dans le titre. Si l'écran le rend un jour,
- * `it.fails` deviendra rouge : il faudra alors le passer en `it`.
+ * Les quatre points qui manquaient à l'écran — le nom sur les boutons de choix, le dessus
+ * du Deck regardé — étaient des `it.fails` documentés ; #171 les a câblés, donc ce sont
+ * des `it` ordinaires. Un manque à l'écran qui reviendrait rougirait ici.
  */
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -193,9 +193,13 @@ const journal = (): string[] =>
 /** Les boutons « Talent » proposés. */
 const boutonsTalent = () => screen.queryAllByRole('button', { name: /^Talent/ });
 
-/** Les boutons « Choisir cette carte » de l'encart de choix. */
+/**
+ * Les boutons « Choisir cette carte » de l'encart de choix. Le nom accessible porte
+ * désormais **la carte désignée** (#171) — « Choisir cette carte Contrôleur de
+ * sécurité » —, donc la requête s'ancre sur le début du libellé.
+ */
 const boutonsDeChoix = (): HTMLElement[] =>
-  within(encartDeChoix() as HTMLElement).getAllByRole('button', { name: 'Choisir cette carte' });
+  within(encartDeChoix() as HTMLElement).getAllByRole('button', { name: /^Choisir cette carte/ });
 
 describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => {
   // ── 1 · Défausse choisie (#159, D-076) ─────────────────────────────────────
@@ -217,11 +221,17 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       expect(journal().some((l) => /au rebut/.test(l))).toBe(true);
     });
 
-    it.fails('… et chaque bouton nomme la carte qu’il désigne — MANQUE À L’ÉCRAN : « Choisir cette carte » sans nom (dette #159)', () => {
-      ouvrir(jouerCollegue(nouvellePartie(deck, scene), COLLEGUE_DEFAUSSE), deck);
+    it('… et chaque bouton nomme la carte de la main qu’il désigne (#171)', () => {
+      const s = jouerCollegue(nouvellePartie(deck, scene), COLLEGUE_DEFAUSSE);
+      ouvrir(s, deck);
       expect(encartDeChoix()).not.toBeNull();
+      // Les cartes restées en main : chacune doit être nommée par *son* bouton. Le
+      // Collègue joué, lui, n'est plus dans la main — c'est un Planqué de base qui reste.
+      const nomsDeLaMain = s.players.player.hand.map((carte) => getCard(carte.cardId)?.name ?? '');
+      expect(nomsDeLaMain).not.toContain(NOM_COLLEGUE_DEFAUSSE);
+      expect(boutonsDeChoix()).toHaveLength(nomsDeLaMain.length);
       for (const bouton of boutonsDeChoix()) {
-        expect(bouton.textContent).toContain(NOM_COLLEGUE_DEFAUSSE);
+        expect(nomsDeLaMain.some((nom) => nom !== '' && bouton.textContent?.includes(nom))).toBe(true);
       }
     });
   });
@@ -272,7 +282,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       expect(journal().join(' ')).not.toMatch(/dessus/i);
     });
 
-    it.fails('… et le joueur voit la carte du dessus — MANQUE À L’ÉCRAN : aucun composant n’appelle `dessusDuDeck` (dette D-079)', () => {
+    it('… et le joueur voit la carte du dessus, hors de la main et du journal (#171)', () => {
       const s = jouerCollegue(nouvellePartie(deck, scene), COLLEGUE_REGARD);
       const dessus = dessusDuDeck(s, 'player');
       expect(dessus, 'un dessus existe').toBeDefined();
@@ -283,6 +293,27 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
         (el) => el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
       );
       expect(affiche.length, 'le dessus est affiché au joueur').toBeGreaterThan(0);
+    });
+
+    it('… et l’adversaire n’en voit rien : la section privée ne se rend pas à son siège (D-079)', () => {
+      const s = jouerCollegue(nouvellePartie(deck, scene), COLLEGUE_REGARD);
+      const dessus = dessusDuDeck(s, 'player');
+      expect(dessus, 'un dessus existe').toBeDefined();
+      // Le même état, tenu depuis le siège adverse (#125) : le journal rejoue pareil.
+      const partie = partieSauvegardee(
+        s,
+        { camp: 'ai', playerDeck: deck, aiDeck: DECK_DIRECTION },
+        { playerDeck: deck, aiDeck: DECK_DIRECTION }
+      );
+      if (!partie) throw new Error('partie terminée : rien à rendre');
+      renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+      expect(screen.getByText(new RegExp(`Tour ${s.turn}\\b`))).toBeInTheDocument();
+
+      expect(document.querySelector('section.regard'), 'aucune section privée chez l’adversaire').toBeNull();
+      const fuite = Array.from(document.querySelectorAll<HTMLElement>('body *')).filter(
+        (el) => el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
+      );
+      expect(fuite, 'le dessus regardé ne fuit pas chez l’adversaire').toHaveLength(0);
     });
   });
 
@@ -300,7 +331,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       expect(boutonsDeChoix()).toHaveLength(attendus);
     });
 
-    it.fails('… et chaque bouton nomme le Planqué proposé — MANQUE À L’ÉCRAN : « Choisir cette carte » sans nom (dette #161)', () => {
+    it('… et chaque bouton nomme le Planqué proposé (#171)', () => {
       const s = jouerCollegue(nouvellePartie(deck, scene), COLLEGUE_RECHERCHE);
       ouvrir(s, deck);
       const noms = s.players.player.deck
@@ -361,7 +392,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       expect(boutonsDeChoix()).toHaveLength(attendus);
     });
 
-    it.fails('… et le bouton nomme le Planqué du Banc — MANQUE À L’ÉCRAN : « Choisir cette carte » sans nom (dette #165)', () => {
+    it('… et le bouton nomme le Planqué du Banc (#171)', () => {
       const s = nouvellePartie(deck, (e) => auPoste(e) && bancPlein(e));
       ouvrir(s, deck);
       fireEvent.click(boutonsTalent()[0] as HTMLElement);

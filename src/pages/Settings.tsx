@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { ClipboardPaste, Copy, RotateCcw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ClipboardPaste, Copy, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Confirmation } from '@/components/Confirmation';
+import { estApprouve, libelleEtat } from '@/lib/comptes';
+import { useComptes } from '@/store/comptes';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
 
@@ -7,9 +11,15 @@ export function Settings() {
   const { name, setName, reducedMotion, setReducedMotion, reset, setTutorielVu, setPasAPasCombatVu } = useStore();
   const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
   const importerSauvegarde = useStore((state) => state.importerSauvegarde);
+  const configure = useComptes((state) => state.configure);
+  const session = useComptes((state) => state.session);
+  const compte = useComptes((state) => state.compte);
+  const deconnecter = useComptes((state) => state.deconnecter);
   const [draft, setDraft] = useState(name);
   const [sauvegarde, setSauvegarde] = useState('');
   const [message, setMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
+  /** La réinitialisation efface tout, sans retour : elle passe par la confirmation du jeu (#131). */
+  const [confirmeReset, setConfirmeReset] = useState(false);
 
   const creerSauvegarde = () => {
     const texte = exporterSauvegarde();
@@ -60,6 +70,51 @@ export function Settings() {
       </section>
 
       <section className="section panel">
+        <h2>Compte</h2>
+        {!configure ? (
+          <p className="muted m-0 max-w-[62ch]">
+            Le jeu n’est pas relié à une base : il n’y a ni compte ni connexion. Ta
+            progression reste dans ce navigateur, et le mur lit le fichier du dépôt.
+          </p>
+        ) : !session ? (
+          <p className="m-0 max-w-[62ch]">
+            Aucun compte connecté.{' '}
+            <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux invités.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[0.9rem]">
+              <li>
+                <strong>Courriel</strong> · {compte?.courriel || session.courriel || '—'}
+              </li>
+              <li>
+                <strong>État</strong> · {compte ? libelleEtat(compte.etat) : 'inconnu'}
+                {compte?.administrateur ? ' · administrateur' : ''}
+              </li>
+            </ul>
+            <p className="m-0 max-w-[64ch] text-[0.86rem] text-ink-muted">
+              {estApprouve(compte)
+                ? 'Ton compte est validé : les post-its, les pouces et les traces de combat sont ouverts.'
+                : 'Ton compte attend la validation de Bastien : tu peux jouer et lire, pas encore écrire.'}
+            </p>
+            <div className="actions actions--tight">
+              <Link className="button" to="/attente">
+                Mon état de compte
+              </Link>
+              {compte?.administrateur && (
+                <Link className="button" to="/administration">
+                  <ShieldCheck size={16} /> Administration des comptes
+                </Link>
+              )}
+              <button type="button" className="button" onClick={() => void deconnecter()}>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section className="section panel">
         <h2>Affichage</h2>
         <label className="settings__toggle">
           <input
@@ -96,9 +151,11 @@ export function Settings() {
       <section className="section panel">
         <h2>Sauvegarde</h2>
         <p className="muted">
-          Ta progression vit dans ce navigateur sous la clé <code>{STORAGE_KEY}</code> : rien n’est
-          envoyé à un serveur, et **vider les données du navigateur l’efface**. Copie ce texte
-          quelque part avant, il contient tout — Collection, Deck, nom.
+          Ta progression de jeu — Collection, Deck, nom — vit dans ce navigateur sous la clé{' '}
+          <code>{STORAGE_KEY}</code> : elle n’est pas envoyée à la base, et{' '}
+          <strong>vider les données du navigateur l’efface</strong>. Copie ce texte quelque
+          part avant, il contient tout. Les traces de combat, elles, partent à la base quand
+          elle est configurée (voir plus bas).
         </p>
         <textarea
           className="settings__save"
@@ -120,18 +177,53 @@ export function Settings() {
             <ClipboardPaste size={16} /> Restaurer ce texte
           </button>
         </div>
+        {/* Le message est annoncé : un refus d'import se lit aussi au lecteur d'écran. */}
         {message && (
-          <p className={message.ton === 'ok' ? 'muted' : 'muted settings__message--ko'}>
+          <p
+            className={message.ton === 'ok' ? 'muted' : 'muted settings__message--ko'}
+            role={message.ton === 'ok' ? 'status' : 'alert'}
+          >
             {message.texte}
           </p>
         )}
       </section>
 
       <section className="section panel">
+        <h2>Traces de combat</h2>
+        <p className="muted">
+          Les parties solo terminées sont gardées sous ton compte — la graine, les deux
+          Decks, les types de café et le journal des coups — pour voir comment le jeu se joue
+          et l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé ; seul ton identifiant
+          de compte relie la trace à toi (D-086, D-088).
+        </p>
+      </section>
+
+      <section className="section panel">
         <h2>Données locales</h2>
-        <button type="button" className="button" onClick={reset}>
+        <button type="button" className="button" onClick={() => setConfirmeReset(true)}>
           <RotateCcw size={16} /> Réinitialiser la progression
         </button>
+      </section>
+
+      <Confirmation
+        open={confirmeReset}
+        titre="Réinitialiser la progression ?"
+        texte="Ta Collection, ton Deck, ton nom et ta partie en cours sont effacés de ce navigateur, sans retour possible. Crée d’abord ta sauvegarde si tu veux pouvoir revenir."
+        confirmer="Tout effacer"
+        onConfirm={() => {
+          reset();
+          setDraft(useStore.getState().name);
+          setConfirmeReset(false);
+        }}
+        onCancel={() => setConfirmeReset(false)}
+      />
+
+      <section className="section panel">
+        <h2>Confidentialité</h2>
+        <p className="muted">
+          Ce que le jeu garde de toi — un compte, ce que tu écris sur le mur, et le
+          déroulé de tes parties solo : <Link to="/confidentialite">la page de confidentialité</Link>.
+        </p>
       </section>
 
       <section className="section panel">
@@ -139,6 +231,8 @@ export function Settings() {
         <p className="muted">
           <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si
           quelque chose ne va pas : c’est lui qui dit quelle version tu as sous les yeux.
+          Ce qu’elle contient, et ce que les précédentes ont changé, se lit sur{' '}
+          <Link to="/nouveautes">la page des nouveautés</Link>.
         </p>
       </section>
     </div>

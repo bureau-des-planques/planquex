@@ -17,8 +17,11 @@ import {
   resolveCafeTypes
 } from '@/game/deck';
 import { useStore } from '@/store/useStore';
-import { CardView } from '@/components/CardView';
+import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
+import { TriCartes } from '@/components/TriCartes';
+import { TRI_DEFAUT, trierCartes } from '@/components/tri-cartes';
+import type { Tri } from '@/components/tri-cartes';
 
 export function Deck() {
   const {
@@ -34,6 +37,8 @@ export function Deck() {
     toggleCafeType
   } = useStore();
   const [selected, setSelected] = useState<Card | null>(null);
+  /** Un seul tri pour « Dedans » et pour la Collection du Deck : les deux se lisent pareil. */
+  const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
 
   /**
    * Le choix **normalisé**, lu ici et pas seul dans le moteur : l'écran est le dernier à
@@ -70,6 +75,8 @@ export function Deck() {
       }),
     [owned]
   );
+  const dedansTrie = useMemo(() => trierCartes(inDeck, tri, owned), [inDeck, tri, owned]);
+  const availableTrie = useMemo(() => trierCartes(available, tri, owned), [available, tri, owned]);
 
   return (
     <div className="page deck">
@@ -168,6 +175,10 @@ export function Deck() {
         </p>
       </section>
 
+      <div className="filters filters--deck">
+        <TriCartes value={tri} onChange={setTri} />
+      </div>
+
       <section className="section">
         <div className="section__head">
           <h2>Dedans ({inDeck.length})</h2>
@@ -179,20 +190,19 @@ export function Deck() {
           </p>
         ) : (
           <div className="card-grid">
-            {inDeck.map((card, index) => (
-              <div className="card-slot" key={`${card.id}-${index}`}>
-                <CardView card={card} compact onClick={() => removeFromDeck(card.id)} />
-                <button
-                  type="button"
-                  className="card-slot__quick"
-                  title={`Fiche de ${card.name}`}
-                  aria-label={`Fiche de ${card.name}`}
-                  onClick={() => setSelected(card)}
-                >
-                  <Info size={14} />
-                </button>
-                <span className="card-slot__count">×{counts[card.id] ?? 0}</span>
-              </div>
+            {dedansTrie.map((card, index) => (
+              <CardSlot
+                key={`${card.id}-${index}`}
+                card={card}
+                inDeck={counts[card.id] ?? 0}
+                onClick={() => removeFromDeck(card.id)}
+                quick={{
+                  icon: <Info size={14} />,
+                  label: `Fiche de ${card.name}`,
+                  title: `Fiche de ${card.name}`,
+                  onClick: () => setSelected(card)
+                }}
+              />
             ))}
           </div>
         )}
@@ -207,28 +217,25 @@ export function Deck() {
           <p className="empty">Aucune carte possédée. Ouvre un Arrivage depuis l’accueil.</p>
         ) : (
           <div className="card-grid">
-            {available.map((card) => {
+            {availableTrie.map((card) => {
               const used = byName[card.name] ?? 0;
               const canAdd = deckCanAdd(deck, card.id);
               return (
-                <div className={`card-slot ${canAdd ? '' : 'is-full'}`} key={card.id}>
-                  <CardView card={card} compact selected={used > 0} onClick={() => addToDeck(card.id)} />
-                  <button
-                    type="button"
-                    className="card-slot__quick"
-                    title={`Fiche de ${card.name}`}
-                    aria-label={`Fiche de ${card.name}`}
-                    onClick={() => setSelected(card)}
-                  >
-                    <Info size={14} />
-                  </button>
-                  <span
-                    className={`card-slot__count ${used === 0 ? 'is-missing' : ''}`}
-                    title={`${used} exemplaire(s) de « ${card.name} » au deck`}
-                  >
-                    ×{used}
-                  </span>
-                </div>
+                <CardSlot
+                  key={card.id}
+                  card={card}
+                  owned={owned[card.id] ?? 0}
+                  inDeck={used}
+                  full={!canAdd}
+                  selected={used > 0}
+                  onClick={() => addToDeck(card.id)}
+                  quick={{
+                    icon: <Info size={14} />,
+                    label: `Fiche de ${card.name}`,
+                    title: `Fiche de ${card.name}`,
+                    onClick: () => setSelected(card)
+                  }}
+                />
               );
             })}
           </div>

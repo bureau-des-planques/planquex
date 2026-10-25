@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ClipboardPaste, Coffee, Copy, RotateCcw, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
+  AttackEffect,
   BattleAction,
   BattleState,
   CafeSymbol,
@@ -13,11 +14,12 @@ import type {
   PlayerState,
   Status
 } from '@/data/types';
-import { applyAction, createBattle, legalActions, legalAttacks } from '@/game/engine';
+import { applyAction, createBattle, dessusDuDeck, legalActions, legalAttacks } from '@/game/engine';
 import { deckLegal } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
 import type { Decks, Reprise } from '@/store/partie';
+import { combatTermine, tracerCombat } from '@/store/combats';
 import {
   aiTurnAction,
   CAMP_NAME,
@@ -32,6 +34,7 @@ import {
 import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
+import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
@@ -79,6 +82,16 @@ function cardName(cardId: string): string {
 /** Le nom d'une instance, sans mentir quand elle a disparu de l'état. */
 function instanceName(instance: CardInstance | null | undefined): string {
   return instance ? cardName(instance.cardId) : 'un Planqué';
+}
+
+/**
+ * La carte qu'une action `choose` **désigne** (#171, D-076, D-080, D-082) : elle vit
+ * là où le choix en attente la cherche — la main (défausse), le Banc (café) ou le
+ * Deck (recherche). Le nom est ce que le bouton montre ; `undefined` s'il a disparu.
+ */
+function choixName(side: PlayerState, uid: string): string | undefined {
+  const instance = [...side.hand, ...side.bench, ...side.deck].find((carte) => carte?.uid === uid);
+  return instance ? cardName(instance.cardId) : undefined;
 }
 
 function kindLabel(definition: Card | undefined): string {
@@ -225,9 +238,15 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     }
     case 'forfeit':
       return { label: 'Abandonner' };
-    // Un choix en attente (D-076). Le nom de la carte ne s'affiche pas encore : dette UI.
-    case 'choose':
-      return { label: 'Choisir cette carte' };
+    /*
+     * Un choix en attente (D-076, D-080, D-082) : le bouton **nomme la carte qu'il
+     * désigne** (#171) — la carte de la main, le Planqué du Deck, celui du Banc. Le
+     * choix appartient à `pendingChoice.who`, qui n'est pas forcément le camp au trait.
+     */
+    case 'choose': {
+      const who = state.pendingChoice?.who ?? state.current;
+      return { label: 'Choisir cette carte', detail: choixName(state.players[who], action.uid) };
+    }
     case 'endTurn':
       return { label: state.current === myCamp ? 'Fin du tour' : 'Passer le tour de la Direction' };
   }
@@ -264,6 +283,67 @@ function ActionButton({
       {view.damage !== undefined && <span className="attack__dmg">{view.damage}</span>}
       {view.detail && <span className="button__detail">{view.detail}</span>}
     </button>
+  );
+}
+
+/** Une liste d'effets porte-t-elle le regard `peek` (D-079) ? */
+const porteUnRegard = (effects: readonly AttackEffect[] | undefined) =>
+  (effects ?? []).some((effect) => effect.kind === 'peek');
+
+/**
+ * **Le dessus du Deck, tel que le joueur vient de le regarder** (#162, D-079, #171).
+ *
+ * Le moteur ne garde **aucune trace** d'un regard : ni champ d'état, ni ligne de
+ * journal — c'est le prix de la confidentialité, et D-079 le veut ainsi. L'écran le
+ * déduit donc du **dernier geste appliqué** (`actionLog`, qui rejoue à l'identique
+ * après un rechargement) :
+ * - un Collègue qui regarde est au **Rebut de son propriétaire**, avec son uid : le
+ *   Rebut de l'autre camp ne le porte pas, donc rien ne fuit ;
+ * - une Pression qui regarde termine le tour : l'attaquant est le camp qui vient de
+ *   passer la main, et il est encore au Poste (une Pression part du Poste).
+ *
+ * Un regard dure le temps de ce geste : le geste suivant l'efface. `dessusDuDeck` ne
+ * rend toujours que le Deck du camp demandé.
+ */
+function regardDuDernierGeste(state: BattleState, who: PlayerId): Card | undefined {
+  const geste = state.actionLog.at(-1);
+  if (!geste) return undefined;
+  const side = state.players[who];
+
+  if (geste.type === 'playAction') {
+    const jouee = side.discard.find((carte) => carte.uid === geste.uid);
+    const definition = jouee ? getCard(jouee.cardId) : undefined;
+    return definition && !isPlanque(definition) && porteUnRegard(definition.effects)
+      ? dessusDuDeck(state, who)
+      : undefined;
+  }
+
+  if (geste.type === 'attack') {
+    if (state.current === who) return undefined;
+    const definition = side.active ? getCard(side.active.cardId) : undefined;
+    const regarde =
+      definition &&
+      isPlanque(definition) &&
+      porteUnRegard(definition.attacks[geste.attackIndex]?.effects);
+    return regarde ? dessusDuDeck(state, who) : undefined;
+  }
+
+  return undefined;
+}
+
+/**
+ * **Ce que tu viens de regarder** (#162, D-079) : le dessus de **ton** Deck, nommé, dans
+ * une section privée — hors de la main et hors du journal, qui sont lus des deux camps.
+ * La section ne dit rien de l'adversaire : `dessusDuDeck` ne rend que le Deck demandé.
+ */
+function RegardDuDessus({ carte }: { carte: Card }) {
+  return (
+    <section className="notice regard" aria-label="Dessus de ton Deck, que tu viens de regarder">
+      <p>
+        <span className="muted">Dessus de ton Deck, pour toi seul :</span> <strong>{carte.name}</strong>
+      </p>
+      <p className="muted">{kindLabel(carte)}</p>
+    </section>
   );
 }
 
@@ -511,6 +591,12 @@ export function Battle() {
   const inReach = useMemo(() => legalAttacks(state), [state]);
 
   /**
+   * **Le dessus de mon Deck, regardé** (#162, D-079) : `undefined` quand mon dernier
+   * geste n'était pas un regard. C'est *mon* Deck — l'adversaire n'y a jamais accès.
+   */
+  const regard = useMemo(() => regardDuDernierGeste(state, myCamp), [state, myCamp]);
+
+  /**
    * **La carte choisie dans la main** (#169). Poser est un geste à deux temps : on touche
    * la carte, puis on choisit **où** elle va. La sélection reste visible (cadre accentué,
    * panneau de pose) tant qu'aucune action ne l'a consommée : `play` la vide, et une
@@ -546,12 +632,19 @@ export function Battle() {
    */
   const reduceMotion = useReducedMotion();
 
+  /**
+   * Ce que la Direction va jouer, ou `null` quand ce n'est pas à elle (ou en partie à deux).
+   * Lu au rendu, et pas seulement dans l'effet : sa **présence** est l'attente que l'écran
+   * montre (« La Direction réfléchit… », #131) — sans elle, 600 ms de silence par action
+   * ressemblaient à un écran figé.
+   */
+  const aiAction = useMemo(() => aiTurnAction(state, match), [state, match]);
+
   useEffect(() => {
-    const action = aiTurnAction(state, match);
-    if (!action) return;
-    const timer = window.setTimeout(() => play(action), reduceMotion ? 0 : 600);
+    if (!aiAction) return;
+    const timer = window.setTimeout(() => play(aiAction), reduceMotion ? 0 : 600);
     return () => window.clearTimeout(timer);
-  }, [state, match, reduceMotion, play]);
+  }, [aiAction, reduceMotion, play]);
 
   /**
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
@@ -574,13 +667,13 @@ export function Battle() {
     [legal, myCamp]
   );
 
-  const abandon = useCallback(
-    (action: BattleAction) => {
-      const lost = match ? 'l’autre camp' : 'La Direction';
-      if (window.confirm(`Déclarer forfait ? ${lost} l’emporte, quel que soit le score.`)) play(action);
-    },
-    [play, match]
-  );
+  /**
+   * Le forfait **demande confirmation**, avec le composant du jeu (`Confirmation`, #131) :
+   * c'est le même que « Réinitialiser la progression » dans Réglages, et il remplace
+   * `window.confirm`. La question vit ici ; `forfaitDemande` garde l'action à jouer.
+   */
+  const [forfaitDemande, setForfaitDemande] = useState<BattleAction | null>(null);
+  const gagnantDuForfait = match ? 'L’autre camp' : 'La Direction';
 
   const restart = useCallback(() => {
     setSelectedUid(null);
@@ -618,18 +711,54 @@ export function Battle() {
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
   }, [state, match, decksSolo, enregistrerPartie]);
 
+  /**
+   * **La trace du combat** (#173, D-086) : une partie **solo terminée** part en arrière-plan,
+   * une seule fois. Sans configuration, rien ne part ; un échec réseau ne touche pas l'écran
+   * — la partie n'a jamais été perdue, elle vit dans le store (`partieSauvegardee` ci-dessus).
+   *
+   * La clé évite un second envoi : la fin d'une partie peut re-rendre l'écran (choix, relève),
+   * et la même trace ne se dépose qu'une fois. Un combat à deux n'est pas envoyé (beta).
+   */
+  const tracesEnvoyees = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const combat = combatTermine(state, match, decksSolo);
+    if (combat === null) return;
+    const cle = `${combat.graine}:${combat.journal.length}`;
+    if (tracesEnvoyees.current.has(cle)) return;
+    tracesEnvoyees.current.add(cle);
+    // `tracerCombat` avale le rejet : une trace perdue ne change rien à la fin de partie
+    // affichée, et un rejet non traité ne doit jamais remonter d'un simple effet.
+    void tracerCombat(combat);
+  }, [state, match, decksSolo]);
+
   /** Le code de la partie, recalculé à chaque état : il décrit ce qui est à l'écran. */
   const code = useMemo(() => (match ? matchCode(state, match) : ''), [state, match]);
   /** Peut-on transmettre ? La règle est dans `@/store/pvp`, l'écran n'en décide pas. */
   const transfer = useMemo(() => (match ? handover(state, match) : null), [state, match]);
 
-  const copyCode = useCallback(() => {
-    // Le presse-papier peut être refusé (contexte non sécurisé, permission) : le code
-    // reste dans la zone, il suffit de le sélectionner. On ne ment pas dans le message.
-    navigator.clipboard?.writeText(code).then(
-      () => setCodeMessage({ ton: 'ok', texte: 'Code copié : donne-le à l’autre joueur.' }),
-      () => setCodeMessage({ ton: 'ok', texte: 'Code prêt ci-dessus — recopie-le à la main.' })
-    );
+  /**
+   * La copie du code (#128), **sans mentir** : le presse-papier peut manquer (page servie
+   * en clair, navigateur de téléphone ancien — `navigator.clipboard` est alors `undefined`)
+   * ou être refusé (permission, geste non reconnu). Les deux cas sont traités : promettre
+   * « copié » sans succès ferait perdre le code, et `navigator.clipboard?.writeText(...).then`
+   * levait un `TypeError` quand l'API manquait, donc le message ne venait jamais.
+   *
+   * Le repli est **le code lui-même** : il reste dans la zone, sélectionné d'office, et
+   * l'invité le recopie à la main.
+   */
+  const codeRef = useRef<HTMLTextAreaElement | null>(null);
+  const copyCode = useCallback(async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('presse-papier indisponible');
+      await navigator.clipboard.writeText(code);
+      setCodeMessage({ ton: 'ok', texte: 'Code copié : donne-le à l’autre joueur.' });
+    } catch {
+      codeRef.current?.select();
+      setCodeMessage({
+        ton: 'ok',
+        texte: 'Le presse-papier a refusé : le code est sélectionné, recopie-le à la main.'
+      });
+    }
   }, [code]);
 
   /** **Coller un code** : la partie reprend, et je prends le camp qui doit jouer. */
@@ -707,10 +836,17 @@ export function Battle() {
                   ? 'à toi'
                   : 'à la Direction'}
           </p>
+          {/* L'attente de la Direction (#131) : annoncée au lecteur d'écran, et elle disparaît
+              dès que le coup est joué. Aucun point animé : le mouvement réduit n'a rien à couper. */}
+          {aiAction && (
+            <p className="battle__attente" role="status">
+              La Direction réfléchit…
+            </p>
+          )}
         </div>
         <div className="actions actions--tight">
           {forfeitAction && (
-            <button type="button" className="button button--small" onClick={() => abandon(forfeitAction)}>
+            <button type="button" className="button button--small" onClick={() => setForfaitDemande(forfeitAction)}>
               Abandonner
             </button>
           )}
@@ -775,6 +911,8 @@ export function Battle() {
         </section>
 
         <div className="battle__console">
+          {regard && <RegardDuDessus carte={regard} />}
+
           {state.pendingPromotion && (
             <section className="notice notice--warn promotion">
               {state.pendingPromotion === myCamp ? (
@@ -983,12 +1121,16 @@ export function Battle() {
                       <Copy size={16} /> Copier le code
                     </button>
                   </div>
+                  {/* Un appui sélectionne le code entier : sur téléphone, c'est le repli
+                      quand la copie automatique est refusée (#128). */}
                   <textarea
                     className="pvp__code"
+                    ref={codeRef}
                     readOnly
                     value={code}
                     rows={4}
                     aria-label="Code de la partie, à transmettre"
+                    onFocus={(event) => event.currentTarget.select()}
                   />
                 </>
               ) : (
@@ -1000,6 +1142,9 @@ export function Battle() {
 
           <label className="field">
             <span className="field__label">Coller un code reçu</span>
+            {/* Sur téléphone, le clavier corrige : un code base64url n'a ni majuscules
+                initiales à deviner ni mots à corriger, et une correction le casse en
+                silence (#128). Le champ grandit vers le bas, la page ne bouge pas. */}
             <textarea
               className="pvp__code"
               value={incoming}
@@ -1007,6 +1152,10 @@ export function Battle() {
               placeholder="PLQ1.…"
               rows={3}
               aria-label="Code reçu, à coller"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
             />
           </label>
           <div className="actions actions--tight">
@@ -1035,12 +1184,17 @@ export function Battle() {
         </ol>
       </details>
 
-      {match === null && (
-        <p className="muted battle__note">
-          La Direction joue toute seule (IA de niveau 1) : son tour s’enchaîne automatiquement. Tous les
-          boutons viennent de la liste du moteur — ce qui n’y est pas n’est pas jouable, et rien n’est grisé.
-        </p>
-      )}
+      <Confirmation
+        open={forfaitDemande !== null && forfeitAction !== undefined}
+        titre="Déclarer forfait ?"
+        texte={`${gagnantDuForfait} l’emporte, quel que soit le score. Tu ne pourras pas reprendre cette partie.`}
+        confirmer="Abandonner"
+        onConfirm={() => {
+          if (forfaitDemande) play(forfaitDemande);
+          setForfaitDemande(null);
+        }}
+        onCancel={() => setForfaitDemande(null)}
+      />
     </div>
   );
 }

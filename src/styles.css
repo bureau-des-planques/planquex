@@ -309,7 +309,14 @@ h2 {
   border: 1px solid var(--line);
   border-radius: 999px;
   font-size: 0.82rem;
+  /* Une ligne, toujours : un nom de 24 caractères (le maximum de Réglages) se coupe d'une
+     ellipse au lieu de se casser en deux. Le nom complet reste au survol (`title`). */
+  flex: none;
+  max-width: 11rem;
+  overflow: hidden;
   padding: 0.35rem 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .main {
@@ -400,6 +407,41 @@ h2 {
     inset 0 -2px 0 rgb(0 0 0 / 30%),
     0 8px 18px -10px rgb(0 0 0 / 70%);
   padding: 1rem 1.15rem;
+}
+
+/* Hors ligne (#131) : sous l'en-tête, avant la page — un état du produit, pas d'un écran. */
+.bandeau-hors-ligne {
+  align-items: flex-start;
+  background: var(--bg-raised);
+  border: 1px solid color-mix(in srgb, var(--warn) 55%, var(--line));
+  border-radius: var(--radius-sm);
+  display: flex;
+  font-size: 0.84rem;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0.55rem 0.8rem;
+}
+
+.bandeau-hors-ligne svg {
+  color: var(--warn);
+  flex: none;
+  margin-top: 0.15rem;
+}
+
+/* Erreur de rendu et adresse inconnue (#131) : deux écrans de repli, une seule mise en page. */
+.erreur-ecran,
+.introuvable {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.erreur-ecran__detail {
+  font-size: 0.78rem;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .empty {
@@ -507,9 +549,10 @@ h2 {
   margin: 0;
 }
 
+/* Le halo doré d'angle a été retiré (#131) : un voile radial de couleur sur page sombre est un
+   tell d'UI générée ; le filet or du haut (`.hero::after`) suffit à dire « apparat ». */
 .hero {
   background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 55%),
     linear-gradient(150deg, #16233f, var(--bg-raised) 60%, var(--bg-sunken));
   border: 1px solid var(--line-strong);
   border-radius: 6px;
@@ -681,11 +724,20 @@ h2 {
 .button--primary {
   /* Le dégradé dérive de `--accent` : bleu par défaut, couleur de la faction dans
      la fiche d'une carte. Un seul système, aucune couleur recopiée. */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent) 45%, color-mix(in srgb, var(--accent) 58%, #04080f));
+  /* Le haut du dégradé est le point **le plus clair** sous le texte blanc : à 80 % d'accent
+     (le reste en `#04080f`), le bleu primaire donne 4,65:1 (AA) — l'ancien haut, éclairci au
+     blanc, en donnait 3,1 (relevé en navigateur, #131). La lueur colorée est remplacée par
+     une ombre neutre : un halo de couleur sur fond sombre est un tell d'UI générée. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 80%, #04080f),
+    color-mix(in srgb, var(--accent) 76%, #04080f) 45%,
+    color-mix(in srgb, var(--accent) 52%, #04080f)
+  );
   border-color: color-mix(in srgb, var(--accent) 50%, #04080f);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 30%),
-    0 4px 10px -3px color-mix(in srgb, var(--accent) 55%, transparent);
+    0 4px 10px -3px rgb(0 0 0 / 55%);
   color: #fff;
   font-weight: 700;
   text-shadow: 0 1px 1px rgb(0 0 0 / 35%);
@@ -696,26 +748,21 @@ h2 {
   border-color: var(--gold-deep);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 45%),
-    0 4px 12px -3px color-mix(in srgb, var(--gold) 50%, transparent);
+    0 4px 12px -3px rgb(0 0 0 / 50%);
   color: #1c1304;
+  font-weight: 700;
+}
+
+.button--danger {
+  background: color-mix(in srgb, var(--danger) 22%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--danger) 70%, var(--line));
+  color: var(--text);
   font-weight: 700;
 }
 
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
-}
-
-.icon-button {
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  color: var(--text);
-  cursor: pointer;
-  display: grid;
-  height: 32px;
-  place-items: center;
-  width: 32px;
 }
 
 .field {
@@ -732,13 +779,20 @@ h2 {
 }
 
 .field input,
-.field select {
+.field select,
+.field textarea {
   background: var(--bg-sunken);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   color: var(--text);
   font: inherit;
   padding: 0.5rem 0.65rem;
+}
+
+/* Le formulaire de dépôt du mur (#136) : un texte de prose, pas un code à copier. */
+.field textarea {
+  min-height: 6rem;
+  resize: vertical;
 }
 
 .field--search {
@@ -769,6 +823,27 @@ h2 {
   gap: 0.75rem;
 }
 
+/* Le tri (#179) : la liste montre le choix courant, « Réinitialiser » le rend à « par défaut ».
+   Il prend toute la largeur de sa ligne, la liste s'étirant et le bouton gardant sa taille. */
+.tri {
+  align-items: flex-end;
+  display: flex;
+  flex: 1 1 100%;
+  gap: 0.5rem;
+}
+
+.tri__champ {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.tri__reinit {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  gap: 0.35rem;
+}
+
 /* ---------- Cartes ---------- */
 
 .card-grid {
@@ -777,23 +852,76 @@ h2 {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 }
 
+/* Un téléphone : **deux** colonnes, toujours. À 360 px la page offre 328 px, et deux cartes
+   de 160 px avec leur gouttière en demandent 332 : `auto-fill` retombait à une colonne, et
+   la Collection devenait un rouleau de cartes plein écran (#131). */
+@media (max-width: 420px) {
+  .card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .card-slot {
   position: relative;
 }
 
-.card-slot__count {
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  bottom: 0.45rem;
-  font-size: 0.75rem;
-  padding: 0.1rem 0.45rem;
+/* Les pastilles du slot sont **hors** de `.card` : elles ne s'atténuent pas avec elle.
+   La possession est la plus lisible (grosse, or) ; le Deck vient à côté. */
+.card-slot__plates {
+  align-items: center;
+  bottom: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  pointer-events: none;
   position: absolute;
-  right: 0.45rem;
+  right: 0.55rem;
 }
 
+.card-slot__count,
+.card-slot__deck {
+  background: var(--bg-deep);
+  border: 1px solid var(--gold-deep);
+  border-radius: 999px;
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  line-height: 1.3;
+  padding: 0.05rem 0.5rem;
+}
+
+.card-slot__deck {
+  border-color: var(--accent);
+  color: var(--text);
+  font-size: 0.68rem;
+}
+
+/* Une carte absente : le « ×0 » reste écrit, en pointillés — la carte, elle, s'éteint
+   (`.card-slot.is-missing .card`, plus bas). */
 .card-slot__count.is-missing {
-  opacity: 0.5;
+  border-color: var(--text-dim);
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+/* L'absence écrite, au milieu de l'illustration éteinte. */
+.card-slot__absent {
+  background: var(--bg-deep);
+  border: 1px dashed var(--text-dim);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.68rem;
+  font-weight: 700;
+  left: 50%;
+  letter-spacing: 0.08em;
+  padding: 0.12rem 0.6rem;
+  pointer-events: none;
+  position: absolute;
+  text-transform: uppercase;
+  top: 48%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
 }
 
 /*
@@ -805,29 +933,49 @@ h2 {
  */
 .card {
   --rarity: var(--line);
+  /* Le cadre : la **couleur de la rareté**, un COMEX prenant l'or (`.card--comex`). */
+  --frame: var(--rarity);
   /* **Le format d'une carte** : 63 × 88 mm, le ratio du jeu de référence. C'est lui qui
      garantit que toutes les cartes font la même taille, quel que soit le nombre de
      Pressions, la longueur du nom ou celle de la flavour. */
   aspect-ratio: 63 / 88;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%);
-  /* La rareté colore la **bordure entière**, pas un filet sur un seul côté (tell d'UI IA). */
-  border: 1px solid color-mix(in srgb, var(--rarity) 55%, var(--line));
-  border-radius: 8px;
+  /* Le cadre est un **anneau plein** de 4 px, en dégradé de la couleur de rareté ; la face
+     (`.card__face`) est la carte elle-même. La rareté colore l'anneau **entier**, pas un
+     filet sur un seul côté (tell d'UI IA). */
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--frame) 88%, white),
+    color-mix(in srgb, var(--frame) 46%, var(--bg-deep)) 52%,
+    color-mix(in srgb, var(--frame) 78%, var(--bg-deep))
+  );
+  border: 1px solid color-mix(in srgb, var(--frame) 60%, black);
+  border-radius: 10px;
   box-shadow:
-    inset 0 0 0 1px rgb(0 0 0 / 45%),
-    inset 0 1px 0 rgb(255 255 255 / 5%),
+    inset 0 1px 0 rgb(255 255 255 / 22%),
     0 8px 20px rgb(0 0 0 / 28%);
   color: inherit;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   font: inherit;
-  gap: 0.35rem;
   overflow: hidden;
-  padding: 0;
+  padding: 4px;
   position: relative;
   text-align: left;
   width: 100%;
+}
+
+/* La face : le corps de la carte, sous l'anneau. Le filet noir intérieur la détache du cadre. */
+.card__face {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%);
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 60%);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .card--selected {
@@ -835,18 +983,15 @@ h2 {
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-/* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. */
+/* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. L'or **est** l'anneau (`--frame`) :
+   il n'y a pas de second filet — l'ancien `::before`, sans `content`, ne rendait rien (#131). */
 .card--comex {
+  --frame: var(--gold);
   border-color: var(--gold-deep);
 }
 
-.card--comex::before {
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  opacity: 0.95;
-}
-
 /* La barre de nom : pleine largeur, teintée de la faction — la première chose qu'on lit
-   sur une carte. Le Seuil la ferme à droite, comme une jauge de vie. */
+   sur une carte. Le stade la surmonte, le Seuil la ferme à droite. */
 .card__top {
   align-items: flex-start;
   background: linear-gradient(
@@ -854,22 +999,61 @@ h2 {
     color-mix(in srgb, var(--accent) 26%, var(--bg-raised)),
     color-mix(in srgb, var(--accent) 12%, var(--bg-raised))
   );
-  border-bottom: 1px solid color-mix(in srgb, var(--rarity) 40%, var(--line));
+  border-bottom: 1px solid color-mix(in srgb, var(--frame) 45%, var(--line));
   display: flex;
   gap: 0.4rem;
   justify-content: space-between;
-  padding: 0.4rem 0.5rem;
+  padding: 0.3rem 0.4rem 0.35rem 0.45rem;
 }
 
+.card__title {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* Le stade (ou la catégorie d'une carte Action) et le statut COMEX, au-dessus du nom. */
+.card__kind {
+  align-items: center;
+  display: flex;
+  font-size: var(--fs-2xs);
+  gap: 0.3rem;
+  letter-spacing: 0.06em;
+  overflow: hidden;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Le Seuil : une plaque dorée à droite de la barre — la place d'une jauge de vie. Le mot
+   « Seuil » est dessiné au-dessus du chiffre, par `data-label`. */
 .card__seuil-badge {
+  align-items: center;
+  background: rgb(7 12 22 / 72%);
+  border: 1px solid var(--gold-deep);
+  border-radius: 6px;
   color: var(--gold-soft);
+  display: flex;
   flex: none;
+  flex-direction: column;
   font-family: var(--font-display);
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-variant-numeric: tabular-nums;
   font-weight: 800;
-  line-height: 1.2;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 60%);
+  line-height: 1;
+  min-width: 2rem;
+  padding: 0.18rem 0.25rem 0.22rem;
+}
+
+.card__seuil-badge::before {
+  color: var(--text-muted);
+  content: attr(data-label);
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-transform: uppercase;
 }
 
 /* Le nom a **deux lignes, toujours** : il tient en entier à cette hauteur-là (les
@@ -880,25 +1064,16 @@ h2 {
   -webkit-line-clamp: 2;
   display: -webkit-box;
   font-family: var(--font-display);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  hyphens: auto;
+  letter-spacing: 0.01em;
   line-height: 1.2;
   min-height: 2.4em;
   overflow: hidden;
+  /* Un mot plus long que la ligne (« Électromécanicien ») se coupe au lieu d'être rogné. */
+  overflow-wrap: anywhere;
   text-transform: uppercase;
-}
-
-.card__meta {
-  align-items: center;
-  display: flex;
-  font-size: var(--fs-2xs);
-  gap: 0.3rem;
-  letter-spacing: 0.06em;
-  overflow: hidden;
-  padding-inline: 0.5rem;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
 
 .card__stage {
@@ -931,9 +1106,11 @@ h2 {
   align-items: center;
   color: var(--accent);
   display: inline-flex;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   gap: 0.28rem;
-  margin-left: auto;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .card__faction-dot {
@@ -956,11 +1133,29 @@ h2 {
     inset 0 0 26px rgb(0 0 0 / 34%);
   display: grid;
   flex: 1 1 auto;
-  margin-inline: 0.45rem;
+  margin-inline: 0.4rem;
   min-height: 0;
   overflow: hidden;
   place-items: center;
   position: relative;
+}
+
+/* L'emblème de la faction : un médaillon à son coin bas-gauche (la couleur et le glyphe
+   viennent de `FACTION_META`). */
+.card__emblem {
+  background: var(--accent);
+  border: 2px solid rgb(7 12 22 / 85%);
+  border-radius: 999px;
+  bottom: 0.3rem;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--frame) 70%, transparent);
+  color: #0b1220;
+  display: grid;
+  font-size: 0.72rem;
+  height: 22px;
+  left: 0.3rem;
+  place-items: center;
+  position: absolute;
+  width: 22px;
 }
 
 .card__glyph {
@@ -991,7 +1186,7 @@ h2 {
 .card__seuil {
   align-items: center;
   display: flex;
-  padding-inline: 0.5rem;
+  padding-inline: 0.4rem;
 }
 
 .card__seuil-label {
@@ -1016,7 +1211,7 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  padding-inline: 0.5rem;
+  padding-inline: 0.4rem;
 }
 
 .card__attacks .attack__name {
@@ -1091,19 +1286,19 @@ h2 {
   line-height: 1.3;
   margin: 0;
   overflow: hidden;
-  padding-inline: 0.5rem;
+  padding-inline: 0.4rem;
 }
 
 .card__footer {
   align-items: center;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid color-mix(in srgb, var(--frame) 35%, var(--line));
   display: flex;
   font-size: var(--fs-xs);
-  justify-content: space-between;
+  gap: 0.5rem;
   /* Collé au bas de la carte : c'est ce qui aligne les pieds de toutes les cartes,
      quelle que soit la longueur du texte au-dessus. */
   margin-top: auto;
-  padding: 0.3rem 0.5rem 0.35rem;
+  padding: 0.28rem 0.45rem 0.32rem;
 }
 
 .card__rarity {
@@ -1114,38 +1309,50 @@ h2 {
 .card__id {
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
+  margin-left: auto;
 }
 
-/* ---------- Modales ---------- */
+/* ---------- Dialogues ----------
+ * Tous passent par `components/ui/dialog.tsx` (D-035, #131) : fond, rôle, Échap et focus
+ * piégé viennent de lui. Ces règles ne règlent que la **taille** des deux grands : la fiche
+ * d'une carte et l'Arrivage. */
 
-.modal-backdrop {
-  align-items: center;
-  backdrop-filter: blur(4px);
-  background: rgb(4 8 16 / 70%);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 1rem;
-  position: fixed;
-  z-index: 40;
-}
-
-.modal {
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.card-detail-dialog,
+.pack-reveal {
   max-height: 90vh;
-  overflow: auto;
-  padding: 1.25rem;
-  position: relative;
-  width: min(560px, 100%);
+  overflow-y: auto;
 }
 
-.modal__close {
+.card-detail-dialog {
+  max-width: min(760px, calc(100% - 2rem));
+  /* La croix du dialogue vit dans le coin haut-droit : on lui laisse sa ligne, elle ne
+     recouvre plus le Seuil de la carte. */
+  padding-top: 2.5rem;
+}
+
+.pack-reveal {
+  max-width: min(560px, calc(100% - 2rem));
+}
+
+.pack-reveal__card {
+  position: relative;
+}
+
+/* « Nouvelle » : la carte que l'Arrivage ajoute à la Collection, jamais possédée avant. */
+.pack-reveal__neuve {
+  background: var(--gold);
+  border-radius: 999px;
+  color: #1c1304;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.1rem 0.5rem;
   position: absolute;
-  right: 0.9rem;
-  top: 0.9rem;
+  right: 0.35rem;
+  text-transform: uppercase;
+  top: -0.4rem;
+  z-index: 1;
 }
 
 .pack-reveal__cards {
@@ -1159,7 +1366,6 @@ h2 {
   display: grid;
   gap: 1.25rem;
   grid-template-columns: minmax(180px, 220px) 1fr;
-  width: min(760px, 100%);
 }
 
 .card-detail__flavor {
@@ -1419,9 +1625,10 @@ h2 {
   margin: 0;
 }
 
-.battle__note {
-  font-size: 0.78rem;
-  margin: 0;
+.battle__attente {
+  color: var(--gold-soft);
+  font-size: 0.82rem;
+  margin: 0.15rem 0 0;
 }
 
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
@@ -1473,7 +1680,7 @@ h2 {
   border-color: var(--accent);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--accent) 45%, transparent),
-    0 10px 24px -10px color-mix(in srgb, var(--accent) 45%, transparent);
+    0 10px 24px -10px rgb(0 0 0 / 70%);
 }
 
 .board__head h2 {
@@ -1715,6 +1922,16 @@ h2 {
   width: 100%;
 }
 
+/* Le code d'une partie à deux (#128) : long, sans espace, souvent collé depuis un
+   téléphone. Il se replie dans sa zone au lieu d'élargir la page — à 420 de large, un
+   code de 2 000 caractères sortirait de l'écran. */
+.pvp__code {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .settings__message--ko,
 .pvp__message--ko {
   color: var(--danger);
@@ -1751,16 +1968,15 @@ h2 {
   width: 24px;
 }
 
-/* Le bouton rapide occupe le coin haut-droit : le nom réserve la place, sinon il
-   passe dessous (le coin droit est libre depuis que le Seuil vit sous l'art). */
+/* Le bouton rapide occupe le coin haut-droit, **sur le cadre** : il recouvre le coin de la
+   plaque de Seuil (qu'il décale donc vers la gauche) sans lui voler de place. */
 .card-slot .card__top {
-  /* De la place pour le bouton « ajouter au Deck », qui vit au coin haut-droit. */
-  padding-right: 2.5rem;
+  padding-right: 1.8rem;
 }
 
+/* Le pied réserve la place des pastilles de possession et de Deck, au coin bas-droit. */
 .card-slot .card__footer {
-  /* Et pour le compteur d'exemplaires, au coin bas-droit. */
-  padding-right: 2.5rem;
+  padding-right: 6.2rem;
 }
 
 .card-slot__quick:hover:not(:disabled) {
@@ -1773,7 +1989,19 @@ h2 {
   opacity: 0.4;
 }
 
+/* Le Deck ne peut plus en recevoir : la carte pâlit, sans perdre ses couleurs. */
 .card-slot.is-full .card {
+  opacity: 0.6;
+}
+
+/* Une carte **non possédée** : éteinte (grisée et très pâle), pour qu'une carte possédée se
+   lise d'un coup d'œil. Plus forte que « Deck complet » : les deux ne se confondent pas. */
+.card-slot.is-missing .card {
+  filter: grayscale(0.9) brightness(0.8);
+  opacity: 0.4;
+}
+
+.card-slot.is-missing .card-slot__quick {
   opacity: 0.55;
 }
 
@@ -2057,6 +2285,14 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  /* Une colonne : la carte garde sa taille de carte, centrée, au lieu de prendre toute la
+     largeur du téléphone et de repousser le texte sous la ligne de flottaison (#131). */
+  .card-detail__visual {
+    margin-inline: auto;
+    max-width: 220px;
+    width: 100%;
+  }
+
   .hero h1 {
     font-size: 1.7rem;
   }
@@ -2125,4 +2361,297 @@ h2 {
   html {
     @apply font-sans;
   }
+}
+
+/* ---------- Pouces du mur (#137) ----------
+ * Les pouces d'un post-it : levé, baissé, chacun avec son compte. Le papier change de teinte
+ * (jaune, rouge, blanc) et l'encre reste `--primary-foreground` : le contour suit donc
+ * `currentColor`. Mon vote est un pouce **plein** *et* l'étiquette « ton vote » — jamais la
+ * couleur seule. Cible tactile de 44 px sur téléphone, plus fine à la souris.
+ */
+.pouces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pouce {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.25rem 0.75rem;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.pouce:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.pouce[aria-pressed='true'] {
+  background: var(--primary-foreground);
+  border-color: var(--primary-foreground);
+  color: var(--text);
+}
+
+.pouce:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.pouce__mien {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pouces__note {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.pouces__note--erreur {
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .pouce {
+    min-height: 2rem;
+    padding: 0.1rem 0.6rem;
+  }
+}
+
+/* ---------- Le fil d'un post-it (#138) et sa relecture (#139) ----------
+ * Le fil vit **dans** le post-it agrandi (D-068), sur tous les écrans. Ses couleurs sont
+ * dérivées de `currentColor` — l'encre du papier, `--primary-foreground` — et des jetons
+ * existants : aucun hex ici, et le jaune, le rouge et le blanc restent lisibles sans un
+ * second système de couleurs.
+ */
+.fil {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  text-align: left;
+}
+
+.fil__titre {
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.fil__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fil__item {
+  margin: 0;
+}
+
+.fil__entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.fil__texte {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.fil__retirer {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.fil__retirer:hover {
+  opacity: 1;
+}
+
+.fil__note {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  opacity: 0.88;
+}
+
+.fil__note--erreur {
+  font-weight: 700;
+  opacity: 1;
+}
+
+.fil__compte {
+  margin: 0.55rem 0 0;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.fil__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fil__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.fil__etiquette {
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.fil__champ {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid color-mix(in srgb, currentColor 55%, transparent);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--primary-foreground) 22%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.fil__champ::placeholder {
+  color: currentColor;
+  opacity: 0.55;
+}
+
+.fil__champ:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+
+.fil__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.fil__bouton {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.7rem;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fil__bouton:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.fil__bouton:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.fil__bouton--retirer {
+  border-style: dashed;
+}
+
+@media (min-width: 900px) {
+  .fil__bouton {
+    min-height: 1.9rem;
+  }
+}
+
+/* ---------- Nouveautés — les notes de version dans le jeu ---------- */
+
+/* Le bloc de la version courante est **mis en avant** : c'est ce qu'un invité vient lire,
+   l'historique vient après. La mise en avant passe par la **chaleur** du panneau (fond et
+   bordure teintés d'or, titre en display) et **pas** par un liseré sur un côté — c'est le
+   tell d'UI générée qu'Impeccable refuse, et il ne dit rien de plus. Jetons uniquement,
+   aucun hex (D-035). */
+.nouveautes__courante {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 46%),
+    var(--bg-raised);
+  border-color: color-mix(in srgb, var(--gold) 42%, var(--line-strong));
+}
+
+.nouveautes__courante .nouveautes__titre {
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+}
+
+.nouveautes__label {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.nouveautes__titre {
+  font-size: 0.95rem;
+  margin: 0.5rem 0;
+}
+
+.nouveautes__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Le `preflight` de Tailwind pose `list-style: none` sur les listes : nos listes à puces
+   le rétablissent explicitement, sinon une note se lit comme une suite de paragraphes et
+   les points ne se distinguent plus (constaté sur la capture du 24/10/2026). */
+.liste-points {
+  list-style: disc;
+}
+
+.liste-points li::marker {
+  color: var(--gold-soft);
 }

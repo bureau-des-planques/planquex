@@ -1,5 +1,6 @@
 /**
- * Supabase — la configuration du mur et l'identité anonyme de l'appareil (#135).
+ * Supabase — la configuration du mur, la session du compte (#181, D-088) et l'identité
+ * anonyme héritée de l'alpha d'avant (#135).
  *
  * **La contrainte qui commande tout ce fichier** : l'alpha **fonctionne sans backend** — le mur
  * lit `docs/boite-a-idees.json` (D-058). Ce module est donc **inerte** quand la configuration
@@ -17,15 +18,22 @@
  * `.env.example` porte les deux noms, avec des valeurs **fausses**. Le fichier versionné
  * n'accueille jamais une vraie clé.
  *
- * **Identité** (D-059) : pas de compte, pas de mot de passe, pas de courriel. La bibliothèque
- * `@supabase/supabase-js` signe l'appareil **anonymement** à sa première visite et persiste la
- * session (localStorage) ; l'utilisateur anonyme est un `auth.uid()` comme un autre, donc les
- * politiques de `supabase/migrations/0001_mur.sql` suffisent à dire « chacun lit tout, chacun
- * n'écrit que les siens ».
+ * **Identité** : depuis **D-088** (#181), l'alpha s'ouvre par un **compte** (Google ou
+ * courriel) validé à la main — c'est `@/lib/comptes` qui porte la connexion et
+ * `supabase/migrations/0005_comptes.sql` qui décide qui écrit. L'**identité anonyme** de
+ * D-059 reste le chemin de **lecture** sans session (et l'auteur des deux post-its d'avant
+ * la migration) : `identiteAppareil` continue de signer un appareil qui n'a pas de compte,
+ * mais un tel appareil ne peut plus **écrire** — les politiques de la 0005 exigent un
+ * compte approuvé, pas seulement une session.
  *
  * La bibliothèque est chargée **à la demande** (`import()` dynamique) : sans configuration, son
  * code ne part même pas dans le premier chargement.
+ *
+ * **La trace des combats** (#173, D-086) se dépose par `ecrireLigne` — même configuration,
+ * même identité anonyme, et **inerte sans configuration**. Ce module ne décide pas *quoi*
+ * envoyer : la ligne est construite par `@/store/combats`, seule source de ce qui est gardé.
  */
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Le nom de la variable qui porte l'adresse du projet Supabase. */
 export const VARIABLE_URL = 'VITE_SUPABASE_URL';
@@ -55,6 +63,44 @@ export interface AppareilAnonyme {
       error: { message: string } | null;
     }>;
   };
+}
+
+/** Ce que rend une requête Supabase : la donnée, ou l'erreur — jamais les deux. */
+export interface ReponseMur<T> {
+  data: T | null;
+  error: { message: string } | null;
+}
+
+/**
+ * Le sous-ensemble du constructeur de requêtes de `supabase-js` dont le mur a besoin.
+ * Il est `PromiseLike`, comme le vrai : `await client.from(…).select(…)` suffit.
+ *
+ * Le déclarer **ici** garde `src/lib/murBase.ts` testable sans réseau : un faux client à
+ * trois méthodes rend les lignes qu'on veut, ou l'erreur qu'on veut.
+ */
+export interface RequeteMur<T = unknown> extends PromiseLike<ReponseMur<T>> {
+  select(colonnes?: string): RequeteMur<T>;
+  order(colonnes: string, options?: { ascending?: boolean }): RequeteMur<T>;
+  insert(ligne: Record<string, unknown>): RequeteMur<T>;
+  /**
+   * Filtre : la colonne vaut la valeur. Sert à lire ses propres votes et à viser sa ligne
+   * (#137) — et, depuis #138, à viser un commentaire par son `id`, qui est un `bigint` :
+   * d'où le nombre accepté ici comme la chaîne.
+   */
+  eq(colonne: string, valeur: string | number): RequeteMur<T>;
+  update(valeurs: Record<string, unknown>): RequeteMur<T>;
+  delete(): RequeteMur<T>;
+}
+
+/** Un client Supabase : l'identité anonyme, l'accès aux tables, et les fonctions SQL. */
+export interface ClientMur extends AppareilAnonyme {
+  from(table: string): RequeteMur;
+  /**
+   * Appelle une fonction SQL (`public.corriger_postit`, 0006). C'est le seul chemin
+   * d'écriture du titre et du texte d'un post-it : un grant de colonnes ne sait pas
+   * distinguer l'auteur d'un administrateur (#139, `0006_tri_et_corrections.sql`).
+   */
+  rpc(nom: string, params?: Record<string, unknown>): PromiseLike<ReponseMur<unknown>>;
 }
 
 type Environnement = Record<string, string | boolean | undefined>;
@@ -137,33 +183,69 @@ export function configurerMur(env: Environnement = import.meta.env): Configurati
 }
 
 let configuration: ConfigurationMur | null | undefined;
-let appareil: AppareilAnonyme | null = null;
+let client: SupabaseClient | null = null;
 
 /**
  * Le client Supabase, ou `null` si le backend n'est pas configuré (alpha). Créé au premier
  * usage, puis gardé : la bibliothèque garde elle-même la session de l'appareil.
+ *
+ * Le client réel est plus large que `ClientMur` (toutes les tables, tous les filtres) : la
+ * conversion est le prix du sous-ensemble structurel qui rend le mur testable sans réseau.
  */
-export async function clientMur(): Promise<AppareilAnonyme | null> {
+async function clientSupabase(): Promise<SupabaseClient | null> {
   if (configuration === undefined) configuration = configurerMur();
   if (!configuration) return null;
 
-  if (!appareil) {
+  if (!client) {
     const { createClient } = await import('@supabase/supabase-js');
-    appareil = createClient(configuration.url, configuration.clePublique, {
+    client = createClient(configuration.url, configuration.clePublique, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        // Le mur n'est pas une page de retour OAuth : rien à lire dans l'URL.
-        detectSessionInUrl: false,
+        // Le retour de Google arrive avec la session dans l'URL (#181, D-088) : sans cette
+        // détection, la connexion OAuth se terminerait sur un écran sans session.
+        detectSessionInUrl: true,
       },
     });
   }
-  return appareil;
+  return client;
 }
 
 /**
- * L'identité anonyme de l'appareil : celle de la session persistée si elle existe, sinon une
- * signature anonyme neuve (première visite). Rend `null` quand le backend n'est pas configuré.
+ * Le client, réduit à ce que le mur en demande (session et signature anonyme). Le test
+ * injecte un faux appareil : c'est ce qui rend `identiteAppareil` éprouvable **sans réseau**.
+ */
+export async function clientMur(): Promise<ClientMur | null> {
+  return (await clientSupabase()) as ClientMur | null;
+}
+
+/**
+ * Écrit **une** ligne dans une table, au nom de la session en cours (le compte, D-088 ; ou
+ * l'identité anonyme d'un appareil d'avant, qui sera refusée à l'écriture par la 0005).
+ *
+ * Rend l'erreur que la base ou le réseau a donnée (`null` si la ligne est passée) ; **ne
+ * décide pas** de ce que l'appelant en fait — `@/store/combats` choisit de ne jamais
+ * interrompre le jeu. Sans configuration, rien n'est contacté et la raison est rendue.
+ *
+ * L'insertion s'appuie sur `auth.uid()` (`auteur` a cette valeur par défaut dans
+ * `0002_combats.sql`) : on signe donc **avant** d'écrire, sinon la RLS refuserait la ligne.
+ */
+export async function ecrireLigne(
+  table: string,
+  ligne: Record<string, unknown>,
+): Promise<{ erreur: string | null }> {
+  const supabase = await clientSupabase();
+  if (!supabase) return { erreur: 'Supabase n’est pas configuré.' };
+
+  await identiteAppareil(async () => supabase);
+  const { error } = await supabase.from(table).insert(ligne);
+  return { erreur: error ? error.message : null };
+}
+
+/**
+ * L'identité de la session persistée si elle existe (un compte, D-088), sinon une signature
+ * anonyme neuve (première visite, lecture seule). Rend `null` quand le backend n'est pas
+ * configuré.
  *
  * `chargerClient` est un paramètre pour que le test puisse injecter un faux appareil, sans
  * réseau ni navigateur.

@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleState, CardInstance } from '@/data/types';
-import { applyAction, createBattle, legalActions } from '@/game/engine';
-import { nextAction, nextSearchAction, sampleWorld, unknownPool } from '@/game/ia';
+import { applyAction, createBattle, createInstance, legalActions } from '@/game/engine';
+import {
+  DEFAULT_SEARCH_OPTIONS,
+  nextAction,
+  nextSearchAction,
+  sampleWorld,
+  searchDecision,
+  unknownPool
+} from '@/game/ia';
+import type { SearchOptions } from '@/game/ia';
 import { factionDeck } from '@/game/simulation';
 
 /**
@@ -20,6 +28,13 @@ import { factionDeck } from '@/game/simulation';
  * `unknownPool`) reste nécessaire. Il attrape une fuite qui ferait varier la décision,
  * pas une fuite sans effet sur cette position.
  */
+
+/**
+ * Les options des tests de **rejeu** (déterminisme, équité) : la garde de temps (`maxMs`)
+ * est le seul terme non déterministe de la décision (#172) ; la neutraliser garde ces
+ * tests reproductibles même sur une CI chargée. Le plafond de nœuds, lui, reste actif.
+ */
+const SANS_GARDE_DE_TEMPS: SearchOptions = { ...DEFAULT_SEARCH_OPTIONS, maxMs: Infinity };
 
 const PLAYER_DECK = factionDeck('SSE');
 const AI_DECK = factionDeck('MANAGEMENT');
@@ -59,7 +74,7 @@ describe('recherche à deux coups — légalité et déterminisme', () => {
 
   it('ne propose jamais une action refusée par le moteur', () => {
     for (const state of positions) {
-      const action = nextSearchAction(state);
+      const action = nextSearchAction(state, SANS_GARDE_DE_TEMPS);
       expect(action).not.toBeNull();
       expect(legalActions(state)).toContainEqual(action);
     }
@@ -67,8 +82,8 @@ describe('recherche à deux coups — légalité et déterminisme', () => {
 
   it('est déterministe : même position, même coup', () => {
     for (const state of positions) {
-      const first = nextSearchAction(state);
-      const again = nextSearchAction(structuredClone(state));
+      const first = nextSearchAction(state, SANS_GARDE_DE_TEMPS);
+      const again = nextSearchAction(structuredClone(state), SANS_GARDE_DE_TEMPS);
       expect(again).toEqual(first);
     }
   });
@@ -76,9 +91,84 @@ describe('recherche à deux coups — légalité et déterminisme', () => {
   it("ne modifie pas la position qu'elle reçoit", () => {
     for (const state of positions) {
       const before = structuredClone(state);
-      nextSearchAction(state);
+      nextSearchAction(state, SANS_GARDE_DE_TEMPS);
       expect(state).toEqual(before);
     }
+  });
+});
+
+/**
+ * **État pathologique** du budget (#172) : une position de décision réelle, puis les deux
+ * camps pourvus d'une **main pleine** (10 Objets « pioche 2 ») et d'un **Deck plein**
+ * (20 cartes). Les tours scriptés jouent ces Objets en boucle (chaque pioche en ramène
+ * deux), et les actions légales sont nombreuses : c'est exactement la forme qui empilait
+ * le plus de `applyAction` — chacun clone tout l'état — et produisait les pics de temps.
+ */
+function pathologicalState(): BattleState {
+  const base = aiDecisionPositions(1, 1)[0];
+  if (!base) throw new Error('aucune position de décision');
+  const state = structuredClone(base);
+  for (const who of ['player', 'ai'] as const) {
+    const side = state.players[who];
+    side.hand = Array.from({ length: 10 }, (_, i) =>
+      createInstance('sse-trousse-secours', state.turn, `patho-${who}-h${i}`)
+    );
+    side.deck = Array.from({ length: 20 }, (_, i) =>
+      createInstance('sse-trousse-secours', state.turn, `patho-${who}-d${i}`)
+    );
+  }
+  return state;
+}
+
+describe('recherche à deux coups — budget (#172)', () => {
+  // Une configuration **plus large** que le défaut (celle de l'essai V2 du journal : elle
+  // a mesuré un pic à 325 ms). Le plafond, lui, est celui du défaut.
+  const LARGE: SearchOptions = {
+    ...DEFAULT_SEARCH_OPTIONS,
+    candidates: 10,
+    worlds: 6,
+    replies: 8,
+    maxMs: Infinity
+  };
+
+  it("ne dépasse jamais le plafond de nœuds et replie sur le glouton", () => {
+    const state = pathologicalState();
+    const debut = performance.now();
+    const decision = searchDecision(state, LARGE);
+    const duree = performance.now() - debut;
+
+    expect(decision.action).not.toBeNull();
+    expect(legalActions(state)).toContainEqual(decision.action);
+    // Le budget a mordu : la décision est le repli glouton, pas une ligne tronquée.
+    expect(decision.fallback).toBe(true);
+    expect(decision.nodes).toBeLessThanOrEqual(LARGE.maxNodes);
+    // Garde de temps volontairement large (la CI est lente) : le plafond déterministe
+    // est `nodes`, la mesure en millisecondes vit dans `npm run pesage`.
+    expect(duree).toBeLessThan(500);
+  });
+
+  it('sans le plafond, le même état coûte bien plus que le budget (le test mord)', () => {
+    const state = pathologicalState();
+    // Plafond **et** garde de temps neutralisés : on mesure le travail réel de l'état.
+    const unbounded = searchDecision(state, { ...LARGE, maxNodes: 1_000_000 });
+    expect(unbounded.fallback).toBe(false);
+    expect(unbounded.nodes).toBeGreaterThan(LARGE.maxNodes);
+  });
+
+  it('la garde de temps abandonne elle aussi, sur le même repli', () => {
+    const state = pathologicalState();
+    // Échéance nulle : dépassée dès la première vérification, quel que soit le plafond de nœuds.
+    const decision = searchDecision(state, { ...LARGE, maxNodes: 1_000_000, maxMs: 0 });
+    expect(decision.fallback).toBe(true);
+    expect(decision.action).toEqual(nextAction(state, 2));
+  });
+
+  it('le repli est le coup du niveau 2 glouton — jamais une erreur, jamais un coup nul', () => {
+    const state = pathologicalState();
+    const decision = searchDecision(state, { ...LARGE, maxNodes: 1 });
+    expect(decision.fallback).toBe(true);
+    expect(decision.action).not.toBeNull();
+    expect(decision.action).toEqual(nextAction(state, 2));
   });
 });
 
@@ -91,7 +181,9 @@ describe('recherche à deux coups — équité', () => {
       const swapped: BattleState = structuredClone(state);
       swapped.players.player.hand = reshuffleIds(state.players.player.hand, 3);
       swapped.players.player.deck = reshuffleIds(state.players.player.deck, 5);
-      expect(nextSearchAction(swapped)).toEqual(nextSearchAction(state));
+      expect(nextSearchAction(swapped, SANS_GARDE_DE_TEMPS)).toEqual(
+        nextSearchAction(state, SANS_GARDE_DE_TEMPS)
+      );
     }
   });
 

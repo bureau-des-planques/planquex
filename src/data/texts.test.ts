@@ -24,10 +24,10 @@ import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
  *
  * **Ce que le garde-fou ne tranche pas.** Il ne dit pas ce que le jeu *devrait* faire :
  * c'est #47. Les mensonges recensés vivaient donc dans `MENSONGES_CONNUS`, avec leur
- * raison. L'inventaire est **clos** (#65) : les 22 textes ont été réécrits, la liste est
- * vide, et le garde-fou mord désormais sans exception. Corriger une carte fait toujours
- * échouer le dernier test tant qu'une entrée n'est pas retirée : la liste ne peut pas
- * survivre à la correction.
+ * raison. L'inventaire est **clos** : vidé par #65, rouvert et refermé par #167, il est
+ * **vide** depuis #175 (les sept mécaniques de D-076 à D-082 sont câblées). Corriger une
+ * carte fait toujours échouer le dernier test tant qu'une entrée n'est pas retirée : la
+ * liste ne peut pas survivre à sa correction.
  *
  * **Choix de fichier.** Le garde-fou vit ici et non dans `cards.test.ts` : ce dernier est
  * modifié en parallèle (#54, l'oracle `WEAKNESS`), et l'adéquation texte ⇔ effet est une
@@ -51,9 +51,10 @@ interface Cue<K extends string> {
  * Les mots d'une **Pression** — et d'une carte **Action**, qui emploie les mêmes
  * primitives (`AGENTS.md` §5) — avec la primitive qui peut les réaliser.
  *
- * `kinds: []` signale un mot **sans primitive** : le texte ne peut pas être honnête
- * aujourd'hui. C'est exactement l'inventaire que #47 doit trancher (changer le texte,
- * ou décider la primitive qui manque).
+ * `kinds: []` signalerait un mot **sans primitive** : le texte ne pourrait pas être
+ * honnête. Depuis #175, aucune primitive d'attaque ne manque plus (#159 à #165) ; la
+ * forme vide reste dans la table des Talents simples, qui n'ont pas accès aux
+ * primitives d'attaque.
  */
 /*
  * Frontières de mot (#166). Un motif sans `\b` trouve son mot **dans un autre** : « demain »,
@@ -80,10 +81,14 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
   { label: 'statut nommé', pattern: /\b(?:surcharg|epuisement|sieste|immobilis|deriv)/, kinds: ['status'] },
   // `switchSelf` échange le Poste avec le premier Planqué du Banc (engine.ts).
   { label: 'Banc', pattern: /\bbancs?\b/, kinds: ['switchSelf'] },
-  // La main n'est touchée que par une défausse (D-076) ; révéler et chercher viendront (D-078, D-080).
+  // La main est touchée par une défausse (D-076), une révélation (D-078) ou une recherche (D-080).
   { label: 'main', pattern: /\bmains?\b/, kinds: ['discardHand', 'reveal', 'search'] },
-  // `reveal` écrit la carte, ou la main, dans le journal (D-078).
-  { label: 'révèle', pattern: /\brevel/, kinds: ['reveal'] },
+  // `reveal` écrit la carte, ou la main, dans le journal (D-078) : « révèle sa main ».
+  // Le motif exclut la forme pronominale « révèle-le », qui appartient à la recherche (ci-dessous).
+  { label: 'révèle', pattern: /\brevele(?!-le\b)/, kinds: ['reveal'] },
+  // `search` écrit au journal la carte trouvée (D-080) : c'est le « révèle-le » du texte
+  // (« cherche un Planqué dans ton deck, révèle-le »), pas une révélation de main.
+  { label: 'révèle-le (recherche)', pattern: /\brevele-le\b/, kinds: ['search'] },
   // `peek` lit le dessus du Deck sans le modifier (D-079) ; la recherche y cherchera (D-080).
   { label: 'regarde le dessus', pattern: /\bregarde la carte du dessus/, kinds: ['peek'] },
   // `search` cherche une carte du filtre dans le Deck, puis la prend en main (D-080).
@@ -94,11 +99,12 @@ const CUES_EFFET: readonly Cue<AttackEffectKind>[] = [
 /**
  * Les mots d'un **Talent**, avec le `AbilityKind` qui peut les réaliser.
  *
- * Un Talent n'a pas accès aux primitives d'attaque : `Banc`, `défausse`, `cherche`,
- * `main`, `deck` n'ont donc aucune primitive de Talent. `attachEnergy` attache un
- * café tiré dans le Deck au **Poste** (engine.ts : `player.active.energy.push(cafe)`),
- * et `heal` / `antiStatus` ne
- * soignent que le Poste : viser le Banc ou la main est un mensonge.
+ * Cette table ne sert qu'aux Talents **simples** : un Talent `kind: 'effects'` (D-077)
+ * porte les primitives d'attaque et passe par `verifierPression` (`verifierTalent`).
+ * Pour un Talent simple, `Banc`, `défausse`, `cherche`, `main`, `deck` n'ont donc aucune
+ * primitive de Talent. `attachEnergy` attache un café tiré dans le Deck au **Poste**
+ * (engine.ts : `player.active.energy.push(cafe)`), sauf `target: 'rack'` (D-082), et
+ * `heal` / `antiStatus` ne soignent que le Poste : viser le Banc ou la main est un mensonge.
  */
 const CUES_TALENT: readonly Cue<AbilityKind>[] = [
   { label: 'café', pattern: /\bcafes?\b/, kinds: ['attachEnergy'] },
@@ -318,21 +324,12 @@ const MENSONGES = SUJETS.filter((sujet) => sujet.problemes.length > 0);
  * le test vérifie que le fichier cité est celui de la faction de la carte. Les variantes
  * (`-star`, `-crown`, `-ex`) héritent de l'attaque de leur carte de base : leur ligne est
  * celle de la source.
+ *
+ * **Vide depuis #175** : les sept mécaniques de D-076 à D-082 sont câblées sur les cartes
+ * qui les vendaient, donc les cinq écarts de #167 ont été retirés. Aucun écart ne survit à
+ * sa correction.
  */
-const MENSONGES_CONNUS: Readonly<Record<string, string>> = {
-  // « L’adversaire révèle une carte de sa main » : aucune révélation (#160) ; le statut
-  // Dérivé de l'effet n'est pas annoncé par le texte.
-  'rh-assistant-rh/Entretien': 'src/data/rh.ts:16 — #160',
-  'rh-assistant-rh-star/Entretien': 'src/data/rh.ts:16 — #160',
-  // « Regarde la carte du dessus de ton deck » : aucune primitive ne regarde le dessus (#162) ;
-  // l'effet `draw` pioche réellement, et le texte ne l'annonce pas.
-  'amelioration-charge-qualite/Checklist': 'src/data/amelioration.ts:23 — #162',
-  // « L’adversaire défausse 1 carte » : aucune défausse de la main (#159) ; l'effet
-  // `discardEnergy` retire un café, et le texte ne le dit pas.
-  'direction-pdg/Fusion-acquisition': 'src/data/direction.ts:48 — #159',
-  'direction-pdg-ex/Fusion-acquisition': 'src/data/direction.ts:65 — #159',
-  'direction-pdg-crown/Fusion-acquisition': 'src/data/direction.ts:48 — #159'
-};
+const MENSONGES_CONNUS: Readonly<Record<string, string>> = {};
 
 /**
  * Les Pressions d'un Planqué qui n'ont **aucun texte** (#158) : absent, vide, ou blanc.
@@ -494,6 +491,244 @@ describe('Textes ⇔ mécanique — garde-fou (ticket #48)', () => {
       const faction = cle.split(/[/#]/)[0].split('-')[0];
       expect(fichier[1], `${cle} : le fichier ne correspond pas à la faction`).toBe(`src/data/${faction}.ts`);
       expect(fichier[3].trim().length, `${cle} : raison vide`).toBeGreaterThan(0);
+    }
+  });
+});
+
+/**
+ * **Câblage des sept mécaniques du moteur** (#175, D-076 à D-082).
+ *
+ * Le garde-fou ci-dessus prouve qu'un texte annonce ce que la carte porte ; ce bloc
+ * prouve la réciproque du ticket : la carte qui **vend** la mécanique la porte bien,
+ * avec la primitive livrée par son ticket. Une carte câblée ne se contente plus d'un
+ * texte juste — elle déclenche l'effet.
+ *
+ * La table se mute comme `pressionsSansTexte` : `cablagesManquants` est confronté au
+ * catalogue (vide attendu) **et** à une carte privée de son effet (rouge attendu).
+ */
+interface Cablage {
+  /** Clé stable `id/attaque` ou `id#talent`, celle de `SUJETS`. */
+  cle: string;
+  /** Ce que la carte vend, avec le ticket du moteur qui l'a livré. */
+  mecanique: string;
+  /** La carte porte-t-elle ce que son texte vend ? */
+  verifie: (carte: PlanqueCard) => boolean;
+}
+
+/** Les effets du Talent d'une carte, vide s'il n'en est pas un `effects` (D-077). */
+const effetsTalent = (carte: PlanqueCard): readonly AttackEffect[] =>
+  carte.ability?.kind === 'effects' ? (carte.ability.effects ?? []) : [];
+
+const declencheEnJouant = (carte: PlanqueCard): boolean => carte.ability?.trigger === 'onPlay';
+
+const effetsAttaque = (carte: PlanqueCard, nom: string): readonly AttackEffect[] =>
+  carte.attacks.find((attaque) => attaque.name === nom)?.effects ?? [];
+
+/** Une liste d'effets contient-elle cette primitive, avec ces champs-là ? */
+const contient = (effets: readonly AttackEffect[], attendu: Partial<AttackEffect>): boolean =>
+  effets.some((effet) =>
+    (Object.keys(attendu) as (keyof AttackEffect)[]).every((cle) => effet[cle] === attendu[cle])
+  );
+
+const CABLAGES: readonly Cablage[] = [
+  // ——— #159 : défausser une carte de la main (D-076) ———
+  {
+    cle: 'management-manager-proximite#talent',
+    mecanique: 'défausse de la main (#159)',
+    verifie: (carte) => contient(effetsTalent(carte), { kind: 'discardHand', target: 'self', amount: 1 })
+  },
+  {
+    cle: 'amelioration-auditeur-qualite#talent',
+    mecanique: 'défausse de la main (#159)',
+    verifie: (carte) => contient(effetsTalent(carte), { kind: 'discardHand', target: 'self', amount: 1 })
+  },
+  {
+    cle: 'direction-directeur-adjoint#talent',
+    mecanique: 'défausse de la main (#159)',
+    verifie: (carte) =>
+      contient(effetsTalent(carte), { kind: 'discardHand', target: 'self', amount: 1 }) &&
+      contient(effetsTalent(carte), { kind: 'discardHand', target: 'opponent', amount: 1 })
+  },
+  {
+    cle: 'direction-pdg/Fusion-acquisition',
+    mecanique: 'défausse de la main (#159)',
+    verifie: (carte) =>
+      contient(effetsAttaque(carte, 'Fusion-acquisition'), { kind: 'discardHand', target: 'opponent', amount: 1 })
+  },
+  {
+    cle: 'direction-pdg-ex/Fusion-acquisition',
+    mecanique: 'défausse de la main (#159)',
+    verifie: (carte) =>
+      contient(effetsAttaque(carte, 'Fusion-acquisition'), { kind: 'discardHand', target: 'opponent', amount: 1 })
+  },
+  {
+    cle: 'rh-drh/Plan de carrière',
+    mecanique: 'défausse de la main (#159)',
+    verifie: (carte) =>
+      contient(effetsAttaque(carte, 'Plan de carrière'), { kind: 'discardHand', target: 'opponent', amount: 1 })
+  },
+  {
+    cle: 'rh-drh-ex/Plan de carrière',
+    mecanique: 'défausse de la main (#159)',
+    verifie: (carte) =>
+      contient(effetsAttaque(carte, 'Plan de carrière'), { kind: 'discardHand', target: 'opponent', amount: 1 })
+  },
+  // ——— #164 : un Talent qui inflige des dégâts (D-077) ———
+  {
+    cle: 'management-manager-proximite#talent',
+    mecanique: 'dégâts d’un Talent (#164)',
+    verifie: (carte) => contient(effetsTalent(carte), { kind: 'damage', amount: 10 })
+  },
+  // ——— #160 : révélation (D-078) ———
+  {
+    cle: 'rh-assistant-rh/Entretien',
+    mecanique: 'révélation (#160)',
+    verifie: (carte) => contient(effetsAttaque(carte, 'Entretien'), { kind: 'reveal', target: 'opponent', amount: 1 })
+  },
+  {
+    cle: 'amelioration-auditeur-qualite#talent',
+    mecanique: 'révélation (#160)',
+    verifie: (carte) => contient(effetsTalent(carte), { kind: 'reveal', target: 'opponent' })
+  },
+  // ——— #162 : regarder le dessus du Deck (D-079) ———
+  {
+    cle: 'amelioration-charge-qualite/Checklist',
+    mecanique: 'regard du dessus (#162)',
+    verifie: (carte) => contient(effetsAttaque(carte, 'Checklist'), { kind: 'peek' })
+  },
+  // ——— #161 : chercher dans le Deck (D-080) ———
+  {
+    cle: 'rh-charge-recrutement#talent',
+    mecanique: 'recherche dans le Deck (#161)',
+    verifie: (carte) => contient(effetsTalent(carte), { kind: 'search', filter: 'PLANQUE' })
+  },
+  {
+    cle: 'support-technicien-support#talent',
+    mecanique: 'recherche dans le Deck (#161)',
+    verifie: (carte) => contient(effetsTalent(carte), { kind: 'search', filter: 'COLLEAGUE' })
+  },
+  // ——— #163 : Talent « en jouant » (D-081) ———
+  {
+    cle: 'amelioration-auditeur-qualite#talent',
+    mecanique: 'Talent « en jouant » (#163)',
+    verifie: declencheEnJouant
+  },
+  {
+    cle: 'direction-directeur-adjoint#talent',
+    mecanique: 'Talent « en jouant » (#163)',
+    verifie: declencheEnJouant
+  },
+  {
+    cle: 'rh-charge-recrutement#talent',
+    mecanique: 'Talent « en jouant » (#163)',
+    verifie: declencheEnJouant
+  },
+  {
+    cle: 'support-technicien-support#talent',
+    mecanique: 'Talent « en jouant » (#163)',
+    verifie: declencheEnJouant
+  },
+  // ——— #165 : un café à un Planqué du Banc (D-082) ———
+  {
+    cle: 'qvt-happiness-manager#talent',
+    mecanique: 'café au Banc (#165)',
+    verifie: (carte) => carte.ability?.kind === 'attachEnergy' && carte.ability.target === 'rack'
+  }
+];
+
+/** Les câblages non tenus par `cartes`, désignés par leur clé stable. */
+function cablagesManquants(cartes: readonly PlanqueCard[], cablages: readonly Cablage[]): string[] {
+  const parId = new Map(cartes.map((carte) => [carte.id, carte]));
+  const manquants: string[] = [];
+  for (const cablage of cablages) {
+    const id = cablage.cle.split(/[/#]/)[0];
+    const carte = parId.get(id);
+    if (!carte) {
+      manquants.push(`${cablage.cle} : carte absente`);
+      continue;
+    }
+    if (!cablage.verifie(carte)) manquants.push(`${cablage.cle} : ne porte pas ${cablage.mecanique}`);
+  }
+  return manquants;
+}
+
+/**
+ * Une copie de `carte` **privée** de ce que `cle` désigne : le Talent (`#talent`) ou
+ * l'attaque nommée (`/Nom`). C'est la mutation de contrôle du test « mord ».
+ */
+function amputer(carte: PlanqueCard, cle: string): PlanqueCard {
+  if (cle.endsWith('#talent')) {
+    return {
+      ...carte,
+      ability: carte.ability
+        ? { ...carte.ability, effects: [], trigger: undefined, target: undefined }
+        : undefined
+    };
+  }
+  const nom = cle.slice(cle.indexOf('/') + 1);
+  return {
+    ...carte,
+    attacks: carte.attacks.map((attaque) => (attaque.name === nom ? { ...attaque, effects: [] } : attaque))
+  };
+}
+
+describe('Câblage des sept mécaniques du moteur (#175, D-076 à D-082)', () => {
+  const PLANQUES = ALL_CARDS.filter(isPlanque);
+
+  it('chaque carte qui vend une mécanique la porte', () => {
+    expect(
+      cablagesManquants(PLANQUES, CABLAGES),
+      'Une carte vend une mécanique que sa primitive ne réalise pas : câbler l’effet (D-074).'
+    ).toEqual([]);
+  });
+
+  it('les sept mécaniques ont au moins une carte qui les porte (#159 à #165)', () => {
+    const quelque = (sonde: (carte: PlanqueCard) => boolean): boolean => PLANQUES.some(sonde);
+    const effetsDesPressions = (carte: PlanqueCard) => carte.attacks.flatMap((attaque) => attaque.effects ?? []);
+    expect(quelque((carte) => [...effetsDesPressions(carte), ...effetsTalent(carte)].some((e) => e.kind === 'discardHand')), 'défausse de la main (#159)').toBe(true);
+    expect(quelque((carte) => effetsTalent(carte).some((e) => e.kind === 'damage')), 'Talent qui inflige des dégâts (#164)').toBe(true);
+    expect(quelque((carte) => [...effetsDesPressions(carte), ...effetsTalent(carte)].some((e) => e.kind === 'reveal')), 'révélation (#160)').toBe(true);
+    expect(quelque((carte) => effetsDesPressions(carte).some((e) => e.kind === 'peek')), 'regard du dessus (#162)').toBe(true);
+    expect(quelque((carte) => effetsTalent(carte).some((e) => e.kind === 'search')), 'recherche dans le Deck (#161)').toBe(true);
+    expect(quelque(declencheEnJouant), 'Talent « en jouant » (#163)').toBe(true);
+    expect(quelque((carte) => carte.ability?.kind === 'attachEnergy' && carte.ability.target === 'rack'), 'café au Banc (#165)').toBe(true);
+  });
+
+  it('mord : retirer l’effet d’une carte câblée fait échouer le contrôle', () => {
+    const source = PLANQUES.find((carte) => carte.id === 'management-manager-proximite');
+    expect(source, 'management-manager-proximite introuvable').toBeDefined();
+    if (!source) return;
+    // La carte amputée de son Talent : le contrôle doit la signaler.
+    const amputee: PlanqueCard = {
+      ...source,
+      ability: source.ability ? { ...source.ability, effects: [] } : undefined
+    };
+    expect(cablagesManquants([amputee], CABLAGES)).toContain(
+      'management-manager-proximite#talent : ne porte pas défausse de la main (#159)'
+    );
+    // Et le témoin : la carte réelle passe.
+    const cible = CABLAGES.filter((cablage) => cablage.cle.startsWith('management-manager-proximite'));
+    expect(cablagesManquants([source], cible)).toEqual([]);
+  });
+
+  it('mord : chaque entrée signale la carte amputée de son effet', () => {
+    // Une mutation par entrée : c'est ce qui prouve que la table n'est pas décorative.
+    for (const cablage of CABLAGES) {
+      const source = PLANQUES.find((carte) => carte.id === cablage.cle.split(/[/#]/)[0]);
+      expect(source, `${cablage.cle} : carte introuvable`).toBeDefined();
+      if (!source) continue;
+      expect(cablage.verifie(amputer(source, cablage.cle)), `${cablage.cle} : l’effet retiré passe inaperçu`).toBe(
+        false
+      );
+    }
+  });
+
+  it('les variantes héritent du câblage sans être retouchées', () => {
+    for (const cablage of CABLAGES) {
+      const id = cablage.cle.split(/[/#]/)[0];
+      for (const variante of PLANQUES.filter((carte) => carte.variantOf === id)) {
+        expect(cablage.verifie(variante), `${variante.id} : variante de ${id}`).toBe(true);
+      }
     }
   });
 });

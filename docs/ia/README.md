@@ -15,9 +15,10 @@ dans `docs/DECISIONS.md` ; les chiffres vivent ici.
 **Ce qui a été retenu** (D-084) : la **recherche à deux coups** est **le niveau 2 acté** de l'alpha.
 Elle gagne **60,4 %** contre le niveau 1 sur des graines neuves (ratio 1,53), là où le glouton
 faisait 44 %. Deux réserves, écrites ici : la mesure n'a été faite **que contre le niveau 1**
-(jamais contre un humain), et des **pics de temps** dépassent le budget (138 ms mesurés, 100 ms
-visés) — c'est le ticket **#172**. **L'écran joue encore le niveau 1** : le passage se fait en
-une ligne, quand #172 est clos.
+(jamais contre un humain), et des **pics de temps** dépassaient le budget (138 ms mesurés, 100 ms
+visés) — ticket **#172** : cause écrite et budget borné (plafond de 800 nœuds + échéance de 60 ms,
+repli sur le glouton), voir `111-essais-recherche-2-coups.md` §6.3. **L'écran joue encore le
+niveau 1** : le passage se fait en une ligne, à trancher une fois #172 fusionné.
 
 **Le niveau 3** (expectiminimax avec déterminisations, ticket #94) repart de
 `111-essais-recherche-2-coups.md` : le pool des cartes inconnues, le tirage de monde, la

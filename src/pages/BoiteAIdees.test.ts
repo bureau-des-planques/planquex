@@ -49,8 +49,11 @@ describe('ce que chaque post-it porte (D-068)', () => {
     expect(postit).toMatch(/issues\/\$\{postit\.ticket\}/);
   });
 
-  it('ne montre aucun compteur de pouces : ils attendent la base (#135)', () => {
-    expect(postit).not.toMatch(/ThumbsUp|ThumbsDown/);
+  it('ne montre de pouces que si la page les donne, et elle ne les donne que depuis la base (#137)', () => {
+    // Le post-it n'ouvre ses pouces que sur la prop, jamais de lui-même…
+    expect(postit).toMatch(/\{pouces && <PoucesDuMur/);
+    // …et la page ne la passe que lorsque la base a répondu : le fichier n'a ni bouton ni compteur.
+    expect(page).toMatch(/pouces=\{\s*source === 'base'/);
     expect(page).not.toMatch(/ThumbsUp|ThumbsDown/);
   });
 });

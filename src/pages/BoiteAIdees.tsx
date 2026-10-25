@@ -4,25 +4,64 @@
  * **C'est une page**, pas un panneau : la bulle y mène, et elle est absente pendant un
  * combat — donc on ne quitte jamais une partie en cours pour venir lire le mur (D-068).
  *
- * L'alpha est en **lecture seule** : le mur affiche ce que porte `docs/boite-a-idees.json`,
- * et rien d'autre. Pas de compteur, pas de commentaire, pas d'écriture (D-058, D-068).
- * La seule écriture possible est l'**export** des positions du mode de placement : un site
- * statique ne peut pas écrire dans son dépôt, donc le fichier se télécharge et se commite.
+ * Sans base, l'alpha est en **lecture seule** : le mur affiche ce que porte
+ * `docs/boite-a-idees.json`, et rien d'autre. **Branché sur la base** (#136, #137), il ouvre
+ * l'écriture : poster un post-it, et voter 👍 / 👎 par post-it, un vote par compte, jamais
+ * pour le sien. **Depuis D-088 (#181)**, cette écriture exige un compte **approuvé** : un
+ * compte en attente lit et joue, l'écran ne lui propose ni le formulaire ni les pouces — et la
+ * base les refuserait de toute façon (migration 0005). Sans configuration — ou quand la base
+ * ne répond pas et que la page retombe sur le fichier — il n'y a ni bouton ni compteur, et
+ * rien n'est contacté. Le mode de placement, lui, n'écrit toujours que le fichier du dépôt.
  *
- * États (D-060) : **vide** et **erreur** sont rendus ; **chargement** et **hors ligne**
- * n'ont pas lieu d'être — le fichier est bundlé par Vite, il n'y a aucune requête. C'est
- * écrit en bas de page plutôt que laissé à deviner.
+ * États (D-060) : **vide**, **erreur** et **chargement** sont rendus. Le chargement n'existe
+ * que branché sur la base (sans elle, le fichier est bundlé par Vite : aucune requête) ; et
+ * **hors ligne**, une base qui ne répond pas fait retomber le mur sur le fichier, avec la
+ * notice « la base n'a pas répondu » — l'écran ne reste jamais sans mur. Le bandeau
+ * hors ligne du Layout le dit en plus, pour toute l'application.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Copy, Download, ExternalLink, Move, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Copy, Download, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
+import { Confirmation } from '@/components/Confirmation';
 import { PAPIERS, PostitDuMur } from '@/components/PostitDuMur';
 import type { GlisserPostit } from '@/components/PostitDuMur';
-import { DOCUMENT_MUR, exporterMur, lireMur } from '@/store/mur';
-import type { Mur, PositionPostit } from '@/store/mur';
+import {
+  chargerCommentaires,
+  chargerPostitsDuMur,
+  commenterPostit,
+  compterApres,
+  corrigerPostit,
+  grouperCommentaires,
+  murEstConfigure,
+  posterPostit,
+  retirerPostit,
+  supprimerCommentaire,
+  verifierCommentaire,
+  voterPourPostit
+} from '@/lib/murBase';
+import type { Commentaire } from '@/lib/murBase';
+import { estApprouve } from '@/lib/comptes';
+import { useComptes } from '@/store/comptes';
+import { DOCUMENT_MUR, ECRANS, exporterMur, lireMur } from '@/store/mur';
+import type { Ecran, Mur, Postit, PositionPostit, SensVote } from '@/store/mur';
+import { useStore } from '@/store/useStore';
+import { APP_LABEL } from '@/version';
 
 /** Le fichier est lu une fois : il ne change pas sans un nouveau déploiement. */
 const LECTURE = lireMur(DOCUMENT_MUR);
+
+/** Les trois natures du formulaire : deux familles, et le gueulage à part (D-085). */
+const NATURES = [
+  ['IP', 'Une idée, une amélioration, un avis'],
+  ['OUF', 'Un signalement : ça casse, ça ment'],
+  ['GUEULAGE', 'Gueuler, sans classer']
+] as const;
+type Nature = (typeof NATURES)[number][0];
+
+function messageDe(erreur: unknown): string {
+  return erreur instanceof Error ? erreur.message : String(erreur);
+}
 
 /** La légende des trois papiers, dans l'ordre où ils se lisent (D-068). */
 const LEGENDE: Array<[keyof typeof PAPIERS, string]> = [
@@ -39,8 +78,50 @@ function positionsDuMur(mur: Mur | null): Record<string, PositionPostit> {
 const borner = (valeur: number) => Math.min(100, Math.max(0, Math.round(valeur * 10) / 10));
 
 export function BoiteAIdees() {
-  const { mur, erreurs } = LECTURE;
-  const [positions, setPositions] = useState(() => positionsDuMur(mur));
+  const branche = murEstConfigure();
+  const pseudo = useStore((state) => state.name);
+  /**
+   * L'écriture exige un **compte approuvé** (D-088). Sans configuration de comptes, on ne
+   * change rien (c'est l'alpha d'avant, et les tests du mur) ; avec elle, l'écran n'offre
+   * que ce que la base accepterait.
+   */
+  const configureComptes = useComptes((state) => state.configure);
+  const sessionCompte = useComptes((state) => state.session);
+  const compte = useComptes((state) => state.compte);
+  const peutEcrire = !configureComptes || estApprouve(compte);
+
+  /**
+   * La source du mur (#136) : la **base** quand elle est configurée, le **fichier** sinon.
+   * La page ne connaît que `Mur` : c'est `src/lib/murBase.ts` qui parle au réseau.
+   *
+   * Sur une base configurée, on n'affiche pas le fichier d'abord : un post-it qui
+   * disparaîtrait à l'arrivée de la réponse serait pire qu'un court « le mur se charge ».
+   * Si la base ne répond pas, on retombe sur le fichier **entier**, avec un message.
+   */
+  const [mur, setMur] = useState<Mur | null>(() => (branche ? null : LECTURE.mur));
+  const [erreurs, setErreurs] = useState<string[]>(() => (branche ? [] : LECTURE.erreurs));
+  const [source, setSource] = useState<'base' | 'fichier'>('fichier');
+  const [chargement, setChargement] = useState(branche);
+  const [notice, setNotice] = useState<string | null>(null);
+  /** Les votes en vol et les votes perdus, par post-it (#137). */
+  const [votesEnVol, setVotesEnVol] = useState<ReadonlySet<string>>(() => new Set());
+  const [erreursVote, setErreursVote] = useState<Record<string, string>>({});
+
+  /** Le fil de chaque post-it, et l'état de sa lecture (#138). */
+  const [commentaires, setCommentaires] = useState<Record<string, Commentaire[]>>({});
+  const [chargementCommentaires, setChargementCommentaires] = useState(false);
+  const [erreurCommentaires, setErreurCommentaires] = useState<string | null>(null);
+  const [commentaireEnVol, setCommentaireEnVol] = useState<string | null>(null);
+  const [erreursFil, setErreursFil] = useState<Record<string, string>>({});
+
+  /** La relecture de **mon** post-it (#139). */
+  const [correctionEnVol, setCorrectionEnVol] = useState<string | null>(null);
+  const [erreursCorrection, setErreursCorrection] = useState<Record<string, string>>({});
+  /** Le post-it dont on demande le retrait : la confirmation est rendue par la page. */
+  const [aRetirer, setARetirer] = useState<Postit | null>(null);
+  const [retraitEnVol, setRetraitEnVol] = useState(false);
+
+  const [positions, setPositions] = useState(() => positionsDuMur(LECTURE.mur));
   const [placement, setPlacement] = useState(false);
   const [agrandi, setAgrandi] = useState<string | null>(null);
   const [message, setMessage] = useState<{ texte: string; alerte?: boolean } | null>(null);
@@ -48,6 +129,72 @@ export function BoiteAIdees() {
   const [lachers, setLachers] = useState(0);
   const tableau = useRef<HTMLDivElement>(null);
   const saisie = useRef<{ id: string; dx: number; dy: number } | null>(null);
+
+  // Le formulaire de dépôt : ouvert à la demande, fermé au succès.
+  const [depot, setDepot] = useState(false);
+  const [nature, setNature] = useState<Nature>('IP');
+  const [titre, setTitre] = useState('');
+  const [texte, setTexte] = useState('');
+  const [ecran, setEcran] = useState<Ecran | ''>('');
+  const [capture, setCapture] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const [depotMessage, setDepotMessage] = useState<{ texte: string; alerte?: boolean } | null>(null);
+
+  /**
+   * Le fil du mur (#138) se lit **après** les post-its, et à part : un fil qu'on ne peut pas
+   * lire ne doit pas faire retomber tout le mur sur le fichier. C'est un état d'erreur à
+   * lui (D-060), affiché dans le fil et non sur la page.
+   */
+  const lireLesFils = () => {
+    setChargementCommentaires(true);
+    chargerCommentaires()
+      .then((liste) => {
+        setCommentaires(grouperCommentaires(liste));
+        setErreurCommentaires(null);
+      })
+      .catch((erreur: unknown) => {
+        setErreurCommentaires(
+          `Les commentaires n’ont pas pu être lus (${messageDe(erreur)}). Le mur reste lisible.`
+        );
+      })
+      .finally(() => setChargementCommentaires(false));
+  };
+
+  useEffect(() => {
+    if (!branche) return;
+    let vivant = true;
+
+    chargerPostitsDuMur()
+      .then((postits) => {
+        if (!vivant) return;
+        if (postits === null) throw new Error('La base n’est pas configurée.');
+        setMur({ formulaire: LECTURE.mur?.formulaire ?? '', postits });
+        setPositions(positionsDuMur({ formulaire: '', postits }));
+        setErreurs([]);
+        setSource('base');
+        setNotice(null);
+        lireLesFils();
+      })
+      .catch((erreur: unknown) => {
+        if (!vivant) return;
+        // Pas d'écran cassé : le fichier est la source de secours, et on le dit.
+        setMur(LECTURE.mur);
+        setErreurs(LECTURE.erreurs);
+        setSource('fichier');
+        setNotice(
+          `La base n’a pas répondu : le mur affiche le fichier du dépôt. (${messageDe(erreur)})`
+        );
+      })
+      .finally(() => {
+        if (vivant) setChargement(false);
+      });
+
+    return () => {
+      vivant = false;
+    };
+    // `branche` et `LECTURE` sont fixes pour la vie de l'écran.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /**
    * Le placement laisse faire un vrai tableau : on peut se tromper. Ce contrôle dit
@@ -130,6 +277,144 @@ export function BoiteAIdees() {
   const fichier = useMemo(() => exporterMur(positions), [positions]);
 
   /**
+   * Un clic sur un pouce (#137). Le compte bouge **tout de suite** ; si la base ou le réseau
+   * refuse, l'affichage revient exactement à l'état d'avant, avec un message discret sur le
+   * post-it — jamais une page cassée. Un post-it ne porte qu'un vote en vol à la fois.
+   */
+  const voter = async (postit: Postit, demande: SensVote) => {
+    if (votesEnVol.has(postit.id) || postit.mien) return;
+    const avant = postit.votes;
+    const monVote = avant.mon ?? null;
+    const apres = monVote === demande ? null : demande;
+
+    const poser = (votes: Postit['votes']) =>
+      setMur((courant) =>
+        courant
+          ? {
+              ...courant,
+              postits: courant.postits.map((p) => (p.id === postit.id ? { ...p, votes } : p))
+            }
+          : courant
+      );
+
+    setErreursVote(({ [postit.id]: _, ...reste }) => reste);
+    setVotesEnVol((courants) => new Set(courants).add(postit.id));
+    poser(compterApres(avant, monVote, apres));
+
+    try {
+      await voterPourPostit(postit.id, demande, monVote);
+    } catch (erreur) {
+      poser(avant);
+      setErreursVote((courantes) => ({ ...courantes, [postit.id]: messageDe(erreur) }));
+    } finally {
+      setVotesEnVol((courants) => {
+        const reste = new Set(courants);
+        reste.delete(postit.id);
+        return reste;
+      });
+    }
+  };
+
+  /**
+   * Commenter (#138). Le commentaire s'ajoute au fil **après** la réponse de la base — à la
+   * différence du pouce, rien ne s'affiche avant d'exister : un commentaire n'a pas de
+   * compteur à faire bouger, et un texte qu'on retire aussitôt serait pire qu'une attente.
+   * Le refus (compte en attente, post-it disparu) se dit **sur le post-it**.
+   */
+  const commenter = async (postit: Postit, texte: string) => {
+    const refus = verifierCommentaire(texte);
+    setErreursFil(({ [postit.id]: _ancien, ...reste }) => reste);
+    if (refus) {
+      setErreursFil((courants) => ({ ...courants, [postit.id]: refus }));
+      return;
+    }
+
+    setCommentaireEnVol(postit.id);
+    try {
+      const commentaire = await commenterPostit(postit.id, texte, { pseudo });
+      setCommentaires((courants) => ({
+        ...courants,
+        [postit.id]: [...(courants[postit.id] ?? []), commentaire],
+      }));
+    } catch (erreur) {
+      setErreursFil((courants) => ({ ...courants, [postit.id]: messageDe(erreur) }));
+    } finally {
+      setCommentaireEnVol(null);
+    }
+  };
+
+  /** Retirer **mon** commentaire (#138) : la base refuse celui d'un autre. */
+  const retirerCommentaire = async (commentaire: Commentaire) => {
+    setCommentaireEnVol(commentaire.postitId);
+    setErreursFil(({ [commentaire.postitId]: _ancien, ...reste }) => reste);
+    try {
+      await supprimerCommentaire(commentaire.id);
+      setCommentaires((courants) => ({
+        ...courants,
+        [commentaire.postitId]: (courants[commentaire.postitId] ?? []).filter(
+          (autre) => autre.id !== commentaire.id
+        ),
+      }));
+    } catch (erreur) {
+      setErreursFil((courants) => ({ ...courants, [commentaire.postitId]: messageDe(erreur) }));
+    } finally {
+      setCommentaireEnVol(null);
+    }
+  };
+
+  /** Corriger le titre et le texte de **mon** post-it, tant qu'il est en attente (#139). */
+  const corriger = async (postit: Postit, titre: string, texte: string) => {
+    setCorrectionEnVol(postit.id);
+    setErreursCorrection(({ [postit.id]: _ancien, ...reste }) => reste);
+    try {
+      const corrige = await corrigerPostit(postit.id, { titre, texte });
+      setMur((courant) =>
+        courant
+          ? {
+              ...courant,
+              postits: courant.postits.map((autre) =>
+                autre.id === postit.id ? { ...autre, ...corrige } : autre
+              )
+            }
+          : courant
+      );
+    } catch (erreur) {
+      setErreursCorrection((courants) => ({ ...courants, [postit.id]: messageDe(erreur) }));
+    } finally {
+      setCorrectionEnVol(null);
+    }
+  };
+
+  /**
+   * Retirer **mon** post-it (#139) : il est **supprimé**, avec ses votes et ses
+   * commentaires (voir `retirerPostit`). La confirmation est passée avant : ce n'est pas
+   * un geste qu'on défait.
+   */
+  const retirer = async () => {
+    const cible = aRetirer;
+    if (!cible || retraitEnVol) return;
+    setRetraitEnVol(true);
+    try {
+      await retirerPostit(cible.id);
+      setMur((courant) =>
+        courant ? { ...courant, postits: courant.postits.filter((autre) => autre.id !== cible.id) } : courant
+      );
+      setCommentaires(({ [cible.id]: _fil, ...reste }) => reste);
+      setPositions(({ [cible.id]: _place, ...reste }) => reste);
+      setARetirer(null);
+      setDepotMessage({
+        texte:
+          'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
+      });
+    } catch (erreur) {
+      setARetirer(null);
+      setDepotMessage({ alerte: true, texte: messageDe(erreur) });
+    } finally {
+      setRetraitEnVol(false);
+    }
+  };
+
+  /**
    * Le post-it collé sur un gueulage (D-085). Il **existe** dans le fichier — c'est lui
    * qui se trie, avec sa famille — mais l'écran ne le montre **que** collé : s'il
    * s'affichait aussi à côté, le mur compterait deux fois la même réponse.
@@ -177,6 +462,50 @@ export function BoiteAIdees() {
     );
   };
 
+  /** Un gueulage n'a pas de titre : la base en fabrique un avec ses premiers mots (D-085). */
+  const gueulage = nature === 'GUEULAGE';
+
+  const coller = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setEnvoi(true);
+    setDepotMessage(null);
+
+    try {
+      const postit = await posterPostit(
+        {
+          famille: gueulage ? null : nature,
+          gueulage,
+          titre,
+          texte,
+          ecran,
+          capture
+        },
+        { pseudo }
+      );
+
+      setMur((courant) => ({
+        formulaire: courant?.formulaire ?? LECTURE.mur?.formulaire ?? '',
+        postits: [...(courant?.postits ?? []), postit]
+      }));
+      setPositions((courantes) => ({ ...courantes, [postit.id]: postit.position }));
+      setTitre('');
+      setTexte('');
+      setEcran('');
+      setCapture('');
+      setNature('IP');
+      setDepot(false);
+      setDepotMessage({
+        texte: 'Ton post-it est collé au mur. Merci — il est signé de ton pseudo et de ton compte.'
+      });
+    } catch (erreur) {
+      setDepotMessage({ alerte: true, texte: messageDe(erreur) });
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  const formulaireExterne = mur?.formulaire ?? LECTURE.mur?.formulaire ?? '';
+
   return (
     <div className="page">
       <section className="section">
@@ -185,15 +514,48 @@ export function BoiteAIdees() {
             <h1>La Boîte à idées</h1>
             <p className="muted max-w-[62ch]">
               Le mur des retours d’alpha : ce que les invités proposent (<strong>IP</strong>) et
-              signalent (<strong>OUF</strong>). Le jeu le lit et n’y écrit pas — pour laisser un
-              post-it, passe par le formulaire.
+              signalent (<strong>OUF</strong>).{' '}
+              {branche
+                ? peutEcrire
+                  ? 'Tu peux y coller un post-it et commenter sous ceux des autres, avec ton compte.'
+                  : 'Tu peux lire le mur et ses commentaires ; écrire s’ouvrira quand ton compte sera validé.'
+                : 'Le jeu le lit et n’y écrit pas — pour laisser un post-it, passe par le formulaire.'}
             </p>
           </div>
           <div className="actions">
-            {mur?.formulaire ? (
+            {branche && peutEcrire ? (
+              <button
+                type="button"
+                className="button button--gold"
+                aria-expanded={depot}
+                aria-controls="depot-form"
+                disabled={chargement}
+                onClick={() => {
+                  setDepot((ouvert) => !ouvert);
+                  setDepotMessage(null);
+                }}
+              >
+                <Send size={16} /> {depot ? 'Fermer le formulaire' : 'Poster une idée'}
+              </button>
+            ) : branche ? (
+              <p className="notice notice--warn m-0 max-w-[46ch]" role="status">
+                {sessionCompte ? (
+                  <>
+                    Ton compte attend d’être validé : tu peux lire et voter dès qu’il sera
+                    approuvé.{' '}
+                    <Link to="/attente">Voir mon compte</Link>
+                  </>
+                ) : (
+                  <>
+                    Il faut un compte pour poster ou voter.{' '}
+                    <Link to="/connexion">Se connecter</Link>
+                  </>
+                )}
+              </p>
+            ) : formulaireExterne ? (
               <a
                 className="button button--gold"
-                href={mur.formulaire}
+                href={formulaireExterne}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -229,6 +591,120 @@ export function BoiteAIdees() {
         </ul>
       </section>
 
+      {depotMessage && (
+        <section className={depotMessage.alerte ? 'notice notice--warn' : 'notice notice--ok'}>
+          <p className="m-0 max-w-[70ch]">{depotMessage.texte}</p>
+        </section>
+      )}
+
+      {branche && peutEcrire && depot && (
+        <section className="section panel" id="depot-form" aria-labelledby="depot-titre">
+          <h2 id="depot-titre">Poster une idée</h2>
+          <p className="muted max-w-[64ch]">
+            Deux familles, et le gueulage à part (D-085). Ton pseudo local est recopié sur le
+            post-it (tu peux le laisser vide), et la base sait quel compte l’a écrit : c’est
+            ce qui permet de te répondre.
+          </p>
+
+          <form className="flex flex-col gap-4" onSubmit={coller}>
+            <fieldset className="field m-0 border-0 p-0">
+              <legend className="field__label">Tu veux quoi ?</legend>
+              <div className="flex flex-col gap-2 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:gap-4">
+                {NATURES.map(([valeur, aide]) => (
+                  <label className="flex items-start gap-2 text-[0.86rem]" key={valeur}>
+                    <input
+                      type="radio"
+                      name="nature"
+                      value={valeur}
+                      checked={nature === valeur}
+                      onChange={() => setNature(valeur)}
+                      className="mt-1"
+                    />
+                    <span>
+                      <strong>{valeur === 'GUEULAGE' ? 'Gueulage' : valeur}</strong>
+                      <span className="block text-[0.78rem] text-ink-muted">{aide}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            {!gueulage && (
+              <label className="field">
+                <span className="field__label">Titre</span>
+                <input
+                  value={titre}
+                  onChange={(event) => setTitre(event.target.value)}
+                  maxLength={120}
+                  required
+                  placeholder="Une ligne. Exemple : le bouton Fin du tour reste grisé."
+                />
+              </label>
+            )}
+
+            <label className="field">
+              <span className="field__label">
+                {gueulage ? 'Exprime-toi' : nature === 'OUF' ? 'Ce qui s’est passé' : 'L’idée'}
+              </span>
+              <textarea
+                rows={5}
+                value={texte}
+                onChange={(event) => setTexte(event.target.value)}
+                required
+                placeholder={
+                  gueulage
+                    ? 'Le texte brut, tel qu’il vient. Personne ne te demande de le classer.'
+                    : nature === 'OUF'
+                      ? 'L’écran, l’action, la carte. Le fait, sans jugement — recopie le message d’erreur.'
+                      : 'Ce que tu voudrais, et dans quelle situation ça te servirait.'
+                }
+              />
+            </label>
+
+            <div className="flex flex-col gap-4 min-[480px]:flex-row">
+              <label className="field flex-1">
+                <span className="field__label">Écran</span>
+                <select value={ecran} onChange={(event) => setEcran(event.target.value as Ecran | '')}>
+                  <option value="">—</option>
+                  {ECRANS.map((valeur) => (
+                    <option value={valeur} key={valeur}>
+                      {valeur}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field flex-[2]">
+                <span className="field__label">Capture — un lien, pas un fichier</span>
+                <input
+                  type="url"
+                  value={capture}
+                  onChange={(event) => setCapture(event.target.value)}
+                  placeholder="https://…"
+                />
+              </label>
+            </div>
+
+            <p className="m-0 max-w-[64ch] text-[0.8rem] text-ink-muted">
+              Tu seras signé <strong>{pseudo || 'anonyme'}</strong> · {APP_LABEL}. Le post-it
+              arrive <strong>en attente</strong> : c’est le tri qui le fait avancer, pas le posteur.
+            </p>
+
+            <div className="actions actions--tight">
+              <button
+                type="submit"
+                className="button button--primary"
+                disabled={envoi || !texte.trim() || (!gueulage && !titre.trim())}
+              >
+                <Send size={16} /> {envoi ? 'Envoi…' : 'Coller le post-it'}
+              </button>
+              <button type="button" className="button" onClick={() => setDepot(false)}>
+                Annuler
+              </button>
+            </div>
+          </form>
+        </section>
+      )}
+
       {erreurs.length > 0 && (
         <section className="notice notice--warn">
           <h2>Le fichier du mur n’a pas pu être lu</h2>
@@ -245,31 +721,59 @@ export function BoiteAIdees() {
         </section>
       )}
 
-      {mur && mur.postits.length === 0 && (
+      {notice && (
+        <section className="notice notice--warn">
+          <p className="m-0 max-w-[70ch]">{notice}</p>
+        </section>
+      )}
+
+      {chargement && (
+        <section className="section panel">
+          <p className="m-0 text-[0.9rem] text-ink-muted">Le mur se charge…</p>
+        </section>
+      )}
+
+      {!chargement && mur && mur.postits.length === 0 && (
         <section className="section">
           <div className="empty">
             <p className="m-0 font-heading text-[1.15rem] font-bold text-ink">
               Le mur est encore vide.
             </p>
             <p className="mx-auto mt-1 mb-0 max-w-[52ch]">
-              Les post-its arrivent par le formulaire : ils apparaîtront ici avec leur papier et
-              leur place sur le tableau.
+              {branche && peutEcrire
+                ? 'Sois le premier à coller un post-it : il apparaîtra ici, avec son papier et sa place.'
+                : branche
+                  ? 'Aucun post-it pour l’instant : le mur s’ouvrira à l’écriture quand ton compte sera validé.'
+                  : 'Les post-its arrivent par le formulaire : ils apparaîtront ici avec leur papier et leur place sur le tableau.'}
             </p>
-            {mur.formulaire && (
-              <a
-                className="button button--gold mt-4"
-                href={mur.formulaire}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Laisser le premier post-it <ExternalLink size={16} />
-              </a>
+            {branche && peutEcrire ? (
+              <button type="button" className="button button--gold mt-4" onClick={() => setDepot(true)}>
+                <Send size={16} /> Laisser le premier post-it
+              </button>
+            ) : branche ? (
+              <p className="m-0">
+                <Link to={sessionCompte ? '/attente' : '/connexion'}>
+                  {sessionCompte ? 'Ton compte attend d’être validé' : 'Se connecter pour écrire'}
+                </Link>{' '}
+                — la lecture, elle, est ouverte.
+              </p>
+            ) : (
+              mur.formulaire && (
+                <a
+                  className="button button--gold mt-4"
+                  href={mur.formulaire}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Laisser le premier post-it <ExternalLink size={16} />
+                </a>
+              )
             )}
           </div>
         </section>
       )}
 
-      {mur && mur.postits.length > 0 && (
+      {!chargement && mur && mur.postits.length > 0 && (
         <section className="panel">
           <div
             ref={tableau}
@@ -287,7 +791,46 @@ export function BoiteAIdees() {
                   agrandi={agrandi === postit.id}
                   onAgrandir={(id) => setAgrandi((courant) => (courant === id ? null : id))}
                   glisser={glisser}
+                  pouces={
+                    source === 'base' && peutEcrire
+                      ? {
+                          occupe: votesEnVol.has(postit.id),
+                          erreur: erreursVote[postit.id] ?? null,
+                          onVoter: voter
+                        }
+                      : undefined
+                  }
                   associe={postit.gueulage && postit.lie ? parId.get(postit.lie) ?? null : null}
+                  fil={
+                    source === 'base'
+                      ? {
+                          chargement: chargementCommentaires,
+                          // Le refus de ce post-it d'abord ; sinon la panne de lecture,
+                          // qui vaut pour tout le mur.
+                          erreur: erreursFil[postit.id] ?? erreurCommentaires,
+                          commentaires: commentaires[postit.id] ?? [],
+                          occupe: commentaireEnVol === postit.id,
+                          peutCommenter: peutEcrire,
+                          motifSansEcriture: sessionCompte
+                            ? 'Ton compte attend d’être validé : tu lis le fil dès maintenant, et tu pourras le commenter une fois approuvé.'
+                            : 'Il faut un compte pour commenter : la lecture du fil, elle, est ouverte.',
+                          onCommenter: commenter,
+                          onSupprimer: retirerCommentaire
+                        }
+                      : undefined
+                  }
+                  correction={
+                    source === 'base' && peutEcrire && postit.mien
+                      ? {
+                          gele: postit.statut !== 'en attente',
+                          raisonGele: `Ce post-it a bougé de statut (« ${postit.statut} ») : on ne le corrige plus, sinon le mur ne dirait plus la même chose à tout le monde.`,
+                          occupe: correctionEnVol === postit.id,
+                          erreur: erreursCorrection[postit.id] ?? null,
+                          onCorriger: corriger,
+                          onRetirer: (cible) => setARetirer(cible)
+                        }
+                      : undefined
+                  }
                 />
               ))}
           </div>
@@ -301,6 +844,13 @@ export function BoiteAIdees() {
           écran large, au glisser — pas au doigt.
         </p>
 
+        {source === 'base' ? (
+          <p className="m-0 max-w-[66ch] text-[0.9rem]">
+            La base porte la position de chaque post-it, mais l’interface de placement (glisser à
+            la souris) n’écrit encore que le fichier du dépôt : elle est donc masquée ici. Les
+            post-its gardent la place que la base leur donne, et cette interface viendra ensuite.
+          </p>
+        ) : (
         <div className="flex max-[899px]:hidden flex-col gap-3">
           <p className="m-0 max-w-[66ch] text-[0.9rem]">
             En mode placement, un post-it se <strong>glisse</strong> à la souris et sa position
@@ -377,12 +927,25 @@ export function BoiteAIdees() {
             </p>
           )}
         </div>
+        )}
       </section>
 
       <p className="m-0 text-[0.78rem] text-ink-dim">
-        Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi
-        hors ligne. Aucun compteur ici — les pouces arrivent avec la base (#135, puis #137).
+        {source === 'base'
+          ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Les pouces comptent un vote par compte et par post-it, et l’on ne vote pas pour le sien ; chaque post-it porte son fil de commentaires.'
+          : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Ni pouces ni commentaires ici : ils ne s’ouvrent qu’avec la base partagée.'}
       </p>
+
+      {/* Le retrait d'un post-it ne se défait pas (#139) : il passe par la confirmation du
+          jeu, jamais par `window.confirm` (D-035). */}
+      <Confirmation
+        open={aRetirer !== null}
+        titre="Retirer ce post-it ?"
+        texte="Il sera supprimé du mur, avec ses commentaires — pas seulement barré, et il n’en restera aucune trace. C’est définitif. Le retrait n’est possible que tant que le post-it est en attente : dès qu’il a bougé de statut, il ne s’efface plus."
+        confirmer={retraitEnVol ? 'Retrait…' : 'Retirer le post-it'}
+        onConfirm={() => void retirer()}
+        onCancel={() => setARetirer(null)}
+      />
     </div>
   );
 }

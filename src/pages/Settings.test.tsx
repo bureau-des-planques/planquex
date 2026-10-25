@@ -116,6 +116,15 @@ describe('Settings — écran des Réglages', () => {
     });
   });
 
+  it('dit que les parties solo terminées sont gardées sous le compte, sans case à cocher (D-086, D-088)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    expect(screen.getByText(/parties solo terminées sont gardées sous ton compte/i)).toBeInTheDocument();
+    // D-086 : une **mention**, pas un consentement par combat — aucune case à cocher.
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.getByRole('checkbox')).toHaveAccessibleName(/Réduire les animations/i);
+  });
+
   it('affiche la section Données locales avec le bouton Réinitialiser', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
@@ -128,5 +137,14 @@ describe('Settings — écran des Réglages', () => {
 
     expect(screen.getByText(/Version/)).toBeInTheDocument();
     expect(screen.getByText(APP_LABEL)).toBeInTheDocument();
+  });
+
+  it('mène à la page des nouveautés depuis la section Version (D-090)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le libellé seul ne dit pas ce que la version contient : la section Version doit
+    // mener à l'écran qui le dit, sinon la note reste invisible depuis le jeu.
+    const lien = screen.getByRole('link', { name: /la page des nouveautés/i });
+    expect(lien).toHaveAttribute('href', '/nouveautes');
   });
 });

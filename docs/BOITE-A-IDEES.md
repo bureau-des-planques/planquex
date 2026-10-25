@@ -1,8 +1,15 @@
 # La Boîte à idées — ce que les invités remontent, et ce qu'on en fait
 
 > Référence d'exploitation du mur de post-its. Les **décisions** qui l'ont écrit : **D-058** (le
-> mur et ses deux familles), **D-059** (le tri, les statuts, l'identité), **D-060** (l'UI), **D-085**
-> (le gueulage est une nature à part, sans famille).
+> mur et ses deux familles), **D-059** (le tri, les statuts) — **amendée par D-088** (l'identité
+> est un compte authentifié, validé à la main) —, **D-060** (l'UI), **D-085** (le gueulage est une
+> nature à part, sans famille).
+>
+> **Depuis D-088**, poster **depuis le jeu** exige un compte **approuvé** : Google ou courriel,
+> puis validation manuelle par Bastien. Un compte en attente lit le mur et joue, il n'écrit pas.
+> Le mur complet est là : **poster** (#136), **voter** (#137), **commenter** (#138), **corriger ou
+> retirer** son post-it (#139), et **trier** depuis l'écran d'administration (`0006`).
+> Le formulaire externe reste le palliatif de l'alpha d'avant — il ne demande pas de compte.
 > Le vocabulaire est dans `AGENTS.md` §3 : **la Boîte à idées** (l'entrée, la bulle), **le mur**
 > (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un invité**.
 
@@ -83,9 +90,40 @@ En bas, comme sur un réseau social : **un pouce levé et un pouce baissé**, av
 **mon** vote distinct du total. Puis l'**auteur**, le **statut**, et le **lien vers le ticket** quand
 il y en a un.
 
-> **Les votes n'existent pas dans l'alpha** : ils supposent un état partagé entre appareils, et le jeu
-> n'a aucun backend. Ils arrivent avec la base (#135) et le mur complet (#137). Dans l'alpha, le mur
-> montre les post-its, leurs couleurs, leurs statuts et leur disposition — **pas** de compteur.
+**Le fil (#138)** : sous chaque post-it, ses **commentaires** — du **plus ancien au plus récent**,
+**sans imbrication**, chacun avec son **pseudo** et sa **date**. Un commentaire précise un cas
+(« pareil chez moi, au deuxième tour ») sans ouvrir un post-it concurrent ; il est limité à
+**500 caractères**, et l'écran le dit pendant la frappe. On **retire les siens**, jamais ceux d'un
+autre. La **lecture** est ouverte à tout compte, même **en attente** ; l'**écriture** exige un compte
+**approuvé** (D-088), et c'est la base qui refuse, pas seulement l'écran. Le fil vit **dans le
+post-it agrandi** (une pression), comme le statut et les pouces ; un post-it qui a des commentaires
+le dit même replié (« 2 commentaires — ouvrir pour lire »).
+
+**La relecture (#139)** : tant que mon post-it est **`en attente`**, je peux corriger son **titre** et
+son **texte**, ou le **retirer**. Après, non — et l'écran **dit pourquoi** : dès qu'un statut a bougé,
+le mur doit dire la même chose à tout le monde, et le tri (une raison, un ticket) ne s'efface pas.
+Le retrait passe par une **confirmation**, et il **supprime** le post-it (§3). Le titre et le texte
+ne passent pas par un `update` direct : la base les donne à une **fonction** qui vérifie l'auteur et
+le statut (`0006_tri_et_corrections.sql`), parce qu'un droit de colonne ne sait pas distinguer
+l'auteur d'un administrateur.
+
+> **Les votes n'existent pas sans la base** : ils supposent un état partagé entre appareils. Sans
+> configuration (ou quand la base ne répond pas et que le mur retombe sur le fichier), le mur montre
+> les post-its, leurs couleurs, leurs statuts et leur disposition — **ni bouton ni compteur**, et
+> rien n'est contacté. **Avec la base** (#137) :
+>
+> - **un appareil, un pouce par post-it** (la clé primaire de `votes`, côté base) ;
+> - **un clic sur un pouce** : si je n'ai pas voté, j'**ajoute** mon vote ; si j'ai déjà levé **ce**
+>   pouce, je le **retire** ; si j'ai levé **l'autre**, je **change** mon vote (une modification de ma
+>   ligne, jamais une seconde) — dans cet ordre de priorité ;
+> - **mon** vote est un pouce **plein** avec l'étiquette « ton vote » : le total le comprend, il ne
+>   s'y ajoute pas ;
+> - **pas pour soi** : sur son propre post-it on voit les comptes, on ne vote pas. L'écran ne propose
+>   pas le bouton, mais la règle est **dans la base** (`0004_pouces.sql`), pas dans l'écran ;
+> - le compte bouge **tout de suite** ; si le réseau ou la base refuse, il **revient** à l'état d'avant,
+>   avec un message discret sur le post-it. Un post-it écarté reste votable ; un post-it effacé ne
+>   l'est plus (le message le dit) ;
+> - le client n'écrit **jamais** `votant` : la base le remplit par `auth.uid()`.
 
 ### Sur téléphone — des post-its quand même, empilés
 
@@ -101,7 +139,7 @@ l'écran étroit **garde des post-its** — il ne se contente pas d'une liste de
   s'allonge tant qu'il y a des post-its ;
 - **une pression agrandit un post-it** : sa taille de lecture — et c'est là que se rangent les choses
   qui ne tiennent pas sur un post-it de téléphone, c'est-à-dire **le statut, le lien vers le ticket, et
-  plus tard les pouces** (qui arrivent avec la base, #135 → #137). Sur écran large, ces éléments
+  les pouces** (avec la base, #137). Sur écran large, ces éléments
   vivent **sur** le post-it.
 
 Le **mode de placement** reste un travail de **bureau** : il ne se fait pas au doigt sur un téléphone.
@@ -136,8 +174,8 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
       // change de taille selon l'écran. `x` et `y` vont de 0 à 100, `angle` de -5 à +5.
       "position": { "x": 12, "y": 34, "angle": -2 },
       // Les compteurs du pouce levé et du pouce baissé, remplis par la base (#136, #137).
-      // À zéro dans l'alpha, qui n'a aucun état partagé : un appareil ne vote qu'une fois
-      // par post-it, et personne ne vote dans l'alpha.
+      // Le fichier les tient à zéro : il n'a aucun état partagé. Mon vote (`mon`, « up » ou
+      // « down » ou nul) n'existe que lu en base ; il n'est jamais écrit dans ce fichier.
       "votes": { "up": 0, "down": 0 }
     }
   ]
@@ -146,16 +184,28 @@ c'est la seule source partagée que le jeu peut lire sans backend (D-058).
 
 Un post-it **retiré** par son auteur (#139) **disparaît du fichier** : il n'existe pas de statut
 « retiré », et un mur qui garderait une ligne barrée dirait ce que personne n'a écrit. Le jeu ne
-connaît donc que les **cinq** statuts de la liste.
+connaît donc que les **cinq** statuts de la liste. **En base, c'est la même règle** : le retrait est
+une **suppression** (`delete`), qui emporte les votes et les commentaires du post-it
+(`on delete cascade`), et la base ne l'autorise que **tant que le post-it est `en attente`**
+(`0006`) — après, il porte un tri que le geste effacerait.
 
-Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **à la main** au fil du tri
-— c'est le prix de l'absence de backend, et il est assumé (D-058).
+Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **hors du jeu** :
+`npm run mur:import` ajoute les réponses du formulaire (§4.5), `npm run statut` déplace le tri
+(§5.1), et la disposition s'écrit à la main (§2 bis). C'est le prix de l'absence de backend, et
+il est assumé (D-058).
+
+**Depuis #136**, quand la base est configurée (`VITE_SUPABASE_URL` et
+`VITE_SUPABASE_ANON_KEY`), le jeu lit la vue `postits_avec_votes` et **poste directement**
+depuis le mur. Le fichier reste le **contrat de données** et la **source de secours** : sans
+variables, ou si la base ne répond pas, le mur affiche ce fichier, sans écran cassé. Dans ce
+cas, le formulaire (§4) reste la porte d'écriture.
 
 ## 4. Le formulaire
 
-La seule porte d'écriture de l'alpha. C'est lui qui décide de la **qualité** des retours : un
-formulaire qui demande « décris ton bug » reçoit « ça bug » ; un formulaire qui demande *ce que tu
-faisais* et *ce que tu attendais* reçoit de quoi corriger.
+La porte d'écriture de l'alpha **sans backend** (avec la base configurée, #136 fait poster
+depuis le mur). C'est lui qui décide de la **qualité** des retours : un formulaire qui demande
+« décris ton bug » reçoit « ça bug » ; un formulaire qui demande *ce que tu faisais* et *ce que
+tu attendais* reçoit de quoi corriger.
 
 **Adresse** : dans `docs/boite-a-idees.json` (`formulaire`). Le jeu la lit et l'ouvre depuis la bulle.
 
@@ -215,10 +265,11 @@ fait la différence).
 ### 4.2 Les cinq réglages qui ne se voient pas
 
 1. **Ne pas collecter les adresses e-mail** (Paramètres → Réponses → *Collecter les adresses
-   e-mail* : désactivé). L'invité n'a pas de compte, et on lui a promis qu'on n'en demanderait pas.
+   e-mail* : désactivé). Depuis **D-088**, le compte de l'invité porte déjà son courriel : ce
+   formulaire n'est qu'un palliatif, et redemander l'adresse créerait une seconde liste à tenir.
 2. **Ne pas limiter à une réponse** (le même invité doit pouvoir signaler trois choses en trois fois).
-3. **Ne pas utiliser le champ « Importer un fichier »** : il **oblige** à se connecter à un compte
-   Google. D'où le champ 8, qui demande un **lien**.
+3. **Ne pas utiliser le champ « Importer un fichier »** : il **oblige** à une connexion Google
+   supplémentaire et à un stockage chez le tiers. D'où le champ 8, qui demande un **lien**.
 4. **Aiguillage** : sur la question 2, *Aller à la section en fonction de la réponse* — « Remonter un
    bug » et « Gueuler » vers **Post-it OUF**, « Proposer une feature » vers **Post-it IP**.
 5. **La version est le premier champ, et obligatoire** : un retour sans version ne dit pas s'il
@@ -376,3 +427,34 @@ import le croira absent — §3 demande déjà un id *stable*.
 
 Ce tri est un travail **avec l'agent**, pas sur son dos : c'est lui qui tient le fichier et qui
 ouvre les tickets (D-059).
+
+### 5.1 Déplacer un statut — l'écran d'administration, ou `npm run statut`
+
+**Quand la base est configurée, le tri se fait dans l'écran d'administration** (`/administration`,
+réservé aux comptes marqués administrateurs) : chaque post-it y a son **statut**, la **raison** d'un
+écarté et son **ticket**. La migration `0006_tri_et_corrections.sql` donne à un administrateur le
+droit d'écrire ces **trois colonnes** sur **n'importe quel** post-it — et **celles-là seulement** :
+le titre et le texte restent à leur auteur, et la base refuse un administrateur qui les viserait
+(`permission denied`, parce que ces colonnes ne sont pas dans le grant). Un **non-administrateur**
+est refusé par la base : sa modification porte sur **0 ligne**, sans erreur.
+
+**Sans base configurée, le fichier se déplace par le script** — c'est le tri de l'alpha sans
+backend (#140) : quand la base n'est pas configurée, c'est ce fichier que le mur lit, et le script
+**le dit**. Quand elle l'est, le script continue de fonctionner sur le fichier (la **source de
+secours**) mais rappelle que le tri des post-its de la base se fait dans l'écran.
+
+```bash
+npm run statut <post-it> <statut>            # en attente | retenu | en cours | fait | écarté
+npm run statut <post-it> --ticket <numéro>   # lie l'issue GitHub ; l'écran affiche le lien
+npm run statut <post-it> écarté --raison "…" # écarter exige la raison (D-059)
+```
+
+Le script refuse, **sans rien écrire** : un statut hors des cinq, un ticket qui n'est pas un
+entier strictement positif, un `id` inconnu, une raison vide, et un fichier déjà invalide. Il
+**relit** ce qu'il a écrit avec `lireMur` (`src/store/mur.ts`) et, si le fichier relu ne passe
+plus, **remet l'original** : il n'écrit rien d'illisible. L'écriture est **atomique** (fichier
+temporaire puis renommage), au format du dépôt (`JSON.stringify(…, null, 2)` et saut de ligne
+final), et les champs qu'il ne connaît pas traversent intacts.
+
+`--fichier <json>` n'existe que pour les tests : il évite d'écrire dans le vrai fichier du mur
+(`scripts/statut-mur.test.ts`).

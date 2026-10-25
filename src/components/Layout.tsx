@@ -1,8 +1,13 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Library, Layers, Settings, Swords } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
 import { BulleBoiteAIdees } from '@/components/BulleBoiteAIdees';
+import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
+import { ErreurDeRendu } from '@/components/ErreurDeRendu';
+import { GardeComptes } from '@/components/GardeComptes';
+import { estApprouve } from '@/lib/comptes';
+import { useComptes } from '@/store/comptes';
 
 const tabs = [
   { to: '/', label: 'Accueil', icon: Home },
@@ -15,6 +20,15 @@ const tabs = [
 export function Layout() {
   const name = useStore((state) => state.name);
   const { pathname } = useLocation();
+  /**
+   * L'état du compte (D-088). Un compte **en attente** joue et lit : le bandeau le lui
+   * rappelle, avec un lien vers l'écran qui dit ce qui s'ouvrira. Sans configuration,
+   * `configure` est faux et rien ne s'affiche.
+   */
+  const configure = useComptes((state) => state.configure);
+  const session = useComptes((state) => state.session);
+  const compte = useComptes((state) => state.compte);
+  const enAttente = configure && session !== null && compte !== null && !estApprouve(compte);
 
   /**
    * La bulle de la Boîte à idées (D-058) est **absente pendant un combat** : c'est ce
@@ -71,13 +85,33 @@ export function Layout() {
             <span>Le TCG de l’atelier</span>
           </div>
         </div>
-        <div className="topbar__user" title="Profil">
+        <div className="topbar__user" title={name}>
           {name}
         </div>
       </header>
 
+      <BandeauHorsLigne />
+
+      {enAttente && (
+        <div className="notice notice--warn" role="status">
+          <p className="m-0 max-w-[70ch]">
+            <Link to="/attente">Ton compte attend d’être validé</Link> — tu peux jouer et
+            lire ; poster un post-it, voter et envoyer une trace de combat s’ouvriront à
+            l’approbation.
+          </p>
+        </div>
+      )}
+
       <main className="main">
-        <Outlet />
+        {/* Un écran qui plante ne prend pas la barre de navigation avec lui, et changer
+            d'écran referme l'erreur (`reinitialiseSur`). */}
+        <ErreurDeRendu reinitialiseSur={pathname}>
+          {/* D-088 : sans session, aucune page du jeu — la garde renvoie vers la connexion.
+              Sans backend, elle laisse tout passer. */}
+          <GardeComptes>
+            <Outlet />
+          </GardeComptes>
+        </ErreurDeRendu>
       </main>
 
       {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). */}

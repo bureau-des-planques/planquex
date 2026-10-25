@@ -244,8 +244,6 @@ DONNEES="${GFLOW_ILLUSTRATION_DONNEES:-src/data}"
 # `vitest` dans `vitest`.
 CHECK_CMD="${GFLOW_ILLUSTRATION_CHECK_CMD:-npm run check}"
 TEST_CMD="${GFLOW_ILLUSTRATION_TEST_CMD:-npm test -- src/data/art.test.ts}"
-CHECK_LOG="${GFLOW_ILLUSTRATION_CHECK_LOG:-/tmp/illustration-check.log}"
-TEST_LOG="${GFLOW_ILLUSTRATION_TEST_LOG:-/tmp/illustration-test.log}"
 #
 # Où tombent les variantes. Surchargeable par l'environnement **exprès** : sans
 # ça, scripts/illustration-vague.test.ts lisait le vrai `.scratch/` du dépôt, et
@@ -254,6 +252,17 @@ TEST_LOG="${GFLOW_ILLUSTRATION_TEST_LOG:-/tmp/illustration-test.log}"
 # qu'il ne pouvait pas donner. Un test qui dépend de l'état du développeur ne
 # garde rien.
 SCRATCH="${GFLOW_ILLUSTRATION_SCRATCH:-.scratch/gflow}"
+# Les trois fichiers de log **vivent sous `$SCRATCH`**, jamais dans un chemin
+# partagé (#176). Ils étaient sur `/tmp/illustration-check.log`,
+# `/tmp/illustration-test.log` et `/tmp/gflow-illustration.err` : deux exécutions
+# concurrentes — `npm test` et `npm run garde-fous`, qui relance
+# `illustration-vague.test.ts` pour ses trois mutations #97, ou deux agents —
+# écrivaient les mêmes fichiers, et un test ne pouvait plus dire lequel des deux
+# avait parlé. `GFLOW_ILLUSTRATION_ERR` reste surchargeable pour la même raison
+# que les autres seams : le bac du test doit tout contenir.
+CHECK_LOG="${GFLOW_ILLUSTRATION_CHECK_LOG:-$SCRATCH/check.log}"
+TEST_LOG="${GFLOW_ILLUSTRATION_TEST_LOG:-$SCRATCH/test.log}"
+ERR_LOG="${GFLOW_ILLUSTRATION_ERR:-$SCRATCH/gflow.err}"
 # Ce que `consigner` a **réellement** touché : « produites », « non », ou « aucun ».
 CONSIGNER_TABLE="aucun"
 
@@ -662,7 +671,7 @@ gflow_generer() {
   while :; do
     code=0
     sortie=$(gflow image t2i "$prompt" --model "$alias" --aspect 1:1 -n "$nb" \
-               --out "$SCRATCH/$carte" --json 2>/tmp/gflow-illustration.err) || code=$?
+               --out "$SCRATCH/$carte" --json 2>"$ERR_LOG") || code=$?
     printf '%s · tentative %d/%d · exit %s\n' "$(date +%Y-%m-%dT%H:%M:%S)" "$n" "$max" "$code" >> "$journal_tent"
     if (( code == 0 )); then
       printf '%s' "$sortie"
@@ -983,7 +992,7 @@ else
     2)
       warn "gflow a refusé nos arguments — erreur d'usage (exit 2)."
       note "Ce n'est PAS une dérive de Flow ni un problème de navigateur : un argument"
-      note "est mal formé. /tmp/gflow-illustration.err nomme l'option fautive. C'est le"
+      note "est mal formé. $ERR_LOG nomme l'option fautive. C'est le"
       note "message qu'on recevait avant que le modèle soit résolu." ;;
     9)
       warn "Échec de transport (exit 9, TransportTimeoutError) après les réessais."
@@ -997,7 +1006,7 @@ else
       warn "Interface classique inatteignable (exit 28, réessayable)."
       note "L'aspect 1:1 a besoin de l'arm « classic » de Flow." ;;
     *)
-      warn "gflow a échoué (exit $CODE) — lis /tmp/gflow-illustration.err." ;;
+      warn "gflow a échoué (exit $CODE) — lis $ERR_LOG." ;;
   esac
   note "Aucun crédit n'est dépensé par une génération d'image : une casse ne coûte rien."
   pause "Entrée pour abandonner"
@@ -1121,6 +1130,7 @@ printf '\n'
 # ci-dessous sont le **dernier** filtre, donc un échec doit arrêter le script,
 # avec le code de sortie qui le dit. (Défaut trouvé en revue le 21/10/2026.)
 ECHEC=0
+mkdir -p "$(dirname "$CHECK_LOG")"
 if $CHECK_CMD >"$CHECK_LOG" 2>&1; then
   note "$CHECK_CMD : exit 0"
 else

@@ -73,8 +73,17 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | `--gold-soft` sur `--bg-raised` | 12.03 | AA |
 | `--accent` sur `--bg-raised` | 5.31 | AA |
 | Texte COMEX (`#1c1304`) sur `--gold` | 9.75 | AA |
+| Texte blanc sur le **haut** du bouton primaire (`--accent` à 80 % + `#04080f`) | 4.65 | AA |
+| Texte `#1c1304` sur le bouton or | 9.75 | AA |
 
-Aucune paire de texte n'est en dessous de AA. Les pips de café (or sur fond sombre)
+Le bouton primaire a été **corrigé** le 23/10/2026 (#131) : son haut, éclairci au blanc, donnait
+**3.1:1** sous le texte blanc — le détecteur d'Impeccable **en navigateur** (`npx impeccable detect
+<url>`) l'a relevé, la commande `npm run detect:ui` (analyse de sources, regex) ne le voit pas. Ce
+dernier le dit lui-même : « findings are an undercount ». Les faction-boutons de la fiche d'une carte
+(`--accent` remplacé par la couleur de la faction) gardent le texte blanc : pour les factions claires,
+le ratio n'est pas garanti — **écart connu, laissé** (voir le rapport de #131).
+
+Aucune autre paire de texte n'est en dessous de AA. Les pips de café (or sur fond sombre)
 restent décoratifs : l'information est aussi portée par le `title` et l'`aria-label`.
 
 ### 1.6 Échelles
@@ -98,21 +107,26 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 
 ### 2.1 Anatomie (de haut en bas)
 
+Depuis #179 (23/10/2026) la carte est un **cadre** et une **face** : `.card` est l'anneau de
+rareté, `.card__face` est la carte elle-même.
+
 | Zone | Classe | Contenu |
 |---|---|---|
-| Cadre | `.card` | la **rareté colore la bordure entière** — pas de filet séparé : un filet sur un seul côté est un tell d'UI générée, et le cadre entier se lit mieux en grille (passe du 21/10/2026) |
-| Nom | `.card__top` / `.card__name` | barre pleine largeur teintée de la faction, nom en Outfit 700, capitales, **deux lignes réservées** (au-delà, il s'abrège) ; le **Seuil** est une pastille dorée à droite de la barre |
-| Bandeau | `.card__meta` | pastille de **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action), badge **COMEX** (`.card__comex`, or), puis la **faction** (`.card__faction`) : point de couleur + sigle, calé à droite |
-| Illustration | `.card__art` | aplat `card.palette` + glyphe, voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`) |
-| Seuil / Stress | `.card__seuil` | **la barre seule**, dix crans, pleine sur la carte : elle montre la **capacité**. Le chiffre du Seuil est en pastille dans la barre de nom. Au combat, la même barre montre le **Stress qui monte** (D-026) |
+| Cadre | `.card` | un **anneau plein de 4 px** en dégradé de `--rarity` (de `--gold` pour un COMEX, `--frame`) — la rareté colore l'anneau **entier**, pas un filet sur un seul côté (tell d'UI générée) |
+| Titre | `.card__top` / `.card__title` | barre pleine largeur teintée de la faction. En haut, le **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action) et le badge **COMEX** (`.card__comex`, or) ; dessous le **nom** (`.card__name`, Outfit 700, capitales, **deux lignes réservées**, un mot trop long se coupe) |
+| Seuil | `.card__seuil-badge` | **plaque dorée** à droite du titre : le mot « Seuil » (dessiné par `data-label`) au-dessus du chiffre |
+| Illustration | `.card__art` | l'image du registre **posée sur l'aplat `card.palette`** (deuxième couche : la carte garde son fond de faction pendant le chargement, ou si l'image n'arrive pas hors ligne — #131), sinon l'aplat seul + glyphe (`.card__glyph`) ; voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`) |
+| Emblème | `.card__emblem` | médaillon de la **faction** (couleur et glyphe de `FACTION_META`) au coin bas-gauche de l'illustration — **seulement quand il y a une illustration** : sans elle, le glyphe du fond tient ce rôle |
+| Barre de Seuil | `.card__seuil` | **la barre seule**, dix crans, pleine sur la carte : elle montre la **capacité**. Au combat, la même barre montre le **Stress qui monte** (D-026) |
 | Pressions | `.card__attacks` | une ligne par Pression : pastilles de café (`.pips` / `.pip`), nom, dégâts |
 | Ambiance | `.card__flavor` | le texte de flavour, masqué en mode compact |
-| Pied | `.card__footer` | rareté (diamants/étoiles, couleur `--rarity`) et identifiant court |
+| Pied | `.card__footer` | rareté (diamants/étoiles, couleur `--rarity`), faction (point + sigle) ; l'identifiant court (`.card__id`) **seulement sur la carte en grand** |
 
 ### 2.2 Grille et marges
 
-- Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem.
-- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **0** (chaque bloc interne porte son propre espacement), `gap` 0.35rem, rayon 8 px, bordure teintée par la rareté.
+- Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem — **deux colonnes** à 420 px (cartes de 188 × 263 px). Sous **420 px** elle est **forcée à deux colonnes** (`repeat(2, minmax(0, 1fr))`) : à 360 px la page offre 328 px, deux cartes de 160 px avec leur gouttière en demandent 332, et `auto-fill` retombait à une colonne (#131).
+- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **4 px** (l'anneau), rayon 10 px.
+- Face : rayon 6 px, filet noir intérieur, `gap` 0.3rem ; chaque bloc porte son propre espacement horizontal (0.4rem).
 - Illustration : **elle prend l'espace restant** (`flex`), rayon 4 px, filet interne double (noir à l'extérieur, clair à l'intérieur), cadrage **haut** (`50% 28%`) — les illustrations sont des portraits.
 - Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
 - Pips de café : 8 px, `gap` 2 px.
@@ -122,10 +136,15 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 | Classe | Effet |
 |---|---|
 | `.card--selected` | bordure `--accent` + halo `color-mix(--accent 18%)` |
-| `.card--comex` | bordure `--gold-deep` — le statut COMEX (D-026). Le filet `.card--comex::before` est déclaré **sans `content`** : il ne rend rien, et c'est un bug (#131) |
+| `.card--comex` | `--frame` = `--gold` : l'anneau est or — le statut COMEX (D-026). L'or **est** l'anneau : il n'y a pas de second filet (l'ancien `.card--comex::before`, déclaré sans `content`, ne rendait rien ; retiré, #131) |
 | `.card--holo` | voile holographique sur l'illustration (1S, 2S, 3S, COU) |
-| `.card--compact` | masque la flavour (grilles) |
-| `.card-slot.is-full` | carte à 55 % d'opacité (plus d'exemplaire possible au Deck) |
+| `.card--compact` | masque la flavour et l'identifiant (grilles) |
+| `.card-slot.is-full` | carte à 60 % d'opacité (plus d'exemplaire possible au Deck) |
+| `.card-slot.is-missing` | carte **non possédée** : grisée (`grayscale`) et à 40 % d'opacité, plus pâle que `.is-full` pour que les deux ne se confondent pas. Sa pastille « ×0 » (pointillés) et la mention « Non possédée » restent **hors de `.card`** : elles ne s'éteignent pas avec elle |
+
+**Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : un bouton rond au coin haut-droit (ajouter, ou ouvrir la fiche), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
+
+**Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
 ### 2.4 L'écran de combat (#169)
 
@@ -141,6 +160,28 @@ secondaire (Conditions, Partie à deux, Journal) est **replié après**.
 | Main | `.hand`, `.hand__card` | une **bande** de cartes-boutons ; la marque « Jouable » dit lesquelles ont un geste |
 | Pose | `.pose` | une carte **choisie** (`aria-pressed`, bordure `--accent`) ouvre un panneau qui la nomme ; les gestes disent **où** : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet » |
 | Écran large (≥ 900 px) | `.battle__table` | le plateau à gauche, la console du joueur à droite |
+
+### 2.5 Les états d'un écran (D-060, critère 3 ; #131)
+
+Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors ligne** — ou dit pourquoi il n'en a pas. Les états **transverses** vivent dans le `Layout`, une seule fois :
+
+| État | Où | Ce que voit l'invité |
+|---|---|---|
+| Erreur de rendu | `ErreurDeRendu` (Layout, autour de l'écran ; et `main.tsx`, autour de tout) | « Cet écran a planté » + Recharger + accueil ; la barre de navigation reste, changer d'écran referme l'erreur |
+| Adresse inconnue | `Introuvable` (`path="*"`) | « Ce couloir ne mène nulle part » + l'adresse ; les anciennes adresses redirigent (D-075) |
+| Hors ligne | `BandeauHorsLigne` (Layout) | un bandeau sous l'en-tête : ce qui continue (combat, Collection, Deck), ce qui attend (mur, traces) |
+| Confirmation | `Confirmation` | le geste irréversible (forfait, réinitialisation) passe par **un seul** dialogue ; « Annuler » prend le focus |
+
+| Écran | Vide | Chargement | Erreur | Hors ligne |
+|---|---|---|---|---|
+| Accueil | une Collection neuve a des cartes de départ | l'aplat de faction sous l'illustration (`.card__art`) | — | bandeau |
+| Collection | « Ta Collection est vide » ; grille vide : la cause est nommée (recherche, filtre, ou les deux) + « Tout effacer » | idem | — | bandeau |
+| Deck | « Le deck est vide » ; « Aucune carte possédée » | idem | l'illégalité est dite (`notice--warn`) | bandeau |
+| Combat | sans objet (deck de démonstration) | « La Direction réfléchit… » pendant son tour | — | bandeau (le combat est local) |
+| Réglages | sans objet | sans objet | refus d'import annoncé (`role="alert"`) | bandeau |
+| Idées | « Le mur est encore vide » | « Le mur se charge… » (branché sur la base) | notice si la base ne répond pas, repli sur le fichier | repli sur le fichier + bandeau |
+
+**Les dialogues** — la fiche d'une carte, l'Arrivage, la Journée d'intégration, les Conditions, la confirmation — passent tous par `components/ui/dialog.tsx` (D-035) : rôle, Échap, focus piégé et fond sont les siens. Il n'y a plus de dialogue maison (`.modal` a disparu).
 
 ---
 

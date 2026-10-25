@@ -129,7 +129,7 @@ Un tour = séquence d'actions (piocher, poser, attacher, Talent, Objets, Collèg
 **Pourquoi** :
 - Coût prévisible et tiny (< 2 ms/coup, bien dans le budget navigateur).
 - Déterministe à graine fixée (RNG de la partie).
-- Pas de triche (l'adversaire simulé joue avec sa main réelle, connue du simulateur car on clone l'état complet — c'est *légitime* : l'IA « sait » ce qu'elle a en main, comme le joueur humain).
+- Pas de triche **corrigée le 23/10/2026** : ce rapport proposait d'abord de laisser l'adversaire simulé jouer avec sa **main réelle** « parce que le simulateur clone l'état complet ». C'est faux, et c'est de la triche : pour prévoir la réponse adverse, l'IA lirait des cartes **cachées** du joueur. L'implémentation retenue (D-084, `src/game/ia.ts`) tire la main adverse dans le **pool des cartes inconnues**, avec une graine dérivée de la partie — jamais `state.rng`, jamais la main réelle. Le protocole d'équité et ses pièges sont écrits dans `111-essais-recherche-2-coups.md`.
 - Gain attendu : +8 à +12 pts vs niveau 1 (passage de 44 % → 52–56 %) d'après la littérature sur l'apport de la recherche peu profonde dans les jeux à branchement modéré (CS188, *Minimax and Alpha-Beta* démos).
 - Si échec (< 52 % après tuning), **abandonner la piste « recherche peu profonde »** et passer directement au **niveau 3 (expectiminimax avec déterminisations / PIMC)** comme prévu par le ticket existant.
 

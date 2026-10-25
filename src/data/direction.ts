@@ -31,7 +31,18 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    ability: { name: 'Cabinet', text: 'Pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: false },
+    // Talent vendu « en jouant » par `CARD-SPEC.md` §4 (D-074) : les deux camps défaussent
+    // une carte de leur main (#159, D-076), le sien par choix, l'autre au hasard (#163, D-081).
+    ability: {
+      name: 'Cabinet',
+      text: 'En jouant : défausse 1 carte, l’adversaire défausse 1 carte.',
+      kind: 'effects',
+      trigger: 'onPlay',
+      effects: [
+        { kind: 'discardHand', target: 'self', amount: 1 },
+        { kind: 'discardHand', target: 'opponent', amount: 1 }
+      ]
+    },
     attacks: [{ name: 'Note de service', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit une note de service. Elle a été signée, puis déléguée à personne.' }],
     flavor: 'Il a délégué. À personne.'
   }),
@@ -45,7 +56,9 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 2,
     attacks: [
       { name: 'Plan de départ', cost: ['DIRECTION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'L’adversaire défausse 1 carte.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
+      // « L’adversaire défausse 1 carte » (CARD-SPEC.md §4) : une carte de la main, au hasard
+      // (#159, D-076) — plus un café comme avant.
+      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'L’adversaire défausse 1 carte.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }] }
     ],
     flavor: 'Il repart avec la prime. Tu restes avec le plan.',
     art: 'direction-pdg.webp'
@@ -62,7 +75,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     ex: true,
     attacks: [
       { name: 'Plan de départ', cost: ['DIRECTION', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
-      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'L’adversaire défausse 1 carte. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'L’adversaire défausse 1 carte. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }, { kind: 'selfDamage', amount: 20 }] }
     ],
     flavor: 'Deux Interventions. Un seul bureau.'
   }),

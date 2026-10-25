@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/outfit';
 import { App } from './App';
+import { ErreurDeRendu } from './components/ErreurDeRendu';
 import './styles.css';
 
 const container = document.getElementById('root');
@@ -14,8 +15,12 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    {/* Le garde-fou **extérieur** : si c'est le Layout ou le routeur qui tombe, la page n'est
+        pas blanche. Celui du Layout garde, lui, la barre de navigation debout. */}
+    <ErreurDeRendu>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </ErreurDeRendu>
   </StrictMode>
 );

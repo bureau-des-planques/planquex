@@ -13,8 +13,10 @@
  * AA sur les trois papiers). Aucun hex n'est recopié ici.
  */
 import type { CSSProperties, PointerEvent } from 'react';
-import { ExternalLink } from 'lucide-react';
-import type { Postit, PositionPostit, Statut } from '@/store/mur';
+import { ExternalLink, ThumbsDown, ThumbsUp } from 'lucide-react';
+import { CorrectionDuPostit, FilDuPostit } from '@/components/FilDuPostit';
+import type { CorrectionPostit, FilPostit } from '@/components/FilDuPostit';
+import type { Postit, PositionPostit, SensVote, Statut } from '@/store/mur';
 
 /** Les trois papiers. Exporté pour la légende de la page : une seule source. */
 export const PAPIERS = {
@@ -44,6 +46,18 @@ export interface GlisserPostit {
   fin: (event: PointerEvent<HTMLElement>) => void;
 }
 
+/**
+ * Les pouces d'un post-it (#137). La page ne les donne **que** lorsque la base a répondu :
+ * sans elle (le fichier du dépôt), pas de prop, donc ni bouton ni compteur.
+ */
+export interface PoucesDuPostit {
+  /** Un vote de ce post-it est en vol : on n'en empile pas un second. */
+  occupe: boolean;
+  /** Le dernier vote refusé ou perdu, dit discrètement ; `null` sinon. */
+  erreur: string | null;
+  onVoter: (postit: Postit, sens: SensVote) => void;
+}
+
 interface Props {
   postit: Postit;
   position: PositionPostit;
@@ -52,8 +66,16 @@ interface Props {
   agrandi: boolean;
   onAgrandir: (id: string) => void;
   glisser: GlisserPostit;
+  pouces?: PoucesDuPostit;
   /** Le post-it (IP ou OUF) que la même réponse a produit, **collé** sur le gueulage. */
   associe?: Postit | null;
+  /**
+   * Le fil du post-it (#138). Comme les pouces, la page ne le donne **que** lorsque la base
+   * a répondu : le fichier du dépôt ne porte pas de commentaires.
+   */
+  fil?: FilPostit;
+  /** La relecture (#139), seulement sur **mon** post-it et seulement branché sur la base. */
+  correction?: CorrectionPostit;
 }
 
 export function PostitDuMur({
@@ -64,7 +86,10 @@ export function PostitDuMur({
   agrandi,
   onAgrandir,
   glisser,
-  associe
+  pouces,
+  associe,
+  fil,
+  correction
 }: Props) {
   const papier = PAPIERS[apparenceDe(postit)];
   const papierAssocie = associe ? PAPIERS[apparenceDe(associe)] : null;
@@ -83,7 +108,7 @@ export function PostitDuMur({
 
   const contenu = (
     <>
-      <span className="flex items-baseline justify-between gap-3 text-[0.64rem] font-bold uppercase tracking-[0.13em]">
+      <span className="flex items-baseline justify-between gap-3 text-[0.7rem] font-bold uppercase tracking-[0.13em]">
         {/* Un gueulage ne porte **aucune** famille : « Gueulage », jamais « · IP » (D-085). */}
         <span>{papier.nom}</span>
         <span className="text-[0.7rem] font-medium normal-case tracking-normal opacity-80">
@@ -146,7 +171,9 @@ export function PostitDuMur({
               : 'mt-3 hidden flex-col gap-1.5 min-[900px]:flex'
           }
         >
-          <span className="flex items-center gap-2 text-[0.68rem] font-bold uppercase tracking-[0.1em]">
+          {pouces && <PoucesDuMur postit={postit} pouces={pouces} />}
+
+          <span className="flex items-center gap-2 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
             <span
               aria-hidden="true"
               className="h-2 w-2 rounded-full"
@@ -174,9 +201,27 @@ export function PostitDuMur({
           )}
 
           {postit.version && (
-            <span className="block text-[0.7rem] opacity-70">Écrit en {postit.version}</span>
+            <span className="block text-[0.7rem] opacity-80">Écrit en {postit.version}</span>
           )}
         </div>
+
+        {/* Un post-it qui a des commentaires le dit **même replié** : sans ça, personne
+            n'irait les chercher derrière une pression (D-068). Ce n'est pas un compteur de
+            vanité comme les pouces : c'est du texte déjà là, et la ligne mène au fil. */}
+        {!agrandi && fil && fil.commentaires.length > 0 && (
+          <p className="fil__compte">
+            {fil.commentaires.length} commentaire{fil.commentaires.length > 1 ? 's' : ''} — ouvrir
+            pour lire
+          </p>
+        )}
+
+        {/* Le fil et la relecture vivent **dans** le post-it agrandi, sur tous les écrans :
+            c'est la place que D-068 leur donne, et elle ne dépend pas du mode de placement
+            (qui n'écrit que le fichier). */}
+        {agrandi && !placement && correction && (
+          <CorrectionDuPostit postit={postit} correction={correction} />
+        )}
+        {agrandi && !placement && fil && <FilDuPostit postit={postit} fil={fil} />}
 
         {/* Le post-it associé (D-085) : petit, incliné, avec son scotch — il se lit
             **collé sur** le gueulage, jamais comme un second post-it libre. Sa teinte
@@ -194,16 +239,16 @@ export function PostitDuMur({
               aria-hidden="true"
               className="absolute -top-1.5 left-1/2 h-3 w-9 -translate-x-1/2 -rotate-3 bg-white/25"
             />
-            <span className="flex items-baseline justify-between gap-2 text-[0.56rem] font-bold uppercase tracking-[0.13em]">
+            <span className="flex items-baseline justify-between gap-2 text-[0.7rem] font-bold uppercase tracking-[0.13em]">
               <span>{papierAssocie.nom}</span>
-              <span className="text-[0.62rem] font-medium normal-case tracking-normal opacity-80">
+              <span className="text-[0.7rem] font-medium normal-case tracking-normal opacity-80">
                 {associe.pseudo || 'anonyme'}
               </span>
             </span>
             <span className="mt-1.5 block font-heading text-[0.86rem] font-bold leading-tight">
               {associe.titre}
             </span>
-            <span className="mt-1 flex items-center gap-1.5 text-[0.6rem] font-bold uppercase tracking-[0.1em]">
+            <span className="mt-1 flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
               <span
                 aria-hidden="true"
                 className="h-1.5 w-1.5 rounded-full"
@@ -214,6 +259,53 @@ export function PostitDuMur({
           </div>
         )}
       </article>
+    </div>
+  );
+}
+
+/**
+ * Les deux pouces avec leur compte, et **mon** vote distinct du total : le pouce que j'ai
+ * levé est plein et porte « ton vote ». Sur mon propre post-it, on voit les comptes mais on
+ * ne vote pas — la base le refuse de toute façon (migration 0004).
+ */
+function PoucesDuMur({ postit, pouces }: { postit: Postit; pouces: PoucesDuPostit }) {
+  const mon = postit.votes.mon ?? null;
+  const mien = postit.mien === true;
+
+  const pouce = (sens: SensVote) => {
+    const Icone = sens === 'up' ? ThumbsUp : ThumbsDown;
+    const compte = postit.votes[sens];
+    const choisi = mon === sens;
+    const nom = sens === 'up' ? 'pouce levé' : 'pouce baissé';
+    return (
+      <button
+        type="button"
+        className="pouce"
+        aria-pressed={choisi}
+        disabled={mien || pouces.occupe}
+        title={mien ? 'On ne vote pas pour son propre post-it.' : undefined}
+        aria-label={`${nom}, ${compte} ${compte > 1 ? 'votes' : 'vote'}${choisi ? ' — ton vote' : ''}`}
+        // Le glisser du mode de placement écoute le post-it entier : un pouce n'est pas une prise.
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={() => pouces.onVoter(postit, sens)}
+      >
+        <Icone size={15} aria-hidden="true" />
+        <span>{compte}</span>
+        {choisi && <span className="pouce__mien">ton vote</span>}
+      </button>
+    );
+  };
+
+  return (
+    <div className="pouces" data-pouces={postit.id}>
+      {pouce('up')}
+      {pouce('down')}
+      {mien && <p className="pouces__note">C’est ton post-it : les autres votent, pas toi.</p>}
+      {pouces.erreur && (
+        <p className="pouces__note pouces__note--erreur" role="status">
+          {pouces.erreur}
+        </p>
+      )}
     </div>
   );
 }
