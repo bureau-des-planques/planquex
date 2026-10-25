@@ -171,7 +171,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Jalons', cost: ['DIRECTION', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est sommé de tenir les jalons du programme. Le programme n’a pas encore de budget.' },
       { name: 'Recette finale', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Le programme avance. Le budget, non.'
+    flavor: 'Le programme avance. Le budget, non.',
+    art: 'direction-directeur-programme.webp'
   }),
 
   // Ligne 3 complétée en N+2 (vague 2, #86) : Assistant direction → Chef de cabinet
