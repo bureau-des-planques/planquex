@@ -153,7 +153,6 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     },
     attacks: [{ name: 'Deadline', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse tombe sur une échéance impossible. Elle a été fixée par courriel, sans accusé de lecture.' }],
     flavor: 'Il manage par mail. Il ne lit pas les réponses.',
-    art: 'management-manager-proximite.webp'
   }),
   base({
     id: 'management-responsable-projet',
