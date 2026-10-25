@@ -164,8 +164,8 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 7', () => {
-    expect(STORAGE_VERSION).toBe(7);
+  it('déclare la version 8', () => {
+    expect(STORAGE_VERSION).toBe(8);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -650,5 +650,60 @@ describe('Partie en cours — store (#126, forme v7)', () => {
     useStore.getState().enregistrerPartie(partieRangee);
     useStore.getState().reset();
     expect(useStore.getState().partie).toBeNull();
+  });
+});
+
+/**
+ * **La bascule d'infos du combat** (#189, `SPEC-COMBAT-UI` §4.3 et §5.6) est un réglage
+ * d'affichage : `sobre` par défaut, mémorisé, et les raccourcis actifs par défaut. C'est la
+ * forme **v8** du store.
+ */
+describe('Combat — densité et raccourcis (#189, forme v8)', () => {
+  it('part en `sobre` et avec les raccourcis actifs', () => {
+    expect(useStore.getState().combatDetaille).toBe(false);
+    expect(useStore.getState().raccourcisCombat).toBe(true);
+  });
+
+  it('bascule la densité, la mémorise, et la remet à `sobre` au reset', () => {
+    useStore.getState().basculerCombatDetaille();
+    expect(useStore.getState().combatDetaille).toBe(true);
+    expect(partializeState(useStore.getState()).combatDetaille).toBe(true);
+
+    useStore.getState().setRaccourcisCombat(false);
+    expect(partializeState(useStore.getState()).raccourcisCombat).toBe(false);
+
+    useStore.getState().reset();
+    expect(useStore.getState().combatDetaille).toBe(false);
+    expect(useStore.getState().raccourcisCombat).toBe(true);
+  });
+
+  it('migre un état v7 sans ces champs vers `sobre` et « raccourcis actifs », sans perdre le reste', () => {
+    const migre = migratePersisted({ name: 'Vétéran', tutorielVu: false }, 7);
+    expect(migre.combatDetaille).toBe(false);
+    expect(migre.raccourcisCombat).toBe(true);
+    expect(migre.name).toBe('Vétéran');
+    expect(migre.tutorielVu).toBe(false);
+  });
+
+  it('respecte des valeurs déjà écrites, et écarte une valeur forgée', () => {
+    expect(migratePersisted({ combatDetaille: true, raccourcisCombat: false }, 8)).toMatchObject({
+      combatDetaille: true,
+      raccourcisCombat: false
+    });
+    expect(
+      migratePersisted({ combatDetaille: 'oui' as unknown as boolean }, 8).combatDetaille
+    ).toBe(false);
+  });
+
+  it('relit une sauvegarde v7 : les deux réglages prennent leurs défauts', () => {
+    const ancienne = JSON.stringify({
+      jeu: 'bureau-des-planques',
+      version: 7,
+      etat: { name: 'Vétéran', owned: {}, deck: [] }
+    });
+
+    expect(useStore.getState().importerSauvegarde(ancienne)).toEqual({ ok: true });
+    expect(useStore.getState().combatDetaille).toBe(false);
+    expect(useStore.getState().raccourcisCombat).toBe(true);
   });
 });

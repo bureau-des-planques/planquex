@@ -1060,7 +1060,26 @@ h2 {
 }
 
 .card--plateau .card__seuil {
+  gap: 0.25rem;
   padding: 0.14rem 0.22rem 0.2rem;
+}
+
+/* La densité du combat (#189, SPEC-COMBAT-UI §4.3) : en `détaillé`, la carte du Poste remet
+   les annotations que `sobre` coupe — le nom des Pressions et leurs dégâts. Le chiffre du
+   Stress, lui, est posé à côté de la barre (`CardView`). Aucune de ces annotations ne porte
+   une décision : la barre, le nom et le Seuil restent dans les deux modes. */
+.card--plateau.card--annotations .card__attacks {
+  display: flex;
+}
+
+.card__stress-chiffre {
+  color: var(--text);
+  flex: none;
+  font-family: var(--font-display);
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .card--plateau .card__emblem {
@@ -1982,6 +2001,27 @@ h2 {
   padding: 0.3rem 0.6rem;
 }
 
+/* La **bascule d'infos** (#189) : la cible de doigt de 44 px du menu `⋯`, sa place dans la
+   barre d'état. Elle porte `aria-pressed` (le mode) et `aria-keyshortcuts="I"` (le raccourci). */
+.battle__infos {
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.battle__infos[aria-pressed='true'] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 /* La ligne de journal de la barre d'action (#199) : une phrase entière, lisible, qui passe à la ligne
    plutôt que de se tronquer. */
 .combat-barre .combat-barre__journal {
@@ -2149,6 +2189,14 @@ h2 {
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
+}
+
+/* Les **types de café du Deck**, annotation du mode `détaillé` (#189) : en `sobre`, la
+   Machine ne montre que sa pastille, et la phrase reste lue par le `sr-only` de `MachinePips`. */
+.poste__machine-types {
+  color: var(--text);
+  font-size: var(--fs-2xs);
+  line-height: 1.2;
 }
 
 /* Le Banc : trois places de `--banc-w`, sur une rangée. Une place libre garde la forme d'une carte,

@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
+import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, Info, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
   AttackEffect,
@@ -119,6 +119,7 @@ function CartePlateau({
   className,
   machine,
   inspectee,
+  annotations = false,
   onInspecter
 }: {
   instance: CardInstance;
@@ -127,6 +128,8 @@ function CartePlateau({
   machine?: string;
   /** Cette carte est celle que le panneau montre. */
   inspectee: boolean;
+  /** Le mode `détaillé` du combat (#189) : les Pressions et le chiffre du Stress reviennent. */
+  annotations?: boolean;
   onInspecter: () => void;
 }) {
   const nom = cardName(instance.cardId);
@@ -141,7 +144,14 @@ function CartePlateau({
       onInspecter={onInspecter}
       fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
     >
-      <CardView card={definition} figee plateau stress={instance.maxHp - instance.hp} seuil={instance.maxHp} />
+      <CardView
+        card={definition}
+        figee
+        plateau
+        annotations={annotations}
+        stress={instance.maxHp - instance.hp}
+        seuil={instance.maxHp}
+      />
     </CarteSurvolable>
   );
 }
@@ -190,6 +200,18 @@ function gestesDeLaCarte(actions: readonly BattleAction[], uid: string, auPoste:
 /** Les cinq conditions, dans l'ordre d'affichage de la légende. */
 const STATUS_LIST = Object.keys(STATUS_META) as Status[];
 
+/**
+ * **La leçon du critère WCAG sur les raccourcis à une touche** (#189, `SPEC-COMBAT-UI` §4.2) : un raccourci à une touche est
+ * neutralisé dans un champ de saisie, sinon « i » devient une commande au milieu d'un code
+ * de partie à deux. Le test couvre les deux zones de texte du code.
+ */
+function dansUnChampDeSaisie(cible: EventTarget | null): boolean {
+  return (
+    cible instanceof Element &&
+    cible.closest('input, textarea, select, [contenteditable="true"]') !== null
+  );
+}
+
 /** Le menu `⋯` au repos : fermé, sur sa liste. */
 const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
 
@@ -209,20 +231,26 @@ function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
  */
 function MachinePips({
   side,
-  designe = false
+  designe = false,
+  detaille = false
 }: {
   side: PlayerState;
   /** Le pas-à-pas du combat (#143) désigne la Machine du joueur, pas celle de la Direction. */
   designe?: boolean;
+  /** Le mode `détaillé` (#189) remet les **types du Deck** à côté de la pastille. */
+  detaille?: boolean;
 }) {
   const zone = side.energyZone;
+  const types = side.cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
   // La Machine se **lit** dans l'inspecteur du Poste (#188) : sur le plateau, seule sa pastille
   // reste — sans le mot « Machine », qui ne dit plus rien à côté de la carte. Le texte est lu
-  // par le nom accessible, comme l'ancien `title` (SPEC-COMBAT-UI §6.7).
+  // par le nom accessible, comme l'ancien `title` (SPEC-COMBAT-UI §6.7). En `détaillé`, les
+  // types du Deck sont une annotation visible (#189).
   return (
     <span className="poste__machine" data-pas-a-pas={designe ? 'machine' : undefined}>
       <span aria-hidden="true">{zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" />}</span>
       <span className="sr-only">{texteMachine(side)}</span>
+      {detaille && <span className="poste__machine-types">{types || 'aucun type particulier'}</span>}
     </span>
   );
 }
@@ -432,6 +460,7 @@ function Camp({
   pendingPromotion,
   pasAPas,
   inspecte,
+  detaille,
   onInspecter
 }: {
   label: string;
@@ -444,6 +473,8 @@ function Camp({
   pasAPas: PasAPasCombatEtat;
   /** Le `uid` de la carte que le panneau montre, ou `null` (#188). */
   inspecte: string | null;
+  /** La densité du combat (#189) : annotations sur le Poste et sur la Machine. */
+  detaille: boolean;
   onInspecter: (uid: string) => void;
 }) {
   // Le Poste : la carte, en grand, au centre du camp (R4). Le nom et la barre de Stress sont
@@ -459,6 +490,7 @@ function Camp({
           className="poste__carte"
           machine={texteMachine(side)}
           inspectee={inspecte === posteActif.uid}
+          annotations={detaille}
           onInspecter={() => onInspecter(posteActif.uid)}
         />
       ) : (
@@ -493,9 +525,13 @@ function Camp({
           {/* Le chiffre du Stress et le mot « Machine » sont dans l'inspecteur (#188) : la carte
               porte la barre, et la pastille de la Machine reste seule, pour le pas-à-pas. */}
           <CafesPips cafes={side.active.energy} />
-          <MachinePips side={side} designe={mine && pasAPas.designe('machine') !== undefined} />
+          <MachinePips
+            side={side}
+            designe={mine && pasAPas.designe('machine') !== undefined}
+            detaille={detaille}
+          />
           {side.active.statuses.map((status) => (
-            <StatusBadge key={status} status={status} />
+            <StatusBadge key={status} status={status} nomAffiche={detaille} />
           ))}
         </div>
       )}
@@ -587,6 +623,14 @@ export function Battle() {
   const storeDeck = useStore((state) => state.deck);
   /** Les types de café choisis au Deck (#91), lus bruts dans le store. */
   const storedCafeTypes = useStore((state) => state.cafeTypes);
+  /**
+   * **La densité d'infos** (#189, `SPEC-COMBAT-UI` §4.3) : `sobre` par défaut, `détaillé`
+   * sur geste. Elle vit dans le store persisté : le choix survit au rechargement.
+   */
+  const combatDetaille = useStore((state) => state.combatDetaille);
+  const basculerCombatDetaille = useStore((state) => state.basculerCombatDetaille);
+  /** Les raccourcis clavier du combat, réglés dans Réglages (#189). */
+  const raccourcisCombat = useStore((state) => state.raccourcisCombat);
   /**
    * Le **pas-à-pas du premier combat** (#143) : son ouverture, son cran et ses cibles
    * vivent dans un seul module (`usePasAPasCombat`) — la page ne fait que poser
@@ -734,6 +778,27 @@ export function Battle() {
    * l'écran ne doit pas jouer son tour à sa place (critère du #125).
    */
   const reduceMotion = useReducedMotion();
+
+  /**
+   * **Le raccourci de la bascule d'infos** (#189, `SPEC-COMBAT-UI` §4.6) : `I` et son alias
+   * `Ctrl`+`I` (le « remap avec un modificateur » du critère WCAG sur les raccourcis à une touche). Les deux se coupent ensemble
+   * depuis Réglages — c'est la **désactivation** qu'exige le critère — et aucun des deux ne
+   * réagit dans un champ de saisie. `Ctrl`+`Maj`+`I` est laissé au navigateur (outils de
+   * développement) : ce n'est pas l'alias.
+   */
+  useEffect(() => {
+    if (!raccourcisCombat) return;
+    const surTouche = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.repeat || event.altKey || event.isComposing) return;
+      if (event.key !== 'i' && event.key !== 'I') return;
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey) return;
+      if (dansUnChampDeSaisie(event.target)) return;
+      event.preventDefault();
+      basculerCombatDetaille();
+    };
+    document.addEventListener('keydown', surTouche);
+    return () => document.removeEventListener('keydown', surTouche);
+  }, [raccourcisCombat, basculerCombatDetaille]);
 
   /**
    * Ce que la Direction va jouer, ou `null` quand ce n'est pas à elle (ou en partie à deux).
@@ -1077,7 +1142,9 @@ export function Battle() {
 
   return (
     <div
-      className={`page battle${pasAPas.ouvert ? ' battle--pas-a-pas' : ''}`}
+      className={`page battle battle--${combatDetaille ? 'detaille' : 'sobre'}${
+        pasAPas.ouvert ? ' battle--pas-a-pas' : ''
+      }`}
       /* Les cibles de l'étape courante : `styles.css` met en avant l'élément qui porte
          le `data-pas-a-pas` correspondant (`pasAPas.designe`). Fermé, aucun élément ne
          porte l'attribut — donc aucun contour. */
@@ -1127,6 +1194,20 @@ export function Battle() {
             {conditionsLegend}
           </DialogContent>
         </Dialog>
+        {/* La **bascule d'infos** (#189) : c'est elle qui possède cette place dans la barre
+            d'état, le `⋯` appartient au menu (#191). Le bouton visible est l'équivalent tactile
+            du raccourci (le critère WCAG sur les raccourcis à une touche), `aria-pressed` dit le mode, `aria-keyshortcuts` le geste. */}
+        <button
+          type="button"
+          className="battle__infos"
+          aria-pressed={combatDetaille}
+          aria-keyshortcuts="I"
+          aria-label="Infos détaillées"
+          title={`Infos détaillées — I (${combatDetaille ? 'détaillé' : 'sobre'})`}
+          onClick={basculerCombatDetaille}
+        >
+          <Info size={18} aria-hidden="true" />
+        </button>
         <MenuCombat etat={menu} onChange={setMenu}>
           {(menuApi) => {
             if (menu.vue === 'journal') {
@@ -1236,6 +1317,7 @@ export function Battle() {
                 pendingPromotion={state.pendingPromotion === id}
                 pasAPas={pasAPas}
                 inspecte={inspecte}
+                detaille={combatDetaille}
                 onInspecter={setInspecte}
               />
             </Fragment>

@@ -18,6 +18,10 @@ export interface TestStoreState {
   cafeTypes?: Faction[];
   packsOpened?: number;
   reducedMotion?: boolean;
+  /** La densité du combat (#189) ; absente = `sobre` (`false`). */
+  combatDetaille?: boolean;
+  /** Les raccourcis clavier du combat (#189) ; absents = actifs (`true`). */
+  raccourcisCombat?: boolean;
   rng?: number;
   tutorielVu?: boolean;
   pasAPasCombatVu?: boolean;
@@ -47,6 +51,8 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     deck: initialState.deck ?? [],
     cafeTypes: initialState.cafeTypes ?? [],
     packsOpened: initialState.packsOpened ?? 0,
+    combatDetaille: initialState.combatDetaille ?? false,
+    raccourcisCombat: initialState.raccourcisCombat ?? true,
     rng: initialState.rng ?? seedRng(12345),
     tutorielVu: initialState.tutorielVu ?? true,
     pasAPasCombatVu: initialState.pasAPasCombatVu ?? true,

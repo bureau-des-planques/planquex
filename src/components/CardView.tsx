@@ -31,12 +31,19 @@ interface Props {
    * dans l'inspecteur (#188).
    */
   plateau?: boolean;
+  /**
+   * **Les annotations remises** (#189, `SPEC-COMBAT-UI` §4.3) : le mode `détaillé` du combat
+   * réaffiche ce que `plateau` avait coupé — le nom des Pressions et leurs dégâts sur la
+   * carte du Poste, le chiffre du Stress. Rien de ce qui décide n'apparaît ni ne disparaît
+   * avec ce drapeau : la barre, le nom, le Seuil et l'illustration restent dans les deux modes.
+   */
+  annotations?: boolean;
 }
 
 /** Les raretés à traitement holographique (`CARD-SPEC.md` §1) : étoiles et Couronne. */
 const HOLO_RARITIES: Rarity[] = ['1S', '2S', '3S', 'COU'];
 
-export function CardView({ card, onClick, compact, selected, figee, stress, seuil, plateau }: Props) {
+export function CardView({ card, onClick, compact, selected, figee, stress, seuil, plateau, annotations }: Props) {
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
@@ -65,7 +72,8 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
     compact ? 'card--compact' : '',
     selected ? 'card--selected' : '',
     figee ? 'card--figee' : '',
-    plateau ? 'card--plateau' : ''
+    plateau ? 'card--plateau' : '',
+    plateau && annotations ? 'card--annotations' : ''
   ]
     .filter(Boolean)
     .join(' ');
@@ -152,24 +160,36 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
               <span className="stress__fill" style={{ width: '100%' }} />
             </span>
           )}
+          {/* Le chiffre n'est qu'une **annotation** (#189) : `sobre` garde la barre seule,
+              `détaillé` remet le nombre. */}
+          {vivant && annotations && (
+            <span className="card__stress-chiffre">
+              {vivant.stress}/{vivant.seuil}
+            </span>
+          )}
         </div>
       )}
 
-      <div className="card__attacks">
-        {planque ? (
-          card.attacks.map((attack) => (
-            <div className="attack" key={attack.name}>
-              <CafePips symbols={attack.cost} />
-              <span className="attack__name">{attack.name}</span>
-              <span className="attack__dmg">{attack.damage}</span>
+      {/* Sur le plateau `sobre`, les Pressions sont une **annotation** (#189) : elles ne
+          sont pas rendues du tout, au lieu d'un texte caché. `détaillé` les remet sur la
+          carte du Poste ; une Action garde son texte dans les deux cas. */}
+      {(!plateau || annotations || !planque) && (
+        <div className="card__attacks">
+          {planque ? (
+            card.attacks.map((attack) => (
+              <div className="attack" key={attack.name}>
+                <CafePips symbols={attack.cost} />
+                <span className="attack__name">{attack.name}</span>
+                <span className="attack__dmg">{attack.damage}</span>
+              </div>
+            ))
+          ) : (
+            <div className="attack">
+              <span className="attack__name">{card.text}</span>
             </div>
-          ))
-        ) : (
-          <div className="attack">
-            <span className="attack__name">{card.text}</span>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {!compact && <p className="card__flavor">{card.flavor}</p>}
 

@@ -990,6 +990,105 @@ describe('Battle — la scène : la piste d’Interventions (#190)', () => {
   });
 });
 
+describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-UI §4)', () => {
+  const boutonInfos = () => screen.getByRole('button', { name: 'Infos détaillées' });
+
+  it('le bouton ⓘ est dans la barre d’état, porte le raccourci, et bascule sobre / détaillé', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const bouton = boutonInfos();
+    expect(bouton).toHaveAttribute('aria-keyshortcuts', 'I');
+    expect(bouton).toHaveAttribute('aria-pressed', 'false');
+    expect(bouton.closest('.battle__head')).not.toBeNull();
+    expect(container.querySelector('.battle')).toHaveClass('battle--sobre');
+
+    fireEvent.click(bouton);
+    expect(bouton).toHaveAttribute('aria-pressed', 'true');
+    expect(useStore.getState().combatDetaille).toBe(true);
+    expect(container.querySelector('.battle')).toHaveClass('battle--detaille');
+
+    fireEvent.click(bouton);
+    expect(bouton).toHaveAttribute('aria-pressed', 'false');
+    expect(useStore.getState().combatDetaille).toBe(false);
+  });
+
+  it('`I` et `Ctrl`+`I` font la même chose', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    fireEvent.keyDown(document, { key: 'i' });
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'true');
+
+    fireEvent.keyDown(document, { key: 'i', ctrlKey: true });
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
+
+    // L'alias reste permanent : un utilisateur de dictée n'est jamais coincé avec la touche nue.
+    fireEvent.keyDown(document, { key: 'I', ctrlKey: true });
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('décochés dans Réglages, `I` et `Ctrl`+`I` ne font plus rien (SC 2.1.4)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, raccourcisCombat: false });
+
+    fireEvent.keyDown(document, { key: 'i' });
+    fireEvent.keyDown(document, { key: 'i', ctrlKey: true });
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
+
+    // Le bouton visible, lui, reste le chemin tactile : c'est ce que le critère exige.
+    fireEvent.click(boutonInfos());
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('dans les deux champs du code de partie à deux, taper « i » reste un « i »', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    menuSurLaVue('Partie à deux');
+    const recu = screen.getByLabelText(/Code reçu, à coller/i) as HTMLTextAreaElement;
+    await userEvent.type(recu, 'i');
+    expect(recu.value).toBe('i');
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
+
+    // La seconde zone : le code à transmettre, quand un tour vient de finir.
+    fireEvent.click(within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('button', { name: /Créer une partie à deux/i }));
+    const fin = screen.queryByRole('button', { name: /Fin du tour/i });
+    if (fin) fireEvent.click(fin);
+    const transmis = screen.getByLabelText(/Code de la partie, à transmettre/i) as HTMLTextAreaElement;
+    fireEvent.keyDown(transmis, { key: 'i' });
+    fireEvent.keyDown(transmis, { key: 'i', ctrlKey: true });
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('en `sobre`, les annotations partent ; les décisions restent', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Ce qui reste : qui est au Poste, la barre de Stress, les Interventions et le tour.
+    expect(container.querySelector('.poste__carte')).not.toBeNull();
+    expect(container.querySelector('.poste__carte .card__seuil-bar')).not.toBeNull();
+    expect(container.querySelectorAll('[role="img"][aria-label^="Intervention"]')).toHaveLength(6);
+    expect(screen.getByText(/Tour 1/)).toBeInTheDocument();
+
+    // Ce qui part : le chiffre du Stress, les Pressions de la carte, les types de café.
+    expect(container.querySelector('.card__stress-chiffre')).toBeNull();
+    expect(container.querySelector('.poste__carte .card__attacks')).toBeNull();
+    expect(container.querySelector('.poste__machine-types')).toBeNull();
+    expect(container.querySelector('.status-chip__nom')).toBeNull();
+  });
+
+  it('en `détaillé`, les annotations reviennent — et les décisions ne bougent pas', () => {
+    const { container } = renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      combatDetaille: true
+    });
+
+    expect(container.querySelector('.poste__carte .card__attacks .attack__name')).not.toBeNull();
+    expect(container.querySelector('.card__stress-chiffre')?.textContent).toMatch(/^\d+\/\d+$/);
+    expect(container.querySelector('.poste__machine-types')).not.toBeNull();
+    expect(container.querySelector('.poste__carte .card__seuil-bar')).not.toBeNull();
+    expect(container.querySelectorAll('[role="img"][aria-label^="Intervention"]')).toHaveLength(6);
+    expect(screen.getByText(/Tour 1/)).toBeInTheDocument();
+  });
+});
+
 describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-COMBAT-UI §6.8 R1)', () => {
   const css = () => readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 
