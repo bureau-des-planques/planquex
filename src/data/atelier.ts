@@ -202,7 +202,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Montage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est monté de travers. La lentille, elle, est à l’envers.' }],
-    flavor: 'Il a monté la lentille à l’endroit. Le miroir, lui, est à l’envers.'
+    flavor: 'Il a monté la lentille à l’endroit. Le miroir, lui, est à l’envers.',
+    art: 'atelier-monteur-optique.webp'
   }),
   base({
     id: 'atelier-technicien-banc-essai',
