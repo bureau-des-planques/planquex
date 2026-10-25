@@ -105,7 +105,6 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       }
     ],
     flavor: 'Il a sauvé la production. Le badge a expiré avant les remerciements.',
-    art: 'interim-interimaire-legendaire-ex.webp'
   }),
 
   // Ligne 2 (vague 2, #86) : Intérimaire → Consultant intérimaire → Responsable

@@ -75,7 +75,6 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 2,
     attacks: [{ name: 'Relance', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est relancé pour un point d’avancement. Le point est reporté à la semaine suivante.' }],
     flavor: 'Il pilote la production depuis une réunion. La production l’a oublié.',
-    art: 'atelier-rpo.webp'
   }),
   base({
     id: 'atelier-rui',
@@ -156,7 +155,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
   base({
     id: 'atelier-responsable-qualite',
     evolvesFrom: 'atelier-controleur-vibration',
-    name: 'Responsable qualité',
+    name: 'Responsable qualité d’atelier',
     stage: 'N+1',
     rarity: '2D',
     hp: 100,
@@ -203,7 +202,6 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Montage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est monté de travers. La lentille, elle, est à l’envers.' }],
     flavor: 'Il a monté la lentille à l’endroit. Le miroir, lui, est à l’envers.',
-    art: 'atelier-monteur-optique.webp'
   }),
   base({
     id: 'atelier-technicien-banc-essai',
@@ -285,7 +283,6 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Sas', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse traverse le sas. Le sas a sonné, personne n’a répondu.' }],
     flavor: 'Il a traversé la salle blanche avec des chaussures de chantier. Le sas a sonné.',
-    art: 'atelier-cariste-salle-blanche.webp'
   }),
   base({
     id: 'atelier-planificateur-moyens-essai',
@@ -333,7 +330,6 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Compte rendu', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte. Le compte rendu part au RPO.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il assiste le RPO depuis trois ans. Personne ne sait lequel assiste l’autre.',
-    art: 'atelier-assistant-rpo.webp'
   }),
   base({
     id: 'atelier-agent-maintenance',

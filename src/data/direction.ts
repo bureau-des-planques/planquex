@@ -22,7 +22,6 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Reporting', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il est en réunion. Depuis 2019.',
-    art: 'direction-chef-projet-fantome.webp'
   }),
   base({
     id: 'direction-directeur-adjoint',
@@ -267,7 +266,6 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Rapport d\'anomalie', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
     flavor: 'Il a certifié les comptes. L\'anomalie est dans le tiroir.',
-    art: 'direction-commissaire-comptes.webp'
   })
 ];
 

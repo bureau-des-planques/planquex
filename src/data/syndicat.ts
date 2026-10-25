@@ -69,7 +69,6 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
       }
     ],
     flavor: 'Il a obtenu une réunion. Elle a duré 4 heures.',
-    art: 'syndicat-secretaire-general.webp'
   }),
   // COMEX : Secrétaire général ex — 4D, 2 Interventions (D-020, D-026).
   base({

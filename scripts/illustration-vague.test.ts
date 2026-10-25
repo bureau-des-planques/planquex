@@ -1202,7 +1202,7 @@ describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', ()
     expect(generations()).toHaveLength(0);
   }, DELAI);
 
-  it('le prompt de atelier-cariste-salle-blanche est celui du registre (756 caractères)', () => {
+  it('le prompt de atelier-cariste-salle-blanche est celui du registre (772 caractères)', () => {
     // Golden : socle + sujet + accent, tels que la table les donne. Si le socle ou
     // la table bougent, ce test le dit — c'est voulu : le prompt envoyé à Flow a changé.
     // (D-095 : le cariste devient « cariste de salle blanche » ; l'ancien prompt, de 773
@@ -1214,9 +1214,9 @@ describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', ()
       'clearly visible features, no shadow over the eyes; only a subtle gold (#e6b64c) rim light on the shoulders ' +
       'and hair. Matte surfaces, subtle film grain, subject centered and isolated on a darker background, ' +
       'occupying ~70% of the frame, waist-up, square 1:1. No text, no logo, no watermark, no brand, no real person. ' +
-      'a forklift driver, in a clean-room suit, holding a pallet list, steering through an airlock door, ' +
+      'a forklift driver, in a clean-room suit, holding a pallet list, pushing a pallet trolley through an airlock door, ' +
       'cheerful, muted rust bronze accent.';
-    expect([...attendu]).toHaveLength(756);
+    expect([...attendu]).toHaveLength(772);
     const r = wizard(['--prompt', 'atelier-cariste-salle-blanche']);
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout.replace(/\n$/, '')).toBe(attendu);
