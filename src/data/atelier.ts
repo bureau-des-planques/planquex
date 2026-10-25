@@ -164,7 +164,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     attacks: [
       { name: 'Non-conformité', cost: ['ATELIER', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué. La non-conformité, elle, reste ouverte.', effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
-    flavor: 'Une non-conformité attend sa signature depuis le printemps.'
+    flavor: 'Une non-conformité attend sa signature depuis le printemps.',
+    art: 'atelier-responsable-qualite.webp'
   }),
 
   // Ligne 5 : Mécanicien → Gestionnaire FOD
