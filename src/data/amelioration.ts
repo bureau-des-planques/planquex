@@ -125,7 +125,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Ordonnancement', cost: ['AMELIORATION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est réordonnancé en urgence. Le client a annulé pendant la réunion.' },
       { name: 'Rattrapage', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse doit rattraper tout le retard d’un coup. Le retard, lui, vient d’être reporté.' }
     ],
-    flavor: 'Il a débloqué la ligne. Le client avait annulé.'
+    flavor: 'Il a débloqué la ligne. Le client avait annulé.',
+    art: 'amelioration-responsable-flux.webp'
   }),
   base({
     id: 'amelioration-directeur-flux',
