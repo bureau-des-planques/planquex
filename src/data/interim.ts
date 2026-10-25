@@ -137,7 +137,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'switchSelf' }]
       }
     ],
-    flavor: 'Il remplace trois personnes. Il n’en a rencontré aucune.'
+    flavor: 'Il remplace trois personnes. Il n’en a rencontré aucune.',
+    art: 'interim-consultant-interimaire.webp'
   }),
   base({
     id: 'interim-responsable-interim',
