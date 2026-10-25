@@ -164,8 +164,8 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 9', () => {
-    expect(STORAGE_VERSION).toBe(9);
+  it('déclare la version 10', () => {
+    expect(STORAGE_VERSION).toBe(10);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {

@@ -117,8 +117,8 @@ export const QVT_CARDS: PlanqueCard[] = [
 
   // Ligne 4 : Gestionnaire flux → Optimiseur process (2 stades)
   base({
-    id: 'qvt-gestionnaire-flux',
-    name: 'Gestionnaire flux',
+    id: 'qvt-coordinateur-flux',
+    name: 'Coordinateur de flux',
     stage: 'ENTRANT',
     rarity: '2D',
     hp: 75,
@@ -128,7 +128,7 @@ export const QVT_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'qvt-optimiseur-process',
-    evolvesFrom: 'qvt-gestionnaire-flux',
+    evolvesFrom: 'qvt-coordinateur-flux',
     name: 'Optimiseur process',
     stage: 'N+1',
     rarity: '3D',
@@ -170,7 +170,7 @@ export const QVT_CARDS: PlanqueCard[] = [
 
   // Ligne 6 : Chargé de mission QVT → Facilitateur (2 stades)
   base({
-    id: 'qvt-ambassadeur-bienveillance',
+    id: 'qvt-charge-mission',
     name: 'Chargé de mission QVT',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -181,7 +181,7 @@ export const QVT_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'qvt-facilitateur',
-    evolvesFrom: 'qvt-ambassadeur-bienveillance',
+    evolvesFrom: 'qvt-charge-mission',
     name: 'Facilitateur',
     stage: 'N+1',
     rarity: '2D',
@@ -194,7 +194,7 @@ export const QVT_CARDS: PlanqueCard[] = [
 
   // Entrants seuls (sans évolution)
   base({
-    id: 'qvt-cueilleur-fruits',
+    id: 'qvt-charge-logistique',
     name: 'Chargé de logistique',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -204,7 +204,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     flavor: 'Il a cueilli des pommes. Le panier est pour la direction.'
   }),
   base({
-    id: 'qvt-organisateur-afterwork',
+    id: 'qvt-responsable-evenementiel',
     name: 'Responsable événementiel',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -214,7 +214,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     flavor: 'Il a réservé le bar. Le budget est passé en frais de représentation.'
   }),
   base({
-    id: 'qvt-yogiste-bureau',
+    id: 'qvt-charge-ergonomie',
     name: 'Chargé d\'ergonomie',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -224,7 +224,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     flavor: 'Elle tient la posture. La charge de travail, non.'
   }),
   base({
-    id: 'qvt-animateur-pause',
+    id: 'qvt-gestionnaire-moyens-generaux',
     name: 'Gestionnaire des moyens généraux',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -234,7 +234,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     flavor: 'Il a fait le tour des bureaux. La machine est en panne.'
   }),
   base({
-    id: 'qvt-decorateur-plantes',
+    id: 'qvt-charge-environnement-travail',
     name: 'Chargé de l\'environnement de travail',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -244,7 +244,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     flavor: 'Il a mis un ficus partout. L\'air est toujours vicié.'
   }),
   base({
-    id: 'qvt-masseur-assis',
+    id: 'qvt-masseur-kinesitherapeute',
     name: 'Masseur-kinésithérapeute',
     stage: 'ENTRANT',
     rarity: '1D',

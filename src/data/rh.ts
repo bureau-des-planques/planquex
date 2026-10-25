@@ -59,7 +59,7 @@ export const RH_CARDS: PlanqueCard[] = [
 
   // Deuxième ligne : Chargé de sourcing → Chasseur de têtes → Directeur des talents
   base({
-    id: 'rh-recruteur-embuscade',
+    id: 'rh-charge-sourcing',
     name: 'Chargé de sourcing',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -70,7 +70,7 @@ export const RH_CARDS: PlanqueCard[] = [
   }),
   base({
     id: 'rh-chasseur-tetes',
-    evolvesFrom: 'rh-recruteur-embuscade',
+    evolvesFrom: 'rh-charge-sourcing',
     name: 'Chasseur de têtes',
     stage: 'N+1',
     rarity: '2D',
@@ -338,7 +338,7 @@ export const RH_CARDS: PlanqueCard[] = [
 export const RH_VARIANTS: Card[] = [
   secretVariant(RH_CARDS, 'rh-assistant-rh', 'star', '◉'),
   secretVariant(RH_CARDS, 'rh-charge-recrutement', 'star', '✦'),
-  secretVariant(RH_CARDS, 'rh-recruteur-embuscade', 'star', '☁'),
+  secretVariant(RH_CARDS, 'rh-charge-sourcing', 'star', '☁'),
   secretVariant(RH_CARDS, 'rh-chasseur-tetes', 'star', '✚'),
   secretVariant(RH_CARDS, 'rh-drh', 'crown', '◉'),
   secretVariant(RH_CARDS, 'rh-directeur-talents', 'star2', '✦'),

@@ -35,7 +35,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 9;
+export const STORAGE_VERSION = 10;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -93,6 +93,17 @@ export const CARD_ID_RENAMES: Readonly<Record<string, string>> = {
   'atelier-stagiaire-atelier': 'atelier-assistant-rpo',
   'atelier-chef-atelier-ex': 'atelier-rpo-sans-rui-ex',
   'atelier-responsable-maintenance-ex': 'atelier-rui-non-toxique-ex',
+  // D-096 (dix cartes dont l'id ne suivait pas le nom, AGENTS.md §5).
+  'qvt-ambassadeur-bienveillance': 'qvt-charge-mission',
+  'qvt-cueilleur-fruits': 'qvt-charge-logistique',
+  'qvt-organisateur-afterwork': 'qvt-responsable-evenementiel',
+  'qvt-yogiste-bureau': 'qvt-charge-ergonomie',
+  'qvt-animateur-pause': 'qvt-gestionnaire-moyens-generaux',
+  'qvt-decorateur-plantes': 'qvt-charge-environnement-travail',
+  'qvt-masseur-assis': 'qvt-masseur-kinesitherapeute',
+  'rh-recruteur-embuscade': 'rh-charge-sourcing',
+  'direction-auditeur-interne': 'direction-auditeur-direction',
+  'qvt-gestionnaire-flux': 'qvt-coordinateur-flux',
   'rh-drh-star2': 'rh-drh-crown',
   'direction-pdg-star2': 'direction-pdg-crown',
   'syndicat-secretaire-general-star2': 'syndicat-secretaire-general-crown'

@@ -112,7 +112,7 @@ export const CHARIOTS: readonly Chariot[] = [
       ...x('qvt-expert-bien-etre', 2),
       ...x('qvt-referent-qvt', 2),
       ...x('qvt-chef-projet-qvt', 2),
-      ...x('qvt-ambassadeur-bienveillance', 2),
+      ...x('qvt-charge-mission', 2),
       ...x('qvt-yoga-du-rire')
     ]
   },

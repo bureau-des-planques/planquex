@@ -105,18 +105,18 @@ critère 5), et la garde la refuse.
 | `qvt-directeur-qvt` | a wellbeing director, in a pale blue suit, holding a budget folder, walking out of a boardroom, calm and detached |
 | `qvt-coach-sante` | a health coach, in a fitted sports jacket, holding a step counter, pacing a corridor, encouraging and brisk |
 | `qvt-expert-bien-etre` | a wellbeing expert, in a cream blouse and trousers, holding a framed certificate, standing by a repurposed gym, serene and smug |
-| `qvt-gestionnaire-flux` | a flow officer, in a grey polo and trousers, holding a process diagram, tracing an arrow on a whiteboard, focused and doubtful |
+| `qvt-coordinateur-flux` | a flow officer, in a grey polo and trousers, holding a process diagram, tracing an arrow on a whiteboard, focused and doubtful |
 | `qvt-optimiseur-process` | a process optimiser, in a slim grey suit, holding a stopwatch, timing a meeting from the doorway, dry and smug |
 | `qvt-referent-qvt` | a wellbeing correspondent, in a company polo with a lanyard, holding a reminder postcard, pinning it to a crowded board, tired and polite |
 | `qvt-chef-projet-qvt` | a wellbeing project lead, in a navy blazer, holding a project charter, presenting it to three empty chairs, earnest and nervous |
-| `qvt-ambassadeur-bienveillance` | a kindness ambassador, in a soft grey sweater, holding a pack of post-its, sticking one on a colleague's screen, cheerful and apologetic |
+| `qvt-charge-mission` | a kindness ambassador, in a soft grey sweater, holding a pack of post-its, sticking one on a colleague's screen, cheerful and apologetic |
 | `qvt-facilitateur` | a facilitator, in a loose shirt with rolled sleeves, holding a talking stick, sitting in a circle of empty chairs, calm and encouraging |
-| `qvt-cueilleur-fruits` | a fruit logistics officer, in a green apron over a shirt, holding a crate of apples, carrying it to the executive floor, tired and unimpressed |
-| `qvt-organisateur-afterwork` | an events organiser, in a dark shirt with a phone holster, holding a bar reservation, checking it by a lift, cheerful and overworked |
-| `qvt-yogiste-bureau` | an ergonomics officer, in a grey wrap top and loose trousers, holding a foam roller, demonstrating a posture by a desk, serene and encouraging |
-| `qvt-animateur-pause` | a facilities host, in a blue work jacket, holding a coffee-machine key, kneeling to unblock the machine, patient and grim |
-| `qvt-decorateur-plantes` | a workplace environment officer, in a canvas apron over a shirt, holding a potted ficus, wedging it between two desks, cheerful and determined |
-| `qvt-masseur-assis` | a massage therapist, in a white polo and trousers, holding a folded massage stool, setting it up behind a chair, calm and brisk |
+| `qvt-charge-logistique` | a logistics officer, in a hi-vis vest over a shirt, holding a delivery manifest, checking a pallet at a loading bay, tired and precise |
+| `qvt-responsable-evenementiel` | an events organiser, in a dark shirt with a phone holster, holding a bar reservation, checking it by a lift, cheerful and overworked |
+| `qvt-charge-ergonomie` | an ergonomics officer, in a grey wrap top and loose trousers, holding a foam roller, demonstrating a posture by a desk, serene and encouraging |
+| `qvt-gestionnaire-moyens-generaux` | a facilities host, in a blue work jacket, holding a coffee-machine key, kneeling to unblock the machine, patient and grim |
+| `qvt-charge-environnement-travail` | a workplace environment officer, in a canvas apron over a shirt, holding a potted ficus, wedging it between two desks, cheerful and determined |
+| `qvt-masseur-kinesitherapeute` | a massage therapist, in a white polo and trousers, holding a folded massage stool, setting it up behind a chair, calm and brisk |
 | `qvt-charge-integration` | an onboarding officer, in a light blue shirt with a lanyard, holding a welcome booklet, walking a newcomer down a corridor, cheerful and brisk |
 | `qvt-responsable-integration` | an onboarding manager, in a navy cardigan, holding a signed induction sheet, standing at the end of a corridor, polite and tired |
 | `qvt-conseiller-evolution-professionnelle` | a career adviser, in a soft tweed jacket, holding a skills passport, sitting across a small table, kind and doubtful |
@@ -155,7 +155,7 @@ critère 5), et la garde la refuse.
 | `rh-assistant-rh` | an HR assistant, in a pale shirt with a lanyard, holding an application form, filing it in the wrong drawer, polite and distracted |
 | `rh-charge-recrutement` | a recruiter, in a navy blouse with a headset, holding a printed CV, scanning it at a desk, cheerful and tired |
 | `rh-drh` | an HR director, in a charcoal suit with a lanyard, holding a blank org chart, standing in front of a whiteboard, calm and knowing |
-| `rh-recruteur-embuscade` | a sourcing recruiter, in a dark polo with a headset, holding a phone, messaging a stranger from a lift, cheerful and unbothered |
+| `rh-charge-sourcing` | a sourcing recruiter, in a dark polo with a headset, holding a phone, messaging a stranger from a lift, cheerful and unbothered |
 | `rh-chasseur-tetes` | a headhunter, in a sharp dark suit, holding a salary offer letter, sliding it across a café table, smug and polite |
 | `rh-directeur-talents` | a talent director, in a grey suit with a gold pin, holding a shortlist of names, reading it behind a glass wall, smug and detached |
 | `rh-gestionnaire-formation` | a training administrator, in a light cardigan, holding a training link, showing it to an empty chair, apologetic and tired |
@@ -217,7 +217,7 @@ critère 5), et la garde la refuse.
 | `direction-directeur-cabinet` | a cabinet director, in a black suit with a silk tie, holding a cabinet key, locking a private office, dry and smug |
 | `direction-directeur-strategie` | a strategy director, in a soft navy suit, holding a strategy deck, presenting a slide to a single chair, calm and imperious |
 | `direction-stagiaire-direction` | a direction intern, in an oversized blazer, holding a cold coffee cup, standing by a photocopier, sheepish and hopeful |
-| `direction-auditeur-interne` | a direction auditor, in a grey suit with a visitor badge, holding a sample folder, standing in an archive, precise and bored |
+| `direction-auditeur-direction` | a direction auditor, in a grey suit with a visitor badge, holding a sample folder, standing in an archive, precise and bored |
 | `direction-commissaire-comptes` | an external auditor, in a dark suit with a briefcase, holding an audit certificate, shaking hands with the finance director, grave and polite |
 | `syndicat-delegue-personnel` | a staff representative, in a corduroy jacket over a shirt, holding a stack of leaflets, handing them out at a gate, determined and tired |
 | `syndicat-representant-cse` | a works-council member, in a dark suit with a union badge, holding a meeting agenda, sitting at a long table, stern and tired |

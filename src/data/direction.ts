@@ -245,7 +245,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     flavor: 'Il a fait le café. Le café était froid.'
   }),
   base({
-    id: 'direction-auditeur-interne',
+    id: 'direction-auditeur-direction',
     name: 'Auditeur de direction',
     stage: 'ENTRANT',
     rarity: '1D',
@@ -253,7 +253,7 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Prélèvement', cost: ['DIRECTION'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
     flavor: 'Il a prélevé un échantillon. L\'échantillon est introuvable.',
-    art: 'direction-auditeur-interne.webp'
+    art: 'direction-auditeur-direction.webp'
   }),
   base({
     id: 'direction-commissaire-comptes',
