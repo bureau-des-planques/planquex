@@ -38,7 +38,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Pioche 2 cartes.',
     effects: [{ kind: 'draw', amount: 2 }],
     flavor: 'Deux heures de mesure pour une vis desserrée. Le rapport est impeccable.',
-    glyph: '↻'
+    glyph: '↻',
+    art: 'amelioration-baie-test.webp'
   }),
   card({
     id: 'atelier-colle-cyanoacrylate',
