@@ -63,6 +63,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Réglage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est réglé au tournevis. La mesure, elle, est faite sur tableur.' }],
     flavor: 'Il règle la lunette à la main. La mesure est faite sur tableur.',
+    art: 'atelier-opticien.webp'
   }),
   base({
     id: 'atelier-rpo',
