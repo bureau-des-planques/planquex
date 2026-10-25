@@ -101,7 +101,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Pioche 2 cartes.',
     effects: [{ kind: 'draw', amount: 2 }],
     flavor: 'Trois actions décidées. Aucune ne concerne le produit.',
-    glyph: '↻'
+    glyph: '↻',
+    art: 'amelioration-reunion-de-suivi.webp'
   }),
   card({
     id: 'rh-reunion-individuelle',
