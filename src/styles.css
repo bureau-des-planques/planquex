@@ -396,6 +396,14 @@ h2 {
   justify-content: space-between;
 }
 
+/* Le mur de la Boîte à idées : une **zone** de placement, pas un panneau. Les post-its sont déjà des
+   cartes ; un panneau autour d'eux en fait des cartes dans une carte (`nested-cards`, impeccable). */
+.mur-plan {
+  border: 1px dashed var(--line-strong);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
 /* Le cadre de jeu : un panneau usiné, pas une carte de tableau de bord. Biseau doré
    en haut, ombre de bas de plaque, rayon court — une console, pas une app SaaS. */
 .panel {
