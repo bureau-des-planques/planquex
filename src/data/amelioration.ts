@@ -144,7 +144,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Prélèvement', cost: ['AMELIORATION'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a prélevé un échantillon. L’échantillon est introuvable.'
+    flavor: 'Il a prélevé un échantillon. L’échantillon est introuvable.',
+    art: 'amelioration-auditeur-interne.webp'
   }),
   base({
     id: 'amelioration-responsable-audit',
