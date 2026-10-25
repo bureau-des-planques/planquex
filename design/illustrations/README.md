@@ -156,3 +156,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-25 · `amelioration-charge-amelioration` · modèle `NARWHAL` · graine `731788735` · `amelioration-charge-amelioration.webp`
 - 2026-10-25 · `amelioration-charge-process` · modèle `NARWHAL` · graine `0` · `amelioration-charge-process.webp`
 - 2026-10-25 · `amelioration-charge-qualite` · modèle `NARWHAL` · graine `1680830631` · `amelioration-charge-qualite.webp`
+- 2026-10-25 · `amelioration-chef-projet-qualite` · modèle `NARWHAL` · graine `435525909` · `amelioration-chef-projet-qualite.webp`

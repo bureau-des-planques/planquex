@@ -223,7 +223,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Jalons', cost: ['AMELIORATION', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse franchit un jalon qualité. Le jalon est passé ; le dossier, non.' },
       { name: 'Recette', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse passe en recette. La liste des réserves est plus longue que le cahier des charges.' }
     ],
-    flavor: 'Le jalon est passé. Le dossier, non.'
+    flavor: 'Le jalon est passé. Le dossier, non.',
+    art: 'amelioration-chef-projet-qualite.webp'
   }),
   base({
     id: 'amelioration-stagiaire-qualite',
