@@ -177,3 +177,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-25 · `direction-directeur-adjoint` · modèle `NARWHAL` · graine `538155204` · `direction-directeur-adjoint.webp`
 - 2026-10-25 · `direction-directeur-cabinet` · modèle `NARWHAL` · graine `1874062206` · `direction-directeur-cabinet.webp`
 - 2026-10-25 · `direction-directeur-fantome` · modèle `NARWHAL` · graine `1469060728` · `direction-directeur-fantome.webp`
+- 2026-10-26 · `atelier-rpo` · modèle `NARWHAL` · graine `2145855204` · `atelier-rpo.webp`
