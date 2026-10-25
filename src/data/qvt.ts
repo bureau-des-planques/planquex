@@ -233,7 +233,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 65,
     retreat: 1,
     attacks: [{ name: 'Café pour tous', cost: ['QVT'], damage: 10, text: 'Le Planqué adverse a droit à sa tournée. La machine est en panne depuis l’inauguration.' }],
-    flavor: 'Il a fait le tour des bureaux. La machine est en panne.'
+    flavor: 'Il a fait le tour des bureaux. La machine est en panne.',
+    art: 'qvt-gestionnaire-moyens-generaux.webp'
   }),
   base({
     id: 'qvt-charge-environnement-travail',
