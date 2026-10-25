@@ -179,6 +179,22 @@ describe('la configuration (#184)', () => {
     expect(typeof resultat).toBe('boolean');
   });
 
+  it('`ADMIN_OUVRIR_NAVIGATEUR=false` n\'ouvre pas le navigateur', async () => {
+    const env = {
+      ...process.env,
+      ADMIN_SECRETS_FICHIER: join(tmpdir(), 'inexistant.json'),
+      ADMIN_LECTEUR_URL: 'postgresql://lecteur.x@pooler/…',
+      ADMIN_ADMIN_URL: 'postgresql://postgres.x@pooler/…',
+      ADMIN_OUVRIR_NAVIGATEUR: 'false',
+    };
+    const config = chargerConfiguration(env);
+    expect(config).toEqual({
+      lecteur_url: 'postgresql://lecteur.x@pooler/…',
+      admin_url: 'postgresql://postgres.x@pooler/…',
+    });
+    // La variable est lue dans `principal()` : pas d'ouverture auto.
+  });
+
   it('`npm run admin` sans configuration sort en erreur (sous-processus)', () => {
     const chemin = join(mkdtempSync(join(tmpdir(), 'admin-config-')), 'supabase-admin.json');
     const resultat = spawnSync(process.execPath, ['tools/admin/serveur.mjs'], {
