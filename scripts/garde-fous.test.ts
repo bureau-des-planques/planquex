@@ -47,7 +47,9 @@ const SCRIPT = join(racine, LANCER);
 // en silence ; la mutation tombe sur la comparaison, pas sur la fonction.
 // #182 : la note de version (D-090) — sans la recherche de la note courante, la garde
 // « on ne publie pas une version sans sa note » ne garde plus rien.
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182];
+// #184 : le rafraîchissement du poste de pilotage — une baisse du nombre d'attentes ne doit
+// pas crier « nouvelle inscription » ; la mutation porte sur la comparaison, pas sur l'affichage.
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {
