@@ -6,6 +6,12 @@
  * requête ; la page parle au serveur, le serveur parle à la base — les chaînes de connexion ne
  * traversent jamais vers le navigateur.
  *
+ * Le jeton peut venir de trois sources équivalentes : le paramètre `?jeton=`, un cookie
+ * `poste-jeton` (`HttpOnly`, `SameSite=Strict`) posé à la première visite, ou l'en-tête
+ * `x-poste-jeton` (historique). Un `?jeton=` valide pose le cookie ; un jeton invalide l'efface
+ * et répond 401. Aucun en-tête CORS n'est émis : le jeton ne peut ni sortir en cross-site ni y
+ * être accepté.
+ *
  * La seule dépendance du serveur est l'**interface étroite** `{ lire, ecrire }` : en production
  * elle est réalisée par `creerAccesPg` (le pooler), en test par un adaptateur `pglite` injecté.
  * C'est la **couture unique** que les tests exercent par `fetch`.
@@ -341,23 +347,57 @@ export async function demarrerServeur(options) {
     [/^\/api\/journal$/, 'GET', () => journalLignes()],
   ];
 
-  function jetonValide(url, req) {
-    const fourni =
-      url.searchParams.get('jeton') ??
-      req.headers['x-poste-jeton'] ??
-      req.headers['poste-jeton'];
-    if (typeof fourni !== 'string' || !jeton) return false;
+  // Le nom du cookie qui retient le jeton entre deux visites. `HttpOnly` (le script de la page
+  // ne peut pas le lire), `SameSite=Strict` (jamais envoyé en cross-site). Le serveur n'émet
+  // **aucun** en-tête CORS : une page d'un autre site ne peut donc ni lire ni recevoir le jeton.
+  const NOM_COOKIE = 'poste-jeton';
+  const COOKIE_CORPS = `${NOM_COOKIE}=${jeton}; HttpOnly; SameSite=Strict; Path=/`;
+  const COOKIE_EFFACE = `${NOM_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0`;
+
+  /** Le jeton depuis le cookie `poste-jeton`, s'il est posé. */
+  function jetonDuCookie(req) {
+    const enTete = req.headers.cookie;
+    if (typeof enTete !== 'string') return undefined;
+    for (const morceau of enTete.split(';')) {
+      const egal = morceau.indexOf('=');
+      if (egal === -1) continue;
+      if (morceau.slice(0, egal).trim() === NOM_COOKIE) return morceau.slice(egal + 1).trim();
+    }
+    return undefined;
+  }
+
+  /** Comparaison en temps constant ; toute valeur non `string` est refusée. */
+  function jetonEgale(candidat) {
+    if (typeof candidat !== 'string' || !jeton) return false;
     const attendu = Buffer.from(jeton, 'utf8');
-    const donne = Buffer.from(fourni, 'utf8');
+    const donne = Buffer.from(candidat, 'utf8');
     return attendu.length === donne.length && timingSafeEqual(attendu, donne);
   }
 
   const serveur = createServer(async (req, res) => {
     const url = new URL(req.url ?? '/', 'http://127.0.0.1');
     try {
-      if (!jetonValide(url, req)) {
+      const paramJeton = url.searchParams.get('jeton');
+      const cookieJeton = jetonDuCookie(req);
+      const enTeteJeton = req.headers['x-poste-jeton'] ?? req.headers['poste-jeton'];
+
+      // Le jeton vient d'abord du paramètre `?jeton=` (qui pose le cookie), puis du cookie qui le
+      // retient, puis de l'en-tête que la page envoyait à l'origine. Les trois sont équivalents.
+      let fourni;
+      let source;
+      if (paramJeton !== null) { fourni = paramJeton; source = 'parametre'; }
+      else if (cookieJeton !== undefined) { fourni = cookieJeton; source = 'cookie'; }
+      else { fourni = enTeteJeton; source = 'en-tete'; }
+
+      if (!jetonEgale(fourni)) {
+        // Un jeton invalide **efface** le cookie posé, puis répond 401.
+        if (cookieJeton !== undefined || paramJeton !== null) res.setHeader('set-cookie', COOKIE_EFFACE);
         return json(res, 401, { erreur: 'jeton manquant ou invalide' });
       }
+
+      // Un `?jeton=` valide pose le cookie pour les visites suivantes (rétrocompatible : le
+      // paramètre reste accepté, simplement il n'est plus requis à chaque fois).
+      if (source === 'parametre') res.setHeader('set-cookie', COOKIE_CORPS);
       if (req.method === 'GET' && url.pathname === '/') {
         res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
         return res.end(PAGE);

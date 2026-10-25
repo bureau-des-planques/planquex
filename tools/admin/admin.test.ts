@@ -34,7 +34,7 @@ import { STATUTS as STATUTS_POSTE } from './lib/classification.mjs';
 import { STATUTS as STATUTS_APP } from '../../src/store/mur';
 import { creerJournal } from './lib/journal.mjs';
 import { demarrerServeur } from './lib/app.mjs';
-import { chargerConfiguration } from './serveur.mjs';
+import { chargerConfiguration, ouvrirNavigateur } from './serveur.mjs';
 
 const RACINE = fileURLToPath(new URL('../../', import.meta.url));
 const ROLES_SQL = readFileSync(join(RACINE, 'supabase', 'admin', 'roles.sql'), 'utf8');
@@ -170,6 +170,14 @@ describe('la configuration (#184)', () => {
     });
   });
 
+  it('ouvre le navigateur sans jamais lever, et rend un booléen', () => {
+    // Le processus est détaché et sa sortie ignorée : le navigateur peut ne pas exister (CI,
+    // sans affichage), l'appel ne doit ni lever ni bloquer l'appelant. Sa valeur rendue dit si
+    // le lancement a pu être tenté.
+    const resultat = ouvrirNavigateur('http://127.0.0.1:5199/?jeton=test');
+    expect(typeof resultat).toBe('boolean');
+  });
+
   it('`npm run admin` sans configuration sort en erreur (sous-processus)', () => {
     const chemin = join(mkdtempSync(join(tmpdir(), 'admin-config-')), 'supabase-admin.json');
     const resultat = spawnSync(process.execPath, ['tools/admin/serveur.mjs'], {
@@ -260,6 +268,66 @@ describe('le serveur (#184)', () => {
     }
     // La raison et le courriel n'entrent pas au journal.
     expect(readFileSync(m.journal.chemin, 'utf8')).not.toContain('Pas un invité.');
+  });
+});
+
+// --------------------------------------------------------------------- le jeton par cookie (#184)
+
+describe('le jeton retenu par cookie (D-091)', () => {
+  it('un `?jeton=` valide pose un cookie `HttpOnly` et `SameSite=Strict`', async () => {
+    const m = await monde();
+    const url = `${m.serveur.baseUrl}/?jeton=${JETON}`;
+    const reponse = await fetch(url);
+    expect(reponse.status).toBe(200);
+    const cookie = reponse.headers.get('set-cookie');
+    expect(cookie).toBeTruthy();
+    expect(cookie).toContain('poste-jeton=');
+    expect(cookie).toContain('HttpOnly');
+    expect(cookie).toContain('SameSite=Strict');
+  });
+
+  it('accepte le cookie posé par la première visite, sans `?jeton=`', async () => {
+    const m = await monde();
+    const premier = await fetch(`${m.serveur.baseUrl}/?jeton=${JETON}`);
+    const cookie = premier.headers.get('set-cookie')!;
+    const sansParam = await fetch(`${m.serveur.baseUrl}/api/etat`, {
+      headers: { cookie },
+    });
+    expect(sansParam.status).toBe(200);
+    // Réponse JSON saine, pas un refus.
+    const etat = await corpsJson(sansParam);
+    expect(etat).toHaveProperty('approbationsEnAttente');
+  });
+
+  it('refuse un cookie invalide, et répond 401 en l’effaçant', async () => {
+    const m = await monde();
+    const reponse = await fetch(`${m.serveur.baseUrl}/api/etat`, {
+      headers: { cookie: 'poste-jeton=mauvais-jeton' },
+    });
+    expect(reponse.status).toBe(401);
+    const cookie = reponse.headers.get('set-cookie');
+    expect(cookie).toBeTruthy();
+    expect(cookie).toContain('poste-jeton=');
+    expect(cookie).toContain('Max-Age=0');
+  });
+
+  it('refuse un `?jeton=` invalide même avec un cookie valide, et l’efface', async () => {
+    const m = await monde();
+    const reponse = await fetch(`${m.serveur.baseUrl}/api/etat?jeton=mauvais`, {
+      headers: { cookie: `poste-jeton=${JETON}` },
+    });
+    expect(reponse.status).toBe(401);
+    const cookie = reponse.headers.get('set-cookie');
+    expect(cookie).toContain('Max-Age=0');
+  });
+
+  it('le paramètre `?jeton=` reste accepté (rétrocompatibilité)', async () => {
+    const m = await monde();
+    // Sans cookie ni paramètre → 401.
+    expect((await fetch(`${m.serveur.baseUrl}/api/etat`)).status).toBe(401);
+    // Avec le paramètre → 200, sur une route API comme sur la page.
+    const parParam = await fetch(`${m.serveur.baseUrl}/api/etat?jeton=${JETON}`);
+    expect(parParam.status).toBe(200);
   });
 });
 

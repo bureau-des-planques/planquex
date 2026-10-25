@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
+import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { demarrerServeur } from './lib/app.mjs';
 import { creerAccesPg } from './lib/acces.mjs';
@@ -54,6 +55,26 @@ export function chargerConfiguration(env = process.env) {
   return { lecteur_url: lecteur, admin_url: admin };
 }
 
+/**
+ * Ouvre le navigateur sur l'URL complète (avec le jeton), ou rend `false` sans lever si aucun
+ * navigateur n'est disponible. Non bloquant : le processus en est détaché, le serveur continue
+ * de vivre. Ne plante jamais l'appelant — l'adresse est affichée dans tous les cas.
+ */
+export function ouvrirNavigateur(url) {
+  const [cmd, ...args] =
+    process.platform === 'darwin' ? ['open', url]
+    : process.platform === 'win32' ? ['cmd', '/c', 'start', '', url]
+    : ['xdg-open', url];
+  try {
+    const fils = spawn(cmd, args, { stdio: 'ignore', detached: true });
+    fils.on('error', () => {});
+    fils.unref();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function principal(env = process.env, argv = process.argv.slice(2)) {
   let configuration;
   try {
@@ -77,7 +98,10 @@ export async function principal(env = process.env, argv = process.argv.slice(2))
   try {
     await acces.demarrer();
     const serveur = await demarrerServeur({ adapter: acces, journal, port, hote: '127.0.0.1' });
-    console.log(`Poste de pilotage : ${serveur.baseUrl}/?jeton=${serveur.jeton}`);
+    const adresse = `${serveur.baseUrl}/?jeton=${serveur.jeton}`;
+    const ouvert = ouvrirNavigateur(adresse);
+    console.log(`Poste de pilotage : ${adresse}${ouvert ? '' : ' (ouvrir à la main)'}`);
+    if (ouvert) console.log('Navigateur ouvert sur l’adresse (le jeton pose un cookie, inutile de le retaper).');
     console.log('Le jeton est exigé sur chaque requête ; il ne quitte pas cette machine.');
     console.log(`Journal : ${journal.chemin}`);
     return 0;
