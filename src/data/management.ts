@@ -122,7 +122,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Devis', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse reçoit un devis au prix le plus bas. La marge est restée au bureau.' }],
-    flavor: 'Le devis est parti. La marge est restée au bureau.'
+    flavor: 'Le devis est parti. La marge est restée au bureau.',
+    art: 'management-charge-affaires.webp'
   }),
 
   base({
