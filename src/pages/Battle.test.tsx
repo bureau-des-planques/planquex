@@ -882,3 +882,31 @@ describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
     expect(champ.value).toHaveLength(long.length);
   });
 });
+
+describe('Battle — la scène : la piste d’Interventions (#190)', () => {
+  it('remplace le score ★★☆ par six hexagones, trois par camp, dans le plateau', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const plateau = container.querySelector('.board') as HTMLElement;
+    // Le score ne se lit plus en étoiles : une étoile est une rareté (`1S`, `2S`, `3S`).
+    expect(plateau.textContent ?? '').not.toMatch(/[★☆]/);
+    expect(within(plateau).getAllByRole('img', { name: /^Intervention \d sur 3, / })).toHaveLength(6);
+    expect(within(plateau).getByRole('img', { name: 'Intervention 1 sur 3, Toi' })).toBeInTheDocument();
+    expect(within(plateau).getByRole('img', { name: 'Intervention 3 sur 3, La Direction' })).toBeInTheDocument();
+  });
+
+  it('désigne la piste par le pas-à-pas une seule fois, sur son conteneur', () => {
+    const scrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = vi.fn();
+    try {
+      renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
+      // L'étape « La fin » désigne les Interventions : on y va par le bouton « Suivant ».
+      for (let i = 1; i < ETAPES_COMBAT.length; i += 1) fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
+      const designes = document.querySelectorAll('[data-pas-a-pas="interventions"]');
+      expect(designes).toHaveLength(1);
+      expect(designes[0]).toHaveAttribute('role', 'group');
+    } finally {
+      Element.prototype.scrollIntoView = scrollIntoView;
+    }
+  });
+});

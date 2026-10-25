@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
@@ -39,6 +39,7 @@ import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { MenuCombat } from '@/components/MenuCombat';
+import { PisteInterventions } from '@/components/PisteInterventions';
 import type { EtatMenu } from '@/components/MenuCombat';
 import {
   Dialog,
@@ -274,10 +275,12 @@ function ActionButton({
   onAction: (action: BattleAction) => void;
 }) {
   const view = describeAction(state, action, myCamp);
+  /* « Fin du tour » porte l'état de la main (#190) : vert quand c'est à toi, rouge sinon. */
+  const fin = action.type === 'endTurn' ? ` button--fin ${state.current === myCamp ? 'is-a-toi' : 'is-direction'}` : '';
   return (
     <button
       type="button"
-      className={`button ${action.type === 'attack' ? 'button--primary' : ''}`}
+      className={`button ${action.type === 'attack' ? 'button--primary' : ''}${fin}`}
       onClick={() => onAction(action)}
     >
       {view.icon === 'coffee' && <Coffee size={16} />}
@@ -434,20 +437,19 @@ function Camp({
   );
 
   return (
-    <article className={`board__side ${current ? 'is-current' : ''}`}>
+    <article className={`board__side ${current ? 'is-current' : ''} ${mine ? '' : 'is-direction'}`}>
       <header className="board__head">
         <h2>{label}</h2>
-        <span className="board__counts muted">
-          main {side.hand.length} · Deck {side.deck.length} · Rebut {side.discard.length}
-        </span>
-        <span
-          className={`board__points ${side.points > 0 ? 'is-scored' : ''}`}
-          role="img"
-          aria-label={`Interventions : ${side.points} sur 3`}
-          data-pas-a-pas={mine ? pasAPas.designe('interventions') : undefined}
-        >
-          {'★'.repeat(side.points)}
-          {'☆'.repeat(Math.max(0, 3 - side.points))}
+        <span className="board__counts muted">main {side.hand.length}</span>
+        {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
+            Rebut ne s'ouvre pas encore : son panneau arrive avec #188, et d'ici là ce n'est pas un bouton. */}
+        <span className="piles">
+          <span className="pile pile--deck">
+            Deck <strong>{side.deck.length}</strong>
+          </span>
+          <span className="pile pile--rebut">
+            Rebut <strong>{side.discard.length}</strong>
+          </span>
         </span>
       </header>
       {mine ? (
@@ -815,6 +817,8 @@ export function Battle() {
       : id === 'player'
         ? 'Toi'
         : 'La Direction';
+  /* Le nom court d'un camp, pour la piste d'Interventions (#190) : sans le nom du siège. */
+  const pisteLabel = (id: PlayerId) => (match ? (id === myCamp ? 'Toi' : 'Adversaire') : campLabel(id));
 
   /** La carte choisie, **si elle est encore dans la main** : sinon la sélection est vide. */
   const selected = mySide.hand.find((card) => card.uid === selectedUid) ?? null;
@@ -1082,16 +1086,28 @@ export function Battle() {
       */}
       <div className="battle__table">
         <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
-          {[otherCamp(myCamp), myCamp].map((id) => (
-            <Camp
-              key={id}
-              label={campLabel(id)}
-              side={state.players[id]}
-              current={state.current === id && state.phase === 'playing'}
-              mine={id === myCamp}
-              pendingPromotion={state.pendingPromotion === id}
-              pasAPas={pasAPas}
-            />
+          {/* La piste d'Interventions (#190) sépare les deux camps : elle est **une** seule cible du
+              pas-à-pas (son conteneur), jamais une par camp. */}
+          {[otherCamp(myCamp), myCamp].map((id, index) => (
+            <Fragment key={id}>
+              {index === 1 && (
+                <PisteInterventions
+                  camps={[otherCamp(myCamp), myCamp].map((camp) => ({
+                    label: pisteLabel(camp),
+                    points: state.players[camp].points
+                  }))}
+                  designe={pasAPas.designe('interventions')}
+                />
+              )}
+              <Camp
+                label={campLabel(id)}
+                side={state.players[id]}
+                current={state.current === id && state.phase === 'playing'}
+                mine={id === myCamp}
+                pendingPromotion={state.pendingPromotion === id}
+                pasAPas={pasAPas}
+              />
+            </Fragment>
           ))}
           {/* Les cinq Conditions, en une ligne sous les deux camps (§6.2) : c'est la cible
               « conditions » du pas-à-pas. Le mot « Conditions » n'est lu que par les lecteurs

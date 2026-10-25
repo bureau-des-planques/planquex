@@ -1632,7 +1632,25 @@ h2 {
 
 /* La page de combat est plus serrée que les autres : le plateau, la main et les actions
    doivent tenir dans un téléphone (420 × 900, D-060) sans défiler (#169). */
+/* **La scène de combat** (D-093, #190 ; DESIGN.md §2.6). Les jetons `--scene-*` vivent sur
+   l'écran et **par-dessus** `:root` : aucun jeton global n'est réécrit ici. Le bleu nuit du
+   projet reste la famille ; le feutre n'en est qu'une version éclaircie au centre. */
 .battle {
+  --scene-felt: #16202c;
+  --scene-felt-deep: #0d1420;
+  --scene-felt-lit: #214d69;
+  --scene-card: #1b222c;
+  --scene-neon: #61d5df;
+  --scene-neon-core: #9ef5fb;
+  --scene-go: #46c78c;
+  --scene-danger: #e0563f;
+  --scene-gold-hot: #f7e264;
+  --scene-parch: #b18a60;
+  --scene-parch-dark: #664d38;
+  --scene-ink-parch: #241a0c;
+  --scene-chalk: #f4e6cc;
+  --scene-steel: #8a93a8;
+  --scene-steel-deep: #4a5468;
   gap: 0.5rem;
 }
 
@@ -1921,20 +1939,31 @@ h2 {
   }
 }
 
+/* La table (plan 1, DESIGN.md §2.6 règle 1) : **une** lumière, entre les deux Postes, et une
+   vignette en ombre interne. Les quatre coins sont les plus sombres de l'écran. */
 .board {
+  background: radial-gradient(
+    120% 90% at 50% 46%,
+    var(--scene-felt-lit) 0%,
+    var(--scene-felt) 52%,
+    var(--scene-felt-deep) 100%
+  );
+  border-radius: 10px;
+  box-shadow: inset 0 0 18vmin rgb(0 0 0 / 55%);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
+  padding: 0.3rem;
 }
 
 /* Les deux camps du combat : le même cadre usiné que les panneaux. Le camp qui a la
    main s'allume — liseré coloré et halo porté vers le bas, pas un simple filet bleu. */
 .board__side {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  background: color-mix(in srgb, var(--scene-card) 90%, transparent);
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--gold) 18%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 7%),
     0 8px 18px -10px rgb(0 0 0 / 70%);
   display: flex;
   flex-direction: column;
@@ -1943,10 +1972,21 @@ h2 {
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
 
+/* Le néon est un **état** (DESIGN.md §2.6 règle 3) : il n'allume que le camp qui a la main, et il
+   tient en **filet et liseré**, sans halo coloré (le détecteur lit un halo comme le tell « glowing
+   accents » ; la direction, §7, dit que le néon suffit aux filets). Au repos, aucun camp ne se
+   distingue. Chez la Direction, l'état est le danger, pas le néon. */
 .board__side.is-current {
-  border-color: var(--accent);
+  border-color: var(--scene-neon);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--accent) 45%, transparent),
+    inset 0 1px 0 var(--scene-neon-core),
+    0 10px 24px -10px rgb(0 0 0 / 70%);
+}
+
+.board__side.is-current.is-direction {
+  border-color: var(--scene-danger);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 7%),
     0 10px 24px -10px rgb(0 0 0 / 70%);
 }
 
@@ -1968,11 +2008,6 @@ h2 {
 .board__counts {
   flex: 1;
   font-size: 0.72rem;
-}
-
-.board__points {
-  color: var(--text-muted);
-  font-size: 0.82rem;
 }
 
 .board__poste,
@@ -2019,10 +2054,8 @@ h2 {
 
 /* Le Poste est la pièce maîtresse du camp : un cadre à lui, plus marqué que le Banc. */
 .board__poste {
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 0.35rem 0.55rem;
+  border-top: 1px solid var(--line);
+  padding: 0.35rem 0 0.1rem;
 }
 
 /* Le Banc : trois places, côte à côte. Une place libre est en pointillé. */
@@ -2415,10 +2448,130 @@ h2 {
   font-size: var(--fs-xs);
 }
 
-.board__points.is-scored {
-  color: var(--accent);
-  font-size: 1rem;
+/* ---------- La scène : piles, piste, état (D-093, #190) ---------- */
+
+/* Les piles de Deck et de Rebut : des **objets posés** (parchemin), un compte dans une pastille.
+   Visibles des deux camps. Le Rebut ne s'ouvre pas encore (#188). */
+.piles {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.pile {
+  align-items: center;
+  background: var(--scene-parch);
+  border: 2px solid var(--scene-parch-dark);
+  border-radius: 6px;
+  box-shadow: 0 6px 14px rgb(0 0 0 / 45%);
+  color: var(--scene-ink-parch);
+  display: inline-flex;
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  gap: 0.3rem;
   letter-spacing: 0.12em;
+  padding: 0.12rem 0.3rem 0.12rem 0.4rem;
+  text-transform: uppercase;
+}
+
+.pile strong {
+  background: var(--scene-ink-parch);
+  border-radius: 999px;
+  color: var(--scene-chalk);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0;
+  min-width: 1.5rem;
+  padding: 0 0.3rem;
+  text-align: center;
+}
+
+/* La piste d'Interventions : six hexagones, trois par camp, remplis dans l'ordre ; l'or pour
+   ceux qui sont acquis (l'or répond à celui du COMEX). Posés sur le feutre, sans fond. */
+.piste {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 1rem;
+  justify-content: space-between;
+}
+
+.piste__camp {
+  align-items: center;
+  display: flex;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.piste__nom {
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.piste__hex {
+  background: var(--line-strong);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  display: block;
+  height: 1.1rem;
+  position: relative;
+  width: 0.95rem;
+}
+
+.piste__hex::after {
+  background: var(--scene-felt-deep);
+  bottom: 1.5px;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  content: '';
+  left: 1.5px;
+  position: absolute;
+  right: 1.5px;
+  top: 1.5px;
+}
+
+.piste__hex.is-acquise {
+  background: var(--gold-deep);
+}
+
+.piste__hex.is-acquise::after {
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+}
+
+/* La barre de Stress est **dorée** (DESIGN.md §2.6) : le rouge reste le danger d'état, quand le
+   Planqué va craquer. */
+.battle .stress__fill {
+  background: linear-gradient(90deg, var(--gold-deep), var(--scene-gold-hot));
+}
+
+.battle .stress__fill.is-high {
+  background: linear-gradient(90deg, #c0442e, var(--scene-danger));
+}
+
+/* Le cadre des cartes **standard** de la scène : métal ardoise, teinté de la rareté (l'anneau
+   garde sa couleur). Le COMEX garde son or (`.card--comex`, plus loin). */
+.battle .card:not(.card--comex) {
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--frame) 22%, var(--scene-steel)),
+    var(--scene-steel-deep) 55%,
+    color-mix(in srgb, var(--frame) 14%, var(--scene-steel))
+  );
+}
+
+/* « Fin du tour » porte l'état de la main : vert quand c'est à toi (l'état), filet rouge quand
+   c'est à la Direction. */
+.battle .button--fin.is-a-toi {
+  background: var(--scene-go);
+  border-color: var(--scene-go);
+  color: #0b1220;
+}
+
+.battle .button--fin.is-direction {
+  border: 2px solid var(--scene-danger);
 }
 
 /* ---------- Main du joueur (ticket #58, #169) ---------- */

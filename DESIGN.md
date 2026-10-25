@@ -199,6 +199,14 @@ d'un panneau dans la page. Les jetons sont déclarés **une fois**, sur le séle
 | `--scene-danger` | `#e0563f` | tour adverse, craquage |
 | `--scene-gold-hot` | `#f7e264` | le **Stress** qui monte |
 | `--scene-parch` | `#b18a60` | le parchemin des piles (Deck, Rebut) |
+| `--scene-parch-dark` | `#664d38` | le filet usé des piles |
+| `--scene-ink-parch` | `#241a0c` | l'encre des piles (5,4:1 sur le parchemin, mesuré par `impeccable detect` sur la page) ; aussi la pastille du compte |
+| `--scene-chalk` | `#f4e6cc` | le chiffre clair de la pastille du compte (sur `--scene-ink-parch`) |
+| `--scene-felt-deep` | `#0d1420` | le bord vignetté de la table (les quatre coins) |
+| `--scene-steel` / `--scene-steel-deep` | `#8a93a8` / `#4a5468` | le métal ardoise du cadre standard |
+
+Les jetons sont posés sur `.battle` (`src/styles.css`, bloc « La scène de combat ») : ils
+n'existent pas hors de l'écran de combat, et `:root` n'en change aucun.
 
 **Quatre règles, et elles tiennent tout l'écran :**
 
@@ -213,6 +221,37 @@ d'un panneau dans la page. Les jetons sont déclarés **une fois**, sur le séle
    (`#8a93a8 → #4a5468`), et la barre de Seuil/Stress est **dorée**, pas rouge — le rouge est la
    couleur d'un danger d'état, pas d'une mesure. La référence vidéo met de l'or partout : on ne la suit
    pas, sinon le statut COMEX disparaît.
+
+**La contradiction §2.3 / règle 4, tranchée (25/10/2026, #190)**
+
+- §2.3 dit que la rareté colore l'anneau **entier**. La règle 4 dit que le cadre standard est
+  **métal ardoise**, et que l'or est réservé au COMEX. Les deux ne peuvent pas être vrais du même anneau.
+- **Décision** : l'anneau **garde la rareté** — il reste plein, et sa **teinte** est celle de
+  `RARITY_META`. Dans la scène, sa **matière** change : un cadre standard prend le métal ardoise,
+  teinté à 14–22 % de la couleur de rareté (`.battle .card:not(.card--comex)`). Le **COMEX** garde
+  l'or seul, comme le veut §2.3 (`.card--comex`, `--frame: var(--gold)`).
+- **Hors scène**, §2.3 reste la règle : la Collection, le Deck et la fiche gardent l'anneau de rareté
+  pur. La matière métal ne vit que dans la table.
+- **L'or a deux emplois dans la scène, pas davantage** : le cadre COMEX, et les **mesures** qui
+  se remplissent — la barre de Stress et les Interventions acquises. Ce ne sont pas des cadres :
+  un hexagone d'Intervention est une mesure, pas un statut. Si cette extension dérange, c'est la
+  seule partie à rouvrir.
+- Le **néon** n'éclaire que l'état (règle 3) ; un cadre n'a jamais de néon au repos.
+- **Le néon tient en filet et en liseré, sans halo coloré.** La direction prévoyait un halo sur
+  l'élément actif ; le détecteur le lit comme le tell « glowing accents » (`dark-glow`), et la
+  direction elle-même (§7) dit que le néon suffit aux filets. Pas d'exception déposée : on n'a pas
+  eu besoin de l'écarter.
+- **Encre des piles** : la direction annonçait `#3a2a18` à 5,95:1 sur le parchemin ; c'est faux (mesuré
+  4,4:1, en dessous d'AA). L'encre passe à `#241a0c` (5,4:1).
+
+**Ce qui est posé sur la table** (#190). Une seule lumière (règle 1) : le feutre `.board` a son
+dégradé centré entre les deux Postes et sa vignette. Les camps sont des zones posées (une ombre,
+fond translucide) ; le camp qui a la main porte le **néon**, la Direction le **danger**, et un camp
+au repos n'a aucun halo. Les **piles** de Deck et de Rebut sont visibles des deux camps avec leur
+compte ; le Rebut ne s'ouvre pas encore (son panneau arrive avec #188). La **piste d'Interventions**
+est **un** conteneur — `data-pas-a-pas="interventions"` n'y est que là — avec six hexagones, trois par
+camp, chacun nommé (« Intervention 2 sur 3, La Direction »). « Fin du tour » est vert quand c'est à
+toi, filet rouge quand c'est à la Direction.
 
 **Ce qui bouge, et son repli.** Le Stress qui monte (chiffre doré, 700 ms, une fois), la carte de la
 main qui se soulève au survol et au focus, la pile de Deck qui s'allume à la pioche, l'Intervention qui
