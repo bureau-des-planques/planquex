@@ -160,7 +160,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Agenda', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Elle gère l\'agenda. L\'agenda la gère.'
+    flavor: 'Elle gère l\'agenda. L\'agenda la gère.',
+    art: 'direction-secretaire-direction.webp'
   }),
   base({
     id: 'direction-directeur-programme',
