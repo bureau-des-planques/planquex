@@ -183,6 +183,50 @@ Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors lign
 
 **Les dialogues** — la fiche d'une carte, l'Arrivage, la Journée d'intégration, les Conditions, la confirmation — passent tous par `components/ui/dialog.tsx` (D-035) : rôle, Échap, focus piégé et fond sont les siens. Il n'y a plus de dialogue maison (`.modal` a disparu).
 
+### 2.6 La scène de combat (D-093, 25/10/2026)
+
+L'écran de combat est le seul qui pose **sa propre palette** : une **table** sous les cartes, au lieu
+d'un panneau dans la page. Les jetons sont déclarés **une fois**, sur le sélecteur de l'écran
+(`.battle`), et **ne réécrivent aucun jeton de `:root`** — le bleu nuit du §1.1 reste la famille.
+
+| Jeton de scène | Valeur | Rôle |
+|---|---|---|
+| `--scene-felt` | `#16202c` | le feutre de la table |
+| `--scene-felt-lit` | `#214d69` | la **seule** lumière, au centre |
+| `--scene-card` | `#1b222c` | la surface d'une carte |
+| `--scene-neon` / `--scene-neon-core` | `#61d5df` / `#9ef5fb` | le néon **d'état** |
+| `--scene-go` | `#46c78c` | « Fin du tour » quand c'est à toi |
+| `--scene-danger` | `#e0563f` | tour adverse, craquage |
+| `--scene-gold-hot` | `#f7e264` | le **Stress** qui monte |
+| `--scene-parch` | `#b18a60` | le parchemin des piles (Deck, Rebut) |
+
+**Quatre règles, et elles tiennent tout l'écran :**
+
+1. **Une lumière, au centre**, entre les deux Postes ; les quatre coins s'éteignent
+   (`radial-gradient` + vignette en ombre interne). C'est ce qui produit la profondeur, pas les filets.
+2. **Quatre plans, une ombre chacun** : la table (vignette), les zones **posées** (piles, piste,
+   cartouches de camp), les cartes **soulevées**, l'élément **actif** (son ombre **plus** un halo).
+   Une surface ne porte jamais deux ombres, et jamais un filet fin **avec** une grosse ombre.
+3. **Le néon est un état, pas un style.** Allumé : le camp qui a la main, l'élément désigné, le danger.
+   Éteint partout ailleurs. Un néon permanent est un tell du détecteur (`.opencode/skills/impeccable/`).
+4. **L'or reste la marque du COMEX** (§2.3) : les cartes standard portent un cadre de **métal ardoise**
+   (`#8a93a8 → #4a5468`), et la barre de Seuil/Stress est **dorée**, pas rouge — le rouge est la
+   couleur d'un danger d'état, pas d'une mesure. La référence vidéo met de l'or partout : on ne la suit
+   pas, sinon le statut COMEX disparaît.
+
+**Ce qui bouge, et son repli.** Le Stress qui monte (chiffre doré, 700 ms, une fois), la carte de la
+main qui se soulève au survol et au focus, la pile de Deck qui s'allume à la pioche, l'Intervention qui
+se remplit, la traînée de craquage. **Aucun de ces effets ne porte une information seule** : sous
+`prefers-reduced-motion` **ou** « Mouvement réduit », le mouvement part et l'information reste (le
+chiffre s'affiche sans bouger). Jamais plus de **trois flashs par seconde**, jamais d'effet qui décale
+une cible ou retarde le geste suivant.
+
+**Ce que la scène n'a pas, et n'aura pas en v1** : les accessoires de la référence (classeurs,
+trombones, feuilles) — ce sont des assets, et l'univers est l'atelier MRO (D-025).
+
+> Le détail — palette mesurée, gabarits, pièges, table de contraste — vit dans
+> `docs/DIRECTION-SCENE-COMBAT.md` ; la recherche et les tâches dans `docs/SPEC-COMBAT-UI.md`.
+
 ---
 
 ## 3. Cadre de rareté, rareté par rareté
