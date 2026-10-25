@@ -26,6 +26,11 @@
 > Intervention) ; `DESIGN.md` reste l'autorité — cette direction propose des **jetons de
 > scène** (`--scene-*`) cantonnés à l'écran de combat, pas une réécriture des jetons
 > globaux.
+>
+> **§8 (les effets) ajoutée le 25/10/2026**, à la demande « et pour les effets des
+> attaques et autre ? ». Elle n'acte rien : D-093 (5) couvre le principe et
+> `SPEC-COMBAT-UI` §6.8.3 fixe les bornes. §8 est le **détail d'exécution**, écrit
+> contre le code de #192.
 
 ---
 
@@ -328,3 +333,105 @@ marquées ✗ sont celles où la vidéo faut — et où on ne la suit pas.
 (420 × 900, preuve de rendu, `AGENTS.md` §8.4), et le contraste des paires ✗ ci-dessus
 dans le navigateur — le détecteur **sous-compte** en analyse de sources
 (`DESIGN.md:80-83`).
+
+---
+
+## 8. Les effets — la Pression en quatre temps, et les autres gestes
+
+### 8.1 Ce qui est déjà en place (vérifié le 25/10/2026)
+
+Ne pas refaire, ne pas contredire. Le harnais et quatre effets existent (#192) :
+
+| Quoi | Où | Ce qui est acté |
+|---|---|---|
+| Le harnais (`useEffetsDeCombat`) | `src/components/effets-combat.ts` | natures `stress` / `craquage` / `pioche` / `intervention` ; plafonds `DUREE_MAX_MS` 800 ms, `MAX_EFFETS_SIMULTANES` 4 (le 5ᵉ est **refusé**), boucle ≤ 2 tours ; fusion par identité (un second coup **remplace**, n'empile pas) ; tests `effets-combat.test.ts` et `effets-combat-hook.test.tsx` |
+| Le chiffre de Stress flottant | `styles.css` (`.stress-flottant`, `@keyframes stress-monte`, `.is-fixe`) ; `Battle.tsx` (rendu `aria-hidden`) | doré `--scene-gold-hot`, 700 ms, `transform`/`opacity` seuls, retiré du DOM ; repli immobile sous Mouvement réduit |
+| La traînée de craquage + la carte désaturée | `styles.css` (`.craquage__train`, `.craquage__carte`) | une bande `danger → gold-hot`, 500 ms ; la carte passe à `grayscale` + `opacity .35`, sans flou |
+| La pile de Deck qui s'allume | `styles.css` (`.pile--deck.is-piochante::after`) | liseré néon **une fois**, 150 ms, sur pseudo-élément (rien ne bouge) |
+| L'hexagone d'Intervention | `styles.css` (`.piste__hex.is-fraiche`) | un rebond 1.15 en 200 ms ; le remplissage est l'état, pas l'animation |
+| Les trois coupures du mouvement | `@media (prefers-reduced-motion)`, `:root[data-mouvement-reduit='true']`, `.battle--mouvement-reduit` + le réglage du store (`reducedMotion`, store `version: 8`, #189) | le mouvement part, l'information reste — chaque effet a son repli |
+
+### 8.2 La Pression en quatre temps
+
+La vidéo découpe une attaque en **anticipation → trait → impact → après**. Les deux
+premiers temps manquent chez nous (le chiffre naît sans que le coup parte) ; les deux
+derniers existent à moitié. Événement déclencheur : une action `attack` appliquée —
+l'état est **déjà final** quand l'effet joue, il ne retarde rien.
+
+| Temps | Vidéo (frame) | Durée | Moyen CSS (zéro asset) | Repli Mouvement réduit |
+|---|---|---|---|---|
+| **1. Anticipation** | la carte attaquante se cabre (`49-06`) | 200 ms | classe `.attaque__elan` sur la carte attaquante : `translateY(-6px) scale(1.03)` en `@keyframes`, une fois ; le halo `is-lit` (§2.4) s'allume dans le même temps | aucun déplacement : le halo s'allume, fixe, 200 ms |
+| **2. Le trait** | l'éclair relie les deux Postes (`49-06`, `55-06`) | 350 ms | **la technique de `.craquage__train`, réutilisée** : une bande en `linear-gradient` sur l'axe central — `neon-core → gold-hot` pour un coup ordinaire, `danger → gold-hot` (existant) si le Planqué craque. **Un seul trait à la fois** : le trait de craquage *est* le trait, on n'en pose pas deux | pas de trait ; le chiffre (déjà affiché, fixe) suffit |
+| **3. L'impact** | flash sur la cible (`49-00`, `49-09`) | 150 ms | pseudo-élément `::after` sur la carte touchée : anneau `box-shadow: 0 0 0 3px var(--scene-neon-core)`, `opacity` 1 → 0, une fois — **sans `filter: blur`** (borne 5 de §6.8.3) ; le chiffre de Stress part au même instant (existant) | pas d'anneau |
+| **4. L'après** | badge « Stressed ×4 » (`55-03`), traînée de craquage (`55-06`) | 200 ms (badge) | **badge de Condition nommé** (R3) : `badge-pop` — `scale .8 → 1` + `opacity` 0 → 1, 200 ms, une fois ; puis il devient un **état** (il reste). Le craquage suit §8.1 | le badge apparaît sans scale |
+
+**Nouvelles natures** pour `effets-combat.ts` : `'attaque'` (les temps 1-3 forment **un
+seul** effet — sinon la séquence mange le plafond de 4 à elle seule ; champs `uid` de
+l'attaquant + `uidCible` à ajouter au type) et `'condition'` (`uid`). `dureeEffet` :
+350 et 200 ms, sous le plafond existant. Identité de `'attaque'` = attaquant + cible :
+un second coup sur la même paire **remplace** la séquence en cours, jamais d'empilement.
+
+### 8.3 Les autres gestes
+
+| Geste | Durée | Moyen | Repli |
+|---|---|---|---|
+| **Café attaché** | 200 ms | la pastille de Café de la carte cible **pop** (`scale 0 → 1`) + le liseré de la Machine réutilise `.is-piochante`. Le **vol de la pastille** (Machine → carte) est une v2 — un déplacement mesuré (FLIP) pour un gain faible | la pastille est là |
+| **Carte Action jouée** | 150 ms | la carte de l'éventail s'estompe (`opacity`) pendant que la zone cible prend le filet doré de désignation (état, spec §6.5) ; la carte soulevée au survol/focus est déjà dans la table §6.8.3 | identique, sans fondu |
+| **Rotation** (les deux cartes échangent) | 250 ms | glissement croisé en `transform` (le Poste sort vers le Banc, la place arrive) ; les badges de Conditions purgés partent en fondu | échange direct |
+| **Relève** (après un craquage) | 250 ms | la carte choisie **monte du Banc** : `translateY(12px) → 0` + fondu — pas de mesure de position (FLIP), la direction « depuis le Banc » suffit à raconter le geste | apparition directe |
+| **Contrôle** (Surcharge/Épuisement) | — | les +10/+20 de Stress au Contrôle sont la nature `stress` **existante** : le crochet les émet déjà dès que `hp` change. Pas d'animation du lancer de tampon en v1 (le journal le dit) | identique |
+| **Fin de partie** | 500 ms, **optionnel** | le bandeau existe ; au plus **un** battement de halo sur le cartouche du vainqueur (la technique de `.piste__hex.is-fraiche`, une fois) | le bandeau seul |
+
+### 8.4 Orchestration — l'enchaînement, jamais la file d'attente
+
+L'ordre après une Pression avec tout qui tombe (le pire cas) :
+
+```text
+0 ms     anticipation (200) ── halo is-lit
+200 ms   trait (350)         ── ou trait de craquage si le coup casse
+550 ms   impact (150) + départ du chiffre de Stress (700)
+700 ms   badge de Condition (200), si la Pression en pose une
+700 ms   traînée de craquage (500) + désaturation, si le Planqué craque
+1 200 ms relève (250)
+```
+
+**Trois règles d'orchestre** :
+
+1. **L'état ne attend personne** : `applyAction` a déjà rendu l'état final ; les effets
+   sont une surimpression (`pointer-events: none` partout, comme aujourd'hui). L'écran
+   reste jouable pendant la séquence.
+2. **Un nouveau geste remplace, ne s'empile pas** : si le joueur enchaîne, les effets en
+   cours partent au profit des nouveaux (la fusion par identité le fait déjà pour une
+   même cible ; l'étendre à « un nouveau `'attaque'` éteint l'ancien »).
+3. **Jamais plus de ~1,3 s** entre le geste et l'état visuel stable ; au-delà, la
+   lecture souffre plus que le geste ne l'aide.
+
+### 8.5 Règles de fabrication (rappel borné)
+
+- **`transform` et `opacity` seuls** sur tout ce qui bouge ; un halo animé vit sur un
+  pseudo-élément **pré-calculé** dont on n'anime que l'`opacity` (le patron
+  `.is-piochante::after`) — jamais `box-shadow` animée, jamais `filter: blur` en
+  mouvement.
+- Toute durée ≤ 800 ms (`DUREE_MAX_MS`), toute boucle ≤ 2 tours, au plus 4 effets
+  simultanés — les plafonds sont **dans le module**, pas dans la tête.
+- Tout effet est `aria-hidden` et son information vit ailleurs (barre de Stress, badge,
+  journal, `aria-live`) — c'est borne 1 de §6.8.3, et c'est ce qui rend le repli honnête.
+- **Tests** : étendre `effets-combat.test.ts` (chaque nouvelle nature a sa durée ≤
+  plafond, le refus du 5ᵉ tient, la fusion remplace) et le test du hook (`attack`
+  émet `'attaque'` avec les deux `uid` ; `status` émet `'condition'`), plus le repli
+  immobile — à l'image des deux fichiers de test existants.
+- `npm run detect:ui` après coup : les halos *one-shot* sur pseudo-élément sont le
+  patron déjà accepté ; un refus se traite comme §6 (correction ou désactivation
+  motivée).
+
+### 8.6 Refusés, et pourquoi
+
+- **Système de particules** (étincelles, braises, confettis) : coût de rendu, bruit, et
+  le repli honnête d'une particule n'existe pas. Refusé en v1 et v2.
+- **L'éclair fractal** de la vidéo (SVG multi-segments ou canvas) : un asset déguisé, et
+  le trait en dégradé (§8.2) raconte la même chose pour 3 rem. Refusé.
+- **Le son** : hors périmètre de cette direction, non demandé, et il ouvrirait un front
+  d'accessibilité entier (contrôle de volume, désactivation). Refusé ici.
+- **L'inclinaison 3D au pointeur** : pas d'équivalent tactile. Refusé (déjà §2.6).
+- **Toute boucle d'ambiance** (feutre qui respire, halo qui pulse au repos) : le néon
+  est un état (§2.4) ; une ambiance animée est un néon permanent déguisé. Refusé.
