@@ -332,6 +332,7 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 1,
     attacks: [{ name: 'Compte rendu', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte. Le compte rendu part au RPO.', effects: [{ kind: 'draw', amount: 1 }] }],
     flavor: 'Il assiste le RPO depuis trois ans. Personne ne sait lequel assiste l’autre.',
+    art: 'atelier-assistant-rpo.webp'
   }),
   base({
     id: 'atelier-agent-maintenance',
