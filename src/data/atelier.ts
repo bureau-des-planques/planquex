@@ -256,7 +256,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Planning', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est replanifié. Le planning avait déjà été replanifié.' }],
-    flavor: 'Il ordonne tout, sauf le planning.'
+    flavor: 'Il ordonne tout, sauf le planning.',
+    art: 'atelier-ordonnanceur.webp'
   }),
   base({
     id: 'atelier-responsable-pole',
