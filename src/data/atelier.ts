@@ -49,7 +49,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Procédure', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse reçoit une procédure. Elle n’a pas été relue.' },
       { name: 'Revue de process', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a une procédure pour tout. Aucune n’est à jour.'
+    flavor: 'Il a une procédure pour tout. Aucune n’est à jour.',
+    art: 'atelier-responsable-process.webp'
   }),
 
   // Ligne 2 : Opticien → RPO → RUI
