@@ -218,6 +218,18 @@ export const MUTATIONS = [
     tests: ['src/data/versions.test.ts'],
     garde:
       'sans cette recherche, la garde « on ne publie pas une version sans sa note » (D-090) ne trouve plus rien : elle refuserait toute version, ou — pire, si elle était écrite à l’envers — laisserait partir une build chez les invités sans que personne ne puisse lire ce qu’elle contient'
+  },
+  {
+    ticket: 188,
+    titre: 'une infobulle de l’inspecteur porte un bouton',
+    fichier: 'src/components/InspecteurCombat.tsx',
+    // L'infobulle (`role="tooltip"`) ne reçoit jamais le focus : le patron ARIA l'interdit (SPEC-COMBAT-UI §3.1).
+    // La mutation ajoute un bouton dans son corps ; la suite doit tomber sur « aucun bouton dans l'infobulle ».
+    motif: '<span className="infobulle__corps">',
+    remplacement: '<span className="infobulle__corps"><button type="button" />',
+    tests: ['src/components/InspecteurCombat.test.tsx'],
+    garde:
+      'un bouton dans une infobulle est un élément focusable qui se dérobe au survol : le lecteur d’écran ne l’atteint plus, et l’APG le proscrit — une régression silencieuse, sans aucun test visuel pour la voir'
   }
 ];
 

@@ -2097,7 +2097,9 @@ h2 {
    le mien Poste puis Banc, et les deux Postes se font face au centre. Les tailles sont des variables,
    mesurées par `npm run capturer` : la garde décide de la plus grande qui tient. */
 .board__zone {
-  --poste-w: 5.25rem;
+  /* Le Banc passe à 64 px (#188, mesuré) : le Poste garde un rapport de 1,5 à 1,8 avec lui. Le Stress
+     et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur. */
+  --poste-w: 5.5rem;
   --banc-w: 3.5rem;
   align-items: center;
   display: flex;
@@ -2394,10 +2396,136 @@ h2 {
   border-color: var(--warn);
 }
 
-.poste__hp {
+/* ---------- L'inspecteur (SPEC-COMBAT-UI §3, §6.4 ; #188) ---------- */
+
+/* La carte du plateau se désigne : curseur, et un anneau de focus qui ne disparaît pas (SC 2.4.7). */
+.battle .poste__carte,
+.battle .bench__carte {
+  cursor: pointer;
+  position: relative;
+}
+
+.battle .poste__carte:focus-visible,
+.battle .bench__carte:focus-visible {
+  border-radius: 10px;
+  outline: 2px solid var(--scene-neon);
+  outline-offset: 3px;
+}
+
+/* L'infobulle de lecture : posée sous la carte. Sa marge haute n'est pas un vide : le pointeur passe
+   de la carte à l'infobulle sans la perdre (SC 1.4.13, survolable). Aucun bouton n'y vit. */
+.battle .infobulle {
+  left: 50%;
+  padding-top: 0.45rem;
+  position: absolute;
+  top: 100%;
+  transform: translateX(-50%);
+  width: min(17rem, 80vw);
+  z-index: 40;
+}
+
+.battle .infobulle__corps {
+  background: var(--scene-card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 24px -8px rgb(0 0 0 / 70%);
   color: var(--text);
-  font-variant-numeric: tabular-nums;
+  display: block;
+  font-size: 0.8rem;
+  padding: 0.6rem 0.75rem;
+}
+
+/* Le panneau non modal (#188) : une feuille basse au-dessus de la barre de navigation, sous la carte
+   décrite (`--inspecteur-haut`, posé par l'écran). Il n'a aucun voile : le plateau reste lisible. */
+.battle .inspecteur {
+  background: var(--scene-card);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  bottom: 4.7rem;
+  box-shadow: 0 -12px 28px -12px rgb(0 0 0 / 75%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  left: 0.5rem;
+  overflow-y: auto;
+  padding: 0.75rem 0.9rem;
+  position: fixed;
+  right: 0.5rem;
+  top: var(--inspecteur-haut, 45dvh);
+  z-index: 30;
+}
+
+.battle .inspecteur[hidden] {
+  display: none;
+}
+
+/* Sur écran large, le panneau est une colonne de la console, collée en haut : il ne recouvre rien. */
+@media (min-width: 900px) {
+  .battle .inspecteur {
+    bottom: auto;
+    left: auto;
+    position: sticky;
+    right: auto;
+    top: 0.5rem;
+    width: 100%;
+  }
+}
+
+.battle .inspecteur__titre {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  hyphens: manual;
+  line-height: 1.15;
+  margin: 0;
+  overflow-wrap: break-word;
+  text-transform: uppercase;
+}
+
+.battle .inspecteur__fiche {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  gap: 0.3rem;
+}
+
+.battle .inspecteur__nom {
   font-weight: 700;
+  margin: 0;
+}
+
+.battle .inspecteur__ligne,
+.battle .inspecteur__machine {
+  margin: 0;
+}
+
+.battle .inspecteur__regle {
+  margin: 0;
+  padding-left: 0.5rem;
+}
+
+.battle .inspecteur__gestes {
+  border-top: 1px solid var(--line);
+  padding-top: 0.5rem;
+}
+
+.battle .inspecteur__fermer {
+  align-self: flex-end;
+}
+
+/* Le Banc à 64 px : un nom sur deux lignes, coupé **entre** les mots. La césure automatique est
+   coupée sur le plateau, et la taille du nom suit la place : « Agent d’entretien » tient sans se
+   couper au milieu d'un mot (reçu de #200). */
+.battle .card--plateau .card__name {
+  hyphens: manual;
+}
+
+.battle .bench__carte .card--plateau .card__name {
+  /* Deux lignes, jamais trois : à 56 px de place, une troisième ligne ne montre qu'une
+     syllabe (« D'ENTRETIEN N »). Mieux vaut une ellipse qu'un mot amputé. */
+  -webkit-line-clamp: 2;
+  font-size: 0.54rem;
+  hyphens: manual;
+  line-height: 1.12;
 }
 
 /* La barre de Stress : elle MONTE. Verte au repos, rouge quand le collègue va craquer. */

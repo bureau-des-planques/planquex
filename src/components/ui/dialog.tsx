@@ -78,6 +78,23 @@ function DialogContent({
   )
 }
 
+/**
+ * Un **panneau non modal** (SPEC-COMBAT-UI §3, #188) : ni voile, ni portail, ni `aria-modal`.
+ * Base UI n'émet aucun `aria-modal` ; la racine `modal={false}` retire seulement le piège de
+ * focus et l'inertie du reste de la page. `DialogContent` ne convient pas : il pose un voile
+ * **inconditionnellement**, et sur le plateau le voile cacherait la carte décrite. Le
+ * panneau se range là où on le pose (feuille basse, colonne), il n'est jamais dessiné par-dessus.
+ */
+function DialogPanneau({ className, ...props }: DialogPrimitive.Popup.Props) {
+  return (
+    <DialogPrimitive.Popup
+      data-slot="dialog-panneau"
+      className={cn("outline-none", className)}
+      {...props}
+    />
+  )
+}
+
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -152,6 +169,7 @@ export {
   DialogFooter,
   DialogHeader,
   DialogOverlay,
+  DialogPanneau,
   DialogPortal,
   DialogTitle,
   DialogTrigger,

@@ -36,6 +36,7 @@ import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { CardView } from '@/components/CardView';
+import { CarteSurvolable, FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
 import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
@@ -113,15 +114,77 @@ function kindLabel(definition: Card | undefined): string {
  * Le groupe porte le **nom** du Planqué : c'est par lui qu'on le retrouve, au Poste comme au
  * Banc. Sans définition connue, le nom seul reste lisible.
  */
-function CartePlateau({ instance, className }: { instance: CardInstance; className: string }) {
+function CartePlateau({
+  instance,
+  className,
+  machine,
+  inspectee,
+  onInspecter
+}: {
+  instance: CardInstance;
+  className: string;
+  /** Le texte de la Machine du camp, pour le Poste : il entre dans l'inspecteur (#188). */
+  machine?: string;
+  /** Cette carte est celle que le panneau montre. */
+  inspectee: boolean;
+  onInspecter: () => void;
+}) {
   const nom = cardName(instance.cardId);
   const definition = getCard(instance.cardId);
   if (!definition) return <span className="muted">{nom}</span>;
   return (
-    <div role="group" aria-label={nom} className={className}>
+    <CarteSurvolable
+      uid={instance.uid}
+      nom={nom}
+      className={className}
+      inspectee={inspectee}
+      onInspecter={onInspecter}
+      fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
+    >
       <CardView card={definition} figee plateau stress={instance.maxHp - instance.hp} seuil={instance.maxHp} />
-    </div>
+    </CarteSurvolable>
   );
+}
+
+/**
+ * Localiser une instance **sur le plateau** : son camp, et si elle est au Poste ou au Banc (et
+ * à quelle place). `null` si elle n'y est plus — la carte est morte ou a changé de zone.
+ */
+function localiser(
+  state: BattleState,
+  uid: string
+): { camp: PlayerId; carte: CardInstance; auPoste: boolean; rang: number } | null {
+  for (const camp of ['player', 'ai'] as const) {
+    const side = state.players[camp];
+    if (side.active?.uid === uid) return { camp, carte: side.active, auPoste: true, rang: -1 };
+    const rang = side.bench.findIndex((carte) => carte?.uid === uid);
+    const carte = side.bench[rang];
+    if (rang >= 0 && carte) return { camp, carte, auPoste: false, rang };
+  }
+  return null;
+}
+
+/**
+ * Les gestes qu'une carte **porte**, pris dans la liste du moteur : attacher un café, évoluer,
+ * Talent (au Poste), Rotation (vers elle, ou depuis le Poste), relève (depuis le Banc). Rien d'autre :
+ * un geste qui n'est pas dans la liste n'est pas offert (SPEC-COMBAT-UI §6.4).
+ */
+function gestesDeLaCarte(actions: readonly BattleAction[], uid: string, auPoste: boolean, rang: number): BattleAction[] {
+  return actions.filter((action) => {
+    switch (action.type) {
+      case 'attachEnergy':
+      case 'evolve':
+        return action.targetUid === uid;
+      case 'ability':
+        return auPoste;
+      case 'retreat':
+        return auPoste || action.benchIndex === rang;
+      case 'promoteActive':
+        return action.benchIndex === rang;
+      default:
+        return false;
+    }
+  });
 }
 
 /** Les cinq conditions, dans l'ordre d'affichage de la légende. */
@@ -145,28 +208,29 @@ function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
  * les **types du Deck** (1 à 3, D-037 (4)) dont la Machine tire le café.
  */
 function MachinePips({
-  zone,
-  cafeTypes,
+  side,
   designe = false
 }: {
-  zone: CafeSymbol | null;
-  cafeTypes: readonly CafeType[];
+  side: PlayerState;
   /** Le pas-à-pas du combat (#143) désigne la Machine du joueur, pas celle de la Direction. */
   designe?: boolean;
 }) {
-  const types = cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
-  // Le contenu de l'ancien `title` (le café produit, les types du Deck) est **dit** : il est
-  // lu par le nom accessible, pas au survol (SPEC-COMBAT-UI §6.7). Le visuel est masqué.
+  const zone = side.energyZone;
+  // La Machine se **lit** dans l'inspecteur du Poste (#188) : sur le plateau, seule sa pastille
+  // reste — sans le mot « Machine », qui ne dit plus rien à côté de la carte. Le texte est lu
+  // par le nom accessible, comme l'ancien `title` (SPEC-COMBAT-UI §6.7).
   return (
-    <span className="muted" data-pas-a-pas={designe ? 'machine' : undefined}>
-      <span aria-hidden="true">
-        Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" />}
-      </span>
-      <span className="sr-only">
-        {`Machine à café : ${zone ? cafeLabel(zone) : 'vide'} (types du Deck : ${types || 'aucun'})`}
-      </span>
+    <span className="poste__machine" data-pas-a-pas={designe ? 'machine' : undefined}>
+      <span aria-hidden="true">{zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" />}</span>
+      <span className="sr-only">{texteMachine(side)}</span>
     </span>
   );
+}
+
+/** La Machine à café d'un camp, dite en une phrase : le café produit, les types du Deck (D-037 (4)). */
+function texteMachine(side: PlayerState): string {
+  const types = side.cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
+  return `Machine à café : ${side.energyZone ? cafeLabel(side.energyZone) : 'vide'} (types du Deck : ${types || 'aucun'})`;
 }
 
 /** Ce qu'un bouton d'action affiche, dérivé de l'action elle-même et de l'état. */
@@ -366,7 +430,9 @@ function Camp({
   current,
   mine,
   pendingPromotion,
-  pasAPas
+  pasAPas,
+  inspecte,
+  onInspecter
 }: {
   label: string;
   side: PlayerState;
@@ -376,15 +442,25 @@ function Camp({
   /** Vrai quand ce camp attend de choisir sa relève. */
   pendingPromotion: boolean;
   pasAPas: PasAPasCombatEtat;
+  /** Le `uid` de la carte que le panneau montre, ou `null` (#188). */
+  inspecte: string | null;
+  onInspecter: (uid: string) => void;
 }) {
   // Le Poste : la carte, en grand, au centre du camp (R4). Le nom et la barre de Stress sont
   // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
   // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
+  const posteActif = side.active;
   const poste = (
     <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
       <span className="sr-only">Poste</span>
-      {side.active ? (
-        <CartePlateau instance={side.active} className="poste__carte" />
+      {posteActif ? (
+        <CartePlateau
+          instance={posteActif}
+          className="poste__carte"
+          machine={texteMachine(side)}
+          inspectee={inspecte === posteActif.uid}
+          onInspecter={() => onInspecter(posteActif.uid)}
+        />
       ) : (
         <strong className="muted poste__libre">
           {pendingPromotion ? 'Aucun Planqué — relève à choisir' : 'Poste libre'}
@@ -414,15 +490,10 @@ function Camp({
       </header>
       {side.active && (
         <div className="poste__info">
-          <span className="poste__hp">
-            {side.active.maxHp - side.active.hp}/{side.active.maxHp} de Stress
-          </span>
+          {/* Le chiffre du Stress et le mot « Machine » sont dans l'inspecteur (#188) : la carte
+              porte la barre, et la pastille de la Machine reste seule, pour le pas-à-pas. */}
           <CafesPips cafes={side.active.energy} />
-          <MachinePips
-            zone={side.energyZone}
-            cafeTypes={side.cafeTypes}
-            designe={mine && pasAPas.designe('machine') !== undefined}
-          />
+          <MachinePips side={side} designe={mine && pasAPas.designe('machine') !== undefined} />
           {side.active.statuses.map((status) => (
             <StatusBadge key={status} status={status} />
           ))}
@@ -439,7 +510,12 @@ function Camp({
         {side.bench.map((slot, index) => (
           <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index}>
             {slot ? (
-              <CartePlateau instance={slot} className="bench__carte" />
+              <CartePlateau
+                instance={slot}
+                className="bench__carte"
+                inspectee={inspecte === slot.uid}
+                onInspecter={() => onInspecter(slot.uid)}
+              />
             ) : (
               <span className="sr-only">Place libre</span>
             )}
@@ -832,6 +908,40 @@ export function Battle() {
   /* Le nom court d'un camp, pour la piste d'Interventions (#190) : sans le nom du siège. */
   const pisteLabel = (id: PlayerId) => (match ? (id === myCamp ? 'Toi' : 'Adversaire') : campLabel(id));
 
+  /**
+   * **L'inspecteur** (#188) : la carte que le panneau montre, par son `uid`. Il se ferme de lui-même
+   * quand la carte n'est plus sur le plateau (`localiser` rend `null`). Ses gestes viennent de la
+   * même liste que la barre d'action (`playable`) — rien de grisé, et seulement mon camp.
+   */
+  const [inspecte, setInspecte] = useState<string | null>(null);
+  const inspecteur = inspecte ? localiser(state, inspecte) : null;
+  const inspecteurDefinition = inspecteur ? getCard(inspecteur.carte.cardId) : undefined;
+  const gestesInspectes =
+    inspecteur && inspecteur.camp === myCamp
+      ? gestesDeLaCarte(playable, inspecteur.carte.uid, inspecteur.auPoste, inspecteur.rang)
+      : [];
+  const gestesDuPanneau =
+    inspecteur && inspecteur.camp === myCamp ? (
+      gestesInspectes.length > 0 ? (
+        <div className="actions actions--tight">
+          {gestesInspectes.map((action) => (
+            <ActionButton
+              key={JSON.stringify(action)}
+              state={state}
+              action={action}
+              myCamp={myCamp}
+              onAction={(geste) => {
+                setInspecte(null);
+                play(geste);
+              }}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="muted">Aucun geste pour cette carte ce tour.</p>
+      )
+    ) : undefined;
+
   /** La carte choisie, **si elle est encore dans la main** : sinon la sélection est vide. */
   const selected = mySide.hand.find((card) => card.uid === selectedUid) ?? null;
   const selectedDefinition = selected ? getCard(selected.cardId) : undefined;
@@ -1125,12 +1235,34 @@ export function Battle() {
                 mine={id === myCamp}
                 pendingPromotion={state.pendingPromotion === id}
                 pasAPas={pasAPas}
+                inspecte={inspecte}
+                onInspecter={setInspecte}
               />
             </Fragment>
           ))}
         </section>
 
         <div className="battle__console">
+          {/* L'inspecteur (#188) : la colonne de droite à partir de 900 px, une feuille basse sur
+              téléphone. Il ne recouvre pas la carte qu'il décrit (`InspecteurCombat`). */}
+          <InspecteurCombat
+            ouvert={inspecteur !== null}
+            onOpenChange={(ouvert) => {
+              if (!ouvert) setInspecte(null);
+            }}
+            nom={inspecteur ? cardName(inspecteur.carte.cardId) : ''}
+            ancre={inspecte}
+            fiche={
+              inspecteur && inspecteurDefinition ? (
+                <FicheCarte
+                  instance={inspecteur.carte}
+                  card={inspecteurDefinition}
+                  machine={inspecteur.auPoste ? texteMachine(state.players[inspecteur.camp]) : undefined}
+                />
+              ) : null
+            }
+            gestes={gestesDuPanneau}
+          />
           {regard && <RegardDuDessus carte={regard} />}
 
           <section className="section hand-panel" data-pas-a-pas={pasAPas.designe('main')}>
