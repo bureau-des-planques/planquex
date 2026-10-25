@@ -166,7 +166,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Il fournit du personnel. Le personnel ne sait pas où il va.'
+    flavor: 'Il fournit du personnel. Le personnel ne sait pas où il va.',
+    art: 'interim-responsable-interim.webp'
   })
 ];
 
