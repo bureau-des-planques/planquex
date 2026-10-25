@@ -361,7 +361,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Procédure supprimée', cost: ['ATELIER', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse subit une procédure supprimée. La procédure, elle, a survécu.' },
       { name: 'Décision seule', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress. La décision a été prise sans le RUI.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Il a supprimé le RUI. La procédure, elle, a survécu.'
+    flavor: 'Deux Interventions. Il a supprimé le RUI. La procédure, elle, a survécu.',
+    art: 'atelier-rpo-sans-rui-ex.webp'
   }),
   base({
     id: 'atelier-rui-non-toxique-ex',
