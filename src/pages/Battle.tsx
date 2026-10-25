@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, Info, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
@@ -43,6 +43,9 @@ import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
+import { useEffetsDeCombat } from '@/components/effets-combat';
+import type { EffetCombat } from '@/components/effets-combat';
+import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import type { EtatMenu } from '@/components/MenuCombat';
 import {
   Dialog,
@@ -120,6 +123,7 @@ function CartePlateau({
   machine,
   inspectee,
   annotations = false,
+  effets = [],
   onInspecter
 }: {
   instance: CardInstance;
@@ -130,6 +134,8 @@ function CartePlateau({
   inspectee: boolean;
   /** Le mode `détaillé` du combat (#189) : les Pressions et le chiffre du Stress reviennent. */
   annotations?: boolean;
+  /** Les effets de la scène qui visent cette instance (#192) : un chiffre de Stress, pas plus. */
+  effets?: readonly EffetCombat[];
   onInspecter: () => void;
 }) {
   const nom = cardName(instance.cardId);
@@ -152,6 +158,17 @@ function CartePlateau({
         stress={instance.maxHp - instance.hp}
         seuil={instance.maxHp}
       />
+      {/* Le chiffre de Stress (#192) : il naît avec l'instance touchée, vit 700 ms et quitte le
+          DOM. `aria-hidden` : l'information est déjà dans la barre de Stress et au journal. */}
+      {effets.map((effet) => (
+        <span
+          key={effet.id}
+          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
+          aria-hidden="true"
+        >
+          +{effet.valeur}
+        </span>
+      ))}
     </CarteSurvolable>
   );
 }
@@ -461,6 +478,7 @@ function Camp({
   pasAPas,
   inspecte,
   detaille,
+  effets = [],
   onInspecter
 }: {
   label: string;
@@ -475,8 +493,20 @@ function Camp({
   inspecte: string | null;
   /** La densité du combat (#189) : annotations sur le Poste et sur la Machine. */
   detaille: boolean;
+  /** Les effets de la scène qui touchent **ce** camp (#192). */
+  effets?: readonly EffetCombat[];
   onInspecter: (uid: string) => void;
 }) {
+  const effetsStress = effets.filter((effet) => effet.nature === 'stress');
+  const craquage = effets.find((effet) => effet.nature === 'craquage');
+  const pioche = effets.some((effet) => effet.nature === 'pioche');
+  const uidsEnJeu = new Set([side.active, ...side.bench].filter(Boolean).map((carte) => carte!.uid));
+  // Un Planqué qui vient de craquer n'a plus de carte au Poste : son chiffre de Stress reste
+  // à la place de la carte, sur le fantôme désaturé, plutôt que de disparaître avec elle.
+  const stressHorsCarte = effetsStress.filter(
+    (effet) => effet.auPoste && (!effet.uid || !uidsEnJeu.has(effet.uid))
+  );
+  const craquageDefinition = craquage ? getCard(craquage.carte?.cardId ?? '') : undefined;
   // Le Poste : la carte, en grand, au centre du camp (R4). Le nom et la barre de Stress sont
   // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
   // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
@@ -491,6 +521,7 @@ function Camp({
           machine={texteMachine(side)}
           inspectee={inspecte === posteActif.uid}
           annotations={detaille}
+          effets={effetsStress.filter((effet) => effet.uid === posteActif.uid)}
           onInspecter={() => onInspecter(posteActif.uid)}
         />
       ) : (
@@ -498,6 +529,23 @@ function Camp({
           {pendingPromotion ? 'Aucun Planqué — relève à choisir' : 'Poste libre'}
         </strong>
       )}
+      {/* Le craquage (#192) : la carte tombée reste une fraction de seconde, désaturée, à la
+          place qu'elle occupait — et son chiffre de Stress avec elle. Le bandeau « a craqué »
+          et le journal restent les porteurs de l'information sous mouvement réduit. */}
+      {craquage && craquage.auPoste && (
+        <div className="craquage__carte" aria-hidden="true">
+          {craquageDefinition && <CardView card={craquageDefinition} figee plateau />}
+        </div>
+      )}
+      {stressHorsCarte.map((effet) => (
+        <span
+          key={effet.id}
+          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
+          aria-hidden="true"
+        >
+          +{effet.valeur}
+        </span>
+      ))}
     </div>
   );
 
@@ -512,7 +560,7 @@ function Camp({
         {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
             Rebut ne s'ouvre pas encore : son panneau arrive avec #188, et d'ici là ce n'est pas un bouton. */}
         <span className="piles">
-          <span className="pile pile--deck">
+          <span className={`pile pile--deck${pioche ? ' is-piochante' : ''}`}>
             Deck <strong>{side.deck.length}</strong>
           </span>
           <span className="pile pile--rebut">
@@ -550,6 +598,7 @@ function Camp({
                 instance={slot}
                 className="bench__carte"
                 inspectee={inspecte === slot.uid}
+                effets={effetsStress.filter((effet) => effet.uid === slot.uid)}
                 onInspecter={() => onInspecter(slot.uid)}
               />
             ) : (
@@ -777,7 +826,14 @@ export function Battle() {
    * rend `null` **sans appeler** la politique — le camp `ai` est tenu par quelqu'un, et
    * l'écran ne doit pas jouer son tour à sa place (critère du #125).
    */
-  const reduceMotion = useReducedMotion();
+  const sansMouvement = useMouvementReduit();
+
+  /**
+   * **Les effets de la scène** (#192) : le chiffre de Stress, la traînée de craquage, la pile
+   * qui s'allume, l'Intervention qui se remplit. Le compteur (quatre au plus) et la durée
+   * (800 ms au plus) vivent dans `effets-combat.ts`, pas dans le CSS.
+   */
+  const effets = useEffetsDeCombat(state, sansMouvement);
 
   /**
    * **Le raccourci de la bascule d'infos** (#189, `SPEC-COMBAT-UI` §4.6) : `I` et son alias
@@ -810,9 +866,9 @@ export function Battle() {
 
   useEffect(() => {
     if (!aiAction) return;
-    const timer = window.setTimeout(() => play(aiAction), reduceMotion ? 0 : 600);
+    const timer = window.setTimeout(() => play(aiAction), sansMouvement ? 0 : 600);
     return () => window.clearTimeout(timer);
-  }, [aiAction, reduceMotion, play]);
+  }, [aiAction, sansMouvement, play]);
 
   /**
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
@@ -979,12 +1035,24 @@ export function Battle() {
    * même liste que la barre d'action (`playable`) — rien de grisé, et seulement mon camp.
    */
   const [inspecte, setInspecte] = useState<string | null>(null);
-  const inspecteur = inspecte ? localiser(state, inspecte) : null;
+  /**
+   * L'inspecteur lit **le plateau et la main** (#192) : sous mouvement réduit, une carte de la
+   * main ne se soulève pas — c'est le panneau qui s'ouvre au survol et au focus. Une carte de
+   * main n'a ni Poste ni rang ; ses gestes sont ceux que la main porte déjà (`playable`).
+   */
+  const inspecteurPlateau = inspecte ? localiser(state, inspecte) : null;
+  const carteEnMain = inspecte ? mySide.hand.find((carte) => carte.uid === inspecte) ?? null : null;
+  const inspecteur = inspecteurPlateau
+    ? { ...inspecteurPlateau, enMain: false }
+    : carteEnMain
+      ? { camp: myCamp, carte: carteEnMain, auPoste: false, rang: -1, enMain: true }
+      : null;
   const inspecteurDefinition = inspecteur ? getCard(inspecteur.carte.cardId) : undefined;
-  const gestesInspectes =
-    inspecteur && inspecteur.camp === myCamp
-      ? gestesDeLaCarte(playable, inspecteur.carte.uid, inspecteur.auPoste, inspecteur.rang)
-      : [];
+  const gestesInspectes = inspecteur && inspecteur.camp === myCamp
+    ? inspecteur.enMain
+      ? playable.filter((action) => 'uid' in action && action.uid === inspecteur.carte.uid)
+      : gestesDeLaCarte(playable, inspecteur.carte.uid, inspecteur.auPoste, inspecteur.rang)
+    : [];
   const gestesDuPanneau =
     inspecteur && inspecteur.camp === myCamp ? (
       gestesInspectes.length > 0 ? (
@@ -1144,7 +1212,10 @@ export function Battle() {
     <div
       className={`page battle battle--${combatDetaille ? 'detaille' : 'sobre'}${
         pasAPas.ouvert ? ' battle--pas-a-pas' : ''
-      }`}
+      }${sansMouvement ? ' battle--mouvement-reduit' : ''}`}
+      /* Le CSS lit aussi cet attribut local : le réglage du store passait jusque-là inaperçu
+         (#192), seul `prefers-reduced-motion` coupait le soulèvement des cartes. */
+      data-mouvement-reduit={sansMouvement ? 'true' : 'false'}
       /* Les cibles de l'étape courante : `styles.css` met en avant l'élément qui porte
          le `data-pas-a-pas` correspondant (`pasAPas.designe`). Fermé, aucun élément ne
          porte l'attribut — donc aucun contour. */
@@ -1304,7 +1375,12 @@ export function Battle() {
                 <PisteInterventions
                   camps={[otherCamp(myCamp), myCamp].map((camp) => ({
                     label: pisteLabel(camp),
-                    points: state.players[camp].points
+                    points: state.players[camp].points,
+                    /* Les crans qui viennent d'être acquis (#192) : leur hexagone rebondit
+                       une fois ; sous mouvement réduit, il est simplement déjà rempli. */
+                    fraiches: effets
+                      .filter((effet) => effet.nature === 'intervention' && effet.camp === camp)
+                      .map((effet) => effet.numero ?? 0)
                   }))}
                   designe={pasAPas.designe('interventions')}
                 />
@@ -1318,10 +1394,26 @@ export function Battle() {
                 pasAPas={pasAPas}
                 inspecte={inspecte}
                 detaille={combatDetaille}
+                effets={effets.filter((effet) => effet.camp === id)}
                 onInspecter={setInspecte}
               />
             </Fragment>
           ))}
+          {/* La traînée de craquage (#192) : une seule, entre l'attaquant et sa cible. Elle ne
+              traverse **jamais** sous mouvement réduit — le fantôme désaturé et le bandeau
+              « a craqué » disent tout, sans mouvement. */}
+          {!sansMouvement &&
+            effets
+              .filter((effet) => effet.nature === 'craquage')
+              .map((effet) => (
+                <span
+                  key={`train-${effet.id}`}
+                  className={`craquage__train ${
+                    effet.camp === myCamp ? 'craquage__train--vers-le-bas' : 'craquage__train--vers-le-haut'
+                  }`}
+                  aria-hidden="true"
+                />
+              ))}
         </section>
 
         <div className="battle__console">
@@ -1375,12 +1467,22 @@ export function Battle() {
                     <li
                       key={card.uid}
                       className={`hand__carte${etat}`}
+                      data-uid={card.uid}
                       style={
                         {
                           '--rot': `${decalage * 3}deg`,
                           '--dec': `${decalage * decalage * 1.5}px`
                         } as CSSProperties
                       }
+                      /* Sous « Mouvement réduit », la carte ne se soulève pas : c'est
+                         l'inspecteur qui s'ouvre au survol et au focus (#192, #188). */
+                      onPointerEnter={(evenement) => {
+                        if (!sansMouvement || evenement.pointerType !== 'mouse') return;
+                        setInspecte(card.uid);
+                      }}
+                      onFocus={() => {
+                        if (sansMouvement) setInspecte(card.uid);
+                      }}
                     >
                       {definition && (
                         <div className="hand__visuel" aria-hidden>

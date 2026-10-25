@@ -1126,3 +1126,84 @@ describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-C
     expect(regle).not.toMatch(/overflow-wrap:\s*anywhere/);
   });
 });
+
+/**
+ * Les effets de la référence et leur repli (#192, `SPEC-COMBAT-UI` §6.8). Les durées et
+ * le compteur vivent dans `effets-combat.ts` ; ici on vérifie **le branchement** : le
+ * réglage du store arrive au CSS, une carte de la main ne se soulève pas sans mouvement,
+ * et une Pression laisse bien un chiffre de Stress sur la table.
+ */
+describe('Battle — les effets de la scène et leur repli (#192)', () => {
+  it('« Mouvement réduit » du store porte une classe et un attribut que le CSS lit', () => {
+    const { container, unmount } = renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      reducedMotion: true
+    });
+    const page = container.querySelector('.battle');
+    expect(page).toHaveClass('battle--mouvement-reduit');
+    expect(page).toHaveAttribute('data-mouvement-reduit', 'true');
+    unmount();
+
+    const autre = renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      reducedMotion: false
+    });
+    expect(autre.container.querySelector('.battle')).not.toHaveClass('battle--mouvement-reduit');
+    expect(autre.container.querySelector('.battle')).toHaveAttribute('data-mouvement-reduit', 'false');
+  });
+
+  it('sous mouvement réduit, le survol d’une carte de la main ouvre l’inspecteur au lieu de la soulever', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+
+    const carte = document.querySelector<HTMLElement>('.hand > li');
+    if (!carte) throw new Error('la main ne porte aucune carte');
+    const nom = carte.querySelector('.hand__name')?.textContent ?? '';
+    expect(nom).not.toBe('');
+
+    fireEvent.pointerEnter(carte, { pointerType: 'mouse' });
+
+    const panneau = await screen.findByRole('dialog');
+    expect(panneau).toHaveAccessibleName(nom);
+  });
+
+  it('une Pression affiche le chiffre de Stress près de la carte touchée', () => {
+    const { partie, etat } = partieAvecPression();
+    const { container } = renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      reducedMotion: true,
+      partie
+    });
+    const attaque = legalActions(etat).find((action) => action.type === 'attack');
+    const definition = ALL_CARDS.find((carte) => carte.id === etat.players.player.active?.cardId);
+    if (attaque?.type !== 'attack' || !definition || !('attacks' in definition)) {
+      throw new Error('le Poste du joueur n’a pas de Pression');
+    }
+    const nom = definition.attacks[attaque.attackIndex]?.name ?? '';
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(nom) }));
+
+    // Sous mouvement réduit, le chiffre est là, immobile : la classe sans animation est la
+    // preuve que c'est bien le repli, pas une animation qui aurait fini avant l'assertion.
+    const chiffre = container.querySelector<HTMLElement>('.stress-flottant');
+    expect(chiffre).not.toBeNull();
+    expect(chiffre).toHaveClass('is-fixe');
+    expect(chiffre?.textContent).toMatch(/^\+\d+$/);
+  });
+
+  it('un changement de tour allume la pile de Deck qui vient de piocher', () => {
+    const { partie } = partieCommencee();
+    const { container } = renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      reducedMotion: true,
+      partie
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fin du tour' }));
+
+    expect(container.querySelector('.pile--deck.is-piochante')).not.toBeNull();
+  });
+});

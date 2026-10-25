@@ -2785,6 +2785,205 @@ h2 {
   background: linear-gradient(180deg, var(--gold-soft), var(--gold));
 }
 
+/* ---------- Les effets de la scène (#192, SPEC-COMBAT-UI §6.8) ---------- */
+
+/* Le chiffre de Stress : doré, près de la carte touchée, **une fois**, 700 ms, puis le
+   composant le retire du DOM. `transform` et `opacity` seulement : aucun `filter: blur`,
+   et la carte n'est jamais décalée (le chiffre est en position absolue). */
+.stress-flottant {
+  animation: stress-monte 700ms ease-out 1 both;
+  color: var(--scene-gold-hot);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  left: 50%;
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+  top: -0.35rem;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+@keyframes stress-monte {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 6px) scale(1.4);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px) scale(1);
+  }
+}
+
+/* Le repli sans mouvement : le chiffre est là, immobile, puis il part à la même échéance.
+   L'information n'a jamais vécu dans l'animation. */
+.stress-flottant.is-fixe {
+  animation: none;
+  opacity: 1;
+  transform: translateX(-50%);
+}
+
+/* L'Intervention qui se remplit : un seul rebond de 200 ms. Le remplissage, lui, est l'état
+   `is-acquise` — il ne bouge pas. */
+.piste__hex.is-fraiche {
+  animation: intervention-rebond 200ms ease-out 1;
+}
+
+@keyframes intervention-rebond {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* La pile de Deck qui s'allume à la pioche : un liseré néon de 150 ms sur un pseudo-élément,
+   donc sans faire bouger la pile ni son compte. */
+.pile--deck {
+  position: relative;
+}
+
+.pile--deck.is-piochante::after {
+  animation: piochante-lueur 150ms ease-out 1 both;
+  border: 2px solid var(--scene-neon);
+  border-radius: 8px;
+  content: '';
+  inset: -3px;
+  pointer-events: none;
+  position: absolute;
+}
+
+@keyframes piochante-lueur {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* La traînée de craquage : une seule bande entre l'attaquant et sa cible, 500 ms, sans flou.
+   Elle est purement décorative — le bandeau « a craqué » et le journal la disent en mots. */
+.craquage__train {
+  animation: train-craquage 500ms ease-out 1 both;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--scene-danger) 65%, transparent) 32%,
+    var(--scene-gold-hot) 55%,
+    transparent 100%
+  );
+  clip-path: polygon(44% 0, 56% 0, 100% 100%, 0 100%);
+  height: 46%;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 27%;
+  transform: translateX(-50%);
+  width: 3rem;
+  z-index: 2;
+}
+
+@keyframes train-craquage {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -12px) scaleY(0.4);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0) scaleY(1);
+  }
+}
+
+/* La carte qui craque : elle reste une fraction de seconde à sa place, **désaturée**, puis
+   s'efface. Aucun flou : seule la saturation et l'opacité changent. */
+.board__poste {
+  position: relative;
+}
+
+.craquage__carte {
+  animation: craquage-desature 500ms ease-out 1 both;
+  filter: grayscale(1) saturate(0.15);
+  inset: 0;
+  opacity: 0.35;
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+}
+
+@keyframes craquage-desature {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+
+/* Sous « Mouvement réduit » (le store **et** le système), le mouvement part et l'information
+   reste : le chiffre s'affiche sans bouger, l'hexagone est déjà rempli, la pile garde son
+   liseré fixe, et la carte craquée reste désaturée. */
+@media (prefers-reduced-motion: reduce) {
+  .stress-flottant,
+  .stress-flottant.is-fixe {
+    animation: none !important;
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+
+  .piste__hex.is-fraiche {
+    animation: none !important;
+  }
+
+  .pile--deck.is-piochante::after {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  .craquage__carte {
+    animation: none !important;
+    opacity: 0.35;
+  }
+}
+
+:root[data-mouvement-reduit='true'] .stress-flottant,
+:root[data-mouvement-reduit='true'] .stress-flottant.is-fixe,
+.battle--mouvement-reduit .stress-flottant,
+.battle--mouvement-reduit .stress-flottant.is-fixe {
+  animation: none !important;
+  opacity: 1;
+  transform: translateX(-50%);
+}
+
+:root[data-mouvement-reduit='true'] .piste__hex.is-fraiche,
+.battle--mouvement-reduit .piste__hex.is-fraiche {
+  animation: none !important;
+}
+
+:root[data-mouvement-reduit='true'] .pile--deck.is-piochante::after,
+.battle--mouvement-reduit .pile--deck.is-piochante::after {
+  animation: none !important;
+  opacity: 1;
+}
+
+:root[data-mouvement-reduit='true'] .craquage__carte,
+.battle--mouvement-reduit .craquage__carte {
+  animation: none !important;
+  opacity: 0.35;
+}
+
 /* La barre de Stress est **dorée** (DESIGN.md §2.6) : le rouge reste le danger d'état, quand le
    Planqué va craquer. */
 .battle .stress__fill {
@@ -2909,6 +3108,13 @@ h2 {
   }
 }
 
+/* Le réglage « Mouvement réduit » du store n'était relié à aucun CSS (#192) : il l'est
+   maintenant par la classe de l'écran et par l'attribut posé sur la racine. */
+:root[data-mouvement-reduit='true'] .hand > li:is(:hover, :focus-within, .is-selected),
+.battle--mouvement-reduit .hand > li:is(:hover, :focus-within, .is-selected) {
+  transform: rotate(var(--rot, 0deg));
+}
+
 .hand__name {
   font-family: var(--font-display);
   font-size: 0.82rem;
@@ -3009,6 +3215,25 @@ h2 {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/*
+ * Le même repli, pour le réglage **du store** (#192) : `App` pose
+ * `data-mouvement-reduit="true"` sur la racine, et le CSS s'en sert partout. Le store
+ * existait depuis longtemps, mais un réglage que seul JavaScript lit ne coupe rien :
+ * c'est exactement le défaut que ce ticket répare.
+ *
+ * Les effets de la scène ont leurs propres règles plus haut (`animation: none` explicite) :
+ * elles ont une spécificité supérieure et gardent le chiffre de Stress **visible**, là où
+ * une durée de 0,001 ms le laisserait sur son état final, donc invisible.
+ */
+:root[data-mouvement-reduit='true'] *,
+:root[data-mouvement-reduit='true'] *::before,
+:root[data-mouvement-reduit='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.001ms !important;
 }
 /*
  ---break---

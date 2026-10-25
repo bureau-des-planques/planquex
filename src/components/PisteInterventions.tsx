@@ -19,6 +19,12 @@ export interface CampPiste {
   readonly label: string;
   /** Les Interventions marquées par ce camp. */
   readonly points: number;
+  /**
+   * Les numéros d'hexagone **qui viennent d'être acquis** (#192) : ils portent `is-fraiche`,
+   * et le CSS leur donne un rebond d'une fois — ou aucun sous mouvement réduit, où le
+   * remplissage de `is-acquise` suffit déjà.
+   */
+  readonly fraiches?: readonly number[];
 }
 
 export function PisteInterventions({
@@ -33,7 +39,7 @@ export function PisteInterventions({
 
   return (
     <div className="piste" role="group" aria-label={`Interventions : ${lecture}`} data-pas-a-pas={designe}>
-      {camps.map(({ label, points }) => (
+      {camps.map(({ label, points, fraiches = [] }) => (
         <div className="piste__camp" role="group" aria-label={label} key={label}>
           <span className="piste__nom" aria-hidden="true">
             {label}
@@ -45,7 +51,9 @@ export function PisteInterventions({
                 key={numero}
                 role="img"
                 aria-label={`Intervention ${numero} sur ${INTERVENTIONS_POUR_GAGNER}, ${label}`}
-                className={`piste__hex${numero <= points ? ' is-acquise' : ''}`}
+                className={`piste__hex${numero <= points ? ' is-acquise' : ''}${
+                  fraiches.includes(numero) ? ' is-fraiche' : ''
+                }`}
               />
             );
           })}
