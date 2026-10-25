@@ -114,7 +114,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Interface', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est branché sur l’interface commune. Personne n’a validé l’interface.' }],
-    flavor: 'Il a un sigle, une salle, et un ordre du jour pour la salle.'
+    flavor: 'Il a un sigle, une salle, et un ordre du jour pour la salle.',
+    art: 'atelier-rpi.webp'
   }),
   base({
     id: 'atelier-responsable-flux',
