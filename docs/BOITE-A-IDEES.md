@@ -80,11 +80,11 @@ pourcentage du tableau : ainsi tout le monde voit **la même** disposition, et e
 d'écran.
 
 **Une interface pour les placer** : un mode où on les **glisse** à la main, et qui **écrit la position**
-là où le mur la lit. **Sur la base (#185)**, le lâcher écrit `position_x`, `position_y` et
-`position_angle` **tout de suite** : tout le monde voit la disposition sans commit — et chacun ne
-range que **ses** post-its, la politique de `0001`/`0005` ne laissant déplacer que l'auteur (un compte
-en attente ne range rien du tout). **Sur le fichier**, le mode exporte le fichier à committer : c'est
-le mécanisme de l'alpha, sans backend.
+là où le mur la lit. **Sur la base (#185, #186)**, le lâcher écrit `position_x`, `position_y` et
+`position_angle` **tout de suite** : tout le monde voit la disposition sans commit. L'auteur range
+**ses** post-its ; l'**administration** range **n'importe lequel** (D-092), et un compte en attente ne
+range rien du tout. **Sur le fichier**, le mode exporte le fichier à committer : c'est le mécanisme de
+l'alpha, sans backend.
 
 **Un post-it neuf ne se colle pas sur un autre (#185)** : sa place est tirée au hasard, puis écartée
 des places déjà prises — le calcul garde le point dont l'écart à toutes les autres est le plus grand.
@@ -150,7 +150,7 @@ l'écran étroit **garde des post-its** — il ne se contente pas d'une liste de
   vivent **sur** le post-it.
 
 Le **mode de placement** reste un travail de **bureau** : il ne se fait pas au doigt sur un téléphone.
-Sur la base, il ne range que **son** post-it (#185) : le tableau se répare donc post-it par post-it, chacun chez soi.
+Sur la base, l'auteur range **son** post-it et l'**administration** range tout (#185, #186, D-092) : le tableau se répare donc post-it par post-it, et le bureau peut reprendre un post-it mal posé.
 
 ## 3. Le fichier du mur
 
@@ -194,8 +194,10 @@ Un post-it **retiré** par son auteur (#139) **disparaît du fichier** : il n'ex
 « retiré », et un mur qui garderait une ligne barrée dirait ce que personne n'a écrit. Le jeu ne
 connaît donc que les **cinq** statuts de la liste. **En base, c'est la même règle** : le retrait est
 une **suppression** (`delete`), qui emporte les votes et les commentaires du post-it
-(`on delete cascade`), et la base ne l'autorise que **tant que le post-it est `en attente`**
-(`0006`) — après, il porte un tri que le geste effacerait.
+(`on delete cascade`). Pour **l'auteur**, la base ne l'autorise que **tant que le post-it est
+`en attente`** (`0006`) — après, il porte un tri que le geste effacerait. Pour
+**l'administration**, elle l'autorise **à n'importe quel statut** (#186, `0007`, D-092) : c'est le
+geste de modération, et la confirmation dit ce qu'il efface.
 
 Le jeu **lit** ce fichier et n'écrit jamais dedans. Il est mis à jour **hors du jeu** :
 `npm run mur:import` ajoute les réponses du formulaire (§4.5), `npm run statut` déplace le tri

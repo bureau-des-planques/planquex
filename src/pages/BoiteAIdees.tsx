@@ -42,7 +42,7 @@ import {
   voterPourPostit
 } from '@/lib/murBase';
 import type { Commentaire } from '@/lib/murBase';
-import { estApprouve } from '@/lib/comptes';
+import { estAdministrateur, estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 import { DOCUMENT_MUR, ECRANS, exporterMur, lireMur } from '@/store/mur';
 import type { Ecran, Mur, Postit, PositionPostit, SensVote } from '@/store/mur';
@@ -90,6 +90,12 @@ export function BoiteAIdees() {
   const sessionCompte = useComptes((state) => state.session);
   const compte = useComptes((state) => state.compte);
   const peutEcrire = !configureComptes || estApprouve(compte);
+  /**
+   * L'administration du mur (#186) : elle range et retire **n'importe quel** post-it. Sans
+   * configuration de comptes, il n'y a pas d'administration — l'alpha sans base n'a que le
+   * fichier, et son rangement est celui du bureau qui commite.
+   */
+  const administrateur = configureComptes && estAdministrateur(compte);
 
   /**
    * La source du mur (#136) : la **base** quand elle est configurée, le **fichier** sinon.
@@ -464,10 +470,16 @@ export function BoiteAIdees() {
       setCommentaires(({ [cible.id]: _fil, ...reste }) => reste);
       setPositions(({ [cible.id]: _place, ...reste }) => reste);
       setARetirer(null);
-      setDepotMessage({
-        texte:
-          'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
-      });
+      setDepotMessage(
+        cible.mien
+          ? {
+              texte:
+                'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
+            }
+          : {
+              texte: `Le post-it de ${cible.pseudo || 'anonyme'} est retiré du mur, avec ses votes et ses commentaires.`
+            }
+      );
     } catch (erreur) {
       setARetirer(null);
       setDepotMessage({ alerte: true, texte: messageDe(erreur) });
@@ -851,7 +863,7 @@ export function BoiteAIdees() {
                   position={positions[postit.id] ?? postit.position}
                   ordre={ordre}
                   placement={placement}
-                  deplacable={source === 'fichier' || postit.mien === true}
+                  deplacable={source === 'fichier' || postit.mien === true || administrateur}
                   agrandi={agrandi === postit.id}
                   onAgrandir={(id) => setAgrandi((courant) => (courant === id ? null : id))}
                   glisser={glisser}
@@ -891,6 +903,14 @@ export function BoiteAIdees() {
                           occupe: correctionEnVol === postit.id,
                           erreur: erreursCorrection[postit.id] ?? null,
                           onCorriger: corriger,
+                          onRetirer: (cible) => setARetirer(cible)
+                        }
+                      : undefined
+                  }
+                  retrait={
+                    source === 'base' && administrateur && !postit.mien
+                      ? {
+                          occupe: retraitEnVol,
                           onRetirer: (cible) => setARetirer(cible)
                         }
                       : undefined
@@ -1029,8 +1049,12 @@ export function BoiteAIdees() {
           jeu, jamais par `window.confirm` (D-035). */}
       <Confirmation
         open={aRetirer !== null}
-        titre="Retirer ce post-it ?"
-        texte="Il sera supprimé du mur, avec ses commentaires — pas seulement barré, et il n’en restera aucune trace. C’est définitif. Le retrait n’est possible que tant que le post-it est en attente : dès qu’il a bougé de statut, il ne s’efface plus."
+        titre={aRetirer && !aRetirer.mien ? 'Retirer le post-it d’un autre ?' : 'Retirer ce post-it ?'}
+        texte={
+          aRetirer && !aRetirer.mien
+            ? 'Il sera supprimé du mur, avec ses votes et ses commentaires — pas seulement barré, et il n’en restera aucune trace. C’est définitif, et c’est un geste d’administration : le post-it n’est pas le tien, et son auteur le verra disparaître sans explication sur le mur.'
+            : 'Il sera supprimé du mur, avec ses commentaires — pas seulement barré, et il n’en restera aucune trace. C’est définitif. Le retrait n’est possible que tant que le post-it est en attente : dès qu’il a bougé de statut, il ne s’efface plus.'
+        }
         confirmer={retraitEnVol ? 'Retrait…' : 'Retirer le post-it'}
         onConfirm={() => void retirer()}
         onCancel={() => setARetirer(null)}

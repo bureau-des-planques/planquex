@@ -129,6 +129,15 @@ export function estApprouve(compte: Compte | null): boolean {
   return compte !== null && (compte.etat === 'approuve' || compte.administrateur);
 }
 
+/**
+ * L'administration du mur (#186) : elle trie, range et retire **n'importe quel** post-it.
+ * Le drapeau vient de la base (`comptes.administrateur`, 0005) et ne s'écrit qu'au SQL
+ * Editor ; l'écran ne fait que ne pas proposer à un compte ce que la base lui refuserait.
+ */
+export function estAdministrateur(compte: Compte | null): boolean {
+  return compte !== null && compte.administrateur === true;
+}
+
 /** Le libellé d'un état, pour les écrans. */
 export function libelleEtat(etat: EtatCompte): string {
   if (etat === 'approuve') return 'approuvé';

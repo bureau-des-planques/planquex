@@ -394,3 +394,55 @@ describe('relire ou retirer son post-it (#139)', () => {
     expect(screen.queryByRole('button', { name: 'Retirer ce post-it' })).toBeNull();
   });
 });
+
+describe('le retrait d’administration (#186)', () => {
+  it('l’administration trouve le retrait sur le post-it d’un autre, et pas sur le sien', async () => {
+    poserCompte({ administrateur: true });
+    rendre();
+    await screen.findByText('Idée d’un collègue');
+
+    agrandir('Idée d’un collègue');
+    const zone = document.querySelector<HTMLElement>('[data-retrait="administration"]');
+    expect(zone).not.toBeNull();
+    expect(
+      within(zone as HTMLElement).getByRole('button', { name: 'Retirer ce post-it' })
+    ).toBeInTheDocument();
+    // Pas de correction du texte d'autrui : `0006` ne la donne à personne (D-088).
+    expect(document.querySelector('[data-correction]')).toBeNull();
+
+    agrandir('Mon idée');
+    // Sur le sien, c'est la relecture de l'auteur — pas le retrait d'administration.
+    expect(document.querySelector('[data-retrait="administration"]')).toBeNull();
+    expect(document.querySelector('[data-correction="ouverte"]')).not.toBeNull();
+  });
+
+  it('retirer le post-it d’un autre passe par la confirmation, puis par la couture', async () => {
+    poserCompte({ administrateur: true });
+    rendre();
+    await screen.findByText('Idée d’un collègue');
+    agrandir('Idée d’un collègue');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retirer ce post-it' }));
+
+    const dialogue = await screen.findByRole('dialog', { name: /Retirer le post-it d’un autre \?/ });
+    expect(dialogue).toHaveTextContent(/avec ses votes et ses commentaires/);
+    // Rien n'est parti tant qu'on n'a pas confirmé.
+    expect(mocks.retirer).not.toHaveBeenCalled();
+
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Retirer le post-it' }));
+
+    await waitFor(() => expect(mocks.retirer).toHaveBeenCalledWith('p-autre'));
+    await waitFor(() => expect(screen.queryByText('Idée d’un collègue')).not.toBeInTheDocument());
+    expect(screen.getByText(/Le post-it de Anonyme est retiré du mur/)).toBeInTheDocument();
+  });
+
+  it('un compte approuvé qui n’est pas administrateur ne voit rien de tout ça', async () => {
+    poserCompte();
+    rendre();
+    await screen.findByText('Idée d’un collègue');
+    agrandir('Idée d’un collègue');
+
+    expect(document.querySelector('[data-retrait="administration"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Retirer ce post-it' })).toBeNull();
+  });
+});

@@ -62,7 +62,9 @@ vi.mock('@/lib/murBase', async () => {
   };
 });
 
+import type { Compte } from '@/lib/comptes';
 import { BoiteAIdees } from './BoiteAIdees';
+import { useComptes } from '@/store/comptes';
 import { useStore } from '@/store/useStore';
 
 const BASE = {
@@ -97,6 +99,31 @@ const MOI = {
   votes: { up: 0, down: 0, mon: null },
   mien: true
 };
+
+const COMPTE: Compte = {
+  id: 'compte-a',
+  courriel: 'a@exemple.test',
+  etat: 'approuve',
+  raison: '',
+  administrateur: false,
+  created_at: '2026-10-20T10:00:00.000Z'
+};
+
+/** Le compte du moment : sans configuration, l'alpha n'a pas d'administration (#186). */
+function poserCompte(etat: Partial<Compte> | null = null) {
+  useComptes.setState({
+    configure: etat !== null,
+    chargement: false,
+    session: etat ? { id: 'compte-a', courriel: 'a@exemple.test' } : null,
+    compte: etat ? { ...COMPTE, ...etat } : null,
+    erreur: null,
+    rafraichir: vi.fn(async () => {}),
+    connecterCourriel: vi.fn(async () => null),
+    inscrireCourriel: vi.fn(async () => ({ erreur: null, courrielEnvoye: false })),
+    connecterGoogle: vi.fn(async () => null),
+    deconnecter: vi.fn(async () => {})
+  });
+}
 
 /** Un rectangle de `getBoundingClientRect` : jsdom rend zéro partout sans ça. */
 function rect(left: number, top: number, width: number, height: number): DOMRect {
@@ -148,6 +175,7 @@ beforeEach(() => {
   mocks.deplacer.mockReset();
   mocks.deplacer.mockResolvedValue({ x: 68, y: 63.3, angle: 0 });
   useStore.setState({ name: 'Employé 404' });
+  poserCompte();
   // jsdom n'implémente pas la capture de pointeur : le glisser n'en a pas besoin ici.
   HTMLElement.prototype.setPointerCapture = vi.fn();
   HTMLElement.prototype.releasePointerCapture = vi.fn();
@@ -206,6 +234,20 @@ describe('glisser écrit la place en base (#185)', () => {
 
     expect(mocks.deplacer).not.toHaveBeenCalled();
     expect(autre.style.left).toBe('10%');
+  });
+
+  it('l’administrateur prend le post-it d’un autre : c’est le rangement du mur (#186)', async () => {
+    poserCompte({ administrateur: true });
+    rendre();
+    await screen.findByText('Idée d’un collègue');
+    fireEvent.click(screen.getByRole('button', { name: /Mode de placement/ }));
+
+    const autre = mesurer('p-autre');
+    expect(autre).not.toHaveAttribute('title');
+    glisser(autre, [220, 120], [700, 400]);
+
+    await waitFor(() => expect(mocks.deplacer).toHaveBeenCalledTimes(1));
+    expect(mocks.deplacer).toHaveBeenCalledWith('p-autre', { x: 68, y: 63.3, angle: 0 });
   });
 
   it('un refus de la base remet le post-it à la place acceptée, et le dit', async () => {

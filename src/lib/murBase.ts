@@ -578,9 +578,11 @@ export async function corrigerPostit(
  * auteur disparaît du fichier : il n'existe pas de statut retiré ». En base c'est le même
  * geste : `delete`, qui emporte ses votes et ses commentaires (`on delete cascade`, 0001).
  *
- * La base ne l'autorise que **tant que le post-it est `en attente`** (0006) : après, il
- * porte un tri — une raison, un ticket — que le retrait emporterait, et le mur ne dirait
- * plus la même chose à tout le monde. Visé par son `id` **et** par mon identité.
+ * La base ne l'autorise, pour l'auteur, que **tant que le post-it est `en attente`** (0006) :
+ * après, il porte un tri — une raison, un ticket — que le retrait emporterait, et le mur ne
+ * dirait plus la même chose à tout le monde. L'**administration**, elle, retire n'importe
+ * quel post-it à n'importe quel statut (#186, `0007`) : c'est le geste de modération.
+ * Visé par son `id` — c'est la RLS qui sait qui a le droit d'effacer la ligne.
  */
 export async function retirerPostit(
   id: string,
@@ -593,16 +595,14 @@ export async function retirerPostit(
   const identite = await identiteAppareil(chargerClient);
   if (!identite) throw new Error('Aucune session : le retrait ne peut pas être signé.');
 
-  const { data, error } = await client
-    .from('postits')
-    .delete()
-    .eq('id', id)
-    .eq('auteur', identite)
-    .select('id');
+  // **Pas de filtre sur `auteur`** (#186) : c'est la RLS qui décide, et elle en connaît deux
+  // — l'auteur, tant que le post-it est `en attente` (0006), et l'administrateur, à tout
+  // statut (`0007`). Filtrer ici retirerait son geste à l'administration.
+  const { data, error } = await client.from('postits').delete().eq('id', id).select('id');
   if (error) throw new Error(messageDeCorrection(error.message));
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error(
-      'La base n’a retiré aucun post-it : il a peut-être bougé de statut, ou il n’est plus le tien.',
+      'La base n’a retiré aucun post-it : il a peut-être bougé de statut (on ne retire le sien qu’en attente), ou tu n’as pas le droit de le retirer.',
     );
   }
 }
@@ -791,11 +791,15 @@ export function verifierPosition(position: PositionPostit): string | null {
 
 /** Un refus de la base sur un déplacement, dit en français. */
 export function messageDePlace(message: string): string {
-  if (/row-level security|permission denied/i.test(message)) {
-    return 'La base refuse ce déplacement : on ne range que ses propres post-its.';
+  if (/postit_deplace_refuse/i.test(message)) {
+    return 'La base refuse ce déplacement : ce post-it n’est pas le tien, ou ton compte n’est pas approuvé.';
   }
-  if (/check constraint|position_/i.test(message)) {
+  if (/postit_deplace_inconnu/i.test(message)) return 'Ce post-it n’existe plus : recharge le mur.';
+  if (/postit_deplace_hors_bornes|check constraint|position_/i.test(message)) {
     return 'Cette place sort du tableau : elle n’a pas été enregistrée.';
+  }
+  if (/permission denied/i.test(message)) {
+    return 'La base refuse ce déplacement : ton compte ne peut pas l’écrire.';
   }
   if (/jwt|session/i.test(message)) return 'Ta session a expiré : reconnecte-toi.';
   return `La place n’a pas été enregistrée (${message}).`;
@@ -804,13 +808,14 @@ export function messageDePlace(message: string): string {
 const arrondi = (valeur: number) => Math.round(valeur * 10) / 10;
 
 /**
- * Écrit la place d'un post-it **en base** (#185) : c'est ce qui fait du mode de placement
- * autre chose qu'un export de fichier — la disposition est partagée sans commit.
+ * Écrit la place d'un post-it **en base** (#185, #186) : c'est ce qui fait du mode de
+ * placement autre chose qu'un export de fichier — la disposition est partagée sans commit.
  *
- * La politique de `0001_mur.sql`, reprise par `0005`, autorise chacun à déplacer **ses**
- * post-its (`auteur = auth.uid()`) ; le client n'écrit donc que les trois colonnes de place,
- * jamais `auteur` ni `statut`. Une modification filtrée par la RLS ne lève pas : elle porte
- * sur **0 ligne** — d'où le contrôle explicite, sinon l'écran croirait avoir rangé.
+ * Le geste passe par la fonction `deplacer_postit` (0007), et **pas** par un `update` : une
+ * politique RLS ne distingue pas les colonnes, donc rendre `position_*` écrivable au rôle
+ * `authenticated` rendrait aussi `statut` à l'auteur de la ligne — et le posteur se trierait
+ * lui-même, ce que D-059 refuse. La fonction, elle, décide **qui** déplace : l'auteur
+ * approuvé, ou l'administrateur (0007).
  *
  * La place appliquée est arrondie au dixième, comme le fait la page : ce qui revient ici est
  * exactement ce que le mur affichera, et non ce qui a été demandé.
@@ -827,25 +832,30 @@ export async function deplacerPostit(
   const client = await chargerClient();
   if (!client) throw new Error('Le mur n’est pas configuré : la place ne peut pas s’écrire.');
 
-  const place: PositionPostit = {
+  const identite = await identiteAppareil(chargerClient);
+  if (!identite) throw new Error('Aucune session : la place ne peut pas être signée.');
+
+  const demandee: PositionPostit = {
     x: arrondi(position.x),
     y: arrondi(position.y),
     angle: arrondi(position.angle)
   };
 
-  const { data, error } = await client
-    .from('postits')
-    .update({ position_x: place.x, position_y: place.y, position_angle: place.angle })
-    .eq('id', id)
-    .select('id');
+  const { data, error } = await client.rpc('deplacer_postit', {
+    p_id: id,
+    p_x: demandee.x,
+    p_y: demandee.y,
+    p_angle: demandee.angle
+  });
   if (error) throw new Error(messageDePlace(error.message));
 
-  if (!Array.isArray(data) || data.length === 0) {
-    throw new Error(
-      'La base n’a déplacé aucun post-it : on ne range que les siens, et il faut un compte approuvé.'
-    );
-  }
-  return place;
+  const ligne = estObjet(data) ? data : null;
+  if (!ligne) throw new Error('La base n’a pas rendu le post-it déplacé.');
+  return {
+    x: Number(ligne.position_x),
+    y: Number(ligne.position_y),
+    angle: Number(ligne.position_angle)
+  };
 }
 
 /**

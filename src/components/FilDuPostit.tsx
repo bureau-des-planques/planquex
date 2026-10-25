@@ -146,6 +146,42 @@ export interface CorrectionPostit {
   onRetirer: (postit: Postit) => void;
 }
 
+/**
+ * Le retrait **d'administration** (#186) : sur un post-it qui n'est pas le mien, je ne corrige
+ * rien — `0006` le refuse — mais je peux l'**effacer** du mur, à n'importe quel statut
+ * (`0007`). C'est le seul geste de l'administration qui vive dans le post-it : le tri, lui,
+ * a son écran.
+ */
+export interface RetraitPostit {
+  occupe: boolean;
+  onRetirer: (postit: Postit) => void;
+}
+
+export function RetraitDuPostit({ postit, retrait }: { postit: Postit; retrait: RetraitPostit }) {
+  return (
+    <section className="fil" data-retrait="administration">
+      <p className="fil__titre">Retrait d’administration</p>
+      <p className="fil__note">
+        Ce post-it n’est pas le tien : tu ne corriges pas son texte, mais tu peux le retirer du
+        mur, quel que soit son statut.
+      </p>
+      <button
+        type="button"
+        className="fil__bouton fil__bouton--retirer"
+        disabled={retrait.occupe}
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={() => retrait.onRetirer(postit)}
+      >
+        {retrait.occupe ? 'Retrait…' : 'Retirer ce post-it'}
+      </button>
+      <p className="fil__note">
+        Le retrait <strong>efface</strong> le post-it, avec ses votes et ses commentaires : il
+        n’en reste pas de trace sur le mur, et le geste ne se défait pas.
+      </p>
+    </section>
+  );
+}
+
 export function CorrectionDuPostit({
   postit,
   correction,

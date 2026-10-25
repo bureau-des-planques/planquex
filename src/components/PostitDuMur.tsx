@@ -14,8 +14,8 @@
  */
 import type { CSSProperties, PointerEvent } from 'react';
 import { ExternalLink, ThumbsDown, ThumbsUp } from 'lucide-react';
-import { CorrectionDuPostit, FilDuPostit } from '@/components/FilDuPostit';
-import type { CorrectionPostit, FilPostit } from '@/components/FilDuPostit';
+import { CorrectionDuPostit, FilDuPostit, RetraitDuPostit } from '@/components/FilDuPostit';
+import type { CorrectionPostit, FilPostit, RetraitPostit } from '@/components/FilDuPostit';
 import type { Postit, PositionPostit, SensVote, Statut } from '@/store/mur';
 
 /** Les trois papiers. Exporté pour la légende de la page : une seule source. */
@@ -82,6 +82,11 @@ interface Props {
   fil?: FilPostit;
   /** La relecture (#139), seulement sur **mon** post-it et seulement branché sur la base. */
   correction?: CorrectionPostit;
+  /**
+   * Le retrait d'administration (#186) : sur le post-it d'un **autre**, quand je suis
+   * administrateur. La base le permet à tout statut (`0007`), l'auteur non (`0006`).
+   */
+  retrait?: RetraitPostit;
 }
 
 export function PostitDuMur({
@@ -96,7 +101,8 @@ export function PostitDuMur({
   pouces,
   associe,
   fil,
-  correction
+  correction,
+  retrait
 }: Props) {
   const papier = PAPIERS[apparenceDe(postit)];
   const papierAssocie = associe ? PAPIERS[apparenceDe(associe)] : null;
@@ -230,6 +236,9 @@ export function PostitDuMur({
             (qui n'écrit que le fichier). */}
         {agrandi && !placement && correction && (
           <CorrectionDuPostit postit={postit} correction={correction} />
+        )}
+        {agrandi && !placement && retrait && (
+          <RetraitDuPostit postit={postit} retrait={retrait} />
         )}
         {agrandi && !placement && fil && <FilDuPostit postit={postit} fil={fil} />}
 
