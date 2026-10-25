@@ -296,7 +296,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Réservation', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est réservé pour lundi. Le créneau est pris depuis mars.' }],
-    flavor: 'Il a réservé le banc pour lundi. Le banc est réservé depuis mars.'
+    flavor: 'Il a réservé le banc pour lundi. Le banc est réservé depuis mars.',
+    art: 'atelier-planificateur-moyens-essai.webp'
   }),
 
   // Entrants seuls (sans évolution)
