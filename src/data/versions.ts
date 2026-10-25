@@ -61,37 +61,40 @@ export interface NoteVersion {
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.7',
-    date: '2026-10-24',
+    date: '2026-10-25',
     titre: 'Les comptes, et le mur qui écrit',
-    brouillon: true,
     points: [
       {
         groupe: 'Comptes',
-        texte: 'Connexion Google ou courriel, et validation manuelle des comptes : l’alpha s’ouvre sur invitation, et un compte en attente joue et lit (#181, D-088).'
+        texte: 'Connexion Google ou courriel, et validation manuelle : un compte en attente joue et lit, mais n’écrit rien tant qu’il n’est pas approuvé (#181, D-088).'
       },
       {
         groupe: 'Comptes',
-        texte: 'Un écran d’administration trie les comptes et, désormais, les post-its du mur : statut, raison d’un écarté et ticket (#139, 0006).'
+        texte: 'Un écran d’administration approuve les comptes, et trie les post-its : statut, raison d’un écarté, ticket (#139, 0006).'
       },
       {
         groupe: 'Le mur',
-        texte: 'Le mur lit la base : poster depuis le jeu, commenter, corriger ou retirer son post-it tant qu’il est en attente (#136, #138, #139).'
+        texte: 'Il lit la base : poster depuis le jeu, commenter, corriger ou retirer son post-it tant qu’il est en attente (#136, #138, #139).'
       },
       {
         groupe: 'Le mur',
-        texte: 'Les pouces 👍/👎 sur chaque post-it : un par appareil, jamais pour soi (#137).'
+        texte: 'Les pouces 👍/👎, un par appareil, jamais pour soi (#137).'
       },
       {
         groupe: 'Le mur',
-        texte: 'Un gueulage s’écrit sans famille (migration 0003, D-085), et le mur se range par script : statut, ticket et raison se déplacent sans rouvrir la base (#140).'
+        texte: 'Un gueulage s’écrit sans famille (D-085), et le mur se range par script (#140).'
       },
       {
         groupe: 'Le jeu',
-        texte: 'Les sept mécaniques du moteur sont câblées sur leurs cartes — défausse, révélation, regard, recherche, « en jouant », dégâts de Talent, café au Banc (#175).'
+        texte: 'Les sept mécaniques du moteur sont câblées sur leurs cartes : défausse, révélation, regard, recherche, « en jouant », dégâts de Talent, café au Banc (#175).'
       },
       {
         groupe: 'Le jeu',
-        texte: 'Les choix nomment leur carte, et le dessus du Deck s’affiche (#171) ; la trace des combats solo est gardée sous le compte, sans bloquer le jeu (#173, D-086).'
+        texte: 'Les choix nomment leur carte, et le dessus du Deck s’affiche (#171).'
+      },
+      {
+        groupe: 'Le jeu',
+        texte: 'La trace des combats solo est gardée sous le compte, sans bloquer le jeu (#173, D-086).'
       },
       {
         groupe: 'Le jeu',
@@ -99,19 +102,27 @@ export const NOTES_VERSIONS: NoteVersion[] = [
       },
       {
         groupe: 'Interface',
-        texte: 'Passe de finition de l’alpha : états, dialogues, confirmation, contraste, grille et Collection triée (#131, #179).'
+        texte: 'Collection et Deck : tri, cartes possédées lisibles, gabarit à cadre (#179).'
       },
       {
         groupe: 'Interface',
-        texte: 'La page de confidentialité, publique : elle dit ce que le jeu garde de toi, et se lit sans compte (D-088).'
+        texte: 'Passe de finition de l’alpha : états, dialogues, confirmation, contraste, grille (#131).'
       },
       {
         groupe: 'Interface',
-        texte: 'La note de version se lit dans le jeu, sur /nouveautés : la version sous tes yeux, puis l’historique, pris aux releases GitHub (D-090, #182).'
+        texte: 'Une page de confidentialité publique, qui dit ce que le jeu garde de toi (D-088).'
+      },
+      {
+        groupe: 'Interface',
+        texte: 'La note de version se lit dans le jeu, sur /nouveautés (D-090, #182).'
       },
       {
         groupe: 'Outillage',
-        texte: 'Les tests ne partagent plus de chemin et tolèrent la charge (#176) ; le budget de la recherche de l’IA est borné, avec repli glouton (#172).'
+        texte: 'Les tests ne partagent plus de chemin et tolèrent la charge (#176).'
+      },
+      {
+        groupe: 'Outillage',
+        texte: 'Le budget de la recherche de l’IA est borné, avec repli glouton (#172).'
       }
     ]
   },
