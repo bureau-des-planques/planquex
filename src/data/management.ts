@@ -82,7 +82,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Relance', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est relancé trois fois dans la journée. La réponse attend toujours une validation.' }],
-    flavor: 'Elle relance les impayés. La relance attend une validation.'
+    flavor: 'Elle relance les impayés. La relance attend une validation.',
+    art: 'management-chargee-clientele.webp'
   }),
   base({
     id: 'management-planificateur',

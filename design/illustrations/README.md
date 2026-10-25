@@ -204,3 +204,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `management-animateur-equipe` · modèle `NARWHAL` · graine `8802758` · `management-animateur-equipe.webp`
 - 2026-10-26 · `management-assistant-manager` · modèle `NARWHAL` · graine `1940873143` · `management-assistant-manager.webp`
 - 2026-10-26 · `management-charge-affaires` · modèle `NARWHAL` · graine `2037215949` · `management-charge-affaires.webp`
+- 2026-10-26 · `management-chargee-clientele` · modèle `NARWHAL` · graine `942910467` · `management-chargee-clientele.webp`
