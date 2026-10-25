@@ -85,7 +85,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Standardisation', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
     attacks: [{ name: 'Revue de processus', cost: ['AMELIORATION', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse passe en revue de processus. Il sort de la réunion avec une étape de plus à documenter.' }],
-    flavor: 'Il a écrit le process. Le process a écrit sa journée.'
+    flavor: 'Il a écrit le process. Le process a écrit sa journée.',
+    art: 'amelioration-responsable-process.webp'
   }),
   base({
     id: 'amelioration-responsable-amelioration-continue',
