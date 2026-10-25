@@ -91,7 +91,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Reporting', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Son bureau est vide. Sa signature est partout.'
+    flavor: 'Son bureau est vide. Sa signature est partout.',
+    art: 'direction-directeur-fantome.webp'
   }),
   base({
     id: 'direction-directeur-regional',
