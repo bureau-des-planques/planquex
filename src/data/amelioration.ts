@@ -210,7 +210,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Contrôle', cost: ['AMELIORATION'], damage: 20, text: 'Le Planqué adverse est contrôlé à la pièce. Quarante vérifiées, quatre cents en attente.' }],
-    flavor: 'Il a contrôlé quarante pièces. Il en reste quatre cents.'
+    flavor: 'Il a contrôlé quarante pièces. Il en reste quatre cents.',
+    art: 'amelioration-controleur-qualite.webp'
   }),
   base({
     id: 'amelioration-chef-projet-qualite',
