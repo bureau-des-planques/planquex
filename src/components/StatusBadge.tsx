@@ -23,7 +23,9 @@ export function StatusBadge({ status }: Props) {
   const meta = STATUS_META[status];
   const Icon = meta.icon;
   return (
-    <span className={`status-chip status-chip--${status.toLowerCase()}`} title={meta.description}>
+    // La règle (`description`) n'est plus un `title` au survol : elle est écrite dans la légende
+    // des Conditions (menu `⋯` → Règles), atteignable au doigt et au clavier (SPEC-COMBAT-UI §6.7).
+    <span className={`status-chip status-chip--${status.toLowerCase()}`}>
       <Icon size={12} strokeWidth={2.2} aria-hidden />
       {meta.label}
     </span>

@@ -34,6 +34,7 @@ import {
 import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
+import { CardView } from '@/components/CardView';
 import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
@@ -106,13 +107,20 @@ function kindLabel(definition: Card | undefined): string {
 }
 
 /**
- * Un Planqué du Banc, **en Stress** : `hp` reste le champ technique du moteur, le
- * Stress est ce que le joueur lit (D-026). Le Seuil est rappelé pour situer la barre.
+ * Un Planqué **sur le plateau** (D-093, #187) : la carte du gabarit, figée, avec son Stress
+ * vivant (`hp` reste le champ technique du moteur ; le Stress est ce que le joueur lit, D-026).
+ * Le groupe porte le **nom** du Planqué : c'est par lui qu'on le retrouve, au Poste comme au
+ * Banc. Sans définition connue, le nom seul reste lisible.
  */
-function describe(instance: CardInstance | null): string {
-  if (!instance) return 'Place libre';
-  const stress = instance.maxHp - instance.hp;
-  return `${cardName(instance.cardId)} · ${stress}/${instance.maxHp} de Stress`;
+function CartePlateau({ instance, className }: { instance: CardInstance; className: string }) {
+  const nom = cardName(instance.cardId);
+  const definition = getCard(instance.cardId);
+  if (!definition) return <span className="muted">{nom}</span>;
+  return (
+    <div role="group" aria-label={nom} className={className}>
+      <CardView card={definition} figee plateau stress={instance.maxHp - instance.hp} seuil={instance.maxHp} />
+    </div>
+  );
 }
 
 /** Les cinq conditions, dans l'ordre d'affichage de la légende. */
@@ -120,21 +128,6 @@ const STATUS_LIST = Object.keys(STATUS_META) as Status[];
 
 /** Le menu `⋯` au repos : fermé, sur sa liste. */
 const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
-
-/**
- * La barre de **Stress** : elle monte. `hp` reste le champ technique du moteur — c'est
- * l'affichage qui s'inverse (D-026 : « le Stress remplace les dégâts »). Verte au repos,
- * rouge quand le collègue va craquer.
- */
-function StressBar({ stress, max }: { stress: number; max: number }) {
-  const pct = max > 0 ? Math.max(0, Math.min(100, Math.round((stress / max) * 100))) : 0;
-  const level = pct >= 75 ? 'is-high' : pct >= 50 ? 'is-mid' : '';
-  return (
-    <div className="stress" role="img" aria-label={`Stress : ${stress} sur ${max}`}>
-      <div className={`stress__fill ${level}`} style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
 
 /**
  * Les cafés **attachés** d'un Planqué, en pastilles typées (D-037) : chaque pastille
@@ -161,13 +154,16 @@ function MachinePips({
   designe?: boolean;
 }) {
   const types = cafeTypes.map((type) => FACTION_META[type].name).join(' · ');
+  // Le contenu de l'ancien `title` (le café produit, les types du Deck) est **dit** : il est
+  // lu par le nom accessible, pas au survol (SPEC-COMBAT-UI §6.7). Le visuel est masqué.
   return (
-    <span
-      className="muted"
-      data-pas-a-pas={designe ? 'machine' : undefined}
-      title={`Machine à café : ${zone ? cafeLabel(zone) : `vide (types du Deck : ${types || 'aucun'})`}`}
-    >
-      Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" title="Machine à café : vide" />}
+    <span className="muted" data-pas-a-pas={designe ? 'machine' : undefined}>
+      <span aria-hidden="true">
+        Machine {zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" />}
+      </span>
+      <span className="sr-only">
+        {`Machine à café : ${zone ? cafeLabel(zone) : 'vide'} (types du Deck : ${types || 'aucun'})`}
+      </span>
     </span>
   );
 }
@@ -355,10 +351,10 @@ function RegardDuDessus({ carte }: { carte: Card }) {
 }
 
 /**
- * **Un camp du plateau** (#169) : l'ordre est celui d'un jeu de cartes à deux joueurs —
- * le camp adverse en haut, **Banc puis Poste**, le mien en bas, **Poste puis Banc** : les
- * deux Postes se font face au milieu. Tout tient dans une carte compacte, pour que les
- * deux camps, la main et les actions se voient d'un coup sur un téléphone.
+ * **Un camp du plateau** (#169, #187) : le Poste (une carte) et le Banc (trois cartes) se
+ * côtoient sur une ligne, le Poste à gauche, pour les deux camps : les deux Postes sont sur
+ * le même axe vertical. La hauteur est comptée : il faut que les deux camps, la main et les
+ * actions se voient d'un coup sur un téléphone (`npm run capturer`).
  *
  * Le pas-à-pas désigne le Poste, la Machine et les Interventions **du joueur seulement**
  * (`mine`) : l'adversaire n'a jamais d'attribut `data-pas-a-pas`.
@@ -380,59 +376,54 @@ function Camp({
   pendingPromotion: boolean;
   pasAPas: PasAPasCombatEtat;
 }) {
+  // Le Poste : la carte à gauche, sur l'axe vertical (les deux Postes se font face). Le nom et la
+  // barre de Stress sont **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur de la
+  // table est comptée par la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
   const poste = (
     <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
-      <span className="stat-label">Poste</span>
-      <div className="board__content">
-        {side.active ? (
-          <>
-            <div className="poste__head">
-              <strong>{cardName(side.active.cardId)}</strong>
-              <span className="poste__hp">
-                {side.active.maxHp - side.active.hp}/{side.active.maxHp} de Stress
-              </span>
-            </div>
-            <div className="poste__gauge">
-              <StressBar stress={side.active.maxHp - side.active.hp} max={side.active.maxHp} />
-              <div className="poste__meta">
-                <CafesPips cafes={side.active.energy} />
-                <MachinePips
-                  zone={side.energyZone}
-                  cafeTypes={side.cafeTypes}
-                  designe={mine && pasAPas.designe('machine') !== undefined}
-                />
-                {side.active.statuses.map((status) => (
-                  <StatusBadge key={status} status={status} />
-                ))}
-              </div>
-            </div>
-          </>
-        ) : (
-          <strong className="muted">{pendingPromotion ? 'Aucun Planqué — relève à choisir' : 'Poste libre'}</strong>
-        )}
-      </div>
+      <span className="sr-only">Poste</span>
+      {side.active ? (
+        <CartePlateau instance={side.active} className="poste__carte" />
+      ) : (
+        <strong className="muted poste__libre">
+          {pendingPromotion ? 'Aucun Planqué — relève à choisir' : 'Poste libre'}
+        </strong>
+      )}
     </div>
   );
 
+  // Le Banc, à droite du Poste : trois places de 61 px, et sous elles ce qui se passe au Poste
+  // (Stress écrit, cafés, Machine, Conditions). Une place libre garde la forme d'une carte.
   const banc = (
     <div className="board__bench">
-      <span className="stat-label">Banc</span>
-      <ul className="bench board__content">
+      <span className="sr-only">Banc</span>
+      <ul className="bench">
         {side.bench.map((slot, index) => (
-          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index} title={describe(slot)}>
+          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index}>
             {slot ? (
-              <>
-                <strong className="bench__name">{cardName(slot.cardId)}</strong>
-                <span className="bench__stress muted">
-                  {slot.maxHp - slot.hp}/{slot.maxHp} de Stress
-                </span>
-              </>
+              <CartePlateau instance={slot} className="bench__carte" />
             ) : (
-              <span className="muted">Place libre</span>
+              <span className="sr-only">Place libre</span>
             )}
           </li>
         ))}
       </ul>
+      {side.active && (
+        <div className="poste__info">
+          <span className="poste__hp">
+            {side.active.maxHp - side.active.hp}/{side.active.maxHp} de Stress
+          </span>
+          <CafesPips cafes={side.active.energy} />
+          <MachinePips
+            zone={side.energyZone}
+            cafeTypes={side.cafeTypes}
+            designe={mine && pasAPas.designe('machine') !== undefined}
+          />
+          {side.active.statuses.map((status) => (
+            <StatusBadge key={status} status={status} />
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -452,17 +443,12 @@ function Camp({
           </span>
         </span>
       </header>
-      {mine ? (
-        <>
-          {poste}
-          {banc}
-        </>
-      ) : (
-        <>
-          {banc}
-          {poste}
-        </>
-      )}
+      {/* Le Poste à gauche, le Banc à droite, pour les deux camps : les deux Postes sont sur le même
+          axe vertical (SPEC-COMBAT-UI §6.8). Le camp qui a la main est porté par le cadre du camp. */}
+      <div className="board__zone">
+        {poste}
+        {banc}
+      </div>
     </article>
   );
 }

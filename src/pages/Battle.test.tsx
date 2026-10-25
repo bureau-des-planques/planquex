@@ -8,7 +8,7 @@ import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
 import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
-import { ALL_CARDS } from '@/data';
+import { ALL_CARDS, isBasic, isPlanque } from '@/data';
 import type { BattleAction, BattleState } from '@/data/types';
 import { encodeMatch } from '@/game/codec';
 import { autoDeck } from '@/game/deck';
@@ -127,6 +127,41 @@ describe('Battle — écran de combat', () => {
 
     const machines = screen.getAllByText(/Machine/);
     expect(machines.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('dit les types de café de la Machine en texte, pas seulement au survol (#187)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le `title` a disparu : le contenu est écrit (lu, pas affiché) à chaque Machine.
+    expect(screen.getAllByText(/Machine à café : .*types du Deck/).length).toBeGreaterThanOrEqual(2);
+    expect(document.querySelectorAll('.bench__slot[title], [title^="Machine à café"]')).toHaveLength(0);
+  });
+
+  it('retrouve une même carte au Poste et au Banc, chacune par son nom accessible (#187)', () => {
+    // Un deck légal (deux exemplaires de dix Entrants). On cherche une graine où, à la mise en
+    // place, mon Poste et mon Banc portent le **même** Entrant : c'est le cas à tester.
+    const entrants = ALL_CARDS.filter((card) => isPlanque(card) && isBasic(card) && !card.variantOf).slice(0, 10);
+    const deck = entrants.flatMap((card) => [card.id, card.id]);
+    const entrant = entrants[0];
+    let etat: BattleState | null = null;
+    for (let seed = 1; seed < 500 && etat === null; seed += 1) {
+      const s = createBattle(deck, deck, seed);
+      const moi = s.players.player;
+      if (moi.active?.cardId === entrant.id && moi.bench.some((carte) => carte?.cardId === entrant.id)) etat = s;
+    }
+    if (etat === null) throw new Error('aucune graine ne met le même Entrant au Poste et au Banc');
+    const partie = partieSauvegardee(etat, null, { playerDeck: deck, aiDeck: deck });
+    if (!partie) throw new Error('partie terminée : rien à rendre');
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    // La Direction est le premier camp du plateau, moi le second : je regarde le mien.
+    const moi = document.querySelectorAll('.board__side')[1];
+    if (!(moi instanceof HTMLElement)) throw new Error('mon camp n’est pas sur le plateau');
+    const cartes = within(moi).getAllByRole('group', { name: entrant.name });
+    expect(cartes.length).toBeGreaterThanOrEqual(2);
+    expect(cartes.some((carte) => carte.closest('.board__poste'))).toBe(true);
+    expect(cartes.some((carte) => carte.closest('.bench'))).toBe(true);
   });
 
   it('affiche la main du joueur', () => {
