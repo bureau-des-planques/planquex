@@ -137,3 +137,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-25 · `atelier-regleur` · modèle `NARWHAL` · graine `1540639500` · `atelier-regleur.webp`
 - 2026-10-25 · `atelier-rpi` · modèle `NARWHAL` · graine `294548429` · `atelier-rpi.webp`
 - 2026-10-25 · `atelier-responsable-flux` · modèle `NARWHAL` · graine `256808332` · `atelier-responsable-flux.webp`
+- 2026-10-25 · `atelier-controleur-vibration` · modèle `NARWHAL` · graine `525769957` · `atelier-controleur-vibration.webp`

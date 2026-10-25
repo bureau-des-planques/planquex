@@ -150,7 +150,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'switchSelf' }]
       }
     ],
-    flavor: 'Il secoue la pièce. La validation attend l’essai du lundi.'
+    flavor: 'Il secoue la pièce. La validation attend l’essai du lundi.',
+    art: 'atelier-controleur-vibration.webp'
   }),
   base({
     id: 'atelier-responsable-qualite',
