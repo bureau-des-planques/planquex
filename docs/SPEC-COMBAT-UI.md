@@ -297,6 +297,14 @@ Trois indices, aucun modal :
   recouvre alors **la main seule** — jamais le plateau, qui reste lisible : c'est ce qui rend
   la feuille basse acceptable (§3.4).
 
+- **Mesuré le 25/10/2026, et ça change la tâche** : en remplaçant les noms par des cartes
+  **sans toucher au reste**, `npm run capturer` passe de « main visible » (bas de la main à
+  **666 px**, barre de navigation à 830) à **906 px** — soit **+313 px**, et l'échec du
+  critère D-060. Autrement dit : le plateau ne peut pas recevoir de cartes **avant** que la
+  composition ne change (barre d'action collante, menu `⋯`, et le pas-à-pas qui ne pousse
+  plus le plateau). C'est ce qui fait de #187 et #191 **une seule et même chantier**, dans
+  cet ordre : #191 d'abord, les cartes ensuite.
+
 ### 5.2 `DESIGN.md` : ce qui est disponible, ce qui manque
 
 Disponible et à réutiliser tel quel : les jetons de `:root` (`DESIGN.md` §1.1-1.4), les

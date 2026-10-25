@@ -983,6 +983,53 @@ h2 {
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+/* **Figée** — la carte du plateau de combat (D-093, #187) : elle ne se soulève pas au
+   survol et ne se comprime pas au tap. Le survol y sert à **lire** (l'inspecteur), pas à
+   décorer ; et huit cartes qui bougent au passage du pointeur font du bruit. */
+.card--figee {
+  transition: none;
+}
+
+/* **Au plateau** (D-093, #187) : la carte se dépouille pour tenir à 64 px de large. Elle
+   garde ce qui décide — illustration, nom, Seuil, Stress — et laisse le reste à
+   l'inspecteur (#188). Un nom tronqué (« SE-CH… ») n'est pas une carte, c'est un débris. */
+.card--plateau .card__kind,
+.card--plateau .card__attacks,
+.card--plateau .card__footer,
+.card--plateau .card__flavor {
+  display: none;
+}
+
+.card--plateau .card__top {
+  padding: 0.2rem 0.22rem 0.22rem;
+}
+
+.card--plateau .card__name {
+  font-size: 0.56rem;
+  letter-spacing: 0.02em;
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.card--plateau .card__seuil-badge {
+  border-radius: 4px;
+  font-size: 0.6rem;
+  padding: 0.05rem 0.16rem;
+}
+
+.card--plateau .card__seuil-badge::before {
+  font-size: 0.42rem;
+  letter-spacing: 0.06em;
+}
+
+.card--plateau .card__seuil {
+  padding: 0.14rem 0.22rem 0.2rem;
+}
+
+.card--plateau .card__emblem {
+  font-size: 0.55rem;
+}
+
 /* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. L'or **est** l'anneau (`--frame`) :
    il n'y a pas de second filet — l'ancien `::before`, sans `content`, ne rendait rien (#131). */
 .card--comex {

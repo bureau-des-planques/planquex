@@ -83,6 +83,31 @@ describe('CardView — le gabarit à cadre', () => {
     expect(grande.container.querySelector('.card__id')).not.toBeNull();
   });
 
+  it('figée : la carte du plateau ne se soulève pas au survol (#187)', () => {
+    const carte = planques[0];
+    const figee = render(<CardView card={carte} compact figee />);
+    expect(figee.container.querySelector('.card')).toHaveClass('card--figee');
+    figee.unmount();
+
+    // Le contrôle mord : sans la prop, la classe n'existe pas — si quelqu'un retire le
+    // drapeau, la première assertion tombe.
+    const animee = render(<CardView card={carte} compact />);
+    expect(animee.container.querySelector('.card')).not.toHaveClass('card--figee');
+  });
+
+  it('au plateau, la barre montre le Stress qui monte, et elle se lit (#187)', () => {
+    const carte = planques[0];
+    const { container } = render(<CardView card={carte} compact figee stress={15} seuil={60} />);
+    const barre = container.querySelector('.card__seuil-bar') as HTMLElement;
+    expect(barre).toHaveAttribute('aria-label', 'Stress 15 sur 60');
+    const remplissage = barre.querySelector('.stress__fill') as HTMLElement;
+    expect(remplissage.style.width).toBe('25%');
+    expect(remplissage.className).not.toContain('is-high');
+
+    const presque = render(<CardView card={carte} compact figee stress={50} seuil={60} />);
+    expect(presque.container.querySelector('.stress__fill')).toHaveClass('is-high');
+  });
+
   it('chargement : l’illustration repose sur l’aplat de faction, qui reste dessous (#131)', () => {
     const { container } = render(<CardView card={avecArt!} compact />);
     const art = container.querySelector('.card__art') as HTMLElement;
