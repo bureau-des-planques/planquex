@@ -198,3 +198,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `direction-stagiaire-direction` · modèle `NARWHAL` · graine `124366703` · `direction-stagiaire-direction.webp`
 - 2026-10-26 · `interim-chef-equipe-interimaire` · modèle `NARWHAL` · graine `841156955` · `interim-chef-equipe-interimaire.webp`
 - 2026-10-26 · `interim-consultant-interimaire` · modèle `NARWHAL` · graine `1903070890` · `interim-consultant-interimaire.webp`
+- 2026-10-26 · `interim-interimaire` · modèle `NARWHAL` · graine `1226904695` · `interim-interimaire.webp`

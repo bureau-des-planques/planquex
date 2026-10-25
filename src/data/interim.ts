@@ -33,7 +33,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Mission courte', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse subit une mission courte et intense. L’intérimaire part vendredi, la consigne reste.' }],
-    flavor: 'Il connaît le site mieux que le directeur. Il part vendredi.'
+    flavor: 'Il connaît le site mieux que le directeur. Il part vendredi.',
+    art: 'interim-interimaire.webp'
   }),
   base({
     id: 'interim-interimaire-confirme',
