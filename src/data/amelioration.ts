@@ -174,7 +174,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Revue de direction', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Écart critique', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a audité l’audit. L’audit a été reporté.'
+    flavor: 'Il a audité l’audit. L’audit a été reporté.',
+    art: 'amelioration-directeur-audit-interne.webp'
   }),
   base({
     id: 'amelioration-charge-amelioration',
