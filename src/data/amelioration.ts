@@ -197,7 +197,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Analyse de la valeur', cost: ['AMELIORATION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est analysé étape par étape. Une étape disparaît ; deux autres arrivent.' },
       { name: 'Goulot d’étranglement', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
-    flavor: 'Il a supprimé une étape. On en a ajouté deux.'
+    flavor: 'Il a supprimé une étape. On en a ajouté deux.',
+    art: 'amelioration-charge-process.webp'
   }),
   base({
     id: 'amelioration-controleur-qualite',
