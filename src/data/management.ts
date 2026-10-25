@@ -42,7 +42,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Prospection', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est démarché sans relâche. Le devis part ; la livraison, elle, n’a pas de date.' }],
-    flavor: 'Il a signé un devis. Le client attend la livraison depuis mars.'
+    flavor: 'Il a signé un devis. Le client attend la livraison depuis mars.',
+    art: 'management-technico-commercial.webp'
   }),
   base({
     id: 'management-assistant-manager',
