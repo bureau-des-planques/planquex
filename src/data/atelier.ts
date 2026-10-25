@@ -189,7 +189,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Ramassage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est ramassé avec la vis qu’il a perdue. La vis, elle, est toujours introuvable.' }],
-    flavor: 'Il ramasse les vis perdues. Il ne retrouve jamais la sienne.'
+    flavor: 'Il ramasse les vis perdues. Il ne retrouve jamais la sienne.',
+    art: 'atelier-gestionnaire-fod.webp'
   }),
 
   // Ligne 6 : Monteur optique → Technicien de banc d'essai
