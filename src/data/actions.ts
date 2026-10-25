@@ -127,7 +127,8 @@ export const ACTION_CARDS: ActionCard[] = [
       { kind: 'draw', amount: 1 }
     ],
     flavor: 'Quarante-cinq minutes pour décider de ne pas décider.',
-    glyph: '◆'
+    glyph: '◆',
+    art: 'direction-reunion-qui-aurait-pu-etre-un-mail.webp'
   }),
   card({
     id: 'syndicat-assemblee-generale',
