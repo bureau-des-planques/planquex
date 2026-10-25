@@ -1552,6 +1552,11 @@ export function Battle() {
               {selectedDefinition && !isPlanque(selectedDefinition) && (
                 <p className="hand__text muted">{selectedDefinition.text}</p>
               )}
+              {/* Un Planqué de la main se lit comme au plateau : son Seuil, ses Pressions et leur coût,
+                  son Talent. Au toucher, l'inspecteur au survol n'existe pas : la fiche est ici. */}
+              {selectedDefinition && isPlanque(selectedDefinition) && (
+                <FicheCarte instance={selected} card={selectedDefinition} />
+              )}
               {selectedActions.length > 0 ? (
                 <>
                   <p className="muted pose__aide">Touche un geste pour la jouer :</p>
