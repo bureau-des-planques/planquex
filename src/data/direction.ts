@@ -45,7 +45,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       ]
     },
     attacks: [{ name: 'Note de service', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit une note de service. Elle a été signée, puis déléguée à personne.' }],
-    flavor: 'Il a délégué. À personne.'
+    flavor: 'Il a délégué. À personne.',
+    art: 'direction-directeur-adjoint.webp'
   }),
   base({
     id: 'direction-pdg',
