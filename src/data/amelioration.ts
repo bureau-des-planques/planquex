@@ -137,7 +137,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Plan de charge', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse reçoit un plan de charge. Le stock, lui, attend devant la porte.' },
       { name: 'Accélération', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a accéléré le flux. Le stock attend devant.'
+    flavor: 'Il a accéléré le flux. Le stock attend devant.',
+    art: 'amelioration-directeur-flux.webp'
   }),
   base({
     id: 'amelioration-auditeur-interne',
