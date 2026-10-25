@@ -79,7 +79,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Plan de départ', cost: ['DIRECTION', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'L’adversaire défausse 1 carte. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Un seul bureau.'
+    flavor: 'Deux Interventions. Un seul bureau.',
+    art: 'direction-pdg-ex.webp'
   }),
 
   // Ligne 2 : Directeur fantôme → Directeur régional → Directeur général
