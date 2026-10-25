@@ -340,7 +340,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Convocation', cost: ['QVT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'La formation est annulée. La convocation est partie.'
+    flavor: 'La formation est annulée. La convocation est partie.',
+    art: 'qvt-charge-formation.webp'
   }),
   base({
     id: 'qvt-chef-projet-formation',
