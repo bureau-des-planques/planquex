@@ -76,7 +76,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Envoie 1 café du Planqué adverse au rebut.',
     effects: [{ kind: 'discardEnergy', target: 'opponent' }],
     flavor: 'Il a coché « atteint ». Le formulaire ne demande pas comment.',
-    glyph: '▲'
+    glyph: '▲',
+    art: 'management-entretien-annuel.webp'
   }),
   card({
     id: 'qvt-yoga-du-rire',
