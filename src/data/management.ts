@@ -104,7 +104,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Écart budgétaire', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est épinglé sur un écart budgétaire. L’écart a déjà migré dans un autre tableau.' }],
-    flavor: 'Il a trouvé l’écart. Il l’a mis dans un autre tableau.'
+    flavor: 'Il a trouvé l’écart. Il l’a mis dans un autre tableau.',
+    art: 'management-controleur-gestion.webp'
   }),
   base({
     id: 'management-chef-equipe',
