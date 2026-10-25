@@ -37,14 +37,19 @@ function dateLongue(jour: string): string {
 function Points({ note }: { note: NoteVersion }) {
   return (
     <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
-      {note.points.map((point) => (
-        <li key={`${point.groupe ?? ''}·${point.texte}`}>
-          {/* Le groupe de la release (« Jeu », « Le mur ») reste lisible : c'est le
-              signet que le corps de la release donnait, et il se lit en gras. */}
-          {point.groupe && <strong>{point.groupe} · </strong>}
-          {point.texte}
-        </li>
-      ))}
+      {note.points.map((point, index) => {
+        // Le groupe (« Jeu », « Le mur ») est le signet que le corps de la release donnait.
+        // Il ne s'écrit **qu'une fois** : deux points de suite du même groupe le répétaient,
+        // et la capture du 24/10/2026 a montré « Le gueulage est à part » deux fois.
+        const precedent = note.points[index - 1]?.groupe;
+        const montreGroupe = Boolean(point.groupe) && point.groupe !== precedent;
+        return (
+          <li key={`${point.groupe ?? ''}·${point.texte}`}>
+            {montreGroupe && <strong>{point.groupe} · </strong>}
+            {point.texte}
+          </li>
+        );
+      })}
     </ul>
   );
 }

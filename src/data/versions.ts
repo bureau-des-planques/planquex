@@ -106,6 +106,10 @@ export const NOTES_VERSIONS: NoteVersion[] = [
         texte: 'La page de confidentialité, publique : elle dit ce que le jeu garde de toi, et se lit sans compte (D-088).'
       },
       {
+        groupe: 'Interface',
+        texte: 'La note de version se lit dans le jeu, sur /nouveautés : la version sous tes yeux, puis l’historique, pris aux releases GitHub (D-090, #182).'
+      },
+      {
         groupe: 'Outillage',
         texte: 'Les tests ne partagent plus de chemin et tolèrent la charge (#176) ; le budget de la recherche de l’IA est borné, avec repli glouton (#172).'
       }
