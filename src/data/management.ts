@@ -297,7 +297,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'EPUISEMENT', target: 'opponent' }]
       }
     ],
-    flavor: 'Trois objectifs. Le sien est atteignable. Les deux autres, non.'
+    flavor: 'Trois objectifs. Le sien est atteignable. Les deux autres, non.',
+    art: 'management-directeur-service.webp'
   }),
   base({
     id: 'management-responsable-unite-ex',
