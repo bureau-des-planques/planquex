@@ -191,3 +191,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `syndicat-secretaire-general` · modèle `NARWHAL` · graine `0` · `syndicat-secretaire-general.webp`
 - 2026-10-26 · `direction-directeur-general` · modèle `NARWHAL` · graine `1341221641` · `direction-directeur-general.webp`
 - 2026-10-26 · `direction-directeur-regional` · modèle `NARWHAL` · graine `1205583550` · `direction-directeur-regional.webp`
+- 2026-10-26 · `direction-directeur-strategie` · modèle `NARWHAL` · graine `1116640585` · `direction-directeur-strategie.webp`

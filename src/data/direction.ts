@@ -233,7 +233,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       }
     ],
-    flavor: 'Le cap est fixé. Le budget suivra, un jour.'
+    flavor: 'Le cap est fixé. Le budget suivra, un jour.',
+    art: 'direction-directeur-strategie.webp'
   }),
 
   // Entrants seuls (sans évolution)
