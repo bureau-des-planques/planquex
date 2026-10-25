@@ -34,7 +34,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     retreat: 2,
     ability: { name: 'Mise à jour', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Redémarrage à froid', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse redémarre à froid. Les données, elles, ne sont pas sauvegardées.' }],
-    flavor: 'Il redémarre le serveur. Pour voir.'
+    flavor: 'Il redémarre le serveur. Pour voir.',
+    art: 'atelier-technicien-systeme.webp'
   }),
   base({
     id: 'atelier-responsable-process',
