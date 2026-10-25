@@ -63,7 +63,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Briefing', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse subit un briefing de dernière minute. Le compte rendu dira le contraire.' }],
-    flavor: 'Il a briefé l’équipe. Le compte-rendu dit l’inverse.'
+    flavor: 'Il a briefé l’équipe. Le compte-rendu dit l’inverse.',
+    art: 'management-superviseur.webp'
   }),
   base({
     id: 'management-animateur-equipe',
