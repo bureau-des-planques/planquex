@@ -244,7 +244,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'reduceDamage', amount: 10 }]
       }
     ],
-    flavor: 'Il pointe la cote au micron. La cote, elle, a été arrondie en réunion.'
+    flavor: 'Il pointe la cote au micron. La cote, elle, a été arrondie en réunion.',
+    art: 'atelier-pointeur.webp'
   }),
   base({
     id: 'atelier-ordonnanceur',
