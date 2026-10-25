@@ -72,7 +72,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Diagnostic', cost: ['AMELIORATION'], damage: 20, text: 'Le Planqué adverse reçoit un diagnostic en deux jours. Le rapport était rédigé avant la visite.' }],
-    flavor: 'Il a tout vu en deux jours. Le rapport était écrit avant.'
+    flavor: 'Il a tout vu en deux jours. Le rapport était écrit avant.',
+    art: 'amelioration-consultant-lean.webp'
   }),
   base({
     id: 'amelioration-responsable-process',
