@@ -63,6 +63,12 @@ interface Props {
   position: PositionPostit;
   ordre: number;
   placement: boolean;
+  /**
+   * Ce post-it se prend-il en mode placement (#185) ? Sur le fichier, oui, tous — c'est le
+   * bureau qui range. Sur la base, la politique de `0001`/`0005` n'autorise que l'auteur à
+   * déplacer le sien : un post-it d'un autre n'offre donc pas la prise, et le dit.
+   */
+  deplacable?: boolean;
   agrandi: boolean;
   onAgrandir: (id: string) => void;
   glisser: GlisserPostit;
@@ -83,6 +89,7 @@ export function PostitDuMur({
   position,
   ordre,
   placement,
+  deplacable = true,
   agrandi,
   onAgrandir,
   glisser,
@@ -93,6 +100,8 @@ export function PostitDuMur({
 }: Props) {
   const papier = PAPIERS[apparenceDe(postit)];
   const papierAssocie = associe ? PAPIERS[apparenceDe(associe)] : null;
+  /** La prise n'existe qu'en mode placement, et seulement sur un post-it qu'on a le droit de ranger. */
+  const poignee = placement && deplacable;
 
   const cadre: CSSProperties = {
     left: `${position.x}%`,
@@ -130,13 +139,14 @@ export function PostitDuMur({
     <div
       data-postit={postit.id}
       className={`w-full min-[900px]:absolute min-[900px]:w-[236px] ${postit.gueulage ? 'min-[900px]:w-[300px]' : ''} ${
-        placement ? 'min-[900px]:cursor-grab min-[900px]:touch-none min-[900px]:select-none' : ''
-      }`}
+        poignee ? 'min-[900px]:cursor-grab min-[900px]:touch-none min-[900px]:select-none' : ''
+      } ${placement && !deplacable ? 'min-[900px]:cursor-not-allowed' : ''}`}
       style={cadre}
-      onPointerDown={placement ? (event) => glisser.debut(event, postit) : undefined}
-      onPointerMove={placement ? glisser.deplace : undefined}
-      onPointerUp={placement ? glisser.fin : undefined}
-      onPointerCancel={placement ? glisser.fin : undefined}
+      title={placement && !deplacable ? 'On ne range que ses propres post-its.' : undefined}
+      onPointerDown={poignee ? (event) => glisser.debut(event, postit) : undefined}
+      onPointerMove={poignee ? glisser.deplace : undefined}
+      onPointerUp={poignee ? glisser.fin : undefined}
+      onPointerCancel={poignee ? glisser.fin : undefined}
     >
       <article
         className="relative rounded-[3px] px-4 pt-4 pb-3.5 text-left shadow-[4px_6px_16px_rgba(0,0,0,0.45)] transition-shadow duration-200 hover:shadow-[6px_10px_24px_rgba(0,0,0,0.55)]"

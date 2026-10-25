@@ -32,6 +32,7 @@ import {
   commenterPostit,
   compterApres,
   corrigerPostit,
+  deplacerPostit,
   grouperCommentaires,
   murEstConfigure,
   posterPostit,
@@ -123,10 +124,27 @@ export function BoiteAIdees() {
 
   const [positions, setPositions] = useState(() => positionsDuMur(LECTURE.mur));
   const [placement, setPlacement] = useState(false);
+  /**
+   * Le mode de placement a-t-il un sens ici (D-068, #185) ? Sur le fichier, c'est le bureau
+   * qui range tout le monde et commite ; sur la base, la politique de `0001`/`0005` ne laisse
+   * déplacer que **ses** post-its, et un compte en attente ne déplace rien du tout — l'écran
+   * ne propose donc pas ce que la base refuserait.
+   */
+  const peutRanger = source === 'fichier' || peutEcrire;
   const [agrandi, setAgrandi] = useState<string | null>(null);
   const [message, setMessage] = useState<{ texte: string; alerte?: boolean } | null>(null);
+  /**
+   * Le contrôle de recouvrement (D-068), tenu à part de `message` : l'effet qui le pose
+   * tourne après chaque lâcher, et il effacerait le refus d'une écriture en base arrivé
+   * entre-temps (#185).
+   */
+  const [recouvrement, setRecouvrement] = useState<string | null>(null);
   /** Compte les lâchers : l'effet qui contrôle le recouvrement tourne après le rendu. */
   const [lachers, setLachers] = useState(0);
+  /** Le post-it dont la place s'écrit en base, et le dernier refus essuyé (#185). */
+  const [placeEnVol, setPlaceEnVol] = useState<string | null>(null);
+  /** Les places que la base **a acceptées** : c'est là qu'on revient si un glisser est refusé. */
+  const placesEnBase = useRef<Record<string, PositionPostit>>({});
   const tableau = useRef<HTMLDivElement>(null);
   const saisie = useRef<{ id: string; dx: number; dy: number } | null>(null);
 
@@ -170,6 +188,7 @@ export function BoiteAIdees() {
         if (postits === null) throw new Error('La base n’est pas configurée.');
         setMur({ formulaire: LECTURE.mur?.formulaire ?? '', postits });
         setPositions(positionsDuMur({ formulaire: '', postits }));
+        placesEnBase.current = positionsDuMur({ formulaire: '', postits });
         setErreurs([]);
         setSource('base');
         setNotice(null);
@@ -224,11 +243,43 @@ export function BoiteAIdees() {
   /**
    * Le glisser du mode de placement. La position s'exprime en pourcentage du tableau,
    * jamais en pixels : c'est ce qui la fait survivre au changement d'écran (D-068).
+   *
+   * Quand le mur vient de la **base**, le lâcher **écrit** la place (#185) : c'est le même
+   * geste que le fichier, sauf que tout le monde la voit tout de suite au lieu d'attendre un
+   * commit. Seuls **ses** post-its se déplacent — la base le refuse aux autres, et le post-it
+   * ne s'offre donc pas à la prise (voir `deplacable` sur `PostitDuMur`).
    */
+  const ranger = async (id: string, place: PositionPostit) => {
+    const avant = placesEnBase.current[id];
+    setPlaceEnVol(id);
+    setMessage(null);
+    try {
+      const acceptee = await deplacerPostit(id, place);
+      placesEnBase.current = { ...placesEnBase.current, [id]: acceptee };
+      setPositions((courantes) => ({ ...courantes, [id]: acceptee }));
+      setMur((courant) =>
+        courant
+          ? {
+              ...courant,
+              postits: courant.postits.map((autre) =>
+                autre.id === id ? { ...autre, position: acceptee } : autre
+              )
+            }
+          : courant
+      );
+    } catch (erreur) {
+      // La place refusée ne doit pas rester à l'écran : on revient à la dernière acceptée.
+      if (avant) setPositions((courantes) => ({ ...courantes, [id]: avant }));
+      setMessage({ alerte: true, texte: messageDe(erreur) });
+    } finally {
+      setPlaceEnVol(null);
+    }
+  };
+
   const glisser: GlisserPostit = {
     debut: (event, postit) => {
       const cadre = tableau.current;
-      if (!cadre || !event.isPrimary) return;
+      if (!cadre || !event.isPrimary || placeEnVol !== null) return;
       const boite = cadre.getBoundingClientRect();
       const feuille = event.currentTarget.getBoundingClientRect();
       saisie.current = {
@@ -251,11 +302,23 @@ export function BoiteAIdees() {
       });
     },
     fin: (event) => {
+      const prise = saisie.current;
       saisie.current = null;
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId);
       }
       setLachers((compte) => compte + 1);
+
+      // La place finale se recalcule du même pointeur que le dernier déplacement : aucune
+      // lecture d'un état qui n'a pas encore été rendu.
+      const cadre = tableau.current;
+      if (source !== 'base' || !prise || !cadre) return;
+      const boite = cadre.getBoundingClientRect();
+      void ranger(prise.id, {
+        x: borner(((event.clientX - boite.left) / boite.width) * 100 - prise.dx),
+        y: borner(((event.clientY - boite.top) / boite.height) * 100 - prise.dy),
+        angle: positions[prise.id]?.angle ?? 0
+      });
     }
   };
 
@@ -263,12 +326,11 @@ export function BoiteAIdees() {
   useEffect(() => {
     if (!lachers) return;
     const paires = recouvrements();
-    setMessage(
+    setRecouvrement(
       paires.length
-        ? {
-            alerte: true,
-            texte: `Ce placement recouvre le texte de ${paires.join(', ')}. Déplace le post-it avant d’exporter — un texte ne doit jamais en cacher un autre.`
-          }
+        ? source === 'base'
+          ? `Ce placement recouvre le texte de ${paires.join(', ')}. Reprends le post-it et déplace-le : un texte ne doit jamais en cacher un autre.`
+          : `Ce placement recouvre le texte de ${paires.join(', ')}. Déplace le post-it avant d’exporter — un texte ne doit jamais en cacher un autre.`
         : null
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `recouvrements` lit le DOM.
@@ -480,7 +542,8 @@ export function BoiteAIdees() {
           ecran,
           capture
         },
-        { pseudo }
+        // Les places déjà prises : le post-it neuf ne se colle pas sur le texte d'un autre.
+        { pseudo, positionsPrises: Object.values(positions) }
       );
 
       setMur((courant) => ({
@@ -788,6 +851,7 @@ export function BoiteAIdees() {
                   position={positions[postit.id] ?? postit.position}
                   ordre={ordre}
                   placement={placement}
+                  deplacable={source === 'fichier' || postit.mien === true}
                   agrandi={agrandi === postit.id}
                   onAgrandir={(id) => setAgrandi((courant) => (courant === id ? null : id))}
                   glisser={glisser}
@@ -846,12 +910,12 @@ export function BoiteAIdees() {
 
         {source === 'base' ? (
           <p className="m-0 max-w-[66ch] text-[0.9rem]">
-            La base porte la position de chaque post-it, mais l’interface de placement (glisser à
-            la souris) n’écrit encore que le fichier du dépôt : elle est donc masquée ici. Les
-            post-its gardent la place que la base leur donne, et cette interface viendra ensuite.
+            La base porte la place de chaque post-it : en mode placement, un post-it se{' '}
+            <strong>glisse</strong> à la souris et sa place s’écrit <strong>tout de suite</strong>{' '}
+            en base — tout le monde la voit, sans commit. Chacun ne range que <strong>ses</strong>{' '}
+            post-its : ceux des autres restent là où leur auteur les a mis.
           </p>
         ) : (
-        <div className="flex max-[899px]:hidden flex-col gap-3">
           <p className="m-0 max-w-[66ch] text-[0.9rem]">
             En mode placement, un post-it se <strong>glisse</strong> à la souris et sa position
             s’écrit en pourcentage du tableau : tout le monde verra la même disposition, quel que
@@ -860,34 +924,48 @@ export function BoiteAIdees() {
             place de <code>docs/boite-a-idees.json</code>. C’est le mécanisme de l’alpha, en
             attendant la base.
           </p>
+        )}
 
+        <div className="flex max-[899px]:hidden flex-col gap-3">
           {mur && mur.postits.length > 0 ? (
             <>
               <div className="actions">
-                <button
-                  type="button"
-                  className={placement ? 'button button--gold' : 'button'}
-                  aria-pressed={placement}
-                  onClick={() => {
-                    setPlacement((actif) => !actif);
-                    setMessage(null);
-                  }}
-                >
-                  <Move size={16} /> {placement ? 'Terminer le placement' : 'Mode de placement'}
-                </button>
-                <button
-                  type="button"
-                  className="button"
-                  onClick={() => {
-                    setPositions(positionsDuMur(mur));
-                    setMessage({ texte: 'Positions revenues à celles du fichier.' });
-                  }}
-                >
-                  <RotateCcw size={16} /> Revenir aux positions du fichier
-                </button>
+                {peutRanger && (
+                  <button
+                    type="button"
+                    className={placement ? 'button button--gold' : 'button'}
+                    aria-pressed={placement}
+                    onClick={() => {
+                      setPlacement((actif) => !actif);
+                      setMessage(null);
+                      setRecouvrement(null);
+                    }}
+                  >
+                    <Move size={16} /> {placement ? 'Terminer le placement' : 'Mode de placement'}
+                  </button>
+                )}
+                {source === 'fichier' && (
+                  <button
+                    type="button"
+                    className="button"
+                    onClick={() => {
+                      setPositions(positionsDuMur(mur));
+                      setMessage({ texte: 'Positions revenues à celles du fichier.' });
+                    }}
+                  >
+                    <RotateCcw size={16} /> Revenir aux positions du fichier
+                  </button>
+                )}
               </div>
 
-              {placement && (
+              {!peutRanger && (
+                <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
+                  Le rangement s’ouvrira en même temps que l’écriture : il faut d’abord un compte
+                  validé.
+                </p>
+              )}
+
+              {placement && source === 'fichier' && (
                 <div className="flex flex-col gap-2">
                   <textarea
                     className="settings__save"
@@ -911,6 +989,14 @@ export function BoiteAIdees() {
                 </div>
               )}
 
+              {placement && source === 'base' && (
+                <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
+                  {placeEnVol
+                    ? 'La place s’écrit…'
+                    : 'Prends un post-it qui est à toi et dépose-le : la place part en base au lâcher. Ceux des autres ne se prennent pas.'}
+                </p>
+              )}
+
               {message && (
                 <p
                   className={
@@ -920,6 +1006,10 @@ export function BoiteAIdees() {
                   {message.texte}
                 </p>
               )}
+
+              {recouvrement && (
+                <p className="notice notice--warn m-0">{recouvrement}</p>
+              )}
             </>
           ) : (
             <p className="m-0 text-[0.86rem] text-ink-dim">
@@ -927,7 +1017,6 @@ export function BoiteAIdees() {
             </p>
           )}
         </div>
-        )}
       </section>
 
       <p className="m-0 text-[0.78rem] text-ink-dim">

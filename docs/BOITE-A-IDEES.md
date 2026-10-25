@@ -80,9 +80,16 @@ pourcentage du tableau : ainsi tout le monde voit **la même** disposition, et e
 d'écran.
 
 **Une interface pour les placer** : un mode où on les **glisse** à la main, et qui **écrit la position**
-dans le fichier — c'est ce qui rend la disposition partagée sans backend. L'export de ce mode (le
-fichier à committer) est le mécanisme de l'alpha ; quand la base existera, la même interface écrira
-directement dedans.
+là où le mur la lit. **Sur la base (#185)**, le lâcher écrit `position_x`, `position_y` et
+`position_angle` **tout de suite** : tout le monde voit la disposition sans commit — et chacun ne
+range que **ses** post-its, la politique de `0001`/`0005` ne laissant déplacer que l'auteur (un compte
+en attente ne range rien du tout). **Sur le fichier**, le mode exporte le fichier à committer : c'est
+le mécanisme de l'alpha, sans backend.
+
+**Un post-it neuf ne se colle pas sur un autre (#185)** : sa place est tirée au hasard, puis écartée
+des places déjà prises — le calcul garde le point dont l'écart à toutes les autres est le plus grand.
+Un tableau bien rempli peut n'avoir plus de place libre : la disposition reste alors une affaire de
+main, et le post-it se déplace.
 
 ### Ce que chaque post-it porte
 
@@ -143,6 +150,7 @@ l'écran étroit **garde des post-its** — il ne se contente pas d'une liste de
   vivent **sur** le post-it.
 
 Le **mode de placement** reste un travail de **bureau** : il ne se fait pas au doigt sur un téléphone.
+Sur la base, il ne range que **son** post-it (#185) : le tableau se répare donc post-it par post-it, chacun chez soi.
 
 ## 3. Le fichier du mur
 
@@ -199,6 +207,11 @@ il est assumé (D-058).
 depuis le mur. Le fichier reste le **contrat de données** et la **source de secours** : sans
 variables, ou si la base ne répond pas, le mur affiche ce fichier, sans écran cassé. Dans ce
 cas, le formulaire (§4) reste la porte d'écriture.
+
+**Le rangement suit (#185)** : sur la base, le mode de placement n'exporte plus un fichier — le
+lâcher écrit `position_x`, `position_y` et `position_angle` (politique « chacun déplace les
+siens » de `0001`, reprise par `0005`). Et un post-it neuf est posé là où il cache le moins de
+texte : sa place de hasard est écartée des places déjà prises, au lieu de tomber dessus.
 
 ## 4. Le formulaire
 
