@@ -101,6 +101,9 @@ describe('un compte non approuvé lit le mur mais n’écrit pas', () => {
     expect(document.querySelector('[data-pouces]')).toBeNull();
     expect(screen.getByRole('link', { name: /Voir mon compte/ })).toHaveAttribute('href', '/attente');
     expect(screen.getByText(/Ton compte attend d’être validé/)).toBeInTheDocument();
+    // Et il ne range pas non plus : la base ne laisse déplacer que ses post-its, à un compte
+    // approuvé (#185). L'écran ne propose donc pas ce qu'elle refuserait.
+    expect(screen.queryByRole('button', { name: /Mode de placement/ })).toBeNull();
   });
 
   it('refusé : même chose, et la lecture reste ouverte', async () => {
@@ -124,6 +127,8 @@ describe('un compte non approuvé lit le mur mais n’écrit pas', () => {
     rendre();
     expect(await screen.findByText('Idée d’un collègue')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Poster une idée/ })).toBeInTheDocument();
+    // Le rangement aussi : le compte approuvé range ses post-its (ceux de la base, #185).
+    expect(screen.getByRole('button', { name: /Mode de placement/ })).toBeInTheDocument();
     expect(document.querySelector('[data-pouces]')).not.toBeNull();
   });
 });
