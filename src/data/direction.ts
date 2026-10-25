@@ -199,7 +199,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }]
       }
     ],
-    flavor: 'Trois bureaux, deux secrétaires, aucun dossier.'
+    flavor: 'Trois bureaux, deux secrétaires, aucun dossier.',
+    art: 'direction-directeur-cabinet.webp'
   }),
 
   // Ligne 4 complétée en N+2 (vague 2, #86) : Secrétaire direction → Directeur de
