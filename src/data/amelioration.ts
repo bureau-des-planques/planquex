@@ -163,7 +163,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Plan d’actions', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Écart majeur', cost: ['AMELIORATION', 'INCOLORE'], damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a ouvert un écart. L’écart est resté ouvert.'
+    flavor: 'Il a ouvert un écart. L’écart est resté ouvert.',
+    art: 'amelioration-responsable-audit.webp'
   }),
   base({
     id: 'amelioration-directeur-audit-interne',
