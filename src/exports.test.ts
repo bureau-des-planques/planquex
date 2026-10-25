@@ -124,7 +124,6 @@ function unreadExportLines(): string[] {
  * être morte : dès qu'un appelant apparaît, le test réclame la suppression de la ligne.
  */
 const EXCEPTIONS: Readonly<Record<string, string>> = {
-  VIVIER_META: 'mort : les libellés de vivier ne sont lus par aucun écran — à câbler ou à supprimer, décision de conception hors du ticket #60',
   CardKind: 'type mort : les deux formes de carte réécrivent leur union de genre en clair — hors du périmètre du ticket #60'
 };
 

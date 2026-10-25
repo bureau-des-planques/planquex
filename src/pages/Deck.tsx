@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Info, Sparkles, Trash2 } from 'lucide-react';
-import { ALL_CARDS, FACTION_META, STAGE_META, isPlanque } from '@/data';
+import { CHARIOTS } from '@/data/chariots';
+import type { Chariot } from '@/data/chariots';
+import { ALL_CARDS, FACTION_META, STAGE_META, VIVIER_META, isPlanque } from '@/data';
 import type { Card, CafeType } from '@/data/types';
 import {
   autoDeck,
@@ -65,6 +67,12 @@ export function Deck() {
   const cafeLabel = (types: readonly CafeType[]) =>
     types.map((type) => FACTION_META[type].short).join(', ');
 
+  /** Charger un Chariot proposé : ses cartes **et** ses types de café, en un geste (#141). */
+  const loadChariot = (chariot: Chariot) => {
+    setDeck([...chariot.cartes]);
+    setCafeTypes([...chariot.cafeTypes]);
+  };
+
   const available = useMemo(
     () =>
       ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0).sort((a, b) => {
@@ -114,6 +122,37 @@ export function Deck() {
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
         {legality.ok ? 'Deck valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
+
+      <section className="section panel chariots">
+        <div className="section__head">
+          <div>
+            <h2>Chariots proposés</h2>
+            <p className="muted">
+              Des Chariots prêts à jouer, indépendants de ta Collection. Charger remplace le Deck actuel.
+            </p>
+          </div>
+        </div>
+        <ul className="chariots__list">
+          {CHARIOTS.map((chariot) => (
+            <li key={chariot.id} className="chariots__item">
+              <div>
+                <h3>
+                  {chariot.name}{' '}
+                  <span className="muted">
+                    — {chariot.vivier === 'MIXTE' ? 'Mixte' : VIVIER_META[chariot.vivier].label} ·{' '}
+                    {cafeLabel(chariot.cafeTypes)}
+                  </span>
+                </h3>
+                <p>{chariot.strategie}</p>
+                <p className="muted">Faible : {chariot.faiblesse}</p>
+              </div>
+              <button type="button" className="button" onClick={() => loadChariot(chariot)}>
+                Charger
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="section panel cafe-picker">
         <div className="section__head">

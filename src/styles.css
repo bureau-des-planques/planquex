@@ -476,6 +476,27 @@ h2 {
  * présent au Deck marqué, le choix manuel en surbrillance. Les couleurs de
  * faction viennent de `FACTION_META`, jamais d'un hex recopié ici.
  */
+.chariots__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chariots__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.chariots__item h3,
+.chariots__item p {
+  margin: 0;
+}
+
 .cafe-picker {
   display: flex;
   flex-direction: column;

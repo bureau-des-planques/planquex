@@ -5,6 +5,8 @@ import { Deck } from './Deck';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS } from '@/data';
+import { CHARIOTS } from '@/data/chariots';
+import { deckLegal } from '@/game/deck';
 
 describe('Deck — écran du Deck', () => {
   beforeEach(() => {
@@ -30,6 +32,22 @@ describe('Deck — écran du Deck', () => {
 
     expect(screen.getByText(/Machine à café/i)).toBeInTheDocument();
     expect(screen.getByText(/Proposition automatique/i)).toBeInTheDocument();
+  });
+
+  it('charge un Chariot proposé en un geste : 20 cartes légales et ses types de café, sans Collection', () => {
+    renderWithStore(<Deck />, { deck: [], owned: {}, tutorielVu: true, pasAPasCombatVu: true });
+    const chariot = CHARIOTS[0];
+
+    expect(screen.getByText(chariot.strategie)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(chariot.faiblesse.slice(0, 20)))).toBeInTheDocument();
+
+    const item = screen.getByText(chariot.name).closest('li') as HTMLElement;
+    fireEvent.click(within(item).getByRole('button', { name: /Charger/i }));
+
+    const state = useStore.getState();
+    expect(state.deck).toEqual([...chariot.cartes]);
+    expect(deckLegal(state.deck).ok).toBe(true);
+    expect(state.cafeTypes).toEqual([...chariot.cafeTypes]);
   });
 
   it('permet de cocher et décocher un type de café via le groupe café-picker', () => {
