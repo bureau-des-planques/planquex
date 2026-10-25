@@ -243,7 +243,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Relevé', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Relevé terminé. L’action corrective est reportée.'
+    flavor: 'Relevé terminé. L’action corrective est reportée.',
+    art: 'amelioration-stagiaire-qualite.webp'
   }),
   base({
     id: 'amelioration-directeur-qualite-ex',
