@@ -131,3 +131,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-25 · `atelier-joueur-de-flute` · modèle `NARWHAL` · graine `1774845045` · `atelier-joueur-de-flute.webp`
 - 2026-10-25 · `atelier-technicien-systeme` · modèle `NARWHAL` · graine `1173674108` · `atelier-technicien-systeme.webp`
 - 2026-10-25 · `atelier-responsable-process` · modèle `NARWHAL` · graine `0` · `atelier-responsable-process.webp`
+- 2026-10-25 · `atelier-opticien` · modèle `NARWHAL` · graine `193387012` · `atelier-opticien.webp`
