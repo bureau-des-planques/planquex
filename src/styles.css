@@ -1560,38 +1560,91 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  padding: 0.6rem 0.8rem;
+  padding: 0.4rem 0.6rem;
   position: sticky;
   top: 0.4rem;
   z-index: 15;
 }
 
-.pas-a-pas__entete {
-  align-items: baseline;
+/* **Une seule ligne** (#199) : le numéro, le titre, « Suivant » et « Plus ». Le reste ne vit que
+   derrière « Plus » — la hauteur rendue au plateau. */
+.pas-a-pas__ligne {
+  align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.75rem;
-  justify-content: space-between;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .pas-a-pas__compte {
   color: var(--text-muted);
+  flex: none;
   font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   margin: 0;
 }
 
-.pas-a-pas__etape h2 {
+.pas-a-pas__titre {
+  flex: 1 1 auto;
   font-size: 0.92rem;
   font-weight: 700;
-  margin: 0 0 0.2rem;
+  line-height: 1.2;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.pas-a-pas__suivant {
+  flex: none;
+}
+
+.pas-a-pas__plus {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  flex: none;
+  font: inherit;
+  font-size: 0.78rem;
+  min-height: 2.25rem;
+  padding: 0.2rem 0.55rem;
+}
+
+.pas-a-pas__plus[aria-expanded='true'] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* Le reste du panneau est replié tant que « Plus » ne le déplie pas (hors de l'arbre visuel, pas
+   de l'arbre d'accessibilité : les pièces restent rendues). */
+.pas-a-pas__reste {
+  display: none;
+}
+
+.pas-a-pas--plus .pas-a-pas__reste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pas-a-pas__actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.8rem;
 }
 
 .pas-a-pas__texte {
   color: var(--text);
+  display: none;
   font-size: 0.8rem;
   line-height: 1.35;
   margin: 0;
+}
+
+.pas-a-pas--detail .pas-a-pas__texte {
+  display: block;
 }
 
 /* La désignation des éléments : un contour doré discret, jamais un bouton qui
@@ -1606,39 +1659,18 @@ h2 {
   scroll-margin-top: calc(var(--pas-a-pas-hauteur, 0px) + 0.75rem);
 }
 
-.pas-a-pas__titre-ligne {
-  align-items: baseline;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.6rem;
-  justify-content: space-between;
-}
-
-/* « Lire le détail » n'existe que pour le repli du téléphone : sur un écran large, le texte
-   est toujours lu et le bouton n'a rien à déplier. */
+/* « Lire le détail » : un lien discret, dans le reste replié. Le texte se déplie d'un geste, et la
+   hauteur reste celle de la ligne tant qu'on ne le demande pas (#170, #199). */
 .pas-a-pas__lire {
-  display: none;
-}
-
-/* Sur téléphone (D-060, 420 × 900), le détail se replie : le titre et les commandes restent
-   à l'écran, la console et la main aussi (#170). Le texte se déplie d'un geste. */
-@media (max-width: 899px) {
-  .pas-a-pas--replie .pas-a-pas__texte {
-    display: none;
-  }
-
-  .pas-a-pas__lire {
-    background: none;
-    border: 0;
-    color: var(--gold);
-    cursor: pointer;
-    display: inline;
-    font: inherit;
-    font-size: 0.78rem;
-    padding: 0;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
+  background: none;
+  border: 0;
+  color: var(--gold);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Un lien discret, pas un troisième bouton : la sortie du pas-à-pas, et « reprendre une
@@ -1869,12 +1901,12 @@ h2 {
     0 -8px 18px -10px rgb(0 0 0 / 60%);
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.2rem;
   /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
      lieu de recouvrir le plateau. */
   max-height: 42dvh;
   overflow-y: auto;
-  padding: 0.5rem 0.6rem;
+  padding: 0.3rem 0.6rem;
   position: sticky;
   z-index: 16;
 }
@@ -1932,23 +1964,30 @@ h2 {
   margin: 0;
 }
 
-/* Les cinq Conditions, sous les deux camps. */
-.board__conditions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem;
+/* « Conditions » (#199) : un lien de la barre d'état, qui ouvre la légende des cinq. Il tient dans la
+   ligne du titre, et c'est la cible « conditions » du pas-à-pas. */
+.battle__conditions {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  flex: none;
+  font: inherit;
+  font-size: 0.78rem;
+  margin-left: auto;
+  min-height: 2.75rem;
+  padding: 0.3rem 0.6rem;
+}
+
+/* La ligne de journal de la barre d'action (#199) : une phrase entière, lisible, qui passe à la ligne
+   plutôt que de se tronquer. */
+.combat-barre .combat-barre__journal {
+  font-size: 0.8rem;
+  line-height: 1.25;
   margin: 0;
-}
-
-/* Cinq noms en une ligne à 420 px : sans leur icône (le nom porte l'information, pas le dessin). */
-.board__conditions .status-chip {
-  letter-spacing: 0;
-  padding: 0.12rem 0.4rem;
-}
-
-.board__conditions .status-chip svg {
-  display: none;
+  overflow-wrap: anywhere;
+  padding: 0.15rem 0.55rem;
 }
 
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
@@ -1956,7 +1995,7 @@ h2 {
 .battle__table {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
 .battle__console {
@@ -1985,8 +2024,8 @@ h2 {
   );
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.3rem;
+  gap: 0.25rem;
+  padding: 0.2rem;
   position: relative;
 }
 
@@ -2003,7 +2042,8 @@ h2 {
 
 /* Le texte de la Machine et des cafés, sur le feutre éclairé : le gris `.muted` tombait à 4,3:1 — sous les 4,5:1
    de l'AA. Ici il reprend la couleur du texte courant. */
-.poste__info .muted {
+.poste__info .muted,
+.board .board__counts {
   color: var(--text);
 }
 
@@ -2014,7 +2054,7 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  padding: 0.25rem 0.2rem 0.15rem;
+  padding: 0.1rem 0.2rem;
   transition: border-color 200ms ease;
 }
 
@@ -2049,43 +2089,68 @@ h2 {
   font-size: 0.72rem;
 }
 
-/* La ligne d'un camp : le Poste à gauche, le Banc à droite. Les deux Postes se font face sur le même
-   axe vertical. Une ligne plutôt qu'une pile : empiler le Poste (162 px) au-dessus du Banc coûterait
-   ~250 px par camp, et la table doit laisser la main dans la fenêtre (`npm run capturer`). */
+/* Les deux camps sont **empilés** (#199, SPEC-COMBAT-UI §6.8.1) : le camp adverse lit Banc puis Poste,
+   le mien Poste puis Banc, et les deux Postes se font face au centre. Les tailles sont des variables,
+   mesurées par `npm run capturer` : la garde décide de la plus grande qui tient. */
 .board__zone {
-  align-items: flex-start;
+  --poste-w: 5.25rem;
+  --banc-w: 3.5rem;
+  align-items: center;
   display: flex;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-/* Le Poste : une carte de 92 px (131 px de haut). Le Banc fait 61 px par place : le rapport est de
-   1,5, la borne basse de D-093 §6.8 (1,5 à 1,8). Le plateau tient à ces tailles et pas au-dessus. */
+/* Le Poste et ce qui s'y passe, côte à côte : la carte garde la place du centre. */
+.board__poste-ligne {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+/* Le Poste : une carte en grand. Sa largeur est `--poste-w`, sa hauteur suit le format 63 × 88. */
 .board__poste {
   flex: none;
-  width: 5.75rem;
+  width: var(--poste-w);
 }
 
 .board__bench {
   display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 0.35rem;
+  justify-content: center;
   min-width: 0;
 }
 
-/* Ce qui se passe au Poste (Stress écrit, cafés, Machine, Conditions), sous le Banc. */
-.poste__info {
-  align-items: center;
+/* La fiche du camp, à côté de la carte du Poste (#199) : son nom et ses piles, puis ce qui se passe
+   au Poste (Stress écrit, cafés, Machine, Conditions). */
+.board__fiche {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.2rem 0.4rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 11rem;
+  min-width: 0;
 }
 
-/* Le Banc : trois places de 61 px. Une place libre garde la forme d'une carte, en pointillé. */
+.board__fiche .board__head {
+  align-items: center;
+  gap: 0.15rem 0.4rem;
+}
+
+/* Ce qui se passe au Poste (Stress écrit, cafés, Machine, Conditions), sous le nom du camp. */
+.poste__info {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+/* Le Banc : trois places de `--banc-w`, sur une rangée. Une place libre garde la forme d'une carte,
+   en pointillé. */
 .bench {
   display: grid;
-  gap: 0.35rem;
-  grid-template-columns: repeat(3, 3.8rem);
+  gap: 0.3rem;
+  grid-template-columns: repeat(3, var(--banc-w));
   list-style: none;
   margin: 0;
   padding: 0;
@@ -2096,7 +2161,7 @@ h2 {
 }
 
 .bench__carte {
-  width: 3.8rem;
+  width: var(--banc-w);
 }
 
 .bench__slot.is-free {
@@ -2106,7 +2171,7 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3.8rem;
+  width: var(--banc-w);
 }
 
 /* Les sections repliées du combat (Conditions, Partie à deux, Journal) : une ligne chacune
@@ -2326,7 +2391,7 @@ h2 {
 }
 
 .poste__hp {
-  color: var(--text-muted);
+  color: var(--text);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
@@ -2582,7 +2647,7 @@ h2 {
   list-style: none;
   margin: 0;
   overflow-x: auto;
-  padding: 0.2rem 0.15rem 0.2rem;
+  padding: 0.1rem 0.15rem 0.1rem;
   scroll-snap-type: x proximity;
 }
 

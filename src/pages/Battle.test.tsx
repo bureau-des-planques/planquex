@@ -164,21 +164,37 @@ describe('Battle — écran de combat', () => {
     expect(cartes.some((carte) => carte.closest('.bench'))).toBe(true);
   });
 
+  it('empile les camps : la Direction lit Banc puis Poste, moi Poste puis Banc, les Postes se font face (#199)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le plateau range la Direction d'abord, moi ensuite (`Battle.tsx`, `[otherCamp, myCamp]`).
+    const [adverse, moi] = Array.from(document.querySelectorAll('.board__side'));
+    const suit = (avant: Element | null, apres: Element | null) =>
+      Boolean(avant && apres && avant.compareDocumentPosition(apres) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(suit(adverse.querySelector('.board__bench'), adverse.querySelector('.board__poste'))).toBe(true);
+    expect(suit(moi.querySelector('.board__poste'), moi.querySelector('.board__bench'))).toBe(true);
+  });
+
   it('affiche la main du joueur', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Ta main/)).toBeInTheDocument();
   });
 
-  it('affiche la ligne des Conditions, sous le plateau : les cinq, par leur nom', () => {
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+  it('ne pose plus la rangée des Conditions sur le plateau : un lien de la barre d’état l’ouvre (#199)', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    // La légende complète est derrière « Règles » (menu `⋯`) ; la table n'en garde que les noms.
-    const ligne = screen.getByText('Conditions').closest('p') as HTMLElement;
+    // La rangée des cinq a quitté le flux du plateau : ni ligne, ni noms en dehors d'un dialogue.
+    expect(container.querySelector('.board__conditions')).toBeNull();
+    expect(container.querySelector('.board')?.textContent).not.toMatch(/Dérive/);
+
+    // Le lien de la barre d'état ouvre la légende, avec les cinq par leur nom et leur règle.
+    fireEvent.click(screen.getByRole('button', { name: 'Conditions' }));
+    const dialogue = screen.getByRole('dialog', { name: /Conditions/i });
     for (const nom of ['Surcharge', 'Épuisement', 'Sieste', 'Immobilisation', 'Dérive']) {
-      expect(within(ligne).getByText(nom)).toBeInTheDocument();
+      expect(within(dialogue).getByText(nom)).toBeInTheDocument();
     }
-    expect(screen.queryByText(/ce qu.un Planqué au Poste peut subir/i)).toBeNull();
+    expect(dialogue).toHaveTextContent(/ce qu.un Planqué au Poste peut subir/i);
   });
 
   it('ouvre le dialogue Règles depuis le menu, avec la règle de chaque Condition', () => {
@@ -356,6 +372,16 @@ describe('Battle — la barre d’action (#191)', () => {
     expect(container.querySelector('.board')?.contains(barre)).toBe(false);
   });
 
+  it('la dernière ligne du journal vit dans la barre d’action, et seule la barre porte le bandeau (#199)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    // « Lancer de tampon : tu ouvres. » — la graine fixe (42) donne au joueur l'ouverture.
+    expect(barre.querySelector('.combat-barre__journal')).toHaveTextContent('Lancer de tampon : tu ouvres.');
+    // Aucun bandeau n'est resté au-dessus du plateau.
+    for (const bandeau of document.querySelectorAll('.banner')) expect(barre.contains(bandeau)).toBe(true);
+  });
+
   it('ne perd rien : une Pression à portée est un bouton de la barre, pas de la main', () => {
     const { partie, etat } = partieAvecPression();
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
@@ -499,22 +525,40 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
     expect(document.documentElement.style.getPropertyValue('--pas-a-pas-hauteur')).toMatch(/px$/);
   });
 
-  it('sur téléphone, le détail du pas-à-pas se replie : le titre reste, « Lire le détail » le déplie (#170)', () => {
+  it('tient sur une ligne : le titre et « Suivant » ; « Plus » déplie Précédent, Passer et le détail (#199)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
     const panneau = screen.getByRole('complementary', { name: /Pas-à-pas du combat/i });
-    // Le repli ne vaut que sur téléphone : sur un écran large, le détail reste lu d'office.
-    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-    expect(css).toMatch(
-      /@media \(max-width: 899px\)\s*\{[\s\S]*?\.pas-a-pas--replie \.pas-a-pas__texte\s*\{\s*display:\s*none/
-    );
 
-    expect(panneau).toHaveClass('pas-a-pas--replie');
+    // La ligne : le titre de l'étape et « Suivant », rien d'autre.
+    const ligne = panneau.querySelector('.pas-a-pas__ligne') as HTMLElement;
+    expect(within(ligne).getByRole('heading', { name: 'Le Poste et le Banc' })).toBeInTheDocument();
+    expect(within(ligne).getByRole('button', { name: 'Suivant' })).toBeInTheDocument();
+
+    // Replié : « Plus » dit qu'il ne déplie rien encore ; le reste est là, sous ses doigts.
+    const plus = within(panneau).getByRole('button', { name: 'Plus' });
+    expect(plus).toHaveAttribute('aria-expanded', 'false');
+    const reste = panneau.querySelector('.pas-a-pas__reste') as HTMLElement;
+    expect(reste).toContainElement(within(panneau).getByRole('button', { name: 'Précédent' }));
+    expect(reste).toContainElement(within(panneau).getByRole('button', { name: 'Passer le pas-à-pas' }));
+
+    fireEvent.click(plus);
+    expect(plus).toHaveAttribute('aria-expanded', 'true');
+
+    // « Lire le détail » déplie le texte de l'étape, et seulement lui.
+    expect(panneau).not.toHaveClass('pas-a-pas--detail');
     const lire = within(panneau).getByRole('button', { name: 'Lire le détail' });
     expect(lire).toHaveAttribute('aria-expanded', 'false');
-
     fireEvent.click(lire);
-    expect(panneau).not.toHaveClass('pas-a-pas--replie');
-    expect(within(panneau).getByRole('button', { name: 'Replier' })).toHaveAttribute('aria-expanded', 'true');
+    expect(panneau).toHaveClass('pas-a-pas--detail');
+    expect(within(panneau).getByRole('button', { name: 'Replier le détail' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('« Passer le pas-à-pas », replié dans « Plus », ferme le pas-à-pas', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
+    const panneau = screen.getByRole('complementary', { name: /Pas-à-pas du combat/i });
+    fireEvent.click(within(panneau).getByRole('button', { name: 'Plus' }));
+    fireEvent.click(within(panneau).getByRole('button', { name: 'Passer le pas-à-pas' }));
+    expect(screen.queryByRole('complementary', { name: /Pas-à-pas du combat/i })).toBeNull();
   });
 
   it('défile en douceur, sauf mouvement réduit : alors le saut est instantané', () => {

@@ -376,9 +376,9 @@ function Camp({
   pendingPromotion: boolean;
   pasAPas: PasAPasCombatEtat;
 }) {
-  // Le Poste : la carte à gauche, sur l'axe vertical (les deux Postes se font face). Le nom et la
-  // barre de Stress sont **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur de la
-  // table est comptée par la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
+  // Le Poste : la carte, en grand, au centre du camp (R4). Le nom et la barre de Stress sont
+  // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
+  // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
   const poste = (
     <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
       <span className="sr-only">Poste</span>
@@ -392,22 +392,25 @@ function Camp({
     </div>
   );
 
-  // Le Banc, à droite du Poste : trois places de 61 px, et sous elles ce qui se passe au Poste
-  // (Stress écrit, cafés, Machine, Conditions). Une place libre garde la forme d'une carte.
-  const banc = (
-    <div className="board__bench">
-      <span className="sr-only">Banc</span>
-      <ul className="bench">
-        {side.bench.map((slot, index) => (
-          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index}>
-            {slot ? (
-              <CartePlateau instance={slot} className="bench__carte" />
-            ) : (
-              <span className="sr-only">Place libre</span>
-            )}
-          </li>
-        ))}
-      </ul>
+  // La fiche du camp, **à côté** de la carte du Poste et non au-dessus (#199) : le nom du camp, ses
+  // piles, puis ce qui se passe au Poste (Stress écrit, cafés, Machine, Conditions). Le camp tient
+  // ainsi en deux rangées, et non en trois : c'est ce qui rend la hauteur au plateau.
+  const fiche = (
+    <div className="board__fiche">
+      <header className="board__head">
+        <h2>{label}</h2>
+        <span className="board__counts muted">main {side.hand.length}</span>
+        {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
+            Rebut ne s'ouvre pas encore : son panneau arrive avec #188, et d'ici là ce n'est pas un bouton. */}
+        <span className="piles">
+          <span className="pile pile--deck">
+            Deck <strong>{side.deck.length}</strong>
+          </span>
+          <span className="pile pile--rebut">
+            Rebut <strong>{side.discard.length}</strong>
+          </span>
+        </span>
+      </header>
       {side.active && (
         <div className="poste__info">
           <span className="poste__hp">
@@ -427,27 +430,49 @@ function Camp({
     </div>
   );
 
+  // Le Banc : trois places, sur une seule rangée. Une place libre garde la forme d'une carte.
+  const banc = (
+    <div className="board__bench">
+      <span className="sr-only">Banc</span>
+      <ul className="bench">
+        {side.bench.map((slot, index) => (
+          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index}>
+            {slot ? (
+              <CartePlateau instance={slot} className="bench__carte" />
+            ) : (
+              <span className="sr-only">Place libre</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  // La pile du camp (#199) : le camp adverse lit **Banc puis Poste**, le mien **Poste puis Banc**.
+  // Ainsi les deux Postes se font face, au centre du plateau.
+  const ligneDuPoste = (
+    <div className="board__poste-ligne">
+      {poste}
+      {fiche}
+    </div>
+  );
+
+  // Empilés (#199) : le Poste et le Banc du camp, dans l'ordre qui met les deux Postes face à face.
+  // Le camp qui a la main est porté par le cadre du camp.
   return (
     <article className={`board__side ${current ? 'is-current' : ''} ${mine ? '' : 'is-direction'}`}>
-      <header className="board__head">
-        <h2>{label}</h2>
-        <span className="board__counts muted">main {side.hand.length}</span>
-        {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
-            Rebut ne s'ouvre pas encore : son panneau arrive avec #188, et d'ici là ce n'est pas un bouton. */}
-        <span className="piles">
-          <span className="pile pile--deck">
-            Deck <strong>{side.deck.length}</strong>
-          </span>
-          <span className="pile pile--rebut">
-            Rebut <strong>{side.discard.length}</strong>
-          </span>
-        </span>
-      </header>
-      {/* Le Poste à gauche, le Banc à droite, pour les deux camps : les deux Postes sont sur le même
-          axe vertical (SPEC-COMBAT-UI §6.8). Le camp qui a la main est porté par le cadre du camp. */}
       <div className="board__zone">
-        {poste}
-        {banc}
+        {mine ? (
+          <>
+            {ligneDuPoste}
+            {banc}
+          </>
+        ) : (
+          <>
+            {banc}
+            {ligneDuPoste}
+          </>
+        )}
       </div>
     </article>
   );
@@ -835,8 +860,9 @@ export function Battle() {
   };
 
   /**
-   * La légende des Conditions : une seule source de JSX, dans le dialogue « Règles » (D-035,
-   * composant shadcn `dialog`). Un libellé ajouté à `STATUS_META` y apparaît sans être recopié.
+   * La légende des Conditions : une seule source de JSX, pour les deux dialogues qui la montrent —
+   * « Conditions » (le lien de la barre d'état, #199) et « Règles » (le menu `⋯`). Composant
+   * `dialog` (D-035). Un libellé ajouté à `STATUS_META` y apparaît sans être recopié.
    */
   const conditionsLegend = (
     <ul className="status-legend">
@@ -967,8 +993,29 @@ export function Battle() {
             </p>
           )}
         </div>
-        {/* La place du `ⓘ` (bascule des infos, #189) est laissée libre : le bouton n'existe pas
-            encore, et un bouton qui ne fait rien n'a pas sa place à l'écran. */}
+        {/* Les Conditions (#199) : la rangée des cinq a quitté le plateau. Elle tient ici en un lien,
+            qui ouvre la même légende que « Règles » dans le menu ; c'est la cible « conditions » du
+            pas-à-pas, et elle reste à l'écran. La place du `ⓘ` (#189) reste libre. */}
+        <Dialog>
+          <DialogTrigger
+            render={
+              <button
+                type="button"
+                className="battle__conditions"
+                data-pas-a-pas={pasAPas.designe('conditions')}
+              />
+            }
+          >
+            Conditions
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Conditions</DialogTitle>
+              <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
+            </DialogHeader>
+            {conditionsLegend}
+          </DialogContent>
+        </Dialog>
         <MenuCombat etat={menu} onChange={setMenu}>
           {(menuApi) => {
             if (menu.vue === 'journal') {
@@ -1049,21 +1096,6 @@ export function Battle() {
         </p>
       )}
 
-      {lastLog && (
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.p
-            key={state.log.length}
-            className={`banner ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
-            initial={{ opacity: 0, y: -10, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-          >
-            {lastLog}
-          </motion.p>
-        </AnimatePresence>
-      )}
-
       {/*
         **La table** (#169) : le plateau des deux camps, puis la console du joueur — la main et la
         pose. Sur téléphone, tout s'empile et tient dans l'écran ; sur un écran large, la console
@@ -1095,16 +1127,6 @@ export function Battle() {
               />
             </Fragment>
           ))}
-          {/* Les cinq Conditions, en une ligne sous les deux camps (§6.2) : c'est la cible
-              « conditions » du pas-à-pas. Le mot « Conditions » n'est lu que par les lecteurs
-              d'écran (la ligne tient en une seule ligne à 420 px), et le texte de chaque règle
-              vit dans « Règles » (menu `⋯`). */}
-          <p className="board__conditions" data-pas-a-pas={pasAPas.designe('conditions')}>
-            <span className="sr-only">Conditions</span>
-            {STATUS_LIST.map((status) => (
-              <StatusBadge key={status} status={status} />
-            ))}
-          </p>
         </section>
 
         <div className="battle__console">
@@ -1200,6 +1222,24 @@ export function Battle() {
         aria-label="Actions du tour"
         data-pas-a-pas={pasAPas.designe('poste-actions')}
       >
+        {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
+            qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
+            information temporaire n'a pas à occuper une bande de plus. */}
+        {lastLog && (
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.p
+              key={state.log.length}
+              className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 6 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+            >
+              {lastLog}
+            </motion.p>
+          </AnimatePresence>
+        )}
+
         {state.pendingPromotion && (
           <section className="notice notice--warn promotion">
             {state.pendingPromotion === myCamp ? (
