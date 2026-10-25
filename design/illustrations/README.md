@@ -151,3 +151,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-25 · `atelier-rpo-sans-rui-ex` · modèle `NARWHAL` · graine `906846156` · `atelier-rpo-sans-rui-ex.webp`
 - 2026-10-25 · `atelier-rui-non-toxique-ex` · modèle `NARWHAL` · graine `281151880` · `atelier-rui-non-toxique-ex.webp`
 - 2026-10-25 · `amelioration-auditeur-interne` · modèle `NARWHAL` · graine `1618354785` · `amelioration-auditeur-interne.webp`
+- 2026-10-25 · `amelioration-auditeur-qualite` · modèle `NARWHAL` · graine `1443224453` · `amelioration-auditeur-qualite.webp`

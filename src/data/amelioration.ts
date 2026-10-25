@@ -45,7 +45,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       ]
     },
     attacks: [{ name: 'Non-conformité', cost: ['AMELIORATION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est déclaré non conforme. La fiche d’écart le désigne ; le process, lui, reste hors de cause.' }],
-    flavor: 'Il a trouvé un problème. Le problème, c’est le process.'
+    flavor: 'Il a trouvé un problème. Le problème, c’est le process.',
+    art: 'amelioration-auditeur-qualite.webp'
   }),
   base({
     id: 'amelioration-directeur-qualite',
