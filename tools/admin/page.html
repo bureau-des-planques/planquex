@@ -9,12 +9,14 @@
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--texte); font:14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   header { padding:18px 22px; border-bottom:1px solid var(--bord); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-  header h1 { font-size:18px; margin:0; font-weight:700; }
+  header h1 { font-size:24px; margin:0; font-weight:700; line-height:1.15; }
   header .lien { color:var(--lien); text-decoration:none; }
   main { max-width: 1080px; margin:0 auto; padding:20px 22px 60px; display:grid; gap:20px; }
-  section { background:var(--panneau); border:1px solid var(--bord); border-radius:10px; padding:16px 18px; }
-  h2 { font-size:15px; margin:0 0 12px; font-weight:700; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
+  section { background:var(--panneau); border:1px solid var(--bord); border-radius:10px; padding:16px 18px; min-width:0; }
+  h2 { font-size:17px; margin:0 0 12px; font-weight:700; line-height:1.2; }
+  h3 { font-size:12px; margin:16px 0 8px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muet); }
+  .tableau { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table { width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
   th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--bord); vertical-align:top; }
   th { color:var(--muet); font-weight:600; white-space:nowrap; }
   button { background:#16213a; color:var(--texte); border:1px solid var(--bord); border-radius:6px; padding:5px 10px; cursor:pointer; font:inherit; }
@@ -22,13 +24,22 @@
   button.vert { background:var(--accent-fonce); border-color:var(--accent-fonce); }
   button.rouge { background:#7f1d1d; border-color:#7f1d1d; }
   input, textarea, select { background:#0b1220; color:var(--texte); border:1px solid var(--bord); border-radius:6px; padding:6px 9px; font:inherit; width:100%; }
-  .grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
-  .chiffre { background:#0b1220; border:1px solid var(--bord); border-radius:8px; padding:10px 12px; }
-  .chiffre b { display:block; font-size:22px; }
-  .chiffre span { color:var(--muet); font-size:12px; }
+  input[type="checkbox"] { width:auto; }
+  .grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:18px 24px; }
+  .chiffre { padding:4px 0 4px 12px; border-left:2px solid var(--bord); }
+  .chiffre b { display:block; font-size:26px; line-height:1.15; font-weight:700; }
+  .chiffre span { color:var(--muet); font-size:13px; }
+  .chiffre.cle { border-left-color:var(--accent); }
+  .chiffre.cle b { color:var(--accent); }
+  input::placeholder, textarea::placeholder { color:var(--muet); opacity:1; }
   .etat-pill { padding:1px 8px; border-radius:999px; font-size:12px; background:#0b1220; border:1px solid var(--bord); }
   .erreur { color:var(--danger); white-space:pre-wrap; }
   .muet { color:var(--muet); }
+  #retour { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); max-width:92vw;
+    background:#14532d; border:1px solid var(--accent); color:var(--texte); border-radius:8px;
+    padding:9px 14px; font-size:13px; box-shadow:0 6px 24px rgba(0,0,0,.45); z-index:10; }
+  #retour.rouge { background:#450a0a; border-color:var(--danger); }
+  #retour[hidden] { display:none; }
   .ligne-forme { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   #mot-destructif { color:var(--danger); font-weight:700; letter-spacing:1px; }
   pre { background:#0b1220; border:1px solid var(--bord); border-radius:6px; padding:10px; overflow:auto; max-height:340px; font-size:12px; }
@@ -69,14 +80,13 @@
   </section>
 </main>
 
-<script>
-  const jeton = new URLSearchParams(location.search).get('jeton') || '';
+<div id="retour" role="status" aria-live="polite" hidden></div>
 
+<script>
+  // Le jeton n'est plus relu ici : à la première visite `?jeton=` pose un cookie `HttpOnly`, et
+  // les `fetch` le renvoient d'eux-mêmes (même origine). La page n'a plus à retaper le jeton.
   async function api(chemin, options = {}) {
-    const reponse = await fetch(chemin, {
-      ...options,
-      headers: { 'x-poste-jeton': jeton, ...(options.headers || {}) }
-    });
+    const reponse = await fetch(chemin, options);
     const texte = await reponse.text();
     let corps = null;
     try { corps = texte ? JSON.parse(texte) : null; } catch { corps = { brut: texte }; }
@@ -92,18 +102,23 @@
     const e = await api('/api/etat');
     const comptes = e.comptes || {};
     const postits = e.postits || {};
-    const ch = (obj) => Object.entries(obj).map(([k, v]) =>
-      `<div class="chiffre"><b>${v}</b><span>${k}</span></div>`).join('');
+    // Les catégories vides (zéro) ne s'affichent pas : « 0 refusé » n'apprend rien.
+    const ch = (obj) => Object.entries(obj).filter(([, v]) => Number(v) > 0)
+      .map(([k, v]) => `<div class="chiffre"><b>${v}</b><span>${k}</span></div>`).join('');
+    const grilleComptes = ch(comptes);
+    const grillePostits = ch(postits);
     document.querySelector('#etat').innerHTML = `
       <h2>État de l'alpha</h2>
       <div class="grille">
-        <div class="chiffre"><b>${e.approbationsEnAttente}</b><span>comptes en attente</span></div>
+        <div class="chiffre cle"><b>${e.approbationsEnAttente}</b><span>comptes en attente</span></div>
         <div class="chiffre"><b>${e.parties.terminees}</b><span>parties terminées</span></div>
         <div class="chiffre"><b>${e.parties.poidsMoyen} o</b><span>poids moyen</span></div>
         <div class="chiffre"><b>${(e.volumeOctets / 1048576).toFixed(2)} Mo</b><span>volume</span></div>
       </div>
-      <div class="grille" style="margin-top:10px">${ch(comptes)}</div>
-      <div class="grille" style="margin-top:10px">${ch(postits)}</div>`;
+      <h3>Comptes par état</h3>
+      ${grilleComptes ? `<div class="grille">${grilleComptes}</div>` : '<div class="muet">aucun compte</div>'}
+      <h3>Post-its par statut</h3>
+      ${grillePostits ? `<div class="grille">${grillePostits}</div>` : '<div class="muet">aucun post-it</div>'}`;
   }
 
   async function comptes() {
@@ -122,8 +137,8 @@
       </tr>`).join('');
     document.querySelector('#comptes').innerHTML = `
       <h2>Comptes</h2>
-      <table><thead><tr><th>id</th><th>courriel</th><th>état</th><th>gestes</th></tr></thead>
-      <tbody>${lignes || '<tr><td colspan="4" class="muet">aucun compte</td></tr>'}</tbody></table>`;
+      ${lignes ? `<div class="tableau"><table><thead><tr><th>id</th><th>courriel</th><th>état</th><th>gestes</th></tr></thead>
+      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucun compte en attente</div>'}`;
   }
 
   async function postits() {
@@ -148,11 +163,11 @@
       <h2>Post-its</h2>
       <div style="margin-bottom:10px" class="ligne-forme">
         <span class="muet">Réattribuer les post-its anonymes à un compte :</span>
-        <input id="cible-reattribuer" placeholder="uuid du compte" style="width:26em">
+        <input id="cible-reattribuer" placeholder="uuid du compte" style="width:16em;min-width:0">
         <button onclick="reattribuer()">réattribuer</button>
       </div>
-      <table><thead><tr><th>id</th><th>titre</th><th>statut</th><th>ticket</th><th>auteur</th><th>tri</th></tr></thead>
-      <tbody>${lignes || '<tr><td colspan="6" class="muet">aucun post-it</td></tr>'}</tbody></table>`;
+      ${lignes ? `<div class="tableau"><table><thead><tr><th>id</th><th>titre</th><th>statut</th><th>ticket</th><th>auteur</th><th>tri</th></tr></thead>
+      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucun post-it</div>'}`;
   }
 
   async function migrations() {
@@ -170,8 +185,8 @@
     }).join('');
     document.querySelector('#migrations').innerHTML = `
       <h2>Migrations</h2>
-      <table><thead><tr><th>fichier</th><th>état</th><th>empreinte</th><th>geste</th></tr></thead>
-      <tbody>${lignes || '<tr><td colspan="4" class="muet">aucune migration</td></tr>'}</tbody></table>
+      ${lignes ? `<div class="tableau"><table><thead><tr><th>fichier</th><th>état</th><th>empreinte</th><th>geste</th></tr></thead>
+      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucune migration</div>'}
       <p class="muet">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée.</p>`;
   }
 
@@ -185,15 +200,35 @@
     await Promise.all([etat(), comptes(), postits(), migrations(), journalVue()]);
   }
 
+  // Le résultat d'un geste, affiché au bas de l'écran au lieu d'une page muette. Disparaît seul.
+  let retourMinute = null;
+  function retour(message, rouge = false) {
+    const bloc = document.querySelector('#retour');
+    bloc.hidden = false;
+    bloc.textContent = message;
+    bloc.classList.toggle('rouge', rouge);
+    if (retourMinute) clearTimeout(retourMinute);
+    retourMinute = setTimeout(() => { bloc.hidden = true; }, 5000);
+  }
+
   // Gestes
-  window.approuver = async (id) => { await api(`/api/comptes/${id}/approuver`, { method: 'POST' }); await charger(); };
+  window.approuver = async (id) => {
+    await api(`/api/comptes/${id}/approuver`, { method: 'POST' });
+    retour('compte approuvé ✓');
+    await charger();
+  };
   window.refuser = async (id) => {
     const raison = prompt('Raison du refus (obligatoire) :');
     if (!raison || !raison.trim()) return alert('un refus exige une raison');
     await api(`/api/comptes/${id}/refuser`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ raison }) });
+    retour('compte refusé');
     await charger();
   };
-  window.marquerAdmin = async (id, administrateur) => { await api(`/api/comptes/${id}/administrateur`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ administrateur }) }); await charger(); };
+  window.marquerAdmin = async (id, administrateur) => {
+    await api(`/api/comptes/${id}/administrateur`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ administrateur }) });
+    retour(administrateur ? 'compte promu administrateur' : 'compte rétrogradé');
+    await charger();
+  };
   window.reveler = async (id) => { const r = await api(`/api/comptes/${id}/courriel`, { method: 'POST' }); alert(`Courriel : ${r.courriel}`); };
   window.trier = async (id) => {
     const statut = document.querySelector(`#s-${id}`).value;
@@ -203,16 +238,21 @@
     if (raison) corps.raison = raison;
     if (ticket) corps.ticket = Number(ticket);
     await api(`/api/postits/${id}/trier`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corps) });
+    retour(`post-it trié → ${statut}`);
     await charger();
   };
   window.reattribuer = async () => {
     const compte = document.querySelector('#cible-reattribuer').value.trim();
     if (!compte) return alert('un compte est requis');
     const r = await api('/api/postits/reattribuer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ compte }) });
-    alert(`${r.reattribues} post-it(s) réattribués.`);
+    retour(`${r.reattribues} post-it(s) réattribué(s)`);
     await charger();
   };
-  window.appliquer = async (fichier) => { const r = await api(`/api/migrations/${fichier}/appliquer`, { method: 'POST' }); alert(`Appliquée : ${r.fichier}\n${JSON.stringify(r.sortie).slice(0, 200)}`); await charger(); };
+  window.appliquer = async (fichier) => {
+    const r = await api(`/api/migrations/${fichier}/appliquer`, { method: 'POST' });
+    retour(`migration appliquée : ${r.fichier}`);
+    await charger();
+  };
 
   window.executerSql = async () => {
     const sortie = document.querySelector('#sql-sortie');

@@ -57,8 +57,12 @@ Puis appliquer **une fois** `supabase/admin/roles.sql` dans le SQL Editor (il cr
 `lecteur`, `select` seul), et poser son mot de passe hors dépôt (`alter role lecteur with
 password '…'`).
 
-Au démarrage, le serveur affiche `Poste de pilotage : http://127.0.0.1:5199/?jeton=…` — c'est
-cette adresse qu'on ouvre. Le jeton est exigé sur chaque requête.
+Au démarrage, le serveur **ouvre le navigateur** tout seul sur
+`http://127.0.0.1:5199/?jeton=…` (s'il y en a un) ; sinon il affiche l'adresse à ouvrir à la
+main, comme avant. Le jeton est exigé sur chaque requête, et **la première visite le pose en
+cookie** (`HttpOnly`, `SameSite=Strict`) : inutile de le retaper aux visites suivantes. Le
+paramètre `?jeton=` reste accepté (rétrocompatibilité) ; un jeton invalide efface le cookie et
+répond 401. Aucun en-tête CORS n'est émis : le jeton ne sort jamais en cross-site.
 
 ## Où vivent les secrets
 
