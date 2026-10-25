@@ -53,7 +53,7 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 60, text: 'L’adversaire défausse 1 carte.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }] },
       { name: "Entretien annuel", cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 80, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
-    flavor: "Il a lu ton CV. Il sait où tu habites.",
+    flavor: "Le CV a été lu par un logiciel. La réponse, elle, était archivée avant.",
     art: 'rh-drh.webp'
   }),
 
