@@ -443,7 +443,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 65,
     retreat: 1,
     attacks: [{ name: 'Mutation', cost: ['QVT'], damage: 10, text: 'Échange ce Planqué avec un Planqué du Banc.', effects: [{ kind: 'switchSelf' }] }],
-    flavor: 'Le poste est ouvert. La mobilité est gelée.'
+    flavor: 'Le poste est ouvert. La mobilité est gelée.',
+    art: 'qvt-charge-mobilite-interne.webp'
   }),
   base({
     id: 'qvt-charge-vie-associative',
