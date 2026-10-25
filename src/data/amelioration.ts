@@ -109,7 +109,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Lissage', cost: ['AMELIORATION'], damage: 20, text: 'Le Planqué adverse est lissé pour entrer dans la courbe. La courbe, elle, ne bouge pas.' }],
-    flavor: 'Il a lissé la charge. Le planning a doublé tout seul.'
+    flavor: 'Il a lissé la charge. Le planning a doublé tout seul.',
+    art: 'amelioration-gestionnaire-flux.webp'
   }),
   base({
     id: 'amelioration-responsable-flux',
