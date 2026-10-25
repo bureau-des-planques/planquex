@@ -226,3 +226,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `management-superviseur` · modèle `NARWHAL` · graine `1382980626` · `management-superviseur.webp`
 - 2026-10-26 · `management-technico-commercial` · modèle `NARWHAL` · graine `23997326` · `management-technico-commercial.webp`
 - 2026-10-26 · `qvt-charge-mission` · modèle `NARWHAL` · graine `1103279242` · `qvt-charge-mission.webp`
+- 2026-10-26 · `qvt-animateur-bien-etre` · modèle `NARWHAL` · graine `951272960` · `qvt-animateur-bien-etre.webp`

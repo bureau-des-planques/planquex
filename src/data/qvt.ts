@@ -60,7 +60,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Pause active', cost: ['QVT'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il a mis de la musique. La pause est décomptée.'
+    flavor: 'Il a mis de la musique. La pause est décomptée.',
+    art: 'qvt-animateur-bien-etre.webp'
   }),
   base({
     id: 'qvt-responsable-qvt',
