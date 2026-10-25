@@ -377,7 +377,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Plan de l’unité', cost: ['ATELIER', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse reçoit le plan de l’unité. L’unité n’a pas été consultée.' },
       { name: 'Bonne humeur', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Il valide l’unité depuis le parking. Personne ne lui a dit qu’il était toxique.'
+    flavor: 'Deux Interventions. Il valide l’unité depuis le parking. Personne ne lui a dit qu’il était toxique.',
+    art: 'atelier-rui-non-toxique-ex.webp'
   })
 ];
 
