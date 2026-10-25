@@ -253,7 +253,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Audit flash', cost: ['AMELIORATION', 'INCOLORE'], damage: 70, text: 'Un audit flash s’abat sur le Planqué adverse. Il dure une heure, le rapport un trimestre.' },
       { name: 'Certification', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'On a amélioré le process d’amélioration.'
+    flavor: 'On a amélioré le process d’amélioration.',
+    art: 'amelioration-directeur-qualite-ex.webp'
   })
 ];
 
