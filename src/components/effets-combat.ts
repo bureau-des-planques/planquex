@@ -40,7 +40,9 @@ export const DUREE_MAX_MS = 800;
  * le plafond de quatre effets simultanés. `condition` est l'après : le badge nommé qui
  * apparaît.
  */
-export const DUREE_ATTAQUE_MS = 350;
+// L'attaque dure le temps de sa séquence, pas celui du trait seul : l'impact part à 550 ms
+// (direction §8.4) et finit à 700 ms. Avec 350 ms, l'effet serait retiré avant l'impact.
+export const DUREE_ATTAQUE_MS = 700;
 export const DUREE_CONDITION_MS = 200;
 
 export type NatureEffet = 'stress' | 'craquage' | 'pioche' | 'intervention' | 'attaque' | 'condition';
@@ -194,11 +196,12 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
   }
 
   // **La Pression en quatre temps** (#207) : une action `attack` vient d'être journalisée.
-  // L'état est déjà final — l'effet ne retarde rien, il raconte. Le camp qui attaque vient du
-  // journal ; la cible est le Poste d'en face, au moment d'avant.
+  // L'état est déjà final — l'effet ne retarde rien, il raconte. L'attaquant est le camp au
+  // trait **avant** l'action (`attack` ne se joue que pour lui) ; la cible est le Poste d'en
+  // face, au moment d'avant.
   const dernier = apres.actionLog[apres.actionLog.length - 1];
   if (apres.actionLog.length > avant.actionLog.length && dernier?.type === 'attack') {
-    const attaquant = apres.current === 'player' ? 'ai' : 'player';
+    const attaquant = avant.current;
     const source = avant.players[attaquant].active;
     const cible = avant.players[attaquant === 'player' ? 'ai' : 'player'].active;
     if (source) {

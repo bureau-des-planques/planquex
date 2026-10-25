@@ -120,8 +120,11 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     const attaque = effets.find((effet) => effet.nature === 'attaque');
     expect(attaque).toBeDefined();
     expect(attaque?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
-    expect(attaque?.uid).toBe(avant.players.ai.active?.uid);
-    expect(attaque?.uidCible).toBe(avant.players.player.active?.uid);
+    // La séquence entière : l'impact (550 + 150 ms) doit tenir dans la durée de l'effet.
+    expect(attaque?.duree).toBeGreaterThanOrEqual(700);
+    // L'attaquant est le camp au trait avant le coup (ici `player`), la cible le Poste d'en face.
+    expect(attaque?.uid).toBe(avant.players.player.active?.uid);
+    expect(attaque?.uidCible).toBe(avant.players.ai.active?.uid);
   });
 
   it('une attaque sur une autre paire a sa propre séquence ; la même paire est remplacée', () => {

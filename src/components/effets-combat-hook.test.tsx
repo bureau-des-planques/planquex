@@ -40,6 +40,8 @@ function Harnais({ depart, suivant, sansMouvement }: { depart: BattleState; suiv
             key={effet.id}
             data-nature={effet.nature}
             data-anime={String(effet.anime)}
+            data-uid={effet.uid}
+            data-uid-cible={effet.uidCible}
             className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
           >
             +{effet.valeur}
@@ -87,5 +89,41 @@ describe('useEffetsDeCombat — le chiffre vit moins de 800 ms puis quitte le DO
     expect(chiffre).toHaveAttribute('data-anime', 'false');
     expect(chiffre).toHaveClass('is-fixe');
     expect(chiffre).toHaveTextContent('+30');
+  });
+});
+
+describe('useEffetsDeCombat — la Pression en quatre temps (#207)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('une action attack émet une nature « attaque » avec l’attaquant et la cible', () => {
+    const depart = avant();
+    const suivant = apresUnCoup(depart);
+    suivant.actionLog = [...depart.actionLog, { type: 'attack', attackIndex: 0 }];
+    render(<Harnais depart={depart} suivant={suivant} sansMouvement={false} />);
+
+    fireEvent.click(screen.getByText('jouer'));
+
+    const attaque = document.querySelector<HTMLElement>('[data-nature="attaque"]');
+    expect(attaque).not.toBeNull();
+    expect(attaque).toHaveAttribute('data-uid', depart.players.player.active!.uid);
+    expect(attaque).toHaveAttribute('data-uid-cible', depart.players.ai.active!.uid);
+  });
+
+  it('une Condition qui apparaît émet une nature « condition »', () => {
+    const depart = avant();
+    const suivant = structuredClone(depart);
+    suivant.players.ai.active!.statuses = ['SURCHARGE'] as never;
+    render(<Harnais depart={depart} suivant={suivant} sansMouvement={false} />);
+
+    fireEvent.click(screen.getByText('jouer'));
+
+    const condition = document.querySelector<HTMLElement>('[data-nature="condition"]');
+    expect(condition).not.toBeNull();
+    expect(condition).toHaveAttribute('data-uid', depart.players.ai.active!.uid);
   });
 });

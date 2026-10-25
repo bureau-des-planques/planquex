@@ -3593,8 +3593,10 @@ h2 {
   }
 }
 
+/* Le trait part à 200 ms (temps 1 = 0–200), il dure 350 ms : fin à 550 ms, l'impact prend le
+   relais (direction §8.4). Avant son départ, l'opacité reste à 0 (`both`). */
 .attaque__trait {
-  animation: trait-attaque 350ms ease-out 1 both;
+  animation: trait-attaque 350ms ease-out 200ms 1 both;
   background: linear-gradient(
     180deg,
     transparent 0%,
@@ -3615,12 +3617,14 @@ h2 {
 /* 3. L'impact (150 ms) : un anneau sur la carte touchée, en `opacity` seule — **pas de flou**,
    et surtout pas un `transform` qui déplacerait une cible de clic. */
 @keyframes impact-anneau {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
+/* L'anneau part à 550 ms (fin du trait) et dure 150 ms. `both` garde l'opacité à 0 avant. */
 .battle .poste__carte.is-impactee::after {
-  animation: impact-anneau 150ms ease-out 1 both;
+  animation: impact-anneau 150ms ease-out 550ms 1 both;
   border-radius: inherit;
   box-shadow: 0 0 0 3px var(--scene-neon-core);
   content: '';
@@ -3658,6 +3662,11 @@ h2 {
   .battle .status-chip {
     animation: none;
   }
+  /* `animation: none` ne suffit pas pour l'anneau : son `box-shadow` resterait affiché. */
+  .attaque__trait,
+  .battle .poste__carte.is-impactee::after {
+    display: none;
+  }
 }
 
 :root[data-mouvement-reduit='true'] .battle .poste__carte.is-elan,
@@ -3666,4 +3675,9 @@ h2 {
 :root[data-mouvement-reduit='true'] .battle .badge-condition,
 :root[data-mouvement-reduit='true'] .battle .status-chip {
   animation: none;
+}
+
+:root[data-mouvement-reduit='true'] .attaque__trait,
+:root[data-mouvement-reduit='true'] .battle .poste__carte.is-impactee::after {
+  display: none;
 }

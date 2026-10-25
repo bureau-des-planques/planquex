@@ -1408,9 +1408,15 @@ export function Battle() {
           {/* Le trait de la Pression (#207) : la deuxième ligne de la séquence. Il ne traverse
               **jamais** sous mouvement réduit — l'anneau d'impact et le chiffre de Stress
               disent la même chose sans mouvement. */}
+          {/* Un seul trait : si la Pression **craque** la cible, la traînée de craquage (ci-dessous)
+              **est** le trait — on n'en pose pas deux. */}
           {!sansMouvement &&
             effets
-              .filter((effet) => effet.nature === 'attaque')
+              .filter(
+                (effet) =>
+                  effet.nature === 'attaque' &&
+                  !effets.some((autre) => autre.nature === 'craquage' && autre.uid === effet.uidCible)
+              )
               .map((effet) => (
                 <span
                   key={`trait-${effet.id}`}
