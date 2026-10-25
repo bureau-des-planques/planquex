@@ -128,3 +128,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-23 · `atelier-electricien` · modèle `NARWHAL` · graine `20706407` · `atelier-electricien.webp`
 - 2026-10-23 · `atelier-magasinier` · modèle `NARWHAL` · graine `920619018` · `atelier-magasinier.webp`
 - 2026-10-23 · `atelier-plombier` · modèle `NARWHAL` · graine `1968322662` · `atelier-plombier.webp`
+- 2026-10-25 · `atelier-joueur-de-flute` · modèle `NARWHAL` · graine `1774845045` · `atelier-joueur-de-flute.webp`

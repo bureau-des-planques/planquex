@@ -21,7 +21,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Mélodie', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse entend une mélodie de réunion. Personne n’a demandé la suite.' }],
-    flavor: 'Il joue pendant la réunion de lancement. Personne ne l’a invité.'
+    flavor: 'Il joue pendant la réunion de lancement. Personne ne l’a invité.',
+    art: 'atelier-joueur-de-flute.webp'
   }),
   base({
     id: 'atelier-technicien-systeme',
