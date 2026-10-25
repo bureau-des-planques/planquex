@@ -418,7 +418,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Newsletter', cost: ['QVT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'L\'article est publié. L\'outil d\'envoi est en maintenance.'
+    flavor: 'L\'article est publié. L\'outil d\'envoi est en maintenance.',
+    art: 'qvt-charge-communication-interne.webp'
   }),
   base({
     id: 'qvt-charge-evenements-internes',
