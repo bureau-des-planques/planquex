@@ -51,7 +51,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       oncePerTurn: true
     },
     attacks: [{ name: 'Démerde', cost: ['MANAGEMENT', 'QVT'], damage: 50, text: 'Le Planqué adverse se fait déborder par un débrouillard. Il fait le travail de trois personnes, payé pour une.' }],
-    flavor: 'Il a fait le boulot de trois personnes. Il est payé pour une.'
+    flavor: 'Il a fait le boulot de trois personnes. Il est payé pour une.',
+    art: 'interim-interimaire-confirme.webp'
   }),
   base({
     id: 'interim-chef-equipe-interimaire',
