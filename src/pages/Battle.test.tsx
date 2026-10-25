@@ -3,8 +3,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
+import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
 import { ALL_CARDS } from '@/data';
 import type { BattleAction, BattleState } from '@/data/types';
@@ -15,6 +17,75 @@ import { nextAiAction } from '@/game/ia';
 import { factionDeck } from '@/game/simulation';
 import { partieSauvegardee } from '@/store/partie';
 import { useStore } from '@/store/useStore';
+
+/** Une partie **commencée** (vingt coups joués), rendue au tour du joueur : rien ne joue seul. */
+function partieCommencee() {
+  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+  const deck = autoDeck(owned).deck;
+  let jouee: BattleState = createBattle(deck, deck, 31337);
+  for (let i = 0; i < 200; i += 1) {
+    const auTourDuJoueur = jouee.current === 'player' && jouee.pendingPromotion === null;
+    if (i >= 20 && auTourDuJoueur) break;
+    const action = legalActions(jouee).find((a) => a.type !== 'forfeit');
+    if (!action) break;
+    jouee = applyAction(jouee, action);
+  }
+  expect(jouee.actionLog.length).toBeGreaterThan(5);
+  const partie = partieSauvegardee(jouee, null, { playerDeck: deck, aiDeck: deck });
+  if (!partie) throw new Error('partie terminée : rien à rendre');
+  return { partie, tour: jouee.turn, etat: jouee, deck };
+}
+
+/** Une partie où **mon** Poste vient de craquer : la relève est à choisir (D-030). */
+function partieAvecReleve() {
+  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+  const deck = autoDeck(owned).deck;
+  for (let seed = 1; seed < 300; seed += 1) {
+    let s: BattleState = createBattle(deck, deck, seed);
+    for (let i = 0; i < 400 && s.phase === 'playing'; i += 1) {
+      if (s.pendingPromotion === 'player' && legalActions(s).some((a) => a.type === 'promoteActive')) {
+        const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
+        if (partie) return { partie, etat: s };
+      }
+      const legales = legalActions(s).filter((a) => a.type !== 'forfeit');
+      const action =
+        s.current === 'ai' && !s.pendingPromotion
+          ? nextAiAction(s, 1)
+          : (legales.find((a) => a.type === 'promoteActive') ??
+            legales.find((a) => a.type === 'attack') ??
+            legales.find((a) => a.type === 'attachEnergy') ??
+            legales.find((a) => a.type === 'endTurn'));
+      if (!action) break;
+      s = applyAction(s, action);
+    }
+  }
+  throw new Error('aucune partie ne donne une relève au joueur');
+}
+
+/** Un tour du joueur où une Pression est à portée : la barre doit la porter. */
+function partieAvecPression() {
+  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+  const deck = autoDeck(owned).deck;
+  for (let seed = 1; seed < 400; seed += 1) {
+    let s: BattleState = createBattle(deck, deck, seed);
+    for (let i = 0; i < 300 && s.phase === 'playing'; i += 1) {
+      const auTourDuJoueur = s.current === 'player' && s.pendingPromotion === null && s.pendingChoice === null;
+      if (auTourDuJoueur && legalActions(s).some((a) => a.type === 'attack')) {
+        const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
+        if (partie) return { partie, etat: s };
+      }
+      // La Direction joue sa politique ; le joueur attache un café, sinon passe son tour.
+      const legales = legalActions(s);
+      const action =
+        s.current === 'ai'
+          ? nextAiAction(s, 1)
+          : (legales.find((a) => a.type === 'attachEnergy') ?? legales.find((a) => a.type === 'endTurn'));
+      if (!action) break;
+      s = applyAction(s, action);
+    }
+  }
+  throw new Error('aucune partie ne propose de Pression au joueur');
+}
 
 describe('Battle — écran de combat', () => {
   beforeEach(() => {
@@ -64,60 +135,254 @@ describe('Battle — écran de combat', () => {
     expect(screen.getByText(/Ta main/)).toBeInTheDocument();
   });
 
-  it('affiche la section Conditions', () => {
+  it('affiche la ligne des Conditions, sous le plateau : les cinq, par leur nom', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/Conditions/)).toBeInTheDocument();
-    expect(screen.getByText(/ce qu.un Planqué au Poste peut subir/i)).toBeInTheDocument();
+    // La légende complète est derrière « Règles » (menu `⋯`) ; la table n'en garde que les noms.
+    const ligne = screen.getByText('Conditions').closest('p') as HTMLElement;
+    for (const nom of ['Surcharge', 'Épuisement', 'Sieste', 'Immobilisation', 'Dérive']) {
+      expect(within(ligne).getByText(nom)).toBeInTheDocument();
+    }
+    expect(screen.queryByText(/ce qu.un Planqué au Poste peut subir/i)).toBeNull();
   });
 
-  it('ouvre le dialogue Règles au clic sur le bouton', () => {
+  it('ouvre le dialogue Règles depuis le menu, avec la règle de chaque Condition', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const rulesButton = screen.getByRole('button', { name: /Règles/i });
-    fireEvent.click(rulesButton);
+    // Avant d'ouvrir le menu, « Règles » n'est pas à l'écran.
+    expect(screen.queryByRole('button', { name: /Règles/i })).toBeNull();
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Règles/i }));
 
-    expect(screen.getByRole('dialog', { name: /Conditions/i })).toBeInTheDocument();
+    const dialogue = screen.getByRole('dialog', { name: /Conditions/i });
+    expect(dialogue).toHaveTextContent(/10 de Stress par Contrôle/);
+    expect(dialogue).toHaveTextContent(/ce qu.un Planqué au Poste peut subir/i);
   });
 
-  it('affiche le bouton Nouveau combat', () => {
+  it('range Journal, Partie à deux, Règles, Abandonner et Nouveau combat derrière un seul bouton', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByRole('button', { name: /Nouveau combat/i })).toBeInTheDocument();
+    // Fermé : aucune des cinq entrées n'est sur la table.
+    for (const nom of [/Journal/, /Partie à deux/, /Règles/, /^Abandonner$/, /Nouveau combat/]) {
+      expect(screen.queryByRole('button', { name: nom }), String(nom)).toBeNull();
+    }
+    // Ouvert : les cinq, dans le même panneau.
+    const menu = menuSurLaListe();
+    for (const nom of [/Journal/, /Partie à deux/, /Règles/, /^Abandonner$/, /Nouveau combat/]) {
+      expect(within(menu).getByRole('button', { name: nom }), String(nom)).toBeInTheDocument();
+    }
   });
 
-  it('affiche le bouton Abandonner', () => {
+  it('le menu est une seule surface : la liste, ou le Journal, ou la Partie à deux', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByRole('button', { name: /Abandonner/i })).toBeInTheDocument();
+    menuSurLaVue('Journal');
+    let menu = screen.getByRole('region', { name: 'Menu du combat' });
+    expect(within(menu).getByRole('heading', { name: 'Journal' })).toBeInTheDocument();
+    expect(within(menu).queryByRole('button', { name: /Nouveau combat/ })).toBeNull();
+    expect(within(menu).queryByLabelText(/Code reçu/)).toBeNull();
+
+    menuSurLaVue('Partie à deux');
+    menu = screen.getByRole('region', { name: 'Menu du combat' });
+    expect(within(menu).queryByRole('heading', { name: 'Journal' })).toBeNull();
+    expect(within(menu).getByRole('button', { name: /Créer une partie à deux/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('region', { name: 'Menu du combat' })).toHaveLength(1);
   });
 
-  it('affiche la section Journal', () => {
+  it('Échap ferme le menu et rend le focus au bouton `⋯`', async () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const bouton = screen.getByRole('button', { name: 'Menu du combat' });
 
-    expect(screen.getByText(/Journal/)).toBeInTheDocument();
+    menuSurLaVue('Journal');
+    expect(bouton).toHaveAttribute('aria-expanded', 'true');
+    // Le focus est dans le panneau (le titre de la vue), pas sur le bouton.
+    expect(bouton).not.toHaveFocus();
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(bouton).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('region', { name: 'Menu du combat' })).toBeNull();
+    expect(bouton).toHaveFocus();
   });
 
-  it('affiche la section Partie à deux avec le bouton Créer', () => {
+  it('le bouton `⋯` ouvre et ferme le menu', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const bouton = screen.getByRole('button', { name: 'Menu du combat' });
 
-    expect(screen.getByText(/Partie à deux/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Créer une partie à deux/i })).toBeInTheDocument();
+    fireEvent.click(bouton);
+    expect(bouton).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(bouton);
+    expect(bouton).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('redémarre le combat au clic sur Nouveau combat', () => {
+  it('affiche le bouton Nouveau combat dans le menu', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const restartButton = screen.getByRole('button', { name: /Nouveau combat/i });
-    fireEvent.click(restartButton);
-
-    expect(screen.getByText(/Tour 1/)).toBeInTheDocument();
+    expect(within(menuSurLaListe()).getByRole('button', { name: /Nouveau combat/i })).toBeInTheDocument();
   });
 
-  it('affiche le message d\'avertissement si le deck n\'est pas valide', () => {
+  it('affiche le bouton Abandonner dans le menu', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/deck de test/i)).toBeInTheDocument();
+    expect(within(menuSurLaListe()).getByRole('button', { name: /Abandonner/i })).toBeInTheDocument();
+  });
+
+  it('affiche le Journal dans le menu', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const menu = menuSurLaVue('Journal');
+    expect(within(menu).getByRole('heading', { name: 'Journal' })).toBeInTheDocument();
+    // Le journal n'est pas une coquille vide : la mise en place y a écrit sa première ligne.
+    expect(menu.querySelectorAll('.log li').length).toBeGreaterThan(0);
+  });
+
+  it('affiche la Partie à deux dans le menu, avec le bouton Créer', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const menu = menuSurLaVue('Partie à deux');
+    expect(within(menu).getByRole('heading', { name: 'Partie à deux' })).toBeInTheDocument();
+    expect(within(menu).getByRole('button', { name: /Créer une partie à deux/i })).toBeInTheDocument();
+  });
+
+  describe('Nouveau combat', () => {
+    beforeEach(() => {
+      // Une graine fixe : le joueur ouvre, personne n'a joué, la partie est neuve.
+      vi.spyOn(Date, 'now').mockReturnValue(42);
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('redémarre tout de suite une partie neuve : elle n’a rien à perdre', () => {
+      renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Nouveau combat/i }));
+
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.getByText(/Tour 1/)).toBeInTheDocument();
+      expect(menuEstOuvert()).toBe(false);
+    });
+
+    it('sur une partie commencée, il demande confirmation — Annuler la garde, confirmer la jette', () => {
+      const { partie, tour } = partieCommencee();
+      renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+      expect(screen.getByText(new RegExp(`Tour ${tour}\\b`))).toBeInTheDocument();
+
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Nouveau combat/i }));
+      const dialogue = screen.getByRole('dialog', { name: /Recommencer un combat/ });
+      // « Annuler » prend le focus : Entrée ne détruit rien par réflexe (DESIGN.md §2.5).
+      expect(within(dialogue).getByRole('button', { name: 'Annuler' })).toHaveFocus();
+
+      fireEvent.click(within(dialogue).getByRole('button', { name: 'Annuler' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.getByText(new RegExp(`Tour ${tour}\\b`))).toBeInTheDocument();
+
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Nouveau combat/i }));
+      fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Nouveau combat' }));
+      expect(screen.getByText(/Tour 1\b/)).toBeInTheDocument();
+      expect(useStore.getState().partie?.actions.length ?? 0).toBe(0);
+    });
+  });
+
+  it('affiche le message d\'avertissement si le deck n\'est pas valide — hors du menu', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Visible menu fermé : c'est une information qui change la partie, pas un réglage.
+    expect(menuEstOuvert()).toBe(false);
+    expect(screen.getByText(/Ton deck n’est pas valide : ce combat utilise un deck de test/)).toBeVisible();
+    expect(screen.getByText(/deck de test/i).closest('.combat-menu__panneau')).toBeNull();
+  });
+});
+
+/**
+ * **La barre d'action** (D-093, #191) : les Pressions et « Fin du tour » vivent dans une barre
+ * collée au-dessus de la navigation, **toujours présente** — c'est la cible « poste-actions » du
+ * pas-à-pas et ce que `npm run capturer` mesure. La géométrie (la main dans la fenêtre à
+ * 420 × 900) ne se teste qu'en capture : jsdom ne calcule aucune mise en page.
+ */
+describe('Battle — la barre d’action (#191)', () => {
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(42);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('porte « Fin du tour » au tour du joueur, à côté de la main et hors du plateau', async () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(barre).toHaveClass('combat-barre');
+    expect(within(barre).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
+    // La barre suit la main dans le document : elle est « en bas », après la table.
+    expect(
+      (container.querySelector('.hand-panel') as Node).compareDocumentPosition(barre) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(container.querySelector('.board')?.contains(barre)).toBe(false);
+  });
+
+  it('ne perd rien : une Pression à portée est un bouton de la barre, pas de la main', () => {
+    const { partie, etat } = partieAvecPression();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const attaque = legalActions(etat).find((action) => action.type === 'attack');
+    const nom = ALL_CARDS.find((carte) => carte.id === etat.players.player.active?.cardId);
+    if (attaque?.type !== 'attack' || !nom || !('attacks' in nom)) throw new Error('le Poste du joueur n’a pas de Pression');
+    const nomDeLaPression = nom.attacks[attaque.attackIndex]?.name ?? '';
+    expect(nomDeLaPression).not.toBe('');
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    const boutons = within(barre).getAllByRole('button');
+    // Une Pression : l'icône d'épées, un nom, des dégâts — et « Fin du tour » à côté.
+    expect(
+      boutons.some((b) => b.className.includes('button--primary') && b.textContent?.includes(nomDeLaPression)),
+      `« ${nomDeLaPression} » est un bouton de la barre`
+    ).toBe(true);
+    expect(within(barre).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
+    for (const bouton of boutons) expect(bouton.className).not.toMatch(/hand__card/);
+    // Et l'ancienne section « Au Poste » n'existe plus sur la table.
+    expect(screen.queryByRole('heading', { name: 'Au Poste' })).toBeNull();
+  });
+
+  it('une relève à choisir : la barre ne porte que les relèves, nommées', () => {
+    const { partie, etat } = partieAvecReleve();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(barre).toHaveTextContent('Ton Poste a craqué. À toi de choisir ta relève.');
+    const boutons = within(barre).getAllByRole('button');
+    expect(boutons.length).toBe(legalActions(etat).filter((a) => a.type === 'promoteActive').length);
+    for (const bouton of boutons) expect(bouton.textContent).toMatch(/^Relève/);
+    // Ni Pression ni « Fin du tour » tant que la relève n'est pas choisie.
+    expect(within(barre).queryByRole('button', { name: /Fin du tour/ })).toBeNull();
+
+    fireEvent.click(boutons[0] as HTMLElement);
+    expect(screen.getByRole('region', { name: 'Actions du tour' })).not.toHaveTextContent(/Ton Poste a craqué/);
+  });
+
+  it('partie terminée : la barre le dit et n’offre aucun geste, le bandeau de fin reste en haut', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Abandonner/ }));
+
+    await waitFor(() => expect(screen.getByText('Défaite : tu as déclaré forfait.')).toBeInTheDocument());
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(barre).toHaveTextContent('Rien à faire : la partie est terminée.');
+    expect(within(barre).queryAllByRole('button')).toHaveLength(0);
+  });
+
+  it('au tour de l’autre, en partie à deux : une ligne, « Coller un code », aucun bouton d’action', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    fireEvent.click(within(menuSurLaVue('Partie à deux')).getByRole('button', { name: /Créer une partie à deux/i }));
+    // Je finis mon tour : c'est au camp adverse, tenu par quelqu'un d'autre.
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    fireEvent.click(within(barre).getByRole('button', { name: 'Fin du tour' }));
+
+    const apres = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(apres).toHaveTextContent(/C’est au .* de jouer\./);
+    // Aucun bouton de jeu : seulement le lien qui rouvre le code.
+    const boutons = within(apres).getAllByRole('button');
+    expect(boutons.map((b) => b.textContent)).toEqual(['Coller un code']);
+    expect(within(apres).queryByRole('button', { name: /Fin du tour|Passer le tour/ })).toBeNull();
   });
 });
 
@@ -326,7 +591,7 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
     expect(carte).toHaveAttribute('aria-pressed', 'true');
 
     // Rien d'autre ne la désélectionne : ni un clic ailleurs, ni un re-rendu.
-    fireEvent.click(screen.getByRole('button', { name: /Abandonner/i }).parentElement as Element);
+    fireEvent.click(screen.getByRole('region', { name: 'Plateau' }));
     expect(carte).toHaveAttribute('aria-pressed', 'true');
 
     fireEvent.click(screen.getByRole('button', { name: /Reprendre une autre carte/i }));
@@ -448,6 +713,8 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
 
   /** Coller un code, comme l'invité : le champ, puis le bouton (#128). */
   function coller(code: string) {
+    // Le champ de collage vit dans la vue « Partie à deux » du menu.
+    menuSurLaVue('Partie à deux');
     fireEvent.change(screen.getByLabelText(/Code reçu/), { target: { value: code } });
     fireEvent.click(screen.getByRole('button', { name: /Prendre le camp adverse/i }));
   }
@@ -479,8 +746,8 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
       // **Le camp Toi se couche.** « la Direction » n'est pas mentionnée : en partie à
       // deux, l'adversaire est quelqu'un, et c'est *lui* qui gagne.
       const mienne = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
-      fireEvent.click(screen.getByRole('button', { name: /Créer une partie à deux/i }));
-      fireEvent.click(screen.getByRole('button', { name: /^Abandonner$/ }));
+      fireEvent.click(within(menuSurLaVue('Partie à deux')).getByRole('button', { name: /Créer une partie à deux/i }));
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
       fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Abandonner/ }));
 
       const defaite = screen.getByText('Défaite : tu as déclaré forfait.');
@@ -540,11 +807,31 @@ describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
 
   /** Crée une partie à deux et va jusqu'au code à transmettre (fin de mon tour). */
   function codeATransmettre(): HTMLTextAreaElement {
-    fireEvent.click(screen.getByRole('button', { name: /Créer une partie à deux/i }));
+    fireEvent.click(within(menuSurLaVue('Partie à deux')).getByRole('button', { name: /Créer une partie à deux/i }));
+    // Créer rend la table au joueur : le menu se ferme, et se rouvre seul quand le code est prêt.
+    expect(menuEstOuvert()).toBe(false);
     const finDuTour = screen.queryByRole('button', { name: /Fin du tour/i });
     if (finDuTour) fireEvent.click(finDuTour);
     return screen.getByLabelText(/Code de la partie, à transmettre/i) as HTMLTextAreaElement;
   }
+
+  it('la Partie à deux s’ouvre seule quand un code est prêt — une fois par code', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const zone = codeATransmettre();
+
+    // Ouvert tout seul, sur la vue qui porte le code : l'invité n'a rien cherché.
+    expect(menuEstOuvert()).toBe(true);
+    expect(within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('heading', { name: 'Partie à deux' }))
+      .toBeInTheDocument();
+    expect(zone.value).toMatch(/^PLQ1\./);
+
+    // Il le referme : un rendu qui ne change pas le code ne le rouvre pas.
+    fireEvent.click(screen.getByRole('button', { name: 'Menu du combat' }));
+    expect(menuEstOuvert()).toBe(false);
+    const carte = document.querySelector<HTMLElement>('button.hand__card');
+    if (carte) fireEvent.click(carte);
+    expect(menuEstOuvert()).toBe(false);
+  });
 
   it('copie le code en un geste quand le presse-papier accepte', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
@@ -581,6 +868,7 @@ describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
   it('un code long se colle entier, et le clavier du téléphone ne le corrige pas', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
+    menuSurLaVue('Partie à deux');
     const champ = screen.getByLabelText(/Code reçu, à coller/i) as HTMLTextAreaElement;
     // Les attributs qui empêchent un clavier de téléphone de « corriger » le code.
     expect(champ).toHaveAttribute('autocapitalize', 'off');

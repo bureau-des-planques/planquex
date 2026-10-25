@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
+import { menuSurLaListe } from '@/test/menu-combat';
 
 /** L'envoi est doublé : il rejette comme un réseau coupé, et on lit ce qu'il a reçu. */
 const envoyerCombat = vi.hoisted(() => vi.fn());
@@ -44,7 +45,7 @@ describe('Battle — la trace d’un combat ne bloque pas la fin de partie (#173
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, name: 'Employé 404' });
 
     // Le forfait passe par la confirmation du jeu (#131), plus par `window.confirm`.
-    fireEvent.click(screen.getByRole('button', { name: /Abandonner/i }));
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Abandonner/i }));
     const confirmation = await screen.findByRole('dialog', { name: /forfait/i });
     fireEvent.click(within(confirmation).getByRole('button', { name: /^Abandonner$/ }));
 

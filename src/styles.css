@@ -1646,36 +1646,256 @@ h2 {
   padding-top: 0.6rem;
 }
 
+/* La barre d'état (D-093, #191) : une ligne — le titre, le tour, et le bouton `⋯` à droite. Le
+   panneau du menu s'y accroche (`position: relative`) et passe par-dessus le plateau. */
 .battle__head {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
   gap: 0.4rem 0.75rem;
   justify-content: space-between;
+  min-height: 2.75rem;
+  position: relative;
 }
 
 .battle__title {
+  align-items: baseline;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0 0.7rem;
+  min-width: 0;
 }
 
 .battle__title h1 {
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   line-height: 1.15;
+  margin: 0;
 }
 
 .battle__title p {
   font-size: 0.8rem;
-}
-
-.battle__title p {
   margin: 0;
 }
 
+/* L'attente de la Direction prend la ligne du dessous, le temps qu'elle dure. */
 .battle__attente {
   color: var(--gold-soft);
+  flex-basis: 100%;
   font-size: 0.82rem;
-  margin: 0.15rem 0 0;
+}
+
+/* ---------- Le menu `⋯` (D-093, #191) ---------- */
+
+.combat-menu {
+  flex: none;
+}
+
+/* La cible de doigt : 44 px (SPEC-COMBAT-UI §5.1). */
+.combat-menu__bouton {
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.combat-menu__bouton[aria-expanded='true'] {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.combat-menu__panneau {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: calc(100dvh - 14rem);
+  overflow-y: auto;
+  padding: 0.6rem 0.75rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  /* Au-dessus du pas-à-pas collé (15) et de la barre d'action (16), sous la navigation (20) et
+     les dialogues (50). */
+  width: min(24rem, 100%);
+  z-index: 17;
+}
+
+.combat-menu__entete {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.75rem;
+}
+
+.combat-menu__titre {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.combat-menu__retour {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--gold);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.8rem;
+  gap: 0.3rem;
+  min-height: 2.75rem;
+  padding: 0;
+}
+
+.combat-menu__liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.combat-menu__entree {
+  align-items: center;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 0.55rem;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.7rem;
+  text-align: left;
+  width: 100%;
+}
+
+.combat-menu__entree .muted {
+  font-size: var(--fs-xs);
+  margin-left: auto;
+  text-align: right;
+}
+
+.combat-menu__entree:hover {
+  border-color: var(--line-strong);
+}
+
+.combat-menu__corps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.combat-menu__corps p {
+  margin: 0;
+}
+
+.combat-menu__panneau .log {
+  max-height: none;
+}
+
+/* ---------- La barre d'action (D-093, #191) ---------- */
+
+/* Collée **au-dessus** de la navigation fixe : `bottom` est la hauteur de la barre de navigation
+   (padding 0.5rem + icône et libellé) et un peu d'air. Plus bas que la navigation (20) pour ne
+   jamais passer devant elle ; plus haut que la table. `sticky` (et non `fixed`) garde la barre
+   dans le flux : quand tout tient dans la fenêtre, elle est simplement sous la main. */
+.combat-barre {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  bottom: 4.7rem;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
+    0 -8px 18px -10px rgb(0 0 0 / 60%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
+     lieu de recouvrir le plateau. */
+  max-height: 42dvh;
+  overflow-y: auto;
+  padding: 0.5rem 0.6rem;
+  position: sticky;
+  z-index: 16;
+}
+
+.combat-barre .actions {
+  margin-top: 0;
+}
+
+.combat-barre .button {
+  font-size: 0.8rem;
+  min-height: 2.5rem;
+  padding: 0.38rem 0.7rem;
+}
+
+/* Les gestes du Poste : une ligne quand ils tiennent, deux sinon. */
+.combat-barre__gestes {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+/* La rangée café / Rotation / Talent défile plutôt que de passer à la ligne : la barre garde sa
+   hauteur. Elle prend la place que « Fin du tour » et les Pressions lui laissent. */
+.combat-barre .combat-barre__rang {
+  flex: 1 1 9rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+}
+
+.combat-barre__rang .button {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* « Fin du tour » reste à droite de sa ligne. */
+.combat-barre__fin {
+  margin-left: auto;
+}
+
+.combat-barre .notice {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.combat-barre .notice p {
+  margin: 0 0 0.3rem;
+}
+
+.combat-barre__portee,
+.combat-barre__repos {
+  font-size: 0.76rem;
+  margin: 0;
+}
+
+/* Les cinq Conditions, sous les deux camps. */
+.board__conditions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+}
+
+/* Cinq noms en une ligne à 420 px : sans leur icône (le nom porte l'information, pas le dessin). */
+.board__conditions .status-chip {
+  letter-spacing: 0;
+  padding: 0.12rem 0.4rem;
+}
+
+.board__conditions .status-chip svg {
+  display: none;
 }
 
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
@@ -1884,32 +2104,23 @@ h2 {
   padding: 0.4rem 0.7rem;
 }
 
-.button--small,
-.actions-panel .button {
+.button--small {
   font-size: 0.8rem;
   padding: 0.38rem 0.7rem;
 }
 
-.actions-panel,
 .hand-panel {
   gap: 0.4rem;
 }
 
-.actions-panel h2,
 .hand-panel h2 {
   font-size: 0.95rem;
   margin: 0;
 }
 
-.actions-panel .section__head,
 .hand-panel .section__head {
   align-items: baseline;
   gap: 0.1rem 0.75rem;
-}
-
-.actions-panel__portee {
-  font-size: 0.76rem;
-  margin: 0;
 }
 
 .actions {
@@ -2301,9 +2512,9 @@ h2 {
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.6rem 0.8rem;
-  /* La page cadre ce panneau (`scrollIntoView`) : la marge basse laisse la barre de
-     navigation fixe à sa place. */
-  scroll-margin-bottom: 5.5rem;
+  /* La page cadre ce panneau (`scrollIntoView`) : la marge basse laisse à leur place la barre
+     de navigation fixe et la barre d'action collée au-dessus d'elle (#191). */
+  scroll-margin-bottom: 11rem;
 }
 
 .pose__titre,

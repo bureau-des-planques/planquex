@@ -87,8 +87,8 @@ const ROUTE_COMBAT = '/battle';
 /**
  * **Les états dédiés** (#128) — des captures qu'aucune page ne montre à l'arrivée.
  *
- * Le code d'une partie à deux vit dans la section « Partie à deux », **repliée** tant
- * qu'aucune partie n'existe (#125) : une capture d'arrivée ne le montrait donc jamais,
+ * Le code d'une partie à deux vit dans la vue « Partie à deux » du menu `⋯`, **fermé** tant
+ * qu'aucun code n'est prêt (#125, #191) : une capture d'arrivée ne le montrait donc jamais,
  * et le critère (4) de D-060 (« on regarde les captures ») n'avait rien à regarder pour
  * #128. Cette capture-ci **prépare** l'état dans le navigateur — même geste qu'un invité —
  * et la garde plus bas **échoue** si le code n'est pas à l'écran, ou si la page déborde.
@@ -125,12 +125,11 @@ async function arriveeAuTourDuJoueur(page) {
  * navigation fixe (qui masque le bas de l'écran) : la main (#170), puis la **barre
  * d'action du combat** et la **piste d'Interventions** (#194).
  *
- * Les deux dernières **n'existent pas encore** : la barre d'action arrive avec #191 — son
- * nom, `.combat-barre`, est celui que nomme `docs/SPEC-COMBAT-UI.md` T9 — et la piste avec
- * #190, qui garde `data-pas-a-pas="interventions"` (le contrat du pas-à-pas ; aujourd'hui
- * l'attribut est porté par le score `★★☆` de l'en-tête de camp). Un **élément absent** ne
- * fait donc rien échouer : la garde est prête pour la refonte, sans casser l'écran
- * d'aujourd'hui, et **mord** dès que l'élément existe et sort de la fenêtre.
+ * La barre d'action existe depuis #191 (`.combat-barre`, `docs/SPEC-COMBAT-UI.md` T9) ; la
+ * piste d'Interventions, elle, arrive avec #190 et garde `data-pas-a-pas="interventions"` (le
+ * contrat du pas-à-pas ; aujourd'hui l'attribut est porté par le score `★★☆` de l'en-tête de
+ * camp, et seulement quand une étape le désigne). Un **élément absent** ne fait rien échouer ;
+ * un élément présent qui sort de la fenêtre, si — la garde **mord**.
  */
 const CIBLES_HAUTEUR = [
   { nom: 'la main', selecteur: '.hand' },
@@ -149,6 +148,10 @@ function mesureHauteur(cibles) {
   const nav = document.querySelector('.bottom-nav')?.getBoundingClientRect();
   return {
     fenetre: window.innerHeight,
+    // Le pas-à-pas du premier combat (#143) ajoute une centaine de pixels collés en haut : tant
+    // qu'il est ouvert, la page déborde **par construction** et la barre d'action collée peut
+    // passer sur le bas de la main jusqu'au défilement (voir `controlesHauteur`).
+    pasAPasOuvert: !!document.querySelector('.pas-a-pas'),
     limite: Math.round(nav ? nav.top : window.innerHeight),
     mesures: cibles.map(({ nom, selecteur }) => {
       const rect = document.querySelector(selecteur)?.getBoundingClientRect();
@@ -172,14 +175,38 @@ function mesureHauteur(cibles) {
  * que #190 et #191 n'ont pas livré ; un élément présent qui sort de la fenêtre produit un
  * message qui **le nomme**, et pas seulement « la main ».
  */
-function controlesHauteur({ limite, mesures, viewport }) {
-  return mesures
-    .filter(({ present, haut, bas }) => present && (haut < 0 || bas > limite))
-    .map(
-      ({ nom, bas }) =>
-        `${nom} n'est pas visible sans défiler (${viewport.width} × ${viewport.height}) : ` +
-        `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px`
+function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false }) {
+  const hors = mesures.filter(({ present, haut, bas }) => present && (haut < 0 || bas > limite));
+  const problemes = hors.map(
+    ({ nom, bas }) =>
+      `${nom} n'est pas visible sans défiler (${viewport.width} × ${viewport.height}) : ` +
+      `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px`
+  );
+
+  // **La barre ne recouvre pas la main** (#191). Être dans la fenêtre ne suffit pas : une barre
+  // collée en bas peut tenir à l'écran **et** cacher le bas des cartes. On ne le dit que quand
+  // les deux sont dans la fenêtre — un élément déjà hors de la fenêtre est nommé plus haut, et
+  // un second message sur le même défaut serait du bruit — et **pas pendant le pas-à-pas** :
+  // ouvert, il rend la page plus haute que la fenêtre, et une barre collée recouvre alors le bas
+  // de la main jusqu'au défilement, ce qui est le comportement d'une barre collée, pas un défaut.
+  // Le passage « pas-à-pas terminé » (voir `INSTANTS_COMBAT`) est celui qui mord.
+  const main = mesures.find(({ selecteur }) => selecteur === '.hand');
+  const barre = mesures.find(({ selecteur }) => selecteur === '.combat-barre');
+  if (
+    !pasAPasOuvert &&
+    main?.present &&
+    barre?.present &&
+    !hors.includes(main) &&
+    !hors.includes(barre) &&
+    barre.haut < main.bas &&
+    main.haut < barre.bas
+  ) {
+    problemes.push(
+      `${barre.nom} recouvre ${main.nom} (${viewport.width} × ${viewport.height}) : ` +
+        `haut de la barre à ${barre.haut} px, bas de la main à ${main.bas} px`
     );
+  }
+  return problemes;
 }
 
 /** Mesure les trois surfaces, journalise, et range les manquements dans `problems`. */
@@ -205,7 +232,9 @@ async function controlerHauteur(page, contexte, route) {
  * « prouver » #128 sans rien montrer.
  */
 async function preparerCodePvp(page) {
-  await page.locator('summary', { hasText: 'Partie à deux' }).click();
+  // Depuis #191 la Partie à deux vit derrière le menu `⋯` : on l'ouvre comme l'invité.
+  await page.getByRole('button', { name: 'Menu du combat' }).click();
+  await page.getByRole('button', { name: /Partie à deux/ }).click();
   await page.getByRole('button', { name: 'Créer une partie à deux' }).click();
   const finDuTour = page.getByRole('button', { name: 'Fin du tour', exact: true });
   if ((await finDuTour.count()) > 0) await finDuTour.click();
@@ -221,15 +250,9 @@ async function preparerCodePvp(page) {
     champ?.blur();
     if (champ) champ.scrollTop = 0;
   });
-  // La section, **sous** le pas-à-pas collé en haut (#169) : sinon son titre passe
-  // derrière le panneau et la capture commence au milieu d'une phrase.
-  await page.evaluate(() => {
-    const zone = document.querySelector('textarea[aria-label="Code de la partie, à transmettre"]');
-    const section = zone?.closest('details');
-    if (!section) return;
-    const panneau = document.querySelector('.pas-a-pas')?.getBoundingClientRect().height ?? 0;
-    window.scrollTo({ top: window.scrollY + section.getBoundingClientRect().top - panneau - 12 });
-  });
+  // Le menu s'est ouvert seul (le code est prêt) : son panneau s'accroche à la barre d'état,
+  // en haut de la page. On remonte donc la page, pour que la capture le montre en entier.
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.waitForTimeout(450);
   return page.evaluate(() => {
     const zone = document.querySelector('textarea[aria-label="Code de la partie, à transmettre"]');
@@ -258,14 +281,14 @@ const STORAGE_KEY = 'bureau-des-planques-v1';
  * une version **numérique différente** de la sienne (zustand, `middleware.js`), et ce
  * blob ne porte qu'un booléen — aucune forme à migrer, donc aucune version à recopier.
  */
-function amorcageStore(origin) {
+function amorcageStore(origin, supplement = {}) {
   return {
     cookies: [],
     origins: [
       {
         origin,
         localStorage: [
-          { name: STORAGE_KEY, value: JSON.stringify({ state: { tutorielVu: true } }) }
+          { name: STORAGE_KEY, value: JSON.stringify({ state: { tutorielVu: true, ...supplement } }) }
         ]
       }
     ]
@@ -449,6 +472,24 @@ try {
     await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
     await arriveeAuTourDuJoueur(page);
     await controlerHauteur(page, new Date(instant).toISOString(), ROUTE_COMBAT);
+    await context.close();
+  }
+
+  // Le combat **tel qu'on le joue** (#191) : pas-à-pas terminé, donc la page n'est plus rallongée
+  // par son panneau. C'est ici que la barre d'action collée est jugée sur le **recouvrement** de
+  // la main — pendant le pas-à-pas, elle la recouvre jusqu'au défilement, par construction.
+  for (const instant of INSTANTS_COMBAT) {
+    const context = await browser.newContext({
+      viewport: VIEWPORT,
+      isMobile: true,
+      storageState: amorcageStore(origine, { pasAPasCombatVu: true })
+    });
+    const page = await context.newPage();
+    page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
+    await page.clock.setFixedTime(instant);
+    await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
+    await arriveeAuTourDuJoueur(page);
+    await controlerHauteur(page, `${new Date(instant).toISOString()} (pas-à-pas terminé)`, ROUTE_COMBAT);
     await context.close();
   }
 } finally {

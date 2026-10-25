@@ -4,6 +4,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
+import { menuEstOuvert, menuSurLaListe } from '@/test/menu-combat';
 
 const base = { tutorielVu: true, pasAPasCombatVu: true };
 
@@ -51,7 +52,7 @@ describe('Battle — finition', () => {
       renderWithStore(<Battle />, base);
       await auTourDuJoueur();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Abandonner' }));
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: 'Abandonner' }));
 
       const dialogue = screen.getByRole('dialog', { name: /Déclarer forfait/ });
       expect(dialogue).toHaveTextContent(/La Direction l’emporte, quel que soit le score/);
@@ -62,27 +63,33 @@ describe('Battle — finition', () => {
       renderWithStore(<Battle />, base);
       await auTourDuJoueur();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Abandonner' }));
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: 'Abandonner' }));
       fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
       expect(screen.queryByRole('dialog')).toBeNull();
       expect(screen.queryByText(/partie terminée/)).toBeNull();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Abandonner' }));
+      // Annuler laisse le menu où il était : le geste suivant n'a pas à le rouvrir.
+      expect(menuEstOuvert()).toBe(true);
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: 'Abandonner' }));
       await userEvent.keyboard('{Escape}');
       await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
       expect(screen.queryByText(/partie terminée/)).toBeNull();
+      // Échap a fermé le dialogue, pas le menu qui est derrière.
+      expect(menuEstOuvert()).toBe(true);
     });
 
     it('confirmer déclare le forfait', async () => {
       renderWithStore(<Battle />, base);
       await auTourDuJoueur();
 
-      fireEvent.click(screen.getByRole('button', { name: 'Abandonner' }));
+      fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: 'Abandonner' }));
       const dialogue = screen.getByRole('dialog');
       fireEvent.click(within(dialogue).getByRole('button', { name: 'Abandonner' }));
 
       await waitFor(() => expect(screen.getByText(/partie terminée/)).toBeInTheDocument());
       expect(screen.queryByRole('dialog')).toBeNull();
+      // La partie est finie : le menu qui portait « Abandonner » se referme.
+      expect(menuEstOuvert()).toBe(false);
     });
   });
 });

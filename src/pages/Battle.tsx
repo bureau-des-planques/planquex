@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ClipboardPaste, Coffee, Copy, RotateCcw, Swords, Users } from 'lucide-react';
+import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
   AttackEffect,
@@ -38,7 +38,8 @@ import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
-import { Button } from '@/components/ui/button';
+import { MenuCombat } from '@/components/MenuCombat';
+import type { EtatMenu } from '@/components/MenuCombat';
 import {
   Dialog,
   DialogContent,
@@ -115,6 +116,9 @@ function describe(instance: CardInstance | null): string {
 
 /** Les cinq conditions, dans l'ordre d'affichage de la légende. */
 const STATUS_LIST = Object.keys(STATUS_META) as Status[];
+
+/** Le menu `⋯` au repos : fermé, sur sa liste. */
+const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
 
 /**
  * La barre de **Stress** : elle monte. `hp` reste le champ technique du moteur — c'est
@@ -546,6 +550,15 @@ export function Battle() {
   const [incoming, setIncoming] = useState('');
 
   /**
+   * **Le menu `⋯`** (D-093, #191) : ouvert ou non, et laquelle de ses trois vues il montre.
+   * `codeAnnonce` est le dernier code que le menu a **annoncé** en s'ouvrant seul — voir plus bas.
+   */
+  const [menu, setMenu] = useState<EtatMenu>(MENU_FERME);
+  const [codeAnnonce, setCodeAnnonce] = useState<string | null>(null);
+  /** « Nouveau combat » sur une partie commencée demande confirmation (comme le forfait). */
+  const [nouveauDemande, setNouveauDemande] = useState(false);
+
+  /**
    * Le camp que **je** tiens. En solo c'est `player` ; en partie à deux, celui que le
    * code m'a donné (`match.camp`). C'est le seul endroit où l'écran se nomme un siège —
    * tout le reste en dérive, y compris le forfait et la main affichée.
@@ -680,6 +693,9 @@ export function Battle() {
     setMatch(null);
     setCodeMessage(null);
     setIncoming('');
+    setMenu(MENU_FERME);
+    setCodeAnnonce(null);
+    setNouveauDemande(false);
     setDecksSolo({ playerDeck, aiDeck: testDeck() });
     setState(createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }));
   }, [playerDeck, chosenCafeTypes]);
@@ -699,6 +715,9 @@ export function Battle() {
     setState(created.state);
     setCodeMessage(null);
     setIncoming('');
+    // La table est rendue au joueur : c'est à lui de jouer. Si un code est déjà à passer (la
+    // Direction ouvrait), le menu se rouvre seul au rendu qui suit.
+    setMenu(MENU_FERME);
   }, [playerDeck, chosenCafeTypes]);
 
   /**
@@ -737,6 +756,18 @@ export function Battle() {
   const transfer = useMemo(() => (match ? handover(state, match) : null), [state, match]);
 
   /**
+   * **La Partie à deux s'ouvre seule** quand un code est prêt à transmettre (D-093, #191) : c'est
+   * le seul moment où l'invité a quelque chose à faire dans le menu. On l'annonce **une fois par
+   * code** — l'invité qui referme le menu n'est pas rouvert à chaque rendu —, par un ajustement
+   * d'état pendant le rendu (la forme que React recommande pour un état dérivé d'un autre) et non
+   * par un effet, qui laisserait passer un rendu sans le menu.
+   */
+  if (transfer?.ready && codeAnnonce !== code) {
+    setCodeAnnonce(code);
+    setMenu({ ouvert: true, vue: 'pvp' });
+  }
+
+  /**
    * La copie du code (#128), **sans mentir** : le presse-papier peut manquer (page servie
    * en clair, navigateur de téléphone ancien — `navigator.clipboard` est alors `undefined`)
    * ou être refusé (permission, geste non reconnu). Les deux cas sont traités : promettre
@@ -773,6 +804,8 @@ export function Battle() {
     setMatch(joined.match);
     setState(joined.state);
     setIncoming('');
+    // La partie est reprise : la table redevient l'écran (le menu se rouvre seul si un code est prêt).
+    setMenu(MENU_FERME);
     setCodeMessage({ ton: 'ok', texte: `Partie reprise : tu joues le ${CAMP_NAME[joined.match.camp]}.` });
   }, [incoming]);
 
@@ -791,18 +824,29 @@ export function Battle() {
     : [];
 
   /**
-   * Ce que dit la section « Au Poste » quand elle est vide : la partie est finie, ou
-   * c'est à l'autre joueur d'agir (partie à deux).
+   * Ce que dit la barre d'action quand elle n'a rien à offrir : la partie est finie, c'est à
+   * l'autre joueur d'agir (partie à deux), ou — le temps d'un rendu — rien n'est ouvert.
    */
-  const idleLine =
-    match !== null && state.phase === 'playing' && !myMove
-      ? `Rien à faire de ton côté : c’est au ${CAMP_NAME[actor]} de jouer.`
-      : 'Rien à faire : la partie est terminée.';
+  const attendLAutre = match !== null && state.phase === 'playing' && !myMove;
+  const idleLine = attendLAutre
+    ? `C’est au ${CAMP_NAME[actor]} de jouer.`
+    : state.phase === 'ended'
+      ? 'Rien à faire : la partie est terminée.'
+      : 'Rien à faire pour le moment.';
 
   /**
-   * La légende des Conditions, rendue **deux fois** : dans la page, et dans le dialogue
-   * « Règles » (D-035, composant shadcn `dialog`). Une seule source de JSX, donc un
-   * libellé ajouté à `STATUS_META` apparaît dans les deux sans être recopié.
+   * « Nouveau combat » jette la partie affichée : sur une partie **commencée** il demande
+   * confirmation, comme le forfait (T6 : le menu ne détruit rien sans dialogue). Une partie
+   * neuve, ou finie, n'a rien à perdre : le geste est direct.
+   */
+  const demanderNouveauCombat = () => {
+    if (state.phase === 'playing' && state.actionLog.length > 0) setNouveauDemande(true);
+    else restart();
+  };
+
+  /**
+   * La légende des Conditions : une seule source de JSX, dans le dialogue « Règles » (D-035,
+   * composant shadcn `dialog`). Un libellé ajouté à `STATUS_META` y apparaît sans être recopié.
    */
   const conditionsLegend = (
     <ul className="status-legend">
@@ -813,6 +857,95 @@ export function Battle() {
         </li>
       ))}
     </ul>
+  );
+
+  /**
+   * La vue « Partie à deux » du menu (#125) : créer, transmettre le code, le coller. Les
+   * commandes de jeu restent celles du moteur, dans la barre d'action : cette vue ne fait que
+   * passer la main. Elle s'ouvre seule dès qu'il y a un code à passer (voir plus haut).
+   */
+  const partieADeux = (
+    <div className="combat-menu__corps">
+      {match === null ? (
+        <>
+          <p className="muted">
+            Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
+            joueur. Un code apparaît à la fin de ton tour.
+          </p>
+          <div className="actions actions--tight">
+            <button type="button" className="button button--primary" onClick={startTwoPlayer}>
+              <Users size={16} /> Créer une partie à deux
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p className="notice">{campLine(state, match)}</p>
+          <p className="muted">
+            Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
+            les mêmes boutons que toi.
+          </p>
+          {transfer?.ready ? (
+            <>
+              <p className="muted">
+                Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
+                reprend ici, avec le camp adverse.
+              </p>
+              <div className="actions actions--tight">
+                <button type="button" className="button" onClick={copyCode}>
+                  <Copy size={16} /> Copier le code
+                </button>
+              </div>
+              {/* Un appui sélectionne le code entier : sur téléphone, c'est le repli
+                  quand la copie automatique est refusée (#128). */}
+              <textarea
+                className="pvp__code"
+                ref={codeRef}
+                readOnly
+                value={code}
+                rows={4}
+                aria-label="Code de la partie, à transmettre"
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </>
+          ) : (
+            <p className="muted">{transfer?.raison}</p>
+          )}
+          <p className="muted">« Nouveau combat » quitte la partie à deux et rend le combat solo.</p>
+        </>
+      )}
+
+      <label className="field">
+        <span className="field__label">Coller un code reçu</span>
+        {/* Sur téléphone, le clavier corrige : un code base64url n'a ni majuscules
+            initiales à deviner ni mots à corriger, et une correction le casse en
+            silence (#128). Le champ grandit vers le bas, la page ne bouge pas. */}
+        <textarea
+          className="pvp__code"
+          value={incoming}
+          onChange={(event) => setIncoming(event.target.value)}
+          placeholder="PLQ1.…"
+          rows={3}
+          aria-label="Code reçu, à coller"
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+      </label>
+      <div className="actions actions--tight">
+        <button type="button" className="button" onClick={join}>
+          <ClipboardPaste size={16} /> Prendre le camp adverse
+        </button>
+      </div>
+      <p className="muted">
+        Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
+        laissée, et tu prends le camp qui doit jouer.
+      </p>
+      {codeMessage && (
+        <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
+      )}
+    </div>
   );
 
   return (
@@ -844,16 +977,68 @@ export function Battle() {
             </p>
           )}
         </div>
-        <div className="actions actions--tight">
-          {forfeitAction && (
-            <button type="button" className="button button--small" onClick={() => setForfaitDemande(forfeitAction)}>
-              Abandonner
-            </button>
-          )}
-          <button type="button" className="button button--small" onClick={restart}>
-            <RotateCcw size={14} /> Nouveau combat
-          </button>
-        </div>
+        {/* La place du `ⓘ` (bascule des infos, #189) est laissée libre : le bouton n'existe pas
+            encore, et un bouton qui ne fait rien n'a pas sa place à l'écran. */}
+        <MenuCombat etat={menu} onChange={setMenu}>
+          {(menuApi) => {
+            if (menu.vue === 'journal') {
+              return (
+                <ol className="log combat-menu__corps">
+                  {state.log.slice(-14).map((line, index) => (
+                    <li key={`${index}-${line}`}>{line}</li>
+                  ))}
+                </ol>
+              );
+            }
+            if (menu.vue === 'pvp') return partieADeux;
+            return (
+              <ul className="combat-menu__liste">
+                <li>
+                  <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('journal')}>
+                    <ScrollText size={16} aria-hidden="true" /> Journal
+                  </button>
+                </li>
+                <li>
+                  <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('pvp')}>
+                    <Users size={16} aria-hidden="true" /> Partie à deux
+                    <span className="muted">un code à se passer, sans serveur</span>
+                  </button>
+                </li>
+                <li>
+                  <Dialog>
+                    <DialogTrigger render={<button type="button" className="combat-menu__entree" />}>
+                      <BookOpen size={16} aria-hidden="true" /> Règles
+                      <span className="muted">les Conditions</span>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Conditions</DialogTitle>
+                        <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
+                      </DialogHeader>
+                      {conditionsLegend}
+                    </DialogContent>
+                  </Dialog>
+                </li>
+                {forfeitAction && (
+                  <li>
+                    <button
+                      type="button"
+                      className="combat-menu__entree"
+                      onClick={() => setForfaitDemande(forfeitAction)}
+                    >
+                      <Flag size={16} aria-hidden="true" /> Abandonner
+                    </button>
+                  </li>
+                )}
+                <li>
+                  <button type="button" className="combat-menu__entree" onClick={demanderNouveauCombat}>
+                    <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
+                  </button>
+                </li>
+              </ul>
+            );
+          }}
+        </MenuCombat>
       </section>
 
       {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
@@ -890,10 +1075,10 @@ export function Battle() {
       )}
 
       {/*
-        **La table** (#169) : le plateau des deux camps, puis la console du joueur — relève,
-        actions de la Pression, main. Sur téléphone, tout s'empile et tient dans l'écran ;
-        sur un écran large, la console passe à côté du plateau. Ce qui est secondaire
-        (Conditions, Partie à deux, Journal) est replié plus bas.
+        **La table** (#169) : le plateau des deux camps, puis la console du joueur — la main et la
+        pose. Sur téléphone, tout s'empile et tient dans l'écran ; sur un écran large, la console
+        passe à côté du plateau. Les actions sont dans la barre collée plus bas, et tout ce qui est
+        secondaire (Journal, Partie à deux, Règles, Abandonner, Nouveau combat) dans le menu `⋯`.
       */}
       <div className="battle__table">
         <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
@@ -908,81 +1093,20 @@ export function Battle() {
               pasAPas={pasAPas}
             />
           ))}
+          {/* Les cinq Conditions, en une ligne sous les deux camps (§6.2) : c'est la cible
+              « conditions » du pas-à-pas. Le mot « Conditions » n'est lu que par les lecteurs
+              d'écran (la ligne tient en une seule ligne à 420 px), et le texte de chaque règle
+              vit dans « Règles » (menu `⋯`). */}
+          <p className="board__conditions" data-pas-a-pas={pasAPas.designe('conditions')}>
+            <span className="sr-only">Conditions</span>
+            {STATUS_LIST.map((status) => (
+              <StatusBadge key={status} status={status} />
+            ))}
+          </p>
         </section>
 
         <div className="battle__console">
           {regard && <RegardDuDessus carte={regard} />}
-
-          {state.pendingPromotion && (
-            <section className="notice notice--warn promotion">
-              {state.pendingPromotion === myCamp ? (
-                <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
-              ) : match === null ? (
-                <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
-              ) : (
-                <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
-              )}
-              <div className="actions actions--tight">
-                {promotions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {choices.length > 0 && (
-            <section className="notice notice--warn choix">
-              <p>Un effet te demande de désigner une carte.</p>
-              <div className="actions actions--tight">
-                {choices.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          <section className="section actions-panel" data-pas-a-pas={pasAPas.designe('poste-actions')}>
-            <div className="section__head">
-              <h2>Au Poste</h2>
-              {/* `legalAttacks` lit le camp qui a la main : ce paragraphe ne parle donc que
-                  quand c'est mon tour (en solo, il ne décrit plus le Poste de la Direction). */}
-              {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (
-                <p className="muted actions-panel__portee">
-                  {mySide.hasAttacked
-                    ? 'Pression déjà portée ce tour.'
-                    : inReach.length === myCard.attacks.length
-                      ? 'Toutes tes Pressions sont à portée de café.'
-                      : `Hors de portée du café : ${myCard.attacks
-                          .filter((entry) => !inReach.includes(entry))
-                          .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
-                          .join(', ')}.`}
-                </p>
-              )}
-            </div>
-            {boardActions.length === 0 && pressions.length === 0 && turnActions.length === 0 ? (
-              <p className="muted">{idleLine}</p>
-            ) : (
-              <>
-                {boardActions.length > 0 && (
-                  <div className="actions actions--tight">
-                    {boardActions.map((action) => (
-                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                    ))}
-                  </div>
-                )}
-                {(pressions.length > 0 || turnActions.length > 0) && (
-                  <div className="actions actions--tight actions--pressions">
-                    {pressions.map((action) => (
-                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                    ))}
-                    {turnActions.map((action) => (
-                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </section>
 
           <section className="section hand-panel" data-pas-a-pas={pasAPas.designe('main')}>
             <div className="section__head">
@@ -1061,128 +1185,98 @@ export function Battle() {
         </div>
       </div>
 
-      <details className="fold" data-pas-a-pas={pasAPas.designe('conditions')} open={pasAPas.designe('conditions') ? true : undefined}>
-        <summary>
-          <span>Conditions</span> <span className="muted">ce qu’un Planqué au Poste peut subir</span>
-        </summary>
-        <div className="fold__body">
-          <Dialog>
-            <DialogTrigger render={<Button variant="outline" size="sm" />}>Règles</DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Conditions</DialogTitle>
-                <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
-              </DialogHeader>
-              {conditionsLegend}
-            </DialogContent>
-          </Dialog>
-          {conditionsLegend}
-        </div>
-      </details>
-
       {/*
-        La partie à deux (#125) : créer, transmettre le code, le coller. Repliée tant qu'aucune
-        partie à deux n'est en cours — elle s'ouvre seule dès qu'il y a un code à passer. Les
-        commandes de jeu restent celles du moteur, plus haut : cette section ne fait que
-        passer la main.
+        **La barre d'action** (D-093, #191) : collée au-dessus de la navigation, elle porte ce qui
+        se joue au Poste — café, Rotation, Talent, les Pressions, « Fin du tour » — et, quand le
+        moteur l'ouvre, la relève ou le choix en attente. Elle est **toujours là** (`.combat-barre`,
+        mesurée par `npm run capturer`) : c'est la cible « poste-actions » du pas-à-pas, et c'est
+        elle qui libère la hauteur dont la main a besoin. Elle ne rend que ce que dit la liste du
+        moteur : en partie à deux, le tour de l'autre ne lui prête aucun bouton (#125).
       */}
-      <details className="fold" open={match !== null ? true : undefined}>
-        <summary>
-          <span>Partie à deux</span> <span className="muted">un code à se passer, sans serveur</span>
-        </summary>
-        <div className="fold__body">
-          {match === null ? (
-            <>
-              <p className="muted">
-                Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
-                joueur. Un code apparaît à la fin de ton tour.
-              </p>
-              <div className="actions actions--tight">
-                <button type="button" className="button button--primary" onClick={startTwoPlayer}>
-                  <Users size={16} /> Créer une partie à deux
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="notice">{campLine(state, match)}</p>
-              <p className="muted">
-                Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
-                les mêmes boutons que toi.
-              </p>
-              {transfer?.ready ? (
-                <>
-                  <p className="muted">
-                    Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
-                    reprend ici, avec le camp adverse.
-                  </p>
-                  <div className="actions actions--tight">
-                    <button type="button" className="button" onClick={copyCode}>
-                      <Copy size={16} /> Copier le code
-                    </button>
-                  </div>
-                  {/* Un appui sélectionne le code entier : sur téléphone, c'est le repli
-                      quand la copie automatique est refusée (#128). */}
-                  <textarea
-                    className="pvp__code"
-                    ref={codeRef}
-                    readOnly
-                    value={code}
-                    rows={4}
-                    aria-label="Code de la partie, à transmettre"
-                    onFocus={(event) => event.currentTarget.select()}
-                  />
-                </>
-              ) : (
-                <p className="muted">{transfer?.raison}</p>
-              )}
-              <p className="muted">« Nouveau combat » quitte la partie à deux et rend le combat solo.</p>
-            </>
-          )}
+      <section
+        className="combat-barre"
+        aria-label="Actions du tour"
+        data-pas-a-pas={pasAPas.designe('poste-actions')}
+      >
+        {state.pendingPromotion && (
+          <section className="notice notice--warn promotion">
+            {state.pendingPromotion === myCamp ? (
+              <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
+            ) : match === null ? (
+              <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
+            ) : (
+              <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
+            )}
+            <div className="actions actions--tight">
+              {promotions.map((action) => (
+                <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+              ))}
+            </div>
+          </section>
+        )}
 
-          <label className="field">
-            <span className="field__label">Coller un code reçu</span>
-            {/* Sur téléphone, le clavier corrige : un code base64url n'a ni majuscules
-                initiales à deviner ni mots à corriger, et une correction le casse en
-                silence (#128). Le champ grandit vers le bas, la page ne bouge pas. */}
-            <textarea
-              className="pvp__code"
-              value={incoming}
-              onChange={(event) => setIncoming(event.target.value)}
-              placeholder="PLQ1.…"
-              rows={3}
-              aria-label="Code reçu, à coller"
-              autoComplete="off"
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </label>
-          <div className="actions actions--tight">
-            <button type="button" className="button" onClick={join}>
-              <ClipboardPaste size={16} /> Prendre le camp adverse
-            </button>
-          </div>
-          <p className="muted">
-            Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
-            laissée, et tu prends le camp qui doit jouer.
+        {choices.length > 0 && (
+          <section className="notice notice--warn choix">
+            <p>Un effet te demande de désigner une carte.</p>
+            <div className="actions actions--tight">
+              {choices.map((action) => (
+                <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* `legalAttacks` lit le camp qui a la main : cette ligne ne parle donc que quand c'est
+            mon tour (en solo, elle ne décrit plus le Poste de la Direction). */}
+        {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (mySide.hasAttacked || inReach.length < myCard.attacks.length) && (
+          <p className="muted combat-barre__portee">
+            {mySide.hasAttacked
+              ? 'Pression déjà portée ce tour.'
+              : `Hors de portée du café : ${myCard.attacks
+                  .filter((entry) => !inReach.includes(entry))
+                  .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
+                  .join(', ')}.`}
           </p>
-          {codeMessage && (
-            <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
-          )}
-        </div>
-      </details>
+        )}
 
-      <details className="fold">
-        <summary>
-          <span>Journal</span>
-        </summary>
-        <ol className="log fold__body">
-          {state.log.slice(-14).map((line, index) => (
-            <li key={`${index}-${line}`}>{line}</li>
-          ))}
-        </ol>
-      </details>
+        {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
+            Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
+            font pas quatre lignes), et les Pressions avec « Fin du tour » viennent à côté ou
+            dessous. La barre ne doit jamais recouvrir la main (`npm run capturer` le mesure). */}
+        {(boardActions.length > 0 || pressions.length > 0 || turnActions.length > 0) && (
+          <div className="combat-barre__gestes">
+            {boardActions.length > 0 && (
+              <div className="actions actions--tight combat-barre__rang">
+                {boardActions.map((action) => (
+                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                ))}
+              </div>
+            )}
+            {pressions.map((action) => (
+              <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+            ))}
+            {turnActions.map((action) => (
+              <span className="combat-barre__fin" key={JSON.stringify(action)}>
+                <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
+              </span>
+            ))}
+          </div>
+        )}
+
+        {playable.length === 0 && (
+          <p className="muted combat-barre__repos">
+            {idleLine}
+            {attendLAutre && (
+              <>
+                {' '}
+                <button type="button" className="link-button" onClick={() => setMenu({ ouvert: true, vue: 'pvp' })}>
+                  Coller un code
+                </button>
+              </>
+            )}
+          </p>
+        )}
+      </section>
 
       <Confirmation
         open={forfaitDemande !== null && forfeitAction !== undefined}
@@ -1192,8 +1286,18 @@ export function Battle() {
         onConfirm={() => {
           if (forfaitDemande) play(forfaitDemande);
           setForfaitDemande(null);
+          // La partie est finie : le menu qui portait « Abandonner » n'a plus rien à offrir.
+          setMenu(MENU_FERME);
         }}
         onCancel={() => setForfaitDemande(null)}
+      />
+      <Confirmation
+        open={nouveauDemande}
+        titre="Recommencer un combat ?"
+        texte="La partie en cours est jetée, et un combat neuf commence. Tu ne pourras pas la reprendre."
+        confirmer="Nouveau combat"
+        onConfirm={restart}
+        onCancel={() => setNouveauDemande(false)}
       />
     </div>
   );

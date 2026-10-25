@@ -3,6 +3,7 @@ import { describe, it, expect, afterAll } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
+import { menuSurLaVue } from '@/test/menu-combat';
 import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import type { ActionCard, Ability, AttackEffect, BattleAction, BattleState, Card, PlanqueCard } from '@/data/types';
 import { applyAction, createBattle, dessusDuDeck, legalActions } from '@/game/engine';
@@ -186,9 +187,18 @@ function ouvrir(state: BattleState, deck: string[]) {
 /** L'encart de choix (`section.choix`), ou `null`. */
 const encartDeChoix = (): HTMLElement | null => document.querySelector<HTMLElement>('section.choix');
 
-/** Les lignes du journal, comme l'écran les affiche (`.log li`). */
-const journal = (): string[] =>
-  Array.from(document.querySelectorAll<HTMLElement>('.log li')).map((li) => li.textContent ?? '');
+/**
+ * Les lignes du journal, comme l'écran les affiche (`.log li`) — **derrière le menu `⋯`** depuis
+ * la refonte du combat (#191) : l'helper l'ouvre sur sa vue Journal, comme l'invité. Une liste
+ * vide ferait passer à vide les tests qui affirment qu'une ligne **n'est pas** là, donc elle
+ * échoue ici : le journal d'une partie commencée n'est jamais vide.
+ */
+const journal = (): string[] => {
+  menuSurLaVue('Journal');
+  const lignes = Array.from(document.querySelectorAll<HTMLElement>('.log li')).map((li) => li.textContent ?? '');
+  if (lignes.length === 0) throw new Error('le Journal du menu est vide : le helper ne lit plus le bon endroit');
+  return lignes;
+};
 
 /** Les boutons « Talent » proposés. */
 const boutonsTalent = () => screen.queryAllByRole('button', { name: /^Talent/ });
