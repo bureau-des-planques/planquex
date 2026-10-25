@@ -141,7 +141,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Porte fermée', cost: ['DIRECTION', 'INCOLORE'], damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Note interne', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Il sait qui voit le patron. Ce n\'est pas toi.'
+    flavor: 'Il sait qui voit le patron. Ce n\'est pas toi.',
+    art: 'direction-chef-cabinet.webp'
   }),
 
   // Ligne 4 (2 stades) : Secrétaire direction → Directeur de programme
