@@ -2040,9 +2040,11 @@ h2 {
   position: absolute;
 }
 
-/* Le texte de la Machine et des cafés, sur le feutre éclairé : le gris `.muted` tombait à 4,3:1 — sous les 4,5:1
-   de l'AA. Ici il reprend la couleur du texte courant. */
-.poste__info .muted,
+/* Rien d'atténué sur la table (DESIGN.md §1.5, #198) : le centre du feutre est la seule lumière, et
+   `--text-muted` y tombe à 3,79:1 (sous les 4,5:1 de l'AA). Tout `.muted` posé sur le plateau — la
+   Machine et les cafés, le compte de main, le « Poste libre » — reprend donc l'encre principale
+   (7,73:1 sur le même pic). La lumière reste franche : c'est le texte qui change, pas le halo. */
+.board .muted,
 .board .board__counts {
   color: var(--text);
 }
@@ -2568,8 +2570,9 @@ h2 {
   min-width: 0;
 }
 
+/* Le nom du camp est posé sur la table, près du centre éclairé : encre principale (#198, voir `.board .muted`). */
 .piste__nom {
-  color: var(--text-muted);
+  color: var(--text);
   font-family: var(--font-display);
   font-size: 0.6rem;
   letter-spacing: 0.1em;

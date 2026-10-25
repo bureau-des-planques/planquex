@@ -57,7 +57,7 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--warn` | `#e0a33e` | avertissement (deck de test, fin perdue) |
 | `--danger` | `#e06a4e` | erreur |
 
-### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195)
+### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198)
 
 Ratios WCAG calculés sur les paires réelles du thème (formule de luminance relative
 WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
@@ -90,7 +90,7 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | `--text` sur carte de scène `--scene-card` | 13.73 | AAA |
 | `--text-muted` sur feutre `--scene-felt` | 6.91 | AA |
 | `--text-muted` sur carte de scène `--scene-card` | 6.73 | AA |
-| **`--text-muted` sur feutre éclairci `--scene-felt-lit`** | **3.79** | **insuffisant** pour du texte courant — **écart consigné, non corrigé** (voir ci-dessous) |
+| **`--text-muted` sur feutre éclairci `--scene-felt-lit`** | **3.79** | **interdit sur la table** (#198, voie 1) : la paire reste insuffisante, donc aucun texte atténué ne se pose sur le centre éclairé — `.board .muted` et `.piste__nom` passent en `--text` (7.73, ligne ci-dessus) |
 | `--accent` (pastilles de café) sur feutre `--scene-felt` | 5.12 | AA |
 | `--gold` sur feutre `--scene-felt` | 8.74 | AAA |
 | `--scene-danger` sur feutre (filet d'état, non-texte) | 4.36 | **filet seulement** : 3:1 ✓, texte ✗ |
@@ -102,10 +102,15 @@ calculés par un script jeté après usage, à refaire de la même façon. Les d
 direction (`docs/DIRECTION-SCENE-COMBAT.md` §7 — crème sur parchemin à 2,41:1, blanc sur vert
 à ≈2,1:1) sont **inversées** ici : encre sombre sur parchemin, encre sombre sur vert ou néon.
 
-**Écart consigné** : `--text-muted` sur `--scene-felt-lit` tombe à **3,79:1** (sous 4,5:1). Le
-feutre est éclairci **au centre** de la table (dégradé radial de `.board`), donc un texte atténué
-posé au centre échoue. Aucune couleur n'est changée ici (hors périmètre de la doc) ; il faut
-soit placer ce texte hors du centre, soit monter son encre. À trancher avec #196.
+**Écart clos par composition (#198, voie 1)** : `--text-muted` sur `--scene-felt-lit` tombe à
+**3,79:1** (sous 4,5:1) — ratio recalculé le 25/10/2026 par la formule WCAG 2.1 sur `#9aa9c2` et
+`#214d69` (le pic du dégradé, le pixel exact du centre de `.board` sur la capture). Le feutre est
+éclairci **au centre** de la table, donc un texte atténué posé là échoue. Le halo **ne baisse pas** :
+la lumière est une décision de scène (D-093). Le texte s'est adapté : tout `.muted` posé sur le
+plateau (`.board .muted`, dont la Machine et le « Poste libre ») et le nom des camps de la piste
+d'Interventions (`.piste__nom`) passent en `--text`, dont le ratio sur le même pic est **7,73:1**
+(AAA). Mesuré sur la page (capture 420 × 900, fond rendu sous chaque texte) : aucun texte du combat
+n'est sous 4,5:1. Le plancher de taille, lui, reste à traiter en #196.
 
 Le ratio d'une pastille de Condition est **plus haut** sur une carte de scène (`--scene-card`,
 6,4 à 7,3:1) que sur `--bg-sunken` : le calcul ci-dessus est le cas le plus sombre où elle tombe.
@@ -135,8 +140,8 @@ dernier le dit lui-même : « findings are an undercount ». Les faction-boutons
 (`--accent` remplacé par la couleur de la faction) gardent le texte blanc : pour les factions claires,
 le ratio n'est pas garanti — **écart connu, laissé** (voir le rapport de #131).
 
-Hors l'écart consigné ci-dessus (`--text-muted` sur feutre éclairci), aucune paire de texte
-du tableau n'est en dessous de AA. Les pips de café (or sur fond sombre)
+Aucune paire de texte du tableau n'est en dessous de AA : la seule qui y tombe (`--text-muted` sur
+feutre éclairci, 3,79:1) est **interdite sur la table** par composition (ci-dessus, #198). Les pips de café (or sur fond sombre)
 restent décoratifs : l'information est aussi portée par le `title` et l'`aria-label`.
 
 ### 1.6 Échelles
