@@ -205,3 +205,117 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     expect(source).toContain('fullPage: PLEINE_PAGE');
   });
 });
+
+/**
+ * Ticket #194 — **la garde de hauteur s'étend au combat qu'on refait** (D-093).
+ *
+ * La refonte #191/#190 ajoute deux surfaces qui n'existent pas encore : la **barre
+ * d'action** (`.combat-barre`, `docs/SPEC-COMBAT-UI.md` T9) et la **piste d'Interventions**
+ * (`data-pas-a-pas="interventions"`, le contrat du pas-à-pas). La garde de #170 ne
+ * mesurait que la main : une barre d'action qui déborde passerait donc inaperçue.
+ *
+ * Les deux éléments sont **absents** aujourd'hui — le test l'exige, sinon la garde
+ * casserait l'écran d'avant la refonte — et le contrôle doit **mordre** dès qu'un élément
+ * présent sort de la fenêtre, en **nommant l'élément fautif**. Le contrôle est joué par la
+ * sonde `--controle-hauteur`, sans navigateur : le test confronte le vrai code à une
+ * géométrie fautive, il ne relit pas une chaîne du source.
+ */
+describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
+  interface HauteurCible {
+    nom: string;
+    selecteur: string;
+  }
+
+  interface Mesure {
+    nom: string;
+    selecteur: string;
+    present: boolean;
+    haut: number | null;
+    bas: number | null;
+  }
+
+  /** L'environnement des sondes, sans les variables que `vitest` exporte pour lui. */
+  function sansEnvDeVitest(): NodeJS.ProcessEnv {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    return env;
+  }
+
+  /** Les cibles que le script surveille vraiment (publiées dans `--plan`). */
+  function cibles(): HauteurCible[] {
+    const output = execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+      cwd: root,
+      encoding: 'utf8',
+      env: sansEnvDeVitest()
+    });
+    return (JSON.parse(output) as { hauteur: HauteurCible[] }).hauteur;
+  }
+
+  /** Le contrôle de géométrie que le script applique, sur une géométrie construite à la main. */
+  function controle(mesures: Mesure[], limite = 830): string[] {
+    const output = execFileSync(
+      process.execPath,
+      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures })],
+      { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+    );
+    return JSON.parse(output) as string[];
+  }
+
+  /** Une cible à sa place, sauf celles qu'on fait déborder. */
+  function geometrie({ mainBas = 760, barreActionBas = 820, pisteBas = 400 } = {}): Mesure[] {
+    return [
+      { nom: 'la main', selecteur: '.hand', present: true, haut: 640, bas: mainBas },
+      { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: 760, bas: barreActionBas },
+      { nom: "la piste d'Interventions", selecteur: '[data-pas-a-pas="interventions"]', present: true, haut: 100, bas: pisteBas }
+    ];
+  }
+
+  it('suit la main, la barre d’action et la piste d’Interventions', () => {
+    expect(cibles().map((cible) => cible.selecteur)).toEqual([
+      '.hand',
+      '.combat-barre',
+      '[data-pas-a-pas="interventions"]'
+    ]);
+  });
+
+  it('ne dit rien tant que #190 et #191 n’ont pas livré leurs surfaces', () => {
+    // L'écran d'aujourd'hui : la main existe, les deux autres non. La garde doit dormir.
+    const mesures = geometrie().map((mesure) => ({ ...mesure, present: mesure.selecteur === '.hand' }));
+    expect(controle(mesures)).toEqual([]);
+  });
+
+  it('laisse passer une géométrie qui tient dans la fenêtre', () => {
+    expect(controle(geometrie())).toEqual([]);
+  });
+
+  it('nomme la main quand elle sort de la fenêtre', () => {
+    const problemes = controle(geometrie({ mainBas: 906 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain('la main');
+    expect(problemes[0]).toContain('bas de la main à 906 px');
+  });
+
+  it('nomme la barre d’action quand c’est elle qui déborde, pas « la main »', () => {
+    const problemes = controle(geometrie({ barreActionBas: 940 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la barre d'action du combat");
+    expect(problemes[0]).not.toContain('la main');
+  });
+
+  it('nomme la piste d’Interventions quand c’est elle qui déborde, pas « la main »', () => {
+    const problemes = controle(geometrie({ pisteBas: 880 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la piste d'Interventions");
+    expect(problemes[0]).not.toContain('la main');
+  });
+
+  it('relie le contrôle au passage réel sur le combat', () => {
+    const source = read('scripts/capturer.mjs');
+    // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer
+    // à ne mesurer que la main.
+    expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT })');
+    expect(source).toContain("problems.push(`${route} · ${probleme}`)");
+  });
+});

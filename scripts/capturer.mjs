@@ -25,6 +25,8 @@
  *   BASE_URL=http://localhost:5178 npm run capturer
  *   CHROME_PATH=/chemin/vers/chrome npm run capturer
  *   node scripts/capturer.mjs --plan   (imprime l'état amorcé et le plan, sans navigateur)
+ *   node scripts/capturer.mjs --controle-hauteur '<géométrie JSON>'  (joue le contrôle de
+ *     hauteur sur une géométrie fournie, sans navigateur : c'est ce que teste #194)
  *
  * Variables d'environnement :
  *   CHROME_PATH  binaire Chromium (défaut : cache de `ms-playwright`)
@@ -119,20 +121,74 @@ async function arriveeAuTourDuJoueur(page) {
 }
 
 /**
- * La **main est-elle visible sans défiler** ? (#170) Elle l'est si son bord bas tient
- * au-dessus de la barre de navigation fixe (qui masque le bas de l'écran), et si son
- * bord haut est dans l'écran. Lu dans le navigateur, à l'arrivée sur le combat.
+ * Les **surfaces du combat** qui doivent tenir dans la fenêtre, au-dessus de la barre de
+ * navigation fixe (qui masque le bas de l'écran) : la main (#170), puis la **barre
+ * d'action du combat** et la **piste d'Interventions** (#194).
+ *
+ * Les deux dernières **n'existent pas encore** : la barre d'action arrive avec #191 — son
+ * nom, `.combat-barre`, est celui que nomme `docs/SPEC-COMBAT-UI.md` T9 — et la piste avec
+ * #190, qui garde `data-pas-a-pas="interventions"` (le contrat du pas-à-pas ; aujourd'hui
+ * l'attribut est porté par le score `★★☆` de l'en-tête de camp). Un **élément absent** ne
+ * fait donc rien échouer : la garde est prête pour la refonte, sans casser l'écran
+ * d'aujourd'hui, et **mord** dès que l'élément existe et sort de la fenêtre.
  */
-function mesureMain() {
-  const main = document.querySelector('.hand')?.getBoundingClientRect();
+const CIBLES_HAUTEUR = [
+  { nom: 'la main', selecteur: '.hand' },
+  { nom: "la barre d'action du combat", selecteur: '.combat-barre' },
+  { nom: "la piste d'Interventions", selecteur: '[data-pas-a-pas="interventions"]' }
+];
+
+/**
+ * Mesure, **dans le navigateur**, le haut et le bas de chaque cible, et la limite à ne pas
+ * franchir : le haut de la barre de navigation fixe (ou le bas de la fenêtre sans elle).
+ *
+ * Passée à `page.evaluate` avec ses cibles en argument : Playwright sérialise la fonction,
+ * qui ne peut donc lire **aucune** constante du module.
+ */
+function mesureHauteur(cibles) {
   const nav = document.querySelector('.bottom-nav')?.getBoundingClientRect();
-  const bas = Math.round(nav ? nav.top : window.innerHeight);
   return {
-    mainHaut: main ? Math.round(main.top) : null,
-    mainBas: main ? Math.round(main.bottom) : null,
-    bas,
-    visible: !!main && main.top >= 0 && main.bottom <= bas
+    fenetre: window.innerHeight,
+    limite: Math.round(nav ? nav.top : window.innerHeight),
+    mesures: cibles.map(({ nom, selecteur }) => {
+      const rect = document.querySelector(selecteur)?.getBoundingClientRect();
+      return {
+        nom,
+        selecteur,
+        present: !!rect,
+        haut: rect ? Math.round(rect.top) : null,
+        bas: rect ? Math.round(rect.bottom) : null
+      };
+    })
   };
+}
+
+/**
+ * Le **contrôle** de la géométrie, sans DOM ni navigateur (#194) : la sonde
+ * `--controle-hauteur` et son test le lisent directement, donc il mord même quand aucun
+ * Chromium ne tourne.
+ *
+ * Un élément **absent** ne produit **rien** — c'est ce qui laisse la garde dormante tant
+ * que #190 et #191 n'ont pas livré ; un élément présent qui sort de la fenêtre produit un
+ * message qui **le nomme**, et pas seulement « la main ».
+ */
+function controlesHauteur({ limite, mesures, viewport }) {
+  return mesures
+    .filter(({ present, haut, bas }) => present && (haut < 0 || bas > limite))
+    .map(
+      ({ nom, bas }) =>
+        `${nom} n'est pas visible sans défiler (${viewport.width} × ${viewport.height}) : ` +
+        `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px`
+    );
+}
+
+/** Mesure les trois surfaces, journalise, et range les manquements dans `problems`. */
+async function controlerHauteur(page, contexte, route) {
+  const hauteur = await page.evaluate(mesureHauteur, CIBLES_HAUTEUR);
+  console.log(`combat · ${contexte} · ${JSON.stringify(hauteur)}`);
+  for (const probleme of controlesHauteur({ ...hauteur, viewport: VIEWPORT })) {
+    problems.push(`${route} · ${probleme}`);
+  }
 }
 
 /**
@@ -281,14 +337,33 @@ if (new Set(slugs).size !== slugs.length) {
 if (process.argv.includes('--plan')) {
   // La **taille** et le **cadrage** sont dans le plan (#153) : la garde les lit ici,
   // au lieu de chercher des nombres dans le source, et une régression les fait tomber.
+  // Les **surfaces mesurées** y sont aussi (#194) : une garde qui ne surveille plus le
+  // bon élément doit faire échouer son test, pas changer de sujet en silence.
   console.log(
     JSON.stringify({
       amorcage: amorcageStore(origine),
       capture: { viewport: VIEWPORT, pleinePage: PLEINE_PAGE },
       captures: shots,
-      preparations: PREPARATIONS
+      preparations: PREPARATIONS,
+      hauteur: CIBLES_HAUTEUR
     })
   );
+  process.exit(0);
+}
+
+// Sonde de `scripts/capturer.test.ts` (#194) : joue le **contrôle de géométrie** sur une
+// géométrie fournie en JSON — `{ limite, mesures: [{ nom, selecteur, present, haut, bas }] }` —
+// et imprime les problèmes trouvés, sans navigateur ni serveur. C'est ce qui permet au
+// contrôle de **mordre** dans un test : une assertion qui ne peut pas échouer ne garde rien.
+if (process.argv.includes('--controle-hauteur')) {
+  const arg = process.argv[process.argv.indexOf('--controle-hauteur') + 1];
+  let geometrie;
+  try {
+    geometrie = JSON.parse(arg);
+  } catch {
+    stop(`--controle-hauteur attend une géométrie JSON, reçu : « ${arg} »`);
+  }
+  console.log(JSON.stringify(controlesHauteur({ ...geometrie, viewport: VIEWPORT })));
   process.exit(0);
 }
 
@@ -354,14 +429,7 @@ try {
       await page.clock.setFixedTime(INSTANTS_COMBAT[0]);
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
       await arriveeAuTourDuJoueur(page);
-      const main = await page.evaluate(mesureMain);
-      console.log(`combat · ${slug} · ${JSON.stringify(main)}`);
-      if (!main.visible) {
-        problems.push(
-          `${route} · la main n'est pas visible sans défiler (${VIEWPORT.width} × ${VIEWPORT.height}) : ` +
-            `bas de la main à ${main.mainBas} px, barre de navigation à ${main.bas} px`
-        );
-      }
+      await controlerHauteur(page, slug, route);
     } else {
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -380,14 +448,7 @@ try {
     await page.clock.setFixedTime(instant);
     await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
     await arriveeAuTourDuJoueur(page);
-    const main = await page.evaluate(mesureMain);
-    console.log(`combat · ${new Date(instant).toISOString()} · ${JSON.stringify(main)}`);
-    if (!main.visible) {
-      problems.push(
-        `${ROUTE_COMBAT} · la main n'est pas visible sans défiler (${VIEWPORT.width} × ${VIEWPORT.height}, ` +
-          `${new Date(instant).toISOString()}) : bas de la main à ${main.mainBas} px, barre de navigation à ${main.bas} px`
-      );
-    }
+    await controlerHauteur(page, new Date(instant).toISOString(), ROUTE_COMBAT);
     await context.close();
   }
 } finally {

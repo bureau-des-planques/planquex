@@ -9,6 +9,7 @@ dans l'application *Pokémon TCG Pocket* elle-même. **Quatre usages, quatre dos
 | `ui-<AAAA-MM-JJ>/` | La **structure de l'interface** — la composition des écrans de l'application d'origine, pour relire les nôtres. | `docs/CAPTURES-UI.md` |
 | `regles-<AAAA-MM-JJ>/` | La **recherche documentaire** — verdict ligne par ligne contre `AGENTS.md` §4, avec citations exactes, niveaux de preuve (primaire / transcription / secondaire) et URL. **Ne contient pas de capture** : c'est un lot de recherche, qui peut ne contenir **aucune preuve primaire**, et doit alors le dire explicitement (§0 du README du lot). | `docs/preuves/regles-<date>/README.md` (modèle implicite : méthode §0, verdict §2, sources §5) |
 | `finition-<étape>-<AAAA-MM-JJ>/` | Les **captures de notre propre application** à la fin d'une étape (D-060, critère 4) : taille d'un téléphone, **avant** et **après** la passe, avec les états provoqués. Ce ne sont pas des preuves de règle. | `README.md` du lot (comment chaque image a été prise, ce qu'elle ne prouve pas) |
+| `combat-ui-<AAAA-MM-JJ>/` | Les **captures de notre écran de combat** avant/après la refonte **D-093** (#194) : l'état daté, la taille de téléphone, et les mesures de hauteur que `npm run capturer` contrôle. Pas des preuves de règle non plus. | `README.md` du lot |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
 
@@ -64,6 +65,14 @@ sont passées de « supposé » à **observé**, et **2 ont été corrigées** (
 non capturées sont **établies par le lot de recherche** `regles-2026-10-20/`, qui fait foi au
 même titre (D-034) : **plus aucune capture n'est requise** pour `AGENTS.md` §4, et O-014 est
 tranché sans essai en jeu.
+
+## État au 25/10/2026 — le lot de combat
+
+`combat-ui-2026-10-25/` est le lot **« avant »** de la refonte de l'écran de combat (D-093,
+#194). Il ne remplace pas `finition-alpha-2026-10-23/` : la refonte ouvrira son **après** à
+côté de cet avant, et c'est à ce lot-ci qu'il se comparera. La garde de hauteur de
+`npm run capturer` mesure désormais la main, la **barre d'action** et la **piste
+d'Interventions** — cette dernière mordra à partir de **#190**, la barre à partir de **#191**.
 
 ## Attention — les captures du legacy ne sont PAS des preuves
 
