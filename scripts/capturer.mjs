@@ -126,15 +126,16 @@ async function arriveeAuTourDuJoueur(page) {
  * d'action du combat** et la **piste d'Interventions** (#194).
  *
  * La barre d'action existe depuis #191 (`.combat-barre`, `docs/SPEC-COMBAT-UI.md` T9) ; la
- * piste d'Interventions, elle, arrive avec #190 et garde `data-pas-a-pas="interventions"` (le
- * contrat du pas-à-pas ; aujourd'hui l'attribut est porté par le score `★★☆` de l'en-tête de
- * camp, et seulement quand une étape le désigne). Un **élément absent** ne fait rien échouer ;
- * un élément présent qui sort de la fenêtre, si — la garde **mord**.
+ * piste d'Interventions depuis #190. Elle est suivie par sa **classe**, pas par
+ * `data-pas-a-pas="interventions"` : cet attribut n'est posé que **lorsque le pas-à-pas
+ * désigne la piste**, donc dans l'état de référence il est absent et la garde ne mesurait
+ * rien (#202). Un **élément absent** ne fait rien échouer ; un élément présent qui sort de
+ * la fenêtre, si — la garde **mord**.
  */
 const CIBLES_HAUTEUR = [
   { nom: 'la main', selecteur: '.hand' },
   { nom: "la barre d'action du combat", selecteur: '.combat-barre' },
-  { nom: "la piste d'Interventions", selecteur: '[data-pas-a-pas="interventions"]' }
+  { nom: "la piste d'Interventions", selecteur: '.piste' }
 ];
 
 /**

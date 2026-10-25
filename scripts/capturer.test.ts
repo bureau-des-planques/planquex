@@ -268,22 +268,32 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     return [
       { nom: 'la main', selecteur: '.hand', present: true, haut: 640, bas: mainBas },
       { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: barreActionHaut, bas: barreActionBas },
-      { nom: "la piste d'Interventions", selecteur: '[data-pas-a-pas="interventions"]', present: true, haut: 100, bas: pisteBas }
+      { nom: "la piste d'Interventions", selecteur: '.piste', present: true, haut: 100, bas: pisteBas }
     ];
   }
 
   it('suit la main, la barre d’action et la piste d’Interventions', () => {
-    expect(cibles().map((cible) => cible.selecteur)).toEqual([
-      '.hand',
-      '.combat-barre',
-      '[data-pas-a-pas="interventions"]'
-    ]);
+    expect(cibles().map((cible) => cible.selecteur)).toEqual(['.hand', '.combat-barre', '.piste']);
   });
 
-  it('ne dit rien tant qu’une surface est absente (la piste d’Interventions attend #190)', () => {
+  it('ne dit rien tant qu’une surface est absente', () => {
     // La main existe, les deux autres non : la garde doit dormir, sans fausse alarme.
     const mesures = geometrie().map((mesure) => ({ ...mesure, present: mesure.selecteur === '.hand' }));
     expect(controle(mesures)).toEqual([]);
+  });
+
+  it('suit la piste par sa classe, jamais par l’attribut du pas-à-pas (#202)', () => {
+    // `data-pas-a-pas="interventions"` n'existe **que** quand une étape désigne la piste : la
+    // garde mesurait donc un élément absent dans l'état de référence, et ne pouvait pas échouer.
+    const piste = cibles().find((cible) => cible.nom.includes('piste'));
+    expect(piste?.selecteur).toBe('.piste');
+    expect(piste?.selecteur).not.toContain('data-pas-a-pas');
+  });
+
+  it('nomme la piste quand c’est elle qui déborde', () => {
+    const problemes = controle(geometrie({ pisteBas: 900 }));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la piste d'Interventions");
   });
 
   it('laisse passer une géométrie qui tient dans la fenêtre', () => {
