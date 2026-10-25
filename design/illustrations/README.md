@@ -214,3 +214,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `management-directeur-service` · modèle `NARWHAL` · graine `1363119885` · `management-directeur-service.webp`
 - 2026-10-26 · `management-entretien-annuel` · modèle `NARWHAL` · graine `419644616` · `management-entretien-annuel.webp`
 - 2026-10-26 · `management-jeune-manager` · modèle `NARWHAL` · graine `1089462067` · `management-jeune-manager.webp`
+- 2026-10-26 · `management-manager-proximite` · modèle `NARWHAL` · graine `1044749969` · `management-manager-proximite.webp`
