@@ -331,7 +331,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Deux Interventions. Une seule réunion.'
+    flavor: 'Deux Interventions. Une seule réunion.',
+    art: 'management-responsable-unite-ex.webp'
   })
 ];
 
