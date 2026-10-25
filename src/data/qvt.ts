@@ -201,7 +201,7 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Panier garni', cost: ['QVT'], damage: 10, text: 'Soigne 20 d\'un de tes Planqués.', effects: [{ kind: 'healSelf', amount: 20 }] }],
-    flavor: 'Il a cueilli des pommes. Le panier est pour la direction.'
+    flavor: 'Il a monté les palettes au troisième. Le bon de livraison, lui, est resté au quai.'
   }),
   base({
     id: 'qvt-responsable-evenementiel',

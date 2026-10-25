@@ -21,7 +21,7 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Checklist', cost: ['AMELIORATION'], damage: 10, text: 'Regarde la carte du dessus de ton deck.', effects: [{ kind: 'peek' }] }],
-    flavor: 'Il a coché la case. La case ne sert à rien.',
+    flavor: 'Il a coché la case. Le produit, personne ne l’a regardé.',
     art: 'amelioration-charge-qualite.webp'
   }),
   base({

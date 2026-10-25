@@ -71,8 +71,8 @@ critère 5), et la garde la refuse.
 | `sse-medecin-sport` | a sports physician, in a tracksuit jacket over scrubs, holding a cold pack, kneeling by a sprained ankle, sympathetic and brisk |
 | `sse-assistante-sociale` | a social worker, in a wool coat with a tote bag, holding a thin case file, standing in a waiting room, kind and overworked |
 | `sse-controleur-securite` | a safety inspector, in a grey jacket with a hi-vis armband, holding an exit checklist, testing a fire door, methodical and grim |
-| `sse-responsable-securite` | a security manager, in a dark suit and a safety helmet, holding a site map, standing on a mezzanine, vigilant and tired |
-| `sse-brancardier` | a stretcher-bearer, in green overalls, holding a folded stretcher, waiting by a lift with no light, stoic and patient |
+| `sse-responsable-securite` | a safety manager, in a dark suit and a safety helmet, holding a site map, standing on a mezzanine, vigilant and tired |
+| `sse-brancardier` | a stretcher-bearer, in green overalls, holding a folded stretcher, waiting by a goods lift, stoic and patient |
 | `sse-medecin-legiste` | a forensic doctor, in a white coat and blue gloves, holding a slim metal case, standing in a cold tiled room, wry and unshockable |
 | `sse-medecin-chef-ex` | the hospital's chief physician, in a white coat with gold piping, holding an embossed seal, pausing in a boardroom doorway, imperious and weary |
 | `sse-responsable-sse-ex` | a regional health-and-safety director, in a dark suit with a hi-vis stripe, holding a signed prevention plan, stepping onto a factory floor, grim and determined |
@@ -87,12 +87,12 @@ critère 5), et la garde la refuse.
 | `management-controleur-gestion` | a management controller, in a dark suit and thin tie, holding a spreadsheet printout, walking away from a whiteboard, dry and smug |
 | `management-chef-equipe` | a team leader, in a hi-vis waistcoat over a shirt, holding a clipboard of orders, relaying it to the bench, grave and methodical |
 | `management-charge-affaires` | a business developer, in a grey suit with an open collar, holding a leather quote folder, closing a meeting-room door, cheerful and determined |
-| `management-manager-proximite` | a line manager, in a navy jacket with a badge, holding a phone at arm's length, typing a mail while walking, distracted and polite |
+| `management-manager-proximite` | a line manager, in a navy jacket with a badge, holding a phone at arm's length, typing an email while walking, distracted and polite |
 | `management-responsable-projet` | a project owner, in a grey suit with a project lanyard, holding a milestone chart, pointing at a date nobody believes, confident and tired |
 | `management-responsable-commercial` | a sales manager, in a dark suit with a red tie, holding a discount sheet, shaking hands across a table, cheerful and smug |
 | `management-chef-service` | a department head, in a charcoal suit, holding a signature pen, standing behind a junior's chair, impatient and polite |
 | `management-responsable-production` | a production manager, in a white hard hat and a grey jacket, holding a stopwatch, watching a conveyor line, stern and overworked |
-| `management-responsable-unite` | a middle manager, in a pressed suit and a clipboard, holding a unit report, standing outside a meeting room, slightly smug |
+| `management-responsable-unite` | a middle manager, in a pressed suit, holding a unit report, standing outside a meeting room, slightly smug |
 | `management-directeur-projet` | a programme director, in a dark suit and a visitor badge, holding a delivery certificate, walking into a handover meeting, calm and determined |
 | `management-directeur-production` | a production director, in a grey suit with steel-toe boots, holding a capacity chart, striding along the line, grim and determined |
 | `management-directeur-service` | a service director, in a black suit with a gold pin, holding three objective cards, fanning them out, bored and smug |
@@ -109,10 +109,10 @@ critère 5), et la garde la refuse.
 | `qvt-optimiseur-process` | a process optimiser, in a slim grey suit, holding a stopwatch, timing a meeting from the doorway, dry and smug |
 | `qvt-referent-qvt` | a wellbeing correspondent, in a company polo with a lanyard, holding a reminder postcard, pinning it to a crowded board, tired and polite |
 | `qvt-chef-projet-qvt` | a wellbeing project lead, in a navy blazer, holding a project charter, presenting it to three empty chairs, earnest and nervous |
-| `qvt-charge-mission` | a kindness ambassador, in a soft grey sweater, holding a pack of post-its, sticking one on a colleague's screen, cheerful and apologetic |
+| `qvt-charge-mission` | a mission officer, in a soft grey sweater, holding a pack of post-its, sticking one on his own screen, cheerful and apologetic |
 | `qvt-facilitateur` | a facilitator, in a loose shirt with rolled sleeves, holding a talking stick, sitting in a circle of empty chairs, calm and encouraging |
 | `qvt-charge-logistique` | a logistics officer, in a hi-vis vest over a shirt, holding a delivery manifest, checking a pallet at a loading bay, tired and precise |
-| `qvt-responsable-evenementiel` | an events organiser, in a dark shirt with a phone holster, holding a bar reservation, checking it by a lift, cheerful and overworked |
+| `qvt-responsable-evenementiel` | an events organiser, in a dark shirt with a phone holster, holding a deposit receipt, checking it by a lift, cheerful and overworked |
 | `qvt-charge-ergonomie` | an ergonomics officer, in a grey wrap top and loose trousers, holding a foam roller, demonstrating a posture by a desk, serene and encouraging |
 | `qvt-gestionnaire-moyens-generaux` | a facilities host, in a blue work jacket, holding a coffee-machine key, kneeling to unblock the machine, patient and grim |
 | `qvt-charge-environnement-travail` | a workplace environment officer, in a canvas apron over a shirt, holding a potted ficus, wedging it between two desks, cheerful and determined |
@@ -132,7 +132,7 @@ critère 5), et la garde la refuse.
 | `qvt-charge-communication-interne` | an internal communication officer, in a crisp shirt and cardigan, holding a mock-up newsletter, taping it to a lift door, cheerful and precise |
 | `qvt-charge-evenements-internes` | an internal events officer, in a dark blouse with a badge, holding a folding seminar backdrop, struggling with it alone, determined and overworked |
 | `qvt-charge-mobilite-interne` | an internal mobility officer, in a navy blouse, holding a transfer form, standing by a sealed lift, hopeful and resigned |
-| `qvt-charge-vie-associative` | a staff-life officer, in a sports club jacket, holding a small cup, polishing it on a shelf, cheerful and bored |
+| `qvt-charge-vie-associative` | a staff-life officer, in a sports club jacket, holding a small engraved trophy, polishing it on a shelf, cheerful and bored |
 | `qvt-directeur-qvt-ex` | a group wellbeing director, in a pale blue suit with gold trim, holding a bonus cheque, raising it at a town hall, smiling and detached |
 | `amelioration-charge-qualite` | a quality officer, in a light grey shirt with a lanyard, holding a tick-box form, ticking a box in a doorway, tired and polite |
 | `amelioration-auditeur-qualite` | a quality auditor, in a navy jacket over a shirt, holding an audit grid, crouching by a workbench, focused and suspicious |
@@ -158,7 +158,7 @@ critère 5), et la garde la refuse.
 | `rh-charge-sourcing` | a sourcing recruiter, in a dark polo with a headset, holding a phone, messaging a stranger from a lift, cheerful and unbothered |
 | `rh-chasseur-tetes` | a headhunter, in a sharp dark suit, holding a salary offer letter, sliding it across a café table, smug and polite |
 | `rh-directeur-talents` | a talent director, in a grey suit with a gold pin, holding a shortlist of names, reading it behind a glass wall, smug and detached |
-| `rh-gestionnaire-formation` | a training administrator, in a light cardigan, holding a training link, showing it to an empty chair, apologetic and tired |
+| `rh-gestionnaire-formation` | a training administrator, in a light cardigan, holding a laptop, showing a dead link to an empty chair, apologetic and tired |
 | `rh-responsable-formation` | a training manager, in a navy jacket with a lanyard, holding a licence invoice, opening it at a desk, grim and resigned |
 | `rh-drh-formation` | an HR director for training, in a charcoal suit, holding an expired certificate, pinning it to a board, tired and dry |
 | `rh-responsable-comp-ben` | a compensation manager, in a grey shirt with a tie, holding a health-insurance leaflet, comparing two columns, precise and doubtful |
@@ -168,7 +168,7 @@ critère 5), et la garde la refuse.
 | `rh-charge-diversite` | a diversity officer, in a soft blouse and cardigan, holding a bias workshop sheet, taping it to a meeting-room wall, hopeful and polite |
 | `rh-responsable-inclusion` | an inclusion manager, in a grey blazer over a blouse, holding an index chart, presenting it to a leadership row, calm and smug |
 | `rh-drh-diversite` | an HR director for diversity, in a pale suit, holding a new signage plan, standing by a closed door, tired and defiant |
-| `rh-charge-mobilite` | a mobility officer, in a company polo with a badge, holding a transfer letter, walking it to a sealed office, hopeful and resigned |
+| `rh-charge-mobilite` | a transfer officer, in a company polo with a badge, holding a sealed envelope, leaving it on an empty desk, hopeful and resigned |
 | `rh-gestionnaire-rh` | an HR administrator, in a beige cardigan, holding a personnel file, shelving it in an archive, placid and tired |
 | `rh-assistant-paie` | a payroll assistant, in a light shirt and tie, holding a payslip printout, checking a bank slip, worried and precise |
 | `rh-referent-handicap` | a disability officer, in a navy cardigan with a badge, holding a desk-assessment form, measuring a doorway, patient and tired |
@@ -180,7 +180,7 @@ critère 5), et la garde la refuse.
 | `atelier-joueur-de-flute` | a flute player, in a shirt with rolled sleeves, holding a flute, playing through a team meeting, unbothered |
 | `atelier-technicien-systeme` | a systems technician, in a grey polo, holding a power cable, rebooting a server rack, hopeful |
 | `atelier-responsable-process` | a process manager, in a suit jacket over overalls, holding a procedure binder, pointing at a flowchart, stern |
-| `atelier-opticien` | an optician, in a white lab coat, holding a lens up to the light, adjusting a mount with tweezers, focused and tired |
+| `atelier-opticien` | an optician, in a white lab coat, holding a screwdriver, adjusting a spectacle frame on a bench, focused and tired |
 | `atelier-rpo` | a production manager, in a blue jacket, holding meeting notes, reading a whiteboard, tired |
 | `atelier-rui` | a unit manager, in a dark jacket, holding a badge, looking at a distant factory, proud |
 | `atelier-regleur` | a setter, in a grey coat, holding a micrometer, adjusting a machine dial, precise and skeptical |
@@ -194,7 +194,7 @@ critère 5), et la garde la refuse.
 | `atelier-technicien-banc-essai` | a test-bench technician, in a navy overall, holding a tablet, checking a bench readout, smug |
 | `atelier-pointeur` | a measurer, in a grey overall, holding a precision gauge, measuring a part, doubtful |
 | `atelier-ordonnanceur` | a scheduler, in a cardigan, holding a marker, updating a planning board, overworked |
-| `atelier-responsable-pole` | a team leader, in a blazer, holding a lanyard, surveying a production floor, proud |
+| `atelier-responsable-pole` | a department manager, in a deep blue blazer, holding a headcount sheet, surveying a production floor, proud |
 | `atelier-cariste-salle-blanche` | a forklift driver, in a clean-room suit, holding a pallet list, steering through an airlock door, cheerful |
 | `atelier-planificateur-moyens-essai` | a test scheduler, in a cardigan, holding a wall calendar, marking a test bench, precise |
 | `atelier-gardien-usine` | a night watchman, in a dark uniform and a peaked cap, holding a torch, patrolling an empty yard, placid and watchful |
@@ -216,8 +216,8 @@ critère 5), et la garde la refuse.
 | `direction-directeur-programme` | a programme director, in a pale grey suit, holding a board pack, climbing a staircase two steps at a time, brisk and determined |
 | `direction-directeur-cabinet` | a cabinet director, in a black suit with a silk tie, holding a cabinet key, locking a private office, dry and smug |
 | `direction-directeur-strategie` | a strategy director, in a soft navy suit, holding a strategy deck, presenting a slide to a single chair, calm and imperious |
-| `direction-stagiaire-direction` | a direction intern, in an oversized blazer, holding a cold coffee cup, standing by a photocopier, sheepish and hopeful |
-| `direction-auditeur-direction` | a direction auditor, in a grey suit with a visitor badge, holding a sample folder, standing in an archive, precise and bored |
+| `direction-stagiaire-direction` | an executive-office intern, in an oversized blazer, holding a cold coffee cup, standing by a photocopier, sheepish and hopeful |
+| `direction-auditeur-direction` | an executive-office auditor, in a grey suit with a visitor badge, holding a sample folder, standing in an archive, precise and bored |
 | `direction-commissaire-comptes` | an external auditor, in a dark suit with a briefcase, holding an audit certificate, shaking hands with the finance director, grave and polite |
 | `syndicat-delegue-personnel` | a staff representative, in a corduroy jacket over a shirt, holding a stack of leaflets, handing them out at a gate, determined and tired |
 | `syndicat-representant-cse` | a works-council member, in a dark suit with a union badge, holding a meeting agenda, sitting at a long table, stern and tired |
@@ -265,7 +265,7 @@ critère 5), et la garde la refuse.
 | `sse-trousse-secours` | an open first-aid box with dusty bandages and an untouched register |
 | `amelioration-baie-test` | a test rack with blinking indicators and one loose screw |
 | `atelier-colle-cyanoacrylate` | a half-used tube of superglue welded to a workbench |
-| `sse-visite-medicale` | an abandoned doctor's chair and a clipboard already ticking apte |
+| `sse-visite-medicale` | a doctor's empty chair with a clipboard left open on the fit-for-work box |
 | `management-entretien-annuel` | a blank annual-review form and a pen still capped on a meeting table |
 | `qvt-yoga-du-rire` | a rolled laughing-yoga mat left alone in a meeting room |
 | `amelioration-reunion-de-suivi` | a whiteboard of action points that concern no product |

@@ -66,7 +66,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Approche discrète', cost: ['RH'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: "Il t'a repéré sur LinkedIn. Tu n'es pas en recherche."
+    flavor: 'Il t’a repéré sur un réseau professionnel. Tu n’es pas en recherche.'
   }),
   base({
     id: 'rh-chasseur-tetes',
@@ -277,7 +277,7 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Enquête satisfaction', cost: ['RH'], damage: 10, text: 'Le Planqué adverse répond à l’enquête de satisfaction. Les résultats sont confidentiels, même pour lui.' }],
-    flavor: "Il a fait l'enquête. Les résultats sont confidentiels."
+    flavor: 'Il a rempli le questionnaire de prévention. Personne n’a coché « risque ».'
   }),
   base({
     id: 'rh-charge-offboarding',
