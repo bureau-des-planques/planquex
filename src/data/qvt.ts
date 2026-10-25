@@ -366,7 +366,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Baromètre', cost: ['QVT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le baromètre progresse. Le taux de réponse, non.'
+    flavor: 'Le baromètre progresse. Le taux de réponse, non.',
+    art: 'qvt-charge-engagement.webp'
   }),
   base({
     id: 'qvt-responsable-engagement',
