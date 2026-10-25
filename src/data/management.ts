@@ -20,7 +20,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Objectif', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse reçoit un objectif de 20. Il sera revu à la hausse dès qu’il sera atteint.' }],
-    flavor: 'Il a un plan. Le plan est un post-it.'
+    flavor: 'Il a un plan. Le plan est un post-it.',
+    art: 'management-jeune-manager.webp'
   }),
   base({
     id: 'management-chef-de-projet',
