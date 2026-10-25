@@ -18,10 +18,15 @@
  *                                                   # navigateur ni réseau)
  */
 
-import { spawn, spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import process from 'node:process';
+import { preview } from 'vite';
+
+/** La racine du dépôt : `dist/` y est servi. */
+const RACINE = fileURLToPath(new URL('..', import.meta.url));
 
 /** Les écrans qui existent, et qu'un invité peut ouvrir. */
 export const ECRANS = ['/', '/collection', '/deck', '/battle', '/reglages'];
@@ -74,6 +79,28 @@ export function messageEchec(ecran, compte) {
   return `${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''}`;
 }
 
+/**
+ * Lance `impeccable detect <url>` et rend sa sortie (stdout + stderr). Asynchrone, et borné à
+ * 120 s : un détecteur bloqué ne doit pas bloquer la CI sans fin.
+ */
+function lancerDetecteur(url) {
+  return new Promise((resoudre) => {
+    const enfant = spawn('npx', ['impeccable', 'detect', url], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let texte = '';
+    enfant.stdout.on('data', (morceau) => (texte += morceau));
+    enfant.stderr.on('data', (morceau) => (texte += morceau));
+    const minuteur = setTimeout(() => enfant.kill('SIGKILL'), 120_000);
+    enfant.on('close', () => {
+      clearTimeout(minuteur);
+      resoudre(texte);
+    });
+    enfant.on('error', (erreur) => {
+      clearTimeout(minuteur);
+      resoudre(String(erreur));
+    });
+  });
+}
+
 /** Attend que le serveur réponde, sans dormir à l'aveugle plus de ~20 s. */
 async function attendreServeur(url) {
   for (let essai = 0; essai < 40; essai += 1) {
@@ -105,14 +132,18 @@ async function principal(args) {
     return compte === 0 ? 0 : 1;
   }
 
-  if (!existsSync(join(process.cwd(), 'dist', 'index.html'))) {
+  if (!existsSync(join(RACINE, 'dist', 'index.html'))) {
     console.error('✖ dist/index.html absent : lance `npm run build` avant ce contrôle.');
     return 1;
   }
 
-  const serveur = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
-    stdio: 'ignore',
-    detached: false
+  // Le serveur est lancé **dans ce processus** (API `vite`, comme `scripts/capturer.mjs`) :
+  // `server.close()` libère le port à coup sûr. Un `npx vite preview` tué par son parent
+  // laissait son `vite` orphelin sur le port (constaté le 25/10/2026, pid 393608 sur 4179).
+  const serveur = await preview({
+    root: RACINE,
+    preview: { port: PORT, strictPort: true, host: '127.0.0.1' },
+    logLevel: 'error'
   });
 
   try {
@@ -124,8 +155,9 @@ async function principal(args) {
     const echecs = [];
     for (const ecran of ECRANS) {
       const url = `${ORIGINE}${ecran}`;
-      const sortie = spawnSync('npx', ['impeccable', 'detect', url], { encoding: 'utf8', timeout: 120_000 });
-      const texte = `${sortie.stdout ?? ''}${sortie.stderr ?? ''}`;
+      // Asynchrone : le serveur tourne dans ce même processus, et un `spawnSync` le figerait
+      // (le navigateur du détecteur ne recevrait plus rien → « Navigation timeout »).
+      const texte = await lancerDetecteur(url);
       const compte = verdict(texte);
       const permis = BASELINE[ecran];
       if (compte === null && permis === null) {
@@ -159,7 +191,7 @@ async function principal(args) {
   } finally {
     // Le serveur doit mourir **même** en cas d'échec : sinon le port reste pris, et le
     // prochain `npm run capturer` échoue pour une raison qui n'a rien à voir.
-    serveur.kill('SIGTERM');
+    await serveur.close();
   }
 }
 
