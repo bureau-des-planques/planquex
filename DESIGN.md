@@ -57,7 +57,7 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--warn` | `#e0a33e` | avertissement (deck de test, fin perdue) |
 | `--danger` | `#e06a4e` | erreur |
 
-### 1.5 Contraste (Vérifié le 20/10/2026)
+### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195)
 
 Ratios WCAG calculés sur les paires réelles du thème (formule de luminance relative
 WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
@@ -75,6 +75,58 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | Texte COMEX (`#1c1304`) sur `--gold` | 9.75 | AA |
 | Texte blanc sur le **haut** du bouton primaire (`--accent` à 80 % + `#04080f`) | 4.65 | AA |
 | Texte `#1c1304` sur le bouton or | 9.75 | AA |
+| **Pastille Surcharge** : `#d9b3ec` sur teinte 22 % de `#9b59b6`, au-dessus de `--bg-sunken` | 7.95 | AAA |
+| **Pastille Épuisement** : `#f0b492` sur teinte 22 % de `#e0783e`, au-dessus de `--bg-sunken` | 7.36 | AAA |
+| **Pastille Sieste** : `#c3cede` sur teinte 22 % de `#788caa`, au-dessus de `--bg-sunken` | 8.34 | AAA |
+| **Pastille Immobilisation** : `#a8d3ef` sur teinte 22 % de `#5aaadc`, au-dessus de `--bg-sunken` | 7.76 | AAA |
+| **Pastille Dérive** : `#e8cd93` sur teinte 22 % de `#c8a050`, au-dessus de `--bg-sunken` | 7.99 | AAA |
+| Encre `#241a0c` (`--scene-ink-parch`) sur parchemin `--scene-parch` (étiquette des piles) | 5.43 | AA |
+| Crème `--scene-chalk` sur encre `--scene-ink-parch` (compte des piles) | 13.87 | AAA |
+| Encre `#0b1220` sur vert `--scene-go` (« Fin du tour », état « à toi ») | 8.75 | AAA |
+| Encre `#0b1220` sur néon `--scene-neon` (repli de la direction, non appliqué en CSS) | 10.78 | AAA |
+| `--text` sur feutre `--scene-felt` | 14.11 | AAA |
+| `--text` sur feutre éclairci `--scene-felt-lit` (centre de la table) | 7.73 | AAA |
+| `--text` sur feutre vignetté `--scene-felt-deep` | 15.83 | AAA |
+| `--text` sur carte de scène `--scene-card` | 13.73 | AAA |
+| `--text-muted` sur feutre `--scene-felt` | 6.91 | AA |
+| `--text-muted` sur carte de scène `--scene-card` | 6.73 | AA |
+| **`--text-muted` sur feutre éclairci `--scene-felt-lit`** | **3.79** | **insuffisant** pour du texte courant — **écart consigné, non corrigé** (voir ci-dessous) |
+| `--accent` (pastilles de café) sur feutre `--scene-felt` | 5.12 | AA |
+| `--gold` sur feutre `--scene-felt` | 8.74 | AAA |
+| `--scene-danger` sur feutre (filet d'état, non-texte) | 4.36 | **filet seulement** : 3:1 ✓, texte ✗ |
+
+Méthode : luminance relative et ratio de la formule WCAG 2.1 calculés sur les valeurs hexadécimales
+de `src/styles.css` (bloc `.battle`, jetons `--scene-*` de #190) et de `:root` ; pastilles :
+la teinte à 22 % est composée sur `#0e1626` (`--bg-sunken`) avant le calcul. Les ratios ont été
+calculés par un script jeté après usage, à refaire de la même façon. Les deux fautes AA de la
+direction (`docs/DIRECTION-SCENE-COMBAT.md` §7 — crème sur parchemin à 2,41:1, blanc sur vert
+à ≈2,1:1) sont **inversées** ici : encre sombre sur parchemin, encre sombre sur vert ou néon.
+
+**Écart consigné** : `--text-muted` sur `--scene-felt-lit` tombe à **3,79:1** (sous 4,5:1). Le
+feutre est éclairci **au centre** de la table (dégradé radial de `.board`), donc un texte atténué
+posé au centre échoue. Aucune couleur n'est changée ici (hors périmètre de la doc) ; il faut
+soit placer ce texte hors du centre, soit monter son encre. À trancher avec #196.
+
+Le ratio d'une pastille de Condition est **plus haut** sur une carte de scène (`--scene-card`,
+6,4 à 7,3:1) que sur `--bg-sunken` : le calcul ci-dessus est le cas le plus sombre où elle tombe.
+
+**Plancher typographique du combat** : aucun texte porteur d'information (nom de Condition,
+étiquette, Stress, compte, nom de zone) ne descend sous **`--fs-xs` (0.7rem)**. Relevé dans le code
+(`src/styles.css`, règles de la scène, 25/10/2026) — **non vérifié à l'écran** (#187 modifie le
+plateau en cours ; la vérification visuelle est renvoyée à **#196**) :
+
+| Sélecteur | Taille | Information portée |
+|---|---:|---|
+| `.status-chip` (Conditions du Poste et de la légende) | `--fs-2xs` 0.62rem | nom de la Condition |
+| `.pile` (étiquette Deck / Rebut) | 0.62rem | étiquette de pile |
+| `.piste__nom` (nom du camp, piste d'Interventions) | 0.6rem | nom du camp |
+| `.board__poste .stat-label`, `.board__bench .stat-label` | 0.64rem | libellé de statistique |
+| `.hand__kind` | 0.64rem | nature de la carte (Collègue, Objet) |
+| `.hand__tag` | 0.62rem | étiquette de la carte |
+| `.bench__stress` | 0.68rem | Stress d'une carte au Banc |
+
+Ces sept règles sont **sous le plancher** : c'est un écart de code, pas une règle de doc. Elles sont
+consignées ici et restent à corriger (ou à justifier) en #196.
 
 Le bouton primaire a été **corrigé** le 23/10/2026 (#131) : son haut, éclairci au blanc, donnait
 **3.1:1** sous le texte blanc — le détecteur d'Impeccable **en navigateur** (`npx impeccable detect
@@ -83,7 +135,8 @@ dernier le dit lui-même : « findings are an undercount ». Les faction-boutons
 (`--accent` remplacé par la couleur de la faction) gardent le texte blanc : pour les factions claires,
 le ratio n'est pas garanti — **écart connu, laissé** (voir le rapport de #131).
 
-Aucune autre paire de texte n'est en dessous de AA. Les pips de café (or sur fond sombre)
+Hors l'écart consigné ci-dessus (`--text-muted` sur feutre éclairci), aucune paire de texte
+du tableau n'est en dessous de AA. Les pips de café (or sur fond sombre)
 restent décoratifs : l'information est aussi portée par le `title` et l'`aria-label`.
 
 ### 1.6 Échelles
