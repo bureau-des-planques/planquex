@@ -27,7 +27,7 @@
 |---|---|---|---|---|
 | `sse-medecin-travail` | SSE | médecin du travail, blouse, porte-bloc | `37109154` | `sse-medecin-travail.webp` |
 | `management-responsable-unite` | Management | responsable d'unité, porte-bloc, sourire en coin | `1323131255` | `management-responsable-unite.webp` |
-| `qvt-chief-happiness-officer` | QVT | chief happiness officer, ballons et autocollants | `1867736723` | `qvt-chief-happiness-officer.webp` |
+| `qvt-chief-happiness-officer` | QVT | chief happiness officer, ballons et autocollants | `753916529` | `qvt-chief-happiness-officer.webp` |
 | `amelioration-directeur-qualite` | Amélioration continue | directeur qualité, classeur de procédures | `1325355317` | `amelioration-directeur-qualite.webp` |
 | `rh-drh` | RH | DRH devant un organigramme | `245800676` | `rh-drh.webp` |
 | `atelier-chef-atelier` | Atelier | chef d'atelier, combinaison tachée, clé | `1491963894` | `atelier-chef-atelier.webp` |
@@ -179,3 +179,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-25 · `direction-directeur-fantome` · modèle `NARWHAL` · graine `1469060728` · `direction-directeur-fantome.webp`
 - 2026-10-26 · `atelier-rpo` · modèle `NARWHAL` · graine `2145855204` · `atelier-rpo.webp`
 - 2026-10-26 · `interim-interimaire-legendaire-ex` · modèle `NARWHAL` · graine `625426660` · `interim-interimaire-legendaire-ex.webp`
+- 2026-10-26 · `qvt-chief-happiness-officer` · modèle `NARWHAL` · graine `753916529` · `qvt-chief-happiness-officer.webp`
