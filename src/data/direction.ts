@@ -263,7 +263,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Certification', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Rapport d\'anomalie', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Il a certifié les comptes. L\'anomalie est dans le tiroir.'
+    flavor: 'Il a certifié les comptes. L\'anomalie est dans le tiroir.',
+    art: 'direction-commissaire-comptes.webp'
   })
 ];
 
