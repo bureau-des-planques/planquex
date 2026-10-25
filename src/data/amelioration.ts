@@ -182,7 +182,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Kaizen', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le progrès continue. Le poste, non.'
+    flavor: 'Le progrès continue. Le poste, non.',
+    art: 'amelioration-charge-amelioration.webp'
   }),
   base({
     id: 'amelioration-charge-process',
