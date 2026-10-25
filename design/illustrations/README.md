@@ -233,3 +233,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `qvt-charge-engagement` · modèle `NARWHAL` · graine `586325096` · `qvt-charge-engagement.webp`
 - 2026-10-26 · `qvt-charge-evenements-internes` · modèle `NARWHAL` · graine `1004930846` · `qvt-charge-evenements-internes.webp`
 - 2026-10-26 · `qvt-charge-formation` · modèle `NARWHAL` · graine `0` · `qvt-charge-formation.webp`
+- 2026-10-26 · `qvt-charge-integration` · modèle `NARWHAL` · graine `1346776538` · `qvt-charge-integration.webp`

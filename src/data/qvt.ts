@@ -266,7 +266,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Livret d\'accueil', cost: ['QVT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le livret d\'accueil fait 80 pages. La journée d\'intégration dure une heure.'
+    flavor: 'Le livret d\'accueil fait 80 pages. La journée d\'intégration dure une heure.',
+    art: 'qvt-charge-integration.webp'
   }),
   base({
     id: 'qvt-responsable-integration',
