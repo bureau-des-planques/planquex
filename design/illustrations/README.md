@@ -181,3 +181,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `interim-interimaire-legendaire-ex` · modèle `NARWHAL` · graine `625426660` · `interim-interimaire-legendaire-ex.webp`
 - 2026-10-26 · `qvt-chief-happiness-officer` · modèle `NARWHAL` · graine `753916529` · `qvt-chief-happiness-officer.webp`
 - 2026-10-26 · `atelier-monteur-optique` · modèle `NARWHAL` · graine `372913666` · `atelier-monteur-optique.webp`
+- 2026-10-26 · `direction-chef-projet-fantome` · modèle `NARWHAL` · graine `970851615` · `direction-chef-projet-fantome.webp`
