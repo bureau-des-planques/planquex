@@ -430,7 +430,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Pot de départ', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse est convié à un pot de départ. La salle est réservée ; le budget attend toujours sa validation.' }],
-    flavor: 'La salle est réservée. Le budget est en attente de validation.'
+    flavor: 'La salle est réservée. Le budget est en attente de validation.',
+    art: 'qvt-charge-evenements-internes.webp'
   }),
   base({
     id: 'qvt-charge-mobilite-interne',
