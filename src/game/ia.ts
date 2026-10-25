@@ -129,16 +129,25 @@ export function nextAction(state: BattleState, level: AiLevel = 1): BattleAction
  * quand la partie est finie, ou quand c'est au joueur de choisir sa relève. C'est le
  * point d'entrée de l'écran de combat.
  *
- * @param level 1 (défaut) : la Direction scriptée — le comportement de l'écran ne
- * change pas. 2 : la Direction qui évalue (mesurée par le simulateur, ticket #93).
+ * @param level 2 (défaut, D-084) : la recherche à deux coups, repli glouton si son budget
+ * est épuisé. 1 : la Direction scriptée, demandable explicitement.
  */
-export function nextAiAction(state: BattleState, level: AiLevel = 1): BattleAction | null {
+export function nextAiAction(state: BattleState, level: AiLevel = 2): BattleAction | null {
   if (state.phase === 'ended') return null;
   if (state.pendingPromotion) {
-    return state.pendingPromotion === 'ai' ? nextAction(state, level) : null;
+    return state.pendingPromotion === 'ai' ? decideAiAction(state, level) : null;
   }
   if (state.current !== 'ai') return null;
-  return nextAction(state, level);
+  return decideAiAction(state, level);
+}
+
+/**
+ * Le niveau 2 de l'écran est la recherche à deux coups (D-084), dont le budget borné (#172)
+ * se replie sur le glouton. `nextAction(…, 2)` reste le glouton : le simulateur et les
+ * mesures de l'historique l'emploient tel quel.
+ */
+function decideAiAction(state: BattleState, level: AiLevel): BattleAction | null {
+  return level === 2 ? nextSearchAction(state) : nextAction(state, level);
 }
 
 /** L'ordre de préférence des actions non terminales de la politique. */
@@ -487,10 +496,9 @@ function bestEvaluatedAction(
 /**
  * **Recherche à deux coups au niveau du tour** — c'est **le niveau 2 acté** (D-084, 23/10/2026).
  * Elle gagne 60,4 % contre le niveau 1 sur des graines neuves, contre 44 % pour le glouton.
- * **Elle n'est pas encore branchée** : le défaut de `nextAiAction` reste le niveau 1 tant que
- * **#172** n'a pas ramené les pics de temps sous le budget (138 ms mesurés, 100 ms visés).
- * Le glouton (`nextAction(state, 2)`) reste le **repli**. Seul `scripts/pesage.mjs --direction
- * recherche` l'emploie aujourd'hui, pour la mesurer dans le même harnais.
+ * **Elle est branchée** : `nextAiAction` la prend par défaut depuis que **#172** a borné ses
+ * pics de temps (budget de nœuds et échéance). Le glouton (`nextAction(state, 2)`) reste le
+ * **repli** interne et la politique du simulateur.
  *
  * **Pourquoi « au niveau du tour »** : une Pression, une fin de tour ou une relève ne
  * laissent pas la main à l'adversaire à chaque action ; un coup de la Direction n'est

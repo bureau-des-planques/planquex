@@ -438,7 +438,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
         }
       }
       if (state.phase === 'ended') break;
-      const next: BattleAction = nextAiAction(state) ?? legal[0];
+      const next: BattleAction = nextAiAction(state, 1) ?? legal[0];
       const applied = applyAction(state, next);
       if (applied === state) break;
       state = applied;
