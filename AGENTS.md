@@ -12,7 +12,7 @@
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
 5. Ne pas copier le contenu, les règles, les assets ou les pourcentages des **versions abandonnées** (§9).
 6. Ne pas ajouter de mécanique maison au mode standard. La seule exception actée est le mot-clé **« Changement de priorité »** (D-004).
-7. Ne pas ajouter de dépendance sans nécessité démontrée et sans le signaler. **Dépendances signalées** : `@supabase/supabase-js` (runtime — le client du mur, chargé à la demande) et `@electric-sql/pglite` (**devDependency** — les tests du mur jouent un PostgreSQL réel en WASM, RLS comprise, parce que la machine n'a ni Docker ni CLI Supabase ; #135) et `impeccable` (**devDependency**, version **exacte** — le détecteur d'UI, qui doit tourner sur le binaire installé et **sans réseau**, #146) et les **outils de test d'écran** (**devDependencies** — `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@types/jsdom` : les cinq écrans se **rendent** dans un test, #145).
+7. Ne pas ajouter de dépendance sans nécessité démontrée et sans le signaler. **Dépendances signalées** : `@supabase/supabase-js` (runtime — le client du mur, chargé à la demande) et `@electric-sql/pglite` (**devDependency** — les tests du mur jouent un PostgreSQL réel en WASM, RLS comprise, parce que la machine n'a ni Docker ni CLI Supabase ; #135) et `impeccable` (**devDependency**, version **exacte** — le détecteur d'UI, qui doit tourner sur le binaire installé et **sans réseau**, #146) et les **outils de test d'écran** (**devDependencies** — `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@types/jsdom` : les cinq écrans se **rendent** dans un test, #145) et `pg` (**devDependency** — le client Postgres du **poste de pilotage local** (`tools/admin/`, #184) : il parle au pooler et **ne part jamais** dans le bundle Vite).
 8. Après une modification : lancer au minimum `npm run check` et les tests concernés ; si le build est cassé, le dire explicitement.
 
 ## 2. Sources de vérité
@@ -218,9 +218,12 @@ planquex/
 ├── components.json   config shadcn/ui (alias `@/`, CSS `src/styles.css` ; D-035)
 ├── vercel.json       réécriture SPA de l'hébergement (D-053) : sans elle, une visite directe sur `/collection` répond `404` (les anciennes adresses redirigent, D-075)
 ├── scripts/          status.mjs, simulate.mjs, capturer.mjs, etapes-infra-tcg.sh, finir-renommage-planquex.sh, illustration-vague.sh (+ leurs tests)
+├── supabase/         migrations/ (0001 à 0006, rejouées par pglite.ts), admin/roles.sql (le rôle `lecteur`, hors migrations), les gardes *.test.ts
+├── tools/            admin/ — le poste de pilotage local (hors application, hors bundle) : serveur, page statique, garde admin.test.ts
 └── docs/
 ```
 
+- **Poste de pilotage local (`tools/admin/`, D-091, #184)** : un serveur `node:http` sur `127.0.0.1` (`npm run admin`), **hors de l'application et hors du bundle** — il n'importe rien de `src/` et `src/` ne l'importe pas. Il parle à la base par **deux rôles** (`postgres` pour les gestes, `lecteur` — `select` seul — pour le SQL libre en lecture), tient un **registre `admin.migrations` hors du schéma du jeu**, et son client (`pg`, devDependency) ne part **jamais** dans le bundle. Sa garde (`admin.test.ts`) n'atteint que l'API HTTP, sur un `pglite` injecté, sans réseau.
 - **TypeScript strict**. Alias `@/` → `./src`, déclaré dans `tsconfig.json` et `vite.config.ts`.
 - **UI en français**, identifiants de code en anglais. Ne pas dupliquer les textes de cartes hors de `src/data`.
 - **Moteur** : code pur autant que possible, sans React ni DOM. `applyAction(state, action)` et fonctions de transition ; cloner avec `structuredClone`.
