@@ -176,7 +176,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Négociation', cost: ['MANAGEMENT', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse négocie une remise. Le client en négocie une autre, et gagne.' }],
-    flavor: 'Il a négocié une remise. Le client en a négocié une autre.'
+    flavor: 'Il a négocié une remise. Le client en a négocié une autre.',
+    art: 'management-responsable-commercial.webp'
   }),
   base({
     id: 'management-chef-service',
