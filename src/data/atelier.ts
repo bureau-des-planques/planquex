@@ -89,7 +89,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Plan d’unité', cost: ['ATELIER', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse reçoit le plan de l’unité. L’unité n’a pas été consultée.' },
       { name: 'Visite de l’unité', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Responsable de l’unité. L’unité ne l’a jamais croisé.'
+    flavor: 'Responsable de l’unité. L’unité ne l’a jamais croisé.',
+    art: 'atelier-rui.webp'
   }),
 
   // Ligne 3 : Régleur → RPI → Responsable flux
