@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
@@ -1145,21 +1146,42 @@ export function Battle() {
             {mySide.hand.length === 0 ? (
               <p className="muted">Main vide.</p>
             ) : (
-              <ul className="hand">
-                {mySide.hand.map((card) => {
+              // **L'éventail** (#200, SPEC-COMBAT-UI §6.8 R1) : chaque carte est le gabarit (`CardView`),
+              // inclinée et chevauchée, rognée par le conteneur `.hand`. Le **bouton** est posé par-dessus
+              // la carte : il porte le geste, `aria-pressed` et le nom lu par un lecteur d'écran.
+              <ul className="hand" style={{ '--n': mySide.hand.length } as CSSProperties}>
+                {mySide.hand.map((card, index) => {
                   const definition = getCard(card.cardId);
                   const isSelected = selected?.uid === card.uid;
                   const jouable = handActions.some((action) => 'uid' in action && action.uid === card.uid);
+                  // L'éventail se déploie autour du centre : les cartes du bord s'inclinent et s'abaissent.
+                  const decalage = index - (mySide.hand.length - 1) / 2;
+                  const etat = `${isSelected ? ' is-selected' : ''}${jouable ? ' is-playable' : ''}`;
                   return (
-                    <li key={card.uid}>
+                    <li
+                      key={card.uid}
+                      className={`hand__carte${etat}`}
+                      style={
+                        {
+                          '--rot': `${decalage * 3}deg`,
+                          '--dec': `${decalage * decalage * 1.5}px`
+                        } as CSSProperties
+                      }
+                    >
+                      {definition && (
+                        <div className="hand__visuel" aria-hidden>
+                          <CardView card={definition} figee plateau compact />
+                        </div>
+                      )}
                       <button
                         type="button"
-                        className={`hand__card${isSelected ? ' is-selected' : ''}${jouable ? ' is-playable' : ''}`}
+                        className={`hand__card${etat}`}
                         aria-pressed={isSelected}
                         onClick={() => setSelectedUid(isSelected ? null : card.uid)}
                       >
-                        <strong className="hand__name">{cardName(card.cardId)}</strong>
-                        <span className="hand__meta">
+                        {/* Le nom et l'état, lus à voix haute : la carte visible est `aria-hidden`. */}
+                        <span className="hand__name sr-only">{cardName(card.cardId)}</span>
+                        <span className="hand__meta sr-only">
                           <span className="hand__kind">{kindLabel(definition)}</span>
                           {jouable && <span className="hand__tag">Jouable</span>}
                         </span>

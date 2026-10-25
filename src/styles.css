@@ -1036,7 +1036,9 @@ h2 {
   letter-spacing: 0.02em;
   line-height: 1.12;
   -webkit-line-clamp: 3;
-  overflow-wrap: anywhere;
+  /* #200 : la coupure se fait **sur les espaces** (et à la césure de la langue, `hyphens: auto` hérité
+     de `.card__name`). `anywhere` coupait « TRAVAIL » au milieu du mot : c'est ce qui donnait « TRA-VAIL ». */
+  overflow-wrap: break-word;
 }
 
 /* Le Seuil sort de la ligne du nom : sur 61 ou 92 px, la pastille prenait la moitié de la ligne et le
@@ -2640,52 +2642,95 @@ h2 {
   border: 2px solid var(--scene-danger);
 }
 
-/* ---------- Main du joueur (ticket #58, #169) ---------- */
+/* ---------- Main du joueur : l'éventail (#200, SPEC-COMBAT-UI §6.8 R1) ---------- */
 
-/* La main est une **bande** : cinq cartes tiennent côte à côte, la dixième se trouve en
-   la faisant glisser. Une carte est un bouton — on la touche, puis on dit où elle va. */
+/* La main est un **éventail** de cartes du gabarit (`CardView`), inclinées et chevauchées. Elle est
+   **rognée par son conteneur** : `.hand` a une hauteur fixe (72 px, celle de l'ancienne bande) et
+   `overflow: hidden`, donc le pied des cartes sort de la fenêtre **dans** la main, jamais sous la
+   barre de navigation (`npm run capturer` le mesure). Le haut (`padding-top`) garde la place du
+   soulèvement de la carte choisie. Le **pas** entre deux cartes se réduit quand la main grandit,
+   pour que dix cartes tiennent dans la largeur d'un téléphone. */
 .hand {
+  --carte-w: 4rem;
+  /* Le pas : deux cartes se chevauchent d'au plus 2,6 rem, et moins quand il faut tenir dans la largeur. */
+  --pas: min(2.6rem, calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
+  align-items: flex-start;
   display: flex;
-  gap: 0.45rem;
+  height: 4.5rem;
+  justify-content: center;
   list-style: none;
   margin: 0;
-  overflow-x: auto;
-  padding: 0.1rem 0.15rem 0.1rem;
-  scroll-snap-type: x proximity;
+  overflow: hidden;
+  padding: 0.6rem 0.4rem 0;
+  position: relative;
 }
 
+/* Une carte de la main : le gabarit à 64 px (la carte du Poste fait 84 px, R4), incliné autour d'un
+   pivot sous la main, et rogné par le haut de `.hand`. `--rot` et `--dec` viennent de l'écran. */
 .hand > li {
-  flex: 0 0 7.4rem;
-  scroll-snap-align: start;
+  flex: 0 0 var(--carte-w);
+  height: calc(var(--carte-w) * 88 / 63);
+  position: relative;
+  transform: translateY(var(--dec, 0)) rotate(var(--rot, 0deg));
+  transform-origin: 50% 240%;
+  transition: transform 160ms ease;
 }
 
-.hand__card {
-  align-items: flex-start;
-  background: var(--bg-raised);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  font: inherit;
-  gap: 0.2rem;
-  height: 100%;
-  min-height: 4.2rem;
-  padding: 0.4rem 0.55rem;
-  text-align: left;
+.hand > li + li {
+  margin-left: calc(var(--pas) - var(--carte-w));
+}
+
+/* Au survol, au focus ou une fois choisie, la carte se redresse et passe devant ses voisines. */
+.hand > li:is(:hover, :focus-within, .is-selected) {
+  transform: translateY(-0.5rem) rotate(0deg);
+  z-index: 1;
+}
+
+/* Le gabarit ne reçoit aucun clic : c'est le bouton posé par-dessus qui le reçoit. */
+.hand__visuel {
+  pointer-events: none;
   width: 100%;
 }
 
-.hand__card.is-playable {
-  border-color: var(--line-strong);
+/* Le bouton couvre la carte. Il est transparent : la carte se lit, le bouton agit. */
+.hand__card {
+  background: none;
+  border: 0;
+  border-radius: 10px;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  height: 100%;
+  inset: 0;
+  padding: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
 }
 
-/* La carte choisie : bordure accentuée et halo, comme `.card--selected`. */
-.hand__card.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
-  transform: translateY(-3px);
+.hand__card:focus-visible {
+  outline: 3px solid var(--scene-neon-core);
+  outline-offset: 2px;
+}
+
+/* Une carte jouable porte un **filet** néon ; l'état choisi, un filet plus épais. La forme du filet
+   dit l'état, la couleur seule ne le dit pas : le texte « Jouable » reste dans le nom accessible. */
+.hand__carte.is-playable .hand__visuel .card {
+  outline: 2px solid var(--scene-neon);
+  outline-offset: 1px;
+}
+
+.hand__carte.is-selected .hand__visuel .card {
+  outline: 3px solid var(--scene-neon-core);
+  outline-offset: 2px;
+}
+
+/* Sous « Mouvement réduit », la carte choisie ne se soulève pas : elle reste à sa place, et c'est son
+   filet qui la désigne. L'inclinaison de l'éventail n'est pas un mouvement, elle reste. */
+@media (prefers-reduced-motion: reduce) {
+  .hand > li:is(:hover, :focus-within, .is-selected) {
+    transform: rotate(var(--rot, 0deg));
+  }
 }
 
 .hand__name {

@@ -989,3 +989,41 @@ describe('Battle — la scène : la piste d’Interventions (#190)', () => {
     }
   });
 });
+
+describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-COMBAT-UI §6.8 R1)', () => {
+  const css = () => readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+
+  it('chaque carte de la main est le gabarit, et reste un bouton qui porte le geste', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const boutons = Array.from(container.querySelectorAll<HTMLElement>('.hand button.hand__card'));
+    expect(boutons.length).toBeGreaterThan(0);
+    // Une carte visible par bouton : le gabarit (`CardView`), masqué aux lecteurs d'écran, le bouton lu.
+    expect(container.querySelectorAll('.hand__visuel .card')).toHaveLength(boutons.length);
+    expect(container.querySelector('.hand__visuel')).toHaveAttribute('aria-hidden', 'true');
+    for (const bouton of boutons) {
+      expect(bouton).toHaveAttribute('aria-pressed');
+      expect(bouton.querySelector('.hand__name')?.textContent ?? '').not.toBe('');
+    }
+  });
+
+  it('la main est rognée par son conteneur, pas par l’écran : hauteur fixe et overflow caché', () => {
+    const regle = css().match(/\n\.hand \{([^}]*)\}/)?.[1] ?? '';
+    expect(regle).toMatch(/overflow:\s*hidden/);
+    expect(regle).toMatch(/height:\s*4\.5rem/);
+  });
+
+  it('la carte du Poste reste plus large qu’une carte de la main (hiérarchie, R4)', () => {
+    const rem = (nom: string) => {
+      const valeur = css().match(new RegExp(`${nom}:\\s*([\\d.]+)rem`))?.[1];
+      return valeur ? Number(valeur) : Number.NaN;
+    };
+    // Le Poste (`--poste-w`) domine : une carte de main plus large que lui inverserait la hiérarchie.
+    expect(rem('--poste-w')).toBeGreaterThan(rem('--carte-w'));
+  });
+
+  it('le nom d’une carte du plateau ne se coupe plus n’importe où : pas de `overflow-wrap: anywhere`', () => {
+    const regle = css().match(/\n\.card--plateau \.card__name \{([^}]*)\}/)?.[1] ?? '';
+    expect(regle).not.toMatch(/overflow-wrap:\s*anywhere/);
+  });
+});
