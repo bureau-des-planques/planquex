@@ -1,4 +1,4 @@
-# L'écran de combat — le lot de preuve « avant » (#194, D-093)
+# L'écran de combat — le lot de preuve, avant et après (#194 puis #204, D-093)
 
 Lot du **25/10/2026**, ouvert par le ticket **#194** (`docs/SPEC-COMBAT-UI.md` T1) **avant** la
 refonte de l'écran de combat (D-093). Un lot **ne se remplace pas** : la refonte ouvrira un
@@ -7,8 +7,28 @@ d'être nommé. La version de l'application n'est pas recopiée ici : elle se li
 `package.json` (`version`, `stage`) et s'affiche par `APP_LABEL` dans Réglages
 (`docs/VERSIONS.md`).
 
-**Ce ticket ne change aucun pixel.** Il fige l'état **avant** et étend la garde de hauteur de
-`npm run capturer` pour qu'elle serve aussi à mesurer l'**après**.
+**#194 ne change aucun pixel.** Il fige l'état **avant** et étend la garde de hauteur de
+`npm run capturer` pour qu'elle serve aussi à mesurer l'**après**. **#204** ajoute cet après,
+une fois la refonte close.
+
+## L'après (25/10/2026, #204)
+
+| Fichier | Commande | Taille |
+|---|---|---|
+| `apres/420-combat.png` | `npm run build` puis `npm run capturer` ; copie de `captures/combat.png` | 420 × 900 |
+| `apres/420-combat-detaille.png` | même build, script ponctuel Playwright : store amorcé avec `tutorielVu`, `pasAPasCombatVu` et `combatDetaille: true` (le mode `détaillé` de #189) | 420 × 900 |
+
+**Cinq différences, observables en comparant `avant/` et `apres/` :**
+
+1. **Le plateau montre des cartes** — illustration, nom, plaque de Seuil, barre de Stress — là où
+   `avant/` n'avait que des noms en gras et « 0/60 de Stress ».
+2. **La main est un éventail** de cartes rognées par son conteneur, au lieu d'une bande de boutons
+   texte qui défilait.
+3. **Le score est une piste d'hexagones**, entre les deux camps ; les `★★☆` ont disparu — une
+   étoile est une rareté, pas un point.
+4. **Les piles Deck et Rebut** sont visibles dans chaque camp, avec leur compte.
+5. **La barre d'action collante** porte les Pressions, la ligne de journal et « Fin du tour » ;
+   le reste (Journal, Partie à deux, Règles, Abandonner, Nouveau combat) tient derrière un `⋯`.
 
 ## Comment elles ont été prises
 

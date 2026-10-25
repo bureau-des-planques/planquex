@@ -1048,12 +1048,11 @@ h2 {
 }
 
 /* La densité du combat (#189, SPEC-COMBAT-UI §4.3) : en `détaillé`, la carte du Poste remet
-   les annotations que `sobre` coupe — le nom des Pressions et leurs dégâts. Le chiffre du
-   Stress, lui, est posé à côté de la barre (`CardView`). Aucune de ces annotations ne porte
-   une décision : la barre, le nom et le Seuil restent dans les deux modes. */
-.card--plateau.card--annotations .card__attacks {
-  display: flex;
-}
+   les annotations que `sobre` coupe — le chiffre du Stress, le nom des Conditions, les types
+   de café. **Pas les Pressions** : à 88 px de large, deux rangées d'attaque cassaient la carte
+   (mesuré le 25/10 : le nom chevauchait la plaque de Seuil). Elles vivent dans la barre
+   d'action, avec leur coût, et dans l'inspecteur. Une annotation ne remplace jamais une
+   décision : le nom, le Seuil et la barre restent dans les deux modes. */
 
 .card__stress-chiffre {
   color: var(--text);
