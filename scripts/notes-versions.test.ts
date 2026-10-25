@@ -10,6 +10,7 @@ import {
   titreDe
 } from './notes-versions.mjs';
 import { NOTES_VERSIONS } from '@/data/versions';
+import { notesAffichees } from '@/data/notes-affichees';
 
 /**
  * **Le générateur des notes de version** (`npm run notes:versions`, D-090).
@@ -164,12 +165,28 @@ describe('notes-versions — le fichier commité', () => {
     expect(fichier).toBe(rendreFichier(NOTES_VERSIONS));
   });
 
-  it('tient la note écrite d’avance hors de l’historique affiché', () => {
-    const avance = NOTES_VERSIONS.filter((note) => note.brouillon);
-    expect(avance.map((note) => note.version)).toEqual(['0.1.7']);
-    // Elle est **dans** le fichier (elle attend sa release) : c'est le drapeau, et lui
-    // seul, qui la cache de l'historique de la page.
-    expect(NOTES_VERSIONS.some((note) => !note.brouillon && note.version === '0.1.7')).toBe(false);
+  it('tient une note écrite d’avance hors de l’historique, et montre celle de la version courante', () => {
+    // **Fixtures, pas le fichier** : le 25/10/2026, ce test affirmait que la 0.1.7 restait
+    // un brouillon ; le jour de sa publication il est devenu faux. Un contrôle de règle ne
+    // doit pas dépendre de l'état du fichier un jour donné.
+    const note = (version: string, brouillon?: boolean) => ({
+      version,
+      date: '2026-10-25',
+      titre: `Version ${version}`,
+      brouillon,
+      points: [{ texte: 'un point' }]
+    });
+    const fixtures = [note('0.1.8', true), note('0.1.7'), note('0.1.6')];
+
+    // Le brouillon de la version **courante** s'affiche en tête (le tag part avant la release).
+    expect(notesAffichees('0.1.8', fixtures).courante?.version).toBe('0.1.8');
+    // Il ne se glisse **pas** dans l'historique.
+    expect(notesAffichees('0.1.8', fixtures).precedentes.map((n) => n.version)).toEqual(['0.1.7', '0.1.6']);
+    // Un brouillon d'une version **à venir** ne s'affiche nulle part.
+    const avecFutur = [note('0.1.9', true), ...fixtures];
+    const vu = notesAffichees('0.1.7', avecFutur);
+    expect(vu.courante?.version).toBe('0.1.7');
+    expect(vu.precedentes.map((n) => n.version)).toEqual(['0.1.6']);
   });
 });
 

@@ -22,7 +22,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { APP_LABEL, APP_VERSION } from '@/version';
-import { NOTES_VERSIONS, noteDe, type NoteVersion } from '@/data/versions';
+import { notesAffichees, type NoteVersion } from '@/data/notes-affichees';
 
 /** La date se lit en français (« 21 octobre 2026 ») : `date` est un jour, pas un instant. */
 function dateLongue(jour: string): string {
@@ -57,12 +57,9 @@ function Points({ note }: { note: NoteVersion }) {
 export function Nouveautes() {
   // La note de la version sous les yeux : **publiée ou écrite d'avance**, les deux
   // comptent (le tag part avant la release GitHub — `docs/VERSIONS.md` §4).
-  const courante = noteDe(APP_VERSION);
+  const { courante, precedentes } = notesAffichees(APP_VERSION);
   // L'historique : les notes **publiées** des autres versions. Celle d'une version à
   // venir ne se montre pas — elle n'est pas sortie, et personne n'a à la lire ici.
-  const precedentes = NOTES_VERSIONS.filter(
-    (note) => !note.brouillon && note.version !== APP_VERSION
-  );
 
   return (
     <div className="page nouveautes">
