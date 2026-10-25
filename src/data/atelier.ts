@@ -102,7 +102,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Calage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est calé au millimètre. Le millimètre n’était pas étalonné.' }],
-    flavor: 'Il règle au millimètre. Le millimètre n’était pas étalonné.'
+    flavor: 'Il règle au millimètre. Le millimètre n’était pas étalonné.',
+    art: 'atelier-regleur.webp'
   }),
   base({
     id: 'atelier-rpi',
