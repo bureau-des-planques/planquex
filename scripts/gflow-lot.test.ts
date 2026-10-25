@@ -193,9 +193,11 @@ describe('gflow-lot.sh — la passe groupée', () => {
       expect(lignesJournal()).toContain('atelier-deux GEN-ECHEC');
       expect(lignesJournal()).toContain('atelier-trois GENERE graine=25');
 
-      // Tous les prompts sont partis en UNE seule invocation (une fenêtre).
+      // Tous les prompts sont partis en UNE seule invocation (une fenêtre),
+      // et sans pause anti-bot imposée par nous : gflow garde son défaut.
       const args = readFileSync(journal, 'utf8');
       expect(args.match(/^CALL$/gm)).toHaveLength(1);
+      expect(args).not.toContain('--jitter');
     },
     delai,
   );
@@ -260,6 +262,15 @@ describe('gflow-lot.sh — ce qui ne doit rien lancer', () => {
       expect(existsSync(join(sortie, 'images'))).toBe(false);
       // Les prompts, eux, sont bien construits (c'est le travail du wizard).
       expect(readFileSync(join(sortie, 'prompts.txt'), 'utf8')).toContain('PROMPT-atelier-un');
+    },
+    delai,
+  );
+
+  it(
+    'passe --jitter à gflow quand on le demande (et rien sinon)',
+    () => {
+      lancer(['--toutes', '--force', '--jitter', '0']);
+      expect(readFileSync(journal, 'utf8')).toMatch(/^ARG --jitter\nARG 0$/m);
     },
     delai,
   );
