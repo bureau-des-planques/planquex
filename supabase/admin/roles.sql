@@ -34,10 +34,14 @@ do $role_lecteur$ begin
   end if;
 end $role_lecteur$;
 
--- La lecture seule doit **voir tout** (le poste affiche les comptes, les post-its, les combats),
--- donc elle passe au-dessus de la RLS — mais sans aucun droit d'écriture : le `select` est le
--- seul privilège accordé. `login` est nécessaire à la connexion directe par le pooler.
-alter role lecteur bypassrls;
+-- `login` est nécessaire à la connexion directe par le pooler.
+--
+-- **Pas de `bypassrls`** : il exige un superuser, et le rôle `postgres` de Supabase n'en est
+-- pas un (`ERROR 42501: permission denied to alter role — Only superusers can alter privileged
+-- roles`, constaté le 25/10/2026). Les tests locaux ne pouvaient pas le voir : `pglite` est,
+-- lui, superuser. On obtient le même résultat sans privilège : une politique de **lecture
+-- seule, nommée pour `lecteur`**, sur chaque table (plus bas). Elle n'ouvre que le `select`,
+-- et elle ne touche pas aux politiques du jeu.
 alter role lecteur login;
 
 -- `usage` sur les deux schémas, puis `select` sur les tables déjà présentes, et le même `select`
@@ -53,3 +57,21 @@ grant select on all tables in schema admin  to lecteur;
 
 alter default privileges in schema public grant select on tables to lecteur;
 alter default privileges in schema admin  grant select on tables to lecteur;
+
+-- La lecture des **lignes** : la RLS s'applique à `lecteur` comme à quiconque, et aucune
+-- politique ne le nommait — il ne verrait donc **aucune ligne**. On lui en donne une par
+-- table existante, en lecture seule, et sans toucher aux politiques du jeu. `drop` puis
+-- `create` rend le fichier rejouable.
+do $policies_lecteur$
+declare
+  table_cible text;
+begin
+  foreach table_cible in array array['postits', 'votes', 'commentaires', 'combats', 'comptes']
+  loop
+    execute format('drop policy if exists "lecteur lit tout" on public.%I', table_cible);
+    execute format(
+      'create policy "lecteur lit tout" on public.%I for select to lecteur using (true)',
+      table_cible
+    );
+  end loop;
+end $policies_lecteur$;
