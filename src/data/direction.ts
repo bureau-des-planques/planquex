@@ -117,7 +117,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Restructuration', cost: ['DIRECTION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Plan social', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a annoncé la fusion. Les organigrammes sont déjà faits.'
+    flavor: 'Il a annoncé la fusion. Les organigrammes sont déjà faits.',
+    art: 'direction-directeur-general.webp'
   }),
 
   // Ligne 3 (2 stades) : Assistant direction → Chef de cabinet
