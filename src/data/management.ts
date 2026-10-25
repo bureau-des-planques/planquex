@@ -165,7 +165,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Jalon', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse doit valider un jalon qui n’existait pas la veille. Le planning sera refait après coup.' }],
-    flavor: 'Il a validé le jalon. Le jalon n’existait pas.'
+    flavor: 'Il a validé le jalon. Le jalon n’existait pas.',
+    art: 'management-responsable-projet.webp'
   }),
   base({
     id: 'management-responsable-commercial',
