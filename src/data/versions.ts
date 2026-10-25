@@ -60,6 +60,34 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.8',
+    date: '2026-10-25',
+    titre: 'Le mur se range, et les Chariots arrivent',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Le mur',
+        texte: 'Le mode de placement écrit la place en base : on glisse un post-it, tout le monde le voit au même endroit (#185).'
+      },
+      {
+        groupe: 'Le mur',
+        texte: 'Un post-it neuf se pose là où il cache le moins de texte : deux places tirées au hasard ne se recouvrent plus (#185).'
+      },
+      {
+        groupe: 'Le mur',
+        texte: 'L’administration range et retire n’importe quel post-it, à n’importe quel statut : un mur se désencombre et se nettoie (D-092, #186).'
+      },
+      {
+        groupe: 'Le Deck',
+        texte: 'Cinq Chariots proposés, chargés en un geste avec leurs types de café, quelle que soit ta Collection (#141).'
+      },
+      {
+        groupe: 'Le jeu',
+        texte: 'La Direction joue son niveau 2 : elle regarde un coup plus loin, et sa recherche est bornée (#172, D-084).'
+      }
+    ]
+  },
+  {
     version: '0.1.7',
     date: '2026-10-25',
     titre: 'Les comptes, et le mur qui écrit',
