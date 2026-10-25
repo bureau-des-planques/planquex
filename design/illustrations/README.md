@@ -201,3 +201,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `interim-interimaire` · modèle `NARWHAL` · graine `1226904695` · `interim-interimaire.webp`
 - 2026-10-26 · `interim-interimaire-confirme` · modèle `NARWHAL` · graine `2109671951` · `interim-interimaire-confirme.webp`
 - 2026-10-26 · `interim-responsable-interim` · modèle `NARWHAL` · graine `1333634933` · `interim-responsable-interim.webp`
+- 2026-10-26 · `management-animateur-equipe` · modèle `NARWHAL` · graine `8802758` · `management-animateur-equipe.webp`

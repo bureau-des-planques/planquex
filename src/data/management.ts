@@ -70,7 +70,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Point de suivi', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est convoqué à un point de suivi. Il durera deux heures et ne décidera rien.' }],
-    flavor: 'Il veut juste un point. Le point dure deux heures.'
+    flavor: 'Il veut juste un point. Le point dure deux heures.',
+    art: 'management-animateur-equipe.webp'
   }),
   base({
     id: 'management-chargee-clientele',
