@@ -31,7 +31,7 @@
 | `amelioration-directeur-qualite` | Amélioration continue | directeur qualité, classeur de procédures | `1325355317` | `amelioration-directeur-qualite.webp` |
 | `rh-drh` | RH | DRH devant un organigramme | `245800676` | `rh-drh.webp` |
 | `atelier-chef-atelier` | Atelier | chef d'atelier, combinaison tachée, clé | `1491963894` | `atelier-chef-atelier.webp` |
-| `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `1286126774` | `syndicat-secretaire-general.webp` |
+| `syndicat-secretaire-general` | Syndicat | secrétaire général, fanion et insigne | `0` | `syndicat-secretaire-general.webp` |
 | `interim-interimaire-legendaire-ex` | Intérim | intérimaire légendaire, badges empilés, tasse | `625426660` | `interim-interimaire-legendaire-ex.webp` |
 
 ## Reste à produire — les cartes de base sans illustration
@@ -188,3 +188,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `direction-commissaire-comptes` · modèle `NARWHAL` · graine `287771641` · `direction-commissaire-comptes.webp`
 - 2026-10-26 · `amelioration-responsable-audit` · modèle `NARWHAL` · graine `1345033703` · `amelioration-responsable-audit.webp`
 - 2026-10-26 · `atelier-cariste-salle-blanche` · modèle `NARWHAL` · graine `1941297743` · `atelier-cariste-salle-blanche.webp`
+- 2026-10-26 · `syndicat-secretaire-general` · modèle `NARWHAL` · graine `0` · `syndicat-secretaire-general.webp`
