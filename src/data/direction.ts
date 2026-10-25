@@ -248,7 +248,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Stage', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a fait le café. Le café était froid.'
+    flavor: 'Il a fait le café. Le café était froid.',
+    art: 'direction-stagiaire-direction.webp'
   }),
   base({
     id: 'direction-auditeur-direction',

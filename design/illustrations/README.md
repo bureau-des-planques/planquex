@@ -195,3 +195,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `direction-pdg-ex` · modèle `NARWHAL` · graine `2060482869` · `direction-pdg-ex.webp`
 - 2026-10-26 · `direction-reunion-qui-aurait-pu-etre-un-mail` · modèle `NARWHAL` · graine `517501058` · `direction-reunion-qui-aurait-pu-etre-un-mail.webp`
 - 2026-10-26 · `direction-secretaire-direction` · modèle `NARWHAL` · graine `515102296` · `direction-secretaire-direction.webp`
+- 2026-10-26 · `direction-stagiaire-direction` · modèle `NARWHAL` · graine `124366703` · `direction-stagiaire-direction.webp`
