@@ -37,7 +37,7 @@ if (!MIGRATION_COMBATS) throw new Error('supabase/migrations/0002_combats.sql in
 
 const DECKS = {
   playerDeck: ['sse-medecin-travail', 'management-responsable-unite'],
-  aiDeck: ['atelier-chef-atelier'],
+  aiDeck: ['atelier-responsable-process'],
 };
 const TYPES_CAFE = {
   playerCafeTypes: ['SSE'],

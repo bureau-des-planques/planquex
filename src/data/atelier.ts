@@ -4,171 +4,160 @@ import { planqueBase, secretVariant } from './planque';
 /**
  * Faction **Atelier** (`ATL`) — Combat, vivier **Atelier** (D-024, D-026).
  * Archétype : aggro / midrange, « gros dégâts, gros Seuil, dégâts au Banc, jeu direct »
- * (`CARD-SPEC.md` §3). Les intitulés sont des postes de terrain, les Pressions des gestes
- * et des outils, les Talents des manies de métier (D-027).
+ * (`CARD-SPEC.md` §3). Les intitulés sont des postes de l'atelier d'optronique ; les Pressions,
+ * des gestes et des outils ; les Talents, des manies de métier (D-027).
  */
 
 /** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
 const base = planqueBase('ATELIER');
 
 export const ATELIER_CARDS: PlanqueCard[] = [
-  // Ligne principale : Apprenti → Technicien de maintenance → Chef d’atelier
+  // Ligne 1 : Joueur de flûte → Technicien système → Responsable process
   base({
-    id: 'atelier-apprenti',
-    name: 'Apprenti',
+    id: 'atelier-joueur-de-flute',
+    name: 'Joueur de flûte',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Coup de clé', cost: ['ATELIER'], damage: 20, text: 'Un coup de clé sur le Planqué adverse. Le serrage, lui, est à reprendre.' }],
-    flavor: 'Il a serré dans le bon sens. Presque.',
-    art: 'atelier-apprenti.webp'
+    attacks: [{ name: 'Mélodie', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse entend une mélodie de réunion. Personne n’a demandé la suite.' }],
+    flavor: 'Il joue pendant la réunion de lancement. Personne ne l’a invité.'
   }),
   base({
-    id: 'atelier-technicien-maintenance',
-    evolvesFrom: 'atelier-apprenti',
-    name: 'Technicien de maintenance',
+    id: 'atelier-technicien-systeme',
+    evolvesFrom: 'atelier-joueur-de-flute',
+    name: 'Technicien système',
     stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    ability: { name: 'Dépannage', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
-    attacks: [{ name: 'Multimètre', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mesuré sous toutes les coutures. La valeur affichée change à chaque mesure.' }],
-    flavor: 'Il a réparé la machine. Elle marche moins bien.',
-    art: 'atelier-technicien-maintenance.webp'
+    ability: { name: 'Mise à jour', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
+    attacks: [{ name: 'Redémarrage à froid', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse redémarre à froid. Les données, elles, ne sont pas sauvegardées.' }],
+    flavor: 'Il redémarre le serveur. Pour voir.'
   }),
   base({
-    id: 'atelier-chef-atelier',
-    evolvesFrom: 'atelier-technicien-maintenance',
-    name: 'Chef d’atelier',
+    id: 'atelier-responsable-process',
+    evolvesFrom: 'atelier-technicien-systeme',
+    name: 'Responsable process d’atelier',
     stage: 'N+2',
     rarity: '3D',
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse subit une intervention de terrain. Aucune demande de travaux n’a été déposée.' },
-      { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Procédure', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse reçoit une procédure. Elle n’a pas été relue.' },
+      { name: 'Revue de process', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a un plan. Le plan est une clé de 12.',
-    art: 'atelier-chef-atelier.webp'
+    flavor: 'Il a une procédure pour tout. Aucune n’est à jour.'
   }),
 
-  // Ligne 2 : Électricien → Électromécanicien → Responsable maintenance
+  // Ligne 2 : Opticien → RPO → RUI
   base({
-    id: 'atelier-electricien',
-    name: 'Électricien',
+    id: 'atelier-opticien',
+    name: 'Opticien',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Dénudage', cost: ['ATELIER'], damage: 20, text: 'Le fil du Planqué adverse est mis à nu. Le schéma électrique restera dans le tiroir.' }],
-    flavor: 'Il a remis le courant. Le compteur tourne à l’envers.',
-    art: 'atelier-electricien.webp'
+    attacks: [{ name: 'Réglage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est réglé au tournevis. La mesure, elle, est faite sur tableur.' }],
+    flavor: 'Il règle la lunette à la main. La mesure est faite sur tableur.'
   }),
   base({
-    id: 'atelier-electromecanicien',
-    evolvesFrom: 'atelier-electricien',
-    name: 'Électromécanicien',
+    id: 'atelier-rpo',
+    evolvesFrom: 'atelier-opticien',
+    name: 'RPO',
     stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Bobinage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est rebobiné de force. Le bon de garantie est introuvable.' }],
-    flavor: 'Il a rebobiné le moteur. Il a rendu l’âme au premier essai.',
-    art: 'atelier-electromecanicien.webp'
+    attacks: [{ name: 'Relance', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est relancé pour un point d’avancement. Le point est reporté à la semaine suivante.' }],
+    flavor: 'Il pilote la production depuis une réunion. La production l’a oublié.'
   }),
   base({
-    id: 'atelier-responsable-maintenance',
-    evolvesFrom: 'atelier-electromecanicien',
-    name: 'Responsable maintenance',
+    id: 'atelier-rui',
+    evolvesFrom: 'atelier-rpo',
+    name: 'RUI',
     stage: 'N+2',
     rarity: '3D',
     hp: 150,
     retreat: 2,
     attacks: [
-      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est inscrit au planning de révision. La machine attend toujours son créneau.' },
-      { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Plan d’unité', cost: ['ATELIER', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse reçoit le plan de l’unité. L’unité n’a pas été consultée.' },
+      { name: 'Visite de l’unité', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il planifie la maintenance. La machine attend depuis mars.',
-    art: 'atelier-responsable-maintenance.webp'
+    flavor: 'Responsable de l’unité. L’unité ne l’a jamais croisé.'
   }),
 
-  // Ligne 3 : Plombier → Tuyauteur → Chef de chantier
+  // Ligne 3 : Régleur → RPI → Responsable flux
   base({
-    id: 'atelier-plombier',
-    name: 'Plombier',
+    id: 'atelier-regleur',
+    name: 'Régleur',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Soudure', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est soudé à son poste. Le chalumeau est en prêt depuis le printemps.' }],
-    flavor: 'Il a colmaté la fuite. Le plafond est tombé.',
-    art: 'atelier-plombier.webp'
+    attacks: [{ name: 'Calage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est calé au millimètre. Le millimètre n’était pas étalonné.' }],
+    flavor: 'Il règle au millimètre. Le millimètre n’était pas étalonné.'
   }),
   base({
-    id: 'atelier-tuyauteur',
-    evolvesFrom: 'atelier-plombier',
-    name: 'Tuyauteur',
+    id: 'atelier-rpi',
+    evolvesFrom: 'atelier-regleur',
+    name: 'RPI',
     stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Raccordement', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est raccordé de force au réseau. Le plan annonçait pourtant un mur plein.' }],
-    flavor: 'Il a tiré la ligne. Elle arrive dans le mur.',
-    art: 'atelier-tuyauteur.webp'
+    attacks: [{ name: 'Interface', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est branché sur l’interface commune. Personne n’a validé l’interface.' }],
+    flavor: 'Il a un sigle, une salle, et un ordre du jour pour la salle.'
   }),
   base({
-    id: 'atelier-chef-chantier',
-    evolvesFrom: 'atelier-tuyauteur',
-    name: 'Chef de chantier',
+    id: 'atelier-responsable-flux',
+    evolvesFrom: 'atelier-rpi',
+    name: 'Responsable flux d’atelier',
     stage: 'N+2',
     rarity: '3D',
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Coulage', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Une dalle de béton est coulée sur le Planqué adverse. Elle sera conforme aux plans à la prochaine révision.' },
-      { name: 'Levage', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Dispatch', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse est envoyé dans un autre flux. Le flux précédent, lui, est resté bloqué.' },
+      { name: 'Réorganisation', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress. Le flux est réorganisé, pas le retard.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a tenu les délais. Le chantier, lui, est en retard.',
-    art: 'atelier-chef-chantier.webp'
+    flavor: 'Il fait circuler les flux. Les flux, eux, ne circulent pas.'
   }),
 
-  // Ligne 4 : Ascensoriste → Dépanneur ascenseur (2 stades)
+  // Ligne 4 : Contrôleur vibration → Responsable qualité
   base({
-    id: 'atelier-ascensoriste',
-    name: 'Ascensoriste',
+    id: 'atelier-controleur-vibration',
+    name: 'Contrôleur vibration',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
     attacks: [
       {
-        name: 'Déblocage',
+        name: 'Essai sous vibration',
         cost: ['ATELIER'],
         damage: 10,
-        text: 'Échange ce Planqué avec un Planqué du Banc.',
+        text: 'Échange ce Planqué avec un Planqué du Banc. L’essai a été décalé au lundi.',
         effects: [{ kind: 'switchSelf' }]
       }
     ],
-    flavor: 'Il a débloqué la cabine. Elle est bloquée au troisième.',
-    art: 'atelier-ascensoriste.webp'
+    flavor: 'Il secoue la pièce. La validation attend l’essai du lundi.'
   }),
   base({
-    id: 'atelier-depanneur-ascenseur',
-    evolvesFrom: 'atelier-ascensoriste',
-    name: 'Dépanneur ascenseur',
+    id: 'atelier-responsable-qualite',
+    evolvesFrom: 'atelier-controleur-vibration',
+    name: 'Responsable qualité',
     stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 1,
     attacks: [
-      { name: 'Remise en service', cost: ['ATELIER', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }
+      { name: 'Non-conformité', cost: ['ATELIER', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué. La non-conformité, elle, reste ouverte.', effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
-    flavor: 'Il a changé le câble. L’ascenseur monte encore plus lentement.',
-    art: 'atelier-depanneur-ascenseur.webp'
+    flavor: 'Une non-conformité attend sa signature depuis le printemps.'
   }),
 
-  // Ligne 5 : Mécanicien → Mécanicien outilleur (2 stades)
+  // Ligne 5 : Mécanicien → Gestionnaire FOD
   base({
     id: 'atelier-mecanicien',
     name: 'Mécanicien',
@@ -181,132 +170,115 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     art: 'atelier-mecanicien.webp'
   }),
   base({
-    id: 'atelier-mecanicien-outilleur',
+    id: 'atelier-gestionnaire-fod',
     evolvesFrom: 'atelier-mecanicien',
-    name: 'Mécanicien outilleur',
+    name: 'Gestionnaire FOD',
     stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Usinage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est usiné à la cote. La cote vient d’être révisée.' }],
-    flavor: 'Il a refait la pièce. La pièce n’existe plus au catalogue.',
-    art: 'atelier-mecanicien-outilleur.webp'
+    attacks: [{ name: 'Ramassage', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est ramassé avec la vis qu’il a perdue. La vis, elle, est toujours introuvable.' }],
+    flavor: 'Il ramasse les vis perdues. Il ne retrouve jamais la sienne.'
   }),
 
-  // Ligne 6 : Soudeur → Soudeur TIG (2 stades)
+  // Ligne 6 : Monteur optique → Technicien de banc d'essai
   base({
-    id: 'atelier-soudeur',
-    name: 'Soudeur',
+    id: 'atelier-monteur-optique',
+    name: 'Monteur optique',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 70,
     retreat: 1,
-    attacks: [{ name: 'Arc électrique', cost: ['ATELIER'], damage: 20, text: 'Un arc électrique frappe le Planqué adverse. Le gant de soudeur n’en réchappera pas non plus.' }],
-    flavor: 'Il a soudé les deux fers. Il a soudé aussi son gant.',
-    art: 'atelier-soudeur.webp'
+    attacks: [{ name: 'Montage', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse est monté de travers. La lentille, elle, est à l’envers.' }],
+    flavor: 'Il a monté la lentille à l’endroit. Le miroir, lui, est à l’envers.'
   }),
   base({
-    id: 'atelier-soudeur-tig',
-    evolvesFrom: 'atelier-soudeur',
-    name: 'Soudeur TIG',
+    id: 'atelier-technicien-banc-essai',
+    evolvesFrom: 'atelier-monteur-optique',
+    name: 'Technicien de banc d’essai',
     stage: 'N+1',
     rarity: '3D',
     hp: 110,
     retreat: 2,
     attacks: [
-      { name: 'Soudure fine', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit une soudure invisible. Elle l’est aussi sur le rapport de contrôle.' },
+      { name: 'Test de banc', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse subit un test. Le test a été validé par son propre auteur.' },
       {
-        name: 'Contrôle radio',
+        name: 'Contrôle du banc',
         cost: ['ATELIER', 'INCOLORE', 'INCOLORE'],
         damage: 80,
-        text: 'Envoie 1 café du Planqué adverse au rebut.',
+        text: 'Envoie 1 café du Planqué adverse au rebut. Le contrôle a été fait ailleurs.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       }
     ],
-    flavor: 'Il a fait une soudure invisible. Le contrôle aussi.',
-    art: 'atelier-soudeur-tig.webp'
+    flavor: 'Il a validé le banc. Le banc a validé son propre test.'
   }),
 
-  // Ligne 7 : Chaudronnier → Chef de fabrication (2 stades)
+  // Ligne 7 : Pointeur → Ordonnanceur → Responsable de pôle
   base({
-    id: 'atelier-chaudronnier',
-    name: 'Chaudronnier',
+    id: 'atelier-pointeur',
+    name: 'Pointeur',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
     attacks: [
       {
-        name: 'Pliage',
+        name: 'Pointage',
         cost: ['ATELIER'],
         damage: 10,
-        text: 'Ce Planqué subit 10 de moins au prochain tour.',
+        text: 'Ce Planqué subit 10 de moins au prochain tour. La cote a été arrondie.',
         effects: [{ kind: 'reduceDamage', amount: 10 }]
       }
     ],
-    flavor: 'Il a plié la tôle au millimètre. Le plan, lui, était faux.',
-    art: 'atelier-chaudronnier.webp'
+    flavor: 'Il pointe la cote au micron. La cote, elle, a été arrondie en réunion.'
   }),
   base({
-    id: 'atelier-chef-fabrication',
-    evolvesFrom: 'atelier-chaudronnier',
-    name: 'Chef de fabrication',
+    id: 'atelier-ordonnanceur',
+    evolvesFrom: 'atelier-pointeur',
+    name: 'Ordonnanceur',
     stage: 'N+1',
     rarity: '2D',
     hp: 100,
     retreat: 2,
-    attacks: [{ name: 'Gabarit', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mis au gabarit. Le gabarit n’a jamais été mis à jour.' }],
-    flavor: 'Il a suivi le gabarit. Le gabarit ne suivait rien.',
-    art: 'atelier-chef-fabrication.webp'
+    attacks: [{ name: 'Planning', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est replanifié. Le planning avait déjà été replanifié.' }],
+    flavor: 'Il ordonne tout, sauf le planning.'
   }),
-
-  // Ligne 7 complétée en N+2 (vague 2, #86) : Chaudronnier → Chef de fabrication →
-  // Chef d’usine.
   base({
-    id: 'atelier-chef-usine',
-    evolvesFrom: 'atelier-chef-fabrication',
-    name: 'Chef d’usine',
+    id: 'atelier-responsable-pole',
+    evolvesFrom: 'atelier-ordonnanceur',
+    name: 'Responsable de pôle',
     stage: 'N+2',
     rarity: '3D',
     hp: 150,
     retreat: 3,
     attacks: [
-      { name: 'Ordre de fabrication', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Un ordre de fabrication tombe sur le Planqué adverse. Il est daté d’hier et déjà périmé.' },
-      {
-        name: 'Ligne de production',
-        cost: ['ATELIER', 'INCOLORE', 'INCOLORE'],
-        damage: 100,
-        text: 'Ce Planqué prend 20 de stress.',
-        effects: [{ kind: 'selfDamage', amount: 20 }]
-      }
+      { name: 'Objectif de pôle', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse reçoit un objectif de pôle. Le pôle compte trente personnes.' },
+      { name: 'Revue du pôle', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress. Le pôle est revu, les personnes non.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a mis les équipes en cadence. Le carnet de commandes, il ne l’a pas ouvert.',
-    art: 'atelier-chef-usine.webp'
+    flavor: 'Il dirige un pôle de trente personnes. Il les reconnaît à leur badge.'
   }),
 
-  // Ligne 8 : Cariste → Chef de quai (2 stades)
+  // Ligne 8 : Cariste de salle blanche → Planificateur des moyens d'essai
   base({
-    id: 'atelier-cariste',
-    name: 'Cariste',
+    id: 'atelier-cariste-salle-blanche',
+    name: 'Cariste de salle blanche',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
-    attacks: [{ name: 'Chariot élévateur', cost: ['ATELIER'], damage: 20, text: 'Les fourches soulèvent le Planqué adverse puis le reposent sans ménagement. Le bon de livraison n’a pas suivi.' }],
-    flavor: 'Il a empilé six palettes. La septième est tombée.',
-    art: 'atelier-cariste.webp'
+    attacks: [{ name: 'Sas', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse traverse le sas. Le sas a sonné, personne n’a répondu.' }],
+    flavor: 'Il a traversé la salle blanche avec des chaussures de chantier. Le sas a sonné.'
   }),
   base({
-    id: 'atelier-chef-quai',
-    evolvesFrom: 'atelier-cariste',
-    name: 'Chef de quai',
+    id: 'atelier-planificateur-moyens-essai',
+    evolvesFrom: 'atelier-cariste-salle-blanche',
+    name: 'Planificateur des moyens d’essai',
     stage: 'N+1',
     rarity: '2D',
     hp: 90,
     retreat: 1,
-    attacks: [{ name: 'Chargement', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est chargé à bord du camion. Le quai d’à côté attendait ce camion.' }],
-    flavor: 'Il a chargé le camion en avance. Ce n’était pas le bon camion.',
-    art: 'atelier-chef-quai.webp'
+    attacks: [{ name: 'Réservation', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est réservé pour lundi. Le créneau est pris depuis mars.' }],
+    flavor: 'Il a réservé le banc pour lundi. Le banc est réservé depuis mars.'
   }),
 
   // Entrants seuls (sans évolution)
@@ -334,15 +306,14 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     art: 'atelier-magasinier.webp'
   }),
   base({
-    id: 'atelier-stagiaire-atelier',
-    name: 'Stagiaire d’atelier',
+    id: 'atelier-assistant-rpo',
+    name: 'Assistant RPO',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 50,
     retreat: 1,
-    attacks: [{ name: 'Coup de main', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a tenu le tournevis. C’est déjà un stage.',
-    art: 'atelier-stagiaire-atelier.webp'
+    attacks: [{ name: 'Compte rendu', cost: ['ATELIER'], damage: 10, text: 'Pioche 1 carte. Le compte rendu part au RPO.', effects: [{ kind: 'draw', amount: 1 }] }],
+    flavor: 'Il assiste le RPO depuis trois ans. Personne ne sait lequel assiste l’autre.'
   }),
   base({
     id: 'atelier-agent-maintenance',
@@ -356,52 +327,48 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     art: 'atelier-agent-maintenance.webp'
   }),
 
-  // COMEX : Chef d’atelier ex
+  // COMEX (D-026) : le statut reste affiché ; le nom porte le jeu de mots (D-095).
   base({
-    id: 'atelier-chef-atelier-ex',
-    evolvesFrom: 'atelier-technicien-maintenance',
-    name: 'Chef d’atelier COMEX',
+    id: 'atelier-rpo-sans-rui-ex',
+    evolvesFrom: 'atelier-technicien-systeme',
+    name: 'RPO sans RUI',
     stage: 'N+2',
     rarity: '4D',
     hp: 180,
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Intervention', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse subit une intervention de terrain. Aucune demande de travaux n’a été déposée.' },
-      { name: 'Gros œuvre', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
+      { name: 'Procédure supprimée', cost: ['ATELIER', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse subit une procédure supprimée. La procédure, elle, a survécu.' },
+      { name: 'Décision seule', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress. La décision a été prise sans le RUI.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Une seule clé de 12.',
-    art: 'atelier-chef-atelier-ex.webp'
+    flavor: 'Deux Interventions. Il a supprimé le RUI. La procédure, elle, a survécu.'
   }),
-
-  // Second COMEX (vague 1, #66) : la ligne de maintenance, distincte de la signature.
   base({
-    id: 'atelier-responsable-maintenance-ex',
-    evolvesFrom: 'atelier-electromecanicien',
-    name: 'Responsable maintenance COMEX',
+    id: 'atelier-rui-non-toxique-ex',
+    evolvesFrom: 'atelier-rpo',
+    name: 'RUI non toxique',
     stage: 'N+2',
     rarity: '4D',
     hp: 190,
     retreat: 3,
     ex: true,
     attacks: [
-      { name: 'Plan de maintenance', cost: ['ATELIER', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est inscrit au planning de révision. La machine attend toujours son créneau.' },
-      { name: 'Révision générale', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
+      { name: 'Plan de l’unité', cost: ['ATELIER', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse reçoit le plan de l’unité. L’unité n’a pas été consultée.' },
+      { name: 'Bonne humeur', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 10 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 10 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. La machine est révisée. La demande de pièces, non.',
-    art: 'atelier-responsable-maintenance-ex.webp'
+    flavor: 'Deux Interventions. Il valide l’unité depuis le parking. Personne ne lui a dit qu’il était toxique.'
   })
 ];
 
 export const ATELIER_VARIANTS: Card[] = [
-  secretVariant(ATELIER_CARDS, 'atelier-technicien-maintenance', 'star', '⚒'),
-  secretVariant(ATELIER_CARDS, 'atelier-electromecanicien', 'star', '⌁'),
-  secretVariant(ATELIER_CARDS, 'atelier-depanneur-ascenseur', 'star', '✦'),
-  secretVariant(ATELIER_CARDS, 'atelier-tuyauteur', 'star', '◉'),
-  secretVariant(ATELIER_CARDS, 'atelier-chef-atelier', 'star3', '⚒'),
-  secretVariant(ATELIER_CARDS, 'atelier-responsable-maintenance', 'star2', '✦'),
-  secretVariant(ATELIER_CARDS, 'atelier-chef-chantier', 'star2', '⚒'),
-  secretVariant(ATELIER_CARDS, 'atelier-apprenti', 'star2', '◉')
+  secretVariant(ATELIER_CARDS, 'atelier-technicien-systeme', 'star', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-rpo', 'star', '⌁'),
+  secretVariant(ATELIER_CARDS, 'atelier-responsable-qualite', 'star', '✦'),
+  secretVariant(ATELIER_CARDS, 'atelier-rpi', 'star', '◉'),
+  secretVariant(ATELIER_CARDS, 'atelier-responsable-process', 'star3', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-rui', 'star2', '✦'),
+  secretVariant(ATELIER_CARDS, 'atelier-responsable-flux', 'star2', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-joueur-de-flute', 'star2', '◉')
 ];
 
 export const ALL_ATELIER_CARDS: Card[] = [...ATELIER_CARDS, ...ATELIER_VARIANTS];

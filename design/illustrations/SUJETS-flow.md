@@ -177,32 +177,32 @@ critère 5), et la garde la refuse.
 | `rh-charge-sirh` | an HRIS officer, in a grey hoodie and trousers, holding a hard drive, waiting for an export bar, tired and focused |
 | `rh-drh-ex` | a senior HR director, in a midnight suit with gold trim, holding a single dossier, standing in an empty office, imperious and dry |
 | `rh-directeur-talents-ex` | a group talent director, in a black suit with gold cufflinks, holding a signed contract, watching the signatory walk away, smug and weary |
-| `atelier-apprenti` | an apprentice, in baggy blue overalls two sizes too big, holding a spanner, tightening a bolt the wrong way, eager and nervous |
-| `atelier-technicien-maintenance` | a maintenance technician, in grey overalls with oil stains, holding a torque wrench, kneeling under a machine, focused and tired |
-| `atelier-chef-atelier` | a workshop foreman, in an oil-stained jacket over overalls, holding a ring of keys, standing in the middle of the shop floor, stern and proud |
-| `atelier-electricien` | an electrician, in a navy boiler suit with a tool belt, holding a multimeter, probing a live cabinet, alarmed and focused |
-| `atelier-electromecanicien` | an electromechanical fitter, in blue overalls with rolled sleeves, holding a rewound motor, lifting it onto a bench, grim and determined |
-| `atelier-responsable-maintenance` | a maintenance manager, in a grey jacket with a badge, holding a maintenance plan, standing in front of a stopped machine, resigned and tired |
-| `atelier-plombier` | a plumber, in dark overalls with a wet knee, holding a pipe wrench, kneeling under a sink, placid and doubtful |
-| `atelier-tuyauteur` | a pipefitter, in a leather apron over overalls, holding a bent pipe, measuring it against a wall, focused and unimpressed |
-| `atelier-chef-chantier` | a site foreman, in a hi-vis jacket and a white helmet, holding a site plan, pointing across a half-built hall, stern and overworked |
-| `atelier-ascensoriste` | a lift fitter, in dark blue overalls, holding a lift key, peering up a shaft, calm and bored |
-| `atelier-depanneur-ascenseur` | a lift repairer, in a grey boiler suit, holding a steel cable, coiling it by a stuck cabin, tired and methodical |
+| `atelier-joueur-de-flute` | a flute player, in a shirt with rolled sleeves, holding a flute, playing through a team meeting, unbothered |
+| `atelier-technicien-systeme` | a systems technician, in a grey polo, holding a power cable, rebooting a server rack, hopeful |
+| `atelier-responsable-process` | a process manager, in a suit jacket over overalls, holding a procedure binder, pointing at a flowchart, stern |
+| `atelier-opticien` | an optician, in a white lab coat, holding a lens up to the light, adjusting a mount with tweezers, focused and tired |
+| `atelier-rpo` | a production manager, in a blue jacket, holding meeting notes, reading a whiteboard, tired |
+| `atelier-rui` | a unit manager, in a dark jacket, holding a badge, looking at a distant factory, proud |
+| `atelier-regleur` | a setter, in a grey coat, holding a micrometer, adjusting a machine dial, precise and skeptical |
+| `atelier-rpi` | an interface manager, in a casual shirt, holding a cable adapter, checking a wall of connectors, nervous and polite |
+| `atelier-responsable-flux` | a flow manager, in a hi-vis vest, holding a tablet, watching arrows on a wall map, under pressure |
+| `atelier-controleur-vibration` | a vibration tester, in a lab coat, holding ear protectors, watching a shaker table, bored |
+| `atelier-responsable-qualite` | a quality manager, in a blazer, holding a stamped form, reviewing a red stamp, stern |
 | `atelier-mecanicien` | a mechanic, in a worn blue overall with greasy hands, holding a hammer, listening to a gearbox, focused and placid |
-| `atelier-mecanicien-outilleur` | a toolmaker, in a grey apron over overalls, holding a micrometer, measuring a turned part, precise and smug |
-| `atelier-soudeur` | a welder, in a leather apron and a welding mask, holding a welding torch, sealing two steel plates, focused and unbothered |
-| `atelier-soudeur-tig` | a TIG welder, in a clean leather apron, holding a filler rod, running a bead along a seam, calm and precise |
-| `atelier-chaudronnier` | a sheet-metal worker, in a heavy apron over overalls, holding a sheet-metal template, bending a panel over a form, focused and doubtful |
-| `atelier-chef-fabrication` | a fabrication lead, in a grey jacket with a badge, holding a fabrication order, checking it against a jig, grave and methodical |
-| `atelier-chef-usine` | a plant manager, in a dark suit with a hi-vis vest, holding a production target sheet, walking the length of the line, imperious and bored |
-| `atelier-cariste` | a forklift driver, in a hi-vis vest over a fleece, holding a pallet list, climbing into a forklift, cheerful and unbothered |
-| `atelier-chef-quai` | a dock supervisor, in a hi-vis jacket with a radio, holding a loading sheet, waving a truck into the wrong bay, brisk and overworked |
+| `atelier-gestionnaire-fod` | a debris manager, in a grey overall, holding a magnet, picking a screw off a clean floor, precise |
+| `atelier-monteur-optique` | an optical assembler, in a clean-room suit, holding a lens, placing it in a mount, patient |
+| `atelier-technicien-banc-essai` | a test-bench technician, in a navy overall, holding a tablet, checking a bench readout, smug |
+| `atelier-pointeur` | a measurer, in a grey overall, holding a precision gauge, measuring a part, doubtful |
+| `atelier-ordonnanceur` | a scheduler, in a cardigan, holding a marker, updating a planning board, overworked |
+| `atelier-responsable-pole` | a team leader, in a blazer, holding a lanyard, surveying a production floor, proud |
+| `atelier-cariste-salle-blanche` | a forklift driver, in a clean-room suit, holding a pallet list, steering through an airlock door, cheerful |
+| `atelier-planificateur-moyens-essai` | a test scheduler, in a cardigan, holding a wall calendar, marking a test bench, precise |
 | `atelier-gardien-usine` | a night watchman, in a dark uniform and a peaked cap, holding a torch, patrolling an empty yard, placid and watchful |
 | `atelier-magasinier` | a storekeeper, in a blue work coat, holding a barcode scanner, scanning a shelf of bins, tired and precise |
-| `atelier-stagiaire-atelier` | a workshop intern, in a clean new overall, holding a screwdriver, standing where the light is bad, sheepish and hopeful |
+| `atelier-assistant-rpo` | an assistant, in a casual shirt, holding a stack of notes, sitting beside a manager, eager |
 | `atelier-agent-maintenance` | a maintenance hand, in a grey overall and a flat cap, holding an oil can, greasing a chain, placid and methodical |
-| `atelier-chef-atelier-ex` | a senior workshop foreman, in a dark jacket with gold trim, holding a brass key ring, standing in a lit workshop, imperious and proud |
-| `atelier-responsable-maintenance-ex` | a group maintenance director, in a charcoal suit with a hi-vis stripe, holding a spare-parts request, standing by a new machine, grim and tired |
+| `atelier-rpo-sans-rui-ex` | a senior production manager, in a dark suit, holding a signed form, standing alone in a meeting room, imperious |
+| `atelier-rui-non-toxique-ex` | a senior unit manager, in a dark suit, holding a parking badge, leaning on a car, unbothered |
 | `direction-chef-projet-fantome` | a phantom project manager, in a crisp shirt with no tie, holding a laptop, standing in an empty meeting room, blank and unbothered |
 | `direction-directeur-adjoint` | a deputy director, in a dark grey suit, holding a delegation note, handing it to an empty chair, polite and detached |
 | `direction-pdg` | a CEO, in a tailored midnight suit, holding a board resolution, leaning back in an executive chair, confident and smug |

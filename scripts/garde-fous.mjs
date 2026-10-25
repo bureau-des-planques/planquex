@@ -88,7 +88,7 @@ export const MUTATIONS = [
     ticket: 49,
     titre: 'la migration du store ne remappe plus les ids',
     fichier: 'src/store/useStore.ts',
-    motif: 'const migrated = version < 3 ? withRenamedCardIds(state) : state;',
+    motif: 'const migrated = version < STORAGE_VERSION ? withRenamedCardIds(state) : state;',
     remplacement: 'const migrated = state;',
     tests: ['src/store/useStore.test.ts'],
     garde: 'une carte renommée quitterait la Collection et le Deck du joueur, en silence'

@@ -36,13 +36,13 @@ export const CHARIOTS: readonly Chariot[] = [
     strategie: 'Agression brute : de gros Seuils et des Pressions dès les premiers tours, presque aucun effet.',
     faiblesse: 'Le soin et l’endurance le laissent à court de Stress à infliger.',
     cartes: [
-      ...x('atelier-apprenti', 2),
-      ...x('atelier-technicien-maintenance', 2),
-      ...x('atelier-chef-atelier'),
-      ...x('atelier-soudeur', 2),
-      ...x('atelier-soudeur-tig', 2),
+      ...x('atelier-joueur-de-flute', 2),
+      ...x('atelier-technicien-systeme', 2),
+      ...x('atelier-responsable-process'),
+      ...x('atelier-monteur-optique', 2),
+      ...x('atelier-technicien-banc-essai', 2),
       ...x('atelier-mecanicien', 2),
-      ...x('atelier-mecanicien-outilleur', 2),
+      ...x('atelier-gestionnaire-fod', 2),
       ...x('management-jeune-manager', 2),
       ...x('management-manager-proximite', 2),
       ...x('management-responsable-unite'),
@@ -132,12 +132,12 @@ export const CHARIOTS: readonly Chariot[] = [
       ...x('interim-chef-equipe-interimaire'),
       ...x('interim-consultant-interimaire', 2),
       ...x('interim-responsable-interim'),
-      ...x('atelier-apprenti', 2),
-      ...x('atelier-technicien-maintenance', 2),
-      ...x('atelier-electricien', 2),
-      ...x('atelier-electromecanicien', 2),
-      ...x('atelier-plombier', 2),
-      ...x('atelier-tuyauteur', 2)
+      ...x('atelier-joueur-de-flute', 2),
+      ...x('atelier-technicien-systeme', 2),
+      ...x('atelier-opticien', 2),
+      ...x('atelier-rpo', 2),
+      ...x('atelier-regleur', 2),
+      ...x('atelier-rpi', 2)
     ]
   }
 ];

@@ -790,6 +790,22 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
     throw new Error(`aucune fin « ${raison} » à la graine ${seed} : réancrer la graine de ce test`);
   }
 
+  /**
+   * La première graine qui finit ainsi. Déterministe (la boucle part de 1) : le code obtenu
+   * est le même à chaque exécution, et le test ne dépend plus d'une graine figée qu'une
+   * modification du catalogue (D-095) rend caduque.
+   */
+  function premiereFinPour(raison: 'interventions' | 'plateauVide'): string {
+    for (let seed = 1; seed < 5000; seed += 1) {
+      try {
+        return codeDuneFin(raison, seed);
+      } catch {
+        // Cette graine ne finit pas ainsi : la suivante.
+      }
+    }
+    throw new Error(`aucune graine ne finit par « ${raison} »`);
+  }
+
   /** Coller un code, comme l'invité : le champ, puis le bouton (#128). */
   function coller(code: string) {
     // Le champ de collage vit dans la vue « Partie à deux » du menu.
@@ -801,7 +817,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   it('trois Interventions terminent la partie, et le bandeau nomme le vainqueur', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    coller(codeDuneFin('interventions', 1));
+    coller(premiereFinPour('interventions'));
 
     // Le vainqueur, la raison, et **le vocabulaire du PvP** : « la Direction » n'apparaît
     // pas dans le bandeau d'une partie à deux.
@@ -813,10 +829,11 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   it('une partie sans aucun Planqué se termine aussi, et le bandeau dit pourquoi', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    coller(codeDuneFin('plateauVide', 153));
+    coller(premiereFinPour('plateauVide'));
 
     expect(screen.getByText('Victoire : l’autre camp n’a plus aucun Planqué.')).toBeInTheDocument();
-  });
+    // La recherche de graine (`premiereFinPour`) peut parcourir beaucoup de graines avant la fin voulue.
+  }, 60_000);
 
   it('l’abandon tombe sur le camp qui le déclare, et l’écran le dit des deux côtés', () => {
     // Une graine figée : la partie à deux se crée depuis l'horloge.

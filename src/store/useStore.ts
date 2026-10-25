@@ -35,7 +35,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 8;
+export const STORAGE_VERSION = 9;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -60,7 +60,39 @@ export const CARD_ID_RENAMES: Readonly<Record<string, string>> = {
   'sse-medecin-travail-star2': 'sse-medecin-travail-star3',
   'qvt-chief-happiness-officer-star2': 'qvt-chief-happiness-officer-star3',
   'amelioration-directeur-qualite-star2': 'amelioration-directeur-qualite-star3',
-  'atelier-chef-atelier-star2': 'atelier-chef-atelier-star3',
+  'atelier-chef-atelier-star2': 'atelier-responsable-process-star3',
+  // D-095 (renommage de l'Atelier, 25/10/2026) : vingt-deux cartes de base changent de nom,
+  // donc d'id, et leurs variantes suivent. Les quatre cartes qui gardent leur nom gardent leur id.
+  'atelier-apprenti': 'atelier-joueur-de-flute',
+  'atelier-apprenti-star2': 'atelier-joueur-de-flute-star2',
+  'atelier-technicien-maintenance': 'atelier-technicien-systeme',
+  'atelier-technicien-maintenance-star': 'atelier-technicien-systeme-star',
+  'atelier-chef-atelier': 'atelier-responsable-process',
+  'atelier-chef-atelier-star3': 'atelier-responsable-process-star3',
+  'atelier-electricien': 'atelier-opticien',
+  'atelier-electromecanicien': 'atelier-rpo',
+  'atelier-electromecanicien-star': 'atelier-rpo-star',
+  'atelier-responsable-maintenance': 'atelier-rui',
+  'atelier-responsable-maintenance-star2': 'atelier-rui-star2',
+  'atelier-plombier': 'atelier-regleur',
+  'atelier-tuyauteur': 'atelier-rpi',
+  'atelier-tuyauteur-star': 'atelier-rpi-star',
+  'atelier-chef-chantier': 'atelier-responsable-flux',
+  'atelier-chef-chantier-star2': 'atelier-responsable-flux-star2',
+  'atelier-ascensoriste': 'atelier-controleur-vibration',
+  'atelier-depanneur-ascenseur': 'atelier-responsable-qualite',
+  'atelier-depanneur-ascenseur-star': 'atelier-responsable-qualite-star',
+  'atelier-mecanicien-outilleur': 'atelier-gestionnaire-fod',
+  'atelier-soudeur': 'atelier-monteur-optique',
+  'atelier-soudeur-tig': 'atelier-technicien-banc-essai',
+  'atelier-chaudronnier': 'atelier-pointeur',
+  'atelier-chef-fabrication': 'atelier-ordonnanceur',
+  'atelier-chef-usine': 'atelier-responsable-pole',
+  'atelier-cariste': 'atelier-cariste-salle-blanche',
+  'atelier-chef-quai': 'atelier-planificateur-moyens-essai',
+  'atelier-stagiaire-atelier': 'atelier-assistant-rpo',
+  'atelier-chef-atelier-ex': 'atelier-rpo-sans-rui-ex',
+  'atelier-responsable-maintenance-ex': 'atelier-rui-non-toxique-ex',
   'rh-drh-star2': 'rh-drh-crown',
   'direction-pdg-star2': 'direction-pdg-crown',
   'syndicat-secretaire-general-star2': 'syndicat-secretaire-general-crown'
@@ -430,10 +462,15 @@ export const useStore = create<AppState>()(
  * **raccourcis clavier** (`raccourcisCombat`). Un état v7 n'en a pas : `false` (le mode
  * `sobre`, défaut de `SPEC-COMBAT-UI` §4.3) et `true` (les raccourcis actifs, défaut de la
  * case des Réglages). Une valeur forgée n'est pas crue : seul un booléen passe.
+ *
+ * **v8 → v9** (renommage de l'Atelier) : vingt-deux cartes de l'Atelier changent de nom, donc
+ * d'id. `CARD_ID_RENAMES` remappe `owned` et `deck`. Une partie **en cours** qui porte un id
+ * renommé est écartée (`partie: null`) : son journal d'actions référence les anciens ids et ne
+ * se rejouerait pas à l'identique.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
-  const migrated = version < 3 ? withRenamedCardIds(state) : state;
+  const migrated = version < STORAGE_VERSION ? withRenamedCardIds(state) : state;
   return {
     ...migrated,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
@@ -473,6 +510,9 @@ function withRenamedCardIds(state: Partial<AppState>): Partial<AppState> {
     next.owned = owned;
   }
   if (state.deck) next.deck = state.deck.map((id) => CARD_ID_RENAMES[id] ?? id);
+  const partie = state.partie as Partial<PartieSauvegardee> | null | undefined;
+  const ids = [partie?.playerDeck, partie?.aiDeck].flatMap((deck) => (Array.isArray(deck) ? deck : []));
+  if (ids.some((id) => typeof id === 'string' && id in CARD_ID_RENAMES)) next.partie = null;
   return next;
 }
 
