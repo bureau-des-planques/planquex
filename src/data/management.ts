@@ -95,7 +95,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Planning', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le planning est à jour. Le site a changé de plan.'
+    flavor: 'Le planning est à jour. Le site a changé de plan.',
+    art: 'management-planificateur.webp'
   }),
   base({
     id: 'management-controleur-gestion',
