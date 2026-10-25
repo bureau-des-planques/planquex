@@ -407,7 +407,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Commande groupée', cost: ['QVT'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il commande les fruits. La facture arrive avant eux.'
+    flavor: 'Il commande les fruits. La facture arrive avant eux.',
+    art: 'qvt-assistant-qvt.webp'
   }),
   base({
     id: 'qvt-charge-communication-interne',
