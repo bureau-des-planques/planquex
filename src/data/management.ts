@@ -272,7 +272,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Il a optimisé la ligne. Il a oublié les gens dessus.'
+    flavor: 'Il a optimisé la ligne. Il a oublié les gens dessus.',
+    art: 'management-directeur-production.webp'
   }),
 
   // Ligne complétée en N+2 (vague 2, #86) : Assistant manager → Chef de service →
