@@ -271,7 +271,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Objectif de pôle', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse reçoit un objectif de pôle. Le pôle compte trente personnes.' },
       { name: 'Revue du pôle', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress. Le pôle est revu, les personnes non.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il dirige un pôle de trente personnes. Il les reconnaît à leur badge.'
+    flavor: 'Il dirige un pôle de trente personnes. Il les reconnaît à leur badge.',
+    art: 'atelier-responsable-pole.webp'
   }),
 
   // Ligne 8 : Cariste de salle blanche → Planificateur des moyens d'essai
