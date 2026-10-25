@@ -208,7 +208,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Cadence', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mis en cadence. La cadence est tenue ; les gens, un peu moins.' }],
-    flavor: 'La cadence est tenue. Les gens, non.'
+    flavor: 'La cadence est tenue. Les gens, non.',
+    art: 'management-responsable-production.webp'
   }),
 
   base({
