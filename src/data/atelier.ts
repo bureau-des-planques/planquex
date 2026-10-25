@@ -223,7 +223,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       }
     ],
-    flavor: 'Il a validé le banc. Le banc a validé son propre test.'
+    flavor: 'Il a validé le banc. Le banc a validé son propre test.',
+    art: 'atelier-technicien-banc-essai.webp'
   }),
 
   // Ligne 7 : Pointeur → Ordonnanceur → Responsable de pôle
