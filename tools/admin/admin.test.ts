@@ -11,7 +11,8 @@
  * jeton → refus ; écriture sans accusé → refus ; `delete` sans `where` sans le mot → refus ;
  * migration deux fois → refusée ; empreinte changée → signalée ; une lecture qui tente d'écrire
  * → refusée par la base ; courriel masqué ; journal alimenté ; un compte approuvé écrit, un
- * compte non approuvé est refusé.
+ * compte non approuvé est refusé ; la page et son module de rafraîchissement sont servis sous
+ * le jeton (#184, rafraîchissement : le calcul du nouveau est testé à part, `suivi.test.ts`).
  */
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -225,6 +226,33 @@ describe('le serveur (#184)', () => {
     expect(avec.status).toBe(200);
     expect(avec.headers.get('content-type')).toContain('text/html');
     expect(await avec.text()).toContain('Poste de pilotage');
+  });
+
+  it('sert le module de suivi de la page, sous le même jeton', async () => {
+    const m = await monde();
+    expect((await fetch(`${m.serveur.baseUrl}/suivi.mjs`)).status).toBe(401);
+    const avec = await api(m, '/suivi.mjs');
+    expect(avec.status).toBe(200);
+    expect(avec.headers.get('content-type')).toContain('text/javascript');
+    expect(await avec.text()).toContain('export function nouveauxEnAttente');
+  });
+
+  it('la page se relit toute seule, sans build, et seulement quand l’onglet est visible', async () => {
+    // Le comportement DOM (minuteur, focus, défilement) n'est pas exécuté ici : ce contrôle
+    // garde le **câblage** — retirer l'un de ces morceaux de `page.html` le fait échouer.
+    const m = await monde();
+    const page = await (await api(m, '/')).text();
+    for (const attendu of [
+      "from './suivi.mjs'",
+      'document.visibilityState',
+      "addEventListener('visibilitychange'",
+      'setInterval',
+      'document.title',
+      'Rafraîchir',
+      'activeElement',
+    ]) {
+      expect(page, `la page doit porter « ${attendu} »`).toContain(attendu);
+    }
   });
 
   it('masque les courriels, et les révèle par un geste explicite', async () => {

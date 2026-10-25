@@ -28,6 +28,9 @@ import { initialiserRegistre, listerMigrations, appliquerMigration } from './mig
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const PAGE = readFileSync(join(ICI, '..', 'page.html'), 'utf8');
+// Le module **pur** de la page (`page.html` l'importe) : la logique du « quoi de neuf ? »,
+// testée à part dans `tools/admin/suivi.test.ts`. Servi comme la page, derrière le jeton.
+const SUIVI = readFileSync(join(ICI, 'suivi.mjs'), 'utf8');
 
 /** Le dossier des migrations du dépôt, par défaut. Surchargeable pour les tests. */
 export function dossierMigrationsParDefaut() {
@@ -401,6 +404,10 @@ export async function demarrerServeur(options) {
       if (req.method === 'GET' && url.pathname === '/') {
         res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
         return res.end(PAGE);
+      }
+      if (req.method === 'GET' && url.pathname === '/suivi.mjs') {
+        res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
+        return res.end(SUIVI);
       }
       for (const [motif, methode, action] of ROUTES) {
         const correspond = motif.exec(url.pathname);

@@ -24,6 +24,13 @@ jamais déployé, et il ne peut pas être atteint depuis le réseau.
   `delete`/`update` sans `where` exige en plus de **taper un mot** annoncé par le serveur.
 - **Journal** : un fichier JSONL hors du dépôt (`~/.local/state/planquex-admin/journal.jsonl`),
   une ligne par geste — date, geste, rôle, durée, résultat — sans aucune valeur personnelle.
+- **Rafraîchissement** : la page relit l'état et les trois listes **toutes les 10 s**, et
+  **seulement quand l'onglet est visible** ; au retour sur l'onglet elle relit aussitôt, et le
+  bouton **Rafraîchir** le fait à la main. Une inscription arrivée entre deux relectures est
+  signalée par un bandeau discret (« 1 nouvelle inscription en attente ») et par le titre de
+  l'onglet (`(2) Poste de pilotage`), jamais au premier chargement ni quand le nombre baisse.
+  Le rendu ne réécrit que ce qui a changé et laisse intacte une section dont un champ a le
+  focus : ni le défilement ni la saisie en cours ne sont perdus.
 
 ## Ce qu'il ne fait pas
 
@@ -85,5 +92,7 @@ répond 401. Aucun en-tête CORS n'est émis : le jeton ne sort jamais en cross-
 | `lib/etat.mjs` | l'état de l'alpha et le masquage des courriels |
 | `lib/migrations.mjs` | le registre `admin.migrations` (empreinte, déjà appliquée, changée) |
 | `lib/journal.mjs` | le journal JSONL hors dépôt |
+| `lib/suivi.mjs` | la logique **pure** du rafraîchissement (nouveau ? bandeau, titre, fraîcheur) |
 | `page.html` | la page statique (HTML + fetch, aucun build) |
 | `admin.test.ts` | la garde : une seule couture, l'API HTTP, sur `pglite`, sans réseau |
+| `suivi.test.ts` | la garde de `lib/suivi.mjs` (le calcul du nouveau, muté par `garde-fous`) |
