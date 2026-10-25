@@ -87,3 +87,4 @@ jobs:
       # Un build valide produit ces deux fichiers (AGENTS.md §7 et §8.3).
       - name: Vérifier les artefacts du build
         run: ls -la dist/index.html dist/sw.js
+

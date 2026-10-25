@@ -23,7 +23,8 @@
     "notes:versions": "node scripts/notes-versions.mjs",
     "statut": "node scripts/statut-mur.mjs",
     "admin": "node tools/admin/serveur.mjs",
-    "detect:ui": "impeccable detect src/"
+    "detect:ui": "impeccable detect src/",
+    "detect:ui:page": "node scripts/detect-ui-pages.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

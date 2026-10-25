@@ -251,7 +251,7 @@ planquex/
   | Imagen 4 | `image4` | |
 
   Un agent à qui on demande « Nano Banana 2.1 » doit donc passer `model: "nano2"` — jamais le nom humain, que gflow rejetterait.
-- **Garde-fou visuel** : **Impeccable** (`.opencode/skills/impeccable/`, Apache-2.0) — un détecteur **déterministe** de 61 tells d'UI générée par IA, sans IA ni clé. `npm run detect:ui` (`impeccable detect src/`, binaire **installé** — sa version est épinglée exacte en devDependency, #146) ; la **CI** le lance après les tests. Un refus se corrige ou se **désactive explicitement** avec la raison (`<!-- impeccable-disable <règle> -->`), jamais en silence.
+- **Garde-fou visuel** : **Impeccable** (`.opencode/skills/impeccable/`, Apache-2.0) — un détecteur **déterministe** de 61 tells d'UI générée par IA, sans IA ni clé. `npm run detect:ui` (`impeccable detect src/`, binaire **installé** — sa version est épinglée exacte en devDependency, #146) ; la **CI** le lance après les tests. Un refus se corrige ou se **désactive explicitement** avec la raison (`<!-- impeccable-disable <règle> -->`), jamais en silence. **Et il sous-compte** : `detect:ui` ne lit que des sources. D'où `npm run detect:ui:page` (#205), qui **sert `dist/`** et lance le détecteur sur les cinq écrans, avec un **cliquet** — les anti-patterns déjà présents sont plafonnés dans `scripts/detect-ui-pages.mjs`, un seul de plus fait tomber la CI. État le 25/10/2026 : `/battle` **0**, `/collection` **42**, `/deck` **12**, `/` et `/reglages` **non mesurables** — la dette est #208.
 
 ## 7. Commandes
 
