@@ -284,7 +284,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Sas', cost: ['ATELIER'], damage: 20, text: 'Le Planqué adverse traverse le sas. Le sas a sonné, personne n’a répondu.' }],
-    flavor: 'Il a traversé la salle blanche avec des chaussures de chantier. Le sas a sonné.'
+    flavor: 'Il a traversé la salle blanche avec des chaussures de chantier. Le sas a sonné.',
+    art: 'atelier-cariste-salle-blanche.webp'
   }),
   base({
     id: 'atelier-planificateur-moyens-essai',
