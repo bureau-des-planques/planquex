@@ -129,7 +129,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
       { name: 'Dispatch', cost: ['ATELIER', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse est envoyé dans un autre flux. Le flux précédent, lui, est resté bloqué.' },
       { name: 'Réorganisation', cost: ['ATELIER', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress. Le flux est réorganisé, pas le retard.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il fait circuler les flux. Les flux, eux, ne circulent pas.'
+    flavor: 'Il fait circuler les flux. Les flux, eux, ne circulent pas.',
+    art: 'atelier-responsable-flux.webp'
   }),
 
   // Ligne 4 : Contrôleur vibration → Responsable qualité
