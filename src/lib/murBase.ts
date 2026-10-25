@@ -37,6 +37,12 @@
  * (`0005`, `0006`), et ce module traduit ses refus en français. Le tri (`statut`, `raison`,
  * `ticket`) est au contraire **réservé à l'administration** : `trierPostit` n'est appelé que
  * par l'écran d'administration, et la base le refuse à tout autre compte.
+ *
+ * **La place sur le tableau (#185)** : la base porte `position_x`, `position_y` et
+ * `position_angle`, et sa politique laisse chacun déplacer **ses** post-its. `deplacerPostit`
+ * est ce geste — le mode de placement de l'écran n'exporte donc plus un fichier quand le mur
+ * vient de la base. Et à la pose, `positionDepuisId` évite les places déjà prises : un
+ * post-it neuf ne se colle plus sur le texte d'un autre (D-068).
  */
 import {
   clientMur,
@@ -77,6 +83,12 @@ export interface OptionsPostit {
   version?: string;
   /** Court, stable, jamais réutilisé. Injectable pour un test déterministe. */
   id?: string;
+  /**
+   * Les places **déjà prises** sur le tableau (#185). Sans elles, deux post-its voisins
+   * peuvent atterrir au même endroit ; avec elles, le nouveau se pose là où il cache le
+   * moins de texte (voir `positionDepuisId`).
+   */
+  positionsPrises?: ReadonlyArray<PositionPostit>;
   /** Injectable pour tester sans réseau. */
   chargerClient?: () => Promise<ClientMur | null>;
 }
@@ -566,9 +578,11 @@ export async function corrigerPostit(
  * auteur disparaît du fichier : il n'existe pas de statut retiré ». En base c'est le même
  * geste : `delete`, qui emporte ses votes et ses commentaires (`on delete cascade`, 0001).
  *
- * La base ne l'autorise que **tant que le post-it est `en attente`** (0006) : après, il
- * porte un tri — une raison, un ticket — que le retrait emporterait, et le mur ne dirait
- * plus la même chose à tout le monde. Visé par son `id` **et** par mon identité.
+ * La base ne l'autorise, pour l'auteur, que **tant que le post-it est `en attente`** (0006) :
+ * après, il porte un tri — une raison, un ticket — que le retrait emporterait, et le mur ne
+ * dirait plus la même chose à tout le monde. L'**administration**, elle, retire n'importe
+ * quel post-it à n'importe quel statut (#186, `0007`) : c'est le geste de modération.
+ * Visé par son `id` — c'est la RLS qui sait qui a le droit d'effacer la ligne.
  */
 export async function retirerPostit(
   id: string,
@@ -581,16 +595,14 @@ export async function retirerPostit(
   const identite = await identiteAppareil(chargerClient);
   if (!identite) throw new Error('Aucune session : le retrait ne peut pas être signé.');
 
-  const { data, error } = await client
-    .from('postits')
-    .delete()
-    .eq('id', id)
-    .eq('auteur', identite)
-    .select('id');
+  // **Pas de filtre sur `auteur`** (#186) : c'est la RLS qui décide, et elle en connaît deux
+  // — l'auteur, tant que le post-it est `en attente` (0006), et l'administrateur, à tout
+  // statut (`0007`). Filtrer ici retirerait son geste à l'administration.
+  const { data, error } = await client.from('postits').delete().eq('id', id).select('id');
   if (error) throw new Error(messageDeCorrection(error.message));
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error(
-      'La base n’a retiré aucun post-it : il a peut-être bougé de statut, ou il n’est plus le tien.',
+      'La base n’a retiré aucun post-it : il a peut-être bougé de statut (on ne retire le sien qu’en attente), ou tu n’as pas le droit de le retirer.',
     );
   }
 }
@@ -682,12 +694,8 @@ export function idPostit(maintenant = Date.now(), aleatoire: () => number = Math
   return `p-${maintenant.toString(36)}-${suffixe}`;
 }
 
-/**
- * Une place sur le tableau, **en pourcentage** (D-068), dérivée de l'id : sans elle, la base
- * poserait tous les post-its au centre, empilés les uns sur les autres. Elle est stable —
- * le même id redonne la même place — et reste dans les bornes de la migration.
- */
-export function positionDepuisId(id: string): PositionPostit {
+/** La place qu'un id tirerait du seul hasard : stable, dans les bornes de la migration. */
+function placeNaturelle(id: string): PositionPostit {
   let empreinte = 0;
   for (const caractere of id) {
     empreinte = (Math.imul(empreinte, 31) + caractere.charCodeAt(0)) >>> 0;
@@ -696,6 +704,157 @@ export function positionDepuisId(id: string): PositionPostit {
     x: 6 + (empreinte % 68),
     y: 6 + ((empreinte >>> 8) % 58),
     angle: -3 + ((empreinte >>> 16) % 7)
+  };
+}
+
+/**
+ * Les bornes du tableau, en pourcentage, et la taille d'un post-it **exprimée de la même
+ * façon**. Les deux sont des ordres de grandeur (un post-it fait 236 px sur un tableau large
+ * de ~1100 px, et ~200 px de haut sur les 600 px mini) : ils servent à comparer des places,
+ * jamais à dessiner quoi que ce soit — le rendu lit des pourcentages, pas cette table.
+ */
+const BORD = 6;
+const LARGEUR_POSTIT = 22;
+const HAUTEUR_POSTIT = 30;
+const PAS_DE_BALAYAGE = 1;
+
+/** De combien deux places s'écartent, en post-its : ≥ 1 veut dire « l'un ne cache pas l'autre ». */
+function ecart(a: PositionPostit, b: PositionPostit): number {
+  return Math.max(
+    Math.abs(a.x - b.x) / LARGEUR_POSTIT,
+    Math.abs(a.y - b.y) / HAUTEUR_POSTIT
+  );
+}
+
+/** Le pire écart d'une place à toutes les places prises : c'est ce qu'on maximise. */
+function ecartMinimum(place: PositionPostit, prises: ReadonlyArray<PositionPostit>): number {
+  return prises.reduce((pire, prise) => Math.min(pire, ecart(place, prise)), Infinity);
+}
+
+/**
+ * Une place sur le tableau, **en pourcentage** (D-068), dérivée de l'id : sans elle, la base
+ * poserait tous les post-its au centre, empilés les uns sur les autres. Elle est stable —
+ * le même id redonne la même place — et reste dans les bornes de la migration.
+ *
+ * **`prises` : les places déjà occupées** (#185). Deux empreintes ne s'évitent pas : sans ce
+ * paramètre, un post-it neuf peut se coller **sur** un autre et en cacher le texte — ce que
+ * D-068 interdit. Quand on connaît les places prises, le tableau est donc balayé au pour
+ * cent, et l'on garde celle dont l'**écart minimum** aux autres est le plus grand : la
+ * première qui ne cache personne si elle existe, sinon la moins mauvaise. À égalité, la plus
+ * proche de la place naturelle — le mur garde son air de hasard quand la place est libre.
+ */
+export function positionDepuisId(
+  id: string,
+  prises: ReadonlyArray<PositionPostit> = []
+): PositionPostit {
+  const naturelle = placeNaturelle(id);
+  if (prises.length === 0) return naturelle;
+
+  let meilleure = naturelle;
+  let meilleurEcart = ecartMinimum(naturelle, prises);
+  let meilleureDistance = 0;
+
+  for (let x = BORD; x <= 100 - BORD; x += PAS_DE_BALAYAGE) {
+    for (let y = BORD; y <= 100 - BORD; y += PAS_DE_BALAYAGE) {
+      const candidate = { x, y, angle: naturelle.angle };
+      const e = ecartMinimum(candidate, prises);
+      // Le tableau est balayé dans un ordre fixe : à égalité stricte, la première gagne.
+      if (e < meilleurEcart) continue;
+      const distance = Math.hypot(candidate.x - naturelle.x, candidate.y - naturelle.y);
+      if (e > meilleurEcart || distance < meilleureDistance) {
+        meilleure = candidate;
+        meilleurEcart = e;
+        meilleureDistance = distance;
+      }
+    }
+  }
+  return meilleure;
+}
+
+// ---------------------------------------------------------------------------------------------
+// La place sur le tableau, en base (0001, D-068)
+// ---------------------------------------------------------------------------------------------
+
+/** Une place hors des bornes n'est pas une place : la base la refuserait (contraintes de 0001). */
+export function verifierPosition(position: PositionPostit): string | null {
+  if (![position.x, position.y, position.angle].every((valeur) => Number.isFinite(valeur))) {
+    return 'Une place sur le tableau, ce sont trois nombres : x, y et l’angle.';
+  }
+  if (position.x < 0 || position.x > 100 || position.y < 0 || position.y > 100) {
+    return 'Une place se donne en pourcentage du tableau : elle doit tenir entre 0 et 100.';
+  }
+  if (position.angle < -5 || position.angle > 5) {
+    return 'L’inclinaison d’un post-it va de -5 à 5 degrés.';
+  }
+  return null;
+}
+
+/** Un refus de la base sur un déplacement, dit en français. */
+export function messageDePlace(message: string): string {
+  if (/postit_deplace_refuse/i.test(message)) {
+    return 'La base refuse ce déplacement : ce post-it n’est pas le tien, ou ton compte n’est pas approuvé.';
+  }
+  if (/postit_deplace_inconnu/i.test(message)) return 'Ce post-it n’existe plus : recharge le mur.';
+  if (/postit_deplace_hors_bornes|check constraint|position_/i.test(message)) {
+    return 'Cette place sort du tableau : elle n’a pas été enregistrée.';
+  }
+  if (/permission denied/i.test(message)) {
+    return 'La base refuse ce déplacement : ton compte ne peut pas l’écrire.';
+  }
+  if (/jwt|session/i.test(message)) return 'Ta session a expiré : reconnecte-toi.';
+  return `La place n’a pas été enregistrée (${message}).`;
+}
+
+const arrondi = (valeur: number) => Math.round(valeur * 10) / 10;
+
+/**
+ * Écrit la place d'un post-it **en base** (#185, #186) : c'est ce qui fait du mode de
+ * placement autre chose qu'un export de fichier — la disposition est partagée sans commit.
+ *
+ * Le geste passe par la fonction `deplacer_postit` (0007), et **pas** par un `update` : une
+ * politique RLS ne distingue pas les colonnes, donc rendre `position_*` écrivable au rôle
+ * `authenticated` rendrait aussi `statut` à l'auteur de la ligne — et le posteur se trierait
+ * lui-même, ce que D-059 refuse. La fonction, elle, décide **qui** déplace : l'auteur
+ * approuvé, ou l'administrateur (0007).
+ *
+ * La place appliquée est arrondie au dixième, comme le fait la page : ce qui revient ici est
+ * exactement ce que le mur affichera, et non ce qui a été demandé.
+ */
+export async function deplacerPostit(
+  id: string,
+  position: PositionPostit,
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
+): Promise<PositionPostit> {
+  const refus = verifierPosition(position);
+  if (refus) throw new Error(refus);
+
+  const chargerClient = options.chargerClient ?? clientMur;
+  const client = await chargerClient();
+  if (!client) throw new Error('Le mur n’est pas configuré : la place ne peut pas s’écrire.');
+
+  const identite = await identiteAppareil(chargerClient);
+  if (!identite) throw new Error('Aucune session : la place ne peut pas être signée.');
+
+  const demandee: PositionPostit = {
+    x: arrondi(position.x),
+    y: arrondi(position.y),
+    angle: arrondi(position.angle)
+  };
+
+  const { data, error } = await client.rpc('deplacer_postit', {
+    p_id: id,
+    p_x: demandee.x,
+    p_y: demandee.y,
+    p_angle: demandee.angle
+  });
+  if (error) throw new Error(messageDePlace(error.message));
+
+  const ligne = estObjet(data) ? data : null;
+  if (!ligne) throw new Error('La base n’a pas rendu le post-it déplacé.');
+  return {
+    x: Number(ligne.position_x),
+    y: Number(ligne.position_y),
+    angle: Number(ligne.position_angle)
   };
 }
 
@@ -744,7 +903,7 @@ export function composerLignePostit(
   if (!titre) throw new Error('Le titre du post-it est vide.');
 
   const id = options.id ?? idPostit();
-  const position = positionDepuisId(id);
+  const position = positionDepuisId(id, options.positionsPrises ?? []);
 
   return {
     id,

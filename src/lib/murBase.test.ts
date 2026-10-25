@@ -8,12 +8,14 @@ import {
   compterApres,
   composerLignePostit,
   corrigerPostit,
+  deplacerPostit,
   gesteDeVote,
   grouperCommentaires,
   idPostit,
   lireCommentaires,
   lirePostitsDeLaBase,
   LIMITE_COMMENTAIRE,
+  messageDePlace,
   messageDeTri,
   murEstConfigure,
   positionDepuisId,
@@ -24,6 +26,7 @@ import {
   titreDepuisTexte,
   trierPostit,
   verifierCommentaire,
+  verifierPosition,
   verifierTri,
   voterPourPostit,
 } from '@/lib/murBase';
@@ -73,6 +76,8 @@ interface Reponses {
   erreurLectureVotes?: string;
   /** L'erreur que la base rend à un vote (insertion, modification ou retrait). */
   erreurVote?: string;
+  /** L'erreur que la base rend à un déplacement de post-it (#185). */
+  erreurPlace?: string;
   /** Le nombre de lignes qu'une modification ou un retrait de vote touche (défaut : 1). */
   lignesTouchees?: number;
   /** Les lignes de `commentaires` rendues à la lecture, et l'erreur éventuelle (#138). */
@@ -86,6 +91,9 @@ interface Reponses {
   /** Ce que rend `rpc('corriger_postit', …)` (#139), et son erreur. */
   correction?: unknown;
   erreurCorrection?: string;
+  /** La ligne rendue par `deplacer_postit` (0007), et l'erreur éventuelle (#186). */
+  deplace?: unknown;
+  erreurDeplace?: string;
   /** La ligne que rend le tri d'un post-it (`statut, raison, ticket`), ou `null` (#0006). */
   tri?: unknown;
   /** L'erreur que la base rend au tri (grant, politique, contrainte). */
@@ -124,6 +132,13 @@ function fauxClient(reponses: Reponses = {}) {
 
   const rpc = vi.fn(async (nom: string, params?: Record<string, unknown>) => {
     appelsRpc.push({ nom, params });
+    // Deux fonctions du mur, deux réponses : le tri et la correction (0006), la place (0007).
+    if (nom === 'deplacer_postit') {
+      return {
+        data: reponses.deplace ?? null,
+        error: reponses.erreurDeplace ? { message: reponses.erreurDeplace } : null,
+      };
+    }
     return {
       data: reponses.correction ?? null,
       error: reponses.erreurCorrection ? { message: reponses.erreurCorrection } : null,
@@ -195,7 +210,8 @@ function fauxClient(reponses: Reponses = {}) {
             };
           } else if (table === 'postits') {
             // Le dépôt d'un post-it ne rend rien (il n'écrit pas `select`) ; un retrait
-            // rend ses lignes, un tri rend `statut, raison, ticket` (0006).
+            // rend ses lignes, un tri rend `statut, raison, ticket` (0006), un déplacement
+            // rend la ligne visée (#185).
             reponse = {
               data:
                 ecriture?.geste === 'delete'
@@ -204,13 +220,17 @@ function fauxClient(reponses: Reponses = {}) {
                     ? // Un `update(…).select(…)` rend une **liste** de lignes.
                       reponses.tri
                       ? [reponses.tri]
-                      : null
+                      : reponses.lignesTouchees === undefined
+                        ? null
+                        : Array.from({ length: reponses.lignesTouchees }, () => ({ id: 'x' }))
                     : null,
               error: reponses.erreurInsertion
                 ? { message: reponses.erreurInsertion }
-                : reponses.erreurTri
-                  ? { message: reponses.erreurTri }
-                  : null,
+                : reponses.erreurPlace
+                  ? { message: reponses.erreurPlace }
+                  : reponses.erreurTri
+                    ? { message: reponses.erreurTri }
+                    : null,
             };
           } else {
             reponse = {
@@ -398,6 +418,84 @@ describe('le dépôt d’un post-it depuis le jeu (#136)', () => {
   });
 });
 
+describe('la place sur le tableau, écrite en base (#185, #186)', () => {
+  it('passe par la fonction `deplacer_postit`, seul chemin qui connaisse le droit de ranger', async () => {
+    const faux = fauxClient({ deplace: { position_x: 12.3, position_y: 45.7, position_angle: -1.5 } });
+    const place = await deplacerPostit(
+      'p-001',
+      { x: 12.34, y: 45.67, angle: -1.5 },
+      { chargerClient: async () => faux.client },
+    );
+
+    // Pas d'`update` direct : `position_*` n'est pas dans le grant de la 0006, et une
+    // politique RLS ne distingue pas les colonnes (voir l'en-tête de `0007`).
+    expect(faux.ecritures).toHaveLength(0);
+    expect(faux.appelsRpc).toEqual([
+      { nom: 'deplacer_postit', params: { p_id: 'p-001', p_x: 12.3, p_y: 45.7, p_angle: -1.5 } },
+    ]);
+    // Ce qui revient est ce que la base a gardé : arrondi au dixième.
+    expect(place).toEqual({ x: 12.3, y: 45.7, angle: -1.5 });
+  });
+
+  it('un déplacement refusé par la base ne se déclare jamais réussi, et le refus est dit en français', async () => {
+    const faux = fauxClient({
+      erreurDeplace: 'postit_deplace_refuse : ce post-it n’est pas le tien',
+    });
+    await expect(
+      deplacerPostit('p-001', { x: 10, y: 20, angle: 0 }, { chargerClient: async () => faux.client }),
+    ).rejects.toThrow(/ce post-it n’est pas le tien/);
+
+    const vide = fauxClient();
+    await expect(
+      deplacerPostit('p-001', { x: 10, y: 20, angle: 0 }, { chargerClient: async () => vide.client }),
+    ).rejects.toThrow(/n’a pas rendu le post-it déplacé/);
+  });
+
+  it('sans configuration, déplacer lève avant tout appel', async () => {
+    const faux = fauxClient();
+    await expect(
+      deplacerPostit('p-001', { x: 10, y: 20, angle: 0 }, { chargerClient: async () => null }),
+    ).rejects.toThrow(/pas configuré/);
+    expect(faux.appelsRpc).toHaveLength(0);
+  });
+
+  it('une place hors du tableau est refusée avant de partir, et le refus est dit en français', () => {
+    expect(verifierPosition({ x: -1, y: 20, angle: 0 })).toMatch(/entre 0 et 100/);
+    expect(verifierPosition({ x: 10, y: 120, angle: 0 })).toMatch(/entre 0 et 100/);
+    expect(verifierPosition({ x: 10, y: 20, angle: 9 })).toMatch(/-5 à 5/);
+    expect(verifierPosition({ x: Number.NaN, y: 20, angle: 0 })).toMatch(/trois nombres/);
+    expect(verifierPosition({ x: 10, y: 20, angle: 0 })).toBeNull();
+
+    expect(messageDePlace('postit_deplace_refuse : ce post-it n’est pas le tien')).toMatch(
+      /n’est pas le tien/,
+    );
+    expect(messageDePlace('postit_deplace_hors_bornes')).toMatch(/sort du tableau/);
+    expect(messageDePlace('postit_deplace_inconnu')).toMatch(/n’existe plus/);
+    expect(messageDePlace('JWT expired')).toMatch(/session a expiré/);
+  });
+
+  it('une place déjà prise écarte le post-it neuf, et l’insertion part avec cette place', async () => {
+    const faux = fauxClient();
+    const prise = positionDepuisId('p-deja');
+    const postit = await posterPostit(
+      { famille: 'IP', gueulage: false, titre: 'Une idée', texte: 'Un texte.', ecran: '' },
+      { chargerClient: async () => faux.client, id: 'p-neuf', positionsPrises: [prise] },
+    );
+
+    const ligne = faux.insertions[0].ligne;
+    const ecart = Math.max(
+      Math.abs(Number(ligne.position_x) - prise.x) / 22,
+      Math.abs(Number(ligne.position_y) - prise.y) / 30,
+    );
+    expect(ecart).toBeGreaterThanOrEqual(1);
+    expect(postit.position).toEqual({
+      x: Number(ligne.position_x),
+      y: Number(ligne.position_y),
+      angle: Number(ligne.position_angle),
+    });
+  });
+});
+
 describe('les petits morceaux du contrat', () => {
   it('l’id est court, stable et ne change pas de forme', () => {
     const id = idPostit(1_700_000_000_000, () => 0.5);
@@ -417,6 +515,38 @@ describe('les petits morceaux du contrat', () => {
     expect(positionDepuisId('p-001')).toEqual(position);
     // Deux ids voisins ne tombent pas forcément au même endroit.
     expect(positionDepuisId('p-002')).not.toEqual(position);
+  });
+
+  it('une place déjà prise est évitée : le post-it neuf ne se colle pas sur le texte d’un autre (#185)', () => {
+    const premiere = positionDepuisId('p-001');
+    const seconde = positionDepuisId('p-002', [premiere]);
+
+    // Sans les places prises, on retombe sur la place naturelle : rien n'a changé pour les murs existants.
+    expect(positionDepuisId('p-002')).not.toEqual(seconde);
+    // L'écart se mesure en post-its : une largeur ou une hauteur suffit à ne rien cacher.
+    const ecart = Math.max(
+      Math.abs(seconde.x - premiere.x) / 22,
+      Math.abs(seconde.y - premiere.y) / 30
+    );
+    expect(ecart).toBeGreaterThanOrEqual(1);
+    // Stable et borné : le même appel redonne la même place, dans le cadre du tableau.
+    expect(positionDepuisId('p-002', [premiere])).toEqual(seconde);
+    expect(seconde.x).toBeGreaterThanOrEqual(0);
+    expect(seconde.x).toBeLessThanOrEqual(100);
+    expect(seconde.y).toBeGreaterThanOrEqual(0);
+    expect(seconde.y).toBeLessThanOrEqual(100);
+  });
+
+  it('un tableau déjà chargé ne fait pas sortir la place du cadre, même quand tout est pris', () => {
+    const prises = [];
+    for (let x = 0; x <= 100; x += 4) {
+      for (let y = 0; y <= 100; y += 4) prises.push({ x, y, angle: 0 });
+    }
+    const place = positionDepuisId('p-042', prises);
+    expect(place.x).toBeGreaterThanOrEqual(0);
+    expect(place.x).toBeLessThanOrEqual(100);
+    expect(place.y).toBeGreaterThanOrEqual(0);
+    expect(place.y).toBeLessThanOrEqual(100);
   });
 
   it('le titre d’un gueulage vient de ses premiers mots, sans être inventé', () => {
@@ -790,7 +920,7 @@ describe('corriger ou retirer son post-it (#139)', () => {
     );
   });
 
-  it('retire mon post-it : une suppression visée par l’id et mon identité', async () => {
+  it('retire un post-it visé par son seul id : c’est la RLS qui sait qui a le droit (#186)', async () => {
     const faux = fauxClient();
     await retirerPostit('p-001', { chargerClient: async () => faux.client });
 
@@ -798,10 +928,8 @@ describe('corriger ou retirer son post-it (#139)', () => {
       {
         table: 'postits',
         geste: 'delete',
-        filtres: [
-          ['id', 'p-001'],
-          ['auteur', 'appareil-A'],
-        ],
+        // Pas de filtre sur `auteur` : l'administrateur retire le post-it d'un autre (`0007`).
+        filtres: [['id', 'p-001']],
       },
     ]);
   });

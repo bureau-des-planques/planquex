@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Poste de pilotage — Bureau des Planqués</title>
+<style>
+  :root { --bg:#0b1220; --panneau:#111a2e; --bord:#1f2b45; --texte:#e7ecf5; --muet:#8b98b3; --accent:#4ade80; --accent-fonce:#166534; --danger:#f87171; --lien:#7dd3fc; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--texte); font:14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding:18px 22px; border-bottom:1px solid var(--bord); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  header h1 { font-size:24px; margin:0; font-weight:700; line-height:1.15; }
+  header .lien { color:var(--lien); text-decoration:none; }
+  main { max-width: 1080px; margin:0 auto; padding:20px 22px 60px; display:grid; gap:20px; }
+  section { background:var(--panneau); border:1px solid var(--bord); border-radius:10px; padding:16px 18px; min-width:0; }
+  h2 { font-size:17px; margin:0 0 12px; font-weight:700; line-height:1.2; }
+  h3 { font-size:12px; margin:16px 0 8px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muet); }
+  .tableau { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table { width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--bord); vertical-align:top; }
+  th { color:var(--muet); font-weight:600; white-space:nowrap; }
+  button { background:#16213a; color:var(--texte); border:1px solid var(--bord); border-radius:6px; padding:5px 10px; cursor:pointer; font:inherit; }
+  button:hover { border-color:var(--accent); }
+  button.vert { background:var(--accent-fonce); border-color:var(--accent-fonce); }
+  button.rouge { background:#7f1d1d; border-color:#7f1d1d; }
+  input, textarea, select { background:#0b1220; color:var(--texte); border:1px solid var(--bord); border-radius:6px; padding:6px 9px; font:inherit; width:100%; }
+  input[type="checkbox"] { width:auto; }
+  .grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:18px 24px; }
+  .chiffre { padding:4px 0 4px 12px; border-left:2px solid var(--bord); }
+  .chiffre b { display:block; font-size:26px; line-height:1.15; font-weight:700; }
+  .chiffre span { color:var(--muet); font-size:13px; }
+  .chiffre.cle { border-left-color:var(--accent); }
+  .chiffre.cle b { color:var(--accent); }
+  input::placeholder, textarea::placeholder { color:var(--muet); opacity:1; }
+  .etat-pill { padding:1px 8px; border-radius:999px; font-size:12px; background:#0b1220; border:1px solid var(--bord); }
+  .erreur { color:var(--danger); white-space:pre-wrap; }
+  .muet { color:var(--muet); }
+  #retour { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); max-width:92vw;
+    background:#14532d; border:1px solid var(--accent); color:var(--texte); border-radius:8px;
+    padding:9px 14px; font-size:13px; box-shadow:0 6px 24px rgba(0,0,0,.45); z-index:10; }
+  #retour.rouge { background:#450a0a; border-color:var(--danger); }
+  #retour[hidden] { display:none; }
+  #fraicheur { margin-left:auto; font-size:12px; }
+  #nouveau { background:#14532d; border-bottom:1px solid var(--accent); padding:6px 22px; font-size:13px; }
+  #nouveau[hidden] { display:none; }
+  #nouveau button { background:none; border:0; padding:0; color:var(--accent); text-decoration:underline; }
+  .ligne-forme { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  #mot-destructif { color:var(--danger); font-weight:700; letter-spacing:1px; }
+  pre { background:#0b1220; border:1px solid var(--bord); border-radius:6px; padding:10px; overflow:auto; max-height:340px; font-size:12px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Poste de pilotage</h1>
+  <span class="muet">Bureau des Planqués · alpha</span>
+  <span id="fraicheur" class="muet" aria-live="off"></span>
+  <button id="rafraichir" type="button">Rafraîchir</button>
+  <a class="lien" href="/api/journal" data-json>Carnet →</a>
+</header>
+<div id="nouveau" hidden><button type="button" id="nouveau-bouton"></button></div>
+<main>
+  <section id="etat" aria-live="polite"><h2>État de l'alpha</h2><div class="muet">chargement…</div></section>
+
+  <section id="comptes" aria-live="polite"><h2>Comptes</h2><div class="muet">chargement…</div></section>
+
+  <section id="postits" aria-live="polite"><h2>Post-its</h2><div class="muet">chargement…</div></section>
+
+  <section id="migrations" aria-live="polite"><h2>Migrations</h2><div class="muet">chargement…</div></section>
+
+  <section>
+    <h2>SQL libre</h2>
+    <p class="muet">Lecture → rôle <code>lecteur</code> (la base refuse l'écriture). Écriture → accusé obligatoire. <code>drop</code>/<code>truncate</code>/<code>delete</code>/<code>update</code> sans <code>where</code> → mot annoncé.</p>
+    <textarea id="sql" rows="4" placeholder="select * from public.comptes;"></textarea>
+    <div class="ligne-forme" style="margin-top:8px">
+      <label><input type="checkbox" id="accuse"> accuse (écriture)</label>
+      <label>mot : <input id="mot" style="width:12em" placeholder="si demandé"></label>
+      <button id="executer" onclick="executerSql()">Exécuter</button>
+      <span id="mot-destructif"></span>
+    </div>
+    <pre id="sql-sortie" hidden></pre>
+  </section>
+
+  <section>
+    <h2>Carnet (journal)</h2>
+    <pre id="journal-sortie" class="muet">chargement…</pre>
+  </section>
+</main>
+
+<div id="retour" role="status" aria-live="polite" hidden></div>
+
+<script type="module">
+  import {
+    libelleFraicheur,
+    libelleNouveaux,
+    nouveauxEnAttente,
+    titreOnglet,
+  } from './suivi.mjs';
+
+  // Le titre de l'onglet porte le nombre d'attentes : on garde le titre normal sous la main.
+  const TITRE_NORMAL = document.title;
+  // La relecture automatique, dix secondes : c'est ce qui fait apparaître une inscription
+  // arrivée depuis le jeu sans F5.
+  const INTERVALLE_MS = 10_000;
+
+  // Le jeton n'est plus relu ici : à la première visite `?jeton=` pose un cookie `HttpOnly`, et
+  // les `fetch` le renvoient d'eux-mêmes (même origine). La page n'a plus à retaper le jeton.
+  async function api(chemin, options = {}) {
+    const reponse = await fetch(chemin, options);
+    const texte = await reponse.text();
+    let corps = null;
+    try { corps = texte ? JSON.parse(texte) : null; } catch { corps = { brut: texte }; }
+    if (!reponse.ok) {
+      const erreur = new Error(corps?.erreur || `HTTP ${reponse.status}`);
+      erreur.corps = corps;
+      throw erreur;
+    }
+    return corps;
+  }
+
+  // ------------------------------------------------------------------ le rendu sans clignotement
+  // Le contenu est réécrit seulement s'il a changé. Une section dont un **champ** a le focus
+  // n'est pas touchée du tout (la saisie en cours survit) ; les valeurs déjà tapées, la
+  // position de défilement de la page et celle des tableaux sont restituées.
+  const rendus = new WeakMap();
+
+  /** Le focus est-il dans un champ de cette section ? Un bouton ne compte pas : un geste
+   *  doit pouvoir rafraîchir la liste qu'il vient de changer. */
+  function champActifDans(section) {
+    const actif = document.activeElement;
+    return Boolean(actif && actif.matches && actif.matches('input, select, textarea') && section.contains(actif));
+  }
+
+  function instantaneSaisie(section) {
+    const valeurs = [];
+    for (const el of section.querySelectorAll('input, select, textarea')) {
+      if (!el.id) continue;
+      valeurs.push({ id: el.id, type: el.type, valeur: el.value, coche: el.checked });
+    }
+    return valeurs;
+  }
+
+  function rendre(section, html) {
+    if (rendus.get(section) === html) return true;
+    if (champActifDans(section)) return false;
+    const y = window.scrollY;
+    const tableaux = [...section.querySelectorAll('.tableau')].map((el) => el.scrollLeft);
+    const saisies = instantaneSaisie(section);
+    section.innerHTML = html;
+    [...section.querySelectorAll('.tableau')].forEach((el, i) => {
+      if (tableaux[i] !== undefined) el.scrollLeft = tableaux[i];
+    });
+    for (const { id, type, valeur, coche } of saisies) {
+      const el = document.getElementById(id);
+      if (!el || !section.contains(el)) continue;
+      if (type === 'checkbox') el.checked = coche;
+      else if (valeur) el.value = valeur;
+    }
+    rendus.set(section, html);
+    window.scrollTo(0, y);
+    return true;
+  }
+
+  async function etat() {
+    const e = await api('/api/etat');
+    const comptes = e.comptes || {};
+    const postits = e.postits || {};
+    // Les catégories vides (zéro) ne s'affichent pas : « 0 refusé » n'apprend rien.
+    const ch = (obj) => Object.entries(obj).filter(([, v]) => Number(v) > 0)
+      .map(([k, v]) => `<div class="chiffre"><b>${v}</b><span>${k}</span></div>`).join('');
+    const grilleComptes = ch(comptes);
+    const grillePostits = ch(postits);
+    rendre(document.querySelector('#etat'), `
+      <h2>État de l'alpha</h2>
+      <div class="grille">
+        <div class="chiffre cle"><b>${e.approbationsEnAttente}</b><span>comptes en attente</span></div>
+        <div class="chiffre"><b>${e.parties.terminees}</b><span>parties terminées</span></div>
+        <div class="chiffre"><b>${e.parties.poidsMoyen} o</b><span>poids moyen</span></div>
+        <div class="chiffre"><b>${(e.volumeOctets / 1048576).toFixed(2)} Mo</b><span>volume</span></div>
+      </div>
+      <h3>Comptes par état</h3>
+      ${grilleComptes ? `<div class="grille">${grilleComptes}</div>` : '<div class="muet">aucun compte</div>'}
+      <h3>Post-its par statut</h3>
+      ${grillePostits ? `<div class="grille">${grillePostits}</div>` : '<div class="muet">aucun post-it</div>'}
+    `);
+    return Number(e.approbationsEnAttente ?? 0);
+  }
+
+  async function comptes() {
+    const e = await api('/api/comptes');
+    const lignes = (e.comptes || []).map((c) => `
+      <tr>
+        <td><code>${c.id.slice(0, 8)}…</code></td>
+        <td>${c.courriel}</td>
+        <td><span class="etat-pill">${c.etat}</span>${c.administrateur ? ' <span class="etat-pill">admin</span>' : ''}</td>
+        <td>
+          <button class="vert" onclick="approuver('${c.id}')">approuver</button>
+          <button class="rouge" onclick="refuser('${c.id}')">refuser</button>
+          ${c.administrateur ? '' : `<button onclick="marquerAdmin('${c.id}', true)">admin</button>`}
+          <button onclick="reveler('${c.id}')">courriel</button>
+        </td>
+      </tr>`).join('');
+    rendre(document.querySelector('#comptes'), `
+      <h2>Comptes</h2>
+      ${lignes ? `<div class="tableau"><table><thead><tr><th>id</th><th>courriel</th><th>état</th><th>gestes</th></tr></thead>
+      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucun compte en attente</div>'}
+    `);
+  }
+
+  async function postits() {
+    const e = await api('/api/postits');
+    const lignes = (e.postits || []).map((p) => `
+      <tr>
+        <td><code>${p.id}</code></td>
+        <td>${p.titre ?? ''}</td>
+        <td>${p.statut}${p.raison ? `<div class="muet">${p.raison}</div>` : ''}</td>
+        <td>${p.ticket ?? ''}</td>
+        <td>${p.auteur ? `<code>${p.auteur.slice(0, 8)}…</code>` : '—'}</td>
+        <td>
+          <select id="s-${p.id}">
+            <option>en attente</option><option>retenu</option><option>en cours</option><option>fait</option><option>écarté</option>
+          </select>
+          <input id="r-${p.id}" placeholder="raison (écarté)" style="width:12em">
+          <input id="t-${p.id}" placeholder="ticket" style="width:6em">
+          <button onclick="trier('${p.id}')">trier</button>
+        </td>
+      </tr>`).join('');
+    rendre(document.querySelector('#postits'), `
+      <h2>Post-its</h2>
+      <div style="margin-bottom:10px" class="ligne-forme">
+        <span class="muet">Réattribuer les post-its anonymes à un compte :</span>
+        <input id="cible-reattribuer" placeholder="uuid du compte" style="width:16em;min-width:0">
+        <button onclick="reattribuer()">réattribuer</button>
+      </div>
+      ${lignes ? `<div class="tableau"><table><thead><tr><th>id</th><th>titre</th><th>statut</th><th>ticket</th><th>auteur</th><th>tri</th></tr></thead>
+      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucun post-it</div>'}
+    `);
+  }
+
+  async function migrations() {
+    const e = await api('/api/migrations');
+    const lignes = (e.migrations || []).map((m) => {
+      const badge = m.etat === 'appliquee'
+        ? '<span class="etat-pill">appliquée</span>'
+        : m.etat === 'empreinte-changee'
+          ? '<span class="etat-pill" style="color:var(--danger)">empreinte changée</span>'
+          : '<span class="etat-pill">manquante</span>';
+      const bouton = m.etat === 'manquante'
+        ? `<button class="vert" onclick="appliquer('${m.fichier}')">appliquer</button>`
+        : '';
+      return `<tr><td><code>${m.fichier}</code></td><td>${badge}</td><td><code>${m.empreinte.slice(0, 16)}…</code></td><td>${bouton}</td></tr>`;
+    }).join('');
+    rendre(document.querySelector('#migrations'), `
+      <h2>Migrations</h2>
+      ${lignes ? `<div class="tableau"><table><thead><tr><th>fichier</th><th>état</th><th>empreinte</th><th>geste</th></tr></thead>
+      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucune migration</div>'}
+      <p class="muet">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée.</p>
+    `);
+  }
+
+  async function journalVue() {
+    const e = await api('/api/journal');
+    document.querySelector('#journal-sortie').textContent =
+      (e.lignes || []).map((l) => `${l.date} ${l.geste} (${l.role}) ${l.resultat}${l.motif ? ' — ' + l.motif : ''}`).join('\n') || '— vide —';
+  }
+
+  // --------------------------------------------------------------- la relecture automatique
+  let enAttentePrecedent = null;
+  let derniereRelecture = 0;
+  let relectureEnCours = null;
+  let minuteurRelecture = null;
+  let minuteurFraicheur = null;
+
+  function signalerNouveaux(nombre) {
+    document.querySelector('#nouveau-bouton').textContent = `${libelleNouveaux(nombre)} →`;
+    document.querySelector('#nouveau').hidden = false;
+  }
+
+  function cacherNouveaux() {
+    document.querySelector('#nouveau').hidden = true;
+  }
+
+  function majFraicheur() {
+    document.querySelector('#fraicheur').textContent = derniereRelecture
+      ? libelleFraicheur(Date.now() - derniereRelecture)
+      : '';
+  }
+
+  async function relireMaintenant({ manuel = false } = {}) {
+    // Onglet caché : rien ne part. Le minuteur est arrêté, et une relecture lancée juste
+    // avant de cacher l'onglet ne doit pas non plus enchaîner.
+    if (document.visibilityState !== 'visible') return;
+    try {
+      const enAttente = await etat();
+      await Promise.all([comptes(), postits(), migrations()]);
+      if (manuel) await journalVue();
+
+      const avant = enAttentePrecedent;
+      const nouveaux = nouveauxEnAttente(avant, enAttente);
+      enAttentePrecedent = enAttente;
+      document.title = titreOnglet(enAttente, TITRE_NORMAL);
+      if (nouveaux > 0) signalerNouveaux(nouveaux);
+      else if (avant !== null && enAttente < avant) cacherNouveaux();
+
+      derniereRelecture = Date.now();
+      majFraicheur();
+    } catch (e) {
+      const sectionEtat = document.querySelector('#etat');
+      if (!rendus.has(sectionEtat)) {
+        sectionEtat.innerHTML = `<h2>État de l'alpha</h2><div class="erreur">${e.message}</div>`;
+      } else {
+        retour(`rafraîchissement impossible : ${e.message}`, true);
+      }
+    }
+  }
+
+  /** Une seule relecture à la fois : deux réponses ne se marchent pas dessus. */
+  function relire(options = {}) {
+    if (relectureEnCours) return relectureEnCours;
+    relectureEnCours = relireMaintenant(options).finally(() => { relectureEnCours = null; });
+    return relectureEnCours;
+  }
+
+  /** Après un geste : laisser finir la relecture en cours, puis en lancer une à jour. */
+  async function charger() {
+    if (relectureEnCours) await relectureEnCours.catch(() => {});
+    await relire({ manuel: true });
+  }
+
+  function demarrerMinuteurs() {
+    if (minuteurRelecture !== null) return;
+    minuteurRelecture = setInterval(() => { relire(); }, INTERVALLE_MS);
+    minuteurFraicheur = setInterval(majFraicheur, 1000);
+  }
+
+  function arreterMinuteurs() {
+    if (minuteurRelecture !== null) clearInterval(minuteurRelecture);
+    if (minuteurFraicheur !== null) clearInterval(minuteurFraicheur);
+    minuteurRelecture = null;
+    minuteurFraicheur = null;
+  }
+
+  // Au retour sur l'onglet : relecture immédiate, puis les minuteurs reprennent. En le
+  // quittant, tout s'arrête — rien ne tourne en arrière-plan.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      demarrerMinuteurs();
+      relire();
+    } else {
+      arreterMinuteurs();
+    }
+  });
+
+  document.querySelector('#rafraichir').addEventListener('click', () => { relire({ manuel: true }); });
+  document.querySelector('#nouveau-bouton').addEventListener('click', () => {
+    cacherNouveaux();
+    document.querySelector('#comptes').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
+
+  // Le résultat d'un geste, affiché au bas de l'écran au lieu d'une page muette. Disparaît seul.
+  let retourMinute = null;
+  function retour(message, rouge = false) {
+    const bloc = document.querySelector('#retour');
+    bloc.hidden = false;
+    bloc.textContent = message;
+    bloc.classList.toggle('rouge', rouge);
+    if (retourMinute) clearTimeout(retourMinute);
+    retourMinute = setTimeout(() => { bloc.hidden = true; }, 5000);
+  }
+
+  // Gestes
+  window.approuver = async (id) => {
+    await api(`/api/comptes/${id}/approuver`, { method: 'POST' });
+    retour('compte approuvé ✓');
+    await charger();
+  };
+  window.refuser = async (id) => {
+    const raison = prompt('Raison du refus (obligatoire) :');
+    if (!raison || !raison.trim()) return alert('un refus exige une raison');
+    await api(`/api/comptes/${id}/refuser`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ raison }) });
+    retour('compte refusé');
+    await charger();
+  };
+  window.marquerAdmin = async (id, administrateur) => {
+    await api(`/api/comptes/${id}/administrateur`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ administrateur }) });
+    retour(administrateur ? 'compte promu administrateur' : 'compte rétrogradé');
+    await charger();
+  };
+  window.reveler = async (id) => { const r = await api(`/api/comptes/${id}/courriel`, { method: 'POST' }); alert(`Courriel : ${r.courriel}`); };
+  window.trier = async (id) => {
+    const statut = document.querySelector(`#s-${id}`).value;
+    const raison = document.querySelector(`#r-${id}`).value.trim();
+    const ticket = document.querySelector(`#t-${id}`).value.trim();
+    const corps = { statut };
+    if (raison) corps.raison = raison;
+    if (ticket) corps.ticket = Number(ticket);
+    await api(`/api/postits/${id}/trier`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corps) });
+    retour(`post-it trié → ${statut}`);
+    await charger();
+  };
+  window.reattribuer = async () => {
+    const compte = document.querySelector('#cible-reattribuer').value.trim();
+    if (!compte) return alert('un compte est requis');
+    const r = await api('/api/postits/reattribuer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ compte }) });
+    retour(`${r.reattribues} post-it(s) réattribué(s)`);
+    await charger();
+  };
+  window.appliquer = async (fichier) => {
+    const r = await api(`/api/migrations/${fichier}/appliquer`, { method: 'POST' });
+    retour(`migration appliquée : ${r.fichier}`);
+    await charger();
+  };
+
+  window.executerSql = async () => {
+    const sortie = document.querySelector('#sql-sortie');
+    const mot = document.querySelector('#mot-destructif');
+    mot.textContent = '';
+    const accuse = document.querySelector('#accuse').checked;
+    const motFourni = document.querySelector('#mot').value.trim();
+    try {
+      const r = await api('/api/sql', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sql: document.querySelector('#sql').value, accuse, mot: motFourni || undefined })
+      });
+      sortie.hidden = false;
+      sortie.textContent = JSON.stringify(r, null, 2);
+    } catch (e) {
+      sortie.hidden = false;
+      sortie.textContent = e.message;
+      if (e.corps && e.corps.mot) {
+        mot.textContent = `Tapez le mot : ${e.corps.mot}`;
+        document.querySelector('#mot').value = e.corps.mot;
+      }
+    }
+    journalVue();
+  };
+
+  // Premier chargement : onglet visible → on lit tout de suite et on démarre la relecture ;
+  // onglet caché → `visibilitychange` fera les deux à son ouverture, sans travailler avant.
+  if (document.visibilityState === 'visible') {
+    demarrerMinuteurs();
+    relire({ manuel: true });
+  }
+</script>
+</body>
+</html>

@@ -11,6 +11,12 @@ import { factionDeck } from '@/game/simulation';
  * pour l'écran (`nextAiAction`), elle ne produit aucune action illégale — elle
  * choisit **dans** `legalActions` —, elle attaque quand elle peut, elle ne joue
  * jamais pour le camp `player`, et elle est **déterministe par graine**.
+ *
+ * **Le niveau est nommé partout (`1`), et ce n'est pas décoratif** : le défaut de
+ * `nextAiAction` est passé à **2** quand l'écran a adopté la recherche (D-084, #172).
+ * Sans le `1`, ce fichier aurait joué le niveau 2 sous un titre qui dit « niveau 1 » —
+ * et il aurait hérité de son budget de **temps**, donc d'un résultat qui dépend de la
+ * charge de la machine.
  */
 
 const PLAYER_DECK = factionDeck('SSE');
@@ -38,13 +44,13 @@ function playSeed(seed: number): {
       // La politique choisit sa relève pour `ai` ; pour `player`, le test la choisit
       // à sa place (ce n'est pas le sujet).
       const action =
-        nextAiAction(state) ?? legalActions(state).find((entry) => entry.type === 'promoteActive');
+        nextAiAction(state, 1) ?? legalActions(state).find((entry) => entry.type === 'promoteActive');
       if (!action) break;
       state = applyAction(state, action);
       continue;
     }
     if (state.current === 'ai') {
-      const action = nextAiAction(state);
+      const action = nextAiAction(state, 1);
       if (!action) break;
       ai.push({ state, action });
       state = applyAction(state, action);
@@ -80,7 +86,7 @@ describe('IA de niveau 1 — la Direction', () => {
       guard += 1;
     }
     expect(state.current).toBe('player');
-    expect(nextAiAction(state)).toBeNull();
+    expect(nextAiAction(state, 1)).toBeNull();
   });
 
   it('termine son tour : plus rien après endTurn', () => {
@@ -92,7 +98,7 @@ describe('IA de niveau 1 — la Direction', () => {
           state = applyAction(state, { type: 'endTurn' });
           continue;
         }
-        const action = nextAiAction(state);
+        const action = nextAiAction(state, 1);
         if (!action) {
           // Relève du joueur : on la trance à sa place et on continue.
           const promotion = legalActions(state).find((entry) => entry.type === 'promoteActive');
@@ -102,7 +108,7 @@ describe('IA de niveau 1 — la Direction', () => {
         }
         const after = applyAction(state, action);
         if (action.type === 'endTurn') {
-          expect(nextAiAction(after), `graine ${seed} : l'IA continue après endTurn`).toBeNull();
+          expect(nextAiAction(after, 1), `graine ${seed} : l'IA continue après endTurn`).toBeNull();
           return;
         }
         state = after;
@@ -128,6 +134,6 @@ describe('IA de niveau 1 — la Direction', () => {
   it('se tait une fois la partie finie', () => {
     const { state } = playSeed(42);
     expect(state.phase).toBe('ended');
-    expect(nextAiAction(state)).toBeNull();
+    expect(nextAiAction(state, 1)).toBeNull();
   });
 });

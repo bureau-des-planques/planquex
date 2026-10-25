@@ -13,11 +13,11 @@ import { readFileSync } from 'node:fs';
  *
  * ⚠️ **Le périmètre des `include` n'est pas un détail.** Avant ce fichier, `vite.config.ts`
  * ne portait **aucun** bloc `test` : `vitest` utilisait donc ses **défauts**, qui couvrent
- * `**\/*.{test,spec}.*` — c'est-à-dire **`src/`, `scripts/` ET `supabase/`**. Un `include`
+ * `**\/*.{test,spec}.*` — c'est-à-dire **`src/`, `scripts/`, `supabase/` ET `tools/`**. Un `include`
  * restreint à `src/**` **cesse d'exécuter** les sept `scripts/*.test.ts` (dont
  * `garde-fous.test.ts`, qui garde la table des gardes) et `supabase/mur.test.ts` (la garde
  * RLS de #135) : la suite devient **verte avec moins de couverture**, ce qui est pire qu'un
- * échec. Les motifs ci-dessous couvrent donc les **trois** zones, et pas seulement `src/`.
+ * échec. Les motifs ci-dessous couvrent donc les **quatre** zones, et pas seulement `src/`.
  *
  * Le défaut a été trouvé par l'orchestrateur en fusionnant : 55 fichiers annoncés contre 60.
  * Un contrôle qui vaut pour la prochaine fois : `npx vitest list --filesOnly` doit rendre
@@ -55,10 +55,10 @@ export default defineConfig({
         test: {
           environment: 'node',
           setupFiles: ['./src/test/setup.ts'],
-          // Les TROIS zones : `src/` (moteur, données, store, lib), `scripts/` (les gardes
-          // du dépôt) et `supabase/` (la migration du mur). Les écrans sont en `.tsx` et
-          // vivent dans le projet `ui`.
-          include: ['src/**/*.test.ts', 'scripts/**/*.test.ts', 'supabase/**/*.test.ts'],
+          // Les QUATRE zones : `src/` (moteur, données, store, lib), `scripts/` (les gardes
+          // du dépôt), `supabase/` (la migration du mur) et `tools/` (le poste de pilotage,
+          // #184). Les écrans sont en `.tsx` et vivent dans le projet `ui`.
+          include: ['src/**/*.test.ts', 'scripts/**/*.test.ts', 'supabase/**/*.test.ts', 'tools/**/*.test.ts'],
           globals: true,
           pool: 'forks'
         }

@@ -174,7 +174,7 @@ describe('le formulaire de dépôt (#136)', () => {
         ecran: 'Combat',
         capture: 'https://exemple.test/capture.png'
       },
-      { pseudo: 'Employé 404' }
+      expect.objectContaining({ pseudo: 'Employé 404' })
     );
 
     expect(await screen.findByText(/Ton post-it est collé au mur/)).toBeInTheDocument();
@@ -208,8 +208,10 @@ describe('le formulaire de dépôt (#136)', () => {
         ecran: '',
         capture: ''
       },
-      { pseudo: 'Employé 404' }
+      expect.objectContaining({ pseudo: 'Employé 404' })
     );
+    // Le post-it neuf connaît les places prises : il ne se colle pas sur un autre (#185).
+    expect(mocks.poster.mock.calls[0][1].positionsPrises).toEqual([{ x: 30, y: 30, angle: 0 }]);
   });
 
   it('affiche le refus de la base, et ne prétend pas que c’est collé', async () => {

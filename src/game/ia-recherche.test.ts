@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BattleState, CardInstance } from '@/data/types';
 import { applyAction, createBattle, createInstance, legalActions } from '@/game/engine';
 import {
   DEFAULT_SEARCH_OPTIONS,
   nextAction,
+  nextAiAction,
   nextSearchAction,
   sampleWorld,
   searchDecision,
@@ -93,6 +94,34 @@ describe('recherche à deux coups — légalité et déterminisme', () => {
       const before = structuredClone(state);
       nextSearchAction(state, SANS_GARDE_DE_TEMPS);
       expect(state).toEqual(before);
+    }
+  });
+});
+
+describe("l'écran joue le niveau 2 acté (D-084, #172 clos)", () => {
+  const positions = [1, 7, 11].flatMap((seed) => aiDecisionPositions(seed, 8));
+
+  // L'échéance de 60 ms replie la recherche sur le glouton quand la machine est chargée :
+  // l'horloge est figée pour que ce test ne dépende que du plafond de nœuds.
+  afterEach(() => vi.restoreAllMocks());
+
+  it('nextAiAction, sans niveau demandé, rend le coup de la recherche et non celui du script', () => {
+    const divergentes = positions.filter(
+      (state) =>
+        JSON.stringify(nextAction(state, 1)) !==
+        JSON.stringify(nextSearchAction(state, SANS_GARDE_DE_TEMPS))
+    );
+    // Sans position où les deux politiques divergent, le test ne prouverait rien.
+    expect(divergentes.length).toBeGreaterThan(0);
+    vi.spyOn(performance, 'now').mockReturnValue(0);
+    for (const state of divergentes) {
+      expect(nextAiAction(state)).toEqual(nextSearchAction(state, SANS_GARDE_DE_TEMPS));
+    }
+  });
+
+  it("le niveau 1 reste demandable explicitement (repli de l'écran)", () => {
+    for (const state of positions) {
+      expect(nextAiAction(state, 1)).toEqual(nextAction(state, 1));
     }
   });
 });

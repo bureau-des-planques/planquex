@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { BattleAction, BattleState } from '@/data/types';
 import { applyAction, createBattle, legalActions } from '@/game/engine';
 import { evaluatePosition, nextAiAction } from '@/game/ia';
@@ -158,12 +158,24 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
     expect(nextAiAction(state, 2)).toBeNull();
   });
 
-  it('est déterministe par graine : même graine, même partie', () => {
-    const first = playSeed(123, 2);
-    const second = playSeed(123, 2);
-    expect(first.ai.length).toBeGreaterThan(0);
-    expect(second.ai.map(({ action }) => action)).toEqual(first.ai.map(({ action }) => action));
-    expect(second.state).toEqual(first.state);
+  it('est déterministe par graine quand l’horloge n’interrompt pas la recherche', () => {
+    // **L'horloge est gelée, et c'est le sujet du test.** La recherche porte deux bornes
+    // (#172) : un **compte de nœuds** (800) et une **échéance murale** (60 ms). La seconde
+    // dépend de la charge de la machine : sous un `npm test` parallèle, la même graine peut
+    // se replier sur le glouton dans une exécution et pas dans l'autre. Ce qui doit être
+    // reproductible, c'est la recherche **à budget de nœuds égal** — c'est ce que vérifie
+    // ce test, horloge gelée. L'échéance, elle, est un garde-fou de latence, pas une
+    // promesse de rejeu (le rejeu, #83, journalise les **actions jouées**, pas les décisions).
+    const horloge = vi.spyOn(performance, 'now').mockReturnValue(0);
+    try {
+      const first = playSeed(123, 2);
+      const second = playSeed(123, 2);
+      expect(first.ai.length).toBeGreaterThan(0);
+      expect(second.ai.map(({ action }) => action)).toEqual(first.ai.map(({ action }) => action));
+      expect(second.state).toEqual(first.state);
+    } finally {
+      horloge.mockRestore();
+    }
   });
 
   it('diffère du niveau 1 : le niveau 2 ne joue pas la même suite', () => {

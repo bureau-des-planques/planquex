@@ -218,6 +218,16 @@ export const MUTATIONS = [
     tests: ['src/data/versions.test.ts'],
     garde:
       'sans cette recherche, la garde « on ne publie pas une version sans sa note » (D-090) ne trouve plus rien : elle refuserait toute version, ou — pire, si elle était écrite à l’envers — laisserait partir une build chez les invités sans que personne ne puisse lire ce qu’elle contient'
+  },
+  {
+    ticket: 184,
+    titre: 'une relecture qui baisse crie « nouvelle inscription »',
+    fichier: 'tools/admin/lib/suivi.mjs',
+    motif: 'return b > a ? b - a : 0;',
+    remplacement: 'return Math.abs(b - a);',
+    tests: ['tools/admin/suivi.test.ts'],
+    garde:
+      'sans la comparaison, une approbation (3 → 2) ferait clignoter le bandeau « 1 nouvelle inscription » : la règle « ne pas crier pour rien » du poste de pilotage (#184)'
   }
 ];
 

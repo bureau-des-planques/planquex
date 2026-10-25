@@ -1,7 +1,7 @@
 {
   "name": "bureau-des-planques",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.8",
   "stage": "alpha",
   "type": "module",
   "description": "Bureau des Planqués — un TCG Pocket-like satirique dans l'univers corporate",
@@ -22,6 +22,7 @@
     "mur:import": "node scripts/mur-import.mjs",
     "notes:versions": "node scripts/notes-versions.mjs",
     "statut": "node scripts/statut-mur.mjs",
+    "admin": "node tools/admin/serveur.mjs",
     "detect:ui": "impeccable detect src/"
   },
   "dependencies": {
@@ -54,6 +55,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "impeccable": "4.7.0",
     "jsdom": "^30.1.3",
+    "pg": "^8.23.1",
     "playwright-core": "^1.64.1",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
