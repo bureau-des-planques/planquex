@@ -31,4 +31,27 @@ servi, et elles encombraient le filtre. Une étiquette qui revient se recrée en
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
+**Étape du projet** — une troisième dimension, **orthogonale** aux catégories et aux états.
+Elle dit **à quelle étape du produit** le ticket doit être livré, pour qu'on puisse filtrer
+« ce qui bloque la prochaine version » sans lire chaque titre. Elle suit `docs/VERSIONS.md` et
+D-048 :
+
+| Étiquette | Sens | Exemple dans le tracker |
+|---|---|---|
+| `alpha` | nécessaire pour le **solo entre invités** (contenu incomplet, casse assumée) | les tickets du combat, la Boîte à idées |
+| `beta` | nécessaire pour le **PvP jouable**, l'URL stable et le périmètre solo complet | le PvP par code (D-049) |
+| `release` | nécessaire pour **1.0.0** : le reste de `PROPOSITION.md` §5.1 (classé, économie…) | l'échelon classé |
+
+Règles de triage :
+
+- **Un ticket porte au plus une étape.** Un ticket qui n'en a pas (dette, outillage hors
+  jeu) n'est pas bloquant pour une étape : il n'en reçoit pas.
+- L'étape est une **échéance**, pas une priorité : elle dit *où* on en a besoin, pas *quand*
+  on le fait. Une étape plus tardive ne déclasse pas un ticket d'alpha qui bloque un testeur.
+- Une étape se **change** dans le ticket (commentaire + `--remove-label`/`--add-label`), jamais
+  silencieusement : c'est une décision de périmètre.
+- Au passage d'une étape à la suivante, les tickets `alpha` encore ouverts sont **relus**
+  avant d'être repris (`docs/VERSIONS.md`) : une étape close ne doit rien laisser derrière
+  elle sans le dire.
+
 Edit the "Label in our tracker" column to match whatever vocabulary you actually use.

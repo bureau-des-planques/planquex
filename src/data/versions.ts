@@ -60,6 +60,21 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.11',
+    date: '2026-10-25',
+    titre: 'Les quatre temps dans l’ordre',
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'Une Pression se lit dans l’ordre : la carte se cabre, puis le trait part, puis la cible prend son anneau. Quand la cible craque, la traînée de craquage remplace le trait, pour qu’il n’y en ait jamais deux à la fois (#207).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Sous « Mouvement réduit », l’anneau d’impact ne s’affiche plus : le chiffre de Stress et le badge disent l’essentiel, sans mouvement.'
+      }
+    ]
+  },
+  {
     version: '0.1.10',
     date: '2026-10-25',
     titre: 'Le combat se voit partir',

@@ -29,8 +29,11 @@
 >
 > **§8 (les effets) ajoutée le 25/10/2026**, à la demande « et pour les effets des
 > attaques et autre ? ». Elle n'acte rien : D-093 (5) couvre le principe et
-> `SPEC-COMBAT-UI` §6.8.3 fixe les bornes. §8 est le **détail d'exécution**, écrit
-> contre le code de #192.
+> `SPEC-COMBAT-UI` §6.8.3 fixe les bornes. §8 est le **détail d'exécution**.
+> **Mise à jour du 25/10/2026 (fermeture de session)** : §8.2 et §8.4 décrivent désormais
+> **ce qui est livré** (#207, commits `a41b6f3` et `c77bcd3`), les écarts restants étant
+> écrits au même endroit. Une version antérieure annonçait 350 ms et des temps tous à 0 ms :
+> c'était faux, elle est remplacée.
 
 ---
 
@@ -365,11 +368,22 @@ l'état est **déjà final** quand l'effet joue, il ne retarde rien.
 | **3. L'impact** | flash sur la cible (`49-00`, `49-09`) | 150 ms | pseudo-élément `::after` sur la carte touchée : anneau `box-shadow: 0 0 0 3px var(--scene-neon-core)`, `opacity` 1 → 0, une fois — **sans `filter: blur`** (borne 5 de §6.8.3) ; le chiffre de Stress part au même instant (existant) | pas d'anneau |
 | **4. L'après** | badge « Stressed ×4 » (`55-03`), traînée de craquage (`55-06`) | 200 ms (badge) | **badge de Condition nommé** (R3) : `badge-pop` — `scale .8 → 1` + `opacity` 0 → 1, 200 ms, une fois ; puis il devient un **état** (il reste). Le craquage suit §8.1 | le badge apparaît sans scale |
 
-**Nouvelles natures** pour `effets-combat.ts` : `'attaque'` (les temps 1-3 forment **un
-seul** effet — sinon la séquence mange le plafond de 4 à elle seule ; champs `uid` de
-l'attaquant + `uidCible` à ajouter au type) et `'condition'` (`uid`). `dureeEffet` :
-350 et 200 ms, sous le plafond existant. Identité de `'attaque'` = attaquant + cible :
-un second coup sur la même paire **remplace** la séquence en cours, jamais d'empilement.
+**Ce qui est livré** (`src/components/effets-combat.ts`, `src/styles.css`, #207) :
+
+| Élément | Valeur livrée | Écart avec le plan ci-dessus |
+|---|---|---|
+| Effet `attaque` | **700 ms** (`DUREE_ATTAQUE_MS`) | le plan disait 350 ms : passé à 700 ms, car l'impact (550–700 ms) serait retiré avant son départ |
+| Effet `condition` | 200 ms (`DUREE_CONDITION_MS`) | aucun |
+| Identité de `attaque` | attaquant + cible (`uid`, `uidCible`) | conforme : un second coup sur la même paire remplace |
+| Anticipation (cabrage) | `attaque-elan`, **0–200 ms**, sur `.poste__carte.is-elan` | conforme |
+| Trait | `trait-attaque`, **200–550 ms** (délai 200 ms), sur `.attaque__trait` | conforme dans sa forme ; **ne part pas** si la Pression craque (voir ci-dessous) |
+| Impact (anneau) | `impact-anneau`, **550–700 ms** (délai 550 ms), sur `.is-impactee::after` | conforme ; `display: none` sous mouvement réduit |
+| Après (badge) | `badge-pop`, 200 ms, **sans délai** | **écart** : le plan le voulait à 700 ms ; il part avec l'effet `condition`, donc au même instant que la Pression |
+| Traînée de craquage | 500 ms, **sans délai** | **écart** : le plan le voulait à 700 ms ; elle part en même temps que la Pression |
+
+Deux garanties tenues par le code : un seul trait à la fois (si la cible craque, la traînée
+de craquage **remplace** le trait), et aucune séquence sous « Mouvement réduit » (le trait et
+l'anneau ne sont pas rendus ou sont masqués, le chiffre reste affiché et figé).
 
 ### 8.3 Les autres gestes
 
@@ -386,6 +400,8 @@ un second coup sur la même paire **remplace** la séquence en cours, jamais d'e
 
 L'ordre après une Pression avec tout qui tombe (le pire cas) :
 
+**Chronologie cible** (le plan) :
+
 ```text
 0 ms     anticipation (200) ── halo is-lit
 200 ms   trait (350)         ── ou trait de craquage si le coup casse
@@ -394,6 +410,14 @@ L'ordre après une Pression avec tout qui tombe (le pire cas) :
 700 ms   traînée de craquage (500) + désaturation, si le Planqué craque
 1 200 ms relève (250)
 ```
+
+**Chronologie livrée** (25/10/2026) : anticipation 0–200 ms, trait 200–550 ms, impact
+550–700 ms, badge et traînée de craquage **à 0 ms** (écart connu), relève **non livrée**.
+L'effet `attaque` reste visible 700 ms, ce qui couvre l'ensemble. Le temps total est donc
+bien sous 1,3 s, mais la chronologie ne suit pas celle du plan pour l'après et le craquage.
+
+**Non livré** : tout le §8.3 (café attaché, carte Action jouée, Rotation, relève, Contrôle,
+fin de partie). Aucun de ces gestes n'a d'effet dans le module d'effets.
 
 **Trois règles d'orchestre** :
 
