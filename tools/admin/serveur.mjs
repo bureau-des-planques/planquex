@@ -60,15 +60,16 @@ export function chargerConfiguration(env = process.env) {
  * navigateur n'est disponible. Non bloquant : le processus en est détaché, le serveur continue
  * de vivre. Ne plante jamais l'appelant — l'adresse est affichée dans tous les cas.
  */
-export function ouvrirNavigateur(url) {
+export function ouvrirNavigateur(url, lancer = spawn) {
   const [cmd, ...args] =
     process.platform === 'darwin' ? ['open', url]
     : process.platform === 'win32' ? ['cmd', '/c', 'start', '', url]
     : ['xdg-open', url];
   try {
-    const fils = spawn(cmd, args, { stdio: 'ignore', detached: true });
-    fils.on('error', () => {});
-    fils.unref();
+    const fils = lancer(cmd, args, { stdio: 'ignore', detached: true });
+    // Un lanceur de test rend un objet nu : on ne suppose ni `on` ni `unref`.
+    fils.on?.('error', () => {});
+    fils.unref?.();
     return true;
   } catch {
     return false;

@@ -171,12 +171,26 @@ describe('la configuration (#184)', () => {
     });
   });
 
-  it('ouvre le navigateur sans jamais lever, et rend un booléen', () => {
-    // Le processus est détaché et sa sortie ignorée : le navigateur peut ne pas exister (CI,
-    // sans affichage), l'appel ne doit ni lever ni bloquer l'appelant. Sa valeur rendue dit si
-    // le lancement a pu être tenté.
-    const resultat = ouvrirNavigateur('http://127.0.0.1:5199/?jeton=test');
-    expect(typeof resultat).toBe('boolean');
+  it('ouvre le navigateur sur l’URL avec le jeton, sans jamais en lancer un pour de vrai', () => {
+    // Ce cas lançait un vrai `xdg-open` : à chaque `npm test`, une fenêtre s'ouvrait sur une
+    // adresse où rien n'écoute, donc une page blanche. On **injecte** le lanceur et on regarde
+    // ce qu'on lui demande — le comportement observable, sans effet de bord.
+    const appels: Array<[string, string[]]> = [];
+    const faux = ((cmd: string, args: string[]) => {
+      appels.push([cmd, args]);
+      return { on() {}, unref() {} };
+    }) as never;
+
+    const url = 'http://127.0.0.1:5199/?jeton=test';
+    expect(ouvrirNavigateur(url, faux)).toBe(true);
+    expect(appels).toHaveLength(1);
+    expect(appels[0][1]).toContain(url);
+
+    // Un lanceur qui explose ne fait pas tomber l'appelant : le serveur affiche l'adresse.
+    const casse = (() => {
+      throw new Error('pas de navigateur');
+    }) as never;
+    expect(ouvrirNavigateur(url, casse)).toBe(false);
   });
 
   it('`ADMIN_OUVRIR_NAVIGATEUR=false` n\'ouvre pas le navigateur', async () => {
