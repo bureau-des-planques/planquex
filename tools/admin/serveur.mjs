@@ -99,9 +99,12 @@ export async function principal(env = process.env, argv = process.argv.slice(2))
     await acces.demarrer();
     const serveur = await demarrerServeur({ adapter: acces, journal, port, hote: '127.0.0.1' });
     const adresse = `${serveur.baseUrl}/?jeton=${serveur.jeton}`;
-    const ouvert = ouvrirNavigateur(adresse);
+
+    const ouvrirNavigateurAuto = env.ADMIN_OUVRIR_NAVIGATEUR !== 'false';
+    const ouvert = ouvrirNavigateurAuto ? ouvrirNavigateur(adresse) : false;
+
     console.log(`Poste de pilotage : ${adresse}${ouvert ? '' : ' (ouvrir à la main)'}`);
-    if (ouvert) console.log('Navigateur ouvert sur l’adresse (le jeton pose un cookie, inutile de le retaper).');
+    if (ouvert) console.log("Navigateur ouvert sur l'adresse (le jeton pose un cookie, inutile de le retaper).");
     console.log('Le jeton est exigé sur chaque requête ; il ne quitte pas cette machine.');
     console.log(`Journal : ${journal.chemin}`);
     return 0;
