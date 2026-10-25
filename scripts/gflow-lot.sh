@@ -82,6 +82,7 @@ COMMIT=0
 SIMULER=0
 FORCE=0
 MAX_ECHECS="${GFLOW_LOT_MAX_ECHECS:-3}"
+JITTER=""          # "" = la valeur de gflow (0.5-1.5 s)
 IDS=()
 
 if [[ -t 1 ]]; then
@@ -121,6 +122,10 @@ Réglages
   --projet <id>            projet Flow existant (défaut : $GFLOW_CLI_PROJECT)
   --modele <nom humain>    défaut « Nano Banana 2.1 » (résolu par illustration-vague.sh)
   --max-echecs <n>         arrêt de sécurité après n échecs de suite (défaut 3)
+  --jitter <spec>          pause anti-bot entre deux envois, passée telle quelle à gflow
+                           (`0` pour la couper ; défaut de gflow : 0.5-1.5 s). Gagne
+                           ~1 s par carte, et rapproche les envois — gflow conseille
+                           de l'ÉLARGIR quand les 403 arrivent (WAF)
   --force                  lance même si une génération gflow tourne déjà
 
   --aide                   ce texte
@@ -141,6 +146,7 @@ while (( $# )); do
     --projet) PROJET="${2:?--projet attend un id}"; shift 2 ;;
     --modele) MODELE="${2:?--modele attend un nom}"; shift 2 ;;
     --max-echecs) MAX_ECHECS="${2:?--max-echecs attend un nombre}"; shift 2 ;;
+    --jitter) JITTER="${2:?--jitter attend une valeur}"; shift 2 ;;
     --force) FORCE=1; shift ;;
     -*) erreur "option inconnue : $1"; exit 2 ;;
     *) IDS+=("$1"); shift ;;
@@ -148,6 +154,9 @@ while (( $# )); do
 done
 
 case "$MAX_ECHECS" in ''|*[!0-9]*) MAX_ECHECS=3 ;; esac
+# Le même réglage, en variable d'environnement : le mode « une par carte » passe
+# par le wizard, qui n'a pas de drapeau `--jitter` — gflow lit celle-ci.
+if [[ -n "$JITTER" ]]; then export GFLOW_CLI_JITTER_RANGE="$JITTER"; fi
 
 if [[ ! -f "$SUJETS" ]]; then
   erreur "table des sujets introuvable : $SUJETS"
@@ -292,6 +301,7 @@ if [[ "$MODE" == "lot" ]]; then
   args=(image t2i --prompts-file "$prompts_fichier" --model "$ALIAS" --aspect 1:1
         --out "$SORTIE/images")
   [[ -n "$PROJET" ]] && args+=(--project "$PROJET")
+  [[ -n "$JITTER" ]] && args+=(--jitter "$JITTER")
   set +e
   "$GFLOW_BIN" "${args[@]}" > "$SORTIE/gflow.out" 2> "$SORTIE/gflow.err"
   code_gen=$?
