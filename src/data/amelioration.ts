@@ -99,7 +99,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Chantier Lean', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Un chantier Lean s’abat sur le Planqué adverse. Objectif : zéro défaut, zéro production.' },
       { name: 'Zéro défaut', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
     ],
-    flavor: 'Zéro défaut. Zéro production.'
+    flavor: 'Zéro défaut. Zéro production.',
+    art: 'amelioration-responsable-amelioration-continue.webp'
   }),
   base({
     id: 'amelioration-gestionnaire-flux',
