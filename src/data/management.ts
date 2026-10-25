@@ -30,7 +30,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Rétroplanning', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a trois rétroplanings. Aucun ne parle du même projet.'
+    flavor: 'Il a trois rétroplanings. Aucun ne parle du même projet.',
+    art: 'management-chef-de-projet.webp'
   }),
   base({
     id: 'management-technico-commercial',
