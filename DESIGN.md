@@ -115,37 +115,27 @@ n'est sous 4,5:1. Le plancher de **taille** est vérifié à l'écran ci-dessous
 Le ratio d'une pastille de Condition est **plus haut** sur une carte de scène (`--scene-card`,
 6,4 à 7,3:1) que sur `--bg-sunken` : le calcul ci-dessus est le cas le plus sombre où elle tombe.
 
-**Plancher typographique du combat — vérifié à l'écran (25/10/2026, #196)**. Le plancher maison
-reste **`--fs-xs` (0.7rem = 11,2 px à la racine)** pour un texte porteur d'information. Mesuré au
-navigateur sur l'état que photographie la capture **420 × 900** `captures/combat.png` (produite par
-`npm run build && npm run capturer`, exit 0), en `sobre` puis en `détaillé` : **23 nœuds de texte
-visibles sous 11,2 px** à l'arrivée, **31** en `détaillé` (hors pseudo-éléments, mesurés à part). Tout ce qui se lit **hors** d'une
-vignette de carte est au-dessus : titre du camp 0.95rem, compte de main 0.72rem, journal et boutons
-0.8rem, fiche de l'inspecteur 0.8–0.85rem.
+**Plancher typographique du combat — vérifié à l'écran (25/10/2026, #196), puis corrigé (#201)**.
+Le plancher maison reste **`--fs-xs` (0.7rem = 11,2 px à la racine)** pour un texte porteur
+d'information. #196 avait mesuré **23 nœuds de texte visibles sous 11,2 px** à l'arrivée, **31** en
+`détaillé`, et inscrit quatre dettes. #201 les a traitées ; voici l'état après.
 
-| Texte mesuré | Sélecteur | Taille | Verdict |
-|---|---|---:|---|
-| Nom du Planqué (Poste, main) | `.card--plateau .card__name` | 0.56rem — **8,96 px** | **écart** : la carte fait 88 px (Poste) ou 64 px (main) ; le nom entier revient à 0.85rem dans l'inspecteur, et le groupe porte `aria-label` |
-| Nom du Planqué (Banc) | `.bench__carte .card--plateau .card__name` | 0.54rem — **8,64 px** | même écart ; le Banc ne fait que 56 px |
-| Numéro de Seuil | `.card--plateau .card__seuil-badge` | 0.6rem — **9,6 px** | **écart** : la fiche redit `x/y de Stress (Seuil y)` ; en `détaillé`, le chiffre de Stress revient près de la barre |
-| Mot « Seuil » | `.card--plateau .card__seuil-badge::before` | 0.42rem — **6,72 px** | **acceptable** : micro-étiquette de la plaque, elle ne porte pas le chiffre ; la fiche donne le mot en clair |
-| Étiquettes de pile | `.pile` | 0.62rem — **9,92 px** | **acceptable** : étiquette d'objet (Deck / Rebut), le compte voisin est à 0.7rem ; le Rebut ne s'ouvre pas encore |
-| Nom du camp sur la piste | `.piste__nom` | 0.6rem — **9,6 px** | **acceptable** : le même nom est en 0.95rem dans l'en-tête du camp, juste à côté ; la piste localise, elle n'apprend rien de neuf |
-| Types de café de la Machine | `.poste__machine-types` | 0.62rem — **9,92 px** | **acceptable** : annotation du mode `détaillé`, absente en `sobre` ; la Machine a son `sr-only` et la fiche |
-| Chiffre de Stress sur la carte | `.card__stress-chiffre` | 0.62rem — **9,92 px** | **écart** : annotation du mode `détaillé` ; la barre montre la même mesure, la fiche la chiffre |
-| Nom d'une Condition | `.status-chip` | 0.62rem — **9,92 px** | **écart** : mesuré dans le dialogue **Conditions** (les cinq noms) ; en `sobre` le badge ne garde que l'icône et le nom part en `sr-only`, et la règle est écrite à côté |
-| Nature / « Jouable » dans la pose | `.hand__kind` / `.hand__tag` | 0.64 / 0.62rem — **10,24 / 9,92 px** | hors capture (aucune carte choisie) ; même famille d'annotation, la carte et la fiche disent le type |
+| Texte mesuré | Taille avant | Aujourd'hui | Verdict |
+|---|---:|---:|---|
+| Nom du Planqué (Poste) | 8,96 px | **11,2 px** (0.7rem, **trois** lignes) | **réglé** — « Psychologue du travail » se lit en entier |
+| Nom du Planqué (Banc) | 8,64 px | **9,92 px** (`--fs-2xs`) | **écart inscrit** : la place fait 56 px, et « TRAVAIL » à 11,2 px prendrait trois lignes dans une vignette de deux. Le nom entier est dans l'inspecteur ; le groupe porte son `aria-label` |
+| Numéro de Seuil | 9,6 px | **11,2 px** | **réglé** — c'est une décision (avant de craquer), pas un ornement |
+| Chiffre de Stress (`détaillé`) | 9,92 px | **11,2 px** | **réglé** — une mesure se lit |
+| Nom d'une Condition | 9,92 px | **11,2 px** | **réglé** — la règle se lit, elle ne se devine pas |
+| Mot « Seuil », étiquettes de pile, nom du camp sur la piste, types de café, nature dans la pose | 6,7 à 10,2 px | inchangés | **acceptables** : information répétée à ≥ 0.7rem ou dans la fiche |
 
-**Verdict** : le plancher n'est **pas** tenu à la lettre sur les vignettes. Sont **acceptables**
-les textes dont l'information est répétée à ≥ 0.7rem ou dans la fiche — le mot « Seuil », les
-étiquettes de pile, le nom des camps de la piste, les types de café. Restent une **dette** ceux qui
-portent l'information sans doublon lisible : le nom du Planqué (8,64–8,96 px), le chiffre du Seuil
-(9,6 px), le chiffre de Stress en `détaillé` (9,92 px) et le nom d'une Condition (9,92 px). On ne
-les monte **pas** ici : #196 ne touche ni l'écran ni les styles. L'écart est **inscrit**, avec sa
-raison : la carte du plateau fait 56 à 88 px, et la garde de hauteur n'a que **5 px** de marge
-(§2.4) — monter la police demande donc d'accepter un nom plus coupé dans la vignette, ou d'agrandir
-la carte et de perdre la marge. Le choix se tranche dans un ticket d'écran. La porte de lecture est
-l'inspecteur (survol, focus, clic) : nom entier à 0.85rem, fiche à 0.8–0.85rem. La règle « aucun
+**Ce qui reste, dit franchement** : un seul texte porteur d'information est encore sous le plancher,
+le **nom du Planqué au Banc** (9,92 px), et c'est un arbitrage de place, pas un oubli : à 56 px de
+large et deux lignes, `--fs-xs` amputerait le nom au milieu d'un mot. Le passage à 64 px coûterait
+22 px de hauteur, que la garde ne donne pas. La porte de lecture reste l'inspecteur (nom entier à
+0.85rem), et le `aria-label` du groupe ne dépend pas de la taille.
+
+La règle « aucun
 texte porteur d'information sous `--fs-xs` » **n'est donc pas satisfaite** : c'est une dette
 d'écran, pas une description du système.
 

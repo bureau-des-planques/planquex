@@ -1008,9 +1008,15 @@ h2 {
 /* Trois lignes, et non deux : à 61 px de large, « Agent d'entretien » se coupe en deux lignes
    sur « AGENT D'ENTR… ». Le cadre reste à 63 × 88 : c'est l'illustration qui cède la place. */
 .card--plateau .card__name {
-  font-size: 0.56rem;
-  letter-spacing: 0.02em;
-  line-height: 1.12;
+  /* #201 : au-dessus du plancher `--fs-xs` (0,7rem = 11,2 px). Le nom d'un Planqué est ce
+     qui décide si on joue la carte ; à 8,6 px il ne servait qu'à décorer. Deux lignes, pas
+     trois : la carte du Poste fait 88 px de large. */
+  font-size: 0.7rem;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  /* Trois lignes : à 11,2 px, « Psychologue du travail » en prend trois dans 84 px. Deux
+     lignes avec ellipse ne montraient plus que « PSYCHOLOGUE DU… » — un nom tronqué au
+     milieu d'une information qui décide. */
   -webkit-line-clamp: 3;
   /* #200 : la coupure se fait **sur les espaces** (et à la césure de la langue, `hyphens: auto` hérité
      de `.card__name`). `anywhere` coupait « TRAVAIL » au milieu du mot : c'est ce qui donnait « TRA-VAIL ». */
@@ -1023,7 +1029,8 @@ h2 {
 .card--plateau .card__seuil-badge {
   bottom: 1.1rem;
   border-radius: 4px;
-  font-size: 0.6rem;
+  /* #201 : le Seuil est une décision (combien de Stress avant de craquer), pas un ornement. */
+  font-size: var(--fs-xs);
   padding: 0.05rem 0.16rem;
   position: absolute;
   right: 0.3rem;
@@ -1052,7 +1059,8 @@ h2 {
   color: var(--text);
   flex: none;
   font-family: var(--font-display);
-  font-size: var(--fs-2xs);
+  /* #201 : le chiffre du Stress est une mesure, pas une annotation — il passe au plancher. */
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   white-space: nowrap;
@@ -2527,9 +2535,12 @@ h2 {
 
 .battle .bench__carte .card--plateau .card__name {
   /* Deux lignes, jamais trois : à 56 px de place, une troisième ligne ne montre qu'une
-     syllabe (« D'ENTRETIEN N »). Mieux vaut une ellipse qu'un mot amputé. */
+     syllabe (« D'ENTRETIEN N »). Mieux vaut une ellipse qu'un mot amputé.
+     #201 : la place du Banc ne permet pas `--fs-xs` (0,7rem) — « TRAVAIL » y prendrait
+     trois lignes. On monte au plancher documenté `--fs-2xs` (0,62rem), et l'écart est
+     inscrit dans `DESIGN.md` §2.4 plutôt que masqué. */
   -webkit-line-clamp: 2;
-  font-size: 0.54rem;
+  font-size: var(--fs-2xs);
   hyphens: manual;
   line-height: 1.12;
 }
@@ -2582,7 +2593,8 @@ h2 {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
-  font-size: var(--fs-2xs);
+  /* #201 : au-dessus du plancher — la règle d'une Condition se lit, elle ne se devine pas. */
+  font-size: var(--fs-xs);
   font-weight: 700;
   gap: 0.25rem;
   letter-spacing: 0.04em;
