@@ -74,7 +74,8 @@ export const ATELIER_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Relance', cost: ['ATELIER', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est relancé pour un point d’avancement. Le point est reporté à la semaine suivante.' }],
-    flavor: 'Il pilote la production depuis une réunion. La production l’a oublié.'
+    flavor: 'Il pilote la production depuis une réunion. La production l’a oublié.',
+    art: 'atelier-rpo.webp'
   }),
   base({
     id: 'atelier-rui',
