@@ -103,7 +103,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Réorganisation', cost: ['DIRECTION', 'INCOLORE'], damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a fusionné trois sites. Les budgets, non.'
+    flavor: 'Il a fusionné trois sites. Les budgets, non.',
+    art: 'direction-directeur-regional.webp'
   }),
   base({
     id: 'direction-directeur-general',
