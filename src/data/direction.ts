@@ -126,7 +126,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Filtre', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il lit tout. Il ne décide rien.'
+    flavor: 'Il lit tout. Il ne décide rien.',
+    art: 'direction-assistant-direction.webp'
   }),
   base({
     id: 'direction-chef-cabinet',
