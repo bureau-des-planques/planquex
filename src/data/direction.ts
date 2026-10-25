@@ -247,7 +247,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Prélèvement', cost: ['DIRECTION'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a prélevé un échantillon. L\'échantillon est introuvable.'
+    flavor: 'Il a prélevé un échantillon. L\'échantillon est introuvable.',
+    art: 'direction-auditeur-interne.webp'
   }),
   base({
     id: 'direction-commissaire-comptes',
