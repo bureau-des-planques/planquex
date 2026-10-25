@@ -177,7 +177,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Mot doux', cost: ['QVT'], damage: 10, text: 'Soigne 10 d\'un de tes Planqués.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il a écrit un post-it. Il l\'a collé sur son écran.'
+    flavor: 'Il a écrit un post-it. Il l\'a collé sur son écran.',
+    art: 'qvt-charge-mission.webp'
   }),
   base({
     id: 'qvt-facilitateur',
