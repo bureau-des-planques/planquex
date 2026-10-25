@@ -60,6 +60,41 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.8',
+    date: '2026-10-25',
+    titre: 'L’écran de combat, refait',
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'Le plateau montre des cartes : l’illustration, le nom, le Seuil et une barre de Stress qui monte. Le Poste et le Banc se font face, et les deux camps se lisent d’un coup (#187, #199).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La main est un éventail de cartes, rogné par le bas de l’écran, au lieu d’une bande de boutons (#200).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Les infos viennent à toi : au survol et au clavier une infobulle, au clic un panneau qui porte aussi les gestes de la carte (#188). Le bouton ⓘ, la touche I ou Ctrl+I changent la densité, et le choix est retenu (#189).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Les Interventions sont des jetons, les piles Deck et Rebut sont visibles avec leur compte, et tout ce qui est secondaire — Journal, Partie à deux, Règles, Abandonner — tient derrière un seul menu (#191, #190).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Une table, une seule lumière : la scène a sa palette, le néon ne s’allume que pour un état, et l’or reste la marque du COMEX (#190).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le Stress qui monte, la pile qui s’allume à la pioche, l’Intervention qui se remplit : les effets disent ce qui vient de se passer, et se taisent si tu as demandé moins de mouvement (#192).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le texte revient au-dessus de 11 px, et plus rien d’atténué ne se pose sur le centre éclairé (#201, #198).'
+      }
+    ]
+  },
+  {
     version: '0.1.7',
     date: '2026-10-25',
     titre: 'Les comptes, et le mur qui écrit',
