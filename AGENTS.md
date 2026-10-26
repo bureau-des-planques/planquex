@@ -332,6 +332,8 @@ D-113 (26/10/2026). Le modèle est **GitHub flow** : une seule branche longue, `
 
 - Un ticket se travaille sur une **branche dédiée dans son propre worktree**, créée depuis **`main`**, et se propose par **pull request** vers **`main`**. La branche se supprime après la fusion.
 - **Fusion : merge commit uniquement**, jamais de squash ni de rebase. Les agents **citent leurs hashes** dans leurs rapports, `git branch -d` (skill `cloture`) ne vaut qu'après un merge commit, et un ticket entier se défait par `git revert -m 1 <merge>`. Sujet : `merge: <ce que ça change> (#N)`. `git log --first-parent main` donne la vue « un ticket, une ligne ».
+- **Les réglages du dépôt font foi** : sur `Chapax/planquex`, seules la fusion par **merge commit** et la **suppression de la branche après fusion** sont activées (26/10/2026) — le squash et le rebase n'y sont même pas proposés.
+- **La protection de branche n'existe pas ici** : elle demande GitHub Pro sur un dépôt privé (réponse de l'API, 26/10/2026). Les gardes sont donc en amont : CI de la PR, aperçu Vercel, `npm run isolation`, et les quatre commandes de §8.4 en local.
 - **Pas de branche `dev`.** Elle a été retirée le 26/10/2026 (son contenu était déjà sur `main` ; le dernier état reste au tag `archive/dev-2026-10-26`). Une session qui n'a pas de ticket prend une branche jetable issue de `main`.
 - La CI des PR est celle de `main` (§6). Les fichiers générés se vérifient **à la release**, pas à chaque PR (§6, `docs/VERSIONS.md` §4).
 - Fermer ou ouvrir une issue `alpha` périme `src/data/plan-dev.ts` : `npm run plan:dev` quand on prépare une release.
