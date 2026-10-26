@@ -69,8 +69,8 @@ const PAGES = [
   ['connexion', '/connexion'],
   ['attente', '/attente'],
   ['administration', '/administration'],
-  // Le mur du comité (#129, D-097) : une page hors barre de navigation, menée
-  // par la bulle — donc capturée en dernier.
+  // Le mur du comité (#129, D-097) : une page du jeu, cinquième onglet depuis #213 ;
+  // capturée après les écrans de compte.
   ['comite', '/comite']
 ];
 
