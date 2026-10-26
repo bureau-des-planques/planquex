@@ -99,26 +99,36 @@ for (const file of sources) {
 
 const tests = files.filter((file) => /\.(test|spec)\.(ts|tsx)$/.test(file));
 const docs = files.filter((file) => file.endsWith('.md')).map((file) => relative(root, file));
-const distIndex = await stat(join(root, 'dist/index.html')).then(() => true).catch(() => false);
-const distSw = await stat(join(root, 'dist/sw.js')).then(() => true).catch(() => false);
+const distIndex = await stat(join(root, 'dist/index.html'))
+  .then(() => true)
+  .catch(() => false);
+const distSw = await stat(join(root, 'dist/sw.js'))
+  .then(() => true)
+  .catch(() => false);
 
 let pkg = null;
 try {
   pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
 } catch {}
 
-console.log(JSON.stringify({
-  generatedAt: new Date().toISOString(),
-  root,
-  cards: await cardReport(),
-  files: {
-    total: files.length,
-    source: sources.length,
-    tests: tests.length,
-    byExt
-  },
-  totalLines,
-  docs,
-  scripts: pkg?.scripts ?? {},
-  build: { distIndex, distSw }
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      generatedAt: new Date().toISOString(),
+      root,
+      cards: await cardReport(),
+      files: {
+        total: files.length,
+        source: sources.length,
+        tests: tests.length,
+        byExt
+      },
+      totalLines,
+      docs,
+      scripts: pkg?.scripts ?? {},
+      build: { distIndex, distSw }
+    },
+    null,
+    2
+  )
+);

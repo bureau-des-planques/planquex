@@ -16,9 +16,7 @@ import type { BattleState, CafeType } from '@/data/types';
  */
 const SEED = 5;
 
-const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
-  (card) => card.id
-);
+const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map((card) => card.id);
 
 /** Deck légal de 20 cartes (10 noms N+1 en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
@@ -138,8 +136,9 @@ describe('Machine à café — les types choisis par le joueur (#91)', () => {
       state.seed,
       state.actionLog.map((entree) => entree.action),
       {
-      playerCafeTypes: chosen
-    });
+        playerCafeTypes: chosen
+      }
+    );
     expect(replayed).toEqual(state);
   });
 });
@@ -149,10 +148,7 @@ describe('Machine à café — les types choisis par le joueur (#91)', () => {
  * seul motif. Même technique que `Battle.test.ts` : le contrat porte sur la source,
  * donc c'est la source qu'on lit.
  */
-const battleSource = readFileSync(
-  fileURLToPath(new URL('../pages/Battle.tsx', import.meta.url)),
-  'utf8'
-);
+const battleSource = readFileSync(fileURLToPath(new URL('../pages/Battle.tsx', import.meta.url)), 'utf8');
 
 describe('Battle.tsx — le plateau rend les cafés typés', () => {
   it('dessine les cafés par les pastilles de la maison (CafePips / CafeDot / cafeLabel)', () => {

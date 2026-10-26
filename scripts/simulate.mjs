@@ -65,7 +65,9 @@ function parseArgs(argv) {
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    const [name, inline] = arg.includes('=') ? [arg.slice(0, arg.indexOf('=')), arg.slice(arg.indexOf('=') + 1)] : [arg, undefined];
+    const [name, inline] = arg.includes('=')
+      ? [arg.slice(0, arg.indexOf('=')), arg.slice(arg.indexOf('=') + 1)]
+      : [arg, undefined];
     const value = () => {
       if (inline !== undefined) return inline;
       index += 1;
@@ -130,7 +132,9 @@ if (!options) {
         playerLevel: options.playerLevel,
         aiLevel: options.aiLevel
       });
-      process.stdout.write(options.json ? `${JSON.stringify(report, null, 2)}\n` : `${simulation.formatReport(report)}\n`);
+      process.stdout.write(
+        options.json ? `${JSON.stringify(report, null, 2)}\n` : `${simulation.formatReport(report)}\n`
+      );
     }
   } finally {
     await server.close();

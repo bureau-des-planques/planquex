@@ -18,7 +18,10 @@ const ids = (cartes: readonly Card[]) => cartes.map((carte) => carte.id);
 const rangStade = (carte: Card) => (isPlanque(carte) ? STAGE_META[carte.stage].order : 99);
 
 /** Une règle par tri : vraie si la liste est dans l'ordre que le libellé promet. */
-const REGLES: Record<Exclude<(typeof TRIS)[number], 'defaut'>, (cartes: readonly Card[], owned: Record<string, number>) => boolean> = {
+const REGLES: Record<
+  Exclude<(typeof TRIS)[number], 'defaut'>,
+  (cartes: readonly Card[], owned: Record<string, number>) => boolean
+> = {
   faction: (cartes) =>
     cartes.every(
       (carte, i) =>
@@ -28,7 +31,8 @@ const REGLES: Record<Exclude<(typeof TRIS)[number], 'defaut'>, (cartes: readonly
   rarete: (cartes) =>
     cartes.every((carte, i) => i === 0 || RARITY_META[cartes[i - 1].rarity].order >= RARITY_META[carte.rarity].order),
   nom: (cartes) => cartes.every((carte, i) => i === 0 || cartes[i - 1].name.localeCompare(carte.name, 'fr') <= 0),
-  possedees: (cartes, owned) => cartes.every((carte, i) => i === 0 || (owned[cartes[i - 1].id] ?? 0) >= (owned[carte.id] ?? 0))
+  possedees: (cartes, owned) =>
+    cartes.every((carte, i) => i === 0 || (owned[cartes[i - 1].id] ?? 0) >= (owned[carte.id] ?? 0))
 };
 
 /** Quelques cartes possédées en nombre inégal, dont la **dernière** du catalogue. */

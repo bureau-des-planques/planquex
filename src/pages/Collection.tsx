@@ -25,9 +25,8 @@ export function Collection() {
   const byName = useMemo(() => deckCountsByName(deck), [deck]);
 
   const factions = useMemo(
-    () => (Object.keys(FACTION_META) as Faction[]).sort((a, b) =>
-      FACTION_META[a].name.localeCompare(FACTION_META[b].name)
-    ),
+    () =>
+      (Object.keys(FACTION_META) as Faction[]).sort((a, b) => FACTION_META[a].name.localeCompare(FACTION_META[b].name)),
     []
   );
 
@@ -58,10 +57,12 @@ export function Collection() {
     <div className="page collection">
       <section className="section__head">
         <div>
-          <h1>{uniqueOwned}/{ALL_CARDS.length} cartes</h1>
+          <h1>
+            {uniqueOwned}/{ALL_CARDS.length} cartes
+          </h1>
           <p className="muted">
-            {visible.length} affichés · {HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum
-            à tirer est {PLAFOND_TIRABLE}
+            {visible.length} affichés · {HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum à tirer est{' '}
+            {PLAFOND_TIRABLE}
           </p>
         </div>
       </section>
@@ -106,8 +107,8 @@ export function Collection() {
 
       {uniqueOwned === 0 && (
         <p className="notice notice--warn">
-          Ta Collection est vide : ouvre un Arrivage depuis l’accueil. Les cartes ci-dessous sont
-          celles qu’il te reste à trouver.
+          Ta Collection est vide : ouvre un Arrivage depuis l’accueil. Les cartes ci-dessous sont celles qu’il te reste
+          à trouver.
         </p>
       )}
 

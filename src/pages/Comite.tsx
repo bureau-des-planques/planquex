@@ -183,9 +183,7 @@ export function Comite() {
         setErreurCommentaires(null);
       })
       .catch((erreur: unknown) => {
-        setErreurCommentaires(
-          `Les commentaires n’ont pas pu être lus (${messageDe(erreur)}). Le mur reste lisible.`
-        );
+        setErreurCommentaires(`Les commentaires n’ont pas pu être lus (${messageDe(erreur)}). Le mur reste lisible.`);
       })
       .finally(() => setChargementCommentaires(false));
   };
@@ -212,9 +210,7 @@ export function Comite() {
         setMur(LECTURE.mur);
         setErreurs(LECTURE.erreurs);
         setSource('fichier');
-        setNotice(
-          `La base n’a pas répondu : le mur affiche le fichier du dépôt. (${messageDe(erreur)})`
-        );
+        setNotice(`La base n’a pas répondu : le mur affiche le fichier du dépôt. (${messageDe(erreur)})`);
       })
       .finally(() => {
         if (vivant) setChargement(false);
@@ -273,9 +269,7 @@ export function Comite() {
         courant
           ? {
               ...courant,
-              postits: courant.postits.map((autre) =>
-                autre.id === id ? { ...autre, position: acceptee } : autre
-              )
+              postits: courant.postits.map((autre) => (autre.id === id ? { ...autre, position: acceptee } : autre))
             }
           : courant
       );
@@ -404,7 +398,7 @@ export function Comite() {
       const commentaire = await commenterPostit(postit.id, texte, { pseudo });
       setCommentaires((courants) => ({
         ...courants,
-        [postit.id]: [...(courants[postit.id] ?? []), commentaire],
+        [postit.id]: [...(courants[postit.id] ?? []), commentaire]
       }));
     } catch (erreur) {
       setErreursFil((courants) => ({ ...courants, [postit.id]: messageDe(erreur) }));
@@ -421,9 +415,7 @@ export function Comite() {
       await supprimerCommentaire(commentaire.id);
       setCommentaires((courants) => ({
         ...courants,
-        [commentaire.postitId]: (courants[commentaire.postitId] ?? []).filter(
-          (autre) => autre.id !== commentaire.id
-        ),
+        [commentaire.postitId]: (courants[commentaire.postitId] ?? []).filter((autre) => autre.id !== commentaire.id)
       }));
     } catch (erreur) {
       setErreursFil((courants) => ({ ...courants, [commentaire.postitId]: messageDe(erreur) }));
@@ -442,9 +434,7 @@ export function Comite() {
         courant
           ? {
               ...courant,
-              postits: courant.postits.map((autre) =>
-                autre.id === postit.id ? { ...autre, ...corrige } : autre
-              )
+              postits: courant.postits.map((autre) => (autre.id === postit.id ? { ...autre, ...corrige } : autre))
             }
           : courant
       );
@@ -475,8 +465,7 @@ export function Comite() {
       setDepotMessage(
         cible.mien
           ? {
-              texte:
-                'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
+              texte: 'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
             }
           : {
               texte: `Le post-it de ${cible.pseudo || 'anonyme'} est retiré du mur, avec ses votes et ses commentaires.`
@@ -561,8 +550,8 @@ export function Comite() {
           <div>
             <h1>Le comité de pilotage</h1>
             <p className="muted max-w-[62ch]">
-              Le mur des retours d’alpha : ce que les invités proposent (<strong>IP</strong>) et
-              signalent (<strong>OUF</strong>).{' '}
+              Le mur des retours d’alpha : ce que les invités proposent (<strong>IP</strong>) et signalent (
+              <strong>OUF</strong>).{' '}
               {branche
                 ? peutEcrire
                   ? 'Tu peux y coller un post-it et commenter sous ceux des autres, avec ton compte.'
@@ -589,30 +578,22 @@ export function Comite() {
               <p className="notice notice--warn m-0 max-w-[46ch]" role="status">
                 {sessionCompte ? (
                   <>
-                    Ton compte attend d’être validé : tu peux lire et voter dès qu’il sera
-                    approuvé.{' '}
+                    Ton compte attend d’être validé : tu peux lire et voter dès qu’il sera approuvé.{' '}
                     <Link to="/attente">Voir mon compte</Link>
                   </>
                 ) : (
                   <>
-                    Il faut un compte pour poster ou voter.{' '}
-                    <Link to="/connexion">Se connecter</Link>
+                    Il faut un compte pour poster ou voter. <Link to="/connexion">Se connecter</Link>
                   </>
                 )}
               </p>
             ) : formulaireExterne ? (
-              <a
-                className="button button--gold"
-                href={formulaireExterne}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a className="button button--gold" href={formulaireExterne} target="_blank" rel="noopener noreferrer">
                 Proposer une idée / signaler <ExternalLink size={16} />
               </a>
             ) : (
               <p className="notice notice--warn m-0 max-w-[38ch]">
-                Le formulaire n’est pas encore branché : le retour se donne pour l’instant de
-                vive voix, à Bastien.
+                Le formulaire n’est pas encore branché : le retour se donne pour l’instant de vive voix, à Bastien.
               </p>
             )}
             <Link className="button" to="/">
@@ -635,8 +616,8 @@ export function Comite() {
             </li>
           ))}
           <li>
-            Un gueulage est à part : s’il a donné lieu à un signalement ou à une idée, ce post-it est
-            collé dessus (D-085).
+            Un gueulage est à part : s’il a donné lieu à un signalement ou à une idée, ce post-it est collé dessus
+            (D-085).
           </li>
         </ul>
       </section>
@@ -651,9 +632,8 @@ export function Comite() {
         <section className="section panel" id="depot-form" aria-labelledby="depot-titre">
           <h2 id="depot-titre">Poster une idée</h2>
           <p className="muted max-w-[64ch]">
-            Deux familles, et le gueulage à part (D-085). Ton pseudo local est recopié sur le
-            post-it (tu peux le laisser vide), et la base sait quel compte l’a écrit : c’est
-            ce qui permet de te répondre.
+            Deux familles, et le gueulage à part (D-085). Ton pseudo local est recopié sur le post-it (tu peux le
+            laisser vide), et la base sait quel compte l’a écrit : c’est ce qui permet de te répondre.
           </p>
 
           <form className="flex flex-col gap-4" onSubmit={coller}>
@@ -735,8 +715,8 @@ export function Comite() {
             </div>
 
             <p className="m-0 max-w-[64ch] text-[0.8rem] text-ink-muted">
-              Tu seras signé <strong>{pseudo || 'anonyme'}</strong> · {APP_LABEL}. Le post-it
-              arrive <strong>en attente</strong> : c’est le tri qui le fait avancer, pas le posteur.
+              Tu seras signé <strong>{pseudo || 'anonyme'}</strong> · {APP_LABEL}. Le post-it arrive{' '}
+              <strong>en attente</strong> : c’est le tri qui le fait avancer, pas le posteur.
             </p>
 
             <div className="actions actions--tight">
@@ -759,9 +739,8 @@ export function Comite() {
         <section className="notice notice--warn">
           <h2>Le fichier du mur n’a pas pu être lu</h2>
           <p className="m-0 max-w-[70ch]">
-            Le mur reste fermé tant que le fichier n’est pas réparé :{' '}
-            <code>docs/comite.json</code>, dont la forme est écrite dans{' '}
-            <code>docs/COMITE.md</code> §3.
+            Le mur reste fermé tant que le fichier n’est pas réparé : <code>docs/comite.json</code>, dont la forme est
+            écrite dans <code>docs/COMITE.md</code> §3.
           </p>
           <ul className="mt-2 mb-0 flex flex-col gap-1 text-[0.84rem]">
             {erreurs.map((erreur) => (
@@ -786,9 +765,7 @@ export function Comite() {
       {!chargement && mur && mur.postits.length === 0 && (
         <section className="section">
           <div className="empty">
-            <p className="m-0 font-heading text-[1.15rem] font-bold text-ink">
-              Le mur est encore vide.
-            </p>
+            <p className="m-0 font-heading text-[1.15rem] font-bold text-ink">Le mur est encore vide.</p>
             <p className="mx-auto mt-1 mb-0 max-w-[52ch]">
               {branche && peutEcrire
                 ? 'Sois le premier à coller un post-it : il apparaîtra ici, avec son papier et sa place.'
@@ -809,12 +786,7 @@ export function Comite() {
               </p>
             ) : (
               mur.formulaire && (
-                <a
-                  className="button button--gold mt-4"
-                  href={mur.formulaire}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <a className="button button--gold mt-4" href={mur.formulaire} target="_blank" rel="noopener noreferrer">
                   Laisser le premier post-it <ExternalLink size={16} />
                 </a>
               )
@@ -860,8 +832,7 @@ export function Comite() {
 
             {!peutRanger && (
               <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
-                Le rangement s’ouvrira en même temps que l’écriture : il faut d’abord un compte
-                validé.
+                Le rangement s’ouvrira en même temps que l’écriture : il faut d’abord un compte validé.
               </p>
             )}
 
@@ -875,17 +846,13 @@ export function Comite() {
 
             {placement && source === 'fichier' && (
               <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
-                Sans base, la place ne se retient pas : elle vit le temps de l’écran. Le fichier
-                garde <code>position</code>, écrit à la main.
+                Sans base, la place ne se retient pas : elle vit le temps de l’écran. Le fichier garde{' '}
+                <code>position</code>, écrit à la main.
               </p>
             )}
 
             {message && (
-              <p
-                className={
-                  message.alerte ? 'notice notice--warn m-0' : 'm-0 text-[0.86rem] text-ink-muted'
-                }
-              >
+              <p className={message.alerte ? 'notice notice--warn m-0' : 'm-0 text-[0.86rem] text-ink-muted'}>
                 {message.texte}
               </p>
             )}
@@ -919,7 +886,7 @@ export function Comite() {
                         }
                       : undefined
                   }
-                  associe={postit.gueulage && postit.lie ? parId.get(postit.lie) ?? null : null}
+                  associe={postit.gueulage && postit.lie ? (parId.get(postit.lie) ?? null) : null}
                   fil={
                     source === 'base'
                       ? {

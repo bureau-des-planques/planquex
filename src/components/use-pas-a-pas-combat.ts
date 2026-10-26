@@ -60,8 +60,7 @@ export interface PasAPasCombatEtat {
 export function comportementDeDefilement(): ScrollBehavior {
   const reduit =
     useStore.getState().reducedMotion ||
-    (typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    (typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   return reduit ? 'auto' : 'smooth';
 }
 

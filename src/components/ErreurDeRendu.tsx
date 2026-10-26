@@ -52,8 +52,8 @@ export class ErreurDeRendu extends Component<Props, Etat> {
       <section className="page erreur-ecran" role="alert">
         <h1>Cet écran a planté</h1>
         <p className="muted">
-          Ce n’est pas ta faute, et ta progression n’est pas touchée : elle vit dans ce navigateur, pas
-          dans l’écran qui vient de tomber. Recharge, ou repars de l’accueil.
+          Ce n’est pas ta faute, et ta progression n’est pas touchée : elle vit dans ce navigateur, pas dans l’écran qui
+          vient de tomber. Recharge, ou repars de l’accueil.
         </p>
         <div className="actions actions--tight">
           <button type="button" className="button button--primary" onClick={() => window.location.reload()}>

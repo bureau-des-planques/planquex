@@ -58,7 +58,10 @@ const AI_DECK = factionDeck('MANAGEMENT');
  * l'humain par la seule fin de tour : on ne teste pas le jeu du joueur, seulement
  * celui de la Direction.
  */
-function playSeed(seed: number, level: Politique): {
+function playSeed(
+  seed: number,
+  level: Politique
+): {
   state: BattleState;
   ai: { state: BattleState; action: BattleAction }[];
 } {
@@ -69,8 +72,7 @@ function playSeed(seed: number, level: Politique): {
     if (state.pendingPromotion) {
       // La politique choisit sa relève pour `ai` ; pour `player`, le test la choisit
       // à sa place (ce n'est pas le sujet).
-      const action =
-        nextAiAction(state, level) ?? legalActions(state).find((entry) => entry.type === 'promoteActive');
+      const action = nextAiAction(state, level) ?? legalActions(state).find((entry) => entry.type === 'promoteActive');
       if (!action) break;
       state = applyAction(state, action);
       continue;
@@ -104,19 +106,14 @@ interface MirrorAggregate {
  * comptant les victoires de chaque niveau. Fonction **pure** : testable sur
  * des données synthétiques.
  */
-function aggregateMirror(
-  directionEnNiveau2: SimulationReport,
-  joueurEnNiveau2: SimulationReport
-): MirrorAggregate {
+function aggregateMirror(directionEnNiveau2: SimulationReport, joueurEnNiveau2: SimulationReport): MirrorAggregate {
   const niveau2 =
     directionEnNiveau2.results.filter((r) => r.winner === 'ai').length +
     joueurEnNiveau2.results.filter((r) => r.winner === 'player').length;
   const niveau1 =
     directionEnNiveau2.results.filter((r) => r.winner === 'player').length +
     joueurEnNiveau2.results.filter((r) => r.winner === 'ai').length;
-  const nulles = [...directionEnNiveau2.results, ...joueurEnNiveau2.results].filter(
-    (r) => r.winner === null
-  ).length;
+  const nulles = [...directionEnNiveau2.results, ...joueurEnNiveau2.results].filter((r) => r.winner === null).length;
   const decidees = niveau2 + niveau1;
   const taux = decidees === 0 ? 0 : niveau2 / decidees;
   const ratio = niveau1 === 0 ? Infinity : niveau2 / niveau1;
@@ -217,12 +214,57 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
       aiLevel: 2,
       factions: [],
       results: [
-        { game: 1, seed: 1, player: 'SSE', ai: 'MANAGEMENT', winner: 'ai', winnerFaction: 'MANAGEMENT', turns: 10, attacks: { player: 0, ai: 0 } },
-        { game: 2, seed: 2, player: 'SSE', ai: 'MANAGEMENT', winner: 'ai', winnerFaction: 'MANAGEMENT', turns: 12, attacks: { player: 0, ai: 0 } },
-        { game: 3, seed: 3, player: 'SSE', ai: 'MANAGEMENT', winner: 'ai', winnerFaction: 'MANAGEMENT', turns: 11, attacks: { player: 0, ai: 0 } },
-        { game: 4, seed: 4, player: 'SSE', ai: 'MANAGEMENT', winner: 'player', winnerFaction: 'SSE', turns: 9, attacks: { player: 0, ai: 0 } },
-        { game: 5, seed: 5, player: 'SSE', ai: 'MANAGEMENT', winner: null, winnerFaction: null, turns: 200, attacks: { player: 0, ai: 0 } },
-      ],
+        {
+          game: 1,
+          seed: 1,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'ai',
+          winnerFaction: 'MANAGEMENT',
+          turns: 10,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 2,
+          seed: 2,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'ai',
+          winnerFaction: 'MANAGEMENT',
+          turns: 12,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 3,
+          seed: 3,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'ai',
+          winnerFaction: 'MANAGEMENT',
+          turns: 11,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 4,
+          seed: 4,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'player',
+          winnerFaction: 'SSE',
+          turns: 9,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 5,
+          seed: 5,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: null,
+          winnerFaction: null,
+          turns: 200,
+          attacks: { player: 0, ai: 0 }
+        }
+      ]
     };
     // Série B : niveau 2 = player, miroir exact (mêmes graines, sièges inversés)
     const seriesB: SimulationReport = {
@@ -233,12 +275,57 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
       aiLevel: 1,
       factions: [],
       results: [
-        { game: 1, seed: 1, player: 'MANAGEMENT', ai: 'SSE', winner: 'player', winnerFaction: 'MANAGEMENT', turns: 10, attacks: { player: 0, ai: 0 } },
-        { game: 2, seed: 2, player: 'MANAGEMENT', ai: 'SSE', winner: 'player', winnerFaction: 'MANAGEMENT', turns: 12, attacks: { player: 0, ai: 0 } },
-        { game: 3, seed: 3, player: 'MANAGEMENT', ai: 'SSE', winner: 'player', winnerFaction: 'MANAGEMENT', turns: 11, attacks: { player: 0, ai: 0 } },
-        { game: 4, seed: 4, player: 'MANAGEMENT', ai: 'SSE', winner: 'ai', winnerFaction: 'SSE', turns: 9, attacks: { player: 0, ai: 0 } },
-        { game: 5, seed: 5, player: 'MANAGEMENT', ai: 'SSE', winner: null, winnerFaction: null, turns: 200, attacks: { player: 0, ai: 0 } },
-      ],
+        {
+          game: 1,
+          seed: 1,
+          player: 'MANAGEMENT',
+          ai: 'SSE',
+          winner: 'player',
+          winnerFaction: 'MANAGEMENT',
+          turns: 10,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 2,
+          seed: 2,
+          player: 'MANAGEMENT',
+          ai: 'SSE',
+          winner: 'player',
+          winnerFaction: 'MANAGEMENT',
+          turns: 12,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 3,
+          seed: 3,
+          player: 'MANAGEMENT',
+          ai: 'SSE',
+          winner: 'player',
+          winnerFaction: 'MANAGEMENT',
+          turns: 11,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 4,
+          seed: 4,
+          player: 'MANAGEMENT',
+          ai: 'SSE',
+          winner: 'ai',
+          winnerFaction: 'SSE',
+          turns: 9,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 5,
+          seed: 5,
+          player: 'MANAGEMENT',
+          ai: 'SSE',
+          winner: null,
+          winnerFaction: null,
+          turns: 200,
+          attacks: { player: 0, ai: 0 }
+        }
+      ]
     };
 
     const agg = aggregateMirror(seriesA, seriesB);
@@ -266,12 +353,57 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
       aiLevel: 2,
       factions: [],
       results: [
-        { game: 1, seed: 1, player: 'SSE', ai: 'MANAGEMENT', winner: 'player', winnerFaction: 'SSE', turns: 10, attacks: { player: 0, ai: 0 } },
-        { game: 2, seed: 2, player: 'SSE', ai: 'MANAGEMENT', winner: 'player', winnerFaction: 'SSE', turns: 12, attacks: { player: 0, ai: 0 } },
-        { game: 3, seed: 3, player: 'SSE', ai: 'MANAGEMENT', winner: 'player', winnerFaction: 'SSE', turns: 11, attacks: { player: 0, ai: 0 } },
-        { game: 4, seed: 4, player: 'SSE', ai: 'MANAGEMENT', winner: 'ai', winnerFaction: 'MANAGEMENT', turns: 9, attacks: { player: 0, ai: 0 } },
-        { game: 5, seed: 5, player: 'SSE', ai: 'MANAGEMENT', winner: null, winnerFaction: null, turns: 200, attacks: { player: 0, ai: 0 } },
-      ],
+        {
+          game: 1,
+          seed: 1,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'player',
+          winnerFaction: 'SSE',
+          turns: 10,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 2,
+          seed: 2,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'player',
+          winnerFaction: 'SSE',
+          turns: 12,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 3,
+          seed: 3,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'player',
+          winnerFaction: 'SSE',
+          turns: 11,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 4,
+          seed: 4,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'ai',
+          winnerFaction: 'MANAGEMENT',
+          turns: 9,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 5,
+          seed: 5,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: null,
+          winnerFaction: null,
+          turns: 200,
+          attacks: { player: 0, ai: 0 }
+        }
+      ]
     };
     const seriesB: SimulationReport = {
       seed: 0,
@@ -281,12 +413,57 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
       aiLevel: 1,
       factions: [],
       results: [
-        { game: 1, seed: 1, player: 'SSE', ai: 'MANAGEMENT', winner: 'ai', winnerFaction: 'MANAGEMENT', turns: 10, attacks: { player: 0, ai: 0 } },
-        { game: 2, seed: 2, player: 'SSE', ai: 'MANAGEMENT', winner: 'ai', winnerFaction: 'MANAGEMENT', turns: 12, attacks: { player: 0, ai: 0 } },
-        { game: 3, seed: 3, player: 'SSE', ai: 'MANAGEMENT', winner: 'ai', winnerFaction: 'MANAGEMENT', turns: 11, attacks: { player: 0, ai: 0 } },
-        { game: 4, seed: 4, player: 'SSE', ai: 'MANAGEMENT', winner: 'player', winnerFaction: 'SSE', turns: 9, attacks: { player: 0, ai: 0 } },
-        { game: 5, seed: 5, player: 'SSE', ai: 'MANAGEMENT', winner: null, winnerFaction: null, turns: 200, attacks: { player: 0, ai: 0 } },
-      ],
+        {
+          game: 1,
+          seed: 1,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'ai',
+          winnerFaction: 'MANAGEMENT',
+          turns: 10,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 2,
+          seed: 2,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'ai',
+          winnerFaction: 'MANAGEMENT',
+          turns: 12,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 3,
+          seed: 3,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'ai',
+          winnerFaction: 'MANAGEMENT',
+          turns: 11,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 4,
+          seed: 4,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: 'player',
+          winnerFaction: 'SSE',
+          turns: 9,
+          attacks: { player: 0, ai: 0 }
+        },
+        {
+          game: 5,
+          seed: 5,
+          player: 'SSE',
+          ai: 'MANAGEMENT',
+          winner: null,
+          winnerFaction: null,
+          turns: 200,
+          attacks: { player: 0, ai: 0 }
+        }
+      ]
     };
 
     const agg = aggregateMirror(seriesA, seriesB);
@@ -301,65 +478,61 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
     expect(agg.ratio).toBe(2 / 6); // 0,333...
   });
 
-  it(
-    'protocole miroir : invariants de comptage sur graines de CONTRÔLE',
-    () => {
-      // On utilise des graines de CONTRÔLE (99, 1234, 2024) pour lever le biais
-      // d'ajustement. Le protocole complet (5 graines × 60 parties, seuils, IC 95 %)
-      // est dans `npm run pesage` et `docs/ia/111-pesage.md`.
-      const gamesPerSeries = 10;
-      const seeds = [99, 1234, 2024]; // graines de contrôle, disjointes de l'entraînement
-      let totalGames = 0;
-      let totalNiveau2 = 0;
-      let totalNiveau1 = 0;
-      let totalNulles = 0;
+  it('protocole miroir : invariants de comptage sur graines de CONTRÔLE', () => {
+    // On utilise des graines de CONTRÔLE (99, 1234, 2024) pour lever le biais
+    // d'ajustement. Le protocole complet (5 graines × 60 parties, seuils, IC 95 %)
+    // est dans `npm run pesage` et `docs/ia/111-pesage.md`.
+    const gamesPerSeries = 10;
+    const seeds = [99, 1234, 2024]; // graines de contrôle, disjointes de l'entraînement
+    let totalGames = 0;
+    let totalNiveau2 = 0;
+    let totalNiveau1 = 0;
+    let totalNulles = 0;
 
-      for (const seed of seeds) {
-        const directionEnNiveau2 = simulate({
-          games: gamesPerSeries,
-          seed,
-          playerLevel: 1,
-          aiLevel: 2
-        });
-        const joueurEnNiveau2 = simulate({
-          games: gamesPerSeries,
-          seed,
-          playerLevel: 2,
-          aiLevel: 1
-        });
+    for (const seed of seeds) {
+      const directionEnNiveau2 = simulate({
+        games: gamesPerSeries,
+        seed,
+        playerLevel: 1,
+        aiLevel: 2
+      });
+      const joueurEnNiveau2 = simulate({
+        games: gamesPerSeries,
+        seed,
+        playerLevel: 2,
+        aiLevel: 1
+      });
 
-        // Invariant 1 : chaque série a le bon nombre de parties
-        expect(directionEnNiveau2.results).toHaveLength(gamesPerSeries);
-        expect(joueurEnNiveau2.results).toHaveLength(gamesPerSeries);
+      // Invariant 1 : chaque série a le bon nombre de parties
+      expect(directionEnNiveau2.results).toHaveLength(gamesPerSeries);
+      expect(joueurEnNiveau2.results).toHaveLength(gamesPerSeries);
 
-        // Invariant 2 : même graine + même index → même appariement de factions
-        // (la série miroir change le NIVEAU qui joue chaque côté, pas les FACTIONS)
-        for (let i = 0; i < gamesPerSeries; i++) {
-          const a = directionEnNiveau2.results[i];
-          const b = joueurEnNiveau2.results[i];
-          expect(a.player).toBe(b.player);
-          expect(a.ai).toBe(b.ai);
-          expect(a.seed).toBe(b.seed); // même graine de partie
-        }
-
-        // Invariant 3 : les Decks sont identiques (mêmes factions = mêmes decks)
-        // (vérifié implicitement par le test ci-dessus : mêmes factions aux mêmes sièges)
-
-        const agg = aggregateMirror(directionEnNiveau2, joueurEnNiveau2);
-        totalNiveau2 += agg.niveau2;
-        totalNiveau1 += agg.niveau1;
-        totalNulles += agg.nulles;
-        totalGames += directionEnNiveau2.games + joueurEnNiveau2.games;
+      // Invariant 2 : même graine + même index → même appariement de factions
+      // (la série miroir change le NIVEAU qui joue chaque côté, pas les FACTIONS)
+      for (let i = 0; i < gamesPerSeries; i++) {
+        const a = directionEnNiveau2.results[i];
+        const b = joueurEnNiveau2.results[i];
+        expect(a.player).toBe(b.player);
+        expect(a.ai).toBe(b.ai);
+        expect(a.seed).toBe(b.seed); // même graine de partie
       }
 
-      // Invariant global : le total des parties comptées = 2 × parties/série × graines
-      expect(totalNiveau2 + totalNiveau1 + totalNulles).toBe(totalGames);
+      // Invariant 3 : les Decks sont identiques (mêmes factions = mêmes decks)
+      // (vérifié implicitement par le test ci-dessus : mêmes factions aux mêmes sièges)
 
-      // On NE PARIE PAS sur le résultat (taux < 0,5 ou > 0,5) :
-      // - l'échantillon (~60 décidées) n'a pas la puissance pour distinguer 50 % de 54 %
-      // - la question de supériorité est tranchée par `npm run pesage` (seuil 55 % + ratio 1,15×)
-      // Ce test garantit seulement que le protocole miroir est bien exécuté.
-    },
-    30000
-  );
+      const agg = aggregateMirror(directionEnNiveau2, joueurEnNiveau2);
+      totalNiveau2 += agg.niveau2;
+      totalNiveau1 += agg.niveau1;
+      totalNulles += agg.nulles;
+      totalGames += directionEnNiveau2.games + joueurEnNiveau2.games;
+    }
+
+    // Invariant global : le total des parties comptées = 2 × parties/série × graines
+    expect(totalNiveau2 + totalNiveau1 + totalNulles).toBe(totalGames);
+
+    // On NE PARIE PAS sur le résultat (taux < 0,5 ou > 0,5) :
+    // - l'échantillon (~60 décidées) n'a pas la puissance pour distinguer 50 % de 54 %
+    // - la question de supériorité est tranchée par `npm run pesage` (seuil 55 % + ratio 1,15×)
+    // Ce test garantit seulement que le protocole miroir est bien exécuté.
+  }, 30000);
 });

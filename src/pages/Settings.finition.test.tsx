@@ -19,7 +19,12 @@ describe('Settings — finition', () => {
 
   describe('« Réinitialiser la progression » demande confirmation', () => {
     it('le clic ouvre une confirmation et n’efface encore rien', () => {
-      renderWithStore(<Settings />, { name: 'Camille', owned: { 'sse-infirmier-site': 3 }, tutorielVu: true, pasAPasCombatVu: true });
+      renderWithStore(<Settings />, {
+        name: 'Camille',
+        owned: { 'sse-infirmier-site': 3 },
+        tutorielVu: true,
+        pasAPasCombatVu: true
+      });
 
       fireEvent.click(screen.getByRole('button', { name: /Réinitialiser la progression/ }));
 
@@ -44,7 +49,12 @@ describe('Settings — finition', () => {
     });
 
     it('confirmer efface, et le champ du nom suit', () => {
-      renderWithStore(<Settings />, { name: 'Camille', owned: { 'sse-infirmier-site': 3 }, tutorielVu: true, pasAPasCombatVu: true });
+      renderWithStore(<Settings />, {
+        name: 'Camille',
+        owned: { 'sse-infirmier-site': 3 },
+        tutorielVu: true,
+        pasAPasCombatVu: true
+      });
 
       fireEvent.click(screen.getByRole('button', { name: /Réinitialiser la progression/ }));
       fireEvent.click(screen.getByRole('button', { name: 'Tout effacer' }));

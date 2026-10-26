@@ -95,7 +95,10 @@ describe('partie rangée — rejouable à l’identique (#126)', () => {
   it('un journal que le moteur refuse ne reprend pas une autre partie en silence', () => {
     const decks: Decks = { playerDeck: deck(), aiDeck: deck() };
     const refusee: BattleAction[] = [{ type: 'forfeit', who: 'player' }, { type: 'endTurn' }];
-    const partie = { ...partieSauvegardee(createBattle(decks.playerDeck, decks.aiDeck, 3), null, decks)!, actions: refusee };
+    const partie = {
+      ...partieSauvegardee(createBattle(decks.playerDeck, decks.aiDeck, 3), null, decks)!,
+      actions: refusee
+    };
 
     expect(reprendrePartie(partie)).toBeNull();
   });

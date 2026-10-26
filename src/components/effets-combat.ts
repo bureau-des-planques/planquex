@@ -174,9 +174,7 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
     const cible = avant.players[adverse].active;
     if (source) {
       const porte = faitsDerniers.find((fait) => fait.type === 'stress' && fait.uid === cible?.uid);
-      const cibleCraque = faitsDerniers.some(
-        (fait) => fait.type === 'craquage' && fait.uid === cible?.uid
-      );
+      const cibleCraque = faitsDerniers.some((fait) => fait.type === 'craquage' && fait.uid === cible?.uid);
       ajouter({
         nature: 'attaque',
         camp: attaquant,

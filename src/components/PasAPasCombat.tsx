@@ -39,8 +39,12 @@ export function PasAPasCombat({ pasAPas }: { pasAPas: PasAPasCombatEtat }) {
     >
       <div className="pas-a-pas__ligne">
         <p className="pas-a-pas__compte">
-          <span aria-hidden="true">{numero}/{total}</span>
-          <span className="sr-only">étape {numero} sur {total}</span>
+          <span aria-hidden="true">
+            {numero}/{total}
+          </span>
+          <span className="sr-only">
+            étape {numero} sur {total}
+          </span>
         </p>
         <h2 className="pas-a-pas__titre" aria-live="polite">
           {pasAPas.courante.titre}

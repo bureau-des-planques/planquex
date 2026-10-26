@@ -43,7 +43,11 @@ export function StatusBadge({ status, nomAffiche = true }: Props) {
     // des Conditions (menu `⋯` → Règles), atteignable au doigt et au clavier (SPEC-COMBAT-UI §6.7).
     <span className={`status-chip status-chip--${status.toLowerCase()}`}>
       <Icon size={12} strokeWidth={2.2} aria-hidden />
-      {nomAffiche ? <span className="status-chip__nom">{meta.label}</span> : <span className="sr-only">{meta.label}</span>}
+      {nomAffiche ? (
+        <span className="status-chip__nom">{meta.label}</span>
+      ) : (
+        <span className="sr-only">{meta.label}</span>
+      )}
     </span>
   );
 }

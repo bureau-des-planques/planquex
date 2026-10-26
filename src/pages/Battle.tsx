@@ -196,7 +196,12 @@ function localiser(
  * Talent (au Poste), Rotation (vers elle, ou depuis le Poste), relève (depuis le Banc). Rien d'autre :
  * un geste qui n'est pas dans la liste n'est pas offert (SPEC-COMBAT-UI §6.4).
  */
-function gestesDeLaCarte(actions: readonly BattleAction[], uid: string, auPoste: boolean, rang: number): BattleAction[] {
+function gestesDeLaCarte(
+  actions: readonly BattleAction[],
+  uid: string,
+  auPoste: boolean,
+  rang: number
+): BattleAction[] {
   return actions.filter((action) => {
     switch (action.type) {
       case 'attachEnergy':
@@ -223,10 +228,7 @@ const STATUS_LIST = Object.keys(STATUS_META) as Status[];
  * de partie à deux. Le test couvre les deux zones de texte du code.
  */
 function dansUnChampDeSaisie(cible: EventTarget | null): boolean {
-  return (
-    cible instanceof Element &&
-    cible.closest('input, textarea, select, [contenteditable="true"]') !== null
-  );
+  return cible instanceof Element && cible.closest('input, textarea, select, [contenteditable="true"]') !== null;
 }
 
 /** Le menu `⋯` au repos : fermé, sur sa liste. */
@@ -238,7 +240,12 @@ const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
  */
 function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
   const names = cafes.map((cafe) => cafeLabel(cafe));
-  return <CafePips symbols={cafes} label={names.length > 0 ? `Cafés attachés : ${names.join(' · ')}` : 'Aucun café attaché'} />;
+  return (
+    <CafePips
+      symbols={cafes}
+      label={names.length > 0 ? `Cafés attachés : ${names.join(' · ')}` : 'Aucun café attaché'}
+    />
+  );
 }
 
 /**
@@ -348,7 +355,10 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     case 'promoteActive': {
       const who = state.pendingPromotion ?? state.current;
       const prefix = who === myCamp ? '' : 'Direction · ';
-      return { label: 'Relève', detail: `${prefix}${instanceName(state.players[who].bench[action.benchIndex])} au Poste` };
+      return {
+        label: 'Relève',
+        detail: `${prefix}${instanceName(state.players[who].bench[action.benchIndex])} au Poste`
+      };
     }
     case 'forfeit':
       return { label: 'Abandonner' };
@@ -438,9 +448,7 @@ function regardDuDernierGeste(state: BattleState, who: PlayerId): Card | undefin
     if (state.current === who) return undefined;
     const definition = side.active ? getCard(side.active.cardId) : undefined;
     const regarde =
-      definition &&
-      isPlanque(definition) &&
-      porteUnRegard(definition.attacks[geste.attackIndex]?.effects);
+      definition && isPlanque(definition) && porteUnRegard(definition.attacks[geste.attackIndex]?.effects);
     return regarde ? dessusDuDeck(state, who) : undefined;
   }
 
@@ -516,9 +524,7 @@ function Camp({
   const uidsEnJeu = new Set([side.active, ...side.bench].filter(Boolean).map((carte) => carte!.uid));
   // Un Planqué qui vient de craquer n'a plus de carte au Poste : son chiffre de Stress reste
   // à la place de la carte, sur le fantôme désaturé, plutôt que de disparaître avec elle.
-  const stressHorsCarte = effetsStress.filter(
-    (effet) => effet.auPoste && (!effet.uid || !uidsEnJeu.has(effet.uid))
-  );
+  const stressHorsCarte = effetsStress.filter((effet) => effet.auPoste && (!effet.uid || !uidsEnJeu.has(effet.uid)));
   const craquageDefinition = craquage ? getCard(craquage.carte?.cardId ?? '') : undefined;
   // Le Poste : la carte, en grand, au centre du camp (R4). Le nom et la barre de Stress sont
   // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
@@ -555,11 +561,7 @@ function Camp({
         </div>
       )}
       {stressHorsCarte.map((effet) => (
-        <span
-          key={effet.id}
-          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
-          aria-hidden="true"
-        >
+        <span key={effet.id} className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`} aria-hidden="true">
           +{effet.valeur}
         </span>
       ))}
@@ -599,11 +601,7 @@ function Camp({
           {/* Le chiffre du Stress et le mot « Machine » sont dans l'inspecteur (#188) : la carte
               porte la barre, et la pastille de la Machine reste seule, pour le pas-à-pas. */}
           <CafesPips cafes={side.active.energy} />
-          <MachinePips
-            side={side}
-            designe={mine && pasAPas.designe('machine') !== undefined}
-            detaille={detaille}
-          />
+          <MachinePips side={side} designe={mine && pasAPas.designe('machine') !== undefined} detaille={detaille} />
           {side.active.statuses.map((status) => (
             <StatusBadge key={status} status={status} nomAffiche={detaille} />
           ))}
@@ -800,7 +798,11 @@ export function Battle() {
       : legal.filter((action) => action.type === 'endTurn');
 
   const handActions = playable.filter(
-    (action) => action.type === 'playAction' || action.type === 'playBasic' || action.type === 'evolve' || action.type === 'priorityShift'
+    (action) =>
+      action.type === 'playAction' ||
+      action.type === 'playBasic' ||
+      action.type === 'evolve' ||
+      action.type === 'priorityShift'
   );
   const boardActions = playable.filter(
     (action) => action.type === 'attachEnergy' || action.type === 'retreat' || action.type === 'ability'
@@ -874,9 +876,7 @@ export function Battle() {
     if (!effetAttaque?.uid) return undefined;
     for (const camp of ['player', 'ai'] as const) {
       const cote = state.players[camp];
-      const instance = [cote.active, ...cote.bench].find(
-        (carte) => carte !== null && carte.uid === effetAttaque.uid
-      );
+      const instance = [cote.active, ...cote.bench].find((carte) => carte !== null && carte.uid === effetAttaque.uid);
       if (instance) {
         const definition = getCard(instance.cardId);
         if (definition && isPlanque(definition)) return definition;
@@ -947,10 +947,7 @@ export function Battle() {
    * par le moteur (#58).
    */
   const forfeitAction = useMemo(
-    () =>
-      legal.some((action) => action.type === 'forfeit')
-        ? ({ type: 'forfeit', who: myCamp } as const)
-        : undefined,
+    () => (legal.some((action) => action.type === 'forfeit') ? ({ type: 'forfeit', who: myCamp } as const) : undefined),
     [legal, myCamp]
   );
 
@@ -1085,11 +1082,7 @@ export function Battle() {
   }, [incoming]);
 
   const campLabel = (id: PlayerId) =>
-    match
-      ? `${id === myCamp ? 'Toi' : 'Adversaire'} · ${CAMP_NAME[id]}`
-      : id === 'player'
-        ? 'Toi'
-        : 'La Direction';
+    match ? `${id === myCamp ? 'Toi' : 'Adversaire'} · ${CAMP_NAME[id]}` : id === 'player' ? 'Toi' : 'La Direction';
   /* Le nom court d'un camp, pour la piste d'Interventions (#190) : sans le nom du siège. */
   const pisteLabel = (id: PlayerId) => (match ? (id === myCamp ? 'Toi' : 'Adversaire') : campLabel(id));
 
@@ -1105,18 +1098,19 @@ export function Battle() {
    * main n'a ni Poste ni rang ; ses gestes sont ceux que la main porte déjà (`playable`).
    */
   const inspecteurPlateau = inspecte ? localiser(state, inspecte) : null;
-  const carteEnMain = inspecte ? mySide.hand.find((carte) => carte.uid === inspecte) ?? null : null;
+  const carteEnMain = inspecte ? (mySide.hand.find((carte) => carte.uid === inspecte) ?? null) : null;
   const inspecteur = inspecteurPlateau
     ? { ...inspecteurPlateau, enMain: false }
     : carteEnMain
       ? { camp: myCamp, carte: carteEnMain, auPoste: false, rang: -1, enMain: true }
       : null;
   const inspecteurDefinition = inspecteur ? getCard(inspecteur.carte.cardId) : undefined;
-  const gestesInspectes = inspecteur && inspecteur.camp === myCamp
-    ? inspecteur.enMain
-      ? playable.filter((action) => 'uid' in action && action.uid === inspecteur.carte.uid)
-      : gestesDeLaCarte(playable, inspecteur.carte.uid, inspecteur.auPoste, inspecteur.rang)
-    : [];
+  const gestesInspectes =
+    inspecteur && inspecteur.camp === myCamp
+      ? inspecteur.enMain
+        ? playable.filter((action) => 'uid' in action && action.uid === inspecteur.carte.uid)
+        : gestesDeLaCarte(playable, inspecteur.carte.uid, inspecteur.auPoste, inspecteur.rang)
+      : [];
   const gestesDuPanneau =
     inspecteur && inspecteur.camp === myCamp ? (
       gestesInspectes.length > 0 ? (
@@ -1193,8 +1187,8 @@ export function Battle() {
       {match === null ? (
         <>
           <p className="muted">
-            Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre
-            joueur. Un code apparaît à la fin de ton tour.
+            Crée la partie ici : sa graine, ton Deck, et le camp adverse tenu par l’autre joueur. Un code apparaît à la
+            fin de ton tour.
           </p>
           <div className="actions actions--tight">
             <button type="button" className="button button--primary" onClick={startTwoPlayer}>
@@ -1206,14 +1200,14 @@ export function Battle() {
         <>
           <p className="notice">{campLine(state, match)}</p>
           <p className="muted">
-            Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec
-            les mêmes boutons que toi.
+            Aucun camp n’est joué par l’IA : c’est l’autre joueur qui tient le camp adverse, avec les mêmes boutons que
+            toi.
           </p>
           {transfer?.ready ? (
             <>
               <p className="muted">
-                Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et
-                reprend ici, avec le camp adverse.
+                Ton tour est fini : copie ce code, l’autre joueur le colle dans son onglet et reprend ici, avec le camp
+                adverse.
               </p>
               <div className="actions actions--tight">
                 <button type="button" className="button" onClick={copyCode}>
@@ -1263,8 +1257,8 @@ export function Battle() {
         </button>
       </div>
       <p className="muted">
-        Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a
-        laissée, et tu prends le camp qui doit jouer.
+        Coller un code remplace le combat affiché : la partie reprend là où l’autre joueur l’a laissée, et tu prends le
+        camp qui doit jouer.
       </p>
       {codeMessage && (
         <p className={codeMessage.ton === 'ok' ? 'muted' : 'muted pvp__message--ko'}>{codeMessage.texte}</p>
@@ -1312,11 +1306,7 @@ export function Battle() {
         <Dialog>
           <DialogTrigger
             render={
-              <button
-                type="button"
-                className="battle__conditions"
-                data-pas-a-pas={pasAPas.designe('conditions')}
-              />
+              <button type="button" className="battle__conditions" data-pas-a-pas={pasAPas.designe('conditions')} />
             }
           >
             Conditions
@@ -1607,7 +1597,13 @@ export function Battle() {
                   <p className="muted pose__aide">Touche un geste pour la jouer :</p>
                   <div className="actions actions--tight">
                     {selectedActions.map((action) => (
-                      <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                      <ActionButton
+                        key={JSON.stringify(action)}
+                        state={state}
+                        action={action}
+                        myCamp={myCamp}
+                        onAction={play}
+                      />
                     ))}
                   </div>
                 </>
@@ -1632,11 +1628,7 @@ export function Battle() {
         elle qui libère la hauteur dont la main a besoin. Elle ne rend que ce que dit la liste du
         moteur : en partie à deux, le tour de l'autre ne lui prête aucun bouton (#125).
       */}
-      <section
-        className="combat-barre"
-        aria-label="Actions du tour"
-        data-pas-a-pas={pasAPas.designe('poste-actions')}
-      >
+      <section className="combat-barre" aria-label="Actions du tour" data-pas-a-pas={pasAPas.designe('poste-actions')}>
         {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
             qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
             information temporaire n'a pas à occuper une bande de plus. */}
@@ -1666,7 +1658,13 @@ export function Battle() {
             )}
             <div className="actions actions--tight">
               {promotions.map((action) => (
-                <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                <ActionButton
+                  key={JSON.stringify(action)}
+                  state={state}
+                  action={action}
+                  myCamp={myCamp}
+                  onAction={play}
+                />
               ))}
             </div>
           </section>
@@ -1677,7 +1675,13 @@ export function Battle() {
             <p>Un effet te demande de désigner une carte.</p>
             <div className="actions actions--tight">
               {choices.map((action) => (
-                <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                <ActionButton
+                  key={JSON.stringify(action)}
+                  state={state}
+                  action={action}
+                  myCamp={myCamp}
+                  onAction={play}
+                />
               ))}
             </div>
           </section>
@@ -1685,16 +1689,20 @@ export function Battle() {
 
         {/* `legalAttacks` lit le camp qui a la main : cette ligne ne parle donc que quand c'est
             mon tour (en solo, elle ne décrit plus le Poste de la Direction). */}
-        {myMove && myCard && isPlanque(myCard) && myCard.attacks.length > 0 && (mySide.hasAttacked || inReach.length < myCard.attacks.length) && (
-          <p className="muted combat-barre__portee">
-            {mySide.hasAttacked
-              ? 'Pression déjà portée ce tour.'
-              : `Hors de portée du café : ${myCard.attacks
-                  .filter((entry) => !inReach.includes(entry))
-                  .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
-                  .join(', ')}.`}
-          </p>
-        )}
+        {myMove &&
+          myCard &&
+          isPlanque(myCard) &&
+          myCard.attacks.length > 0 &&
+          (mySide.hasAttacked || inReach.length < myCard.attacks.length) && (
+            <p className="muted combat-barre__portee">
+              {mySide.hasAttacked
+                ? 'Pression déjà portée ce tour.'
+                : `Hors de portée du café : ${myCard.attacks
+                    .filter((entry) => !inReach.includes(entry))
+                    .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
+                    .join(', ')}.`}
+            </p>
+          )}
 
         {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
             Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
@@ -1705,12 +1713,24 @@ export function Battle() {
             {boardActions.length > 0 && (
               <div className="actions actions--tight combat-barre__rang">
                 {boardActions.map((action) => (
-                  <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+                  <ActionButton
+                    key={JSON.stringify(action)}
+                    state={state}
+                    action={action}
+                    myCamp={myCamp}
+                    onAction={play}
+                  />
                 ))}
               </div>
             )}
             {pressions.map((action) => (
-              <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+              <ActionButton
+                key={JSON.stringify(action)}
+                state={state}
+                action={action}
+                myCamp={myCamp}
+                onAction={play}
+              />
             ))}
             {turnActions.map((action) => (
               <span className="combat-barre__fin" key={JSON.stringify(action)}>

@@ -42,7 +42,7 @@ import {
   creerCompte,
   fichiersMigrations,
   migrations,
-  type Base,
+  type Base
 } from './pglite';
 
 /** La 0009, lue paresseusement : sans elle, les scénarios de comportement doivent échouer **par le fond**. */
@@ -57,20 +57,11 @@ function migrationDates(): string {
 const FUTUR = '2030-01-01T00:00:00Z';
 const PASSE = '2000-01-01T00:00:00Z';
 
-type Issue =
-  | { accepte: true; lignes: Array<Record<string, unknown>> }
-  | { accepte: false; message: string };
+type Issue = { accepte: true; lignes: Array<Record<string, unknown>> } | { accepte: false; message: string };
 
-async function tenter(
-  db: Base,
-  appareil: string,
-  sql: string,
-  params: unknown[] = [],
-): Promise<Issue> {
+async function tenter(db: Base, appareil: string, sql: string, params: unknown[] = []): Promise<Issue> {
   try {
-    const res = await avecAppareil(db, appareil, () =>
-      db.query<Record<string, unknown>>(sql, params),
-    );
+    const res = await avecAppareil(db, appareil, () => db.query<Record<string, unknown>>(sql, params));
     return { accepte: true, lignes: res.rows };
   } catch (erreur) {
     return { accepte: false, message: erreur instanceof Error ? erreur.message : String(erreur) };
@@ -100,7 +91,7 @@ const commenterDate = (db: Base, appareil: string, postit: string, date: string)
     appareil,
     `insert into public.commentaires (postit_id, texte, created_at)
      values ($1, 'Pareil chez moi.', $2) returning created_at`,
-    [postit, date],
+    [postit, date]
   );
 
 /** A colle un post-it en datant son `updated_at` — la même porte, côté compteur des mouvements. */
@@ -110,7 +101,7 @@ const collerDate = (db: Base, appareil: string, id: string, date: string) =>
     appareil,
     `insert into public.postits (id, kind, titre, texte, version, updated_at)
      values ($1, 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.12', $2) returning updated_at`,
-    [id, date],
+    [id, date]
   );
 
 /** A et B approuvés ; A a un post-it, c'est lui que B menace d'une date fausse. */
@@ -122,8 +113,8 @@ async function monde(db: Base) {
       db,
       APPAREIL_A,
       `insert into public.postits (id, kind, titre, texte, version)
-       values ('p-a', 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.12') returning id`,
-    ),
+       values ('p-a', 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.12') returning id`
+    )
   );
 }
 
@@ -159,7 +150,7 @@ describe('les dates sont posées par le serveur (0009)', () => {
       const issue = await tenter(
         db,
         APPAREIL_B,
-        `insert into public.commentaires (postit_id, texte) values ('p-a', 'Pareil.') returning created_at`,
+        `insert into public.commentaires (postit_id, texte) values ('p-a', 'Pareil.') returning created_at`
       );
       accepte(issue);
       if (issue.accepte) estHeureDuServeur(issue.lignes[0].created_at);
@@ -201,10 +192,7 @@ describe('les dates sont posées par le serveur (0009)', () => {
 /** Remplace un motif de la 0009 ; un motif absent fait échouer. */
 function muter(motif: string, remplacement: string): string {
   const migration = migrationDates();
-  expect(
-    migration.split(motif).length - 1,
-    `motif introuvable ou ambigu : ${motif}`,
-  ).toBeGreaterThan(0);
+  expect(migration.split(motif).length - 1, `motif introuvable ou ambigu : ${motif}`).toBeGreaterThan(0);
   const mutee = migration.replaceAll(motif, remplacement);
   expect(mutee).not.toBe(migration);
   return migrations().replace(migration, () => mutee);
@@ -222,7 +210,7 @@ const MUTATIONS: Array<{
       const issue = await commenterDate(db, APPAREIL_B, 'p-a', FUTUR);
       accepte(issue);
       return issue.accepte ? issue.lignes[0].created_at : null;
-    },
+    }
   },
   {
     nom: '(b) déclencheur des post-its neutralisé → l’updated_at de 2030 reste',
@@ -231,21 +219,25 @@ const MUTATIONS: Array<{
       const issue = await collerDate(db, APPAREIL_A, 'p-futur', FUTUR);
       accepte(issue);
       return issue.accepte ? issue.lignes[0].updated_at : null;
-    },
-  },
+    }
+  }
 ];
 
 describe('le contrôle mord — neutralisé, le fautif passe', () => {
   for (const m of MUTATIONS) {
-    it(m.nom, async () => {
-      const db = await base(m.sql());
-      try {
-        await monde(db);
-        estHeureDuClient(await m.geste(db), FUTUR);
-      } finally {
-        await db.close();
-      }
-    }, 90_000);
+    it(
+      m.nom,
+      async () => {
+        const db = await base(m.sql());
+        try {
+          await monde(db);
+          estHeureDuClient(await m.geste(db), FUTUR);
+        } finally {
+          await db.close();
+        }
+      },
+      90_000
+    );
   }
 });
 
@@ -280,7 +272,7 @@ async function commentaireDeB(db: Base): Promise<{ id: string; cree: string }> {
     db,
     APPAREIL_B,
     `insert into public.commentaires (postit_id, texte) values ('p-a', 'Pareil chez moi.')
-     returning id, created_at::text as created_at`,
+     returning id, created_at::text as created_at`
   );
   accepte(issue);
   if (!issue.accepte) throw new Error('commentaire non créé');
@@ -293,7 +285,7 @@ const redaterCommentaire = (db: Base, id: string, date: string) =>
     db,
     APPAREIL_B,
     `update public.commentaires set created_at = $2 where id = $1 returning created_at::text as created_at`,
-    [id, date],
+    [id, date]
   );
 
 describe('created_at ne se redate pas par un update (0010, #244)', () => {
@@ -338,7 +330,7 @@ describe('created_at ne se redate pas par un update (0010, #244)', () => {
         APPAREIL_B,
         `update public.commentaires set texte = 'Corrigé.', created_at = $2
           where id = $1 returning texte, created_at::text as created_at`,
-        [id, FUTUR],
+        [id, FUTUR]
       );
       accepte(issue);
       if (issue.accepte) {
@@ -358,11 +350,11 @@ describe('created_at ne se redate pas par un update (0010, #244)', () => {
     try {
       await monde(db);
       const avant = await db.query<{ created_at: string }>(
-        `select created_at::text as created_at from public.postits where id = 'p-a'`,
+        `select created_at::text as created_at from public.postits where id = 'p-a'`
       );
       const res = await db.query<{ created_at: string }>(
         `update public.postits set created_at = $1 where id = 'p-a' returning created_at::text as created_at`,
-        [FUTUR],
+        [FUTUR]
       );
       expect(res.rows[0].created_at).toBe(avant.rows[0].created_at);
     } finally {
@@ -393,9 +385,7 @@ describe('le contrôle mord — 0010 neutralisée, la redatation passe', () => {
     const migration = migrationFigee();
     const motif = `  new.created_at := old.created_at; -- ${fonction}`;
     expect(migration.split(motif).length - 1, `motif introuvable : ${motif}`).toBe(1);
-    return migrations().replace(migration, () =>
-      migration.replace(motif, '  new.created_at := new.created_at;'),
-    );
+    return migrations().replace(migration, () => migration.replace(motif, '  new.created_at := new.created_at;'));
   };
 
   it('commentaires : déclencheur neutralisé → created_at = 2030 passe', async () => {
@@ -417,7 +407,7 @@ describe('le contrôle mord — 0010 neutralisée, la redatation passe', () => {
       await monde(db);
       const res = await db.query<{ created_at: string }>(
         `update public.postits set created_at = $1 where id = 'p-a' returning created_at`,
-        [FUTUR],
+        [FUTUR]
       );
       estHeureDuClient(res.rows[0].created_at, FUTUR);
     } finally {

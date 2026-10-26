@@ -34,39 +34,34 @@ const RAPPORT_CARTE = 88 / 63;
  * texte (« Poste libre ») : son rectangle ne fait plus la taille d'une carte, donc on le redresse
  * autour de son centre, et la saynète vise un vrai Planqué et non une bande de vingt pixels.
  */
-function poserDoublure(
-  m: Moteur,
-  scene: HTMLElement,
-  poste: HTMLElement,
-  fantome: HTMLElement | null,
-): Doublure {
+function poserDoublure(m: Moteur, scene: HTMLElement, poste: HTMLElement, fantome: HTMLElement | null): Doublure {
   const r = m.rect(poste);
   const h = Math.max(r.h, r.w * RAPPORT_CARTE);
   // Un Poste refermé n'a plus la hauteur d'une carte : la carte, elle, était **en haut de sa ligne**
   // (la ligne était aussi haute qu'elle). On reprend donc le haut de la ligne, pas le centre du reste.
-  const ligne = poste.closest<HTMLElement>(".board__poste-ligne");
+  const ligne = poste.closest<HTMLElement>('.board__poste-ligne');
   const replie = r.h < r.w * RAPPORT_CARTE * 0.9;
   const haut = replie && ligne ? m.rect(ligne).y : r.y;
-  const el = document.createElement("div");
-  el.setAttribute("aria-hidden", "true");
-  el.dataset.doublure = "";
+  const el = document.createElement('div');
+  el.setAttribute('aria-hidden', 'true');
+  el.dataset.doublure = '';
   Object.assign(el.style, {
-    position: "absolute",
+    position: 'absolute',
     left: `${r.x}px`,
     top: `${haut}px`,
     width: `${r.w}px`,
     height: `${h}px`,
-    zIndex: "5",
-    pointerEvents: "none",
+    zIndex: '5',
+    pointerEvents: 'none'
   } satisfies Partial<CSSStyleDeclaration>);
-  const carte = document.createElement("div");
-  Object.assign(carte.style, { position: "absolute", inset: "0" } satisfies Partial<CSSStyleDeclaration>);
+  const carte = document.createElement('div');
+  Object.assign(carte.style, { position: 'absolute', inset: '0' } satisfies Partial<CSSStyleDeclaration>);
   if (fantome) {
     // Le fantôme est la carte **sans** son voile gris : la copie la montre en couleur jusqu'à l'impact.
     // Il n'y a **pas de fond** derrière elle : la relève, que le combat pose au même Poste, reste
     // visible dès que la carte est partie.
     for (const enfant of Array.from(fantome.children)) carte.appendChild(enfant.cloneNode(true));
-    fantome.style.visibility = "hidden";
+    fantome.style.visibility = 'hidden';
   }
   el.append(carte);
   scene.appendChild(el);
@@ -77,7 +72,7 @@ function retirerDoublure(ref: { current: Doublure | null }) {
   const d = ref.current;
   if (!d) return;
   d.el.remove();
-  d.source?.style.removeProperty("visibility");
+  d.source?.style.removeProperty('visibility');
   ref.current = null;
 }
 
@@ -107,7 +102,7 @@ export function SceneAttaque({
   attaque,
   sansMouvement,
   onMoteur,
-  surFin,
+  surFin
 }: {
   /** L'identifiant de l'effet d'attaque : un même effet ne se joue qu'une fois. */
   effetId?: number;
@@ -174,7 +169,7 @@ export function SceneAttaque({
       uid,
       uidCible,
       stress: stress ?? 0,
-      coupDeGrace,
+      coupDeGrace
     };
     joue.current = effetId;
   }, [effetId, uid, uidCible, stress, coupDeGrace, carte, attaque, sansMouvement]);
@@ -190,26 +185,21 @@ export function SceneAttaque({
     if (effetId === undefined || sansMouvement || !m || !cible || cible.id !== effetId) return;
     const scene = fondRef.current?.parentElement;
     if (!scene) return;
-    const att = cible.uid
-      ? scene.querySelector<HTMLElement>(`[data-uid="${CSS.escape(cible.uid)}"]`)
-      : null;
+    const att = cible.uid ? scene.querySelector<HTMLElement>(`[data-uid="${CSS.escape(cible.uid)}"]`) : null;
     const visee = cible.uidCible
       ? scene.querySelector<HTMLElement>(`[data-uid="${CSS.escape(cible.uidCible)}"]`)
       : null;
     // **Le coup de grâce** : la carte a quitté le plateau pour le Rebut, mais son fantôme
     // désaturé est encore là — c'est lui que la scène vise, et c'est lui qui part.
     const fantome = cible.coupDeGrace
-      ? (scene.querySelector<HTMLElement>(
-          `.craquage__carte[data-uid="${CSS.escape(cible.uidCible ?? "")}"]`,
-        ) ?? scene.querySelector<HTMLElement>(".craquage__carte"))
+      ? (scene.querySelector<HTMLElement>(`.craquage__carte[data-uid="${CSS.escape(cible.uidCible ?? '')}"]`) ??
+        scene.querySelector<HTMLElement>('.craquage__carte'))
       : null;
     // Le fantôme ne vit que 500 ms (`DUREE_TRAINEE_MS`) ; la Pression, elle, frappe plus tard.
     // À défaut de carte, la **zone du Poste** adverse reste : c'est là que le carton et le
     // tampon se posent, et c'est la place que la carte vient de quitter.
     const posteVide = cible.coupDeGrace
-      ? ([...scene.querySelectorAll<HTMLElement>(".board__poste")].find(
-          (poste) => !poste.contains(att),
-        ) ?? null)
+      ? ([...scene.querySelectorAll<HTMLElement>('.board__poste')].find((poste) => !poste.contains(att)) ?? null)
       : null;
     let cib = visee ?? fantome ?? posteVide;
     // Une carte déjà retirée sans fantôme (relève, craquage au Banc) n'a pas de cible à viser.
@@ -223,7 +213,7 @@ export function SceneAttaque({
     // vide. La scène pose donc sa propre copie de la carte, de la taille d'une carte même si le
     // Poste s'est refermé, et c'est **elle** qui encaisse, craque et part au carton.
     if (cible.coupDeGrace) {
-      const poste = cib.closest<HTMLElement>(".board__poste") ?? cib;
+      const poste = cib.closest<HTMLElement>('.board__poste') ?? cib;
       const copie = poserDoublure(m, scene, poste, fantome ?? (cib === poste ? null : cib));
       doublure.current = copie;
       cib = copie.carte;
@@ -237,10 +227,10 @@ export function SceneAttaque({
         att,
         cib,
         stress: cible.stress,
-        coupDeGrace: cible.coupDeGrace,
+        coupDeGrace: cible.coupDeGrace
       });
     } catch (erreur) {
-      console.error("Chorégraphie impossible", erreur);
+      console.error('Chorégraphie impossible', erreur);
       retirerDoublure(doublure);
       return;
     }

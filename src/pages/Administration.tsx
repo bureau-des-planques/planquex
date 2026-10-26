@@ -28,8 +28,7 @@ import { chargerPostitsDuMur, trierPostit, type TriPostit } from '@/lib/murBase'
 import { useComptes } from '@/store/comptes';
 import { STATUTS, type Postit } from '@/store/mur';
 
-const messageDe = (erreur: unknown): string =>
-  erreur instanceof Error ? erreur.message : String(erreur);
+const messageDe = (erreur: unknown): string => (erreur instanceof Error ? erreur.message : String(erreur));
 
 export function Administration() {
   const configure = useComptes((state) => state.configure);
@@ -82,11 +81,8 @@ export function Administration() {
       setPostits(liste);
       setBrouillons(
         Object.fromEntries(
-          liste.map((postit) => [
-            postit.id,
-            { statut: postit.statut, raison: postit.raison, ticket: postit.ticket },
-          ]),
-        ),
+          liste.map((postit) => [postit.id, { statut: postit.statut, raison: postit.raison, ticket: postit.ticket }])
+        )
       );
     } catch (panne) {
       setErreurMur(messageDe(panne));
@@ -105,7 +101,7 @@ export function Administration() {
 
   const remplacer = (decide: Compte) =>
     setComptes((courants) =>
-      courants ? courants.map((ligne) => (ligne.id === decide.id ? decide : ligne)) : courants,
+      courants ? courants.map((ligne) => (ligne.id === decide.id ? decide : ligne)) : courants
     );
 
   const approuver = async (ligne: Compte) => {
@@ -149,7 +145,7 @@ export function Administration() {
   const changerBrouillon = (id: string, changement: Partial<TriPostit>, postit: Postit) =>
     setBrouillons((courants) => ({
       ...courants,
-      [id]: { ...(courants[id] ?? brouillonDe(postit)), ...changement },
+      [id]: { ...(courants[id] ?? brouillonDe(postit)), ...changement }
     }));
 
   const enregistrerTri = async (postit: Postit) => {
@@ -159,7 +155,7 @@ export function Administration() {
     try {
       const ecrit = await trierPostit(postit.id, tri);
       setPostits((courants) =>
-        courants ? courants.map((ligne) => (ligne.id === postit.id ? { ...ligne, ...ecrit } : ligne)) : courants,
+        courants ? courants.map((ligne) => (ligne.id === postit.id ? { ...ligne, ...ecrit } : ligne)) : courants
       );
       setBrouillons((courants) => ({ ...courants, [postit.id]: ecrit }));
       setMessageMur({ ton: 'ok', texte: `« ${postit.titre} » : ${ecrit.statut}.` });
@@ -176,8 +172,8 @@ export function Administration() {
         <section className="section panel">
           <h1>Pas de comptes sans base</h1>
           <p className="muted max-w-[62ch]">
-            Cette version du jeu n’est pas reliée à une base : il n’y a ni compte à valider ni
-            administration. Le mur lit le fichier du dépôt.
+            Cette version du jeu n’est pas reliée à une base : il n’y a ni compte à valider ni administration. Le mur
+            lit le fichier du dépôt.
           </p>
           <Link className="button" to="/">
             Retour au bureau
@@ -217,8 +213,8 @@ export function Administration() {
         <section className="section panel">
           <h1>Réservé à l’administration</h1>
           <p className="muted max-w-[62ch]">
-            Cette page liste les comptes de l’alpha et décide de leur validation. Elle n’est
-            ouverte qu’aux comptes marqués administrateurs ; le tien ne l’est pas.
+            Cette page liste les comptes de l’alpha et décide de leur validation. Elle n’est ouverte qu’aux comptes
+            marqués administrateurs ; le tien ne l’est pas.
           </p>
           <Link className="button" to="/">
             Retour au bureau
@@ -238,10 +234,9 @@ export function Administration() {
           <div>
             <h1>Les comptes de l’alpha</h1>
             <p className="muted max-w-[64ch]">
-              Chaque compte arrive <strong>en attente</strong> : il peut jouer et lire, pas
-              encore écrire. Approuve les invités, refuse les autres — un refus doit dire
-              pourquoi, l’invité lira la raison. En dessous, le <strong>tri du mur</strong> :
-              statut, raison d’un écarté, ticket.
+              Chaque compte arrive <strong>en attente</strong> : il peut jouer et lire, pas encore écrire. Approuve les
+              invités, refuse les autres — un refus doit dire pourquoi, l’invité lira la raison. En dessous, le{' '}
+              <strong>tri du mur</strong> : statut, raison d’un écarté, ticket.
             </p>
           </div>
           <button
@@ -283,9 +278,7 @@ export function Administration() {
       {comptes && comptes.length === 0 && (
         <section className="section">
           <div className="empty">
-            <p className="m-0 font-heading text-[1.15rem] font-bold text-ink">
-              Aucun compte pour l’instant.
-            </p>
+            <p className="m-0 font-heading text-[1.15rem] font-bold text-ink">Aucun compte pour l’instant.</p>
             <p className="mx-auto mt-1 mb-0 max-w-[52ch]">
               Les comptes apparaissent ici à leur première connexion — Google ou courriel.
             </p>
@@ -301,7 +294,10 @@ export function Administration() {
           ) : (
             <ul className="m-0 flex list-none flex-col gap-4 p-0">
               {enAttente.map((ligne) => (
-                <li key={ligne.id} className="flex flex-col gap-2 border-t border-line/40 pt-3 first:border-t-0 first:pt-0">
+                <li
+                  key={ligne.id}
+                  className="flex flex-col gap-2 border-t border-line/40 pt-3 first:border-t-0 first:pt-0"
+                >
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <div>
                       <strong>{ligne.courriel || 'courriel inconnu'}</strong>
@@ -325,9 +321,7 @@ export function Administration() {
                       <button
                         type="button"
                         className="button"
-                        onClick={() =>
-                          setOuvertRefus((courant) => (courant === ligne.id ? null : ligne.id))
-                        }
+                        onClick={() => setOuvertRefus((courant) => (courant === ligne.id ? null : ligne.id))}
                         disabled={enCours === ligne.id}
                         aria-expanded={ouvertRefus === ligne.id}
                         aria-label={`Refuser ${ligne.courriel || 'ce compte'}`}
@@ -409,9 +403,9 @@ export function Administration() {
         <section className="section panel" aria-labelledby="tri-titre">
           <h2 id="tri-titre">Le mur — le tri ({postits.length})</h2>
           <p className="muted max-w-[66ch]">
-            Déplacer un <strong>statut</strong>, écrire la <strong>raison</strong> d’un écarté,
-            lier un <strong>ticket</strong>. Ni le titre ni le texte ne se modifient ici : ils
-            sont à leur auteur (#139), et la base ne les donne pas à l’administration.
+            Déplacer un <strong>statut</strong>, écrire la <strong>raison</strong> d’un écarté, lier un{' '}
+            <strong>ticket</strong>. Ni le titre ni le texte ne se modifient ici : ils sont à leur auteur (#139), et la
+            base ne les donne pas à l’administration.
           </p>
 
           <ul className="m-0 flex list-none flex-col gap-4 p-0">
@@ -421,8 +415,7 @@ export function Administration() {
                 brouillon.statut !== postit.statut ||
                 brouillon.raison.trim() !== postit.raison ||
                 brouillon.ticket !== postit.ticket;
-              const ecarteSansRaison =
-                brouillon.statut === 'écarté' && brouillon.raison.trim() === '';
+              const ecarteSansRaison = brouillon.statut === 'écarté' && brouillon.raison.trim() === '';
 
               return (
                 <li
@@ -433,8 +426,7 @@ export function Administration() {
                   <div>
                     <strong>{postit.titre}</strong>
                     <span className="block text-[0.78rem] text-ink-muted">
-                      {postit.gueulage ? 'Gueulage' : postit.kind} · {postit.pseudo || 'anonyme'} ·{' '}
-                      {postit.statut}
+                      {postit.gueulage ? 'Gueulage' : postit.kind} · {postit.pseudo || 'anonyme'} · {postit.statut}
                       {postit.ticket !== null ? ` · ticket #${postit.ticket}` : ''}
                     </span>
                   </div>
@@ -445,11 +437,7 @@ export function Administration() {
                       <select
                         value={brouillon.statut}
                         onChange={(event) =>
-                          changerBrouillon(
-                            postit.id,
-                            { statut: event.target.value as TriPostit['statut'] },
-                            postit,
-                          )
+                          changerBrouillon(postit.id, { statut: event.target.value as TriPostit['statut'] }, postit)
                         }
                         aria-label={`Statut de « ${postit.titre} »`}
                       >
@@ -466,9 +454,7 @@ export function Administration() {
                         <span className="field__label">Raison de l’écart</span>
                         <input
                           value={brouillon.raison}
-                          onChange={(event) =>
-                            changerBrouillon(postit.id, { raison: event.target.value }, postit)
-                          }
+                          onChange={(event) => changerBrouillon(postit.id, { raison: event.target.value }, postit)}
                           placeholder="Exemple : hors périmètre du lancement."
                           aria-label={`Raison de l’écart de « ${postit.titre} »`}
                         />
@@ -488,12 +474,9 @@ export function Administration() {
                           changerBrouillon(
                             postit.id,
                             {
-                              ticket:
-                                numero !== null && Number.isSafeInteger(numero) && numero > 0
-                                  ? numero
-                                  : null,
+                              ticket: numero !== null && Number.isSafeInteger(numero) && numero > 0 ? numero : null
                             },
-                            postit,
+                            postit
                           );
                         }}
                         aria-label={`Ticket de « ${postit.titre} »`}
@@ -513,8 +496,8 @@ export function Administration() {
 
                   {ecarteSansRaison && (
                     <p className="m-0 text-[0.8rem] text-ink-muted">
-                      Écarter exige une raison écrite : c’est elle qui apprend aux invités ce
-                      qui vaut la peine d’être remonté (D-059).
+                      Écarter exige une raison écrite : c’est elle qui apprend aux invités ce qui vaut la peine d’être
+                      remonté (D-059).
                     </p>
                   )}
                 </li>
@@ -533,8 +516,7 @@ export function Administration() {
             <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[0.88rem]">
               {traites.map((ligne) => (
                 <li key={ligne.id}>
-                  <strong>{ligne.courriel || 'courriel inconnu'}</strong> ·{' '}
-                  {libelleEtat(ligne.etat)}
+                  <strong>{ligne.courriel || 'courriel inconnu'}</strong> · {libelleEtat(ligne.etat)}
                   {ligne.raison ? ` · ${ligne.raison}` : ''}
                   {ligne.administrateur ? ' · administrateur' : ''}
                 </li>

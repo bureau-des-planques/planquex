@@ -94,11 +94,9 @@ const estObjet = (valeur: unknown): valeur is Brut =>
 
 const estTexte = (valeur: unknown): valeur is string => typeof valeur === 'string';
 
-const estNombre = (valeur: unknown): valeur is number =>
-  typeof valeur === 'number' && Number.isFinite(valeur);
+const estNombre = (valeur: unknown): valeur is number => typeof valeur === 'number' && Number.isFinite(valeur);
 
-const estEntier = (valeur: unknown): valeur is number =>
-  typeof valeur === 'number' && Number.isInteger(valeur);
+const estEntier = (valeur: unknown): valeur is number => typeof valeur === 'number' && Number.isInteger(valeur);
 
 function dansListe<T extends string>(liste: readonly T[], valeur: unknown): valeur is T {
   return estTexte(valeur) && (liste as readonly string[]).includes(valeur);

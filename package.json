@@ -27,7 +27,10 @@
     "admin": "node tools/admin/serveur.mjs",
     "serveurs": "node tools/serveurs/serveur.mjs",
     "detect:ui": "impeccable detect src/",
-    "detect:ui:page": "node scripts/detect-ui-pages.mjs"
+    "detect:ui:page": "node scripts/detect-ui-pages.mjs",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"scripts/**/*.mjs\" \"tools/**/*.mjs\" \"supabase/**/*.ts\" \"*.json\" \"*.ts\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"scripts/**/*.mjs\" \"tools/**/*.mjs\" \"supabase/**/*.ts\" \"*.json\" \"*.ts\"",
+    "index:decisions": "node scripts/index-decisions.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -61,6 +64,7 @@
     "jsdom": "^30.1.3",
     "pg": "^8.23.1",
     "playwright-core": "^1.64.1",
+    "prettier": "3.9.10",
     "typescript": "^7.0.2",
     "vite": "^8.3.4",
     "vite-plugin-pwa": "^2.0.0",

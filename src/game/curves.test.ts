@@ -25,7 +25,9 @@ describe('Règles chiffrées — bandes de CARD-SPEC.md §2 (#55)', () => {
   });
 
   it('ne fait jamais baisser les dégâts quand le café monte', () => {
-    const costs = Object.keys(DAMAGE_BY_COST).map(Number).sort((a, b) => a - b);
+    const costs = Object.keys(DAMAGE_BY_COST)
+      .map(Number)
+      .sort((a, b) => a - b);
     for (const [index, cost] of costs.entries()) {
       const band = damageBand(cost);
       const previous = index > 0 ? damageBand(costs[index - 1]) : undefined;

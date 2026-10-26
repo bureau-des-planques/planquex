@@ -64,11 +64,7 @@ export function setupTestStore(initialState: TestStoreState = {}) {
  * Wrapper de test qui fournit le BrowserRouter.
  */
 export function TestWrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <BrowserRouter>
-      {children}
-    </BrowserRouter>
-  );
+  return <BrowserRouter>{children}</BrowserRouter>;
 }
 
 /**

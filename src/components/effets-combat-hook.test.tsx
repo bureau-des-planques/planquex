@@ -26,7 +26,15 @@ function apresUnCoup(avantEtat: BattleState): BattleState {
   return apres;
 }
 
-function Harnais({ depart, suivant, sansMouvement }: { depart: BattleState; suivant: BattleState; sansMouvement: boolean }) {
+function Harnais({
+  depart,
+  suivant,
+  sansMouvement
+}: {
+  depart: BattleState;
+  suivant: BattleState;
+  sansMouvement: boolean;
+}) {
   const [etat, setEtat] = useState(depart);
   const effets = useEffetsDeCombat(etat, sansMouvement);
   return (

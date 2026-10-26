@@ -149,9 +149,8 @@ export function Layout() {
       {enAttente && (
         <div className="notice notice--warn" role="status">
           <p className="m-0 max-w-[70ch]">
-            <Link to="/attente">Ton compte attend d’être validé</Link> — tu peux jouer et
-            lire ; poster un post-it, voter et envoyer une trace de combat s’ouvriront à
-            l’approbation.
+            <Link to="/attente">Ton compte attend d’être validé</Link> — tu peux jouer et lire ; poster un post-it,
+            voter et envoyer une trace de combat s’ouvriront à l’approbation.
           </p>
         </div>
       )}
@@ -187,9 +186,7 @@ export function Layout() {
               to={tab.to}
               end={tab.to === '/'}
               aria-label={
-                pastille > 0
-                  ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir`
-                  : undefined
+                pastille > 0 ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir` : undefined
               }
               className={({ isActive }) => `bottom-nav__item ${isActive ? 'is-active' : ''}`}
             >

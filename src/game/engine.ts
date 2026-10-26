@@ -494,7 +494,9 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   player.active = { ...bench, statuses: [] };
   player.bench[benchIndex] = outgoing;
   player.hasRetreated = true;
-  next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'passes', 'passe')} en rotation : ${getCard(bench.cardId)?.name}.`);
+  next.log.push(
+    `${sujet(next, next.current)} ${verbe(next, next.current, 'passes', 'passe')} en rotation : ${getCard(bench.cardId)?.name}.`
+  );
   return next;
 }
 
@@ -642,7 +644,7 @@ export function attackDamage(
 
   // 4. Les effets qui affectent le défenseur : son Talent `reduceDamage`, puis la
   //    réduction d'instance posée par une Pression, valable le tour adverse.
-  const abilityReduction = defenderCard.ability?.kind === 'reduceDamage' ? defenderCard.ability.amount ?? 0 : 0;
+  const abilityReduction = defenderCard.ability?.kind === 'reduceDamage' ? (defenderCard.ability.amount ?? 0) : 0;
   damage -= abilityReduction;
   damage -= defender.damageReduction ?? 0;
 
@@ -733,7 +735,10 @@ function assertNever(value: never): never {
  * passent avant la défausse et les autres effets ; le reste garde l'ordre de la liste.
  */
 function ordreD031(effects: readonly AttackEffect[]): AttackEffect[] {
-  return [...effects.filter((effect) => effect.kind === 'damage'), ...effects.filter((effect) => effect.kind !== 'damage')];
+  return [
+    ...effects.filter((effect) => effect.kind === 'damage'),
+    ...effects.filter((effect) => effect.kind !== 'damage')
+  ];
 }
 
 /** Le camp adverse de `who`. */
@@ -863,9 +868,7 @@ function choixPossibles(state: BattleState): string[] {
  * ne fait rien sur une main vide, sans erreur.
  */
 function defausseImpossible(player: PlayerState, effects: readonly AttackEffect[] | undefined): boolean {
-  const defausseDeSoi = (effects ?? []).some(
-    (effect) => effect.kind === 'discardHand' && effect.target !== 'opponent'
-  );
+  const defausseDeSoi = (effects ?? []).some((effect) => effect.kind === 'discardHand' && effect.target !== 'opponent');
   return defausseDeSoi && player.hand.length === 0;
 }
 
@@ -976,7 +979,12 @@ function applyEffects(
         break;
       case 'damage': {
         // Dégâts (D-077) : même calcul que la Pression (D-031), Vulnérabilité au Poste comprise.
-        const extra = attackDamage(attacker, defender, { name: 'Talent', cost: [], damage: effect.amount ?? 0 }, 'poste');
+        const extra = attackDamage(
+          attacker,
+          defender,
+          { name: 'Talent', cost: [], damage: effect.amount ?? 0 },
+          'poste'
+        );
         defender.hp -= extra;
         state.log.push(`${getCard(attacker.cardId)?.name ?? 'Le Planqué'} : ${extra} de stress.`);
         faits.push({ type: 'stress', uid: defender.uid, montant: extra, auPoste: true });
@@ -1145,7 +1153,9 @@ function resolveEnd(state: BattleState) {
     state.phase = 'ended';
     state.winner = playerOut ? (aiOut ? opponent : 'ai') : 'player';
     state.endReason = 'plateauVide';
-    state.log.push(`${sujet(state, state.winner)} ${verbe(state, state.winner, 'gagnes', 'gagne')} : plus aucun Planqué.`);
+    state.log.push(
+      `${sujet(state, state.winner)} ${verbe(state, state.winner, 'gagnes', 'gagne')} : plus aucun Planqué.`
+    );
     return;
   }
 
@@ -1197,7 +1207,9 @@ export function promoteActive(state: BattleState, benchIndex: number): BattleSta
   player.bench[benchIndex] = null;
   player.active = { ...incoming, statuses: [] };
   next.pendingPromotion = null;
-  next.log.push(`${sujet(next, who)} ${verbe(next, who, 'envoies', 'envoie')} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`);
+  next.log.push(
+    `${sujet(next, who)} ${verbe(next, who, 'envoies', 'envoie')} ${getCard(incoming.cardId)?.name ?? 'un Planqué'} au Poste.`
+  );
 
   // Double craquage (D-031) : l'attaquant a choisi en premier, c'est au tour de
   // l'autre camp. Le plateau porte la file — un Poste vide avec un Banc garni
@@ -1558,10 +1570,10 @@ export function canEvolve(state: BattleState, handUid: string, targetUid: string
   const card = getCard(hand.cardId);
   return Boolean(
     isPlanque(card) &&
-      card.evolvesFrom === target.cardId &&
-      target.playedTurn < state.turn &&
-      target.evolvedTurn !== state.turn &&
-      !isFirstTurnFor(state, state.current)
+    card.evolvesFrom === target.cardId &&
+    target.playedTurn < state.turn &&
+    target.evolvedTurn !== state.turn &&
+    !isFirstTurnFor(state, state.current)
   );
 }
 
@@ -1721,4 +1733,3 @@ export function legalActions(state: BattleState): BattleAction[] {
   actions.push(forfeitOffer(state));
   return actions;
 }
-

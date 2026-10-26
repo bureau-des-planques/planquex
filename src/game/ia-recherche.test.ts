@@ -107,9 +107,7 @@ describe("l'écran joue le niveau 2 acté (D-084, #172 clos)", () => {
 
   it('nextAiAction, sans niveau demandé, rend le coup de la recherche et non celui du script', () => {
     const divergentes = positions.filter(
-      (state) =>
-        JSON.stringify(nextAction(state, 1)) !==
-        JSON.stringify(nextSearchAction(state, SANS_GARDE_DE_TEMPS))
+      (state) => JSON.stringify(nextAction(state, 1)) !== JSON.stringify(nextSearchAction(state, SANS_GARDE_DE_TEMPS))
     );
     // Sans position où les deux politiques divergent, le test ne prouverait rien.
     expect(divergentes.length).toBeGreaterThan(0);
@@ -160,7 +158,7 @@ describe('recherche à deux coups — budget (#172)', () => {
     maxMs: Infinity
   };
 
-  it("ne dépasse jamais le plafond de nœuds et replie sur le glouton", () => {
+  it('ne dépasse jamais le plafond de nœuds et replie sur le glouton', () => {
     const state = pathologicalState();
     const debut = performance.now();
     const decision = searchDecision(state, LARGE);
@@ -212,9 +210,7 @@ describe('recherche à deux coups — équité', () => {
       const swapped: BattleState = structuredClone(state);
       swapped.players.player.hand = reshuffleIds(state.players.player.hand, 3);
       swapped.players.player.deck = reshuffleIds(state.players.player.deck, 5);
-      expect(nextSearchAction(swapped, SANS_GARDE_DE_TEMPS)).toEqual(
-        nextSearchAction(state, SANS_GARDE_DE_TEMPS)
-      );
+      expect(nextSearchAction(swapped, SANS_GARDE_DE_TEMPS)).toEqual(nextSearchAction(state, SANS_GARDE_DE_TEMPS));
     }
   });
 

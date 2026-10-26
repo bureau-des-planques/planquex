@@ -262,9 +262,7 @@ function readUid(value: unknown): string | null {
 
 /** Un entier dans `[0, max]` — index de Banc, de Pression, de relève. */
 function readIndex(value: unknown, max: number): number | null {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= max
-    ? value
-    : null;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= max ? value : null;
 }
 
 /**
@@ -408,10 +406,7 @@ export function decodeMatch(code: string): DecodeResult {
     return refus('forme', 'Le code est mal formé : sa version est illisible.');
   }
   if (version !== CODEC_VERSION) {
-    return refus(
-      'version-inconnue',
-      `Code d’une version inconnue (« ${header} ») : ce jeu ne sait pas le lire.`
-    );
+    return refus('version-inconnue', `Code d’une version inconnue (« ${header} ») : ce jeu ne sait pas le lire.`);
   }
 
   const reste = trimmed.slice(firstDot + 1);
@@ -466,10 +461,7 @@ export function decodeMatch(code: string): DecodeResult {
   const playerCafeTypes = readCafeTypes(c[0]);
   const aiCafeTypes = readCafeTypes(c[1]);
   if (playerCafeTypes === null || aiCafeTypes === null) {
-    return refus(
-      'cafe',
-      'Types de café illégaux : il faut au plus trois factions productrices, sans doublon (D-034).'
-    );
+    return refus('cafe', 'Types de café illégaux : il faut au plus trois factions productrices, sans doublon (D-034).');
   }
 
   const actions: BattleAction[] = [];

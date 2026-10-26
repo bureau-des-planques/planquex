@@ -92,7 +92,9 @@ describe('Deck — écran du Deck', () => {
     }
     expect(checked).toBe(3);
 
-    const remainingEnabled = buttons.filter((b) => (b as HTMLButtonElement).disabled === false && !b.getAttribute('aria-pressed'));
+    const remainingEnabled = buttons.filter(
+      (b) => (b as HTMLButtonElement).disabled === false && !b.getAttribute('aria-pressed')
+    );
     expect(remainingEnabled.length).toBe(0);
   });
 
@@ -160,7 +162,8 @@ describe('Deck — tri et gabarit (#179)', () => {
   const reglage = { owned, deck, tutorielVu: true, pasAPasCombatVu: true };
 
   const sectionDedans = () => screen.getByRole('heading', { name: /Dedans/ }).closest('section') as HTMLElement;
-  const sectionCollection = () => screen.getByRole('heading', { name: /^Collection/ }).closest('section') as HTMLElement;
+  const sectionCollection = () =>
+    screen.getByRole('heading', { name: /^Collection/ }).closest('section') as HTMLElement;
 
   it('le tri range « Dedans » et « Collection » avec le même choix', () => {
     renderWithStore(<Deck />, reglage);
@@ -201,7 +204,9 @@ describe('Deck — tri et gabarit (#179)', () => {
     const slot = sectionDedans().querySelector<HTMLElement>(`.card-slot[data-card-id="${deck[0]}"]`)!;
     expect(within(slot).getByText('Deck ×1')).toBeInTheDocument();
 
-    const enCollection = sectionCollection().querySelector<HTMLElement>(`.card-slot[data-card-id="${choisies[0].id}"]`)!;
+    const enCollection = sectionCollection().querySelector<HTMLElement>(
+      `.card-slot[data-card-id="${choisies[0].id}"]`
+    )!;
     expect(within(enCollection).getByText('×1')).toBeInTheDocument();
     expect(enCollection).not.toHaveClass('is-missing');
   });

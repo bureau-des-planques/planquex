@@ -125,7 +125,7 @@ describe('l’import du mur (docs/comite.json → public.postits, #136)', () => 
       expect([ligne?.position_x, ligne?.position_y, ligne?.position_angle]).toEqual([
         postit.position.x,
         postit.position.y,
-        postit.position.angle,
+        postit.position.angle
       ]);
       // Un gueulage n'a pas de famille (contrainte `postits_gueulage_sans_famille`) ;
       // les autres en ont une. Le fichier le dit déjà, l'import ne l'invente pas.

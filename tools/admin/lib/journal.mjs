@@ -27,7 +27,7 @@ export function creerJournal(chemin = cheminJournalParDefaut()) {
     ecrire(ligne) {
       mkdirSync(dirname(chemin), { recursive: true });
       appendFileSync(chemin, `${JSON.stringify(ligne)}\n`, 'utf8');
-    },
+    }
   };
 }
 

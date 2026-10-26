@@ -98,7 +98,10 @@ function lireArguments(argv) {
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     const valeur = () => argv[(i += 1)];
-    if (arg === '--seeds') options.seeds = valeur().split(',').map((n) => Number(n.trim()));
+    if (arg === '--seeds')
+      options.seeds = valeur()
+        .split(',')
+        .map((n) => Number(n.trim()));
     else if (arg === '--games') options.games = Number(valeur());
     else if (arg === '--max-turns') options.maxTurns = Number(valeur());
     else if (arg === '--seuil-taux') options.seuilTaux = Number(valeur());
@@ -110,16 +113,14 @@ function lireArguments(argv) {
         console.error(`--direction attend niveau2, recherche ou niveau3, reçu « ${options.direction} ».`);
         process.exit(2);
       }
-    }
-    else if (arg === '--adversaire') {
+    } else if (arg === '--adversaire') {
       const brut = valeur();
       options.adversaire = brut === 'recherche' ? 'recherche' : Number(brut);
       if (![1, 2, 'recherche'].includes(options.adversaire)) {
         console.error(`--adversaire attend 1, 2 ou recherche, reçu « ${brut} ».`);
         process.exit(2);
       }
-    }
-    else if (arg === '--en-processus') options.enProcessus = true;
+    } else if (arg === '--en-processus') options.enProcessus = true;
     else if (arg === '--candidats') options.recherche.candidates = Number(valeur());
     else if (arg === '--mondes') options.recherche.worlds = Number(valeur());
     else if (arg === '--reponses') options.recherche.replies = Number(valeur());
@@ -134,7 +135,11 @@ function lireArguments(argv) {
     else if (arg === '--n3-noeuds') options.expectiminimax.maxNodes = Number(valeur());
     else if (arg === '--n3-ms') options.expectiminimax.maxMs = Number(valeur());
     else if (arg === '--aide' || arg === '-h') {
-      console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('*/')[0].replace('/**', ''));
+      console.log(
+        readFileSync(fileURLToPath(import.meta.url), 'utf8')
+          .split('*/')[0]
+          .replace('/**', '')
+      );
       process.exit(0);
     } else {
       console.error(`Argument inconnu : ${arg}`);
@@ -287,12 +292,7 @@ function peser(seeds, options) {
   const durees = [];
   const parGraine = [];
   // La politique **candidate** du protocole : le niveau 2 (référence), la recherche ou le niveau 3.
-  const candidat =
-    options.direction === 'recherche'
-      ? 'recherche'
-      : options.direction === 'niveau3'
-        ? 'niveau3'
-        : 2;
+  const candidat = options.direction === 'recherche' ? 'recherche' : options.direction === 'niveau3' ? 'niveau3' : 2;
   // La politique **adverse** : le niveau 1 (protocole historique) ou le niveau 2 acté.
   const adversaire = options.adversaire;
   for (const seed of seeds) {
@@ -422,9 +422,7 @@ async function main() {
         console.log(
           '\nRappel : un gain doit tenir sur le CONTRÔLE. Un gain d’entraînement qui s’évapore n’est pas un gain.'
         );
-        console.log(
-          'Rappel : la mesure n’a de sens que si le simulateur sait faire payer les Pressions (voir #113).'
-        );
+        console.log('Rappel : la mesure n’a de sens que si le simulateur sait faire payer les Pressions (voir #113).');
       }
     }
   } finally {

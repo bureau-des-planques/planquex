@@ -28,9 +28,7 @@ import type { BattleState, CardInstance, Status } from '@/data/types';
 
 const SEED = 5;
 
-const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
-  (card) => card.id
-);
+const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map((card) => card.id);
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 /** Un tour du joueur, prêt à attaquer : café, Poste et cible solides. */

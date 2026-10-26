@@ -70,11 +70,8 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
 
   // Le Stress **vivant** n'a de sens qu'avec son Seuil : sans les deux, la barre garde son
   // rôle de capacité (pleine) — c'est la carte de la Collection, pas celle du plateau.
-  const vivant =
-    typeof stress === 'number' && typeof seuil === 'number' && seuil > 0 ? { stress, seuil } : null;
-  const pctStress = vivant
-    ? Math.max(0, Math.min(100, Math.round((vivant.stress / vivant.seuil) * 100)))
-    : 100;
+  const vivant = typeof stress === 'number' && typeof seuil === 'number' && seuil > 0 ? { stress, seuil } : null;
+  const pctStress = vivant ? Math.max(0, Math.min(100, Math.round((vivant.stress / vivant.seuil) * 100))) : 100;
   const niveauStress = pctStress >= 75 ? 'is-high' : pctStress >= 50 ? 'is-mid' : '';
 
   const classes = [

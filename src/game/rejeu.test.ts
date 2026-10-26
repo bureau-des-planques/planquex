@@ -39,9 +39,7 @@ describe('rejouer — le verdict (#249)', () => {
   it('l’enveloppe ne transporte que les actions, jamais les faits', () => {
     const { enveloppe } = partieJouee();
     // Contrôle : une entrée de journal typée n'a pas la forme d'une action.
-    expect(enveloppe.actions.every((action) => typeof action === 'object' && 'type' in action)).toBe(
-      true
-    );
+    expect(enveloppe.actions.every((action) => typeof action === 'object' && 'type' in action)).toBe(true);
     expect(enveloppe.actions.some((action) => 'faits' in action)).toBe(false);
   });
 

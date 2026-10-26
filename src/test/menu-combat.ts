@@ -27,7 +27,9 @@ export function menuSurLaVue(vue: 'Journal' | 'Partie à deux'): HTMLElement {
   const menu = menuDuCombat();
   if (within(menu).queryByRole('heading', { name: vue })) return menu;
   menuSurLaListe();
-  fireEvent.click(within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('button', { name: new RegExp(vue) }));
+  fireEvent.click(
+    within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('button', { name: new RegExp(vue) })
+  );
   return screen.getByRole('region', { name: 'Menu du combat' });
 }
 

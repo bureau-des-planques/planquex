@@ -11,7 +11,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 // diagnostic n°1 d'une PWA, où un testeur garde très bien l'ancien service worker.
 // Garde : `src/version.test.ts` (elle échoue si un numéro de version est écrit en dur).
 const { version: APP_VERSION, stage: APP_STAGE } = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
 ) as { version: string; stage: string };
 
 export default defineConfig({

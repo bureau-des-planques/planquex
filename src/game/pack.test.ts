@@ -25,9 +25,7 @@ describe('Composition d’un Arrivage (§4.2)', () => {
   it('respecte 3 communes, 1 peu commune, 1 rare', () => {
     for (const seed of [1, 7, 42, 99, 2026]) {
       const cards = openPackCards({ rng: seedRng(seed) });
-      const groups = PACK_COMPOSITION.map(
-        (slot) => cards.filter((card) => slot.rarities.includes(card.rarity)).length
-      );
+      const groups = PACK_COMPOSITION.map((slot) => cards.filter((card) => slot.rarities.includes(card.rarity)).length);
       expect(groups, `graine ${seed}`).toEqual(PACK_COMPOSITION.map((slot) => slot.count));
     }
   });

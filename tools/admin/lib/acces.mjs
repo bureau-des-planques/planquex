@@ -35,7 +35,7 @@ export function creerAccesPg({ lecteur_url, admin_url }) {
     return {
       rows: resultat.rows ?? [],
       command: resultat.command ?? null,
-      instructions: 1,
+      instructions: 1
     };
   }
 
@@ -55,6 +55,6 @@ export function creerAccesPg({ lecteur_url, admin_url }) {
     async fermer() {
       await lecteurClient?.end();
       await adminClient?.end();
-    },
+    }
   };
 }

@@ -47,7 +47,11 @@ export function CafePips({ symbols, label }: Props) {
   const title = label ?? (names.length > 0 ? `Coût : ${names.join(' · ')}` : 'Aucun café requis');
   return (
     <span className="pips" title={title} aria-label={title}>
-      {names.length > 0 ? symbols.map((cafe, index) => <CafeDot key={`${index}-${cafe}`} cafe={cafe} />) : <i className="pip pip--free" />}
+      {names.length > 0 ? (
+        symbols.map((cafe, index) => <CafeDot key={`${index}-${cafe}`} cafe={cafe} />)
+      ) : (
+        <i className="pip pip--free" />
+      )}
     </span>
   );
 }

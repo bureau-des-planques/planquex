@@ -333,9 +333,7 @@ async function principal(ligne = process.argv.slice(2)) {
   // Le crochet de corruption ne s'arme **que** sur une copie (`--fichier`) : le vrai mur
   // ne peut pas être la cible d'un test.
   const relire =
-    options.fichier && process.env.STATUT_MUR_RELECTURE_CORROMPUE === '1'
-      ? () => '{"postits": "cassé"}'
-      : undefined;
+    options.fichier && process.env.STATUT_MUR_RELECTURE_CORROMPUE === '1' ? () => '{"postits": "cassé"}' : undefined;
 
   try {
     ecrireEtControler(chemin, texte, original, { controler, ...(relire ? { relire } : {}) });

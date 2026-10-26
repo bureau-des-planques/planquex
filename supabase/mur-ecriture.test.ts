@@ -36,26 +36,17 @@ import {
   creerCompte,
   fichiersMigrations,
   migrations,
-  type Base,
+  type Base
 } from './pglite';
 
 const MIGRATION_TRI = fichiersMigrations().find((sql) => sql.includes('corriger_postit'));
 if (!MIGRATION_TRI) throw new Error('supabase/migrations/0006_tri_et_corrections.sql introuvable');
 
-type Issue =
-  | { accepte: true; lignes: Array<Record<string, unknown>> }
-  | { accepte: false; message: string };
+type Issue = { accepte: true; lignes: Array<Record<string, unknown>> } | { accepte: false; message: string };
 
-async function tenter(
-  db: Base,
-  appareil: string,
-  sql: string,
-  params: unknown[] = [],
-): Promise<Issue> {
+async function tenter(db: Base, appareil: string, sql: string, params: unknown[] = []): Promise<Issue> {
   try {
-    const res = await avecAppareil(db, appareil, () =>
-      db.query<Record<string, unknown>>(sql, params),
-    );
+    const res = await avecAppareil(db, appareil, () => db.query<Record<string, unknown>>(sql, params));
     return { accepte: true, lignes: res.rows };
   } catch (erreur) {
     return { accepte: false, message: erreur instanceof Error ? erreur.message : String(erreur) };
@@ -81,7 +72,7 @@ const coller = (db: Base, appareil: string, id: string) =>
     appareil,
     `insert into public.postits (id, kind, titre, texte, version)
      values ($1, 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.8') returning *`,
-    [id],
+    [id]
   );
 
 const commenter = (db: Base, appareil: string, postit: string, texte = 'Pareil chez moi.') =>
@@ -89,7 +80,7 @@ const commenter = (db: Base, appareil: string, postit: string, texte = 'Pareil c
     db,
     appareil,
     `insert into public.commentaires (postit_id, texte, pseudo) values ($1, $2, 'Employé 404') returning *`,
-    [postit, texte],
+    [postit, texte]
   );
 
 /** La correction passe par la fonction : c'est elle qui porte la règle de #139. */
@@ -135,23 +126,21 @@ describe('commenter un post-it (#138)', () => {
 
   it('(a) un compte en attente ne commente pas — la base refuse', async () => {
     refuse(await commenter(db, APPAREIL_C, 'p-b'), /row-level security/);
-    const lus = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select count(*) as n from public.commentaires`),
-    );
+    const lus = await avecAppareil(db, APPAREIL_A, () => db.query(`select count(*) as n from public.commentaires`));
     expect(Number(lus.rows[0].n)).toBe(0);
   });
 
   it('(a) la lecture reste ouverte à un compte en attente (D-088)', async () => {
     accepte(await commenter(db, APPAREIL_A, 'p-b'));
     const lus = await avecAppareil(db, APPAREIL_C, () =>
-      db.query(`select postit_id, texte, pseudo, auteur from public.commentaires`),
+      db.query(`select postit_id, texte, pseudo, auteur from public.commentaires`)
     );
     expect(lus.rows).toHaveLength(1);
     expect(lus.rows[0]).toMatchObject({
       postit_id: 'p-b',
       texte: 'Pareil chez moi.',
       pseudo: 'Employé 404',
-      auteur: APPAREIL_A,
+      auteur: APPAREIL_A
     });
   });
 
@@ -161,9 +150,9 @@ describe('commenter un post-it (#138)', () => {
         db,
         APPAREIL_B,
         `insert into public.commentaires (postit_id, texte, auteur) values ('p-a', 'Pirate.', $1) returning *`,
-        [APPAREIL_A],
+        [APPAREIL_A]
       ),
-      /row-level security/,
+      /row-level security/
     );
   });
 
@@ -173,15 +162,11 @@ describe('commenter un post-it (#138)', () => {
         db,
         APPAREIL_B,
         `delete from public.commentaires where postit_id = 'p-b' and auteur = $1 returning *`,
-        [APPAREIL_A],
-      ),
+        [APPAREIL_A]
+      )
     );
     // … et l'auteur, lui, retire le sien.
-    const sien = await tenter(
-      db,
-      APPAREIL_A,
-      `delete from public.commentaires where postit_id = 'p-b' returning *`,
-    );
+    const sien = await tenter(db, APPAREIL_A, `delete from public.commentaires where postit_id = 'p-b' returning *`);
     accepte(sien);
     if (sien.accepte) expect(sien.lignes).toHaveLength(1);
   });
@@ -209,7 +194,7 @@ describe('corriger ou retirer son post-it (#139)', () => {
   it('(c) on ne corrige pas le post-it d’un autre', async () => {
     refuse(await corriger(db, APPAREIL_B, 'p-a', 'Pirate', 'Pirate.'), /postit_corrige_refuse/);
     const intact = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select titre from public.postits where id = 'p-a'`),
+      db.query(`select titre from public.postits where id = 'p-a'`)
     );
     expect(intact.rows[0].titre).toBe('Le bouton reste grisé');
   });
@@ -233,15 +218,11 @@ describe('corriger ou retirer son post-it (#139)', () => {
     accepte(retire);
 
     // p-b a été « retenu » : son auteur ne l'efface plus, le tri partirait avec lui.
-    zeroLigne(
-      await tenter(db, APPAREIL_B, `delete from public.postits where id = 'p-b' returning *`),
-    );
+    zeroLigne(await tenter(db, APPAREIL_B, `delete from public.postits where id = 'p-b' returning *`));
   });
 
   it('(d) on n’efface pas le post-it d’un autre', async () => {
-    zeroLigne(
-      await tenter(db, APPAREIL_B, `delete from public.postits where id = 'p-a' returning *`),
-    );
+    zeroLigne(await tenter(db, APPAREIL_B, `delete from public.postits where id = 'p-a' returning *`));
   });
 });
 
@@ -257,18 +238,13 @@ describe('le tri par l’administration (0006)', () => {
   });
 
   it('(e) un administrateur écrit statut, raison et ticket sur n’importe quel post-it', async () => {
-    const ecarte = await trierEn(
-      db,
-      ADMIN,
-      'p-a',
-      `statut = 'écarté', raison = 'Hors périmètre.', ticket = 139`,
-    );
+    const ecarte = await trierEn(db, ADMIN, 'p-a', `statut = 'écarté', raison = 'Hors périmètre.', ticket = 139`);
     accepte(ecarte);
     if (ecarte.accepte) {
       expect(ecarte.lignes[0]).toMatchObject({
         statut: 'écarté',
         raison: 'Hors périmètre.',
-        ticket: 139,
+        ticket: 139
       });
     }
     // Le tri marche aussi sur le post-it de quelqu'un d'autre, sans le réécrire.
@@ -278,14 +254,14 @@ describe('le tri par l’administration (0006)', () => {
   it('(e) un administrateur ne peut pas réécrire le texte d’un post-it d’autrui — le grant le refuse', async () => {
     refuse(
       await trierEn(db, ADMIN, 'p-b', `texte = 'Réécrit par l’administration.'`),
-      /permission denied for table postits/,
+      /permission denied for table postits/
     );
     refuse(
       await trierEn(db, ADMIN, 'p-b', `titre = 'Réécrit par l’administration.'`),
-      /permission denied for table postits/,
+      /permission denied for table postits/
     );
     const intact = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`select titre, texte from public.postits where id = 'p-b'`),
+      db.query(`select titre, texte from public.postits where id = 'p-b'`)
     );
     expect(intact.rows[0]).toEqual({ titre: 'Titre', texte: 'Texte.' });
   });
@@ -293,12 +269,9 @@ describe('le tri par l’administration (0006)', () => {
   it('(f) un non-administrateur est refusé : 0 ligne pour statut, permission refusée pour titre', async () => {
     zeroLigne(await trierEn(db, APPAREIL_B, 'p-a', `statut = 'fait'`));
     zeroLigne(await trierEn(db, APPAREIL_B, 'p-b', `statut = 'fait'`));
-    refuse(
-      await trierEn(db, APPAREIL_B, 'p-a', `titre = 'Pirate'`),
-      /permission denied for table postits/,
-    );
+    refuse(await trierEn(db, APPAREIL_B, 'p-a', `titre = 'Pirate'`), /permission denied for table postits/);
     const intact = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select statut from public.postits where id = 'p-a'`),
+      db.query(`select statut from public.postits where id = 'p-a'`)
     );
     expect(intact.rows[0].statut).toBe('écarté');
   });
@@ -307,7 +280,7 @@ describe('le tri par l’administration (0006)', () => {
     accepte(await coller(db, APPAREIL_A, 'p-sien'));
     zeroLigne(await trierEn(db, APPAREIL_A, 'p-sien', `statut = 'retenu'`));
     const relu = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select statut from public.postits where id = 'p-sien'`),
+      db.query(`select statut from public.postits where id = 'p-sien'`)
     );
     expect(relu.rows[0].statut).toBe('en attente');
   });
@@ -334,68 +307,58 @@ const MUTATIONS: Array<{
   {
     nom: '(f) politique du tri neutralisée → un non-administrateur trie le mur',
     sql: () =>
-      migrations().replace(
-        MIGRATION_TRI!,
-        () =>
-          muter(
-            `  on public.postits for update to authenticated
+      migrations().replace(MIGRATION_TRI!, () =>
+        muter(
+          `  on public.postits for update to authenticated
   using (public.est_administrateur())
   with check (public.est_administrateur());`,
-            `  on public.postits for update to authenticated
+          `  on public.postits for update to authenticated
   using (true)
-  with check (true);`,
-          ),
+  with check (true);`
+        )
       ),
     geste: (db) => trier(db, APPAREIL_B, 'p-a', `statut = 'fait'`),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(e) grant élargi au texte → l’administration réécrit le post-it d’autrui',
     sql: () =>
-      migrations().replace(
-        MIGRATION_TRI!,
-        () =>
-          muter(
-            'grant update (statut, raison, ticket) on public.postits to authenticated;',
-            'grant update on public.postits to authenticated;',
-          ),
+      migrations().replace(MIGRATION_TRI!, () =>
+        muter(
+          'grant update (statut, raison, ticket) on public.postits to authenticated;',
+          'grant update on public.postits to authenticated;'
+        )
       ),
     geste: (db) => trier(db, ADMIN, 'p-b', `texte = 'Réécrit par l’administration.'`),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(c) fonction sans le garde d’auteur → n’importe qui corrige le post-it d’un autre',
     sql: () =>
-      migrations().replace(
-        MIGRATION_TRI!,
-        () => muter('if corrige.auteur is distinct from auth.uid() then', 'if false then'),
+      migrations().replace(MIGRATION_TRI!, () =>
+        muter('if corrige.auteur is distinct from auth.uid() then', 'if false then')
       ),
     geste: (db) => corriger(db, APPAREIL_B, 'p-a'),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(c) fonction sans le garde de statut → une correction tardive passe',
     sql: () =>
-      migrations().replace(
-        MIGRATION_TRI!,
-        () => muter(`if corrige.statut <> 'en attente' then`, 'if false then'),
-      ),
+      migrations().replace(MIGRATION_TRI!, () => muter(`if corrige.statut <> 'en attente' then`, 'if false then')),
     geste: async (db) => {
       expect((await trier(db, ADMIN, 'p-b', `statut = 'retenu'`)).accepte).toBe(true);
       return corriger(db, APPAREIL_B, 'p-b');
     },
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(d) retrait sans « en attente » → l’auteur efface un post-it déjà trié',
     sql: () =>
-      migrations().replace(
-        MIGRATION_TRI!,
-        () =>
-          muter(
-            `using (auteur = auth.uid() and public.compte_approuve() and statut = 'en attente');`,
-            'using (auteur = auth.uid() and public.compte_approuve());',
-          ),
+      migrations().replace(MIGRATION_TRI!, () =>
+        muter(
+          `using (auteur = auth.uid() and public.compte_approuve() and statut = 'en attente');`,
+          'using (auteur = auth.uid() and public.compte_approuve());'
+        )
       ),
     geste: async (db) => {
       expect((await trier(db, ADMIN, 'p-b', `statut = 'retenu'`)).accepte).toBe(true);
@@ -405,7 +368,7 @@ const MUTATIONS: Array<{
         ? { accepte: false, message: '0 ligne supprimée (la RLS a filtré le retrait)' }
         : issue;
     },
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(a) approbation retirée de l’insertion d’un commentaire → un compte en attente commente',
@@ -414,11 +377,11 @@ const MUTATIONS: Array<{
         `on public.commentaires for insert to authenticated
   with check (auteur = auth.uid() and public.compte_approuve());`,
         `on public.commentaires for insert to authenticated
-  with check (auteur = auth.uid());`,
+  with check (auteur = auth.uid());`
       ),
     geste: (db) => commenter(db, APPAREIL_C, 'p-b'),
-    attendu: 'accepte',
-  },
+    attendu: 'accepte'
+  }
 ];
 
 describe('sur la vraie base, chaque geste fautif est refusé', () => {
@@ -460,14 +423,11 @@ describe('la migration 0006 est idempotente', () => {
       await db.exec(MIGRATION_TRI!);
 
       const relu = await avecAppareil(db, APPAREIL_A, () =>
-        db.query(`select statut from public.postits where id = 'p-a'`),
+        db.query(`select statut from public.postits where id = 'p-a'`)
       );
       expect(relu.rows[0].statut).toBe('retenu');
       // Les droits n'ont pas bougé : l'auteur ne réécrit toujours pas son texte en direct.
-      refuse(
-        await trierEn(db, APPAREIL_A, 'p-a', `texte = 'Réécrit'`),
-        /permission denied for table postits/,
-      );
+      refuse(await trierEn(db, APPAREIL_A, 'p-a', `texte = 'Réécrit'`), /permission denied for table postits/);
       // … et le tri fonctionne encore.
       accepte(await trierEn(db, ADMIN, 'p-a', `statut = 'fait'`));
     } finally {

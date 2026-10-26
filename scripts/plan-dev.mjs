@@ -61,18 +61,7 @@ export function entreeDe(issue) {
  * dépôt un jour donné.
  */
 export function lireIssues(gh = ghJson) {
-  const liste = gh([
-    'issue',
-    'list',
-    '--label',
-    LABEL,
-    '--state',
-    'open',
-    '--limit',
-    '200',
-    '--json',
-    'number,title'
-  ]);
+  const liste = gh(['issue', 'list', '--label', LABEL, '--state', 'open', '--limit', '200', '--json', 'number,title']);
   if (!Array.isArray(liste)) throw new Error('gh n’a pas rendu une liste d’issues');
   return liste.map(entreeDe).sort((a, b) => b.numero - a.numero);
 }
@@ -91,10 +80,7 @@ function ghJson(args) {
 /** Le fichier entier : l'en-tête, le type, la liste. Aucune URL, jamais (D-097 (3)). */
 export function rendreFichier(features) {
   const corps = features
-    .map(
-      (feature) =>
-        `  {\n    numero: ${feature.numero},\n    titre: ${q(feature.titre)}\n  }`
-    )
+    .map((feature) => `  {\n    numero: ${feature.numero},\n    titre: ${q(feature.titre)}\n  }`)
     .join(',\n');
   return `/**
  * **Les fonctionnalités prévues** — ce que la feuille de route annonce (D-097 (3), #214).
@@ -139,9 +125,7 @@ ${corps}
  * de production ne garde rien.
  */
 export function divergence(actuel, attendu) {
-  return actuel === attendu
-    ? null
-    : 'src/data/plan-dev.ts a divergé de GitHub — lance `npm run plan:dev`.';
+  return actuel === attendu ? null : 'src/data/plan-dev.ts a divergé de GitHub — lance `npm run plan:dev`.';
 }
 
 /** Un titre mis en forme comme le reste du dépôt : guillemets simples, apostrophes typographiques. */
@@ -157,9 +141,7 @@ function stop(message) {
 // `import.meta.main` n'existe pas partout : on regarde si ce fichier est l'entrée.
 // **Tout le CLI est sous cette garde** : un test qui importe le module ne doit ni lire
 // `process.argv` (vitest y met ses propres options), ni appeler `gh`.
-const estEntree = process.argv[1]
-  ? resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-  : false;
+const estEntree = process.argv[1] ? resolve(process.argv[1]) === fileURLToPath(import.meta.url) : false;
 
 if (estEntree) {
   const option = process.argv.slice(1).find((arg) => arg.startsWith('--'));
@@ -189,8 +171,6 @@ if (estEntree) {
     console.log(`✔ src/data/plan-dev.ts est à jour (${features.length} issue(s) alpha ouverte(s))`);
   } else {
     writeFileSync(CIBLE, contenu);
-    console.log(
-      `✔ src/data/plan-dev.ts écrit — ${features.length} issue(s) alpha ouverte(s) sur GitHub`
-    );
+    console.log(`✔ src/data/plan-dev.ts écrit — ${features.length} issue(s) alpha ouverte(s) sur GitHub`);
   }
 }

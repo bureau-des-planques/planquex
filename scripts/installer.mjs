@@ -58,7 +58,8 @@ function lien(chemin) {
 
 const estLance = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (estLance) {
-  const git = (...args) => execFileSync('git', ['rev-parse', '--path-format=absolute', ...args], { encoding: 'utf8' }).trim();
+  const git = (...args) =>
+    execFileSync('git', ['rev-parse', '--path-format=absolute', ...args], { encoding: 'utf8' }).trim();
   const args = process.argv.slice(2);
   const principalVoulu = args.includes('--principal');
   const decision = verdict({

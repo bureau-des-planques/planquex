@@ -24,7 +24,7 @@ import { readFileSync } from 'node:fs';
  * **autant de fichiers qu'il y a de fichiers de test sur le disque** (`find -name '*.test.*'`).
  */
 const { version: APP_VERSION, stage: APP_STAGE } = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
+  readFileSync(new URL('./package.json', import.meta.url), 'utf8')
 ) as { version: string; stage: string };
 
 export default defineConfig({

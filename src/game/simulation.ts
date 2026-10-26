@@ -141,15 +141,13 @@ export function factionDeck(faction: Faction): string[] {
   const others = ALL_CARDS.filter((card) => card.faction !== faction && !card.variantOf);
 
   for (const pool of [own, others]) {
-    const planques = pool
-      .filter(isPlanque)
-      .sort(
-        (a, b) =>
-          STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage] ||
-          // Comparaison par point de code, pas `localeCompare` : le rapport doit
-          // être identique d'une machine à l'autre, pas seulement d'une exécution à l'autre.
-          (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
-      );
+    const planques = pool.filter(isPlanque).sort(
+      (a, b) =>
+        STAGE_ORDER[a.stage] - STAGE_ORDER[b.stage] ||
+        // Comparaison par point de code, pas `localeCompare` : le rapport doit
+        // être identique d'une machine à l'autre, pas seulement d'une exécution à l'autre.
+        (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+    );
 
     // 1. un Entrant de chaque, socle du Deck.
     for (const card of planques) {
@@ -348,9 +346,7 @@ export function simulate(options: SimulationOptions): SimulationReport {
     throw new Error(`Niveau d'IA invalide : ${playerLevel}/${aiLevel}. Les niveaux sont 1 et 2.`);
   }
 
-  const factions = [
-    ...new Set(options.factions?.length ? options.factions : FACTION_ORDER)
-  ];
+  const factions = [...new Set(options.factions?.length ? options.factions : FACTION_ORDER)];
   const unknown = factions.filter((faction) => !FACTION_ORDER.includes(faction));
   if (unknown.length > 0) {
     throw new Error(`Faction(s) inconnue(s) : ${unknown.join(', ')}.`);
@@ -387,8 +383,7 @@ export function simulate(options: SimulationOptions): SimulationReport {
       }
     );
 
-    const winnerFaction =
-      state.winner === 'player' ? player : state.winner === 'ai' ? ai : null;
+    const winnerFaction = state.winner === 'player' ? player : state.winner === 'ai' ? ai : null;
     results.push({
       game: index + 1,
       seed: gameSeed,
@@ -413,10 +408,7 @@ export function simulate(options: SimulationOptions): SimulationReport {
 }
 
 /** Agrégat par faction : parties, victoires, défaites, nulles, tours moyens. */
-export function aggregateFactions(
-  factions: readonly Faction[],
-  results: readonly GameResult[]
-): FactionResult[] {
+export function aggregateFactions(factions: readonly Faction[], results: readonly GameResult[]): FactionResult[] {
   return factions.map((faction) => {
     const played = results.filter((result) => result.player === faction || result.ai === faction);
     const wins = played.filter((result) => result.winnerFaction === faction).length;
@@ -456,7 +448,9 @@ export function formatReport(report: SimulationReport): string {
   }
 
   lines.push('', 'Agrégat par faction', '');
-  lines.push(`${'Faction'.padEnd(22)}${'Parties'.padStart(8)}${'Victoires'.padStart(11)}${'Défaites'.padStart(10)}${'Nulles'.padStart(8)}${'Tours moy.'.padStart(12)}`);
+  lines.push(
+    `${'Faction'.padEnd(22)}${'Parties'.padStart(8)}${'Victoires'.padStart(11)}${'Défaites'.padStart(10)}${'Nulles'.padStart(8)}${'Tours moy.'.padStart(12)}`
+  );
   lines.push('-'.repeat(71));
   for (const faction of report.factions) {
     lines.push(

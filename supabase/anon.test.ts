@@ -36,14 +36,14 @@ const SECURITY_DEFINER_ATTENDUES = [
   'compte_approuve()',
   'est_administrateur()',
   'comptes_creation()',
-  'comptes_decision()',
+  'comptes_decision()'
 ];
 
 /** Les fonctions d'écriture, que `authenticated` doit toujours pouvoir appeler. */
 const ECRITURE = [
   'corriger_postit(text,text,text)',
   'deplacer_postit(text,double precision,double precision,double precision)',
-  'marquer_comite_vu()',
+  'marquer_comite_vu()'
 ];
 
 /** La 0011, lue paresseusement : sans elle, les scénarios échouent **par le fond**. */
@@ -64,17 +64,17 @@ async function fonctionsSecurityDefiner(db: Base): Promise<string[]> {
     `select p.oid::regprocedure::text as signature
        from pg_proc p
       where p.pronamespace = 'public'::regnamespace and p.prosecdef
-      order by 1`,
+      order by 1`
   );
   return res.rows.map((ligne) => ligne.signature);
 }
 
 /** Vrai si le rôle `role` peut exécuter la fonction `signature`. */
 async function peutExecuter(db: Base, role: string, signature: string): Promise<boolean> {
-  const res = await db.query<{ ok: boolean }>(
-    `select has_function_privilege($1, $2::regprocedure, 'execute') as ok`,
-    [role, signature],
-  );
+  const res = await db.query<{ ok: boolean }>(`select has_function_privilege($1, $2::regprocedure, 'execute') as ok`, [
+    role,
+    signature
+  ]);
   return res.rows[0].ok;
 }
 
@@ -107,10 +107,9 @@ describe('anon n’exécute aucune fonction security definer de public (0011, #2
     const db = await baseSupabase();
     try {
       for (const signature of ECRITURE) {
-        expect(
-          await peutExecuter(db, 'authenticated', signature),
-          `authenticated n'exécute plus ${signature}`,
-        ).toBe(true);
+        expect(await peutExecuter(db, 'authenticated', signature), `authenticated n'exécute plus ${signature}`).toBe(
+          true
+        );
       }
     } finally {
       await db.close();
@@ -151,10 +150,7 @@ describe('le contrôle mord — 0011 neutralisée, anon exécute', () => {
     const db = await baseSupabase(mutee());
     try {
       for (const signature of ECRITURE) {
-        expect(
-          await peutExecuter(db, 'anon', signature),
-          `la garde ne mord pas sur ${signature}`,
-        ).toBe(true);
+        expect(await peutExecuter(db, 'anon', signature), `la garde ne mord pas sur ${signature}`).toBe(true);
       }
     } finally {
       await db.close();

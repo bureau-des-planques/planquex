@@ -352,9 +352,7 @@ export const useStore = create<AppState>()(
       setCafeTypes: (types) => set({ cafeTypes: normalizeCafeTypes(types) }),
       toggleCafeType: (type) => {
         const current = get().cafeTypes;
-        const next = current.includes(type)
-          ? current.filter((entry) => entry !== type)
-          : [...current, type];
+        const next = current.includes(type) ? current.filter((entry) => entry !== type) : [...current, type];
         // La normalisation écarte `SUPPORT`/`INTERIM` et ignore un 4ᵉ type (#91).
         set({ cafeTypes: normalizeCafeTypes(next) });
       },
@@ -387,11 +385,7 @@ export const useStore = create<AppState>()(
       setPasAPasCombatVu: (value) => set({ pasAPasCombatVu: value }),
       enregistrerPartie: (partie) => set({ partie }),
       exporterSauvegarde: () =>
-        JSON.stringify(
-          { jeu: SAVE_FORMAT, version: STORAGE_VERSION, etat: partializeState(get()) },
-          null,
-          2
-        ),
+        JSON.stringify({ jeu: SAVE_FORMAT, version: STORAGE_VERSION, etat: partializeState(get()) }, null, 2),
       importerSauvegarde: (texte) => {
         let brut: unknown;
         try {
@@ -495,8 +489,7 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // **v7 → v8** : l'affichage du combat reprend ses défauts — `sobre`, et les raccourcis
     // actifs. Une valeur d'un autre type est écartée comme une absence.
     combatDetaille: typeof migrated.combatDetaille === 'boolean' ? migrated.combatDetaille : false,
-    raccourcisCombat:
-      typeof migrated.raccourcisCombat === 'boolean' ? migrated.raccourcisCombat : true,
+    raccourcisCombat: typeof migrated.raccourcisCombat === 'boolean' ? migrated.raccourcisCombat : true,
     // **v4 → v5** : un état v4 a **déjà été joué** (on ne lui remontre pas la Journée
     // d'intégration, `true` d'office) ; une partie neuve n'a aucun état à migrer et
     // part de `false`.
@@ -504,9 +497,7 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // **v5 → v6** : même règle pour le pas-à-pas du combat — un état d'avant sa
     // création vient d'un invité qui a déjà combattu.
     pasAPasCombatVu:
-      typeof migrated.pasAPasCombatVu === 'boolean'
-        ? migrated.pasAPasCombatVu
-        : version < STORAGE_VERSION
+      typeof migrated.pasAPasCombatVu === 'boolean' ? migrated.pasAPasCombatVu : version < STORAGE_VERSION
   };
 }
 

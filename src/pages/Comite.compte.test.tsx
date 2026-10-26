@@ -14,12 +14,12 @@ import type { Compte } from '@/lib/comptes';
  */
 const DOCUMENT = vi.hoisted(() => ({
   formulaire: 'https://exemple.test/formulaire',
-  postits: [],
+  postits: []
 }));
 
 const mocks = vi.hoisted(() => ({
   murEstConfigure: vi.fn(() => true),
-  charger: vi.fn(),
+  charger: vi.fn()
 }));
 
 vi.mock('@/store/mur', async () => {
@@ -32,7 +32,7 @@ vi.mock('@/lib/murBase', async () => {
   return {
     ...vrai,
     murEstConfigure: mocks.murEstConfigure,
-    chargerPostitsDuMur: mocks.charger,
+    chargerPostitsDuMur: mocks.charger
   };
 });
 
@@ -54,7 +54,7 @@ const POSTIT = {
   lie: null,
   position: { x: 10, y: 10, angle: 0 },
   votes: { up: 2, down: 1, mon: null },
-  mien: false,
+  mien: false
 };
 
 const COMPTE: Compte = {
@@ -63,7 +63,7 @@ const COMPTE: Compte = {
   etat: 'en attente',
   raison: '',
   administrateur: false,
-  created_at: '2026-10-23T10:00:00.000Z',
+  created_at: '2026-10-23T10:00:00.000Z'
 };
 
 function poserCompte(etat: Partial<Compte> | null = {}) {
@@ -72,7 +72,7 @@ function poserCompte(etat: Partial<Compte> | null = {}) {
     chargement: false,
     session: etat ? { id: 'compte-a', courriel: 'a@exemple.test' } : null,
     compte: etat ? { ...COMPTE, ...etat } : null,
-    erreur: null,
+    erreur: null
   });
 }
 

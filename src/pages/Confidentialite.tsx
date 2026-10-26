@@ -38,33 +38,33 @@ const COLLECTE: Rubrique[] = [
     lignes: [
       'Si tu te connectes avec Google, on reçoit ton adresse de courriel et un identifiant technique.',
       'Si tu crées un compte avec un mot de passe, on garde ton adresse de courriel ; le mot de passe est chiffré et nous ne le voyons jamais.',
-      'Ton pseudo est choisi dans Réglages. Il vit sur ton appareil et il accompagne ce que tu écris ; sans pseudo, c’est « anonyme ».',
-    ],
+      'Ton pseudo est choisi dans Réglages. Il vit sur ton appareil et il accompagne ce que tu écris ; sans pseudo, c’est « anonyme ».'
+    ]
   },
   {
     titre: 'Ce que tu écris sur le mur',
     lignes: [
       'Un post-it : son titre, son texte, l’écran concerné, la version du jeu, et le lien de capture si tu en mets un.',
       'Tes commentaires, et tes pouces (un par post-it, pour savoir combien de personnes sont d’accord).',
-      'Ces textes sont visibles de tous les testeurs : c’est un mur, pas une boîte aux lettres.',
-    ],
+      'Ces textes sont visibles de tous les testeurs : c’est un mur, pas une boîte aux lettres.'
+    ]
   },
   {
     titre: 'Tes parties terminées',
     lignes: [
       'Le déroulé de la partie, solo comme à deux : la graine de hasard, les deux Decks, les types de café et la suite des actions jouées.',
       'Cela sert à voir comment le jeu est réellement joué, et où il coince.',
-      'Ni ton pseudo, ni ton adresse, ni aucun texte de ta part n’y figurent.',
-    ],
+      'Ni ton pseudo, ni ton adresse, ni aucun texte de ta part n’y figurent.'
+    ]
   },
   {
     titre: 'Ce qu’on ne fait pas',
     lignes: [
       'Aucune publicité, aucun traceur publicitaire, aucune revente de données.',
       'Aucun profilage : on ne cherche pas à te connaître, on cherche à savoir si le jeu tient.',
-      'Rien d’autre que ce qui est écrit ci-dessus : les tables de la base portent ces champs-là, et pas d’autres.',
-    ],
-  },
+      'Rien d’autre que ce qui est écrit ci-dessus : les tables de la base portent ces champs-là, et pas d’autres.'
+    ]
+  }
 ];
 
 const QUESTIONS: Rubrique[] = [
@@ -72,23 +72,23 @@ const QUESTIONS: Rubrique[] = [
     titre: 'Combien de temps',
     lignes: [
       'Le temps de l’alpha, c’est-à-dire le temps de recueillir assez de retours pour décider de la suite.',
-      'Tu peux demander la suppression de ton compte et de ce que tu as écrit à tout moment : écris-nous, et c’est fait.',
-    ],
+      'Tu peux demander la suppression de ton compte et de ce que tu as écrit à tout moment : écris-nous, et c’est fait.'
+    ]
   },
   {
     titre: 'Voir, corriger, supprimer',
     lignes: [
       'Tu peux corriger ou retirer tes post-its depuis le mur, tant qu’ils n’ont pas été triés.',
-      'Tu peux retirer tes commentaires. Pour le reste — ton compte, tes parties enregistrées — demande-le nous.',
-    ],
+      'Tu peux retirer tes commentaires. Pour le reste — ton compte, tes parties enregistrées — demande-le nous.'
+    ]
   },
   {
     titre: 'Un doute',
     lignes: [
       'Écris-nous : le comité est là pour ça, et un courriel marche aussi.',
-      'Cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.',
-    ],
-  },
+      'Cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.'
+    ]
+  }
 ];
 
 function Bloc({ rubrique }: { rubrique: Rubrique }) {
@@ -110,8 +110,8 @@ export function Confidentialite() {
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Confidentialité</h1>
         <p className="muted m-0 max-w-[62ch]">
-          Le Bureau des Planqués est un jeu d’alpha, testé par quelques invités. Voici, en
-          clair et sans formule, ce que le jeu garde de toi, et pourquoi.
+          Le Bureau des Planqués est un jeu d’alpha, testé par quelques invités. Voici, en clair et sans formule, ce que
+          le jeu garde de toi, et pourquoi.
         </p>
       </section>
 

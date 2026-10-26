@@ -100,7 +100,7 @@ export function analyserWorktrees(porcelain) {
     tete: bloc.tete ? bloc.tete.slice(0, 7) : null,
     branche: bloc.detache ? null : bloc.branche,
     detache: bloc.detache,
-    nu: bloc.nu,
+    nu: bloc.nu
   }));
 }
 
@@ -109,7 +109,9 @@ export function analyserWorktrees(porcelain) {
  * `## dev...origin/dev [ahead 2, behind 1]`, `## No commits yet on main`, ou `## HEAD (no branch)`.
  */
 export function analyserEnteteStatut(ligne) {
-  const texte = String(ligne).trim().replace(/^##\s*/, '');
+  const texte = String(ligne)
+    .trim()
+    .replace(/^##\s*/, '');
   const crochet = /\[(.+)\]$/.exec(texte);
   const reste = crochet ? texte.slice(0, crochet.index).trim() : texte;
   const morceaux = reste.split('...');
@@ -121,7 +123,7 @@ export function analyserEnteteStatut(ligne) {
     branche: morceaux[0].replace(/^No commits yet on /, ''),
     suivi: morceaux[1] ?? null,
     enAvance: compte('ahead'),
-    enRetard: compte('behind'),
+    enRetard: compte('behind')
   };
 }
 
@@ -239,7 +241,7 @@ export function creerSysteme({ racine = process.cwd(), etat = dossierEtatParDefa
         ...socket,
         dossier,
         commande,
-        age: tableAges.get(socket.pid) ?? null,
+        age: tableAges.get(socket.pid) ?? null
       };
     });
   };
@@ -255,7 +257,7 @@ export function creerSysteme({ racine = process.cwd(), etat = dossierEtatParDefa
         branche: bloc.branche || entete.branche || null,
         modifs: Math.max(0, lignes.length - (lignes.length ? 1 : 0)),
         enAvance: entete.enAvance,
-        enRetard: entete.enRetard,
+        enRetard: entete.enRetard
       };
     });
   };
@@ -265,11 +267,12 @@ export function creerSysteme({ racine = process.cwd(), etat = dossierEtatParDefa
     const fichier = cheminJournal(etat, port);
     const descripteur = openSync(fichier, 'a');
     const script = mode === 'preview' ? 'preview' : 'dev';
-    const enfant = spawn(
-      'npm',
-      ['run', script, '--', '--port', String(port), '--strictPort', '--host', '127.0.0.1'],
-      { cwd: chemin, detached: true, stdio: ['ignore', descripteur, descripteur], env: { ...process.env, FORCE_COLOR: '0' } },
-    );
+    const enfant = spawn('npm', ['run', script, '--', '--port', String(port), '--strictPort', '--host', '127.0.0.1'], {
+      cwd: chemin,
+      detached: true,
+      stdio: ['ignore', descripteur, descripteur],
+      env: { ...process.env, FORCE_COLOR: '0' }
+    });
     enfant.unref();
     closeSync(descripteur);
     return { pid: enfant.pid ?? null, port, journal: fichier };
@@ -319,6 +322,9 @@ export function creerSysteme({ racine = process.cwd(), etat = dossierEtatParDefa
     tuer,
     lireJournal,
     portLibre: (depart = PREMIER_PORT) =>
-      prochainLibre(listerServeurs().map((s) => s.port), { depart }),
+      prochainLibre(
+        listerServeurs().map((s) => s.port),
+        { depart }
+      )
   };
 }

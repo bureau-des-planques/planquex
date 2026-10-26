@@ -34,7 +34,7 @@ import {
   creerCompte,
   fichiersMigrations,
   migrations,
-  type Base,
+  type Base
 } from './pglite';
 
 const MIGRATION_COMITE = fichiersMigrations().find((sql) => sql.includes('marquer_comite_vu'));
@@ -42,20 +42,11 @@ if (!MIGRATION_COMITE) {
   throw new Error('supabase/migrations/0008_comite.sql introuvable');
 }
 
-type Issue =
-  | { accepte: true; lignes: Array<Record<string, unknown>> }
-  | { accepte: false; message: string };
+type Issue = { accepte: true; lignes: Array<Record<string, unknown>> } | { accepte: false; message: string };
 
-async function tenter(
-  db: Base,
-  appareil: string,
-  sql: string,
-  params: unknown[] = [],
-): Promise<Issue> {
+async function tenter(db: Base, appareil: string, sql: string, params: unknown[] = []): Promise<Issue> {
   try {
-    const res = await avecAppareil(db, appareil, () =>
-      db.query<Record<string, unknown>>(sql, params),
-    );
+    const res = await avecAppareil(db, appareil, () => db.query<Record<string, unknown>>(sql, params));
     return { accepte: true, lignes: res.rows };
   } catch (erreur) {
     return { accepte: false, message: erreur instanceof Error ? erreur.message : String(erreur) };
@@ -76,22 +67,18 @@ const coller = (db: Base, appareil: string, id: string) =>
     appareil,
     `insert into public.postits (id, kind, titre, texte, version)
      values ($1, 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.12') returning *`,
-    [id],
+    [id]
   );
 
 /** Le tri passe par l'administration (0006 : `grant update (statut, raison, ticket)`). */
 const trier = (db: Base, appareil: string, postit: string, statut: string) =>
-  tenter(db, appareil, `update public.postits set statut = $2 where id = $1 returning statut`, [
-    postit,
-    statut,
-  ]);
+  tenter(db, appareil, `update public.postits set statut = $2 where id = $1 returning statut`, [postit, statut]);
 
 /** La correction du texte passe par sa fonction (0006) : elle ne touche pas au statut. */
 const corriger = (db: Base, appareil: string, postit: string, texte: string) =>
   tenter(db, appareil, `select * from public.corriger_postit($1, 'Titre', $2)`, [postit, texte]);
 
-const marquer = (db: Base, appareil: string) =>
-  tenter(db, appareil, `select public.marquer_comite_vu() as vu_le`);
+const marquer = (db: Base, appareil: string) => tenter(db, appareil, `select public.marquer_comite_vu() as vu_le`);
 
 /** A et B approuvés, C en attente, un administrateur ; A et B ont chacun un post-it. */
 async function monde(db: Base) {
@@ -107,14 +94,12 @@ const mouvement = async (db: Base, id: string) =>
   (
     await db.query<{ updated_at: Date; created_at: Date }>(
       `select updated_at, created_at from public.postits where id = $1`,
-      [id],
+      [id]
     )
   ).rows[0];
 
 const repere = async (db: Base, compte: string) =>
-  (
-    await db.query<{ vu_le: Date }>(`select vu_le from public.comptes where id = $1`, [compte])
-  ).rows[0].vu_le;
+  (await db.query<{ vu_le: Date }>(`select vu_le from public.comptes where id = $1`, [compte])).rows[0].vu_le;
 
 /** Recule un horodatage, pour que le mouvement attendu soit **visiblement** plus récent. */
 const reculer = async (db: Base, id: string) =>
@@ -142,9 +127,7 @@ describe('quand un post-it a bougé (0008)', () => {
       accepte(await trier(db, ADMIN, 'p-a', 'retenu'));
 
       const apres = await mouvement(db, 'p-a');
-      expect(new Date(apres.updated_at).getTime()).toBeGreaterThan(
-        new Date(avant.updated_at).getTime(),
-      );
+      expect(new Date(apres.updated_at).getTime()).toBeGreaterThan(new Date(avant.updated_at).getTime());
     } finally {
       await db.close();
     }
@@ -174,12 +157,7 @@ describe('quand un post-it a bougé (0008)', () => {
       const avant = await mouvement(db, 'p-a');
 
       accepte(
-        await tenter(
-          db,
-          APPAREIL_A,
-          `select * from public.deplacer_postit($1, $2, $3, $4)`,
-          ['p-a', 12.5, 80, 0],
-        ),
+        await tenter(db, APPAREIL_A, `select * from public.deplacer_postit($1, $2, $3, $4)`, ['p-a', 12.5, 80, 0])
       );
 
       const apres = await mouvement(db, 'p-a');
@@ -210,12 +188,8 @@ describe('quand un post-it a bougé (0008)', () => {
     try {
       await monde(db);
       refuse(
-        await tenter(
-          db,
-          ADMIN,
-          `update public.postits set updated_at = '2000-01-01' where id = 'p-a'`,
-        ),
-        /permission denied/,
+        await tenter(db, ADMIN, `update public.postits set updated_at = '2000-01-01' where id = 'p-a'`),
+        /permission denied/
       );
     } finally {
       await db.close();
@@ -227,9 +201,7 @@ describe('quand un post-it a bougé (0008)', () => {
     try {
       await monde(db);
       const vue = await avecAppareil(db, APPAREIL_A, () =>
-        db.query<{ updated_at: Date }>(
-          `select updated_at from public.postits_avec_votes where id = 'p-a'`,
-        ),
+        db.query<{ updated_at: Date }>(`select updated_at from public.postits_avec_votes where id = 'p-a'`)
       );
       expect(vue.rows).toHaveLength(1);
       expect(vue.rows[0].updated_at).toBeTruthy();
@@ -265,10 +237,8 @@ describe('quand tu l’as vu (0008)', () => {
     try {
       await monde(db);
       refuse(
-        await tenter(db, APPAREIL_A, `update public.comptes set vu_le = now() where id = $1`, [
-          APPAREIL_A,
-        ]),
-        /permission denied/,
+        await tenter(db, APPAREIL_A, `update public.comptes set vu_le = now() where id = $1`, [APPAREIL_A]),
+        /permission denied/
       );
     } finally {
       await db.close();
@@ -307,7 +277,7 @@ describe('quand tu l’as vu (0008)', () => {
       await monde(db);
       refuse(
         await tenter(db, '99999999-9999-4999-8999-999999999999', `select public.marquer_comite_vu()`),
-        /comite_vu_sans_compte/,
+        /comite_vu_sans_compte/
       );
     } finally {
       await db.close();
@@ -321,10 +291,7 @@ describe('quand tu l’as vu (0008)', () => {
 
 /** Remplace un motif de la 0008 ; un motif absent fait échouer. */
 function muter(motif: string, remplacement: string): string {
-  expect(
-    MIGRATION_COMITE!.split(motif).length - 1,
-    `motif introuvable ou ambigu : ${motif}`,
-  ).toBeGreaterThan(0);
+  expect(MIGRATION_COMITE!.split(motif).length - 1, `motif introuvable ou ambigu : ${motif}`).toBeGreaterThan(0);
   const mutee = MIGRATION_COMITE!.replaceAll(motif, remplacement);
   expect(mutee).not.toBe(MIGRATION_COMITE);
   return migrations().replace(MIGRATION_COMITE!, () => mutee);
@@ -341,18 +308,14 @@ const MUTATIONS: Array<{
     // économie — le comportement tient déjà au `if` ; son effet est éprouvé plus haut par
     // « une correction de texte ne date rien ».)
     nom: '(a) fonction sans le contrôle de statut → un update qui ne change rien date le post-it',
-    sql: () =>
-      muter(
-        `  if new.statut is distinct from old.statut then`,
-        `  if true then`,
-      ),
+    sql: () => muter(`  if new.statut is distinct from old.statut then`, `  if true then`),
     geste: async (db) => {
       await reculer(db, 'p-a');
       const avant = new Date((await mouvement(db, 'p-a')).updated_at).getTime();
       accepte(await trier(db, ADMIN, 'p-a', 'en attente'));
       const apres = new Date((await mouvement(db, 'p-a')).updated_at).getTime();
       return { date: apres, avant };
-    },
+    }
   },
   {
     // Un `where true` ferait échouer la fonction (`returning into` sur plusieurs lignes) :
@@ -366,22 +329,26 @@ const MUTATIONS: Array<{
       accepte(await marquer(db, APPAREIL_A));
       const apres = new Date(await repere(db, APPAREIL_B)).getTime();
       return { date: apres, avant };
-    },
-  },
+    }
+  }
 ];
 
 describe('le contrôle mord — neutralisé, le fautif passe', () => {
   for (const m of MUTATIONS) {
-    it(m.nom, async () => {
-      const db = await base(m.sql());
-      try {
-        await monde(db);
-        const { date, avant } = await m.geste(db);
-        expect(date, m.nom).toBeGreaterThan(avant);
-      } finally {
-        await db.close();
-      }
-    }, 90_000);
+    it(
+      m.nom,
+      async () => {
+        const db = await base(m.sql());
+        try {
+          await monde(db);
+          const { date, avant } = await m.geste(db);
+          expect(date, m.nom).toBeGreaterThan(avant);
+        } finally {
+          await db.close();
+        }
+      },
+      90_000
+    );
   }
 });
 

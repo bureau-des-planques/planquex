@@ -37,7 +37,7 @@ import {
   creerCompte,
   fichiersMigrations,
   migrations,
-  type Base,
+  type Base
 } from './pglite';
 
 const MIGRATION_PLACE = fichiersMigrations().find((sql) => sql.includes('deplacer_postit'));
@@ -45,20 +45,11 @@ if (!MIGRATION_PLACE) {
   throw new Error('supabase/migrations/0007_place_et_retrait_admin.sql introuvable');
 }
 
-type Issue =
-  | { accepte: true; lignes: Array<Record<string, unknown>> }
-  | { accepte: false; message: string };
+type Issue = { accepte: true; lignes: Array<Record<string, unknown>> } | { accepte: false; message: string };
 
-async function tenter(
-  db: Base,
-  appareil: string,
-  sql: string,
-  params: unknown[] = [],
-): Promise<Issue> {
+async function tenter(db: Base, appareil: string, sql: string, params: unknown[] = []): Promise<Issue> {
   try {
-    const res = await avecAppareil(db, appareil, () =>
-      db.query<Record<string, unknown>>(sql, params),
-    );
+    const res = await avecAppareil(db, appareil, () => db.query<Record<string, unknown>>(sql, params));
     return { accepte: true, lignes: res.rows };
   } catch (erreur) {
     return { accepte: false, message: erreur instanceof Error ? erreur.message : String(erreur) };
@@ -84,35 +75,25 @@ const coller = (db: Base, appareil: string, id: string) =>
     appareil,
     `insert into public.postits (id, kind, titre, texte, version)
      values ($1, 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.9') returning *`,
-    [id],
+    [id]
   );
 
 /** Le déplacement passe par la fonction : c'est elle qui porte la règle de #185/#186. */
-const deplacer = (
-  db: Base,
-  appareil: string,
-  postit: string,
-  x = 40,
-  y = 30,
-  angle = 1,
-) =>
-  tenter(db, appareil, `select * from public.deplacer_postit($1, $2, $3, $4)`, [
-    postit,
-    x,
-    y,
-    angle,
-  ]);
+const deplacer = (db: Base, appareil: string, postit: string, x = 40, y = 30, angle = 1) =>
+  tenter(db, appareil, `select * from public.deplacer_postit($1, $2, $3, $4)`, [postit, x, y, angle]);
 
 const retirer = (db: Base, appareil: string, postit: string) =>
   tenter(db, appareil, `delete from public.postits where id = $1 returning *`, [postit]);
 
 const place = async (db: Base, id: string) =>
-  (await avecAppareil(db, APPAREIL_A, () =>
-    db.query<{ position_x: number; position_y: number; position_angle: number }>(
-      `select position_x, position_y, position_angle from public.postits where id = $1`,
-      [id],
-    ),
-  )).rows[0];
+  (
+    await avecAppareil(db, APPAREIL_A, () =>
+      db.query<{ position_x: number; position_y: number; position_angle: number }>(
+        `select position_x, position_y, position_angle from public.postits where id = $1`,
+        [id]
+      )
+    )
+  ).rows[0];
 
 /**
  * Un post-it à **C**, qui reste `en attente` : on le colle approuvé (la base refuse
@@ -173,7 +154,7 @@ describe('ranger un post-it (0007)', () => {
       expect(await place(db, 'p-a')).toEqual({
         position_x: 12,
         position_y: 34,
-        position_angle: 2,
+        position_angle: 2
       });
     } finally {
       await db.close();
@@ -212,12 +193,10 @@ describe('ranger un post-it (0007)', () => {
       // `statut` (une politique RLS ne distingue pas les colonnes).
       refuse(
         await tenter(db, APPAREIL_A, `update public.postits set position_x = 50 where id = 'p-a'`),
-        /permission denied/,
+        /permission denied/
       );
       // Et le tri reste hors de portée de l'auteur (D-059).
-      zeroLigne(
-        await tenter(db, APPAREIL_A, `update public.postits set statut = 'retenu' where id = 'p-a'`),
-      );
+      zeroLigne(await tenter(db, APPAREIL_A, `update public.postits set statut = 'retenu' where id = 'p-a'`));
     } finally {
       await db.close();
     }
@@ -237,7 +216,7 @@ describe('retirer un post-it (0007)', () => {
       if (issue.accepte) expect(issue.lignes).toHaveLength(1);
 
       const reste = await avecAppareil(db, APPAREIL_A, () =>
-        db.query(`select id from public.postits where id = 'p-b'`),
+        db.query(`select id from public.postits where id = 'p-b'`)
       );
       expect(reste.rows).toHaveLength(0);
     } finally {
@@ -280,12 +259,9 @@ const MUTATIONS: Array<{
   {
     nom: '(a) fonction sans le garde d’auteur → n’importe qui range le post-it d’un autre',
     sql: () =>
-      muter(
-        'if deplace.auteur is distinct from auth.uid() and not public.est_administrateur() then',
-        'if false then',
-      ),
+      muter('if deplace.auteur is distinct from auth.uid() and not public.est_administrateur() then', 'if false then'),
     geste: (db) => deplacer(db, APPAREIL_B, 'p-a'),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(c) fonction sans le contrôle d’approbation → un compte en attente range le sien',
@@ -294,7 +270,7 @@ const MUTATIONS: Array<{
       await postitDeC(db);
       return deplacer(db, APPAREIL_C, 'p-c');
     },
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(d) politique d’administration ouverte à tous → n’importe qui efface le post-it d’un autre',
@@ -305,11 +281,11 @@ const MUTATIONS: Array<{
   using (public.est_administrateur());`,
         `create policy "postits : l'administration retire"
   on public.postits for delete to authenticated
-  using (true);`,
+  using (true);`
       ),
     geste: (db) => retirer(db, APPAREIL_B, 'p-a'),
-    attendu: 'accepte',
-  },
+    attendu: 'accepte'
+  }
 ];
 
 /** Un refus rendu tantôt par la fonction, tantôt par la RLS (0 ligne) — les deux comptent. */
@@ -362,12 +338,12 @@ describe('la migration 0007 est idempotente', () => {
       expect(await place(db, 'p-a')).toEqual({
         position_x: 20,
         position_y: 20,
-        position_angle: 0,
+        position_angle: 0
       });
       // Les droits n'ont pas bougé : la place passe toujours par la fonction, jamais en direct.
       refuse(
         await tenter(db, APPAREIL_A, `update public.postits set position_x = 50 where id = 'p-a'`),
-        /permission denied/,
+        /permission denied/
       );
       accepte(await deplacer(db, APPAREIL_A, 'p-a', 30, 30, 1));
     } finally {

@@ -20,10 +20,7 @@ const ONGLETS = [
 
 export function SousOngletsComite() {
   return (
-    <nav
-      aria-label="Les pages du comité"
-      className="flex flex-wrap gap-2 border-b border-line pb-2"
-    >
+    <nav aria-label="Les pages du comité" className="flex flex-wrap gap-2 border-b border-line pb-2">
       {ONGLETS.map((onglet) => (
         <NavLink
           key={onglet.to}

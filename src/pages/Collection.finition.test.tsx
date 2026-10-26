@@ -56,7 +56,9 @@ describe('Collection — finition', () => {
   it('le plafond réel est écrit : sept cartes ne sortent d’aucun Arrivage', () => {
     renderWithStore(<Collection />, base);
     expect(
-      screen.getByText(new RegExp(`${HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum à tirer est ${PLAFOND_TIRABLE}`))
+      screen.getByText(
+        new RegExp(`${HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum à tirer est ${PLAFOND_TIRABLE}`)
+      )
     ).toBeInTheDocument();
   });
 });

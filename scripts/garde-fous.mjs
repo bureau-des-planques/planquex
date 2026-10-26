@@ -118,8 +118,7 @@ export const MUTATIONS = [
     motif: 'for (const { id, original } of PATCHES.splice(0).reverse()) CARD_BY_ID.set(id, original);',
     remplacement: 'PATCHES.splice(0);',
     tests: ['src/game/cafe-type.test.ts'],
-    garde:
-      'sans restauration, la carte patchée survit au test : le détecteur de `beforeEach` la nomme'
+    garde: 'sans restauration, la carte patchée survit au test : le détecteur de `beforeEach` la nomme'
   },
   {
     ticket: 116,
@@ -325,7 +324,10 @@ for (const mutation of MUTATIONS) {
       execFileSync(vitest, ['run', ...mutation.tests], { cwd: racine, stdio: 'pipe', timeout: 300_000 });
     } catch (erreur) {
       echoue = true;
-      sortie = String(erreur.stdout ?? '').split('\n').find((l) => l.includes('FAIL')) ?? '';
+      sortie =
+        String(erreur.stdout ?? '')
+          .split('\n')
+          .find((l) => l.includes('FAIL')) ?? '';
     }
   } finally {
     writeFileSync(chemin, original);

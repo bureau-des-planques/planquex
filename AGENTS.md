@@ -6,20 +6,20 @@
 
 ## 1. Règles d'or
 
-1. Lire ce fichier et `docs/DECISIONS.md` avant toute modification.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (113 décisions, 36 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier le **dossier frère des versions abandonnées** (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
 5. Ne pas copier le contenu, les règles, les assets ou les pourcentages des **versions abandonnées** (§9).
 6. Ne pas ajouter de mécanique maison au mode standard. La seule exception actée est le mot-clé **« Changement de priorité »** (D-004).
-7. Ne pas ajouter de dépendance sans nécessité démontrée et sans le signaler. **Dépendances signalées** : `@supabase/supabase-js` (runtime — le client du mur, chargé à la demande) et `@electric-sql/pglite` (**devDependency** — les tests du mur jouent un PostgreSQL réel en WASM, RLS comprise, parce que la machine n'a ni Docker ni CLI Supabase ; #135) et `impeccable` (**devDependency**, version **exacte** — le détecteur d'UI, qui doit tourner sur le binaire installé et **sans réseau**, #146) et les **outils de test d'écran** (**devDependencies** — `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@types/jsdom` : les cinq écrans se **rendent** dans un test, #145) et `pg` (**devDependency** — le client Postgres du **poste de pilotage local** (`tools/admin/`, #184) : il parle au pooler et **ne part jamais** dans le bundle Vite).
+7. Ne pas ajouter de dépendance sans nécessité démontrée et sans le signaler. **Dépendances signalées** : `@supabase/supabase-js` (runtime — le client du mur, chargé à la demande) et `@electric-sql/pglite` (**devDependency** — les tests du mur jouent un PostgreSQL réel en WASM, RLS comprise, parce que la machine n'a ni Docker ni CLI Supabase ; #135) et `impeccable` (**devDependency**, version **exacte** — le détecteur d'UI, qui doit tourner sur le binaire installé et **sans réseau**, #146) et les **outils de test d'écran** (**devDependencies** — `jsdom`, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@types/jsdom` : les cinq écrans se **rendent** dans un test, #145) et `pg` (**devDependency** — le client Postgres du **poste de pilotage local** (`tools/admin/`, #184) : il parle au pooler et **ne part jamais** dans le bundle Vite) et `prettier` (**devDependency**, version **exacte** — le formateur, qui remplace un `npx prettier` téléchargé à la volée 6 fois en trois jours ; la CI le vérifie par `npm run format:check`, et `.prettierignore` dit ce qu'il ne touche pas).
 8. Après une modification : lancer au minimum `npm run check` et les tests concernés ; si le build est cassé, le dire explicitement.
 
 ## 2. Sources de vérité
 
 En cas de conflit, appliquer cet ordre :
 
-1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale.
+1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale. Son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision, dérivé par `npm run index:decisions`) est la porte d'entrée : on y trouve le `D-NNN`, puis on ouvre sa ligne.
 2. **`AGENTS.md` §4 et §5** — la table des règles de jeu et les règles d'écriture des cartes. Chaque ligne de §4 est **sourcée** par D-034 : les captures de l'application (`docs/preuves/astuces-*`) et la recherche documentée (`docs/preuves/regles-*`). Si les deux se contredisent, **la capture l'emporte** et l'écart se signale.
 3. **`docs/CARD-SPEC.md` et `docs/FACTIONS.md`** — structure du set, courbes, factions, nommage.
 4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus entre le tableau §4 et le jeu de référence 2026, avec leurs sources. Décrit les écarts **et leurs verdicts** (O-008 → D-020, O-009 → D-022) ; il ne reste plus d'écart ouvert sur §4 (O-014 tranché par D-034) : ne pas s'en servir pour modifier une règle sans décision datée.
@@ -222,6 +222,7 @@ Application **Vite plate** ; le monorepo de `PROPOSITION.md` §6.1 est une cible
 Tableau des commandes, wizards et gotchas : **`docs/COMMANDES.md`**, depuis `planquex/`. Après une modification : `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` (§8.4).
 
 - **Installer les dépendances** : `npm run installer` dans le worktree. `npm ci` vide `node_modules/` et ne se lance jamais dans le dépôt principal (`scripts/installer.mjs` le refuse).
+- **Formater** : `npm run format` (écrit), `npm run format:check` (vérifie, ce que la CI lance). Un fichier de données de carte (`src/data/`) n'est **pas** reformaté : un texte par ligne, un repli changerait le texte affiché.
 - **Lire un ticket** : `gh issue view N --json number,title,body,labels,comments`. Sans `--json`, `gh` échoue (Projects classic), à chaque fois.
 - **Écran blanc en dev** (asset répondu en `200 text/html`) : service worker du build resté sur cette origine — `docs/COMMANDES.md` §7.1.
 
@@ -274,6 +275,7 @@ grep -c "variant(" src/data/sse.ts
 Pour une modification de code :
 
 - `npm run check` : exit 0.
+- `npm run format:check` : exit 0 (ou `npm run format` l'a fait).
 - `npm test` : exit 0, avec au moins un test couvrant le changement.
 - `npm run garde-fous` : exit 0 — et toute garde **nouvelle** est ancrée (un test « le contrôle mord » qui la confronte à un cas fautif, ou une entrée commentée dans `scripts/garde-fous.mjs`). Une assertion qui **ne peut pas** échouer ne compte pas comme un test.
 - `npm run build` : exit 0, `dist/index.html` et `dist/sw.js` présents.

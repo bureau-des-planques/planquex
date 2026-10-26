@@ -93,7 +93,7 @@ describe('.github/workflows/ci.yml', () => {
 describe('.github/workflows/fichiers-generes.yml (#231, D-113)', () => {
   const generes = readFileSync(
     fileURLToPath(new URL('../.github/workflows/fichiers-generes.yml', import.meta.url)),
-    'utf8',
+    'utf8'
   );
 
   it('se lance sur un tag de version ou à la demande, jamais sur une pull request', () => {
@@ -118,3 +118,22 @@ describe('.github/workflows/fichiers-generes.yml (#231, D-113)', () => {
   });
 });
 
+describe('le formatage est vérifié, pas seulement souhaité (26/10/2026)', () => {
+  it('la CI lance `prettier --check` sur le code, et Prettier est épinglé en devDependency', () => {
+    // Sans cette assertion, retirer l'étape rendrait la CI verte alors que 537 lignes de plus
+    // de 120 caractères et deux fichiers en guillemets doubles sont revenus (constat du 26/10).
+    expect(workflow).toContain('npm run format:check');
+    const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8')) as {
+      devDependencies: Record<string, string>;
+    };
+    // Épinglé **exactement** : `^3` laisserait une version mineure arriver sans revue.
+    expect(pkg.devDependencies.prettier).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it('dit ce que Prettier ne touche pas, et pourquoi', () => {
+    // `src/data` porte un texte de carte par ligne : un repli changerait le texte affiché.
+    const ignore = readFileSync(fileURLToPath(new URL('../.prettierignore', import.meta.url)), 'utf8');
+    expect(ignore).toContain('src/data/**/*.ts');
+    expect(ignore).toMatch(/texte de carte/);
+  });
+});

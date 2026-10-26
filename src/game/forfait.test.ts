@@ -143,10 +143,7 @@ describe('Forfait — le camp qui a la main, et lui seul (#123)', () => {
     state.players.ai.hasAttacked = true;
 
     // Le seul autre chemin de `legalActions` : la fin du tour et le forfait.
-    expect(legalActions(state)).toEqual([
-      { type: 'endTurn' },
-      { type: 'forfeit', who: 'ai' }
-    ]);
+    expect(legalActions(state)).toEqual([{ type: 'endTurn' }, { type: 'forfeit', who: 'ai' }]);
   });
 
   /**

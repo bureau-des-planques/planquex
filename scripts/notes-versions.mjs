@@ -50,19 +50,21 @@ const SECTIONS_ECARTEES = [
 
 /** Le bruit markdown d'un corps de release : on garde la phrase, pas la mise en forme. */
 export function nettoyer(texte) {
-  return texte
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // une image ne dit rien dans une liste
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // un lien garde son texte
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/__([^_]+)__/g, '$1')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/(^|\s)[*_]([^*_]+)[*_](?=\s|$)/g, '$1$2')
-    .replace(/\s+/g, ' ')
-    // Les corps de release écrivent l'apostrophe droite ; le reste du projet écrit la
-    // typographique. On ne touche qu'à celle qui est **entre deux lettres** : une citation
-    // entre guillemets, un code, un nom de fichier ne bougent pas.
-    .replace(/(\p{L})'(\p{L})/gu, '$1’$2')
-    .trim();
+  return (
+    texte
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // une image ne dit rien dans une liste
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // un lien garde son texte
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/__([^_]+)__/g, '$1')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/(^|\s)[*_]([^*_]+)[*_](?=\s|$)/g, '$1$2')
+      .replace(/\s+/g, ' ')
+      // Les corps de release écrivent l'apostrophe droite ; le reste du projet écrit la
+      // typographique. On ne touche qu'à celle qui est **entre deux lettres** : une citation
+      // entre guillemets, un code, un nom de fichier ne bougent pas.
+      .replace(/(\p{L})'(\p{L})/gu, '$1’$2')
+      .trim()
+  );
 }
 
 /** Deux titres se comparent sans se soucier de l'apostrophe : GitHub n'écrit pas la même. */
@@ -154,7 +156,11 @@ function capitaliser(texte) {
  */
 export function titreDe(release) {
   const nom = (release.name ?? '').trim();
-  const apres = nom.split(/\s[—–]\s/).slice(1).join(' — ').trim();
+  const apres = nom
+    .split(/\s[—–]\s/)
+    .slice(1)
+    .join(' — ')
+    .trim();
   if (apres) return capitaliser(apres);
   const version = release.tagName.replace(/^v/, '');
   return TITRES[version] ?? `Version ${version}`;
@@ -343,7 +349,9 @@ function rendreEntree(note) {
   const points = note.points
     .map((point) => {
       const texte = `        texte: ${q(point.texte)}`;
-      return point.groupe ? `      {\n        groupe: ${q(point.groupe)},\n${texte}\n      }` : `      {\n${texte}\n      }`;
+      return point.groupe
+        ? `      {\n        groupe: ${q(point.groupe)},\n${texte}\n      }`
+        : `      {\n${texte}\n      }`;
     })
     .join(',\n');
 
@@ -376,9 +384,7 @@ export async function construire(releases, chemin = CIBLE) {
 // `import.meta.main` n'existe pas encore partout : on regarde si ce fichier est l'entrée.
 // **Tout le CLI est sous cette garde** : un test qui importe le module ne doit ni lire
 // `process.argv` (vitest y met ses propres options), ni appeler `gh`.
-const estEntree = process.argv[1]
-  ? resolve(process.argv[1]) === fileURLToPath(import.meta.url)
-  : false;
+const estEntree = process.argv[1] ? resolve(process.argv[1]) === fileURLToPath(import.meta.url) : false;
 
 if (estEntree) {
   const option = process.argv.slice(1).find((arg) => arg.startsWith('--'));

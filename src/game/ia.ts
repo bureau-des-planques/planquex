@@ -1,11 +1,5 @@
 import { ALL_CARDS, getCard, isPlanque } from '@/data';
-import type {
-  BattleAction,
-  BattleState,
-  CardInstance,
-  PlayerId,
-  PlayerState
-} from '@/data/types';
+import type { BattleAction, BattleState, CardInstance, PlayerId, PlayerState } from '@/data/types';
 import { applyAction, attackDamage, attackPreview, createInstance, legalActions } from '@/game/engine';
 import { MAX_COPIES_PER_NAME } from '@/game/deck';
 import { HAND_LIMIT } from '@/game/rules';
@@ -451,8 +445,7 @@ export function endTurnBonus(player: PlayerState, weights: EvaluationWeights): n
  * (`replayBattle` retombe sur la même partie).
  */
 function evaluationRng(state: BattleState, index: number): RngState {
-  const signature =
-    state.turn * 31 + state.players.player.points * 7 + state.players.ai.points * 101 + index;
+  const signature = state.turn * 31 + state.players.player.points * 7 + state.players.ai.points * 101 + index;
   return seedRng(signature);
 }
 
@@ -691,12 +684,8 @@ export function sampleWorld(state: BattleState, who: PlayerId, index: number): B
   }
 
   const drawn = pool.slice(0, need);
-  const hand = drawn
-    .slice(0, handSize)
-    .map((cardId, i) => createInstance(cardId, state.turn, `w${index}h${i}`));
-  const deck = drawn
-    .slice(handSize)
-    .map((cardId, i) => createInstance(cardId, state.turn, `w${index}d${i}`));
+  const hand = drawn.slice(0, handSize).map((cardId, i) => createInstance(cardId, state.turn, `w${index}h${i}`));
+  const deck = drawn.slice(handSize).map((cardId, i) => createInstance(cardId, state.turn, `w${index}d${i}`));
 
   return {
     ...state,
@@ -728,11 +717,7 @@ function budgetExhausted(budget: SearchBudget): boolean {
  * (nœuds ou échéance) : c'est le signal d'abandon qui remonte jusqu'à `searchDecision`,
  * laquelle rend alors le coup du niveau 2 glouton. Aucun appelant ne joue un état `null`.
  */
-function applyWithin(
-  state: BattleState,
-  action: BattleAction,
-  budget: SearchBudget
-): BattleState | null {
+function applyWithin(state: BattleState, action: BattleAction, budget: SearchBudget): BattleState | null {
   if (budgetExhausted(budget)) return null;
   budget.left -= 1;
   return applyAction(state, action);
@@ -778,11 +763,7 @@ function scoreMoves(
  * l'autre camp). Rend l'état à la fin du tour, ou à la fin de la partie — et `null` si
  * le budget s'épuise en route (#172).
  */
-function playOutTurn(
-  state: BattleState,
-  side: PlayerId,
-  budget?: SearchBudget
-): BattleState | null {
+function playOutTurn(state: BattleState, side: PlayerId, budget?: SearchBudget): BattleState | null {
   let current = state;
   for (let step = 0; step < CONTINUATION_CAP; step += 1) {
     if (current.phase === 'ended') break;
@@ -827,9 +808,7 @@ function lineValue(
   const opponentId = opponentOf(who);
   const scored = scoreMoves(mine, legalActions(mine), who, false, budget);
   if (scored === null) return null;
-  const replies = scored
-    .sort((a, b) => a.score - b.score || a.index - b.index)
-    .slice(0, options.replies);
+  const replies = scored.sort((a, b) => a.score - b.score || a.index - b.index).slice(0, options.replies);
 
   let worst = Infinity;
   for (const reply of replies) {
@@ -872,10 +851,7 @@ export interface SearchDecision {
  * Une relève en attente est tranchée par le niveau 2 (1 coup) et ne consomme pas de nœud :
  * la recherche ne porte que sur le tour.
  */
-export function searchDecision(
-  state: BattleState,
-  options: SearchOptions = DEFAULT_SEARCH_OPTIONS
-): SearchDecision {
+export function searchDecision(state: BattleState, options: SearchOptions = DEFAULT_SEARCH_OPTIONS): SearchDecision {
   // L'échéance court depuis l'**entrée** : l'élagage à un coup et le repli comptent aussi.
   const started = performance.now();
   if (state.phase === 'ended') return { action: null, nodes: 0, fallback: false };
@@ -885,9 +861,7 @@ export function searchDecision(
 
   const who = state.current;
   const pruned = scoreMoves(state, legalActions(state), who, true) ?? [];
-  const candidates = pruned
-    .sort((a, b) => b.score - a.score || a.index - b.index)
-    .slice(0, options.candidates);
+  const candidates = pruned.sort((a, b) => b.score - a.score || a.index - b.index).slice(0, options.candidates);
   const only = candidates[0];
   if (!only) return { action: null, nodes: 0, fallback: false };
   if (candidates.length === 1) return { action: only.action, nodes: 0, fallback: false };

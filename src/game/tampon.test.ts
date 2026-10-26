@@ -132,9 +132,7 @@ describe('Dérive — face laisse partir la Pression, pile l’annule (capture 0
 
     expect(after.players.ai.active?.hp).toBe(500);
     expect(after.players.player.hasAttacked).toBe(true);
-    expect(after.log.join(' ')).toContain(
-      'Dérive : tampon, la Pression n’est pas lancée, le tour prend fin.'
-    );
+    expect(after.log.join(' ')).toContain('Dérive : tampon, la Pression n’est pas lancée, le tour prend fin.');
   });
 });
 

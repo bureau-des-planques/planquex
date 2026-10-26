@@ -99,7 +99,7 @@ describe('Battle — écran de combat', () => {
     expect(screen.getByText(/Tour 1/)).toBeInTheDocument();
   });
 
-  it('affiche l\'indicateur de tour (à toi / à la Direction)', () => {
+  it("affiche l'indicateur de tour (à toi / à la Direction)", () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/à (toi|la Direction)/)).toBeInTheDocument();
@@ -352,7 +352,11 @@ describe('Battle — écran de combat', () => {
   });
 
   it("n'affiche aucune étiquette de deck de test quand le deck du joueur est valide", () => {
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, deck: autoDeck(Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]))).deck });
+    renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      deck: autoDeck(Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]))).deck
+    });
     expect(document.querySelectorAll('.board__test')).toHaveLength(0);
   });
 });
@@ -379,8 +383,7 @@ describe('Battle — la barre d’action (#191)', () => {
     expect(within(barre).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
     // La barre suit la main dans le document : elle est « en bas », après la table.
     expect(
-      (container.querySelector('.hand-panel') as Node).compareDocumentPosition(barre) &
-        Node.DOCUMENT_POSITION_FOLLOWING
+      (container.querySelector('.hand-panel') as Node).compareDocumentPosition(barre) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy();
     expect(container.querySelector('.board')?.contains(barre)).toBe(false);
   });
@@ -401,7 +404,8 @@ describe('Battle — la barre d’action (#191)', () => {
 
     const attaque = legalActions(etat).find((action) => action.type === 'attack');
     const nom = ALL_CARDS.find((carte) => carte.id === etat.players.player.active?.cardId);
-    if (attaque?.type !== 'attack' || !nom || !('attacks' in nom)) throw new Error('le Poste du joueur n’a pas de Pression');
+    if (attaque?.type !== 'attack' || !nom || !('attacks' in nom))
+      throw new Error('le Poste du joueur n’a pas de Pression');
     const nomDeLaPression = nom.attacks[attaque.attackIndex]?.name ?? '';
     expect(nomDeLaPression).not.toBe('');
     const barre = screen.getByRole('region', { name: 'Actions du tour' });
@@ -644,7 +648,8 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
   });
 
   /** Les libellés de pose : le lieu ou l'effet, jamais un « Poser » nu. */
-  const LIBELLES_DE_POSE = /^(Poser au Poste|Mettre au Banc \d|Jouer cet Objet|Jouer ce Collègue|Faire évoluer|Changement de priorité)/;
+  const LIBELLES_DE_POSE =
+    /^(Poser au Poste|Mettre au Banc \d|Jouer cet Objet|Jouer ce Collègue|Faire évoluer|Changement de priorité)/;
 
   async function premiereCarteJouable(): Promise<HTMLElement> {
     return waitFor(() => {
@@ -668,7 +673,9 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
     const nom = carte.querySelector('.hand__name')?.textContent ?? '';
     expect(within(panneau).getByText(nom)).toBeInTheDocument();
 
-    const gestes = within(panneau).getAllByRole('button').filter((b) => !/Reprendre/.test(b.textContent ?? ''));
+    const gestes = within(panneau)
+      .getAllByRole('button')
+      .filter((b) => !/Reprendre/.test(b.textContent ?? ''));
     expect(gestes.length).toBeGreaterThan(0);
     for (const geste of gestes) {
       expect(geste.textContent, 'un geste de pose dit où ou quoi').toMatch(LIBELLES_DE_POSE);
@@ -930,8 +937,9 @@ describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
 
     // Ouvert tout seul, sur la vue qui porte le code : l'invité n'a rien cherché.
     expect(menuEstOuvert()).toBe(true);
-    expect(within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('heading', { name: 'Partie à deux' }))
-      .toBeInTheDocument();
+    expect(
+      within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('heading', { name: 'Partie à deux' })
+    ).toBeInTheDocument();
     expect(zone.value).toMatch(/^PLQ1\./);
 
     // Il le referme : un rendu qui ne change pas le code ne le rouvre pas.
@@ -1010,7 +1018,8 @@ describe('Battle — la scène : la piste d’Interventions (#190)', () => {
     try {
       renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
       // L'étape « La fin » désigne les Interventions : on y va par le bouton « Suivant ».
-      for (let i = 1; i < ETAPES_COMBAT.length; i += 1) fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
+      for (let i = 1; i < ETAPES_COMBAT.length; i += 1)
+        fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
       const designes = document.querySelectorAll('[data-pas-a-pas="interventions"]');
       expect(designes).toHaveLength(1);
       expect(designes[0]).toHaveAttribute('role', 'group');
@@ -1078,7 +1087,11 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
     expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
 
     // La seconde zone : le code à transmettre, quand un tour vient de finir.
-    fireEvent.click(within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('button', { name: /Créer une partie à deux/i }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('button', {
+        name: /Créer une partie à deux/i
+      })
+    );
     const fin = screen.queryByRole('button', { name: /Fin du tour/i });
     if (fin) fireEvent.click(fin);
     const transmis = screen.getByLabelText(/Code de la partie, à transmettre/i) as HTMLTextAreaElement;

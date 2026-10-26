@@ -137,7 +137,7 @@ describe("niveau 3 — information cachée (l'IA ne lit jamais la main adverse)"
     }
   });
 
-  it("les mondes gardent les comptes adverses et ne tirent que dans le pool", () => {
+  it('les mondes gardent les comptes adverses et ne tirent que dans le pool', () => {
     for (const state of positions) {
       const pool = new Set(unknownPool(state, 'ai'));
       const opponent = state.players.player;
@@ -231,9 +231,7 @@ describe('niveau 3 — budget', () => {
     vi.spyOn(performance, 'now').mockReturnValue(0);
     const decision = expectiminimaxDecision(state, { ...LARGE, maxNodes: 10_000_000, maxMs: 0 });
     expect(decision.fallback).toBe(true);
-    expect(decision.action).toEqual(
-      nextSearchAction(state, { ...DEFAULT_SEARCH_OPTIONS, maxMs: Infinity })
-    );
+    expect(decision.action).toEqual(nextSearchAction(state, { ...DEFAULT_SEARCH_OPTIONS, maxMs: Infinity }));
   });
 });
 

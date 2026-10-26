@@ -58,9 +58,7 @@ function messageDe(erreur: unknown): string {
 export function Suivi() {
   const branche = murEstConfigure();
 
-  const [postits, setPostits] = useState<Postit[] | null>(() =>
-    branche ? null : (LECTURE.mur?.postits ?? [])
-  );
+  const [postits, setPostits] = useState<Postit[] | null>(() => (branche ? null : (LECTURE.mur?.postits ?? [])));
   const [notice, setNotice] = useState<string | null>(() =>
     branche || LECTURE.erreurs.length === 0
       ? null
@@ -95,9 +93,7 @@ export function Suivi() {
       .catch((erreur: unknown) => {
         if (!vivant) return;
         setPostits(LECTURE.mur?.postits ?? []);
-        setNotice(
-          `La base n’a pas répondu : le suivi affiche le fichier du dépôt. (${messageDe(erreur)})`
-        );
+        setNotice(`La base n’a pas répondu : le suivi affiche le fichier du dépôt. (${messageDe(erreur)})`);
       })
       .finally(() => {
         if (vivant) setChargement(false);
@@ -115,9 +111,8 @@ export function Suivi() {
           <div>
             <h1>Le comité de pilotage</h1>
             <p className="muted max-w-[62ch]">
-              Le suivi : ce qui est <strong>en cours</strong>, ce qui est <strong>fait</strong>, et
-              ce qui a été <strong>écarté</strong> — avec sa raison. Ce qui arrive et ce qui est
-              retenu reste sur le mur.
+              Le suivi : ce qui est <strong>en cours</strong>, ce qui est <strong>fait</strong>, et ce qui a été{' '}
+              <strong>écarté</strong> — avec sa raison. Ce qui arrive et ce qui est retenu reste sur le mur.
             </p>
           </div>
           <div className="actions">
@@ -164,16 +159,9 @@ export function Suivi() {
               ) : (
                 <ul className="m-0 flex list-none flex-col gap-4 p-0">
                   {liste.map((postit) => (
-                    <li
-                      key={postit.id}
-                      className="rounded-[var(--radius-sm)] border border-line bg-bg-sunken p-3"
-                    >
-                      <h3 className="m-0 font-heading text-[1rem] font-bold text-ink">
-                        {postit.titre}
-                      </h3>
-                      <p className="mt-1 mb-0 max-w-[70ch] text-[0.88rem] text-ink-muted">
-                        {postit.texte}
-                      </p>
+                    <li key={postit.id} className="rounded-[var(--radius-sm)] border border-line bg-bg-sunken p-3">
+                      <h3 className="m-0 font-heading text-[1rem] font-bold text-ink">{postit.titre}</h3>
+                      <p className="mt-1 mb-0 max-w-[70ch] text-[0.88rem] text-ink-muted">{postit.texte}</p>
                       <p className="mt-2 mb-0 text-[0.78rem] text-ink-dim">
                         Écrit par {postit.pseudo || 'anonyme'}
                         {postit.ecran ? ` · ${postit.ecran}` : ''}

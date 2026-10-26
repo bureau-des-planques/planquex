@@ -1,12 +1,7 @@
 import type { CSSProperties } from 'react';
 import { ACTION_KIND_META, FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { WEAKNESS_BONUS } from '@/game/rules';
 import { outilsDeTest } from '@/lib/outils-de-test';
 import { CafePips } from './CafePips';
@@ -52,22 +47,40 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
             <DialogDescription className="card-detail__flavor">« {card.flavor} »</DialogDescription>
 
             <div className="stat-row">
-              {planque && <div><span className="stat-label">Seuil</span><strong>{card.hp}</strong></div>}
-              {planque && <div><span className="stat-label">Rotation</span><strong>{card.retreat}</strong></div>}
+              {planque && (
+                <div>
+                  <span className="stat-label">Seuil</span>
+                  <strong>{card.hp}</strong>
+                </div>
+              )}
+              {planque && (
+                <div>
+                  <span className="stat-label">Rotation</span>
+                  <strong>{card.retreat}</strong>
+                </div>
+              )}
               {!planque && card.itemKind && (
                 <div title={ITEM_KIND_META[card.itemKind].description}>
                   <span className="stat-label">Catégorie</span>
                   <strong>{ITEM_KIND_META[card.itemKind].label}</strong>
                 </div>
               )}
-              <div><span className="stat-label">Rareté</span><strong className="card__rarity">{rarity.label}</strong></div>
-              <div><span className="stat-label">Possédés</span><strong>{owned}</strong></div>
+              <div>
+                <span className="stat-label">Rareté</span>
+                <strong className="card__rarity">{rarity.label}</strong>
+              </div>
+              <div>
+                <span className="stat-label">Possédés</span>
+                <strong>{owned}</strong>
+              </div>
             </div>
 
             {planque && card.ability && (
               <section className="detail-section">
                 <h3>Talent</h3>
-                <p><strong>{card.ability.name}</strong> — {card.ability.text}</p>
+                <p>
+                  <strong>{card.ability.name}</strong> — {card.ability.text}
+                </p>
               </section>
             )}
 
@@ -96,16 +109,22 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
             {planque && card.weakness && (
               <p className="muted card-detail__weakness">
                 Vulnérable à
-                <strong style={{ color: FACTION_META[card.weakness].color }}>
-                  {FACTION_META[card.weakness].name}
-                </strong>
+                <strong style={{ color: FACTION_META[card.weakness].color }}>{FACTION_META[card.weakness].name}</strong>
                 (+{WEAKNESS_BONUS})
               </p>
             )}
 
             <div className="card-detail__actions">
-              {onAddDeck && <button type="button" className="button button--primary" onClick={onAddDeck}>Ajouter au Deck</button>}
-              {onAddCard && outilsDeTest() && <button type="button" className="button" onClick={onAddCard}>Ajouter un exemplaire (test)</button>}
+              {onAddDeck && (
+                <button type="button" className="button button--primary" onClick={onAddDeck}>
+                  Ajouter au Deck
+                </button>
+              )}
+              {onAddCard && outilsDeTest() && (
+                <button type="button" className="button" onClick={onAddCard}>
+                  Ajouter un exemplaire (test)
+                </button>
+              )}
             </div>
           </div>
         </div>

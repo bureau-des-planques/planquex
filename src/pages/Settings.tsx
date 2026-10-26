@@ -37,7 +37,11 @@ export function Settings() {
     // Le presse-papier peut être refusé (contexte non sécurisé, permission) : le texte
     // reste dans la zone, il suffit de le sélectionner. On ne ment pas dans le message.
     navigator.clipboard?.writeText(texte).then(
-      () => setMessage({ ton: 'ok', texte: 'Sauvegarde copiée. Colle-la dans un fichier ou un message : c’est ta seule copie.' }),
+      () =>
+        setMessage({
+          ton: 'ok',
+          texte: 'Sauvegarde copiée. Colle-la dans un fichier ou un message : c’est ta seule copie.'
+        }),
       () => setMessage({ ton: 'ok', texte: 'Sauvegarde prête ci-dessus — recopie-la à la main.' })
     );
   };
@@ -83,13 +87,12 @@ export function Settings() {
         <h2>Compte</h2>
         {!configure ? (
           <p className="muted m-0 max-w-[62ch]">
-            Le jeu n’est pas relié à une base : il n’y a ni compte ni connexion. Ta
-            progression reste dans ce navigateur, et le mur lit le fichier du dépôt.
+            Le jeu n’est pas relié à une base : il n’y a ni compte ni connexion. Ta progression reste dans ce
+            navigateur, et le mur lit le fichier du dépôt.
           </p>
         ) : !session ? (
           <p className="m-0 max-w-[62ch]">
-            Aucun compte connecté.{' '}
-            <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux invités.
+            Aucun compte connecté. <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux invités.
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -127,11 +130,7 @@ export function Settings() {
       <section className="section panel">
         <h2>Affichage</h2>
         <label className="settings__toggle">
-          <input
-            type="checkbox"
-            checked={reducedMotion}
-            onChange={(event) => setReducedMotion(event.target.checked)}
-          />
+          <input type="checkbox" checked={reducedMotion} onChange={(event) => setReducedMotion(event.target.checked)} />
           <span>Réduire les animations</span>
         </label>
         {/* Le critère WCAG sur les raccourcis à une touche (#189, SPEC-COMBAT-UI §4.2) : la case **désactive** les deux gestes,
@@ -146,17 +145,16 @@ export function Settings() {
           <span>Raccourcis clavier au combat</span>
         </label>
         <p className="muted">
-          Cochée, « I » ou « Ctrl+I » bascule les infos du combat entre sobre et détaillé. Décochée,
-          les deux ne font plus rien — taper « i » dans le code d’une partie à deux reste toujours
-          un « i ».
+          Cochée, « I » ou « Ctrl+I » bascule les infos du combat entre sobre et détaillé. Décochée, les deux ne font
+          plus rien — taper « i » dans le code d’une partie à deux reste toujours un « i ».
         </p>
       </section>
 
       <section className="section panel">
         <h2>Journée d’intégration</h2>
         <p className="muted">
-          Quatre étapes, et chacune ouvre son écran : le Seuil et le Stress, l’Arrivage, le
-          Deck, la fin d’un combat. À revoir quand tu veux.
+          Quatre étapes, et chacune ouvre son écran : le Seuil et le Stress, l’Arrivage, le Deck, la fin d’un combat. À
+          revoir quand tu veux.
         </p>
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
@@ -166,8 +164,8 @@ export function Settings() {
       <section className="section panel">
         <h2>Pas-à-pas du combat</h2>
         <p className="muted">
-          Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression,
-          les Conditions et la fin. À revoir quand tu veux.
+          Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression, les Conditions et la fin. À
+          revoir quand tu veux.
         </p>
         <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
           Revoir le pas-à-pas du combat
@@ -176,12 +174,17 @@ export function Settings() {
 
       <section className="section panel">
         <h2>Sauvegarde</h2>
-        <p className="muted">
-          Ta progression de jeu — Collection, Deck, nom — vit dans ce navigateur sous la clé{' '}
-          <code>{STORAGE_KEY}</code> : elle n’est pas envoyée à la base, et{' '}
-          <strong>vider les données du navigateur l’efface</strong>. Copie ce texte quelque
-          part avant, il contient tout. Les traces de combat, elles, partent à la base quand
-          elle est configurée (voir plus bas).
+        {/* `max-w-[62ch]` (et non la largeur du panneau) : c'est un paragraphe de prose de
+            quatre lignes, et `impeccable` (line-length) le refusait dès que le texte tient
+            sur des lignes de plus de 80 caractères. Le rendu du texte était le même avant et
+            après le passage de Prettier (vérifié : `innerText` identique, sha1 égal) — c'est
+            la **largeur de lecture** qui manquait, pas le formateur. Même remède que la
+            section « Traces de combat » (#208). */}
+        <p className="muted max-w-[62ch]">
+          Ta progression de jeu — Collection, Deck, nom — vit dans ce navigateur sous la clé <code>{STORAGE_KEY}</code>{' '}
+          : elle n’est pas envoyée à la base, et <strong>vider les données du navigateur l’efface</strong>. Copie ce
+          texte quelque part avant, il contient tout. Les traces de combat, elles, partent à la base quand elle est
+          configurée (voir plus bas).
         </p>
         <textarea
           className="settings__save"
@@ -194,12 +197,7 @@ export function Settings() {
           <button type="button" className="button" onClick={creerSauvegarde}>
             <Copy size={16} /> Créer ma sauvegarde
           </button>
-          <button
-            type="button"
-            className="button"
-            onClick={restaurerSauvegarde}
-            disabled={!sauvegarde.trim()}
-          >
+          <button type="button" className="button" onClick={restaurerSauvegarde} disabled={!sauvegarde.trim()}>
             <ClipboardPaste size={16} /> Restaurer ce texte
           </button>
         </div>
@@ -219,10 +217,9 @@ export function Settings() {
         {/* `max-w-[56ch]` (et non 64) : depuis le texte à deux (D-105), les lignes à 64ch
             dépassaient 80 caractères — `impeccable`, line-length, cliquet #208. */}
         <p className="muted max-w-[56ch]">
-          Les parties terminées sont gardées sous ton compte, solo comme à deux — la graine,
-          les deux Decks, les types de café et le journal des coups — pour voir comment le jeu
-          se joue et l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé ; seul ton
-          identifiant de compte relie la trace à toi (D-086, D-088, D-105).
+          Les parties terminées sont gardées sous ton compte, solo comme à deux — la graine, les deux Decks, les types
+          de café et le journal des coups — pour voir comment le jeu se joue et l’améliorer. Ni ton nom ni aucun texte
+          libre n’est envoyé ; seul ton identifiant de compte relie la trace à toi (D-086, D-088, D-105).
         </p>
       </section>
 
@@ -249,18 +246,17 @@ export function Settings() {
       <section className="section panel">
         <h2>Confidentialité</h2>
         <p className="muted">
-          Ce que le jeu garde de toi — un compte, ce que tu écris sur le mur, et le
-          déroulé de tes parties : <Link to="/confidentialite">la page de confidentialité</Link>.
+          Ce que le jeu garde de toi — un compte, ce que tu écris sur le mur, et le déroulé de tes parties :{' '}
+          <Link to="/confidentialite">la page de confidentialité</Link>.
         </p>
       </section>
 
       <section className="section panel">
         <h2>Version</h2>
         <p className="muted">
-          <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si
-          quelque chose ne va pas : c’est lui qui dit quelle version tu as sous les yeux.
-          Ce qu’elle contient, et ce que les précédentes ont changé, se lit sur{' '}
-          <Link to="/feuille-de-route">la feuille de route</Link>.
+          <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si quelque chose ne va pas :
+          c’est lui qui dit quelle version tu as sous les yeux. Ce qu’elle contient, et ce que les précédentes ont
+          changé, se lit sur <Link to="/feuille-de-route">la feuille de route</Link>.
         </p>
       </section>
     </div>

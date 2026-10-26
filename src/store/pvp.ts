@@ -132,9 +132,7 @@ export function campLine(state: BattleState, match: Match): string {
   const mine = `Tu joues le ${CAMP_NAME[match.camp]}`;
   if (state.phase === 'ended') return `${mine} · partie terminée`;
   const actor = campToAct(state);
-  return actor === match.camp
-    ? `${mine} · à toi de jouer`
-    : `${mine} · c’est au ${CAMP_NAME[actor]} de jouer`;
+  return actor === match.camp ? `${mine} · à toi de jouer` : `${mine} · c’est au ${CAMP_NAME[actor]} de jouer`;
 }
 
 export type JoinResult = { ok: true; state: BattleState; match: Match } | Refusal;

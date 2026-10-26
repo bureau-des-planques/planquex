@@ -78,10 +78,9 @@ describe('Feuille de route — les blocs de la page', () => {
     expect(screen.getByRole('heading', { level: 2, name: /prévu/i })).toBeTruthy();
     expect(FEATURES_PREVUES.length).toBeGreaterThan(0);
     for (const feature of FEATURES_PREVUES) {
-      expect(
-        screen.getAllByText(new RegExp(`#${feature.numero}`)).length,
-        `issue ${feature.numero}`
-      ).toBeGreaterThan(0);
+      expect(screen.getAllByText(new RegExp(`#${feature.numero}`)).length, `issue ${feature.numero}`).toBeGreaterThan(
+        0
+      );
       expect(
         screen.getAllByText(new RegExp(echapper(feature.titre))).length,
         `titre ${feature.numero}`

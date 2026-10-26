@@ -48,11 +48,11 @@ function parCritere(critere: Critere, quoi: string): PlanqueCard {
       (critere.stage === undefined || c.stage === critere.stage) &&
       (critere.rarity === undefined || c.rarity === critere.rarity) &&
       (critere.ex === undefined || (c.ex === true) === critere.ex) &&
-      (critere.et === undefined || critere.et(c)),
+      (critere.et === undefined || critere.et(c))
   );
   if (!trouve) {
     throw new Error(
-      `Banc d'essai — aucun Planqué pour « ${quoi} » : le catalogue a changé, le critère est à revoir (#219, D-101).`,
+      `Banc d'essai — aucun Planqué pour « ${quoi} » : le catalogue a changé, le critère est à revoir (#219, D-101).`
     );
   }
   return trouve;
@@ -81,7 +81,7 @@ interface Scenario {
 /** La cinématique est réservée (D-098 (3)) : un légendaire, et sa **dernière** Pression. */
 const ATTAQUANT_COMEX = parCritere(
   { et: (c) => estLegendaire(c) && c.attacks.length > 1 && cinematiqueDe(c, c.attacks[derniere(c)]) },
-  'l’attaquant d’une cinématique, COU / 3 étoiles / COMEX',
+  'l’attaquant d’une cinématique, COU / 3 étoiles / COMEX'
 );
 
 /** Les trois scénarios du banc, sur des cartes réelles choisies **par critère**. */
@@ -92,7 +92,7 @@ const PRESETS: Record<Preset, Scenario> = {
     rang: 0,
     cible: parCritere({ faction: 'DIRECTION', stage: 'N+1' }, 'la cible ordinaire, Direction N+1'),
     grace: false,
-    libelle: 'Attaque normale',
+    libelle: 'Attaque normale'
   },
   // Une petite Pression d'Entrant qui fait craquer : la saynète de sortie (D-098 (4)).
   grace: {
@@ -100,7 +100,7 @@ const PRESETS: Record<Preset, Scenario> = {
     rang: 0,
     cible: parCritere({ faction: 'DIRECTION', stage: 'N+1' }, 'la cible du coup de grâce, Direction N+1'),
     grace: true,
-    libelle: 'Coup de grâce',
+    libelle: 'Coup de grâce'
   },
   // La cinématique coiffe la Pression la plus chère : son rang se **dérive**, il ne se recopie pas.
   comex: {
@@ -108,8 +108,8 @@ const PRESETS: Record<Preset, Scenario> = {
     rang: derniere(ATTAQUANT_COMEX),
     cible: parCritere({ faction: 'SSE', stage: 'ENTRANT' }, 'la cible de la cinématique, SSE Entrant'),
     grace: false,
-    libelle: 'Cinématique COMEX',
-  },
+    libelle: 'Cinématique COMEX'
+  }
 };
 
 /** Le Banc d'un camp : trois Planqués réels, un par faction, à leur première carte. */
@@ -192,40 +192,37 @@ export function PrototypeScene() {
   const motifs = useMemo(() => attribuer(attaquant), [attaquant]);
   const cinematique = cinematiqueDe(attaquant, attaque);
 
-  const lancer = useCallback(
-    (c: PlanqueCard, r: number, cb: PlanqueCard, g: boolean, s: number) => {
-      const m = moteur.current;
-      if (!m) return;
-      m.arreter();
-      if (minuterie.current) window.clearTimeout(minuterie.current);
-      if (minuterieReleve.current) window.clearTimeout(minuterieReleve.current);
-      setReleveFaite(false);
-      compteur.current += 1;
-      setEnCours(true);
-      setBilan('');
-      // Même séquence qu'en combat : l'état est déjà celui d'après le coup (la carte a quitté le
-      // Poste, son fantôme reste 500 ms) quand la scène se déclenche.
-      setCibleTombee(g);
-      setFantome(g);
-      if (g) {
-        minuterie.current = window.setTimeout(() => setFantome(false), FANTOME_MS / vitesseRef.current);
-        if (releveRef.current)
-          minuterieReleve.current = window.setTimeout(() => setReleveFaite(true), 600 / vitesseRef.current);
-      }
-      setLancee({
-        id: compteur.current,
-        uid: 'att',
-        uidCible: 'cib',
-        carte: c,
-        // Le rang vient de la régie ou d'une sonde : borné comme le fait `stressDe`.
-        attaque: c.attacks[Math.min(r, derniere(c))],
-        stress: s,
-        coupDeGrace: g,
-      });
-      void cb;
-    },
-    [],
-  );
+  const lancer = useCallback((c: PlanqueCard, r: number, cb: PlanqueCard, g: boolean, s: number) => {
+    const m = moteur.current;
+    if (!m) return;
+    m.arreter();
+    if (minuterie.current) window.clearTimeout(minuterie.current);
+    if (minuterieReleve.current) window.clearTimeout(minuterieReleve.current);
+    setReleveFaite(false);
+    compteur.current += 1;
+    setEnCours(true);
+    setBilan('');
+    // Même séquence qu'en combat : l'état est déjà celui d'après le coup (la carte a quitté le
+    // Poste, son fantôme reste 500 ms) quand la scène se déclenche.
+    setCibleTombee(g);
+    setFantome(g);
+    if (g) {
+      minuterie.current = window.setTimeout(() => setFantome(false), FANTOME_MS / vitesseRef.current);
+      if (releveRef.current)
+        minuterieReleve.current = window.setTimeout(() => setReleveFaite(true), 600 / vitesseRef.current);
+    }
+    setLancee({
+      id: compteur.current,
+      uid: 'att',
+      uidCible: 'cib',
+      carte: c,
+      // Le rang vient de la régie ou d'une sonde : borné comme le fait `stressDe`.
+      attaque: c.attacks[Math.min(r, derniere(c))],
+      stress: s,
+      coupDeGrace: g
+    });
+    void cb;
+  }, []);
 
   const preset = useCallback(
     (p: Preset) => {
@@ -238,7 +235,7 @@ export function PrototypeScene() {
       setStress(degats);
       lancer(d.attaquant, d.rang, d.cible, d.grace, degats);
     },
-    [lancer],
+    [lancer]
   );
 
   const surMoteur = useCallback((m: Moteur | null) => {
@@ -276,7 +273,7 @@ export function PrototypeScene() {
       releve: (b) => setReleve(b),
       t: () => moteur.current?.t ?? 0,
       enCours: () => enCours,
-      info: () => ({ cinematique, motif: libelle(motifs.get(rang) ?? '') }),
+      info: () => ({ cinematique, motif: libelle(motifs.get(rang) ?? '') })
     };
     return () => {
       window.__scene = undefined;
@@ -385,7 +382,9 @@ export function PrototypeScene() {
 
   return (
     <main className="proto-scene">
-      <p className="proto-scene__bandeau">Banc d’essai jetable · DEV · la vraie scène, sur le vrai gabarit du plateau</p>
+      <p className="proto-scene__bandeau">
+        Banc d’essai jetable · DEV · la vraie scène, sur le vrai gabarit du plateau
+      </p>
       <div className="battle">
         <div className="battle__table">
           <section className="board" aria-label="Plateau" id="plateau">
@@ -461,14 +460,23 @@ export function PrototypeScene() {
             <input type="checkbox" checked={releve} onChange={(e) => setReleve(e.target.checked)} /> relève à 600 ms
           </label>
           <label>
-            <input type="checkbox" checked={reserve} onChange={(e) => setReserve(e.target.checked)} /> Poste réservé (correctif CSS)
+            <input type="checkbox" checked={reserve} onChange={(e) => setReserve(e.target.checked)} /> Poste réservé
+            (correctif CSS)
           </label>
           <label>
-            <input type="checkbox" checked={inverse} onChange={(e) => setInverse(e.target.checked)} /> la Direction frappe
+            <input type="checkbox" checked={inverse} onChange={(e) => setInverse(e.target.checked)} /> la Direction
+            frappe
           </label>
           <label>
             Stress
-            <input type="number" min={0} max={300} step={10} value={stress} onChange={(e) => setStress(Number(e.target.value))} />
+            <input
+              type="number"
+              min={0}
+              max={300}
+              step={10}
+              value={stress}
+              onChange={(e) => setStress(Number(e.target.value))}
+            />
           </label>
           {[1, 0.5, 0.2].map((v) => (
             <button key={v} type="button" aria-pressed={vitesse === v} onClick={() => setVitesse(v)}>

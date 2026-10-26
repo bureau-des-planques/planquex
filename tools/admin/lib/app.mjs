@@ -83,7 +83,7 @@ export async function demarrerServeur(options) {
     dossierMigrations = dossierMigrationsParDefaut(),
     jeton = randomBytes(24).toString('hex'),
     port = 5199,
-    hote = '127.0.0.1',
+    hote = '127.0.0.1'
   } = options;
 
   // Le registre des migrations (`admin.migrations`) existe avant toute chose, idempotent.
@@ -97,8 +97,7 @@ export async function demarrerServeur(options) {
     motLe = Date.now();
     return mot;
   };
-  const motValide = (candidat) =>
-    mot !== null && candidat === mot && Date.now() - motLe < 10 * 60_000;
+  const motValide = (candidat) => mot !== null && candidat === mot && Date.now() - motLe < 10 * 60_000;
 
   /** Un geste journalisé : date, geste, rôle, durée, résultat — jamais de valeur personnelle. */
   async function geste(nom, role, action) {
@@ -111,7 +110,7 @@ export async function demarrerServeur(options) {
         role,
         duree_ms: Date.now() - debut,
         resultat: 'ok',
-        ...(resultat && resultat.meta ? resultat.meta : {}),
+        ...(resultat && resultat.meta ? resultat.meta : {})
       });
       return resultat;
     } catch (erreur) {
@@ -121,9 +120,12 @@ export async function demarrerServeur(options) {
         role,
         duree_ms: Date.now() - debut,
         resultat: erreur && erreur.statut ? 'refuse' : 'erreur',
-        motif: erreur && erreur.publicMessage
-          ? erreur.publicMessage
-          : erreur instanceof Error ? erreur.message : String(erreur),
+        motif:
+          erreur && erreur.publicMessage
+            ? erreur.publicMessage
+            : erreur instanceof Error
+              ? erreur.message
+              : String(erreur)
       });
       throw erreur;
     }
@@ -131,13 +133,12 @@ export async function demarrerServeur(options) {
 
   // --------------------------------------------------------------------------- les gestes nommés
 
-  const etat = () =>
-    geste('etat-alpha', 'lecteur', async () => ({ status: 200, body: await lireEtat(adapter) }));
+  const etat = () => geste('etat-alpha', 'lecteur', async () => ({ status: 200, body: await lireEtat(adapter) }));
 
   const listerComptes = () =>
     geste('lister-comptes', 'lecteur', async () => {
       const lu = await adapter.lire(
-        'select id, courriel, etat, administrateur, created_at, decide_par, decide_le from public.comptes order by created_at',
+        'select id, courriel, etat, administrateur, created_at, decide_par, decide_le from public.comptes order by created_at'
       );
       const comptes = lu.rows.map((ligne) => ({
         id: String(ligne.id),
@@ -147,7 +148,7 @@ export async function demarrerServeur(options) {
         administrateur: ligne.administrateur === true,
         created_at: ligne.created_at,
         decide_par: ligne.decide_par,
-        decide_le: ligne.decide_le,
+        decide_le: ligne.decide_le
       }));
       return { status: 200, body: { comptes } };
     });
@@ -156,10 +157,14 @@ export async function demarrerServeur(options) {
     geste('approuver-compte', 'admin', async () => {
       const lu = await adapter.ecrire(
         `update public.comptes set etat = 'approuve', raison = '' where id = $1 returning id, etat`,
-        [id],
+        [id]
       );
       if (lu.rows.length === 0) throw refus(404, `compte introuvable : ${id}`, 'inconnu');
-      return { status: 200, body: { ok: true, id: String(lu.rows[0].id), etat: String(lu.rows[0].etat) }, meta: { cible: id } };
+      return {
+        status: 200,
+        body: { ok: true, id: String(lu.rows[0].id), etat: String(lu.rows[0].etat) },
+        meta: { cible: id }
+      };
     });
 
   const refuser = (id, raison) =>
@@ -168,10 +173,14 @@ export async function demarrerServeur(options) {
       if (!motif) throw refus(400, 'un refus exige une raison (obligatoire)', 'raison-obligatoire');
       const lu = await adapter.ecrire(
         `update public.comptes set etat = 'refuse', raison = $2 where id = $1 returning id, etat`,
-        [id, motif],
+        [id, motif]
       );
       if (lu.rows.length === 0) throw refus(404, `compte introuvable : ${id}`, 'inconnu');
-      return { status: 200, body: { ok: true, id: String(lu.rows[0].id), etat: String(lu.rows[0].etat) }, meta: { cible: id } };
+      return {
+        status: 200,
+        body: { ok: true, id: String(lu.rows[0].id), etat: String(lu.rows[0].etat) },
+        meta: { cible: id }
+      };
     });
 
   const marquerAdministrateur = (id, administrateur) =>
@@ -179,10 +188,14 @@ export async function demarrerServeur(options) {
       const drapeau = administrateur === true;
       const lu = await adapter.ecrire(
         'update public.comptes set administrateur = $2 where id = $1 returning id, administrateur',
-        [id, drapeau],
+        [id, drapeau]
       );
       if (lu.rows.length === 0) throw refus(404, `compte introuvable : ${id}`, 'inconnu');
-      return { status: 200, body: { ok: true, id: String(lu.rows[0].id), administrateur: lu.rows[0].administrateur === true }, meta: { cible: id } };
+      return {
+        status: 200,
+        body: { ok: true, id: String(lu.rows[0].id), administrateur: lu.rows[0].administrateur === true },
+        meta: { cible: id }
+      };
     });
 
   const revelerCourriel = (id) =>
@@ -196,7 +209,7 @@ export async function demarrerServeur(options) {
   const listerPostits = () =>
     geste('lister-postits', 'lecteur', async () => {
       const lu = await adapter.lire(
-        'select id, titre, statut, raison, ticket, auteur, gueulage, kind, created_at from public.postits order by created_at',
+        'select id, titre, statut, raison, ticket, auteur, gueulage, kind, created_at from public.postits order by created_at'
       );
       return {
         status: 200,
@@ -210,9 +223,9 @@ export async function demarrerServeur(options) {
             auteur: ligne.auteur === null ? null : String(ligne.auteur),
             gueulage: ligne.gueulage === true,
             kind: ligne.kind === null ? null : String(ligne.kind),
-            created_at: ligne.created_at,
-          })),
-        },
+            created_at: ligne.created_at
+          }))
+        }
       };
     });
 
@@ -247,15 +260,24 @@ export async function demarrerServeur(options) {
 
       const champs = [];
       const params = [];
-      if (statut !== undefined) { champs.push(`statut = $${params.length + 1}`); params.push(statut); }
-      if (raison !== undefined) { champs.push(`raison = $${params.length + 1}`); params.push(raisonNettoyee); }
-      if (ticket !== undefined) { champs.push(`ticket = $${params.length + 1}`); params.push(numero); }
+      if (statut !== undefined) {
+        champs.push(`statut = $${params.length + 1}`);
+        params.push(statut);
+      }
+      if (raison !== undefined) {
+        champs.push(`raison = $${params.length + 1}`);
+        params.push(raisonNettoyee);
+      }
+      if (ticket !== undefined) {
+        champs.push(`ticket = $${params.length + 1}`);
+        params.push(numero);
+      }
       if (champs.length === 0) throw refus(400, 'rien à changer : donner statut, raison ou ticket', 'rien-a-changer');
 
       params.push(id);
       const lu = await adapter.ecrire(
         `update public.postits set ${champs.join(', ')} where id = $${params.length} returning id, statut, raison, ticket`,
-        params,
+        params
       );
       return { status: 200, body: { ...lu.rows[0] }, meta: { cible: id } };
     });
@@ -268,7 +290,7 @@ export async function demarrerServeur(options) {
       if (existe.rows.length === 0) throw refus(404, `compte inconnu : ${cible}`, 'inconnu');
       const lu = await adapter.ecrire(
         `update public.postits set auteur = $1 where auteur not in (select id from public.comptes) returning id`,
-        [cible],
+        [cible]
       );
       return { status: 200, body: { reattribues: lu.rows.length }, meta: { cible, nombre: lu.rows.length } };
     });
@@ -276,7 +298,7 @@ export async function demarrerServeur(options) {
   const migrations = () =>
     geste('lister-migrations', 'lecteur', async () => ({
       status: 200,
-      body: { migrations: await listerMigrations(adapter, dossierMigrations) },
+      body: { migrations: await listerMigrations(adapter, dossierMigrations) }
     }));
 
   const appliquer = (fichier) =>
@@ -294,14 +316,26 @@ export async function demarrerServeur(options) {
     try {
       classement = classerSql(sql);
     } catch (erreur) {
-      journal.ecrire({ ...segment, duree_ms: Date.now() - debut, role: 'lecteur', resultat: 'refuse', motif: erreur.publicMessage });
+      journal.ecrire({
+        ...segment,
+        duree_ms: Date.now() - debut,
+        role: 'lecteur',
+        resultat: 'refuse',
+        motif: erreur.publicMessage
+      });
       throw erreur;
     }
     const { nature, destructif } = classement;
     const role = nature === 'lecture' ? 'lecteur' : 'admin';
     const fin = (resultat, extra = {}) =>
       journal.ecrire({
-        ...segment, duree_ms: Date.now() - debut, role, nature, requete: empreinte(sql), resultat, ...extra,
+        ...segment,
+        duree_ms: Date.now() - debut,
+        role,
+        nature,
+        requete: empreinte(sql),
+        resultat,
+        ...extra
       });
 
     if (nature === 'ecriture') {
@@ -316,7 +350,10 @@ export async function demarrerServeur(options) {
       }
       const lu = await adapter.ecrire(sql);
       fin('ok', { destructif, instructions: lu.instructions });
-      return { status: 200, body: { nature, role, destructif, rows: lu.rows, command: lu.command, instructions: lu.instructions } };
+      return {
+        status: 200,
+        body: { nature, role, destructif, rows: lu.rows, command: lu.command, instructions: lu.instructions }
+      };
     }
 
     // Lecture : le rôle `lecteur`. Si la requête tentait d'écrire, la **base** la refuserait.
@@ -339,7 +376,11 @@ export async function demarrerServeur(options) {
     [/^\/api\/comptes$/, 'GET', () => listerComptes()],
     [/^\/api\/comptes\/([^/]+)\/approuver$/, 'POST', ([id]) => approuver(id)],
     [/^\/api\/comptes\/([^/]+)\/refuser$/, 'POST', ([id], corps) => refuser(id, corps?.raison)],
-    [/^\/api\/comptes\/([^/]+)\/administrateur$/, 'POST', ([id], corps) => marquerAdministrateur(id, corps?.administrateur)],
+    [
+      /^\/api\/comptes\/([^/]+)\/administrateur$/,
+      'POST',
+      ([id], corps) => marquerAdministrateur(id, corps?.administrateur)
+    ],
     [/^\/api\/comptes\/([^/]+)\/courriel$/, 'POST', ([id]) => revelerCourriel(id)],
     [/^\/api\/postits$/, 'GET', () => listerPostits()],
     [/^\/api\/postits\/reattribuer$/, 'POST', (_, corps) => reattribuerPostits(corps)],
@@ -347,7 +388,7 @@ export async function demarrerServeur(options) {
     [/^\/api\/migrations$/, 'GET', () => migrations()],
     [/^\/api\/migrations\/([^/]+)\/appliquer$/, 'POST', ([fichier]) => appliquer(fichier)],
     [/^\/api\/sql$/, 'POST', (_, corps) => sqlLibre(corps)],
-    [/^\/api\/journal$/, 'GET', () => journalLignes()],
+    [/^\/api\/journal$/, 'GET', () => journalLignes()]
   ];
 
   // Le nom du cookie qui retient le jeton entre deux visites. `HttpOnly` (le script de la page
@@ -388,9 +429,16 @@ export async function demarrerServeur(options) {
       // retient, puis de l'en-tête que la page envoyait à l'origine. Les trois sont équivalents.
       let fourni;
       let source;
-      if (paramJeton !== null) { fourni = paramJeton; source = 'parametre'; }
-      else if (cookieJeton !== undefined) { fourni = cookieJeton; source = 'cookie'; }
-      else { fourni = enTeteJeton; source = 'en-tete'; }
+      if (paramJeton !== null) {
+        fourni = paramJeton;
+        source = 'parametre';
+      } else if (cookieJeton !== undefined) {
+        fourni = cookieJeton;
+        source = 'cookie';
+      } else {
+        fourni = enTeteJeton;
+        source = 'en-tete';
+      }
 
       if (!jetonEgale(fourni)) {
         // Un jeton invalide **efface** le cookie posé, puis répond 401.
@@ -437,7 +485,7 @@ export async function demarrerServeur(options) {
         baseUrl,
         jeton,
         adresse: { ...adresse },
-        arreter: () => new Promise((fin) => serveur.close(() => fin())),
+        arreter: () => new Promise((fin) => serveur.close(() => fin()))
       });
     });
   });

@@ -89,20 +89,14 @@ export interface EtatCompteBanc {
  * un `insert` direct dans `comptes` : c'est le chemin réel de la première connexion, et il
  * éprouve le déclencheur au passage.
  */
-export async function creerCompte(
-  db: Base,
-  appareil: string,
-  options: EtatCompteBanc = {},
-): Promise<void> {
+export async function creerCompte(db: Base, appareil: string, options: EtatCompteBanc = {}): Promise<void> {
   await db.query(
     `insert into auth.users (id, email) values ($1, $2)
      on conflict (id) do update set email = excluded.email`,
-    [appareil, options.courriel ?? `${appareil.slice(0, 8)}@exemple.test`],
+    [appareil, options.courriel ?? `${appareil.slice(0, 8)}@exemple.test`]
   );
 
-  const existe = await db.query<{ id: string }>('select id from public.comptes where id = $1', [
-    appareil,
-  ]);
+  const existe = await db.query<{ id: string }>('select id from public.comptes where id = $1', [appareil]);
   if (existe.rows.length === 0) {
     throw new Error(`le déclencheur n’a pas créé de compte pour ${appareil}`);
   }
@@ -113,7 +107,7 @@ export async function creerCompte(
             administrateur = $3,
             raison = case when $2 = 'refuse' then coalesce(nullif($4, ''), 'Refusé par le test.') else '' end
       where id = $1`,
-    [appareil, options.etat ?? 'approuve', options.administrateur ?? false, ''],
+    [appareil, options.etat ?? 'approuve', options.administrateur ?? false, '']
   );
 }
 
@@ -147,11 +141,7 @@ export async function baseAvecAppareils(sql: string = migrations()): Promise<Bas
 }
 
 /** Joue un geste en tant qu'appareil (identité anonyme), puis rend le rôle et le sujet. */
-export async function avecAppareil<T>(
-  db: Base,
-  appareil: string,
-  geste: () => Promise<T>,
-): Promise<T> {
+export async function avecAppareil<T>(db: Base, appareil: string, geste: () => Promise<T>): Promise<T> {
   await db.exec(`set role authenticated; set request.jwt.claim.sub = '${appareil}';`);
   try {
     return await geste();

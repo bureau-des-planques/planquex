@@ -35,7 +35,7 @@ import {
   type PositionPostit,
   type SensVote,
   type Statut,
-  type VotesPostit,
+  type VotesPostit
 } from '@/store/mur';
 
 /** D'où vient le mur — c'est ce que `charger` rend, et ce que la page affiche. */
@@ -139,11 +139,7 @@ export interface PortMur {
   readonly source: SourceMur;
   charger(): Promise<ResultatMur<{ postits: Postit[]; source: SourceMur; notice?: string }>>;
   poster(brouillon: BrouillonPostit, options?: OptionsPostit): Promise<ResultatMur<{ postit: Postit }>>;
-  voter(
-    postitId: string,
-    demande: SensVote,
-    actuel: SensVote | null,
-  ): Promise<ResultatMur<{ vote: SensVote | null }>>;
+  voter(postitId: string, demande: SensVote, actuel: SensVote | null): Promise<ResultatMur<{ vote: SensVote | null }>>;
   trier(id: string, tri: TriPostit): Promise<ResultatMur<{ tri: TriPostit }>>;
   deplacer(id: string, position: PositionPostit): Promise<ResultatMur<{ position: PositionPostit }>>;
   corriger(id: string, correction: Correction): Promise<ResultatMur<Correction>>;
@@ -160,8 +156,7 @@ export const estObjet = (valeur: unknown): valeur is Record<string, unknown> =>
   typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur);
 
 /** Un entier : un `id` de commentaire (`bigint`), un numéro de ticket. */
-export const estEntier = (valeur: unknown): valeur is number =>
-  typeof valeur === 'number' && Number.isInteger(valeur);
+export const estEntier = (valeur: unknown): valeur is number => typeof valeur === 'number' && Number.isInteger(valeur);
 
 // ---------------------------------------------------------------------------------------------
 // La lecture d'une source, ramenée à la forme du contrat
@@ -189,7 +184,7 @@ function versContrat(ligne: unknown): Record<string, unknown> | null {
     gueulage,
     lie: null,
     position: ligne.position,
-    votes: ligne.votes,
+    votes: ligne.votes
   };
   if (!gueulage) brut.kind = ligne.kind;
   return brut;
@@ -223,7 +218,7 @@ export function lirePostitsDeLaBase(lignes: unknown): {
   return {
     // Une seule ligne illisible suffit : un mur à moitié faux vaut moins qu'un message.
     postits: lu.mur && toutes.length === 0 ? lu.mur.postits : null,
-    erreurs: toutes,
+    erreurs: toutes
   };
 }
 
@@ -248,11 +243,7 @@ export function lireMesVotes(lignes: unknown): Map<string, SensVote> {
  * pouce, on ajoute le nouveau. Pure et sans plancher caché — un compteur ne descend pas sous
  * zéro, mais c'est la base qui compte, pas ce calcul : il ne sert qu'à l'affichage immédiat.
  */
-export function compterApres(
-  votes: VotesPostit,
-  avant: SensVote | null,
-  apres: SensVote | null,
-): VotesPostit {
+export function compterApres(votes: VotesPostit, avant: SensVote | null, apres: SensVote | null): VotesPostit {
   const compte = { up: votes.up, down: votes.down };
   if (avant) compte[avant] = Math.max(0, compte[avant] - 1);
   if (apres) compte[apres] += 1;
@@ -266,10 +257,7 @@ export function compterApres(
  * 2. l'autre pouce → je **change** mon vote (une modification de ma ligne, jamais une seconde) ;
  * 3. aucun vote → j'**insère** le mien.
  */
-export function gesteDeVote(
-  actuel: SensVote | null,
-  demande: SensVote,
-): { geste: GesteVote; apres: SensVote | null } {
+export function gesteDeVote(actuel: SensVote | null, demande: SensVote): { geste: GesteVote; apres: SensVote | null } {
   if (actuel === demande) return { geste: 'retirer', apres: null };
   if (actuel) return { geste: 'changer', apres: demande };
   return { geste: 'inserer', apres: demande };
@@ -389,10 +377,7 @@ const PAS_DE_BALAYAGE = 1;
 
 /** De combien deux places s'écartent, en post-its : ≥ 1 veut dire « l'un ne cache pas l'autre ». */
 function ecart(a: PositionPostit, b: PositionPostit): number {
-  return Math.max(
-    Math.abs(a.x - b.x) / LARGEUR_POSTIT,
-    Math.abs(a.y - b.y) / HAUTEUR_POSTIT
-  );
+  return Math.max(Math.abs(a.x - b.x) / LARGEUR_POSTIT, Math.abs(a.y - b.y) / HAUTEUR_POSTIT);
 }
 
 /** Le pire écart d'une place à toutes les places prises : c'est ce qu'on maximise. */
@@ -412,10 +397,7 @@ function ecartMinimum(place: PositionPostit, prises: ReadonlyArray<PositionPosti
  * première qui ne cache personne si elle existe, sinon la moins mauvaise. À égalité, la plus
  * proche de la place naturelle — le mur garde son air de hasard quand la place est libre.
  */
-export function positionDepuisId(
-  id: string,
-  prises: ReadonlyArray<PositionPostit> = []
-): PositionPostit {
+export function positionDepuisId(id: string, prises: ReadonlyArray<PositionPostit> = []): PositionPostit {
   const naturelle = placeNaturelle(id);
   if (prises.length === 0) return naturelle;
 
@@ -505,10 +487,7 @@ export function texteAvecCapture(brouillon: BrouillonPostit): string {
  * Exportée pour que le test lise exactement ce qui part au réseau, plutôt que de croire un
  * faux client sur parole.
  */
-export function composerLignePostit(
-  brouillon: BrouillonPostit,
-  options: OptionsPostit = {},
-): Record<string, unknown> {
+export function composerLignePostit(brouillon: BrouillonPostit, options: OptionsPostit = {}): Record<string, unknown> {
   const gueulage = brouillon.gueulage;
   if (!gueulage && !FAMILLES.includes(brouillon.famille as Famille)) {
     throw new Error('Choisis une famille : une IP ou un OUF.');
@@ -538,7 +517,7 @@ export function composerLignePostit(
     // La position s'écrit en pourcentage, colonne par colonne (la vue la recompose).
     position_x: position.x,
     position_y: position.y,
-    position_angle: position.angle,
+    position_angle: position.angle
   };
 }
 
@@ -587,11 +566,11 @@ export function creerMur(adaptateur: AdaptateurMur, options: OptionsPortMur = {}
             ok: true as const,
             postits: await secours.charger(),
             source: secours.source,
-            notice: panne,
+            notice: panne
           };
         } catch (erreurDeSecours) {
           return refuse(
-            `${panne} Le mur de secours (${secours.source}) est illisible lui aussi : ${messageDErreur(erreurDeSecours)}`,
+            `${panne} Le mur de secours (${secours.source}) est illisible lui aussi : ${messageDErreur(erreurDeSecours)}`
           );
         }
       }
@@ -660,7 +639,7 @@ export function creerMur(adaptateur: AdaptateurMur, options: OptionsPortMur = {}
       const demandee: PositionPostit = {
         x: arrondi(position.x),
         y: arrondi(position.y),
-        angle: arrondi(position.angle),
+        angle: arrondi(position.angle)
       };
       try {
         return { ok: true as const, position: await adaptateur.deplacer(id, demandee) };
@@ -696,6 +675,6 @@ export function creerMur(adaptateur: AdaptateurMur, options: OptionsPortMur = {}
       } catch (erreur) {
         return refuse(messageDErreur(erreur));
       }
-    },
+    }
   };
 }

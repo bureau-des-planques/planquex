@@ -33,8 +33,7 @@ function scene(effects: AttackEffect[], adverse: number): BattleState {
 }
 
 /** Le nom de chaque carte de la main adverse, dans l'ordre. */
-const nomsDe = (state: BattleState) =>
-  state.players.ai.hand.map((card) => getCard(card.cardId)?.name ?? '');
+const nomsDe = (state: BattleState) => state.players.ai.hand.map((card) => getCard(card.cardId)?.name ?? '');
 
 describe('Révéler une carte ou la main — primitive `reveal` (#160, D-078)', () => {
   it('révéler toute la main écrit chaque carte dans le journal, sans rien changer de la main', () => {

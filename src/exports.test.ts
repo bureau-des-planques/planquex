@@ -62,7 +62,8 @@ function withoutComments(text: string): string {
     .replace(/^[ \t]*\/\/.*$/gm, ' ');
 }
 
-const DECLARATION = /^export\s+(?:default\s+)?(?:async\s+)?(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/gm;
+const DECLARATION =
+  /^export\s+(?:default\s+)?(?:async\s+)?(?:const|let|var|function|class|interface|type|enum)\s+([A-Za-z_$][\w$]*)/gm;
 const NAMED = /^export\s+(?:type\s+)?\{([^}]*)\}/gm;
 
 function lineOf(text: string, index: number): number {
@@ -77,7 +78,11 @@ function exportsIn(text: string, file: string): PublicExport[] {
   }
   for (const match of text.matchAll(NAMED)) {
     for (const specifier of match[1].split(',')) {
-      const name = specifier.trim().split(/\s+as\s+/).pop()?.trim();
+      const name = specifier
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim();
       if (name) found.push({ name, file, line: lineOf(text, match.index ?? 0) });
     }
   }
@@ -124,7 +129,8 @@ function unreadExportLines(): string[] {
  * être morte : dès qu'un appelant apparaît, le test réclame la suppression de la ligne.
  */
 const EXCEPTIONS: Readonly<Record<string, string>> = {
-  CardKind: 'type mort : les deux formes de carte réécrivent leur union de genre en clair — hors du périmètre du ticket #60'
+  CardKind:
+    'type mort : les deux formes de carte réécrivent leur union de genre en clair — hors du périmètre du ticket #60'
 };
 
 const readSource = (file: string): Source => ({ file, text: withoutComments(readFileSync(file, 'utf8')) });

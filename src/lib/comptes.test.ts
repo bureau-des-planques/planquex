@@ -14,7 +14,7 @@ import {
   listerComptes,
   messageDeCompte,
   messageDeConnexion,
-  type ClientComptes,
+  type ClientComptes
 } from '@/lib/comptes';
 import type { RequeteMur, ReponseMur } from '@/lib/supabase';
 
@@ -33,7 +33,7 @@ const COMPTE = {
   etat: 'approuve',
   raison: '',
   administrateur: false,
-  created_at: '2026-10-23T10:00:00.000Z',
+  created_at: '2026-10-23T10:00:00.000Z'
 };
 
 interface Reponses {
@@ -46,7 +46,11 @@ interface Reponses {
 
 function fauxClient(reponses: Reponses = {}) {
   const lectures: Array<{ table: string; filtres: Array<[string, string | number]> }> = [];
-  const ecritures: Array<{ table: string; valeurs?: Record<string, unknown>; filtres: Array<[string, string | number]> }> = [];
+  const ecritures: Array<{
+    table: string;
+    valeurs?: Record<string, unknown>;
+    filtres: Array<[string, string | number]>;
+  }> = [];
   const ordres: Array<{ colonne: string; ascendant?: boolean }> = [];
 
   const getSession = vi.fn(async () => ({
@@ -54,28 +58,24 @@ function fauxClient(reponses: Reponses = {}) {
       session:
         reponses.session === null
           ? null
-          : { user: { id: reponses.session?.id ?? 'compte-a', email: reponses.session?.email ?? 'a@exemple.test' } },
-    },
+          : { user: { id: reponses.session?.id ?? 'compte-a', email: reponses.session?.email ?? 'a@exemple.test' } }
+    }
   }));
   type RetourConnexion = {
     data: { session: { user: { id: string } } | null };
     error: { message: string } | null;
   };
   const signInWithOAuth = vi.fn(async (): Promise<{ error: { message: string } | null }> => ({
-    error: null,
+    error: null
   }));
-  const signInWithPassword = vi.fn(
-    async (): Promise<RetourConnexion> => ({
-      data: { session: reponses.session === null ? null : { user: { id: 'compte-a' } } },
-      error: null,
-    }),
-  );
-  const signUp = vi.fn(
-    async (): Promise<RetourConnexion> => ({
-      data: { session: reponses.session === null ? null : { user: { id: 'compte-a' } } },
-      error: null,
-    }),
-  );
+  const signInWithPassword = vi.fn(async (): Promise<RetourConnexion> => ({
+    data: { session: reponses.session === null ? null : { user: { id: 'compte-a' } } },
+    error: null
+  }));
+  const signUp = vi.fn(async (): Promise<RetourConnexion> => ({
+    data: { session: reponses.session === null ? null : { user: { id: 'compte-a' } } },
+    error: null
+  }));
   const signOut = vi.fn(async (): Promise<{ error: { message: string } | null }> => ({ error: null }));
   const signInAnonymously = vi.fn(async () => ({ data: { user: { id: 'anonyme' } }, error: null }));
 
@@ -86,7 +86,7 @@ function fauxClient(reponses: Reponses = {}) {
       signInWithOAuth,
       signInWithPassword,
       signUp,
-      signOut,
+      signOut
     },
     from(table: string): RequeteMur {
       let geste: 'select' | 'update' = 'select';
@@ -116,20 +116,20 @@ function fauxClient(reponses: Reponses = {}) {
           if (geste === 'update') {
             reponse = {
               data: reponses.lignesEcrites ?? [],
-              error: reponses.erreurEcriture ? { message: reponses.erreurEcriture } : null,
+              error: reponses.erreurEcriture ? { message: reponses.erreurEcriture } : null
             };
           } else {
             lectures.push({ table, filtres });
             reponse = {
               data: reponses.lignes ?? [],
-              error: reponses.erreurLecture ? { message: reponses.erreurLecture } : null,
+              error: reponses.erreurLecture ? { message: reponses.erreurLecture } : null
             };
           }
           return Promise.resolve(reponse).then(onfulfilled, onrejected);
-        },
+        }
       };
       return requete;
-    },
+    }
   };
 
   return {
@@ -142,7 +142,7 @@ function fauxClient(reponses: Reponses = {}) {
     signOut,
     lectures,
     ecritures,
-    ordres,
+    ordres
   };
 }
 
@@ -175,7 +175,7 @@ describe('la lecture d’un compte', () => {
     await expect(lireMonCompte(faux.charger)).resolves.toEqual({
       session: null,
       compte: null,
-      erreur: null,
+      erreur: null
     });
     // Aucune lecture de `comptes` n'a été tentée.
     expect(faux.lectures).toHaveLength(0);
@@ -210,9 +210,7 @@ describe('la lecture d’un compte', () => {
 
 describe('se connecter, s’inscrire, se déconnecter', () => {
   it('sans configuration, la connexion est refusée clairement', async () => {
-    await expect(connexionCourriel('a@exemple.test', 'motdepasse', async () => null)).rejects.toThrow(
-      /pas configuré/,
-    );
+    await expect(connexionCourriel('a@exemple.test', 'motdepasse', async () => null)).rejects.toThrow(/pas configuré/);
   });
 
   it('le courriel est nettoyé, le mot de passe passe tel quel', async () => {
@@ -220,7 +218,7 @@ describe('se connecter, s’inscrire, se déconnecter', () => {
     await connexionCourriel('  a@exemple.test ', 'secret1', faux.charger);
     expect(faux.signInWithPassword).toHaveBeenCalledWith({
       email: 'a@exemple.test',
-      password: 'secret1',
+      password: 'secret1'
     });
   });
 
@@ -228,17 +226,17 @@ describe('se connecter, s’inscrire, se déconnecter', () => {
     const faux = fauxClient();
     faux.signInWithPassword.mockResolvedValueOnce({
       data: { session: null },
-      error: { message: 'Invalid login credentials' },
+      error: { message: 'Invalid login credentials' }
     });
     await expect(connexionCourriel('a@exemple.test', 'faux', faux.charger)).rejects.toThrow(
-      'Courriel ou mot de passe incorrect.',
+      'Courriel ou mot de passe incorrect.'
     );
   });
 
   it('l’inscription dit quand un courriel de confirmation est attendu', async () => {
     const faux = fauxClient({ session: null });
     await expect(inscriptionCourriel('a@exemple.test', 'secret1', faux.charger)).resolves.toEqual({
-      session: false,
+      session: false
     });
   });
 
@@ -247,7 +245,7 @@ describe('se connecter, s’inscrire, se déconnecter', () => {
     await connexionGoogle('https://planquex.4k7.org/connexion', faux.charger);
     expect(faux.signInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
-      options: { redirectTo: 'https://planquex.4k7.org/connexion' },
+      options: { redirectTo: 'https://planquex.4k7.org/connexion' }
     });
   });
 
@@ -275,23 +273,19 @@ describe('l’administration des comptes', () => {
     const compte = await deciderCompte('compte-a', 'refuse', 'Pas un invité.', faux.charger);
     expect(compte.etat).toBe('refuse');
     expect(faux.ecritures).toEqual([
-      { table: 'comptes', valeurs: { etat: 'refuse', raison: 'Pas un invité.' }, filtres: [['id', 'compte-a']] },
+      { table: 'comptes', valeurs: { etat: 'refuse', raison: 'Pas un invité.' }, filtres: [['id', 'compte-a']] }
     ]);
   });
 
   it('une décision qui ne touche aucune ligne est une erreur, pas un succès', async () => {
     // C'est le piège de RLS : refusée, la modification ne lève pas — elle porte sur 0 ligne.
     const faux = fauxClient({ lignesEcrites: [] });
-    await expect(deciderCompte('compte-a', 'approuve', '', faux.charger)).rejects.toThrow(
-      /n’a changé aucun compte/,
-    );
+    await expect(deciderCompte('compte-a', 'approuve', '', faux.charger)).rejects.toThrow(/n’a changé aucun compte/);
   });
 
   it('un refus de la base est traduit, jamais recraché brut', async () => {
     const faux = fauxClient({ erreurEcriture: 'permission denied for table comptes' });
-    await expect(deciderCompte('compte-a', 'approuve', '', faux.charger)).rejects.toThrow(
-      /seul un administrateur/,
-    );
+    await expect(deciderCompte('compte-a', 'approuve', '', faux.charger)).rejects.toThrow(/seul un administrateur/);
   });
 });
 
@@ -312,7 +306,9 @@ describe('les messages d’erreur', () => {
 
   it('la configuration se lit comme celle du mur', () => {
     expect(comptesEstConfigure({})).toBe(false);
-    expect(comptesEstConfigure({ VITE_SUPABASE_URL: 'https://x.test', VITE_SUPABASE_ANON_KEY: 'sb_publishable_x' })).toBe(true);
+    expect(
+      comptesEstConfigure({ VITE_SUPABASE_URL: 'https://x.test', VITE_SUPABASE_ANON_KEY: 'sb_publishable_x' })
+    ).toBe(true);
     // Une configuration à moitié posée vaut « pas de base » pour l'écran, jamais une page blanche.
     expect(comptesEstConfigure({ VITE_SUPABASE_URL: 'https://x.test' })).toBe(false);
   });

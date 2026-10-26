@@ -24,10 +24,7 @@
  * traduire son résultat dans l'ancien contrat, qui lève.
  */
 import { clientMur, identiteAppareil, type ClientMur } from '@/lib/supabase';
-import {
-  adaptateurFichier,
-  resoudreAdaptateur,
-} from '@/lib/murAdaptateurs';
+import { adaptateurFichier, resoudreAdaptateur } from '@/lib/murAdaptateurs';
 import {
   creerMur,
   estEntier,
@@ -35,7 +32,7 @@ import {
   type BrouillonPostit,
   type Correction,
   type OptionsPostit,
-  type TriPostit,
+  type TriPostit
 } from '@/lib/mur';
 import type { Postit, PositionPostit, SensVote } from '@/store/mur';
 
@@ -56,7 +53,7 @@ export {
   texteAvecCapture,
   titreDepuisTexte,
   verifierPosition,
-  verifierTri,
+  verifierTri
 } from '@/lib/mur';
 export type { BrouillonPostit, OptionsPostit, TriPostit } from '@/lib/mur';
 export { murEstConfigure } from '@/lib/murAdaptateurs';
@@ -80,7 +77,7 @@ export type OptionsPostitDuJeu = OptionsPostit & {
  * `authenticated`, pas à `anon` (migration #135, D-088).
  */
 export async function chargerPostitsDuMur(
-  chargerClient: () => Promise<ClientMur | null> = clientMur,
+  chargerClient: () => Promise<ClientMur | null> = clientMur
 ): Promise<Postit[] | null> {
   const { adaptateur, base } = await resoudreAdaptateur(chargerClient);
   if (!base) return null;
@@ -98,10 +95,7 @@ export async function chargerPostitsDuMur(
  * l'affiche sans relire la base. Sans configuration, le port refuse **avant** d'écrire : le
  * bouton n'est qu'une seconde garde.
  */
-export async function posterPostit(
-  brouillon: BrouillonPostit,
-  options: OptionsPostitDuJeu = {},
-): Promise<Postit> {
+export async function posterPostit(brouillon: BrouillonPostit, options: OptionsPostitDuJeu = {}): Promise<Postit> {
   const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
   const resultat = await creerMur(adaptateur).poster(brouillon, options);
   if (!resultat.ok) throw new Error(resultat.message);
@@ -116,7 +110,7 @@ export async function voterPourPostit(
   postitId: string,
   demande: SensVote,
   actuel: SensVote | null,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<SensVote | null> {
   const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
   const resultat = await creerMur(adaptateur).voter(postitId, demande, actuel);
@@ -132,7 +126,7 @@ export async function voterPourPostit(
 export async function trierPostit(
   id: string,
   tri: TriPostit,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<TriPostit> {
   const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
   const resultat = await creerMur(adaptateur).trier(id, tri);
@@ -148,7 +142,7 @@ export async function trierPostit(
 export async function deplacerPostit(
   id: string,
   position: PositionPostit,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<PositionPostit> {
   const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
   const resultat = await creerMur(adaptateur).deplacer(id, position);
@@ -163,7 +157,7 @@ export async function deplacerPostit(
 export async function corrigerPostit(
   id: string,
   correction: Correction,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<Correction> {
   const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
   const resultat = await creerMur(adaptateur).corriger(id, correction);
@@ -178,7 +172,7 @@ export async function corrigerPostit(
  */
 export async function retirerPostit(
   id: string,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<void> {
   const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
   const resultat = await creerMur(adaptateur).retirer(id);
@@ -229,7 +223,7 @@ export function lireCommentaire(ligne: unknown, identite: string | null): Commen
     texte: ligne.texte,
     pseudo: typeof ligne.pseudo === 'string' ? ligne.pseudo : '',
     creeLe: typeof ligne.created_at === 'string' ? ligne.created_at : '',
-    mien: identite !== null && ligne.auteur === identite,
+    mien: identite !== null && ligne.auteur === identite
   };
 }
 
@@ -284,7 +278,7 @@ export function messageDeCommentaire(message: string): string {
  * qui ne porte pas de commentaires.
  */
 export async function chargerCommentaires(
-  chargerClient: () => Promise<ClientMur | null> = clientMur,
+  chargerClient: () => Promise<ClientMur | null> = clientMur
 ): Promise<Commentaire[]> {
   const client = await chargerClient();
   if (!client) return [];
@@ -308,7 +302,7 @@ export async function chargerCommentaires(
 export async function commenterPostit(
   postitId: string,
   texte: string,
-  options: { pseudo?: string; chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { pseudo?: string; chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<Commentaire> {
   const refus = verifierCommentaire(texte);
   if (refus) throw new Error(refus);
@@ -326,7 +320,7 @@ export async function commenterPostit(
       postit_id: postitId,
       texte: texte.trim(),
       // Le pseudo local (Réglages) ; « anonyme » s'il est vide (D-059).
-      pseudo: options.pseudo?.trim() || 'anonyme',
+      pseudo: options.pseudo?.trim() || 'anonyme'
     })
     .select('id, postit_id, texte, pseudo, auteur, created_at');
   if (error) throw new Error(messageDeCommentaire(error.message));
@@ -344,7 +338,7 @@ export async function commenterPostit(
  */
 export async function supprimerCommentaire(
   id: number,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<void> {
   const chargerClient = options.chargerClient ?? clientMur;
   const client = await chargerClient();
@@ -353,12 +347,7 @@ export async function supprimerCommentaire(
   const identite = await identiteAppareil(chargerClient);
   if (!identite) throw new Error('Aucune session : le retrait ne peut pas être signé.');
 
-  const { data, error } = await client
-    .from('commentaires')
-    .delete()
-    .eq('id', id)
-    .eq('auteur', identite)
-    .select('id');
+  const { data, error } = await client.from('commentaires').delete().eq('id', id).eq('auteur', identite).select('id');
   if (error) throw new Error(messageDeCommentaire(error.message));
   if (!Array.isArray(data) || data.length === 0) {
     throw new Error('Ce commentaire n’est plus le tien : recharge le mur.');
@@ -395,7 +384,7 @@ export function messageDeRepere(message: string): string {
  * base, traduit par `messageDeRepere` : la page le dit sans casser le suivi.
  */
 export async function marquerComiteVu(
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<string | null> {
   const chargerClient = options.chargerClient ?? clientMur;
   const client = await chargerClient();
@@ -439,10 +428,7 @@ export function estApres(date: unknown, depuis: unknown): boolean {
  * `updated_at` soit postérieur à `created_at`. Pas de colonne nouvelle, le déclencheur de
  * 0008 ne datant que le statut (l'insertion ne le déclenche pas).
  */
-export function lireMouvements(
-  lignes: unknown,
-  repere: string | null,
-): { ids: string[]; mouvements: number } {
+export function lireMouvements(lignes: unknown, repere: string | null): { ids: string[]; mouvements: number } {
   const ids: string[] = [];
   let mouvements = 0;
   if (!Array.isArray(lignes) || repere === null) return { ids, mouvements };
@@ -465,11 +451,7 @@ export function lireMouvements(
  * règle que `npm run garde-fous` fait mordre (#212), et une pastille qui ne retombe jamais
  * quand on se relit serait du bruit, pas un signal.
  */
-export function compterCommentairesDesAutres(
-  lignes: unknown,
-  repere: string | null,
-  identite: string,
-): number {
+export function compterCommentairesDesAutres(lignes: unknown, repere: string | null, identite: string): number {
   if (!Array.isArray(lignes) || repere === null) return 0;
   let nombre = 0;
   for (const ligne of lignes) {
@@ -500,7 +482,7 @@ export function compterCommentairesDesAutres(
  * (`marquerComiteVu`), et un compteur ne crie pas pour une donnée qu'il n'a pas lue.
  */
 export async function compterChosesAVoir(
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
 ): Promise<number | null> {
   const chargerClient = options.chargerClient ?? clientMur;
   const client = await chargerClient();
@@ -509,10 +491,7 @@ export async function compterChosesAVoir(
   const identite = await identiteAppareil(chargerClient);
   if (!identite) throw new Error('Aucune session : la base refuse de compter le comité.');
 
-  const { data: comptes, error: erreurRepere } = await client
-    .from('comptes')
-    .select('vu_le')
-    .eq('id', identite);
+  const { data: comptes, error: erreurRepere } = await client.from('comptes').select('vu_le').eq('id', identite);
   if (erreurRepere) {
     throw new Error(`Lecture du repère du comité impossible : ${erreurRepere.message}`);
   }

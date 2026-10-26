@@ -99,10 +99,7 @@ describe('actionLog — ne contient que des BattleAction valides (#83)', () => {
   function hasFields(action: BattleAction): boolean {
     switch (action.type) {
       case 'playBasic':
-        return (
-          typeof action.uid === 'string' &&
-          (action.slot === 'active' || typeof action.slot === 'number')
-        );
+        return typeof action.uid === 'string' && (action.slot === 'active' || typeof action.slot === 'number');
       case 'evolve':
         return typeof action.uid === 'string' && typeof action.targetUid === 'string';
       case 'attachEnergy':
