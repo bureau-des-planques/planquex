@@ -1,6 +1,19 @@
 name: CI
 
 # Vérifie la batterie de AGENTS.md §7 à chaque push et pull request vers main.
+#
+# **Trois jobs en parallèle, et non un seul** (ticket #257, rétro du 26/10/2026). Un job unique
+# prenait 11 min 41 s pour un `timeout-minutes: 15`, dont **8 min 13 s de tests**. Le 26/10, le
+# même code a mis **287 s** de tests sur une PR et **525 s** sur `main` : 1,8× d'écart pour un
+# runner plus chargé. Avec une somme, cette variance décide du rouge ; avec un maximum, elle ne
+# mange que la marge du job le plus lourd.
+#
+# Le découpage suit les **deux projets de `vitest.config.ts`** — `node` et `ui` — plus les
+# contrôles. `npm test` en local reste **la commande unique** qui lance les deux : la CI ne
+# fait que les répartir sur deux machines.
+#
+# Mesures du 26/10/2026 en local (12 cœurs) : `node` 63 s / 1379 tests, `ui` 37 s / 346 tests,
+# 149 fichiers vus pour 149 sur le disque.
 on:
   push:
     branches: [main]
@@ -11,8 +24,9 @@ permissions:
   contents: read
 
 jobs:
-  ci:
-    name: check + tests + build
+  # Ce qui n'est ni un test ni un écran : les types, la forme, les garde-fous, le build.
+  controles:
+    name: contrôles (types, format, garde-fous, build)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -29,18 +43,6 @@ jobs:
       - name: Installer les dépendances
         run: npm ci
 
-      # Pillow — dépendance du tuyau d'illustration (AGENTS.md §6) : le wizard
-      # `scripts/illustration-vague.sh` convertit les rendus de gflow (JPEG) en
-      # webp, et son test fabrique de vraies images. Le paquet `python3-pil`
-      # fournit `PIL` au python3 du runner, sans heurter PEP 668 (`pip` y refuse
-      # l'installation système). Sans cette étape, 8 tests tombent en
-      # `ModuleNotFoundError: No module named 'PIL'` — constaté le 21/10/2026.
-      - name: Installer Pillow (conversion webp du tuyau d'illustration)
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq python3-pil
-          python3 -c "import PIL; print('Pillow', PIL.__version__)"
-
       - name: Vérifier les types
         run: npm run check
 
@@ -53,25 +55,12 @@ jobs:
       - name: Vérifier le formatage
         run: npm run format:check
 
-      - name: Lancer les tests
-        run: npm test
-
-      # Les fichiers générés (`versions.ts`, `plan-dev.ts`) ne sont PAS vérifiés ici : ils
-      # dépendent de l'état vivant de GitHub (issues ouvertes, releases), et une PR ne doit pas
-      # tomber rouge parce qu'une issue s'est fermée à côté (D-113). Voir
-      # `.github/workflows/fichiers-generes.yml`, lancé sur un tag `v*` ou à la demande.
-
       # Garde-fous (ticket #112) : mute un invariant critique et EXIGE que la suite échoue.
       # Une mutation qui passe inaperçue désigne une assertion qui ne garde rien — trois
       # cas ont été trouvés en une session (#101, #107, #103), d'où ce harnais.
       - name: Vérifier que les garde-fous peuvent échouer
         run: npm run garde-fous
 
-      # Garde-fou visuel (Impeccable, Apache-2.0) : tells d'UI générée par IA,
-      # 61 règles déterministes, sans IA ni clé. Voir DESIGN.md et .opencode/skills/impeccable.
-      # La version est épinglée en devDependency (`package.json`, exacte, sans ^ ni ~) ;
-      # `--no` refuse de télécharger : sans `npm ci`, l'étape ÉCHOUE au lieu d'aller
-      # prendre ce que le registre donne ce jour-là (ticket #146).
       # Garde de l'épinglage (#146), qui doit pouvoir échouer : remplacer la version par
       # `"latest"` dans package.json, ou `--no` par `--yes` ci-dessous → exit 1.
       - name: Vérifier que le détecteur d'UI reste épinglé
@@ -102,6 +91,68 @@ jobs:
       - name: Vérifier les artefacts du build
         run: ls -la dist/index.html dist/sw.js
 
+  # Le moteur, les données, les scripts, la migration du mur — le gros du temps de test.
+  tests-noyau:
+    name: tests du noyau (projet node)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Installer Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      # Pillow — dépendance du tuyau d'illustration (AGENTS.md §6) : le wizard
+      # `scripts/illustration-vague.sh` convertit les rendus de gflow (JPEG) en
+      # webp, et son test fabrique de vraies images. Le paquet `python3-pil`
+      # fournit `PIL` au python3 du runner, sans heurter PEP 668 (`pip` y refuse
+      # l'installation système). Sans cette étape, 8 tests tombent en
+      # `ModuleNotFoundError: No module named 'PIL'` — constaté le 21/10/2026.
+      # Ces tests vivent dans `scripts/`, donc dans le projet `node` : Pillow n'est
+      # pas installé dans le job des écrans, qui n'en a pas besoin.
+      - name: Installer Pillow (conversion webp du tuyau d'illustration)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq python3-pil
+          python3 -c "import PIL; print('Pillow', PIL.__version__)"
+
+      # `npm test` en local lance **les deux projets** ; ici on en prend la moitié `node`.
+      # `src/ci.test.ts` vérifie que les deux jobs couvrent exactement les projets déclarés
+      # dans `vitest.config.ts` : ajouter un projet sans l'appeler ici fait échouer la suite.
+      - name: Lancer les tests du noyau
+        run: npm test -- --project=node
+
+  # Les écrans, rendus sous jsdom, puis le contrôle visuel des pages servies depuis `dist/`.
+  tests-ecrans:
+    name: tests des écrans + contrôle visuel
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Installer Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Lancer les tests des écrans
+        run: npm test -- --project=ui
+
+      - name: Construire la production
+        run: npm run build
+
       # **Le contrôle visuel qui compte** (#205, #234) : `impeccable detect` sur les écrans
       # **servis depuis `dist/`**, avec le cliquet de `scripts/detect-ui-pages.mjs`
       # (`ECRANS` = 12 écrans, `BASELINE` = leur compte mesuré). `detect:ui` ne lit que les
@@ -121,7 +172,7 @@ jobs:
           IMPECCABLE_BROWSER: /usr/bin/google-chrome
         run: |
           if [ ! -x "$IMPECCABLE_BROWSER" ]; then
-            echo "::error::Chrome absent ($IMPECCABLE_BROWSER) : le scan d'URL d'impeccable n'a pas de navigateur. Installe-en un (npx playwright install chromium --with-deps) et pointe IMPECCABLE_BROWSER dessus — ne saute pas le contrôle."
+            echo "::error::Chrome absent ($IMPECCABLE_BROWSER) : le scan d'URL d'impeccable n'a pas de navigateur. Installe-le (npx playwright install chromium --with-deps) et pointe IMPECCABLE_BROWSER dessus — ne saute pas le contrôle."
             exit 1
           fi
           "$IMPECCABLE_BROWSER" --version

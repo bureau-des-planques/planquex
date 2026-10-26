@@ -23,7 +23,27 @@ import { describe, expect, it } from 'vitest';
 const WORKFLOW_PATH = fileURLToPath(new URL('../.github/workflows/ci.yml', import.meta.url));
 const workflow = readFileSync(WORKFLOW_PATH, 'utf8');
 
-const STEPS = ['npm ci', 'npm run check', 'npm test', 'npm run build'];
+const VITEST_PATH = fileURLToPath(new URL('../vitest.config.ts', import.meta.url));
+const vitestConfig = readFileSync(VITEST_PATH, 'utf8');
+
+/**
+ * Le bloc YAML d'un job, découpé **par indentation** : de `  <nom>:` jusqu'à la ligne suivante
+ * qui commence un autre job. Pas d'analyseur YAML ajouté pour ça (même choix que pour le
+ * fichier entier, #52) — l'indentation de deux espaces est stable et lisible.
+ */
+function blocJob(nom: string): string {
+  const entete = new RegExp(`^ {2}${nom}:$`, 'm').exec(workflow);
+  if (!entete) return '';
+  const reste = workflow.slice(entete.index + entete[0].length);
+  const fin = reste.search(/^ {2}[a-zA-Z][\w-]*:$/m);
+  return fin === -1 ? reste : reste.slice(0, fin);
+}
+
+/** Les projets qui existent vraiment, lus dans `vitest.config.ts`. */
+const PROJETS_DECLARES = [...vitestConfig.matchAll(/^ +name: '([\w-]+)'/gm)].map((m) => m[1]).sort();
+
+/** Les projets que la CI exécute, lus dans le workflow. */
+const PROJETS_CI = [...workflow.matchAll(/--project=([\w-]+)/g)].map((m) => m[1]).sort();
 
 describe('.github/workflows/ci.yml', () => {
   it('se déclenche sur push et pull_request vers main', () => {
@@ -48,10 +68,36 @@ describe('.github/workflows/ci.yml', () => {
     expect(names).toContain('actions/setup-node');
   });
 
-  it('enchaîne npm ci, check, tests puis build, dans cet ordre', () => {
-    const positions = STEPS.map((command) => workflow.indexOf(`run: ${command}`));
+  it('sépare les contrôles des deux projets de test, pour que le temps mural soit un maximum (#257)', () => {
+    // Le défaut mesuré le 26/10/2026 : un job unique, 11 min 41 s pour un timeout de 15, et
+    // **287 s de tests sur une PR contre 525 s sur `main` pour le même code**. En somme, cette
+    // variance décidait du rouge ; en maximum, elle ne mange que la marge du job le plus lourd.
+    // Sans cette assertion, refusionner les trois jobs en un seul rendrait la CI verte tout en
+    // ramenant la panne — c'est exactement ce que le ticket #257 interdit.
+    for (const nom of ['controles', 'tests-noyau', 'tests-ecrans']) {
+      expect(blocJob(nom), `job « ${nom} » absent`).not.toBe('');
+      expect(blocJob(nom)).toMatch(/timeout-minutes: \d+/);
+      expect(blocJob(nom)).toContain('run: npm ci');
+    }
+    // Le job des écrans porte le contrôle visuel ET son build : il doit rester seul à le faire.
+    expect(blocJob('tests-ecrans')).toContain('npm run detect:ui:page');
+    expect(workflow.match(/npm run detect:ui:page/g)).toHaveLength(1);
+  });
+
+  it('exécute **exactement** les projets déclarés dans `vitest.config.ts`, sans trou ni doublon', () => {
+    // La garde du découpage : ajouter un projet à `vitest.config.ts` sans l'appeler dans la CI
+    // doit rougir. Un projet oublié, ce serait des tests qui ne tournent plus nulle part — une
+    // suite verte avec moins de couverture, pire qu'un échec (leçon du `include` de #145).
+    expect(PROJETS_DECLARES.length).toBeGreaterThanOrEqual(2);
+    expect(PROJETS_CI).toEqual(PROJETS_DECLARES);
+  });
+
+  it('enchaîne dans `controles` : npm ci, types, format, garde-fous, puis build', () => {
+    const bloc = blocJob('controles');
+    const etapes = ['npm ci', 'npm run check', 'npm run format:check', 'npm run garde-fous', 'npm run build'];
+    const positions = etapes.map((commande) => bloc.indexOf(`run: ${commande}`));
     for (const [index, position] of positions.entries()) {
-      expect(position, `étape manquante : ${STEPS[index]}`).toBeGreaterThanOrEqual(0);
+      expect(position, `étape manquante dans « controles » : ${etapes[index]}`).toBeGreaterThanOrEqual(0);
     }
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
   });
@@ -69,17 +115,19 @@ describe('.github/workflows/ci.yml', () => {
     // garde ce qui se casse en silence : **retirer l'étape** rendrait la CI verte alors
     // qu'aucun écran ne serait mesuré. `detect:ui` (regex sur les sources) la remplacerait
     // en apparence — il sous-compte, et c'est précisément pour ça que #205 existe.
-    const debut = workflow.indexOf('Contrôler les écrans dans un navigateur');
+    const bloc = blocJob('tests-ecrans');
+    const debut = bloc.indexOf('Contrôler les écrans dans un navigateur');
     expect(debut, 'étape « contrôle visuel en navigateur » absente').toBeGreaterThanOrEqual(0);
-    const bloc = workflow.slice(debut);
-    expect(bloc).toContain('npm run detect:ui:page');
+    const apres = bloc.slice(debut);
+    expect(apres).toContain('npm run detect:ui:page');
     // Il lui faut un navigateur, et l'étape le nomme (Chromium de l'image du runner).
-    expect(bloc).toContain('IMPECCABLE_BROWSER');
+    expect(apres).toContain('IMPECCABLE_BROWSER');
     // Pas de saut : sans navigateur, elle échoue explicitement.
-    expect(bloc).not.toMatch(/^\s*if:/m);
-    expect(bloc).toMatch(/exit 1/);
-    // Elle lit `dist/` : le build doit avoir tourné avant.
-    expect(workflow.indexOf('run: npm run build')).toBeLessThan(debut);
+    expect(apres).not.toMatch(/^\s*if:/m);
+    expect(apres).toMatch(/exit 1/);
+    // Elle lit `dist/` : le build doit avoir tourné avant, **dans le même job**.
+    expect(bloc.indexOf('run: npm run build')).toBeGreaterThanOrEqual(0);
+    expect(bloc.indexOf('run: npm run build')).toBeLessThan(debut);
   });
 
   it('échoue si une étape échoue et n’exige aucun secret', () => {

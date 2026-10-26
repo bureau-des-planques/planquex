@@ -30,7 +30,8 @@
     "detect:ui:page": "node scripts/detect-ui-pages.mjs",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"scripts/**/*.mjs\" \"tools/**/*.mjs\" \"supabase/**/*.ts\" \"*.json\" \"*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"scripts/**/*.mjs\" \"tools/**/*.mjs\" \"supabase/**/*.ts\" \"*.json\" \"*.ts\"",
-    "index:decisions": "node scripts/index-decisions.mjs"
+    "index:decisions": "node scripts/index-decisions.mjs",
+    "ci:etat": "node scripts/ci-etat.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

@@ -16,6 +16,8 @@ cd /home/chapax/Documents/opencode/gamedev/planquex
 | `npm run dev` | Serveur Vite sur `:5178` |  |
 | `npm run check` | `tsc -b` |  |
 | `npm test` | `vitest run` |  |
+| `npm test -- --project=node` | **La moitié `node` de la suite** — moteur, données, `scripts/`, `supabase/`, `tools/`. C'est ce que lance le job `tests-noyau` (D-115, #257), pour reproduire une CI rouge en local |  |
+| `npm test -- --project=ui` | **La moitié `ui`** — les écrans sous jsdom. C'est ce que lance le job `tests-ecrans` (D-115, #257) |  |
 | `npm run format` | **Formate** le code (`prettier --write`) — src, scripts, tools, supabase, JSON et TS de la racine. `src/data/`, les docs et les sorties de build sont exclus : `.prettierignore` dit pourquoi, ligne à ligne |  |
 | `npm run format:check` | **Vérifie** le formatage sans écrire. La CI le lance après `check` ; épinglé en devDependency exacte |  |
 | `npm run test:watch` | Vitest en watch |  |
@@ -23,6 +25,7 @@ cd /home/chapax/Documents/opencode/gamedev/planquex
 | `npm run preview` | Servir `dist/` |  |
 | `npm run index:decisions` | **Réécrit `docs/DECISIONS-INDEX.md`**, dérivé de `docs/DECISIONS.md` (une ligne par décision). `-- --verifie` n'écrit rien et sort 1 si l'index a divergé ; `scripts/index-decisions.test.ts` le lance à chaque `npm test` |  |
 | `npm run status` | Métriques JSON, dont les cartes dérivées d'`ALL_CARDS` |  |
+| `npm run ci:etat` | **État du dernier run de CI sur `main`** (#258) : lit le dernier run via le CLI `gh` et **sort 1** si ce run n’est pas green — le pont que `main` n’avait pas, qui restait rouge **8 runs / 6 h 36** sans que personne le voie. Outil de poste de pilotage, jamais un artefact de build | **OK**, exit 0 — dernier run `main` 40395203605 green (fusion #259, 26/10/2026) |
 | `node scripts/status.mjs` | Même script directement |  |
 | `npm run capturer` | Photographie les pages **amorcées** de la visite (`tutorielVu: true`, #150), plus la première visite elle-même, à la **taille d'un téléphone** et sur la **fenêtre seule** (420 × 900, critère (4) de D-060 et #153) ; échoue sur une erreur de console |  |
 | `npm run notes:versions` | **Le journal des versions, pris à GitHub** (D-090) : relit les **releases** du dépôt (`gh`, dépôt privé) et réécrit `src/data/versions.ts`, que lit l'écran `/feuille-de-route`. À lancer **avant de taguer** — la note écrite d'avance est conservée. `-- --verifie` n'écrit rien et sort 1 si le fichier a divergé (**`fichiers-generes.yml` le lance** sur un tag `v*`, D-113) ; `-- --json` imprime les notes |  |

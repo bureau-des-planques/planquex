@@ -211,7 +211,7 @@ Application **Vite plate** ; le monorepo de `PROPOSITION.md` §6.1 est une cible
 - **Tests** : Vitest, `*.test.ts` à côté du code. Pas de test = pas de preuve.
 - **Garde-fous** : une assertion qui garde une **règle** doit **pouvoir échouer**. Deux moyens : (1) un test « **le contrôle mord** » qui confronte le contrôle à un **cas fautif** ; (2) une entrée dans **`scripts/garde-fous.mjs`** (table courte, commentée : **ticket**, **règle** gardée, **tests ciblés**), mutée par `npm run garde-fous`. La table elle-même est surveillée par `scripts/garde-fous.test.ts`.
 - **Effets de bord d'un test** : un test n'ouvre ni navigateur ni fenêtre sur le poste de l'utilisateur ; `src/test/setup-poste.ts` fait échouer tout `spawn` d'ouverture (`xdg-open`, `open`) — injecter le lanceur, comme `ouvrirNavigateur(url, lancer)`.
-- **CI** : `.github/workflows/ci.yml`, sur `push` et `pull_request` vers **`main`** : `check`, `test`, `garde-fous`, détecteur d'UI, `build`, contrôle des écrans. Les **fichiers générés** (`plan-dev.ts`, `versions.ts`) n'y sont **pas** vérifiés (D-113) : `fichiers-generes.yml` s'en charge sur un tag `v*`, et `docs/VERSIONS.md` §4 le fait faire en local avant de taguer.
+- **CI** : `.github/workflows/ci.yml`, sur `push` et `pull_request` vers **`main`** — **trois jobs en parallèle** (D-115) : `controles` (`check`, `format:check`, `garde-fous`, détecteur d'UI, `build`, artefacts), `tests-noyau` (`npm test -- --project=node`) et `tests-ecrans` (`--project=ui`, puis `build` et contrôle des écrans). Le temps mural est un **maximum**, pas une somme. Les **fichiers générés** (`plan-dev.ts`, `versions.ts`) n'y sont **pas** vérifiés (D-113) : `fichiers-generes.yml` s'en charge sur un tag `v*`, et `docs/VERSIONS.md` §4 le fait faire en local avant de taguer.
 - **CSS** : une seule feuille, `src/styles.css`. Tailwind v4 (CSS-first) est le moteur de style, shadcn/ui ne sert qu'aux composants génériques ; le système visuel vit dans `DESIGN.md`.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX ; une animation, par une **planche de frames** (`scripts/filmer-animation.mjs`), pas par un style calculé. Voir §8.4.
 - **Garde-fou visuel** : `npm run detect:ui` (sources) et `npm run detect:ui:page` (écrans servis, avec cliquet), lancés par la CI. Un refus se corrige ou se désactive avec sa raison (`<!-- impeccable-disable <règle> -->`).
@@ -279,6 +279,7 @@ Pour une modification de code :
 - `npm test` : exit 0, avec au moins un test couvrant le changement.
 - `npm run garde-fous` : exit 0 — et toute garde **nouvelle** est ancrée (un test « le contrôle mord » qui la confronte à un cas fautif, ou une entrée commentée dans `scripts/garde-fous.mjs`). Une assertion qui **ne peut pas** échouer ne compte pas comme un test.
 - `npm run build` : exit 0, `dist/index.html` et `dist/sw.js` présents.
+- `npm run ci:etat` : exit 0 avant de **fusionner** vers `main` — si `main` est rouge, on ne fusionne pas sans savoir pourquoi (D-115, #258).
 - Aucune occurrence de `Galère` dans `src/`.
 - Docs mises à jour si une règle, un vocabulaire, un contenu ou une décision change.
 
