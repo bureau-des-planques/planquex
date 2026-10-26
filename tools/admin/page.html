@@ -96,6 +96,7 @@
     nouveauxEnAttente,
     titreOnglet,
   } from './suivi.mjs';
+  import { ligneMigration } from './ligne-migration.mjs';
 
   // Le titre de l'onglet porte le nombre d'attentes : on garde le titre normal sous la main.
   const TITRE_NORMAL = document.title;
@@ -239,22 +240,14 @@
 
   async function migrations() {
     const e = await api('/api/migrations');
-    const lignes = (e.migrations || []).map((m) => {
-      const badge = m.etat === 'appliquee'
-        ? '<span class="etat-pill">appliquée</span>'
-        : m.etat === 'empreinte-changee'
-          ? '<span class="etat-pill" style="color:var(--danger)">empreinte changée</span>'
-          : '<span class="etat-pill">manquante</span>';
-      const bouton = m.etat === 'manquante'
-        ? `<button class="vert" onclick="appliquer('${m.fichier}')">appliquer</button>`
-        : '';
-      return `<tr><td><code>${m.fichier}</code></td><td>${badge}</td><td><code>${m.empreinte.slice(0, 16)}…</code></td><td>${bouton}</td></tr>`;
-    }).join('');
+    // Chaque ligne (badge, empreinte, bouton) vient de `ligneMigration` : c'est là que se
+    // décide ce qu'on offre de rejouer, et c'est testé sans navigateur (#224).
+    const lignes = (e.migrations || []).map(ligneMigration).join('');
     rendre(document.querySelector('#migrations'), `
       <h2>Migrations</h2>
       ${lignes ? `<div class="tableau"><table><thead><tr><th>fichier</th><th>état</th><th>empreinte</th><th>geste</th></tr></thead>
       <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucune migration</div>'}
-      <p class="muet">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée.</p>
+      <p class="muet">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée ; appliquée avant le registre → ni empreinte ni date, jamais rejouée.</p>
     `);
   }
 

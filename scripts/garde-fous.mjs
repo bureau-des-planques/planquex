@@ -278,6 +278,18 @@ export const MUTATIONS = [
     tests: ['src/lib/murBase.test.ts'],
     garde:
       'sans le filtre d’auteur, le compteur compte aussi mes propres commentaires : il ne dit plus « ce qui me concerne » mais « tout ce qui touche mes post-its » (D-097 (5)), et il ne retombe pas à zéro quand je me réponds'
+  },
+  {
+    ticket: 224,
+    titre: 'la page propose de rejouer une migration appliquée avant le registre',
+    fichier: 'tools/admin/lib/ligne-migration.mjs',
+    // Le bouton n'est offert que sur une migration **manquante** : 0001 et 0002 ne sont pas
+    // idempotentes, et le poste ne connaît pas l'empreinte d'avant le registre (#224).
+    motif: "etat === 'manquante'",
+    remplacement: "etat !== 'anterieure'",
+    tests: ['tools/admin/ligne-migration.test.ts'],
+    garde:
+      'un bouton « appliquer » sur une antérieure rejoue un fichier déjà passé : `relation "combats" already exists` (l’incident du 23/10) — un refus de repli qui vient de la base, pas du poste'
   }
 ];
 
