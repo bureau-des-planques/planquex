@@ -174,7 +174,13 @@ export function Settings() {
 
       <section className="section panel">
         <h2>Sauvegarde</h2>
-        <p className="muted">
+        {/* `max-w-[62ch]` (et non la largeur du panneau) : c'est un paragraphe de prose de
+            quatre lignes, et `impeccable` (line-length) le refusait dès que le texte tient
+            sur des lignes de plus de 80 caractères. Le rendu du texte était le même avant et
+            après le passage de Prettier (vérifié : `innerText` identique, sha1 égal) — c'est
+            la **largeur de lecture** qui manquait, pas le formateur. Même remède que la
+            section « Traces de combat » (#208). */}
+        <p className="muted max-w-[62ch]">
           Ta progression de jeu — Collection, Deck, nom — vit dans ce navigateur sous la clé <code>{STORAGE_KEY}</code>{' '}
           : elle n’est pas envoyée à la base, et <strong>vider les données du navigateur l’efface</strong>. Copie ce
           texte quelque part avant, il contient tout. Les traces de combat, elles, partent à la base quand elle est
