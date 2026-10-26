@@ -85,8 +85,8 @@ d'écran.
 là où le mur la lit. **Sur la base (#185, #186)**, le lâcher écrit `position_x`, `position_y` et
 `position_angle` **tout de suite** : tout le monde voit la disposition sans commit. L'auteur range
 **ses** post-its ; l'**administration** range **n'importe lequel** (D-092), et un compte en attente ne
-range rien du tout. **Sur le fichier**, le mode exporte le fichier à committer : c'est le mécanisme de
-l'alpha, sans backend.
+range rien du tout. **Sans base**, il n'y a plus d'export (#215, D-097 (6)) : le mode déplace les
+post-its à l'écran, et le fichier garde `position`, **écrit à la main**.
 
 **Un post-it neuf ne se colle pas sur un autre (#185)** : sa place est tirée au hasard, puis écartée
 des places déjà prises — le calcul garde le point dont l'écart à toutes les autres est le plus grand.
@@ -212,10 +212,12 @@ depuis le mur. Le fichier reste le **contrat de données** et la **source de sec
 variables, ou si la base ne répond pas, le mur affiche ce fichier, sans écran cassé. Dans ce
 cas, le formulaire (§4) reste la porte d'écriture.
 
-**Le rangement suit (#185)** : sur la base, le mode de placement n'exporte plus un fichier — le
+**Le rangement (#185, #215)** : le mode de placement n'exporte plus de fichier — sur la base, le
 lâcher écrit `position_x`, `position_y` et `position_angle` (politique « chacun déplace les
-siens » de `0001`, reprise par `0005`). Et un post-it neuf est posé là où il cache le moins de
-texte : sa place de hasard est écartée des places déjà prises, au lieu de tomber dessus.
+siens » de `0001`, reprise par `0005`) ; sans base, il ne fait que déplacer à l'écran, et
+`position` s'écrit à la main dans le fichier. Et un post-it neuf est posé là où il cache le
+moins de texte : sa place de hasard est écartée des places déjà prises, au lieu de tomber
+dessus.
 
 ## 4. Le formulaire
 

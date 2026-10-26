@@ -40,9 +40,9 @@
  *
  * **La place sur le tableau (#185)** : la base porte `position_x`, `position_y` et
  * `position_angle`, et sa politique laisse chacun déplacer **ses** post-its. `deplacerPostit`
- * est ce geste — le mode de placement de l'écran n'exporte donc plus un fichier quand le mur
- * vient de la base. Et à la pose, `positionDepuisId` évite les places déjà prises : un
- * post-it neuf ne se colle plus sur le texte d'un autre (D-068).
+ * est ce geste — le mode de placement de l'écran n'exporte plus aucun fichier (D-097 (6),
+ * #215). Et à la pose, `positionDepuisId` évite les places déjà prises : un post-it neuf ne
+ * se colle plus sur le texte d'un autre (D-068).
  */
 import {
   clientMur,
