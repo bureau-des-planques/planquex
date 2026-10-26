@@ -39,14 +39,6 @@ export const FEATURES_PREVUES: FeaturePrevue[] = [
     titre: 'PvP — la trace des combats à deux (beta)'
   },
   {
-    numero: 219,
-    titre: 'Prototype — la scène de comparaison ne rend rien (id renommé par D-095) : réparer ou sortir'
-  },
-  {
-    numero: 212,
-    titre: 'Comité — compteur « choses à voir » et post-it d\'alerte (D-097)'
-  },
-  {
     numero: 136,
     titre: 'Le comité — poster depuis le jeu, et la base remplace le fichier'
   },
