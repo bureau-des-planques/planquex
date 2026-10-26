@@ -34,6 +34,7 @@ import {
 import { STATUTS as STATUTS_POSTE } from './lib/classification.mjs';
 import { STATUTS as STATUTS_APP } from '../../src/store/mur';
 import { creerJournal } from './lib/journal.mjs';
+import { empreinte } from './lib/migrations.mjs';
 import { demarrerServeur } from './lib/app.mjs';
 import { chargerConfiguration, ouvrirNavigateur } from './serveur.mjs';
 
@@ -608,6 +609,31 @@ describe('les migrations (#184)', () => {
     const rejoueChangee = await api(m, '/api/migrations/0001_test.sql/appliquer', { method: 'POST' });
     expect(rejoueChangee.status).toBe(409);
     expect((await corpsJson(rejoueChangee)).erreur).toContain('empreinte changée');
+  });
+
+  it('une migration appliquée avant le registre est « antérieure », jamais rejouée (#224)', async () => {
+    const bac = bacMigrations();
+    const m = await monde({ migrations: bac.dossier });
+
+    // Ce que le rétablissement du 26/10/2026 a posé pour 0001-0006 : une empreinte (celle
+    // du fichier aujourd'hui, pas une preuve de ce qui a été joué) et l'origine.
+    const contenu = readFileSync(join(bac.dossier, '0002_test.sql'), 'utf8');
+    await m.adapter.ecrire(
+      `insert into admin.migrations (fichier, empreinte, origine)
+       values ($1, $2, 'anterieure')`,
+      ['0002_test.sql', empreinte(contenu)],
+    );
+
+    const liste = (await corpsJson(await api(m, '/api/migrations'))).migrations;
+    const anterieure = liste.find((x: { fichier: string }) => x.fichier === '0002_test.sql');
+    expect(anterieure.etat).toBe('anterieure');
+    expect(anterieure.origine).toBe('anterieure');
+    // La migration voisine, pas encore connue, reste la seule à proposer.
+    expect(liste.find((x: { fichier: string }) => x.fichier === '0001_test.sql').etat).toBe('manquante');
+
+    const rejoue = await api(m, '/api/migrations/0002_test.sql/appliquer', { method: 'POST' });
+    expect(rejoue.status).toBe(409);
+    expect((await corpsJson(rejoue)).erreur).toContain('avant le registre');
   });
 });
 
