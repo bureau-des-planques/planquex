@@ -56,20 +56,12 @@ describe('.github/workflows/ci.yml', () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
   });
 
-  it('vérifie les fichiers générés avec le jeton du workflow, sans jamais se sauter (#231)', () => {
-    // Le contrôle de fraîcheur (#231) doit tourner, et échouer si `gh` ne peut pas lire
-    // GitHub. Sans cette assertion, **retirer l'étape** rendrait la CI verte alors qu'un
-    // fichier périmé ne serait plus comparé à rien — on ne garderait que l'apparence.
-    const debut = workflow.indexOf('Vérifier que les fichiers générés sont à jour');
-    expect(debut, 'étape « fichiers générés » absente').toBeGreaterThanOrEqual(0);
-    const bloc = workflow.slice(debut, workflow.indexOf('- name: Vérifier que les garde-fous peuvent échouer'));
-    expect(bloc).toContain('npm run plan:dev -- --verifie');
-    expect(bloc).toContain('npm run notes:versions -- --verifie');
-    // Le jeton automatique du workflow : aucune valeur à configurer (`secrets.` interdit).
-    expect(bloc).toContain('GH_TOKEN: ${{ github.token }}');
-    // Pas de `if:` YAML qui sauterait l'étape : sans jeton, elle échoue explicitement.
-    expect(bloc).not.toMatch(/^\s*if:/m);
-    expect(bloc).toMatch(/exit 1/);
+  it('ne vérifie PAS les fichiers générés : une PR ne dépend pas de l’état vivant de GitHub (D-113)', () => {
+    // `plan-dev.ts` liste les issues ouvertes : fermer une issue le périme. La CI des PR est
+    // tombée rouge trois fois le 26/10/2026 sans rien de cassé. Ce contrôle vit ailleurs.
+    expect(workflow).not.toContain('plan:dev');
+    expect(workflow).not.toContain('notes:versions');
+    expect(workflow).not.toMatch(/issues: read/);
   });
 
   it('contrôle les écrans dans un navigateur, après le build et sans saut possible (#234)', () => {
@@ -97,3 +89,32 @@ describe('.github/workflows/ci.yml', () => {
     expect(workflow).toMatch(/runs-on: ubuntu-latest/);
   });
 });
+
+describe('.github/workflows/fichiers-generes.yml (#231, D-113)', () => {
+  const generes = readFileSync(
+    fileURLToPath(new URL('../.github/workflows/fichiers-generes.yml', import.meta.url)),
+    'utf8',
+  );
+
+  it('se lance sur un tag de version ou à la demande, jamais sur une pull request', () => {
+    expect(generes).toMatch(/tags: \['v\*'\]/);
+    expect(generes).toMatch(/^ {2}workflow_dispatch:/m);
+    expect(generes).not.toMatch(/pull_request/);
+  });
+
+  it('vérifie les deux fichiers avec le jeton du workflow, sans jamais se sauter', () => {
+    // Sans cette assertion, **retirer l'étape** rendrait le contrôle vert sans rien comparer.
+    expect(generes).toContain('npm run plan:dev -- --verifie');
+    expect(generes).toContain('npm run notes:versions -- --verifie');
+    expect(generes).toContain('GH_TOKEN: ${{ github.token }}');
+    expect(generes).toMatch(/issues: read/);
+    expect(generes).toMatch(/exit 1/);
+    expect(generes).not.toMatch(/^\s*if:/m);
+  });
+
+  it('n’exige aucun secret et ne masque aucun échec', () => {
+    expect(generes).not.toMatch(/secrets\./);
+    expect(generes).not.toMatch(/continue-on-error/);
+  });
+});
+

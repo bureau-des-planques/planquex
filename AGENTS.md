@@ -211,7 +211,7 @@ Application **Vite plate** ; le monorepo de `PROPOSITION.md` §6.1 est une cible
 - **Tests** : Vitest, `*.test.ts` à côté du code. Pas de test = pas de preuve.
 - **Garde-fous** : une assertion qui garde une **règle** doit **pouvoir échouer**. Deux moyens : (1) un test « **le contrôle mord** » qui confronte le contrôle à un **cas fautif** ; (2) une entrée dans **`scripts/garde-fous.mjs`** (table courte, commentée : **ticket**, **règle** gardée, **tests ciblés**), mutée par `npm run garde-fous`. La table elle-même est surveillée par `scripts/garde-fous.test.ts`.
 - **Effets de bord d'un test** : un test n'ouvre ni navigateur ni fenêtre sur le poste de l'utilisateur ; `src/test/setup-poste.ts` fait échouer tout `spawn` d'ouverture (`xdg-open`, `open`) — injecter le lanceur, comme `ouvrirNavigateur(url, lancer)`.
-- **CI** : `.github/workflows/ci.yml`, sur `push` et `pull_request` vers **`main` seulement** (une PR vers `dev` n'a que Vercel). Les fichiers générés (`npm run plan:dev -- --verifie`, `npm run notes:versions -- --verifie`) y sont **vérifiés, jamais réécrits**, et l'étape échoue au lieu de se sauter.
+- **CI** : `.github/workflows/ci.yml`, sur `push` et `pull_request` vers **`main`** : `check`, `test`, `garde-fous`, détecteur d'UI, `build`, contrôle des écrans. Les **fichiers générés** (`plan-dev.ts`, `versions.ts`) n'y sont **pas** vérifiés (D-113) : `fichiers-generes.yml` s'en charge sur un tag `v*`, et `docs/VERSIONS.md` §4 le fait faire en local avant de taguer.
 - **CSS** : une seule feuille, `src/styles.css`. Tailwind v4 (CSS-first) est le moteur de style, shadcn/ui ne sert qu'aux composants génériques ; le système visuel vit dans `DESIGN.md`.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX ; une animation, par une **planche de frames** (`scripts/filmer-animation.mjs`), pas par un style calculé. Voir §8.4.
 - **Garde-fou visuel** : `npm run detect:ui` (sources) et `npm run detect:ui:page` (écrans servis, avec cliquet), lancés par la CI. Un refus se corrige ou se désactive avec sa raison (`<!-- impeccable-disable <règle> -->`).
@@ -328,11 +328,11 @@ tâche**, vagues disjointes, protocole de fusion et ses pièges. Voir
 
 ## 11. Branches et fusion
 
-Pratique observée le 26/10/2026, **à confirmer par Bastien** (aucune décision datée ne la fixe) :
+D-113 (26/10/2026). Le modèle est **GitHub flow** : une seule branche longue, `main`, toujours déployable.
 
-- Un ticket se travaille sur une **branche dédiée dans son propre worktree**, créée depuis **`main`** (#237 à #254), et se propose par **pull request** vers **`main`**.
-- **Fusion : merge commit**, pas de squash (choix de Bastien, 26/10/2026) ; le sujet est `merge: <ce que ça change> (#N)`.
-- La CI ne tourne que vers `main` (§6). Une PR vers une autre branche n'a que Vercel : lancer **en local** `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` avant de la fusionner.
-- **`dev`** est la branche de la session OpenChamber (`dev-jolly-cactus`) : docs, outillage, préparation de release. Elle retarde sur `main` (42 commits le 26/10/2026) : la remettre à jour avant d'y travailler (`git merge main`).
-- Fermer ou ouvrir une issue `alpha` rend `src/data/plan-dev.ts` périmé : relancer `npm run plan:dev` avant de fusionner vers `main`.
+- Un ticket se travaille sur une **branche dédiée dans son propre worktree**, créée depuis **`main`**, et se propose par **pull request** vers **`main`**. La branche se supprime après la fusion.
+- **Fusion : merge commit uniquement**, jamais de squash ni de rebase. Les agents **citent leurs hashes** dans leurs rapports, `git branch -d` (skill `cloture`) ne vaut qu'après un merge commit, et un ticket entier se défait par `git revert -m 1 <merge>`. Sujet : `merge: <ce que ça change> (#N)`. `git log --first-parent main` donne la vue « un ticket, une ligne ».
+- **Pas de branche `dev`.** Elle a été retirée le 26/10/2026 (son contenu était déjà sur `main` ; le dernier état reste au tag `archive/dev-2026-10-26`). Une session qui n'a pas de ticket prend une branche jetable issue de `main`.
+- La CI des PR est celle de `main` (§6). Les fichiers générés se vérifient **à la release**, pas à chaque PR (§6, `docs/VERSIONS.md` §4).
+- Fermer ou ouvrir une issue `alpha` périme `src/data/plan-dev.ts` : `npm run plan:dev` quand on prépare une release.
 - Les règles de parallélisme (zones, worktrees, `npm run isolation`, modèles) sont dans `docs/agents/parallelisme.md`.
