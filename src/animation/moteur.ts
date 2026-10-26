@@ -1,5 +1,6 @@
 /*
- * PROTOTYPE JETABLE — moteur d'effets du prototype d'animations, sans dépendance.
+ * **Le moteur de la scène d'attaque** (D-098) : deux `canvas`, une horloge, des particules.
+ * Sans dépendance.
  * Deux canvas (derrière et devant les cartes), une horloge unique : ralenti, gel d'impact
  * (hit-stop) et tremblement s'appliquent à la fois aux particules et aux animations des cartes
  * (Web Animations API), qui échappent ainsi à la règle CSS globale « Mouvement réduit ».
@@ -235,6 +236,8 @@ export class Moteur {
     for (const el of this.elements) {
       el.style.removeProperty("transform");
       el.style.removeProperty("opacity");
+      el.style.pointerEvents = el.dataset.pointeurAvant ?? "";
+      delete el.dataset.pointeurAvant;
     }
     this.elements.clear();
     this.particules = [];
@@ -320,6 +323,9 @@ export class Moteur {
       el.style.removeProperty("transform");
       el.style.removeProperty("opacity");
     };
+    // Une carte qui bouge ne doit pas capter un clic : la scène déplace ses cibles (D-098).
+    if (!el.dataset.pointeurAvant) el.dataset.pointeurAvant = el.style.pointerEvents;
+    el.style.pointerEvents = "none";
     this.animations.push(a);
     this.elements.add(el);
     return a;
@@ -335,6 +341,9 @@ export class Moteur {
       // on rend l'écran propre, et on le dit dans la console plutôt que de le taire.
       console.error("Scène d'attaque interrompue", erreur);
       this.arreter();
+      // Le composant doit retirer ce qu'il a posé pour la scène (la doublure du coup de grâce),
+      // sinon elle resterait sur le plateau jusqu'à la Pression suivante.
+      this.surFin?.(this.stats);
     }
   };
 
@@ -399,6 +408,8 @@ export class Moteur {
       for (const el of this.elements) {
         el.style.removeProperty("transform");
         el.style.removeProperty("opacity");
+        el.style.pointerEvents = el.dataset.pointeurAvant ?? "";
+        delete el.dataset.pointeurAvant;
       }
       this.elements.clear();
       this.ctxFond.clearRect(0, 0, this.largeur, this.hauteur);
@@ -423,7 +434,9 @@ export class Moteur {
       p.rot += p.vrot * s;
     }
     this.particules = this.particules.filter((p) => p.age < p.vie);
-    for (const e of this.effets) e.maj?.(this.t, dt);
+    // **`dt === 0` pendant le gel** : sans ce filtre, chaque image gelée rappellerait `maj`, et
+    // les émetteurs par image verseraient des particules identiques (même tranche, même graine).
+    if (dt > 0) for (const e of this.effets) e.maj?.(this.t, dt);
     this.effets = this.effets.filter((e) => this.t < e.debut + e.duree);
   }
 

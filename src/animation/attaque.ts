@@ -292,9 +292,11 @@ export function choregraphie(
   );
   // Un coup de grâce sous cinématique : la salle se retire dès que l'impact est passé, pour que la
   // saynète de sortie se joue sur un plateau clair et non sous le voile.
+  // Le retour de la carte part **après** tout ce que l'après a programmé sur elle
+  // (`switchSelf` va jusqu'à `impact + 1020`) : sinon le retour de la cinématique l'écrase.
   if (cinematique)
     etapes.push({
-      a: sc.coupDeGrace ? impact + 700 : duree - 350,
+      a: duree - 340 > impact + 1020 ? duree - 340 : impact + 1020,
       faire: () => retourCinematique(ctx),
     });
   return { nom: libelle(cle), etapes, duree, cinematique };
@@ -383,9 +385,16 @@ function impactGenerique(x: Ctx, force: number) {
   if (dmg > 0) {
     // Au coup de grâce, le tampon tombe au milieu de la carte : le chiffre se pose **à côté**,
     // dans l'angle haut de la carte, là où rien d'autre ne passe.
+    const marge = 44;
     const lieu = x.coupDeGrace
-      ? { x: x.C.x + x.C.w + 46, y: x.C.y + 20 }
-      : { x: x.c.x + 30, y: x.C.y + x.C.h * 0.3 };
+      ? {
+          x: Math.min(x.C.x + x.C.w + 46, x.m.largeur - marge),
+          y: x.C.y + 20,
+        }
+      : {
+          x: Math.min(x.c.x + 30, x.m.largeur - marge),
+          y: x.C.y + x.C.h * 0.3,
+        };
     chiffre(x.m, lieu, `+${dmg}`, "#f7e264", dmg >= 60);
   }
 }
@@ -414,6 +423,9 @@ function projectile(
   };
   const f = opts.facilite ?? ((p: number) => p);
   let dernier = opts.de;
+  // Le début est **capturé ici** : `m.effet` le pose à `this.t` quand on ne le donne pas, et
+  // `maj` lisait `0` — la traînée partait donc à mi-vol, ou jamais en cinématique.
+  const debut = opts.debut ?? x.m.t;
   x.m.effet({
     couche: "avant",
     debut: opts.debut,
@@ -424,7 +436,6 @@ function projectile(
       opts.dessin(ctx, pos, ang, p);
     },
     maj(t) {
-      const debut = opts.debut ?? 0;
       const p = Math.min(1, Math.max(0, (t - debut) / opts.duree));
       const pos = bezier(opts.de, mid, opts.vers, f(p));
       if (opts.trainee && p > 0 && p < 1) opts.trainee(pos, p);
@@ -755,20 +766,19 @@ function motifD(
           }
           break;
         case "eclair": {
-          const rr = alea(hacher(x.attaque.name));
-          let graine = 0;
+          const graine = hacher(`${x.attaque.name}:eclair`);
           m.effet({
             couche: "avant",
             duree: voyage + 120,
             additif: true,
             dessiner(ctx, p, temps) {
               const coup = Math.floor(temps / 90);
-              if (coup !== graine) graine = coup;
               const visible = p < 0.25 || (p > 0.4 && p < 0.6) || p > 0.75;
               if (!visible) return;
-              const local = alea(graine + 7);
+              const local = alea(graine + coup * 7);
               eclair(ctx, de, vers, local, "#9ef5fb", 26);
-              if (rr() > 0.4)
+              // Le second arc est décidé **par tranche**, pas par image.
+              if (alea(graine + coup)() > 0.4)
                 eclair(
                   ctx,
                   de,
@@ -845,6 +855,7 @@ function motifD(
           break;
         }
         case "soudure":
+          let derniereTrancheSoudure = -1;
           m.effet({
             couche: "avant",
             duree: voyage,
@@ -868,9 +879,13 @@ function motifD(
               void p;
             },
             maj(temps) {
-              // Un tirage **par tranche de temps**, jamais par image : la même attaque produit
-              // les mêmes étincelles à 30 comme à 144 Hz (déterminisme de l'écran, D-098).
-              const rt = alea(hacher(`${x.attaque.name}:soudure:${Math.floor(temps / 40)}`));
+              // **Une gerbe par tranche de 40 ms**, jamais par image : le tirage était déjà
+              // dérivé du temps, mais le nombre de particules suivait la fréquence d'affichage
+              // (D-098, budget de 300 hors cinématique).
+              const tranche = Math.floor(temps / 40);
+              if (tranche === derniereTrancheSoudure) return;
+              derniereTrancheSoudure = tranche;
+              const rt = alea(hacher(`${x.attaque.name}:soudure:${tranche}`));
               for (let i = 0; i < 3; i++)
                 m.emettre({
                   x: vers.x,
@@ -937,12 +952,18 @@ function motifD(
           });
           break;
         case "extincteur":
+          // Une seule gerbe par tranche de 40 ms : à 144 Hz, émettre par image remplissait le
+          // budget de particules et refusait l'impact lui-même.
+          let derniereTranche = -1;
           m.effet({
             couche: "avant",
             duree: voyage,
             dessiner() {},
             maj(temps) {
-              const rt = alea(hacher(`${x.attaque.name}:extincteur:${Math.floor(temps / 40)}`));
+              const tranche = Math.floor(temps / 40);
+              if (tranche === derniereTranche) return;
+              derniereTranche = tranche;
+              const rt = alea(hacher(`${x.attaque.name}:extincteur:${tranche}`));
               for (let i = 0; i < 5; i++) {
                 const ang =
                   Math.atan2(vers.y - de.y, vers.x - de.x) + (rt() - 0.5) * 0.35;
@@ -964,7 +985,6 @@ function motifD(
           });
           break;
         case "laser": {
-          const rr = alea(hacher(x.carte.id));
           m.effet({
             couche: "avant",
             duree: voyage + 100,
@@ -995,7 +1015,6 @@ function motifD(
               g.addColorStop(1, "transparent");
               ctx.fillStyle = g;
               ctx.fillRect(point.x - 14, point.y - 14, 28, 28);
-              void rr;
             },
           });
           break;
@@ -2328,7 +2347,7 @@ function sayneteDeSortie(x: Ctx, e: Etape[], t: number) {
           // L'ouverture du carton, sombre : c'est là que la carte disparaît.
           ctx.fillStyle = "#2a1a0a";
           ctx.beginPath();
-          ctx.ellipse(x.c.x, y, bw / 2 - 3, 10, 0, 0, Math.PI * 2);
+          ctx.ellipse(x.c.x, y, Math.max(0.5, bw / 2 - 3), 10, 0, 0, Math.PI * 2);
           ctx.fill();
           // La plante du bureau (à gauche) et la tasse (à droite) dépassent du carton.
           const oscille = Math.sin(ms / 260) * 2;

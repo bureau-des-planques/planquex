@@ -125,6 +125,7 @@ function CartePlateau({
   inspectee,
   annotations = false,
   effets = [],
+  dansScene = false,
   onInspecter
 }: {
   instance: CardInstance;
@@ -137,6 +138,12 @@ function CartePlateau({
   annotations?: boolean;
   /** Les effets de la scène qui visent cette instance (#192) : un chiffre de Stress, pas plus. */
   effets?: readonly EffetCombat[];
+  /**
+   * C'est **la cible de la Pression en cours** : la scène dessine son chiffre à l'impact, donc
+   * le chiffre du DOM s'efface pour ne pas en afficher deux (D-098). Les autres chiffres —
+   * Surcharge et Épuisement au Contrôle, dégâts sur soi — restent visibles.
+   */
+  dansScene?: boolean;
   onInspecter: () => void;
 }) {
   const nom = cardName(instance.cardId);
@@ -164,7 +171,7 @@ function CartePlateau({
       {effets.map((effet) => (
         <span
           key={effet.id}
-          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
+          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}${dansScene ? ' is-scene' : ''}`}
           aria-hidden="true"
         >
           +{effet.valeur}
@@ -480,6 +487,7 @@ function Camp({
   inspecte,
   detaille,
   effets = [],
+  cibleScene,
   onInspecter
 }: {
   label: string;
@@ -496,6 +504,8 @@ function Camp({
   detaille: boolean;
   /** Les effets de la scène qui touchent **ce** camp (#192). */
   effets?: readonly EffetCombat[];
+  /** Le `uid` de la cible de la Pression en cours : c'est elle que la scène anime (D-098). */
+  cibleScene?: string;
   onInspecter: (uid: string) => void;
 }) {
   const effetsStress = effets.filter((effet) => effet.nature === 'stress');
@@ -526,6 +536,7 @@ function Camp({
           inspectee={inspecte === posteActif.uid}
           annotations={detaille}
           effets={effetsStress.filter((effet) => effet.uid === posteActif.uid)}
+          dansScene={cibleScene === posteActif.uid}
           onInspecter={() => onInspecter(posteActif.uid)}
         />
       ) : (
@@ -603,6 +614,7 @@ function Camp({
                 className="bench__carte"
                 inspectee={inspecte === slot.uid}
                 effets={effetsStress.filter((effet) => effet.uid === slot.uid)}
+                dansScene={cibleScene === slot.uid}
                 onInspecter={() => onInspecter(slot.uid)}
               />
             ) : (
@@ -841,8 +853,10 @@ export function Battle() {
 
   /**
    * **La chorégraphie de la Pression** (D-098) : l'effet d'attaque dit qui frappe qui, le
-   * journal dit quelle Pression (`attackIndex`). La carte est retrouvée par son `uid` dans
-   * les deux camps — l'attaquant est au Poste, sauf s'il a craqué sur son propre coup.
+   * journal dit quelle Pression (`attackIndex`). La carte est retrouvée par son `uid` au Poste
+   * ou au Banc **des deux camps**. Un attaquant qui a craqué sur son propre coup
+   * (`selfDamage`) n'est plus ni à l'un ni à l'autre : la scène n'a alors rien à animer, et
+   * c'est le chiffre de Stress de #192 qui raconte le coup.
    */
   const effetAttaque = effets.findLast((effet) => effet.nature === 'attaque');
   const carteAttaque = useMemo(() => {
@@ -870,12 +884,8 @@ export function Battle() {
    * alors sa saynète de sortie, et vise le **fantôme** de la carte tombée — elle a déjà quitté
    * le plateau, mais `craquage__carte` la montre encore une fraction de seconde.
    */
-  const coupDeGrace = effets.some(
-    (effet) => effet.nature === 'craquage' && effet.uid === effetAttaque?.uidCible
-  );
-  const stressEncaisse =
-    effets.find((effet) => effet.nature === 'stress' && effet.uid === effetAttaque?.uidCible)?.valeur ??
-    0;
+  const coupDeGrace = effetAttaque?.cibleCraque === true;
+  const stressEncaisse = effetAttaque?.stressCible ?? 0;
 
   /**
    * **Le raccourci de la bascule d'infos** (#189, `SPEC-COMBAT-UI` §4.6) : `I` et son alias
@@ -1449,6 +1459,7 @@ export function Battle() {
                 inspecte={inspecte}
                 detaille={combatDetaille}
                 effets={effets.filter((effet) => effet.camp === id)}
+                cibleScene={sansMouvement ? undefined : effetAttaque?.uidCible}
                 onInspecter={setInspecte}
               />
             </Fragment>

@@ -184,7 +184,10 @@ export function SceneAttaque({
   useEffect(() => {
     const m = moteur.current;
     const cible = lancee.current;
-    if (sansMouvement || !m || !cible) return;
+    // **L'effet meurt à 700 ms, la chorégraphie vit jusqu'à 3 s.** Quand `effetId` passe à
+    // `undefined`, cet effet se relance : sans cette garde, il rejouerait la séquence depuis
+    // zéro, en tuant celle qui est en cours. `lancee` n'est donc lu que pour **son** effet.
+    if (effetId === undefined || sansMouvement || !m || !cible || cible.id !== effetId) return;
     const scene = fondRef.current?.parentElement;
     if (!scene) return;
     const att = cible.uid
@@ -196,7 +199,9 @@ export function SceneAttaque({
     // **Le coup de grâce** : la carte a quitté le plateau pour le Rebut, mais son fantôme
     // désaturé est encore là — c'est lui que la scène vise, et c'est lui qui part.
     const fantome = cible.coupDeGrace
-      ? scene.querySelector<HTMLElement>(".craquage__carte")
+      ? (scene.querySelector<HTMLElement>(
+          `.craquage__carte[data-uid="${CSS.escape(cible.uidCible ?? "")}"]`,
+        ) ?? scene.querySelector<HTMLElement>(".craquage__carte"))
       : null;
     // Le fantôme ne vit que 500 ms (`DUREE_TRAINEE_MS`) ; la Pression, elle, frappe plus tard.
     // À défaut de carte, la **zone du Poste** adverse reste : c'est là que le carton et le
@@ -223,13 +228,22 @@ export function SceneAttaque({
       doublure.current = copie;
       cib = copie.carte;
     }
-    const ch = choregraphie(cible.carte, cible.attaque, {
-      m,
-      att,
-      cib,
-      stress: cible.stress,
-      coupDeGrace: cible.coupDeGrace,
-    });
+    // Une chorégraphie qui lève ne doit pas casser l'écran de combat : on retire la doublure et
+    // on laisse la séquence de #192 (chiffre, bandeau « a craqué ») raconter le coup.
+    let ch: ReturnType<typeof choregraphie>;
+    try {
+      ch = choregraphie(cible.carte, cible.attaque, {
+        m,
+        att,
+        cib,
+        stress: cible.stress,
+        coupDeGrace: cible.coupDeGrace,
+      });
+    } catch (erreur) {
+      console.error("Chorégraphie impossible", erreur);
+      retirerDoublure(doublure);
+      return;
+    }
     m.surFin = (stats) => {
       retirerDoublure(doublure);
       surFin?.(stats);

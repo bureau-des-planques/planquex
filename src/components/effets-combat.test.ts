@@ -127,6 +127,30 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     expect(attaque?.uidCible).toBe(avant.players.ai.active?.uid);
   });
 
+  // **La Dérive ratée** (D-033 §3) : le moteur journalise quand même l'action `attack` — le tour
+  // est consommé — mais la Pression n'est pas lancée. Sans ce filtre, la scène jouerait un coup
+  // qui n'a pas eu lieu (D-098).
+  it('une Dérive ratée n’émet aucune Pression, et le contrôle mord', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    apres.actionLog = [
+      ...avant.actionLog,
+      { type: 'attack', player: 'player', attackIndex: 0 } as never
+    ];
+    apres.log = [
+      ...avant.log,
+      'Dérive : tampon, la Pression n’est pas lancée, le tour prend fin.'
+    ];
+    expect(effetsEntre(avant, apres).some((effet) => effet.nature === 'attaque')).toBe(false);
+
+    // Le cas fautif, pour que le contrôle puisse échouer : la même action **sans** la ligne de
+    // Dérive émet bien la Pression.
+    const reussie = structuredClone(avant);
+    reussie.actionLog = apres.actionLog;
+    reussie.log = [...avant.log, 'Kiné du travail utilise Massage cardiaque : 20 de stress.'];
+    expect(effetsEntre(avant, reussie).some((effet) => effet.nature === 'attaque')).toBe(true);
+  });
+
   it('une attaque sur une autre paire a sa propre séquence ; la même paire est remplacée', () => {
     const a = {
       id: 1,

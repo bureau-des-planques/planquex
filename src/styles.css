@@ -2526,14 +2526,22 @@ h2 {
 
 /* L'infobulle de lecture : posée sous la carte. Sa marge haute n'est pas un vide : le pointeur passe
    de la carte à l'infobulle sans la perdre (SC 1.4.13, survolable). Aucun bouton n'y vit. */
+/* Posée dans `body` (portail), à la verticale de sa carte : le plateau isole ses plans pour la
+   scène d'attaque (D-098), et une infobulle restée dedans passait sous la main en éventail. */
 .battle .infobulle {
-  left: 50%;
   padding-top: 0.45rem;
-  position: absolute;
-  top: 100%;
+  position: fixed;
   transform: translateX(-50%);
   width: min(17rem, 80vw);
-  z-index: 40;
+  z-index: 60;
+}
+
+/* Ouverte au-dessus de sa carte : la marge de survol change de côté, pour que le pointeur
+   traverse sans perdre l'infobulle (SC 1.4.13). */
+.battle .infobulle--dessus {
+  padding-bottom: 0.45rem;
+  padding-top: 0;
+  transform: translate(-50%, -100%);
 }
 
 .battle .infobulle__corps {
@@ -3711,11 +3719,12 @@ h2 {
   z-index: 8;
 }
 
-/* **Un seul chiffre à l'écran** : la scène dessine le sien, à l'instant de l'impact, et la
-   valeur est la même (le Stress encaissé). Le chiffre du DOM reste **sous** mouvement réduit,
-   où la scène ne se monte pas — et il reste dans le DOM dans tous les cas (`aria-hidden`,
-   l'information vivant dans la barre de Stress et au journal). */
-.battle:not(.battle--mouvement-reduit) .board .stress-flottant {
+/* **Un seul chiffre à l'écran pour la cible de la Pression** : la scène dessine le sien, à
+   l'instant de l'impact, à la même valeur (le Stress encaissé). Le chiffre du DOM de *cette*
+   carte s'efface donc — lui seul, jamais les autres : le Stress d'une Surcharge au Contrôle ou
+   d'un dégât sur soi n'est dessiné par personne d'autre, et il doit rester lisible (#192).
+   Sous « Mouvement réduit », la scène ne se monte pas : le chiffre du DOM reste. */
+.stress-flottant.is-scene {
   /* `animation: none` est indispensable : l'apparition du chiffre est une animation d'`opacity`,
      et une animation l'emporte sur une simple déclaration. */
   animation: none;
