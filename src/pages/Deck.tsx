@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Info, Sparkles, Trash2 } from 'lucide-react';
-import { CHARIOTS } from '@/data/chariots';
-import type { Chariot } from '@/data/chariots';
+import { DECKS_PROPOSES } from '@/data/decks-proposes';
+import type { DeckPropose } from '@/data/decks-proposes';
 import { ALL_CARDS, FACTION_META, STAGE_META, VIVIER_META, isPlanque } from '@/data';
 import type { Card, CafeType } from '@/data/types';
 import {
@@ -67,10 +67,10 @@ export function Deck() {
   const cafeLabel = (types: readonly CafeType[]) =>
     types.map((type) => FACTION_META[type].short).join(', ');
 
-  /** Charger un Chariot proposé : ses cartes **et** ses types de café, en un geste (#141). */
-  const loadChariot = (chariot: Chariot) => {
-    setDeck([...chariot.cartes]);
-    setCafeTypes([...chariot.cafeTypes]);
+  /** Charger un Deck proposé : ses cartes **et** ses types de café, en un geste (#141). */
+  const chargerDeck = (deckPropose: DeckPropose) => {
+    setDeck([...deckPropose.cartes]);
+    setCafeTypes([...deckPropose.cafeTypes]);
   };
 
   const available = useMemo(
@@ -123,30 +123,30 @@ export function Deck() {
         {legality.ok ? 'Deck valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
 
-      <section className="section panel chariots">
+      <section className="section panel decks-proposes">
         <div className="section__head">
           <div>
-            <h2>Chariots proposés</h2>
+            <h2>Decks proposés</h2>
             <p className="muted">
-              Des Chariots prêts à jouer, indépendants de ta Collection. Charger remplace le Deck actuel.
+              Des Decks prêts à jouer, indépendants de ta Collection. Charger remplace le Deck actuel.
             </p>
           </div>
         </div>
-        <ul className="chariots__list">
-          {CHARIOTS.map((chariot) => (
-            <li key={chariot.id} className="chariots__item">
+        <ul className="decks-proposes__list">
+          {DECKS_PROPOSES.map((deckPropose) => (
+            <li key={deckPropose.id} className="decks-proposes__item">
               <div>
                 <h3>
-                  {chariot.name}{' '}
+                  {deckPropose.name}{' '}
                   <span className="muted">
-                    — {chariot.vivier === 'MIXTE' ? 'Mixte' : VIVIER_META[chariot.vivier].label} ·{' '}
-                    {cafeLabel(chariot.cafeTypes)}
+                    — {deckPropose.vivier === 'MIXTE' ? 'Mixte' : VIVIER_META[deckPropose.vivier].label} ·{' '}
+                    {cafeLabel(deckPropose.cafeTypes)}
                   </span>
                 </h3>
-                <p>{chariot.strategie}</p>
-                <p className="muted">Faible : {chariot.faiblesse}</p>
+                <p>{deckPropose.strategie}</p>
+                <p className="muted">Faible : {deckPropose.faiblesse}</p>
               </div>
-              <button type="button" className="button" onClick={() => loadChariot(chariot)}>
+              <button type="button" className="button" onClick={() => chargerDeck(deckPropose)}>
                 Charger
               </button>
             </li>

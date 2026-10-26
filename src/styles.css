@@ -484,7 +484,7 @@ h2 {
  * présent au Deck marqué, le choix manuel en surbrillance. Les couleurs de
  * faction viennent de `FACTION_META`, jamais d'un hex recopié ici.
  */
-.chariots__list {
+.decks-proposes__list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -493,9 +493,9 @@ h2 {
   list-style: none;
 }
 
-/* Sur un téléphone, le texte du Chariot prend toute la largeur et « Charger » passe dessous : à côté,
+/* Sur un téléphone, le texte du Deck proposé prend toute la largeur et « Charger » passe dessous : à côté,
    il prenait la moitié de la ligne et la stratégie se coupait en colonne étroite. */
-.chariots__item {
+.decks-proposes__item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -503,7 +503,7 @@ h2 {
 }
 
 @media (min-width: 560px) {
-  .chariots__item {
+  .decks-proposes__item {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -511,8 +511,8 @@ h2 {
   }
 }
 
-.chariots__item h3,
-.chariots__item p {
+.decks-proposes__item h3,
+.decks-proposes__item p {
   margin: 0;
 }
 
