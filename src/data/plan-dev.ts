@@ -27,44 +27,24 @@ export interface FeaturePrevue {
 /** Les issues `alpha` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
-    numero: 220,
-    titre: 'Vocabulaire — l\'écran Deck affiche encore « Chariots proposés » (D-075, AGENTS.md §3)'
+    numero: 234,
+    titre: 'UI — le contrôle en navigateur ne couvre que cinq écrans, et ne tourne pas en CI'
+  },
+  {
+    numero: 233,
+    titre: 'Combat — la main à 64 px replie des noms en plein mot'
+  },
+  {
+    numero: 228,
+    titre: 'PvP — la trace des combats à deux (beta)'
   },
   {
     numero: 219,
     titre: 'Prototype — la scène de comparaison ne rend rien (id renommé par D-095) : réparer ou sortir'
   },
   {
-    numero: 218,
-    titre: 'Combat — npm run capturer sort 1 : la barre d\'action dépasse la garde de hauteur (D-094)'
-  },
-  {
-    numero: 215,
-    titre: 'Comité — le rangement sur la base, sans l\'export du fichier (D-097)'
-  },
-  {
-    numero: 214,
-    titre: 'Feuille de route — page publique : note, critères, jalons, features prévues (D-097)'
-  },
-  {
-    numero: 213,
-    titre: 'Comité — barre à cinq onglets, Réglages dans l\'en-tête (D-097)'
-  },
-  {
     numero: 212,
     titre: 'Comité — compteur « choses à voir » et post-it d\'alerte (D-097)'
-  },
-  {
-    numero: 211,
-    titre: 'Comité — la page Le suivi (en cours / fait / écarté avec raison) (D-097)'
-  },
-  {
-    numero: 208,
-    titre: 'UI — 54 anti-patterns préexistants, et deux écrans que le détecteur ne lit pas'
-  },
-  {
-    numero: 173,
-    titre: 'Alpha — garder la trace des combats (pour lire comment les invités affrontent le niveau 2)'
   },
   {
     numero: 136,
