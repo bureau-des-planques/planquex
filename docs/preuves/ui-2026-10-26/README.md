@@ -14,11 +14,14 @@ npm run detect:ui:page # sert dist/ sur 4179 et passe impeccable sur les cinq é
 
 **`npm run capturer` sort en `1`** dans cet arbre, et ce n'est pas de ce lot : la garde de
 hauteur de `/battle` refuse la **barre d'action du combat** (bas à 836, 910 et 912 px pour
-une limite de 830 px à 420 × 900), sur les cinq graines de `INSTANTS_COMBAT`. Le défaut est
-**préexistant** — il se reproduit sur l'arbre d'intégration sans aucune de mes modifications
-(`git diff integration/alpha-2026-10-26 -- src/styles.css` ne touche pas `.combat-barre`) —
-et il est signalé au ticket plutôt que masqué. Les images de ce lot ont été produites **avant**
-ce refus : `capturer` écrit chaque page au fil de l'eau, la garde tombe à la fin.
+une limite de 830 px à 420 × 900), sur les cinq graines de `INSTANTS_COMBAT`.
+
+Mesuré, pas supposé : dans cet arbre même, `git checkout --detach integration/alpha-2026-10-26`
+(`d0c0cd6`), `npm run build`, `npm run capturer` → **les mêmes cinq refus**, avec les mêmes
+hauteurs. Le défaut est **préexistant** et ne vient d'aucun fichier de ce lot — aucun ne touche
+`.combat-barre` (`git diff --stat integration/alpha-2026-10-26 HEAD`). Il est signalé au ticket
+plutôt que masqué. Les images de ce lot ont été produites **avant** ce refus : `capturer` écrit
+chaque page au fil de l'eau, la garde tombe à la fin.
 
 `npm run detect:ui:page` : **0 anti-pattern sur les cinq écrans** après la passe (voir le
 README racine de `docs/preuves/` et `scripts/detect-ui-pages.mjs`).
@@ -39,3 +42,7 @@ README racine de `docs/preuves/` et `scripts/detect-ui-pages.mjs`).
   brouillon reproductible.
 - Le compte du détecteur est celui du **26/10/2026** ; un anti-pattern est un avis d'outil,
   pas une vérité : `BASELINE` à zéro veut dire « plus rien à signaler », pas « écran parfait ».
+- Le contrôle ne couvre **que les cinq écrans de la barre de navigation** (`ECRANS`). Les
+  autres pages (`/comite`, `/comite/suivi`, `/feuille-de-route`, `/connexion`,
+  `/confidentialite`, `/attente`, `/administration`) ne sont **pas** mesurées — c'est le
+  périmètre de #205, pas une oubli de ce lot, mais c'est un trou à dire.
