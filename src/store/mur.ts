@@ -2,9 +2,9 @@
  * Le mur du comité — le contrat de `docs/comite.json` (#129, D-097).
  *
  * L'alpha est **en lecture seule** (D-058) : le jeu lit ce fichier, que Vite bundle
- * (`resolveJsonModule`), et il n'y écrit **jamais**. La seule écriture est l'**export**
- * du mode de placement (D-068), que la personne commite — un site statique ne peut pas
- * écrire dans son propre dépôt, et c'est le mécanisme assumé de l'alpha.
+ * (`resolveJsonModule`), et il n'y écrit **jamais** — un site statique ne peut pas écrire
+ * dans son propre dépôt. Sans base, `position` s'écrit **à la main** dans le fichier ;
+ * l'export du mode de placement est retiré (D-097 (6), #215), la base portant la place.
  *
  * La forme fait foi dans `docs/COMITE.md` §3. Les listes ci-dessous la recopient
  * **pour la contrôler** : une valeur hors liste n'est pas affichée en silence, elle est

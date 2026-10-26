@@ -58,11 +58,21 @@ describe('ce que chaque post-it porte (D-068)', () => {
   });
 });
 
-describe('le placement exporte le fichier (D-068)', () => {
-  it('exporte depuis l’écran, en téléchargement ou en copie', () => {
-    expect(page).toMatch(/exporterMur\(positions\)/);
-    expect(page).toMatch(/lien\.download = 'comite\.json'/);
-    expect(page).toMatch(/navigator\.clipboard\?\.writeText\(fichier\)/);
+describe('le rangement sur la base, sans export (#215, D-097 (6))', () => {
+  it('n’exporte plus le fichier depuis l’écran', () => {
+    // Le panneau « Le rangement » et son export sont retirés : la place s'écrit en base
+    // (`deplacerPostit`, #185). Un retour de l'export rendrait au mur deux mécanismes
+    // concurrents pour la même disposition.
+    expect(page).not.toMatch(/exporterMur/);
+    expect(page).not.toMatch(/lien\.download/);
+    expect(page).not.toMatch(/navigator\.clipboard/);
+    expect(page).not.toMatch(/Télécharger le fichier/);
+    expect(page).not.toMatch(/<h2>Le rangement<\/h2>/);
+  });
+
+  it('garde le mode de placement, et il écrit par `deplacerPostit`', () => {
+    expect(page).toMatch(/Mode de placement/);
+    expect(page).toMatch(/deplacerPostit\(id, place\)/);
   });
 
   it('reste un travail d’écran large', () => {
@@ -75,6 +85,17 @@ describe('la bulle (D-058)', () => {
   it('mène au mur, et le mur a sa page', () => {
     expect(app).toMatch(/path="comite"/);
     expect(app).toMatch(/<Comite \/>/);
+  });
+
+  it('le suivi a son adresse, sous le même comité (D-097 (2))', () => {
+    expect(app).toMatch(/path="comite\/suivi"/);
+    expect(app).toMatch(/<Suivi \/>/);
+  });
+
+  it('les deux pages portent la barre de sous-onglets (D-097 (2))', () => {
+    const suivi = lire('./Suivi.tsx');
+    expect(page).toMatch(/<SousOngletsComite \/>/);
+    expect(suivi).toMatch(/<SousOngletsComite \/>/);
   });
 
   it('s’efface pendant un combat', () => {

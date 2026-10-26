@@ -40,9 +40,14 @@
  *
  * **La place sur le tableau (#185)** : la base porte `position_x`, `position_y` et
  * `position_angle`, et sa politique laisse chacun déplacer **ses** post-its. `deplacerPostit`
- * est ce geste — le mode de placement de l'écran n'exporte donc plus un fichier quand le mur
- * vient de la base. Et à la pose, `positionDepuisId` évite les places déjà prises : un
- * post-it neuf ne se colle plus sur le texte d'un autre (D-068).
+ * est ce geste — le mode de placement de l'écran n'exporte plus aucun fichier (D-097 (6),
+ * #215). Et à la pose, `positionDepuisId` évite les places déjà prises : un post-it neuf ne
+ * se colle plus sur le texte d'un autre (D-068).
+ *
+ * **Le repère du suivi (#211, D-097 (5))** : ouvrir la page **Le suivi** pose `vu_le` au
+ * compte, par `public.marquer_comite_vu()` (migration `0008`) — **jamais** un `update` de
+ * `comptes`, dont la RLS ne distingue pas les colonnes. Sans base configurée, le geste est
+ * inerte : on ne contacte rien, et il n'y a pas d'alerte (D-097 (5)).
  */
 import {
   clientMur,
@@ -968,4 +973,45 @@ export async function posterPostit(
   }
   // Il est à moi : pas de pouce sur mon propre post-it (#137).
   return { ...postits[0], votes: { up: 0, down: 0, mon: null }, mien: true };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Le repère du suivi (#211, D-097 (5), migration 0008)
+// ---------------------------------------------------------------------------------------------
+
+/** Un refus de la base sur le repère, dit en français. */
+export function messageDeRepere(message: string): string {
+  if (/comite_vu_sans_compte/i.test(message)) {
+    return 'Le repère du suivi demande un compte : sans compte, il n’y a rien à marquer.';
+  }
+  if (/permission denied|insufficient_privilege/i.test(message)) {
+    return 'La base refuse ce repère : ton compte ne peut pas l’écrire.';
+  }
+  return `Le repère du suivi n’a pas pu être posé (${message}).`;
+}
+
+/**
+ * Pose le repère du suivi au compte de la session : c'est ce qui remet le compteur du
+ * comité à zéro quand la page **Le suivi** s'ouvre (D-097 (5)).
+ *
+ * Le geste passe par la fonction `marquer_comite_vu()` (0008), et **pas** par un `update` :
+ * une politique RLS ne distingue pas les colonnes, donc donner `comptes.vu_le` au rôle
+ * `authenticated` rouvrirait `etat` et `raison` à leur propriétaire, que la 0005 réserve à
+ * l'administration (le même raisonnement que `deplacer_postit`, D-092).
+ *
+ * La fonction vise **`auth.uid()`** : le client ne passe aucun identifiant, donc il ne peut
+ * pas marquer le repère d'un autre. Sans base configurée, rien n'est contacté et la réponse
+ * est `null` — le repli inerte de D-097 (5). Un compte absent est un refus **nommé** de la
+ * base, traduit par `messageDeRepere` : la page le dit sans casser le suivi.
+ */
+export async function marquerComiteVu(
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+): Promise<string | null> {
+  const chargerClient = options.chargerClient ?? clientMur;
+  const client = await chargerClient();
+  if (!client) return null;
+
+  const { data, error } = await client.rpc('marquer_comite_vu');
+  if (error) throw new Error(messageDeRepere(error.message));
+  return typeof data === 'string' && data ? data : null;
 }

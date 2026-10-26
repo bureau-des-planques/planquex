@@ -7,6 +7,7 @@ import { Deck } from '@/pages/Deck';
 import { Battle } from '@/pages/Battle';
 import { Settings } from '@/pages/Settings';
 import { Comite } from '@/pages/Comite';
+import { Suivi } from '@/pages/Suivi';
 import { Confidentialite } from '@/pages/Confidentialite';
 import { FeuilleDeRoute } from '@/pages/FeuilleDeRoute';
 import { Connexion } from '@/pages/Connexion';
@@ -63,7 +64,10 @@ export function App() {
         <Route path="collection" element={<Collection />} />
         <Route path="deck" element={<Deck />} />
         <Route path="battle" element={<Battle />} />
+        {/* Le comité a **deux pages** (D-097 (2)) : le mur (`/comite`) et le suivi
+            (`/comite/suivi`), sous la même barre de sous-onglets. */}
         <Route path="comite" element={<Comite />} />
+        <Route path="comite/suivi" element={<Suivi />} />
         <Route path="settings" element={<Settings />} />
         {/* Le compte : son état d'attente, puis l'administration (D-088). */}
         <Route path="attente" element={<Attente />} />
