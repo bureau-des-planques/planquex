@@ -25,7 +25,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Ticket', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a ouvert le ticket. Il l’a fermé. Sans réponse.'
+    flavor: 'Il a ouvert le ticket. Il l’a fermé. Sans réponse.',
+    art: 'support-agent-support.webp'
   }),
   base({
     id: 'support-technicien-support',
@@ -46,7 +47,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       effects: [{ kind: 'search', filter: 'COLLEAGUE' }]
     },
     attacks: [{ name: 'Procédure', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est renvoyé à la procédure. Avez-vous essayé de redémarrer votre demande ?' }],
-    flavor: 'Avez-vous essayé de redémarrer votre demande ?'
+    flavor: 'Avez-vous essayé de redémarrer votre demande ?',
+    art: 'support-technicien-support.webp'
   }),
   base({
     id: 'support-responsable-support',
@@ -76,7 +78,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'FAQ', cost: ['INCOLORE', 'INCOLORE'], damage: 70, text: 'Pioche 2 cartes.', effects: [{ kind: 'draw', amount: 2 }] },
       { name: 'Chatbot', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Une seule réponse automatique.'
+    flavor: 'Deux Interventions. Une seule réponse automatique.',
+    art: 'support-responsable-support-ex.webp'
   }),
 
   // Ligne 2 : Standardiste → Assistant de direction → Responsable des services généraux
@@ -88,7 +91,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Transfert d’appel', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'L’appel est transféré. Le dossier reste sur la ligne.'
+    flavor: 'L’appel est transféré. Le dossier reste sur la ligne.',
+    art: 'support-standardiste.webp'
   }),
   base({
     id: 'support-assistant-direction',
@@ -99,7 +103,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Compte rendu', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit le compte rendu en copie. Il est diffusé à tous et lu par personne.' }],
-    flavor: 'Le compte rendu est diffusé. Il n’est pas lu.'
+    flavor: 'Le compte rendu est diffusé. Il n’est pas lu.',
+    art: 'support-assistant-direction.webp'
   }),
   base({
     id: 'support-responsable-services-generaux',
@@ -113,7 +118,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'Appel d’offres', cost: ['INCOLORE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est mis en concurrence. Tous les contrats sont renouvelés ; le service ne change pas.' },
       { name: 'Plan de reprise', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
-    flavor: 'Il a renouvelé tous les contrats. Le service, lui, n’a pas changé.'
+    flavor: 'Il a renouvelé tous les contrats. Le service, lui, n’a pas changé.',
+    art: 'support-responsable-services-generaux.webp'
   }),
 
   // Ligne 3 : Technicien micro-informatique → Administrateur systèmes → Ingénieur systèmes
@@ -125,7 +131,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Réinstallation', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est réinstallé de zéro. La sauvegarde est incluse ; elle n’a jamais tourné.' }],
-    flavor: 'La sauvegarde est incluse. Elle n’a jamais tourné.'
+    flavor: 'La sauvegarde est incluse. Elle n’a jamais tourné.',
+    art: 'support-technicien-micro-informatique.webp'
   }),
   base({
     id: 'support-administrateur-systemes',
@@ -136,7 +143,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Sauvegarde', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'La sauvegarde est quotidienne. La restauration, jamais testée.'
+    flavor: 'La sauvegarde est quotidienne. La restauration, jamais testée.',
+    art: 'support-administrateur-systemes.webp'
   }),
   base({
     id: 'support-ingenieur-systemes',
@@ -150,7 +158,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'Bascule', cost: ['INCOLORE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse est basculé sur le site de secours. Le plan de continuité tient en une page, la panne en trois.' },
       { name: 'Plan de continuité', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
-    flavor: 'Le plan de continuité tient en une page. La panne, en trois.'
+    flavor: 'Le plan de continuité tient en une page. La panne, en trois.',
+    art: 'support-ingenieur-systemes.webp'
   }),
 
   // Ligne 4 : Rédacteur technique → Chargé de documentation → Responsable documentation
@@ -162,7 +171,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Mode d’emploi', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a écrit la procédure. Elle décrit une version qui n’existe plus.'
+    flavor: 'Il a écrit la procédure. Elle décrit une version qui n’existe plus.',
+    art: 'support-redacteur-technique.webp'
   }),
   base({
     id: 'support-charge-documentation',
@@ -173,7 +183,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Base de connaissances', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'La base de connaissances est complète. Elle documente l’ancien logiciel.'
+    flavor: 'La base de connaissances est complète. Elle documente l’ancien logiciel.',
+    art: 'support-charge-documentation.webp'
   }),
   base({
     id: 'support-responsable-documentation',
@@ -187,7 +198,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'Mise à jour', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit une mise à jour de la documentation. Le produit est déjà passé à la version suivante.' },
       { name: 'Refonte', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }
     ],
-    flavor: 'La documentation est validée. Le produit est déjà en v2.'
+    flavor: 'La documentation est validée. Le produit est déjà en v2.',
+    art: 'support-responsable-documentation.webp'
   }),
 
   // Ligne 5 : Technicien réseau → Administrateur réseau (2 stades)
@@ -199,7 +211,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Câblage', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est branché sur un câble neuf. La prise, elle, date de l’ouverture du site.' }],
-    flavor: 'Le câble est neuf. La prise, non.'
+    flavor: 'Le câble est neuf. La prise, non.',
+    art: 'support-technicien-reseau.webp'
   }),
   base({
     id: 'support-administrateur-reseau',
@@ -218,7 +231,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'reduceDamage', amount: 10 }]
       }
     ],
-    flavor: 'Le pare-feu bloque tout. Y compris les demandes.'
+    flavor: 'Le pare-feu bloque tout. Y compris les demandes.',
+    art: 'support-administrateur-reseau.webp'
   }),
 
   // Ligne 6 : Correspondant informatique → Référent informatique (2 stades)
@@ -230,7 +244,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Relais', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il remonte l’information. Elle redescend en procédure.'
+    flavor: 'Il remonte l’information. Elle redescend en procédure.',
+    art: 'support-correspondant-informatique.webp'
   }),
   base({
     id: 'support-referent-informatique',
@@ -241,7 +256,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Assistance', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }],
-    flavor: 'Il connaît la solution. Elle n’est pas dans le catalogue.'
+    flavor: 'Il connaît la solution. Elle n’est pas dans le catalogue.',
+    art: 'support-referent-informatique.webp'
   }),
 
   // Ligne 7 : Assistant méthodes → Technicien méthodes (2 stades)
@@ -253,7 +269,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Gamme', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'La gamme est à jour. L’atelier travaille sur l’ancienne.'
+    flavor: 'La gamme est à jour. L’atelier travaille sur l’ancienne.',
+    art: 'support-assistant-methodes.webp'
   }),
   base({
     id: 'support-technicien-methodes',
@@ -264,7 +281,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Mode opératoire', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse suit le mode opératoire à la lettre. Il a été validé sans avoir été essayé.' }],
-    flavor: 'Le mode opératoire est validé. Il n’a pas été essayé.'
+    flavor: 'Le mode opératoire est validé. Il n’a pas été essayé.',
+    art: 'support-technicien-methodes.webp'
   }),
 
   // Ligne 8 : Formateur informatique → Chargé de formation (2 stades)
@@ -276,7 +294,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Initiation', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'La formation dure une heure. La licence s’installe en trois.'
+    flavor: 'La formation dure une heure. La licence s’installe en trois.',
+    art: 'support-formateur-informatique.webp'
   }),
   base({
     id: 'support-charge-formation-informatique',
@@ -287,7 +306,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Parcours', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse suit un parcours personnalisé. C’est le même pour tout le monde.' }],
-    flavor: 'Le parcours est personnalisé. Tout le monde suit le même.'
+    flavor: 'Le parcours est personnalisé. Tout le monde suit le même.',
+    art: 'support-charge-formation-informatique.webp'
   }),
 
   // Ligne 9 : Gestionnaire de tickets → Superviseur support (2 stades)
@@ -299,7 +319,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Tri', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a trié les tickets. Le plus ancien a deux ans.'
+    flavor: 'Il a trié les tickets. Le plus ancien a deux ans.',
+    art: 'support-gestionnaire-tickets.webp'
   }),
   base({
     id: 'support-superviseur-support',
@@ -313,7 +334,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'Reporting', cost: ['INCOLORE', 'INCOLORE'], damage: 50, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Escalade', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Le ticket est escaladé. Il redescend sans réponse.'
+    flavor: 'Le ticket est escaladé. Il redescend sans réponse.',
+    art: 'support-superviseur-support.webp'
   }),
 
   // Entrants seuls (sans évolution)
@@ -325,7 +347,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Saisie', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est saisi dans le formulaire. Le formulaire perd la demande, pas la rancune.' }],
-    flavor: 'Il saisit les demandes. Le formulaire les perd.'
+    flavor: 'Il saisit les demandes. Le formulaire les perd.',
+    art: 'support-assistant-administratif.webp'
   }),
   base({
     id: 'support-archiviste',
@@ -335,7 +358,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Archivage', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Tout est archivé. Plus rien n’est retrouvé.'
+    flavor: 'Tout est archivé. Plus rien n’est retrouvé.',
+    art: 'support-archiviste.webp'
   }),
   base({
     id: 'support-receptionniste',
@@ -345,7 +369,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Accueil', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse est accueilli au comptoir. Son badge ne s’ouvre sur aucune porte.' }],
-    flavor: 'Il accueille les visiteurs. Le badge ne s’ouvre pas.'
+    flavor: 'Il accueille les visiteurs. Le badge ne s’ouvre pas.',
+    art: 'support-receptionniste.webp'
   }),
   base({
     id: 'support-teleconseiller',
@@ -355,7 +380,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Script', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le script prévoit tout. Sauf la question.'
+    flavor: 'Le script prévoit tout. Sauf la question.',
+    art: 'support-teleconseiller.webp'
   }),
   base({
     id: 'support-operateur-saisie',
@@ -365,7 +391,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Frappe', cost: ['INCOLORE'], damage: 20, text: 'Le Planqué adverse encaisse une frappe rapide. Le système répond moins vite que le clavier.' }],
-    flavor: 'Il tape plus vite que le système ne répond.'
+    flavor: 'Il tape plus vite que le système ne répond.',
+    art: 'support-operateur-saisie.webp'
   }),
   base({
     id: 'support-testeur-logiciel',
@@ -375,7 +402,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Recette', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a testé le cas normal. La production, non.'
+    flavor: 'Il a testé le cas normal. La production, non.',
+    art: 'support-testeur-logiciel.webp'
   }),
   base({
     id: 'support-coordinateur-support',
@@ -388,7 +416,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'Planning', cost: ['INCOLORE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Revue de tickets', cost: ['INCOLORE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse passe en revue de tickets. Les files d’attente avancent en parallèle et ne se rejoignent jamais.' }
     ],
-    flavor: 'Il coordonne les files d’attente. Elles ne se rejoignent jamais.'
+    flavor: 'Il coordonne les files d’attente. Elles ne se rejoignent jamais.',
+    art: 'support-coordinateur-support.webp'
   }),
 
   // Second COMEX (vague 1, #66) : la ligne des systèmes, distincte de la signature.
@@ -405,7 +434,8 @@ export const SUPPORT_CARDS: PlanqueCard[] = [
       { name: 'Bascule', cost: ['INCOLORE', 'INCOLORE'], damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Plan de continuité', cost: ['INCOLORE', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Soigne 20 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 20 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Le plan de continuité tient sur une seule page.'
+    flavor: 'Deux Interventions. Le plan de continuité tient sur une seule page.',
+    art: 'support-ingenieur-systemes-ex.webp'
   })
 ];
 

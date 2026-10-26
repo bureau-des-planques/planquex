@@ -14,7 +14,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Corbeille de fruits', cost: ['QVT'], damage: 10, text: 'Soigne 10 d\'un de tes Planqués.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il a apporté des clémentines. C\'est son projet.'
+    flavor: 'Il a apporté des clémentines. C\'est son projet.',
+    art: 'qvt-charge-qvt.webp'
   }),
   base({
     id: 'qvt-happiness-manager',
@@ -33,7 +34,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       oncePerTurn: true
     },
     attacks: [{ name: 'Afterwork', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le bonheur est un KPI comme un autre.'
+    flavor: 'Le bonheur est un KPI comme un autre.',
+    art: 'qvt-happiness-manager.webp'
   }),
   base({
     id: 'qvt-chief-happiness-officer',
@@ -73,7 +75,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Écoute active', text: 'Une fois par tour : soigne 10 et retire un statut d\'un de tes Planqués.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Enquête satisfaction', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est sondé sur son bien-être. Les réponses sont anonymes, sauf la sienne.' }],
-    flavor: 'Il a lu les réponses. Il a fait comme si.'
+    flavor: 'Il a lu les réponses. Il a fait comme si.',
+    art: 'qvt-responsable-qvt.webp'
   }),
   base({
     id: 'qvt-directeur-qvt',
@@ -87,7 +90,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Plan d\'action', cost: ['QVT', 'INCOLORE'], damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Semaine de la QVT', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 30 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 30 }] }
     ],
-    flavor: 'Le budget a été validé. La direction l\'a gelé.'
+    flavor: 'Le budget a été validé. La direction l\'a gelé.',
+    art: 'qvt-directeur-qvt.webp'
   }),
 
   // Ligne 3 : Coach santé → Expert bien-être (2 stades)
@@ -99,7 +103,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Étirement', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse est étiré jusqu’à la limite. Le dos craque ; le planning, non.' }],
-    flavor: 'Il a compté jusqu\'à dix. Le dos craque encore.'
+    flavor: 'Il a compté jusqu\'à dix. Le dos craque encore.',
+    art: 'qvt-coach-sante.webp'
   }),
   base({
     id: 'qvt-expert-bien-etre',
@@ -113,7 +118,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Bilan forme', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse passe un bilan de forme. La salle de sport est devenue un bureau, mais le bilan est positif.' },
       { name: 'Programme sur mesure', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
-    flavor: 'Elle a un certificat. La salle de sport est devenue un bureau.'
+    flavor: 'Elle a un certificat. La salle de sport est devenue un bureau.',
+    art: 'qvt-expert-bien-etre.webp'
   }),
 
   // Ligne 4 : Gestionnaire flux → Optimiseur process (2 stades)
@@ -125,7 +131,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 75,
     retreat: 1,
     attacks: [{ name: 'Fluidifier', cost: ['QVT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a fluidifié le process. Le goulot est toujours là.'
+    flavor: 'Il a fluidifié le process. Le goulot est toujours là.',
+    art: 'qvt-coordinateur-flux.webp'
   }),
   base({
     id: 'qvt-optimiseur-process',
@@ -140,7 +147,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Kaizen', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] },
       { name: 'Chronométrage', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
-    flavor: 'Il a optimisé la réunion. Elle dure maintenant 55 minutes.'
+    flavor: 'Il a optimisé la réunion. Elle dure maintenant 55 minutes.',
+    art: 'qvt-optimiseur-process.webp'
   }),
 
   // Ligne 5 : Référent QVT → Chef de projet QVT (2 stades)
@@ -152,7 +160,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Relance', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse est relancé pour remplir le formulaire. Le formulaire n’enregistre rien.' }],
-    flavor: 'Il a relancé tout le monde. Le formulaire n\'enregistre rien.'
+    flavor: 'Il a relancé tout le monde. Le formulaire n\'enregistre rien.',
+    art: 'qvt-referent-qvt.webp'
   }),
   base({
     id: 'qvt-chef-projet-qvt',
@@ -166,7 +175,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Atelier créatif', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Restitution', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse assiste à la restitution du projet. Le compte rendu est en attente de validation.' }
     ],
-    flavor: 'Le projet est livré. Le compte-rendu est en attente.'
+    flavor: 'Le projet est livré. Le compte-rendu est en attente.',
+    art: 'qvt-chef-projet-qvt.webp'
   }),
 
   // Ligne 6 : Chargé de mission QVT → Facilitateur (2 stades)
@@ -191,7 +201,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Cadre bienveillant', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
     attacks: [{ name: 'Icebreaker', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
-    flavor: 'Il a brisé la glace. L\'eau est restée froide.'
+    flavor: 'Il a brisé la glace. L\'eau est restée froide.',
+    art: 'qvt-facilitateur.webp'
   }),
 
   // Entrants seuls (sans évolution)
@@ -203,7 +214,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Panier garni', cost: ['QVT'], damage: 10, text: 'Soigne 20 d\'un de tes Planqués.', effects: [{ kind: 'healSelf', amount: 20 }] }],
-    flavor: 'Il a monté les palettes au troisième. Le bon de livraison, lui, est resté au quai.'
+    flavor: 'Il a monté les palettes au troisième. Le bon de livraison, lui, est resté au quai.',
+    art: 'qvt-charge-logistique.webp'
   }),
   base({
     id: 'qvt-responsable-evenementiel',
@@ -213,7 +225,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Verre de l\'amitié', cost: ['QVT'], damage: 20, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a réservé le bar. Le budget est passé en frais de représentation.'
+    flavor: 'Il a réservé le bar. Le budget est passé en frais de représentation.',
+    art: 'qvt-responsable-evenementiel.webp'
   }),
   base({
     id: 'qvt-charge-ergonomie',
@@ -223,7 +236,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Posture du lotus', cost: ['QVT'], damage: 10, text: 'Le Planqué adverse est prié de tenir la posture du lotus. La charge de travail, elle, ne se tient pas.' }],
-    flavor: 'Elle tient la posture. La charge de travail, non.'
+    flavor: 'Elle tient la posture. La charge de travail, non.',
+    art: 'qvt-charge-ergonomie.webp'
   }),
   base({
     id: 'qvt-gestionnaire-moyens-generaux',
@@ -244,7 +258,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Oxygéner', cost: ['QVT'], damage: 10, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }],
-    flavor: 'Il a mis un ficus partout. L\'air est toujours vicié.'
+    flavor: 'Il a mis un ficus partout. L\'air est toujours vicié.',
+    art: 'qvt-charge-environnement-travail.webp'
   }),
   base({
     id: 'qvt-masseur-kinesitherapeute',
@@ -254,7 +269,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Shiatsu express', cost: ['QVT'], damage: 20, text: 'Le Planqué adverse reçoit un shiatsu de cinq minutes. Le stress descend des épaules et remonte au cou.' }],
-    flavor: 'Il a massé les épaules. Le stress est remonté au cou.'
+    flavor: 'Il a massé les épaules. Le stress est remonté au cou.',
+    art: 'qvt-masseur-kinesitherapeute.webp'
   }),
 
   // Ligne 7 : Chargé d'intégration → Responsable intégration (2 stades)
@@ -279,7 +295,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Parrainage', text: 'Une fois par tour : soigne 10 de ce Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Journée d\'intégration', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'L\'intégration est réussie. Le poste est supprimé.'
+    flavor: 'L\'intégration est réussie. Le poste est supprimé.',
+    art: 'qvt-responsable-integration.webp'
   }),
 
   // Ligne 8 : Conseiller en évolution professionnelle → Responsable développement des compétences
@@ -291,7 +308,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Bilan de compétences', cost: ['QVT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Les compétences sont reconnues. Le budget ne l\'est pas.'
+    flavor: 'Les compétences sont reconnues. Le budget ne l\'est pas.',
+    art: 'qvt-conseiller-evolution-professionnelle.webp'
   }),
   base({
     id: 'qvt-responsable-developpement-competences',
@@ -305,7 +323,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Plan de formation', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Attestation de formation', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 70, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
     ],
-    flavor: 'Le plan de formation est validé. Les formations sont reportées.'
+    flavor: 'Le plan de formation est validé. Les formations sont reportées.',
+    art: 'qvt-responsable-developpement-competences.webp'
   }),
 
   // Ligne 9 : Consultant QVT → Responsable de l'expérience collaborateur
@@ -317,7 +336,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Diagnostic', cost: ['QVT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le diagnostic est livré. La solution est une autre mission.'
+    flavor: 'Le diagnostic est livré. La solution est une autre mission.',
+    art: 'qvt-consultant-qvt.webp'
   }),
   base({
     id: 'qvt-responsable-experience-collaborateur',
@@ -329,7 +349,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Point d\'étape', text: 'Une fois par tour : soigne 10 et retire un statut de ce Planqué.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Entretien de parcours', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est reçu pour son entretien de parcours. Le parcours traverse trois directions et aucun bureau.' }],
-    flavor: 'Le parcours est fluide. Il traverse trois directions.'
+    flavor: 'Le parcours est fluide. Il traverse trois directions.',
+    art: 'qvt-responsable-experience-collaborateur.webp'
   }),
 
   // Ligne 10 : Chargé de formation → Chef de projet formation
@@ -356,7 +377,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Catalogue', cost: ['QVT', 'INCOLORE'], damage: 40, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Évaluation à froid', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse remplit une évaluation à froid. Le projet est livré ; l’évaluation, jamais lue.' }
     ],
-    flavor: 'Le projet est livré. L\'évaluation ne l\'est jamais.'
+    flavor: 'Le projet est livré. L\'évaluation ne l\'est jamais.',
+    art: 'qvt-chef-projet-formation.webp'
   }),
 
   // Ligne 11 : Chargé de l'engagement → Responsable de l'engagement → Chief Happiness Officer COMEX
@@ -383,7 +405,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Semaine de l\'engagement', cost: ['QVT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est engagé de force dans l’opération d’engagement. La mesure ne l’engage à rien.' },
       { name: 'Action collective', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse est Immobilisation.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
-    flavor: 'L\'engagement est mesuré. La mesure n\'engage personne.'
+    flavor: 'L\'engagement est mesuré. La mesure n\'engage personne.',
+    art: 'qvt-responsable-engagement.webp'
   }),
   base({
     id: 'qvt-chief-happiness-officer-ex',
@@ -398,7 +421,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Certification du bonheur', cost: ['QVT', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse reçoit sa certification du bonheur. Elle est obligatoire et facturée au service.' },
       { name: 'Facture du bonheur', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 110, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Le bonheur est obligatoire. Il est aussi facturé.'
+    flavor: 'Le bonheur est obligatoire. Il est aussi facturé.',
+    art: 'qvt-chief-happiness-officer-ex.webp'
   }),
 
   // Entrants seuls (suite)
@@ -454,7 +478,8 @@ export const QVT_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Tournoi de babyfoot', cost: ['QVT'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Le tournoi est annulé. La coupe est déjà gravée.'
+    flavor: 'Le tournoi est annulé. La coupe est déjà gravée.',
+    art: 'qvt-charge-vie-associative.webp'
   }),
 
   // Second COMEX (vague 1, #66) : la ligne du responsable QVT, distincte de la signature.
@@ -471,7 +496,8 @@ export const QVT_CARDS: PlanqueCard[] = [
       { name: 'Plan d\'action', cost: ['QVT', 'INCOLORE'], damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Semaine de la QVT', cost: ['QVT', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Soigne 30 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 30 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Une semaine entière à ne rien produire.'
+    flavor: 'Deux Interventions. Une semaine entière à ne rien produire.',
+    art: 'qvt-directeur-qvt-ex.webp'
   })
 ];
 

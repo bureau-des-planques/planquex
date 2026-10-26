@@ -16,7 +16,8 @@ export const RH_CARDS: PlanqueCard[] = [
     // L’effet vendu (CARD-SPEC.md §4) est la révélation d’une carte de la main adverse
     // (#160, D-078) ; le statut Dérivé n’était pas annoncé par le texte.
     attacks: [{ name: 'Entretien', cost: ['RH'], damage: 10, text: 'L’adversaire révèle une carte de sa main.', effects: [{ kind: 'reveal', target: 'opponent', amount: 1 }] }],
-    flavor: "Il a posé la question. Il n'a pas écouté la réponse."
+    flavor: "Il a posé la question. Il n'a pas écouté la réponse.",
+    art: 'rh-assistant-rh.webp'
   }),
   base({
     id: 'rh-charge-recrutement',
@@ -37,7 +38,8 @@ export const RH_CARDS: PlanqueCard[] = [
       effects: [{ kind: 'search', filter: 'PLANQUE' }]
     },
     attacks: [{ name: "Promesse d'embauche", cost: ['RH', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit une promesse d’embauche. Le poste est passionnant ; le salaire est confidentiel.' }],
-    flavor: "Le poste est passionnant. Le salaire est confidentiel."
+    flavor: "Le poste est passionnant. Le salaire est confidentiel.",
+    art: 'rh-charge-recrutement.webp'
   }),
   base({
     id: 'rh-drh',
@@ -66,7 +68,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Approche discrète', cost: ['RH'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il t’a repéré sur un réseau professionnel. Tu n’es pas en recherche.'
+    flavor: 'Il t’a repéré sur un réseau professionnel. Tu n’es pas en recherche.',
+    art: 'rh-charge-sourcing.webp'
   }),
   base({
     id: 'rh-chasseur-tetes',
@@ -80,7 +83,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Offre mirobolante', cost: ['RH'], damage: 20, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Contre-offre', cost: ['RH', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse reçoit une contre-offre inespérée. Elle expirera avant la fin de son préavis.' }
     ],
-    flavor: "Il double ton salaire. La direction triple son budget café."
+    flavor: "Il double ton salaire. La direction triple son budget café.",
+    art: 'rh-chasseur-tetes.webp'
   }),
   base({
     id: 'rh-directeur-talents',
@@ -94,7 +98,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Marque employeur', cost: ['RH', 'INCOLORE'], damage: 60, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] },
       { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 90, text: "Échange ce Planqué avec un Planqué du Banc.", effects: [{ kind: 'switchSelf' }] }
     ],
-    flavor: "Il garde les meilleurs. Les autres partent en intérim."
+    flavor: "Il garde les meilleurs. Les autres partent en intérim.",
+    art: 'rh-directeur-talents.webp'
   }),
 
   // Troisième ligne : Gestionnaire formation → Responsable formation → DRH formation
@@ -106,7 +111,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Module e-learning', cost: ['RH'], damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: "Il a validé ta formation. Le lien est mort depuis 2019."
+    flavor: "Il a validé ta formation. Le lien est mort depuis 2019.",
+    art: 'rh-gestionnaire-formation.webp'
   }),
   base({
     id: 'rh-responsable-formation',
@@ -118,7 +124,8 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Plan de développement', text: "Une fois par tour : soigne 10 d'un Planqué.", kind: 'heal', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Certification', cost: ['RH', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est envoyé en certification. Le budget a servi à acheter des licences que personne n’utilise.' }],
-    flavor: "Il a un budget. Il l'a dépensé en licences inutilisées."
+    flavor: "Il a un budget. Il l'a dépensé en licences inutilisées.",
+    art: 'rh-responsable-formation.webp'
   }),
   base({
     id: 'rh-drh-formation',
@@ -132,7 +139,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Université d\'entreprise', cost: ['RH', 'INCOLORE'], damage: 60, text: "Soigne 10 de tous tes Planqués.", effects: [{ kind: 'healAll', amount: 10 }] },
       { name: 'Montée en compétences', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: "Ce Planqué prend 20 de stress.", effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: "Elle a formé l'équipe. Le plan de formation a expiré."
+    flavor: "Elle a formé l'équipe. Le plan de formation a expiré.",
+    art: 'rh-drh-formation.webp'
   }),
 
   // Quatrième ligne : Chargé paie → Responsable comp & ben → DRH rémunération
@@ -147,7 +155,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Prime variable', cost: ['RH'], damage: 20, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Avantages sociaux', cost: ['RH', 'INCOLORE'], damage: 40, text: "Soigne 10 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 10 }] }
     ],
-    flavor: "Il a négocié la mutuelle. Elle ne rembourse pas les lunettes."
+    flavor: "Il a négocié la mutuelle. Elle ne rembourse pas les lunettes.",
+    art: 'rh-responsable-comp-ben.webp'
   }),
 
   // Cinquième ligne : Juriste social → Responsable relations sociales → DRH juridique
@@ -159,7 +168,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Clause', cost: ['RH'], damage: 10, text: "Le Planqué adverse est Immobilisé.", effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }],
-    flavor: "Il a lu le code du travail. Il l'utilise comme oreiller."
+    flavor: "Il a lu le code du travail. Il l'utilise comme oreiller.",
+    art: 'rh-juriste-social.webp'
   }),
   base({
     id: 'rh-responsable-relations-sociales',
@@ -173,7 +183,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Négociation', cost: ['RH', 'INCOLORE'], damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Accord d\'entreprise', cost: ['RH', 'INCOLORE'], damage: 50, text: "Soigne 20 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 20 }] }
     ],
-    flavor: "Il a signé l'accord. Les syndicats ont signé le procès-verbal."
+    flavor: "Il a signé l'accord. Les syndicats ont signé le procès-verbal.",
+    art: 'rh-responsable-relations-sociales.webp'
   }),
   base({
     id: 'rh-drh-juridique',
@@ -187,7 +198,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Contentieux', cost: ['RH', 'INCOLORE'], damage: 60, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] },
       { name: 'Conformité', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 90, text: "Ce Planqué subit 10 de moins au prochain tour.", effects: [{ kind: 'reduceDamage', amount: 10 }] }
     ],
-    flavor: "Il a gagné le procès. L'entreprise a payé les frais."
+    flavor: "Il a gagné le procès. L'entreprise a payé les frais.",
+    art: 'rh-drh-juridique.webp'
   }),
 
   // Sixième ligne : Chargé diversité → Responsable inclusion → DRH diversité
@@ -199,7 +211,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Atelier biais', cost: ['RH'], damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: "Il a fait l'atelier. Les biais sont revenus au café."
+    flavor: "Il a fait l'atelier. Les biais sont revenus au café.",
+    art: 'rh-charge-diversite.webp'
   }),
   base({
     id: 'rh-responsable-inclusion',
@@ -211,7 +224,8 @@ export const RH_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Parité', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
     attacks: [{ name: 'Index égalité', cost: ['RH', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est classé dans l’index égalité. La direction fête déjà les 99 sur 100.' }],
-    flavor: "Elle a publié l'index. La direction a fêté les 99/100."
+    flavor: "Elle a publié l'index. La direction a fêté les 99/100.",
+    art: 'rh-responsable-inclusion.webp'
   }),
   base({
     id: 'rh-drh-diversite',
@@ -225,7 +239,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Mixité', cost: ['RH', 'INCOLORE'], damage: 60, text: "Soigne 10 de tous tes Planqués.", effects: [{ kind: 'healAll', amount: 10 }] },
       { name: 'Inclusion réelle', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: "Le Planqué adverse est Dérivé.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
-    flavor: "Elle a changé les panneaux. Les portes sont restées fermées."
+    flavor: "Elle a changé les panneaux. Les portes sont restées fermées.",
+    art: 'rh-drh-diversite.webp'
   }),
 
   // Cartes Entrant seules (sans évolution)
@@ -237,7 +252,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Mutation', cost: ['RH'], damage: 20, text: "Échange ce Planqué avec un Planqué du Banc.", effects: [{ kind: 'switchSelf' }] }],
-    flavor: "Il a validé ta mutation. Le carton est prêt depuis trois mois."
+    flavor: "Il a validé ta mutation. Le carton est prêt depuis trois mois.",
+    art: 'rh-charge-mobilite.webp'
   }),
   base({
     id: 'rh-gestionnaire-rh',
@@ -247,7 +263,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Dossier', cost: ['RH'], damage: 20, text: 'Le Planqué adverse est classé au dossier. L’archive a brûlé, mais la procédure de classement est intacte.' }],
-    flavor: "Il a classé le dossier. L'archive a brûlé."
+    flavor: "Il a classé le dossier. L'archive a brûlé.",
+    art: 'rh-gestionnaire-rh.webp'
   }),
   base({
     id: 'rh-assistant-paie',
@@ -257,7 +274,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Virement', cost: ['RH'], damage: 10, text: "Soigne 10 de ce Planqué.", effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: "Il a fait le virement. La banque a bloqué le compte."
+    flavor: "Il a fait le virement. La banque a bloqué le compte.",
+    art: 'rh-assistant-paie.webp'
   }),
   base({
     id: 'rh-referent-handicap',
@@ -267,7 +285,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Aménagement', cost: ['RH'], damage: 20, text: "Ce Planqué subit 10 de moins au prochain tour.", effects: [{ kind: 'reduceDamage', amount: 10 }] }],
-    flavor: "Il a demandé l'aménagement. La direction a acheté une plante."
+    flavor: "Il a demandé l'aménagement. La direction a acheté une plante.",
+    art: 'rh-referent-handicap.webp'
   }),
   base({
     id: 'rh-charge-prevention',
@@ -277,7 +296,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Enquête satisfaction', cost: ['RH'], damage: 10, text: 'Le Planqué adverse répond à l’enquête de satisfaction. Les résultats sont confidentiels, même pour lui.' }],
-    flavor: 'Il a rempli le questionnaire de prévention. Personne n’a coché « risque ».'
+    flavor: 'Il a rempli le questionnaire de prévention. Personne n’a coché « risque ».',
+    art: 'rh-charge-prevention.webp'
   }),
   base({
     id: 'rh-charge-offboarding',
@@ -287,7 +307,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Entretien départ', cost: ['RH'], damage: 20, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: "Il a fait l'entretien. Le badge est déjà désactivé."
+    flavor: "Il a fait l'entretien. Le badge est déjà désactivé.",
+    art: 'rh-charge-offboarding.webp'
   }),
   base({
     id: 'rh-charge-sirh',
@@ -297,7 +318,8 @@ export const RH_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Export', cost: ['RH'], damage: 10, text: "Pioche 1 carte.", effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: "Il a fait l'export. Le fichier fait 2 Go."
+    flavor: "Il a fait l'export. Le fichier fait 2 Go.",
+    art: 'rh-charge-sirh.webp'
   }),
 
   // COMEX : DRH ex
@@ -314,7 +336,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Plan de carrière', cost: ['RH', 'INCOLORE'], damage: 70, text: 'L’adversaire défausse 1 carte.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }] },
       { name: "Entretien annuel", cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 120, text: "Le Planqué adverse est Dérivé. Ce Planqué prend 20 de stress.", effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: "Deux Interventions. Un seul dossier."
+    flavor: "Deux Interventions. Un seul dossier.",
+    art: 'rh-drh-ex.webp'
   }),
 
   // Second COMEX (vague 1, #66) : la ligne du recrutement, distincte de la signature.
@@ -331,7 +354,8 @@ export const RH_CARDS: PlanqueCard[] = [
       { name: 'Marque employeur', cost: ['RH', 'INCOLORE'], damage: 70, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] },
       { name: 'Rétention', cost: ['RH', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Échange ce Planqué avec un Planqué du Banc. Le Planqué adverse est Dérivé.', effects: [{ kind: 'switchSelf' }, { kind: 'status', status: 'DERIVE', target: 'opponent' }] }
     ],
-    flavor: 'Deux Interventions. Le talent est parti avant la signature.'
+    flavor: 'Deux Interventions. Le talent est parti avant la signature.',
+    art: 'rh-directeur-talents-ex.webp'
   })
 ];
 

@@ -26,7 +26,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Soigne 10 de tous tes Planqués.',
     effects: [{ kind: 'healAll', amount: 10 }],
     flavor: 'Le pansement est périmé. Le registre, non.',
-    glyph: '✚'
+    glyph: '✚',
+    art: 'sse-trousse-secours.webp'
   }),
   card({
     id: 'amelioration-baie-test',
@@ -65,7 +66,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Soigne 20 de tous tes Planqués.',
     effects: [{ kind: 'healAll', amount: 20 }],
     flavor: 'Il a coché « apte ». Il n’a pas demandé à quoi.',
-    glyph: '✚'
+    glyph: '✚',
+    art: 'sse-visite-medicale.webp'
   }),
   card({
     id: 'management-entretien-annuel',
@@ -91,7 +93,8 @@ export const ACTION_CARDS: ActionCard[] = [
       { kind: 'draw', amount: 1 }
     ],
     flavor: 'Riez. La séance est obligatoire, et déduite de la pause.',
-    glyph: '☺'
+    glyph: '☺',
+    art: 'qvt-yoga-du-rire.webp'
   }),
   card({
     id: 'amelioration-reunion-de-suivi',
@@ -114,7 +117,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Le Planqué adverse est Dérivé.',
     effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }],
     flavor: 'Tu es ressorti avec un plan de carrière. Il tient sur un post-it.',
-    glyph: '◉'
+    glyph: '◉',
+    art: 'rh-reunion-individuelle.webp'
   }),
   card({
     id: 'direction-reunion-qui-aurait-pu-etre-un-mail',
@@ -140,7 +144,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Le Planqué adverse est en Sieste.',
     effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }],
     flavor: 'L’ordre du jour tient en trois heures. La décision, en une ligne.',
-    glyph: '✊'
+    glyph: '✊',
+    art: 'syndicat-assemblee-generale.webp'
   }),
   card({
     id: 'support-escalade',
@@ -151,7 +156,8 @@ export const ACTION_CARDS: ActionCard[] = [
     text: 'Pioche 2 cartes.',
     effects: [{ kind: 'draw', amount: 2 }],
     flavor: 'Le ticket a changé de service. Le problème aussi.',
-    glyph: '⌘'
+    glyph: '⌘',
+    art: 'support-escalade.webp'
   })
 ];
 
