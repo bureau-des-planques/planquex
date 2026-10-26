@@ -102,6 +102,25 @@ releases par `npm run notes:versions` — elle marche **hors ligne**, et il n'y 
 configurer. Le script tourne **avant de taguer**, jamais pendant `npm run build` : la CI n'a
 ni `gh` ni accès à GitHub, et un build qui dépend du réseau ne se rejoue pas.
 
+### 4.2 Le corps de la release, dans cet ordre
+
+Depuis le 26/10/2026, le corps de chaque release GitHub a **deux catégories**, dans cet ordre :
+
+1. **`## Ajouts et améliorations`** — ce qui est nouveau ou mieux qu'avant.
+2. **`## Corrections de bugs`** — ce qui était cassé et ne l'est plus.
+
+Un paragraphe d'introduction (`Version 0.1.13, étape alpha…`) peut précéder les deux. Une catégorie
+vide se retire, plutôt que de rester avec « rien ». Chaque point est une phrase complète, lue par
+un invité : pas de nom de fichier, pas de jargon interne sans l'expliquer.
+
+Les **autres informations** (migration, sauvegarde, pièges connus) vont **après** les deux
+catégories, sous `## Pour un testeur` : ce titre est dans `SECTIONS_ECARTEES`
+(`scripts/notes-versions.mjs`), donc il reste dans la release et sort de la note du jeu.
+
+Le parseur lit chaque `##` comme un groupe de `src/data/versions.ts` : les deux catégories
+apparaissent donc telles quelles dans `/feuille-de-route`. Un titre inventé hors de ce modèle
+entre dans la note du jeu : ne pas en créer sans raison.
+
 ## 5. Ce qu'un agent doit faire, et ne pas faire
 
 - **Avant** de citer une version quelque part : la lire dans `package.json` (ou `APP_LABEL` à
