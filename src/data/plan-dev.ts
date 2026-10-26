@@ -29,9 +29,5 @@ export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
     numero: 258,
     titre: 'Outillage — la CI rouge ne se voit pas, et les gros fichiers sont réécrits au lieu d\'être édités'
-  },
-  {
-    numero: 254,
-    titre: 'Le mur : un port de sept gestes, deux adapters, un état optimiste'
   }
 ];

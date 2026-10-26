@@ -60,6 +60,62 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.13',
+    date: '2026-10-27',
+    titre: 'Le comité se suit, et le combat tient dans l’écran',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'L’écran de combat ne défile plus : le plateau, la main et la barre d’action tiennent dans la fenêtre à 420 px, pas-à-pas ouvert compris.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La barre d’action rentre sous la hauteur de l’écran, et une partie à deux laisse sa trace comme une partie en solo.'
+      },
+      {
+        groupe: 'Les cartes',
+        texte: 'Le contraste des cartes remonte. L’aplat de faction remplace le dégradé, et la Couronne a un filet plat.'
+      },
+      {
+        groupe: 'Les cartes',
+        texte: 'L’écran Deck dit « Decks proposés », et ses identifiants suivent.'
+      },
+      {
+        groupe: 'La navigation',
+        texte: 'La barre du bas passe à cinq onglets. Les Réglages passent dans l’en-tête, à côté du pseudo.'
+      },
+      {
+        groupe: 'La navigation',
+        texte: 'La feuille de route publique dit l’étape en cours, les critères de sortie et ce qui arrive.'
+      },
+      {
+        groupe: 'Le comité',
+        texte: 'La page Le suivi montre où en est chaque post-it. Un compteur « choses à voir » signale les réponses qui vous attendent.'
+      },
+      {
+        groupe: 'Le comité',
+        texte: 'Le rangement reste, sur la base ; l’export du fichier disparaît.'
+      },
+      {
+        groupe: 'Le comité',
+        texte: 'Les post-its et les pouces du fichier entrent dans la base : le mur est désormais partagé.'
+      },
+      {
+        groupe: 'Corrections de bugs',
+        texte: 'Un post-it neuf ne compte plus comme un statut qui a changé, et les dates du mur sont posées par le serveur.'
+      },
+      {
+        groupe: 'Corrections de bugs',
+        texte: 'Un commentaire garde la date de son écriture, même quand on le relit.'
+      },
+      {
+        groupe: 'Corrections de bugs',
+        texte: 'Les paragraphes de sauvegarde, de traces et de la feuille de route tiennent leur largeur de lecture.'
+      }
+    ]
+  },
+  {
     version: '0.1.12',
     date: '2026-10-26',
     titre: 'Une chorégraphie par Pression',
