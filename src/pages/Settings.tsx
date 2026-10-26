@@ -216,7 +216,10 @@ export function Settings() {
 
       <section className="section panel">
         <h2>Traces de combat</h2>
-        <p className="muted">
+        {/* `max-w-[64ch]` : sur toute la largeur du panneau, les lignes passaient 150
+            caractères (`impeccable`, line-length, #208) — illisible et hors du gabarit de
+            lecture des autres textes de l'écran. */}
+        <p className="muted max-w-[64ch]">
           Les parties solo terminées sont gardées sous ton compte — la graine, les deux
           Decks, les types de café et le journal des coups — pour voir comment le jeu se joue
           et l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé ; seul ton identifiant

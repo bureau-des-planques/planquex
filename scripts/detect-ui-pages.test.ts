@@ -64,10 +64,12 @@ describe('le contrôle visuel en CI (#205, #208)', () => {
     expect(seuil).toBe(0);
   });
 
-  it('ne gèle plus aucun écran derrière un `null` (#208)', () => {
+  it('ne gèle plus aucun écran derrière un `null`, et ne tolère plus rien (#208)', () => {
     const { baseline } = plan();
-    expect(baseline).toEqual({ '/': 0, '/collection': 32, '/deck': 11, '/battle': 0, '/settings': 1 });
-    expect(Object.values(baseline).every((plafond) => typeof plafond === 'number')).toBe(true);
+    // Le cliquet est arrivé à **zéro** le 26/10/2026 : les 32 + 11 + 1 comptes ont été corrigés
+    // un par un, chacun dans son commit. Un seul anti-pattern fait désormais tomber le contrôle.
+    expect(baseline).toEqual({ '/': 0, '/collection': 0, '/deck': 0, '/battle': 0, '/settings': 0 });
+    expect(Object.values(baseline).every((plafond) => plafond === 0)).toBe(true);
   });
 
   it('lit une page propre : un tableau vide est un résultat, pas un silence', () => {

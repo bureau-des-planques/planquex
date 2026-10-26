@@ -62,16 +62,17 @@ export const ECRANS = ['/', '/collection', '/deck', '/battle', '/settings'];
  * possédée n'est plus mise à 40 % d'opacité : son texte reste lisible, l'illustration et la barre
  * disent l'absence (Collection 32 → 3, Deck 11 → 6, commit `0bad67d`). Puis les **dégradés de
  * faction** de la fenêtre d'illustration deviennent des **aplats**, et le filet violet de la
- * Couronne cesse d'être un dégradé : Collection **0**, Deck **0**. Total : **1** (0 + 0 + 0 + 0
- * + 1), le dernier point étant la ligne trop longue des Réglages. Chaque baisse abaisse le
- * plafond dans le même commit.
+ * Couronne cesse d'être un dégradé : Collection **0**, Deck **0**. Enfin la ligne trop longue
+ * des Réglages reçoit sa largeur de lecture : `/settings` **0**. **Total du dépôt : 0** le
+ * 26/10/2026 — le contrôle ne gèle plus rien, il exige zéro, et un seul anti-pattern le fait
+ * tomber. Chaque baisse s'est faite dans son commit, avec son compte.
  */
 export const BASELINE = {
   '/': 0,
   '/collection': 0,
   '/deck': 0,
   '/battle': 0,
-  '/settings': 1
+  '/settings': 0
 };
 
 /** Le port du serveur de contrôle : **pas 4180**, que `npm run capturer` occupe. */
