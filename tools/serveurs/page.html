@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serveurs et chantiers — Bureau des Planqués</title>
+<style>
+  :root { --bg:#0b1220; --fond:#0e1626; --panneau:#131c2e; --bord:#243049; --bord-fort:#34456a;
+          --texte:#e8eef8; --muet:#9aa9c2; --pale:#7e8fb0; --accent:#4f8ef7; --or:#e6b64c;
+          --ok:#46b98a; --alerte:#e0a33e; --danger:#e06a4e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--texte);
+         font:14px/1.5 "Inter Variable", Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding:16px 22px; border-bottom:1px solid var(--bord); display:flex; align-items:center;
+           gap:12px; flex-wrap:wrap; }
+  header h1 { font-size:20px; margin:0; font-weight:700; font-family:"Outfit Variable", Outfit, system-ui, sans-serif; }
+  header .pousse { margin-left:auto; }
+  .badge { font:12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--muet);
+           border:1px solid var(--bord); border-radius:999px; padding:2px 9px; white-space:nowrap; }
+  main { max-width:1140px; margin:0 auto; padding:18px 22px 64px; display:grid; gap:18px; }
+  section { background:var(--panneau); border:1px solid var(--bord); border-radius:12px; padding:14px 16px; min-width:0; }
+  h2 { font-size:15px; margin:0 0 10px; font-weight:700; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  h2 .compte { font-size:12px; color:var(--or); font-weight:600; }
+  .tableau { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--bord); vertical-align:middle; }
+  th { color:var(--muet); font-weight:600; white-space:nowrap; font-size:12px; }
+  tr:last-child td { border-bottom:0; }
+  .port { font:13px ui-monospace, SFMono-Regular, Menlo, monospace; display:flex; align-items:center; gap:6px; }
+  .point { width:7px; height:7px; border-radius:999px; background:var(--ok); flex:none;
+           box-shadow:0 0 0 3px rgba(70,185,138,.14); }
+  .mono { font:12.5px ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--muet); }
+  .coupe { display:inline-block; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:bottom; }
+  .puce { font-size:11.5px; border-radius:999px; padding:1px 8px; border:1px solid var(--bord-fort); color:var(--muet); white-space:nowrap; }
+  .puce.sale { border-color:rgba(224,163,62,.55); color:var(--alerte); }
+  .puce.avance { border-color:rgba(79,142,247,.55); color:var(--accent); }
+  .puce.vivant { border-color:rgba(70,185,138,.55); color:var(--ok); }
+  .puce.mort { color:var(--pale); }
+  button { background:#16213a; color:var(--texte); border:1px solid var(--bord-fort); border-radius:7px;
+           padding:4px 9px; cursor:pointer; font:inherit; font-size:12.5px; }
+  button:hover { border-color:var(--accent); }
+  button:disabled { opacity:.45; cursor:not-allowed; }
+  button.vert { border-color:rgba(70,185,138,.6); color:var(--ok); }
+  button.rouge { border-color:rgba(224,106,78,.5); color:var(--danger); }
+  .actions { display:flex; gap:5px; justify-content:flex-end; }
+  .lancer { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+  .champ { display:grid; gap:3px; }
+  .champ label { font-size:11.5px; color:var(--muet); }
+  select, input { background:#0b1220; color:var(--texte); border:1px solid var(--bord); border-radius:7px;
+                  padding:6px 9px; font:inherit; font-size:13px; }
+  select { max-width:340px; }
+  input[type="number"] { width:104px; }
+  .vide { color:var(--pale); font-size:13px; padding:6px 0; }
+  #journal { display:none; }
+  #journal pre { margin:0; max-height:340px; overflow:auto; background:#080e1a; border:1px solid var(--bord);
+                 border-radius:8px; padding:10px; font:12px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+                 color:#c8d4e8; white-space:pre-wrap; }
+  #retour { position:fixed; left:50%; bottom:16px; transform:translateX(-50%); max-width:92vw;
+            background:#14532d; border:1px solid var(--ok); border-radius:9px; padding:9px 14px;
+            font-size:13px; box-shadow:0 6px 24px rgba(0,0,0,.5); display:none; z-index:10; }
+  #retour.erreur { background:#4a1414; border-color:var(--danger); }
+  .note { font-size:12px; color:var(--pale); margin:8px 0 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Serveurs et chantiers</h1>
+  <span class="badge" id="adresse">—</span>
+  <span class="badge" id="horodatage">—</span>
+  <button class="pousse" id="rafraichir">Rafraîchir</button>
+</header>
+
+<main>
+  <section>
+    <h2>Serveurs en cours <span class="compte" id="compte-serveurs"></span></h2>
+    <div class="tableau">
+      <table>
+        <thead>
+          <tr><th>Port</th><th>Type</th><th>Chantier · branche servie</th><th>Dossier</th><th>Depuis</th><th>PID</th><th></th></tr>
+        </thead>
+        <tbody id="corps-serveurs"></tbody>
+      </table>
+    </div>
+    <p class="note">La branche affichée est celle du <strong>dossier de travail du processus</strong> : c'est elle que le serveur sert vraiment, pas celle du jour où il a été lancé.</p>
+  </section>
+
+  <section>
+    <h2>Lancer un serveur</h2>
+    <div class="lancer">
+      <div class="champ"><label for="chantier">Chantier</label><select id="chantier"></select></div>
+      <div class="champ"><label for="mode">Mode</label>
+        <select id="mode"><option value="dev">dev</option><option value="preview">preview (dist/)</option></select>
+      </div>
+      <div class="champ"><label for="port">Port</label><input type="number" id="port" placeholder="libre"></div>
+      <button class="vert" id="lancer">Lancer</button>
+    </div>
+    <p class="note">Port vide = le premier libre à partir de 5181. Le serveur est lancé <span class="mono">--strictPort --host 127.0.0.1</span>, détaché : fermer cet onglet ne l'arrête pas.</p>
+  </section>
+
+  <section id="journal">
+    <h2><span id="journal-titre">Journal</span>
+      <span class="pousse"></span>
+      <span style="margin-left:auto; display:flex; gap:6px">
+        <button id="journal-maj">Relire</button>
+        <button id="journal-fermer">Fermer</button>
+      </span>
+    </h2>
+    <pre id="journal-texte">—</pre>
+  </section>
+
+  <section>
+    <h2>Chantiers <span class="compte" id="compte-chantiers"></span></h2>
+    <div class="tableau">
+      <table>
+        <thead><tr><th>Worktree</th><th>Branche</th><th>HEAD</th><th>État</th><th>Servi par</th><th></th></tr></thead>
+        <tbody id="corps-chantiers"></tbody>
+      </table>
+    </div>
+    <p class="note">Détachement, modifications non commitées et commits non poussés : ce que <span class="mono">npm run isolation</span> refuse, ici on le voit.</p>
+  </section>
+</main>
+
+<div id="retour"></div>
+
+<script>
+const jeton = new URLSearchParams(location.search).get('jeton') || '';
+const enTete = { 'x-serveurs-jeton': jeton, 'content-type': 'application/json' };
+let etat = { serveurs: [], chantiers: [], portLibre: null };
+let portJournal = null;
+
+const $ = (id) => document.getElementById(id);
+const esc = (valeur) => String(valeur ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+function dire(texte, erreur) {
+  const zone = $('retour');
+  zone.textContent = texte;
+  zone.className = erreur ? 'erreur' : '';
+  zone.style.display = 'block';
+  clearTimeout(dire.timer);
+  dire.timer = setTimeout(() => { zone.style.display = 'none'; }, erreur ? 6000 : 3000);
+}
+
+function age(secondes) {
+  if (secondes === null || secondes === undefined) return '—';
+  if (secondes < 60) return secondes + ' s';
+  if (secondes < 3600) return Math.floor(secondes / 60) + ' min';
+  const heures = Math.floor(secondes / 3600);
+  const minutes = Math.floor((secondes % 3600) / 60);
+  return heures + ' h ' + String(minutes).padStart(2, '0');
+}
+
+async function appel(chemin, options = {}) {
+  const reponse = await fetch(chemin, { headers: enTete, ...options });
+  let corps = null;
+  try { corps = await reponse.json(); } catch { corps = null; }
+  if (!reponse.ok) throw new Error((corps && corps.erreur) || ('HTTP ' + reponse.status));
+  return corps;
+}
+
+function rendreServeurs() {
+  const corps = $('corps-serveurs');
+  $('compte-serveurs').textContent = etat.serveurs.length + (etat.serveurs.length > 1 ? ' vivants' : ' vivant');
+  if (!etat.serveurs.length) {
+    corps.innerHTML = '<tr><td colspan="7" class="vide">Aucun serveur en écoute sur le dépôt. Lance-en un ci-dessous.</td></tr>';
+    return;
+  }
+  corps.innerHTML = etat.serveurs.map((serveur) => {
+    const ou = serveur.chantier
+      ? '<strong>' + esc(serveur.chantier) + '</strong> <span class="mono">· ' + esc(serveur.branche || 'HEAD détaché') + '</span>'
+      : '<span class="mono">hors dépôt</span>';
+    return '<tr>' +
+      '<td class="port"><i class="point"></i>' + esc(serveur.port) + '</td>' +
+      '<td><span class="puce ' + (serveur.type === 'dev' ? 'vivant' : 'mort') + '">' + esc(serveur.type) + '</span></td>' +
+      '<td>' + ou + '</td>' +
+      '<td><span class="mono coupe" title="' + esc(serveur.dossier || '') + '">' + esc(serveur.dossier || '—') + '</span></td>' +
+      '<td class="mono">' + age(serveur.age) + '</td>' +
+      '<td class="mono">' + esc(serveur.pid) + '</td>' +
+      '<td><span class="actions">' +
+        '<button data-voir="' + esc(serveur.port) + '">Voir</button>' +
+        '<button data-journal="' + esc(serveur.port) + '">Journal</button>' +
+        '<button class="rouge" data-tuer="' + esc(serveur.pid) + '" data-port="' + esc(serveur.port) + '">Tuer</button>' +
+      '</span></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function rendreChantiers() {
+  const corps = $('corps-chantiers');
+  $('compte-chantiers').textContent = etat.chantiers.length + ' worktrees';
+  corps.innerHTML = etat.chantiers.map((chantier) => {
+    const etats = [];
+    if (chantier.detache) etats.push('<span class="puce sale">HEAD détaché</span>');
+    if (chantier.modifs) etats.push('<span class="puce sale">' + chantier.modifs + ' modif' + (chantier.modifs > 1 ? 's' : '') + '</span>');
+    if (chantier.enAvance) etats.push('<span class="puce avance">+' + chantier.enAvance + ' non poussé' + (chantier.enAvance > 1 ? 's' : '') + '</span>');
+    if (chantier.enRetard) etats.push('<span class="puce">−' + chantier.enRetard + '</span>');
+    if (!etats.length) etats.push('<span class="puce">propre</span>');
+    const servi = (chantier.serveurs || []).length
+      ? chantier.serveurs.map((port) => '<span class="puce vivant">' + esc(port) + '</span>').join(' ')
+      : '<span class="mono">—</span>';
+    return '<tr>' +
+      '<td><strong>' + esc(chantier.nom) + '</strong></td>' +
+      '<td class="mono">' + esc(chantier.branche || '—') + '</td>' +
+      '<td class="mono">' + esc(chantier.tete || '—') + '</td>' +
+      '<td>' + etats.join(' ') + '</td>' +
+      '<td>' + servi + '</td>' +
+      '<td><span class="actions">' +
+        '<button data-choisir="' + esc(chantier.chemin) + '">Préparer</button>' +
+      '</span></td>' +
+    '</tr>';
+  }).join('');
+}
+
+function rendreFormulaire() {
+  const choix = $('chantier');
+  const garde = choix.value;
+  choix.innerHTML = etat.chantiers.map((chantier) =>
+    '<option value="' + esc(chantier.chemin) + '">' + esc(chantier.nom) + ' — ' + esc(chantier.branche || 'HEAD détaché') + '</option>'
+  ).join('');
+  if (garde && etat.chantiers.some((c) => c.chemin === garde)) choix.value = garde;
+  $('port').placeholder = etat.portLibre ? String(etat.portLibre) : 'libre';
+}
+
+async function rafraichir(silencieux) {
+  try {
+    etat = await appel('/api/etat');
+    $('adresse').textContent = location.host;
+    $('horodatage').textContent = 'lu à ' + new Date().toLocaleTimeString('fr-FR');
+    rendreServeurs();
+    rendreChantiers();
+    rendreFormulaire();
+    if (portJournal !== null) await relireJournal();
+  } catch (erreur) {
+    if (!silencieux) dire('Lecture impossible : ' + erreur.message, true);
+  }
+}
+
+async function relireJournal() {
+  if (portJournal === null) return;
+  try {
+    const journal = await appel('/api/journal?port=' + encodeURIComponent(portJournal));
+    $('journal-titre').textContent = 'Journal du port ' + portJournal;
+    const lignes = journal.lignes.length ? journal.lignes.join('\n') : '(vide pour l’instant — Vite écrit au démarrage)';
+    const bloc = $('journal-texte');
+    const enBas = bloc.scrollTop + bloc.clientHeight >= bloc.scrollHeight - 30;
+    bloc.textContent = lignes;
+    if (enBas) bloc.scrollTop = bloc.scrollHeight;
+  } catch (erreur) {
+    $('journal-texte').textContent = erreur.message;
+  }
+}
+
+function ouvrirJournal(port) {
+  portJournal = Number(port);
+  $('journal').style.display = 'block';
+  relireJournal();
+  $('journal').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function tuer(pid, port) {
+  if (!confirm('Tuer le serveur du port ' + port + ' (pid ' + pid + ') et tout son arbre ?')) return;
+  try {
+    const resultat = await appel('/api/tuer', { method: 'POST', body: JSON.stringify({ pid: Number(pid) }) });
+    dire('Port ' + resultat.port + ' tué (' + resultat.tues.length + ' processus).');
+    if (portJournal === Number(resultat.port)) { portJournal = null; $('journal').style.display = 'none'; }
+    await rafraichir(true);
+  } catch (erreur) {
+    dire('Échec : ' + erreur.message, true);
+  }
+}
+
+async function lancer() {
+  const corps = { chemin: $('chantier').value, mode: $('mode').value };
+  const port = $('port').value.trim();
+  if (port) corps.port = Number(port);
+  const bouton = $('lancer');
+  bouton.disabled = true;
+  try {
+    const resultat = await appel('/api/lancer', { method: 'POST', body: JSON.stringify(corps) });
+    dire('Lancé sur le port ' + resultat.port + ' (pid ' + resultat.pid + ') — ' + corps.mode);
+    $('port').value = '';
+    ouvrirJournal(resultat.port);
+    setTimeout(() => rafraichir(true), 1200);
+  } catch (erreur) {
+    dire('Échec : ' + erreur.message, true);
+  } finally {
+    bouton.disabled = false;
+  }
+}
+
+document.addEventListener('click', (evenement) => {
+  const cible = evenement.target.closest('button');
+  if (!cible) return;
+  if (cible.dataset.voir) window.open('http://127.0.0.1:' + cible.dataset.voir + '/', '_blank', 'noopener');
+  else if (cible.dataset.journal) ouvrirJournal(cible.dataset.journal);
+  else if (cible.dataset.tuer) tuer(cible.dataset.tuer, cible.dataset.port);
+  else if (cible.dataset.choisir) { $('chantier').value = cible.dataset.choisir; $('port').focus(); }
+});
+
+$('rafraichir').addEventListener('click', () => rafraichir(false));
+$('lancer').addEventListener('click', lancer);
+$('journal-maj').addEventListener('click', relireJournal);
+$('journal-fermer').addEventListener('click', () => { portJournal = null; $('journal').style.display = 'none'; });
+
+rafraichir(false);
+setInterval(() => rafraichir(true), 5000);
+</script>
+</body>
+</html>

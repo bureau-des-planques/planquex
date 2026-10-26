@@ -24,6 +24,7 @@
     "plan:dev": "node scripts/plan-dev.mjs",
     "statut": "node scripts/statut-mur.mjs",
     "admin": "node tools/admin/serveur.mjs",
+    "serveurs": "node tools/serveurs/serveur.mjs",
     "detect:ui": "impeccable detect src/",
     "detect:ui:page": "node scripts/detect-ui-pages.mjs"
   },
