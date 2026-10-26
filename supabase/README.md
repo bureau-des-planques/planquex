@@ -18,6 +18,8 @@ s'appuyer dessus.
 | `supabase/migrations/0010_dates_figees.sql` | les dates du comité figées à l'écriture (#244) : un déclencheur `before update` rétablit `created_at` à sa valeur d'origine sur `commentaires` et `postits` — l'auteur qui redate son commentaire n'obtient pas la date ; la correction du texte passe toujours |
 | `supabase/migrations/0011_anon_hors_fonctions.sql` | le rôle `anon` n'exécute plus aucune fonction `security definer` de `public` (#247) : les valeurs par défaut de Supabase lui accordent `execute`, et le refus ne reposait que sur `auth.uid()` nul. `authenticated` garde ses droits |
 | `supabase/migrations/0012_combats_pvp.sql` | la trace des parties à deux (#228, D-105) : `combats.mode` admet `'pvp'` à côté de `'solo'` — pas de colonne, pas de politique, pas de droit nouveau |
+| `supabase/imports/comite-fichier-2026-10-26.sql` | l'import des deux post-its de `docs/comite.json` en base (#136) — données, pas schéma : auteur sentinelle, date de collecte reprise de l'id, écran vide devenu `null` |
+| `supabase/imports.test.ts` | la garde de l'import : le fichier et l'import disent la même chose, les lignes passent `lirePostitsDeLaBase`, rejouer ne duplique rien |
 | `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
 | `supabase/comptes.test.ts` | la garde des comptes : en attente refusé, approuvé accepté, non-administrateur sans pouvoir, pas d'auto-approbation, drapeau protégé — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/place.test.ts` | la garde de la place et du retrait : l'auteur range le sien, l'administrateur range et retire tout, un compte en attente rien — et chaque contrôle neutralisé laisse passer le fautif |
@@ -304,15 +306,37 @@ update public.comptes set etat = 'approuve' where courriel = 'invite@exemple.fr'
 update public.comptes set etat = 'refuse', raison = 'Pas un invité.' where courriel = '…';
 ```
 
-### 5.4 Les deux post-its déjà en base
+### 5.4 Les deux post-its du fichier, importés en base (#136)
 
-Ils restent **lisibles** et **figés** : leur auteur est une identité anonyme, sans courriel,
-donc sans compte. La migration ne les supprime pas et ne les rattache à personne (ce serait
-inventer un auteur). Pour les rendre modifiables, un geste explicite :
+`docs/comite.json` porte deux post-its d'avant le mur en base. Ils sont **entrés en base le
+26/10/2026** par `supabase/imports/comite-fichier-2026-10-26.sql` — ce n'est **pas** une
+migration (aucune forme de schéma ne change) mais un import de données, rejouable
+(`on conflict (id) do nothing`), rangé au dépôt pour être relu avant d'être exécuté.
+
+Leur auteur est l'**auteur sentinelle** `00000000-0000-0000-0000-000000000000` : les deux
+post-its ont été écrits par des identités **anonymes** d'avant D-088, qui n'ont pas de compte,
+et les rattacher à quelqu'un serait inventer un auteur. Aucun `auth.uid()` ne peut valoir cette
+valeur, donc le mur ne les montre comme « les tiens » à **personne** : aucun invité ne les
+corrige, ne les déplace ni ne les retire. L'**administration** garde ses droits de tri (0006,
+`statut`/`raison`/`ticket`) et de retrait (0007) — c'est le tri normal de D-092, et ces deux
+post-its sont `en attente`, donc ils doivent pouvoir avancer. Pour les rattacher à un compte,
+un geste explicite :
 
 ```sql
 update public.postits set auteur = '<uid du compte>' where id in ('…', '…');
 ```
+
+Le fichier, lui, reste au dépôt : c'est le **contrat de données** (§3 de `docs/COMITE.md`) et
+la trace de ce qui a été collecté avant. Il n'est plus la source — la page lit la base, et ne
+retombe sur le fichier que si la base ne répond pas.
+
+La garde `supabase/imports.test.ts` vérifie les trois choses qui peuvent diverger en silence :
+chaque post-it du fichier **existe** en base (un post-it ajouté au JSON sans être ajouté à
+l'import fait échouer le test) ; ses **champs** y sont un à un — texte, place, raison, ticket
+compris, puisque le JSON et le SQL sont deux copies ; et la **date** de `created_at` dit la
+même heure que l'identifiant (`p-DD-MM-AAAA-HH-MM-SS-…`, heure de Paris), `updated_at` suivant
+`created_at` pour qu'aucun compteur ne lise un faux mouvement. Les lignes passent enfin le
+**même validateur** que la page (`lirePostitsDeLaBase`).
 
 ### 5.5 Ce qu'il faut vérifier après
 
