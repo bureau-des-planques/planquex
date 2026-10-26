@@ -51,8 +51,8 @@ export default defineConfig({
     hookTimeout: 30_000,
     projects: [
       {
-        name: 'node',
         test: {
+          name: 'node',
           environment: 'node',
           setupFiles: ['./src/test/setup.ts', './src/test/setup-poste.ts'],
           // Les QUATRE zones : `src/` (moteur, données, store, lib), `scripts/` (les gardes
@@ -64,8 +64,8 @@ export default defineConfig({
         }
       },
       {
-        name: 'ui',
         test: {
+          name: 'ui',
           environment: 'jsdom',
           setupFiles: ['./src/test/setup-jsdom.ts', './src/test/setup-poste.ts'],
           include: ['src/**/*.test.tsx'],

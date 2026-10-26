@@ -16,7 +16,7 @@ Une clôture **retire ce que la session a créé, rien d'autre**. Plusieurs sess
    - serveur lancé par la session : tuer l'**arbre** de processus (`npm` → `sh` → `node`), vérifier le port libre ensuite ;
    - fichiers temporaires : seulement sous un dossier à soi, `/tmp/opencode/<nom-de-session>/`. Aucun joker sur `/tmp/opencode/`, aucun `rm -rf` de `captures/` ni de `dist/` dans le dépôt principal.
 4. **Noter le reste à faire** là où l'humain le retrouve : un todo `openchamber_knowledge` (`kind: todo`) par travail laissé, ou un commentaire sur l'issue. Si des issues `alpha` ont été ouvertes ou fermées, `npm run plan:dev` (§11 de `AGENTS.md`).
-5. **Vérifier.** `npm run isolation` sort 0, ou n'accuse que des éléments listés « laissés » à l'étape 6.
+5. **Vérifier.** `npm run isolation` sort 0, ou n'accuse que des éléments listés « laissés » à l'étape 6. Et `npm run ci:etat` sort 0 : si `main` est rouge, le dire dans le compte rendu au lieu de fermer en silence (D-115, #258).
 6. **Rendre un compte** en trois listes : *retiré* (avec la commande), *laissé* (avec la raison : autre session, non fusionné, non poussé), *reste à faire* (avec où c'est noté).
 
 ## Fini quand
