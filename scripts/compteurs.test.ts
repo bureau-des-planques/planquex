@@ -48,18 +48,15 @@ function hardCounts(text: string): string[] {
     .map(([label]) => label);
 }
 
-/** `AGENTS.md` §7 seulement : les autres sections sont des documents d'autorité hors périmètre. */
+/** `docs/COMMANDES.md` (l'ancien `AGENTS.md` §7) : `AGENTS.md` §7 n'en garde qu'un pointeur. */
 function agentsSection7(): string {
-  const agents = read('AGENTS.md');
-  const start = agents.indexOf('## 7. Commandes');
-  const end = agents.indexOf('## 8. Audits');
-  expect(start, 'AGENTS.md §7 introuvable').toBeGreaterThanOrEqual(0);
-  expect(end, 'AGENTS.md §8 introuvable').toBeGreaterThan(start);
-  return agents.slice(start, end);
+  const commandes = read('docs/COMMANDES.md');
+  expect(commandes.length, 'docs/COMMANDES.md vide').toBeGreaterThan(0);
+  return commandes;
 }
 
 describe('Documents vivants — décomptes (ticket #36)', () => {
-  it('AGENTS.md §7 ne recopie aucun décompte de cartes ni de tests', () => {
+  it('docs/COMMANDES.md ne recopie aucun décompte de cartes ni de tests', () => {
     expect(hardCounts(agentsSection7())).toEqual([]);
   });
 

@@ -45,6 +45,25 @@ Jamais le modèle qui a implémenté ne relit. La chaîne vient du **benchmark**
 **Budget** : seuls Sonnet et Opus sont payants (abonnement existant). Les réserver aux
 migrations de store, au moteur et aux revues de session. Le reste reste gratuit.
 
+### Appeler `subagent` — `model` explicite, repli, `sessionID`
+
+Mesuré du 23 au 26/10/2026 (94 appels `subagent`) :
+
+- **Toujours passer `model`.** Sans lui, l'agent prend le modèle lié à son profil, c'est-à-dire le
+  maillon gratuit d'`opencode/` : il a échoué 7 fois sur `Free usage limit reached` (26/10 à 09:12,
+  13:24, 18:18). Le paramètre `model` marche (une trentaine d'appels l'ont passé) ; quand Bastien
+  dit « prends Anthropic pour les sous-agents », c'est `model: "anthropic/claude-sonnet-5-5#high"`
+  dans l'appel, et la réponse « ce n'est pas réglable depuis cette session » est fausse.
+- **`Free usage limit reached` coupe tout `opencode/*`, pas un seul modèle** : le repli saute le
+  fournisseur. Repli payant bon marché utilisé avec succès : `openrouter/deepseek/deepseek-v4.1-flash-1017`
+  (`variant` par défaut). Relancer le même modèle quatre fois en parallèle ne sert à rien.
+- **`sessionID` n'est jamais un placeholder.** Huit appels ont passé `sessionID: "ses"` et reçu
+  `Subagent session not found`. Une valeur vient du retour d'un appel précédent (`ses_…`, entière) ;
+  à défaut, appel neuf, brief complet.
+- **Une fenêtre de quota donnée par Bastien** (« pas d'Anthropic avant 11h30 », « je suis à 39 %,
+  reset à 16h20 ») vaut pour toute la session, sous-agents compris. Ne pas la tester en lançant
+  des agents : deux relecteurs lancés trop tôt ne sont jamais partis.
+
 ## 3. Vagues — ce qui peut tourner ensemble
 
 Une vague = un ensemble de tickets **de zones disjointes**, lancés ensemble ; puis **une seule
@@ -104,6 +123,9 @@ seul coût, voir §6).
    `git status` non vide sur un fichier déjà fusionné se lit `git checkout -- <fichier>` pour
    restaurer la version de l'historique — et l'agent doit avoir **rendu** avant qu'on fusionne
    son travail. Le contrôle `npm run isolation` détecte les deux formes.
+9. **Lire le ticket par `gh issue view N --json number,title,body,labels,comments`.** Sans
+   `--json`, `gh` échoue (Projects classic) : 43 erreurs dans 37 sessions du 23 au 26/10, dont
+   les briefs de l'orchestrateur qui écrivaient « Lis-le : `gh issue view N` ».
 
 ## 5. Fusion — le protocole, et ses deux pièges
 
