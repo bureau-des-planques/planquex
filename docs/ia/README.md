@@ -11,6 +11,7 @@ dans `docs/DECISIONS.md` ; les chiffres vivent ici.
 | `111-essais-evaluation.md` | **Piste 1, évaluation enrichie** : cinq jeux de poids, tous sous le seuil. **Échec** (43,7 % au contrôle). `src/game/ia.ts` est resté intact |
 | `111-essais-recherche-2-coups.md` | **Piste 2, recherche à deux coups** : ce qui a été retenu, le protocole d'équité, les pièges, et ce qui est réutilisable pour un niveau 3 |
 | `111-recherche-pistes.md` | **La recherche bibliographique** : les pistes possibles (évaluation, recherche, PIMC, ISMCTS, MCTS, évaluation apprise), leurs coûts et leurs risques, avec les sources |
+| `94-niveau3-expectiminimax.md` | **Le niveau 3** (#94) : expectiminimax + K déterminisations, profondeur 3. Mesure : **55,94 %** contre le niveau 2 au contrôle (ratio 1,270), une seule fois lancé. **Non branché** |
 
 **Ce qui a été retenu** (D-084) : la **recherche à deux coups** est **le niveau 2 acté** de l'alpha.
 Elle gagne **60,4 %** contre le niveau 1 sur des graines neuves (ratio 1,53), là où le glouton
@@ -22,4 +23,7 @@ niveau 1** : le passage se fait en une ligne, à trancher une fois #172 fusionn�
 
 **Le niveau 3** (expectiminimax avec déterminisations, ticket #94) repart de
 `111-essais-recherche-2-coups.md` : le pool des cartes inconnues, le tirage de monde, la
-simulation de tour y sont décrits et réutilisables.
+simulation de tour y sont décrits et réutilisables. Il est **implémenté et mesuré**
+(`94-niveau3-expectiminimax.md`) : **55,94 %** des décidées contre le niveau 2 au contrôle
+(ratio 1,270), seuils tenus, **aucun repli de budget**. Il n'est **pas branché** : le défaut
+reste le niveau 2 (D-084), et la marge est mince (IC bas à 52,6 %).

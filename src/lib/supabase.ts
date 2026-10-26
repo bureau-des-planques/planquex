@@ -88,6 +88,11 @@ export interface RequeteMur<T = unknown> extends PromiseLike<ReponseMur<T>> {
    * d'où le nombre accepté ici comme la chaîne.
    */
   eq(colonne: string, valeur: string | number): RequeteMur<T>;
+  /**
+   * Filtre : la colonne vaut **une** des valeurs. Sert au compteur du comité (#212), qui lit
+   * les commentaires de **tous** ses post-its en une seule requête — jamais une par post-it.
+   */
+  in(colonne: string, valeurs: ReadonlyArray<string | number>): RequeteMur<T>;
   update(valeurs: Record<string, unknown>): RequeteMur<T>;
   delete(): RequeteMur<T>;
 }

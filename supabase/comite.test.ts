@@ -166,6 +166,29 @@ describe('quand un post-it a bougé (0008)', () => {
     }
   });
 
+  it('(a) ranger un post-it ne date rien : le compteur ne s’agite pas à chaque glisser', async () => {
+    const db = await base();
+    try {
+      await monde(db);
+      await reculer(db, 'p-a');
+      const avant = await mouvement(db, 'p-a');
+
+      accepte(
+        await tenter(
+          db,
+          APPAREIL_A,
+          `select * from public.deplacer_postit($1, $2, $3, $4)`,
+          ['p-a', 12.5, 80, 0],
+        ),
+      );
+
+      const apres = await mouvement(db, 'p-a');
+      expect(new Date(apres.updated_at).getTime()).toBe(new Date(avant.updated_at).getTime());
+    } finally {
+      await db.close();
+    }
+  });
+
   it('(a) un update qui nomme le statut sans le changer ne date rien', async () => {
     const db = await base();
     try {

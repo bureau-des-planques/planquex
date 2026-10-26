@@ -274,6 +274,11 @@ h2 {
   align-items: center;
   display: flex;
   gap: 0.65rem;
+  /* L'en-tête se partage entre trois volontés : la marque, le pseudo, l'engrenage (#213).
+     Le pseudo et l'engrenage gardent leur largeur (`flex: none`) ; **c'est la marque qui
+     cède** quand la fenêtre se resserre, en ellipse sur le nom du jeu — sans quoi
+     l'engrenage prendrait la place du pseudo à 360 px. */
+  min-width: 0;
 }
 
 .brand__mark {
@@ -282,6 +287,7 @@ h2 {
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px rgb(230 182 76 / 18%), 0 6px 18px rgb(0 0 0 / 42%);
   display: grid;
+  flex: none;
   height: 40px;
   place-items: center;
   width: 40px;
@@ -297,11 +303,38 @@ h2 {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  min-width: 0;
+}
+
+.brand__text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand__text span {
   color: var(--text-muted);
   font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sous 400 px, l'accroche de la marque est la première à céder (#213). Coupée en
+   « Le TCG de l'ate… », elle n'apprend rien, alors que le nom du jeu, le pseudo et
+   l'engrenage restent. La fenêtre de capture de D-060 (420 px) garde les deux lignes. */
+@media (max-width: 400px) {
+  .brand__text span {
+    display: none;
+  }
+}
+
+/* Le pseudo et l'engrenage, à droite de l'en-tête : deux blocs insécables. */
+.topbar__actions {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 0.4rem;
 }
 
 .topbar__user {
@@ -317,6 +350,36 @@ h2 {
   padding: 0.35rem 0.8rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* L'engrenage des Réglages (D-097 (4), #213) : un lien, pas un bouton — il **navigue**,
+   et le `<Link>` donne le clic au clavier et le « ouvrir dans un onglet » gratuits. La
+   cible de doigt fait 44 px (même règle que le menu du combat, SPEC-COMBAT-UI §5.1). */
+.topbar__gear {
+  align-items: center;
+  border-radius: 999px;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: none;
+  height: 44px;
+  justify-content: center;
+  /* La cible fait 44 px de **boîte** sans faire grandir l'en-tête : 4 px rognés de chaque
+     côté l'alignent sur la marque (40 px), sinon le combat perd 4 px de hauteur et la garde
+     de `npm run capturer` (D-094) les voit. */
+  margin-block: -4px;
+  text-decoration: none;
+  width: 44px;
+}
+
+.topbar__gear:hover,
+.topbar__gear:focus-visible {
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.topbar__gear:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .main {
@@ -355,6 +418,24 @@ h2 {
 .bottom-nav__item {
   position: relative;
   transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Le compteur « choses à voir » du comité (#212, D-097 (5)) : une pastille numérotée
+   au-dessus de l'icône. Elle n'est posée que sur l'onglet Comité, et seulement quand il
+   y a quelque chose à voir — à zéro, l'élément n'existe pas. */
+.bottom-nav__pastille {
+  background: var(--gold);
+  border-radius: 999px;
+  color: var(--bg);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.05rem;
+  padding: 0.14rem 0.28rem;
+  position: absolute;
+  right: calc(50% - 1.45rem);
+  text-align: center;
+  top: 0.1rem;
 }
 
 /* L'onglet actif : un témoin doré au bord, comme un voyant de console. */
@@ -479,12 +560,9 @@ h2 {
   border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
 }
 
-/*
- * Machine à café du Deck (#91) : un bouton par faction produisible, le type
- * présent au Deck marqué, le choix manuel en surbrillance. Les couleurs de
- * faction viennent de `FACTION_META`, jamais d'un hex recopié ici.
- */
-.chariots__list {
+/* Les Decks proposés (D-069, #141) : une carte par Deck, stratégie et faiblesse
+   lisibles avant de charger, et un bouton qui remplace le Deck courant. */
+.decks-proposes__list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -493,9 +571,9 @@ h2 {
   list-style: none;
 }
 
-/* Sur un téléphone, le texte du Chariot prend toute la largeur et « Charger » passe dessous : à côté,
+/* Sur un téléphone, le texte du Deck proposé prend toute la largeur et « Charger » passe dessous : à côté,
    il prenait la moitié de la ligne et la stratégie se coupait en colonne étroite. */
-.chariots__item {
+.decks-proposes__item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -503,7 +581,7 @@ h2 {
 }
 
 @media (min-width: 560px) {
-  .chariots__item {
+  .decks-proposes__item {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
@@ -511,8 +589,8 @@ h2 {
   }
 }
 
-.chariots__item h3,
-.chariots__item p {
+.decks-proposes__item h3,
+.decks-proposes__item p {
   margin: 0;
 }
 
@@ -994,6 +1072,15 @@ h2 {
   overflow: hidden;
 }
 
+/* **La Couronne** : son filet est violet, et DESIGN.md §3 dit « filet violet » — il est donc
+   **plat**, pas un dégradé de violet (#208). Un dégradé violet est un tell d'UI générée
+   (`impeccable`, `ai-color-palette`, relevé sur les trois COU de `/collection`), et la teinte
+   reste celle de `RARITY_META`, atténuée pour ne pas devenir un néon sur le fond sombre.
+   `:not(.card--plateau)` : au plateau, la carte est une seule surface avec son propre fond. */
+.card[data-rarity='COU']:not(.card--plateau) {
+  background: color-mix(in srgb, var(--rarity) 62%, var(--bg-deep));
+}
+
 .card--selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
@@ -1245,7 +1332,9 @@ h2 {
 }
 
 .card__comex {
-  background: linear-gradient(135deg, var(--gold-deep), var(--gold));
+  /* Un **aplat** d'or, pas un dégradé (#208) : le dégradé passait sous 4,5:1 à l'endroit où
+     le détecteur l'échantillonne (3,6:1), et l'or plein tient 9,75:1 avec l'encre COMEX. */
+  background: var(--gold);
   border-radius: 999px;
   color: #1c1304;
   font-weight: 700;
@@ -1254,7 +1343,10 @@ h2 {
 
 .card__faction {
   align-items: center;
-  color: var(--accent);
+  /* Le **sigle** de la faction est du texte, pas une décoration : la couleur pure tombait
+     entre 2,7 et 4,1:1 sur la face teintée (`impeccable`, #208). Éclaircie de 35 % de blanc,
+     elle garde sa teinte et passe au-dessus de 5,6:1 — la pastille, elle, reste pure. */
+  color: color-mix(in srgb, var(--accent) 65%, white);
   display: inline-flex;
   font-size: var(--fs-2xs);
   font-weight: 600;
@@ -1766,7 +1858,9 @@ h2 {
   --scene-chalk: #f4e6cc;
   --scene-steel: #8a93a8;
   --scene-steel-deep: #4a5468;
-  gap: 0.5rem;
+  /* Les trois gouttières de l'écran (en-tête → note → table → barre d'action) se resserrent (#218) :
+     3,2 px chacune, 9,6 px rendus à la main, et l'écran garde toutes ses lignes. */
+  gap: 0.2rem;
 }
 
 /* Sur le combat, l'en-tête de l'application se serre : chaque ligne gagnée laisse la main
@@ -1949,12 +2043,14 @@ h2 {
     0 -8px 18px -10px rgb(0 0 0 / 60%);
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  /* #218 : la barre resserre ses trois lignes (journal, portée, gestes) — 1,6 px entre elles et
+     2,4 px de cadre — pour ne pas dépasser la garde de hauteur. Rien n'y est retiré. */
+  gap: 0.1rem;
   /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
      lieu de recouvrir le plateau. */
   max-height: 42dvh;
   overflow-y: auto;
-  padding: 0.25rem 0.6rem;
+  padding: 0.15rem 0.6rem;
   position: sticky;
   z-index: 16;
 }
@@ -2020,6 +2116,8 @@ h2 {
 .combat-barre__portee,
 .combat-barre__repos {
   font-size: 0.76rem;
+  /* Le même interligne que la ligne de journal (#218) : la ligne de portée perd 3 px, reste lisible. */
+  line-height: 1.2;
   margin: 0;
 }
 
@@ -2075,13 +2173,13 @@ h2 {
 .battle__table {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .battle__console {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.125rem;
 }
 
 @media (min-width: 900px) {
@@ -2139,7 +2237,9 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  padding: 0.1rem 0.2rem;
+  /* Le filet du néon (`is-current`, en ombre intérieure) n'a pas besoin de plus d'un demi-pixel de
+     marge (#218) : 0,8 px rendus à la carte du Poste, donc à la garde de hauteur. */
+  padding: 0.05rem 0.2rem;
   transition: border-color 200ms ease;
 }
 
@@ -2179,8 +2279,10 @@ h2 {
    mesurées par `npm run capturer` : la garde décide de la plus grande qui tient. */
 .board__zone {
   /* Le Banc passe à 64 px (#188, mesuré) : le Poste garde un rapport de 1,5 à 1,8 avec lui. Le Stress
-     et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur. */
-  --poste-w: 6rem;
+     et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur.
+     Le Poste revient aux **88 px de D-094 (1)** (#218) : 8 px de large valent ~22 px de haut sur les
+     deux camps, et le rapport de 1,57 avec le Banc est celui que la décision a acté. */
+  --poste-w: 5.5rem;
   --banc-w: 3.5rem;
   align-items: center;
   display: flex;
@@ -2193,7 +2295,8 @@ h2 {
 @media (max-width: 639px) {
   .board {
     gap: 0.1rem;
-    padding: 0.15rem;
+    /* #218 : 0,8 px de cadre au lieu de 2,4 — le feutre affleure le bord, la garde y gagne 3 px. */
+    padding: 0.05rem;
   }
 
   .board__zone {
@@ -2337,7 +2440,8 @@ h2 {
 }
 
 .hand-panel {
-  gap: 0.4rem;
+  /* Le titre de la main et l'éventail se touchent presque (#218) : 2 px suffisent à les séparer. */
+  gap: 0.125rem;
 }
 
 .hand-panel h2 {
@@ -2480,10 +2584,21 @@ h2 {
   opacity: 0.6;
 }
 
-/* Une carte **non possédée** : éteinte (grisée et très pâle), pour qu'une carte possédée se
-   lise d'un coup d'œil. Plus forte que « Deck complet » : les deux ne se confondent pas. */
+/* Une carte **non possédée** : éteinte, pour qu'une carte possédée se lise d'un coup d'œil.
+   Plus forte que « Deck complet » : les deux ne se confondent pas.
+   **L'extinction ne touche plus le texte** (#208) : le `opacity: 0.4` global posait le nom et le
+   sigle de faction entre 2,1 et 3,5:1 — une carte qu'on ne peut pas lire n'est pas une carte
+   éteinte, c'est une carte absente. Le gris et l'illustration pâlie disent l'absence ; le nom
+   reste lisible. */
 .card-slot.is-missing .card {
-  filter: grayscale(0.9) brightness(0.8);
+  filter: grayscale(1);
+}
+
+.card-slot.is-missing .card__art {
+  opacity: 0.4;
+}
+
+.card-slot.is-missing .card__seuil {
   opacity: 0.4;
 }
 
@@ -3102,16 +3217,22 @@ h2 {
    soulèvement de la carte choisie. Le **pas** entre deux cartes se réduit quand la main grandit,
    pour que dix cartes tiennent dans la largeur d'un téléphone. */
 .hand {
-  /* Une carte de la main se lit : 5,7 rem de large, soit ~91 px (64 px auparavant, où le nom était
-     illisible). Elle reste plus étroite que le Poste, 6 rem (R4). Le conteneur est assez haut pour la carte
-     entière et son inclinaison : rien n'est plus rogné en bas. */
-  --carte-w: 5.7rem;
+  /* **La garde de hauteur fait foi** (D-094 (2)) : la carte de la main revient aux **4 rem de
+     D-094 (1)**, soit 64 px, contre 5,7 rem (#218). C'est elle qui rend les ~50 px que la barre
+     d'action réclamait sous la main, et ce que D-094 (4) nomme pour densifier — sans retirer aucune
+     ligne de l'écran. Les noms longs s'y replient sur deux ou trois lignes, et la fiche « Carte
+     choisie » les redonne entiers au toucher. Elle reste plus étroite que le Poste, 5,5 rem (R4).
+     Le conteneur est assez haut pour la carte entière et son inclinaison : rien n'est rogné en bas,
+     le Seuil reste visible. */
+  --carte-w: 4rem;
   /* Le pas : deux cartes ne se chevauchent pas quand la largeur le permet (leurs noms restent lisibles),
      et se recouvrent juste assez pour tenir dans la largeur quand la main grandit. */
   --pas: min(calc(var(--carte-w) + 0.2rem), calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
   align-items: flex-start;
   display: flex;
-  height: calc(var(--carte-w) * 88 / 63 + 1.6rem);
+  /* La carte entière et son inclinaison, plus la place du soulèvement (`padding-top`) : 1 rem de
+     plus que la hauteur de la carte, pas 1,6 — la marge de hauteur ne pardonne pas (#218). */
+  height: calc(var(--carte-w) * 88 / 63 + 1rem);
   justify-content: center;
   list-style: none;
   margin: 0;
@@ -3193,6 +3314,25 @@ h2 {
 :root[data-mouvement-reduit='true'] .hand > li:is(:hover, :focus-within, .is-selected),
 .battle--mouvement-reduit .hand > li:is(:hover, :focus-within, .is-selected) {
   transform: rotate(var(--rot, 0deg));
+}
+
+/* **Le nom de la carte de main à 64 px** (#233) : la césure manuelle du plateau coupait
+   « VISITE MÉDICAL E » et « PRÉVENT EUR » en plein mot, et « TROUSSE DE SECOURS » sortait en
+   ellipse. Le chiffre de D-094 (1) ne bouge pas (4 rem) ; c'est la place du nom qui change :
+   la césure **automatique de la langue** (`lang="fr"`, `index.html`) fait des coupures
+   marquées d'un trait d'union (« MÉDI-CALE », « PRÉVEN-TEUR »), et la barre de nom du
+   **plateau** de la main cède ses marges latérales (0,22 → 0,1 rem, +4 px) pour que
+   « TROUSSE » tienne entier et que le nom complet des trois cartes se lise sur trois lignes.
+   Ce sont des pixels **horizontaux** : la hauteur de la main — donc la garde de D-094 (2) —
+   ne bouge pas, la carte garde son ratio 63 × 88. Le nom complet reste dans le bouton
+   (`sr-only`) et dans la fiche « Carte choisie ». */
+.battle .hand .card--plateau .card__name {
+  hyphens: auto;
+}
+
+.battle .hand .card--plateau .card__top {
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
 }
 
 .hand__name {
@@ -3610,35 +3750,35 @@ h2 {
   }
 }
 
-/* ---------- Nouveautés — les notes de version dans le jeu ---------- */
+/* ---------- La feuille de route — la version, l'étape, les jalons (D-097) ---------- */
 
 /* Le bloc de la version courante est **mis en avant** : c'est ce qu'un invité vient lire,
    l'historique vient après. La mise en avant passe par la **chaleur** du panneau (fond et
    bordure teintés d'or, titre en display) et **pas** par un liseré sur un côté — c'est le
    tell d'UI générée qu'Impeccable refuse, et il ne dit rien de plus. Jetons uniquement,
    aucun hex (D-035). */
-.nouveautes__courante {
+.feuille-de-route__courante {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 46%),
     var(--bg-raised);
   border-color: color-mix(in srgb, var(--gold) 42%, var(--line-strong));
 }
 
-.nouveautes__courante .nouveautes__titre {
+.feuille-de-route__courante .feuille-de-route__titre {
   color: var(--gold-soft);
   font-family: var(--font-display);
 }
 
-.nouveautes__label {
+.feuille-de-route__label {
   margin: 0.5rem 0 0.75rem;
 }
 
-.nouveautes__titre {
+.feuille-de-route__titre {
   font-size: 0.95rem;
   margin: 0.5rem 0;
 }
 
-.nouveautes__liste {
+.feuille-de-route__liste {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;

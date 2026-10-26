@@ -12,7 +12,11 @@ s'appuyer dessus.
 | `supabase/migrations/0004_pouces.sql` | les pouces (#137) : les politiques d'insertion et de modification de `votes` refusent un vote pour **son propre** post-it — pas de table, pas de droit |
 | `supabase/migrations/0005_comptes.sql` | les comptes (#181, D-088) : la table `comptes`, la ligne créée à la première connexion (`auth.users`), et les politiques d'**écriture** de `postits`, `votes`, `commentaires` et `combats` qui exigent un compte **approuvé** |
 | `supabase/migrations/0006_tri_et_corrections.sql` | le tri, la correction et le retrait (#138, #139, D-088) : `statut`/`raison`/`ticket` écrits par un **administrateur** seul, le retrait par l'auteur tant que le post-it est `en attente`, et `public.corriger_postit(id, titre, texte)` pour le titre et le texte — la base n'en donne plus l'écriture directe |
+| `supabase/migrations/0007_place_et_retrait_admin.sql` | la place et le retrait (#185, #186, D-092) : `public.deplacer_postit(...)` (l'auteur range **ses** post-its, l'administrateur **tous**), et la politique qui laisse l'administration retirer n'importe quel post-it à n'importe quel statut |
+| `supabase/migrations/0008_comite.sql` | le suivi (#209, D-097) : `postits.updated_at` et son déclencheur (monté **au changement de statut** seul), `comptes.vu_le` — le repère par compte — et `public.marquer_comite_vu()`. Le rôle `authenticated` **lit** son repère et ne l'écrit jamais |
 | `supabase/comptes.test.ts` | la garde des comptes : en attente refusé, approuvé accepté, non-administrateur sans pouvoir, pas d'auto-approbation, drapeau protégé — et chaque contrôle neutralisé laisse passer le fautif |
+| `supabase/place.test.ts` | la garde de la place et du retrait : l'auteur range le sien, l'administrateur range et retire tout, un compte en attente rien — et chaque contrôle neutralisé laisse passer le fautif |
+| `supabase/comite.test.ts` | la garde du suivi (#209) : `updated_at` monte au changement de statut, et **pas** sur une écriture de place ni une correction de texte ; le repère s'écrit par la fonction et pas en direct ; chacun ne marque que le sien — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/pouces.test.ts` | la garde des pouces : un seul vote par appareil, pas pour soi, pas au nom d'un autre, un vote défait remet le compteur — et chaque contrôle, neutralisé, laisse passer le fautif |
 | `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
@@ -55,7 +59,8 @@ forme du contrat, `position` et `votes` compris.
 | `position` | `position_x`, `position_y`, `position_angle` | **en pourcentage**, 0–100 et −5–+5 ; défaut au centre, droit |
 | `votes` | *(pas de colonne)* | **compté** depuis `votes` par la vue — une seule source de vérité |
 | — | `auteur uuid` | `auth.uid()` de l'appareil ; c'est **lui** que les politiques comparent |
-| — | `created_at` | `now()` |
+| — | `created_at` | `now()` ; ne bouge jamais |
+| — | `updated_at` | `now()` ; monté par le déclencheur `postits_updated_at` **au changement de statut** seul (0008) — ni sur une écriture de place, ni sur une correction de texte. C'est la date que lit le compteur de D-097 (5) |
 
 Pas de clé étrangère de `auteur` vers `auth.users` : une identité **anonyme** peut être purgée
 côté GoTrue, et un post-it ne doit pas disparaître avec l'appareil qui l'a écrit. Le pseudo est
@@ -83,7 +88,7 @@ partent en **cascade** quand un post-it est retiré par son auteur (#139).
 | `votes` | **tout le monde** | `votant = auth.uid()`, pas pour son propre post-it (0004), et `public.compte_approuve()` (0005) |
 | `commentaires` | **tout le monde** | `auteur = auth.uid()` **et** `public.compte_approuve()` (0005) |
 | `combats` | son **auteur** seul | `auteur = auth.uid()` **et** `public.compte_approuve()` (0005) |
-| `comptes` | sa ligne, ou tout pour un **administrateur** | `etat` et `raison` par un **administrateur** seul ; `administrateur` jamais par le client |
+| `comptes` | sa ligne, ou tout pour un **administrateur** | `etat` et `raison` par un **administrateur** seul ; `administrateur` jamais par le client ; `vu_le` (le repère du comité, 0008) **jamais** par le client — il s'écrit par `public.marquer_comite_vu()`, `security definer`, qui ne vise que `auth.uid()` et pose l'heure du serveur |
 
 Une politique par commande, et non une politique `for all` : les politiques permissives
 s'additionnent en **OU**, donc la lecture reste ouverte pendant que l'écriture reste fermée.
@@ -453,6 +458,11 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
 - **appliquer la migration 0002** (§6, la table des combats, #173) — pas encore appliquée ;
 - **appliquer la migration 0003** (§6, le gueulage, D-085) — pas encore appliquée ;
 - **appliquer la migration 0004** (§6, les pouces, #137) ;
+- **appliquer la migration 0006** (§6, le tri et les corrections, #138/#139) ;
+- **appliquer la migration 0007** (§6, la place et le retrait d'administration, D-092) ;
+- **appliquer la migration 0008** (§6, le suivi du comité, #209, D-097) — elle est **idempotente**,
+  et son backfill ne réveille personne : les post-its existants prennent `created_at` comme
+  `updated_at`, et les comptes existants `now()` comme `vu_le` ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
 - **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
   l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;

@@ -58,12 +58,18 @@ describe('CardSlot — la possession se lit (#179)', () => {
 describe('styles.css — l’atténuation est réelle', () => {
   const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
 
-  it('une carte non possédée est nettement plus pâle qu’une carte seulement « complète »', () => {
-    const absente = Number(/opacity:\s*([\d.]+)/.exec(regle(css, '.card-slot.is-missing .card'))?.[1]);
+  it('une carte non possédée est éteinte — grise, illustration pâlie — sans perdre son texte', () => {
+    const carte = regle(css, '.card-slot.is-missing .card');
     const pleine = Number(/opacity:\s*([\d.]+)/.exec(regle(css, '.card-slot.is-full .card'))?.[1]);
-    expect(absente).toBeLessThanOrEqual(0.5);
-    expect(absente).toBeLessThan(pleine);
-    expect(regle(css, '.card-slot.is-missing .card')).toMatch(/grayscale\(/);
+    // L'extinction passe par le **gris** et par l'**illustration**, jamais par l'opacité de la
+    // carte : à 40 %, le nom et le sigle tombaient entre 2,1 et 3,5:1 (`impeccable`,
+    // `low-contrast`, #208 — une carte qu'on ne peut pas lire n'est pas une carte éteinte).
+    expect(carte).toMatch(/grayscale\(/);
+    expect(carte, 'le texte de la carte garde son contraste').not.toMatch(/opacity/);
+    const art = Number(/opacity:\s*([\d.]+)/.exec(regle(css, '.card-slot.is-missing .card__art'))?.[1]);
+    expect(art).toBeLessThanOrEqual(0.5);
+    // Le contrôle mord : « complète » reste moins pâle que « non possédée ».
+    expect(art).toBeLessThan(pleine);
   });
 
   it('la pastille de possession reste hors de la carte : elle ne s’éteint pas avec elle', () => {
