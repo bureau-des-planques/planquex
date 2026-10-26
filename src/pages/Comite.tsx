@@ -30,6 +30,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { PAPIERS, PostitDuMur } from '@/components/PostitDuMur';
+import { SousOngletsComite } from '@/components/SousOngletsComite';
 import type { GlisserPostit } from '@/components/PostitDuMur';
 import {
   chargerCommentaires,
@@ -619,6 +620,8 @@ export function Comite() {
             </Link>
           </div>
         </div>
+
+        <SousOngletsComite />
 
         <ul className="m-0 flex list-none flex-wrap items-center gap-x-5 gap-y-2 p-0 text-[0.76rem] text-ink-muted">
           {LEGENDE.map(([apparence, texte]) => (

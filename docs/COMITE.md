@@ -154,6 +154,22 @@ l'écran étroit **garde des post-its** — il ne se contente pas d'une liste de
 Le **mode de placement** reste un travail de **bureau** : il ne se fait pas au doigt sur un téléphone.
 Sur la base, l'auteur range **son** post-it et l'**administration** range tout (#185, #186, D-092) : le tableau se répare donc post-it par post-it, et le bureau peut reprendre un post-it mal posé.
 
+## 2 ter. Le suivi — `/comite/suivi` (#211, D-097 (2) et (5))
+
+Le comité a **deux pages**, sous une barre de sous-onglets : **Le mur** (`/comite`, ce qui
+arrive) et **Le suivi** (`/comite/suivi`, ce qu'on en a fait).
+
+- **trois groupes** : `en cours`, `fait` — affiché **« Fait »**, un seul nom pour un état — et
+  `écarté`, **avec sa raison** (D-059 : un écarté sans raison est un mur mort) ;
+- `en attente` et `retenu` **restent sur le mur** : un post-it non trié n'a rien à faire dans
+  un suivi, et le montrer deux fois ferait deux murs ;
+- **ouvrir la page pose le repère** `vu_le` du compte, par `public.marquer_comite_vu()`
+  (migration `0008`) — **jamais** un `update` direct, une politique RLS ne distinguant pas
+  les colonnes. C'est ce qui remet le compteur du comité à zéro (D-097 (5)) ; sans base
+  configurée, le geste est **inerte** ;
+- la **source** est celle du mur : la base, ou `docs/comite.json` en secours — un suivi ne se
+  déclare jamais vide parce que la base n'a pas répondu.
+
 ## 3. Le fichier du mur
 
 `design/…` non : le mur vit dans **`docs/comite.json`**, versionné avec le dépôt, parce que

@@ -87,6 +87,17 @@ describe('la bulle (D-058)', () => {
     expect(app).toMatch(/<Comite \/>/);
   });
 
+  it('le suivi a son adresse, sous le même comité (D-097 (2))', () => {
+    expect(app).toMatch(/path="comite\/suivi"/);
+    expect(app).toMatch(/<Suivi \/>/);
+  });
+
+  it('les deux pages portent la barre de sous-onglets (D-097 (2))', () => {
+    const suivi = lire('./Suivi.tsx');
+    expect(page).toMatch(/<SousOngletsComite \/>/);
+    expect(suivi).toMatch(/<SousOngletsComite \/>/);
+  });
+
   it('s’efface pendant un combat', () => {
     expect(layout).toMatch(/pathname\.startsWith\('\/battle'\)/);
     expect(layout).toMatch(/\{!enCombat && !surLeMur && <AlerteComite \/>\}/);

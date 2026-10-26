@@ -161,8 +161,9 @@ function glisser(postit: HTMLElement, de: [number, number], vers: [number, numbe
 }
 
 function rendre() {
+  // L'adresse du mur : la barre de sous-onglets y lit lequel est ouvert (D-097 (2)).
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={['/comite']}>
       <Comite />
     </MemoryRouter>
   );
@@ -194,6 +195,14 @@ describe('le rangement s’ouvre sur la base (#185)', () => {
     expect(screen.getByRole('button', { name: /Terminer le placement/ })).toBeInTheDocument();
     // L'export du fichier, lui, n'a plus de sens ici : c'est la base qui porte la place.
     expect(screen.queryByRole('button', { name: /Télécharger le fichier/ })).not.toBeInTheDocument();
+  });
+
+  it('le mur porte la barre de sous-onglets, et se dit ouvert (D-097 (2))', async () => {
+    rendre();
+    await screen.findByText('Mon idée');
+
+    expect(screen.getByRole('link', { name: 'Le suivi' })).toHaveAttribute('href', '/comite/suivi');
+    expect(screen.getByRole('link', { name: 'Le mur' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('sans configuration de base, le rangement reste celui du fichier — sans export (#215)', async () => {
