@@ -2504,7 +2504,10 @@ h2 {
   filter: grayscale(1);
 }
 
-.card-slot.is-missing .card__art,
+.card-slot.is-missing .card__art {
+  opacity: 0.4;
+}
+
 .card-slot.is-missing .card__seuil {
   opacity: 0.4;
 }
