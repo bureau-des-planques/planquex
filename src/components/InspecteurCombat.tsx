@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import { FACTION_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card, CardInstance } from '@/data/types';
@@ -124,6 +125,8 @@ export function CarteSurvolable({
   const [focus, setFocus] = useState(false);
   const [ecartee, setEcartee] = useState(false);
   const minuterie = useRef<number | null>(null);
+  const carte = useRef<HTMLDivElement | null>(null);
+  const [ancre, setAncre] = useState<{ x: number; y: number; dessus: boolean } | null>(null);
   const etaitInspectee = useRef(inspectee);
 
   const annulerMinuterie = () => {
@@ -139,6 +142,20 @@ export function CarteSurvolable({
   }, [inspectee]);
 
   const visible = (survol || focus) && !ecartee && !inspectee;
+
+  // **L'infobulle sort du plateau** : le plateau isole ses plans (`isolation`, D-098) pour que le
+  // canvas de fond passe sous ses cartes, et cette isolation y enfermait aussi l'infobulle —
+  // la main en éventail, qui vit hors du plateau, passait devant elle (mesuré au navigateur :
+  // `elementFromPoint` rendait `hand__card`). Elle est donc posée dans `body`, à la verticale de
+  // sa carte. Le survol reste continu : la marge haute de l'infobulle fait le pont.
+  useEffect(() => {
+    if (!visible || !carte.current) return;
+    const r = carte.current.getBoundingClientRect();
+    // Pas de place sous la carte (le Banc du joueur, sous 900 px) : l'infobulle s'ouvre au-dessus,
+    // sinon elle sort de l'écran — mesuré au navigateur, `elementFromPoint` tombait sur la barre.
+    const dessus = r.bottom + 220 > window.innerHeight;
+    setAncre({ x: r.left + r.width / 2, y: dessus ? r.top : r.bottom, dessus });
+  }, [visible]);
 
   // Échap ferme l'infobulle où que soit le focus (le même critère : fermable sans bouger le pointeur).
   useEffect(() => {
@@ -159,6 +176,7 @@ export function CarteSurvolable({
 
   return (
     <div
+      ref={carte}
       role="group"
       aria-label={nom}
       className={className}
@@ -190,12 +208,21 @@ export function CarteSurvolable({
       }}
     >
       {children}
-      {visible && (
-        <div role="tooltip" id={id} className="infobulle" onClick={(evenement) => evenement.stopPropagation()}>
-          {/* Aucun élément focusable ici : l'APG interdit qu'une infobulle reçoive le focus. */}
-          <span className="infobulle__corps">{fiche}</span>
-        </div>
-      )}
+      {visible &&
+        ancre &&
+        createPortal(
+          <div
+            role="tooltip"
+            id={id}
+            className={`infobulle${ancre.dessus ? ' infobulle--dessus' : ''}`}
+            style={{ left: `${ancre.x}px`, top: `${ancre.y}px` }}
+            onClick={(evenement) => evenement.stopPropagation()}
+          >
+            {/* Aucun élément focusable ici : l'APG interdit qu'une infobulle reçoive le focus. */}
+            <span className="infobulle__corps">{fiche}</span>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

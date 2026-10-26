@@ -704,10 +704,20 @@ est une lecture plus rapide.
 3. **Rien ne recouvre une cible.** Un chiffre flottant ne passe jamais sur le nom d'une
    carte plus de 700 ms, et ne se superpose pas à trois exemplaires (T10, critère 2).
 4. **`prefers-reduced-motion` et « Mouvement réduit » du store** coupent tout, un seul
-   point de bascule (`styles.css:2305-2314`).
+   point de bascule : le réglage du store **et** la préférence système, réunis par
+   `use-mouvement-reduit.ts` et posés sur la racine (`data-mouvement-reduit`).
 5. **Le coût de rendu** est plafonné : au plus **quatre** éléments animés simultanément.
    Une animation CSS de `transform`/`opacity` ne repeint pas ; un `filter: blur` sur une
    surface qui bouge, si — donc **pas de flou en mouvement**.
+
+> **Révision du 26/10/2026 — la Pression a sa chorégraphie (D-098).** Les bornes 3 et 5 ne
+> s'appliquent plus telles quelles à la **Pression** : sa durée monte jusqu'à ~3,7 s quand la
+> grosse attaque d'un COU, d'un 3 étoiles ou d'un COMEX joue sa cinématique, et son coût de
+> rendu se compte en **particules de `canvas`** (600 au plus, 300 hors cinématique), plus en
+> éléments du DOM. Les bornes **1, 2 et 4 ne bougent pas** : aucune information dans
+> l'animation, pas plus de trois flashs par seconde, et les deux coupures du mouvement
+> (**le repli est la séquence CSS décrite ci-dessus, inchangée**). Détail d'exécution :
+> `src/animation/` ; mesures : 60 ips, 57 sur la cinématique la plus lourde.
 
 #### 6.8.4 Ce que la piste d'Interventions remplace
 

@@ -68,6 +68,16 @@ export interface EffetCombat {
   readonly auPoste?: boolean;
   /** L'attaque : la carte visée. Le trait relie l'attaquant à elle (nature `attaque`). */
   readonly uidCible?: string;
+  /** La Pression jouée, son rang dans la carte : la chorégraphie en dépend (D-098). */
+  readonly attackIndex?: number;
+  /**
+   * Le Stress **réellement encaissé** par la cible de cette Pression, et si elle a craqué.
+   * Ils voyagent **sur l'attaque** et non comme des effets séparés : le plafond de quatre
+   * refuserait le Stress ou le craquage de la cible avant qu'ils n'arrivent, et la scène
+   * jouerait un coup sans impact (D-098).
+   */
+  readonly stressCible?: number;
+  readonly cibleCraque?: boolean;
 }
 
 export function dureeEffet(nature: NatureEffet): number {
@@ -141,6 +151,57 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
     prochainId += 1;
   };
 
+  // **La Pression est émise en premier** : le plafond de quatre effets refuse le cinquième
+  // arrivé, et l'attaque est la plus importante de la liste — la refuser parce que deux
+  // Conditions et une Intervention sont passées avant elle serait un mauvais arbitrage.
+  // Une action `attack` vient d'être journalisée : l'état est déjà final, l'effet ne retarde
+  // rien, il raconte. L'attaquant est le camp au trait **avant** l'action (`attack` ne se joue
+  // que pour lui) ; la cible est le Poste d'en face, au moment d'avant.
+  const dernier = apres.actionLog[apres.actionLog.length - 1];
+  // **Une seule action de plus** : en partie à deux, `join` remplace l'état d'un bloc, et le
+  // diff couvre alors tout un tour adverse. L'attaquant lu dans l'état d'avant ne serait plus
+  // celui qui a frappé, et la scène jouerait la mauvaise Pression sur la mauvaise carte.
+  const uneSeuleAction = apres.actionLog.length === avant.actionLog.length + 1;
+  // **Une Dérive ratée journalise bien une action `attack`** (le tour est consommé), mais le
+  // moteur n'écrit aucune ligne de coup : il dit que la Pression n'est pas lancée. Sans ce
+  // filtre, la scène jouerait une attaque qui n'a pas eu lieu (D-098). On exclut donc le cas
+  // **négatif explicite**, plutôt que d'exiger une formulation positive du succès.
+  const deriveRatee = apres.log
+    .slice(avant.log.length)
+    .some((ligne) => ligne.includes('Dérive') && ligne.includes('Pression'));
+  if (uneSeuleAction && dernier?.type === 'attack' && !deriveRatee) {
+    const attaquant = avant.current;
+    const adverse = attaquant === 'player' ? 'ai' : 'player';
+    const source = avant.players[attaquant].active;
+    const cible = avant.players[adverse].active;
+    if (source) {
+      // Le Stress encaissé par la cible et son craquage sont calculés **ici**, sur l'état
+      // d'avant et d'après, et posés sur l'attaque : ils ne dépendent plus du plafond.
+      let stressCible = 0;
+      let cibleCraque = false;
+      if (cible) {
+        const survivante = enJeu(apres.players[adverse]).find(
+          (carte) => carte.uid === cible.uid
+        );
+        const avantStress = cible.maxHp - cible.hp;
+        const apresStress = survivante ? survivante.maxHp - survivante.hp : cible.maxHp;
+        stressCible = Math.max(0, apresStress - avantStress);
+        cibleCraque =
+          !survivante &&
+          apres.players[adverse].discard.some((carte) => carte.uid === cible.uid);
+      }
+      ajouter({
+        nature: 'attaque',
+        camp: attaquant,
+        uid: source.uid,
+        uidCible: cible?.uid,
+        attackIndex: dernier.attackIndex,
+        stressCible,
+        cibleCraque
+      });
+    }
+  }
+
   for (const camp of CAMPS) {
     const avantCamp = enJeu(avant.players[camp]);
     const apresCamp = enJeu(apres.players[camp]);
@@ -192,20 +253,6 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
     // remplit deux, donc deux rebonds — et le compteur les refusera au-delà de quatre.
     for (let numero = avant.players[camp].points + 1; numero <= apres.players[camp].points; numero += 1) {
       ajouter({ nature: 'intervention', camp, numero });
-    }
-  }
-
-  // **La Pression en quatre temps** (#207) : une action `attack` vient d'être journalisée.
-  // L'état est déjà final — l'effet ne retarde rien, il raconte. L'attaquant est le camp au
-  // trait **avant** l'action (`attack` ne se joue que pour lui) ; la cible est le Poste d'en
-  // face, au moment d'avant.
-  const dernier = apres.actionLog[apres.actionLog.length - 1];
-  if (apres.actionLog.length > avant.actionLog.length && dernier?.type === 'attack') {
-    const attaquant = avant.current;
-    const source = avant.players[attaquant].active;
-    const cible = avant.players[attaquant === 'player' ? 'ai' : 'player'].active;
-    if (source) {
-      ajouter({ nature: 'attaque', camp: attaquant, uid: source.uid, uidCible: cible?.uid });
     }
   }
 

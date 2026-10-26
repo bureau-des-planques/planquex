@@ -44,6 +44,7 @@ import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
+import { SceneAttaque } from '@/animation/SceneAttaque';
 import type { EffetCombat } from '@/components/effets-combat';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import type { EtatMenu } from '@/components/MenuCombat';
@@ -124,6 +125,7 @@ function CartePlateau({
   inspectee,
   annotations = false,
   effets = [],
+  dansScene = false,
   onInspecter
 }: {
   instance: CardInstance;
@@ -136,6 +138,12 @@ function CartePlateau({
   annotations?: boolean;
   /** Les effets de la scène qui visent cette instance (#192) : un chiffre de Stress, pas plus. */
   effets?: readonly EffetCombat[];
+  /**
+   * C'est **la cible de la Pression en cours** : la scène dessine son chiffre à l'impact, donc
+   * le chiffre du DOM s'efface pour ne pas en afficher deux (D-098). Les autres chiffres —
+   * Surcharge et Épuisement au Contrôle, dégâts sur soi — restent visibles.
+   */
+  dansScene?: boolean;
   onInspecter: () => void;
 }) {
   const nom = cardName(instance.cardId);
@@ -163,7 +171,7 @@ function CartePlateau({
       {effets.map((effet) => (
         <span
           key={effet.id}
-          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`}
+          className={`stress-flottant${effet.anime ? '' : ' is-fixe'}${dansScene ? ' is-scene' : ''}`}
           aria-hidden="true"
         >
           +{effet.valeur}
@@ -479,6 +487,7 @@ function Camp({
   inspecte,
   detaille,
   effets = [],
+  cibleScene,
   onInspecter
 }: {
   label: string;
@@ -495,6 +504,8 @@ function Camp({
   detaille: boolean;
   /** Les effets de la scène qui touchent **ce** camp (#192). */
   effets?: readonly EffetCombat[];
+  /** Le `uid` de la cible de la Pression en cours : c'est elle que la scène anime (D-098). */
+  cibleScene?: string;
   onInspecter: (uid: string) => void;
 }) {
   const effetsStress = effets.filter((effet) => effet.nature === 'stress');
@@ -511,23 +522,21 @@ function Camp({
   // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
   // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
   const posteActif = side.active;
-  // **La Pression en quatre temps** (#207) : l'attaquant se cabre (200 ms), la cible prend
-  // l'anneau d'impact (150 ms). Un seul effet porte les deux — l'état est déjà final.
-  const elanPoste = effets.some((effet) => effet.nature === 'attaque' && effet.uid === posteActif?.uid);
-  const impactPoste = effets.some(
-    (effet) => effet.nature === 'attaque' && effet.uidCible === posteActif?.uid
-  );
+  // **La Pression** est jouée par la scène (D-098) : le cabrage, le trait et l'anneau d'impact
+  // du CSS de #207 ont disparu, sinon deux animations se superposeraient. Ce qui reste ici, et
+  // qui ne dépend d'aucun mouvement, c'est le **chiffre de Stress** (`effetsStress`).
   const poste = (
     <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
       <span className="sr-only">Poste</span>
       {posteActif ? (
         <CartePlateau
           instance={posteActif}
-          className={`poste__carte${elanPoste ? ' is-elan' : ''}${impactPoste ? ' is-impactee' : ''}`}
+          className="poste__carte"
           machine={texteMachine(side)}
           inspectee={inspecte === posteActif.uid}
           annotations={detaille}
           effets={effetsStress.filter((effet) => effet.uid === posteActif.uid)}
+          dansScene={cibleScene === posteActif.uid}
           onInspecter={() => onInspecter(posteActif.uid)}
         />
       ) : (
@@ -539,7 +548,7 @@ function Camp({
           place qu'elle occupait — et son chiffre de Stress avec elle. Le bandeau « a craqué »
           et le journal restent les porteurs de l'information sous mouvement réduit. */}
       {craquage && craquage.auPoste && (
-        <div className="craquage__carte" aria-hidden="true">
+        <div className="craquage__carte" data-uid={craquage.uid} aria-hidden="true">
           {craquageDefinition && <CardView card={craquageDefinition} figee plateau />}
         </div>
       )}
@@ -605,6 +614,7 @@ function Camp({
                 className="bench__carte"
                 inspectee={inspecte === slot.uid}
                 effets={effetsStress.filter((effet) => effet.uid === slot.uid)}
+                dansScene={cibleScene === slot.uid}
                 onInspecter={() => onInspecter(slot.uid)}
               />
             ) : (
@@ -840,6 +850,42 @@ export function Battle() {
    * (800 ms au plus) vivent dans `effets-combat.ts`, pas dans le CSS.
    */
   const effets = useEffetsDeCombat(state, sansMouvement);
+
+  /**
+   * **La chorégraphie de la Pression** (D-098) : l'effet d'attaque dit qui frappe qui, le
+   * journal dit quelle Pression (`attackIndex`). La carte est retrouvée par son `uid` au Poste
+   * ou au Banc **des deux camps**. Un attaquant qui a craqué sur son propre coup
+   * (`selfDamage`) n'est plus ni à l'un ni à l'autre : la scène n'a alors rien à animer, et
+   * c'est le chiffre de Stress de #192 qui raconte le coup.
+   */
+  const effetAttaque = effets.findLast((effet) => effet.nature === 'attaque');
+  const carteAttaque = useMemo(() => {
+    if (!effetAttaque?.uid) return undefined;
+    for (const camp of ['player', 'ai'] as const) {
+      const cote = state.players[camp];
+      const instance = [cote.active, ...cote.bench].find(
+        (carte) => carte !== null && carte.uid === effetAttaque.uid
+      );
+      if (instance) {
+        const definition = getCard(instance.cardId);
+        if (definition && isPlanque(definition)) return definition;
+      }
+    }
+    return undefined;
+  }, [effetAttaque?.uid, state.players]);
+  const attaqueJouee = carteAttaque?.attacks[effetAttaque?.attackIndex ?? 0];
+  /**
+   * Le Stress **encaissé** par la cible : c'est la valeur de l'effet `stress` qui la vise, donc
+   * celle que le jeu a réellement retirée (Vulnérabilité comprise) — jamais le chiffre imprimé
+   * sur la carte. La scène n'affiche rien si la cible n'a rien encaissé.
+   */
+  /**
+   * **Le coup de grâce** : la cible de la Pression est aussi celle qui craque. La scène joue
+   * alors sa saynète de sortie, et vise le **fantôme** de la carte tombée — elle a déjà quitté
+   * le plateau, mais `craquage__carte` la montre encore une fraction de seconde.
+   */
+  const coupDeGrace = effetAttaque?.cibleCraque === true;
+  const stressEncaisse = effetAttaque?.stressCible ?? 0;
 
   /**
    * **Le raccourci de la bascule d'infos** (#189, `SPEC-COMBAT-UI` §4.6) : `I` et son alias
@@ -1373,6 +1419,18 @@ export function Battle() {
       */}
       <div className="battle__table">
         <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
+          {/* La scène de la Pression (D-098) : deux `canvas` et les cartes animées par l'API
+              Web Animations. Rien ne se monte sous « Mouvement réduit ». */}
+          <SceneAttaque
+            effetId={effetAttaque?.id}
+            uid={effetAttaque?.uid}
+            uidCible={effetAttaque?.uidCible}
+            carte={carteAttaque}
+            attaque={attaqueJouee}
+            stress={stressEncaisse}
+            coupDeGrace={coupDeGrace}
+            sansMouvement={sansMouvement}
+          />
           {/* La piste d'Interventions (#190) sépare les deux camps : elle est **une** seule cible du
               pas-à-pas (son conteneur), jamais une par camp. */}
           {[otherCamp(myCamp), myCamp].map((id, index) => (
@@ -1401,31 +1459,14 @@ export function Battle() {
                 inspecte={inspecte}
                 detaille={combatDetaille}
                 effets={effets.filter((effet) => effet.camp === id)}
+                cibleScene={sansMouvement ? undefined : effetAttaque?.uidCible}
                 onInspecter={setInspecte}
               />
             </Fragment>
           ))}
-          {/* Le trait de la Pression (#207) : la deuxième ligne de la séquence. Il ne traverse
-              **jamais** sous mouvement réduit — l'anneau d'impact et le chiffre de Stress
-              disent la même chose sans mouvement. */}
-          {/* Un seul trait : si la Pression **craque** la cible, la traînée de craquage (ci-dessous)
-              **est** le trait — on n'en pose pas deux. */}
-          {!sansMouvement &&
-            effets
-              .filter(
-                (effet) =>
-                  effet.nature === 'attaque' &&
-                  !effets.some((autre) => autre.nature === 'craquage' && autre.uid === effet.uidCible)
-              )
-              .map((effet) => (
-                <span
-                  key={`trait-${effet.id}`}
-                  className={`attaque__trait ${
-                    effet.camp === myCamp ? 'attaque__trait--vers-le-bas' : 'attaque__trait--vers-le-haut'
-                  }`}
-                  aria-hidden="true"
-                />
-              ))}
+          {/* Le trait de la Pression est **dessiné par la scène** (D-098) : deux animations
+              pour un seul coup se verraient. La traînée de craquage, elle, reste ici — c'est
+              la même règle : une seule bande à la fois. */}
           {/* La traînée de craquage (#192) : une seule, entre l'attaquant et sa cible. Elle ne
               traverse **jamais** sous mouvement réduit — le fantôme désaturé et le bandeau
               « a craqué » disent tout, sans mouvement. */}
