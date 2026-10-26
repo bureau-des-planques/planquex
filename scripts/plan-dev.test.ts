@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { entreeDe, lireIssues, rendreFichier } from './plan-dev.mjs';
+import { divergence, entreeDe, lireIssues, rendreFichier } from './plan-dev.mjs';
 import { FEATURES_PREVUES } from '@/data/plan-dev';
 
 /**
@@ -20,7 +20,9 @@ import { FEATURES_PREVUES } from '@/data/plan-dev';
  * 2. **aucun lien n'est engendré** : le dépôt est **privé**, donc un `#214` se lit, un
  *    `https://github.com/…` ne s'ouvre pas (D-097 (3)) ;
  * 3. le fichier commité est **exactement** ce que le générateur écrirait — c'est le
- *    `--verifie` de la commande, mais hors ligne, donc dans la CI.
+ *    `--verifie` de la commande, mais hors ligne, donc dans la CI ;
+ * 4. **le contrôle mord** (#231) : la fonction de comparaison du `--verifie`, confrontée
+ *    à un fichier amputé, dit la divergence — sinon la CI ne garderait qu'une apparence.
  */
 
 /** Deux issues telles que `gh issue list --json number,title` les rend. */
@@ -58,6 +60,21 @@ describe('plan-dev — le fichier engendré', () => {
     // effacé en silence par la prochaine exécution de `npm run plan:dev`. On le dit ici.
     const fichier = readFileSync(new URL('../src/data/plan-dev.ts', import.meta.url), 'utf8');
     expect(fichier).toBe(rendreFichier(FEATURES_PREVUES));
+  });
+
+  it('le contrôle mord : un fichier amputé est une divergence, pas un vert (#231)', () => {
+    // C'est la fonction que `-- --verifie` appelle (CI, étape « fichiers générés »).
+    // Sans ce cas, elle pourrait toujours répondre `null` et personne ne le verrait.
+    const attendu = rendreFichier(FEATURES_PREVUES);
+    expect(divergence(attendu, attendu)).toBeNull();
+
+    // Une entrée de moins, comme un fichier édité à la main après un merge.
+    const sansUne = rendreFichier(FEATURES_PREVUES.slice(0, -1));
+    expect(sansUne).not.toBe(attendu);
+    expect(divergence(sansUne, attendu)).toMatch(/a divergé de GitHub — lance `npm run plan:dev`/);
+
+    // Une seule ligne changée suffit : la comparaison est à l'octet, pas à l'à-peu-près.
+    expect(divergence(`${attendu}\n`, attendu)).toMatch(/divergé/);
   });
 
   it('ne porte aucun lien — le dépôt est privé (D-097 (3))', () => {

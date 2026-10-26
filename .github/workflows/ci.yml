@@ -7,8 +7,11 @@ on:
   pull_request:
     branches: [main]
 
+# `contents: read` suffit aux releases (`gh release list`, D-090) ; les issues `alpha`
+# (`gh issue list`, D-097 (3)) demandent en plus `issues: read`, même sur un dépôt privé.
 permissions:
   contents: read
+  issues: read
 
 jobs:
   ci:
@@ -46,6 +49,35 @@ jobs:
 
       - name: Lancer les tests
         run: npm test
+
+      # Fichiers générés (ticket #231) : `src/data/versions.ts` (releases GitHub, D-090) et
+      # `src/data/plan-dev.ts` (issues `alpha` ouvertes, D-097 (3)) sont commités et lus par
+      # `/feuille-de-route`. Les deux commandes savent dire si le fichier commité a divergé
+      # (`-- --verifie` : n'écrit rien, sort 1) ; ce contrôle le leur demande, sinon un
+      # fichier périmé passerait au vert en silence. **On vérifie, on ne réécrit pas** : un
+      # fichier généré par la CI ferait un commit fantôme.
+      #
+      # `gh` lit le dépôt **privé** : `GH_TOKEN` est `github.token`, le jeton automatique
+      # du workflow — aucune valeur à configurer, donc **aucun secret nouveau** (la garde
+      # `src/ci.test.ts` refuse toute variable de ce genre dans ce fichier) — et les
+      # permissions ci-dessus lui ouvrent les releases et les issues.
+      # Sans jeton ou sans `gh` authentifié, l'étape **ÉCHOUE** au lieu de se sauter : un
+      # contrôle qui n'a pas tourné n'est pas un contrôle (même règle que `npm run capturer`),
+      # et sur ce dépôt le jeton est toujours disponible — son absence est une configuration
+      # cassée, pas une dispense. Le message dit quoi rétablir. Un jeton **présent mais
+      # invalide** n'est pas vu par `gh auth status` sur toutes les versions de `gh` : les
+      # deux commandes appellent GitHub et sortent alors 1 avec leur propre message, donc
+      # l'étape reste rouge.
+      - name: Vérifier que les fichiers générés sont à jour
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ] && ! gh auth status >/dev/null 2>&1; then
+            echo "::error::Fichiers générés non vérifiés — aucun jeton GitHub : GH_TOKEN est absent et gh n'est pas authentifié. Un contrôle qui n'a pas tourné n'est pas un contrôle : rétablis le jeton (github.token), ne saute pas l'étape."
+            exit 1
+          fi
+          npm run plan:dev -- --verifie
+          npm run notes:versions -- --verifie
 
       # Garde-fous (ticket #112) : mute un invariant critique et EXIGE que la suite échoue.
       # Une mutation qui passe inaperçue désigne une assertion qui ne garde rien — trois

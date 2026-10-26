@@ -56,6 +56,22 @@ describe('.github/workflows/ci.yml', () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
   });
 
+  it('vérifie les fichiers générés avec le jeton du workflow, sans jamais se sauter (#231)', () => {
+    // Le contrôle de fraîcheur (#231) doit tourner, et échouer si `gh` ne peut pas lire
+    // GitHub. Sans cette assertion, **retirer l'étape** rendrait la CI verte alors qu'un
+    // fichier périmé ne serait plus comparé à rien — on ne garderait que l'apparence.
+    const debut = workflow.indexOf('Vérifier que les fichiers générés sont à jour');
+    expect(debut, 'étape « fichiers générés » absente').toBeGreaterThanOrEqual(0);
+    const bloc = workflow.slice(debut, workflow.indexOf('- name: Vérifier que les garde-fous peuvent échouer'));
+    expect(bloc).toContain('npm run plan:dev -- --verifie');
+    expect(bloc).toContain('npm run notes:versions -- --verifie');
+    // Le jeton automatique du workflow : aucune valeur à configurer (`secrets.` interdit).
+    expect(bloc).toContain('GH_TOKEN: ${{ github.token }}');
+    // Pas de `if:` YAML qui sauterait l'étape : sans jeton, elle échoue explicitement.
+    expect(bloc).not.toMatch(/^\s*if:/m);
+    expect(bloc).toMatch(/exit 1/);
+  });
+
   it('échoue si une étape échoue et n’exige aucun secret', () => {
     // Pas de `continue-on-error` : l'échec d'une étape fait échouer le job.
     expect(workflow).not.toMatch(/continue-on-error/);
