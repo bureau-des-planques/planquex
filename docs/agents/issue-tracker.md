@@ -47,11 +47,13 @@ ticket bloqué, lire ce qu'il fait *réellement*.
 
 When set to `yes`, PRs run through the same labels and states as issues, using the `gh pr` equivalents:
 
-- **Read a PR**: `gh pr view <number> --comments` and `gh pr diff <number>` for the diff.
+- **Read a PR**: `gh pr view <number> --json number,title,body,labels,comments` and `gh pr diff <number>` for the diff.
 - **List external PRs for triage**: `gh api --paginate 'repos/Chapax/planquex/pulls?state=open' --jq '.[] | select(.author_association | IN("OWNER","MEMBER","COLLABORATOR") | not) | {number, title, author: .user.login, author_association, labels: [.labels[].name]}'`.
 - **Comment / label / close**: `gh pr comment`, `gh pr edit --add-label`/`--remove-label`, `gh pr close`.
 
-GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42` and fall back to `gh issue view 42`.
+GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42 --json number,title,body` and fall back to `gh issue view 42 --json number,title,body`.
+
+**Toujours `--json`, jamais la sortie par défaut** : `gh issue view 42` et `gh pr view 42` sortent **1** sur ce dépôt (l'avertissement « Projects (classic) is being deprecated » compte comme une erreur). Mesuré le 26/10/2026 : 42 appels en échec en 3 jours. `gh issue list` et `gh pr list` fonctionnent sans `--json`.
 
 ## When a skill says "publish to the issue tracker"
 
