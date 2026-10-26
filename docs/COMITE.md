@@ -85,8 +85,8 @@ d'écran.
 là où le mur la lit. **Sur la base (#185, #186)**, le lâcher écrit `position_x`, `position_y` et
 `position_angle` **tout de suite** : tout le monde voit la disposition sans commit. L'auteur range
 **ses** post-its ; l'**administration** range **n'importe lequel** (D-092), et un compte en attente ne
-range rien du tout. **Sur le fichier**, le mode exporte le fichier à committer : c'est le mécanisme de
-l'alpha, sans backend.
+range rien du tout. **Sans base**, il n'y a plus d'export (#215, D-097 (6)) : le mode déplace les
+post-its à l'écran, et le fichier garde `position`, **écrit à la main**.
 
 **Un post-it neuf ne se colle pas sur un autre (#185)** : sa place est tirée au hasard, puis écartée
 des places déjà prises — le calcul garde le point dont l'écart à toutes les autres est le plus grand.
@@ -154,6 +154,22 @@ l'écran étroit **garde des post-its** — il ne se contente pas d'une liste de
 Le **mode de placement** reste un travail de **bureau** : il ne se fait pas au doigt sur un téléphone.
 Sur la base, l'auteur range **son** post-it et l'**administration** range tout (#185, #186, D-092) : le tableau se répare donc post-it par post-it, et le bureau peut reprendre un post-it mal posé.
 
+## 2 ter. Le suivi — `/comite/suivi` (#211, D-097 (2) et (5))
+
+Le comité a **deux pages**, sous une barre de sous-onglets : **Le mur** (`/comite`, ce qui
+arrive) et **Le suivi** (`/comite/suivi`, ce qu'on en a fait).
+
+- **trois groupes** : `en cours`, `fait` — affiché **« Fait »**, un seul nom pour un état — et
+  `écarté`, **avec sa raison** (D-059 : un écarté sans raison est un mur mort) ;
+- `en attente` et `retenu` **restent sur le mur** : un post-it non trié n'a rien à faire dans
+  un suivi, et le montrer deux fois ferait deux murs ;
+- **ouvrir la page pose le repère** `vu_le` du compte, par `public.marquer_comite_vu()`
+  (migration `0008`) — **jamais** un `update` direct, une politique RLS ne distinguant pas
+  les colonnes. C'est ce qui remet le compteur du comité à zéro (D-097 (5)) ; sans base
+  configurée, le geste est **inerte** ;
+- la **source** est celle du mur : la base, ou `docs/comite.json` en secours — un suivi ne se
+  déclare jamais vide parce que la base n'a pas répondu.
+
 ## 3. Le fichier du mur
 
 `design/…` non : le mur vit dans **`docs/comite.json`**, versionné avec le dépôt, parce que
@@ -212,10 +228,12 @@ depuis le mur. Le fichier reste le **contrat de données** et la **source de sec
 variables, ou si la base ne répond pas, le mur affiche ce fichier, sans écran cassé. Dans ce
 cas, le formulaire (§4) reste la porte d'écriture.
 
-**Le rangement suit (#185)** : sur la base, le mode de placement n'exporte plus un fichier — le
+**Le rangement (#185, #215)** : le mode de placement n'exporte plus de fichier — sur la base, le
 lâcher écrit `position_x`, `position_y` et `position_angle` (politique « chacun déplace les
-siens » de `0001`, reprise par `0005`). Et un post-it neuf est posé là où il cache le moins de
-texte : sa place de hasard est écartée des places déjà prises, au lieu de tomber dessus.
+siens » de `0001`, reprise par `0005`) ; sans base, il ne fait que déplacer à l'écran, et
+`position` s'écrit à la main dans le fichier. Et un post-it neuf est posé là où il cache le
+moins de texte : sa place de hasard est écartée des places déjà prises, au lieu de tomber
+dessus.
 
 ## 4. Le formulaire
 

@@ -252,6 +252,19 @@ export const MUTATIONS = [
     tests: ['src/components/effets-combat.test.ts'],
     garde:
       'au-delà de 800 ms, un chiffre flottant recouvre le nom de la carte et retarde la lecture du geste suivant — la borne est dans le CSS, pas seulement dans la constante du composant'
+  },
+  {
+    ticket: 211,
+    titre: 'le suivi cache la raison d’un post-it écarté',
+    fichier: 'src/pages/Suivi.tsx',
+    // La raison est **la seule chose** qui apprend aux invités ce qui vaut la peine d'être
+    // remonté (D-059) : le suivi est la page qui la porte, et le mur ne la montre qu'en
+    // agrandissant un post-it.
+    motif: '</strong> {postit.raison}',
+    remplacement: '</strong>',
+    tests: ['src/pages/Suivi.test.tsx'],
+    garde:
+      'un écarté sans sa raison est un mur mort (D-059) : retirer ce texte ne casse rien à la compilation, et l’invité ne saurait plus pourquoi son idée a été refusée'
   }
 ];
 

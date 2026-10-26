@@ -11,7 +11,12 @@
  * compte en attente lit et joue, l'écran ne lui propose ni le formulaire ni les pouces — et la
  * base les refuserait de toute façon (migration 0005). Sans configuration — ou quand la base
  * ne répond pas et que la page retombe sur le fichier — il n'y a ni bouton ni compteur, et
- * rien n'est contacté. Le mode de placement, lui, n'écrit toujours que le fichier du dépôt.
+ * rien n'est contacté.
+ *
+ * **Le rangement (#215, D-097 (6))** : le mode de placement reste, et la place s'écrit **en
+ * base** (`deplacerPostit`, #185). L'**export du fichier** et son panneau sont retirés ; sans
+ * base, le glisser ne fait que déplacer à l'écran, et c'est `docs/comite.json` qui garde
+ * `position`, écrit à la main.
  *
  * États (D-060) : **vide**, **erreur** et **chargement** sont rendus. Le chargement n'existe
  * que branché sur la base (sans elle, le fichier est bundlé par Vite : aucune requête) ; et
@@ -19,12 +24,13 @@
  * notice « la base n'a pas répondu » — l'écran ne reste jamais sans mur. Le bandeau
  * hors ligne du Layout le dit en plus, pour toute l'application.
  */
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Copy, Download, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { PAPIERS, PostitDuMur } from '@/components/PostitDuMur';
+import { SousOngletsComite } from '@/components/SousOngletsComite';
 import type { GlisserPostit } from '@/components/PostitDuMur';
 import {
   chargerCommentaires,
@@ -44,7 +50,7 @@ import {
 import type { Commentaire } from '@/lib/murBase';
 import { estAdministrateur, estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
-import { DOCUMENT_MUR, ECRANS, exporterMur, lireMur } from '@/store/mur';
+import { DOCUMENT_MUR, ECRANS, lireMur } from '@/store/mur';
 import type { Ecran, Mur, Postit, PositionPostit, SensVote } from '@/store/mur';
 import { useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
@@ -334,15 +340,11 @@ export function Comite() {
     const paires = recouvrements();
     setRecouvrement(
       paires.length
-        ? source === 'base'
-          ? `Ce placement recouvre le texte de ${paires.join(', ')}. Reprends le post-it et déplace-le : un texte ne doit jamais en cacher un autre.`
-          : `Ce placement recouvre le texte de ${paires.join(', ')}. Déplace le post-it avant d’exporter — un texte ne doit jamais en cacher un autre.`
+        ? `Ce placement recouvre le texte de ${paires.join(', ')}. Reprends le post-it et déplace-le : un texte ne doit jamais en cacher un autre.`
         : null
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `recouvrements` lit le DOM.
   }, [lachers]);
-
-  const fichier = useMemo(() => exporterMur(positions), [positions]);
 
   /**
    * Un clic sur un pouce (#137). Le compte bouge **tout de suite** ; si la base ou le réseau
@@ -507,35 +509,6 @@ export function Comite() {
       .map((postit) => postit.lie as string)
   );
 
-  const telecharger = () => {
-    const url = URL.createObjectURL(new Blob([fichier], { type: 'application/json' }));
-    const lien = document.createElement('a');
-    lien.href = url;
-    lien.download = 'comite.json';
-    lien.click();
-    URL.revokeObjectURL(url);
-    setMessage({
-      texte:
-        'Fichier téléchargé. Remplace docs/comite.json par lui, puis commite — c’est tout le mécanisme de l’alpha.'
-    });
-  };
-
-  const copier = () => {
-    const refus = () =>
-      setMessage({
-        texte: 'Le navigateur a refusé le presse-papier : le texte est dans la zone, recopie-le à la main.'
-      });
-    const envoi = navigator.clipboard?.writeText(fichier);
-    if (!envoi) {
-      refus();
-      return;
-    }
-    envoi.then(
-      () => setMessage({ texte: 'Fichier copié. Colle-le dans docs/comite.json, puis commite.' }),
-      refus
-    );
-  };
-
   /** Un gueulage n'a pas de titre : la base en fabrique un avec ses premiers mots (D-085). */
   const gueulage = nature === 'GUEULAGE';
 
@@ -647,6 +620,8 @@ export function Comite() {
             </Link>
           </div>
         </div>
+
+        <SousOngletsComite />
 
         <ul className="m-0 flex list-none flex-wrap items-center gap-x-5 gap-y-2 p-0 text-[0.76rem] text-ink-muted">
           {LEGENDE.map(([apparence, texte]) => (
@@ -850,6 +825,74 @@ export function Comite() {
 
       {!chargement && mur && mur.postits.length > 0 && (
         <section className="mur-plan">
+          {/* Le rangement (#185, #215) : le geste seulement. L'export du fichier et son
+              panneau sont retirés (D-097 (6)) — la place s'écrit en base, et le fichier
+              garde `position`, écrit à la main. */}
+          <div className="mb-3 flex max-[899px]:hidden flex-col gap-2">
+            <div className="actions actions--tight">
+              {peutRanger && (
+                <button
+                  type="button"
+                  className={placement ? 'button button--gold' : 'button'}
+                  aria-pressed={placement}
+                  onClick={() => {
+                    setPlacement((actif) => !actif);
+                    setMessage(null);
+                    setRecouvrement(null);
+                  }}
+                >
+                  <Move size={16} /> {placement ? 'Terminer le placement' : 'Mode de placement'}
+                </button>
+              )}
+              {source === 'fichier' && (
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    setPositions(positionsDuMur(mur));
+                    setMessage({ texte: 'Positions revenues à celles du fichier.' });
+                  }}
+                >
+                  <RotateCcw size={16} /> Revenir aux positions du fichier
+                </button>
+              )}
+            </div>
+
+            {!peutRanger && (
+              <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
+                Le rangement s’ouvrira en même temps que l’écriture : il faut d’abord un compte
+                validé.
+              </p>
+            )}
+
+            {placement && source === 'base' && (
+              <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
+                {placeEnVol
+                  ? 'La place s’écrit…'
+                  : 'Prends un post-it qui est à toi et dépose-le : la place part en base au lâcher. Ceux des autres ne se prennent pas.'}
+              </p>
+            )}
+
+            {placement && source === 'fichier' && (
+              <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
+                Sans base, la place ne se retient pas : elle vit le temps de l’écran. Le fichier
+                garde <code>position</code>, écrit à la main.
+              </p>
+            )}
+
+            {message && (
+              <p
+                className={
+                  message.alerte ? 'notice notice--warn m-0' : 'm-0 text-[0.86rem] text-ink-muted'
+                }
+              >
+                {message.texte}
+              </p>
+            )}
+
+            {recouvrement && <p className="notice notice--warn m-0">{recouvrement}</p>}
+          </div>
+
           <div
             ref={tableau}
             className="relative max-[899px]:grid max-[899px]:grid-cols-1 max-[899px]:gap-4 min-[421px]:max-[899px]:grid-cols-2 min-[900px]:min-h-[600px]"
@@ -920,124 +963,6 @@ export function Comite() {
           </div>
         </section>
       )}
-
-      <section className="section panel">
-        <h2>Le rangement</h2>
-        <p className="muted max-w-[64ch] min-[900px]:hidden">
-          Sur téléphone, les post-its s’empilent et la page défile. Le rangement se fait sur un
-          écran large, au glisser — pas au doigt.
-        </p>
-
-        {source === 'base' ? (
-          <p className="m-0 max-w-[66ch] text-[0.9rem] max-[899px]:hidden">
-            La base porte la place de chaque post-it : en mode placement, un post-it se{' '}
-            <strong>glisse</strong> à la souris et sa place s’écrit <strong>tout de suite</strong>{' '}
-            en base — tout le monde la voit, sans commit. Chacun ne range que <strong>ses</strong>{' '}
-            post-its : ceux des autres restent là où leur auteur les a mis.
-          </p>
-        ) : (
-          <p className="m-0 max-w-[66ch] text-[0.9rem] max-[899px]:hidden">
-            En mode placement, un post-it se <strong>glisse</strong> à la souris et sa position
-            s’écrit en pourcentage du tableau : tout le monde verra la même disposition, quel que
-            soit l’écran. L’application est un <strong>site statique</strong> — elle ne peut pas
-            écrire dans le dépôt : le fichier exporté ci-dessous se <strong>commite</strong> à la
-            place de <code>docs/comite.json</code>. C’est le mécanisme de l’alpha, en
-            attendant la base.
-          </p>
-        )}
-
-        <div className="flex max-[899px]:hidden flex-col gap-3">
-          {mur && mur.postits.length > 0 ? (
-            <>
-              <div className="actions">
-                {peutRanger && (
-                  <button
-                    type="button"
-                    className={placement ? 'button button--gold' : 'button'}
-                    aria-pressed={placement}
-                    onClick={() => {
-                      setPlacement((actif) => !actif);
-                      setMessage(null);
-                      setRecouvrement(null);
-                    }}
-                  >
-                    <Move size={16} /> {placement ? 'Terminer le placement' : 'Mode de placement'}
-                  </button>
-                )}
-                {source === 'fichier' && (
-                  <button
-                    type="button"
-                    className="button"
-                    onClick={() => {
-                      setPositions(positionsDuMur(mur));
-                      setMessage({ texte: 'Positions revenues à celles du fichier.' });
-                    }}
-                  >
-                    <RotateCcw size={16} /> Revenir aux positions du fichier
-                  </button>
-                )}
-              </div>
-
-              {!peutRanger && (
-                <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
-                  Le rangement s’ouvrira en même temps que l’écriture : il faut d’abord un compte
-                  validé.
-                </p>
-              )}
-
-              {placement && source === 'fichier' && (
-                <div className="flex flex-col gap-2">
-                  <textarea
-                    className="settings__save"
-                    readOnly
-                    rows={10}
-                    value={fichier}
-                    aria-label="Le fichier du mur, avec les positions choisies"
-                  />
-                  <div className="actions actions--tight">
-                    <button
-                      type="button"
-                      className="button button--primary"
-                      onClick={telecharger}
-                    >
-                      <Download size={16} /> Télécharger le fichier
-                    </button>
-                    <button type="button" className="button" onClick={copier}>
-                      <Copy size={16} /> Copier
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {placement && source === 'base' && (
-                <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
-                  {placeEnVol
-                    ? 'La place s’écrit…'
-                    : 'Prends un post-it qui est à toi et dépose-le : la place part en base au lâcher. Ceux des autres ne se prennent pas.'}
-                </p>
-              )}
-
-              {message && (
-                <p
-                  className={
-                    message.alerte ? 'notice notice--warn m-0' : 'm-0 text-[0.86rem] text-ink-muted'
-                  }
-                >
-                  {message.texte}
-                </p>
-              )}
-
-              {recouvrement && (
-                <p className="notice notice--warn m-0">{recouvrement}</p>
-              )}
-            </>
-          ) : (
-            <p className="m-0 text-[0.86rem] text-ink-dim">
-              Rien à ranger pour l’instant : le mode s’ouvre dès le premier post-it.
-            </p>
-          )}
-        </div>
-      </section>
 
       <p className="m-0 max-w-[66ch] text-[0.78rem] text-ink-dim">
         {source === 'base'
