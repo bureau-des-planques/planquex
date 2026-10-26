@@ -488,6 +488,7 @@ function Camp({
   detaille,
   effets = [],
   cibleScene,
+  deckDeTest = false,
   onInspecter
 }: {
   label: string;
@@ -506,6 +507,12 @@ function Camp({
   effets?: readonly EffetCombat[];
   /** Le `uid` de la cible de la Pression en cours : c'est elle que la scène anime (D-098). */
   cibleScene?: string;
+  /**
+   * Ce camp joue le **deck de test**, parce que le Deck du joueur n'est pas valide (D-103, #243).
+   * L'avertissement tenait sur sa propre ligne (30 px) ; il est désormais une étiquette de la
+   * fiche du camp, où la place existait déjà.
+   */
+  deckDeTest?: boolean;
   onInspecter: (uid: string) => void;
 }) {
   const effetsStress = effets.filter((effet) => effet.nature === 'stress');
@@ -572,6 +579,15 @@ function Camp({
       <header className="board__head">
         <h2>{label}</h2>
         <span className="board__counts muted">main {side.hand.length}</span>
+        {deckDeTest && (
+          <span
+            className="board__test"
+            title="Un deck valide : 20 cartes, 2 exemplaires max, 1 Entrant minimum."
+          >
+            <span aria-hidden="true">deck de test</span>
+            <span className="sr-only">Ton deck n’est pas valide : ce combat utilise un deck de test.</span>
+          </span>
+        )}
         {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
             Rebut ne s'ouvre pas encore : son panneau arrive avec #188, et d'ici là ce n'est pas un bouton. */}
         <span className="piles">
@@ -1396,15 +1412,6 @@ export function Battle() {
       {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
       <PasAPasCombat pasAPas={pasAPas} />
 
-      {usedTestDeck && (
-        <p
-          className="notice notice--warn notice--compact"
-          title="Un deck valide : 20 cartes, 2 exemplaires max, 1 Entrant minimum."
-        >
-          Ton deck n’est pas valide : ce combat utilise un deck de test.
-        </p>
-      )}
-
       {state.phase === 'ended' && (
         <p className={`notice ${state.winner === myCamp ? 'notice--ok' : 'notice--warn'}`}>
           {endBanner(state, match ? myCamp : null)}
@@ -1460,6 +1467,7 @@ export function Battle() {
                 detaille={combatDetaille}
                 effets={effets.filter((effet) => effet.camp === id)}
                 cibleScene={sansMouvement ? undefined : effetAttaque?.uidCible}
+                deckDeTest={usedTestDeck && id === myCamp}
                 onInspecter={setInspecte}
               />
             </Fragment>

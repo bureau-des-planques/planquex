@@ -310,6 +310,16 @@ Trois indices, aucun modal :
   au-dessus de la barre, ce qui porte l'état « pas-à-pas terminé » à **36–38 px** de marge
   (contre 31–33) et laisse la composition plus loin de la limite.
 
+- **Fait le 26/10/2026 (#243, D-103) : l'écran de combat ne défile plus.** Le pas-à-pas ouvert
+  faisait **937 px** de document pour une fenêtre de 900 (défilement de **37 px**, en-tête rogné sur
+  la capture). Le bandeau « deck de test » (30 px + 3 px de gouttière) a été **déplacé** — il
+  est devenu une étiquette de la fiche du joueur, là où la place existait — et l'air réservé de
+  #237 (`padding-bottom: 0.5rem` de `.battle`) est **retiré**. Mesuré sur les huit états : plus
+  aucun défilement, barre d'action à **808–810 px** pas-à-pas ouvert (marge **20–22 px**, contre
+  23–26 px d'avant, qui n'étaient que de l'air réservé) et **758–761 px** pas-à-pas terminé
+  (marge 69–72 px). `npm run capturer` mesure désormais le défilement lui-même (`defilement`).
+  Preuve : `docs/preuves/combat-sans-defilement-2026-10-26/`.
+
 - **Mesuré le 25/10/2026, et ça change la tâche** : en remplaçant les noms par des cartes
   **sans toucher au reste**, `npm run capturer` passe de « main visible » (bas de la main à
   **666 px**, barre de navigation à 830) à **906 px** — soit **+313 px**, et l'échec du
@@ -428,7 +438,7 @@ le format d'export change. Même mécanique que `pasAPasCombatVu` (v5 → v6).
 | la **partie à deux** (#125) | l'écran ne montre **rien** des actions de l'autre camp (`Battle.tsx:571-577`) ; le code reste atteignable, et son `textarea` ne doit pas déclencher `I` |
 | **`peek`** (D-079) | le dessus du Deck regardé s'affiche au **seul** joueur concerné (`Battle.tsx:339-348`) : il reste dans l'inspecteur, jamais dans le journal, jamais dans un toast partagé |
 | **le forfait** (D-030) | passe par `Confirmation`, avec « Annuler » qui prend le focus (`DESIGN.md` §2.5) : le bouton descend dans le menu `⋯`, **le dialogue ne change pas** |
-| **le deck de test** | le bandeau d'avertissement (`Battle.tsx:862-869`) reste **visible**, pas dans le menu : c'est une information qui change la partie |
+| **le deck de test** | l'avertissement reste **visible**, pas dans le menu : c'est une information qui change la partie. Depuis #243 (D-103) il n'a plus sa ligne de 30 px : c'est l'étiquette « deck de test » (`.board__test`) de la fiche **du joueur**, et le texte entier reste lu par les lecteurs d'écran |
 | **la trace du combat** (#173) | aucun impact : elle lit l'état, pas l'écran |
 
 ### 5.8 Une divergence à signaler (doc ↔ code)

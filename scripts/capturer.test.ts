@@ -490,3 +490,51 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
     expect(source).toContain('(pas-à-pas terminé)');
   });
 });
+
+/**
+ * Ticket #243 — **l'écran de combat ne défile plus** (D-103). La marge de #237 se tenait par de
+ * l'air réservé tant que le document dépassait la fenêtre ; la garde exige maintenant que la
+ * page **tienne**, et elle le dit aussi pour l'état « pas-à-pas ouvert », celui qui défilait.
+ */
+describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #243)', () => {
+  const mesures = [
+    { nom: 'la main', selecteur: '.hand', present: true, haut: 620, bas: 720 },
+    { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: 730, bas: 806 }
+  ];
+
+  function controle(defilement: number | undefined, etat: string, pasAPasOuvert = false): string[] {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const sortie = execFileSync(
+      process.execPath,
+      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite: 830, mesures, defilement, etat, pasAPasOuvert })],
+      { cwd: root, encoding: 'utf8', env }
+    );
+    return JSON.parse(sortie) as string[];
+  }
+
+  it('laisse passer un document qui tient dans la fenêtre, pas-à-pas ouvert compris', () => {
+    expect(controle(0, 'pas-à-pas ouvert', true)).toEqual([]);
+  });
+
+  it('mord quand la page défile de 37 px — la mesure d’avant #243, pas-à-pas ouvert — et nomme l’état', () => {
+    const problemes = controle(37, 'pas-à-pas ouvert', true);
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("l'écran de combat défile de 37 px");
+    expect(problemes[0]).toContain('pas-à-pas ouvert');
+    expect(problemes[0]).toContain('D-103');
+  });
+
+  it('mord aussi d’un seul pixel', () => {
+    expect(controle(1, 'pas-à-pas terminé')).toHaveLength(1);
+  });
+
+  it('mesure le défilement dans la capture réelle, sur les huit états', () => {
+    const source = read('scripts/capturer.mjs');
+    expect(source).toContain('document.documentElement.scrollHeight - window.innerHeight');
+    // Les huit passages passent tous par `controlerHauteur`, qui transmet la mesure entière.
+    expect(source.match(/await controlerHauteur\(/g)?.length).toBeGreaterThanOrEqual(3);
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
+  });
+});

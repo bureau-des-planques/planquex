@@ -334,13 +334,26 @@ describe('Battle — écran de combat', () => {
     });
   });
 
-  it('affiche le message d\'avertissement si le deck n\'est pas valide — hors du menu', () => {
+  it('signale le deck de test sur la fiche de ton camp, hors du menu et sans ligne dédiée (D-103)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     // Visible menu fermé : c'est une information qui change la partie, pas un réglage.
     expect(menuEstOuvert()).toBe(false);
-    expect(screen.getByText(/Ton deck n’est pas valide : ce combat utilise un deck de test/)).toBeVisible();
-    expect(screen.getByText(/deck de test/i).closest('.combat-menu__panneau')).toBeNull();
+    // L'étiquette est lue en entier (#243 : elle a quitté sa ligne de 30 px, pas son texte).
+    const phrase = screen.getByText(/Ton deck n’est pas valide : ce combat utilise un deck de test/);
+    expect(phrase.closest('.combat-menu__panneau')).toBeNull();
+    // Elle vit dans la fiche **du joueur** — jamais celle de la Direction — et pas dans une `.notice`.
+    const etiquette = phrase.closest('.board__test');
+    expect(etiquette).not.toBeNull();
+    expect(etiquette?.closest('.board__fiche')).not.toBeNull();
+    expect(etiquette?.closest('.notice')).toBeNull();
+    expect(document.querySelectorAll('.board__test')).toHaveLength(1);
+    expect(screen.getByText('deck de test')).toBeInTheDocument();
+  });
+
+  it("n'affiche aucune étiquette de deck de test quand le deck du joueur est valide", () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, deck: autoDeck(Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]))).deck });
+    expect(document.querySelectorAll('.board__test')).toHaveLength(0);
   });
 });
 
