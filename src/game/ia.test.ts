@@ -44,13 +44,13 @@ function playSeed(seed: number): {
       // La politique choisit sa relève pour `ai` ; pour `player`, le test la choisit
       // à sa place (ce n'est pas le sujet).
       const action =
-        nextAiAction(state, 1) ?? legalActions(state).find((entry) => entry.type === 'promoteActive');
+        nextAiAction(state, 'scripte') ?? legalActions(state).find((entry) => entry.type === 'promoteActive');
       if (!action) break;
       state = applyAction(state, action);
       continue;
     }
     if (state.current === 'ai') {
-      const action = nextAiAction(state, 1);
+      const action = nextAiAction(state, 'scripte');
       if (!action) break;
       ai.push({ state, action });
       state = applyAction(state, action);
@@ -86,7 +86,7 @@ describe('IA de niveau 1 — la Direction', () => {
       guard += 1;
     }
     expect(state.current).toBe('player');
-    expect(nextAiAction(state, 1)).toBeNull();
+    expect(nextAiAction(state, 'scripte')).toBeNull();
   });
 
   it('termine son tour : plus rien après endTurn', () => {
@@ -98,7 +98,7 @@ describe('IA de niveau 1 — la Direction', () => {
           state = applyAction(state, { type: 'endTurn' });
           continue;
         }
-        const action = nextAiAction(state, 1);
+        const action = nextAiAction(state, 'scripte');
         if (!action) {
           // Relève du joueur : on la trance à sa place et on continue.
           const promotion = legalActions(state).find((entry) => entry.type === 'promoteActive');
@@ -108,7 +108,7 @@ describe('IA de niveau 1 — la Direction', () => {
         }
         const after = applyAction(state, action);
         if (action.type === 'endTurn') {
-          expect(nextAiAction(after, 1), `graine ${seed} : l'IA continue après endTurn`).toBeNull();
+          expect(nextAiAction(after, 'scripte'), `graine ${seed} : l'IA continue après endTurn`).toBeNull();
           return;
         }
         state = after;
@@ -134,6 +134,6 @@ describe('IA de niveau 1 — la Direction', () => {
   it('se tait une fois la partie finie', () => {
     const { state } = playSeed(42);
     expect(state.phase).toBe('ended');
-    expect(nextAiAction(state, 1)).toBeNull();
+    expect(nextAiAction(state, 'scripte')).toBeNull();
   });
 });

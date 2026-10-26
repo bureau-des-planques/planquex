@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BattleAction, BattleState } from '@/data/types';
 import { applyAction, createBattle, legalActions } from '@/game/engine';
 import { evaluatePosition, nextAiAction } from '@/game/ia';
-import type { AiLevel } from '@/game/ia';
+import type { Politique } from '@/game/ia';
 import { factionDeck, simulate, type SimulationReport } from '@/game/simulation';
 
 /**
@@ -58,7 +58,7 @@ const AI_DECK = factionDeck('MANAGEMENT');
  * l'humain par la seule fin de tour : on ne teste pas le jeu du joueur, seulement
  * celui de la Direction.
  */
-function playSeed(seed: number, level: AiLevel): {
+function playSeed(seed: number, level: Politique): {
   state: BattleState;
   ai: { state: BattleState; action: BattleAction }[];
 } {
@@ -126,7 +126,7 @@ function aggregateMirror(
 describe('IA de niveau 2 — la Direction qui évalue', () => {
   it('ne propose jamais une action illégale : elle part de legalActions', () => {
     for (const seed of [1, 7, 42, 99, 1234]) {
-      const { ai } = playSeed(seed, 2);
+      const { ai } = playSeed(seed, 'recherche');
       expect(ai.length, `graine ${seed} : l'IA n'a rien joué`).toBeGreaterThan(0);
       for (const { state, action } of ai) {
         const legal = legalActions(state);
@@ -141,7 +141,7 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
 
   it('ne propose jamais le forfait', () => {
     for (const seed of [1, 7, 42, 99, 1234]) {
-      for (const { action } of playSeed(seed, 2).ai) {
+      for (const { action } of playSeed(seed, 'recherche').ai) {
         expect(action.type, `graine ${seed} : la Direction s'est couchée`).not.toBe('forfeit');
       }
     }
@@ -155,7 +155,7 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
       guard += 1;
     }
     expect(state.current).toBe('player');
-    expect(nextAiAction(state, 2)).toBeNull();
+    expect(nextAiAction(state, 'recherche')).toBeNull();
   });
 
   it('est déterministe par graine quand l’horloge n’interrompt pas la recherche', () => {
@@ -168,8 +168,8 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
     // promesse de rejeu (le rejeu, #83, journalise les **actions jouées**, pas les décisions).
     const horloge = vi.spyOn(performance, 'now').mockReturnValue(0);
     try {
-      const first = playSeed(123, 2);
-      const second = playSeed(123, 2);
+      const first = playSeed(123, 'recherche');
+      const second = playSeed(123, 'recherche');
       expect(first.ai.length).toBeGreaterThan(0);
       expect(second.ai.map(({ action }) => action)).toEqual(first.ai.map(({ action }) => action));
       expect(second.state).toEqual(first.state);
@@ -179,8 +179,8 @@ describe('IA de niveau 2 — la Direction qui évalue', () => {
   });
 
   it('diffère du niveau 1 : le niveau 2 ne joue pas la même suite', () => {
-    const un = playSeed(123, 1).ai.map(({ action }) => JSON.stringify(action));
-    const deux = playSeed(123, 2).ai.map(({ action }) => JSON.stringify(action));
+    const un = playSeed(123, 'scripte').ai.map(({ action }) => JSON.stringify(action));
+    const deux = playSeed(123, 'recherche').ai.map(({ action }) => JSON.stringify(action));
     expect(deux.length).toBeGreaterThan(0);
     expect(deux).not.toEqual(un);
   });

@@ -167,7 +167,7 @@ function laisserJouerLaDirection(state: BattleState): BattleState {
   for (let i = 0; i < 60; i += 1) {
     if (next.phase === 'ended') throw new Error('partie finie avant le tour du joueur');
     if (next.current === 'player' && !next.pendingChoice && !next.pendingPromotion) return next;
-    const action = nextAiAction(next, 1);
+    const action = nextAiAction(next, 'scripte');
     if (!action) throw new Error('la Direction ne joue pas');
     next = applyAction(next, action);
   }

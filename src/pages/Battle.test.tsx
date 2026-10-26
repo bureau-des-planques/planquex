@@ -50,7 +50,7 @@ function partieAvecReleve() {
       const legales = legalActions(s).filter((a) => a.type !== 'forfeit');
       const action =
         s.current === 'ai' && !s.pendingPromotion
-          ? nextAiAction(s, 1)
+          ? nextAiAction(s, 'scripte')
           : (legales.find((a) => a.type === 'promoteActive') ??
             legales.find((a) => a.type === 'attack') ??
             legales.find((a) => a.type === 'attachEnergy') ??
@@ -78,7 +78,7 @@ function partieAvecPression() {
       const legales = legalActions(s);
       const action =
         s.current === 'ai'
-          ? nextAiAction(s, 1)
+          ? nextAiAction(s, 'scripte')
           : (legales.find((a) => a.type === 'attachEnergy') ?? legales.find((a) => a.type === 'endTurn'));
       if (!action) break;
       s = applyAction(s, action);
@@ -795,7 +795,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
         }
       }
       if (state.phase === 'ended') break;
-      const next: BattleAction = nextAiAction(state, 1) ?? legal[0];
+      const next: BattleAction = nextAiAction(state, 'scripte') ?? legal[0];
       const applied = applyAction(state, next);
       if (applied === state) break;
       state = applied;

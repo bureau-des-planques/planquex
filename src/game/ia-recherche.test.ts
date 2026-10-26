@@ -121,7 +121,7 @@ describe("l'écran joue le niveau 2 acté (D-084, #172 clos)", () => {
 
   it("le niveau 1 reste demandable explicitement (repli de l'écran)", () => {
     for (const state of positions) {
-      expect(nextAiAction(state, 1)).toEqual(nextAction(state, 1));
+      expect(nextAiAction(state, 'scripte')).toEqual(nextAction(state, 1));
     }
   });
 });

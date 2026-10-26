@@ -134,25 +134,42 @@ export function nextAction(state: BattleState, level: AiLevel = 1): BattleAction
  * quand la partie est finie, ou quand c'est au joueur de choisir sa relève. C'est le
  * point d'entrée de l'écran de combat.
  *
- * @param level 2 (défaut, D-084) : la recherche à deux coups, repli glouton si son budget
- * est épuisé. 1 : la Direction scriptée, demandable explicitement.
+ * @param nom `'recherche'` par défaut (D-084) : la recherche à deux coups, repli glouton si
+ * son budget est épuisé. `'scripte'` : la Direction scriptée, demandable explicitement.
  */
-export function nextAiAction(state: BattleState, level: AiLevel = 2): BattleAction | null {
+export function nextAiAction(state: BattleState, nom: Politique = 'recherche'): BattleAction | null {
   if (state.phase === 'ended') return null;
   if (state.pendingPromotion) {
-    return state.pendingPromotion === 'ai' ? decideAiAction(state, level) : null;
+    return state.pendingPromotion === 'ai' ? politique(nom)(state) : null;
   }
   if (state.current !== 'ai') return null;
-  return decideAiAction(state, level);
+  return politique(nom)(state);
 }
 
 /**
- * Le niveau 2 de l'écran est la recherche à deux coups (D-084), dont le budget borné (#172)
- * se replie sur le glouton. `nextAction(…, 2)` reste le glouton : le simulateur et les
- * mesures de l'historique l'emploient tel quel.
+ * **Les politiques nommées** (#253) : un nom dit ce qu'un numéro taisait.
+ *
+ * `nextAction(state, 2)` et `nextAiAction(state, 2)` ne jouaient pas la même chose — le
+ * glouton d'un côté, la recherche à deux coups de l'autre — et l'écran comme le simulateur
+ * passaient « 2 ». Le nom supprime l'ambiguïté : à l'écran, `'recherche'` (D-084) ; dans le
+ * simulateur et `pesage`, `'glouton'`, qui est la **référence de mesure** (D-109).
+ *
+ * `expectiminimax` est nommable pour être mesuré ; il n'est **branché nulle part** (D-084).
  */
-function decideAiAction(state: BattleState, level: AiLevel): BattleAction | null {
-  return level === 2 ? nextSearchAction(state) : nextAction(state, level);
+export type Politique = 'scripte' | 'glouton' | 'recherche' | 'expectiminimax';
+
+/** La politique nommée — **une seule porte** pour un concept (#253). */
+export function politique(nom: Politique): (state: BattleState) => BattleAction | null {
+  switch (nom) {
+    case 'scripte':
+      return (state) => nextAction(state, 1);
+    case 'glouton':
+      return (state) => nextAction(state, 2);
+    case 'recherche':
+      return (state) => nextSearchAction(state);
+    case 'expectiminimax':
+      return (state) => nextExpectiminimaxAction(state);
+  }
 }
 
 /** L'ordre de préférence des actions non terminales de la politique. */

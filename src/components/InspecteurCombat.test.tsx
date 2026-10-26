@@ -35,7 +35,7 @@ function partieAvecCafe() {
       const legales = legalActions(s).filter((a) => a.type !== 'forfeit');
       const action =
         s.current === 'ai' && !s.pendingPromotion
-          ? nextAiAction(s, 1)
+          ? nextAiAction(s, 'scripte')
           : (legales.find((a) => a.type === 'attachEnergy') ?? legales.find((a) => a.type === 'endTurn'));
       if (!action) break;
       s = applyAction(s, action);
