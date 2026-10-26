@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * La « Journée d'intégration » (#130, D-066) — la mécanique de l'écran.
  *
- * Même technique que `src/pages/BoiteAIdees.test.ts` : le contrat porte sur la source,
+ * Même technique que `src/pages/Comite.test.ts` : le contrat porte sur la source,
  * donc c'est la source qu'on lit. Ce que le dépôt n'a pas — un rendu de composant en
  * test (`@testing-library/react`, jsdom) — ne s'ajoute pas pour un seul écran
  * (`AGENTS.md` §1, règle 7). L'affichage lui-même se prouve par capture, et le contenu
@@ -67,11 +67,11 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
   });
 });
 
-describe('le mur de la Boîte à idées est exclu de la visite (#130)', () => {
-  it('s’abstient sur `/idees`, et rien d’autre', () => {
-    expect(composant).toMatch(/pathname\.startsWith\('\/idees'\)/);
+describe('le mur du comité est exclu de la visite (#130)', () => {
+  it('s’abstient sur `/comite`, et rien d’autre', () => {
+    expect(composant).toMatch(/pathname\.startsWith\('\/comite'\)/);
     // Une seule exclusion : le mur. En combat la visite reste, elle ne fait que passer.
-    expect(composant).toMatch(/const surLeMur = pathname\.startsWith\('\/idees'\);/);
+    expect(composant).toMatch(/const surLeMur = pathname\.startsWith\('\/comite'\);/);
     expect(composant.match(/startsWith\(/g)).toHaveLength(1);
   });
 

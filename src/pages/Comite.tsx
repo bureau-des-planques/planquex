@@ -1,11 +1,11 @@
 /**
- * Le mur de la Boîte à idées (#129, D-058 et D-068).
+ * Le mur du comité (#129, D-058 et D-068 ; renommé par D-097, #210).
  *
  * **C'est une page**, pas un panneau : la bulle y mène, et elle est absente pendant un
  * combat — donc on ne quitte jamais une partie en cours pour venir lire le mur (D-068).
  *
  * Sans base, l'alpha est en **lecture seule** : le mur affiche ce que porte
- * `docs/boite-a-idees.json`, et rien d'autre. **Branché sur la base** (#136, #137), il ouvre
+ * `docs/comite.json`, et rien d'autre. **Branché sur la base** (#136, #137), il ouvre
  * l'écriture : poster un post-it, et voter 👍 / 👎 par post-it, un vote par compte, jamais
  * pour le sien. **Depuis D-088 (#181)**, cette écriture exige un compte **approuvé** : un
  * compte en attente lit et joue, l'écran ne lui propose ni le formulaire ni les pouces — et la
@@ -78,7 +78,7 @@ function positionsDuMur(mur: Mur | null): Record<string, PositionPostit> {
 
 const borner = (valeur: number) => Math.min(100, Math.max(0, Math.round(valeur * 10) / 10));
 
-export function BoiteAIdees() {
+export function Comite() {
   const branche = murEstConfigure();
   const pseudo = useStore((state) => state.name);
   /**
@@ -511,12 +511,12 @@ export function BoiteAIdees() {
     const url = URL.createObjectURL(new Blob([fichier], { type: 'application/json' }));
     const lien = document.createElement('a');
     lien.href = url;
-    lien.download = 'boite-a-idees.json';
+    lien.download = 'comite.json';
     lien.click();
     URL.revokeObjectURL(url);
     setMessage({
       texte:
-        'Fichier téléchargé. Remplace docs/boite-a-idees.json par lui, puis commite — c’est tout le mécanisme de l’alpha.'
+        'Fichier téléchargé. Remplace docs/comite.json par lui, puis commite — c’est tout le mécanisme de l’alpha.'
     });
   };
 
@@ -531,7 +531,7 @@ export function BoiteAIdees() {
       return;
     }
     envoi.then(
-      () => setMessage({ texte: 'Fichier copié. Colle-le dans docs/boite-a-idees.json, puis commite.' }),
+      () => setMessage({ texte: 'Fichier copié. Colle-le dans docs/comite.json, puis commite.' }),
       refus
     );
   };
@@ -586,7 +586,7 @@ export function BoiteAIdees() {
       <section className="section">
         <div className="section__head">
           <div>
-            <h1>La Boîte à idées</h1>
+            <h1>Le comité de pilotage</h1>
             <p className="muted max-w-[62ch]">
               Le mur des retours d’alpha : ce que les invités proposent (<strong>IP</strong>) et
               signalent (<strong>OUF</strong>).{' '}
@@ -785,8 +785,8 @@ export function BoiteAIdees() {
           <h2>Le fichier du mur n’a pas pu être lu</h2>
           <p className="m-0 max-w-[70ch]">
             Le mur reste fermé tant que le fichier n’est pas réparé :{' '}
-            <code>docs/boite-a-idees.json</code>, dont la forme est écrite dans{' '}
-            <code>docs/BOITE-A-IDEES.md</code> §3.
+            <code>docs/comite.json</code>, dont la forme est écrite dans{' '}
+            <code>docs/COMITE.md</code> §3.
           </p>
           <ul className="mt-2 mb-0 flex flex-col gap-1 text-[0.84rem]">
             {erreurs.map((erreur) => (
@@ -941,7 +941,7 @@ export function BoiteAIdees() {
             s’écrit en pourcentage du tableau : tout le monde verra la même disposition, quel que
             soit l’écran. L’application est un <strong>site statique</strong> — elle ne peut pas
             écrire dans le dépôt : le fichier exporté ci-dessous se <strong>commite</strong> à la
-            place de <code>docs/boite-a-idees.json</code>. C’est le mécanisme de l’alpha, en
+            place de <code>docs/comite.json</code>. C’est le mécanisme de l’alpha, en
             attendant la base.
           </p>
         )}

@@ -396,7 +396,7 @@ h2 {
   justify-content: space-between;
 }
 
-/* Le mur de la Boîte à idées : une **zone** de placement, pas un panneau. Les post-its sont déjà des
+/* Le mur du comité : une **zone** de placement, pas un panneau. Les post-its sont déjà des
    cartes ; un panneau autour d'eux en fait des cartes dans une carte (`nested-cards`, impeccable). */
 .mur-plan {
   border: 1px dashed var(--line-strong);

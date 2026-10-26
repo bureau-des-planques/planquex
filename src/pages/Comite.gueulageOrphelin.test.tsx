@@ -43,13 +43,13 @@ vi.mock('@/store/mur', async () => {
   };
 });
 
-import { BoiteAIdees } from './BoiteAIdees';
+import { Comite } from './Comite';
 
 describe('un `lie` non résolu n’empêche pas le gueulage de s’afficher (D-085)', () => {
   it('affiche le gueulage seul, et signale l’id absent', () => {
     render(
       <MemoryRouter>
-        <BoiteAIdees />
+        <Comite />
       </MemoryRouter>
     );
 

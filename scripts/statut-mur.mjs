@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Déplacer un post-it du mur de la Boîte à idées (#140).
+ * Déplacer un post-it du mur du comité (#140).
  *
- * L'alpha est **en lecture seule** (D-058) : le jeu lit `docs/boite-a-idees.json` et n'y
+ * L'alpha est **en lecture seule** (D-058) : le jeu lit `docs/comite.json` et n'y
  * écrit jamais. Le tri, lui, se fait **hors du jeu** — et D-059 lui donne trois gestes :
  * changer le statut, lier un ticket, écarter avec une raison. Ce script les fait à la
  * place d'un tableau de bord d'administration, que le mur n'aura pas.
@@ -46,16 +46,16 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
-const FICHIER_MUR = join(RACINE, 'docs', 'boite-a-idees.json');
+const FICHIER_MUR = join(RACINE, 'docs', 'comite.json');
 
 const AIDE = `Usage : npm run statut <post-it> <statut> [options]
 
-Déplace un post-it du mur (docs/boite-a-idees.json) sans passer par l'écran.
+Déplace un post-it du mur (docs/comite.json) sans passer par l'écran.
 
   <post-it> <statut>        en attente | retenu | en cours | fait | écarté
   --ticket <numéro>         lie le post-it à une issue GitHub (entier > 0)
   --raison "…"              la raison d'un écarté, obligatoire pour l'écarter
-  --fichier <json>          fichier du mur à modifier (défaut : docs/boite-a-idees.json ;
+  --fichier <json>          fichier du mur à modifier (défaut : docs/comite.json ;
                             réservé aux tests)
   --aide                    affiche ce texte
 

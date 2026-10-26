@@ -63,7 +63,7 @@ vi.mock('@/lib/murBase', async () => {
 });
 
 import type { Compte } from '@/lib/comptes';
-import { BoiteAIdees } from './BoiteAIdees';
+import { Comite } from './Comite';
 import { useComptes } from '@/store/comptes';
 import { useStore } from '@/store/useStore';
 
@@ -163,7 +163,7 @@ function glisser(postit: HTMLElement, de: [number, number], vers: [number, numbe
 function rendre() {
   return render(
     <MemoryRouter>
-      <BoiteAIdees />
+      <Comite />
     </MemoryRouter>
   );
 }

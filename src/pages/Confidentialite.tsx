@@ -84,7 +84,7 @@ const QUESTIONS: Rubrique[] = [
   {
     titre: 'Un doute',
     lignes: [
-      'Écris-nous : la Boîte à idées est là pour ça, et un courriel marche aussi.',
+      'Écris-nous : le comité est là pour ça, et un courriel marche aussi.',
       'Cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.',
     ],
   },

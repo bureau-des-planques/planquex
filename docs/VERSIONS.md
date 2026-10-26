@@ -66,7 +66,7 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
 ## 4. Publier une build
 
 1. **Écrire la note** de la version à venir dans `src/data/versions.ts` — c'est ce que
-   l'écran `/nouveautes` affiche, et c'est **le geste qui rend la règle tenable** : le tag
+   l'écran `/feuille-de-route` affiche, et c'est **le geste qui rend la règle tenable** : le tag
    part **avant** la release GitHub, donc la note est écrite d'abord, avec son
    `brouillon: true`. `src/data/versions.test.ts` **échoue** si la version de
    `package.json` n'a pas sa note : on ne publie pas une version sans dire ce qu'elle
@@ -107,7 +107,7 @@ ni `gh` ni accès à GitHub, et un build qui dépend du réseau ne se rejoue pas
 - **Avant** de citer une version quelque part : la lire dans `package.json` (ou `APP_LABEL` à
   l'écran) — jamais de mémoire, jamais recopiée d'un message précédent.
 - **Après** un changement qui part chez quelqu'un : **deux** écritures, et elles disent la
-  même chose — la note dans `src/data/versions.ts` (lue par l'écran `/nouveautes`), et le
+  même chose — la note dans `src/data/versions.ts` (lue par l'écran `/feuille-de-route`), et le
   corps de la **release GitHub** (le journal public, daté). `npm run notes:versions` les
   réconcilie à la publication : c'est la release qui a le dernier mot, et
   `src/data/versions.test.ts` refuse une version sans note.

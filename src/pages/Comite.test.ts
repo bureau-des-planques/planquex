@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Garde-fous de la **Boîte à idées** (#129) — même technique que `Deck.test.ts` et
+ * Garde-fous du **comité** (#129 ; renommé par D-097, #210) — même technique que `Deck.test.ts` et
  * `Battle.test.ts` : le contrat porte sur la source, donc c'est la source qu'on lit.
  *
  * Ce qui est en jeu ici n'est pas un détail d'affichage : D-058 dit que le jeu **lit**
@@ -13,13 +13,13 @@ import { describe, expect, it } from 'vitest';
  */
 const lire = (chemin: string) => readFileSync(fileURLToPath(new URL(chemin, import.meta.url)), 'utf8');
 
-const page = lire('./BoiteAIdees.tsx');
+const page = lire('./Comite.tsx');
 const postit = lire('../components/PostitDuMur.tsx');
 const layout = lire('../components/Layout.tsx');
 const app = lire('../App.tsx');
 
 describe('le mur lit le fichier, et rien d’autre (D-058)', () => {
-  it('lit `docs/boite-a-idees.json` par le contrat, une seule fois', () => {
+  it('lit `docs/comite.json` par le contrat, une seule fois', () => {
     expect(page).toMatch(/lireMur\(DOCUMENT_MUR\)/);
     expect(page).not.toMatch(/from '\.\.\/\.\.\/docs/);
   });
@@ -61,7 +61,7 @@ describe('ce que chaque post-it porte (D-068)', () => {
 describe('le placement exporte le fichier (D-068)', () => {
   it('exporte depuis l’écran, en téléchargement ou en copie', () => {
     expect(page).toMatch(/exporterMur\(positions\)/);
-    expect(page).toMatch(/lien\.download = 'boite-a-idees\.json'/);
+    expect(page).toMatch(/lien\.download = 'comite\.json'/);
     expect(page).toMatch(/navigator\.clipboard\?\.writeText\(fichier\)/);
   });
 
@@ -73,12 +73,12 @@ describe('le placement exporte le fichier (D-068)', () => {
 
 describe('la bulle (D-058)', () => {
   it('mène au mur, et le mur a sa page', () => {
-    expect(app).toMatch(/path="idees"/);
-    expect(app).toMatch(/<BoiteAIdees \/>/);
+    expect(app).toMatch(/path="comite"/);
+    expect(app).toMatch(/<Comite \/>/);
   });
 
   it('s’efface pendant un combat', () => {
     expect(layout).toMatch(/pathname\.startsWith\('\/battle'\)/);
-    expect(layout).toMatch(/\{!enCombat && !surLeMur && <BulleBoiteAIdees \/>\}/);
+    expect(layout).toMatch(/\{!enCombat && !surLeMur && <AlerteComite \/>\}/);
   });
 });

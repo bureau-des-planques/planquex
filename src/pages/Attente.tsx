@@ -127,7 +127,7 @@ export function Attente() {
             <Link to="/">Jouer une partie</Link> — le solo ne demande rien à la base.
           </li>
           <li>
-            <Link to="/idees">Lire le mur</Link> — les post-its et les compteurs de pouces
+            <Link to="/comite">Lire le mur</Link> — les post-its et les compteurs de pouces
             sont ouverts à tout compte.
           </li>
           <li>

@@ -41,7 +41,7 @@ import {
 const MIGRATION_MUR = fichiersMigrations().find((sql) => sql.includes('create table public.postits'));
 if (!MIGRATION_MUR) throw new Error('supabase/migrations/0001_mur.sql introuvable');
 
-/** Colle un post-it au nom de l'appareil, avec les champs du contrat (`docs/BOITE-A-IDEES.md` §3). */
+/** Colle un post-it au nom de l'appareil, avec les champs du contrat (`docs/COMITE.md` §3). */
 function coller(db: Base, appareil: string, id: string, titre = 'Le bouton Fin du tour reste grise') {
   return avecAppareil(db, appareil, () =>
     db.query(

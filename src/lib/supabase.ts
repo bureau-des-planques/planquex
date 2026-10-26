@@ -3,7 +3,7 @@
  * anonyme héritée de l'alpha d'avant (#135).
  *
  * **La contrainte qui commande tout ce fichier** : l'alpha **fonctionne sans backend** — le mur
- * lit `docs/boite-a-idees.json` (D-058). Ce module est donc **inerte** quand la configuration
+ * lit `docs/comite.json` (D-058). Ce module est donc **inerte** quand la configuration
  * manque : il ne lève rien, ne contacte rien, et rend `null`. `npm run build`, `npm run capturer`
  * et l'application servie doivent marcher **sans** `.env`.
  *

@@ -2,7 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     { "source": "/parc", "destination": "/collection", "permanent": true },
-    { "source": "/chariot", "destination": "/deck", "permanent": true }
+    { "source": "/chariot", "destination": "/deck", "permanent": true },
+    { "source": "/idees", "destination": "/comite", "permanent": true },
+    { "source": "/nouveautes", "destination": "/feuille-de-route", "permanent": true }
   ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

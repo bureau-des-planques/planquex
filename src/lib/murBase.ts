@@ -1,13 +1,13 @@
 /**
  * Le mur branché sur la base (#136) — la **couture** entre l'écran et la source.
  *
- * Le mur ne sait pas d'où viennent ses post-its : `src/pages/BoiteAIdees.tsx` appelle
+ * Le mur ne sait pas d'où viennent ses post-its : `src/pages/Comite.tsx` appelle
  * `chargerPostitsDuMur`, et c'est ce module qui décide. Trois cas, et un seul est une
  * erreur :
  *
  * 1. **la base est configurée** (`VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`) : on signe
  *    l'appareil anonymement (D-059) puis on lit `postits_avec_votes`, la vue qui recompose
- *    la forme du contrat (`docs/BOITE-A-IDEES.md` §3, `src/store/mur.ts`) ;
+ *    la forme du contrat (`docs/COMITE.md` §3, `src/store/mur.ts`) ;
  * 2. **elle ne l'est pas** : on rend `null`, et la page garde le fichier JSON — c'est ce qui
  *    laisse l'alpha fonctionner sans backend (D-058) et ce que la production sans
  *    variables Vercel doit continuer à faire ;
@@ -574,7 +574,7 @@ export async function corrigerPostit(
 
 /**
  * Retire mon post-it : il est **supprimé**. Pas de statut « retiré », et pas de ligne
- * barrée — §3 de `docs/BOITE-A-IDEES.md` le dit depuis D-059 : « un post-it retiré par son
+ * barrée — §3 de `docs/COMITE.md` le dit depuis D-059 : « un post-it retiré par son
  * auteur disparaît du fichier : il n'existe pas de statut retiré ». En base c'est le même
  * geste : `delete`, qui emporte ses votes et ses commentaires (`on delete cascade`, 0001).
  *

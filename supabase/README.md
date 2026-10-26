@@ -1,6 +1,6 @@
 # Le socle backend du mur (#135)
 
-Le mur de la Boîte à idées, côté base : **les tables**, **l'identité anonyme par appareil** et
+Le mur du comité, côté base : **les tables**, **l'identité anonyme par appareil** et
 **les règles d'accès** qui vont avec. Rien d'autre — le mur complet (#137) et le PvP viendront
 s'appuyer dessus.
 
@@ -27,13 +27,13 @@ s'appuyer dessus.
 
 Les décisions : **D-058** (le mur et ses deux familles), **D-059** (statuts, identité), **D-068**
 (les apparences, le gueulage, la disposition en pourcentage). Le contrat de données :
-`docs/BOITE-A-IDEES.md` §3.
+`docs/COMITE.md` §3.
 
 ---
 
 ## 1. Le schéma, champ par champ
 
-Le contrat de `docs/BOITE-A-IDEES.md` §3 est repris tel quel, avec **une** différence :
+Le contrat de `docs/COMITE.md` §3 est repris tel quel, avec **une** différence :
 `position` éclate en trois colonnes (`position_x`, `position_y`, `position_angle`) pour que les
 bornes 0–100 / −5–+5 soient tenues par la **base**. La vue `postits_avec_votes` recompose la
 forme du contrat, `position` et `votes` compris.
@@ -103,7 +103,7 @@ migration. Le jeu signe d'abord (identité anonyme, rôle `authenticated`), puis
   `"role": "service_role"`) : elle contourne la RLS et n'a rien à faire dans un navigateur ;
 - **inerte** quand les deux variables manquent : `configurerMur()` rend `null`, rien n'est
   contacté, et `npm run build` / `npm run capturer` marchent sans configuration. C'est la
-  contrainte de l'alpha : le mur lit `docs/boite-a-idees.json` (D-058) ;
+  contrainte de l'alpha : le mur lit `docs/comite.json` (D-058) ;
 - `identiteAppareil()` rend l'identité de la session persistée, ou en **signe une** anonymement à
   la première visite (`signInAnonymously`, session gardée par `@supabase/supabase-js`) ;
 - la bibliothèque est chargée **à la demande** : sans configuration, son code ne part même pas
@@ -339,7 +339,7 @@ select proname, prosecdef from pg_proc where proname = 'corriger_postit';       
 
 Un **administrateur** trie depuis `/administration` ; un autre compte est refusé **par la
 base** : sa modification porte sur **0 ligne**, sans erreur, et `trierPostit` la refuse au lieu
-de la croire passée. `npm run statut`, lui, ne touche que `docs/boite-a-idees.json` — la source
+de la croire passée. `npm run statut`, lui, ne touche que `docs/comite.json` — la source
 de secours — et **le dit** dans sa sortie.
 
 ## 6. La garde, et ce qu'elle prouve

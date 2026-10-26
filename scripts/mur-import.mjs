@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * Importer les réponses du formulaire de la Boîte à idées dans le mur (#177).
+ * Importer les réponses du formulaire du comité dans le mur (#177).
  *
  * L'alpha n'a **aucun backend** : le formulaire Google écrit dans **sa** feuille, et le
- * jeu ne lit que `docs/boite-a-idees.json`, bundlé par Vite (D-058). Entre les deux, un
+ * jeu ne lit que `docs/comite.json`, bundlé par Vite (D-058). Entre les deux, un
  * humain recopiait les réponses à la main (§5). Ce script fait la recopie mécanique :
  * il lit la feuille **publiée en CSV**, puis ajoute au fichier du mur les post-its
  * **absents**.
@@ -31,7 +31,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
-const FICHIER_MUR = join(RACINE, 'docs', 'boite-a-idees.json');
+const FICHIER_MUR = join(RACINE, 'docs', 'comite.json');
 
 /** Les écrans admis (`src/store/mur.ts`), écrits ici pour la traduction du formulaire. */
 const ECRANS = {
@@ -50,11 +50,11 @@ post-its absents (clé : horodatage + titre). Ne modifie jamais un post-it exist
 
   --dry-run          affiche ce qui serait ajouté, n'écrit rien
   --fichier <csv>    lit un CSV local au lieu du réseau (tests, dépannage)
-  --mur <json>       fichier du mur à mettre à jour (défaut : docs/boite-a-idees.json ;
+  --mur <json>       fichier du mur à mettre à jour (défaut : docs/comite.json ;
                      réservé aux tests)
   --aide             affiche ce texte
 
-L'adresse du CSV se lit dans le champ « reponses » de docs/boite-a-idees.json, ou dans
+L'adresse du CSV se lit dans le champ « reponses » de docs/comite.json, ou dans
 la variable d'environnement MUR_REPONSES_CSV (qui la surcharge).`;
 
 /** Minuscules, sans accents ni ponctuation : c'est la forme de comparaison des en-têtes. */
@@ -565,11 +565,11 @@ function adresseCsv(doc) {
   const env = String(process.env.MUR_REPONSES_CSV ?? '').trim();
   if (env) return { url: env, source: 'MUR_REPONSES_CSV' };
   if (doc.reponses !== undefined && typeof doc.reponses !== 'string') {
-    throw new Error('le champ « reponses » de docs/boite-a-idees.json doit être une chaîne');
+    throw new Error('le champ « reponses » de docs/comite.json doit être une chaîne');
   }
   return {
     url: String(doc.reponses ?? '').trim(),
-    source: 'docs/boite-a-idees.json (champ « reponses »)'
+    source: 'docs/comite.json (champ « reponses »)'
   };
 }
 
@@ -588,7 +588,7 @@ async function lireCsvDistant(url) {
 
 const CONSIGNE_RESEAU =
   'Vérifie que la feuille est publiée en CSV (Fichier → Partager → Publier sur le Web → CSV) ' +
-  'et que son adresse est dans le champ « reponses » de docs/boite-a-idees.json.';
+  'et que son adresse est dans le champ « reponses » de docs/comite.json.';
 
 async function principal(ligne = process.argv.slice(2)) {
   let options;

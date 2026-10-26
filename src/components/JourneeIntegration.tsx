@@ -25,7 +25,7 @@ import { useStore } from '@/store/useStore';
  * tous les chemins de fermeture passent par `terminer`, le seul endroit qui écrit le
  * drapeau.
  *
- * **Le mur de la Boîte à idées (`/idees`) est exclu** : la visite guidée s'abstient sur
+ * **Le mur du comité (`/comite`) est exclu** : la visite guidée s'abstient sur
  * cette page (voir le commentaire de `surLeMur`).
  */
 export function JourneeIntegration() {
@@ -48,7 +48,7 @@ export function JourneeIntegration() {
    * n'est perdu : `tutorielVu` reste `false`, et la visite se montre dès qu'on quitte le
    * mur — d'autant que ses étapes emmènent justement ailleurs.
    */
-  const surLeMur = pathname.startsWith('/idees');
+  const surLeMur = pathname.startsWith('/comite');
 
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
   const derniere = etape >= ETAPES_JOURNEE.length - 1;

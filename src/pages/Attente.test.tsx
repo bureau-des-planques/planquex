@@ -67,7 +67,7 @@ describe('un compte en attente voit son état, et ce qu’il peut faire', () => 
     ).toBeInTheDocument();
     expect(screen.getByText(/Bastien valide les comptes à la main/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Jouer une partie/ })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: /Lire le mur/ })).toHaveAttribute('href', '/idees');
+    expect(screen.getByRole('link', { name: /Lire le mur/ })).toHaveAttribute('href', '/comite');
     // L'état et le courriel sont lisibles, pas devinés.
     expect(screen.getByText(/a@exemple.test/)).toBeInTheDocument();
     expect(screen.getByText(/en attente de validation/)).toBeInTheDocument();

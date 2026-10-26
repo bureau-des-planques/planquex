@@ -15,7 +15,7 @@ import { notesAffichees } from '@/data/notes-affichees';
 /**
  * **Le générateur des notes de version** (`npm run notes:versions`, D-090).
  *
- * Les notes affichées par `/nouveautes` ne s'écrivent plus à la main : elles sont prises
+ * Les notes affichées par `/feuille-de-route` ne s'écrivent plus à la main : elles sont prises
  * aux **releases GitHub** par `scripts/notes-versions.mjs`. Ce test éprouve la mise en
  * forme, **sans réseau** : il donne au générateur des corps de release réels (recopiés
  * ici), et regarde ce qu'il en fait.
