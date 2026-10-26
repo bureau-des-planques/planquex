@@ -126,6 +126,14 @@ seul coût, voir §6).
 9. **Lire le ticket par `gh issue view N --json number,title,body,labels,comments`.** Sans
    `--json`, `gh` échoue (Projects classic) : 43 erreurs dans 37 sessions du 23 au 26/10, dont
    les briefs de l'orchestrateur qui écrivaient « Lis-le : `gh issue view N` ».
+10. **Installer les dépendances par `npm run installer`, dans le worktree** — jamais `npm ci` à
+    la main. `npm ci` **vide `node_modules/` avant de le refaire** : le 26/10/2026, un
+    sous-agent (#220) dont le shell s'ouvrait dans le dépôt principal (`pwd` l'a montré) y a lancé
+    `npm ci` quatre fois en 90 s, et la session d'infra a eu `vitest: not found` puis des modules
+    absents pendant cinq minutes. `npm run installer` refuse le dépôt principal et refuse un
+    `node_modules` qui est un lien symbolique vers lui (le geste des worktrees de comparaison :
+    `ln -s …/node_modules`, puis un `npm ci` qui viderait la cible). Un worktree de comparaison
+    en lecture seule garde son lien, et n'installe rien.
 
 ## 5. Fusion — le protocole, et ses deux pièges
 

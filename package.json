@@ -18,6 +18,7 @@
     "icones": "node scripts/icones.mjs",
     "garde-fous": "node scripts/garde-fous.mjs",
     "pesage": "node scripts/pesage.mjs",
+    "installer": "node scripts/installer.mjs",
     "isolation": "node scripts/isolation.mjs",
     "mur:import": "node scripts/mur-import.mjs",
     "notes:versions": "node scripts/notes-versions.mjs",

@@ -328,10 +328,11 @@ tâche**, vagues disjointes, protocole de fusion et ses pièges. Voir
 
 ## 11. Branches et fusion
 
-Pratique observée le 26/10/2026 (aucune décision datée ne la fixe encore ; Bastien la confirme ou la corrige) :
+Pratique observée le 26/10/2026, **à confirmer par Bastien** (aucune décision datée ne la fixe) :
 
-- **`dev`** est la branche d'intégration, **`main`** la branche livrée (Vercel production, tags, releases). Un ticket se travaille sur une **branche dédiée dans son worktree**, et se propose par **pull request**.
-- **Fusion : merge commit**, pas de squash (choix de Bastien, 26/10/2026).
-- La CI ne tourne que vers `main` (§6) : avant de pousser vers `dev`, lancer **en local** `npm run check`, `npm test`, `npm run garde-fous`, `npm run build`.
+- Un ticket se travaille sur une **branche dédiée dans son propre worktree**, créée depuis **`main`** (#237 à #254), et se propose par **pull request** vers **`main`**.
+- **Fusion : merge commit**, pas de squash (choix de Bastien, 26/10/2026) ; le sujet est `merge: <ce que ça change> (#N)`.
+- La CI ne tourne que vers `main` (§6). Une PR vers une autre branche n'a que Vercel : lancer **en local** `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` avant de la fusionner.
+- **`dev`** est la branche de la session OpenChamber (`dev-jolly-cactus`) : docs, outillage, préparation de release. Elle retarde sur `main` (42 commits le 26/10/2026) : la remettre à jour avant d'y travailler (`git merge main`).
 - Fermer ou ouvrir une issue `alpha` rend `src/data/plan-dev.ts` périmé : relancer `npm run plan:dev` avant de fusionner vers `main`.
 - Les règles de parallélisme (zones, worktrees, `npm run isolation`, modèles) sont dans `docs/agents/parallelisme.md`.
