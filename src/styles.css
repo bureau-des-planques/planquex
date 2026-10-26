@@ -1867,15 +1867,10 @@ h2 {
   /* Les trois gouttières de l'écran (en-tête → note → table → barre d'action) se resserrent (#218) :
      3,2 px chacune, 9,6 px rendus à la main, et l'écran garde toutes ses lignes. */
   gap: 0.2rem;
-  /* **L'air sous la barre d'action** (#237). La barre est le dernier élément de l'écran, et la page
-     défile **jusqu'en bas** à l'arrivée : le pas-à-pas amène sa cible en haut, le défilement se
-     borne au document, et l'air qu'on voit sous la barre est alors celui que la coquille réserve
-     pour la navigation (`5,5rem` = 88 px pour une barre de 70 px) — soit **18 px** là où
-     D-094 (3) en exige **20**. D'où 8 px de plus : la marge mesurée passe à 26 px, et les 3 px
-     que le journal peut prendre en repassant à deux lignes après le défilement (mesuré à la
-     graine de 14 h 30) ne la ramènent pas sous 20 — c'est l'objet même de D-094 (3).
-     Rien n'est retiré à l'écran, et le seuil de 830 px de D-094 (2) ne bouge pas. */
-  padding-bottom: 0.5rem;
+  /* **Pas d'air réservé sous la barre d'action** (D-103, #243). L'écran de combat ne défile plus :
+     son contenu tient dans la fenêtre, et la marge de D-094 (3) — 20 px sous la barre — se tient
+     par ce que l'écran contient, pas par un espace ajouté (#237 y avait mis 8 px). L'avertissement
+     « deck de test » a quitté sa ligne (30 px) pour la fiche du camp (`.board__test`). */
 }
 
 /* Sur le combat, l'en-tête de l'application se serre : chaque ligne gagnée laisse la main
@@ -2295,6 +2290,16 @@ h2 {
   font-size: 0.72rem;
 }
 
+/* « deck de test » (D-103, #243) : l'avertissement du Deck invalide, en étiquette de la fiche du camp.
+   Le texte entier est lu par les lecteurs d'écran ; la vue ne garde que le fait. */
+.board__test {
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  line-height: 1.2;
+  padding: 0.12rem 0.45rem;
+}
+
 /* Les deux camps sont **empilés** (#199, SPEC-COMBAT-UI §6.8.1) : le camp adverse lit Banc puis Poste,
    le mien Poste puis Banc, et les deux Postes se font face au centre. Les tailles sont des variables,
    mesurées par `npm run capturer` : la garde décide de la plus grande qui tient. */
@@ -2448,11 +2453,6 @@ h2 {
 
 .fold__body.log {
   background: var(--bg-sunken);
-}
-
-.notice--compact {
-  font-size: 0.78rem;
-  padding: 0.3rem 0.7rem;
 }
 
 .button--small {

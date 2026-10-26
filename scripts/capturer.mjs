@@ -157,6 +157,8 @@ function mesureHauteur(cibles) {
     // passer sur le bas de la main jusqu'au défilement (voir `controlesHauteur`).
     pasAPasOuvert: !!document.querySelector('.pas-a-pas'),
     limite: Math.round(nav ? nav.top : window.innerHeight),
+    // De combien le document dépasse la fenêtre : l'écran de combat ne défile plus (D-103, #243).
+    defilement: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
     mesures: cibles.map(({ nom, selecteur }) => {
       const rect = document.querySelector(selecteur)?.getBoundingClientRect();
       return {
@@ -195,13 +197,27 @@ const MARGE_MIN = 20;
  * serait du bruit), et `etat` — le libellé du passage mesuré, par exemple « pas-à-pas
  * terminé » — entre dans le message pour qu'on sache **lequel** des états mesurés fauter.
  */
-function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false, etat = '' }) {
+function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false, defilement = 0, etat = '' }) {
+  const problemes = [];
+
+  // **L'écran ne défile pas** (D-103, #243), pas-à-pas ouvert compris. Un document plus haut que
+  // la fenêtre amène la cible du pas-à-pas en haut et rogne l'en-tête sur la capture ; surtout,
+  // la marge mesurée y vaut alors l'air qu'on a réservé, pas la place réelle (#237). La marge
+  // ci-dessous ne vaut donc que sur un écran qui tient.
+  if (defilement > 0) {
+    problemes.push(
+      `l'écran de combat défile de ${defilement} px (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+        `il doit tenir dans la fenêtre (D-103)`
+    );
+  }
+
   const hors = mesures.filter(({ present, haut, bas }) => present && (haut < 0 || bas > limite));
-  const problemes = hors.map(
-    ({ nom, bas }) =>
+  for (const { nom, bas } of hors) {
+    problemes.push(
       `${nom} n'est pas visible sans défiler (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
-      `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px`
-  );
+        `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px`
+    );
+  }
 
   // **La marge** (#237) : tenir dans la fenêtre ne suffit pas, il faut y tenir avec 20 px de
   // place sous soi (D-094 (3)). Seuls les éléments **dans** la fenêtre sont jugés ici — un
