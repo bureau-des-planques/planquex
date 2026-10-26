@@ -55,13 +55,19 @@ export const ECRANS = ['/', '/collection', '/deck', '/battle', '/settings'];
  * **Plus aucun `null` (#208)** : ils ne voulaient pas dire « non mesurable » mais « page propre
  * que le détecteur ne commente pas » — le silence a été mesuré (`/` = `[]`, code 0) et le script
  * le lit désormais. `/` vaut donc **0**, et `/settings` (la vraie route ; `/reglages` n'existait
- * pas) **1**. Total du dépôt : **44** le 26/10/2026 (0 + 32 + 11 + 0 + 1) — le chiffre du ticket
- * (54) datait d'avant l'abaissement de #205. Chaque baisse abaisse le plafond dans le même commit.
+ * pas) **1**. Le chiffre du ticket (54) datait d'avant l'abaissement de #205.
+ *
+ * **Abaissé le 26/10/2026 (#208)** : la famille `low-contrast` tombe — le sigle de faction est
+ * éclairci (2,7 à 4,1:1 → plus de 5,6), le badge COMEX passe en or plein, et une carte non
+ * possédée n'est plus mise à 40 % d'opacité : son texte reste lisible, l'illustration et la barre
+ * disent l'absence. Collection 32 → **3**, Deck 11 → **6** ; il ne reste que les dégradés de
+ * faction, traités au commit suivant. Total : **10** (0 + 3 + 6 + 0 + 1). Chaque baisse abaisse
+ * le plafond dans le même commit.
  */
 export const BASELINE = {
   '/': 0,
-  '/collection': 32,
-  '/deck': 11,
+  '/collection': 3,
+  '/deck': 6,
   '/battle': 0,
   '/settings': 1
 };

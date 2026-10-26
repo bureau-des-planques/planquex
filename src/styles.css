@@ -1245,7 +1245,9 @@ h2 {
 }
 
 .card__comex {
-  background: linear-gradient(135deg, var(--gold-deep), var(--gold));
+  /* Un **aplat** d'or, pas un dégradé (#208) : le dégradé passait sous 4,5:1 à l'endroit où
+     le détecteur l'échantillonne (3,6:1), et l'or plein tient 9,75:1 avec l'encre COMEX. */
+  background: var(--gold);
   border-radius: 999px;
   color: #1c1304;
   font-weight: 700;
@@ -1254,7 +1256,10 @@ h2 {
 
 .card__faction {
   align-items: center;
-  color: var(--accent);
+  /* Le **sigle** de la faction est du texte, pas une décoration : la couleur pure tombait
+     entre 2,7 et 4,1:1 sur la face teintée (`impeccable`, #208). Éclaircie de 35 % de blanc,
+     elle garde sa teinte et passe au-dessus de 5,6:1 — la pastille, elle, reste pure. */
+  color: color-mix(in srgb, var(--accent) 65%, white);
   display: inline-flex;
   font-size: var(--fs-2xs);
   font-weight: 600;
@@ -2480,10 +2485,18 @@ h2 {
   opacity: 0.6;
 }
 
-/* Une carte **non possédée** : éteinte (grisée et très pâle), pour qu'une carte possédée se
-   lise d'un coup d'œil. Plus forte que « Deck complet » : les deux ne se confondent pas. */
+/* Une carte **non possédée** : éteinte, pour qu'une carte possédée se lise d'un coup d'œil.
+   Plus forte que « Deck complet » : les deux ne se confondent pas.
+   **L'extinction ne touche plus le texte** (#208) : le `opacity: 0.4` global posait le nom et le
+   sigle de faction entre 2,1 et 3,5:1 — une carte qu'on ne peut pas lire n'est pas une carte
+   éteinte, c'est une carte absente. Le gris et l'illustration pâlie disent l'absence ; le nom
+   reste lisible. */
 .card-slot.is-missing .card {
-  filter: grayscale(0.9) brightness(0.8);
+  filter: grayscale(1);
+}
+
+.card-slot.is-missing .card__art,
+.card-slot.is-missing .card__seuil {
   opacity: 0.4;
 }
 
