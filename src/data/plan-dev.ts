@@ -27,12 +27,12 @@ export interface FeaturePrevue {
 /** Les issues `alpha` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
-    numero: 237,
-    titre: 'Combat — la garde de hauteur ne fait pas tenir la marge de 20 px de D-094 (3)'
+    numero: 243,
+    titre: 'Combat — l\'écran de combat défile : la marge de 20 px tient par de l\'air réservé, et la capture coupe l\'en-tête'
   },
   {
-    numero: 228,
-    titre: 'PvP — la trace des combats à deux (beta)'
+    numero: 241,
+    titre: 'Infra — appliquer les migrations 0006 à 0008 sur la base réelle (relecture avant application)'
   },
   {
     numero: 136,
