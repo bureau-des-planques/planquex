@@ -164,8 +164,8 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 8', () => {
-    expect(STORAGE_VERSION).toBe(8);
+  it('déclare la version 10', () => {
+    expect(STORAGE_VERSION).toBe(10);
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -187,10 +187,14 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     const { persisted, rng } = stateV1();
     const migrated = migratePersisted(persisted, 1);
 
-    expect(migrated.owned).toEqual({
-      ...Object.fromEntries(ANCIENS.map((ancien) => [CARD_ID_RENAMES[ancien], 2])),
-      'sse-psychologue': 3
-    });
+    // Deux anciens ids peuvent tomber sur le même id courant (l'Atelier, D-095 : une variante
+    // en `-star3` et son ancien `-star2`) : les exemplaires s'additionnent, rien ne se perd.
+    const attendus: Record<string, number> = { 'sse-psychologue': 3 };
+    for (const ancien of ANCIENS) {
+      const courant = CARD_ID_RENAMES[ancien];
+      attendus[courant] = (attendus[courant] ?? 0) + 2;
+    }
+    expect(migrated.owned).toEqual(attendus);
     expect(migrated.deck).toEqual([...ANCIENS.map((ancien) => CARD_ID_RENAMES[ancien]), 'sse-psychologue']);
     // Le reste de l'état traverse la migration intact.
     expect(migrated.name).toBe('Employé 404');
@@ -214,14 +218,19 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
   });
 
   it('déclare les sept variantes re-raréfiées de #87, et elles seules', () => {
-    const variantes = Object.entries(CARD_ID_RENAMES).filter(([ancien]) => ancien.endsWith('-star2'));
+    // Seules les variantes **re-raréfiées** (2S → 3S ou Couronne) ; un renommage de base
+    // (D-095) entraîne aussi des variantes en `-star2` qui gardent leur rareté.
+    const variantes = Object.entries(CARD_ID_RENAMES).filter(
+      ([ancien, courant]) => ancien.endsWith('-star2') && /-(star3|crown)$/.test(courant)
+    );
     expect(variantes).toHaveLength(7);
     for (const [ancien, courant] of variantes) {
       expect(getCard(ancien), `${ancien} ne doit plus exister`).toBeUndefined();
       const card = getCard(courant);
       expect(isPlanque(card), `${courant} doit rester un Planqué`).toBe(true);
       expect(['3S', 'COU'], `${courant} : rareté haute attendue`).toContain(card?.rarity);
-      expect(card?.variantOf, `${courant} : base de variante`).toBe(ancien.replace(/-star2$/, ''));
+      const baseAncienne = ancien.replace(/-star2$/, '');
+      expect(card?.variantOf, `${courant} : base de variante`).toBe(CARD_ID_RENAMES[baseAncienne] ?? baseAncienne);
     }
   });
 
@@ -282,14 +291,12 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
       const prefixe = `${card.faction.toLowerCase()}-`;
       expect(courant.startsWith(prefixe), `${courant} : préfixe de faction`).toBe(true);
 
-      // Le suffixe `-ex` vient du **statut** COMEX (`ex: true`, D-026/D-027), pas du
-      // nom : le nom porte « COMEX », l'id porte `ex` (AGENTS.md §5, et les 15 cartes
-      // COMEX s'y conforment). On le retire
-      // avant de confronter les mots de l'id à ceux du nom.
+      // Le suffixe `-ex` vient du **statut** COMEX (`ex: true`, D-026), pas du nom : le
+      // statut est affiché sur la carte, le nom est libre (D-095). On le retire avant de
+      // confronter les mots de l'id à ceux du nom.
       const segments = courant.slice(prefixe.length).split('-');
       if (segments.at(-1) === 'ex') {
         expect(isPlanque(card) && card.ex, `${courant} : suffixe -ex sans statut COMEX`).toBe(true);
-        expect(card.name, `${courant} : le nom doit finir par « COMEX »`).toMatch(/COMEX$/);
         segments.pop();
       }
 
@@ -425,11 +432,11 @@ describe('Types de café du Deck — store (#91)', () => {
    * effaçait : le même geste avait deux comportements.
    */
   it('efface le choix quand le Deck est remplacé en bloc (setDeck, donc « Remplir »)', () => {
-    expect(getCard('atelier-chef-atelier'), 'carte de test absente').toBeTruthy();
+    expect(getCard('atelier-responsable-process'), 'carte de test absente').toBeTruthy();
     useStore.getState().setCafeTypes(['SSE', 'RH']);
-    useStore.getState().setDeck(['atelier-chef-atelier']);
+    useStore.getState().setDeck(['atelier-responsable-process']);
 
-    expect(useStore.getState().deck).toEqual(['atelier-chef-atelier']);
+    expect(useStore.getState().deck).toEqual(['atelier-responsable-process']);
     expect(useStore.getState().cafeTypes).toEqual([]);
   });
 
@@ -448,16 +455,16 @@ describe('Types de café du Deck — store (#91)', () => {
 
   it('garde le choix quand on ajuste le Deck carte par carte, et le perd s’il devient vide', () => {
     expect(getCard('sse-psychologue'), 'carte de test absente').toBeTruthy();
-    useStore.getState().setDeck(['sse-psychologue', 'atelier-chef-atelier']);
+    useStore.getState().setDeck(['sse-psychologue', 'atelier-responsable-process']);
     useStore.getState().setCafeTypes(['SSE', 'RH']);
 
     // Une carte retirée, il en reste : c'est le même Deck, le choix tient.
     useStore.getState().removeFromDeck('sse-psychologue');
-    expect(useStore.getState().deck).toEqual(['atelier-chef-atelier']);
+    expect(useStore.getState().deck).toEqual(['atelier-responsable-process']);
     expect(useStore.getState().cafeTypes).toEqual(['SSE', 'RH']);
 
     // Dernière carte retirée : Deck vide, donc plus de types — comme `clearDeck`.
-    useStore.getState().removeFromDeck('atelier-chef-atelier');
+    useStore.getState().removeFromDeck('atelier-responsable-process');
     expect(useStore.getState().deck).toEqual([]);
     expect(useStore.getState().cafeTypes).toEqual([]);
   });

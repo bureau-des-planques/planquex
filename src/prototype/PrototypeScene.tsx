@@ -1,5 +1,5 @@
 /*
- * PROTOTYPE JETABLE — le banc d'essai des saynètes d'attaque (D-095).
+ * PROTOTYPE JETABLE — le banc d'essai des saynètes d'attaque (D-098).
  * Question : le coup de grâce et la cinématique COMEX sont-ils lisibles et drôles à 420 × 900 ?
  *
  * Ce n'est PAS une scène réécrite : le plateau reprend le gabarit réel de `Battle.tsx`

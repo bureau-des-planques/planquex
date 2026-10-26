@@ -33,7 +33,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Mission courte', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse subit une mission courte et intense. L’intérimaire part vendredi, la consigne reste.' }],
-    flavor: 'Il connaît le site mieux que le directeur. Il part vendredi.'
+    flavor: 'Il connaît le site mieux que le directeur. Il part vendredi.',
+    art: 'interim-interimaire.webp'
   }),
   base({
     id: 'interim-interimaire-confirme',
@@ -50,7 +51,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       oncePerTurn: true
     },
     attacks: [{ name: 'Démerde', cost: ['MANAGEMENT', 'QVT'], damage: 50, text: 'Le Planqué adverse se fait déborder par un débrouillard. Il fait le travail de trois personnes, payé pour une.' }],
-    flavor: 'Il a fait le boulot de trois personnes. Il est payé pour une.'
+    flavor: 'Il a fait le boulot de trois personnes. Il est payé pour une.',
+    art: 'interim-interimaire-confirme.webp'
   }),
   base({
     id: 'interim-chef-equipe-interimaire',
@@ -76,7 +78,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: "Il gère l'équipe. Il n'a pas de badge."
+    flavor: "Il gère l'équipe. Il n'a pas de badge.",
+    art: 'interim-chef-equipe-interimaire.webp'
   }),
   // COMEX : carte signature de la faction, 2 Interventions (D-020, D-026).
   base({
@@ -136,7 +139,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'switchSelf' }]
       }
     ],
-    flavor: 'Il remplace trois personnes. Il n’en a rencontré aucune.'
+    flavor: 'Il remplace trois personnes. Il n’en a rencontré aucune.',
+    art: 'interim-consultant-interimaire.webp'
   }),
   base({
     id: 'interim-responsable-interim',
@@ -162,7 +166,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'discardEnergy', target: 'opponent' }, { kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Il fournit du personnel. Le personnel ne sait pas où il va.'
+    flavor: 'Il fournit du personnel. Le personnel ne sait pas où il va.',
+    art: 'interim-responsable-interim.webp'
   })
 ];
 

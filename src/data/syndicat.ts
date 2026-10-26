@@ -30,7 +30,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'healSelf', amount: 10 }]
       }
     ],
-    flavor: 'Il a imprimé 400 tracts. En noir et blanc.'
+    flavor: 'Il a imprimé 400 tracts. En noir et blanc.',
+    art: 'syndicat-delegue-personnel.webp'
   }),
   base({
     id: 'syndicat-representant-cse',
@@ -42,7 +43,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
     retreat: 2,
     ability: { name: 'Heure de délégation', text: 'Une fois par tour : pioche 1 carte.', kind: 'draw', amount: 1, oncePerTurn: true },
     attacks: [{ name: 'Motion', cost: ['SYNDICAT', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse essuie une motion votée à l’unanimité. La réunion a duré quatre heures et elle sera reportée.' }],
-    flavor: 'La réunion a duré 4 heures. Elle a été reportée.'
+    flavor: 'La réunion a duré 4 heures. Elle a été reportée.',
+    art: 'syndicat-representant-cse.webp'
   }),
   base({
     id: 'syndicat-secretaire-general',
@@ -97,7 +99,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }]
       }
     ],
-    flavor: 'Deux Interventions. Le compte rendu fait 40 pages.'
+    flavor: 'Deux Interventions. Le compte rendu fait 40 pages.',
+    art: 'syndicat-secretaire-general-ex.webp'
   }),
 
   // Ligne 2 (vague 2, #86) : Délégué du personnel → Trésorier CSE → Président CSE.
@@ -125,7 +128,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'draw', amount: 1 }]
       }
     ],
-    flavor: 'Il tient la caisse du café. Le reste n’est pas budgété.'
+    flavor: 'Il tient la caisse du café. Le reste n’est pas budgété.',
+    art: 'syndicat-tresorier-cse.webp'
   }),
   base({
     id: 'syndicat-president-cse',
@@ -151,7 +155,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       }
     ],
-    flavor: 'Il préside une réunion de deux personnes. Le procès-verbal fait douze pages.'
+    flavor: 'Il préside une réunion de deux personnes. Le procès-verbal fait douze pages.',
+    art: 'syndicat-president-cse.webp'
   })
 ];
 

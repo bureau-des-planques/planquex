@@ -21,7 +21,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Checklist', cost: ['AMELIORATION'], damage: 10, text: 'Regarde la carte du dessus de ton deck.', effects: [{ kind: 'peek' }] }],
-    flavor: 'Il a coché la case. La case ne sert à rien.'
+    flavor: 'Il a coché la case. Le produit, personne ne l’a regardé.',
+    art: 'amelioration-charge-qualite.webp'
   }),
   base({
     id: 'amelioration-auditeur-qualite',
@@ -45,7 +46,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       ]
     },
     attacks: [{ name: 'Non-conformité', cost: ['AMELIORATION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est déclaré non conforme. La fiche d’écart le désigne ; le process, lui, reste hors de cause.' }],
-    flavor: 'Il a trouvé un problème. Le problème, c’est le process.'
+    flavor: 'Il a trouvé un problème. Le problème, c’est le process.',
+    art: 'amelioration-auditeur-qualite.webp'
   }),
   base({
     id: 'amelioration-directeur-qualite',
@@ -70,7 +72,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Diagnostic', cost: ['AMELIORATION'], damage: 20, text: 'Le Planqué adverse reçoit un diagnostic en deux jours. Le rapport était rédigé avant la visite.' }],
-    flavor: 'Il a tout vu en deux jours. Le rapport était écrit avant.'
+    flavor: 'Il a tout vu en deux jours. Le rapport était écrit avant.',
+    art: 'amelioration-consultant-lean.webp'
   }),
   base({
     id: 'amelioration-responsable-process',
@@ -82,7 +85,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Standardisation', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
     attacks: [{ name: 'Revue de processus', cost: ['AMELIORATION', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse passe en revue de processus. Il sort de la réunion avec une étape de plus à documenter.' }],
-    flavor: 'Il a écrit le process. Le process a écrit sa journée.'
+    flavor: 'Il a écrit le process. Le process a écrit sa journée.',
+    art: 'amelioration-responsable-process.webp'
   }),
   base({
     id: 'amelioration-responsable-amelioration-continue',
@@ -96,7 +100,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Chantier Lean', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Un chantier Lean s’abat sur le Planqué adverse. Objectif : zéro défaut, zéro production.' },
       { name: 'Zéro défaut', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 20 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 20 }] }
     ],
-    flavor: 'Zéro défaut. Zéro production.'
+    flavor: 'Zéro défaut. Zéro production.',
+    art: 'amelioration-responsable-amelioration-continue.webp'
   }),
   base({
     id: 'amelioration-gestionnaire-flux',
@@ -106,7 +111,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Lissage', cost: ['AMELIORATION'], damage: 20, text: 'Le Planqué adverse est lissé pour entrer dans la courbe. La courbe, elle, ne bouge pas.' }],
-    flavor: 'Il a lissé la charge. Le planning a doublé tout seul.'
+    flavor: 'Il a lissé la charge. Le planning a doublé tout seul.',
+    art: 'amelioration-gestionnaire-flux.webp'
   }),
   base({
     id: 'amelioration-responsable-flux',
@@ -120,7 +126,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Ordonnancement', cost: ['AMELIORATION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est réordonnancé en urgence. Le client a annulé pendant la réunion.' },
       { name: 'Rattrapage', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse doit rattraper tout le retard d’un coup. Le retard, lui, vient d’être reporté.' }
     ],
-    flavor: 'Il a débloqué la ligne. Le client avait annulé.'
+    flavor: 'Il a débloqué la ligne. Le client avait annulé.',
+    art: 'amelioration-responsable-flux.webp'
   }),
   base({
     id: 'amelioration-directeur-flux',
@@ -134,7 +141,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Plan de charge', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse reçoit un plan de charge. Le stock, lui, attend devant la porte.' },
       { name: 'Accélération', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a accéléré le flux. Le stock attend devant.'
+    flavor: 'Il a accéléré le flux. Le stock attend devant.',
+    art: 'amelioration-directeur-flux.webp'
   }),
   base({
     id: 'amelioration-auditeur-interne',
@@ -144,7 +152,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Prélèvement', cost: ['AMELIORATION'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a prélevé un échantillon. L’échantillon est introuvable.'
+    flavor: 'Il a prélevé un échantillon. L’échantillon est introuvable.',
+    art: 'amelioration-auditeur-interne.webp'
   }),
   base({
     id: 'amelioration-responsable-audit',
@@ -156,7 +165,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Plan d’actions', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Écart majeur', cost: ['AMELIORATION', 'INCOLORE'], damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a ouvert un écart. L’écart est resté ouvert.'
+    flavor: 'Il a ouvert un écart. L’écart est resté ouvert.',
+    art: 'amelioration-responsable-audit.webp'
   }),
   base({
     id: 'amelioration-directeur-audit-interne',
@@ -170,7 +180,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Revue de direction', cost: ['AMELIORATION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Écart critique', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Il a audité l’audit. L’audit a été reporté.'
+    flavor: 'Il a audité l’audit. L’audit a été reporté.',
+    art: 'amelioration-directeur-audit-interne.webp'
   }),
   base({
     id: 'amelioration-charge-amelioration',
@@ -180,7 +191,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Kaizen', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le progrès continue. Le poste, non.'
+    flavor: 'Le progrès continue. Le poste, non.',
+    art: 'amelioration-charge-amelioration.webp'
   }),
   base({
     id: 'amelioration-charge-process',
@@ -194,7 +206,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Analyse de la valeur', cost: ['AMELIORATION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est analysé étape par étape. Une étape disparaît ; deux autres arrivent.' },
       { name: 'Goulot d’étranglement', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse est Immobilisé.', effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }] }
     ],
-    flavor: 'Il a supprimé une étape. On en a ajouté deux.'
+    flavor: 'Il a supprimé une étape. On en a ajouté deux.',
+    art: 'amelioration-charge-process.webp'
   }),
   base({
     id: 'amelioration-controleur-qualite',
@@ -204,7 +217,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Contrôle', cost: ['AMELIORATION'], damage: 20, text: 'Le Planqué adverse est contrôlé à la pièce. Quarante vérifiées, quatre cents en attente.' }],
-    flavor: 'Il a contrôlé quarante pièces. Il en reste quatre cents.'
+    flavor: 'Il a contrôlé quarante pièces. Il en reste quatre cents.',
+    art: 'amelioration-controleur-qualite.webp'
   }),
   base({
     id: 'amelioration-chef-projet-qualite',
@@ -218,7 +232,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Jalons', cost: ['AMELIORATION', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse franchit un jalon qualité. Le jalon est passé ; le dossier, non.' },
       { name: 'Recette', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Le Planqué adverse passe en recette. La liste des réserves est plus longue que le cahier des charges.' }
     ],
-    flavor: 'Le jalon est passé. Le dossier, non.'
+    flavor: 'Le jalon est passé. Le dossier, non.',
+    art: 'amelioration-chef-projet-qualite.webp'
   }),
   base({
     id: 'amelioration-stagiaire-qualite',
@@ -228,7 +243,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Relevé', cost: ['AMELIORATION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Relevé terminé. L’action corrective est reportée.'
+    flavor: 'Relevé terminé. L’action corrective est reportée.',
+    art: 'amelioration-stagiaire-qualite.webp'
   }),
   base({
     id: 'amelioration-directeur-qualite-ex',
@@ -243,7 +259,8 @@ export const AMELIORATION_CARDS: PlanqueCard[] = [
       { name: 'Audit flash', cost: ['AMELIORATION', 'INCOLORE'], damage: 70, text: 'Un audit flash s’abat sur le Planqué adverse. Il dure une heure, le rapport un trimestre.' },
       { name: 'Certification', cost: ['AMELIORATION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'On a amélioré le process d’amélioration.'
+    flavor: 'On a amélioré le process d’amélioration.',
+    art: 'amelioration-directeur-qualite-ex.webp'
   })
 ];
 

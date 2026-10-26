@@ -709,7 +709,7 @@ est une lecture plus rapide.
    Une animation CSS de `transform`/`opacity` ne repeint pas ; un `filter: blur` sur une
    surface qui bouge, si — donc **pas de flou en mouvement**.
 
-> **Révision du 26/10/2026 — la Pression a sa chorégraphie (D-095).** Les bornes 3 et 5 ne
+> **Révision du 26/10/2026 — la Pression a sa chorégraphie (D-098).** Les bornes 3 et 5 ne
 > s'appliquent plus telles quelles à la **Pression** : sa durée monte jusqu'à ~3,2 s quand la
 > grosse attaque d'un COU, d'un 3 étoiles ou d'un COMEX joue sa cinématique, et son coût de
 > rendu se compte en **particules de `canvas`** (600 au plus, 300 hors cinématique), plus en

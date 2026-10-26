@@ -13,7 +13,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Pansement', cost: ['SSE'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il a lu la notice. En diagonale.'
+    flavor: 'Il a lu la notice. En diagonale.',
+    art: 'sse-infirmier-site.webp'
   }),
   base({
     id: 'sse-infirmiere-travail',
@@ -25,7 +26,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Prévention', text: 'Une fois par tour : soigne 10 d’un Planqué.', kind: 'heal', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Piqûre de rappel', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit sa piqûre de rappel. Le rappel suivant est déjà planifié, sans date.' }],
-    flavor: 'Elle sait où tu as mal avant toi.'
+    flavor: 'Elle sait où tu as mal avant toi.',
+    art: 'sse-infirmiere-travail.webp'
   }),
   base({
     id: 'sse-medecin-travail',
@@ -50,7 +52,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Inspection', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est inspecté de la tête aux pieds. La case est cochée ; le danger reste en place.' }],
-    flavor: 'Il a coché la case. La case ne sert à rien.'
+    flavor: 'Il a coché la case. La case ne sert à rien.',
+    art: 'sse-preventeur.webp'
   }),
   base({
     id: 'sse-ergonome',
@@ -62,7 +65,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 2,
     ability: { name: 'Posture', text: 'Ce Planqué subit 10 dégâts de moins.', kind: 'reduceDamage', amount: 10 },
     attacks: [{ name: 'Réglage', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est réglé à sa hauteur. La chaise, elle, a été réglée pour quelqu’un d’autre.' }],
-    flavor: 'Il a réglé la chaise. Ton dos attend encore.'
+    flavor: 'Il a réglé la chaise. Ton dos attend encore.',
+    art: 'sse-ergonome.webp'
   }),
   base({
     id: 'sse-responsable-sse',
@@ -76,7 +80,8 @@ export const SSE_CARDS: PlanqueCard[] = [
       { name: 'Rapport d’incident', cost: ['SSE', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Plan de prévention', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Soigne 10 de tous tes Planqués.', effects: [{ kind: 'healAll', amount: 10 }] }
     ],
-    flavor: 'Il a écrit le protocole. Personne ne l’applique.'
+    flavor: 'Il a écrit le protocole. Personne ne l’applique.',
+    art: 'sse-responsable-sse.webp'
   }),
   base({
     id: 'sse-kine-travail',
@@ -86,7 +91,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Manipulation', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est manipulé avec fermeté. Le problème n’est pas à l’épaule, mais personne ne le dira.' }],
-    flavor: 'Il a massé l’épaule. Le problème est ailleurs.'
+    flavor: 'Il a massé l’épaule. Le problème est ailleurs.',
+    art: 'sse-kine-travail.webp'
   }),
   base({
     id: 'sse-sophrologue',
@@ -98,7 +104,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     retreat: 1,
     ability: { name: 'Respiration', text: 'Une fois par tour : soigne 10 et retire un statut.', kind: 'antiStatus', amount: 10, oncePerTurn: true },
     attacks: [{ name: 'Relaxation', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est invité à relâcher les épaules. L’échéance, elle, reste serrée.' }],
-    flavor: 'Respire. Le Banc est encore là.'
+    flavor: 'Respire. Le Banc est encore là.',
+    art: 'sse-sophrologue.webp'
   }),
   base({
     id: 'sse-medecin-chef',
@@ -112,7 +119,8 @@ export const SSE_CARDS: PlanqueCard[] = [
       { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 60, text: 'Le Planqué adverse reçoit un diagnostic sévère. Le traitement n’est pas remboursé par le service.' },
       { name: 'Protocole', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Ce Planqué prend 10 de stress.', effects: [{ kind: 'selfDamage', amount: 10 }] }
     ],
-    flavor: 'Il a diagnostiqué le management. C’est grave.'
+    flavor: 'Il a diagnostiqué le management. C’est grave.',
+    art: 'sse-medecin-chef.webp'
   }),
   base({
     id: 'sse-secouriste',
@@ -122,7 +130,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Massage cardiaque', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse reçoit un massage cardiaque en règle. Le défibrillateur est à l’étage, sous clé.' }],
-    flavor: 'Il a couru. L’ascenseur était en panne.'
+    flavor: 'Il a couru. L’ascenseur était en panne.',
+    art: 'sse-secouriste.webp'
   }),
   base({
     id: 'sse-chef-secours',
@@ -133,7 +142,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Intervention', cost: ['SSE', 'INCOLORE'], damage: 50, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il a sauvé la réunion. Pas le patient.'
+    flavor: 'Il a sauvé la réunion. Pas le patient.',
+    art: 'sse-chef-secours.webp'
   }),
   base({
     id: 'sse-agent-entretien',
@@ -143,7 +153,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Serpillière', cost: ['SSE'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a nettoyé. La direction a sali.'
+    flavor: 'Il a nettoyé. La direction a sali.',
+    art: 'sse-agent-entretien.webp'
   }),
   base({
     id: 'sse-responsable-hygiene',
@@ -154,7 +165,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Protocole', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est soumis au protocole d’hygiène. Trois exemplaires signés ; aucun appliqué.' }],
-    flavor: 'Il a écrit le protocole d’hygiène. En trois exemplaires.'
+    flavor: 'Il a écrit le protocole d’hygiène. En trois exemplaires.',
+    art: 'sse-responsable-hygiene.webp'
   }),
   base({
     id: 'sse-psychologue',
@@ -164,7 +176,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Écoute', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a écouté. C’était déjà beaucoup.'
+    flavor: 'Il a écouté. C’était déjà beaucoup.',
+    art: 'sse-psychologue.webp'
   }),
   base({
     id: 'sse-psychiatre',
@@ -175,7 +188,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse est Dérivé.', effects: [{ kind: 'status', status: 'DERIVE', target: 'opponent' }] }],
-    flavor: 'Il a prescrit des vacances. Refusées.'
+    flavor: 'Il a prescrit des vacances. Refusées.',
+    art: 'sse-psychiatre.webp'
   }),
   base({
     id: 'sse-dieteticien',
@@ -185,7 +199,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Menu équilibré', cost: ['SSE'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il a équilibré le menu. La cantine a ajouté du gras.'
+    flavor: 'Il a équilibré le menu. La cantine a ajouté du gras.',
+    art: 'sse-dieteticien.webp'
   }),
   base({
     id: 'sse-nutritionniste',
@@ -196,7 +211,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Régime', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Soigne 20 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 20 }] }],
-    flavor: 'Il a remplacé le sucre par la stevia. Personne n’a vu la différence.'
+    flavor: 'Il a remplacé le sucre par la stevia. Personne n’a vu la différence.',
+    art: 'sse-nutritionniste.webp'
   }),
   base({
     id: 'sse-interne',
@@ -206,7 +222,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Garde', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse tombe sur une garde de trente heures. Le planning prévoyait pourtant du repos.' }],
-    flavor: 'Il est interne. Il fait le travail de trois médecins.'
+    flavor: 'Il est interne. Il fait le travail de trois médecins.',
+    art: 'sse-interne.webp'
   }),
   base({
     id: 'sse-infirmier-volant',
@@ -216,7 +233,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Remplacement', cost: ['SSE'], damage: 20, text: 'Échange ce Planqué avec un Planqué du Banc.', effects: [{ kind: 'switchSelf' }] }],
-    flavor: 'Il remplace tout le monde. Personne ne le remplace.'
+    flavor: 'Il remplace tout le monde. Personne ne le remplace.',
+    art: 'sse-infirmier-volant.webp'
   }),
   base({
     id: 'sse-pompier-volontaire',
@@ -226,7 +244,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Extincteur', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est arrosé à l’extincteur. Le contrôle annuel est périmé depuis la dernière alerte.' }],
-    flavor: 'Il éteint les incendies. On lui demande de les prévenir.'
+    flavor: 'Il éteint les incendies. On lui demande de les prévenir.',
+    art: 'sse-pompier-volontaire.webp'
   }),
   base({
     id: 'sse-medecin-sport',
@@ -236,7 +255,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Bandage', cost: ['SSE'], damage: 10, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] }],
-    flavor: 'Il soigne les entorses des autres.'
+    flavor: 'Il soigne les entorses des autres.',
+    art: 'sse-medecin-sport.webp'
   }),
   base({
     id: 'sse-assistante-sociale',
@@ -246,7 +266,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Dossier', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Elle a ouvert le dossier. Le dossier s’est refermé.'
+    flavor: 'Elle a ouvert le dossier. Le dossier s’est refermé.',
+    art: 'sse-assistante-sociale.webp'
   }),
   base({
     id: 'sse-controleur-securite',
@@ -256,7 +277,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Vérification', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il vérifie les issues de secours. Elles sont bloquées.'
+    flavor: 'Il vérifie les issues de secours. Elles sont bloquées.',
+    art: 'sse-controleur-securite.webp'
   }),
 
   // Ligne complétée en N+1 (vague 2, #86) : Contrôleur de sécurité → Responsable
@@ -274,7 +296,8 @@ export const SSE_CARDS: PlanqueCard[] = [
       { name: 'Consigne de sécurité', cost: ['SSE', 'INCOLORE'], damage: 40, text: 'Soigne 10 de ce Planqué.', effects: [{ kind: 'healSelf', amount: 10 }] },
       { name: 'Rapport de sécurité', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 70, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }
     ],
-    flavor: 'Il a tout vérifié. Le tableau de bord est vide.'
+    flavor: 'Il a tout vérifié. Le tableau de bord est vide.',
+    art: 'sse-responsable-securite.webp'
   }),
   base({
     id: 'sse-brancardier',
@@ -284,7 +307,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Transport', cost: ['SSE'], damage: 20, text: 'Le Planqué adverse est transporté sans ménagement. L’ascenseur est réservé aux marchandises.' }],
-    flavor: 'Il transporte. Il ne juge pas.'
+    flavor: 'Il transporte. Il ne juge pas.',
+    art: 'sse-brancardier.webp'
   }),
   base({
     id: 'sse-medecin-legiste',
@@ -294,7 +318,8 @@ export const SSE_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Autopsie', cost: ['SSE'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a vu pire. C’était la réunion d’hier.'
+    flavor: 'Il a vu pire. C’était la réunion d’hier.',
+    art: 'sse-medecin-legiste.webp'
   }),
   base({
     id: 'sse-medecin-chef-ex',
@@ -309,7 +334,8 @@ export const SSE_CARDS: PlanqueCard[] = [
       { name: 'Diagnostic', cost: ['SSE', 'INCOLORE'], damage: 70, text: 'Le Planqué adverse reçoit un diagnostic sévère. Le traitement n’est pas remboursé par le service.' },
       { name: 'Protocole', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Un seul médecin.'
+    flavor: 'Deux Interventions. Un seul médecin.',
+    art: 'sse-medecin-chef-ex.webp'
   }),
 
   // Second COMEX (vague 1, #66) : la ligne de prévention, distincte de la signature.
@@ -326,7 +352,8 @@ export const SSE_CARDS: PlanqueCard[] = [
       { name: 'Rapport d’incident', cost: ['SSE', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Plan de prévention', cost: ['SSE', 'INCOLORE', 'INCOLORE'], damage: 100, text: 'Soigne 30 de tous tes Planqués. Ce Planqué prend 20 de stress.', effects: [{ kind: 'healAll', amount: 30 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Le plan de prévention est arrivé après l’incident.'
+    flavor: 'Deux Interventions. Le plan de prévention est arrivé après l’incident.',
+    art: 'sse-responsable-sse-ex.webp'
   })
 ];
 

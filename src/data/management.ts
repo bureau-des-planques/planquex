@@ -20,7 +20,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Objectif', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse reçoit un objectif de 20. Il sera revu à la hausse dès qu’il sera atteint.' }],
-    flavor: 'Il a un plan. Le plan est un post-it.'
+    flavor: 'Il a un plan. Le plan est un post-it.',
+    art: 'management-jeune-manager.webp'
   }),
   base({
     id: 'management-chef-de-projet',
@@ -30,7 +31,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Rétroplanning', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a trois rétroplanings. Aucun ne parle du même projet.'
+    flavor: 'Il a trois rétroplanings. Aucun ne parle du même projet.',
+    art: 'management-chef-de-projet.webp'
   }),
   base({
     id: 'management-technico-commercial',
@@ -40,7 +42,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Prospection', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est démarché sans relâche. Le devis part ; la livraison, elle, n’a pas de date.' }],
-    flavor: 'Il a signé un devis. Le client attend la livraison depuis mars.'
+    flavor: 'Il a signé un devis. Le client attend la livraison depuis mars.',
+    art: 'management-technico-commercial.webp'
   }),
   base({
     id: 'management-assistant-manager',
@@ -50,7 +53,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Reporting', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il prépare le tableau de bord qui prépare le tableau de bord.'
+    flavor: 'Il prépare le tableau de bord qui prépare le tableau de bord.',
+    art: 'management-assistant-manager.webp'
   }),
   base({
     id: 'management-superviseur',
@@ -60,7 +64,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Briefing', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse subit un briefing de dernière minute. Le compte rendu dira le contraire.' }],
-    flavor: 'Il a briefé l’équipe. Le compte-rendu dit l’inverse.'
+    flavor: 'Il a briefé l’équipe. Le compte-rendu dit l’inverse.',
+    art: 'management-superviseur.webp'
   }),
   base({
     id: 'management-animateur-equipe',
@@ -70,7 +75,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Point de suivi', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est convoqué à un point de suivi. Il durera deux heures et ne décidera rien.' }],
-    flavor: 'Il veut juste un point. Le point dure deux heures.'
+    flavor: 'Il veut juste un point. Le point dure deux heures.',
+    art: 'management-animateur-equipe.webp'
   }),
   base({
     id: 'management-chargee-clientele',
@@ -80,7 +86,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Relance', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est relancé trois fois dans la journée. La réponse attend toujours une validation.' }],
-    flavor: 'Elle relance les impayés. La relance attend une validation.'
+    flavor: 'Elle relance les impayés. La relance attend une validation.',
+    art: 'management-chargee-clientele.webp'
   }),
   base({
     id: 'management-planificateur',
@@ -90,7 +97,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Planning', cost: ['MANAGEMENT'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Le planning est à jour. Le site a changé de plan.'
+    flavor: 'Le planning est à jour. Le site a changé de plan.',
+    art: 'management-planificateur.webp'
   }),
   base({
     id: 'management-controleur-gestion',
@@ -100,7 +108,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Écart budgétaire', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse est épinglé sur un écart budgétaire. L’écart a déjà migré dans un autre tableau.' }],
-    flavor: 'Il a trouvé l’écart. Il l’a mis dans un autre tableau.'
+    flavor: 'Il a trouvé l’écart. Il l’a mis dans un autre tableau.',
+    art: 'management-controleur-gestion.webp'
   }),
   base({
     id: 'management-chef-equipe',
@@ -110,7 +119,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 70,
     retreat: 1,
     attacks: [{ name: 'Consigne', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse reçoit la consigne du jour. Elle sera remplacée avant la fin du poste.' }],
-    flavor: 'Il relaie la consigne. Le circuit l’a déjà remplacée.'
+    flavor: 'Il relaie la consigne. Le circuit l’a déjà remplacée.',
+    art: 'management-chef-equipe.webp'
   }),
   base({
     id: 'management-charge-affaires',
@@ -120,7 +130,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Devis', cost: ['MANAGEMENT'], damage: 20, text: 'Le Planqué adverse reçoit un devis au prix le plus bas. La marge est restée au bureau.' }],
-    flavor: 'Le devis est parti. La marge est restée au bureau.'
+    flavor: 'Le devis est parti. La marge est restée au bureau.',
+    art: 'management-charge-affaires.webp'
   }),
 
   base({
@@ -144,7 +155,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
       ]
     },
     attacks: [{ name: 'Deadline', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse tombe sur une échéance impossible. Elle a été fixée par courriel, sans accusé de lecture.' }],
-    flavor: 'Il manage par mail. Il ne lit pas les réponses.'
+    flavor: 'Il manage par mail. Il ne lit pas les réponses.',
+    art: 'management-manager-proximite.webp'
   }),
   base({
     id: 'management-responsable-projet',
@@ -155,7 +167,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Jalon', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse doit valider un jalon qui n’existait pas la veille. Le planning sera refait après coup.' }],
-    flavor: 'Il a validé le jalon. Le jalon n’existait pas.'
+    flavor: 'Il a validé le jalon. Le jalon n’existait pas.',
+    art: 'management-responsable-projet.webp'
   }),
   base({
     id: 'management-responsable-commercial',
@@ -166,7 +179,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Négociation', cost: ['MANAGEMENT', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse négocie une remise. Le client en négocie une autre, et gagne.' }],
-    flavor: 'Il a négocié une remise. Le client en a négocié une autre.'
+    flavor: 'Il a négocié une remise. Le client en a négocié une autre.',
+    art: 'management-responsable-commercial.webp'
   }),
   base({
     id: 'management-chef-service',
@@ -185,7 +199,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }]
       }
     ],
-    flavor: 'Il a pris les décisions. Le chef les a signées.'
+    flavor: 'Il a pris les décisions. Le chef les a signées.',
+    art: 'management-chef-service.webp'
   }),
   base({
     id: 'management-responsable-production',
@@ -196,7 +211,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
     hp: 100,
     retreat: 2,
     attacks: [{ name: 'Cadence', cost: ['MANAGEMENT', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est mis en cadence. La cadence est tenue ; les gens, un peu moins.' }],
-    flavor: 'La cadence est tenue. Les gens, non.'
+    flavor: 'La cadence est tenue. Les gens, non.',
+    art: 'management-responsable-production.webp'
   }),
 
   base({
@@ -244,7 +260,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'healAll', amount: 10 }]
       }
     ],
-    flavor: 'Le projet est livré. La recette est signée demain.'
+    flavor: 'Le projet est livré. La recette est signée demain.',
+    art: 'management-directeur-projet.webp'
   }),
   base({
     id: 'management-directeur-production',
@@ -264,7 +281,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Il a optimisé la ligne. Il a oublié les gens dessus.'
+    flavor: 'Il a optimisé la ligne. Il a oublié les gens dessus.',
+    art: 'management-directeur-production.webp'
   }),
 
   // Ligne complétée en N+2 (vague 2, #86) : Assistant manager → Chef de service →
@@ -287,7 +305,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'EPUISEMENT', target: 'opponent' }]
       }
     ],
-    flavor: 'Trois objectifs. Le sien est atteignable. Les deux autres, non.'
+    flavor: 'Trois objectifs. Le sien est atteignable. Les deux autres, non.',
+    art: 'management-directeur-service.webp'
   }),
   base({
     id: 'management-responsable-unite-ex',
@@ -314,7 +333,8 @@ export const MANAGEMENT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 20 }]
       }
     ],
-    flavor: 'Deux Interventions. Une seule réunion.'
+    flavor: 'Deux Interventions. Une seule réunion.',
+    art: 'management-responsable-unite-ex.webp'
   })
 ];
 

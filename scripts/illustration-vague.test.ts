@@ -1048,8 +1048,8 @@ describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
   });
 
   it('le contrôle mord : une carte de base sans sujet est refusée', () => {
-    const sans = lireSujets().filter((ligne) => ligne.id !== 'atelier-cariste');
-    expect(controlerSujets(sans).join('\n')).toContain('atelier-cariste');
+    const sans = lireSujets().filter((ligne) => ligne.id !== 'atelier-cariste-salle-blanche');
+    expect(controlerSujets(sans).join('\n')).toContain('atelier-cariste-salle-blanche');
   });
 
   it('le contrôle mord : une ligne orpheline est refusée', () => {
@@ -1061,11 +1061,11 @@ describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
     const sujets = lireSujets();
     const remplacer = (id: string, sujet: string) =>
       controlerSujets(sujets.map((ligne) => (ligne.id === id ? { id, sujet } : ligne))).join('\n');
-    expect(remplacer('atelier-cariste', 'a forklift driver, in a hi-vis vest, holding a pallet list, cheerful')).toContain(
+    expect(remplacer('atelier-cariste-salle-blanche', 'a forklift driver, in a clean-room suit, cheerful')).toContain(
       'créneaux'
     );
     expect(
-      remplacer('atelier-cariste', 'a forklift driver, in a hi-vis vest, holding a pallet list, climbing in, cheerful, calm')
+      remplacer('atelier-cariste-salle-blanche', 'a forklift driver, in a clean-room suit, holding a pallet list, steering through the door, cheerful, calm')
     ).toContain('créneaux');
   });
 
@@ -1073,7 +1073,9 @@ describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
     const sujets = lireSujets();
     const source = sujets.find((ligne) => ligne.id === 'direction-pdg');
     expect(source).toBeDefined();
-    const copie = sujets.map((ligne) => (ligne.id === 'atelier-cariste' ? { id: ligne.id, sujet: source?.sujet ?? '' } : ligne));
+    const copie = sujets.map((ligne) =>
+      ligne.id === 'atelier-cariste-salle-blanche' ? { id: ligne.id, sujet: source?.sujet ?? '' } : ligne
+    );
     expect(controlerSujets(copie).join('\n')).toContain('couple objet + geste');
   });
 
@@ -1200,9 +1202,11 @@ describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', ()
     expect(generations()).toHaveLength(0);
   }, DELAI);
 
-  it('le prompt de atelier-cariste est celui qu’on a relevé (773 caractères)', () => {
+  it('le prompt de atelier-cariste-salle-blanche est celui du registre (772 caractères)', () => {
     // Golden : socle + sujet + accent, tels que la table les donne. Si le socle ou
     // la table bougent, ce test le dit — c'est voulu : le prompt envoyé à Flow a changé.
+    // (D-095 : le cariste devient « cariste de salle blanche » ; l'ancien prompt, de 773
+    // caractères, n'est plus généré.)
     const attendu =
       'Editorial trading-card illustration for a corporate-satire deck, semi-realistic painterly rendering, ' +
       'end-of-day office mood, satirical but never mean. Deep midnight-blue palette (#0b1220, #131c2e) with one ' +
@@ -1210,10 +1214,10 @@ describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', ()
       'clearly visible features, no shadow over the eyes; only a subtle gold (#e6b64c) rim light on the shoulders ' +
       'and hair. Matte surfaces, subtle film grain, subject centered and isolated on a darker background, ' +
       'occupying ~70% of the frame, waist-up, square 1:1. No text, no logo, no watermark, no brand, no real person. ' +
-      'a forklift driver, in a hi-vis vest over a fleece, holding a pallet list, climbing into a forklift, ' +
-      'cheerful and unbothered, muted rust bronze accent.';
-    expect([...attendu]).toHaveLength(773);
-    const r = wizard(['--prompt', 'atelier-cariste']);
+      'a forklift driver, in a clean-room suit, holding a pallet list, pushing a pallet trolley through an airlock door, ' +
+      'cheerful, muted rust bronze accent.';
+    expect([...attendu]).toHaveLength(772);
+    const r = wizard(['--prompt', 'atelier-cariste-salle-blanche']);
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout.replace(/\n$/, '')).toBe(attendu);
   });

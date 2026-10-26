@@ -1,5 +1,5 @@
 /*
- * **Les chorégraphies de Pression** (D-095). Une attaque → une animation, dérivée de son nom,
+ * **Les chorégraphies de Pression** (D-098). Une attaque → une animation, dérivée de son nom,
  * de sa faction et de ses effets ; deux attaques d'une même carte n'ont jamais le même motif.
  * La grosse attaque d'un Planqué COU, 3 étoiles ou COMEX reçoit en plus une cinématique.
  */
@@ -222,7 +222,7 @@ export function estLegendaire(carte: PlanqueCard): boolean {
 }
 
 /**
- * **La cinématique est réservée** (D-095) : un Planqué COU, 3 étoiles ou COMEX, et seulement
+ * **La cinématique est réservée** (D-098) : un Planqué COU, 3 étoiles ou COMEX, et seulement
  * sur sa Pression la plus chère. Une carte ordinaire n'en a jamais, et la petite attaque d'un
  * légendaire non plus — sinon la carte aurait deux fois la même fête.
  */
@@ -869,7 +869,7 @@ function motifD(
             },
             maj(temps) {
               // Un tirage **par tranche de temps**, jamais par image : la même attaque produit
-              // les mêmes étincelles à 30 comme à 144 Hz (déterminisme de l'écran, D-095).
+              // les mêmes étincelles à 30 comme à 144 Hz (déterminisme de l'écran, D-098).
               const rt = alea(hacher(`${x.attaque.name}:soudure:${Math.floor(temps / 40)}`));
               for (let i = 0; i < 3; i++)
                 m.emettre({

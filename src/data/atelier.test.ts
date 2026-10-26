@@ -18,7 +18,7 @@ const byId = (id: string): PlanqueCard | undefined => {
   return isPlanque(card) ? card : undefined;
 };
 
-const LINE = ['atelier-apprenti', 'atelier-technicien-maintenance', 'atelier-chef-atelier'];
+const LINE = ['atelier-joueur-de-flute', 'atelier-technicien-systeme', 'atelier-responsable-process'];
 
 describe('Atelier — enregistrement (ticket #19)', () => {
   it('compte 34 entrées, dont 26 bases et 8 variantes (vague 1, #66 : +1 COMEX ; vague 2, #86 : +1 carte 3◆)', () => {
@@ -71,8 +71,8 @@ describe('Atelier — ligne et COMEX (D-020)', () => {
   it('a deux COMEX, en 4 diamants, à 2 Interventions, sur deux lignes distinctes', () => {
     const comex = ALL_ATELIER_CARDS.filter(isPlanque).filter((card) => card.ex);
     expect(comex.map((card) => card.id)).toEqual([
-      'atelier-chef-atelier-ex',
-      'atelier-responsable-maintenance-ex'
+      'atelier-rpo-sans-rui-ex',
+      'atelier-rui-non-toxique-ex'
     ]);
     for (const card of comex) {
       // D-020 : `ex: true` ⇒ 4D ⇒ 2 Interventions (engine.ts `knockOut`).
@@ -80,8 +80,8 @@ describe('Atelier — ligne et COMEX (D-020)', () => {
       expect(card.stage, card.id).toBe('N+2');
     }
     expect(comex.map((card) => card.evolvesFrom)).toEqual([
-      'atelier-technicien-maintenance',
-      'atelier-electromecanicien'
+      'atelier-technicien-systeme',
+      'atelier-rpo'
     ]);
   });
 

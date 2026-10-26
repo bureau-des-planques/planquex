@@ -21,7 +21,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Reporting', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il est en réunion. Depuis 2019.'
+    flavor: 'Il est en réunion. Depuis 2019.',
+    art: 'direction-chef-projet-fantome.webp'
   }),
   base({
     id: 'direction-directeur-adjoint',
@@ -44,7 +45,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       ]
     },
     attacks: [{ name: 'Note de service', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Le Planqué adverse reçoit une note de service. Elle a été signée, puis déléguée à personne.' }],
-    flavor: 'Il a délégué. À personne.'
+    flavor: 'Il a délégué. À personne.',
+    art: 'direction-directeur-adjoint.webp'
   }),
   base({
     id: 'direction-pdg',
@@ -77,7 +79,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Plan de départ', cost: ['DIRECTION', 'INCOLORE'], damage: 70, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Fusion-acquisition', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 120, text: 'L’adversaire défausse 1 carte. Ce Planqué prend 20 de stress.', effects: [{ kind: 'discardHand', target: 'opponent', amount: 1 }, { kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'Deux Interventions. Un seul bureau.'
+    flavor: 'Deux Interventions. Un seul bureau.',
+    art: 'direction-pdg-ex.webp'
   }),
 
   // Ligne 2 : Directeur fantôme → Directeur régional → Directeur général
@@ -89,7 +92,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Reporting', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Son bureau est vide. Sa signature est partout.'
+    flavor: 'Son bureau est vide. Sa signature est partout.',
+    art: 'direction-directeur-fantome.webp'
   }),
   base({
     id: 'direction-directeur-regional',
@@ -100,7 +104,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 90,
     retreat: 1,
     attacks: [{ name: 'Réorganisation', cost: ['DIRECTION', 'INCOLORE'], damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a fusionné trois sites. Les budgets, non.'
+    flavor: 'Il a fusionné trois sites. Les budgets, non.',
+    art: 'direction-directeur-regional.webp'
   }),
   base({
     id: 'direction-directeur-general',
@@ -114,7 +119,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Restructuration', cost: ['DIRECTION', 'INCOLORE'], damage: 60, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Plan social', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 90, text: 'Ce Planqué prend 20 de stress.', effects: [{ kind: 'selfDamage', amount: 20 }] }
     ],
-    flavor: 'La croissance est externe. Les dégâts sont internes.'
+    flavor: 'Il a annoncé la fusion. Les organigrammes sont déjà faits.',
+    art: 'direction-directeur-general.webp'
   }),
 
   // Ligne 3 (2 stades) : Assistant direction → Chef de cabinet
@@ -126,7 +132,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Filtre', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il lit tout. Il ne décide rien.'
+    flavor: 'Il lit tout. Il ne décide rien.',
+    art: 'direction-assistant-direction.webp'
   }),
   base({
     id: 'direction-chef-cabinet',
@@ -140,7 +147,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Porte fermée', cost: ['DIRECTION', 'INCOLORE'], damage: 50, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] },
       { name: 'Note interne', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Il sait qui voit le patron. Ce n\'est pas toi.'
+    flavor: 'Il sait qui voit le patron. Ce n\'est pas toi.',
+    art: 'direction-chef-cabinet.webp'
   }),
 
   // Ligne 4 (2 stades) : Secrétaire direction → Directeur de programme
@@ -152,7 +160,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 55,
     retreat: 1,
     attacks: [{ name: 'Agenda', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Elle gère l\'agenda. L\'agenda la gère.'
+    flavor: 'Elle gère l\'agenda. L\'agenda la gère.',
+    art: 'direction-secretaire-direction.webp'
   }),
   base({
     id: 'direction-directeur-programme',
@@ -166,7 +175,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Jalons', cost: ['DIRECTION', 'INCOLORE'], damage: 50, text: 'Le Planqué adverse est sommé de tenir les jalons du programme. Le programme n’a pas encore de budget.' },
       { name: 'Recette finale', cost: ['DIRECTION', 'INCOLORE', 'INCOLORE'], damage: 80, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Le projet est livré. La recette est signée demain.'
+    flavor: 'Le programme avance. Le budget, non.',
+    art: 'direction-directeur-programme.webp'
   }),
 
   // Ligne 3 complétée en N+2 (vague 2, #86) : Assistant direction → Chef de cabinet
@@ -195,7 +205,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'IMMOBILISATION', target: 'opponent' }]
       }
     ],
-    flavor: 'Trois bureaux, deux secrétaires, aucun dossier.'
+    flavor: 'Trois bureaux, deux secrétaires, aucun dossier.',
+    art: 'direction-directeur-cabinet.webp'
   }),
 
   // Ligne 4 complétée en N+2 (vague 2, #86) : Secrétaire direction → Directeur de
@@ -224,7 +235,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       }
     ],
-    flavor: 'Le cap est fixé. Le budget suivra, un jour.'
+    flavor: 'Le cap est fixé. Le budget suivra, un jour.',
+    art: 'direction-directeur-strategie.webp'
   }),
 
   // Entrants seuls (sans évolution)
@@ -236,17 +248,19 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     hp: 50,
     retreat: 1,
     attacks: [{ name: 'Stage', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] }],
-    flavor: 'Il a fait le café. Le café était froid.'
+    flavor: 'Il a fait le café. Le café était froid.',
+    art: 'direction-stagiaire-direction.webp'
   }),
   base({
-    id: 'direction-auditeur-interne',
+    id: 'direction-auditeur-direction',
     name: 'Auditeur de direction',
     stage: 'ENTRANT',
     rarity: '1D',
     hp: 60,
     retreat: 1,
     attacks: [{ name: 'Prélèvement', cost: ['DIRECTION'], damage: 10, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }],
-    flavor: 'Il a prélevé un échantillon. L\'échantillon est introuvable.'
+    flavor: 'Il a prélevé un échantillon. Le rapport a disparu avant lui.',
+    art: 'direction-auditeur-direction.webp'
   }),
   base({
     id: 'direction-commissaire-comptes',
@@ -259,7 +273,8 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
       { name: 'Certification', cost: ['DIRECTION'], damage: 10, text: 'Pioche 1 carte.', effects: [{ kind: 'draw', amount: 1 }] },
       { name: 'Rapport d\'anomalie', cost: ['DIRECTION', 'INCOLORE'], damage: 40, text: 'Envoie 1 café du Planqué adverse au rebut.', effects: [{ kind: 'discardEnergy', target: 'opponent' }] }
     ],
-    flavor: 'Il a certifié les comptes. L\'anomalie est dans le tiroir.'
+    flavor: 'Il a certifié les comptes. L\'anomalie est dans le tiroir.',
+    art: 'direction-commissaire-comptes.webp'
   })
 ];
 

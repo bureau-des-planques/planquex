@@ -4,7 +4,7 @@ import type { PlanqueCard } from "@/data/types";
 import { attribuer, cinematiqueDe, libelle } from "./attaque";
 
 /**
- * **Une attaque, une animation** (D-095). Ces tests gardent la règle que le prototype a
+ * **Une attaque, une animation** (D-098). Ces tests gardent la règle que le prototype a
  * tranchée : deux Pressions d'une même carte ne partagent jamais leur motif, et la
  * cinématique reste réservée à la grosse attaque d'un COU, d'un 3 étoiles ou d'un COMEX.
  *
@@ -14,7 +14,7 @@ const planques = ALL_CARDS.filter(isPlanque);
 
 const DEUX_ATTAQUES = planques.filter((carte) => carte.attacks.length > 1);
 
-describe("les chorégraphies de Pression — l’attribution des motifs (D-095)", () => {
+describe("les chorégraphies de Pression — l’attribution des motifs (D-098)", () => {
   it("le catalogue contient bien des cartes à deux Pressions (le test mord)", () => {
     // Sans ce cas, le test suivant passerait sur une liste vide et ne garderait rien.
     expect(DEUX_ATTAQUES.length).toBeGreaterThan(20);
@@ -57,7 +57,7 @@ describe("les chorégraphies de Pression — l’attribution des motifs (D-095)"
   });
 });
 
-describe("la cinématique est réservée (D-095)", () => {
+describe("la cinématique est réservée (D-098)", () => {
   const legendaires = planques.filter(
     (c) => c.rarity === "COU" || c.rarity === "3S" || c.ex === true,
   );

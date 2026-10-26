@@ -2106,7 +2106,7 @@ h2 {
   flex-direction: column;
   gap: 0.25rem;
   /* Le contexte d'empilement qui permet au canvas de fond (`z-index: -1`) de se poser
-     au-dessus du feutre et sous les cartes (D-095). */
+     au-dessus du feutre et sous les cartes (D-098). */
   isolation: isolate;
   padding: 0.2rem;
   position: relative;
@@ -3647,7 +3647,7 @@ h2 {
   color: var(--gold-soft);
 }
 
-/* ---------- La Pression (D-095) ---------- */
+/* ---------- La Pression (D-098) ---------- */
 
 /* Les temps 1 à 3 de la séquence de #207 — le cabrage, le trait, l'anneau d'impact — ont été
    **retirés** quand la scène d'attaque les a repris (`src/animation/`) : un seul coup, une
@@ -3687,7 +3687,7 @@ h2 {
   animation: none;
 }
 
-/* ---------- La scène de la Pression (D-095) ---------- */
+/* ---------- La scène de la Pression (D-098) ---------- */
 
 /* Deux `canvas` posés sur le plateau, dans l'ordre du rendu : le fond passe **sous** les
    cartes **et sous le texte du plateau** (halo, ombre portée d'un saut), l'avant **au-dessus**

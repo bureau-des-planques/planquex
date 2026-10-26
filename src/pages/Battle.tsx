@@ -512,7 +512,7 @@ function Camp({
   // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
   // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
   const posteActif = side.active;
-  // **La Pression** est jouée par la scène (D-095) : le cabrage, le trait et l'anneau d'impact
+  // **La Pression** est jouée par la scène (D-098) : le cabrage, le trait et l'anneau d'impact
   // du CSS de #207 ont disparu, sinon deux animations se superposeraient. Ce qui reste ici, et
   // qui ne dépend d'aucun mouvement, c'est le **chiffre de Stress** (`effetsStress`).
   const poste = (
@@ -840,7 +840,7 @@ export function Battle() {
   const effets = useEffetsDeCombat(state, sansMouvement);
 
   /**
-   * **La chorégraphie de la Pression** (D-095) : l'effet d'attaque dit qui frappe qui, le
+   * **La chorégraphie de la Pression** (D-098) : l'effet d'attaque dit qui frappe qui, le
    * journal dit quelle Pression (`attackIndex`). La carte est retrouvée par son `uid` dans
    * les deux camps — l'attaquant est au Poste, sauf s'il a craqué sur son propre coup.
    */
@@ -1409,7 +1409,7 @@ export function Battle() {
       */}
       <div className="battle__table">
         <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
-          {/* La scène de la Pression (D-095) : deux `canvas` et les cartes animées par l'API
+          {/* La scène de la Pression (D-098) : deux `canvas` et les cartes animées par l'API
               Web Animations. Rien ne se monte sous « Mouvement réduit ». */}
           <SceneAttaque
             effetId={effetAttaque?.id}
@@ -1453,7 +1453,7 @@ export function Battle() {
               />
             </Fragment>
           ))}
-          {/* Le trait de la Pression est **dessiné par la scène** (D-095) : deux animations
+          {/* Le trait de la Pression est **dessiné par la scène** (D-098) : deux animations
               pour un seul coup se verraient. La traînée de craquage, elle, reste ici — c'est
               la même règle : une seule bande à la fois. */}
           {/* La traînée de craquage (#192) : une seule, entre l'attaquant et sa cible. Elle ne

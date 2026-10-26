@@ -82,7 +82,7 @@ function retirerDoublure(ref: { current: Doublure | null }) {
 }
 
 /**
- * **La scène d'attaque** (D-095) : deux `canvas` posés sur le plateau, un derrière les cartes
+ * **La scène d'attaque** (D-098) : deux `canvas` posés sur le plateau, un derrière les cartes
  * (halo, ombre) et un devant (trait, particules), plus les animations de carte par l'API
  * Web Animations.
  *

@@ -68,7 +68,7 @@ export interface EffetCombat {
   readonly auPoste?: boolean;
   /** L'attaque : la carte visée. Le trait relie l'attaquant à elle (nature `attaque`). */
   readonly uidCible?: string;
-  /** La Pression jouée, son rang dans la carte : la chorégraphie en dépend (D-095). */
+  /** La Pression jouée, son rang dans la carte : la chorégraphie en dépend (D-098). */
   readonly attackIndex?: number;
 }
 
