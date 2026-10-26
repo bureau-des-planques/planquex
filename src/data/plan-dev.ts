@@ -27,12 +27,8 @@ export interface FeaturePrevue {
 /** Les issues `alpha` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
-    numero: 234,
-    titre: 'UI — le contrôle en navigateur ne couvre que cinq écrans, et ne tourne pas en CI'
-  },
-  {
-    numero: 233,
-    titre: 'Combat — la main à 64 px replie des noms en plein mot'
+    numero: 237,
+    titre: 'Combat — la garde de hauteur ne fait pas tenir la marge de 20 px de D-094 (3)'
   },
   {
     numero: 228,
@@ -41,9 +37,5 @@ export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
     numero: 136,
     titre: 'Le comité — poster depuis le jeu, et la base remplace le fichier'
-  },
-  {
-    numero: 94,
-    titre: 'IA — niveau 3 : expectiminimax + déterminisations'
   }
 ];
