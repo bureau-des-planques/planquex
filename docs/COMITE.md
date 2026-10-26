@@ -261,6 +261,17 @@ depuis le mur. Le fichier reste le **contrat de données** et la **source de sec
 variables, ou si la base ne répond pas, le mur affiche ce fichier, sans écran cassé. Dans ce
 cas, le formulaire (§4) reste la porte d'écriture.
 
+**Où ce choix vit (#254)** : dans le **port** du mur, `src/lib/mur.ts` — **sept gestes**
+(`charger`, `poster`, `voter`, `trier`, `deplacer`, `corriger`, `retirer`), chacun rendant
+`{ ok: true, … }` ou `{ ok: false, message }` : une panne de réseau est un **message
+affichable**, jamais une exception qui remonte à l'écran. Les sources sont des **adapters**
+(`src/lib/murAdaptateurs.ts`) : la **base**, le **fichier** (en lecture seule : ses six gestes
+d'écriture sont refusés, avec le message que les écrans affichent) et la **mémoire**, qui sert
+aux tests **sans réseau ni navigateur**. Le cas « base configurée mais muette » est tenu par le
+port : il rend le fichier **avec la notice** de la panne. `src/lib/murBase.ts` garde ses
+fonctions et **délègue** — le fil des commentaires, le repère du suivi et le compteur y vivent
+toujours.
+
 **Le rangement (#185, #215)** : le mode de placement n'exporte plus de fichier — sur la base, le
 lâcher écrit `position_x`, `position_y` et `position_angle` (politique « chacun déplace les
 siens » de `0001`, reprise par `0005`) ; sans base, il ne fait que déplacer à l'écran, et
