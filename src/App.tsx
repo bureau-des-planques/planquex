@@ -8,7 +8,7 @@ import { Battle } from '@/pages/Battle';
 import { Settings } from '@/pages/Settings';
 import { Comite } from '@/pages/Comite';
 import { Confidentialite } from '@/pages/Confidentialite';
-import { Nouveautes } from '@/pages/Nouveautes';
+import { FeuilleDeRoute } from '@/pages/FeuilleDeRoute';
 import { Connexion } from '@/pages/Connexion';
 import { Attente } from '@/pages/Attente';
 import { Administration } from '@/pages/Administration';
@@ -52,11 +52,10 @@ export function App() {
           visiteur devrait s'inscrire pour savoir ce qu'on collecte. Elle est donc hors
           de la garde, comme la connexion. */}
       <Route path="confidentialite" element={<Confidentialite />} />
-      {/* Les nouveautés aussi : un testeur doit pouvoir lire ce qu'une version apporte
-          **avant** de s'inscrire. Même raison, même place, hors de la garde. Depuis
-          D-097, l'écran s'appelle **la feuille de route** (`/feuille-de-route`) ; son
-          contenu propre arrive avec #214. */}
-      <Route path="feuille-de-route" element={<Nouveautes />} />
+      {/* La feuille de route aussi : un testeur doit pouvoir lire ce qu'une version
+          apporte, et ce qui arrive, **avant** de s'inscrire (D-097 (3)). Même raison,
+          même place, hors de la garde. */}
+      <Route path="feuille-de-route" element={<FeuilleDeRoute />} />
       {/* Les anciennes adresses dont la destination est publique restent hors de la garde. */}
       {routesDeRedirection(true)}
       <Route element={<Layout />}>

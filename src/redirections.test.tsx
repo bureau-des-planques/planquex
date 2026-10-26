@@ -106,7 +106,7 @@ describe('App — les anciennes adresses mènent aux nouvelles', () => {
   it('/nouveautes arrive sur /feuille-de-route (D-097)', () => {
     visite('/nouveautes');
     expect(screen.getByTestId('adresse')).toHaveTextContent('/feuille-de-route');
-    expect(screen.getByRole('heading', { level: 1, name: /nouveautés/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /feuille de route/i })).toBeInTheDocument();
   });
 
   it('les nouvelles adresses ne bougent pas', () => {
