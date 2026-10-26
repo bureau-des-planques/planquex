@@ -54,11 +54,13 @@ vi.mock('@/store/mur', async () => {
 });
 
 vi.mock('@/lib/murBase', async () => {
+  const { portDepuisMocks } = await import('@/test/murDeTest');
   const vrai = await vi.importActual<typeof import('@/lib/murBase')>('@/lib/murBase');
   return {
     ...vrai,
+    // Le port du jeu, branché sur les `vi.fn()` ci-dessus (#254).
+    murDuJeu: (options?: { secours?: boolean }) => portDepuisMocks(mocks, options),
     murEstConfigure: mocks.murEstConfigure,
-    chargerPostitsDuMur: mocks.charger,
     marquerComiteVu: mocks.marquer
   };
 });

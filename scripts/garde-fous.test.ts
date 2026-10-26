@@ -49,7 +49,8 @@ const SCRIPT = join(racine, LANCER);
 // « on ne publie pas une version sans sa note » ne garde plus rien.
 // #188 : l'inspecteur du combat — une infobulle de lecture ne porte aucun bouton (le patron ARIA).
 // #192 : les effets de la scène — aucune animation de plus de 800 ms (SPEC-COMBAT-UI §6.8.3).
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 188, 192];
+// #254 : le mur — un geste refusé défait ce que l'optimiste avait bougé (useMur).
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 188, 192, 254];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {

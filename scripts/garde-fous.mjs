@@ -251,6 +251,18 @@ export const MUTATIONS = [
     tests: ['src/components/effets-combat.test.ts'],
     garde:
       'au-delà de 800 ms, un chiffre flottant recouvre le nom de la carte et retarde la lecture du geste suivant — la borne est dans le CSS, pas seulement dans la constante du composant'
+  },
+  {
+    ticket: 254,
+    titre: 'un geste refusé laisse le mur tel que l’optimiste l’a bougé',
+    fichier: 'src/lib/useMur.ts',
+    // Le hook est le seul endroit où les trois pages défont un pouce refusé. La mutation retire
+    // la retouche de retour : le compteur reste à « +1 » alors que la source a dit non.
+    motif: 'if (regle.refus) retoucher(regle.refus);',
+    remplacement: '/* pas de rollback */',
+    tests: ['src/lib/useMur.test.tsx'],
+    garde:
+      'sans le retour en arrière, un vote refusé par la RLS laisserait un pouce affiché que la base ne porte pas : le mur mentirait à l’invité, jusqu’au prochain rechargement (#137, #254)'
   }
 ];
 

@@ -21,7 +21,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { SousOngletsComite } from '@/components/SousOngletsComite';
-import { chargerPostitsDuMur, marquerComiteVu, murEstConfigure } from '@/lib/murBase';
+import { marquerComiteVu, murEstConfigure } from '@/lib/murBase';
+import { useMur } from '@/lib/useMur';
 import { DOCUMENT_MUR, lireMur } from '@/store/mur';
 import type { Postit, Statut } from '@/store/mur';
 
@@ -58,13 +59,23 @@ function messageDe(erreur: unknown): string {
 export function Suivi() {
   const branche = murEstConfigure();
 
-  const [postits, setPostits] = useState<Postit[] | null>(() => (branche ? null : (LECTURE.mur?.postits ?? [])));
-  const [notice, setNotice] = useState<string | null>(() =>
-    branche || LECTURE.erreurs.length === 0
-      ? null
-      : `Le fichier du mur n’a pas pu être lu : ${LECTURE.erreurs.join(' ; ')}`
-  );
-  const [chargement, setChargement] = useState(branche);
+  /**
+   * La source du suivi : la base, ou le fichier en secours — la même que celle du mur, par
+   * le même hook (#254). La notice de la panne vient du port, pas d'un repli écrit ici.
+   */
+  const {
+    mur,
+    erreurs,
+    chargement,
+    notice: panne
+  } = useMur({
+    branche,
+    lecture: LECTURE,
+    quoi: 'le suivi'
+  });
+  const postits = mur?.postits ?? [];
+  const notice =
+    panne ?? (branche || erreurs.length === 0 ? null : `Le fichier du mur n’a pas pu être lu : ${erreurs.join(' ; ')}`);
   /** Le refus du repère, s'il y en a un : le suivi reste lisible sans lui. */
   const [refusRepere, setRefusRepere] = useState<string | null>(null);
 
@@ -76,32 +87,6 @@ export function Suivi() {
   useEffect(() => {
     if (!branche) return;
     marquerComiteVu().catch((erreur: unknown) => setRefusRepere(messageDe(erreur)));
-  }, [branche]);
-
-  /** La source du suivi : la base, ou le fichier en secours (même couture que le mur). */
-  useEffect(() => {
-    if (!branche) return;
-    let vivant = true;
-
-    chargerPostitsDuMur()
-      .then((liste) => {
-        if (!vivant) return;
-        if (liste === null) throw new Error('La base n’est pas configurée.');
-        setPostits(liste);
-        setNotice(null);
-      })
-      .catch((erreur: unknown) => {
-        if (!vivant) return;
-        setPostits(LECTURE.mur?.postits ?? []);
-        setNotice(`La base n’a pas répondu : le suivi affiche le fichier du dépôt. (${messageDe(erreur)})`);
-      })
-      .finally(() => {
-        if (vivant) setChargement(false);
-      });
-
-    return () => {
-      vivant = false;
-    };
   }, [branche]);
 
   return (
@@ -146,7 +131,6 @@ export function Suivi() {
       )}
 
       {!chargement &&
-        postits &&
         GROUPES_SUIVI.map((groupe) => {
           const liste = postitsDuGroupe(postits, groupe.statut);
           const titreId = `suivi-${groupe.statut.replace(' ', '-')}`;

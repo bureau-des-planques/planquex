@@ -24,11 +24,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, RefreshCw, X } from 'lucide-react';
 import { deciderCompte, libelleEtat, listerComptes, type Compte } from '@/lib/comptes';
-import { chargerPostitsDuMur, trierPostit, type TriPostit } from '@/lib/murBase';
+import type { TriPostit } from '@/lib/murBase';
+import { useMur } from '@/lib/useMur';
 import { useComptes } from '@/store/comptes';
 import { STATUTS, type Postit } from '@/store/mur';
 
 const messageDe = (erreur: unknown): string => (erreur instanceof Error ? erreur.message : String(erreur));
+
+/** L'administration ne lit jamais le fichier : trier le dépôt n'aurait aucun sens. */
+const SANS_FICHIER = { mur: null, erreurs: [] };
 
 export function Administration() {
   const configure = useComptes((state) => state.configure);
@@ -45,12 +49,29 @@ export function Administration() {
   const [raisons, setRaisons] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
 
-  /** Le mur et son tri (#0006) : les post-its, les brouillons, et l'état de la lecture. */
-  const [postits, setPostits] = useState<Postit[] | null>(null);
-  const [chargementMur, setChargementMur] = useState(false);
-  const [erreurMur, setErreurMur] = useState<string | null>(null);
-  const [triEnCours, setTriEnCours] = useState<string | null>(null);
   const [brouillons, setBrouillons] = useState<Record<string, TriPostit>>({});
+
+  /**
+   * Le mur et son tri (#0006) : le **même** hook que la page du mur (#254), donc une seule
+   * définition de ce qu'est un post-it — l'écran de tri ne peut pas afficher autre chose que
+   * ce que les invités lisent. Sans repli : une base muette est une erreur à dire, pas un
+   * fichier à trier.
+   */
+  const {
+    mur,
+    chargement: chargementMur,
+    erreurChargement: erreurMur,
+    enVol,
+    recharger: chargerLeMur,
+    trier
+  } = useMur({
+    branche: configure && administrateur,
+    lecture: SANS_FICHIER,
+    repli: false,
+    // Une lecture du mur vient de finir : les brouillons repartent de ce qui est lu.
+    surLecture: () => setBrouillons({})
+  });
+  const postits = mur?.postits ?? null;
   const [messageMur, setMessageMur] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
 
   const charger = useCallback(async () => {
@@ -66,38 +87,9 @@ export function Administration() {
     }
   }, [configure, administrateur]);
 
-  /**
-   * Le mur se lit par le même chemin que la page du mur (`chargerPostitsDuMur`) : une seule
-   * définition de ce qu'est un post-it, donc l'écran de tri ne peut pas afficher autre chose
-   * que ce que les invités lisent.
-   */
-  const chargerLeMur = useCallback(async () => {
-    if (!configure || !administrateur) return;
-    setChargementMur(true);
-    setErreurMur(null);
-    try {
-      const lus = await chargerPostitsDuMur();
-      const liste = lus ?? [];
-      setPostits(liste);
-      setBrouillons(
-        Object.fromEntries(
-          liste.map((postit) => [postit.id, { statut: postit.statut, raison: postit.raison, ticket: postit.ticket }])
-        )
-      );
-    } catch (panne) {
-      setErreurMur(messageDe(panne));
-    } finally {
-      setChargementMur(false);
-    }
-  }, [configure, administrateur]);
-
   useEffect(() => {
     if (configure && administrateur) void charger();
   }, [configure, administrateur, charger]);
-
-  useEffect(() => {
-    if (configure && administrateur) void chargerLeMur();
-  }, [configure, administrateur, chargerLeMur]);
 
   const remplacer = (decide: Compte) =>
     setComptes((courants) =>
@@ -149,21 +141,14 @@ export function Administration() {
     }));
 
   const enregistrerTri = async (postit: Postit) => {
-    const tri = brouillonDe(postit);
-    setTriEnCours(postit.id);
     setMessageMur(null);
-    try {
-      const ecrit = await trierPostit(postit.id, tri);
-      setPostits((courants) =>
-        courants ? courants.map((ligne) => (ligne.id === postit.id ? { ...ligne, ...ecrit } : ligne)) : courants
-      );
-      setBrouillons((courants) => ({ ...courants, [postit.id]: ecrit }));
-      setMessageMur({ ton: 'ok', texte: `« ${postit.titre} » : ${ecrit.statut}.` });
-    } catch (panne) {
-      setMessageMur({ ton: 'ko', texte: messageDe(panne) });
-    } finally {
-      setTriEnCours(null);
+    const resultat = await trier(postit.id, brouillonDe(postit));
+    if (!resultat.ok) {
+      setMessageMur({ ton: 'ko', texte: resultat.message });
+      return;
     }
+    setBrouillons((courants) => ({ ...courants, [postit.id]: resultat.tri }));
+    setMessageMur({ ton: 'ok', texte: `« ${postit.titre} » : ${resultat.tri.statut}.` });
   };
 
   if (!configure) {
@@ -486,11 +471,11 @@ export function Administration() {
                     <button
                       type="button"
                       className="button button--primary"
-                      disabled={!change || ecarteSansRaison || triEnCours === postit.id}
+                      disabled={!change || ecarteSansRaison || enVol('trier', postit.id)}
                       onClick={() => void enregistrerTri(postit)}
                       aria-label={`Enregistrer le tri de « ${postit.titre} »`}
                     >
-                      {triEnCours === postit.id ? 'Enregistrement…' : 'Enregistrer'}
+                      {enVol('trier', postit.id) ? 'Enregistrement…' : 'Enregistrer'}
                     </button>
                   </div>
 

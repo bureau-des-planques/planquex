@@ -22,11 +22,13 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/murBase', async () => {
+  const { portDepuisMocks } = await import('@/test/murDeTest');
   const vrai = await vi.importActual<typeof import('@/lib/murBase')>('@/lib/murBase');
   return {
     ...vrai,
-    chargerPostitsDuMur: mocks.chargerMur,
-    trierPostit: mocks.trier
+    // Le port du jeu, branché sur les `vi.fn()` ci-dessus (#254).
+    murDuJeu: (options?: { secours?: boolean }) =>
+      portDepuisMocks({ charger: mocks.chargerMur, trier: mocks.trier }, options)
   };
 });
 

@@ -382,7 +382,7 @@ select proname, prosecdef from pg_proc where proname = 'corriger_postit';       
 ```
 
 Un **administrateur** trie depuis `/administration` ; un autre compte est refusé **par la
-base** : sa modification porte sur **0 ligne**, sans erreur, et `trierPostit` la refuse au lieu
+base** : sa modification porte sur **0 ligne**, sans erreur, et le geste `trier` du port la refuse au lieu
 de la croire passée. `npm run statut`, lui, ne touche que `docs/comite.json` — la source
 de secours — et **le dit** dans sa sortie.
 

@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { positionDepuisId } from '@/lib/mur';
 
 /**
  * Le mur **poste depuis le jeu**, et lit la base quand elle est configurée (#136).
@@ -56,12 +57,13 @@ vi.mock('@/lib/murBase', async () => {
   // Les vraies fonctions restent : un faux module **entier** rendrait `chargerCommentaires`
   // indéfini, et la page retomberait sur le fichier pour une raison qui n'a rien à voir
   // avec ce que ce test mesure (#138).
+  const { portDepuisMocks } = await import('@/test/murDeTest');
   const vrai = await vi.importActual<typeof import('@/lib/murBase')>('@/lib/murBase');
   return {
     ...vrai,
-    murEstConfigure: mocks.murEstConfigure,
-    chargerPostitsDuMur: mocks.charger,
-    posterPostit: mocks.poster
+    // Le port du jeu, branché sur les `vi.fn()` ci-dessus (#254).
+    murDuJeu: (options?: { secours?: boolean }) => portDepuisMocks(mocks, options),
+    murEstConfigure: mocks.murEstConfigure
   };
 });
 
@@ -165,17 +167,20 @@ describe('le formulaire de dépôt (#136)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Coller le post-it/ }));
 
     await waitFor(() => expect(mocks.poster).toHaveBeenCalledTimes(1));
+    // Depuis #254 le port compose la ligne : la source reçoit ce qui part à la base, pas le
+    // brouillon de l'écran. Le lien de capture est déjà au bout du texte, et aucun `auteur`.
     expect(mocks.poster).toHaveBeenCalledWith(
-      {
-        famille: 'OUF',
+      expect.objectContaining({
+        kind: 'OUF',
         gueulage: false,
         titre: 'Le bouton Fin du tour reste grisé',
-        texte: 'Au combat, il ne répond pas.',
+        texte: 'Au combat, il ne répond pas.\n\nCapture : https://exemple.test/capture.png',
         ecran: 'Combat',
-        capture: 'https://exemple.test/capture.png'
-      },
-      expect.objectContaining({ pseudo: 'Employé 404' })
+        pseudo: 'Employé 404',
+        statut: 'en attente'
+      })
     );
+    expect(mocks.poster.mock.calls[0][0]).not.toHaveProperty('auteur');
 
     expect(await screen.findByText(/Ton post-it est collé au mur/)).toBeInTheDocument();
     // Le post-it rendu par la couture s'ajoute sans attendre un rechargement.
@@ -199,19 +204,23 @@ describe('le formulaire de dépôt (#136)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Coller le post-it/ }));
 
     await waitFor(() => expect(mocks.poster).toHaveBeenCalledTimes(1));
+    // Pas de famille : `kind` est nul, et le titre vient des premiers mots (D-085).
     expect(mocks.poster).toHaveBeenCalledWith(
-      {
-        famille: null,
+      expect.objectContaining({
+        kind: null,
         gueulage: true,
-        titre: '',
+        titre: 'Non mais ça va pas la tête',
         texte: 'Non mais ça va pas la tête',
-        ecran: '',
-        capture: ''
-      },
-      expect.objectContaining({ pseudo: 'Employé 404' })
+        ecran: null,
+        pseudo: 'Employé 404'
+      })
     );
-    // Le post-it neuf connaît les places prises : il ne se colle pas sur un autre (#185).
-    expect(mocks.poster.mock.calls[0][1].positionsPrises).toEqual([{ x: 30, y: 30, angle: 0 }]);
+    // Le post-it neuf connaît les places prises : il ne se colle pas sur un autre (#185). La
+    // place écrite est celle que `positionDepuisId` donne **avec** les places prises.
+    const ligne = mocks.poster.mock.calls[0][0];
+    expect({ x: ligne.position_x, y: ligne.position_y, angle: ligne.position_angle }).toEqual(
+      positionDepuisId(ligne.id, [{ x: 30, y: 30, angle: 0 }])
+    );
   });
 
   it('affiche le refus de la base, et ne prétend pas que c’est collé', async () => {

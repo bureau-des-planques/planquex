@@ -268,9 +268,13 @@ affichable**, jamais une exception qui remonte à l'écran. Les sources sont des
 (`src/lib/murAdaptateurs.ts`) : la **base**, le **fichier** (en lecture seule : ses six gestes
 d'écriture sont refusés, avec le message que les écrans affichent) et la **mémoire**, qui sert
 aux tests **sans réseau ni navigateur**. Le cas « base configurée mais muette » est tenu par le
-port : il rend le fichier **avec la notice** de la panne. `src/lib/murBase.ts` garde ses
-fonctions et **délègue** — le fil des commentaires, le repère du suivi et le compteur y vivent
-toujours.
+port : il rend le fichier **avec la notice** de la panne. Les trois pages (le mur, le suivi,
+l'administration) tiennent ce port par **un seul hook**, `src/lib/useMur.ts` : il porte la
+mécanique `en vol` / `erreurs` / **retour en arrière** une fois pour toutes (un pouce refusé
+revient exactement à l'état d'avant, avec le message du port rangé sur le post-it), et la page
+ne recompose plus le repli base → fichier. `src/lib/murBase.ts` n'a gardé que ce que le port ne
+couvre pas — le fil des commentaires, le repère du suivi et le compteur — plus `murDuJeu()`,
+qui branche le port sur la source réelle.
 
 **Le rangement (#185, #215)** : le mode de placement n'exporte plus de fichier — sur la base, le
 lâcher écrit `position_x`, `position_y` et `position_angle` (politique « chacun déplace les
