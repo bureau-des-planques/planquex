@@ -20,11 +20,13 @@
 En cas de conflit, appliquer cet ordre :
 
 1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale.
-2. **`docs/PROPOSITION.md` §3–5** — règles, contenu, périmètre validés par les décisions D-003, D-005, D-006, D-011, D-014.
+2. **`AGENTS.md` §4 et §5** — la table des règles de jeu et les règles d'écriture des cartes. Chaque ligne de §4 est **sourcée** par D-034 : les captures de l'application (`docs/preuves/astuces-*`) et la recherche documentée (`docs/preuves/regles-*`). Si les deux se contredisent, **la capture l'emporte** et l'écart se signale.
 3. **`docs/CARD-SPEC.md` et `docs/FACTIONS.md`** — structure du set, courbes, factions, nommage.
 4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus entre le tableau §4 et le jeu de référence 2026, avec leurs sources. Décrit les écarts **et leurs verdicts** (O-008 → D-020, O-009 → D-022) ; il ne reste plus d'écart ouvert sur §4 (O-014 tranché par D-034) : ne pas s'en servir pour modifier une règle sans décision datée.
 5. **Le code et les commandes** — ce qui existe réellement. Un écart avec les docs est un bug ou une tâche, pas une nouvelle règle.
 6. **`docs/STATUS.md` et `docs/AUDIT-*.md`** — instantanés d'audit datés. Ce ne sont pas des vérités live : relancer les commandes.
+
+**Gelés, hors de l'ordre d'autorité** (D-112) : `docs/PROPOSITION.md` §3–5, `docs/CORRESPONDANCES.md` et `docs/NOMMAGE.md` gardent le vocabulaire d'avant D-026 et D-075 (« Chariot », « Parc », « Rack ») et documentent le **périmètre d'origine**, pas les règles vivantes. Le gel est un acte (D-075, D-083) : on ne s'en sert pas pour trancher un conflit, et on ne les « remet à jour » pas non plus — les règles vivantes sont en §4, le périmètre dans `docs/DECISIONS.md`.
 
 **Pour les règles de jeu (§4), ce qui fait foi** (D-034) : les **captures** de l'application (`docs/preuves/astuces-*`) **et** les **règles établies par la recherche** documentée (`docs/preuves/regles-*`, chaque ligne avec sa citation). Si les deux se contredisent, **la capture l'emporte** et l'écart est signalé. Une règle de §4 qui ne s'appuie sur aucune des deux est une hypothèse.
 
@@ -191,7 +193,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 
 | Stats | suivre **`CARD-SPEC.md` §2** | la table n'est **pas recopiée ici** : elle y bouge à chaque ajustement, et une copie prend du retard (leçon de la propagation de D-026) |
 
-- Une attaque à 1 café fait 10–30 ; à 2 cafés, 40–60 ou 30 + effet ; à 3 cafés, 70–100 ou 60 + effet fort.
+- Une attaque à 1 café fait 10–30 ; à 2 cafés, **40–80** ; à 3 cafés, **70–120**. Un **effet** ne coûte **pas** de dégâts à 1 et 2 cafés ; à partir de 3 cafés, il en coûte 20 à 40. La table normative est **`CARD-SPEC.md` §2** (D-021), que `src/game/curves.ts` implémente : cette ligne la **résume**, elle ne la remplace pas.
 - Un Talent ne doit pas créer d'avantage de cartes net sans coût.
 - Un COMEX doit être plus fort, pas auto-include.
 - Vulnérabilité : +20. L'Intérimaire n'a aucune vulnérabilité.
