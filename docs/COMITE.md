@@ -170,6 +170,37 @@ arrive) et **Le suivi** (`/comite/suivi`, ce qu'on en a fait).
 - la **source** est celle du mur : la base, ou `docs/comite.json` en secours — un suivi ne se
   déclare jamais vide parce que la base n'a pas répondu.
 
+## 2 quater. Le compteur « choses à voir » — #212, D-097 (5)
+
+Une **pastille numérotée** sur l'onglet **Comité** de la barre du bas, et l'**alerte** flottante
+(`AlerteComite`, un post-it numéroté) qui **mène au suivi**. Elles répondent à une seule question :
+**qu'est-ce qui a changé pour moi depuis ma dernière visite ?**
+
+Ce qui compte, et **rien d'autre** :
+
+1. **mes** post-its dont le **statut** a changé — la date est `postits.updated_at`, posée par le
+   déclencheur du **statut seul** (migration `0008`) : corriger son texte ou ranger son post-it
+   ne réveille pas le compteur ;
+2. les **commentaires des autres** arrivés sur **mes** post-its — **jamais les miens** : répondre à
+   son propre post-it n'apprend rien de neuf, et une pastille qui ne retombe jamais quand on se
+   relit serait du bruit (`npm run garde-fous`, entrée #212).
+
+Le **repère** est `comptes.vu_le` : **en base**, donc il suit le compte d'un appareil à l'autre
+(D-097). Il est **posé à l'ouverture du suivi** par `public.marquer_comite_vu()` (voir §2 ter),
+jamais par un `update` direct ; le compteur relu ensuite rend **0**.
+
+**Où il est absent, et pourquoi** : **à zéro** (une pastille qui affiche 0 crie pour rien), **sans
+base configurée** (rien n'est contacté : l'alpha fonctionne sans backend, D-058), et **en combat**
+(on ne quitte pas une partie en cours pour un post-it — la barre y perd déjà l'onglet Comité). Sur
+**Le suivi**, l'alerte s'efface aussi : c'est la page qui vient de les voir.
+
+**La lecture** (`compterChosesAVoir`, `src/lib/murBase.ts`) fait **trois requêtes fixes**, jamais une
+par post-it (pas de N+1) : mon repère, **mes** post-its (la vue `postits_avec_votes`, filtrée par
+`auteur`), puis les commentaires de **tous** mes post-its en **un** `in`. Le filtre de date et
+d'auteur se fait en mémoire : le repère est une donnée de mon compte, pas une colonne de la table
+lue. Une base configurée qui échoue **lève** — l'écran n'affiche alors aucune pastille, et
+l'erreur ne devient pas un zéro qui aurait l'air vrai.
+
 ## 3. Le fichier du mur
 
 `design/…` non : le mur vit dans **`docs/comite.json`**, versionné avec le dépôt, parce que

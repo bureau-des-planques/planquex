@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Library, Layers, Settings, StickyNote, Swords } from 'lucide-react';
+import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
 import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
 import { AlerteComite } from '@/components/AlerteComite';
@@ -39,11 +41,42 @@ export function Layout() {
    * L'entrée du **comité** (D-058, D-097) est **absente pendant un combat** : c'est ce
    * qui permet au mur d'être une **page** (D-068) sans risquer une partie en cours — on
    * ne la quitte pas pour aller lire des post-its. Elle revient dès qu'on quitte l'écran
-   * de combat, fin de partie ou retour au bureau. Sur le mur lui-même, elle n'a rien à
-   * ouvrir : elle s'efface.
+   * de combat, fin de partie ou retour au bureau.
    */
   const enCombat = pathname.startsWith('/battle');
-  const surLeMur = pathname.startsWith('/comite');
+
+  /**
+   * Le compteur « choses à voir » du comité (#212, D-097 (5)) : **mes** post-its dont le
+   * statut a bougé, et les commentaires des autres sur eux, depuis le repère `vu_le`.
+   *
+   * Il est **absent à zéro, sans base, et en combat** ; sur **Le suivi**, l'alerte s'efface
+   * aussi — c'est la page qui vient de les voir, et c'est en la quittant que la lecture
+   * suivante rend 0 (le repère a été posé par `marquerComiteVu`, #211). La lecture est donc
+   * refaite à chaque changement d'adresse, jamais sur ces deux écrans.
+   */
+  const [aVoir, setAVoir] = useState(0);
+  const base = murEstConfigure();
+  const surLeSuivi = pathname.startsWith('/comite/suivi');
+
+  useEffect(() => {
+    if (!base || enCombat || surLeSuivi) {
+      setAVoir(0);
+      return;
+    }
+    let vivant = true;
+    compterChosesAVoir()
+      .then((nombre) => {
+        if (vivant) setAVoir(nombre ?? 0);
+      })
+      // Une base muette ne fait pas une pastille : le compteur est un signal, pas une panne
+      // affichée (le mur, lui, dit quand il retombe sur le fichier).
+      .catch(() => {
+        if (vivant) setAVoir(0);
+      });
+    return () => {
+      vivant = false;
+    };
+  }, [pathname, base, enCombat, surLeSuivi]);
 
   /**
    * L'onglet **Comité** suit la même règle que la bulle : **cinq** onglets hors combat,
@@ -138,21 +171,35 @@ export function Layout() {
       {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). */}
       <JourneeIntegration />
 
-      {/* L'entrée du mur (D-058) : partout, sauf en combat et sur le mur. */}
-      {!enCombat && !surLeMur && <AlerteComite />}
+      {/* L'alerte du comité (D-058, #212) : partout sauf en combat et sur Le suivi, et
+          seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
+      {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
 
       <nav className="bottom-nav" aria-label="Navigation principale">
         {onglets.map((tab) => {
           const Icon = tab.icon;
+          // La pastille ne vit que sur l'onglet **Comité** : elle dit « choses à voir »,
+          // et le nom accessible du lien la porte pour le lecteur d'écran (#212).
+          const pastille = tab.to === '/comite' ? aVoir : 0;
           return (
             <NavLink
               key={tab.to}
               to={tab.to}
               end={tab.to === '/'}
+              aria-label={
+                pastille > 0
+                  ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir`
+                  : undefined
+              }
               className={({ isActive }) => `bottom-nav__item ${isActive ? 'is-active' : ''}`}
             >
               <Icon size={20} strokeWidth={1.8} />
               <span>{tab.label}</span>
+              {pastille > 0 && (
+                <span className="bottom-nav__pastille" aria-hidden="true">
+                  {pastille}
+                </span>
+              )}
             </NavLink>
           );
         })}
