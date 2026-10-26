@@ -16,6 +16,8 @@ s'appuyer dessus.
 | `supabase/migrations/0008_comite.sql` | le suivi (#209, D-097) : `postits.updated_at` et son déclencheur (monté **au changement de statut** seul), `comptes.vu_le` — le repère par compte — et `public.marquer_comite_vu()`. Le rôle `authenticated` **lit** son repère et ne l'écrit jamais |
 | `supabase/migrations/0009_commentaires_dates.sql` | les dates du comité posées par le serveur (#238) : `commentaires.created_at` et `postits.updated_at` sont **réécrits** à `now()` par un déclencheur `before insert` — une date fournie par le client, future ou passée, ne garde plus la pastille allumée ni ne la cache |
 | `supabase/migrations/0010_dates_figees.sql` | les dates du comité figées à l'écriture (#244) : un déclencheur `before update` rétablit `created_at` à sa valeur d'origine sur `commentaires` et `postits` — l'auteur qui redate son commentaire n'obtient pas la date ; la correction du texte passe toujours |
+| `supabase/migrations/0011_anon_hors_fonctions.sql` | le rôle `anon` n'exécute plus aucune fonction `security definer` de `public` (#247) : les valeurs par défaut de Supabase lui accordent `execute`, et le refus ne reposait que sur `auth.uid()` nul. `authenticated` garde ses droits |
+| `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
 | `supabase/comptes.test.ts` | la garde des comptes : en attente refusé, approuvé accepté, non-administrateur sans pouvoir, pas d'auto-approbation, drapeau protégé — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/place.test.ts` | la garde de la place et du retrait : l'auteur range le sien, l'administrateur range et retire tout, un compte en attente rien — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/comite.test.ts` | la garde du suivi (#209) : `updated_at` monte au changement de statut, et **pas** sur une écriture de place ni une correction de texte ; le repère s'écrit par la fonction et pas en direct ; chacun ne marque que le sien — et chaque contrôle neutralisé laisse passer le fautif |
@@ -466,12 +468,15 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
 - **appliquer la migration 0008** (§6, le suivi du comité, #209, D-097) — elle est **idempotente**,
   et son backfill ne réveille personne : les post-its existants prennent `created_at` comme
   `updated_at`, et les comptes existants `now()` comme `vu_le` ;
-- **appliquer la migration 0009** (§6, les dates du comité posées par le serveur, #238) — elle est
-  **idempotente** et ne touche aucune ligne existante : ses deux déclencheurs ne visent que
-  l'insertion ;
-- **appliquer la migration 0010** (§6, les dates du comité figées à l'écriture, #244) — elle est
-  **idempotente** et ne touche aucune ligne existante : ses deux déclencheurs ne visent que
-  l'`update` à venir. Étape de la session infra (#241), pas de celle-ci ;
+- **appliquer la migration 0009** (§6, les dates du comité posées par le serveur, #238) — **fait
+  le 26/10/2026** (session infra, #247) ; elle est **idempotente** et ne touche aucune ligne
+  existante : ses deux déclencheurs ne visent que l'insertion ;
+- **appliquer la migration 0010** (§6, les dates du comité figées à l'écriture, #244) — **fait
+  le 26/10/2026** (session infra, #247) ; elle est **idempotente** et ne touche aucune ligne
+  existante : ses deux déclencheurs ne visent que l'`update` ;
+- **appliquer la migration 0011** (§6, `anon` retiré des fonctions `security definer`, #247) —
+  **faite le 26/10/2026** (session infra) : `has_function_privilege('anon', 'public.marquer_comite_vu()', 'execute')`
+  renvoie `false` ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
 - **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
   l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;
