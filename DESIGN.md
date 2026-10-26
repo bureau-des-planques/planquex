@@ -72,7 +72,8 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | `--gold` sur `--bg` | 9.95 | AA |
 | `--gold-soft` sur `--bg-raised` | 12.03 | AA |
 | `--accent` sur `--bg-raised` | 5.31 | AA |
-| Texte COMEX (`#1c1304`) sur `--gold` | 9.75 | AA |
+| **Sigle de faction** : `--accent` éclairci à 65 % de blanc, sur la face teintée (accent à 9 % sur `--bg-raised`) | **5,61 à 8,56** | AA — calculé sur les dix `FACTION_META.color` (#208) ; la couleur **pure** tombait entre **2,66 et 6,14**, donc sous AA pour huit factions sur dix, et c'est elle qui est corrigée |
+| Texte COMEX (`#1c1304`) sur `--gold` | 9.75 | AA — vrai depuis #208 : le badge est un **aplat** d'or, plus un dégradé (le dégradé mesurait 3,6:1) |
 | Texte blanc sur le **haut** du bouton primaire (`--accent` à 80 % + `#04080f`) | 4.65 | AA |
 | Texte `#1c1304` sur le bouton or | 9.75 | AA |
 | **Pastille Surcharge** : `#d9b3ec` sur teinte 22 % de `#9b59b6`, au-dessus de `--bg-sunken` | 7.95 | AAA |
@@ -176,10 +177,10 @@ rareté, `.card__face` est la carte elle-même.
 
 | Zone | Classe | Contenu |
 |---|---|---|
-| Cadre | `.card` | un **anneau plein de 4 px** en dégradé de `--rarity` (de `--gold` pour un COMEX, `--frame`) — la rareté colore l'anneau **entier**, pas un filet sur un seul côté (tell d'UI générée) |
+| Cadre | `.card` | un **anneau plein de 4 px** en dégradé de `--rarity` (de `--gold` pour un COMEX, `--frame`) — la rareté colore l'anneau **entier**, pas un filet sur un seul côté (tell d'UI générée). **Exception : la Couronne** (`COU`), dont l'anneau est **plat** — un dégradé de violet est un tell d'UI générée (`ai-color-palette`, #208, §3) |
 | Titre | `.card__top` / `.card__title` | barre pleine largeur teintée de la faction. En haut, le **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action) et le badge **COMEX** (`.card__comex`, or) ; dessous le **nom** (`.card__name`, Outfit 700, capitales, **deux lignes réservées**, un mot trop long se coupe) |
 | Seuil | `.card__seuil-badge` | **plaque dorée** à droite du titre : le mot « Seuil » (dessiné par `data-label`) au-dessus du chiffre |
-| Illustration | `.card__art` | l'image du registre **posée sur l'aplat `card.palette`** (deuxième couche : la carte garde son fond de faction pendant le chargement, ou si l'image n'arrive pas hors ligne — #131), sinon l'aplat seul + glyphe (`.card__glyph`) ; voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`) |
+| Illustration | `.card__art` | l'image du registre **posée sur l'aplat de faction** — `color-mix` sur `--accent`, une **couleur plate** (`APLAT_FACTION`, `CardView`) : un dégradé violet ou cyan sur fond sombre est un tell d'UI générée (#208, `ai-color-palette`), alors qu'un aplat non. Deuxième couche : la carte garde son fond de faction pendant le chargement, ou si l'image n'arrive pas hors ligne (#131) ; sinon l'aplat seul + glyphe (`.card__glyph`) ; voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`). La palette dérivée `card.palette` (un dégradé, `planquePalette`) reste la **donnée** d'identité de la faction, et son test la garde |
 | Emblème | `.card__emblem` | médaillon de la **faction** (couleur et glyphe de `FACTION_META`) au coin bas-gauche de l'illustration — **seulement quand il y a une illustration** : sans elle, le glyphe du fond tient ce rôle |
 | Barre de Seuil | `.card__seuil` | **la barre seule**, dix crans, pleine sur la carte : elle montre la **capacité**. Au combat, la même barre montre le **Stress qui monte** (D-026) |
 | Pressions | `.card__attacks` | une ligne par Pression : pastilles de café (`.pips` / `.pip`), nom, dégâts |
@@ -204,7 +205,7 @@ rareté, `.card__face` est la carte elle-même.
 | `.card--holo` | voile holographique sur l'illustration (1S, 2S, 3S, COU) |
 | `.card--compact` | masque la flavour et l'identifiant (grilles) |
 | `.card-slot.is-full` | carte à 60 % d'opacité (plus d'exemplaire possible au Deck) |
-| `.card-slot.is-missing` | carte **non possédée** : grisée (`grayscale`) et à 40 % d'opacité, plus pâle que `.is-full` pour que les deux ne se confondent pas. Sa pastille « ×0 » (pointillés) et la mention « Non possédée » restent **hors de `.card`** : elles ne s'éteignent pas avec elle |
+| `.card-slot.is-missing` | carte **non possédée** : grisée (`grayscale(1)`) et son illustration et sa barre de Seuil à 40 % d'opacité — le **texte**, lui, garde son contraste (#208 : à 40 % d'opacité sur toute la carte, le nom tombait à 2,1–3,5:1, et une carte illisible n'est pas une carte éteinte). Sa pastille « ×0 » (pointillés) et la mention « Non possédée » restent **hors de `.card`** : elles ne s'éteignent pas avec elle |
 
 **Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : un bouton rond au coin haut-droit (ajouter, ou ouvrir la fiche), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
 
@@ -406,7 +407,7 @@ le CSS ne fait que les lire par `--rarity`.
 | `1S` | ★ | `#e8b54a` | filet or + voile holographique |
 | `2S` | ★★ | `#f2d27a` | filet or clair + voile holographique |
 | `3S` | ★★★ | `#ffd76e` | filet or + holo ; **4 variantes** depuis #87 |
-| `COU` | ♛ | `#c9a2ff` | filet violet + holo ; **3 variantes** depuis #87 |
+| `COU` | ♛ | `#c9a2ff` | filet violet **plat** (atténué : `color-mix` à 62 % sur `--bg-deep`) + holo ; **3 variantes** depuis #87. Plat, parce qu'un dégradé de violet est un tell d'UI générée (`ai-color-palette`, #208) |
 
 Les raretés hautes (`3S`, `COU`) sont portées **uniquement par des variantes
 re-raréfiées** (#87, `npm run status` → `"3S": 4, "COU": 3`). Le traitement
@@ -571,8 +572,9 @@ utile aux Objets étiquetés), `evalstate/flux1_schnell` (essais rapides), plus 
 
 ## 8. Ce qui reste à curer (première passe assumée)
 
-- Les illustrations réelles n'existent pas : les cartes affichent l'aplat `palette` et le
-  `glyph` des données. Les planches §6 décrivent le travail d'illustration à venir.
+- Les illustrations réelles n'existent pas : les cartes affichent l'aplat de faction
+  (`APLAT_FACTION`, une couleur plate depuis #208) et le `glyph` des données. Les planches §6
+  décrivent le travail d'illustration à venir.
 - Les textures (papier, métal, grain) et les effets holographiques sont **simplifiés** :
   voile en dégradé, pas de vraie feuille métallisée.
 - Les raretés `3S` et `COU` sont stylées et **portées par 7 variantes re-raréfiées** (#87).

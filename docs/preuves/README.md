@@ -37,6 +37,11 @@ preuves/
 
 Un lot « ui » suit la même règle (`ui-<AAAA-MM-JJ>/`, avec `B01-accueil.png`…).
 
+**Une exception, celle de #208** : `ui-2026-10-26/` ne documente pas l'application d'origine
+mais **la nôtre**, avant/après la passe d'anti-patterns — le ticket demandait ce dossier-là.
+Ses images ne sont pas des preuves de structure de référence : elles se lisent comme un lot
+`finition-*` (ce qui a changé, et ce que ça ne prouve pas).
+
 **Les noms suivent les écrans réels de l'app**, pas la liste du protocole : le protocole
 visait 6 captures, l'app en a **9**. Un fichier = un écran, numéroté dans l'ordre du menu.
 
