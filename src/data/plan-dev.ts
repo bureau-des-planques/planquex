@@ -27,12 +27,24 @@ export interface FeaturePrevue {
 /** Les issues `alpha` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
+    numero: 241,
+    titre: 'Infra — appliquer les migrations 0006 à 0008 sur la base réelle (relecture avant application)'
+  },
+  {
+    numero: 238,
+    titre: 'Comité — un commentaire daté dans le futur garde la pastille allumée pour son auteur'
+  },
+  {
     numero: 237,
     titre: 'Combat — la garde de hauteur ne fait pas tenir la marge de 20 px de D-094 (3)'
   },
   {
-    numero: 228,
-    titre: 'PvP — la trace des combats à deux (beta)'
+    numero: 236,
+    titre: 'UI — /feuille-de-route porte 3 anti-patterns `line-length` (mesuré par #234)'
+  },
+  {
+    numero: 235,
+    titre: 'UI — /comite porte 2 anti-patterns `nested-cards` (mesuré par #234)'
   },
   {
     numero: 136,
