@@ -507,11 +507,14 @@ function declencheALaPose(state: BattleState, who: PlayerId, instance: CardInsta
   const card = getCard(instance.cardId);
   const ability = isPlanque(card) ? card.ability : undefined;
   if (!ability || ability.trigger !== 'onPlay') return;
+  // **Le Talent joué à la pose** (D-081) ne collecte pas encore ses faits : `playBasic` et
+  // `evolve` ne portent pas le collecteur. Rien ne le lit aujourd'hui — `effets-combat`
+  // garde la comparaison d'états pour le Stress générique (#250, suivi).
   resolveAbility(state, who, instance, ability);
   state.log.push(`${sujet(state, who)} ${verbe(state, who, 'utilises', 'utilise')} ${ability.name}.`);
 }
 
-export function useAbility(state: BattleState): BattleState {
+export function useAbility(state: BattleState, faits: FaitMoteur[] = []): BattleState {
   if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
@@ -525,7 +528,7 @@ export function useAbility(state: BattleState): BattleState {
   if (ability.target === 'rack' && !player.bench.some(Boolean)) return state;
   // Défausse de sa propre main sur une main vide : le Talent n'est pas proposé (D-076).
   if (defausseImpossible(player, ability.effects)) return state;
-  resolveAbility(next, next.current, player.active, ability);
+  resolveAbility(next, next.current, player.active, ability, faits);
   player.hasUsedAbility = true;
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'utilises', 'utilise')} ${ability.name}.`);
   return next;
@@ -536,7 +539,13 @@ export function useAbility(state: BattleState): BattleState {
  * écriture pour le Talent à la demande (`useAbility`) et pour le Talent « en jouant »
  * (D-081) : les deux lisent les mêmes primitives.
  */
-function resolveAbility(state: BattleState, who: PlayerId, instance: CardInstance, ability: Ability) {
+function resolveAbility(
+  state: BattleState,
+  who: PlayerId,
+  instance: CardInstance,
+  ability: Ability,
+  faits: FaitMoteur[] = []
+) {
   switch (ability.kind) {
     case 'heal':
       instance.hp = Math.min(instance.maxHp, instance.hp + (ability.amount ?? 10));
@@ -580,14 +589,20 @@ function resolveAbility(state: BattleState, who: PlayerId, instance: CardInstanc
  * pas le tour et ne consomme pas la Pression. Un craquage qu'il provoque suit le chemin
  * ordinaire (Interventions, relève). Pas de Poste adverse : pas de cible, rien à résoudre.
  */
-function applyTalentEffects(state: BattleState, who: PlayerId, attacker: CardInstance, effects: AttackEffect[]) {
+function applyTalentEffects(
+  state: BattleState,
+  who: PlayerId,
+  attacker: CardInstance,
+  effects: AttackEffect[],
+  faits: FaitMoteur[] = []
+) {
   const defender = state.players[other(who)].active;
   if (!defender) return;
   for (const effect of ordreD031(effects)) {
-    applyEffects(state, who, attacker, defender, { name: 'Talent', cost: [], damage: 0, effects: [effect] });
+    applyEffects(state, who, attacker, defender, { name: 'Talent', cost: [], damage: 0, effects: [effect] }, faits);
   }
   if (defender.hp <= 0) {
-    knockOut(state, who);
+    knockOut(state, who, faits);
     resolveEnd(state);
   }
 }
@@ -906,7 +921,8 @@ function applyEffects(
   who: PlayerId,
   attacker: CardInstance,
   defender: CardInstance,
-  attack: Attack
+  attack: Attack,
+  faits: FaitMoteur[] = []
 ) {
   const player = state.players[who];
   for (const effect of ordreD031(attack.effects ?? [])) {
@@ -930,9 +946,14 @@ function applyEffects(
         // La défausse retire le café typé de l'instance, sans restaurer la Machine.
         discardFirstCafes(defender, 1);
         break;
-      case 'selfDamage':
-        attacker.hp -= effect.amount ?? 10;
+      case 'selfDamage': {
+        const montant = effect.amount ?? 10;
+        attacker.hp -= montant;
+        // Se blesser est du Stress comme un autre (#250) : la transition le dit, l'écran
+        // n'a pas à le déduire d'une comparaison d'états.
+        faits.push({ type: 'stress', uid: attacker.uid, montant, auPoste: player.active?.uid === attacker.uid });
         break;
+      }
       case 'switchSelf': {
         const index = player.bench.findIndex(Boolean);
         if (index >= 0) {
@@ -958,6 +979,7 @@ function applyEffects(
         const extra = attackDamage(attacker, defender, { name: 'Talent', cost: [], damage: effect.amount ?? 0 }, 'poste');
         defender.hp -= extra;
         state.log.push(`${getCard(attacker.cardId)?.name ?? 'Le Planqué'} : ${extra} de stress.`);
+        faits.push({ type: 'stress', uid: defender.uid, montant: extra, auPoste: true });
         break;
       }
       default:
@@ -1268,7 +1290,7 @@ export function attack(state: BattleState, attackIndex: number, faits: FaitMoteu
   next.log.push(`${card.name} utilise ${attack.name} : ${damage} de stress.`);
   // Le Stress **réellement porté**, décidé ici : plus besoin de comparer deux états.
   faits.push({ type: 'stress', uid: opponent.active.uid, montant: damage, auPoste: true });
-  applyEffects(next, next.current, player.active, opponent.active, attack);
+  applyEffects(next, next.current, player.active, opponent.active, attack, faits);
   player.hasAttacked = true;
 
   knockOut(next, next.current, faits);
@@ -1496,7 +1518,7 @@ function transition(state: BattleState, action: BattleAction, faits: FaitMoteur[
     case 'attack':
       return attack(state, action.attackIndex, faits);
     case 'ability':
-      return useAbility(state);
+      return useAbility(state, faits);
     case 'priorityShift':
       return priorityShift(state, action.uid);
     case 'playAction':

@@ -13,7 +13,12 @@ import type { PartieSauvegardee } from '@/store/partie';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **8** : le store gagne la **densité du combat**
+ * Version de la forme persistée. **10** — voir `migratePersisted` pour l'historique complet
+ * (v8 : la densité du combat et les raccourcis ; v9 et v10 : les renommages de D-095 et
+ * D-096). Une constante qui annonce un autre chiffre que le sien est un piège : elle a dit
+ * **8** jusqu'au 26/10/2026 alors qu'elle valait déjà 10 (#249).
+ *
+ * **8** : le store gagne la **densité du combat**
  * (`combatDetaille`, #189) et les **raccourcis clavier du combat** (`raccourcisCombat`,
  * #189) — absents d'un état v7, ils valent `false` (sobre) et `true` (raccourcis actifs),
  * les défauts que `AGENTS.md` §6 et `SPEC-COMBAT-UI` §4.2 fixent. **7** : le store gagne
