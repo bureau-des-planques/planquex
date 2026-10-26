@@ -254,17 +254,21 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
   }
 
   /** Le contrôle de géométrie que le script applique, sur une géométrie construite à la main. */
-  function controle(mesures: Mesure[], limite = 830, pasAPasOuvert = false): string[] {
+  function controle(mesures: Mesure[], limite = 830, pasAPasOuvert = false, etat = ''): string[] {
     const output = execFileSync(
       process.execPath,
-      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, pasAPasOuvert })],
+      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, pasAPasOuvert, etat })],
       { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
     );
     return JSON.parse(output) as string[];
   }
 
-  /** Une cible à sa place, sauf celles qu'on fait déborder. */
-  function geometrie({ mainBas = 760, barreActionHaut = 760, barreActionBas = 820, pisteBas = 400 } = {}): Mesure[] {
+  /**
+   * Une cible à sa place, sauf celles qu'on fait déborder. Depuis #237 « à sa place » veut
+   * dire **avec la marge** de D-094 (3) : 800 laisse 30 px sous la barre de navigation à 830,
+   * là où 820 n'en laissait que 10.
+   */
+  function geometrie({ mainBas = 760, barreActionHaut = 760, barreActionBas = 800, pisteBas = 400 } = {}): Mesure[] {
     return [
       { nom: 'la main', selecteur: '.hand', present: true, haut: 640, bas: mainBas },
       { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: barreActionHaut, bas: barreActionBas },
@@ -356,7 +360,133 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer
     // à ne mesurer que la main.
     expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
-    expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT })');
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
     expect(source).toContain("problems.push(`${route} · ${probleme}`)");
+  });
+});
+
+/**
+ * Ticket #237 — **la marge de 20 px de D-094 (3) est gardée**, pas recalculée à la main.
+ *
+ * La garde ne comparait la barre d'action qu'à la **limite** (830 px, D-094 (2)) : mesurée le
+ * 26/10/2026, elle disait « exit 0 » sur un état « pas-à-pas ouvert » à **15–18 px** de marge,
+ * alors que D-094 (3) en exige **20** à 420 × 900 — « pour qu'une ligne de plus ne rougisse pas
+ * la capture ». La marge est donc une exigence **distincte**, et elle doit mordre comme le
+ * seuil : ici, sur une géométrie fautive, sans navigateur.
+ *
+ * La valeur n'est pas recopiée : elle est relue dans la ligne D-094, pour que l'acte et le code
+ * ne puissent pas diverger en silence (même patron que la taille de D-060, #153).
+ */
+describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () => {
+  interface Mesure {
+    nom: string;
+    selecteur: string;
+    present: boolean;
+    haut: number | null;
+    bas: number | null;
+  }
+
+  /** La limite de D-094 (2) — le haut de la barre de navigation à 420 × 900. */
+  const LIMITE = 830;
+
+  function sansEnvDeVitest(): NodeJS.ProcessEnv {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    return env;
+  }
+
+  /**
+   * Le contrôle réel du script, joué sur une géométrie construite à la main. `etat` est le
+   * libellé du passage mesuré, comme `controlerHauteur` le passe à la capture.
+   */
+  function controle(mesures: Mesure[], etat = '', limite = LIMITE): string[] {
+    const output = execFileSync(
+      process.execPath,
+      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, etat })],
+      { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+    );
+    return JSON.parse(output) as string[];
+  }
+
+  /** La marge que D-094 (3) exige — « au moins 20 px » —, lue dans l'acte, pas recopiée. */
+  function margeDeD094(): number {
+    const lignes = read('docs/DECISIONS.md').split('\n').filter((ligne) => ligne.startsWith('| D-094 |'));
+    expect(lignes, 'ligne D-094 introuvable dans docs/DECISIONS.md').toHaveLength(1);
+    const marge = lignes[0].match(/au moins (\d+) px/);
+    expect(marge, 'D-094 ne nomme plus de marge « au moins N px »').not.toBeNull();
+    return Number(marge![1]);
+  }
+
+  /** La barre d'action à `bas`, la main et la piste bien au-dessus. */
+  function barreA(bas: number): Mesure[] {
+    return [
+      { nom: 'la main', selecteur: '.hand', present: true, haut: 620, bas: 720 },
+      { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: 730, bas },
+      { nom: "la piste d'Interventions", selecteur: '.piste', present: true, haut: 380, bas: 400 }
+    ];
+  }
+
+  it('lit la marge dans D-094 (3) : 20 px', () => {
+    expect(margeDeD094()).toBe(20);
+  });
+
+  it('laisse passer une marge pile à l’exigence, et mord un pixel en dessous', () => {
+    const marge = margeDeD094();
+    expect(controle(barreA(LIMITE - marge))).toEqual([]);
+    const problemes = controle(barreA(LIMITE - marge + 1));
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la barre d'action du combat");
+    expect(problemes[0]).toContain(`n'a que ${marge - 1} px de marge`);
+  });
+
+  it('mord sur la marge mesurée de 15 px, et nomme l’état fautif (#237)', () => {
+    // Le chiffre du ticket, tel qu'il a été mesuré : barre à 815 px, limite à 830 → 15 px.
+    const problemes = controle(barreA(815), 'pas-à-pas ouvert');
+    expect(problemes).toHaveLength(1);
+    // La surface, la marge réelle, la limite, l'exigence — et l'état mesuré.
+    expect(problemes[0]).toContain("la barre d'action du combat n'a que 15 px de marge");
+    expect(problemes[0]).toContain("bas de la barre d'action du combat à 815 px");
+    expect(problemes[0]).toContain('barre de navigation à 830 px');
+    expect(problemes[0]).toContain(`${margeDeD094()} px exigés (D-094 (3))`);
+    expect(problemes[0]).toContain('pas-à-pas ouvert');
+  });
+
+  it('applique la marge au pas-à-pas ouvert, sans exception (D-094 (3))', () => {
+    // D-094 (3) dit « à 420 × 900 », sans réserve pour le pas-à-pas : la même géométrie fautive
+    // doit mordre dans les deux états. Une exception, si elle est voulue, se décide — elle ne se
+    // glisse pas dans le code (#237).
+    const courte = controle(barreA(815), 'pas-à-pas ouvert');
+    const terminee = controle(barreA(815), 'pas-à-pas terminé');
+    expect(courte).toHaveLength(1);
+    expect(terminee).toHaveLength(1);
+    expect(terminee[0]).toContain('pas-à-pas terminé');
+  });
+
+  it('ne double pas le message quand l’élément sort déjà de la fenêtre', () => {
+    // À 840, la barre est hors fenêtre : nommée une fois pour le débordement, pas deux.
+    const problemes = controle(barreA(840), 'pas-à-pas ouvert');
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("n'est pas visible sans défiler");
+    expect(problemes[0]).not.toContain('de marge');
+  });
+
+  it('ne reproche pas la marge à un élément absent', () => {
+    const mesures = barreA(815).map((mesure) => ({ ...mesure, present: false }));
+    expect(controle(mesures)).toEqual([]);
+  });
+
+  it('garde aussi la marge de la main, pas seulement celle de la barre', () => {
+    // La main sous la barre (800 → 820), donc sans recouvrement : seule sa marge est en cause.
+    const mesures = barreA(800).map((mesure) => (mesure.selecteur === '.hand' ? { ...mesure, haut: 800, bas: 820 } : mesure));
+    const problemes = controle(mesures, 'pas-à-pas terminé');
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain("la main n'a que 10 px de marge");
+  });
+
+  it('passe le libellé de l’état mesuré au contrôle, dans la capture réelle', () => {
+    const source = read('scripts/capturer.mjs');
+    expect(source).toContain('etat: contexte');
+    expect(source).toContain('(pas-à-pas terminé)');
   });
 });
