@@ -27,7 +27,15 @@ export interface FeaturePrevue {
 /** Les issues `alpha` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
-    numero: 136,
-    titre: 'Le comité — poster depuis le jeu, et la base remplace le fichier'
+    numero: 252,
+    titre: 'Infra — activer les connexions anonymes de Supabase (O-016, D-110)'
+  },
+  {
+    numero: 250,
+    titre: 'Le journal des actions cesse d\'être du texte : une issue typée, écrite par la transition'
+  },
+  {
+    numero: 249,
+    titre: 'Le rejeu : un module, une enveloppe, et un rejeu qui dit s\'il a réussi'
   }
 ];
