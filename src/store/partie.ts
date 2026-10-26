@@ -15,9 +15,10 @@
  * et une reprise refusée (journal qui ne rejoue pas, forme illisible) rend `null` — l'écran
  * repart alors d'un combat neuf, sans planter.
  */
-import type { BattleAction, BattleState, CafeType, PlayerId } from '@/data/types';
+import type { BattleState, CafeType, PlayerId } from '@/data/types';
 import { isCafeType } from '@/game/deck';
-import { replayBattle } from '@/game/engine';
+import { enveloppeDe, rejouer } from '@/game/rejeu';
+import type { EnveloppeRejeu } from '@/game/rejeu';
 import type { Match } from '@/store/pvp';
 
 /** Les deux Decks d'un combat **solo** (une partie à deux les porte dans son `Match`). */
@@ -26,21 +27,17 @@ export interface Decks {
   aiDeck: string[];
 }
 
-/** Ce qui se range dans le store : de quoi rejouer la partie, à l'identique. */
-export interface PartieSauvegardee {
+/**
+ * Ce qui se range dans le store : l'**enveloppe de rejeu** (#249), plus ce que le store sait
+ * et que le moteur ignore — le mode, et le camp que je tiens. La forme persistée ne bouge
+ * pas : `EnveloppeRejeu` porte exactement les mêmes noms (`seed`, `playerDeck`, `aiDeck`,
+ * `playerCafeTypes`, `aiCafeTypes`, `actions`).
+ */
+export interface PartieSauvegardee extends EnveloppeRejeu {
   /** `solo` : contre la Direction. `deux` : une partie à deux (#125). */
   mode: 'solo' | 'deux';
   /** Le camp que je tiens (toujours `player` en solo). */
   camp: PlayerId;
-  /** Graine d'origine (`BattleState.seed`), pas `rng`. */
-  seed: number;
-  playerDeck: string[];
-  aiDeck: string[];
-  /** Types de café **effectifs** (`BattleState.players[who].cafeTypes`). */
-  playerCafeTypes: CafeType[];
-  aiCafeTypes: CafeType[];
-  /** Journal des actions **appliquées** (`BattleState.actionLog`). */
-  actions: BattleAction[];
 }
 
 /** Ce que l'écran reprend au montage : l'état rejoué, son match (ou `null`), ses Decks. */
@@ -64,13 +61,8 @@ export function partieSauvegardee(
   return {
     mode: match ? 'deux' : 'solo',
     camp: match ? match.camp : 'player',
-    seed: state.seed,
-    playerDeck: [...decks.playerDeck],
-    aiDeck: [...decks.aiDeck],
-    playerCafeTypes: [...state.players.player.cafeTypes],
-    aiCafeTypes: [...state.players.ai.cafeTypes],
     // L'enveloppe ne transporte que les **actions** : les faits se recalculent au rejeu (#250).
-    actions: state.actionLog.map((entree) => entree.action)
+    ...enveloppeDe(state, decks)
   };
 }
 
@@ -81,22 +73,11 @@ export function partieSauvegardee(
 export function reprendrePartie(partie: PartieSauvegardee | null): Reprise | null {
   if (partie === null) return null;
   const deux = partie.mode === 'deux';
-  let state: BattleState;
-  try {
-    state = replayBattle(
-      partie.playerDeck,
-      partie.aiDeck,
-      partie.seed,
-      partie.actions,
-      { playerCafeTypes: partie.playerCafeTypes, aiCafeTypes: partie.aiCafeTypes },
-      deux ? { deuxCamps: true } : {}
-    );
-  } catch {
-    return null;
-  }
-  // Une action refusée par le moteur n'est pas journalisée (#83) : si le compte ne suit
-  // pas, le journal ne rejoue pas, et on ne reprend pas une autre partie en silence.
-  if (state.actionLog.length !== partie.actions.length) return null;
+  // Un seul verdict, rendu par le module de rejeu (#249) : Deck illégal, journal qui ne
+  // rejoue pas, ou partie rejouée. C'est `rejouer` qui compare les journaux, plus l'appelant.
+  const rejeu = rejouer(partie, deux ? { deuxCamps: true } : {});
+  if (!rejeu.ok) return null;
+  const state = rejeu.state;
   if (state.phase === 'ended') return null;
   const decks: Decks = { playerDeck: [...partie.playerDeck], aiDeck: [...partie.aiDeck] };
   return {

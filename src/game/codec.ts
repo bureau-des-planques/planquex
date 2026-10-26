@@ -1,7 +1,7 @@
 import { getCard } from '@/data';
 import type { BattleAction, CafeType } from '@/data/types';
 import { deckLegal, isCafeType, MAX_DECK_CAFE_TYPES } from '@/game/deck';
-import { replayBattle } from '@/game/engine';
+import { rejouer } from '@/game/rejeu';
 
 /**
  * **Codec de partie** — ticket #124 (PvP par code, D-049).
@@ -481,20 +481,24 @@ export function decodeMatch(code: string): DecodeResult {
     actions.push(action);
   }
 
-  // Les Decks sont légaux, les cartes connues : `createBattle` ne doit plus lever.
-  // Le `try` couvre quand même le rejeu — un refus ne lève pas, il se motive.
-  let replayed;
-  try {
-    replayed = replayBattle(player.deck, ai.deck, s as number, actions, {
-      playerCafeTypes,
-      aiCafeTypes
-    });
-  } catch {
-    return refus('rejeu', 'Le code ne rejoue pas : le moteur a refusé de reconstruire la partie.');
-  }
-  // Une action refusée par le moteur n'est **pas** journalisée (#83) : le compte le dit.
-  if (replayed.actionLog.length !== actions.length) {
-    return refus('rejeu', 'Le code ne rejoue pas : son journal contient une action que le moteur refuse.');
+  // Les Decks sont légaux, les cartes connues : `rejouer` ne devrait plus refuser. Il le
+  // fait quand même proprement — et c'est **lui** qui compare les journaux (#249), plus
+  // ce module : un code partagé et une partie reprise posent la même question.
+  const rejeu = rejouer({
+    seed: s as number,
+    playerDeck: player.deck,
+    aiDeck: ai.deck,
+    playerCafeTypes,
+    aiCafeTypes,
+    actions
+  });
+  if (!rejeu.ok) {
+    return refus(
+      'rejeu',
+      rejeu.raison === 'deck-illegal'
+        ? 'Le code ne rejoue pas : le moteur a refusé de reconstruire la partie.'
+        : 'Le code ne rejoue pas : son journal contient une action que le moteur refuse.'
+    );
   }
 
   return {

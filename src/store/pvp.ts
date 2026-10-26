@@ -23,7 +23,8 @@
 import type { BattleAction, BattleState, PlayerId } from '@/data/types';
 import { decodeMatch, encodeMatch } from '@/game/codec';
 import type { Refusal } from '@/game/codec';
-import { createBattle, replayBattle } from '@/game/engine';
+import { createBattle } from '@/game/engine';
+import { rejouer } from '@/game/rejeu';
 import type { BattleCafeTypes } from '@/game/engine';
 import { nextAiAction } from '@/game/ia';
 import { CAMP_NAME } from '@/data/vocabulaire';
@@ -149,17 +150,18 @@ export type JoinResult = { ok: true; state: BattleState; match: Match } | Refusa
 export function joinMatch(code: string): JoinResult {
   const decoded = decodeMatch(code);
   if (!decoded.ok) return decoded;
-  const state = replayBattle(
-    decoded.match.playerDeck,
-    decoded.match.aiDeck,
-    decoded.match.seed,
-    decoded.match.actions,
-    {
-      playerCafeTypes: decoded.match.playerCafeTypes,
-      aiCafeTypes: decoded.match.aiCafeTypes
-    },
-    { deuxCamps: true }
-  );
+  // **Le même rejeu, avec le drapeau de la partie à deux** : `decodeMatch` a validé le code
+  // en solo (`deuxCamps` ne change que les phrases), et c'est ici que la partie prend son
+  // vrai journal. Le verdict, lui, vient toujours de `rejouer` (#249).
+  const rejeu = rejouer(decoded.match, { deuxCamps: true });
+  if (!rejeu.ok) {
+    return {
+      ok: false,
+      kind: 'rejeu',
+      raison: 'Le code ne rejoue pas en partie à deux.'
+    };
+  }
+  const state = rejeu.state;
   return {
     ok: true,
     state,
