@@ -115,9 +115,25 @@ describe('CardView — le gabarit à cadre', () => {
   it('chargement : l’illustration repose sur l’aplat de faction, qui reste dessous (#131)', () => {
     const { container } = render(<CardView card={avecArt!} compact />);
     const art = container.querySelector('.card__art') as HTMLElement;
-    // Deux couches : l'image, puis la palette — sans la seconde, la fenêtre reste un trou
+    // Deux couches : l'image, puis l'aplat — sans le second, la fenêtre reste un trou
     // tant que l'image n'est pas arrivée (ou si elle n'arrive pas, hors ligne).
     expect(art.style.background).toContain('url(');
-    expect(art.style.background).toContain('linear-gradient');
+    // Un **aplat** depuis #208, pas le dégradé de faction : un dégradé violet ou cyan sur
+    // fond sombre est un tell d'UI générée (`impeccable`, `ai-color-palette`).
+    expect(art.style.background).toContain('color-mix');
+    expect(art.style.background).not.toContain('linear-gradient');
+  });
+
+  it('porte sa rareté en attribut, pour que le CSS traite une rareté sans recopier un hex (#208)', () => {
+    const cou = planques.find((carte) => carte.rarity === 'COU');
+    expect(cou, 'le catalogue a une Couronne').toBeDefined();
+    const { container } = render(<CardView card={cou!} compact />);
+    expect(container.querySelector('.card')).toHaveAttribute('data-rarity', 'COU');
+
+    // Le contrôle mord : une autre rareté ne prend pas l'attribut de la Couronne.
+    const commune = planques.find((carte) => carte.rarity === '1D');
+    expect(commune, 'le catalogue a une carte commune').toBeDefined();
+    const autre = render(<CardView card={commune!} compact />);
+    expect(autre.container.querySelector('.card')).toHaveAttribute('data-rarity', '1D');
   });
 });

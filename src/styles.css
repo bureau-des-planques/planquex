@@ -1072,6 +1072,15 @@ h2 {
   overflow: hidden;
 }
 
+/* **La Couronne** : son filet est violet, et DESIGN.md §3 dit « filet violet » — il est donc
+   **plat**, pas un dégradé de violet (#208). Un dégradé violet est un tell d'UI générée
+   (`impeccable`, `ai-color-palette`, relevé sur les trois COU de `/collection`), et la teinte
+   reste celle de `RARITY_META`, atténuée pour ne pas devenir un néon sur le fond sombre.
+   `:not(.card--plateau)` : au plateau, la carte est une seule surface avec son propre fond. */
+.card[data-rarity='COU']:not(.card--plateau) {
+  background: color-mix(in srgb, var(--rarity) 62%, var(--bg-deep));
+}
+
 .card--selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
@@ -1323,7 +1332,9 @@ h2 {
 }
 
 .card__comex {
-  background: linear-gradient(135deg, var(--gold-deep), var(--gold));
+  /* Un **aplat** d'or, pas un dégradé (#208) : le dégradé passait sous 4,5:1 à l'endroit où
+     le détecteur l'échantillonne (3,6:1), et l'or plein tient 9,75:1 avec l'encre COMEX. */
+  background: var(--gold);
   border-radius: 999px;
   color: #1c1304;
   font-weight: 700;
@@ -1332,7 +1343,10 @@ h2 {
 
 .card__faction {
   align-items: center;
-  color: var(--accent);
+  /* Le **sigle** de la faction est du texte, pas une décoration : la couleur pure tombait
+     entre 2,7 et 4,1:1 sur la face teintée (`impeccable`, #208). Éclaircie de 35 % de blanc,
+     elle garde sa teinte et passe au-dessus de 5,6:1 — la pastille, elle, reste pure. */
+  color: color-mix(in srgb, var(--accent) 65%, white);
   display: inline-flex;
   font-size: var(--fs-2xs);
   font-weight: 600;
@@ -1844,7 +1858,9 @@ h2 {
   --scene-chalk: #f4e6cc;
   --scene-steel: #8a93a8;
   --scene-steel-deep: #4a5468;
-  gap: 0.5rem;
+  /* Les trois gouttières de l'écran (en-tête → note → table → barre d'action) se resserrent (#218) :
+     3,2 px chacune, 9,6 px rendus à la main, et l'écran garde toutes ses lignes. */
+  gap: 0.2rem;
 }
 
 /* Sur le combat, l'en-tête de l'application se serre : chaque ligne gagnée laisse la main
@@ -2027,12 +2043,14 @@ h2 {
     0 -8px 18px -10px rgb(0 0 0 / 60%);
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  /* #218 : la barre resserre ses trois lignes (journal, portée, gestes) — 1,6 px entre elles et
+     2,4 px de cadre — pour ne pas dépasser la garde de hauteur. Rien n'y est retiré. */
+  gap: 0.1rem;
   /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
      lieu de recouvrir le plateau. */
   max-height: 42dvh;
   overflow-y: auto;
-  padding: 0.25rem 0.6rem;
+  padding: 0.15rem 0.6rem;
   position: sticky;
   z-index: 16;
 }
@@ -2098,6 +2116,8 @@ h2 {
 .combat-barre__portee,
 .combat-barre__repos {
   font-size: 0.76rem;
+  /* Le même interligne que la ligne de journal (#218) : la ligne de portée perd 3 px, reste lisible. */
+  line-height: 1.2;
   margin: 0;
 }
 
@@ -2153,13 +2173,13 @@ h2 {
 .battle__table {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
 }
 
 .battle__console {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.125rem;
 }
 
 @media (min-width: 900px) {
@@ -2217,7 +2237,9 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  padding: 0.1rem 0.2rem;
+  /* Le filet du néon (`is-current`, en ombre intérieure) n'a pas besoin de plus d'un demi-pixel de
+     marge (#218) : 0,8 px rendus à la carte du Poste, donc à la garde de hauteur. */
+  padding: 0.05rem 0.2rem;
   transition: border-color 200ms ease;
 }
 
@@ -2257,8 +2279,10 @@ h2 {
    mesurées par `npm run capturer` : la garde décide de la plus grande qui tient. */
 .board__zone {
   /* Le Banc passe à 64 px (#188, mesuré) : le Poste garde un rapport de 1,5 à 1,8 avec lui. Le Stress
-     et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur. */
-  --poste-w: 6rem;
+     et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur.
+     Le Poste revient aux **88 px de D-094 (1)** (#218) : 8 px de large valent ~22 px de haut sur les
+     deux camps, et le rapport de 1,57 avec le Banc est celui que la décision a acté. */
+  --poste-w: 5.5rem;
   --banc-w: 3.5rem;
   align-items: center;
   display: flex;
@@ -2271,7 +2295,8 @@ h2 {
 @media (max-width: 639px) {
   .board {
     gap: 0.1rem;
-    padding: 0.15rem;
+    /* #218 : 0,8 px de cadre au lieu de 2,4 — le feutre affleure le bord, la garde y gagne 3 px. */
+    padding: 0.05rem;
   }
 
   .board__zone {
@@ -2415,7 +2440,8 @@ h2 {
 }
 
 .hand-panel {
-  gap: 0.4rem;
+  /* Le titre de la main et l'éventail se touchent presque (#218) : 2 px suffisent à les séparer. */
+  gap: 0.125rem;
 }
 
 .hand-panel h2 {
@@ -2558,10 +2584,21 @@ h2 {
   opacity: 0.6;
 }
 
-/* Une carte **non possédée** : éteinte (grisée et très pâle), pour qu'une carte possédée se
-   lise d'un coup d'œil. Plus forte que « Deck complet » : les deux ne se confondent pas. */
+/* Une carte **non possédée** : éteinte, pour qu'une carte possédée se lise d'un coup d'œil.
+   Plus forte que « Deck complet » : les deux ne se confondent pas.
+   **L'extinction ne touche plus le texte** (#208) : le `opacity: 0.4` global posait le nom et le
+   sigle de faction entre 2,1 et 3,5:1 — une carte qu'on ne peut pas lire n'est pas une carte
+   éteinte, c'est une carte absente. Le gris et l'illustration pâlie disent l'absence ; le nom
+   reste lisible. */
 .card-slot.is-missing .card {
-  filter: grayscale(0.9) brightness(0.8);
+  filter: grayscale(1);
+}
+
+.card-slot.is-missing .card__art {
+  opacity: 0.4;
+}
+
+.card-slot.is-missing .card__seuil {
   opacity: 0.4;
 }
 
@@ -3180,16 +3217,22 @@ h2 {
    soulèvement de la carte choisie. Le **pas** entre deux cartes se réduit quand la main grandit,
    pour que dix cartes tiennent dans la largeur d'un téléphone. */
 .hand {
-  /* Une carte de la main se lit : 5,7 rem de large, soit ~91 px (64 px auparavant, où le nom était
-     illisible). Elle reste plus étroite que le Poste, 6 rem (R4). Le conteneur est assez haut pour la carte
-     entière et son inclinaison : rien n'est plus rogné en bas. */
-  --carte-w: 5.7rem;
+  /* **La garde de hauteur fait foi** (D-094 (2)) : la carte de la main revient aux **4 rem de
+     D-094 (1)**, soit 64 px, contre 5,7 rem (#218). C'est elle qui rend les ~50 px que la barre
+     d'action réclamait sous la main, et ce que D-094 (4) nomme pour densifier — sans retirer aucune
+     ligne de l'écran. Les noms longs s'y replient sur deux ou trois lignes, et la fiche « Carte
+     choisie » les redonne entiers au toucher. Elle reste plus étroite que le Poste, 5,5 rem (R4).
+     Le conteneur est assez haut pour la carte entière et son inclinaison : rien n'est rogné en bas,
+     le Seuil reste visible. */
+  --carte-w: 4rem;
   /* Le pas : deux cartes ne se chevauchent pas quand la largeur le permet (leurs noms restent lisibles),
      et se recouvrent juste assez pour tenir dans la largeur quand la main grandit. */
   --pas: min(calc(var(--carte-w) + 0.2rem), calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
   align-items: flex-start;
   display: flex;
-  height: calc(var(--carte-w) * 88 / 63 + 1.6rem);
+  /* La carte entière et son inclinaison, plus la place du soulèvement (`padding-top`) : 1 rem de
+     plus que la hauteur de la carte, pas 1,6 — la marge de hauteur ne pardonne pas (#218). */
+  height: calc(var(--carte-w) * 88 / 63 + 1rem);
   justify-content: center;
   list-style: none;
   margin: 0;

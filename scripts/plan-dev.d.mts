@@ -33,3 +33,10 @@ export function lireIssues(gh?: (args: string[]) => any): FeaturePrevue[];
 
 /** Le fichier entier : l'en-tête, le type, la liste. Aucune URL. */
 export function rendreFichier(features: FeaturePrevue[]): string;
+
+/**
+ * Le contrôle de fraîcheur du `-- --verifie` (#231) : `null` quand le fichier sur le
+ * disque est exactement ce que le générateur écrirait, sinon le message qui dit l'écart
+ * et la commande à lancer. Exporté pour que le test le confronte à un fichier périmé.
+ */
+export function divergence(actuel: string, attendu: string): string | null;
