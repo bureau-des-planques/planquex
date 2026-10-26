@@ -1,5 +1,5 @@
 /*
- * PROTOTYPE JETABLE — le banc d'essai des saynètes d'attaque (D-098).
+ * PROTOTYPE JETABLE — le banc d'essai des saynètes d'attaque (D-098, réparé par D-101).
  * Question : le coup de grâce et la cinématique COMEX sont-ils lisibles et drôles à 420 × 900 ?
  *
  * Ce n'est PAS une scène réécrite : le plateau reprend le gabarit réel de `Battle.tsx`
@@ -9,36 +9,121 @@
  * Le coup de grâce rejoue l'état **réel** du combat au moment du coup : la carte visée n'est
  * déjà plus au Poste, seul son fantôme `craquage__carte` y reste 500 ms (DUREE_TRAINEE_MS).
  *
- * DEV seulement : `/src/prototype/scene.html`. Les sondes `window.__scene` servent à la capture.
+ * **Le banc choisit ses cartes par critère, jamais par id** (D-101). Il nommait
+ * `atelier-chef-atelier`, que D-095 a renommé : il levait « Carte introuvable » au premier
+ * rendu (#219). Un id suit le nom (`AGENTS.md` §5), donc un id écrit ici est un piège ; une
+ * faction, un stade et une rareté se relisent après un renommage.
+ *
+ * DEV seulement : `/src/prototype/scene.html` — hors bundle et hors de l'application (D-101).
+ * Les sondes `window.__scene` servent à la capture.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ALL_CARDS, isPlanque } from '@/data';
-import type { Attack, PlanqueCard } from '@/data/types';
+import type { Attack, Faction, PlanqueCard, Rarity, Stage } from '@/data/types';
 import { CardView } from '@/components/CardView';
 import { SceneAttaque } from '@/animation/SceneAttaque';
-import { attribuer, cinematiqueDe, libelle } from '@/animation/attaque';
+import { attribuer, cinematiqueDe, estLegendaire, libelle } from '@/animation/attaque';
 import type { Moteur } from '@/animation/moteur';
 
 const PLANQUES = ALL_CARDS.filter(isPlanque).filter((c) => c.attacks.length > 0);
-const carte = (id: string): PlanqueCard => {
-  const c = PLANQUES.find((x) => x.id === id);
-  if (!c) throw new Error(`Carte introuvable : ${id}`);
-  return c;
-};
+
+/** Un critère de choix d'une carte : une faction, un stade, une rareté, un statut. */
+interface Critere {
+  faction?: Faction;
+  stage?: Stage;
+  rarity?: Rarity;
+  ex?: boolean;
+  /** Une condition de plus, quand les champs ci-dessus ne suffisent pas (la cinématique). */
+  et?: (c: PlanqueCard) => boolean;
+}
+
+/**
+ * **Le premier Planqué du catalogue qui satisfait le critère** — jamais un id nommé.
+ * L'erreur nomme le critère, pas une carte : elle dit quoi relire dans `src/data/`.
+ */
+function parCritere(critere: Critere, quoi: string): PlanqueCard {
+  const trouve = PLANQUES.find(
+    (c) =>
+      (critere.faction === undefined || c.faction === critere.faction) &&
+      (critere.stage === undefined || c.stage === critere.stage) &&
+      (critere.rarity === undefined || c.rarity === critere.rarity) &&
+      (critere.ex === undefined || (c.ex === true) === critere.ex) &&
+      (critere.et === undefined || critere.et(c)),
+  );
+  if (!trouve) {
+    throw new Error(
+      `Banc d'essai — aucun Planqué pour « ${quoi} » : le catalogue a changé, le critère est à revoir (#219, D-101).`,
+    );
+  }
+  return trouve;
+}
+
+/** La dernière Pression d'une carte : la plus chère, donc celle que la cinématique peut coiffer. */
+const derniere = (c: PlanqueCard) => c.attacks.length - 1;
+
+/** Le Stress montré par la scène : les dégâts de la Pression, **lus sur la carte**. */
+const stressDe = (c: PlanqueCard, rang: number) => c.attacks[Math.min(rang, derniere(c))].damage;
 
 /** La durée du fantôme de craquage dans le vrai combat (`DUREE_TRAINEE_MS`). */
 const FANTOME_MS = 500;
 
 type Preset = 'normale' | 'grace' | 'comex';
 
-/** Les trois scénarios demandés, sur des cartes réelles du catalogue. */
-const PRESETS: Record<
-  Preset,
-  { attaquant: string; rang: number; cible: string; grace: boolean; stress: number; libelle: string }
-> = {
-  normale: { attaquant: 'sse-medecin-travail', rang: 0, cible: 'direction-directeur-regional', grace: false, stress: 60, libelle: 'Attaque normale' },
-  grace: { attaquant: 'sse-preventeur', rang: 0, cible: 'direction-directeur-regional', grace: true, stress: 20, libelle: 'Coup de grâce' },
-  comex: { attaquant: 'direction-pdg-ex', rang: 1, cible: 'sse-infirmier-site', grace: false, stress: 120, libelle: 'Cinématique COMEX' },
+/** Un scénario du banc : l'attaquant, la Pression qu'il joue, la cible. */
+interface Scenario {
+  attaquant: PlanqueCard;
+  rang: number;
+  cible: PlanqueCard;
+  grace: boolean;
+  libelle: string;
+}
+
+/** La cinématique est réservée (D-098 (3)) : un légendaire, et sa **dernière** Pression. */
+const ATTAQUANT_COMEX = parCritere(
+  { et: (c) => estLegendaire(c) && c.attacks.length > 1 && cinematiqueDe(c, c.attacks[derniere(c)]) },
+  'l’attaquant d’une cinématique, COU / 3 étoiles / COMEX',
+);
+
+/** Les trois scénarios du banc, sur des cartes réelles choisies **par critère**. */
+const PRESETS: Record<Preset, Scenario> = {
+  // Un Planqué évolué du SSE au Poste, sa première Pression : la comparaison de référence.
+  normale: {
+    attaquant: parCritere({ faction: 'SSE', stage: 'N+2' }, 'l’attaquant ordinaire, SSE N+2'),
+    rang: 0,
+    cible: parCritere({ faction: 'DIRECTION', stage: 'N+1' }, 'la cible ordinaire, Direction N+1'),
+    grace: false,
+    libelle: 'Attaque normale',
+  },
+  // Une petite Pression d'Entrant qui fait craquer : la saynète de sortie (D-098 (4)).
+  grace: {
+    attaquant: parCritere({ faction: 'SSE', stage: 'ENTRANT' }, 'l’attaquant du coup de grâce, SSE Entrant'),
+    rang: 0,
+    cible: parCritere({ faction: 'DIRECTION', stage: 'N+1' }, 'la cible du coup de grâce, Direction N+1'),
+    grace: true,
+    libelle: 'Coup de grâce',
+  },
+  // La cinématique coiffe la Pression la plus chère : son rang se **dérive**, il ne se recopie pas.
+  comex: {
+    attaquant: ATTAQUANT_COMEX,
+    rang: derniere(ATTAQUANT_COMEX),
+    cible: parCritere({ faction: 'SSE', stage: 'ENTRANT' }, 'la cible de la cinématique, SSE Entrant'),
+    grace: false,
+    libelle: 'Cinématique COMEX',
+  },
+};
+
+/** Le Banc d'un camp : trois Planqués réels, un par faction, à leur première carte. */
+const bancDe = (...factions: Faction[]): PlanqueCard[] =>
+  factions.map((faction) => parCritere({ faction }, `le Banc (${faction})`));
+
+const BANC_HAUT = bancDe('MANAGEMENT', 'SSE', 'QVT');
+const BANC_BAS = bancDe('RH', 'ATELIER', 'SYNDICAT');
+
+/** La carte d'un id **choisi dans la régie** : un choix de l'utilisateur, jamais une constante. */
+const carte = (id: string): PlanqueCard => {
+  const c = PLANQUES.find((x) => x.id === id);
+  if (!c) throw new Error(`Carte introuvable : ${id}`);
+  return c;
 };
 
 interface Lancee {
@@ -50,9 +135,6 @@ interface Lancee {
   stress: number;
   coupDeGrace: boolean;
 }
-
-const BANC_HAUT = ['management-responsable-unite', 'sse-preventeur', 'qvt-chief-happiness-officer'];
-const BANC_BAS = ['rh-assistant-rh', 'atelier-chef-atelier', 'syndicat-secretaire-general'];
 
 declare global {
   interface Window {
@@ -71,11 +153,11 @@ declare global {
 }
 
 export function PrototypeScene() {
-  const [attaquantId, setAttaquantId] = useState(PRESETS.normale.attaquant);
+  const [attaquantId, setAttaquantId] = useState(PRESETS.normale.attaquant.id);
   const [rang, setRang] = useState(PRESETS.normale.rang);
-  const [cibleId, setCibleId] = useState(PRESETS.normale.cible);
-  const [grace, setGrace] = useState(false);
-  const [stress, setStress] = useState(PRESETS.normale.stress);
+  const [cibleId, setCibleId] = useState(PRESETS.normale.cible.id);
+  const [grace, setGrace] = useState(PRESETS.normale.grace);
+  const [stress, setStress] = useState(() => stressDe(PRESETS.normale.attaquant, PRESETS.normale.rang));
   const [vitesse, setVitesse] = useState(1);
   const [lancee, setLancee] = useState<Lancee | null>(null);
   /** Le fantôme de la cible craquée : vrai pendant 500 ms (comme dans le vrai combat). */
@@ -135,7 +217,8 @@ export function PrototypeScene() {
         uid: 'att',
         uidCible: 'cib',
         carte: c,
-        attaque: c.attacks[r],
+        // Le rang vient de la régie ou d'une sonde : borné comme le fait `stressDe`.
+        attaque: c.attacks[Math.min(r, derniere(c))],
         stress: s,
         coupDeGrace: g,
       });
@@ -147,12 +230,13 @@ export function PrototypeScene() {
   const preset = useCallback(
     (p: Preset) => {
       const d = PRESETS[p];
-      setAttaquantId(d.attaquant);
+      const degats = stressDe(d.attaquant, d.rang);
+      setAttaquantId(d.attaquant.id);
       setRang(d.rang);
-      setCibleId(d.cible);
+      setCibleId(d.cible.id);
       setGrace(d.grace);
-      setStress(d.stress);
-      lancer(carte(d.attaquant), d.rang, carte(d.cible), d.grace, d.stress);
+      setStress(degats);
+      lancer(d.attaquant, d.rang, d.cible, d.grace, degats);
     },
     [lancer],
   );
@@ -199,13 +283,13 @@ export function PrototypeScene() {
     };
   }, [preset, lancer, enCours, cinematique, motifs, rang]);
 
-  const banc = (ids: string[]) => (
+  const banc = (cartes: PlanqueCard[]) => (
     <div className="board__bench">
       <ul className="bench">
-        {ids.map((id) => (
-          <li className="bench__slot" key={id}>
+        {cartes.map((c) => (
+          <li className="bench__slot" key={c.id}>
             <div className="bench__carte">
-              <CardView card={carte(id)} figee plateau />
+              <CardView card={c} figee plateau />
             </div>
           </li>
         ))}
@@ -241,8 +325,10 @@ export function PrototypeScene() {
     </div>
   );
 
-  const relevee = carte('management-responsable-unite');
-  const posteCible = (
+  /** Le Banc d'un camp — la relève vient du sien, comme en combat (une carte du Banc). */
+  const bancDuCamp = (haut: boolean) => (haut ? BANC_HAUT : BANC_BAS);
+
+  const posteCible = (relevee: PlanqueCard) => (
     <div className="board__poste" style={styleReserve}>
       <span className="sr-only">Poste</span>
       {!cibleTombee && (
@@ -265,31 +351,37 @@ export function PrototypeScene() {
     </div>
   );
 
-  const campCible = (haut: boolean) => (
-    <article className={`board__side ${haut ? 'is-direction' : ''}`}>
-      <div className="board__zone">
-        {haut && banc(BANC_HAUT)}
-        <div className="board__poste-ligne">
-          {posteCible}
-          {fiche(haut ? 'La Direction' : 'Toi', 3, 12, 1)}
+  const campCible = (haut: boolean) => {
+    const bancCible = bancDuCamp(haut);
+    return (
+      <article className={`board__side ${haut ? 'is-direction' : ''}`}>
+        <div className="board__zone">
+          {haut && banc(bancCible)}
+          <div className="board__poste-ligne">
+            {posteCible(bancCible[0])}
+            {fiche(haut ? 'La Direction' : 'Toi', 3, 12, 1)}
+          </div>
+          {!haut && banc(bancCible)}
         </div>
-        {!haut && banc(BANC_BAS)}
-      </div>
-    </article>
-  );
+      </article>
+    );
+  };
 
-  const campAttaquant = (haut: boolean) => (
-    <article className={`board__side ${haut ? 'is-direction' : ''}`}>
-      <div className="board__zone">
-        {haut && banc(BANC_HAUT)}
-        <div className="board__poste-ligne">
-          {posteAttaquant}
-          {fiche(haut ? 'La Direction' : 'Toi', 2, 14, 0)}
+  const campAttaquant = (haut: boolean) => {
+    const bancAttaquant = bancDuCamp(haut);
+    return (
+      <article className={`board__side ${haut ? 'is-direction' : ''}`}>
+        <div className="board__zone">
+          {haut && banc(bancAttaquant)}
+          <div className="board__poste-ligne">
+            {posteAttaquant}
+            {fiche(haut ? 'La Direction' : 'Toi', 2, 14, 0)}
+          </div>
+          {!haut && banc(bancAttaquant)}
         </div>
-        {!haut && banc(BANC_BAS)}
-      </div>
-    </article>
-  );
+      </article>
+    );
+  };
 
   return (
     <main className="proto-scene">
