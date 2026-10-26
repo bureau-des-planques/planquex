@@ -478,10 +478,12 @@ h2 {
 }
 
 /* Le mur du comité : une **zone** de placement, pas un panneau. Les post-its sont déjà des
-   cartes ; un panneau autour d'eux en fait des cartes dans une carte (`nested-cards`, impeccable). */
+   cartes ; un panneau autour d'eux en fait des cartes dans une carte (`nested-cards`, impeccable).
+   Le détecteur lit « filet + rayon » comme une carte (mesuré, #235) : la zone garde son filet
+   en pointillé, **à angles droits** — un cadre de repérage, pas une surface. */
 .mur-plan {
   border: 1px dashed var(--line-strong);
-  border-radius: 6px;
+  border-radius: 0;
   padding: 0.5rem;
 }
 

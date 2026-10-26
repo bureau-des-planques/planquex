@@ -90,18 +90,19 @@ export const ECRANS = [
  *
  * **Étendu le 26/10/2026 (#234)** aux sept écrans publics et de compte, chacun **mesuré**
  * par `npm run build && npm run detect:ui:page` avant d'écrire son compte — aucun `null`,
- * aucun écran sauté sans le dire. **Total plafonné : 5** (2 + 3, ci-dessous).
+ * aucun écran sauté sans le dire. **Total plafonné : 5** (2 + 3) à l'origine, **3** depuis #235.
  *
  * - `/comite/suivi`, `/connexion`, `/attente`, `/confidentialite`, `/administration` : **0**.
  *   Les deux écrans de compte mesurés ici sont ceux d'un alpha **sans base** — leur état
  *   inerte « Pas de compte sans base » — et non l'écran d'un compte connecté, qui demanderait
  *   un backend : ce contour est dit, pas caché.
- * - `/comite` : **2** `nested-cards` (un post-it est une carte dans une carte) — ticket
- *   **#235**.
+ * - `/comite` : **0** depuis #235. Les 2 `nested-cards` ne venaient pas du post-it mais de
+ *   la **zone** `.mur-plan` qui l'entoure (filet + rayon = une carte pour le détecteur) : son
+ *   rayon est tombé à 0, le filet en pointillé reste.
  * - `/feuille-de-route` : **3** `line-length` (listes trop larges à lire) — ticket **#236**.
  *
- * Les deux ne sont **pas** corrigés ici : #234 étend la mesure, il n'habille pas les écrans.
- * Le plafond est leur compte mesuré, pas un acquittement : le faire baisser est le travail
+ * #234 étend la mesure, il n'habille pas les écrans : `/comite` a été corrigé par #235,
+ * `/feuille-de-route` reste à #236. Le plafond est un compte mesuré, pas un acquittement : le faire baisser est le travail
  * de #235 et #236, et la baisse se fait dans le même commit que la correction (#208).
  */
 export const BASELINE = {
@@ -110,7 +111,7 @@ export const BASELINE = {
   '/deck': 0,
   '/battle': 0,
   '/settings': 0,
-  '/comite': 2,
+  '/comite': 0,
   '/comite/suivi': 0,
   '/feuille-de-route': 3,
   '/connexion': 0,
