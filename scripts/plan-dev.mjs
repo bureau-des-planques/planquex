@@ -129,6 +129,21 @@ ${corps}
 `;
 }
 
+/**
+ * **Le contrôle de fraîcheur, hors réseau** : `null` quand le fichier est exactement ce
+ * que le générateur écrirait, sinon la phrase qui dit l'écart et le geste à faire.
+ *
+ * Exporté pour que `scripts/plan-dev.test.ts` le confronte à un fichier **volontairement
+ * périmé** : sans ce cas, on ne garderait que l'apparence du contrôle (#231). C'est la
+ * fonction que le `--verifie` appelle, pas une copie — un test qui passe à côté du code
+ * de production ne garde rien.
+ */
+export function divergence(actuel, attendu) {
+  return actuel === attendu
+    ? null
+    : 'src/data/plan-dev.ts a divergé de GitHub — lance `npm run plan:dev`.';
+}
+
 /** Un titre mis en forme comme le reste du dépôt : guillemets simples, apostrophes typographiques. */
 function q(texte) {
   return `'${String(texte).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
@@ -169,9 +184,8 @@ if (estEntree) {
     } catch {
       stop('src/data/plan-dev.ts est absent — lance `npm run plan:dev`.');
     }
-    if (actuel !== contenu) {
-      stop('src/data/plan-dev.ts a divergé de GitHub — lance `npm run plan:dev`.');
-    }
+    const ecart = divergence(actuel, contenu);
+    if (ecart) stop(ecart);
     console.log(`✔ src/data/plan-dev.ts est à jour (${features.length} issue(s) alpha ouverte(s))`);
   } else {
     writeFileSync(CIBLE, contenu);
