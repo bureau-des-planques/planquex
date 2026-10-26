@@ -63,7 +63,6 @@ export const NOTES_VERSIONS: NoteVersion[] = [
     version: '0.1.12',
     date: '2026-10-26',
     titre: 'Une chorégraphie par Pression',
-    brouillon: true,
     points: [
       {
         groupe: 'Le combat',
