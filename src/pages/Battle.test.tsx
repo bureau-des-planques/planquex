@@ -772,7 +772,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
       aiDeck: THEIRS,
       playerCafeTypes: state.players.player.cafeTypes,
       aiCafeTypes: state.players.ai.cafeTypes,
-      actions: state.actionLog
+      actions: state.actionLog.map((entree) => entree.action)
     });
   }
 

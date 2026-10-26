@@ -69,7 +69,8 @@ export function partieSauvegardee(
     aiDeck: [...decks.aiDeck],
     playerCafeTypes: [...state.players.player.cafeTypes],
     aiCafeTypes: [...state.players.ai.cafeTypes],
-    actions: [...state.actionLog]
+    // L'enveloppe ne transporte que les **actions** : les faits se recalculent au rejeu (#250).
+    actions: state.actionLog.map((entree) => entree.action)
   };
 }
 

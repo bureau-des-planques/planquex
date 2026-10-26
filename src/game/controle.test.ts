@@ -108,7 +108,11 @@ describe('Contrôle des deux Postes après chaque tour (D-033 §5)', () => {
     foeDuring.players.ai.hasAttacked = false;
     const hpBefore = foeDuring.players.player.active?.hp;
     const attacked = attack(foeDuring, 0);
-    expect(attacked.log).toContain('Immobilisation : impossible d’attaquer.');
+    // **Refus, pas action** (#250) : la transition rend l'état d'entrée **tel quel**, donc
+    // rien n'entre au journal d'actions — c'est le contrat écrit dans `types.ts`, et c'est
+    // ce qui distingue enfin un coup refusé d'un coup porté. `legalAttacks` ne propose
+    // déjà pas cette Pression (D-033 §2) : cette garde est le filet d'une liste périmée.
+    expect(attacked).toBe(foeDuring);
     expect(attacked.players.player.active?.hp).toBe(hpBefore);
 
     const afterTheirs = endTurn(afterMine); // fin de SON tour

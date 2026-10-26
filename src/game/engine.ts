@@ -12,6 +12,7 @@ import type {
   PendingChoice,
   PlayerId,
   PlayerState,
+  FaitMoteur,
   Status
 } from '@/data/types';
 import { deckLegal, resolveCafeTypes } from '@/game/deck';
@@ -1061,7 +1062,7 @@ export function playAction(state: BattleState, uid: string): BattleState {
  * vidé. Ne décide **pas** de la fin : c'est `resolveEnd` qui tranche, **après** tous
  * les craquages de l'action (D-031).
  */
-function knockOut(state: BattleState, attackerId: PlayerId) {
+function knockOut(state: BattleState, attackerId: PlayerId, faits: FaitMoteur[] = []) {
   const defenderId: PlayerId = attackerId === 'player' ? 'ai' : 'player';
   const defender = state.players[defenderId];
   if (!defender.active || defender.active.hp > 0) return;
@@ -1073,6 +1074,10 @@ function knockOut(state: BattleState, attackerId: PlayerId) {
   state.log.push(`${fallenCard?.name ?? 'Un Planqué'} craque : ${points} Intervention${points > 1 ? 's' : ''}.`);
   putInDiscard(defender, fallen);
   defender.active = null;
+  // Le craquage **et** ce qu'il rapporte, décidés au même endroit : l'écran les lit
+  // au lieu de déduire le craquage d'une présence au Rebut (#250).
+  faits.push({ type: 'craquage', uid: fallen.uid, camp: defenderId });
+  faits.push({ type: 'interventions', camp: attackerId, montant: points });
 }
 
 /** Un camp a-t-il encore un Planqué en jeu ? Sans Planqué, il perd (D-022). */
@@ -1216,7 +1221,7 @@ export function priorityShift(state: BattleState, uid: string): BattleState {
   return next;
 }
 
-export function attack(state: BattleState, attackIndex: number): BattleState {
+export function attack(state: BattleState, attackIndex: number, faits: FaitMoteur[] = []): BattleState {
   if (awaitingDecision(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
@@ -1238,14 +1243,12 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   // « Les Pokémon Endormis ne peuvent ni attaquer ni battre en retraite. »). Le
   // lancer de guérison de la Sieste a lieu **au Contrôle** (`checkup`), jamais ici :
   // on refuse sans tirer.
-  if (hasStatus(player.active, 'IMMOBILISATION')) {
-    next.log.push('Immobilisation : impossible d’attaquer.');
-    return next;
-  }
-  if (hasStatus(player.active, 'SIESTE')) {
-    next.log.push('Sieste : impossible d’attaquer.');
-    return next;
-  }
+  // **Refus, pas action** (#250) : la transition rend l'état d'entrée **tel quel**, donc
+  // `applyAction` ne la journalise pas — c'est le contrat écrit dans `types.ts`. La liste
+  // `legalAttacks` ne propose déjà pas la Pression sous ces deux conditions (D-033 §2) :
+  // cette garde est le filet d'un client qui aurait une liste périmée.
+  if (hasStatus(player.active, 'IMMOBILISATION')) return state;
+  if (hasStatus(player.active, 'SIESTE')) return state;
   // Dérive (D-033 §3, capture `07`) : « Si c'est face, l'attaque fonctionne
   // normalement. Si c'est pile, l'attaque n'est pas lancée et le tour du joueur
   // prend fin. » **face = succès** (le lancer de tampon, #82) : on ne refuse que
@@ -1254,19 +1257,24 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
   if (hasStatus(player.active, 'DERIVE') && flipStamp(next) === 'pile') {
     player.hasAttacked = true;
     next.log.push('Dérive : tampon, la Pression n’est pas lancée, le tour prend fin.');
+    // **Le tour est consommé** : l'action est bien appliquée, donc journalisée — avec
+    // son fait. C'est ce fait, et non la phrase ci-dessus, que l'écran lit désormais.
+    faits.push({ type: 'pressionRatee', uid: player.active.uid, cause: 'derive' });
     return next;
   }
 
   const damage = attackDamage(player.active, opponent.active, attack, 'poste');
   opponent.active.hp -= damage;
   next.log.push(`${card.name} utilise ${attack.name} : ${damage} de stress.`);
+  // Le Stress **réellement porté**, décidé ici : plus besoin de comparer deux états.
+  faits.push({ type: 'stress', uid: opponent.active.uid, montant: damage, auPoste: true });
   applyEffects(next, next.current, player.active, opponent.active, attack);
   player.hasAttacked = true;
 
-  knockOut(next, next.current);
+  knockOut(next, next.current, faits);
   // Si l'attaquant s'est craqué lui-même (selfDamage), l'adversaire marque.
   if (player.active && player.active.hp <= 0) {
-    knockOut(next, next.current === 'player' ? 'ai' : 'player');
+    knockOut(next, next.current === 'player' ? 'ai' : 'player', faits);
   }
   // D-031 : les deux craquages de l'action sont appliqués **avant** de trancher ;
   // un plateau vide l'emporte alors sur les Interventions gagnées dans la foulée.
@@ -1296,7 +1304,7 @@ export function attack(state: BattleState, attackIndex: number): BattleState {
  * limite (un statut posé sur son propre Poste) n'est pas atteignable ; s'il le devenait,
  * il faudrait mémoriser le tour de pose (#78).
  */
-function controlStatuses(state: BattleState, who: PlayerId) {
+function controlStatuses(state: BattleState, who: PlayerId, faits: FaitMoteur[] = []) {
   // Étiquette de camp : le Contrôle porte désormais sur les deux Postes, le journal
   // doit dire lequel — c'est aussi ce qui rend l'ordre des Contrôles vérifiable.
   const label = who === 'player' ? 'ton Poste' : 'Poste adverse';
@@ -1306,9 +1314,11 @@ function controlStatuses(state: BattleState, who: PlayerId) {
     if (status === 'SURCHARGE') {
       active.hp -= SURCHARGE_DAMAGE;
       state.log.push(`Surcharge : ${SURCHARGE_DAMAGE} de stress (${label}).`);
+      faits.push({ type: 'stress', uid: active.uid, montant: SURCHARGE_DAMAGE, auPoste: who === state.current });
     } else if (status === 'EPUISEMENT') {
       active.hp -= BURNOUT_DAMAGE;
       state.log.push(`Épuisement : ${BURNOUT_DAMAGE} de stress (${label}).`);
+      faits.push({ type: 'stress', uid: active.uid, montant: BURNOUT_DAMAGE, auPoste: who === state.current });
       // Capture `07` : « Si c'est face, le Pokémon est guéri » — face = succès (#82).
       if (flipStamp(state) === 'face') {
         clearStatus(active, 'EPUISEMENT');
@@ -1347,20 +1357,20 @@ function controlStatuses(state: BattleState, who: PlayerId) {
  * premier — le prolongement de « l'attaquant choisit en premier » (D-031), où
  * `state.current` désigne ici l'acteur du tour qui s'achève.
  */
-function checkup(state: BattleState): BattleState {
+function checkup(state: BattleState, faits: FaitMoteur[] = []): BattleState {
   const ending = state.current;
   const opponent: PlayerId = ending === 'player' ? 'ai' : 'player';
 
-  controlStatuses(state, ending);
-  controlStatuses(state, opponent);
+  controlStatuses(state, ending, faits);
+  controlStatuses(state, opponent, faits);
 
   // Un craquage au Poste du camp qui finit rapporte les Interventions à l'adversaire,
   // et réciproquement : `knockOut(state, X)` fait marquer `X` et vide le Poste d'en face.
   if (state.players[ending].active && state.players[ending].active.hp <= 0) {
-    knockOut(state, opponent);
+    knockOut(state, opponent, faits);
   }
   if (state.players[opponent].active && state.players[opponent].active.hp <= 0) {
-    knockOut(state, ending);
+    knockOut(state, ending, faits);
   }
 
   resolveEnd(state);
@@ -1403,14 +1413,14 @@ export function forfeit(state: BattleState, who: PlayerId): BattleState {
   return next;
 }
 
-export function endTurn(state: BattleState): BattleState {
+export function endTurn(state: BattleState, faits: FaitMoteur[] = []): BattleState {
   // Une partie finie **refuse** la fin de tour : l'état est rendu tel quel (`===`),
   // comme toute transition refusée, sinon `applyAction` la journaliserait (#83).
   if (awaitingDecision(state) || state.phase === 'ended') return state;
   const next = clone(state);
   // `checkup` mute l'état et peut le terminer (craquage par statut) : on lit la
   // valeur retournée, pas `next`, dont le rétrécissement de type est périmé.
-  const afterCheckup = checkup(next);
+  const afterCheckup = checkup(next, faits);
   if (afterCheckup.phase === 'ended') return afterCheckup;
   // Un craquage de checkup ouvre une relève : le tour ne passe pas avant le choix.
   if (awaitingDecision(afterCheckup)) return afterCheckup;
@@ -1443,9 +1453,10 @@ export function endTurn(state: BattleState): BattleState {
  * ne touche jamais l'état d'entrée.
  */
 export function applyAction(state: BattleState, action: BattleAction): BattleState {
-  const after = transition(state, action);
+  const faits: FaitMoteur[] = [];
+  const after = transition(state, action, faits);
   if (after === state) return state;
-  after.actionLog.push(action);
+  after.actionLog.push({ action, faits });
   return after;
 }
 
@@ -1472,7 +1483,7 @@ export function replayBattle(
 }
 
 /** Le `switch` exhaustif des transitions de combat. `applyAction` est son seul appelant. */
-function transition(state: BattleState, action: BattleAction): BattleState {
+function transition(state: BattleState, action: BattleAction, faits: FaitMoteur[]): BattleState {
   switch (action.type) {
     case 'playBasic':
       return playBasic(state, action.uid, action.slot);
@@ -1483,7 +1494,7 @@ function transition(state: BattleState, action: BattleAction): BattleState {
     case 'retreat':
       return retreat(state, action.benchIndex);
     case 'attack':
-      return attack(state, action.attackIndex);
+      return attack(state, action.attackIndex, faits);
     case 'ability':
       return useAbility(state);
     case 'priorityShift':
@@ -1497,7 +1508,7 @@ function transition(state: BattleState, action: BattleAction): BattleState {
     case 'forfeit':
       return forfeit(state, action.who);
     case 'endTurn':
-      return endTurn(state);
+      return endTurn(state, faits);
     default:
       return assertNever(action);
   }

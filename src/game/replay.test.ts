@@ -34,7 +34,12 @@ describe('replayBattle — même graine + mêmes actions = même partie (#83)', 
     expect(played.actionLog.length).toBeGreaterThan(0);
     expect(played.seed).toBe(seed);
 
-    const replayed = replayBattle(playerDeck, aiDeck, seed, played.actionLog);
+    const replayed = replayBattle(
+      playerDeck,
+      aiDeck,
+      seed,
+      played.actionLog.map((entree) => entree.action)
+    );
 
     // Égalité **stricte** : rng, plateau, journal texte, actionLog et vainqueur.
     expect(replayed).toEqual(played);
@@ -59,7 +64,7 @@ describe('applyAction — seul point de journalisation (#83)', () => {
     const after = applyAction(state, { type: 'endTurn' });
 
     expect(after).not.toBe(state);
-    expect(after.actionLog).toEqual([{ type: 'endTurn' }]);
+    expect(after.actionLog.map((entree) => entree.action)).toEqual([{ type: 'endTurn' }]);
   });
 
   it('n’ajoute pas une action refusée : la transition rend l’état tel quel (`===`)', () => {
@@ -83,8 +88,8 @@ describe('applyAction — seul point de journalisation (#83)', () => {
     const second = applyAction(first, { type: 'endTurn' });
 
     // Chaque état garde son propre journal : le second n'a pas gonflé le premier.
-    expect(first.actionLog).toEqual([{ type: 'endTurn' }]);
-    expect(second.actionLog).toEqual([{ type: 'endTurn' }, { type: 'endTurn' }]);
+    expect(first.actionLog.map((entree) => entree.action)).toEqual([{ type: 'endTurn' }]);
+    expect(second.actionLog.map((entree) => entree.action)).toEqual([{ type: 'endTurn' }, { type: 'endTurn' }]);
     expect(state.actionLog).toEqual([]);
   });
 });
@@ -129,7 +134,7 @@ describe('actionLog — ne contient que des BattleAction valides (#83)', () => {
     const [playerDeck, aiDeck] = decksFor(seed);
     const played = playGame(playerDeck, aiDeck, seed);
 
-    for (const action of played.actionLog) {
+    for (const { action } of played.actionLog) {
       expect(hasFields(action), JSON.stringify(action)).toBe(true);
     }
   });

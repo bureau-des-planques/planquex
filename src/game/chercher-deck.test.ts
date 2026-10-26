@@ -101,7 +101,7 @@ describe('Chercher dans le Deck — primitive `search` (#161, D-080)', () => {
     expect(fin.players.player.deck.map((card) => card.uid)).not.toContain(choisie);
     expect(fin.players.player.deck).toHaveLength(apres.players.player.deck.length - 1);
     expect(fin.log.at(-1)).toContain('Collègue cherché');
-    expect(fin.actionLog.at(-1)).toEqual({ type: 'choose', uid: choisie });
+    expect(fin.actionLog.at(-1)?.action).toEqual({ type: 'choose', uid: choisie });
   });
 
   it('le Deck est mélangé après le choix : l’ordre change, et il est reproductible', () => {

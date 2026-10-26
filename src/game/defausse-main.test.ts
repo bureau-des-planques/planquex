@@ -106,7 +106,7 @@ describe('Défausse de la main — primitive `discardHand` (#159, D-076)', () =>
     expect(fin.players.player.hand.map((card) => card.uid)).not.toContain(choisie);
     expect(fin.players.player.discard.map((card) => card.uid)).toContain(choisie);
     // Le choix est journalisé comme une action réelle (#83).
-    expect(fin.actionLog.at(-1)).toEqual({ type: 'choose', uid: choisie });
+    expect(fin.actionLog.at(-1)?.action).toEqual({ type: 'choose', uid: choisie });
   });
 
   it('une carte absente de la main est refusée par `choose`', () => {

@@ -51,7 +51,7 @@ function matchOf(state: BattleState, playerDeck: string[], aiDeck: string[]): Ma
     aiDeck,
     playerCafeTypes: state.players.player.cafeTypes,
     aiCafeTypes: state.players.ai.cafeTypes,
-    actions: state.actionLog
+    actions: state.actionLog.map((entree) => entree.action)
   };
 }
 

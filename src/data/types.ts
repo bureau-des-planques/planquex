@@ -292,6 +292,30 @@ export type BattleAction =
   | { type: 'endTurn' };
 
 /**
+ * Un **fait** qu'une transition a réellement produit (#250) : un **code**, jamais une
+ * phrase (D-086) — c'est ce qui remplace les `.includes('Dérive')` de l'écran.
+ *
+ * Il naît **là où il est décidé** : `knockOut` pour un craquage et ses Interventions,
+ * `attack` pour le Stress porté et la Pression refusée, `controlStatuses` pour le
+ * Stress du Contrôle (qui n'a **aucune** action `attack` à laquelle s'accrocher).
+ */
+export type FaitMoteur =
+  /** Le Stress encaissé par `uid` sur cette action (jamais négatif). */
+  | { type: 'stress'; uid: string; montant: number; auPoste: boolean }
+  /** `uid` a craqué ; `camp` est son propriétaire. */
+  | { type: 'craquage'; uid: string; camp: PlayerId }
+  /** `camp` a marqué `montant` Interventions sur cette action (1, ou 2 pour un COMEX). */
+  | { type: 'interventions'; camp: PlayerId; montant: number }
+  /** La Pression n'a pas été lancée, et pourquoi. */
+  | { type: 'pressionRatee'; uid: string; cause: 'derive' | 'sieste' | 'immobilisation' };
+
+/** Une entrée du journal : l'action **appliquée**, et ce qu'elle a produit. */
+export interface EntreeJournal {
+  action: BattleAction;
+  faits: readonly FaitMoteur[];
+}
+
+/**
  * Un **choix** que le moteur attend du joueur (D-076, D-080, D-082). Tant qu'il est
  * ouvert, seul `choose` (et le forfait) est accepté pour ce joueur.
  */
@@ -360,6 +384,12 @@ export interface BattleState {
    * une action **refusée** n'y figure pas. C'est la suite **rejouable** — même graine
    * + mêmes actions = même partie (`PROPOSITION.md` §6.2) ; `log`, lui, reste le
    * journal **texte** destiné à l'écran. Voir `replayBattle`.
+   *
+   * **Chaque entrée porte ses faits** (#250) : `faits` dit ce que la transition a
+   * produit — Stress, craquage, Interventions, Pression refusée. C'est le
+   * remplacement typé de la lecture du texte par l'écran. Les faits sont
+   * **déterministes** : un rejeu les recalcule à l'identique, donc ils ne voyagent
+   * ni dans le code partagé ni dans la base — seul `action` s'y transporte.
    */
-  actionLog: BattleAction[];
+  actionLog: EntreeJournal[];
 }

@@ -103,7 +103,12 @@ describe('useEffetsDeCombat — la Pression en quatre temps (#207)', () => {
   it('une action attack émet une nature « attaque » avec l’attaquant et la cible', () => {
     const depart = avant();
     const suivant = apresUnCoup(depart);
-    suivant.actionLog = [...depart.actionLog, { type: 'attack', attackIndex: 0 }];
+    // Une entrée de journal porte son action **et** ses faits (#250) : c'est le fait qui
+    // dit que la Pression est partie, plus la phrase du journal.
+    suivant.actionLog = [
+      ...depart.actionLog,
+      { action: { type: 'attack', attackIndex: 0 }, faits: [{ type: 'stress', uid: 'x', montant: 20, auPoste: true }] }
+    ];
     render(<Harnais depart={depart} suivant={suivant} sansMouvement={false} />);
 
     fireEvent.click(screen.getByText('jouer'));

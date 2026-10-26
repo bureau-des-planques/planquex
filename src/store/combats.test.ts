@@ -95,7 +95,7 @@ describe('combatTermine — ce qui est gardé, et rien d’autre (#173, D-086)',
       playerCafeTypes: state.players.player.cafeTypes,
       aiCafeTypes: state.players.ai.cafeTypes
     });
-    expect(combat?.journal).toEqual(state.actionLog);
+    expect(combat?.journal).toEqual(state.actionLog.map((entree) => entree.action));
   });
 
   it('ne garde pas une partie en cours', () => {
@@ -116,7 +116,7 @@ describe('combatTermine — ce qui est gardé, et rien d’autre (#173, D-086)',
     expect(combat?.mode).toBe('pvp');
     expect(combat?.decks).toEqual({ playerDeck: match.playerDeck, aiDeck: match.aiDeck });
     expect(combat?.graine).toBe(state.seed);
-    expect(combat?.journal).toEqual(state.actionLog);
+    expect(combat?.journal).toEqual(state.actionLog.map((entree) => entree.action));
   });
 
   it('ne garde pas une partie à deux en cours', () => {

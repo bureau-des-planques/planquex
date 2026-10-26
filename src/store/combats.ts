@@ -90,7 +90,7 @@ export function combatTermine(
       playerCafeTypes: [...state.players.player.cafeTypes],
       aiCafeTypes: [...state.players.ai.cafeTypes]
     },
-    journal: state.actionLog.map((action) => structuredClone(action))
+    journal: state.actionLog.map((entree) => structuredClone(entree.action))
   };
 }
 

@@ -132,7 +132,12 @@ describe('Machine à café — les types choisis par le joueur (#91)', () => {
     state = applyAction(state, { type: 'endTurn' });
     state = applyAction(state, { type: 'endTurn' });
 
-    const replayed = replayBattle(DECK, DECK, state.seed, state.actionLog, {
+    const replayed = replayBattle(
+      DECK,
+      DECK,
+      state.seed,
+      state.actionLog.map((entree) => entree.action),
+      {
       playerCafeTypes: chosen
     });
     expect(replayed).toEqual(state);

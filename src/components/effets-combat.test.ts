@@ -112,9 +112,16 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
   it('une attaque journalisée devient le trait, avec l’attaquant et sa cible', () => {
     const avant = partie();
     const apres = structuredClone(avant);
+    // Une entrée porte son action **et** ses faits (#250) : c'est le fait qui dit que la
+    // Pression est partie et quel Stress elle a porté.
     apres.actionLog = [
       ...avant.actionLog,
-      { type: 'attack', player: 'player', attackIndex: 0 } as never
+      {
+        action: { type: 'attack', attackIndex: 0 },
+        faits: [
+          { type: 'stress', uid: avant.players.ai.active!.uid, montant: 20, auPoste: true }
+        ]
+      }
     ];
     const effets = effetsEntre(avant, apres);
     const attaque = effets.find((effet) => effet.nature === 'attaque');
@@ -133,21 +140,29 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
   it('une Dérive ratée n’émet aucune Pression, et le contrôle mord', () => {
     const avant = partie();
     const apres = structuredClone(avant);
+    // La Dérive ratée : l'action est journalisée (le tour est consommé) mais son **fait**
+    // dit que la Pression n'est pas partie. Plus une phrase à relire.
     apres.actionLog = [
       ...avant.actionLog,
-      { type: 'attack', player: 'player', attackIndex: 0 } as never
-    ];
-    apres.log = [
-      ...avant.log,
-      'Dérive : tampon, la Pression n’est pas lancée, le tour prend fin.'
+      {
+        action: { type: 'attack', attackIndex: 0 },
+        faits: [{ type: 'pressionRatee', uid: avant.players.player.active!.uid, cause: 'derive' }]
+      }
     ];
     expect(effetsEntre(avant, apres).some((effet) => effet.nature === 'attaque')).toBe(false);
 
     // Le cas fautif, pour que le contrôle puisse échouer : la même action **sans** la ligne de
     // Dérive émet bien la Pression.
     const reussie = structuredClone(avant);
-    reussie.actionLog = apres.actionLog;
-    reussie.log = [...avant.log, 'Kiné du travail utilise Massage cardiaque : 20 de stress.'];
+    reussie.actionLog = [
+      ...avant.actionLog,
+      {
+        action: { type: 'attack', attackIndex: 0 },
+        faits: [
+          { type: 'stress', uid: avant.players.ai.active!.uid, montant: 20, auPoste: true }
+        ]
+      }
+    ];
     expect(effetsEntre(avant, reussie).some((effet) => effet.nature === 'attaque')).toBe(true);
   });
 

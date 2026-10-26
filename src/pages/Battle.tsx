@@ -422,7 +422,7 @@ const porteUnRegard = (effects: readonly AttackEffect[] | undefined) =>
  * rend toujours que le Deck du camp demandé.
  */
 function regardDuDernierGeste(state: BattleState, who: PlayerId): Card | undefined {
-  const geste = state.actionLog.at(-1);
+  const geste = state.actionLog.at(-1)?.action;
   if (!geste) return undefined;
   const side = state.players[who];
 
