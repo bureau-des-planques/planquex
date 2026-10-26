@@ -180,8 +180,8 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
     refuse(await GESTES.id81(db), /postits_id_check/);
   });
 
-  it('les deux post-its réels de docs/boite-a-idees.json s’insèrent tels quels', async () => {
-    const fichier = JSON.parse(readFileSync(new URL('../docs/boite-a-idees.json', import.meta.url), 'utf8')) as {
+  it('les deux post-its réels de docs/comite.json s’insèrent tels quels', async () => {
+    const fichier = JSON.parse(readFileSync(new URL('../docs/comite.json', import.meta.url), 'utf8')) as {
       postits: Array<Record<string, unknown>>;
     };
     expect(fichier.postits.length).toBeGreaterThanOrEqual(2);

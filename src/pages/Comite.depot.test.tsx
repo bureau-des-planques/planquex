@@ -65,7 +65,7 @@ vi.mock('@/lib/murBase', async () => {
   };
 });
 
-import { BoiteAIdees } from './BoiteAIdees';
+import { Comite } from './Comite';
 import { useStore } from '@/store/useStore';
 
 const POSTIT_BASE = {
@@ -88,7 +88,7 @@ const POSTIT_BASE = {
 function rendre() {
   return render(
     <MemoryRouter>
-      <BoiteAIdees />
+      <Comite />
     </MemoryRouter>
   );
 }

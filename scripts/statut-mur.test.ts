@@ -11,7 +11,7 @@ import { STATUTS, lireMur } from '../src/store/mur';
  *
  * Le script est testé **comme une commande** — c'est `npm run statut` que Bastien lancera,
  * pas une fonction (même technique que `mur-import.test.ts`). Aucun test ne touche au vrai
- * `docs/boite-a-idees.json` : `--fichier` pointe une **copie** dans un bac temporaire, et
+ * `docs/comite.json` : `--fichier` pointe une **copie** dans un bac temporaire, et
  * chaque refus est vérifié par les **octets** du fichier, pas par une impression.
  *
  * Les gardes doivent **mordre** (ticket #112) : chacune est confrontée à un cas fautif —
@@ -20,7 +20,7 @@ import { STATUTS, lireMur } from '../src/store/mur';
  * l'original. Neutraliser le contrôle correspondant fait échouer le test.
  */
 const RACINE = fileURLToPath(new URL('..', import.meta.url));
-const MUR_SOURCE = join(RACINE, 'docs', 'boite-a-idees.json');
+const MUR_SOURCE = join(RACINE, 'docs', 'comite.json');
 const SCRIPT = 'scripts/statut-mur.mjs';
 
 /** Le post-it structuré (OUF) du fichier réel — celui qu'on déplace dans les tests. */
@@ -49,7 +49,7 @@ function postitDe(document: Document, id: string): Postit {
  */
 function bac(): { mur: string; texteInitial: string; document: Document } {
   const dossier = mkdtempSync(join(tmpdir(), 'statut-mur-'));
-  const mur = join(dossier, 'boite-a-idees.json');
+  const mur = join(dossier, 'comite.json');
   const document = JSON.parse(readFileSync(MUR_SOURCE, 'utf8')) as Document;
   document.champ_inconnu = { garder: true };
   postitDe(document, ID).note_interne = 'à garder';

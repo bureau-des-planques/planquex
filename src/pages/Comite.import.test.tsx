@@ -41,13 +41,13 @@ vi.mock('@/store/mur', async () => {
   return { ...vrai, DOCUMENT_MUR: DOCUMENT };
 });
 
-import { BoiteAIdees } from './BoiteAIdees';
+import { Comite } from './Comite';
 
 describe('le mur rend un post-it importé du formulaire (#177)', () => {
   it('affiche la famille, le titre, le texte, le pseudo, le statut et la version', () => {
     render(
       <MemoryRouter>
-        <BoiteAIdees />
+        <Comite />
       </MemoryRouter>
     );
 

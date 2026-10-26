@@ -1,6 +1,6 @@
--- La Boîte à idées — le mur : post-its, votes, commentaires (#135).
+-- Le comité (ex-Boîte à idées) — le mur : post-its, votes, commentaires (#135).
 --
--- Contrat de données : `docs/BOITE-A-IDEES.md` §3 (« Le fichier du mur »). Le schéma le reprend
+-- Contrat de données : `docs/COMITE.md` §3 (« Le fichier du mur »). Le schéma le reprend
 -- champ pour champ, avec une différence assumée : `position` éclate en trois colonnes
 -- (`position_x`, `position_y`, `position_angle`) plutôt qu'en JSON, pour que les bornes
 -- 0–100 / −5–+5 soient tenues par la base et non par le client. La vue `postits_avec_votes`

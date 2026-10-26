@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Library, Layers, Settings, Swords } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
-import { BulleBoiteAIdees } from '@/components/BulleBoiteAIdees';
+import { AlerteComite } from '@/components/AlerteComite';
 import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
 import { ErreurDeRendu } from '@/components/ErreurDeRendu';
 import { GardeComptes } from '@/components/GardeComptes';
@@ -31,14 +31,14 @@ export function Layout() {
   const enAttente = configure && session !== null && compte !== null && !estApprouve(compte);
 
   /**
-   * La bulle de la Boîte à idées (D-058) est **absente pendant un combat** : c'est ce
+   * L'entrée du **comité** (D-058, D-097) est **absente pendant un combat** : c'est ce
    * qui permet au mur d'être une **page** (D-068) sans risquer une partie en cours — on
    * ne la quitte pas pour aller lire des post-its. Elle revient dès qu'on quitte l'écran
    * de combat, fin de partie ou retour au bureau. Sur le mur lui-même, elle n'a rien à
    * ouvrir : elle s'efface.
    */
   const enCombat = pathname.startsWith('/battle');
-  const surLeMur = pathname.startsWith('/idees');
+  const surLeMur = pathname.startsWith('/comite');
 
   return (
     <div className="app-shell">
@@ -118,7 +118,7 @@ export function Layout() {
       <JourneeIntegration />
 
       {/* L'entrée du mur (D-058) : partout, sauf en combat et sur le mur. */}
-      {!enCombat && !surLeMur && <BulleBoiteAIdees />}
+      {!enCombat && !surLeMur && <AlerteComite />}
 
       <nav className="bottom-nav" aria-label="Navigation principale">
         {tabs.map((tab) => {

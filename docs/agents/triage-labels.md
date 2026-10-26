@@ -38,7 +38,7 @@ D-048 :
 
 | Étiquette | Sens | Exemple dans le tracker |
 |---|---|---|
-| `alpha` | nécessaire pour le **solo entre invités** (contenu incomplet, casse assumée) | les tickets du combat, la Boîte à idées |
+| `alpha` | nécessaire pour le **solo entre invités** (contenu incomplet, casse assumée) | les tickets du combat, le comité |
 | `beta` | nécessaire pour le **PvP jouable**, l'URL stable et le périmètre solo complet | le PvP par code (D-049) |
 | `release` | nécessaire pour **1.0.0** : le reste de `PROPOSITION.md` §5.1 (classé, économie…) | l'échelon classé |
 

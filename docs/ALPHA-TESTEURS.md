@@ -38,7 +38,7 @@ une note ou un message à toi-même. Pour revenir : colle-le dans la même zone,
 
 ## Comment remonter un retour
 
-**Il y a un mur dans le jeu.** Une petite bulle en bas à droite ouvre **le mur de la Boîte à idées** :
+**Il y a un mur dans le jeu.** Une petite bulle en bas à droite ouvre **le mur du comité** :
 tu y vois ce que les autres ont signalé, avec un statut — en attente, retenu, en cours, fait, ou
 écarté avec sa raison. Ça évite de signaler vingt fois la même chose.
 

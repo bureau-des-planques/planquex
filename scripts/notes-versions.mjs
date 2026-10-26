@@ -2,7 +2,7 @@
 /**
  * **Le journal des versions, pris à GitHub** — ticket #182.
  *
- * `src/data/versions.ts` alimente l'écran `/nouveautes` : c'est là qu'un invité lit ce
+ * `src/data/versions.ts` alimente l'écran `/feuille-de-route` : c'est là qu'un invité lit ce
  * que la version qu'il a sous les yeux contient. Ce fichier-là est **généré** par ce
  * script, à partir des **releases GitHub** — les notes réellement publiées, écrites une
  * fois par version. Personne ne recopie plus à la main ce qu'une release dit.

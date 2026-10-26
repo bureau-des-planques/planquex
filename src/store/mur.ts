@@ -1,17 +1,17 @@
 /**
- * Le mur de la Boîte à idées — le contrat de `docs/boite-a-idees.json` (#129).
+ * Le mur du comité — le contrat de `docs/comite.json` (#129, D-097).
  *
  * L'alpha est **en lecture seule** (D-058) : le jeu lit ce fichier, que Vite bundle
  * (`resolveJsonModule`), et il n'y écrit **jamais**. La seule écriture est l'**export**
  * du mode de placement (D-068), que la personne commite — un site statique ne peut pas
  * écrire dans son propre dépôt, et c'est le mécanisme assumé de l'alpha.
  *
- * La forme fait foi dans `docs/BOITE-A-IDEES.md` §3. Les listes ci-dessous la recopient
+ * La forme fait foi dans `docs/COMITE.md` §3. Les listes ci-dessous la recopient
  * **pour la contrôler** : une valeur hors liste n'est pas affichée en silence, elle est
  * signalée. `mur.test.ts` confronte ce contrôle à un fichier fautif **fabriqué** — un
  * contrôle qui ne peut pas échouer ne garde rien (`AGENTS.md` §6, ticket #112).
  */
-import murBrut from '../../docs/boite-a-idees.json';
+import murBrut from '../../docs/comite.json';
 
 /** Les deux familles (D-058, §1) : une troisième serait déjà trop pour un mur. */
 export const FAMILLES = ['IP', 'OUF'] as const;

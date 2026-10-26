@@ -258,7 +258,7 @@ export function Settings() {
           <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si
           quelque chose ne va pas : c’est lui qui dit quelle version tu as sous les yeux.
           Ce qu’elle contient, et ce que les précédentes ont changé, se lit sur{' '}
-          <Link to="/nouveautes">la page des nouveautés</Link>.
+          <Link to="/feuille-de-route">la page des nouveautés</Link>.
         </p>
       </section>
     </div>

@@ -4,14 +4,14 @@ import { describe, expect, it } from 'vitest';
 import { DOCUMENT_MUR, ECRANS, FAMILLES, STATUTS, exporterMur, lireMur } from './mur';
 
 /**
- * Le contrat du fichier du mur (#129, `docs/BOITE-A-IDEES.md` §3).
+ * Le contrat du fichier du mur (#129, `docs/COMITE.md` §3).
  *
  * Deux choses sont vérifiées ici, et la seconde compte autant que la première :
  * le **vrai** fichier est conforme, et le contrôle **mord** — chaque règle est
  * confrontée à un `postit` fabriqué qui la viole (`AGENTS.md` §6, ticket #112 : une
  * assertion qui passe quoi qu'il arrive ne garde rien).
  */
-const CHEMIN = fileURLToPath(new URL('../../docs/boite-a-idees.json', import.meta.url));
+const CHEMIN = fileURLToPath(new URL('../../docs/comite.json', import.meta.url));
 
 /** Un post-it conforme, qu'un test peut abîmer champ par champ. */
 function postit(extra: Record<string, unknown> = {}): Record<string, unknown> {
@@ -51,7 +51,7 @@ function doc(...entrees: Array<Record<string, unknown>>) {
 
 const erreursDe = (source: unknown) => lireMur(source).erreurs;
 
-describe('docs/boite-a-idees.json — le fichier du mur', () => {
+describe('docs/comite.json — le fichier du mur', () => {
   it('se lit sans une erreur', () => {
     const { mur, erreurs } = lireMur(DOCUMENT_MUR);
     expect(erreurs).toEqual([]);

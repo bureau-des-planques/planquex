@@ -7,6 +7,11 @@
  * sous les yeux et ce qu'elle apporte — avant même de s'inscrire, d'où la route déclarée
  * hors de `Layout`, comme `/confidentialite`.
  *
+ * **Depuis D-097 (#210)**, l'adresse est `/feuille-de-route` (`/nouveautes` y redirige) :
+ * la page devient la feuille de route publique, et son contenu propre — étape en cours,
+ * critères de sortie, jalons, features prévues — arrive avec #214. L'écran, lui, ne
+ * change pas encore.
+ *
  * Trois règles d'écriture :
  *
  * 1. **la version courante se lit, elle ne se recopie pas** : c'est `APP_LABEL`

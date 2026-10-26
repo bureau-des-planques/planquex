@@ -1,4 +1,4 @@
-# La Boîte à idées — ce que les invités remontent, et ce qu'on en fait
+# Le comité — ce que les invités remontent, et ce qu'on en fait
 
 > Référence d'exploitation du mur de post-its. Les **décisions** qui l'ont écrit : **D-058** (le
 > mur et ses deux familles), **D-059** (le tri, les statuts) — **amendée par D-088** (l'identité
@@ -10,7 +10,9 @@
 > Le mur complet est là : **poster** (#136), **voter** (#137), **commenter** (#138), **corriger ou
 > retirer** son post-it (#139), et **trier** depuis l'écran d'administration (`0006`).
 > Le formulaire externe reste le palliatif de l'alpha d'avant — il ne demande pas de compte.
-> Le vocabulaire est dans `AGENTS.md` §3 : **la Boîte à idées** (l'entrée, la bulle), **le mur**
+> **Renommée par D-097 (#210)** : l'entrée s'appelle **le comité** (elle était la « Boîte à idées »),
+> son adresse est `/comite`, et `/idees` y redirige ; le fichier du mur est `docs/comite.json`.
+> Le vocabulaire est dans `AGENTS.md` §3 : **le comité** (l'entrée, la bulle), **le mur**
 > (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un invité**.
 
 ## 1. Les deux familles, et le gueulage à part
@@ -154,7 +156,7 @@ Sur la base, l'auteur range **son** post-it et l'**administration** range tout (
 
 ## 3. Le fichier du mur
 
-`design/…` non : le mur vit dans **`docs/boite-a-idees.json`**, versionné avec le dépôt, parce que
+`design/…` non : le mur vit dans **`docs/comite.json`**, versionné avec le dépôt, parce que
 c'est la seule source partagée que le jeu peut lire sans backend (D-058).
 
 ```jsonc
@@ -222,7 +224,7 @@ depuis le mur). C'est lui qui décide de la **qualité** des retours : un formul
 « décris ton bug » reçoit « ça bug » ; un formulaire qui demande *ce que tu faisais* et *ce que
 tu attendais* reçoit de quoi corriger.
 
-**Adresse** : dans `docs/boite-a-idees.json` (`formulaire`). Le jeu la lit et l'ouvre depuis la bulle.
+**Adresse** : dans `docs/comite.json` (`formulaire`). Le jeu la lit et l'ouvre depuis la bulle.
 
 > ### ⚠️ Le piège qui a déjà mordu (22/10/2026)
 >
@@ -372,7 +374,7 @@ mais ajoute un compte et des limites.
 
 ### 4.3 Une fois le formulaire modifié
 
-L'adresse **ne change pas** (seul le contenu change) : `docs/boite-a-idees.json` n'a rien à recevoir.
+L'adresse **ne change pas** (seul le contenu change) : `docs/comite.json` n'a rien à recevoir.
 Si l'adresse venait à changer, c'est **ce champ** qu'on met à jour — et rien d'autre, le mur la lit.
 
 ## 4.5 L'import des réponses — le palliatif sans backend (#177)
@@ -381,7 +383,7 @@ Le formulaire n'écrit pas dans le jeu : ses réponses vivent dans **Google Form
 mur complet (#136) n'existe pas, un script comble le trou — il lit la feuille de réponses
 **publiée en CSV** et ajoute au fichier du mur les post-its **absents**.
 
-**L'adresse** est le champ `reponses` de `docs/boite-a-idees.json` (mesurée le 23/10/2026) :
+**L'adresse** est le champ `reponses` de `docs/comite.json` (mesurée le 23/10/2026) :
 
 ```
 https://docs.google.com/spreadsheets/d/1WUvB3q0CjEbs7Z-cWXqPUU834Wh1X-nhw1oBWFlhugw/gviz/tq?tqx=out:csv

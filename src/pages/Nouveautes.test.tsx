@@ -67,9 +67,9 @@ describe('Nouveautés — la page publique', () => {
     // `import.meta.url` est une URL `http:` sous jsdom : on lit par le disque, comme les
     // autres tests d'écran qui inspectent une source (`CardSlot.test.tsx`).
     const app = readFileSync(join(process.cwd(), 'src/App.tsx'), 'utf8');
-    const route = app.indexOf('<Route path="nouveautes"');
+    const route = app.indexOf('<Route path="feuille-de-route"');
     const garde = app.indexOf('<Route element={<Layout />}>');
-    expect(route, 'route /nouveautes introuvable dans src/App.tsx').toBeGreaterThanOrEqual(0);
+    expect(route, 'route /feuille-de-route introuvable dans src/App.tsx').toBeGreaterThanOrEqual(0);
     expect(garde, 'la garde `<Route element={<Layout />}>` a disparu').toBeGreaterThanOrEqual(0);
     // Avant la garde = hors de `Layout`, donc hors de `GardeComptes` : lisible sans compte.
     expect(route).toBeLessThan(garde);

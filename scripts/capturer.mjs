@@ -65,13 +65,13 @@ const PAGES = [
   ['confidentialite', '/confidentialite'],
   // Les nouveautés aussi (elles se lisent avant de s'inscrire) : une version qu'on ne
   // peut pas lire depuis le jeu ne sert à rien, donc la capture le prouve.
-  ['nouveautes', '/nouveautes'],
+  ['feuille-de-route', '/feuille-de-route'],
   ['connexion', '/connexion'],
   ['attente', '/attente'],
   ['administration', '/administration'],
-  // Le mur de la Boîte à idées (#129) : une page hors barre de navigation, menée
+  // Le mur du comité (#129, D-097) : une page hors barre de navigation, menée
   // par la bulle — donc capturée en dernier.
-  ['idees', '/idees']
+  ['comite', '/comite']
 ];
 
 /**

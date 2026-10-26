@@ -71,12 +71,12 @@ vi.mock('@/store/mur', async () => {
   return { ...vrai, DOCUMENT_MUR: DOCUMENT };
 });
 
-import { BoiteAIdees } from './BoiteAIdees';
+import { Comite } from './Comite';
 
 function rendre() {
   return render(
     <MemoryRouter>
-      <BoiteAIdees />
+      <Comite />
     </MemoryRouter>
   );
 }

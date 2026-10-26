@@ -39,7 +39,7 @@ export function BandeauHorsLigne() {
       <WifiOff size={16} aria-hidden />
       <span>
         <strong>Hors ligne.</strong> Le jeu continue : combats, Collection et Deck ne demandent aucun
-        réseau. Le mur de la Boîte à idées et les traces de combat attendent le retour de la connexion.
+        réseau. Le mur du comité et les traces de combat attendent le retour de la connexion.
       </span>
     </p>
   );

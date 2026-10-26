@@ -22,7 +22,7 @@ import { lireMur } from '../src/store/mur';
  * déjà trié (ticket #112 : une assertion qui ne peut pas échouer ne garde rien).
  */
 const RACINE = fileURLToPath(new URL('..', import.meta.url));
-const MUR_SOURCE = join(RACINE, 'docs', 'boite-a-idees.json');
+const MUR_SOURCE = join(RACINE, 'docs', 'comite.json');
 const SCRIPT = 'scripts/mur-import.mjs';
 
 const q = (valeur: string) => `"${valeur.replace(/"/g, '""')}"`;
@@ -152,7 +152,7 @@ let compteur = 0;
  */
 function bac(): { dossier: string; mur: string; texteInitial: string } {
   const dossier = mkdtempSync(join(tmpdir(), 'mur-import-'));
-  const mur = join(dossier, 'boite-a-idees.json');
+  const mur = join(dossier, 'comite.json');
   const document = JSON.parse(readFileSync(MUR_SOURCE, 'utf8')) as Document;
   document.postits = [];
   writeFileSync(mur, `${JSON.stringify(document, null, 2)}\n`, 'utf8');

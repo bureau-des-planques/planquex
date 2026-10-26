@@ -1,5 +1,5 @@
 {
-  "_lisez_moi": "Le mur de la Boîte à idées (D-058). Le jeu LIT ce fichier et n'écrit jamais dedans : le tri se fait à la main. `npm run mur:import` ajoute seulement les réponses absentes du formulaire, sans jamais modifier un post-it existant. Champs et statuts : docs/BOITE-A-IDEES.md. Le jeu le lit par import (Vite le bundle), donc une modification change le mur au déploiement suivant.",
+  "_lisez_moi": "Le mur du comité (D-058, D-097). Le jeu LIT ce fichier et n'écrit jamais dedans : le tri se fait à la main. `npm run mur:import` ajoute seulement les réponses absentes du formulaire, sans jamais modifier un post-it existant. Champs et statuts : docs/COMITE.md. Le jeu le lit par import (Vite le bundle), donc une modification change le mur au déploiement suivant.",
   "formulaire": "https://docs.google.com/forms/d/e/1FAIpQLSeu6DH8Us6-Fd4UQ0yMm3sToZpzAFV-QIpdF5y8XRUFXRFIEw/viewform",
   "reponses": "https://docs.google.com/spreadsheets/d/1WUvB3q0CjEbs7Z-cWXqPUU834Wh1X-nhw1oBWFlhugw/gviz/tq?tqx=out:csv",
   "postits": [

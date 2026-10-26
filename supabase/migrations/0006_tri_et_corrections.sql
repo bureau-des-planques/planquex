@@ -33,7 +33,7 @@
 --     `postit_corrige_trop_tard` (le statut a bougé), `postit_corrige_inconnu`.
 --
 -- **Le retrait (#139)** est une **suppression**, pas un statut : §3 de
--- `docs/BOITE-A-IDEES.md` le dit déjà — « un post-it retiré par son auteur disparaît du
+-- `docs/COMITE.md` le dit déjà — « un post-it retiré par son auteur disparaît du
 -- fichier : il n'existe pas de statut retiré ». Il ne se retire donc que par son auteur, et
 -- seulement **tant que le post-it est `en attente`** : après, il porte un tri (une raison,
 -- un ticket) que le geste emporterait.

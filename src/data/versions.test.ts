@@ -5,7 +5,7 @@ import { NOTES_VERSIONS, noteDe, noteManquante, type NoteVersion } from './versi
 /**
  * **On ne publie pas une version sans sa note** (`docs/VERSIONS.md`, D-090).
  *
- * La note vit dans l'application (`/nouveautes`), et elle est **prise aux releases
+ * La note vit dans l'application (`/feuille-de-route`), et elle est **prise aux releases
  * GitHub** par `npm run notes:versions`. Ce test est la garde : la version lue dans
  * `package.json` doit avoir son entrée dans `NOTES_VERSIONS`. Monter la version sans
  * écrire ce qu'elle contient fait tomber `npm test` — c'est le geste qu'on veut

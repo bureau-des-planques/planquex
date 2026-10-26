@@ -5,11 +5,12 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App } from '@/App';
-import { REDIRECTIONS } from '@/redirections';
+import { REDIRECTIONS, REDIRECTIONS_PUBLIQUES } from '@/redirections';
 import { setupTestStore } from '@/test/test-utils';
 
 /**
- * Les anciennes adresses (`/parc`, `/chariot`) redirigent vers les nouvelles (D-075, #168).
+ * Les anciennes adresses (`/parc`, `/chariot`, `/idees`, `/nouveautes`) redirigent vers les
+ * nouvelles (D-075, #168 ; D-097, #210).
  *
  * Deux endroits les portent, et chacun a son garde :
  * - **`vercel.json`** — une visite directe sur l'ancienne adresse reçoit un `308`. Le
@@ -51,6 +52,13 @@ describe('vercel.json — les anciennes adresses redirigent', () => {
     expect(redirectionsPermanentes(config)).toMatchObject({ '/parc': '/collection', '/chariot': '/deck' });
   });
 
+  it('couvre /idees → /comite et /nouveautes → /feuille-de-route (D-097)', () => {
+    expect(redirectionsPermanentes(config)).toMatchObject({
+      '/idees': '/comite',
+      '/nouveautes': '/feuille-de-route'
+    });
+  });
+
   it('le contrôle mord : une config sans la redirection est refusée', () => {
     const sansChariot = { redirects: [{ source: '/parc', destination: '/collection', permanent: true }] };
     expect(redirectionsPermanentes(sansChariot)).not.toEqual(REDIRECTIONS);
@@ -89,8 +97,37 @@ describe('App — les anciennes adresses mènent aux nouvelles', () => {
     expect(screen.getByRole('button', { name: /Remplir/i })).toBeInTheDocument();
   });
 
+  it('/idees arrive sur /comite, et le mur du comité s’affiche (D-097)', () => {
+    visite('/idees');
+    expect(screen.getByTestId('adresse')).toHaveTextContent('/comite');
+    expect(screen.getByRole('heading', { level: 1, name: /comité/i })).toBeInTheDocument();
+  });
+
+  it('/nouveautes arrive sur /feuille-de-route (D-097)', () => {
+    visite('/nouveautes');
+    expect(screen.getByTestId('adresse')).toHaveTextContent('/feuille-de-route');
+    expect(screen.getByRole('heading', { level: 1, name: /nouveautés/i })).toBeInTheDocument();
+  });
+
   it('les nouvelles adresses ne bougent pas', () => {
     visite('/deck');
     expect(screen.getByTestId('adresse')).toHaveTextContent('/deck');
+  });
+
+  /**
+   * `/feuille-de-route` se lit **sans compte** (D-090, D-097 (3)) : sa redirection doit donc
+   * vivre **hors de la garde**, sinon un visiteur suivant un ancien lien atterrit sur
+   * `/connexion` au lieu de la page qu'il demandait. Le contrôle mord : déplacer
+   * `routesDeRedirection(true)` dans le `Layout` fait tomber l'ordre ci-dessous.
+   */
+  it('redirige /nouveautes hors de la garde des comptes', () => {
+    expect(REDIRECTIONS_PUBLIQUES).toContain('/nouveautes');
+    const app = readFileSync(join(process.cwd(), 'src/App.tsx'), 'utf8');
+    const publiques = app.indexOf('{routesDeRedirection(true)}');
+    const garde = app.indexOf('<Route element={<Layout />}>');
+    expect(publiques, 'aucune redirection publique dans src/App.tsx').toBeGreaterThanOrEqual(0);
+    expect(garde, 'la garde `<Route element={<Layout />}>` a disparu').toBeGreaterThanOrEqual(0);
+    // Avant la garde = hors de `Layout`, donc hors de `GardeComptes`.
+    expect(publiques).toBeLessThan(garde);
   });
 });
