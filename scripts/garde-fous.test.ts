@@ -50,7 +50,7 @@ const SCRIPT = join(racine, LANCER);
 // #188 : l'inspecteur du combat — une infobulle de lecture ne porte aucun bouton (le patron ARIA).
 // #192 : les effets de la scène — aucune animation de plus de 800 ms (SPEC-COMBAT-UI §6.8.3).
 // #211 : le suivi du comité — la raison d'un écarté s'affiche (D-059, D-097 (2)).
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 188, 192, 211];
+const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 188, 192, 211, 212];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {

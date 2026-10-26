@@ -6,6 +6,7 @@ import {
   chargerPostitsDuMur,
   commenterPostit,
   compterApres,
+  compterChosesAVoir,
   composerLignePostit,
   corrigerPostit,
   deplacerPostit,
@@ -102,6 +103,9 @@ interface Reponses {
   /** Le repère rendu par `marquer_comite_vu()` (0008), et l'erreur éventuelle (#211). */
   vu?: unknown;
   erreurVu?: string;
+  /** La ligne de `comptes` lue par le compteur du comité (#212) : `[{ vu_le }]`. */
+  repere?: unknown[];
+  erreurRepere?: string;
 }
 
 /** Tout ce qui part vers la base en écriture : la table, le geste, les valeurs, les filtres. */
@@ -134,6 +138,13 @@ function fauxClient(reponses: Reponses = {}) {
     },
   }));
 
+  /**
+   * Le repère du compte, côté « base » : `marquer_comite_vu()` l'avance **pour de vrai**,
+   * comme la fonction de 0008. Sans cela, aucun test ne pourrait vérifier que le compteur
+   * **relu** après l'ouverture du suivi rend bien 0 (#212).
+   */
+  let lignesRepere: unknown[] = reponses.repere ?? [];
+
   const rpc = vi.fn(async (nom: string, params?: Record<string, unknown>) => {
     appelsRpc.push({ nom, params });
     // Trois fonctions du mur, trois réponses : le tri et la correction (0006), la place
@@ -145,6 +156,9 @@ function fauxClient(reponses: Reponses = {}) {
       };
     }
     if (nom === 'marquer_comite_vu') {
+      if (reponses.vu !== undefined && reponses.erreurVu === undefined) {
+        lignesRepere = [{ vu_le: reponses.vu }];
+      }
       return {
         data: reponses.vu ?? null,
         error: reponses.erreurVu ? { message: reponses.erreurVu } : null,
@@ -169,6 +183,13 @@ function fauxClient(reponses: Reponses = {}) {
           filtres.push([colonne, valeur]);
           return requete;
         },
+        // Le filtre `in` sert au compteur du comité (#212) : les commentaires de **tous**
+        // mes post-its en une requête. On le garde lisible dans les filtres (`postit_id in`)
+        // pour que le test puisse vérifier qu'il n'y a **pas** une lecture par post-it.
+        in: (colonne, valeurs) => {
+          filtres.push([`${colonne} in`, valeurs.join(',')]);
+          return requete;
+        },
         insert: (ligne) => {
           insertions.push({ table, ligne });
           ecriture = { table, geste: 'insert', valeurs: ligne, filtres };
@@ -187,7 +208,14 @@ function fauxClient(reponses: Reponses = {}) {
         },
         then: (onfulfilled, onrejected) => {
           let reponse: ReponseMur<unknown>;
-          if (table === 'commentaires') {
+          if (table === 'comptes') {
+            // Le compteur du comité lit son repère (#212) ; `marquer_comite_vu()` l'avance.
+            lectures.push({ table, filtres });
+            reponse = {
+              data: lignesRepere,
+              error: reponses.erreurRepere ? { message: reponses.erreurRepere } : null,
+            };
+          } else if (table === 'commentaires') {
             lectures.push({ table, filtres });
             reponse = ecriture
               ? {
@@ -244,6 +272,9 @@ function fauxClient(reponses: Reponses = {}) {
                     : null,
             };
           } else {
+            // La vue `postits_avec_votes` (et tout schéma inconnu) : une **lecture** se note,
+            // c'est ce qui permet au test du compteur de compter les requêtes (#212).
+            lectures.push({ table, filtres });
             reponse = {
               data: reponses.lignes ?? [],
               error: reponses.erreurLecture ? { message: reponses.erreurLecture } : null,
@@ -633,7 +664,11 @@ describe('les pouces : lecture de mon vote et écriture du vote (#137)', () => {
   it('ne lit que MES votes : la lecture est filtrée sur mon identité', async () => {
     const faux = fauxClient({ lignes: [LIGNE] });
     await chargerPostitsDuMur(async () => faux.client);
-    expect(faux.lectures).toEqual([{ table: 'votes', filtres: [['votant', 'appareil-A']] }]);
+    // La vue entière, puis **mes** votes — deux lectures, et le filtre est sur mon identité.
+    expect(faux.lectures).toEqual([
+      { table: 'postits_avec_votes', filtres: [] },
+      { table: 'votes', filtres: [['votant', 'appareil-A']] }
+    ]);
     // Aucune écriture à la lecture.
     expect(faux.ecritures).toHaveLength(0);
   });
@@ -1037,6 +1072,112 @@ describe('le repère du suivi, posé par la fonction (0008, #211, D-097 (5))', (
     });
     await expect(marquerComiteVu({ chargerClient: async () => faux.client })).rejects.toThrow(
       /un compte/,
+    );
+  });
+});
+
+/**
+ * Le compteur « choses à voir » (#212, D-097 (5)).
+ *
+ * Ce qu'il compte, et **rien d'autre** : (1) **mes** post-its dont le **statut** a bougé
+ * depuis `vu_le` — la date que le déclencheur de 0008 pose sur le seul statut ; (2) les
+ * **commentaires des autres** arrivés sur **mes** post-its. Ces tests gardent les trois
+ * façons de se tromper : compter ce qui ne me concerne pas, crier pour du passé, et relire
+ * le mur post-it par post-it (le N+1 que #212 interdit).
+ */
+describe('le compteur « choses à voir » du comité (#212, D-097 (5))', () => {
+  const REPERE = '2026-10-26T10:00:00.000Z';
+
+  /** Ce que la vue rend pour **mes** post-its : `id` et `updated_at`, rien de plus. */
+  const MIENS = [
+    { id: 'p-mien-1', updated_at: '2026-10-26T11:00:00.000Z' }, // le statut a bougé
+    { id: 'p-mien-2', updated_at: '2026-10-25T09:00:00.000Z' }, // rien depuis le repère
+    { id: 'p-mien-3', updated_at: '2026-10-26T12:00:00.000Z' } // le statut a bougé
+  ];
+
+  const COMMENTAIRES = [
+    // Un autre, après le repère : compte.
+    { postit_id: 'p-mien-1', auteur: 'autre', created_at: '2026-10-26T11:30:00.000Z' },
+    // Le mien, après le repère : ne compte jamais (D-097 (5)).
+    { postit_id: 'p-mien-2', auteur: 'appareil-A', created_at: '2026-10-26T11:45:00.000Z' },
+    // Un autre, mais avant le repère : du passé, il ne réveille personne.
+    { postit_id: 'p-mien-3', auteur: 'autre', created_at: '2026-10-25T08:00:00.000Z' }
+  ];
+
+  it('sans base configurée, ne contacte rien et rend null (repli inerte)', async () => {
+    const charger = vi.fn(async () => null);
+    await expect(compterChosesAVoir({ chargerClient: charger })).resolves.toBeNull();
+    expect(charger).toHaveBeenCalledTimes(1);
+  });
+
+  it('compte mes statuts bougés et les commentaires des autres — 3, pas 5', async () => {
+    const faux = fauxClient({
+      repere: [{ vu_le: REPERE }],
+      lignes: MIENS,
+      commentaires: COMMENTAIRES
+    });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(3);
+  });
+
+  it('ne lit que ce qui me concerne, et les commentaires en **une** requête (pas de N+1)', async () => {
+    const faux = fauxClient({
+      repere: [{ vu_le: REPERE }],
+      lignes: MIENS,
+      commentaires: []
+    });
+    await compterChosesAVoir({ chargerClient: async () => faux.client });
+
+    // Le filtre d'auteur est **côté base** : la lecture ne remonte que mes post-its.
+    expect(faux.lectures.find((l) => l.table === 'postits_avec_votes')?.filtres).toEqual([
+      ['auteur', 'appareil-A']
+    ]);
+    // Trois post-its, **une** lecture de commentaires : le `in` porte tous les ids d'un coup.
+    const commentaires = faux.lectures.filter((l) => l.table === 'commentaires');
+    expect(commentaires).toHaveLength(1);
+    expect(commentaires[0].filtres).toEqual([
+      ['postit_id in', 'p-mien-1,p-mien-2,p-mien-3']
+    ]);
+  });
+
+  it('rend 0 quand rien n’a bougé depuis le repère', async () => {
+    const faux = fauxClient({
+      repere: [{ vu_le: '2026-10-26T23:00:00.000Z' }],
+      lignes: MIENS,
+      commentaires: COMMENTAIRES
+    });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(0);
+  });
+
+  it('sans repère lisible, ne crie pas : 0 (le repère se pose à l’ouverture du suivi)', async () => {
+    const faux = fauxClient({ repere: [], lignes: MIENS, commentaires: COMMENTAIRES });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(0);
+  });
+
+  it('aucun post-it à moi : le compteur rend 0 sans lire les commentaires', async () => {
+    const faux = fauxClient({ repere: [{ vu_le: REPERE }], lignes: [], commentaires: COMMENTAIRES });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(0);
+    expect(faux.lectures.filter((l) => l.table === 'commentaires')).toHaveLength(0);
+  });
+
+  it('le compteur relu après l’ouverture du suivi rend 0 (`marquerComiteVu`, #211)', async () => {
+    const faux = fauxClient({
+      repere: [{ vu_le: REPERE }],
+      lignes: MIENS,
+      commentaires: COMMENTAIRES,
+      // Le repère que `marquer_comite_vu()` rend, et que la « base » du faux pose ensuite.
+      vu: '2026-10-26T13:00:00.000Z'
+    });
+
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(3);
+    // Ouvrir **Le suivi** pose le repère — le geste existe déjà (#211) et n'est fait qu'une fois.
+    await marquerComiteVu({ chargerClient: async () => faux.client });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(0);
+  });
+
+  it('lève quand la base refuse le repère : la pastille n’invente pas un zéro', async () => {
+    const faux = fauxClient({ erreurRepere: 'TypeError: Failed to fetch' });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).rejects.toThrow(
+      /repère du comité impossible/
     );
   });
 });

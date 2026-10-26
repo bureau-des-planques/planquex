@@ -1015,3 +1015,125 @@ export async function marquerComiteVu(
   if (error) throw new Error(messageDeRepere(error.message));
   return typeof data === 'string' && data ? data : null;
 }
+
+// ---------------------------------------------------------------------------------------------
+// Le compteur « choses à voir » (#212, D-097 (5))
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Une date de la base est-elle **postérieure** au repère ? `false` dès que l'une des deux
+ * est illisible : un compteur ne crie pas pour une date qu'il ne sait pas lire. Les deux
+ * viennent de PostgreSQL en ISO 8601 ; `Date.parse` accepte `Z` comme `+00:00`.
+ */
+export function estApresLeRepere(date: unknown, repere: unknown): boolean {
+  if (typeof date !== 'string' || typeof repere !== 'string') return false;
+  const quand = Date.parse(date);
+  const depuis = Date.parse(repere);
+  return Number.isFinite(quand) && Number.isFinite(depuis) && quand > depuis;
+}
+
+/**
+ * **Mes** post-its dont le **statut** a bougé depuis le repère, et leurs ids — les ids
+ * servent à lire leurs commentaires en une seule requête.
+ *
+ * `updated_at` n'est posé que par le déclencheur du statut (0008) : corriger son texte ou
+ * ranger son post-it ne réveille donc pas le compteur, ce qui est la règle de D-097 (5).
+ */
+export function lireMouvements(
+  lignes: unknown,
+  repere: string | null,
+): { ids: string[]; mouvements: number } {
+  const ids: string[] = [];
+  let mouvements = 0;
+  if (!Array.isArray(lignes) || repere === null) return { ids, mouvements };
+
+  for (const ligne of lignes) {
+    if (!estObjet(ligne) || typeof ligne.id !== 'string' || !ligne.id) continue;
+    ids.push(ligne.id);
+    if (estApresLeRepere(ligne.updated_at, repere)) mouvements += 1;
+  }
+  return { ids, mouvements };
+}
+
+/**
+ * Les **commentaires des autres** arrivés sur mes post-its depuis le repère. Le mien ne
+ * compte pas : répondre à son propre post-it n'apprend rien de neuf (D-097 (5)) — c'est la
+ * règle que `npm run garde-fous` fait mordre (#212), et une pastille qui ne retombe jamais
+ * quand on se relit serait du bruit, pas un signal.
+ */
+export function compterCommentairesDesAutres(
+  lignes: unknown,
+  repere: string | null,
+  identite: string,
+): number {
+  if (!Array.isArray(lignes) || repere === null) return 0;
+  let nombre = 0;
+  for (const ligne of lignes) {
+    if (!estObjet(ligne)) continue;
+    if (ligne.auteur === identite) continue;
+    if (estApresLeRepere(ligne.created_at, repere)) nombre += 1;
+  }
+  return nombre;
+}
+
+/**
+ * Le nombre de « choses à voir » du comité depuis mon repère `vu_le` (D-097 (5), #212) :
+ * **mes** post-its dont le statut a changé, et les **commentaires des autres** sur eux.
+ *
+ * Rend **`null` sans base configurée** — le repli inerte de `marquerComiteVu` : l'alpha
+ * fonctionne sans backend (D-058), et il n'y a alors aucune alerte à porter. Une base
+ * configurée qui échoue **lève** : l'appelant décide de ne rien afficher, mais il le sait.
+ *
+ * **Trois lectures, et jamais une par post-it** (le N+1 que #212 interdit) :
+ *
+ * 1. mon repère — `comptes.vu_le`, ma seule ligne étant lisible (0005) ;
+ * 2. **mes** post-its — la vue `postits_avec_votes`, filtrée par `auteur` côté base ;
+ * 3. les commentaires de **tous** mes post-its — un `in` sur leurs ids, filtré en mémoire
+ *    par la date et par l'auteur (le repère est une donnée de mon compte, pas de la table
+ *    lue : il n'y a pas de colonne à comparer dans la requête).
+ *
+ * Sans repère lisible, le compte est **0** : le repère se pose à l'ouverture du suivi
+ * (`marquerComiteVu`), et un compteur ne crie pas pour une donnée qu'il n'a pas lue.
+ */
+export async function compterChosesAVoir(
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+): Promise<number | null> {
+  const chargerClient = options.chargerClient ?? clientMur;
+  const client = await chargerClient();
+  if (!client) return null;
+
+  const identite = await identiteAppareil(chargerClient);
+  if (!identite) throw new Error('Aucune session : la base refuse de compter le comité.');
+
+  const { data: comptes, error: erreurRepere } = await client
+    .from('comptes')
+    .select('vu_le')
+    .eq('id', identite);
+  if (erreurRepere) {
+    throw new Error(`Lecture du repère du comité impossible : ${erreurRepere.message}`);
+  }
+  const mienne = Array.isArray(comptes) ? comptes[0] : comptes;
+  const repere = estObjet(mienne) && typeof mienne.vu_le === 'string' ? mienne.vu_le : null;
+  if (repere === null) return 0;
+
+  const { data: miens, error: erreurPostits } = await client
+    .from('postits_avec_votes')
+    .select('id, updated_at')
+    .eq('auteur', identite);
+  if (erreurPostits) {
+    throw new Error(`Lecture de mes post-its impossible : ${erreurPostits.message}`);
+  }
+
+  const { ids, mouvements } = lireMouvements(miens ?? [], repere);
+  if (ids.length === 0) return mouvements;
+
+  const { data: commentaires, error: erreurCommentaires } = await client
+    .from('commentaires')
+    .select('postit_id, auteur, created_at')
+    .in('postit_id', ids);
+  if (erreurCommentaires) {
+    throw new Error(`Lecture des commentaires de mes post-its impossible : ${erreurCommentaires.message}`);
+  }
+
+  return mouvements + compterCommentairesDesAutres(commentaires ?? [], repere, identite);
+}
