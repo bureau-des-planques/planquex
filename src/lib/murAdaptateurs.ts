@@ -501,7 +501,18 @@ export function adaptateurMemoire(postits: readonly Postit[] = [], options: Opti
 export async function resoudreAdaptateur(
   chargerClient: () => Promise<ClientMur | null> = clientMur
 ): Promise<{ adaptateur: AdaptateurMur; base: boolean }> {
-  const client = await chargerClient();
+  // **Un client qui ne se charge pas n'est pas un plantage de l'écran** : `configurerMur`
+  // lève sur une configuration à moitié posée, et l'import dynamique du SDK peut échouer.
+  // Sans ce `catch`, l'erreur remontait jusqu'à la page — c'est le seul chemin par lequel
+  // le port pouvait encore faire lever un appelant, et la relecture du 26/10/2026 l'a
+  // trouvé. On retombe sur le fichier, comme quand la base n'est pas configurée : le mur
+  // reste lisible, et c'est la promesse de l'en-tête de `mur.ts`.
+  let client: ClientMur | null = null;
+  try {
+    client = await chargerClient();
+  } catch {
+    client = null;
+  }
   if (!client) return { adaptateur: adaptateurFichier(), base: false };
   return { adaptateur: adaptateurBase(client, chargerClient), base: true };
 }

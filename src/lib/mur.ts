@@ -570,7 +570,7 @@ export function creerMur(adaptateur: AdaptateurMur, options: OptionsPortMur = {}
           };
         } catch (erreurDeSecours) {
           return refuse(
-            `${panne} Le mur de secours (${secours.source}) est illisible lui aussi : ${messageDErreur(erreurDeSecours)}`
+            `${panne.replace(/\.?$/, '.')} Le mur de secours (${secours.source}) est illisible lui aussi : ${messageDErreur(erreurDeSecours)}`
           );
         }
       }
