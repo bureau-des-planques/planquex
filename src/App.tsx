@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { Home } from '@/pages/Home';
@@ -16,20 +16,6 @@ import { Introuvable } from '@/pages/Introuvable';
 import { REDIRECTIONS } from '@/redirections';
 import { useComptes } from '@/store/comptes';
 import { useMouvementReduitGlobal } from '@/components/use-mouvement-reduit';
-
-/**
- * **Le prototype d'animations** (jetable, skill `prototype`) : une route de développement,
- * `/prototype/animations`, qui **n'existe pas** hors de `DEV` et **ne part pas dans le build**
- * — chargement paresseux, et la condition est constante au build, donc Vite écarte le module.
- * Ce n'est pas une page de l'application : `scripts/capturer.mjs` n'a pas à la photographier,
- * et la route est déclarée hors du littéral que lit `scripts/capturer.test.ts`.
- */
-const ROUTE_PROTOTYPE = { chemin: 'prototype/animations' } as const;
-const PrototypeAnimations = import.meta.env.DEV
-  ? lazy(() =>
-      import('@/prototype/PrototypeAnimations').then((m) => ({ default: m.PrototypeAnimations }))
-    )
-  : null;
 
 export function App() {
   // La session persistée est relue **une fois** au démarrage (D-088). Sans backend,
@@ -54,16 +40,6 @@ export function App() {
       {/* Les nouveautés aussi : un testeur doit pouvoir lire ce qu'une version apporte
           **avant** de s'inscrire. Même raison, même place, hors de la garde. */}
       <Route path="nouveautes" element={<Nouveautes />} />
-      {PrototypeAnimations && (
-        <Route
-          path={ROUTE_PROTOTYPE.chemin}
-          element={
-            <Suspense fallback={null}>
-              <PrototypeAnimations />
-            </Suspense>
-          }
-        />
-      )}
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="collection" element={<Collection />} />
