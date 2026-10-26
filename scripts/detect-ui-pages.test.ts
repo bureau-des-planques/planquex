@@ -19,17 +19,65 @@ import { resolve } from 'node:path';
  */
 const root = resolve(import.meta.dirname, '..');
 
-function plan(): { ecrans: string[]; port: number; seuil: number; baseline: Record<string, number | null> } {
+/**
+ * Les écrans que le ticket **#234** exige : publics, et de compte. Le contrôle peut en
+ * mesurer d'autres, il ne peut pas en **perdre** un en silence — c'est le cliquet de
+ * couverture, distinct de celui des comptes.
+ */
+const ECRANS_EXIGES = [
+  '/',
+  '/collection',
+  '/deck',
+  '/battle',
+  '/settings',
+  '/comite',
+  '/comite/suivi',
+  '/feuille-de-route',
+  '/connexion',
+  '/attente',
+  '/confidentialite',
+  '/administration'
+];
+
+interface Plan {
+  ecrans: string[];
+  port: number;
+  seuil: number;
+  baseline: Record<string, number | null>;
+  sansPlafond: string[];
+}
+
+function plan(): Plan {
   const sortie = execFileSync(process.execPath, ['scripts/detect-ui-pages.mjs', '--plan'], {
     cwd: root,
     encoding: 'utf8'
   });
-  return JSON.parse(sortie) as {
-    ecrans: string[];
-    port: number;
-    seuil: number;
-    baseline: Record<string, number | null>;
-  };
+  return JSON.parse(sortie) as Plan;
+}
+
+/**
+ * La sonde du **contrôle des plafonds** (#234) : joue la règle sur un plan fourni, sans
+ * navigateur. C'est ce qui permet au test de **mordre** avec un écran fautif, au lieu de
+ * relire une chaîne du source.
+ */
+function sondePlan(
+  ecrans: string[],
+  baseline: Record<string, number | null>
+): { sansPlafond: string[]; echec: boolean } {
+  try {
+    const sortie = execFileSync(
+      process.execPath,
+      ['scripts/detect-ui-pages.mjs', '--controle-plan', JSON.stringify({ ecrans, baseline })],
+      { cwd: root, encoding: 'utf8' }
+    );
+    return JSON.parse(sortie) as { sansPlafond: string[]; echec: boolean };
+  } catch (erreur) {
+    // La sonde sort 1 quand elle refuse : la sortie reste sur `stdout`.
+    return JSON.parse((erreur as { stdout?: string }).stdout ?? '{}') as {
+      sansPlafond: string[];
+      echec: boolean;
+    };
+  }
 }
 
 function sonde(
@@ -55,21 +103,51 @@ function constat(antipattern: string, advisory = false): Record<string, unknown>
   return advisory ? { antipattern, severity: 'advisory', advisory: true } : { antipattern, severity: 'warning' };
 }
 
-describe('le contrôle visuel en CI (#205, #208)', () => {
-  it('contrôle les cinq écrans qui existent, sur un port qui n’est pas celui des captures', () => {
+describe('le contrôle visuel en CI (#205, #208, #234)', () => {
+  it('contrôle les écrans publics et de compte, sur un port qui n’est pas celui des captures', () => {
     const { ecrans, port, seuil } = plan();
+    // Chaque écran nommé par #234 est mesuré : une page qu'un invité voit sans être
+    // regardée par le détecteur est une régression visuelle qui passe au vert.
+    for (const ecran of ECRANS_EXIGES) expect(ecrans, ecran).toContain(ecran);
     // `/settings` est la route réelle : `/reglages` rendait l'écran 404 (#208).
-    expect(ecrans).toEqual(['/', '/collection', '/deck', '/battle', '/settings']);
+    expect(ecrans).toContain('/settings');
     expect(port).not.toBe(4180);
     expect(seuil).toBe(0);
   });
 
-  it('ne gèle plus aucun écran derrière un `null`, et ne tolère plus rien (#208)', () => {
-    const { baseline } = plan();
-    // Le cliquet est arrivé à **zéro** le 26/10/2026 : les 32 + 11 + 1 comptes ont été corrigés
-    // un par un, chacun dans son commit. Un seul anti-pattern fait désormais tomber le contrôle.
-    expect(baseline).toEqual({ '/': 0, '/collection': 0, '/deck': 0, '/battle': 0, '/settings': 0 });
-    expect(Object.values(baseline).every((plafond) => plafond === 0)).toBe(true);
+  it('donne un plafond **mesuré** à chaque écran, et jamais `null` (#208)', () => {
+    const { ecrans, baseline, sansPlafond } = plan();
+    // Un écran mesuré sans plafond est refusé plus bas ; ici, aucun n'est dans ce cas.
+    expect(sansPlafond).toEqual([]);
+    for (const ecran of ecrans) expect(typeof baseline[ecran], ecran).toBe('number');
+  });
+
+  it('refuse un écran sans plafond : le contrôle mord (#234)', () => {
+    const { ecrans, baseline } = plan();
+    // Le cas fautif : un écran ajouté à la mesure sans son compte.
+    const fautif = sondePlan([...ecrans, '/ecran-sans-plafond'], baseline);
+    expect(fautif.echec).toBe(true);
+    expect(fautif.sansPlafond).toEqual(['/ecran-sans-plafond']);
+    // Et un plafond `null` n'est pas un plafond : c'est le défaut corrigé par #208.
+    expect(sondePlan(['/a'], { '/a': null }).echec).toBe(true);
+    // Un plan complet passe : la sonde ne refuse pas tout.
+    expect(sondePlan(['/a'], { '/a': 0 }).echec).toBe(false);
+  });
+
+  it('exige une capture pour chaque écran mesuré (AGENTS.md §6, D-060)', () => {
+    // `npm run capturer` photographie des routes : un écran mesuré mais jamais photographié
+    // n'est pas *regardé*, et D-060 demande justement qu'on regarde les captures.
+    const photos = JSON.parse(
+      execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+        cwd: root,
+        encoding: 'utf8',
+        // Vitest exporte `BASE_URL` (Vite aussi) : le script des captures exige une URL
+        // absolue et refuse `/`. On lui donne la sienne, sans démarrer de serveur.
+        env: { ...process.env, BASE_URL: 'http://localhost:4180' }
+      })
+    ) as { captures: { route: string }[] };
+    const routes = new Set(photos.captures.map((capture) => capture.route));
+    for (const ecran of plan().ecrans) expect(routes.has(ecran), ecran).toBe(true);
   });
 
   it('lit une page propre : un tableau vide est un résultat, pas un silence', () => {

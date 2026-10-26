@@ -72,6 +72,24 @@ describe('.github/workflows/ci.yml', () => {
     expect(bloc).toMatch(/exit 1/);
   });
 
+  it('contrôle les écrans dans un navigateur, après le build et sans saut possible (#234)', () => {
+    // Le contrôle visuel en navigateur (#205) est branché depuis #234. Cette assertion
+    // garde ce qui se casse en silence : **retirer l'étape** rendrait la CI verte alors
+    // qu'aucun écran ne serait mesuré. `detect:ui` (regex sur les sources) la remplacerait
+    // en apparence — il sous-compte, et c'est précisément pour ça que #205 existe.
+    const debut = workflow.indexOf('Contrôler les écrans dans un navigateur');
+    expect(debut, 'étape « contrôle visuel en navigateur » absente').toBeGreaterThanOrEqual(0);
+    const bloc = workflow.slice(debut);
+    expect(bloc).toContain('npm run detect:ui:page');
+    // Il lui faut un navigateur, et l'étape le nomme (Chromium de l'image du runner).
+    expect(bloc).toContain('IMPECCABLE_BROWSER');
+    // Pas de saut : sans navigateur, elle échoue explicitement.
+    expect(bloc).not.toMatch(/^\s*if:/m);
+    expect(bloc).toMatch(/exit 1/);
+    // Elle lit `dist/` : le build doit avoir tourné avant.
+    expect(workflow.indexOf('run: npm run build')).toBeLessThan(debut);
+  });
+
   it('échoue si une étape échoue et n’exige aucun secret', () => {
     // Pas de `continue-on-error` : l'échec d'une étape fait échouer le job.
     expect(workflow).not.toMatch(/continue-on-error/);
