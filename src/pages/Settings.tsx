@@ -220,10 +220,10 @@ export function Settings() {
             caractères (`impeccable`, line-length, #208) — illisible et hors du gabarit de
             lecture des autres textes de l'écran. */}
         <p className="muted max-w-[64ch]">
-          Les parties solo terminées sont gardées sous ton compte — la graine, les deux
-          Decks, les types de café et le journal des coups — pour voir comment le jeu se joue
-          et l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé ; seul ton identifiant
-          de compte relie la trace à toi (D-086, D-088).
+          Les parties terminées sont gardées sous ton compte, solo comme à deux — la graine,
+          les deux Decks, les types de café et le journal des coups — pour voir comment le jeu
+          se joue et l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé ; seul ton
+          identifiant de compte relie la trace à toi (D-086, D-088, D-105).
         </p>
       </section>
 
@@ -251,7 +251,7 @@ export function Settings() {
         <h2>Confidentialité</h2>
         <p className="muted">
           Ce que le jeu garde de toi — un compte, ce que tu écris sur le mur, et le
-          déroulé de tes parties solo : <Link to="/confidentialite">la page de confidentialité</Link>.
+          déroulé de tes parties : <Link to="/confidentialite">la page de confidentialité</Link>.
         </p>
       </section>
 

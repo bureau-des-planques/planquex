@@ -1010,12 +1010,13 @@ export function Battle() {
   }, [state, match, decksSolo, enregistrerPartie]);
 
   /**
-   * **La trace du combat** (#173, D-086) : une partie **solo terminée** part en arrière-plan,
-   * une seule fois. Sans configuration, rien ne part ; un échec réseau ne touche pas l'écran
-   * — la partie n'a jamais été perdue, elle vit dans le store (`partieSauvegardee` ci-dessus).
+   * **La trace du combat** (#173, D-086 ; #228, D-105) : une partie **terminée** part en
+   * arrière-plan, une seule fois — solo comme à deux, le mode de la ligne le dit. Sans
+   * configuration, rien ne part ; un échec réseau ne touche pas l'écran — la partie n'a
+   * jamais été perdue, elle vit dans le store (`partieSauvegardee` ci-dessus).
    *
    * La clé évite un second envoi : la fin d'une partie peut re-rendre l'écran (choix, relève),
-   * et la même trace ne se dépose qu'une fois. Un combat à deux n'est pas envoyé (beta).
+   * et la même trace ne se dépose qu'une fois.
    */
   const tracesEnvoyees = useRef<Set<string>>(new Set());
   useEffect(() => {

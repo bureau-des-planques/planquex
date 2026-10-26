@@ -17,6 +17,7 @@ s'appuyer dessus.
 | `supabase/migrations/0009_commentaires_dates.sql` | les dates du comité posées par le serveur (#238) : `commentaires.created_at` et `postits.updated_at` sont **réécrits** à `now()` par un déclencheur `before insert` — une date fournie par le client, future ou passée, ne garde plus la pastille allumée ni ne la cache |
 | `supabase/migrations/0010_dates_figees.sql` | les dates du comité figées à l'écriture (#244) : un déclencheur `before update` rétablit `created_at` à sa valeur d'origine sur `commentaires` et `postits` — l'auteur qui redate son commentaire n'obtient pas la date ; la correction du texte passe toujours |
 | `supabase/migrations/0011_anon_hors_fonctions.sql` | le rôle `anon` n'exécute plus aucune fonction `security definer` de `public` (#247) : les valeurs par défaut de Supabase lui accordent `execute`, et le refus ne reposait que sur `auth.uid()` nul. `authenticated` garde ses droits |
+| `supabase/migrations/0012_combats_pvp.sql` | la trace des parties à deux (#228, D-105) : `combats.mode` admet `'pvp'` à côté de `'solo'` — pas de colonne, pas de politique, pas de droit nouveau |
 | `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
 | `supabase/comptes.test.ts` | la garde des comptes : en attente refusé, approuvé accepté, non-administrateur sans pouvoir, pas d'auto-approbation, drapeau protégé — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/place.test.ts` | la garde de la place et du retrait : l'auteur range le sien, l'administrateur range et retire tout, un compte en attente rien — et chaque contrôle neutralisé laisse passer le fautif |
@@ -372,12 +373,21 @@ et `comptes.test.ts` :
 Pourquoi muter la **condition** et non **supprimer** la politique : une politique supprimée est
 *default-deny* en RLS, donc le scénario passerait et ne prouverait rien (mesuré le 21/10/2026).
 
-## 7. La trace des combats (#173, D-086)
+## 7. La trace des combats (#173, D-086 ; #228, D-105)
 
-À la fin d'une partie **solo** terminée, le jeu dépose en arrière-plan de quoi la **rejouer** :
-la graine, les deux Decks, les types de café et le journal d'actions. **Rien d'autre** — ni le
-pseudo de Réglages, ni un texte libre, ni un identifiant d'appareil : `auteur` est `auth.uid()`,
-le compte connecté (D-088 ; D-059 pour les traces d'avant). Le PvP n'est **pas** gardé (beta).
+À la fin d'une partie **terminée** — solo ou à deux —, le jeu dépose en arrière-plan de quoi la
+**rejouer** : la graine, les deux Decks, les types de café et le journal d'actions. **Rien
+d'autre** — ni le pseudo de Réglages, ni un texte libre, ni un identifiant d'appareil : `auteur`
+est `auth.uid()`, le compte connecté (D-088 ; D-059 pour les traces d'avant). Le mode est la
+seule différence entre les deux : `'solo'`, ou `'pvp'` (D-105). Un relecteur qui rejoue une
+trace doit passer `{ deuxCamps: true }` à `replayBattle` quand le `mode` vaut `'pvp'` : l'option
+vit dans l'état, et l'oublier compare deux parties différentes (`combats.test.ts` le montre en
+la retirant).
+
+Une partie à deux est jouée sur **deux appareils** : chacun dépose sa trace à la fin, et les
+deux lignes sont distinctes (`auteur` diffère). Le **siège** tenu par chacun n'est pas une
+colonne (D-105 ne demande pas de champ de plus) : deux lignes d'une même partie se
+reconnaissent à leur graine et à leur journal, pas à qui ouvrait le camp `player`.
 
 `src/store/combats.ts` construit la ligne (`combatTermine`, `ligneDe`) et l'envoie
 (`tracerCombat`) ; `Battle.tsx` l'appelle une fois, à la fin. **L'échec réseau ne bloque
@@ -391,7 +401,7 @@ cocher (D-086).
 |---|---|
 | `id` | `bigint identity` — le client ne choisit pas l'identité de sa ligne |
 | `auteur` | `uuid`, défaut `auth.uid()` ; pas de FK vers `auth.users` (une trace survit à la purge d'une identité) |
-| `mode` | `check (mode = 'solo')` — le PvP attend la beta, une migration élargira la contrainte |
+| `mode` | `check (mode in ('solo', 'pvp'))` — la partie à deux se trace comme la solo dans la même table (0012, D-105, #228) |
 | `graine` | `bigint >= 0` (`BattleState.seed`) |
 | `decks` | `jsonb` : `playerDeck` et `aiDeck` sont des tableaux |
 | `types_cafe` | `jsonb` : `playerCafeTypes` et `aiCafeTypes` sont des tableaux |
@@ -408,6 +418,12 @@ politique `update` / `delete` : une trace est un **ajout**, elle ne se réécrit
 4 554), soit une ligne PostgreSQL de **1 819 octets** en moyenne (médiane 1 872 ; 1 344 à
 2 008) — `jsonb` range les clés répétées une fois. Vingt combats tiennent donc en ~68 ko de
 JSON, et un millier de combats en ~3,4 Mo.
+
+**Ce chiffre-là et celui de `combats.test.ts` ne mesurent pas la même chose** : les 3 409 o
+viennent de 20 parties **simulées** par le simulateur headless, qui jouent jusqu'au bout ; le
+test, lui, joue **douze actions** puis termine au forfait, pour rester rapide. Sa mesure —
+1 583 o en solo, **1 580 o à deux** (#228) — sert donc de **comparaison**, pas de référence :
+elle dit qu'ajouter le `mode` et les camps du journal ne change pas le coût d'une trace.
 
 ### Appliquer 0002
 
@@ -477,6 +493,9 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
 - **appliquer la migration 0011** (§6, `anon` retiré des fonctions `security definer`, #247) —
   **faite le 26/10/2026** (session infra) : `has_function_privilege('anon', 'public.marquer_comite_vu()', 'execute')`
   renvoie `false` ;
+- **appliquer la migration 0012** (§7, la trace des parties à deux, #228/D-105) — **faite le
+  26/10/2026** (session infra) : `combats_mode_check` vaut `mode in ('solo', 'pvp')`, et la
+  trace à deux se dépose comme la solo ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
 - **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
   l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;

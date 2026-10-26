@@ -12,8 +12,8 @@
  * 2. il ne peut pas **signer au nom d'un autre** (`auteur = auth.uid()`) ;
  * 3. `anon` (appareil non identifié) n'a **rien** : ni lecture, ni écriture ;
  * 4. une trace ne se **réécrit** pas — ni par un autre appareil, ni par le sien ;
- * 5. les contraintes tiennent : `mode = 'solo'`, graine positive, Decks et journal en JSON
- *    de la bonne forme ;
+ * 5. les contraintes tiennent : `mode` vaut `solo` ou `pvp` (D-105), et rien d'autre ;
+ *    graine positive, Decks et journal en JSON de la bonne forme ;
  * 6. **le contrôle mord** : rejoué contre une migration **mutée** (conditions des politiques
  *    remplacées par `true`), le scénario doit **constater la fuite**. Une garde qui passerait
  *    quoi qu'il arrive ne garderait rien.
@@ -177,7 +177,17 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
     }
   });
 
-  it('les contraintes tiennent : solo seulement, graine positive, Decks et journal de la bonne forme', async () => {
+  it('les contraintes tiennent : solo et pvp seulement, graine positive, Decks et journal de la bonne forme', async () => {
+    // Une partie à deux se dépose comme une solo (D-105, #228) : le mode est accepté…
+    await avecAppareil(db, APPAREIL_A, () =>
+      db.query(
+        `insert into public.combats (mode, graine, decks, types_cafe, journal)
+         values ('pvp', 1, $1::jsonb, $2::jsonb, $3::jsonb)`,
+        [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)],
+      ),
+    );
+
+    // …et un mode inventé reste refusé (la liste des modes est explicite).
     await expect(
       avecAppareil(db, APPAREIL_A, () =>
         db.query(

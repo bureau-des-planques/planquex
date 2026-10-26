@@ -10,6 +10,7 @@ import {
   type DependancesEnvoi
 } from '@/store/combats';
 import type { Decks } from '@/store/partie';
+import { campToAct, createMatch } from '@/store/pvp';
 import type { Match } from '@/store/pvp';
 
 /**
@@ -45,6 +46,34 @@ function combatSolo(seed = 42): { state: BattleState; decks: Decks } {
   return { state, decks };
 }
 
+/**
+ * Un combat **à deux** qui a réellement agi, puis se termine au forfait du camp qui a la
+ * main : c'est la trace de #228 (D-105), et le journal nomme les camps (« le camp Toi »).
+ */
+function combatPvp(seed = 7): { state: BattleState; match: Match } {
+  const { state: depart, match } = createMatch(
+    factionDeck('SSE'),
+    factionDeck('MANAGEMENT'),
+    seed
+  );
+  let state = depart;
+  for (let i = 0; i < 12; i += 1) {
+    const action = legalActions(state).find((candidate) => candidate.type !== 'forfeit');
+    if (!action) break;
+    state = applyAction(state, action);
+  }
+  state = applyAction(state, { type: 'forfeit', who: campToAct(state) });
+  expect(state.phase).toBe('ended');
+  expect(state.actionLog.length).toBeGreaterThan(0);
+  return { state, match };
+}
+
+/**
+ * Ce qu'on passe en `decksSolo` quand la partie est à deux : **jamais lu** (les Decks sont
+ * ceux du `Match`), et nommé pour que l'appel ne mente pas sur ce qu'il transmet.
+ */
+const DECKS_JAMAIS_LUS: Decks = { playerDeck: [], aiDeck: [] };
+
 /** Les dépendances d'un envoi de test : une configuration, une écriture espionnée. */
 function dependances(ecrire: DependancesEnvoi['ecrire']): DependancesEnvoi {
   return {
@@ -76,10 +105,25 @@ describe('combatTermine — ce qui est gardé, et rien d’autre (#173, D-086)',
     expect(combatTermine(enCours, null, decks)).toBeNull();
   });
 
-  it('ne garde pas une partie à deux : le PvP attend la beta', () => {
-    const { state, decks } = combatSolo();
-    const match: Match = { camp: 'player', ...decks };
-    expect(combatTermine(state, match, decks)).toBeNull();
+  it('garde une partie à deux terminée, avec son mode et les Decks du Match (D-105, #228)', () => {
+    const { state, match } = combatPvp();
+    // Les Decks d'une partie à deux vivent dans le `Match`, pas dans `decksSolo` : la trace
+    // prend les bons, sinon le rejeu rejouerait une autre partie.
+    const autre: Decks = { playerDeck: factionDeck('MANAGEMENT'), aiDeck: factionDeck('SSE') };
+    const combat = combatTermine(state, match, autre);
+
+    expect(combat).not.toBeNull();
+    expect(combat?.mode).toBe('pvp');
+    expect(combat?.decks).toEqual({ playerDeck: match.playerDeck, aiDeck: match.aiDeck });
+    expect(combat?.graine).toBe(state.seed);
+    expect(combat?.journal).toEqual(state.actionLog);
+  });
+
+  it('ne garde pas une partie à deux en cours', () => {
+    const { match } = combatPvp();
+    const enCours = createBattle(match.playerDeck, match.aiDeck, 3, {}, { deuxCamps: true });
+    expect(enCours.phase).toBe('playing');
+    expect(combatTermine(enCours, match, DECKS_JAMAIS_LUS)).toBeNull();
   });
 
   it('la ligne porte cinq clés, et aucune autre', () => {
@@ -120,6 +164,35 @@ describe('combatTermine — ce qui est gardé, et rien d’autre (#173, D-086)',
       combat.typesCafe
     );
     expect(rejoue).toEqual(state);
+  });
+
+  it('le rejeu d’une trace à deux redonne l’état final (#228)', () => {
+    const { state, match } = combatPvp();
+    const combat = combatTermine(state, match, DECKS_JAMAIS_LUS)!;
+
+    // Une partie à deux se rejoue avec `deuxCamps` : c'est ce que le `mode` de la trace
+    // dit au relecteur. Le test le prouve dans les deux sens.
+    const rejoue = replayBattle(
+      combat.decks.playerDeck,
+      combat.decks.aiDeck,
+      combat.graine,
+      combat.journal,
+      combat.typesCafe,
+      { deuxCamps: true }
+    );
+    expect(rejoue).toEqual(state);
+
+    // Sans l'option, l'état n'est pas le même : `deuxCamps` vit dans l'état (`engine.ts`),
+    // donc un relecteur qui l'oublie compare deux parties différentes. C'est le contrôle
+    // qui mord — sans lui, le test passerait avec ou sans l'option.
+    const sansOption = replayBattle(
+      combat.decks.playerDeck,
+      combat.decks.aiDeck,
+      combat.graine,
+      combat.journal,
+      combat.typesCafe
+    );
+    expect(sansOption).not.toEqual(state);
   });
 });
 
@@ -221,20 +294,31 @@ describe('le volume d’une trace (#173 : « sur 20 combats simulés »)', () =>
    * pas le sujet — elle attrape une dérive (un champ d'état qui partirait en entier, par
    * exemple), et la valeur mesurée est écrite dans le commentaire de fermeture du ticket.
    */
-  it('mesure la taille d’une ligne de combat sur 20 graines', () => {
+  const taillesSur = (ligneDe20: (seed: number) => ReturnType<typeof ligneDe>, etiquette: string) => {
     const tailles: number[] = [];
     for (let seed = 1; seed <= 20; seed += 1) {
-      const { state, decks } = combatSolo(seed);
-      const ligne = ligneDe(combatTermine(state, null, decks)!);
-      tailles.push(new TextEncoder().encode(JSON.stringify(ligne)).length);
+      tailles.push(new TextEncoder().encode(JSON.stringify(ligneDe20(seed))).length);
     }
     const moyenne = Math.round(tailles.reduce((a, b) => a + b, 0) / tailles.length);
     const max = Math.max(...tailles);
     console.log(
-      `[#173] combat enregistré : moyenne ${moyenne} o, max ${max} o, sur ${tailles.length} combats`
+      `[${etiquette}] combat enregistré : moyenne ${moyenne} o, max ${max} o, sur ${tailles.length} combats`
     );
-
     expect(moyenne).toBeGreaterThan(0);
     expect(max).toBeLessThan(64 * 1024);
+  };
+
+  it('mesure la taille d’une ligne de combat sur 20 graines', () => {
+    taillesSur((seed) => {
+      const { state, decks } = combatSolo(seed);
+      return ligneDe(combatTermine(state, null, decks)!);
+    }, '#173');
+  });
+
+  it('mesure la même chose pour les parties à deux (#228)', () => {
+    taillesSur((seed) => {
+      const { state, match } = combatPvp(seed);
+      return ligneDe(combatTermine(state, match, DECKS_JAMAIS_LUS)!);
+    }, '#228');
   });
 });

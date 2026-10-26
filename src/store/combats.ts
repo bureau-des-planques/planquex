@@ -1,8 +1,8 @@
 /**
- * **La trace d'un combat** — #173, D-086.
+ * **La trace d'un combat** — #173, D-086 ; #228, D-105 pour les parties à deux.
  *
- * À la fin d'une partie **solo** terminée, le jeu dépose en arrière-plan de quoi la
- * **rejouer** : la graine, les deux Decks, les types de café et le journal d'actions.
+ * À la fin d'une partie **terminée** — solo ou à deux —, le jeu dépose en arrière-plan de
+ * quoi la **rejouer** : la graine, les deux Decks, les types de café et le journal d'actions.
  * C'est exactement le contrat de `replayBattle` (#83) — la ligne ne porte donc **rien
  * d'autre** : ni le pseudo de Réglages, ni un texte libre, ni un identifiant d'appareil.
  * `auteur` est rempli par la base (`auth.uid()` : le compte connecté depuis D-088, ou
@@ -23,13 +23,16 @@ import type { ConfigurationMur } from '@/lib/supabase';
 import type { Decks } from '@/store/partie';
 import type { Match } from '@/store/pvp';
 
+/** Les deux modes tracés : le solo, et la partie à deux (D-105, #228). */
+export type ModeCombat = 'solo' | 'pvp';
+
 /**
- * Ce qu'une partie solo terminée laisse derrière elle : de quoi la rejouer, et rien de plus.
+ * Ce qu'une partie terminée laisse derrière elle : de quoi la rejouer, et rien de plus.
  * Les noms sont ceux du code du jeu (`graine`, `decks`, `typesCafe`, `journal`) ; la ligne
  * envoyée les traduit en colonnes (`ligneDe`).
  */
 export interface CombatEnregistre {
-  mode: 'solo';
+  mode: ModeCombat;
   graine: number;
   decks: Decks;
   typesCafe: {
@@ -47,7 +50,7 @@ export interface CombatEnregistre {
  * `Record<string, unknown>`, ce dont `ecrireLigne` a besoin.
  */
 export type LigneCombat = {
-  mode: 'solo';
+  mode: ModeCombat;
   graine: number;
   decks: Decks;
   types_cafe: {
@@ -58,24 +61,30 @@ export type LigneCombat = {
 };
 
 /**
- * Le combat à garder, ou `null` si la partie ne se garde pas : **pas terminée**, ou **à
- * deux** (le PvP attend la beta, #173). Chaque champ est **recopié à la main** : un objet
- * d'état qui porterait un pseudo ou un texte libre ne peut pas fuir par un `...state`.
+ * Le combat à garder, ou `null` si la partie ne se garde pas : **pas terminée**. Une partie
+ * **à deux** se garde comme une solo (D-105, #228), avec son `mode` ; le journal nomme alors
+ * les camps, d'où l'option `deuxCamps` qu'un relecteur doit passer à `replayBattle` quand le
+ * `mode` vaut `'pvp'`. Chaque champ est **recopié à la main** : un objet d'état qui porterait
+ * un pseudo ou un texte libre ne peut pas fuir par un `...state`.
+ *
+ * `decksSolo` est ignoré quand `match` n'est pas `null` : les Decks d'une partie à deux sont
+ * ceux du `Match`, et prendre les autres ferait rejouer une partie qui n'a pas eu lieu.
  */
 export function combatTermine(
   state: BattleState,
   match: Match | null,
   decksSolo: Decks
 ): CombatEnregistre | null {
-  if (match !== null) return null;
   if (state.phase !== 'ended') return null;
 
+  const decks = match ? { playerDeck: match.playerDeck, aiDeck: match.aiDeck } : decksSolo;
+
   return {
-    mode: 'solo',
+    mode: match ? 'pvp' : 'solo',
     graine: state.seed,
     decks: {
-      playerDeck: [...decksSolo.playerDeck],
-      aiDeck: [...decksSolo.aiDeck]
+      playerDeck: [...decks.playerDeck],
+      aiDeck: [...decks.aiDeck]
     },
     typesCafe: {
       playerCafeTypes: [...state.players.player.cafeTypes],

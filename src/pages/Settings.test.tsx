@@ -128,10 +128,12 @@ describe('Settings — écran des Réglages', () => {
     });
   });
 
-  it('dit que les parties solo terminées sont gardées sous le compte, sans case à cocher (D-086, D-088)', () => {
+  it('dit que les parties terminées, solo comme à deux, sont gardées sous le compte, sans case à cocher (D-086, D-088, D-105)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/parties solo terminées sont gardées sous ton compte/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/parties terminées sont gardées sous ton compte, solo comme à deux/i)
+    ).toBeInTheDocument();
     // D-086 : une **mention**, pas un consentement par combat — aucune case ne concerne
     // les traces. Les deux cases de l'écran sont des réglages d'affichage : le mouvement
     // réduit, et les raccourcis clavier du combat (#189).

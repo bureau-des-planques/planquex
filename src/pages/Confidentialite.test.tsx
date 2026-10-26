@@ -11,8 +11,8 @@ import { Confidentialite, CONTACT } from '@/pages/Confidentialite';
  *
  * 1. la page se rend **sans** compte, sans base et sans configuration ;
  * 2. elle dit les trois familles de données qu'on collecte réellement — un compte, ce qu'on
- *    écrit sur le mur, le déroulé des parties solo — parce qu'une page qui oublierait l'une
- *    des trois serait un mensonge par omission ;
+ *    écrit sur le mur, le déroulé des parties, solo comme à deux (D-105) — parce qu'une page
+ *    qui oublierait l'une des trois serait un mensonge par omission ;
  * 3. elle donne un moyen d'écrire (l'adresse de contact), sans quoi on ne peut pas demander
  *    la suppression de ses données.
  *
@@ -37,7 +37,7 @@ describe('Confidentialité — la page publique', () => {
     expect(screen.getByText(/adresse de courriel et un identifiant technique/i)).toBeTruthy();
     // 2. ce qu'on écrit sur le mur
     expect(screen.getByText(/un post-it : son titre, son texte/i)).toBeTruthy();
-    // 3. le déroulé des parties solo
+    // 3. le déroulé des parties, solo comme à deux (D-105)
     expect(screen.getByText(/la graine de hasard, les deux Decks/i)).toBeTruthy();
   });
 

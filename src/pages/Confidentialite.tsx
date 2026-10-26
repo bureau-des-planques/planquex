@@ -3,7 +3,8 @@
  *
  * Elle est exigée par Google pour publier l'application OAuth (`D-088`), et elle a une
  * raison propre : depuis D-088 on demande un compte, et depuis D-086 on garde la trace des
- * parties solo. Une page qui ne dit pas ce qu'on collecte serait un mensonge par omission.
+ * parties — solo comme à deux (D-105). Une page qui ne dit pas ce qu'on collecte serait un
+ * mensonge par omission.
  *
  * Trois règles d'écriture, et elles ne bougeront pas :
  *
@@ -49,9 +50,9 @@ const COLLECTE: Rubrique[] = [
     ],
   },
   {
-    titre: 'Tes parties solo terminées',
+    titre: 'Tes parties terminées',
     lignes: [
-      'Le déroulé de la partie : la graine de hasard, les deux Decks, les types de café et la suite des actions jouées.',
+      'Le déroulé de la partie, solo comme à deux : la graine de hasard, les deux Decks, les types de café et la suite des actions jouées.',
       'Cela sert à voir comment le jeu est réellement joué, et où il coince.',
       'Ni ton pseudo, ni ton adresse, ni aucun texte de ta part n’y figurent.',
     ],
