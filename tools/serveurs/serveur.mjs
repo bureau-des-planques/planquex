@@ -50,7 +50,11 @@ export function ouvrirNavigateur(url, plateforme = process.platform, lancer = sp
   }
 }
 
-export async function principal({ argv = process.argv.slice(2), systeme = creerSysteme(), ouvrir = ouvrirNavigateur } = {}) {
+export async function principal({
+  argv = process.argv.slice(2),
+  systeme = creerSysteme(),
+  ouvrir = ouvrirNavigateur
+} = {}) {
   const options = lireArguments(argv);
   if (options.aide) {
     return {
@@ -58,8 +62,8 @@ export async function principal({ argv = process.argv.slice(2), systeme = creerS
         'npm run serveurs [-- --port 5180] [-- --no-open]',
         '',
         '  --port N     port du tableau de bord (défaut 5180 ; celui des serveurs lancés est proposé libre)',
-        '  --no-open    ne pas ouvrir le navigateur',
-      ].join('\n'),
+        '  --no-open    ne pas ouvrir le navigateur'
+      ].join('\n')
     };
   }
   const serveur = await demarrerServeur({ port: options.port, systeme });
@@ -73,13 +77,12 @@ export async function principal({ argv = process.argv.slice(2), systeme = creerS
       `Tableau de bord des serveurs : ${url}`,
       '',
       'Il lit les processus en écoute, les worktrees du dépôt et leur état git.',
-      'Lancer ou tuer un serveur ne quitte pas cette page ; Ctrl+C arrête le tableau de bord.',
-    ].join('\n'),
+      'Lancer ou tuer un serveur ne quitte pas cette page ; Ctrl+C arrête le tableau de bord.'
+    ].join('\n')
   };
 }
 
-const estPointDEntree =
-  process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+const estPointDEntree = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (estPointDEntree) {
   principal()

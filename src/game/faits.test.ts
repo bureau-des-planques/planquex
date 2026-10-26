@@ -54,9 +54,7 @@ describe('faits — une Pression qui touche porte son Stress réel (#250)', () =
       auPoste: true
     });
     // Le contrôle mord : un montant inventé ne passe pas.
-    expect(entree?.faits.some((fait) => fait.type === 'stress' && fait.montant !== attendu)).toBe(
-      false
-    );
+    expect(entree?.faits.some((fait) => fait.type === 'stress' && fait.montant !== attendu)).toBe(false);
   });
 });
 

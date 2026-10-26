@@ -113,13 +113,7 @@ describe('Layout — la barre à cinq onglets (#213, D-097 (4))', () => {
     const liens = within(barre()).getAllByRole('link');
     // La liste entière, pas seulement la présence : remettre Réglages dans la barre
     // (six entrées) ou déplacer Comité ailleurs fait échouer ce test.
-    expect(liens.map((lien) => lien.textContent)).toEqual([
-      'Accueil',
-      'Collection',
-      'Deck',
-      'Combat',
-      'Comité'
-    ]);
+    expect(liens.map((lien) => lien.textContent)).toEqual(['Accueil', 'Collection', 'Deck', 'Combat', 'Comité']);
     expect(within(barre()).getByRole('link', { name: 'Comité' })).toHaveAttribute('href', '/comite');
     expect(within(barre()).queryByRole('link', { name: 'Réglages' })).toBeNull();
   });
@@ -137,12 +131,11 @@ describe('Layout — la barre à cinq onglets (#213, D-097 (4))', () => {
     monter('/battle');
     expect(within(barre()).queryByRole('link', { name: 'Comité' })).toBeNull();
     // Les quatre autres restent, à leur place : la barre ne se vide pas.
-    expect(within(barre()).getAllByRole('link').map((lien) => lien.textContent)).toEqual([
-      'Accueil',
-      'Collection',
-      'Deck',
-      'Combat'
-    ]);
+    expect(
+      within(barre())
+        .getAllByRole('link')
+        .map((lien) => lien.textContent)
+    ).toEqual(['Accueil', 'Collection', 'Deck', 'Combat']);
   });
 });
 

@@ -26,47 +26,32 @@ import {
   baseAvecAppareils,
   fichiersMigrations,
   migrations,
-  type Base,
+  type Base
 } from './pglite';
 
 /** La migration des combats, seule : la mutation ne touche pas les politiques du mur. */
-const MIGRATION_COMBATS = fichiersMigrations().find((sql) =>
-  sql.includes('create table public.combats'),
-);
+const MIGRATION_COMBATS = fichiersMigrations().find((sql) => sql.includes('create table public.combats'));
 if (!MIGRATION_COMBATS) throw new Error('supabase/migrations/0002_combats.sql introuvable');
 
 const DECKS = {
   playerDeck: ['sse-medecin-travail', 'management-responsable-unite'],
-  aiDeck: ['atelier-responsable-process'],
+  aiDeck: ['atelier-responsable-process']
 };
 const TYPES_CAFE = {
   playerCafeTypes: ['SSE'],
-  aiCafeTypes: ['MANAGEMENT'],
+  aiCafeTypes: ['MANAGEMENT']
 };
-const JOURNAL = [
-  { type: 'attachEnergy', targetUid: 'u1' },
-  { type: 'attack', attackIndex: 0 },
-  { type: 'endTurn' },
-];
+const JOURNAL = [{ type: 'attachEnergy', targetUid: 'u1' }, { type: 'attack', attackIndex: 0 }, { type: 'endTurn' }];
 
 /**
  * Dépose un combat au nom de l'appareil. `auteur` n'est passé que pour les tentatives
  * d'usurpation : le cas normal laisse la base remplir `auth.uid()`.
  */
-function deposer(
-  db: Base,
-  appareil: string,
-  options: { graine?: number; auteur?: string } = {},
-) {
+function deposer(db: Base, appareil: string, options: { graine?: number; auteur?: string } = {}) {
   const { graine = 42, auteur } = options;
   const colonnes = auteur ? ', auteur' : '';
   const valeurAuteur = auteur ? ', $5' : '';
-  const parametres: unknown[] = [
-    graine,
-    JSON.stringify(DECKS),
-    JSON.stringify(TYPES_CAFE),
-    JSON.stringify(JOURNAL),
-  ];
+  const parametres: unknown[] = [graine, JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)];
   if (auteur) parametres.push(auteur);
 
   return avecAppareil(db, appareil, () =>
@@ -74,8 +59,8 @@ function deposer(
       `insert into public.combats (mode, graine, decks, types_cafe, journal${colonnes})
        values ('solo', $1, $2::jsonb, $3::jsonb, $4::jsonb${valeurAuteur})
        returning *`,
-      parametres,
-    ),
+      parametres
+    )
   );
 }
 
@@ -113,23 +98,19 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
 
   it('A relit le sien, B ne lit pas celui de A', async () => {
     const sien = await avecAppareil(db, APPAREIL_A, () =>
-      db.query('select id from public.combats where graine = 2026'),
+      db.query('select id from public.combats where graine = 2026')
     );
     expect(sien.rows).toHaveLength(1);
 
     // B dépose le sien pour distinguer « ne lit rien » de « ne lit pas les autres ».
     await deposer(db, APPAREIL_B, { graine: 77 });
-    const siensB = await avecAppareil(db, APPAREIL_B, () =>
-      db.query('select id, graine from public.combats'),
-    );
+    const siensB = await avecAppareil(db, APPAREIL_B, () => db.query('select id, graine from public.combats'));
     expect(siensB.rows).toHaveLength(1);
     expect(Number(siensB.rows[0].graine)).toBe(77);
   });
 
   it('B ne peut pas déposer un combat au nom de A', async () => {
-    await expect(deposer(db, APPAREIL_B, { graine: 99, auteur: APPAREIL_A })).rejects.toThrow(
-      /row-level security/,
-    );
+    await expect(deposer(db, APPAREIL_B, { graine: 99, auteur: APPAREIL_A })).rejects.toThrow(/row-level security/);
   });
 
   it('une trace ne se réécrit pas : ni B ni A ne la modifient ou la suppriment', async () => {
@@ -140,20 +121,14 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
         await lignesTouchees(
           db,
           appareil,
-          `update public.combats set journal = '[]'::jsonb where graine = 111 returning *`,
-        ),
+          `update public.combats set journal = '[]'::jsonb where graine = 111 returning *`
+        )
       ).toBe(0);
-      expect(
-        await lignesTouchees(
-          db,
-          appareil,
-          `delete from public.combats where graine = 111 returning *`,
-        ),
-      ).toBe(0);
+      expect(await lignesTouchees(db, appareil, `delete from public.combats where graine = 111 returning *`)).toBe(0);
     }
 
     const intacte = await avecAppareil(db, APPAREIL_A, () =>
-      db.query('select journal from public.combats where graine = 111'),
+      db.query('select journal from public.combats where graine = 111')
     );
     expect(intacte.rows).toHaveLength(1);
     expect(intacte.rows[0].journal).toEqual(JOURNAL);
@@ -162,15 +137,13 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
   it('un appareil non identifié (anon) n’a aucun accès', async () => {
     await db.exec('set role anon');
     try {
-      await expect(db.query('select count(*) from public.combats')).rejects.toThrow(
-        /permission denied/,
-      );
+      await expect(db.query('select count(*) from public.combats')).rejects.toThrow(/permission denied/);
       await expect(
         db.query(
           `insert into public.combats (mode, graine, decks, types_cafe, journal)
            values ('solo', 1, '${JSON.stringify(DECKS)}'::jsonb,
-                   '${JSON.stringify(TYPES_CAFE)}'::jsonb, '${JSON.stringify(JOURNAL)}'::jsonb)`,
-        ),
+                   '${JSON.stringify(TYPES_CAFE)}'::jsonb, '${JSON.stringify(JOURNAL)}'::jsonb)`
+        )
       ).rejects.toThrow(/permission denied/);
     } finally {
       await db.exec('reset role');
@@ -183,8 +156,8 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
       db.query(
         `insert into public.combats (mode, graine, decks, types_cafe, journal)
          values ('pvp', 1, $1::jsonb, $2::jsonb, $3::jsonb)`,
-        [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)],
-      ),
+        [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)]
+      )
     );
 
     // …et un mode inventé reste refusé (la liste des modes est explicite).
@@ -193,9 +166,9 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
         db.query(
           `insert into public.combats (mode, graine, decks, types_cafe, journal)
            values ('deux', 1, $1::jsonb, $2::jsonb, $3::jsonb)`,
-          [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)],
-        ),
-      ),
+          [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)]
+        )
+      )
     ).rejects.toThrow(/combats_mode_check/);
 
     await expect(
@@ -203,9 +176,9 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
         db.query(
           `insert into public.combats (mode, graine, decks, types_cafe, journal)
            values ('solo', -1, $1::jsonb, $2::jsonb, $3::jsonb)`,
-          [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)],
-        ),
-      ),
+          [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)]
+        )
+      )
     ).rejects.toThrow(/combats_graine_check/);
 
     await expect(
@@ -213,9 +186,9 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
         db.query(
           `insert into public.combats (mode, graine, decks, types_cafe, journal)
            values ('solo', 1, '{"playerDeck": {}}'::jsonb, $1::jsonb, $2::jsonb)`,
-          [JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)],
-        ),
-      ),
+          [JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)]
+        )
+      )
     ).rejects.toThrow(/combats_decks_check/);
 
     await expect(
@@ -223,9 +196,9 @@ describe('les combats — schéma et règles d’accès (#173, D-086)', () => {
         db.query(
           `insert into public.combats (mode, graine, decks, types_cafe, journal)
            values ('solo', 1, $1::jsonb, $2::jsonb, '{}'::jsonb)`,
-          [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE)],
-        ),
-      ),
+          [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE)]
+        )
+      )
     ).rejects.toThrow(/combats_journal_check/);
   });
 });
@@ -246,11 +219,13 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
     const combatsMute = muter(MIGRATION_COMBATS);
     // La 0005 (D-088) remplace la politique d'insertion des combats : la neutralisation de
     // la 0002 seule serait annulée par elle. On l'applique donc à toutes les copies.
-    return migrations()
-      .replace(MIGRATION_COMBATS, () => combatsMute)
-      // `p.auteur` d'abord : sans cela, le remplacement global laisserait `p.true`.
-      .replaceAll('p.auteur = auth.uid()', 'true')
-      .replaceAll('auteur = auth.uid()', 'true');
+    return (
+      migrations()
+        .replace(MIGRATION_COMBATS, () => combatsMute)
+        // `p.auteur` d'abord : sans cela, le remplacement global laisserait `p.true`.
+        .replaceAll('p.auteur = auth.uid()', 'true')
+        .replaceAll('auteur = auth.uid()', 'true')
+    );
   }
 
   let db: Base;
@@ -269,7 +244,7 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
 
     // 1. B lit la ligne de A : la fuite est constatée.
     const lu = await avecAppareil(db, APPAREIL_B, () =>
-      db.query('select id, graine from public.combats where graine = 4242'),
+      db.query('select id, graine from public.combats where graine = 4242')
     );
     expect(lu.rows).toHaveLength(1);
     expect(Number(lu.rows[0].graine)).toBe(4242);

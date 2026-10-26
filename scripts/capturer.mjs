@@ -49,8 +49,7 @@ const distIndex = join(root, 'dist/index.html');
 
 /** Le binaire du cache `ms-playwright`, surchargeable pour une autre machine (comme le legacy). */
 const executablePath =
-  process.env.CHROME_PATH ??
-  join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
+  process.env.CHROME_PATH ?? join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
 
 /** Une page par route de `src/App.tsx`, dans l'ordre de la barre de navigation. */
 const PAGES = [
@@ -99,9 +98,7 @@ const ROUTE_COMBAT = '/battle';
  * Liste à part, et non dans `PAGES` : « une page par route » reste vrai (le contrat de
  * `scripts/capturer.test.ts`), et `/battle` est déjà photographiée à son arrivée.
  */
-const PREPARATIONS = [
-  { slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' }
-];
+const PREPARATIONS = [{ slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' }];
 
 /**
  * Les instants figés qui fixent la graine d'une partie (`createBattle`, seed = `Date.now()`) :
@@ -318,7 +315,8 @@ async function preparerCodePvp(page) {
     return {
       // Le code réellement affiché : c'est lui que la capture doit montrer.
       caracteres: zone ? zone.value.length : 0,
-      zoneDansEcran: !!cadre && cadre.top >= 0 && cadre.bottom <= window.innerHeight && cadre.right <= window.innerWidth,
+      zoneDansEcran:
+        !!cadre && cadre.top >= 0 && cadre.bottom <= window.innerHeight && cadre.right <= window.innerWidth,
       boutonDansEcran: !!bouton && bouton.top >= 0 && bouton.bottom <= window.innerHeight,
       // Une page qui déborde en largeur « casse la mise en page » : c'est le critère de #128.
       debordement: document.documentElement.scrollWidth - document.documentElement.clientWidth
@@ -341,9 +339,7 @@ function amorcageStore(origin, supplement = {}) {
     origins: [
       {
         origin,
-        localStorage: [
-          { name: STORAGE_KEY, value: JSON.stringify({ state: { tutorielVu: true, ...supplement } }) }
-        ]
+        localStorage: [{ name: STORAGE_KEY, value: JSON.stringify({ state: { tutorielVu: true, ...supplement } }) }]
       }
     ]
   };
@@ -490,10 +486,14 @@ try {
       const code = await preparerCodePvp(page);
       console.log(`code-pvp · ${slug} · ${JSON.stringify(code)}`);
       if (code.caracteres < 100) {
-        problems.push(`${slug} · aucun code de partie à l’écran (${code.caracteres} caractères) : la capture ne prouve pas #128`);
+        problems.push(
+          `${slug} · aucun code de partie à l’écran (${code.caracteres} caractères) : la capture ne prouve pas #128`
+        );
       }
       if (!code.zoneDansEcran || !code.boutonDansEcran) {
-        problems.push(`${slug} · le code ou son bouton Copier sort de la fenêtre (${VIEWPORT.width} × ${VIEWPORT.height})`);
+        problems.push(
+          `${slug} · le code ou son bouton Copier sort de la fenêtre (${VIEWPORT.width} × ${VIEWPORT.height})`
+        );
       }
       if (code.debordement > 0) {
         problems.push(`${slug} · la page déborde de ${code.debordement} px en largeur : la mise en page casse`);
@@ -519,7 +519,11 @@ try {
   // La garde de rendu (#170) ne se fie pas à **une** donne : la graine change avec
   // l'heure, donc la main change de hauteur. On mesure sur chaque instant figé.
   for (const instant of INSTANTS_COMBAT.slice(1)) {
-    const context = await browser.newContext({ viewport: VIEWPORT, isMobile: true, storageState: amorcageStore(origine) });
+    const context = await browser.newContext({
+      viewport: VIEWPORT,
+      isMobile: true,
+      storageState: amorcageStore(origine)
+    });
     const page = await context.newPage();
     page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
     await page.clock.setFixedTime(instant);

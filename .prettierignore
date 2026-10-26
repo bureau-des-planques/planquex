@@ -1,0 +1,28 @@
+# Ce que Prettier ne touche pas.
+#
+# Les raisons sont mesurées, pas esthétiques : chaque ligne dit ce qu'une réécriture
+# casserait.
+
+# `src/data/` : un texte de carte par ligne, et ces lignes portent la mise en page du
+# contenu (339 lignes de plus de 120 caractères y sont des flavour et des textes de Pression).
+# Prettier les replierait à l'intérieur des chaînes, ce qui change le texte affiché.
+src/data/**/*.ts
+
+# Documents : le dépôt est écrit à la main, en français, avec des tableaux alignés et des
+# retours à la ligne qui portent du sens. Prettier reformaterait 113 décisions et 30 docs.
+docs/**/*.md
+AGENTS.md
+DESIGN.md
+README.md
+GLOSSARY.md
+LICENSE
+
+# Copies et sorties de build.
+dist/**
+captures/**
+public/**
+node_modules/**
+
+# Registre d'illustrations : fichiers produits par un outil, jamais édités à la main.
+design/illustrations/README.md
+design/illustrations/SUJETS-flow.md

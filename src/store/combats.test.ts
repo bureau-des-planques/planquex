@@ -2,13 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { BattleState } from '@/data/types';
 import { applyAction, createBattle, legalActions, replayBattle } from '@/game/engine';
 import { factionDeck } from '@/game/simulation';
-import {
-  combatTermine,
-  envoyerCombat,
-  ligneDe,
-  tracerCombat,
-  type DependancesEnvoi
-} from '@/store/combats';
+import { combatTermine, envoyerCombat, ligneDe, tracerCombat, type DependancesEnvoi } from '@/store/combats';
 import type { Decks } from '@/store/partie';
 import { campToAct, createMatch } from '@/store/pvp';
 import type { Match } from '@/store/pvp';
@@ -51,11 +45,7 @@ function combatSolo(seed = 42): { state: BattleState; decks: Decks } {
  * main : c'est la trace de #228 (D-105), et le journal nomme les camps (« le camp Toi »).
  */
 function combatPvp(seed = 7): { state: BattleState; match: Match } {
-  const { state: depart, match } = createMatch(
-    factionDeck('SSE'),
-    factionDeck('MANAGEMENT'),
-    seed
-  );
+  const { state: depart, match } = createMatch(factionDeck('SSE'), factionDeck('MANAGEMENT'), seed);
   let state = depart;
   for (let i = 0; i < 12; i += 1) {
     const action = legalActions(state).find((candidate) => candidate.type !== 'forfeit');
@@ -301,9 +291,7 @@ describe('le volume d’une trace (#173 : « sur 20 combats simulés »)', () =>
     }
     const moyenne = Math.round(tailles.reduce((a, b) => a + b, 0) / tailles.length);
     const max = Math.max(...tailles);
-    console.log(
-      `[${etiquette}] combat enregistré : moyenne ${moyenne} o, max ${max} o, sur ${tailles.length} combats`
-    );
+    console.log(`[${etiquette}] combat enregistré : moyenne ${moyenne} o, max ${max} o, sur ${tailles.length} combats`);
     expect(moyenne).toBeGreaterThan(0);
     expect(max).toBeLessThan(64 * 1024);
   };

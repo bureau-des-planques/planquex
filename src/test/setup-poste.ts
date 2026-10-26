@@ -22,7 +22,7 @@ export function refuserOuverture<A extends unknown[], R>(reel: (commande: string
   return (commande: string, ...reste: A): R => {
     if (estOuvreur(commande)) {
       throw new Error(
-        `Un test a lancé « ${commande} » : il ouvrirait une fenêtre sur le poste de l'utilisateur. Injecter le lanceur.`,
+        `Un test a lancé « ${commande} » : il ouvrirait une fenêtre sur le poste de l'utilisateur. Injecter le lanceur.`
       );
     }
     return reel(commande, ...reste);

@@ -4,7 +4,7 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { Home } from './Home';
 import { renderWithStore } from '@/test/test-utils';
 
-describe('Home — écran d\'accueil', () => {
+describe("Home — écran d'accueil", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -51,7 +51,7 @@ describe('Home — écran d\'accueil', () => {
     });
   });
 
-  it('incrémente le compteur d\'Arrivages ouverts', () => {
+  it("incrémente le compteur d'Arrivages ouverts", () => {
     renderWithStore(<Home />, { packsOpened: 3, tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/3 Arrivages? ouvert/)).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('Home — écran d\'accueil', () => {
     expect(link).toHaveAttribute('href', '/battle');
   });
 
-  it('n\'affiche pas le modal tant qu\'aucun Arrivage n\'est ouvert', () => {
+  it("n'affiche pas le modal tant qu'aucun Arrivage n'est ouvert", () => {
     renderWithStore(<Home />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.queryByText(/Arrivage : cinq nouvelles cartes/i)).not.toBeInTheDocument();

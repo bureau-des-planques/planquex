@@ -86,9 +86,7 @@ function withPressions(state: BattleState, pressions: Attack[]): BattleState {
 
 describe('Paiement typé — le contrat d’une Pression (D-037)', () => {
   it('refuse une Pression dont le type exigé n’est pas dans les cafés du Poste', () => {
-    const state = withPressions(freshBattle(), [
-      { name: 'Pression test', cost: ['QVT'], damage: 10 }
-    ]);
+    const state = withPressions(freshBattle(), [{ name: 'Pression test', cost: ['QVT'], damage: 10 }]);
     const player = state.players[state.current];
     player.active!.energy = ['SSE'];
     player.hasAttacked = false;
@@ -114,16 +112,11 @@ describe('Paiement typé — le contrat d’une Pression (D-037)', () => {
 
     // Une fois payé correctement, le deuxième incolore lance la Pression en paie deux.
     player.active!.energy = ['SSE', 'QVT'];
-    expect(legalAttacks(state).map((entry) => entry.name)).toEqual([
-      'Pression incolore',
-      'Pression double'
-    ]);
+    expect(legalAttacks(state).map((entry) => entry.name)).toEqual(['Pression incolore', 'Pression double']);
   });
 
   it('exige le nombre exact de cafés quand le coût mélange types et incolore', () => {
-    const state = withPressions(freshBattle(), [
-      { name: 'Pression mixte', cost: ['QVT', 'INCOLORE'], damage: 20 }
-    ]);
+    const state = withPressions(freshBattle(), [{ name: 'Pression mixte', cost: ['QVT', 'INCOLORE'], damage: 20 }]);
     const player = state.players[state.current];
 
     // Deux cafés, mais aucun QVT : l'incolore couvre QVT? Non — un café paie **une
@@ -160,10 +153,7 @@ describe('Paiement typé — le contrat d’une Pression (D-037)', () => {
           if (!pression) throw new Error('Pression inconnue');
           // Le contrat : le café couvre le coût **typé**, et la transition
           // accepte — une action refusée retournant l'état tel quel.
-          expect(
-            satisfiesCafeCost(active.energy, pression.cost),
-            `graine ${seed}, « ${pression.name} »`
-          ).toBe(true);
+          expect(satisfiesCafeCost(active.energy, pression.cost), `graine ${seed}, « ${pression.name} »`).toBe(true);
           expect(after).not.toBe(state);
         }
         state = after;

@@ -118,9 +118,7 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
       ...avant.actionLog,
       {
         action: { type: 'attack', attackIndex: 0 },
-        faits: [
-          { type: 'stress', uid: avant.players.ai.active!.uid, montant: 20, auPoste: true }
-        ]
+        faits: [{ type: 'stress', uid: avant.players.ai.active!.uid, montant: 20, auPoste: true }]
       }
     ];
     const effets = effetsEntre(avant, apres);
@@ -158,9 +156,7 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
       ...avant.actionLog,
       {
         action: { type: 'attack', attackIndex: 0 },
-        faits: [
-          { type: 'stress', uid: avant.players.ai.active!.uid, montant: 20, auPoste: true }
-        ]
+        faits: [{ type: 'stress', uid: avant.players.ai.active!.uid, montant: 20, auPoste: true }]
       }
     ];
     expect(effetsEntre(avant, reussie).some((effet) => effet.nature === 'attaque')).toBe(true);
@@ -250,14 +246,20 @@ describe('styles.css — les bornes des effets (#192, SPEC-COMBAT-UI §6.8)', ()
     // Le réglage est relié : le CSS lit l'attribut posé par `App`.
     expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \*/);
     // Le chiffre est figé, pas éteint : une durée de 0,001 ms le rendrait invisible (opacité finale).
-    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \.stress-flottant[\s\S]*?animation:\s*none !important/);
+    expect(feuille).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.stress-flottant[\s\S]*?animation:\s*none !important/
+    );
     expect(feuille).toMatch(/\.stress-flottant\.is-fixe\s*\{[^}]*animation:\s*none/);
     // L'hexagone et la pile gardent leur état (rempli / allumé), sans pulsation.
-    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \.piste__hex\.is-fraiche[\s\S]*?animation:\s*none !important/);
+    expect(feuille).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.piste__hex\.is-fraiche[\s\S]*?animation:\s*none !important/
+    );
     expect(feuille).toMatch(
       /:root\[data-mouvement-reduit='true'\] \.pile--deck\.is-piochante::after[\s\S]*?animation:\s*none !important/
     );
     // Le craquage garde la désaturation ; la traînée, elle, n'est pas créée (`Battle.tsx`).
-    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \.craquage__carte[\s\S]*?animation:\s*none !important/);
+    expect(feuille).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.craquage__carte[\s\S]*?animation:\s*none !important/
+    );
   });
 });

@@ -7,9 +7,10 @@ import { APP_LABEL, APP_STAGE, APP_VERSION, asStage } from './version';
 const SRC = fileURLToPath(new URL('.', import.meta.url));
 
 /** Le paquet lu sur le disque : c'est lui la source, pas la constante injectée. */
-const pkg = JSON.parse(
-  readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
-) as { version: string; stage: string };
+const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+  version: string;
+  stage: string;
+};
 
 /** Tous les fichiers source, hors tests. */
 function fichiersSource(dossier = SRC): string[] {
@@ -60,7 +61,9 @@ function versionsEnDurDansSrc(): string[] {
 describe('version de l’application', () => {
   it('vient de package.json, et de nulle part ailleurs', () => {
     expect(APP_VERSION).toBe(pkg.version);
-    expect(APP_LABEL).toBe(`${APP_STAGE === 'alpha' ? 'Alpha' : APP_STAGE === 'beta' ? 'Bêta' : 'Version finale'} · ${pkg.version}`);
+    expect(APP_LABEL).toBe(
+      `${APP_STAGE === 'alpha' ? 'Alpha' : APP_STAGE === 'beta' ? 'Bêta' : 'Version finale'} · ${pkg.version}`
+    );
   });
 
   it('porte l’étape en clair, à côté du numéro (D-050)', () => {
@@ -85,11 +88,7 @@ describe('version de l’application', () => {
 
   // Le contrôle doit pouvoir échouer : sans ce cas, la garde du dessus ne garde rien.
   it('le contrôle mord : un numéro en dur est bien détecté', () => {
-    expect(versionsEnDur('faux.ts', 'const affichee = "9.9.9";')).toEqual([
-      'faux.ts : 9.9.9',
-    ]);
-    expect(versionsEnDur('faux.tsx', '<span>v1.2.3</span>')).toEqual([
-      'faux.tsx : v1.2.3',
-    ]);
+    expect(versionsEnDur('faux.ts', 'const affichee = "9.9.9";')).toEqual(['faux.ts : 9.9.9']);
+    expect(versionsEnDur('faux.tsx', '<span>v1.2.3</span>')).toEqual(['faux.tsx : v1.2.3']);
   });
 });

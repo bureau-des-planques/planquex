@@ -10,13 +10,7 @@ import {
 } from '@/game/deck';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
-import {
-  migratePersisted,
-  CARD_ID_RENAMES,
-  partializeState,
-  STORAGE_VERSION,
-  useStore
-} from '@/store/useStore';
+import { migratePersisted, CARD_ID_RENAMES, partializeState, STORAGE_VERSION, useStore } from '@/store/useStore';
 import { isSecretSuffix, secretSuffix } from '@/data/planque';
 
 beforeEach(() => {
@@ -39,7 +33,10 @@ describe('Arrivage', () => {
     const expected = openPackCards({ rng: seedRng(7) }).map((card) => card.id);
 
     useStore.setState({ rng: seedRng(7), owned: {}, packsOpened: 0 });
-    const cards = useStore.getState().openPack().map((card) => card.id);
+    const cards = useStore
+      .getState()
+      .openPack()
+      .map((card) => card.id);
 
     expect(cards).toEqual(expected);
   });
@@ -98,7 +95,10 @@ describe('Générateur du store (#29)', () => {
   /** Ouvre un Arrivage depuis une graine connue, en repartant de la même base. */
   function packFrom(seed: number): string[] {
     useStore.setState({ rng: seedRng(seed), owned: {}, packsOpened: 0 });
-    return useStore.getState().openPack().map((card) => card.id);
+    return useStore
+      .getState()
+      .openPack()
+      .map((card) => card.id);
   }
 
   it('même graine → même Arrivage ; graines différentes → Arrivages différents', () => {
@@ -266,7 +266,13 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
 
     // Aucun ancien nom ne survit dans le catalogue.
     const noms = new Set(ALL_CARDS.map((card) => card.name));
-    for (const ancien of ['Chef des ventes', 'Chef des ventes COMEX', 'Responsable d’équipe', 'Manager adjoint', 'Commercial']) {
+    for (const ancien of [
+      'Chef des ventes',
+      'Chef des ventes COMEX',
+      'Responsable d’équipe',
+      'Manager adjoint',
+      'Commercial'
+    ]) {
       expect(noms.has(ancien), `« ${ancien} » ne doit plus exister`).toBe(false);
     }
   });
@@ -365,10 +371,7 @@ describe('Types de café du Deck — store (#91)', () => {
 
   it('migre un état v3 sans ce champ vers « automatique », sans perdre le reste', () => {
     const rng = seedRng(91);
-    const migrated = migratePersisted(
-      { name: 'Employé 404', deck: ['sse-psychologue'], packsOpened: 3, rng },
-      3
-    );
+    const migrated = migratePersisted({ name: 'Employé 404', deck: ['sse-psychologue'], packsOpened: 3, rng }, 3);
 
     expect(migrated.cafeTypes).toEqual([]);
     expect(migrated.deck).toEqual(['sse-psychologue']);
@@ -566,13 +569,11 @@ describe('Sauvegarde — export et import', () => {
     const avant = partializeState(useStore.getState());
 
     expect(useStore.getState().importerSauvegarde('pas du json')).toMatchObject({ ok: false });
+    expect(useStore.getState().importerSauvegarde(JSON.stringify({ jeu: 'un-autre-jeu', version: 5 }))).toMatchObject({
+      ok: false
+    });
     expect(
-      useStore.getState().importerSauvegarde(JSON.stringify({ jeu: 'un-autre-jeu', version: 5 }))
-    ).toMatchObject({ ok: false });
-    expect(
-      useStore
-        .getState()
-        .importerSauvegarde(JSON.stringify({ jeu: 'bureau-des-planques', version: 5, etat: {} }))
+      useStore.getState().importerSauvegarde(JSON.stringify({ jeu: 'bureau-des-planques', version: 5, etat: {} }))
     ).toMatchObject({ ok: false });
 
     // Rien n'a bougé : c'est la garantie qui compte, pas le message.
@@ -697,9 +698,7 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
       combatDetaille: true,
       raccourcisCombat: false
     });
-    expect(
-      migratePersisted({ combatDetaille: 'oui' as unknown as boolean }, 8).combatDetaille
-    ).toBe(false);
+    expect(migratePersisted({ combatDetaille: 'oui' as unknown as boolean }, 8).combatDetaille).toBe(false);
   });
 
   it('relit une sauvegarde v7 : les deux réglages prennent leurs défauts', () => {

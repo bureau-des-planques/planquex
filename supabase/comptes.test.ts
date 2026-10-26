@@ -38,35 +38,24 @@ import {
   creerCompte,
   fichiersMigrations,
   migrations,
-  type Base,
+  type Base
 } from './pglite';
 
-const MIGRATION_COMPTES = fichiersMigrations().find((sql) =>
-  sql.includes('create table if not exists public.comptes'),
-);
+const MIGRATION_COMPTES = fichiersMigrations().find((sql) => sql.includes('create table if not exists public.comptes'));
 if (!MIGRATION_COMPTES) throw new Error('supabase/migrations/0005_comptes.sql introuvable');
 
 const DECKS = {
   playerDeck: ['sse-medecin-travail', 'management-responsable-unite'],
-  aiDeck: ['atelier-responsable-process'],
+  aiDeck: ['atelier-responsable-process']
 };
 const TYPES_CAFE = { playerCafeTypes: ['SSE'], aiCafeTypes: ['MANAGEMENT'] };
 const JOURNAL = [{ type: 'endTurn' }];
 
-type Issue =
-  | { accepte: true; lignes: Array<Record<string, unknown>> }
-  | { accepte: false; message: string };
+type Issue = { accepte: true; lignes: Array<Record<string, unknown>> } | { accepte: false; message: string };
 
-async function tenter(
-  db: Base,
-  appareil: string,
-  sql: string,
-  params: unknown[] = [],
-): Promise<Issue> {
+async function tenter(db: Base, appareil: string, sql: string, params: unknown[] = []): Promise<Issue> {
   try {
-    const res = await avecAppareil(db, appareil, () =>
-      db.query<Record<string, unknown>>(sql, params),
-    );
+    const res = await avecAppareil(db, appareil, () => db.query<Record<string, unknown>>(sql, params));
     return { accepte: true, lignes: res.rows };
   } catch (erreur) {
     return { accepte: false, message: erreur instanceof Error ? erreur.message : String(erreur) };
@@ -92,16 +81,11 @@ const coller = (db: Base, appareil: string, id: string) =>
     appareil,
     `insert into public.postits (id, kind, titre, texte, version)
      values ($1, 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.8') returning *`,
-    [id],
+    [id]
   );
 
 const voter = (db: Base, appareil: string, postit: string) =>
-  tenter(
-    db,
-    appareil,
-    `insert into public.votes (postit_id, sens) values ($1, 'up') returning *`,
-    [postit],
-  );
+  tenter(db, appareil, `insert into public.votes (postit_id, sens) values ($1, 'up') returning *`, [postit]);
 
 const combat = (db: Base, appareil: string) =>
   tenter(
@@ -109,7 +93,7 @@ const combat = (db: Base, appareil: string) =>
     appareil,
     `insert into public.combats (mode, graine, decks, types_cafe, journal)
      values ('solo', 42, $1::jsonb, $2::jsonb, $3::jsonb) returning *`,
-    [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)],
+    [JSON.stringify(DECKS), JSON.stringify(TYPES_CAFE), JSON.stringify(JOURNAL)]
   );
 
 /**
@@ -122,14 +106,13 @@ const decider = async (
   acteur: string,
   cible: string,
   etat: 'en attente' | 'approuve' | 'refuse',
-  raison = '',
+  raison = ''
 ): Promise<Issue> => {
-  const issue = await tenter(
-    db,
-    acteur,
-    `update public.comptes set etat = $2, raison = $3 where id = $1 returning *`,
-    [cible, etat, raison],
-  );
+  const issue = await tenter(db, acteur, `update public.comptes set etat = $2, raison = $3 where id = $1 returning *`, [
+    cible,
+    etat,
+    raison
+  ]);
   if (issue.accepte && issue.lignes.length === 0) {
     return { accepte: false, message: '0 ligne touchée (la RLS a filtré la décision)' };
   }
@@ -140,7 +123,7 @@ const etatDe = async (db: Base, cible: string) => {
   // Lecture en superutilisateur : la ligne d'un autre n'est pas lisible par un compte.
   const lu = await db.query<{ etat: string; administrateur: boolean; raison: string }>(
     'select etat, administrateur, raison from public.comptes where id = $1',
-    [cible],
+    [cible]
   );
   return lu.rows[0];
 };
@@ -171,24 +154,20 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
   it('(a) un compte en attente ne colle pas de post-it — la base refuse', async () => {
     refuse(await coller(db, APPAREIL_C, 'p-attente'), /row-level security/);
     const reste = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select id from public.postits where id = 'p-attente'`),
+      db.query(`select id from public.postits where id = 'p-attente'`)
     );
     expect(reste.rows).toHaveLength(0);
   });
 
   it('(a) un compte en attente ne vote pas, même pour le post-it d’un autre', async () => {
     refuse(await voter(db, APPAREIL_C, 'p-b'), /row-level security/);
-    const votes = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select count(*) as n from public.votes`),
-    );
+    const votes = await avecAppareil(db, APPAREIL_A, () => db.query(`select count(*) as n from public.votes`));
     expect(Number(votes.rows[0].n)).toBe(0);
   });
 
   it('(a) un compte en attente ne dépose pas de trace de combat', async () => {
     refuse(await combat(db, APPAREIL_C), /row-level security/);
-    const traces = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select count(*) as n from public.combats`),
-    );
+    const traces = await avecAppareil(db, APPAREIL_A, () => db.query(`select count(*) as n from public.combats`));
     expect(Number(traces.rows[0].n)).toBe(0);
   });
 
@@ -197,9 +176,7 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
     accepte(await voter(db, APPAREIL_A, 'p-b'));
     accepte(await combat(db, APPAREIL_A));
 
-    const traces = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select auteur from public.combats`),
-    );
+    const traces = await avecAppareil(db, APPAREIL_A, () => db.query(`select auteur from public.combats`));
     expect(traces.rows).toHaveLength(1);
     expect(traces.rows[0].auteur).toBe(APPAREIL_A);
   });
@@ -224,13 +201,10 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
 
   it('(d) un compte ne change pas son drapeau administrateur — permission refusée', async () => {
     refuse(
-      await tenter(
-        db,
-        APPAREIL_C,
-        `update public.comptes set administrateur = true where id = $1 returning *`,
-        [APPAREIL_C],
-      ),
-      /permission denied/,
+      await tenter(db, APPAREIL_C, `update public.comptes set administrateur = true where id = $1 returning *`, [
+        APPAREIL_C
+      ]),
+      /permission denied/
     );
     expect((await etatDe(db, APPAREIL_C)).administrateur).toBe(false);
   });
@@ -240,44 +214,40 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
       await tenter(
         db,
         APPAREIL_B,
-        `insert into public.comptes (id, courriel) values (gen_random_uuid(), 'intrus@exemple.test') returning *`,
+        `insert into public.comptes (id, courriel) values (gen_random_uuid(), 'intrus@exemple.test') returning *`
       ),
-      /permission denied/,
+      /permission denied/
     );
     refuse(
-      await tenter(db, APPAREIL_B, `delete from public.comptes where id = $1 returning *`, [
-        APPAREIL_C,
-      ]),
-      /permission denied/,
+      await tenter(db, APPAREIL_B, `delete from public.comptes where id = $1 returning *`, [APPAREIL_C]),
+      /permission denied/
     );
     refuse(
       await tenter(
         db,
         APPAREIL_B,
         `update public.comptes set courriel = 'autre@exemple.test' where id = $1 returning *`,
-        [APPAREIL_C],
+        [APPAREIL_C]
       ),
-      /permission denied/,
+      /permission denied/
     );
     expect((await etatDe(db, APPAREIL_C)).etat).toBe('en attente');
   });
 
   it('(f) chacun lit sa ligne, et pas celle d’un autre', async () => {
     const sien = await avecAppareil(db, APPAREIL_C, () =>
-      db.query(`select id, etat from public.comptes where id = $1`, [APPAREIL_C]),
+      db.query(`select id, etat from public.comptes where id = $1`, [APPAREIL_C])
     );
     expect(sien.rows).toHaveLength(1);
     expect(sien.rows[0].etat).toBe('en attente');
 
     const autre = await avecAppareil(db, APPAREIL_C, () =>
-      db.query(`select id from public.comptes where id = $1`, [APPAREIL_A]),
+      db.query(`select id from public.comptes where id = $1`, [APPAREIL_A])
     );
     expect(autre.rows).toHaveLength(0);
 
     // La liste entière est aussi vide pour lui : la RLS filtre, elle ne lève pas.
-    const tous = await avecAppareil(db, APPAREIL_C, () =>
-      db.query(`select id from public.comptes`),
-    );
+    const tous = await avecAppareil(db, APPAREIL_C, () => db.query(`select id from public.comptes`));
     expect(tous.rows).toHaveLength(1);
   });
 
@@ -311,26 +281,23 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
 
   it('(g) la première connexion crée une ligne en attente, et le courriel suit', async () => {
     const nouveau = '55555555-5555-4555-8555-555555555555';
-    await db.query(`insert into auth.users (id, email) values ($1, 'nouveau@exemple.test')`, [
-      nouveau,
-    ]);
+    await db.query(`insert into auth.users (id, email) values ($1, 'nouveau@exemple.test')`, [nouveau]);
 
     const cree = await etatDe(db, nouveau);
     expect(cree).toBeDefined();
     expect(cree.etat).toBe('en attente');
     expect(cree.administrateur).toBe(false);
     // Les comptes d'avant la migration ont été recopiés, eux aussi (email non nul).
-    const recopie = await db.query<{ courriel: string }>(
-      'select courriel from public.comptes where id = $1',
-      [APPAREIL_A],
-    );
+    const recopie = await db.query<{ courriel: string }>('select courriel from public.comptes where id = $1', [
+      APPAREIL_A
+    ]);
     expect(recopie.rows[0].courriel).toBe(`${APPAREIL_A.slice(0, 8)}@exemple.test`);
 
     // Mettre à jour le courriel côté Auth met la ligne à jour ; l'état ne bouge pas.
     await db.query(`update auth.users set email = 'change@exemple.test' where id = $1`, [nouveau]);
     const lu = await db.query<{ courriel: string; etat: string }>(
       'select courriel, etat from public.comptes where id = $1',
-      [nouveau],
+      [nouveau]
     );
     expect(lu.rows[0].courriel).toBe('change@exemple.test');
     expect(lu.rows[0].etat).toBe('en attente');
@@ -345,9 +312,7 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
   it('`anon` n’a aucun accès aux comptes', async () => {
     await db.exec('set role anon');
     try {
-      await expect(db.query('select count(*) from public.comptes')).rejects.toThrow(
-        /permission denied/,
-      );
+      await expect(db.query('select count(*) from public.comptes')).rejects.toThrow(/permission denied/);
     } finally {
       await db.exec('reset role');
     }
@@ -369,7 +334,7 @@ describe('les post-its déjà en base (23/10/2026) restent lisibles et deviennen
 
       // Les deux lignes sont toujours là, lisibles, sans qu'on invente un auteur.
       const lus = await avecAppareil(db, APPAREIL_A, () =>
-        db.query(`select id, auteur from public.postits order by id`),
+        db.query(`select id, auteur from public.postits order by id`)
       );
       expect(lus.rows.map((l) => l.id)).toEqual(['p-avant-1', 'p-avant-2']);
       expect(lus.rows[0].auteur).toBe(APPAREIL_A);
@@ -381,15 +346,9 @@ describe('les post-its déjà en base (23/10/2026) restent lisibles et deviennen
       // Le refus de 0005 : l'auteur n'a pas de compte approuvé. Cette base s'arrête à la
       // 0005 (pas de 0006 : elle n'a donc pas le grant restreint de #139).
       zeroLigne(
-        await tenter(
-          db,
-          APPAREIL_A,
-          `update public.postits set titre = 'Réécrit' where id = 'p-avant-1' returning *`,
-        ),
+        await tenter(db, APPAREIL_A, `update public.postits set titre = 'Réécrit' where id = 'p-avant-1' returning *`)
       );
-      zeroLigne(
-        await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-avant-1' returning *`),
-      );
+      zeroLigne(await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-avant-1' returning *`));
       refuse(await coller(db, APPAREIL_A, 'p-apres'), /row-level security/);
     } finally {
       await db.close();
@@ -423,10 +382,10 @@ const MUTATIONS: Array<{
         `on public.postits for insert to authenticated
   with check (auteur = auth.uid() and public.compte_approuve())`,
         `on public.postits for insert to authenticated
-  with check (auteur = auth.uid())`,
+  with check (auteur = auth.uid())`
       ),
     geste: (db) => coller(db, APPAREIL_C, 'p-fuite'),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(a) sans la condition d’approbation du vote → un compte en attente vote',
@@ -438,10 +397,10 @@ const MUTATIONS: Array<{
     and public.compte_approuve()`,
         `on public.votes for insert to authenticated
   with check (
-    votant = auth.uid()`,
+    votant = auth.uid()`
       ),
     geste: (db) => voter(db, APPAREIL_C, 'p-b'),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(a) sans la condition d’approbation du combat → un compte en attente dépose',
@@ -450,16 +409,16 @@ const MUTATIONS: Array<{
         `on public.combats for insert to authenticated
   with check (auteur = auth.uid() and public.compte_approuve())`,
         `on public.combats for insert to authenticated
-  with check (auteur = auth.uid())`,
+  with check (auteur = auth.uid())`
       ),
     geste: (db) => combat(db, APPAREIL_C),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(a) `compte_approuve()` neutralisée → toutes les écritures passent',
     sql: () => muter(`and (c.etat = 'approuve' or c.administrateur)`, 'and true'),
     geste: (db) => coller(db, APPAREIL_C, 'p-fuite-fonction'),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(c) politique d’update des comptes neutralisée → un compte s’approuve lui-même',
@@ -468,49 +427,42 @@ const MUTATIONS: Array<{
         `  using (public.est_administrateur())
   with check (public.est_administrateur());`,
         `  using (true)
-  with check (true);`,
+  with check (true);`
       ),
     // B est approuvé mais pas administrateur ; il ne peut pas voir la ligne de C (politique
     // de lecture), donc le geste observable est **sa propre** ligne : il se ré-approuve.
     geste: (db) => decider(db, APPAREIL_B, APPAREIL_B, 'approuve'),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(d) `est_administrateur()` neutralisée → n’importe quel compte approuve',
     sql: () => muter(`      and c.administrateur\n`, `      and true\n`),
     geste: (db) => decider(db, APPAREIL_B, APPAREIL_C, 'approuve'),
-    attendu: 'accepte',
+    attendu: 'accepte'
   },
   {
     nom: '(d) grant élargi au drapeau → l’administration peut le changer depuis le client',
     sql: () =>
       muter(
         'grant update (etat, raison) on public.comptes to authenticated;',
-        'grant update (etat, raison, administrateur) on public.comptes to authenticated;',
+        'grant update (etat, raison, administrateur) on public.comptes to authenticated;'
       ),
     geste: (db) =>
-      tenter(
-        db,
-        ADMIN,
-        `update public.comptes set administrateur = true where id = $1 returning *`,
-        [APPAREIL_C],
-      ),
-    attendu: 'accepte',
+      tenter(db, ADMIN, `update public.comptes set administrateur = true where id = $1 returning *`, [APPAREIL_C]),
+    attendu: 'accepte'
   },
   {
     nom: '(f) la lecture des comptes ouverte → chacun lit la ligne d’un autre',
     sql: () => muter(`using (id = auth.uid() or public.est_administrateur());`, 'using (true);'),
     geste: async (db) => {
       // Une lecture filtrée par la RLS ne lève pas : 0 ligne, et c'est le refus.
-      const issue = await tenter(db, APPAREIL_C, `select id from public.comptes where id = $1`, [
-        APPAREIL_A,
-      ]);
+      const issue = await tenter(db, APPAREIL_C, `select id from public.comptes where id = $1`, [APPAREIL_A]);
       return issue.accepte && issue.lignes.length === 0
         ? { accepte: false, message: '0 ligne lisible (la RLS a filtré la lecture)' }
         : issue;
     },
-    attendu: 'accepte',
-  },
+    attendu: 'accepte'
+  }
 ];
 
 describe('sur la vraie base, chaque geste fautif est refusé', () => {

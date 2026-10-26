@@ -321,7 +321,8 @@ async function principal(args) {
       }
       if (compte <= permis) {
         console.log(`✔ ${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''} (plafond ${permis})`);
-        if (compte < permis) console.log(`  ⚠ ${ecran} est sous son plafond (${permis}) : baisse BASELINE dans ce commit.`);
+        if (compte < permis)
+          console.log(`  ⚠ ${ecran} est sous son plafond (${permis}) : baisse BASELINE dans ce commit.`);
         continue;
       }
       const message = `${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''}, au-dessus du plafond de ${permis}`;

@@ -17,9 +17,9 @@ export const MAX_DECK_CAFE_TYPES = 3;
  * ce qu'un Deck peut **proposer ou accepter** (#91) : `FACTION_META` tient
  * l'identité des dix factions, ce tableau n'en retire que les deux non produites.
  */
-export const CAFE_FACTIONS: readonly CafeType[] = (
-  Object.keys(FACTION_META) as Faction[]
-).filter((faction) => faction !== 'SUPPORT' && faction !== 'INTERIM') as CafeType[];
+export const CAFE_FACTIONS: readonly CafeType[] = (Object.keys(FACTION_META) as Faction[]).filter(
+  (faction) => faction !== 'SUPPORT' && faction !== 'INTERIM'
+) as CafeType[];
 
 /** Vrai pour une faction qui peut être un type de café (`CAFE_FACTIONS`). */
 export function isCafeType(type: unknown): type is CafeType {
@@ -73,10 +73,7 @@ export function deckCafeTypes(deck: readonly string[]): CafeType[] {
  * lisent la liste (#91) — un état trafiqué ne peut donc pas faire produire `SUPPORT`
  * ni `INTERIM` à la Machine, ni dépasser 3 types.
  */
-export function resolveCafeTypes(
-  deck: readonly string[],
-  chosen?: readonly unknown[] | null
-): CafeType[] {
+export function resolveCafeTypes(deck: readonly string[], chosen?: readonly unknown[] | null): CafeType[] {
   const choice = normalizeCafeTypes(chosen);
   return choice.length > 0 ? choice : deckCafeTypes(deck);
 }

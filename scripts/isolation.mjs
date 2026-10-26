@@ -90,7 +90,9 @@ for (const entree of autres) {
   if (lignes > 0) avecTravail += 1;
   if (entree.detache) detache += 1;
   const marque = entree.detache ? '✖ HEAD détaché' : lignes > 0 ? '•' : ' ✔';
-  console.log(`  ${marque} ${nom.padEnd(24)} ${String(entree.branche).padEnd(28)} ${lignes === 0 ? '(propre)' : `${lignes} fichier(s)`}`);
+  console.log(
+    `  ${marque} ${nom.padEnd(24)} ${String(entree.branche).padEnd(28)} ${lignes === 0 ? '(propre)' : `${lignes} fichier(s)`}`
+  );
 }
 
 const problemes = [];

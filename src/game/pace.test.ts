@@ -97,7 +97,9 @@ const table = (curve: Profile[], hits: (profile: Profile) => number) =>
   }));
 
 const asReport = (name: string, rows: ReturnType<typeof table>) =>
-  rows.map((row) => `${name.padEnd(7)} ${row.profil.padEnd(14)} ${row.frappesParKO} frappe(s)/craquage  ${row.tours} tours`);
+  rows.map(
+    (row) => `${name.padEnd(7)} ${row.profil.padEnd(14)} ${row.frappesParKO} frappe(s)/craquage  ${row.tours} tours`
+  );
 
 describe('O-011 — effet du Seuil sur le rythme', () => {
   it('lit les bandes du jeu et les confronte à la mesure datée du miroir', () => {
@@ -141,9 +143,7 @@ describe('O-011 — effet du Seuil sur le rythme', () => {
 
     // L'écart reste borné à 3 tours, et ne touche qu'un profil par lecture : Entrant en
     // optimiste (2 frappes contre 3), N+1 en pessimiste (3 contre 4). Rien sur N+2 ni COMEX.
-    expect(deltas.filter((delta) => delta.optimiste > 0).map((delta) => delta.profil)).toEqual([
-      'Entrant → Entrant'
-    ]);
+    expect(deltas.filter((delta) => delta.optimiste > 0).map((delta) => delta.profil)).toEqual(['Entrant → Entrant']);
     expect(deltas.filter((delta) => delta.pessimiste > 0).map((delta) => delta.profil)).toEqual(['N+1 → N+1']);
     expect(Math.max(...deltas.map((delta) => delta.optimiste)), 'écart optimiste').toBe(3);
     expect(Math.max(...deltas.map((delta) => delta.pessimiste)), 'écart pessimiste').toBe(3);

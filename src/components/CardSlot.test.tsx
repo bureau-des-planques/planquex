@@ -39,7 +39,9 @@ describe('CardSlot — la possession se lit (#179)', () => {
   });
 
   it('la pastille « Deck » n’existe qu’au-dessus de zéro', () => {
-    const { container } = render(<CardSlot card={carte} owned={1} inDeck={0} quick={quick} onClick={() => undefined} />);
+    const { container } = render(
+      <CardSlot card={carte} owned={1} inDeck={0} quick={quick} onClick={() => undefined} />
+    );
     expect(container.querySelector('.card-slot__deck')).toBeNull();
   });
 

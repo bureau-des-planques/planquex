@@ -18,12 +18,7 @@
  * **Le choix entre les deux sources réelles vit ici aussi** (`resoudreAdaptateur`) : la base
  * quand elle est configurée, le fichier sinon. Le port, lui, ne sait pas d'où il lit.
  */
-import {
-  clientMur,
-  configurerMur,
-  identiteAppareil,
-  type ClientMur,
-} from '@/lib/supabase';
+import { clientMur, configurerMur, identiteAppareil, type ClientMur } from '@/lib/supabase';
 import {
   DOCUMENT_MUR,
   STATUTS,
@@ -32,7 +27,7 @@ import {
   type Postit,
   type SensVote,
   type Statut,
-  type VotesPostit,
+  type VotesPostit
 } from '@/store/mur';
 import {
   estEntier,
@@ -48,7 +43,7 @@ import {
   type GesteEcriture,
   type GesteVote,
   type LignePostit,
-  type TriPostit,
+  type TriPostit
 } from '@/lib/mur';
 
 /**
@@ -80,7 +75,7 @@ const REFUS_DU_FICHIER: Record<GesteEcriture, string> = {
   trier: 'Supabase n’est pas configuré : il n’y a pas de mur à trier.',
   deplacer: 'Le mur n’est pas configuré : la place ne peut pas s’écrire.',
   corriger: 'Le mur n’est pas configuré : on ne corrige pas de post-it.',
-  retirer: 'Le mur n’est pas configuré : on ne retire pas de post-it.',
+  retirer: 'Le mur n’est pas configuré : on ne retire pas de post-it.'
 };
 
 /**
@@ -113,7 +108,7 @@ export function adaptateurFichier(fichier?: unknown): AdaptateurMur {
     trier: lectureSeule('trier'),
     deplacer: lectureSeule('deplacer'),
     corriger: lectureSeule('corriger'),
-    retirer: lectureSeule('retirer'),
+    retirer: lectureSeule('retirer')
   };
 }
 
@@ -131,7 +126,7 @@ export function adaptateurFichier(fichier?: unknown): AdaptateurMur {
  */
 export function adaptateurBase(
   client: ClientMur,
-  chargerClient: () => Promise<ClientMur | null> = async () => client,
+  chargerClient: () => Promise<ClientMur | null> = async () => client
 ): AdaptateurMur {
   return {
     source: 'base',
@@ -169,13 +164,13 @@ export function adaptateurBase(
 
       const auteurs = new Map<string, unknown>(
         (Array.isArray(data) ? data : []).flatMap((ligne): Array<[string, unknown]> =>
-          estObjet(ligne) && typeof ligne.id === 'string' ? [[ligne.id, ligne.auteur]] : [],
-        ),
+          estObjet(ligne) && typeof ligne.id === 'string' ? [[ligne.id, ligne.auteur]] : []
+        )
       );
       return postits.map((postit) => ({
         ...postit,
         votes: { ...postit.votes, mon: mesVotes.get(postit.id) ?? null },
-        mien: auteurs.get(postit.id) === identite,
+        mien: auteurs.get(postit.id) === identite
       }));
     },
 
@@ -195,10 +190,10 @@ export function adaptateurBase(
           position: {
             x: Number(ligne.position_x),
             y: Number(ligne.position_y),
-            angle: Number(ligne.position_angle),
+            angle: Number(ligne.position_angle)
           },
-          votes: { up: 0, down: 0 },
-        },
+          votes: { up: 0, down: 0 }
+        }
       ]);
       if (!postits) {
         throw new Error(`Le post-it écrit n’a pas la forme du contrat : ${erreurs.join(' ; ')}`);
@@ -224,12 +219,7 @@ export function adaptateurBase(
                 .eq('postit_id', postitId)
                 .eq('votant', identite)
                 .select('postit_id')
-            : await client
-                .from('votes')
-                .delete()
-                .eq('postit_id', postitId)
-                .eq('votant', identite)
-                .select('postit_id');
+            : await client.from('votes').delete().eq('postit_id', postitId).eq('votant', identite).select('postit_id');
 
       if (reponse.error) throw new Error(messageDeVote(reponse.error.message));
       // Une modification ou un retrait qui ne touche **aucune ligne** (le vote a disparu
@@ -249,14 +239,12 @@ export function adaptateurBase(
 
       const ligne = Array.isArray(data) ? data[0] : null;
       if (!estObjet(ligne)) {
-        throw new Error(
-          'La base n’a changé aucun post-it : ton compte n’est peut-être pas administrateur.',
-        );
+        throw new Error('La base n’a changé aucun post-it : ton compte n’est peut-être pas administrateur.');
       }
       return {
         statut: STATUTS.includes(ligne.statut as Statut) ? (ligne.statut as Statut) : tri.statut,
         raison: typeof ligne.raison === 'string' ? ligne.raison : tri.raison.trim(),
-        ticket: estEntier(ligne.ticket) ? ligne.ticket : null,
+        ticket: estEntier(ligne.ticket) ? ligne.ticket : null
       };
     },
 
@@ -272,7 +260,7 @@ export function adaptateurBase(
         p_id: id,
         p_x: position.x,
         p_y: position.y,
-        p_angle: position.angle,
+        p_angle: position.angle
       });
       if (error) throw new Error(messageDePlace(error.message));
 
@@ -281,7 +269,7 @@ export function adaptateurBase(
       return {
         x: Number(ligne.position_x),
         y: Number(ligne.position_y),
-        angle: Number(ligne.position_angle),
+        angle: Number(ligne.position_angle)
       };
     },
 
@@ -295,7 +283,7 @@ export function adaptateurBase(
       const { data, error } = await client.rpc('corriger_postit', {
         p_id: id,
         p_titre: correction.titre,
-        p_texte: correction.texte,
+        p_texte: correction.texte
       });
       if (error) throw new Error(messageDeCorrection(error.message));
 
@@ -317,10 +305,10 @@ export function adaptateurBase(
       if (error) throw new Error(messageDeCorrection(error.message));
       if (!Array.isArray(data) || data.length === 0) {
         throw new Error(
-          'La base n’a retiré aucun post-it : il a peut-être bougé de statut (on ne retire le sien qu’en attente), ou tu n’as pas le droit de le retirer.',
+          'La base n’a retiré aucun post-it : il a peut-être bougé de statut (on ne retire le sien qu’en attente), ou tu n’as pas le droit de le retirer.'
         );
       }
-    },
+    }
   };
 }
 
@@ -369,10 +357,10 @@ function postitDepuisLigne(ligne: LignePostit): Postit {
     position: {
       x: Number(ligne.position_x ?? 0),
       y: Number(ligne.position_y ?? 0),
-      angle: Number(ligne.position_angle ?? 0),
+      angle: Number(ligne.position_angle ?? 0)
     },
     votes: { up: 0, down: 0, mon: null },
-    mien: true,
+    mien: true
   };
 }
 
@@ -387,10 +375,7 @@ const arrondi = (valeur: number) => Math.round(valeur * 10) / 10;
  * contrôles, messages) et il peut **refuser exprès** (`refuse`), ce que la vraie base ne sait
  * pas faire à la demande.
  */
-export function adaptateurMemoire(
-  postits: readonly Postit[] = [],
-  options: OptionsMemoire = {},
-): AdaptateurMemoire {
+export function adaptateurMemoire(postits: readonly Postit[] = [], options: OptionsMemoire = {}): AdaptateurMemoire {
   const etat = structuredClone([...postits]);
   const estAMoi = (postit: Postit): boolean => {
     if (typeof options.mien === 'function') return options.mien(postit.id);
@@ -458,13 +443,13 @@ export function adaptateurMemoire(
       const postit = trouver(id);
       if (!estAMoi(postit) && !administrateur) {
         throw new Error(
-          'La base refuse ce déplacement : ce post-it n’est pas le tien, ou ton compte n’est pas approuvé.',
+          'La base refuse ce déplacement : ce post-it n’est pas le tien, ou ton compte n’est pas approuvé.'
         );
       }
       postit.position = {
         x: arrondi(position.x),
         y: arrondi(position.y),
-        angle: arrondi(position.angle),
+        angle: arrondi(position.angle)
       };
       return { ...postit.position };
     },
@@ -472,13 +457,11 @@ export function adaptateurMemoire(
     async corriger(id, correction) {
       const postit = trouver(id);
       if (!estAMoi(postit)) {
-        throw new Error(
-          'La base refuse : ce post-it n’est pas le tien, ou ton compte n’est pas encore approuvé.',
-        );
+        throw new Error('La base refuse : ce post-it n’est pas le tien, ou ton compte n’est pas encore approuvé.');
       }
       if (postit.statut !== 'en attente') {
         throw new Error(
-          'Ce post-it a bougé de statut : il ne se corrige plus, sinon le mur ne dirait plus la même chose à tout le monde.',
+          'Ce post-it a bougé de statut : il ne se corrige plus, sinon le mur ne dirait plus la même chose à tout le monde.'
         );
       }
       postit.titre = correction.titre;
@@ -491,13 +474,13 @@ export function adaptateurMemoire(
       const aMoiEtEnAttente = estAMoi(postit) && postit.statut === 'en attente';
       if (!aMoiEtEnAttente && !administrateur) {
         throw new Error(
-          'La base n’a retiré aucun post-it : il a peut-être bougé de statut (on ne retire le sien qu’en attente), ou tu n’as pas le droit de le retirer.',
+          'La base n’a retiré aucun post-it : il a peut-être bougé de statut (on ne retire le sien qu’en attente), ou tu n’as pas le droit de le retirer.'
         );
       }
       etat.splice(etat.indexOf(postit), 1);
     },
 
-    contenu: () => structuredClone(etat),
+    contenu: () => structuredClone(etat)
   };
 
   return adapter;
@@ -516,7 +499,7 @@ export function adaptateurMemoire(
  * c'est le fichier qui prend le relais.
  */
 export async function resoudreAdaptateur(
-  chargerClient: () => Promise<ClientMur | null> = clientMur,
+  chargerClient: () => Promise<ClientMur | null> = clientMur
 ): Promise<{ adaptateur: AdaptateurMur; base: boolean }> {
   const client = await chargerClient();
   if (!client) return { adaptateur: adaptateurFichier(), base: false };

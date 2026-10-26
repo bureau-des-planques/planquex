@@ -7,12 +7,7 @@ import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
 import { CardView } from '@/components/CardView';
 import { avancementTirable, PLAFOND_TIRABLE } from '@/components/plafond-collection';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 
 export function Home() {
   const { owned, deck, openPack, packsOpened } = useStore();
@@ -42,10 +37,16 @@ export function Home() {
   return (
     <div className="page home">
       <section className="hero">
-        <h1>Ton atelier.<br />Tes Interventions.<br />Ta survie.</h1>
+        <h1>
+          Ton atelier.
+          <br />
+          Tes Interventions.
+          <br />
+          Ta survie.
+        </h1>
         <p className="hero__lead">
-          Ouvre des Arrivages, collectionne les Planqués et affronte la Direction.
-          Le seul TCG où le boss est déjà dans ta main.
+          Ouvre des Arrivages, collectionne les Planqués et affronte la Direction. Le seul TCG où le boss est déjà dans
+          ta main.
         </p>
         <div className="hero__actions">
           <button type="button" className="button button--gold button--big" onClick={handleOpenPack}>
@@ -56,7 +57,8 @@ export function Home() {
           </Link>
         </div>
         <div className="hero__hint">
-          <Coffee size={14} /> {packsOpened} Arrivage{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} · {uniqueOwned}/{ALL_CARDS.length} cartes
+          <Coffee size={14} /> {packsOpened} Arrivage{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} ·{' '}
+          {uniqueOwned}/{ALL_CARDS.length} cartes
         </div>
       </section>
 

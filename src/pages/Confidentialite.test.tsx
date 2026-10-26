@@ -20,11 +20,12 @@ import { Confidentialite, CONTACT } from '@/pages/Confidentialite';
  * phrases — une réécriture du texte ne doit pas casser le test, un retrait de rubrique, si.
  */
 describe('Confidentialité — la page publique', () => {
-  const rendre = () => render(
-    <MemoryRouter>
-      <Confidentialite />
-    </MemoryRouter>,
-  );
+  const rendre = () =>
+    render(
+      <MemoryRouter>
+        <Confidentialite />
+      </MemoryRouter>
+    );
 
   it('se rend sans compte, sans base et sans configuration', () => {
     rendre();

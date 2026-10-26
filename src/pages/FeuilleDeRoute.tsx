@@ -71,8 +71,7 @@ function Points({ note }: { note: NoteVersion }) {
 function Entree({ element }: { element: ElementPlan }) {
   return (
     <li>
-      {element.texte}{' '}
-      <span className="muted text-[0.78rem]">({element.decision})</span>
+      {element.texte} <span className="muted text-[0.78rem]">({element.decision})</span>
       {element.note && <span className="muted"> — {element.note}</span>}
     </li>
   );
@@ -88,9 +87,8 @@ export function FeuilleDeRoute() {
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Feuille de route</h1>
         <p className="muted m-0 max-w-[62ch]">
-          Ce qui existe, ce qui arrive, et ce qui n’arrive pas encore. Cette page se lit
-          sans compte : elle dit où en est le jeu et ce qu’il reste à faire avant de le
-          montrer plus large.
+          Ce qui existe, ce qui arrive, et ce qui n’arrive pas encore. Cette page se lit sans compte : elle dit où en
+          est le jeu et ce qu’il reste à faire avant de le montrer plus large.
         </p>
       </section>
 
@@ -111,8 +109,8 @@ export function FeuilleDeRoute() {
           </>
         ) : (
           <p className="muted m-0 max-w-[62ch]">
-            Cette build n’a pas encore sa note : elle arrive avec la publication. Les
-            versions précédentes, elles, sont toutes là.
+            Cette build n’a pas encore sa note : elle arrive avec la publication. Les versions précédentes, elles, sont
+            toutes là.
           </p>
         )}
       </section>
@@ -120,8 +118,8 @@ export function FeuilleDeRoute() {
       <section className="section">
         <h2>Les critères de sortie d’alpha</h2>
         <p className="muted max-w-[62ch]">
-          Ce qu’il faut avoir livré pour qu’on vise l’étape suivante. La liste est courte,
-          et elle ne s’allonge pas en cours de route.
+          Ce qu’il faut avoir livré pour qu’on vise l’étape suivante. La liste est courte, et elle ne s’allonge pas en
+          cours de route.
         </p>
         <ul className="liste-points panel flex flex-col gap-2 pl-8 pr-4 py-3 leading-relaxed">
           {CRITERES_ALPHA.map((critere) => (
@@ -131,8 +129,7 @@ export function FeuilleDeRoute() {
 
         <h2>Les jalons</h2>
         <p className="muted max-w-[62ch]">
-          Trois étapes nommées, et rien d’autre : chaque étape se quitte quand ses critères
-          sont remplis.
+          Trois étapes nommées, et rien d’autre : chaque étape se quitte quand ses critères sont remplis.
         </p>
         <div className="feuille-de-route__liste">
           {JALONS.map((jalon) => (
@@ -152,9 +149,8 @@ export function FeuilleDeRoute() {
       <section className="section panel">
         <h2>Les fonctionnalités prévues</h2>
         <p className="muted max-w-[62ch]">
-          Les chantiers ouverts de l’étape en cours. La liste vient du dépôt de travail :
-          elle se met à jour quand une issue s’ouvre ou se ferme, et le numéro suffit à la
-          retrouver.
+          Les chantiers ouverts de l’étape en cours. La liste vient du dépôt de travail : elle se met à jour quand une
+          issue s’ouvre ou se ferme, et le numéro suffit à la retrouver.
         </p>
         {FEATURES_PREVUES.length > 0 ? (
           <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
@@ -166,8 +162,7 @@ export function FeuilleDeRoute() {
           </ul>
         ) : (
           <p className="muted m-0">
-            Aucun chantier ouvert pour cette étape : la liste est vide, et c’est une bonne
-            nouvelle.
+            Aucun chantier ouvert pour cette étape : la liste est vide, et c’est une bonne nouvelle.
           </p>
         )}
       </section>
@@ -175,8 +170,7 @@ export function FeuilleDeRoute() {
       <section className="section panel">
         <h2>Décidé pour plus tard</h2>
         <p className="muted max-w-[62ch]">
-          Ce qui est tranché, mais rangé après la beta : ce n’est pas oublié, c’est plus
-          loin.
+          Ce qui est tranché, mais rangé après la beta : ce n’est pas oublié, c’est plus loin.
         </p>
         <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
           {DECIDE_PLUS_TARD.map((element) => (
@@ -188,8 +182,7 @@ export function FeuilleDeRoute() {
       <section className="section panel">
         <h2>Pas maintenant</h2>
         <p className="muted max-w-[62ch]">
-          Ce qui n’entre pas pendant l’alpha, pour que l’écoute des retours ne remplisse
-          pas le programme à notre place.
+          Ce qui n’entre pas pendant l’alpha, pour que l’écoute des retours ne remplisse pas le programme à notre place.
         </p>
         <ul className="m-0 flex list-none flex-wrap gap-2 p-0 text-[0.85rem]">
           {PAS_MAINTENANT.map((quoi) => (

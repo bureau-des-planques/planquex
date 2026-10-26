@@ -31,7 +31,8 @@ function redirectionsPermanentes(config: { redirects?: Redirect[] }): Record<str
   const trouvees: Record<string, string> = {};
   for (const redirect of config.redirects ?? []) {
     // `permanent` vaut `true` par défaut (308) ; `statusCode` 308/301 le sont aussi.
-    const permanente = redirect.statusCode === undefined ? redirect.permanent !== false : [301, 308].includes(redirect.statusCode);
+    const permanente =
+      redirect.statusCode === undefined ? redirect.permanent !== false : [301, 308].includes(redirect.statusCode);
     if (permanente) trouvees[redirect.source] = redirect.destination;
   }
   return trouvees;

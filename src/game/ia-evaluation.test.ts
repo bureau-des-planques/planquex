@@ -36,12 +36,7 @@ function only(weights: Partial<EvaluationWeights>): EvaluationWeights {
 }
 
 /** Un état où `who` a exactement le Planqué voulu au Poste, avec les cafés passés. */
-function withTestActive(
-  state: BattleState,
-  who: PlayerId,
-  cardId: string,
-  energy: CafeSymbol[]
-): BattleState {
+function withTestActive(state: BattleState, who: PlayerId, cardId: string, energy: CafeSymbol[]): BattleState {
   const card = getCard(cardId);
   if (!isPlanque(card)) throw new Error(`${cardId} n'est pas un Planqué`);
   const active: CardInstance = {

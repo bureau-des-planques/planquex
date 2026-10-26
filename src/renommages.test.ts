@@ -149,7 +149,7 @@ describe('les mots retirés du vocabulaire ne reviennent pas à l’écran (#220
       mkdirSync(join(bac, 'src', 'pages'), { recursive: true });
       mkdirSync(join(bac, 'src', 'components'), { recursive: true });
       // Le défaut de 0.1.11, tel quel : c'est lui que le contrôle doit voir.
-      writeFileSync(join(bac, 'src', 'pages', 'Deck.tsx'), "<h2>Chariots proposés</h2>\n");
+      writeFileSync(join(bac, 'src', 'pages', 'Deck.tsx'), '<h2>Chariots proposés</h2>\n');
       writeFileSync(
         join(bac, 'src', 'components', 'Banc.tsx'),
         'Le Planqué du Rack reçoit le café, et le Parc le montre.\n'

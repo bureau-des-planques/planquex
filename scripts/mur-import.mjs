@@ -213,7 +213,11 @@ export function famille(entree) {
 
 /** Les premiers mots d'un texte, quand le formulaire n'a pas donné de titre (§4.3 bis). */
 export function titreDepuisTexte(texte) {
-  const premier = String(texte ?? '').split('\n').map((ligne) => ligne.trim()).find(Boolean) ?? '';
+  const premier =
+    String(texte ?? '')
+      .split('\n')
+      .map((ligne) => ligne.trim())
+      .find(Boolean) ?? '';
   const mots = premier.split(/\s+/).filter(Boolean).slice(0, 10).join(' ');
   return mots.length > 72 ? `${mots.slice(0, 69).trimEnd()}…` : mots;
 }
@@ -330,9 +334,7 @@ function reponseGueulage(ligne, roles, { horodatage, entree, connu }) {
   if (!titre || blocs.length === 0) return null;
   blocs.unshift('Titre fabriqué avec les premiers mots du message : le formulaire n’en demandait pas.');
 
-  const avertissements = connu
-    ? []
-    : [`chemin « ${entree || '(vide)'} » inconnu : importé comme gueulage`];
+  const avertissements = connu ? [] : [`chemin « ${entree || '(vide)'} » inconnu : importé comme gueulage`];
 
   // La **réponse d'après** : c'est elle qui produit une IP ou un OUF, jamais le gueulage.
   const bug = postitSection(ligne, roles, 'OUF', horodatage, pseudo, version);
@@ -655,9 +657,7 @@ async function principal(ligne = process.argv.slice(2)) {
     }
     // Un gueulage n'annonce **pas** de famille : « Gueulage », jamais « IP » (D-085).
     const etiquette = postit.gueulage ? 'Gueulage' : postit.kind;
-    console.log(
-      `  + ${postit.id} — ${etiquette}${postit.lie ? ` (collé sur ${postit.lie})` : ''} — ${postit.titre}`
-    );
+    console.log(`  + ${postit.id} — ${etiquette}${postit.lie ? ` (collé sur ${postit.lie})` : ''} — ${postit.titre}`);
   }
 
   const resume = `lus : ${lus} — ajoutés : ${ajouts.length} — déjà là : ${deja}`;

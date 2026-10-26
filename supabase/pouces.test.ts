@@ -18,9 +18,20 @@
  * bruyamment au lieu de se décaler en silence.
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { APPAREIL_A, APPAREIL_B, avecAppareil, base, baseAvecAppareils, fichiersMigrations, migrations, type Base } from './pglite';
+import {
+  APPAREIL_A,
+  APPAREIL_B,
+  avecAppareil,
+  base,
+  baseAvecAppareils,
+  fichiersMigrations,
+  migrations,
+  type Base
+} from './pglite';
 
-const MIGRATION_POUCES = fichiersMigrations().find((sql) => sql.includes('on public.votes for insert') && sql.includes('drop policy if exists'));
+const MIGRATION_POUCES = fichiersMigrations().find(
+  (sql) => sql.includes('on public.votes for insert') && sql.includes('drop policy if exists')
+);
 if (!MIGRATION_POUCES) throw new Error('supabase/migrations/0004_pouces.sql introuvable');
 
 const MIGRATION_MUR = fichiersMigrations().find((sql) => sql.includes('create table public.postits'));
@@ -53,7 +64,7 @@ const coller = (db: Base, appareil: string, id: string, statut = 'en attente') =
     `insert into public.postits (id, kind, titre, texte, version, statut, raison)
      values ($1, 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.7', $2, case when $2 = 'écarté' then 'Hors périmètre.' else '' end)
      returning *`,
-    [id, statut],
+    [id, statut]
   );
 
 const voter = (db: Base, appareil: string, postit: string, sens: 'up' | 'down') =>
@@ -61,7 +72,9 @@ const voter = (db: Base, appareil: string, postit: string, sens: 'up' | 'down') 
 
 const compteurs = async (db: Base, postit: string) => {
   const lu = await avecAppareil(db, APPAREIL_B, () =>
-    db.query<{ votes: { up: number; down: number } }>(`select votes from public.postits_avec_votes where id = $1`, [postit]),
+    db.query<{ votes: { up: number; down: number } }>(`select votes from public.postits_avec_votes where id = $1`, [
+      postit
+    ])
   );
   return lu.rows[0]?.votes;
 };
@@ -93,7 +106,7 @@ const GESTES = {
       db,
       APPAREIL_A,
       `update public.votes set postit_id = 'p-a' where postit_id = 'p-b' and votant = $1 returning *`,
-      [APPAREIL_A],
+      [APPAREIL_A]
     );
   },
   /** (c) Voter au nom d'un autre appareil. */
@@ -103,7 +116,7 @@ const GESTES = {
       db,
       APPAREIL_B,
       `insert into public.votes (postit_id, votant, sens) values ('p-a', $1, 'up') returning *`,
-      [APPAREIL_A],
+      [APPAREIL_A]
     );
   },
   /** (d) Voter, puis défaire : la vue doit revenir à zéro. */
@@ -111,7 +124,12 @@ const GESTES = {
     await monde(db);
     accepte(await voter(db, APPAREIL_B, 'p-a', 'up'));
     expect(await compteurs(db, 'p-a')).toEqual({ up: 1, down: 0 });
-    const retire = await tenter(db, APPAREIL_B, `delete from public.votes where postit_id = 'p-a' and votant = $1 returning *`, [APPAREIL_B]);
+    const retire = await tenter(
+      db,
+      APPAREIL_B,
+      `delete from public.votes where postit_id = 'p-a' and votant = $1 returning *`,
+      [APPAREIL_B]
+    );
     if (!retire.accepte) return retire;
     // Une suppression refusée par RLS rend 0 ligne sans erreur : seul le compteur dit la vérité.
     const apres = await compteurs(db, 'p-a');
@@ -119,7 +137,7 @@ const GESTES = {
       return { accepte: false, message: `le compteur n’est pas revenu à zéro : ${JSON.stringify(apres)}` };
     }
     return retire;
-  },
+  }
 } as const;
 
 describe('les pouces dans la base — la 0004 (#137)', () => {
@@ -147,9 +165,7 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
   });
 
   it('changer d’avis déplace le compte : la modification de sa propre ligne est acceptée', async () => {
-    accepte(
-      await tenter(db, APPAREIL_B, `update public.votes set sens = 'down' where postit_id = 'p-a' returning *`),
-    );
+    accepte(await tenter(db, APPAREIL_B, `update public.votes set sens = 'down' where postit_id = 'p-a' returning *`));
     expect(await compteurs(db, 'p-a')).toEqual({ up: 0, down: 1 });
   });
 
@@ -167,9 +183,9 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
         db,
         APPAREIL_A,
         `update public.votes set postit_id = 'p-a' where postit_id = 'p-b' and votant = $1 returning *`,
-        [APPAREIL_A],
+        [APPAREIL_A]
       ),
-      /row-level security/,
+      /row-level security/
     );
     expect(await compteurs(db, 'p-a')).toEqual({ up: 0, down: 1 });
     expect(await compteurs(db, 'p-b')).toEqual({ up: 1, down: 0 });
@@ -182,9 +198,9 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
         db,
         APPAREIL_B,
         `insert into public.votes (postit_id, votant, sens) values ('p-a2', $1, 'up') returning *`,
-        [APPAREIL_A],
+        [APPAREIL_A]
       ),
-      /row-level security/,
+      /row-level security/
     );
   });
 
@@ -200,7 +216,12 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
   });
 
   it('un autre appareil ne défait pas le vote de B : 0 ligne, le compteur ne bouge pas', async () => {
-    const attaque = await tenter(db, APPAREIL_A, `delete from public.votes where postit_id = 'p-a' and votant = $1 returning *`, [APPAREIL_B]);
+    const attaque = await tenter(
+      db,
+      APPAREIL_A,
+      `delete from public.votes where postit_id = 'p-a' and votant = $1 returning *`,
+      [APPAREIL_B]
+    );
     expect(attaque).toEqual({ accepte: true, ligne: {} });
     expect(await compteurs(db, 'p-a')).toEqual({ up: 1, down: 0 });
   });
@@ -212,23 +233,28 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
 
     // Un post-it qui a bougé de statut ne se retire plus par son auteur (#139, 0006) : le tri
     // — une raison, un ticket — partirait avec lui. Le refus est un `0 ligne` de RLS.
-    expect(
-      await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-ecarte' returning *`),
-    ).toEqual({ accepte: true, ligne: {} });
+    expect(await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-ecarte' returning *`)).toEqual({
+      accepte: true,
+      ligne: {}
+    });
 
     // Tant qu'il est « en attente », l'auteur le retire, et les votes qu'il portait partent
     // avec lui (cascade).
     accepte(await coller(db, APPAREIL_A, 'p-jetable'));
     accepte(await voter(db, APPAREIL_B, 'p-jetable', 'up'));
     accepte(await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-jetable' returning *`));
-    const reste = await avecAppareil(db, APPAREIL_B, () => db.query(`select 1 from public.votes where postit_id = 'p-jetable'`));
+    const reste = await avecAppareil(db, APPAREIL_B, () =>
+      db.query(`select 1 from public.votes where postit_id = 'p-jetable'`)
+    );
     expect(reste.rows).toHaveLength(0);
   });
 
   it('`anon` ne vote pas', async () => {
     await db.exec('set role anon');
     try {
-      await expect(db.query(`insert into public.votes (postit_id, sens) values ('p-a', 'up')`)).rejects.toThrow(/permission denied/);
+      await expect(db.query(`insert into public.votes (postit_id, sens) values ('p-a', 'up')`)).rejects.toThrow(
+        /permission denied/
+      );
     } finally {
       await db.exec('reset role');
     }
@@ -273,7 +299,10 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
   function muterNieme(sql: string, motif: string, attendues: number, n: number, remplacement: string): string {
     const morceaux = sql.split(motif);
     expect(morceaux.length - 1, `motif attendu ${attendues} fois : ${motif}`).toBe(attendues);
-    const mutee = morceaux.reduce((acc, morceau, i) => (i === 0 ? morceau : acc + (i - 1 === n ? remplacement : motif) + morceau), '');
+    const mutee = morceaux.reduce(
+      (acc, morceau, i) => (i === 0 ? morceau : acc + (i - 1 === n ? remplacement : motif) + morceau),
+      ''
+    );
     expect(mutee).not.toBe(sql);
     return mutee;
   }
@@ -286,8 +315,7 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
    * neutraliser la seule 0004 serait annulé par elle. La même neutralisation est donc
    * appliquée à toutes les copies du motif, où qu'elles vivent.
    */
-  const aussi0005 = (sql: string, motif: string, remplacement: string) =>
-    sql.replaceAll(motif, remplacement);
+  const aussi0005 = (sql: string, motif: string, remplacement: string) => sql.replaceAll(motif, remplacement);
 
   const MUTATIONS: Array<{
     nom: string;
@@ -297,31 +325,26 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
   }> = [
     {
       nom: 'sans la clé primaire (postit_id, votant, sens) → l’appareil vote deux fois (a)',
-      sql: () => avecMur(muterNieme(MIGRATION_MUR!, 'primary key (postit_id, votant)', 1, 0, 'primary key (postit_id, votant, sens)')),
+      sql: () =>
+        avecMur(
+          muterNieme(MIGRATION_MUR!, 'primary key (postit_id, votant)', 1, 0, 'primary key (postit_id, votant, sens)')
+        ),
       geste: GESTES.deuxFoisLeMemePostit,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans la condition à l’insertion → l’auteur vote pour lui-même (b)',
       sql: () =>
-        aussi0005(
-          avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 0, 'and false')),
-          PREUVE_SOI,
-          'and false',
-        ),
+        aussi0005(avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 0, 'and false')), PREUVE_SOI, 'and false'),
       geste: GESTES.pourSoi,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans la condition à la modification → il déplace son vote vers son propre post-it (b)',
       sql: () =>
-        aussi0005(
-          avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 1, 'and false')),
-          PREUVE_SOI,
-          'and false',
-        ),
+        aussi0005(avecPouces(muterNieme(MIGRATION_POUCES!, PREUVE_SOI, 2, 1, 'and false')), PREUVE_SOI, 'and false'),
       geste: GESTES.deplacerVersSoi,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans `votant = auth.uid()` à l’insertion → on vote au nom d’un autre (c)',
@@ -329,10 +352,10 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
         aussi0005(
           avecPouces(muterNieme(MIGRATION_POUCES!, VOTANT_A_L_INSERTION, 2, 0, 'with check (\n    true')),
           VOTANT_A_L_INSERTION,
-          'with check (\n    true',
+          'with check (\n    true'
         ),
       geste: GESTES.auNomDUnAutre,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans la politique de suppression → le vote ne se défait pas, le compteur ne revient pas (d)',
@@ -344,15 +367,15 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
               'on public.votes for delete to authenticated\n  using (votant = auth.uid())',
               1,
               0,
-              'on public.votes for delete to authenticated\n  using (false)',
-            ),
+              'on public.votes for delete to authenticated\n  using (false)'
+            )
           ),
           'using (votant = auth.uid() and public.compte_approuve())',
-          'using (false)',
+          'using (false)'
         ),
       geste: GESTES.defaire,
-      attendu: 'refuse',
-    },
+      attendu: 'refuse'
+    }
   ];
 
   // Le geste, sur la vraie base : l'issue que chaque mutation doit inverser.
@@ -364,7 +387,7 @@ describe('le contrôle mord — chaque contrôle, neutralisé, laisse passer le 
       ['pourSoi', 'refuse'],
       ['deplacerVersSoi', 'refuse'],
       ['auNomDUnAutre', 'refuse'],
-      ['defaire', 'accepte'],
+      ['defaire', 'accepte']
     ];
     for (const [nom, attendu] of attendus) {
       const db = await baseAvecAppareils();

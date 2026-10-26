@@ -26,8 +26,7 @@ vi.mock('@/store/combats', async (importOriginal) => {
     ...original,
     envoyerCombat,
     // Le vrai `tracerCombat`, avec l'envoi doublé : son `catch` est donc bien exercé.
-    tracerCombat: (combat: Parameters<typeof original.tracerCombat>[0]) =>
-      original.tracerCombat(combat, envoyerCombat)
+    tracerCombat: (combat: Parameters<typeof original.tracerCombat>[0]) => original.tracerCombat(combat, envoyerCombat)
   };
 });
 

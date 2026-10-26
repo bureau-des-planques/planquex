@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   lister: vi.fn(),
   decider: vi.fn(),
   chargerMur: vi.fn(),
-  trier: vi.fn(),
+  trier: vi.fn()
 }));
 
 vi.mock('@/lib/murBase', async () => {
@@ -26,7 +26,7 @@ vi.mock('@/lib/murBase', async () => {
   return {
     ...vrai,
     chargerPostitsDuMur: mocks.chargerMur,
-    trierPostit: mocks.trier,
+    trierPostit: mocks.trier
   };
 });
 
@@ -35,7 +35,7 @@ vi.mock('@/lib/comptes', async () => {
   return {
     ...vrai,
     listerComptes: mocks.lister,
-    deciderCompte: mocks.decider,
+    deciderCompte: mocks.decider
   };
 });
 
@@ -49,7 +49,7 @@ const EN_ATTENTE: Compte = {
   etat: 'en attente',
   raison: '',
   administrateur: false,
-  created_at: '2026-10-23T10:00:00.000Z',
+  created_at: '2026-10-23T10:00:00.000Z'
 };
 const APPROUVE: Compte = {
   id: 'compte-b',
@@ -57,7 +57,7 @@ const APPROUVE: Compte = {
   etat: 'approuve',
   raison: '',
   administrateur: false,
-  created_at: '2026-10-22T09:00:00.000Z',
+  created_at: '2026-10-22T09:00:00.000Z'
 };
 const POSTIT = {
   id: 'p-autre',
@@ -74,7 +74,7 @@ const POSTIT = {
   lie: null,
   position: { x: 10, y: 10, angle: 0 },
   votes: { up: 2, down: 0, mon: null },
-  mien: false,
+  mien: false
 };
 
 const ADMIN: Compte = {
@@ -83,7 +83,7 @@ const ADMIN: Compte = {
   etat: 'approuve',
   raison: '',
   administrateur: true,
-  created_at: '2026-10-21T09:00:00.000Z',
+  created_at: '2026-10-21T09:00:00.000Z'
 };
 
 const actions = () => ({
@@ -92,11 +92,11 @@ const actions = () => ({
   inscrireCourriel: vi.fn(
     async (_courriel: string, _motDePasse: string): Promise<{ erreur: string | null; courrielEnvoye: boolean }> => ({
       erreur: null,
-      courrielEnvoye: false,
-    }),
+      courrielEnvoye: false
+    })
   ),
   connecterGoogle: vi.fn(async (_redirectTo?: string): Promise<string | null> => null),
-  deconnecter: vi.fn(async () => {}),
+  deconnecter: vi.fn(async () => {})
 });
 
 function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
@@ -107,7 +107,7 @@ function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
     compte: ADMIN,
     erreur: null,
     ...actions(),
-    ...etat,
+    ...etat
   });
 }
 
@@ -126,7 +126,7 @@ beforeEach(() => {
   mocks.decider.mockImplementation(async (id: string, etat: EtatCompte, raison: string) => ({
     ...(id === EN_ATTENTE.id ? EN_ATTENTE : APPROUVE),
     etat,
-    raison,
+    raison
   }));
   mocks.chargerMur.mockReset();
   mocks.chargerMur.mockResolvedValue([{ ...POSTIT }]);
@@ -184,9 +184,7 @@ describe('un administrateur approuve et refuse', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Approuver a@exemple.test/ }));
 
-    await waitFor(() =>
-      expect(mocks.decider).toHaveBeenCalledWith(EN_ATTENTE.id, 'approuve', ''),
-    );
+    await waitFor(() => expect(mocks.decider).toHaveBeenCalledWith(EN_ATTENTE.id, 'approuve', ''));
     expect(await screen.findByText(/est approuvé/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /En attente \(0\)/ })).toBeInTheDocument();
   });
@@ -200,17 +198,13 @@ describe('un administrateur approuve et refuse', () => {
     expect(confirmer).toBeDisabled();
 
     fireEvent.change(screen.getByLabelText(/Raison du refus pour a@exemple.test/), {
-      target: { value: 'Je ne connais pas cette adresse.' },
+      target: { value: 'Je ne connais pas cette adresse.' }
     });
     expect(confirmer).not.toBeDisabled();
     fireEvent.click(confirmer);
 
     await waitFor(() =>
-      expect(mocks.decider).toHaveBeenCalledWith(
-        EN_ATTENTE.id,
-        'refuse',
-        'Je ne connais pas cette adresse.',
-      ),
+      expect(mocks.decider).toHaveBeenCalledWith(EN_ATTENTE.id, 'refuse', 'Je ne connais pas cette adresse.')
     );
     expect(await screen.findByText(/est refusé/)).toBeInTheDocument();
   });
@@ -263,9 +257,7 @@ describe('le tri du mur par l’administration (#0006, D-088)', () => {
     rendre();
     expect(await screen.findByRole('heading', { name: /Le mur — le tri \(1\)/ })).toBeInTheDocument();
     expect(screen.getByText('Le bouton Fin du tour reste grisé')).toBeInTheDocument();
-    expect(screen.getByLabelText('Statut de « Le bouton Fin du tour reste grisé »')).toHaveValue(
-      'en attente',
-    );
+    expect(screen.getByLabelText('Statut de « Le bouton Fin du tour reste grisé »')).toHaveValue('en attente');
     // Rien à enregistrer tant que rien n'a bougé.
     expect(screen.getByRole('button', { name: /Enregistrer le tri/ })).toBeDisabled();
   });
@@ -282,17 +274,17 @@ describe('le tri du mur par l’administration (#0006, D-088)', () => {
     await screen.findByText('Le bouton Fin du tour reste grisé');
 
     fireEvent.change(screen.getByLabelText('Statut de « Le bouton Fin du tour reste grisé »'), {
-      target: { value: 'écarté' },
+      target: { value: 'écarté' }
     });
     const enregistrer = screen.getByRole('button', { name: /Enregistrer le tri/ });
     expect(enregistrer).toBeDisabled();
     expect(screen.getByText(/Écarter exige une raison écrite/)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Raison de l’écart de « Le bouton Fin du tour reste grisé »'), {
-      target: { value: 'Hors périmètre du lancement.' },
+      target: { value: 'Hors périmètre du lancement.' }
     });
     fireEvent.change(screen.getByLabelText('Ticket de « Le bouton Fin du tour reste grisé »'), {
-      target: { value: '140' },
+      target: { value: '140' }
     });
     expect(enregistrer).not.toBeDisabled();
     fireEvent.click(enregistrer);
@@ -301,32 +293,30 @@ describe('le tri du mur par l’administration (#0006, D-088)', () => {
       expect(mocks.trier).toHaveBeenCalledWith(POSTIT.id, {
         statut: 'écarté',
         raison: 'Hors périmètre du lancement.',
-        ticket: 140,
-      }),
+        ticket: 140
+      })
     );
-    expect(
-      screen.getByLabelText('Raison de l’écart de « Le bouton Fin du tour reste grisé »'),
-    ).toHaveValue('Hors périmètre du lancement.');
+    expect(screen.getByLabelText('Raison de l’écart de « Le bouton Fin du tour reste grisé »')).toHaveValue(
+      'Hors périmètre du lancement.'
+    );
     expect(await screen.findByText(/« Le bouton Fin du tour reste grisé » : écarté/)).toBeInTheDocument();
   });
 
   it('un refus de la base se lit, et rien ne prétend avoir été trié', async () => {
     mocks.trier.mockRejectedValue(
-      new Error('La base refuse : seul un administrateur trie le mur (D-088, migration 0006).'),
+      new Error('La base refuse : seul un administrateur trie le mur (D-088, migration 0006).')
     );
     rendre();
     await screen.findByText('Le bouton Fin du tour reste grisé');
 
     fireEvent.change(screen.getByLabelText('Statut de « Le bouton Fin du tour reste grisé »'), {
-      target: { value: 'retenu' },
+      target: { value: 'retenu' }
     });
     fireEvent.click(screen.getByRole('button', { name: /Enregistrer le tri/ }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/seul un administrateur trie le mur/);
     // La ligne du mur, elle, n'a pas bougé : le brouillon de l'écran attend, le mur non.
-    expect(document.querySelector('[data-tri="p-autre"]')).toHaveTextContent(
-      'IP · Employé 404 · en attente',
-    );
+    expect(document.querySelector('[data-tri="p-autre"]')).toHaveTextContent('IP · Employé 404 · en attente');
   });
 
   it('un mur vide le dit, et une erreur de lecture s’affiche avec « Réessayer »', async () => {

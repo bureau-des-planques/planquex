@@ -23,12 +23,7 @@ const AI_DECK = factionDeck('MANAGEMENT');
  * Un état où `who` a **exactement** le Planqué voulu au Poste, Banc vide, avec les
  * cafés passés — de quoi isoler une mesure d'évaluation sans dépendre du tirage.
  */
-function withTestActive(
-  state: BattleState,
-  who: PlayerId,
-  cardId: string,
-  energy: CafeSymbol[]
-): BattleState {
+function withTestActive(state: BattleState, who: PlayerId, cardId: string, energy: CafeSymbol[]): BattleState {
   const card = getCard(cardId);
   if (!isPlanque(card)) throw new Error(`${cardId} n'est pas un Planqué`);
   const active: CardInstance = {

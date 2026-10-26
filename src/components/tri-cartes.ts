@@ -31,8 +31,7 @@ const nom = (a: Card, b: Card) => a.name.localeCompare(b.name, 'fr') || a.id.loc
 /** Le rang de stade : les Planqués par stade, les cartes Action **après**. */
 const stade = (carte: Card) => (isPlanque(carte) ? STAGE_META[carte.stage].order : STAGE_META['N+2'].order + 1);
 
-const faction = (a: Card, b: Card) =>
-  FACTION_META[a.faction].name.localeCompare(FACTION_META[b.faction].name, 'fr');
+const faction = (a: Card, b: Card) => FACTION_META[a.faction].name.localeCompare(FACTION_META[b.faction].name, 'fr');
 
 /**
  * Range une **copie** de `cartes`. Tous les tris finissent par le nom puis l'identifiant :

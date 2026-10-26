@@ -10,7 +10,7 @@ import {
   VARIABLE_CLE,
   VARIABLE_URL,
   type AppareilAnonyme,
-  type ConfigurationMur,
+  type ConfigurationMur
 } from '@/lib/supabase';
 
 /**
@@ -38,10 +38,10 @@ const CLE_PUBLIQUE_FAUSSE = 'sb_publishable_exemple-cle-publique-fausse';
 function fauxAppareil(options: { session?: string; erreur?: string } = {}) {
   const signInAnonymously = vi.fn(async () => ({
     data: { user: options.erreur ? null : { id: 'appareil-neuf' } },
-    error: options.erreur ? { message: options.erreur } : null,
+    error: options.erreur ? { message: options.erreur } : null
   }));
   const getSession = vi.fn(async () => ({
-    data: { session: options.session ? { user: { id: options.session } } : null },
+    data: { session: options.session ? { user: { id: options.session } } : null }
   }));
   const appareil: AppareilAnonyme = { auth: { getSession, signInAnonymously } };
   return { appareil, getSession, signInAnonymously };
@@ -54,20 +54,18 @@ describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
   });
 
   it('refuse une configuration à moitié posée, au lieu de se taire', () => {
-    expect(() => configurerMur({ [VARIABLE_URL]: 'https://exemple.supabase.co' })).toThrow(
-      /incomplète/,
-    );
+    expect(() => configurerMur({ [VARIABLE_URL]: 'https://exemple.supabase.co' })).toThrow(/incomplète/);
     expect(() => configurerMur({ [VARIABLE_CLE]: CLE_PUBLIQUE_FAUSSE })).toThrow(/incomplète/);
   });
 
   it('lit les deux variables quand elles sont posées, espaces compris', () => {
     const configuration: ConfigurationMur | null = configurerMur({
       [VARIABLE_URL]: ' https://exemple.supabase.co ',
-      [VARIABLE_CLE]: ` ${CLE_PUBLIQUE_FAUSSE} `,
+      [VARIABLE_CLE]: ` ${CLE_PUBLIQUE_FAUSSE} `
     });
     expect(configuration).toEqual({
       url: 'https://exemple.supabase.co',
-      clePublique: CLE_PUBLIQUE_FAUSSE,
+      clePublique: CLE_PUBLIQUE_FAUSSE
     });
   });
 
@@ -77,8 +75,8 @@ describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
     expect(() =>
       configurerMur({
         [VARIABLE_URL]: 'https://exemple.supabase.co',
-        [VARIABLE_CLE]: 'sb_secret_exemple',
-      }),
+        [VARIABLE_CLE]: 'sb_secret_exemple'
+      })
     ).toThrow(/clé de service/i);
   });
 
@@ -91,9 +89,7 @@ describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
 
     expect(cleEstDeService(anon)).toBe(false);
     expect(() => assertClePublique(anon)).not.toThrow();
-    expect(() =>
-      configurerMur({ [VARIABLE_URL]: 'https://exemple.supabase.co', [VARIABLE_CLE]: anon }),
-    ).not.toThrow();
+    expect(() => configurerMur({ [VARIABLE_URL]: 'https://exemple.supabase.co', [VARIABLE_CLE]: anon })).not.toThrow();
   });
 
   it('ne prend pas un JWT illisible pour une clé de service', () => {
@@ -120,7 +116,7 @@ describe('écrire une ligne (#173 : la trace des combats passe par ici)', () => 
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
     try {
       await expect(ecrireLigne('combats', { graine: 1 })).resolves.toEqual({
-        erreur: 'Supabase n’est pas configuré.',
+        erreur: 'Supabase n’est pas configuré.'
       });
     } finally {
       vi.unstubAllEnvs();
@@ -157,8 +153,6 @@ describe('l’identité anonyme de l’appareil (D-059 : ni compte, ni mot de pa
 
   it('dit clairement quand la signature anonyme est refusée (réglage du projet)', async () => {
     const faux = fauxAppareil({ erreur: 'Anonymous sign-ins are disabled' });
-    await expect(identiteAppareil(async () => faux.appareil)).rejects.toThrow(
-      /Identité anonyme impossible/,
-    );
+    await expect(identiteAppareil(async () => faux.appareil)).rejects.toThrow(/Identité anonyme impossible/);
   });
 });

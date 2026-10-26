@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import type { ActionCard, AttackEffect, BattleState } from '@/data/types';
-import {
-  applyAction,
-  choose,
-  createBattle,
-  createInstance,
-  legalActions
-} from '@/game/engine';
+import { applyAction, choose, createBattle, createInstance, legalActions } from '@/game/engine';
 
 /**
  * Défausser une carte de la main (#159, D-076).
@@ -57,7 +51,7 @@ function scene(effects: AttackEffect[], { joueur = 2, adverse = 3 } = {}): Battl
 const ATTAQUE = { type: 'attack', attackIndex: 0 } as const;
 
 describe('Défausse de la main — primitive `discardHand` (#159, D-076)', () => {
-  it("une défausse imposée retire une carte de la main adverse, au hasard", () => {
+  it('une défausse imposée retire une carte de la main adverse, au hasard', () => {
     const avant = scene([{ kind: 'discardHand', target: 'opponent', amount: 1 }], { adverse: 3 });
     const apres = applyAction(avant, ATTAQUE);
 
@@ -78,7 +72,7 @@ describe('Défausse de la main — primitive `discardHand` (#159, D-076)', () =>
     expect(second).toEqual(premier);
   });
 
-  it("une défausse imposée sur une main vide ne fait rien et ne bloque rien", () => {
+  it('une défausse imposée sur une main vide ne fait rien et ne bloque rien', () => {
     const avant = scene([{ kind: 'discardHand', target: 'opponent', amount: 1 }], { adverse: 0 });
     const apres = applyAction(avant, ATTAQUE);
     expect(apres.players.ai.hand).toHaveLength(0);

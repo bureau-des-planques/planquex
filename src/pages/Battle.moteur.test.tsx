@@ -82,7 +82,9 @@ const NOM_TALENT_DEGATS = 'Fixture Pression Manager';
 const NOM_EN_JOUANT = 'Fixture Sourcing';
 const NOM_BANC = 'Fixture Polyvalence';
 
-const COLLEGUE_DEFAUSSE = collegue('defausse', NOM_COLLEGUE_DEFAUSSE, [{ kind: 'discardHand', target: 'self', amount: 1 }]);
+const COLLEGUE_DEFAUSSE = collegue('defausse', NOM_COLLEGUE_DEFAUSSE, [
+  { kind: 'discardHand', target: 'self', amount: 1 }
+]);
 const COLLEGUE_REVELE = collegue('revele', 'Fixture Audit', [{ kind: 'reveal' }]);
 const COLLEGUE_REGARD = collegue('regard', 'Fixture Regard', [{ kind: 'peek' }]);
 const COLLEGUE_RECHERCHE = collegue('recherche', 'Fixture Recherche', [{ kind: 'search', filter: 'PLANQUE' }]);
@@ -300,7 +302,8 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
 
       // Hors de la main et du journal, un élément doit porter le nom du dessus.
       const affiche = Array.from(document.querySelectorAll<HTMLElement>('body *')).filter(
-        (el) => el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
+        (el) =>
+          el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
       );
       expect(affiche.length, 'le dessus est affiché au joueur').toBeGreaterThan(0);
     });
@@ -321,7 +324,8 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
 
       expect(document.querySelector('section.regard'), 'aucune section privée chez l’adversaire').toBeNull();
       const fuite = Array.from(document.querySelectorAll<HTMLElement>('body *')).filter(
-        (el) => el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
+        (el) =>
+          el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
       );
       expect(fuite, 'le dessus regardé ne fuit pas chez l’adversaire').toHaveLength(0);
     });

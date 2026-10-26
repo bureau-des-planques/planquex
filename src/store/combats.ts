@@ -70,11 +70,7 @@ export type LigneCombat = {
  * `decksSolo` est ignoré quand `match` n'est pas `null` : les Decks d'une partie à deux sont
  * ceux du `Match`, et prendre les autres ferait rejouer une partie qui n'a pas eu lieu.
  */
-export function combatTermine(
-  state: BattleState,
-  match: Match | null,
-  decksSolo: Decks
-): CombatEnregistre | null {
+export function combatTermine(state: BattleState, match: Match | null, decksSolo: Decks): CombatEnregistre | null {
   if (state.phase !== 'ended') return null;
 
   const decks = match ? { playerDeck: match.playerDeck, aiDeck: match.aiDeck } : decksSolo;

@@ -90,9 +90,7 @@ describe('pvp — à qui c’est le tour', () => {
     const afterEnd = applyAction(state, { type: 'endTurn' });
     expect(campLine(afterEnd, match)).toBe('Tu joues le camp Toi · c’est au camp Direction de jouer');
     // Un écran qui tiendrait l'autre camp le dit sans se tromper.
-    expect(campLine(state, { ...match, camp: 'ai' })).toBe(
-      'Tu joues le camp Direction · c’est au camp Toi de jouer'
-    );
+    expect(campLine(state, { ...match, camp: 'ai' })).toBe('Tu joues le camp Direction · c’est au camp Toi de jouer');
   });
 });
 

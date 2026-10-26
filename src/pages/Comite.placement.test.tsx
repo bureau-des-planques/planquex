@@ -242,9 +242,7 @@ describe('glisser écrit la place en base (#185)', () => {
     await waitFor(() => expect(mocks.deplacer).toHaveBeenCalledTimes(1));
     expect(mocks.deplacer).toHaveBeenCalledWith('p-moi', { x: 68, y: 63.3, angle: 0 });
     // La place rendue par la base est celle que le mur affiche.
-    await waitFor(() =>
-      expect(document.querySelector<HTMLElement>('[data-postit="p-moi"]')?.style.left).toBe('68%')
-    );
+    await waitFor(() => expect(document.querySelector<HTMLElement>('[data-postit="p-moi"]')?.style.left).toBe('68%'));
   });
 
   it('le post-it d’un autre ne se prend pas', async () => {
@@ -276,7 +274,9 @@ describe('glisser écrit la place en base (#185)', () => {
   });
 
   it('un refus de la base remet le post-it à la place acceptée, et le dit', async () => {
-    mocks.deplacer.mockRejectedValue(new Error('La base refuse ce déplacement : on ne range que ses propres post-its.'));
+    mocks.deplacer.mockRejectedValue(
+      new Error('La base refuse ce déplacement : on ne range que ses propres post-its.')
+    );
     rendre();
     await screen.findByText('Mon idée');
     fireEvent.click(screen.getByRole('button', { name: /Mode de placement/ }));
@@ -284,8 +284,6 @@ describe('glisser écrit la place en base (#185)', () => {
     glisser(mesurer('p-moi'), [220, 120], [700, 400]);
 
     expect(await screen.findByText(/on ne range que ses propres post-its/)).toBeInTheDocument();
-    await waitFor(() =>
-      expect(document.querySelector<HTMLElement>('[data-postit="p-moi"]')?.style.left).toBe('50%')
-    );
+    await waitFor(() => expect(document.querySelector<HTMLElement>('[data-postit="p-moi"]')?.style.left).toBe('50%'));
   });
 });

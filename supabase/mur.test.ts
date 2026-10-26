@@ -34,7 +34,7 @@ import {
   baseAvecAppareils,
   fichiersMigrations,
   migrations,
-  type Base,
+  type Base
 } from './pglite';
 
 /** La migration du mur, seule : une nouvelle migration ne doit pas décaler ses motifs. */
@@ -48,8 +48,8 @@ function coller(db: Base, appareil: string, id: string, titre = 'Le bouton Fin d
       `insert into public.postits (id, kind, titre, texte, ecran, pseudo, version)
        values ($1, 'IP', $2, 'Texte du retour.', 'Combat', 'Employe 404', 'Alpha · 0.1.2')
        returning *`,
-      [id, titre],
-    ),
+      [id, titre]
+    )
   );
 }
 
@@ -70,7 +70,7 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
     expect(colle.rows[0].auteur).toBe(APPAREIL_A);
 
     const lu = await avecAppareil(db, APPAREIL_B, () =>
-      db.query('select id, titre, auteur from public.postits where id = $1', ['p-001']),
+      db.query('select id, titre, auteur from public.postits where id = $1', ['p-001'])
     );
     expect(lu.rows).toHaveLength(1);
     expect(lu.rows[0].titre).toBe('Le bouton Fin du tour reste grise');
@@ -83,9 +83,9 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
           `insert into public.postits (id, kind, titre, texte, version, auteur)
            values ('p-002', 'OUF', 'Pirate', 'Pas de moi.', 'Alpha · 0.1.2', $1)
            returning *`,
-          [APPAREIL_A],
-        ),
-      ),
+          [APPAREIL_A]
+        )
+      )
     ).rejects.toThrow(/row-level security/);
   });
 
@@ -93,7 +93,7 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
     // La colonne `statut` est bien dans le grant (0006, le tri), donc le refus vient de la
     // **politique** : c'est celui que ce test garde.
     const attaque = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.postits set statut = 'fait' where id = 'p-001' returning *`),
+      db.query(`update public.postits set statut = 'fait' where id = 'p-001' returning *`)
     );
     expect(attaque.rows).toHaveLength(0);
 
@@ -102,25 +102,25 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
     // le post-it de quelqu'un d'autre (#139).
     await expect(
       avecAppareil(db, APPAREIL_B, () =>
-        db.query(`update public.postits set titre = 'Pirate' where id = 'p-001' returning *`),
-      ),
+        db.query(`update public.postits set titre = 'Pirate' where id = 'p-001' returning *`)
+      )
     ).rejects.toThrow(/permission denied for table postits/);
 
     // La ligne est intacte : le refus n'a rien changé en douce.
     const relu = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select titre, statut from public.postits where id = 'p-001'`),
+      db.query(`select titre, statut from public.postits where id = 'p-001'`)
     );
     expect(relu.rows[0]).toEqual({ titre: 'Le bouton Fin du tour reste grise', statut: 'en attente' });
   });
 
   it('B ne peut pas supprimer le post-it de A', async () => {
     const attaque = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`delete from public.postits where id = 'p-001' returning *`),
+      db.query(`delete from public.postits where id = 'p-001' returning *`)
     );
     expect(attaque.rows).toHaveLength(0);
 
     const reste = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select id from public.postits where id = 'p-001'`),
+      db.query(`select id from public.postits where id = 'p-001'`)
     );
     expect(reste.rows).toHaveLength(1);
   });
@@ -129,14 +129,14 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
     // Depuis la 0006, un auteur ne modifie plus sa ligne directement : le titre et le texte
     // passent par la fonction, qui vérifie l'auteur **et** le statut.
     const sienA = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select * from public.corriger_postit('p-001', 'Corrigé par A', 'Le texte corrigé.')`),
+      db.query(`select * from public.corriger_postit('p-001', 'Corrigé par A', 'Le texte corrigé.')`)
     );
     expect(sienA.rows).toHaveLength(1);
     expect(sienA.rows[0]).toMatchObject({ titre: 'Corrigé par A', texte: 'Le texte corrigé.' });
 
     await coller(db, APPAREIL_B, 'p-003');
     const sienB = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`select * from public.corriger_postit('p-003', 'Le mien', 'Texte du mien.')`),
+      db.query(`select * from public.corriger_postit('p-003', 'Le mien', 'Texte du mien.')`)
     );
     expect(sienB.rows).toHaveLength(1);
     expect(sienB.rows[0].titre).toBe('Le mien');
@@ -145,55 +145,57 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
   it('B ne touche ni aux votes ni aux commentaires de A', async () => {
     // A vote pour le post-it de B (p-003) : on ne vote pas pour le sien (0004, pouces.test.ts).
     const vote = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`insert into public.votes (postit_id, sens) values ('p-003', 'up') returning *`),
+      db.query(`insert into public.votes (postit_id, sens) values ('p-003', 'up') returning *`)
     );
     expect(vote.rows[0].votant).toBe(APPAREIL_A);
     const commentaire = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`insert into public.commentaires (postit_id, texte) values ('p-001', 'Pareil.') returning *`),
+      db.query(`insert into public.commentaires (postit_id, texte) values ('p-001', 'Pareil.') returning *`)
     );
     expect(commentaire.rows[0].auteur).toBe(APPAREIL_A);
 
     // B lit tout (les compteurs de la vue en dépendent)…
     const lus = await avecAppareil(db, APPAREIL_B, () =>
-      db.query('select (select count(*) from public.votes) as votes, (select count(*) from public.commentaires) as commentaires'),
+      db.query(
+        'select (select count(*) from public.votes) as votes, (select count(*) from public.commentaires) as commentaires'
+      )
     );
     expect(Number(lus.rows[0].votes)).toBe(1);
     expect(Number(lus.rows[0].commentaires)).toBe(1);
 
     // … mais ne réécrit ni ne supprime les lignes de A.
     const voteVolé = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.votes set sens = 'down' where postit_id = 'p-003' returning *`),
+      db.query(`update public.votes set sens = 'down' where postit_id = 'p-003' returning *`)
     );
     expect(voteVolé.rows).toHaveLength(0);
     const voteSupprimé = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`delete from public.votes where postit_id = 'p-003' returning *`),
+      db.query(`delete from public.votes where postit_id = 'p-003' returning *`)
     );
     expect(voteSupprimé.rows).toHaveLength(0);
     const commentaireSupprimé = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`delete from public.commentaires where postit_id = 'p-001' returning *`),
+      db.query(`delete from public.commentaires where postit_id = 'p-001' returning *`)
     );
     expect(commentaireSupprimé.rows).toHaveLength(0);
     const commentaireVolé = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.commentaires set texte = 'Pirate' where postit_id = 'p-001' returning *`),
+      db.query(`update public.commentaires set texte = 'Pirate' where postit_id = 'p-001' returning *`)
     );
     expect(commentaireVolé.rows).toHaveLength(0);
   });
 
   it('B vote en son nom, et ne vote qu’une fois par post-it', async () => {
     const vote = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`insert into public.votes (postit_id, sens) values ('p-001', 'down') returning *`),
+      db.query(`insert into public.votes (postit_id, sens) values ('p-001', 'down') returning *`)
     );
     expect(vote.rows[0].votant).toBe(APPAREIL_B);
 
     await expect(
       avecAppareil(db, APPAREIL_B, () =>
-        db.query(`insert into public.votes (postit_id, sens) values ('p-001', 'up') returning *`),
-      ),
+        db.query(`insert into public.votes (postit_id, sens) values ('p-001', 'up') returning *`)
+      )
     ).rejects.toThrow(/duplicate key/);
 
     // Changer d'avis, c'est modifier sa propre ligne.
     const change = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.votes set sens = 'up' where postit_id = 'p-001' returning *`),
+      db.query(`update public.votes set sens = 'up' where postit_id = 'p-001' returning *`)
     );
     expect(change.rows).toHaveLength(1);
     expect(change.rows[0].sens).toBe('up');
@@ -201,7 +203,7 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
 
   it('la vue recompose la forme du contrat : position en pourcentage, votes { up, down }', async () => {
     const mur = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`select id, position, votes from public.postits_avec_votes where id = 'p-001'`),
+      db.query(`select id, position, votes from public.postits_avec_votes where id = 'p-001'`)
     );
     expect(mur.rows[0].position).toEqual({ x: 50, y: 50, angle: 0 });
     // Le seul vote de p-001 : le « up » de B (après son changement d'avis). A n'a pas le droit
@@ -216,37 +218,37 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
     // ici, pas un droit — les droits sont dans `mur-ecriture.test.ts`.
     const casse = (sql: string) => db.query(sql);
 
-    await expect(
-      casse(`update public.postits set statut = 'ecarte' where id = 'p-001'`),
-    ).rejects.toThrow(/postits_statut_check/);
+    await expect(casse(`update public.postits set statut = 'ecarte' where id = 'p-001'`)).rejects.toThrow(
+      /postits_statut_check/
+    );
 
     // « Un post-it écarté sans raison est un mur mort » (§2, D-059).
-    await expect(
-      casse(`update public.postits set statut = 'écarté' where id = 'p-001'`),
-    ).rejects.toThrow(/postits_ecarte_a_sa_raison/);
+    await expect(casse(`update public.postits set statut = 'écarté' where id = 'p-001'`)).rejects.toThrow(
+      /postits_ecarte_a_sa_raison/
+    );
 
     const ecarte = await casse(
-      `update public.postits set statut = 'écarté', raison = 'Hors perimetre.' where id = 'p-001' returning *`,
+      `update public.postits set statut = 'écarté', raison = 'Hors perimetre.' where id = 'p-001' returning *`
     );
     expect(ecarte.rows).toHaveLength(1);
 
     await expect(
       coller(db, APPAREIL_A, 'p-004').then(() =>
-        casse(`update public.postits set position_angle = 9 where id = 'p-004' returning *`),
-      ),
+        casse(`update public.postits set position_angle = 9 where id = 'p-004' returning *`)
+      )
     ).rejects.toThrow(/postits_position_angle_check/);
 
     await expect(
       casse(
         `insert into public.postits (id, kind, titre, texte, version, auteur)
-         values ('p-006', 'BUG', 'Famille inconnue', 'Texte.', 'Alpha · 0.1.2', '${APPAREIL_A}') returning *`,
-      ),
+         values ('p-006', 'BUG', 'Famille inconnue', 'Texte.', 'Alpha · 0.1.2', '${APPAREIL_A}') returning *`
+      )
     ).rejects.toThrow(/postits_kind_check/);
 
     // Et la règle de la 0006 tient : un auteur qui n'est pas administrateur ne déplace plus
     // son propre statut — 0 ligne, sans erreur (le piège de RLS).
     const sien = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`update public.postits set statut = 'retenu' where id = 'p-004' returning *`),
+      db.query(`update public.postits set statut = 'retenu' where id = 'p-004' returning *`)
     );
     expect(sien.rows).toHaveLength(0);
   });
@@ -259,8 +261,8 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
       await expect(
         db.query(
           `insert into public.postits (id, kind, titre, texte, version)
-           values ('p-anon', 'IP', 'Anonyme', 'Texte.', 'Alpha · 0.1.6') returning *`,
-        ),
+           values ('p-anon', 'IP', 'Anonyme', 'Texte.', 'Alpha · 0.1.6') returning *`
+        )
       ).rejects.toThrow(/permission denied/);
     } finally {
       await db.exec('reset role');
@@ -277,8 +279,8 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
       await expect(
         db.query(
           `insert into public.postits (id, kind, titre, texte, version)
-           values ('p-sans-identite', 'IP', 'Sans identité', 'Texte.', 'Alpha · 0.1.6') returning *`,
-        ),
+           values ('p-sans-identite', 'IP', 'Sans identité', 'Texte.', 'Alpha · 0.1.6') returning *`
+        )
       ).rejects.toThrow(/null value in column "auteur"|row-level security/);
 
       // 2. Avec un `auteur` choisi, la politique refuse de signer au nom d'un autre.
@@ -286,15 +288,15 @@ describe('le mur — schéma et règles d’accès (#135)', () => {
         db.query(
           `insert into public.postits (id, kind, titre, texte, version, auteur)
            values ('p-usurpe-sans-session', 'IP', 'Sans identité', 'Texte.', 'Alpha · 0.1.6', $1) returning *`,
-          [APPAREIL_A],
-        ),
+          [APPAREIL_A]
+        )
       ).rejects.toThrow(/row-level security/);
     } finally {
       await db.exec('reset role; reset request.jwt.claim.sub;');
     }
 
     const reste = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select id from public.postits where id = 'p-sans-identite'`),
+      db.query(`select id from public.postits where id = 'p-sans-identite'`)
     );
     expect(reste.rows).toHaveLength(0);
   });
@@ -334,28 +336,30 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
     // mutation des seules conditions ne prouverait plus rien (B serait refusé par les
     // droits, pas par la politique). On rétablit donc le grant large de la 0001, et c'est
     // bien la politique qu'on mesure.
-    return migrations()
-      .replace(MIGRATION_MUR, () => murMute)
-      // `p.auteur` d'abord : sans cela, le remplacement global laisserait `p.true`.
-      .replaceAll('p.auteur = auth.uid()', 'true')
-      .replaceAll('auteur = auth.uid()', 'true')
-      .replaceAll('votant = auth.uid()', 'true')
-      .replaceAll(
-        `grant update (statut, raison, ticket) on public.postits to authenticated;`,
-        'grant update on public.postits to authenticated;',
-      )
-      // Et la politique de la 0006, seule rescapée : elle refuse l'`update` à qui n'est pas
-      // administrateur, donc une mutation des conditions de la 0001 ne suffirait pas.
-      .replace(
-        `create policy "postits : l'administration trie"
+    return (
+      migrations()
+        .replace(MIGRATION_MUR, () => murMute)
+        // `p.auteur` d'abord : sans cela, le remplacement global laisserait `p.true`.
+        .replaceAll('p.auteur = auth.uid()', 'true')
+        .replaceAll('auteur = auth.uid()', 'true')
+        .replaceAll('votant = auth.uid()', 'true')
+        .replaceAll(
+          `grant update (statut, raison, ticket) on public.postits to authenticated;`,
+          'grant update on public.postits to authenticated;'
+        )
+        // Et la politique de la 0006, seule rescapée : elle refuse l'`update` à qui n'est pas
+        // administrateur, donc une mutation des conditions de la 0001 ne suffirait pas.
+        .replace(
+          `create policy "postits : l'administration trie"
   on public.postits for update to authenticated
   using (public.est_administrateur())
   with check (public.est_administrateur());`,
-        `create policy "postits : l'administration trie"
+          `create policy "postits : l'administration trie"
   on public.postits for update to authenticated
   using (true)
-  with check (true);`,
-      );
+  with check (true);`
+        )
+    );
   }
 
   let db: Base;
@@ -373,21 +377,19 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
     expect(colle.rows).toHaveLength(1);
 
     // 1. B lit déjà tout (inchangé)…
-    const lu = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`select id from public.postits where id = 'p-fuite'`),
-    );
+    const lu = await avecAppareil(db, APPAREIL_B, () => db.query(`select id from public.postits where id = 'p-fuite'`));
     expect(lu.rows).toHaveLength(1);
 
     // 2. …mais ici il **modifie** le post-it de A : 1 ligne, donc la fuite est bien constatée.
     const modifie = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`update public.postits set titre = 'Pirate' where id = 'p-fuite' returning *`),
+      db.query(`update public.postits set titre = 'Pirate' where id = 'p-fuite' returning *`)
     );
     expect(modifie.rows).toHaveLength(1);
     expect(modifie.rows[0].titre).toBe('Pirate');
 
     // 3. Il supprime aussi la ligne d'autrui.
     const supprime = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`delete from public.postits where id = 'p-fuite' returning *`),
+      db.query(`delete from public.postits where id = 'p-fuite' returning *`)
     );
     expect(supprime.rows).toHaveLength(1);
 
@@ -396,8 +398,8 @@ describe('le contrôle mord — la fuite doit apparaître sur la migration muté
       db.query(
         `insert into public.postits (id, kind, titre, texte, version, auteur)
          values ('p-usurpe', 'IP', 'Au nom de A', 'Signe A.', 'Alpha · 0.1.2', $1) returning *`,
-        [APPAREIL_A],
-      ),
+        [APPAREIL_A]
+      )
     );
     expect(usurpe.rows).toHaveLength(1);
     expect(usurpe.rows[0].auteur).toBe(APPAREIL_A);

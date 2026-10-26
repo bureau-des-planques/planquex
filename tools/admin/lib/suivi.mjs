@@ -34,9 +34,7 @@ export function nouveauxEnAttente(avant, apres) {
 export function libelleNouveaux(nombre) {
   const n = Math.floor(Number(nombre));
   if (!Number.isFinite(n) || n <= 0) return '';
-  return n === 1
-    ? '1 nouvelle inscription en attente'
-    : `${n} nouvelles inscriptions en attente`;
+  return n === 1 ? '1 nouvelle inscription en attente' : `${n} nouvelles inscriptions en attente`;
 }
 
 /** Le titre de l'onglet : le nombre en attente devant le titre normal, seulement s'il y en a. */

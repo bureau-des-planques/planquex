@@ -70,7 +70,9 @@ describe('Collection — écran de la Collection', () => {
   });
 
   it('ajoute une carte au Deck via le bouton +', () => {
-    const entrant = ALL_CARDS.find((c) => isPlanque(c) && c.stage === 'ENTRANT' && !c.ex && c.id === 'sse-infirmier-site');
+    const entrant = ALL_CARDS.find(
+      (c) => isPlanque(c) && c.stage === 'ENTRANT' && !c.ex && c.id === 'sse-infirmier-site'
+    );
     expect(entrant).toBeTruthy();
 
     renderWithStore(<Collection />, { tutorielVu: true, pasAPasCombatVu: true });
@@ -98,7 +100,9 @@ describe('Collection — écran de la Collection', () => {
   });
 
   it('indique les cartes déjà dans le Deck', () => {
-    const entrant = ALL_CARDS.find((c) => isPlanque(c) && c.stage === 'ENTRANT' && !c.ex && c.id === 'sse-infirmier-site');
+    const entrant = ALL_CARDS.find(
+      (c) => isPlanque(c) && c.stage === 'ENTRANT' && !c.ex && c.id === 'sse-infirmier-site'
+    );
     expect(entrant).toBeTruthy();
 
     renderWithStore(<Collection />, { deck: [entrant!.id], tutorielVu: true, pasAPasCombatVu: true });
@@ -126,7 +130,9 @@ describe('Collection — tri (#179)', () => {
     renderWithStore(<Collection />, reglage);
     const tri = screen.getByLabelText(/Trier par/i) as HTMLSelectElement;
     expect(tri).toHaveValue('defaut');
-    const libelles = within(tri).getAllByRole('option').map((option) => option.textContent);
+    const libelles = within(tri)
+      .getAllByRole('option')
+      .map((option) => option.textContent);
     expect(libelles).toEqual(['Par défaut', 'Faction', 'Stade', 'Rareté', 'Nom', 'Possédées d’abord']);
   });
 

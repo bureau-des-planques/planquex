@@ -64,7 +64,7 @@ export async function initialiserRegistre(adapter) {
 /** Une ligne du registre, vue du poste. */
 async function registre(adapter) {
   const lu = await adapter.lire(
-    'select fichier, empreinte, origine, applique_le from admin.migrations order by fichier',
+    'select fichier, empreinte, origine, applique_le from admin.migrations order by fichier'
   );
   return new Map(
     lu.rows.map((ligne) => [
@@ -72,9 +72,9 @@ async function registre(adapter) {
       {
         empreinte: String(ligne.empreinte),
         origine: String(ligne.origine ?? 'registre'),
-        applique_le: ligne.applique_le,
-      },
-    ]),
+        applique_le: ligne.applique_le
+      }
+    ])
   );
 }
 
@@ -105,10 +105,12 @@ export async function listerMigrations(adapter, dossier) {
       empreinte: empreinteFichier,
       etat,
       origine: enBase ? enBase.origine : null,
-      applique_le: enBase ? (enBase.applique_le instanceof Date
-        ? enBase.applique_le.toISOString()
-        : String(enBase.applique_le ?? '')) : null,
-      empreinte_en_base: enBase ? enBase.empreinte : null,
+      applique_le: enBase
+        ? enBase.applique_le instanceof Date
+          ? enBase.applique_le.toISOString()
+          : String(enBase.applique_le ?? '')
+        : null,
+      empreinte_en_base: enBase ? enBase.empreinte : null
     };
   });
 }
@@ -138,11 +140,7 @@ export async function appliquerMigration(adapter, dossier, nom) {
 
   if (enBase) {
     if (enBase.origine === 'anterieure') {
-      throw refus(
-        409,
-        `appliquée avant le registre : ${nom} — elle n'est pas rejouée`,
-        'anterieure',
-      );
+      throw refus(409, `appliquée avant le registre : ${nom} — elle n'est pas rejouée`, 'anterieure');
     }
     if (enBase.empreinte === empreinteFichier) {
       throw refus(409, `déjà appliquée : ${nom}`, 'deja-appliquee');
@@ -150,17 +148,14 @@ export async function appliquerMigration(adapter, dossier, nom) {
     throw refus(
       409,
       `empreinte changée : ${nom} a été réécrit après son application — il n'est pas rejoué`,
-      'empreinte-changee',
+      'empreinte-changee'
     );
   }
 
   // Dans sa transaction : le fichier porte `begin; … commit;`. La sortie du serveur (nombre
   // d'instructions) est conservée et rendue, comme le demande la spec.
   const sortie = await adapter.ecrire(contenu);
-  await adapter.ecrire(
-    'insert into admin.migrations (fichier, empreinte) values ($1, $2)',
-    [nom, empreinteFichier],
-  );
+  await adapter.ecrire('insert into admin.migrations (fichier, empreinte) values ($1, $2)', [nom, empreinteFichier]);
 
   return { fichier: nom, empreinte: empreinteFichier, sortie };
 }

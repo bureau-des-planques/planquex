@@ -42,9 +42,7 @@ export type RefusRejeu =
   | 'journal-incoherent';
 
 /** Le verdict d'un rejeu. `state` est `null` quand la partie n'a même pas pu commencer. */
-export type Rejeu =
-  | { ok: true; state: BattleState }
-  | { ok: false; raison: RefusRejeu; state: BattleState | null };
+export type Rejeu = { ok: true; state: BattleState } | { ok: false; raison: RefusRejeu; state: BattleState | null };
 
 /**
  * Rejoue une enveloppe et **dit** si le résultat est celui qu'elle décrit.
@@ -54,10 +52,7 @@ export type Rejeu =
  * doit passer le même drapeau que celui qui a joué la partie, sinon les journaux texte
  * diffèrent.
  */
-export function rejouer(
-  enveloppe: EnveloppeRejeu,
-  options: { deuxCamps?: boolean } = {}
-): Rejeu {
+export function rejouer(enveloppe: EnveloppeRejeu, options: { deuxCamps?: boolean } = {}): Rejeu {
   let state: BattleState;
   try {
     state = replayBattle(

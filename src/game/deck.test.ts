@@ -17,9 +17,7 @@ import {
 } from '@/game/deck';
 import type { CafeType } from '@/data/types';
 
-const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
-  (card) => card.id
-);
+const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map((card) => card.id);
 
 /** Deck légal : 10 noms N+1 en double. */
 const LEGAL_DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
@@ -34,9 +32,7 @@ describe('deckLegal — Deck', () => {
   it('refuse un Deck de 19 cartes', () => {
     const result = deckLegal(LEGAL_DECK.slice(0, DECK_SIZE - 1));
     expect(result.ok).toBe(false);
-    expect(result.reasons).toEqual([
-      `Le Deck doit contenir ${DECK_SIZE} cartes (${DECK_SIZE - 1}/${DECK_SIZE}).`
-    ]);
+    expect(result.reasons).toEqual([`Le Deck doit contenir ${DECK_SIZE} cartes (${DECK_SIZE - 1}/${DECK_SIZE}).`]);
   });
 
   it('refuse un Deck de 21 cartes', () => {
@@ -46,9 +42,7 @@ describe('deckLegal — Deck', () => {
 
     const result = deckLegal(deck);
     expect(result.ok).toBe(false);
-    expect(result.reasons).toEqual([
-      `Le Deck doit contenir ${DECK_SIZE} cartes (${DECK_SIZE + 1}/${DECK_SIZE}).`
-    ]);
+    expect(result.reasons).toEqual([`Le Deck doit contenir ${DECK_SIZE} cartes (${DECK_SIZE + 1}/${DECK_SIZE}).`]);
   });
 
   it('refuse un Deck vide', () => {
@@ -105,9 +99,9 @@ describe('deckLegal — Deck', () => {
   });
 
   it('refuse un Deck sans Planqué Entrant', () => {
-    const evolutions = ALL_CARDS.filter(
-      (card) => isPlanque(card) && !card.variantOf && card.stage !== 'ENTRANT'
-    ).map((card) => card.id);
+    const evolutions = ALL_CARDS.filter((card) => isPlanque(card) && !card.variantOf && card.stage !== 'ENTRANT').map(
+      (card) => card.id
+    );
     const deck = [...evolutions, ...evolutions].slice(0, DECK_SIZE);
     expect(deck).toHaveLength(DECK_SIZE);
 
@@ -133,9 +127,7 @@ describe('deckLegal — Deck', () => {
     const base = 'sse-psychologue';
     const variant = 'sse-psychologue-star2';
     const deck = [base, base, variant, variant, ...LEGAL_DECK].slice(0, DECK_SIZE);
-    expect(deckLegal(deck).reasons).toContain(
-      `Maximum ${MAX_COPIES_PER_NAME} exemplaires du même nom.`
-    );
+    expect(deckLegal(deck).reasons).toContain(`Maximum ${MAX_COPIES_PER_NAME} exemplaires du même nom.`);
   });
 });
 
@@ -227,9 +219,7 @@ describe('Types de café choisis — Deck (#91)', () => {
     expect(normalizeCafeTypes(forged)).toEqual(['SSE', 'RH', 'QVT']);
     expect(normalizeCafeTypes(['SUPPORT'] as unknown as CafeType[])).toEqual([]);
     // Un choix qui ne contient que des types interdits retombe sur la proposition.
-    expect(resolveCafeTypes(MULTI, ['SUPPORT', 'INTERIM'] as unknown as CafeType[])).toEqual(
-      deckCafeTypes(MULTI)
-    );
+    expect(resolveCafeTypes(MULTI, ['SUPPORT', 'INTERIM'] as unknown as CafeType[])).toEqual(deckCafeTypes(MULTI));
   });
 
   it('ignore une valeur qui n’est pas une faction', () => {

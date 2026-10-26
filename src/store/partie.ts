@@ -51,11 +51,7 @@ export interface Reprise {
  * La partie à ranger, ou `null` si elle est terminée. `match` non nul = partie à deux ;
  * sinon c'est un combat solo et `decksSolo` porte ses Decks.
  */
-export function partieSauvegardee(
-  state: BattleState,
-  match: Match | null,
-  decksSolo: Decks
-): PartieSauvegardee | null {
+export function partieSauvegardee(state: BattleState, match: Match | null, decksSolo: Decks): PartieSauvegardee | null {
   if (state.phase === 'ended') return null;
   const decks = match ?? decksSolo;
   return {

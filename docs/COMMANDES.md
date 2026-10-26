@@ -16,9 +16,12 @@ cd /home/chapax/Documents/opencode/gamedev/planquex
 | `npm run dev` | Serveur Vite sur `:5178` |  |
 | `npm run check` | `tsc -b` |  |
 | `npm test` | `vitest run` |  |
+| `npm run format` | **Formate** le code (`prettier --write`) — src, scripts, tools, supabase, JSON et TS de la racine. `src/data/`, les docs et les sorties de build sont exclus : `.prettierignore` dit pourquoi, ligne à ligne |  |
+| `npm run format:check` | **Vérifie** le formatage sans écrire. La CI le lance après `check` ; épinglé en devDependency exacte |  |
 | `npm run test:watch` | Vitest en watch |  |
 | `npm run build` | `tsc -b && vite build` |  |
 | `npm run preview` | Servir `dist/` |  |
+| `npm run index:decisions` | **Réécrit `docs/DECISIONS-INDEX.md`**, dérivé de `docs/DECISIONS.md` (une ligne par décision). `-- --verifie` n'écrit rien et sort 1 si l'index a divergé ; `scripts/index-decisions.test.ts` le lance à chaque `npm test` |  |
 | `npm run status` | Métriques JSON, dont les cartes dérivées d'`ALL_CARDS` |  |
 | `node scripts/status.mjs` | Même script directement |  |
 | `npm run capturer` | Photographie les pages **amorcées** de la visite (`tutorielVu: true`, #150), plus la première visite elle-même, à la **taille d'un téléphone** et sur la **fenêtre seule** (420 × 900, critère (4) de D-060 et #153) ; échoue sur une erreur de console |  |

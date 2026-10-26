@@ -158,9 +158,7 @@ describe('les trois groupes du suivi (D-097 (2))', () => {
     rendre();
     await screen.findByText('Un mode nuit');
 
-    expect(
-      screen.getByText(/Le thème sombre est déjà le seul : un mode nuit n’ajoute rien\./)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Le thème sombre est déjà le seul : un mode nuit n’ajoute rien\./)).toBeInTheDocument();
     expect(screen.getByText(/Pourquoi c’est écarté/)).toBeInTheDocument();
   });
 });

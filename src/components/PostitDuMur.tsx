@@ -131,11 +131,12 @@ export function PostitDuMur({
         </span>
       </span>
 
-      <span className="mt-2 block font-heading text-[1.02rem] font-bold leading-tight">
-        {postit.titre}
-      </span>
+      <span className="mt-2 block font-heading text-[1.02rem] font-bold leading-tight">{postit.titre}</span>
 
-      <span className={`mt-1.5 block leading-snug whitespace-pre-line ${postit.gueulage ? 'text-[0.94rem]' : 'text-[0.83rem]'}`} data-postit-texte>
+      <span
+        className={`mt-1.5 block leading-snug whitespace-pre-line ${postit.gueulage ? 'text-[0.94rem]' : 'text-[0.83rem]'}`}
+        data-postit-texte
+      >
         {postit.texte}
       </span>
     </>
@@ -159,10 +160,7 @@ export function PostitDuMur({
         style={feuille}
       >
         {/* Le morceau de scotch : c'est lui qui dit « collé », avec l'inclinaison. */}
-        <span
-          aria-hidden="true"
-          className="absolute -top-2 left-1/2 h-4 w-12 -translate-x-1/2 -rotate-2 bg-white/20"
-        />
+        <span aria-hidden="true" className="absolute -top-2 left-1/2 h-4 w-12 -translate-x-1/2 -rotate-2 bg-white/20" />
 
         {placement ? (
           <div>{contenu}</div>
@@ -180,13 +178,7 @@ export function PostitDuMur({
 
         {/* Sur écran large, le statut et le ticket vivent sur le post-it ; en étroit,
             ils se rangent derrière une pression (D-068). */}
-        <div
-          className={
-            agrandi
-              ? 'mt-3 flex flex-col gap-1.5'
-              : 'mt-3 hidden flex-col gap-1.5 min-[900px]:flex'
-          }
-        >
+        <div className={agrandi ? 'mt-3 flex flex-col gap-1.5' : 'mt-3 hidden flex-col gap-1.5 min-[900px]:flex'}>
           {pouces && <PoucesDuMur postit={postit} pouces={pouces} />}
 
           <span className="flex items-center gap-2 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
@@ -199,9 +191,7 @@ export function PostitDuMur({
           </span>
 
           {postit.statut === 'écarté' && postit.raison && (
-            <span className="block text-[0.76rem] leading-snug italic opacity-80">
-              Raison : {postit.raison}
-            </span>
+            <span className="block text-[0.76rem] leading-snug italic opacity-80">Raison : {postit.raison}</span>
           )}
 
           {postit.ticket !== null && (
@@ -216,9 +206,7 @@ export function PostitDuMur({
             </a>
           )}
 
-          {postit.version && (
-            <span className="block text-[0.7rem] opacity-80">Écrit en {postit.version}</span>
-          )}
+          {postit.version && <span className="block text-[0.7rem] opacity-80">Écrit en {postit.version}</span>}
         </div>
 
         {/* Un post-it qui a des commentaires le dit **même replié** : sans ça, personne
@@ -226,20 +214,15 @@ export function PostitDuMur({
             vanité comme les pouces : c'est du texte déjà là, et la ligne mène au fil. */}
         {!agrandi && fil && fil.commentaires.length > 0 && (
           <p className="fil__compte">
-            {fil.commentaires.length} commentaire{fil.commentaires.length > 1 ? 's' : ''} — ouvrir
-            pour lire
+            {fil.commentaires.length} commentaire{fil.commentaires.length > 1 ? 's' : ''} — ouvrir pour lire
           </p>
         )}
 
         {/* Le fil et la relecture vivent **dans** le post-it agrandi, sur tous les écrans :
             c'est la place que D-068 leur donne, et elle ne dépend pas du mode de placement
             (qui n'écrit que le fichier). */}
-        {agrandi && !placement && correction && (
-          <CorrectionDuPostit postit={postit} correction={correction} />
-        )}
-        {agrandi && !placement && retrait && (
-          <RetraitDuPostit postit={postit} retrait={retrait} />
-        )}
+        {agrandi && !placement && correction && <CorrectionDuPostit postit={postit} correction={correction} />}
+        {agrandi && !placement && retrait && <RetraitDuPostit postit={postit} retrait={retrait} />}
         {agrandi && !placement && fil && <FilDuPostit postit={postit} fil={fil} />}
 
         {/* Le post-it associé (D-085) : petit, incliné, avec son scotch — il se lit
@@ -264,9 +247,7 @@ export function PostitDuMur({
                 {associe.pseudo || 'anonyme'}
               </span>
             </span>
-            <span className="mt-1.5 block font-heading text-[0.86rem] font-bold leading-tight">
-              {associe.titre}
-            </span>
+            <span className="mt-1.5 block font-heading text-[0.86rem] font-bold leading-tight">{associe.titre}</span>
             <span className="mt-1 flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
               <span
                 aria-hidden="true"

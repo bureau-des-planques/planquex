@@ -45,7 +45,7 @@ export function decisions(texte) {
     out.push({
       id: m[1],
       date: m[2],
-      court: mots.slice(0, 10).join(' ') + (mots.length > 10 ? '…' : ''),
+      court: mots.slice(0, 10).join(' ') + (mots.length > 10 ? '…' : '')
     });
   }
   return out;
@@ -56,14 +56,14 @@ export function rendre(liste) {
   return [
     '# Index des décisions',
     '',
-    "> **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.",
+    '> **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.',
     `> ${liste.length} décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,`,
-    "> puis on ouvre la ligne du tableau.",
+    '> puis on ouvre la ligne du tableau.',
     '',
     '| ID | Date | Intitulé (début) |',
     '|---|---|---|',
     ...liste.map((d) => `| ${d.id} | ${d.date} | ${d.court} |`),
-    '',
+    ''
   ].join('\n');
 }
 
@@ -84,6 +84,12 @@ if (lance) {
     process.exit(1);
   } else {
     writeFileSync(INDEX, attendu);
-    console.log('✔ docs/DECISIONS-INDEX.md réécrit (' + decisions(actuel || '').length + ' → ' + (attendu.match(/^\| D-/gm) || []).length + ' décisions)');
+    console.log(
+      '✔ docs/DECISIONS-INDEX.md réécrit (' +
+        decisions(actuel || '').length +
+        ' → ' +
+        (attendu.match(/^\| D-/gm) || []).length +
+        ' décisions)'
+    );
   }
 }

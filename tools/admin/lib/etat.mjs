@@ -29,10 +29,10 @@ export async function lireEtat(adapter) {
   const [comptes, partiesLu, postits, volume] = await Promise.all([
     adapter.lire('select etat, count(*)::int as n from public.comptes group by etat'),
     adapter.lire(
-      'select count(*)::int as terminees, coalesce(avg(pg_column_size(c.*)), 0)::float8 as poids_moyen from public.combats c',
+      'select count(*)::int as terminees, coalesce(avg(pg_column_size(c.*)), 0)::float8 as poids_moyen from public.combats c'
     ),
     adapter.lire('select statut, count(*)::int as n from public.postits group by statut'),
-    adapter.lire('select pg_database_size(current_database())::float8 as octets'),
+    adapter.lire('select pg_database_size(current_database())::float8 as octets')
   ]);
 
   const parEtat = {};
@@ -48,9 +48,9 @@ export async function lireEtat(adapter) {
     approbationsEnAttente: Number(parEtat['en attente'] ?? 0),
     parties: {
       terminees: Number(parties.terminees),
-      poidsMoyen: Math.round(Number(parties.poids_moyen)),
+      poidsMoyen: Math.round(Number(parties.poids_moyen))
     },
     postits: parStatut,
-    volumeOctets: Number((volume.rows[0] ?? {}).octets ?? 0),
+    volumeOctets: Number((volume.rows[0] ?? {}).octets ?? 0)
   };
 }

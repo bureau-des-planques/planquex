@@ -62,9 +62,7 @@ export function estServeurDeChantier(serveur) {
   // Un **mot** `vite` (le binaire `…/.bin/vite`, `…/vite/bin/vite.js`), pas un mot qui le
   // contient : `node …/.bin/vitest run` n'est pas un serveur de chantier, et un `/vite/` nu le
   // laissait passer — la table le montrait et la route de mort l'acceptait (#245, mesuré).
-  return (serveur?.commande ?? '')
-    .split(/\s+/)
-    .some((argument) => /(^|[/\\])(vite|vite\.js)$/.test(argument));
+  return (serveur?.commande ?? '').split(/\s+/).some((argument) => /(^|[/\\])(vite|vite\.js)$/.test(argument));
 }
 
 /**
@@ -78,24 +76,22 @@ export function estServeurDeChantier(serveur) {
  */
 export function construireEtat({ serveurs, chantiers }) {
   const parChemin = new Map(chantiers.map((chantier) => [chantier.chemin, chantier]));
-  const retenus = serveurs
-    .filter(estServeurDeChantier)
-    .map((serveur) => {
-      const commande = serveur.commande ?? '';
-      const type = /vite preview/.test(commande) ? 'preview' : 'dev';
-      return {
-        ...serveur,
-        type,
-        chantier: parChemin.get(serveur.dossier)?.nom ?? null,
-        branche: parChemin.get(serveur.dossier)?.branche ?? null,
-      };
-    });
+  const retenus = serveurs.filter(estServeurDeChantier).map((serveur) => {
+    const commande = serveur.commande ?? '';
+    const type = /vite preview/.test(commande) ? 'preview' : 'dev';
+    return {
+      ...serveur,
+      type,
+      chantier: parChemin.get(serveur.dossier)?.nom ?? null,
+      branche: parChemin.get(serveur.dossier)?.branche ?? null
+    };
+  });
   return {
     serveurs: retenus,
     chantiers: chantiers.map((chantier) => ({
       ...chantier,
-      serveurs: retenus.filter((serveur) => serveur.dossier === chantier.chemin).map((serveur) => serveur.port),
-    })),
+      serveurs: retenus.filter((serveur) => serveur.dossier === chantier.chemin).map((serveur) => serveur.port)
+    }))
   };
 }
 
@@ -107,7 +103,7 @@ export async function demarrerServeur({
   port = 5180,
   hote = '127.0.0.1',
   jeton = randomBytes(16).toString('hex'),
-  systeme = creerSysteme(),
+  systeme = creerSysteme()
 } = {}) {
   function jetonDuCookie(req) {
     const enTete = req.headers.cookie;
@@ -132,7 +128,7 @@ export async function demarrerServeur({
       // Le tableau de bord s'écoute lui-même : se lister, c'est offrir un bouton « tuer » qui
       // ferme la page en cours de clic. Il se montre donc partout sauf dans sa propre table.
       serveurs: systeme.listerServeurs().filter((serveur) => serveur.pid !== process.pid),
-      chantiers: systeme.listerChantiers(),
+      chantiers: systeme.listerChantiers()
     });
 
   /**
@@ -270,7 +266,7 @@ export async function demarrerServeur({
         baseUrl: `http://127.0.0.1:${adresse.port}`,
         jeton,
         adresse: { ...adresse },
-        arreter: () => new Promise((fin) => serveur.close(() => fin())),
+        arreter: () => new Promise((fin) => serveur.close(() => fin()))
       });
     });
   });

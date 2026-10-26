@@ -25,7 +25,7 @@ const PENDING: Compte = {
   etat: 'en attente',
   raison: '',
   administrateur: false,
-  created_at: '2026-10-23T10:00:00.000Z',
+  created_at: '2026-10-23T10:00:00.000Z'
 };
 
 const actions = () => ({
@@ -34,11 +34,11 @@ const actions = () => ({
   inscrireCourriel: vi.fn(
     async (_courriel: string, _motDePasse: string): Promise<{ erreur: string | null; courrielEnvoye: boolean }> => ({
       erreur: null,
-      courrielEnvoye: false,
-    }),
+      courrielEnvoye: false
+    })
   ),
   connecterGoogle: vi.fn(async (_redirectTo?: string): Promise<string | null> => null),
-  deconnecter: vi.fn(async () => {}),
+  deconnecter: vi.fn(async () => {})
 });
 
 function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
@@ -49,7 +49,7 @@ function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
     compte: null,
     erreur: null,
     ...actions(),
-    ...etat,
+    ...etat
   });
 }
 
@@ -111,9 +111,7 @@ describe('les deux portes (D-088)', () => {
     expect(bouton).not.toBeDisabled();
 
     fireEvent.click(bouton);
-    await waitFor(() =>
-      expect(etat.connecterCourriel).toHaveBeenCalledWith('a@exemple.test', 'secret1'),
-    );
+    await waitFor(() => expect(etat.connecterCourriel).toHaveBeenCalledWith('a@exemple.test', 'secret1'));
   });
 
   it('un refus de connexion s’affiche en alerte', async () => {
@@ -139,9 +137,7 @@ describe('les deux portes (D-088)', () => {
     fireEvent.change(screen.getByLabelText(/Mot de passe/), { target: { value: 'secret1' } });
     fireEvent.click(screen.getByRole('button', { name: /Créer mon compte/ }));
 
-    await waitFor(() =>
-      expect(etat.inscrireCourriel).toHaveBeenCalledWith('neuf@exemple.test', 'secret1'),
-    );
+    await waitFor(() => expect(etat.inscrireCourriel).toHaveBeenCalledWith('neuf@exemple.test', 'secret1'));
   });
 
   it('une confirmation de courriel attendue est dite, sans prétendre à une session', async () => {
@@ -169,7 +165,7 @@ describe('un compte déjà connecté ne reste pas sur la page', () => {
   it('un compte en attente part vers l’attente', async () => {
     poser({
       session: { id: 'compte-a', courriel: 'a@exemple.test' },
-      compte: PENDING,
+      compte: PENDING
     });
     rendre();
     expect(await screen.findByText('écran d’attente')).toBeInTheDocument();
@@ -178,7 +174,7 @@ describe('un compte déjà connecté ne reste pas sur la page', () => {
   it('un compte approuvé part vers le bureau', async () => {
     poser({
       session: { id: 'compte-a', courriel: 'a@exemple.test' },
-      compte: { ...PENDING, etat: 'approuve' },
+      compte: { ...PENDING, etat: 'approuve' }
     });
     rendre();
     expect(await screen.findByText('le bureau')).toBeInTheDocument();

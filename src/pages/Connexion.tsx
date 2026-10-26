@@ -57,8 +57,8 @@ export function Connexion() {
         <section className="section panel">
           <h1>Pas de compte sans base</h1>
           <p className="muted max-w-[62ch]">
-            Cette version du jeu n’est pas reliée à une base : il n’y a ni compte ni connexion.
-            Tout fonctionne comme avant, et le mur lit le fichier du dépôt.
+            Cette version du jeu n’est pas reliée à une base : il n’y a ni compte ni connexion. Tout fonctionne comme
+            avant, et le mur lit le fichier du dépôt.
           </p>
           <Link className="button" to="/">
             Retour au bureau
@@ -114,16 +114,14 @@ export function Connexion() {
       <section className="section">
         <h1>Entrer dans l’alpha</h1>
         <p className="muted max-w-[64ch]">
-          L’alpha est réservée aux <strong>invités</strong> : il faut un compte pour entrer.
-          Il est <strong>validé à la main</strong> — en attendant, tu peux jouer et lire le
-          mur ; poster un post-it, voter ou envoyer une trace de combat s’ouvrira ensuite.
+          L’alpha est réservée aux <strong>invités</strong> : il faut un compte pour entrer. Il est{' '}
+          <strong>validé à la main</strong> — en attendant, tu peux jouer et lire le mur ; poster un post-it, voter ou
+          envoyer une trace de combat s’ouvrira ensuite.
         </p>
       </section>
 
       <section className="section panel" aria-labelledby="connexion-titre">
-        <h2 id="connexion-titre">
-          {mode === 'connexion' ? 'Se connecter' : 'Créer un compte'}
-        </h2>
+        <h2 id="connexion-titre">{mode === 'connexion' ? 'Se connecter' : 'Créer un compte'}</h2>
 
         <button type="button" className="button button--gold" onClick={google} disabled={chargement}>
           <LogIn size={16} /> Continuer avec Google
@@ -163,11 +161,7 @@ export function Connexion() {
               className="button button--primary"
               disabled={chargement || !courriel.trim() || motDePasse.length < 6}
             >
-              {chargement
-                ? 'Patiente…'
-                : mode === 'connexion'
-                  ? 'Se connecter'
-                  : 'Créer mon compte'}
+              {chargement ? 'Patiente…' : mode === 'connexion' ? 'Se connecter' : 'Créer mon compte'}
             </button>
             <button
               type="button"
@@ -198,11 +192,9 @@ export function Connexion() {
       </section>
 
       <p className="m-0 text-[0.78rem] text-ink-dim">
-        Ton mot de passe ne transite que vers Supabase Auth ; le jeu ne le garde pas. Le
-        courriel sert à te reconnaître et à te prévenir de la validation. Ce qui est gardé
-        de toi est écrit dans{' '}
-        <Link to="/confidentialite">la page de confidentialité</Link>.{' '}
-        <Link to="/">Retour au bureau</Link>
+        Ton mot de passe ne transite que vers Supabase Auth ; le jeu ne le garde pas. Le courriel sert à te reconnaître
+        et à te prévenir de la validation. Ce qui est gardé de toi est écrit dans{' '}
+        <Link to="/confidentialite">la page de confidentialité</Link>. <Link to="/">Retour au bureau</Link>
       </p>
     </div>
   );

@@ -14,7 +14,8 @@ const tout = (cartes: readonly { id: string }[]) => Object.fromEntries(cartes.ma
 /** La passe de finition de l'alpha (#131, D-060) : Accueil. */
 describe('Home — finition', () => {
   it('le plafond vient de la table de tirage : il ne compte que ce qu’un Arrivage peut donner', () => {
-    const tirable = (rarete: string) => PACK_COMPOSITION.some((ligne) => (ligne.rarities as readonly string[]).includes(rarete));
+    const tirable = (rarete: string) =>
+      PACK_COMPOSITION.some((ligne) => (ligne.rarities as readonly string[]).includes(rarete));
     expect(PLAFOND_TIRABLE).toBe(ALL_CARDS.filter((c) => tirable(c.rarity)).length);
     // Il y a bien des cartes hors Arrivage (3S, COU) : sans elles ce garde ne garderait rien.
     expect(HORS_ARRIVAGE).toBeGreaterThan(0);

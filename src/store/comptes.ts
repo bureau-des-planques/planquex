@@ -20,7 +20,7 @@ import {
   inscriptionCourriel,
   lireMonCompte,
   type Compte,
-  type SessionCompte,
+  type SessionCompte
 } from '@/lib/comptes';
 
 export interface ComptesState {
@@ -37,21 +37,18 @@ export interface ComptesState {
   connecterCourriel: (courriel: string, motDePasse: string) => Promise<string | null>;
   inscrireCourriel: (
     courriel: string,
-    motDePasse: string,
+    motDePasse: string
   ) => Promise<{ erreur: string | null; courrielEnvoye: boolean }>;
   connecterGoogle: (redirectTo?: string) => Promise<string | null>;
   deconnecter: () => Promise<void>;
 }
 
-const messageDe = (erreur: unknown): string =>
-  erreur instanceof Error ? erreur.message : String(erreur);
+const messageDe = (erreur: unknown): string => (erreur instanceof Error ? erreur.message : String(erreur));
 
 /** L'adresse de retour OAuth : la page de connexion, qui lit la session dans l'URL. */
 function retourOAuth(): string {
   const origine =
-    typeof window !== 'undefined' && window.location?.origin
-      ? window.location.origin
-      : 'http://localhost:5178';
+    typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'http://localhost:5178';
   return `${origine}/connexion`;
 }
 
@@ -79,7 +76,7 @@ export const useComptes = create<ComptesState>((set, get) => ({
         compte: lu?.compte ?? null,
         // Une ligne illisible ne ferme pas l'entrée : la session reste valable, l'écran
         // d'attente dit ce qui manque.
-        erreur: lu?.erreur ?? null,
+        erreur: lu?.erreur ?? null
       });
     } catch (erreur) {
       set({ chargement: false, erreur: messageDe(erreur) });
@@ -138,5 +135,5 @@ export const useComptes = create<ComptesState>((set, get) => ({
     } catch (erreur) {
       set({ chargement: false, erreur: messageDe(erreur) });
     }
-  },
+  }
 }));

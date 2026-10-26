@@ -64,8 +64,7 @@ export function FicheCarte({ instance, card, machine }: { instance: CardInstance
             />
           </p>
           <p>
-            <strong>Conditions</strong>{' '}
-            {instance.statuses.length === 0 && <span className="muted">aucune</span>}
+            <strong>Conditions</strong> {instance.statuses.length === 0 && <span className="muted">aucune</span>}
           </p>
           {instance.statuses.map((status) => (
             <p className="inspecteur__regle" key={status}>

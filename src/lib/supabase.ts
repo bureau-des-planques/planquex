@@ -161,7 +161,7 @@ export function assertClePublique(cle: string): void {
     throw new Error(
       `Clé de service refusée dans ${VARIABLE_CLE} : le jeu ne lit que la clé publique ` +
         '(anon / publishable). Une clé de service contourne les règles d\u2019accès et ne peut ' +
-        'pas vivre dans le navigateur. Voir .env.example et supabase/README.md.',
+        'pas vivre dans le navigateur. Voir .env.example et supabase/README.md.'
     );
   }
 }
@@ -182,7 +182,7 @@ export function configurerMur(env: Environnement = import.meta.env): Configurati
   if (!url || !clePublique) {
     throw new Error(
       `Configuration Supabase incomplète : ${VARIABLE_URL} et ${VARIABLE_CLE} vont ensemble ` +
-        '(voir .env.example). Sans les deux, le mur reste sur son fichier JSON.',
+        '(voir .env.example). Sans les deux, le mur reste sur son fichier JSON.'
     );
   }
 
@@ -212,8 +212,8 @@ async function clientSupabase(): Promise<SupabaseClient | null> {
         autoRefreshToken: true,
         // Le retour de Google arrive avec la session dans l'URL (#181, D-088) : sans cette
         // détection, la connexion OAuth se terminerait sur un écran sans session.
-        detectSessionInUrl: true,
-      },
+        detectSessionInUrl: true
+      }
     });
   }
   return client;
@@ -238,10 +238,7 @@ export async function clientMur(): Promise<ClientMur | null> {
  * L'insertion s'appuie sur `auth.uid()` (`auteur` a cette valeur par défaut dans
  * `0002_combats.sql`) : on signe donc **avant** d'écrire, sinon la RLS refuserait la ligne.
  */
-export async function ecrireLigne(
-  table: string,
-  ligne: Record<string, unknown>,
-): Promise<{ erreur: string | null }> {
+export async function ecrireLigne(table: string, ligne: Record<string, unknown>): Promise<{ erreur: string | null }> {
   const supabase = await clientSupabase();
   if (!supabase) return { erreur: 'Supabase n’est pas configuré.' };
 
@@ -259,7 +256,7 @@ export async function ecrireLigne(
  * réseau ni navigateur.
  */
 export async function identiteAppareil(
-  chargerClient: () => Promise<AppareilAnonyme | null> = clientMur,
+  chargerClient: () => Promise<AppareilAnonyme | null> = clientMur
 ): Promise<string | null> {
   const supabase = await chargerClient();
   if (!supabase) return null;

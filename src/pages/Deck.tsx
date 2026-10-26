@@ -67,8 +67,7 @@ export function Deck() {
   );
   // Le **sigle** (et non le nom) : c'est la liste compacte de la Machine, pas un libellé
   // de café. Il ne porte donc pas le nom `cafeLabel`, qui dit le nom ailleurs (#248).
-  const cafeSigles = (types: readonly CafeType[]) =>
-    types.map((type) => FACTION_META[type].short).join(', ');
+  const cafeSigles = (types: readonly CafeType[]) => types.map((type) => FACTION_META[type].short).join(', ');
 
   /** Charger un Deck proposé : ses cartes **et** ses types de café, en un geste (#141). */
   const chargerDeck = (deckPropose: DeckPropose) => {
@@ -93,10 +92,12 @@ export function Deck() {
     <div className="page deck">
       <section className="section__head">
         <div>
-          <h1>{deck.length}/{DECK_SIZE} cartes</h1>
+          <h1>
+            {deck.length}/{DECK_SIZE} cartes
+          </h1>
           <p className="muted">
-            Un clic sur une carte l’ajoute, un clic sur une carte du haut la retire.{' '}
-            {MAX_COPIES_PER_NAME} exemplaires maximum par nom.
+            Un clic sur une carte l’ajoute, un clic sur une carte du haut la retire. {MAX_COPIES_PER_NAME} exemplaires
+            maximum par nom.
           </p>
         </div>
         <div className="section__actions">
@@ -117,8 +118,8 @@ export function Deck() {
 
       {automatic.missing > 0 && (
         <p className="notice notice--warn">
-          Ta Collection ne couvre que <strong>{automatic.deck.length}</strong> cartes sur {DECK_SIZE} : ouvre des arrivages depuis
-          l’accueil pour compléter.
+          Ta Collection ne couvre que <strong>{automatic.deck.length}</strong> cartes sur {DECK_SIZE} : ouvre des
+          arrivages depuis l’accueil pour compléter.
         </p>
       )}
 
@@ -162,8 +163,8 @@ export function Deck() {
           <div>
             <h2>Machine à café</h2>
             <p className="muted">
-              Choisis de 1 à {MAX_DECK_CAFE_TYPES} types de café : la Machine ne tire que dans ceux-là.
-              Support et Intérim n’en produisent jamais.
+              Choisis de 1 à {MAX_DECK_CAFE_TYPES} types de café : la Machine ne tire que dans ceux-là. Support et
+              Intérim n’en produisent jamais.
             </p>
           </div>
           <button

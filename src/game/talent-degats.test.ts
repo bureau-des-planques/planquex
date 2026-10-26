@@ -81,7 +81,12 @@ describe('Talent qui inflige des dégâts — primitive `damage` (#164, D-077)',
   });
 
   it('la Vulnérabilité s’applique au Poste : +20 si la cible est faible contre l’attaquant', () => {
-    const avant = scene({ effects: [{ kind: 'damage', amount: 10 }], joueur: 0, pvCible: 60, faiblesse: FAIBLESSE_ATTAQUANT });
+    const avant = scene({
+      effects: [{ kind: 'damage', amount: 10 }],
+      joueur: 0,
+      pvCible: 60,
+      faiblesse: FAIBLESSE_ATTAQUANT
+    });
     const apres = applyAction(avant, TALENT);
     expect(apres.players.ai.active?.hp).toBe(30);
   });

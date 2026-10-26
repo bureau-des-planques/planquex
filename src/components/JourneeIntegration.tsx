@@ -1,12 +1,6 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ETAPES_JOURNEE } from '@/components/journee-etapes';
 import { useStore } from '@/store/useStore';
 
@@ -74,11 +68,7 @@ export function JourneeIntegration() {
             La visite reste ouverte par-dessus, pour qu'on lise l'étape en regardant
             l'écran qu'elle décrit. */}
         <div className="actions actions--tight">
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={() => navigate(courante.cible)}
-          >
+          <button type="button" className="button button--primary" onClick={() => navigate(courante.cible)}>
             {courante.action}
           </button>
           {derniere ? (

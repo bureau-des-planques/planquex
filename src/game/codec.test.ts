@@ -1,14 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleState } from '@/data/types';
 import { applyAction, createBattle, replayBattle } from '@/game/engine';
-import {
-  CODEC_PREFIX,
-  CODEC_VERSION,
-  codeFingerprint,
-  decodeMatch,
-  encodeMatch,
-  sealCode
-} from '@/game/codec';
+import { CODEC_PREFIX, CODEC_VERSION, codeFingerprint, decodeMatch, encodeMatch, sealCode } from '@/game/codec';
 import type { MatchCode } from '@/game/codec';
 import { FACTION_ORDER, factionDeck, playGame } from '@/game/simulation';
 
@@ -89,10 +82,7 @@ function toBase64Url(bytes: Uint8Array): string {
 
 /** La charge utile d'un code, en clair — pour forger un code abîmé en connaissance de cause. */
 function wireOf(code: string): Record<string, unknown> {
-  return JSON.parse(new TextDecoder().decode(fromBase64Url(code.split('.')[2] as string))) as Record<
-    string,
-    unknown
-  >;
+  return JSON.parse(new TextDecoder().decode(fromBase64Url(code.split('.')[2] as string))) as Record<string, unknown>;
 }
 
 /** Longueur de la charge utile seule (ce qui reste une fois préfixe et empreinte ôtés). */
@@ -385,9 +375,7 @@ describe('Codec — détruire un caractère produit un refus, à chaque position
       }
     }
 
-    expect(traversantes, `substitutions passées au travers : ${traversantes.join(', ')}`).toEqual(
-      []
-    );
+    expect(traversantes, `substitutions passées au travers : ${traversantes.join(', ')}`).toEqual([]);
     // Toutes les substitutions ont été tentées : 63 par caractère base64url, 64 pour les
     // deux points séparateurs (aucun caractère de l'alphabet ne leur est égal).
     const attendus = [...court].reduce(
@@ -407,13 +395,7 @@ describe('Codec — détruire un caractère produit un refus, à chaque position
     const code = encodeMatch(match);
     const entete = code.slice(0, code.lastIndexOf('.') + 1);
     const charge = code.slice(entete.length);
-    const positions = [
-      0,
-      1,
-      Math.floor(charge.length / 3),
-      Math.floor(charge.length / 2),
-      charge.length - 1
-    ];
+    const positions = [0, 1, Math.floor(charge.length / 3), Math.floor(charge.length / 2), charge.length - 1];
 
     for (const position of positions) {
       const original = charge[position] as string;

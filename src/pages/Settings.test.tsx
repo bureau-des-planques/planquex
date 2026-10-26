@@ -39,14 +39,14 @@ describe('Settings — écran des Réglages', () => {
     expect(state.name).toBe('Nouveau Nom');
   });
 
-  it('désactive le bouton Enregistrer si le nom n\'a pas changé', () => {
+  it("désactive le bouton Enregistrer si le nom n'a pas changé", () => {
     renderWithStore(<Settings />, { name: 'Testeur', tutorielVu: true, pasAPasCombatVu: true });
 
     const saveButton = screen.getByRole('button', { name: /Enregistrer/i });
     expect(saveButton).toBeDisabled();
   });
 
-  it('affiche la section Affichage avec l\'option Réduire les animations', () => {
+  it("affiche la section Affichage avec l'option Réduire les animations", () => {
     renderWithStore(<Settings />, { reducedMotion: false, tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Affichage/)).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('Settings — écran des Réglages', () => {
     expect(useStore.getState().raccourcisCombat).toBe(false);
   });
 
-  it('affiche la section Journée d\'intégration', () => {
+  it("affiche la section Journée d'intégration", () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Journée d.intégration/)).toBeInTheDocument();
@@ -116,7 +116,7 @@ describe('Settings — écran des Réglages', () => {
     expect(screen.getByRole('button', { name: /Restaurer ce texte/i })).toBeInTheDocument();
   });
 
-  it('crée une sauvegarde et l\'affiche dans le textarea', async () => {
+  it("crée une sauvegarde et l'affiche dans le textarea", async () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     const createButton = screen.getByRole('button', { name: /Créer ma sauvegarde/i });
@@ -131,9 +131,7 @@ describe('Settings — écran des Réglages', () => {
   it('dit que les parties terminées, solo comme à deux, sont gardées sous le compte, sans case à cocher (D-086, D-088, D-105)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(
-      screen.getByText(/parties terminées sont gardées sous ton compte, solo comme à deux/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/parties terminées sont gardées sous ton compte, solo comme à deux/i)).toBeInTheDocument();
     // D-086 : une **mention**, pas un consentement par combat — aucune case ne concerne
     // les traces. Les deux cases de l'écran sont des réglages d'affichage : le mouvement
     // réduit, et les raccourcis clavier du combat (#189).
@@ -150,7 +148,7 @@ describe('Settings — écran des Réglages', () => {
     expect(screen.getByRole('button', { name: /Réinitialiser la progression/i })).toBeInTheDocument();
   });
 
-  it('affiche la version de l\'application', () => {
+  it("affiche la version de l'application", () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Version/)).toBeInTheDocument();

@@ -47,7 +47,7 @@ export function chargerConfiguration(env = process.env) {
 
   if (!lecteur || !admin) {
     const erreur = new Error(
-      `pas de configuration : créer ${chemin} (chmod 600) avec { "lecteur": "…", "admin": "…" } — deux chaînes de connexion au pooler (sslmode=require)`,
+      `pas de configuration : créer ${chemin} (chmod 600) avec { "lecteur": "…", "admin": "…" } — deux chaînes de connexion au pooler (sslmode=require)`
     );
     erreur.code = 'SANS_CONFIGURATION';
     throw erreur;
@@ -62,9 +62,11 @@ export function chargerConfiguration(env = process.env) {
  */
 export function ouvrirNavigateur(url, lancer = spawn) {
   const [cmd, ...args] =
-    process.platform === 'darwin' ? ['open', url]
-    : process.platform === 'win32' ? ['cmd', '/c', 'start', '', url]
-    : ['xdg-open', url];
+    process.platform === 'darwin'
+      ? ['open', url]
+      : process.platform === 'win32'
+        ? ['cmd', '/c', 'start', '', url]
+        : ['xdg-open', url];
   try {
     const fils = lancer(cmd, args, { stdio: 'ignore', detached: true });
     // Un lanceur de test rend un objet nu : on ne suppose ni `on` ni `unref`.
@@ -90,11 +92,7 @@ export async function principal(env = process.env, argv = process.argv.slice(2))
 
   const portArg = argv.indexOf('--port');
   const port =
-    portArg !== -1 && argv[portArg + 1]
-      ? Number(argv[portArg + 1])
-      : env.ADMIN_PORT
-        ? Number(env.ADMIN_PORT)
-        : 5199;
+    portArg !== -1 && argv[portArg + 1] ? Number(argv[portArg + 1]) : env.ADMIN_PORT ? Number(env.ADMIN_PORT) : 5199;
 
   try {
     await acces.demarrer();
@@ -120,8 +118,7 @@ export async function principal(env = process.env, argv = process.argv.slice(2))
   }
 }
 
-const estEntree =
-  process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+const estEntree = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
 
 if (estEntree) {
   process.exitCode = await principal();

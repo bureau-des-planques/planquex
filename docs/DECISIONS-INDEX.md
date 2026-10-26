@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 113 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 114 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -119,3 +119,4 @@
 | D-111 | 26/10/2026 | Le journal des décisions se tient lui aussi . Trois… |
 | D-112 | 26/10/2026 | L'ordre d'autorité pointe sur ce qui vit . AGENTS.md §2… |
 | D-113 | 26/10/2026 | Un seul tronc, main ; fusion par merge commit ;… |
+| D-114 | 26/10/2026 | Le dépôt a un formateur, et la doc de commande… |

@@ -170,10 +170,7 @@ beforeEach(() => {
   mocks.charger.mockReset();
   mocks.charger.mockResolvedValue([structuredClone(AUTRE), structuredClone(MOI)]);
   mocks.chargerCommentaires.mockReset();
-  mocks.chargerCommentaires.mockResolvedValue([
-    structuredClone(COMMENTAIRE_AUTRE),
-    structuredClone(COMMENTAIRE_MIEN)
-  ]);
+  mocks.chargerCommentaires.mockResolvedValue([structuredClone(COMMENTAIRE_AUTRE), structuredClone(COMMENTAIRE_MIEN)]);
   mocks.commenter.mockReset();
   mocks.supprimer.mockReset();
   mocks.supprimer.mockResolvedValue(undefined);
@@ -277,9 +274,7 @@ describe('le fil d’un post-it (#138)', () => {
     fireEvent.click(within(zone).getByRole('button', { name: /Retirer mon commentaire/ }));
 
     await waitFor(() => expect(mocks.supprimer).toHaveBeenCalledWith(COMMENTAIRE_MIEN.id));
-    await waitFor(() =>
-      expect(within(zone).queryByText('Et chez moi donc.')).not.toBeInTheDocument()
-    );
+    await waitFor(() => expect(within(zone).queryByText('Et chez moi donc.')).not.toBeInTheDocument());
     expect(within(zone).getByText('Pareil chez moi, au deuxième tour.')).toBeInTheDocument();
   });
 
@@ -305,7 +300,9 @@ describe('le fil d’un post-it (#138)', () => {
       target: { value: 'x'.repeat(501) }
     });
 
-    expect(within(zone).getByText(/Un commentaire fait au plus 500 caractères \(le tien en fait 501\)/)).toBeInTheDocument();
+    expect(
+      within(zone).getByText(/Un commentaire fait au plus 500 caractères \(le tien en fait 501\)/)
+    ).toBeInTheDocument();
     expect(within(zone).getByRole('button', { name: 'Commenter' })).toBeDisabled();
     expect(mocks.commenter).not.toHaveBeenCalled();
   });
@@ -404,9 +401,7 @@ describe('le retrait d’administration (#186)', () => {
     agrandir('Idée d’un collègue');
     const zone = document.querySelector<HTMLElement>('[data-retrait="administration"]');
     expect(zone).not.toBeNull();
-    expect(
-      within(zone as HTMLElement).getByRole('button', { name: 'Retirer ce post-it' })
-    ).toBeInTheDocument();
+    expect(within(zone as HTMLElement).getByRole('button', { name: 'Retirer ce post-it' })).toBeInTheDocument();
     // Pas de correction du texte d'autrui : `0006` ne la donne à personne (D-088).
     expect(document.querySelector('[data-correction]')).toBeNull();
 

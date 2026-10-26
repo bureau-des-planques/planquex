@@ -20,7 +20,7 @@ const PENDING: Compte = {
   etat: 'en attente',
   raison: '',
   administrateur: false,
-  created_at: '2026-10-23T10:00:00.000Z',
+  created_at: '2026-10-23T10:00:00.000Z'
 };
 
 const actions = () => ({
@@ -29,11 +29,11 @@ const actions = () => ({
   inscrireCourriel: vi.fn(
     async (_courriel: string, _motDePasse: string): Promise<{ erreur: string | null; courrielEnvoye: boolean }> => ({
       erreur: null,
-      courrielEnvoye: false,
-    }),
+      courrielEnvoye: false
+    })
   ),
   connecterGoogle: vi.fn(async (_redirectTo?: string): Promise<string | null> => null),
-  deconnecter: vi.fn(async () => {}),
+  deconnecter: vi.fn(async () => {})
 });
 
 function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
@@ -44,7 +44,7 @@ function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
     compte: PENDING,
     erreur: null,
     ...actions(),
-    ...etat,
+    ...etat
   });
 }
 
@@ -62,9 +62,7 @@ afterEach(cleanup);
 describe('un compte en attente voit son état, et ce qu’il peut faire', () => {
   it('le titre dit l’attente, la phrase dit pourquoi, et ce qui reste ouvert est listé', () => {
     rendre();
-    expect(
-      screen.getByRole('heading', { level: 1, name: /Ton compte attend d’être validé/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /Ton compte attend d’être validé/ })).toBeInTheDocument();
     expect(screen.getByText(/Bastien valide les comptes à la main/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Jouer une partie/ })).toHaveAttribute('href', '/');
     expect(screen.getByRole('link', { name: /Lire le mur/ })).toHaveAttribute('href', '/comite');

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — module .mjs sans déclaration de types
 import { decisions, rendre } from './index-decisions.mjs';
@@ -15,7 +15,6 @@ import { decisions, rendre } from './index-decisions.mjs';
  * l'index, et à une décision ajoutée sans ligne d'index.
  */
 
-const racine = fileURLToPath(new URL('..', import.meta.url));
 const lire = (f: string) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
 
 describe("l'index des décisions couvre le journal (26/10/2026)", () => {
@@ -33,7 +32,7 @@ describe("l'index des décisions couvre le journal (26/10/2026)", () => {
   it('le contrôle mord : une décision absente de l’index est vue', () => {
     const journal = [
       '| D-001 | 18/10/2026 | Premier choix | parce que |',
-      '| D-002 | 19/10/2026 | Second choix | parce que |',
+      '| D-002 | 19/10/2026 | Second choix | parce que |'
     ].join('\n');
     const indexFaux = rendre(decisions(journal.split('\n')[0]));
     const lignesFausses = [...indexFaux.matchAll(/^\| (D-\d+) \|/gm)].map((m) => m[1]);

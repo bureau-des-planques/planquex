@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
-import {
-  createBattle,
-  createInstance,
-  evolve,
-  legalActions,
-  retreat
-} from '@/game/engine';
+import { createBattle, createInstance, evolve, legalActions, retreat } from '@/game/engine';
 import type { BattleState } from '@/data/types';
 
 /**
@@ -18,9 +12,7 @@ import type { BattleState } from '@/data/types';
  */
 const SEED = 5;
 
-const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
-  (card) => card.id
-);
+const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map((card) => card.id);
 
 /** Deck légal de 20 cartes (10 noms d'Entrants en double). */
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
@@ -131,9 +123,7 @@ describe('Rotation et évolution purgent les effets d’attaque (D-033 (4))', ()
     if (!active) throw new Error('Poste vide');
 
     // Une évolution de test : on ne dépend d'aucune carte de données.
-    const evolution = ALL_CARDS.filter(isPlanque).find(
-      (card) => card.stage !== 'ENTRANT' && !card.variantOf
-    );
+    const evolution = ALL_CARDS.filter(isPlanque).find((card) => card.stage !== 'ENTRANT' && !card.variantOf);
     if (!evolution) throw new Error('Aucune évolution dans les données');
     const originalEvolution = CARD_BY_ID.get(evolution.id);
     if (!isPlanque(originalEvolution)) throw new Error('Carte inconnue');

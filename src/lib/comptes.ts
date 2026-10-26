@@ -69,10 +69,7 @@ export interface ClientComptes {
       provider: 'google';
       options?: { redirectTo?: string };
     }): Promise<{ error: { message: string } | null }>;
-    signInWithPassword(credentials: {
-      email: string;
-      password: string;
-    }): Promise<{
+    signInWithPassword(credentials: { email: string; password: string }): Promise<{
       data: { session: { user: { id: string; email?: string | null } } | null };
       error: { message: string } | null;
     }>;
@@ -120,7 +117,7 @@ export function lireCompte(ligne: unknown): Compte | null {
     raison: typeof ligne.raison === 'string' ? ligne.raison : '',
     // Le drapeau vient de la base ; un client ne peut ni l'écrire ni le deviner.
     administrateur: ligne.administrateur === true,
-    created_at: typeof ligne.created_at === 'string' ? ligne.created_at : '',
+    created_at: typeof ligne.created_at === 'string' ? ligne.created_at : ''
   };
 }
 
@@ -197,7 +194,7 @@ export interface LectureCompte {
  * fermerait l'entrée à tout le monde, alors que lire et jouer ne dépendent pas de `comptes`.
  */
 export async function lireMonCompte(
-  chargerClient: () => Promise<ClientComptes | null> = clientComptes,
+  chargerClient: () => Promise<ClientComptes | null> = clientComptes
 ): Promise<LectureCompte | null> {
   const client = await chargerClient();
   if (!client) return null;
@@ -212,14 +209,14 @@ export async function lireMonCompte(
     return {
       session,
       compte: null,
-      erreur: `Lecture de ton compte impossible : ${error.message}`,
+      erreur: `Lecture de ton compte impossible : ${error.message}`
     };
   }
 
   return {
     session,
     compte: Array.isArray(lignes) ? lireCompte(lignes[0]) : null,
-    erreur: null,
+    erreur: null
   };
 }
 
@@ -230,7 +227,7 @@ export async function lireMonCompte(
  */
 export async function connexionGoogle(
   redirectTo: string,
-  chargerClient: () => Promise<ClientComptes | null> = clientComptes,
+  chargerClient: () => Promise<ClientComptes | null> = clientComptes
 ): Promise<void> {
   const client = await chargerClient();
   if (!client) throw new Error('Supabase n’est pas configuré : pas de connexion possible.');
@@ -242,13 +239,13 @@ export async function connexionGoogle(
 export async function connexionCourriel(
   courriel: string,
   motDePasse: string,
-  chargerClient: () => Promise<ClientComptes | null> = clientComptes,
+  chargerClient: () => Promise<ClientComptes | null> = clientComptes
 ): Promise<void> {
   const client = await chargerClient();
   if (!client) throw new Error('Supabase n’est pas configuré : pas de connexion possible.');
   const { error } = await client.auth.signInWithPassword({
     email: courriel.trim(),
-    password: motDePasse,
+    password: motDePasse
   });
   if (error) throw new Error(messageDeConnexion(error.message));
 }
@@ -260,22 +257,20 @@ export async function connexionCourriel(
 export async function inscriptionCourriel(
   courriel: string,
   motDePasse: string,
-  chargerClient: () => Promise<ClientComptes | null> = clientComptes,
+  chargerClient: () => Promise<ClientComptes | null> = clientComptes
 ): Promise<{ session: boolean }> {
   const client = await chargerClient();
   if (!client) throw new Error('Supabase n’est pas configuré : pas d’inscription possible.');
   const { data, error } = await client.auth.signUp({
     email: courriel.trim(),
-    password: motDePasse,
+    password: motDePasse
   });
   if (error) throw new Error(messageDeConnexion(error.message));
   return { session: data.session !== null };
 }
 
 /** Se déconnecter. Sans backend, il n'y a rien à faire et rien à dire. */
-export async function deconnexion(
-  chargerClient: () => Promise<ClientComptes | null> = clientComptes,
-): Promise<void> {
+export async function deconnexion(chargerClient: () => Promise<ClientComptes | null> = clientComptes): Promise<void> {
   const client = await chargerClient();
   if (!client) return;
   const { error } = await client.auth.signOut();
@@ -284,7 +279,7 @@ export async function deconnexion(
 
 /** La liste des comptes, pour l'écran d'administration. La RLS ne la donne qu'à un admin. */
 export async function listerComptes(
-  chargerClient: () => Promise<ClientComptes | null> = clientComptes,
+  chargerClient: () => Promise<ClientComptes | null> = clientComptes
 ): Promise<Compte[]> {
   const client = await chargerClient();
   if (!client) throw new Error('Supabase n’est pas configuré : il n’y a pas de comptes.');
@@ -313,23 +308,17 @@ export async function deciderCompte(
   id: string,
   etat: EtatCompte,
   raison: string,
-  chargerClient: () => Promise<ClientComptes | null> = clientComptes,
+  chargerClient: () => Promise<ClientComptes | null> = clientComptes
 ): Promise<Compte> {
   const client = await chargerClient();
   if (!client) throw new Error('Supabase n’est pas configuré : il n’y a pas de comptes.');
 
-  const { data, error } = await client
-    .from('comptes')
-    .update({ etat, raison })
-    .eq('id', id)
-    .select('*');
+  const { data, error } = await client.from('comptes').update({ etat, raison }).eq('id', id).select('*');
   if (error) throw new Error(messageDeCompte(error.message));
 
   const ligne = Array.isArray(data) ? data[0] : null;
   if (!ligne) {
-    throw new Error(
-      'La base n’a changé aucun compte : ton compte n’est peut-être pas administrateur.',
-    );
+    throw new Error('La base n’a changé aucun compte : ton compte n’est peut-être pas administrateur.');
   }
   const compte = lireCompte(ligne);
   if (!compte) throw new Error('La base a rendu un compte illisible après la décision.');

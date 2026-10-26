@@ -56,7 +56,9 @@ export function CardSlot({ card, onClick, quick, owned, inDeck = 0, full = false
         {owned !== undefined && (
           <span
             className={`card-slot__count ${missing ? 'is-missing' : ''}`}
-            title={missing ? `« ${card.name} » : non possédée` : `${owned} exemplaire(s) de « ${card.name} » possédé(s)`}
+            title={
+              missing ? `« ${card.name} » : non possédée` : `${owned} exemplaire(s) de « ${card.name} » possédé(s)`
+            }
           >
             ×{owned}
           </span>

@@ -90,7 +90,10 @@ describe('le contrôle mord', () => {
     // voyait pas, toutes les assertions ci-dessus passeraient quoi qu'il arrive.
     const fautives: Source[] = [
       { relatif: 'src/data/index.ts', source: 'export function kindLabel(card: Card): string { return ""; }' },
-      { relatif: 'src/pages/Battle.tsx', source: 'function kindLabel(definition: Card | undefined): string { return ""; }' }
+      {
+        relatif: 'src/pages/Battle.tsx',
+        source: 'function kindLabel(definition: Card | undefined): string { return ""; }'
+      }
     ];
     expect(declarants(fautives, 'function kindLabel(')).toEqual(['src/data/index.ts', 'src/pages/Battle.tsx']);
   });

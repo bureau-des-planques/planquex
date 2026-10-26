@@ -107,15 +107,13 @@ describe('simulate — contenu du rapport', () => {
     expect(() => simulate({ games: 1.5, seed: SEED })).toThrow(/Nombre de parties/);
     expect(() => simulate({ games: 1, seed: Number.NaN })).toThrow(/Graine/);
     expect(() => simulate({ games: 1, seed: SEED, maxTurns: 0 })).toThrow(/Limite de tours/);
-    expect(() =>
-      simulate({ games: 1, seed: SEED, factions: ['NOPE' as (typeof FACTION_ORDER)[number]] })
-    ).toThrow(/inconnue/);
-    expect(() =>
-      simulate({ games: 1, seed: SEED, aiLevel: 3 as unknown as AiLevel })
-    ).toThrow(/Niveau d'IA invalide/);
+    expect(() => simulate({ games: 1, seed: SEED, factions: ['NOPE' as (typeof FACTION_ORDER)[number]] })).toThrow(
+      /inconnue/
+    );
+    expect(() => simulate({ games: 1, seed: SEED, aiLevel: 3 as unknown as AiLevel })).toThrow(/Niveau d'IA invalide/);
   });
 
-  it('porte les niveaux d\'IA dans le rapport, et par défaut le niveau 1', () => {
+  it("porte les niveaux d'IA dans le rapport, et par défaut le niveau 1", () => {
     const parDefaut = simulate({ games: 2, seed: SEED });
     expect(parDefaut.playerLevel).toBe(1);
     expect(parDefaut.aiLevel).toBe(1);
@@ -130,9 +128,7 @@ describe('simulate — contenu du rapport', () => {
     const niveau2 = simulate({ games: 6, seed: SEED, playerLevel: 1, aiLevel: 2 });
 
     // Mêmes graines, mêmes Decks : seul le niveau de la Direction change.
-    expect(niveau2.results.map((result) => result.seed)).toEqual(
-      niveau1.results.map((result) => result.seed)
-    );
+    expect(niveau2.results.map((result) => result.seed)).toEqual(niveau1.results.map((result) => result.seed));
     expect(niveau2.results).not.toEqual(niveau1.results);
   });
 });
@@ -216,9 +212,7 @@ describe('types de café des Decks simulés (#113)', () => {
 
   it('un Deck SUPPORT du simulateur lance des Pressions dans chaque partie', () => {
     const report = simulate({ games: 6, seed: SEED, factions: ['SUPPORT', 'SSE'] });
-    const supportGames = report.results.filter(
-      (result) => result.player === 'SUPPORT' || result.ai === 'SUPPORT'
-    );
+    const supportGames = report.results.filter((result) => result.player === 'SUPPORT' || result.ai === 'SUPPORT');
     // Deux factions : l'appariement fait aussi des miroirs, toutes les parties ne
     // contiennent donc pas SUPPORT. Celles qui le contiennent doivent l'armer.
     expect(supportGames.length).toBeGreaterThan(0);
@@ -226,7 +220,10 @@ describe('types de café des Decks simulés (#113)', () => {
     const armed = supportGames.map((result) =>
       result.player === 'SUPPORT' ? result.attacks.player : result.attacks.ai
     );
-    expect(armed.every((count) => count > 0), `Pressions SUPPORT : ${armed.join(', ')}`).toBe(true);
+    expect(
+      armed.every((count) => count > 0),
+      `Pressions SUPPORT : ${armed.join(', ')}`
+    ).toBe(true);
   });
 
   it('un Deck INTERIM peut payer chaque stade de sa ligne', () => {
@@ -245,9 +242,7 @@ describe('types de café des Decks simulés (#113)', () => {
     expect(own.length).toBeGreaterThan(0);
 
     const stages = new Set<Stage>(
-      own
-        .filter((card) => card.attacks.some((attack) => payable(attack.cost)))
-        .map((card) => card.stage)
+      own.filter((card) => card.attacks.some((attack) => payable(attack.cost))).map((card) => card.stage)
     );
     for (const stage of ['ENTRANT', 'N+1', 'N+2'] as const) {
       expect(stages.has(stage), `stade ${stage} sans Pression payable`).toBe(true);
@@ -271,28 +266,31 @@ describe('formatReport', () => {
 describe('aggregateFactions', () => {
   it('compte les tours moyens sans arrondi dépendant de la plateforme', () => {
     const [first, second] = FACTION_ORDER;
-    const aggregate = aggregateFactions([first, second], [
-      {
-        game: 1,
-        seed: 1,
-        player: first,
-        ai: second,
-        winner: 'player',
-        winnerFaction: first,
-        turns: 10,
-        attacks: { player: 2, ai: 1 }
-      },
-      {
-        game: 2,
-        seed: 2,
-        player: second,
-        ai: first,
-        winner: 'player',
-        winnerFaction: second,
-        turns: 20,
-        attacks: { player: 3, ai: 2 }
-      }
-    ]);
+    const aggregate = aggregateFactions(
+      [first, second],
+      [
+        {
+          game: 1,
+          seed: 1,
+          player: first,
+          ai: second,
+          winner: 'player',
+          winnerFaction: first,
+          turns: 10,
+          attacks: { player: 2, ai: 1 }
+        },
+        {
+          game: 2,
+          seed: 2,
+          player: second,
+          ai: first,
+          winner: 'player',
+          winnerFaction: second,
+          turns: 20,
+          attacks: { player: 3, ai: 2 }
+        }
+      ]
+    );
 
     expect(aggregate).toEqual([
       { faction: first, games: 2, wins: 1, losses: 1, draws: 0, averageTurns: 15 },

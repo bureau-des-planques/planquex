@@ -37,8 +37,8 @@ export function Attente() {
         <section className="section panel">
           <h1>Pas de compte sans base</h1>
           <p className="muted max-w-[62ch]">
-            Cette version du jeu n’est pas reliée à une base : il n’y a ni compte ni
-            validation. Tout fonctionne comme avant.
+            Cette version du jeu n’est pas reliée à une base : il n’y a ni compte ni validation. Tout fonctionne comme
+            avant.
           </p>
           <Link className="button" to="/">
             Retour au bureau
@@ -73,8 +73,7 @@ export function Attente() {
           <p className="m-0 text-[0.9rem] text-ink-muted">Lecture de ton compte…</p>
         ) : !session ? (
           <p className="m-0">
-            Tu n’es pas connecté.{' '}
-            <Link to="/connexion">Se connecter</Link>
+            Tu n’es pas connecté. <Link to="/connexion">Se connecter</Link>
           </p>
         ) : compte ? (
           <ul className="m-0 flex list-none flex-col gap-1 p-0 text-[0.9rem]">
@@ -93,19 +92,13 @@ export function Attente() {
           </ul>
         ) : (
           <p className="m-0 max-w-[62ch]">
-            Ton compte existe, mais la base ne le connaît pas encore : la migration des
-            comptes n’est peut-être pas appliquée. Réessaie dans un instant ; si cela dure,
-            signale-le à Bastien.
+            Ton compte existe, mais la base ne le connaît pas encore : la migration des comptes n’est peut-être pas
+            appliquée. Réessaie dans un instant ; si cela dure, signale-le à Bastien.
           </p>
         )}
 
         <div className="actions actions--tight mt-3">
-          <button
-            type="button"
-            className="button"
-            onClick={() => void rafraichir()}
-            disabled={chargement}
-          >
+          <button type="button" className="button" onClick={() => void rafraichir()} disabled={chargement}>
             <RefreshCw size={16} /> Revérifier mon état
           </button>
           <button type="button" className="button" onClick={() => void deconnecter()} disabled={chargement}>
@@ -127,12 +120,10 @@ export function Attente() {
             <Link to="/">Jouer une partie</Link> — le solo ne demande rien à la base.
           </li>
           <li>
-            <Link to="/comite">Lire le mur</Link> — les post-its et les compteurs de pouces
-            sont ouverts à tout compte.
+            <Link to="/comite">Lire le mur</Link> — les post-its et les compteurs de pouces sont ouverts à tout compte.
           </li>
           <li>
-            <Link to="/settings">Tes réglages</Link> — ta Collection et ton Deck restent dans
-            ce navigateur.
+            <Link to="/settings">Tes réglages</Link> — ta Collection et ton Deck restent dans ce navigateur.
           </li>
         </ul>
       </section>

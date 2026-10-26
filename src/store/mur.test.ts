@@ -196,10 +196,7 @@ describe('exporterMur — le seul mécanisme d’écriture de l’alpha', () => 
   it('ne fabrique pas de famille, et laisse `lie` traverser tel quel (D-085)', () => {
     const source = {
       formulaire: '',
-      postits: [
-        gueulage({ id: 'p-gueule', lie: 'p-002' }),
-        postit({ id: 'p-002', kind: 'OUF' })
-      ]
+      postits: [gueulage({ id: 'p-gueule', lie: 'p-002' }), postit({ id: 'p-002', kind: 'OUF' })]
     };
 
     const lu = JSON.parse(exporterMur({}, source)) as { postits: Array<Record<string, unknown>> };

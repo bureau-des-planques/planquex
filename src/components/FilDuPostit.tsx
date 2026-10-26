@@ -62,9 +62,7 @@ export function FilDuPostit({ postit, fil }: { postit: Postit; fil: FilPostit })
 
   return (
     <section className="fil" data-fil={postit.id} aria-label={`Commentaires de « ${postit.titre} »`}>
-      <p className="fil__titre">
-        Commentaires{fil.commentaires.length > 0 ? ` (${fil.commentaires.length})` : ''}
-      </p>
+      <p className="fil__titre">Commentaires{fil.commentaires.length > 0 ? ` (${fil.commentaires.length})` : ''}</p>
 
       {fil.chargement ? (
         <p className="fil__note">Les commentaires se chargent…</p>
@@ -76,9 +74,7 @@ export function FilDuPostit({ postit, fil }: { postit: Postit; fil: FilPostit })
             <li className="fil__item" key={commentaire.id} data-commentaire={commentaire.id}>
               <p className="fil__entete">
                 <span>{commentaire.pseudo || 'anonyme'}</span>
-                {commentaire.creeLe && (
-                  <time dateTime={commentaire.creeLe}>{dateCourte(commentaire.creeLe)}</time>
-                )}
+                {commentaire.creeLe && <time dateTime={commentaire.creeLe}>{dateCourte(commentaire.creeLe)}</time>}
                 {commentaire.mien && (
                   <button
                     type="button"
@@ -162,8 +158,8 @@ export function RetraitDuPostit({ postit, retrait }: { postit: Postit; retrait: 
     <section className="fil" data-retrait="administration">
       <p className="fil__titre">Retrait d’administration</p>
       <p className="fil__note">
-        Ce post-it n’est pas le tien : tu ne corriges pas son texte, mais tu peux le retirer du
-        mur, quel que soit son statut.
+        Ce post-it n’est pas le tien : tu ne corriges pas son texte, mais tu peux le retirer du mur, quel que soit son
+        statut.
       </p>
       <button
         type="button"
@@ -175,20 +171,14 @@ export function RetraitDuPostit({ postit, retrait }: { postit: Postit; retrait: 
         {retrait.occupe ? 'Retrait…' : 'Retirer ce post-it'}
       </button>
       <p className="fil__note">
-        Le retrait <strong>efface</strong> le post-it, avec ses votes et ses commentaires : il
-        n’en reste pas de trace sur le mur, et le geste ne se défait pas.
+        Le retrait <strong>efface</strong> le post-it, avec ses votes et ses commentaires : il n’en reste pas de trace
+        sur le mur, et le geste ne se défait pas.
       </p>
     </section>
   );
 }
 
-export function CorrectionDuPostit({
-  postit,
-  correction,
-}: {
-  postit: Postit;
-  correction: CorrectionPostit;
-}) {
+export function CorrectionDuPostit({ postit, correction }: { postit: Postit; correction: CorrectionPostit }) {
   const [titre, setTitre] = useState(postit.titre);
   const [texte, setTexte] = useState(postit.texte);
   const change = titre.trim() !== postit.titre || texte.trim() !== postit.texte;
@@ -205,9 +195,7 @@ export function CorrectionDuPostit({
       <section className="fil" data-correction="gele">
         <p className="fil__titre">Ton post-it</p>
         <p className="fil__note">{correction.raisonGele}</p>
-        <p className="fil__note">
-          Il reste lisible, et son fil reste ouvert : on commente sous lui.
-        </p>
+        <p className="fil__note">Il reste lisible, et son fil reste ouvert : on commente sous lui.</p>
       </section>
     );
   }
@@ -257,8 +245,8 @@ export function CorrectionDuPostit({
           </button>
         </div>
         <p className="fil__note">
-          Le retrait <strong>efface</strong> le post-it, avec ses commentaires : il n’en reste
-          pas de trace sur le mur. Il n’est possible que tant que le post-it est en attente.
+          Le retrait <strong>efface</strong> le post-it, avec ses commentaires : il n’en reste pas de trace sur le mur.
+          Il n’est possible que tant que le post-it est en attente.
         </p>
       </form>
     </section>

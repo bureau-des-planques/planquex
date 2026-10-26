@@ -22,8 +22,7 @@ const svg = readFileSync(join(root, 'public/icon-512.svg'), 'utf8');
 const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 
 const executablePath =
-  process.env.CHROME_PATH ??
-  join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
+  process.env.CHROME_PATH ?? join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
 
 const BACKGROUND = '#0b1220';
 

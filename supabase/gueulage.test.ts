@@ -17,9 +17,20 @@
  */
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { APPAREIL_A, APPAREIL_B, avecAppareil, base, baseAvecAppareils, fichiersMigrations, migrations, type Base } from './pglite';
+import {
+  APPAREIL_A,
+  APPAREIL_B,
+  avecAppareil,
+  base,
+  baseAvecAppareils,
+  fichiersMigrations,
+  migrations,
+  type Base
+} from './pglite';
 
-const MIGRATION_GUEULAGE = fichiersMigrations().find((sql) => sql.includes('D-085') && sql.includes('postits_lie_hors_gueulage'));
+const MIGRATION_GUEULAGE = fichiersMigrations().find(
+  (sql) => sql.includes('D-085') && sql.includes('postits_lie_hors_gueulage')
+);
 if (!MIGRATION_GUEULAGE) throw new Error('supabase/migrations/0003_gueulage.sql introuvable');
 
 const MIGRATION_MUR = fichiersMigrations().find((sql) => sql.includes('create table public.postits'));
@@ -57,14 +68,14 @@ async function tenterEnBase(db: Base, sql: string, params: unknown[] = []): Prom
 function inserer(
   db: Base,
   champs: { id: string; kind?: 'IP' | 'OUF' | null; gueulage?: boolean; lie?: string | null },
-  appareil = APPAREIL_A,
+  appareil = APPAREIL_A
 ) {
   return tenter(
     db,
     appareil,
     `insert into public.postits (id, kind, titre, texte, version, gueulage, lie)
      values ($1, $2, 'Titre', 'Texte.', $3, $4, $5) returning *`,
-    [champs.id, champs.kind ?? null, VERSION, champs.gueulage ?? false, champs.lie ?? null],
+    [champs.id, champs.kind ?? null, VERSION, champs.gueulage ?? false, champs.lie ?? null]
   );
 }
 
@@ -98,7 +109,7 @@ const GESTES = {
     // d'écriture du client (#139). C'est le **déclencheur** de la 0003 qu'on éprouve ici.
     try {
       const res = await db.query<Record<string, unknown>>(
-        `update public.postits set gueulage = true, kind = null where id = 'p-designe' returning *`,
+        `update public.postits set gueulage = true, kind = null where id = 'p-designe' returning *`
       );
       return { accepte: true, ligne: res.rows[0] ?? {} } as Issue;
     } catch (erreur) {
@@ -107,7 +118,7 @@ const GESTES = {
   },
   id48: (db: Base) => inserer(db, { id: `p-${'a'.repeat(46)}`, kind: 'IP' }),
   id80: (db: Base) => inserer(db, { id: `p-${'b'.repeat(78)}`, kind: 'IP' }),
-  id81: (db: Base) => inserer(db, { id: `p-${'c'.repeat(79)}`, kind: 'IP' }),
+  id81: (db: Base) => inserer(db, { id: `p-${'c'.repeat(79)}`, kind: 'IP' })
 } as const;
 
 describe('le gueulage dans la base — la 0003 (D-085)', () => {
@@ -124,7 +135,7 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
     const issue = await GESTES.gueulageSansKind(db);
     accepte(issue);
     const lu = await avecAppareil(db, APPAREIL_B, () =>
-      db.query(`select kind, gueulage from public.postits_avec_votes where id = 'g-sans-kind'`),
+      db.query(`select kind, gueulage from public.postits_avec_votes where id = 'g-sans-kind'`)
     );
     expect(lu.rows[0]).toEqual({ kind: null, gueulage: true });
   });
@@ -143,7 +154,7 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
       db,
       APPAREIL_A,
       `insert into public.postits (id, kind, titre, texte, version) values ('p-bug', 'BUG', 'T', 'T.', $1) returning *`,
-      [VERSION],
+      [VERSION]
     );
     refuse(issue, /postits_kind_check/);
   });
@@ -169,7 +180,7 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
     const retire = await tenter(db, APPAREIL_A, `delete from public.postits where id = 'p-cible' returning *`);
     accepte(retire);
     const lu = await avecAppareil(db, APPAREIL_A, () =>
-      db.query(`select lie from public.postits where id = 'g-lie-ip'`),
+      db.query(`select lie from public.postits where id = 'g-lie-ip'`)
     );
     expect(lu.rows[0].lie).toBeNull();
   });
@@ -197,9 +208,21 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
            (id, kind, titre, texte, ecran, pseudo, version, statut, raison, ticket, gueulage, position_x, position_y, position_angle)
          values ($1, $2, $3, $4, nullif($5, ''), $6, $7, $8, $9, $10, $11, $12, $13, $14) returning *`,
         [
-          p.id, p.kind ?? null, p.titre, p.texte, p.ecran ?? '', p.pseudo, p.version, p.statut,
-          p.raison ?? '', p.ticket ?? null, p.gueulage, pos.x, pos.y, pos.angle,
-        ],
+          p.id,
+          p.kind ?? null,
+          p.titre,
+          p.texte,
+          p.ecran ?? '',
+          p.pseudo,
+          p.version,
+          p.statut,
+          p.raison ?? '',
+          p.ticket ?? null,
+          p.gueulage,
+          pos.x,
+          pos.y,
+          pos.angle
+        ]
       );
       accepte(issue);
     }
@@ -211,13 +234,13 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
     // `mur-ecriture.test.ts`.
     refuse(
       await tenterEnBase(db, `update public.postits set statut = 'écarté' where id = 'g-sans-kind' returning *`),
-      /postits_ecarte_a_sa_raison/,
+      /postits_ecarte_a_sa_raison/
     );
     accepte(
       await tenterEnBase(
         db,
-        `update public.postits set statut = 'écarté', raison = 'Hors périmètre.' where id = 'g-sans-kind' returning *`,
-      ),
+        `update public.postits set statut = 'écarté', raison = 'Hors périmètre.' where id = 'g-sans-kind' returning *`
+      )
     );
   });
 
@@ -225,14 +248,14 @@ describe('le gueulage dans la base — la 0003 (D-085)', () => {
     // Le refus est plus tôt qu'en 0001 : `titre` n'est plus dans le grant du client (0006).
     refuse(
       await tenter(db, APPAREIL_B, `update public.postits set titre = 'Pirate' where id = 'g-sans-kind' returning *`),
-      /permission denied for table postits/,
+      /permission denied for table postits/
     );
     const usurpe = await tenter(
       db,
       APPAREIL_B,
       `insert into public.postits (id, titre, texte, version, gueulage, auteur)
        values ('g-usurpe', 'T', 'T.', $1, true, $2) returning *`,
-      [VERSION, APPAREIL_A],
+      [VERSION, APPAREIL_A]
     );
     refuse(usurpe, /row-level security/);
   });
@@ -261,7 +284,7 @@ describe('la 0003 sur une base qui a déjà des lignes (celle de #135)', () => {
         APPAREIL_A,
         `insert into public.postits (id, kind, titre, texte, version, gueulage)
          values ('g-ancien', 'IP', 'Ancien', 'Gueulé avant D-085.', $1, true) returning *`,
-        [VERSION],
+        [VERSION]
       );
       accepte(pose);
       accepte(
@@ -269,8 +292,8 @@ describe('la 0003 sur une base qui a déjà des lignes (celle de #135)', () => {
           db,
           APPAREIL_A,
           `insert into public.postits (id, kind, titre, texte, version) values ('p-ancien', 'OUF', 'T', 'T.', $1) returning *`,
-          [VERSION],
-        ),
+          [VERSION]
+        )
       );
 
       // Avant la 0003, la base refuse un gueulage sans famille et un identifiant de 48 : le défaut constaté.
@@ -279,7 +302,7 @@ describe('la 0003 sur une base qui a déjà des lignes (celle de #135)', () => {
           db,
           APPAREIL_A,
           `insert into public.postits (id, kind, titre, texte, version, gueulage) values ($1, $2, 'T', 'T.', $3, $4) returning *`,
-          [id, kind, VERSION, gueulage],
+          [id, kind, VERSION, gueulage]
         );
       refuse(await sans('g-sans-famille', null, true), /null value in column "kind"/);
       refuse(await sans(`p-${'a'.repeat(46)}`, 'IP', false), /postits_id_check/);
@@ -287,11 +310,11 @@ describe('la 0003 sur une base qui a déjà des lignes (celle de #135)', () => {
       await db.exec(MIGRATION_GUEULAGE);
 
       const lu = await avecAppareil(db, APPAREIL_A, () =>
-        db.query(`select id, kind from public.postits where id in ('g-ancien', 'p-ancien') order by id`),
+        db.query(`select id, kind from public.postits where id in ('g-ancien', 'p-ancien') order by id`)
       );
       expect(lu.rows).toEqual([
         { id: 'g-ancien', kind: null },
-        { id: 'p-ancien', kind: 'OUF' },
+        { id: 'p-ancien', kind: 'OUF' }
       ]);
 
       // Idempotente : une seconde application ne lève rien et ne change rien.
@@ -327,50 +350,50 @@ describe('le contrôle mord — chaque contrôle de la 0003, neutralisé, laisse
       nom: '`kind` redevient obligatoire → le gueulage sans famille est refusé',
       mutee: () => muter('alter table public.postits alter column kind drop not null;', ''),
       geste: GESTES.gueulageSansKind,
-      attendu: 'refuse',
+      attendu: 'refuse'
     },
     {
       nom: 'sans « un gueulage n’a pas de famille » → le gueulage avec `kind` passe',
       mutee: () => muter('check (not gueulage or kind is null)', 'check (true)'),
       geste: GESTES.gueulageAvecKind,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans « un post-it a une famille » → l’IP sans `kind` passe',
       mutee: () => muter('check (gueulage or kind is not null)', 'check (true)'),
       geste: GESTES.ipSansKind,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans le garde du déclencheur → un `lie` vers un gueulage passe',
       mutee: () => muter('cible.id = new.lie and cible.gueulage', 'cible.id = new.lie and false'),
       geste: GESTES.lieVersGueulage,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans le garde d’auto-lien → un post-it se lie à lui-même',
       mutee: () => muter('if new.lie = new.id then', 'if false then'),
       geste: GESTES.lieSurSoi,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'sans le garde de l’autre sens → un post-it désigné devient gueulage',
       mutee: () => muter('where lieur.lie = new.id', 'where false'),
       geste: GESTES.devenirGueulageDesigne,
-      attendu: 'accepte',
+      attendu: 'accepte'
     },
     {
       nom: 'identifiant resté à 32 → celui de 48 caractères est refusé',
       mutee: () => muter('between 1 and 80', 'between 1 and 32'),
       geste: GESTES.id48,
-      attendu: 'refuse',
+      attendu: 'refuse'
     },
     {
       nom: 'identifiant sans plafond → celui de 81 caractères passe',
       mutee: () => muter('between 1 and 80', 'between 1 and 8000'),
       geste: GESTES.id81,
-      attendu: 'accepte',
-    },
+      attendu: 'accepte'
+    }
   ];
 
   for (const m of MUTATIONS) {

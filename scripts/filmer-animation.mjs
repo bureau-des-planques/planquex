@@ -93,8 +93,7 @@ export function nomFrame(index) {
 export function htmlPlanche(frames, { colonnes, intervalle }) {
   const cases = frames
     .map(
-      (src, i) =>
-        `<figure><img src="${src}" alt="frame ${i}"><figcaption>${i * intervalle} ms</figcaption></figure>`
+      (src, i) => `<figure><img src="${src}" alt="frame ${i}"><figcaption>${i * intervalle} ms</figcaption></figure>`
     )
     .join('');
   return `<!doctype html><meta charset="utf-8"><style>
@@ -106,7 +105,8 @@ figure{margin:0}img{display:block;max-width:360px;height:auto}figcaption{padding
 
 async function filmer(config) {
   const base = process.env.BASE_URL;
-  if (!base) throw new Error('BASE_URL est requis : lancer le serveur (npm run dev) puis BASE_URL=http://localhost:5178');
+  if (!base)
+    throw new Error('BASE_URL est requis : lancer le serveur (npm run dev) puis BASE_URL=http://localhost:5178');
   const { chromium } = await import('playwright-core');
   const racine = fileURLToPath(new URL('..', import.meta.url));
   const executablePath =

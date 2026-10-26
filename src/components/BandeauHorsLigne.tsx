@@ -38,8 +38,8 @@ export function BandeauHorsLigne() {
     <p className="bandeau-hors-ligne" role="status">
       <WifiOff size={16} aria-hidden />
       <span>
-        <strong>Hors ligne.</strong> Le jeu continue : combats, Collection et Deck ne demandent aucun
-        réseau. Le mur du comité et les traces de combat attendent le retour de la connexion.
+        <strong>Hors ligne.</strong> Le jeu continue : combats, Collection et Deck ne demandent aucun réseau. Le mur du
+        comité et les traces de combat attendent le retour de la connexion.
       </span>
     </p>
   );
