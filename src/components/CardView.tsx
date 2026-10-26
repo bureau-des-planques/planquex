@@ -43,6 +43,18 @@ interface Props {
 /** Les raretés à traitement holographique (`CARD-SPEC.md` §1) : étoiles et Couronne. */
 const HOLO_RARITIES: Rarity[] = ['1S', '2S', '3S', 'COU'];
 
+/**
+ * **L'aplat de faction** sous l'illustration — un **aplat**, pas un dégradé (#208).
+ *
+ * Il est calculé par `color-mix` sur `--accent`, que la carte porte déjà : aucune couleur
+ * n'est recopiée. La palette dérivée de `FACTION_META` (`card.palette`, un dégradé) reste la
+ * donnée d'identité et le repli documentaire, mais elle n'est plus peinte dans la fenêtre :
+ * un dégradé **violet** ou **cyan** sur fond sombre est un tell d'UI générée
+ * (`impeccable`, `ai-color-palette`, relevé sur `/collection` et `/deck`) — et la teinte de
+ * faction, elle, ne change pas.
+ */
+const APLAT_FACTION = 'color-mix(in srgb, var(--accent) 26%, var(--bg-deep))';
+
 export function CardView({ card, onClick, compact, selected, figee, stress, seuil, plateau, annotations }: Props) {
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
@@ -121,12 +133,12 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
           // L'URL vient de `@/art` (D-045) : Vite la résout et la hache. Il n'y a plus de
           // copie servie dans `public/` — une image du registre est servie, ou rien.
           //
-          // **Chargement** (#131) : sous l'image, l'aplat de faction (`card.palette`, un
-          // dégradé) en seconde couche — le temps que l'illustration arrive, ou si elle ne
-          // vient pas (hors ligne, hors précache), la carte garde son fond au lieu d'un trou.
+          // **Chargement** (#131) : sous l'image, l'aplat de faction (`APLAT_FACTION`) en
+          // seconde couche — le temps que l'illustration arrive, ou si elle ne vient pas
+          // (hors ligne, hors précache), la carte garde son fond au lieu d'un trou.
           background: artUrl(card.art)
-            ? `url('${artUrl(card.art)}') 50% 28% / cover no-repeat, ${card.palette}`
-            : card.palette
+            ? `url('${artUrl(card.art)}') 50% 28% / cover no-repeat, ${APLAT_FACTION}`
+            : APLAT_FACTION
         }}
       >
         {/* Spec #95 : « l'image **si elle existe** ; sinon l'aplat **+ glyphe** ». Le
@@ -208,6 +220,10 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
 
   const commun = {
     className: classes,
+    // La rareté en **attribut** (en plus de `--rarity`) : c'est ce qui permet au CSS de
+    // traiter une rareté en particulier (le filet plat de la Couronne, #208) sans recopier
+    // un hex.
+    'data-rarity': card.rarity,
     style,
     onClick,
     // Figée : le plateau ne bouge pas au passage du pointeur (D-093). Le survol y ouvre
