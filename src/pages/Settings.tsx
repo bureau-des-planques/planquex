@@ -216,10 +216,9 @@ export function Settings() {
 
       <section className="section panel">
         <h2>Traces de combat</h2>
-        {/* `max-w-[64ch]` : sur toute la largeur du panneau, les lignes passaient 150
-            caractères (`impeccable`, line-length, #208) — illisible et hors du gabarit de
-            lecture des autres textes de l'écran. */}
-        <p className="muted max-w-[64ch]">
+        {/* `max-w-[56ch]` (et non 64) : depuis le texte à deux (D-105), les lignes à 64ch
+            dépassaient 80 caractères — `impeccable`, line-length, cliquet #208. */}
+        <p className="muted max-w-[56ch]">
           Les parties terminées sont gardées sous ton compte, solo comme à deux — la graine,
           les deux Decks, les types de café et le journal des coups — pour voir comment le jeu
           se joue et l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé ; seul ton
