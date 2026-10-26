@@ -352,6 +352,51 @@ describe('lib/app.mjs — l’API HTTP', () => {
     expect(systeme.appels.tues).toEqual([]);
   });
 
+  it('le contrôle mord : le journal d’un port hors périmètre ne se lit pas', async () => {
+    // Le cas du ticket #246 : `lireJournal` ouvre `<état>/<port>.log` pour **n'importe quel**
+    // nombre, sans passer par le périmètre. Un port qui écoute hors chantier (ici un `vitest`)
+    // répondait 200 avec ses lignes — un journal que la page ne montre pas, servi par la route.
+    const horsPerimetre = {
+      port: 51234,
+      pid: 404,
+      comm: 'node',
+      dossier: '/depot/dev',
+      commande: 'node /depot/dev/node_modules/.bin/vitest run --pool forks',
+      age: 12,
+    };
+    const systeme = fauxSysteme({
+      serveurs: [horsPerimetre, ...SERVEURS],
+      chantiers: CHANTIERS,
+      journaux: { 51234: ['FAIL src/game/engine.test.ts', 'Tests 1 failed | 23 passed'] },
+    });
+    const serveur = await demarrerServeur({ port: 0, jeton: JETON, systeme });
+    ouvertes.push(serveur);
+
+    const refus = await demander(serveur.baseUrl, '/api/journal?port=51234');
+    expect(refus.status).toBeGreaterThanOrEqual(400);
+    expect(refus.status).toBeLessThan(500);
+    expect((await refus.json()).erreur).toMatch(/serveur de chantier/);
+  });
+
+  it('le contrôle mord : /api/lancer n’adopte pas de pid', async () => {
+    // La route **lance** un processus : elle n'en adopte aucun et n'en tue aucun. Un `pid` dans
+    // le corps était accepté en silence (#246) — l'appelant pouvait croire avoir attaché un
+    // serveur existant, hors du périmètre que `estServeurDeChantier` définit.
+    const systeme = fauxSysteme({ serveurs: SERVEURS, chantiers: CHANTIERS });
+    const serveur = await demarrerServeur({ port: 0, jeton: JETON, systeme });
+    ouvertes.push(serveur);
+
+    const refus = await demander(serveur.baseUrl, '/api/lancer', {
+      methode: 'POST',
+      corps: { chemin: '/depot/sale', pid: 404 },
+    });
+    expect(refus.status).toBeGreaterThanOrEqual(400);
+    expect(refus.status).toBeLessThan(500);
+    expect((await refus.json()).erreur).toMatch(/pid/);
+    // Rien n'a été lancé : le refus tombe avant l'appel au système.
+    expect(systeme.appels.lances).toEqual([]);
+  });
+
   it('sert le journal d’un port, et dit franchement quand il n’y en a pas', async () => {
     const avecJournal = fauxSysteme({ serveurs: SERVEURS, chantiers: CHANTIERS, journaux: { 5179: ['VITE v8.3.4', 'Local: http://127.0.0.1:5179/'] } });
     const serveur = await demarrerServeur({ port: 0, jeton: JETON, systeme: avecJournal });

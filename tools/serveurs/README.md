@@ -29,12 +29,15 @@ L'outil tue donc l'arbre, feuilles d'abord.
 - **Lancer** : sur un chantier choisi, en `dev` ou en `preview`, sur le premier port libre à
   partir de `5181` (ou un port imposé), toujours `--strictPort --host 127.0.0.1`. Le processus est
   détaché : fermer l'onglet ne l'arrête pas. Son journal s'écrit hors du dépôt
-  (`~/.local/state/planquex-serveurs/<port>.log`).
+  (`~/.local/state/planquex-serveurs/<port>.log`). Un champ `pid` dans le corps est refusé
+  (400) : la route **lance** un processus, elle n'en adopte aucun (#246).
 - **Tuer** : l'arbre entier, feuilles d'abord — un pid qui n'écoute pas est refusé (404), et un
   pid qui écoute **sans être un serveur de chantier** aussi (403) : la route accepte exactement
   ce que la page montre, par la **même** fonction (`estServeurDeChantier`, #245). Un `vitest`
   n'est pas un `vite`.
-- **Journal** : les 200 dernières lignes d'un serveur lancé par l'outil.
+- **Journal** : les 200 dernières lignes d'un serveur lancé par l'outil — d'un port **dans le
+  périmètre** : un port qui écoute hors chantier est refusé (403) par la même fonction (#246), au
+  lieu de rendre un 404 qui faisait croire à un journal absent.
 - **Rafraîchissement** : toutes les 5 s, tant que l'onglet est ouvert.
 
 ## Ce qu'il ne fait pas
@@ -68,7 +71,8 @@ Surcharge par l'environnement : `SERVEURS_ETAT` (le dossier des journaux).
 
 ## Les gardes
 
-Vingt-quatre contrôles, et chacun **mord** (`AGENTS.md` §6) : le cas fautif est là pour échouer —
-un socket sans PID, un port déjà pris (409), un pid qui n'écoute pas (404), un pid hors périmètre
-(403), un jeton faux (401), un argument inconnu. Aucun test ne lance `ss`, `git`, `npm` ni `kill` :
+Vingt-six contrôles, et chacun **mord** (`AGENTS.md` §6) : le cas fautif est là pour échouer —
+un socket sans PID, un port déjà pris (409), un pid qui n'écoute pas (404), un pid ou un port de
+journal hors périmètre (403), un `pid` glissé dans un lancement (400), un jeton faux (401), un
+argument inconnu. Aucun test ne lance `ss`, `git`, `npm` ni `kill` :
 le système est injecté.
