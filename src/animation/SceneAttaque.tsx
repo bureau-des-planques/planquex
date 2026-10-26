@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Attack, PlanqueCard } from '@/data/types';
 import { choregraphie } from './attaque';
 import { Moteur } from './moteur';
+import type { Stats } from './moteur';
 
 /** Ce qu'une scène joue : capturé **au déclenchement**, jamais relu ensuite. */
 interface Lancee {
@@ -13,6 +14,71 @@ interface Lancee {
   /** Le Stress réellement encaissé par la cible (Vulnérabilité comprise). */
   stress: number;
   coupDeGrace: boolean;
+}
+
+/** La copie de la carte qui craque, posée par la scène et retirée à sa fin. */
+interface Doublure {
+  /** Le conteneur posé sur le plateau : il porte la place vide et la carte. */
+  el: HTMLElement;
+  /** La carte copiée : c'est elle que la chorégraphie vise, anime et fait partir. */
+  carte: HTMLElement;
+  /** Le fantôme du plateau, caché pendant que sa copie joue. */
+  source: HTMLElement | null;
+}
+
+/** Le gabarit d'une carte : 63 × 88 (`CARD-SPEC.md`). */
+const RAPPORT_CARTE = 88 / 63;
+
+/**
+ * Pose la doublure **à la place de la carte**. Quand un Poste se vide, il se referme sur son
+ * texte (« Poste libre ») : son rectangle ne fait plus la taille d'une carte, donc on le redresse
+ * autour de son centre, et la saynète vise un vrai Planqué et non une bande de vingt pixels.
+ */
+function poserDoublure(
+  m: Moteur,
+  scene: HTMLElement,
+  poste: HTMLElement,
+  fantome: HTMLElement | null,
+): Doublure {
+  const r = m.rect(poste);
+  const h = Math.max(r.h, r.w * RAPPORT_CARTE);
+  // Un Poste refermé n'a plus la hauteur d'une carte : la carte, elle, était **en haut de sa ligne**
+  // (la ligne était aussi haute qu'elle). On reprend donc le haut de la ligne, pas le centre du reste.
+  const ligne = poste.closest<HTMLElement>(".board__poste-ligne");
+  const replie = r.h < r.w * RAPPORT_CARTE * 0.9;
+  const haut = replie && ligne ? m.rect(ligne).y : r.y;
+  const el = document.createElement("div");
+  el.setAttribute("aria-hidden", "true");
+  el.dataset.doublure = "";
+  Object.assign(el.style, {
+    position: "absolute",
+    left: `${r.x}px`,
+    top: `${haut}px`,
+    width: `${r.w}px`,
+    height: `${h}px`,
+    zIndex: "5",
+    pointerEvents: "none",
+  } satisfies Partial<CSSStyleDeclaration>);
+  const carte = document.createElement("div");
+  Object.assign(carte.style, { position: "absolute", inset: "0" } satisfies Partial<CSSStyleDeclaration>);
+  if (fantome) {
+    // Le fantôme est la carte **sans** son voile gris : la copie la montre en couleur jusqu'à l'impact.
+    // Il n'y a **pas de fond** derrière elle : la relève, que le combat pose au même Poste, reste
+    // visible dès que la carte est partie.
+    for (const enfant of Array.from(fantome.children)) carte.appendChild(enfant.cloneNode(true));
+    fantome.style.visibility = "hidden";
+  }
+  el.append(carte);
+  scene.appendChild(el);
+  return { el, carte, source: fantome };
+}
+
+function retirerDoublure(ref: { current: Doublure | null }) {
+  const d = ref.current;
+  if (!d) return;
+  d.el.remove();
+  d.source?.style.removeProperty("visibility");
+  ref.current = null;
 }
 
 /**
@@ -40,6 +106,8 @@ export function SceneAttaque({
   carte,
   attaque,
   sansMouvement,
+  onMoteur,
+  surFin,
 }: {
   /** L'identifiant de l'effet d'attaque : un même effet ne se joue qu'une fois. */
   effetId?: number;
@@ -54,12 +122,17 @@ export function SceneAttaque({
   carte?: PlanqueCard;
   attaque?: Attack;
   sansMouvement: boolean;
+  /** Le moteur monté (ou `null` au démontage) : le banc d'essai y règle la vitesse et lit l'horloge. */
+  onMoteur?: (m: Moteur | null) => void;
+  /** Appelé quand la chorégraphie va au bout, après le nettoyage de la scène. */
+  surFin?: (stats: Stats) => void;
 }) {
   const fondRef = useRef<HTMLCanvasElement>(null);
   const avantRef = useRef<HTMLCanvasElement>(null);
   const moteur = useRef<Moteur | null>(null);
   const joue = useRef<number | null>(null);
   const lancee = useRef<Lancee | null>(null);
+  const doublure = useRef<Doublure | null>(null);
 
   useEffect(() => {
     if (sansMouvement) return;
@@ -76,11 +149,14 @@ export function SceneAttaque({
       return;
     }
     moteur.current = m;
+    onMoteur?.(m);
     const surTaille = () => m.redimensionner();
     window.addEventListener('resize', surTaille);
     return () => {
       window.removeEventListener('resize', surTaille);
       m.arreter();
+      retirerDoublure(doublure);
+      onMoteur?.(null);
       moteur.current = null;
       joue.current = null;
       lancee.current = null;
@@ -130,12 +206,23 @@ export function SceneAttaque({
           (poste) => !poste.contains(att),
         ) ?? null)
       : null;
-    const cib = visee ?? fantome ?? posteVide;
+    let cib = visee ?? fantome ?? posteVide;
     // Une carte déjà retirée sans fantôme (relève, craquage au Banc) n'a pas de cible à viser.
     if (!att || !cib) return;
     // Arrêter **avant** de mesurer : une scène encore en cours laisserait les cartes déplacées,
     // et les positions de départ seraient fausses.
     m.arreter();
+    retirerDoublure(doublure);
+    // **La doublure** : la carte a déjà quitté le Poste quand la Pression part, et son fantôme
+    // s'éteint en 500 ms — avant l'impact. Sans elle, le coup de grâce se jouerait sur une table
+    // vide. La scène pose donc sa propre copie de la carte, de la taille d'une carte même si le
+    // Poste s'est refermé, et c'est **elle** qui encaisse, craque et part au carton.
+    if (cible.coupDeGrace) {
+      const poste = cib.closest<HTMLElement>(".board__poste") ?? cib;
+      const copie = poserDoublure(m, scene, poste, fantome ?? (cib === poste ? null : cib));
+      doublure.current = copie;
+      cib = copie.carte;
+    }
     const ch = choregraphie(cible.carte, cible.attaque, {
       m,
       att,
@@ -143,6 +230,10 @@ export function SceneAttaque({
       stress: cible.stress,
       coupDeGrace: cible.coupDeGrace,
     });
+    m.surFin = (stats) => {
+      retirerDoublure(doublure);
+      surFin?.(stats);
+    };
     m.jouer(ch.etapes, ch.duree, ch.cinematique ? 600 : 300);
   }, [effetId, sansMouvement]);
 

@@ -2213,9 +2213,14 @@ h2 {
   justify-content: center;
 }
 
-/* Le Poste : une carte en grand. Sa largeur est `--poste-w`, sa hauteur suit le format 63 × 88. */
+/* Le Poste : une carte en grand. Sa largeur est `--poste-w`, sa hauteur suit le format 63 × 88.
+   **La hauteur est tenue même quand le Poste est vide** : sur un craquage, le texte « Poste
+   libre » s'effondre à une ligne, le plateau remonte d'environ 130 px, et la cible d'une scène
+   d'attaque en cours se retrouve ailleurs que là où elle a été mesurée (constaté le 26/10 sur
+   une capture de coup de grâce). La place se réserve, elle ne se reprend pas. */
 .board__poste {
   flex: none;
+  min-height: calc(var(--poste-w) * 88 / 63);
   width: var(--poste-w);
 }
 
