@@ -267,6 +267,19 @@ export const MUTATIONS = [
       'un écarté sans sa raison est un mur mort (D-059) : retirer ce texte ne casse rien à la compilation, et l’invité ne saurait plus pourquoi son idée a été refusée'
   },
   {
+    ticket: 212,
+    titre: 'le compteur du comité compte mon propre commentaire',
+    fichier: 'src/lib/murBase.ts',
+    // D-097 (5) : « les commentaires **des autres** ». Répondre à son propre post-it
+    // n'apprend rien de neuf ; sans ce filtre, la pastille ne retombe jamais quand on se
+    // relit, et un compteur qui crie pour soi devient du bruit.
+    motif: 'if (ligne.auteur === identite) continue;',
+    remplacement: 'if (false) continue;',
+    tests: ['src/lib/murBase.test.ts'],
+    garde:
+      'sans le filtre d’auteur, le compteur compte aussi mes propres commentaires : il ne dit plus « ce qui me concerne » mais « tout ce qui touche mes post-its » (D-097 (5)), et il ne retombe pas à zéro quand je me réponds'
+  },
+  {
     ticket: 224,
     titre: 'la page propose de rejouer une migration appliquée avant le registre',
     fichier: 'tools/admin/lib/ligne-migration.mjs',
