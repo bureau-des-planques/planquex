@@ -102,8 +102,12 @@ describe('le contrôle mord : un refus est un message, pas une exception (#254)'
     const mur = creerMur(adaptateurMemoire([LE_SIEN], { refuse: () => 'La base refuse : compte en attente.' }));
     const resultat = await mur.voter('p-sien', 'up', null);
     expect(resultat).toEqual({ ok: false, message: 'La base refuse : compte en attente.' });
-    // Rien n'a été écrit : un refus n'est pas un demi-geste.
-    expect(await mur.charger()).toMatchObject({ ok: true });
+    // Rien n'a été écrit : un refus n'est pas un demi-geste. On regarde **mon vote**, pas
+    // seulement que la lecture répond — une assertion qui ne peut pas tomber ne garde rien.
+    const apres = await mur.charger();
+    expect(apres.ok).toBe(true);
+    if (!apres.ok) return;
+    expect(apres.postits.find((p) => p.id === 'p-sien')?.votes.mon ?? null).toBeNull();
   });
 
   it('la panne d’une source devient un message, quelle que soit sa forme', async () => {
