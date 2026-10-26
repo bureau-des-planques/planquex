@@ -31,6 +31,8 @@
  * npm run pesage -- --direction recherche --candidats 6 --mondes 3 --reponses 4
  * npm run pesage -- --direction recherche --noeuds 1000  # le plafond de nœuds (#172)
  * npm run pesage -- --direction recherche --noeuds 100000000 --ms Infinity  # plafonds neutralisés (témoin)
+ * npm run pesage -- --direction niveau3 --adversaire recherche           # le niveau 3 (#94) contre le niveau 2
+ * npm run pesage -- --direction niveau3 --adversaire recherche --profondeur 3 --n3-mondes 3
  * npm run pesage -- --en-processus                 # le niveau 2 joué en processus (contrôle du harnais)
  * ```
  *
@@ -40,6 +42,12 @@
  * la politique change. Le chiffre de la Direction est donc comparable à la référence du CLI.
  * Les réglages (`--candidats`, `--mondes`, `--reponses`) et le temps par coup sont consignés
  * dans `docs/ia/111-essais-recherche-2-coups.md`.
+ *
+ * `--direction niveau3 --adversaire recherche` oppose le **niveau 3** (expectiminimax +
+ * déterminisations, #94) au **niveau 2 acté** — le protocole est le même (entraînement puis
+ * un contrôle, seuil inchangé), seul l'adversaire change. `--adversaire 1` (défaut) garde la
+ * comparaison au niveau 1. Réglages : `--profondeur`, `--n3-candidats`, `--n3-reponses`,
+ * `--n3-suites`, `--n3-mondes`, `--n3-hasard`, `--n3-noeuds`, `--n3-ms`.
  *
  * ⚠️ Depuis #113, le **simulateur** est la pièce à vérifier avant de croire un chiffre : tant
  * qu'un Deck d'archétype ne peut pas payer ses Pressions, la mesure compare des politiques
@@ -68,10 +76,24 @@ function lireArguments(argv) {
     // La Direction : `niveau2` (la référence #93/#111, le CLI du simulateur) ou `recherche`
     // (le niveau 2 acté (D-084) — `docs/ia/111-essais-recherche-2-coups.md`).
     direction: 'niveau2',
+    // Politique de l'**adversaire** dans le miroir (défaut : le niveau 1 historique).
+    // `recherche` oppose donc le niveau 2 acté au niveau 1, et `niveau3` au niveau 2.
+    adversaire: 1,
     enProcessus: false,
     // `maxNodes` : le plafond de nœuds d'une décision (#172), repli glouton au-delà.
     // `maxMs` : la garde de temps de la même décision (filet pour les machines chargées).
-    recherche: { candidates: 6, worlds: 3, replies: 4, maxNodes: 800, maxMs: 60 }
+    recherche: { candidates: 6, worlds: 3, replies: 4, maxNodes: 800, maxMs: 60 },
+    // Le niveau 3 (#94) : ses réglages sont **distincts** de la recherche à deux coups.
+    expectiminimax: {
+      depth: 3,
+      candidates: 3,
+      replies: 2,
+      followups: 2,
+      worlds: 2,
+      chanceSamples: 2,
+      maxNodes: 800,
+      maxMs: 60
+    }
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -84,8 +106,16 @@ function lireArguments(argv) {
     else if (arg === '--json') options.json = true;
     else if (arg === '--direction') {
       options.direction = valeur();
-      if (!['niveau2', 'recherche'].includes(options.direction)) {
-        console.error(`--direction attend niveau2 ou recherche, reçu « ${options.direction} ».`);
+      if (!['niveau2', 'recherche', 'niveau3'].includes(options.direction)) {
+        console.error(`--direction attend niveau2, recherche ou niveau3, reçu « ${options.direction} ».`);
+        process.exit(2);
+      }
+    }
+    else if (arg === '--adversaire') {
+      const brut = valeur();
+      options.adversaire = brut === 'recherche' ? 'recherche' : Number(brut);
+      if (![1, 2, 'recherche'].includes(options.adversaire)) {
+        console.error(`--adversaire attend 1, 2 ou recherche, reçu « ${brut} ».`);
         process.exit(2);
       }
     }
@@ -95,6 +125,14 @@ function lireArguments(argv) {
     else if (arg === '--reponses') options.recherche.replies = Number(valeur());
     else if (arg === '--noeuds') options.recherche.maxNodes = Number(valeur());
     else if (arg === '--ms') options.recherche.maxMs = Number(valeur());
+    else if (arg === '--profondeur') options.expectiminimax.depth = Number(valeur());
+    else if (arg === '--n3-candidats') options.expectiminimax.candidates = Number(valeur());
+    else if (arg === '--n3-reponses') options.expectiminimax.replies = Number(valeur());
+    else if (arg === '--n3-suites') options.expectiminimax.followups = Number(valeur());
+    else if (arg === '--n3-mondes') options.expectiminimax.worlds = Number(valeur());
+    else if (arg === '--n3-hasard') options.expectiminimax.chanceSamples = Number(valeur());
+    else if (arg === '--n3-noeuds') options.expectiminimax.maxNodes = Number(valeur());
+    else if (arg === '--n3-ms') options.expectiminimax.maxMs = Number(valeur());
     else if (arg === '--aide' || arg === '-h') {
       console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('*/')[0].replace('/**', ''));
       process.exit(0);
@@ -142,8 +180,15 @@ function choisir(niveau, state, options) {
     const decision = MODULES.ia.searchDecision(state, options.recherche);
     return { action: decision.action, repli: decision.fallback };
   }
+  if (niveau === 'niveau3') {
+    const decision = MODULES.ia.expectiminimaxDecision(state, options.expectiminimax);
+    return { action: decision.action, repli: decision.fallback };
+  }
   return { action: MODULES.ia.nextAction(state, niveau), repli: false };
 }
+
+/** Les politiques **en processus** : la recherche (niveau 2 acté) et le niveau 3 expérimental. */
+const EN_PROCESSUS = new Set(['recherche', 'niveau3']);
 
 /**
  * Le même protocole que `simulate()` (`src/game/simulation.ts`), joué **en processus** : la
@@ -153,6 +198,8 @@ function choisir(niveau, state, options) {
  */
 function executerEnProcessus(seed, niveaux, options) {
   const { simulation, engine, rng } = MODULES;
+  // La politique comparée (celle dont on chronomètre les décisions) — pas l'adversaire.
+  const candidat = options.direction === 'niveau2' ? 2 : options.direction;
   const factions = simulation.FACTION_ORDER;
   const decks = simulation.factionDecks(factions);
   const cafeTypes = new Map(factions.map((faction) => [faction, simulation.factionCafeTypes(faction)]));
@@ -177,7 +224,10 @@ function executerEnProcessus(seed, niveaux, options) {
       const debut = performance.now();
       const decision = choisir(niveau, state, options);
       const duree = performance.now() - debut;
-      if (niveau === 'recherche' && who === 'ai') {
+      // Le **candidat** est la politique en processus comparée : c'est son coût qu'on
+      // consigne, sur les **deux** sièges (il joue `ai` au siège A, `player` au B). Le camp
+      // adverse (`--adversaire recherche`) n'entre pas dans ces compteurs.
+      if (niveau === candidat) {
         coups += 1;
         tempsMs += duree;
         tempsMaxMs = Math.max(tempsMaxMs, duree);
@@ -201,7 +251,7 @@ function executerEnProcessus(seed, niveaux, options) {
  * recherche (ou `--en-processus`), le même protocole est joué en processus.
  */
 function executer(seed, niveaux, options) {
-  if (options.enProcessus || niveaux.joueur === 'recherche' || niveaux.direction === 'recherche') {
+  if (options.enProcessus || EN_PROCESSUS.has(niveaux.joueur) || EN_PROCESSUS.has(niveaux.direction)) {
     return executerEnProcessus(seed, niveaux, options);
   }
   const sortie = execFileSync(
@@ -236,13 +286,20 @@ function peser(seeds, options) {
   let replis = 0;
   const durees = [];
   const parGraine = [];
-  // La politique « niveau 2 » du protocole : le niveau 2 (référence) ou la recherche.
-  const deux = options.direction === 'recherche' ? 'recherche' : 2;
+  // La politique **candidate** du protocole : le niveau 2 (référence), la recherche ou le niveau 3.
+  const candidat =
+    options.direction === 'recherche'
+      ? 'recherche'
+      : options.direction === 'niveau3'
+        ? 'niveau3'
+        : 2;
+  // La politique **adverse** : le niveau 1 (protocole historique) ou le niveau 2 acté.
+  const adversaire = options.adversaire;
   for (const seed of seeds) {
-    // Siège A : joueur = niveau 1, Direction = niveau 2 (ou recherche).
-    const a = executer(seed, { joueur: 1, direction: deux }, options);
-    // Siège B : joueur = niveau 2 (ou recherche), Direction = niveau 1 (même graine, même appariement).
-    const b = executer(seed, { joueur: deux, direction: 1 }, options);
+    // Siège A : joueur = adversaire, Direction = candidat.
+    const a = executer(seed, { joueur: adversaire, direction: candidat }, options);
+    // Siège B : joueur = candidat, Direction = adversaire (même graine, même appariement).
+    const b = executer(seed, { joueur: candidat, direction: adversaire }, options);
     for (const jeu of [a, b]) {
       coups += jeu.coups ?? 0;
       tempsMs += jeu.tempsMs ?? 0;
@@ -279,10 +336,12 @@ function peser(seeds, options) {
   durees.sort((x, y) => x - y);
   const quantile = (q) =>
     durees.length === 0 ? null : Number(durees[Math.min(durees.length - 1, Math.floor(q * durees.length))].toFixed(2));
+  const budget = options.direction === 'niveau3' ? options.expectiminimax : options.recherche;
   return {
     seeds,
     direction: options.direction,
-    // Temps de la Direction (mode en processus) : coups joués par la recherche et leur coût.
+    adversaire: String(options.adversaire),
+    // Temps du candidat (mode en processus) : coups joués par la recherche et leur coût.
     coupsRecherche: coups,
     msParCoup: coups === 0 ? null : Number((tempsMs / coups).toFixed(2)),
     msP50Coup: quantile(0.5),
@@ -291,8 +350,8 @@ function peser(seeds, options) {
     msMaxCoup: coups === 0 ? null : Number(tempsMaxMs.toFixed(2)),
     // Décisions où le plafond de nœuds a mordu : le glouton a rendu le coup (#172).
     replisBudget: replis,
-    maxNoeuds: options.recherche.maxNodes,
-    maxMs: options.recherche.maxMs,
+    maxNoeuds: budget.maxNodes,
+    maxMs: budget.maxMs,
     parties: n2 + n1 + nulles,
     decidees,
     niveau2: n2,
@@ -312,8 +371,10 @@ const pourcent = (valeur) => `${(100 * valeur).toFixed(2)} %`;
 const nombre = (valeur) => valeur.toFixed(3);
 
 function tableau(titre, resultat, options) {
+  const candidat = `${resultat.direction} (candidat)`;
+  const adverse = `niveau ${resultat.adversaire} (adversaire)`;
   console.log(`\n${titre} — graines ${resultat.seeds.join(', ')} — ${resultat.parties} parties`);
-  console.log('  graine   niveau 2   niveau 1   nulles');
+  console.log(`  graine      ${candidat.padStart(20)}   ${adverse.padStart(20)}   nulles`);
   for (const ligne of resultat.parGraine) {
     console.log(
       `  ${String(ligne.seed).padStart(6)}   ${String(ligne.n2).padStart(8)}   ${String(ligne.n1).padStart(8)}   ${String(ligne.nulles).padStart(6)}`
@@ -329,7 +390,7 @@ function tableau(titre, resultat, options) {
     `  intervalle à 95 % du taux : ${pourcent(resultat.intervalle[0])} – ${pourcent(resultat.intervalle[1])}`
   );
   console.log(
-    `  verdict : ${resultat.tient ? 'le niveau 2 est démontré meilleur' : 'supériorité NON démontrée'}` +
+    `  verdict : ${resultat.tient ? 'le candidat est démontré meilleur' : 'supériorité NON démontrée'}` +
       ` (taux ${resultat.tientTaux ? 'ok' : 'non'}, ratio ${resultat.tientRatio ? 'ok' : 'non'})`
   );
 }
@@ -337,7 +398,9 @@ function tableau(titre, resultat, options) {
 const options = lireArguments(process.argv.slice(2));
 
 async function main() {
-  if (options.enProcessus || options.direction === 'recherche') MODULES = await chargerModules();
+  if (options.enProcessus || options.direction !== 'niveau2' || options.adversaire === 'recherche') {
+    MODULES = await chargerModules();
+  }
   try {
     if (options.seeds) {
       const resultat = peser(options.seeds, options);

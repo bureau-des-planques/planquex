@@ -42,8 +42,29 @@ const RACINE = fileURLToPath(new URL('..', import.meta.url));
  * `redirections.ts`), et `/reglages` n'en est pas une — le détecteur scannait donc l'écran
  * **404** (`Introuvable`) en croyant lire les Réglages. La capture, elle, visait déjà
  * `/settings` (`scripts/capturer.mjs`) : c'est ce contrôle-ci qui était décalé.
+ *
+ * **Étendus le 26/10/2026 (#234)** aux pages publiques et de compte : le contrôle ne
+ * couvrait que le jeu, alors qu'un invité voit aussi `/connexion`, `/attente`,
+ * `/administration`, `/comite`, `/comite/suivi`, `/feuille-de-route` et
+ * `/confidentialite`. Ces deux dernières sont **hors de la garde** (elles se lisent sans
+ * compte) ; les autres passent par le `Layout`. Sans base configurée, `/attente` et
+ * `/administration` montrent leur état inerte « Pas de compte sans base » : c'est bien un
+ * écran distinct, et c'est celui-ci qu'un invité voit sur l'alpha sans backend.
  */
-export const ECRANS = ['/', '/collection', '/deck', '/battle', '/settings'];
+export const ECRANS = [
+  '/',
+  '/collection',
+  '/deck',
+  '/battle',
+  '/settings',
+  '/comite',
+  '/comite/suivi',
+  '/feuille-de-route',
+  '/connexion',
+  '/attente',
+  '/confidentialite',
+  '/administration'
+];
 
 /**
  * **Le cliquet** (#205) : les anti-patterns **déjà présents** le 25/10/2026, relevés à la main
@@ -66,14 +87,51 @@ export const ECRANS = ['/', '/collection', '/deck', '/battle', '/settings'];
  * des Réglages reçoit sa largeur de lecture : `/settings` **0**. **Total du dépôt : 0** le
  * 26/10/2026 — le contrôle ne gèle plus rien, il exige zéro, et un seul anti-pattern le fait
  * tomber. Chaque baisse s'est faite dans son commit, avec son compte.
+ *
+ * **Étendu le 26/10/2026 (#234)** aux sept écrans publics et de compte, chacun **mesuré**
+ * par `npm run build && npm run detect:ui:page` avant d'écrire son compte — aucun `null`,
+ * aucun écran sauté sans le dire. **Total plafonné : 5** (2 + 3, ci-dessous).
+ *
+ * - `/comite/suivi`, `/connexion`, `/attente`, `/confidentialite`, `/administration` : **0**.
+ *   Les deux écrans de compte mesurés ici sont ceux d'un alpha **sans base** — leur état
+ *   inerte « Pas de compte sans base » — et non l'écran d'un compte connecté, qui demanderait
+ *   un backend : ce contour est dit, pas caché.
+ * - `/comite` : **2** `nested-cards` (un post-it est une carte dans une carte) — ticket
+ *   **#235**.
+ * - `/feuille-de-route` : **3** `line-length` (listes trop larges à lire) — ticket **#236**.
+ *
+ * Les deux ne sont **pas** corrigés ici : #234 étend la mesure, il n'habille pas les écrans.
+ * Le plafond est leur compte mesuré, pas un acquittement : le faire baisser est le travail
+ * de #235 et #236, et la baisse se fait dans le même commit que la correction (#208).
  */
 export const BASELINE = {
   '/': 0,
   '/collection': 0,
   '/deck': 0,
   '/battle': 0,
-  '/settings': 0
+  '/settings': 0,
+  '/comite': 2,
+  '/comite/suivi': 0,
+  '/feuille-de-route': 3,
+  '/connexion': 0,
+  '/attente': 0,
+  '/confidentialite': 0,
+  '/administration': 0
 };
+
+/**
+ * Les écrans **mesurés sans plafond** (#234). La règle vit ici, une fois : un écran ajouté
+ * à `ECRANS` sans son compte dans `BASELINE` est un **échec**, pas un zéro par défaut.
+ *
+ * Un `null` n'est pas un plafond — il a déjà servi à geler un écran (#208), et une page
+ * qu'on ne sait pas compter n'est pas une page propre. Seul un **nombre** compte.
+ *
+ * Le test la joue sur un plan fourni (`--controle-plan`) : une assertion qui ne peut pas
+ * échouer ne garde rien (AGENTS.md §6), donc le cas fautif est confronté à la vraie règle.
+ */
+export function ecransSansPlafond(ecrans, baseline) {
+  return ecrans.filter((ecran) => typeof baseline[ecran] !== 'number');
+}
 
 /** Le port du serveur de contrôle : **pas 4180**, que `npm run capturer` occupe. */
 const PORT = 4179;
@@ -164,8 +222,35 @@ async function principal(args) {
   // `--plan` : les écrans et le port, sans rien lancer — le test les lit là, comme
   // `scripts/capturer.mjs --plan` pour la garde de hauteur.
   if (args.includes('--plan')) {
-    console.log(JSON.stringify({ ecrans: ECRANS, port: PORT, seuil: 0, baseline: BASELINE }));
+    console.log(
+      JSON.stringify({
+        ecrans: ECRANS,
+        port: PORT,
+        seuil: 0,
+        baseline: BASELINE,
+        // La règle est publiée avec le plan : le test la lit ici, et compare `ECRANS` à
+        // `BASELINE` une seule fois, au même endroit que le contrôle qui s'en sert.
+        sansPlafond: ecransSansPlafond(ECRANS, BASELINE)
+      })
+    );
     return 0;
+  }
+
+  // Sonde de `scripts/detect-ui-pages.test.ts` (#234) : joue la règle des plafonds sur un
+  // plan fourni — `{ ecrans, baseline }` — et sort 1 si un écran n'a pas de compte. C'est
+  // ce qui permet au test de confronter la règle à un **cas fautif**, sans navigateur.
+  const iPlan = args.indexOf('--controle-plan');
+  if (iPlan !== -1) {
+    let fourni;
+    try {
+      fourni = JSON.parse(args[iPlan + 1] ?? '');
+    } catch {
+      console.error('--controle-plan attend un JSON { ecrans, baseline }.');
+      return 1;
+    }
+    const sansPlafond = ecransSansPlafond(fourni?.ecrans ?? [], fourni?.baseline ?? {});
+    console.log(JSON.stringify({ sansPlafond, echec: sansPlafond.length > 0 }));
+    return sansPlafond.length > 0 ? 1 : 0;
   }
 
   const i = args.indexOf('--controle');
@@ -188,6 +273,17 @@ async function principal(args) {
 
   if (!existsSync(join(RACINE, 'dist', 'index.html'))) {
     console.error('✖ dist/index.html absent : lance `npm run build` avant ce contrôle.');
+    return 1;
+  }
+
+  // Avant de scanner, la question du **plafond** (#234) : un écran sans compte ne se mesure
+  // pas « à zéro par défaut ». On le dit avant, plutôt que de scanner onze pages pour
+  // échouer sur la douzième.
+  const manquants = ecransSansPlafond(ECRANS, BASELINE);
+  if (manquants.length > 0) {
+    console.error(
+      `✖ aucun plafond dans BASELINE pour : ${manquants.join(', ')} — mesure l'écran, puis écris son compte.`
+    );
     return 1;
   }
 
@@ -214,12 +310,6 @@ async function principal(args) {
       const { sortie, erreur, code } = await lancerDetecteur(url);
       const compte = verdict(sortie, code);
       const permis = BASELINE[ecran];
-      if (permis === undefined) {
-        const message = `${ecran} : aucun plafond déclaré dans BASELINE — un écran n'entre pas dans le contrôle sans son compte`;
-        echecs.push(message);
-        console.error(`✖ ${message}`);
-        continue;
-      }
       if (compte === null) {
         // Un écran **sauté** n'est pas un écran propre (#208) : le scan a échoué, et ça se dit.
         const message = `${messageEchec(ecran, null, erreur)} — plafond ${permis}`;
