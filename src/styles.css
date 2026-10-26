@@ -1700,7 +1700,11 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  padding: 0.4rem 0.6rem;
+  /* #237 : la gouttière verticale passe de 0,4 à 0,25 rem. Le pas-à-pas ouvert rallonge la page
+     de sa hauteur, et la barre d'action n'avait plus que 15 à 18 px de marge sous la barre de
+     navigation là où D-094 (3) en exige 20 — la voie de D-094 (4) est de densifier, pas de
+     relâcher la garde. La ligne du panneau, ses boutons et son texte ne changent pas. */
+  padding: 0.25rem 0.6rem;
   position: sticky;
   top: 0.4rem;
   z-index: 15;
@@ -1861,6 +1865,15 @@ h2 {
   /* Les trois gouttières de l'écran (en-tête → note → table → barre d'action) se resserrent (#218) :
      3,2 px chacune, 9,6 px rendus à la main, et l'écran garde toutes ses lignes. */
   gap: 0.2rem;
+  /* **L'air sous la barre d'action** (#237). La barre est le dernier élément de l'écran, et la page
+     défile **jusqu'en bas** à l'arrivée : le pas-à-pas amène sa cible en haut, le défilement se
+     borne au document, et l'air qu'on voit sous la barre est alors celui que la coquille réserve
+     pour la navigation (`5,5rem` = 88 px pour une barre de 70 px) — soit **18 px** là où
+     D-094 (3) en exige **20**. D'où 8 px de plus : la marge mesurée passe à 26 px, et les 3 px
+     que le journal peut prendre en repassant à deux lignes après le défilement (mesuré à la
+     graine de 14 h 30) ne la ramènent pas sous 20 — c'est l'objet même de D-094 (3).
+     Rien n'est retiré à l'écran, et le seuil de 830 px de D-094 (2) ne bouge pas. */
+  padding-bottom: 0.5rem;
 }
 
 /* Sur le combat, l'en-tête de l'application se serre : chaque ligne gagnée laisse la main
@@ -2044,13 +2057,17 @@ h2 {
   display: flex;
   flex-direction: column;
   /* #218 : la barre resserre ses trois lignes (journal, portée, gestes) — 1,6 px entre elles et
-     2,4 px de cadre — pour ne pas dépasser la garde de hauteur. Rien n'y est retiré. */
-  gap: 0.1rem;
+     2,4 px de cadre — pour ne pas dépasser la garde de hauteur. Rien n'y est retiré.
+     #237 : 0,8 px entre les lignes et 1,6 px de cadre, pour que la **marge** de 20 px de
+     D-094 (3) tienne aussi quand le pas-à-pas est ouvert (mesuré : 15 px). Aucune information
+     retirée : les trois lignes, leurs boutons de 36 px et la ligne de journal sont intacts. */
+  gap: 0.05rem;
   /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
      lieu de recouvrir le plateau. */
   max-height: 42dvh;
   overflow-y: auto;
-  padding: 0.15rem 0.6rem;
+  /* 2,4 → 1,6 px de cadre vertical (#237) : même raison que la gouttière ci-dessus. */
+  padding: 0.1rem 0.6rem;
   position: sticky;
   z-index: 16;
 }
@@ -2165,7 +2182,9 @@ h2 {
   line-height: 1.2;
   margin: 0;
   overflow-wrap: anywhere;
-  padding: 0.1rem 0.55rem;
+  /* 1,6 → 0,8 px de respiration verticale (#237) : la phrase reste la même, la ligne reste
+     entière, et les 0,8 px gagnés servent la marge de D-094 (3). */
+  padding: 0.05rem 0.55rem;
 }
 
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
