@@ -71,7 +71,10 @@ const PAGES = [
   ['administration', '/administration'],
   // Le mur du comité (#129, D-097) : une page du jeu, cinquième onglet depuis #213 ;
   // capturée après les écrans de compte.
-  ['comite', '/comite']
+  ['comite', '/comite'],
+  // Le suivi (#211, D-097 (2)) : la seconde page du comité, sous les mêmes sous-onglets —
+  // une page de l'application sans capture est une page que personne ne regarde.
+  ['comite-suivi', '/comite/suivi']
 ];
 
 /**

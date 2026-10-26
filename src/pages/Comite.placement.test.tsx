@@ -161,8 +161,9 @@ function glisser(postit: HTMLElement, de: [number, number], vers: [number, numbe
 }
 
 function rendre() {
+  // L'adresse du mur : la barre de sous-onglets y lit lequel est ouvert (D-097 (2)).
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={['/comite']}>
       <Comite />
     </MemoryRouter>
   );
@@ -196,13 +197,37 @@ describe('le rangement s’ouvre sur la base (#185)', () => {
     expect(screen.queryByRole('button', { name: /Télécharger le fichier/ })).not.toBeInTheDocument();
   });
 
-  it('sans configuration de base, le rangement reste celui du fichier', async () => {
+  it('le mur porte la barre de sous-onglets, et se dit ouvert (D-097 (2))', async () => {
+    rendre();
+    await screen.findByText('Mon idée');
+
+    expect(screen.getByRole('link', { name: 'Le suivi' })).toHaveAttribute('href', '/comite/suivi');
+    expect(screen.getByRole('link', { name: 'Le mur' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('sans configuration de base, le rangement reste celui du fichier — sans export (#215)', async () => {
     mocks.murEstConfigure.mockReturnValue(false);
     rendre();
 
     fireEvent.click(await screen.findByRole('button', { name: /Mode de placement/ }));
 
-    expect(screen.getByRole('button', { name: /Télécharger le fichier/ })).toBeInTheDocument();
+    // L'export du fichier est retiré (D-097 (6)) : sans base, le mode déplace à l'écran,
+    // et c'est le fichier qui garde `position`, écrit à la main.
+    expect(screen.queryByRole('button', { name: /Télécharger le fichier/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Copier/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/Le fichier garde/)).toBeInTheDocument();
+  });
+
+  it('sans base, un glisser déplace à l’écran et n’écrit rien', async () => {
+    mocks.murEstConfigure.mockReturnValue(false);
+    rendre();
+
+    fireEvent.click(await screen.findByRole('button', { name: /Mode de placement/ }));
+    const fichier = mesurer('p-fichier');
+    glisser(fichier, [220, 120], [700, 400]);
+
+    expect(mocks.deplacer).not.toHaveBeenCalled();
+    expect(fichier.style.left).toBe('68%');
   });
 });
 
