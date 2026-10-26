@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Home, Library, Layers, Settings, Swords } from 'lucide-react';
+import { Home, Library, Layers, Settings, StickyNote, Swords } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
 import { AlerteComite } from '@/components/AlerteComite';
@@ -9,12 +9,17 @@ import { GardeComptes } from '@/components/GardeComptes';
 import { estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 
+/**
+ * La barre du bas, **cinq onglets** (D-097 (4), #213) : le **comité** prend la place des
+ * **Réglages**, qui passent à l'engrenage de l'en-tête. Le post-it est l'objet du comité —
+ * une note qu'on laisse sur le mur —, pas un dessin maison.
+ */
 const tabs = [
   { to: '/', label: 'Accueil', icon: Home },
   { to: '/collection', label: 'Collection', icon: Library },
   { to: '/deck', label: 'Deck', icon: Layers },
   { to: '/battle', label: 'Combat', icon: Swords },
-  { to: '/settings', label: 'Réglages', icon: Settings }
+  { to: '/comite', label: 'Comité', icon: StickyNote }
 ];
 
 export function Layout() {
@@ -39,6 +44,15 @@ export function Layout() {
    */
   const enCombat = pathname.startsWith('/battle');
   const surLeMur = pathname.startsWith('/comite');
+
+  /**
+   * L'onglet **Comité** suit la même règle que la bulle : **cinq** onglets hors combat,
+   * **quatre** pendant. L'onglet est **masqué**, pas grisé : un onglet désactivé reste une
+   * invitation au doigt qui ne répond pas, alors que D-058 dit *masquée* — ce qui n'existe
+   * pas pendant la partie ne se montre pas. La place laissée est reprise par les autres,
+   * et la barre reste d'une seule ligne (`flex: 1` par onglet).
+   */
+  const onglets = enCombat ? tabs.filter((tab) => tab.to !== '/comite') : tabs;
 
   return (
     <div className="app-shell">
@@ -85,8 +99,15 @@ export function Layout() {
             <span>Le TCG de l’atelier</span>
           </div>
         </div>
-        <div className="topbar__user" title={name}>
-          {name}
+        {/* Les Réglages ont quitté la barre (D-097 (4)) : l'engrenage est **collé au pseudo**,
+            et c'est un lien nommé — une icône seule ne dit rien au lecteur d'écran. */}
+        <div className="topbar__actions">
+          <div className="topbar__user" title={name}>
+            {name}
+          </div>
+          <Link to="/settings" className="topbar__gear" aria-label="Réglages">
+            <Settings size={20} strokeWidth={1.8} aria-hidden="true" />
+          </Link>
         </div>
       </header>
 
@@ -121,7 +142,7 @@ export function Layout() {
       {!enCombat && !surLeMur && <AlerteComite />}
 
       <nav className="bottom-nav" aria-label="Navigation principale">
-        {tabs.map((tab) => {
+        {onglets.map((tab) => {
           const Icon = tab.icon;
           return (
             <NavLink
