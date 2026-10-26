@@ -11,8 +11,9 @@
  * jeton → refus ; écriture sans accusé → refus ; `delete` sans `where` sans le mot → refus ;
  * migration deux fois → refusée ; empreinte changée → signalée ; une lecture qui tente d'écrire
  * → refusée par la base ; courriel masqué ; journal alimenté ; un compte approuvé écrit, un
- * compte non approuvé est refusé ; la page et son module de rafraîchissement sont servis sous
- * le jeton (#184, rafraîchissement : le calcul du nouveau est testé à part, `suivi.test.ts`).
+ * compte non approuvé est refusé ; la page et ses modules sont servis sous le jeton (#184,
+ * rafraîchissement : le calcul du nouveau est testé à part, `suivi.test.ts`) ; le registre dit
+ * l'**origine** des migrations — 0001–0006 sont antérieures, et jamais rejouées (#224).
  */
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,11 +36,15 @@ import { STATUTS as STATUTS_POSTE } from './lib/classification.mjs';
 import { STATUTS as STATUTS_APP } from '../../src/store/mur';
 import { creerJournal } from './lib/journal.mjs';
 import { demarrerServeur } from './lib/app.mjs';
+import { empreinte, marquerAnterieures, SQL_REGISTRE } from './lib/migrations.mjs';
 import { chargerConfiguration, ouvrirNavigateur } from './serveur.mjs';
 
 const RACINE = fileURLToPath(new URL('../../', import.meta.url));
 const ROLES_SQL = readFileSync(join(RACINE, 'supabase', 'admin', 'roles.sql'), 'utf8');
 const JETON = 'jeton-de-test-184';
+
+/** La date des migrations que le poste a lui-même appliquées : une valeur de test, choisie. */
+const DATE_POSTE = '2026-10-25T09:30:00.000Z';
 
 /** L'interface étroite `{ lire, ecrire }` réalisée sur `pglite` — la même que `creerAccesPg`. */
 function adaptateurPglite(db: Base) {
@@ -80,10 +85,42 @@ commit;`;
 
 type Monde = Awaited<ReturnType<typeof demarrerMonde>>;
 
-async function demarrerMonde(options: { migrations?: string } = {}) {
+/** La forme du registre **avant #224** : pas d'`origine`, deux colonnes `not null`. */
+const SQL_REGISTRE_AVANT_224 = `
+create schema if not exists admin;
+create table if not exists admin.migrations (
+  fichier     text        primary key,
+  empreinte   text        not null,
+  applique_le timestamptz not null default now()
+);`;
+
+/**
+ * Un registre **déjà tenu** par le poste avant son démarrage : les migrations qu'il a
+ * lui-même appliquées, avec leur empreinte et leur date. Sur la vraie base, le registre est
+ * né avec la **0007** (#184) — `registre` reproduit cet état mesuré le 26/10/2026 (#224).
+ * `avant224` pose la **forme d'alors** de la table, pour éprouver le rattrapage au démarrage.
+ */
+async function registreAvec(
+  adapter: ReturnType<typeof adaptateurPglite>,
+  fichiers: string[],
+  avant224 = false,
+) {
+  await adapter.ecrire(avant224 ? SQL_REGISTRE_AVANT_224 : SQL_REGISTRE);
+  for (const nom of fichiers) {
+    await adapter.ecrire(
+      'insert into admin.migrations (fichier, empreinte, applique_le) values ($1, $2, $3)',
+      [nom, empreinte(readFileSync(join(DOSSIER_MIGRATIONS, nom), 'utf8')), DATE_POSTE],
+    );
+  }
+}
+
+async function demarrerMonde(
+  options: { migrations?: string; registre?: string[]; registreAvant224?: boolean } = {},
+) {
   const db = await base();
   await db.exec(ROLES_SQL);
   const adapter = adaptateurPglite(db);
+  if (options.registre) await registreAvec(adapter, options.registre, options.registreAvant224);
   const journal = creerJournal(join(mkdtempSync(join(tmpdir(), 'admin-journal-')), 'journal.jsonl'));
   const serveur = await demarrerServeur({
     adapter,
@@ -105,7 +142,9 @@ afterEach(async () => {
   }
 });
 
-async function monde(options: { migrations?: string } = {}): Promise<Monde> {
+async function monde(
+  options: { migrations?: string; registre?: string[]; registreAvant224?: boolean } = {},
+): Promise<Monde> {
   const m = await demarrerMonde(options);
   mondes.push(m);
   return m;
@@ -258,13 +297,19 @@ describe('le serveur (#184)', () => {
     expect(await avec.text()).toContain('Poste de pilotage');
   });
 
-  it('sert le module de suivi de la page, sous le même jeton', async () => {
+  it('sert les modules de la page, sous le même jeton', async () => {
     const m = await monde();
-    expect((await fetch(`${m.serveur.baseUrl}/suivi.mjs`)).status).toBe(401);
-    const avec = await api(m, '/suivi.mjs');
-    expect(avec.status).toBe(200);
-    expect(avec.headers.get('content-type')).toContain('text/javascript');
-    expect(await avec.text()).toContain('export function nouveauxEnAttente');
+    for (const [chemin, attendu] of [
+      ['/suivi.mjs', 'export function nouveauxEnAttente'],
+      // Le rendu d'une ligne de migration : la page ne décide plus elle-même du bouton (#224).
+      ['/ligne-migration.mjs', 'export function ligneMigration'],
+    ]) {
+      expect((await fetch(`${m.serveur.baseUrl}${chemin}`)).status, chemin).toBe(401);
+      const avec = await api(m, chemin);
+      expect(avec.status, chemin).toBe(200);
+      expect(avec.headers.get('content-type'), chemin).toContain('text/javascript');
+      expect(await avec.text(), chemin).toContain(attendu);
+    }
   });
 
   it('la page se relit toute seule, sans build, et seulement quand l’onglet est visible', async () => {
@@ -274,6 +319,7 @@ describe('le serveur (#184)', () => {
     const page = await (await api(m, '/')).text();
     for (const attendu of [
       "from './suivi.mjs'",
+      "from './ligne-migration.mjs'",
       'document.visibilityState',
       "addEventListener('visibilitychange'",
       'setInterval',
@@ -608,6 +654,95 @@ describe('les migrations (#184)', () => {
     const rejoueChangee = await api(m, '/api/migrations/0001_test.sql/appliquer', { method: 'POST' });
     expect(rejoueChangee.status).toBe(409);
     expect((await corpsJson(rejoueChangee)).erreur).toContain('empreinte changée');
+  });
+});
+
+// ------------------------------------------------- le registre dit l'origine des migrations (#224)
+
+/** Le registre n'a été créé qu'avec la 0007 : les six précédentes sont **antérieures**. */
+const ANTERIEURES = [
+  '0001_mur.sql',
+  '0002_combats.sql',
+  '0003_gueulage.sql',
+  '0004_pouces.sql',
+  '0005_comptes.sql',
+  '0006_tri_et_corrections.sql',
+];
+const APPLIQUEES_PAR_LE_POSTE = ['0007_place_et_retrait_admin.sql', '0008_comite.sql'];
+
+type LigneMigration = {
+  fichier: string;
+  etat: string;
+  empreinte: string | null;
+  empreinte_en_base: string | null;
+  applique_le: string | null;
+};
+
+async function lignesMigrations(m: Monde): Promise<Map<string, LigneMigration>> {
+  const liste = (await corpsJson(await api(m, '/api/migrations'))).migrations as LigneMigration[];
+  return new Map(liste.map((ligne) => [ligne.fichier, ligne]));
+}
+
+describe('le registre dit l’origine des migrations (#224)', () => {
+  it('rend 0001–0006 « appliquée avant le registre », sans empreinte ni date inventées', async () => {
+    const m = await monde({ registre: APPLIQUEES_PAR_LE_POSTE });
+    const lignes = await lignesMigrations(m);
+
+    for (const nom of ANTERIEURES) {
+      const ligne = lignes.get(nom)!;
+      expect(ligne, nom).toBeDefined();
+      expect(ligne.etat, nom).toBe('anterieure');
+      // Le poste ne sait pas quel fichier a été appliqué : il n'affirme ni empreinte ni date.
+      expect(ligne.empreinte_en_base, nom).toBeNull();
+      expect(ligne.applique_le, nom).toBeNull();
+    }
+
+    // 0007 et 0008 : appliquées **par** le poste, empreinte et date intactes.
+    for (const nom of APPLIQUEES_PAR_LE_POSTE) {
+      const ligne = lignes.get(nom)!;
+      expect(ligne.etat, nom).toBe('appliquee');
+      expect(ligne.empreinte_en_base, nom).toBe(ligne.empreinte);
+      expect(ligne.applique_le, nom).toBe(DATE_POSTE);
+    }
+  });
+
+  it('rattrape le registre d’avant #224, sans réécrire les empreintes du poste', async () => {
+    // C'est l'état de la **vraie** base : la table existe déjà, sans `origine`, et ses deux
+    // colonnes sont `not null`. Le démarrage du poste doit la compléter, pas la recréer.
+    const m = await monde({ registre: APPLIQUEES_PAR_LE_POSTE, registreAvant224: true });
+    const lignes = await lignesMigrations(m);
+    for (const nom of ANTERIEURES) expect(lignes.get(nom)!.etat, nom).toBe('anterieure');
+    for (const nom of APPLIQUEES_PAR_LE_POSTE) {
+      const ligne = lignes.get(nom)!;
+      expect(ligne.etat, nom).toBe('appliquee');
+      expect(ligne.empreinte_en_base, nom).toBe(ligne.empreinte);
+      expect(ligne.applique_le, nom).toBe(DATE_POSTE);
+    }
+  });
+
+  it('refuse de rejouer une migration antérieure : la page n’est pas la garde', async () => {
+    const m = await monde({ registre: APPLIQUEES_PAR_LE_POSTE });
+    // 0001 et 0002 ne sont pas idempotentes : le refus doit venir du serveur, pas du bouton.
+    const rejoue = await api(m, '/api/migrations/0001_mur.sql/appliquer', { method: 'POST' });
+    expect(rejoue.status).toBe(409);
+    expect((await corpsJson(rejoue)).erreur).toContain('avant le registre');
+  });
+
+  it('sans le marquage, les six redeviennent « manquante » — le contrôle mord', async () => {
+    const m = await monde({ registre: APPLIQUEES_PAR_LE_POSTE });
+
+    // On efface les lignes d'antériorité : c'est exactement l'état d'avant #224.
+    await m.adapter.ecrire("delete from admin.migrations where origine = 'anterieur'");
+    const avant = await lignesMigrations(m);
+    expect(avant.get('0001_mur.sql')!.etat).toBe('manquante');
+
+    // Le marquage remet la vérité, et se rejoue sans effet (idempotent).
+    await marquerAnterieures(m.adapter, DOSSIER_MIGRATIONS);
+    await marquerAnterieures(m.adapter, DOSSIER_MIGRATIONS);
+    const apres = await lignesMigrations(m);
+    for (const nom of ANTERIEURES) expect(apres.get(nom)!.etat, nom).toBe('anterieure');
+    // Les migrations du poste n'ont pas bougé.
+    for (const nom of APPLIQUEES_PAR_LE_POSTE) expect(apres.get(nom)!.etat, nom).toBe('appliquee');
   });
 });
 

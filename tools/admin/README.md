@@ -18,7 +18,10 @@ jamais déployé, et il ne peut pas être atteint depuis le réseau.
 - **Migrations** : la page liste celles du dépôt, celles qui sont appliquées et celles qui
   manquent, avec leur empreinte `sha256`. L'application se fait **une seule à la fois**, dans sa
   transaction, avec la sortie du serveur ; réappliquer répond « déjà appliquée », une empreinte
-  **changée** est signalée et non rejouée.
+  **changée** est signalée et non rejouée. Les migrations appliquées **avant que le registre
+  existe** (`0001`–`0006`, le registre est né avec la `0007`) sont dites « **appliquée avant le
+  registre** » : le poste n'en connaît ni l'empreinte ni la date, il ne les invente pas, et il
+  **ne les propose pas** à l'application (#224).
 - **SQL libre** : la lecture passe par le rôle `lecteur` (la base refuse l'écriture, pas le
   code) ; l'écriture exige un accusé de réception ; un `drop`, `truncate`, ou un
   `delete`/`update` sans `where` exige en plus de **taper un mot** annoncé par le serveur.
@@ -90,9 +93,11 @@ répond 401. Aucun en-tête CORS n'est émis : le jeton ne sort jamais en cross-
 | `lib/acces.mjs` | l'interface étroite `{ lire, ecrire }` et sa réalisation `pg` (le pooler) |
 | `lib/classification.mjs` | lecture/écriture/destructif, et les statuts du mur |
 | `lib/etat.mjs` | l'état de l'alpha et le masquage des courriels |
-| `lib/migrations.mjs` | le registre `admin.migrations` (empreinte, déjà appliquée, changée) |
+| `lib/migrations.mjs` | le registre `admin.migrations` (empreinte, déjà appliquée, changée, **antérieure au registre**) |
 | `lib/journal.mjs` | le journal JSONL hors dépôt |
 | `lib/suivi.mjs` | la logique **pure** du rafraîchissement (nouveau ? bandeau, titre, fraîcheur) |
+| `lib/ligne-migration.mjs` | le rendu **pur** d'une ligne de migration (badge, empreinte, bouton) |
 | `page.html` | la page statique (HTML + fetch, aucun build) |
 | `admin.test.ts` | la garde : une seule couture, l'API HTTP, sur `pglite`, sans réseau |
 | `suivi.test.ts` | la garde de `lib/suivi.mjs` (le calcul du nouveau, muté par `garde-fous`) |
+| `ligne-migration.test.ts` | la garde du rendu : pas de bouton sur une migration antérieure (#224) |

@@ -15,6 +15,7 @@ import {
   lireCommentaires,
   lirePostitsDeLaBase,
   LIMITE_COMMENTAIRE,
+  marquerComiteVu,
   messageDePlace,
   messageDeTri,
   murEstConfigure,
@@ -98,6 +99,9 @@ interface Reponses {
   tri?: unknown;
   /** L'erreur que la base rend au tri (grant, politique, contrainte). */
   erreurTri?: string;
+  /** Le repère rendu par `marquer_comite_vu()` (0008), et l'erreur éventuelle (#211). */
+  vu?: unknown;
+  erreurVu?: string;
 }
 
 /** Tout ce qui part vers la base en écriture : la table, le geste, les valeurs, les filtres. */
@@ -132,11 +136,18 @@ function fauxClient(reponses: Reponses = {}) {
 
   const rpc = vi.fn(async (nom: string, params?: Record<string, unknown>) => {
     appelsRpc.push({ nom, params });
-    // Deux fonctions du mur, deux réponses : le tri et la correction (0006), la place (0007).
+    // Trois fonctions du mur, trois réponses : le tri et la correction (0006), la place
+    // (0007), et le repère du suivi (0008, #211).
     if (nom === 'deplacer_postit') {
       return {
         data: reponses.deplace ?? null,
         error: reponses.erreurDeplace ? { message: reponses.erreurDeplace } : null,
+      };
+    }
+    if (nom === 'marquer_comite_vu') {
+      return {
+        data: reponses.vu ?? null,
+        error: reponses.erreurVu ? { message: reponses.erreurVu } : null,
       };
     }
     return {
@@ -999,5 +1010,33 @@ describe('le tri par l’administration (0006)', () => {
         chargerClient: async () => null,
       }),
     ).rejects.toThrow(/pas configuré/);
+  });
+});
+
+describe('le repère du suivi, posé par la fonction (0008, #211, D-097 (5))', () => {
+  it('sans base configurée, ne contacte rien et rend null', async () => {
+    const vu = await marquerComiteVu({ chargerClient: async () => null });
+    expect(vu).toBeNull();
+  });
+
+  it('passe par `marquer_comite_vu()`, sans paramètre et sans `update` de `comptes`', async () => {
+    const faux = fauxClient({ vu: '2026-10-26T10:00:00.000Z' });
+    const vu = await marquerComiteVu({ chargerClient: async () => faux.client });
+
+    expect(vu).toBe('2026-10-26T10:00:00.000Z');
+    expect(faux.appelsRpc).toEqual([{ nom: 'marquer_comite_vu', params: undefined }]);
+    // **Jamais** un `update` de `comptes.vu_le` : une politique RLS ne distingue pas les
+    // colonnes, et l'écrire en direct rouvrirait `etat` et `raison` à leur propriétaire,
+    // que la 0005 réserve à l'administration (0008 le dit, et `supabase/comite.test.ts` le garde).
+    expect(faux.ecritures).toEqual([]);
+  });
+
+  it('un compte absent est dit en français, pas en jargon SQL', async () => {
+    const faux = fauxClient({
+      erreurVu: 'comite_vu_sans_compte : il faut un compte pour marquer le suivi',
+    });
+    await expect(marquerComiteVu({ chargerClient: async () => faux.client })).rejects.toThrow(
+      /un compte/,
+    );
   });
 });

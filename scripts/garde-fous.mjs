@@ -252,6 +252,31 @@ export const MUTATIONS = [
     tests: ['src/components/effets-combat.test.ts'],
     garde:
       'au-delà de 800 ms, un chiffre flottant recouvre le nom de la carte et retarde la lecture du geste suivant — la borne est dans le CSS, pas seulement dans la constante du composant'
+  },
+  {
+    ticket: 211,
+    titre: 'le suivi cache la raison d’un post-it écarté',
+    fichier: 'src/pages/Suivi.tsx',
+    // La raison est **la seule chose** qui apprend aux invités ce qui vaut la peine d'être
+    // remonté (D-059) : le suivi est la page qui la porte, et le mur ne la montre qu'en
+    // agrandissant un post-it.
+    motif: '</strong> {postit.raison}',
+    remplacement: '</strong>',
+    tests: ['src/pages/Suivi.test.tsx'],
+    garde:
+      'un écarté sans sa raison est un mur mort (D-059) : retirer ce texte ne casse rien à la compilation, et l’invité ne saurait plus pourquoi son idée a été refusée'
+  },
+  {
+    ticket: 224,
+    titre: 'la page propose de rejouer une migration appliquée avant le registre',
+    fichier: 'tools/admin/lib/ligne-migration.mjs',
+    // Le bouton n'est offert que sur une migration **manquante** : 0001 et 0002 ne sont pas
+    // idempotentes, et le poste ne connaît pas l'empreinte d'avant le registre (#224).
+    motif: "etat === 'manquante'",
+    remplacement: "etat !== 'anterieure'",
+    tests: ['tools/admin/ligne-migration.test.ts'],
+    garde:
+      'un bouton « appliquer » sur une antérieure rejoue un fichier déjà passé : `relation "combats" already exists` (l’incident du 23/10) — un refus de repli qui vient de la base, pas du poste'
   }
 ];
 
