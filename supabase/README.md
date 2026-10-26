@@ -129,8 +129,11 @@ reste inerte sans configuration.
 **Depuis D-088 (#181)**, l'identité d'écriture est un **compte** : `src/lib/comptes.ts` porte
 la connexion (Google ou courriel + mot de passe), `src/store/comptes.ts` garde la session et
 l'état de la demande, et les écrans `Connexion`, `Attente` et `Administration` s'en servent.
-L'identité anonyme reste le chemin de **lecture** sans session (et l'auteur des deux post-its
-d'avant la 0005) ; un appareil anonyme ne peut plus écrire, puisque la 0005 exige un compte
+L'identité anonyme **n'ouvre plus la lecture** : la garde d'entrée (`GardeComptes`) renvoie
+vers `/connexion` tout visiteur sans compte — décidé par Bastien le 26/10/2026, « il faut un
+compte pour entrer dans le jeu ». Elle reste l'auteur des deux post-its d'avant la 0005, et
+`identiteAppareil` sait toujours signer un appareil sans compte (les connexions anonymes
+restent actives, O-016, #252) ; un appareil anonyme ne peut pas écrire, puisque la 0005 exige un compte
 approuvé.
 
 ## 3. Les variables d'environnement
@@ -155,12 +158,12 @@ résultat identique entre la machine de développement et la CI.
 
 ## 4. L'étape humaine — appliquer les migrations
 
-> **État au 23/10/2026, mesuré par la session d'infrastructure** : la migration **est
-> appliquée** sur le projet `jzlcwnozlzhadatksvgh`, et les connexions anonymes sont
-> **activées**. Une session anonyme lit les quatre objets (`200`, vide) ; sans session, la
-> requête est refusée — c'est voulu, les droits sont donnés à `authenticated` seul. Les
-> variables sont posées dans le `.env` local ; **elles ne le sont pas encore sur Vercel**, donc
-> la production reste inerte et le mur lit le fichier.
+> **État au 26/10/2026, mesuré par la session d'infrastructure** : les migrations sont
+> appliquées sur le projet `jzlcwnozlzhadatksvgh` (0001 à 0012), et les connexions anonymes sont
+> **activées** (`external_anonymous_users_enabled = true`). Une session anonyme lit la vue
+> (`200`, deux post-its) ; sans session, la requête est refusée (`401`) — c'est voulu, les
+> droits sont donnés à `authenticated` seul. Les deux variables sont posées dans le `.env`
+> local **et sur Vercel en production** : le mur de production lit la base.
 >
 > La machine de développement n'a **ni Docker ni CLI Supabase**, et la session de
 > développement n'a **aucun accès** au projet Supabase (pas de MCP : la politique de la maison
@@ -171,10 +174,16 @@ résultat identique entre la machine de développement et la CI.
 
 **Avant D-088**, il fallait activer *Authentication → Sign In / Providers → **Anonymous
 sign-ins*** : sans ce réglage, `signInAnonymously()` répond `Anonymous sign-ins are disabled`,
-et la garde de `src/lib/supabase.test.ts` le dit. Depuis **D-088**, l'identité anonyme n'est
-plus le chemin normal — c'est le **compte** qui écrit — mais elle reste le repli de **lecture**
-sans session : la laisser active ne gêne pas, la couper est acceptable dès lors que le jeu
-passe par la connexion.
+et la garde de `src/lib/supabase.test.ts` le dit.
+
+**Depuis D-088 et la décision de Bastien du 26/10/2026, ce n'est plus un chemin de lecture** :
+l'alpha s'ouvre par un **compte**, et `GardeComptes` renvoie un visiteur sans compte vers
+`/connexion`. Le réglage reste **actif** (O-016, #252) parce que le code porte encore l'appel et que
+les deux post-its d'avant la 0005 ont été écrits sous cette identité — mais un visiteur neuf
+ne lit pas le mur : il voit l'écran de connexion. Mesuré le 26/10/2026 : le réglage
+`external_anonymous_users_enabled` vaut `true`, une session anonyme s'obtient
+(`POST /auth/v1/signup` → `200`), et avec son jeton la vue `postits_avec_votes` se lit
+(`200`, deux lignes) ; sans jeton, `401 permission denied`.
 
 Le même écran active les fournisseurs voulus (**Google**, **Email**) : voir §5.
 

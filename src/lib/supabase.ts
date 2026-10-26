@@ -21,10 +21,13 @@
  * **Identité** : depuis **D-088** (#181), l'alpha s'ouvre par un **compte** (Google ou
  * courriel) validé à la main — c'est `@/lib/comptes` qui porte la connexion et
  * `supabase/migrations/0005_comptes.sql` qui décide qui écrit. L'**identité anonyme** de
- * D-059 reste le chemin de **lecture** sans session (et l'auteur des deux post-its d'avant
- * la migration) : `identiteAppareil` continue de signer un appareil qui n'a pas de compte,
- * mais un tel appareil ne peut plus **écrire** — les politiques de la 0005 exigent un
- * compte approuvé, pas seulement une session.
+ * D-059 **n'ouvre plus la lecture** : la garde d'entrée (`src/components/GardeComptes.tsx`)
+ * renvoie vers `/connexion` tout visiteur sans **compte**, donc le mur ne s'atteint pas sans
+ * session de compte — Bastien, 26/10/2026 : « il faut un compte pour entrer dans le jeu ».
+ * `identiteAppareil` sait toujours signer un appareil sans compte (les connexions anonymes
+ * restent actives, O-016, #252 — et c'est l'auteur des deux post-its d'avant la 0005), mais
+ * un tel appareil ne peut plus **écrire** — les politiques de la 0005 exigent un compte
+ * approuvé, pas seulement une session.
  *
  * La bibliothèque est chargée **à la demande** (`import()` dynamique) : sans configuration, son
  * code ne part même pas dans le premier chargement.
