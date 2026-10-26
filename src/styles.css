@@ -560,11 +560,8 @@ h2 {
   border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
 }
 
-/*
- * Machine à café du Deck (#91) : un bouton par faction produisible, le type
- * présent au Deck marqué, le choix manuel en surbrillance. Les couleurs de
- * faction viennent de `FACTION_META`, jamais d'un hex recopié ici.
- */
+/* Les Decks proposés (D-069, #141) : une carte par Deck, stratégie et faiblesse
+   lisibles avant de charger, et un bouton qui remplace le Deck courant. */
 .decks-proposes__list {
   display: flex;
   flex-direction: column;
