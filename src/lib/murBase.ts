@@ -1,15 +1,15 @@
 /**
- * Le mur branché sur la base — la **couture** historique, désormais **déléguée** (#254).
+ * Le mur branché sur la base — ce qui **reste** de la couture historique (#254).
  *
  * Ce module portait un miroir 1:1 des requêtes : une fonction par appel réseau, un
  * `messageDeX` par famille de refus. Depuis le ticket #254, les **sept gestes** du mur
  * (`charger`, `poster`, `voter`, `trier`, `deplacer`, `corriger`, `retirer`) vivent dans un
  * **port** — `src/lib/mur.ts` — branché sur trois **adapters** (`src/lib/murAdaptateurs.ts`) :
- * la base, le fichier, la mémoire.
+ * la base, le fichier, la mémoire. Les pages le tiennent par **un seul hook**
+ * (`src/lib/useMur.ts`), via `murDuJeu()` ci-dessous. Les sept façades qui levaient une
+ * exception, une par geste, sont retirées : plus personne ne les appelle.
  *
- * **Ce fichier reste, et délègue** : ses fonctions gardent leur nom, leur signature et leurs
- * messages, pour qu'aucun appelant ne casse (les pages, les composants et leurs tests s'en
- * servent tels quels). Ce qui n'est pas un geste reste **ici** :
+ * Ce qui n'est **pas** un geste du port reste **ici**, parce que le port ne le couvre pas :
  *
  * - **le fil d'un post-it** (#138) — commenter, lire, retirer son commentaire ;
  * - **le repère du suivi** (D-097 (5), migration `0008`) — `public.marquer_comite_vu()`,
@@ -17,24 +17,13 @@
  * - **le compteur « choses à voir »** (#212) — trois lectures fixes, jamais une par post-it.
  *
  * **Les deux sources, et le repli** : la base est configurée (`VITE_SUPABASE_URL` +
- * `VITE_SUPABASE_ANON_KEY`) ou elle ne l'est pas — dans le second cas `chargerPostitsDuMur`
- * rend `null` et la page garde le fichier qu'elle a déjà bundlé (D-058). Une base configurée
- * qui **ne répond pas** lève : la page retombe sur le fichier avec un message. C'est le port
- * qui décide de ce repli (`creerMur(adaptateur, { secours })`) ; ici, on se contente de
- * traduire son résultat dans l'ancien contrat, qui lève.
+ * `VITE_SUPABASE_ANON_KEY`) ou elle ne l'est pas. Une base configurée qui **ne répond pas**
+ * fait lire le fichier avec la notice de la panne : c'est le port qui décide de ce repli
+ * (`creerMur(adaptateur, { secours })`), jamais la page (D-058).
  */
 import { clientMur, identiteAppareil, type ClientMur } from '@/lib/supabase';
 import { adaptateurFichier, resoudreAdaptateur } from '@/lib/murAdaptateurs';
-import {
-  creerMur,
-  estEntier,
-  estObjet,
-  type BrouillonPostit,
-  type Correction,
-  type OptionsPostit,
-  type TriPostit
-} from '@/lib/mur';
-import type { Postit, PositionPostit, SensVote } from '@/store/mur';
+import { creerMur, estEntier, estObjet, type PortMur } from '@/lib/mur';
 
 // Les primitives du port et son choix de source sont **réexportés** : ils étaient l'API de ce
 // module, et un appelant qui les importait d'ici n'a pas à changer (#254).
@@ -59,124 +48,48 @@ export type { BrouillonPostit, OptionsPostit, TriPostit } from '@/lib/mur';
 export { murEstConfigure } from '@/lib/murAdaptateurs';
 
 // ---------------------------------------------------------------------------------------------
-// Les sept gestes — délégués au port (#254)
+// Les sept gestes — un seul point d'entrée, le port (#254)
 // ---------------------------------------------------------------------------------------------
 
-/** Les options d'un dépôt, plus la couture réseau (injectable pour un test déterministe). */
-export type OptionsPostitDuJeu = OptionsPostit & {
+export interface OptionsMurDuJeu {
+  /** La couture réseau, injectable pour un test déterministe. */
   chargerClient?: () => Promise<ClientMur | null>;
-};
+  /**
+   * Lire le fichier quand la base ne répond pas (défaut : oui, D-058). L'administration le
+   * désactive : trier le fichier n'aurait aucun sens.
+   */
+  secours?: boolean;
+}
 
 /**
- * Lit le mur dans la base. Rend `null` quand aucune base n'est configurée : c'est le signal
- * « garde ton fichier » (D-058). Une base configurée qui ne répond pas **lève** — le port a
- * lu le fichier de secours, et lève avec la notice de la panne pour que la page le dise sans
- * afficher un mur vide qui aurait l'air vrai.
+ * Le port du mur, branché sur **la source réelle** : la base quand elle est configurée, le
+ * fichier sinon (D-058). Les sept gestes (`charger`, `poster`, `voter`, `trier`, `deplacer`,
+ * `corriger`, `retirer`) rendent `{ ok, … } | { ok: false, message }` et **ne lèvent pas** :
+ * c'est ce que consomme `useMur`, et c'est la seule porte des pages vers le mur.
+ *
+ * La source est résolue **à chaque geste** (le client peut naître d'une session signée entre
+ * deux clics), pas à la création : le port n'a donc pas de `source` à lui, et c'est le
+ * résultat de `charger` qui dit laquelle a répondu.
  *
  * Une session est signée **avant** la lecture : les droits sont donnés au rôle
  * `authenticated`, pas à `anon` (migration #135, D-088).
  */
-export async function chargerPostitsDuMur(
-  chargerClient: () => Promise<ClientMur | null> = clientMur
-): Promise<Postit[] | null> {
-  const { adaptateur, base } = await resoudreAdaptateur(chargerClient);
-  if (!base) return null;
+export function murDuJeu(options: OptionsMurDuJeu = {}): Omit<PortMur, 'source'> {
+  const chargerClient = options.chargerClient ?? clientMur;
+  const brancher = async (): Promise<PortMur> => {
+    const { adaptateur, base } = await resoudreAdaptateur(chargerClient);
+    return creerMur(adaptateur, base && options.secours !== false ? { secours: adaptateurFichier() } : {});
+  };
 
-  const resultat = await creerMur(adaptateur, { secours: adaptateurFichier() }).charger();
-  if (!resultat.ok) throw new Error(resultat.message);
-  if (resultat.source !== 'base') {
-    throw new Error(resultat.notice ?? 'La base n’a pas répondu : le mur retombe sur le fichier.');
-  }
-  return resultat.postits;
-}
-
-/**
- * Poste un post-it depuis le jeu, et le rend dans la forme du contrat pour que l'écran
- * l'affiche sans relire la base. Sans configuration, le port refuse **avant** d'écrire : le
- * bouton n'est qu'une seconde garde.
- */
-export async function posterPostit(brouillon: BrouillonPostit, options: OptionsPostitDuJeu = {}): Promise<Postit> {
-  const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
-  const resultat = await creerMur(adaptateur).poster(brouillon, options);
-  if (!resultat.ok) throw new Error(resultat.message);
-  return resultat.postit;
-}
-
-/**
- * Vote, change ou retire mon pouce sur un post-it (#137) : le port décide du geste
- * (`gesteDeVote`) et rend mon vote **après**.
- */
-export async function voterPourPostit(
-  postitId: string,
-  demande: SensVote,
-  actuel: SensVote | null,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
-): Promise<SensVote | null> {
-  const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
-  const resultat = await creerMur(adaptateur).voter(postitId, demande, actuel);
-  if (!resultat.ok) throw new Error(resultat.message);
-  return resultat.vote;
-}
-
-/**
- * Déplace le tri d'un post-it — le geste de l'**administration** (0006, D-088). Le contrôle
- * (`verifierTri`) passe avant la source, et une modification qui ne touche aucune ligne n'est
- * jamais un succès.
- */
-export async function trierPostit(
-  id: string,
-  tri: TriPostit,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
-): Promise<TriPostit> {
-  const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
-  const resultat = await creerMur(adaptateur).trier(id, tri);
-  if (!resultat.ok) throw new Error(resultat.message);
-  return resultat.tri;
-}
-
-/**
- * Écrit la place d'un post-it en base (#185, #186) : le geste passe par `deplacer_postit`
- * (0007), jamais par un `update` — une politique RLS ne distingue pas les colonnes (D-092).
- * La place rendue est celle que la base a gardée, arrondie au dixième.
- */
-export async function deplacerPostit(
-  id: string,
-  position: PositionPostit,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
-): Promise<PositionPostit> {
-  const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
-  const resultat = await creerMur(adaptateur).deplacer(id, position);
-  if (!resultat.ok) throw new Error(resultat.message);
-  return resultat.position;
-}
-
-/**
- * Corrige le titre et le texte d'un post-it, **par son auteur** et **tant qu'il est
- * `en attente`** (#139). Le geste passe par la fonction `corriger_postit` (0006).
- */
-export async function corrigerPostit(
-  id: string,
-  correction: Correction,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
-): Promise<Correction> {
-  const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
-  const resultat = await creerMur(adaptateur).corriger(id, correction);
-  if (!resultat.ok) throw new Error(resultat.message);
-  return { titre: resultat.titre, texte: resultat.texte };
-}
-
-/**
- * Retire mon post-it : il est **supprimé** (§3 de `docs/COMITE.md`). L'**administration**,
- * elle, retire n'importe quel post-it à n'importe quel statut (#186, `0007`) — c'est la RLS
- * qui décide, et le geste est visé par son seul `id`.
- */
-export async function retirerPostit(
-  id: string,
-  options: { chargerClient?: () => Promise<ClientMur | null> } = {}
-): Promise<void> {
-  const { adaptateur } = await resoudreAdaptateur(options.chargerClient ?? clientMur);
-  const resultat = await creerMur(adaptateur).retirer(id);
-  if (!resultat.ok) throw new Error(resultat.message);
+  return {
+    charger: async () => (await brancher()).charger(),
+    poster: async (brouillon, optionsPostit) => (await brancher()).poster(brouillon, optionsPostit),
+    voter: async (postitId, demande, actuel) => (await brancher()).voter(postitId, demande, actuel),
+    trier: async (id, tri) => (await brancher()).trier(id, tri),
+    deplacer: async (id, position) => (await brancher()).deplacer(id, position),
+    corriger: async (id, correction) => (await brancher()).corriger(id, correction),
+    retirer: async (id) => (await brancher()).retirer(id)
+  };
 }
 
 // ---------------------------------------------------------------------------------------------

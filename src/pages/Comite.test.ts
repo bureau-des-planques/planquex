@@ -61,7 +61,7 @@ describe('ce que chaque post-it porte (D-068)', () => {
 describe('le rangement sur la base, sans export (#215, D-097 (6))', () => {
   it('n’exporte plus le fichier depuis l’écran', () => {
     // Le panneau « Le rangement » et son export sont retirés : la place s'écrit en base
-    // (`deplacerPostit`, #185). Un retour de l'export rendrait au mur deux mécanismes
+    // (`deplacer`, #185). Un retour de l'export rendrait au mur deux mécanismes
     // concurrents pour la même disposition.
     expect(page).not.toMatch(/exporterMur/);
     expect(page).not.toMatch(/lien\.download/);
@@ -70,9 +70,9 @@ describe('le rangement sur la base, sans export (#215, D-097 (6))', () => {
     expect(page).not.toMatch(/<h2>Le rangement<\/h2>/);
   });
 
-  it('garde le mode de placement, et il écrit par `deplacerPostit`', () => {
+  it('garde le mode de placement, et il écrit par le geste `deplacer` du port', () => {
     expect(page).toMatch(/Mode de placement/);
-    expect(page).toMatch(/deplacerPostit\(id, place\)/);
+    expect(page).toMatch(/deplacer\(id, place\)/);
   });
 
   it('reste un travail d’écran large', () => {

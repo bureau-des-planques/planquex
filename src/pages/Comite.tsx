@@ -34,20 +34,14 @@ import { SousOngletsComite } from '@/components/SousOngletsComite';
 import type { GlisserPostit } from '@/components/PostitDuMur';
 import {
   chargerCommentaires,
-  chargerPostitsDuMur,
   commenterPostit,
-  compterApres,
-  corrigerPostit,
-  deplacerPostit,
   grouperCommentaires,
   murEstConfigure,
-  posterPostit,
-  retirerPostit,
   supprimerCommentaire,
-  verifierCommentaire,
-  voterPourPostit
+  verifierCommentaire
 } from '@/lib/murBase';
 import type { Commentaire } from '@/lib/murBase';
+import { useMur } from '@/lib/useMur';
 import { estAdministrateur, estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 import { DOCUMENT_MUR, ECRANS, lireMur } from '@/store/mur';
@@ -104,21 +98,40 @@ export function Comite() {
   const administrateur = configureComptes && estAdministrateur(compte);
 
   /**
-   * La source du mur (#136) : la **base** quand elle est configurée, le **fichier** sinon.
-   * La page ne connaît que `Mur` : c'est `src/lib/murBase.ts` qui parle au réseau.
+   * Le mur (#136) : la **base** quand elle est configurée, le **fichier** sinon. La page ne
+   * connaît que `Mur` — le port (`src/lib/mur.ts`) parle au réseau, et `useMur` tient
+   * l'état optimiste (en vol, refus, retour en arrière) pour tous les gestes (#254).
    *
    * Sur une base configurée, on n'affiche pas le fichier d'abord : un post-it qui
    * disparaîtrait à l'arrivée de la réponse serait pire qu'un court « le mur se charge ».
-   * Si la base ne répond pas, on retombe sur le fichier **entier**, avec un message.
+   * Si la base ne répond pas, le hook retombe sur le fichier **entier**, avec une notice.
    */
-  const [mur, setMur] = useState<Mur | null>(() => (branche ? null : LECTURE.mur));
-  const [erreurs, setErreurs] = useState<string[]>(() => (branche ? [] : LECTURE.erreurs));
-  const [source, setSource] = useState<'base' | 'fichier'>('fichier');
-  const [chargement, setChargement] = useState(branche);
-  const [notice, setNotice] = useState<string | null>(null);
-  /** Les votes en vol et les votes perdus, par post-it (#137). */
-  const [votesEnVol, setVotesEnVol] = useState<ReadonlySet<string>>(() => new Set());
-  const [erreursVote, setErreursVote] = useState<Record<string, string>>({});
+  const {
+    mur,
+    erreurs,
+    source,
+    chargement,
+    notice,
+    enVol,
+    erreur,
+    voter: voterPostit,
+    poster,
+    deplacer,
+    corriger: corrigerPostit,
+    retirer: retirerPostit
+  } = useMur({
+    branche,
+    lecture: LECTURE,
+    // Une lecture de la **base** vient de finir : les places et le fil en dépendent. Un
+    // repli sur le fichier ne touche à rien — les places du fichier sont déjà là.
+    surLecture: ({ source: lue, postits }) => {
+      if (lue !== 'base') return;
+      const places = positionsDuMur({ formulaire: '', postits });
+      setPositions(places);
+      placesEnBase.current = places;
+      lireLesFils();
+    }
+  });
 
   /** Le fil de chaque post-it, et l'état de sa lecture (#138). */
   const [commentaires, setCommentaires] = useState<Record<string, Commentaire[]>>({});
@@ -128,11 +141,8 @@ export function Comite() {
   const [erreursFil, setErreursFil] = useState<Record<string, string>>({});
 
   /** La relecture de **mon** post-it (#139). */
-  const [correctionEnVol, setCorrectionEnVol] = useState<string | null>(null);
-  const [erreursCorrection, setErreursCorrection] = useState<Record<string, string>>({});
   /** Le post-it dont on demande le retrait : la confirmation est rendue par la page. */
   const [aRetirer, setARetirer] = useState<Postit | null>(null);
-  const [retraitEnVol, setRetraitEnVol] = useState(false);
 
   const [positions, setPositions] = useState(() => positionsDuMur(LECTURE.mur));
   const [placement, setPlacement] = useState(false);
@@ -153,8 +163,6 @@ export function Comite() {
   const [recouvrement, setRecouvrement] = useState<string | null>(null);
   /** Compte les lâchers : l'effet qui contrôle le recouvrement tourne après le rendu. */
   const [lachers, setLachers] = useState(0);
-  /** Le post-it dont la place s'écrit en base, et le dernier refus essuyé (#185). */
-  const [placeEnVol, setPlaceEnVol] = useState<string | null>(null);
   /** Les places que la base **a acceptées** : c'est là qu'on revient si un glisser est refusé. */
   const placesEnBase = useRef<Record<string, PositionPostit>>({});
   const tableau = useRef<HTMLDivElement>(null);
@@ -167,7 +175,6 @@ export function Comite() {
   const [texte, setTexte] = useState('');
   const [ecran, setEcran] = useState<Ecran | ''>('');
   const [capture, setCapture] = useState('');
-  const [envoi, setEnvoi] = useState(false);
   const [depotMessage, setDepotMessage] = useState<{ texte: string; alerte?: boolean } | null>(null);
 
   /**
@@ -187,41 +194,6 @@ export function Comite() {
       })
       .finally(() => setChargementCommentaires(false));
   };
-
-  useEffect(() => {
-    if (!branche) return;
-    let vivant = true;
-
-    chargerPostitsDuMur()
-      .then((postits) => {
-        if (!vivant) return;
-        if (postits === null) throw new Error('La base n’est pas configurée.');
-        setMur({ formulaire: LECTURE.mur?.formulaire ?? '', postits });
-        setPositions(positionsDuMur({ formulaire: '', postits }));
-        placesEnBase.current = positionsDuMur({ formulaire: '', postits });
-        setErreurs([]);
-        setSource('base');
-        setNotice(null);
-        lireLesFils();
-      })
-      .catch((erreur: unknown) => {
-        if (!vivant) return;
-        // Pas d'écran cassé : le fichier est la source de secours, et on le dit.
-        setMur(LECTURE.mur);
-        setErreurs(LECTURE.erreurs);
-        setSource('fichier');
-        setNotice(`La base n’a pas répondu : le mur affiche le fichier du dépôt. (${messageDe(erreur)})`);
-      })
-      .finally(() => {
-        if (vivant) setChargement(false);
-      });
-
-    return () => {
-      vivant = false;
-    };
-    // `branche` et `LECTURE` sont fixes pour la vie de l'écran.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   /**
    * Le placement laisse faire un vrai tableau : on peut se tromper. Ce contrôle dit
@@ -259,33 +231,22 @@ export function Comite() {
    */
   const ranger = async (id: string, place: PositionPostit) => {
     const avant = placesEnBase.current[id];
-    setPlaceEnVol(id);
     setMessage(null);
-    try {
-      const acceptee = await deplacerPostit(id, place);
-      placesEnBase.current = { ...placesEnBase.current, [id]: acceptee };
-      setPositions((courantes) => ({ ...courantes, [id]: acceptee }));
-      setMur((courant) =>
-        courant
-          ? {
-              ...courant,
-              postits: courant.postits.map((autre) => (autre.id === id ? { ...autre, position: acceptee } : autre))
-            }
-          : courant
-      );
-    } catch (erreur) {
+    const resultat = await deplacer(id, place);
+    if (resultat.ok) {
+      placesEnBase.current = { ...placesEnBase.current, [id]: resultat.position };
+      setPositions((courantes) => ({ ...courantes, [id]: resultat.position }));
+    } else {
       // La place refusée ne doit pas rester à l'écran : on revient à la dernière acceptée.
       if (avant) setPositions((courantes) => ({ ...courantes, [id]: avant }));
-      setMessage({ alerte: true, texte: messageDe(erreur) });
-    } finally {
-      setPlaceEnVol(null);
+      setMessage({ alerte: true, texte: resultat.message });
     }
   };
 
   const glisser: GlisserPostit = {
     debut: (event, postit) => {
       const cadre = tableau.current;
-      if (!cadre || !event.isPrimary || placeEnVol !== null) return;
+      if (!cadre || !event.isPrimary || enVol('deplacer')) return;
       const boite = cadre.getBoundingClientRect();
       const feuille = event.currentTarget.getBoundingClientRect();
       saisie.current = {
@@ -341,42 +302,12 @@ export function Comite() {
   }, [lachers]);
 
   /**
-   * Un clic sur un pouce (#137). Le compte bouge **tout de suite** ; si la base ou le réseau
-   * refuse, l'affichage revient exactement à l'état d'avant, avec un message discret sur le
-   * post-it — jamais une page cassée. Un post-it ne porte qu'un vote en vol à la fois.
+   * Un clic sur un pouce (#137). Le compte bouge **tout de suite** (`useMur`) ; si la base ou
+   * le réseau refuse, l'affichage revient exactement à l'état d'avant, avec un message
+   * discret sur le post-it — jamais une page cassée. Un post-it ne porte qu'un vote en vol.
    */
   const voter = async (postit: Postit, demande: SensVote) => {
-    if (votesEnVol.has(postit.id) || postit.mien) return;
-    const avant = postit.votes;
-    const monVote = avant.mon ?? null;
-    const apres = monVote === demande ? null : demande;
-
-    const poser = (votes: Postit['votes']) =>
-      setMur((courant) =>
-        courant
-          ? {
-              ...courant,
-              postits: courant.postits.map((p) => (p.id === postit.id ? { ...p, votes } : p))
-            }
-          : courant
-      );
-
-    setErreursVote(({ [postit.id]: _, ...reste }) => reste);
-    setVotesEnVol((courants) => new Set(courants).add(postit.id));
-    poser(compterApres(avant, monVote, apres));
-
-    try {
-      await voterPourPostit(postit.id, demande, monVote);
-    } catch (erreur) {
-      poser(avant);
-      setErreursVote((courantes) => ({ ...courantes, [postit.id]: messageDe(erreur) }));
-    } finally {
-      setVotesEnVol((courants) => {
-        const reste = new Set(courants);
-        reste.delete(postit.id);
-        return reste;
-      });
-    }
+    await voterPostit(postit, demande);
   };
 
   /**
@@ -426,23 +357,7 @@ export function Comite() {
 
   /** Corriger le titre et le texte de **mon** post-it, tant qu'il est en attente (#139). */
   const corriger = async (postit: Postit, titre: string, texte: string) => {
-    setCorrectionEnVol(postit.id);
-    setErreursCorrection(({ [postit.id]: _ancien, ...reste }) => reste);
-    try {
-      const corrige = await corrigerPostit(postit.id, { titre, texte });
-      setMur((courant) =>
-        courant
-          ? {
-              ...courant,
-              postits: courant.postits.map((autre) => (autre.id === postit.id ? { ...autre, ...corrige } : autre))
-            }
-          : courant
-      );
-    } catch (erreur) {
-      setErreursCorrection((courants) => ({ ...courants, [postit.id]: messageDe(erreur) }));
-    } finally {
-      setCorrectionEnVol(null);
-    }
+    await corrigerPostit(postit.id, { titre, texte });
   };
 
   /**
@@ -452,31 +367,24 @@ export function Comite() {
    */
   const retirer = async () => {
     const cible = aRetirer;
-    if (!cible || retraitEnVol) return;
-    setRetraitEnVol(true);
-    try {
-      await retirerPostit(cible.id);
-      setMur((courant) =>
-        courant ? { ...courant, postits: courant.postits.filter((autre) => autre.id !== cible.id) } : courant
-      );
-      setCommentaires(({ [cible.id]: _fil, ...reste }) => reste);
-      setPositions(({ [cible.id]: _place, ...reste }) => reste);
-      setARetirer(null);
-      setDepotMessage(
-        cible.mien
-          ? {
-              texte: 'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
-            }
-          : {
-              texte: `Le post-it de ${cible.pseudo || 'anonyme'} est retiré du mur, avec ses votes et ses commentaires.`
-            }
-      );
-    } catch (erreur) {
-      setARetirer(null);
-      setDepotMessage({ alerte: true, texte: messageDe(erreur) });
-    } finally {
-      setRetraitEnVol(false);
+    if (!cible || enVol('retirer')) return;
+    const resultat = await retirerPostit(cible.id);
+    setARetirer(null);
+    if (!resultat.ok) {
+      setDepotMessage({ alerte: true, texte: resultat.message });
+      return;
     }
+    setCommentaires(({ [cible.id]: _fil, ...reste }) => reste);
+    setPositions(({ [cible.id]: _place, ...reste }) => reste);
+    setDepotMessage(
+      cible.mien
+        ? {
+            texte: 'Ton post-it est retiré du mur : il est supprimé, avec ses commentaires. Merci de l’avoir écrit.'
+          }
+        : {
+            texte: `Le post-it de ${cible.pseudo || 'anonyme'} est retiré du mur, avec ses votes et ses commentaires.`
+          }
+    );
   };
 
   /**
@@ -503,42 +411,35 @@ export function Comite() {
 
   const coller = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setEnvoi(true);
     setDepotMessage(null);
 
-    try {
-      const postit = await posterPostit(
-        {
-          famille: gueulage ? null : nature,
-          gueulage,
-          titre,
-          texte,
-          ecran,
-          capture
-        },
-        // Les places déjà prises : le post-it neuf ne se colle pas sur le texte d'un autre.
-        { pseudo, positionsPrises: Object.values(positions) }
-      );
-
-      setMur((courant) => ({
-        formulaire: courant?.formulaire ?? LECTURE.mur?.formulaire ?? '',
-        postits: [...(courant?.postits ?? []), postit]
-      }));
-      setPositions((courantes) => ({ ...courantes, [postit.id]: postit.position }));
-      setTitre('');
-      setTexte('');
-      setEcran('');
-      setCapture('');
-      setNature('IP');
-      setDepot(false);
-      setDepotMessage({
-        texte: 'Ton post-it est collé au mur. Merci — il est signé de ton pseudo et de ton compte.'
-      });
-    } catch (erreur) {
-      setDepotMessage({ alerte: true, texte: messageDe(erreur) });
-    } finally {
-      setEnvoi(false);
+    const resultat = await poster(
+      {
+        famille: gueulage ? null : nature,
+        gueulage,
+        titre,
+        texte,
+        ecran,
+        capture
+      },
+      // Les places déjà prises : le post-it neuf ne se colle pas sur le texte d'un autre.
+      { pseudo, positionsPrises: Object.values(positions) }
+    );
+    if (!resultat.ok) {
+      setDepotMessage({ alerte: true, texte: resultat.message });
+      return;
     }
+
+    setPositions((courantes) => ({ ...courantes, [resultat.postit.id]: resultat.postit.position }));
+    setTitre('');
+    setTexte('');
+    setEcran('');
+    setCapture('');
+    setNature('IP');
+    setDepot(false);
+    setDepotMessage({
+      texte: 'Ton post-it est collé au mur. Merci — il est signé de ton pseudo et de ton compte.'
+    });
   };
 
   const formulaireExterne = mur?.formulaire ?? LECTURE.mur?.formulaire ?? '';
@@ -723,9 +624,9 @@ export function Comite() {
               <button
                 type="submit"
                 className="button button--primary"
-                disabled={envoi || !texte.trim() || (!gueulage && !titre.trim())}
+                disabled={enVol('poster') || !texte.trim() || (!gueulage && !titre.trim())}
               >
-                <Send size={16} /> {envoi ? 'Envoi…' : 'Coller le post-it'}
+                <Send size={16} /> {enVol('poster') ? 'Envoi…' : 'Coller le post-it'}
               </button>
               <button type="button" className="button" onClick={() => setDepot(false)}>
                 Annuler
@@ -838,7 +739,7 @@ export function Comite() {
 
             {placement && source === 'base' && (
               <p className="m-0 max-w-[66ch] text-[0.86rem] text-ink-muted">
-                {placeEnVol
+                {enVol('deplacer')
                   ? 'La place s’écrit…'
                   : 'Prends un post-it qui est à toi et dépose-le : la place part en base au lâcher. Ceux des autres ne se prennent pas.'}
               </p>
@@ -880,8 +781,8 @@ export function Comite() {
                   pouces={
                     source === 'base' && peutEcrire
                       ? {
-                          occupe: votesEnVol.has(postit.id),
-                          erreur: erreursVote[postit.id] ?? null,
+                          occupe: enVol('voter', postit.id),
+                          erreur: erreur('voter', postit.id),
                           onVoter: voter
                         }
                       : undefined
@@ -910,8 +811,8 @@ export function Comite() {
                       ? {
                           gele: postit.statut !== 'en attente',
                           raisonGele: `Ce post-it a bougé de statut (« ${postit.statut} ») : on ne le corrige plus, sinon le mur ne dirait plus la même chose à tout le monde.`,
-                          occupe: correctionEnVol === postit.id,
-                          erreur: erreursCorrection[postit.id] ?? null,
+                          occupe: enVol('corriger', postit.id),
+                          erreur: erreur('corriger', postit.id),
                           onCorriger: corriger,
                           onRetirer: (cible) => setARetirer(cible)
                         }
@@ -920,7 +821,7 @@ export function Comite() {
                   retrait={
                     source === 'base' && administrateur && !postit.mien
                       ? {
-                          occupe: retraitEnVol,
+                          occupe: enVol('retirer'),
                           onRetirer: (cible) => setARetirer(cible)
                         }
                       : undefined
@@ -947,7 +848,7 @@ export function Comite() {
             ? 'Il sera supprimé du mur, avec ses votes et ses commentaires — pas seulement barré, et il n’en restera aucune trace. C’est définitif, et c’est un geste d’administration : le post-it n’est pas le tien, et son auteur le verra disparaître sans explication sur le mur.'
             : 'Il sera supprimé du mur, avec ses commentaires — pas seulement barré, et il n’en restera aucune trace. C’est définitif. Le retrait n’est possible que tant que le post-it est en attente : dès qu’il a bougé de statut, il ne s’efface plus.'
         }
-        confirmer={retraitEnVol ? 'Retrait…' : 'Retirer le post-it'}
+        confirmer={enVol('retirer') ? 'Retrait…' : 'Retirer le post-it'}
         onConfirm={() => void retirer()}
         onCancel={() => setARetirer(null)}
       />

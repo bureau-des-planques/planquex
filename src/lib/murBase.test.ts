@@ -3,13 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ClientMur, RequeteMur, ReponseMur } from '@/lib/supabase';
 import {
   chargerCommentaires,
-  chargerPostitsDuMur,
   commenterPostit,
   compterApres,
   compterChosesAVoir,
   composerLignePostit,
-  corrigerPostit,
-  deplacerPostit,
   gesteDeVote,
   grouperCommentaires,
   idPostit,
@@ -19,19 +16,19 @@ import {
   marquerComiteVu,
   messageDePlace,
   messageDeTri,
+  murDuJeu,
   murEstConfigure,
   positionDepuisId,
-  posterPostit,
-  retirerPostit,
   supprimerCommentaire,
   texteAvecCapture,
   titreDepuisTexte,
-  trierPostit,
   verifierCommentaire,
   verifierPosition,
-  verifierTri,
-  voterPourPostit
+  verifierTri
 } from '@/lib/murBase';
+import type { OptionsMurDuJeu } from '@/lib/murBase';
+import type { BrouillonPostit, Correction, OptionsPostit, TriPostit } from '@/lib/mur';
+import type { PositionPostit, SensVote } from '@/store/mur';
 
 /**
  * La couture du mur (#136), testée **sans réseau** : un faux client rend ce qu'on décide.
@@ -48,6 +45,41 @@ import {
  * 5. une panne de lecture **lève** (la page retombe sur le fichier) au lieu de rendre un
  *    mur vide qui aurait l'air vrai.
  */
+
+/**
+ * Les gestes du mur, vus **à travers le port** (`murDuJeu`) mais dans l'ancien contrat qui
+ * lève : les requêtes envoyées à la base sont celles que ces tests gardent depuis #136, et
+ * ces sept raccourcis ne font que traduire `{ ok: false, message }` en exception (#254).
+ * Aucune page ne les appelle plus ; ils servent à éprouver **le fil** (la base, au niveau de
+ * la requête) sans réécrire ce qui était déjà gardé.
+ */
+type Couture = Pick<OptionsMurDuJeu, 'chargerClient'>;
+function leve<T extends { ok: boolean }>(resultat: T | { ok: false; message: string }): Extract<T, { ok: true }> {
+  if (!resultat.ok) throw new Error((resultat as { message: string }).message);
+  return resultat as Extract<T, { ok: true }>;
+}
+/** Sans base : `null`, le signal « garde ton fichier ». Base muette : la notice, levée. */
+async function chargerPostitsDuMur(chargerClient?: Couture['chargerClient']) {
+  const lu = leve(await murDuJeu({ chargerClient }).charger());
+  if (lu.source === 'base') return lu.postits;
+  if (lu.notice) throw new Error(lu.notice);
+  return null;
+}
+const posterPostit = async (brouillon: BrouillonPostit, options: OptionsPostit & Couture = {}) =>
+  leve(await murDuJeu(options).poster(brouillon, options)).postit;
+const voterPourPostit = async (id: string, demande: SensVote, actuel: SensVote | null, options: Couture = {}) =>
+  leve(await murDuJeu(options).voter(id, demande, actuel)).vote;
+const trierPostit = async (id: string, tri: TriPostit, options: Couture = {}) =>
+  leve(await murDuJeu(options).trier(id, tri)).tri;
+const deplacerPostit = async (id: string, position: PositionPostit, options: Couture = {}) =>
+  leve(await murDuJeu(options).deplacer(id, position)).position;
+const corrigerPostit = async (id: string, correction: Correction, options: Couture = {}) => {
+  const { titre, texte } = leve(await murDuJeu(options).corriger(id, correction));
+  return { titre, texte };
+};
+const retirerPostit = async (id: string, options: Couture = {}) => {
+  leve(await murDuJeu(options).retirer(id));
+};
 
 /** Une ligne de `postits_avec_votes`, dans la forme que la vue compose. */
 const LIGNE = {
