@@ -3316,6 +3316,25 @@ h2 {
   transform: rotate(var(--rot, 0deg));
 }
 
+/* **Le nom de la carte de main à 64 px** (#233) : la césure manuelle du plateau coupait
+   « VISITE MÉDICAL E » et « PRÉVENT EUR » en plein mot, et « TROUSSE DE SECOURS » sortait en
+   ellipse. Le chiffre de D-094 (1) ne bouge pas (4 rem) ; c'est la place du nom qui change :
+   la césure **automatique de la langue** (`lang="fr"`, `index.html`) fait des coupures
+   marquées d'un trait d'union (« MÉDI-CALE », « PRÉVEN-TEUR »), et la barre de nom du
+   **plateau** de la main cède ses marges latérales (0,22 → 0,1 rem, +4 px) pour que
+   « TROUSSE » tienne entier et que le nom complet des trois cartes se lise sur trois lignes.
+   Ce sont des pixels **horizontaux** : la hauteur de la main — donc la garde de D-094 (2) —
+   ne bouge pas, la carte garde son ratio 63 × 88. Le nom complet reste dans le bouton
+   (`sr-only`) et dans la fiche « Carte choisie ». */
+.battle .hand .card--plateau .card__name {
+  hyphens: auto;
+}
+
+.battle .hand .card--plateau .card__top {
+  padding-left: 0.1rem;
+  padding-right: 0.1rem;
+}
+
 .hand__name {
   font-family: var(--font-display);
   font-size: 0.82rem;
