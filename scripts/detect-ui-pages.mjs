@@ -60,14 +60,16 @@ export const ECRANS = ['/', '/collection', '/deck', '/battle', '/settings'];
  * **Abaissé le 26/10/2026 (#208)** : la famille `low-contrast` tombe — le sigle de faction est
  * éclairci (2,7 à 4,1:1 → plus de 5,6), le badge COMEX passe en or plein, et une carte non
  * possédée n'est plus mise à 40 % d'opacité : son texte reste lisible, l'illustration et la barre
- * disent l'absence. Collection 32 → **3**, Deck 11 → **6** ; il ne reste que les dégradés de
- * faction, traités au commit suivant. Total : **10** (0 + 3 + 6 + 0 + 1). Chaque baisse abaisse
- * le plafond dans le même commit.
+ * disent l'absence (Collection 32 → 3, Deck 11 → 6, commit `0bad67d`). Puis les **dégradés de
+ * faction** de la fenêtre d'illustration deviennent des **aplats**, et le filet violet de la
+ * Couronne cesse d'être un dégradé : Collection **0**, Deck **0**. Total : **1** (0 + 0 + 0 + 0
+ * + 1), le dernier point étant la ligne trop longue des Réglages. Chaque baisse abaisse le
+ * plafond dans le même commit.
  */
 export const BASELINE = {
   '/': 0,
-  '/collection': 3,
-  '/deck': 6,
+  '/collection': 0,
+  '/deck': 0,
   '/battle': 0,
   '/settings': 1
 };

@@ -994,6 +994,15 @@ h2 {
   overflow: hidden;
 }
 
+/* **La Couronne** : son filet est violet, et DESIGN.md §3 dit « filet violet » — il est donc
+   **plat**, pas un dégradé de violet (#208). Un dégradé violet est un tell d'UI générée
+   (`impeccable`, `ai-color-palette`, relevé sur les trois COU de `/collection`), et la teinte
+   reste celle de `RARITY_META`, atténuée pour ne pas devenir un néon sur le fond sombre.
+   `:not(.card--plateau)` : au plateau, la carte est une seule surface avec son propre fond. */
+.card[data-rarity='COU']:not(.card--plateau) {
+  background: color-mix(in srgb, var(--rarity) 62%, var(--bg-deep));
+}
+
 .card--selected {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
