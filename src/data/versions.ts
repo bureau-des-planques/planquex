@@ -60,6 +60,62 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.12',
+    date: '2026-10-26',
+    titre: 'Une chorégraphie par Pression',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'Chaque Pression a sa scène : dix-huit motifs de bureau — tampon, avion en papier, avalanche de mails, pile de dossiers, pointeur laser, pluie de CV… — et deux Pressions d’une même carte n’en partagent jamais un (D-098).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La grosse Pression d’un COMEX, d’une Couronne ou d’un trois étoiles a sa cinématique : voile, rayons, bandeau au nom de la Pression, ralenti, impact élargi — et, pour un COMEX, la salle de conseil se réunit avant que le tampon ne tombe, « ADOPTÉ À L’UNANIMITÉ » (D-098).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le coup de grâce a sa saynète : le tampon administratif (« POSTE SUPPRIMÉ », « FIN DE MISSION »…), la carte qui se range dans son carton, et la note de service qui lâche la formule creuse — « Merci pour votre engagement. » (D-098).'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Sous « Mouvement réduit », la scène ne se monte pas : le chiffre de Stress, le badge de Condition, le journal et le bandeau « a craqué » disent tout (D-098).'
+      },
+      {
+        groupe: 'Les cartes',
+        texte: 'Les 225 cartes de base ont leur illustration, et chaque variante reprend celle de sa base : le registre design/illustrations est la seule source, et c’est Vite qui les sert (D-045).'
+      },
+      {
+        groupe: 'Les cartes',
+        texte: 'L’Atelier suit les métiers d’un atelier d’optronique : 22 cartes changent de nom, leurs ids suivent, et le statut COMEX se lit au badge, plus dans le nom (D-095).'
+      },
+      {
+        groupe: 'Les cartes',
+        texte: 'Dix ids s’alignent sur le nom de leur carte, et « Gestionnaire flux » devient « Coordinateur de flux » (D-096).'
+      },
+      {
+        groupe: 'Le comité',
+        texte: 'La boîte à idées devient le comité : la page s’appelle /comite et son titre « Le comité de pilotage ». Les post-its, les pouces et le mur ne changent pas (#210, D-097).'
+      },
+      {
+        groupe: 'Le comité',
+        texte: 'Les adresses déjà partagées continuent de marcher : /idees mène à /comite, et /nouveautes à /feuille-de-route, où la note de version se lit comme avant (#210, D-075, D-090).'
+      },
+      {
+        groupe: 'L’interface',
+        texte: 'Au combat, une carte se touche pour lire sa fiche — Stress, Seuil, Pressions, Talent — et son nom ne se coupe plus (commit 6b46e65).'
+      },
+      {
+        groupe: 'L’interface',
+        texte: 'Sur téléphone, la main se lit, le plateau se compacte, et la Collection garde ses noms lisibles (commit 2f8651b).'
+      },
+      {
+        groupe: 'L’outillage',
+        texte: 'Le lot d’illustrations (scripts/gflow-lot.sh) produit plusieurs cartes en une seule passe, et lit la graine dans la base locale de gflow au lieu de l’inventer.'
+      }
+    ]
+  },
+  {
     version: '0.1.11',
     date: '2026-10-25',
     titre: 'Les quatre temps dans l’ordre',
