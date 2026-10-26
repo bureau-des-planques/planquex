@@ -18,7 +18,10 @@ jamais déployé, et il ne peut pas être atteint depuis le réseau.
 - **Migrations** : la page liste celles du dépôt, celles qui sont appliquées et celles qui
   manquent, avec leur empreinte `sha256`. L'application se fait **une seule à la fois**, dans sa
   transaction, avec la sortie du serveur ; réappliquer répond « déjà appliquée », une empreinte
-  **changée** est signalée et non rejouée.
+  **changée** est signalée et non rejouée. Les migrations appliquées **avant** que le registre
+  existe (0001-0006, inscrites le 26/10/2026) sont dites **antérieures au registre** : leur
+  empreinte est celle du fichier au rétablissement, pas une preuve, et elles ne sont jamais
+  reproposées ni rejouées.
 - **SQL libre** : la lecture passe par le rôle `lecteur` (la base refuse l'écriture, pas le
   code) ; l'écriture exige un accusé de réception ; un `drop`, `truncate`, ou un
   `delete`/`update` sans `where` exige en plus de **taper un mot** annoncé par le serveur.

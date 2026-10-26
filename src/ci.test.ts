@@ -56,6 +56,40 @@ describe('.github/workflows/ci.yml', () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
   });
 
+  it('vérifie les fichiers générés avec le jeton du workflow, sans jamais se sauter (#231)', () => {
+    // Le contrôle de fraîcheur (#231) doit tourner, et échouer si `gh` ne peut pas lire
+    // GitHub. Sans cette assertion, **retirer l'étape** rendrait la CI verte alors qu'un
+    // fichier périmé ne serait plus comparé à rien — on ne garderait que l'apparence.
+    const debut = workflow.indexOf('Vérifier que les fichiers générés sont à jour');
+    expect(debut, 'étape « fichiers générés » absente').toBeGreaterThanOrEqual(0);
+    const bloc = workflow.slice(debut, workflow.indexOf('- name: Vérifier que les garde-fous peuvent échouer'));
+    expect(bloc).toContain('npm run plan:dev -- --verifie');
+    expect(bloc).toContain('npm run notes:versions -- --verifie');
+    // Le jeton automatique du workflow : aucune valeur à configurer (`secrets.` interdit).
+    expect(bloc).toContain('GH_TOKEN: ${{ github.token }}');
+    // Pas de `if:` YAML qui sauterait l'étape : sans jeton, elle échoue explicitement.
+    expect(bloc).not.toMatch(/^\s*if:/m);
+    expect(bloc).toMatch(/exit 1/);
+  });
+
+  it('contrôle les écrans dans un navigateur, après le build et sans saut possible (#234)', () => {
+    // Le contrôle visuel en navigateur (#205) est branché depuis #234. Cette assertion
+    // garde ce qui se casse en silence : **retirer l'étape** rendrait la CI verte alors
+    // qu'aucun écran ne serait mesuré. `detect:ui` (regex sur les sources) la remplacerait
+    // en apparence — il sous-compte, et c'est précisément pour ça que #205 existe.
+    const debut = workflow.indexOf('Contrôler les écrans dans un navigateur');
+    expect(debut, 'étape « contrôle visuel en navigateur » absente').toBeGreaterThanOrEqual(0);
+    const bloc = workflow.slice(debut);
+    expect(bloc).toContain('npm run detect:ui:page');
+    // Il lui faut un navigateur, et l'étape le nomme (Chromium de l'image du runner).
+    expect(bloc).toContain('IMPECCABLE_BROWSER');
+    // Pas de saut : sans navigateur, elle échoue explicitement.
+    expect(bloc).not.toMatch(/^\s*if:/m);
+    expect(bloc).toMatch(/exit 1/);
+    // Elle lit `dist/` : le build doit avoir tourné avant.
+    expect(workflow.indexOf('run: npm run build')).toBeLessThan(debut);
+  });
+
   it('échoue si une étape échoue et n’exige aucun secret', () => {
     // Pas de `continue-on-error` : l'échec d'une étape fait échouer le job.
     expect(workflow).not.toMatch(/continue-on-error/);

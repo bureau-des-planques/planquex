@@ -8,7 +8,7 @@ traîne.
 Il ne fait **pas** partie du jeu : aucun de ses fichiers n'entre dans le bundle Vite, il n'est
 jamais déployé, et il ne peut pas être atteint depuis le réseau.
 
-## Pourquoi il existe (#227, D-101)
+## Pourquoi il existe (#227, D-102)
 
 Le 26/10/2026, trois serveurs Vite tournaient sur la machine sans que personne sache sur quoi :
 `5178` (le checkout principal, changé de branche trois fois dans la nuit), et deux `vite preview`

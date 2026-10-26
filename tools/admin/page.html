@@ -244,7 +244,9 @@
         ? '<span class="etat-pill">appliquée</span>'
         : m.etat === 'empreinte-changee'
           ? '<span class="etat-pill" style="color:var(--danger)">empreinte changée</span>'
-          : '<span class="etat-pill">manquante</span>';
+          : m.etat === 'anterieure'
+            ? '<span class="etat-pill" style="color:var(--muet)">antérieure au registre</span>'
+            : '<span class="etat-pill">manquante</span>';
       const bouton = m.etat === 'manquante'
         ? `<button class="vert" onclick="appliquer('${m.fichier}')">appliquer</button>`
         : '';
@@ -254,7 +256,7 @@
       <h2>Migrations</h2>
       ${lignes ? `<div class="tableau"><table><thead><tr><th>fichier</th><th>état</th><th>empreinte</th><th>geste</th></tr></thead>
       <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucune migration</div>'}
-      <p class="muet">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée.</p>
+      <p class="muet">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée ; antérieure au registre → jamais rejouée.</p>
     `);
   }
 

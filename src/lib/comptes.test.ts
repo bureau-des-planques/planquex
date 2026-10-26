@@ -102,6 +102,9 @@ function fauxClient(reponses: Reponses = {}) {
           filtres.push([colonne, valeur]);
           return requete;
         },
+        // Jamais employé ici (`comptes` se lit par `eq`) : le filtre existe pour le contrat
+        // de `RequeteMur`, que le compteur du comité étend (#212).
+        in: () => requete,
         update: (nouvelles) => {
           geste = 'update';
           ecritures.push({ table, valeurs: nouvelles, filtres });

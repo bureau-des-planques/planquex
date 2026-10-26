@@ -93,7 +93,7 @@ coup, c'est un mensonge. Si la build était fausse, on monte la version et on re
 | Endroit | Ce qu'il porte | Qui le lit |
 |---|---|---|
 | **La release GitHub** | le journal complet, daté, avec le message aux testeurs | le dépôt, l'historique, `npm run notes:versions` |
-| **`/nouveautés`** (dans le jeu) | la version courante mise en avant, puis l'historique | **l'invité**, sans compte, sans sortir du jeu |
+| **`/feuille-de-route`** (dans le jeu) | la version courante mise en avant, puis l'historique — et, depuis D-097 (3), l'étape en cours, les critères de sortie, les jalons et ce qui est prévu | **l'invité**, sans compte, sans sortir du jeu |
 
 **Pourquoi le fichier de données est embarqué au build et pas lu en direct** : le dépôt est
 **privé**, l'API GitHub répond `404` sans jeton (mesuré le 24/10/2026), et un jeton dans le
@@ -137,4 +137,4 @@ entre dans la note du jeu : ne pas en créer sans raison.
 - **Ne pas** renommer un tag publié : on monte la version.
 - Les testeurs citent **ce que Réglages affiche** (`Alpha · 0.1.2`) : c'est ce que
   `docs/ALPHA-TESTEURS.md` leur demande de recopier, et c'est aussi le libellé mis en avant
-  sur `/nouveautés`.
+  sur `/feuille-de-route`.

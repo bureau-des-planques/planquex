@@ -30,9 +30,15 @@ const EXCEPTIONS = [
   'src/renommages.test.ts'
 ];
 
-/** Les fichiers des dossiers donnés qui portent encore un ancien nom, triés. */
-function references(root: string, dossiers: readonly string[], exceptions: readonly string[] = []): string[] {
-  const trouvees: string[] = [];
+/** Un fichier trouvé : son chemin **relatif** (séparateur `/`) et son chemin sur le disque. */
+interface Fichier {
+  relatif: string;
+  chemin: string;
+}
+
+/** Les fichiers des dossiers donnés, récursivement, hors exceptions nommées. */
+function fichiers(root: string, dossiers: readonly string[], exceptions: readonly string[] = []): Fichier[] {
+  const trouves: Fichier[] = [];
   const parcourir = (dossier: string) => {
     for (const entree of readdirSync(dossier, { withFileTypes: true })) {
       const chemin = join(dossier, entree.name);
@@ -41,16 +47,62 @@ function references(root: string, dossiers: readonly string[], exceptions: reado
         continue;
       }
       const relatif = relative(root, chemin).split(sep).join('/');
-      if (exceptions.includes(relatif)) continue;
-      const texte = readFileSync(chemin, 'utf8');
-      for (const nom of ANCIENS_NOMS) {
-        if (texte.includes(nom)) trouvees.push(`${relatif} : ${nom}`);
-      }
+      if (!exceptions.includes(relatif)) trouves.push({ relatif, chemin });
     }
   };
   for (const dossier of dossiers) {
     const chemin = join(root, dossier);
     if (existsSync(chemin)) parcourir(chemin);
+  }
+  return trouves;
+}
+
+/** Les fichiers des dossiers donnés qui portent encore un ancien nom, triés. */
+function references(root: string, dossiers: readonly string[], exceptions: readonly string[] = []): string[] {
+  const trouvees: string[] = [];
+  for (const { relatif, chemin } of fichiers(root, dossiers, exceptions)) {
+    const texte = readFileSync(chemin, 'utf8');
+    for (const nom of ANCIENS_NOMS) {
+      if (texte.includes(nom)) trouvees.push(`${relatif} : ${nom}`);
+    }
+  }
+  return trouvees.sort();
+}
+
+/**
+ * **Les mots que D-075 et D-083 ont retirés ne reviennent pas à l'écran** (#220).
+ *
+ * D-026 avait nommé le Deck « Chariot », la Collection « Parc » et le Banc « Rack » ; D-075
+ * puis D-083 ont rendu au jeu ses mots du réel, et l'écran du Deck disait encore « Chariots
+ * proposés » en 0.1.11. La couche d'écran (`src/pages`, `src/components`) est celle que lit
+ * l'invité : c'est là que le contrôle mord, et pas dans le moteur, qui garde ses valeurs.
+ *
+ * Deux **tokens** restent légitimes, et sont blanchis avant la recherche — chacun avec sa raison :
+ * - `'rack'` entre guillemets : la **valeur du moteur** (`target`/`slot`), que D-083 dit de ne
+ *   pas renommer (`src/game/engine.ts`) ;
+ * - `/parc` et `/chariot` : les **anciennes adresses**, qui redirigent (D-075) — `Introuvable`
+ *   les cite pour expliquer qu'on n'arrive pas dessus, comme `src/redirections.ts`.
+ */
+const MOTS_RETIRES = [
+  { mot: 'Chariot', motif: /\bchariots?\b/i },
+  { mot: 'Rack', motif: /\bracks?\b/i },
+  { mot: 'Parc', motif: /\bparcs?\b/i }
+] as const;
+
+const TOKENS_LEGITIMES = [/'rack'/g, /"rack"/g, /\/parc\b/g, /\/chariot\b/g];
+
+/** Les écrans : la couche que lit l'invité. */
+const ECRANS = ['src/pages', 'src/components'] as const;
+
+/** Les fichiers d'écran qui portent encore un mot retiré, `chemin : mot`, triés. */
+function motsRetires(root: string, dossiers: readonly string[] = ECRANS): string[] {
+  const trouvees: string[] = [];
+  for (const { relatif, chemin } of fichiers(root, dossiers)) {
+    let texte = readFileSync(chemin, 'utf8');
+    for (const legitime of TOKENS_LEGITIMES) texte = texte.replace(legitime, '');
+    for (const { mot, motif } of MOTS_RETIRES) {
+      if (motif.test(texte)) trouvees.push(`${relatif} : ${mot}`);
+    }
   }
   return trouvees.sort();
 }
@@ -79,6 +131,39 @@ describe('les anciens noms de la boîte à idées ne reviennent pas (#210, D-097
       expect(references(bac, ['src', 'scripts'], ['scripts/contrat.mjs'])).toEqual([
         'scripts/mur.mjs : boite-a-idees',
         'src/pages/Retour.tsx : BoiteAIdees'
+      ]);
+    } finally {
+      rmSync(bac, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('les mots retirés du vocabulaire ne reviennent pas à l’écran (#220, D-075, D-083)', () => {
+  it('ni Chariot, ni Rack, ni Parc dans src/pages et src/components', () => {
+    expect(motsRetires(RACINE)).toEqual([]);
+  });
+
+  it('le contrôle mord : un écran qui réemploie un mot est trouvé, ses tokens légitimes non', () => {
+    const bac = mkdtempSync(join(tmpdir(), 'vocabulaire-'));
+    try {
+      mkdirSync(join(bac, 'src', 'pages'), { recursive: true });
+      mkdirSync(join(bac, 'src', 'components'), { recursive: true });
+      // Le défaut de 0.1.11, tel quel : c'est lui que le contrôle doit voir.
+      writeFileSync(join(bac, 'src', 'pages', 'Deck.tsx'), "<h2>Chariots proposés</h2>\n");
+      writeFileSync(
+        join(bac, 'src', 'components', 'Banc.tsx'),
+        'Le Planqué du Rack reçoit le café, et le Parc le montre.\n'
+      );
+      // Les deux tokens gardés exprès : la valeur du moteur, les anciennes adresses.
+      writeFileSync(
+        join(bac, 'src', 'pages', 'Battle.moteur.test.tsx'),
+        "const ability = { target: 'rack' };\n// /parc et /chariot redirigent vers /collection et /deck.\n"
+      );
+
+      expect(motsRetires(bac)).toEqual([
+        'src/components/Banc.tsx : Parc',
+        'src/components/Banc.tsx : Rack',
+        'src/pages/Deck.tsx : Chariot'
       ]);
     } finally {
       rmSync(bac, { recursive: true, force: true });

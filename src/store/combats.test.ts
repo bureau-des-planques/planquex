@@ -213,3 +213,28 @@ describe('envoyerCombat — silencieux, et jamais bloquant (#173)', () => {
     expect(ecrire).not.toHaveBeenCalled();
   });
 });
+
+describe('le volume d’une trace (#173 : « sur 20 combats simulés »)', () => {
+  /**
+   * Le ticket demande un chiffre, pas une impression. Un combat enregistré est une **petite**
+   * donnée (graine + deux Decks + types de café + journal) : la borne large ci-dessous n'est
+   * pas le sujet — elle attrape une dérive (un champ d'état qui partirait en entier, par
+   * exemple), et la valeur mesurée est écrite dans le commentaire de fermeture du ticket.
+   */
+  it('mesure la taille d’une ligne de combat sur 20 graines', () => {
+    const tailles: number[] = [];
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const { state, decks } = combatSolo(seed);
+      const ligne = ligneDe(combatTermine(state, null, decks)!);
+      tailles.push(new TextEncoder().encode(JSON.stringify(ligne)).length);
+    }
+    const moyenne = Math.round(tailles.reduce((a, b) => a + b, 0) / tailles.length);
+    const max = Math.max(...tailles);
+    console.log(
+      `[#173] combat enregistré : moyenne ${moyenne} o, max ${max} o, sur ${tailles.length} combats`
+    );
+
+    expect(moyenne).toBeGreaterThan(0);
+    expect(max).toBeLessThan(64 * 1024);
+  });
+});

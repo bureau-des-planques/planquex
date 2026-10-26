@@ -5,7 +5,7 @@ import { Deck } from './Deck';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS } from '@/data';
-import { CHARIOTS } from '@/data/chariots';
+import { DECKS_PROPOSES } from '@/data/decks-proposes';
 import { deckLegal } from '@/game/deck';
 
 describe('Deck — écran du Deck', () => {
@@ -34,20 +34,28 @@ describe('Deck — écran du Deck', () => {
     expect(screen.getByText(/Proposition automatique/i)).toBeInTheDocument();
   });
 
-  it('charge un Chariot proposé en un geste : 20 cartes légales et ses types de café, sans Collection', () => {
+  it('nomme la section « Decks proposés », sans le mot retiré par D-075', () => {
+    renderWithStore(<Deck />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const section = screen.getByRole('heading', { name: /Decks proposés/i }).closest('section') as HTMLElement;
+    expect(within(section).getByText(/Des Decks prêts à jouer/)).toBeInTheDocument();
+    // Le mot retiré par D-075 ne revient pas à l'écran : c'est `src/renommages.test.ts` qui le garde.
+  });
+
+  it('charge un Deck proposé en un geste : 20 cartes légales et ses types de café, sans Collection', () => {
     renderWithStore(<Deck />, { deck: [], owned: {}, tutorielVu: true, pasAPasCombatVu: true });
-    const chariot = CHARIOTS[0];
+    const deckPropose = DECKS_PROPOSES[0];
 
-    expect(screen.getByText(chariot.strategie)).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(chariot.faiblesse.slice(0, 20)))).toBeInTheDocument();
+    expect(screen.getByText(deckPropose.strategie)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(deckPropose.faiblesse.slice(0, 20)))).toBeInTheDocument();
 
-    const item = screen.getByText(chariot.name).closest('li') as HTMLElement;
+    const item = screen.getByText(deckPropose.name).closest('li') as HTMLElement;
     fireEvent.click(within(item).getByRole('button', { name: /Charger/i }));
 
     const state = useStore.getState();
-    expect(state.deck).toEqual([...chariot.cartes]);
+    expect(state.deck).toEqual([...deckPropose.cartes]);
     expect(deckLegal(state.deck).ok).toBe(true);
-    expect(state.cafeTypes).toEqual([...chariot.cafeTypes]);
+    expect(state.cafeTypes).toEqual([...deckPropose.cafeTypes]);
   });
 
   it('permet de cocher et décocher un type de café via le groupe café-picker', () => {

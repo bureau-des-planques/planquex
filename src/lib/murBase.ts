@@ -40,9 +40,14 @@
  *
  * **La place sur le tableau (#185)** : la base porte `position_x`, `position_y` et
  * `position_angle`, et sa politique laisse chacun déplacer **ses** post-its. `deplacerPostit`
- * est ce geste — le mode de placement de l'écran n'exporte donc plus un fichier quand le mur
- * vient de la base. Et à la pose, `positionDepuisId` évite les places déjà prises : un
- * post-it neuf ne se colle plus sur le texte d'un autre (D-068).
+ * est ce geste — le mode de placement de l'écran n'exporte plus aucun fichier (D-097 (6),
+ * #215). Et à la pose, `positionDepuisId` évite les places déjà prises : un post-it neuf ne
+ * se colle plus sur le texte d'un autre (D-068).
+ *
+ * **Le repère du suivi (#211, D-097 (5))** : ouvrir la page **Le suivi** pose `vu_le` au
+ * compte, par `public.marquer_comite_vu()` (migration `0008`) — **jamais** un `update` de
+ * `comptes`, dont la RLS ne distingue pas les colonnes. Sans base configurée, le geste est
+ * inerte : on ne contacte rien, et il n'y a pas d'alerte (D-097 (5)).
  */
 import {
   clientMur,
@@ -968,4 +973,182 @@ export async function posterPostit(
   }
   // Il est à moi : pas de pouce sur mon propre post-it (#137).
   return { ...postits[0], votes: { up: 0, down: 0, mon: null }, mien: true };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Le repère du suivi (#211, D-097 (5), migration 0008)
+// ---------------------------------------------------------------------------------------------
+
+/** Un refus de la base sur le repère, dit en français. */
+export function messageDeRepere(message: string): string {
+  if (/comite_vu_sans_compte/i.test(message)) {
+    return 'Le repère du suivi demande un compte : sans compte, il n’y a rien à marquer.';
+  }
+  if (/permission denied|insufficient_privilege/i.test(message)) {
+    return 'La base refuse ce repère : ton compte ne peut pas l’écrire.';
+  }
+  return `Le repère du suivi n’a pas pu être posé (${message}).`;
+}
+
+/**
+ * Pose le repère du suivi au compte de la session : c'est ce qui remet le compteur du
+ * comité à zéro quand la page **Le suivi** s'ouvre (D-097 (5)).
+ *
+ * Le geste passe par la fonction `marquer_comite_vu()` (0008), et **pas** par un `update` :
+ * une politique RLS ne distingue pas les colonnes, donc donner `comptes.vu_le` au rôle
+ * `authenticated` rouvrirait `etat` et `raison` à leur propriétaire, que la 0005 réserve à
+ * l'administration (le même raisonnement que `deplacer_postit`, D-092).
+ *
+ * La fonction vise **`auth.uid()`** : le client ne passe aucun identifiant, donc il ne peut
+ * pas marquer le repère d'un autre. Sans base configurée, rien n'est contacté et la réponse
+ * est `null` — le repli inerte de D-097 (5). Un compte absent est un refus **nommé** de la
+ * base, traduit par `messageDeRepere` : la page le dit sans casser le suivi.
+ */
+export async function marquerComiteVu(
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+): Promise<string | null> {
+  const chargerClient = options.chargerClient ?? clientMur;
+  const client = await chargerClient();
+  if (!client) return null;
+
+  const { data, error } = await client.rpc('marquer_comite_vu');
+  if (error) throw new Error(messageDeRepere(error.message));
+  return typeof data === 'string' && data ? data : null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Le compteur « choses à voir » (#212, D-097 (5))
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Deux dates de la base : la première est-elle **strictement postérieure** à la seconde ?
+ * `false` dès que l'une des deux est illisible : un compteur ne crie pas pour une date qu'il
+ * ne sait pas lire. Les deux viennent de PostgreSQL en ISO 8601 ; `Date.parse` accepte `Z`
+ * comme `+00:00`.
+ *
+ * Sert deux fois au compteur : comparer un mouvement au **repère** `vu_le`, et comparer
+ * `updated_at` à `created_at` (un post-it neuf ne compte pas, #239).
+ */
+export function estApres(date: unknown, depuis: unknown): boolean {
+  if (typeof date !== 'string' || typeof depuis !== 'string') return false;
+  const quand = Date.parse(date);
+  const reference = Date.parse(depuis);
+  return Number.isFinite(quand) && Number.isFinite(reference) && quand > reference;
+}
+
+/**
+ * **Mes** post-its dont le **statut** a bougé depuis le repère, et leurs ids — les ids
+ * servent à lire leurs commentaires en une seule requête.
+ *
+ * `updated_at` n'est posé que par le déclencheur du statut (0008) : corriger son texte ou
+ * ranger son post-it ne réveille donc pas le compteur, ce qui est la règle de D-097 (5).
+ *
+ * **`updated_at` seul ne suffit pas** (#239) : son défaut est `now()`, donc un post-it que je
+ * viens de poser porte `updated_at = created_at` — postérieur au repère, mais son statut n'a
+ * jamais bougé. D-097 (5) ne compte que les statuts **changés** : il faut donc aussi que
+ * `updated_at` soit postérieur à `created_at`. Pas de colonne nouvelle, le déclencheur de
+ * 0008 ne datant que le statut (l'insertion ne le déclenche pas).
+ */
+export function lireMouvements(
+  lignes: unknown,
+  repere: string | null,
+): { ids: string[]; mouvements: number } {
+  const ids: string[] = [];
+  let mouvements = 0;
+  if (!Array.isArray(lignes) || repere === null) return { ids, mouvements };
+
+  for (const ligne of lignes) {
+    if (!estObjet(ligne) || typeof ligne.id !== 'string' || !ligne.id) continue;
+    ids.push(ligne.id);
+    // Les deux conditions, dans cet ordre : le statut a bougé **et** ce mouvement est plus
+    // récent que mon repère — un post-it que je viens de poser ne compte pas.
+    if (estApres(ligne.updated_at, ligne.created_at) && estApres(ligne.updated_at, repere)) {
+      mouvements += 1;
+    }
+  }
+  return { ids, mouvements };
+}
+
+/**
+ * Les **commentaires des autres** arrivés sur mes post-its depuis le repère. Le mien ne
+ * compte pas : répondre à son propre post-it n'apprend rien de neuf (D-097 (5)) — c'est la
+ * règle que `npm run garde-fous` fait mordre (#212), et une pastille qui ne retombe jamais
+ * quand on se relit serait du bruit, pas un signal.
+ */
+export function compterCommentairesDesAutres(
+  lignes: unknown,
+  repere: string | null,
+  identite: string,
+): number {
+  if (!Array.isArray(lignes) || repere === null) return 0;
+  let nombre = 0;
+  for (const ligne of lignes) {
+    if (!estObjet(ligne)) continue;
+    if (ligne.auteur === identite) continue;
+    if (estApres(ligne.created_at, repere)) nombre += 1;
+  }
+  return nombre;
+}
+
+/**
+ * Le nombre de « choses à voir » du comité depuis mon repère `vu_le` (D-097 (5), #212) :
+ * **mes** post-its dont le statut a changé, et les **commentaires des autres** sur eux.
+ *
+ * Rend **`null` sans base configurée** — le repli inerte de `marquerComiteVu` : l'alpha
+ * fonctionne sans backend (D-058), et il n'y a alors aucune alerte à porter. Une base
+ * configurée qui échoue **lève** : l'appelant décide de ne rien afficher, mais il le sait.
+ *
+ * **Trois lectures, et jamais une par post-it** (le N+1 que #212 interdit) :
+ *
+ * 1. mon repère — `comptes.vu_le`, ma seule ligne étant lisible (0005) ;
+ * 2. **mes** post-its — la vue `postits_avec_votes`, filtrée par `auteur` côté base ;
+ * 3. les commentaires de **tous** mes post-its — un `in` sur leurs ids, filtré en mémoire
+ *    par la date et par l'auteur (le repère est une donnée de mon compte, pas de la table
+ *    lue : il n'y a pas de colonne à comparer dans la requête).
+ *
+ * Sans repère lisible, le compte est **0** : le repère se pose à l'ouverture du suivi
+ * (`marquerComiteVu`), et un compteur ne crie pas pour une donnée qu'il n'a pas lue.
+ */
+export async function compterChosesAVoir(
+  options: { chargerClient?: () => Promise<ClientMur | null> } = {},
+): Promise<number | null> {
+  const chargerClient = options.chargerClient ?? clientMur;
+  const client = await chargerClient();
+  if (!client) return null;
+
+  const identite = await identiteAppareil(chargerClient);
+  if (!identite) throw new Error('Aucune session : la base refuse de compter le comité.');
+
+  const { data: comptes, error: erreurRepere } = await client
+    .from('comptes')
+    .select('vu_le')
+    .eq('id', identite);
+  if (erreurRepere) {
+    throw new Error(`Lecture du repère du comité impossible : ${erreurRepere.message}`);
+  }
+  const mienne = Array.isArray(comptes) ? comptes[0] : comptes;
+  const repere = estObjet(mienne) && typeof mienne.vu_le === 'string' ? mienne.vu_le : null;
+  if (repere === null) return 0;
+
+  const { data: miens, error: erreurPostits } = await client
+    .from('postits_avec_votes')
+    // `created_at` sert à distinguer un statut **changé** d'un post-it **neuf** (#239).
+    .select('id, created_at, updated_at')
+    .eq('auteur', identite);
+  if (erreurPostits) {
+    throw new Error(`Lecture de mes post-its impossible : ${erreurPostits.message}`);
+  }
+
+  const { ids, mouvements } = lireMouvements(miens ?? [], repere);
+  if (ids.length === 0) return mouvements;
+
+  const { data: commentaires, error: erreurCommentaires } = await client
+    .from('commentaires')
+    .select('postit_id, auteur, created_at')
+    .in('postit_id', ids);
+  if (erreurCommentaires) {
+    throw new Error(`Lecture des commentaires de mes post-its impossible : ${erreurCommentaires.message}`);
+  }
+
+  return mouvements + compterCommentairesDesAutres(commentaires ?? [], repere, identite);
 }

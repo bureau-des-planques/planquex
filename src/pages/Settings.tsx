@@ -216,7 +216,10 @@ export function Settings() {
 
       <section className="section panel">
         <h2>Traces de combat</h2>
-        <p className="muted">
+        {/* `max-w-[64ch]` : sur toute la largeur du panneau, les lignes passaient 150
+            caractères (`impeccable`, line-length, #208) — illisible et hors du gabarit de
+            lecture des autres textes de l'écran. */}
+        <p className="muted max-w-[64ch]">
           Les parties solo terminées sont gardées sous ton compte — la graine, les deux
           Decks, les types de café et le journal des coups — pour voir comment le jeu se joue
           et l’améliorer. Ni ton nom ni aucun texte libre n’est envoyé ; seul ton identifiant
@@ -258,7 +261,7 @@ export function Settings() {
           <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si
           quelque chose ne va pas : c’est lui qui dit quelle version tu as sous les yeux.
           Ce qu’elle contient, et ce que les précédentes ont changé, se lit sur{' '}
-          <Link to="/feuille-de-route">la page des nouveautés</Link>.
+          <Link to="/feuille-de-route">la feuille de route</Link>.
         </p>
       </section>
     </div>

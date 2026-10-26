@@ -1,5 +1,5 @@
 /**
- * La machine, vue par le tableau de bord des serveurs (#227, D-101).
+ * La machine, vue par le tableau de bord des serveurs (#227, D-102).
  *
  * C'est la **seule couture** de l'outil qui touche à la machine — et elle est coupée en deux
  * natures, exprès :

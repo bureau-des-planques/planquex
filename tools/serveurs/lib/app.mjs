@@ -1,5 +1,5 @@
 /**
- * Le serveur HTTP du tableau de bord des serveurs (#227, D-101).
+ * Le serveur HTTP du tableau de bord des serveurs (#227, D-102).
  *
  * Un `node:http` lié **à `127.0.0.1` seule**, qui sert une page statique (HTML + `fetch`, aucun
  * build) et une API JSON. Le **jeton** est exigé comme au poste de pilotage (`tools/admin/`) :

@@ -353,3 +353,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `rh-directeur-talents` · modèle `NARWHAL` · graine `830636382` · `rh-directeur-talents.webp`
 - 2026-10-26 · `rh-gestionnaire-formation` · modèle `NARWHAL` · graine `1592319664` · `rh-gestionnaire-formation.webp`
 - 2026-10-26 · `rh-responsable-formation` · modèle `NARWHAL` · graine `300403632` · `rh-responsable-formation.webp`
+- 2026-10-26 · `direction-auditeur-direction` · **fichier renommé** avec son id (D-096 (4)), graine reprise de la production du 25/10/2026 `direction-auditeur-interne` · graine `1811249482` · `direction-auditeur-direction.webp`
