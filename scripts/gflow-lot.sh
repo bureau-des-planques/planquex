@@ -395,7 +395,10 @@ for base in bases:
             graine = "" if graine in (None, 0) else str(graine)
             prompt = (prompt or "").replace("\t", " ").replace("\n", " ")
             modele = (modele or "").strip()
-            print("%s\t%s\t%s\t%s" % (os.path.realpath(chemin), graine, modele, prompt))
+            # Séparateur \x1f (unit separator) et pas une tabulation : `read` traite
+            # la tabulation comme un blanc, donc une graine vide faisait glisser les
+            # champs et le modèle tombait dans la graine (`int('NARWHAL')`, 26/10).
+            print("%s\x1f%s\x1f%s\x1f%s" % (os.path.realpath(chemin), graine, modele, prompt))
     except Exception:
         pass
     finally:
@@ -421,7 +424,7 @@ done < "$cartes_fichier"
 declare -A graine_du_fichier=()
 declare -A modele_du_fichier=()
 declare -A prompt_du_fichier=()
-while IFS=$'\t' read -r chemin graine modele prompt; do
+while IFS=$'\x1f' read -r chemin graine modele prompt; do
   [[ -z "$chemin" ]] && continue
   graine_du_fichier["$chemin"]="$graine"
   modele_du_fichier["$chemin"]="$modele"

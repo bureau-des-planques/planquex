@@ -12,7 +12,11 @@ import { CardView } from './CardView';
  */
 const planques = ALL_CARDS.filter(isPlanque);
 const avecArt = planques.find((carte) => carte.art);
-const sansArt = planques.find((carte) => !carte.art && !carte.ex);
+// Depuis le 26/10/2026, **toutes** les cartes de base ont une illustration : le cas
+// « sans illustration » n'existe plus dans le catalogue, mais le **repli** doit rester
+// gardé (une image peut manquer au registre, ou le champ être retiré). On le fabrique
+// donc à partir d'une carte réelle, au lieu de dépendre d'une carte qui n'en a pas.
+const sansArt = avecArt ? { ...avecArt, art: undefined } : undefined;
 const comex = planques.find((carte) => carte.ex);
 const action = ALL_CARDS.find((carte) => !isPlanque(carte));
 
