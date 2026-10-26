@@ -274,6 +274,11 @@ h2 {
   align-items: center;
   display: flex;
   gap: 0.65rem;
+  /* L'en-tête se partage entre trois volontés : la marque, le pseudo, l'engrenage (#213).
+     Le pseudo et l'engrenage gardent leur largeur (`flex: none`) ; **c'est la marque qui
+     cède** quand la fenêtre se resserre, en ellipse sur le nom du jeu — sans quoi
+     l'engrenage prendrait la place du pseudo à 360 px. */
+  min-width: 0;
 }
 
 .brand__mark {
@@ -282,6 +287,7 @@ h2 {
   border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px rgb(230 182 76 / 18%), 0 6px 18px rgb(0 0 0 / 42%);
   display: grid;
+  flex: none;
   height: 40px;
   place-items: center;
   width: 40px;
@@ -297,11 +303,38 @@ h2 {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  min-width: 0;
+}
+
+.brand__text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand__text span {
   color: var(--text-muted);
   font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Sous 400 px, l'accroche de la marque est la première à céder (#213). Coupée en
+   « Le TCG de l'ate… », elle n'apprend rien, alors que le nom du jeu, le pseudo et
+   l'engrenage restent. La fenêtre de capture de D-060 (420 px) garde les deux lignes. */
+@media (max-width: 400px) {
+  .brand__text span {
+    display: none;
+  }
+}
+
+/* Le pseudo et l'engrenage, à droite de l'en-tête : deux blocs insécables. */
+.topbar__actions {
+  align-items: center;
+  display: flex;
+  flex: none;
+  gap: 0.4rem;
 }
 
 .topbar__user {
@@ -317,6 +350,36 @@ h2 {
   padding: 0.35rem 0.8rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* L'engrenage des Réglages (D-097 (4), #213) : un lien, pas un bouton — il **navigue**,
+   et le `<Link>` donne le clic au clavier et le « ouvrir dans un onglet » gratuits. La
+   cible de doigt fait 44 px (même règle que le menu du combat, SPEC-COMBAT-UI §5.1). */
+.topbar__gear {
+  align-items: center;
+  border-radius: 999px;
+  color: var(--text-muted);
+  display: inline-flex;
+  flex: none;
+  height: 44px;
+  justify-content: center;
+  /* La cible fait 44 px de **boîte** sans faire grandir l'en-tête : 4 px rognés de chaque
+     côté l'alignent sur la marque (40 px), sinon le combat perd 4 px de hauteur et la garde
+     de `npm run capturer` (D-094) les voit. */
+  margin-block: -4px;
+  text-decoration: none;
+  width: 44px;
+}
+
+.topbar__gear:hover,
+.topbar__gear:focus-visible {
+  background: var(--bg-raised);
+  color: var(--text);
+}
+
+.topbar__gear:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .main {
@@ -3610,35 +3673,35 @@ h2 {
   }
 }
 
-/* ---------- Nouveautés — les notes de version dans le jeu ---------- */
+/* ---------- La feuille de route — la version, l'étape, les jalons (D-097) ---------- */
 
 /* Le bloc de la version courante est **mis en avant** : c'est ce qu'un invité vient lire,
    l'historique vient après. La mise en avant passe par la **chaleur** du panneau (fond et
    bordure teintés d'or, titre en display) et **pas** par un liseré sur un côté — c'est le
    tell d'UI générée qu'Impeccable refuse, et il ne dit rien de plus. Jetons uniquement,
    aucun hex (D-035). */
-.nouveautes__courante {
+.feuille-de-route__courante {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 46%),
     var(--bg-raised);
   border-color: color-mix(in srgb, var(--gold) 42%, var(--line-strong));
 }
 
-.nouveautes__courante .nouveautes__titre {
+.feuille-de-route__courante .feuille-de-route__titre {
   color: var(--gold-soft);
   font-family: var(--font-display);
 }
 
-.nouveautes__label {
+.feuille-de-route__label {
   margin: 0.5rem 0 0.75rem;
 }
 
-.nouveautes__titre {
+.feuille-de-route__titre {
   font-size: 0.95rem;
   margin: 0.5rem 0;
 }
 
-.nouveautes__liste {
+.feuille-de-route__liste {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
