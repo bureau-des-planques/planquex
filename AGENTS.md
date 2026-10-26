@@ -6,7 +6,7 @@
 
 ## 1. Règles d'or
 
-1. Lire ce fichier et `docs/DECISIONS.md` avant toute modification.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (113 décisions, 36 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier le **dossier frère des versions abandonnées** (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
@@ -19,7 +19,7 @@
 
 En cas de conflit, appliquer cet ordre :
 
-1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale.
+1. **`docs/DECISIONS.md`** — décisions actées, datées. Autorité finale. Son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision, dérivé par `npm run index:decisions`) est la porte d'entrée : on y trouve le `D-NNN`, puis on ouvre sa ligne.
 2. **`AGENTS.md` §4 et §5** — la table des règles de jeu et les règles d'écriture des cartes. Chaque ligne de §4 est **sourcée** par D-034 : les captures de l'application (`docs/preuves/astuces-*`) et la recherche documentée (`docs/preuves/regles-*`). Si les deux se contredisent, **la capture l'emporte** et l'écart se signale.
 3. **`docs/CARD-SPEC.md` et `docs/FACTIONS.md`** — structure du set, courbes, factions, nommage.
 4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus entre le tableau §4 et le jeu de référence 2026, avec leurs sources. Décrit les écarts **et leurs verdicts** (O-008 → D-020, O-009 → D-022) ; il ne reste plus d'écart ouvert sur §4 (O-014 tranché par D-034) : ne pas s'en servir pour modifier une règle sans décision datée.

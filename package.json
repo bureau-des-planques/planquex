@@ -27,7 +27,8 @@
     "admin": "node tools/admin/serveur.mjs",
     "serveurs": "node tools/serveurs/serveur.mjs",
     "detect:ui": "impeccable detect src/",
-    "detect:ui:page": "node scripts/detect-ui-pages.mjs"
+    "detect:ui:page": "node scripts/detect-ui-pages.mjs",
+    "index:decisions": "node scripts/index-decisions.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
