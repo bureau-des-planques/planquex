@@ -3808,6 +3808,16 @@ h2 {
    les points ne se distinguent plus (constaté sur la capture du 24/10/2026). */
 .liste-points {
   list-style: disc;
+  /* La **largeur de lecture**, déclarée une fois pour toutes les listes (feuille de route
+     et confidentialité) plutôt que recopiée à chaque section — sans elle, un point de note
+     courait sur ~170 caractères, deux fois la limite d'`impeccable` (`line-length`, trois
+     constats sur `/feuille-de-route`, #236).
+     **58ch et non 64ch comme les Réglages** (#208, `max-w-[64ch]`) : ces listes-ci sont en
+     `text-[0.92rem]`, et `ch` suit la taille de la police — 64ch y rendait encore une ligne
+     de 87 caractères, que le détecteur compte comme trop longue. 58ch ≈ 538 px, la largeur
+     des paragraphes voisins (`max-w-[62ch]`, 551 px mesurés), pour des lignes sous 80
+     caractères. Mesuré le 26/10/2026 : 3 constats → 0. */
+  max-width: 58ch;
 }
 
 .liste-points li::marker {

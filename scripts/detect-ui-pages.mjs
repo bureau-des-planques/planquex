@@ -90,7 +90,7 @@ export const ECRANS = [
  *
  * **Étendu le 26/10/2026 (#234)** aux sept écrans publics et de compte, chacun **mesuré**
  * par `npm run build && npm run detect:ui:page` avant d'écrire son compte — aucun `null`,
- * aucun écran sauté sans le dire. **Total plafonné : 5** (2 + 3, ci-dessous).
+ * aucun écran sauté sans le dire. **Total plafonné : 2** (un seul écran, ci-dessous).
  *
  * - `/comite/suivi`, `/connexion`, `/attente`, `/confidentialite`, `/administration` : **0**.
  *   Les deux écrans de compte mesurés ici sont ceux d'un alpha **sans base** — leur état
@@ -98,11 +98,14 @@ export const ECRANS = [
  *   un backend : ce contour est dit, pas caché.
  * - `/comite` : **2** `nested-cards` (un post-it est une carte dans une carte) — ticket
  *   **#235**.
- * - `/feuille-de-route` : **3** `line-length` (listes trop larges à lire) — ticket **#236**.
  *
- * Les deux ne sont **pas** corrigés ici : #234 étend la mesure, il n'habille pas les écrans.
- * Le plafond est leur compte mesuré, pas un acquittement : le faire baisser est le travail
- * de #235 et #236, et la baisse se fait dans le même commit que la correction (#208).
+ * **`/feuille-de-route` : 3 → 0 le 26/10/2026 (#236)** — les points de note couraient sur
+ * ~170 caractères ; `.liste-points` porte maintenant sa **largeur de lecture** (`58ch`, une
+ * seule règle pour les listes de la feuille de route et de la confidentialité), et le
+ * plafond baisse dans le même commit que la correction (#208). Re-mesuré : **0**.
+ *
+ * La baisse du plafond se fait **dans le même commit que la correction** (#208) : le
+ * plafond est le compte mesuré, pas un acquittement.
  */
 export const BASELINE = {
   '/': 0,
@@ -112,7 +115,7 @@ export const BASELINE = {
   '/settings': 0,
   '/comite': 2,
   '/comite/suivi': 0,
-  '/feuille-de-route': 3,
+  '/feuille-de-route': 0,
   '/connexion': 0,
   '/attente': 0,
   '/confidentialite': 0,
