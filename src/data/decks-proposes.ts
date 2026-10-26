@@ -1,20 +1,20 @@
 import type { CafeType, Vivier } from './types';
 
 /**
- * Les **Chariots proposés** (#141, D-063, D-069) : des Decks de 20 cartes que le joueur
- * charge en un geste depuis l'écran Chariot, quelle que soit sa Collection.
+ * Les **Decks proposés** (#141, D-063, D-069) : des Decks de 20 cartes que le joueur
+ * charge en un geste depuis l'écran du Deck, quelle que soit sa Collection.
  *
- * ⚠️ **Les listes sont PROVISOIRES.** D-069 acte le jeu d'archétypes (cinq Chariots, leur
+ * ⚠️ **Les listes sont PROVISOIRES.** D-069 acte le jeu d'archétypes (cinq Decks proposés, leur
  * stratégie, leur faiblesse) mais réserve la **fabrication des listes** à après la vague
  * d'illustrations. Ce fichier fournit la mécanique ; les `cartes` sont un brouillon légal
  * et jouable, à refaire une fois les cartes illustrées. Le registre, lui, ne change pas.
  */
-export interface Chariot {
+export interface DeckPropose {
   id: string;
   name: string;
-  /** `MIXTE` : un Chariot qui prend dans deux viviers (D-069 (5)). */
+  /** `MIXTE` : un Deck proposé qui prend dans deux viviers (D-069 (5)). */
   vivier: Vivier | 'MIXTE';
-  /** Les types de café du Chariot (1 à 3, productibles) : ils partent avec lui (#91). */
+  /** Les types de café du Deck proposé (1 à 3, productibles) : ils partent avec lui (#91). */
   cafeTypes: readonly CafeType[];
   /** Ce qu'il fait, en une phrase. */
   strategie: string;
@@ -27,7 +27,7 @@ export interface Chariot {
 /** Répète un id : `x(id, 2)` pour deux exemplaires. */
 const x = (id: string, copies = 1): string[] => Array.from({ length: copies }, () => id);
 
-export const CHARIOTS: readonly Chariot[] = [
+export const DECKS_PROPOSES: readonly DeckPropose[] = [
   {
     id: 'coup-de-marteau',
     name: 'Le coup de marteau',
@@ -125,7 +125,7 @@ export const CHARIOTS: readonly Chariot[] = [
     // comme `SIMULATION_CAFE_TYPES` : c'est elle qui arme le joker incolore.
     cafeTypes: ['ATELIER', 'RH'],
     strategie: 'Le joker incolore : des Intérimaires qui s’adaptent, soutenus par la maintenance de l’Atelier.',
-    faiblesse: 'Les Chariots d’un seul type, plus réguliers et plus rapides.',
+    faiblesse: 'Les Decks d’un seul type, plus réguliers et plus rapides.',
     cartes: [
       ...x('interim-interimaire', 2),
       ...x('interim-interimaire-confirme', 2),
