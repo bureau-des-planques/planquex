@@ -1088,12 +1088,39 @@ describe('le repère du suivi, posé par la fonction (0008, #211, D-097 (5))', (
 describe('le compteur « choses à voir » du comité (#212, D-097 (5))', () => {
   const REPERE = '2026-10-26T10:00:00.000Z';
 
-  /** Ce que la vue rend pour **mes** post-its : `id` et `updated_at`, rien de plus. */
+  /** Ce que la vue rend pour **mes** post-its : `id`, `created_at` et `updated_at`. */
   const MIENS = [
-    { id: 'p-mien-1', updated_at: '2026-10-26T11:00:00.000Z' }, // le statut a bougé
-    { id: 'p-mien-2', updated_at: '2026-10-25T09:00:00.000Z' }, // rien depuis le repère
-    { id: 'p-mien-3', updated_at: '2026-10-26T12:00:00.000Z' } // le statut a bougé
+    // Le statut a bougé : `updated_at` est postérieur à la création **et** au repère.
+    {
+      id: 'p-mien-1',
+      created_at: '2026-10-20T09:00:00.000Z',
+      updated_at: '2026-10-26T11:00:00.000Z'
+    },
+    // Rien depuis le repère, et pas de statut bougé : `updated_at = created_at`.
+    {
+      id: 'p-mien-2',
+      created_at: '2026-10-25T09:00:00.000Z',
+      updated_at: '2026-10-25T09:00:00.000Z'
+    },
+    // Le statut a bougé : postérieur à la création **et** au repère.
+    {
+      id: 'p-mien-3',
+      created_at: '2026-10-21T09:00:00.000Z',
+      updated_at: '2026-10-26T12:00:00.000Z'
+    }
   ];
+
+  /**
+   * Un post-it **neuf** : `updated_at` reçoit `now()` au même instant que `created_at` (0008),
+   * donc les deux dates sont égales. Son statut n'a jamais bougé — D-097 (5) ne compte que
+   * les statuts **changés**, et la pastille ne doit pas crier pour ce que je viens de poser
+   * (#239).
+   */
+  const NEUF = {
+    id: 'p-neuf',
+    created_at: '2026-10-26T11:00:00.000Z',
+    updated_at: '2026-10-26T11:00:00.000Z'
+  };
 
   const COMMENTAIRES = [
     // Un autre, après le repère : compte.
@@ -1137,6 +1164,20 @@ describe('le compteur « choses à voir » du comité (#212, D-097 (5))', () => 
     expect(commentaires[0].filtres).toEqual([
       ['postit_id in', 'p-mien-1,p-mien-2,p-mien-3']
     ]);
+  });
+
+  it('un post-it neuf ne compte pas : son statut n’a jamais bougé (#239)', async () => {
+    const faux = fauxClient({ repere: [{ vu_le: REPERE }], lignes: [NEUF], commentaires: [] });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(0);
+  });
+
+  it('un post-it neuf posé à côté d’un statut changé : 2, pas 3 (#239)', async () => {
+    const faux = fauxClient({
+      repere: [{ vu_le: REPERE }],
+      lignes: [...MIENS, NEUF],
+      commentaires: []
+    });
+    await expect(compterChosesAVoir({ chargerClient: async () => faux.client })).resolves.toBe(2);
   });
 
   it('rend 0 quand rien n’a bougé depuis le repère', async () => {

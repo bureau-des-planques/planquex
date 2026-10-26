@@ -1021,15 +1021,19 @@ export async function marquerComiteVu(
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Une date de la base est-elle **postérieure** au repère ? `false` dès que l'une des deux
- * est illisible : un compteur ne crie pas pour une date qu'il ne sait pas lire. Les deux
- * viennent de PostgreSQL en ISO 8601 ; `Date.parse` accepte `Z` comme `+00:00`.
+ * Deux dates de la base : la première est-elle **strictement postérieure** à la seconde ?
+ * `false` dès que l'une des deux est illisible : un compteur ne crie pas pour une date qu'il
+ * ne sait pas lire. Les deux viennent de PostgreSQL en ISO 8601 ; `Date.parse` accepte `Z`
+ * comme `+00:00`.
+ *
+ * Sert deux fois au compteur : comparer un mouvement au **repère** `vu_le`, et comparer
+ * `updated_at` à `created_at` (un post-it neuf ne compte pas, #239).
  */
-export function estApresLeRepere(date: unknown, repere: unknown): boolean {
-  if (typeof date !== 'string' || typeof repere !== 'string') return false;
+export function estApres(date: unknown, depuis: unknown): boolean {
+  if (typeof date !== 'string' || typeof depuis !== 'string') return false;
   const quand = Date.parse(date);
-  const depuis = Date.parse(repere);
-  return Number.isFinite(quand) && Number.isFinite(depuis) && quand > depuis;
+  const reference = Date.parse(depuis);
+  return Number.isFinite(quand) && Number.isFinite(reference) && quand > reference;
 }
 
 /**
@@ -1038,6 +1042,12 @@ export function estApresLeRepere(date: unknown, repere: unknown): boolean {
  *
  * `updated_at` n'est posé que par le déclencheur du statut (0008) : corriger son texte ou
  * ranger son post-it ne réveille donc pas le compteur, ce qui est la règle de D-097 (5).
+ *
+ * **`updated_at` seul ne suffit pas** (#239) : son défaut est `now()`, donc un post-it que je
+ * viens de poser porte `updated_at = created_at` — postérieur au repère, mais son statut n'a
+ * jamais bougé. D-097 (5) ne compte que les statuts **changés** : il faut donc aussi que
+ * `updated_at` soit postérieur à `created_at`. Pas de colonne nouvelle, le déclencheur de
+ * 0008 ne datant que le statut (l'insertion ne le déclenche pas).
  */
 export function lireMouvements(
   lignes: unknown,
@@ -1050,7 +1060,11 @@ export function lireMouvements(
   for (const ligne of lignes) {
     if (!estObjet(ligne) || typeof ligne.id !== 'string' || !ligne.id) continue;
     ids.push(ligne.id);
-    if (estApresLeRepere(ligne.updated_at, repere)) mouvements += 1;
+    // Les deux conditions, dans cet ordre : le statut a bougé **et** ce mouvement est plus
+    // récent que mon repère — un post-it que je viens de poser ne compte pas.
+    if (estApres(ligne.updated_at, ligne.created_at) && estApres(ligne.updated_at, repere)) {
+      mouvements += 1;
+    }
   }
   return { ids, mouvements };
 }
@@ -1071,7 +1085,7 @@ export function compterCommentairesDesAutres(
   for (const ligne of lignes) {
     if (!estObjet(ligne)) continue;
     if (ligne.auteur === identite) continue;
-    if (estApresLeRepere(ligne.created_at, repere)) nombre += 1;
+    if (estApres(ligne.created_at, repere)) nombre += 1;
   }
   return nombre;
 }
@@ -1118,7 +1132,8 @@ export async function compterChosesAVoir(
 
   const { data: miens, error: erreurPostits } = await client
     .from('postits_avec_votes')
-    .select('id, updated_at')
+    // `created_at` sert à distinguer un statut **changé** d'un post-it **neuf** (#239).
+    .select('id, created_at, updated_at')
     .eq('auteur', identite);
   if (erreurPostits) {
     throw new Error(`Lecture de mes post-its impossible : ${erreurPostits.message}`);

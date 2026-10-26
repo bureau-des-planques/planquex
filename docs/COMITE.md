@@ -180,7 +180,9 @@ Ce qui compte, et **rien d'autre** :
 
 1. **mes** post-its dont le **statut** a changé — la date est `postits.updated_at`, posée par le
    déclencheur du **statut seul** (migration `0008`) : corriger son texte ou ranger son post-it
-   ne réveille pas le compteur ;
+   ne réveille pas le compteur. Un post-it **neuf** ne compte pas non plus : il arrive avec
+   `updated_at = created_at` (le défaut de la 0008), et le compteur exige `updated_at >
+   created_at`, donc un vrai changement de statut (#239) ;
 2. les **commentaires des autres** arrivés sur **mes** post-its — **jamais les miens** : répondre à
    son propre post-it n'apprend rien de neuf, et une pastille qui ne retombe jamais quand on se
    relit serait du bruit (`npm run garde-fous`, entrée #212).
