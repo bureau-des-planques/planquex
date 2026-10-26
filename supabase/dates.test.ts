@@ -262,3 +262,166 @@ describe('sur la vraie base, le comportement attendu tient', () => {
     }
   }, 90_000);
 });
+
+// ---------------------------------------------------------------------------------------------
+// #244 — le chemin par `update` : `created_at` ne se redate pas (migration 0010)
+// ---------------------------------------------------------------------------------------------
+
+/** La 0010, lue paresseusement. */
+function migrationFigee(): string {
+  const trouvee = fichiersMigrations().find((sql) => sql.includes('dates_figees'));
+  if (!trouvee) throw new Error('supabase/migrations/0010_dates_figees.sql introuvable');
+  return trouvee;
+}
+
+/** B commente le post-it de A (date du serveur), puis l'on lit la date posée. */
+async function commentaireDeB(db: Base): Promise<{ id: string; cree: string }> {
+  const issue = await tenter(
+    db,
+    APPAREIL_B,
+    `insert into public.commentaires (postit_id, texte) values ('p-a', 'Pareil chez moi.')
+     returning id, created_at::text as created_at`,
+  );
+  accepte(issue);
+  if (!issue.accepte) throw new Error('commentaire non créé');
+  return { id: String(issue.lignes[0].id), cree: String(issue.lignes[0].created_at) };
+}
+
+/** L'auteur redate son propre commentaire — le geste de #244. */
+const redaterCommentaire = (db: Base, id: string, date: string) =>
+  tenter(
+    db,
+    APPAREIL_B,
+    `update public.commentaires set created_at = $2 where id = $1 returning created_at::text as created_at`,
+    [id, date],
+  );
+
+describe('created_at ne se redate pas par un update (0010, #244)', () => {
+  it('l’auteur d’un commentaire qui écrit created_at = 2030 ne l’obtient pas', async () => {
+    const db = await base();
+    try {
+      await monde(db);
+      const { id, cree } = await commentaireDeB(db);
+      const issue = await redaterCommentaire(db, id, FUTUR);
+      accepte(issue);
+      if (issue.accepte) {
+        expect(issue.lignes[0].created_at).toBe(cree);
+        estHeureDuServeur(issue.lignes[0].created_at);
+      }
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('antidater par un update est rétabli de même', async () => {
+    const db = await base();
+    try {
+      await monde(db);
+      const { id, cree } = await commentaireDeB(db);
+      const issue = await redaterCommentaire(db, id, PASSE);
+      accepte(issue);
+      if (issue.accepte) {
+        expect(issue.lignes[0].created_at).toBe(cree);
+      }
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('corriger le texte de son commentaire fonctionne toujours, et la date reste', async () => {
+    const db = await base();
+    try {
+      await monde(db);
+      const { id, cree } = await commentaireDeB(db);
+      const issue = await tenter(
+        db,
+        APPAREIL_B,
+        `update public.commentaires set texte = 'Corrigé.', created_at = $2
+          where id = $1 returning texte, created_at::text as created_at`,
+        [id, FUTUR],
+      );
+      accepte(issue);
+      if (issue.accepte) {
+        expect(issue.lignes).toHaveLength(1);
+        expect(issue.lignes[0].texte).toBe('Corrigé.');
+        expect(issue.lignes[0].created_at).toBe(cree);
+      }
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('un post-it : created_at est rétabli par la base, même hors du grant de colonnes', async () => {
+    // Le client n'a plus l'`update` de `created_at` sur `postits` (0006) : le déclencheur est
+    // une ceinture. On le joue donc en propriétaire de la table, qui, lui, le peut.
+    const db = await base();
+    try {
+      await monde(db);
+      const avant = await db.query<{ created_at: string }>(
+        `select created_at::text as created_at from public.postits where id = 'p-a'`,
+      );
+      const res = await db.query<{ created_at: string }>(
+        `update public.postits set created_at = $1 where id = 'p-a' returning created_at::text as created_at`,
+        [FUTUR],
+      );
+      expect(res.rows[0].created_at).toBe(avant.rows[0].created_at);
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('la migration est idempotente : rejouée, elle ne lève rien et la garde tient', async () => {
+    const db = await base();
+    try {
+      await monde(db);
+      await db.exec(migrationFigee());
+      const { id, cree } = await commentaireDeB(db);
+      const issue = await redaterCommentaire(db, id, FUTUR);
+      accepte(issue);
+      if (issue.accepte) {
+        expect(issue.lignes[0].created_at).toBe(cree);
+      }
+    } finally {
+      await db.close();
+    }
+  });
+});
+
+describe('le contrôle mord — 0010 neutralisée, la redatation passe', () => {
+  /** Chaque déclencheur est neutralisé seul : la ligne qui rétablit la date est remplacée. */
+  const mutee = (fonction: string) => {
+    const migration = migrationFigee();
+    const motif = `  new.created_at := old.created_at; -- ${fonction}`;
+    expect(migration.split(motif).length - 1, `motif introuvable : ${motif}`).toBe(1);
+    return migrations().replace(migration, () =>
+      migration.replace(motif, '  new.created_at := new.created_at;'),
+    );
+  };
+
+  it('commentaires : déclencheur neutralisé → created_at = 2030 passe', async () => {
+    const db = await base(mutee('commentaires'));
+    try {
+      await monde(db);
+      const { id } = await commentaireDeB(db);
+      const issue = await redaterCommentaire(db, id, FUTUR);
+      accepte(issue);
+      if (issue.accepte) estHeureDuClient(issue.lignes[0].created_at, FUTUR);
+    } finally {
+      await db.close();
+    }
+  }, 90_000);
+
+  it('postits : déclencheur neutralisé → created_at = 2030 passe', async () => {
+    const db = await base(mutee('postits'));
+    try {
+      await monde(db);
+      const res = await db.query<{ created_at: string }>(
+        `update public.postits set created_at = $1 where id = 'p-a' returning created_at`,
+        [FUTUR],
+      );
+      estHeureDuClient(res.rows[0].created_at, FUTUR);
+    } finally {
+      await db.close();
+    }
+  }, 90_000);
+});
