@@ -537,7 +537,7 @@ function Camp({
           place qu'elle occupait — et son chiffre de Stress avec elle. Le bandeau « a craqué »
           et le journal restent les porteurs de l'information sous mouvement réduit. */}
       {craquage && craquage.auPoste && (
-        <div className="craquage__carte" aria-hidden="true">
+        <div className="craquage__carte" data-uid={craquage.uid} aria-hidden="true">
           {craquageDefinition && <CardView card={craquageDefinition} figee plateau />}
         </div>
       )}
@@ -865,6 +865,14 @@ export function Battle() {
    * celle que le jeu a réellement retirée (Vulnérabilité comprise) — jamais le chiffre imprimé
    * sur la carte. La scène n'affiche rien si la cible n'a rien encaissé.
    */
+  /**
+   * **Le coup de grâce** : la cible de la Pression est aussi celle qui craque. La scène joue
+   * alors sa saynète de sortie, et vise le **fantôme** de la carte tombée — elle a déjà quitté
+   * le plateau, mais `craquage__carte` la montre encore une fraction de seconde.
+   */
+  const coupDeGrace = effets.some(
+    (effet) => effet.nature === 'craquage' && effet.uid === effetAttaque?.uidCible
+  );
   const stressEncaisse =
     effets.find((effet) => effet.nature === 'stress' && effet.uid === effetAttaque?.uidCible)?.valeur ??
     0;
@@ -1410,6 +1418,7 @@ export function Battle() {
             carte={carteAttaque}
             attaque={attaqueJouee}
             stress={stressEncaisse}
+            coupDeGrace={coupDeGrace}
             sansMouvement={sansMouvement}
           />
           {/* La piste d'Interventions (#190) sépare les deux camps : elle est **une** seule cible du

@@ -26,6 +26,8 @@ export interface Scene {
   cib: HTMLElement;
   /** Le Stress encaissé par la cible ; 0 pour un coup sans dégât. */
   stress: number;
+  /** La Pression fait craquer la cible : la saynète de sortie joue après l'impact. */
+  coupDeGrace: boolean;
 }
 
 export interface Choregraphie {
@@ -52,6 +54,8 @@ interface Ctx {
    * comprise). Absent quand la cible n'a rien encaissé : la scène n'affiche alors aucun chiffre.
    */
   stress: number;
+  /** La cible craque sur ce coup. */
+  coupDeGrace: boolean;
   /** La pose de l'attaquant pendant une cinématique (centré, agrandi) ; vide sinon. */
   base: string;
 }
@@ -251,6 +255,7 @@ export function choregraphie(
     attaque,
     carte,
     stress: sc.stress,
+    coupDeGrace: sc.coupDeGrace,
     base: "",
   };
   const cle =
@@ -259,7 +264,7 @@ export function choregraphie(
   const cinematique = cinematiqueDe(carte, attaque);
   if (cinematique) preparerVoile();
 
-  const t0 = cinematique ? prelude(ctx, etapes) : 0;
+  const t0 = cinematique ? prelude(ctx, etapes, carte.ex === true) : 0;
   const impact = motifD(ctx, etapes, t0, cle as CleD, cinematique);
 
   const touche = sc.stress > 0;
@@ -271,8 +276,11 @@ export function choregraphie(
       if (cinematique) impactLegendaire(ctx);
     },
   });
+  if (sc.coupDeGrace) sayneteDeSortie(ctx, etapes, impact + 80);
   const finApres = apres(ctx, etapes, impact + 120);
-  const duree = Math.max(impact + 950, finApres);
+  // La saynète de sortie court jusqu'à `impact + 2010` : la séquence doit lui laisser le temps
+  // d'aller au bout, sinon le carton et la formule resteraient en l'air.
+  const duree = Math.max(impact + 950, finApres, sc.coupDeGrace ? impact + 2150 : 0);
   if (cinematique)
     etapes.push({ a: duree - 350, faire: () => retourCinematique(ctx) });
   return { nom: libelle(cle), etapes, duree, cinematique };
@@ -1362,7 +1370,7 @@ function motifD(
 
 // ---------- E : la cinématique légendaire ----------
 
-function prelude(x0: Ctx, e: Etape[]): number {
+function prelude(x0: Ctx, e: Etape[], comex: boolean): number {
   const x = { ...x0 };
   const m = x.m;
   const dx = m.largeur / 2 - x.a.x;
@@ -1407,6 +1415,34 @@ function prelude(x0: Ctx, e: Etape[]): number {
         dessiner(ctx, _p, temps) {
           const o = { x: x.a.x + dx, y: x.a.y + dy };
           ctx.globalAlpha = Math.min(1, temps / 400) * 0.55 * alphaVoile(temps);
+          if (comex) {
+            // **Le COMEX** : le fond d'une salle de conseil. Trois courbes qui montent, des
+            // barres, et personne dans la pièce — la satire vise le système, jamais quelqu'un.
+            for (let i = 0; i < 3; i++) {
+              const decalage = i * 0.9;
+              ctx.strokeStyle = i === 0 ? "#46c78c" : i === 1 ? "#f7e264" : "#61d5df";
+              ctx.globalAlpha = 0.4 * alphaVoile(temps) * Math.min(1, temps / 500);
+              ctx.lineWidth = 2.5;
+              ctx.beginPath();
+              for (let k = 0; k <= 24; k++) {
+                const px = o.x - m.largeur * 0.45 + (k / 24) * m.largeur * 0.9;
+                const py =
+                  o.y +
+                  m.hauteur * 0.34 -
+                  (k / 24) ** 1.4 * m.hauteur * 0.42 +
+                  Math.sin(k * 0.7 + decalage + temps / 900) * 10;
+                ctx.lineTo(px, py);
+              }
+              ctx.stroke();
+            }
+            ctx.globalAlpha = 0.22 * alphaVoile(temps);
+            ctx.fillStyle = "#46c78c";
+            for (let b = 0; b < 9; b++) {
+              const h = (18 + b * 9) * Math.min(1, temps / 700);
+              ctx.fillRect(o.x - m.largeur * 0.42 + b * (m.largeur * 0.85) / 9, o.y + m.hauteur * 0.36 - h, 12, h);
+            }
+            return;
+          }
           ctx.translate(o.x, o.y);
           ctx.rotate(temps / 1400);
           for (let i = 0; i < 12; i++) {
@@ -1489,6 +1525,12 @@ function prelude(x0: Ctx, e: Etape[]): number {
           ctx.strokeText(x.attaque.name.toUpperCase(), xx, y + 8);
           ctx.fillStyle = "#ffffff";
           ctx.fillText(x.attaque.name.toUpperCase(), xx, y + 8);
+          if (comex) {
+            // La rogne du COMEX : on se moque du cérémonial, pas des gens.
+            ctx.font = "700 10px system-ui, sans-serif";
+            ctx.fillStyle = "#f7e264";
+            ctx.fillText("SÉANCE EXTRAORDINAIRE · ADOPTÉ À L'UNANIMITÉ", xx, y + 26);
+          }
         },
       });
     },
@@ -1888,6 +1930,154 @@ function pastille(x: Ctx, texte: string, couleur: string) {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(texte, 0, 1);
+    },
+  });
+}
+
+// ---------- Le coup de grâce : la sortie, en satyre de bureau ----------
+
+/** Les formules creuses du départ. On se moque du formulaire, pas de celle qui le reçoit. */
+const SORTIES = [
+  'POSTE SUPPRIMÉ',
+  'RUPTURE CONVENTIONNELLE',
+  'OPTIMISATION DES EFFECTIFS',
+  'MUTATION À DISTANCE',
+  'FIN DE MISSION',
+];
+
+const MOTS_DU_DEPART = [
+  'Merci pour votre engagement.',
+  'Vos tâches sont réparties.',
+  'Un pot de départ sera organisé.',
+  'Le poste n’est pas reconduit.',
+];
+
+/**
+ * **Le coup de grâce** : la cible craque, elle part au Rebut. Sa saynète tient en quatre gestes
+ * de bureau — le carton, le tampon, la carte qui s'éteint, la formule creuse. Le ton est celui
+ * du jeu : on ridiculise le cérémonial et le formulaire, jamais la personne qui les subit.
+ *
+ * Rien de ce que ça dit n'est perdu sous « Mouvement réduit » : le bandeau « a craqué », la
+ * ligne du journal et l'Intervention marquée le disent déjà.
+ */
+function sayneteDeSortie(x: Ctx, e: Etape[], t: number) {
+  const m = x.m;
+  const r = x.rnd;
+  const sortie = SORTIES[hacher(`${x.attaque.name}:sortie`) % SORTIES.length];
+  const mot = MOTS_DU_DEPART[hacher(`${x.attaque.name}:mot`) % MOTS_DU_DEPART.length];
+
+  // 1. Le carton arrive et se remplit : le poste se range en quatre secondes.
+  e.push({
+    a: t,
+    faire: () => {
+      m.effet({
+        couche: 'avant',
+        duree: 1400,
+        dessiner(ctx, p) {
+          const montee = facilite.sortie(Math.min(1, p / 0.25));
+          const y = x.C.y + x.C.h + 6 - montee * 18;
+          ctx.globalAlpha = Math.min(1, p * 6);
+          ctx.fillStyle = '#a67c22';
+          arrondi(ctx, x.c.x - 46, y, 92, 34, 3);
+          ctx.fill();
+          ctx.strokeStyle = '#664d38';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x.c.x - 46, y + 4);
+          ctx.lineTo(x.c.x - 22, y - 14);
+          ctx.lineTo(x.c.x + 22, y - 14);
+          ctx.lineTo(x.c.x + 46, y + 4);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(255,255,255,.55)';
+          ctx.fillRect(x.c.x - 16, y + 14, 32, 3);
+        },
+      });
+      // Ce qui tombe dans le carton : des feuilles, une tasse, la plante du bureau.
+      for (let i = 0; i < 7; i++) {
+        const forme = (['papier', 'tasse', 'carte', 'petale'] as const)[i % 4];
+        m.emettre({
+          x: x.c.x + (r() - 0.5) * x.C.w * 0.8,
+          y: x.C.y - 10,
+          vx: (r() - 0.5) * 40,
+          vy: 60 + r() * 80,
+          ay: 900,
+          vie: 900,
+          forme,
+          couleur: forme === 'tasse' ? '#5a3415' : forme === 'petale' ? '#4f9d4f' : '#f4f1e8',
+          taille: 7,
+          vrot: (r() - 0.5) * 6,
+        });
+      }
+    },
+  });
+
+  // 2. Le tampon s'abat en travers de la carte — le geste administratif, grotesque et sec.
+  e.push({
+    a: t + 170,
+    faire: () => {
+      m.geler(60);
+      m.secouer(7, 260);
+      m.effet({
+        couche: 'avant',
+        duree: 1600,
+        dessiner(ctx, p) {
+          const s = p < 0.12 ? lerp(2.6, 1, facilite.sortie(p / 0.12)) : 1;
+          ctx.globalAlpha = p > 0.86 ? (1 - p) / 0.14 : Math.min(1, p * 8);
+          ctx.translate(x.c.x, x.c.y);
+          ctx.rotate(-0.2);
+          ctx.scale(s, s);
+          const w = Math.min(x.C.w * 0.94, 190);
+          ctx.strokeStyle = '#d0352b';
+          ctx.lineWidth = 4;
+          ctx.strokeRect(-w / 2, -15, w, 30);
+          ctx.fillStyle = '#d0352b';
+          ctx.font = `900 ${sortie.length > 18 ? 11 : 14}px system-ui, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(sortie, 0, 1);
+        },
+      });
+    },
+  });
+
+  // 3. La carte s'éteint et quitte la scène, comme on referme un dossier.
+  e.push({
+    a: t + 300,
+    faire: () =>
+      m.animer(
+        x.cib,
+        [
+          { transform: 'none', opacity: 1 },
+          { transform: 'translateY(-6px) rotate(-2deg)', opacity: 0.55, offset: 0.25 },
+          { transform: 'translateY(120%) rotate(-9deg)', opacity: 0 },
+        ],
+        760,
+        'cubic-bezier(.6,0,.8,.6)',
+      ),
+  });
+
+  // 4. La formule, qui monte et s'efface : c'est elle qu'on retient.
+  e.push({
+    a: t + 430,
+    faire: () => {
+      m.effet({
+        couche: 'avant',
+        duree: 1500,
+        dessiner(ctx, p) {
+          const entree = facilite.sortie(Math.min(1, p / 0.2));
+          ctx.globalAlpha = p > 0.75 ? (1 - p) / 0.25 : 1;
+          ctx.translate(x.c.x, x.C.y - 12 - entree * 16);
+          ctx.font = '700 12px system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          const larg = ctx.measureText(mot).width + 22;
+          ctx.fillStyle = 'rgba(10,8,4,.8)';
+          arrondi(ctx, -larg / 2, -13, larg, 26, 13);
+          ctx.fill();
+          ctx.fillStyle = '#f4e6cc';
+          ctx.fillText(mot, 0, 1);
+        },
+      });
     },
   });
 }

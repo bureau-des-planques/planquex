@@ -12,6 +12,7 @@ interface Lancee {
   uidCible?: string;
   /** Le Stress réellement encaissé par la cible (Vulnérabilité comprise). */
   stress: number;
+  coupDeGrace: boolean;
 }
 
 /**
@@ -35,6 +36,7 @@ export function SceneAttaque({
   uid,
   uidCible,
   stress,
+  coupDeGrace = false,
   carte,
   attaque,
   sansMouvement,
@@ -47,6 +49,8 @@ export function SceneAttaque({
   uidCible?: string;
   /** Le Stress encaissé par la cible, tel que l'effet `stress` le calcule. */
   stress?: number;
+  /** La Pression fait craquer la cible : la scène joue sa saynète de sortie. */
+  coupDeGrace?: boolean;
   carte?: PlanqueCard;
   attaque?: Attack;
   sansMouvement: boolean;
@@ -87,9 +91,17 @@ export function SceneAttaque({
     const m = moteur.current;
     if (sansMouvement || !m || !carte || !attaque || effetId === undefined) return;
     if (joue.current === effetId) return;
-    lancee.current = { id: effetId, carte, attaque, uid, uidCible, stress: stress ?? 0 };
+    lancee.current = {
+      id: effetId,
+      carte,
+      attaque,
+      uid,
+      uidCible,
+      stress: stress ?? 0,
+      coupDeGrace,
+    };
     joue.current = effetId;
-  }, [effetId, uid, uidCible, stress, carte, attaque, sansMouvement]);
+  }, [effetId, uid, uidCible, stress, coupDeGrace, carte, attaque, sansMouvement]);
 
   // La lecture est séparée du déclenchement : elle ne dépend plus des props, donc la
   // disparition de l'effet (700 ms) n'interrompt plus la chorégraphie.
@@ -102,16 +114,35 @@ export function SceneAttaque({
     const att = cible.uid
       ? scene.querySelector<HTMLElement>(`[data-uid="${CSS.escape(cible.uid)}"]`)
       : null;
-    const cib = cible.uidCible
+    const visee = cible.uidCible
       ? scene.querySelector<HTMLElement>(`[data-uid="${CSS.escape(cible.uidCible)}"]`)
       : null;
-    // Une carte déjà retirée (craquage, relève) n'a pas de cible à viser : l'animation du
-    // craquage raconte déjà ce qui vient d'arriver.
+    // **Le coup de grâce** : la carte a quitté le plateau pour le Rebut, mais son fantôme
+    // désaturé est encore là — c'est lui que la scène vise, et c'est lui qui part.
+    const fantome = cible.coupDeGrace
+      ? scene.querySelector<HTMLElement>(".craquage__carte")
+      : null;
+    // Le fantôme ne vit que 500 ms (`DUREE_TRAINEE_MS`) ; la Pression, elle, frappe plus tard.
+    // À défaut de carte, la **zone du Poste** adverse reste : c'est là que le carton et le
+    // tampon se posent, et c'est la place que la carte vient de quitter.
+    const posteVide = cible.coupDeGrace
+      ? ([...scene.querySelectorAll<HTMLElement>(".board__poste")].find(
+          (poste) => !poste.contains(att),
+        ) ?? null)
+      : null;
+    const cib = visee ?? fantome ?? posteVide;
+    // Une carte déjà retirée sans fantôme (relève, craquage au Banc) n'a pas de cible à viser.
     if (!att || !cib) return;
     // Arrêter **avant** de mesurer : une scène encore en cours laisserait les cartes déplacées,
     // et les positions de départ seraient fausses.
     m.arreter();
-    const ch = choregraphie(cible.carte, cible.attaque, { m, att, cib, stress: cible.stress });
+    const ch = choregraphie(cible.carte, cible.attaque, {
+      m,
+      att,
+      cib,
+      stress: cible.stress,
+      coupDeGrace: cible.coupDeGrace,
+    });
     m.jouer(ch.etapes, ch.duree, ch.cinematique ? 600 : 300);
   }, [effetId, sansMouvement]);
 
