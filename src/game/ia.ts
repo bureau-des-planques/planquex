@@ -19,8 +19,10 @@ import { satisfiesCafeCost } from '@/game/rules';
  * l'action suivante du camp au trait. Le simulateur (`@/game/simulation`) et l'écran
  * de combat (`@/pages/Battle`) la lisent tous les deux — aucune copie.
  *
- * Deux **niveaux**, un seul module : le niveau est un **paramètre**, jamais une
- * seconde implémentation (spec #92).
+ * **Trois niveaux**, un seul module : le niveau est un **paramètre**, jamais une
+ * seconde implémentation (spec #92). Le **niveau 3** (expectiminimax + déterminisations,
+ * ticket #94) est **expérimental** : il n'est ni le défaut de l'écran ni celui du
+ * simulateur, et `nextAiAction` ne le joue pas — voir `nextExpectiminimaxAction`.
  *
  * - **Niveau 1 — la Direction** (scripté, sobre, déterministe). Politique, dans
  *   l'ordre — celui de la simulation d'origine, préservé tel quel pour que le
@@ -63,9 +65,11 @@ import { satisfiesCafeCost } from '@/game/rules';
  */
 
 /**
- * Les niveaux de la Direction. `1` : la politique scriptée. `2` : la politique qui
- * évalue chaque coup légal. Le niveau est un **paramètre** : `ia.ts` reste le seul
- * module de politique.
+ * Les niveaux de la Direction **joués par le paramètre `level`**. `1` : la politique
+ * scriptée. `2` : la politique qui évalue chaque coup légal (et, par défaut de l'écran,
+ * la recherche à deux coups). Le **niveau 3** (expectiminimax, ticket #94) a sa propre
+ * entrée (`nextExpectiminimaxAction`) et ses propres options : il n'est **pas** un `AiLevel`,
+ * car il ne doit pas devenir le défaut sans mesure — `ia.ts` reste le seul module de politique.
  */
 export type AiLevel = 1 | 2;
 
@@ -913,4 +917,328 @@ export function nextSearchAction(
   options: SearchOptions = DEFAULT_SEARCH_OPTIONS
 ): BattleAction | null {
   return searchDecision(state, options).action;
+}
+
+/* ------------------------------------------------------------------ */
+/* Niveau 3 — expectiminimax + déterminisations (ticket #94, spec #92) */
+/* ------------------------------------------------------------------ */
+
+/**
+ * **Niveau 3 — la Direction qui regarde plusieurs tours en avant** (ticket #94).
+ *
+ * La recherche à deux coups (niveau 2) s'arrête au début de mon prochain tour. Le niveau 3
+ * descend **2 à 3 tours** (mon tour, la réponse adverse, mon tour suivant), en **moyennant
+ * K déterminisations** des mains et Decks adverses (`sampleWorld`) et en **échantillonnant
+ * les nœuds de hasard** avec un générateur **seedé** dérivé de la graine de la partie.
+ *
+ * **Pourquoi expectiminimax.** Un jeu à information imparfaite mêle trois sortes de nœuds :
+ * mes décisions (max), celles de l'adversaire (min), et le hasard (espérance). Le niveau 2
+ * ne prend qu'**un** échantillon du hasard (`evaluationRng`) et un seul monde par ligne. Le
+ * niveau 3 moyenne : `max` sur mes coups, `min` sur les réponses adverses, et **espérance**
+ * sur (a) les K mondes tirés — l'information cachée — et (b) `chanceSamples` tirages du
+ * générateur au **dernier pli simulé** (cf. `chanceTurnValue` : au-delà, le coût serait
+ * multiplié à chaque profondeur).
+ *
+ * **Idées sourcées, aucun code copié.** La structure PIMC / expectiminimax vient de la
+ * littérature (`docs/ia/111-recherche-pistes.md` §2–3 : expectiminimax, PIMC, Long et al.
+ * 2020) et de deux moteurs libres regardés **comme documentation** : `deckgym-core`
+ * (**AGPL-3.0 — idées seules**, aucun code, aucun fichier du projet n'est copié ici) et le
+ * projet Kaggle *Pokémon TCG AI Battle* (**MIT — idées seules**). Tout est réécrit en
+ * TypeScript contre les types de ce dépôt.
+ *
+ * **Équité, identique au niveau 2.** La recherche ne lit **jamais** le contenu de la main
+ * ni du Deck adverses : elle en lit les **comptes** (`hand.length`, `deck.length`) et les
+ * remplace par un tirage dans `unknownPool` (`sampleWorld`). Aucun `Math.random()`, aucun
+ * `state.rng` : les tirages passent par `searchSeed` (graine de la partie + tour + sel).
+ * Le générateur réel de la partie n'avance donc pas d'un cran — la politique ne peut pas
+ * deviner un lancer à venir (même raison que #114).
+ *
+ * **Budget (#172, réutilisé).** Comme le niveau 2 : plafond de **nœuds** (`applyAction`,
+ * déterministe) et **échéance murale** (filet pour les machines chargées). Atteint, la
+ * recherche **abandonne** et rend le coup de la **recherche à deux coups**
+ * (`nextSearchAction`, `level2Fallback`) — jamais une erreur, jamais un coup nul, et jamais
+ * moins bien que le niveau 2 qu'elle remplace. L'échéance est le seul terme non déterministe.
+ *
+ * **Ce que le niveau 3 n'est pas.** Il n'est **pas** le défaut : `nextAiAction` joue
+ * toujours le niveau 2 (D-084), et l'écran ne le branche pas. Le journal
+ * `docs/ia/94-niveau3-expectiminimax.md` dit ce qu'il bat, et à quel prix.
+ */
+export interface ExpectiminimaxOptions {
+  /** Profondeur en **tours** (plis) : 2 = mon tour + réponse adverse ; 3 = + mon tour suivant. */
+  depth: number;
+  /** Coups retenus à la racine, après l'élagage à un coup (nœud max). */
+  candidates: number;
+  /** Réponses adverses jouées en entier, après l'élagage à un coup (nœud min). */
+  replies: number;
+  /** Mes coups retenus aux nœuds max **internes** (mon tour suivant). */
+  followups: number;
+  /** K — nombre de **déterminisations** (mains et Decks adverses) moyennées. */
+  worlds: number;
+  /**
+   * Nombre d'échantillons de **hasard** au **dernier pli simulé** (espérance des lancers qui
+   * décident de la position évaluée). `1` désactive l'espérance : le dernier tour joue le
+   * générateur de son monde. Les tirages sont **seedés** (`chanceSeed`) et ne consomment
+   * jamais `state.rng`.
+   */
+  chanceSamples: number;
+  /** Plafond de **nœuds** d'une décision (déterministe). Atteint : repli sur le niveau 2. */
+  maxNodes: number;
+  /** **Échéance murale** en millisecondes (filet machine chargée). Atteinte : repli niveau 2. */
+  maxMs: number;
+}
+
+/**
+ * Réglages par défaut du niveau 3. Ils sont **un** choix, pas un optimum : mesurés sur les
+ * graines d'entraînement, consignés dans `docs/ia/94-niveau3-expectiminimax.md`.
+ *
+ * Réglages retenus sur les graines d'**entraînement** (voir le journal) : un branchement
+ * plus étroit que le niveau 2 (3 candidats, 2 réponses, 2 suites, 2 mondes) **compensé par
+ * la profondeur 3** — mesuré à ~390 nœuds par décision, contre ~1 100 pour la variante
+ * large (4/3/2/3 mondes). À budget égal, c'est la variante étroite qui tient.
+ * `chanceSamples` 2 : le hasard du dernier pli (lancer de statut, café de la Machine,
+ * pioche) est moyenné sur deux tirages seedés.
+ * Budget : 800 nœuds et 60 ms, ceux du niveau 2 (#172) — le niveau 3 doit tenir dans le
+ * même budget pour pouvoir être branché un jour.
+ */
+export const DEFAULT_EXPECTIMINIMAX_OPTIONS: ExpectiminimaxOptions = {
+  depth: 3,
+  candidates: 3,
+  replies: 2,
+  followups: 2,
+  worlds: 2,
+  chanceSamples: 2,
+  maxNodes: 800,
+  maxMs: 60
+};
+
+/**
+ * **Le repli du niveau 3** : la recherche à deux coups (le niveau 2 acté, D-084), pas le
+ * glouton. Un niveau 3 qui épuise son budget ne doit pas jouer **moins bien** que le niveau
+ * 2 qu'il remplace : la décision de repli est donc celle de `nextSearchAction`.
+ *
+ * La garde de temps du repli suit celle du niveau 3 quand elle est neutralisée
+ * (`Infinity`) — les mesures et les tests restent alors reproductibles. Sinon, elle garde
+ * celle du niveau 2 (60 ms) : le coût total d'une décision reste borné par
+ * `options.maxMs + 60`.
+ */
+function level2Fallback(state: BattleState, options: ExpectiminimaxOptions): BattleAction | null {
+  const maxMs = options.maxMs === Infinity ? Infinity : DEFAULT_SEARCH_OPTIONS.maxMs;
+  return nextSearchAction(state, { ...DEFAULT_SEARCH_OPTIONS, maxMs });
+}
+
+/** Ce qu'une décision du niveau 3 a fait : le coup, son travail, et s'il y a eu repli. */
+export interface ExpectiminimaxDecision {
+  action: BattleAction | null;
+  /** Nœuds (`applyAction`) consommés — jamais plus que `maxNodes`. */
+  nodes: number;
+  /** `true` quand le budget a mordu : `action` est alors le coup du niveau 2 (`nextSearchAction`). */
+  fallback: boolean;
+}
+
+/**
+ * Les **K déterminisations** : des copies de `state` où la main et le Deck adverses sont
+ * tirés dans `unknownPool` (`sampleWorld`). Exporté pour le test d'équité — le contenu de
+ * ces mondes ne doit **jamais** dépendre des vraies cartes cachées.
+ */
+export function expectiminimaxWorlds(
+  state: BattleState,
+  who: PlayerId,
+  options: ExpectiminimaxOptions = DEFAULT_EXPECTIMINIMAX_OPTIONS
+): BattleState[] {
+  const count = Math.max(1, Math.floor(options.worlds));
+  return Array.from({ length: count }, (_, index) => sampleWorld(state, who, index));
+}
+
+/**
+ * Graine d'un **échantillon de hasard** : dérivée de la graine de la partie, du tour et de la
+ * profondeur, **jamais** de `state.rng`. La plage `1000+` évite les sels des mondes
+ * (`sampleWorld`, sels `2i+1` / `2i+2`).
+ */
+function chanceSeed(state: BattleState, sample: number, depth: number): RngState {
+  return searchSeed(state, 1000 + sample * 131 + depth * 17);
+}
+
+/**
+ * **Nœud max ou min d'un monde** : on note les actions légales du camp au trait, on garde
+ * les `width` meilleures pour `who` (descendant au max, ascendant au min), puis chaque coup
+ * est joué **en entier** (le reste du tour suit la politique scriptée, comme le niveau 2).
+ *
+ * Rend `null` si le budget s'épuise — l'appelant abandonne alors toute la décision.
+ */
+function nodeValue(
+  state: BattleState,
+  who: PlayerId,
+  depth: number,
+  options: ExpectiminimaxOptions,
+  budget: SearchBudget
+): number | null {
+  if (state.phase === 'ended') return valueOf(state, who);
+  if (depth <= 0) return evaluatePosition(state, who);
+
+  const side = state.pendingPromotion ?? state.current;
+  const maximize = side === who;
+  // Le score est **toujours** celui de `who` (comme les réponses du niveau 2) : au nœud min,
+  // on garde donc les coups adverses les plus **nocifs pour moi**, pas les meilleurs pour lui.
+  const scored = scoreMoves(state, legalActions(state), who, maximize, budget);
+  if (scored === null) return null;
+  const ordered = scored.sort((a, b) =>
+    maximize ? b.score - a.score || a.index - b.index : a.score - b.score || a.index - b.index
+  );
+  const width = maximize ? options.followups : options.replies;
+  const picks = ordered.slice(0, Math.max(1, Math.floor(width)));
+  if (picks.length === 0) return evaluatePosition(state, who);
+
+  let best = maximize ? -Infinity : Infinity;
+  for (const pick of picks) {
+    const value = turnValue(state, pick.action, side, who, depth, options, budget);
+    if (value === null) return null;
+    best = maximize ? Math.max(best, value) : Math.min(best, value);
+  }
+  return best;
+}
+
+/**
+ * **Nœud de hasard du dernier pli** : la position est rejouée `chanceSamples` fois avec des
+ * générateurs **seedés** différents (`chanceSeed`), et l'on **moyenne** la valeur des tours
+ * obtenus. C'est l'espérance sur les lancers (statuts, cafés de la Machine, pioches) qui
+ * décident de la position évaluée.
+ *
+ * Pourquoi **le dernier pli seulement** : un nœud de hasard qui engloberait tout un
+ * sous-arbre multiplierait le coût par `chanceSamples` à chaque profondeur — mesuré à
+ * ~2 700 nœuds pour `chanceSamples: 2` en profondeur 3, soit trois fois le budget de
+ * l'écran. Au dernier pli, l'espérance porte là où elle change réellement la position
+ * évaluée, pour `chanceSamples` tours simulés de plus par feuille. Plus haut dans l'arbre,
+ * ce sont les **K déterminisations** (`sampleWorld`) qui tiennent le rôle du hasard.
+ *
+ * Les copies remplacent `rng` par `chanceSeed` et vident les journaux : le flux réel de la
+ * partie n'est jamais consommé.
+ */
+function chanceTurnValue(
+  state: BattleState,
+  action: BattleAction,
+  side: PlayerId,
+  who: PlayerId,
+  options: ExpectiminimaxOptions,
+  budget: SearchBudget
+): number | null {
+  const samples = Math.max(1, Math.floor(options.chanceSamples));
+  let total = 0;
+  for (let sample = 0; sample < samples; sample += 1) {
+    if (budgetExhausted(budget)) return null;
+    const copy: BattleState = {
+      ...state,
+      rng: chanceSeed(state, sample, 1),
+      log: [],
+      actionLog: []
+    };
+    const first = applyWithin(copy, action, budget);
+    if (first === null) return null;
+    // Action refusée : elle ne fait pas avancer le tour, elle ne vaut pas mieux que la position.
+    if (first === copy) {
+      total += evaluatePosition(copy, who);
+      continue;
+    }
+    const done = playOutTurn(first, side, budget);
+    if (done === null) return null;
+    total += valueOf(done, who);
+  }
+  return total / samples;
+}
+
+/**
+ * **Un pli** : le coup `action` du camp `side`, puis le reste de son tour par la politique
+ * scriptée (`playOutTurn`). Au **dernier pli** (`depth <= 1`), le tour est moyenné sur les
+ * `chanceSamples` tirages de `chanceTurnValue` ; sinon on descend d'une profondeur vers le
+ * nœud du camp suivant (`nodeValue`).
+ */
+function turnValue(
+  state: BattleState,
+  action: BattleAction,
+  side: PlayerId,
+  who: PlayerId,
+  depth: number,
+  options: ExpectiminimaxOptions,
+  budget: SearchBudget
+): number | null {
+  if (depth <= 1) return chanceTurnValue(state, action, side, who, options, budget);
+
+  const first = applyWithin(state, action, budget);
+  if (first === null) return null;
+  // Action refusée : elle ne fait pas avancer le tour, elle ne vaut pas mieux que la position.
+  if (first === state) return evaluatePosition(state, who);
+
+  const done = playOutTurn(first, side, budget);
+  if (done === null) return null;
+  if (done.phase === 'ended') return valueOf(done, who);
+  return nodeValue(done, who, depth - 1, options, budget);
+}
+
+/**
+ * **Décision du niveau 3.** À la racine : élagage à un coup des coups légaux (comme le
+ * niveau 2), puis, pour chaque candidat et **chaque déterminisation**, un `turnValue` de
+ * profondeur `options.depth`. La valeur d'un candidat est la **moyenne sur les K mondes** ;
+ * le meilleur gagne (à égalité, le premier de l'élagage — déterministe).
+ *
+ * Une relève ou un choix en attente est tranché par le niveau 2 (1 coup) : la recherche ne
+ * porte que sur le tour, comme pour `searchDecision`.
+ */
+export function expectiminimaxDecision(
+  state: BattleState,
+  options: ExpectiminimaxOptions = DEFAULT_EXPECTIMINIMAX_OPTIONS
+): ExpectiminimaxDecision {
+  if (state.phase === 'ended') return { action: null, nodes: 0, fallback: false };
+  if (state.pendingPromotion || state.pendingChoice) {
+    return { action: nextAction(state, 2), nodes: 0, fallback: false };
+  }
+
+  const started = performance.now();
+  const who = state.current;
+  const pruned = scoreMoves(state, legalActions(state), who, true) ?? [];
+  const candidates = pruned
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, Math.max(1, Math.floor(options.candidates)));
+  const only = candidates[0];
+  if (!only) return { action: null, nodes: 0, fallback: false };
+  if (candidates.length === 1) return { action: only.action, nodes: 0, fallback: false };
+
+  const budget: SearchBudget = {
+    left: options.maxNodes,
+    deadline: options.maxMs === Infinity ? Infinity : started + options.maxMs
+  };
+  const worlds = expectiminimaxWorlds(state, who, options);
+  let best: BattleAction = only.action;
+  let bestValue = -Infinity;
+
+  for (const candidate of candidates) {
+    let total = 0;
+    for (const world of worlds) {
+      const value = turnValue(world, candidate.action, who, who, options.depth, options, budget);
+      if (value === null) {
+        // Budget épuisé : repli sur le niveau 2, compte plafonné par construction.
+        return {
+          action: level2Fallback(state, options),
+          nodes: options.maxNodes - budget.left,
+          fallback: true
+        };
+      }
+      total += value;
+    }
+    const value = total / worlds.length;
+    if (value > bestValue) {
+      best = candidate.action;
+      bestValue = value;
+    }
+  }
+  return { action: best, nodes: options.maxNodes - budget.left, fallback: false };
+}
+
+/**
+ * **Prochaine action du niveau 3** (expérimental, non branché). Même contrat que
+ * `nextAction` : rend une action de `legalActions` ou `null`.
+ */
+export function nextExpectiminimaxAction(
+  state: BattleState,
+  options: ExpectiminimaxOptions = DEFAULT_EXPECTIMINIMAX_OPTIONS
+): BattleAction | null {
+  return expectiminimaxDecision(state, options).action;
 }
