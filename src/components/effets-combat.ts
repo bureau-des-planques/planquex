@@ -68,6 +68,8 @@ export interface EffetCombat {
   readonly auPoste?: boolean;
   /** L'attaque : la carte visée. Le trait relie l'attaquant à elle (nature `attaque`). */
   readonly uidCible?: string;
+  /** La Pression jouée, son rang dans la carte : la chorégraphie en dépend (D-095). */
+  readonly attackIndex?: number;
 }
 
 export function dureeEffet(nature: NatureEffet): number {
@@ -141,6 +143,32 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
     prochainId += 1;
   };
 
+  // **La Pression est émise en premier** : le plafond de quatre effets refuse le cinquième
+  // arrivé, et l'attaque est la plus importante de la liste — la refuser parce que deux
+  // Conditions et une Intervention sont passées avant elle serait un mauvais arbitrage.
+  // Une action `attack` vient d'être journalisée : l'état est déjà final, l'effet ne retarde
+  // rien, il raconte. L'attaquant est le camp au trait **avant** l'action (`attack` ne se joue
+  // que pour lui) ; la cible est le Poste d'en face, au moment d'avant.
+  const dernier = apres.actionLog[apres.actionLog.length - 1];
+  // **Une seule action de plus** : en partie à deux, `join` remplace l'état d'un bloc, et le
+  // diff couvre alors tout un tour adverse. L'attaquant lu dans l'état d'avant ne serait plus
+  // celui qui a frappé, et la scène jouerait la mauvaise Pression sur la mauvaise carte.
+  const uneSeuleAction = apres.actionLog.length === avant.actionLog.length + 1;
+  if (uneSeuleAction && dernier?.type === 'attack') {
+    const attaquant = avant.current;
+    const source = avant.players[attaquant].active;
+    const cible = avant.players[attaquant === 'player' ? 'ai' : 'player'].active;
+    if (source) {
+      ajouter({
+        nature: 'attaque',
+        camp: attaquant,
+        uid: source.uid,
+        uidCible: cible?.uid,
+        attackIndex: dernier.attackIndex
+      });
+    }
+  }
+
   for (const camp of CAMPS) {
     const avantCamp = enJeu(avant.players[camp]);
     const apresCamp = enJeu(apres.players[camp]);
@@ -192,20 +220,6 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
     // remplit deux, donc deux rebonds — et le compteur les refusera au-delà de quatre.
     for (let numero = avant.players[camp].points + 1; numero <= apres.players[camp].points; numero += 1) {
       ajouter({ nature: 'intervention', camp, numero });
-    }
-  }
-
-  // **La Pression en quatre temps** (#207) : une action `attack` vient d'être journalisée.
-  // L'état est déjà final — l'effet ne retarde rien, il raconte. L'attaquant est le camp au
-  // trait **avant** l'action (`attack` ne se joue que pour lui) ; la cible est le Poste d'en
-  // face, au moment d'avant.
-  const dernier = apres.actionLog[apres.actionLog.length - 1];
-  if (apres.actionLog.length > avant.actionLog.length && dernier?.type === 'attack') {
-    const attaquant = avant.current;
-    const source = avant.players[attaquant].active;
-    const cible = avant.players[attaquant === 'player' ? 'ai' : 'player'].active;
-    if (source) {
-      ajouter({ nature: 'attaque', camp: attaquant, uid: source.uid, uidCible: cible?.uid });
     }
   }
 

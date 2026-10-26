@@ -44,6 +44,7 @@ import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
+import { SceneAttaque } from '@/animation/SceneAttaque';
 import type { EffetCombat } from '@/components/effets-combat';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import type { EtatMenu } from '@/components/MenuCombat';
@@ -511,19 +512,16 @@ function Camp({
   // **sur** la carte. Le mot « Poste » est lu, pas affiché : la hauteur du plateau est comptée par
   // la garde (`npm run capturer`), et une étiquette de plus la ferait déborder.
   const posteActif = side.active;
-  // **La Pression en quatre temps** (#207) : l'attaquant se cabre (200 ms), la cible prend
-  // l'anneau d'impact (150 ms). Un seul effet porte les deux — l'état est déjà final.
-  const elanPoste = effets.some((effet) => effet.nature === 'attaque' && effet.uid === posteActif?.uid);
-  const impactPoste = effets.some(
-    (effet) => effet.nature === 'attaque' && effet.uidCible === posteActif?.uid
-  );
+  // **La Pression** est jouée par la scène (D-095) : le cabrage, le trait et l'anneau d'impact
+  // du CSS de #207 ont disparu, sinon deux animations se superposeraient. Ce qui reste ici, et
+  // qui ne dépend d'aucun mouvement, c'est le **chiffre de Stress** (`effetsStress`).
   const poste = (
     <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
       <span className="sr-only">Poste</span>
       {posteActif ? (
         <CartePlateau
           instance={posteActif}
-          className={`poste__carte${elanPoste ? ' is-elan' : ''}${impactPoste ? ' is-impactee' : ''}`}
+          className="poste__carte"
           machine={texteMachine(side)}
           inspectee={inspecte === posteActif.uid}
           annotations={detaille}
@@ -840,6 +838,36 @@ export function Battle() {
    * (800 ms au plus) vivent dans `effets-combat.ts`, pas dans le CSS.
    */
   const effets = useEffetsDeCombat(state, sansMouvement);
+
+  /**
+   * **La chorégraphie de la Pression** (D-095) : l'effet d'attaque dit qui frappe qui, le
+   * journal dit quelle Pression (`attackIndex`). La carte est retrouvée par son `uid` dans
+   * les deux camps — l'attaquant est au Poste, sauf s'il a craqué sur son propre coup.
+   */
+  const effetAttaque = effets.findLast((effet) => effet.nature === 'attaque');
+  const carteAttaque = useMemo(() => {
+    if (!effetAttaque?.uid) return undefined;
+    for (const camp of ['player', 'ai'] as const) {
+      const cote = state.players[camp];
+      const instance = [cote.active, ...cote.bench].find(
+        (carte) => carte !== null && carte.uid === effetAttaque.uid
+      );
+      if (instance) {
+        const definition = getCard(instance.cardId);
+        if (definition && isPlanque(definition)) return definition;
+      }
+    }
+    return undefined;
+  }, [effetAttaque?.uid, state.players]);
+  const attaqueJouee = carteAttaque?.attacks[effetAttaque?.attackIndex ?? 0];
+  /**
+   * Le Stress **encaissé** par la cible : c'est la valeur de l'effet `stress` qui la vise, donc
+   * celle que le jeu a réellement retirée (Vulnérabilité comprise) — jamais le chiffre imprimé
+   * sur la carte. La scène n'affiche rien si la cible n'a rien encaissé.
+   */
+  const stressEncaisse =
+    effets.find((effet) => effet.nature === 'stress' && effet.uid === effetAttaque?.uidCible)?.valeur ??
+    0;
 
   /**
    * **Le raccourci de la bascule d'infos** (#189, `SPEC-COMBAT-UI` §4.6) : `I` et son alias
@@ -1373,6 +1401,17 @@ export function Battle() {
       */}
       <div className="battle__table">
         <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
+          {/* La scène de la Pression (D-095) : deux `canvas` et les cartes animées par l'API
+              Web Animations. Rien ne se monte sous « Mouvement réduit ». */}
+          <SceneAttaque
+            effetId={effetAttaque?.id}
+            uid={effetAttaque?.uid}
+            uidCible={effetAttaque?.uidCible}
+            carte={carteAttaque}
+            attaque={attaqueJouee}
+            stress={stressEncaisse}
+            sansMouvement={sansMouvement}
+          />
           {/* La piste d'Interventions (#190) sépare les deux camps : elle est **une** seule cible du
               pas-à-pas (son conteneur), jamais une par camp. */}
           {[otherCamp(myCamp), myCamp].map((id, index) => (
@@ -1405,27 +1444,9 @@ export function Battle() {
               />
             </Fragment>
           ))}
-          {/* Le trait de la Pression (#207) : la deuxième ligne de la séquence. Il ne traverse
-              **jamais** sous mouvement réduit — l'anneau d'impact et le chiffre de Stress
-              disent la même chose sans mouvement. */}
-          {/* Un seul trait : si la Pression **craque** la cible, la traînée de craquage (ci-dessous)
-              **est** le trait — on n'en pose pas deux. */}
-          {!sansMouvement &&
-            effets
-              .filter(
-                (effet) =>
-                  effet.nature === 'attaque' &&
-                  !effets.some((autre) => autre.nature === 'craquage' && autre.uid === effet.uidCible)
-              )
-              .map((effet) => (
-                <span
-                  key={`trait-${effet.id}`}
-                  className={`attaque__trait ${
-                    effet.camp === myCamp ? 'attaque__trait--vers-le-bas' : 'attaque__trait--vers-le-haut'
-                  }`}
-                  aria-hidden="true"
-                />
-              ))}
+          {/* Le trait de la Pression est **dessiné par la scène** (D-095) : deux animations
+              pour un seul coup se verraient. La traînée de craquage, elle, reste ici — c'est
+              la même règle : une seule bande à la fois. */}
           {/* La traînée de craquage (#192) : une seule, entre l'attaquant et sa cible. Elle ne
               traverse **jamais** sous mouvement réduit — le fantôme désaturé et le bandeau
               « a craqué » disent tout, sans mouvement. */}

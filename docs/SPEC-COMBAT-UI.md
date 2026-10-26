@@ -709,6 +709,15 @@ est une lecture plus rapide.
    Une animation CSS de `transform`/`opacity` ne repeint pas ; un `filter: blur` sur une
    surface qui bouge, si — donc **pas de flou en mouvement**.
 
+> **Révision du 26/10/2026 — la Pression a sa chorégraphie (D-095).** Les bornes 3 et 5 ne
+> s'appliquent plus telles quelles à la **Pression** : sa durée monte jusqu'à ~3,2 s quand la
+> grosse attaque d'un COU, d'un 3 étoiles ou d'un COMEX joue sa cinématique, et son coût de
+> rendu se compte en **particules de `canvas`** (600 au plus, 300 hors cinématique), plus en
+> éléments du DOM. Les bornes **1, 2 et 4 ne bougent pas** : aucune information dans
+> l'animation, pas plus de trois flashs par seconde, et les deux coupures du mouvement
+> (**le repli est la séquence CSS décrite ci-dessus, inchangée**). Détail d'exécution :
+> `src/animation/` ; mesures : 60 ips, 57 sur la cinématique la plus lourde.
+
 #### 6.8.4 Ce que la piste d'Interventions remplace
 
 Le compte `★★☆` et le `board__points` actuel (`Battle.tsx:440-446`, `styles.css:1706-1711,
