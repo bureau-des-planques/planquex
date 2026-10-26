@@ -14,7 +14,7 @@
  * c'est précisément un port resté dans la main d'un `node` orphelin qu'on n'avait pas su voir.
  */
 import { afterEach, describe, expect, it } from 'vitest';
-import { construireEtat, demarrerServeur } from './lib/app.mjs';
+import { construireEtat, demarrerServeur, estServeurDeChantier } from './lib/app.mjs';
 import {
   analyserCmdline,
   analyserEnteteStatut,
@@ -196,6 +196,21 @@ describe('lib/app.mjs — l’état affiché', () => {
     expect(etat.serveurs.map((s) => s.port)).toEqual([5179, 4181]);
     expect(etat.serveurs.some((s) => s.port === 5432)).toBe(false);
   });
+
+  it('le contrôle mord : `vitest` n’est pas `vite` — ni affiché, ni tuable', () => {
+    // Un `/vite/` nu laissait passer `node …/.bin/vitest run` : il s'affichait dans la table, et
+    // la route `/api/tuer` acceptait son pid (son arbre entier, workers compris). Les deux
+    // lectures du périmètre doivent dire non, et elles disent non au **même** endroit.
+    const vitest = { port: 51234, pid: 404, comm: 'node', dossier: '/depot/dev', commande: 'node /depot/dev/node_modules/.bin/vitest run --pool forks', age: 12 };
+    const etat = construireEtat({ serveurs: [vitest, ...SERVEURS], chantiers: CHANTIERS });
+    expect(etat.serveurs.map((s) => s.port)).toEqual([5179, 4181]);
+
+    // Le binaire, lui, reste reconnu — y compris par son vrai chemin (`vite/bin/vite.js`).
+    expect(estServeurDeChantier({ commande: 'node /depot/dev/node_modules/.bin/vite --port 5179' })).toBe(true);
+    expect(estServeurDeChantier({ commande: 'node /depot/dev/node_modules/vite/bin/vite.js preview --port 4181' })).toBe(true);
+    expect(estServeurDeChantier({ commande: 'node /depot/dev/node_modules/.bin/vitest run' })).toBe(false);
+    expect(estServeurDeChantier({})).toBe(false);
+  });
 });
 
 describe('lib/app.mjs — l’API HTTP', () => {
@@ -310,6 +325,31 @@ describe('lib/app.mjs — l’API HTTP', () => {
     const inconnu = await demander(serveur.baseUrl, '/api/tuer', { methode: 'POST', corps: { pid: 4242 } });
     expect(inconnu.status).toBe(404);
     expect(systeme.appels.tues).toEqual([101]);
+  });
+
+  it('le contrôle mord : un processus qui écoute sans être un serveur de chantier ne se tue pas', async () => {
+    // Le cas du ticket #245 : la route cherchait dans la liste **non filtrée**, donc un `POST`
+    // muni du jeton pouvait terminer n'importe quel processus de l'utilisateur qui écoute — ici
+    // un `vitest` éphémère dans un worktree, mais aussi un `postgres` ou un MCP — avec tout son
+    // arbre. La page, elle, ne montrait déjà que les serveurs de chantier.
+    const horsPerimetre = {
+      port: 51234,
+      pid: 404,
+      comm: 'node',
+      dossier: '/depot/dev',
+      commande: 'node /depot/dev/node_modules/.bin/vitest run --pool forks',
+      age: 12,
+    };
+    const systeme = fauxSysteme({ serveurs: [horsPerimetre, ...SERVEURS], chantiers: CHANTIERS });
+    const serveur = await demarrerServeur({ port: 0, jeton: JETON, systeme });
+    ouvertes.push(serveur);
+
+    const refus = await demander(serveur.baseUrl, '/api/tuer', { methode: 'POST', corps: { pid: 404 } });
+    expect(refus.status).toBeGreaterThanOrEqual(400);
+    expect(refus.status).toBeLessThan(500);
+    expect((await refus.json()).erreur).toMatch(/serveur de chantier/);
+    // Rien n'a été tué : `tuer` n'est jamais appelé, et l'arbre du processus reste entier.
+    expect(systeme.appels.tues).toEqual([]);
   });
 
   it('sert le journal d’un port, et dit franchement quand il n’y en a pas', async () => {

@@ -30,7 +30,10 @@ L'outil tue donc l'arbre, feuilles d'abord.
   partir de `5181` (ou un port imposé), toujours `--strictPort --host 127.0.0.1`. Le processus est
   détaché : fermer l'onglet ne l'arrête pas. Son journal s'écrit hors du dépôt
   (`~/.local/state/planquex-serveurs/<port>.log`).
-- **Tuer** : l'arbre entier, feuilles d'abord — un pid qui n'écoute pas est refusé (404).
+- **Tuer** : l'arbre entier, feuilles d'abord — un pid qui n'écoute pas est refusé (404), et un
+  pid qui écoute **sans être un serveur de chantier** aussi (403) : la route accepte exactement
+  ce que la page montre, par la **même** fonction (`estServeurDeChantier`, #245). Un `vitest`
+  n'est pas un `vite`.
 - **Journal** : les 200 dernières lignes d'un serveur lancé par l'outil.
 - **Rafraîchissement** : toutes les 5 s, tant que l'onglet est ouvert.
 
@@ -65,6 +68,7 @@ Surcharge par l'environnement : `SERVEURS_ETAT` (le dossier des journaux).
 
 ## Les gardes
 
-Vingt contrôles, et chacun **mord** (`AGENTS.md` §6) : le cas fautif est là pour échouer — un
-socket sans PID, un port déjà pris (409), un pid qui n'écoute pas (404), un jeton faux (401), un
-argument inconnu. Aucun test ne lance `ss`, `git`, `npm` ni `kill` : le système est injecté.
+Vingt-quatre contrôles, et chacun **mord** (`AGENTS.md` §6) : le cas fautif est là pour échouer —
+un socket sans PID, un port déjà pris (409), un pid qui n'écoute pas (404), un pid hors périmètre
+(403), un jeton faux (401), un argument inconnu. Aucun test ne lance `ss`, `git`, `npm` ni `kill` :
+le système est injecté.

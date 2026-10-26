@@ -46,8 +46,29 @@ async function corpsJson(req) {
 }
 
 /**
- * L'état affiché : les serveurs **du dépôt** (ceux dont le dossier est un chantier connu, ou
- * dont la commande est un `vite`), et les chantiers **avec le port qui les sert**.
+ * Le **périmètre** : quels processus sont des serveurs de chantier, c'est-à-dire lesquels
+ * **servent** l'application — Vite, en dev ou en preview. Tout ce qui écoute dans un worktree n'en
+ * est pas un — un `vitest` éphémère, un `postgres`, un script de simulation, un MCP : les lister
+ * remplirait la table de bruit et offrirait des boutons « tuer » sur des processus qui n'ont rien
+ * à voir avec un serveur (#227).
+ *
+ * Cette définition est **la seule**, et c'est exprès (#245) : elle sert deux fois — la page pour
+ * **montrer**, `/api/tuer` pour **accepter**. Deux copies du filtre avaient divergé, et la route
+ * de mort pouvait terminer n'importe quel processus de l'utilisateur qui écoute, avec tout son
+ * arbre. Une règle qui décide de ce qu'on **tue** ne se duplique pas : elle se lit ici ou pas.
+ */
+export function estServeurDeChantier(serveur) {
+  // Un **mot** `vite` (le binaire `…/.bin/vite`, `…/vite/bin/vite.js`), pas un mot qui le
+  // contient : `node …/.bin/vitest run` n'est pas un serveur de chantier, et un `/vite/` nu le
+  // laissait passer — la table le montrait et la route de mort l'acceptait (#245, mesuré).
+  return (serveur?.commande ?? '')
+    .split(/\s+/)
+    .some((argument) => /(^|[/\\])(vite|vite\.js)$/.test(argument));
+}
+
+/**
+ * L'état affiché : les serveurs **du dépôt** (ceux dont la commande est un `vite`, selon
+ * `estServeurDeChantier`), et les chantiers **avec le port qui les sert**.
  *
  * La liaison serveur ↔ chantier se fait par le **dossier de travail du processus** (`/proc`),
  * pas par le port : c'est la seule chose qui dise quelle **branche** est réellement servie —
@@ -57,11 +78,7 @@ async function corpsJson(req) {
 export function construireEtat({ serveurs, chantiers }) {
   const parChemin = new Map(chantiers.map((chantier) => [chantier.chemin, chantier]));
   const retenus = serveurs
-    // Un « serveur de chantier » est un processus qui **sert** l'application : Vite, en dev ou en
-    // preview. Tout ce qui écoute dans un worktree n'en est pas un — un `vitest` éphémère, un
-    // script de simulation, un MCP : les lister remplirait la table de bruit et offrirait des
-    // boutons « tuer » sur des processus qui n'ont rien à voir avec un serveur (#227).
-    .filter((serveur) => /vite/.test(serveur.commande ?? ''))
+    .filter(estServeurDeChantier)
     .map((serveur) => {
       const commande = serveur.commande ?? '';
       const type = /vite preview/.test(commande) ? 'preview' : 'dev';
@@ -144,15 +161,23 @@ export async function demarrerServeur({
     return { statut: 201, corps: { ...lancement, chemin, mode } };
   }
 
-  /** Tuer : seulement un processus qui **écoute** et que l'état courant montre. */
+  /**
+   * Tuer : seulement un processus qui **écoute** et que l'état courant montre — donc dans le
+   * périmètre de `estServeurDeChantier`, le même que la page (#245). Un processus hors périmètre
+   * est refusé **avant** que `systeme.tuer` soit appelé : c'est la route qui protège l'arbre entier
+   * du processus visé, pas l'appelant.
+   */
   function tuer(corps) {
     const pid = Number(corps?.pid);
     if (!Number.isInteger(pid) || pid <= 1) throw refus(400, `pid invalide : ${corps?.pid}`);
     if (pid === process.pid) throw refus(400, 'le tableau de bord ne se tue pas lui-même');
-    const serveur = systeme.listerServeurs().find((candidat) => candidat.pid === pid);
-    if (!serveur) throw refus(404, `aucun serveur en écoute pour le pid ${pid}`);
+    const enEcoute = systeme.listerServeurs().find((candidat) => candidat.pid === pid);
+    if (!enEcoute) throw refus(404, `aucun serveur en écoute pour le pid ${pid}`);
+    if (!estServeurDeChantier(enEcoute)) {
+      throw refus(403, `le pid ${pid} écoute mais n'est pas un serveur de chantier — hors périmètre, il ne se tue pas ici`);
+    }
     const tues = systeme.tuer(pid);
-    return { statut: 200, corps: { pid, port: serveur.port, tues } };
+    return { statut: 200, corps: { pid, port: enEcoute.port, tues } };
   }
 
   const serveur = createServer(async (req, res) => {
