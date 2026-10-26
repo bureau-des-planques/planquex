@@ -14,9 +14,11 @@ s'appuyer dessus.
 | `supabase/migrations/0006_tri_et_corrections.sql` | le tri, la correction et le retrait (#138, #139, D-088) : `statut`/`raison`/`ticket` écrits par un **administrateur** seul, le retrait par l'auteur tant que le post-it est `en attente`, et `public.corriger_postit(id, titre, texte)` pour le titre et le texte — la base n'en donne plus l'écriture directe |
 | `supabase/migrations/0007_place_et_retrait_admin.sql` | la place et le retrait (#185, #186, D-092) : `public.deplacer_postit(...)` (l'auteur range **ses** post-its, l'administrateur **tous**), et la politique qui laisse l'administration retirer n'importe quel post-it à n'importe quel statut |
 | `supabase/migrations/0008_comite.sql` | le suivi (#209, D-097) : `postits.updated_at` et son déclencheur (monté **au changement de statut** seul), `comptes.vu_le` — le repère par compte — et `public.marquer_comite_vu()`. Le rôle `authenticated` **lit** son repère et ne l'écrit jamais |
+| `supabase/migrations/0009_commentaires_dates.sql` | les dates du comité posées par le serveur (#238) : `commentaires.created_at` et `postits.updated_at` sont **réécrits** à `now()` par un déclencheur `before insert` — une date fournie par le client, future ou passée, ne garde plus la pastille allumée ni ne la cache |
 | `supabase/comptes.test.ts` | la garde des comptes : en attente refusé, approuvé accepté, non-administrateur sans pouvoir, pas d'auto-approbation, drapeau protégé — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/place.test.ts` | la garde de la place et du retrait : l'auteur range le sien, l'administrateur range et retire tout, un compte en attente rien — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/comite.test.ts` | la garde du suivi (#209) : `updated_at` monte au changement de statut, et **pas** sur une écriture de place ni une correction de texte ; le repère s'écrit par la fonction et pas en direct ; chacun ne marque que le sien — et chaque contrôle neutralisé laisse passer le fautif |
+| `supabase/dates.test.ts` | la garde des dates (#238) : une date de 2030 ou de 2000 fournie à l'insertion d'un commentaire ou d'un post-it est réécrite à l'heure du serveur — et chaque déclencheur, neutralisé, laisse passer la date du client |
 | `supabase/pouces.test.ts` | la garde des pouces : un seul vote par appareil, pas pour soi, pas au nom d'un autre, un vote défait remet le compteur — et chaque contrôle, neutralisé, laisse passer le fautif |
 | `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
@@ -463,6 +465,9 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
 - **appliquer la migration 0008** (§6, le suivi du comité, #209, D-097) — elle est **idempotente**,
   et son backfill ne réveille personne : les post-its existants prennent `created_at` comme
   `updated_at`, et les comptes existants `now()` comme `vu_le` ;
+- **appliquer la migration 0009** (§6, les dates du comité posées par le serveur, #238) — elle est
+  **idempotente** et ne touche aucune ligne existante : ses deux déclencheurs ne visent que
+  l'insertion ;
 - **renommer le fichier** en `<horodatage>_mur.sql` **si** le CLI l'exige (non vérifié) ;
 - **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
   l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;
