@@ -171,6 +171,16 @@ function mesureHauteur(cibles) {
 }
 
 /**
+ * **La marge exigée** sous la barre de navigation : `20` px à 420 × 900 (D-094 (3)).
+ *
+ * Le seuil de 830 px (D-094 (2)) dit seulement que l'écran tient ; la marge dit qu'il tient
+ * **avec de la place** — « pour qu'une ligne de plus ne rougisse pas la capture ». Elle
+ * s'applique à **tous** les états mesurés, pas-à-pas ouvert compris : D-094 (3) ne prévoit
+ * aucune exception, et une exception se décide, elle ne se glisse pas dans le code (#237).
+ */
+const MARGE_MIN = 20;
+
+/**
  * Le **contrôle** de la géométrie, sans DOM ni navigateur (#194) : la sonde
  * `--controle-hauteur` et son test le lisent directement, donc il mord même quand aucun
  * Chromium ne tourne.
@@ -178,14 +188,34 @@ function mesureHauteur(cibles) {
  * Un élément **absent** ne produit **rien** — c'est ce qui laisse la garde dormante tant
  * que #190 et #191 n'ont pas livré ; un élément présent qui sort de la fenêtre produit un
  * message qui **le nomme**, et pas seulement « la main ».
+ *
+ * Depuis #237 deux défauts sont mesurés, et **chacun mord** : l'élément qui **sort** de la
+ * fenêtre (bas au-delà de la barre de navigation) et celui qui n'a **pas la marge** de
+ * D-094 (3). Un élément déjà hors de la fenêtre n'est nommé qu'une fois (le second message
+ * serait du bruit), et `etat` — le libellé du passage mesuré, par exemple « pas-à-pas
+ * terminé » — entre dans le message pour qu'on sache **lequel** des états mesurés fauter.
  */
-function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false }) {
+function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false, etat = '' }) {
   const hors = mesures.filter(({ present, haut, bas }) => present && (haut < 0 || bas > limite));
   const problemes = hors.map(
     ({ nom, bas }) =>
-      `${nom} n'est pas visible sans défiler (${viewport.width} × ${viewport.height}) : ` +
+      `${nom} n'est pas visible sans défiler (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
       `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px`
   );
+
+  // **La marge** (#237) : tenir dans la fenêtre ne suffit pas, il faut y tenir avec 20 px de
+  // place sous soi (D-094 (3)). Seuls les éléments **dans** la fenêtre sont jugés ici — un
+  // élément qui en sort est déjà nommé au-dessus.
+  const justes = mesures.filter(
+    ({ present, haut, bas }) => present && haut >= 0 && bas <= limite && limite - bas < MARGE_MIN
+  );
+  for (const { nom, bas } of justes) {
+    const marge = limite - bas;
+    problemes.push(
+      `${nom} n'a que ${marge} px de marge (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+        `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px, ${MARGE_MIN} px exigés (D-094 (3))`
+    );
+  }
 
   // **La barre ne recouvre pas la main** (#191). Être dans la fenêtre ne suffit pas : une barre
   // collée en bas peut tenir à l'écran **et** cacher le bas des cartes. On ne le dit que quand
@@ -206,18 +236,22 @@ function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false }) 
     main.haut < barre.bas
   ) {
     problemes.push(
-      `${barre.nom} recouvre ${main.nom} (${viewport.width} × ${viewport.height}) : ` +
+      `${barre.nom} recouvre ${main.nom} (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
         `haut de la barre à ${barre.haut} px, bas de la main à ${main.bas} px`
     );
   }
   return problemes;
 }
 
-/** Mesure les trois surfaces, journalise, et range les manquements dans `problems`. */
+/**
+ * Mesure les trois surfaces, journalise, et range les manquements dans `problems`.
+ * `contexte` est le **libellé de l'état** mesuré (graine, ou « pas-à-pas terminé ») : il part
+ * dans le message de la garde, pour qu'un échec nomme l'état et pas seulement la surface (#237).
+ */
 async function controlerHauteur(page, contexte, route) {
   const hauteur = await page.evaluate(mesureHauteur, CIBLES_HAUTEUR);
   console.log(`combat · ${contexte} · ${JSON.stringify(hauteur)}`);
-  for (const probleme of controlesHauteur({ ...hauteur, viewport: VIEWPORT })) {
+  for (const probleme of controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })) {
     problems.push(`${route} · ${probleme}`);
   }
 }

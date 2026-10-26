@@ -297,6 +297,19 @@ Trois indices, aucun modal :
   recouvre alors **la main seule** — jamais le plateau, qui reste lisible : c'est ce qui rend
   la feuille basse acceptable (§3.4).
 
+- **Mesuré le 26/10/2026, la marge de D-094 (3) maintenant gardée** (#237) : le pas-à-pas
+  **ouvert** laissait la barre d'action à **18 px** de la barre de navigation (15 px à la
+  graine de 14 h 30) sans que rien ne le dise — `controlesHauteur` ne comparait qu'à la
+  **limite** de 830 px. Elle exige désormais `limite - bas >= 20` sur **chaque** état mesuré,
+  pas-à-pas ouvert compris. Deux choses à savoir pour la suite de la composition : (1) tant
+  que la page **déborde** de la fenêtre, l'arrivée défile **jusqu'en bas**, et la marge
+  mesurée vaut alors l'**air réservé sous la barre** (le `padding-bottom` de l'écran, 88 px
+  de coquille + 8 px de l'écran) **moins** la hauteur de la navigation (70 px) : densifier
+  le contenu au-dessus de la barre ne la déplace donc pas, seul l'air réservé le fait ;
+  (2) les gouttières resserrées du même ticket (barre, journal, pas-à-pas) rendent 9,6 px
+  au-dessus de la barre, ce qui porte l'état « pas-à-pas terminé » à **36–38 px** de marge
+  (contre 31–33) et laisse la composition plus loin de la limite.
+
 - **Mesuré le 25/10/2026, et ça change la tâche** : en remplaçant les noms par des cartes
   **sans toucher au reste**, `npm run capturer` passe de « main visible » (bas de la main à
   **666 px**, barre de navigation à 830) à **906 px** — soit **+313 px**, et l'échec du
