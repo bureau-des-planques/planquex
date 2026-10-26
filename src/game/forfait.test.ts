@@ -36,7 +36,7 @@ describe('Forfait — une défaite quel que soit le score (D-030, #79)', () => {
 
     expect(after.phase).toBe('ended');
     expect(after.winner).toBe('player');
-    expect(after.log.at(-1)).toBe('L’IA déclare forfait : tu l’emportes.');
+    expect(after.log.at(-1)).toBe('La Direction déclare forfait : tu l’emportes.');
   });
 
   it('l’emporte malgré 2 Interventions du joueur contre 0', () => {
@@ -116,7 +116,7 @@ describe('Forfait — le camp qui a la main, et lui seul (#123)', () => {
     expect(after.phase).toBe('ended');
     expect(after.winner).toBe('player');
     expect(after.endReason).toBe('forfait');
-    expect(after.log.at(-1)).toBe('L’IA déclare forfait : tu l’emportes.');
+    expect(after.log.at(-1)).toBe('La Direction déclare forfait : tu l’emportes.');
   });
 
   it('le suit pendant une relève : `current` reste l’attaquant, pas `pendingPromotion`', () => {

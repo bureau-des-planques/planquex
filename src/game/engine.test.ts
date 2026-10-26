@@ -266,7 +266,7 @@ describe('Fin de partie (D-031)', () => {
       expect(after.winner).toBe('ai');
       // Une seule décision, et c'est le plateau vide : l'ordre inverse (3 Interventions
       // d'abord) aurait donné la victoire au joueur.
-      expect(decisions).toEqual(['L’IA gagne : plus aucun Planqué.']);
+      expect(decisions).toEqual(['La Direction gagne : plus aucun Planqué.']);
     } finally {
       restore();
     }

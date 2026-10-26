@@ -26,16 +26,18 @@ import type { Refusal } from '@/game/codec';
 import { createBattle, replayBattle } from '@/game/engine';
 import type { BattleCafeTypes } from '@/game/engine';
 import { nextAiAction } from '@/game/ia';
+import { CAMP_NAME } from '@/data/vocabulaire';
 
 /**
  * Les deux camps du moteur, nommés pour l'écran. Ce sont les **sièges** du moteur
  * (`player`, `ai`), pas des personnes : en partie à deux, celui qui colle le code peut
  * tenir l'un ou l'autre, et l'écran doit le dire sans se tromper (critère #125).
+ *
+ * La table vit dans `src/data/vocabulaire.ts` (#248) : le **moteur** l'écrit dans son
+ * journal et ne peut pas importer ce module (`pvp.ts` importe `engine.ts`, jamais
+ * l'inverse). On la ré-exporte ici pour ne déplacer aucun appelant.
  */
-export const CAMP_NAME: Readonly<Record<PlayerId, string>> = {
-  player: 'camp Toi',
-  ai: 'camp Direction'
-};
+export { CAMP_NAME };
 
 /** L'autre camp. Une seule écriture, donc pas de camp « oublié » dans une branche. */
 export function otherCamp(camp: PlayerId): PlayerId {

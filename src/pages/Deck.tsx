@@ -7,6 +7,7 @@ import type { Card, CafeType } from '@/data/types';
 import {
   autoDeck,
   CAFE_FACTIONS,
+  DECK_SIZE,
   deckCanAdd,
   deckCafeTypes,
   deckCards,
@@ -64,7 +65,9 @@ export function Deck() {
     () => [...proposed, ...CAFE_FACTIONS.filter((type) => !proposed.includes(type))],
     [proposed]
   );
-  const cafeLabel = (types: readonly CafeType[]) =>
+  // Le **sigle** (et non le nom) : c'est la liste compacte de la Machine, pas un libellé
+  // de café. Il ne porte donc pas le nom `cafeLabel`, qui dit le nom ailleurs (#248).
+  const cafeSigles = (types: readonly CafeType[]) =>
     types.map((type) => FACTION_META[type].short).join(', ');
 
   /** Charger un Deck proposé : ses cartes **et** ses types de café, en un geste (#141). */
@@ -90,7 +93,7 @@ export function Deck() {
     <div className="page deck">
       <section className="section__head">
         <div>
-          <h1>{deck.length}/20 cartes</h1>
+          <h1>{deck.length}/{DECK_SIZE} cartes</h1>
           <p className="muted">
             Un clic sur une carte l’ajoute, un clic sur une carte du haut la retire.{' '}
             {MAX_COPIES_PER_NAME} exemplaires maximum par nom.
@@ -102,7 +105,7 @@ export function Deck() {
             className="button button--primary"
             disabled={automatic.deck.length === 0}
             onClick={() => setDeck(automatic.deck)}
-            title="Remplace le deck par 20 cartes prises dans ta collection"
+            title={`Remplace le deck par ${DECK_SIZE} cartes prises dans ta collection`}
           >
             <Sparkles size={16} /> Remplir ({automatic.deck.length})
           </button>
@@ -114,7 +117,7 @@ export function Deck() {
 
       {automatic.missing > 0 && (
         <p className="notice notice--warn">
-          Ta Collection ne couvre que <strong>{automatic.deck.length}</strong> cartes sur 20 : ouvre des arrivages depuis
+          Ta Collection ne couvre que <strong>{automatic.deck.length}</strong> cartes sur {DECK_SIZE} : ouvre des arrivages depuis
           l’accueil pour compléter.
         </p>
       )}
@@ -140,7 +143,7 @@ export function Deck() {
                   {deckPropose.name}{' '}
                   <span className="muted">
                     — {deckPropose.vivier === 'MIXTE' ? 'Mixte' : VIVIER_META[deckPropose.vivier].label} ·{' '}
-                    {cafeLabel(deckPropose.cafeTypes)}
+                    {cafeSigles(deckPropose.cafeTypes)}
                   </span>
                 </h3>
                 <p>{deckPropose.strategie}</p>
@@ -206,11 +209,11 @@ export function Deck() {
 
         <p className="muted">
           {chosenCafeTypes.length > 0
-            ? `Choix manuel : ${cafeLabel(chosenCafeTypes)}.`
+            ? `Choix manuel : ${cafeSigles(chosenCafeTypes)}.`
             : proposed.length > 0
-              ? `Proposition automatique : ${cafeLabel(proposed)}.`
+              ? `Proposition automatique : ${cafeSigles(proposed)}.`
               : 'Aucun type : ce Deck ne produira pas de café.'}
-          {cafeTypes.length > 0 && ` La Machine tirera dans ${cafeLabel(cafeTypes)}.`}
+          {cafeTypes.length > 0 && ` La Machine tirera dans ${cafeSigles(cafeTypes)}.`}
         </p>
       </section>
 

@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { FACTION_META } from '@/data';
+import { cafeLabel } from '@/data/vocabulaire';
 import type { CafeSymbol } from '@/data/types';
 
 /**
@@ -16,10 +17,12 @@ export function CafeDot({ cafe }: { cafe: CafeSymbol }) {
   return <i className="pip pip--typed" style={style} title={cafeLabel(cafe)} />;
 }
 
-/** Le libellé français d'un café (tooltip, résumés du plateau). */
-export function cafeLabel(cafe: CafeSymbol): string {
-  return cafe === 'INCOLORE' ? 'Incolore' : FACTION_META[cafe].name;
-}
+/**
+ * Le libellé français d'un café vient de `@/data/vocabulaire` (#248) : le moteur l'écrit
+ * dans son journal, l'écran l'affiche, et il n'y a plus qu'un corps. On le ré-exporte pour
+ * que les appelants de l'écran continuent d'importer depuis ce module.
+ */
+export { cafeLabel };
 
 interface Props {
   /**

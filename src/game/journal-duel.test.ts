@@ -6,10 +6,11 @@ import { factionDeck } from '@/game/simulation';
 /**
  * Ticket #154 — le journal du moteur nomme les camps selon **qui joue**.
  *
- * En solo, le camp `ai` est la Direction : « L’IA pose » est juste et reste écrit tel
- * quel. En partie à deux, les **deux** camps sont tenus par des humains : « L’IA » est
- * faux, et « Tu » aussi (le camp `player` peut être tenu par l'adversaire). Le journal
- * nomme donc les camps (« le camp Toi », « le camp Direction »).
+ * En solo, le camp `ai` est la Direction et le journal l'appelle « La Direction »
+ * (D-106 : un seul nom, du journal à l'écran). En partie à deux, les **deux** camps sont
+ * tenus par des humains : « La Direction » est faux, et « Tu » aussi (le camp `player`
+ * peut être tenu par l'adversaire). Le journal nomme donc les camps (« le camp Toi »,
+ * « le camp Direction »).
  *
  * Le journal vit dans l'état (`BattleState.log`), pas dans l'écran : le moteur doit donc
  * savoir qu'il tourne à deux. C'est l'option `deuxCamps` de `createBattle`.
@@ -51,22 +52,23 @@ describe('journal — une partie à deux ne nomme jamais l’IA (#154)', () => {
     expect(after.log.filter((l) => MOT_TU.test(l))).toEqual([]);
   });
 
-  it('le solo écrit toujours « L’IA » : le drapeau ne fuit pas vers le solo', () => {
-    // Garde le contraire : si le moteur nommait le camp partout, « L’IA » disparaîtrait
-    // aussi en solo. Le mutant `if (false)` de `sujet` fait échouer les deux tests
-    // « à deux » ci-dessus, pas celui-ci (vérifié le 22/10/2026).
+  it('le solo écrit toujours « La Direction » : le drapeau ne fuit pas vers le solo', () => {
+    // Garde le contraire : si le moteur nommait le camp partout, « La Direction »
+    // disparaîtrait aussi en solo. Le mutant `if (false)` de `sujet` fait échouer les
+    // deux tests « à deux » ci-dessus, pas celui-ci (vérifié le 22/10/2026 ; nom du camp
+    // adverse fixé par D-106).
     const solo = jouer(createBattle(PLAYER_DECK, AI_DECK, 7));
-    expect(solo.log.some((l) => MOT_IA.test(l))).toBe(true);
+    expect(solo.log.some((l) => l.includes('La Direction'))).toBe(true);
     expect(solo.log.some((l) => l.includes('camp Direction'))).toBe(false);
   });
 });
 
 describe('journal — le solo reste inchangé (#154)', () => {
-  it('garde « Tu » et « L’IA » en partie solo', () => {
+  it('garde « Tu » et « La Direction » en partie solo', () => {
     const after = jouer(createBattle(PLAYER_DECK, AI_DECK, 7));
 
     expect(after.log.some((l) => l.startsWith('Tu '))).toBe(true);
-    expect(after.log.some((l) => l.startsWith('L’IA '))).toBe(true);
+    expect(after.log.some((l) => l.startsWith('La Direction '))).toBe(true);
   });
 
   it('ne change pas l’état à deux hors du journal (mêmes tirages, même partie)', () => {

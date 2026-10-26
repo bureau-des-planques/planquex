@@ -1,4 +1,4 @@
-import { ACTION_KIND_META, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
+import { ACTION_KIND_META, getCard, isBasic, isPlanque } from '@/data';
 import type {
   Ability,
   Attack,
@@ -7,7 +7,6 @@ import type {
   AttackEffect,
   BattleAction,
   BattleState,
-  CafeSymbol,
   CafeType,
   CardInstance,
   PendingChoice,
@@ -18,7 +17,21 @@ import type {
 import { deckLegal, resolveCafeTypes } from '@/game/deck';
 import { drawRandom, flipStamp, seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
-import { RULES, EXCLUSIVE_STATUSES, STATUS_ORDER, TURN_LIMIT, satisfiesCafeCost } from '@/game/rules';
+import {
+  RULES,
+  EXCLUSIVE_STATUSES,
+  STATUS_ORDER,
+  TURN_LIMIT,
+  HAND_LIMIT,
+  POINTS_TO_WIN,
+  BENCH_SIZE,
+  STARTING_HAND,
+  WEAKNESS_BONUS,
+  SURCHARGE_DAMAGE,
+  BURNOUT_DAMAGE,
+  satisfiesCafeCost
+} from '@/game/rules';
+import { CAMP_NAME, CAMP_SUJET, cafeLabel } from '@/data/vocabulaire';
 
 let uidCounter = 0;
 
@@ -82,14 +95,11 @@ const newUid = () => `u${++uidCounter}`;
 export interface BattleOptions {
   /**
    * Partie à **deux humains** : le journal nomme les camps (« le camp Toi », « le camp
-   * Direction ») au lieu de « Tu » et « L’IA ». Solo : `false`, et le journal est
-   * inchangé (la Direction y est bien une IA).
+   * Direction ») au lieu de « Tu » et « La Direction ». Solo : `false`, et le camp
+   * adverse garde son nom (`CAMP_SUJET`, D-108).
    */
   deuxCamps?: boolean;
 }
-
-/** Le nom d'un camp dans une partie à deux (AGENTS.md §3, `CAMP_NAME` de `store/pvp.ts`). */
-const CAMP_DUO: Readonly<Record<PlayerId, string>> = { player: 'camp Toi', ai: 'camp Direction' };
 
 /** Vrai quand le journal doit nommer les camps (partie à deux). */
 function estDeuxCamps(state: BattleState): boolean {
@@ -97,13 +107,13 @@ function estDeuxCamps(state: BattleState): boolean {
 }
 
 /**
- * Le sujet d'une phrase du journal pour le camp `who`. Solo : « Tu » / « L’IA » (la
- * Direction est une IA). À deux : « Le camp Toi » / « Le camp Direction », car aucun
- * des deux camps n'est une IA et « Tu » ne dit pas qui joue.
+ * Le sujet d'une phrase du journal pour le camp `who`. Solo : « Tu » / « La Direction »
+ * (D-108 : un seul nom, du journal à l'écran). À deux : « Le camp Toi » / « Le camp
+ * Direction », car aucun des deux camps n'est une IA et « Tu » ne dit pas qui joue.
  */
 function sujet(state: BattleState, who: PlayerId): string {
-  if (estDeuxCamps(state)) return `Le ${CAMP_DUO[who]}`;
-  return who === 'player' ? 'Tu' : 'L’IA';
+  if (estDeuxCamps(state)) return `Le ${CAMP_NAME[who]}`;
+  return CAMP_SUJET[who];
 }
 
 /**
@@ -167,20 +177,13 @@ function drawCafeType(state: BattleState, who: PlayerId): CafeType | null {
   return types[Math.floor(drawRandom(state) * types.length)] ?? types[0] ?? null;
 }
 
-/** Le libellé français d'un café, pour le journal (AGENTS.md §3.2). */
-function cafeLabel(type: CafeSymbol): string {
-  // Un café INCOLORE n'est jamais produit (D-034) ; le libellé reste juste s'il
-  // l'était un jour.
-  return type === 'INCOLORE' ? 'Incolore' : FACTION_META[type].name;
-}
-
 function emptyPlayer(): PlayerState {
   return {
     deck: [],
     hand: [],
     discard: [],
     active: null,
-    bench: [null, null, null],
+    bench: Array.from({ length: BENCH_SIZE }, () => null),
     energyZone: null,
     cafeTypes: [],
     points: 0,
@@ -219,9 +222,9 @@ function draw(state: BattleState, who: PlayerId, amount: number) {
       state.log.push(`${sujet(state, who)} ne pioche pas : Deck vide.`);
       break;
     }
-    if (player.hand.length >= 10) {
-      const main = estDeuxCamps(state) ? `La main du ${CAMP_DUO[who]}` : who === 'player' ? 'Ta main' : 'La main';
-      state.log.push(`${main} est pleine (10).`);
+    if (player.hand.length >= HAND_LIMIT) {
+      const main = estDeuxCamps(state) ? `La main du ${CAMP_NAME[who]}` : who === 'player' ? 'Ta main' : 'La main';
+      state.log.push(`${main} est pleine (${HAND_LIMIT}).`);
       break;
     }
     const card = player.deck.shift();
@@ -289,7 +292,7 @@ function ensureBasicInHand(player: PlayerState) {
 
 function setupPlayer(state: BattleState, who: PlayerId) {
   const player = state.players[who];
-  draw(state, who, 5);
+  draw(state, who, STARTING_HAND);
   ensureBasicInHand(player);
 
   const basics = player.hand.filter((card) => isBasic(getCard(card.cardId)));
@@ -379,7 +382,7 @@ export function createBattle(
   state.current = firstPlayer;
   state.log.push(
     estDeuxCamps(state)
-      ? `Lancer de tampon : le ${CAMP_DUO[firstPlayer]} ouvre.`
+      ? `Lancer de tampon : le ${CAMP_NAME[firstPlayer]} ouvre.`
       : firstPlayer === 'player'
         ? 'Lancer de tampon : tu ouvres.'
         : 'Lancer de tampon : la Direction ouvre.'
@@ -404,7 +407,7 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
     removeFromHand(player, uid);
     player.active = instance;
   } else {
-    if (slot < 0 || slot > 2 || player.bench[slot]) return state;
+    if (slot < 0 || slot >= BENCH_SIZE || player.bench[slot]) return state;
     removeFromHand(player, uid);
     player.bench[slot] = instance;
   }
@@ -619,7 +622,7 @@ export function attackDamage(
   //    l'étape 4 quand ce Planqué est la cible.
 
   // 3. La Vulnérabilité : +20, **au Poste seulement** (#70).
-  if (slot === 'poste' && defenderCard.weakness === attackerCard.faction) damage += 20;
+  if (slot === 'poste' && defenderCard.weakness === attackerCard.faction) damage += WEAKNESS_BONUS;
 
   // 4. Les effets qui affectent le défenseur : son Talent `reduceDamage`, puis la
   //    réduction d'instance posée par une Pression, valable le tour adverse.
@@ -782,7 +785,7 @@ function applyHandDeckEffect(state: BattleState, who: PlayerId, effect: AttackEf
         effect.amount === undefined ? opponent.hand : shuffle(opponent.hand, state).slice(0, effect.amount);
       const noms = montrees.map((card) => getCard(card.cardId)?.name ?? 'une carte').join(', ');
       const dans = estDeuxCamps(state)
-        ? `la main du ${CAMP_DUO[adversaire]}`
+        ? `la main du ${CAMP_NAME[adversaire]}`
         : adversaire === 'player'
           ? 'ta main'
           : 'la main de la Direction';
@@ -794,7 +797,7 @@ function applyHandDeckEffect(state: BattleState, who: PlayerId, effect: AttackEf
       // trouver, ou main pleine, pas de choix : le Deck est mélangé tout de suite.
       const filtre = effect.filter ?? 'PLANQUE';
       const trouvable = player.deck.some((card) => correspondFiltre(card, filtre));
-      if (trouvable && player.hand.length < 10) {
+      if (trouvable && player.hand.length < HAND_LIMIT) {
         ouvrirChoix(state, { kind: 'chercher', who, filtre });
         state.log.push(`${sujet(state, who)} ${verbe(state, who, 'cherches', 'cherche')} une carte dans le Deck.`);
       } else {
@@ -1123,12 +1126,18 @@ function resolveEnd(state: BattleState) {
   // #72 : le dernier craquage (celui de l'attaquant) départage.
   const last: PlayerId = state.current === 'player' ? 'ai' : 'player';
   const pointsWinner =
-    state.players[last].points >= 3 ? last : state.players[state.current].points >= 3 ? state.current : null;
+    state.players[last].points >= POINTS_TO_WIN
+      ? last
+      : state.players[state.current].points >= POINTS_TO_WIN
+        ? state.current
+        : null;
   if (pointsWinner) {
     state.phase = 'ended';
     state.winner = pointsWinner;
     state.endReason = 'interventions';
-    state.log.push(`${sujet(state, pointsWinner)} ${verbe(state, pointsWinner, 'gagnes', 'gagne')} : 3 Interventions.`);
+    state.log.push(
+      `${sujet(state, pointsWinner)} ${verbe(state, pointsWinner, 'gagnes', 'gagne')} : ${POINTS_TO_WIN} Interventions.`
+    );
     return;
   }
 
@@ -1295,11 +1304,11 @@ function controlStatuses(state: BattleState, who: PlayerId) {
     const active = state.players[who].active;
     if (!active || !hasStatus(active, status)) continue;
     if (status === 'SURCHARGE') {
-      active.hp -= 10;
-      state.log.push(`Surcharge : 10 de stress (${label}).`);
+      active.hp -= SURCHARGE_DAMAGE;
+      state.log.push(`Surcharge : ${SURCHARGE_DAMAGE} de stress (${label}).`);
     } else if (status === 'EPUISEMENT') {
-      active.hp -= 20;
-      state.log.push(`Épuisement : 20 de stress (${label}).`);
+      active.hp -= BURNOUT_DAMAGE;
+      state.log.push(`Épuisement : ${BURNOUT_DAMAGE} de stress (${label}).`);
       // Capture `07` : « Si c'est face, le Pokémon est guéri » — face = succès (#82).
       if (flipStamp(state) === 'face') {
         clearStatus(active, 'EPUISEMENT');
@@ -1386,10 +1395,10 @@ export function forfeit(state: BattleState, who: PlayerId): BattleState {
   const gagnant: PlayerId = who === 'player' ? 'ai' : 'player';
   next.log.push(
     estDeuxCamps(next)
-      ? `${sujet(next, who)} déclare forfait : le ${CAMP_DUO[gagnant]} l’emporte.`
+      ? `${sujet(next, who)} déclare forfait : le ${CAMP_NAME[gagnant]} l’emporte.`
       : who === 'player'
         ? 'Tu déclares forfait : la Direction l’emporte.'
-        : 'L’IA déclare forfait : tu l’emportes.'
+        : `${CAMP_SUJET.ai} déclare forfait : tu l’emportes.`
   );
   return next;
 }

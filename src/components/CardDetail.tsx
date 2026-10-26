@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogTitle
 } from '@/components/ui/dialog';
+import { WEAKNESS_BONUS } from '@/game/rules';
 import { outilsDeTest } from '@/lib/outils-de-test';
 import { CafePips } from './CafePips';
 import { CardView } from './CardView';
@@ -98,7 +99,7 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
                 <strong style={{ color: FACTION_META[card.weakness].color }}>
                   {FACTION_META[card.weakness].name}
                 </strong>
-                (+20)
+                (+{WEAKNESS_BONUS})
               </p>
             )}
 

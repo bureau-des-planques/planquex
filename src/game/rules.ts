@@ -22,6 +22,35 @@ export const RULES = {
 export const TURN_LIMIT = 30;
 
 /**
+ * Les **chiffres** du mode standard (`AGENTS.md` §4), chacun une seule fois (#248).
+ *
+ * Un chiffre recopié est un chiffre qui dérive : la main pleine existait en cinq
+ * endroits, « 3 Interventions » en quatre, et la Vulnérabilité en deux. Le moteur, l'IA
+ * et les écrans lisent désormais **ici**.
+ */
+
+/** Main maximale (§4) — 10 cartes. Au-delà, la pioche s'arrête. */
+export const HAND_LIMIT = 10;
+
+/** Interventions pour gagner (§4) — 3. Un COMEX en vaut 2. */
+export const POINTS_TO_WIN = 3;
+
+/** Places de Banc (§4) — 3. */
+export const BENCH_SIZE = 3;
+
+/** Main de départ (§4) — 5 cartes. */
+export const STARTING_HAND = 5;
+
+/** Vulnérabilité (§4) — +20, **au Poste seulement** (D-031). */
+export const WEAKNESS_BONUS = 20;
+
+/** Surcharge (§4) — 10 de Stress à chaque Contrôle. */
+export const SURCHARGE_DAMAGE = 10;
+
+/** Épuisement (§4) — 20 de Stress, plus le lancer de tampon. */
+export const BURNOUT_DAMAGE = 20;
+
+/**
  * Ordre de résolution des conditions en fin de tour (`AGENTS.md` §4) :
  * **Surcharge → Épuisement → Sieste → Immobilisation**. Un Planqué peut en subir plusieurs,
  * mais pas de toutes : voir `EXCLUSIVE_STATUSES` (D-030).

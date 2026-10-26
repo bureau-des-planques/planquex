@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'rea
 import type { CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, Info, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
-import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
+import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque, kindLabel } from '@/data';
 import type {
   AttackEffect,
   BattleAction,
@@ -16,7 +16,8 @@ import type {
   Status
 } from '@/data/types';
 import { applyAction, createBattle, dessusDuDeck, legalActions, legalAttacks } from '@/game/engine';
-import { deckLegal } from '@/game/deck';
+import { DECK_SIZE, MAX_COPIES_PER_NAME, deckLegal } from '@/game/deck';
+import { HAND_LIMIT, POINTS_TO_WIN } from '@/game/rules';
 import { useStore } from '@/store/useStore';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
 import type { Decks, Reprise } from '@/store/partie';
@@ -77,11 +78,11 @@ function testDeck(): string[] {
   const deck: string[] = [];
   for (const card of showcase) deck.push(card.id, card.id);
   for (const card of ordered) {
-    if (deck.length >= 20) break;
+    if (deck.length >= DECK_SIZE) break;
     deck.push(card.id);
-    if (deck.length < 20) deck.push(card.id);
+    if (deck.length < DECK_SIZE) deck.push(card.id);
   }
-  return deck.slice(0, 20);
+  return deck.slice(0, DECK_SIZE);
 }
 
 function cardName(cardId: string): string {
@@ -101,15 +102,6 @@ function instanceName(instance: CardInstance | null | undefined): string {
 function choixName(side: PlayerState, uid: string): string | undefined {
   const instance = [...side.hand, ...side.bench, ...side.deck].find((carte) => carte?.uid === uid);
   return instance ? cardName(instance.cardId) : undefined;
-}
-
-function kindLabel(definition: Card | undefined): string {
-  if (!definition) return '';
-  if (isPlanque(definition)) {
-    const stage = definition.stage === 'ENTRANT' ? 'Entrant' : definition.stage;
-    return definition.ex ? `${stage} · COMEX` : stage;
-  }
-  return definition.kind === 'OBJET' ? 'Objet' : 'Collègue';
 }
 
 /**
@@ -322,10 +314,13 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
      */
     case 'playBasic':
       return { label: action.slot === 'active' ? 'Poser au Poste' : `Mettre au Banc ${Number(action.slot) + 1}` };
-    case 'playAction':
-      return {
-        label: kindLabel(handDefinition(action.uid)) === 'Objet' ? 'Jouer cet Objet' : 'Jouer ce Collègue'
-      };
+    case 'playAction': {
+      // On lit la **nature** de la carte, pas son libellé : comparer `kindLabel(…)` à
+      // « Objet » faisait dépendre un bouton d'une chaîne d'affichage, et un Objet MRO
+      // aurait proposé « Jouer ce Collègue » (#248).
+      const jouee = handDefinition(action.uid);
+      return { label: jouee?.kind === 'OBJET' ? 'Jouer cet Objet' : 'Jouer ce Collègue' };
+    }
     case 'evolve':
       return {
         label: 'Faire évoluer',
@@ -582,7 +577,7 @@ function Camp({
         {deckDeTest && (
           <span
             className="board__test"
-            title="Un deck valide : 20 cartes, 2 exemplaires max, 1 Entrant minimum."
+            title={`Un deck valide : ${DECK_SIZE} cartes, ${MAX_COPIES_PER_NAME} exemplaires max, 1 Entrant minimum.`}
           >
             <span aria-hidden="true">deck de test</span>
             <span className="sr-only">Ton deck n’est pas valide : ce combat utilise un deck de test.</span>
@@ -687,8 +682,8 @@ function endBanner(state: BattleState, myCamp: PlayerId | null): string {
   switch (state.endReason) {
     case 'interventions':
       return won
-        ? 'Victoire : 3 Interventions.'
-        : `Défaite : ${versus ? 'le camp adverse' : 'la Direction'} marque 3 Interventions.`;
+        ? `Victoire : ${POINTS_TO_WIN} Interventions.`
+        : `Défaite : ${versus ? 'le camp adverse' : 'la Direction'} marque ${POINTS_TO_WIN} Interventions.`;
     case 'plateauVide':
       return won ? `Victoire : ${other} n’a plus aucun Planqué.` : 'Défaite : tu n’as plus aucun Planqué.';
     case 'forfait':
@@ -1522,7 +1517,7 @@ export function Battle() {
                   lui, n'en voit jamais que le compte (bandeau du plateau). */}
               <h2>{match === null ? 'Ta main' : `Ta main · ${CAMP_NAME[myCamp]}`}</h2>
               <span className="muted">
-                {mySide.hand.length} / 10
+                {mySide.hand.length} / {HAND_LIMIT}
                 {myMove && handActions.length > 0 && !selected ? ' · touche une carte pour la jouer' : ''}
               </span>
             </div>
@@ -1575,7 +1570,7 @@ export function Battle() {
                         {/* Le nom et l'état, lus à voix haute : la carte visible est `aria-hidden`. */}
                         <span className="hand__name sr-only">{cardName(card.cardId)}</span>
                         <span className="hand__meta sr-only">
-                          <span className="hand__kind">{kindLabel(definition)}</span>
+                          <span className="hand__kind">{definition && kindLabel(definition)}</span>
                           {jouable && <span className="hand__tag">Jouable</span>}
                         </span>
                       </button>
@@ -1597,7 +1592,7 @@ export function Battle() {
             <section className="pose panel" aria-label="Poser la carte choisie" ref={poseRef}>
               <p className="pose__titre">
                 <span className="muted">Carte choisie</span> <strong>{cardName(selected.cardId)}</strong>{' '}
-                <span className="hand__kind">{kindLabel(selectedDefinition)}</span>
+                <span className="hand__kind">{selectedDefinition && kindLabel(selectedDefinition)}</span>
               </p>
               {selectedDefinition && !isPlanque(selectedDefinition) && (
                 <p className="hand__text muted">{selectedDefinition.text}</p>

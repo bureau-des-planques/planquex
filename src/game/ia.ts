@@ -8,6 +8,7 @@ import type {
 } from '@/data/types';
 import { applyAction, attackDamage, attackPreview, createInstance, legalActions } from '@/game/engine';
 import { MAX_COPIES_PER_NAME } from '@/game/deck';
+import { HAND_LIMIT } from '@/game/rules';
 import { drawRandom, seedRng } from '@/game/rng';
 import type { RngState } from '@/game/rng';
 import { satisfiesCafeCost } from '@/game/rules';
@@ -399,9 +400,6 @@ export function evaluatePosition(
     weights.threat * (myThreat - opponentThreat)
   );
 }
-
-/** La main pleine (10 cartes) — la même limite que `draw` dans le moteur (§4). */
-const HAND_LIMIT = 10;
 
 /**
  * **Bonus de fin de tour** : la carte que le camp qui termine **piochera** au début de

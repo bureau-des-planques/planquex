@@ -226,8 +226,9 @@ describe('pvp — gardes de l’écran de combat', () => {
 
 /**
  * Ticket #154 — le journal d'une partie à deux ne dit jamais « l’IA » : les deux camps
- * sont tenus par des humains. Le **témoin** est le solo, où « L’IA » doit rester écrit :
- * sans lui, un journal vide ou une partie qui ne joue pas passerait ce test pour rien.
+ * sont tenus par des humains. Le **témoin** est le solo, où « La Direction » doit rester
+ * écrit (D-106) : sans lui, un journal vide ou une partie qui ne joue pas passerait ce
+ * test pour rien.
  *
  * Le contrôle mord : sans l’option `deuxCamps` passée par `createMatch` et `joinMatch`,
  * le journal d’une partie PvP contient « L’IA » et ces tests échouent.
@@ -266,8 +267,9 @@ describe('pvp — le journal ne dit jamais « l’IA » à deux (#154)', () => {
     expect(joined.state.log).toEqual(played.log);
   });
 
-  it('le solo écrit toujours « L’IA » (témoin)', () => {
+  it('le solo écrit toujours « La Direction » (témoin, D-106)', () => {
     const solo = jouer(createBattle(testDeck(), testDeck(), seedFor('player')));
-    expect(solo.log.some((l) => MOT_IA.test(l))).toBe(true);
+    expect(solo.log.some((l) => l.includes('La Direction'))).toBe(true);
+    expect(solo.log.some((l) => l.includes('camp Direction'))).toBe(false);
   });
 });

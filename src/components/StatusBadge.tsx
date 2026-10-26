@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { Flame, FlaskConical, Lock, Moon, Wind } from 'lucide-react';
 import type { Status } from '@/data/types';
+import { BURNOUT_DAMAGE, SURCHARGE_DAMAGE } from '@/game/rules';
 
 /**
  * Les cinq conditions de combat (`AGENTS.md` §4), avec leur libellé, leur règle et leur
@@ -8,8 +9,16 @@ import type { Status } from '@/data/types';
  * condition ajoutée au type s'affiche ici avant d'atteindre l'écran.
  */
 export const STATUS_META: Record<Status, { label: string; description: string; icon: LucideIcon }> = {
-  SURCHARGE: { label: 'Surcharge', description: '10 de Stress par Contrôle', icon: FlaskConical },
-  EPUISEMENT: { label: 'Épuisement', description: '20 de Stress, plus le lancer de tampon', icon: Flame },
+  SURCHARGE: {
+    label: 'Surcharge',
+    description: `${SURCHARGE_DAMAGE} de Stress par Contrôle`,
+    icon: FlaskConical
+  },
+  EPUISEMENT: {
+    label: 'Épuisement',
+    description: `${BURNOUT_DAMAGE} de Stress, plus le lancer de tampon`,
+    icon: Flame
+  },
   SIESTE: { label: 'Sieste', description: 'Ni Pression ni Rotation ; lancer au Contrôle', icon: Moon },
   IMMOBILISATION: { label: 'Immobilisation', description: 'Ni Pression ni Rotation', icon: Lock },
   DERIVE: { label: 'Dérive', description: 'Lancer avant la Pression : sur un échec, le tour prend fin', icon: Wind }
