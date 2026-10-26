@@ -1,0 +1,52 @@
+name: Fichiers générés
+
+# `src/data/versions.ts` (releases GitHub, D-090) et `src/data/plan-dev.ts` (issues `alpha`
+# ouvertes, D-097 (3)) sont commités et lus par `/feuille-de-route`. Ils dépendent de l'état
+# VIVANT de GitHub : les vérifier dans la CI des pull requests la faisait tomber rouge à chaque
+# issue fermée, sans rien de cassé dans le code (26/10/2026, trois fois). On les vérifie donc
+# **quand ça compte** (D-113) : sur un tag de version, ou à la demande (« Run workflow »).
+#
+# Le geste qui garde la release reste local, avant de taguer : `docs/VERSIONS.md` §4, étape 3.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# `contents: read` suffit aux releases (`gh release list`) ; les issues `alpha`
+# (`gh issue list`) demandent en plus `issues: read`, même sur un dépôt privé.
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  fichiers-generes:
+    name: versions.ts et plan-dev.ts sont à jour
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Installer Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      # **On vérifie, on ne réécrit pas** : un fichier généré par la CI ferait un commit fantôme.
+      # `GH_TOKEN` est `github.token`, le jeton automatique : aucune valeur à configurer, donc
+      # aucun secret. Sans jeton, l'étape ÉCHOUE au lieu de se sauter : un contrôle qui n'a pas
+      # tourné n'est pas un contrôle (même règle que `npm run capturer`).
+      - name: Vérifier que les fichiers générés sont à jour
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "${GH_TOKEN:-}" ] && ! gh auth status >/dev/null 2>&1; then
+            echo "::error::Fichiers générés non vérifiés — aucun jeton GitHub : GH_TOKEN est absent et gh n'est pas authentifié. Un contrôle qui n'a pas tourné n'est pas un contrôle : rétablis le jeton (github.token), ne saute pas l'étape."
+            exit 1
+          fi
+          npm run plan:dev -- --verifie
+          npm run notes:versions -- --verifie

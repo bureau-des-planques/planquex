@@ -75,7 +75,10 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    changer `stage` à la main si l'étape change.
 3. **Vérifier** : `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` — et
    regarder la version rendue (`grep -o "$(node -p 'require("./package.json").version')"
-   dist/assets/*.js`).
+   dist/assets/*.js`). Puis les
+   **fichiers générés** : `npm run plan:dev` et `npm run notes:versions` (réécrivent si besoin),
+   puis `-- --verifie` sur chacun. Ce geste local est celui qui garde la release : la CI des PR
+   ne les vérifie plus (D-113), et `fichiers-generes.yml` le refait sur le tag en filet.
 4. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
 5. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
    message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.

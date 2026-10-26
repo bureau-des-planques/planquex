@@ -54,7 +54,7 @@ export default defineConfig({
         name: 'node',
         test: {
           environment: 'node',
-          setupFiles: ['./src/test/setup.ts'],
+          setupFiles: ['./src/test/setup.ts', './src/test/setup-poste.ts'],
           // Les QUATRE zones : `src/` (moteur, données, store, lib), `scripts/` (les gardes
           // du dépôt), `supabase/` (la migration du mur) et `tools/` (le poste de pilotage,
           // #184). Les écrans sont en `.tsx` et vivent dans le projet `ui`.
@@ -67,7 +67,7 @@ export default defineConfig({
         name: 'ui',
         test: {
           environment: 'jsdom',
-          setupFiles: ['./src/test/setup-jsdom.ts'],
+          setupFiles: ['./src/test/setup-jsdom.ts', './src/test/setup-poste.ts'],
           include: ['src/**/*.test.tsx'],
           globals: true,
           css: true,
