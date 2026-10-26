@@ -1,7 +1,8 @@
 # Preuves — captures qui rendent une règle « observée »
 
 Ce dossier reçoit les **preuves primaires** : des captures d'écran horodatées, faites
-dans l'application *Pokémon TCG Pocket* elle-même. **Quatre usages, quatre dossiers** :
+dans l'application *Pokémon TCG Pocket* elle-même — et, pour les deux derniers usages, des
+captures de **notre** application. **Un usage, un dossier** :
 
 | Dossier | Ce qu'il prouve | Protocole |
 |---|---|---|
@@ -10,6 +11,7 @@ dans l'application *Pokémon TCG Pocket* elle-même. **Quatre usages, quatre dos
 | `regles-<AAAA-MM-JJ>/` | La **recherche documentaire** — verdict ligne par ligne contre `AGENTS.md` §4, avec citations exactes, niveaux de preuve (primaire / transcription / secondaire) et URL. **Ne contient pas de capture** : c'est un lot de recherche, qui peut ne contenir **aucune preuve primaire**, et doit alors le dire explicitement (§0 du README du lot). | `docs/preuves/regles-<date>/README.md` (modèle implicite : méthode §0, verdict §2, sources §5) |
 | `finition-<étape>-<AAAA-MM-JJ>/` | Les **captures de notre propre application** à la fin d'une étape (D-060, critère 4) : taille d'un téléphone, **avant** et **après** la passe, avec les états provoqués. Ce ne sont pas des preuves de règle. | `README.md` du lot (comment chaque image a été prise, ce qu'elle ne prouve pas) |
 | `combat-ui-<AAAA-MM-JJ>/` | Les **captures de notre écran de combat** avant/après la refonte **D-093** (#194) : l'état daté, la taille de téléphone, et les mesures de hauteur que `npm run capturer` contrôle. Pas des preuves de règle non plus. | `README.md` du lot |
+| `prototype-<AAAA-MM-JJ>/` | Le **banc d'essai DEV** des saynètes d'attaque (`src/prototype/scene.html`, D-098, réparé par D-101) : il **se rend**, la scène y joue, et il n'est **pas** dans le bundle. Ce n'est pas un écran de l'application et ce n'est pas une preuve de règle. | `README.md` du lot |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
 
