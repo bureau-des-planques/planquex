@@ -3610,35 +3610,35 @@ h2 {
   }
 }
 
-/* ---------- Nouveautés — les notes de version dans le jeu ---------- */
+/* ---------- La feuille de route — la version, l'étape, les jalons (D-097) ---------- */
 
 /* Le bloc de la version courante est **mis en avant** : c'est ce qu'un invité vient lire,
    l'historique vient après. La mise en avant passe par la **chaleur** du panneau (fond et
    bordure teintés d'or, titre en display) et **pas** par un liseré sur un côté — c'est le
    tell d'UI générée qu'Impeccable refuse, et il ne dit rien de plus. Jetons uniquement,
    aucun hex (D-035). */
-.nouveautes__courante {
+.feuille-de-route__courante {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 46%),
     var(--bg-raised);
   border-color: color-mix(in srgb, var(--gold) 42%, var(--line-strong));
 }
 
-.nouveautes__courante .nouveautes__titre {
+.feuille-de-route__courante .feuille-de-route__titre {
   color: var(--gold-soft);
   font-family: var(--font-display);
 }
 
-.nouveautes__label {
+.feuille-de-route__label {
   margin: 0.5rem 0 0.75rem;
 }
 
-.nouveautes__titre {
+.feuille-de-route__titre {
   font-size: 0.95rem;
   margin: 0.5rem 0;
 }
 
-.nouveautes__liste {
+.feuille-de-route__liste {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;

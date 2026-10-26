@@ -155,12 +155,12 @@ describe('Settings — écran des Réglages', () => {
     expect(screen.getByText(APP_LABEL)).toBeInTheDocument();
   });
 
-  it('mène à la page des nouveautés depuis la section Version (D-090)', () => {
+  it('mène à la feuille de route depuis la section Version (D-090, D-097)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     // Le libellé seul ne dit pas ce que la version contient : la section Version doit
     // mener à l'écran qui le dit, sinon la note reste invisible depuis le jeu.
-    const lien = screen.getByRole('link', { name: /la page des nouveautés/i });
+    const lien = screen.getByRole('link', { name: /la feuille de route/i });
     expect(lien).toHaveAttribute('href', '/feuille-de-route');
   });
 });
