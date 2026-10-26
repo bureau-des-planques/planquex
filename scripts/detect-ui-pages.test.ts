@@ -49,7 +49,7 @@ describe('le contrôle visuel en CI (#205)', () => {
     expect(ecrans).toEqual(['/', '/collection', '/deck', '/battle', '/reglages']);
     expect(port).not.toBe(4180);
     expect(seuil).toBe(0);
-    expect(plan().baseline).toEqual({ '/': null, '/collection': 42, '/deck': 12, '/battle': 0, '/reglages': null });
+    expect(plan().baseline).toEqual({ '/': null, '/collection': 32, '/deck': 11, '/battle': 0, '/reglages': null });
   });
 
   it('ne refuse pas une page propre', () => {

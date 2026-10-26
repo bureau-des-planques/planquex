@@ -1497,8 +1497,8 @@ export function Battle() {
                       data-uid={card.uid}
                       style={
                         {
-                          '--rot': `${decalage * 3}deg`,
-                          '--dec': `${decalage * decalage * 1.5}px`
+                          '--rot': `${decalage * 2}deg`,
+                          '--dec': `${decalage * decalage * 0.8}px`
                         } as CSSProperties
                       }
                       /* Sous « Mouvement réduit », la carte ne se soulève pas : c'est
@@ -1551,6 +1551,11 @@ export function Battle() {
               </p>
               {selectedDefinition && !isPlanque(selectedDefinition) && (
                 <p className="hand__text muted">{selectedDefinition.text}</p>
+              )}
+              {/* Un Planqué de la main se lit comme au plateau : son Seuil, ses Pressions et leur coût,
+                  son Talent. Au toucher, l'inspecteur au survol n'existe pas : la fiche est ici. */}
+              {selectedDefinition && isPlanque(selectedDefinition) && (
+                <FicheCarte instance={selected} card={selectedDefinition} />
               )}
               {selectedActions.length > 0 ? (
                 <>

@@ -849,7 +849,7 @@ export function BoiteAIdees() {
       )}
 
       {!chargement && mur && mur.postits.length > 0 && (
-        <section className="panel">
+        <section className="mur-plan">
           <div
             ref={tableau}
             className="relative max-[899px]:grid max-[899px]:grid-cols-1 max-[899px]:gap-4 min-[421px]:max-[899px]:grid-cols-2 min-[900px]:min-h-[600px]"
@@ -929,14 +929,14 @@ export function BoiteAIdees() {
         </p>
 
         {source === 'base' ? (
-          <p className="m-0 max-w-[66ch] text-[0.9rem]">
+          <p className="m-0 max-w-[66ch] text-[0.9rem] max-[899px]:hidden">
             La base porte la place de chaque post-it : en mode placement, un post-it se{' '}
             <strong>glisse</strong> à la souris et sa place s’écrit <strong>tout de suite</strong>{' '}
             en base — tout le monde la voit, sans commit. Chacun ne range que <strong>ses</strong>{' '}
             post-its : ceux des autres restent là où leur auteur les a mis.
           </p>
         ) : (
-          <p className="m-0 max-w-[66ch] text-[0.9rem]">
+          <p className="m-0 max-w-[66ch] text-[0.9rem] max-[899px]:hidden">
             En mode placement, un post-it se <strong>glisse</strong> à la souris et sa position
             s’écrit en pourcentage du tableau : tout le monde verra la même disposition, quel que
             soit l’écran. L’application est un <strong>site statique</strong> — elle ne peut pas
@@ -1039,7 +1039,7 @@ export function BoiteAIdees() {
         </div>
       </section>
 
-      <p className="m-0 text-[0.78rem] text-ink-dim">
+      <p className="m-0 max-w-[66ch] text-[0.78rem] text-ink-dim">
         {source === 'base'
           ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Les pouces comptent un vote par compte et par post-it, et l’on ne vote pas pour le sien ; chaque post-it porte son fil de commentaires.'
           : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Ni pouces ni commentaires ici : ils ne s’ouvrent qu’avec la base partagée.'}

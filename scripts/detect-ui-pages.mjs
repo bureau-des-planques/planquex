@@ -35,14 +35,17 @@ export const ECRANS = ['/', '/collection', '/deck', '/battle', '/reglages'];
  * **Le cliquet** (#205) : les anti-patterns **déjà présents** le 25/10/2026, relevés à la main
  * avant de brancher ce contrôle. Le gate ne demande pas zéro — il demande **pas plus qu'hier**.
  *
+ * Abaissé le 25/10/2026 après la lisibilité des cartes (Collection 42 → 32, Deck 12 → 11) : le
+ * stade des cartes passe en encre pleine, et le nom ne partage plus sa ligne avec le Seuil.
+ *
  * `null` veut dire « le détecteur ne rend rien sur cet écran aujourd'hui » (il sort sans un mot,
  * probablement sur une page qui ne se stabilise pas) : l'écran est **sauté** avec un message, pas
  * déclaré propre. C'est une dette d'outil, pas un blanc-seing — voir #208.
  */
 export const BASELINE = {
   '/': null,
-  '/collection': 42,
-  '/deck': 12,
+  '/collection': 32,
+  '/deck': 11,
   '/battle': 0,
   '/reglages': null
 };

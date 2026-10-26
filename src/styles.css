@@ -396,6 +396,14 @@ h2 {
   justify-content: space-between;
 }
 
+/* Le mur de la Boîte à idées : une **zone** de placement, pas un panneau. Les post-its sont déjà des
+   cartes ; un panneau autour d'eux en fait des cartes dans une carte (`nested-cards`, impeccable). */
+.mur-plan {
+  border: 1px dashed var(--line-strong);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
 /* Le cadre de jeu : un panneau usiné, pas une carte de tableau de bord. Biseau doré
    en haut, ombre de bas de plaque, rayon court — une console, pas une app SaaS. */
 .panel {
@@ -485,11 +493,22 @@ h2 {
   list-style: none;
 }
 
+/* Sur un téléphone, le texte du Chariot prend toute la largeur et « Charger » passe dessous : à côté,
+   il prenait la moitié de la ligne et la stratégie se coupait en colonne étroite. */
 .chariots__item {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+@media (min-width: 560px) {
+  .chariots__item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
 }
 
 .chariots__item h3,
@@ -1100,25 +1119,35 @@ h2 {
 /* La barre de nom : pleine largeur, teintée de la faction — la première chose qu'on lit
    sur une carte. Le stade la surmonte, le Seuil la ferme à droite. */
 .card__top {
-  align-items: flex-start;
+  align-items: start;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--accent) 26%, var(--bg-raised)),
     color-mix(in srgb, var(--accent) 12%, var(--bg-raised))
   );
   border-bottom: 1px solid color-mix(in srgb, var(--frame) 45%, var(--line));
-  display: flex;
-  gap: 0.4rem;
-  justify-content: space-between;
+  /* Le stade et le Seuil partagent la **première** ligne ; le nom prend **toute** la largeur de la
+     seconde. Avant, le Seuil se posait à côté du nom et lui volait la moitié de sa colonne : « PRÉVENTEU /
+     R », « ERGONOM / IE » sur bureau comme sur téléphone. */
+  display: grid;
+  gap: 0.15rem 0.4rem;
+  grid-template-areas:
+    'kind seuil'
+    'name name';
+  grid-template-columns: minmax(0, 1fr) auto;
   padding: 0.3rem 0.4rem 0.35rem 0.45rem;
 }
 
 .card__title {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
+  display: contents;
+}
+
+.card__kind {
+  grid-area: kind;
+}
+
+.card__name {
+  grid-area: name;
 }
 
 /* Le stade (ou la catégorie d'une carte Action) et le statut COMEX, au-dessus du nom. */
@@ -1137,6 +1166,7 @@ h2 {
    « Seuil » est dessiné au-dessus du chiffre, par `data-label`. */
 .card__seuil-badge {
   align-items: center;
+  grid-area: seuil;
   background: rgb(7 12 22 / 72%);
   border: 1px solid var(--gold-deep);
   border-radius: 6px;
@@ -1171,7 +1201,9 @@ h2 {
   -webkit-line-clamp: 2;
   display: -webkit-box;
   font-family: var(--font-display);
-  font-size: 0.8rem;
+  /* 0,74 rem : à 0,8, la pastille du Seuil réduisait la colonne du nom et « PRÉVENTEUR », « ERGONOMIE »
+     se coupaient en plein mot sur bureau comme sur téléphone (mesuré le 25/10). */
+  font-size: 0.74rem;
   font-weight: 700;
   hyphens: auto;
   letter-spacing: 0.01em;
@@ -1183,11 +1215,22 @@ h2 {
   text-transform: uppercase;
 }
 
+/* Sur un téléphone, le nom de la carte cède un cran : la pastille du Seuil réduit sa colonne, et
+   « PRÉVENTEUR » se coupait en « PRÉVENTEU / R ». Le nom reste entier, à deux lignes au plus. Cette
+   règle vient **après** `.card__name` : à même spécificité, la dernière l'emporte. */
+@media (max-width: 420px) {
+  .card__name {
+    font-size: 0.72rem;
+  }
+}
+
 .card__stage {
   background: rgb(255 255 255 / 5%);
   border: 1px solid var(--line);
   border-radius: 999px;
-  color: var(--text-muted);
+  /* Le stade sit sur le dégradé de la faction : en gris atténué il tombait sous 4,5:1 (`impeccable`,
+     #205). L'encre pleine le tient, la pastille reste discrète. */
+  color: var(--text);
   padding: 0.05rem 0.42rem;
 }
 
@@ -1916,6 +1959,15 @@ h2 {
   z-index: 16;
 }
 
+/* Sur un téléphone, la barre ne se colle plus : collée, elle remontait par-dessus le bas de la main
+   (la main est dans la fenêtre avec un deck valide). Elle se range sous la main, et son geste se fait
+   en défilant. */
+@media (max-width: 639px) {
+  .combat-barre {
+    position: static;
+  }
+}
+
 .combat-barre .actions {
   margin-top: 0;
 }
@@ -2125,12 +2177,29 @@ h2 {
 .board__zone {
   /* Le Banc passe à 64 px (#188, mesuré) : le Poste garde un rapport de 1,5 à 1,8 avec lui. Le Stress
      et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur. */
-  --poste-w: 5.5rem;
+  --poste-w: 6rem;
   --banc-w: 3.5rem;
   align-items: center;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+/* Sur un téléphone, la table se resserre : le Banc et les écarts entre zones cèdent la place à la main
+   (choix du 25/10 : compacter le plateau). Le Poste ne bouge pas : il reste plus grand que la main (R4). */
+@media (max-width: 639px) {
+  .board {
+    gap: 0.1rem;
+    padding: 0.15rem;
+  }
+
+  .board__zone {
+    gap: 0.1rem;
+  }
+
+  .bench {
+    gap: 0.2rem;
+  }
 }
 
 /* Le Poste et ce qui s'y passe, côte à côte : la carte garde la place du centre. */
@@ -2270,6 +2339,7 @@ h2 {
 
 .hand-panel .section__head {
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 0.1rem 0.75rem;
 }
 
@@ -3016,13 +3086,16 @@ h2 {
    soulèvement de la carte choisie. Le **pas** entre deux cartes se réduit quand la main grandit,
    pour que dix cartes tiennent dans la largeur d'un téléphone. */
 .hand {
-  --carte-w: 4rem;
-  /* #203 : le conteneur perd 4 px ; les cartes de l'éventail se rognent un peu plus bas. */
-  /* Le pas : deux cartes se chevauchent d'au plus 2,6 rem, et moins quand il faut tenir dans la largeur. */
-  --pas: min(2.6rem, calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
+  /* Une carte de la main se lit : 5,7 rem de large, soit ~91 px (64 px auparavant, où le nom était
+     illisible). Elle reste plus étroite que le Poste, 6 rem (R4). Le conteneur est assez haut pour la carte
+     entière et son inclinaison : rien n'est plus rogné en bas. */
+  --carte-w: 5.7rem;
+  /* Le pas : deux cartes ne se chevauchent pas quand la largeur le permet (leurs noms restent lisibles),
+     et se recouvrent juste assez pour tenir dans la largeur quand la main grandit. */
+  --pas: min(calc(var(--carte-w) + 0.2rem), calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
   align-items: flex-start;
   display: flex;
-  height: 4rem;
+  height: calc(var(--carte-w) * 88 / 63 + 1.6rem);
   justify-content: center;
   list-style: none;
   margin: 0;
@@ -3111,6 +3184,7 @@ h2 {
   font-size: 0.82rem;
   line-height: 1.2;
 }
+
 
 .hand__kind {
   color: var(--text-muted);
