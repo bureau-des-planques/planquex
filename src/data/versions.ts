@@ -60,6 +60,58 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.14',
+    date: '2026-10-27',
+    titre: 'Le combat se lit à 420 px, et le café se voit',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'Les pastilles de café sont plus grandes et cerclées : les couleurs de faction se distinguent sur le plateau.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Les boutons de la barre d’action et du pas-à-pas font 44 px : plus faciles à toucher au pouce.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La barre d’action ne passe plus sous la barre de navigation, même quand une Pression est jouable.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le mode « sobre » ne défile plus quand trois Conditions sont posées de chaque côté. Le mode « détaillé » tient aussi à 420 px.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le menu ⋯ se superpose au plateau au lieu de le pousser.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Lire et agir sont séparés : survoler une carte, ou la sélectionner au clavier, affiche sa fiche ; un clic ouvre le panneau d’action, Échap le referme.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le raccourci I (ou Ctrl+I) affiche et masque les informations du combat. Une case dans Réglages le coupe.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le Stress monte près de la carte touchée, en un demi-seconde, sans décaler le plateau.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Les effets (arc de Condition, traînée de craquage, carte soulevée au survol) ont chacun une version sans mouvement, pour « Mouvement réduit ».'
+      },
+      {
+        groupe: 'L’alpha',
+        texte: 'Une page Installation, accessible sans compte : les étapes sur téléphone et sur ordinateur, les navigateurs essayés, ce qui se perd en changeant d’appareil, et comment sauvegarder avant.'
+      },
+      {
+        groupe: 'L’alpha',
+        texte: 'Les textes qui parlent du testeur de l’alpha disent « testeur » partout, là où l’ancien terme traînait encore.'
+      }
+    ]
+  },
+  {
     version: '0.1.13',
     date: '2026-10-26',
     titre: 'Le comité se suit, et le combat tient dans l’écran',
