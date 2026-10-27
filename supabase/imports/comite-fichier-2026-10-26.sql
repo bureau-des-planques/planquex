@@ -14,7 +14,7 @@
 -- D-088, qui n'ont pas de compte — il n'existe donc personne à qui les attribuer, et
 -- inventer un compte serait mentir sur qui a écrit. Ils portent l'**auteur sentinelle**
 -- `00000000-0000-0000-0000-000000000000`, qu'aucun `auth.uid()` ne peut valoir : le mur ne
--- les montre comme « les tiens » à personne, donc **aucun testeur** ne les corrige, ne les
+-- les montre comme « les tiens » à personne, donc **aucun invité** ne les corrige, ne les
 -- déplace ni ne les retire. L'**administration**, elle, garde ses droits de tri (0006) et de
 -- retrait (0007) — c'est le tri normal de D-092, et ces deux post-its sont `en attente` :
 -- ils doivent pouvoir avancer. Le geste pour les rattacher à un compte est explicite et

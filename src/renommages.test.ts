@@ -177,6 +177,12 @@ const EXCEPTIONS_INVITE = [
   // Le journal ne se réécrit pas (D-111), et l'index est dérivé du journal.
   'docs/DECISIONS.md',
   'docs/DECISIONS-INDEX.md',
+  // Un acte **appliqué** ne se réécrit pas non plus : l'empreinte SHA-256 de `0005` est
+  // inscrite dans `admin.migrations` (registre de la base réelle), et renommer un mot dans
+  // son commentaire l'aurait fait diverger du registre sans rien changer au schéma. Même
+  // raison pour l'import de D-106, déjà joué.
+  'supabase/migrations/0005_comptes.sql',
+  'supabase/imports/comite-fichier-2026-10-26.sql',
   // Ce fichier-ci nomme ce qu'il interdit : il ne peut pas se compter comme une référence.
   'src/renommages.test.ts'
 ];
