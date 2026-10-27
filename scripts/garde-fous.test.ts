@@ -47,7 +47,9 @@ const SCRIPT = join(racine, LANCER);
 // en silence ; la mutation tombe sur la comparaison, pas sur la fonction.
 // #182 : la note de version (D-090) — sans la recherche de la note courante, la garde
 // « on ne publie pas une version sans sa note » ne garde plus rien.
-// #188 : l'inspecteur du combat — une infobulle de lecture ne porte aucun bouton (le patron ARIA).
+// #287 : l'inspecteur du combat (T4) — une infobulle de lecture ne porte aucun bouton (le
+// patron ARIA). L'invariant vient de #188 ; le ticket de la table est celui du test autonome
+// qui le garde désormais, sans passer par `Battle.tsx`.
 // #192 : les effets de la scène — aucune animation de plus de 800 ms (SPEC-COMBAT-UI §6.8.3).
 // #254 : le mur — un geste refusé défait ce que l'optimiste avait bougé (useMur).
 // #299 : les problèmes connus de la release (D-119) — un post-it `fait` ne reste pas dans
@@ -55,7 +57,7 @@ const SCRIPT = join(racine, LANCER);
 // #317 : la porte du serveur des testeurs (D-118) — une invitation vide ne rend rien, et le
 // lien qui est rendu porte `noreferrer noopener` : deux entrées, une par moitié de la règle.
 const TICKETS_ATTENDUS = [
-  49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 188, 192, 254, 299, 317, 317
+  49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 299, 317, 317
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
