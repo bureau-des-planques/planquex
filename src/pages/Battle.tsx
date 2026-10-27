@@ -521,6 +521,9 @@ function Camp({
   const effetsStress = effets.filter((effet) => effet.nature === 'stress');
   const craquage = effets.find((effet) => effet.nature === 'craquage');
   const pioche = effets.some((effet) => effet.nature === 'pioche');
+  // L'arc d'une Condition (#294) : seul un effet **animé** en porte un. Sous « Mouvement réduit »
+  // le nœud n'est pas créé : le badge nommé de la fiche (`StatusBadge`) dit déjà la Condition.
+  const arcs = effets.filter((effet) => effet.nature === 'condition' && effet.anime);
   const uidsEnJeu = new Set([side.active, ...side.bench].filter(Boolean).map((carte) => carte!.uid));
   // Un Planqué qui vient de craquer n'a plus de carte au Poste : son chiffre de Stress reste
   // à la place de la carte, sur le fantôme désaturé, plutôt que de disparaître avec elle.
@@ -560,6 +563,18 @@ function Camp({
           {craquageDefinition && <CardView card={craquageDefinition} calme plateau />}
         </div>
       )}
+      {/* L'arc de Condition (#294) : un liseré qui pulse deux fois autour de la carte du Poste, puis
+          quitte le DOM. Il est hors du flux (`position: absolute`) et ne capte aucun clic. */}
+      {posteActif &&
+        arcs
+          .filter((effet) => effet.uid === posteActif.uid)
+          .map((effet) => (
+            <span
+              key={effet.id}
+              className={`condition__arc${effet.apresCoup ? ' condition__arc--apres-coup' : ''}`}
+              aria-hidden="true"
+            />
+          ))}
       {stressHorsCarte.map((effet) => (
         <span key={effet.id} className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`} aria-hidden="true">
           +{effet.valeur}
@@ -1457,7 +1472,7 @@ export function Battle() {
                     /* Les crans qui viennent d'être acquis (#192) : leur hexagone rebondit
                        une fois ; sous mouvement réduit, il est simplement déjà rempli. */
                     fraiches: effets
-                      .filter((effet) => effet.nature === 'intervention' && effet.camp === camp)
+                      .filter((effet) => effet.nature === 'intervention' && effet.camp === camp && effet.anime)
                       .map((effet) => effet.numero ?? 0)
                   }))}
                   designe={pasAPas.designe('interventions')}

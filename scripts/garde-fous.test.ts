@@ -53,13 +53,16 @@ const SCRIPT = join(racine, LANCER);
 // #289 : la barre d'action et le menu `⋯` (T6) — le panneau se superpose au plateau, il ne le
 // pousse pas en rentrant dans le flux (vrac du 27/10/2026).
 // #192 : les effets de la scène — aucune animation de plus de 800 ms (SPEC-COMBAT-UI §6.8.3).
+// #294 : les effets de la référence (T11) — quatre entrées : pas d'arc ni de traînée sous « Mouvement
+// réduit », pas de boucle sans fin, et la case de la main ne bouge pas au survol.
 // #254 : le mur — un geste refusé défait ce que l'optimiste avait bougé (useMur).
 // #299 : les problèmes connus de la release (D-119) — un post-it `fait` ne reste pas dans
 // la note, et un post-it `en attente` n'y entre pas.
 // #317 : la porte du serveur des testeurs (D-118) — une invitation vide ne rend rien, et le
 // lien qui est rendu porte `noreferrer noopener` : deux entrées, une par moitié de la règle.
 const TICKETS_ATTENDUS = [
-  49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 299, 317, 317
+  49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 294, 294, 294, 294,
+  299, 317, 317
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {

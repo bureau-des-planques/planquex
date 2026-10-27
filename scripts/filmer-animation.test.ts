@@ -31,6 +31,13 @@ describe('filmer-animation', () => {
     expect(() => analyserArguments(['--images'])).toThrow(/valeur/);
   });
 
+  it('lit --survol, répétable, et le garde distinct des clics (#294 : la carte de main soulevée)', () => {
+    const config = analyserArguments(['--clic', 'a', '--survol', '.hand > li', '--survol', 'b']);
+    expect(config).toMatchObject({ clics: ['a'], survols: ['.hand > li', 'b'] });
+    expect(analyserArguments([]).survols).toEqual([]);
+    expect(() => analyserArguments(['--survol'])).toThrow(/valeur/);
+  });
+
   it('numérote les frames dans l’ordre et légende la planche en millisecondes', () => {
     expect(nomFrame(3)).toBe('f03.png');
     const html = htmlPlanche(['f00.png', 'f01.png'], { colonnes: 2, intervalle: 70 });

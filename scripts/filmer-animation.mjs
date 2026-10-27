@@ -19,6 +19,8 @@
  * Options :
  *   --chemin      route à ouvrir (défaut : /battle)
  *   --clic        sélecteur à cliquer pour déclencher ; répétable, dans l'ordre
+ *   --survol      sélecteur à survoler (après les clics) pour déclencher un effet de survol ;
+ *                 répétable. Le pointeur y reste pendant la prise (#294 : la carte de main soulevée)
  *   --zone        sélecteur de la zone photographiée (défaut : body)
  *   --images      nombre de frames (défaut : 24)
  *   --intervalle  millisecondes entre deux frames (défaut : 70)
@@ -43,6 +45,7 @@ const STORAGE_KEY = 'bureau-des-planques-v1';
 const DEFAUTS = {
   chemin: '/battle',
   clics: [],
+  survols: [],
   zone: 'body',
   images: 24,
   intervalle: 70,
@@ -53,7 +56,7 @@ const DEFAUTS = {
 
 /** Lit `--option valeur` ; refuse une option inconnue ou une valeur non numérique. */
 export function analyserArguments(argv) {
-  const config = { ...DEFAUTS, clics: [], stockage: {} };
+  const config = { ...DEFAUTS, clics: [], survols: [], stockage: {} };
   const entiers = new Set(['images', 'intervalle', 'colonnes']);
   for (let i = 0; i < argv.length; i += 1) {
     const option = argv[i];
@@ -62,13 +65,17 @@ export function analyserArguments(argv) {
       continue;
     }
     const nom = option.startsWith('--') ? option.slice(2) : null;
-    if (!nom || !['chemin', 'clic', 'zone', 'images', 'intervalle', 'colonnes', 'stockage', 'sortie'].includes(nom)) {
+    if (
+      !nom ||
+      !['chemin', 'clic', 'survol', 'zone', 'images', 'intervalle', 'colonnes', 'stockage', 'sortie'].includes(nom)
+    ) {
       throw new Error(`Option inconnue : ${option}`);
     }
     const valeur = argv[i + 1];
     if (valeur === undefined) throw new Error(`${option} attend une valeur`);
     i += 1;
     if (nom === 'clic') config.clics.push(valeur);
+    else if (nom === 'survol') config.survols.push(valeur);
     else if (nom === 'stockage') config.stockage = JSON.parse(valeur);
     else if (entiers.has(nom)) {
       const n = Number(valeur);
@@ -130,6 +137,9 @@ async function filmer(config) {
     await page.goto(new URL(config.chemin, base).href, { waitUntil: 'networkidle' });
     for (const selecteur of config.clics) {
       await page.locator(selecteur).first().click();
+    }
+    for (const selecteur of config.survols) {
+      await page.locator(selecteur).first().hover();
     }
     const zone = page.locator(config.zone).first();
     const frames = [];

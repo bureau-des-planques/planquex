@@ -43,7 +43,21 @@ export const DUREE_MAX_MS = 800;
 // L'attaque dure le temps de sa séquence, pas celui du trait seul : l'impact part à 550 ms
 // (direction §8.4) et finit à 700 ms. Avec 350 ms, l'effet serait retiré avant l'impact.
 export const DUREE_ATTAQUE_MS = 700;
-export const DUREE_CONDITION_MS = 200;
+/**
+ * L'arc d'une Condition posée (#294) : un liseré qui pulse **deux fois** 120 ms, soit 240 ms —
+ * la durée **totale** de l'animation (`condition-arc`, `styles.css`), pas celle d'un battement.
+ * Le nœud vit exactement ce temps puis quitte le DOM ; le badge nommé, lui, reste.
+ */
+export const DUREE_CONDITION_MS = 240;
+
+/**
+ * Quand la Condition vient **d'une Pression**, l'arc attend l'impact : le coup part, touche à
+ * 550 ms (direction §8.4), et c'est alors que la Condition se pose. Sans ce délai, le liseré
+ * s'allumerait autour d'une carte que le coup n'a pas encore atteinte. 550 + 240 = 790 ms : le
+ * nœud reste sous la borne de 800 ms (`DUREE_MAX_MS`).
+ */
+export const DELAI_IMPACT_MS = 550;
+export const DUREE_CONDITION_APRES_COUP_MS = DELAI_IMPACT_MS + DUREE_CONDITION_MS;
 
 export type NatureEffet = 'stress' | 'craquage' | 'pioche' | 'intervention' | 'attaque' | 'condition';
 
@@ -68,6 +82,8 @@ export interface EffetCombat {
   readonly auPoste?: boolean;
   /** L'attaque : la carte visée. Le trait relie l'attaquant à elle (nature `attaque`). */
   readonly uidCible?: string;
+  /** Une Condition posée par la Pression de ce même pas : l'arc attend l'impact (`DELAI_IMPACT_MS`). */
+  readonly apresCoup?: boolean;
   /** La Pression jouée, son rang dans la carte : la chorégraphie en dépend (D-098). */
   readonly attackIndex?: number;
   /**
@@ -248,7 +264,17 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
       const avantCarte = enJeu(avant.players[camp]).find((autre) => autre.uid === carte.uid);
       if (!avantCarte) continue;
       const nouvelles = carte.statuses.filter((statut) => !avantCarte.statuses.includes(statut));
-      if (nouvelles.length > 0) ajouter({ nature: 'condition', camp, uid: carte.uid });
+      if (nouvelles.length > 0) {
+        // Posée par la Pression de ce pas : l'arc suit l'impact. Posée par le Contrôle, il joue tout de suite.
+        const apresCoup = effets.some((effet) => effet.nature === 'attaque');
+        ajouter({
+          nature: 'condition',
+          camp,
+          uid: carte.uid,
+          apresCoup,
+          duree: apresCoup ? DUREE_CONDITION_APRES_COUP_MS : DUREE_CONDITION_MS
+        });
+      }
     }
   }
 
