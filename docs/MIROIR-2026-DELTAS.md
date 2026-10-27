@@ -23,7 +23,7 @@ qu'O-008 demandait d'écrire.
 
 | Règle | Vote | Source |
 |---|---|---|
-| Chariot 20 cartes, max 2 exemplaires, ≥ 1 Entrant | ✅ | Pokémon.com, guide de deck, 30/01/2025 |
+| Deck 20 cartes, max 2 exemplaires, ≥ 1 Entrant | ✅ | Pokémon.com, guide de deck, 30/01/2025 |
 | 3 Interventions pour gagner, 1 par K.O. | ✅ | Pokémon.com (même page) ; support officiel (FAQ combat) |
 | Interventions accordées **uniquement** sur K.O. (pas sur une défausse par effet) | ✅ | FAQ combat officielle |
 | Machine à café : 1 café généré par tour **et** 1 attachement par tour | ✅ | Pokémon.com, guide de deck |
@@ -37,7 +37,7 @@ qu'O-008 demandait d'écrire.
 > est le relevé ; la transcription fait foi, pas ce résumé.
 
 **Passent à « observé »** (capture entre parenthèses) : main maximale **10** (`03`) ·
-Rack **3 places** (`05`) · évolution impossible au **premier tour de chaque joueur** (`05`) ·
+Banc **3 places** (`05`) · évolution impossible au **premier tour de chaque joueur** (`05`) ·
 1 Pression par tour et café **non consommé** (`05`) · Vulnérabilité **+20**, **jamais au
 Banc** (`05`) · Rotation payée en cafés, **n'importe quel type** (`05`) · Objet illimité /
 Collègue **1 par tour** (`05`) · **ordre des statuts** Empoisonné → Brûlé → Endormi →
@@ -69,7 +69,7 @@ au moteur.
 fusion du 20/10/2026 ; le troisième est **tranché par D-034** sans changer le moteur : la capture
 dit « tant que vous disposez d'Énergie dans votre zone », et la recherche établit que la zone n'en
 contient jamais plus d'une — donc 1 attachement par tour. La revue de sources du même jour
-a ajouté les règles de **D-031** (Vulnérabilité hors Rack, ordre du calcul des dégâts, double
+a ajouté les règles de **D-031** (Vulnérabilité hors Banc, ordre du calcul des dégâts, double
 craquage, nombre de tours).
 
 ### Niveaux de preuve
