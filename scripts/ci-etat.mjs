@@ -24,7 +24,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 /** La branche surveillée : le tronc unique du dépôt (D-113). */
 export const BRANCHE = 'main';
 
-const REPOS = process.env.GITHUB_REPOSITORY ?? 'Chapax/planquex';
+const REPOS = process.env.GITHUB_REPOSITORY ?? 'bureau-des-planques/planquex';
 
 /** Le dernier run de la branche, ou `null` si l'API n'en rend aucun. Pur. */
 export function runDernier(reponse) {

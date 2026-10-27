@@ -79,14 +79,23 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    **fichiers générés** : `npm run plan:dev` et `npm run notes:versions` (réécrivent si besoin),
    puis `-- --verifie` sur chacun. Ce geste local est celui qui garde la release : la CI des PR
    ne les vérifie plus (D-113), et `fichiers-generes.yml` le refait sur le tag en filet.
-4. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
-5. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
+4. **Mettre la production au niveau de ce que la note promet** — la note se lit **à la sortie de
+   la release**, donc ce qu'elle annonce doit être vrai **ce jour-là**, pas à la fusion. Pour les
+   annonces du mur dans `#comite` (#318, D-120), qui est ce que `/confidentialite` décrit au
+   présent : appliquer `supabase/migrations/0013_discord_comite.sql`, puis poser le webhook dans
+   Vault — `select vault.create_secret('<url du webhook>', 'discord_webhook_comite');`. La
+   procédure complète, avec sa vérification, est `docs/INTEGRATIONS-DISCORD.md` §10. Tant que ces
+   deux gestes ne sont pas faits, la page Confidentialité **décrit un envoi qui n'a pas lieu** :
+   c'est le premier pas à cocher, et la preuve qu'il est fait est **une annonce réelle** arrivée
+   dans le salon (un post-it collé, une minute d'attente, `§10.4`), pas une migration « appliquée ».
+5. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
+6. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
    message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.
-6. **Reprendre la release dans l'application** : `npm run notes:versions` relit les releases
+7. **Reprendre la release dans l'application** : `npm run notes:versions` relit les releases
    GitHub et réécrit `src/data/versions.ts` — le texte publié remplace la note écrite
    d'avance, et son `brouillon` tombe. C'est la seule fois où la note change après coup, et
    elle devient alors **la même des deux côtés**.
-7. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
+8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
 Un `git tag -a v0.1.2` sur un commit, c'est un point de retour ; un tag déplacé à la main après
 coup, c'est un mensonge. Si la build était fausse, on monte la version et on refait un tag.
@@ -96,7 +105,7 @@ coup, c'est un mensonge. Si la build était fausse, on monte la version et on re
 | Endroit | Ce qu'il porte | Qui le lit |
 |---|---|---|
 | **La release GitHub** | le journal complet, daté, avec le message aux testeurs | le dépôt, l'historique, `npm run notes:versions` |
-| **`/feuille-de-route`** (dans le jeu) | la version courante mise en avant, puis l'historique — et, depuis D-097 (3), l'étape en cours, les critères de sortie, les jalons et ce qui est prévu | **l'invité**, sans compte, sans sortir du jeu |
+| **`/feuille-de-route`** (dans le jeu) | la version courante mise en avant, puis l'historique — et, depuis D-097 (3), l'étape en cours, les critères de sortie, les jalons et ce qui est prévu | **le testeur**, sans compte, sans sortir du jeu |
 
 **Pourquoi le fichier de données est embarqué au build et pas lu en direct** : le dépôt est
 **privé**, l'API GitHub répond `404` sans jeton (mesuré le 24/10/2026), et un jeton dans le
@@ -114,11 +123,16 @@ Depuis le 26/10/2026, le corps de chaque release GitHub a **deux catégories**, 
 
 Un paragraphe d'introduction (`Version 0.1.13, étape alpha…`) peut précéder les deux. Une catégorie
 vide se retire, plutôt que de rester avec « rien ». Chaque point est une phrase complète, lue par
-un invité : pas de nom de fichier, pas de jargon interne sans l'expliquer.
+un testeur : pas de nom de fichier, pas de jargon interne sans l'expliquer.
 
 Les **autres informations** (migration, sauvegarde, pièges connus) vont **après** les deux
 catégories, sous `## Pour un testeur` : ce titre est dans `SECTIONS_ECARTEES`
 (`scripts/notes-versions.mjs`), donc il reste dans la release et sort de la note du jeu.
+
+Les **problèmes connus** de la version se lisent en base et se collent sous ce même titre :
+`npm run problemes` imprime le bloc (D-119, `docs/COMITE.md` §5.2), et il le rend **sans titre
+markdown** — un `###` sous `## Pour un testeur` rouvrirait la section, et les problèmes
+entreraient dans `/feuille-de-route` comme s'ils étaient des nouveautés.
 
 Le parseur lit chaque `##` comme un groupe de `src/data/versions.ts` : les deux catégories
 apparaissent donc telles quelles dans `/feuille-de-route`. Un titre inventé hors de ce modèle

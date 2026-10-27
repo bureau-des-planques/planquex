@@ -43,7 +43,9 @@ describe('`npm run capturer` — ticket #53', () => {
   });
 
   it('écrit dans un dossier ignoré par git', () => {
-    const ignored = read('.gitignore').split('\n').map((line) => line.trim());
+    const ignored = read('.gitignore')
+      .split('\n')
+      .map((line) => line.trim());
     expect(ignored).toContain('captures/');
     expect(read('scripts/capturer.mjs')).toContain("'captures'");
   });
@@ -120,11 +122,24 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
 
   it('donne cet amorçage au contexte, donc avant `page.goto`', () => {
     const source = read('scripts/capturer.mjs');
+    // Les pages : l'amorçage est donné au contexte, la navigation vient après.
     expect(source).toContain('storageState: amorce ? amorcageStore(origine) : undefined');
-    const contexte = source.indexOf('browser.newContext({');
-    const navigation = source.indexOf('page.goto(');
-    expect(contexte, '`browser.newContext` introuvable').toBeGreaterThanOrEqual(0);
-    expect(navigation, '`page.goto` introuvable').toBeGreaterThan(contexte);
+    // Le combat : il n'y a plus qu'**un** endroit qui monte son contexte (`ouvrirCombat`, #324).
+    // L'ordre se vérifie donc **dans ce corps-là** : contexte d'abord, navigation ensuite, et
+    // c'est bien le contexte qui reçoit l'amorçage.
+    const debut = source.indexOf('async function ouvrirCombat(');
+    expect(debut, '`ouvrirCombat` introuvable').toBeGreaterThanOrEqual(0);
+    const corps = source.slice(debut, source.indexOf('\n}\n', debut));
+    expect(corps).toContain('storageState: amorcageStore(origine, supplement)');
+    const contexte = corps.indexOf('browser.newContext({');
+    const navigation = corps.indexOf('arriverAuCombat(page, instant)');
+    expect(contexte, '`browser.newContext` introuvable dans `ouvrirCombat`').toBeGreaterThanOrEqual(0);
+    expect(navigation, 'la navigation de `ouvrirCombat` est introuvable').toBeGreaterThan(contexte);
+    // Et la navigation elle-même attend le tour du joueur, sinon la mesure tombe sur l'IA.
+    const debutArrivee = source.indexOf('async function arriverAuCombat(');
+    const corpsArrivee = source.slice(debutArrivee, source.indexOf('\n}\n', debutArrivee));
+    expect(corpsArrivee.indexOf('page.goto(')).toBeGreaterThanOrEqual(0);
+    expect(corpsArrivee.indexOf('arriveeAuTourDuJoueur(page)')).toBeGreaterThan(corpsArrivee.indexOf('page.goto('));
   });
 
   it('amorce toutes les pages de l’application', () => {
@@ -271,13 +286,25 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
   function geometrie({ mainBas = 760, barreActionHaut = 760, barreActionBas = 800, pisteBas = 400 } = {}): Mesure[] {
     return [
       { nom: 'la main', selecteur: '.hand', present: true, haut: 640, bas: mainBas },
-      { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: barreActionHaut, bas: barreActionBas },
+      {
+        nom: "la barre d'action du combat",
+        selecteur: '.combat-barre',
+        present: true,
+        haut: barreActionHaut,
+        bas: barreActionBas
+      },
       { nom: "la piste d'Interventions", selecteur: '.piste', present: true, haut: 100, bas: pisteBas }
     ];
   }
 
   it('suit la main, la barre d’action et la piste d’Interventions', () => {
-    expect(cibles().map((cible) => cible.selecteur)).toEqual(['.hand', '.combat-barre', '.piste']);
+    // … et « Fin du tour » seul (#320) : l'action principale se mesure à part.
+    expect(cibles().map((cible) => cible.selecteur)).toEqual([
+      '.hand',
+      '.combat-barre',
+      '.piste',
+      '.combat-barre__fin .button'
+    ]);
   });
 
   it('ne dit rien tant qu’une surface est absente', () => {
@@ -344,8 +371,102 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
 
   it('joue aussi le combat pas-à-pas terminé, là où le recouvrement est jugé (#191)', () => {
     const source = read('scripts/capturer.mjs');
-    expect(source).toContain('amorcageStore(origine, { pasAPasCombatVu: true })');
+    expect(source).toContain('ouvrirCombat(browser, instant, { pasAPasCombatVu: true })');
     expect(source).toContain('(pas-à-pas terminé)');
+  });
+
+  /**
+   * Ticket #320 — « Fin du tour » sous la barre de navigation. La géométrie est **celle qui a été
+   * mesurée** le 27/10/2026 sur le code d'avant (tour 3, un café attaché, Pression jouable, pas-à-pas
+   * ouvert, 420 × 900) : barre à 836 px, bouton à 834 px, navigation à 830 px, page qui défile de 24.
+   * Le contrôle doit la refuser en nommant le bouton, et accepter la géométrie d'après.
+   */
+  describe('« Fin du tour » doit rester visible avec une Pression jouable (#320)', () => {
+    const fin = (bas: number): Mesure => ({
+      nom: '« Fin du tour »',
+      selecteur: '.combat-barre__fin .button',
+      present: true,
+      haut: bas - 36,
+      bas
+    });
+
+    function controleComplet(mesures: Mesure[], defilement: number): string[] {
+      const output = execFileSync(
+        process.execPath,
+        [
+          'scripts/capturer.mjs',
+          '--controle-hauteur',
+          JSON.stringify({ limite: 830, mesures, defilement, pasAPasOuvert: true, etat: 'Pression jouable, tour 3' })
+        ],
+        { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+      );
+      return JSON.parse(output) as string[];
+    }
+
+    it('le contrôle mord sur la mesure d’avant : bouton à 834 px sous une navigation à 830 px', () => {
+      const avant = [...geometrie({ mainBas: 728, barreActionHaut: 731, barreActionBas: 836 }), fin(834)];
+      const problemes = controleComplet(avant, 24);
+      expect(problemes.some((p) => p.includes("« Fin du tour » n'est pas visible sans défiler"))).toBe(true);
+      expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 834 px, barre de navigation à 830 px'))).toBe(
+        true
+      );
+      expect(problemes.some((p) => p.includes('défile de 24 px'))).toBe(true);
+      expect(problemes.some((p) => p.includes('Pression jouable, tour 3'))).toBe(true);
+    });
+
+    it('laisse passer la mesure d’après : bouton à 770 px, barre à 809 px, aucun défilement', () => {
+      const apres = [...geometrie({ mainBas: 728, barreActionHaut: 731, barreActionBas: 809 }), fin(770)];
+      expect(controleComplet(apres, 0)).toEqual([]);
+    });
+
+    it('mord sur le bouton seul, même quand la barre reste dans la fenêtre', () => {
+      // La barre à 800 px tient ; un bouton à 835 px (hors barre, par construction) est nommé seul.
+      const problemes = controleComplet([...geometrie({ barreActionBas: 800 }), fin(835)], 0);
+      expect(problemes).toHaveLength(1);
+      expect(problemes[0]).toContain('« Fin du tour »');
+    });
+
+    it('la cible de doigt de 44 px : le contrôle mord sur un bouton de 36 px, et nomme le bouton (#320)', () => {
+      // Les hauteurs d'avant : la barre à 36 px (#203) et « Plus » du pas-à-pas à 36 px, « Suivant » à 33.
+      const sortie = (boutonsPetits: { nom: string; hauteur: number }[]): string[] => {
+        const output = execFileSync(
+          process.execPath,
+          [
+            'scripts/capturer.mjs',
+            '--controle-hauteur',
+            JSON.stringify({ limite: 830, mesures: geometrie(), etat: 'Pression jouable', boutonsPetits })
+          ],
+          { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+        );
+        return JSON.parse(output) as string[];
+      };
+      expect(sortie([])).toEqual([]);
+      const problemes = sortie([
+        { nom: 'Fin du tour', hauteur: 36 },
+        { nom: 'Plus', hauteur: 36 },
+        { nom: 'Suivant', hauteur: 33 }
+      ]);
+      expect(problemes).toHaveLength(3);
+      expect(problemes[0]).toContain('« Fin du tour » ne fait que 36 px de haut');
+      expect(problemes[0]).toContain('44 px');
+      expect(problemes[2]).toContain('« Suivant » ne fait que 33 px de haut');
+    });
+
+    it('mesure les boutons de la barre et du pas-à-pas tels que rendus', () => {
+      const source = read('scripts/capturer.mjs');
+      expect(source).toContain('.combat-barre .button, .pas-a-pas__ligne button');
+      expect(source).toContain('boutonsPetits');
+    });
+
+    it('joue réellement un état « Pression jouable », et échoue s’il n’en atteint aucun', () => {
+      const source = read('scripts/capturer.mjs');
+      // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer à ne
+      // mesurer que l'arrivée, où la barre n'a qu'une rangée.
+      expect(source).toContain('await mesurerAvecUnePression(browser)');
+      expect(source).toContain("barre.locator('.button--primary')");
+      expect(source).toContain('Pression jouable${pasAPasVu');
+      expect(source).toContain('aucun état « ${densite}Pression jouable » atteint');
+    });
   });
 
   it('ne double pas le message quand la main sort déjà de la fenêtre (#191)', () => {
@@ -361,7 +482,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     // à ne mesurer que la main.
     expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
     expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
-    expect(source).toContain("problems.push(`${route} · ${probleme}`)");
+    expect(source).toContain('problems.push(`${route} · ${probleme}`)');
   });
 });
 
@@ -411,7 +532,9 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
 
   /** La marge que D-094 (3) exige — « au moins 20 px » —, lue dans l'acte, pas recopiée. */
   function margeDeD094(): number {
-    const lignes = read('docs/DECISIONS.md').split('\n').filter((ligne) => ligne.startsWith('| D-094 |'));
+    const lignes = read('docs/DECISIONS.md')
+      .split('\n')
+      .filter((ligne) => ligne.startsWith('| D-094 |'));
     expect(lignes, 'ligne D-094 introuvable dans docs/DECISIONS.md').toHaveLength(1);
     const marge = lignes[0].match(/au moins (\d+) px/);
     expect(marge, 'D-094 ne nomme plus de marge « au moins N px »').not.toBeNull();
@@ -478,7 +601,9 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
 
   it('garde aussi la marge de la main, pas seulement celle de la barre', () => {
     // La main sous la barre (800 → 820), donc sans recouvrement : seule sa marge est en cause.
-    const mesures = barreA(800).map((mesure) => (mesure.selecteur === '.hand' ? { ...mesure, haut: 800, bas: 820 } : mesure));
+    const mesures = barreA(800).map((mesure) =>
+      mesure.selecteur === '.hand' ? { ...mesure, haut: 800, bas: 820 } : mesure
+    );
     const problemes = controle(mesures, 'pas-à-pas terminé');
     expect(problemes).toHaveLength(1);
     expect(problemes[0]).toContain("la main n'a que 10 px de marge");
@@ -508,7 +633,11 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
     delete env.PORT;
     const sortie = execFileSync(
       process.execPath,
-      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite: 830, mesures, defilement, etat, pasAPasOuvert })],
+      [
+        'scripts/capturer.mjs',
+        '--controle-hauteur',
+        JSON.stringify({ limite: 830, mesures, defilement, etat, pasAPasOuvert })
+      ],
       { cwd: root, encoding: 'utf8', env }
     );
     return JSON.parse(sortie) as string[];
@@ -536,5 +665,121 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
     // Les huit passages passent tous par `controlerHauteur`, qui transmet la mesure entière.
     expect(source.match(/await controlerHauteur\(/g)?.length).toBeGreaterThanOrEqual(3);
     expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
+  });
+});
+
+/**
+ * Ticket #292 — **le mode `détaillé` ne casse pas la lecture à 420 px** (SPEC-COMBAT-UI T9).
+ *
+ * `détaillé` remet des annotations sur le plateau (le nom des Conditions, les types du Deck) :
+ * c'est la seule tâche de la refonte qui peut le faire **grossir**. Mesuré le 27/10/2026 à
+ * 420 × 900, avec trois Conditions et trois types par camp, les fiches passaient de 138 à
+ * 188 px : l'écran défilait de 34 px et la barre d'action finissait à 846 px, sous la navigation
+ * (830 px). La capture d'arrivée ne le voyait pas — il n'y a pas de Condition à l'arrivée —, d'où
+ * le **pire cas** posé dans le DOM par `poserLePireCas`.
+ */
+describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292)', () => {
+  const mesures = (barreBas: number, finBas: number) => [
+    { nom: 'la main', selecteur: '.hand', present: true, haut: 612, bas: 714 },
+    { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: 716, bas: barreBas },
+    { nom: '« Fin du tour »', selecteur: '.combat-barre__fin .button', present: true, haut: finBas - 44, bas: finBas }
+  ];
+
+  function controle(geometrie: { mesures: unknown[]; defilement: number }): string[] {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const sortie = execFileSync(
+      process.execPath,
+      [
+        'scripts/capturer.mjs',
+        '--controle-hauteur',
+        JSON.stringify({ limite: 830, pasAPasOuvert: false, etat: '(détaillé, pire cas)', ...geometrie })
+      ],
+      { cwd: root, encoding: 'utf8', env }
+    );
+    return JSON.parse(sortie) as string[];
+  }
+
+  it('le contrôle mord sur la mesure d’avant : barre à 846 px, bouton à 843 px, écran qui défile de 34 px', () => {
+    const problemes = controle({ mesures: mesures(846, 843), defilement: 34 });
+    expect(problemes.some((p) => p.includes('défile de 34 px') && p.includes('détaillé, pire cas'))).toBe(true);
+    expect(problemes.some((p) => p.includes("bas de la barre d'action du combat à 846 px"))).toBe(true);
+    expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 843 px'))).toBe(true);
+  });
+
+  it('laisse passer la mesure d’après : barre à 742 px, bouton à 738 px, aucun défilement', () => {
+    expect(controle({ mesures: mesures(742, 738), defilement: 0 })).toEqual([]);
+  });
+
+  it('joue réellement `détaillé` à chaque graine, pas-à-pas ouvert et terminé, et pose le pire cas', () => {
+    const source = readFileSync(new URL('../scripts/capturer.mjs', import.meta.url), 'utf8');
+    // Sans ces liens, le contrôle pourrait mordre dans son test et la capture ne mesurer que `sobre`.
+    expect(source).toContain('await mesurerDensite(browser, true)');
+    expect(source).toContain('await mesurerAvecUnePression(browser, true)');
+    expect(source).toContain('combatDetaille: true');
+    expect(source).toContain("`.battle--${detaille ? 'detaille' : 'sobre'}`");
+    expect(source).toContain('page.evaluate(poserLePireCas, [detaille, MODELE_BADGE])');
+    expect(source).toContain('${etat}, pire cas');
+  });
+
+  it('range les Conditions en ligne dans les deux densités, et ne garde à `détaillé` que la largeur (feuille de style)', () => {
+    const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\n\.poste__info\s*\{[^}]*flex-wrap:\s*wrap/);
+    expect(css).not.toMatch(/\n\.poste__info\s*\{[^}]*flex-direction:\s*column/);
+    expect(css).toMatch(/\.battle--detaille \.board__fiche\s*\{[^}]*max-width:\s*15rem/);
+  });
+});
+
+/**
+ * Ticket #321 — **`sobre` aussi tient dans la fenêtre avec trois Conditions des deux côtés**.
+ *
+ * Trouvé par le harnais de #292 : en `sobre`, les Conditions (une icône chacune) étaient empilées
+ * en colonne, comme en `détaillé`. Mesuré le 27/10/2026 à 420 × 900 sur la feuille d'avant, trois
+ * Conditions par camp : l'arrivée défilait de 56 px (barre d'action à 868 px, « Fin du tour » à
+ * 865 px, navigation à 830 px) et le tour d'une Pression jouable, pas-à-pas ouvert, de 95 px.
+ * Le plan de `npm run capturer` ne **jouait** pas ce cas en `sobre`.
+ */
+describe('`npm run capturer` — `sobre` tient dans la fenêtre avec trois Conditions (#321)', () => {
+  const mesures = (mainBas: number, barreBas: number, finBas: number) => [
+    { nom: 'la main', selecteur: '.hand', present: true, haut: 612, bas: mainBas },
+    { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: 716, bas: barreBas },
+    { nom: '« Fin du tour »', selecteur: '.combat-barre__fin .button', present: true, haut: finBas - 44, bas: finBas }
+  ];
+
+  function controle(m: unknown[], defilement: number): string[] {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const sortie = execFileSync(
+      process.execPath,
+      [
+        'scripts/capturer.mjs',
+        '--controle-hauteur',
+        JSON.stringify({ limite: 830, pasAPasOuvert: true, etat: '(sobre), pire cas', mesures: m, defilement })
+      ],
+      { cwd: root, encoding: 'utf8', env }
+    );
+    return JSON.parse(sortie) as string[];
+  }
+
+  it('le contrôle mord sur la mesure d’avant : barre à 868 px, bouton à 865 px, défilement de 56 px', () => {
+    const problemes = controle(mesures(816, 868, 865), 56);
+    expect(problemes.some((p) => p.includes('défile de 56 px') && p.includes('sobre), pire cas'))).toBe(true);
+    expect(problemes.some((p) => p.includes("bas de la barre d'action du combat à 868 px"))).toBe(true);
+    expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 865 px'))).toBe(true);
+    expect(problemes.some((p) => p.includes("la main n'a que 14 px de marge"))).toBe(true);
+  });
+
+  it('laisse passer la mesure d’après : barre à 806 px (24 px de marge), aucun défilement', () => {
+    expect(controle(mesures(714, 806, 761), 0)).toEqual([]);
+  });
+
+  it('joue `sobre` avec le pire cas, à l’arrivée et au tour d’une Pression jouable', () => {
+    const source = readFileSync(new URL('../scripts/capturer.mjs', import.meta.url), 'utf8');
+    expect(source).toContain('await mesurerDensite(browser, false)');
+    expect(source).toContain("`.battle--${detaille ? 'detaille' : 'sobre'}`");
+    // Le pire cas du tour d'une Pression jouable, dans les deux densités.
+    expect(source).toContain('${etat}, tour ${tour}, pire cas');
   });
 });

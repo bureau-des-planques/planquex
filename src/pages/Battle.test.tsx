@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
@@ -158,7 +158,10 @@ describe('Battle — écran de combat', () => {
     // La Direction est le premier camp du plateau, moi le second : je regarde le mien.
     const moi = document.querySelectorAll('.board__side')[1];
     if (!(moi instanceof HTMLElement)) throw new Error('mon camp n’est pas sur le plateau');
-    const cartes = within(moi).getAllByRole('group', { name: entrant.name });
+    // Une carte du plateau est un **bouton** : elle porte le geste (l'inspecteur s'ouvre au
+    // clic) et son nom accessible est celui du Planqué (#286, T3). `group` laissait croire à
+    // un groupe inerte tout en la rendant focusable — le rôle ne disait pas qu'on agit dessus.
+    const cartes = within(moi).getAllByRole('button', { name: entrant.name });
     expect(cartes.length).toBeGreaterThanOrEqual(2);
     expect(cartes.some((carte) => carte.closest('.board__poste'))).toBe(true);
     expect(cartes.some((carte) => carte.closest('.bench'))).toBe(true);
@@ -294,6 +297,45 @@ describe('Battle — écran de combat', () => {
     expect(within(menu).getByRole('button', { name: /Créer une partie à deux/i })).toBeInTheDocument();
   });
 
+  it('le panneau du menu se superpose : il s’accroche à la barre d’état, hors du plateau (#289, T6)', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const barreEtat = container.querySelector('.battle__head') as HTMLElement;
+    const plateau = container.querySelector('.board') as HTMLElement;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu du combat' }));
+    const panneau = screen.getByRole('region', { name: 'Menu du combat' });
+
+    // Le panneau est **enfant de la barre d'état**, jamais du plateau : son ouverture n'insère
+    // rien dans le flux des cartes, donc le plateau ne saute pas (le défaut du vrac du 27/10).
+    expect(barreEtat.contains(panneau)).toBe(true);
+    expect(plateau.contains(panneau)).toBe(false);
+    expect(plateau.querySelectorAll('.combat-menu__panneau, .combat-menu__liste')).toHaveLength(0);
+
+    // Et la feuille de style le sort du flux : superposition, pas poussée du contenu.
+    const regle =
+      readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').match(
+        /\n\.combat-menu__panneau \{([^}]*)\}/
+      )?.[1] ?? '';
+    expect(regle).toMatch(/position:\s*absolute/);
+  });
+
+  it('« Abandonner » passe par le menu, et « Annuler » garde le focus du dialogue de forfait (#289, T6)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le geste destructeur n'est pas dans le menu : il ouvre le dialogue de confirmation.
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    const dialogue = screen.getByRole('dialog', { name: /Déclarer forfait/i });
+    expect(within(dialogue).getByRole('button', { name: 'Annuler' })).toHaveFocus();
+    expect(within(dialogue).getByRole('button', { name: 'Abandonner' })).not.toHaveFocus();
+
+    // Annuler referme sans rien détruire : la barre d'action garde ses gestes.
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Annuler' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      within(screen.getByRole('region', { name: 'Actions du tour' })).getAllByRole('button').length
+    ).toBeGreaterThan(0);
+  });
+
   describe('Nouveau combat', () => {
     beforeEach(() => {
       // Une graine fixe : le joueur ouvre, personne n'a joué, la partie est neuve.
@@ -396,6 +438,27 @@ describe('Battle — la barre d’action (#191)', () => {
     expect(barre.querySelector('.combat-barre__journal')).toHaveTextContent('Lancer de tampon : tu ouvres.');
     // Aucun bandeau n'est resté au-dessus du plateau.
     for (const bandeau of document.querySelectorAll('.banner')) expect(barre.contains(bandeau)).toBe(true);
+  });
+
+  it('« Fin du tour » est sur la ligne de tête, jamais dans la rangée des gestes, Pression jouable ou non (#320)', () => {
+    // Une Pression jouable rallongeait la rangée des gestes ; « Fin du tour », dedans, passait sur une
+    // seconde rangée sous la barre de navigation (420 × 900). La position se mesure en capture
+    // (`npm run capturer`) ; ici, le contrat de structure : l'action principale n'est pas dans la
+    // rangée qui grandit, et cette rangée ne porte aucune Pression en double.
+    const { partie } = partieAvecPression();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    const tete = barre.querySelector('.combat-barre__tete') as HTMLElement;
+    const gestes = barre.querySelector('.combat-barre__gestes') as HTMLElement;
+    expect(tete).not.toBeNull();
+    expect(gestes).not.toBeNull();
+    expect(within(tete).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
+    expect(within(gestes).queryByRole('button', { name: 'Fin du tour' })).toBeNull();
+    expect(gestes.querySelector('.button--primary'), 'la Pression est dans la rangée des gestes').not.toBeNull();
+    // La phrase du journal partage la ligne de « Fin du tour » : elle ne lui prend pas une ligne de plus.
+    expect(tete.querySelector('.combat-barre__journal')).not.toBeNull();
+    expect(tete.compareDocumentPosition(gestes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('ne perd rien : une Pression à portée est un bouton de la barre, pas de la main', () => {
@@ -764,7 +827,7 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
  * (`partieSauvegardee` rend `null`), donc elle ne se reprend pas. Le chemin réel est
  * celui du #128 — un **code de partie** collé, que `joinMatch` rejoue (D-049). On
  * construit donc un code par le moteur, en jouant la Direction avec sa politique
- * (`nextAiAction`, seedé), et l'écran l'affiche comme le ferait un invité.
+ * (`nextAiAction`, seedé), et l'écran l'affiche comme le ferait un testeur.
  */
 describe('Battle — la fin d’une partie à deux (#127)', () => {
   /** Deux Decks légaux, ceux du simulateur : le codec les valide avant de rejouer. */
@@ -826,7 +889,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
     throw new Error(`aucune graine ne finit par « ${raison} »`);
   }
 
-  /** Coller un code, comme l'invité : le champ, puis le bouton (#128). */
+  /** Coller un code, comme le testeur : le champ, puis le bouton (#128). */
   function coller(code: string) {
     // Le champ de collage vit dans la vue « Partie à deux » du menu.
     menuSurLaVue('Partie à deux');
@@ -903,7 +966,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
  * sur une page servie en clair et sur des navigateurs de téléphone anciens, et un
  * `writeText` peut être **refusé** (permission, geste non reconnu). L'ancien code faisait
  * `navigator.clipboard?.writeText(code).then(…)` : sans l'API, l'expression vaut
- * `undefined` et `.then` **lève**, donc l'invité ne recevait ni code copié ni message —
+ * `undefined` et `.then` **lève**, donc le testeur ne recevait ni code copié ni message —
  * juste une erreur. Ces deux tests tiennent les deux branches.
  */
 describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
@@ -935,7 +998,7 @@ describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     const zone = codeATransmettre();
 
-    // Ouvert tout seul, sur la vue qui porte le code : l'invité n'a rien cherché.
+    // Ouvert tout seul, sur la vue qui porte le code : le testeur n'a rien cherché.
     expect(menuEstOuvert()).toBe(true);
     expect(
       within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('heading', { name: 'Partie à deux' })
@@ -1051,14 +1114,18 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
     expect(useStore.getState().combatDetaille).toBe(false);
   });
 
-  it('`I` et `Ctrl`+`I` font la même chose', () => {
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+  it('`I` et `Ctrl`+`I` font la même chose, annotations comprises', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
+    // Le geste ne change pas qu'un attribut : c'est la densité du plateau qui bascule.
+    expect(container.querySelector('.poste__carte .card__attacks .attack__name')).toBeNull();
     fireEvent.keyDown(document, { key: 'i' });
     expect(boutonInfos()).toHaveAttribute('aria-pressed', 'true');
+    expect(container.querySelector('.poste__carte .card__attacks .attack__name')).not.toBeNull();
 
     fireEvent.keyDown(document, { key: 'i', ctrlKey: true });
     expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
+    expect(container.querySelector('.poste__carte .card__attacks .attack__name')).toBeNull();
 
     // L'alias reste permanent : un utilisateur de dictée n'est jamais coincé avec la touche nue.
     fireEvent.keyDown(document, { key: 'I', ctrlKey: true });
@@ -1066,7 +1133,11 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
   });
 
   it('décochés dans Réglages, `I` et `Ctrl`+`I` ne font plus rien (SC 2.1.4)', () => {
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, raccourcisCombat: false });
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le réglage se coupe en cours de partie (Réglages, `setRaccourcisCombat`) : c'est la
+    // **désactivation** qu'exige le critère, pas seulement un état de départ.
+    act(() => useStore.getState().setRaccourcisCombat(false));
 
     fireEvent.keyDown(document, { key: 'i' });
     fireEvent.keyDown(document, { key: 'i', ctrlKey: true });
@@ -1268,5 +1339,85 @@ describe('Battle — les effets de la scène et leur repli (#192)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fin du tour' }));
 
     expect(container.querySelector('.pile--deck.is-piochante')).not.toBeNull();
+  });
+
+  it('« Fin du tour » change de libellé et de teinte avec la main (T10, #293)', () => {
+    const { partie } = partieCommencee();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+
+    // À toi : le libellé court, la teinte « à toi ».
+    const aToi = screen.getByRole('button', { name: 'Fin du tour' });
+    expect(aToi).toHaveClass('button--fin', 'is-a-toi');
+    expect(aToi).not.toHaveClass('is-direction');
+
+    // En attente : le tour passe à la Direction avant que son délai ne l'ait fait jouer.
+    fireEvent.click(aToi);
+    const enAttente = screen.getByRole('button', { name: /Passer le tour de la Direction/ });
+    expect(enAttente).toHaveClass('button--fin', 'is-direction');
+    expect(enAttente).not.toHaveClass('is-a-toi');
+  });
+});
+
+/**
+ * **T3 — le plateau en cartes, sans perdre le pas-à-pas** (#286, `SPEC-COMBAT-UI` §8 T3).
+ *
+ * L'« avant » de la vague 1 montre déjà des cartes au Poste et au Banc (`docs/preuves/
+ * combat-ui-2026-10-27/avant/420-combat.png`, D-093) : ce que T3 ajoute, c'est le **mode
+ * `calme`** (`CardView`, #285) et le **nom accessible** qui rend une carte trouvable comme
+ * un bouton. Les trois assertions du ticket sont ici, et le pas-à-pas n'a pas bougé.
+ */
+describe('Battle — le plateau en cartes, sans perdre le pas-à-pas (T3, #286)', () => {
+  it('ne garde qu’un `title=` dans la page : celui du bandeau de deck de test', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/pages/Battle.tsx'), 'utf8');
+    // Le `title` est le pire des trois supports : il ne s'ouvre ni au clavier ni au doigt. Ce qui
+    // était dit par un `title` est soit écrit, soit lu par le nom accessible.
+    expect(source.match(/title=/g) ?? []).toHaveLength(1);
+  });
+
+  it('rend le Poste et le Banc comme des boutons nommés par la carte', () => {
+    // Une graine où **mon** Poste et **mon** Banc portent le même Secouriste : c'est la carte
+    // du critère du ticket. Deux exemplaires de dix Entrants font un Deck légal.
+    const entrants = ALL_CARDS.filter((card) => isPlanque(card) && isBasic(card) && !card.variantOf);
+    const secouriste = entrants.find((card) => card.name === 'Secouriste');
+    if (!secouriste) throw new Error('le Secouriste a disparu des données');
+    const dix = [secouriste, ...entrants.filter((card) => card.id !== secouriste.id).slice(0, 9)];
+    const deck = dix.flatMap((card) => [card.id, card.id]);
+
+    let etat: BattleState | null = null;
+    for (let seed = 1; seed < 500 && etat === null; seed += 1) {
+      const s = createBattle(deck, deck, seed);
+      const moi = s.players.player;
+      if (moi.active?.cardId === secouriste.id && moi.bench.some((carte) => carte?.cardId === secouriste.id)) etat = s;
+    }
+    if (etat === null) throw new Error('aucune graine ne met le même Secouriste au Poste et au Banc');
+    const partie = partieSauvegardee(etat, null, { playerDeck: deck, aiDeck: deck });
+    if (!partie) throw new Error('partie terminée : rien à rendre');
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const moi = document.querySelectorAll('.board__side')[1];
+    if (!(moi instanceof HTMLElement)) throw new Error('mon camp n’est pas sur le plateau');
+    const boutons = within(moi).getAllByRole('button', { name: /Secouriste/ });
+    expect(boutons.some((bouton) => bouton.closest('.board__poste') !== null)).toBe(true);
+    expect(boutons.some((bouton) => bouton.closest('.bench') !== null)).toBe(true);
+  });
+
+  it('garde les 7 cibles du pas-à-pas, et les cartes du plateau sont calmes et compactes', () => {
+    const cibles = new Set(ETAPES_COMBAT.flatMap((etape) => etape.cibles));
+    // Sept cibles distinctes, et pas une de moins : le pas-à-pas est le seul mode d'emploi de
+    // l'écran, et la refonte du plateau ne l'a pas raccourci.
+    expect([...cibles]).toHaveLength(7);
+
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const cartes = container.querySelectorAll('.poste__carte .card, .bench__carte .card');
+    expect(cartes.length).toBeGreaterThanOrEqual(4);
+    for (const carte of cartes) {
+      // `calme` (#285) : la carte porte le gabarit réduit qu'il impose — et, sur le plateau,
+      // le dépouillement de `card--plateau` — sans aucune micro-animation : une carte de
+      // plateau ne se soulève pas au passage du pointeur.
+      expect(carte).toHaveClass('card--compact');
+      expect(carte).toHaveClass('card--plateau');
+      expect(carte).toHaveClass('card--figee');
+    }
   });
 });

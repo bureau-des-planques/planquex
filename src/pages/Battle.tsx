@@ -45,6 +45,7 @@ import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
+import { phraseDePortee } from './portee';
 import { SceneAttaque } from '@/animation/SceneAttaque';
 import type { EffetCombat } from '@/components/effets-combat';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
@@ -152,7 +153,7 @@ function CartePlateau({
     >
       <CardView
         card={definition}
-        figee
+        calme
         plateau
         annotations={annotations}
         stress={instance.maxHp - instance.hp}
@@ -521,6 +522,9 @@ function Camp({
   const effetsStress = effets.filter((effet) => effet.nature === 'stress');
   const craquage = effets.find((effet) => effet.nature === 'craquage');
   const pioche = effets.some((effet) => effet.nature === 'pioche');
+  // L'arc d'une Condition (#294) : seul un effet **animé** en porte un. Sous « Mouvement réduit »
+  // le nœud n'est pas créé : le badge nommé de la fiche (`StatusBadge`) dit déjà la Condition.
+  const arcs = effets.filter((effet) => effet.nature === 'condition' && effet.anime);
   const uidsEnJeu = new Set([side.active, ...side.bench].filter(Boolean).map((carte) => carte!.uid));
   // Un Planqué qui vient de craquer n'a plus de carte au Poste : son chiffre de Stress reste
   // à la place de la carte, sur le fantôme désaturé, plutôt que de disparaître avec elle.
@@ -557,9 +561,21 @@ function Camp({
           et le journal restent les porteurs de l'information sous mouvement réduit. */}
       {craquage && craquage.auPoste && (
         <div className="craquage__carte" data-uid={craquage.uid} aria-hidden="true">
-          {craquageDefinition && <CardView card={craquageDefinition} figee plateau />}
+          {craquageDefinition && <CardView card={craquageDefinition} calme plateau />}
         </div>
       )}
+      {/* L'arc de Condition (#294) : un liseré qui pulse deux fois autour de la carte du Poste, puis
+          quitte le DOM. Il est hors du flux (`position: absolute`) et ne capte aucun clic. */}
+      {posteActif &&
+        arcs
+          .filter((effet) => effet.uid === posteActif.uid)
+          .map((effet) => (
+            <span
+              key={effet.id}
+              className={`condition__arc${effet.apresCoup ? ' condition__arc--apres-coup' : ''}`}
+              aria-hidden="true"
+            />
+          ))}
       {stressHorsCarte.map((effet) => (
         <span key={effet.id} className={`stress-flottant${effet.anime ? '' : ' is-fixe'}`} aria-hidden="true">
           +{effet.valeur}
@@ -816,6 +832,23 @@ export function Battle() {
   const inReach = useMemo(() => legalAttacks(state), [state]);
 
   /**
+   * La ligne de **portée** de la barre (« Hors de portée du café : … », « Pression déjà portée ») :
+   * `undefined` quand rien n'est à dire. Elle ne parle que quand c'est mon tour (en solo, elle ne
+   * décrit plus le Poste de la Direction). Elle vit sous la phrase du journal, à gauche de « Fin du
+   * tour » (#320), et non sur une ligne de plus.
+   *
+   * La phrase elle-même vit dans `./portee` (#324) : six conditions en ternaire imbriqué dans un
+   * fichier déjà gros, c'était de la Feature Envy vers le moteur. Ici, on ne fait que lui passer
+   * les faits — mon tour, mon Poste, la Pression consommée, ce que le café couvre.
+   */
+  const porteeLine = phraseDePortee({
+    aMoi: myMove,
+    poste: myCard,
+    dejaPortee: mySide.hasAttacked,
+    enPortee: inReach
+  });
+
+  /**
    * **Le dessus de mon Deck, regardé** (#162, D-079) : `undefined` quand mon dernier
    * geste n'était pas un regard. C'est *mon* Deck — l'adversaire n'y a jamais accès.
    */
@@ -1029,8 +1062,8 @@ export function Battle() {
 
   /**
    * **La Partie à deux s'ouvre seule** quand un code est prêt à transmettre (D-093, #191) : c'est
-   * le seul moment où l'invité a quelque chose à faire dans le menu. On l'annonce **une fois par
-   * code** — l'invité qui referme le menu n'est pas rouvert à chaque rendu —, par un ajustement
+   * le seul moment où le testeur a quelque chose à faire dans le menu. On l'annonce **une fois par
+   * code** — le testeur qui referme le menu n'est pas rouvert à chaque rendu —, par un ajustement
    * d'état pendant le rendu (la forme que React recommande pour un état dérivé d'un autre) et non
    * par un effet, qui laisserait passer un rendu sans le menu.
    */
@@ -1047,7 +1080,7 @@ export function Battle() {
    * levait un `TypeError` quand l'API manquait, donc le message ne venait jamais.
    *
    * Le repli est **le code lui-même** : il reste dans la zone, sélectionné d'office, et
-   * l'invité le recopie à la main.
+   * le testeur le recopie à la main.
    */
   const codeRef = useRef<HTMLTextAreaElement | null>(null);
   const copyCode = useCallback(async () => {
@@ -1321,14 +1354,15 @@ export function Battle() {
         </Dialog>
         {/* La **bascule d'infos** (#189) : c'est elle qui possède cette place dans la barre
             d'état, le `⋯` appartient au menu (#191). Le bouton visible est l'équivalent tactile
-            du raccourci (le critère WCAG sur les raccourcis à une touche), `aria-pressed` dit le mode, `aria-keyshortcuts` le geste. */}
+            du raccourci (le critère WCAG sur les raccourcis à une touche), `aria-pressed` dit le mode, `aria-keyshortcuts` le geste. Le
+            mode courant n'est plus dans un `title` (#286, T3) : `aria-pressed` le porte déjà, et
+            un `title` ne s'ouvre ni au clavier ni au doigt. */}
         <button
           type="button"
           className="battle__infos"
           aria-pressed={combatDetaille}
           aria-keyshortcuts="I"
           aria-label="Infos détaillées"
-          title={`Infos détaillées — I (${combatDetaille ? 'détaillé' : 'sobre'})`}
           onClick={basculerCombatDetaille}
         >
           <Info size={18} aria-hidden="true" />
@@ -1436,7 +1470,7 @@ export function Battle() {
                     /* Les crans qui viennent d'être acquis (#192) : leur hexagone rebondit
                        une fois ; sous mouvement réduit, il est simplement déjà rempli. */
                     fraiches: effets
-                      .filter((effet) => effet.nature === 'intervention' && effet.camp === camp)
+                      .filter((effet) => effet.nature === 'intervention' && effet.camp === camp && effet.anime)
                       .map((effet) => effet.numero ?? 0)
                   }))}
                   designe={pasAPas.designe('interventions')}
@@ -1548,7 +1582,7 @@ export function Battle() {
                     >
                       {definition && (
                         <div className="hand__visuel" aria-hidden>
-                          <CardView card={definition} figee plateau compact />
+                          <CardView card={definition} calme plateau />
                         </div>
                       )}
                       <button
@@ -1632,19 +1666,36 @@ export function Battle() {
         {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
             qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
             information temporaire n'a pas à occuper une bande de plus. */}
-        {lastLog && (
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.p
-              key={state.log.length}
-              className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-            >
-              {lastLog}
-            </motion.p>
-          </AnimatePresence>
+        {/* **« Fin du tour » vit sur cette ligne** (#320), à droite de la phrase du journal : c'est
+            l'action principale, et elle garde la même place à chaque état du tour. Quand une
+            Pression est jouable, la rangée des gestes dessous porte le café, la Rotation, le Talent
+            et la Pression — « Fin du tour » ne descend donc plus jamais sur une ligne de plus, sous
+            la barre de navigation (420 × 900, `npm run capturer` le mesure). */}
+        {(lastLog || porteeLine || turnActions.length > 0) && (
+          <div className="combat-barre__tete">
+            <div className="combat-barre__texte">
+              {lastLog && (
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.p
+                    key={state.log.length}
+                    className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                  >
+                    {lastLog}
+                  </motion.p>
+                </AnimatePresence>
+              )}
+              {porteeLine && <p className="muted combat-barre__portee">{porteeLine}</p>}
+            </div>
+            {turnActions.map((action) => (
+              <span className="combat-barre__fin" key={JSON.stringify(action)}>
+                <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
+              </span>
+            ))}
+          </div>
         )}
 
         {state.pendingPromotion && (
@@ -1687,28 +1738,12 @@ export function Battle() {
           </section>
         )}
 
-        {/* `legalAttacks` lit le camp qui a la main : cette ligne ne parle donc que quand c'est
-            mon tour (en solo, elle ne décrit plus le Poste de la Direction). */}
-        {myMove &&
-          myCard &&
-          isPlanque(myCard) &&
-          myCard.attacks.length > 0 &&
-          (mySide.hasAttacked || inReach.length < myCard.attacks.length) && (
-            <p className="muted combat-barre__portee">
-              {mySide.hasAttacked
-                ? 'Pression déjà portée ce tour.'
-                : `Hors de portée du café : ${myCard.attacks
-                    .filter((entry) => !inReach.includes(entry))
-                    .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
-                    .join(', ')}.`}
-            </p>
-          )}
-
         {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
             Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
-            font pas quatre lignes), et les Pressions avec « Fin du tour » viennent à côté ou
-            dessous. La barre ne doit jamais recouvrir la main (`npm run capturer` le mesure). */}
-        {(boardActions.length > 0 || pressions.length > 0 || turnActions.length > 0) && (
+            font pas quatre lignes), et les Pressions viennent à côté. « Fin du tour » est sur la
+            ligne du journal, au-dessus (#320). La barre ne doit jamais recouvrir la main ni passer
+            sous la navigation (`npm run capturer` le mesure). */}
+        {(boardActions.length > 0 || pressions.length > 0) && (
           <div className="combat-barre__gestes">
             {boardActions.length > 0 && (
               <div className="actions actions--tight combat-barre__rang">
@@ -1731,11 +1766,6 @@ export function Battle() {
                 myCamp={myCamp}
                 onAction={play}
               />
-            ))}
-            {turnActions.map((action) => (
-              <span className="combat-barre__fin" key={JSON.stringify(action)}>
-                <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
-              </span>
             ))}
           </div>
         )}

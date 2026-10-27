@@ -191,7 +191,7 @@ const encartDeChoix = (): HTMLElement | null => document.querySelector<HTMLEleme
 
 /**
  * Les lignes du journal, comme l'écran les affiche (`.log li`) — **derrière le menu `⋯`** depuis
- * la refonte du combat (#191) : l'helper l'ouvre sur sa vue Journal, comme l'invité. Une liste
+ * la refonte du combat (#191) : l'helper l'ouvre sur sa vue Journal, comme le testeur. Une liste
  * vide ferait passer à vide les tests qui affirment qu'une ligne **n'est pas** là, donc elle
  * échoue ici : le journal d'une partie commencée n'est jamais vide.
  */

@@ -83,6 +83,14 @@ côté de cet avant, et c'est à ce lot-ci qu'il se comparera. La garde de haute
 `npm run capturer` mesure désormais la main, la **barre d'action** et la **piste
 d'Interventions** — cette dernière mordra à partir de **#190**, la barre à partir de **#191**.
 
+## État au 27/10/2026 — l'« avant » de la refonte de la vague 1
+
+`combat-ui-2026-10-27/avant/` est l'**avant** de la refonte de la vague 1 (D-116, #264,
+tâche T1 #284) : l'écran de combat **tel qu'il est après D-093**, c'est-à-dire avec des
+cartes au plateau et un éventail en main, à 420 × 900 et 1280 × 800. Ce n'est pas un second
+« avant D-093 » : cet état-là reste `combat-ui-2026-10-25/avant/`, et il n'est plus l'écran
+du dépôt. T3–T12 s'y compareront par leur `apres/`.
+
 ## Attention — les captures du legacy ne sont PAS des preuves
 
 `docs/screenshot-*.png` (4 images) et `design/qa/`

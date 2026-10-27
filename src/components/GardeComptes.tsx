@@ -2,7 +2,7 @@
  * La garde d'entrée de l'alpha (D-088, #181).
  *
  * Quand la base est configurée, **aucune page du jeu** ne s'ouvre sans session : on repart
- * vers `/connexion`. C'est ce qui fait de l'alpha un lieu réservé aux invités, et non un
+ * vers `/connexion`. C'est ce qui fait de l'alpha un lieu réservé aux testeurs, et non un
  * site public dont seules les écritures seraient fermées.
  *
  * Un compte **en attente** passe : il peut jouer et lire (D-088) ; c'est l'écriture que la

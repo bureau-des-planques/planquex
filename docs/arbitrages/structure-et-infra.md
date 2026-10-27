@@ -78,7 +78,7 @@ Trois tickets qui se recouvrent (`#100` plomberie, `#75` nom `planquex`, `#10` i
 | Remplir `BREVO_SMTP_KEY` (`.env:3`) | Fichier `.env` (non suivi) | Vide (`''`) | Une clé SMTP Brevo valide (`D-017`) |
 | Publier le site (`planquex` ou l'ancien projet) | `npm run build` → `npm run preview` (déjà `OK`) | Build passe (`dist/index.html` + `sw.js`) | Un projet Vercel non en pause et un domaine actif |
 | Vérifier que le dépôt GitHub est privé (`Chapax/planquex`) | `gh repo view Chapax/planquex` (hors sandbox) | Non lancé | Une clé `gh` et un accès au compte |
-| Activer la bêta fermée (phases `D-028`) | `docs/DECISIONS.md` + `docs/PROPOSITION.md` §5.2 | Définie (phases 0→6) | Un environnement déployé et des utilisateurs invités |
+| Activer la bêta fermée (phases `D-028`) | `docs/DECISIONS.md` + `docs/PROPOSITION.md` §5.2 | Définie (phases 0→6) | Un environnement déployé et des testeurs |
 
 **Options et conséquences** :
 - **Site (`503`)** : (a) laisser le projet `planquex` en pause et le site `503` (`D-038` le prévoit) ; (b) réactiver le projet et republier. **(a)** est le choix `D-038` (le site legacy reste retiré) ; (b) débloque la bêta mais expose un site sans backend fonctionnel (Supabase vide, SMTP vide).

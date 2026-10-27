@@ -271,9 +271,9 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
     refuse(await decider(db, ADMIN, APPAREIL_C, 'refuse'), /comptes_refus_a_sa_raison/);
     expect((await etatDe(db, APPAREIL_C)).etat).toBe('approuve');
 
-    const refus = await decider(db, ADMIN, APPAREIL_C, 'refuse', 'Pas un invité.');
+    const refus = await decider(db, ADMIN, APPAREIL_C, 'refuse', 'Pas un testeur.');
     accepte(refus);
-    if (refus.accepte) expect(refus.lignes[0].raison).toBe('Pas un invité.');
+    if (refus.accepte) expect(refus.lignes[0].raison).toBe('Pas un testeur.');
 
     // Un compte refusé est aussi fermé qu'un compte en attente.
     refuse(await coller(db, APPAREIL_C, 'p-refuse'), /row-level security/);

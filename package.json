@@ -1,7 +1,7 @@
 {
   "name": "bureau-des-planques",
   "private": true,
-  "version": "0.1.13",
+  "version": "0.1.14",
   "stage": "alpha",
   "type": "module",
   "description": "Bureau des Planqués — un TCG Pocket-like satirique dans l'univers corporate",
@@ -24,6 +24,7 @@
     "notes:versions": "node scripts/notes-versions.mjs",
     "plan:dev": "node scripts/plan-dev.mjs",
     "statut": "node scripts/statut-mur.mjs",
+    "problemes": "node scripts/problemes-connus.mjs",
     "admin": "node tools/admin/serveur.mjs",
     "serveurs": "node tools/serveurs/serveur.mjs",
     "detect:ui": "impeccable detect src/",

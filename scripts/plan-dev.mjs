@@ -14,7 +14,7 @@
  * est le seul pont avec GitHub, et il tourne au build de l'auteur, jamais dans la CI.
  *
  * **Sans lien** : le dépôt est privé, donc `#214` se lit mais `https://github.com/…` ne
- * s'ouvre pas pour un invité (D-097 (3)). Le fichier ne porte donc **jamais** d'URL, et
+ * s'ouvre pas pour un testeur (D-097 (3)). Le fichier ne porte donc **jamais** d'URL, et
  * le test le vérifie.
  *
  * Usage :
@@ -96,7 +96,7 @@ export function rendreFichier(features) {
  * GitHub est le script, lancé au build de l'auteur — jamais dans la CI, qui n'a ni \`gh\`
  * ni réseau vers GitHub.
  *
- * **Sans lien** : un invité lit \`#214\` et son titre ; une adresse du dépôt ne
+ * **Sans lien** : un testeur lit \`#214\` et son titre ; une adresse du dépôt ne
  * l'ouvrirait pas, le dépôt étant privé (D-097 (3)). Aucune URL n'est donc écrite ici, et
  * \`scripts/plan-dev.test.ts\` le vérifie.
  */

@@ -495,7 +495,7 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // part de `false`.
     tutorielVu: typeof migrated.tutorielVu === 'boolean' ? migrated.tutorielVu : version < STORAGE_VERSION,
     // **v5 → v6** : même règle pour le pas-à-pas du combat — un état d'avant sa
-    // création vient d'un invité qui a déjà combattu.
+    // création vient d'un testeur qui a déjà combattu.
     pasAPasCombatVu:
       typeof migrated.pasAPasCombatVu === 'boolean' ? migrated.pasAPasCombatVu : version < STORAGE_VERSION
   };

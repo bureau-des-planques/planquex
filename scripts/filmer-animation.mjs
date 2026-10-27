@@ -19,9 +19,23 @@
  * Options :
  *   --chemin      route à ouvrir (défaut : /battle)
  *   --clic        sélecteur à cliquer pour déclencher ; répétable, dans l'ordre
+ *   --attendre    sélecteur à attendre (visible) avant l'étape suivante ; répétable, **mêlé aux
+ *                 `--clic` dans l'ordre de la ligne de commande** (atteindre un état de partie)
+ *   --pause       millisecondes à attendre entre deux étapes (laisser finir un défilement)
+ *   --horloge     instant ISO où l'horloge est **figée** (`page.clock.setFixedTime`) : la graine
+ *                 d'une partie vient de `Date.now()`, donc la planche se refait à l'identique
+ *   --marge       pixels ajoutés **autour** de la zone photographiée (défaut : 0). Un chiffre qui
+ *                 s'élève sort de la boîte de sa carte : sans marge, la planche le rogne et ne dit
+ *                 plus s'il reste près d'elle
+ *   --compter     sélecteur dont on **compte les éléments dans le DOM** à chaque frame, et dont le
+ *                 compte est écrit dans la légende : c'est ce qui prouve un retrait du DOM
+ *   --survol      sélecteur à survoler (après les clics) pour déclencher un effet de survol ;
+ *                 répétable. Le pointeur y reste pendant la prise (#294 : la carte de main soulevée)
  *   --zone        sélecteur de la zone photographiée (défaut : body)
  *   --images      nombre de frames (défaut : 24)
- *   --intervalle  millisecondes entre deux frames (défaut : 70)
+ *   --intervalle  millisecondes d'attente **après** chaque frame (défaut : 70) ; une capture prend
+ *                 elle-même quelques dizaines de ms, donc la légende porte l'instant **mesuré**
+ *                 (`performance.now()` depuis la dernière étape), pas le nominal
  *   --colonnes    colonnes de la planche (défaut : 6)
  *   --stockage    JSON fusionné dans l'état amorcé du store (ex. '{"combatDetaille":true}')
  *   --sortie      dossier de sortie (défaut : captures/film)
@@ -43,6 +57,11 @@ const STORAGE_KEY = 'bureau-des-planques-v1';
 const DEFAUTS = {
   chemin: '/battle',
   clics: [],
+  etapes: [],
+  survols: [],
+  horloge: null,
+  compter: null,
+  marge: 0,
   zone: 'body',
   images: 24,
   intervalle: 70,
@@ -53,7 +72,7 @@ const DEFAUTS = {
 
 /** Lit `--option valeur` ; refuse une option inconnue ou une valeur non numérique. */
 export function analyserArguments(argv) {
-  const config = { ...DEFAUTS, clics: [], stockage: {} };
+  const config = { ...DEFAUTS, clics: [], etapes: [], survols: [], stockage: {} };
   const entiers = new Set(['images', 'intervalle', 'colonnes']);
   for (let i = 0; i < argv.length; i += 1) {
     const option = argv[i];
@@ -62,14 +81,46 @@ export function analyserArguments(argv) {
       continue;
     }
     const nom = option.startsWith('--') ? option.slice(2) : null;
-    if (!nom || !['chemin', 'clic', 'zone', 'images', 'intervalle', 'colonnes', 'stockage', 'sortie'].includes(nom)) {
+    const connues = [
+      'chemin',
+      'clic',
+      'survol',
+      'attendre',
+      'pause',
+      'horloge',
+      'compter',
+      'marge',
+      'zone',
+      'images',
+      'intervalle',
+      'colonnes',
+      'stockage',
+      'sortie'
+    ];
+    if (!nom || !connues.includes(nom)) {
       throw new Error(`Option inconnue : ${option}`);
     }
     const valeur = argv[i + 1];
     if (valeur === undefined) throw new Error(`${option} attend une valeur`);
     i += 1;
-    if (nom === 'clic') config.clics.push(valeur);
-    else if (nom === 'stockage') config.stockage = JSON.parse(valeur);
+    if (nom === 'clic') {
+      config.clics.push(valeur);
+      config.etapes.push({ type: 'clic', selecteur: valeur });
+    } else if (nom === 'survol') {
+      config.survols.push(valeur);
+    } else if (nom === 'attendre') config.etapes.push({ type: 'attendre', selecteur: valeur });
+    else if (nom === 'pause') {
+      const ms = Number(valeur);
+      if (!Number.isInteger(ms) || ms < 1) throw new Error(`${option} attend un entier ≥ 1 (reçu « ${valeur} »)`);
+      config.etapes.push({ type: 'pause', ms });
+    } else if (nom === 'marge') {
+      const px = Number(valeur);
+      if (!Number.isInteger(px) || px < 0) throw new Error(`${option} attend un entier ≥ 0 (reçu « ${valeur} »)`);
+      config.marge = px;
+    } else if (nom === 'horloge') {
+      if (Number.isNaN(Date.parse(valeur))) throw new Error(`${option} attend une date ISO (reçu « ${valeur} »)`);
+      config.horloge = valeur;
+    } else if (nom === 'stockage') config.stockage = JSON.parse(valeur);
     else if (entiers.has(nom)) {
       const n = Number(valeur);
       if (!Number.isInteger(n) || n < 1) throw new Error(`${option} attend un entier ≥ 1 (reçu « ${valeur} »)`);
@@ -89,12 +140,19 @@ export function nomFrame(index) {
   return `f${String(index).padStart(2, '0')}.png`;
 }
 
-/** La page HTML de la planche : une grille de frames légendées par leur instant en ms. */
+/**
+ * La page HTML de la planche : une grille de frames légendées par leur instant en ms.
+ * Une frame est un nom de fichier (instant nominal `i × intervalle`) ou `{ src, t, compte }` :
+ * l'instant **mesuré** et, si `--compter` est donné, le nombre d'éléments alors dans le DOM.
+ */
 export function htmlPlanche(frames, { colonnes, intervalle }) {
   const cases = frames
-    .map(
-      (src, i) => `<figure><img src="${src}" alt="frame ${i}"><figcaption>${i * intervalle} ms</figcaption></figure>`
-    )
+    .map((frame, i) => {
+      const { src, t, compte } = typeof frame === 'string' ? { src: frame } : frame;
+      const instant = Math.round(t ?? i * intervalle);
+      const suite = compte === undefined ? '' : ` · DOM : ${compte}`;
+      return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${instant} ms${suite}</figcaption></figure>`;
+    })
     .join('');
   return `<!doctype html><meta charset="utf-8"><style>
 body{margin:0;background:#111;color:#ddd;font:12px monospace}
@@ -127,16 +185,43 @@ async function filmer(config) {
       ([cle, etat]) => localStorage.setItem(cle, JSON.stringify(etat)),
       [STORAGE_KEY, etatAmorce(config.stockage)]
     );
+    if (config.horloge) await page.clock.setFixedTime(new Date(config.horloge));
     await page.goto(new URL(config.chemin, base).href, { waitUntil: 'networkidle' });
-    for (const selecteur of config.clics) {
-      await page.locator(selecteur).first().click();
+    for (const etape of config.etapes) {
+      if (etape.type === 'clic') await page.locator(etape.selecteur).first().click();
+      else if (etape.type === 'attendre') {
+        await page.locator(etape.selecteur).first().waitFor({ state: 'visible', timeout: 60000 });
+      } else await page.waitForTimeout(etape.ms);
+    }
+    for (const selecteur of config.survols) {
+      await page.locator(selecteur).first().hover();
     }
     const zone = page.locator(config.zone).first();
     const frames = [];
+    // `performance.now()` n'est pas figé par `setFixedTime` : c'est l'horloge réelle de la page.
+    const t0 = await page.evaluate(() => performance.now());
     for (let i = 0; i < config.images; i += 1) {
       const nom = nomFrame(i);
-      await zone.screenshot({ path: join(sortie, nom), animations: 'allow' });
-      frames.push(nom);
+      const t = (await page.evaluate(() => performance.now())) - t0;
+      const compte = config.compter ? await page.locator(config.compter).count() : undefined;
+      if (config.marge > 0) {
+        // La boîte est relue à chaque frame : la zone peut bouger. Bornée à la fenêtre.
+        const boite = await zone.boundingBox();
+        if (!boite) throw new Error(`La zone « ${config.zone} » n'a plus de boîte (retirée du DOM ?)`);
+        const x = Math.max(0, boite.x - config.marge);
+        const y = Math.max(0, boite.y - config.marge);
+        await page.screenshot({
+          path: join(sortie, nom),
+          animations: 'allow',
+          clip: {
+            x,
+            y,
+            width: Math.min(420 - x, boite.width + 2 * config.marge),
+            height: Math.min(900 - y, boite.height + 2 * config.marge)
+          }
+        });
+      } else await zone.screenshot({ path: join(sortie, nom), animations: 'allow' });
+      frames.push({ src: nom, t, compte });
       await page.waitForTimeout(config.intervalle);
     }
     writeFileSync(join(sortie, 'planche.html'), htmlPlanche(frames, config));

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
+import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { estApprouve, libelleEtat } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
@@ -92,7 +93,7 @@ export function Settings() {
           </p>
         ) : !session ? (
           <p className="m-0 max-w-[62ch]">
-            Aucun compte connecté. <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux invités.
+            Aucun compte connecté. <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux testeurs.
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -242,6 +243,8 @@ export function Settings() {
         }}
         onCancel={() => setConfirmeReset(false)}
       />
+
+      <InvitationTesteurs ou="reglages" />
 
       <section className="section panel">
         <h2>Confidentialité</h2>

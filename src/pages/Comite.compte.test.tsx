@@ -109,7 +109,7 @@ describe('un compte non approuvé lit le mur mais n’écrit pas', () => {
   });
 
   it('refusé : même chose, et la lecture reste ouverte', async () => {
-    poserCompte({ etat: 'refuse', raison: 'Pas un invité.' });
+    poserCompte({ etat: 'refuse', raison: 'Pas un testeur.' });
     rendre();
     expect(await screen.findByText('Idée d’un collègue')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Poster une idée/ })).toBeNull();

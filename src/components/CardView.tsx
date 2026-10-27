@@ -11,12 +11,18 @@ interface Props {
   compact?: boolean;
   selected?: boolean;
   /**
-   * **Figée** — la carte telle qu'elle doit être **sur le plateau** (D-093, #187) : aucune
-   * micro-animation de survol. Sur un plateau de combat, huit cartes qui se soulèvent au
-   * passage du pointeur font du bruit, et le survol y sert à **lire** (l'inspecteur), pas
-   * à décorer. La classe `card--figee` est aussi ce que `styles.css` reconnaît.
+   * **Calme** — la carte telle qu'elle doit être **sur le plateau** (D-093, #187 ;
+   * `SPEC-COMBAT-UI` §8 T2, D-116, #285) : aucune micro-animation de survol, et le gabarit
+   * **réduit** (`card--compact`) qu'il **impose** — une carte de plateau ne se rend pas en
+   * grand. C'est le **seul** nom du cas d'usage : la prop `figee`, qui ne coupait que le
+   * geste, a été retirée (#324), et `calme` la couvre.
+   *
+   * Sur un plateau de combat, huit cartes qui se soulèvent au passage du pointeur font du
+   * bruit, et le survol y sert à **lire** (l'inspecteur), pas à décorer. La classe
+   * `card--figee` reste le nom que `styles.css` reconnaît pour ce silence (#324 : le
+   * renommage de la classe appartient à la feuille de style).
    */
-  figee?: boolean;
+  calme?: boolean;
   /**
    * **L'état vivant de la carte au plateau** : le Stress qui monte (D-026). Le Seuil reste
    * la pastille de la carte (`card.hp`) ; c'est la **barre** qui change de sens. Omis, la
@@ -55,11 +61,15 @@ const HOLO_RARITIES: Rarity[] = ['1S', '2S', '3S', 'COU'];
  */
 const APLAT_FACTION = 'color-mix(in srgb, var(--accent) 26%, var(--bg-deep))';
 
-export function CardView({ card, onClick, compact, selected, figee, stress, seuil, plateau, annotations }: Props) {
+export function CardView({ card, onClick, compact, selected, calme, stress, seuil, plateau, annotations }: Props) {
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
   const comex = planque && card.ex === true;
+  // **Calme** coupe le geste (#285) et **impose** le format réduit : une carte de plateau ne
+  // se rend pas en grand. Un seul drapeau pour un seul comportement (#324).
+  const immobile = calme === true;
+  const reduite = compact === true || calme === true;
   // `--accent` = couleur **de la faction** (source unique : `FACTION_META`) ; `--rarity`
   // = celle de la rareté. Les deux pilotent le cadre et les accents de la carte.
   const style = {
@@ -78,9 +88,12 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
     'card',
     comex ? 'card--comex' : '',
     HOLO_RARITIES.includes(card.rarity) ? 'card--holo' : '',
-    compact ? 'card--compact' : '',
+    reduite ? 'card--compact' : '',
     selected ? 'card--selected' : '',
-    figee ? 'card--figee' : '',
+    // La classe du geste coupé porte le **style** (curseur, `transition: none`) et garde le nom
+    // que `styles.css` reconnaît (`card--figee`) : `calme` l'obtient sans quoi il couperait les
+    // animations `framer-motion` mais pas la transition CSS.
+    immobile ? 'card--figee' : '',
     plateau ? 'card--plateau' : '',
     plateau && annotations ? 'card--annotations' : ''
   ]
@@ -200,7 +213,7 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
         </div>
       )}
 
-      {!compact && <p className="card__flavor">{card.flavor}</p>}
+      {!reduite && <p className="card__flavor">{card.flavor}</p>}
 
       <footer className="card__footer">
         <span className="card__rarity" title={`Rareté ${card.rarity}`}>
@@ -210,7 +223,7 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
           <i className="card__faction-dot" aria-hidden />
           {faction.short}
         </span>
-        {!compact && <span className="card__id">#{card.id.split('-').slice(-1)[0]}</span>}
+        {!reduite && <span className="card__id">#{card.id.split('-').slice(-1)[0]}</span>}
       </footer>
     </div>
   );
@@ -223,14 +236,15 @@ export function CardView({ card, onClick, compact, selected, figee, stress, seui
     'data-rarity': card.rarity,
     style,
     onClick,
-    // Figée : le plateau ne bouge pas au passage du pointeur (D-093). Le survol y ouvre
-    // l'inspecteur ; une carte qui se soulève en même temps brouille ce geste.
-    whileHover: figee ? undefined : { y: -4, scale: 1.01 },
-    whileTap: figee ? undefined : { scale: 0.99 },
-    transition: figee ? undefined : { type: 'spring' as const, stiffness: 320, damping: 26 }
+    // Immobile : le plateau ne bouge pas au passage du pointeur (D-093). Le survol y ouvre
+    // l'inspecteur ; une carte qui se soulève en même temps brouille ce geste. `calme` est ce
+    // silence, et c'est le seul drapeau qui le porte (#285, #324).
+    whileHover: immobile ? undefined : { y: -4, scale: 1.01 },
+    whileTap: immobile ? undefined : { scale: 0.99 },
+    transition: immobile ? undefined : { type: 'spring' as const, stiffness: 320, damping: 26 }
   };
 
-  return figee && !onClick ? (
+  return immobile && !onClick ? (
     <motion.div {...commun}>{contenu}</motion.div>
   ) : (
     <motion.button type="button" {...commun}>

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { Settings } from './Settings';
 import { renderWithStore } from '@/test/test-utils';
@@ -162,5 +162,37 @@ describe('Settings — écran des Réglages', () => {
     // mener à l'écran qui le dit, sinon la note reste invisible depuis le jeu.
     const lien = screen.getByRole('link', { name: /la feuille de route/i });
     expect(lien).toHaveAttribute('href', '/feuille-de-route');
+  });
+});
+
+/**
+ * La porte du serveur des testeurs (#317, D-120) — dans **Réglages**.
+ *
+ * Le comportement est celui du module `@/components/InvitationTesteurs` : vide → rien du
+ * tout, renseignée → un seul lien externe. Ici, ce qui est gardé, c'est **l'emplacement** :
+ * sans invitation, l'écran ne garde ni titre ni panneau vide ; avec, le testeur trouve le
+ * lien depuis Réglages, sans dépendre d'un message qu'il aurait perdu.
+ */
+describe('Settings — le serveur des testeurs (#317)', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('sans invitation, ne laisse ni section ni lien Discord', () => {
+    vi.stubEnv('VITE_DISCORD_INVITE', '');
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    expect(screen.queryByText(/serveur des testeurs/i)).toBeNull();
+    expect(screen.queryByRole('link', { name: /discord/i })).toBeNull();
+  });
+
+  it('avec invitation, donne le lien en nouvel onglet', () => {
+    vi.stubEnv('VITE_DISCORD_INVITE', 'https://discord.gg/planquex-test');
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const lien = screen.getByRole('link', { name: /rejoindre le serveur des testeurs/i });
+    expect(lien).toHaveAttribute('href', 'https://discord.gg/planquex-test');
+    expect(lien).toHaveAttribute('target', '_blank');
+    expect(lien).toHaveAttribute('rel', 'noreferrer noopener');
   });
 });

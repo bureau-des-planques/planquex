@@ -33,6 +33,9 @@ c'est surtout : **est-ce que ça donne envie de refaire une partie ?**
   qui le fait avancer, pas celui qui l'écrit.
 - **La feuille de route** (`/feuille-de-route`) : ce que chaque version apporte, lisible sans
   compte — c'est là que la note de version se relit.
+- **Le guide d'installation** (`/installation`) : quoi ouvrir, comment poser l'icône sur
+  l'écran d'accueil (téléphone ou ordinateur), ce qui marche selon le navigateur, et ce qui
+  se perd quand on change d'appareil. Il se lit **sans compte** lui aussi.
 
 Tu commences avec une Collection déjà garnie : tu peux composer un Deck et te battre tout de suite.
 
@@ -56,11 +59,26 @@ Tu commences avec une Collection déjà garnie : tu peux composer un Deck et te 
 ## ⚠️ Ta sauvegarde
 
 **Vider les données de ton navigateur efface ta Collection, ton Deck, ton pseudo et ta partie en
-cours.** Pareil si tu changes de navigateur ou d'appareil — ton compte, lui, te suit.
+cours.** Pareil si tu changes de navigateur ou d'appareil — ton compte, lui, te suit. Le détail
+des gestes d'installation et de sauvegarde est sur `/installation`.
 
 Avant : **Réglages → « Créer ma sauvegarde »**. Le texte qui apparaît est copié ; colle-le dans
 une note ou un message à toi-même. Pour revenir : colle-le dans la même zone, puis
 **« Restaurer ce texte »**.
+
+## Le serveur des testeurs
+
+Les testeurs de l'alpha se retrouvent aussi sur un **serveur Discord**, pour se parler entre
+deux parties : se donner rendez-vous pour une partie à deux, poser une question, raconter ce
+qui marche. Le lien est dans **Réglages** (« Le serveur des testeurs ») et au pied du
+**comité**.
+
+**Invitation permanente** : `<https://discord.gg/…>` — jamais à expiration, donc un lien collé
+dans un message reste valable.
+
+C'est **facultatif** : le jeu se joue sans, et le mur reste l'endroit où un retour est
+**suivi**. Sur Discord, ce sont les règles du serveur qui s'appliquent, et la page
+**Confidentialité** dit ce que ça implique.
 
 ## Comment remonter un retour
 

@@ -43,7 +43,7 @@ Les décomptes de cartes et de tests ne sont **pas recopiés** dans ce fichier :
 
 | Étape | Critères (D-048) |
 |---|---|
-| **alpha** | Solo jouable entre invités, contenu incomplet, casse assumée — on teste si la boucle tient |
+| **alpha** | Solo jouable entre testeurs, contenu incomplet, casse assumée — on teste si la boucle tient |
 | **beta** | Solo complet (Journée d'intégration, Réglages, export/import), **PvP jouable** (D-049), URL stable (domaine tranché, O-003), les **bases** illustrées — les variantes en héritent — *ou* la décision assumée de ne pas les illustrer, sans compte imposé (D-063), aucune perte de données possible |
 | **release** | Beta + le reste de `PROPOSITION.md` §5.1 (classé, économie, missions, échanges, notifications, polish, localisation) |
 

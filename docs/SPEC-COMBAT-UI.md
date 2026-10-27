@@ -165,7 +165,7 @@ excepté, inspecteur qui se replie).
 - **Le survol n'existe pas au tactile.** `@media (hover: hover)` et `(pointer: coarse)` sont
   *Baseline, largement disponibles* (§9) : ce sont les bons tests, et ils sont purement CSS.
   Toute information qui n'existe qu'au survol doit avoir un chemin **clic/tap** de même
-  contenu — sinon elle n'existe pas pour la moitié des invités.
+  contenu — sinon elle n'existe pas pour la moitié des testeurs.
 - **Un raccourci clavier n'a pas d'équivalent tactile** : la §4 exige donc un **bouton
   visible** qui fait exactement la même chose.
 
@@ -251,7 +251,7 @@ les **annotations** (le texte répété, les noms de Conditions, le détail des 
 | Inspecteur | à la demande (survol, focus, tap) | idem — la bascule ne le remplace pas |
 
 Autrement dit : `sobre` supprime la **redite**, `détaillé` la remet pour qui la veut. Un
-invité qui n'a jamais entendu parler du raccourci peut jouer entièrement en `sobre` : il perd
+testeur qui n'a jamais entendu parler du raccourci peut jouer entièrement en `sobre` : il perd
 du confort, jamais une information unique.
 
 ### 4.4 Le rendre découvrable sans tutoriel
@@ -568,7 +568,7 @@ solution la moins risquée.
 
 ### 6.5 Les états de l'écran
 
-| État | Ce que voit l'invité | Détail |
+| État | Ce que voit le testeur | Détail |
 |---|---|---|
 | **Mon tour** | la barre d'état dit « à toi », les verbes de la zone d'action sont là | les cartes jouables de la main portent un **filet doré**, pas une étiquette « Jouable » |
 | **Tour adverse** (solo) | « La Direction réfléchit… » (`role="status"`, déjà là, `Battle.tsx:841-845`) ; la zone d'action se réduit à `Fin du tour` si le moteur l'ouvre | le plateau reste **entièrement** consultable : c'est le moment où on lit |
@@ -845,7 +845,7 @@ reste l'autorité, et la scène est une couche.
    sait d'eux vient de nos **propres captures** (`docs/preuves/astuces-2026-10-20/`) et de
    leurs **notes de correctifs** : cela prouve des **règles** et des **défauts**, pas des
    mises en page. La §2 ne prétend donc pas « voici comment Hearthstone compose son plateau ».
-6. **Le « toggle » n'est pas mesuré non plus.** Rien ne dit qu'un invité préfère `sobre` ou
+6. **Le « toggle » n'est pas mesuré non plus.** Rien ne dit qu'un testeur préfère `sobre` ou
    `détaillé`, ni qu'il découvre `I`. La §4.4 parie sur un bouton visible + une ligne dans
    Réglages ; c'est un pari informé par GAG, pas un résultat.
 7. **La référence vidéo de §6.8 est un mockup généré par IA, pas un jeu.** Elle ne prouve

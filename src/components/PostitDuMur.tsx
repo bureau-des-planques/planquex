@@ -197,7 +197,7 @@ export function PostitDuMur({
           {postit.ticket !== null && (
             <a
               className="inline-flex items-center gap-1 self-start text-[0.76rem] font-semibold underline underline-offset-2"
-              href={`https://github.com/Chapax/planquex/issues/${postit.ticket}`}
+              href={`https://github.com/bureau-des-planques/planquex/issues/${postit.ticket}`}
               target="_blank"
               rel="noopener noreferrer"
               onPointerDown={(event) => event.stopPropagation()}

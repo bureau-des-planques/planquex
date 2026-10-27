@@ -176,7 +176,13 @@ export function CarteSurvolable({
   return (
     <div
       ref={carte}
-      role="group"
+      /* **`role="button"`** (#286, T3) : une carte du plateau **agit** — le clic et Entrée ouvrent
+         le panneau. `group` la rendait focusable sans dire qu'on agit dessus (le critère WCAG
+         « Nom, rôle, valeur » ne promet aucun geste), et un lecteur d'écran ne la trouvait pas
+         comme un bouton. Le nom reste celui du Planqué, entier (`aria-label`).
+         La carte **dans** la boîte reste inerte (`CardView` figée sans `onClick`) : une seule
+         cible de tabulation par Planqué, pas deux. */
+      role="button"
       aria-label={nom}
       className={className}
       data-uid={uid}

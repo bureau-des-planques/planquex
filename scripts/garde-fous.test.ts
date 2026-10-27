@@ -47,10 +47,23 @@ const SCRIPT = join(racine, LANCER);
 // en silence ; la mutation tombe sur la comparaison, pas sur la fonction.
 // #182 : la note de version (D-090) — sans la recherche de la note courante, la garde
 // « on ne publie pas une version sans sa note » ne garde plus rien.
-// #188 : l'inspecteur du combat — une infobulle de lecture ne porte aucun bouton (le patron ARIA).
+// #287 : l'inspecteur du combat (T4) — une infobulle de lecture ne porte aucun bouton (le
+// patron ARIA). L'invariant vient de #188 ; le ticket de la table est celui du test autonome
+// qui le garde désormais, sans passer par `Battle.tsx`.
+// #289 : la barre d'action et le menu `⋯` (T6) — le panneau se superpose au plateau, il ne le
+// pousse pas en rentrant dans le flux (vrac du 27/10/2026).
 // #192 : les effets de la scène — aucune animation de plus de 800 ms (SPEC-COMBAT-UI §6.8.3).
+// #294 : les effets de la référence (T11) — quatre entrées : pas d'arc ni de traînée sous « Mouvement
+// réduit », pas de boucle sans fin, et la case de la main ne bouge pas au survol.
 // #254 : le mur — un geste refusé défait ce que l'optimiste avait bougé (useMur).
-const TICKETS_ATTENDUS = [49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 188, 192, 254];
+// #299 : les problèmes connus de la release (D-119) — un post-it `fait` ne reste pas dans
+// la note, et un post-it `en attente` n'y entre pas.
+// #317 : la porte du serveur des testeurs (D-120) — une invitation vide ne rend rien, et le
+// lien qui est rendu porte `noreferrer noopener` : deux entrées, une par moitié de la règle.
+const TICKETS_ATTENDUS = [
+  49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 294, 294, 294, 294,
+  299, 317, 317
+];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
   try {
@@ -67,7 +80,7 @@ function verifier(args: string[]): { ok: boolean; sortie: string } {
     return { ok: true, sortie };
   } catch (erreur) {
     const e = erreur as { stdout?: string; stderr?: string; message?: string };
-    return { ok: false, sortie: `${e.stdout ?? ''}${e.stderr ?? ''}${e.stdout || e.stderr ? '' : e.message ?? ''}` };
+    return { ok: false, sortie: `${e.stdout ?? ''}${e.stderr ?? ''}${e.stdout || e.stderr ? '' : (e.message ?? '')}` };
   }
 }
 
@@ -124,7 +137,12 @@ describe('Garde-fous — la table est ancrée et bornée (#112)', () => {
     const empreinte = () =>
       [...new Set(fichiers)]
         .sort()
-        .map((fichier) => `${fichier}:${createHash('sha1').update(readFileSync(join(racine, fichier))).digest('hex')}`)
+        .map(
+          (fichier) =>
+            `${fichier}:${createHash('sha1')
+              .update(readFileSync(join(racine, fichier)))
+              .digest('hex')}`
+        )
         .join('\n');
 
     const avant = empreinte();

@@ -67,7 +67,7 @@ compte pour nous : des milliers de jeux de cartes/plateau, des millions de parti
 |---|---|---|
 | **PWA** (actuel) | installable, hors-ligne, déploiement en 24 s (D-055) | **retenu**, c'est le présent |
 | **TWA / Bubblewrap** | `dist/` emballé tel quel en AAB pour le Play Store | **retenu pour le lancement public** — la fiche store sans réécrire |
-| **APK en sideload** | coquille WebView de `dist/`, téléchargement direct | possible en un après-midi, si un invité veut « un vrai fichier » |
+| **APK en sideload** | coquille WebView de `dist/`, téléchargement direct | possible en un après-midi, si un testeur veut « un vrai fichier » |
 | **Dépôt F-Droid auto-hébergé** | on héberge APK + métadonnées ; maj via l'app F-Droid | possible ; aucune exigence de source publique (c'est *notre* dépôt) |
 | **F-Droid officiel** | ils **compilent depuis une source publique** | **bloqué aujourd'hui** : le dépôt est privé. Le reste est déjà en règle : licence MIT, dépendances 100 % open source, alpha fonctionnel sans backend (le mur/PvP passeraient en mention `NonFreeNet`), tags propres. Décision **de distribution**, à trancher au lancement public |
 | **Réécriture native** (Unity, Godot…) | particules GPU, shaders, haptique | **refusée aujourd'hui** — voir §5 |
@@ -82,7 +82,7 @@ ses tests sont à refaire ; l'**accessibilité** (focus, ARIA, APG — toute la 
 `SPEC-COMBAT-UI.md`) est à reconstruire à la main, le navigateur la donnait ; le texte
 riche est meilleur en DOM ; l'export **web** de Godot reste le maillon fragile (moteur
 wasm ~10-15 Mo, en-têtes COOP/COEP, navigateurs mobiles capricieux) ; friction
-d'installation pour les invités.
+d'installation pour les testeurs.
 
 **Le test qui trancherait en une journée** : porter `createBattle` + `applyAction` en
 GDScript et faire claquer une carte sur une table Godot. Si le feel ne bat pas §8 en

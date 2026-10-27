@@ -27,7 +27,7 @@ export function useEnLigne(): boolean {
 /**
  * Le **bandeau hors ligne** (#131, D-060 critère 3). Le jeu est une PWA : le service
  * worker précache tout, donc le combat, la Collection et le Deck marchent sans réseau.
- * Le bandeau dit **ce qui continue** et **ce qui attend** — sans quoi un invité hors
+ * Le bandeau dit **ce qui continue** et **ce qui attend** — sans quoi un testeur hors
  * ligne croirait la page en panne le jour où le mur ou les pouces ne répondent pas.
  */
 export function BandeauHorsLigne() {

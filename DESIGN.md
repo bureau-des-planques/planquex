@@ -57,10 +57,21 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--warn` | `#e0a33e` | avertissement (deck de test, fin perdue) |
 | `--danger` | `#e06a4e` | erreur |
 
-### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196)
+### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196 ; pastille de café, étiquettes et plancher de `--fs-2xs` rejoués le 27/10/2026, #290 ; paires de la direction de scène recalculées le 27/10/2026, #295 ; filet de danger relevé et mesuré sur la page le 27/10/2026, #323)
 
 Ratios WCAG calculés sur les paires réelles du thème (formule de luminance relative
 WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
+
+**Ce qui fait foi, et comment on le vérifie.** Ces ratios sont **calculés sur les jetons de
+`src/styles.css`** et **gardés** par `src/styles-scene.test.ts` : changer un jeton de scène sans
+changer la ligne d'ici fait échouer le test. Les chiffres du même genre recopiés dans
+`docs/DIRECTION-SCENE-COMBAT.md` §7 sont la **proposition de la direction** du 25/10/2026, pas une
+mesure : quand les deux se contredisent, **ce tableau-ci l'emporte**.
+
+**Le critère « en navigateur » de #290** (T7) : `npm run detect:ui:page` **est** le
+`impeccable detect <url>` demandé — il sert `dist/` et passe le détecteur sur chacun des
+**treize** écrans servis, un par un (`scripts/detect-ui-pages.mjs`, `docs/COMMANDES.md`). Le
+critère est donc tenu par cette commande, pas par une inspection à la main.
 
 | Paire | Ratio | Verdict |
 |---|---:|---|
@@ -94,7 +105,31 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | **`--text-muted` sur feutre éclairci `--scene-felt-lit`** | **3.79** | **interdit sur la table** (#198, voie 1) : la paire reste insuffisante, donc aucun texte atténué ne se pose sur le centre éclairé — `.board .muted` et `.piste__nom` passent en `--text` (7.73, ligne ci-dessus) |
 | `--accent` (pastilles de café) sur feutre `--scene-felt` | 5.12 | AA |
 | `--gold` sur feutre `--scene-felt` | 8.74 | AAA |
-| `--scene-danger` sur feutre (filet d'état, non-texte) | 4.36 | **filet seulement** : 3:1 ✓, texte ✗ |
+| `--scene-danger` sur feutre (filet d'état, non-texte) | 6.55 | **filet seulement** : 3:1 ✓, texte ✗ |
+| **Les paires de la direction (T12, #295, 27/10/2026)** — recalculées sur les jetons de la feuille, pas recopiées de `docs/DIRECTION-SCENE-COMBAT.md` §7 | | |
+| **Faute AA n° 1 de la vidéo** : crème `#efe0c2` sur parchemin `--scene-parch` | **2.41** | **✗ interdit** — inversée : encre `--scene-ink-parch` (5.43, ligne plus haut). Le jeton `--scene-chalk` sur le même parchemin tombe aussi à **2.55** ✗ : il ne se pose **que** sur l'encre (13.87) |
+| **Faute AA n° 2 de la vidéo** : blanc `#fff` sur vert `--scene-go` | **2.14** | **✗ interdit** — inversée : encre `#0b1220` (8.75, ligne plus haut). Le blanc `#f4feff` y fait 2.09 |
+| Encre `#3a2a18` (celle de la direction) sur parchemin `--scene-parch` | **4.38** | **✗** — la direction annonçait 5,95 : c'est faux, d'où `--scene-ink-parch` (#190) |
+| Blanc `#f4feff` sur la pilule cyan `#2d556a` (bannière de la direction) | 7.81 | AAA — la direction annonçait 8,02 ; la bannière n'est pas livrée |
+| `--scene-neon` sur feutre `--scene-felt` / sur le centre éclairé `--scene-felt-lit` / sur carte `--scene-card` | 9.47 / 5.19 / 9.22 | AAA / AA / AAA — même en texte, mais le néon est un filet |
+| `--scene-neon-core` sur `--scene-felt` / sur `--scene-felt-lit` | 13.24 / 7.26 | AAA |
+| `--scene-gold-hot` (le chiffre de Stress) sur `--scene-felt` / sur `--scene-felt-lit` | 12.54 / 6.87 | AAA |
+| Or `#d8b96a` sur feutre / or profond `#8a6a34` sur feutre | 8.67 / 3.28 | AAA / 3:1 — l'or profond n'est **ni** texte **ni** livré (la direction le réservait aux filets) |
+| Parchemin `--scene-parch` sur feutre (contour de la pile) | 5.23 | AA non-texte ✓ |
+| `--scene-go` sur feutre / sur le centre éclairé | 7.68 / 4.21 | AAA / AA non-texte ✓ |
+| `--scene-danger` sur le vignetté `--scene-felt-deep` / **sur le centre éclairé `--scene-felt-lit`** | 7.35 / **3.59** | 3:1 ✓ **dans les deux cas** (#323) : le filet danger du camp de la Direction est une ombre intérieure de 2 px sur le **bord gauche** de la zone. **Mesuré sur la page** le 27/10/2026 (420 × 900, capture lue au pixel près au bord du camp) : le jeton `#e0563f` y rendait `#a63f2e` sous la vignette de la table pour un feutre `#121f2b`, soit **2,80:1** — sous 3:1 malgré le « calcul géométrique » de #295 (3,94, jamais vérifié). Le jeton est relevé à `#ff7f3f` : **3,18:1 au pire** (le coin le plus vignetté) et **3,83 à 3,98:1** sur le reste du filet |
+| Filet `--scene-danger` de « Fin du tour » (tour adverse) contre la barre d'action (dégradé de `--bg-raised` à `--bg-sunken`) | 6.78 / 7.20 | 3:1 non-texte ✓ ; contre son **propre remplissage** `--scene-steel-deep` il vaut **3.03** (#323 : 2,02 avec l'ancien jeton, donc sous 3:1) : le **libellé** (blanc sur `--scene-steel-deep` : **7.61**, AAA) continue de porter l'état au premier chef, le filet le souligne désormais au-dessus du seuil |
+| Pilule danger `#5f1a16` de la direction sur feutre | 1.29 | **✗ non livrée** : « Fin du tour » à la Direction prend `--scene-steel-deep` + filet danger (ligne précédente). Si la pilule revient, le filet est **obligé** |
+| `--text` `#e8eef8` (l'encre de la scène) vs l'encre `#eef4fb` de la direction, sur feutre | 14.11 / 14.85 | AAA — la scène ne crée **pas** d'encre : elle prend `--text` |
+| **Pastille de café** (#290) : la couleur de faction contre son **liseré sombre** `--bg-deep` — les dix `FACTION_META.color` | **3,27 à 8,09** | 3:1 non-texte ✓ — le pire est la Direction (`#5b6472`, 3,27) ; le meilleur Amélioration continue (8,09) |
+| Pastille de café : anneau `--text` contre le liseré `--bg-deep` | 16.79 | AAA |
+| Pastille de café : anneau `--text` sur les trois feutres (`--scene-felt-deep` 15.83, `--scene-felt` 14.11, `--scene-felt-lit` 7.73) | **7,73 à 15,83** | 3:1 non-texte ✓ — c'est l'anneau, non la teinte, qui fait exister la pastille sur la table |
+| Pastille **vide** ou incolore : bord pointillé `--text` sur `--scene-felt-lit` | 7.73 | 3:1 non-texte ✓ (avant : `--text-dim`, **2,77** ✗) |
+| **Avant #290** : la couleur nue de la Direction sur `--scene-felt` / `--scene-felt-lit` | 2.75 / 1.51 | **✗ sous 3:1** : c'est la cause de « les couleurs du café ne se voient pas » (vrac du 27/10) ; corrigé par l'anneau ci-dessus |
+| Pastille de café dans le bouton primaire : liseré `--bg-deep` sur `--accent` | 6.10 | 3:1 non-texte ✓ (l'anneau crème y tombe à 2,75 : il est **décoratif**, c'est le liseré qui découpe la pastille) |
+| Étiquette « SEUIL » : `--text` sur la plaque `rgb(7 12 22 / 72 %)` posée sur une illustration **blanche** (pire cas, fond rendu `#4c5057`) | 6.93 | AA — avant : `--text-muted`, **3,40** ✗ au pire cas |
+| Chiffre du Seuil : `--gold-soft` sur la même plaque, pire cas | 5.71 | AA |
+| Étiquette « Jouable » de la main : `--gold-soft` sur teinte or 18 % de `--bg-raised` / de `--scene-card` | 8.32 / 7.72 | AAA |
 
 Méthode : luminance relative et ratio de la formule WCAG 2.1 calculés sur les valeurs hexadécimales
 de `src/styles.css` (bloc `.battle`, jetons `--scene-*` de #190) et de `:root` ; pastilles :
@@ -128,7 +163,7 @@ d'information. #196 avait mesuré **23 nœuds de texte visibles sous 11,2 px** �
 | Numéro de Seuil | 9,6 px | **11,2 px** | **réglé** — c'est une décision (avant de craquer), pas un ornement |
 | Chiffre de Stress (`détaillé`) | 9,92 px | **11,2 px** | **réglé** — une mesure se lit |
 | Nom d'une Condition | 9,92 px | **11,2 px** | **réglé** — la règle se lit, elle ne se devine pas |
-| Mot « Seuil », étiquettes de pile, nom du camp sur la piste, types de café, nature dans la pose | 6,7 à 10,2 px | inchangés | **acceptables** : information répétée à ≥ 0.7rem ou dans la fiche |
+| Mot « Seuil », étiquettes de pile, nom du camp sur la piste, types de café, nature dans la pose | 6,7 à 10,2 px | **9,92 px** (`--fs-2xs`) partout, **11,2 px** pour les types de café du `détaillé` | **réglé en #290** — le mot « Seuil » (0,42 rem, **6,7 px**), l'emblème de faction (0,55 rem) et le nom du camp sur la piste (0,6 rem) étaient les trois seules règles du combat sous `--fs-2xs` ; elles y sont |
 
 **Ce qui reste, dit franchement** : un seul texte porteur d'information est encore sous le plancher,
 le **nom du Planqué au Banc** (9,92 px), et c'est un arbitrage de place, pas un oubli : à 56 px de
@@ -139,6 +174,28 @@ large et deux lignes, `--fs-xs` amputerait le nom au milieu d'un mot. Le passage
 La règle « aucun
 texte porteur d'information sous `--fs-xs` » **n'est donc pas satisfaite** : c'est une dette
 d'écran, pas une description du système.
+
+**Le plancher du combat est `--fs-2xs`, et il est gardé (#290, 27/10/2026).** Deux choses sont
+distinctes : le plancher **maison** d'un texte porteur d'information reste `--fs-xs` (dette ci-dessus,
+inchangée) ; le plancher **mécanique** du combat — ce qu'aucune règle `.battle`, `.board`, `.poste`,
+`.piste`, `.pile`, `.hand`, `.card--plateau`, `.combat-*`… n'a le droit de descendre sous — est
+`--fs-2xs` (0,62 rem = 9,92 px). `src/styles-combat.test.ts` lit la feuille, **échoue** si une
+déclaration passe dessous (il voit une règle de 0,42 rem comme de 8 px : le contrôle mord) et a été vu
+**rouge** avant la correction sur trois règles (0,42 / 0,55 / 0,6 rem). Mesure à l'écran, 420 × 900,
+arrivée **et** tour 3 avec un café attaché : **aucun nœud de texte visible sous 9,92 px** (le plus petit
+est 9,92 px : noms du Banc, emblèmes, « Deck » / « Rebut », noms des camps de la piste). Ce que la
+mesure ne prouve pas : les pseudo-éléments (`::before` « SEUIL ») ne sont pas des nœuds de texte, c'est
+le test de la feuille qui les couvre.
+
+**La pastille de café (#290).** Elle faisait **8 px** (`.pip`) avec un filet noir à 35 % : la couleur de
+la Direction (`#5b6472`) y tombait à **1,51:1** du centre éclairé de la table, donc le café s'y fondait
+— c'est la plainte du vrac du 27/10 (« les couleurs du café ne se voient pas »). Dans `.battle` elle
+fait maintenant **14 px** (Pressions, barre d'action) et **18 px** dans la fiche du camp (cafés attachés,
+Machine), cernée d'un liseré sombre puis d'un **anneau crème** : la pastille existe par son anneau
+(7,73 à 15,83:1), et sa teinte par son liseré (3,27 à 8,09:1) — ratios en §1.5. **Ce qui reste, dit
+franchement** : la teinte seule ne distingue toujours pas deux factions voisines pour une personne
+daltonienne ; le nom du type est dans le `title`, l'`aria-label` et l'inspecteur, pas sur la pastille.
+Un glyphe de faction dans la pastille serait une autre décision (place : 18 px).
 
 Le bouton primaire a été **corrigé** le 23/10/2026 (#131) : son haut, éclairci au blanc, donnait
 **3.1:1** sous le texte blanc — le détecteur d'Impeccable **en navigateur** (`npx impeccable detect
@@ -194,7 +251,7 @@ rareté, `.card__face` est la carte elle-même.
 - Face : rayon 6 px, filet noir intérieur, `gap` 0.3rem ; chaque bloc porte son propre espacement horizontal (0.4rem).
 - Illustration : **elle prend l'espace restant** (`flex`), rayon 4 px, filet interne double (noir à l'extérieur, clair à l'intérieur), cadrage **haut** (`50% 28%`) — les illustrations sont des portraits.
 - Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
-- Pips de café : 8 px, `gap` 2 px.
+- Pips de café : 8 px, `gap` 2 px — **hors du combat** ; dans `.battle` : 14 px (18 px dans la fiche du camp), anneau crème, `gap` 0,3 rem (#290).
 
 ### 2.3 États
 
@@ -211,20 +268,22 @@ rareté, `.card__face` est la carte elle-même.
 
 **Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
-### 2.4 L'écran de combat (D-093 ; #169, #187–#200)
+### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121 ; écart de collage de la barre daté le 27/10/2026, #289, #323)
 
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
-tout tient « sans défiler » : `npm run capturer` **mesure** les deux surfaces qui doivent rester
-au-dessus de la navigation. Au tour du joueur, pas-à-pas terminé, le bas de la **main** est à
-**723 px** et celui de la **barre d'action** à **825 px**, pour une limite de **830 px** (haut de
-la barre de navigation) — **5 px de marge**. Le pas-à-pas ouvert (`1 / 5`) ajoute sa bande : la
-barre finit alors à **812 px**. La page peut défiler ; ce sont ces deux surfaces que la garde
-interdit de perdre, et un tour chargé (relève, choix) fait défiler la barre **en elle-même**
-(`max-height: 42dvh`) plutôt que de recouvrir la table.
+tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
+doivent rester au-dessus de la navigation (limite **830 px**, haut de la barre de navigation, avec
+**20 px** de marge exigés par D-094 (3)). Remesuré le 27/10/2026 (`npm run capturer`, #322) sur les
+64 états du passage de combat, cibles de 44 px comprises : **aucun défilement** (D-103) ; pas-à-pas
+**terminé**, le bas de la **main** est à **663–667 px** et celui de la **barre d'action** à
+**711–758 px** (72–119 px de marge) ; pas-à-pas **ouvert** (`1 / 5`, il ajoute sa bande), la main
+finit à **714–717 px** et la barre à **762–809 px** (**21–68 px** de marge). Un tour chargé (relève,
+choix) fait défiler la barre **en elle-même** (`max-height: 42dvh`) plutôt que de recouvrir la table.
 
 Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 88 px** (`--poste-w:
 5.5rem`), **Banc 56 px** (`--banc-w: 3.5rem`), **carte de main 64 px** (`--carte-w: 4rem`) dans
-un conteneur de **72 px** qui la rogne par le bas (`overflow: hidden`).
+un conteneur de **105 px** (la carte entière, son inclinaison et la place du soulèvement) :
+**rien n'est rogné**, le Seuil reste visible.
 
 | Zone | Classe | Ce que fait l'écran |
 |---|---|---|
@@ -233,10 +292,10 @@ un conteneur de **72 px** qui la rogne par le bas (`overflow: hidden`).
 | Table | `.board` | deux camps **empilés** : l'adversaire lit **Banc puis Poste**, le mien **Poste puis Banc**, donc les deux **Postes se font face** au centre. Une seule lumière au centre (§2.6) ; aucun cadre autour d'un camp. |
 | Camp | `.board__side`, `.board__zone`, `.board__fiche` | la carte du **Poste** à gauche, sa **fiche** à droite : nom du camp, `main n`, les **piles Deck / Rebut** avec leur compte, les cafés attachés, la Machine, les Conditions. Le **Banc** est une rangée de trois places ; une place libre garde la forme d'une carte, en pointillé. |
 | Piste d'Interventions | `.piste` | **horizontale**, entre les deux camps : le nom de chaque camp et trois hexagones (l'adversaire à gauche, toi à droite) ; l'or marque une Intervention acquise. **Une** cible `data-pas-a-pas="interventions"`, sur le conteneur. |
-| Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (64 px), inclinées et chevauchées, **rognées par le conteneur** de 72 px. Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
+| Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (64 px), inclinées, qui ne se chevauchent que quand la largeur l'exige ; la carte se soulève au survol et au focus (pas sous « Mouvement réduit » : c'est alors le panneau de l'inspecteur qui s'ouvre). Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
 | Pose | `.pose` | une carte **choisie** ouvre un panneau sous la main qui la nomme et donne **où** la jouer : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet ». |
-| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir**. La lecture est une infobulle `role="tooltip"` (après 300 ms à la souris, aucun élément focusable, Échap la ferme) ; le panneau **non modal** montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse ancrée sous la carte décrite ; à partir de 900 px, colonne collée à droite. |
-| Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation. Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi). C'est la cible `poste-actions` du pas-à-pas. |
+| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-121). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`). La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans `body` à la verticale de sa carte (sous elle, au-dessus si l'écran manque de place), 17 rem de large au plus. Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; à partir de 900 px, colonne collée dans la console. |
+| Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation — **au-dessus de 640 px de large seulement** : sous 640 px (donc à la cible de 420 px de D-060) elle repasse en `position: static` et se range sous la main, sinon elle remontait par-dessus le bas de la main (#289, écart **assumé**, `src/styles.css`). Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi). C'est la cible `poste-actions` du pas-à-pas. |
 | Écran large (≥ 900 px) | `.battle__table` | la table à gauche, la console (inspecteur, main, pose) à droite. |
 
 Le **secondaire** est derrière le `⋯` : Journal (les 14 dernières lignes), Partie à deux (un code
@@ -247,6 +306,34 @@ et rend le focus au bouton, et un dialogue ouvert par-dessus garde son propre É
 Les **piles** Deck et Rebut sont des objets **posés** et **comptés** : le Rebut **ne s'ouvre pas**
 (écart à `SPEC-COMBAT-UI` R5, pas une règle).
 
+**Le clavier et le doigt** (D-121 ; la recherche est `SPEC-COMBAT-UI` §4 et §6.6, elle ne fait pas règle).
+
+| Geste | Effet |
+|---|---|
+| `Tab` / `Maj+Tab` | l'ordre du document : barre d'état → cartes du plateau (adversaire, puis moi) → main → barre d'action. Aucun `tabindex` positif. |
+| `Entrée` / `Espace` sur une carte | ouvre le panneau d'action |
+| `Échap` | ferme l'infobulle, ou le panneau (le focus revient à la carte), ou le menu `⋯` (le focus revient au bouton), ou le dialogue ouvert par-dessus — **un seul étage à la fois** |
+| `I`, `Ctrl+I` (`Cmd+I`) | bascule `sobre` / `détaillé`. La case **« Raccourcis clavier au combat »** (Réglages) est **cochée par défaut** ; décochée, les deux touches ne font plus rien. Sans effet dans un champ de saisie (le code de la partie à deux). `Ctrl+Maj+I` reste au navigateur. |
+| flèches, `Page↑/↓` | **défilent la page**. Le plateau n'est pas un `role="grid"` (D-121) : huit places au plus, le `Tab` naturel suffit. |
+| appui long | n'existe nulle part ; le tap suffit |
+
+Le focus est **rendu** : l'anneau d'une carte du plateau est un contour de 2 px au néon
+(`--scene-neon`, décalé de 3 px, `.poste__carte:focus-visible` et `.bench__carte:focus-visible`), celui
+des autres éléments est l'anneau global (`:focus-visible`, 2 px `--gold`, décalé de 2 px). Le panneau
+rend le focus à la carte qu'il décrivait (`finalFocus`), et la fermeture du panneau ne rouvre pas
+l'infobulle de cette même carte.
+
+**Cibles de doigt (état mesuré le 27/10/2026, #320, #322).** Toutes les cibles du combat font
+**44 px** (`2.75rem`, D-116) : la barre d'état, le menu `⋯`, ses entrées, la bascule `ⓘ`, **les boutons
+de la barre d'action** (`.combat-barre .button`, « Fin du tour » compris) et **ceux de la ligne du
+pas-à-pas** (`.pas-a-pas__ligne button`, dont « Plus »). Il ne reste **aucun écart** : ce que ce
+paragraphe disait avant #320 — ces deux surfaces à 36 px, « écart daté » — est **caduc**. La
+mesure est celle de `npm run capturer`, qui lit dans le navigateur la hauteur rendue de chaque bouton
+et **échoue** sous 43,5 px (`boutonsPetits` : `[]` sur les 64 états mesurés ce jour, « Fin du
+tour » de 44 px de haut). La marge de D-094 (3) tient avec ces 44 px : le bas de la barre d'action est
+à **758 px au plus** pas-à-pas terminé (72 px de marge) et à **806 à 809 px** pas-à-pas ouvert
+(**24 px** en `sobre`, **21 px** au pire cas `détaillé`), pour **20 px** exigés ; aucun défilement.
+
 **Trois notes de lecture (25/10/2026, #196)** — des constats datés sur des actes qui ne se
 réécrivent pas. Ils disent où le code a avancé depuis la ligne, ou pourquoi un chiffre de l'acte
 n'est pas celui de l'écran.
@@ -255,24 +342,26 @@ n'est pas celui de l'écran.
    Il l'est depuis #171 : `regardDuDernierGeste` retrouve le `peek` du dernier geste et
    `RegardDuDessus` (`Battle.tsx`) affiche le dessus de **mon** Deck dans une section privée,
    hors main et hors journal — donc sans révélation à l'autre camp. La décision n'est pas
-   modifiée ; c'est sa dette qui est close.
+   modifiée ; c'est sa dette qui est close. Le journal le porte lui-même depuis D-111 (le ⚠️ en
+   tête de la ligne de D-079), et D-121 le redit (27/10/2026, #291).
 2. **D-035, « Radix » n'est pas le paquet installé.** L'acte écrit « shadcn/Radix ». Le paquet
    réel est **Base UI** : `@base-ui/react` (`package.json`), importé par
    `src/components/ui/dialog.tsx` et `button.tsx`. Le choix de fond — shadcn/ui pour les
-   composants génériques seulement — tient ; le nom du moteur, lui, est Base UI.
+   composants génériques seulement — tient ; le nom du moteur, lui, est Base UI. Le journal ne
+   réécrit pas D-035 : sa ligne porte un ⚠️ de lecture daté du 27/10/2026 qui renvoie à D-121 (b).
 3. **La largeur du Poste : 116 px dans D-093, 88 px sur l'écran.** L'acte écrit « le Poste à
    116 px, le Banc à 64 px » (la direction visuelle, elle, dit 112, `docs/DIRECTION-SCENE-COMBAT.md`
    §3.1) ; l'écran mesure **88 px** pour le Poste (`--poste-w: 5.5rem`) et **56 px** pour le Banc
    (`--banc-w: 3.5rem`). L'écart n'est pas une nouvelle règle : c'est la **plus grande combinaison
-   qui garde la main et la barre d'action au-dessus de la navigation** à 420 × 900 (5 px de marge,
-   ci-dessus). Les deux chiffres de l'acte restent écrits ; c'est l'écran qui est plus petit que
+   qui garde la main et la barre d'action au-dessus de la navigation** à 420 × 900 (20 px de marge
+   au moins, ci-dessus). Les deux chiffres de l'acte restent écrits ; c'est l'écran qui est plus petit que
    la cible.
 
 ### 2.5 Les états d'un écran (D-060, critère 3 ; #131)
 
 Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors ligne** — ou dit pourquoi il n'en a pas. Les états **transverses** vivent dans le `Layout`, une seule fois :
 
-| État | Où | Ce que voit l'invité |
+| État | Où | Ce que voit le testeur |
 |---|---|---|
 | Erreur de rendu | `ErreurDeRendu` (Layout, autour de l'écran ; et `main.tsx`, autour de tout) | « Cet écran a planté » + Recharger + accueil ; la barre de navigation reste, changer d'écran referme l'erreur |
 | Adresse inconnue | `Introuvable` (`path="*"`) | « Ce couloir ne mène nulle part » + l'adresse ; les anciennes adresses redirigent (D-075) |
@@ -292,12 +381,14 @@ Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors lign
 mais des **états de la même vue**. Ils sont listés ici pour qu'on sache quoi regarder sur une
 capture.
 
-| État | Comment on y entre | Ce que voit l'invité | Sortie |
+| État | Comment on y entre | Ce que voit le testeur | Sortie |
 |---|---|---|---|
-| `sobre` (défaut) | à l'arrivée (`combatDetaille: false`) | les cartes du plateau, leur nom, le Seuil et la barre de Stress ; la Machine en pastille ; une Condition en icône seule ; le chiffre de Stress et les Pressions ne sont pas écrits sur la carte | `ⓘ`, `I` ou `Ctrl+I` → `détaillé` |
-| `détaillé` | `ⓘ` (`aria-pressed`) ou `I` / `Ctrl+I` | les annotations reviennent : nom et dégâts des Pressions sur la carte, chiffre `x/y` de Stress, types de café de la Machine, nom des Conditions | le même geste, ou `ⓘ` |
-| Inspecteur — lecture | survol à la souris (300 ms) ou focus clavier d'une carte | une infobulle `role="tooltip"` sous la carte : nom entier et fiche, **aucun bouton** | sortie du pointeur ou du focus ; **Échap** ferme |
-| Inspecteur — action | clic, tap ou **Entrée** sur une carte | un panneau **non modal**, sans voile : la même fiche, plus les gestes de la carte ; feuille basse sous la carte sur téléphone, colonne collée à ≥ 900 px | **Fermer**, **Échap** ; le focus revient à la carte |
+| `sobre` (défaut) | à l'arrivée (`combatDetaille: false`) | les cartes du plateau, leur nom, le Seuil et la barre de Stress ; la Machine en pastille ; une Condition en icône seule ; le chiffre de Stress et les Pressions ne sont pas écrits sur la carte. **Rien de ce qui change une décision n'est caché** : la fiche de l'inspecteur dit tout | `ⓘ`, `I` ou `Ctrl+I` → `détaillé` |
+| `détaillé` | `ⓘ` (`aria-pressed="true"`) ou `I` / `Ctrl+I` (`aria-keyshortcuts="I"`) | les annotations reviennent : nom et dégâts des Pressions sur la carte, chiffre `x/y` de Stress, types de café de la Machine, nom des Conditions. Le choix **survit au rechargement** (store persisté) | le même geste, ou `ⓘ` |
+| Raccourcis coupés | Réglages → décocher « Raccourcis clavier au combat » (cochée par défaut, D-121) | `I` et `Ctrl+I` ne font plus rien ; `ⓘ` reste le seul chemin. Taper « i » dans le code de la partie à deux n'a jamais d'effet sur l'écran | recocher la case |
+| Inspecteur — lecture | survol à la **souris** (300 ms) ou focus clavier d'une carte du Poste ou du Banc ; le tactile n'y entre pas (le tap ouvre l'action) | une infobulle `role="tooltip"` reliée à la carte par `aria-describedby`, sous elle (au-dessus s'il n'y a pas de place) : nom entier et fiche, **aucun bouton, aucun élément focusable**. Le pointeur peut passer de la carte à l'infobulle sans la perdre | sortie du pointeur ou du focus ; **Échap** la ferme sans bouger le pointeur ; elle s'efface dès que le panneau montre la même carte |
+| Inspecteur — action | clic, tap ou **Entrée** / **Espace** sur une carte | un panneau **non modal**, sans voile, titré du nom entier : la même fiche, plus les gestes de la carte (« Gestes de cette carte ») ; feuille basse sous la carte sur téléphone, colonne collée à ≥ 900 px | **Fermer** ou **Échap** ; le **focus revient à la carte** décrite, et l'infobulle ne se rouvre pas toute seule |
+| Inspecteur — carte sans geste | une carte de **l'adversaire** : la fiche seule, pas de section de gestes. Une carte à **moi** sans geste légal (tour adverse, café déjà attaché) : la fiche et « Aucun geste pour cette carte ce tour. » | **aucun bouton grisé** : les gestes viennent de `legalActions` (café, évolution, Talent, Rotation, relève), l'écran n'en invente pas | idem ; un geste choisi ferme le panneau et joue l'action |
 | Menu `⋯` — fermé | — | le bouton `⋯` seul, à droite de `ⓘ` | ouvrir |
 | Menu `⋯` — ouvert | `⋯` | un panneau ancré sous la barre d'état, **une vue à la fois** : la liste, le Journal (14 dernières lignes) ou la Partie à deux | `⋯`, **Échap**, ou une entrée ; le focus revient au bouton |
 | Règles | `⋯` → **Règles**, ou **Conditions** dans la barre d'état | le dialogue des cinq Conditions : libellé, icône et règle | **Échap** ou la fermeture du dialogue |
@@ -320,7 +411,7 @@ d'un panneau dans la page. Les jetons sont déclarés **une fois**, sur le séle
 | `--scene-card` | `#1b222c` | la surface d'une carte |
 | `--scene-neon` / `--scene-neon-core` | `#61d5df` / `#9ef5fb` | le néon **d'état** |
 | `--scene-go` | `#46c78c` | « Fin du tour » quand c'est à toi |
-| `--scene-danger` | `#e0563f` | tour adverse, craquage |
+| `--scene-danger` | `#ff7f3f` | tour adverse, craquage — relevé le 27/10/2026 (#323) : à `#e0563f` le filet tombait à **2,80:1** mesuré au bord du camp de la Direction |
 | `--scene-gold-hot` | `#f7e264` | le **Stress** qui monte |
 | `--scene-parch` | `#b18a60` | le parchemin des piles (Deck, Rebut) |
 | `--scene-parch-dark` | `#664d38` | le filet usé des piles |
@@ -331,6 +422,18 @@ d'un panneau dans la page. Les jetons sont déclarés **une fois**, sur le séle
 
 Les jetons sont posés sur `.battle` (`src/styles.css`, bloc « La scène de combat ») : ils
 n'existent pas hors de l'écran de combat, et `:root` n'en change aucun.
+
+**Gardé par un test (T12, #295, 27/10/2026)** : `src/styles-scene.test.ts` lit la feuille et échoue si
+(1) l'un des huit jetons de `SPEC-COMBAT-UI` §6.9 (`--scene-felt`, `-felt-lit`, `-card`, `-neon` et
+`-neon-core`, `-go`, `-danger`, `-gold-hot`, `-parch`) n'est pas déclaré **une fois**, ou si un
+`--scene-*` est déclaré ailleurs que sous `.battle` (`:root` compris) ; (2) un ratio de la direction
+(les deux fautes AA et leurs inversions comprises) calculé sur les jetons n'est plus écrit en §1.5 ;
+(3) une surface du combat porte une ombre **extérieure, floue et colorée** — un halo. Le néon est un
+**état** : le filet en ombre intérieure du camp qui a la main, l'anneau de focus, le contour d'une
+carte jouable. Une carte qui n'est ni active, ni désignée, ni en train de subir n'a aucun halo. Chaque
+garde a son « le contrôle mord » dans le même fichier. Depuis #323, il garde aussi le **plancher
+3:1 du filet de danger** sur le feutre le plus clair (WCAG 1.4.11), avec l'ancien jeton comme cas
+fautif.
 
 **Quatre règles, et elles tiennent tout l'écran :**
 

@@ -55,7 +55,7 @@ Mesures : moyenne de zone sur crop (JPEG, ±5 %). « M » = mesuré, « I » = i
 | Pilule cyan (fond) | `--scene-neon-deep` | `#2d556a → #2e7189` | `49-00` · corps de la pilule (dégradé mesuré) | M |
 | **Vert action** (Fin du tour) | `--scene-go` | `#46c78c` | `49-00` · pilule verte (menthe mesurée `#5ba28f`, **saturée**) | M+I |
 | Vert profond (fond) | `--scene-go-deep` | `#1d3b31` | `49-00` · fond de la pilule (`#19302f`) | M |
-| **Danger** (tour adverse, casse) | `--scene-danger` | `#e0563f` | `55-06`/`49-09` · pilule rouge (corps `#6f1c15`, lueur pâle `#c9a1a1`) — **éclaircie** | M+I |
+| **Danger** (tour adverse, casse) | `--scene-danger` | `#ff7f3f` (livré, #323 ; la direction proposait `#e0563f`) | `55-06`/`49-09` · pilule rouge (corps `#6f1c15`, lueur pâle `#c9a1a1`) — **éclaircie** | M+I |
 | Pilule danger (fond) | `--scene-danger-deep` | `#5f1a16` | `49-09` · corps de la pilule rouge (`#6f1c15`) | M |
 | **Or métal** (cadres) | `--scene-gold-*` | dégradé `#f2dd9a → #d8b96a → #8a6a34 → #6b5233` | `49-00` · cadre de la carte active (moyenne `#9f8d6c`, haut clair) | M |
 | Or pâle (chiffres de Stress) | `--scene-gold-hot` | `#f7e264` | `49-09` · chiffre « −60 » (`#f7e264`) | M |
@@ -188,7 +188,8 @@ Base : fenêtre 420 × 900 (critère (4) de D-060). Tailles en px à cette réf�
   `#0b1220`** (8,75:1 — §7), halo vert. **Jamais de texte blanc sur le vert clair**
   (~2:1, §7) : la vidéo le fait, c'est une faute AA qu'on ne reproduit pas.
 - **État adverse** : fond `--scene-danger-deep` `#5f1a16`, filet 2 px `--scene-danger`
-  `#e0563f` (le fond seul ne ressort pas du feutre : 1,29:1, le filet est **obligé**),
+  `#ff7f3f` (le fond seul ne ressort pas du feutre : 1,29:1, le filet est **obligé** ; 3,59:1
+  contre le feutre le plus clair, `DESIGN.md` §1.5),
   étiquette blanche (12,76:1), halo rouge léger.
 - **Typographie** : Outfit 700, capitales, interlettrage .10em, 0.85rem.
 
@@ -224,7 +225,7 @@ Base : fenêtre 420 × 900 (critère (4) de D-060). Tailles en px à cette réf�
   .18)`), halo cyan (elle est l'élément vivant par défaut).
 - **Bord** : filet 2 px `--scene-neon-core` `#9ef5fb`.
 - **Typographie** : une ligne — `Tour 3 · À toi` — Outfit 800, capitales,
-  interlettrage .14em, 1.1rem, encre `#f4feff` (8,02:1 sur la pilule, §7). Chez la
+  interlettrage .14em, 1.1rem, encre `#f4feff` (7,81:1 sur la pilule, §7). Chez la
   Direction : `--scene-danger` et texte « La Direction joue ».
 
 ---
@@ -280,7 +281,7 @@ sous 0.62rem — en dessous, le nom complet vit dans l'inspecteur (spec §6.7).
 | Cadre **or sur toutes les cartes** | chez nous l'or **est** la marque COMEX (D-026) | **jeter** l'or généralisé : métal ardoise en standard (§3.1), or = COMEX |
 | **Violet** de la piste de score | hors vocabulaire (Interventions = or) ; famille « AI purple » des UI générées | **jeter** ; la piste est en or (§3.5) |
 | « Level 32 », photos d'avatar | n'existent pas dans le projet | **jeter** le contenu, **garder** le cartouche (initiales + nom du camp, §3.2, utile au PvP #125) |
-| Étiquette crème sur parchemin | 2,41:1 — sous AA | **inverser** : encre sombre `#3a2a18` (5,95:1, §7) |
+| Étiquette crème sur parchemin | 2,41:1 — sous AA | **inverser** : encre sombre `#3a2a18` (**4,38:1**, §7 — la valeur de 5,95 était fausse) |
 | Texte blanc sur pilule verte claire | ~2:1 si le vert est néonisé | **inverser** : encre sombre sur néon (8,75:1, §7) |
 | Feu, éclairs, lueurs en boucle | `prefers-reduced-motion` (D-026, spec §5.7) | **garder** en version réduite : un fondu simple, aucun flash, aucune translation |
 | ~30 zones visibles | contredit « une surface, trois bandes, un panneau » (spec §6.1) | **garder la structure de la spec** ; cette direction change la matière, pas la structure |
@@ -299,26 +300,37 @@ latéral, l'axe central vide.
 
 ## 7. Palette de repli (contraste AA)
 
+> **Note de lecture (27/10/2026, #323) — qui fait foi.** Ce document est la **proposition de la
+> direction** du 25/10/2026 : ses hexadécimaux ont été choisis pour la vidéo, et ses ratios ont
+> été posés **d'avance**. Les ratios **mesurés** vivent dans **`DESIGN.md` §1.5**, calculés sur les
+> jetons réellement livrés de `src/styles.css` et **gardés** par `src/styles-scene.test.ts`. Si les
+> deux tables se contredisent, **`DESIGN.md` §1.5 l'emporte**, et c'est ici qu'on corrige le
+> chiffre. Trois l'avaient dérivé : 5,95 → **4,38** (encre `#3a2a18` sur le parchemin), 8,02 →
+> **7,81** (blanc sur la pilule cyan), 16,07 → **16,67** (encre sur le feutre vignetté). Le
+> « Danger » de la table ci-dessous n'est plus `#e0563f` : le jeton est `#ff7f3f` depuis #323,
+> parce que l'ancien tombait à 2,39:1 sur le centre éclairé de la table et 2,80:1 **mesuré** au
+> bord du filet du camp de la Direction — sous les 3:1 d'une frontière d'état (WCAG 1.4.11).
+
 Ratios **calculés** (WCAG, luminance relative) sur les jetons de §1. Les paires
 marquées ✗ sont celles où la vidéo faut — et où on ne la suit pas.
 
 | Paire | Ratio | Verdict |
 |---|---|---|
 | Encre `#eef4fb` / feutre `#16202c` | **14,85** | ✓ AAA partout |
-| Encre / feutre vignetté `#0d1420` | 16,07 | ✓ |
+| Encre / feutre vignetté `#0d1420` | 16,67 | ✓ |
 | Encre / carte `#1b222c` | 14,46 | ✓ |
 | Encre secondaire `#9fb0c8` / feutre | 7,45 | ✓ |
 | Néon cyan `#61d5df` / feutre | 9,47 | ✓ même en texte |
-| Blanc `#f4feff` / pilule cyan `#2d556a` | 8,02 | ✓ la bannière tient AA |
+| Blanc `#f4feff` / pilule cyan `#2d556a` | 7,81 | ✓ la bannière tient AA |
 | Encre sombre `#0b1220` / vert `#46c78c` | 8,75 | ✓ **étiquette du bouton d'action** |
 | Blanc / vert `#46c78c` | ≈2,1 | ✗ interdit (la vidéo le fait) |
 | Encre sombre / cyan `#61d5df` | 10,78 | ✓ repli possible |
 | Or `#d8b96a` / feutre | 8,67 | ✓ |
 | Or profond `#8a6a34` / feutre | 3,28 | ✓ filets et grandes formes (3:1), pas de texte |
 | Parchemin `#b18a60` / feutre | 5,23 | ✓ contour d'objet |
-| Encre sombre `#3a2a18~#0b1220` / parchemin | 5,95 | ✓ **étiquette des piles** |
+| Encre sombre `#3a2a18~#0b1220` / parchemin | **4,38** | ✓ **étiquette des piles** |
 | Crème `#efe0c2` / parchemin | 2,41 | ✗ interdit (la vidéo le fait) |
-| Danger `#e0563f` / feutre | 4,36 | ✓ filet et halo (3:1) |
+| Danger / feutre | 6,55 | ✓ filet et halo (3:1) — le jeton est `#ff7f3f` depuis #323 (27/10/2026), relevé pour que le filet du camp de la Direction passe 3:1 ; la direction proposait `#e0563f` (4,36 sur le feutre, mais **2,39** sur le centre éclairé) |
 | Pilule danger `#5f1a16` / feutre | 1,29 | ✗ **le filet danger est obligatoire** (§3.3) |
 | Blanc / pilule danger | 12,76 | ✓ |
 
@@ -330,7 +342,7 @@ marquées ✗ sont celles où la vidéo faut — et où on ne la suit pas.
 2. **Le texte sur néon clair est sombre** : étiquette de bouton = `#0b1220` sur
    néon, jamais blanc.
 3. **Le néon suffit aux filets et halos** (seuil UI 3:1) : même si un fond de pilule
-   frôle, le filet 2 px `#61d5df` / `#e0563f` porte la lisibilité de l'état.
+   frôle, le filet 2 px `#61d5df` / `#ff7f3f` porte la lisibilité de l'état.
 
 **Vérifications avant livraison** : `npm run detect:ui` (tells §6), `npm run capturer`
 (420 × 900, preuve de rendu, `AGENTS.md` §8.4), et le contraste des paires ✗ ci-dessus
@@ -373,7 +385,7 @@ l'état est **déjà final** quand l'effet joue, il ne retarde rien.
 | Élément | Valeur livrée | Écart avec le plan ci-dessus |
 |---|---|---|
 | Effet `attaque` | **700 ms** (`DUREE_ATTAQUE_MS`) | le plan disait 350 ms : passé à 700 ms, car l'impact (550–700 ms) serait retiré avant son départ |
-| Effet `condition` | 200 ms (`DUREE_CONDITION_MS`) | aucun |
+| Effet `condition` | **240 ms** (`DUREE_CONDITION_MS`), ou **790 ms** quand une Pression l'a posée (`DUREE_CONDITION_APRES_COUP_MS`, #294) | l'arc `condition__arc` pulse deux fois 120 ms ; posé par une Pression, il attend l'impact (550 ms) pour ne pas s'allumer avant le coup. Aucun arc sous mouvement réduit : le badge nommé suffit |
 | Identité de `attaque` | attaquant + cible (`uid`, `uidCible`) | conforme : un second coup sur la même paire remplace |
 | Anticipation (cabrage) | `attaque-elan`, **0–200 ms**, sur `.poste__carte.is-elan` | conforme |
 | Trait | `trait-attaque`, **200–550 ms** (délai 200 ms), sur `.attaque__trait` | conforme dans sa forme ; **ne part pas** si la Pression craque (voir ci-dessous) |

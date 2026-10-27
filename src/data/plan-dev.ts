@@ -12,7 +12,7 @@
  * GitHub est le script, lancé au build de l'auteur — jamais dans la CI, qui n'a ni `gh`
  * ni réseau vers GitHub.
  *
- * **Sans lien** : un invité lit `#214` et son titre ; une adresse du dépôt ne
+ * **Sans lien** : un testeur lit `#214` et son titre ; une adresse du dépôt ne
  * l'ouvrirait pas, le dépôt étant privé (D-097 (3)). Aucune URL n'est donc écrite ici, et
  * `scripts/plan-dev.test.ts` le vérifie.
  */
@@ -26,6 +26,14 @@ export interface FeaturePrevue {
 
 /** Les issues `alpha` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
+  {
+    numero: 317,
+    titre: 'Discord 1 — le serveur des testeurs, et sa porte dans le jeu'
+  },
+  {
+    numero: 316,
+    titre: 'Discord — le serveur des testeurs, et le mur qui s\'annonce'
+  },
   {
     numero: 258,
     titre: 'Outillage — la CI rouge ne se voit pas, et les gros fichiers sont réécrits au lieu d\'être édités'

@@ -10,6 +10,7 @@ import { Comite } from '@/pages/Comite';
 import { Suivi } from '@/pages/Suivi';
 import { Confidentialite } from '@/pages/Confidentialite';
 import { FeuilleDeRoute } from '@/pages/FeuilleDeRoute';
+import { Installation } from '@/pages/Installation';
 import { Connexion } from '@/pages/Connexion';
 import { Attente } from '@/pages/Attente';
 import { Administration } from '@/pages/Administration';
@@ -57,6 +58,10 @@ export function App() {
           apporte, et ce qui arrive, **avant** de s'inscrire (D-097 (3)). Même raison,
           même place, hors de la garde. */}
       <Route path="feuille-de-route" element={<FeuilleDeRoute />} />
+      {/* Le guide d'installation (#300) : la note de release y renvoie, et un testeur doit
+          pouvoir le lire avant de créer un compte. Même raison que la feuille de route,
+          même place — hors de la garde. */}
+      <Route path="installation" element={<Installation />} />
       {/* Les anciennes adresses dont la destination est publique restent hors de la garde. */}
       {routesDeRedirection(true)}
       <Route element={<Layout />}>

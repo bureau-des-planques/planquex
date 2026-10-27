@@ -58,6 +58,15 @@ const COLLECTE: Rubrique[] = [
     ]
   },
   {
+    titre: 'Ce qui part du mur quand il bouge',
+    lignes: [
+      'Quand un post-it arrive sur le mur, et chaque fois que son statut change (retenu, en cours, fait, écarté avec sa raison), une annonce part dans le salon #comite du serveur des testeurs : la famille (idée ou signalement), le titre, ton pseudo et le lien vers la page du comité.',
+      'Un gueulage, lui, s’annonce sans rien dire de lui : on annonce qu’il est arrivé, jamais son texte — ni son titre.',
+      'Rien d’autre ne part : ni ton compte, ni ton adresse de courriel, ni ton identifiant, ni tes votes, ni tes commentaires. Le pseudo est la seule chose qui te nomme, et il est déjà visible de tous sur le mur.',
+      'Ces annonces partent de la base du jeu, pas de ton navigateur : le jeu n’embarque aucun code de Discord, et ne pas rejoindre le serveur ne change rien à ce qui part.'
+    ]
+  },
+  {
     titre: 'Ce qu’on ne fait pas',
     lignes: [
       'Aucune publicité, aucun traceur publicitaire, aucune revente de données.',
@@ -68,6 +77,14 @@ const COLLECTE: Rubrique[] = [
 ];
 
 const QUESTIONS: Rubrique[] = [
+  {
+    titre: 'Le serveur des testeurs (facultatif)',
+    lignes: [
+      'Le lien « Rejoindre le serveur des testeurs », dans Réglages et au pied du comité, ouvre Discord : c’est un service à part, hors du jeu, et on peut jouer sans jamais y aller.',
+      'Si tu le rejoins, Discord applique ses propres règles et sa propre politique de confidentialité : ce que tu y écris ne dépend plus de nous.',
+      'Le jeu n’embarque ni iframe, ni script, ni widget Discord : avant que tu cliques, rien de Discord n’est chargé, et la promesse « aucun traceur » tient toujours.'
+    ]
+  },
   {
     titre: 'Combien de temps',
     lignes: [
@@ -110,8 +127,8 @@ export function Confidentialite() {
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Confidentialité</h1>
         <p className="muted m-0 max-w-[62ch]">
-          Le Bureau des Planqués est un jeu d’alpha, testé par quelques invités. Voici, en clair et sans formule, ce que
-          le jeu garde de toi, et pourquoi.
+          Le Bureau des Planqués est un jeu d’alpha, testé par quelques testeurs. Voici, en clair et sans formule, ce
+          que le jeu garde de toi, et pourquoi.
         </p>
       </section>
 

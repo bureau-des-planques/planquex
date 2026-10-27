@@ -229,11 +229,13 @@ export const MUTATIONS = [
       'sans la comparaison, une approbation (3 → 2) ferait clignoter le bandeau « 1 nouvelle inscription » : la règle « ne pas crier pour rien » du poste de pilotage (#184)'
   },
   {
-    ticket: 188,
+    ticket: 287,
     titre: 'une infobulle de l’inspecteur porte un bouton',
     fichier: 'src/components/InspecteurCombat.tsx',
     // L'infobulle (`role="tooltip"`) ne reçoit jamais le focus : le patron ARIA l'interdit (SPEC-COMBAT-UI §3.1).
     // La mutation ajoute un bouton dans son corps ; la suite doit tomber sur « aucun bouton dans l'infobulle ».
+    // L'invariant est né avec #188 ; #287 (T4) le réancre sur le test **autonome** du composant, qui ne
+    // passe plus par l'écran : c'est le même bouton, mais la garde ne dépend plus de `Battle.tsx`.
     motif: '<span className="infobulle__corps">',
     remplacement: '<span className="infobulle__corps"><button type="button" />',
     tests: ['src/components/InspecteurCombat.test.tsx'],
@@ -241,16 +243,82 @@ export const MUTATIONS = [
       'un bouton dans une infobulle est un élément focusable qui se dérobe au survol : le lecteur d’écran ne l’atteint plus, et l’APG le proscrit — une régression silencieuse, sans aucun test visuel pour la voir'
   },
   {
+    ticket: 289,
+    titre: 'le panneau du menu `⋯` rentre dans le flux et pousse le plateau',
+    fichier: 'src/styles.css',
+    // SPEC-COMBAT-UI T6, vrac du 27/10/2026 : le panneau s'accroche à la barre d'état et se
+    // **superpose** au plateau. En `static`, il reprend sa place dans le flux, et l'ouverture
+    // du menu déplace les cartes — le défaut que le ticket corrige. Le motif porte les trois
+    // lignes du bloc (`position`, `right`, `top`) parce que `position: absolute;` seul n'est
+    // pas unique dans la feuille.
+    motif: '  position: absolute;\n  right: 0;\n  top: calc(100% + 0.25rem);',
+    remplacement: '  position: static;\n  right: 0;\n  top: calc(100% + 0.25rem);',
+    tests: ['src/pages/Battle.test.tsx'],
+    garde:
+      'un menu qui pousse le plateau est exactement ce que le vrac du 27/10 reprochait à l’écran : le contenu doit se recouvrir, pas faire sauter les cartes sous le doigt'
+  },
+  {
     ticket: 192,
     titre: 'une animation d’effet de combat dure plus de 800 ms',
     fichier: 'src/styles.css',
     // SPEC-COMBAT-UI §6.8.3 : le chiffre de Stress ne recouvre jamais une cible plus de 700 ms,
     // et aucun effet ne dépasse 800 ms. Le test lit **toutes** les durées d'`animation` de la feuille.
-    motif: 'animation: stress-monte 700ms ease-out 1 both;',
+    motif: 'animation: stress-monte 500ms ease-out 1 both;',
     remplacement: 'animation: stress-monte 1600ms ease-out 1 both;',
     tests: ['src/components/effets-combat.test.ts'],
     garde:
       'au-delà de 800 ms, un chiffre flottant recouvre le nom de la carte et retarde la lecture du geste suivant — la borne est dans le CSS, pas seulement dans la constante du composant'
+  },
+  {
+    ticket: 294,
+    titre: 'l’arc de Condition est créé sous « Mouvement réduit »',
+    fichier: 'src/pages/Battle.tsx',
+    // SPEC-COMBAT-UI §6.8.3 : sous « Mouvement réduit », il n'y a **aucun arc** — le badge nommé
+    // dit la Condition. La mutation retire le drapeau `anime` de l'effet : le liseré naît
+    // alors même que le réglage coupe le mouvement.
+    motif: "effet.nature === 'condition' && effet.anime",
+    remplacement: "effet.nature === 'condition'",
+    tests: ['src/pages/Battle.effets.test.tsx'],
+    garde:
+      'un liseré qui pulse chez quelqu’un qui a demandé « Mouvement réduit » est exactement ce que le réglage promet de ne pas faire (SC 2.3.3) ; rien d’autre que ce test ne rend la page dans les deux modes'
+  },
+  {
+    ticket: 294,
+    titre: 'la traînée de craquage est créée sous « Mouvement réduit »',
+    fichier: 'src/pages/Battle.tsx',
+    // Le repli de la traînée est de ne pas la créer : la carte désaturée et le bandeau « a craqué »
+    // disent tout. La mutation rend la garde toujours vraie.
+    motif: '{!sansMouvement &&',
+    remplacement: '{true &&',
+    tests: ['src/pages/Battle.effets.test.tsx'],
+    garde:
+      'sans ce repli, la bande traverse le plateau malgré le réglage ; l’information (carte désaturée, bandeau) n’en dépend pas, donc rien d’autre ne verrait la régression'
+  },
+  {
+    ticket: 294,
+    titre: 'l’arc de Condition boucle sans fin',
+    fichier: 'src/styles.css',
+    // §6.8.3 borne 2 : l'arc pulse **deux fois**, pas en boucle (SC 2.3.1, trois flashs par
+    // seconde). `infinite` échappait au décompte des chiffres : le test lit désormais le mot.
+    motif: 'animation: condition-arc 120ms ease-in-out 2 both;',
+    remplacement: 'animation: condition-arc 120ms ease-in-out infinite both;',
+    tests: ['src/components/effets-combat.test.ts'],
+    garde:
+      'une boucle sans fin sur un liseré rouge est un clignotement permanent : la borne vit dans la feuille, pas dans une constante du composant'
+  },
+  {
+    ticket: 294,
+    titre: 'la case de la main se déplace au survol',
+    fichier: 'src/styles.css',
+    // §6.8.3 / T11 : un effet ne déplace jamais une cible de clic. Le survol soulève le **visuel**,
+    // pas l'`<li>` qui porte le bouton : sinon un pointeur posé sur le bas de la carte la quitte
+    // dès qu'elle monte, et elle retombe.
+    motif: '.hand > li:is(:hover, :focus-within, .is-selected) {\n  z-index: 1;\n}',
+    remplacement:
+      '.hand > li:is(:hover, :focus-within, .is-selected) {\n  transform: translateY(-0.5rem);\n  z-index: 1;\n}',
+    tests: ['src/components/effets-combat.test.ts'],
+    garde:
+      'une carte qui fuit sous le curseur scintille et se clique mal, surtout au doigt ; aucun test de rendu ne voit une géométrie, seule la règle de la feuille la garde'
   },
   {
     ticket: 254,
@@ -263,6 +331,52 @@ export const MUTATIONS = [
     tests: ['src/lib/useMur.test.tsx'],
     garde:
       'sans le retour en arrière, un vote refusé par la RLS laisserait un pouce affiché que la base ne porte pas : le mur mentirait à l’invité, jusqu’au prochain rechargement (#137, #254)'
+  },
+  {
+    ticket: 317,
+    titre: 'sans invitation, la porte du serveur des testeurs rend quand même un bloc',
+    fichier: 'src/components/InvitationTesteurs.tsx',
+    // D-118 : « une valeur vide veut dire rien ». La mutation laisse passer le rendu alors
+    // que l'invitation est `null` : Réglages et le pied du comité portent un panneau avec un
+    // lien **sans adresse**, sur le build par défaut, celui que la CI construit.
+    motif: 'if (!invitation) return null;',
+    remplacement: 'if (!invitation && false) return null;',
+    tests: [
+      'src/components/InvitationTesteurs.test.tsx',
+      'src/pages/Settings.test.tsx',
+      'src/pages/Comite.invitation.test.tsx'
+    ],
+    garde:
+      'un build sans configuration afficherait un lien mort dans Réglages et au comité : c’est l’état par défaut de l’alpha, et rien d’autre ne le verrait passer'
+  },
+  {
+    ticket: 317,
+    titre: 'le lien du serveur des testeurs perd `noreferrer`',
+    fichier: 'src/components/InvitationTesteurs.tsx',
+    // Le même module rend les deux emplacements : l'attribut est écrit **une fois**, et c'est
+    // ce qui empêche les deux liens de diverger.
+    motif: 'rel="noreferrer noopener"',
+    remplacement: 'rel="noopener"',
+    tests: [
+      'src/components/InvitationTesteurs.test.tsx',
+      'src/pages/Settings.test.tsx',
+      'src/pages/Comite.invitation.test.tsx'
+    ],
+    garde:
+      'sans `noreferrer`, l’onglet ouvert transmet à Discord l’adresse d’où vient le testeur — le seul renseignement que le lien peut laisser à un tiers (D-118)'
+  },
+  {
+    ticket: 299,
+    titre: 'un problème « fait » reste dans les problèmes connus de la release',
+    fichier: 'scripts/problemes-connus.mjs',
+    // La règle de D-119 : `fait` sort de la note (le correctif part dans la même release),
+    // `en attente` aussi (personne ne l'a trié). La mutation ouvre la porte à tous les
+    // statuts ; la suite doit tomber sur « un fait sort ».
+    motif: `.filter((ligne) => STATUTS_PUBLIES.includes(String(ligne.statut ?? '').trim()))`,
+    remplacement: '.filter(() => true)',
+    tests: ['scripts/problemes-connus.test.ts'],
+    garde:
+      'sans ce filtre, la note de version annoncerait « problème connu » pour un correctif déjà livré, et pour un post-it que personne n’a trié — une note qui ment sur son propre contenu'
   }
 ];
 

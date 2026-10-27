@@ -6,7 +6,7 @@
 
 ## 1. Règles d'or
 
-1. Lire ce fichier. Pour `docs/DECISIONS.md` (113 décisions, 36 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (121 décisions, 36 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier le **dossier frère des versions abandonnées** (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
@@ -214,6 +214,7 @@ Application **Vite plate** ; le monorepo de `PROPOSITION.md` §6.1 est une cible
 - **CI** : `.github/workflows/ci.yml`, sur `push` et `pull_request` vers **`main`** — **trois jobs en parallèle** (D-115) : `controles` (`check`, `format:check`, `garde-fous`, détecteur d'UI, `build`, artefacts), `tests-noyau` (`npm test -- --project=node`) et `tests-ecrans` (`--project=ui`, puis `build` et contrôle des écrans). Le temps mural est un **maximum**, pas une somme. Les **fichiers générés** (`plan-dev.ts`, `versions.ts`) n'y sont **pas** vérifiés (D-113) : `fichiers-generes.yml` s'en charge sur un tag `v*`, et `docs/VERSIONS.md` §4 le fait faire en local avant de taguer.
 - **CSS** : une seule feuille, `src/styles.css`. Tailwind v4 (CSS-first) est le moteur de style, shadcn/ui ne sert qu'aux composants génériques ; le système visuel vit dans `DESIGN.md`.
 - **Preuve de rendu** : un écran ne se déclare rendu que par capture ou inspection du navigateur, pas par la lecture du JSX ; une animation, par une **planche de frames** (`scripts/filmer-animation.mjs`), pas par un style calculé. Voir §8.4.
+- **Le serveur des testeurs (D-120, #317)** : un serveur Discord **facultatif** pour les testeurs de l'alpha. Le client ne porte **qu'un lien** : l'invitation vit dans `VITE_DISCORD_INVITE`, lue par **un seul module** (`src/components/InvitationTesteurs.tsx`) ; vide = rien de rendu, et le build sans configuration reste l'état par défaut. Le lien s'affiche dans **Réglages** et au **pied du comité**, en nouvel onglet, `rel="noreferrer noopener"`. **Aucun `iframe`, script ou widget** Discord n'entre dans le jeu : la page Confidentialité promet « aucun traceur ». La **procédure d'exploitation** — salons `#comite` / `#depot` / `#deploiements`, règles, webhook GitHub, intégration Vercel, invitation permanente — est dans **`docs/INTEGRATIONS-DISCORD.md`**, rejouable par quelqu'un qui n'a jamais créé le serveur ; le message aux testeurs, lui, est **`docs/ALPHA-TESTEURS.md`**.
 - **Garde-fou visuel** : `npm run detect:ui` (sources) et `npm run detect:ui:page` (écrans servis, avec cliquet), lancés par la CI. Un refus se corrige ou se désactive avec sa raison (`<!-- impeccable-disable <règle> -->`).
 - **MCP `gflow`** : `gflow_generate_video`, `gflow_upscale_video` et `gflow_download_media` **dépensent des crédits Veo** ; seuls les outils image sont autorisés. Passer `gflow_auth_status` avant toute génération. Le modèle se passe par son **alias** (`nano2`, `nano2-lite`, `nano-pro`, `image4`), jamais par le nom humain : `bash scripts/illustration-vague.sh --modele "<nom>"`.
 
@@ -223,7 +224,7 @@ Tableau des commandes, wizards et gotchas : **`docs/COMMANDES.md`**, depuis `pla
 
 - **Installer les dépendances** : `npm run installer` dans le worktree. `npm ci` vide `node_modules/` et ne se lance jamais dans le dépôt principal (`scripts/installer.mjs` le refuse).
 - **Formater** : `npm run format` (écrit), `npm run format:check` (vérifie, ce que la CI lance). Un fichier de données de carte (`src/data/`) n'est **pas** reformaté : un texte par ligne, un repli changerait le texte affiché.
-- **Lire un ticket** : `gh issue view N --json number,title,body,labels,comments`. Sans `--json`, `gh` échoue (Projects classic), à chaque fois.
+- **Lire un ticket** : `gh issue view N --json number,title,body,labels,comments`. Sans `--json`, `gh` échoue (Projects classic), à chaque fois. Même cause, autre commande : **`gh pr edit --body-file` échoue aussi** — pour réécrire le corps d'une PR, passer par `gh api --method PATCH repos/<org>/<dépôt>/pulls/<n>` avec un JSON `{"body": …}`.
 - **Écran blanc en dev** (asset répondu en `200 text/html`) : service worker du build resté sur cette origine — `docs/COMMANDES.md` §7.1.
 
 ## 8. Audits
@@ -313,7 +314,7 @@ Elles sont en **lecture seule** : on peut y consulter une idée d'UI ou l'invent
 
 ### Issue tracker
 
-Les tickets vivent dans GitHub Issues sur `Chapax/planquex`, piloté par la CLI `gh`. Voir `docs/agents/issue-tracker.md`.
+Les tickets vivent dans GitHub Issues sur `bureau-des-planques/planquex`, piloté par la CLI `gh`. Voir `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -335,8 +336,9 @@ D-113 (26/10/2026). Le modèle est **GitHub flow** : une seule branche longue, `
 
 - Un ticket se travaille sur une **branche dédiée dans son propre worktree**, créée depuis **`main`**, et se propose par **pull request** vers **`main`**. La branche se supprime après la fusion.
 - **Fusion : merge commit uniquement**, jamais de squash ni de rebase. Les agents **citent leurs hashes** dans leurs rapports, `git branch -d` (skill `cloture`) ne vaut qu'après un merge commit, et un ticket entier se défait par `git revert -m 1 <merge>`. Sujet : `merge: <ce que ça change> (#N)`. `git log --first-parent main` donne la vue « un ticket, une ligne ».
-- **Les réglages du dépôt font foi** : sur `Chapax/planquex`, seules la fusion par **merge commit** et la **suppression de la branche après fusion** sont activées (26/10/2026) — le squash et le rebase n'y sont même pas proposés.
-- **La protection de branche n'existe pas ici** : elle demande GitHub Pro sur un dépôt privé (réponse de l'API, 26/10/2026). Les gardes sont donc en amont : CI de la PR, aperçu Vercel, `npm run isolation`, et les quatre commandes de §8.4 en local.
+- **Les réglages du dépôt font foi** : sur `bureau-des-planques/planquex`, seules la fusion par **merge commit** et la **suppression de la branche après fusion** sont activées (26/10/2026) — le squash et le rebase n'y sont même pas proposés. Depuis le 27/10/2026, un **ruleset** les y tient et le dépôt est public (D-118).
+- **La protection existe depuis le 27/10/2026** (D-118, #267). Le dépôt public débloque les **rulesets**, gratuits ; celui de `main` — `main protégée (#267)` — exige une **pull request**, les **trois jobs** de `ci.yml` (`contrôles…`, `tests du noyau…`, `tests des écrans…`), et **zéro approbation** tant que Bastien est seul membre : GitHub interdit d'approuver sa propre PR, une approbation exigée le bloquerait. La **liste de contournement est vide** : un push direct est refusé, checks ou pas, propriétaire compris. Avant cette date, sur un dépôt privé, l'API répondait `403` (« Upgrade to GitHub Pro… ») et les gardes étaient seulement en amont : CI de la PR, aperçu Vercel, `npm run isolation`, les quatre commandes de §8.4.
+- **Le dépôt du jeu est public, l'exploitation est privée** (D-118) : `bureau-des-planques/planquex-infra` porte le lieu de session, la skill `infra-planquex` et les runbooks. `supabase/migrations/` **reste ici** : `supabase/pglite.ts` la lit par un chemin relatif et la CI la rejoue en PostgreSQL WASM ; un dépôt public dont la CI dépend d'un dépôt privé demanderait un jeton.
 - **Pas de branche `dev`.** Elle a été retirée le 26/10/2026 (son contenu était déjà sur `main` ; le dernier état reste au tag `archive/dev-2026-10-26`). Une session qui n'a pas de ticket prend une branche jetable issue de `main`.
 - La CI des PR est celle de `main` (§6). Les fichiers générés se vérifient **à la release**, pas à chaque PR (§6, `docs/VERSIONS.md` §4).
 - Fermer ou ouvrir une issue `alpha` périme `src/data/plan-dev.ts` : `npm run plan:dev` quand on prépare une release.

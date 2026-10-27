@@ -18,6 +18,7 @@ s'appuyer dessus.
 | `supabase/migrations/0010_dates_figees.sql` | les dates du comité figées à l'écriture (#244) : un déclencheur `before update` rétablit `created_at` à sa valeur d'origine sur `commentaires` et `postits` — l'auteur qui redate son commentaire n'obtient pas la date ; la correction du texte passe toujours |
 | `supabase/migrations/0011_anon_hors_fonctions.sql` | le rôle `anon` n'exécute plus aucune fonction `security definer` de `public` (#247) : les valeurs par défaut de Supabase lui accordent `execute`, et le refus ne reposait que sur `auth.uid()` nul. `authenticated` garde ses droits |
 | `supabase/migrations/0012_combats_pvp.sql` | la trace des parties à deux (#228, D-105) : `combats.mode` admet `'pvp'` à côté de `'solo'` — pas de colonne, pas de politique, pas de droit nouveau |
+| `supabase/migrations/0013_discord_comite.sql` | les annonces du mur dans `#comite` (#318, D-120) : la table `annonces_discord`, les deux déclencheurs qui **composent la phrase**, la couture `poster_discord(url, corps)`, la réconciliation de `pg_net`, la passe de dix, le secret lu dans **Vault**, le passé marqué `sans_webhook` — et **aucun privilège client** |
 | `supabase/imports/comite-fichier-2026-10-26.sql` | l'import des deux post-its de `docs/comite.json` en base (#136) — données, pas schéma : auteur sentinelle, date de collecte reprise de l'id, écran vide devenu `null` |
 | `supabase/imports.test.ts` | la garde de l'import : le fichier et l'import disent la même chose, les lignes passent `lirePostitsDeLaBase`, rejouer ne duplique rien |
 | `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
@@ -25,6 +26,7 @@ s'appuyer dessus.
 | `supabase/place.test.ts` | la garde de la place et du retrait : l'auteur range le sien, l'administrateur range et retire tout, un compte en attente rien — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/comite.test.ts` | la garde du suivi (#209) : `updated_at` monte au changement de statut, et **pas** sur une écriture de place ni une correction de texte ; le repère s'écrit par la fonction et pas en direct ; chacun ne marque que le sien — et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/dates.test.ts` | la garde des dates (#238) : une date de 2030 ou de 2000 fournie à l'insertion d'un commentaire ou d'un post-it est réécrite à l'heure du serveur — et chaque déclencheur, neutralisé, laisse passer la date du client |
+| `supabase/discord.test.ts` | la garde des annonces (#318, D-120) : la phrase est vérifiée **mot pour mot**, un gueulage n'emporte ni titre ni texte, une écriture qui nomme `statut` sans le changer n'annonce rien, le transport est **une couture** doublée d'un faux, « remis » n'est pas « livré » (non-2xx, cinquième tentative, quart d'heure muet), dix par passe, le secret vient de Vault, le passé est `sans_webhook`, la table est fermée — et la migration **mutée** laisse voir le doublon, la fuite ou la rafale |
 | `supabase/pouces.test.ts` | la garde des pouces : un seul vote par appareil, pas pour soi, pas au nom d'un autre, un vote défait remet le compteur — et chaque contrôle, neutralisé, laisse passer le fautif |
 | `supabase/pglite.ts` | le banc d'essai partagé : shim, migrations appliquées dans l'ordre, deux appareils (`mur.test.ts`, `combats.test.ts`) |
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
@@ -269,7 +271,7 @@ ne change (l'identité anonyme écrit encore) ; après elle, **seul un compte ap
 ### 5.1 Côté Google Cloud
 
 1. *APIs & Services → OAuth consent screen* : type **External**, nom « Planquex » ; l'écran
-   restera en mode *Testing* tant que l'alpha dure (ajouter les invités comme *test users* si
+   restera en mode *Testing* tant que l'alpha dure (ajouter les testeurs comme *test users* si
    Google l'exige).
 2. *Credentials → Create credentials → OAuth client ID*, type **Web application**.
    - **Authorized JavaScript origins** : `https://planquex.4k7.org` (et
@@ -312,7 +314,7 @@ approuver à la main :
 
 ```sql
 update public.comptes set etat = 'approuve' where courriel = 'invite@exemple.fr';
-update public.comptes set etat = 'refuse', raison = 'Pas un invité.' where courriel = '…';
+update public.comptes set etat = 'refuse', raison = 'Pas un testeur.' where courriel = '…';
 ```
 
 ### 5.4 Les deux post-its du fichier, importés en base (#136)
@@ -325,7 +327,7 @@ migration (aucune forme de schéma ne change) mais un import de données, rejoua
 Leur auteur est l'**auteur sentinelle** `00000000-0000-0000-0000-000000000000` : les deux
 post-its ont été écrits par des identités **anonymes** d'avant D-088, qui n'ont pas de compte,
 et les rattacher à quelqu'un serait inventer un auteur. Aucun `auth.uid()` ne peut valoir cette
-valeur, donc le mur ne les montre comme « les tiens » à **personne** : aucun invité ne les
+valeur, donc le mur ne les montre comme « les tiens » à **personne** : aucun testeur ne les
 corrige, ne les déplace ni ne les retire. L'**administration** garde ses droits de tri (0006,
 `statut`/`raison`/`ticket`) et de retrait (0007) — c'est le tri normal de D-092, et ces deux
 post-its sont `en attente`, donc ils doivent pouvoir avancer. Pour les rattacher à un compte,
@@ -533,3 +535,72 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
 - **poser les variables Vercel** : sans elles, la production reste sur le fichier, ce qui est
   l'état voulu tant que la base n'est pas branchée. Le branchement de l'écran est fait (#136) ;
   restent les commentaires (#138) et la modification/retrait (#139).
+- **appliquer la migration 0013** (§9, les annonces du mur dans `#comite`, #318/D-120) — **à
+  faire** : elle installe `pg_cron` et `pg_net` si la base les propose (mesuré installables le
+  27/10/2026), marque le passé `sans_webhook`, et **ne part pas** tant que le secret n'est pas
+  dans Vault. La procédure complète est `docs/INTEGRATIONS-DISCORD.md` §10.
+
+---
+
+## 9. Les annonces du mur dans `#comite` (#318, D-120)
+
+Le mur **parle** dans le salon `#comite` du serveur des testeurs : un post-it neuf, et chaque
+**vrai** changement de statut. Tout vit dans la base — rien n'est hébergé.
+
+### Ce qui sort, et ce qui n'en sort jamais
+
+| Sort | Ne sort jamais |
+|---|---|
+| la **famille** (IP / OUF), le **titre**, le **pseudo**, le lien vers `/comite` | le **texte** d'un gueulage (D-085) — on annonce qu'il est arrivé, pas ce qu'il dit ; ni son titre |
+| le **statut** atteint (`retenu`, `en cours`, `fait`, `écarté`) et la **raison** d'un écarté, tronquée | `auteur`, le courriel, l'identifiant du compte, les votes, les commentaires |
+
+Un gueulage s'annonce donc en une ligne, sans famille : `Un gueulage vient d'arriver sur le
+mur (pseudo) · lien`. Le pseudo est la seule identité admise — il est déjà public sur le mur.
+
+### La table et les états
+
+`public.annonces_discord` est un **journal** (`postit_id` sans clé étrangère : une annonce
+survit au retrait du post-it qu'elle a annoncé). Chaque ligne porte un état :
+
+```text
+en attente ──envoi──▶ remis ──2xx────────▶ livre
+                         ├──non-2xx───────▶ en attente (nouvel essai)  ──5ᵉ──▶ abandonne
+                         └──15 min de silence ▶ en attente              ──5ᵉ──▶ abandonne
+sans_webhook : le passé, à l'installation — jamais envoyé, jamais repris
+```
+
+- **« remis » n'est pas « livré »** : `pg_net` dépose une requête, sa réponse arrive plus tard
+  dans `net._http_response`, et `public.reconcilier_annonces_discord()` la relit.
+- **Cinq tentatives, puis abandon** : la tentative est comptée **au départ** de la requête.
+- **Dix par passe**, dans l'ordre des ids : 25 annonces se vident en trois passes.
+- **Sans secret, rien ne part** : `public.discord_webhook()` lit Vault à l'envoi et rend
+  `null` ; la file attend, rien n'est marqué livré.
+
+### Une seule couture
+
+`public.poster_discord(url, corps)` est le **seul** appel à `net.http_post` du dépôt. La garde
+le remplace par un faux (`supabase/discord.test.ts`) : aucun test ne parle à Discord, et la
+preuve est que `net._http_request` reste vide.
+
+### Ce qu'il faut vérifier après application
+
+```sql
+-- 1. La table est fermée aux clients (attendu : false, false)
+select has_table_privilege('authenticated', 'public.annonces_discord', 'select') as authentifie_lit,
+       has_table_privilege('anon',          'public.annonces_discord', 'select') as anon_lit;
+
+-- 2. Le job est programmé une seule fois
+select jobname, schedule, command from cron.job where jobname = 'annonces_discord';
+
+-- 3. Le passé est marqué, et la file est vide
+select etat, count(*) from public.annonces_discord group by etat order by etat;
+
+-- 4. Le secret est là — jamais dans le dépôt, jamais dans une migration
+select name from vault.decrypted_secrets where name = 'discord_webhook_comite';
+```
+
+Puis le contrôle qui compte :
+
+```bash
+npx vitest run supabase/discord.test.ts
+```

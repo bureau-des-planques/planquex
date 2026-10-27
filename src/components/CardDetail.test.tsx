@@ -29,7 +29,7 @@ describe('CardDetail — la fiche est un dialogue (#131)', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('en développement, le bouton de test existe ; dans le build, un invité ne le voit pas', () => {
+  it('en développement, le bouton de test existe ; dans le build, un testeur ne le voit pas', () => {
     const onAddCard = vi.fn();
 
     vi.stubEnv('DEV', true);
@@ -43,7 +43,7 @@ describe('CardDetail — la fiche est un dialogue (#131)', () => {
     expect(screen.queryByText(/\(test\)/)).toBeNull();
   });
 
-  it('« Ajouter au Deck » reste offert à l’invité', () => {
+  it('« Ajouter au Deck » reste offert au testeur', () => {
     vi.stubEnv('DEV', false);
     render(<CardDetail card={carte} owned={1} onClose={() => {}} onAddDeck={() => {}} />);
     expect(screen.getByRole('button', { name: 'Ajouter au Deck' })).toBeInTheDocument();

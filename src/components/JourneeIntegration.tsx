@@ -5,7 +5,7 @@ import { ETAPES_JOURNEE } from '@/components/journee-etapes';
 import { useStore } from '@/store/useStore';
 
 /**
- * La « Journée d'intégration » : les quatre choses qu'un invité ne devine pas
+ * La « Journée d'intégration » : les quatre choses qu'un testeur ne devine pas
  * (`AGENTS.md` §3 — le tutoriel s'appelle comme ça, jamais « onboarding »).
  *
  * **Forme courte** (D-066, #130) : quatre étapes, et **chaque étape ouvre l'écran
@@ -36,7 +36,7 @@ export function JourneeIntegration() {
 
   /**
    * Le mur (D-058, D-068) est le seul écran où la visite **s'abstient**. Il ne s'ouvre
-   * que par la bulle, pas par la barre de navigation : un invité qui le lit d'abord n'a
+   * que par la bulle, pas par la barre de navigation : un testeur qui le lit d'abord n'a
    * pas commencé à jouer, et lui poser un dialogue de jeu par-dessus le premier contenu
    * qu'il découvre serait le seul écran de l'application où l'on ne peut rien lire. Rien
    * n'est perdu : `tutorielVu` reste `false`, et la visite se montre dès qu'on quitte le

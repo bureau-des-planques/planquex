@@ -5,7 +5,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
 import type { BattleState } from '@/data/types';
 import { createBattle } from '@/game/engine';
-import { useEffetsDeCombat } from './effets-combat';
+import {
+  dureeDeLEffet,
+  DUREE_CONDITION_APRES_COUP_MS,
+  DUREE_CONDITION_MS,
+  DUREE_MAX_MS,
+  effetsEntre,
+  MAX_EFFETS_SIMULTANES,
+  useEffetsDeCombat
+} from './effets-combat';
 
 /**
  * Le **compteur tenu par le composant** (#192) : un effet naît, vit sa durée, puis quitte le
@@ -68,7 +76,7 @@ describe('useEffetsDeCombat — le chiffre vit moins de 800 ms puis quitte le DO
     vi.useRealTimers();
   });
 
-  it('apparaît une fois, reste 700 ms, puis est retiré — donc pas d’empilement au troisième coup', () => {
+  it('apparaît une fois, reste 500 ms, puis est retiré — donc pas d’empilement au troisième coup', () => {
     const depart = avant();
     render(<Harnais depart={depart} suivant={apresUnCoup(depart)} sansMouvement={false} />);
 
@@ -79,7 +87,7 @@ describe('useEffetsDeCombat — le chiffre vit moins de 800 ms puis quitte le DO
     expect(chiffre).toHaveTextContent('+30');
     expect(chiffre).toHaveAttribute('data-anime', 'true');
 
-    act(() => vi.advanceTimersByTime(699));
+    act(() => vi.advanceTimersByTime(499));
     expect(document.querySelectorAll('[data-nature="stress"]')).toHaveLength(1);
 
     act(() => vi.advanceTimersByTime(1));
@@ -138,5 +146,81 @@ describe('useEffetsDeCombat — la Pression en quatre temps (#207)', () => {
     const condition = document.querySelector<HTMLElement>('[data-nature="condition"]');
     expect(condition).not.toBeNull();
     expect(condition).toHaveAttribute('data-uid', depart.players.ai.active!.uid);
+  });
+});
+
+describe('useEffetsDeCombat — l’arc de Condition et le plafond de quatre (#294)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  function avecCondition(depart: BattleState): BattleState {
+    const suivant = structuredClone(depart);
+    suivant.players.ai.active!.statuses = ['SURCHARGE'] as never;
+    return suivant;
+  }
+
+  it('l’arc vit ses deux battements (600 ms) puis quitte le DOM', () => {
+    const depart = avant();
+    render(<Harnais depart={depart} suivant={avecCondition(depart)} sansMouvement={false} />);
+
+    fireEvent.click(screen.getByText('jouer'));
+    expect(document.querySelector('[data-nature="condition"]')).toHaveAttribute('data-anime', 'true');
+
+    act(() => vi.advanceTimersByTime(DUREE_CONDITION_MS - 1));
+    expect(document.querySelectorAll('[data-nature="condition"]')).toHaveLength(1);
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(document.querySelectorAll('[data-nature="condition"]')).toHaveLength(0);
+  });
+
+  it('une Condition posée par la Pression attend l’impact : son arc vit 790 ms, sous la borne de 800', () => {
+    const depart = avant();
+    const suivant = avecCondition(depart);
+    suivant.actionLog = [
+      ...depart.actionLog,
+      { action: { type: 'attack', attackIndex: 0 }, faits: [{ type: 'stress', uid: 'x', montant: 20, auPoste: true }] }
+    ];
+    expect(DUREE_CONDITION_APRES_COUP_MS).toBeLessThanOrEqual(DUREE_MAX_MS);
+    const condition = effetsEntre(depart, suivant).find((effet) => effet.nature === 'condition');
+    expect(condition?.apresCoup).toBe(true);
+    expect(dureeDeLEffet(condition!)).toBe(DUREE_CONDITION_APRES_COUP_MS);
+    // **Un seul canal** (#324) : la durée n'est pas un champ de l'effet, elle se dérive du fait.
+    expect(condition).not.toHaveProperty('duree');
+    // Sans Pression dans le pas (le Contrôle, un Talent), l'arc joue tout de suite.
+    const sansCoup = effetsEntre(depart, avecCondition(depart)).find((effet) => effet.nature === 'condition');
+    expect(sansCoup?.apresCoup).toBe(false);
+    expect(dureeDeLEffet(sansCoup!)).toBe(DUREE_CONDITION_MS);
+  });
+
+  it('sous « Mouvement réduit », l’effet naît non animé : l’écran n’en fait aucun arc', () => {
+    const depart = avant();
+    render(<Harnais depart={depart} suivant={avecCondition(depart)} sansMouvement />);
+
+    fireEvent.click(screen.getByText('jouer'));
+
+    expect(document.querySelector('[data-nature="condition"]')).toHaveAttribute('data-anime', 'false');
+  });
+
+  it('un pas d’état qui demande six effets n’en rend que quatre, sans rien faire attendre', () => {
+    const depart = avant();
+    const suivant = avecCondition(depart);
+    suivant.players.ai.active!.hp -= 30; // 1 Stress
+    suivant.players.player.points += 2; // 2 Interventions (un COMEX)
+    suivant.players.player.deck.pop(); // 1 pioche
+    suivant.players.ai.deck.pop(); // 1 pioche
+    // Précondition : le pas demande bien plus que le plafond (1 + 1 + 2 + 1 + 1 = 6).
+    expect(effetsEntre(depart, suivant)).toHaveLength(6);
+    render(<Harnais depart={depart} suivant={suivant} sansMouvement={false} />);
+
+    fireEvent.click(screen.getByText('jouer'));
+
+    expect(document.querySelectorAll('li[data-nature]')).toHaveLength(MAX_EFFETS_SIMULTANES);
+    // Le refus n'attend rien : à la durée la plus longue, la liste est vide.
+    act(() => vi.advanceTimersByTime(DUREE_MAX_MS));
+    expect(document.querySelectorAll('li[data-nature]')).toHaveLength(0);
   });
 });

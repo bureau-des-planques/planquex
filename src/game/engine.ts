@@ -1422,7 +1422,7 @@ function checkup(state: BattleState, faits: FaitMoteur[] = []): BattleState {
  * relève (#79) ; une partie à deux (#122) aura la même forme, chaque écran nommant son
  * siège. `legalActions` propose, lui, le forfait du **camp qui a la main**
  * (`forfeitOffer`, #123) : « le camp qui joue peut abandonner ». Les deux ne se
- * contredisent pas — l'un dit qui est invité, l'autre accepte n'importe quel siège.
+ * contredisent pas — l'un dit qui peut abandonner, l'autre accepte n'importe quel siège.
  *
  * Idempotente sur une partie finie : une partie déjà terminée est rendue **telle
  * quelle** (`===`), sans nouvelle ligne de journal.
