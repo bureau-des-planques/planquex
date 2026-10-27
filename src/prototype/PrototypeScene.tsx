@@ -286,7 +286,7 @@ export function PrototypeScene() {
         {cartes.map((c) => (
           <li className="bench__slot" key={c.id}>
             <div className="bench__carte">
-              <CardView card={c} figee plateau />
+              <CardView card={c} calme plateau />
             </div>
           </li>
         ))}
@@ -317,7 +317,7 @@ export function PrototypeScene() {
     <div className="board__poste" style={styleReserve}>
       <span className="sr-only">Poste</span>
       <div className="poste__carte" data-uid="att">
-        <CardView card={attaquant} figee plateau stress={0} seuil={attaquant.hp} />
+        <CardView card={attaquant} calme plateau stress={0} seuil={attaquant.hp} />
       </div>
     </div>
   );
@@ -330,19 +330,19 @@ export function PrototypeScene() {
       <span className="sr-only">Poste</span>
       {!cibleTombee && (
         <div className="poste__carte" data-uid="cib">
-          <CardView card={cible} figee plateau stress={0} seuil={cible.hp} />
+          <CardView card={cible} calme plateau stress={0} seuil={cible.hp} />
         </div>
       )}
       {cibleTombee && releveFaite && (
         <div className="poste__carte" data-uid="releve">
-          <CardView card={relevee} figee plateau stress={0} seuil={relevee.hp} />
+          <CardView card={relevee} calme plateau stress={0} seuil={relevee.hp} />
         </div>
       )}
       {cibleTombee && !releveFaite && !fantome && <strong className="muted poste__libre">Poste libre</strong>}
       {cibleTombee && !releveFaite && fantome && <strong className="muted poste__libre">Poste libre</strong>}
       {fantome && (
         <div className="craquage__carte" data-uid="cib" aria-hidden="true">
-          <CardView card={cible} figee plateau />
+          <CardView card={cible} calme plateau />
         </div>
       )}
     </div>

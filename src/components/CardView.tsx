@@ -11,19 +11,16 @@ interface Props {
   compact?: boolean;
   selected?: boolean;
   /**
-   * **Figée** — la carte telle qu'elle doit être **sur le plateau** (D-093, #187) : aucune
-   * micro-animation de survol. Sur un plateau de combat, huit cartes qui se soulèvent au
-   * passage du pointeur font du bruit, et le survol y sert à **lire** (l'inspecteur), pas
-   * à décorer. La classe `card--figee` est aussi ce que `styles.css` reconnaît.
-   */
-  figee?: boolean;
-  /**
-   * **Calme** — la carte du plateau de la refonte (`SPEC-COMBAT-UI` §8 T2, D-116, #285) : le
-   * gabarit **réduit** (`card--compact`) *et* aucune micro-animation. `figee` coupe déjà le
-   * geste (#187) ; `calme` est le nom du **cas d'usage** — une carte de plateau — et il
-   * **impose** le format réduit, pour qu'un appel ne puisse pas rendre une carte de plateau
-   * en grand. Un appel qui n'a besoin que du geste coupé garde `figee` ; il n'y a pas deux
-   * drapeaux pour deux comportements différents, `calme` entraîne `figee`.
+   * **Calme** — la carte telle qu'elle doit être **sur le plateau** (D-093, #187 ;
+   * `SPEC-COMBAT-UI` §8 T2, D-116, #285) : aucune micro-animation de survol, et le gabarit
+   * **réduit** (`card--compact`) qu'il **impose** — une carte de plateau ne se rend pas en
+   * grand. C'est le **seul** nom du cas d'usage : la prop `figee`, qui ne coupait que le
+   * geste, a été retirée (#324), et `calme` la couvre.
+   *
+   * Sur un plateau de combat, huit cartes qui se soulèvent au passage du pointeur font du
+   * bruit, et le survol y sert à **lire** (l'inspecteur), pas à décorer. La classe
+   * `card--figee` reste le nom que `styles.css` reconnaît pour ce silence (#324 : le
+   * renommage de la classe appartient à la feuille de style).
    */
   calme?: boolean;
   /**
@@ -69,7 +66,6 @@ export function CardView({
   onClick,
   compact,
   selected,
-  figee,
   calme,
   stress,
   seuil,
@@ -80,9 +76,9 @@ export function CardView({
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
   const comex = planque && card.ex === true;
-  // **Calme** entraîne `figee` : deux noms pour un seul comportement, le geste coupé (#285).
-  const immobile = figee === true || calme === true;
-  // Et il **impose** le format réduit : une carte de plateau ne se rend pas en grand.
+  // **Calme** coupe le geste (#285) et **impose** le format réduit : une carte de plateau ne
+  // se rend pas en grand. Un seul drapeau pour un seul comportement (#324).
+  const immobile = calme === true;
   const reduite = compact === true || calme === true;
   // `--accent` = couleur **de la faction** (source unique : `FACTION_META`) ; `--rarity`
   // = celle de la rareté. Les deux pilotent le cadre et les accents de la carte.
@@ -104,9 +100,9 @@ export function CardView({
     HOLO_RARITIES.includes(card.rarity) ? 'card--holo' : '',
     reduite ? 'card--compact' : '',
     selected ? 'card--selected' : '',
-    // La classe du geste coupé porte le **style** (curseur, `transition: none`) : `calme`
-    // l'obtient aussi, sans quoi il couperait les animations `framer-motion` mais pas la
-    // transition CSS.
+    // La classe du geste coupé porte le **style** (curseur, `transition: none`) et garde le nom
+    // que `styles.css` reconnaît (`card--figee`) : `calme` l'obtient sans quoi il couperait les
+    // animations `framer-motion` mais pas la transition CSS.
     immobile ? 'card--figee' : '',
     plateau ? 'card--plateau' : '',
     plateau && annotations ? 'card--annotations' : ''
@@ -251,8 +247,8 @@ export function CardView({
     style,
     onClick,
     // Figée : le plateau ne bouge pas au passage du pointeur (D-093). Le survol y ouvre
-    // l'inspecteur ; une carte qui se soulève en même temps brouille ce geste. `calme`
-    // entraîne le même silence (#285).
+    // l'inspecteur ; une carte qui se soulève en même temps brouille ce geste. `calme` est ce
+    // silence, et c'est le seul drapeau qui le porte (#285, #324).
     whileHover: immobile ? undefined : { y: -4, scale: 1.01 },
     whileTap: immobile ? undefined : { scale: 0.99 },
     transition: immobile ? undefined : { type: 'spring' as const, stiffness: 320, damping: 26 }
