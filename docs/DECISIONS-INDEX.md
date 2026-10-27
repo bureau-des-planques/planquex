@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 129 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 133 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -129,9 +129,13 @@
 | D-121 | 27/10/2026 | L'inspecteur du combat : trois règles d'usage, et deux notes… |
 | D-122 | 27/10/2026 | Le contrôle des notes sur un tag accepte le brouillon… |
 | D-123 | 27/10/2026 | La sortie d'alpha se mesure en testeurs réels, et la… |
-| D-124 | 27/10/2026 | Les comptes de l'alpha sont remis à zéro à l'ouverture… |
+| D-124 | 27/10/2026 | ⚠ Note de lecture du 27/10/2026 — voir D-130 :… |
 | D-125 | 27/10/2026 | La difficulté est un couple : la politique de l'IA… |
 | D-126 | 27/10/2026 | Les illustrations couvrent les bases, puis les variantes . Ordre… |
 | D-127 | 27/10/2026 | Pendant l'alpha, les Arrivées sont illimitées et gratuites : il… |
 | D-128 | 27/10/2026 | Une release par lot cohérent, jamais plus d'une par jour… |
 | D-129 | 27/10/2026 | Les états d'un ticket disent qui agit, pas où il… |
+| D-130 | 27/10/2026 | Le reset de la beta épargne le compte et récompense… |
+| D-131 | 27/10/2026 | Une pull request venue d'ailleurs exige une relecture d'agent et… |
+| D-132 | 27/10/2026 | La feuille de route ouvre les liens du dépôt qui… |
+| D-133 | 27/10/2026 | pg_net retourne dans extensions, et les deux fonctions de déclencheur… |
