@@ -132,7 +132,7 @@ cibles de 44 px). Avec l'ancienne feuille de style, la commande **échoue** (28 
 exemple `l'écran de combat défile de 34 px (… détaillé, pas-à-pas terminé), pire cas`) ; avec la
 nouvelle, elle sort **exit 0**.
 
-**Limite connue, antérieure à T9 et hors périmètre** : en `sobre`, les mêmes trois Conditions sur les
+**Limite connue au moment de T9 — corrigée par #321 (section suivante)** : en `sobre`, les mêmes trois Conditions sur les
 deux camps, au tour à deux rangées de barre et pas-à-pas ouvert, font défiler l'écran de 23 px
 (sonde ponctuelle, graine 22/10 14:30 : barre à 835 px). Le cas est quasi impossible (deux camps
 à trois Conditions au premier combat) et `détaillé` y fait **mieux** que `sobre` (barre à 806 px) ;
@@ -140,3 +140,30 @@ il n'est pas gardé ici.
 
 **Ce que les captures ne prouvent pas** : un Poste qui porterait les trois Conditions *réelles* (la
 mesure les pose dans le DOM, le moteur n'est pas touché) ; la lecture au pouce.
+
+## `apres/` — #321, `sobre` tient aussi avec trois Conditions des deux côtés
+
+La limite signalée par T9 devient le ticket **#321**. Le plan de `npm run capturer` joue maintenant le
+**pire cas** (trois Conditions par camp, posées dans le DOM) en **`sobre`** comme en `détaillé` : à
+l'arrivée (quatre graines, pas-à-pas ouvert et terminé) **et** au tour d'une Pression jouable.
+
+**Mesuré sur la feuille d'avant** (`npm run capturer`, exit 1, 54 manquements, tous en `sobre`) : en `sobre`, à l'arrivée,
+l'écran défile de 56 px (barre d'action à 868 px, « Fin du tour » à 865 px, navigation à 830 px), de
+**95 px** au tour d'une Pression jouable pas-à-pas ouvert, de 44 px pas-à-pas terminé. L'estimation de
+23 px de T9 était celle d'une sonde ponctuelle, plus basse que le plan complet. En `détaillé`, #292
+tenait déjà.
+
+**La cause** : en `sobre`, chaque Condition (une icône) prenait sa **rangée**, comme en `détaillé`
+avant #292. **La correction** : les règles de rangement de #292 passent de `.battle--detaille` à la
+**base** (`.poste__info` en ligne avec retour, pastille serrée, `.poste__machine` en ligne). Les deux
+densités **convergent** : ne reste propre à `détaillé` que la **largeur** de la fiche (15 rem au lieu
+de 11 rem, pour que deux *noms* de Conditions tiennent côte à côte — en `sobre`, trois icônes tiennent
+sur une rangée).
+
+**Mesuré après** (`npm run capturer`, exit 0) : défilement 0 dans tous les états « pire cas » ; marge
+la plus juste de la barre d'action **24 px** en `sobre` (21 px en `détaillé`, au tour d'une Pression,
+pas-à-pas ouvert), pour 20 px exigés. Capture : `apres/420-combat-sobre-pire-cas.png`
+(`apres/420-combat-detail*.png` sont reprises de la même commande).
+
+**Ce que ça ne prouve pas** : comme pour T9, les Conditions sont posées dans le DOM — le moteur n'est
+pas touché ; l'icône y est un `svg` vide de 12 px, comme la taille de celle de `StatusBadge`.

@@ -650,7 +650,7 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
  * 420 × 900, avec trois Conditions et trois types par camp, les fiches passaient de 138 à
  * 188 px : l'écran défilait de 34 px et la barre d'action finissait à 846 px, sous la navigation
  * (830 px). La capture d'arrivée ne le voyait pas — il n'y a pas de Condition à l'arrivée —, d'où
- * le **pire cas** posé dans le DOM par `poserLePireCasDetaille`.
+ * le **pire cas** posé dans le DOM par `poserLePireCas`.
  */
 describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292)', () => {
   const mesures = (barreBas: number, finBas: number) => [
@@ -689,17 +689,71 @@ describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292
   it('joue réellement `détaillé` à chaque graine, pas-à-pas ouvert et terminé, et pose le pire cas', () => {
     const source = readFileSync(new URL('../scripts/capturer.mjs', import.meta.url), 'utf8');
     // Sans ces liens, le contrôle pourrait mordre dans son test et la capture ne mesurer que `sobre`.
-    expect(source).toContain('await mesurerDetaille(browser)');
+    expect(source).toContain('await mesurerDensite(browser, true)');
     expect(source).toContain('await mesurerAvecUnePression(browser, true)');
     expect(source).toContain('combatDetaille: true');
-    expect(source).toContain('.battle--detaille');
-    expect(source).toContain('page.evaluate(poserLePireCasDetaille)');
+    expect(source).toContain("`.battle--${detaille ? 'detaille' : 'sobre'}`");
+    expect(source).toContain('page.evaluate(poserLePireCas, detaille)');
     expect(source).toContain('${etat}, pire cas');
   });
 
-  it('range les annotations en ligne dans une fiche plus large, sans toucher aux cibles ni aux cafés (feuille de style)', () => {
+  it('range les Conditions en ligne dans les deux densités, et ne garde à `détaillé` que la largeur (feuille de style)', () => {
     const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\n\.poste__info\s*\{[^}]*flex-wrap:\s*wrap/);
+    expect(css).not.toMatch(/\n\.poste__info\s*\{[^}]*flex-direction:\s*column/);
     expect(css).toMatch(/\.battle--detaille \.board__fiche\s*\{[^}]*max-width:\s*15rem/);
-    expect(css).toMatch(/\.battle--detaille \.poste__info\s*\{[^}]*flex-direction:\s*row[^}]*flex-wrap:\s*wrap/);
+  });
+});
+
+/**
+ * Ticket #321 — **`sobre` aussi tient dans la fenêtre avec trois Conditions des deux côtés**.
+ *
+ * Trouvé par le harnais de #292 : en `sobre`, les Conditions (une icône chacune) étaient empilées
+ * en colonne, comme en `détaillé`. Mesuré le 27/10/2026 à 420 × 900 sur la feuille d'avant, trois
+ * Conditions par camp : l'arrivée défilait de 56 px (barre d'action à 868 px, « Fin du tour » à
+ * 865 px, navigation à 830 px) et le tour d'une Pression jouable, pas-à-pas ouvert, de 95 px.
+ * Le plan de `npm run capturer` ne **jouait** pas ce cas en `sobre`.
+ */
+describe('`npm run capturer` — `sobre` tient dans la fenêtre avec trois Conditions (#321)', () => {
+  const mesures = (mainBas: number, barreBas: number, finBas: number) => [
+    { nom: 'la main', selecteur: '.hand', present: true, haut: 612, bas: mainBas },
+    { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: 716, bas: barreBas },
+    { nom: '« Fin du tour »', selecteur: '.combat-barre__fin .button', present: true, haut: finBas - 44, bas: finBas }
+  ];
+
+  function controle(m: unknown[], defilement: number): string[] {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const sortie = execFileSync(
+      process.execPath,
+      [
+        'scripts/capturer.mjs',
+        '--controle-hauteur',
+        JSON.stringify({ limite: 830, pasAPasOuvert: true, etat: '(sobre), pire cas', mesures: m, defilement })
+      ],
+      { cwd: root, encoding: 'utf8', env }
+    );
+    return JSON.parse(sortie) as string[];
+  }
+
+  it('le contrôle mord sur la mesure d’avant : barre à 868 px, bouton à 865 px, défilement de 56 px', () => {
+    const problemes = controle(mesures(816, 868, 865), 56);
+    expect(problemes.some((p) => p.includes('défile de 56 px') && p.includes('sobre), pire cas'))).toBe(true);
+    expect(problemes.some((p) => p.includes('bas de la barre d\'action du combat à 868 px'))).toBe(true);
+    expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 865 px'))).toBe(true);
+    expect(problemes.some((p) => p.includes('la main n\'a que 14 px de marge'))).toBe(true);
+  });
+
+  it('laisse passer la mesure d’après : barre à 806 px (24 px de marge), aucun défilement', () => {
+    expect(controle(mesures(714, 806, 761), 0)).toEqual([]);
+  });
+
+  it('joue `sobre` avec le pire cas, à l’arrivée et au tour d’une Pression jouable', () => {
+    const source = readFileSync(new URL('../scripts/capturer.mjs', import.meta.url), 'utf8');
+    expect(source).toContain('await mesurerDensite(browser, false)');
+    expect(source).toContain("`.battle--${detaille ? 'detaille' : 'sobre'}`");
+    // Le pire cas du tour d'une Pression jouable, dans les deux densités.
+    expect(source).toContain('${etat}, tour ${tour}, pire cas');
   });
 });
