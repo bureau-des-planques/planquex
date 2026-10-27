@@ -62,6 +62,20 @@ Avant : **Réglages → « Créer ma sauvegarde »**. Le texte qui apparaît est
 une note ou un message à toi-même. Pour revenir : colle-le dans la même zone, puis
 **« Restaurer ce texte »**.
 
+## Le serveur des testeurs
+
+Les testeurs de l'alpha se retrouvent aussi sur un **serveur Discord**, pour se parler entre
+deux parties : se donner rendez-vous pour une partie à deux, poser une question, raconter ce
+qui marche. Le lien est dans **Réglages** (« Le serveur des testeurs ») et au pied du
+**comité**.
+
+**Invitation permanente** : `<https://discord.gg/…>` — jamais à expiration, donc un lien collé
+dans un message reste valable.
+
+C'est **facultatif** : le jeu se joue sans, et le mur reste l'endroit où un retour est
+**suivi**. Sur Discord, ce sont les règles du serveur qui s'appliquent, et la page
+**Confidentialité** dit ce que ça implique.
+
 ## Comment remonter un retour
 
 **Il y a un mur dans le jeu.** Une petite bulle en bas à droite ouvre **le comité** : tu y vois
