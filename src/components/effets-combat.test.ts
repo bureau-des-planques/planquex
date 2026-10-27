@@ -7,9 +7,11 @@ import { createBattle } from '@/game/engine';
 import {
   ajouterEffet,
   DELAI_IMPACT_MS,
+  dureeDeLEffet,
   DUREE_CONDITION_APRES_COUP_MS,
   DUREE_CONDITION_MS,
   DUREE_MAX_MS,
+  DUREE_PIOCHE_MS,
   DUREE_STRESS_MS,
   effetsEntre,
   fusionnerEffets,
@@ -33,7 +35,6 @@ const css = () => readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8')
 const effet = (id: number): EffetCombat => ({
   id,
   nature: 'stress',
-  duree: DUREE_STRESS_MS,
   anime: true,
   valeur: 10
 });
@@ -48,7 +49,8 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     const stress = effets.find((e) => e.nature === 'stress' && e.camp === 'ai');
 
     expect(stress?.valeur).toBe(30);
-    expect(stress?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+    expect(dureeDeLEffet(stress!)).toBe(DUREE_STRESS_MS);
+    expect(dureeDeLEffet(stress!)).toBeLessThanOrEqual(DUREE_MAX_MS);
     expect(stress?.uid).toBe(avant.players.ai.active!.uid);
     expect(stress?.anime).toBe(true);
   });
@@ -81,7 +83,7 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
 
     const pioche = effetsEntre(avant, apres).find((e) => e.nature === 'pioche');
     expect(pioche?.camp).toBe('player');
-    expect(pioche?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+    expect(dureeDeLEffet(pioche!)).toBe(DUREE_PIOCHE_MS);
   });
 
   it('un COMEX qui vaut deux Interventions remplit deux hexagones', () => {
@@ -127,9 +129,9 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     const effets = effetsEntre(avant, apres);
     const attaque = effets.find((effet) => effet.nature === 'attaque');
     expect(attaque).toBeDefined();
-    expect(attaque?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+    expect(dureeDeLEffet(attaque!)).toBeLessThanOrEqual(DUREE_MAX_MS);
     // La séquence entière : l'impact (550 + 150 ms) doit tenir dans la durée de l'effet.
-    expect(attaque?.duree).toBeGreaterThanOrEqual(700);
+    expect(dureeDeLEffet(attaque!)).toBeGreaterThanOrEqual(700);
     // L'attaquant est le camp au trait avant le coup (ici `player`), la cible le Poste d'en face.
     expect(attaque?.uid).toBe(avant.players.player.active?.uid);
     expect(attaque?.uidCible).toBe(avant.players.ai.active?.uid);
@@ -169,7 +171,6 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     const a = {
       id: 1,
       nature: 'attaque' as const,
-      duree: 350,
       anime: true,
       camp: 'player' as const,
       uid: 'x',
@@ -192,7 +193,7 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     const condition = effets.find((effet) => effet.nature === 'condition');
     expect(condition).toBeDefined();
     expect(condition?.uid).toBe(cible.uid);
-    expect(condition?.duree).toBeLessThanOrEqual(DUREE_MAX_MS);
+    expect(dureeDeLEffet(condition!)).toBeLessThanOrEqual(DUREE_MAX_MS);
   });
 
   it('refuse la cinquième demande : quatre éléments animés au plus', () => {

@@ -43,7 +43,9 @@ describe('`npm run capturer` — ticket #53', () => {
   });
 
   it('écrit dans un dossier ignoré par git', () => {
-    const ignored = read('.gitignore').split('\n').map((line) => line.trim());
+    const ignored = read('.gitignore')
+      .split('\n')
+      .map((line) => line.trim());
     expect(ignored).toContain('captures/');
     expect(read('scripts/capturer.mjs')).toContain("'captures'");
   });
@@ -120,11 +122,24 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
 
   it('donne cet amorçage au contexte, donc avant `page.goto`', () => {
     const source = read('scripts/capturer.mjs');
+    // Les pages : l'amorçage est donné au contexte, la navigation vient après.
     expect(source).toContain('storageState: amorce ? amorcageStore(origine) : undefined');
-    const contexte = source.indexOf('browser.newContext({');
-    const navigation = source.indexOf('page.goto(');
-    expect(contexte, '`browser.newContext` introuvable').toBeGreaterThanOrEqual(0);
-    expect(navigation, '`page.goto` introuvable').toBeGreaterThan(contexte);
+    // Le combat : il n'y a plus qu'**un** endroit qui monte son contexte (`ouvrirCombat`, #324).
+    // L'ordre se vérifie donc **dans ce corps-là** : contexte d'abord, navigation ensuite, et
+    // c'est bien le contexte qui reçoit l'amorçage.
+    const debut = source.indexOf('async function ouvrirCombat(');
+    expect(debut, '`ouvrirCombat` introuvable').toBeGreaterThanOrEqual(0);
+    const corps = source.slice(debut, source.indexOf('\n}\n', debut));
+    expect(corps).toContain('storageState: amorcageStore(origine, supplement)');
+    const contexte = corps.indexOf('browser.newContext({');
+    const navigation = corps.indexOf('arriverAuCombat(page, instant)');
+    expect(contexte, '`browser.newContext` introuvable dans `ouvrirCombat`').toBeGreaterThanOrEqual(0);
+    expect(navigation, 'la navigation de `ouvrirCombat` est introuvable').toBeGreaterThan(contexte);
+    // Et la navigation elle-même attend le tour du joueur, sinon la mesure tombe sur l'IA.
+    const debutArrivee = source.indexOf('async function arriverAuCombat(');
+    const corpsArrivee = source.slice(debutArrivee, source.indexOf('\n}\n', debutArrivee));
+    expect(corpsArrivee.indexOf('page.goto(')).toBeGreaterThanOrEqual(0);
+    expect(corpsArrivee.indexOf('arriveeAuTourDuJoueur(page)')).toBeGreaterThan(corpsArrivee.indexOf('page.goto('));
   });
 
   it('amorce toutes les pages de l’application', () => {
@@ -271,7 +286,13 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
   function geometrie({ mainBas = 760, barreActionHaut = 760, barreActionBas = 800, pisteBas = 400 } = {}): Mesure[] {
     return [
       { nom: 'la main', selecteur: '.hand', present: true, haut: 640, bas: mainBas },
-      { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: barreActionHaut, bas: barreActionBas },
+      {
+        nom: "la barre d'action du combat",
+        selecteur: '.combat-barre',
+        present: true,
+        haut: barreActionHaut,
+        bas: barreActionBas
+      },
       { nom: "la piste d'Interventions", selecteur: '.piste', present: true, haut: 100, bas: pisteBas }
     ];
   }
@@ -350,7 +371,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
 
   it('joue aussi le combat pas-à-pas terminé, là où le recouvrement est jugé (#191)', () => {
     const source = read('scripts/capturer.mjs');
-    expect(source).toContain('amorcageStore(origine, { pasAPasCombatVu: true })');
+    expect(source).toContain('ouvrirCombat(browser, instant, { pasAPasCombatVu: true })');
     expect(source).toContain('(pas-à-pas terminé)');
   });
 
@@ -383,12 +404,9 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     }
 
     it('le contrôle mord sur la mesure d’avant : bouton à 834 px sous une navigation à 830 px', () => {
-      const avant = [
-        ...geometrie({ mainBas: 728, barreActionHaut: 731, barreActionBas: 836 }),
-        fin(834)
-      ];
+      const avant = [...geometrie({ mainBas: 728, barreActionHaut: 731, barreActionBas: 836 }), fin(834)];
       const problemes = controleComplet(avant, 24);
-      expect(problemes.some((p) => p.includes('« Fin du tour » n\'est pas visible sans défiler'))).toBe(true);
+      expect(problemes.some((p) => p.includes("« Fin du tour » n'est pas visible sans défiler"))).toBe(true);
       expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 834 px, barre de navigation à 830 px'))).toBe(
         true
       );
@@ -436,7 +454,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
 
     it('mesure les boutons de la barre et du pas-à-pas tels que rendus', () => {
       const source = read('scripts/capturer.mjs');
-      expect(source).toContain(".combat-barre .button, .pas-a-pas__ligne button");
+      expect(source).toContain('.combat-barre .button, .pas-a-pas__ligne button');
       expect(source).toContain('boutonsPetits');
     });
 
@@ -464,7 +482,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     // à ne mesurer que la main.
     expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
     expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
-    expect(source).toContain("problems.push(`${route} · ${probleme}`)");
+    expect(source).toContain('problems.push(`${route} · ${probleme}`)');
   });
 });
 
@@ -514,7 +532,9 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
 
   /** La marge que D-094 (3) exige — « au moins 20 px » —, lue dans l'acte, pas recopiée. */
   function margeDeD094(): number {
-    const lignes = read('docs/DECISIONS.md').split('\n').filter((ligne) => ligne.startsWith('| D-094 |'));
+    const lignes = read('docs/DECISIONS.md')
+      .split('\n')
+      .filter((ligne) => ligne.startsWith('| D-094 |'));
     expect(lignes, 'ligne D-094 introuvable dans docs/DECISIONS.md').toHaveLength(1);
     const marge = lignes[0].match(/au moins (\d+) px/);
     expect(marge, 'D-094 ne nomme plus de marge « au moins N px »').not.toBeNull();
@@ -581,7 +601,9 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
 
   it('garde aussi la marge de la main, pas seulement celle de la barre', () => {
     // La main sous la barre (800 → 820), donc sans recouvrement : seule sa marge est en cause.
-    const mesures = barreA(800).map((mesure) => (mesure.selecteur === '.hand' ? { ...mesure, haut: 800, bas: 820 } : mesure));
+    const mesures = barreA(800).map((mesure) =>
+      mesure.selecteur === '.hand' ? { ...mesure, haut: 800, bas: 820 } : mesure
+    );
     const problemes = controle(mesures, 'pas-à-pas terminé');
     expect(problemes).toHaveLength(1);
     expect(problemes[0]).toContain("la main n'a que 10 px de marge");
@@ -611,7 +633,11 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
     delete env.PORT;
     const sortie = execFileSync(
       process.execPath,
-      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite: 830, mesures, defilement, etat, pasAPasOuvert })],
+      [
+        'scripts/capturer.mjs',
+        '--controle-hauteur',
+        JSON.stringify({ limite: 830, mesures, defilement, etat, pasAPasOuvert })
+      ],
       { cwd: root, encoding: 'utf8', env }
     );
     return JSON.parse(sortie) as string[];
@@ -693,7 +719,7 @@ describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292
     expect(source).toContain('await mesurerAvecUnePression(browser, true)');
     expect(source).toContain('combatDetaille: true');
     expect(source).toContain("`.battle--${detaille ? 'detaille' : 'sobre'}`");
-    expect(source).toContain('page.evaluate(poserLePireCas, detaille)');
+    expect(source).toContain('page.evaluate(poserLePireCas, [detaille, MODELE_BADGE])');
     expect(source).toContain('${etat}, pire cas');
   });
 
@@ -740,9 +766,9 @@ describe('`npm run capturer` — `sobre` tient dans la fenêtre avec trois Condi
   it('le contrôle mord sur la mesure d’avant : barre à 868 px, bouton à 865 px, défilement de 56 px', () => {
     const problemes = controle(mesures(816, 868, 865), 56);
     expect(problemes.some((p) => p.includes('défile de 56 px') && p.includes('sobre), pire cas'))).toBe(true);
-    expect(problemes.some((p) => p.includes('bas de la barre d\'action du combat à 868 px'))).toBe(true);
+    expect(problemes.some((p) => p.includes("bas de la barre d'action du combat à 868 px"))).toBe(true);
     expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 865 px'))).toBe(true);
-    expect(problemes.some((p) => p.includes('la main n\'a que 14 px de marge'))).toBe(true);
+    expect(problemes.some((p) => p.includes("la main n'a que 14 px de marge"))).toBe(true);
   });
 
   it('laisse passer la mesure d’après : barre à 806 px (24 px de marge), aucun défilement', () => {

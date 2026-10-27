@@ -135,34 +135,24 @@ describe('CardView — le gabarit à cadre', () => {
     expect(grande.container.querySelector('.card__id')).not.toBeNull();
   });
 
-  it('figée : la carte du plateau ne se soulève pas au survol (#187)', () => {
-    const carte = planques[0];
-    const figee = render(<CardView card={carte} compact figee />);
-    expect(figee.container.querySelector('.card')).toHaveClass('card--figee');
-    figee.unmount();
-
-    // Le contrôle mord : sans la prop, la classe n'existe pas — si quelqu'un retire le
-    // drapeau, la première assertion tombe.
-    const animee = render(<CardView card={carte} compact />);
-    expect(animee.container.querySelector('.card')).not.toHaveClass('card--figee');
-  });
-
-  it('calme : ni `whileHover`, ni `transform`, et le gabarit réduit imposé (#285, T2)', () => {
+  it('calme : ni `whileHover`, ni `transform`, ni nom, et le gabarit réduit imposé (#285, T2, #324)', () => {
     const carte = planques[0];
 
     const calme = render(<CardView card={carte} calme />);
-    const figee = calme.container.querySelector('.card') as HTMLElement;
+    const carteCalme = calme.container.querySelector('.card') as HTMLElement;
     // Le gabarit réduit est **imposé** : pas de flavour, pas d'identifiant, la classe y est
     // sans que l'appelant ait passé `compact`.
-    expect(figee).toHaveClass('card--compact');
+    expect(carteCalme).toHaveClass('card--compact');
+    // Le geste coupé est **le même drapeau** : la classe du silence y est aussi (#324).
+    expect(carteCalme).toHaveClass('card--figee');
     expect(calme.container.querySelector('.card__flavor')).toBeNull();
     expect(calme.container.querySelector('.card__id')).toBeNull();
     // Aucun geste, donc : ni au survol (`whileHover` / `whileTap`), ni en `transform`.
-    expect(figee).not.toHaveAttribute('data-while-hover');
-    expect(figee).not.toHaveAttribute('data-while-tap');
-    expect(figee).not.toHaveAttribute('data-transition');
-    fireEvent.mouseEnter(figee);
-    expect(figee.style.transform).toBe('');
+    expect(carteCalme).not.toHaveAttribute('data-while-hover');
+    expect(carteCalme).not.toHaveAttribute('data-while-tap');
+    expect(carteCalme).not.toHaveAttribute('data-transition');
+    fireEvent.mouseEnter(carteCalme);
+    expect(carteCalme.style.transform).toBe('');
     calme.unmount();
 
     // **Le contrôle mord** : la même carte **sans** le drapeau porte le geste, et le survol
@@ -171,6 +161,7 @@ describe('CardView — le gabarit à cadre', () => {
     const animee = render(<CardView card={carte} />);
     const mobile = animee.container.querySelector('.card') as HTMLElement;
     expect(mobile).not.toHaveClass('card--compact');
+    expect(mobile).not.toHaveClass('card--figee');
     expect(mobile).toHaveAttribute('data-while-hover', 'oui');
     expect(mobile).toHaveAttribute('data-while-tap', 'oui');
     fireEvent.mouseEnter(mobile);
@@ -179,14 +170,14 @@ describe('CardView — le gabarit à cadre', () => {
 
   it('au plateau, la barre montre le Stress qui monte, et elle se lit (#187)', () => {
     const carte = planques[0];
-    const { container } = render(<CardView card={carte} compact figee stress={15} seuil={60} />);
+    const { container } = render(<CardView card={carte} calme stress={15} seuil={60} />);
     const barre = container.querySelector('.card__seuil-bar') as HTMLElement;
     expect(barre).toHaveAttribute('aria-label', 'Stress 15 sur 60');
     const remplissage = barre.querySelector('.stress__fill') as HTMLElement;
     expect(remplissage.style.width).toBe('25%');
     expect(remplissage.className).not.toContain('is-high');
 
-    const presque = render(<CardView card={carte} compact figee stress={50} seuil={60} />);
+    const presque = render(<CardView card={carte} calme stress={50} seuil={60} />);
     expect(presque.container.querySelector('.stress__fill')).toHaveClass('is-high');
   });
 

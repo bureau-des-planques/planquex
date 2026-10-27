@@ -125,6 +125,60 @@ async function arriveeAuTourDuJoueur(page) {
 }
 
 /**
+ * **Le balisage d'un badge de Condition**, tel que `StatusBadge` le rend — la **seule** copie
+ * hors du composant (#324).
+ *
+ * Le pire cas posé dans le DOM doit être celui que le composant produit : une puce
+ * `status-chip`, l'icône à sa taille, puis le nom (visible en `détaillé`, `sr-only` en `sobre`).
+ * Recopier ce balisage à la main laissait la mesure mesurer autre chose le jour où le
+ * composant changeait — et rester verte. Ce modèle-ci est donc **confronté** au composant :
+ * `src/components/StatusBadge.test.tsx` le compare au rendu réel et tombe dès que le
+ * balisage, une classe, la taille de l'icône ou un libellé divergent.
+ *
+ * Il est publié dans `--plan` (la garde le lit sans navigateur) et passé en argument à
+ * `poserLePireCas` : `page.evaluate` sérialise la fonction, qui ne lit aucune constante du
+ * module.
+ */
+const MODELE_BADGE = {
+  racine: 'status-chip',
+  modificateur: 'status-chip--',
+  icone: { largeur: 12, hauteur: 12 },
+  nom: 'status-chip__nom',
+  masque: 'sr-only',
+  // Les **trois** Conditions qu'un même Poste peut porter ensemble (AGENTS.md §4) : Surcharge
+  // et Épuisement se cumulent avec une Condition d'état — Immobilisation ici, la plus longue.
+  statuts: [
+    { code: 'SURCHARGE', nom: 'Surcharge' },
+    { code: 'EPUISEMENT', nom: 'Épuisement' },
+    { code: 'IMMOBILISATION', nom: 'Immobilisation' }
+  ]
+};
+
+/** Va sur le combat à un **instant figé** (la graine de `createBattle`) et attend le tour du joueur. */
+async function arriverAuCombat(page, instant) {
+  await page.clock.setFixedTime(instant);
+  await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
+  await arriveeAuTourDuJoueur(page);
+}
+
+/**
+ * Un contexte de combat **neuf et arrivé au tour du joueur** : le bloc que cinq passages
+ * recopiaient (contexte, `pageerror`, horloge figée, navigation, attente). Une copie qui prend
+ * du retard, c'est un état du plan qui n'écoute plus les erreurs de page (#324).
+ */
+async function ouvrirCombat(browser, instant, supplement = {}) {
+  const context = await browser.newContext({
+    viewport: VIEWPORT,
+    isMobile: true,
+    storageState: amorcageStore(origine, supplement)
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
+  await arriverAuCombat(page, instant);
+  return { context, page };
+}
+
+/**
  * Les **surfaces du combat** qui doivent tenir dans la fenêtre, au-dessus de la barre de
  * navigation fixe (qui masque le bas de l'écran) : la main (#170), puis la **barre
  * d'action du combat** et la **piste d'Interventions** (#194).
@@ -366,19 +420,10 @@ async function mesurerDensite(browser, detaille) {
   const densite = detaille ? 'détaillé' : 'sobre';
   for (const pasAPasVu of [false, true]) {
     for (const [index, instant] of INSTANTS_COMBAT.entries()) {
-      const context = await browser.newContext({
-        viewport: VIEWPORT,
-        isMobile: true,
-        storageState: amorcageStore(origine, {
-          ...(detaille ? { combatDetaille: true } : {}),
-          ...(pasAPasVu ? { pasAPasCombatVu: true } : {})
-        })
+      const { context, page } = await ouvrirCombat(browser, instant, {
+        ...(detaille ? { combatDetaille: true } : {}),
+        ...(pasAPasVu ? { pasAPasCombatVu: true } : {})
       });
-      const page = await context.newPage();
-      page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
-      await page.clock.setFixedTime(instant);
-      await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
-      await arriveeAuTourDuJoueur(page);
       // La bascule est bien posée : sans elle la mesure ne regarderait pas la densité qu'elle nomme
       // (une garde qui ne regarde pas le bon état ne garde rien).
       if ((await page.locator(`.battle--${detaille ? 'detaille' : 'sobre'}`).count()) === 0) {
@@ -393,7 +438,7 @@ async function mesurerDensite(browser, detaille) {
         }
       }
       // **Le pire cas** : ce que l'arrivée ne montre pas, c'est les Conditions.
-      await page.evaluate(poserLePireCas, detaille);
+      await page.evaluate(poserLePireCas, [detaille, MODELE_BADGE]);
       await page.waitForTimeout(300);
       await controlerHauteur(page, `${etat}, pire cas`, ROUTE_COMBAT);
       if (pasAPasVu && index === 0) {
@@ -414,24 +459,20 @@ async function mesurerDensite(browser, detaille) {
  *
  * C'est le **DOM** qui reçoit ces éléments — le moteur n'est pas touché : atteindre ces
  * Conditions en jouant dépend de la graine et du hasard, et la mesure doit les voir à chaque fois.
- * Le balisage est celui de `StatusBadge` : une icône de 12 px, puis le nom — visible en `détaillé`
- * (`status-chip__nom`), lu seulement par le lecteur d'écran en `sobre` (`sr-only`).
- * Passée à `page.evaluate` : aucune constante du module n'y est lisible.
+ * Le balisage **n'est pas recopié ici** : il vient de `MODELE_BADGE`, que
+ * `StatusBadge.test.tsx` confronte au composant (#324). Passée à `page.evaluate` avec son
+ * modèle en argument : aucune constante du module n'y est lisible.
  */
-function poserLePireCas(detaille) {
+function poserLePireCas([detaille, modele]) {
   for (const info of document.querySelectorAll('.poste__info')) {
-    for (const [classe, nom] of [
-      ['surcharge', 'Surcharge'],
-      ['epuisement', 'Épuisement'],
-      ['immobilisation', 'Immobilisation']
-    ]) {
+    for (const { code, nom } of modele.statuts) {
       const puce = document.createElement('span');
-      puce.className = `status-chip status-chip--${classe}`;
+      puce.className = `${modele.racine} ${modele.modificateur}${code.toLowerCase()}`;
       const icone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      icone.setAttribute('width', '12');
-      icone.setAttribute('height', '12');
+      icone.setAttribute('width', String(modele.icone.largeur));
+      icone.setAttribute('height', String(modele.icone.hauteur));
       const texte = document.createElement('span');
-      texte.className = detaille ? 'status-chip__nom' : 'sr-only';
+      texte.className = detaille ? modele.nom : modele.masque;
       texte.textContent = nom;
       puce.append(icone, texte);
       info.append(puce);
@@ -452,19 +493,10 @@ async function mesurerAvecUnePression(browser, detaille = false) {
   const densite = detaille ? 'détaillé, ' : '';
   for (const pasAPasVu of [false, true]) {
     for (const instant of INSTANTS_COMBAT) {
-      const context = await browser.newContext({
-        viewport: VIEWPORT,
-        isMobile: true,
-        storageState: amorcageStore(origine, {
-          ...(pasAPasVu ? { pasAPasCombatVu: true } : {}),
-          ...(detaille ? { combatDetaille: true } : {})
-        })
+      const { context, page } = await ouvrirCombat(browser, instant, {
+        ...(pasAPasVu ? { pasAPasCombatVu: true } : {}),
+        ...(detaille ? { combatDetaille: true } : {})
       });
-      const page = await context.newPage();
-      page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
-      await page.clock.setFixedTime(instant);
-      await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
-      await arriveeAuTourDuJoueur(page);
       const tour = await jusquAUnePression(page);
       const etat = `${new Date(instant).toISOString()} (${densite}Pression jouable${pasAPasVu ? ', pas-à-pas terminé' : ''})`;
       if (tour === null) {
@@ -474,7 +506,7 @@ async function mesurerAvecUnePression(browser, detaille = false) {
         await controlerHauteur(page, `${etat}, tour ${tour}`, ROUTE_COMBAT);
         // **Le pire cas** (#321) : la barre y est à deux rangées, et les trois Conditions des deux
         // camps y ont fait défiler l'écran de 23 px en `sobre`.
-        await page.evaluate(poserLePireCas, detaille);
+        await page.evaluate(poserLePireCas, [detaille, MODELE_BADGE]);
         await page.waitForTimeout(300);
         await controlerHauteur(page, `${etat}, tour ${tour}, pire cas`, ROUTE_COMBAT);
         // Premier état atteint : c'est aussi la capture du tour (`combat-pression.png`).
@@ -639,13 +671,16 @@ if (process.argv.includes('--plan')) {
   // au lieu de chercher des nombres dans le source, et une régression les fait tomber.
   // Les **surfaces mesurées** y sont aussi (#194) : une garde qui ne surveille plus le
   // bon élément doit faire échouer son test, pas changer de sujet en silence.
+  // Le **balisage du pire cas** y est aussi (#324) : c'est ce que `StatusBadge.test.tsx` compare
+  // au composant réel. Un modèle qui change sans le composant fait tomber ce test-là.
   console.log(
     JSON.stringify({
       amorcage: amorcageStore(origine),
       capture: { viewport: VIEWPORT, pleinePage: PLEINE_PAGE },
       captures: shots,
       preparations: PREPARATIONS,
-      hauteur: CIBLES_HAUTEUR
+      hauteur: CIBLES_HAUTEUR,
+      badge: MODELE_BADGE
     })
   );
   process.exit(0);
@@ -707,9 +742,7 @@ try {
       // L'état dédié (#128) : la partie à deux préparée dans le navigateur, à la même
       // graine que le combat — donc reproductible, et sans IA qui joue à la place de
       // l'autre camp (une partie à deux n'en a pas).
-      await page.clock.setFixedTime(INSTANTS_COMBAT[0]);
-      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
-      await arriveeAuTourDuJoueur(page);
+      await arriverAuCombat(page, INSTANTS_COMBAT[0]);
       const code = await preparerCodePvp(page);
       console.log(`code-pvp · ${slug} · ${JSON.stringify(code)}`);
       if (code.caracteres < 100) {
@@ -730,9 +763,7 @@ try {
       // la partie vient de l'horloge, donc on la fige (`page.clock`) pour une capture
       // reproductible. On ne remet pas la page à zéro : ce qu'on juge, c'est ce que voit
       // l'invité sans toucher.
-      await page.clock.setFixedTime(INSTANTS_COMBAT[0]);
-      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
-      await arriveeAuTourDuJoueur(page);
+      await arriverAuCombat(page, INSTANTS_COMBAT[0]);
       await controlerHauteur(page, slug, route);
     } else {
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
@@ -746,16 +777,7 @@ try {
   // La garde de rendu (#170) ne se fie pas à **une** donne : la graine change avec
   // l'heure, donc la main change de hauteur. On mesure sur chaque instant figé.
   for (const instant of INSTANTS_COMBAT.slice(1)) {
-    const context = await browser.newContext({
-      viewport: VIEWPORT,
-      isMobile: true,
-      storageState: amorcageStore(origine)
-    });
-    const page = await context.newPage();
-    page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
-    await page.clock.setFixedTime(instant);
-    await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
-    await arriveeAuTourDuJoueur(page);
+    const { context, page } = await ouvrirCombat(browser, instant);
     await controlerHauteur(page, new Date(instant).toISOString(), ROUTE_COMBAT);
     await context.close();
   }
@@ -764,16 +786,7 @@ try {
   // par son panneau. C'est ici que la barre d'action collée est jugée sur le **recouvrement** de
   // la main — pendant le pas-à-pas, elle la recouvre jusqu'au défilement, par construction.
   for (const instant of INSTANTS_COMBAT) {
-    const context = await browser.newContext({
-      viewport: VIEWPORT,
-      isMobile: true,
-      storageState: amorcageStore(origine, { pasAPasCombatVu: true })
-    });
-    const page = await context.newPage();
-    page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
-    await page.clock.setFixedTime(instant);
-    await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
-    await arriveeAuTourDuJoueur(page);
+    const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true });
     await controlerHauteur(page, `${new Date(instant).toISOString()} (pas-à-pas terminé)`, ROUTE_COMBAT);
     await context.close();
   }

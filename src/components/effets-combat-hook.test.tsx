@@ -6,6 +6,7 @@ import { ALL_CARDS, isBasic, isPlanque } from '@/data';
 import type { BattleState } from '@/data/types';
 import { createBattle } from '@/game/engine';
 import {
+  dureeDeLEffet,
   DUREE_CONDITION_APRES_COUP_MS,
   DUREE_CONDITION_MS,
   DUREE_MAX_MS,
@@ -186,11 +187,13 @@ describe('useEffetsDeCombat — l’arc de Condition et le plafond de quatre (#2
     expect(DUREE_CONDITION_APRES_COUP_MS).toBeLessThanOrEqual(DUREE_MAX_MS);
     const condition = effetsEntre(depart, suivant).find((effet) => effet.nature === 'condition');
     expect(condition?.apresCoup).toBe(true);
-    expect(condition?.duree).toBe(DUREE_CONDITION_APRES_COUP_MS);
+    expect(dureeDeLEffet(condition!)).toBe(DUREE_CONDITION_APRES_COUP_MS);
+    // **Un seul canal** (#324) : la durée n'est pas un champ de l'effet, elle se dérive du fait.
+    expect(condition).not.toHaveProperty('duree');
     // Sans Pression dans le pas (le Contrôle, un Talent), l'arc joue tout de suite.
     const sansCoup = effetsEntre(depart, avecCondition(depart)).find((effet) => effet.nature === 'condition');
     expect(sansCoup?.apresCoup).toBe(false);
-    expect(sansCoup?.duree).toBe(DUREE_CONDITION_MS);
+    expect(dureeDeLEffet(sansCoup!)).toBe(DUREE_CONDITION_MS);
   });
 
   it('sous « Mouvement réduit », l’effet naît non animé : l’écran n’en fait aucun arc', () => {
