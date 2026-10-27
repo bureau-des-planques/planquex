@@ -313,7 +313,7 @@ Elles sont en **lecture seule** : on peut y consulter une idée d'UI ou l'invent
 
 ### Issue tracker
 
-Les tickets vivent dans GitHub Issues sur `Chapax/planquex`, piloté par la CLI `gh`. Voir `docs/agents/issue-tracker.md`.
+Les tickets vivent dans GitHub Issues sur `bureau-des-planques/planquex`, piloté par la CLI `gh`. Voir `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
@@ -335,8 +335,9 @@ D-113 (26/10/2026). Le modèle est **GitHub flow** : une seule branche longue, `
 
 - Un ticket se travaille sur une **branche dédiée dans son propre worktree**, créée depuis **`main`**, et se propose par **pull request** vers **`main`**. La branche se supprime après la fusion.
 - **Fusion : merge commit uniquement**, jamais de squash ni de rebase. Les agents **citent leurs hashes** dans leurs rapports, `git branch -d` (skill `cloture`) ne vaut qu'après un merge commit, et un ticket entier se défait par `git revert -m 1 <merge>`. Sujet : `merge: <ce que ça change> (#N)`. `git log --first-parent main` donne la vue « un ticket, une ligne ».
-- **Les réglages du dépôt font foi** : sur `Chapax/planquex`, seules la fusion par **merge commit** et la **suppression de la branche après fusion** sont activées (26/10/2026) — le squash et le rebase n'y sont même pas proposés.
-- **La protection de branche n'existe pas ici** : elle demande GitHub Pro sur un dépôt privé (réponse de l'API, 26/10/2026). Les gardes sont donc en amont : CI de la PR, aperçu Vercel, `npm run isolation`, et les quatre commandes de §8.4 en local.
+- **Les réglages du dépôt font foi** : sur `bureau-des-planques/planquex`, seules la fusion par **merge commit** et la **suppression de la branche après fusion** sont activées (26/10/2026) — le squash et le rebase n'y sont même pas proposés. Depuis le 27/10/2026, un **ruleset** les y tient et le dépôt est public (D-118).
+- **La protection existe depuis le 27/10/2026** (D-118, #267). Le dépôt public débloque les **rulesets**, gratuits ; celui de `main` — `main protégée (#267)` — exige une **pull request**, les **trois jobs** de `ci.yml` (`contrôles…`, `tests du noyau…`, `tests des écrans…`), et **zéro approbation** tant que Bastien est seul membre : GitHub interdit d'approuver sa propre PR, une approbation exigée le bloquerait. La **liste de contournement est vide** : un push direct est refusé, checks ou pas, propriétaire compris. Avant cette date, sur un dépôt privé, l'API répondait `403` (« Upgrade to GitHub Pro… ») et les gardes étaient seulement en amont : CI de la PR, aperçu Vercel, `npm run isolation`, les quatre commandes de §8.4.
+- **Le dépôt du jeu est public, l'exploitation est privée** (D-118) : `bureau-des-planques/planquex-infra` porte le lieu de session, la skill `infra-planquex` et les runbooks. `supabase/migrations/` **reste ici** : `supabase/pglite.ts` la lit par un chemin relatif et la CI la rejoue en PostgreSQL WASM ; un dépôt public dont la CI dépend d'un dépôt privé demanderait un jeton.
 - **Pas de branche `dev`.** Elle a été retirée le 26/10/2026 (son contenu était déjà sur `main` ; le dernier état reste au tag `archive/dev-2026-10-26`). Une session qui n'a pas de ticket prend une branche jetable issue de `main`.
 - La CI des PR est celle de `main` (§6). Les fichiers générés se vérifient **à la release**, pas à chaque PR (§6, `docs/VERSIONS.md` §4).
 - Fermer ou ouvrir une issue `alpha` périme `src/data/plan-dev.ts` : `npm run plan:dev` quand on prépare une release.

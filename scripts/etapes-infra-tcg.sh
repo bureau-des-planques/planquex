@@ -287,7 +287,7 @@ else
   warn "On ne crée PAS de nouveau projet Vercel : on réutilise le projet existant « planquex »."
   open_url "https://vercel.com/$VERCEL_TEAM"
   step "Ouvre le projet existant, pas « Add New Project »."
-  step "Project Settings → Git : le dépôt lié doit être Chapax/planquex."
+  step "Project Settings → Git : le dépôt lié doit être bureau-des-planques/planquex."
   step "Project Settings → Build and Deployment : Framework preset Vite, Root directory la racine, Build command npm run build, Output directory dist."
   step "Lance un déploiement. Le build passe (src/main.tsx existe) : dist/index.html et dist/sw.js sont produits."
   pause "Projet lié et déployé ? Entrée pour enregistrer les identifiants"
