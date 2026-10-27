@@ -33,6 +33,12 @@ La règle est : **un agent par zone, jamais deux** ; un ticket qui couvre plusie
 
 Jamais le modèle qui a implémenté ne relit. La chaîne vient du **benchmark** (`modeles.md`).
 
+> **27/10/2026** : depuis le dé-épinglage (PR `Chapax/opencode-config#26`), **aucun agent
+> ne porte de `model:`**. Cette table reste la **règle de choix** — quel modèle pour quel
+> rôle, quand on choisit à la main — mais ce n'est plus une configuration : une session
+> interactive est routée par le plugin `quota-router`, et `agents lance` par
+> `chaineDeRepli`. Un agent épinglé traverserait la chaîne sans être replié (#221, D-099).
+
 | Rôle | Modèle | Pourquoi |
 |---|---|---|
 | **implémenteur** — code, moteur, tests | `opencode/deepseek-v4.1-flash-free#high` | maillon 1 du benchmark : 3/3, 27–47 s, variante `high` la moins consommatrice |
