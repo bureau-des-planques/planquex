@@ -154,7 +154,7 @@ export function Suivi() {
                             {' · '}
                             <a
                               className="text-gold-soft"
-                              href={`https://github.com/Chapax/planquex/issues/${postit.ticket}`}
+                              href={`https://github.com/bureau-des-planques/planquex/issues/${postit.ticket}`}
                               target="_blank"
                               rel="noopener noreferrer"
                             >

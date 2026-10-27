@@ -350,7 +350,7 @@ fi
 say "Pour le dossier local, il n'y a plus rien à faire :"
 note "Le dossier local porte « planquex » depuis le 21/10/2026 (D-047) — dépôt, dossier et URL portent le même nom."
 say "Reste, et ce wizard ne le fait pas : le LIEN GIT du projet Vercel pointe encore sur l'ancien dépôt (D-053)."
-note "Settings → Git : connecte Chapax/planquex, sinon un push sur main ne déploie rien, et un push sur la branche dev de l'archive publierait l'ancien jeu."
+note "Settings → Git : connecte bureau-des-planques/planquex, sinon un push sur main ne déploie rien, et un push sur la branche dev de l'archive publierait l'ancien jeu."
 say "Et le reste de #10 (domaine + Cloudflare, Sentry, R2, Figma) est un autre chantier, « le moment venu »."
 pause "Entrée pour terminer"
 
