@@ -2439,7 +2439,7 @@ h2 {
 .board__fiche {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
   max-width: 11rem;
   min-width: 0;
 }
@@ -2451,44 +2451,37 @@ h2 {
 
 /* Ce qui se passe au Poste (Stress écrit, cafés, Machine, Conditions), sous le nom du camp. */
 .poste__info {
-  align-items: flex-start;
+  align-items: center;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.3rem;
   min-width: 0;
 }
 
-/* **`détaillé` ne fait pas grossir le plateau** (#292, SPEC-COMBAT-UI T9). Les annotations qu'il
-   remet — le nom des Conditions, les types du Deck — sont plus larges que leurs icônes ; empilées
-   en colonne, trois Conditions et trois types rallongeaient chaque fiche de 50 px, et la barre
-   d'action passait sous la navigation (mesuré à 420 × 900 : défilement de 34 px, barre à 846 px
-   pour une limite de 830). Elles se rangent donc **en ligne, avec retour**, dans une fiche plus
-   large : elle garde la hauteur qu'elle a en `sobre`, et rien de ce qui décide (cafés,
-   Conditions) ne disparaît. */
-.battle--detaille .board__fiche {
-  /* Deux noms de Conditions côte à côte (≈ 190 px) : à 11 rem, chacun prenait sa rangée. */
-  gap: 0.15rem;
-  max-width: 15rem;
-}
-
-.battle--detaille .poste__info {
-  align-items: center;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 0.15rem 0.3rem;
-}
-
-/* Le nom d'une Condition garde la taille du plancher (`--fs-xs`) ; c'est la pastille qui se serre,
-   pour que deux rangées de Conditions ne dépassent pas la hauteur de la carte du Poste. */
-.battle--detaille .poste__info .status-chip {
+/* **Les Conditions se rangent en ligne, avec retour** (#292, #321), dans les deux densités.
+   Empilées en colonne, chacune prenait sa rangée : à 420 × 900, trois Conditions des deux côtés
+   faisaient défiler l'écran de 56 px en `sobre` (barre d'action à 868 px, navigation à 830 px) et de
+   34 px en `détaillé`. En ligne, la fiche garde la hauteur de la carte du Poste, et rien de ce qui
+   décide (cafés, Conditions) ne disparaît. La pastille se serre en hauteur ; son texte garde
+   `--fs-xs`, et sa cible n'est pas un bouton. */
+.poste__info .status-chip {
   padding-block: 0.04rem;
 }
 
-.battle--detaille .poste__machine {
+.poste__machine {
   align-items: center;
   display: inline-flex;
   flex-wrap: wrap;
   gap: 0.25rem;
+}
+
+/* **`détaillé` ne fait pas grossir le plateau** (#292, SPEC-COMBAT-UI T9). Les annotations qu'il
+   remet — le nom des Conditions, les types du Deck — sont plus larges que leurs icônes : la fiche
+   passe de `11rem` à `15rem` pour que deux noms de Conditions (≈ 190 px) tiennent côte à côte ;
+   à 11 rem, chacun prenait sa rangée. C'est la **seule** différence de rangement entre les deux
+   densités : le reste (ligne avec retour, pastille serrée) est dans la base, au-dessus. */
+.battle--detaille .board__fiche {
+  max-width: 15rem;
 }
 
 /* Les **types de café du Deck**, annotation du mode `détaillé` (#189) : en `sobre`, la

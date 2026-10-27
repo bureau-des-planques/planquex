@@ -353,44 +353,54 @@ async function jusquAUnePression(page) {
 }
 
 /**
- * Le combat en **mode `détaillé`** (#292, `docs/SPEC-COMBAT-UI.md` T9), à l'arrivée : la bascule
- * `sobre` / `détaillé` remet des annotations sur le plateau, et c'est la seule tâche de la
- * refonte qui peut faire **grossir** le plateau — donc sortir la barre d'action de la fenêtre.
- * Le store est amorcé avec `combatDetaille: true` (la bascule est mémorisée, SPEC §4.5) : on
- * mesure l'écran qu'un testeur qui a choisi `détaillé` ouvre, avec les **mêmes** gardes que
- * `sobre` — hauteur, marge, défilement, cibles de 44 px. Pas-à-pas ouvert comme terminé.
+ * Le combat dans **une densité** (`sobre` ou `détaillé`), à l'arrivée, **avec le pire cas** (#292, #321).
+ *
+ * `détaillé` (#292, `docs/SPEC-COMBAT-UI.md` T9) remet des annotations sur le plateau : c'est la
+ * densité qui peut le faire **grossir** — donc sortir la barre d'action de la fenêtre. Le store
+ * est amorcé avec `combatDetaille: true` (la bascule est mémorisée, SPEC §4.5), et on mesure
+ * avec les **mêmes** gardes que `sobre` : hauteur, marge, défilement, cibles de 44 px, pas-à-pas
+ * ouvert comme terminé. `sobre` (#321) n'a, à l'arrivée, rien à mesurer de plus que les passages
+ * ordinaires : seul son **pire cas** est joué ici.
  */
-async function mesurerDetaille(browser) {
+async function mesurerDensite(browser, detaille) {
+  const densite = detaille ? 'détaillé' : 'sobre';
   for (const pasAPasVu of [false, true]) {
     for (const [index, instant] of INSTANTS_COMBAT.entries()) {
       const context = await browser.newContext({
         viewport: VIEWPORT,
         isMobile: true,
-        storageState: amorcageStore(origine, { combatDetaille: true, ...(pasAPasVu ? { pasAPasCombatVu: true } : {}) })
+        storageState: amorcageStore(origine, {
+          ...(detaille ? { combatDetaille: true } : {}),
+          ...(pasAPasVu ? { pasAPasCombatVu: true } : {})
+        })
       });
       const page = await context.newPage();
       page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
       await page.clock.setFixedTime(instant);
       await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
       await arriveeAuTourDuJoueur(page);
-      // La bascule est bien posée : sans elle la mesure ne regarderait que `sobre` (une garde qui
-      // ne regarde pas le bon état ne garde rien).
-      if ((await page.locator('.battle--detaille').count()) === 0) {
-        problems.push(`${ROUTE_COMBAT} · le mode « détaillé » n'est pas actif : la mesure ne le voit pas`);
+      // La bascule est bien posée : sans elle la mesure ne regarderait pas la densité qu'elle nomme
+      // (une garde qui ne regarde pas le bon état ne garde rien).
+      if ((await page.locator(`.battle--${detaille ? 'detaille' : 'sobre'}`).count()) === 0) {
+        problems.push(`${ROUTE_COMBAT} · le mode « ${densite} » n'est pas actif : la mesure ne le voit pas`);
       }
-      const etat = `${new Date(instant).toISOString()} (détaillé${pasAPasVu ? ', pas-à-pas terminé' : ''})`;
-      await controlerHauteur(page, etat, ROUTE_COMBAT);
-      // La capture de la preuve : l'arrivée, pas-à-pas terminé, à la première graine.
-      if (pasAPasVu && index === 0) {
-        await page.screenshot({ path: join(outDir, 'combat-detail.png'), fullPage: PLEINE_PAGE });
+      const etat = `${new Date(instant).toISOString()} (${densite}${pasAPasVu ? ', pas-à-pas terminé' : ''})`;
+      if (detaille) {
+        await controlerHauteur(page, etat, ROUTE_COMBAT);
+        // La capture de la preuve : l'arrivée, pas-à-pas terminé, à la première graine.
+        if (pasAPasVu && index === 0) {
+          await page.screenshot({ path: join(outDir, 'combat-detail.png'), fullPage: PLEINE_PAGE });
+        }
       }
-      // **Le pire cas** : ce que l'arrivée ne montre pas, c'est les Conditions. `détaillé` y ajoute
-      // leur nom, et c'est là que le plateau grossissait (#292).
-      await page.evaluate(poserLePireCasDetaille);
+      // **Le pire cas** : ce que l'arrivée ne montre pas, c'est les Conditions.
+      await page.evaluate(poserLePireCas, detaille);
       await page.waitForTimeout(300);
       await controlerHauteur(page, `${etat}, pire cas`, ROUTE_COMBAT);
       if (pasAPasVu && index === 0) {
-        await page.screenshot({ path: join(outDir, 'combat-detail-pire-cas.png'), fullPage: PLEINE_PAGE });
+        await page.screenshot({
+          path: join(outDir, detaille ? 'combat-detail-pire-cas.png' : 'combat-sobre-pire-cas.png'),
+          fullPage: PLEINE_PAGE
+        });
       }
       await context.close();
     }
@@ -399,15 +409,16 @@ async function mesurerDetaille(browser) {
 
 /**
  * Pose, dans la fiche de chaque camp, **les trois Conditions** qu'un Planqué peut porter ensemble
- * (Surcharge et Épuisement se cumulent avec une Condition d'état, SPEC-COMBAT-UI §4) et **trois
- * types de café** au Deck : le plus haut que `détaillé` puisse faire grossir la fiche.
+ * (Surcharge et Épuisement se cumulent avec une Condition d'état, SPEC-COMBAT-UI §4) et, en
+ * `détaillé`, **trois types de café** au Deck : le plus haut que la fiche puisse grossir.
  *
  * C'est le **DOM** qui reçoit ces éléments — le moteur n'est pas touché : atteindre ces
  * Conditions en jouant dépend de la graine et du hasard, et la mesure doit les voir à chaque fois.
- * Les classes sont celles que `StatusBadge` rend en `détaillé` (`status-chip`, `status-chip__nom`).
+ * Le balisage est celui de `StatusBadge` : une icône de 12 px, puis le nom — visible en `détaillé`
+ * (`status-chip__nom`), lu seulement par le lecteur d'écran en `sobre` (`sr-only`).
  * Passée à `page.evaluate` : aucune constante du module n'y est lisible.
  */
-function poserLePireCasDetaille() {
+function poserLePireCas(detaille) {
   for (const info of document.querySelectorAll('.poste__info')) {
     for (const [classe, nom] of [
       ['surcharge', 'Surcharge'],
@@ -416,10 +427,13 @@ function poserLePireCasDetaille() {
     ]) {
       const puce = document.createElement('span');
       puce.className = `status-chip status-chip--${classe}`;
+      const icone = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icone.setAttribute('width', '12');
+      icone.setAttribute('height', '12');
       const texte = document.createElement('span');
-      texte.className = 'status-chip__nom';
+      texte.className = detaille ? 'status-chip__nom' : 'sr-only';
       texte.textContent = nom;
-      puce.append(texte);
+      puce.append(icone, texte);
       info.append(puce);
     }
     const types = info.querySelector('.poste__machine-types');
@@ -458,6 +472,11 @@ async function mesurerAvecUnePression(browser, detaille = false) {
       } else {
         atteints += 1;
         await controlerHauteur(page, `${etat}, tour ${tour}`, ROUTE_COMBAT);
+        // **Le pire cas** (#321) : la barre y est à deux rangées, et les trois Conditions des deux
+        // camps y ont fait défiler l'écran de 23 px en `sobre`.
+        await page.evaluate(poserLePireCas, detaille);
+        await page.waitForTimeout(300);
+        await controlerHauteur(page, `${etat}, tour ${tour}, pire cas`, ROUTE_COMBAT);
         // Premier état atteint : c'est aussi la capture du tour (`combat-pression.png`).
         if (atteints === 1) {
           await page.screenshot({
@@ -763,8 +782,10 @@ try {
   // c'est là que « Fin du tour » passait sous la navigation.
   await mesurerAvecUnePression(browser);
 
-  // Le combat en mode `détaillé` (#292) : à l'arrivée, puis avec une Pression jouable.
-  await mesurerDetaille(browser);
+  // Le combat en mode `détaillé` (#292) : à l'arrivée, puis avec une Pression jouable ; et le pire
+  // cas de `sobre` (#321), qui n'est joué nulle part ailleurs.
+  await mesurerDensite(browser, true);
+  await mesurerDensite(browser, false);
   await mesurerAvecUnePression(browser, true);
 } finally {
   await browser.close();
