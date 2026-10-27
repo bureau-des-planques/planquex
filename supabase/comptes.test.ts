@@ -19,7 +19,9 @@
  *   (e) la table des comptes **n'est pas modifiable** par un non-administrateur ;
  *   (f) un compte **lit sa propre ligne**, pas celle d'un autre ;
  *   (g) la ligne naît **automatiquement** à la première connexion (`auth.users` →
- *       déclencheur), et les post-its **déjà en base** restent lisibles mais figés.
+ *       déclencheur), et les post-its **déjà en base** restent lisibles mais figés ;
+ *   (h) la **médaille de la période d'essai** (0016, D-130 (3)) est posée par le serveur, lue
+ *       par son compte, et **jamais** écrite par un client — elle ne se déduit pas d'une date.
  *
  * **Le contrôle mord** (#112) : chaque contrôle est neutralisé tour à tour — la 0005 est
  * relue, un motif précis est remplacé, puis rejouée — et le geste fautif doit alors donner
@@ -43,6 +45,10 @@ import {
 
 const MIGRATION_COMPTES = fichiersMigrations().find((sql) => sql.includes('create table if not exists public.comptes'));
 if (!MIGRATION_COMPTES) throw new Error('supabase/migrations/0005_comptes.sql introuvable');
+
+/** La médaille de la période d'essai (#346, D-130 (3)) — sa colonne, et sa fermeture. */
+const MIGRATION_MEDAILLE = fichiersMigrations().find((sql) => sql.includes('medaille_periode_essai'));
+if (!MIGRATION_MEDAILLE) throw new Error('supabase/migrations/0016_medaille_periode_essai.sql introuvable');
 
 const DECKS = {
   playerDeck: ['sse-medecin-travail', 'management-responsable-unite'],
@@ -319,6 +325,154 @@ describe('les comptes — la 0005 (#181, D-088)', () => {
   });
 });
 
+// ---------------------------------------------------------------------------------------------
+// La médaille de la période d'essai (0016, #346, D-130 (3))
+// ---------------------------------------------------------------------------------------------
+
+/** La médaille telle que la base la garde : le drapeau, et la date qui l'accompagne. */
+async function medailleDe(db: Base, cible: string) {
+  const lu = await db.query<{ medaille: boolean; le: unknown }>(
+    `select medaille_periode_essai as medaille, medaille_periode_essai_le as le
+       from public.comptes where id = $1`,
+    [cible]
+  );
+  return lu.rows[0];
+}
+
+/**
+ * Le geste du reset (D-130 (4)) : le serveur d'administration pose le drapeau **et** sa date,
+ * d'un seul `update` — la contrainte `comptes_medaille_a_sa_date` exige l'accord des deux.
+ */
+const attribuer = (db: Base, cible: string) =>
+  db.query(
+    `update public.comptes
+        set medaille_periode_essai = true,
+            medaille_periode_essai_le = now()
+      where id = $1`,
+    [cible]
+  );
+
+/** La tentative d'un client : il écrit lui-même les deux colonnes de la médaille. */
+const attribuerParClient = (db: Base, acteur: string, cible: string = acteur): Promise<Issue> =>
+  tenter(
+    db,
+    acteur,
+    `update public.comptes
+        set medaille_periode_essai = true,
+            medaille_periode_essai_le = now()
+      where id = $1 returning medaille_periode_essai`,
+    [cible]
+  );
+
+describe('la Médaille de la période d’essai — la 0016 (#346, D-130 (3))', () => {
+  it('un compte neuf n’a pas la médaille : fausse, et sans date', async () => {
+    const db = await base();
+    try {
+      await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+      await creerCompte(db, APPAREIL_C, { etat: 'en attente' });
+      for (const id of [APPAREIL_A, APPAREIL_C]) {
+        expect(await medailleDe(db, id), id).toEqual({ medaille: false, le: null });
+      }
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('elle ne se déduit pas de la date de création : deux comptes approuvés ensemble, un seul la reçoit', async () => {
+    const db = await base();
+    try {
+      await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+      await creerCompte(db, APPAREIL_B, { etat: 'approuve' });
+      // Les deux lignes naissent du même déclencheur, dans la même seconde : si la médaille se
+      // calculait sur `created_at`, les deux l'auraient. Elle ne l'ont pas.
+      expect((await medailleDe(db, APPAREIL_A)).medaille).toBe(false);
+      expect((await medailleDe(db, APPAREIL_B)).medaille).toBe(false);
+
+      await attribuer(db, APPAREIL_B);
+
+      // Le compte de l'alpha est récompensé ; celui qui a été approuvé après coup ne l'est pas.
+      const gagnant = await medailleDe(db, APPAREIL_B);
+      expect(gagnant.medaille).toBe(true);
+      expect(gagnant.le).not.toBeNull();
+      expect((await medailleDe(db, APPAREIL_A)).medaille).toBe(false);
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('le serveur l’attribue, et le compte la lit lui-même — le `select` couvre les colonnes neuves', async () => {
+    const db = await base();
+    try {
+      await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+      await attribuer(db, APPAREIL_A);
+
+      const lu = await avecAppareil(db, APPAREIL_A, () =>
+        db.query<{ medaille: boolean; le: unknown }>(
+          `select medaille_periode_essai as medaille, medaille_periode_essai_le as le
+             from public.comptes where id = $1`,
+          [APPAREIL_A]
+        )
+      );
+      expect(lu.rows).toHaveLength(1);
+      expect(lu.rows[0].medaille).toBe(true);
+      expect(lu.rows[0].le).not.toBeNull();
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('un client ne se l’attribue pas — et un administrateur non plus : la colonne n’est pas dans son grant', async () => {
+    const db = await base();
+    try {
+      await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+      await creerCompte(db, ADMIN, { etat: 'approuve', administrateur: true });
+
+      refuse(await attribuerParClient(db, APPAREIL_A), /permission denied/);
+      // L'administrateur passe la RLS (`est_administrateur()`) mais pas le droit de colonne :
+      // c'est le `grant`, et non la politique, qui ferme la médaille.
+      refuse(await attribuerParClient(db, ADMIN), /permission denied/);
+
+      expect((await medailleDe(db, APPAREIL_A)).medaille).toBe(false);
+      expect((await medailleDe(db, ADMIN)).medaille).toBe(false);
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('le drapeau et sa date ne se séparent pas : les deux lignes fausses sont refusées', async () => {
+    const db = await base();
+    try {
+      await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+      // La médaille sans sa date : on ne saurait plus quand elle a été remise.
+      await expect(
+        db.query(`update public.comptes set medaille_periode_essai = true where id = $1`, [APPAREIL_A])
+      ).rejects.toThrow(/comptes_medaille_a_sa_date/);
+      // La date sans la médaille : le drapeau qu'on lit mentirait.
+      await expect(
+        db.query(`update public.comptes set medaille_periode_essai_le = now() where id = $1`, [APPAREIL_A])
+      ).rejects.toThrow(/comptes_medaille_a_sa_date/);
+      expect(await medailleDe(db, APPAREIL_A)).toEqual({ medaille: false, le: null });
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('rejouée, la migration ne lève rien et n’efface aucune médaille', async () => {
+    const db = await base();
+    try {
+      await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+      await attribuer(db, APPAREIL_A);
+      const avant = await medailleDe(db, APPAREIL_A);
+
+      await db.exec(MIGRATION_MEDAILLE!);
+
+      expect(await medailleDe(db, APPAREIL_A)).toEqual(avant);
+    } finally {
+      await db.close();
+    }
+  });
+});
+
 describe('les post-its déjà en base (23/10/2026) restent lisibles et deviennent figés', () => {
   it('la 0005 ne les supprime pas, ne les rattache pas, et leur auteur anonyme ne peut plus écrire', async () => {
     // L'état d'avant la 0005 : 0001 à 0004, deux post-its d'un appareil anonyme.
@@ -367,6 +521,15 @@ function muter(motif: string, remplacement: string): string {
   const mutee = MIGRATION_COMPTES!.replaceAll(motif, remplacement);
   expect(mutee).not.toBe(MIGRATION_COMPTES);
   return migrations().replace(MIGRATION_COMPTES!, () => mutee);
+}
+
+/** Remplace un motif de la 0016 ; un motif absent fait échouer bruyamment. */
+function muterMedaille(motif: string, remplacement: string): string {
+  const occurrences = MIGRATION_MEDAILLE!.split(motif).length - 1;
+  expect(occurrences, `motif introuvable ou ambigu dans la 0016 : ${motif}`).toBe(1);
+  const mutee = MIGRATION_MEDAILLE!.replace(motif, () => remplacement);
+  expect(mutee).not.toBe(MIGRATION_MEDAILLE);
+  return migrations().replace(MIGRATION_MEDAILLE!, () => mutee);
 }
 
 const MUTATIONS: Array<{
@@ -462,13 +625,35 @@ const MUTATIONS: Array<{
         : issue;
     },
     attendu: 'accepte'
+  },
+  {
+    nom: '(h) grant élargi à la médaille → un administrateur se l’attribue depuis le client',
+    // L'administrateur est le cas qui prouve quelque chose : il passe la RLS (`est_administrateur()`),
+    // donc seule la liste de colonnes du `grant` le retient. La 0005 ne peut pas nommer les
+    // colonnes (elles n'existent pas encore) : la mutation ouvre le droit **dans la 0016**, après
+    // sa révocation — ce que ferait une migration qui « rouvrirait » la médaille au client.
+    sql: () =>
+      muterMedaille(
+        'revoke all (medaille_periode_essai, medaille_periode_essai_le) on public.comptes from authenticated;',
+        `revoke all (medaille_periode_essai, medaille_periode_essai_le) on public.comptes from authenticated;
+grant update (medaille_periode_essai, medaille_periode_essai_le) on public.comptes to authenticated;`
+      ),
+    geste: async (db) => {
+      const issue = await attribuerParClient(db, ADMIN);
+      // Une écriture refusée par la RLS ne lève pas : 0 ligne, et c'est le refus. Sans ce
+      // contrôle, la mutation passerait sans qu'aucune médaille soit écrite.
+      return issue.accepte && issue.lignes.length === 0
+        ? { accepte: false, message: '0 ligne écrite (la RLS a filtré)' }
+        : issue;
+    },
+    attendu: 'accepte'
   }
 ];
 
 describe('sur la vraie base, chaque geste fautif est refusé', () => {
-  // Huit bases PGlite de suite : large au-delà du défaut de 20 s quand la suite tourne en
+  // Neuf bases PGlite de suite : large au-delà du défaut de 20 s quand la suite tourne en
   // parallèle, et le temps n'est pas ce que ce test mesure.
-  it('les huit gestes', async () => {
+  it('les neuf gestes', async () => {
     for (const m of MUTATIONS) {
       const db = await base();
       try {

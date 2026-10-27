@@ -51,6 +51,8 @@ const EN_ATTENTE: Compte = {
   etat: 'en attente',
   raison: '',
   administrateur: false,
+  medaille_periode_essai: false,
+  medaille_periode_essai_le: null,
   created_at: '2026-10-23T10:00:00.000Z'
 };
 const APPROUVE: Compte = {
@@ -59,6 +61,8 @@ const APPROUVE: Compte = {
   etat: 'approuve',
   raison: '',
   administrateur: false,
+  medaille_periode_essai: false,
+  medaille_periode_essai_le: null,
   created_at: '2026-10-22T09:00:00.000Z'
 };
 const POSTIT = {
@@ -85,6 +89,8 @@ const ADMIN: Compte = {
   etat: 'approuve',
   raison: '',
   administrateur: true,
+  medaille_periode_essai: false,
+  medaille_periode_essai_le: null,
   created_at: '2026-10-21T09:00:00.000Z'
 };
 

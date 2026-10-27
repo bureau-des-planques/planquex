@@ -135,7 +135,7 @@
 | D-127 | 27/10/2026 | Pendant l'alpha, les Arrivées sont illimitées et gratuites : il… |
 | D-128 | 27/10/2026 | Une release par lot cohérent, jamais plus d'une par jour… |
 | D-129 | 27/10/2026 | Les états d'un ticket disent qui agit, pas où il… |
-| D-130 | 27/10/2026 | Le reset de la beta épargne le compte et récompense… |
+| D-130 | 27/10/2026 | ⚠ Note de lecture du 27/10/2026 — #346 : la… |
 | D-131 | 27/10/2026 | Une pull request venue d'ailleurs exige une relecture d'agent et… |
 | D-132 | 27/10/2026 | La feuille de route ouvre les liens du dépôt qui… |
 | D-133 | 27/10/2026 | pg_net retourne dans extensions, et les deux fonctions de déclencheur… |
