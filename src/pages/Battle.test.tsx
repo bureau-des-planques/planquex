@@ -440,6 +440,27 @@ describe('Battle — la barre d’action (#191)', () => {
     for (const bandeau of document.querySelectorAll('.banner')) expect(barre.contains(bandeau)).toBe(true);
   });
 
+  it('« Fin du tour » est sur la ligne de tête, jamais dans la rangée des gestes, Pression jouable ou non (#320)', () => {
+    // Une Pression jouable rallongeait la rangée des gestes ; « Fin du tour », dedans, passait sur une
+    // seconde rangée sous la barre de navigation (420 × 900). La position se mesure en capture
+    // (`npm run capturer`) ; ici, le contrat de structure : l'action principale n'est pas dans la
+    // rangée qui grandit, et cette rangée ne porte aucune Pression en double.
+    const { partie } = partieAvecPression();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    const tete = barre.querySelector('.combat-barre__tete') as HTMLElement;
+    const gestes = barre.querySelector('.combat-barre__gestes') as HTMLElement;
+    expect(tete).not.toBeNull();
+    expect(gestes).not.toBeNull();
+    expect(within(tete).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
+    expect(within(gestes).queryByRole('button', { name: 'Fin du tour' })).toBeNull();
+    expect(gestes.querySelector('.button--primary'), 'la Pression est dans la rangée des gestes').not.toBeNull();
+    // La phrase du journal partage la ligne de « Fin du tour » : elle ne lui prend pas une ligne de plus.
+    expect(tete.querySelector('.combat-barre__journal')).not.toBeNull();
+    expect(tete.compareDocumentPosition(gestes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('ne perd rien : une Pression à portée est un bouton de la barre, pas de la main', () => {
     const { partie, etat } = partieAvecPression();
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });

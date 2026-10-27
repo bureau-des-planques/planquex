@@ -816,6 +816,26 @@ export function Battle() {
   const inReach = useMemo(() => legalAttacks(state), [state]);
 
   /**
+   * La ligne de **portée** de la barre (« Hors de portée du café : … », « Pression déjà portée ») :
+   * `undefined` quand rien n'est à dire. Elle ne parle que quand c'est mon tour (en solo, elle ne
+   * décrit plus le Poste de la Direction). Elle vit sous la phrase du journal, à gauche de « Fin du
+   * tour » (#320), et non sur une ligne de plus.
+   */
+  const porteeLine =
+    myMove &&
+    myCard &&
+    isPlanque(myCard) &&
+    myCard.attacks.length > 0 &&
+    (mySide.hasAttacked || inReach.length < myCard.attacks.length)
+      ? mySide.hasAttacked
+        ? 'Pression déjà portée ce tour.'
+        : `Hors de portée du café : ${myCard.attacks
+            .filter((entry) => !inReach.includes(entry))
+            .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
+            .join(', ')}.`
+      : undefined;
+
+  /**
    * **Le dessus de mon Deck, regardé** (#162, D-079) : `undefined` quand mon dernier
    * geste n'était pas un regard. C'est *mon* Deck — l'adversaire n'y a jamais accès.
    */
@@ -1633,19 +1653,36 @@ export function Battle() {
         {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
             qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
             information temporaire n'a pas à occuper une bande de plus. */}
-        {lastLog && (
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.p
-              key={state.log.length}
-              className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-            >
-              {lastLog}
-            </motion.p>
-          </AnimatePresence>
+        {/* **« Fin du tour » vit sur cette ligne** (#320), à droite de la phrase du journal : c'est
+            l'action principale, et elle garde la même place à chaque état du tour. Quand une
+            Pression est jouable, la rangée des gestes dessous porte le café, la Rotation, le Talent
+            et la Pression — « Fin du tour » ne descend donc plus jamais sur une ligne de plus, sous
+            la barre de navigation (420 × 900, `npm run capturer` le mesure). */}
+        {(lastLog || porteeLine || turnActions.length > 0) && (
+          <div className="combat-barre__tete">
+            <div className="combat-barre__texte">
+              {lastLog && (
+                <AnimatePresence mode="popLayout" initial={false}>
+                  <motion.p
+                    key={state.log.length}
+                    className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 6 }}
+                    transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                  >
+                    {lastLog}
+                  </motion.p>
+                </AnimatePresence>
+              )}
+              {porteeLine && <p className="muted combat-barre__portee">{porteeLine}</p>}
+            </div>
+            {turnActions.map((action) => (
+              <span className="combat-barre__fin" key={JSON.stringify(action)}>
+                <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
+              </span>
+            ))}
+          </div>
         )}
 
         {state.pendingPromotion && (
@@ -1688,28 +1725,12 @@ export function Battle() {
           </section>
         )}
 
-        {/* `legalAttacks` lit le camp qui a la main : cette ligne ne parle donc que quand c'est
-            mon tour (en solo, elle ne décrit plus le Poste de la Direction). */}
-        {myMove &&
-          myCard &&
-          isPlanque(myCard) &&
-          myCard.attacks.length > 0 &&
-          (mySide.hasAttacked || inReach.length < myCard.attacks.length) && (
-            <p className="muted combat-barre__portee">
-              {mySide.hasAttacked
-                ? 'Pression déjà portée ce tour.'
-                : `Hors de portée du café : ${myCard.attacks
-                    .filter((entry) => !inReach.includes(entry))
-                    .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
-                    .join(', ')}.`}
-            </p>
-          )}
-
         {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
             Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
-            font pas quatre lignes), et les Pressions avec « Fin du tour » viennent à côté ou
-            dessous. La barre ne doit jamais recouvrir la main (`npm run capturer` le mesure). */}
-        {(boardActions.length > 0 || pressions.length > 0 || turnActions.length > 0) && (
+            font pas quatre lignes), et les Pressions viennent à côté. « Fin du tour » est sur la
+            ligne du journal, au-dessus (#320). La barre ne doit jamais recouvrir la main ni passer
+            sous la navigation (`npm run capturer` le mesure). */}
+        {(boardActions.length > 0 || pressions.length > 0) && (
           <div className="combat-barre__gestes">
             {boardActions.length > 0 && (
               <div className="actions actions--tight combat-barre__rang">
@@ -1732,11 +1753,6 @@ export function Battle() {
                 myCamp={myCamp}
                 onAction={play}
               />
-            ))}
-            {turnActions.map((action) => (
-              <span className="combat-barre__fin" key={JSON.stringify(action)}>
-                <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
-              </span>
             ))}
           </div>
         )}

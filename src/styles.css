@@ -2127,22 +2127,44 @@ h2 {
   padding: 0.3rem 0.7rem;
 }
 
-/* Les gestes du Poste : une ligne quand ils tiennent, deux sinon. */
+/* La ligne de tête (#320) : la phrase du journal à gauche, « Fin du tour » à droite. L'action
+   principale ne change donc jamais de ligne — c'est elle qui sortait sous la navigation quand une
+   Pression rallongeait la barre d'une rangée (420 × 900). */
+.combat-barre__tete {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+}
+
+/* La phrase du journal et la ligne de portée, l'une sous l'autre, à gauche du bouton : elles
+   partagent la hauteur du bouton (36 px) au lieu d'ajouter une ligne chacune. */
+.combat-barre__texte {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
+/* Les gestes du Poste : **une seule rangée**, jamais deux (#320). Ce qui ne tient pas défile ou
+   se raccourcit ; rien ne passe à la ligne, donc la hauteur de la barre ne dépend plus du
+   nombre de boutons. */
 .combat-barre__gestes {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.35rem;
 }
 
 /* La rangée café / Rotation / Talent défile plutôt que de passer à la ligne : la barre garde sa
-   hauteur. Elle prend la place que « Fin du tour » et les Pressions lui laissent. */
+   hauteur. Elle prend la place que les Pressions lui laissent (au moins 6 rem : de quoi lire et
+   toucher un bouton), et sa barre de défilement est masquée pour ne pas ajouter de hauteur. */
 .combat-barre .combat-barre__rang {
-  flex: 1 1 9rem;
+  flex: 1 1 6rem;
   flex-wrap: nowrap;
   min-width: 0;
   overflow-x: auto;
-  padding-bottom: 0.15rem;
+  scrollbar-width: none;
 }
 
 .combat-barre__rang .button {
@@ -2150,8 +2172,23 @@ h2 {
   white-space: nowrap;
 }
 
-/* « Fin du tour » reste à droite de sa ligne. */
+/* Une Pression se raccourcit (le nom prend une ellipse) plutôt que de pousser la rangée hors de
+   la barre ; son nom entier reste dans le texte du bouton, donc dans l'arbre d'accessibilité. */
+.combat-barre__gestes > .button {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.combat-barre__gestes > .button > span:not(.attack__dmg) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* « Fin du tour » reste à droite de sa ligne, entière. */
 .combat-barre__fin {
+  flex: none;
   margin-left: auto;
 }
 
