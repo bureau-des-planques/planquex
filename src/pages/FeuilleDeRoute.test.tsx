@@ -1,13 +1,13 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { APP_LABEL, APP_VERSION } from '@/version';
 import { NOTES_VERSIONS } from '@/data/versions';
 import { CRITERES_ALPHA, DECIDE_PLUS_TARD, JALONS, PAS_MAINTENANT } from '@/data/plan';
-import { FEATURES_PREVUES } from '@/data/plan-dev';
+import { FEATURES_PREVUES, type FeaturePrevue } from '@/data/plan-dev';
 import { FeuilleDeRoute } from '@/pages/FeuilleDeRoute';
 
 /**
@@ -15,18 +15,23 @@ import { FeuilleDeRoute } from '@/pages/FeuilleDeRoute';
  *
  * Elle **absorbe** les nouveautés de D-090 (le journal des versions) et y ajoute ce qui
  * ne se génère pas : l'étape en cours, les critères de sortie d'alpha (D-056), les jalons
- * (D-048) et ce qui est décidé pour plus tard (D-061). Les fonctionnalités prévues, elles,
- * viennent de `src/data/plan-dev.ts`, que `npm run plan:dev` prend aux issues `alpha`.
+ * (D-048) et ce qui est décidé pour plus tard (D-061). **Ce qui arrive** vient de
+ * `src/data/plan-dev.ts`, que `npm run plan:dev` prend aux issues **`alpha` et `beta`** :
+ * un ticket `beta` se travaille pendant l'alpha (#336).
  *
  * Ce test garde cinq choses, et chacune peut échouer :
  *
  * 1. **les blocs sont là**, avec leur contenu — un bloc vide ne renseigne personne ;
  * 2. **la version courante est celle de `package.json`**, lue par `APP_LABEL` — jamais un
  *    numéro recopié dans la page ;
- * 3. **aucun lien ne mène au dépôt** : il est privé, donc `github.com` s'y ouvrirait sur un
- *    `404` (D-097 (3)). Le numéro et le titre de l'issue suffisent ;
+ * 3. **aucun lien ne mène au dépôt** dans cette version : les liens sont le ticket #343
+ *    (D-132), pas celui-ci ;
  * 4. **la page vit hors de la garde** dans `src/App.tsx` — elle se lit sans compte ;
  * 5. **les modes parkés n'y sont pas** (D-019) : ils ne s'annoncent jamais.
+ *
+ * Et **l'étape de chaque chantier s'affiche** : un testeur doit pouvoir dire « pour
+ * l'alpha » de « pour la beta » sans deviner (#336). Le contrôle mord : une entrée privée
+ * de son étape n'affiche plus le mot.
  */
 const publiees = NOTES_VERSIONS.filter((note) => !note.brouillon);
 
@@ -73,9 +78,9 @@ describe('Feuille de route — les blocs de la page', () => {
     }
   });
 
-  it('montre les fonctionnalités prévues, par leur numéro et leur titre', () => {
+  it('montre ce qui arrive, avec le numéro, le titre et l’étape', () => {
     rendre();
-    expect(screen.getByRole('heading', { level: 2, name: /prévu/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: /ce qui arrive/i })).toBeTruthy();
     expect(FEATURES_PREVUES.length).toBeGreaterThan(0);
     for (const feature of FEATURES_PREVUES) {
       expect(screen.getAllByText(new RegExp(`#${feature.numero}`)).length, `issue ${feature.numero}`).toBeGreaterThan(
@@ -85,7 +90,64 @@ describe('Feuille de route — les blocs de la page', () => {
         screen.getAllByText(new RegExp(echapper(feature.titre))).length,
         `titre ${feature.numero}`
       ).toBeGreaterThan(0);
+      // L'étape est un des deux mots du jalon, jamais vide : le triage l'impose.
+      expect(['alpha', 'beta']).toContain(feature.etape);
     }
+  });
+
+  it('range chaque chantier sous son étape, et le dit en toutes lettres', () => {
+    // L'état réel du tracker change : on donne les deux étapes au rendu pour que le test
+    // dise la **règle** (les deux se lisent), pas l'état d'un jour.
+    const features: FeaturePrevue[] = [
+      { numero: 9001, titre: 'Un chantier de la boucle', etape: 'alpha' },
+      { numero: 9002, titre: 'Un chantier du PvP', etape: 'beta' }
+    ];
+    const { container } = render(
+      <MemoryRouter>
+        <FeuilleDeRoute features={features} />
+      </MemoryRouter>
+    );
+
+    const lignes = [...container.querySelectorAll('.feuille-de-route__arrivage')];
+    expect(lignes).toHaveLength(2);
+    const [ligneAlpha, ligneBeta] = lignes as HTMLElement[];
+    expect(within(ligneAlpha).getByText('alpha', { exact: true })).toBeTruthy();
+    expect(within(ligneBeta).getByText('beta', { exact: true })).toBeTruthy();
+    // Et pas l'inverse : le mot vient de l'entrée, pas de sa place dans la liste.
+    expect(within(ligneAlpha).queryByText('beta', { exact: true })).toBeNull();
+    expect(within(ligneBeta).queryByText('alpha', { exact: true })).toBeNull();
+    // Les deux groupes sont annoncés : l'ordre est l'alpha puis la beta.
+    expect(screen.getByRole('heading', { level: 3, name: /étape alpha/i })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 3, name: /étape beta/i })).toBeTruthy();
+  });
+
+  it('le contrôle mord : sans leur étape, les chantiers ne se rangent plus', () => {
+    // Une entrée amputée de son étape (ce que le générateur refuse désormais) ne doit pas
+    // emprunter le mot de sa voisine : c'est la preuve que le badge lit la donnée.
+    // La page affiche aussi les **jalons**, qui s'appellent `alpha` et `beta` : on regarde
+    // donc la section « Ce qui arrive », pas toute la page.
+    const sectionArrivee = () =>
+      screen.getByRole('heading', { level: 2, name: /ce qui arrive/i }).closest('section') as HTMLElement;
+
+    const entree: FeaturePrevue = { numero: 9003, titre: 'Un chantier sans étape', etape: 'beta' };
+    render(
+      <MemoryRouter>
+        <FeuilleDeRoute features={[entree]} />
+      </MemoryRouter>
+    );
+    expect(within(sectionArrivee()).getByText(/Un chantier sans étape/)).toBeTruthy();
+    expect(sectionArrivee().querySelectorAll('.feuille-de-route__etape')).toHaveLength(1);
+    cleanup();
+
+    const ampute = [{ numero: 9003, titre: 'Un chantier sans étape' } as unknown as FeaturePrevue];
+    render(
+      <MemoryRouter>
+        <FeuilleDeRoute features={ampute} />
+      </MemoryRouter>
+    );
+    // Le chantier n'est plus rangé sous aucune étape : il disparaît de la section.
+    expect(sectionArrivee().querySelectorAll('.feuille-de-route__etape')).toHaveLength(0);
+    expect(within(sectionArrivee()).queryByText(/Un chantier sans étape/)).toBeNull();
   });
 
   it('dit ce qui est décidé pour plus tard, et ce qui n’est pas pour maintenant', () => {
@@ -100,7 +162,7 @@ describe('Feuille de route — les blocs de la page', () => {
     }
   });
 
-  it('ne mène jamais vers le dépôt privé (D-097 (3))', () => {
+  it('ne mène jamais vers le dépôt — les liens sont le ticket #343 (D-132)', () => {
     const { container } = rendre();
     // Aucun `href` sortant : la page n'a que ses liens internes (retour au bureau).
     for (const lien of [...container.querySelectorAll('a')]) {

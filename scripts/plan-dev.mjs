@@ -3,19 +3,22 @@
  * **Les fonctionnalités prévues, prises à GitHub** — ticket #214, D-097 (3).
  *
  * La feuille de route (`/feuille-de-route`) montre ce qui arrive : les **issues `alpha`
- * ouvertes** du dépôt. Elles ne se recopient pas à la main — une liste tenue à la main
- * se désynchronise en silence — elles sont lues ici et écrites dans
- * `src/data/plan-dev.ts`, sur le patron de `npm run notes:versions` (D-090).
+ * et `beta` ouvertes** du dépôt. Le label dit **à quel jalon** un ticket appartient, pas
+ * quand on le travaille : un ticket `beta` se travaille pendant l'alpha (#336). Elles ne
+ * se recopient pas à la main — une liste tenue à la main se désynchronise en silence —
+ * elles sont lues ici et écrites dans `src/data/plan-dev.ts`, sur le patron de
+ * `npm run notes:versions` (D-090). Chaque entrée porte son étape.
  *
- * **Pourquoi un fichier embarqué plutôt qu'un appel à GitHub** : le dépôt est **privé**,
- * l'API répond `404` sans jeton (mesuré le 24/10/2026 pour les notes de version), et un
- * jeton dans le bundle se lit dans les DevTools. L'écran lit donc un fichier **commité**,
- * embarqué au build : il marche **hors ligne**, et il n'y a rien à configurer. Ce script
- * est le seul pont avec GitHub, et il tourne au build de l'auteur, jamais dans la CI.
+ * **Pourquoi un fichier embarqué plutôt qu'un appel à GitHub** : l'écran doit marcher
+ * **hors ligne**, et lire `FEATURES_PREVUES` ne demande **rien à configurer** — ni jeton,
+ * ni requête au chargement de la page, ni dépendance de plus dans le bundle. Le dépôt est
+ * public depuis D-118, donc un appel serait possible ; il rendrait l'écran dépendant du
+ * réseau et de l'API, pour une liste qui change quand une issue s'ouvre. Ce script est
+ * donc le seul pont avec GitHub, lancé au build de l'auteur, jamais dans la CI.
  *
- * **Sans lien** : le dépôt est privé, donc `#214` se lit mais `https://github.com/…` ne
- * s'ouvre pas pour un testeur (D-097 (3)). Le fichier ne porte donc **jamais** d'URL, et
- * le test le vérifie.
+ * **Sans lien** : le fichier ne porte **jamais** d'URL. Les liens vers le dépôt qui
+ * intéressent un testeur sont le ticket **#343** (D-132), pas celui-ci ; le test vérifie
+ * qu'aucune adresse ne s'est glissée ici en attendant.
  *
  * Usage :
  *   npm run plan:dev              écrit src/data/plan-dev.ts
@@ -30,14 +33,14 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const CIBLE = join(root, 'src/data/plan-dev.ts');
 
-/** Le libellé des issues qui entrent : celles de l'**étape en cours** (D-048). */
-export const LABEL = 'alpha';
+/** Les libellés des issues qui entrent : une **étape du projet**, et rien d'autre (D-048, #336). */
+export const ETAPES = ['alpha', 'beta'];
 
 /**
  * Une issue GitHub → une entrée de `plan-dev.ts`.
  *
- * Elle **lève** au lieu de tolérer une entrée vide : une puce sans titre ne dit rien, et
- * un générateur qui l'accepterait la publierait sans que personne le voie. C'est la garde
+ * Elle **lève** au lieu de tolérer une entrée vide ou sans étape : une puce sans titre ne
+ * dit rien, et une puce sans étape ne se range dans aucune des deux listes. C'est la garde
  * qui mord, et `scripts/plan-dev.test.ts` la confronte à une issue fautive.
  */
 export function entreeDe(issue) {
@@ -51,17 +54,41 @@ export function entreeDe(issue) {
     .replace(/\s+/g, ' ')
     .trim();
   if (!titre) throw new Error(`l’issue #${numero} n’a pas de titre`);
-  return { numero, titre };
+  const etape = etapeDe(issue);
+  if (!etape) {
+    throw new Error(`l’issue #${numero} ne porte aucune étiquette d’étape (${ETAPES.join(' ou ')})`);
+  }
+  return { numero, titre, etape };
+}
+
+/** L'étape d'une issue : la première des étiquettes connues qu'elle porte, sinon `null`. */
+function etapeDe(issue) {
+  const noms = (Array.isArray(issue?.labels) ? issue.labels : [])
+    .map((label) => (typeof label === 'string' ? label : label?.name))
+    .map((nom) => String(nom ?? '').toLowerCase());
+  return ETAPES.find((etape) => noms.includes(etape)) ?? null;
 }
 
 /**
- * Les issues **`alpha` ouvertes**, de la plus récente à la plus ancienne.
+ * Les issues **`alpha` et `beta` ouvertes**, de la plus récente à la plus ancienne.
  *
  * `gh` est injecté : le test n'appelle rien et ne dépend ni du réseau ni de l'état du
- * dépôt un jour donné.
+ * dépôt un jour donné. La recherche `label:alpha,beta` est un **OU** : un ticket ne porte
+ * qu'une étape (le triage l'interdit), et c'est `entreeDe` qui la lit dans ses étiquettes.
  */
 export function lireIssues(gh = ghJson) {
-  const liste = gh(['issue', 'list', '--label', LABEL, '--state', 'open', '--limit', '200', '--json', 'number,title']);
+  const liste = gh([
+    'issue',
+    'list',
+    '--search',
+    `label:${ETAPES.join(',')}`,
+    '--state',
+    'open',
+    '--limit',
+    '200',
+    '--json',
+    'number,title,labels'
+  ]);
   if (!Array.isArray(liste)) throw new Error('gh n’a pas rendu une liste d’issues');
   return liste.map(entreeDe).sort((a, b) => b.numero - a.numero);
 }
@@ -72,43 +99,53 @@ function ghJson(args) {
   } catch (erreur) {
     stop(
       `gh a échoué (${args.join(' ')}) : ${String(erreur.stderr ?? erreur.message).trim()}\n` +
-        '  Vérifie `gh auth status` — le dépôt est privé, donc le jeton est nécessaire.'
+        '  Vérifie `gh auth status` — la lecture des issues demande une session GitHub.'
     );
   }
 }
 
-/** Le fichier entier : l'en-tête, le type, la liste. Aucune URL, jamais (D-097 (3)). */
+/** Le fichier entier : l'en-tête, le type, la liste. Aucune URL, jamais (#343, D-132). */
 export function rendreFichier(features) {
   const corps = features
-    .map((feature) => `  {\n    numero: ${feature.numero},\n    titre: ${q(feature.titre)}\n  }`)
+    .map(
+      (feature) =>
+        `  {\n    numero: ${feature.numero},\n    titre: ${q(feature.titre)},\n    etape: ${q(feature.etape)}\n  }`
+    )
     .join(',\n');
   return `/**
- * **Les fonctionnalités prévues** — ce que la feuille de route annonce (D-097 (3), #214).
+ * **Ce qui arrive** — les chantiers prévus, par étape (D-097 (3), #214, #336).
  *
  * **Fichier généré : ne pas éditer à la main.** Il est écrit par \`npm run plan:dev\`
- * (\`scripts/plan-dev.mjs\`) à partir des **issues \`alpha\` ouvertes** du dépôt, qui
- * restent la source de ce qui arrive. Fermer une issue la retire de cette liste à la
- * génération suivante.
+ * (\`scripts/plan-dev.mjs\`) à partir des **issues \`alpha\` et \`beta\` ouvertes** du
+ * dépôt, qui restent la source de ce qui arrive. Le label d'étape dit **à quel jalon un
+ * ticket appartient**, pas quand on le travaille : un ticket \`beta\` se travaille pendant
+ * l'alpha. Fermer une issue la retire de cette liste à la génération suivante.
  *
- * **Pourquoi un fichier embarqué plutôt qu'un appel à GitHub** : le dépôt est **privé**,
- * l'API répond \`404\` sans jeton, et un jeton dans le bundle se lit dans les DevTools.
- * L'écran lit donc ce fichier, embarqué au build : il marche **hors ligne**. Le pont avec
+ * **Pourquoi un fichier embarqué plutôt qu'un appel à GitHub** : l'écran marche
+ * **hors ligne**, et il n'y a **rien à configurer** — ni jeton, ni requête au chargement.
+ * Le dépôt est public depuis D-118, donc un appel serait possible ; il rendrait l'écran
+ * dépendant du réseau pour une liste qui bouge quand une issue s'ouvre. Le pont avec
  * GitHub est le script, lancé au build de l'auteur — jamais dans la CI, qui n'a ni \`gh\`
  * ni réseau vers GitHub.
  *
- * **Sans lien** : un testeur lit \`#214\` et son titre ; une adresse du dépôt ne
- * l'ouvrirait pas, le dépôt étant privé (D-097 (3)). Aucune URL n'est donc écrite ici, et
- * \`scripts/plan-dev.test.ts\` le vérifie.
+ * **Sans lien** : ce fichier ne porte **aucune URL**. Les liens vers le dépôt qui
+ * intéressent un testeur sont un autre ticket, **#343** (D-132) ;
+ * \`scripts/plan-dev.test.ts\` vérifie qu'aucune adresse ne s'est glissée ici.
  */
+
+/** Une étape du projet : le jalon auquel un chantier appartient (D-048). */
+export type EtapeProjet = 'alpha' | 'beta';
 
 export interface FeaturePrevue {
   /** Le numéro de l'issue, affiché \`#214\` : c'est ce qui permet de la retrouver. */
   numero: number;
   /** Le titre de l'issue, sur une ligne. */
   titre: string;
+  /** L'étape à laquelle le chantier appartient — affichée à côté de son numéro. */
+  etape: EtapeProjet;
 }
 
-/** Les issues \`alpha\` ouvertes, **de la plus récente à la plus ancienne**. */
+/** Les issues \`alpha\` et \`beta\` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
 ${corps}
 ];
@@ -168,9 +205,9 @@ if (estEntree) {
     }
     const ecart = divergence(actuel, contenu);
     if (ecart) stop(ecart);
-    console.log(`✔ src/data/plan-dev.ts est à jour (${features.length} issue(s) alpha ouverte(s))`);
+    console.log(`✔ src/data/plan-dev.ts est à jour (${features.length} issue(s) alpha ou beta ouverte(s))`);
   } else {
     writeFileSync(CIBLE, contenu);
-    console.log(`✔ src/data/plan-dev.ts écrit — ${features.length} issue(s) alpha ouverte(s) sur GitHub`);
+    console.log(`✔ src/data/plan-dev.ts écrit — ${features.length} issue(s) alpha ou beta ouverte(s) sur GitHub`);
   }
 }

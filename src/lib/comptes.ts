@@ -41,6 +41,14 @@ export interface Compte {
   etat: EtatCompte;
   raison: string;
   administrateur: boolean;
+  /**
+   * La « Médaille de la période d'essai » (0016, D-130 (3)) : posée par le reset de la beta,
+   * **jamais** par le client — la colonne n'est pas dans ses droits d'écriture. Fausse pour un
+   * compte qui n'a pas connu l'alpha, et pour une base qui n'a pas encore la 0016.
+   */
+  medaille_periode_essai: boolean;
+  /** La date d'attribution de la médaille, ou `null` — les deux colonnes vont ensemble. */
+  medaille_periode_essai_le: string | null;
   /** L'arrivée du compte, telle que la base la donne (ISO 8601). */
   created_at: string;
 }
@@ -117,6 +125,11 @@ export function lireCompte(ligne: unknown): Compte | null {
     raison: typeof ligne.raison === 'string' ? ligne.raison : '',
     // Le drapeau vient de la base ; un client ne peut ni l'écrire ni le deviner.
     administrateur: ligne.administrateur === true,
+    // La médaille vient de la base pour la même raison (0016, D-130 (3)) : une base qui ne l'a
+    // pas encore rend `undefined`, et l'écran n'affiche alors rien.
+    medaille_periode_essai: ligne.medaille_periode_essai === true,
+    medaille_periode_essai_le:
+      typeof ligne.medaille_periode_essai_le === 'string' ? ligne.medaille_periode_essai_le : null,
     created_at: typeof ligne.created_at === 'string' ? ligne.created_at : ''
   };
 }

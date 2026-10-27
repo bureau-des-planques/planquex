@@ -107,6 +107,8 @@ const COMPTE: Compte = {
   etat: 'approuve',
   raison: '',
   administrateur: false,
+  medaille_periode_essai: false,
+  medaille_periode_essai_le: null,
   created_at: '2026-10-20T10:00:00.000Z'
 };
 
