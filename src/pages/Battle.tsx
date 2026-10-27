@@ -45,6 +45,7 @@ import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
+import { phraseDePortee } from './portee';
 import { SceneAttaque } from '@/animation/SceneAttaque';
 import type { EffetCombat } from '@/components/effets-combat';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
@@ -835,20 +836,17 @@ export function Battle() {
    * `undefined` quand rien n'est à dire. Elle ne parle que quand c'est mon tour (en solo, elle ne
    * décrit plus le Poste de la Direction). Elle vit sous la phrase du journal, à gauche de « Fin du
    * tour » (#320), et non sur une ligne de plus.
+   *
+   * La phrase elle-même vit dans `./portee` (#324) : six conditions en ternaire imbriqué dans un
+   * fichier déjà gros, c'était de la Feature Envy vers le moteur. Ici, on ne fait que lui passer
+   * les faits — mon tour, mon Poste, la Pression consommée, ce que le café couvre.
    */
-  const porteeLine =
-    myMove &&
-    myCard &&
-    isPlanque(myCard) &&
-    myCard.attacks.length > 0 &&
-    (mySide.hasAttacked || inReach.length < myCard.attacks.length)
-      ? mySide.hasAttacked
-        ? 'Pression déjà portée ce tour.'
-        : `Hors de portée du café : ${myCard.attacks
-            .filter((entry) => !inReach.includes(entry))
-            .map((entry) => `${entry.name} (${entry.cost.map(cafeLabel).join(' · ')})`)
-            .join(', ')}.`
-      : undefined;
+  const porteeLine = phraseDePortee({
+    aMoi: myMove,
+    poste: myCard,
+    dejaPortee: mySide.hasAttacked,
+    enPortee: inReach
+  });
 
   /**
    * **Le dessus de mon Deck, regardé** (#162, D-079) : `undefined` quand mon dernier
