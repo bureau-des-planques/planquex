@@ -63,7 +63,6 @@ export const NOTES_VERSIONS: NoteVersion[] = [
     version: '0.1.14',
     date: '2026-10-27',
     titre: 'Le combat se lit à 420 px, et le café se voit',
-    brouillon: true,
     points: [
       {
         groupe: 'Le combat',
@@ -107,7 +106,23 @@ export const NOTES_VERSIONS: NoteVersion[] = [
       },
       {
         groupe: 'L’alpha',
+        texte: 'Les post-its arrivent dans le salon #comite du serveur des testeurs : un post-it neuf, et chaque changement de statut.'
+      },
+      {
+        groupe: 'L’alpha',
         texte: 'Les textes qui parlent du testeur de l’alpha disent « testeur » partout, là où l’ancien terme traînait encore.'
+      },
+      {
+        groupe: 'Corrections de bugs',
+        texte: 'Le menu ⋯ ne déplace plus le plateau pendant un combat.'
+      },
+      {
+        groupe: 'Corrections de bugs',
+        texte: 'Une carte soulevée au survol ne fait plus bouger le bouton sous le curseur.'
+      },
+      {
+        groupe: 'Corrections de bugs',
+        texte: 'En mode « sobre », trois Conditions posées de chaque côté ne font plus défiler l’écran.'
       }
     ]
   },
