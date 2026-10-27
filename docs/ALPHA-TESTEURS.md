@@ -1,4 +1,4 @@
-# Message aux testeurs de l'alpha — **Alpha · 0.1.13**
+# Message aux testeurs de l'alpha — **{libellé}**
 
 **Adresse** : https://planquex.4k7.org
 
@@ -101,7 +101,7 @@ nous permet de **suivre ce que tu remontes** d'une fois à l'autre. Sans pseudo,
 
 Et le point qui compte le plus :
 
-> **Recopie ta version.** Elle est tout en bas de **Réglages** (par exemple `Alpha · 0.1.13`).
+> **Recopie ta version.** Elle est tout en bas de **Réglages**, après « Alpha · ».
 > Sans elle, on ne sait pas si ce que tu signales existe encore aujourd'hui : c'est le seul
 > repère qui nous dit quoi corriger.
 
