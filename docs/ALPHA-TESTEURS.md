@@ -73,8 +73,8 @@ deux parties : se donner rendez-vous pour une partie à deux, poser une question
 qui marche. Le lien est dans **Réglages** (« Le serveur des testeurs ») et au pied du
 **comité**.
 
-**Invitation permanente** : `<https://discord.gg/…>` — jamais à expiration, donc un lien collé
-dans un message reste valable.
+**Invitation permanente** : <https://discord.gg/NvfrzCeJee> — jamais à expiration, donc un lien
+collé dans un message reste valable.
 
 C'est **facultatif** : le jeu se joue sans, et le mur reste l'endroit où un retour est
 **suivi**. Sur Discord, ce sont les règles du serveur qui s'appliquent, et la page
