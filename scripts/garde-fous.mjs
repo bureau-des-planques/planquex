@@ -263,7 +263,7 @@ export const MUTATIONS = [
     fichier: 'src/styles.css',
     // SPEC-COMBAT-UI §6.8.3 : le chiffre de Stress ne recouvre jamais une cible plus de 700 ms,
     // et aucun effet ne dépasse 800 ms. Le test lit **toutes** les durées d'`animation` de la feuille.
-    motif: 'animation: stress-monte 700ms ease-out 1 both;',
+    motif: 'animation: stress-monte 500ms ease-out 1 both;',
     remplacement: 'animation: stress-monte 1600ms ease-out 1 both;',
     tests: ['src/components/effets-combat.test.ts'],
     garde:

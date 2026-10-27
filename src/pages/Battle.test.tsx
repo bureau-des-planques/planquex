@@ -1340,6 +1340,22 @@ describe('Battle — les effets de la scène et leur repli (#192)', () => {
 
     expect(container.querySelector('.pile--deck.is-piochante')).not.toBeNull();
   });
+
+  it('« Fin du tour » change de libellé et de teinte avec la main (T10, #293)', () => {
+    const { partie } = partieCommencee();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+
+    // À toi : le libellé court, la teinte « à toi ».
+    const aToi = screen.getByRole('button', { name: 'Fin du tour' });
+    expect(aToi).toHaveClass('button--fin', 'is-a-toi');
+    expect(aToi).not.toHaveClass('is-direction');
+
+    // En attente : le tour passe à la Direction avant que son délai ne l'ait fait jouer.
+    fireEvent.click(aToi);
+    const enAttente = screen.getByRole('button', { name: /Passer le tour de la Direction/ });
+    expect(enAttente).toHaveClass('button--fin', 'is-direction');
+    expect(enAttente).not.toHaveClass('is-a-toi');
+  });
 });
 
 /**

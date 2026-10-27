@@ -13,8 +13,8 @@ import type { BattleState, CardInstance, PlayerId } from '@/data/types';
  * cinquième effet : `MAX_EFFETS_SIMULTANES` est un refus, pas une consigne de style.
  */
 
-/** Le chiffre de Stress : moins de 800 ms, une fois, puis retiré du DOM. */
-export const DUREE_STRESS_MS = 700;
+/** Le chiffre de Stress : 500 ms (T10), une fois, puis retiré du DOM. */
+export const DUREE_STRESS_MS = 500;
 
 /** La traînée de craquage : une seule, courte. */
 export const DUREE_TRAINEE_MS = 500;

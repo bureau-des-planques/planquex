@@ -68,7 +68,7 @@ describe('useEffetsDeCombat — le chiffre vit moins de 800 ms puis quitte le DO
     vi.useRealTimers();
   });
 
-  it('apparaît une fois, reste 700 ms, puis est retiré — donc pas d’empilement au troisième coup', () => {
+  it('apparaît une fois, reste 500 ms, puis est retiré — donc pas d’empilement au troisième coup', () => {
     const depart = avant();
     render(<Harnais depart={depart} suivant={apresUnCoup(depart)} sansMouvement={false} />);
 
@@ -79,7 +79,7 @@ describe('useEffetsDeCombat — le chiffre vit moins de 800 ms puis quitte le DO
     expect(chiffre).toHaveTextContent('+30');
     expect(chiffre).toHaveAttribute('data-anime', 'true');
 
-    act(() => vi.advanceTimersByTime(699));
+    act(() => vi.advanceTimersByTime(499));
     expect(document.querySelectorAll('[data-nature="stress"]')).toHaveLength(1);
 
     act(() => vi.advanceTimersByTime(1));
