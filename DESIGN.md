@@ -57,7 +57,7 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--warn` | `#e0a33e` | avertissement (deck de test, fin perdue) |
 | `--danger` | `#e06a4e` | erreur |
 
-### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196)
+### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196 ; pastille de café, étiquettes et plancher de `--fs-2xs` rejoués le 27/10/2026, #290)
 
 Ratios WCAG calculés sur les paires réelles du thème (formule de luminance relative
 WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
@@ -95,6 +95,15 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | `--accent` (pastilles de café) sur feutre `--scene-felt` | 5.12 | AA |
 | `--gold` sur feutre `--scene-felt` | 8.74 | AAA |
 | `--scene-danger` sur feutre (filet d'état, non-texte) | 4.36 | **filet seulement** : 3:1 ✓, texte ✗ |
+| **Pastille de café** (#290) : la couleur de faction contre son **liseré sombre** `--bg-deep` — les dix `FACTION_META.color` | **3,27 à 8,09** | 3:1 non-texte ✓ — le pire est la Direction (`#5b6472`, 3,27) ; le meilleur Amélioration continue (8,09) |
+| Pastille de café : anneau `--text` contre le liseré `--bg-deep` | 16.79 | AAA |
+| Pastille de café : anneau `--text` sur les trois feutres (`--scene-felt-deep` 15.83, `--scene-felt` 14.11, `--scene-felt-lit` 7.73) | **7,73 à 15,83** | 3:1 non-texte ✓ — c'est l'anneau, non la teinte, qui fait exister la pastille sur la table |
+| Pastille **vide** ou incolore : bord pointillé `--text` sur `--scene-felt-lit` | 7.73 | 3:1 non-texte ✓ (avant : `--text-dim`, **2,77** ✗) |
+| **Avant #290** : la couleur nue de la Direction sur `--scene-felt` / `--scene-felt-lit` | 2.75 / 1.51 | **✗ sous 3:1** : c'est la cause de « les couleurs du café ne se voient pas » (vrac du 27/10) ; corrigé par l'anneau ci-dessus |
+| Pastille de café dans le bouton primaire : liseré `--bg-deep` sur `--accent` | 6.10 | 3:1 non-texte ✓ (l'anneau crème y tombe à 2,75 : il est **décoratif**, c'est le liseré qui découpe la pastille) |
+| Étiquette « SEUIL » : `--text` sur la plaque `rgb(7 12 22 / 72 %)` posée sur une illustration **blanche** (pire cas, fond rendu `#4c5057`) | 6.93 | AA — avant : `--text-muted`, **3,40** ✗ au pire cas |
+| Chiffre du Seuil : `--gold-soft` sur la même plaque, pire cas | 5.71 | AA |
+| Étiquette « Jouable » de la main : `--gold-soft` sur teinte or 18 % de `--bg-raised` / de `--scene-card` | 8.32 / 7.72 | AAA |
 
 Méthode : luminance relative et ratio de la formule WCAG 2.1 calculés sur les valeurs hexadécimales
 de `src/styles.css` (bloc `.battle`, jetons `--scene-*` de #190) et de `:root` ; pastilles :
@@ -128,7 +137,7 @@ d'information. #196 avait mesuré **23 nœuds de texte visibles sous 11,2 px** �
 | Numéro de Seuil | 9,6 px | **11,2 px** | **réglé** — c'est une décision (avant de craquer), pas un ornement |
 | Chiffre de Stress (`détaillé`) | 9,92 px | **11,2 px** | **réglé** — une mesure se lit |
 | Nom d'une Condition | 9,92 px | **11,2 px** | **réglé** — la règle se lit, elle ne se devine pas |
-| Mot « Seuil », étiquettes de pile, nom du camp sur la piste, types de café, nature dans la pose | 6,7 à 10,2 px | inchangés | **acceptables** : information répétée à ≥ 0.7rem ou dans la fiche |
+| Mot « Seuil », étiquettes de pile, nom du camp sur la piste, types de café, nature dans la pose | 6,7 à 10,2 px | **9,92 px** (`--fs-2xs`) partout, **11,2 px** pour les types de café du `détaillé` | **réglé en #290** — le mot « Seuil » (0,42 rem, **6,7 px**), l'emblème de faction (0,55 rem) et le nom du camp sur la piste (0,6 rem) étaient les trois seules règles du combat sous `--fs-2xs` ; elles y sont |
 
 **Ce qui reste, dit franchement** : un seul texte porteur d'information est encore sous le plancher,
 le **nom du Planqué au Banc** (9,92 px), et c'est un arbitrage de place, pas un oubli : à 56 px de
@@ -139,6 +148,28 @@ large et deux lignes, `--fs-xs` amputerait le nom au milieu d'un mot. Le passage
 La règle « aucun
 texte porteur d'information sous `--fs-xs` » **n'est donc pas satisfaite** : c'est une dette
 d'écran, pas une description du système.
+
+**Le plancher du combat est `--fs-2xs`, et il est gardé (#290, 27/10/2026).** Deux choses sont
+distinctes : le plancher **maison** d'un texte porteur d'information reste `--fs-xs` (dette ci-dessus,
+inchangée) ; le plancher **mécanique** du combat — ce qu'aucune règle `.battle`, `.board`, `.poste`,
+`.piste`, `.pile`, `.hand`, `.card--plateau`, `.combat-*`… n'a le droit de descendre sous — est
+`--fs-2xs` (0,62 rem = 9,92 px). `src/styles-combat.test.ts` lit la feuille, **échoue** si une
+déclaration passe dessous (il voit une règle de 0,42 rem comme de 8 px : le contrôle mord) et a été vu
+**rouge** avant la correction sur trois règles (0,42 / 0,55 / 0,6 rem). Mesure à l'écran, 420 × 900,
+arrivée **et** tour 3 avec un café attaché : **aucun nœud de texte visible sous 9,92 px** (le plus petit
+est 9,92 px : noms du Banc, emblèmes, « Deck » / « Rebut », noms des camps de la piste). Ce que la
+mesure ne prouve pas : les pseudo-éléments (`::before` « SEUIL ») ne sont pas des nœuds de texte, c'est
+le test de la feuille qui les couvre.
+
+**La pastille de café (#290).** Elle faisait **8 px** (`.pip`) avec un filet noir à 35 % : la couleur de
+la Direction (`#5b6472`) y tombait à **1,51:1** du centre éclairé de la table, donc le café s'y fondait
+— c'est la plainte du vrac du 27/10 (« les couleurs du café ne se voient pas »). Dans `.battle` elle
+fait maintenant **14 px** (Pressions, barre d'action) et **18 px** dans la fiche du camp (cafés attachés,
+Machine), cernée d'un liseré sombre puis d'un **anneau crème** : la pastille existe par son anneau
+(7,73 à 15,83:1), et sa teinte par son liseré (3,27 à 8,09:1) — ratios en §1.5. **Ce qui reste, dit
+franchement** : la teinte seule ne distingue toujours pas deux factions voisines pour une personne
+daltonienne ; le nom du type est dans le `title`, l'`aria-label` et l'inspecteur, pas sur la pastille.
+Un glyphe de faction dans la pastille serait une autre décision (place : 18 px).
 
 Le bouton primaire a été **corrigé** le 23/10/2026 (#131) : son haut, éclairci au blanc, donnait
 **3.1:1** sous le texte blanc — le détecteur d'Impeccable **en navigateur** (`npx impeccable detect
@@ -194,7 +225,7 @@ rareté, `.card__face` est la carte elle-même.
 - Face : rayon 6 px, filet noir intérieur, `gap` 0.3rem ; chaque bloc porte son propre espacement horizontal (0.4rem).
 - Illustration : **elle prend l'espace restant** (`flex`), rayon 4 px, filet interne double (noir à l'extérieur, clair à l'intérieur), cadrage **haut** (`50% 28%`) — les illustrations sont des portraits.
 - Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
-- Pips de café : 8 px, `gap` 2 px.
+- Pips de café : 8 px, `gap` 2 px — **hors du combat** ; dans `.battle` : 14 px (18 px dans la fiche du camp), anneau crème, `gap` 0,3 rem (#290).
 
 ### 2.3 États
 
