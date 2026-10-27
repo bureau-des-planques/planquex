@@ -540,13 +540,14 @@ Le « planqué » est représenté **avachi à son poste**, un café à la main.
 **Café** est le motif maison : elle revient dans le monogramme, dans le logo de la barre
 du haut et dans les pips de coût.
 
-### 5.1 Les trois fichiers
+### 5.1 Les fichiers
 
 | Fichier | Contenu | Usage |
 |---|---|---|
 | `public/favicon.svg` | monogramme **BP** en dégradé or, cadre or sur bleu nuit (32×32) | favicon, lisible à 16 px |
 | `public/icon-192.svg` | la scène complète, `viewBox` 512 (rendue en 192) | icône PWA |
 | `public/icon-512.svg` | la scène complète + le mot « Bureau des Planqués » | icône PWA, écran d'accueil |
+| `design/logo/cafe-clair.svg`, `cafe-sombre.svg` | **la tasse seule, en trait** : godet, anse, trois vapeurs, arc d'ombre ; aucun remplissage, trait de 5 sur un `viewBox` 64. Encre `--bg` pour le thème clair, or `--gold-soft` pour le sombre | **la marque du README** (#328), choisie par `<picture>` + `prefers-color-scheme` — l'or sur fond clair tombe à 1,9:1. Ce n'est **ni** le favicon **ni** l'icône PWA |
 
 La scène, dans sa version 512 : salle bleu nuit, cadre or, écran de contrôle à gauche,
 dossier de chaise, **le Planqué** (veste, chemise blanche, cravate or, yeux fermés),
@@ -563,6 +564,10 @@ bureau, **tasse de café or** fumante, plante d'angle, puis le nom en bas.
   jamais une personne (`AGENTS.md` §4.2).
 - La barre du haut reprend la **tasse** seule (`src/components/Layout.tsx`) : même dessin,
   simplifié pour tenir dans 30 px.
+- La **marque du README** (`design/logo/`) reprend la tasse de l'icône du serveur des testeurs
+  (dessinée par `icones_jeu.py`, dossier de session `planquex-discord`, hors dépôt) en **trait** :
+  mêmes trois vapeurs, même anse qui descend au bas du godet ; l'ombre remplie devient un arc et le
+  reflet disparaît, qui ferait une ligne de trop à 24 px.
 
 ---
 
