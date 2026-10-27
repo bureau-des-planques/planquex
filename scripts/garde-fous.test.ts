@@ -50,6 +50,8 @@ const SCRIPT = join(racine, LANCER);
 // #287 : l'inspecteur du combat (T4) — une infobulle de lecture ne porte aucun bouton (le
 // patron ARIA). L'invariant vient de #188 ; le ticket de la table est celui du test autonome
 // qui le garde désormais, sans passer par `Battle.tsx`.
+// #289 : la barre d'action et le menu `⋯` (T6) — le panneau se superpose au plateau, il ne le
+// pousse pas en rentrant dans le flux (vrac du 27/10/2026).
 // #192 : les effets de la scène — aucune animation de plus de 800 ms (SPEC-COMBAT-UI §6.8.3).
 // #254 : le mur — un geste refusé défait ce que l'optimiste avait bougé (useMur).
 // #299 : les problèmes connus de la release (D-119) — un post-it `fait` ne reste pas dans
@@ -57,7 +59,7 @@ const SCRIPT = join(racine, LANCER);
 // #317 : la porte du serveur des testeurs (D-118) — une invitation vide ne rend rien, et le
 // lien qui est rendu porte `noreferrer noopener` : deux entrées, une par moitié de la règle.
 const TICKETS_ATTENDUS = [
-  49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 299, 317, 317
+  49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 299, 317, 317
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
@@ -75,7 +77,7 @@ function verifier(args: string[]): { ok: boolean; sortie: string } {
     return { ok: true, sortie };
   } catch (erreur) {
     const e = erreur as { stdout?: string; stderr?: string; message?: string };
-    return { ok: false, sortie: `${e.stdout ?? ''}${e.stderr ?? ''}${e.stdout || e.stderr ? '' : e.message ?? ''}` };
+    return { ok: false, sortie: `${e.stdout ?? ''}${e.stderr ?? ''}${e.stdout || e.stderr ? '' : (e.message ?? '')}` };
   }
 }
 
@@ -132,7 +134,12 @@ describe('Garde-fous — la table est ancrée et bornée (#112)', () => {
     const empreinte = () =>
       [...new Set(fichiers)]
         .sort()
-        .map((fichier) => `${fichier}:${createHash('sha1').update(readFileSync(join(racine, fichier))).digest('hex')}`)
+        .map(
+          (fichier) =>
+            `${fichier}:${createHash('sha1')
+              .update(readFileSync(join(racine, fichier)))
+              .digest('hex')}`
+        )
         .join('\n');
 
     const avant = empreinte();

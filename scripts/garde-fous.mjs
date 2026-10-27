@@ -243,6 +243,21 @@ export const MUTATIONS = [
       'un bouton dans une infobulle est un élément focusable qui se dérobe au survol : le lecteur d’écran ne l’atteint plus, et l’APG le proscrit — une régression silencieuse, sans aucun test visuel pour la voir'
   },
   {
+    ticket: 289,
+    titre: 'le panneau du menu `⋯` rentre dans le flux et pousse le plateau',
+    fichier: 'src/styles.css',
+    // SPEC-COMBAT-UI T6, vrac du 27/10/2026 : le panneau s'accroche à la barre d'état et se
+    // **superpose** au plateau. En `static`, il reprend sa place dans le flux, et l'ouverture
+    // du menu déplace les cartes — le défaut que le ticket corrige. Le motif porte les trois
+    // lignes du bloc (`position`, `right`, `top`) parce que `position: absolute;` seul n'est
+    // pas unique dans la feuille.
+    motif: '  position: absolute;\n  right: 0;\n  top: calc(100% + 0.25rem);',
+    remplacement: '  position: static;\n  right: 0;\n  top: calc(100% + 0.25rem);',
+    tests: ['src/pages/Battle.test.tsx'],
+    garde:
+      'un menu qui pousse le plateau est exactement ce que le vrac du 27/10 reprochait à l’écran : le contenu doit se recouvrir, pas faire sauter les cartes sous le doigt'
+  },
+  {
     ticket: 192,
     titre: 'une animation d’effet de combat dure plus de 800 ms',
     fichier: 'src/styles.css',
