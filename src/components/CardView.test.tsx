@@ -1,9 +1,57 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { ALL_CARDS, FACTION_META, RARITY_META, isPlanque } from '@/data';
 import type { PlanqueCard } from '@/data/types';
 import { CardView } from './CardView';
+
+/**
+ * **Le geste observé, pas deviné** (#285). jsdom ne calcule aucune mise en page : avec la
+ * vraie librairie, `whileHover` ne produit **jamais** de `transform` dans le DOM du test
+ * (vérifié : survol + attente, `style.transform` reste vide, la carte animée comme la
+ * figée). L'assertion « ni `whileHover` ni `transform` » y serait donc un faux garde-fou —
+ * une assertion qui ne peut pas échouer.
+ *
+ * Ce simulacre rend le geste **visible** sans l'inventer : `whileHover` devient, au survol,
+ * le `transform` que la librairie poserait, et les deux props sont exposées en attributs
+ * `data-`. Le reste de l'arbre est rendu tel quel (une `div` ou un `button`, avec ses
+ * classes et son style).
+ */
+vi.mock('framer-motion', async () => {
+  const React = await import('react');
+  const motion = new Proxy(
+    {},
+    {
+      get: (_cible, balise: string) =>
+        function Motion(props: {
+          children?: React.ReactNode;
+          whileHover?: unknown;
+          whileTap?: unknown;
+          transition?: unknown;
+          onClick?: () => void;
+          [cle: string]: unknown;
+        }) {
+          const { children, whileHover, whileTap, transition, onClick, ...reste } = props;
+          return React.createElement(
+            balise,
+            {
+              ...(reste as Record<string, string>),
+              onClick,
+              // Le `transform` que `whileHover` produirait réellement, au survol.
+              onMouseEnter: (evenement: React.MouseEvent<HTMLElement>) => {
+                if (whileHover) evenement.currentTarget.style.transform = 'translateY(-4px) scale(1.01)';
+              },
+              'data-while-hover': whileHover ? 'oui' : undefined,
+              'data-while-tap': whileTap ? 'oui' : undefined,
+              'data-transition': transition ? 'oui' : undefined
+            },
+            children
+          );
+        }
+    }
+  );
+  return { motion };
+});
 
 /**
  * Le gabarit de carte (#179) : ce qu'une carte de jeu porte — rareté, nom, Seuil, Pressions
@@ -97,6 +145,36 @@ describe('CardView — le gabarit à cadre', () => {
     // drapeau, la première assertion tombe.
     const animee = render(<CardView card={carte} compact />);
     expect(animee.container.querySelector('.card')).not.toHaveClass('card--figee');
+  });
+
+  it('calme : ni `whileHover`, ni `transform`, et le gabarit réduit imposé (#285, T2)', () => {
+    const carte = planques[0];
+
+    const calme = render(<CardView card={carte} calme />);
+    const figee = calme.container.querySelector('.card') as HTMLElement;
+    // Le gabarit réduit est **imposé** : pas de flavour, pas d'identifiant, la classe y est
+    // sans que l'appelant ait passé `compact`.
+    expect(figee).toHaveClass('card--compact');
+    expect(calme.container.querySelector('.card__flavor')).toBeNull();
+    expect(calme.container.querySelector('.card__id')).toBeNull();
+    // Aucun geste, donc : ni au survol (`whileHover` / `whileTap`), ni en `transform`.
+    expect(figee).not.toHaveAttribute('data-while-hover');
+    expect(figee).not.toHaveAttribute('data-while-tap');
+    expect(figee).not.toHaveAttribute('data-transition');
+    fireEvent.mouseEnter(figee);
+    expect(figee.style.transform).toBe('');
+    calme.unmount();
+
+    // **Le contrôle mord** : la même carte **sans** le drapeau porte le geste, et le survol
+    // la transforme. Retirer le drapeau du composant fait donc tomber les assertions du
+    // dessus.
+    const animee = render(<CardView card={carte} />);
+    const mobile = animee.container.querySelector('.card') as HTMLElement;
+    expect(mobile).not.toHaveClass('card--compact');
+    expect(mobile).toHaveAttribute('data-while-hover', 'oui');
+    expect(mobile).toHaveAttribute('data-while-tap', 'oui');
+    fireEvent.mouseEnter(mobile);
+    expect(mobile.style.transform).not.toBe('');
   });
 
   it('au plateau, la barre montre le Stress qui monte, et elle se lit (#187)', () => {
