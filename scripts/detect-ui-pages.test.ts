@@ -33,6 +33,8 @@ const ECRANS_EXIGES = [
   '/comite',
   '/comite/suivi',
   '/feuille-de-route',
+  // #300 : le guide d'installation, public — la couverture ne peut pas le perdre en silence.
+  '/installation',
   '/connexion',
   '/attente',
   '/confidentialite',
@@ -80,10 +82,7 @@ function sondePlan(
   }
 }
 
-function sonde(
-  sortieImpeccable: string,
-  code = 0
-): { compte: number | null; echec: boolean; message: string | null } {
+function sonde(sortieImpeccable: string, code = 0): { compte: number | null; echec: boolean; message: string | null } {
   try {
     const resultat = execFileSync(
       process.execPath,
