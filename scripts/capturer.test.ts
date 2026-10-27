@@ -446,8 +446,8 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
       // mesurer que l'arrivée, où la barre n'a qu'une rangée.
       expect(source).toContain('await mesurerAvecUnePression(browser)');
       expect(source).toContain("barre.locator('.button--primary')");
-      expect(source).toContain('(Pression jouable');
-      expect(source).toContain('aucun état « Pression jouable » atteint');
+      expect(source).toContain('Pression jouable${pasAPasVu');
+      expect(source).toContain('aucun état « ${densite}Pression jouable » atteint');
     });
   });
 
@@ -639,5 +639,67 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
     // Les huit passages passent tous par `controlerHauteur`, qui transmet la mesure entière.
     expect(source.match(/await controlerHauteur\(/g)?.length).toBeGreaterThanOrEqual(3);
     expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
+  });
+});
+
+/**
+ * Ticket #292 — **le mode `détaillé` ne casse pas la lecture à 420 px** (SPEC-COMBAT-UI T9).
+ *
+ * `détaillé` remet des annotations sur le plateau (le nom des Conditions, les types du Deck) :
+ * c'est la seule tâche de la refonte qui peut le faire **grossir**. Mesuré le 27/10/2026 à
+ * 420 × 900, avec trois Conditions et trois types par camp, les fiches passaient de 138 à
+ * 188 px : l'écran défilait de 34 px et la barre d'action finissait à 846 px, sous la navigation
+ * (830 px). La capture d'arrivée ne le voyait pas — il n'y a pas de Condition à l'arrivée —, d'où
+ * le **pire cas** posé dans le DOM par `poserLePireCasDetaille`.
+ */
+describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292)', () => {
+  const mesures = (barreBas: number, finBas: number) => [
+    { nom: 'la main', selecteur: '.hand', present: true, haut: 612, bas: 714 },
+    { nom: "la barre d'action du combat", selecteur: '.combat-barre', present: true, haut: 716, bas: barreBas },
+    { nom: '« Fin du tour »', selecteur: '.combat-barre__fin .button', present: true, haut: finBas - 44, bas: finBas }
+  ];
+
+  function controle(geometrie: { mesures: unknown[]; defilement: number }): string[] {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const sortie = execFileSync(
+      process.execPath,
+      [
+        'scripts/capturer.mjs',
+        '--controle-hauteur',
+        JSON.stringify({ limite: 830, pasAPasOuvert: false, etat: '(détaillé, pire cas)', ...geometrie })
+      ],
+      { cwd: root, encoding: 'utf8', env }
+    );
+    return JSON.parse(sortie) as string[];
+  }
+
+  it('le contrôle mord sur la mesure d’avant : barre à 846 px, bouton à 843 px, écran qui défile de 34 px', () => {
+    const problemes = controle({ mesures: mesures(846, 843), defilement: 34 });
+    expect(problemes.some((p) => p.includes('défile de 34 px') && p.includes('détaillé, pire cas'))).toBe(true);
+    expect(problemes.some((p) => p.includes("bas de la barre d'action du combat à 846 px"))).toBe(true);
+    expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 843 px'))).toBe(true);
+  });
+
+  it('laisse passer la mesure d’après : barre à 742 px, bouton à 738 px, aucun défilement', () => {
+    expect(controle({ mesures: mesures(742, 738), defilement: 0 })).toEqual([]);
+  });
+
+  it('joue réellement `détaillé` à chaque graine, pas-à-pas ouvert et terminé, et pose le pire cas', () => {
+    const source = readFileSync(new URL('../scripts/capturer.mjs', import.meta.url), 'utf8');
+    // Sans ces liens, le contrôle pourrait mordre dans son test et la capture ne mesurer que `sobre`.
+    expect(source).toContain('await mesurerDetaille(browser)');
+    expect(source).toContain('await mesurerAvecUnePression(browser, true)');
+    expect(source).toContain('combatDetaille: true');
+    expect(source).toContain('.battle--detaille');
+    expect(source).toContain('page.evaluate(poserLePireCasDetaille)');
+    expect(source).toContain('${etat}, pire cas');
+  });
+
+  it('range les annotations en ligne dans une fiche plus large, sans toucher aux cibles ni aux cafés (feuille de style)', () => {
+    const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\.battle--detaille \.board__fiche\s*\{[^}]*max-width:\s*15rem/);
+    expect(css).toMatch(/\.battle--detaille \.poste__info\s*\{[^}]*flex-direction:\s*row[^}]*flex-wrap:\s*wrap/);
   });
 });

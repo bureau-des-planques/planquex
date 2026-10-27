@@ -101,3 +101,42 @@ en mode **`calme`** (`CardView`, #285 — gabarit réduit, aucune micro-animatio
 **bouton** nommé par le Planqué, pour qu'un lecteur d'écran trouve le Poste *et* le Banc de la
 même carte. Le reste des pixels est déjà celui de D-093 : l'« avant » du 27/10 montrait des
 cartes, l'écart est signalé en tête de ce fichier et n'est pas maquillé ici.
+
+## `apres/` — T9, le mode `détaillé` ne casse pas la lecture à 420 px (#292)
+
+**Verdict : le critère tient, sans prendre le repli.** `détaillé` garde ses annotations (le chiffre
+du Stress, le nom des Conditions, les types du Deck) ; la barre d'action reste visible sans
+défilement, à 420 × 900, dans tous les états mesurés.
+
+| Fichier | État |
+|---|---|
+| `apres/420-combat-detail.png` | `détaillé`, à l'arrivée, pas-à-pas terminé, graine 22/10 09:00 |
+| `apres/420-combat-detail-pression.png` | `détaillé`, au tour d'une Pression jouable (barre sur deux rangées) |
+| `apres/420-combat-detail-pire-cas.png` | `détaillé`, **trois Conditions et trois types de café par camp** (posés dans le DOM) |
+
+**Ce que l'arrivée ne montrait pas** : à l'arrivée il n'y a aucune Condition, et `détaillé` y ajoute
+seulement `0/60` et les types du Deck — la mesure est identique à celle de `sobre`. Le défaut était
+dans le **pire cas** : en colonne, trois noms de Conditions et trois types rallongeaient chaque
+fiche de camp de 138 à 188 px. Mesuré avant correction (`npm run capturer`, exit 1) :
+`défile de 34 px`, barre d'action à `846 px`, « Fin du tour » à `843 px`, navigation à `830 px`.
+
+**Ce qui change** (`src/styles.css`, `.battle--detaille` seulement — `sobre` ne bouge pas) : la fiche
+du camp passe de `11rem` à `15rem` pour que deux noms de Conditions tiennent côte à côte, ses
+annotations se rangent **en ligne avec retour**, la pastille d'une Condition se serre de 0,1 rem
+en hauteur (le texte garde `--fs-xs`). Les cibles de 44 px et le plancher `--fs-2xs` ne sont pas touchés.
+
+**Ce que la mesure garde** (`npm run capturer`, `mesurerDetaille` et `mesurerAvecUnePression(…, true)`) :
+`détaillé` à chaque graine, pas-à-pas ouvert et terminé, avec une Pression jouable, **et** le
+pire cas — avec les mêmes contrôles que `sobre` (fenêtre, marge de 20 px de D-094 (3), défilement,
+cibles de 44 px). Avec l'ancienne feuille de style, la commande **échoue** (28 manquements, par
+exemple `l'écran de combat défile de 34 px (… détaillé, pas-à-pas terminé), pire cas`) ; avec la
+nouvelle, elle sort **exit 0**.
+
+**Limite connue, antérieure à T9 et hors périmètre** : en `sobre`, les mêmes trois Conditions sur les
+deux camps, au tour à deux rangées de barre et pas-à-pas ouvert, font défiler l'écran de 23 px
+(sonde ponctuelle, graine 22/10 14:30 : barre à 835 px). Le cas est quasi impossible (deux camps
+à trois Conditions au premier combat) et `détaillé` y fait **mieux** que `sobre` (barre à 806 px) ;
+il n'est pas gardé ici.
+
+**Ce que les captures ne prouvent pas** : un Poste qui porterait les trois Conditions *réelles* (la
+mesure les pose dans le DOM, le moteur n'est pas touché) ; la lecture au pouce.

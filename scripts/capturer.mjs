@@ -353,19 +353,98 @@ async function jusquAUnePression(page) {
 }
 
 /**
+ * Le combat en **mode `détaillé`** (#292, `docs/SPEC-COMBAT-UI.md` T9), à l'arrivée : la bascule
+ * `sobre` / `détaillé` remet des annotations sur le plateau, et c'est la seule tâche de la
+ * refonte qui peut faire **grossir** le plateau — donc sortir la barre d'action de la fenêtre.
+ * Le store est amorcé avec `combatDetaille: true` (la bascule est mémorisée, SPEC §4.5) : on
+ * mesure l'écran qu'un testeur qui a choisi `détaillé` ouvre, avec les **mêmes** gardes que
+ * `sobre` — hauteur, marge, défilement, cibles de 44 px. Pas-à-pas ouvert comme terminé.
+ */
+async function mesurerDetaille(browser) {
+  for (const pasAPasVu of [false, true]) {
+    for (const [index, instant] of INSTANTS_COMBAT.entries()) {
+      const context = await browser.newContext({
+        viewport: VIEWPORT,
+        isMobile: true,
+        storageState: amorcageStore(origine, { combatDetaille: true, ...(pasAPasVu ? { pasAPasCombatVu: true } : {}) })
+      });
+      const page = await context.newPage();
+      page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
+      await page.clock.setFixedTime(instant);
+      await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
+      await arriveeAuTourDuJoueur(page);
+      // La bascule est bien posée : sans elle la mesure ne regarderait que `sobre` (une garde qui
+      // ne regarde pas le bon état ne garde rien).
+      if ((await page.locator('.battle--detaille').count()) === 0) {
+        problems.push(`${ROUTE_COMBAT} · le mode « détaillé » n'est pas actif : la mesure ne le voit pas`);
+      }
+      const etat = `${new Date(instant).toISOString()} (détaillé${pasAPasVu ? ', pas-à-pas terminé' : ''})`;
+      await controlerHauteur(page, etat, ROUTE_COMBAT);
+      // La capture de la preuve : l'arrivée, pas-à-pas terminé, à la première graine.
+      if (pasAPasVu && index === 0) {
+        await page.screenshot({ path: join(outDir, 'combat-detail.png'), fullPage: PLEINE_PAGE });
+      }
+      // **Le pire cas** : ce que l'arrivée ne montre pas, c'est les Conditions. `détaillé` y ajoute
+      // leur nom, et c'est là que le plateau grossissait (#292).
+      await page.evaluate(poserLePireCasDetaille);
+      await page.waitForTimeout(300);
+      await controlerHauteur(page, `${etat}, pire cas`, ROUTE_COMBAT);
+      if (pasAPasVu && index === 0) {
+        await page.screenshot({ path: join(outDir, 'combat-detail-pire-cas.png'), fullPage: PLEINE_PAGE });
+      }
+      await context.close();
+    }
+  }
+}
+
+/**
+ * Pose, dans la fiche de chaque camp, **les trois Conditions** qu'un Planqué peut porter ensemble
+ * (Surcharge et Épuisement se cumulent avec une Condition d'état, SPEC-COMBAT-UI §4) et **trois
+ * types de café** au Deck : le plus haut que `détaillé` puisse faire grossir la fiche.
+ *
+ * C'est le **DOM** qui reçoit ces éléments — le moteur n'est pas touché : atteindre ces
+ * Conditions en jouant dépend de la graine et du hasard, et la mesure doit les voir à chaque fois.
+ * Les classes sont celles que `StatusBadge` rend en `détaillé` (`status-chip`, `status-chip__nom`).
+ * Passée à `page.evaluate` : aucune constante du module n'y est lisible.
+ */
+function poserLePireCasDetaille() {
+  for (const info of document.querySelectorAll('.poste__info')) {
+    for (const [classe, nom] of [
+      ['surcharge', 'Surcharge'],
+      ['epuisement', 'Épuisement'],
+      ['immobilisation', 'Immobilisation']
+    ]) {
+      const puce = document.createElement('span');
+      puce.className = `status-chip status-chip--${classe}`;
+      const texte = document.createElement('span');
+      texte.className = 'status-chip__nom';
+      texte.textContent = nom;
+      puce.append(texte);
+      info.append(puce);
+    }
+    const types = info.querySelector('.poste__machine-types');
+    if (types) types.textContent = 'Plante · Eau · Psychique';
+  }
+}
+
+/**
  * Le combat **avec une Pression jouable** (#320), à chaque instant figé et dans les deux états du
  * pas-à-pas : c'est là que la barre est la plus haute. Un instant dont le Poste n'offre aucune
  * Pression dans la borne n'est pas une panne — mais **aucun** instant n'en offrant, la mesure ne
  * verrait plus rien, et ça échoue : une garde qui ne regarde rien ne garde rien.
  */
-async function mesurerAvecUnePression(browser) {
+async function mesurerAvecUnePression(browser, detaille = false) {
   let atteints = 0;
+  const densite = detaille ? 'détaillé, ' : '';
   for (const pasAPasVu of [false, true]) {
     for (const instant of INSTANTS_COMBAT) {
       const context = await browser.newContext({
         viewport: VIEWPORT,
         isMobile: true,
-        storageState: amorcageStore(origine, pasAPasVu ? { pasAPasCombatVu: true } : {})
+        storageState: amorcageStore(origine, {
+          ...(pasAPasVu ? { pasAPasCombatVu: true } : {}),
+          ...(detaille ? { combatDetaille: true } : {})
+        })
       });
       const page = await context.newPage();
       page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
@@ -373,21 +452,26 @@ async function mesurerAvecUnePression(browser) {
       await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
       await arriveeAuTourDuJoueur(page);
       const tour = await jusquAUnePression(page);
-      const etat = `${new Date(instant).toISOString()} (Pression jouable${pasAPasVu ? ', pas-à-pas terminé' : ''})`;
+      const etat = `${new Date(instant).toISOString()} (${densite}Pression jouable${pasAPasVu ? ', pas-à-pas terminé' : ''})`;
       if (tour === null) {
         console.log(`combat · ${etat} · aucune Pression en ${TOURS_MAX_POUR_UNE_PRESSION} tours : non mesuré`);
       } else {
         atteints += 1;
         await controlerHauteur(page, `${etat}, tour ${tour}`, ROUTE_COMBAT);
         // Premier état atteint : c'est aussi la capture du tour (`combat-pression.png`).
-        if (atteints === 1) await page.screenshot({ path: join(outDir, 'combat-pression.png'), fullPage: PLEINE_PAGE });
+        if (atteints === 1) {
+          await page.screenshot({
+            path: join(outDir, detaille ? 'combat-detail-pression.png' : 'combat-pression.png'),
+            fullPage: PLEINE_PAGE
+          });
+        }
       }
       await context.close();
     }
   }
   if (atteints === 0) {
     problems.push(
-      `${ROUTE_COMBAT} · aucun état « Pression jouable » atteint : la barre n'est mesurée que sans Pression`
+      `${ROUTE_COMBAT} · aucun état « ${densite}Pression jouable » atteint : la barre n'est mesurée que sans Pression`
     );
   }
   return atteints;
@@ -678,6 +762,10 @@ try {
   // Le combat **avec une Pression jouable** (#320) : la barre y est à sa hauteur maximale, et
   // c'est là que « Fin du tour » passait sous la navigation.
   await mesurerAvecUnePression(browser);
+
+  // Le combat en mode `détaillé` (#292) : à l'arrivée, puis avec une Pression jouable.
+  await mesurerDetaille(browser);
+  await mesurerAvecUnePression(browser, true);
 } finally {
   await browser.close();
   await server?.close();
