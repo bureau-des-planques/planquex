@@ -69,7 +69,7 @@ compte pour nous : des milliers de jeux de cartes/plateau, des millions de parti
 | **TWA / Bubblewrap** | `dist/` emballé tel quel en AAB pour le Play Store | **retenu pour le lancement public** — la fiche store sans réécrire |
 | **APK en sideload** | coquille WebView de `dist/`, téléchargement direct | possible en un après-midi, si un testeur veut « un vrai fichier » |
 | **Dépôt F-Droid auto-hébergé** | on héberge APK + métadonnées ; maj via l'app F-Droid | possible ; aucune exigence de source publique (c'est *notre* dépôt) |
-| **F-Droid officiel** | ils **compilent depuis une source publique** | **bloqué aujourd'hui** : le dépôt est privé. Le reste est déjà en règle : licence MIT, dépendances 100 % open source, alpha fonctionnel sans backend (le mur/PvP passeraient en mention `NonFreeNet`), tags propres. Décision **de distribution**, à trancher au lancement public |
+| **F-Droid officiel** | ils **compilent depuis une source publique** | **bloqué aujourd'hui** : le dépôt est public. Le reste est déjà en règle : licence MIT, dépendances 100 % open source, alpha fonctionnel sans backend (le mur/PvP passeraient en mention `NonFreeNet`), tags propres. Décision **de distribution**, à trancher au lancement public |
 | **Réécriture native** (Unity, Godot…) | particules GPU, shaders, haptique | **refusée aujourd'hui** — voir §5 |
 
 ## 5. Godot, si un jour

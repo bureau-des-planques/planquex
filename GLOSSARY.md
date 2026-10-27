@@ -21,4 +21,4 @@ ni une règle. C'est pourquoi il n'entre pas dans `AGENTS.md` §3.
 | `weakness` (Vulnérabilité) | `FACTION_META[faction].weakness` — source unique |
 | `palette` (dégradé à 3 arrêts) | dérivée de `FACTION_META[faction].color` par `planquePalette` |
 | `glyph` | `FACTION_META[faction].glyph`, surchargeable carte par carte |
-| variantes `-star` / `-star2` | `secretVariant(cards, baseId, suffixe, glyph?)` |
+| variantes `-star` / `-star2` / `-star3` / `-crown` | `secretVariant(cards, baseId, suffixe, glyph?)` |

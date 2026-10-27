@@ -44,7 +44,7 @@ npm run installer -- --principal     # npm ci dans le clone
 npm run dev                          # http://localhost:5178
 ```
 
-Sans droit d'écriture sur le dépôt, on **forke** d'abord, et la PR part du fork vers `main`.
+Sans droit d'écriture sur le dépôt, on **forke** d'abord, et la PR part du fork vers `main`. Une PR **externe** exige une **relecture par un agent** qui n'a pas écrit le code, puis la **validation écrite** de Bastien (D-131).
 
 **Un ticket = un worktree.** Le clone reste sur `main` et ne sert qu'à en créer :
 

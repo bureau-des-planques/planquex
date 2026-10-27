@@ -45,7 +45,6 @@ donne envie de refaire une partie ?
 |---|---|
 | ✅ | **Le solo** contre la Direction : Poste, Banc, Machine à café, Pressions, Conditions, trois Interventions |
 | ✅ | **Les Arrivages** (3 communes, 1 peu commune, 1 rare au minimum), la **Collection** filtrable, le **Deck** de 20 cartes avec ses types de café |
-| ✅ | **La partie à deux par code** : l'un crée le code, l'autre le colle |
 | ✅ | **Le comité** : le mur des retours, où l'on colle un post-it IP (idée) ou OUF (défaut) |
 | ✅ | **Le set illustré** : chaque carte de base a son image, les variantes héritent de la leur |
 | ⛔ | **Le classé**, **l'Économat du CSE**, **les notes de service** et la **Cotisation** — pas encore |
@@ -201,7 +200,7 @@ pour la beta, `1.0.0` pour la sortie — et la version servie se lit dans **Rég
 
 Les tickets de chaque étape portent l'étiquette `alpha`, `beta` ou `release` :
 [ce qui bloque la beta](https://github.com/bureau-des-planques/planquex/issues?q=is%3Aopen+label%3Abeta),
-par exemple. Les critères de passage sont ceux de D-048, amendés par D-063 et D-117.
+par exemple. Les critères de passage sont ceux de D-048, amendés par D-063, D-117, D-123 et D-130.
 
 ---
 

@@ -1,6 +1,6 @@
 # L'IA de la Direction — les mesures et les essais
 
-Les règles de l'IA vivent dans `AGENTS.md` §6 et le code dans `src/game/ia.ts`. **Ici, ce sont les
+Les règles de l'IA vivent dans les décisions (`docs/DECISIONS.md`) et le code dans `src/game/ia.ts`. **Ici, ce sont les
 mesures** : ce qui a été essayé, ce que ça a donné, et ce qui reste à faire. Les actes datés sont
 dans `docs/DECISIONS.md` ; les chiffres vivent ici.
 
@@ -18,12 +18,12 @@ Elle gagne **60,4 %** contre le niveau 1 sur des graines neuves (ratio 1,53), l�
 faisait 44 %. Deux réserves, écrites ici : la mesure n'a été faite **que contre le niveau 1**
 (jamais contre un humain), et des **pics de temps** dépassaient le budget (138 ms mesurés, 100 ms
 visés) — ticket **#172** : cause écrite et budget borné (plafond de 800 nœuds + échéance de 60 ms,
-repli sur le glouton), voir `111-essais-recherche-2-coups.md` §6.3. **L'écran joue encore le
-niveau 1** : le passage se fait en une ligne, à trancher une fois #172 fusionné.
+repli sur le glouton), voir `111-essais-recherche-2-coups.md` §6.3. **L'écran joue le niveau 2 (`nextAiAction`)** : le niveau 2 est la **recherche à deux coups**
+(`nextAiAction`, D-109), et la politique **Sérieuse** est par défaut (D-125 (2)).
 
 **Le niveau 3** (expectiminimax avec déterminisations, ticket #94) repart de
 `111-essais-recherche-2-coups.md` : le pool des cartes inconnues, le tirage de monde, la
 simulation de tour y sont décrits et réutilisables. Il est **implémenté et mesuré**
 (`94-niveau3-expectiminimax.md`) : **55,94 %** des décidées contre le niveau 2 au contrôle
 (ratio 1,270), seuils tenus, **aucun repli de budget**. Il n'est **pas branché** : le défaut
-reste le niveau 2 (D-084), et la marge est mince (IC bas à 52,6 %).
+reste la politique **Sérieuse** (D-125 (2)), et la marge est mince (IC bas à 52,6 %).

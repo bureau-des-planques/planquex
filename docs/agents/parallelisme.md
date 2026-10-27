@@ -168,7 +168,7 @@ seul coût, voir §6).
 
 ## 6. Concurrence machine — ne pas saturer
 
-- `npm test` lance un **worker par fichier de test** : ~46 aujourd'hui. Trois suites en
+- `npm test` lance un **worker par fichier de test** : 146 aujourd'hui. Trois suites en
   parallèle sur 12 cœurs saturent déjà. **Maximum 3 agents simultanés** en pratique (et
   `maxParFournisseur` 2 côté lanceur historique).
 - Les modèles gratuits **dégradent sous charge** : la passe « 3 sessions simultanées » du
@@ -214,7 +214,7 @@ seul coût, voir §6).
 | Ticket | Zone | Modèle d'implémentation | Relecteur |
 |---|---|---|---|
 | #114 IA lit l'avenir | MOTEUR | maillon 1 | inkling (courant) |
-| #117 Choix de types vs Chariot | STORE/UI | maillon 1 | inkling (courant) |
+| #117 Choix de types vs Deck | STORE/UI | maillon 1 | inkling (courant) |
 | #106 Migration v2→v4 verrouillée | STORE/UI (+ `cards.test.ts`) | maillon 1 | inkling (courant) |
 | #109 Durcir la mesure | MOTEUR (+ `scripts/`) | maillon 1 | **Sonnet 5.5** (mesure) |
 | #94 IA niveau 3 | MOTEUR | **à repenser** : bloqué par #111, dont le résultat retire son préalable | — |
