@@ -84,7 +84,8 @@ const TITRES = {
   '0.1.3': 'La partie à deux, et le mur des retours',
   '0.1.4': 'Le combat se lit d’un coup',
   '0.1.5': 'Le mur des retours fonctionne de bout en bout',
-  '0.1.6': 'L’Atelier a ses illustrations'
+  '0.1.6': 'L’Atelier a ses illustrations',
+  '0.1.13': 'Le comité se suit, et le combat tient dans l’écran'
 };
 
 /** Un titre de groupe : `## …`, `### …`, ou une ligne en gras toute seule. */
