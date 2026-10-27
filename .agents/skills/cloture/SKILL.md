@@ -18,6 +18,7 @@ Une clôture **retire ce que la session a créé, rien d'autre**. Plusieurs sess
 4. **Noter le reste à faire** là où l'humain le retrouve : un todo `openchamber_knowledge` (`kind: todo`) par travail laissé, ou un commentaire sur l'issue. Si des issues `alpha` ont été ouvertes ou fermées, `npm run plan:dev` (§11 de `AGENTS.md`).
 5. **Vérifier.** `npm run isolation` sort 0, ou n'accuse que des éléments listés « laissés » à l'étape 6. Et `npm run ci:etat` sort 0 : si `main` est rouge, le dire dans le compte rendu au lieu de fermer en silence (D-115, #258).
 6. **Rendre un compte** en trois listes : *retiré* (avec la commande), *laissé* (avec la raison : autre session, non fusionné, non poussé), *reste à faire* (avec où c'est noté).
+7. **Passer la main.** Si la session a été longue, dire à Bastien de taper `/compact` : c'est une commande de l'interface, que l'agent ne peut pas lancer lui-même. Le dire en dernière ligne du compte rendu, sans l'exécuter.
 
 ## Fini quand
 
