@@ -38,6 +38,15 @@ proprement — pas de timeout, pas d'erreur de fournisseur, reset prouvé).
 
 ## Politique
 
+> **27/10/2026 — cette politique n'est plus dans la configuration.** Aucun fichier de
+> `~/.config/opencode/agents/` ne porte de clé `model:` (PR `Chapax/opencode-config#26`).
+> La raison est mécanique : le routeur de quota ne touche pas un modèle qu'il considère
+> **hors chaîne**, donc un agent épinglé traverse la chaîne sans jamais être replié — c'est
+> ce qui a laissé une session mourir sur un gratuit épuisé le 26/10 (#221, D-099).
+> Ce qui choisit, désormais : le **routeur** pour une session interactive, `chaineDeRepli`
+> pour `agents lance`. Ce qui suit est donc une **recommandation de choix manuel** — quel
+> modèle prendre quand on choisit soi-même — et non plus ce que la machine imposera.
+
 1. **Maillon 1** : `opencode/deepseek-v4.1-flash-free#high`. C'est le seul
    gratuit à faire 3/3 **et** à tenir sous 50 s. La variante `high` est
    **moins chère en tokens et fait moins d'appels d'outils** que `none`
