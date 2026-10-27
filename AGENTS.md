@@ -91,7 +91,7 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Suggestion box (retours) | **le comité** (ex-Boîte à idées) | l'entrée : la **bulle** présente partout ; l'écran s'appelle **le mur** (D-058, D-097) — adresse `/comite` |
 | Amélioration / idée | **post-it IP** | une idée, une fonctionnalité, un avis — « IP » = *Idée de Progrès*, comme au kaizen (D-058) |
 | Signalement (bug) | **post-it OUF** | le jargon Safran, **gardé tel quel** : on ne l'explique pas, on l'emploie (D-058) |
-| Testeur de l'alpha | **un invité** | jamais « un joueur » tout court : le public, c'est le lancement |
+| Testeur de l'alpha | **un testeur** | jamais « un joueur » tout court : le public, c'est le lancement (D-117) |
 
 **Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Pokémon`, ainsi que **l'ancien nom du projet** et le vocabulaire de son univers — la liste tenue par `src/data/cards.test.ts` (`FORBIDDEN_ANY_CASE`) en est la version exécutable, et c'est elle qui fait foi. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. L'ancien nom **Galérodex** est **abandonné** (il venait de l'univers legacy) : la collection s'appelle **le Parc**.
 

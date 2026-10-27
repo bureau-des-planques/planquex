@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 116 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 117 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -61,7 +61,7 @@
 | D-053 | 21/10/2026 | L'infra de l'alpha est montée ; ce qui reste est… |
 | D-054 | 21/10/2026 | L'application installée s'appelle « Planquex » et porte son icône… |
 | D-055 | 21/10/2026 | La bascule vers planquex.4k7.org est bloquée par les droits Cloudflare,… |
-| D-056 | 21/10/2026 | Ce que l'alpha doit avoir livré pour qu'on vise la… |
+| D-056 | 21/10/2026 | ⚠ Amendée le 27/10/2026 — voir D-117 : le critère… |
 | D-057 | 21/10/2026 | Illustrations : un pilote d'une trentaine d'images sur l'ATELIER, puis… |
 | D-058 | 21/10/2026 | La Boîte à idées — les retours des invités entrent… |
 | D-059 | 21/10/2026 | Le tri des retours, et l'ordre face au backend .… |
@@ -122,3 +122,4 @@
 | D-114 | 26/10/2026 | Le dépôt a un formateur, et la doc de commande… |
 | D-115 | 26/10/2026 | La CI se découpe en trois jobs, et main a… |
 | D-116 | 27/10/2026 | L'UI se refait en deux temps, light puis système v2… |
+| D-117 | 27/10/2026 | Revoir les jalons de l'alpha . Amende D-048 et D-056.… |

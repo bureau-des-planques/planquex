@@ -52,18 +52,20 @@ export interface Jalon {
 export const ETAPE_EN_COURS = {
   nom: 'alpha',
   texte:
-    'Le solo se teste entre invités : le contenu est incomplet, la casse est assumée, et on cherche si la boucle tient.',
+    'Le solo se teste entre testeurs : le contenu est incomplet, la casse est assumée, et on cherche si la boucle tient.',
   decision: 'D-048'
 };
 
 /**
- * **Ce que l'alpha doit avoir livré pour qu'on vise la beta** (D-056) — les quatre points
- * (a) à (d), dans l'ordre de la décision.
+ * **Ce que l'alpha doit avoir livré pour qu'on vise la beta** (D-056, **amendée par
+ * D-117** le 27/10/2026) — trois points : (a) reformulé, (b) et (c) inchangés. Le (d),
+ * la décision sur les illustrations, **sort de l'alpha** ; le jalon beta garde la
+ * rédaction de D-063.
  */
 export const CRITERES_ALPHA: ElementPlan[] = [
   {
-    texte: 'Les dix invités ont joué au moins une partie complète, chacun.',
-    decision: 'D-056'
+    texte: 'Chaque testeur a joué au moins une partie complète.',
+    decision: 'D-117'
   },
   {
     texte: 'Plus aucun bug qui casse la boucle n’est ouvert.',
@@ -71,10 +73,6 @@ export const CRITERES_ALPHA: ElementPlan[] = [
   },
   {
     texte: 'La Journée d’intégration est finie.',
-    decision: 'D-056'
-  },
-  {
-    texte: 'La décision sur les illustrations est prise (D-057).',
     decision: 'D-056'
   }
 ];
@@ -90,11 +88,11 @@ export const JALONS: Jalon[] = [
   {
     etape: 'alpha',
     texte:
-      'Le solo se teste entre invités : contenu incomplet et casse assumés, on cherche si la boucle tient.',
+      'Le solo se teste entre testeurs : contenu incomplet et casse assumés, on cherche si la boucle tient.',
     criteres: [
       {
-        texte: 'Les dix invités ont joué au moins une partie complète, chacun.',
-        decision: 'D-056'
+        texte: 'Chaque testeur a joué au moins une partie complète.',
+        decision: 'D-117'
       },
       {
         texte: 'La Journée d’intégration est finie.',
@@ -125,7 +123,7 @@ export const JALONS: Jalon[] = [
         decision: 'D-063'
       },
       {
-        texte: 'Aucune perte de données n’est possible pour un invité.',
+        texte: 'Aucune perte de données n’est possible pour un testeur.',
         decision: 'D-048'
       }
     ]
@@ -152,7 +150,7 @@ export const DECIDE_PLUS_TARD: ElementPlan[] = [
     texte: 'La Pause café (le Wonder Pick)',
     decision: 'D-061',
     note:
-      'Le seul des quatre qui donne des cartes : premier candidat à remonter en beta si les invités réclament de quoi compléter leur Parc.'
+      'Le seul des quatre qui donne des cartes : premier candidat à remonter en beta si les testeurs réclament de quoi compléter leur Parc.'
   },
   {
     texte: 'La Boutique du CSE',
@@ -203,6 +201,6 @@ export const FIGE_PENDANT_ALPHA: ElementPlan[] = [
   {
     texte: 'Le domaine du jeu',
     decision: 'D-055',
-    note: 'Une URL qui change ferait réinstaller l’application à tous les invités.'
+    note: 'Une URL qui change ferait réinstaller l’application à tous les testeurs.'
   }
 ];
