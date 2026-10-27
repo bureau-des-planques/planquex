@@ -109,6 +109,28 @@ C'est cette condition (`auteur = auth.uid()`, `votant = auth.uid()`) que la gard
 Le rôle **`anon`** (appareil non identifié) n'a **aucun** privilège : `revoke all` dans la
 migration. Le jeu signe d'abord (identité anonyme, rôle `authenticated`), puis lit.
 
+### Les fonctions que `authenticated` peut encore exécuter (D-133 (3))
+
+La 0011 a fermé `anon` sur toutes les fonctions `security definer` de `public`. Pour le rôle
+`authenticated`, **cinq** restent exécutables, chacune pour une raison écrite ici :
+
+| Fonction | Raison |
+|---|---|
+| `public.corriger_postit(id, titre, texte)` (0006) | appelée **par le client** : la correction du titre et du texte passe par elle, la base n'accorde pas l'écriture directe |
+| `public.deplacer_postit(id, x, y, angle)` (0007) | appelée **par le client** : la place d'un post-it, pour son auteur ou l'administrateur |
+| `public.marquer_comite_vu()` (0008) | appelée **par le client** : le repère « vu » du comité, pour le compte de l'appelant seul |
+| `public.compte_approuve()` (0005) | **citée par les politiques RLS** : une politique s'exécute avec les droits de l'appelant, donc le rôle doit pouvoir l'appeler |
+| `public.est_administrateur()` (0005) | **citée par les politiques RLS**, pour la même raison |
+
+Les déclencheurs `comptes_creation` et `comptes_decision` ne sont **pas** dans cette liste : un
+déclencheur ne vérifie pas l'`EXECUTE` de son appelant, donc le droit ne servait à rien. D-133 (2)
+le leur retire ; ce retrait est porté par la migration `0015`, qui **n'est pas dans le dépôt** à la
+date de cette rédaction. Tant qu'elle n'y est pas, le dépôt laisse ces deux fonctions exécutables par
+`authenticated` : c'est un écart à lever, pas un état voulu.
+
+Les fonctions d'annonce Discord (0013) ne sont ouvertes à **aucun** client : `revoke ... from public,
+anon, authenticated`.
+
 ## 2. L'identité, côté jeu
 
 `src/lib/supabase.ts` :
