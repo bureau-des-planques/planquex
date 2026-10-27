@@ -14,10 +14,11 @@ Le **domaine** (art, IA, infra, PvP, UI…) n'est pas une étiquette : il est po
 **préfixe du titre** (`PvP — …`, `Infra — …`), et lisible dans la liste. On filtre par
 `gh issue list --search "PvP in:title"` plutôt que par une étiquette de plus à tenir.
 
-Seule exception, **gardée parce qu'elle sert** : `documentation` — sept tickets la portent. Les sept
-autres étiquettes que GitHub installe par défaut (`accessibility`, `duplicate`, `good first issue`,
-`help wanted`, `invalid`, `question`) ont été **retirées** le 21/10/2026 : elles n'avaient jamais
-servi, et elles encombraient le filtre. Une étiquette qui revient se recrée en une commande.
+Seule exception, **gardée parce qu'elle sert** : `documentation` — sept tickets l'ont portée, tous
+fermés au 27/10/2026. Les sept autres étiquettes que GitHub installe par défaut (`accessibility`,
+`duplicate`, `good first issue`, `help wanted`, `invalid`, `question`) ont été **retirées** le
+21/10/2026 : elles n'avaient jamais servi, et elles encombraient le filtre. Une étiquette qui
+revient se recrée en une commande.
 
 **Cinq états** :
 
@@ -30,6 +31,20 @@ servi, et elles encombraient le filtre. Une étiquette qui revient se recrée en
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
+
+**Tout ticket ouvert porte les deux** (Bastien, 27/10/2026) : exactement une **catégorie** et
+exactement un **état**. Mesuré le 27/10/2026 : **35 tickets ouverts, 35 catégories, 35 états** —
+`ready-for-agent` 16, `ready-for-human` 18, `needs-triage` 1, `needs-info` 0, `wontfix` 0. Un
+ticket neuf reçoit donc `needs-triage` et sa catégorie à la création (`gh issue create --label`),
+et non « rien » en attendant.
+
+**Les cartes wayfinder en portent aussi.** Le skill `wayfinder` écrit qu'une carte et ses tickets
+ne portent **que** des étiquettes `wayfinder:` ; ici, c'est l'inverse qui a été choisi : #264 et
+ses tickets #267, #268 et #269 portent leur catégorie et leur état comme les autres, pour qu'un
+seul filtre lise « tout ce qui est ouvert ». L'état dit alors qui attend quoi : `ready-for-human`
+pour une décision ou un prototype qui a besoin de Bastien (les grillings, le prototype d'ouverture
+de paquet, le transfert d'organisation), `ready-for-agent` pour la carte elle-même, dont une
+session peut prendre le prochain ticket de la frontière.
 
 **Étape du projet** — une troisième dimension, **orthogonale** aux catégories et aux états.
 Elle dit **à quelle étape du produit** le ticket doit être livré, pour qu'on puisse filtrer
