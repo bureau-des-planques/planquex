@@ -31,8 +31,9 @@
 `src/data/factions.test.ts` vérifie que les deux disent la même chose.
 
 **Hors du set** : les **Outils** et les **Lieux** ne sont pas des cartes du lancement
-(D-020 ; `AGENTS.md` §4.1, « Outils / Lieux »). Les lignes qui en portaient ont été retirées de ce
-document le 27/10/2026 ; elles restent dans l'historique git.
+(D-020 ; `AGENTS.md` §4, « Outils / Lieux »). Leurs lignes ne sont plus dans les tables par
+faction : elles sont regroupées, étiquetées, dans la section « Hors périmètre du lancement »
+en fin de document.
 
 ---
 
@@ -322,3 +323,85 @@ sans changer les cartes.
 2. Définir les **3 viviers de lancement** et leurs cartes exclusives.
 3. Produire la **direction artistique** : palette, gabarit de carte, 3 planches.
 4. Scaffolder le monorepo et le design system.
+
+---
+
+## Hors périmètre du lancement
+
+Les **Outils** et les **Lieux** ci-dessous ne sont pas dans le périmètre du lancement (D-020 ;
+`AGENTS.md` §4, « Outils / Lieux : hors périmètre du lancement »). Ils sont gardés ici pour que
+l'idée ne se perde pas : ce ne sont ni des cartes du set ni une promesse, et aucun ne doit être
+implémenté sans décision datée dans `docs/DECISIONS.md`.
+
+### SSE — Plante
+
+| Carte | Type | Effet |
+|---|---|---|
+| Gants de protection | Outil | +20 Seuil |
+| Salle de repos | Lieu | +Seuil au Banc |
+
+### Management — Feu
+
+| Carte | Type | Effet |
+|---|---|---|
+| Tableau Excel | Outil | +10 dégâts |
+| Bureau partagé | Lieu | +10 dégâts aux attaques Feu |
+
+### QVT — Eau
+
+| Carte | Type | Effet |
+|---|---|---|
+| Plante verte | Outil | +10 Seuil |
+| Babyfoot | Lieu | +1 café |
+
+### Amélioration continue — Électricité
+
+| Carte | Type | Effet |
+|---|---|---|
+| Norme ISO | Outil | +20 Seuil |
+| Salle de réunion | Lieu | +10 dégâts aux attaques Électrique |
+
+### RH — Psychique
+
+| Carte | Type | Effet |
+|---|---|---|
+| Badge nominatif | Outil | +10 dégâts |
+| Salle d’entretien | Lieu | +10 dégâts aux attaques Psychique |
+
+### Atelier — Combat
+
+| Carte | Type | Effet |
+|---|---|---|
+| Multimètre | Outil | +10 dégâts |
+| Échelle | Outil | +20 Seuil |
+| Atelier | Lieu | +10 dégâts aux attaques Combat |
+
+### Direction — Obscurité
+
+| Carte | Type | Effet |
+|---|---|---|
+| Costume trois pièces | Outil | +10 dégâts |
+| Salle du N+2 | Lieu | +10 dégâts aux attaques Obscurité |
+
+### Syndicat — Métal
+
+| Carte | Type | Effet |
+|---|---|---|
+| Badge syndical | Outil | +20 Seuil |
+| Convention collective | Outil | +20 Seuil |
+| Local syndical | Lieu | +Seuil |
+
+### Intérim — Dragon
+
+| Carte | Type | Effet |
+|---|---|---|
+| Badge temporaire | Outil | +10 dégâts |
+| Site différent | Lieu | +1 café |
+
+### Support — Incolore
+
+| Carte | Type | Effet |
+|---|---|---|
+| Chatbot | Outil | +10 dégâts |
+| Casque téléphonique | Outil | +10 Seuil |
+| Salle de support | Lieu | +10 dégâts aux attaques Incolore |

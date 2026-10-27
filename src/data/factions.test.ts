@@ -65,6 +65,15 @@ function ecarts(texte: string): string[] {
 /** Une ligne de carte typée Outil ou Lieu : hors du set (D-020). */
 const CARTE_HORS_SET = /^\| .+ \| (Outil|Lieu) \| .+ \|$/m;
 
+/** Le titre de la section où ces cartes sont gardées, étiquetées, pour que l'idée ne se perde pas. */
+const SECTION_HORS_PERIMETRE = '## Hors périmètre du lancement';
+
+/** Le document sans sa section « hors périmètre » : c'est lui qui ne doit porter aucun Outil ni Lieu. */
+function sansHorsPerimetre(doc: string): string {
+  const debut = doc.indexOf(`\n${SECTION_HORS_PERIMETRE}\n`);
+  return debut === -1 ? doc : doc.slice(0, debut);
+}
+
 describe('la table des factions', () => {
   it('AGENTS.md §3.2 dit les mêmes valeurs que FACTION_META', () => {
     expect(lignesDeLaTable(lire('AGENTS.md'))).toHaveLength(10);
@@ -78,8 +87,10 @@ describe('la table des factions', () => {
     expect(doc).not.toMatch(/^- \*\*Vulnérabilité\*\* :/m);
   });
 
-  it('docs/FACTIONS.md ne compte aucun Outil ni Lieu parmi les cartes du set', () => {
-    expect(CARTE_HORS_SET.test(lire('docs/FACTIONS.md'))).toBe(false);
+  it('docs/FACTIONS.md ne compte aucun Outil ni Lieu hors de sa section « hors périmètre »', () => {
+    const doc = lire('docs/FACTIONS.md');
+    expect(doc).toContain(`\n${SECTION_HORS_PERIMETRE}\n`);
+    expect(CARTE_HORS_SET.test(sansHorsPerimetre(doc))).toBe(false);
   });
 
   // Le contrôle doit pouvoir échouer : sans ces cas, les gardes du dessus ne gardent rien.
@@ -109,5 +120,13 @@ describe('la table des factions', () => {
   it('le contrôle mord : une carte Outil réintroduite est détectée', () => {
     expect(CARTE_HORS_SET.test('| Gants de protection | Outil | +20 Seuil |')).toBe(true);
     expect(CARTE_HORS_SET.test('| Salle de repos | Lieu | +Seuil au Banc |')).toBe(true);
+  });
+
+  it('le contrôle mord : seule la section « hors périmètre » est exemptée', () => {
+    const ligne = '| Gants de protection | Outil | +20 Seuil |';
+    const dansLaSection = `# Doc\n\n| Carte | Stade | Rôle |\n\n${SECTION_HORS_PERIMETRE}\n\n${ligne}\n`;
+    const avantLaSection = `# Doc\n\n${ligne}\n\n${SECTION_HORS_PERIMETRE}\n\nrien\n`;
+    expect(CARTE_HORS_SET.test(sansHorsPerimetre(dansLaSection))).toBe(false);
+    expect(CARTE_HORS_SET.test(sansHorsPerimetre(avantLaSection))).toBe(true);
   });
 });
