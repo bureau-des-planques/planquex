@@ -66,6 +66,15 @@ describe('plan — les jalons (D-048)', () => {
     }
   });
 
+  it('le jalon alpha porte les trois critères de sortie, pas une copie partielle', () => {
+    // Constat du 27/10/2026 : `JALONS` reprenait D-056 en oubliant le (b), donc la feuille
+    // de route affichait **deux** critères là où la décision en pose **trois**. Le test
+    // n'exigeait qu'une liste non vide : une copie qui prend du retard passait. Les deux
+    // listes sont maintenant la même source (`CRITERES_ALPHA`), et cette assertion le garde.
+    const alpha = JALONS.find((jalon) => jalon.etape === 'alpha');
+    expect(alpha?.criteres).toEqual(CRITERES_ALPHA);
+  });
+
   it('n’écrit aucun numéro de version : la version vit dans package.json', () => {
     // `src/version.test.ts` refuse déjà un numéro en dur dans `src/` ; on le dit ici pour
     // que la raison soit lisible au bon endroit — un jalon se nomme « beta », jamais « 0.2.x ».

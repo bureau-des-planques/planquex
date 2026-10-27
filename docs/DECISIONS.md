@@ -257,11 +257,14 @@ Les conséquences de D-024, D-025, D-026 et D-027 ont été propagées en **deux
 
 ## Prochaine étape
 
-L’étape est **l’alpha** (D-048, D-050). Elle se termine sur les quatre critères de **D-056**, et sur eux seuls — pas sur un compte de cartes (D-063).
+L’étape est **l’alpha** (D-048, D-050). Elle se termine sur les **trois** critères de **D-056**, amendés par **D-117** — et sur eux seuls, pas sur un compte de cartes (D-063) ni sur l’UI (D-117 (3)).
 
-1. **Les dix invités ont joué au moins une partie complète** (D-056 (a)).
+1. **Chaque testeur a joué au moins une partie complète** (D-056 (a), reformulé par D-117 : le nombre n’est plus fixé à dix).
 2. **Aucun bug qui casse la boucle n’est ouvert** (D-056 (b)).
 3. **La Journée d’intégration est finie** (D-056 (c)) — forme courte pour l’alpha, guidée pour la beta (D-066).
-4. **La décision sur les illustrations est prise** (D-056 (d), D-057) et la couverture avance sur les **bases**, sans compte imposé (D-063).
+
+Le critère (d) — la décision sur les illustrations — **a quitté l’alpha** le 27/10/2026 (D-117 (2)) : il appartient au jalon **beta**, qui garde la rédaction de D-063 (« les bases illustrées, ou la décision assumée de ne pas l’être »).
+
+*(Section remise à jour le 27/10/2026 : elle disait encore « les quatre critères » et « les dix invités », deux formulations antérieures à D-117. Aucun acte daté n’a été réécrit — D-056 et D-117 restent tels quels, seule cette page de situation suit.)*
 
 Ce qui attend une réponse s’inscrit dans **Ouvertes** — vide au 26/10/2026. La feuille de route du jeu (`/feuille-de-route`, D-097) lit cette étape et les issues `alpha` ouvertes : c’est elle qu’on regarde pour savoir où l’on en est, pas ce paragraphe.
