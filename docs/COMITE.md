@@ -541,3 +541,38 @@ final), et les champs qu'il ne connaît pas traversent intacts.
 
 `--fichier <json>` n'existe que pour les tests : il évite d'écrire dans le vrai fichier du mur
 (`scripts/statut-mur.test.ts`).
+
+### 5.2 Les problèmes connus d'une release — `npm run problemes`
+
+Une note de version ne recopie pas à la main une liste de problèmes : elle **projette** ce que le
+mur dit encore cassé (D-119). Le bloc se lit en base, en **lecture seule**, et se colle dans le
+corps de la release **sous `## Pour un testeur`** — la seule section que le parseur de notes écarte
+(`docs/VERSIONS.md` §4.2), donc la seule qui n'entre pas dans `/feuille-de-route`.
+
+```bash
+npm run problemes            # le bloc de markdown à coller
+npm run problemes -- --json  # les lignes brutes
+```
+
+Ce qui entre, et ce qui sort :
+
+| Statut du post-it | Dans la note ? | Pourquoi |
+|---|---|---|
+| `retenu`, `en cours` | **oui** | trié, pas encore corrigé : c'est un problème connu |
+| `en attente` | non | personne ne l'a trié — on ne publie pas une affirmation non vérifiée |
+| `fait` | non | le correctif part dans la même release (`## Corrections de bugs`) |
+| `écarté` | non | sa raison reste sur le mur |
+
+Une **IP** n'est pas un problème (D-058). Un **gueulage** n'entre **jamais** (D-085) : c'est
+l'**OUF que la même réponse du formulaire a produit** qui porte le signalement — ou celui que le
+tri ouvre à partir du gueulage. **Qui valide, c'est le tri** : un OUF n'apparaît dans la note
+qu'après être passé à `retenu` ou `en cours` par un administrateur (D-088, §5.1). La ligne publiée
+est le titre, plus `(#ticket)` quand le post-it en porte un.
+
+La connexion est celle du rôle **`lecteur`** (D-091) : `select` seul, et le rôle est vérifié
+**avant** la connexion — `postgres` est refusé. Elle se lit hors dépôt
+(`~/.secrets/supabase-admin.json`, clé `lecteur`, `chmod 600`) ou dans `PROBLEMES_LECTEUR_URL`.
+**Sans configuration, la commande refuse** : il n'y a pas de repli sur `docs/comite.json`, qui ne
+voit pas l'état réel du mur. Le bloc sort **sans titre markdown** — un `###` rouvrirait la section
+écartée, et des bugs non corrigés seraient lus comme des nouveautés dans le jeu.
+

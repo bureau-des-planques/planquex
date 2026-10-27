@@ -24,6 +24,7 @@
     "notes:versions": "node scripts/notes-versions.mjs",
     "plan:dev": "node scripts/plan-dev.mjs",
     "statut": "node scripts/statut-mur.mjs",
+    "problemes": "node scripts/problemes-connus.mjs",
     "admin": "node tools/admin/serveur.mjs",
     "serveurs": "node tools/serveurs/serveur.mjs",
     "detect:ui": "impeccable detect src/",

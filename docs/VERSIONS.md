@@ -120,6 +120,11 @@ Les **autres informations** (migration, sauvegarde, pièges connus) vont **aprè
 catégories, sous `## Pour un testeur` : ce titre est dans `SECTIONS_ECARTEES`
 (`scripts/notes-versions.mjs`), donc il reste dans la release et sort de la note du jeu.
 
+Les **problèmes connus** de la version se lisent en base et se collent sous ce même titre :
+`npm run problemes` imprime le bloc (D-119, `docs/COMITE.md` §5.2), et il le rend **sans titre
+markdown** — un `###` sous `## Pour un testeur` rouvrirait la section, et les problèmes
+entreraient dans `/feuille-de-route` comme s'ils étaient des nouveautés.
+
 Le parseur lit chaque `##` comme un groupe de `src/data/versions.ts` : les deux catégories
 apparaissent donc telles quelles dans `/feuille-de-route`. Un titre inventé hors de ce modèle
 entre dans la note du jeu : ne pas en créer sans raison.

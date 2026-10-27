@@ -23,7 +23,7 @@ planquex/
 ├── public/           favicon.svg, icon-192/512.svg (SVG), icon-192/512.png + icon-maskable-512.png (générés par `npm run icones`)
 ├── components.json   config shadcn/ui (alias `@/`, CSS `src/styles.css` ; D-035)
 ├── vercel.json       réécriture SPA de l'hébergement (D-053) : sans elle, une visite directe sur `/collection` répond `404` (les anciennes adresses redirigent, D-075)
-├── scripts/          status.mjs, simulate.mjs, capturer.mjs, notes-versions.mjs, plan-dev.mjs, etapes-infra-tcg.sh, finir-renommage-planquex.sh, illustration-vague.sh (+ leurs tests)
+├── scripts/          status.mjs, simulate.mjs, capturer.mjs, notes-versions.mjs, plan-dev.mjs, problemes-connus.mjs (D-119), etapes-infra-tcg.sh, finir-renommage-planquex.sh, illustration-vague.sh (+ leurs tests)
 ├── supabase/         migrations/ (0001 à 0008, rejouées par pglite.ts), admin/roles.sql (le rôle `lecteur`, hors migrations), les gardes *.test.ts
 ├── tools/            admin/ — le poste de pilotage local (hors application, hors bundle) : serveur, page statique, garde admin.test.ts
 │                     serveurs/ — le tableau de bord des serveurs et des chantiers (D-102) : serveur, page statique, garde serveurs.test.ts
