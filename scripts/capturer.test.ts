@@ -120,11 +120,24 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
 
   it('donne cet amorçage au contexte, donc avant `page.goto`', () => {
     const source = read('scripts/capturer.mjs');
+    // Les pages : l'amorçage est donné au contexte, la navigation vient après.
     expect(source).toContain('storageState: amorce ? amorcageStore(origine) : undefined');
-    const contexte = source.indexOf('browser.newContext({');
-    const navigation = source.indexOf('page.goto(');
-    expect(contexte, '`browser.newContext` introuvable').toBeGreaterThanOrEqual(0);
-    expect(navigation, '`page.goto` introuvable').toBeGreaterThan(contexte);
+    // Le combat : il n'y a plus qu'**un** endroit qui monte son contexte (`ouvrirCombat`, #324).
+    // L'ordre se vérifie donc **dans ce corps-là** : contexte d'abord, navigation ensuite, et
+    // c'est bien le contexte qui reçoit l'amorçage.
+    const debut = source.indexOf('async function ouvrirCombat(');
+    expect(debut, '`ouvrirCombat` introuvable').toBeGreaterThanOrEqual(0);
+    const corps = source.slice(debut, source.indexOf('\n}\n', debut));
+    expect(corps).toContain('storageState: amorcageStore(origine, supplement)');
+    const contexte = corps.indexOf('browser.newContext({');
+    const navigation = corps.indexOf('arriverAuCombat(page, instant)');
+    expect(contexte, '`browser.newContext` introuvable dans `ouvrirCombat`').toBeGreaterThanOrEqual(0);
+    expect(navigation, 'la navigation de `ouvrirCombat` est introuvable').toBeGreaterThan(contexte);
+    // Et la navigation elle-même attend le tour du joueur, sinon la mesure tombe sur l'IA.
+    const debutArrivee = source.indexOf('async function arriverAuCombat(');
+    const corpsArrivee = source.slice(debutArrivee, source.indexOf('\n}\n', debutArrivee));
+    expect(corpsArrivee.indexOf('page.goto(')).toBeGreaterThanOrEqual(0);
+    expect(corpsArrivee.indexOf('arriveeAuTourDuJoueur(page)')).toBeGreaterThan(corpsArrivee.indexOf('page.goto('));
   });
 
   it('amorce toutes les pages de l’application', () => {
@@ -350,7 +363,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
 
   it('joue aussi le combat pas-à-pas terminé, là où le recouvrement est jugé (#191)', () => {
     const source = read('scripts/capturer.mjs');
-    expect(source).toContain('amorcageStore(origine, { pasAPasCombatVu: true })');
+    expect(source).toContain('ouvrirCombat(browser, instant, { pasAPasCombatVu: true })');
     expect(source).toContain('(pas-à-pas terminé)');
   });
 
@@ -693,7 +706,7 @@ describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292
     expect(source).toContain('await mesurerAvecUnePression(browser, true)');
     expect(source).toContain('combatDetaille: true');
     expect(source).toContain("`.battle--${detaille ? 'detaille' : 'sobre'}`");
-    expect(source).toContain('page.evaluate(poserLePireCas, detaille)');
+    expect(source).toContain('page.evaluate(poserLePireCas, [detaille, MODELE_BADGE])');
     expect(source).toContain('${etat}, pire cas');
   });
 
