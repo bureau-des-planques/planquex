@@ -37,6 +37,99 @@ export function migrations(): string {
 }
 
 /**
+ * Ce que Supabase fournit **autour** d'une migration et que PGlite n'a pas (mesuré le
+ * 27/10/2026, PGlite 0.5.11 : `pg_cron`, `pg_net` et `vault` répondent tous les trois
+ * `extension "…" is not available`). Sans ce shim, la migration qui fait parler le mur
+ * (D-118) ne pourrait pas être **rejouée** par la garde — et une migration qu'on ne rejoue
+ * pas n'est gardée par rien.
+ *
+ * Trois schémas, réduits à ce que la migration touche :
+ *
+ * - **`cron`** : `cron.job` et `cron.schedule(nom, cadence, commande)`, comme `pg_cron`. Le job
+ *   n'est **pas** exécuté : le banc n'a pas de démon, et c'est la fonction d'envoi que la
+ *   garde appelle à la main — c'est plus précis qu'attendre une minute.
+ * - **`net`** : `net.http_post(url, body, headers, timeout)` rend un identifiant et **note la
+ *   requête** dans `net._http_request` ; et `net._http_response`, où le **test** dépose la
+ *   réponse, exactement comme le worker de `pg_net` le ferait plus tard.
+ * - **`vault`** : `vault.secrets` et `vault.decrypted_secrets` — le secret du webhook est lu
+ *   là, jamais dans une migration (D-118 (3)). `vault.create_secret(secret, nom)` est le
+ *   geste que la procédure fait à la main dans le tableau de bord.
+ */
+export const SHIM_TUYAU_DISCORD = `
+  create schema if not exists cron;
+  create table if not exists cron.job (
+    jobid    bigserial primary key,
+    jobname  text,
+    schedule text,
+    command  text,
+    active   boolean not null default true
+  );
+  create or replace function cron.schedule(p_nom text, p_cadence text, p_commande text)
+    returns bigint language plpgsql as $cron$
+  declare
+    nouvel_id bigint;
+  begin
+    insert into cron.job (jobname, schedule, command) values (p_nom, p_cadence, p_commande)
+    returning jobid into nouvel_id;
+    return nouvel_id;
+  end;
+  $cron$;
+
+  create schema if not exists net;
+  create table if not exists net._http_request (
+    id      bigserial primary key,
+    url     text,
+    corps   jsonb,
+    cree_le timestamptz not null default now()
+  );
+  -- Ce que le vrai pg_net attend d'une réponse : un code, un corps, une erreur, un délai.
+  create table if not exists net._http_response (
+    id          bigint,
+    status_code integer,
+    content     text,
+    error_msg   text,
+    timed_out   boolean not null default false,
+    created     timestamptz not null default now()
+  );
+  -- Les noms des paramètres sont ceux du vrai pg_net : la couture les passe en **notation
+  -- nommée** (\`url := …\`), donc un shim aux noms différents ne compilerait pas la couture.
+  create or replace function net.http_post(
+    url                  text,
+    body                 jsonb default '{}'::jsonb,
+    params               jsonb default '{}'::jsonb,
+    headers              jsonb default '{"Content-Type": "application/json"}'::jsonb,
+    timeout_milliseconds integer default 5000
+  )
+    returns bigint language plpgsql as $net$
+  declare
+    v_url    text := url;
+    v_corps  jsonb := body;
+    v_id     bigint;
+  begin
+    insert into net._http_request (url, corps) values (v_url, v_corps)
+    returning id into v_id;
+    return v_id;
+  end;
+  $net$;
+
+  create schema if not exists vault;
+  create table if not exists vault.secrets (
+    id          uuid primary key default gen_random_uuid(),
+    name        text unique,
+    description text,
+    secret      text not null
+  );
+  -- \`decrypted_secret\` est le nom de colonne que la migration lit, et celui du vrai coffre.
+  create or replace view vault.decrypted_secrets as
+    select id, name, description, secret, secret as decrypted_secret from vault.secrets;
+  create or replace function vault.create_secret(p_secret text, p_nom text, p_description text default null)
+    returns uuid language sql as $vault$
+  insert into vault.secrets (secret, name, description) values (p_secret, p_nom, p_description)
+  returning id
+  $vault$;
+`;
+
+/**
  * Ce que Supabase fournit déjà : `auth.uid()` lit le sujet du JWT, les deux rôles existent,
  * et **les privilèges par défaut ouvrent les nouvelles tables à `anon` et `authenticated`**
  * (c'est écrit dans `0001_mur.sql` : sans la révocation, Supabase les ouvrirait). Le shim
@@ -61,7 +154,7 @@ export const SHIM = `
   grant usage on schema auth to authenticated;
   grant execute on function auth.uid() to authenticated;
   alter default privileges in schema public grant all on tables to anon, authenticated;
-`;
+${SHIM_TUYAU_DISCORD}`;
 
 /** Deux appareils distincts, pour les scénarios « le mien / celui d'un autre ». */
 export const APPAREIL_A = '11111111-1111-4111-8111-111111111111';
