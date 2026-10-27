@@ -17,7 +17,7 @@ If a file in steps 3–4 doesn't exist, **proceed silently**. Don't flag its abs
 
 When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `AGENTS.md` §3. Don't drift to synonyms the glossary explicitly avoids.
 
-Banned terms: `Galère`, `GalèreMon`, `Pokémon`, plus the project's former name and its universe's vocabulary, must never appear in `src/`, the UI or card data — the executable list is `FORBIDDEN_ANY_CASE` in `src/data/cards.test.ts`, and it is the one that counts. `docs/` may cite « Pokémon TCG Pocket » as an external reference only. The collection is **le Parc** (renamed by D-026; « Galérodex » is the abandoned legacy name); « Galère » alone is always wrong.
+Banned terms: `Galère`, `GalèreMon`, `Pokémon`, plus the project's former name and its universe's vocabulary, must never appear in `src/`, the UI or card data — the executable list is `FORBIDDEN_ANY_CASE` in `src/data/cards.test.ts`, and it is the one that counts. `docs/` may cite « Pokémon TCG Pocket » as an external reference only. The collection is **Collection** (renamed by D-075; « Galérodex » is the abandoned legacy name); « Galère » alone is always wrong.
 
 If the concept you need isn't in the glossary yet, that's a signal: either you're inventing language the project doesn't use (reconsider) or there's a real gap (note it for `/domain-modeling`).
 

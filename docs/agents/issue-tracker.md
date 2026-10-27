@@ -53,7 +53,7 @@ When set to `yes`, PRs run through the same labels and states as issues, using t
 
 GitHub shares one number space across issues and PRs, so a bare `#42` may be either: resolve with `gh pr view 42 --json number,title,body` and fall back to `gh issue view 42 --json number,title,body`.
 
-**Toujours `--json`, jamais la sortie par défaut** : `gh issue view 42` et `gh pr view 42` sortent **1** sur ce dépôt (l'avertissement « Projects (classic) is being deprecated » compte comme une erreur). Mesuré le 26/10/2026 : 42 appels en échec en 3 jours. `gh issue list` et `gh pr list` fonctionnent sans `--json`.
+**Toujours `--json`, jamais la sortie par défaut** : `gh issue view 42` et `gh pr view 42` sortent **1** sur ce dépôt (l'avertissement « Projects (classic) is being deprecated » compte comme une erreur). Mesuré le 26/10/2026 : 43 appels en échec en 3 jours. `gh issue list` et `gh pr list` fonctionnent sans `--json`.
 
 ## When a skill says "publish to the issue tracker"
 

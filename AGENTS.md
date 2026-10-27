@@ -93,7 +93,7 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Signalement (bug) | **post-it OUF** | le jargon Safran, **gardé tel quel** : on ne l'explique pas, on l'emploie (D-058) |
 | Testeur de l'alpha | **un testeur** | jamais « un joueur » tout court : le public, c'est le lancement (D-117) |
 
-**Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Pokémon`, ainsi que **l'ancien nom du projet** et le vocabulaire de son univers — la liste tenue par `src/data/cards.test.ts` (`FORBIDDEN_ANY_CASE`) en est la version exécutable, et c'est elle qui fait foi. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. L'ancien nom **Galérodex** est **abandonné** (il venait de l'univers legacy) : la collection s'appelle **le Parc**.
+**Interdits dans les données, l'UI et les textes du jeu** : `Galère`, `GalèreMon`, `Pokémon`, ainsi que **l'ancien nom du projet** et le vocabulaire de son univers — la liste tenue par `src/data/cards.test.ts` (`FORBIDDEN_ANY_CASE`) en est la version exécutable, et c'est elle qui fait foi. Les docs peuvent citer « Pokémon TCG Pocket » comme référence externe. L'ancien nom **Galérodex** est **abandonné** (il venait de l'univers legacy) : la collection s'appelle **la Collection**.
 
 ### 3.2 Factions
 

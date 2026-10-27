@@ -424,8 +424,8 @@ doigt », alors `anchor positioning` sera la bonne réponse et il faudra une dé
 
 `DESIGN.md`/`AGENTS.md` §6 : « toute modification de forme doit être migrée ou versionnée ».
 La bascule de la §4.3 est un **réglage d'affichage** : elle doit survivre au rechargement
-(GAG), donc vivre dans le store persisté. `STORAGE_VERSION` vaut **7**
-(`src/store/useStore.ts:34`) → la refonte passe à **8**, avec une valeur par défaut (`sobre`)
+(GAG), donc vivre dans le store persisté. `STORAGE_VERSION` vaut **10**
+(`src/store/useStore.ts:43`) → la refonte passe à **11**, avec une valeur par défaut (`sobre`)
 et une entrée dans `migratePersisted` (`useStore.ts:394-...`) et dans `docs/VERSIONS.md` si
 le format d'export change. Même mécanique que `pasAPasCombatVu` (v5 → v6).
 
@@ -916,7 +916,7 @@ casse les tests, ensuite ce qui ajoute.
 ### T5 — La bascule et le raccourci
 
 - **Quoi** : le bouton `ⓘ` (`aria-pressed`, `aria-keyshortcuts="I"`), `I` et `Ctrl+I`,
-  neutralisés dans un champ de saisie, l'état persisté (`STORAGE_VERSION` 7 → 8 + migration).
+  neutralisés dans un champ de saisie, l'état persisté (`STORAGE_VERSION` 10 → 11 + migration).
 - **Critère** (`src/pages/Battle.test.tsx`) :
   1. `fireEvent.keyDown(document, { key: 'i' })` change `aria-pressed` et fait apparaître les
      annotations (ex. le nom d'une Pression sur la carte du Poste) ;
