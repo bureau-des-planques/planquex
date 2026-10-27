@@ -139,7 +139,11 @@ async function arriveeAuTourDuJoueur(page) {
 const CIBLES_HAUTEUR = [
   { nom: 'la main', selecteur: '.hand' },
   { nom: "la barre d'action du combat", selecteur: '.combat-barre' },
-  { nom: "la piste d'Interventions", selecteur: '.piste' }
+  { nom: "la piste d'Interventions", selecteur: '.piste' },
+  // L'action principale, mesurée **seule** (#320) : la barre pouvait déborder de la fenêtre
+  // sans qu'on sache si « Fin du tour » en était, et c'est elle qui sortait sous la navigation
+  // quand une Pression rallongeait la barre d'une rangée. Un bouton absent ne fait rien échouer.
+  { nom: '« Fin du tour »', selecteur: '.combat-barre__fin .button' }
 ];
 
 /**
@@ -151,7 +155,17 @@ const CIBLES_HAUTEUR = [
  */
 function mesureHauteur(cibles) {
   const nav = document.querySelector('.bottom-nav')?.getBoundingClientRect();
+  // La cible de doigt (#320, `docs/SPEC-COMBAT-UI.md` §5.1) : les boutons de la barre d'action et de
+  // la ligne du pas-à-pas, mesurés tels que rendus — pas lus dans la feuille de style. Un bouton
+  // masqué (`display: none`, hauteur nulle) n'en est pas un. 43,5 : l'arrondi du navigateur.
+  const boutonsPetits = [...document.querySelectorAll('.combat-barre .button, .pas-a-pas__ligne button')]
+    .map((bouton) => ({
+      nom: (bouton.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40),
+      hauteur: Math.round(bouton.getBoundingClientRect().height * 10) / 10
+    }))
+    .filter(({ hauteur }) => hauteur > 0 && hauteur < 43.5);
   return {
+    boutonsPetits,
     fenetre: window.innerHeight,
     // Le pas-à-pas du premier combat (#143) ajoute une centaine de pixels collés en haut : tant
     // qu'il est ouvert, la page déborde **par construction** et la barre d'action collée peut
@@ -198,8 +212,26 @@ const MARGE_MIN = 20;
  * serait du bruit), et `etat` — le libellé du passage mesuré, par exemple « pas-à-pas
  * terminé » — entre dans le message pour qu'on sache **lequel** des états mesurés fauter.
  */
-function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false, defilement = 0, etat = '' }) {
+function controlesHauteur({
+  limite,
+  mesures,
+  viewport,
+  pasAPasOuvert = false,
+  defilement = 0,
+  etat = '',
+  boutonsPetits = []
+}) {
   const problemes = [];
+
+  // **La cible de doigt de 44 px** (#320) : un bouton de la barre d'action ou du pas-à-pas plus bas
+  // est nommé, avec sa hauteur. Gagner de la marge en rognant la cible est exactement ce que ce
+  // ticket refuse : la hauteur se gagne ailleurs.
+  for (const { nom, hauteur } of boutonsPetits) {
+    problemes.push(
+      `le bouton « ${nom} » ne fait que ${hauteur} px de haut (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+        `la cible de doigt est de 44 px (SPEC-COMBAT-UI §5.1)`
+    );
+  }
 
   // **L'écran ne défile pas** (D-103, #243), pas-à-pas ouvert compris. Un document plus haut que
   // la fenêtre amène la cible du pas-à-pas en haut et rogne l'en-tête sur la capture ; surtout,
@@ -271,6 +303,94 @@ async function controlerHauteur(page, contexte, route) {
   for (const probleme of controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })) {
     problems.push(`${route} · ${probleme}`);
   }
+}
+
+/**
+ * Les tours qu'on joue au plus pour obtenir une Pression jouable (#320). Le Poste peut n'offrir
+ * que des Pressions à deux cafés : un café par tour, la patience a une borne, et un état qu'on
+ * n'atteint pas se **dit** (voir `jusquAUnePression`), il ne passe pas pour mesuré.
+ */
+const TOURS_MAX_POUR_UNE_PRESSION = 8;
+
+/**
+ * **Jouer jusqu'à une Pression jouable** (#320) — l'état que l'arrivée ne montre jamais.
+ *
+ * L'arrivée n'affiche que « Fin du tour » : la barre d'action y est à sa hauteur **minimale**, et
+ * la mesure y disait `defilement = 0` pendant que, au tour 3, avec un café attaché, la barre
+ * passait sur deux rangées et « Fin du tour » sortait sous la navigation. Cette fonction joue les
+ * gestes d'un testeur — « Attacher 1 café » puis « Fin du tour », tant qu'aucune Pression n'est
+ * proposée — et rend le **tour** atteint, ou `null` quand le Poste n'en offre aucune dans la borne.
+ *
+ * Une Pression jouable est un bouton `button--primary` de la barre (`ActionButton`, `attack`).
+ */
+async function jusquAUnePression(page) {
+  const barre = page.locator('.combat-barre');
+  const pression = barre.locator('.button--primary');
+  for (let essai = 0; essai < TOURS_MAX_POUR_UNE_PRESSION; essai += 1) {
+    const attacher = barre.getByRole('button', { name: /Attacher 1 café/ });
+    if ((await attacher.count()) > 0) {
+      await attacher.first().click();
+      await page.waitForTimeout(500);
+    }
+    if ((await pression.count()) > 0) {
+      const tete = await page.locator('.battle__head').textContent();
+      return Number(tete?.match(/Tour (\d+)/)?.[1] ?? 0);
+    }
+    const avant = await page.locator('.battle__head').textContent();
+    await barre.getByRole('button', { name: 'Fin du tour', exact: true }).click();
+    // Le tour de l'IA se joue seul : on attend que la main revienne **et** que le tour ait changé.
+    await page.waitForFunction(
+      (ancien) => {
+        const texte = document.querySelector('.battle__head')?.textContent ?? '';
+        return texte.includes('à toi') && texte !== ancien;
+      },
+      avant,
+      { timeout: 60000 }
+    );
+    await page.waitForTimeout(1200);
+  }
+  return null;
+}
+
+/**
+ * Le combat **avec une Pression jouable** (#320), à chaque instant figé et dans les deux états du
+ * pas-à-pas : c'est là que la barre est la plus haute. Un instant dont le Poste n'offre aucune
+ * Pression dans la borne n'est pas une panne — mais **aucun** instant n'en offrant, la mesure ne
+ * verrait plus rien, et ça échoue : une garde qui ne regarde rien ne garde rien.
+ */
+async function mesurerAvecUnePression(browser) {
+  let atteints = 0;
+  for (const pasAPasVu of [false, true]) {
+    for (const instant of INSTANTS_COMBAT) {
+      const context = await browser.newContext({
+        viewport: VIEWPORT,
+        isMobile: true,
+        storageState: amorcageStore(origine, pasAPasVu ? { pasAPasCombatVu: true } : {})
+      });
+      const page = await context.newPage();
+      page.on('pageerror', (error) => problems.push(`${ROUTE_COMBAT} · pageerror : ${error.message}`));
+      await page.clock.setFixedTime(instant);
+      await page.goto(`${base}${ROUTE_COMBAT}`, { waitUntil: 'networkidle' });
+      await arriveeAuTourDuJoueur(page);
+      const tour = await jusquAUnePression(page);
+      const etat = `${new Date(instant).toISOString()} (Pression jouable${pasAPasVu ? ', pas-à-pas terminé' : ''})`;
+      if (tour === null) {
+        console.log(`combat · ${etat} · aucune Pression en ${TOURS_MAX_POUR_UNE_PRESSION} tours : non mesuré`);
+      } else {
+        atteints += 1;
+        await controlerHauteur(page, `${etat}, tour ${tour}`, ROUTE_COMBAT);
+        // Premier état atteint : c'est aussi la capture du tour (`combat-pression.png`).
+        if (atteints === 1) await page.screenshot({ path: join(outDir, 'combat-pression.png'), fullPage: PLEINE_PAGE });
+      }
+      await context.close();
+    }
+  }
+  if (atteints === 0) {
+    problems.push(
+      `${ROUTE_COMBAT} · aucun état « Pression jouable » atteint : la barre n'est mesurée que sans Pression`
+    );
+  }
+  return atteints;
 }
 
 /**
@@ -554,6 +674,10 @@ try {
     await controlerHauteur(page, `${new Date(instant).toISOString()} (pas-à-pas terminé)`, ROUTE_COMBAT);
     await context.close();
   }
+
+  // Le combat **avec une Pression jouable** (#320) : la barre y est à sa hauteur maximale, et
+  // c'est là que « Fin du tour » passait sous la navigation.
+  await mesurerAvecUnePression(browser);
 } finally {
   await browser.close();
   await server?.close();

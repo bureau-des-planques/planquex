@@ -277,7 +277,13 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
   }
 
   it('suit la main, la barre d’action et la piste d’Interventions', () => {
-    expect(cibles().map((cible) => cible.selecteur)).toEqual(['.hand', '.combat-barre', '.piste']);
+    // … et « Fin du tour » seul (#320) : l'action principale se mesure à part.
+    expect(cibles().map((cible) => cible.selecteur)).toEqual([
+      '.hand',
+      '.combat-barre',
+      '.piste',
+      '.combat-barre__fin .button'
+    ]);
   });
 
   it('ne dit rien tant qu’une surface est absente', () => {
@@ -346,6 +352,103 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     const source = read('scripts/capturer.mjs');
     expect(source).toContain('amorcageStore(origine, { pasAPasCombatVu: true })');
     expect(source).toContain('(pas-à-pas terminé)');
+  });
+
+  /**
+   * Ticket #320 — « Fin du tour » sous la barre de navigation. La géométrie est **celle qui a été
+   * mesurée** le 27/10/2026 sur le code d'avant (tour 3, un café attaché, Pression jouable, pas-à-pas
+   * ouvert, 420 × 900) : barre à 836 px, bouton à 834 px, navigation à 830 px, page qui défile de 24.
+   * Le contrôle doit la refuser en nommant le bouton, et accepter la géométrie d'après.
+   */
+  describe('« Fin du tour » doit rester visible avec une Pression jouable (#320)', () => {
+    const fin = (bas: number): Mesure => ({
+      nom: '« Fin du tour »',
+      selecteur: '.combat-barre__fin .button',
+      present: true,
+      haut: bas - 36,
+      bas
+    });
+
+    function controleComplet(mesures: Mesure[], defilement: number): string[] {
+      const output = execFileSync(
+        process.execPath,
+        [
+          'scripts/capturer.mjs',
+          '--controle-hauteur',
+          JSON.stringify({ limite: 830, mesures, defilement, pasAPasOuvert: true, etat: 'Pression jouable, tour 3' })
+        ],
+        { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+      );
+      return JSON.parse(output) as string[];
+    }
+
+    it('le contrôle mord sur la mesure d’avant : bouton à 834 px sous une navigation à 830 px', () => {
+      const avant = [
+        ...geometrie({ mainBas: 728, barreActionHaut: 731, barreActionBas: 836 }),
+        fin(834)
+      ];
+      const problemes = controleComplet(avant, 24);
+      expect(problemes.some((p) => p.includes('« Fin du tour » n\'est pas visible sans défiler'))).toBe(true);
+      expect(problemes.some((p) => p.includes('bas de « Fin du tour » à 834 px, barre de navigation à 830 px'))).toBe(
+        true
+      );
+      expect(problemes.some((p) => p.includes('défile de 24 px'))).toBe(true);
+      expect(problemes.some((p) => p.includes('Pression jouable, tour 3'))).toBe(true);
+    });
+
+    it('laisse passer la mesure d’après : bouton à 770 px, barre à 809 px, aucun défilement', () => {
+      const apres = [...geometrie({ mainBas: 728, barreActionHaut: 731, barreActionBas: 809 }), fin(770)];
+      expect(controleComplet(apres, 0)).toEqual([]);
+    });
+
+    it('mord sur le bouton seul, même quand la barre reste dans la fenêtre', () => {
+      // La barre à 800 px tient ; un bouton à 835 px (hors barre, par construction) est nommé seul.
+      const problemes = controleComplet([...geometrie({ barreActionBas: 800 }), fin(835)], 0);
+      expect(problemes).toHaveLength(1);
+      expect(problemes[0]).toContain('« Fin du tour »');
+    });
+
+    it('la cible de doigt de 44 px : le contrôle mord sur un bouton de 36 px, et nomme le bouton (#320)', () => {
+      // Les hauteurs d'avant : la barre à 36 px (#203) et « Plus » du pas-à-pas à 36 px, « Suivant » à 33.
+      const sortie = (boutonsPetits: { nom: string; hauteur: number }[]): string[] => {
+        const output = execFileSync(
+          process.execPath,
+          [
+            'scripts/capturer.mjs',
+            '--controle-hauteur',
+            JSON.stringify({ limite: 830, mesures: geometrie(), etat: 'Pression jouable', boutonsPetits })
+          ],
+          { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+        );
+        return JSON.parse(output) as string[];
+      };
+      expect(sortie([])).toEqual([]);
+      const problemes = sortie([
+        { nom: 'Fin du tour', hauteur: 36 },
+        { nom: 'Plus', hauteur: 36 },
+        { nom: 'Suivant', hauteur: 33 }
+      ]);
+      expect(problemes).toHaveLength(3);
+      expect(problemes[0]).toContain('« Fin du tour » ne fait que 36 px de haut');
+      expect(problemes[0]).toContain('44 px');
+      expect(problemes[2]).toContain('« Suivant » ne fait que 33 px de haut');
+    });
+
+    it('mesure les boutons de la barre et du pas-à-pas tels que rendus', () => {
+      const source = read('scripts/capturer.mjs');
+      expect(source).toContain(".combat-barre .button, .pas-a-pas__ligne button");
+      expect(source).toContain('boutonsPetits');
+    });
+
+    it('joue réellement un état « Pression jouable », et échoue s’il n’en atteint aucun', () => {
+      const source = read('scripts/capturer.mjs');
+      // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer à ne
+      // mesurer que l'arrivée, où la barre n'a qu'une rangée.
+      expect(source).toContain('await mesurerAvecUnePression(browser)');
+      expect(source).toContain("barre.locator('.button--primary')");
+      expect(source).toContain('(Pression jouable');
+      expect(source).toContain('aucun état « Pression jouable » atteint');
+    });
   });
 
   it('ne double pas le message quand la main sort déjà de la fenêtre (#191)', () => {
