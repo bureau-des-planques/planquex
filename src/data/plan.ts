@@ -64,8 +64,9 @@ export const ETAPE_EN_COURS = {
  */
 export const CRITERES_ALPHA: ElementPlan[] = [
   {
-    texte: 'Chaque testeur a joué au moins une partie complète.',
-    decision: 'D-117'
+    texte:
+      'Cinq testeurs réels ont terminé une partie complète — mesuré dans les traces de combat, pas déclaré.',
+    decision: 'D-123'
   },
   {
     texte: 'Plus aucun bug qui casse la boucle n’est ouvert.',

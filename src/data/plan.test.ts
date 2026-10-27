@@ -45,8 +45,9 @@ describe('plan — les critères de sortie d’alpha (D-056)', () => {
     expect(CRITERES_ALPHA).toHaveLength(3);
     expect(sansDecision(CRITERES_ALPHA)).toEqual([]);
     for (const critere of CRITERES_ALPHA) {
-      // (a) est reformulé par D-117 ; (b) et (c) restent ceux de D-056.
-      expect(['D-056', 'D-117'], critere.texte).toContain(critere.decision);
+      // (a) est reformulé par D-117, puis **mesuré** par D-123 (cinq testeurs, preuve
+      // dans `public.combats`) ; (b) et (c) restent ceux de D-056.
+      expect(['D-056', 'D-117', 'D-123'], critere.texte).toContain(critere.decision);
       expect(critere.texte.trim()).not.toBe('');
     }
   });

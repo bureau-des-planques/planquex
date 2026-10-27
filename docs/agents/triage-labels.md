@@ -24,11 +24,19 @@ revient se recrée en une commande.
 
 | Label in mattpocock/skills | Label in our tracker | Meaning                                  |
 | -------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
+| `needs-triage`             | `needs-triage`       | **Une décision manque** (ou le ticket dépend d'un autre travail) : un humain tranche, puis l'agent exécute |
 | `needs-info`               | `needs-info`         | Waiting on reporter for more information |
 | `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
+| `ready-for-human`          | `ready-for-human`    | **Geste qu'aucun agent ne peut faire** : compte, clé, serveur, validation manuelle |
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
+
+**Ce que l'état dit, et ce qu'il ne dit pas** (**D-129**, 27/10/2026). Les états disent **qui agit**, pas où en est le travail :
+
+- `needs-triage` — **une décision manque**. Ce n'est pas « quelqu'un doit coder » : c'est « personne ne sait encore quoi coder ». Un ticket **bloqué par un autre travail** porte aussi `needs-triage`, et **dit son bloqueur dans le corps** (« Bloqué par #251 ») : il n'existe pas d'étiquette `blocked`, qui serait une liste de plus à tenir.
+- `ready-for-agent` — **spécifié**, un agent peut le prendre tel quel et rendre ses preuves.
+- `ready-for-human` — un **geste** qu'aucun agent ne peut faire : créer un serveur, poser un secret, valider un compte, trancher une orientation. Rare, et jamais pour dire « c'est du code, mais je préfère le faire moi-même ».
+
+Avant D-129, douze tickets portaient `ready-for-human` alors que neuf n'attendaient qu'une décision : le label faisait croire que douze tickets attendaient une personne, et le travail ne démarrait pas.
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
