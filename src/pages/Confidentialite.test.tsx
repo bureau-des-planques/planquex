@@ -55,3 +55,40 @@ describe('Confidentialité — la page publique', () => {
     expect(CONTACT).not.toMatch(/exemple|a-completer|todo/i);
   });
 });
+
+/**
+ * Le serveur des testeurs (#317, D-119).
+ *
+ * La page promet « aucun traceur » : un lien vers un **service tiers** doit donc y être dit.
+ * Ce qui est gardé, et qui peut échouer :
+ *
+ * 1. la rubrique existe, et dit que rejoindre est **facultatif** — quitter le jeu sans
+ *    rejoindre reste normal ;
+ * 2. elle dit qu'on **sort du jeu** et que **Discord applique ses propres règles** : c'est la
+ *    phrase qui empêche la page de laisser croire que le jeu garde ce qu'on y écrit ;
+ * 3. elle ne dit **rien des annonces** : elles n'existent pas encore (#318), et une page qui
+ *    décrit un flux qui n'est pas branché est un mensonge d'avance.
+ */
+describe('Confidentialité — le serveur des testeurs (#317)', () => {
+  const rendre = () =>
+    render(
+      <MemoryRouter>
+        <Confidentialite />
+      </MemoryRouter>
+    );
+
+  it('dit que rejoindre est facultatif, hors du jeu, et que Discord a ses propres règles', () => {
+    rendre();
+
+    expect(screen.getByRole('heading', { level: 2, name: /serveur des testeurs/i })).toBeTruthy();
+    expect(screen.getByText(/facultatif/i)).toBeTruthy();
+    expect(screen.getAllByText(/discord/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/hors du jeu|service à part/i)).toBeTruthy();
+    expect(screen.getByText(/ses propres règles|sa propre politique/i)).toBeTruthy();
+  });
+
+  it('ne dit rien des annonces tant qu’elles n’existent pas (#318)', () => {
+    rendre();
+    expect(document.body.textContent).not.toMatch(/annonce/i);
+  });
+});

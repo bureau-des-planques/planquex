@@ -69,6 +69,14 @@ const COLLECTE: Rubrique[] = [
 
 const QUESTIONS: Rubrique[] = [
   {
+    titre: 'Le serveur des testeurs (facultatif)',
+    lignes: [
+      'Le lien « Rejoindre le serveur des testeurs », dans Réglages et au pied du comité, ouvre Discord : c’est un service à part, hors du jeu, et on peut jouer sans jamais y aller.',
+      'Si tu le rejoins, Discord applique ses propres règles et sa propre politique de confidentialité : ce que tu y écris ne dépend plus de nous.',
+      'Le jeu n’embarque ni iframe, ni script, ni widget Discord : avant que tu cliques, rien de Discord n’est chargé, et la promesse « aucun traceur » tient toujours.'
+    ]
+  },
+  {
     titre: 'Combien de temps',
     lignes: [
       'Le temps de l’alpha, c’est-à-dire le temps de recueillir assez de retours pour décider de la suite.',
