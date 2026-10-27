@@ -1167,7 +1167,11 @@ h2 {
 }
 
 .card--plateau .card__seuil-badge::before {
-  font-size: 0.42rem;
+  /* #290 : 0,42 rem (6,7 px) était illisible ; le plancher du combat est `--fs-2xs`. Et la plaque
+     n'est opaque qu'à 72 % : sur une illustration blanche, `--text-muted` y tombait à 3,40:1 ; en
+     `--text` le pire cas est 6,93:1 (DESIGN.md §1.5). */
+  color: var(--text);
+  font-size: var(--fs-2xs);
   letter-spacing: 0.06em;
 }
 
@@ -1195,7 +1199,7 @@ h2 {
 }
 
 .card--plateau .card__emblem {
-  font-size: 0.55rem;
+  font-size: var(--fs-2xs);
 }
 
 /* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. L'or **est** l'anneau (`--frame`) :
@@ -1496,6 +1500,39 @@ h2 {
    la variable `--cafe` que `CafeDot` pose en style inline. */
 .pip--typed {
   background: var(--cafe);
+}
+
+/* **Le café se voit sur la table** (#290, T7 ; vrac du 27/10/2026 : « les couleurs du café ne se
+   voient pas »). Avant : 8 px, un filet noir à 35 % — le Direction (#5b6472) tombait à **2,75:1**
+   du feutre et à **1,51:1** du centre éclairé, donc la pastille s'y fondait. Maintenant : un
+   disque de la couleur de la faction, cerné d'un liseré **sombre** (la couleur pleine contre lui :
+   3,27:1 au pire, le Direction), lui-même cerné d'un anneau **crème** (`--text`, 7,73:1 sur le
+   centre éclairé). La pastille existe donc par son anneau, quelle que soit la teinte du café.
+   Les ratios sont dans `DESIGN.md` §1.5. */
+.battle .pip {
+  border: 1.5px solid var(--bg-deep);
+  box-shadow: 0 0 0 1.5px var(--text);
+  height: 14px;
+  margin: 1.5px;
+  width: 14px;
+}
+
+/* La fiche du camp (cafés attachés, Machine) est lue d'un coup d'œil : plus grand. */
+.battle .poste__info .pip {
+  height: 18px;
+  width: 18px;
+}
+
+/* L'incolore et la place vide : un anneau en pointillé, crème — le `--text-dim` de la pastille
+   d'avant (2,77:1 sur le centre éclairé) ne se lisait pas. */
+.battle .pip--free {
+  background: none;
+  border: 1.5px dashed var(--text);
+  box-shadow: none;
+}
+
+.battle .pips {
+  gap: 0.3rem;
 }
 
 /* La flavour : deux lignes au plus, coupées proprement — c'est ce qui garde les cartes
@@ -2387,7 +2424,7 @@ h2 {
    Machine ne montre que sa pastille, et la phrase reste lue par le `sr-only` de `MachinePips`. */
 .poste__machine-types {
   color: var(--text);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs);
   line-height: 1.2;
 }
 
@@ -2922,7 +2959,7 @@ h2 {
   color: var(--scene-ink-parch);
   display: inline-flex;
   font-family: var(--font-display);
-  font-size: 0.62rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   gap: 0.3rem;
   letter-spacing: 0.12em;
@@ -2964,7 +3001,7 @@ h2 {
 .piste__nom {
   color: var(--text);
   font-family: var(--font-display);
-  font-size: 0.6rem;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -3365,7 +3402,7 @@ h2 {
 
 .hand__kind {
   color: var(--text-muted);
-  font-size: 0.64rem;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -3384,7 +3421,7 @@ h2 {
   border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
   border-radius: 999px;
   color: var(--gold-soft);
-  font-size: 0.62rem;
+  font-size: var(--fs-2xs);
   padding: 0 0.35rem;
 }
 
