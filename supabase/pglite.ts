@@ -40,7 +40,7 @@ export function migrations(): string {
  * Ce que Supabase fournit **autour** d'une migration et que PGlite n'a pas (mesuré le
  * 27/10/2026, PGlite 0.5.11 : `pg_cron`, `pg_net` et `vault` répondent tous les trois
  * `extension "…" is not available`). Sans ce shim, la migration qui fait parler le mur
- * (D-118) ne pourrait pas être **rejouée** par la garde — et une migration qu'on ne rejoue
+ * (D-120) ne pourrait pas être **rejouée** par la garde — et une migration qu'on ne rejoue
  * pas n'est gardée par rien.
  *
  * Trois schémas, réduits à ce que la migration touche :
@@ -52,7 +52,7 @@ export function migrations(): string {
  *   requête** dans `net._http_request` ; et `net._http_response`, où le **test** dépose la
  *   réponse, exactement comme le worker de `pg_net` le ferait plus tard.
  * - **`vault`** : `vault.secrets` et `vault.decrypted_secrets` — le secret du webhook est lu
- *   là, jamais dans une migration (D-118 (3)). `vault.create_secret(secret, nom)` est le
+ *   là, jamais dans une migration (D-120 (3)). `vault.create_secret(secret, nom)` est le
  *   geste que la procédure fait à la main dans le tableau de bord.
  */
 export const SHIM_TUYAU_DISCORD = `

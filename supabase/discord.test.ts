@@ -1,6 +1,6 @@
 // @vitest-environment node
 /**
- * Le mur s'annonce dans #comite — la migration `0013_discord_comite.sql` (#318, D-118 (2),
+ * Le mur s'annonce dans #comite — la migration `0013_discord_comite.sql` (#318, D-120 (2),
  * (3) et (5)).
  *
  * Même banc que les autres gardes de la base : **toutes** les migrations réelles, lues sur
@@ -64,13 +64,13 @@ async function monde(db: Base): Promise<void> {
   await creerCompte(db, ADMIN, { etat: 'approuve', administrateur: true });
 }
 
-/** Le webhook vit dans Vault (D-118 (3)) : le test le pose là, et jamais ailleurs. */
+/** Le webhook vit dans Vault (D-120 (3)) : le test le pose là, et jamais ailleurs. */
 async function poserWebhook(db: Base, url: string = URL_WEBHOOK): Promise<void> {
   await db.query(`select vault.create_secret($1, 'discord_webhook_comite')`, [url]);
 }
 
 /**
- * **Le faux de la couture** (D-118 (5)). Il remplace `public.poster_discord` et note chaque
+ * **Le faux de la couture** (D-120 (5)). Il remplace `public.poster_discord` et note chaque
  * appel : à partir d'ici, le vrai `net.http_post` n'est plus joignable, donc le test ne peut
  * pas parler à Discord même s'il le voulait.
  */
@@ -181,7 +181,7 @@ describe('ce qui annonce (0013)', () => {
       expect(lignes[0].etat).toBe('en attente');
       expect(contenu(lignes[0])).toBe(`Nouveau post-it IP — « Le bouton ne répond pas » (Nora) · ${LIEN}`);
 
-      // D-118 (2) : le pseudo est la seule identité admise — ni `auteur`, ni courriel, ni id.
+      // D-120 (2) : le pseudo est la seule identité admise — ni `auteur`, ni courriel, ni id.
       const brut = JSON.stringify(lignes[0].corps);
       expect(brut).not.toContain(APPAREIL_A);
       expect(brut).not.toContain('@exemple.test');

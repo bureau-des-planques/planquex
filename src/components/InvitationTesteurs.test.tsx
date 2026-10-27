@@ -16,7 +16,7 @@ import {
 const MOT_ECARTE = new RegExp(`invi${'té'}`, 'i');
 
 /**
- * La porte du serveur des testeurs (#317, D-118).
+ * La porte du serveur des testeurs (#317, D-120).
  *
  * Ce que ce test garde, et qui peut réellement échouer :
  *

@@ -6,7 +6,7 @@
 > l'a fait. **Rien ne s'écrit dans le code** pour le serveur et les deux intégrations : ils se
 > règlent dans des interfaces, et le jeu ne porte qu'un lien. Le **mur**, lui, envoie ses
 > annonces par une migration (§10) — c'est le seul morceau qui vit dans le dépôt. Décision :
-> **D-118** ; tickets #316 (le serveur et les annonces), #317 (le serveur et sa porte dans le
+> **D-120** ; tickets #316 (le serveur et les annonces), #317 (le serveur et sa porte dans le
 > jeu) et #318 (les annonces du mur, qui sont la **§10** de ce document).
 
 ## Ce que le jeu attend, et ce qu'il n'attend pas
@@ -149,7 +149,7 @@ comme un vrai événement.
 - **L'invitation permanente** se crée **sans expiration** ; une invitation à durée limitée
   ferait un lien mort dans un message que personne ne pensera à corriger.
 
-## 10. Le mur s'annonce dans `#comite` (#318, D-118)
+## 10. Le mur s'annonce dans `#comite` (#318, D-120)
 
 Depuis #318, le mur **parle** dans `#comite` : un post-it neuf et chaque **vrai** changement
 de statut. Ce n'est pas une intégration Discord à brancher à la main — c'est **la base du jeu

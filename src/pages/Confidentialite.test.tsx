@@ -57,7 +57,7 @@ describe('Confidentialité — la page publique', () => {
 });
 
 /**
- * Le serveur des testeurs (#317, D-118).
+ * Le serveur des testeurs (#317, D-120).
  *
  * La page promet « aucun traceur » : un lien vers un **service tiers** doit donc y être dit.
  * Ce qui est gardé, et qui peut échouer :
@@ -94,7 +94,7 @@ describe('Confidentialité — le serveur des testeurs (#317)', () => {
 });
 
 /**
- * Les annonces du mur dans `#comite` (#318, D-118 (2)).
+ * Les annonces du mur dans `#comite` (#318, D-120 (2)).
  *
  * Depuis #318, le mur **sort** du jeu : un post-it neuf et chaque changement de statut
  * partent dans le salon `#comite` d'un service tiers. La page doit donc le dire — et dire
@@ -104,7 +104,7 @@ describe('Confidentialité — le serveur des testeurs (#317)', () => {
  *
  * 1. la rubrique existe et nomme le salon, la famille, le titre, le pseudo et le lien ;
  * 2. elle nomme le **gueulage** dans ce qui ne part pas : c'est la promesse la plus précise
- *    de D-118, et la plus facile à perdre en réécrivant la page ;
+ *    de D-120, et la plus facile à perdre en réécrivant la page ;
  * 3. elle dit qu'aucune donnée de compte ne part.
  */
 describe('Confidentialité — les annonces du mur (#318)', () => {

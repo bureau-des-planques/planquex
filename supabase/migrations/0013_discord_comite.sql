@@ -1,11 +1,11 @@
--- Le mur s'annonce dans #comite — #318, D-118 (2), (3) et (5).
+-- Le mur s'annonce dans #comite — #318, D-120 (2), (3) et (5).
 --
 -- Le mur est **mort** quand ses statuts ne bougent pas en silence : celui qui a collé un
 -- post-it n'apprend son tri que s'il revient voir. Cette migration fait donc **parler** le
--- mur dans le salon `#comite` du serveur des testeurs (D-118), sans rien héberger : la
+-- mur dans le salon `#comite` du serveur des testeurs (D-120), sans rien héberger : la
 -- cadence vient de `pg_cron`, l'envoi de `pg_net`, le secret de **Vault**.
 --
--- **Ce qui sort, et ce qui ne sort jamais** (D-118 (2)) :
+-- **Ce qui sort, et ce qui ne sort jamais** (D-120 (2)) :
 --   - l'arrivée d'un post-it : sa famille (IP/OUF), son titre, le pseudo de son auteur, et le
 --     lien vers `/comite` ;
 --   - chaque **changement de statut** (retenu, en cours, fait, écarté avec sa raison) ;
@@ -13,7 +13,7 @@
 --     dit), et **jamais** une donnée de compte : ni `auteur`, ni courriel, ni identifiant.
 --     Le pseudo, déjà public sur le mur, est la seule identité admise.
 --
--- **« Remis » n'est pas « livré »** (D-118 (3)). `pg_net` ne fait que **déposer** une requête :
+-- **« Remis » n'est pas « livré »** (D-120 (3)). `pg_net` ne fait que **déposer** une requête :
 -- sa réponse arrive plus tard, dans `net._http_response`. Une ligne d'annonce a donc un
 -- **état** :
 --
@@ -27,7 +27,7 @@
 --
 -- **Une seule couture** : `public.poster_discord(url, corps)` est le **seul** endroit du
 -- dépôt qui appelle `net.http_post`. La garde la remplace par un faux et compte les appels —
--- aucun test ne parle à Discord (D-118 (5)).
+-- aucun test ne parle à Discord (D-120 (5)).
 --
 -- **Le passé ne déferle pas** : à l'installation, chaque post-it déjà présent reçoit une
 -- ligne `sans_webhook` — il n'a rien à annoncer, et le premier jour ne déverse pas
@@ -50,7 +50,7 @@ begin;
 -- 1. Les deux extensions du tuyau, si la base les propose
 -- ---------------------------------------------------------------------------------------------
 
--- Le banc d'essai (PGlite, D-118 (5)) n'a **ni** `pg_cron` **ni** `pg_net` : mesuré le
+-- Le banc d'essai (PGlite, D-120 (5)) n'a **ni** `pg_cron` **ni** `pg_net` : mesuré le
 -- 27/10/2026, les deux répondent `extension "…" is not available`. La migration ne peut donc
 -- pas les exiger — elle les installe quand `pg_available_extensions` les annonce, et se tait
 -- sinon. Sur le projet réel, les deux sont **installables** par le rôle `postgres` (mesuré le
@@ -80,7 +80,7 @@ create table if not exists public.annonces_discord (
   -- D'où vient l'annonce : l'arrivée du post-it, ou un de ses mouvements de statut.
   type         text        not null check (type in ('postit', 'statut')),
 
-  -- L'état de l'envoi (D-118 (3)) : « remis » n'est pas « livré ».
+  -- L'état de l'envoi (D-120 (3)) : « remis » n'est pas « livré ».
   etat         text        not null default 'en attente'
                            check (etat in ('en attente', 'remis', 'livre', 'abandonne', 'sans_webhook')),
 
@@ -107,9 +107,9 @@ create table if not exists public.annonces_discord (
 );
 
 comment on table public.annonces_discord is
-  'Ce que le mur dit dans #comite (D-118), et où en est chaque envoi. Aucun accès client.';
+  'Ce que le mur dit dans #comite (D-120), et où en est chaque envoi. Aucun accès client.';
 comment on column public.annonces_discord.etat is
-  'en attente → remis → livre ; une réponse non-2xx ramène en attente, la 5ᵉ tentative abandonne (D-118).';
+  'en attente → remis → livre ; une réponse non-2xx ramène en attente, la 5ᵉ tentative abandonne (D-120).';
 comment on column public.annonces_discord.corps is
   'Le message Discord, composé par la base : contenu et aucune mention interprétable.';
 
@@ -142,8 +142,8 @@ alter table public.annonces_discord force row level security;
 -- ---------------------------------------------------------------------------------------------
 
 /**
- * L'adresse du comité dans le jeu. Ce n'est **pas** un secret (D-118 (1) : l'invitation est
- * publique) : le webhook, lui, ne vit que dans Vault (D-118 (3)).
+ * L'adresse du comité dans le jeu. Ce n'est **pas** un secret (D-120 (1) : l'invitation est
+ * publique) : le webhook, lui, ne vit que dans Vault (D-120 (3)).
  */
 create or replace function public.lien_comite()
 returns text
@@ -155,7 +155,7 @@ as $$
 $$;
 
 comment on function public.lien_comite() is
-  'L''adresse publique du comité, jointe à chaque annonce (D-118).';
+  'L''adresse publique du comité, jointe à chaque annonce (D-120).';
 
 /**
  * Coupe un texte à `p_max` caractères, points de suspension compris. Deux limites se
@@ -175,7 +175,7 @@ as $$
 $$;
 
 comment on function public.tronquer_annonce(text, integer) is
-  'Tronque un champ d''annonce, points de suspension compris (limite du salon, D-118).';
+  'Tronque un champ d''annonce, points de suspension compris (limite du salon, D-120).';
 
 /**
  * L'arrivée d'un post-it.
@@ -214,7 +214,7 @@ as $$
 $$;
 
 comment on function public.phrase_postit_neuf(text, boolean, text, text) is
-  'La phrase d''arrivée d''un post-it ; un gueulage n''y porte ni titre ni texte (D-085, D-118).';
+  'La phrase d''arrivée d''un post-it ; un gueulage n''y porte ni titre ni texte (D-085, D-120).';
 
 /**
  * Un mouvement de statut. `écarté` porte sa **raison**, tronquée : c'est la seule explication
@@ -246,7 +246,7 @@ as $$
 $$;
 
 comment on function public.phrase_changement_statut(text, text, text, text) is
-  'La phrase d''un mouvement de statut, avec la raison tronquée d''un écarté (D-118).';
+  'La phrase d''un mouvement de statut, avec la raison tronquée d''un écarté (D-120).';
 
 -- ---------------------------------------------------------------------------------------------
 -- 5. Les déclencheurs : ce qui annonce, et rien d'autre
@@ -280,7 +280,7 @@ end;
 $$;
 
 comment on function public.annoncer_postit_neuf() is
-  'Met en file l''annonce d''un post-it neuf (D-118).';
+  'Met en file l''annonce d''un post-it neuf (D-120).';
 
 drop trigger if exists postits_annonce_neuve on public.postits;
 create trigger postits_annonce_neuve
@@ -294,7 +294,7 @@ create trigger postits_annonce_neuve
  *
  *   1. le statut doit **vraiment** changer — un `update` qui nomme la colonne sans la changer
  *      (le tri qui réécrit le même statut) n'annonce rien, sinon le salon répète ;
- *   2. le statut d'arrivée doit être l'un des **quatre** que D-118 nomme. Un retour à
+ *   2. le statut d'arrivée doit être l'un des **quatre** que D-120 nomme. Un retour à
  *      `en attente` (le tri qui se ravise) ne s'annonce pas : c'est un brouillon, pas un
  *      mouvement ;
  *   3. le reste ne déclenche pas du tout — `after update of statut` écarte la correction de
@@ -330,7 +330,7 @@ end;
 $$;
 
 comment on function public.annoncer_statut() is
-  'Met en file l''annonce d''un vrai changement de statut (D-118) : une par mouvement, pas deux.';
+  'Met en file l''annonce d''un vrai changement de statut (D-120) : une par mouvement, pas deux.';
 
 drop trigger if exists postits_annonce_statut on public.postits;
 create trigger postits_annonce_statut
@@ -342,7 +342,7 @@ create trigger postits_annonce_statut
 -- ---------------------------------------------------------------------------------------------
 
 /**
- * L'URL du webhook, lue dans **Vault** au moment de l'envoi (D-118 (3)) : jamais dans le
+ * L'URL du webhook, lue dans **Vault** au moment de l'envoi (D-120 (3)) : jamais dans le
  * dépôt, jamais dans une migration, jamais dans le client. Sans secret, `null` — et rien ne
  * part, rien n'est marqué livré.
  */
@@ -361,10 +361,10 @@ as $$
 $$;
 
 comment on function public.discord_webhook() is
-  'Le webhook de #comite, lu dans Vault à l''envoi (D-118) : null sans secret.';
+  'Le webhook de #comite, lu dans Vault à l''envoi (D-120) : null sans secret.';
 
 /**
- * **La** couture (D-118 (5)) : le seul endroit du dépôt qui parle à `pg_net`. La garde la
+ * **La** couture (D-120 (5)) : le seul endroit du dépôt qui parle à `pg_net`. La garde la
  * remplace par un faux et compte les appels, donc aucun test ne parle à Discord.
  */
 create or replace function public.poster_discord(p_url text, p_corps jsonb)
@@ -381,7 +381,7 @@ as $$
 $$;
 
 comment on function public.poster_discord(text, jsonb) is
-  'La couture de l''envoi Discord (D-118) : le seul appel à net.http_post du dépôt.';
+  'La couture de l''envoi Discord (D-120) : le seul appel à net.http_post du dépôt.';
 
 -- ---------------------------------------------------------------------------------------------
 -- 7. La réconciliation : « remis » n'est pas « livré »
@@ -457,7 +457,7 @@ end;
 $$;
 
 comment on function public.reconcilier_annonces_discord() is
-  'Réconcilie les réponses de pg_net : 2xx livre, non-2xx et silence d''un quart d''heure échouent (D-118).';
+  'Réconcilie les réponses de pg_net : 2xx livre, non-2xx et silence d''un quart d''heure échouent (D-120).';
 
 -- ---------------------------------------------------------------------------------------------
 -- 8. L'envoi : dix par passe, dans l'ordre
@@ -519,7 +519,7 @@ end;
 $$;
 
 comment on function public.envoyer_annonces_discord() is
-  'La passe d''envoi du mur : réconcilie, puis remet dix annonces au plus, dans l''ordre (D-118).';
+  'La passe d''envoi du mur : réconcilie, puis remet dix annonces au plus, dans l''ordre (D-120).';
 
 -- Les fonctions du tuyau ne sont **pas** des points d'entrée clients : ni `anon`, ni
 -- `authenticated`, ni `public`. `pg_cron` les appelle sous la main de leur propriétaire.

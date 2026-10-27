@@ -4,7 +4,7 @@ import { cleanup, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 /**
- * La porte du serveur des testeurs (#317, D-118) — au **pied du comité**.
+ * La porte du serveur des testeurs (#317, D-120) — au **pied du comité**.
  *
  * Le mur est lu dans le fichier du dépôt (`@/store/mur` est mocké), donc le rendu ne
  * contacte rien. Ce qui est gardé ici, c'est l'**emplacement** : au bas de la page, sous le

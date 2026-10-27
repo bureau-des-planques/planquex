@@ -1,5 +1,5 @@
 /**
- * La porte du serveur des testeurs — **le seul module qui lit l'invitation** (#317, D-118).
+ * La porte du serveur des testeurs — **le seul module qui lit l'invitation** (#317, D-120).
  *
  * Un **service tiers** entre dans le périmètre : un serveur Discord facultatif, où les
  * testeurs de l'alpha se parlent entre deux parties. Le client n'en garde **qu'un lien** :
