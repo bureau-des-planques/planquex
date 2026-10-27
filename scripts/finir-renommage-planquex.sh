@@ -311,7 +311,13 @@ write_env BREVO_SENDER_NAME "$BREVO_SENDER_NAME"
 note "Rappel D-017 : la clé SMTP vit dans la config Custom SMTP de Supabase, jamais dans un fichier."
 # Ce n'est pas une citation : c'est la valeur que l'outil doit **reconnaître**
 # (l'adresse expéditeur d'origine) pour dire si le critère de #100 est satisfait.
-if [[ "$BREVO_SENDER_EMAIL" == "grevomon.game@gmail.com" ]]; then
+# Elle ne s'écrit pas ici : le dépôt passe en public (#267), et une adresse
+# personnelle n'a pas à entrer dans son historique. On la passe à l'exécution —
+#   LEGACY_SENDER_EMAIL=<adresse d'origine> bash scripts/finir-renommage-planquex.sh
+LEGACY_SENDER_EMAIL="${LEGACY_SENDER_EMAIL:-}"
+if [[ -z "$LEGACY_SENDER_EMAIL" ]]; then
+  note "Contrôle « expéditeur inchangé » inactif : relance avec LEGACY_SENDER_EMAIL=<adresse d'origine> pour l'armer."
+elif [[ "$BREVO_SENDER_EMAIL" == "$LEGACY_SENDER_EMAIL" ]]; then
   warn "Adresse inchangée : le critère « expéditeur renommé » de #100 n'est alors satisfait qu'au sens du nom affiché. À écrire noir sur blanc dans le ticket, sinon la case cochée ment."
 fi
 
