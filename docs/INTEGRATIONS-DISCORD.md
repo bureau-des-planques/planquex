@@ -3,10 +3,11 @@
 > **Ce document ne s'adresse pas aux testeurs** : le message qu'ils reçoivent est
 > `docs/ALPHA-TESTEURS.md`. Ici, la procédure se rejoue par quelqu'un qui n'a **jamais** créé le
 > serveur — c'est le critère : ce qui n'est pas écrit ici n'existe que dans la tête de celui qui
-> l'a fait. **Rien ne s'écrit dans le code** : le serveur et les deux intégrations se règlent
-> dans des interfaces, et le jeu ne porte qu'un lien. Décision : **D-118** ; tickets #316 (le
-> serveur et les annonces), #317 (le serveur et sa porte dans le jeu) et #318 (les annonces du
-> mur, qui ne sont **pas** de cette tranche).
+> l'a fait. **Rien ne s'écrit dans le code** pour le serveur et les deux intégrations : ils se
+> règlent dans des interfaces, et le jeu ne porte qu'un lien. Le **mur**, lui, envoie ses
+> annonces par une migration (§10) — c'est le seul morceau qui vit dans le dépôt. Décision :
+> **D-118** ; tickets #316 (le serveur et les annonces), #317 (le serveur et sa porte dans le
+> jeu) et #318 (les annonces du mur, qui sont la **§10** de ce document).
 
 ## Ce que le jeu attend, et ce qu'il n'attend pas
 
@@ -130,12 +131,12 @@ comme un vrai événement.
 
 ## 8. Ce que cette procédure ne fait pas
 
-- **Les annonces du mur** (un post-it neuf, un changement de statut poussés vers `#comite`) :
-  elles demandent une migration et un webhook en base — c'est **#318**, pas cette tranche.
 - **Le bot entrant** (`/ip`, `/ouf` depuis Discord) et **« Se connecter avec Discord »** : hors
   périmètre de #316.
 - **Un widget ou un embed** dans le site : contraire à la promesse « aucun traceur » de
   Confidentialité.
+- **Les annonces du mur** ne se règlent pas ici : elles demandent une migration et un webhook
+  en base, et c'est la **§10** ci-dessous (#318).
 
 ## 9. Contraintes Discord à ne pas oublier
 
@@ -147,3 +148,79 @@ comme un vrai événement.
   **supprimer**, en créer un autre, et mettre à jour GitHub ou Vercel — jamais le committer.
 - **L'invitation permanente** se crée **sans expiration** ; une invitation à durée limitée
   ferait un lien mort dans un message que personne ne pensera à corriger.
+
+## 10. Le mur s'annonce dans `#comite` (#318, D-118)
+
+Depuis #318, le mur **parle** dans `#comite` : un post-it neuf et chaque **vrai** changement
+de statut. Ce n'est pas une intégration Discord à brancher à la main — c'est **la base du jeu
+qui envoie**, par `pg_cron` puis `pg_net`, et c'est la migration
+`supabase/migrations/0013_discord_comite.sql` qui porte tout. Le détail du schéma et des états
+est dans `supabase/README.md` §9 ; ici, la procédure.
+
+### 10.1 Créer le webhook de `#comite`
+
+1. Dans `#comite` : **Modifier le salon → Intégrations → Webhooks → Nouveau webhook →
+   Copier l'URL**. Elle ressemble à `https://discord.com/api/webhooks/<id>/<jeton>`.
+2. Vérifier que ce webhook n'est **pas** celui de `#depot` (celui-là porte le suffixe
+   `/github` dans GitHub, pas ici) : le salon ne doit pas recevoir la CI.
+3. Ce n'est **pas** une adresse publique comme l'invitation : c'est un **secret**. Il ne va
+   ni dans `.env`, ni dans Vercel, ni dans une migration, ni dans `docs/`.
+
+### 10.2 Le poser dans Vault, et nulle part ailleurs
+
+*SQL Editor* → une seule fois :
+
+```sql
+select vault.create_secret('https://discord.com/api/webhooks/<id>/<jeton>',
+                           'discord_webhook_comite');
+```
+
+C'est le nom exact que la migration lit (`public.discord_webhook()`), **à l'envoi** : le secret
+n'est jamais recopié dans une ligne d'annonce. Le retirer, c'est arrêter le flux — la file
+attend, et **rien n'est marqué livré** :
+
+```sql
+delete from vault.secrets where name = 'discord_webhook_comite';
+```
+
+### 10.3 Appliquer la migration
+
+Comme les autres : coller **tout** `supabase/migrations/0013_discord_comite.sql` dans *SQL
+Editor* → *Run* (ou `supabase db push`), puis `supabase migration repair --status applied 0013`.
+
+Ce qu'elle fait, dans l'ordre : installe `pg_cron` et `pg_net` **si la base les propose**
+(mesuré installables le 27/10/2026), crée la table, ferme la table aux clients, pose les deux
+déclencheurs, la couture, la réconciliation, la passe, **programme le job `annonces_discord`
+toutes les minutes**, et marque **le passé** `sans_webhook` — le premier jour ne déverse pas
+l'historique du mur dans le salon.
+
+### 10.4 Vérifier que ça arrive vraiment
+
+La procédure n'est pas « faite » parce que la migration est appliquée : elle est faite quand
+**une annonce réelle** arrive dans le salon.
+
+| Geste | Ce qui doit apparaître |
+|---|---|
+| Coller un post-it IP sur le mur, attendre une minute | `Nouveau post-it IP — « … » (pseudo) · https://planquex.4k7.org/comite` |
+| Coller un **gueulage** | `Un gueulage vient d'arriver sur le mur (pseudo) · …` — **ni titre, ni texte** |
+| Trier ce post-it `retenu` depuis `/administration` | `Post-it « … » (pseudo) : retenu · …` |
+| L'écarter avec une raison | `… : écarté — <raison> · …` |
+| Sonder la file | `select etat, count(*) from public.annonces_discord group by etat;` — les lignes passent à `livre` en une ou deux minutes |
+
+Puis le contrôle qui compte, en local :
+
+```bash
+npx vitest run supabase/discord.test.ts
+```
+
+Il rejoue **toutes** les migrations dans PGlite, remplace la couture `poster_discord` par un
+faux — donc **aucun test ne parle à Discord** — et exige que la migration **mutée** laisse
+voir le doublon, la fuite ou la rafale.
+
+### 10.5 Ce que ce flux ne fait pas
+
+- **Il ne répond pas** dans le salon : le webhook n'écrit que des messages, il n'écoute rien.
+- **Il ne reprend pas `@everyone`** : le corps porte `allowed_mentions.parse = []`, donc un
+  titre qui contient une mention reste du texte.
+- **Il ne remplace pas le mur** : un testeur qui n'a pas Discord voit exactement la même chose
+  dans `/comite` ; le salon est un **rappel**, la page la source.

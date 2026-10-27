@@ -58,6 +58,15 @@ const COLLECTE: Rubrique[] = [
     ]
   },
   {
+    titre: 'Ce qui part du mur quand il bouge',
+    lignes: [
+      'Quand un post-it arrive sur le mur, et chaque fois que son statut change (retenu, en cours, fait, écarté avec sa raison), une annonce part dans le salon #comite du serveur des testeurs : la famille (idée ou signalement), le titre, ton pseudo et le lien vers la page du comité.',
+      'Un gueulage, lui, s’annonce sans rien dire de lui : on annonce qu’il est arrivé, jamais son texte — ni son titre.',
+      'Rien d’autre ne part : ni ton compte, ni ton adresse de courriel, ni ton identifiant, ni tes votes, ni tes commentaires. Le pseudo est la seule chose qui te nomme, et il est déjà visible de tous sur le mur.',
+      'Ces annonces partent de la base du jeu, pas de ton navigateur : le jeu n’embarque aucun code de Discord, et ne pas rejoindre le serveur ne change rien à ce qui part.'
+    ]
+  },
+  {
     titre: 'Ce qu’on ne fait pas',
     lignes: [
       'Aucune publicité, aucun traceur publicitaire, aucune revente de données.',

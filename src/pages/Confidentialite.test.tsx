@@ -66,8 +66,8 @@ describe('Confidentialité — la page publique', () => {
  *    rejoindre reste normal ;
  * 2. elle dit qu'on **sort du jeu** et que **Discord applique ses propres règles** : c'est la
  *    phrase qui empêche la page de laisser croire que le jeu garde ce qu'on y écrit ;
- * 3. elle ne dit **rien des annonces** : elles n'existent pas encore (#318), et une page qui
- *    décrit un flux qui n'est pas branché est un mensonge d'avance.
+ * 3. jusqu'à #318, elle ne disait **rien des annonces** ; depuis, les annonces existent et
+ *    c'est le bloc suivant qui les garde.
  */
 describe('Confidentialité — le serveur des testeurs (#317)', () => {
   const rendre = () =>
@@ -87,8 +87,51 @@ describe('Confidentialité — le serveur des testeurs (#317)', () => {
     expect(screen.getByText(/ses propres règles|sa propre politique/i)).toBeTruthy();
   });
 
-  it('ne dit rien des annonces tant qu’elles n’existent pas (#318)', () => {
+  it('ne promet rien qu’elle ne tiendrait pas : le lien est décrit sans widget', () => {
     rendre();
-    expect(document.body.textContent).not.toMatch(/annonce/i);
+    expect(document.body.textContent).toMatch(/ni iframe, ni script, ni widget Discord/i);
+  });
+});
+
+/**
+ * Les annonces du mur dans `#comite` (#318, D-118 (2)).
+ *
+ * Depuis #318, le mur **sort** du jeu : un post-it neuf et chaque changement de statut
+ * partent dans le salon `#comite` d'un service tiers. La page doit donc le dire — et dire
+ * surtout ce qui **ne part pas**, à commencer par le texte d'un gueulage (D-085).
+ *
+ * Ce qui est gardé, et qui peut échouer :
+ *
+ * 1. la rubrique existe et nomme le salon, la famille, le titre, le pseudo et le lien ;
+ * 2. elle nomme le **gueulage** dans ce qui ne part pas : c'est la promesse la plus précise
+ *    de D-118, et la plus facile à perdre en réécrivant la page ;
+ * 3. elle dit qu'aucune donnée de compte ne part.
+ */
+describe('Confidentialité — les annonces du mur (#318)', () => {
+  const rendre = () =>
+    render(
+      <MemoryRouter>
+        <Confidentialite />
+      </MemoryRouter>
+    );
+
+  it('nomme ce qui part du mur', () => {
+    rendre();
+    const texte = document.body.textContent ?? '';
+    expect(texte).toMatch(/#comite/);
+    expect(texte).toMatch(/famille \(idée ou signalement\)/i);
+    expect(texte).toMatch(/le titre, ton pseudo et le lien/i);
+  });
+
+  it('nomme le gueulage dans ce qui ne part pas', () => {
+    rendre();
+    const texte = document.body.textContent ?? '';
+    expect(texte).toMatch(/un gueulage, lui, s’annonce sans rien dire de lui/i);
+    expect(texte).toMatch(/jamais son texte/i);
+  });
+
+  it('dit qu’aucune donnée de compte ne part', () => {
+    rendre();
+    expect(document.body.textContent).toMatch(/ni ton compte, ni ton adresse de courriel, ni ton identifiant/i);
   });
 });
