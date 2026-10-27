@@ -262,11 +262,11 @@ rareté, `.card__face` est la carte elle-même.
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
 doivent rester au-dessus de la navigation (limite **830 px**, haut de la barre de navigation, avec
-**20 px** de marge exigés par D-094 (3)). Mesuré le 27/10/2026 sur les huit états du passage de
-combat : **aucun défilement** (D-103) ; pas-à-pas **terminé**, le bas de la **main** est à
-**679 px** et celui de la **barre d'action** à **758–761 px** (69–72 px de marge) ; pas-à-pas
-**ouvert** (`1 / 5`, il ajoute sa bande), la main finit à **728 px** et la barre à **808–810 px**
-(**20–22 px** de marge). Un tour chargé (relève,
+**20 px** de marge exigés par D-094 (3)). Remesuré le 27/10/2026 (`npm run capturer`, #322) sur les
+64 états du passage de combat, cibles de 44 px comprises : **aucun défilement** (D-103) ; pas-à-pas
+**terminé**, le bas de la **main** est à **663–667 px** et celui de la **barre d'action** à
+**711–758 px** (72–119 px de marge) ; pas-à-pas **ouvert** (`1 / 5`, il ajoute sa bande), la main
+finit à **714–717 px** et la barre à **762–809 px** (**21–68 px** de marge). Un tour chargé (relève,
 choix) fait défiler la barre **en elle-même** (`max-height: 42dvh`) plutôt que de recouvrir la table.
 
 Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 88 px** (`--poste-w:
@@ -312,11 +312,16 @@ des autres éléments est l'anneau global (`:focus-visible`, 2 px `--gold`, déc
 rend le focus à la carte qu'il décrivait (`finalFocus`), et la fermeture du panneau ne rouvre pas
 l'infobulle de cette même carte.
 
-**Cibles de doigt.** La barre d'état, le menu `⋯`, ses entrées et la bascule `ⓘ` font **44 px**
-(`2.75rem`, D-116). Deux surfaces restent à **36 px** (`2.25rem`) : les boutons de la barre d'action
-(`.combat-barre .button`) et « Plus » du pas-à-pas (`.pas-a-pas__plus`) — au-dessus du minimum AA de
-24 px (WCAG 2.5.8), sous les 44 px visés, pour tenir la marge de hauteur de D-094. C'est un **écart
-daté (27/10/2026)**, pas une règle ; le jour où la marge le permet, ils montent à 44 px.
+**Cibles de doigt (état mesuré le 27/10/2026, #320, #322).** Toutes les cibles du combat font
+**44 px** (`2.75rem`, D-116) : la barre d'état, le menu `⋯`, ses entrées, la bascule `ⓘ`, **les boutons
+de la barre d'action** (`.combat-barre .button`, « Fin du tour » compris) et **ceux de la ligne du
+pas-à-pas** (`.pas-a-pas__ligne button`, dont « Plus »). Il ne reste **aucun écart** : ce que ce
+paragraphe disait avant #320 — ces deux surfaces à 36 px, « écart daté » — est **caduc**. La
+mesure est celle de `npm run capturer`, qui lit dans le navigateur la hauteur rendue de chaque bouton
+et **échoue** sous 43,5 px (`boutonsPetits` : `[]` sur les 64 états mesurés ce jour, « Fin du
+tour » de 44 px de haut). La marge de D-094 (3) tient avec ces 44 px : le bas de la barre d'action est
+à **758 px au plus** pas-à-pas terminé (72 px de marge) et à **806 à 809 px** pas-à-pas ouvert
+(**24 px** en `sobre`, **21 px** au pire cas `détaillé`), pour **20 px** exigés ; aucun défilement.
 
 **Trois notes de lecture (25/10/2026, #196)** — des constats datés sur des actes qui ne se
 réécrivent pas. Ils disent où le code a avancé depuis la ligne, ou pourquoi un chiffre de l'acte
