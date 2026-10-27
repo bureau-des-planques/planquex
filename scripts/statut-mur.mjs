@@ -34,6 +34,13 @@
  *   npm run statut <post-it> <statut>
  *   npm run statut <post-it> --ticket <numéro>
  *   npm run statut <post-it> écarté --raison "…"
+ *   npm run statut -- --problemes
+ *
+ * `--problemes` **lit la base** et imprime les problèmes connus d'une release (#299,
+ * D-119) : c'est le seul mode de cette commande qui parle à la base, et il est **en lecture
+ * seule** (rôle `lecteur`). Il délègue à `scripts/problemes-connus.mjs`, que
+ * `npm run problemes` expose aussi. Le tri, lui, continue de déplacer le **fichier** : quand
+ * la base est configurée, le tri réel se fait dans l'écran d'administration (D-088).
  *
  * `--fichier <json>` n'existe que pour les tests : il évite d'écrire dans le vrai fichier
  * du mur. `STATUT_MUR_RELECTURE_CORROMPUE=1` (avec `--fichier` seulement) fait relire un
@@ -44,6 +51,7 @@ import { existsSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 
 import { registerHooks } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { principalProblemes } from './problemes-connus.mjs';
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FICHIER_MUR = join(RACINE, 'docs', 'comite.json');
@@ -57,6 +65,8 @@ Déplace un post-it du mur (docs/comite.json) sans passer par l'écran.
   --raison "…"              la raison d'un écarté, obligatoire pour l'écarter
   --fichier <json>          fichier du mur à modifier (défaut : docs/comite.json ;
                             réservé aux tests)
+  --problemes               lit la base et imprime les problèmes connus de la release
+                            (lecture seule, D-119 ; équivaut à npm run problemes)
   --aide                    affiche ce texte
 
 Écarter exige une raison (D-059) ; un statut inventé ou un post-it inconnu est refusé
@@ -90,7 +100,15 @@ async function chargerContrat() {
 }
 
 export function argumentsDe(ligne) {
-  const options = { id: null, statut: null, ticket: null, raison: null, fichier: null, aide: false };
+  const options = {
+    id: null,
+    statut: null,
+    ticket: null,
+    raison: null,
+    fichier: null,
+    problemes: false,
+    aide: false
+  };
   const positionnels = [];
 
   for (let i = 0; i < ligne.length; i += 1) {
@@ -100,6 +118,8 @@ export function argumentsDe(ligne) {
       if (valeur === undefined || valeur.startsWith('--')) throw new Error(`${arg} attend une valeur`);
       options[arg.slice(2)] = valeur;
       i += 1;
+    } else if (arg === '--problemes') {
+      options.problemes = true;
     } else if (arg === '--aide' || arg === '--help' || arg === '-h') {
       options.aide = true;
     } else if (arg.startsWith('--')) {
@@ -110,10 +130,16 @@ export function argumentsDe(ligne) {
   }
 
   if (options.aide) return options;
+
+  options.id = positionnels[0] !== undefined ? positionnels[0].trim() : null;
+  options.statut = positionnels[1] !== undefined ? positionnels[1].trim() : null;
+
+  // `--problemes` est un **autre** mode : il ne demande pas de post-it, mais il refuse de se
+  // combiner avec un déplacement (vérifié par `principal`, qui a les deux sous la main).
+  if (options.problemes) return options;
+
   if (positionnels.length === 0) throw new Error('un post-it est requis');
   if (positionnels.length > 2) throw new Error('un post-it et un statut au plus');
-  options.id = positionnels[0].trim();
-  options.statut = positionnels[1] !== undefined ? positionnels[1].trim() : null;
   if (!options.id) throw new Error('le post-it a un identifiant vide');
   return options;
 }
@@ -215,6 +241,26 @@ async function principal(ligne = process.argv.slice(2)) {
   if (options.aide) {
     console.log(AIDE);
     return 0;
+  }
+
+  // `--problemes` ne trie rien : il **lit** la base (D-119). Le combiner avec un déplacement
+  // ferait deux gestes d'un seul appel, dont un seul serait vrai.
+  if (options.problemes) {
+    if (
+      options.id !== null ||
+      options.statut !== null ||
+      options.ticket !== null ||
+      options.raison !== null ||
+      options.fichier !== null
+    ) {
+      console.error('statut-mur — --problemes ne se combine pas avec un déplacement de post-it');
+      console.error('Rien n’a été écrit.');
+      return 1;
+    }
+    return principalProblemes(
+      ligne.filter((argument) => argument !== '--problemes'),
+      process.env
+    );
   }
 
   let STATUTS;
