@@ -74,7 +74,9 @@ Règles de triage :
   Journée d'intégration finie. L'**UI** ne la bloque pas — le light suffit à inviter (D-116) —
   et la **décision sur les illustrations** en est sortie, puisqu'elle reste un critère de beta
   (D-063). Un ticket d'UI ou d'illustration se range donc en `beta`, pas en `alpha`.
-- L'étape est une **échéance**, pas une priorité : elle dit *où* on en a besoin, pas *quand*
+- Le label d'étape dit **à quel jalon le ticket appartient**, pas quand on peut le travailler :
+  un ticket `beta` se travaille pendant l'alpha, et c'est arrivé (vague 1 du combat, #284 à #295).
+  L'étape est une **échéance**, pas une priorité : elle dit *où* on en a besoin, pas *quand*
   on le fait. Une étape plus tardive ne déclasse pas un ticket d'alpha qui bloque un testeur.
 - Une étape se **change** dans le ticket (commentaire + `--remove-label`/`--add-label`), jamais
   silencieusement : c'est une décision de périmètre.
