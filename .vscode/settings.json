@@ -1,0 +1,24 @@
+{
+  // Réglages partagés du dépôt — CONTRIBUTING.md § « VS Code ».
+  //
+  // Formater à l'enregistrement avec le Prettier du dépôt, et SEULEMENT là où `npm run format`
+  // passe. `prettier.ignorePath` est la ligne qui compte : sans elle, l'extension ne lit pas
+  // `.prettierignore` à l'enregistrement, et replierait un texte de carte dans `src/data/`
+  // — ce qui change le texte affiché.
+  "editor.formatOnSave": true,
+  "prettier.ignorePath": ".prettierignore",
+  "prettier.requireConfig": true,
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  // Les docs sont écrites à la main (tableaux alignés, retours à la ligne qui portent du sens) :
+  // aucun formatage automatique sur le Markdown.
+  "[markdown]": { "editor.formatOnSave": false },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  // Sorties de build et captures : hors de la recherche et de l'explorateur de tests.
+  "search.exclude": { "dist": true, "captures": true, "**/node_modules": true },
+  "files.watcherExclude": { "dist/**": true, "captures/**": true }
+}

@@ -1,0 +1,51 @@
+name: Signaler un défaut
+description: Quelque chose est cassé dans le jeu, les scripts ou la CI.
+title: '<Domaine> — '
+labels: ['bug', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci. Un testeur de l'alpha peut aussi coller un **post-it OUF** sur le mur du comité, dans le jeu : il y est suivi de la même façon.
+        Le titre commence par le **domaine** (`Combat — …`, `Collection — …`, `Infra — …`) : c'est ce qui remplace une étiquette de plus (`docs/agents/triage-labels.md`).
+  - type: textarea
+    id: constat
+    attributes:
+      label: Ce qui se passe
+      description: Ce que tu vois, tel quel. Un message d'erreur se colle en entier.
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Pour le reproduire
+      description: Les gestes, dans l'ordre. Une partie se rejoue mieux avec sa graine.
+      placeholder: |
+        1. Ouvrir /battle
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Ce qui était attendu
+      description: Si c'est une règle du jeu, cite la ligne de AGENTS.md §4 ou la décision (D-NNN).
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Elle s'affiche dans Réglages (« Alpha · … »). Pour le code, le hash du commit.
+    validations:
+      required: true
+  - type: input
+    id: appareil
+    attributes:
+      label: Appareil et navigateur
+      placeholder: Android 15, Chrome 141 — application installée
+  - type: textarea
+    id: preuve
+    attributes:
+      label: Preuve
+      description: Une capture, ou la sortie de la commande (commande exacte, code de sortie, extrait).

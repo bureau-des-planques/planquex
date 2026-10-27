@@ -1,0 +1,42 @@
+name: Proposer une idée
+description: Une fonctionnalité, une amélioration, une carte, un changement de doc.
+title: '<Domaine> — '
+labels: ['enhancement', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Un testeur de l'alpha peut aussi coller un **post-it IP** sur le mur du comité, dans le jeu.
+        Les règles de jeu suivent un miroir de TCG Pocket (`AGENTS.md` §4) : une idée qui change une règle demande une **décision datée** (`docs/DECISIONS.md`), pas seulement un ticket. Dis-le si c'est le cas, c'est une information, pas un refus.
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Le besoin
+      description: Ce qui manque ou gêne aujourd'hui, du point de vue de celui qui joue ou qui développe.
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: La proposition
+      description: Ce que tu ferais. Une maquette, un exemple de carte ou un extrait de code sont bienvenus.
+    validations:
+      required: true
+  - type: dropdown
+    id: etape
+    attributes:
+      label: Pour quelle étape ?
+      description: docs/VERSIONS.md et D-048. Le tri tranche si tu ne sais pas.
+      options:
+        - Je ne sais pas
+        - alpha — le solo joué par des testeurs
+        - beta — PvP, URL stable, solo complet
+        - release — 1.0.0
+    validations:
+      required: true
+  - type: input
+    id: decisions
+    attributes:
+      label: Décisions touchées
+      description: Les D-NNN de docs/DECISIONS-INDEX.md que cette idée touche ou contredit, s'il y en a.
+      placeholder: D-004, D-020

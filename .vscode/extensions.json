@@ -1,0 +1,7 @@
+{
+  // Les extensions qui servent ce dépôt — CONTRIBUTING.md § « VS Code ».
+  // Prettier : le formateur, épinglé en devDependency (npm run format:check en CI).
+  // Vitest : lancer un test à côté du code, comme `npm test`.
+  // Tailwind CSS : complétion des classes, la feuille unique étant src/styles.css.
+  "recommendations": ["esbenp.prettier-vscode", "vitest.explorer", "bradlc.vscode-tailwindcss"]
+}
