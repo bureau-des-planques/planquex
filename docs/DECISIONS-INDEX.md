@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 133 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 136 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -139,3 +139,6 @@
 | D-131 | 27/10/2026 | Une pull request venue d'ailleurs exige une relecture d'agent et… |
 | D-132 | 27/10/2026 | La feuille de route ouvre les liens du dépôt qui… |
 | D-133 | 27/10/2026 | pg_net retourne dans extensions, et les deux fonctions de déclencheur… |
+| D-134 | 27/10/2026 | L'équilibrage se mesure sur une bande fixée d'avance, et la… |
+| D-135 | 27/10/2026 | Le service du profil reste décoratif — et c'est une… |
+| D-136 | 27/10/2026 | La Journée d'intégration reste sautable, et le bouton dit ce… |
