@@ -257,7 +257,7 @@ rareté, `.card__face` est la carte elle-même.
 
 **Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
-### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-120)
+### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121)
 
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
@@ -283,7 +283,7 @@ un conteneur de **105 px** (la carte entière, son inclinaison et la place du so
 | Piste d'Interventions | `.piste` | **horizontale**, entre les deux camps : le nom de chaque camp et trois hexagones (l'adversaire à gauche, toi à droite) ; l'or marque une Intervention acquise. **Une** cible `data-pas-a-pas="interventions"`, sur le conteneur. |
 | Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (64 px), inclinées, qui ne se chevauchent que quand la largeur l'exige ; la carte se soulève au survol et au focus (pas sous « Mouvement réduit » : c'est alors le panneau de l'inspecteur qui s'ouvre). Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
 | Pose | `.pose` | une carte **choisie** ouvre un panneau sous la main qui la nomme et donne **où** la jouer : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet ». |
-| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-120). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`). La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans `body` à la verticale de sa carte (sous elle, au-dessus si l'écran manque de place), 17 rem de large au plus. Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; à partir de 900 px, colonne collée dans la console. |
+| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-121). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`). La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans `body` à la verticale de sa carte (sous elle, au-dessus si l'écran manque de place), 17 rem de large au plus. Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; à partir de 900 px, colonne collée dans la console. |
 | Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation. Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi). C'est la cible `poste-actions` du pas-à-pas. |
 | Écran large (≥ 900 px) | `.battle__table` | la table à gauche, la console (inspecteur, main, pose) à droite. |
 
@@ -295,7 +295,7 @@ et rend le focus au bouton, et un dialogue ouvert par-dessus garde son propre É
 Les **piles** Deck et Rebut sont des objets **posés** et **comptés** : le Rebut **ne s'ouvre pas**
 (écart à `SPEC-COMBAT-UI` R5, pas une règle).
 
-**Le clavier et le doigt** (D-120 ; la recherche est `SPEC-COMBAT-UI` §4 et §6.6, elle ne fait pas règle).
+**Le clavier et le doigt** (D-121 ; la recherche est `SPEC-COMBAT-UI` §4 et §6.6, elle ne fait pas règle).
 
 | Geste | Effet |
 |---|---|
@@ -303,7 +303,7 @@ Les **piles** Deck et Rebut sont des objets **posés** et **comptés** : le Rebu
 | `Entrée` / `Espace` sur une carte | ouvre le panneau d'action |
 | `Échap` | ferme l'infobulle, ou le panneau (le focus revient à la carte), ou le menu `⋯` (le focus revient au bouton), ou le dialogue ouvert par-dessus — **un seul étage à la fois** |
 | `I`, `Ctrl+I` (`Cmd+I`) | bascule `sobre` / `détaillé`. La case **« Raccourcis clavier au combat »** (Réglages) est **cochée par défaut** ; décochée, les deux touches ne font plus rien. Sans effet dans un champ de saisie (le code de la partie à deux). `Ctrl+Maj+I` reste au navigateur. |
-| flèches, `Page↑/↓` | **défilent la page**. Le plateau n'est pas un `role="grid"` (D-120) : huit places au plus, le `Tab` naturel suffit. |
+| flèches, `Page↑/↓` | **défilent la page**. Le plateau n'est pas un `role="grid"` (D-121) : huit places au plus, le `Tab` naturel suffit. |
 | appui long | n'existe nulle part ; le tap suffit |
 
 Le focus est **rendu** : l'anneau d'une carte du plateau est un contour de 2 px au néon
@@ -332,12 +332,12 @@ n'est pas celui de l'écran.
    `RegardDuDessus` (`Battle.tsx`) affiche le dessus de **mon** Deck dans une section privée,
    hors main et hors journal — donc sans révélation à l'autre camp. La décision n'est pas
    modifiée ; c'est sa dette qui est close. Le journal le porte lui-même depuis D-111 (le ⚠️ en
-   tête de la ligne de D-079), et D-120 le redit (27/10/2026, #291).
+   tête de la ligne de D-079), et D-121 le redit (27/10/2026, #291).
 2. **D-035, « Radix » n'est pas le paquet installé.** L'acte écrit « shadcn/Radix ». Le paquet
    réel est **Base UI** : `@base-ui/react` (`package.json`), importé par
    `src/components/ui/dialog.tsx` et `button.tsx`. Le choix de fond — shadcn/ui pour les
    composants génériques seulement — tient ; le nom du moteur, lui, est Base UI. Le journal ne
-   réécrit pas D-035 : sa ligne porte un ⚠️ de lecture daté du 27/10/2026 qui renvoie à D-120 (b).
+   réécrit pas D-035 : sa ligne porte un ⚠️ de lecture daté du 27/10/2026 qui renvoie à D-121 (b).
 3. **La largeur du Poste : 116 px dans D-093, 88 px sur l'écran.** L'acte écrit « le Poste à
    116 px, le Banc à 64 px » (la direction visuelle, elle, dit 112, `docs/DIRECTION-SCENE-COMBAT.md`
    §3.1) ; l'écran mesure **88 px** pour le Poste (`--poste-w: 5.5rem`) et **56 px** pour le Banc
@@ -374,7 +374,7 @@ capture.
 |---|---|---|---|
 | `sobre` (défaut) | à l'arrivée (`combatDetaille: false`) | les cartes du plateau, leur nom, le Seuil et la barre de Stress ; la Machine en pastille ; une Condition en icône seule ; le chiffre de Stress et les Pressions ne sont pas écrits sur la carte. **Rien de ce qui change une décision n'est caché** : la fiche de l'inspecteur dit tout | `ⓘ`, `I` ou `Ctrl+I` → `détaillé` |
 | `détaillé` | `ⓘ` (`aria-pressed="true"`) ou `I` / `Ctrl+I` (`aria-keyshortcuts="I"`) | les annotations reviennent : nom et dégâts des Pressions sur la carte, chiffre `x/y` de Stress, types de café de la Machine, nom des Conditions. Le choix **survit au rechargement** (store persisté) | le même geste, ou `ⓘ` |
-| Raccourcis coupés | Réglages → décocher « Raccourcis clavier au combat » (cochée par défaut, D-120) | `I` et `Ctrl+I` ne font plus rien ; `ⓘ` reste le seul chemin. Taper « i » dans le code de la partie à deux n'a jamais d'effet sur l'écran | recocher la case |
+| Raccourcis coupés | Réglages → décocher « Raccourcis clavier au combat » (cochée par défaut, D-121) | `I` et `Ctrl+I` ne font plus rien ; `ⓘ` reste le seul chemin. Taper « i » dans le code de la partie à deux n'a jamais d'effet sur l'écran | recocher la case |
 | Inspecteur — lecture | survol à la **souris** (300 ms) ou focus clavier d'une carte du Poste ou du Banc ; le tactile n'y entre pas (le tap ouvre l'action) | une infobulle `role="tooltip"` reliée à la carte par `aria-describedby`, sous elle (au-dessus s'il n'y a pas de place) : nom entier et fiche, **aucun bouton, aucun élément focusable**. Le pointeur peut passer de la carte à l'infobulle sans la perdre | sortie du pointeur ou du focus ; **Échap** la ferme sans bouger le pointeur ; elle s'efface dès que le panneau montre la même carte |
 | Inspecteur — action | clic, tap ou **Entrée** / **Espace** sur une carte | un panneau **non modal**, sans voile, titré du nom entier : la même fiche, plus les gestes de la carte (« Gestes de cette carte ») ; feuille basse sous la carte sur téléphone, colonne collée à ≥ 900 px | **Fermer** ou **Échap** ; le **focus revient à la carte** décrite, et l'infobulle ne se rouvre pas toute seule |
 | Inspecteur — carte sans geste | une carte de **l'adversaire** : la fiche seule, pas de section de gestes. Une carte à **moi** sans geste légal (tour adverse, café déjà attaché) : la fiche et « Aucun geste pour cette carte ce tour. » | **aucun bouton grisé** : les gestes viennent de `legalActions` (café, évolution, Talent, Rotation, relève), l'écran n'en invente pas | idem ; un geste choisi ferme le panneau et joue l'action |
