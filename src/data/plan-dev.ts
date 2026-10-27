@@ -27,12 +27,8 @@ export interface FeaturePrevue {
 /** Les issues `alpha` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
-    numero: 317,
-    titre: 'Discord 1 — le serveur des testeurs, et sa porte dans le jeu'
-  },
-  {
-    numero: 316,
-    titre: 'Discord — le serveur des testeurs, et le mur qui s\'annonce'
+    numero: 334,
+    titre: 'Journée d\'intégration — la rendre jouée plutôt que lue, et relier le combat'
   },
   {
     numero: 258,
