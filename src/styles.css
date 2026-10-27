@@ -1894,7 +1894,14 @@ h2 {
   --scene-neon: #61d5df;
   --scene-neon-core: #9ef5fb;
   --scene-go: #46c78c;
-  --scene-danger: #e0563f;
+  /* Le danger d'état, **relevé le 27/10/2026** (#323) : `#e0563f` tombait à **2,39:1** sur le
+     centre éclairé du feutre (`--scene-felt-lit`), et à **2,80:1** mesuré sur la page au bord du
+     filet — sous les 3:1 d'une frontière qui doit se voir (WCAG 1.4.11). `#ff7f3f` vaut **3,59:1**
+     sur ce même pic, **3,4:1 à 3,6:1** une fois la vignette de la table posée (mesuré au pixel au
+     bord du camp de la Direction), et **3,03:1** contre `--scene-steel-deep`, le propre fond du
+     bouton « Fin du tour ». Le jeton n'est employé que sur des filets et des dégradés, jamais en
+     texte : aucune autre paire ne baisse. */
+  --scene-danger: #ff7f3f;
   --scene-gold-hot: #f7e264;
   --scene-parch: #b18a60;
   --scene-parch-dark: #664d38;

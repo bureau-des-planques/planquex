@@ -57,10 +57,21 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--warn` | `#e0a33e` | avertissement (deck de test, fin perdue) |
 | `--danger` | `#e06a4e` | erreur |
 
-### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196 ; pastille de café, étiquettes et plancher de `--fs-2xs` rejoués le 27/10/2026, #290 ; paires de la direction de scène recalculées le 27/10/2026, #295)
+### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196 ; pastille de café, étiquettes et plancher de `--fs-2xs` rejoués le 27/10/2026, #290 ; paires de la direction de scène recalculées le 27/10/2026, #295 ; filet de danger relevé et mesuré sur la page le 27/10/2026, #323)
 
 Ratios WCAG calculés sur les paires réelles du thème (formule de luminance relative
 WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
+
+**Ce qui fait foi, et comment on le vérifie.** Ces ratios sont **calculés sur les jetons de
+`src/styles.css`** et **gardés** par `src/styles-scene.test.ts` : changer un jeton de scène sans
+changer la ligne d'ici fait échouer le test. Les chiffres du même genre recopiés dans
+`docs/DIRECTION-SCENE-COMBAT.md` §7 sont la **proposition de la direction** du 25/10/2026, pas une
+mesure : quand les deux se contredisent, **ce tableau-ci l'emporte**.
+
+**Le critère « en navigateur » de #290** (T7) : `npm run detect:ui:page` **est** le
+`impeccable detect <url>` demandé — il sert `dist/` et passe le détecteur sur chacun des
+**treize** écrans servis, un par un (`scripts/detect-ui-pages.mjs`, `docs/COMMANDES.md`). Le
+critère est donc tenu par cette commande, pas par une inspection à la main.
 
 | Paire | Ratio | Verdict |
 |---|---:|---|
@@ -94,7 +105,7 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | **`--text-muted` sur feutre éclairci `--scene-felt-lit`** | **3.79** | **interdit sur la table** (#198, voie 1) : la paire reste insuffisante, donc aucun texte atténué ne se pose sur le centre éclairé — `.board .muted` et `.piste__nom` passent en `--text` (7.73, ligne ci-dessus) |
 | `--accent` (pastilles de café) sur feutre `--scene-felt` | 5.12 | AA |
 | `--gold` sur feutre `--scene-felt` | 8.74 | AAA |
-| `--scene-danger` sur feutre (filet d'état, non-texte) | 4.36 | **filet seulement** : 3:1 ✓, texte ✗ |
+| `--scene-danger` sur feutre (filet d'état, non-texte) | 6.55 | **filet seulement** : 3:1 ✓, texte ✗ |
 | **Les paires de la direction (T12, #295, 27/10/2026)** — recalculées sur les jetons de la feuille, pas recopiées de `docs/DIRECTION-SCENE-COMBAT.md` §7 | | |
 | **Faute AA n° 1 de la vidéo** : crème `#efe0c2` sur parchemin `--scene-parch` | **2.41** | **✗ interdit** — inversée : encre `--scene-ink-parch` (5.43, ligne plus haut). Le jeton `--scene-chalk` sur le même parchemin tombe aussi à **2.55** ✗ : il ne se pose **que** sur l'encre (13.87) |
 | **Faute AA n° 2 de la vidéo** : blanc `#fff` sur vert `--scene-go` | **2.14** | **✗ interdit** — inversée : encre `#0b1220` (8.75, ligne plus haut). Le blanc `#f4feff` y fait 2.09 |
@@ -106,8 +117,8 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | Or `#d8b96a` sur feutre / or profond `#8a6a34` sur feutre | 8.67 / 3.28 | AAA / 3:1 — l'or profond n'est **ni** texte **ni** livré (la direction le réservait aux filets) |
 | Parchemin `--scene-parch` sur feutre (contour de la pile) | 5.23 | AA non-texte ✓ |
 | `--scene-go` sur feutre / sur le centre éclairé | 7.68 / 4.21 | AAA / AA non-texte ✓ |
-| `--scene-danger` sur le vignetté `--scene-felt-deep` / **sur le centre éclairé `--scene-felt-lit`** | 4.90 / **2.39** | 3:1 ✓ / **✗ au pic** : le filet danger du camp de la Direction est une ombre intérieure de 2 px sur le **bord gauche** de la zone ; la table y mélange 80 % de feutre (`#182938`, calcul de la géométrie du dégradé, **non mesuré** sur la page) → **3.94** ✓ |
-| Filet `--scene-danger` de « Fin du tour » (tour adverse) contre la barre d'action (dégradé de `--bg-raised` à `--bg-sunken`) | 4.52 / 4.80 | 3:1 non-texte ✓ ; contre son **propre remplissage** `--scene-steel-deep` il ne vaut que **2.02** : c'est donc le **libellé** (blanc sur `--scene-steel-deep` : **7.61**, AAA) qui porte l'état, le filet ne fait que le souligner |
+| `--scene-danger` sur le vignetté `--scene-felt-deep` / **sur le centre éclairé `--scene-felt-lit`** | 7.35 / **3.59** | 3:1 ✓ **dans les deux cas** (#323) : le filet danger du camp de la Direction est une ombre intérieure de 2 px sur le **bord gauche** de la zone. **Mesuré sur la page** le 27/10/2026 (420 × 900, capture lue au pixel près au bord du camp) : le jeton `#e0563f` y rendait `#a63f2e` sous la vignette de la table pour un feutre `#121f2b`, soit **2,80:1** — sous 3:1 malgré le « calcul géométrique » de #295 (3,94, jamais vérifié). Le jeton est relevé à `#ff7f3f` : **3,18:1 au pire** (le coin le plus vignetté) et **3,83 à 3,98:1** sur le reste du filet |
+| Filet `--scene-danger` de « Fin du tour » (tour adverse) contre la barre d'action (dégradé de `--bg-raised` à `--bg-sunken`) | 6.78 / 7.20 | 3:1 non-texte ✓ ; contre son **propre remplissage** `--scene-steel-deep` il vaut **3.03** (#323 : 2,02 avec l'ancien jeton, donc sous 3:1) : le **libellé** (blanc sur `--scene-steel-deep` : **7.61**, AAA) continue de porter l'état au premier chef, le filet le souligne désormais au-dessus du seuil |
 | Pilule danger `#5f1a16` de la direction sur feutre | 1.29 | **✗ non livrée** : « Fin du tour » à la Direction prend `--scene-steel-deep` + filet danger (ligne précédente). Si la pilule revient, le filet est **obligé** |
 | `--text` `#e8eef8` (l'encre de la scène) vs l'encre `#eef4fb` de la direction, sur feutre | 14.11 / 14.85 | AAA — la scène ne crée **pas** d'encre : elle prend `--text` |
 | **Pastille de café** (#290) : la couleur de faction contre son **liseré sombre** `--bg-deep` — les dix `FACTION_META.color` | **3,27 à 8,09** | 3:1 non-texte ✓ — le pire est la Direction (`#5b6472`, 3,27) ; le meilleur Amélioration continue (8,09) |
@@ -257,7 +268,7 @@ rareté, `.card__face` est la carte elle-même.
 
 **Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
-### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121)
+### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121 ; écart de collage de la barre daté le 27/10/2026, #289, #323)
 
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
@@ -284,7 +295,7 @@ un conteneur de **105 px** (la carte entière, son inclinaison et la place du so
 | Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (64 px), inclinées, qui ne se chevauchent que quand la largeur l'exige ; la carte se soulève au survol et au focus (pas sous « Mouvement réduit » : c'est alors le panneau de l'inspecteur qui s'ouvre). Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
 | Pose | `.pose` | une carte **choisie** ouvre un panneau sous la main qui la nomme et donne **où** la jouer : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet ». |
 | Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-121). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`). La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans `body` à la verticale de sa carte (sous elle, au-dessus si l'écran manque de place), 17 rem de large au plus. Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; à partir de 900 px, colonne collée dans la console. |
-| Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation. Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi). C'est la cible `poste-actions` du pas-à-pas. |
+| Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation — **au-dessus de 640 px de large seulement** : sous 640 px (donc à la cible de 420 px de D-060) elle repasse en `position: static` et se range sous la main, sinon elle remontait par-dessus le bas de la main (#289, écart **assumé**, `src/styles.css`). Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi). C'est la cible `poste-actions` du pas-à-pas. |
 | Écran large (≥ 900 px) | `.battle__table` | la table à gauche, la console (inspecteur, main, pose) à droite. |
 
 Le **secondaire** est derrière le `⋯` : Journal (les 14 dernières lignes), Partie à deux (un code
@@ -400,7 +411,7 @@ d'un panneau dans la page. Les jetons sont déclarés **une fois**, sur le séle
 | `--scene-card` | `#1b222c` | la surface d'une carte |
 | `--scene-neon` / `--scene-neon-core` | `#61d5df` / `#9ef5fb` | le néon **d'état** |
 | `--scene-go` | `#46c78c` | « Fin du tour » quand c'est à toi |
-| `--scene-danger` | `#e0563f` | tour adverse, craquage |
+| `--scene-danger` | `#ff7f3f` | tour adverse, craquage — relevé le 27/10/2026 (#323) : à `#e0563f` le filet tombait à **2,80:1** mesuré au bord du camp de la Direction |
 | `--scene-gold-hot` | `#f7e264` | le **Stress** qui monte |
 | `--scene-parch` | `#b18a60` | le parchemin des piles (Deck, Rebut) |
 | `--scene-parch-dark` | `#664d38` | le filet usé des piles |
@@ -420,7 +431,9 @@ n'existent pas hors de l'écran de combat, et `:root` n'en change aucun.
 (3) une surface du combat porte une ombre **extérieure, floue et colorée** — un halo. Le néon est un
 **état** : le filet en ombre intérieure du camp qui a la main, l'anneau de focus, le contour d'une
 carte jouable. Une carte qui n'est ni active, ni désignée, ni en train de subir n'a aucun halo. Chaque
-garde a son « le contrôle mord » dans le même fichier.
+garde a son « le contrôle mord » dans le même fichier. Depuis #323, il garde aussi le **plancher
+3:1 du filet de danger** sur le feutre le plus clair (WCAG 1.4.11), avec l'ancien jeton comme cas
+fautif.
 
 **Quatre règles, et elles tiennent tout l'écran :**
 

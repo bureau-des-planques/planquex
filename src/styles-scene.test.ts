@@ -124,6 +124,31 @@ describe('les paires de la direction sont dans DESIGN.md §1.5, calculées (T12,
   });
 });
 
+describe('le filet de danger passe 3:1 sur le feutre le plus clair (#323)', () => {
+  /**
+   * Le filet danger du camp de la Direction (`.board__side.is-current.is-direction`) est une
+   * **frontière d'état** : sans elle, on ne voit pas qui a la main. WCAG 1.4.11 demande **3:1**
+   * pour une telle frontière, et le pire fond possible est le **centre éclairé** de la table
+   * (`--scene-felt-lit`), là où le dégradé de `.board` est le plus clair — le filet, lui, est au
+   * bord gauche, donc toujours sur un feutre plus sombre : c'est une borne **haute**.
+   *
+   * Mesuré sur la page (420 × 900, `npm run build` + `vite preview`, capture lue au pixel près
+   * au bord gauche du camp de la Direction) : **3,18:1 au pire** (le coin le plus vignetté) et
+   * **3,83 à 3,98:1** sur le reste du filet. Le calcul sur les jetons donne la même conclusion
+   * (3,59 contre le pic, qui est une borne haute : le filet est au bord, pas au centre), donc la
+   * garde reste une lecture de jetons — sans navigateur.
+   */
+  const feltLit = () => jeton('--scene-felt-lit');
+
+  it('`--scene-danger` sur `--scene-felt-lit` vaut au moins 3:1', () => {
+    expect(ratio(jeton('--scene-danger'), feltLit())).toBeGreaterThanOrEqual(3);
+  });
+
+  it('le contrôle mord : l’ancien jeton `#e0563f` tombe sous 3:1 sur ce même feutre', () => {
+    expect(ratio('#e0563f', feltLit())).toBeLessThan(3);
+  });
+});
+
 describe('aucun halo coloré sur le combat (T12, #295)', () => {
   const SELECTEUR_COMBAT =
     /\.(battle|combat-[a-z]|board|bench|poste|piste|pile|hand|pose|inspecteur|infobulle|craquage|stress|pips?|status-chip|status-legend|card--plateau|card__stress-chiffre|button--fin|condition|attaque|is-impactee)(?![a-z])/;
