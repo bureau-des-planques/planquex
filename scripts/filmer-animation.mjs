@@ -29,6 +29,8 @@
  *                 plus s'il reste près d'elle
  *   --compter     sélecteur dont on **compte les éléments dans le DOM** à chaque frame, et dont le
  *                 compte est écrit dans la légende : c'est ce qui prouve un retrait du DOM
+ *   --survol      sélecteur à survoler (après les clics) pour déclencher un effet de survol ;
+ *                 répétable. Le pointeur y reste pendant la prise (#294 : la carte de main soulevée)
  *   --zone        sélecteur de la zone photographiée (défaut : body)
  *   --images      nombre de frames (défaut : 24)
  *   --intervalle  millisecondes d'attente **après** chaque frame (défaut : 70) ; une capture prend
@@ -56,6 +58,7 @@ const DEFAUTS = {
   chemin: '/battle',
   clics: [],
   etapes: [],
+  survols: [],
   horloge: null,
   compter: null,
   marge: 0,
@@ -69,8 +72,8 @@ const DEFAUTS = {
 
 /** Lit `--option valeur` ; refuse une option inconnue ou une valeur non numérique. */
 export function analyserArguments(argv) {
-  const config = { ...DEFAUTS, clics: [], etapes: [], stockage: {} };
-  const entiers = new Set(['images', 'intervalle', 'colonnes', 'pause']);
+  const config = { ...DEFAUTS, clics: [], etapes: [], survols: [], stockage: {} };
+  const entiers = new Set(['images', 'intervalle', 'colonnes']);
   for (let i = 0; i < argv.length; i += 1) {
     const option = argv[i];
     if (option === '--plan') {
@@ -81,6 +84,7 @@ export function analyserArguments(argv) {
     const connues = [
       'chemin',
       'clic',
+      'survol',
       'attendre',
       'pause',
       'horloge',
@@ -102,6 +106,8 @@ export function analyserArguments(argv) {
     if (nom === 'clic') {
       config.clics.push(valeur);
       config.etapes.push({ type: 'clic', selecteur: valeur });
+    } else if (nom === 'survol') {
+      config.survols.push(valeur);
     } else if (nom === 'attendre') config.etapes.push({ type: 'attendre', selecteur: valeur });
     else if (nom === 'pause') {
       const ms = Number(valeur);
@@ -186,6 +192,9 @@ async function filmer(config) {
       else if (etape.type === 'attendre') {
         await page.locator(etape.selecteur).first().waitFor({ state: 'visible', timeout: 60000 });
       } else await page.waitForTimeout(etape.ms);
+    }
+    for (const selecteur of config.survols) {
+      await page.locator(selecteur).first().hover();
     }
     const zone = page.locator(config.zone).first();
     const frames = [];

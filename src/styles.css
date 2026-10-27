@@ -3251,6 +3251,39 @@ h2 {
   }
 }
 
+/* L'arc d'une Condition (#294) : un liseré de 2 px qui pulse **deux fois** autour de la carte du
+   Poste, 2 × 120 ms, puis le composant retire le nœud (`DUREE_CONDITION_MS`). Seule l'`opacity`
+   bouge : aucun halo, aucun flou, aucun `box-shadow` animé, et deux battements en 240 ms restent
+   sous les trois flashs par seconde de SC 2.3.1. Le nœud est hors du flux et ne capte aucun clic.
+   `both` tient la première image (invisible) pendant le délai et fige la dernière à 0 : ni liseré
+   plein avant l'impact, ni liseré plein si le minuteur retarde le retrait. */
+.condition__arc {
+  animation: condition-arc 120ms ease-in-out 2 both;
+  border: 2px solid var(--scene-danger);
+  border-radius: 9px;
+  inset: -2px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 5;
+}
+
+/* Une Condition posée par la Pression attend l'impact (550 ms, `DELAI_IMPACT_MS`) : 550 + 240 = 790. */
+.condition__arc--apres-coup {
+  animation-delay: 550ms;
+}
+
+@keyframes condition-arc {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* Sous « Mouvement réduit » (le store **et** le système), le mouvement part et l'information
    reste : le chiffre s'affiche sans bouger, l'hexagone est déjà rempli, la pile garde son
    liseré fixe, et la carte craquée reste désaturée. */
@@ -3274,6 +3307,13 @@ h2 {
   .craquage__carte {
     animation: none !important;
     opacity: 0.35;
+  }
+
+  /* L'arc n'existe pas sans mouvement : le nœud n'est pas créé, et le badge nommé dit la Condition.
+     Ceinture : si un nœud restait (réglage changé en cours d'effet), il ne s'affiche pas. */
+  .condition__arc {
+    animation: none !important;
+    display: none;
   }
 }
 
@@ -3301,6 +3341,12 @@ h2 {
 .battle--mouvement-reduit .craquage__carte {
   animation: none !important;
   opacity: 0.35;
+}
+
+:root[data-mouvement-reduit='true'] .condition__arc,
+.battle--mouvement-reduit .condition__arc {
+  animation: none !important;
+  display: none;
 }
 
 /* La barre de Stress est **dorée** (DESIGN.md §2.6) : le rouge reste le danger d'état, quand le
@@ -3420,16 +3466,27 @@ h2 {
   margin-left: calc(var(--pas) - var(--carte-w));
 }
 
-/* Au survol, au focus ou une fois choisie, la carte se redresse et passe devant ses voisines. */
+/* Au survol, au focus ou une fois choisie, la carte passe devant ses voisines. **La cible de clic
+   ne bouge pas** (#294) : l'`<li>` et le bouton gardent leur place et leur inclinaison, seul le
+   visuel monte (`.hand__visuel`, plus bas). Soulever l'`<li>` lui-même déplaçait le bouton sous le
+   curseur — un pointeur posé sur le bas de la carte la quittait dès qu'elle montait, et la carte
+   retombait : un scintillement. */
 .hand > li:is(:hover, :focus-within, .is-selected) {
-  transform: translateY(-0.5rem) rotate(0deg);
   z-index: 1;
 }
 
-/* Le gabarit ne reçoit aucun clic : c'est le bouton posé par-dessus qui le reçoit. */
+/* Le gabarit ne reçoit aucun clic : c'est le bouton posé par-dessus qui le reçoit. Il se soulève
+   de 0,5 rem au survol, au focus ou une fois choisi (160 ms, `transform` seul) : plus haut, et
+   `.hand` (`overflow: hidden`, budget de hauteur) le rognerait. L'agrandissement, c'est
+   l'inspecteur. */
 .hand__visuel {
   pointer-events: none;
+  transition: transform 160ms ease;
   width: 100%;
+}
+
+.hand > li:is(:hover, :focus-within, .is-selected) .hand__visuel {
+  transform: translateY(-0.5rem);
 }
 
 /* Le bouton couvre la carte. Il est transparent : la carte se lit, le bouton agit. */
@@ -3468,16 +3525,16 @@ h2 {
 /* Sous « Mouvement réduit », la carte choisie ne se soulève pas : elle reste à sa place, et c'est son
    filet qui la désigne. L'inclinaison de l'éventail n'est pas un mouvement, elle reste. */
 @media (prefers-reduced-motion: reduce) {
-  .hand > li:is(:hover, :focus-within, .is-selected) {
-    transform: rotate(var(--rot, 0deg));
+  .hand > li:is(:hover, :focus-within, .is-selected) .hand__visuel {
+    transform: none;
   }
 }
 
 /* Le réglage « Mouvement réduit » du store n'était relié à aucun CSS (#192) : il l'est
    maintenant par la classe de l'écran et par l'attribut posé sur la racine. */
-:root[data-mouvement-reduit='true'] .hand > li:is(:hover, :focus-within, .is-selected),
-.battle--mouvement-reduit .hand > li:is(:hover, :focus-within, .is-selected) {
-  transform: rotate(var(--rot, 0deg));
+:root[data-mouvement-reduit='true'] .hand > li:is(:hover, :focus-within, .is-selected) .hand__visuel,
+.battle--mouvement-reduit .hand > li:is(:hover, :focus-within, .is-selected) .hand__visuel {
+  transform: none;
 }
 
 /* **Le nom de la carte de main à 64 px** (#233) : la césure manuelle du plateau coupait

@@ -6,6 +6,9 @@ import type { BattleState } from '@/data/types';
 import { createBattle } from '@/game/engine';
 import {
   ajouterEffet,
+  DELAI_IMPACT_MS,
+  DUREE_CONDITION_APRES_COUP_MS,
+  DUREE_CONDITION_MS,
   DUREE_MAX_MS,
   DUREE_STRESS_MS,
   effetsEntre,
@@ -260,6 +263,130 @@ describe('styles.css — les bornes des effets (#192, SPEC-COMBAT-UI §6.8)', ()
     // Le craquage garde la désaturation ; la traînée, elle, n'est pas créée (`Battle.tsx`).
     expect(feuille).toMatch(
       /:root\[data-mouvement-reduit='true'\] \.craquage__carte[\s\S]*?animation:\s*none !important/
+    );
+  });
+});
+
+/**
+ * **T11 — les bornes, avec leur contrôle qui mord** (#294, `SPEC-COMBAT-UI` §8 T11).
+ *
+ * Les trois premiers tests de la section précédente lisent la feuille ; celui-ci confronte la
+ * **même** règle à des feuilles fautives, pour qu'elle puisse échouer (`AGENTS.md` §6) :
+ * une `@keyframes` jouée plus de 800 ms (durée × tours comprise), une boucle de plus de deux
+ * tours, ou une boucle sans fin (`infinite`, que le décompte des chiffres ne voyait pas).
+ */
+function animationsFautives(feuille: string): string[] {
+  const sansCommentaires = feuille.replace(/\/\*[\s\S]*?\*\//g, '');
+  const fautes: string[] = [];
+  for (const declaration of sansCommentaires.matchAll(/animation:\s*([^;]+);/g)) {
+    const valeur = declaration[1].trim();
+    if (valeur.includes('none')) continue;
+    const durees = [...valeur.matchAll(/(\d+)ms/g)].map((duree) => Number(duree[1]));
+    const tours = valeur.includes('infinite')
+      ? Number.POSITIVE_INFINITY
+      : Math.max(1, ...[...valeur.matchAll(/(?:^|\s)(\d+)(?=\s|$)/g)].map((nombre) => Number(nombre[1])));
+    const duree = durees.length === 0 ? Number.POSITIVE_INFINITY : Math.max(...durees);
+    if (duree > DUREE_MAX_MS) fautes.push(`${valeur} : plus de ${DUREE_MAX_MS} ms`);
+    else if (tours > MAX_TOURS_BOUCLE) fautes.push(`${valeur} : plus de ${MAX_TOURS_BOUCLE} tours`);
+    else if (duree * tours > DUREE_MAX_MS) fautes.push(`${valeur} : ${duree * tours} ms au total`);
+  }
+  return fautes;
+}
+
+/** Les blocs `selecteur { corps }` de la feuille, commentaires retirés. */
+function reglesDe(feuille: string): { selecteur: string; corps: string }[] {
+  return [...feuille.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}@]+)\{([^{}]*)\}/g)].map((m) => ({
+    selecteur: m[1].trim().replace(/\s+/g, ' '),
+    corps: m[2]
+  }));
+}
+
+/** Les règles de survol de la case de la main (`<li>`) qui portent un `transform` : la cible bougerait. */
+function transformsDuSurvolDeLaCase(feuille: string): string[] {
+  return reglesDe(feuille)
+    .filter((r) => r.selecteur === '.hand > li:is(:hover, :focus-within, .is-selected)')
+    .flatMap((r) => {
+      const transform = r.corps.match(/transform:\s*([^;]+);/);
+      return transform ? [`${r.selecteur} { transform: ${transform[1].trim()} }`] : [];
+    });
+}
+
+describe('styles.css — durée, tours et durée totale des animations (#294)', () => {
+  it('aucune animation de la feuille ne dépasse 800 ms, deux tours, ni 800 ms au total', () => {
+    expect(animationsFautives(css())).toEqual([]);
+  });
+
+  it('le contrôle mord : durée, boucle sans fin, trop de tours et total sont vus', () => {
+    const fautive = [
+      css(),
+      '.a { animation: x 1600ms ease-out 1 both; }',
+      '.b { animation: y 300ms ease-in-out infinite both; }',
+      '.c { animation: z 100ms ease-in-out 3 both; }',
+      '.d { animation: w 500ms ease-in-out 2 both; }'
+    ].join('\n');
+    expect(animationsFautives(fautive)).toEqual([
+      'x 1600ms ease-out 1 both : plus de 800 ms',
+      'y 300ms ease-in-out infinite both : plus de 2 tours',
+      'z 100ms ease-in-out 3 both : plus de 2 tours',
+      'w 500ms ease-in-out 2 both : 1000 ms au total'
+    ]);
+  });
+
+  it('l’arc de Condition pulse deux fois et le nœud vit exactement le temps de l’animation', () => {
+    const arc = css().match(/\.condition__arc\s*\{([^}]*)\}/)?.[1] ?? '';
+    const declaration = arc.match(/animation:\s*condition-arc (\d+)ms [\w-]+ (\d+) both;/);
+    expect(declaration, 'la règle .condition__arc porte l’animation condition-arc').not.toBeNull();
+    const [, battement, tours] = declaration!;
+    expect(Number(tours)).toBe(2);
+    expect(Number(battement) * Number(tours)).toBe(DUREE_CONDITION_MS);
+    // Seule l'opacité bouge, et l'arc ne capte aucun clic ni ne sort du flux.
+    expect(arc).toMatch(/pointer-events:\s*none;/);
+    expect(arc).toMatch(/position:\s*absolute;/);
+    // Posé par une Pression, l'arc attend l'impact : le délai, ajouté à la durée, reste sous 800 ms.
+    const retard = css().match(/\.condition__arc--apres-coup\s*\{[^}]*animation-delay:\s*(\d+)ms;/)?.[1];
+    expect(Number(retard)).toBe(DELAI_IMPACT_MS);
+    expect(Number(retard) + Number(battement) * Number(tours)).toBe(DUREE_CONDITION_APRES_COUP_MS);
+    expect(DUREE_CONDITION_APRES_COUP_MS).toBeLessThanOrEqual(DUREE_MAX_MS);
+    const keyframes = css().match(/@keyframes condition-arc\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+    expect(keyframes).toMatch(/opacity/);
+    expect(keyframes).not.toMatch(/transform|blur|filter|box-shadow/);
+  });
+
+  it('la carte de la main se soulève sans déplacer sa cible de clic, et se tait sous mouvement réduit', () => {
+    // Aucune règle de survol de l'`<li>` ne porte de `transform` : c'est elle qui déplacerait le bouton.
+    expect(transformsDuSurvolDeLaCase(css())).toEqual([]);
+    const regles = reglesDe(css());
+    // Le visuel monte, en 160 ms.
+    const visuel = regles.find(
+      (r) => r.selecteur === '.hand > li:is(:hover, :focus-within, .is-selected) .hand__visuel'
+    );
+    expect(visuel?.corps).toMatch(/transform:\s*translateY\(-0\.5rem\);/);
+    expect(regles.find((r) => r.selecteur === '.hand__visuel')?.corps).toMatch(/transition:\s*transform 160ms/);
+    // Les deux coupures (store, système) ramènent le visuel à sa place.
+    const replis = regles.filter(
+      (r) => /\.hand__visuel$/.test(r.selecteur) && /mouvement-reduit|^\.hand > li/.test(r.selecteur)
+    );
+    const coupes = replis.filter((r) => /transform:\s*none;/.test(r.corps)).map((r) => r.selecteur);
+    expect(coupes.some((s) => /^:root\[data-mouvement-reduit='true'\] .*\.battle--mouvement-reduit/.test(s))).toBe(
+      true
+    );
+    expect(coupes.some((s) => s === '.hand > li:is(:hover, :focus-within, .is-selected) .hand__visuel')).toBe(true);
+  });
+
+  it('le contrôle mord : un survol qui soulève l’`<li>` est vu', () => {
+    const fautive = `${css()}\n.hand > li:is(:hover, :focus-within, .is-selected) { transform: translateY(-1rem) rotate(0deg); }`;
+    expect(transformsDuSurvolDeLaCase(fautive)).toEqual([
+      '.hand > li:is(:hover, :focus-within, .is-selected) { transform: translateY(-1rem) rotate(0deg) }'
+    ]);
+  });
+
+  it('l’arc a son repli : aucun arc sous « Mouvement réduit », store comme système', () => {
+    const feuille = css();
+    expect(feuille).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.condition__arc,\s*\.battle--mouvement-reduit \.condition__arc\s*\{[^}]*animation:\s*none !important;[^}]*display:\s*none;/
+    );
+    expect(feuille).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.condition__arc\s*\{[^}]*animation:\s*none !important;[^}]*display:\s*none;/
     );
   });
 });

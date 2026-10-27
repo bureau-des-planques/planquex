@@ -373,7 +373,7 @@ l'état est **déjà final** quand l'effet joue, il ne retarde rien.
 | Élément | Valeur livrée | Écart avec le plan ci-dessus |
 |---|---|---|
 | Effet `attaque` | **700 ms** (`DUREE_ATTAQUE_MS`) | le plan disait 350 ms : passé à 700 ms, car l'impact (550–700 ms) serait retiré avant son départ |
-| Effet `condition` | 200 ms (`DUREE_CONDITION_MS`) | aucun |
+| Effet `condition` | **240 ms** (`DUREE_CONDITION_MS`), ou **790 ms** quand une Pression l'a posée (`DUREE_CONDITION_APRES_COUP_MS`, #294) | l'arc `condition__arc` pulse deux fois 120 ms ; posé par une Pression, il attend l'impact (550 ms) pour ne pas s'allumer avant le coup. Aucun arc sous mouvement réduit : le badge nommé suffit |
 | Identité de `attaque` | attaquant + cible (`uid`, `uidCible`) | conforme : un second coup sur la même paire remplace |
 | Anticipation (cabrage) | `attaque-elan`, **0–200 ms**, sur `.poste__carte.is-elan` | conforme |
 | Trait | `trait-attaque`, **200–550 ms** (délai 200 ms), sur `.attaque__trait` | conforme dans sa forme ; **ne part pas** si la Pression craque (voir ci-dessous) |
