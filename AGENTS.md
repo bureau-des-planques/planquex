@@ -223,7 +223,7 @@ Tableau des commandes, wizards et gotchas : **`docs/COMMANDES.md`**, depuis `pla
 
 - **Installer les dépendances** : `npm run installer` dans le worktree. `npm ci` vide `node_modules/` et ne se lance jamais dans le dépôt principal (`scripts/installer.mjs` le refuse).
 - **Formater** : `npm run format` (écrit), `npm run format:check` (vérifie, ce que la CI lance). Un fichier de données de carte (`src/data/`) n'est **pas** reformaté : un texte par ligne, un repli changerait le texte affiché.
-- **Lire un ticket** : `gh issue view N --json number,title,body,labels,comments`. Sans `--json`, `gh` échoue (Projects classic), à chaque fois.
+- **Lire un ticket** : `gh issue view N --json number,title,body,labels,comments`. Sans `--json`, `gh` échoue (Projects classic), à chaque fois. Même cause, autre commande : **`gh pr edit --body-file` échoue aussi** — pour réécrire le corps d'une PR, passer par `gh api --method PATCH repos/<org>/<dépôt>/pulls/<n>` avec un JSON `{"body": …}`.
 - **Écran blanc en dev** (asset répondu en `200 text/html`) : service worker du build resté sur cette origine — `docs/COMMANDES.md` §7.1.
 
 ## 8. Audits
