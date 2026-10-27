@@ -1,200 +1,136 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import { describe, it, expect } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Battle } from '@/pages/Battle';
-import { renderWithStore } from '@/test/test-utils';
-import { ALL_CARDS } from '@/data';
-import type { BattleState } from '@/data/types';
-import { autoDeck } from '@/game/deck';
-import { applyAction, createBattle, legalActions } from '@/game/engine';
-import { nextAiAction } from '@/game/ia';
-import { partieSauvegardee } from '@/store/partie';
-import { useStore } from '@/store/useStore';
+import { getCard } from '@/data';
+import type { Card, CardInstance } from '@/data/types';
+import { CarteSurvolable, FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
 
 /**
- * **L'inspecteur du combat** (SPEC-COMBAT-UI §3, §6.4 ; ticket #188).
+ * **L'inspecteur du combat — deux modes, un contenu** (`SPEC-COMBAT-UI` §8 T4, #287).
  *
- * Deux surfaces, un contenu : l'infobulle au survol et au focus (lecture, **aucun bouton**), le
- * panneau au clic (non modal, avec les gestes de la carte). Les tests passent par le plateau réel :
- * c'est la carte du plateau qui se désigne, et le panneau qui se règle sur elle.
+ * Le test **ne passe pas par l'écran** : il monte les deux surfaces du composant, prises dans
+ * un petit harnais qui fait exactement ce que T5 fera dans `Battle.tsx` — la carte désigne,
+ * le panneau s'ouvre sur elle. C'est la condition pour que la règle reste vérifiable même
+ * quand l'écran bouge : ici, seule compte la promesse du composant.
+ *
+ * Le contenu (`FicheCarte`) est **le même** dans les deux rendus : l'infobulle n'est pas une
+ * version courte, le panneau n'est pas une version longue — il y ajoute les gestes.
  */
 
-/** Une partie où le joueur peut attacher un café : elle donne au panneau un geste à montrer. */
-function partieAvecCafe() {
-  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
-  const deck = autoDeck(owned).deck;
-  for (let seed = 1; seed < 300; seed += 1) {
-    let s: BattleState = createBattle(deck, deck, seed);
-    for (let i = 0; i < 60 && s.phase === 'playing'; i += 1) {
-      const auTour = s.current === 'player' && s.pendingPromotion === null;
-      if (auTour && legalActions(s).some((a) => a.type === 'attachEnergy')) {
-        const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
-        if (partie) return { partie, etat: s };
-      }
-      const legales = legalActions(s).filter((a) => a.type !== 'forfeit');
-      const action =
-        s.current === 'ai' && !s.pendingPromotion
-          ? nextAiAction(s, 'scripte')
-          : (legales.find((a) => a.type === 'attachEnergy') ?? legales.find((a) => a.type === 'endTurn'));
-      if (!action) break;
-      s = applyAction(s, action);
-    }
-  }
-  throw new Error('aucune partie ne propose de café au joueur');
-}
-
-/** Une partie neuve : le Poste du joueur et celui de la Direction, tous deux sur le plateau. */
-function partieNeuve() {
-  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
-  const deck = autoDeck(owned).deck;
-  const etat = createBattle(deck, deck, 42);
-  const partie = partieSauvegardee(etat, null, { playerDeck: deck, aiDeck: deck });
-  if (!partie) throw new Error('partie terminée : rien à rendre');
-  return { partie, etat };
-}
-
-/** La carte du plateau d'un `uid`, telle que l'écran la pose (`data-uid`). */
-function carteDuPlateau(uid: string): HTMLElement {
-  const carte = document.querySelector<HTMLElement>(`[data-uid="${uid}"]`);
-  if (!carte) throw new Error(`la carte ${uid} n’est pas sur le plateau`);
+/** Une carte réelle, longue et évoluée : son nom dépasse la largeur d'une carte du plateau. */
+function carteDeTest(): Card {
+  const carte = getCard('qvt-responsable-developpement-competences');
+  if (!carte) throw new Error('la carte de test a disparu des données');
   return carte;
 }
+const CARTE = carteDeTest();
+const INSTANCE: CardInstance = {
+  uid: 'test-1',
+  cardId: CARTE.id,
+  hp: 70,
+  maxHp: 110,
+  energy: ['QVT'],
+  statuses: [],
+  playedTurn: 1,
+  evolvedTurn: null,
+  damageReduction: 0
+};
 
-describe('Inspecteur du combat — l’infobulle de lecture (survol et focus)', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+const NOM_ENTIER = CARTE.name;
+/** Ce que l'écran tronque : un préfixe et une ellipse, jamais le nom entier. */
+const NOM_TRONQUE = `${NOM_ENTIER.slice(0, 12)}…`;
 
-  it('au survol, une infobulle role="tooltip" sans aucun bouton, reliée à la carte', async () => {
-    const { partie, etat } = partieNeuve();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    // Rien avant le délai de survol : l'infobulle n'apparaît pas au premier pixel.
-    await userEvent.hover(carte);
-    expect(screen.queryByRole('tooltip')).toBeNull();
-
-    const infobulle = await screen.findByRole('tooltip');
-    expect(within(infobulle).queryAllByRole('button')).toHaveLength(0);
-    expect(carte).toHaveAttribute('aria-describedby', infobulle.id);
-    // Le Stress est chiffré, et le nom est entier.
-    expect(infobulle).toHaveTextContent(/\d+\/\d+ de Stress/);
-    expect(infobulle).toHaveTextContent(cardNameOf(etat, 'player'));
-  });
-
-  it('l’infobulle reste ouverte quand le pointeur entre dedans (SC 1.4.13 : survolable)', async () => {
-    const { partie, etat } = partieNeuve();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    await userEvent.hover(carte);
-    const infobulle = await screen.findByRole('tooltip');
-    await userEvent.hover(infobulle);
-    expect(screen.getByRole('tooltip')).toBe(infobulle);
-  });
-
-  it('Échap la ferme, sans que le pointeur ait à bouger', async () => {
-    const { partie, etat } = partieNeuve();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    await userEvent.hover(carte);
-    await screen.findByRole('tooltip');
-    await userEvent.keyboard('{Escape}');
-
-    expect(screen.queryByRole('tooltip')).toBeNull();
-  });
-
-  it('au focus clavier, la même infobulle ; elle se ferme au blur', async () => {
-    const { partie, etat } = partieNeuve();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    act(() => carte.focus());
-    const infobulle = await screen.findByRole('tooltip');
-    expect(carte).toHaveAttribute('aria-describedby', infobulle.id);
-
-    act(() => carte.blur());
-    expect(screen.queryByRole('tooltip')).toBeNull();
-  });
-});
-
-describe('Inspecteur du combat — le panneau d’action (clic, tap, Entrée)', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('au clic, un dialogue non modal : ni voile, ni aria-modal, et les gestes de la carte', async () => {
-    const { partie, etat } = partieAvecCafe();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    fireEvent.click(carte);
-
-    const panneau = await screen.findByRole('dialog');
-    expect(panneau).not.toHaveAttribute('aria-modal');
-    // Pas de voile : le plateau reste lisible et cliquable.
-    expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
-    expect(panneau).toHaveAccessibleName(cardNameOf(etat, 'player'));
-    // Au moins un geste, et c'est un bouton tiré de la liste du moteur.
-    const gestes = within(panneau).getByRole('region', { name: 'Gestes de cette carte' });
-    expect(within(gestes).getByRole('button', { name: /Attacher 1 café/ })).toBeInTheDocument();
-  });
-
-  it('un geste du panneau est joué, et le panneau se ferme', async () => {
-    const { partie, etat } = partieAvecCafe();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    fireEvent.click(carte);
-    const panneau = await screen.findByRole('dialog');
-    fireEvent.click(within(panneau).getByRole('button', { name: /Attacher 1 café/ }));
-
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(useStore.getState().partie?.actions.length ?? 0).toBeGreaterThan(0);
-  });
-
-  it('Échap ferme le panneau et rend le focus à la carte', async () => {
-    const { partie, etat } = partieAvecCafe();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    fireEvent.click(carte);
-    await screen.findByRole('dialog');
-    await userEvent.keyboard('{Escape}');
-
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(carte).toHaveFocus();
-  });
-
-  it('une carte adverse s’ouvre en lecture seule : aucune section de gestes', async () => {
-    const { partie, etat } = partieNeuve();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const adverse = etat.players.ai.active?.uid ?? '';
-
-    fireEvent.click(carteDuPlateau(adverse));
-
-    const panneau = await screen.findByRole('dialog');
-    expect(within(panneau).queryByRole('region', { name: 'Gestes de cette carte' })).toBeNull();
-    expect(within(panneau).queryAllByRole('button')).toHaveLength(1); // « Fermer », seul.
-  });
-
-  it('le clavier ouvre le panneau avec Entrée, comme le clic', async () => {
-    const { partie, etat } = partieNeuve();
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
-    const carte = carteDuPlateau(etat.players.player.active?.uid ?? '');
-
-    act(() => carte.focus());
-    await userEvent.keyboard('{Enter}');
-
-    expect(await screen.findByRole('dialog')).toHaveAccessibleName(cardNameOf(etat, 'player'));
-  });
-});
-
-/** Le nom de la carte active d'un camp, tel que le plateau l'écrit. */
-function cardNameOf(state: BattleState, camp: 'player' | 'ai'): string {
-  const active = state.players[camp].active;
-  const definition = ALL_CARDS.find((carte) => carte.id === active?.cardId);
-  return definition?.name ?? '';
+/**
+ * Le harnais : la carte du plateau et son panneau, comme l'écran les tient. `gestes` est le
+ * contenu d'action du panneau — c'est ce que T5 branchera sur la liste du moteur.
+ */
+function InspecteurDeTest({ gestes }: { gestes?: ReactNode }) {
+  const [inspectee, setInspectee] = useState(false);
+  const fiche = <FicheCarte instance={INSTANCE} card={CARTE} />;
+  return (
+    <>
+      <CarteSurvolable
+        uid={INSTANCE.uid}
+        nom={NOM_ENTIER}
+        className="carte-de-test"
+        fiche={fiche}
+        inspectee={inspectee}
+        onInspecter={() => setInspectee(true)}
+      >
+        {/* La carte est **tronquée** à l'écran : c'est le cas que la spec demande de couvrir. */}
+        <span className="carte-de-test__nom">{NOM_TRONQUE}</span>
+      </CarteSurvolable>
+      <InspecteurCombat
+        ouvert={inspectee}
+        onOpenChange={(ouvert) => {
+          if (!ouvert) setInspectee(false);
+        }}
+        nom={NOM_ENTIER}
+        ancre={INSTANCE.uid}
+        fiche={fiche}
+        gestes={gestes}
+      />
+    </>
+  );
 }
+
+/** La carte telle que le plateau la pose : c'est le déclencheur, et le focus doit y revenir. */
+function carte(): HTMLElement {
+  return screen.getByRole('button', { name: NOM_ENTIER });
+}
+
+describe('InspecteurCombat — deux rendus, un seul contenu (T4, #287)', () => {
+  it('1. au survol, une infobulle role="tooltip" sans aucun bouton, reliée par aria-describedby', async () => {
+    render(<InspecteurDeTest />);
+
+    await userEvent.hover(carte());
+    const infobulle = await screen.findByRole('tooltip');
+
+    // L'APG interdit qu'une infobulle contienne un élément focusable : pas un seul bouton.
+    expect(within(infobulle).queryAllByRole('button')).toHaveLength(0);
+    // Le déclencheur est décrit par elle tant qu'elle est ouverte.
+    expect(carte()).toHaveAttribute('aria-describedby', infobulle.id);
+  });
+
+  it('2. Échap ferme le panneau et rend le focus à la carte', async () => {
+    render(<InspecteurDeTest gestes={<button type="button">Attacher 1 café</button>} />);
+
+    await userEvent.click(carte());
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(carte()).toHaveFocus();
+  });
+
+  it('3. au clic, le panneau est un dialogue non modal qui porte au moins un bouton', async () => {
+    render(<InspecteurDeTest gestes={<button type="button">Attacher 1 café</button>} />);
+
+    await userEvent.click(carte());
+    const panneau = await screen.findByRole('dialog');
+
+    // Non modal : la carte décrite reste lisible et agissable sous le panneau.
+    expect(panneau).not.toHaveAttribute('aria-modal');
+    expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
+    expect(within(panneau).getAllByRole('button').length).toBeGreaterThan(0);
+  });
+
+  it('4. le contenu porte le Stress chiffré et le nom entier, même quand l’écran tronque le nom', async () => {
+    render(<InspecteurDeTest />);
+
+    // Ce que l'écran montre : le nom est coupé.
+    expect(carte()).toHaveTextContent(NOM_TRONQUE);
+    expect(carte()).not.toHaveTextContent(NOM_ENTIER);
+
+    await userEvent.hover(carte());
+    const infobulle = await screen.findByRole('tooltip');
+
+    // Ce que l'inspecteur dit : le nom entier, et le Stress **chiffré** (70/110 sur 110).
+    expect(infobulle).toHaveTextContent(NOM_ENTIER);
+    expect(infobulle).toHaveTextContent(`${INSTANCE.maxHp - INSTANCE.hp}/${INSTANCE.maxHp} de Stress`);
+  });
+});

@@ -229,11 +229,13 @@ export const MUTATIONS = [
       'sans la comparaison, une approbation (3 → 2) ferait clignoter le bandeau « 1 nouvelle inscription » : la règle « ne pas crier pour rien » du poste de pilotage (#184)'
   },
   {
-    ticket: 188,
+    ticket: 287,
     titre: 'une infobulle de l’inspecteur porte un bouton',
     fichier: 'src/components/InspecteurCombat.tsx',
     // L'infobulle (`role="tooltip"`) ne reçoit jamais le focus : le patron ARIA l'interdit (SPEC-COMBAT-UI §3.1).
     // La mutation ajoute un bouton dans son corps ; la suite doit tomber sur « aucun bouton dans l'infobulle ».
+    // L'invariant est né avec #188 ; #287 (T4) le réancre sur le test **autonome** du composant, qui ne
+    // passe plus par l'écran : c'est le même bouton, mais la garde ne dépend plus de `Battle.tsx`.
     motif: '<span className="infobulle__corps">',
     remplacement: '<span className="infobulle__corps"><button type="button" />',
     tests: ['src/components/InspecteurCombat.test.tsx'],
