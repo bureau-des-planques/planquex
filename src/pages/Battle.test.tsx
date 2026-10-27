@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
@@ -1054,14 +1054,18 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
     expect(useStore.getState().combatDetaille).toBe(false);
   });
 
-  it('`I` et `Ctrl`+`I` font la même chose', () => {
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+  it('`I` et `Ctrl`+`I` font la même chose, annotations comprises', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
+    // Le geste ne change pas qu'un attribut : c'est la densité du plateau qui bascule.
+    expect(container.querySelector('.poste__carte .card__attacks .attack__name')).toBeNull();
     fireEvent.keyDown(document, { key: 'i' });
     expect(boutonInfos()).toHaveAttribute('aria-pressed', 'true');
+    expect(container.querySelector('.poste__carte .card__attacks .attack__name')).not.toBeNull();
 
     fireEvent.keyDown(document, { key: 'i', ctrlKey: true });
     expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
+    expect(container.querySelector('.poste__carte .card__attacks .attack__name')).toBeNull();
 
     // L'alias reste permanent : un utilisateur de dictée n'est jamais coincé avec la touche nue.
     fireEvent.keyDown(document, { key: 'I', ctrlKey: true });
@@ -1069,7 +1073,11 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
   });
 
   it('décochés dans Réglages, `I` et `Ctrl`+`I` ne font plus rien (SC 2.1.4)', () => {
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, raccourcisCombat: false });
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le réglage se coupe en cours de partie (Réglages, `setRaccourcisCombat`) : c'est la
+    // **désactivation** qu'exige le critère, pas seulement un état de départ.
+    act(() => useStore.getState().setRaccourcisCombat(false));
 
     fireEvent.keyDown(document, { key: 'i' });
     fireEvent.keyDown(document, { key: 'i', ctrlKey: true });
