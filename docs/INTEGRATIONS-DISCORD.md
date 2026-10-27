@@ -4,7 +4,7 @@
 > `docs/ALPHA-TESTEURS.md`. Ici, la procédure se rejoue par quelqu'un qui n'a **jamais** créé le
 > serveur — c'est le critère : ce qui n'est pas écrit ici n'existe que dans la tête de celui qui
 > l'a fait. **Rien ne s'écrit dans le code** : le serveur et les deux intégrations se règlent
-> dans des interfaces, et le jeu ne porte qu'un lien. Décision : **D-119** ; tickets #316 (le
+> dans des interfaces, et le jeu ne porte qu'un lien. Décision : **D-118** ; tickets #316 (le
 > serveur et les annonces), #317 (le serveur et sa porte dans le jeu) et #318 (les annonces du
 > mur, qui ne sont **pas** de cette tranche).
 

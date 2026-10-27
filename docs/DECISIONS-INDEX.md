@@ -123,4 +123,4 @@
 | D-115 | 26/10/2026 | La CI se découpe en trois jobs, et main a… |
 | D-116 | 27/10/2026 | L'UI se refait en deux temps, light puis système v2… |
 | D-117 | 27/10/2026 | Revoir les jalons de l'alpha . Amende D-048 et D-056.… |
-| D-119 | 27/10/2026 | Un serveur Discord pour les testeurs, et le mur qui… |
+| D-118 | 27/10/2026 | Un serveur Discord pour les testeurs, et le mur qui… |

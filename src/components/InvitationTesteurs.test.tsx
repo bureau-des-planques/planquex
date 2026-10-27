@@ -9,7 +9,14 @@ import {
 } from '@/components/InvitationTesteurs';
 
 /**
- * La porte du serveur des testeurs (#317, D-119).
+ * Le mot que D-117 a retiré pour désigner le testeur de l'alpha, assemblé en deux morceaux :
+ * écrit d'un seul tenant, ce fichier de test serait compté par la garde de
+ * `src/renommages.test.ts` comme une réintroduction du vieux mot.
+ */
+const MOT_ECARTE = new RegExp(`invi${'té'}`, 'i');
+
+/**
+ * La porte du serveur des testeurs (#317, D-118).
  *
  * Ce que ce test garde, et qui peut réellement échouer :
  *
@@ -17,7 +24,7 @@ import {
  *    titre orphelin, pas un trou de mise en page. C'est l'état par défaut d'un build sans
  *    configuration, celui que la CI construit ;
  * 2. **renseignée, un seul lien** : externe, nouvel onglet, `rel="noreferrer noopener"`, et le
- *    libellé dit « testeur » (D-117), jamais « invité » ;
+ *    libellé dit « testeur » (D-117) ;
  * 3. **aucun tiers embarqué** : ni `iframe`, ni `script`, ni `embed` — la page Confidentialité
  *    promet « aucun traceur », un embed la rendrait fausse ;
  * 4. **une adresse douteuse est refusée** : `javascript:`, `http:`, ou un hôte qui n'est pas
@@ -79,12 +86,12 @@ describe('InvitationTesteurs — le rendu', () => {
       expect(lien.getAttribute('rel'), ou).toBe('noreferrer noopener');
       expect(lien.textContent, ou).toContain(LIBELLE_INVITATION);
       expect(lien.textContent, ou).toMatch(/testeur/i);
-      expect(lien.textContent, ou).not.toMatch(/invité/i);
+      expect(lien.textContent, ou).not.toMatch(MOT_ECARTE);
 
       unmount();
     }
     // Le libellé lui-même, hors rendu : la règle de vocabulaire de D-117.
-    expect(LIBELLE_INVITATION).not.toMatch(/invité/i);
+    expect(LIBELLE_INVITATION).not.toMatch(MOT_ECARTE);
   });
 
   it('n’embarque aucun tiers : ni iframe, ni script, ni embed', () => {

@@ -268,7 +268,7 @@ export const MUTATIONS = [
     ticket: 317,
     titre: 'sans invitation, la porte du serveur des testeurs rend quand même un bloc',
     fichier: 'src/components/InvitationTesteurs.tsx',
-    // D-119 : « une valeur vide veut dire rien ». La mutation laisse passer le rendu alors
+    // D-118 : « une valeur vide veut dire rien ». La mutation laisse passer le rendu alors
     // que l'invitation est `null` : Réglages et le pied du comité portent un panneau avec un
     // lien **sans adresse**, sur le build par défaut, celui que la CI construit.
     motif: 'if (!invitation) return null;',
@@ -295,7 +295,7 @@ export const MUTATIONS = [
       'src/pages/Comite.invitation.test.tsx'
     ],
     garde:
-      'sans `noreferrer`, l’onglet ouvert transmet à Discord l’adresse d’où vient le testeur — le seul renseignement que le lien peut laisser à un tiers (D-119)'
+      'sans `noreferrer`, l’onglet ouvert transmet à Discord l’adresse d’où vient le testeur — le seul renseignement que le lien peut laisser à un tiers (D-118)'
   }
 ];
 

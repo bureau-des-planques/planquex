@@ -57,7 +57,7 @@ describe('Confidentialité — la page publique', () => {
 });
 
 /**
- * Le serveur des testeurs (#317, D-119).
+ * Le serveur des testeurs (#317, D-118).
  *
  * La page promet « aucun traceur » : un lien vers un **service tiers** doit donc y être dit.
  * Ce qui est gardé, et qui peut échouer :

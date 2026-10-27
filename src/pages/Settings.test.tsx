@@ -166,7 +166,7 @@ describe('Settings — écran des Réglages', () => {
 });
 
 /**
- * La porte du serveur des testeurs (#317, D-119) — dans **Réglages**.
+ * La porte du serveur des testeurs (#317, D-118) — dans **Réglages**.
  *
  * Le comportement est celui du module `@/components/InvitationTesteurs` : vide → rien du
  * tout, renseignée → un seul lien externe. Ici, ce qui est gardé, c'est **l'emplacement** :

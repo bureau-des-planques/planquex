@@ -839,7 +839,7 @@ export function Comite() {
           : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Ni pouces ni commentaires ici : ils ne s’ouvrent qu’avec la base partagée.'}
       </p>
 
-      {/* La porte du serveur des testeurs (#317, D-119) : un lien, posé au pied du mur, et
+      {/* La porte du serveur des testeurs (#317, D-118) : un lien, posé au pied du mur, et
           rien d'autre — aucun widget, aucun `iframe`. Sans invitation configurée, il ne
           rend rien du tout. */}
       <InvitationTesteurs ou="comite" />
