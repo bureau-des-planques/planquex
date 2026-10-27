@@ -167,3 +167,43 @@ pas-à-pas ouvert), pour 20 px exigés. Capture : `apres/420-combat-sobre-pire-c
 
 **Ce que ça ne prouve pas** : comme pour T9, les Conditions sont posées dans le DOM — le moteur n'est
 pas touché ; l'icône y est un `svg` vide de 12 px, comme la taille de celle de `StatusBadge`.
+
+## `t10-stress/` — T10, le chiffre de Stress qui s'élève (#293)
+
+**Quelle animation** : le chiffre `+N` du DOM (`.stress-flottant`), 500 ms (`DUREE_STRESS_MS`), au-dessus
+de la carte dont le Stress monte. **Combien de frames** : 14 par planche, de 0 à ~510 ms, soit une image
+toutes les ~35 ms (la légende porte l'instant **mesuré** par `performance.now()` et le nombre
+d'éléments `.stress-flottant` alors dans le DOM). **Comment** : `t10-stress/filmer.sh` (graine figée au
+22/10/2026 09:00 UTC, six « Fin du tour », on filme dès que le chiffre existe) — deux planches :
+
+| Fichier | État | Ce qu'on y lit |
+|---|---|---|
+| `t10-stress/planche-anime.png` | mouvement normal | le chiffre naît au bord haut du Poste, monte de quelques pixels en s'effaçant (presque invisible à ~290 ms), reste dans la bande de 48 px autour du Poste, et le **compte DOM tombe de 1 à 0 entre 458 et 508 ms** — le retrait a lieu **après** l'animation |
+| `t10-stress/planche-mouvement-reduit.png` | « Mouvement réduit » (store) | le chiffre **ne bouge pas** : même position, pleine opacité, sur les 10 premières frames (jusqu'à 410 ms) ; DOM : 1 jusqu'à 446 ms, 0 à 498 ms |
+
+**Deux événements différents du même combat** : sous « Mouvement réduit », la scène de Pression n'est pas
+montée, donc le tout premier chiffre du combat déclenche la prise (ici le Stress d'une Pression adverse sur
+le Poste, qui craque) ; avec mouvement, ce chiffre-là est celui de la scène (D-098) et le DOM garde le sien à
+`opacity: 0` (`.is-scene`) — la prise attend donc le premier chiffre **hors scène**. Les deux planches
+prouvent chacune leur propriété ; elles ne se superposent pas image pour image.
+
+**Ce que ces planches ont appris, et que les styles calculés ne disaient pas** :
+- **Pendant une Pression, avec mouvement, le chiffre de 500 ms n'est pas celui qu'on voit** : c'est le
+  chiffre de la scène (D-098), qui monte plus tard (~550 ms) et dure plus longtemps (~750 ms sur une
+  planche de la Pression elle-même, non versionnée). Celui de T10 n'est animé à l'écran que pour un Stress
+  qui ne vient pas d'une Pression (le Contrôle de fin de tour, un dégât sur soi).
+- **Sous « Mouvement réduit », quand le Poste vient de craquer, le chiffre se pose sur le texte « Aucun
+  Planqué — relève à choisir »** (frames 0-446 ms) : il le recouvre sur ~450 ms, sous la borne de 800 ms,
+  mais il le recouvre. Non corrigé ici : le placement du chiffre « hors carte » est celui de #192.
+
+**Ce que les planches ne prouvent pas** : le ressenti (une planche est un échantillon à ~35 ms, pas un
+film) ; le **commencement exact** — `t` part de la fin de l'étape de déclenchement, et l'attente du
+chiffre ajoute quelques dizaines de ms, donc « 508 ms » est ~500 ms depuis la naissance du chiffre, pas
+une mesure au pixel ; le tactile ; la fusion « pas d'empilement au troisième coup » (elle est testée dans
+`src/components/effets-combat.test.ts`, pas filmée).
+
+**Corrections du script** (`scripts/filmer-animation.mjs`) : il ne savait pas viser cet effet — il
+déclenchait par des clics immédiats, sans graine figée, sans légende mesurée, et rognait la zone. Ajoutés :
+`--attendre`, `--pause` (étapes ordonnées), `--horloge`, `--marge`, `--compter`, et la légende porte
+l'instant mesuré. `scripts/filmer-animation.test.ts` garde ces options.
+
