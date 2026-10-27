@@ -1,4 +1,13 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -36,23 +45,26 @@ interface Fichier {
   chemin: string;
 }
 
-/** Les fichiers des dossiers donnés, récursivement, hors exceptions nommées. */
+/** Les fichiers des chemins donnés — un dossier est parcouru récursivement — hors exceptions nommées. */
 function fichiers(root: string, dossiers: readonly string[], exceptions: readonly string[] = []): Fichier[] {
   const trouves: Fichier[] = [];
+  const retenir = (chemin: string) => {
+    const relatif = relative(root, chemin).split(sep).join('/');
+    if (!exceptions.includes(relatif)) trouves.push({ relatif, chemin });
+  };
   const parcourir = (dossier: string) => {
     for (const entree of readdirSync(dossier, { withFileTypes: true })) {
       const chemin = join(dossier, entree.name);
-      if (entree.isDirectory()) {
-        parcourir(chemin);
-        continue;
-      }
-      const relatif = relative(root, chemin).split(sep).join('/');
-      if (!exceptions.includes(relatif)) trouves.push({ relatif, chemin });
+      if (entree.isDirectory()) parcourir(chemin);
+      else retenir(chemin);
     }
   };
   for (const dossier of dossiers) {
     const chemin = join(root, dossier);
-    if (existsSync(chemin)) parcourir(chemin);
+    if (!existsSync(chemin)) continue;
+    // Un fichier nommé seul (`README.md`) se lit comme un dossier d'un fichier.
+    if (statSync(chemin).isFile()) retenir(chemin);
+    else parcourir(chemin);
   }
   return trouves;
 }
@@ -132,6 +144,75 @@ describe('les anciens noms de la boîte à idées ne reviennent pas (#210, D-097
         'scripts/mur.mjs : boite-a-idees',
         'src/pages/Retour.tsx : BoiteAIdees'
       ]);
+    } finally {
+      rmSync(bac, { recursive: true, force: true });
+    }
+  });
+});
+
+/**
+ * **« invité » ne désigne plus le testeur de l'alpha** (#306, D-117).
+ *
+ * D-117 (6) fixe le mot : « **testeur** » remplace « invité » pour désigner le testeur de
+ * l'alpha (`AGENTS.md` §3.1). Le renommage a été fait une fois, à la main, dans les textes,
+ * les docs et les commentaires ; ce contrôle empêche que le vieux mot revienne avec le
+ * prochain fichier recopié — même raison que la Boîte à idées ci-dessus.
+ *
+ * Trois familles d'occurrences **restent** et sont hors d'atteinte, chacune avec sa raison :
+ * - le **flavour** des cartes, où « invité » ne désigne personne de l'alpha mais un
+ *   participant à une réunion de bureau (D-074) ;
+ * - le **journal** (`docs/DECISIONS.md`) et son index, qui ne se réécrivent pas (D-111) ;
+ * - ce fichier-ci, qui nomme ce qu'il interdit.
+ */
+const FORME_INVITE = /invité/i;
+
+/** Les portées du contrôle : le code, les écrans, les docs, la base et le prompt des agents. */
+const PORTEES_INVITE = ['src', 'docs', 'supabase', '.opencode', 'README.md', 'DESIGN.md'] as const;
+
+const EXCEPTIONS_INVITE = [
+  // Flavour : « Personne ne l'a invité » (atelier) et « Le Planqué adverse est invité à
+  // relâcher les épaules » (sse) parlent d'une scène de bureau, pas du testeur.
+  'src/data/atelier.ts',
+  'src/data/sse.ts',
+  // Le journal ne se réécrit pas (D-111), et l'index est dérivé du journal.
+  'docs/DECISIONS.md',
+  'docs/DECISIONS-INDEX.md',
+  // Ce fichier-ci nomme ce qu'il interdit : il ne peut pas se compter comme une référence.
+  'src/renommages.test.ts'
+];
+
+/** Les lignes qui disent encore « invité », `chemin:ligne`, triées. */
+function formesInvite(root: string, portees: readonly string[] = PORTEES_INVITE): string[] {
+  const trouvees: string[] = [];
+  for (const { relatif, chemin } of fichiers(root, portees, EXCEPTIONS_INVITE)) {
+    readFileSync(chemin, 'utf8')
+      .split('\n')
+      .forEach((ligne, index) => {
+        if (FORME_INVITE.test(ligne)) trouvees.push(`${relatif}:${index + 1}`);
+      });
+  }
+  return trouvees.sort();
+}
+
+describe('« invité » ne désigne plus le testeur de l’alpha (#306, D-117)', () => {
+  it('il ne reste que le flavour des cartes et le journal', () => {
+    expect(formesInvite(RACINE)).toEqual([]);
+  });
+
+  it('le contrôle mord : un texte, une doc ou un commentaire qui le réintroduit est trouvé', () => {
+    const bac = mkdtempSync(join(tmpdir(), 'vocabulaire-invite-'));
+    try {
+      mkdirSync(join(bac, 'src', 'pages'), { recursive: true });
+      mkdirSync(join(bac, 'docs'), { recursive: true });
+      // Le défaut que #306 a corrigé, tel quel : un écran qui parle encore aux « invités ».
+      writeFileSync(join(bac, 'src', 'pages', 'Connexion.tsx'), 'L’alpha est réservée aux <strong>invités</strong>.\n');
+      // Et une doc, qui doit s'accorder avec les textes qu'elle explique.
+      writeFileSync(join(bac, 'docs', 'COMITE.md'), '# Le comité\n\nCe que les invitées remontent.\n');
+      // Le flavour, lui, garde le mot : c'est une scène, pas le testeur.
+      mkdirSync(join(bac, 'src', 'data'), { recursive: true });
+      writeFileSync(join(bac, 'src', 'data', 'atelier.ts'), "flavor: 'Personne ne l’a invité.',\n");
+
+      expect(formesInvite(bac, ['src', 'docs'])).toEqual(['docs/COMITE.md:3', 'src/pages/Connexion.tsx:1']);
     } finally {
       rmSync(bac, { recursive: true, force: true });
     }
