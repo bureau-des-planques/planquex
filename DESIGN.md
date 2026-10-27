@@ -242,20 +242,22 @@ rareté, `.card__face` est la carte elle-même.
 
 **Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
-### 2.4 L'écran de combat (D-093 ; #169, #187–#200)
+### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-120)
 
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
-tout tient « sans défiler » : `npm run capturer` **mesure** les deux surfaces qui doivent rester
-au-dessus de la navigation. Au tour du joueur, pas-à-pas terminé, le bas de la **main** est à
-**723 px** et celui de la **barre d'action** à **825 px**, pour une limite de **830 px** (haut de
-la barre de navigation) — **5 px de marge**. Le pas-à-pas ouvert (`1 / 5`) ajoute sa bande : la
-barre finit alors à **812 px**. La page peut défiler ; ce sont ces deux surfaces que la garde
-interdit de perdre, et un tour chargé (relève, choix) fait défiler la barre **en elle-même**
+tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
+doivent rester au-dessus de la navigation (limite **830 px**, haut de la barre de navigation, avec
+**20 px** de marge exigés par D-094 (3)). Mesuré le 27/10/2026 sur les huit états du passage de
+combat : **aucun défilement** (D-103) ; pas-à-pas **terminé**, le bas de la **main** est à
+**679 px** et celui de la **barre d'action** à **758–761 px** (69–72 px de marge) ; pas-à-pas
+**ouvert** (`1 / 5`, il ajoute sa bande), la main finit à **728 px** et la barre à **808–810 px**
+(**20–22 px** de marge). Un tour chargé (relève, choix) fait défiler la barre **en elle-même**
 (`max-height: 42dvh`) plutôt que de recouvrir la table.
 
 Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 88 px** (`--poste-w:
 5.5rem`), **Banc 56 px** (`--banc-w: 3.5rem`), **carte de main 64 px** (`--carte-w: 4rem`) dans
-un conteneur de **72 px** qui la rogne par le bas (`overflow: hidden`).
+un conteneur de **105 px** (la carte entière, son inclinaison et la place du soulèvement) :
+**rien n'est rogné**, le Seuil reste visible.
 
 | Zone | Classe | Ce que fait l'écran |
 |---|---|---|
@@ -264,9 +266,9 @@ un conteneur de **72 px** qui la rogne par le bas (`overflow: hidden`).
 | Table | `.board` | deux camps **empilés** : l'adversaire lit **Banc puis Poste**, le mien **Poste puis Banc**, donc les deux **Postes se font face** au centre. Une seule lumière au centre (§2.6) ; aucun cadre autour d'un camp. |
 | Camp | `.board__side`, `.board__zone`, `.board__fiche` | la carte du **Poste** à gauche, sa **fiche** à droite : nom du camp, `main n`, les **piles Deck / Rebut** avec leur compte, les cafés attachés, la Machine, les Conditions. Le **Banc** est une rangée de trois places ; une place libre garde la forme d'une carte, en pointillé. |
 | Piste d'Interventions | `.piste` | **horizontale**, entre les deux camps : le nom de chaque camp et trois hexagones (l'adversaire à gauche, toi à droite) ; l'or marque une Intervention acquise. **Une** cible `data-pas-a-pas="interventions"`, sur le conteneur. |
-| Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (64 px), inclinées et chevauchées, **rognées par le conteneur** de 72 px. Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
+| Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (64 px), inclinées, qui ne se chevauchent que quand la largeur l'exige ; la carte se soulève au survol et au focus (pas sous « Mouvement réduit » : c'est alors le panneau de l'inspecteur qui s'ouvre). Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
 | Pose | `.pose` | une carte **choisie** ouvre un panneau sous la main qui la nomme et donne **où** la jouer : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet ». |
-| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir**. La lecture est une infobulle `role="tooltip"` (après 300 ms à la souris, aucun élément focusable, Échap la ferme) ; le panneau **non modal** montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse ancrée sous la carte décrite ; à partir de 900 px, colonne collée à droite. |
+| Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-120). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`). La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans `body` à la verticale de sa carte (sous elle, au-dessus si l'écran manque de place), 17 rem de large au plus. Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; à partir de 900 px, colonne collée dans la console. |
 | Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation. Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi). C'est la cible `poste-actions` du pas-à-pas. |
 | Écran large (≥ 900 px) | `.battle__table` | la table à gauche, la console (inspecteur, main, pose) à droite. |
 
@@ -278,6 +280,29 @@ et rend le focus au bouton, et un dialogue ouvert par-dessus garde son propre É
 Les **piles** Deck et Rebut sont des objets **posés** et **comptés** : le Rebut **ne s'ouvre pas**
 (écart à `SPEC-COMBAT-UI` R5, pas une règle).
 
+**Le clavier et le doigt** (D-120 ; la recherche est `SPEC-COMBAT-UI` §4 et §6.6, elle ne fait pas règle).
+
+| Geste | Effet |
+|---|---|
+| `Tab` / `Maj+Tab` | l'ordre du document : barre d'état → cartes du plateau (adversaire, puis moi) → main → barre d'action. Aucun `tabindex` positif. |
+| `Entrée` / `Espace` sur une carte | ouvre le panneau d'action |
+| `Échap` | ferme l'infobulle, ou le panneau (le focus revient à la carte), ou le menu `⋯` (le focus revient au bouton), ou le dialogue ouvert par-dessus — **un seul étage à la fois** |
+| `I`, `Ctrl+I` (`Cmd+I`) | bascule `sobre` / `détaillé`. La case **« Raccourcis clavier au combat »** (Réglages) est **cochée par défaut** ; décochée, les deux touches ne font plus rien. Sans effet dans un champ de saisie (le code de la partie à deux). `Ctrl+Maj+I` reste au navigateur. |
+| flèches, `Page↑/↓` | **défilent la page**. Le plateau n'est pas un `role="grid"` (D-120) : huit places au plus, le `Tab` naturel suffit. |
+| appui long | n'existe nulle part ; le tap suffit |
+
+Le focus est **rendu** : l'anneau d'une carte du plateau est un contour de 2 px au néon
+(`--scene-neon`, décalé de 3 px, `.poste__carte:focus-visible` et `.bench__carte:focus-visible`), celui
+des autres éléments est l'anneau global (`:focus-visible`, 2 px `--gold`, décalé de 2 px). Le panneau
+rend le focus à la carte qu'il décrivait (`finalFocus`), et la fermeture du panneau ne rouvre pas
+l'infobulle de cette même carte.
+
+**Cibles de doigt.** La barre d'état, le menu `⋯`, ses entrées et la bascule `ⓘ` font **44 px**
+(`2.75rem`, D-116). Deux surfaces restent à **36 px** (`2.25rem`) : les boutons de la barre d'action
+(`.combat-barre .button`) et « Plus » du pas-à-pas (`.pas-a-pas__plus`) — au-dessus du minimum AA de
+24 px (WCAG 2.5.8), sous les 44 px visés, pour tenir la marge de hauteur de D-094. C'est un **écart
+daté (27/10/2026)**, pas une règle ; le jour où la marge le permet, ils montent à 44 px.
+
 **Trois notes de lecture (25/10/2026, #196)** — des constats datés sur des actes qui ne se
 réécrivent pas. Ils disent où le code a avancé depuis la ligne, ou pourquoi un chiffre de l'acte
 n'est pas celui de l'écran.
@@ -286,17 +311,19 @@ n'est pas celui de l'écran.
    Il l'est depuis #171 : `regardDuDernierGeste` retrouve le `peek` du dernier geste et
    `RegardDuDessus` (`Battle.tsx`) affiche le dessus de **mon** Deck dans une section privée,
    hors main et hors journal — donc sans révélation à l'autre camp. La décision n'est pas
-   modifiée ; c'est sa dette qui est close.
+   modifiée ; c'est sa dette qui est close. Le journal le porte lui-même depuis D-111 (le ⚠️ en
+   tête de la ligne de D-079), et D-120 le redit (27/10/2026, #291).
 2. **D-035, « Radix » n'est pas le paquet installé.** L'acte écrit « shadcn/Radix ». Le paquet
    réel est **Base UI** : `@base-ui/react` (`package.json`), importé par
    `src/components/ui/dialog.tsx` et `button.tsx`. Le choix de fond — shadcn/ui pour les
-   composants génériques seulement — tient ; le nom du moteur, lui, est Base UI.
+   composants génériques seulement — tient ; le nom du moteur, lui, est Base UI. Le journal ne
+   réécrit pas D-035 : sa ligne porte un ⚠️ de lecture daté du 27/10/2026 qui renvoie à D-120 (b).
 3. **La largeur du Poste : 116 px dans D-093, 88 px sur l'écran.** L'acte écrit « le Poste à
    116 px, le Banc à 64 px » (la direction visuelle, elle, dit 112, `docs/DIRECTION-SCENE-COMBAT.md`
    §3.1) ; l'écran mesure **88 px** pour le Poste (`--poste-w: 5.5rem`) et **56 px** pour le Banc
    (`--banc-w: 3.5rem`). L'écart n'est pas une nouvelle règle : c'est la **plus grande combinaison
-   qui garde la main et la barre d'action au-dessus de la navigation** à 420 × 900 (5 px de marge,
-   ci-dessus). Les deux chiffres de l'acte restent écrits ; c'est l'écran qui est plus petit que
+   qui garde la main et la barre d'action au-dessus de la navigation** à 420 × 900 (20 px de marge
+   au moins, ci-dessus). Les deux chiffres de l'acte restent écrits ; c'est l'écran qui est plus petit que
    la cible.
 
 ### 2.5 Les états d'un écran (D-060, critère 3 ; #131)
@@ -325,10 +352,12 @@ capture.
 
 | État | Comment on y entre | Ce que voit le testeur | Sortie |
 |---|---|---|---|
-| `sobre` (défaut) | à l'arrivée (`combatDetaille: false`) | les cartes du plateau, leur nom, le Seuil et la barre de Stress ; la Machine en pastille ; une Condition en icône seule ; le chiffre de Stress et les Pressions ne sont pas écrits sur la carte | `ⓘ`, `I` ou `Ctrl+I` → `détaillé` |
-| `détaillé` | `ⓘ` (`aria-pressed`) ou `I` / `Ctrl+I` | les annotations reviennent : nom et dégâts des Pressions sur la carte, chiffre `x/y` de Stress, types de café de la Machine, nom des Conditions | le même geste, ou `ⓘ` |
-| Inspecteur — lecture | survol à la souris (300 ms) ou focus clavier d'une carte | une infobulle `role="tooltip"` sous la carte : nom entier et fiche, **aucun bouton** | sortie du pointeur ou du focus ; **Échap** ferme |
-| Inspecteur — action | clic, tap ou **Entrée** sur une carte | un panneau **non modal**, sans voile : la même fiche, plus les gestes de la carte ; feuille basse sous la carte sur téléphone, colonne collée à ≥ 900 px | **Fermer**, **Échap** ; le focus revient à la carte |
+| `sobre` (défaut) | à l'arrivée (`combatDetaille: false`) | les cartes du plateau, leur nom, le Seuil et la barre de Stress ; la Machine en pastille ; une Condition en icône seule ; le chiffre de Stress et les Pressions ne sont pas écrits sur la carte. **Rien de ce qui change une décision n'est caché** : la fiche de l'inspecteur dit tout | `ⓘ`, `I` ou `Ctrl+I` → `détaillé` |
+| `détaillé` | `ⓘ` (`aria-pressed="true"`) ou `I` / `Ctrl+I` (`aria-keyshortcuts="I"`) | les annotations reviennent : nom et dégâts des Pressions sur la carte, chiffre `x/y` de Stress, types de café de la Machine, nom des Conditions. Le choix **survit au rechargement** (store persisté) | le même geste, ou `ⓘ` |
+| Raccourcis coupés | Réglages → décocher « Raccourcis clavier au combat » (cochée par défaut, D-120) | `I` et `Ctrl+I` ne font plus rien ; `ⓘ` reste le seul chemin. Taper « i » dans le code de la partie à deux n'a jamais d'effet sur l'écran | recocher la case |
+| Inspecteur — lecture | survol à la **souris** (300 ms) ou focus clavier d'une carte du Poste ou du Banc ; le tactile n'y entre pas (le tap ouvre l'action) | une infobulle `role="tooltip"` reliée à la carte par `aria-describedby`, sous elle (au-dessus s'il n'y a pas de place) : nom entier et fiche, **aucun bouton, aucun élément focusable**. Le pointeur peut passer de la carte à l'infobulle sans la perdre | sortie du pointeur ou du focus ; **Échap** la ferme sans bouger le pointeur ; elle s'efface dès que le panneau montre la même carte |
+| Inspecteur — action | clic, tap ou **Entrée** / **Espace** sur une carte | un panneau **non modal**, sans voile, titré du nom entier : la même fiche, plus les gestes de la carte (« Gestes de cette carte ») ; feuille basse sous la carte sur téléphone, colonne collée à ≥ 900 px | **Fermer** ou **Échap** ; le **focus revient à la carte** décrite, et l'infobulle ne se rouvre pas toute seule |
+| Inspecteur — carte sans geste | une carte de **l'adversaire** : la fiche seule, pas de section de gestes. Une carte à **moi** sans geste légal (tour adverse, café déjà attaché) : la fiche et « Aucun geste pour cette carte ce tour. » | **aucun bouton grisé** : les gestes viennent de `legalActions` (café, évolution, Talent, Rotation, relève), l'écran n'en invente pas | idem ; un geste choisi ferme le panneau et joue l'action |
 | Menu `⋯` — fermé | — | le bouton `⋯` seul, à droite de `ⓘ` | ouvrir |
 | Menu `⋯` — ouvert | `⋯` | un panneau ancré sous la barre d'état, **une vue à la fois** : la liste, le Journal (14 dernières lignes) ou la Partie à deux | `⋯`, **Échap**, ou une entrée ; le focus revient au bouton |
 | Règles | `⋯` → **Règles**, ou **Conditions** dans la barre d'état | le dialogue des cinq Conditions : libellé, icône et règle | **Échap** ou la fermeture du dialogue |
