@@ -79,14 +79,23 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    **fichiers générés** : `npm run plan:dev` et `npm run notes:versions` (réécrivent si besoin),
    puis `-- --verifie` sur chacun. Ce geste local est celui qui garde la release : la CI des PR
    ne les vérifie plus (D-113), et `fichiers-generes.yml` le refait sur le tag en filet.
-4. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
-5. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
+4. **Mettre la production au niveau de ce que la note promet** — la note se lit **à la sortie de
+   la release**, donc ce qu'elle annonce doit être vrai **ce jour-là**, pas à la fusion. Pour les
+   annonces du mur dans `#comite` (#318, D-120), qui est ce que `/confidentialite` décrit au
+   présent : appliquer `supabase/migrations/0013_discord_comite.sql`, puis poser le webhook dans
+   Vault — `select vault.create_secret('<url du webhook>', 'discord_webhook_comite');`. La
+   procédure complète, avec sa vérification, est `docs/INTEGRATIONS-DISCORD.md` §10. Tant que ces
+   deux gestes ne sont pas faits, la page Confidentialité **décrit un envoi qui n'a pas lieu** :
+   c'est le premier pas à cocher, et la preuve qu'il est fait est **une annonce réelle** arrivée
+   dans le salon (un post-it collé, une minute d'attente, `§10.4`), pas une migration « appliquée ».
+5. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
+6. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
    message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.
-6. **Reprendre la release dans l'application** : `npm run notes:versions` relit les releases
+7. **Reprendre la release dans l'application** : `npm run notes:versions` relit les releases
    GitHub et réécrit `src/data/versions.ts` — le texte publié remplace la note écrite
    d'avance, et son `brouillon` tombe. C'est la seule fois où la note change après coup, et
    elle devient alors **la même des deux côtés**.
-7. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
+8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
 Un `git tag -a v0.1.2` sur un commit, c'est un point de retour ; un tag déplacé à la main après
 coup, c'est un mensonge. Si la build était fausse, on monte la version et on refait un tag.
