@@ -61,9 +61,8 @@ export interface NoteVersion {
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.13',
-    date: '2026-10-27',
+    date: '2026-10-26',
     titre: 'Le comité se suit, et le combat tient dans l’écran',
-    brouillon: true,
     points: [
       {
         groupe: 'Le combat',
