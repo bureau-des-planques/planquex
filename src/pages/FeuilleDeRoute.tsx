@@ -13,10 +13,13 @@
  *    (`src/version.ts`), donc `package.json` — un numéro écrit ici serait un mensonge dès
  *    la build suivante, et `src/version.test.ts` le refuserait ;
  * 2. **le décidé vient de `src/data/plan.ts`, l'en cours de `src/data/plan-dev.ts`** —
- *    celui-ci est généré par `npm run plan:dev` à partir des issues `alpha` ouvertes, pour
- *    qu'une liste de chantiers ne se désynchronise pas en silence ;
- * 3. **aucun lien vers le dépôt** : il est **privé**, donc `#214` se lit et une adresse
- *    `github.com` s'ouvrirait sur un `404` (D-097 (3)). Le numéro et le titre suffisent.
+ *    celui-ci est généré par `npm run plan:dev` à partir des issues **`alpha` et `beta`**
+ *    ouvertes, pour qu'une liste de chantiers ne se désynchronise pas en silence. L'étape
+ *    du ticket dit **à quel jalon il appartient**, pas quand on le travaille : un ticket
+ *    `beta` se travaille pendant l'alpha (#336) ;
+ * 3. **aucun lien vers le dépôt** dans cette version : les liens des releases et des
+ *    chantiers sont le ticket **#343** (D-132), pas celui-ci. Le numéro et le titre
+ *    suffisent en attendant.
  *
  * Ce que la page **ne montre jamais** : les **modes parkés** de D-019, ni les règles
  * maison rangées hors du standard. Une page publique qui les annoncerait promettrait ce
@@ -35,7 +38,10 @@ import {
   PAS_MAINTENANT,
   type ElementPlan
 } from '@/data/plan';
-import { FEATURES_PREVUES } from '@/data/plan-dev';
+import { FEATURES_PREVUES, type EtapeProjet, type FeaturePrevue } from '@/data/plan-dev';
+
+/** Les étapes qui se lisent ici, dans l'ordre : l'alpha d'abord, la beta ensuite. */
+const ETAPES_ARRIVAGE: EtapeProjet[] = ['alpha', 'beta'];
 
 /** La date se lit en français (« 21 octobre 2026 ») : `date` est un jour, pas un instant. */
 function dateLongue(jour: string): string {
@@ -77,7 +83,15 @@ function Entree({ element }: { element: ElementPlan }) {
   );
 }
 
-export function FeuilleDeRoute() {
+/**
+ * La section s'appelle **Ce qui arrive** : elle montre les chantiers ouverts des **deux**
+ * étapes (#336), avec l'étape de chaque chantier écrite en toutes lettres — pas par une
+ * couleur, qu'un testeur daltonien ne lirait pas.
+ *
+ * `features` est injectable pour que le test éprouve le rendu avec les deux étapes, sans
+ * dépendre de l'état du tracker au jour où il tourne.
+ */
+export function FeuilleDeRoute({ features = FEATURES_PREVUES }: { features?: FeaturePrevue[] } = {}) {
   // La note de la version sous les yeux : **publiée ou écrite d'avance**, les deux
   // comptent (le tag part avant la release GitHub — `docs/VERSIONS.md` §4).
   const { courante, precedentes } = notesAffichees(APP_VERSION);
@@ -147,22 +161,36 @@ export function FeuilleDeRoute() {
       </section>
 
       <section className="section panel">
-        <h2>Les fonctionnalités prévues</h2>
+        <h2>Ce qui arrive</h2>
         <p className="muted max-w-[62ch]">
-          Les chantiers ouverts de l’étape en cours. La liste vient du dépôt de travail : elle se met à jour quand une
-          issue s’ouvre ou se ferme, et le numéro suffit à la retrouver.
+          Les chantiers ouverts des deux étapes, l’alpha et la beta. <strong>Elles se travaillent en parallèle</strong>{' '}
+          : l’étape d’un chantier dit à quel jalon il appartient, pas quand il se fait. La liste vient du dépôt de
+          travail : elle se met à jour quand une issue s’ouvre ou se ferme, et le numéro suffit à la retrouver.
         </p>
-        {FEATURES_PREVUES.length > 0 ? (
-          <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
-            {FEATURES_PREVUES.map((feature) => (
-              <li key={feature.numero}>
-                <strong>#{feature.numero}</strong> · {feature.titre}
-              </li>
-            ))}
-          </ul>
+        {features.length > 0 ? (
+          ETAPES_ARRIVAGE.map((etape) => {
+            const chantiers = features.filter((feature) => feature.etape === etape);
+            return (
+              <div key={etape} className="feuille-de-route__arrivages">
+                <h3 className="feuille-de-route__titre">Étape {etape}</h3>
+                {chantiers.length > 0 ? (
+                  <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
+                    {chantiers.map((feature) => (
+                      <li key={feature.numero} className="feuille-de-route__arrivage">
+                        <span className="feuille-de-route__etape">{feature.etape}</span>
+                        <strong>#{feature.numero}</strong> · {feature.titre}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="muted m-0">Aucun chantier ouvert pour cette étape.</p>
+                )}
+              </div>
+            );
+          })
         ) : (
           <p className="muted m-0">
-            Aucun chantier ouvert pour cette étape : la liste est vide, et c’est une bonne nouvelle.
+            Aucun chantier ouvert pour le moment : la liste est vide, et c’est une bonne nouvelle.
           </p>
         )}
       </section>

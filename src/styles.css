@@ -4013,6 +4013,24 @@ h2 {
   gap: 0.75rem;
 }
 
+/* Un chantier et son étape : l'étape s'écrit **en toutes lettres** (#336), pas par une
+   couleur seule — un badge teinté ne se lit pas sans distinguer les teintes. */
+.feuille-de-route__arrivages + .feuille-de-route__arrivages {
+  margin-top: 0.75rem;
+}
+
+.feuille-de-route__etape {
+  display: inline-block;
+  margin-right: 0.4rem;
+  padding: 0.02rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: capitalize;
+}
+
 /* Le `preflight` de Tailwind pose `list-style: none` sur les listes : nos listes à puces
    le rétablissent explicitement, sinon une note se lit comme une suite de paragraphes et
    les points ne se distinguent plus (constaté sur la capture du 24/10/2026). */
