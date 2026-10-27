@@ -408,6 +408,38 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
       expect(problemes[0]).toContain('« Fin du tour »');
     });
 
+    it('la cible de doigt de 44 px : le contrôle mord sur un bouton de 36 px, et nomme le bouton (#320)', () => {
+      // Les hauteurs d'avant : la barre à 36 px (#203) et « Plus » du pas-à-pas à 36 px, « Suivant » à 33.
+      const sortie = (boutonsPetits: { nom: string; hauteur: number }[]): string[] => {
+        const output = execFileSync(
+          process.execPath,
+          [
+            'scripts/capturer.mjs',
+            '--controle-hauteur',
+            JSON.stringify({ limite: 830, mesures: geometrie(), etat: 'Pression jouable', boutonsPetits })
+          ],
+          { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
+        );
+        return JSON.parse(output) as string[];
+      };
+      expect(sortie([])).toEqual([]);
+      const problemes = sortie([
+        { nom: 'Fin du tour', hauteur: 36 },
+        { nom: 'Plus', hauteur: 36 },
+        { nom: 'Suivant', hauteur: 33 }
+      ]);
+      expect(problemes).toHaveLength(3);
+      expect(problemes[0]).toContain('« Fin du tour » ne fait que 36 px de haut');
+      expect(problemes[0]).toContain('44 px');
+      expect(problemes[2]).toContain('« Suivant » ne fait que 33 px de haut');
+    });
+
+    it('mesure les boutons de la barre et du pas-à-pas tels que rendus', () => {
+      const source = read('scripts/capturer.mjs');
+      expect(source).toContain(".combat-barre .button, .pas-a-pas__ligne button");
+      expect(source).toContain('boutonsPetits');
+    });
+
     it('joue réellement un état « Pression jouable », et échoue s’il n’en atteint aucun', () => {
       const source = read('scripts/capturer.mjs');
       // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer à ne

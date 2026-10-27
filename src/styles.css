@@ -1743,7 +1743,7 @@ h2 {
      de sa hauteur, et la barre d'action n'avait plus que 15 à 18 px de marge sous la barre de
      navigation là où D-094 (3) en exige 20 — la voie de D-094 (4) est de densifier, pas de
      relâcher la garde. La ligne du panneau, ses boutons et son texte ne changent pas. */
-  padding: 0.25rem 0.6rem;
+  padding: 0.1rem 0.6rem;
   position: sticky;
   top: 0.4rem;
   z-index: 15;
@@ -1779,6 +1779,7 @@ h2 {
 
 .pas-a-pas__suivant {
   flex: none;
+  min-height: 2.75rem;
 }
 
 .pas-a-pas__plus {
@@ -1790,7 +1791,7 @@ h2 {
   flex: none;
   font: inherit;
   font-size: 0.78rem;
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   padding: 0.2rem 0.55rem;
 }
 
@@ -1903,7 +1904,7 @@ h2 {
   --scene-steel-deep: #4a5468;
   /* Les trois gouttières de l'écran (en-tête → note → table → barre d'action) se resserrent (#218) :
      3,2 px chacune, 9,6 px rendus à la main, et l'écran garde toutes ses lignes. */
-  gap: 0.2rem;
+  gap: 0.1rem;
   /* **Pas d'air réservé sous la barre d'action** (D-103, #243). L'écran de combat ne défile plus :
      son contenu tient dans la fenêtre, et la marge de D-094 (3) — 20 px sous la barre — se tient
      par ce que l'écran contient, pas par un espace ajouté (#237 y avait mis 8 px). L'avertissement
@@ -1917,7 +1918,7 @@ h2 {
 }
 
 .app-shell:has(.battle) .main {
-  padding-top: 0.6rem;
+  padding-top: 0.2rem;
 }
 
 /* La barre d'état (D-093, #191) : une ligne — le titre, le tour, et le bouton `⋯` à droite. Le
@@ -2095,13 +2096,13 @@ h2 {
      #237 : 0,8 px entre les lignes et 1,6 px de cadre, pour que la **marge** de 20 px de
      D-094 (3) tienne aussi quand le pas-à-pas est ouvert (mesuré : 15 px). Aucune information
      retirée : les trois lignes, leurs boutons de 36 px et la ligne de journal sont intacts. */
-  gap: 0.05rem;
+  gap: 0;
   /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
      lieu de recouvrir le plateau. */
   max-height: 42dvh;
   overflow-y: auto;
   /* 2,4 → 1,6 px de cadre vertical (#237) : même raison que la gouttière ci-dessus. */
-  padding: 0.1rem 0.6rem;
+  padding: 0 0.6rem;
   position: sticky;
   z-index: 16;
 }
@@ -2121,9 +2122,9 @@ h2 {
 
 .combat-barre .button {
   font-size: 0.8rem;
-  /* #203 : 40 px de haut suffisaient visuellement, et la marge de hauteur ne pardonnait rien.
-     36 px reste au-dessus de la cible tactile de 24 px (SC 2.5.8) et rend 4 px par rangée. */
-  min-height: 2.25rem;
+  /* #320 : la cible de doigt de 44 px (SPEC-COMBAT-UI §5.1, SC 2.5.5). #203 l'avait ramenée à 36 px
+     pour la marge de hauteur ; la hauteur se gagne ailleurs, pas sur la cible. */
+  min-height: 2.75rem;
   padding: 0.3rem 0.7rem;
 }
 
@@ -2548,6 +2549,8 @@ h2 {
   align-items: baseline;
   flex-wrap: wrap;
   gap: 0.1rem 0.75rem;
+  /* #320 : l'interligne du corps (1,5) ajoutait ~4 px à une ligne de titre. */
+  line-height: 1.2;
 }
 
 .actions {
@@ -3327,12 +3330,12 @@ h2 {
   display: flex;
   /* La carte entière et son inclinaison, plus la place du soulèvement (`padding-top`) : 1 rem de
      plus que la hauteur de la carte, pas 1,6 — la marge de hauteur ne pardonne pas (#218). */
-  height: calc(var(--carte-w) * 88 / 63 + 1rem);
+  height: calc(var(--carte-w) * 88 / 63 + 0.8rem);
   justify-content: center;
   list-style: none;
   margin: 0;
   overflow: hidden;
-  padding: 0.6rem 0.4rem 0;
+  padding: 0.4rem 0.4rem 0;
   position: relative;
 }
 

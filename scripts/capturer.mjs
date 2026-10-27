@@ -155,7 +155,17 @@ const CIBLES_HAUTEUR = [
  */
 function mesureHauteur(cibles) {
   const nav = document.querySelector('.bottom-nav')?.getBoundingClientRect();
+  // La cible de doigt (#320, `docs/SPEC-COMBAT-UI.md` §5.1) : les boutons de la barre d'action et de
+  // la ligne du pas-à-pas, mesurés tels que rendus — pas lus dans la feuille de style. Un bouton
+  // masqué (`display: none`, hauteur nulle) n'en est pas un. 43,5 : l'arrondi du navigateur.
+  const boutonsPetits = [...document.querySelectorAll('.combat-barre .button, .pas-a-pas__ligne button')]
+    .map((bouton) => ({
+      nom: (bouton.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40),
+      hauteur: Math.round(bouton.getBoundingClientRect().height * 10) / 10
+    }))
+    .filter(({ hauteur }) => hauteur > 0 && hauteur < 43.5);
   return {
+    boutonsPetits,
     fenetre: window.innerHeight,
     // Le pas-à-pas du premier combat (#143) ajoute une centaine de pixels collés en haut : tant
     // qu'il est ouvert, la page déborde **par construction** et la barre d'action collée peut
@@ -202,8 +212,26 @@ const MARGE_MIN = 20;
  * serait du bruit), et `etat` — le libellé du passage mesuré, par exemple « pas-à-pas
  * terminé » — entre dans le message pour qu'on sache **lequel** des états mesurés fauter.
  */
-function controlesHauteur({ limite, mesures, viewport, pasAPasOuvert = false, defilement = 0, etat = '' }) {
+function controlesHauteur({
+  limite,
+  mesures,
+  viewport,
+  pasAPasOuvert = false,
+  defilement = 0,
+  etat = '',
+  boutonsPetits = []
+}) {
   const problemes = [];
+
+  // **La cible de doigt de 44 px** (#320) : un bouton de la barre d'action ou du pas-à-pas plus bas
+  // est nommé, avec sa hauteur. Gagner de la marge en rognant la cible est exactement ce que ce
+  // ticket refuse : la hauteur se gagne ailleurs.
+  for (const { nom, hauteur } of boutonsPetits) {
+    problemes.push(
+      `le bouton « ${nom} » ne fait que ${hauteur} px de haut (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+        `la cible de doigt est de 44 px (SPEC-COMBAT-UI §5.1)`
+    );
+  }
 
   // **L'écran ne défile pas** (D-103, #243), pas-à-pas ouvert compris. Un document plus haut que
   // la fenêtre amène la cible du pas-à-pas en haut et rogne l'en-tête sur la capture ; surtout,
