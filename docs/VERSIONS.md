@@ -78,7 +78,13 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    dist/assets/*.js`). Puis les
    **fichiers générés** : `npm run plan:dev` et `npm run notes:versions` (réécrivent si besoin),
    puis `-- --verifie` sur chacun. Ce geste local est celui qui garde la release : la CI des PR
-   ne les vérifie plus (D-113), et `fichiers-generes.yml` le refait sur le tag en filet.
+   ne les vérifie plus (D-113), et `fichiers-generes.yml` le refait sur le tag en filet. Le
+   contrôle `--verifie` du tag **accepte un seul écart** (D-122) : la note de la version de
+   `package.json` encore marquée `brouillon: true` alors que sa release est **publiée** — c'est
+   le cas du tag, puisque le tag part avant la release et que la note est reprise ensuite
+   (étape 7). Tant que la note n'est pas reprise, il le dit dans sa sortie et sort 0 ; tout
+   autre écart (version en trop ou manquante, texte retouché, brouillon d'une autre version)
+   sort 1 comme avant.
 4. **Mettre la production au niveau de ce que la note promet** — la note se lit **à la sortie de
    la release**, donc ce qu'elle annonce doit être vrai **ce jour-là**, pas à la fusion. Pour les
    annonces du mur dans `#comite` (#318, D-120), qui est ce que `/confidentialite` décrit au
@@ -90,11 +96,19 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    dans le salon (un post-it collé, une minute d'attente, `§10.4`), pas une migration « appliquée ».
 5. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
 6. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
-   message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.
+   message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes. C'est
+   cette publication qui rend le brouillon du tag **attendu** aux yeux du contrôle
+   `-- --verifie` (D-122) : avant elle, aucune tolérance — la note écrite d'avance est
+   simplement ce que le générateur garde.
 7. **Reprendre la release dans l'application** : `npm run notes:versions` relit les releases
    GitHub et réécrit `src/data/versions.ts` — le texte publié remplace la note écrite
    d'avance, et son `brouillon` tombe. C'est la seule fois où la note change après coup, et
-   elle devient alors **la même des deux côtés**.
+   elle devient alors **la même des deux côtés**. Jusque-là, le contrôle du tag (`-- --verifie`,
+   D-122) accepte ce brouillon comme **attendu** : c'est l'état normal d'un tag, pas une
+   divergence. Ce que la tolérance ne fait pas : **réparer un tag déjà poussé** — le run de
+   `fichiers-generes.yml` tourne sur le commit tagué, donc il garde le comportement de ce
+   commit. Une fois l'étape faite, la tolérance ne sert plus et le contrôle repasse par le
+   chemin strict.
 8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
 Un `git tag -a v0.1.2` sur un commit, c'est un point de retour ; un tag déplacé à la main après

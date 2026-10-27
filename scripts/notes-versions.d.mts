@@ -60,6 +60,32 @@ export function lireReleases(gh?: Gh): Release[];
 /** Les notes écrites d'avance déjà présentes dans le fichier. */
 export function brouillonsEnPlace(chemin?: string): Promise<NoteVersion[]>;
 
+/** Toutes les notes déjà présentes dans le fichier, brouillons compris. */
+export function notesEnPlace(chemin?: string): Promise<NoteVersion[]>;
+
+/** La version de `package.json` : la seule dont un brouillon est attendu sur un tag. */
+export function versionCourante(chemin?: string): string;
+
+/**
+ * Les notes à rendre quand la seule divergence est le brouillon attendu de la version
+ * courante, déjà publiée sur GitHub ; `null` s'il n'y a rien à tolérer (D-122).
+ */
+export function brouillonAttendu(args: {
+  notes: NoteVersion[];
+  surGithub: NoteVersion[];
+  actuelles: NoteVersion[];
+  version: string;
+}): NoteVersion[] | null;
+
+/** Le verdict du `--verifie` : à jour, à jour par tolérance, ou divergente. */
+export function verifierNotes(args: {
+  actuel: string;
+  notes: NoteVersion[];
+  surGithub: NoteVersion[];
+  actuelles: NoteVersion[];
+  version: string;
+}): { ok: boolean; tolere: boolean };
+
 /** Le fichier entier : l'en-tête, les types, l'historique, et les deux fonctions. */
 export function rendreFichier(notes: NoteVersion[]): string;
 
