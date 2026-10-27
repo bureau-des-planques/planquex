@@ -89,16 +89,12 @@ export const JALONS: Jalon[] = [
     etape: 'alpha',
     texte:
       'Le solo se teste entre testeurs : contenu incomplet et casse assumés, on cherche si la boucle tient.',
-    criteres: [
-      {
-        texte: 'Chaque testeur a joué au moins une partie complète.',
-        decision: 'D-117'
-      },
-      {
-        texte: 'La Journée d’intégration est finie.',
-        decision: 'D-056'
-      }
-    ]
+    // **Les trois critères, pas deux** : le jalon affiché reprenait la liste sans le (b),
+    // alors que D-056 (b) — « plus aucun bug qui casse la boucle » — n'a jamais quitté
+    // l'alpha (D-117 n'a amendé que le (a) et sorti le (d)). La source est `CRITERES_ALPHA`,
+    // recopiée ici pour la forme du jalon ; `plan.test.ts` exige maintenant l'égalité, pour
+    // qu'une des deux listes ne puisse plus prendre du retard sur l'autre.
+    criteres: CRITERES_ALPHA
   },
   {
     etape: 'beta',
