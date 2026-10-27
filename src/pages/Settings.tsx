@@ -105,6 +105,16 @@ export function Settings() {
                 <strong>État</strong> · {compte ? libelleEtat(compte.etat) : 'inconnu'}
                 {compte?.administrateur ? ' · administrateur' : ''}
               </li>
+              {/* La « Médaille de la période d'essai » (0016, D-130 (3)) : une **ligne de plus**,
+                  jamais à la place de l'état ni du courriel. Elle vit ici tant que le profil n'a
+                  pas d'intitulé (#325) — c'est la note de lecture de D-130 (3), pas une
+                  réécriture de l'acte. Une liste qui se replie tient à 420 px, là où un badge
+                  collé à l'état le pousserait hors de la ligne. */}
+              {compte?.medaille_periode_essai && (
+                <li>
+                  <strong>Médaille de la période d’essai</strong> · obtenue pendant l’alpha
+                </li>
+              )}
             </ul>
             <p className="m-0 max-w-[64ch] text-[0.86rem] text-ink-muted">
               {estApprouve(compte)

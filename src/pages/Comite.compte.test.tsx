@@ -65,6 +65,8 @@ const COMPTE: Compte = {
   etat: 'en attente',
   raison: '',
   administrateur: false,
+  medaille_periode_essai: false,
+  medaille_periode_essai_le: null,
   created_at: '2026-10-23T10:00:00.000Z'
 };
 

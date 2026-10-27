@@ -4,6 +4,8 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { Settings } from './Settings';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
+import { useComptes } from '@/store/comptes';
+import type { Compte } from '@/lib/comptes';
 import { APP_LABEL } from '@/version';
 
 describe('Settings — écran des Réglages', () => {
@@ -162,6 +164,60 @@ describe('Settings — écran des Réglages', () => {
     // mener à l'écran qui le dit, sinon la note reste invisible depuis le jeu.
     const lien = screen.getByRole('link', { name: /la feuille de route/i });
     expect(lien).toHaveAttribute('href', '/feuille-de-route');
+  });
+});
+
+/**
+ * Le bloc **Compte** de Réglages, et la médaille de la période d'essai (#346, D-130 (3)).
+ *
+ * La médaille est une **ligne de plus** sous l'état du compte : présente quand la base la
+ * donne, absente sinon — et le courriel comme l'état restent lisibles dans les deux cas,
+ * puisqu'elle ne remplace rien. L'emplacement est celui de la note de lecture de D-130 (3) :
+ * le bloc Compte, tant que le profil n'a pas d'intitulé (#325).
+ */
+describe('Settings — le compte, et la médaille de la période d’essai (#346)', () => {
+  const COMPTE: Compte = {
+    id: 'compte-a',
+    courriel: 'a@exemple.test',
+    etat: 'approuve',
+    raison: '',
+    administrateur: false,
+    medaille_periode_essai: false,
+    medaille_periode_essai_le: null,
+    created_at: '2026-10-23T10:00:00.000Z'
+  };
+
+  /** L'écran lit le store, jamais la base : c'est lui qu'on pose, comme les autres écrans. */
+  const poser = (compte: Compte) =>
+    useComptes.setState({
+      configure: true,
+      chargement: false,
+      session: { id: compte.id, courriel: compte.courriel },
+      compte,
+      erreur: null
+    });
+
+  afterEach(() => {
+    useComptes.setState({ configure: false, chargement: false, session: null, compte: null, erreur: null });
+  });
+
+  it('affiche la médaille quand elle est vraie, sans écraser l’état du compte', () => {
+    poser({ ...COMPTE, medaille_periode_essai: true, medaille_periode_essai_le: '2026-11-03T09:00:00.000Z' });
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    expect(screen.getByText(/Médaille de la période d’essai/)).toBeInTheDocument();
+    // Ce qui était là reste là, ligne pour ligne : le courriel, et l'état.
+    expect(screen.getByText(/a@exemple\.test/)).toBeInTheDocument();
+    expect(screen.getByText(/approuvé/)).toBeInTheDocument();
+  });
+
+  it('n’affiche rien quand elle est fausse, et garde l’état lisible', () => {
+    poser(COMPTE);
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    expect(screen.queryByText(/Médaille de la période d’essai/)).toBeNull();
+    expect(screen.getByText(/a@exemple\.test/)).toBeInTheDocument();
+    expect(screen.getByText(/approuvé/)).toBeInTheDocument();
   });
 });
 

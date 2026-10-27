@@ -33,6 +33,8 @@ const COMPTE = {
   etat: 'approuve',
   raison: '',
   administrateur: false,
+  medaille_periode_essai: false,
+  medaille_periode_essai_le: null,
   created_at: '2026-10-23T10:00:00.000Z'
 };
 
@@ -158,6 +160,32 @@ describe('la lecture d’un compte', () => {
     expect(estApprouve({ ...COMPTE, etat: 'en attente', administrateur: true })).toBe(true);
     expect(estApprouve({ ...COMPTE, etat: 'en attente' })).toBe(false);
     expect(estApprouve(null)).toBe(false);
+  });
+
+  it('lit la médaille de la période d’essai, et ne l’invente pas quand la base l’ignore (D-130 (3))', () => {
+    // La base la donne : le drapeau et sa date passent tels quels.
+    expect(
+      lireCompte({
+        ...COMPTE,
+        medaille_periode_essai: true,
+        medaille_periode_essai_le: '2026-11-03T09:00:00.000Z'
+      })
+    ).toEqual({
+      ...COMPTE,
+      medaille_periode_essai: true,
+      medaille_periode_essai_le: '2026-11-03T09:00:00.000Z'
+    });
+
+    // Une base qui n'a pas encore la 0016 ne rend pas les colonnes : pas de médaille inventée.
+    const sansColonne = { ...COMPTE };
+    delete (sansColonne as { medaille_periode_essai?: unknown }).medaille_periode_essai;
+    delete (sansColonne as { medaille_periode_essai_le?: unknown }).medaille_periode_essai_le;
+    expect(lireCompte(sansColonne)).toMatchObject({ medaille_periode_essai: false, medaille_periode_essai_le: null });
+
+    // Une valeur qui n'est pas un booléen vrai (chaîne, 1) ne vaut pas une médaille.
+    expect(lireCompte({ ...COMPTE, medaille_periode_essai: 'oui' })).toMatchObject({
+      medaille_periode_essai: false
+    });
   });
 
   it('les libellés d’état sont ceux de l’écran', () => {
