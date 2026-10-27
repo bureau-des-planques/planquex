@@ -24,6 +24,11 @@
  * et il garde les notes **brouillon** écrites à la main (`brouillon: true`) tant que leur
  * version n'est pas publiée sur GitHub. Le jour du tag, la release prend la place du
  * brouillon — c'est le seul geste que la publication demande.
+ *
+ * **La seule divergence que `--verifie` tolère** (D-122) : sur un tag, le fichier porte
+ * encore le brouillon de la version de `package.json` alors que GitHub a déjà sa release
+ * publiée — la note est reprise **après** la release (`docs/VERSIONS.md` §4 étape 6). Voir
+ * `brouillonAttendu` : une note, une version, et la release doit être publiée.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -222,23 +227,29 @@ export function comparer(a, b) {
 }
 
 /**
- * Le **brouillon** déjà écrit à la main, conservé jusqu'à sa publication.
- *
- * On relit le fichier par un `import` (Node 24 lit le TypeScript tout seul) plutôt qu'à
- * coups d'expressions régulières : la forme est celle du fichier, et une entrée mal
- * écrite se voit tout de suite. Une version **publiée sur GitHub** remplace le brouillon
- * du même numéro — c'est le geste de la publication, et rien d'autre.
+ * Toutes les notes du fichier, brouillons compris, relues par un `import` (Node 24 lit le
+ * TypeScript tout seul) plutôt qu'à coups d'expressions régulières : la forme est celle du
+ * fichier, et une entrée mal écrite se voit tout de suite. `--verifie` s'en sert pour
+ * reconnaître le brouillon attendu de la version courante (D-122).
  */
-export async function brouillonsEnPlace(chemin = CIBLE) {
-  let notes;
+export async function notesEnPlace(chemin = CIBLE) {
   try {
-    notes = (await import(`${pathToFileURL(chemin).href}?v=${Date.now()}`)).NOTES_VERSIONS;
+    return (await import(`${pathToFileURL(chemin).href}?v=${Date.now()}`)).NOTES_VERSIONS ?? [];
   } catch (erreur) {
-    // Premier passage, ou fichier absent : il n'y a alors aucun brouillon à garder.
+    // Premier passage, ou fichier absent : il n'y a alors aucune note à relire.
     if (/Cannot find module|ERR_MODULE_NOT_FOUND/.test(String(erreur))) return [];
     throw erreur;
   }
-  const brouillons = (notes ?? []).filter((note) => note.brouillon);
+}
+
+/**
+ * Le **brouillon** déjà écrit à la main, conservé jusqu'à sa publication.
+ *
+ * Une version **publiée sur GitHub** remplace le brouillon du même numéro — c'est le geste
+ * de la publication, et rien d'autre.
+ */
+export async function brouillonsEnPlace(chemin = CIBLE) {
+  const brouillons = (await notesEnPlace(chemin)).filter((note) => note.brouillon);
   for (const note of brouillons) {
     if (!note.points?.every((point) => point && typeof point.texte === 'string')) {
       stop(
@@ -382,6 +393,48 @@ export async function construire(releases, chemin = CIBLE) {
   return { notes, brouillons, surGithub };
 }
 
+/** La version de `package.json` : la seule dont un brouillon est attendu sur un tag. */
+export function versionCourante(chemin = join(root, 'package.json')) {
+  return JSON.parse(readFileSync(chemin, 'utf8')).version;
+}
+
+/**
+ * **Le brouillon attendu sur un tag** — la seule divergence que `--verifie` tolère (D-122).
+ *
+ * Le tag part **avant** la release (`docs/VERSIONS.md` §4, étapes 5 et 6) : sur `v0.1.14`,
+ * `src/data/versions.ts` portait encore la note écrite d'avance (`brouillon: true`) alors que
+ * GitHub avait déjà la release publiée. `construire` remplace cette note par celle de la
+ * release, le fichier diverge donc — et la procédure est pourtant respectée. Le contrôle du
+ * workflow `fichiers-generes.yml` sortait 1 sur un premier tag, quoi qu'on relançât.
+ *
+ * La tolérance est **étroite**, et c'est ce qui la rend sûre : **une** note, celle de la
+ * version de `package.json`, **et** seulement si le fichier la marque `brouillon: true` **et**
+ * que GitHub a la release **publiée** de cette version. Le reste du fichier doit être
+ * exactement ce que le générateur écrirait — une version en trop, une version manquante, le
+ * texte retouché d'une version publiée, ou le brouillon d'une **autre** version restent des
+ * divergences.
+ *
+ * Rend les notes à rendre (celles du générateur, la note courante remplacée par le brouillon
+ * du fichier), ou `null` quand il n'y a rien à tolérer.
+ */
+export function brouillonAttendu({ notes, surGithub, actuelles, version }) {
+  if (!surGithub.some((note) => note.version === version)) return null;
+  const dansFichier = (actuelles ?? []).find((note) => note.version === version);
+  if (!dansFichier?.brouillon) return null;
+  return notes.map((note) => (note.version === version ? dansFichier : note));
+}
+
+/**
+ * Le verdict du `--verifie`, sur le texte du fichier : à jour, à jour par tolérance du
+ * brouillon attendu (`tolere: true`), ou divergente.
+ */
+export function verifierNotes({ actuel, notes, surGithub, actuelles, version }) {
+  if (actuel === rendreFichier(notes)) return { ok: true, tolere: false };
+  const tolere = brouillonAttendu({ notes, surGithub, actuelles, version });
+  if (tolere && actuel === rendreFichier(tolere)) return { ok: true, tolere: true };
+  return { ok: false, tolere: false };
+}
+
 // `import.meta.main` n'existe pas encore partout : on regarde si ce fichier est l'entrée.
 // **Tout le CLI est sous cette garde** : un test qui importe le module ne doit ni lire
 // `process.argv` (vitest y met ses propres options), ni appeler `gh`.
@@ -400,11 +453,19 @@ if (estEntree) {
     console.log(JSON.stringify({ notes, brouillons: brouillons.map((note) => note.version) }, null, 2));
   } else if (option === '--verifie') {
     const actuel = readFileSync(CIBLE, 'utf8');
-    if (actuel !== contenu) {
+    const version = versionCourante();
+    const verdict = verifierNotes({
+      actuel,
+      notes,
+      surGithub,
+      actuelles: await notesEnPlace(),
+      version
+    });
+    if (!verdict.ok) {
       const avant = new Set((actuel.match(/version: '([^']+)'/g) ?? []).map((ligne) => ligne.slice(10, -1)));
       const apres = new Set(notes.map((note) => note.version));
       const absentes = notes.filter((note) => !avant.has(note.version)).map((note) => note.version);
-      const enTrop = [...avant].filter((version) => !apres.has(version));
+      const enTrop = [...avant].filter((numero) => !apres.has(numero));
       stop(
         'src/data/versions.ts a divergé de GitHub — lance `npm run notes:versions`.\n' +
           (absentes.length ? `  manquantes : ${absentes.join(', ')}\n` : '') +
@@ -412,6 +473,13 @@ if (estEntree) {
       );
     }
     console.log(`✔ src/data/versions.ts est à jour (${notes.length} notes, dont ${brouillons.length} brouillon(s))`);
+    if (verdict.tolere) {
+      console.log(
+        `  brouillon attendu sur le tag : la note ${version} est encore écrite d'avance ` +
+          'alors que sa release est publiée — elle est reprise après la release ' +
+          '(docs/VERSIONS.md §4 étapes 6 et 7, D-122).'
+      );
+    }
   } else {
     writeFileSync(CIBLE, contenu);
     console.log(

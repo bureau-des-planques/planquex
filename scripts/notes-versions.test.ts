@@ -3,11 +3,13 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
   analyserCorps,
+  brouillonAttendu,
   comparer,
   entreeDe,
   nettoyer,
   rendreFichier,
-  titreDe
+  titreDe,
+  verifierNotes
 } from './notes-versions.mjs';
 import { NOTES_VERSIONS } from '@/data/versions';
 import { notesAffichees } from '@/data/notes-affichees';
@@ -84,9 +86,7 @@ describe('notes-versions — la mise en forme d’un corps de release', () => {
   });
 
   it('retire le markdown, et met l’apostrophe typographique', () => {
-    expect(nettoyer('un **gras**, un `code`, et [un lien](http://x)')).toBe(
-      'un gras, un code, et un lien'
-    );
+    expect(nettoyer('un **gras**, un `code`, et [un lien](http://x)')).toBe('un gras, un code, et un lien');
     expect(nettoyer("l'IA et l'Atelier")).toBe('l’IA et l’Atelier');
     // Une citation entre guillemets n'est pas touchée : seul l'apostrophe entre lettres l'est.
     expect(nettoyer('« STUCK AGAIN »')).toBe('« STUCK AGAIN »');
@@ -190,14 +190,115 @@ describe('notes-versions — le fichier commité', () => {
   });
 });
 
+/**
+ * **Le brouillon attendu sur un tag** (D-122).
+ *
+ * Le tag part **avant** la release (`docs/VERSIONS.md` §4 étapes 5 et 6) : sur `v0.1.14`,
+ * `src/data/versions.ts` portait encore la note écrite d'avance, `brouillon: true`, alors que
+ * GitHub avait déjà la release publiée. `construire` remplace cette note par celle de la
+ * release, le fichier divergeait, et le contrôle du workflow `fichiers-generes.yml` sortait 1
+ * sur une procédure respectée. La tolérance est **étroite** : une note, celle de la version de
+ * `package.json`, et seulement si le fichier la marque brouillon et que la release est publiée.
+ */
+describe('notes-versions — le brouillon attendu sur le tag (D-122)', () => {
+  const note = (version: string, date: string, brouillon: boolean, points: string[]) => ({
+    version,
+    date,
+    titre: `Version ${version}`,
+    points: points.map((texte) => ({ texte })),
+    ...(brouillon ? { brouillon: true } : {})
+  });
+
+  const VERSION = '0.1.14';
+  // Le fichier écrit d'avance : la 0.1.14 en brouillon, la 0.1.13 publiée.
+  const brouillonCourant = note(VERSION, '2026-10-27', true, ['ce qui va sortir']);
+  const publiee1313 = note('0.1.13', '2026-10-25', false, ['la 0.1.13']);
+  const actuel = rendreFichier([brouillonCourant, publiee1313]);
+  // Ce que GitHub rend le jour du tag : la release 0.1.14 est publiée, son corps diffère.
+  const release1314 = note(VERSION, '2026-10-27', false, ['le corps de la release']);
+  const surGithub = [release1314, publiee1313];
+  // Ce que `construire` produit : la release remplace le brouillon du même numéro.
+  const notes = [release1314, publiee1313];
+
+  it('accepte le seul écart qui est le brouillon de la version courante, déjà publiée', () => {
+    // Sans la tolérance, `rendreFichier(notes)` ne dit pas la même chose que le fichier :
+    // c'est exactement ce qui faisait sortir 1 sur v0.1.14.
+    expect(rendreFichier(notes)).not.toBe(actuel);
+    expect(
+      verifierNotes({ actuel, notes, surGithub, actuelles: [brouillonCourant, publiee1313], version: VERSION })
+    ).toEqual({
+      ok: true,
+      tolere: true
+    });
+  });
+
+  it('refuse une version en trop, et le texte modifié d’une version publiée', () => {
+    const enTrop = note('0.1.12', '2026-10-20', false, ['la 0.1.12']);
+    expect(
+      verifierNotes({
+        actuel: rendreFichier([brouillonCourant, publiee1313, enTrop]),
+        notes,
+        surGithub,
+        actuelles: [brouillonCourant, publiee1313, enTrop],
+        version: VERSION
+      })
+    ).toEqual({ ok: false, tolere: false });
+
+    const retouchee = note('0.1.13', '2026-10-25', false, ['un texte réécrit à la main']);
+    expect(
+      verifierNotes({
+        actuel: rendreFichier([brouillonCourant, retouchee]),
+        notes,
+        surGithub,
+        actuelles: [brouillonCourant, retouchee],
+        version: VERSION
+      })
+    ).toEqual({ ok: false, tolere: false });
+  });
+
+  it('ne tolère rien quand la release de la version courante n’est pas publiée', () => {
+    // Sans publication, `construire` garde déjà le brouillon : aucune tolérance ne s'invente.
+    expect(
+      brouillonAttendu({
+        notes: [brouillonCourant, publiee1313],
+        surGithub: [publiee1313],
+        actuelles: [brouillonCourant, publiee1313],
+        version: VERSION
+      })
+    ).toBeNull();
+  });
+
+  it('ne tolère pas le brouillon d’une autre version que celle de package.json', () => {
+    const brouillonAutre = note('0.1.13', '2026-10-25', true, ['ce qui va sortir']);
+    expect(
+      brouillonAttendu({
+        notes,
+        surGithub,
+        actuelles: [release1314, brouillonAutre],
+        version: VERSION
+      })
+    ).toBeNull();
+    expect(
+      verifierNotes({
+        actuel: rendreFichier([release1314, brouillonAutre]),
+        notes,
+        surGithub,
+        actuelles: [release1314, brouillonAutre],
+        version: VERSION
+      })
+    ).toEqual({ ok: false, tolere: false });
+  });
+});
+
 /** Le chemin du script, pour le message d'erreur des contrôles ci-dessus. */
 const CHEMIN = fileURLToPath(new URL('./notes-versions.mjs', import.meta.url));
 
 describe('notes-versions — la commande', () => {
   it('est déclarée dans package.json, et n’ajoute aucune dépendance', () => {
-    const pkg = JSON.parse(
-      readFileSync(new URL('../package.json', import.meta.url), 'utf8')
-    ) as { scripts: Record<string, string>; dependencies: Record<string, string> };
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+      scripts: Record<string, string>;
+      dependencies: Record<string, string>;
+    };
     expect(pkg.scripts['notes:versions']).toBe('node scripts/notes-versions.mjs');
     // Le pont avec GitHub est `gh` (la CLI, déjà là) : aucun paquet de plus dans le bundle.
     expect(Object.keys(pkg.dependencies)).not.toContain('@octokit/rest');
