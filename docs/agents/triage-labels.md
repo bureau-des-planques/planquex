@@ -38,14 +38,19 @@ D-048 :
 
 | Étiquette | Sens | Exemple dans le tracker |
 |---|---|---|
-| `alpha` | nécessaire pour le **solo entre invités** (contenu incomplet, casse assumée) | les tickets du combat, le comité |
-| `beta` | nécessaire pour le **PvP jouable**, l'URL stable et le périmètre solo complet | le PvP par code (D-049) |
+| `alpha` | nécessaire pour **sortir de l'alpha** : le solo **joué par des testeurs**, la boucle qui tient — contenu incomplet, casse assumée (D-048, D-117) | le guide d'installation (#300), les problèmes connus (#299) |
+| `beta` | nécessaire pour le **PvP jouable**, l'**URL stable**, le périmètre solo complet et les **bases illustrées** (D-048, D-063) | le PvP par code (D-049), les tâches d'UI du combat (#284 à #295) |
 | `release` | nécessaire pour **1.0.0** : le reste de `PROPOSITION.md` §5.1 (classé, économie…) | l'échelon classé |
 
 Règles de triage :
 
 - **Un ticket porte au plus une étape.** Un ticket qui n'en a pas (dette, outillage hors
   jeu) n'est pas bloquant pour une étape : il n'en reçoit pas.
+- **Ce qui ne bloque pas l'alpha ne porte pas `alpha`** (D-117). La sortie d'alpha a **trois**
+  critères : chaque testeur a joué une partie complète, plus aucun bug qui casse la boucle,
+  Journée d'intégration finie. L'**UI** ne la bloque pas — le light suffit à inviter (D-116) —
+  et la **décision sur les illustrations** en est sortie, puisqu'elle reste un critère de beta
+  (D-063). Un ticket d'UI ou d'illustration se range donc en `beta`, pas en `alpha`.
 - L'étape est une **échéance**, pas une priorité : elle dit *où* on en a besoin, pas *quand*
   on le fait. Une étape plus tardive ne déclasse pas un ticket d'alpha qui bloque un testeur.
 - Une étape se **change** dans le ticket (commentaire + `--remove-label`/`--add-label`), jamais
