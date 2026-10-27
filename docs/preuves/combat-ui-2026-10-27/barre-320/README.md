@@ -28,7 +28,8 @@ Les boutons de la barre d'action et ceux de la ligne du pas-à-pas (« Suivant �
 | cadre et gouttière de la barre 3,2 + 0,8 → 0 | 4 px |
 | main : interligne du titre (1,5 → 1,2) et soulèvement (9,6 → 6,4 px) | 8 px |
 | **gain total** | **~28 px** |
-| coût : barre +16 px (deux rangées de 44), pas-à-pas +3 px (ligne 44, cadre réduit) | −19 px |
+| coût brut des 44 px : barre +16 px (deux rangées de 44), pas-à-pas +8 px (ligne de 44) | −24 px |
+| **solde** : bas de la barre 809 → 806 px | +3 px |
 
 Mesuré par `npm run capturer` (16 états) : défilement 0, aucun bouton sous 44 px, marge de la barre sous la
 navigation **24 px au plus juste** (D-094 (3) : 20), « Fin du tour » 717 → 761 px. Fichiers
