@@ -3,13 +3,15 @@
 > **Lot de recherche**, pas de captures. Ouvert le **27/10/2026**.
 > Toutes les URL citées ont été lues le **27/10/2026**.
 >
-> **Emplacement retenu** : `docs/preuves/jalons-2026-10-27/README.md` — la convention de
+> **Emplacement** : `docs/preuves/jalons-2026-10-27/README.md` — la convention de
 > `docs/preuves/README.md` est « **un lot, un dossier daté** », et `regles-2026-10-20/`
-> (lot de recherche documentaire, sans capture) est le précédent exact. Le nom proposé
-> à défaut, `docs/preuves/jalons-industrie-2026-10-27.md`, ferait un lot **à plat**, seul
-> cas de l'arborescence. **Une ligne manque** dans le tableau de `docs/preuves/README.md`
-> pour l'usage « jalons » : elle n'a pas été ajoutée ici, la consigne étant de ne toucher
-> aucun autre fichier. C'est le seul suivi que ce lot laisse derrière lui.
+> (lot de recherche documentaire, sans capture) est le précédent exact. Un fichier à plat,
+> `docs/preuves/jalons-industrie-2026-10-27.md`, aurait été le seul cas de l'arborescence.
+>
+> **Traçabilité** : l'usage « jalons » figure dans le tableau de `docs/preuves/README.md`
+> (ligne `jalons-<AAAA-MM-JJ>/`), et le lot est rangé à cet emplacement. Rien d'autre n'est à
+> ajouter pour que le lot soit rattaché. Ce qui reste **non lu** est dit en §7, « Sources non
+> trouvées » : ce n'est pas un suivi de rangement.
 
 ## 0. Méthode — et sa limite
 
