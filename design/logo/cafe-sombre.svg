@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Bureau des Planqués — la tasse de Café">
-  <!-- La tasse de Café en trait (DESIGN.md §5.1) : thème sombre, or --gold-soft. Même dessin que cafe-clair.svg. -->
+  <!-- La tasse de Café en trait (DESIGN.md §5.1) : thème sombre, or gold-soft (#f4d68a). Même dessin que cafe-clair.svg. -->
   <g stroke="#f4d68a">
     <g stroke-width="3">
       <path d="M25 22q-2-2.8 0-5.6q2-2.8 0-5.6" />
