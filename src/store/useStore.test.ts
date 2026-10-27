@@ -693,6 +693,18 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
     expect(migre.tutorielVu).toBe(false);
   });
 
+  it('migre un état v10 sans ces champs (export bricolé) sans perdre le reste', () => {
+    // La forme n'a plus bougé depuis la v8 (#189) : le repli est **par type**, pas par numéro,
+    // donc une sauvegarde v10 à qui il manquerait les deux booléens reprend les défauts sans
+    // rien perdre — et sans qu'une v11 vide de sens soit nécessaire.
+    const migre = migratePersisted({ name: 'Vétéran', owned: { 'sse-infirmier-site': 1 }, deck: [] }, 10);
+    expect(migre.combatDetaille).toBe(false);
+    expect(migre.raccourcisCombat).toBe(true);
+    expect(migre.name).toBe('Vétéran');
+    expect(migre.owned).toEqual({ 'sse-infirmier-site': 1 });
+    expect(migre.deck).toEqual([]);
+  });
+
   it('respecte des valeurs déjà écrites, et écarte une valeur forgée', () => {
     expect(migratePersisted({ combatDetaille: true, raccourcisCombat: false }, 8)).toMatchObject({
       combatDetaille: true,
