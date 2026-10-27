@@ -90,6 +90,10 @@ describe('Installation — le guide public (#300)', () => {
       const href = lien.getAttribute('href') ?? '';
       expect(href.startsWith('/'), `${href} n’est pas interne`).toBe(true);
     }
+    // Les deux pages voisines, toutes deux publiques : le guide renvoie vers elles.
+    expect(container.querySelector('a[href="/confidentialite"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/feuille-de-route"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/"]')).toBeTruthy();
   });
 
   it('garde l’adresse en accord avec docs/ALPHA-TESTEURS.md', () => {

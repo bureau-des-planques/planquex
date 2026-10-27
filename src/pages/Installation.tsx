@@ -174,6 +174,11 @@ export function Installation() {
             navigateur où tu joues.
           </li>
         </ul>
+        <p className="muted m-0 max-w-[62ch] text-[0.86rem]">
+          Le détail de ce qui est gardé est sur <Link to="/confidentialite">la page Confidentialité</Link>, et ce que
+          chaque version apporte sur <Link to="/feuille-de-route">la feuille de route</Link>. Les deux se lisent sans
+          compte.
+        </p>
       </section>
 
       <section className="section panel">
