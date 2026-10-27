@@ -19,114 +19,178 @@
   reste vraie, et `src/components/InvitationTesteurs.test.tsx` le vérifie.
 - **Aucune dépendance npm** n'est ajoutée, et il n'y a **rien à héberger**.
 
-## 1. Créer le serveur
+## 1. Le serveur, tel qu'il existe (vérifié le 27/10/2026)
 
-1. Dans Discord : **Ajouter un serveur → Pour un club ou une communauté**. Nom :
-   `Bureau des Planqués — alpha` (ou ce qui reste lisible sous l'icône). Icône : celle de
-   l'application (`public/icon-512.png`).
-2. **Paramètres du serveur → Rôles** : garder `@everyone` pour les testeurs, et créer
-   `@Mainteneur` (gestion des salons, des messages, des webhooks) pour l'équipe. Ne donner
-   aucun rôle d'administration aux testeurs.
-3. **Paramètres du serveur → Modération** : niveau de vérification « Moyen » suffit à cette
-   échelle ; pas de bot de modération (hors périmètre de #316).
+Le serveur a été créé et habillé le **27/10/2026**. Cette section décrit **l'état réel**, pas un
+plan : les gestes de création ne se rejouent que si le serveur disparaît.
+
+| Élément | Valeur |
+|---|---|
+| Nom | `Planquex` (le nom du jeu ; « Bureau des Planqués » reste le titre des messages) |
+| Identifiant | `1487523730438492231` |
+| Icône | la tasse (`public/icon-512.png`, carré plein de 512 px, sans cadre) |
+| Langue | français ; notifications par défaut : **mentions seulement** |
+| Salon système | `#général` |
+| Vérification | aucune (niveau 0) ; **AutoMod** : 3 règles actives — anti-spam, mentions en rafale, invitations Discord |
+
+**Les rôles**, du plus haut au plus bas : le bot `Planqué` (3), `Équipe` (2), `Testeur` (1),
+`@everyone` (0).
+
+| Rôle | Ce qu'il porte | Pour qui |
+|---|---|---|
+| `Équipe` | Gérer les messages, rendre muet ; voit **tout** | Bastien et ceux qui modèrent |
+| `Testeur` | Envoyer, liens, fichiers ; ouvre `ALPHA` et `VOCAL` | les testeurs dont le compte du jeu est validé |
+| `@everyone` | 11 droits, ni invitation, ni mention `@everyone`, ni fil, ni épinglage ; ne voit que `ACCUEIL` | les arrivants |
+| `Planqué` (bot) | salons, rôles, messages, webhooks, épinglage ; **ni kick, ni ban, ni administrateur** | le MCP `planquex-discord` |
+
+Deux gardes tenues par ce tableau : **aucun droit d'administration aux testeurs**, et le bot
+**ne peut pas exclure** — s'il en avait besoin un jour, ce serait une réautorisation OAuth
+explicite, pas une permission ajoutée à la main.
+
+Le salon `#regles` est en **lecture seule** pour `@everyone` (Permissions du salon → Envoyer des
+messages : refusé) ; `Équipe` et le bot y écrivent.
 
 ## 2. Les salons
 
-| Salon | Rôle | Qui écrit |
-|---|---|---|
-| `#regles` | Les règles, épinglées, en lecture seule | `@Mainteneur` |
-| `#comite` | La conversation des testeurs — parties à deux, questions, ce qui marche — et, dès **#318**, les annonces du mur | tout le monde, et le webhook du mur |
-| `#depot` | Les **issues**, les **pull requests** et les **CI** du dépôt, poussées par GitHub | les webhooks seulement |
-| `#deploiements` | Les déploiements de production et les aperçus de PR, poussés par Vercel | l'intégration seulement |
+| Catégorie | Salon | Rôle | Qui écrit |
+|---|---|---|---|
+| `✦ ACCUEIL` | `#bienvenue` | L'accroche, où jouer, la visite guidée | `Équipe` |
+| | `#règles` | Le règlement, épinglé, en lecture seule | `Équipe` |
+| | `#annonces` | Versions et déploiements, en lecture seule | `Équipe`, et **Vercel** quand l'intégration est posée (§6) |
+| `✦ ALPHA` | `#général` | Le coin café : on parle du jeu | tout le monde |
+| | `#comite` | Les annonces du mur, en lecture seule pour `@everyone` | `Équipe` et le webhook du mur (§10) |
+| | `#retours` | Ce qui a perdu, ennuyé ou fait sourire | tout le monde |
+| | `#parties` | Les codes de partie à deux | tout le monde |
+| `✦ ÉQUIPE` | `#game-design` | Règles, cartes, équilibrage | `Équipe` |
+| | `#logs-github` | Issues, pull requests et CI du dépôt, poussés par GitHub | le webhook seulement |
+| | `#ressources` | Liens, références, outils | `Équipe` |
+| `✦ VOCAL` | `🔊 Général` | Le vocal | tout le monde |
 
-**Les deux salons techniques vivent hors de `#comite`**, et c'est une règle, pas un goût : un
-testeur n'a pas à lire la CI pour parler du jeu, et un webhook qui tombe dans la conversation
-la noie. `#regles` se met en **lecture seule** pour `@everyone` (Permissions du salon → Envoyer
-des messages : refusé).
+**Deux noms ont changé depuis le plan de #317** : `#depot` s'appelle **`#logs-github`** (le
+webhook GitHub y était déjà) et `#deploiements` s'appelle **`#annonces`** (versions et
+déploiements, en lecture pour les testeurs). La règle de fond ne bouge pas : les **deux salons
+techniques vivent hors de `#comite`** — un testeur n'a pas à lire la CI pour parler du jeu, et
+un webhook qui tombe dans la conversation la noie. `#logs-github` est en plus dans la catégorie
+`ÉQUIPE`, donc **invisible des testeurs**.
 
-## 3. Les règles (à coller dans `#regles`, puis épingler)
+Le verrouillage est fait : `@everyone` ne voit que `ACCUEIL`, `Testeur` ouvre `ALPHA` et
+`VOCAL`, `Équipe` voit tout, et le bot garde l'accès partout (une autorisation explicite pour
+son rôle, sinon il perdrait la vue des salons cachés).
+
+## 3. Les règles
+
+Le règlement épinglé dans `#règles` le 27/10/2026, tel qu'il est écrit sur le serveur. Si le
+salon est recréé, coller **ce** texte (les mentions deviennent des liens de salon) et
+l'épingler. Ce sont les règles du **serveur** : elles ne remplacent pas celles du jeu, qui vivent
+dans `AGENTS.md` §4.
 
 ```text
-Bureau des Planqués — règles du serveur de l'alpha
+📜 Règlement intérieur
 
-1. On parle du jeu, de l'alpha et de ce qu'on y vit. Le reste a sa place ailleurs.
-2. On ridiculise les postures, jamais les personnes : pas de nom réel, pas de capture qui en
-   porte un, pas d'entreprise nommée.
-3. Pas de données personnelles : ni adresse, ni courriel, ni identifiant de compte. Ce que tu
-   écris ici reste ici.
-4. Un bug ou une idée ne se perd pas sur Discord : il va sur le comité, dans le jeu (/comite),
-   qui lui donne un statut et un suivi. Discord en parle, le comité le garde.
-5. Pas de spam, pas de publicité, pas de revente de ce qui se dit ici.
-6. Ce serveur est facultatif : on peut jouer sans, et personne n'y est obligé.
+1 · On est entre testeurs.
+Ce qui se passe ici reste ici : pas de captures ni d'extraits hors du serveur sans l'accord de
+l'équipe.
+
+2 · Un retour utile.
+La version, ce que tu faisais, ce qui s'est passé. Le mur du jeu (#comite) est fait pour ça.
+
+3 · Le jeu, jamais la personne.
+On critique ce qui ne marche pas, pas celui qui le dit. Ce qui t'a perdu, ennuyé ou fait sourire
+compte autant qu'un bug.
+
+4 · Pas de secrets.
+Jamais de mot de passe ni de lien de connexion. Un code de partie se donne dans #parties, et
+nulle part ailleurs.
+
+5 · Une question ?
+Pose-la dans #retours : quelqu'un te répondra.
 ```
 
 ## 4. L'invitation permanente
 
-1. **Paramètres du serveur → Invitations → Créer un lien d'invitation**. Expiration :
-   **Jamais**. Nombre d'utilisations : **illimité**. Le lien ressemble à
-   `https://discord.gg/<code>`.
-2. **La recopier dans `docs/ALPHA-TESTEURS.md`**, section « Le serveur des testeurs » (le
-   message aux testeurs), à la place du gabarit `<https://discord.gg/…>` : tant que le gabarit
-   est là, le message n'est pas prêt à partir.
-3. **La poser dans le jeu**, sans jamais la committer :
-   - **en local** : copier `.env.example` en `.env` (ignoré par git) et renseigner
-     `VITE_DISCORD_INVITE=<invitation>` ;
-   - **en production** : Vercel → projet `planquex` → *Settings* → *Environment Variables* →
-     `VITE_DISCORD_INVITE`, pour **Production** (et **Preview** si l'on veut la voir dans les
-     aperçus de PR), puis **redéployer** : Vite fige la valeur au build, un simple
-     redéploiement sans build ne la change pas.
-4. Vérifier : `npm run build` **sans** `.env` doit passer (aucune invitation = aucun lien), et
-   avec l'invitation, **Réglages** et le pied du **comité** doivent l'afficher en nouvel
-   onglet.
+L'invitation existe depuis le **27/10/2026, 15:12 UTC**, sur `#bienvenue` :
 
-L'invitation n'est **pas un secret** — c'est une adresse publique. Le **webhook** de l'étape
-suivante, lui, en est un.
+**`https://discord.gg/NvfrzCeJee`** — expiration **jamais**, utilisations **illimitées**.
 
-## 5. GitHub → `#depot`
+Elle est donc **publique** (ce n'est pas un secret) et vit à trois endroits, qui doivent dire la
+même chose :
 
-1. Dans `#depot` : **Modifier le salon → Intégrations → Webhooks → Nouveau webhook → Copier
-   l'URL du webhook**. L'URL ressemble à
-   `https://discord.com/api/webhooks/<id>/<jeton>`.
-2. Dans GitHub, dépôt `bureau-des-planques/planquex` (`git remote -v` fait foi ; l'ancienne
-   adresse `Chapax/planquex` redirige) : **Settings → Webhooks → Add webhook**.
-   - **Payload URL** : l'URL du webhook Discord, **suivie de `/github`** — c'est ce suffixe qui
-     fait traduire le format GitHub par Discord. Sans lui, Discord répond `400`.
-   - **Content type** : `application/json`.
-   - **SSL verification** : activée.
-   - **Which events** : *Let me select individual events*, puis cocher **Issues**, **Pull
-     requests** et **Check runs** (les CI rouges, qu'une Actions rapporte en *check runs*).
-     Ne pas envoyer `push` : chaque push ferait un message de plus dans un salon qui doit
-     rester lisible.
-   - **Si aucune CI n'apparaît** à l'étape 7 : Discord ne traduit pas tous les événements
-     GitHub. Revenir ici, cocher **Workflow runs** en plus (ou à la place de *Check runs*),
-     puis rejouer le test. C'est le §7 qui tranche, pas ce document : une liste d'événements
-     qu'on n'a pas vue arriver n'est pas une procédure, c'est une intention.
-3. Discord traduit ces événements en messages ; **le webhook GitHub d'un dépôt privé ne
-   publie rien de plus que ce que le dépôt porte déjà** (titres, numéros, résultats de CI).
+1. **`docs/ALPHA-TESTEURS.md`**, section « Le serveur des testeurs » — le message que reçoivent
+   les testeurs. C'est fait.
+2. **Vercel**, variable `VITE_DISCORD_INVITE`, pour **Production** et **Preview** — posée le
+   27/10/2026, puis redéployée. C'est fait ; le lien est visible en production dans **Réglages**
+   (« Le serveur des testeurs ») et au pied du **comité**.
+3. **En local** seulement si l'on veut voir le lien : copier `.env.example` en `.env` (ignoré par
+   git) et y mettre `VITE_DISCORD_INVITE=<invitation>`. Sans `.env`, le build est l'état par
+   défaut : **aucun lien**, et c'est ce que la CI construit.
 
-## 6. Vercel → `#deploiements`
+**Recréer l'invitation** (si elle est supprimée, ou pour un serveur neuf) : **clic droit sur
+`#bienvenue` → Modifier le lien → Expiration : Jamais → Utilisations : illimitées**. Puis
+remplacer la valeur aux trois endroits ci-dessus et **redéployer** : Vite fige la variable au
+build, un redéploiement sans build ne la change pas.
 
-1. Dans `#deploiements` : créer un webhook comme à l'étape 5, et copier son URL (sans suffixe
-   cette fois).
-2. Vercel → projet `planquex` → **Integrations → Discord → Add Integration** : autoriser,
-   choisir le serveur, le salon `#deploiements`, puis les événements de **déploiement**
-   (production et aperçus de PR).
-3. Rien à écrire : l'intégration est entretenue par Vercel, et le dépôt n'en garde aucune
-   trace — c'est voulu (aucun secret dans git).
+Vérifier : `npm run build` **sans** `.env` doit passer (aucune invitation = aucun lien) ; avec
+l'invitation, Réglages et le pied du comité l'affichent en nouvel onglet. Les deux emplacements
+sont couverts par `src/components/InvitationTesteurs.test.tsx`.
+
+Le **webhook** de l'étape suivante, lui, est un **secret**.
+
+## 5. GitHub → `#logs-github`
+
+Le webhook existe et **fonctionne** (vérifié le 27/10/2026 : dix messages GitHub reçus entre
+15:57 et 16:35).
+
+| Réglage | Valeur constatée le 27/10/2026 |
+|---|---|
+| Dépôt | `bureau-des-planques/planquex` (`git remote -v` fait foi) |
+| Payload URL | l'URL du webhook de `#logs-github`, **suivie de `/github`** |
+| Content type | `application/json` |
+| Événements | `issues`, `pull_request`, `push`, `release`, `workflow_run` |
+| Actif | oui |
+
+**Le suffixe `/github` n'est pas décoratif** : c'est lui qui fait traduire le format GitHub par
+Discord. Sans lui, Discord répond `400`.
+
+**Rejouer le réglage** : `#logs-github` → **Modifier le salon → Intégrations → Webhooks →
+Nouveau webhook → Copier l'URL** ; puis GitHub → dépôt → **Settings → Webhooks → Add webhook**
+avec cette URL et ces événements. Si l'URL change, mettre à jour le webhook GitHub, pas le
+contraire.
+
+Deux écarts avec le premier jet de cette procédure, mesurés et **assumés** : le salon s'appelle
+`#logs-github` (pas `#depot`), et `push` et `release` sont **aussi** envoyés (un message par
+push et par tag, en plus des issues, PR et CI). Le salon est dans la catégorie `ÉQUIPE` : ces
+messages ne sont **pas** visibles des testeurs. Si le bruit gêne un jour, retirer `push` dans
+GitHub — c'est le seul réglage à toucher.
+
+## 6. Vercel → `#annonces`
+
+> **État au 27/10/2026 : pas encore posé.** C'est le seul geste de #317 qui reste à faire, et il
+> se fait **dans le tableau de bord de Vercel** : `vercel integration discover discord` répond
+> « No marketplace products matching "discord" found », cette intégration native n'est pas
+> installable par la CLI. Tant qu'elle n'est pas posée, un déploiement n'annonce rien.
+
+1. Vercel → équipe `chapaxs-projects` → projet `planquex` → **Integrations → Discord → Add
+   Integration** : autoriser, choisir le serveur `Planquex`, le salon **`#annonces`**, puis les
+   événements de **déploiement** (production et aperçus de PR).
+2. Rien à écrire : l'intégration est entretenue par Vercel, et le dépôt n'en garde aucune trace
+   — c'est voulu (aucun secret dans git).
+3. Vérifier au §7 : le déploiement suivant doit apparaître dans `#annonces`. C'est ce message,
+   et pas le réglage, qui dit que l'étape est faite.
 
 ## 7. Vérifier que ça arrive vraiment
 
-La procédure n'est pas « faite » parce qu'elle est écrite : elle est faite quand **un
-événement réel** arrive dans le bon salon.
+La procédure n'est pas « faite » parce qu'elle est écrite : elle est faite quand **un événement
+réel** arrive dans le bon salon. **État mesuré le 27/10/2026 :**
 
-| Geste | Ce qui doit apparaître |
-|---|---|
-| Ouvrir une issue de test (`gh issue create`), puis la fermer | un message dans `#depot` |
-| Pousser une pull request dont la CI échoue (ou la faire échouer exprès) | un message de CI rouge dans `#depot` |
-| Fusionner sur `main`, attendre le déploiement de production | un message dans `#deploiements` |
-| Ouvrir l'invitation dans une fenêtre de navigation privée | le serveur est rejoignable, et l'invitation n'expire pas |
+| Geste | Ce qui doit apparaître | État |
+|---|---|---|
+| Ouvrir une issue, pousser une PR, faire échouer une CI | un message dans `#logs-github` | ✅ vérifié — dix messages GitHub entre 15:57 et 16:35 |
+| Coller un post-it sur le mur | une annonce dans `#comite` (§10) | ✅ vérifié — quatre messages du webhook du mur |
+| Fusionner sur `main`, attendre le déploiement | un message dans `#annonces` | ⛔ **non vérifié** — l'intégration Vercel n'est pas posée (§6) |
+| Ouvrir l'invitation en navigation privée | le serveur est rejoignable, l'invitation n'expire pas | ✅ vérifié — l'API Discord résout `NvfrzCeJee` sans expiration ; il reste à l'ouvrir une fois dans un navigateur sans compte |
 
-Puis supprimer l'issue de test et ses messages : un salon qui garde la preuve d'un test se lit
+Deux restes de tests sont encore visibles dans `#comite` (messages « Captain Hook » du 27/10) :
+les supprimer une fois la vérification terminée — un salon qui garde la preuve d'un test se lit
 comme un vrai événement.
 
 ## 8. Ce que cette procédure ne fait pas
@@ -185,8 +249,15 @@ delete from vault.secrets where name = 'discord_webhook_comite';
 
 ### 10.3 Appliquer la migration
 
-Comme les autres : coller **tout** `supabase/migrations/0013_discord_comite.sql` dans *SQL
-Editor* → *Run* (ou `supabase db push`), puis `supabase migration repair --status applied 0013`.
+Le geste est celui du **poste de pilotage**, pas du SQL Editor : `npm run admin`, puis
+l'onglet **Migrations** applique `0013_discord_comite.sql` (route
+`POST /api/migrations/<fichier>/appliquer`) — une migration à la fois, dans sa transaction, avec
+l'empreinte `sha256` inscrite dans le registre `admin.migrations` (D-091, `tools/admin/`). Une
+empreinte qui change est signalée et **non** rejouée.
+
+C'est ce qui a été fait le **27/10/2026** : `0013` est appliquée en production, empreinte
+`d3a42bb512fd2ffb…`. `supabase db push` et `supabase migration repair` ne sont **pas** les gestes
+de ce projet.
 
 Ce qu'elle fait, dans l'ordre : installe `pg_cron` et `pg_net` **si la base les propose**
 (mesuré installables le 27/10/2026), crée la table, ferme la table aux clients, pose les deux
