@@ -59,15 +59,13 @@ describe('phraseDePortee — la phrase de portée de la barre (#320, #324)', () 
       phraseDePortee({ aMoi: false, poste: planque([pressionSimple]), dejaPortee: false, enPortee: [] })
     ).toBeUndefined();
     // Le contrôle mord : le même état à mon tour parle — sans `aMoi`, la ligne ne dirait rien.
-    expect(
-      phraseDePortee({ aMoi: true, poste: planque([pressionSimple]), dejaPortee: false, enPortee: [] })
-    ).toBe('Hors de portée du café : Relecture (Management).');
+    expect(phraseDePortee({ aMoi: true, poste: planque([pressionSimple]), dejaPortee: false, enPortee: [] })).toBe(
+      'Hors de portée du café : Relecture (Management).'
+    );
   });
 
   it('se tait sans Poste, sur une Action au Poste, ou sur un Planqué sans Pression', () => {
-    expect(
-      phraseDePortee({ aMoi: true, poste: undefined, dejaPortee: false, enPortee: [] })
-    ).toBeUndefined();
+    expect(phraseDePortee({ aMoi: true, poste: undefined, dejaPortee: false, enPortee: [] })).toBeUndefined();
     expect(phraseDePortee({ aMoi: true, poste: action, dejaPortee: false, enPortee: [] })).toBeUndefined();
     expect(phraseDePortee({ aMoi: true, poste: planque([]), dejaPortee: true, enPortee: [] })).toBeUndefined();
   });
@@ -96,9 +94,7 @@ describe('phraseDePortee — la phrase de portée de la barre (#320, #324)', () 
     const poste = planque([pressionSimple, pressionChere]);
     // Toutes les Pressions seraient « hors de portée » (le moteur rend une liste vide quand le
     // tour est fini) : la phrase dit la Pression, pas un manque de café.
-    expect(phraseDePortee({ aMoi: true, poste, dejaPortee: true, enPortee: [] })).toBe(
-      'Pression déjà portée ce tour.'
-    );
+    expect(phraseDePortee({ aMoi: true, poste, dejaPortee: true, enPortee: [] })).toBe('Pression déjà portée ce tour.');
     // Et elle le dit aussi quand le café couvrirait tout.
     expect(phraseDePortee({ aMoi: true, poste, dejaPortee: true, enPortee: poste.attacks })).toBe(
       'Pression déjà portée ce tour.'

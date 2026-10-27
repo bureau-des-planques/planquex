@@ -72,7 +72,8 @@ function modeleDuHarnais(): ModeleBadge {
 function ecartsDuBadge(modele: ModeleBadge, puce: Element, { nomAffiche }: { nomAffiche: boolean }): string[] {
   const ecarts: string[] = [];
   const attendue = `${modele.racine} ${modele.modificateur}${classeDuStatut(modele, puce)}`;
-  if (puce.tagName.toLowerCase() !== 'span') ecarts.push(`la puce est un <${puce.tagName.toLowerCase()}>, pas un <span>`);
+  if (puce.tagName.toLowerCase() !== 'span')
+    ecarts.push(`la puce est un <${puce.tagName.toLowerCase()}>, pas un <span>`);
   if (puce.className !== attendue) ecarts.push(`classe « ${puce.className} » au lieu de « ${attendue} »`);
   const [icone, texte, ...reste] = [...puce.children];
   if (!icone || icone.tagName.toLowerCase() !== 'svg') ecarts.push("la première enfant n'est pas le <svg> de l'icône");
@@ -123,9 +124,10 @@ describe('StatusBadge — le pire cas du harnais de capture vient du composant (
     expect(ecartsDuBadge(modele, puce, { nomAffiche: true })).toEqual([]);
 
     // La taille de l'icône (le 12 px que le harnais recopie).
-    expect(
-      ecartsDuBadge({ ...modele, icone: { largeur: 14, hauteur: 14 } }, puce, { nomAffiche: true })
-    ).toEqual(['icône de 12 px au lieu de 14', 'icône de 12 px de haut au lieu de 14']);
+    expect(ecartsDuBadge({ ...modele, icone: { largeur: 14, hauteur: 14 } }, puce, { nomAffiche: true })).toEqual([
+      'icône de 12 px au lieu de 14',
+      'icône de 12 px de haut au lieu de 14'
+    ]);
     // La classe de la puce, et celle du libellé.
     expect(ecartsDuBadge({ ...modele, racine: 'condition' }, puce, { nomAffiche: true })[0]).toContain('classe');
     expect(ecartsDuBadge({ ...modele, nom: 'chip__label' }, puce, { nomAffiche: true })[0]).toContain('libellé');
@@ -142,7 +144,7 @@ describe('StatusBadge — le pire cas du harnais de capture vient du composant (
     const source = readFileSync('scripts/capturer.mjs', 'utf8');
     expect(source).toContain('page.evaluate(poserLePireCas, [detaille, MODELE_BADGE])');
     // Le HTML n'est plus écrit à la main : ni la puce, ni le 12 px de l'icône.
-    expect(source).not.toContain("puce.className = `status-chip status-chip--${classe}`");
+    expect(source).not.toContain('puce.className = `status-chip status-chip--${classe}`');
     expect(source).not.toContain("icone.setAttribute('width', '12')");
     expect(source).toContain('modele.icone.largeur');
   });

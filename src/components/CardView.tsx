@@ -61,17 +61,7 @@ const HOLO_RARITIES: Rarity[] = ['1S', '2S', '3S', 'COU'];
  */
 const APLAT_FACTION = 'color-mix(in srgb, var(--accent) 26%, var(--bg-deep))';
 
-export function CardView({
-  card,
-  onClick,
-  compact,
-  selected,
-  calme,
-  stress,
-  seuil,
-  plateau,
-  annotations
-}: Props) {
+export function CardView({ card, onClick, compact, selected, calme, stress, seuil, plateau, annotations }: Props) {
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
@@ -246,7 +236,7 @@ export function CardView({
     'data-rarity': card.rarity,
     style,
     onClick,
-    // Figée : le plateau ne bouge pas au passage du pointeur (D-093). Le survol y ouvre
+    // Immobile : le plateau ne bouge pas au passage du pointeur (D-093). Le survol y ouvre
     // l'inspecteur ; une carte qui se soulève en même temps brouille ce geste. `calme` est ce
     // silence, et c'est le seul drapeau qui le porte (#285, #324).
     whileHover: immobile ? undefined : { y: -4, scale: 1.01 },
