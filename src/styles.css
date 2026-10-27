@@ -2458,6 +2458,39 @@ h2 {
   min-width: 0;
 }
 
+/* **`détaillé` ne fait pas grossir le plateau** (#292, SPEC-COMBAT-UI T9). Les annotations qu'il
+   remet — le nom des Conditions, les types du Deck — sont plus larges que leurs icônes ; empilées
+   en colonne, trois Conditions et trois types rallongeaient chaque fiche de 50 px, et la barre
+   d'action passait sous la navigation (mesuré à 420 × 900 : défilement de 34 px, barre à 846 px
+   pour une limite de 830). Elles se rangent donc **en ligne, avec retour**, dans une fiche plus
+   large : elle garde la hauteur qu'elle a en `sobre`, et rien de ce qui décide (cafés,
+   Conditions) ne disparaît. */
+.battle--detaille .board__fiche {
+  /* Deux noms de Conditions côte à côte (≈ 190 px) : à 11 rem, chacun prenait sa rangée. */
+  gap: 0.15rem;
+  max-width: 15rem;
+}
+
+.battle--detaille .poste__info {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.3rem;
+}
+
+/* Le nom d'une Condition garde la taille du plancher (`--fs-xs`) ; c'est la pastille qui se serre,
+   pour que deux rangées de Conditions ne dépassent pas la hauteur de la carte du Poste. */
+.battle--detaille .poste__info .status-chip {
+  padding-block: 0.04rem;
+}
+
+.battle--detaille .poste__machine {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
 /* Les **types de café du Deck**, annotation du mode `détaillé` (#189) : en `sobre`, la
    Machine ne montre que sa pastille, et la phrase reste lue par le `sr-only` de `MachinePips`. */
 .poste__machine-types {
