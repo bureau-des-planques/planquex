@@ -99,7 +99,7 @@
 | D-091 | 25/10/2026 | Le poste de pilotage local de la base . Trois… |
 | D-092 | 25/10/2026 | L'administration du mur range et retire n'importe quel post-it ,… |
 | D-093 | 25/10/2026 | L'écran de combat devient une table (recherche : docs/SPEC-COMBAT-UI.md ;… |
-| D-094 | 25/10/2026 | La composition finale de l'écran de combat, et la garde… |
+| D-094 | 25/10/2026 | ⚠ Note de lecture du 27/10/2026 — voir #322 :… |
 | D-095 | 25/10/2026 | Les noms de l'Atelier suivent le métier de l'atelier d'optronique,… |
 | D-096 | 25/10/2026 | Dix ids alignés sur leur nom, et deux noms corrigés… |
 | D-097 | 26/10/2026 | Le panneau devient le comité : deux pages du suivi,… |

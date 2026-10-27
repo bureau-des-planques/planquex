@@ -2095,7 +2095,8 @@ h2 {
      2,4 px de cadre — pour ne pas dépasser la garde de hauteur. Rien n'y est retiré.
      #237 : 0,8 px entre les lignes et 1,6 px de cadre, pour que la **marge** de 20 px de
      D-094 (3) tienne aussi quand le pas-à-pas est ouvert (mesuré : 15 px). Aucune information
-     retirée : les trois lignes, leurs boutons de 36 px et la ligne de journal sont intacts. */
+     retirée : les trois lignes, leurs boutons (36 px à l'époque de #237, **44 px depuis #320**)
+     et la ligne de journal sont intacts. */
   gap: 0;
   /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
      lieu de recouvrir le plateau. */
