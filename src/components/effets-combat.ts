@@ -55,6 +55,10 @@ export const DUREE_CONDITION_MS = 240;
  * 550 ms (direction §8.4), et c'est alors que la Condition se pose. Sans ce délai, le liseré
  * s'allumerait autour d'une carte que le coup n'a pas encore atteinte. 550 + 240 = 790 ms : le
  * nœud reste sous la borne de 800 ms (`DUREE_MAX_MS`).
+ *
+ * C'est **la** constante du délai (#324) : `styles.css` garde le 550 ms en
+ * `animation-delay` et ne peut pas lire un module TS, donc `effets-combat.test.ts` confronte
+ * la feuille à cette constante et fait tomber l'écart.
  */
 export const DELAI_IMPACT_MS = 550;
 export const DUREE_CONDITION_APRES_COUP_MS = DELAI_IMPACT_MS + DUREE_CONDITION_MS;
@@ -64,8 +68,6 @@ export type NatureEffet = 'stress' | 'craquage' | 'pioche' | 'intervention' | 'a
 export interface EffetCombat {
   readonly id: number;
   readonly nature: NatureEffet;
-  /** La durée que le composant applique : toujours `<= DUREE_MAX_MS`. */
-  readonly duree: number;
   /** Faux sous « Mouvement réduit » : le nœud reste, sans animation. */
   readonly anime: boolean;
   /** Le camp touché (Stress, craquage, pioche, Intervention). */
@@ -82,7 +84,11 @@ export interface EffetCombat {
   readonly auPoste?: boolean;
   /** L'attaque : la carte visée. Le trait relie l'attaquant à elle (nature `attaque`). */
   readonly uidCible?: string;
-  /** Une Condition posée par la Pression de ce même pas : l'arc attend l'impact (`DELAI_IMPACT_MS`). */
+  /**
+   * Une Condition posée par la Pression de ce même pas : l'arc attend l'impact
+   * (`DELAI_IMPACT_MS`). **C'est le seul canal** du fait : la durée de vie du nœud s'en
+   * **dérive** (`dureeDeLEffet`), elle n'est plus un second champ à tenir en accord (#324).
+   */
   readonly apresCoup?: boolean;
   /** La Pression jouée, son rang dans la carte : la chorégraphie en dépend (D-098). */
   readonly attackIndex?: number;
@@ -111,6 +117,17 @@ export function dureeEffet(nature: NatureEffet): number {
     case 'condition':
       return DUREE_CONDITION_MS;
   }
+}
+
+/**
+ * **La durée de vie d'un effet**, dérivée du seul fait qu'il porte : sa nature, et pour une
+ * Condition son `apresCoup` (l'arc attend l'impact, puis pulse). Elle n'est **pas** stockée
+ * sur l'effet : une durée recopiée à côté du fait qui la décide serait un second canal, et
+ * deux canaux finissent par se contredire (#324).
+ */
+export function dureeDeLEffet(effet: Pick<EffetCombat, 'nature' | 'apresCoup'>): number {
+  if (effet.nature === 'condition' && effet.apresCoup === true) return DUREE_CONDITION_APRES_COUP_MS;
+  return dureeEffet(effet.nature);
 }
 
 /**
@@ -157,13 +174,8 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
   const effets: EffetCombat[] = [];
   let prochainId = premierId;
 
-  const ajouter = (effet: Omit<EffetCombat, 'id' | 'duree' | 'anime'> & { duree?: number }) => {
-    effets.push({
-      id: prochainId,
-      duree: effet.duree ?? dureeEffet(effet.nature),
-      anime: true,
-      ...effet
-    });
+  const ajouter = (effet: Omit<EffetCombat, 'id' | 'anime'>) => {
+    effets.push({ id: prochainId, anime: true, ...effet });
     prochainId += 1;
   };
 
@@ -239,8 +251,7 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
           camp,
           uid: carte.uid,
           carte,
-          auPoste: avant.players[camp].active?.uid === carte.uid,
-          duree: DUREE_TRAINEE_MS
+          auPoste: avant.players[camp].active?.uid === carte.uid
         });
       }
     }
@@ -267,13 +278,8 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
       if (nouvelles.length > 0) {
         // Posée par la Pression de ce pas : l'arc suit l'impact. Posée par le Contrôle, il joue tout de suite.
         const apresCoup = effets.some((effet) => effet.nature === 'attaque');
-        ajouter({
-          nature: 'condition',
-          camp,
-          uid: carte.uid,
-          apresCoup,
-          duree: apresCoup ? DUREE_CONDITION_APRES_COUP_MS : DUREE_CONDITION_MS
-        });
+        // La durée n'est pas portée : `dureeDeLEffet` la dérive de `apresCoup` (#324).
+        ajouter({ nature: 'condition', camp, uid: carte.uid, apresCoup });
       }
     }
   }
@@ -322,7 +328,7 @@ export function useEffetsDeCombat(state: BattleState, sansMouvement: boolean): E
     for (const effet of nouveaux) {
       // `Math.min` est la seconde ceinture : même une constante fausse ne peut pas laisser un
       // chiffre plus de 800 ms sur le nom d'une carte.
-      const duree = Math.min(effet.duree, DUREE_MAX_MS);
+      const duree = Math.min(dureeDeLEffet(effet), DUREE_MAX_MS);
       minuteries.current.push(
         window.setTimeout(() => {
           setEffets((courants) => courants.filter((courant) => courant.id !== effet.id));
