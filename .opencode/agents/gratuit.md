@@ -1,6 +1,10 @@
 ---
+# DÉSACTIVÉ le 27/10/2026 : passé en `subagent` pour qu'il ne soit plus proposé dans le
+# sélecteur d'agents principal, tant que la mesure des quotas (#221) n'est pas finie. Son
+# modèle `openrouter/cohere/north-mini-code:free` n'est plus au catalogue. Pour le rouvrir :
+# `mode: primary` et un modèle du jour (`opencode models`) — ou aucun, le routeur choisit.
 description: Développe Bureau des Planqués avec un modèle gratuit. À utiliser pour discuter, modifier, tester et relire le code.
-mode: primary
+mode: subagent
 model: openrouter/cohere/north-mini-code:free
 color: "#67e8a5"
 permissions:
