@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Le comité, dans le jeu
+    url: https://planquex.4k7.org/comite
+    about: Pour un testeur de l'alpha — un post-it IP (idée) ou OUF (défaut), suivi sur le mur.
+  - name: Guide de contribution
+    url: https://github.com/bureau-des-planques/planquex/blob/main/CONTRIBUTING.md
+    about: Cloner, poser une issue, la résoudre, proposer une PR — et les skills à utiliser.
