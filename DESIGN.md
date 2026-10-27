@@ -57,7 +57,7 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--warn` | `#e0a33e` | avertissement (deck de test, fin perdue) |
 | `--danger` | `#e06a4e` | erreur |
 
-### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196 ; pastille de café, étiquettes et plancher de `--fs-2xs` rejoués le 27/10/2026, #290)
+### 1.5 Contraste (Vérifié le 20/10/2026 ; pastilles de Condition et surfaces de scène ajoutées le 25/10/2026, D-093, #195 ; écart du centre éclairé clos le 25/10/2026, #198 ; plancher typographique vérifié à l'écran le 25/10/2026, #196 ; pastille de café, étiquettes et plancher de `--fs-2xs` rejoués le 27/10/2026, #290 ; paires de la direction de scène recalculées le 27/10/2026, #295)
 
 Ratios WCAG calculés sur les paires réelles du thème (formule de luminance relative
 WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
@@ -95,6 +95,21 @@ WCAG 2.1). Seuil : **AA = 4.5:1** pour le texte courant.
 | `--accent` (pastilles de café) sur feutre `--scene-felt` | 5.12 | AA |
 | `--gold` sur feutre `--scene-felt` | 8.74 | AAA |
 | `--scene-danger` sur feutre (filet d'état, non-texte) | 4.36 | **filet seulement** : 3:1 ✓, texte ✗ |
+| **Les paires de la direction (T12, #295, 27/10/2026)** — recalculées sur les jetons de la feuille, pas recopiées de `docs/DIRECTION-SCENE-COMBAT.md` §7 | | |
+| **Faute AA n° 1 de la vidéo** : crème `#efe0c2` sur parchemin `--scene-parch` | **2.41** | **✗ interdit** — inversée : encre `--scene-ink-parch` (5.43, ligne plus haut). Le jeton `--scene-chalk` sur le même parchemin tombe aussi à **2.55** ✗ : il ne se pose **que** sur l'encre (13.87) |
+| **Faute AA n° 2 de la vidéo** : blanc `#fff` sur vert `--scene-go` | **2.14** | **✗ interdit** — inversée : encre `#0b1220` (8.75, ligne plus haut). Le blanc `#f4feff` y fait 2.09 |
+| Encre `#3a2a18` (celle de la direction) sur parchemin `--scene-parch` | **4.38** | **✗** — la direction annonçait 5,95 : c'est faux, d'où `--scene-ink-parch` (#190) |
+| Blanc `#f4feff` sur la pilule cyan `#2d556a` (bannière de la direction) | 7.81 | AAA — la direction annonçait 8,02 ; la bannière n'est pas livrée |
+| `--scene-neon` sur feutre `--scene-felt` / sur le centre éclairé `--scene-felt-lit` / sur carte `--scene-card` | 9.47 / 5.19 / 9.22 | AAA / AA / AAA — même en texte, mais le néon est un filet |
+| `--scene-neon-core` sur `--scene-felt` / sur `--scene-felt-lit` | 13.24 / 7.26 | AAA |
+| `--scene-gold-hot` (le chiffre de Stress) sur `--scene-felt` / sur `--scene-felt-lit` | 12.54 / 6.87 | AAA |
+| Or `#d8b96a` sur feutre / or profond `#8a6a34` sur feutre | 8.67 / 3.28 | AAA / 3:1 — l'or profond n'est **ni** texte **ni** livré (la direction le réservait aux filets) |
+| Parchemin `--scene-parch` sur feutre (contour de la pile) | 5.23 | AA non-texte ✓ |
+| `--scene-go` sur feutre / sur le centre éclairé | 7.68 / 4.21 | AAA / AA non-texte ✓ |
+| `--scene-danger` sur le vignetté `--scene-felt-deep` / **sur le centre éclairé `--scene-felt-lit`** | 4.90 / **2.39** | 3:1 ✓ / **✗ au pic** : le filet danger du camp de la Direction est une ombre intérieure de 2 px sur le **bord gauche** de la zone ; la table y mélange 80 % de feutre (`#182938`, calcul de la géométrie du dégradé, **non mesuré** sur la page) → **3.94** ✓ |
+| Filet `--scene-danger` de « Fin du tour » (tour adverse) contre la barre d'action (dégradé de `--bg-raised` à `--bg-sunken`) | 4.52 / 4.80 | 3:1 non-texte ✓ ; contre son **propre remplissage** `--scene-steel-deep` il ne vaut que **2.02** : c'est donc le **libellé** (blanc sur `--scene-steel-deep` : **7.61**, AAA) qui porte l'état, le filet ne fait que le souligner |
+| Pilule danger `#5f1a16` de la direction sur feutre | 1.29 | **✗ non livrée** : « Fin du tour » à la Direction prend `--scene-steel-deep` + filet danger (ligne précédente). Si la pilule revient, le filet est **obligé** |
+| `--text` `#e8eef8` (l'encre de la scène) vs l'encre `#eef4fb` de la direction, sur feutre | 14.11 / 14.85 | AAA — la scène ne crée **pas** d'encre : elle prend `--text` |
 | **Pastille de café** (#290) : la couleur de faction contre son **liseré sombre** `--bg-deep` — les dix `FACTION_META.color` | **3,27 à 8,09** | 3:1 non-texte ✓ — le pire est la Direction (`#5b6472`, 3,27) ; le meilleur Amélioration continue (8,09) |
 | Pastille de café : anneau `--text` contre le liseré `--bg-deep` | 16.79 | AAA |
 | Pastille de café : anneau `--text` sur les trois feutres (`--scene-felt-deep` 15.83, `--scene-felt` 14.11, `--scene-felt-lit` 7.73) | **7,73 à 15,83** | 3:1 non-texte ✓ — c'est l'anneau, non la teinte, qui fait exister la pastille sur la table |
@@ -251,8 +266,8 @@ doivent rester au-dessus de la navigation (limite **830 px**, haut de la barre d
 combat : **aucun défilement** (D-103) ; pas-à-pas **terminé**, le bas de la **main** est à
 **679 px** et celui de la **barre d'action** à **758–761 px** (69–72 px de marge) ; pas-à-pas
 **ouvert** (`1 / 5`, il ajoute sa bande), la main finit à **728 px** et la barre à **808–810 px**
-(**20–22 px** de marge). Un tour chargé (relève, choix) fait défiler la barre **en elle-même**
-(`max-height: 42dvh`) plutôt que de recouvrir la table.
+(**20–22 px** de marge). Un tour chargé (relève,
+choix) fait défiler la barre **en elle-même** (`max-height: 42dvh`) plutôt que de recouvrir la table.
 
 Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 88 px** (`--poste-w:
 5.5rem`), **Banc 56 px** (`--banc-w: 3.5rem`), **carte de main 64 px** (`--carte-w: 4rem`) dans
@@ -391,6 +406,16 @@ d'un panneau dans la page. Les jetons sont déclarés **une fois**, sur le séle
 
 Les jetons sont posés sur `.battle` (`src/styles.css`, bloc « La scène de combat ») : ils
 n'existent pas hors de l'écran de combat, et `:root` n'en change aucun.
+
+**Gardé par un test (T12, #295, 27/10/2026)** : `src/styles-scene.test.ts` lit la feuille et échoue si
+(1) l'un des huit jetons de `SPEC-COMBAT-UI` §6.9 (`--scene-felt`, `-felt-lit`, `-card`, `-neon` et
+`-neon-core`, `-go`, `-danger`, `-gold-hot`, `-parch`) n'est pas déclaré **une fois**, ou si un
+`--scene-*` est déclaré ailleurs que sous `.battle` (`:root` compris) ; (2) un ratio de la direction
+(les deux fautes AA et leurs inversions comprises) calculé sur les jetons n'est plus écrit en §1.5 ;
+(3) une surface du combat porte une ombre **extérieure, floue et colorée** — un halo. Le néon est un
+**état** : le filet en ombre intérieure du camp qui a la main, l'anneau de focus, le contour d'une
+carte jouable. Une carte qui n'est ni active, ni désignée, ni en train de subir n'a aucun halo. Chaque
+garde a son « le contrôle mord » dans le même fichier.
 
 **Quatre règles, et elles tiennent tout l'écran :**
 
