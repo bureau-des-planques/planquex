@@ -158,7 +158,10 @@ describe('Battle — écran de combat', () => {
     // La Direction est le premier camp du plateau, moi le second : je regarde le mien.
     const moi = document.querySelectorAll('.board__side')[1];
     if (!(moi instanceof HTMLElement)) throw new Error('mon camp n’est pas sur le plateau');
-    const cartes = within(moi).getAllByRole('group', { name: entrant.name });
+    // Une carte du plateau est un **bouton** : elle porte le geste (l'inspecteur s'ouvre au
+    // clic) et son nom accessible est celui du Planqué (#286, T3). `group` laissait croire à
+    // un groupe inerte tout en la rendant focusable — le rôle ne disait pas qu'on agit dessus.
+    const cartes = within(moi).getAllByRole('button', { name: entrant.name });
     expect(cartes.length).toBeGreaterThanOrEqual(2);
     expect(cartes.some((carte) => carte.closest('.board__poste'))).toBe(true);
     expect(cartes.some((carte) => carte.closest('.bench'))).toBe(true);
@@ -1268,5 +1271,69 @@ describe('Battle — les effets de la scène et leur repli (#192)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Fin du tour' }));
 
     expect(container.querySelector('.pile--deck.is-piochante')).not.toBeNull();
+  });
+});
+
+/**
+ * **T3 — le plateau en cartes, sans perdre le pas-à-pas** (#286, `SPEC-COMBAT-UI` §8 T3).
+ *
+ * L'« avant » de la vague 1 montre déjà des cartes au Poste et au Banc (`docs/preuves/
+ * combat-ui-2026-10-27/avant/420-combat.png`, D-093) : ce que T3 ajoute, c'est le **mode
+ * `calme`** (`CardView`, #285) et le **nom accessible** qui rend une carte trouvable comme
+ * un bouton. Les trois assertions du ticket sont ici, et le pas-à-pas n'a pas bougé.
+ */
+describe('Battle — le plateau en cartes, sans perdre le pas-à-pas (T3, #286)', () => {
+  it('ne garde qu’un `title=` dans la page : celui du bandeau de deck de test', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/pages/Battle.tsx'), 'utf8');
+    // Le `title` est le pire des trois supports : il ne s'ouvre ni au clavier ni au doigt. Ce qui
+    // était dit par un `title` est soit écrit, soit lu par le nom accessible.
+    expect(source.match(/title=/g) ?? []).toHaveLength(1);
+  });
+
+  it('rend le Poste et le Banc comme des boutons nommés par la carte', () => {
+    // Une graine où **mon** Poste et **mon** Banc portent le même Secouriste : c'est la carte
+    // du critère du ticket. Deux exemplaires de dix Entrants font un Deck légal.
+    const entrants = ALL_CARDS.filter((card) => isPlanque(card) && isBasic(card) && !card.variantOf);
+    const secouriste = entrants.find((card) => card.name === 'Secouriste');
+    if (!secouriste) throw new Error('le Secouriste a disparu des données');
+    const dix = [secouriste, ...entrants.filter((card) => card.id !== secouriste.id).slice(0, 9)];
+    const deck = dix.flatMap((card) => [card.id, card.id]);
+
+    let etat: BattleState | null = null;
+    for (let seed = 1; seed < 500 && etat === null; seed += 1) {
+      const s = createBattle(deck, deck, seed);
+      const moi = s.players.player;
+      if (moi.active?.cardId === secouriste.id && moi.bench.some((carte) => carte?.cardId === secouriste.id)) etat = s;
+    }
+    if (etat === null) throw new Error('aucune graine ne met le même Secouriste au Poste et au Banc');
+    const partie = partieSauvegardee(etat, null, { playerDeck: deck, aiDeck: deck });
+    if (!partie) throw new Error('partie terminée : rien à rendre');
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const moi = document.querySelectorAll('.board__side')[1];
+    if (!(moi instanceof HTMLElement)) throw new Error('mon camp n’est pas sur le plateau');
+    const boutons = within(moi).getAllByRole('button', { name: /Secouriste/ });
+    expect(boutons.some((bouton) => bouton.closest('.board__poste') !== null)).toBe(true);
+    expect(boutons.some((bouton) => bouton.closest('.bench') !== null)).toBe(true);
+  });
+
+  it('garde les 7 cibles du pas-à-pas, et les cartes du plateau sont calmes et compactes', () => {
+    const cibles = new Set(ETAPES_COMBAT.flatMap((etape) => etape.cibles));
+    // Sept cibles distinctes, et pas une de moins : le pas-à-pas est le seul mode d'emploi de
+    // l'écran, et la refonte du plateau ne l'a pas raccourci.
+    expect([...cibles]).toHaveLength(7);
+
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const cartes = container.querySelectorAll('.poste__carte .card, .bench__carte .card');
+    expect(cartes.length).toBeGreaterThanOrEqual(4);
+    for (const carte of cartes) {
+      // `calme` (#285) : la carte porte le gabarit réduit qu'il impose — et, sur le plateau,
+      // le dépouillement de `card--plateau` — sans aucune micro-animation : une carte de
+      // plateau ne se soulève pas au passage du pointeur.
+      expect(carte).toHaveClass('card--compact');
+      expect(carte).toHaveClass('card--plateau');
+      expect(carte).toHaveClass('card--figee');
+    }
   });
 });

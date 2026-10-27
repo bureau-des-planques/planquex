@@ -78,3 +78,26 @@ T12 (les jetons de scène) y prendront leurs captures d'après.
 Le **ressenti** : la fluidité, le calme des animations, la lisibilité au pouce sur un vrai
 téléphone. Une capture est un instant, à une graine figée ; elle ne juge ni le survol, ni le
 clavier, ni le tactile.
+
+## `apres/` — T3, le plateau en cartes, sans perdre le pas-à-pas (#286)
+
+`apres/420-combat.png` est prise **le 27/10/2026** par la même commande, sur la même graine et
+le même état (pas-à-pas ouvert, à l'arrivée) :
+
+```
+npm run build && npm run capturer   →  exit 0
+combat · combat · {"fenetre":900,"pasAPasOuvert":true,"limite":830,"defilement":0,
+  "mesures":[{"nom":"la main",…,"haut":623,"bas":728},
+             {"nom":"la barre d'action du combat",…,"haut":731,"bas":808},
+             {"nom":"la piste d'Interventions",…,"haut":370,"bas":387}]}
+```
+
+`defilement` reste à **0** : le plateau de T3 ne fait pas défiler l'écran. Chaque camp montre
+son **illustration** (le Psychologue du travail pour la Direction, le Secouriste pour toi), et
+les trois places du Banc gardent leur nom et leur plaque de Seuil.
+
+**Ce que la capture ne montre pas, et qui est le vrai delta de T3** : la carte du plateau passe
+en mode **`calme`** (`CardView`, #285 — gabarit réduit, aucune micro-animation) et devient un
+**bouton** nommé par le Planqué, pour qu'un lecteur d'écran trouve le Poste *et* le Banc de la
+même carte. Le reste des pixels est déjà celui de D-093 : l'« avant » du 27/10 montrait des
+cartes, l'écart est signalé en tête de ce fichier et n'est pas maquillé ici.

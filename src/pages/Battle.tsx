@@ -152,7 +152,7 @@ function CartePlateau({
     >
       <CardView
         card={definition}
-        figee
+        calme
         plateau
         annotations={annotations}
         stress={instance.maxHp - instance.hp}
@@ -557,7 +557,7 @@ function Camp({
           et le journal restent les porteurs de l'information sous mouvement réduit. */}
       {craquage && craquage.auPoste && (
         <div className="craquage__carte" data-uid={craquage.uid} aria-hidden="true">
-          {craquageDefinition && <CardView card={craquageDefinition} figee plateau />}
+          {craquageDefinition && <CardView card={craquageDefinition} calme plateau />}
         </div>
       )}
       {stressHorsCarte.map((effet) => (
@@ -1321,14 +1321,15 @@ export function Battle() {
         </Dialog>
         {/* La **bascule d'infos** (#189) : c'est elle qui possède cette place dans la barre
             d'état, le `⋯` appartient au menu (#191). Le bouton visible est l'équivalent tactile
-            du raccourci (le critère WCAG sur les raccourcis à une touche), `aria-pressed` dit le mode, `aria-keyshortcuts` le geste. */}
+            du raccourci (le critère WCAG sur les raccourcis à une touche), `aria-pressed` dit le mode, `aria-keyshortcuts` le geste. Le
+            mode courant n'est plus dans un `title` (#286, T3) : `aria-pressed` le porte déjà, et
+            un `title` ne s'ouvre ni au clavier ni au doigt. */}
         <button
           type="button"
           className="battle__infos"
           aria-pressed={combatDetaille}
           aria-keyshortcuts="I"
           aria-label="Infos détaillées"
-          title={`Infos détaillées — I (${combatDetaille ? 'détaillé' : 'sobre'})`}
           onClick={basculerCombatDetaille}
         >
           <Info size={18} aria-hidden="true" />
@@ -1548,7 +1549,7 @@ export function Battle() {
                     >
                       {definition && (
                         <div className="hand__visuel" aria-hidden>
-                          <CardView card={definition} figee plateau compact />
+                          <CardView card={definition} calme plateau />
                         </div>
                       )}
                       <button
