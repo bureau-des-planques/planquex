@@ -68,10 +68,20 @@ Les treize autres captures du même passage ne sont pas recopiées : le lot port
 
 ## À quoi elles serviront (T3–T12)
 
-C'est la référence de comparaison de la vague 1 : `apres/420-combat.png` et
-`apres/1280-combat.png` se liront **contre** ces deux images, état pour état (pas-à-pas
-ouvert, même graine). T3 (le plateau en cartes compactes), T10 (le retour d'action) et
-T12 (les jetons de scène) y prendront leurs captures d'après.
+C'est la référence de comparaison de la vague 1 : les captures d'**après** se lisent
+**contre** ces deux images, état pour état (pas-à-pas ouvert, même graine).
+
+- L'**après** existe à 420 px : `apres/420-combat.png`, plus `apres/420-combat-detail.png`, la
+  Pression jouable et le pire cas. Il **n'existe pas** à 1280 : la déclinaison large de D-116 (4)
+  n'a pas encore sa capture d'après, et ce lot ne prétend pas l'avoir faite (revue du 27/10/2026,
+  #323).
+- **`apres/420-combat.png` est identique à `avant/420-combat.png`, au pixel et au sha256.** Ce
+  n'est pas un oubli : le delta de #286 (T3) est **sémantique** — les cartes du plateau étaient
+  déjà là depuis D-093, et le ticket a changé le mode de la `CardView`, le rôle de la carte et
+  retiré trois `title`. Aucun pixel ne devait bouger. La preuve visuelle de la vague est donc
+  ailleurs : `t7-contrastes/` (le café se voit), `barre-320/` (la barre ne passe plus sous la
+  navigation), `apres/420-combat-sobre-pire-cas.png` (plus de défilement) et `t10-stress/` (la
+  planche de frames).
 
 ## Ce que les captures ne prouvent pas
 
