@@ -39,12 +39,14 @@ describe('plan — l’étape en cours', () => {
 
 describe('plan — les critères de sortie d’alpha (D-056)', () => {
   it('sont ceux de la décision, chacun avec sa source', () => {
-    // Les quatre critères de D-056 (a) à (d), et pas un de plus : une liste qui gonfle
-    // repousse indéfiniment le passage à la beta, c'est la raison d'être de la décision.
-    expect(CRITERES_ALPHA).toHaveLength(4);
+    // Les trois critères de D-056 (a) à (c), et pas un de plus : le (d) est sorti de
+    // l'alpha le 27/10/2026 (D-117), et une liste qui gonfle repousse indéfiniment le
+    // passage à la beta — c'est la raison d'être de la décision.
+    expect(CRITERES_ALPHA).toHaveLength(3);
     expect(sansDecision(CRITERES_ALPHA)).toEqual([]);
     for (const critere of CRITERES_ALPHA) {
-      expect(critere.decision).toBe('D-056');
+      // (a) est reformulé par D-117 ; (b) et (c) restent ceux de D-056.
+      expect(['D-056', 'D-117'], critere.texte).toContain(critere.decision);
       expect(critere.texte.trim()).not.toBe('');
     }
   });
