@@ -1,4 +1,4 @@
-# Le comité — ce que les invités remontent, et ce qu'on en fait
+# Le comité — ce que les testeurs remontent, et ce qu'on en fait
 
 > Référence d'exploitation du mur de post-its. Les **décisions** qui l'ont écrit : **D-058** (le
 > mur et ses deux familles), **D-059** (le tri, les statuts) — **amendée par D-088** (l'identité
@@ -13,7 +13,7 @@
 > **Renommée par D-097 (#210)** : l'entrée s'appelle **le comité** (elle était la « Boîte à idées »),
 > son adresse est `/comite`, et `/idees` y redirige ; le fichier du mur est `docs/comite.json`.
 > Le vocabulaire est dans `AGENTS.md` §3 : **le comité** (l'entrée, la bulle), **le mur**
-> (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un invité**.
+> (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un testeur**.
 
 ## 1. Les deux familles, et le gueulage à part
 
@@ -50,9 +50,9 @@ en attente → retenu → en cours → fait
 - **`en cours`** et **`fait`** : le post-it a un **ticket** ; c'est l'état du ticket qui fait foi,
   pas une seconde échelle tenue à la main.
 - **`écarté`** : refusé, **avec sa raison écrite**. Un post-it écarté sans raison est un mur mort :
-  c'est ce qui apprend aux invités ce qui vaut la peine d'être remonté.
+  c'est ce qui apprend aux testeurs ce qui vaut la peine d'être remonté.
 
-Le mur affiche ces statuts, donc les invités voient ceux qui sont **validés**, ceux qui sont **en
+Le mur affiche ces statuts, donc les testeurs voient ceux qui sont **validés**, ceux qui sont **en
 attente**, et où en sont les retenus.
 
 ## 2 bis. Le mur, à l'écran
@@ -348,9 +348,9 @@ fait la différence).
 ### 4.2 Les cinq réglages qui ne se voient pas
 
 1. **Ne pas collecter les adresses e-mail** (Paramètres → Réponses → *Collecter les adresses
-   e-mail* : désactivé). Depuis **D-088**, le compte de l'invité porte déjà son courriel : ce
+   e-mail* : désactivé). Depuis **D-088**, le compte du testeur porte déjà son courriel : ce
    formulaire n'est qu'un palliatif, et redemander l'adresse créerait une seconde liste à tenir.
-2. **Ne pas limiter à une réponse** (le même invité doit pouvoir signaler trois choses en trois fois).
+2. **Ne pas limiter à une réponse** (le même testeur doit pouvoir signaler trois choses en trois fois).
 3. **Ne pas utiliser le champ « Importer un fichier »** : il **oblige** à une connexion Google
    supplémentaire et à un stockage chez le tiers. D'où le champ 8, qui demande un **lien**.
 4. **Aiguillage** : sur la question 2, *Aller à la section en fonction de la réponse* — « Remonter un
@@ -506,7 +506,7 @@ import le croira absent — §3 demande déjà un id *stable*.
    **écarté** avec sa **raison écrite**.
 4. Un **bug** qui casse la boucle passe devant tout le reste : c'est le critère (b) de sortie
    d'alpha (D-056).
-5. Commiter le fichier — le mur des invités change au déploiement suivant.
+5. Commiter le fichier — le mur des testeurs change au déploiement suivant.
 
 Ce tri est un travail **avec l'agent**, pas sur son dos : c'est lui qui tient le fichier et qui
 ouvre les tickets (D-059).

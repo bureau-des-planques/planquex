@@ -77,7 +77,7 @@ describe('le mur du comité est exclu de la visite (#130)', () => {
 
   it('ne perd pas la visite : le drapeau n’est pas écrit par l’exclusion', () => {
     // `surLeMur` ne fait que fermer le dialogue ; `terminer` est le seul écrivain du
-    // drapeau, et il n’écrit que `true`. Un invité qui lit le mur d’abord verra donc la
+    // drapeau, et il n’écrit que `true`. Un testeur qui lit le mur d’abord verra donc la
     // visite en le quittant — et l’exclusion ne peut pas la marquer « vue » par erreur.
     expect(composant.match(/setTutorielVu\((true|false)\)/g)).toEqual(['setTutorielVu(true)']);
   });

@@ -5,7 +5,7 @@ import { MOTS_PAR_MINUTE } from '@/components/journee-etapes';
  * d'intégration (#130), qui couvre le premier lancement ; celui-ci couvre la première
  * partie.
  *
- * Cinq choses qu'un invité ne devine pas en jouant : le **Poste** et le **Banc**, le
+ * Cinq choses qu'un testeur ne devine pas en jouant : le **Poste** et le **Banc**, le
  * **café**, la **Pression**, les **Conditions**, la **fin**. Chaque étape **désigne**
  * l'élément dont elle parle (`cibles`) au lieu de le décrire de loin : la valeur est le
  * `data-pas-a-pas` que `Battle.tsx` pose sur l'élément, et `styles.css` le met en

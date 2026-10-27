@@ -269,11 +269,11 @@ describe('l’administration des comptes', () => {
   });
 
   it('une décision envoie l’état et la raison, et rend la ligne écrite', async () => {
-    const faux = fauxClient({ lignesEcrites: [{ ...COMPTE, etat: 'refuse', raison: 'Pas un invité.' }] });
-    const compte = await deciderCompte('compte-a', 'refuse', 'Pas un invité.', faux.charger);
+    const faux = fauxClient({ lignesEcrites: [{ ...COMPTE, etat: 'refuse', raison: 'Pas un testeur.' }] });
+    const compte = await deciderCompte('compte-a', 'refuse', 'Pas un testeur.', faux.charger);
     expect(compte.etat).toBe('refuse');
     expect(faux.ecritures).toEqual([
-      { table: 'comptes', valeurs: { etat: 'refuse', raison: 'Pas un invité.' }, filtres: [['id', 'compte-a']] }
+      { table: 'comptes', valeurs: { etat: 'refuse', raison: 'Pas un testeur.' }, filtres: [['id', 'compte-a']] }
     ]);
   });
 

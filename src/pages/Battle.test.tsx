@@ -764,7 +764,7 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
  * (`partieSauvegardee` rend `null`), donc elle ne se reprend pas. Le chemin réel est
  * celui du #128 — un **code de partie** collé, que `joinMatch` rejoue (D-049). On
  * construit donc un code par le moteur, en jouant la Direction avec sa politique
- * (`nextAiAction`, seedé), et l'écran l'affiche comme le ferait un invité.
+ * (`nextAiAction`, seedé), et l'écran l'affiche comme le ferait un testeur.
  */
 describe('Battle — la fin d’une partie à deux (#127)', () => {
   /** Deux Decks légaux, ceux du simulateur : le codec les valide avant de rejouer. */
@@ -826,7 +826,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
     throw new Error(`aucune graine ne finit par « ${raison} »`);
   }
 
-  /** Coller un code, comme l'invité : le champ, puis le bouton (#128). */
+  /** Coller un code, comme le testeur : le champ, puis le bouton (#128). */
   function coller(code: string) {
     // Le champ de collage vit dans la vue « Partie à deux » du menu.
     menuSurLaVue('Partie à deux');
@@ -903,7 +903,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
  * sur une page servie en clair et sur des navigateurs de téléphone anciens, et un
  * `writeText` peut être **refusé** (permission, geste non reconnu). L'ancien code faisait
  * `navigator.clipboard?.writeText(code).then(…)` : sans l'API, l'expression vaut
- * `undefined` et `.then` **lève**, donc l'invité ne recevait ni code copié ni message —
+ * `undefined` et `.then` **lève**, donc le testeur ne recevait ni code copié ni message —
  * juste une erreur. Ces deux tests tiennent les deux branches.
  */
 describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
@@ -935,7 +935,7 @@ describe('Battle — le code sur téléphone : copier, coller (#128)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     const zone = codeATransmettre();
 
-    // Ouvert tout seul, sur la vue qui porte le code : l'invité n'a rien cherché.
+    // Ouvert tout seul, sur la vue qui porte le code : le testeur n'a rien cherché.
     expect(menuEstOuvert()).toBe(true);
     expect(
       within(screen.getByRole('region', { name: 'Menu du combat' })).getByRole('heading', { name: 'Partie à deux' })

@@ -269,7 +269,7 @@ ne change (l'identité anonyme écrit encore) ; après elle, **seul un compte ap
 ### 5.1 Côté Google Cloud
 
 1. *APIs & Services → OAuth consent screen* : type **External**, nom « Planquex » ; l'écran
-   restera en mode *Testing* tant que l'alpha dure (ajouter les invités comme *test users* si
+   restera en mode *Testing* tant que l'alpha dure (ajouter les testeurs comme *test users* si
    Google l'exige).
 2. *Credentials → Create credentials → OAuth client ID*, type **Web application**.
    - **Authorized JavaScript origins** : `https://planquex.4k7.org` (et
@@ -312,7 +312,7 @@ approuver à la main :
 
 ```sql
 update public.comptes set etat = 'approuve' where courriel = 'invite@exemple.fr';
-update public.comptes set etat = 'refuse', raison = 'Pas un invité.' where courriel = '…';
+update public.comptes set etat = 'refuse', raison = 'Pas un testeur.' where courriel = '…';
 ```
 
 ### 5.4 Les deux post-its du fichier, importés en base (#136)
@@ -325,7 +325,7 @@ migration (aucune forme de schéma ne change) mais un import de données, rejoua
 Leur auteur est l'**auteur sentinelle** `00000000-0000-0000-0000-000000000000` : les deux
 post-its ont été écrits par des identités **anonymes** d'avant D-088, qui n'ont pas de compte,
 et les rattacher à quelqu'un serait inventer un auteur. Aucun `auth.uid()` ne peut valoir cette
-valeur, donc le mur ne les montre comme « les tiens » à **personne** : aucun invité ne les
+valeur, donc le mur ne les montre comme « les tiens » à **personne** : aucun testeur ne les
 corrige, ne les déplace ni ne les retire. L'**administration** garde ses droits de tri (0006,
 `statut`/`raison`/`ticket`) et de retrait (0007) — c'est le tri normal de D-092, et ces deux
 post-its sont `en attente`, donc ils doivent pouvoir avancer. Pour les rattacher à un compte,

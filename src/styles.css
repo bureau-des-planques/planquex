@@ -3773,7 +3773,7 @@ h2 {
 
 /* ---------- La feuille de route — la version, l'étape, les jalons (D-097) ---------- */
 
-/* Le bloc de la version courante est **mis en avant** : c'est ce qu'un invité vient lire,
+/* Le bloc de la version courante est **mis en avant** : c'est ce qu'un testeur vient lire,
    l'historique vient après. La mise en avant passe par la **chaleur** du panneau (fond et
    bordure teintés d'or, titre en display) et **pas** par un liseré sur un côté — c'est le
    tell d'UI générée qu'Impeccable refuse, et il ne dit rien de plus. Jetons uniquement,

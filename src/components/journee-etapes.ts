@@ -6,7 +6,7 @@
  * forme **guidée** — celle qui attend que le geste soit fait — appartient à la beta
  * (D-066) et ne se code pas ici.
  *
- * Les quatre choses qu'un invité ne devine pas (ticket #130) : le **Seuil** et le
+ * Les quatre choses qu'un testeur ne devine pas (ticket #130) : le **Seuil** et le
  * **Stress**, l'**Arrivage**, le **Deck**, la **fin d'un combat**. Les textes
  * emploient le vocabulaire du jeu (`AGENTS.md` §3) et aucun mot interdit.
  *
@@ -57,7 +57,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
 
 /**
  * Vitesse de lecture retenue pour la mesure : **180 mots par minute**, la lecture d'un
- * écran par un invité, pas celle d'un correcteur. À cette vitesse, 90 mots font
+ * écran par un testeur, pas celle d'un correcteur. À cette vitesse, 90 mots font
  * exactement les trente secondes du ticket.
  */
 export const MOTS_PAR_MINUTE = 180;

@@ -114,7 +114,7 @@ export function Connexion() {
       <section className="section">
         <h1>Entrer dans l’alpha</h1>
         <p className="muted max-w-[64ch]">
-          L’alpha est réservée aux <strong>invités</strong> : il faut un compte pour entrer. Il est{' '}
+          L’alpha est réservée aux <strong>testeurs</strong> : il faut un compte pour entrer. Il est{' '}
           <strong>validé à la main</strong> — en attendant, tu peux jouer et lire le mur ; poster un post-it, voter ou
           envoyer une trace de combat s’ouvrira ensuite.
         </p>

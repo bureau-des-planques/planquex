@@ -15,7 +15,7 @@ import { ETAPES_JOURNEE, MOTS_PAR_MINUTE, secondesDeLecture } from './journee-et
  */
 const app = readFileSync(fileURLToPath(new URL('../App.tsx', import.meta.url)), 'utf8');
 
-/** Le texte que l'invité lit vraiment : le titre, la phrase et le libellé du geste. */
+/** Le texte que le testeur lit vraiment : le titre, la phrase et le libellé du geste. */
 function texteDe(index: number): string {
   const etape = ETAPES_JOURNEE[index];
   return `${etape.titre} ${etape.texte} ${etape.action}`;
@@ -31,7 +31,7 @@ function routeDeclaree(cible: string): boolean {
   return new RegExp(`path="${cible.replace(/^\//, '')}"`).test(app);
 }
 
-describe('les quatre choses qu’un invité ne devine pas (#130)', () => {
+describe('les quatre choses qu’un testeur ne devine pas (#130)', () => {
   it('tient en quatre étapes, une par sujet', () => {
     expect(ETAPES_JOURNEE).toHaveLength(4);
   });

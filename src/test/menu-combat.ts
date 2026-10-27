@@ -1,10 +1,10 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 
 /**
- * Les gestes d'un invité sur le **menu `⋯` du combat** (D-093, #191), pour les tests d'écran :
+ * Les gestes d'un testeur sur le **menu `⋯` du combat** (D-093, #191), pour les tests d'écran :
  * Journal, Partie à deux, Règles, Abandonner et Nouveau combat n'ont plus de place sur la table,
  * ils sont derrière un seul bouton. Chaque test qui les cherche passe par ici — c'est le même
- * chemin que l'invité, donc un menu qui ne s'ouvre plus fait échouer **tous** ces tests.
+ * chemin que le testeur, donc un menu qui ne s'ouvre plus fait échouer **tous** ces tests.
  */
 
 /** Ouvre le menu (s'il ne l'est pas) et rend son panneau. */

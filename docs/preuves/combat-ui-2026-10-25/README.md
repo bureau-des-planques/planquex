@@ -39,7 +39,7 @@ une fois la refonte close.
 
 L'écran de combat est capturé **à l'arrivée**, sans qu'on touche à rien, et à une graine
 **figée** (`INSTANTS_COMBAT[0]` dans `scripts/capturer.mjs`) : la donner est donc reproductible.
-La première image montre le **pas-à-pas** ouvert, l'état exact d'un invité qui arrive ; la
+La première image montre le **pas-à-pas** ouvert, l'état exact d'un testeur qui arrive ; la
 seconde le referme pour lire le plateau nu — c'est le même geste que « Passer le pas-à-pas ».
 
 `captures/` n'est pas versionné : ces deux images sont la copie de la preuve, choisie ici.

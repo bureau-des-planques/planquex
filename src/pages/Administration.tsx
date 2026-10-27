@@ -10,7 +10,7 @@
  * proposer ce que la base refuserait.
  *
  * Ce qu'on peut faire : **approuver** (le compte s'ouvre à l'écriture), **refuser avec une
- * raison** (la base exige la raison ; l'invité la lit sur son écran d'attente), et **trier**
+ * raison** (la base exige la raison ; le testeur la lit sur son écran d'attente), et **trier**
  * chaque post-it — déplacer son **statut**, écrire la **raison** d'un écarté, lier un
  * **ticket**. Le tri ne touche ni le titre ni le texte : ceux-là sont à leur auteur (#139),
  * et le grant de colonnes de la 0006 ne les donne pas, même à l'administration.
@@ -54,7 +54,7 @@ export function Administration() {
   /**
    * Le mur et son tri (#0006) : le **même** hook que la page du mur (#254), donc une seule
    * définition de ce qu'est un post-it — l'écran de tri ne peut pas afficher autre chose que
-   * ce que les invités lisent. Sans repli : une base muette est une erreur à dire, pas un
+   * ce que les testeurs lisent. Sans repli : une base muette est une erreur à dire, pas un
    * fichier à trier.
    */
   const {
@@ -220,7 +220,7 @@ export function Administration() {
             <h1>Les comptes de l’alpha</h1>
             <p className="muted max-w-[64ch]">
               Chaque compte arrive <strong>en attente</strong> : il peut jouer et lire, pas encore écrire. Approuve les
-              invités, refuse les autres — un refus doit dire pourquoi, l’invité lira la raison. En dessous, le{' '}
+              testeurs, refuse les autres — un refus doit dire pourquoi, le testeur lira la raison. En dessous, le{' '}
               <strong>tri du mur</strong> : statut, raison d’un écarté, ticket.
             </p>
           </div>
@@ -481,7 +481,7 @@ export function Administration() {
 
                   {ecarteSansRaison && (
                     <p className="m-0 text-[0.8rem] text-ink-muted">
-                      Écarter exige une raison écrite : c’est elle qui apprend aux invités ce qui vaut la peine d’être
+                      Écarter exige une raison écrite : c’est elle qui apprend aux testeurs ce qui vaut la peine d’être
                       remonté (D-059).
                     </p>
                   )}

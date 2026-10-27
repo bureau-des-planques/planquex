@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 export function Home() {
   const { owned, deck, openPack, packsOpened } = useStore();
   const [lastPack, setLastPack] = useState<Card[] | null>(null);
-  /** Les cartes de l'Arrivage que l'invité n'avait pas : une carte tirée deux fois n'est neuve qu'une. */
+  /** Les cartes de l'Arrivage que le testeur n'avait pas : une carte tirée deux fois n'est neuve qu'une. */
   const [nouvelles, setNouvelles] = useState<ReadonlySet<number>>(() => new Set());
 
   const uniqueOwned = Object.keys(owned).filter((id) => (owned[id] ?? 0) > 0).length;

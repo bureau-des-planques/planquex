@@ -1,5 +1,5 @@
 /**
- * Les **outils de test** — ce qu'un invité de l'alpha ne doit pas voir (#131) : le bouton
+ * Les **outils de test** — ce qu'un testeur de l'alpha ne doit pas voir (#131) : le bouton
  * « Ajouter un exemplaire (test) » de la fiche d'une carte, qui fabrique des cartes hors
  * Arrivage.
  *

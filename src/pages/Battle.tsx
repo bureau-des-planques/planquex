@@ -1029,8 +1029,8 @@ export function Battle() {
 
   /**
    * **La Partie à deux s'ouvre seule** quand un code est prêt à transmettre (D-093, #191) : c'est
-   * le seul moment où l'invité a quelque chose à faire dans le menu. On l'annonce **une fois par
-   * code** — l'invité qui referme le menu n'est pas rouvert à chaque rendu —, par un ajustement
+   * le seul moment où le testeur a quelque chose à faire dans le menu. On l'annonce **une fois par
+   * code** — le testeur qui referme le menu n'est pas rouvert à chaque rendu —, par un ajustement
    * d'état pendant le rendu (la forme que React recommande pour un état dérivé d'un autre) et non
    * par un effet, qui laisserait passer un rendu sans le menu.
    */
@@ -1047,7 +1047,7 @@ export function Battle() {
    * levait un `TypeError` quand l'API manquait, donc le message ne venait jamais.
    *
    * Le repli est **le code lui-même** : il reste dans la zone, sélectionné d'office, et
-   * l'invité le recopie à la main.
+   * le testeur le recopie à la main.
    */
   const codeRef = useRef<HTMLTextAreaElement | null>(null);
   const copyCode = useCallback(async () => {

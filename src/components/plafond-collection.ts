@@ -21,7 +21,7 @@ export const PLAFOND_TIRABLE = CARTES_TIRABLES.length;
 export const HORS_ARRIVAGE = ALL_CARDS.length - PLAFOND_TIRABLE;
 
 /**
- * L'avancement de la Collection **sur ce qu'on peut obtenir** : un invité qui a tiré tout
+ * L'avancement de la Collection **sur ce qu'on peut obtenir** : un testeur qui a tiré tout
  * ce qui sort lit 100 %, pas 98 % — le pourcentage ne promet pas un maximum inatteignable.
  */
 export function avancementTirable(owned: Readonly<Record<string, number>>): {

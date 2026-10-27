@@ -451,7 +451,7 @@ export function Comite() {
           <div>
             <h1>Le comité de pilotage</h1>
             <p className="muted max-w-[62ch]">
-              Le mur des retours d’alpha : ce que les invités proposent (<strong>IP</strong>) et signalent (
+              Le mur des retours d’alpha : ce que les testeurs proposent (<strong>IP</strong>) et signalent (
               <strong>OUF</strong>).{' '}
               {branche
                 ? peutEcrire

@@ -272,7 +272,7 @@ n'est pas celui de l'écran.
 
 Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors ligne** — ou dit pourquoi il n'en a pas. Les états **transverses** vivent dans le `Layout`, une seule fois :
 
-| État | Où | Ce que voit l'invité |
+| État | Où | Ce que voit le testeur |
 |---|---|---|
 | Erreur de rendu | `ErreurDeRendu` (Layout, autour de l'écran ; et `main.tsx`, autour de tout) | « Cet écran a planté » + Recharger + accueil ; la barre de navigation reste, changer d'écran referme l'erreur |
 | Adresse inconnue | `Introuvable` (`path="*"`) | « Ce couloir ne mène nulle part » + l'adresse ; les anciennes adresses redirigent (D-075) |
@@ -292,7 +292,7 @@ Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors lign
 mais des **états de la même vue**. Ils sont listés ici pour qu'on sache quoi regarder sur une
 capture.
 
-| État | Comment on y entre | Ce que voit l'invité | Sortie |
+| État | Comment on y entre | Ce que voit le testeur | Sortie |
 |---|---|---|---|
 | `sobre` (défaut) | à l'arrivée (`combatDetaille: false`) | les cartes du plateau, leur nom, le Seuil et la barre de Stress ; la Machine en pastille ; une Condition en icône seule ; le chiffre de Stress et les Pressions ne sont pas écrits sur la carte | `ⓘ`, `I` ou `Ctrl+I` → `détaillé` |
 | `détaillé` | `ⓘ` (`aria-pressed`) ou `I` / `Ctrl+I` | les annotations reviennent : nom et dégâts des Pressions sur la carte, chiffre `x/y` de Stress, types de café de la Machine, nom des Conditions | le même geste, ou `ⓘ` |

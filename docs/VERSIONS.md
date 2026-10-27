@@ -96,7 +96,7 @@ coup, c'est un mensonge. Si la build était fausse, on monte la version et on re
 | Endroit | Ce qu'il porte | Qui le lit |
 |---|---|---|
 | **La release GitHub** | le journal complet, daté, avec le message aux testeurs | le dépôt, l'historique, `npm run notes:versions` |
-| **`/feuille-de-route`** (dans le jeu) | la version courante mise en avant, puis l'historique — et, depuis D-097 (3), l'étape en cours, les critères de sortie, les jalons et ce qui est prévu | **l'invité**, sans compte, sans sortir du jeu |
+| **`/feuille-de-route`** (dans le jeu) | la version courante mise en avant, puis l'historique — et, depuis D-097 (3), l'étape en cours, les critères de sortie, les jalons et ce qui est prévu | **le testeur**, sans compte, sans sortir du jeu |
 
 **Pourquoi le fichier de données est embarqué au build et pas lu en direct** : le dépôt est
 **privé**, l'API GitHub répond `404` sans jeton (mesuré le 24/10/2026), et un jeton dans le
@@ -114,7 +114,7 @@ Depuis le 26/10/2026, le corps de chaque release GitHub a **deux catégories**, 
 
 Un paragraphe d'introduction (`Version 0.1.13, étape alpha…`) peut précéder les deux. Une catégorie
 vide se retire, plutôt que de rester avec « rien ». Chaque point est une phrase complète, lue par
-un invité : pas de nom de fichier, pas de jargon interne sans l'expliquer.
+un testeur : pas de nom de fichier, pas de jargon interne sans l'expliquer.
 
 Les **autres informations** (migration, sauvegarde, pièges connus) vont **après** les deux
 catégories, sous `## Pour un testeur` : ce titre est dans `SECTIONS_ECARTEES`

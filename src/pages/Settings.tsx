@@ -92,7 +92,7 @@ export function Settings() {
           </p>
         ) : !session ? (
           <p className="m-0 max-w-[62ch]">
-            Aucun compte connecté. <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux invités.
+            Aucun compte connecté. <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux testeurs.
           </p>
         ) : (
           <div className="flex flex-col gap-2">

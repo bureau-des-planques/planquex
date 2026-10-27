@@ -110,8 +110,8 @@ export function Confidentialite() {
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Confidentialité</h1>
         <p className="muted m-0 max-w-[62ch]">
-          Le Bureau des Planqués est un jeu d’alpha, testé par quelques invités. Voici, en clair et sans formule, ce que
-          le jeu garde de toi, et pourquoi.
+          Le Bureau des Planqués est un jeu d’alpha, testé par quelques testeurs. Voici, en clair et sans formule, ce
+          que le jeu garde de toi, et pourquoi.
         </p>
       </section>
 

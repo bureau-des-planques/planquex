@@ -12,7 +12,7 @@
  * GitHub est le script, lancé au build de l'auteur — jamais dans la CI, qui n'a ni `gh`
  * ni réseau vers GitHub.
  *
- * **Sans lien** : un invité lit `#214` et son titre ; une adresse du dépôt ne
+ * **Sans lien** : un testeur lit `#214` et son titre ; une adresse du dépôt ne
  * l'ouvrirait pas, le dépôt étant privé (D-097 (3)). Aucune URL n'est donc écrite ici, et
  * `scripts/plan-dev.test.ts` le vérifie.
  */

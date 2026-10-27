@@ -15,7 +15,7 @@
 --   2. La ligne de compte est créée **automatiquement à la première connexion** par un
 --      déclencheur sur `auth.users`. Pourquoi un déclencheur et pas une fonction appelée
 --      par le client : le compte doit exister **même si le client est vieux, bricolé ou
---      hors ligne**, sinon un invité s'inscrit et n'apparaît dans aucune liste — Bastien ne
+--      hors ligne**, sinon un testeur s'inscrit et n'apparaît dans aucune liste — Bastien ne
 --      peut pas l'approuver. Le déclencheur est la seule porte qui ne dépend pas du client.
 --      Les comptes **déjà** présents dans `auth.users` avec un courriel sont recopiés au
 --      bas de ce fichier (un compte créé avant la migration ne resterait sinon invisible).
@@ -63,7 +63,7 @@ create table if not exists public.comptes (
   etat            text        not null default 'en attente'
                               check (etat in ('en attente', 'approuve', 'refuse')),
 
-  -- « Refuser, avec sa raison » (D-088) : un refus muet ne dit rien à l'invité.
+  -- « Refuser, avec sa raison » (D-088) : un refus muet ne dit rien au testeur.
   raison          text        not null default '',
 
   -- Le drapeau qui ouvre l'écran d'administration. Faux par défaut, et **jamais** modifiable
@@ -345,7 +345,7 @@ create policy "combats : chacun dépose les siens"
 -- invisible dans l'écran d'administration. On recopie donc les comptes qui ont un courriel.
 -- Les identités **anonymes** (courriel nul) sont exclues volontairement : ce sont les
 -- appareils d'avant D-088, dont les deux post-its existants — ils ne s'approuvent pas, et
--- n'ont rien à faire dans la liste des invités. Aucune autre donnée n'est touchée.
+-- n'ont rien à faire dans la liste des testeurs. Aucune autre donnée n'est touchée.
 insert into public.comptes (id, courriel)
 select u.id, u.email
 from auth.users u

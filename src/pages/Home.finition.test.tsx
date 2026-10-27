@@ -44,7 +44,7 @@ describe('Home — finition', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
-  it('une carte que l’invité n’avait pas est signalée « Nouvelle », une carte déjà possédée non', async () => {
+  it('une carte que le testeur n’avait pas est signalée « Nouvelle », une carte déjà possédée non', async () => {
     // Collection vide : tout ce que l'Arrivage donne est neuf, une seule fois par carte.
     renderWithStore(<Home />, { owned: {}, tutorielVu: true, pasAPasCombatVu: true });
     fireEvent.click(screen.getByRole('button', { name: /Ouvrir un Arrivage/ }));
