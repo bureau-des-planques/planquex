@@ -253,60 +253,20 @@ Un serveur utile partout s'ajoute en global, une ligne :
 
 ## Les scripts
 
-**Chaque commande se lance depuis la racine ; son mode d'emploi complet est dans
-[`docs/COMMANDES.md`](docs/COMMANDES.md).** Deux conventions reviennent partout : `-- --verifie`
-n'écrit rien et sort 1 si un fichier a divergé, `-- --json` rend une sortie pour la machine.
+**Chaque commande se lance depuis la racine ; la table complète est dans
+[`docs/COMMANDES.md`](docs/COMMANDES.md)**, la seule à jour. Deux conventions reviennent partout :
+`-- --verifie` n'écrit rien et sort 1 si un fichier a divergé, `-- --json` rend une sortie pour la
+machine.
 
-**Tous les jours**
+Quatre commandes pour démarrer ; le reste, dont celles qui précèdent une PR, est dans
+[`docs/COMMANDES.md`](docs/COMMANDES.md).
 
 | Commande | Usage |
 |---|---|
 | `npm run dev` | le serveur Vite, port 5178 |
-| `npm run check` | les types |
-| `npm test` | toute la suite ; `-- --project=node` (moteur, données, scripts) ou `-- --project=ui` (écrans) |
-| `npm run test:watch` | Vitest en continu |
-| `npm run format` / `format:check` | formater / vérifier ; `src/data/` et les docs ne sont jamais reformatés |
-
-**Avant une PR**
-
-| Commande | Usage |
-|---|---|
-| `npm run garde-fous` | mute les invariants critiques et exige que la suite échoue ; `--verifie` contrôle la table sans muter |
-| `npm run build` | le build de production, `dist/index.html` et `dist/sw.js` |
-| `npm run build && npm run capturer` | les écrans à 420 × 900 dans `captures/` ; échoue sur une erreur de console, un bouton sous 44 px, une marge sous 20 px |
-| `npm run detect:ui` | le détecteur d'UI sur les sources |
-| `npm run detect:ui:page` | le détecteur sur les écrans servis, avec un cliquet : un anti-pattern de plus fait tomber la commande |
-| `npm run ci:etat` | le dernier run de CI sur `main` ; sort 1 s'il n'est pas vert |
-
-**Lire l'état du projet**
-
-| Commande | Usage |
-|---|---|
-| `npm run status` | les métriques en JSON, dont les cartes par rareté et par faction |
-| `npm run simulate -- --games 100 --seed 42` | des parties sans écran, reproductibles |
-| `npm run pesage -- --games 100 --json` | le niveau 2 de l'adversaire bat-il le niveau 1 ? Seuil fixé d'avance |
-| `npm run index:decisions` | réécrit `docs/DECISIONS-INDEX.md` depuis le journal |
-
-**Préparer une release** (procédure : [`docs/VERSIONS.md`](docs/VERSIONS.md) §4)
-
-| Commande | Usage |
-|---|---|
-| `npm run notes:versions` | relit les releases GitHub et réécrit `src/data/versions.ts`, lu par `/feuille-de-route` |
-| `npm run plan:dev` | relit les issues `alpha` ouvertes et réécrit `src/data/plan-dev.ts` |
-| `npm run problemes` | les problèmes connus, lus dans la base du comité ; demande une configuration hors dépôt |
-
-**Le poste de pilotage**
-
-| Commande | Usage |
-|---|---|
-| `npm run installer` | `npm ci` sans risque pour les autres sessions |
-| `npm run isolation` | vérifie qu'un agent n'a écrit que dans son worktree ; à lancer après chaque agent |
-| `npm run serveurs` | le tableau de bord des serveurs Vite et des worktrees, port 5180 |
-| `npm run admin` | le poste d'administration local, port 5199 |
-| `node scripts/filmer-animation.mjs` | une planche de frames : la seule preuve valable d'une animation |
-
-Les ports déjà pris : 5178 (dev), 5180 (serveurs), 5199 (admin), 4180 (preview), 4179
-(détecteur). Un prototype prend un autre port : `npm run dev -- --port 5201 --strictPort`.
+| `npm test` | toute la suite ; `-- --project=node` ou `-- --project=ui`, comme la CI |
+| `npm run garde-fous` | mute un invariant et exige que la suite échoue |
+| `npm run build` | le build de production : `dist/index.html` **et** `dist/sw.js` |
 
 ## Pièges connus
 

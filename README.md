@@ -110,24 +110,18 @@ règles d'accès : le module la refuse, et elle ne se commite jamais.
 
 ## Les scripts du quotidien
 
-**Chaque ligne est un script de `package.json` ; aucune ne recopie un résultat.** Le nombre de
-cartes et de tests se lit en lançant la commande, jamais dans ce fichier.
+Quatre commandes pour démarrer. La liste complète, avec ce que fait chaque script, est dans
+**[`docs/COMMANDES.md`](docs/COMMANDES.md)** : c'est la seule table des commandes du dépôt.
 
 | Commande | Ce qu'elle fait |
 |---|---|
 | `npm run dev` | le serveur Vite, sur le port 5178 |
-| `npm run check` | les types (`tsc -b`) |
-| `npm test` | toute la suite Vitest ; `-- --project=node` ou `-- --project=ui` pour une moitié, comme la CI |
-| `npm run format` | formate le code ; `format:check` vérifie sans écrire, comme la CI |
-| `npm run garde-fous` | mute un invariant et **exige** que la suite échoue : un test qui ne peut pas échouer ne garde rien |
-| `npm run build` | types, puis le build de production : `dist/index.html` **et** `dist/sw.js` |
-| `npm run status` | les métriques du projet en JSON, dont le décompte des cartes par rareté et par faction |
-| `npm run simulate -- --games 100 --seed 42` | des parties sans écran, reproductibles à la graine près |
-| `npm run build && npm run capturer` | photographie les écrans à 420 × 900 dans `captures/`, et échoue sur une erreur de console ou un bouton trop petit |
-| `npm run ci:etat` | l'état du dernier run de CI sur `main` ; sort 1 s'il n'est pas vert |
+| `npm test` | toute la suite Vitest |
+| `npm run build` | le build de production : `dist/index.html` **et** `dist/sw.js` |
+| `npm run capturer` | photographie les écrans à la taille d'un téléphone (après un `npm run build`) |
 
-Le reste — release, poste de pilotage, illustrations, détecteur d'UI — est rangé par besoin dans
-[`CONTRIBUTING.md`](CONTRIBUTING.md#les-scripts), et chaque script a son mode d'emploi complet dans
+Les autres — `npm run check`, `npm run status` (les décomptes de cartes et de tests, qui ne se
+recopient dans aucun document), la release, le poste de pilotage — sont dans
 [`docs/COMMANDES.md`](docs/COMMANDES.md).
 
 ## Contribuer
