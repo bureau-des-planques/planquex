@@ -19,7 +19,7 @@ s'appuyer dessus.
 | `supabase/migrations/0011_anon_hors_fonctions.sql` | le rôle `anon` n'exécute plus aucune fonction `security definer` de `public` (#247) : les valeurs par défaut de Supabase lui accordent `execute`, et le refus ne reposait que sur `auth.uid()` nul. `authenticated` garde ses droits |
 | `supabase/migrations/0012_combats_pvp.sql` | la trace des parties à deux (#228, D-105) : `combats.mode` admet `'pvp'` à côté de `'solo'` — pas de colonne, pas de politique, pas de droit nouveau |
 | `supabase/migrations/0013_discord_comite.sql` | les annonces du mur dans `#comite` (#318, D-120) : la table `annonces_discord`, les deux déclencheurs qui **composent la phrase**, la couture `poster_discord(url, corps)`, la réconciliation de `pg_net`, la passe de dix, le secret lu dans **Vault**, le passé marqué `sans_webhook` — et **aucun privilège client** |
-| `supabase/migrations/0016_medaille_periode_essai.sql` | la « Médaille de la période d'essai » (#346, D-130 (3)) : `comptes.medaille_periode_essai` et sa date, la contrainte qui les lie, et la fermeture des droits d'écriture client sur les deux colonnes — aucune fonction, aucun déclencheur |
+| `supabase/migrations/0016_medaille_periode_essai.sql` | la « Médaille de la période d'essai » (#346, D-130 (3)) : `comptes.medaille_periode_essai` et sa date, la contrainte qui les lie — aucune fonction, aucun déclencheur, **aucun droit** : ce qui ferme ces deux colonnes au client est le `grant update (etat, raison)` **colonne par colonne** de la 0005, et c'est tout (une révocation de colonne ne retirerait rien — les trois lignes de la 0016 qui le prétendaient sont parties, #372) |
 | `supabase/imports/comite-fichier-2026-10-26.sql` | l'import des deux post-its de `docs/comite.json` en base (#136) — données, pas schéma : auteur sentinelle, date de collecte reprise de l'id, écran vide devenu `null` |
 | `supabase/imports.test.ts` | la garde de l'import : le fichier et l'import disent la même chose, les lignes passent `lirePostitsDeLaBase`, rejouer ne duplique rien |
 | `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
@@ -550,6 +550,11 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
   -- La contrainte les lie ; aucune médaille n'existe encore
   select count(*) from public.comptes where medaille_periode_essai;
   ```
+
+  Un `client_ecrit` à `true` veut dire qu'un `grant update` **au niveau table** a été glissé
+  quelque part : la 0005 a révoqué celui-là et ne rend que deux colonnes, et c'est **cela seul**
+  qui ferme la médaille — la 0016 ne porte aucune ligne de droit, une révocation de colonne ne
+  retirant rien (#372). La garde `supabase/comptes.test.ts` fabrique ce cas et le refuse.
 
 ---
 
