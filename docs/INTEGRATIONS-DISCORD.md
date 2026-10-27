@@ -56,7 +56,7 @@ messages : refusé) ; `Équipe` et le bot y écrivent.
 |---|---|---|---|
 | `✦ ACCUEIL` | `#bienvenue` | L'accroche, où jouer, la visite guidée | `Équipe` |
 | | `#règles` | Le règlement, épinglé, en lecture seule | `Équipe` |
-| | `#annonces` | Versions et déploiements, en lecture seule | `Équipe`, et **Vercel** quand l'intégration est posée (§6) |
+| | `#annonces` | Versions et déploiements, en lecture seule | `Équipe` — et **Vercel** le jour où l'équipe passe en Pro (§6) |
 | `✦ ALPHA` | `#général` | Le coin café : on parle du jeu | tout le monde |
 | | `#comite` | Les annonces du mur, en lecture seule pour `@everyone` | `Équipe` et le webhook du mur (§10) |
 | | `#retours` | Ce qui a perdu, ennuyé ou fait sourire | tout le monde |
@@ -164,18 +164,43 @@ GitHub — c'est le seul réglage à toucher.
 
 ## 6. Vercel → `#annonces`
 
-> **État au 27/10/2026 : pas encore posé.** C'est le seul geste de #317 qui reste à faire, et il
-> se fait **dans le tableau de bord de Vercel** : `vercel integration discover discord` répond
-> « No marketplace products matching "discord" found », cette intégration native n'est pas
-> installable par la CLI. Tant qu'elle n'est pas posée, un déploiement n'annonce rien.
+> **État mesuré le 27/10/2026 : l'intégration ne peut pas être posée sur l'offre Hobby.** Ce n'est
+> pas un réglage oublié : le seul produit Discord qui reste chez Vercel est **communautaire** et
+> **exige les Log Drains**, donc **Pro ou Enterprise**. Tant que l'équipe `chapaxs-projects` reste
+> en Hobby, **un déploiement n'annonce rien** — et c'est pourquoi #317 reste ouvert.
 
-1. Vercel → équipe `chapaxs-projects` → projet `planquex` → **Integrations → Discord → Add
+### 6.1 Ce qui bloque, mesuré le 27/10/2026
+
+| Contrôle | Résultat |
+|---|---|
+| `https://vercel.com/integrations/discord` | redirige (`meta refresh`) vers **`/marketplace/discord`** — « Receive ZEIT events in your Discord guild ». Il n'y a plus d'intégration **native** : c'est un produit du marketplace. |
+| Le formulaire d'installation | « This integration is a **community-developed** integration. » et, dans *Missing Prerequisites* : **Log Drains — Pro / Enterprise**, « Log Drains are required to install this integration. Upgrade to Pro to continue. » |
+| `GET /v2/teams/team_7wVfDrmlLwi8LhUFQSmXQOXW` | `billing.plan = "hobby"` |
+| `vercel integration add discord` | `Error: Integration "discord" is not a Marketplace integration` |
+| `vercel integration discover --json` | 55 produits, **aucun** `discord` |
+| OpenAPI Vercel, sous `/v1/integrations/…` | seulement `GET /v1/integrations/configurations`, `GET` et `DELETE /v1/integrations/configuration/{id}` : **aucun `POST`** — l'installation n'a pas d'API, elle passe par l'OAuth du tableau de bord |
+| `GET /v1/integrations/configurations?view=account` | `[]` — rien n'est installé |
+| `GET /guilds/1487523730438492231/integrations` (API Discord) | seul le bot `Planqué` : aucune application Vercel sur le serveur |
+
+**Un webhook ne remplace pas l'intégration.** Un `POST /v1/webhooks` réussit même en Hobby
+(mesuré : il rend un `account_hook_…`, supprimé aussitôt), mais le corps qu'il envoie est celui de
+Vercel, pas le format d'un webhook Discord (`content` / `embeds`) : il faudrait un **relais
+hébergé** entre les deux — donc du code et un secret, ce que cette procédure s'interdit. (*Déduit
+du format des deux payloads, non testé.*)
+
+### 6.2 Le jour où l'équipe passe en Pro
+
+Les gestes sont ceux d'un humain connecté à Vercel ; ils ne se font ni par la CLI ni par le MCP.
+
+1. Vercel → équipe `chapaxs-projects` → <https://vercel.com/marketplace/discord> → **Add
    Integration** : autoriser, choisir le serveur `Planquex`, le salon **`#annonces`**, puis les
    événements de **déploiement** (production et aperçus de PR).
-2. Rien à écrire : l'intégration est entretenue par Vercel, et le dépôt n'en garde aucune trace
+2. Vérifier sur le serveur : `#annonces` → **Modifier le salon → Intégrations** doit montrer
+   l'application Vercel.
+3. Rien à écrire : l'intégration est entretenue par Vercel, et le dépôt n'en garde aucune trace
    — c'est voulu (aucun secret dans git).
-3. Vérifier au §7 : le déploiement suivant doit apparaître dans `#annonces`. C'est ce message,
-   et pas le réglage, qui dit que l'étape est faite.
+4. Vérifier au §7 : le déploiement suivant doit apparaître dans `#annonces`. C'est ce message, et
+   pas le réglage, qui dit que l'étape est faite — après l'installation, jamais avant.
 
 ## 7. Vérifier que ça arrive vraiment
 
@@ -186,12 +211,12 @@ réel** arrive dans le bon salon. **État mesuré le 27/10/2026 :**
 |---|---|---|
 | Ouvrir une issue, pousser une PR, faire échouer une CI | un message dans `#logs-github` | ✅ vérifié — dix messages GitHub entre 15:57 et 16:35 |
 | Coller un post-it sur le mur | une annonce dans `#comite` (§10) | ✅ vérifié — quatre messages du webhook du mur |
-| Fusionner sur `main`, attendre le déploiement | un message dans `#annonces` | ⛔ **non vérifié** — l'intégration Vercel n'est pas posée (§6) |
+| Fusionner sur `main`, attendre le déploiement | un message dans `#annonces` | ⛔ **impossible en Hobby** — l'intégration Discord de Vercel exige les Log Drains, donc Pro/Enterprise (§6.1) ; `#annonces` ne porte que deux messages du bot `planquex`, aucun de Vercel |
 | Ouvrir l'invitation en navigation privée | le serveur est rejoignable, l'invitation n'expire pas | ✅ vérifié — l'API Discord résout `NvfrzCeJee` sans expiration ; il reste à l'ouvrir une fois dans un navigateur sans compte |
 
-Deux restes de tests sont encore visibles dans `#comite` (messages « Captain Hook » du 27/10) :
-les supprimer une fois la vérification terminée — un salon qui garde la preuve d'un test se lit
-comme un vrai événement.
+**Les restes des tests sont retirés** : les deux messages « Captain Hook » du 27/10 ne sont plus
+dans `#comite` (vérifié le 27/10 à 17 h 30 UTC par l'API Discord, aucun message ne les contient) —
+un salon qui garde la preuve d'un test se lit comme un vrai événement.
 
 ## 8. Ce que cette procédure ne fait pas
 
