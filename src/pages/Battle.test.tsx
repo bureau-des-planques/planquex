@@ -297,6 +297,45 @@ describe('Battle — écran de combat', () => {
     expect(within(menu).getByRole('button', { name: /Créer une partie à deux/i })).toBeInTheDocument();
   });
 
+  it('le panneau du menu se superpose : il s’accroche à la barre d’état, hors du plateau (#289, T6)', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const barreEtat = container.querySelector('.battle__head') as HTMLElement;
+    const plateau = container.querySelector('.board') as HTMLElement;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menu du combat' }));
+    const panneau = screen.getByRole('region', { name: 'Menu du combat' });
+
+    // Le panneau est **enfant de la barre d'état**, jamais du plateau : son ouverture n'insère
+    // rien dans le flux des cartes, donc le plateau ne saute pas (le défaut du vrac du 27/10).
+    expect(barreEtat.contains(panneau)).toBe(true);
+    expect(plateau.contains(panneau)).toBe(false);
+    expect(plateau.querySelectorAll('.combat-menu__panneau, .combat-menu__liste')).toHaveLength(0);
+
+    // Et la feuille de style le sort du flux : superposition, pas poussée du contenu.
+    const regle =
+      readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').match(
+        /\n\.combat-menu__panneau \{([^}]*)\}/
+      )?.[1] ?? '';
+    expect(regle).toMatch(/position:\s*absolute/);
+  });
+
+  it('« Abandonner » passe par le menu, et « Annuler » garde le focus du dialogue de forfait (#289, T6)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    // Le geste destructeur n'est pas dans le menu : il ouvre le dialogue de confirmation.
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    const dialogue = screen.getByRole('dialog', { name: /Déclarer forfait/i });
+    expect(within(dialogue).getByRole('button', { name: 'Annuler' })).toHaveFocus();
+    expect(within(dialogue).getByRole('button', { name: 'Abandonner' })).not.toHaveFocus();
+
+    // Annuler referme sans rien détruire : la barre d'action garde ses gestes.
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Annuler' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(
+      within(screen.getByRole('region', { name: 'Actions du tour' })).getAllByRole('button').length
+    ).toBeGreaterThan(0);
+  });
+
   describe('Nouveau combat', () => {
     beforeEach(() => {
       // Une graine fixe : le joueur ouvre, personne n'a joué, la partie est neuve.
