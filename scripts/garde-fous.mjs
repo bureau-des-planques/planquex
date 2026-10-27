@@ -263,6 +263,39 @@ export const MUTATIONS = [
     tests: ['src/lib/useMur.test.tsx'],
     garde:
       'sans le retour en arrière, un vote refusé par la RLS laisserait un pouce affiché que la base ne porte pas : le mur mentirait à l’invité, jusqu’au prochain rechargement (#137, #254)'
+  },
+  {
+    ticket: 317,
+    titre: 'sans invitation, la porte du serveur des testeurs rend quand même un bloc',
+    fichier: 'src/components/InvitationTesteurs.tsx',
+    // D-119 : « une valeur vide veut dire rien ». La mutation laisse passer le rendu alors
+    // que l'invitation est `null` : Réglages et le pied du comité portent un panneau avec un
+    // lien **sans adresse**, sur le build par défaut, celui que la CI construit.
+    motif: 'if (!invitation) return null;',
+    remplacement: 'if (!invitation && false) return null;',
+    tests: [
+      'src/components/InvitationTesteurs.test.tsx',
+      'src/pages/Settings.test.tsx',
+      'src/pages/Comite.invitation.test.tsx'
+    ],
+    garde:
+      'un build sans configuration afficherait un lien mort dans Réglages et au comité : c’est l’état par défaut de l’alpha, et rien d’autre ne le verrait passer'
+  },
+  {
+    ticket: 317,
+    titre: 'le lien du serveur des testeurs perd `noreferrer`',
+    fichier: 'src/components/InvitationTesteurs.tsx',
+    // Le même module rend les deux emplacements : l'attribut est écrit **une fois**, et c'est
+    // ce qui empêche les deux liens de diverger.
+    motif: 'rel="noreferrer noopener"',
+    remplacement: 'rel="noopener"',
+    tests: [
+      'src/components/InvitationTesteurs.test.tsx',
+      'src/pages/Settings.test.tsx',
+      'src/pages/Comite.invitation.test.tsx'
+    ],
+    garde:
+      'sans `noreferrer`, l’onglet ouvert transmet à Discord l’adresse d’où vient le testeur — le seul renseignement que le lien peut laisser à un tiers (D-119)'
   }
 ];
 

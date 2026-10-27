@@ -29,6 +29,7 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Move, RotateCcw, Send } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
+import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PAPIERS, PostitDuMur } from '@/components/PostitDuMur';
 import { SousOngletsComite } from '@/components/SousOngletsComite';
 import type { GlisserPostit } from '@/components/PostitDuMur';
@@ -837,6 +838,11 @@ export function Comite() {
           ? 'Le mur est lu dans la base partagée : un post-it apparaît chez les autres sans nouvelle version du jeu. Les pouces comptent un vote par compte et par post-it, et l’on ne vote pas pour le sien ; chaque post-it porte son fil de commentaires.'
           : 'Le mur est dans le paquet de l’application : il n’a rien à charger, et il s’affiche aussi hors ligne. Ni pouces ni commentaires ici : ils ne s’ouvrent qu’avec la base partagée.'}
       </p>
+
+      {/* La porte du serveur des testeurs (#317, D-119) : un lien, posé au pied du mur, et
+          rien d'autre — aucun widget, aucun `iframe`. Sans invitation configurée, il ne
+          rend rien du tout. */}
+      <InvitationTesteurs ou="comite" />
 
       {/* Le retrait d'un post-it ne se défait pas (#139) : il passe par la confirmation du
           jeu, jamais par `window.confirm` (D-035). */}
