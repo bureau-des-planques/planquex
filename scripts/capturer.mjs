@@ -65,6 +65,10 @@ const PAGES = [
   // Les nouveautés aussi (elles se lisent avant de s'inscrire) : une version qu'on ne
   // peut pas lire depuis le jeu ne sert à rien, donc la capture le prouve.
   ['feuille-de-route', '/feuille-de-route'],
+  // Le guide d'installation (#300) : public, et la note de release y renvoie — une page
+  // qu'un testeur ne peut pas lire avant son compte ne sert à rien, donc une capture le
+  // prouve, comme pour la feuille de route.
+  ['installation', '/installation'],
   ['connexion', '/connexion'],
   ['attente', '/attente'],
   ['administration', '/administration'],

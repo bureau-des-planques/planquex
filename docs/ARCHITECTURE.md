@@ -13,7 +13,7 @@ planquex/
 │   ├── components/ui/  shadcn/ui (D-035) : button.tsx, dialog.tsx — composants génériques seuls
 │   ├── data/         index.ts, types.ts, actions.ts, planque.ts, factions.ts, vocabulaire.ts, plan.ts (la feuille de route écrite à la main) et plan-dev.ts (généré), un fichier par faction (sse.ts, management.ts, …) (+ leurs tests)
 │   ├── game/         engine.ts, deck.ts, rules.ts, curves.ts, rng.ts, pack.ts, simulation.ts, ia.ts (+ leurs tests, pace.test.ts)
-│   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx, FeuilleDeRoute.tsx, Confidentialite.tsx
+│   ├── pages/        Home.tsx, Collection.tsx, Deck.tsx, Battle.tsx, Settings.tsx, FeuilleDeRoute.tsx, Installation.tsx (le guide d'installation, public, #300), Confidentialite.tsx
 │   ├── lib/          utils.ts — `cn()` de shadcn/ui (D-035)
 │   ├── store/        useStore.ts, useStore.test.ts
 │   ├── App.tsx       routes (Layout + 5 pages)
