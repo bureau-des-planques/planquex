@@ -123,3 +123,79 @@ describe('la pastille de café se voit sur la table (#290)', () => {
     expect(CSS).toMatch(/\.battle \.poste__info \.pip\s*\{[^}]*height:\s*18px/);
   });
 });
+
+/**
+ * **T10 — le retour d'action, sans mouvement quand on le demande** (#293, SPEC-COMBAT-UI §8 T10).
+ *
+ * Sous « Mouvement réduit » (la préférence système **et** le réglage du store, posé en
+ * `data-mouvement-reduit` sur la racine), aucun élément du retour ne porte de `transform` : le
+ * chiffre de Stress reste lisible **à sa place**. Il est donc centré sans `transform` — c'est la
+ * règle de base qui le dit, pas seulement le repli.
+ */
+describe('le retour d’action sans mouvement (T10, #293)', () => {
+  /** Les blocs `selecteur { corps }` de la feuille, commentaires retirés. */
+  function regles(css: string): { selecteur: string; corps: string }[] {
+    const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    return [...sans.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].map((m) => ({
+      selecteur: m[1].trim().replace(/\s+/g, ' '),
+      corps: m[2]
+    }));
+  }
+
+  /** Les règles qui visent le chiffre flottant ET qui sont des replis (« Mouvement réduit »). */
+  const repli = /mouvement-reduit|\.is-fixe/;
+
+  /** Les `transform` du chiffre flottant et des boutons qui ne sont pas `none` : la faute. */
+  function transformsDuRepli(css: string): string[] {
+    const fautes: string[] = [];
+    for (const { selecteur, corps } of regles(css)) {
+      if (!/stress-flottant|button--fin|\.battle(--mouvement-reduit)? \.button/.test(selecteur)) continue;
+      if (!repli.test(selecteur) && !/^\.stress-flottant$/.test(selecteur)) continue;
+      const transform = corps.match(/(?:^|[;\s])transform:\s*([^;]+);/);
+      if (transform && transform[1].trim() !== 'none')
+        fautes.push(`${selecteur} { transform: ${transform[1].trim()} }`);
+    }
+    return fautes;
+  }
+
+  it('le chiffre de Stress et ses replis ne portent aucun transform', () => {
+    expect(transformsDuRepli(CSS)).toEqual([]);
+  });
+
+  it('le chiffre est centré sans transform, et les replis le laissent visible', () => {
+    const base = regles(CSS).find((r) => r.selecteur === '.stress-flottant');
+    expect(base?.corps).toMatch(/left:\s*0;/);
+    expect(base?.corps).toMatch(/right:\s*0;/);
+    expect(base?.corps).toMatch(/text-align:\s*center;/);
+    expect(base?.corps).not.toMatch(/transform:/);
+    for (const { selecteur, corps } of regles(CSS)) {
+      if (!/mouvement-reduit.*\.stress-flottant/.test(selecteur)) continue;
+      expect(corps, selecteur).toMatch(/opacity:\s*1;/);
+      expect(corps, selecteur).toMatch(/animation:\s*none !important;/);
+    }
+  });
+
+  it('le contrôle mord : un repli qui recentre par translateX(-50%) est vu', () => {
+    const fautif = `${CSS}\n:root[data-mouvement-reduit='true'] .stress-flottant { transform: translateX(-50%); }`;
+    expect(transformsDuRepli(fautif)).toEqual([
+      ":root[data-mouvement-reduit='true'] .stress-flottant { transform: translateX(-50%) }"
+    ]);
+  });
+
+  it('le chiffre dure 500 ms, la pile de Deck 150 ms (le CSS suit les constantes)', () => {
+    expect(CSS).toMatch(/\.stress-flottant\s*\{[^}]*animation:\s*stress-monte 500ms/);
+    expect(CSS).toMatch(/\.pile--deck\.is-piochante::after\s*\{[^}]*animation:\s*piochante-lueur 150ms/);
+  });
+
+  it('« Fin du tour » a deux teintes, sans que la bordure ne change d’épaisseur', () => {
+    const reglesFin = regles(CSS).filter((r) => /^\.battle \.button--fin/.test(r.selecteur));
+    expect(reglesFin.map((r) => r.selecteur)).toEqual([
+      '.battle .button--fin',
+      '.battle .button--fin.is-a-toi',
+      '.battle .button--fin.is-direction'
+    ]);
+    expect(reglesFin[0].corps).toMatch(/border:\s*2px solid transparent/);
+    expect(reglesFin[1].corps).toMatch(/background:\s*var\(--scene-go\)/);
+    expect(reglesFin[2].corps).toMatch(/background:\s*var\(--scene-steel-deep\)/);
+  });
+});

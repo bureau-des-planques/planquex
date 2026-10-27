@@ -3102,36 +3102,40 @@ h2 {
 
 /* ---------- Les effets de la scène (#192, SPEC-COMBAT-UI §6.8) ---------- */
 
-/* Le chiffre de Stress : doré, près de la carte touchée, **une fois**, 700 ms, puis le
+/* Le chiffre de Stress : doré, près de la carte touchée, **une fois**, 500 ms (T10), puis le
    composant le retire du DOM. `transform` et `opacity` seulement : aucun `filter: blur`,
-   et la carte n'est jamais décalée (le chiffre est en position absolue). */
+   et la carte n'est jamais décalée (le chiffre est en position absolue, hors du flux).
+   **Il est centré sans `transform`** (`left: 0` + `right: 0` + `text-align`) : le `transform` ne
+   sert qu'à l'animation, donc sous « Mouvement réduit » aucun élément n'en porte un, et le
+   chiffre reste lisible à sa place. */
 .stress-flottant {
-  animation: stress-monte 700ms ease-out 1 both;
+  animation: stress-monte 500ms ease-out 1 both;
   color: var(--scene-gold-hot);
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 700;
-  left: 50%;
+  left: 0;
   line-height: 1;
   pointer-events: none;
   position: absolute;
+  right: 0;
+  text-align: center;
   text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
   top: -0.35rem;
-  transform: translateX(-50%);
   z-index: 4;
 }
 
 @keyframes stress-monte {
   0% {
     opacity: 0;
-    transform: translate(-50%, 6px) scale(1.4);
+    transform: translateY(6px) scale(1.4);
   }
   30% {
     opacity: 1;
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -28px) scale(1);
+    transform: translateY(-28px) scale(1);
   }
 }
 
@@ -3140,7 +3144,7 @@ h2 {
 .stress-flottant.is-fixe {
   animation: none;
   opacity: 1;
-  transform: translateX(-50%);
+  transform: none;
 }
 
 /* L'Intervention qui se remplit : un seul rebond de 200 ms. Le remplissage, lui, est l'état
@@ -3255,7 +3259,7 @@ h2 {
   .stress-flottant.is-fixe {
     animation: none !important;
     opacity: 1;
-    transform: translateX(-50%);
+    transform: none;
   }
 
   .piste__hex.is-fraiche {
@@ -3279,7 +3283,7 @@ h2 {
 .battle--mouvement-reduit .stress-flottant.is-fixe {
   animation: none !important;
   opacity: 1;
-  transform: translateX(-50%);
+  transform: none;
 }
 
 :root[data-mouvement-reduit='true'] .piste__hex.is-fraiche,
@@ -3320,8 +3324,20 @@ h2 {
   );
 }
 
-/* « Fin du tour » porte l'état de la main : vert quand c'est à toi (l'état), filet rouge quand
-   c'est à la Direction. */
+/* « Fin du tour » porte l'état de la main (T10, SPEC-COMBAT-UI §6.8.3) : **émeraude** quand c'est
+   à toi, **ardoise** (filet rouge) quand c'est à la Direction. Le libellé change avec lui (« Fin du
+   tour » / « Passer le tour de la Direction »), donc la teinte ne porte pas seule l'information
+   (SC 1.4.1). Rien ne bouge : seules des couleurs changent — la bordure garde ses 2 px dans les
+   deux états, pour que le bouton ne grandisse pas d'un pixel en changeant de main — et la
+   transition de couleur de 150 ms est neutralisée par « Mouvement réduit » (règle globale). */
+.battle .button--fin {
+  border: 2px solid transparent;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
 .battle .button--fin.is-a-toi {
   background: var(--scene-go);
   border-color: var(--scene-go);
@@ -3329,7 +3345,31 @@ h2 {
 }
 
 .battle .button--fin.is-direction {
-  border: 2px solid var(--scene-danger);
+  background: var(--scene-steel-deep);
+  border-color: var(--scene-danger);
+  color: #fff;
+}
+
+/* Le libellé d'attente est plus long que « Fin du tour » : il se range sur **deux lignes** dans une
+   largeur bornée, pour que la barre ne grandisse pas quand la main change (le journal, à sa
+   gauche, ne perd que quelques pixels et ne passe pas à la ligne de plus). La hauteur de 44 px
+   est celle de la cible de doigt, qui contient les deux lignes. */
+.combat-barre__fin .button--fin.is-direction {
+  font-size: var(--fs-sm);
+  line-height: 1.1;
+  max-width: 7.5rem;
+  text-align: center;
+}
+
+/* Sous « Mouvement réduit » du store (le système l'a déjà, `.button` plus haut), les boutons du combat
+   ne se soulèvent ni ne s'enfoncent : « Fin du tour » ne porte alors aucun `transform`. */
+:root[data-mouvement-reduit='true'] .battle .button,
+:root[data-mouvement-reduit='true'] .battle .button:hover:not(:disabled),
+:root[data-mouvement-reduit='true'] .battle .button:active:not(:disabled),
+.battle--mouvement-reduit .button,
+.battle--mouvement-reduit .button:hover:not(:disabled),
+.battle--mouvement-reduit .button:active:not(:disabled) {
+  transform: none;
 }
 
 /* ---------- Main du joueur : l'éventail (#200, SPEC-COMBAT-UI §6.8 R1) ---------- */
