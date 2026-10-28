@@ -21,6 +21,7 @@ import {
   normalizeCafeTypes,
   resolveCafeTypes
 } from '@/game/deck';
+import { decodeDeckCode, encodeDeckCode } from '@/game/codec';
 import { useStore } from '@/store/useStore';
 import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
@@ -52,6 +53,10 @@ export function Deck() {
   const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
   /** La recherche du **sélecteur borné** (#276) : la page Deck ne déroule pas la Collection. */
   const [recherche, setRecherche] = useState('');
+  /** Le code qu'on colle pour importer un Deck partagé (#363). */
+  const [codeAColler, setCodeAColler] = useState('');
+  /** Le retour de la dernière copie ou du dernier import : dit ce qui s'est passé. */
+  const [retour, setRetour] = useState<{ ok: boolean; texte: string } | null>(null);
 
   /**
    * Le choix **normalisé**, lu ici et pas seul dans le moteur : l'écran est le dernier à
@@ -83,6 +88,40 @@ export function Deck() {
   const chargerDeck = (deckPropose: DeckPropose) => {
     setDeck([...deckPropose.cartes]);
     setCafeTypes([...deckPropose.cafeTypes]);
+  };
+
+  /** Le code du Deck tel qu'on le partage : cartes et types **choisis** (vide = auto). */
+  const codeDuDeck = useMemo(() => encodeDeckCode(deck, chosenCafeTypes), [deck, chosenCafeTypes]);
+  /** Exemplaires du Deck que la Collection ne possède pas : grisés, comptés, jamais retirés (#363). */
+  const absentes = useMemo(() => deck.filter((id) => (owned[id] ?? 0) === 0).length, [deck, owned]);
+
+  const copierLeCode = async () => {
+    try {
+      await navigator.clipboard.writeText(codeDuDeck);
+      setRetour({ ok: true, texte: 'Code copié. Colle-le à qui doit recevoir ce Deck.' });
+    } catch {
+      setRetour({ ok: false, texte: 'Copie impossible ici : sélectionne le code et copie-le à la main.' });
+    }
+  };
+
+  const importerLeCode = () => {
+    const resultat = decodeDeckCode(codeAColler);
+    if (!resultat.ok) {
+      setRetour({ ok: false, texte: resultat.raison });
+      return;
+    }
+    // Le Deck importé **remplace** le Deck actuel, comme « Charger » : c'est un geste explicite.
+    setDeck([...resultat.deck.cartes]);
+    setCafeTypes([...resultat.deck.cafeTypes]);
+    const manquantes = resultat.deck.cartes.filter((id) => (owned[id] ?? 0) === 0).length;
+    setRetour({
+      ok: true,
+      texte:
+        manquantes > 0
+          ? `Deck importé : ${resultat.deck.cartes.length} cartes, dont ${manquantes} que tu ne possèdes pas (grisées ci-dessous).`
+          : `Deck importé : ${resultat.deck.cartes.length} cartes, toutes possédées.`
+    });
+    setCodeAColler('');
   };
 
   const available = useMemo(
@@ -143,6 +182,14 @@ export function Deck() {
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
         {legality.ok ? 'Deck valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
+
+      {absentes > 0 && (
+        <p className="notice notice--warn" role="status">
+          {absentes} carte{absentes > 1 ? 's' : ''} de ce Deck {absentes > 1 ? 'ne sont' : 'n’est'} pas dans ta
+          Collection : {absentes > 1 ? 'elles restent' : 'elle reste'} visible{absentes > 1 ? 's' : ''}, grisée
+          {absentes > 1 ? 's' : ''}.
+        </p>
+      )}
 
       {/* **Les contraintes du Deck** (#276) : la page dit ce qu'elle demande, en quatre
           lignes. Les valeurs viennent des constantes du moteur (`@/game/deck`), pas d'une
@@ -264,6 +311,68 @@ export function Deck() {
         </p>
       </section>
 
+      {/* **Partager le Deck par un code** (#363). Le partage est une action explicite :
+          rien ne part sans un clic. Un Deck illégal
+          s'exporte quand même, avec son avertissement — c'est le partage qui s'ouvre. */}
+      <section className="section panel deck-partage" aria-labelledby="deck-partage-titre">
+        <div className="section__head">
+          <div>
+            <h2 id="deck-partage-titre">Partager le Deck</h2>
+            <p className="muted">
+              Un code à copier : il porte les cartes et les types de café, pas ta Collection. Un Deck reçu montre ce qui
+              te manque.
+            </p>
+          </div>
+        </div>
+
+        <label className="field">
+          <span>Ton code</span>
+          <textarea
+            className="deck-partage__code"
+            readOnly
+            rows={3}
+            value={codeDuDeck}
+            aria-label="Code du Deck à partager"
+            onFocus={(event) => event.currentTarget.select()}
+          />
+        </label>
+        {!legality.ok && (
+          <p className="notice notice--warn">
+            Ce code porte un Deck illégal (raisons ci-dessus). Il s’exporte quand même, et s’importe de même.
+          </p>
+        )}
+        <div className="section__actions">
+          <button type="button" className="button button--primary" onClick={copierLeCode}>
+            Copier le code
+          </button>
+        </div>
+
+        <label className="field">
+          <span>Coller un code reçu</span>
+          <textarea
+            className="deck-partage__code"
+            rows={3}
+            value={codeAColler}
+            placeholder="PLQ1.…"
+            onChange={(event) => setCodeAColler(event.target.value)}
+          />
+        </label>
+        <div className="section__actions">
+          <button type="button" className="button" onClick={importerLeCode} disabled={codeAColler.trim() === ''}>
+            Importer ce Deck
+          </button>
+        </div>
+
+        {retour && (
+          <p
+            className={`notice ${retour.ok ? 'notice--ok' : 'notice--warn'} deck-partage__retour`}
+            role={retour.ok ? 'status' : 'alert'}
+          >
+            {retour.texte}
+          </p>
+        )}
+      </section>
+
       <div className="filters filters--deck">
         <TriCartes value={tri} onChange={setTri} />
       </div>
@@ -271,6 +380,11 @@ export function Deck() {
       <section className="section">
         <div className="section__head">
           <h2>Dedans ({inDeck.length})</h2>
+          {absentes > 0 && (
+            <span className="muted">
+              dont {absentes} non possédée{absentes > 1 ? 's' : ''}
+            </span>
+          )}
           <span className="muted">clic = retirer un exemplaire</span>
         </div>
         {inDeck.length === 0 ? (
@@ -284,6 +398,7 @@ export function Deck() {
                 key={`${card.id}-${index}`}
                 card={card}
                 inDeck={counts[card.id] ?? 0}
+                owned={owned[card.id] ?? 0}
                 onClick={() => removeFromDeck(card.id)}
                 quick={{
                   icon: <Info size={14} />,
