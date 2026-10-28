@@ -140,6 +140,11 @@ seul coût, voir §6).
     `node_modules` qui est un lien symbolique vers lui (le geste des worktrees de comparaison :
     `ln -s …/node_modules`, puis un `npm ci` qui viderait la cible). Un worktree de comparaison
     en lecture seule garde son lien, et n'installe rien.
+11. **Éditer par remplacement ciblé, jamais en réécrivant un fichier entier** (#258) : ancrer le
+    passage, élargir l'ancre si elle n'est pas unique, lire une **plage** plutôt que le fichier.
+    Une réécriture complète **écrase la modification d'un autre agent** entre la lecture et
+    l'écriture, sans que git la voie, et rend le diff illisible pour la relecture. Le geste, ses
+    cas limites et ce qui reste ouvert : [`edition-ciblee.md`](edition-ciblee.md).
 
 ## 5. Fusion — le protocole, et ses deux pièges
 

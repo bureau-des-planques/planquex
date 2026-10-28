@@ -27,4 +27,9 @@ Closes #
 <!-- Porte à sens unique (migration du store, schéma Supabase, renommage d'id) ou à double
      sens (se défait par `git revert -m 1 <merge>`) ? Ce qui casse si c'est faux. -->
 
+<!-- La CI de la PR ne dit pas l'état de `main` : cette case est le seul rappel qui arrive à
+     l'endroit où la fusion se décide (#258, D-115). -->
+
+- [ ] Avant de fusionner : `npm run ci:etat` sort 0 — `main` est green (si elle est rouge, on ne fusionne pas sans savoir pourquoi)
+
 <!-- Fusion : merge commit uniquement, sujet « merge: <ce que ça change> (#N) » (AGENTS.md §11). -->
