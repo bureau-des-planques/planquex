@@ -63,7 +63,7 @@ elle** : elle emprunte celui de sa base (`base_de_variante` dans
 | `atelier-responsable-process-star3` | `3S` | `atelier-responsable-process` | **produite** — graine `0` |
 | `rh-drh-crown` | `COU` | `rh-drh` | **produite** — graine `92169534` |
 | `direction-pdg-crown` | `COU` | `direction-pdg` | **produite** — graine `602849386` |
-| `syndicat-secretaire-general-crown` | `COU` | `syndicat-secretaire-general` | à produire |
+| `syndicat-secretaire-general-crown` | `COU` | `syndicat-secretaire-general` | **produite** — graine `1019569493` |
 
 Les **68 autres variantes** n'ont pas encore de planche : elles affichent celle de leur
 base, par résolution (D-139), et `npm run status` ne les compte pas comme manquantes.
@@ -387,3 +387,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-28 · `atelier-responsable-process-star3` · modèle `NARWHAL` · graine `0` · `atelier-responsable-process-star3.webp`
 - 2026-10-28 · `rh-drh-crown` · modèle `NARWHAL` · graine `92169534` · `rh-drh-crown.webp`
 - 2026-10-28 · `direction-pdg-crown` · modèle `NARWHAL` · graine `602849386` · `direction-pdg-crown.webp`
+- 2026-10-28 · `syndicat-secretaire-general-crown` · modèle `NARWHAL` · graine `1019569493` · `syndicat-secretaire-general-crown.webp`
