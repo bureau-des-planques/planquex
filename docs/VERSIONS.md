@@ -111,6 +111,12 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    chemin strict.
 8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
+**Cadence (D-128).** Une release part quand un **lot cohérent** est prêt, et **pas plus d'une par
+jour** : deux releases le même jour ont déjà eu lieu, et le testeur doit pouvoir dire « je suis sur
+celle d'aujourd'hui ». **Plusieurs pull requests peuvent entrer dans une même release** : la limite de
+`docs/agents/parallelisme.md` porte sur deux PR qui touchent les mêmes fichiers, pas sur le nombre de
+releases. Une PR n'est donc pas une release.
+
 Un `git tag -a v0.1.2` sur un commit, c'est un point de retour ; un tag déplacé à la main après
 coup, c'est un mensonge. Si la build était fausse, on monte la version et on refait un tag.
 
