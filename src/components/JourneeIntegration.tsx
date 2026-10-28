@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AppelParticiper } from '@/components/AppelParticiper';
 import { ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
 import { useStore } from '@/store/useStore';
 
@@ -146,6 +147,10 @@ export function JourneeIntegration() {
         <button type="button" className="journee__passer" onClick={terminer}>
           {libelleSaut(etape, tourFait)}
         </button>
+
+        {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée
+            jusqu'à sa dernière étape. */}
+        {derniere && <AppelParticiper surComite={terminer} />}
       </DialogContent>
     </Dialog>
   );
