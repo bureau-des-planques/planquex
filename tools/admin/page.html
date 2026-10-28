@@ -170,6 +170,15 @@
       .map(([k, v]) => `<div class="chiffre"><b>${v}</b><span>${k}</span></div>`).join('');
     const grilleComptes = ch(comptes);
     const grillePostits = ch(postits);
+    // La **sortie d'alpha** (D-123) : cinq testeurs distincts ayant terminé une partie. Le
+    // chiffre se lit, le seuil se voit, et la requête se copie pour être rejouée ailleurs.
+    const sortie = e.sortieAlpha || { seuil: 5, testeurs: 0, atteint: false, liste: [], requete: '' };
+    const etatSortie = sortie.atteint
+      ? `<span class="etat-pill" style="color:var(--accent)">atteint</span>`
+      : `<span class="etat-pill">pas atteint</span>`;
+    const listeSortie = sortie.liste.length
+      ? `<ul class="muet">${sortie.liste.map((t) => `<li><code>${t}</code></li>`).join('')}</ul>`
+      : '<div class="muet">aucun testeur n’a encore terminé de partie</div>';
     rendre(document.querySelector('#etat'), `
       <h2>État de l'alpha</h2>
       <div class="grille">
@@ -178,6 +187,10 @@
         <div class="chiffre"><b>${e.parties.poidsMoyen} o</b><span>poids moyen</span></div>
         <div class="chiffre"><b>${(e.volumeOctets / 1048576).toFixed(2)} Mo</b><span>volume</span></div>
       </div>
+      <h3>Sortie d'alpha — ${sortie.testeurs} testeur(s) distinct(s) sur ${sortie.seuil} ${etatSortie}</h3>
+      <p class="muet">Critère de D-123 : ${sortie.seuil} testeurs <strong>distincts</strong> ayant terminé une partie, croisés aux comptes approuvés. Deux parties du même testeur font un testeur.</p>
+      ${listeSortie}
+      <details><summary class="muet">la requête, à rejouer ailleurs</summary><pre>${sortie.requete}</pre></details>
       <h3>Comptes par état</h3>
       ${grilleComptes ? `<div class="grille">${grilleComptes}</div>` : '<div class="muet">aucun compte</div>'}
       <h3>Post-its par statut</h3>

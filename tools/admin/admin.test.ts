@@ -36,6 +36,7 @@ import { STATUTS as STATUTS_APP } from '../../src/store/mur';
 import { creerJournal } from './lib/journal.mjs';
 import { empreinte } from './lib/migrations.mjs';
 import { demarrerServeur } from './lib/app.mjs';
+import { sortieAlpha } from './lib/etat.mjs';
 import { chargerConfiguration, ouvrirNavigateur } from './serveur.mjs';
 
 const RACINE = fileURLToPath(new URL('../../', import.meta.url));
@@ -650,6 +651,82 @@ describe('les migrations (#184)', () => {
 });
 
 // ------------------------------------------------------------------------- les gardes croisées
+
+// ---------------------------------------------------------------------- la sortie d'alpha (#337)
+
+describe('la sortie d’alpha, lue dans le poste (#337, D-123)', () => {
+  /**
+   * Une trace minimale mais **valide** : la table exige un objet `decks` (`playerDeck`,
+   * `aiDeck`), un objet `types_cafe` et un journal tableau. Le contenu n'a aucune
+   * importance ici : la sortie d'alpha ne compte que des **auteurs**.
+   */
+  async function deposerCombat(db: Base, auteur: string) {
+    await db.query(
+      `insert into public.combats (auteur, mode, graine, decks, types_cafe, journal)
+       values ($1, 'solo', 7,
+               '{"playerDeck": [], "aiDeck": []}'::jsonb,
+               '{"playerCafeTypes": [], "aiCafeTypes": []}'::jsonb,
+               '[]'::jsonb)`,
+      [auteur],
+    );
+  }
+
+  it('compte des testeurs distincts, et seuls les comptes approuvés', async () => {
+    const m = await monde();
+    const testeurs = [
+      '11111111-1111-4111-8111-111111111111',
+      '22222222-2222-4222-8222-222222222222',
+      '33333333-3333-4333-8333-333333333333',
+      '44444444-4444-4444-8444-444444444444',
+    ];
+    for (const id of testeurs) await creerCompte(m.db, id, { etat: 'approuve' });
+    // Un compte **refusé** qui a déposé une partie : elle ne compte pas (D-123).
+    const refuse = '55555555-5555-4555-8555-555555555555';
+    await creerCompte(m.db, refuse, { etat: 'refuse' });
+    await deposerCombat(m.db, refuse);
+
+    // Quatre testeurs approuvés, une partie chacun : le seuil de cinq n'est pas atteint.
+    for (const id of testeurs) await deposerCombat(m.db, id);
+    const quatre = (await corpsJson(await api(m, '/api/etat'))).sortieAlpha;
+    expect(quatre.testeurs).toBe(4);
+    expect(quatre.seuil).toBe(5);
+    expect(quatre.atteint).toBe(false);
+    expect(quatre.liste).toEqual([...testeurs].sort());
+    // La requête sort avec le chiffre : elle se rejoue ailleurs.
+    expect(quatre.requete).toContain('distinct c.auteur');
+
+    // Un cinquième testeur approuvé qui termine une partie : le seuil est atteint.
+    const cinquieme = '66666666-6666-4666-8666-666666666666';
+    await creerCompte(m.db, cinquieme, { etat: 'approuve' });
+    await deposerCombat(m.db, cinquieme);
+    const cinq = (await corpsJson(await api(m, '/api/etat'))).sortieAlpha;
+    expect(cinq.testeurs).toBe(5);
+    expect(cinq.atteint).toBe(true);
+    // Le compte refusé n'est jamais entré dans la liste.
+    expect(cinq.liste).not.toContain(refuse);
+  });
+
+  it('le contrôle mord : deux parties du même auteur font UN testeur', async () => {
+    const m = await monde();
+    const seul = '77777777-7777-4777-8777-777777777777';
+    await creerCompte(m.db, seul, { etat: 'approuve' });
+    await deposerCombat(m.db, seul);
+    await deposerCombat(m.db, seul);
+
+    const sortie = (await corpsJson(await api(m, '/api/etat'))).sortieAlpha;
+    // Deux lignes en base, **une** personne : c'est la question de D-123, pas le compte de parties.
+    expect(sortie.testeurs).toBe(1);
+    expect(sortie.liste).toEqual([seul]);
+    // Et le nombre de parties, lui, reste deux — les deux chiffres disent deux choses.
+    const etat = await corpsJson(await api(m, '/api/etat'));
+    expect(etat.parties.terminees).toBe(2);
+
+    // Contrôle direct de la fonction pure : un doublon ne compte qu'une fois, une entrée
+    // illisible est ignorée plutôt que comptée.
+    expect(sortieAlpha([seul, seul, '', '  ', null]).testeurs).toBe(1);
+    expect(sortieAlpha([]).atteint).toBe(false);
+  });
+});
 
 describe('les statuts ne divergent pas (#184)', () => {
   it('le poste et le contrat du mur portent la même liste', () => {
