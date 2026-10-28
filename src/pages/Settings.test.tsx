@@ -145,6 +145,16 @@ describe('Settings — écran des Réglages', () => {
     }
   });
 
+  it('la case « Sons du jeu » coupe les deux sons et se retient (#378, D-137)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+    const case_ = screen.getByRole('checkbox', { name: /Sons du jeu/i });
+    // Cochée par défaut : D-137 veut que le testeur entende l'Arrivage sans rien régler.
+    expect(case_).toBeChecked();
+    fireEvent.click(case_);
+    expect(useStore.getState().sons).toBe(false);
+    expect(case_).not.toBeChecked();
+  });
+
   it('affiche la section Données locales avec le bouton Réinitialiser', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
