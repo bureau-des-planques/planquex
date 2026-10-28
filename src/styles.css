@@ -5233,11 +5233,7 @@ h2 {
 .ouverture__retourne {
   height: 100%;
   position: relative;
-  transform: rotateY(180deg);
-  transform-style: preserve-3d;
-  transition:
-    transform 950ms cubic-bezier(0.25, 0.9, 0.3, 1),
-    translate 260ms ease;
+  transition: translate 260ms ease;
   width: 100%;
 }
 
@@ -5268,17 +5264,35 @@ h2 {
   }
 }
 
-.ouverture__carte[data-face='recto'] .ouverture__retourne {
-  transform: rotateY(0deg);
-}
-
 .ouverture__face,
 .ouverture__dos {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   border-radius: 12px;
   inset: 0;
   position: absolute;
+}
+
+/* Le retournement n'imbrique plus de 3D : le dos part de face (0° → 90°) pendant que la face arrive
+   de profil (−90° → 0°). Chaque élément reste dans ±90°, donc jamais vu à l'envers ni en miroir,
+   et ne dépend ni de `preserve-3d` ni de `backface-visibility`, que certains navigateurs ignorent. */
+.ouverture__carte[data-face='verso'] .ouverture__face {
+  transform: perspective(1200px) rotateY(-90deg);
+  visibility: hidden;
+}
+
+.ouverture__carte[data-face='recto'] .ouverture__face {
+  transform: perspective(1200px) rotateY(0deg);
+  transition:
+    transform 520ms cubic-bezier(0.3, 0.7, 0.6, 1) 430ms,
+    visibility 0s 430ms;
+  visibility: visible;
+}
+
+.ouverture__carte[data-face='recto'] .ouverture__dos {
+  transform: perspective(1200px) rotateY(90deg);
+  transition:
+    transform 430ms cubic-bezier(0.4, 0, 0.6, 1),
+    visibility 0s 430ms;
+  visibility: hidden;
 }
 
 .ouverture__face {
@@ -5551,14 +5565,15 @@ h2 {
   pointer-events: none;
 }
 
-/* La carte arrive en tournant sur elle-même, puis se tient sous le doigt comme une vraie. */
+/* La carte est déjà face visible : elle **pivote** jusqu'à sa place, sans jamais montrer son dos
+   (une pirouette de 360° l'affichait à l'envers au premier instant). Moins de 90°, elle reste de face. */
 .ouverture__carte[data-fiche='oui'] .ouverture__retourne {
-  animation: ouverture-pirouette 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: ouverture-fiche-pivot 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes ouverture-pirouette {
+@keyframes ouverture-fiche-pivot {
   from {
-    transform: rotateY(-360deg);
+    transform: rotateY(-70deg);
   }
   to {
     transform: rotateY(0deg);
@@ -5566,7 +5581,7 @@ h2 {
 }
 
 .ouverture__carte[data-fiche='oui'] .ouverture__face {
-  transform: rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg));
+  transform: perspective(1200px) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg));
   transition: transform 140ms ease-out;
 }
 
@@ -5808,6 +5823,8 @@ h2 {
 [data-mouvement-reduit='true'] .ouverture__rayons,
 [data-mouvement-reduit='true'] .ouverture__carte,
 [data-mouvement-reduit='true'] .ouverture__retourne,
+[data-mouvement-reduit='true'] .ouverture__face,
+[data-mouvement-reduit='true'] .ouverture__dos,
 [data-mouvement-reduit='true'] .ouverture__neuve {
   transition: none;
 }
