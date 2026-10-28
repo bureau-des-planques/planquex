@@ -6,9 +6,11 @@ import {
   DEFAULT_MAX_TURNS,
   FACTION_ORDER,
   factionCafeTypes,
+  ENTRANTS_MAX_DECK_DERIVE,
   factionDecks,
   jouerPartiePolitiques
 } from '@/game/simulation';
+import type { OptionsDeckDerive } from '@/game/simulation';
 import { drawRandom, seedRng } from '@/game/rng';
 import { intervalleWilson } from '@/game/mesure-direction';
 
@@ -154,6 +156,18 @@ export interface FormeDeck {
    * INTERIM en #412 — 12 sur 28, et le COMEX ne pouvait pas attaquer.
    */
   payables: number;
+  /**
+   * La composition du Deck, nom par nom (#417) : un lecteur voit ce qui s'affronte.
+   * Dans l'ordre du Deck (Entrants, évolutions, Actions), une entrée par nom.
+   */
+  composition: LigneComposition[];
+}
+
+/** Une ligne de composition : un nom de carte, son stade (ou « Action »), ses exemplaires. */
+export interface LigneComposition {
+  nom: string;
+  stade: string;
+  exemplaires: number;
 }
 
 /** Une Pression est-elle payable avec ces types de café (D-037) ? */
@@ -166,6 +180,8 @@ export interface RapportArchetypes {
   politique: Politique;
   partiesParPaire: number;
   maxTurns: number;
+  /** Le plafond d'Entrants distincts par Deck dérivé (#417) ; `null` = sans plafond. */
+  entrantsMax: number | null;
   bande: { bas: number; haut: number };
   /** Le seuil d'alerte, en points de pourcentage. */
   seuilAlerte: number;
@@ -181,10 +197,16 @@ export interface RapportArchetypes {
 export function formeDeck(faction: Faction, deck: readonly string[]): FormeDeck {
   const planques: PlanqueCard[] = [];
   let actions = 0;
+  const parNom = new Map<string, LigneComposition>();
   for (const id of deck) {
     const card = CARD_BY_ID.get(id);
     if (card && isPlanque(card)) planques.push(card);
     else actions += 1;
+    const stade = card && isPlanque(card) ? (card.ex ? `${card.stage} · COMEX` : card.stage) : 'Action';
+    const nom = card?.name ?? id;
+    const ligne = parNom.get(nom);
+    if (ligne) ligne.exemplaires += 1;
+    else parNom.set(nom, { nom, stade, exemplaires: 1 });
   }
   const auStade = (stage: PlanqueCard['stage']) => planques.filter((card) => card.stage === stage).length;
   // Les types que la partie utilise réellement : la table explicite du harnais (#113)
@@ -203,7 +225,8 @@ export function formeDeck(faction: Faction, deck: readonly string[]): FormeDeck 
     seuilMax: planques.reduce((max, card) => Math.max(max, card.hp), 0),
     noms: new Set(deck).size,
     pressions: pressions.length,
-    payables: pressions.filter((attack) => pressionPayable(attack.cost, types)).length
+    payables: pressions.filter((attack) => pressionPayable(attack.cost, types)).length,
+    composition: [...parNom.values()]
   };
 }
 
@@ -215,6 +238,11 @@ export interface OptionsMesureArchetypes {
   factions?: readonly Faction[];
   bande?: { bas: number; haut: number };
   seuilAlerte?: number;
+  /**
+   * Plafond d'Entrants distincts des Decks dérivés (#417). Défaut :
+   * `ENTRANTS_MAX_DECK_DERIVE`. `Infinity` mesure l'ancien comportement, sans plafond.
+   */
+  entrantsMax?: OptionsDeckDerive['entrantsMax'];
 }
 
 /**
@@ -238,7 +266,7 @@ export function mesurerArchetypes(options: OptionsMesureArchetypes = {}): Rappor
   if (!Number.isFinite(graine)) throw new Error(`Graine invalide : ${graine}.`);
 
   const factions = [...(options.factions?.length ? options.factions : FACTION_ORDER)];
-  const decks = factionDecks(factions);
+  const decks = factionDecks(factions, { entrantsMax: options.entrantsMax });
   const paires = pairesArchetypes(factions);
   const master = { rng: seedRng(graine) };
   const lignes: LigneArchetype[] = [];
@@ -317,6 +345,9 @@ export function mesurerArchetypes(options: OptionsMesureArchetypes = {}): Rappor
     politique: 'scripte',
     partiesParPaire,
     maxTurns,
+    entrantsMax: Number.isFinite(options.entrantsMax ?? ENTRANTS_MAX_DECK_DERIVE)
+      ? (options.entrantsMax ?? ENTRANTS_MAX_DECK_DERIVE)
+      : null,
     bande: { ...bande },
     seuilAlerte,
     paires: lignes,
@@ -364,6 +395,22 @@ export function formatTableArchetypes(rapport: RapportArchetypes): string {
       `| ${deck.faction} | ${deck.cartes} | ${deck.entrants} | ${deck.n1} | ${deck.n2} | ${deck.comex} | ` +
         `${deck.actions} | ${deck.noms} | ${deck.seuilMax} | ${deck.payables} / ${deck.pressions} |`
     );
+  }
+
+  lignes.push(
+    '',
+    '### La composition des Decks mesurés',
+    '',
+    rapport.entrantsMax === null
+      ? 'Sans plafond d’Entrants (#417 désactivé) : une faction de plus de dix Entrants remplit son Deck avant ses évolutions.'
+      : `Plafond : ${rapport.entrantsMax} Entrants distincts au plus par Deck dérivé (#417) ; les Entrants gardés sont ceux dont la ligne d’évolution est la plus longue.`,
+    '',
+    '| Archétype | Composition (20 cartes : nom ×exemplaires (stade)) |',
+    '|---|---|'
+  );
+  for (const deck of rapport.decks) {
+    const texte = deck.composition.map((ligne) => `${ligne.nom} ×${ligne.exemplaires} (${ligne.stade})`).join(' ; ');
+    lignes.push(`| ${deck.faction} | ${texte} |`);
   }
 
   lignes.push(

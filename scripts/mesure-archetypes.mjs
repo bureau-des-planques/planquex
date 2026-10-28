@@ -25,6 +25,9 @@ const USAGE = `Usage : npm run mesure:archetypes -- [options]
       --max-turns <N>   arrêt d'urgence d'une partie (défaut : 200)
       --factions <liste> factions à opposer, séparées par des virgules (défaut : les dix)
       --seuil <points>  seuil d'alerte en points de pourcentage (défaut : 15)
+      --entrants-max <N|inf>
+                        plafond d'Entrants distincts par Deck dérivé (défaut : 8, #417).
+                        « inf » rejoue l'ancien constructeur, sans plafond (la mesure « avant »)
       --json            rapport JSON au lieu du markdown
   -h, --help            cette aide
 
@@ -52,6 +55,7 @@ function parseArgs(argv) {
     maxTurns: null,
     factions: null,
     seuil: null,
+    entrantsMax: null,
     json: false,
     help: false
   };
@@ -72,7 +76,12 @@ function parseArgs(argv) {
     else if (name === '--graine' || name === '-s') options.graine = readNumber(value(), '--graine');
     else if (name === '--max-turns') options.maxTurns = readNumber(value(), '--max-turns');
     else if (name === '--seuil') options.seuil = readNumber(value(), '--seuil');
-    else if (name === '--factions') {
+    else if (name === '--entrants-max') {
+      const brut = String(value() ?? '')
+        .trim()
+        .toLowerCase();
+      options.entrantsMax = brut === 'inf' || brut === 'infinity' ? Infinity : readNumber(brut, '--entrants-max');
+    } else if (name === '--factions') {
       options.factions = (value() ?? '')
         .split(',')
         .map((faction) => faction.trim().toUpperCase())
@@ -96,6 +105,11 @@ if (!options) {
   fail('--parties doit être un entier ≥ 2.');
 } else if (options.parties !== null && options.parties % 2 !== 0) {
   fail('--parties doit être PAIR : le miroir joue les deux sièges.');
+} else if (
+  options.entrantsMax !== null &&
+  !(options.entrantsMax === Infinity || (Number.isInteger(options.entrantsMax) && options.entrantsMax >= 1))
+) {
+  fail('--entrants-max doit être un entier ≥ 1, ou « inf ».');
 } else {
   const server = await createServer({
     server: { middlewareMode: true },
@@ -121,7 +135,8 @@ if (!options) {
         graine: options.graine ?? undefined,
         maxTurns: options.maxTurns ?? undefined,
         factions: options.factions ?? undefined,
-        seuilAlerte: options.seuil === null ? undefined : options.seuil / 100
+        seuilAlerte: options.seuil === null ? undefined : options.seuil / 100,
+        entrantsMax: options.entrantsMax ?? undefined
       });
       process.stdout.write(
         options.json ? `${JSON.stringify(rapport, null, 2)}\n` : `${mesure.formatTableArchetypes(rapport)}\n`

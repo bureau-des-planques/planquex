@@ -5818,3 +5818,46 @@ h2 {
 .deck-partage__retour {
   margin-top: 0.5rem;
 }
+
+/* ---------- Les filtres de la Collection (#365) ---------- */
+
+/* Rareté, coût et possession s'ajoutent à la recherche, la faction et le stade : chaque champ
+   prend une part de ligne, et la recherche la ligne entière. */
+.collection .filters .field {
+  flex: 1 1 9.5rem;
+  min-width: 0;
+}
+
+.collection .filters .field--search {
+  flex: 1 1 100%;
+}
+
+/* « Seulement ce que je possède » : une case dont toute la ligne est la cible (44 px). */
+.filtre-case {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex: 1 1 9.5rem;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  min-width: 0;
+}
+
+.filtre-case input {
+  flex: none;
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+/* La ligne des filtres actifs : leur nombre, et « Tout effacer » pour les retirer d'un geste. */
+.filtres-actifs {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.filtres-actifs .button {
+  min-height: 2.75rem;
+}

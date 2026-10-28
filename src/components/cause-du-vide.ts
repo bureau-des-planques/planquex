@@ -3,9 +3,9 @@
  * n'accuse que ce qui est réellement en cause — « cette recherche » à un testeur qui n'a rien
  * tapé et a choisi une faction le renvoie chercher au mauvais endroit.
  *
- * Aujourd'hui le catalogue croise toutes les factions et tous les stades : un filtre **seul**
- * ne vide pas la grille, et seule la recherche (ou recherche et filtre) y mène. La fonction
- * n'en dépend pas : elle dit la vérité le jour où un couple se vide.
+ * Un filtre **seul** peut vider la grille : la rareté et le coût en café (#365) croisent le
+ * catalogue et n'en gardent parfois rien (« seulement ce que je possède » sur une Collection
+ * vide, par exemple). La fonction ne dépend pas de la combinaison : elle dit la cause réelle.
  */
 export function causeDuVide(recherche: string, filtreActif: boolean): string {
   const cherche = recherche.trim() !== '';
