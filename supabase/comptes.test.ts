@@ -21,7 +21,9 @@
  *   (g) la ligne naît **automatiquement** à la première connexion (`auth.users` →
  *       déclencheur), et les post-its **déjà en base** restent lisibles mais figés ;
  *   (h) la **médaille de la période d'essai** (0016, D-130 (3)) est posée par le serveur, lue
- *       par son compte, et **jamais** écrite par un client — elle ne se déduit pas d'une date.
+ *       par son compte, et **jamais** écrite par un client — elle ne se déduit pas d'une date ;
+ *       et la 0016 ne porte **aucune** ligne de droit qui nomme ses colonnes, car un `revoke` de
+ *       colonne ne retire rien (#372).
  *
  * **Le contrôle mord** (#112) : chaque contrôle est neutralisé tour à tour — la 0005 est
  * relue, un motif précis est remplacé, puis rejouée — et le geste fautif doit alors donner
@@ -473,6 +475,52 @@ describe('la Médaille de la période d’essai — la 0016 (#346, D-130 (3))', 
   });
 });
 
+// ---------------------------------------------------------------------------------------------
+// Aucune ligne de droit morte sur la médaille (#372)
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Les lignes de la migration qui donnent ou retirent un droit **en nommant une colonne de la
+ * médaille**. Les droits d'écriture de `authenticated` sont **colonne par colonne** depuis la
+ * 0005 (`etat`, `raison`) : ces deux colonnes n'entrent dans aucun `grant`.
+ *
+ * D'où les deux refus, et c'est **mesuré**, pas supposé (PGlite, 27/10/2026) :
+ *
+ * - un `revoke all (colonne)` sur une colonne jamais accordée **ne retire rien** et ne peut pas
+ *   échouer — les trois lignes que la 0016 portait ont été retirées pour ça (#372) ;
+ * - un `grant` qui les nomme ouvrirait l'écriture, ce que la 0005 interdit.
+ *
+ * Une ligne de droit sur une autre colonne, ou une prose qui parle de `revoke`, ne compte pas :
+ * les commentaires sont retirés avant la lecture.
+ */
+function lignesDeDroitSurLaMedaille(sql: string): string[] {
+  return sql
+    .split('\n')
+    .map((ligne) => ligne.replace(/--.*/, '').trim())
+    .filter((ligne) => /^(grant|revoke)\b/i.test(ligne) && /medaille_periode_essai/.test(ligne));
+}
+
+describe('les lignes de droit de la 0016 (#372)', () => {
+  it('aucune ne nomme les colonnes de la médaille : aucune ne pourrait échouer', () => {
+    expect(lignesDeDroitSurLaMedaille(MIGRATION_MEDAILLE!)).toEqual([]);
+  });
+
+  it('le contrôle mord — une révocation de colonne comme un grant sont vus', () => {
+    // Ce que la 0016 portait avant #372 : trois `revoke all (colonne)`, qui ne retiraient rien.
+    expect(
+      lignesDeDroitSurLaMedaille('revoke all (medaille_periode_essai) on public.comptes from authenticated;')
+    ).toHaveLength(1);
+    expect(
+      lignesDeDroitSurLaMedaille('  grant update (medaille_periode_essai_le) on public.comptes to authenticated;')
+    ).toHaveLength(1);
+    // Et ce qui n'est pas une ligne de droit sur la médaille reste dehors.
+    expect(lignesDeDroitSurLaMedaille('grant update (etat, raison) on public.comptes to authenticated;')).toEqual([]);
+    expect(lignesDeDroitSurLaMedaille('-- revoke all (medaille_periode_essai) on public.comptes from public;')).toEqual(
+      []
+    );
+  });
+});
+
 describe('les post-its déjà en base (23/10/2026) restent lisibles et deviennent figés', () => {
   it('la 0005 ne les supprime pas, ne les rattache pas, et leur auteur anonyme ne peut plus écrire', async () => {
     // L'état d'avant la 0005 : 0001 à 0004, deux post-its d'un appareil anonyme.
@@ -521,15 +569,6 @@ function muter(motif: string, remplacement: string): string {
   const mutee = MIGRATION_COMPTES!.replaceAll(motif, remplacement);
   expect(mutee).not.toBe(MIGRATION_COMPTES);
   return migrations().replace(MIGRATION_COMPTES!, () => mutee);
-}
-
-/** Remplace un motif de la 0016 ; un motif absent fait échouer bruyamment. */
-function muterMedaille(motif: string, remplacement: string): string {
-  const occurrences = MIGRATION_MEDAILLE!.split(motif).length - 1;
-  expect(occurrences, `motif introuvable ou ambigu dans la 0016 : ${motif}`).toBe(1);
-  const mutee = MIGRATION_MEDAILLE!.replace(motif, () => remplacement);
-  expect(mutee).not.toBe(MIGRATION_MEDAILLE);
-  return migrations().replace(MIGRATION_MEDAILLE!, () => mutee);
 }
 
 const MUTATIONS: Array<{
@@ -627,16 +666,17 @@ const MUTATIONS: Array<{
     attendu: 'accepte'
   },
   {
-    nom: '(h) grant élargi à la médaille → un administrateur se l’attribue depuis le client',
-    // L'administrateur est le cas qui prouve quelque chose : il passe la RLS (`est_administrateur()`),
-    // donc seule la liste de colonnes du `grant` le retient. La 0005 ne peut pas nommer les
-    // colonnes (elles n'existent pas encore) : la mutation ouvre le droit **dans la 0016**, après
-    // sa révocation — ce que ferait une migration qui « rouvrirait » la médaille au client.
+    nom: '(h) le `grant` de colonnes élargi à la table → un administrateur se l’attribue depuis le client',
+    // L'administrateur est le cas qui prouve quelque chose : il passe la RLS
+    // (`est_administrateur()`), donc seule la liste de colonnes du `grant update (etat, raison)`
+    // de la 0005 le retient. Élargi à la table, ce grant couvre **toutes** les colonnes,
+    // médaille comprise — c'est la régression qui rouvre l'écriture, et la 0016 ne peut pas la
+    // rattraper : cette garde est donc ici, dans le test, et pas dans une ligne de migration
+    // (#372 — un `revoke` de colonne ne retirait rien, il est parti).
     sql: () =>
-      muterMedaille(
-        'revoke all (medaille_periode_essai, medaille_periode_essai_le) on public.comptes from authenticated;',
-        `revoke all (medaille_periode_essai, medaille_periode_essai_le) on public.comptes from authenticated;
-grant update (medaille_periode_essai, medaille_periode_essai_le) on public.comptes to authenticated;`
+      muter(
+        'grant update (etat, raison) on public.comptes to authenticated;',
+        'grant update on public.comptes to authenticated;'
       ),
     geste: async (db) => {
       const issue = await attribuerParClient(db, ADMIN);

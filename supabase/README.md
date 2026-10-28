@@ -19,7 +19,10 @@ s'appuyer dessus.
 | `supabase/migrations/0011_anon_hors_fonctions.sql` | le rôle `anon` n'exécute plus aucune fonction `security definer` de `public` (#247) : les valeurs par défaut de Supabase lui accordent `execute`, et le refus ne reposait que sur `auth.uid()` nul. `authenticated` garde ses droits |
 | `supabase/migrations/0012_combats_pvp.sql` | la trace des parties à deux (#228, D-105) : `combats.mode` admet `'pvp'` à côté de `'solo'` — pas de colonne, pas de politique, pas de droit nouveau |
 | `supabase/migrations/0013_discord_comite.sql` | les annonces du mur dans `#comite` (#318, D-120) : la table `annonces_discord`, les deux déclencheurs qui **composent la phrase**, la couture `poster_discord(url, corps)`, la réconciliation de `pg_net`, la passe de dix, le secret lu dans **Vault**, le passé marqué `sans_webhook` — et **aucun privilège client** |
-| `supabase/migrations/0016_medaille_periode_essai.sql` | la « Médaille de la période d'essai » (#346, D-130 (3)) : `comptes.medaille_periode_essai` et sa date, la contrainte qui les lie, et la fermeture des droits d'écriture client sur les deux colonnes — aucune fonction, aucun déclencheur |
+| `supabase/migrations/0016_medaille_periode_essai.sql` | la « Médaille de la période d'essai » (#346, D-130 (3)) : `comptes.medaille_periode_essai` et sa date, la contrainte qui les lie — aucune fonction, aucun déclencheur, **aucun droit** : ce qui ferme ces deux colonnes au client est le `grant update (etat, raison)` **colonne par colonne** de la 0005, et c'est tout (une révocation de colonne ne retirerait rien — les trois lignes de la 0016 qui le prétendaient sont parties, #372) |
+| `supabase/migrations/0017_annonce_resume.sql` | l'annonce du post-it porte son **résumé** et ses **points** (#339, D-120) : `phrase_postit_neuf` prend le texte, le premier paragraphe est coupé à 200 et les lignes à puces (quatre au plus) à 100 ; un gueulage reste muet, un texte vide n'ajoute aucune ligne — aucune fonction `security definer` nouvelle, aucun droit client |
+| `supabase/migrations/0018_pgnet_et_fonctions_fermees.sql` | `pg_net` sort de `public` pour `extensions` (#341, D-133 (1), D-138) — supprimée puis réinstallée, `SET SCHEMA` n'étant pas supporté par l'extension ; et les fonctions de `public` sont triées (D-133 (2), (3)) : les deux déclencheurs `comptes_creation`/`comptes_decision` **fermés**, les six déclencheurs sans `security definer` que la 0011 avait laissés sous le `EXECUTE` de `PUBLIC` **fermés aussi**, et les cinq fonctions que le client ou la RLS appellent **réaffirmées ouvertes**. Aucun droit client nouveau |
+| `supabase/fonctions.test.ts` | la garde des droits d'exécution (#341) : `anon` n'exécute aucune fonction de `public`, `authenticated` exécute **exactement** les cinq justifiées, la migration se rejoue — et une fonction fabriquée laissée ouverte de plus est dénoncée |
 | `supabase/imports/comite-fichier-2026-10-26.sql` | l'import des deux post-its de `docs/comite.json` en base (#136) — données, pas schéma : auteur sentinelle, date de collecte reprise de l'id, écran vide devenu `null` |
 | `supabase/imports.test.ts` | la garde de l'import : le fichier et l'import disent la même chose, les lignes passent `lirePostitsDeLaBase`, rejouer ne duplique rien |
 | `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
@@ -551,6 +554,29 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
   select count(*) from public.comptes where medaille_periode_essai;
   ```
 
+  Un `client_ecrit` à `true` veut dire qu'un `grant update` **au niveau table** a été glissé
+  quelque part : la 0005 a révoqué celui-là et ne rend que deux colonnes, et c'est **cela seul**
+  qui ferme la médaille — la 0016 ne porte aucune ligne de droit, une révocation de colonne ne
+  retirant rien (#372). La garde `supabase/comptes.test.ts` fabrique ce cas et le refuse.
+- **appliquer la migration 0017** (le résumé et les points de l'annonce, #339/D-120) — à faire
+  par le poste de pilotage, comme la 0013 (`docs/INTEGRATIONS-DISCORD.md` §10.3). Elle
+  **remplace** la phrase d'arrivée posée par 0013 : l'ancienne signature à quatre arguments est
+  retirée, le déclencheur `postits_annonce_neuve` n'est pas retouché. Idempotente, aucune ligne
+  existante touchée — les annonces déjà en file gardent le corps composé par 0013.
+
+  ```sql
+  -- La signature à cinq arguments, et plus qu'elle (attendu : 1 ligne)
+  select oid::regprocedure::text from pg_proc where proname = 'phrase_postit_neuf';
+  ```
+
+- **appliquer la migration 0018** (`pg_net` dans `extensions`, et les fonctions de `public`
+  triées, #341/D-133) — **à faire** dans la même fenêtre que la 0017 (#339), et **après**
+  elle : elle supprime puis réinstalle `pg_net` (`SET SCHEMA` n'est pas supporté), ce qui
+  suspend la file d'annonces le temps du geste. La procédure et les vérifications sont
+  **§10**. Elle est idempotente : rejouée sur une base à jour, elle ne lève rien. Contrôle :
+  `npx vitest run --project=node supabase/fonctions.test.ts` (`anon` n'exécute aucune fonction,
+  `authenticated` exactement les cinq).
+
 ---
 
 ## 9. Les annonces du mur dans `#comite` (#318, D-120)
@@ -562,7 +588,7 @@ Le mur **parle** dans le salon `#comite` du serveur des testeurs : un post-it ne
 
 | Sort | Ne sort jamais |
 |---|---|
-| la **famille** (IP / OUF), le **titre**, le **pseudo**, le lien vers `/comite` | le **texte** d'un gueulage (D-085) — on annonce qu'il est arrivé, pas ce qu'il dit ; ni son titre |
+| la **famille** (IP / OUF), le **titre**, le **pseudo**, le **résumé** du texte (premier paragraphe, 200 caractères), ses **points** (lignes à puces, quatre au plus, 100 caractères), le lien vers `/comite` | le **texte** d'un gueulage (D-085) — on annonce qu'il est arrivé, pas ce qu'il dit ; ni son titre, ni son résumé |
 | le **statut** atteint (`retenu`, `en cours`, `fait`, `écarté`) et la **raison** d'un écarté, tronquée | `auteur`, le courriel, l'identifiant du compte, les votes, les commentaires |
 
 Un gueulage s'annonce donc en une ligne, sans famille : `Un gueulage vient d'arriver sur le
@@ -615,3 +641,91 @@ Puis le contrôle qui compte :
 ```bash
 npx vitest run supabase/discord.test.ts
 ```
+
+---
+
+## 10. Qui exécute quoi dans `public` (#341, D-133)
+
+Les valeurs par défaut de Supabase accordent `EXECUTE` sur les fonctions de `public` à `anon`
+et à `authenticated` ; PostgreSQL, lui, l'accorde à `PUBLIC` sur toute fonction neuve. La 0011
+avait fermé `anon` sur les **sept** fonctions `security definer` de l'époque, mais elle laissait
+deux choses : `authenticated` sur les deux **déclencheurs** de `comptes`, et les déclencheurs
+**sans** `security definer` sous le droit de `PUBLIC` (donc exécutables par `anon`). La 0018
+ferme tout cela. L'invariant, tenu par `supabase/fonctions.test.ts` :
+
+- **`anon` n'exécute aucune fonction de `public`** ;
+- **`authenticated` exécute exactement les cinq** ci-dessous.
+
+### Les sept fonctions `SECURITY DEFINER`, triées une par une
+
+| Fonction | État | Raison |
+|---|---|---|
+| `corriger_postit(text, text, text)` | **ouverte** à `authenticated` | **appelée par le client** : la correction du titre et du texte d'un post-it (#139) |
+| `deplacer_postit(text, double precision, double precision, double precision)` | **ouverte** | **appelée par le client** : la place d'un post-it (#185, D-092) |
+| `marquer_comite_vu()` | **ouverte** | **appelée par le client** : le repère de suivi du comité (#209, D-097) |
+| `compte_approuve()` | **ouverte** | **citée par les politiques RLS** de `postits`, `votes`, `commentaires` et `combats` ; une politique s'exécute **avec les droits de l'appelant**, donc `authenticated` garde `EXECUTE` |
+| `est_administrateur()` | **ouverte** | **citée par les politiques RLS** (tri, retrait d'administration) — même raison |
+| `comptes_creation()` | **fermée** | **déclencheur** sur `auth.users` : jamais appelée par RPC, et un déclencheur ne vérifie pas l'`EXECUTE` |
+| `comptes_decision()` | **fermée** | **déclencheur** sur `public.comptes` — même raison |
+
+Fermées aussi, avec elles, les six fonctions de déclencheur **sans `security definer`**
+(`postits_lie_hors_gueulage`, `postits_updated_at`, `commentaires_date_serveur`,
+`postits_date_serveur`, `commentaires_figer_date`, `postits_figer_date`) : elles rendent
+`trigger`, ne sont pas appelables, et un déclencheur ne vérifie pas l'`EXECUTE` — les fermer ne
+change aucun comportement.
+
+Le contrôle qui compte :
+
+```bash
+npx vitest run --project=node supabase/fonctions.test.ts
+```
+
+### `pg_net` : la réinstaller dans `extensions` (procédure rejouable)
+
+`alter extension pg_net set schema extensions` **ne marche pas** : l'extension n'est pas
+`relocatable` (mesuré par la session d'infra). La 0018 supprime donc l'extension et la
+réinstalle — c'est ce que D-133 (1) acte, dans la fenêtre où le salon `#comite` est vide, donc
+**aucune annonce ne peut se perdre**. La migration fait le geste d'elle-même ; la voici à la
+main, pour une session d'infra :
+
+```sql
+-- 1. Où est-elle ? (attendu avant : public ; après : extensions)
+select e.extname, n.nspname as schema
+  from pg_extension e join pg_namespace n on n.oid = e.extnamespace
+ where e.extname = 'pg_net';
+
+-- 2. Vider la file avant de couper : aucune requête en vol ne doit être oubliée.
+--    (`en attente` = pas encore déposée chez pg_net, rien ne se perd à l'étape 3.)
+select count(*) from public.annonces_discord where etat = 'remis';
+
+-- 3. Réinstaller dans `extensions`.
+create schema if not exists extensions;
+drop extension pg_net;
+create extension pg_net with schema extensions;
+
+-- 4. Vérifier que la couture retrouve son chemin (elle nomme `net.http_post`, aucun
+--    changement de nom : seul le schéma de l'extension bouge).
+select public.poster_discord(
+  (select decrypted_secret from vault.decrypted_secrets where name = 'discord_webhook_comite'),
+  '{"content": "test de la 0018 — pg_net est dans extensions"}'::jsonb
+);
+```
+
+Le `drop` **n'emporte pas** `public.poster_discord` : elle nomme `net.http_post` en SQL
+qualifié, et plpgsql n'enregistre aucune dépendance de son corps. Si un jour autre chose en
+dépend, le `drop` **échoue** au lieu de l'emporter en silence : ne pas ajouter de `cascade`
+sans avoir lu l'erreur.
+
+Puis, quelques minutes plus tard (le worker de `pg_net` dépose, Discord répond) :
+
+```sql
+-- 5. L'annonce de test est passée par la réconciliation, et l'extension est au bon endroit.
+select status_code from net._http_response order by created desc limit 1;
+select n.nspname as schema
+  from pg_extension e join pg_namespace n on n.oid = e.extnamespace
+ where e.extname = 'pg_net';                          -- attendu : extensions
+```
+
+Le banc PGlite **ne rejoue pas** ce déplacement : mesuré le 27/10/2026, `pg_net` y répond
+`extension "pg_net" is not available` comme dans la 0013, et la branche se tait. La preuve du
+déplacement est donc un geste d'infra, pas un test — la garde, elle, tient les droits.
