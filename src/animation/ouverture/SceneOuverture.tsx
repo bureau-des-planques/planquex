@@ -296,6 +296,15 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                 style={{ opacity: poids[i], transform: `scaleX(${miroir})` }}
               />
             ))}
+            {etat.phase === 'dechirure' && etat.dechirure > 0.02 && etat.dechirure < 1 && (
+              // Le front de la déchirure : un repère fin qui suit le doigt. Il ne porte **aucune**
+              // information (le pourcentage est dans la consigne), il dit seulement où en est la ligne.
+              <span
+                className="ouverture__front"
+                aria-hidden="true"
+                style={{ left: `${etat.dechirure * 100}%`, top: `${0.075 * 100}%` }}
+              />
+            )}
             {!reduit && !creuxPret && etat.phase !== 'ouvert' && (
               <span ref={repliRef} className="ouverture__creux-repli" aria-hidden="true" />
             )}

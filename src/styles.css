@@ -4408,6 +4408,18 @@ h2 {
   width: 26%;
 }
 
+/* Le front de la déchirure (#283) : un repère fin, qui suit le doigt le long des pointillés. */
+.ouverture__front {
+  background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 60%, rgba(255, 255, 255, 0) 100%);
+  filter: blur(1px);
+  height: 3px;
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  z-index: 3;
+}
+
 /* Le shader du creux : au-dessus des plaques, sous les cartes. */
 .ouverture__creux {
   height: 100%;
