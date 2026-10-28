@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 /**
  * La version de l'application et son étape, injectées au build depuis `package.json`

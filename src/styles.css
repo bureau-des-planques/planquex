@@ -552,6 +552,44 @@ h2 {
   margin-top: 0.15rem;
 }
 
+/* Une nouvelle version est prête (#355) : un bandeau **discret**, sous l'en-tête, et
+   **absent du DOM** quand il n'a rien à dire — donc aucun trou de mise en page. Les deux
+   boutons font 44 px (D-120), et le texte passe à la ligne tout seul à 420 px (D-116). */
+.bandeau-version {
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0.8rem;
+}
+
+.bandeau-version svg {
+  color: var(--accent);
+  flex: none;
+}
+
+.bandeau-version__texte {
+  flex: 1 1 12rem;
+  font-size: 0.86rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.bandeau-version .button {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.bandeau-version__fermer {
+  justify-content: center;
+  padding: 0.4rem;
+  width: 2.75rem;
+}
+
 /* Erreur de rendu et adresse inconnue (#131) : deux écrans de repli, une seule mise en page. */
 .erreur-ecran,
 .introuvable {

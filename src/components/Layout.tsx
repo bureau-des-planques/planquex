@@ -6,6 +6,7 @@ import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
 import { AlerteComite } from '@/components/AlerteComite';
 import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
+import { BandeauNouvelleVersion } from '@/components/BandeauNouvelleVersion';
 import { ErreurDeRendu } from '@/components/ErreurDeRendu';
 import { GardeComptes } from '@/components/GardeComptes';
 import { estApprouve } from '@/lib/comptes';
@@ -144,6 +145,9 @@ export function Layout() {
       </header>
 
       <BandeauHorsLigne />
+      {/* Une nouvelle version est prête (#355) : le testeur décide de recharger, et le
+          bandeau ne s'affiche pas en combat. */}
+      <BandeauNouvelleVersion />
 
       {enAttente && (
         <div className="notice notice--warn" role="status">
