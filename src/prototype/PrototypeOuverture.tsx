@@ -16,6 +16,7 @@ import { BASE_URL, LARGEUR, HAUTEUR } from './ouverture/base';
 import { VarianteA } from './ouverture/VarianteA';
 import { VarianteB } from './ouverture/VarianteB';
 import { VarianteC } from './ouverture/VarianteC';
+import { Sachet } from './ouverture/Sachet';
 
 const REFERENCE = new URL('./ouverture/ref-creux.jpg', import.meta.url).href;
 
@@ -45,6 +46,7 @@ export function PrototypeOuverture() {
   }, []);
   const baseUrl = BASE_URL;
   const [cle, setCle] = useState<Cle>(cleInitiale);
+  const [etape] = useState(() => new URLSearchParams(window.location.search).get('etape') ?? 'creux');
   const [reference, setReference] = useState(false);
   const [radial, setRadial] = useState(() => new URLSearchParams(window.location.search).get('radial') === '1');
   pression.options.radial = radial;
@@ -99,6 +101,18 @@ export function PrototypeOuverture() {
   const index = VARIANTES.findIndex((v) => v.cle === cle);
   const courante = VARIANTES[index];
 
+  if (etape === 'gestes') {
+    return (
+      <div className="proto-ouv">
+        <p className="proto-ouv__bandeau">PROTOTYPE JETABLE — l'étiquette et la déchirure (#283)</p>
+        <Sachet />
+        <a className="proto-ouv__lien" href="?etape=creux&variant=B&radial=1">
+          ← revenir au creux
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div className="proto-ouv">
       <p className="proto-ouv__bandeau">PROTOTYPE JETABLE — le creux du sachet (#283)</p>
@@ -140,6 +154,9 @@ export function PrototypeOuverture() {
         <label title="Variante B seulement : plis en étoile (cible E) au lieu d'anneaux (clip 0)">
           <input type="checkbox" checked={radial} onChange={(e) => setRadial(e.target.checked)} /> plis en étoile (B)
         </label>
+        <a className="proto-ouv__lien" href="?etape=gestes">
+          étiquette et déchirure →
+        </a>
         <output className="proto-ouv__etat" data-etat>
           {courante.cle} · creux {lecture.creux.toFixed(2)} · point ({lecture.px.toFixed(2)} ; {lecture.py.toFixed(2)})
           · rendu {lecture.cout.toFixed(2)} ms/image · graine {pression.graine}
