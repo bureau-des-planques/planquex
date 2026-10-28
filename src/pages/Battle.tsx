@@ -137,7 +137,8 @@ function CartePlateau({
   annotations = false,
   effets = [],
   dansScene = false,
-  onInspecter
+  onInspecter,
+  onAttacher
 }: {
   instance: CardInstance;
   className: string;
@@ -156,6 +157,8 @@ function CartePlateau({
    */
   dansScene?: boolean;
   onInspecter: () => void;
+  /** Le café en Machine attache à ce Planqué (#454, D-145) : le toucher l'attache. */
+  onAttacher?: () => void;
 }) {
   const nom = cardName(instance.cardId);
   const definition = getCard(instance.cardId);
@@ -167,6 +170,7 @@ function CartePlateau({
       className={className}
       inspectee={inspectee}
       onInspecter={onInspecter}
+      onAttacher={onAttacher}
       fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
     >
       <CardView
@@ -537,7 +541,9 @@ function Camp({
   effets = [],
   cibleScene,
   deckDeTest = false,
-  onInspecter
+  cafeAttachable,
+  onInspecter,
+  onAttacherCafe
 }: {
   label: string;
   side: PlayerState;
@@ -561,8 +567,14 @@ function Camp({
    * fiche du camp, où la place existait déjà.
    */
   deckDeTest?: boolean;
+  /** Les Planqués qui reçoivent le café en Machine, par `uid` (#454, D-145). */
+  cafeAttachable?: ReadonlySet<string>;
+  /** Toucher un Planqué de `cafeAttachable` attache le café à lui. */
+  onAttacherCafe?: (uid: string) => void;
   onInspecter: (uid: string) => void;
 }) {
+  const attacher = (uid: string) =>
+    cafeAttachable?.has(uid) && onAttacherCafe ? () => onAttacherCafe(uid) : undefined;
   const effetsStress = effets.filter((effet) => effet.nature === 'stress');
   const craquage = effets.find((effet) => effet.nature === 'craquage');
   const pioche = effets.some((effet) => effet.nature === 'pioche');
@@ -594,6 +606,7 @@ function Camp({
           effets={effetsStress.filter((effet) => effet.uid === posteActif.uid)}
           dansScene={cibleScene === posteActif.uid}
           onInspecter={() => onInspecter(posteActif.uid)}
+          onAttacher={attacher(posteActif.uid)}
         />
       ) : (
         <strong className="muted poste__libre">
@@ -685,6 +698,7 @@ function Camp({
                 effets={effetsStress.filter((effet) => effet.uid === slot.uid)}
                 dansScene={cibleScene === slot.uid}
                 onInspecter={() => onInspecter(slot.uid)}
+                onAttacher={attacher(slot.uid)}
               />
             ) : (
               <span className="sr-only">Place libre</span>
@@ -906,6 +920,18 @@ export function Battle() {
    * silence d'un bouton absent (`phraseCafeAuPoste`).
    */
   const attachements = playable.filter((action) => action.type === 'attachEnergy');
+  /**
+   * **Le café se touche sur le Planqué** (#454, D-145) : les Planqués qui reçoivent le café en
+   * Machine sont marqués sur le plateau, et le toucher appelle **le même geste** que la liste du
+   * moteur (`attachEnergy`) — rien de nouveau à jouer, un autre endroit pour le faire.
+   */
+  const cafeAttachable = new Set(
+    attachements.flatMap((action) => (action.type === 'attachEnergy' ? [action.targetUid] : []))
+  );
+  const attacherCafe = (uid: string) => {
+    const geste = attachements.find((action) => action.type === 'attachEnergy' && action.targetUid === uid);
+    if (geste) play(geste);
+  };
   const gestesDuPoste = boardActions.filter((action) => action.type !== 'attachEnergy');
   const raisonCafe = phraseCafeAuPoste({
     aMoi: myMove,
@@ -1648,6 +1674,8 @@ export function Battle() {
                 effets={effets.filter((effet) => effet.camp === id)}
                 cibleScene={sansMouvement ? undefined : effetAttaque?.uidCible}
                 deckDeTest={usedTestDeck && id === myCamp}
+                cafeAttachable={id === myCamp ? cafeAttachable : undefined}
+                onAttacherCafe={attacherCafe}
                 onInspecter={setInspecte}
               />
             </Fragment>
@@ -1920,19 +1948,7 @@ export function Battle() {
             {(gestesDuPoste.length > 0 || pressions.length > 0 || attachements.length > 0) && (
               <div className="combat-barre__gestes">
                 {attachements.length > 0 && (
-                  <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe}>
-                    <div className="actions actions--tight combat-barre__cafe-cibles">
-                      {attachements.map((action) => (
-                        <ActionButton
-                          key={JSON.stringify(action)}
-                          state={state}
-                          action={action}
-                          myCamp={myCamp}
-                          onAction={play}
-                        />
-                      ))}
-                    </div>
-                  </PanneauAttacheCafe>
+                  <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe} />
                 )}
                 {gestesDuPoste.length > 0 && (
                   <div className="actions actions--tight combat-barre__rang">

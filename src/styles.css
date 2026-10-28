@@ -5572,24 +5572,20 @@ h2 {
   white-space: nowrap;
 }
 
-.combat-barre__cafe-aide {
-  display: none;
-  margin: 0;
-}
-
-.battle--detaille .combat-barre__cafe-aide {
-  display: block;
-}
-
-.combat-barre__cafe-cibles {
-  flex: none;
-  flex-wrap: nowrap;
-}
-
 /* La raison du refus se range sous le journal, à la place de la ligne de portée (#320) :
    elle se lit comme elle, sur toute la largeur du bloc de texte. */
 .combat-barre__cafe-raison {
   margin: 0;
+}
+
+/* **Le café se touche sur le Planqué** (#454, D-145) : un Planqué qui reçoit le café en Machine
+   porte un cadre d'accent épais, hors de la mise en page (`outline`, pas de décalage) et un
+   pointeur. Le cadre ne tient pas à la couleur seule : il est épais, et le nom accessible dit
+   l'action. Sous « Mouvement réduit », rien ne bouge : le cadre est statique. */
+.battle .is-attachable {
+  cursor: pointer;
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
 }
 
 /* **Les règles en une minute** (#270) : six étapes dans un dialogue, une seule à la fois.
