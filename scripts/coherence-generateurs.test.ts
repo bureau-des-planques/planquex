@@ -218,13 +218,22 @@ const PROTOCOLE_FUSION = 'docs/agents/parallelisme.md';
  * dans `docs/VERSIONS.md` §4). Chaque motif peut manquer : c'est la garde qui mord.
  */
 const PORTE_ATTENDUE = [
-  { quoi: 'la fusion réservée à Bastien (D-131)', motif: /seul le compte\s+de\s+\*\*Bastien\*\*\s+(?:peut|puisse) fusionner/i },
+  {
+    quoi: 'la fusion réservée à Bastien (D-131)',
+    motif: /seul le compte\s+de\s+\*\*Bastien\*\*\s+(?:peut|puisse) fusionner/i
+  },
   { quoi: 'la PR de Bastien sans relecture obligatoire', motif: /PR de Bastien[^\n]*pas de relecture obligatoire/i },
-  { quoi: 'la PR externe relue par un agent qui n’a pas écrit le code', motif: /un agent qui n['’]a pas écrit le code/i },
+  {
+    quoi: 'la PR externe relue par un agent qui n’a pas écrit le code',
+    motif: /un agent qui n['’]a pas écrit le code/i
+  },
   { quoi: 'le compte rendu de relecture publié sur la PR', motif: /compte rendu publié sur la PR/i },
   { quoi: 'la validation écrite de Bastien', motif: /validation écrite/i },
   { quoi: 'le merge commit comme seule forme (D-113)', motif: /merge commit/i },
-  { quoi: 'le renvoi à la cadence de release (D-128, docs/VERSIONS.md §4)', motif: /docs\/VERSIONS\.md\*\* §4|`docs\/VERSIONS\.md` §4/i }
+  {
+    quoi: 'le renvoi à la cadence de release (D-128, docs/VERSIONS.md §4)',
+    motif: /docs\/VERSIONS\.md\*\* §4|`docs\/VERSIONS\.md` §4/i
+  }
 ] as const;
 
 /** Ce que le protocole ne dit pas — vide quand la porte est complète. */
@@ -342,7 +351,8 @@ describe('La porte des pull requests est écrite (#268)', () => {
 
   it('le contrôle mord : une PR externe sans relecture ni validation est vue', () => {
     // La porte réduite à « CI verte, on fusionne » — le cas fautif.
-    const faux = 'Seul le compte de **Bastien** peut fusionner. Les PR de Bastien se fusionnent sans relecture obligatoire. Merge commit.';
+    const faux =
+      'Seul le compte de **Bastien** peut fusionner. Les PR de Bastien se fusionnent sans relecture obligatoire. Merge commit.';
     const manquantes = porteManquante(faux);
     expect(manquantes).toContain('la PR externe relue par un agent qui n’a pas écrit le code');
     expect(manquantes).toContain('la validation écrite de Bastien');
@@ -429,14 +439,20 @@ describe('La garde des générateurs mord (#359)', () => {
 
     // Le code qui ne porte pas le marqueur ne tient pas la promesse.
     expect(
-      promessesSansCode(fausse, 'docs/VERSIONS.md', [{ document: 'docs/VERSIONS.md', marqueur: '{libellé}', code: 'package.json' }]).map(
-        ({ raison }) => raison
-      )
+      promessesSansCode(fausse, 'docs/VERSIONS.md', [
+        { document: 'docs/VERSIONS.md', marqueur: '{libellé}', code: 'package.json' }
+      ]).map(({ raison }) => raison)
     ).toEqual(['package.json ne porte pas "{libellé}"', 'aucun code déclaré ne la remplace — la retirer, ou la tenir']);
 
     // Et les accolades de **code** ne sont pas des promesses : c'est ce qui permet de lire
     // les docs sans crier sur chaque bloc JSON.
-    for (const code of ['{"body": …}', '{env:NOM}', '{type, message, status?}', '{{ github.token }', '{cwd,cmdline,stat}']) {
+    for (const code of [
+      '{"body": …}',
+      '{env:NOM}',
+      '{type, message, status?}',
+      '{{ github.token }',
+      '{cwd,cmdline,stat}'
+    ]) {
       expect(promesses(code), code).toEqual([]);
     }
   });
