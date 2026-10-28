@@ -379,6 +379,12 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
       }
 
       // Le geste. Une action de main passe par la carte (aria-pressed) puis le bouton de la pose.
+      // Le panneau du Poste (#455) reste ouvert après une Rotation montrée : il recouvre la barre.
+      // Une autre action passe donc d'abord par sa fermeture, comme le joueur (Échap).
+      if (choix.type !== 'retreat' && (await page.locator('.inspecteur').count()) > 0) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(200);
+      }
       let index;
       let libelle;
       let mesure = null;
