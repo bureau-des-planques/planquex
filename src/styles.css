@@ -1805,6 +1805,65 @@ h2 {
   padding-left: 0.45em;
 }
 
+/* **Le cadre tampon** (hors plateau, recto) : un double filet, le premier à 3 px du bord, le second en
+   retrait, comme le cadre d'un tampon administratif. La rareté le teinte, le COMEX reste or. Le filet est
+   posé au-dessus de l'anneau, sans recouvrir le texte (`pointer-events: none`). */
+.card:not(.card--plateau)::before {
+  border: 1px solid color-mix(in srgb, var(--frame) 55%, transparent);
+  border-radius: 9px;
+  content: '';
+  inset: 3px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.card:not(.card--plateau)::after {
+  border: 1px solid color-mix(in srgb, var(--frame) 22%, transparent);
+  border-radius: 7px;
+  content: '';
+  inset: 6px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+/* Le filigrane « BP » très bas dans la face : sous le texte (`z-index: -1` dans le contexte de la face). */
+.card:not(.card--plateau) .card__face {
+  isolation: isolate;
+  position: relative;
+}
+
+.card:not(.card--plateau) .card__face::before {
+  color: color-mix(in srgb, var(--gold) 7%, transparent);
+  content: 'BP';
+  font-family: var(--font-display);
+  font-size: 5em;
+  font-weight: 800;
+  left: 50%;
+  line-height: 1;
+  pointer-events: none;
+  position: absolute;
+  bottom: 0.4em;
+  translate: -50% 0;
+  z-index: -1;
+}
+
+/* Le numéro en cartouche, comme la référence d'un dossier. */
+.card:not(.card--plateau) .card__id {
+  border: 1px solid color-mix(in srgb, var(--gold) 35%, transparent);
+  border-radius: 0.25em;
+  padding: 0 0.3em;
+}
+
+/* La flavour en encart : un fond à peine plus clair, des marges ; elle reste deux lignes au plus. */
+.card:not(.card--plateau) .card__flavor {
+  background: rgb(255 255 255 / 3%);
+  border-radius: 0.3em;
+  margin-inline: 0.4em;
+  padding-block: 0.3em;
+}
+
 /* **Les paliers de taille** (hors plateau) : sous 175 px de texte (une carte de 360 px de téléphone), la
    carte se resserre. L'illustration se recadre sur le visage, le nom du statut porte seul la faction. Le
    recadrage est un `background-size` posé sur la couche de l'image (l'image n'est pas une autre image). */
