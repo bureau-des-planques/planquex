@@ -5,6 +5,7 @@ import { Home } from '@/pages/Home';
 import { Collection } from '@/pages/Collection';
 import { Deck } from '@/pages/Deck';
 import { Battle } from '@/pages/Battle';
+import { Rejeu } from '@/pages/Rejeu';
 import { Settings } from '@/pages/Settings';
 import { Comite } from '@/pages/Comite';
 import { Suivi } from '@/pages/Suivi';
@@ -88,6 +89,7 @@ export function App() {
         <Route path="comite" element={<Comite />} />
         <Route path="comite/suivi" element={<Suivi />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="rejeu" element={<Rejeu />} />
         {/* Le compte : son état d'attente, puis l'administration (D-088). */}
         <Route path="attente" element={<Attente />} />
         <Route path="administration" element={<Administration />} />

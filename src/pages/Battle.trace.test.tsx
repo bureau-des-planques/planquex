@@ -16,6 +16,9 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
 import { menuSurLaListe } from '@/test/menu-combat';
+import { useStore } from '@/store/useStore';
+import { rejouer } from '@/game/rejeu';
+import { ecartVerdict } from '@/store/derniere';
 
 /** L'envoi est doublé : il rejette comme un réseau coupé, et on lit ce qu'il a reçu. */
 const envoyerCombat = vi.hoisted(() => vi.fn());
@@ -59,5 +62,36 @@ describe('Battle — la trace d’un combat ne bloque pas la fin de partie (#173
     // Le rejet est avalé : la fin de partie est toujours là, aucun écran d'erreur.
     expect(screen.getByText(/partie terminée/)).toBeInTheDocument();
     expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+  });
+});
+
+describe('Battle — la dernière partie terminée se garde pour la revoir (#366)', () => {
+  beforeEach(() => {
+    envoyerCombat.mockReset();
+    envoyerCombat.mockResolvedValue({ erreur: null });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('un forfait range la partie et son verdict, et ce qui est rangé se rejoue à l’identique', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, name: 'Employé 404' });
+
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Abandonner/i }));
+    const confirmation = await screen.findByRole('dialog', { name: /forfait/i });
+    fireEvent.click(within(confirmation).getByRole('button', { name: /^Abandonner$/ }));
+
+    await waitFor(() => expect(screen.getByText(/partie terminée/)).toBeInTheDocument());
+    await waitFor(() => expect(useStore.getState().derniere).not.toBeNull());
+
+    const derniere = useStore.getState().derniere;
+    expect(derniere?.verdict.raison).toBe('forfait');
+    expect(derniere?.mode).toBe('solo');
+    // Le rejeu de ce qui est rangé rend le même verdict : c'est ce que l'écran Rejeu affichera.
+    const rejeu = rejouer(derniere as NonNullable<typeof derniere>);
+    expect(rejeu.ok).toBe(true);
+    if (rejeu.ok)
+      expect(ecartVerdict(rejeu.state, derniere?.verdict as NonNullable<typeof derniere>['verdict'])).toBeNull();
   });
 });
