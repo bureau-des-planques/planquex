@@ -270,6 +270,11 @@ rareté, `.card__face` est la carte elle-même.
 
 ### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121 ; écart de collage de la barre daté le 27/10/2026, #289, #323)
 
+> **Depuis D-142 (28/10/2026)**, cette section décrit la **référence 420 × 900**. Sur un écran plus
+> court, en paysage et sur PC, la disposition change : la barre du haut s'efface en combat (une
+> sortie `←` entre dans l'en-tête), le Banc passe à côté du Poste, la barre d'action vit dans la
+> console. Voir §2.7.
+
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
 doivent rester au-dessus de la navigation (limite **830 px**, haut de la barre de navigation, avec
@@ -511,6 +516,7 @@ qui suit est ce que `src/styles.css` fait de chacun.
 | Paysage de téléphone | `orientation: landscape` et `max-height: 600px` | plateau à gauche, **main et barre d'action** à droite ; un camp sur **une** rangée (Poste 80, Banc 52, fiche) ; la console défile en elle-même ; l'inspecteur est une colonne, pas une feuille basse ; hors combat, l'en-tête se serre et la barre du bas met icône et libellé côte à côte |
 | Écran large | `min-width: 900px`, ou paysage ≥ 600 px | plateau à gauche, console à droite, barre d'action **dans** la console |
 | PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et main **grandissent avec la hauteur** (`clamp`, D-094 (1) en plancher) |
+| Grand écran | `min-width: 1440px` | la coquille passe de 1080 à 1280 px (`--shell-max`, lu aussi par la barre du bas) : une colonne de cartes de plus en Collection et au Deck |
 | Partout | — | `min-height: 100dvh` ; encoches (`env(safe-area-inset-*)`) sur l'en-tête et les bords ; **44 px** pour un bouton, un champ, une case de Réglages, un onglet du comité, et la zone tactile du `+` d'une carte (la pastille garde 24 px) |
 
 **Règle** : la **disposition** cède avant la **lisibilité**. Les tailles de D-094 (1) ne baissent

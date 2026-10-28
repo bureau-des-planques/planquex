@@ -4,8 +4,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { act, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { render } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Battle } from './Battle';
-import { renderWithStore } from '@/test/test-utils';
+import { renderWithStore, setupTestStore } from '@/test/test-utils';
 import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
@@ -1448,5 +1450,63 @@ describe('Battle — le plateau en cartes, sans perdre le pas-à-pas (T3, #286)'
       expect(carte).toHaveClass('card--plateau');
       expect(carte).toHaveClass('card--figee');
     }
+  });
+});
+
+/**
+ * **La sortie du combat** (D-142, #427) : un geste, qui n'est **jamais** un forfait. La barre du haut
+ * et celle du bas sont effacées en combat sur téléphone : la flèche de l'en-tête est le chemin.
+ */
+describe('Battle — la sortie du combat (D-142, #427)', () => {
+  // La graine de `createBattle` vient de l'horloge : figée, le joueur ouvre (comme « la barre d'action »).
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(42);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function combatDepuis(origine: string) {
+    setupTestStore({ tutorielVu: true, pasAPasCombatVu: true });
+    return render(
+      <MemoryRouter initialEntries={[origine, '/battle']} initialIndex={1}>
+        <Routes>
+          <Route path="/" element={<p>page Accueil</p>} />
+          <Route path="/deck" element={<p>page Deck</p>} />
+          <Route path="/battle" element={<Battle />} />
+        </Routes>
+      </MemoryRouter>
+    );
+  }
+
+  it('revient là d’où l’on vient, et la partie reste rangée — ce n’est pas un forfait', async () => {
+    combatDepuis('/deck');
+    // Un coup joué : la partie est rangée dans le store (#126). Un forfait la terminerait, et une
+    // partie terminée n'y reste pas — c'est ce qui fait mordre l'assertion finale.
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Actions du tour' })).getByRole('button', { name: 'Fin du tour' })
+    );
+    await waitFor(() => expect(useStore.getState().partie).not.toBeNull());
+    const avant = useStore.getState().partie;
+
+    fireEvent.click(screen.getByRole('link', { name: 'Quitter le combat, la partie est gardée' }));
+
+    expect(await screen.findByText('page Deck')).toBeInTheDocument();
+    expect(useStore.getState().partie).not.toBeNull();
+    expect(useStore.getState().partie?.actions.length).toBeGreaterThanOrEqual(avant?.actions.length ?? 0);
+  });
+
+  it('mène à l’accueil quand rien ne précède le combat (lien direct)', async () => {
+    setupTestStore({ tutorielVu: true, pasAPasCombatVu: true });
+    render(
+      <MemoryRouter initialEntries={['/battle']}>
+        <Routes>
+          <Route path="/" element={<p>page Accueil</p>} />
+          <Route path="/battle" element={<Battle />} />
+        </Routes>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole('link', { name: 'Quitter le combat, la partie est gardée' }));
+    expect(await screen.findByText('page Accueil')).toBeInTheDocument();
   });
 });

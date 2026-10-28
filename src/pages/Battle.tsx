@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   BookOpen,
@@ -760,6 +760,8 @@ export function Battle() {
    */
   const [parametres] = useSearchParams();
   const tutoriel = parametres.get('tutoriel') === '1';
+  const location = useLocation();
+  const navigate = useNavigate();
 
   /**
    * Le **pas-à-pas du premier combat** (#143) : son ouverture, son cran et ses cibles
@@ -1392,6 +1394,13 @@ export function Battle() {
           to="/"
           className="battle__sortie"
           aria-label={tutoriel ? 'Quitter le combat guidé' : 'Quitter le combat, la partie est gardée'}
+          onClick={(evenement) => {
+            // **Le retour va là d'où l'on vient** (#427) : entré par le Deck, on revient au Deck.
+            // Sans page précédente dans l'application (lien direct, PWA rouverte), l'accueil.
+            if (location.key === 'default') return;
+            evenement.preventDefault();
+            void navigate(-1);
+          }}
         >
           <ArrowLeft size={18} aria-hidden="true" />
         </Link>

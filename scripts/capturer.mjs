@@ -559,6 +559,19 @@ async function mesurerGabarit(browser, gabarit) {
   }
 
   const instant = INSTANTS_COMBAT[0];
+  // Le **pas-à-pas ouvert** de la première partie : une centaine de pixels collés en haut, à
+  // l'arrivée — l'état le plus haut qu'un nouveau testeur voit sur son téléphone.
+  {
+    const { context, page } = await ouvrirCombat(browser, instant, {}, gabarit);
+    await controlerHauteur(
+      page,
+      `${new Date(instant).toISOString()} (${nom}, pas-à-pas ouvert)`,
+      ROUTE_COMBAT,
+      viewport
+    );
+    await page.screenshot({ path: join(outDir, `${nom}-combat-pas-a-pas.png`), fullPage: PLEINE_PAGE });
+    await context.close();
+  }
   const etat = `${new Date(instant).toISOString()} (${nom}, pas-à-pas terminé)`;
   {
     const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true }, gabarit);
@@ -672,7 +685,8 @@ const VIEWPORT = { width: 420, height: 900 };
  * 420 × 900 reste la **référence** (D-060, D-094) : toutes les gardes ci-dessus y tournent. Mais
  * c'est un téléphone sans barre de navigateur ; mesuré le 28/10/2026, le combat défilait de 159 px
  * à 360 × 640 et la barre d'action recouvrait le plateau en paysage. Chaque gabarit joue donc
- * **le combat** (arrivée, puis une Pression jouable et le pire cas, pas-à-pas terminé) sous les
+ * **le combat** (arrivée pas-à-pas ouvert, puis pas-à-pas terminé : arrivée, Pression jouable et
+ * pire cas) sous les
  * mêmes gardes — défilement, marge de 20 px, cibles de 44 px — et **chaque page** sous la garde
  * de largeur : une page qui déborde en largeur casse la mise en page (le critère de #128).
  *

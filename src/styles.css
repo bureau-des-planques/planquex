@@ -251,11 +251,23 @@ h2 {
 
 /* ---------- Coquille ---------- */
 
+/* La largeur de la coquille, lue aussi par la barre du bas. Sur un grand écran de PC (D-142), la
+   Collection et le Deck prennent une colonne de cartes de plus au lieu de laisser deux marges vides. */
+:root {
+  --shell-max: 1080px;
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --shell-max: 1280px;
+  }
+}
+
 .app-shell {
   display: flex;
   flex-direction: column;
   margin: 0 auto;
-  max-width: 1080px;
+  max-width: var(--shell-max);
   min-height: 100vh;
   /* La hauteur **visible** sur téléphone : `100vh` y compte la barre d'adresse repliée. */
   min-height: 100dvh;
@@ -402,7 +414,7 @@ h2 {
   gap: 0.25rem;
   justify-content: space-between;
   left: 0;
-  padding: 0.5rem max(1rem, calc((100vw - 1080px) / 2));
+  padding: 0.5rem max(1rem, calc((100vw - var(--shell-max)) / 2));
   position: fixed;
   right: 0;
   z-index: 20;
@@ -4107,10 +4119,39 @@ h2 {
     grid-template-columns: max-content minmax(0, 1fr);
   }
 
+  /* L'écran de combat prend **exactement** la hauteur de la fenêtre, moins les 20 px de D-094 (3) :
+     la table remplit ce qui reste sous l'en-tête et le pas-à-pas, et la console défile en elle-même.
+     Une hauteur fixe sous l'en-tête ne suffisait pas : le pas-à-pas ouvert (première partie)
+     faisait défiler l'écran de 7 px à 740 × 360. */
+  .app-shell:has(.battle) {
+    height: 100dvh;
+    min-height: 0;
+    padding-bottom: 1.25rem;
+  }
+
+  .app-shell:has(.battle) .main {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .battle {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .battle__table {
+    flex: 1;
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
   /* `position: relative` : la console devient le bloc conteneur de ses descendants positionnés,
      qui sinon débordaient d'elle et faisaient défiler la page (mesuré : 38 px à 844 × 390). */
   .battle__console {
-    max-height: calc(100dvh - 4.5rem);
+    align-self: stretch;
+    max-height: 100%;
+    min-height: 0;
     overflow-y: auto;
     position: relative;
   }
