@@ -247,70 +247,55 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         {neuves && neuves.size > 0 ? ` · ${neuves.size} nouvelle${neuves.size > 1 ? 's' : ''}` : ''}
       </p>
 
-      <div
-        ref={zoneRef}
-        className="ouverture__zone"
-        data-zone
-        onPointerDown={surAppui}
-        onPointerMove={surMouvement}
-        onPointerUp={surRelache}
-        onPointerCancel={surRelache}
-        onLostPointerCapture={surRelache}
-      >
-        {sortie === 'montent' && (
-          <div className="ouverture__interieur" aria-hidden="true">
-            {cartes.map((carte, i) => (
-              <div
-                key={`${carte.id}-${i}`}
-                className="ouverture__carte ouverture__carte--monte"
-                style={{ ['--i' as string]: String(i) }}
-              >
-                <CardView card={carte} compact />
-              </div>
+      <div className="ouverture__scene">
+        <div
+          ref={zoneRef}
+          className="ouverture__zone"
+          data-zone
+          onPointerDown={surAppui}
+          onPointerMove={surMouvement}
+          onPointerUp={surRelache}
+          onPointerCancel={surRelache}
+          onLostPointerCapture={surRelache}
+        >
+          <div className={`ouverture__sac${etat.phase === 'ouvert' ? ' ouverture__sac--descend' : ''}`}>
+            {PLAQUES.map((src, i) => (
+              <img
+                key={src}
+                className="ouverture__plaque"
+                src={src}
+                alt=""
+                draggable={false}
+                style={{ opacity: poids[i], transform: `scaleX(${miroir})` }}
+              />
             ))}
+            {creuxPret && etat.phase !== 'ouvert' && (
+              <canvas ref={canvasRef} className="ouverture__creux" aria-hidden="true" />
+            )}
           </div>
-        )}
 
-        <div className={`ouverture__sac${etat.phase === 'ouvert' ? ' ouverture__sac--descend' : ''}`}>
-          {PLAQUES.map((src, i) => (
+          {vol && (
             <img
-              key={src}
-              className="ouverture__plaque"
-              src={src}
+              className="ouverture__vole"
+              src={etiquetteVolee}
               alt=""
               draggable={false}
-              style={{ opacity: poids[i], transform: `scaleX(${miroir})` }}
+              style={{ ['--sens' as string]: String(sens.current) }}
             />
-          ))}
-          {creuxPret && etat.phase !== 'ouvert' && (
-            <canvas ref={canvasRef} className="ouverture__creux" aria-hidden="true" />
           )}
         </div>
 
-        {sortie === 'eventail' && (
-          <div className="ouverture__devant">
-            {cartes.map((carte, i) => (
-              <div
-                key={`${carte.id}-${i}`}
-                className="ouverture__carte ouverture__carte--eventail"
-                style={{ ['--i' as string]: String(i) }}
-              >
-                {neuves?.has(i) && <span className="ouverture__neuve">Nouvelle</span>}
-                <CardView card={carte} compact />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {vol && (
-          <img
-            className="ouverture__vole"
-            src={etiquetteVolee}
-            alt=""
-            draggable={false}
-            style={{ ['--sens' as string]: String(sens.current) }}
-          />
-        )}
+        {/* Les cartes sont **toujours** dans le DOM, même avant l'ouverture : le tirage et le badge
+          « Nouvelle » ne dépendent d'aucune animation (D-098). Elles émergent dans la bande du haut,
+          puis se posent en rangée sous le sachet — la largeur de la pochette ne peut pas les tenir. */}
+        <div className={`ouverture__cartes ouverture__cartes--${sortie}`} data-cartes>
+          {cartes.map((carte, i) => (
+            <div key={`${carte.id}-${i}`} className="ouverture__carte" style={{ ['--i' as string]: String(i) }}>
+              {neuves?.has(i) && <span className="ouverture__neuve">Nouvelle</span>}
+              <CardView card={carte} compact />
+            </div>
+          ))}
+        </div>
       </div>
 
       <p className="ouverture__consigne" data-consigne>

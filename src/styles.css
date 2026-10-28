@@ -4291,36 +4291,59 @@ h2 {
 }
 
 /* Les cartes restent dans le DOM dès le premier rendu : c'est le tirage qui compte, pas l'effet. */
-.ouverture__cartes {
+.ouverture__scene {
+  position: relative;
+}
+
+/* Avant l'ouverture : la rangée est **dans le DOM** et garde sa place, sinon le sachet rétrécit
+   d'un coup quand elle apparaît (saut de mise en page vu sur la planche de frames). */
+.ouverture__cartes--aucune {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  height: 8.2rem;
+  margin-top: 0.6rem;
+  visibility: hidden;
+}
+
+/* Pendant l'ouverture : les cartes montent dans la bande du haut, derrière le sachet. */
+.ouverture__cartes--montent {
+  clip-path: inset(0 0 86% 0);
   inset: 0;
   pointer-events: none;
   position: absolute;
   z-index: 3;
 }
 
+.ouverture__cartes--montent .ouverture__carte {
+  animation: ouverture-monte 620ms cubic-bezier(0.3, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+  left: 50%;
+  position: absolute;
+  top: 4%;
+  width: 29%;
+}
+
+/* Après : la rangée réelle, sous le sachet, à la taille du dialogue. */
+.ouverture__cartes--eventail {
+  display: grid;
+  gap: 0.4rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-top: 0.6rem;
+}
+
+.ouverture__cartes--eventail .ouverture__carte {
+  animation: ouverture-sortie 460ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+  position: relative;
+}
+
 .ouverture__cartes--aucune {
   opacity: 0;
 }
 
-.ouverture__collectif {
-  display: contents;
-}
-
 .ouverture__carte {
-  left: 50%;
-  position: absolute;
-  top: 6%;
-  width: 34%;
-}
-
-.ouverture__cartes--monte .ouverture__carte {
-  animation: ouverture-monte 620ms cubic-bezier(0.3, 0.9, 0.3, 1) both;
-  animation-delay: calc(var(--i) * 70ms);
-}
-
-.ouverture__cartes--eventail .ouverture__carte {
-  animation: ouverture-eventail 780ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
-  animation-delay: calc(var(--i) * 80ms);
+  position: relative;
 }
 
 @keyframes ouverture-monte {
@@ -4332,14 +4355,14 @@ h2 {
   }
 }
 
-@keyframes ouverture-eventail {
+@keyframes ouverture-sortie {
   from {
-    opacity: 0.15;
-    transform: translate(-50%, 10px) scale(0.9);
+    opacity: 0;
+    transform: translateY(26px) scale(0.92);
   }
   to {
     opacity: 1;
-    transform: translate(calc(-50% + (var(--i) - 2) * 15%), 132px) rotate(calc((var(--i) - 2) * 6deg));
+    transform: none;
   }
 }
 
@@ -4435,6 +4458,6 @@ h2 {
   transition: none;
 }
 
-[data-mouvement-reduit='true'] .ouverture__cartes--aucune {
-  opacity: 1;
+[data-mouvement-reduit='true'] .ouverture__cartes--eventail .ouverture__carte {
+  animation: none;
 }
