@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { Collection } from './Collection';
 import { renderWithStore } from '@/test/test-utils';
@@ -10,6 +10,9 @@ const base = { tutorielVu: true, pasAPasCombatVu: true };
 
 /** La passe de finition de l'alpha (#131, D-060) : Collection. */
 describe('Collection — finition', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/');
+  });
   it('le vide n’accuse que ce qui est en cause : la recherche', () => {
     renderWithStore(<Collection />, base);
     fireEvent.change(screen.getByPlaceholderText(/Chercher une carte/i), { target: { value: 'zzzz-aucune' } });
@@ -17,8 +20,8 @@ describe('Collection — finition', () => {
   });
 
   it('…ou le filtre, quand rien n’a été tapé : ce n’est pas la recherche qu’on accuse', () => {
-    // Le catalogue croise aujourd'hui toutes les factions et tous les stades : un filtre seul
-    // ne peut pas vider la grille à l'écran. La cause est donc testée là où elle se décide.
+    // Un filtre seul peut vider la grille (rareté, coût, possédées : #365). La cause se teste
+    // ici, là où elle se décide ; le rendu se teste dans Collection.filtres.test.tsx.
     expect(causeDuVide('', true)).toBe('ces filtres');
     expect(causeDuVide('   ', true)).toBe('ces filtres');
     expect(causeDuVide('dir', false)).toBe('cette recherche');

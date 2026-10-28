@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
-import { ALL_CARDS, FACTION_META, STAGE_META, isPlanque } from '@/data';
-import type { Card, Faction, Stage } from '@/data/types';
+import { ALL_CARDS, FACTION_META, RARITY_META, STAGE_META } from '@/data';
+import type { Card, Faction, Rarity, Stage } from '@/data/types';
 import { deckCanAdd, deckCountsByName, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { CardSlot } from '@/components/CardSlot';
@@ -10,18 +10,36 @@ import { CardDetail } from '@/components/CardDetail';
 import { causeDuVide } from '@/components/cause-du-vide';
 import { HORS_ARRIVAGE, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { TriCartes } from '@/components/TriCartes';
-import { TRI_DEFAUT, trierCartes } from '@/components/tri-cartes';
+import { trierCartes } from '@/components/tri-cartes';
 import type { Tri } from '@/components/tri-cartes';
+import {
+  COUTS_PRESENTS,
+  FILTRES_DEFAUT,
+  ecrireFiltres,
+  filtrerCartes,
+  filtresActifs,
+  lireFiltres,
+  libelleCout
+} from '@/components/filtres-collection';
+import type { Filtres } from '@/components/filtres-collection';
 
 const STAGES: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
+const RARETES = Object.keys(RARITY_META) as Rarity[];
 
 export function Collection() {
   const { owned, deck, addToDeck, addCard } = useStore();
-  const [query, setQuery] = useState('');
-  const [faction, setFaction] = useState<Faction | 'ALL'>('ALL');
-  const [stage, setStage] = useState<Stage | 'ALL'>('ALL');
-  const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
+  // Les filtres et le tri vivent dans l'adresse de la page (#365) : revenir de la fiche, ou de
+  // n'importe quelle page, les retrouve sans toucher au store.
+  const [params, setParams] = useSearchParams();
+  const { filtres, tri } = useMemo(() => lireFiltres(params), [params]);
   const [selected, setSelected] = useState<Card | null>(null);
+
+  const modifier = (patch: Partial<Filtres>, nouveauTri: Tri = tri) => {
+    setParams((precedent) => ecrireFiltres(precedent, { ...filtres, ...patch }, nouveauTri), { replace: true });
+  };
+  const setTri = (nouveauTri: Tri) => {
+    setParams((precedent) => ecrireFiltres(precedent, filtres, nouveauTri), { replace: true });
+  };
 
   const byName = useMemo(() => deckCountsByName(deck), [deck]);
 
@@ -31,27 +49,20 @@ export function Collection() {
     []
   );
 
-  const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    const gardees = ALL_CARDS.filter((card) => {
-      if (faction !== 'ALL' && card.faction !== faction) return false;
-      // Le filtre porte sur le stade : il ne concerne que les Planqués, une carte Action
-      // n'a pas de stade (elle est rangée dans son vivier, via sa faction).
-      if (stage !== 'ALL' && (!isPlanque(card) || card.stage !== stage)) return false;
-      if (needle && !card.name.toLowerCase().includes(needle)) return false;
-      return true;
-    });
-    return trierCartes(gardees, tri, owned);
-  }, [query, faction, stage, tri, owned]);
+  const visible = useMemo(
+    () => trierCartes(filtrerCartes(ALL_CARDS, filtres, owned), tri, owned),
+    [filtres, tri, owned]
+  );
 
   const uniqueOwned = ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0).length;
+  const nbFiltres = filtresActifs(filtres);
 
   /** Pourquoi la grille est vide : ce que le message accuse (`causeDuVide`). */
-  const videParce = causeDuVide(query, faction !== 'ALL' || stage !== 'ALL');
+  const rechercheActive = filtres.texte.trim() !== '';
+  const filtreHorsRecherche = nbFiltres > (rechercheActive ? 1 : 0);
+  const videParce = causeDuVide(filtres.texte, filtreHorsRecherche);
   const toutEffacer = () => {
-    setQuery('');
-    setFaction('ALL');
-    setStage('ALL');
+    setParams((precedent) => ecrireFiltres(precedent, FILTRES_DEFAUT, tri), { replace: true });
   };
 
   return (
@@ -79,15 +90,18 @@ export function Collection() {
           <Search size={16} />
           <input
             type="search"
-            value={query}
+            value={filtres.texte}
             placeholder="Chercher une carte"
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => modifier({ texte: event.target.value })}
           />
         </label>
 
         <label className="field">
           <span className="field__label">Faction</span>
-          <select value={faction} onChange={(event) => setFaction(event.target.value as Faction | 'ALL')}>
+          <select
+            value={filtres.faction}
+            onChange={(event) => modifier({ faction: event.target.value as Faction | 'ALL' })}
+          >
             <option value="ALL">Toutes</option>
             {factions.map((key) => (
               <option key={key} value={key}>
@@ -99,7 +113,7 @@ export function Collection() {
 
         <label className="field">
           <span className="field__label">Stade</span>
-          <select value={stage} onChange={(event) => setStage(event.target.value as Stage | 'ALL')}>
+          <select value={filtres.stade} onChange={(event) => modifier({ stade: event.target.value as Stage | 'ALL' })}>
             <option value="ALL">Tous</option>
             {STAGES.map((key) => (
               <option key={key} value={key}>
@@ -109,8 +123,58 @@ export function Collection() {
           </select>
         </label>
 
+        <label className="field">
+          <span className="field__label">Rareté</span>
+          <select
+            value={filtres.rarete}
+            onChange={(event) => modifier({ rarete: event.target.value as Rarity | 'ALL' })}
+          >
+            <option value="ALL">Toutes</option>
+            {RARETES.map((key) => (
+              <option key={key} value={key}>
+                {RARITY_META[key].label} ({key})
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="field">
+          <span className="field__label">Coût en café</span>
+          <select
+            value={filtres.cout === 'ALL' ? 'ALL' : String(filtres.cout)}
+            onChange={(event) => modifier({ cout: event.target.value === 'ALL' ? 'ALL' : Number(event.target.value) })}
+          >
+            <option value="ALL">Tous</option>
+            {COUTS_PRESENTS.map((cafes) => (
+              <option key={cafes} value={cafes}>
+                {libelleCout(cafes)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="filtre-case">
+          <input
+            type="checkbox"
+            checked={filtres.possedees}
+            onChange={(event) => modifier({ possedees: event.target.checked })}
+          />
+          <span>Seulement ce que je possède</span>
+        </label>
+
         <TriCartes value={tri} onChange={setTri} />
       </div>
+
+      {nbFiltres > 0 && (
+        <div className="filtres-actifs">
+          <span className="muted">
+            {nbFiltres} filtre{nbFiltres > 1 ? 's' : ''} actif{nbFiltres > 1 ? 's' : ''}
+          </span>
+          <button type="button" className="button" onClick={toutEffacer}>
+            Tout effacer
+          </button>
+        </div>
+      )}
 
       {uniqueOwned === 0 && (
         <p className="notice notice--warn">
@@ -122,9 +186,7 @@ export function Collection() {
       {visible.length === 0 ? (
         <div className="empty" role="status">
           <p className="m-0">Aucune carte ne correspond à {videParce}.</p>
-          <button type="button" className="button mt-3" onClick={toutEffacer}>
-            Tout effacer
-          </button>
+          <p className="m-0 mt-2">Retire un filtre, ou efface-les tous pour revoir les {ALL_CARDS.length} cartes.</p>
         </div>
       ) : (
         <div className="card-grid">
