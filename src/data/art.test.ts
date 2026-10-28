@@ -142,9 +142,11 @@ describe('Cartes — illustrations (art) (spec #95, D-045, D-139)', () => {
   });
 
   it('une variante qui a sa propre image ne résout pas celle de sa base', () => {
-    expect(artFileOf({ art: 'sse-medecin-travail-star3.webp', variantOf: 'sse-medecin-travail' })).toBe(
-      'sse-medecin-travail-star3.webp'
-    );
+    // Le nom est **fictif** exprès : le wizard câble une carte en cherchant
+    // `art: '<id>.webp'` dans `src/data/`, et un test qui écrirait ce littéral pour
+    // une vraie carte lui ferait croire qu'elle est déjà câblée (constaté le 28/10/2026).
+    const propre = 'sse-exemple-star3.webp';
+    expect(artFileOf({ art: propre, variantOf: 'sse-medecin-travail' })).toBe(propre);
   });
 
   it('le repli ne fabrique rien quand la base n’a pas d’image', () => {

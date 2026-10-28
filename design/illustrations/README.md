@@ -57,7 +57,7 @@ elle** : elle emprunte celui de sa base (`base_de_variante` dans
 
 | Variante (`id`) | Rareté | Base | État |
 |---|---|---|---|
-| `sse-medecin-travail-star3` | `3S` | `sse-medecin-travail` | à produire |
+| `sse-medecin-travail-star3` | `3S` | `sse-medecin-travail` | **produite** — graine `0` |
 | `amelioration-directeur-qualite-star3` | `3S` | `amelioration-directeur-qualite` | à produire |
 | `qvt-chief-happiness-officer-star3` | `3S` | `qvt-chief-happiness-officer` | à produire |
 | `atelier-responsable-process-star3` | `3S` | `atelier-responsable-process` | à produire |
@@ -381,3 +381,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `rh-gestionnaire-formation` · modèle `NARWHAL` · graine `1592319664` · `rh-gestionnaire-formation.webp`
 - 2026-10-26 · `rh-responsable-formation` · modèle `NARWHAL` · graine `300403632` · `rh-responsable-formation.webp`
 - 2026-10-26 · `direction-auditeur-direction` · **fichier renommé** avec son id (D-096 (4)), graine reprise de la production du 25/10/2026 `direction-auditeur-interne` · graine `1811249482` · `direction-auditeur-direction.webp`
+- 2026-10-28 · `sse-medecin-travail-star3` · modèle `NARWHAL` · graine `0` · `sse-medecin-travail-star3.webp`
