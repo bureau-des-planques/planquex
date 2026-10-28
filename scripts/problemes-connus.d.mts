@@ -25,12 +25,15 @@ export interface LignePostit {
   gueulage?: boolean;
   lie?: string | null;
   version?: string;
+  ecran?: string | null;
 }
 
-/** Une ligne publiée : le titre, et le ticket quand il existe. */
+/** Une ligne publiée : le titre, l'écran et la version du signalement, et son ticket. */
 export interface Probleme {
   id: string;
   titre: string;
+  ecran: string;
+  version: string;
   ticket: number | null;
 }
 
@@ -54,6 +57,9 @@ export function nettoyerTitre(titre: unknown): string;
 
 /** Le filtre de D-119, pur : gueulage dehors, IP dehors, statuts non publiés dehors. */
 export function filtrerProblemes(lignes: unknown): Probleme[];
+
+/** La puce d'un problème : titre, écran, version, ticket — sans trou quand il en manque un. */
+export function etiquetteProbleme(probleme: Partial<Probleme> | null | undefined): string;
 
 /** Le bloc de markdown, **sans titre**, à coller sous « Pour un testeur ». */
 export function blocProblemes(problemes: Probleme[]): string;

@@ -27,6 +27,7 @@
     "plan:dev": "node scripts/plan-dev.mjs",
     "statut": "node scripts/statut-mur.mjs",
     "problemes": "node scripts/problemes-connus.mjs",
+    "ouf": "node scripts/ouf.mjs",
     "traces": "node scripts/traces-combat.mjs",
     "admin": "node tools/admin/serveur.mjs",
     "serveurs": "node tools/serveurs/serveur.mjs",

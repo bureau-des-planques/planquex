@@ -16,6 +16,7 @@ captures de **notre** application. **Un usage, un dossier** :
 | `main-64px-<AAAA-MM-JJ>/` | Un **défaut de mise en page précis** de notre écran de combat, avant/après, à 420 × 900 **et** à 360 px — ici le nom de la carte de main à 64 px (#233, D-094) : la composition de l'écran, pas la règle du jeu. | `README.md` du lot |
 | `feuille-lignes-<AAAA-MM-JJ>/` | Un **anti-pattern d'écran précis** de notre feuille de route, avant/après, à 420 × 900 **et** à 1280 px — ici les trois `line-length` de #236 : le compte du détecteur, pas la règle du jeu. | `README.md` du lot |
 | `prototype-<AAAA-MM-JJ>/` | Le **banc d'essai DEV** des saynètes d'attaque (`src/prototype/scene.html`, D-098, réparé par D-101) : il **se rend**, la scène y joue, et il n'est **pas** dans le bundle. Ce n'est pas un écran de l'application et ce n'est pas une preuve de règle. | `README.md` du lot |
+| `sons-<AAAA-MM-JJ>/` | Le **sourcing des sons** (#379, D-137) : des candidats **libres de droits** pour l'ouverture d'un Arrivage et le verdict de combat, avec URL, licence, auteur, date de consultation et poids. **Aucun fichier audio** : le lot ne contient que le document, les assets entrent avec le module qui les joue (#378). | `README.md` du lot (méthode §0, candidats §1–2, ce qui n'est pas vérifié §5) |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
 

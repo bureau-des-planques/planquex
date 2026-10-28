@@ -10,6 +10,7 @@ les règles sont dans [`AGENTS.md`](AGENTS.md), les décisions dans
 | installer le projet sur ma machine | [Cloner et installer](#cloner-et-installer) |
 | signaler un défaut ou proposer une idée | [Poser une issue](#poser-une-issue) |
 | prendre un ticket et le faire | [Résoudre une issue](#résoudre-une-issue) |
+| modifier un gros fichier sans le réécrire | [`docs/agents/edition-ciblee.md`](docs/agents/edition-ciblee.md) |
 | proposer mon travail | [Proposer une pull request](#proposer-une-pull-request) |
 | brancher Claude Code, Codex, OpenCode ou VS Code | [Outiller son agent](#outiller-son-agent) |
 | savoir quel skill lancer à quel moment | [Quel skill pour quel geste](#quel-skill-pour-quel-geste) |
@@ -109,9 +110,15 @@ gh issue view 328 --json number,title,body,labels,comments   # --json est obliga
 4. **Le test d'abord.** Un défaut se reproduit par un test rouge avant d'être corrigé. Une garde
    nouvelle doit **pouvoir échouer** : un test « le contrôle mord », ou une entrée de
    `scripts/garde-fous.mjs`.
-5. **Commiter petit, au format du dépôt** : `type(zone): ce que ça change (#n)`, en français.
+5. **Éditer par remplacement ciblé, jamais en réécrivant le fichier.** Une écriture touche les
+   lignes de son intention : on ancre le passage (trois lignes de contexte avant et après), on
+   élargit l'ancre si elle n'est pas unique, et on **lit une plage** plutôt que 3 900 lignes
+   quand la ligne est loin. Un fichier réécrit **écrase les modifications des agents qui
+   travaillent en même temps**, sans que git puisse le voir, et rend le diff illisible pour la
+   relecture. Le geste et ses cas limites : [`docs/agents/edition-ciblee.md`](docs/agents/edition-ciblee.md).
+6. **Commiter petit, au format du dépôt** : `type(zone): ce que ça change (#n)`, en français.
    Exemple réel : `fix(env): le serveur des testeurs renvoie à D-120, pas à D-119 (#323)`.
-6. **Tenir le ticket à jour** : un commentaire à la fin, avec ce qui est fait, la preuve et les
+7. **Tenir le ticket à jour** : un commentaire à la fin, avec ce qui est fait, la preuve et les
    hashes. On ne ferme que ce qui est fait **et** vérifié
    ([`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md)).
 
@@ -138,7 +145,10 @@ Avant de proposer, la définition de « fini » (`AGENTS.md` §8.4) :
 - **Fusion par merge commit uniquement.** Ni squash ni rebase : le dépôt ne les propose même pas.
   Sujet : `merge: <ce que ça change> (#n)`. Un ticket entier se défait par `git revert -m 1 <merge>`.
 - **Avant de fusionner** : `npm run ci:etat` — si `main` est rouge, on ne fusionne pas sans savoir
-  pourquoi.
+  pourquoi. C'est une **case à cocher du [modèle de PR](.github/pull_request_template.md)**
+  (section « Le risque à la fusion ») : le rappel arrive donc avec la PR, à l'endroit où la
+  fusion se décide, et pas seulement dans une doc qu'on ne relit pas. `scripts/garde-fusion.test.ts`
+  échoue si cette citation disparaît d'un des quatre endroits qui portent la procédure de fusion.
 - **Qui fusionne, et après quoi** ([`docs/agents/parallelisme.md`](docs/agents/parallelisme.md) §5) :
   seul le compte de **Bastien** fusionne (D-131). **Sa propre PR** part sur les trois jobs verts,
   sans relecture obligatoire ; une **PR venue d'un autre auteur** reçoit d'abord la **relecture
