@@ -19,6 +19,11 @@ import { useStore } from '@/store/useStore';
  *    (`tutorielVu`) : la visite du premier lancement est un dialogue modal, et
  *    superposer un second tutoriel par-dessus le premier serait illisible. La Journée
  *    finit justement par « Aller au combat » — le pas-à-pas prend donc le relais.
+ *
+ * `force` est le **combat guidé** (#272) : le même pas-à-pas, ouvert à la demande depuis
+ * Réglages ou la présentation des règles, même quand le drapeau dit « déjà vu ». Il se
+ * referme localement (`terminer`) et n'écrit pas le drapeau du store : rejouer le
+ * tutoriel ne retire pas le pas-à-pas de la première vraie partie.
  */
 export interface PasAPasCombatEtat {
   /** Vrai tant que le pas-à-pas est à l'écran. */
@@ -64,20 +69,32 @@ export function comportementDeDefilement(): ScrollBehavior {
   return reduit ? 'auto' : 'smooth';
 }
 
-export function usePasAPasCombat(): PasAPasCombatEtat {
+export function usePasAPasCombat(force = false): PasAPasCombatEtat {
   const tutorielVu = useStore((state) => state.tutorielVu);
   const pasAPasCombatVu = useStore((state) => state.pasAPasCombatVu);
   const setPasAPasCombatVu = useStore((state) => state.setPasAPasCombatVu);
   const [etape, setEtape] = useState(0);
+  /**
+   * Le **combat guidé** (#272) : la page ouvre le pas-à-pas même quand le drapeau dit
+   * « déjà vu ». `termine` referme **ce** combat seulement — l'état est local, et le
+   * drapeau du store n'est **pas** réécrit : rejouer le tutoriel ne prive pas la première
+   * vraie partie de son pas-à-pas. Un seul écrivain du drapeau, donc, comme avant.
+   */
+  const [termine, setTermine] = useState(false);
 
-  const ouvert = !pasAPasCombatVu && tutorielVu;
+  const ouvert = force ? !termine : !pasAPasCombatVu && tutorielVu;
   const index = Math.min(etape, ETAPES_COMBAT.length - 1);
   const courante = ETAPES_COMBAT[index];
 
   const terminer = useCallback(() => {
+    if (force) {
+      setTermine(true);
+      setEtape(0);
+      return;
+    }
     setPasAPasCombatVu(true);
     setEtape(0);
-  }, [setPasAPasCombatVu]);
+  }, [force, setPasAPasCombatVu]);
 
   const suivante = useCallback(() => {
     setEtape((courant) => Math.min(courant + 1, ETAPES_COMBAT.length - 1));

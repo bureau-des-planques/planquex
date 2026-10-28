@@ -2214,8 +2214,12 @@ h2 {
      lieu de recouvrir le plateau. */
   max-height: 42dvh;
   overflow-y: auto;
-  /* 2,4 → 1,6 px de cadre vertical (#237) : même raison que la gouttière ci-dessus. */
-  padding: 0 0.6rem;
+  /* 2,4 → 1,6 px de cadre vertical (#237) : même raison que la gouttière ci-dessus.
+     **8 px en haut et en bas depuis le 28/10/2026** (#205, « cramped padding ») : sans inset,
+     les trois lignes touchaient le bord du cadre, et le détecteur le voyait — une fois sur
+     deux seulement, ce qui en faisait un faux rouge. La hauteur se reprend sur les lignes,
+     pas sur l'inset : `npm run capturer` garde les 20 px de marge (D-094 (3)). */
+  padding: 0.5rem 0.6rem;
   position: sticky;
   z-index: 16;
 }
@@ -4231,6 +4235,102 @@ h2 {
      et une animation l'emporte sur une simple déclaration. */
   animation: none;
   opacity: 0;
+}
+
+/* **Le café, deux rangs nommés** (#399, OUF `p-mvrome4s-f93mg6`).
+
+   Sur la fiche du camp, deux pastilles voisines — les cafés attachés au Poste et le café
+   de la Machine — se ressemblaient : un café en Machine se lisait comme « le second café
+   attaché », et l'attachement semblait le faire changer de place en laissant un vide. Les
+   deux rangs sont maintenant distincts par la forme et par une tasse : la pastille ronde
+   reste le café attaché, la Machine porte une tasse et une pastille carrée. Aucun texte
+   recopié : le nom des rangs est dans `aria-label` (`Battle.tsx`). */
+.battle .poste__machine-icone {
+  color: var(--text-dim);
+  flex: none;
+}
+
+.battle .poste__machine .pip {
+  border-radius: 4px;
+}
+
+/* **Le panneau d'attache du café** (#399) : il prend la place du bouton muet dans la rangée
+   des gestes, montre le café de la Machine avant le choix de la cible, et dit pourquoi
+   l'attachement n'est pas offert. Il tient sur une ligne — la barre ne gagne pas de hauteur
+   (420 × 900, `npm run capturer`), et la phrase d'aide ne s'affiche qu'en `détaillé`. */
+.combat-barre__cafe {
+  align-items: center;
+  display: flex;
+  flex: 1 1 8rem;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow-x: auto;
+  /* **8 px au moins entre le texte et le bord** (#205, règle « cramped padding »). Le
+     détecteur le voyait par intermittence : la rangée ne portait aucun rembourrage, et le
+     titre du café comme l'aide se lisaient collés au bord de la barre. En ligne seulement :
+     la barre ne gagne pas de hauteur (420 × 900, `npm run capturer`). */
+  padding-inline: 0.5rem;
+  scrollbar-width: none;
+}
+
+.combat-barre__cafe-titre {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  gap: 0.25rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.combat-barre__cafe-aide {
+  display: none;
+  margin: 0;
+}
+
+.battle--detaille .combat-barre__cafe-aide {
+  display: block;
+}
+
+.combat-barre__cafe-cibles {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+/* La raison du refus se range sous le journal, à la place de la ligne de portée (#320) :
+   elle se lit comme elle, sur toute la largeur du bloc de texte. */
+.combat-barre__cafe-raison {
+  margin: 0;
+}
+
+/* **Les règles en une minute** (#270) : six étapes dans un dialogue, une seule à la fois.
+   La largeur de lecture est bornée — un paragraphe de règles se lit, il ne s'étale pas sur
+   toute la feuille — et le compte des étapes reste discret, au-dessus du titre. */
+.regles-dialogue {
+  max-width: min(32rem, calc(100% - 2rem));
+}
+
+.regles {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.regles__compte {
+  margin: 0;
+  font-size: var(--fs-xs);
+}
+
+.regles__titre {
+  margin: 0;
+}
+
+.regles__texte {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.regles__essai {
+  margin: 0;
 }
 
 /* ---------- L'accueil : le gros bouton d'Arrivage et son compteur (#273) ---------- */

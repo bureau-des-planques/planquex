@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
+import { PresentationRegles } from '@/components/PresentationRegles';
 import { estApprouve, libelleEtat } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
@@ -28,6 +29,7 @@ export const CATEGORIES_REGLAGES = [
   'Compte',
   'Accessibilité',
   'Journée d’intégration',
+  'Les règles',
   'Pas-à-pas du combat',
   'Sauvegarde',
   'Traces de combat',
@@ -203,14 +205,32 @@ export function Settings() {
         </button>
       </section>
 
+      {/* **Les règles en une minute** (#270) : la présentation du nouvel inscrit, lisible et
+          rejouable ici. */}
+      <section className="section panel" aria-labelledby="reglages-regles">
+        <h2 id="reglages-regles">Les règles</h2>
+        <p className="muted max-w-[62ch]">
+          Six étapes, une minute : le Seuil et le Stress, le plateau, le Deck, la Pression et le café, les Conditions,
+          la fin de la partie.
+        </p>
+        <PresentationRegles>Les règles en une minute</PresentationRegles>
+      </section>
+
       <section className="section panel" aria-labelledby="reglages-pas-a-pas">
         <h2 id="reglages-pas-a-pas">Pas-à-pas du combat</h2>
         <p className="muted max-w-[62ch]">
           Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression, les Conditions et la fin.
         </p>
-        <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
-          Revoir le pas-à-pas du combat
-        </button>
+        <div className="actions actions--tight">
+          <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
+            Revoir le pas-à-pas du combat
+          </button>
+          {/* **Le combat guidé** (#272) : une page de combat, pas un état de plus dans le
+              store — le lien la rouvre au début, quel que soit l'état du pas-à-pas. */}
+          <Link className="button" to="/battle?tutoriel=1">
+            Rejouer le combat guidé
+          </Link>
+        </div>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-sauvegarde">
