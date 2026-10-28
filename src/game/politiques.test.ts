@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, isBasic } from '@/data';
-import { applyAction, createBattle } from '@/game/engine';
-import { nextAction, nextAiAction, nextSearchAction, politique } from '@/game/ia';
+import { applyAction, createBattle, legalActions } from '@/game/engine';
+import {
+  DIFFICULTE_PAR_DEFAUT,
+  POLITIQUE_DE_DIFFICULTE,
+  POLITIQUE_DU_NIVEAU,
+  nextAction,
+  nextAiAction,
+  nextSearchAction,
+  politique
+} from '@/game/ia';
+import type { AiLevel, Politique } from '@/game/ia';
 import type { BattleState } from '@/data/types';
 
 /**
@@ -17,8 +26,8 @@ const BASICS = ALL_CARDS.filter((card) => isBasic(card) && !card.variantOf).map(
 const DECK = [...BASICS.slice(0, 10), ...BASICS.slice(0, 10)];
 
 /** Une partie où c'est à la Direction de jouer. */
-function tourDeLaDirection(): BattleState {
-  let state = createBattle(DECK, DECK, 7);
+function tourDeLaDirection(seed = 7): BattleState {
+  let state = createBattle(DECK, DECK, seed);
   for (let i = 0; i < 8 && state.current !== 'ai'; i += 1) {
     state = applyAction(state, { type: 'endTurn' });
   }
@@ -43,5 +52,52 @@ describe('politiques nommées (#253)', () => {
     expect(nextAiAction(state, 'recherche')).toEqual(nextSearchAction(state));
     // Contrôle : demander explicitement le glouton n'est pas la même demande.
     expect(nextAiAction(state, 'glouton')).toEqual(nextAction(state, 2));
+  });
+});
+
+describe('niveaux et difficulté nommés (#251, D-125)', () => {
+  /**
+   * Une partie où, à un tour de la Direction, le script et le glouton jouent des coups
+   * différents. On joue la partie au glouton pour les deux camps, en s'arrêtant au premier
+   * tour de la Direction qui départage les deux politiques.
+   */
+  function tourOuLesPolitiquesDiffèrent(): BattleState {
+    for (let seed = 1; seed < 80; seed += 1) {
+      let state = createBattle(DECK, DECK, seed);
+      for (let step = 0; step < 400 && state.phase !== 'ended'; step += 1) {
+        if (state.current === 'ai' && !state.pendingPromotion) {
+          if (JSON.stringify(nextAction(state, 1)) !== JSON.stringify(nextAction(state, 2))) return state;
+        }
+        const action = nextAction(state, 2) ?? legalActions(state).find((a) => a.type === 'endTurn');
+        if (!action) break;
+        state = applyAction(state, action);
+      }
+    }
+    throw new Error('Aucune partie ne distingue le script du glouton');
+  }
+
+  it('chaque niveau numérique joue la politique que son nom annonce', () => {
+    const state = tourOuLesPolitiquesDiffèrent();
+    const niveaux: AiLevel[] = [1, 2];
+    for (const niveau of niveaux) {
+      expect(politique(POLITIQUE_DU_NIVEAU[niveau])(state)).toEqual(nextAction(state, niveau));
+    }
+  });
+
+  it('contrôle mord : une table inversée est refusée par le même test', () => {
+    const state = tourOuLesPolitiquesDiffèrent();
+    const inversee: Record<AiLevel, Politique> = { 1: 'glouton', 2: 'scripte' };
+    expect(politique(inversee[1])(state)).not.toEqual(nextAction(state, 1));
+  });
+
+  it('la difficulté par défaut est la Sérieuse, c’est-à-dire la recherche de l’écran (D-084)', () => {
+    const state = tourDeLaDirection();
+    expect(DIFFICULTE_PAR_DEFAUT).toBe('serieuse');
+    expect(POLITIQUE_DE_DIFFICULTE[DIFFICULTE_PAR_DEFAUT]).toBe('recherche');
+    expect(nextAiAction(state)).toEqual(politique(POLITIQUE_DE_DIFFICULTE[DIFFICULTE_PAR_DEFAUT])(state));
+  });
+
+  it('la Simple joue le glouton, de mesure (D-125)', () => {
+    expect(POLITIQUE_DE_DIFFICULTE.simple).toBe('glouton');
   });
 });
