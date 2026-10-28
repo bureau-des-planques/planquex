@@ -1805,6 +1805,20 @@ h2 {
   padding-left: 0.45em;
 }
 
+/* **Les paliers de taille** (hors plateau) : sous 175 px de texte (une carte de 360 px de téléphone), la
+   carte se resserre. L'illustration se recadre sur le visage, le nom du statut porte seul la faction. Le
+   recadrage est un `background-size` posé sur la couche de l'image (l'image n'est pas une autre image). */
+@container (max-width: 175px) {
+  .card:not(.card--plateau) .card__art {
+    background-position: 50% 8% !important;
+    background-size: 150% auto !important;
+  }
+
+  .card:not(.card--plateau) .card__faction {
+    display: none;
+  }
+}
+
 /* ---------- Dialogues ----------
  * Tous passent par `components/ui/dialog.tsx` (D-035, #131) : fond, rôle, Échap et focus
  * piégé viennent de lui. Ces règles ne règlent que la **taille** des deux grands : la fiche
