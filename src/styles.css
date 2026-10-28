@@ -5861,3 +5861,10 @@ h2 {
 .filtres-actifs .button {
   min-height: 2.75rem;
 }
+
+/* ─── Le retour d'un écran sans barre du bas (#428) ───
+   La cible reste celle de `.button` (44 px, `min-height: 2.75rem`) : `retour-ecran.test.tsx`
+   lit cette hauteur et échoue si elle repasse sous 44 px. */
+.retour-ecran {
+  margin-bottom: 0.75rem;
+}

@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
+import { RetourEcran } from '@/components/RetourEcran';
 import { estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 
@@ -60,9 +61,7 @@ export function Connexion() {
             Cette version du jeu n’est pas reliée à une base : il n’y a ni compte ni connexion. Tout fonctionne comme
             avant, et le mur lit le fichier du dépôt.
           </p>
-          <Link className="button" to="/">
-            Retour au bureau
-          </Link>
+          <RetourEcran vers="/" libelle="Retour au bureau" />
         </section>
       </div>
     );
@@ -71,6 +70,7 @@ export function Connexion() {
   if (chargement && !session) {
     return (
       <div className="page">
+        <RetourEcran vers="/" libelle="Retour au bureau" />
         <section className="section panel">
           <h1>Connexion</h1>
           <p className="m-0 text-[0.9rem] text-ink-muted">Vérification de ta session…</p>
@@ -111,6 +111,7 @@ export function Connexion() {
 
   return (
     <div className="page">
+      <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section">
         <h1>Entrer dans l’alpha</h1>
         <p className="muted max-w-[64ch]">
@@ -194,7 +195,7 @@ export function Connexion() {
       <p className="m-0 text-[0.78rem] text-ink-dim">
         Ton mot de passe ne transite que vers Supabase Auth ; le jeu ne le garde pas. Le courriel sert à te reconnaître
         et à te prévenir de la validation. Ce qui est gardé de toi est écrit dans{' '}
-        <Link to="/confidentialite">la page de confidentialité</Link>. <Link to="/">Retour au bureau</Link>
+        <Link to="/confidentialite">la page de confidentialité</Link>.
       </p>
     </div>
   );

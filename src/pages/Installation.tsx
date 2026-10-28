@@ -23,7 +23,7 @@
  * (`npm run capturer`), pas à guider un doigt.
  */
 import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { RetourEcran } from '@/components/RetourEcran';
 
 /**
  * L'adresse servie en production (D-071), **sans** le schéma : on l'affiche comme on la
@@ -108,6 +108,7 @@ export function Installation() {
 
   return (
     <div className="page installation">
+      <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Installer le jeu</h1>
         <p className="muted m-0 max-w-[62ch]">
@@ -219,12 +220,6 @@ export function Installation() {
           Cette page a été vérifiée le {verifieLe}. Elle est revue à chaque version.
         </p>
       </section>
-
-      <p className="m-0">
-        <Link className="button min-h-11" to="/">
-          <ArrowLeft size={16} /> Retour au bureau
-        </Link>
-      </p>
     </div>
   );
 }

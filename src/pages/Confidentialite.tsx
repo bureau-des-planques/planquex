@@ -15,8 +15,7 @@
  * 3. **elle se lit sans compte** : la route est déclarée hors de `Layout`, comme
  *    `/connexion`, sinon un visiteur devrait s'inscrire pour lire ce qu'on collecte.
  */
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { RetourEcran } from '@/components/RetourEcran';
 
 /**
  * Le courriel de contact, pour demander la suppression de ses données.
@@ -124,6 +123,7 @@ function Bloc({ rubrique }: { rubrique: Rubrique }) {
 export function Confidentialite() {
   return (
     <div className="page">
+      <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Confidentialité</h1>
         <p className="muted m-0 max-w-[62ch]">
@@ -150,12 +150,6 @@ export function Confidentialite() {
           .
         </p>
       </section>
-
-      <p className="m-0">
-        <Link className="button" to="/">
-          <ArrowLeft size={16} /> Retour au bureau
-        </Link>
-      </p>
     </div>
   );
 }
