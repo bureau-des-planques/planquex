@@ -282,8 +282,45 @@ cartes() {
     gsub(/^ +| +$/, "", sujet)
     printf "%s\t%s\n", id, sujet }' "$SUJETS"
 }
-connue()   { cartes | awk -F'\t' -v id="$1" '$1 == id { f = 1 } END { exit !f }'; }
-sujet_de() { cartes | awk -F'\t' -v id="$1" '$1 == id { print $2 }'; }
+# Les suffixes de variante — la **même** table que `SECRET_RARITY` (`src/data/planque.ts`,
+# `star` → 1S, `star2` → 2S, `star3` → 3S, `crown` → COU).
+SUFFIXES_VARIANTE="star star2 star3 crown"
+
+# base_de_variante ID : l'id de base d'une variante (`sse-medecin-travail-star3` →
+# `sse-medecin-travail`), ou un échec pour tout autre id. La table des sujets ne porte
+# **qu'une ligne par carte de base** : une variante n'y a pas sa ligne, elle emprunte
+# celle de sa base (D-139 — c'est la même carte, dans un autre cadre). Ce n'est donc pas
+# une « ligne orpheline » (scripts/illustration-vague.test.ts le vérifie dans les deux sens).
+base_de_variante() {
+  local id="$1" suffixe s
+  suffixe="${id##*-}"
+  [[ "$suffixe" != "$id" ]] || return 1
+  for s in $SUFFIXES_VARIANTE; do
+    if [[ "$suffixe" == "$s" ]]; then
+      printf '%s' "${id%-$suffixe}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# connue ID : la carte a-t-elle un sujet utilisable — ligne de base, ou variante dont la
+# base en a une ? Un id inventé, ou une variante d'une base inconnue, reste refusé.
+connue() {
+  local id="$1" base
+  if cartes | awk -F'\t' -v id="$id" '$1 == id { f = 1 } END { exit !f }'; then return 0; fi
+  base=$(base_de_variante "$id") || return 1
+  cartes | awk -F'\t' -v id="$base" '$1 == id { f = 1 } END { exit !f }'
+}
+
+# sujet_de ID : le sujet de la carte — le sien, ou celui de sa base pour une variante.
+sujet_de() {
+  local id="$1" base=""
+  base=$(base_de_variante "$id" || true)
+  cartes | awk -F'\t' -v id="$id" -v base="$base" '
+    $1 == id { print $2; exit }
+    base != "" && $1 == base { print $2; exit }'
+}
 
 # faction_de ID : **le préfixe de l'id est la faction** (`AGENTS.md` §5 : `sse-…`,
 # `direction-…`). C'est ce qui permet de résoudre l'accent **par faction** au lieu de le
@@ -609,10 +646,29 @@ consigner() {
 
 # cabler ID : ajoute « art: '<id>.webp' » en **dernière** propriété de l'objet de
 # la carte — la convention des cartes déjà câblées. Rend le chemin, ou un code.
+#
+# Une **variante** n'a pas d'objet à elle : elle s'écrit `secretVariant(<cartes>,
+# '<base>', '<suffixe>', '<glyphe>')` (`src/data/planque.ts`). Son image, elle, se
+# **déclare** (D-139) : on ajoute donc son nom de fichier en cinquième argument. Sans
+# ça, le tuyau produirait une planche de variante que personne ne câblerait — la
+# garde `src/data/art.test.ts` laisserait l'image orpheline.
 cabler() {
-  local id="$1" fichier tmp
+  local id="$1" fichier tmp base suffixe
   fichier=$(grep -rlF "id: '$id'" "$DONNEES" --include='*.ts' 2>/dev/null | head -n1)
-  if [[ -z "$fichier" ]]; then return 2; fi
+  if [[ -z "$fichier" ]]; then
+    base=$(base_de_variante "$id") || return 2
+    suffixe="${id##*-}"
+    fichier=$(grep -rlF "'$base', '$suffixe'" "$DONNEES" --include='*.ts' 2>/dev/null | head -n1)
+    if [[ -z "$fichier" ]]; then return 2; fi
+    tmp=$(mktemp)
+    sed -E "s/(secretVariant\([^)]*'$base', '$suffixe'[^)]*)\)/\1, '$id.webp')/" "$fichier" > "$tmp"
+    if ! grep -qF "'$id.webp'" "$tmp"; then
+      rm -f "$tmp"; return 3
+    fi
+    cat "$tmp" > "$fichier"; rm -f "$tmp"
+    printf '%s' "$fichier"
+    return 0
+  fi
   tmp=$(mktemp)
   if ! awk -v id="$id" -v art="$id.webp" '
     { ligne[NR] = $0 }

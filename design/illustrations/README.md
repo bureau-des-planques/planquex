@@ -38,8 +38,35 @@
 
 Les **dix cartes signature sont produites** (voir le journal, en bas). Les autres cartes de
 base restent à faire : `npm run status` en donne le compte (`cards`), et la liste des lignes
-de sujets est celle de **`SUJETS-flow.md`**. Les **variantes** n'en demandent **aucune** —
-`secretVariant` recopie `art` de sa base, et `src/data/art.test.ts` l'impose.
+de sujets est celle de **`SUJETS-flow.md`**.
+
+## Les variantes — une planche chacune, à leur tour (D-139)
+
+Une variante **ne recopie plus** l'illustration de sa base. `secretVariant`
+(`src/data/planque.ts`) écarte `art`, une variante qui a sa planche la **déclare**
+(`art: '<son id>.webp'`, cinquième argument de `secretVariant`), et l'écran résout le
+repli quand elle n'en a pas encore : `artFileOf` (`src/art.ts`) rend l'image de
+`variantOf`, ou rien si la base non plus n'en a pas. `src/data/art.test.ts` garde les
+trois règles — l'image porte l'**id de la carte qui la déclare**, aucune orpheline, et le
+gabarit (carré, ≥ 1024 px, < 1 Mo).
+
+**L'ordre de D-126 ne change pas** : les bases, puis les **sept variantes hautes**
+(4 × `3S`, 3 × `COU`), puis les `1S`/`2S`. Une variante **n'a pas de ligne de sujet à
+elle** : elle emprunte celui de sa base (`base_de_variante` dans
+`scripts/illustration-vague.sh`), et le wizard accepte donc son id.
+
+| Variante (`id`) | Rareté | Base | État |
+|---|---|---|---|
+| `sse-medecin-travail-star3` | `3S` | `sse-medecin-travail` | à produire |
+| `amelioration-directeur-qualite-star3` | `3S` | `amelioration-directeur-qualite` | à produire |
+| `qvt-chief-happiness-officer-star3` | `3S` | `qvt-chief-happiness-officer` | à produire |
+| `atelier-responsable-process-star3` | `3S` | `atelier-responsable-process` | à produire |
+| `rh-drh-crown` | `COU` | `rh-drh` | à produire |
+| `direction-pdg-crown` | `COU` | `direction-pdg` | à produire |
+| `syndicat-secretaire-general-crown` | `COU` | `syndicat-secretaire-general` | à produire |
+
+Les **68 autres variantes** n'ont pas encore de planche : elles affichent celle de leur
+base, par résolution (D-139), et `npm run status` ne les compte pas comme manquantes.
 
 Pour ces cartes, **le sujet et l'accent sont désormais écrits**, et l'obstacle ouvert de #97
 est levé par #121 :

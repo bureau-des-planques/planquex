@@ -117,6 +117,24 @@ describe('Socle — secretVariant', () => {
     expect(secretVariant([source], 'sse-socle', 'star', '✦').glyph).toBe('✦');
   });
 
+  /**
+   * **D-139** : `art` ne s'hérite pas. La copie avait été tranchée en silence par le
+   * code ; elle est levée, et `src/data/art.test.ts` refuse qu'elle revienne.
+   */
+  it('ne recopie pas l’illustration de la carte de base (D-139)', () => {
+    const avecArt: PlanqueCard = { ...source, art: 'sse-socle.webp' };
+    const variant = secretVariant([avecArt], 'sse-socle', 'star3');
+    expect(variant.art).toBeUndefined();
+    expect(variant.variantOf).toBe('sse-socle');
+  });
+
+  it('accepte l’illustration que la variante déclare, la sienne', () => {
+    const avecArt: PlanqueCard = { ...source, art: 'sse-socle.webp' };
+    const variant = secretVariant([avecArt], 'sse-socle', 'star3', '✦', 'sse-socle-star3.webp');
+    expect(variant.art).toBe('sse-socle-star3.webp');
+    expect(variant.glyph).toBe('✦');
+  });
+
   it('n’attribue de suffixe qu’aux raretés secrètes', () => {
     expect(secretSuffix('4D')).toBeUndefined();
     expect(isSecretSuffix('star3')).toBe(true);
