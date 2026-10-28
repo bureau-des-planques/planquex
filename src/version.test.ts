@@ -91,4 +91,17 @@ describe('version de l’application', () => {
     expect(versionsEnDur('faux.ts', 'const affichee = "9.9.9";')).toEqual(['faux.ts : 9.9.9']);
     expect(versionsEnDur('faux.tsx', '<span>v1.2.3</span>')).toEqual(['faux.tsx : v1.2.3']);
   });
+
+  // Le message aux testeurs part dans la release : son titre renvoie au libellé de
+  // `package.json` (`{libellé}`), il ne recopie jamais un numéro (#356).
+  it('le message aux testeurs ne recopie aucun numéro de version', () => {
+    const message = readFileSync(new URL('../docs/ALPHA-TESTEURS.md', import.meta.url), 'utf8');
+    expect(versionsEnDur('docs/ALPHA-TESTEURS.md', message)).toEqual([]);
+    expect(message.split('\n')[0]).not.toMatch(/\d+\.\d+\.\d+/);
+  });
+
+  it('le contrôle mord : un message qui recopie 0.1.13 est refusé', () => {
+    const titre = "# Message aux testeurs de l'alpha — **Alpha · 0.1.13**";
+    expect(versionsEnDur('docs/ALPHA-TESTEURS.md', titre)).toEqual(['docs/ALPHA-TESTEURS.md : 0.1.13']);
+  });
 });

@@ -70,7 +70,10 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    part **avant** la release GitHub, donc la note est écrite d'abord, avec son
    `brouillon: true`. `src/data/versions.test.ts` **échoue** si la version de
    `package.json` n'a pas sa note : on ne publie pas une version sans dire ce qu'elle
-   contient.
+   contient. Le **message aux testeurs** (`docs/ALPHA-TESTEURS.md`) ne recopie **aucun** numéro
+   de version : son titre n'en porte pas, et il demande au testeur de lire le sien dans Réglages.
+   Un numéro écrit à la main dans ce document vieillit à la release suivante — il annonçait encore
+   0.1.13 quand la production servait 0.1.14 (#356) —, et `src/version.test.ts` le refuse.
 2. **Monter la version** : `npm version 0.1.2 --no-git-tag-version` (dans `planquex/`), puis
    changer `stage` à la main si l'étape change.
 3. **Vérifier** : `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` — et
