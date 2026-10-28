@@ -2,134 +2,93 @@ import { describe, expect, it } from 'vitest';
 import {
   avancer,
   COURSE_DECHIRURE,
-  COURSE_ETIQUETTE,
   creer,
   demarrer,
   moments,
   relacher,
   SEUIL_DECHIRURE,
-  SEUIL_ETIQUETTE,
-  zone,
+  surLaLigne,
   type EtatOuverture,
   type Geometrie
 } from './etats';
 
 /**
- * **Les quatre temps de l'ouverture d'un Arrivage** (#283, `docs/SPEC-OUVERTURE-ARRIVAGE.md`).
+ * **La déchirure d'un Arrivage** (#283, `docs/SPEC-OUVERTURE-ARRIVAGE.md`).
  *
  * Chaque règle est confrontée à un **cas fautif** (AGENTS.md §6) : un test qui ne peut pas échouer
  * ne garde rien. Les seuils sont lus sur les constantes, jamais recopiés ici — un réglage change
  * dans `etats.ts` et ces tests le suivent.
  */
-const GEO: Geometrie = { largeur: 315, hauteur: 560, ligne: 42, tolerance: 25 };
-const BOITE_ETIQUETTE = { x: 90, y: 56, w: 135, h: 62 };
+const GEO: Geometrie = { largeur: 300, ligne: 44, tolerance: 30 };
+const COURSE = GEO.largeur * COURSE_DECHIRURE;
 
-/** Un appui au centre de l'étiquette, et le chemin jusqu'à la détacher. */
-function detacher(depuis: EtatOuverture): EtatOuverture {
-  let etat = demarrer(depuis, zone(depuis, 150, 80, BOITE_ETIQUETTE, GEO));
-  etat = avancer(etat, 0, -COURSE_ETIQUETTE * 0.8, GEO);
-  return relacher(etat);
+/** Un geste complet depuis le bord gauche, jusqu'à une fraction `p` de la course. */
+function glisser(p: number, depuis: EtatOuverture = creer()): EtatOuverture {
+  return avancer(demarrer(depuis, 10, GEO), COURSE * p, GEO);
 }
 
-describe('l’ouverture d’un Arrivage — la machine des quatre temps (#283)', () => {
-  it('un appui hors de l’étiquette et loin de la ligne ne prend rien (le contrôle mord)', () => {
-    // Sans ce cas, `demarrer` serait « vrai » sur n'importe quel appui et le test suivant ne
-    // prouverait rien.
-    expect(zone(creer(), 150, 300, BOITE_ETIQUETTE, GEO)).toBeNull();
-    expect(demarrer(creer(), null).phase).toBe('ferme');
+describe('l’ouverture d’un Arrivage — la déchirure (#283)', () => {
+  it('la ligne ne se prend que près des pointillés (le contrôle mord)', () => {
+    expect(surLaLigne(creer(), GEO.ligne, GEO)).toBe(true);
+    expect(surLaLigne(creer(), GEO.ligne + GEO.tolerance, GEO)).toBe(true);
+    // Le cas fautif : un appui au milieu du sachet ne doit rien déchirer.
+    expect(surLaLigne(creer(), GEO.ligne + GEO.tolerance + 1, GEO)).toBe(false);
+    expect(surLaLigne(creer(), 300, GEO)).toBe(false);
   });
 
-  it('l’étiquette s’attrape sur sa boîte, et seulement sachet fermé', () => {
-    expect(zone(creer(), 150, 80, BOITE_ETIQUETTE, GEO)).toBe('etiquette');
-    const dechire: EtatOuverture = { phase: 'dechirure', etiquette: 1, dechirure: 0 };
-    expect(zone(dechire, 150, 80, BOITE_ETIQUETTE, GEO)).toBeNull();
+  it('un sachet ouvert ne se reprend plus', () => {
+    const ouvert: EtatOuverture = { phase: 'ouvert', dechirure: 1, sens: 1 };
+    expect(surLaLigne(ouvert, GEO.ligne, GEO)).toBe(false);
+    expect(demarrer(ouvert, 10, GEO)).toBe(ouvert);
   });
 
-  it('lâchée sous le seuil, l’étiquette se recolle et le sachet redevient fermé', () => {
-    let etat = demarrer(creer(), 'etiquette');
-    etat = avancer(etat, 0, -(COURSE_ETIQUETTE * (SEUIL_ETIQUETTE - 0.1)), GEO);
-    etat = relacher(etat);
+  it('la déchirure part du bord le plus proche de l’appui', () => {
+    expect(demarrer(creer(), 20, GEO).sens).toBe(1);
+    expect(demarrer(creer(), 280, GEO).sens).toBe(-1);
+  });
+
+  it('elle suit le doigt dans son sens, et un glissement à rebours ne déchire rien', () => {
+    expect(glisser(0.5).dechirure).toBeCloseTo(0.5);
+    const aRebours = avancer(demarrer(creer(), 10, GEO), -COURSE, GEO);
+    expect(aRebours.dechirure).toBe(0);
+    // Depuis la droite, c'est l'inverse : le doigt va vers la gauche.
+    const depuisDroite = avancer(demarrer(creer(), 290, GEO), -COURSE * 0.5, GEO);
+    expect(depuisDroite.dechirure).toBeCloseTo(0.5);
+  });
+
+  it('elle suit le doigt dans les deux sens : revenir en arrière la referme', () => {
+    let etat = glisser(0.8);
+    etat = avancer(etat, COURSE * 0.3, GEO);
+    expect(etat.dechirure).toBeCloseTo(0.3);
+  });
+
+  it('elle est bornée à [0, 1], même si le doigt sort du sachet', () => {
+    expect(glisser(3).dechirure).toBe(1);
+  });
+
+  it('lâchée juste sous le seuil, elle se referme', () => {
+    const etat = relacher(glisser(SEUIL_DECHIRURE - 0.01));
     expect(etat.phase).toBe('ferme');
-    expect(etat.etiquette).toBe(0);
-  });
-
-  it('lâchée au-delà du seuil, elle se détache et ouvre le temps de la déchirure', () => {
-    const etat = detacher(creer());
-    expect(etat.phase).toBe('dechirure');
-    expect(etat.etiquette).toBe(1);
-  });
-
-  it('l’étiquette ne redescend pas pendant le glissement, même si le doigt revient', () => {
-    let etat = demarrer(creer(), 'etiquette');
-    etat = avancer(etat, 0, -COURSE_ETIQUETTE * 0.7, GEO);
-    const haut = etat.etiquette;
-    etat = avancer(etat, 0, -4, GEO);
-    expect(etat.etiquette).toBe(haut);
-  });
-
-  it('la déchirure, elle, suit le doigt dans les deux sens : c’est ce qui la rend annulable', () => {
-    let etat = detacher(creer());
-    etat = demarrer(etat, 'dechirure');
-    etat = avancer(etat, GEO.largeur * COURSE_DECHIRURE * 0.4, 0, GEO);
-    const milieu = etat.dechirure;
-    etat = avancer(etat, GEO.largeur * COURSE_DECHIRURE * 0.2, 0, GEO);
-    expect(etat.dechirure).toBeLessThan(milieu);
-  });
-
-  it('lâchée avant la fin, la déchirure revient à zéro et le sachet reste fermé', () => {
-    let etat = detacher(creer());
-    etat = demarrer(etat, 'dechirure');
-    etat = avancer(etat, GEO.largeur * COURSE_DECHIRURE * (SEUIL_DECHIRURE - 0.15), 0, GEO);
-    etat = relacher(etat);
-    expect(etat.phase).toBe('dechirure');
     expect(etat.dechirure).toBe(0);
   });
 
-  it('le seuil se joue à la borne : juste en dessous on referme, exactement dessus on ouvre', () => {
-    // Deux cas fautifs qui encadrent la constante : c'est ce qui prouve que le seuil sert à
-    // quelque chose, et pas seulement qu'une ligne de code existe.
-    const avant: EtatOuverture = { phase: 'dechirure', etiquette: 1, dechirure: SEUIL_DECHIRURE - 0.01 };
-    expect(relacher(avant).phase).toBe('dechirure');
-    const pile: EtatOuverture = { phase: 'dechirure', etiquette: 1, dechirure: SEUIL_DECHIRURE };
-    expect(relacher(pile).phase).toBe('ouvert');
-  });
-
-  it('le seuil de l’étiquette se joue aussi à la borne', () => {
-    const avant: EtatOuverture = { phase: 'etiquette', etiquette: SEUIL_ETIQUETTE - 0.01, dechirure: 0 };
-    const apres = relacher(avant);
-    expect(apres.phase).toBe('ferme');
-    expect(apres.etiquette).toBe(0);
-    const pile: EtatOuverture = { phase: 'etiquette', etiquette: SEUIL_ETIQUETTE, dechirure: 0 };
-    expect(relacher(pile).phase).toBe('dechirure');
-  });
-
-  it('la ligne parcourue en entier ouvre le sachet', () => {
-    let etat = detacher(creer());
-    etat = demarrer(etat, 'dechirure');
-    etat = avancer(etat, GEO.largeur * COURSE_DECHIRURE, 0, GEO);
-    etat = relacher(etat);
+  it('lâchée au seuil exact, le sachet s’ouvre', () => {
+    const etat = relacher(glisser(SEUIL_DECHIRURE));
     expect(etat.phase).toBe('ouvert');
+    expect(etat.dechirure).toBe(1);
   });
 
-  it('aucun chemin ne mène à « ouvert » sans passer par la déchirure', () => {
-    // Deux tentatives fautives : relâcher une étiquette, et relâcher un sachet fermé.
-    const apresEtiquette = relacher(demarrer(creer(), 'etiquette'));
-    expect(apresEtiquette.phase).not.toBe('ouvert');
-    expect(relacher(creer()).phase).toBe('ferme');
-    // Et un appui près de la ligne, sachet fermé, ne prend rien : rien à déchirer.
-    expect(zone(creer(), 150, GEO.ligne, BOITE_ETIQUETTE, GEO)).toBeNull();
+  it('`ouvert` n’est atteignable que par la déchirure : relâcher un sachet fermé ne fait rien', () => {
+    expect(relacher(creer())).toEqual(creer());
+    // Avancer sans avoir démarré ne déchire rien non plus.
+    expect(avancer(creer(), COURSE, GEO).dechirure).toBe(0);
   });
 
-  it('les moments sonorisés racontent le geste, et ne se répètent pas', () => {
-    const ferme = creer();
-    const etiquette = demarrer(ferme, 'etiquette');
-    expect(moments(ferme, etiquette)).toEqual(['contact']);
-    const dechire = detacher(ferme);
-    expect(moments(etiquette, dechire)).toEqual(['dechirure']);
-    let ouvert = demarrer(dechire, 'dechirure');
-    ouvert = relacher(avancer(ouvert, GEO.largeur * COURSE_DECHIRURE, 0, GEO));
-    expect(moments(dechire, ouvert)).toEqual(['ouverture']);
-    // Une fois ouvert, plus rien : un second relâchement ne rejoue pas le son.
-    expect(moments(ouvert, relacher(ouvert))).toEqual([]);
+  it('les moments sonores suivent les phases franchies', () => {
+    const debut = demarrer(creer(), 10, GEO);
+    expect(moments(creer(), debut)).toEqual(['contact']);
+    expect(moments(debut, relacher(glisser(1)))).toEqual(['ouverture']);
+    // Le cas fautif : une déchirure qui avance n'est pas un nouveau contact.
+    expect(moments(debut, glisser(0.4))).toEqual([]);
   });
 });
