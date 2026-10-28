@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ALL_CARDS } from '@/data';
 import { deckCanAdd, normalizeCafeTypes } from '@/game/deck';
+import { DIFFICULTE_PAR_DEFAUT, estDifficulte } from '@/game/ia';
+import type { Difficulte } from '@/game/ia';
 import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
@@ -15,8 +17,10 @@ import type { DernierePartie } from '@/store/derniere';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **13** : le store gagne `derniere`, la dernière partie terminée
- * (ticket #366), absente d'un état v12 : elle vaut `null`. Voir `migratePersisted` pour l'historique complet
+ * Version de la forme persistée. **14** : le store gagne `difficulte` (le cran de la
+ * Direction, #251 / D-145), absente d'un état v13 : elle vaut `normal`, le défaut qui ne
+ * change pas l'écran (D-084). **13** : `derniere`, la dernière partie terminée (ticket
+ * #366), absente d'un état v12 : elle vaut `null`. Voir `migratePersisted` pour l'historique complet
  * (v8 : la densité du combat et les raccourcis ; v9 et v10 : les renommages de D-095 et
  * D-096). Une constante qui annonce un autre chiffre que le sien est un piège : elle a dit
  * **8** jusqu'au 26/10/2026 alors qu'elle valait déjà 10 (#249).
@@ -43,7 +47,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 13;
+export const STORAGE_VERSION = 14;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
@@ -208,6 +212,14 @@ export interface AppState {
    * par l'écran de combat ; remise à zéro par « Réinitialiser la progression ».
    */
   derniere: DernierePartie | null;
+  /**
+   * **Le cran de difficulté de la Direction** (#251, D-145) : il règle ensemble la
+   * **politique** de l'IA et le **Deck** qu'elle joue (`@/game/deck-direction`).
+   * `normal` par défaut — la recherche à deux coups de l'écran (D-084), donc un état qui
+   * n'y touche pas garde le comportement d'avant. Persisté : c'est un réglage du testeur,
+   * pas une mécanique de partie, et il survit au rechargement comme le reste du poste.
+   */
+  difficulte: Difficulte;
   openPack: () => Card[];
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
@@ -223,6 +235,8 @@ export interface AppState {
   setName: (name: string) => void;
   setReducedMotion: (value: boolean) => void;
   setSons: (value: boolean) => void;
+  /** Pose le cran de difficulté de la Direction (`facile`, `normal`, `difficile`). */
+  setDifficulte: (value: Difficulte) => void;
   /** Pose la densité du combat (`true` = détaillé, `false` = sobre). */
   setCombatDetaille: (value: boolean) => void;
   /** Bascule `sobre` ↔ `détaillé` — le geste du bouton `ⓘ` et des raccourcis (#189). */
@@ -269,6 +283,7 @@ export type PersistedState = Pick<
   | 'pasAPasCombatVu'
   | 'partie'
   | 'derniere'
+  | 'difficulte'
 >;
 
 export function partializeState(state: AppState): PersistedState {
@@ -286,7 +301,8 @@ export function partializeState(state: AppState): PersistedState {
     tutorielVu: state.tutorielVu,
     pasAPasCombatVu: state.pasAPasCombatVu,
     partie: state.partie,
-    derniere: state.derniere
+    derniere: state.derniere,
+    difficulte: state.difficulte
   };
 }
 
@@ -321,6 +337,7 @@ export const useStore = create<AppState>()(
       pasAPasCombatVu: false,
       partie: null,
       derniere: null,
+      difficulte: DIFFICULTE_PAR_DEFAUT,
       openPack: () => {
         // La composition de l'Arrivage (3 communes, 1 peu commune, 1 rare) est
         // une règle de jeu : elle vit dans `@/game/pack` (ticket #57). Ici, on ne
@@ -398,6 +415,9 @@ export const useStore = create<AppState>()(
           partie: null,
           // La dernière partie terminée se remet à zéro avec la progression (#366).
           derniere: null,
+          // La difficulté revient au défaut : la remise à zéro part d'un poste neuf
+          // (#251, D-145), et `normal` est ce que l'écran jouait avant.
+          difficulte: DIFFICULTE_PAR_DEFAUT,
           // Un nouveau départ change la suite des Arrivages : sinon le premier
           // Arrivage d'après remise à zéro rejouerait le précédent.
           rng: seedRng(Date.now())
@@ -405,6 +425,7 @@ export const useStore = create<AppState>()(
       setName: (name) => set({ name }),
       setReducedMotion: (value) => set({ reducedMotion: value }),
       setSons: (value) => set({ sons: value }),
+      setDifficulte: (value) => set({ difficulte: estDifficulte(value) ? value : DIFFICULTE_PAR_DEFAUT }),
       setCombatDetaille: (value) => set({ combatDetaille: value }),
       basculerCombatDetaille: () => set((state) => ({ combatDetaille: !state.combatDetaille })),
       setRaccourcisCombat: (value) => set({ raccourcisCombat: value }),
@@ -510,6 +531,10 @@ export const useStore = create<AppState>()(
  *
  * **v12 → v13** (#366) : le store gagne `derniere`, la dernière partie terminée (de quoi la
  * rejouer et son verdict). Un état v12 n'en a pas : `null`. Rien d'autre ne bouge.
+ *
+ * **v13 → v14** (#251, D-145) : le store gagne `difficulte`, le cran de la Direction.
+ * Un état v13 n'en a pas : `normal`, la recherche à deux coups de D-084 — donc son écran
+ * ne change pas. Une valeur d'un autre type (ou un cran inconnu) est écartée de même.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
@@ -522,6 +547,9 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // **v12 → v13** (#366) : la dernière partie terminée. Un état v12 n'en a pas : `null`. Une
     // forme mal faite est écartée (`lireDerniere`), comme la partie en cours.
     derniere: lireDerniere(migrated.derniere),
+    // **v13 → v14** (#251, D-145) : le cran de difficulté. Un état v13 n'en a pas, et une
+    // valeur forgée ne passe pas : `normal`, le défaut de D-084.
+    difficulte: estDifficulte(migrated.difficulte) ? migrated.difficulte : DIFFICULTE_PAR_DEFAUT,
     // **v7 → v8** : l'affichage du combat reprend ses défauts — `sobre`, et les raccourcis
     // actifs. Une valeur d'un autre type est écartée comme une absence.
     combatDetaille: typeof migrated.combatDetaille === 'boolean' ? migrated.combatDetaille : false,

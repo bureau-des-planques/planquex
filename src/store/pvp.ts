@@ -27,6 +27,7 @@ import { createBattle } from '@/game/engine';
 import { rejouer } from '@/game/rejeu';
 import type { BattleCafeTypes } from '@/game/engine';
 import { nextAiAction } from '@/game/ia';
+import type { Politique } from '@/game/ia';
 import { CAMP_NAME } from '@/data/vocabulaire';
 
 /**
@@ -179,11 +180,19 @@ export function joinMatch(code: string): JoinResult {
  *
  * En solo, la condition est celle de l'écran d'avant : la Direction agit à son tour ou
  * pendant sa relève, jamais quand une relève humaine est en attente.
+ *
+ * `politique` est le **nom** de ce que joue la Direction (#251, D-145) : l'écran la lit
+ * dans `reglageDirection(difficulte)`, jamais dans un chiffre. Défaut `'recherche'`, la
+ * politique de l'écran (D-084).
  */
-export function aiTurnAction(state: BattleState, match: Match | null): BattleAction | null {
+export function aiTurnAction(
+  state: BattleState,
+  match: Match | null,
+  politique: Politique = 'recherche'
+): BattleAction | null {
   if (match !== null) return null;
   if (state.phase !== 'playing') return null;
   const pending = state.pendingPromotion;
   const directionPlays = pending === 'ai' || (state.current === 'ai' && pending === null);
-  return directionPlays ? nextAiAction(state) : null;
+  return directionPlays ? nextAiAction(state, politique) : null;
 }
