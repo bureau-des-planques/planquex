@@ -5800,3 +5800,21 @@ h2 {
     transition: none;
   }
 }
+
+/* ---------- Le Deck partagé par un code (#363) ---------- */
+.deck-partage__code {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--fs-sm);
+  word-break: break-all;
+  resize: vertical;
+}
+
+.deck-partage .button {
+  min-height: 44px;
+}
+
+.deck-partage__retour {
+  margin-top: 0.5rem;
+}
