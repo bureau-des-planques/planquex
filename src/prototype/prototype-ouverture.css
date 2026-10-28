@@ -208,6 +208,16 @@ body {
   gap: 0.7rem;
 }
 
+.sachet__plaque {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+  will-change: opacity;
+}
+
 .sachet__zone {
   border-radius: 10px;
   height: 560px;
@@ -217,58 +227,6 @@ body {
   user-select: none;
   -webkit-user-select: none;
   width: 315px;
-}
-
-.sachet__photo,
-.sachet__bande {
-  display: block;
-  height: 100%;
-  inset: 0;
-  position: absolute;
-  width: 100%;
-}
-
-.sachet__bande {
-  transform-origin: 0% 100%;
-}
-
-.sachet__etiquette {
-  align-items: center;
-  background: #0d1424;
-  border: 2px solid #d9b457;
-  border-radius: 4px;
-  box-sizing: border-box;
-  display: flex;
-  gap: 5px;
-  padding: 2px 6px;
-  position: absolute;
-  will-change: transform;
-}
-
-.sachet__pictogramme {
-  background: #e8c55e;
-  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
-  flex: 0 0 auto;
-  height: 62%;
-  width: 26%;
-}
-
-.sachet__lignes {
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(226, 232, 242, 0.62) 0 2px,
-    transparent 2px 7px
-  );
-  flex: 1;
-  height: 46%;
-}
-
-.sachet__reflet {
-  background: linear-gradient(100deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.05) 42%, transparent 68%);
-  border-radius: 4px;
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
 }
 
 .sachet__consigne {
@@ -299,11 +257,4 @@ body {
 .proto-ouv__lien {
   color: #8fb4ff;
   font-size: 0.75rem;
-}
-
-.sachet__ombre {
-  background: radial-gradient(ellipse at 40% 40%, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0) 72%);
-  filter: blur(3px);
-  pointer-events: none;
-  position: absolute;
 }
