@@ -4271,3 +4271,36 @@ h2 {
   margin: 0.35rem 0 0;
 }
 
+/* ---------- L'accueil : la dernière release (#274) ---------- */
+
+/* **La dernière version** (#274) : un bloc à deux colonnes sur grand écran — le libellé, la
+   date, puis la porte vers l'historique. Une seule release s'affiche : l'accueil est un écran
+   de jeu, pas un journal. */
+.home__version {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  justify-content: space-between;
+}
+
+.home__version-texte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.home__version-titre {
+  color: var(--text-dim);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.home__version-libelle,
+.home__version-date {
+  margin: 0;
+}
+
