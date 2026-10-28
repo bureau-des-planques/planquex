@@ -68,6 +68,19 @@
 
   <section id="migrations" aria-live="polite"><h2>Migrations</h2><div class="muet">chargement…</div></section>
 
+  <section id="reset">
+    <h2>Reset de la beta</h2>
+    <p class="muet">Efface <strong>les traces de combat et le mur</strong> (post-its, votes, commentaires). <strong>Garde chaque compte</strong> (courriel, mot de passe, approbation) et pose la <strong>Médaille de la période d'essai</strong> sur les comptes approuvés, <strong>une seule fois</strong>. Ce n'est pas une migration : <code>admin.migrations</code> n'est pas touché (D-130). Procédure : <code>tools/admin/README.md</code>.</p>
+    <div class="ligne-forme"><button type="button" id="reset-apercu">Voir ce qui partirait</button></div>
+    <pre id="reset-apercu-sortie" class="muet" hidden></pre>
+    <div class="ligne-forme" style="margin-top:8px">
+      <label>Tapez exactement <code>remettre à zéro la beta</code> : <input id="reset-confirmation" autocomplete="off" style="width:22em"></label>
+      <button type="button" id="reset-executer" disabled>Remettre à zéro</button>
+    </div>
+    <pre id="reset-rapport" hidden></pre>
+    <div class="ligne-forme" style="margin-top:8px"><button type="button" id="reset-copier" hidden>Copier le compte rendu</button></div>
+  </section>
+
   <section>
     <h2>SQL libre</h2>
     <p class="muet">Lecture → rôle <code>lecteur</code> (la base refuse l'écriture). Écriture → accusé obligatoire. <code>drop</code>/<code>truncate</code>/<code>delete</code>/<code>update</code> sans <code>where</code> → mot annoncé.</p>
@@ -428,6 +441,54 @@
     retour(`migration appliquée : ${r.fichier}`);
     await charger();
   };
+
+  // Le reset (#342). La phrase est celle de `lib/reset.mjs` (CONFIRMATION), gardée par un test ;
+  // le serveur refait la vérification : ce bouton ne fait qu'éviter un envoi inutile.
+  const RESET_PHRASE = 'remettre à zéro la beta';
+  const resetSaisie = document.querySelector('#reset-confirmation');
+  const resetBouton = document.querySelector('#reset-executer');
+  resetSaisie.addEventListener('input', () => { resetBouton.disabled = resetSaisie.value !== RESET_PHRASE; });
+  document.querySelector('#reset-apercu').addEventListener('click', async () => {
+    const sortie = document.querySelector('#reset-apercu-sortie');
+    try {
+      const r = await api('/api/reset');
+      sortie.hidden = false;
+      sortie.textContent = r.texte;
+    } catch (e) {
+      sortie.hidden = false;
+      sortie.textContent = e.message;
+    }
+  });
+  resetBouton.addEventListener('click', async () => {
+    const rapport = document.querySelector('#reset-rapport');
+    const copier = document.querySelector('#reset-copier');
+    try {
+      const r = await api('/api/reset', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ confirmation: resetSaisie.value })
+      });
+      rapport.hidden = false;
+      rapport.textContent = r.texte;
+      copier.hidden = false;
+      resetSaisie.value = '';
+      resetBouton.disabled = true;
+      retour('reset effectué : voir le compte rendu');
+      await charger();
+    } catch (e) {
+      rapport.hidden = false;
+      rapport.textContent = e.message;
+      retour(e.message, true);
+    }
+  });
+  document.querySelector('#reset-copier').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(document.querySelector('#reset-rapport').textContent);
+      retour('compte rendu copié');
+    } catch {
+      retour('copie impossible : sélectionnez le texte à la main', true);
+    }
+  });
 
   window.executerSql = async () => {
     const sortie = document.querySelector('#sql-sortie');

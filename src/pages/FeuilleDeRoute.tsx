@@ -43,6 +43,7 @@ import {
   type ElementPlan
 } from '@/data/plan';
 import { FEATURES_PREVUES, type EtapeProjet, type FeaturePrevue } from '@/data/plan-dev';
+import { DEPOT_PUBLIC } from '@/lib/depot';
 
 /** Les étapes qui se lisent ici, dans l'ordre : l'alpha d'abord, la beta ensuite. */
 const ETAPES_ARRIVAGE: EtapeProjet[] = ['alpha', 'beta'];
@@ -51,7 +52,7 @@ const ETAPES_ARRIVAGE: EtapeProjet[] = ['alpha', 'beta'];
  * **Le dépôt du jeu**, public depuis D-118 — la racine, qui ne se lie **jamais** : les deux
  * portes ouvertes par D-132 sont les releases et les issues (`lienIssue`), pas le code.
  */
-export const DEPOT = 'https://github.com/bureau-des-planques/planquex';
+export const DEPOT = DEPOT_PUBLIC;
 
 /** **Les releases publiées** (D-132) : ce qu'un testeur a sous les yeux, version par version. */
 export const LIEN_RELEASES = `${DEPOT}/releases`;

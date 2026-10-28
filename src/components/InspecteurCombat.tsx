@@ -119,6 +119,7 @@ export function CarteSurvolable({
   fiche,
   inspectee,
   onInspecter,
+  onAttacher,
   children
 }: {
   uid: string;
@@ -129,8 +130,16 @@ export function CarteSurvolable({
   /** Vrai quand le panneau montre cette carte : l'infobulle s'efface devant lui. */
   inspectee: boolean;
   onInspecter: () => void;
+  /**
+   * **Le café se touche sur le Planqué** (#454, D-145) : quand un café attend en Machine et que
+   * cette carte le reçoit, le clic, Entrée et Espace attachent le café au lieu d'ouvrir le
+   * panneau. Son nom accessible dit alors l'action. Absent, la carte se comporte comme avant.
+   */
+  onAttacher?: () => void;
   children: ReactNode;
 }) {
+  const attachable = onAttacher !== undefined;
+  const activer = () => (onAttacher ? onAttacher() : onInspecter());
   const id = useId();
   const [survol, setSurvol] = useState(false);
   const [focus, setFocus] = useState(false);
@@ -181,7 +190,7 @@ export function CarteSurvolable({
   const onKeyDown = (evenement: KeyboardEvent<HTMLDivElement>) => {
     if (evenement.key === 'Enter' || evenement.key === ' ') {
       evenement.preventDefault();
-      onInspecter();
+      activer();
     }
   };
 
@@ -195,12 +204,12 @@ export function CarteSurvolable({
          La carte **dans** la boîte reste inerte (`CardView` figée sans `onClick`) : une seule
          cible de tabulation par Planqué, pas deux. */
       role="button"
-      aria-label={nom}
-      className={className}
+      aria-label={attachable ? `Attacher le café à ${nom}` : nom}
+      className={attachable ? `${className} is-attachable` : className}
       data-uid={uid}
       tabIndex={0}
       aria-describedby={visible ? id : undefined}
-      onClick={onInspecter}
+      onClick={activer}
       onKeyDown={onKeyDown}
       onFocus={() => setFocus(true)}
       onBlur={(evenement) => {

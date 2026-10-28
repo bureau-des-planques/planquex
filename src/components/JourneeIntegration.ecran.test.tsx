@@ -86,4 +86,19 @@ describe('la Journée d’intégration se joue (#334, D-136)', () => {
     // Le geste de l'étape mène au combat : c'est lui qui referme la Journée.
     expect(screen.getByText('l’écran ouvert')).toBeInTheDocument();
   });
+
+  it('l’appel à participer n’apparaît qu’à la fin, et son lien comité referme la Journée (#271)', async () => {
+    monter();
+    const appel = /Envie d’aider/;
+    // **Le contrôle mord** : une ligne posée à une étape intermédiaire se verrait ici.
+    for (let index = 0; index < ETAPES_JOURNEE.length - 1; index += 1) {
+      expect(screen.queryByText(appel), `étape ${index + 1}`).toBeNull();
+      await userEvent.click(action(/^Suivant$/i));
+    }
+    expect(screen.getByText(appel)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('link', { name: 'le comité' }));
+    expect(useStore.getState().tutorielVu).toBe(true);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
 });

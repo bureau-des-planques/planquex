@@ -57,7 +57,9 @@ export default defineConfig({
         // pas hachés par Vite, donc aucun `import` ne les met dans le graphe de modules. Sans cette
         // extension, le jeu était **muet hors ligne** — le mode que #357 a rendu utilisable.
         // 74 Ko pour deux sons : le prix est dérisoire, le silence ne l'est pas.
-        globPatterns: ['**/*.{js,css,html,svg,woff2,wav}'],
+        // **`webp` depuis #415** : les trois captures de règles (`public/regles/`, ~92 Ko) doivent
+        // rester lisibles hors ligne, comme les sons. Même raison, même garde (`precache.test.ts`).
+        globPatterns: ['**/*.{js,css,html,svg,woff2,wav,webp}'],
         navigateFallback: '/index.html',
         // Les illustrations pèsent : 1,2 Mo par image en 1024². Le précache les veut toutes
         // (c'est le jeu hors ligne), mais il ne doit pas être purgé d'office.

@@ -1,3 +1,4 @@
+// Lent : chaque cas lance le wizard `bash` et un `python3` (SQLite de test) par `spawnSync`, dans un bac temporaire ; le bout en bout est le contrôle voulu.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

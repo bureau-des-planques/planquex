@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useComptes } from '@/store/comptes';
+import { useProfil } from '@/store/profil';
 import type { Compte } from '@/lib/comptes';
+import type { Profil } from '@/lib/profil';
 import { Connexion } from './Connexion';
 
 /**
@@ -43,7 +45,19 @@ const actions = () => ({
   deconnecter: vi.fn(async () => {})
 });
 
-function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
+/** Un profil complet : le parcours est fini, la connexion mène où elle menait avant #325. */
+const PROFIL_FAIT: Profil = {
+  id: 'compte-a',
+  pseudo: 'Anaïs',
+  service: '2e',
+  intitule: 'sculpteur de fumée',
+  intitule_relances: 0
+};
+
+function poser(
+  etat: Partial<ReturnType<typeof useComptes.getState>> = {},
+  profil: Partial<Profil> | null = PROFIL_FAIT
+) {
   useComptes.setState({
     configure: true,
     chargement: false,
@@ -52,6 +66,14 @@ function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
     erreur: null,
     ...actions(),
     ...etat
+  });
+  // Le profil est posé d'avance (pas de réseau) : `charger` ne fait rien.
+  useProfil.setState({
+    charge: true,
+    chargement: false,
+    erreur: null,
+    charger: async () => {},
+    profil: profil === null ? null : { ...PROFIL_FAIT, ...profil }
   });
 }
 
@@ -180,6 +202,14 @@ describe('un compte déjà connecté ne reste pas sur la page', () => {
     });
     rendre();
     expect(await screen.findByText('le bureau')).toBeInTheDocument();
+  });
+
+  it('un compte connecté sans profil fait le parcours avant d’aller au bureau', async () => {
+    poser({ session: { id: 'compte-a', courriel: 'a@exemple.test' }, compte: { ...PENDING, etat: 'approuve' } }, null);
+    rendre();
+    expect(await screen.findByRole('heading', { name: /Ton pseudo/ })).toBeInTheDocument();
+    expect(screen.queryByText('le bureau')).toBeNull();
+    expect(screen.queryByText('écran d’attente')).toBeNull();
   });
 
   it('pendant la vérification de la session, on patiente au lieu de demander un mot de passe', () => {

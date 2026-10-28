@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { ETAPES_REGLES, motsDeLEtapeRegle } from './regles-etapes';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { ETAPES_REGLES, cheminImageRegle, imageManquante, motsDeLEtapeRegle } from './regles-etapes';
 import { BENCH_SIZE, HAND_LIMIT, POINTS_TO_WIN, STARTING_HAND, WEAKNESS_BONUS } from '@/game/rules';
 import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 
@@ -47,5 +49,26 @@ describe('les étapes des règles (#270)', () => {
     const nombres = `${fautive.titre} ${fautive.texte}`.match(/\d+/g) ?? [];
     expect(nombres.length).toBeGreaterThan(0);
     expect(nombres.every((nombre) => FIGURES.has(nombre))).toBe(false);
+  });
+
+  it('chaque étape qui déclare une image a son fichier, et un alt qui dit ce qu’elle montre (#415)', () => {
+    const racine = fileURLToPath(new URL('../../public', import.meta.url));
+    const avecImage = ETAPES_REGLES.filter((etape) => etape.image);
+    expect(avecImage.length).toBeGreaterThan(0);
+    for (const etape of avecImage) {
+      expect(imageManquante(etape, existsSync, racine), `image absente pour « ${etape.titre} »`).toBe(false);
+      expect(etape.image?.alt.trim().length ?? 0).toBeGreaterThan(20);
+      expect(cheminImageRegle(etape)).toMatch(/^\/regles\/[a-z-]+\.webp$/);
+    }
+  });
+
+  it('le contrôle mord : une image déclarée absente fait échouer la garde (#415)', () => {
+    const fantome = {
+      titre: 'Essai',
+      texte: 'Un texte.',
+      image: { fichier: 'regles/fantome.webp', alt: 'Une image qui n’existe pas du tout.' }
+    };
+    expect(imageManquante(fantome, () => false, '/racine')).toBe(true);
+    expect(imageManquante(fantome, () => true, '/racine')).toBe(false);
   });
 });

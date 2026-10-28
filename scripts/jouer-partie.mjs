@@ -31,6 +31,7 @@ import { chromium } from 'playwright-core';
 import { createServer, preview } from 'vite';
 import { GABARITS, INSTANTS_COMBAT, STORAGE_KEY, VIEWPORT, amorcageStore } from './capturer-socle.mjs';
 import {
+  affordancesDeBarre,
   choisirAction,
   classerBouton,
   cle,
@@ -118,6 +119,106 @@ async function lirePartieRangee(page) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Les cibles du café (#454, D-145) : chaque Planqué à moi qui reçoit le café en Machine se touche
+ * sur le plateau. Le nom accessible porte l'action ; `aria-hidden` écarte le clone de la scène.
+ */
+const CIBLES_CAFE = '[role="button"][aria-label^="Attacher le café à"]';
+
+async function lireCiblesCafe(page) {
+  return page.evaluate(
+    (selecteur) =>
+      [...document.querySelectorAll(selecteur)]
+        .filter((b) => !b.closest('[aria-hidden="true"]'))
+        .map((b) => {
+          const rect = b.getBoundingClientRect();
+          return {
+            uid: b.getAttribute('data-uid'),
+            texte: b.getAttribute('aria-label'),
+            visible: rect.width > 0 && rect.height > 0,
+            actif: true
+          };
+        }),
+    CIBLES_CAFE
+  );
+}
+
+/**
+ * Mesure une cible **sans la faire défiler** (#455) : la Rotation se joue par la barre, puis par le
+ * panneau du Poste, et chaque mesure vaut pour l'écran tel qu'un joueur le voit, sans glissement.
+ */
+async function viserSansDefilement(page, selecteur, index) {
+  return page.evaluate(
+    ({ selecteur, index }) => {
+      const liste = [...document.querySelectorAll(selecteur)].filter(
+        (b) => !b.classList.contains('link-button') && !b.closest('[aria-hidden="true"]')
+      );
+      const cible = liste[index];
+      document.querySelectorAll('[data-jouer-cible]').forEach((el) => el.removeAttribute('data-jouer-cible'));
+      if (!cible) return null;
+      cible.setAttribute('data-jouer-cible', '1');
+      const rect = cible.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const dessus = document.elementFromPoint(x, y);
+      return {
+        x,
+        y,
+        visible: rect.width > 0 && rect.height > 0,
+        actif: !cible.disabled,
+        dansLaFenetre: x >= 0 && y >= 0 && x <= innerWidth && y <= innerHeight,
+        dessusEstCible: !!dessus && (dessus === cible || cible.contains(dessus))
+      };
+    },
+    { selecteur, index }
+  );
+}
+
+/** Les boutons du panneau du Poste (`.inspecteur__gestes`), classés comme ceux de la barre. */
+async function lireBoutonsDuPanneau(page) {
+  return page.evaluate(() =>
+    [...document.querySelectorAll('.inspecteur__gestes button')].map((b) => {
+      const rect = b.getBoundingClientRect();
+      return {
+        texte: (b.textContent ?? '').trim().replace(/\s+/g, ' '),
+        visible: rect.width > 0 && rect.height > 0,
+        actif: !b.disabled
+      };
+    })
+  );
+}
+
+/**
+ * Mesure une cible du café **sans la faire défiler** (#454) : `scrollIntoView` masquait le défaut
+ * qu'on cherche — une cible qui n'existe qu'après un glissement. Hors de la fenêtre, le jugement
+ * le dit (`hors-fenetre`).
+ */
+async function viserCafe(page, uid) {
+  return page.evaluate(
+    ({ selecteur, uid }) => {
+      const cible = [...document.querySelectorAll(selecteur)].find(
+        (b) => b.getAttribute('data-uid') === uid && !b.closest('[aria-hidden="true"]')
+      );
+      document.querySelectorAll('[data-jouer-cible]').forEach((el) => el.removeAttribute('data-jouer-cible'));
+      if (!cible) return null;
+      cible.setAttribute('data-jouer-cible', '1');
+      const rect = cible.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const dessus = document.elementFromPoint(x, y);
+      return {
+        x,
+        y,
+        visible: rect.width > 0 && rect.height > 0,
+        actif: true,
+        dansLaFenetre: x >= 0 && y >= 0 && x <= innerWidth && y <= innerHeight,
+        dessusEstCible: !!dessus && (dessus === cible || cible.contains(dessus))
+      };
+    },
+    { selecteur: CIBLES_CAFE, uid }
+  );
 }
 
 /** Fait voir l'élément n° `index` (dans la liste du sélecteur) et mesure son centre. */
@@ -253,9 +354,21 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
         .map((b) => ({ type: classerBouton(b.texte), actif: b.actif && b.visible }));
       const sansType = boutons.filter((b) => b.zone === 'barre' && classerBouton(b.texte) === null);
       for (const b of sansType) await echec('bouton-sans-type', `« ${b.texte} » ne correspond à aucune action`);
-      const boutonsDeBarre = jouables.filter((a) => !GESTES_DE_MAIN.includes(a.type));
+      // La Rotation n'a qu'une entrée dans la barre (#455, D-147) : ses cibles sont jugées au panneau.
+      const boutonsDeBarre = affordancesDeBarre(
+        jouables.filter((a) => !GESTES_DE_MAIN.includes(a.type) && a.type !== 'attachEnergy')
+      );
       for (const a of comparerAffordances({ legales: boutonsDeBarre, visibles: barre })) {
         await echec(a.type, `${a.geste} : attendu ${a.attendu}, offert ${a.offert}`);
+      }
+      // L'oracle, côté café : chaque attachement légal a sa cible sur un Planqué, et inversement.
+      const ciblesCafe = await lireCiblesCafe(page);
+      const attachLegaux = jouables.filter((a) => a.type === 'attachEnergy');
+      for (const a of comparerAffordances({
+        legales: attachLegaux,
+        visibles: ciblesCafe.map((c) => ({ type: 'attachEnergy', actif: c.visible && c.actif }))
+      })) {
+        await echec(a.type, `café : attendu ${a.attendu} cible(s), offert ${a.offert}`);
       }
 
       const choix = choisirAction(legales, muettes);
@@ -268,7 +381,18 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
       // Le geste. Une action de main passe par la carte (aria-pressed) puis le bouton de la pose.
       let index;
       let libelle;
-      if (GESTES_DE_MAIN.includes(choix.type)) {
+      let mesure = null;
+      if (choix.type === 'attachEnergy') {
+        // Le café se touche sur le Planqué qui le reçoit (#454) : la cible est celle de son `uid`.
+        const voulue = ciblesCafe.find((c) => c.uid === choix.targetUid);
+        if (!voulue) {
+          await echec('sans-bouton', `attachement vers ${choix.targetUid} : aucune cible affichée`);
+          muettes.add(cle(choix));
+          continue;
+        }
+        libelle = voulue.texte;
+        mesure = await viserCafe(page, choix.targetUid);
+      } else if (GESTES_DE_MAIN.includes(choix.type)) {
         const nomCarte = moteur.nomDeCarte(state, choix.uid);
         const cartes = await lireMain(page);
         const occurrences = cartes.map((nom, i) => (nom === nomCarte ? i : -1)).filter((i) => i >= 0);
@@ -319,6 +443,42 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
         }
         index = voulu.i;
         libelle = voulu.texte;
+      } else if (choix.type === 'retreat') {
+        // La Rotation (#455, D-147) : l'entrée de la barre ouvre le panneau du Poste ; la cible du
+        // Planqué du Banc se joue **dans ce panneau**. Rien n'est défilé avant la mesure.
+        const entree = boutons.findIndex((b) => b.zone === 'barre' && classerBouton(b.texte) === 'retreat');
+        const mesureEntree = entree < 0 ? null : await viserSansDefilement(page, BOUTONS, entree);
+        if (!mesureEntree || jugerCible(mesureEntree).length) {
+          await echec('sans-bouton', `Rotation légale, entrée de barre ${mesureEntree ? 'non cliquable' : 'absente'}`);
+          muettes.add(cle(choix));
+          continue;
+        }
+        await page.mouse.click(mesureEntree.x, mesureEntree.y);
+        compte.clics += 1;
+        await page.waitForSelector('.inspecteur__gestes', { timeout: 3000 }).catch(() => null);
+        await page.waitForTimeout(150);
+        const panneau = await lireBoutonsDuPanneau(page);
+        // L'oracle, côté panneau : une cible par Rotation légale, pas une de plus ni de moins.
+        const rotations = jouables.filter((a) => a.type === 'retreat');
+        for (const a of comparerAffordances({
+          legales: rotations,
+          visibles: panneau.map((b) => ({ type: classerBouton(b.texte), actif: b.actif && b.visible }))
+        })) {
+          await echec(a.type, `panneau du Poste : ${a.geste} attendu ${a.attendu}, offert ${a.offert}`);
+        }
+        const cibles = panneau.map((b, i) => ({ b, i })).filter(({ b }) => classerBouton(b.texte) === 'retreat');
+        const voulue = cibles[rangDansLeType(legales, choix)];
+        if (!voulue) {
+          await echec(
+            'sans-bouton',
+            `Rotation légale, aucune cible dans le panneau (rang ${rangDansLeType(legales, choix)})`
+          );
+          muettes.add(cle(choix));
+          continue;
+        }
+        index = voulue.i;
+        libelle = voulue.b.texte;
+        mesure = await viserSansDefilement(page, '.inspecteur__gestes button', index);
       } else {
         // Un geste de barre : le rang de l'action parmi les légaux de son type.
         const rang = rangDansLeType(legales, choix);
@@ -337,7 +497,7 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
 
       const avant = await page.locator('.battle').textContent();
       const actionsAvant = partie.actions.length;
-      const cible = await viser(page, BOUTONS, index);
+      const cible = mesure ?? (await viser(page, BOUTONS, index));
       const anomaliesCible = cible ? jugerCible(cible) : ['introuvable'];
       if (anomaliesCible.length) {
         await echec(anomaliesCible[0], `« ${libelle} »`);

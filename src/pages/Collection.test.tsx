@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lent : chaque cas rend la Collection complète dans jsdom, avec le catalogue entier et le store réinitialisé ; le coût est le rendu de la grille.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Collection } from './Collection';
@@ -53,7 +54,7 @@ describe('Collection — écran de la Collection', () => {
     fireEvent.change(factionSelect, { target: { value: 'SSE' } });
 
     expect(factionSelect).toHaveValue('SSE');
-    expect(screen.getByText(/Infirmier de site/)).toBeInTheDocument();
+    expect(screen.getByText('Infirmier de site')).toBeInTheDocument();
     expect(screen.queryByText(/Responsable d'unité/)).not.toBeInTheDocument();
   });
 
@@ -65,7 +66,7 @@ describe('Collection — écran de la Collection', () => {
     fireEvent.change(stageSelect, { target: { value: 'ENTRANT' } });
 
     expect(stageSelect).toHaveValue('ENTRANT');
-    expect(screen.getByText(/Infirmier de site/)).toBeInTheDocument();
+    expect(screen.getByText('Infirmier de site')).toBeInTheDocument();
   });
 
   it('affiche un message quand aucune carte ne correspond', () => {

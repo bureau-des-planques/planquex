@@ -1,3 +1,4 @@
+// Lent : les cas jouent des parties complètes (`simulate`, graines 1 à 1234) pour mesurer le niveau de l'IA ; la mesure est le test.
 import { describe, expect, it, vi } from 'vitest';
 import type { BattleAction, BattleState } from '@/data/types';
 import { applyAction, createBattle, legalActions } from '@/game/engine';

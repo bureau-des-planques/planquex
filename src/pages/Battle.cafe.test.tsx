@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { Battle } from './Battle';
@@ -129,8 +131,8 @@ describe('le café attaché ne change pas de place — l’écran (#399)', () =>
   it('après l’attachement, le café reste dans son rang et la Machine se vide nommément', () => {
     const { container, etat } = rendre();
     const zone = etat.players.player.energyZone;
-    const bouton = screen.getAllByRole('button', { name: /Attacher 1 café/ })[0];
-    if (!bouton) throw new Error('aucun bouton d’attachement rendu');
+    const bouton = screen.getAllByRole('button', { name: /Attacher le café à/ })[0];
+    if (!bouton) throw new Error('aucun Planqué qui reçoive le café (#454)');
     fireEvent.click(bouton);
 
     const fiche = maFiche(container);
@@ -163,8 +165,9 @@ describe('le panneau d’attache dit quel café attend et ce qui est possible (#
     const pastille = panneau.querySelector('.pip--typed') as HTMLElement;
     expect(pastille).not.toBeNull();
     expect(pastille.style.getPropertyValue('--cafe')).toBe(couleurDe(zone));
-    // Les cibles sont dans le panneau, sous le café : on choisit après avoir lu la couleur.
-    expect(within(panneau).getAllByRole('button', { name: /Attacher 1 café/ }).length).toBeGreaterThan(0);
+    // Le panneau n'offre aucune cible : le café se touche sur le Planqué qui le reçoit (#454).
+    expect(within(panneau).queryAllByRole('button')).toHaveLength(0);
+    expect(screen.getAllByRole('button', { name: /Attacher le café à/ }).length).toBeGreaterThan(0);
   });
 
   it('dit pourquoi l’attachement n’est pas offert quand le café est déjà posé ce tour', () => {
@@ -180,10 +183,117 @@ describe('le panneau d’attache dit quel café attend et ce qui est possible (#
     if (!partie) throw new Error('partie terminée : rien à rendre');
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
 
-    const attachements = screen.queryAllByRole('button', { name: /Attacher 1 café/ });
+    const attachements = screen.queryAllByRole('button', { name: /Attacher le café à/ });
     expect(attachements).toHaveLength(0);
     // La raison vit sur la ligne du journal, là où la ligne de portée dit déjà ce qui manque.
     const barre = screen.getByRole('region', { name: 'Actions du tour' });
     expect(within(barre).getByText(/déjà attaché/i)).toBeInTheDocument();
+  });
+});
+
+/** Les contrôles d'action, hors scène d'attaque (son clone est `aria-hidden`, D-098). */
+function controles(racine: ParentNode): HTMLElement[] {
+  return [...racine.querySelectorAll<HTMLElement>('button, [role="button"]')].filter(
+    (el) => !el.closest('[aria-hidden="true"]')
+  );
+}
+
+describe('le café se touche sur le Planqué (#454, D-145)', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('chaque Planqué qui reçoit le café porte son nom d’action, et seulement eux', () => {
+    const { container, etat } = rendre();
+    // Les cibles sont celles du moteur : un `attachEnergy` par Planqué à moi (Poste et Banc).
+    const attendues = legalActions(etat).filter((action) => action.type === 'attachEnergy');
+    const cibles = screen.getAllByRole('button', { name: /Attacher le café à/ });
+    expect(cibles).toHaveLength(attendues.length);
+    const attachables = [...container.querySelectorAll('.is-attachable')];
+    expect(attachables).toHaveLength(attendues.length);
+    expect(attachables.every((el) => cibles.includes(el as HTMLElement))).toBe(true);
+  });
+
+  it('toucher le Planqué attache le café : la Machine se vide, le café reste au rang', () => {
+    const { container, etat } = rendre();
+    const zone = etat.players.player.energyZone;
+    fireEvent.click(screen.getAllByRole('button', { name: /Attacher le café à/ })[0]!);
+
+    const fiche = container.querySelector('.board__side:not(.is-direction) .poste__info') as HTMLElement;
+    expect(fiche.querySelector('[data-cafes="attaches"] .pip--typed')).not.toBeNull();
+    expect(fiche.querySelector('[data-cafes="machine"]')?.textContent).toMatch(/vide/i);
+    expect(zone).not.toBeNull();
+    // Un seul attachement par tour : plus aucune cible, et le Planqué n'est plus marqué.
+    expect(screen.queryAllByRole('button', { name: /Attacher le café à/ })).toHaveLength(0);
+    expect(container.querySelectorAll('.is-attachable')).toHaveLength(0);
+  });
+
+  it('au clavier, Entrée attache le café comme le toucher', () => {
+    rendre();
+    const cible = screen.getAllByRole('button', { name: /Attacher le café à/ })[0]!;
+    fireEvent.keyDown(cible, { key: 'Enter' });
+    expect(screen.queryAllByRole('button', { name: /Attacher le café à/ })).toHaveLength(0);
+  });
+
+  it('la barre n’a plus de cibles de café et garde « Café en Machine »', () => {
+    const { container } = rendre();
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(container.querySelector('.combat-barre__cafe-cibles')).toBeNull();
+    expect(within(barre).queryAllByRole('button', { name: /Attacher/ })).toHaveLength(0);
+    expect(screen.getByRole('region', { name: /Café à attacher/i }).textContent).toMatch(/Café en Machine/);
+  });
+});
+
+/**
+ * **Le contrôle mord** (#454, #455) : une cible d'action du combat ne doit pas être atteignable
+ * seulement en faisant défiler une rangée sans barre (`overflow-x: auto; scrollbar-width: none`,
+ * ce que D-103 interdit). Le test lit les règles de `styles.css`, en retient les rangées qui
+ * défilent cachées, et refuse qu'un contrôle d'action y vive. Aucune exemption : la rangée de
+ * Rotation n'en a plus (#455, D-147).
+ */
+function rangeesSansBarre(css: string): string[] {
+  const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const selecteurs: string[] = [];
+  for (const [, selecteur, corps] of sansCommentaires.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/scrollbar-width\s*:\s*none/.test(corps) && /overflow-x\s*:\s*(auto|scroll)/.test(corps)) {
+      selecteurs.push(
+        ...selecteur
+          .split(',')
+          .map((morceau) => morceau.trim())
+          .filter(Boolean)
+      );
+    }
+  }
+  return selecteurs;
+}
+
+function controlesCaches(racine: ParentNode, selecteurs: string[]): HTMLElement[] {
+  return controles(racine).filter((el) => selecteurs.some((selecteur) => el.closest(selecteur) !== null));
+}
+
+describe('le contrôle mord : pas de cible d’action dans une rangée qui défile cachée (#454)', () => {
+  it('mord sur un cas fautif fabriqué : un contrôle dans une rangée cachée est signalé', () => {
+    const css = '.faux-rangee { overflow-x: auto; scrollbar-width: none; }';
+    const racine = document.createElement('div');
+    racine.innerHTML = '<div class="faux-rangee"><button type="button">Attacher le café à Faux</button></div>';
+    expect(controlesCaches(racine, rangeesSansBarre(css))).toHaveLength(1);
+  });
+
+  it('ne mord pas sur un contrôle hors rangée cachée', () => {
+    const css = '.faux-rangee { overflow-x: auto; scrollbar-width: none; }';
+    const racine = document.createElement('div');
+    racine.innerHTML = '<div class="rangee"><button type="button">Fin du tour</button></div>';
+    expect(controlesCaches(racine, rangeesSansBarre(css))).toHaveLength(0);
+  });
+
+  it('aucune rangée de la barre ne défile plus cachée, et le plateau n’a aucun contrôle caché', () => {
+    const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
+    // #455, D-147 : la rangée de Rotation n'a plus d'exemption, et aucune rangée de la barre défile.
+    expect(rangeesSansBarre(css).filter((selecteur) => selecteur.includes('combat-barre'))).toEqual([]);
+    const { container } = rendre();
+    expect(controlesCaches(container, rangeesSansBarre(css))).toEqual([]);
   });
 });
