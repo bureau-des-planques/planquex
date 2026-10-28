@@ -62,7 +62,7 @@ const SCRIPT = join(racine, LANCER);
 // lien qui est rendu porte `noreferrer noopener` : deux entrées, une par moitié de la règle.
 const TICKETS_ATTENDUS = [
   49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 294, 294, 294, 294,
-  299, 317, 317
+  299, 317, 317, 411, 411
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {

@@ -377,6 +377,29 @@ export const MUTATIONS = [
     tests: ['scripts/problemes-connus.test.ts'],
     garde:
       'sans ce filtre, la note de version annoncerait « problème connu » pour un correctif déjà livré, et pour un post-it que personne n’a trié — une note qui ment sur son propre contenu'
+  },
+  {
+    ticket: 411,
+    titre: 'la mesure recopie les réglages de recherche au lieu de les lire',
+    fichier: 'src/game/mesure-direction.ts',
+    // La mutation **fige** `candidates` à l’ancienne valeur de #111 (6). Tant que les défauts
+    // portent le réglage mesuré (2, #411), la mesure recopiée ne l’est plus : la suite doit
+    // tomber sur « la mesure lit les réglages de l’écran ».
+    motif: '{ ...DEFAULT_SEARCH_OPTIONS, maxMs: Infinity }',
+    remplacement: '{ ...DEFAULT_SEARCH_OPTIONS, maxMs: Infinity, candidates: 6 }',
+    tests: ['src/game/mesure-direction.test.ts'],
+    garde:
+      'une mesure qui recopie ses réglages prouve la force d’une politique que plus personne ne joue : le chiffre publié cesserait de décrire l’écran (D-134)'
+  },
+  {
+    ticket: 411,
+    titre: 'le budget de candidats revient à la valeur hors bande',
+    fichier: 'src/game/ia.ts',
+    motif: '  candidates: 2,',
+    remplacement: '  candidates: 6,',
+    tests: ['src/game/ia-recherche.test.ts'],
+    garde:
+      '6 candidats mesuraient 62,57 % des parties décidées contre la référence scriptée, hors de la bande 40–60 % de D-134 ; y revenir sans une nouvelle mesure est une régression de jeu, pas un réglage'
   }
 ];
 
