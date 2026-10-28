@@ -116,12 +116,12 @@ jobs:
         if: steps.chemins.outputs.doc_seulement != 'true'
         run: ls -la dist/index.html dist/sw.js
 
-  # Le moteur, les données, les scripts, la migration du mur — le gros du temps de test.
-
       - name: Chemin rapide — documentation seule, rien à contrôler ici (D-143)
         if: steps.chemins.outputs.doc_seulement == 'true'
-        run: echo "PR de documentation seule : types, format, garde-fous et build ne peuvent pas changer."
+        run: |
+          echo "PR de documentation seule : types, format, garde-fous et build ne peuvent pas changer."
 
+  # Le moteur, les données, les scripts, la migration du mur — le gros du temps de test.
   tests-noyau:
     name: tests du noyau (projet node)
     runs-on: ubuntu-latest
@@ -177,8 +177,6 @@ jobs:
         if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm test -- --project=node
 
-  # Les écrans, rendus sous jsdom, puis le contrôle visuel des pages servies depuis `dist/`.
-
       # Le chemin rapide : les tests du projet `node` qui lisent un document (les gardes de
       # cohérence de D-143 (1), `capturer.test.ts` qui relit D-142…). Calculés, pas recopiés.
       - name: Chemin rapide — les tests qui lisent un document (D-143)
@@ -187,6 +185,7 @@ jobs:
           TESTS: ${{ steps.chemins.outputs.tests_node }}
         run: npx vitest run $TESTS
 
+  # Les écrans, rendus sous jsdom, puis le contrôle visuel des pages servies depuis `dist/`.
   tests-ecrans:
     name: tests des écrans + contrôle visuel
     runs-on: ubuntu-latest
