@@ -254,6 +254,18 @@ function dansUnChampDeSaisie(cible: EventTarget | null): boolean {
 const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
 
 /**
+ * Les écrans joignables depuis le menu du combat (#427). Ce sont les entrées de la barre du
+ * bas (`Layout`, cinq onglets) et les Réglages, que l'en-tête cache sur téléphone.
+ */
+const ECRANS_DU_MENU = [
+  { to: '/', label: 'Accueil' },
+  { to: '/collection', label: 'Collection' },
+  { to: '/deck', label: 'Deck' },
+  { to: '/comite', label: 'Comité' },
+  { to: '/settings', label: 'Réglages' }
+] as const;
+
+/**
  * Les cafés **attachés** d'un Planqué, en pastilles typées (D-037) : chaque pastille
  * porte la couleur de sa faction, vide si rien n'est attaché.
  *
@@ -805,17 +817,25 @@ export function Battle() {
    * et son journal. À défaut (rien de rangé, partie terminée, journal qui ne rejoue pas),
    * un combat neuf contre la Direction, comme avant.
    */
-  const [depart] = useState<Reprise>(
-    () =>
-      // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
-      // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
-      (tutoriel ? null : reprendrePartie(useStore.getState().partie)) ?? {
-        state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
-        match: null,
-        decksSolo: { playerDeck, aiDeck: testDeck() }
-      }
-  );
+  const [depart] = useState<Reprise & { reprise: boolean }>(() => {
+    // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
+    // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
+    const reprise = tutoriel ? null : reprendrePartie(useStore.getState().partie);
+    if (reprise) return { ...reprise, reprise: true };
+    return {
+      state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
+      match: null,
+      decksSolo: { playerDeck, aiDeck: testDeck() },
+      reprise: false
+    };
+  });
   const [state, setState] = useState<BattleState>(depart.state);
+  /**
+   * **Ce que le testeur sait de sa partie quittée** (#427) : une partie rangée est reprise
+   * seule au retour, et l'écran le **dit** jusqu'au premier coup. Sans ce mot, la sortie
+   * de la veille ressemblait à un abandon.
+   */
+  const [partieReprise, setPartieReprise] = useState(depart.reprise);
   /** Les Decks du combat solo : une partie à deux porte les siens dans son `Match`. */
   const [decksSolo, setDecksSolo] = useState<Decks>(depart.decksSolo);
 
@@ -946,6 +966,7 @@ export function Battle() {
 
   const play = useCallback((action: BattleAction) => {
     setSelectedUid(null);
+    setPartieReprise(false);
     setState((current) => applyAction(current, action));
   }, []);
 
@@ -1425,6 +1446,11 @@ export function Battle() {
           <p className="muted">
             Tour {state.turn} · {match ? campLine(state, match) : libelleDuTour(state)}
           </p>
+          {partieReprise && (
+            <p className="battle__reprise" role="status">
+              Partie reprise au tour {state.turn}, comme tu l’as laissée.
+            </p>
+          )}
           {/* L'attente de la Direction (#131) : annoncée au lecteur d'écran, et elle disparaît
               dès que le coup est joué. Aucun point animé : le mouvement réduit n'a rien à couper. */}
           {aiAction && (
@@ -1481,6 +1507,19 @@ export function Battle() {
             if (menu.vue === 'pvp') return partieADeux;
             return (
               <ul className="combat-menu__liste">
+                {/* **La navigation en combat** (#427) : la barre du bas est retirée (#275) et la
+                    barre du haut s'efface sur téléphone. Ces liens la rendent ici, dans le panneau
+                    qui s'ouvre déjà — rien ne reprend la place du plateau. Un lien ne déclare pas de
+                    forfait : la partie est rangée à chaque coup (#126) et reprend au retour. */}
+                <li>
+                  <nav className="combat-menu__ailleurs" aria-label="Aller à un autre écran">
+                    {ECRANS_DU_MENU.map((ecran) => (
+                      <Link key={ecran.to} to={ecran.to} className="combat-menu__lien">
+                        {ecran.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </li>
                 <li>
                   <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('journal')}>
                     <ScrollText size={16} aria-hidden="true" /> Journal

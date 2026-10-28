@@ -5938,6 +5938,50 @@ h2 {
   min-height: 2.75rem;
 }
 
+/* ---------- Combat : sortie, reprise et navigation du menu (#427) ----------
+
+   La sortie reste l'icône `←` de l'en-tête (`.battle__sortie`). La reprise dit au testeur que sa
+   partie rangée est reprise (`.battle__reprise`), sur la même ligne que l'état du combat. Le menu
+   `⋯` porte les autres écrans (`.combat-menu__ailleurs`) : ils sont dans le panneau qui s'ouvre
+   déjà, donc aucune place ne revient au plateau. */
+
+.battle__reprise {
+  color: var(--gold-soft);
+  flex-basis: 100%;
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.combat-menu__ailleurs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.combat-menu__lien {
+  align-items: center;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  display: inline-flex;
+  font-size: var(--fs-sm, 0.9rem);
+  min-height: 2.75rem;
+  padding: 0.35rem 0.7rem;
+  text-decoration: none;
+}
+
+.combat-menu__lien:hover,
+.combat-menu__lien:focus-visible {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.combat-menu__lien:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
 /* ---------- Le Deck : courbe de coût, compte et filtres (#364) ---------- */
 
 /* La courbe : une ligne par coût — l'étiquette, la piste, le nombre. Lecture seule : rien n'est cliquable. */
