@@ -40,7 +40,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 10;
+export const STORAGE_VERSION = 11;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -481,7 +481,7 @@ export const useStore = create<AppState>()(
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
   const migrated = version < STORAGE_VERSION ? withRenamedCardIds(state) : state;
-  return {
+  const normalise: Partial<AppState> = {
     ...migrated,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now()),
@@ -499,6 +499,24 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     pasAPasCombatVu:
       typeof migrated.pasAPasCombatVu === 'boolean' ? migrated.pasAPasCombatVu : version < STORAGE_VERSION
   };
+  // **v10 -> v11** : la beta efface la **progression**, jamais le compte (D-130). Le compte
+  // vit dans Supabase : rien de lui n'est ici. Ce qui part est ce qui se rejoue — Collection,
+  // Deck, Arrivages ouverts, partie en cours, types de café. Ce qui reste est ce qui décrit
+  // le **testeur** : son nom, ses réglages d'accessibilité, et ce qu'il a déjà appris.
+  // Le palier ne vise **que** la population qui existe : les testeurs en v10. Un état plus
+  // ancien n'arrive plus que par un **import de sauvegarde** (Réglages), et l'effacer serait
+  // un bug : celui qui importe veut retrouver sa partie, pas la perdre.
+  if (version === 10) {
+    return {
+      ...normalise,
+      owned: starterOwned(),
+      deck: [],
+      cafeTypes: [],
+      packsOpened: 0,
+      partie: null
+    };
+  }
+  return normalise;
 }
 
 /**

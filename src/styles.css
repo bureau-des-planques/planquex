@@ -948,6 +948,17 @@ h2 {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 }
 
+/* **Une carte hors écran ne se peint pas** (#357). La Collection monte ses 225 cartes d'un
+   coup ; sans cela, le navigateur calcule et peint chacune, et **demande son illustration**
+   pour toutes — 300 images au premier affichage. `content-visibility: auto` laisse le
+   navigateur sauter ce qui est hors champ, et `contain-intrinsic-size` lui donne la place
+   pour que la barre de défilement ne saute pas quand une carte entre dans le champ.
+   Le rendu à l'écran ne change pas : la carte visible est peinte comme avant. */
+.card-grid > * {
+  contain-intrinsic-size: auto 14rem;
+  content-visibility: auto;
+}
+
 /* Un téléphone : **deux** colonnes, toujours. À 360 px la page offre 328 px, et deux cartes
    de 160 px avec leur gouttière en demandent 332 : `auto-fill` retombait à une colonne, et
    la Collection devenait un rouleau de cartes plein écran (#131). */
