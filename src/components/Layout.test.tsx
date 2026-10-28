@@ -127,15 +127,24 @@ describe('Layout — la barre à cinq onglets (#213, D-097 (4))', () => {
     expect(within(entete).getByText('Testeur')).toBeInTheDocument();
   });
 
-  it('en combat, l’onglet Comité s’efface — on ne quitte pas une partie en cours', () => {
+  it('en combat, la barre du bas n’est pas rendue du tout (#275)', () => {
     monter('/battle');
-    expect(within(barre()).queryByRole('link', { name: 'Comité' })).toBeNull();
-    // Les quatre autres restent, à leur place : la barre ne se vide pas.
+    // **Le contrôle mord** : si `Layout` rend la barre en combat (même réduite à quatre
+    // onglets, comme avant #275), cette assertion tombe. On ne la cache pas : elle est
+    // absente du DOM, donc absente du focus et de l'arbre d'accessibilité.
+    expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
+  });
+
+  it('hors combat, l’onglet courant porte `aria-current` (#275)', () => {
+    monter('/comite');
+    const onglet = within(barre()).getByRole('link', { name: 'Comité' });
+    expect(onglet).toHaveAttribute('aria-current', 'page');
+    // Un seul onglet courant : les autres ne le sont pas.
     expect(
       within(barre())
         .getAllByRole('link')
-        .map((lien) => lien.textContent)
-    ).toEqual(['Accueil', 'Collection', 'Deck', 'Combat']);
+        .filter((lien) => lien.hasAttribute('aria-current'))
+    ).toHaveLength(1);
   });
 });
 
@@ -188,12 +197,13 @@ describe('Layout — le compteur du comité (#212, D-097 (5))', () => {
     expect(mocks.compter).not.toHaveBeenCalled();
   });
 
-  it('en combat, ni onglet Comité ni alerte, et aucune lecture', () => {
+  it('en combat, ni barre ni alerte, et aucune lecture', () => {
     mocks.murEstConfigure.mockReturnValue(true);
     mocks.compter.mockResolvedValue(3);
     monter('/battle');
 
-    expect(within(barre()).queryByRole('link', { name: /Comité/ })).toBeNull();
+    // La barre entière est absente (#275), donc l'onglet Comité avec elle.
+    expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
     expect(screen.queryByRole('link', { name: ALERTE })).toBeNull();
     expect(mocks.compter).not.toHaveBeenCalled();
   });

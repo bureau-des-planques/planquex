@@ -455,6 +455,39 @@ h2 {
   top: -0.5rem;
 }
 
+/* ---------- La barre du bas, refaite (#275) ----------
+   Trois ajouts, aucune règle existante réécrite :
+   - la **cible** d'un onglet fait au moins 44 px de haut et de large (D-120, #322), pour
+     le doigt sur un écran de 420 px (D-116) ;
+   - l'**onglet actif** se reconnaît à sa pastille dorée, qui reste visible même quand la
+     couleur seule ne suffit pas (jamais la couleur pour seule information) ;
+   - la barre **respire** l'encoche basse du téléphone au lieu de passer dessous. */
+.bottom-nav {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-nav__item {
+  justify-content: center;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+
+/* Le témoin de l'onglet actif : un contour doré **et** le voyant du haut, déjà là. */
+.bottom-nav__item.is-active {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 38%, transparent);
+}
+
+.bottom-nav__item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* En combat, la barre n'est pas rendue (#275) : le shell ne garde donc pas la marge du bas
+   qui lui laissait la place, et le plateau gagne la hauteur (D-116). */
+.app-shell:has(.battle) {
+  padding-bottom: 0.5rem;
+}
+
 /* ---------- Blocs de page ---------- */
 
 .page {
