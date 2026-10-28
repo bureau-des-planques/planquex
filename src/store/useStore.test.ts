@@ -164,8 +164,49 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 10', () => {
-    expect(STORAGE_VERSION).toBe(10);
+  it('déclare la version 11', () => {
+    expect(STORAGE_VERSION).toBe(11);
+  });
+
+  it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {
+    const v10 = {
+      name: 'Vétéran',
+      owned: { 'sse-infirmier-site': 2, 'management-rpo-sans-rui-ex': 1 },
+      deck: ['sse-infirmier-site', 'sse-infirmier-site'],
+      cafeTypes: ['SSE' as const],
+      packsOpened: 40,
+      reducedMotion: true,
+      combatDetaille: true,
+      raccourcisCombat: false,
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      partie: null,
+      rng: 12345
+    };
+    const migre = migratePersisted(v10, 10);
+    // Ce qui part : ce qui se rejoue.
+    expect(migre.owned).not.toHaveProperty('management-rpo-sans-rui-ex');
+    expect(migre.deck).toEqual([]);
+    expect(migre.packsOpened).toBe(0);
+    expect(migre.cafeTypes).toEqual([]);
+    expect(migre.partie).toBeNull();
+    // Ce qui reste : ce qui décrit le testeur, et ce qu'il a appris.
+    expect(migre.name).toBe('Vétéran');
+    expect(migre.reducedMotion).toBe(true);
+    expect(migre.combatDetaille).toBe(true);
+    expect(migre.raccourcisCombat).toBe(false);
+    expect(migre.tutorielVu).toBe(true);
+    expect(migre.pasAPasCombatVu).toBe(true);
+    // Et la Collection repart sur les cartes de départ, celles que le jeu donne.
+    expect(Object.keys(migre.owned ?? {}).length).toBeGreaterThan(0);
+  });
+
+  it('le contrôle mord : sans le palier, le COMEX du vétéran survivrait', () => {
+    // La garde du test précédent est l'**absence** d'une carte hors des raretés de départ
+    // (`1D`/`2D`) : un COMEX. Retirer le palier de `migratePersisted` fait réapparaître
+    // cette clé, et le test tombe. C'est ce qui distingue une garde d'une description.
+    const migre = migratePersisted({ owned: { 'management-rpo-sans-rui-ex': 1 } }, 10);
+    expect(Object.keys(migre.owned ?? {})).not.toContain('management-rpo-sans-rui-ex');
   });
 
   it('déclare les cinq renommages de Management de D-029 (#67), et eux seuls', () => {
@@ -693,11 +734,11 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
     expect(migre.tutorielVu).toBe(false);
   });
 
-  it('migre un état v10 sans ces champs (export bricolé) sans perdre le reste', () => {
-    // La forme n'a plus bougé depuis la v8 (#189) : le repli est **par type**, pas par numéro,
-    // donc une sauvegarde v10 à qui il manquerait les deux booléens reprend les défauts sans
-    // rien perdre — et sans qu'une v11 vide de sens soit nécessaire.
-    const migre = migratePersisted({ name: 'Vétéran', owned: { 'sse-infirmier-site': 1 }, deck: [] }, 10);
+  it('un état v9 sans ces champs prend les défauts sans perdre le reste', () => {
+    // Le repli est **par type**, pas par numéro : un état d'avant #189 reprend les deux
+    // défauts sans rien perdre. Le palier v10 -> v11 de #347 ne le touche pas (voir plus bas) :
+    // un état antérieur n'arrive plus que par un **import de sauvegarde**.
+    const migre = migratePersisted({ name: 'Vétéran', owned: { 'sse-infirmier-site': 1 }, deck: [] }, 9);
     expect(migre.combatDetaille).toBe(false);
     expect(migre.raccourcisCombat).toBe(true);
     expect(migre.name).toBe('Vétéran');

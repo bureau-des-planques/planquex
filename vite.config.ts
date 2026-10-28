@@ -47,10 +47,11 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // `webp` est là pour les illustrations : depuis D-045 elles entrent dans le graphe
-        // de modules (Vite les hache dans `dist/assets/`), donc sans ce motif un testeur
-        // hors ligne verrait des cartes sans image.
-        globPatterns: ['**/*.{js,css,html,svg,webp,woff2}'],
+        // Les illustrations **ne sont pas précachées** (#357) : depuis D-045 elles entrent
+        // dans le graphe de modules (Vite les hache dans `dist/assets/`), et les précacher
+        // faisait payer **28 Mo** à la première visite avant d'avoir vu une carte. Elles
+        // restent servies par le réseau, et la carte qui s'affiche les demande alors.
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         navigateFallback: '/index.html',
         // Les illustrations pèsent : 1,2 Mo par image en 1024². Le précache les veut toutes
         // (c'est le jeu hors ligne), mais il ne doit pas être purgé d'office.
