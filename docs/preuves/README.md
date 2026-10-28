@@ -15,6 +15,7 @@ captures de **notre** application. **Un usage, un dossier** :
 | `combat-ui-<AAAA-MM-JJ>/` | Les **captures de notre écran de combat** avant/après la refonte **D-093** (#194) : l'état daté, la taille de téléphone, et les mesures de hauteur que `npm run capturer` contrôle. Pas des preuves de règle non plus. | `README.md` du lot |
 | `main-64px-<AAAA-MM-JJ>/` | Un **défaut de mise en page précis** de notre écran de combat, avant/après, à 420 × 900 **et** à 360 px — ici le nom de la carte de main à 64 px (#233, D-094) : la composition de l'écran, pas la règle du jeu. | `README.md` du lot |
 | `feuille-lignes-<AAAA-MM-JJ>/` | Un **anti-pattern d'écran précis** de notre feuille de route, avant/après, à 420 × 900 **et** à 1280 px — ici les trois `line-length` de #236 : le compte du détecteur, pas la règle du jeu. | `README.md` du lot |
+| `cafe-attache-<AAAA-MM-JJ>/` | Un **défaut d'écran précis** de notre combat, avant/après, à 420 × 900 — ici les deux rangs de pastilles de la fiche du camp (cafés attachés et Machine) et le panneau d'attache (#399, OUF `p-mvrome4s-f93mg6`) : la lisibilité de l'écran, pas la règle du jeu. | `README.md` du lot |
 | `prototype-<AAAA-MM-JJ>/` | Le **banc d'essai DEV** des saynètes d'attaque (`src/prototype/scene.html`, D-098, réparé par D-101) : il **se rend**, la scène y joue, et il n'est **pas** dans le bundle. Ce n'est pas un écran de l'application et ce n'est pas une preuve de règle. | `README.md` du lot |
 
 Le guide de terrain, utilisable **sur le téléphone**, est `docs/CAPTURES.html`.
