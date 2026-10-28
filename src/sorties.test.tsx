@@ -38,6 +38,7 @@ const ROUTES_ECRAN = [
   '/comite',
   '/comite/suivi',
   '/settings',
+  '/rejeu',
   '/attente',
   '/administration'
 ];

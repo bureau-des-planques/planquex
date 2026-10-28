@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardPaste, Copy, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
@@ -33,6 +33,7 @@ export const CATEGORIES_REGLAGES = [
   'Pas-à-pas du combat',
   'Sauvegarde',
   'Traces de combat',
+  'Revoir une partie',
   'Données locales',
   'Confidentialité',
   'Version'
@@ -293,6 +294,19 @@ export function Settings() {
           de café et le journal des coups — pour voir comment le jeu se joue et l’améliorer. Ni ton nom ni aucun texte
           libre n’est envoyé ; seul ton identifiant de compte relie la trace à toi (D-086, D-088, D-105).
         </p>
+      </section>
+
+      <section className="section panel" aria-labelledby="reglages-rejeu">
+        <h2 id="reglages-rejeu">Revoir une partie</h2>
+        <p className="muted max-w-[56ch]">
+          Ta dernière partie terminée se revoit pas à pas, coup par coup. Le rejeu rejoue le journal avec le moteur, et
+          compare son verdict à celui de la partie d’origine : il ne joue rien et ne rejuge rien.
+        </p>
+        <div className="actions actions--tight">
+          <Link className="button" to="/rejeu">
+            <History size={16} /> Revoir ma dernière partie
+          </Link>
+        </div>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-donnees">
