@@ -238,10 +238,11 @@ rareté, `.card__face` est la carte elle-même.
 | Titre | `.card__top` / `.card__title` | barre pleine largeur teintée de la faction. En haut, le **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action) et le badge **COMEX** (`.card__comex`, or) ; dessous le **nom** (`.card__name`, Outfit 700, capitales, **deux lignes réservées**, un mot trop long se coupe) |
 | Seuil | `.card__seuil-badge` | **plaque dorée** à droite du titre : le mot « Seuil » (dessiné par `data-label`) au-dessus du chiffre |
 | Illustration | `.card__art` | l'image du registre **posée sur l'aplat de faction** — `color-mix` sur `--accent`, une **couleur plate** (`APLAT_FACTION`, `CardView`) : un dégradé violet ou cyan sur fond sombre est un tell d'UI générée (#208, `ai-color-palette`), alors qu'un aplat non. Deuxième couche : la carte garde son fond de faction pendant le chargement, ou si l'image n'arrive pas hors ligne (#131) ; sinon l'aplat seul + glyphe (`.card__glyph`) ; voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`). La palette dérivée `card.palette` (un dégradé, `planquePalette`) reste la **donnée** d'identité de la faction, et son test la garde |
-| Emblème | `.card__emblem` | médaillon de la **faction** (couleur et glyphe de `FACTION_META`) au coin bas-gauche de l'illustration — **seulement quand il y a une illustration** : sans elle, le glyphe du fond tient ce rôle |
-| Barre de Seuil | `.card__seuil` | **la barre seule**, dix crans, pleine sur la carte : elle montre la **capacité**. Au combat, la même barre montre le **Stress qui monte** (D-026) |
+| Médaillon de faction | `.card__emblem--entete` | médaillon de la **faction** (couleur et glyphe de `FACTION_META`) dans l'en-tête, à gauche du Seuil. Hors plateau seulement ; au plateau, l'emblème reste sur l'illustration (`.card__emblem`) |
+| Barre de Seuil | `.card__seuil` | au plateau seulement : la barre de **Stress** qui monte (D-026). Hors plateau, la barre de capacité n'est pas rendue (`.card__seuil-bar--capacite`) |
 | Pressions | `.card__attacks` | une ligne par Pression : pastilles de café (`.pips` / `.pip`), nom, dégâts |
-| Ambiance | `.card__flavor` | le texte de flavour, masqué en mode compact |
+| Ambiance | `.card__flavor` | la description (flavour), deux lignes au plus ; masquée sous 240 px de texte |
+| Faiblesse / Retraite | `.card__bas` | « Vulnérable à [faction] (+20) » à gauche, « Rotation n » à droite. Planqué hors plateau ; sous 175 px, masquée |
 | Pied | `.card__footer` | rareté (diamants/étoiles, couleur `--rarity`), faction (point + sigle) ; l'identifiant court (`.card__id`) **seulement sur la carte en grand** |
 
 ### 2.2 Grille et marges

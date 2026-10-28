@@ -1733,15 +1733,78 @@ h2 {
   width: 0.6em;
 }
 
+/* Le Seuil reste à droite, plus petit : il ne doit plus dominer l'en-tête. */
 .card:not(.card--plateau) .card__seuil-badge {
-  border-radius: 0.5em;
-  font-size: 1.35em;
-  min-width: 2.7em;
-  padding: 0.18em 0.3em 0.22em;
+  border-radius: 0.4em;
+  font-size: 0.95em;
+  min-width: 2em;
+  padding: 0.08em 0.18em 0.1em;
 }
 
 .card:not(.card--plateau) .card__seuil-badge::before {
-  font-size: 0.68em;
+  font-size: 0.5em;
+}
+
+/* L'en-tête : le stade et le Seuil sur la première ligne, avec le médaillon entre les deux ; le nom
+   prend toute la largeur de la seconde. */
+.card:not(.card--plateau) .card__top {
+  grid-template-areas:
+    'kind medaille seuil'
+    'name name name';
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+/* L'illustration prend la hauteur que laissent l'en-tête, les attaques et le pied : elle monte, et le pied ne
+   se rogne jamais. Sa hauteur minimale garde la même image d'une carte à l'autre. */
+.card:not(.card--plateau) .card__art {
+  flex: 1 1 auto;
+  min-height: 50cqw;
+}
+
+/* Seule l'illustration se dilate : l'en-tête, les attaques, la description, la ligne Faiblesse et le pied
+   gardent leur hauteur. Sans cela, la description (lignes coupées, donc sans hauteur minimale) s'écrase à zéro. */
+.card:not(.card--plateau) .card__top,
+.card:not(.card--plateau) .card__attacks,
+.card:not(.card--plateau) .card__flavor,
+.card:not(.card--plateau) .card__bas,
+.card:not(.card--plateau) .card__footer {
+  flex: none;
+}
+
+.card:not(.card--plateau) .card__top {
+  padding-block: 0.3em 0.25em;
+}
+
+.card:not(.card--plateau) .card__attacks .attack__name {
+  text-align: left;
+}
+
+/* La zone d'attaques réserve deux lignes : une carte à une attaque garde la même hauteur qu'une carte à deux. */
+.card:not(.card--plateau) .card__attacks {
+  min-height: 3em;
+}
+
+/* La barre verte de capacité (sans Stress) ne se rend plus hors plateau : c'est le Stress du combat
+   qui se mesure, pas le Seuil. Quand la barre porte un Stress, elle reste. */
+.card:not(.card--plateau) .card__seuil:has(> .card__seuil-bar--capacite) {
+  display: none;
+}
+
+/* Faiblesse et Rotation, en bas de carte (ligne de la référence Pokémon). Planqué seulement. */
+.card:not(.card--plateau) .card__bas {
+  align-items: center;
+  border-top: 1px solid color-mix(in srgb, var(--frame) 35%, var(--line));
+  color: var(--text-muted);
+  display: flex;
+  font-size: 0.8em;
+  gap: 0.5em;
+  justify-content: space-between;
+  padding: 0.2em 0.45em 0.15em;
+}
+
+.card:not(.card--plateau) .card__bas strong {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .card:not(.card--plateau) .card__seuil {
@@ -1760,11 +1823,15 @@ h2 {
   font-size: 2.7em;
 }
 
-.card:not(.card--plateau) .card__emblem {
-  bottom: 0.3em;
-  font-size: 0.9em;
+/* Le médaillon de faction quitte l'illustration : il se pose dans l'en-tête, à gauche du Seuil. */
+.card:not(.card--plateau) .card__emblem--entete {
+  align-self: center;
+  bottom: auto;
+  font-size: 0.85em;
+  grid-area: medaille;
   height: 1.9em;
-  left: 0.3em;
+  left: auto;
+  position: static;
   width: 1.9em;
 }
 
@@ -1867,13 +1934,21 @@ h2 {
 /* **Les paliers de taille** (hors plateau) : sous 175 px de texte (une carte de 360 px de téléphone), la
    carte se resserre. L'illustration se recadre sur le visage, le nom du statut porte seul la faction. Le
    recadrage est un `background-size` posé sur la couche de l'image (l'image n'est pas une autre image). */
+@container (max-width: 240px) {
+  /* Sous 240 px, la description (flavour) se retire : la place va à l'illustration et aux attaques. */
+  .card:not(.card--plateau) .card__flavor {
+    display: none;
+  }
+}
+
 @container (max-width: 175px) {
   .card:not(.card--plateau) .card__art {
     background-position: 50% 8% !important;
     background-size: 150% auto !important;
   }
 
-  .card:not(.card--plateau) .card__faction {
+  .card:not(.card--plateau) .card__faction,
+  .card:not(.card--plateau) .card__bas {
     display: none;
   }
 }

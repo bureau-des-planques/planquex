@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { FACTION_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card, Rarity } from '@/data/types';
 import { artFileOf, artUrl } from '@/art';
+import { WEAKNESS_BONUS } from '@/game/rules';
 import { CafePips } from './CafePips';
 
 interface Props {
@@ -67,6 +68,8 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
+  // La faiblesse se lit sur la faction, comme les 20 de `WEAKNESS_BONUS` (AGENTS §5 : l'Intérimaire n'en a pas).
+  const weakness = faction.weakness;
   const comex = planque && card.ex === true;
   // **Calme** coupe le geste (#285) et **impose** le format réduit : une carte de plateau ne
   // se rend pas en grand. Un seul drapeau pour un seul comportement (#324).
@@ -129,6 +132,12 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
             {card.hp}
           </span>
         )}
+        {/* Hors plateau, le médaillon de faction vit dans l'en-tête, à côté du Seuil (plan refonte). */}
+        {!plateau && (
+          <span className="card__emblem card__emblem--entete" title={faction.name} aria-hidden>
+            {faction.glyph}
+          </span>
+        )}
       </header>
 
       <div
@@ -160,7 +169,7 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
         {/* L'emblème de la faction, au coin de l'illustration : sa couleur et son glyphe
             viennent de `FACTION_META`. Le nom de la faction est écrit au pied. Sans illustration,
             le glyphe du fond (`.card__glyph`) tient déjà ce rôle : pas de doublon. */}
-        {card.art && (
+        {card.art && plateau && (
           <span className="card__emblem" title={faction.name} aria-hidden>
             {faction.glyph}
           </span>
@@ -180,7 +189,7 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
               <span className={`stress__fill ${niveauStress}`} style={{ width: `${pctStress}%` }} />
             </span>
           ) : (
-            <span className="stress card__seuil-bar" aria-hidden>
+            <span className="stress card__seuil-bar card__seuil-bar--capacite" aria-hidden>
               <span className="stress__fill" style={{ width: '100%' }} />
             </span>
           )}
@@ -216,6 +225,21 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
       )}
 
       {!reduite && <p className="card__flavor">{card.flavor}</p>}
+
+      {planque && !plateau && (
+        <div className="card__bas">
+          <span>
+            {weakness ? (
+              <>
+                Vulnérable à <strong>{FACTION_META[weakness].short}</strong> (+{WEAKNESS_BONUS})
+              </>
+            ) : (
+              'Aucune vulnérabilité'
+            )}
+          </span>
+          <span>Rotation {card.retreat}</span>
+        </div>
+      )}
 
       <footer className="card__footer">
         <span className="card__rarity" title={`Rareté ${card.rarity}`}>
