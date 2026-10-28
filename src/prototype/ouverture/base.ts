@@ -8,6 +8,20 @@ export const HAUTEUR = 560;
 /** La photo de la pochette, telle que produite par gflow (image A). */
 export const BASE_URL = new URL('./sachet-reel.jpg', import.meta.url).href;
 
+/** Le masque du sachet : R = silhouette, G = proximité du bord. Sert au shader. */
+export async function preparerMasque(): Promise<HTMLCanvasElement> {
+  const image = new Image();
+  image.src = new URL('./plates/masque.png', import.meta.url).href;
+  await image.decode();
+  const c = document.createElement('canvas');
+  c.width = LARGEUR * 2;
+  c.height = HAUTEUR * 2;
+  const g = c.getContext('2d');
+  if (!g) throw new Error('canvas 2D indisponible');
+  g.drawImage(image, 0, 0, c.width, c.height);
+  return c;
+}
+
 /** La photo, posée sur un canevas 2× pour que la texture reste nette une fois déformée. */
 export async function preparerTexture(): Promise<HTMLCanvasElement> {
   const image = new Image();

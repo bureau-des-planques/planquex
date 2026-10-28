@@ -12,8 +12,8 @@ export interface Etat {
   dechirure: number;
 }
 
-/** Course du doigt, en pixels, pour lever l'étiquette de 0 à 1. */
-export const COURSE_ETIQUETTE = 96;
+/** Course du doigt, en pixels, pour lever l'étiquette de 0 à 1 (allongée : 96 était trop vif). */
+export const COURSE_ETIQUETTE = 170;
 /** Au-delà, l'autocollant se détache ; en deçà, il se recolle. */
 export const SEUIL_ETIQUETTE = 0.45;
 /** La déchirure ne se détache qu'au bout ; sinon elle revient. */

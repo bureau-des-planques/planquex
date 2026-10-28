@@ -1,7 +1,7 @@
 /* PROTOTYPE JETABLE (#283) — variante B : un shader WebGL2. Le relief et le reflet se calculent par pixel. */
 import { useEffect, useRef, useState } from 'react';
 import type { Pression } from './pression';
-import { HAUTEUR, LARGEUR, preparerTexture } from './base';
+import { HAUTEUR, LARGEUR, preparerTexture, preparerMasque } from './base';
 
 interface Props {
   pression: Pression;
@@ -26,6 +26,7 @@ uniform float u_aspect;
 uniform float u_radial;
 uniform vec4 u_m1;
 uniform vec4 u_m2;
+uniform sampler2D u_masque;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float bruit(vec2 p) {
@@ -43,7 +44,7 @@ float hauteur(vec2 uv) {
   float r = length(dr);
   float s = mix(0.17, 0.046 + 0.022 * u_m2.w, u_radial);
   float profondeur = mix(1.0, 0.75 + 0.5 * u_m1.x, u_radial);
-  float creux = -u_c * mix(0.075, 0.135, u_radial) * profondeur * exp(-r * r / (2.0 * s * s));
+  float creux = -u_c * mix(0.075, 0.16, u_radial) * profondeur * exp(-r * r / (2.0 * s * s));
   float anneaux = (1.0 - u_radial) * u_c * 0.0035 * sin(r * 95.0) * exp(-r * r / (2.0 * s * s * 1.4));
   // Les plis : un bruit pris sur le cercle (sans couture). Peu de branches, et chaque appui a
   // sa fréquence, sa phase, son ampleur et sa portée — deux appuis ne se ressemblent pas.
@@ -60,7 +61,12 @@ float hauteur(vec2 uv) {
   float etoile = u_radial * u_c * 0.0038 * pli * smoothstep(0.0, 0.04, r) * exp(-r * r / (2.0 * portee * portee * 2.4));
   float plis = anneaux + etoile;
   float froisse = 0.0008 * (bruit(uv * vec2(7.0, 11.0)) + 0.5 * bruit(uv * vec2(19.0, 27.0)));
-  return creux + pince + plis + froisse;
+  // **Le sachet seul** : hors de son contour, aucune déformation. Et plus on approche du bord,
+  // plus le film travaille — un film tendu se plisse sur ses soudures, pas au centre.
+  float masque = texture(u_masque, uv).r;
+  float bord = 1.0 - smoothstep(0.0, 0.55, texture(u_masque, uv).g);
+  float force = masque * (0.55 + 1.15 * bord);
+  return (creux + pince + plis + froisse) * force;
 }
 void main() {
   vec2 e = vec2(1.0 / 315.0, 1.0 / 560.0);
@@ -74,7 +80,10 @@ void main() {
   float spec = pow(max(dot(n, H), 0.0), 90.0);
   float diff = dot(n, L);
   // Le film est clair : on assombrit peu à la lumière, et le creux s'assombrit de lui-même.
-  vec3 base = texture(u_tex, v_uv + n.xy * 0.010).rgb;
+  // Le film est tiré vers le doigt : tout le sachet se déplace, pas seulement la surface.
+  float dedans = texture(u_masque, v_uv).r;
+  vec2 versLeDoigt = (u_p - v_uv) * u_c * 0.022 * dedans;
+  vec3 base = texture(u_tex, v_uv + versLeDoigt + n.xy * 0.010).rgb;
   float env = smoothstep(-0.4, 0.7, -n.y * 1.0 - n.x * 0.35);
   vec3 col = base * (0.92 + 0.14 * diff);
   // L'occlusion : au fond du creux la lumière manque. C'est ce qui fait lire « trou » et non « bosse ».
@@ -107,12 +116,15 @@ export function VarianteB({ pression }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [texture, setTexture] = useState<HTMLCanvasElement | null>(null);
+  const [masque, setMasque] = useState<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     let vivant = true;
-    preparerTexture()
-      .then((c) => {
-        if (vivant) setTexture(c);
+    Promise.all([preparerTexture(), preparerMasque()])
+      .then(([c, mk]) => {
+        if (!vivant) return;
+        setTexture(c);
+        setMasque(mk);
       })
       .catch((e: unknown) => {
         if (vivant) setErreur(e instanceof Error ? e.message : String(e));
@@ -124,7 +136,7 @@ export function VarianteB({ pression }: Props) {
 
   useEffect(() => {
     const canvas = ref.current;
-    if (!canvas || !texture) return undefined;
+    if (!canvas || !texture || !masque) return undefined;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = LARGEUR * dpr;
     canvas.height = HAUTEUR * dpr;
@@ -162,6 +174,17 @@ export function VarianteB({ pression }: Props) {
       const uM1 = gl.getUniformLocation(prog, 'u_m1');
       const uM2 = gl.getUniformLocation(prog, 'u_m2');
       gl.uniform1i(gl.getUniformLocation(prog, 'u_tex'), 0);
+      gl.uniform1i(gl.getUniformLocation(prog, 'u_masque'), 1);
+      // Le masque : R = silhouette du sachet, G = proximité de son bord.
+      const texMasque = gl.createTexture();
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, texMasque);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, masque);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.activeTexture(gl.TEXTURE0);
       gl.uniform1f(gl.getUniformLocation(prog, 'u_aspect'), LARGEUR / HAUTEUR);
       gl.viewport(0, 0, canvas.width, canvas.height);
 
@@ -182,7 +205,7 @@ export function VarianteB({ pression }: Props) {
       setErreur(e instanceof Error ? e.message : String(e));
       return undefined;
     }
-  }, [pression, texture]);
+  }, [pression, texture, masque]);
 
   if (erreur) return <p className="proto-ouv__erreur">{erreur}</p>;
   return <canvas ref={ref} className="vb" />;
