@@ -700,6 +700,11 @@ cartouche. Le **Journal** gagne une bande en bas, à droite de la barre d'action
 
 #### 6.8.3 Les animations de la référence, adaptées
 
+> **Note du 28/10/2026 (D-141)** : les bornes de durée et de boucle de cette section valent pour
+> toute la feuille **sauf la scène d'Arrivage** (animations `ouverture-*`), qui a les siennes —
+> boucles lentes (≥ 1 s), 3 s au plus, mouvement réduit respecté — gardées par
+> `src/components/effets-combat.test.ts`.
+
 Les deux vidéos bougent beaucoup, et quatre de leurs mouvements **portent une information**
 qui, chez nous, n'est aujourd'hui qu'une ligne de journal. Ce sont ceux-là qu'on reprend :
 un effet qui ne dit rien est du bruit, un effet qui dit « ce Planqué vient de prendre 60 »

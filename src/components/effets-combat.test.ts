@@ -210,6 +210,34 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
 });
 
 /**
+ * **La scène d'Arrivage est hors de ces bornes** (D-141). Une ouverture d'Arrivage est une
+ * célébration qu'on passe d'un bouton, pas un effet qui retarde la lecture du coup suivant : ses
+ * animations (toutes préfixées `ouverture-`) suivent **leurs propres bornes**, gardées plus bas
+ * (`bornesDeLArrivage`). Une déclaration qui mêle une animation de la scène et une autre reste
+ * sous les bornes du combat.
+ */
+function horsBornes(declaration: string): boolean {
+  return animationsDe(declaration).every((partie) => /^ouverture-[\w-]+/.test(partie));
+}
+
+/** Les animations d'une déclaration, séparées aux virgules **hors** parenthèses (`cubic-bezier(…)`). */
+function animationsDe(declaration: string): string[] {
+  const parties: string[] = [];
+  let profondeur = 0;
+  let courante = '';
+  for (const c of declaration) {
+    if (c === '(') profondeur += 1;
+    if (c === ')') profondeur -= 1;
+    if (c === ',' && profondeur === 0) {
+      parties.push(courante.trim());
+      courante = '';
+    } else courante += c;
+  }
+  parties.push(courante.trim());
+  return parties.filter(Boolean);
+}
+
+/**
  * Les bornes de `SPEC-COMBAT-UI` §6.8, vérifiées sur **la feuille servie** : aucune
  * `animation` de plus de 800 ms, aucune boucle de plus de deux tours, aucun flou en
  * mouvement. C'est cette garde que `scripts/garde-fous.mjs` mute (#192).
@@ -218,7 +246,8 @@ describe('styles.css — les bornes des effets (#192, SPEC-COMBAT-UI §6.8)', ()
   const animations = () =>
     [...css().matchAll(/animation:\s*([^;]+);/g)]
       .map((declaration) => declaration[1].trim())
-      .filter((declaration) => declaration !== 'none' && !declaration.includes('none'));
+      .filter((declaration) => declaration !== 'none' && !declaration.includes('none'))
+      .filter((declaration) => !horsBornes(declaration));
 
   it('aucune animation ne dure plus de 800 ms', () => {
     for (const declaration of animations()) {
@@ -281,7 +310,7 @@ function animationsFautives(feuille: string): string[] {
   const fautes: string[] = [];
   for (const declaration of sansCommentaires.matchAll(/animation:\s*([^;]+);/g)) {
     const valeur = declaration[1].trim();
-    if (valeur.includes('none')) continue;
+    if (valeur.includes('none') || horsBornes(valeur)) continue;
     const durees = [...valeur.matchAll(/(\d+)ms/g)].map((duree) => Number(duree[1]));
     const tours = valeur.includes('infinite')
       ? Number.POSITIVE_INFINITY
@@ -290,6 +319,28 @@ function animationsFautives(feuille: string): string[] {
     if (duree > DUREE_MAX_MS) fautes.push(`${valeur} : plus de ${DUREE_MAX_MS} ms`);
     else if (tours > MAX_TOURS_BOUCLE) fautes.push(`${valeur} : plus de ${MAX_TOURS_BOUCLE} tours`);
     else if (duree * tours > DUREE_MAX_MS) fautes.push(`${valeur} : ${duree * tours} ms au total`);
+  }
+  return fautes;
+}
+
+/**
+ * **Les bornes propres à la scène d'Arrivage** (D-141) : une boucle d'ambiance y est permise, mais
+ * **lente** — une seconde au moins par tour, jamais un clignotement (SC 2.3.1) — et une animation
+ * qui finit dure **trois secondes** au plus. « Mouvement réduit » les coupe toutes (règle globale
+ * de la feuille, et bloc final de la scène).
+ */
+function bornesDeLArrivage(feuille: string): string[] {
+  const sansCommentaires = feuille.replace(/\/\*[\s\S]*?\*\//g, '');
+  const fautes: string[] = [];
+  for (const declaration of sansCommentaires.matchAll(/animation:\s*([^;]+);/g)) {
+    const valeur = declaration[1].trim();
+    if (valeur.includes('none') || !horsBornes(valeur)) continue;
+    for (const partie of animationsDe(valeur)) {
+      const duree = Number(/(\d+)ms/.exec(partie)?.[1] ?? Number.NaN);
+      if (Number.isNaN(duree)) continue;
+      if (partie.includes('infinite') && duree < 1000) fautes.push(`${partie.trim()} : boucle de moins d’une seconde`);
+      if (!partie.includes('infinite') && duree > 3000) fautes.push(`${partie.trim()} : plus de 3 s`);
+    }
   }
   return fautes;
 }
@@ -315,6 +366,29 @@ function transformsDuSurvolDeLaCase(feuille: string): string[] {
 describe('styles.css — durée, tours et durée totale des animations (#294)', () => {
   it('aucune animation de la feuille ne dépasse 800 ms, deux tours, ni 800 ms au total', () => {
     expect(animationsFautives(css())).toEqual([]);
+  });
+
+  it('la scène d’Arrivage tient ses propres bornes (D-141)', () => {
+    expect(bornesDeLArrivage(css())).toEqual([]);
+    // Elle a bien des animations : sans elles, l'exemption ne garderait rien.
+    expect(css()).toMatch(/animation:\s*ouverture-[\w-]+ \d+ms[^;]*infinite/);
+  });
+
+  it('le contrôle mord : l’exemption ne couvre que la scène, et la scène a ses bornes', () => {
+    const fautive = [
+      css(),
+      '.a { animation: ouverture-a 200ms linear infinite; }',
+      '.b { animation: ouverture-b 4000ms ease-out both; }',
+      '.c { animation: ouverture-c 900ms ease infinite, autre 900ms ease both; }'
+    ].join('\n');
+    expect(bornesDeLArrivage(fautive)).toEqual([
+      'ouverture-a 200ms linear infinite : boucle de moins d’une seconde',
+      'ouverture-b 4000ms ease-out both : plus de 3 s'
+    ]);
+    // Une déclaration mêlée reste sous les bornes du combat : l'exemption ne s'étend pas.
+    expect(animationsFautives(fautive)).toContain(
+      'ouverture-c 900ms ease infinite, autre 900ms ease both : plus de 800 ms'
+    );
   });
 
   it('le contrôle mord : durée, boucle sans fin, trop de tours et total sont vus', () => {

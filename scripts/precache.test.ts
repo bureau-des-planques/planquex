@@ -29,13 +29,7 @@ function extensionsPrecachees(): string[] {
 
 /** Les fichiers de `public/` que le code charge vraiment, par leur chemin littéral. */
 function fichiersPublicCharges(): string[] {
-  const sources = [
-    'src/audio/sons.ts',
-    'src/animation/ouverture/SceneOuverture.tsx',
-    'src/animation/ouverture/creux.ts',
-    'src/art.ts',
-    'src/App.tsx'
-  ];
+  const sources = ['src/audio/sons.ts', 'src/animation/ouverture/SceneOuverture.tsx', 'src/art.ts', 'src/App.tsx'];
   const trouves = new Set<string>();
   for (const chemin of sources) {
     let texte = '';
