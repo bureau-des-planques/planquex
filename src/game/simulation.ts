@@ -11,8 +11,11 @@ import { drawRandom, seedRng } from '@/game/rng';
  * **Simulateur headless seedé** (ticket #34).
  *
  * Il ne juge rien : le rapport dit qui gagne et en combien de tours, il ne compare
- * aucun taux à une cible. Les valeurs cibles (45–55 %) viendront avec le contenu,
- * quand les dix factions auront leurs cartes.
+ * aucun taux à une cible. Les valeurs cibles vivent désormais dans une **mesure** :
+ * la table des archétypes (`src/game/mesure-archetypes.ts`, publiée dans
+ * `docs/ia/360-table-archetypes.md`, bande 40–60 % et alerte à 15 points d'écart,
+ * D-134 (2)) et la mesure de la Direction contre un joueur de référence
+ * (`src/game/mesure-direction.ts`, `docs/ia/354-mesure-direction.md`).
  *
  * Ce que le module garantit :
  *
