@@ -206,6 +206,36 @@ function promessesSansCode(
 }
 
 // ---------------------------------------------------------------------------------------
+// 4. La porte des pull requests (#268, D-131)
+// ---------------------------------------------------------------------------------------
+
+/** Le protocole de fusion — la porte des PR s'écrit là (D-131), et nulle part ailleurs en double. */
+const PROTOCOLE_FUSION = 'docs/agents/parallelisme.md';
+
+/**
+ * Ce que la porte **doit** dire, et que ce contrôle exige dans le protocole : les deux cas de
+ * PR, la fusion réservée, et le renvoi à la cadence au lieu de sa réécriture (D-128 est écrite
+ * dans `docs/VERSIONS.md` §4). Chaque motif peut manquer : c'est la garde qui mord.
+ */
+const PORTE_ATTENDUE = [
+  { quoi: 'la fusion réservée à Bastien (D-131)', motif: /seul le compte\s+de\s+\*\*Bastien\*\*\s+(?:peut|puisse) fusionner/i },
+  { quoi: 'la PR de Bastien sans relecture obligatoire', motif: /PR de Bastien[^\n]*pas de relecture obligatoire/i },
+  { quoi: 'la PR externe relue par un agent qui n’a pas écrit le code', motif: /un agent qui n['’]a pas écrit le code/i },
+  { quoi: 'le compte rendu de relecture publié sur la PR', motif: /compte rendu publié sur la PR/i },
+  { quoi: 'la validation écrite de Bastien', motif: /validation écrite/i },
+  { quoi: 'le merge commit comme seule forme (D-113)', motif: /merge commit/i },
+  { quoi: 'le renvoi à la cadence de release (D-128, docs/VERSIONS.md §4)', motif: /docs\/VERSIONS\.md\*\* §4|`docs\/VERSIONS\.md` §4/i }
+] as const;
+
+/** Ce que le protocole ne dit pas — vide quand la porte est complète. */
+function porteManquante(
+  texte: string,
+  attendue: readonly { quoi: string; motif: RegExp }[] = PORTE_ATTENDUE
+): string[] {
+  return attendue.filter(({ motif }) => !motif.test(texte)).map(({ quoi }) => quoi);
+}
+
+// ---------------------------------------------------------------------------------------
 // Les contrôles sur les fichiers du dépôt
 // ---------------------------------------------------------------------------------------
 
@@ -270,6 +300,27 @@ describe('Promesses — une annonce de remplacement a du code derrière (#359)',
         sansCode.map(({ ligne, marqueur, raison }) => `${ligne} ${JSON.stringify(marqueur)} — ${raison}`).join('\n  ') +
         '\nUn document vivant n’annonce que ce qui a un script : sinon il promet un geste que personne ne fait.'
     ).toEqual([]);
+  });
+});
+
+describe('La porte des pull requests est écrite (#268)', () => {
+  it('le protocole dit les deux cas, la fusion réservée et la cadence', () => {
+    const manquantes = porteManquante(read(PROTOCOLE_FUSION));
+    expect(
+      manquantes,
+      `${PROTOCOLE_FUSION} ne dit plus : ${manquantes.join(' ; ')}. La porte des PR (D-131) se lit là, ` +
+        'et un agent qui ne la trouve pas devine — ou fusionne sans relecture.'
+    ).toEqual([]);
+  });
+
+  it('le contrôle mord : une PR externe sans relecture ni validation est vue', () => {
+    // La porte réduite à « CI verte, on fusionne » — le cas fautif.
+    const faux = 'Seul le compte de **Bastien** peut fusionner. Les PR de Bastien se fusionnent sans relecture obligatoire. Merge commit.';
+    const manquantes = porteManquante(faux);
+    expect(manquantes).toContain('la PR externe relue par un agent qui n’a pas écrit le code');
+    expect(manquantes).toContain('la validation écrite de Bastien');
+    expect(manquantes).toContain('le renvoi à la cadence de release (D-128, docs/VERSIONS.md §4)');
+    expect(manquantes).not.toContain('la fusion réservée à Bastien (D-131)');
   });
 });
 

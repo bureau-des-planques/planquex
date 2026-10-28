@@ -143,6 +143,48 @@ seul coût, voir §6).
 
 ## 5. Fusion — le protocole, et ses deux pièges
 
+### La porte des pull requests — revue, tests, ce qui se fusionne (#268, D-131)
+
+Une PR est **une porte**, pas un dépôt de travail : elle porte ce qu'il faut pour être jugée,
+et elle ne s'ouvre que dans deux cas. La règle est **structurelle** (D-131) : seul le compte
+de **Bastien** peut fusionner, et la forme est le **merge commit**, jamais le squash ni le
+rebase (D-113).
+
+| Cas | Qui relit | Ce qu'il faut avant de fusionner |
+|---|---|---|
+| **PR de Bastien** (même auteur que le compte qui fusionne) | personne : **pas de relecture obligatoire** | les **trois jobs** de `ci.yml` verts (D-118), `npm run ci:etat` vert sur `main`, l'accord écrit de Bastien dans la PR |
+| **PR externe** (auteur différent de Bastien) | **un agent qui n'a pas écrit le code** | la relecture ci-dessus, son **compte rendu publié sur la PR**, la **validation écrite** de Bastien, puis les trois jobs verts |
+
+Le **compte rendu de relecture** dit ce qui a été lu, ce qui a été lancé (la commande et son
+exit code), et ce qui reste non vérifié. Il ne dit jamais « ça a l'air bon » : `AGENTS.md` §1.3
+vaut pour un relecteur comme pour un implémenteur — une affirmation sans commande, test ou
+fichier cité est une hypothèse.
+
+**Ce qu'une PR doit contenir** pour être jugée :
+
+- **son ticket**, en titre et dans le corps (`#N`) — une PR sans ticket peut être fermée,
+  l'idée passe d'abord par une issue (`CONTRIBUTING.md`) ;
+- **sa preuve** : les commandes lancées et leur exit code, et pour un écran la capture ou
+  l'inspection du navigateur (`AGENTS.md` §6) — pas la lecture du JSX ;
+- **son risque** : ce qui peut casser, ce qui est à sens unique (une migration appliquée), ce
+  qui touche une **décision** ou un **vocabulaire** et demande donc un acte daté ;
+- **la doc de la zone**, dans la même branche, si une règle, une forme ou une commande change.
+
+**Ce qui la fait refuser** : un job rouge (les trois sont exigés par la protection de `main`,
+D-118) ; une affirmation sans preuve ; une règle de jeu, un mot du vocabulaire ou un contenu
+changé **sans décision datée** ; un squash ou un rebase, que le dépôt ne propose même pas ; une
+PR qui touche la zone d'un autre agent sans le dire (§1) ; une PR laissée ouverte pendant qu'un
+autre agent écrase son fichier (§4.8).
+
+**Le moment de la release ne se décide pas ici** : la cadence est tranchée depuis D-128 — **un
+lot cohérent, jamais plus d'une release par jour** — et elle est écrite avec son geste complet
+dans **`docs/VERSIONS.md` §4**. Plusieurs PR peuvent entrer dans une même release ; ce qui
+compte est qu'elles ne se marchent pas dessus (§1), pas leur nombre.
+
+Les trois jobs, `npm run ci:etat` et la vérification des fichiers générés au tag sont décrits
+dans `AGENTS.md` §6 et §8.4 : cette section ne les réécrit pas, elle dit **qui** les regarde et
+**ce qui** se fusionne.
+
 1. **`git merge-tree --write-tree --name-only main <branche>`** : connaître les conflits
    **avant** de toucher l'arbre. Il ne voit **pas** les conflits **sémantiques** — deux tests
    qui divergent, un `energy` devenu tableau — donc il complète la lecture, il ne la remplace pas.
