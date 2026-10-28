@@ -339,3 +339,77 @@ et un Deck dont les Pressions ne sont pas payables par ses trois types de café 
 - **MANAGEMENT / INTERIM** — 27.8 pts d'écart (14–4, 22 nulle(s)) : à corriger avant la beta.
 - **RH / SUPPORT** — 25.0 pts d'écart (5–15, 20 nulle(s)) : à corriger avant la beta.
 - **SYNDICAT / INTERIM** — 22.2 pts d'écart (13–5, 22 nulle(s)) : à corriger avant la beta.
+
+
+## Mesure après #417 : le Deck dérivé plafonné (28/10/2026)
+
+**Ce qui change.** `factionDeck` plafonne les Entrants **distincts** du Deck dérivé à
+`ENTRANTS_MAX_DECK_DERIVE` = **8** (paramètre nommé, `OptionsDeckDerive.entrantsMax`, #417). Au-delà,
+les Entrants dont la ligne d'évolution est la plus longue passent en premier. `entrantsMax: Infinity`
+rejoue l'ancien constructeur ; c'est la mesure « avant » ci-dessous. Le contenu, les règles et la
+politique ne bougent pas.
+
+**Commandes** (verrou partagé `flock`, une passe chacune, graine `20261029`, 40 parties par paire) :
+
+- avant : `npm run mesure:archetypes -- --entrants-max inf` → exit 0, ≈ 113 s hors file d'attente ;
+- après : `npm run mesure:archetypes` → exit 0.
+
+Le script n'a pas besoin de réduction : 1 800 parties tiennent largement sous 20 min.
+
+### Taux de victoire, avant et après (parties décidées, bande 40–60 %)
+
+| Archétype | Avant (sans plafond) | Après (plafond 8) |
+|---|---:|---:|
+| SSE | 45.3 % | 49.4 % |
+| MANAGEMENT | 49.4 % | 47.3 % |
+| QVT | 44.2 % | 47.6 % |
+| AMELIORATION | 54.5 % | 53.4 % |
+| RH | 44.9 % | 48.6 % |
+| ATELIER | 53.2 % | 45.7 % |
+| SUPPORT | 53.5 % | 63.9 % |
+| DIRECTION | 52.8 % | 53.4 % |
+| SYNDICAT | 54.8 % | 54.5 % |
+| INTERIM | 46.9 % | 38.5 % |
+
+Écart maximal entre deux archétypes : **50,0 pts** avant (QVT / INTERIM, QVT / SUPPORT) → **45,0 pts** après (MANAGEMENT / SUPPORT).
+Affrontements au-delà de 15 pts : **12** avant → **12** après.
+
+**Lecture.** Le plafond change la composition, pas la hiérarchie : QVT (sans N+2) gagne 3 points,
+SUPPORT et INTERIM restent les deux extrêmes. Le ticket prévoyait que si les écarts persistent, la
+cause est le **contenu** (#412 le disait déjà) ; la mesure le confirme, sans trancher seule la
+question. Aucune carte ni règle n'a été touchée.
+
+### La forme des Decks mesurés
+
+Un écart se lit d’abord ici : un Deck sans N+2 n’a pas de réponse à un COMEX de 180 de Seuil,
+et un Deck dont les Pressions ne sont pas payables par ses trois types de café (D-037) ne peut pas attaquer.
+
+| Archétype | Cartes | Entrants | N+1 | N+2 | COMEX | Actions | Noms | Seuil max | Pressions payables |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| SSE | 20 | 8 | 8 | 4 | 1 | 0 | 20 | 170 | 25 / 25 |
+| MANAGEMENT | 20 | 9 | 5 | 5 | 1 | 1 | 19 | 170 | 24 / 24 |
+| QVT | 20 | 8 | 8 | 4 | 2 | 0 | 20 | 180 | 28 / 28 |
+| AMELIORATION | 20 | 7 | 6 | 5 | 1 | 2 | 20 | 170 | 26 / 26 |
+| RH | 20 | 8 | 5 | 7 | 2 | 0 | 20 | 180 | 29 / 29 |
+| ATELIER | 20 | 8 | 8 | 4 | 1 | 0 | 20 | 180 | 25 / 25 |
+| DIRECTION | 20 | 10 | 4 | 5 | 1 | 1 | 17 | 180 | 27 / 27 |
+| SYNDICAT | 20 | 8 | 6 | 5 | 1 | 1 | 11 | 180 | 26 / 26 |
+| INTERIM | 20 | 8 | 6 | 6 | 2 | 0 | 10 | 180 | 28 / 28 |
+| SUPPORT | 20 | 8 | 8 | 4 | 1 | 0 | 20 | 190 | 25 / 25 |
+
+### La composition des Decks mesurés
+
+Plafond : 8 Entrants distincts au plus par Deck dérivé (#417) ; les Entrants gardés sont ceux dont la ligne d’évolution est la plus longue.
+
+| Archétype | Composition (20 cartes : nom ×exemplaires (stade)) |
+|---|---|
+| SSE | Infirmier de site ×1 (ENTRANT) ; Kiné du travail ×1 (ENTRANT) ; Préventeur ×1 (ENTRANT) ; Agent d’entretien ×1 (ENTRANT) ; Contrôleur de sécurité ×1 (ENTRANT) ; Diététicien ×1 (ENTRANT) ; Psychologue du travail ×1 (ENTRANT) ; Secouriste ×1 (ENTRANT) ; Chef de secours ×1 (N+1) ; Ergonome ×1 (N+1) ; Infirmière du travail ×1 (N+1) ; Nutritionniste ×1 (N+1) ; Psychiatre du travail ×1 (N+1) ; Responsable hygiène ×1 (N+1) ; Responsable sécurité ×1 (N+1) ; Sophrologue ×1 (N+1) ; Médecin-chef ×1 (N+2) ; Médecin-chef COMEX ×1 (N+2 · COMEX) ; Médecin du travail ×1 (N+2) ; Responsable SSE ×1 (N+2) |
+| MANAGEMENT | Assistant manager ×1 (ENTRANT) ; Chef de projet ×1 (ENTRANT) ; Jeune manager ×1 (ENTRANT) ; Superviseur ×1 (ENTRANT) ; Technico-commercial ×1 (ENTRANT) ; Animateur d’équipe ×2 (ENTRANT) ; Chargé d’affaires ×1 (ENTRANT) ; Chargée de clientèle ×1 (ENTRANT) ; Chef de service ×1 (N+1) ; Manager de proximité ×1 (N+1) ; Responsable commercial ×1 (N+1) ; Responsable de production ×1 (N+1) ; Responsable de projet ×1 (N+1) ; Directeur de production ×1 (N+2) ; Directeur de projet ×1 (N+2) ; Directeur de service ×1 (N+2) ; Responsable d’unité ×1 (N+2) ; Responsable d’unité COMEX ×1 (N+2 · COMEX) ; Entretien annuel ×1 (Action) |
+| QVT | Animateur bien-être ×1 (ENTRANT) ; Chargé de l'engagement ×1 (ENTRANT) ; Chargé QVT ×1 (ENTRANT) ; Chargé de formation ×1 (ENTRANT) ; Chargé d'intégration ×1 (ENTRANT) ; Chargé de mission QVT ×1 (ENTRANT) ; Coach santé ×1 (ENTRANT) ; Conseiller en évolution professionnelle ×1 (ENTRANT) ; Chef de projet formation ×1 (N+1) ; Expert bien-être ×1 (N+1) ; Facilitateur ×1 (N+1) ; Happiness Manager ×1 (N+1) ; Responsable développement des compétences ×1 (N+1) ; Responsable de l'engagement ×1 (N+1) ; Responsable intégration ×1 (N+1) ; Responsable QVT ×1 (N+1) ; Chief Happiness Officer ×1 (N+2) ; Chief Happiness Officer COMEX ×1 (N+2 · COMEX) ; Directeur QVT ×1 (N+2) ; Directeur QVT COMEX ×1 (N+2 · COMEX) |
+| AMELIORATION | Auditeur interne ×1 (ENTRANT) ; Chargé d’amélioration continue ×1 (ENTRANT) ; Chargé qualité ×1 (ENTRANT) ; Consultant Lean ×1 (ENTRANT) ; Contrôleur qualité ×1 (ENTRANT) ; Gestionnaire de flux ×1 (ENTRANT) ; Stagiaire qualité ×1 (ENTRANT) ; Auditeur qualité ×1 (N+1) ; Chargé de process ×1 (N+1) ; Chef de projet qualité ×1 (N+1) ; Responsable audit ×1 (N+1) ; Responsable flux ×1 (N+1) ; Responsable process ×1 (N+1) ; Directeur de l’audit interne ×1 (N+2) ; Directeur des flux ×1 (N+2) ; Directeur qualité ×1 (N+2) ; Directeur qualité COMEX ×1 (N+2 · COMEX) ; Responsable amélioration continue ×1 (N+2) ; Baie de test ×1 (Action) ; Réunion de suivi ×1 (Action) |
+| RH | Assistant RH ×1 (ENTRANT) ; Chargé diversité ×1 (ENTRANT) ; Chargé de sourcing ×1 (ENTRANT) ; Gestionnaire formation ×1 (ENTRANT) ; Juriste social ×1 (ENTRANT) ; Assistant paie ×1 (ENTRANT) ; Chargé mobilité ×1 (ENTRANT) ; Chargé offboarding ×1 (ENTRANT) ; Chargé de recrutement ×1 (N+1) ; Chasseur de têtes ×1 (N+1) ; Responsable formation ×1 (N+1) ; Responsable inclusion ×1 (N+1) ; Responsable relations sociales ×1 (N+1) ; Directeur des talents ×1 (N+2) ; Directeur des talents COMEX ×1 (N+2 · COMEX) ; DRH ×1 (N+2) ; DRH Diversité ×1 (N+2) ; DRH COMEX ×1 (N+2 · COMEX) ; DRH Formation ×1 (N+2) ; DRH Juridique ×1 (N+2) |
+| ATELIER | Joueur de flûte ×1 (ENTRANT) ; Opticien ×1 (ENTRANT) ; Pointeur ×1 (ENTRANT) ; Régleur ×1 (ENTRANT) ; Cariste de salle blanche ×1 (ENTRANT) ; Contrôleur vibration ×1 (ENTRANT) ; Mécanicien ×1 (ENTRANT) ; Monteur optique ×1 (ENTRANT) ; Gestionnaire FOD ×1 (N+1) ; Ordonnanceur ×1 (N+1) ; Planificateur des moyens d’essai ×1 (N+1) ; Responsable qualité d’atelier ×1 (N+1) ; RPI ×1 (N+1) ; RPO ×1 (N+1) ; Technicien de banc d’essai ×1 (N+1) ; Technicien système ×1 (N+1) ; Responsable flux d’atelier ×1 (N+2) ; Responsable de pôle ×1 (N+2) ; Responsable process d’atelier ×1 (N+2) ; RPO sans RUI ×1 (N+2 · COMEX) |
+| DIRECTION | Assistant direction ×2 (ENTRANT) ; Auditeur de direction ×2 (ENTRANT) ; Chef de projet fantôme ×2 (ENTRANT) ; Commissaire aux comptes ×1 (ENTRANT) ; Directeur fantôme ×1 (ENTRANT) ; Secrétaire direction ×1 (ENTRANT) ; Stagiaire direction ×1 (ENTRANT) ; Chef de cabinet ×1 (N+1) ; Directeur adjoint ×1 (N+1) ; Directeur de programme ×1 (N+1) ; Directeur régional ×1 (N+1) ; Directeur de cabinet ×1 (N+2) ; Directeur général ×1 (N+2) ; Directeur de la stratégie ×1 (N+2) ; PDG ×1 (N+2) ; PDG COMEX ×1 (N+2 · COMEX) ; Réunion qui aurait pu être un mail ×1 (Action) |
+| SYNDICAT | Collectif d’atelier ×2 (ENTRANT) ; Délégué du personnel ×2 (ENTRANT) ; Délégué syndical ×2 (ENTRANT) ; Représentant de section ×2 (ENTRANT) ; Permanent syndical ×2 (N+1) ; Représentant CSE ×2 (N+1) ; Trésorier CSE ×2 (N+1) ; Président CSE ×2 (N+2) ; Secrétaire général ×2 (N+2) ; Secrétaire général COMEX ×1 (N+2 · COMEX) ; Assemblée générale ×1 (Action) |
+| INTERIM | Chargé de mission ×2 (ENTRANT) ; Intérimaire ×2 (ENTRANT) ; Suppléant ×2 (ENTRANT) ; Vacataire ×2 (ENTRANT) ; Consultant intérimaire ×2 (N+1) ; Coordinateur intérimaire ×2 (N+1) ; Intérimaire confirmé ×2 (N+1) ; Chef d'équipe intérimaire ×2 (N+2) ; Intérimaire légendaire ×2 (N+2 · COMEX) ; Responsable d’intérim ×2 (N+2) |
+| SUPPORT | Agent support ×1 (ENTRANT) ; Rédacteur technique ×1 (ENTRANT) ; Standardiste ×1 (ENTRANT) ; Technicien micro-informatique ×1 (ENTRANT) ; Assistant méthodes ×1 (ENTRANT) ; Correspondant informatique ×1 (ENTRANT) ; Formateur informatique ×1 (ENTRANT) ; Gestionnaire de tickets ×1 (ENTRANT) ; Administrateur systèmes ×1 (N+1) ; Assistant de direction ×1 (N+1) ; Chargé de documentation ×1 (N+1) ; Chargé de formation informatique ×1 (N+1) ; Référent informatique ×1 (N+1) ; Superviseur support ×1 (N+1) ; Technicien méthodes ×1 (N+1) ; Technicien support ×1 (N+1) ; Ingénieur systèmes ×1 (N+2) ; Ingénieur systèmes COMEX ×1 (N+2 · COMEX) ; Responsable documentation ×1 (N+2) ; Responsable des services généraux ×1 (N+2) |

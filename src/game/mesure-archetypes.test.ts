@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { factionDeck } from '@/game/simulation';
 import {
   BANDE_ARCHETYPES,
   ECART_ALERTE,
@@ -6,6 +7,7 @@ import {
   ecartAlerte,
   ecartEnPoints,
   formatTableArchetypes,
+  formeDeck,
   mesurerArchetypes,
   pairesArchetypes,
   pressionPayable
@@ -93,6 +95,20 @@ describe('table des archétypes (#360)', () => {
     const markdown = formatTableArchetypes(rapport);
     expect(markdown).toContain('### La forme des Decks mesurés');
     expect(markdown).toMatch(/\| SSE \| 20 \|/);
+  });
+
+  it('publie la composition de chaque Deck, carte par carte, et le plafond d’Entrants (#417)', () => {
+    const forme = formeDeck('SSE', factionDeck('SSE'));
+    const exemplaires = forme.composition.reduce((somme, ligne) => somme + ligne.exemplaires, 0);
+    expect(exemplaires).toBe(20);
+    expect(forme.composition.every((ligne) => ligne.exemplaires <= 2)).toBe(true);
+    expect(forme.composition.some((ligne) => ligne.stade === 'Action' || ligne.stade === 'ENTRANT')).toBe(true);
+
+    const rapport = mesurerArchetypes({ ...OPTIONS, factions: ['SSE', 'RH'] });
+    expect(rapport.entrantsMax).toBe(8);
+    const markdown = formatTableArchetypes(rapport);
+    expect(markdown).toContain('### La composition des Decks mesurés');
+    expect(markdown).toContain('Plafond : 8 Entrants distincts');
   });
 
   it('compte une Pression payable comme le moteur la paie (D-037) : le contrôle mord', () => {
