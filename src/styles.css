@@ -2214,8 +2214,12 @@ h2 {
      lieu de recouvrir le plateau. */
   max-height: 42dvh;
   overflow-y: auto;
-  /* 2,4 → 1,6 px de cadre vertical (#237) : même raison que la gouttière ci-dessus. */
-  padding: 0 0.6rem;
+  /* 2,4 → 1,6 px de cadre vertical (#237) : même raison que la gouttière ci-dessus.
+     **8 px en haut et en bas depuis le 28/10/2026** (#205, « cramped padding ») : sans inset,
+     les trois lignes touchaient le bord du cadre, et le détecteur le voyait — une fois sur
+     deux seulement, ce qui en faisait un faux rouge. La hauteur se reprend sur les lignes,
+     pas sur l'inset : `npm run capturer` garde les 20 px de marge (D-094 (3)). */
+  padding: 0.5rem 0.6rem;
   position: sticky;
   z-index: 16;
 }
@@ -4262,6 +4266,11 @@ h2 {
   gap: 0.35rem;
   min-width: 0;
   overflow-x: auto;
+  /* **8 px au moins entre le texte et le bord** (#205, règle « cramped padding »). Le
+     détecteur le voyait par intermittence : la rangée ne portait aucun rembourrage, et le
+     titre du café comme l'aide se lisaient collés au bord de la barre. En ligne seulement :
+     la barre ne gagne pas de hauteur (420 × 900, `npm run capturer`). */
+  padding-inline: 0.5rem;
   scrollbar-width: none;
 }
 
