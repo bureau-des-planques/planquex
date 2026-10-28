@@ -4,7 +4,7 @@ import { drawRandom } from '@/game/rng';
 import type { RngHolder } from '@/game/rng';
 
 /**
- * Composition d'un **Arrivage** (`AGENTS.md` §4.2, `docs/PROPOSITION.md` §3) :
+ * Composition d'un **Arrivage** (`docs/JEU.md` §4.2, `docs/PROPOSITION.md` §3) :
  * « 3 communes, 1 peu commune, 1 rare minimum ».
  *
  * C'est une **règle de jeu**, et elle vit donc dans `src/game/`, à côté du

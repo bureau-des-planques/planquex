@@ -3,7 +3,7 @@ import { FACTION_META } from '@/data';
 import type { CafeType } from '@/data/types';
 import { COLORLESS_CAFE, cafeSatisfies, satisfiesCafeCost } from '@/game/rules';
 
-/** Les dix types de café, dans l'ordre des factions (AGENTS.md §3.2). */
+/** Les dix types de café, dans l'ordre des factions (docs/JEU.md §3.2). */
 const CAFE_TYPES = Object.keys(FACTION_META) as CafeType[];
 
 describe('Café typé — paiement d’un coût (D-037 (2))', () => {

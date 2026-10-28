@@ -2,7 +2,7 @@
 
 > Mesure **sans changement de code** : `src/game/ia.ts`, le moteur et `scripts/pesage.mjs` sont intacts.
 > Ce document **ne tranche pas** entre (a) re-peser, (b) retirer, (c) assumer le niveau 2 : c'est une décision humaine.
-> Il ne change **aucune règle** (`AGENTS.md` §4 et `docs/DECISIONS.md` restent seuls juges).
+> Il ne change **aucune règle** (`docs/JEU.md` §4 et `docs/DECISIONS.md` restent seuls juges).
 
 ## 1. Verdict mesuré
 

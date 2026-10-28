@@ -38,7 +38,7 @@ describe('QVT — enregistrement (tickets #23/#24)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `qvt-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `qvt-` (docs/JEU.md §5)', () => {
     for (const card of ALL_QVT_CARDS) {
       expect(card.id, card.id).toMatch(/^qvt-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('QVT');

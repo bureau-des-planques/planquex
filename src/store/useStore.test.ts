@@ -320,7 +320,7 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     }
   });
 
-  it('le nouvel id suit le nom de la carte (AGENTS.md §5)', () => {
+  it('le nouvel id suit le nom de la carte (docs/JEU.md §5)', () => {
     // Convention du dépôt : le suffixe de l'id est le nom en mots, dans l'ordre,
     // sans accents ni mots-outils — `sse-infirmier-site` pour « Infirmier de site »,
     // `rh-charge-prevention` pour « Chargé de prévention ».

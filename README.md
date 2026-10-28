@@ -82,8 +82,8 @@ bouge — le périmètre est borné par les décisions D-018 et D-020.
 
 Dix factions — RH, SSE, QVT, Management, Atelier, Syndicat, Direction, Amélioration continue,
 Support, Intérim — rangées dans trois **viviers** : l'Atelier, l'Étage et les Bureaux. Le
-vocabulaire complet est dans [`AGENTS.md` §3](AGENTS.md#3-vocabulaire), la table des règles dans
-[`AGENTS.md` §4](AGENTS.md#4-règles-du-jeu), et chaque règle y cite sa source.
+vocabulaire complet est dans [`docs/JEU.md` §3](AGENTS.md#3-vocabulaire), la table des règles dans
+[`docs/JEU.md` §4](AGENTS.md#4-règles-du-jeu), et chaque règle y cite sa source.
 
 ## Lancer le projet
 

@@ -44,7 +44,7 @@ describe('Syndicat — enregistrement (ticket #21)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `syndicat-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `syndicat-` (docs/JEU.md §5)', () => {
     for (const card of ALL_SYNDICAT_CARDS) {
       expect(card.id, card.id).toMatch(/^syndicat-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('SYNDICAT');

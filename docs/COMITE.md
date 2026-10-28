@@ -12,7 +12,7 @@
 > Le formulaire externe reste le palliatif de l'alpha d'avant — il ne demande pas de compte.
 > **Renommée par D-097 (#210)** : l'entrée s'appelle **le comité** (elle était la « Boîte à idées »),
 > son adresse est `/comite`, et `/idees` y redirige ; le fichier du mur est `docs/comite.json`.
-> Le vocabulaire est dans `AGENTS.md` §3 : **le comité** (l'entrée, la bulle), **le mur**
+> Le vocabulaire est dans `docs/JEU.md` §3 : **le comité** (l'entrée, la bulle), **le mur**
 > (l'écran), **post-it IP** (une idée), **post-it OUF** (un signalement), **un testeur**.
 
 ## 1. Les deux familles, et le gueulage à part

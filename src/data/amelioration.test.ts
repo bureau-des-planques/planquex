@@ -37,7 +37,7 @@ describe('Amélioration continue — enregistrement (ticket #17)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `amelioration-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `amelioration-` (docs/JEU.md §5)', () => {
     for (const card of ALL_AMELIORATION_CARDS) {
       expect(card.id, card.id).toMatch(/^amelioration-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('AMELIORATION');

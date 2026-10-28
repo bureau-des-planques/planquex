@@ -41,7 +41,7 @@ describe('RH — enregistrement (ticket #50)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `rh-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `rh-` (docs/JEU.md §5)', () => {
     for (const card of ALL_RH_CARDS) {
       expect(card.id, card.id).toMatch(/^rh-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('RH');

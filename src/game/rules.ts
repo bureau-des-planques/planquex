@@ -15,14 +15,14 @@ export const RULES = {
  * Limite de partie (D-031) : **30 tours** en Échelon (PvP), puis **égalité**.
  *
  * Le solo s'arrête à **50** tours, mais il n'existe pas dans notre périmètre
- * (`AGENTS.md` §4) et le moteur ne connaît **aucune notion de mode** : 50 est donc
+ * (`docs/JEU.md` §4) et le moteur ne connaît **aucune notion de mode** : 50 est donc
  * une valeur inatteignable aujourd'hui, notée ici pour le jour où un mode solo
  * arrivera. Ne pas ajouter un champ `mode` que rien ne remplit (#59).
  */
 export const TURN_LIMIT = 30;
 
 /**
- * Les **chiffres** du mode standard (`AGENTS.md` §4), chacun une seule fois (#248).
+ * Les **chiffres** du mode standard (`docs/JEU.md` §4), chacun une seule fois (#248).
  *
  * Un chiffre recopié est un chiffre qui dérive : la main pleine existait en cinq
  * endroits, « 3 Interventions » en quatre, et la Vulnérabilité en deux. Le moteur, l'IA
@@ -51,7 +51,7 @@ export const SURCHARGE_DAMAGE = 10;
 export const BURNOUT_DAMAGE = 20;
 
 /**
- * Ordre de résolution des conditions en fin de tour (`AGENTS.md` §4) :
+ * Ordre de résolution des conditions en fin de tour (`docs/JEU.md` §4) :
  * **Surcharge → Épuisement → Sieste → Immobilisation**. Un Planqué peut en subir plusieurs,
  * mais pas de toutes : voir `EXCLUSIVE_STATUSES` (D-030).
  *
@@ -72,7 +72,7 @@ export const STATUS_ORDER: readonly Status[] = ['SURCHARGE', 'EPUISEMENT', 'SIES
 export const EXCLUSIVE_STATUSES: readonly Status[] = ['SIESTE', 'IMMOBILISATION', 'DERIVE'];
 
 /**
- * Le café **incolore** satisfait n'importe quel coût typé (`AGENTS.md` §4). C'est le
+ * Le café **incolore** satisfait n'importe quel coût typé (`docs/JEU.md` §4). C'est le
  * **symbole** `INCOLORE`, distinct de la faction `SUPPORT` (D-037 (1)) — la Machine
  * n'en produit jamais (D-034), mais un tel café, s'il existait, paierait tout.
  */

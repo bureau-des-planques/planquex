@@ -43,7 +43,7 @@ function TourDeJeu({ onFait }: { onFait: () => void }) {
 }
 
 /**
- * La « Journée d'intégration » : ce qu'un testeur ne devine pas (`AGENTS.md` §3 — le
+ * La « Journée d'intégration » : ce qu'un testeur ne devine pas (`docs/JEU.md` §3 — le
  * tutoriel s'appelle comme ça, jamais « onboarding »).
  *
  * **Cinq étapes, deux phrases, un geste** (D-136, #334) : les quatre étapes de #130, plus le

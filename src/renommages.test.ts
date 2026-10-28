@@ -18,7 +18,7 @@ import { describe, expect, it } from 'vitest';
  * D-097 renomme l'entrée en **le comité** : `/idees` devient `/comite`, `BoiteAIdees.tsx`
  * devient `Comite.tsx`, `BulleBoiteAIdees.tsx` devient `AlerteComite.tsx`, et
  * `docs/boite-a-idees.json` devient `docs/comite.json`. Un nom d'écran renommé à moitié se
- * remet à vivre au premier fichier recopié : c'est un *Mysterious Name* (`AGENTS.md` §5),
+ * remet à vivre au premier fichier recopié : c'est un *Mysterious Name* (`docs/JEU.md` §5),
  * et c'est exactement ce que D-097 (9) demande de refuser.
  *
  * Le contrôle lit le dépôt, comme `scripts/compteurs.test.ts` : pas de linter de plus. Deux
@@ -154,7 +154,7 @@ describe('les anciens noms de la boîte à idées ne reviennent pas (#210, D-097
  * **« invité » ne désigne plus le testeur de l'alpha** (#306, D-117).
  *
  * D-117 (6) fixe le mot : « **testeur** » remplace « invité » pour désigner le testeur de
- * l'alpha (`AGENTS.md` §3.1). Le renommage a été fait une fois, à la main, dans les textes,
+ * l'alpha (`docs/JEU.md` §3.1). Le renommage a été fait une fois, à la main, dans les textes,
  * les docs et les commentaires ; ce contrôle empêche que le vieux mot revienne avec le
  * prochain fichier recopié — même raison que la Boîte à idées ci-dessus.
  *

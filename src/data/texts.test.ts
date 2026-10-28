@@ -49,7 +49,7 @@ interface Cue<K extends string> {
 
 /**
  * Les mots d'une **Pression** — et d'une carte **Action**, qui emploie les mêmes
- * primitives (`AGENTS.md` §5) — avec la primitive qui peut les réaliser.
+ * primitives (`docs/JEU.md` §5) — avec la primitive qui peut les réaliser.
  *
  * `kinds: []` signalerait un mot **sans primitive** : le texte ne pourrait pas être
  * honnête. Depuis #175, aucune primitive d'attaque ne manque plus (#159 à #165) ; la
@@ -163,7 +163,7 @@ const ATTENTES_TALENT: Record<AbilityKind, Attente | null> = {
   effects: null
 };
 
-/** Les mots par lesquels un texte annonce un statut (`AGENTS.md` §3.1). */
+/** Les mots par lesquels un texte annonce un statut (`docs/JEU.md` §3.1). */
 const MOTS_STATUT: Record<Status, RegExp> = {
   // Mêmes règles que `CUES_EFFET` (#166) : racines, `\b` de début seulement.
   SURCHARGE: /\bsurcharg/,

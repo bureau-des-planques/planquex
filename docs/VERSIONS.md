@@ -1,7 +1,7 @@
 # Les versions — la règle, et comment on la publie
 
 > Référence unique du projet sur le nom des versions. Elle **ne crée aucune règle de jeu** :
-> les règles vivent dans `AGENTS.md` §4 et `docs/DECISIONS.md`. Les actes datés qui l'ont
+> les règles vivent dans `docs/JEU.md` §4 et `docs/DECISIONS.md`. Les actes datés qui l'ont
 > écrite : **D-048** (trois étapes nommées), **D-050** (l'étape est un mot, le numéro est la
 > version), **D-051** (une ligne de version par étape), **D-090** (la note de version vit
 > aussi **dans l'application**, prise aux releases GitHub).

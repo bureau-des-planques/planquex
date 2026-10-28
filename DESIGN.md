@@ -7,7 +7,7 @@
 >
 > État : **première passe** (20/10/2026). Elle fixe les jetons de couleur, le gabarit de
 > carte et les planches de style ; la **curation carte par carte** viendra ensuite.
-> Ce document ne crée **aucune règle de jeu** : les règles vivent dans `AGENTS.md` §4 et
+> Ce document ne crée **aucune règle de jeu** : les règles vivent dans `docs/JEU.md` §4 et
 > `docs/DECISIONS.md`. Il décrit l'apparence, pas la mécanique.
 >
 > Il suit `docs/PROPOSITION.md` §4.6 : direction « **corporate dark premium** »,
@@ -546,7 +546,7 @@ holographique s'applique déjà : `HOLO_RARITIES` les inclut (`src/components/Ca
 
 ## 4. Badges de statut
 
-Les cinq conditions (`AGENTS.md` §4) sont rendues par `src/components/StatusBadge.tsx`,
+Les cinq conditions (`docs/JEU.md` §4) sont rendues par `src/components/StatusBadge.tsx`,
 `STATUS_META` : libellé, description et icône en **une seule** source. `Battle.tsx` les
 affiche sur le Poste et dans une légende « Conditions » ; il ne recopie plus aucun libellé.
 
@@ -587,7 +587,7 @@ bureau, **tasse de café or** fumante, plante d'angle, puis le nom en bas.
 - Le personnage : silhouette simple, tête ronde, calotte sombre, yeux fermés, épaules
   basses, un bras posé sur le bureau, l'autre vers la tasse.
 - Pas de visage détaillé, pas de logo réel, pas de marque : on ridiculise la posture,
-  jamais une personne (`AGENTS.md` §4.2).
+  jamais une personne (`docs/JEU.md` §4.2).
 - La barre du haut reprend la **tasse** seule (`src/components/Layout.tsx`) : même dessin,
   simplifié pour tenir dans 30 px.
 - La **marque du README** (`design/logo/`) reprend la tasse de l'icône du serveur des testeurs
@@ -655,7 +655,7 @@ socle ; seuls le sujet et le cadrage changent.
 
 - **Sujet** : **un lieu de travail vide de tout visage**, vu de loin : un atelier, un
   étage de bureaux ou une aile administrative. Trois variantes = les trois viviers
-  (`AGENTS.md` §4.2) : **Atelier** (outils, établis, machines), **Étage** (couloir de
+  (`docs/JEU.md` §4.2) : **Atelier** (outils, établis, machines), **Étage** (couloir de
   bureaux, baies vitrées, plantes), **Bureaux** (plateau partagé, cloisons, imprimante).
 - **Cadrage** : plan large, un point de fuite marqué, perspective à hauteur d'épaule.
 - **Lumière** : éclairage mixte fin de journée — lumière froide des néons, lumière chaude

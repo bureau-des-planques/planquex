@@ -193,7 +193,7 @@ export function Deck() {
 
       {/* **Les contraintes du Deck** (#276) : la page dit ce qu'elle demande, en quatre
           lignes. Les valeurs viennent des constantes du moteur (`@/game/deck`), pas d'une
-          copie — `AGENTS.md` §4 en est la règle, ce bandeau n'en est que la lecture. */}
+          copie — `docs/JEU.md` §4 en est la règle, ce bandeau n'en est que la lecture. */}
       <section className="panel deck-contraintes" aria-labelledby="deck-contraintes-titre">
         <h2 id="deck-contraintes-titre" className="deck-contraintes__titre">
           Ce que le Deck doit respecter

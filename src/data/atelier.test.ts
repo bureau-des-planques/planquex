@@ -42,7 +42,7 @@ describe('Atelier — enregistrement (ticket #19)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `atelier-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `atelier-` (docs/JEU.md §5)', () => {
     for (const card of ALL_ATELIER_CARDS) {
       expect(card.id, card.id).toMatch(/^atelier-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('ATELIER');
