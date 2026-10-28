@@ -85,10 +85,12 @@ void main() {
   col *= 1.0 - 0.62 * ao * clamp(u_c, 0.0, 1.0);
   col *= 1.0 - 0.22 * clamp(-diff, 0.0, 1.0);
   col += mix(vec3(0.34, 0.40, 0.52), vec3(1.0), env) * (1.0 - n.z) * 0.30;
-  col += spec * vec3(0.92, 0.97, 1.0) * (0.14 + 0.42 * clamp(u_c, 0.0, 1.0)) * mix(1.0, 0.50, u_radial);
+  col += spec * vec3(0.92, 0.97, 1.0) * (0.12 + 0.30 * clamp(u_c, 0.0, 1.0)) * mix(1.0, 0.45, u_radial);
   // L'anneau clair du bord : c'est lui qui donne l'épaisseur du creux sur l'image E.
-  float anneau = exp(-pow((r0 - s0 * 1.15) / (s0 * 0.42), 2.0));
-  col += anneau * u_c * mix(0.0, 0.30, u_radial) * vec3(0.95, 0.97, 1.0);
+  float anneau = exp(-pow((r0 - s0 * 1.25) / (s0 * 0.62), 2.0));
+  // Le liseré n'est pas un cercle : l'angle le casse, comme un pli qui accroche la lumière par endroits.
+  float accroc = 0.45 + 0.85 * bruit(vec2(atan(d0.y, d0.x) * 1.8, u_m1.y * 11.0));
+  col += anneau * accroc * u_c * mix(0.0, 0.13, u_radial) * vec3(0.95, 0.97, 1.0);
   o = vec4(col, 1.0);
 }`;
 
