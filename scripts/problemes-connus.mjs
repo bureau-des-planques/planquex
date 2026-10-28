@@ -59,7 +59,7 @@ export const STATUTS_PUBLIES = ['retenu', 'en cours'];
  * `order by created_at, id` rend l'ordre stable d'une release à l'autre ; aucune donnée
  * n'est écrite, et le rôle `lecteur` n'en aurait pas le droit.
  */
-export const REQUETE_PROBLEMES = `select id, kind, titre, statut, ticket, gueulage, lie, version
+export const REQUETE_PROBLEMES = `select id, kind, titre, statut, ticket, gueulage, lie, version, ecran
   from public.postits
  order by created_at, id`;
 
@@ -82,10 +82,28 @@ export function filtrerProblemes(lignes) {
     .map((ligne) => ({
       id: String(ligne.id ?? '').trim(),
       titre: nettoyerTitre(ligne.titre),
+      // L'écran et la version disent **où** et **quand** le problème a été vu (#401) : un
+      // testeur qui re-signale sait alors si son signalement est d'avant ou d'après.
+      ecran: nettoyerTitre(ligne.ecran),
+      version: nettoyerTitre(ligne.version),
       // Un ticket est un entier > 0, comme dans le mur (`numeroDeTicket`, 0001).
       ticket: Number.isInteger(ligne.ticket) && ligne.ticket > 0 ? ligne.ticket : null
     }))
     .filter((probleme) => probleme.id && probleme.titre);
+}
+
+/**
+ * La puce d'un problème : son titre, puis — quand le mur le porte — l'**écran** et la
+ * **version** du signalement (#401), et enfin son ticket. Un post-it sans écran ni version
+ * (import ancien, champ vide) ne laisse **ni tiret orphelin ni « undefined »** : la partie
+ * manquante n'est simplement pas écrite.
+ *
+ * Rien d'autre n'entre : ni `texte`, ni `pseudo`, ni `raison` (D-085, D-059).
+ */
+export function etiquetteProbleme(probleme) {
+  const ou = [nettoyerTitre(probleme?.ecran), nettoyerTitre(probleme?.version)].filter(Boolean).join(', ');
+  const ticket = Number.isInteger(probleme?.ticket) && probleme.ticket > 0 ? ` (#${probleme.ticket})` : '';
+  return `${nettoyerTitre(probleme?.titre)}${ou ? ` — ${ou}` : ''}${ticket}`;
 }
 
 /**
@@ -100,9 +118,7 @@ export function blocProblemes(problemes) {
   if (liste.length === 0) {
     return '**Problèmes connus** — aucun problème ouvert à ce jour.';
   }
-  const puces = liste.map(
-    (probleme) => `- ${nettoyerTitre(probleme.titre)}${probleme.ticket ? ` (#${probleme.ticket})` : ''}`
-  );
+  const puces = liste.map((probleme) => `- ${etiquetteProbleme(probleme)}`);
   return ['**Problèmes connus** — ce qui est déjà signalé, et pas encore corrigé :', '', ...puces].join('\n');
 }
 
