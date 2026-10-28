@@ -49,16 +49,28 @@ export function Home() {
           ta main.
         </p>
         <div className="hero__actions">
-          <button type="button" className="button button--gold button--big" onClick={handleOpenPack}>
-            <PackageOpen size={20} /> Ouvrir un Arrivage
+          <button type="button" className="button button--gold button--big hero__ouvrir" onClick={handleOpenPack}>
+            <PackageOpen size={22} /> Ouvrir un Arrivage
           </button>
           <Link className="button button--primary button--big" to="/battle">
             <Swords size={20} /> Affronter la Direction
           </Link>
         </div>
+        {/* Le compteur (#273) : ce qu'un testeur a ouvert depuis le début. L'alpha ne limite
+            rien (D-127, Arrivages illimités et gratuits) : aucun quota, aucun prix, aucun
+            bouton grisé ici — la cadence est une décision de beta. */}
+        <div className="hero__packs">
+          <p className="hero__packs-compteur">
+            {/* La phrase et le chiffre dans le **même** nœud de texte : le compteur se lit
+                d'un bloc, et un test qui cherche « 3 Arrivages ouverts » le trouve. */}
+            <strong className="hero__packs-nombre">
+              {packsOpened} Arrivage{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''}
+            </strong>
+          </p>
+          {packsOpened === 0 && <p className="hero__packs-invite">Aucun Arrivage ouvert : le premier est pour toi.</p>}
+        </div>
         <div className="hero__hint">
-          <Coffee size={14} /> {packsOpened} Arrivage{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} ·{' '}
-          {uniqueOwned}/{ALL_CARDS.length} cartes
+          <Coffee size={14} /> {uniqueOwned}/{ALL_CARDS.length} cartes uniques
         </div>
       </section>
 

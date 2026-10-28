@@ -4232,3 +4232,42 @@ h2 {
   animation: none;
   opacity: 0;
 }
+
+/* ---------- L'accueil : le gros bouton d'Arrivage et son compteur (#273) ---------- */
+
+/* **Le gros bouton d'Arrivage** (#273). Ce n'est pas un composant nouveau : c'est la taille du
+   bouton d'action principal, portée plus haut que `.button--big`, pour qu'on ouvre un Arrivage
+   sans le chercher. La forme reste celle du bouton de la maison (`DESIGN.md` §1.6). */
+.hero__ouvrir {
+  align-items: center;
+  display: inline-flex;
+  font-size: 1.14rem;
+  gap: 0.55rem;
+  padding: 1rem 1.7rem;
+}
+
+/* **Le compteur d'Arrivages ouverts** (#273) : le chiffre en gros, le mot à côté. L'alpha ne
+   limite rien (D-127) — aucun quota, aucun prix, aucun bouton grisé. */
+.hero__packs {
+  margin-top: 1rem;
+}
+
+.hero__packs-compteur {
+  margin: 0;
+}
+
+.hero__packs-nombre {
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.hero__packs-invite {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin: 0.35rem 0 0;
+}
+
