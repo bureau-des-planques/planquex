@@ -393,7 +393,12 @@ export function createBattle(
   return state;
 }
 
-export function playBasic(state: BattleState, uid: string, slot: 'active' | number): BattleState {
+export function playBasic(
+  state: BattleState,
+  uid: string,
+  slot: 'active' | number,
+  faits: FaitMoteur[] = []
+): BattleState {
   if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   const player = next.players[next.current];
@@ -413,11 +418,11 @@ export function playBasic(state: BattleState, uid: string, slot: 'active' | numb
     player.bench[slot] = instance;
   }
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'poses', 'pose')} ${card.name}.`);
-  declencheALaPose(next, next.current, instance);
+  declencheALaPose(next, next.current, instance, faits);
   return next;
 }
 
-export function evolve(state: BattleState, uid: string, targetUid: string): BattleState {
+export function evolve(state: BattleState, uid: string, targetUid: string, faits: FaitMoteur[] = []): BattleState {
   if (awaitingDecision(state) || turnFinished(state)) return state;
   const next = clone(state);
   if (isFirstTurnFor(next, next.current)) return state;
@@ -440,7 +445,7 @@ export function evolve(state: BattleState, uid: string, targetUid: string): Batt
   clearAttackEffects(target);
   target.evolvedTurn = next.turn;
   next.log.push(`${sujet(next, next.current)} ${verbe(next, next.current, 'fais', 'fait')} évoluer ${card.name}.`);
-  declencheALaPose(next, next.current, target);
+  declencheALaPose(next, next.current, target, faits);
   return next;
 }
 
@@ -505,14 +510,15 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
  * `instance` (pose au Poste ou au Banc, évolution). Une instance n'entre en jeu qu'une fois,
  * donc aucun drapeau n'est nécessaire. Il ne figure jamais parmi les actions `ability`.
  */
-function declencheALaPose(state: BattleState, who: PlayerId, instance: CardInstance) {
+function declencheALaPose(state: BattleState, who: PlayerId, instance: CardInstance, faits: FaitMoteur[]) {
   const card = getCard(instance.cardId);
   const ability = isPlanque(card) ? card.ability : undefined;
   if (!ability || ability.trigger !== 'onPlay') return;
-  // **Le Talent joué à la pose** (D-081) ne collecte pas encore ses faits : `playBasic` et
-  // `evolve` ne portent pas le collecteur. Rien ne le lit aujourd'hui — `effets-combat`
-  // garde la comparaison d'états pour le Stress générique (#250, suivi).
-  resolveAbility(state, who, instance, ability);
+  // Le Talent « en jouant » collecte ses faits comme les autres (#353) : le collecteur de
+  // `applyAction` descend jusqu'ici par `playBasic` et `evolve`, et `resolveAbility` le
+  // passe à ses primitives. Aucun fait n'est inventé : seuls ceux qu'une primitive écrit
+  // (le Stress d'un `selfDamage`, par exemple) sont ajoutés.
+  resolveAbility(state, who, instance, ability, faits);
   state.log.push(`${sujet(state, who)} ${verbe(state, who, 'utilises', 'utilise')} ${ability.name}.`);
 }
 
@@ -578,7 +584,7 @@ function resolveAbility(
       // Passif : `attackDamage` lit la réduction quand le Planqué est visé. Le Talent n'agit pas.
       break;
     case 'effects':
-      applyTalentEffects(state, who, instance, ability.effects ?? []);
+      applyTalentEffects(state, who, instance, ability.effects ?? [], faits);
       break;
     default:
       assertNever(ability.kind);
@@ -1520,9 +1526,9 @@ export function replayBattle(
 function transition(state: BattleState, action: BattleAction, faits: FaitMoteur[]): BattleState {
   switch (action.type) {
     case 'playBasic':
-      return playBasic(state, action.uid, action.slot);
+      return playBasic(state, action.uid, action.slot, faits);
     case 'evolve':
-      return evolve(state, action.uid, action.targetUid);
+      return evolve(state, action.uid, action.targetUid, faits);
     case 'attachEnergy':
       return attachEnergy(state, action.targetUid);
     case 'retreat':
