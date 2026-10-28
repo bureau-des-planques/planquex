@@ -241,7 +241,7 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
 ];
 
 export const SYNDICAT_VARIANTS: Card[] = [
-  secretVariant(SYNDICAT_CARDS, 'syndicat-secretaire-general', 'crown', '✦')
+  secretVariant(SYNDICAT_CARDS, 'syndicat-secretaire-general', 'crown', '✦', 'syndicat-secretaire-general-crown.webp')
 ];
 
 export const ALL_SYNDICAT_CARDS: Card[] = [...SYNDICAT_CARDS, ...SYNDICAT_VARIANTS];

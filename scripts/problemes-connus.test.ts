@@ -45,6 +45,7 @@ type Ligne = Record<string, unknown> & {
   gueulage?: boolean;
   lie?: string | null;
   version?: string;
+  ecran?: string | null;
 };
 
 const RACINE = fileURLToPath(new URL('..', import.meta.url));
@@ -61,12 +62,13 @@ function ligne(id: string, statut: string, extra: Partial<Ligne> = {}): Ligne {
     gueulage: false,
     lie: null,
     version: 'Alpha · 0.1.13',
+    ecran: 'Combat',
     ...extra
   };
 }
 
 /** Une ligne de « problème connu », telle que le filtre la rend (le module `.mjs` n'a pas de types). */
-type Probleme = { id: string; titre: string; ticket: number | null };
+type Probleme = { id: string; titre: string; ecran: string; version: string; ticket: number | null };
 
 /** Les points que le parseur de notes **garderait** : ceux qui entrent dans `/feuille-de-route`. */
 function pointsDe(corps: string): string[] {
@@ -136,7 +138,9 @@ describe('le filtre des problèmes connus (D-119)', () => {
       ligne('p-multiligne', 'retenu', { titre: 'Première ligne\n\nseconde   ligne', ticket: 299 })
     ]);
     expect(probleme).toMatchObject({ id: 'p-multiligne', titre: 'Première ligne seconde ligne', ticket: 299 });
-    expect(blocProblemes([probleme]).split('\n')).toContain('- Première ligne seconde ligne (#299)');
+    expect(blocProblemes([probleme]).split('\n')).toContain(
+      '- Première ligne seconde ligne — Combat, Alpha · 0.1.13 (#299)'
+    );
   });
 
   it('un ticket qui n’est pas un entier positif n’est pas repris', () => {
@@ -183,7 +187,7 @@ describe('le bloc de release (D-119)', () => {
     ].join('\n');
 
     expect(corps).toContain('## Pour un testeur');
-    expect(corps).toContain('Le bouton Remplir ne remplit rien (#301)');
+    expect(corps).toContain('Le bouton Remplir ne remplit rien — Combat, Alpha · 0.1.13 (#301)');
     expect(corps).toContain('La partie à deux perd son code');
 
     const points = pointsDe(corps);
@@ -195,6 +199,62 @@ describe('le bloc de release (D-119)', () => {
     const bloc = blocProblemes([]);
     expect(bloc).toBe('**Problèmes connus** — aucun problème ouvert à ce jour.');
     expect(bloc).not.toContain('- ');
+  });
+
+  /**
+   * #401 : la puce dit **où** (l'écran) et **quand** (la version) le problème a été vu —
+   * mot pour mot, parce que c'est ce que le testeur lit dans la note.
+   */
+  it('la puce dit l’écran et la version, mot pour mot (#401)', () => {
+    const problemes = filtrerProblemes([
+      ligne('p-mvrome4s-f93mg6', 'retenu', {
+        titre: 'Bug café attaché',
+        ecran: 'Combat',
+        version: 'Alpha · 0.1.14',
+        ticket: 399
+      })
+    ]);
+
+    expect(problemes[0]).toEqual({
+      id: 'p-mvrome4s-f93mg6',
+      titre: 'Bug café attaché',
+      ecran: 'Combat',
+      version: 'Alpha · 0.1.14',
+      ticket: 399
+    });
+
+    const puce = blocProblemes(problemes).split('\n').at(-1);
+    expect(puce).toBe('- Bug café attaché — Combat, Alpha · 0.1.14 (#399)');
+    expect(puce).not.toMatch(/undefined|null|NaN/);
+  });
+
+  it('un post-it sans écran ni version ne produit ni puce bancale ni « undefined » (#401)', () => {
+    const problemes = filtrerProblemes([
+      ligne('p-sans-contexte', 'en cours', { titre: 'Le bouton Fin du tour', ecran: null, version: '', ticket: 7 })
+    ]);
+
+    const puce = blocProblemes(problemes).split('\n').at(-1);
+    expect(puce).toBe('- Le bouton Fin du tour (#7)');
+    expect(puce).not.toContain('—');
+    expect(puce).not.toMatch(/undefined|null/);
+  });
+
+  it('le contrôle mord : retirer l’écran change le rendu (#401)', () => {
+    const complet = filtrerProblemes([
+      ligne('p-mord', 'retenu', { titre: 'Bug café attaché', ecran: 'Combat', version: 'Alpha · 0.1.14', ticket: 399 })
+    ]);
+    // Le même post-it, tel qu'un mur qui ne lirait pas `ecran` le rendrait : la puce ne dit
+    // plus où. C'est cette différence que la garde du dessus mesure.
+    const sansEcran = filtrerProblemes([
+      ligne('p-mord', 'retenu', { titre: 'Bug café attaché', ecran: '', version: 'Alpha · 0.1.14', ticket: 399 })
+    ]).map((probleme) => ({ ...probleme, ecran: '' }));
+
+    const avec = blocProblemes(complet).split('\n').at(-1);
+    const sans = blocProblemes(sansEcran).split('\n').at(-1);
+    expect(avec).toContain('Combat');
+    expect(sans).not.toContain('Combat');
+    expect(sans).toBe('- Bug café attaché — Alpha · 0.1.14 (#399)');
+    expect(avec).not.toBe(sans);
   });
 });
 
@@ -208,6 +268,9 @@ describe('la lecture de la base (D-119)', () => {
     expect(REQUETE_PROBLEMES).not.toMatch(/\bpseudo\b/i);
     // Le `lie` est lu : c'est lui qui dit quel OUF porte le signalement d'un gueulage.
     expect(REQUETE_PROBLEMES).toMatch(/\blie\b/);
+    // L'écran et la version sont lus : ce sont eux que la puce affiche (#401).
+    expect(REQUETE_PROBLEMES).toMatch(/\becran\b/);
+    expect(REQUETE_PROBLEMES).toMatch(/\bversion\b/);
   });
 
   it('le rôle de la connexion doit être « lecteur », jamais « postgres »', () => {
@@ -230,14 +293,34 @@ describe('la lecture de la base (D-119)', () => {
       const coller = (params: unknown[]) =>
         avecAppareil(db, APPAREIL_A, () =>
           db.query(
-            `insert into public.postits (id, kind, titre, texte, version, statut, gueulage, lie, ticket, raison)
-             values ($1, $2, $3, $4, 'Alpha · 0.1.13', $5, $6, $7, $8, $9)`,
+            `insert into public.postits (id, kind, titre, texte, version, statut, gueulage, lie, ticket, raison, ecran)
+             values ($1, $2, $3, $4, 'Alpha · 0.1.13', $5, $6, $7, $8, $9, 'Combat')`,
             params
           )
         );
 
-      await coller(['p-ouf-retenu', 'OUF', 'Le bouton Remplir ne remplit rien', 'Texte.', 'retenu', false, null, 301, '']);
-      await coller(['p-ouf-en-cours', 'OUF', 'La partie à deux perd son code', 'Texte.', 'en cours', false, null, null, '']);
+      await coller([
+        'p-ouf-retenu',
+        'OUF',
+        'Le bouton Remplir ne remplit rien',
+        'Texte.',
+        'retenu',
+        false,
+        null,
+        301,
+        ''
+      ]);
+      await coller([
+        'p-ouf-en-cours',
+        'OUF',
+        'La partie à deux perd son code',
+        'Texte.',
+        'en cours',
+        false,
+        null,
+        null,
+        ''
+      ]);
       await coller(['p-ouf-fait', 'OUF', 'Déjà corrigé', 'Texte.', 'fait', false, null, null, '']);
       await coller(['p-ouf-attente', 'OUF', 'Pas encore trié', 'Texte.', 'en attente', false, null, null, '']);
       await coller(['p-ouf-ecarte', 'OUF', 'Doublon', 'Texte.', 'écarté', false, null, null, 'doublon de #100']);
@@ -258,7 +341,7 @@ describe('la lecture de la base (D-119)', () => {
       expect(problemes.map((probleme: Probleme) => probleme.id)).toEqual(['p-ouf-retenu', 'p-ouf-en-cours']);
 
       const bloc = blocProblemes(problemes);
-      expect(bloc).toContain('Le bouton Remplir ne remplit rien (#301)');
+      expect(bloc).toContain('Le bouton Remplir ne remplit rien — Combat, Alpha · 0.1.13 (#301)');
       expect(bloc).toContain('La partie à deux perd son code');
       expect(bloc).not.toContain(TITRE_GUEULAGE);
       expect(bloc).not.toContain('Le texte brut du gueulage');
@@ -352,7 +435,7 @@ describe('la commande (D-119)', () => {
 
     expect(code).toBe(0);
     expect(JSON.parse(sortie.lignes[0])).toEqual({
-      problemes: [{ id: 'p-1', titre: 'Un problème', ticket: 301 }]
+      problemes: [{ id: 'p-1', titre: 'Un problème', ecran: 'Combat', version: 'Alpha · 0.1.13', ticket: 301 }]
     });
   });
 

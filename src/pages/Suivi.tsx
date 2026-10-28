@@ -52,6 +52,76 @@ export function postitsDuGroupe(postits: readonly Postit[], statut: Statut): Pos
   return postits.filter((postit) => postit.statut === statut);
 }
 
+/** Le libellé d'un statut sur une ligne de suivi : un seul nom par état, jamais le code brut. */
+export const LABEL_STATUT: Record<Statut, string> = {
+  'en attente': 'En attente',
+  retenu: 'Retenu',
+  'en cours': 'En cours',
+  fait: 'Fait',
+  écarté: 'Écarté'
+};
+
+/** Les issues du dépôt (#281) : le dépôt est public depuis D-118, le lien se compose. */
+export const URL_ISSUES = 'https://github.com/bureau-des-planques/planquex/issues';
+
+/** Le lien d'un ticket, **composé à partir du numéro** : aucun appel réseau depuis la page. */
+export function lienTicket(numero: number): string {
+  return `${URL_ISSUES}/${numero}`;
+}
+
+/**
+ * Le ticket à afficher pour un post-it (#281). Un post-it **`en attente`** n'a pas encore
+ * été trié : même si la base portait un numéro, l'écran ne prétend pas qu'il a un ticket —
+ * c'est le tri qui le lie, et le suivi ne montre que ce qui a été trié.
+ */
+export function ticketDuSuivi(postit: Postit): number | null {
+  if (postit.statut === 'en attente') return null;
+  return typeof postit.ticket === 'number' && postit.ticket > 0 ? postit.ticket : null;
+}
+
+/**
+ * Une ligne du suivi : le post-it **et ce qu'il est devenu** — son statut, l'écran qu'il
+ * concerne, et son ticket (le numéro et le lien GitHub quand il en a un). Un écarté porte sa
+ * raison (D-059), et un `en attente` ne prétend pas avoir de ticket.
+ */
+export function LigneSuivi({ postit }: { postit: Postit }) {
+  const ticket = ticketDuSuivi(postit);
+  return (
+    <li
+      className="rounded-[var(--radius-sm)] border border-line bg-bg-sunken p-3"
+      data-statut={postit.statut}
+      data-suivi={postit.id}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h3 className="m-0 font-heading text-[1rem] font-bold text-ink">{postit.titre}</h3>
+        <span className="text-[0.72rem] font-bold uppercase tracking-[0.1em] text-ink-muted" data-etat={postit.statut}>
+          {LABEL_STATUT[postit.statut]}
+        </span>
+      </div>
+      <p className="mt-1 mb-0 max-w-[70ch] text-[0.88rem] text-ink-muted">{postit.texte}</p>
+      <p className="mt-2 mb-0 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.78rem] text-ink-dim">
+        <span>Écrit par {postit.pseudo || 'anonyme'}</span>
+        {postit.ecran ? <span>Écran : {postit.ecran}</span> : null}
+        {ticket !== null ? (
+          <a className="text-gold-soft" href={lienTicket(ticket)} target="_blank" rel="noopener noreferrer">
+            Ticket #{ticket}
+          </a>
+        ) : postit.statut === 'en attente' ? (
+          <span>Pas encore de ticket : le tri n’a pas eu lieu.</span>
+        ) : null}
+      </p>
+
+      {/* La raison d'un écarté (D-059) : c'est elle qui apprend ce qui vaut la peine
+          d'être remonté — un écarté sans raison serait un mur mort. */}
+      {postit.statut === 'écarté' && postit.raison && (
+        <p className="mt-2 mb-0 max-w-[70ch] border-l-2 border-gold-deep pl-3 text-[0.86rem] text-ink">
+          <strong>Pourquoi c’est écarté :</strong> {postit.raison}
+        </p>
+      )}
+    </li>
+  );
+}
+
 function messageDe(erreur: unknown): string {
   return erreur instanceof Error ? erreur.message : String(erreur);
 }
@@ -143,35 +213,7 @@ export function Suivi() {
               ) : (
                 <ul className="m-0 flex list-none flex-col gap-4 p-0">
                   {liste.map((postit) => (
-                    <li key={postit.id} className="rounded-[var(--radius-sm)] border border-line bg-bg-sunken p-3">
-                      <h3 className="m-0 font-heading text-[1rem] font-bold text-ink">{postit.titre}</h3>
-                      <p className="mt-1 mb-0 max-w-[70ch] text-[0.88rem] text-ink-muted">{postit.texte}</p>
-                      <p className="mt-2 mb-0 text-[0.78rem] text-ink-dim">
-                        Écrit par {postit.pseudo || 'anonyme'}
-                        {postit.ecran ? ` · ${postit.ecran}` : ''}
-                        {postit.ticket ? (
-                          <>
-                            {' · '}
-                            <a
-                              className="text-gold-soft"
-                              href={`https://github.com/bureau-des-planques/planquex/issues/${postit.ticket}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Ticket #{postit.ticket}
-                            </a>
-                          </>
-                        ) : null}
-                      </p>
-
-                      {/* La raison d'un écarté (D-059) : c'est elle qui apprend ce qui vaut
-                          la peine d'être remonté — un écarté sans raison serait un mur mort. */}
-                      {postit.statut === 'écarté' && postit.raison && (
-                        <p className="mt-2 mb-0 max-w-[70ch] border-l-2 border-gold-deep pl-3 text-[0.86rem] text-ink">
-                          <strong>Pourquoi c’est écarté :</strong> {postit.raison}
-                        </p>
-                      )}
-                    </li>
+                    <LigneSuivi postit={postit} key={postit.id} />
                   ))}
                 </ul>
               )}

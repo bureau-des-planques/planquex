@@ -10,6 +10,7 @@ import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat'
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
 import type { BattleAction, BattleState } from '@/data/types';
+import type { PartieSauvegardee } from '@/store/partie';
 import { encodeMatch } from '@/game/codec';
 import { autoDeck } from '@/game/deck';
 import { applyAction, createBattle, legalActions } from '@/game/engine';
@@ -36,8 +37,16 @@ function partieCommencee() {
   return { partie, tour: jouee.turn, etat: jouee, deck };
 }
 
-/** Une partie où **mon** Poste vient de craquer : la relève est à choisir (D-030). */
+/**
+ * Une partie où **mon** Poste vient de craquer : la relève est à choisir (D-030).
+ *
+ * **Mémoïsée** : la recherche est déterministe (graines 1, 2, 3… et aucune horloge), donc
+ * la refaire à chaque appel rend le même résultat. Elle coûtait **33 s** pour la page
+ * entière, appelée six fois ; le cache la ramène à une seule recherche par scénario.
+ */
+let cacheReleve: { partie: unknown; etat: unknown } | null = null;
 function partieAvecReleve() {
+  if (cacheReleve) return cacheReleve as { partie: PartieSauvegardee; etat: BattleState };
   const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
   const deck = autoDeck(owned).deck;
   for (let seed = 1; seed < 300; seed += 1) {
@@ -45,7 +54,10 @@ function partieAvecReleve() {
     for (let i = 0; i < 400 && s.phase === 'playing'; i += 1) {
       if (s.pendingPromotion === 'player' && legalActions(s).some((a) => a.type === 'promoteActive')) {
         const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
-        if (partie) return { partie, etat: s };
+        if (partie) {
+          cacheReleve = { partie, etat: s };
+          return { partie, etat: s };
+        }
       }
       const legales = legalActions(s).filter((a) => a.type !== 'forfeit');
       const action =
@@ -62,8 +74,10 @@ function partieAvecReleve() {
   throw new Error('aucune partie ne donne une relève au joueur');
 }
 
-/** Un tour du joueur où une Pression est à portée : la barre doit la porter. */
+/** Un tour du joueur où une Pression est à portée : la barre doit la porter. Mémoïsée, même raison. */
+let cachePression: { partie: unknown; etat: unknown } | null = null;
 function partieAvecPression() {
+  if (cachePression) return cachePression as { partie: PartieSauvegardee; etat: BattleState };
   const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
   const deck = autoDeck(owned).deck;
   for (let seed = 1; seed < 400; seed += 1) {
@@ -72,7 +86,10 @@ function partieAvecPression() {
       const auTourDuJoueur = s.current === 'player' && s.pendingPromotion === null && s.pendingChoice === null;
       if (auTourDuJoueur && legalActions(s).some((a) => a.type === 'attack')) {
         const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
-        if (partie) return { partie, etat: s };
+        if (partie) {
+          cachePression = { partie, etat: s };
+          return { partie, etat: s };
+        }
       }
       // La Direction joue sa politique ; le joueur attache un café, sinon passe son tour.
       const legales = legalActions(s);
@@ -207,7 +224,9 @@ describe('Battle — écran de combat', () => {
     expect(screen.queryByRole('button', { name: /Règles/i })).toBeNull();
     fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Règles/i }));
 
-    const dialogue = screen.getByRole('dialog', { name: /Conditions/i });
+    // Le menu ouvre **les règles en une minute** (#270) : la légende des Conditions y est,
+    // à la suite des étapes — un seul panneau, deux contenus.
+    const dialogue = screen.getByRole('dialog', { name: /règles en une minute/i });
     expect(dialogue).toHaveTextContent(/10 de Stress par Contrôle/);
     expect(dialogue).toHaveTextContent(/ce qu.un Planqué au Poste peut subir/i);
   });
@@ -874,20 +893,20 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   }
 
   /**
-   * La première graine qui finit ainsi. Déterministe (la boucle part de 1) : le code obtenu
-   * est le même à chaque exécution, et le test ne dépend plus d'une graine figée qu'une
-   * modification du catalogue (D-095) rend caduque.
+   * **La graine, figée** — parce que la chercher coûtait une minute.
+   *
+   * Ces deux valeurs sont le résultat d'une recherche **déterministe** (la boucle partait de
+   * 1) : les rejouer à chaque exécution rend le même code, et ne prouve rien de plus.
+   * Mesuré le 28/10/2026 : `plateauVide` demandait de balayer **506** graines, chacune jusqu'à
+   * 400 étapes en essayant **toutes** les actions légales — un seul test frisait les 60 s et
+   * expirait sous charge.
+   *
+   * Si le moteur ou la politique change au point qu'une graine ne finit plus ainsi,
+   * `codeDuneFin` **jette** et dit de réancrer : c'est le comportement voulu, un échec nommé
+   * plutôt qu'une assertion incompréhensible.
    */
-  function premiereFinPour(raison: 'interventions' | 'plateauVide'): string {
-    for (let seed = 1; seed < 5000; seed += 1) {
-      try {
-        return codeDuneFin(raison, seed);
-      } catch {
-        // Cette graine ne finit pas ainsi : la suivante.
-      }
-    }
-    throw new Error(`aucune graine ne finit par « ${raison} »`);
-  }
+  const GRAINE_INTERVENTIONS = 2;
+  const GRAINE_PLATEAU_VIDE = 506;
 
   /** Coller un code, comme le testeur : le champ, puis le bouton (#128). */
   function coller(code: string) {
@@ -900,7 +919,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   it('trois Interventions terminent la partie, et le bandeau nomme le vainqueur', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    coller(premiereFinPour('interventions'));
+    coller(codeDuneFin('interventions', GRAINE_INTERVENTIONS));
 
     // Le vainqueur, la raison, et **le vocabulaire du PvP** : « la Direction » n'apparaît
     // pas dans le bandeau d'une partie à deux.
@@ -912,11 +931,12 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   it('une partie sans aucun Planqué se termine aussi, et le bandeau dit pourquoi', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    coller(premiereFinPour('plateauVide'));
+    coller(codeDuneFin('plateauVide', GRAINE_PLATEAU_VIDE));
 
     expect(screen.getByText('Victoire : l’autre camp n’a plus aucun Planqué.')).toBeInTheDocument();
-    // La recherche de graine (`premiereFinPour`) peut parcourir beaucoup de graines avant la fin voulue.
-  }, 60_000);
+    // Graine figée : le balayage de 506 graines qui la trouvait est tombé le 28/10/2026
+    // (il frisait les 60 s). Le test repasse sous la seconde.
+  });
 
   it('l’abandon tombe sur le camp qui le déclare, et l’écran le dit des deux côtés', () => {
     // Une graine figée : la partie à deux se crée depuis l'horloge.

@@ -2,16 +2,39 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Coffee, PackageOpen, Swords } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
+import { NOTES_VERSIONS, type NoteVersion } from '@/data/versions';
 import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
-
+import { APP_LABEL, APP_VERSION } from '@/version';
 import { avancementTirable, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { SceneOuverture } from '@/animation/ouverture/SceneOuverture';
 import { jouer } from '@/audio/sons';
 
-export function Home() {
+/** La date se lit en français (« 21 octobre 2026 ») : `date` est un jour, pas un instant. */
+function dateLongue(jour: string): string {
+  return new Date(`${jour}T00:00:00Z`).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC'
+  });
+}
+
+/**
+ * **La dernière release publiée** (#274) : la note de la version sous les yeux si elle est
+ * sortie, sinon la plus récente des notes **publiées** — un brouillon attend sa release et
+ * ne s'annonce donc pas ici. La donnée vient de `src/data/versions.ts` (D-090), jamais d'un
+ * numéro recopié ; `notes` est injectable pour que le test éprouve le cas du brouillon sans
+ * dépendre de l'état du journal un jour donné.
+ */
+function derniereRelease(notes: readonly NoteVersion[]): NoteVersion | undefined {
+  return notes.find((note) => !note.brouillon && note.version === APP_VERSION) ?? notes.find((note) => !note.brouillon);
+}
+
+export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[] } = {}) {
   const { owned, deck, openPack, packsOpened } = useStore();
+  const derniere = derniereRelease(notes);
   const [lastPack, setLastPack] = useState<Card[] | null>(null);
   /** Les cartes de l'Arrivage que le testeur n'avait pas : une carte tirée deux fois n'est neuve qu'une. */
   const [nouvelles, setNouvelles] = useState<ReadonlySet<number>>(() => new Set());
@@ -53,16 +76,28 @@ export function Home() {
           ta main.
         </p>
         <div className="hero__actions">
-          <button type="button" className="button button--gold button--big" onClick={handleOpenPack}>
-            <PackageOpen size={20} /> Ouvrir un Arrivage
+          <button type="button" className="button button--gold button--big hero__ouvrir" onClick={handleOpenPack}>
+            <PackageOpen size={22} /> Ouvrir un Arrivage
           </button>
           <Link className="button button--primary button--big" to="/battle">
             <Swords size={20} /> Affronter la Direction
           </Link>
         </div>
+        {/* Le compteur (#273) : ce qu'un testeur a ouvert depuis le début. L'alpha ne limite
+            rien (D-127, Arrivages illimités et gratuits) : aucun quota, aucun prix, aucun
+            bouton grisé ici — la cadence est une décision de beta. */}
+        <div className="hero__packs">
+          <p className="hero__packs-compteur">
+            {/* La phrase et le chiffre dans le **même** nœud de texte : le compteur se lit
+                d'un bloc, et un test qui cherche « 3 Arrivages ouverts » le trouve. */}
+            <strong className="hero__packs-nombre">
+              {packsOpened} Arrivage{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''}
+            </strong>
+          </p>
+          {packsOpened === 0 && <p className="hero__packs-invite">Aucun Arrivage ouvert : le premier est pour toi.</p>}
+        </div>
         <div className="hero__hint">
-          <Coffee size={14} /> {packsOpened} Arrivage{packsOpened > 1 ? 's' : ''} ouvert{packsOpened > 1 ? 's' : ''} ·{' '}
-          {uniqueOwned}/{ALL_CARDS.length} cartes
+          <Coffee size={14} /> {uniqueOwned}/{ALL_CARDS.length} cartes uniques
         </div>
       </section>
 
@@ -84,6 +119,32 @@ export function Home() {
           <strong>{deck.length}/20</strong>
           <span className="muted">cartes équipées</span>
         </article>
+      </section>
+
+      {/* La dernière release (#274) : une seule, avec sa date, et une porte vers l'historique
+          complet. L'accueil est un écran de jeu, pas un journal : les précédentes restent sur
+          `/feuille-de-route`. Le libellé vient de `APP_LABEL`, la note de `versions.ts` — rien
+          n'est recopié (`src/version.test.ts` le refuse). */}
+      <section className="section panel home__version">
+        <div className="home__version-texte">
+          <h2 className="home__version-titre">La dernière version</h2>
+          <p className="home__version-libelle">
+            <strong className="settings__version">{APP_LABEL}</strong>
+            {derniere && <span className="muted"> · {derniere.titre}</span>}
+          </p>
+          <p className="muted home__version-date">
+            {derniere ? (
+              <>
+                Publiée le <time dateTime={derniere.date}>{dateLongue(derniere.date)}</time>
+              </>
+            ) : (
+              'Cette build n’a pas encore sa note : elle arrive avec la publication.'
+            )}
+          </p>
+        </div>
+        <Link className="button" to="/feuille-de-route">
+          Voir toutes les versions
+        </Link>
       </section>
 
       {/* L'Arrivage est un dialogue du composant générique (D-035, #131) : rôle, Échap et
