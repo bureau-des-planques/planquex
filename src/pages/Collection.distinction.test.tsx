@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lenteur justifiée (D-143 (5)) — le rôle de la Collection (#276), rendu sous jsdom
 import { describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
 import { Collection } from './Collection';

@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lenteur justifiée (D-143 (5)) — lit le routeur et ses liens : le coût est le démarrage de jsdom
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { cleanup, render } from '@testing-library/react';

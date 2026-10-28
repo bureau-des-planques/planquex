@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — le fuzz des invariants sur des graines seedées : c'est le calcul
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, getCard, isPlanque } from '@/data';
 import type { BattleAction, BattleState, CardInstance, FaitMoteur, PlayerId } from '@/data/types';

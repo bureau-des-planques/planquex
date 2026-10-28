@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — des parties entières et seedées pour mesurer la Direction (D-134)
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SEARCH_OPTIONS } from '@/game/ia';
 import {

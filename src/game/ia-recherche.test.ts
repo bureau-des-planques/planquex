@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — la recherche à deux coups explore l'arbre à chaque cas
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { BattleState, CardInstance } from '@/data/types';
 import { applyAction, createBattle, createInstance, legalActions } from '@/game/engine';

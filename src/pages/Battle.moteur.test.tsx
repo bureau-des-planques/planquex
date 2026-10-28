@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lenteur justifiée (D-143 (5)) — les mécaniques du moteur vues à l'écran, rendues sous jsdom
 import { describe, it, expect, afterAll } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Battle } from './Battle';

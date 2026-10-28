@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lent : chaque scénario démarre le serveur sur une base PGlite neuve, migrée à chaque fois (`supabase/pglite.ts`) ; le coût est ce montage. Voir D-143 (4) : on le partage, on ne retire aucun cas.
+// Lent : chaque scénario démarre un serveur HTTP et son monde sur une base PGlite recyclée (`supabase/pglite.ts`) ; le coût est le serveur, pas le montage (D-143 (4), #422).
 /**
  * Le poste de pilotage local — `tools/admin/` (#184, D-088, D-089, D-091).
  *

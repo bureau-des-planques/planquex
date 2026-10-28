@@ -15,12 +15,13 @@ cd /home/chapax/Documents/opencode/gamedev/planquex
 | `npm install` | Installer les dépendances |  |
 | `npm run dev` | Serveur Vite sur `:5178` |  |
 | `npm run check` | `tsc -b` |  |
+| `npm run test:rapide` | **Les types, puis les gardes de cohérence, en quelques secondes** (#422, D-143 (5)) : `tsc -b`, puis les cinq fichiers qui lisent un document — `coherence-docs` (commandes, compte de décisions, vocabulaire retiré), `compteurs`, `coherence-generateurs`, `decisions`, `index-decisions`. C'est le premier réflexe d'un agent : une erreur de type ou une doc qui ment se voit **avant** la suite lourde (≈ 4 s, mesuré le 28/10/2026), là où `npm test` en coûte 75. Note : D-143 cite aussi une garde `renommages` — **aucun fichier de ce nom n'existe** sous `scripts/` (vérifié le 28/10/2026), elle n'est donc pas dans la liste | `scripts/coherence-docs.test.ts` garde la liste dans les deux sens : un script de `package.json` absent d'ici fait échouer la suite |
 | `npm test` | `vitest run` |  |
 | `npm test -- --project=node` | **La moitié `node` de la suite** — moteur, données, `scripts/`, `supabase/`, `tools/`. C'est ce que lance le job `tests-noyau` (D-115, #257), pour reproduire une CI rouge en local |  |
 | `npm test -- --project=ui` | **La moitié `ui`** — les écrans sous jsdom. C'est ce que lance le job `tests-ecrans` (D-115, #257) |  |
 | `npm run tests:lents` | **Les tests les plus lents, et la règle des 5 s** (D-143 (5), #422). Lance la suite entière (les deux projets) et écrit `node_modules/.durees-tests.json` (plusieurs minutes : sous `flock /tmp/planquex-lourd.lock` pour un agent), puis imprime les **dix plus lents** et **sort 1** si un fichier au-delà de 5 s n'a pas de ligne `Lent :` en tête. `node scripts/durees-tests.mjs [rapport]` relit un rapport sans relancer la suite | Table publiée à la fin de ce document, mesure du 28/10/2026 |
 | `npm run format` | **Formate** le code (`prettier --write`) — src, scripts, tools, supabase, JSON et TS de la racine. `src/data/`, les docs et les sorties de build sont exclus : `.prettierignore` dit pourquoi, ligne à ligne |  |
-| `npm run format:check` | **Vérifie** le formatage sans écrire. La CI le lance après `check` ; épinglé en devDependency exacte |  |
+| `npm run format:check` | **Vérifie** le formatage sans écrire. La CI le lance après `check` ; épinglé en devDependency exacte. Depuis #422 il passe par `scripts/format-check.mjs`, qui **résout le binaire de `node_modules`** (jamais `npx`, jamais le `PATH`) et, s'il manque, **échoue avec la marche à suivre** au lieu de sortir **127** — c'est un 127 muet qui a fait tomber deux PR le 28/10/2026. `npm run installer` vérifie le binaire après `npm ci` | `scripts/format-check.test.ts` (les deux chemins, dont l'absence, sur un dépôt fabriqué) |
 | `npm run test:watch` | Vitest en watch |  |
 | `npm run build` | `tsc -b && vite build` |  |
 | `npm run preview` | Servir `dist/` |  |

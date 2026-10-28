@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lenteur justifiée (D-143 (5)) — l'écran Deck sous jsdom, cas par cas sur la courbe de coût (#364)
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { Deck } from './Deck';
