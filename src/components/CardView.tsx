@@ -150,9 +150,7 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
           // (hors ligne, hors précache), la carte garde son fond au lieu d'un trou.
           // **Une variante sans planche montre celle de sa base** (D-139) : le repli se fait
           // par **résolution** (`artFileOf`), jamais par une copie dans les données.
-          background: artUrl(art)
-            ? `url('${artUrl(art)}') 50% 28% / cover no-repeat, ${APLAT_FACTION}`
-            : APLAT_FACTION
+          background: artUrl(art) ? `url('${artUrl(art)}') 50% 28% / cover no-repeat, ${APLAT_FACTION}` : APLAT_FACTION
         }}
       >
         {/* Spec #95 : « l'image **si elle existe** ; sinon l'aplat **+ glyphe** ». Le
