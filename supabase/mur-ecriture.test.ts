@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
+// Lent : un cas par scénario, chacun avec son SQL ; `base()` reprend une instance PGlite vidée au lieu de la remonter (D-143 (4), #422) — il reste le travail SQL, pas la règle testée.
 /**
  * Les écritures du mur : commenter, corriger, retirer, et le tri de l'administration
  * (#138, #139, migration `0006_tri_et_corrections.sql`, D-088).
