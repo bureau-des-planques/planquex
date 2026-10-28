@@ -53,6 +53,11 @@ migrations de store, au moteur et aux revues de session. Le reste reste gratuit.
 
 ### Appeler `subagent` — `model` explicite, repli, `sessionID`
 
+**Le prompt se rend par `npm run dispatch -- --ticket N --decision`** (rétro du 28/10/2026,
+`docs/agents/dispatch.md`) : worktree absolu, branche, corps du ticket, zones, définition de
+fini, numéro de décision réservé. 74 dispatchs écrits à la main sur la période, dont les
+oublis se payaient en messages de rattrapage.
+
 Mesuré du 23 au 26/10/2026 (94 appels `subagent`) :
 
 - **Toujours passer `model`.** Sans lui, l'agent prend le modèle lié à son profil, c'est-à-dire le

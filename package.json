@@ -40,7 +40,8 @@
     "index:decisions": "node scripts/index-decisions.mjs",
     "ci:etat": "node scripts/ci-etat.mjs",
     "sons": "node scripts/sons.mjs",
-    "sons:verifier": "node scripts/sons.mjs --verifier"
+    "sons:verifier": "node scripts/sons.mjs --verifier",
+    "dispatch": "node scripts/dispatch.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
