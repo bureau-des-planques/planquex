@@ -26,10 +26,15 @@ function manquements(yaml: string): string[] {
   if (!/^concurrency:/m.test(yaml)) ecarts.push('pas de concurrency (deux déploiements se chevaucheraient)');
 
   const avantBuild = yaml.indexOf('npm run build');
-  const deploiement = yaml.indexOf('vercel deploy');
+  const deploiement = yaml.search(/vercel(@\S+)? deploy/);
   if (deploiement === -1) ecarts.push('aucun `vercel deploy`');
   else if (avantBuild === -1 || avantBuild > deploiement) ecarts.push('build absent ou placé après le déploiement');
-  if (!/^\s+npm exec --no -- vercel deploy[^\n]*--prod/m.test(yaml)) ecarts.push('le déploiement n’est pas en --prod');
+  if (!/^\s+npx --yes vercel@\S+ deploy[^\n]*--prod/m.test(yaml)) ecarts.push('le déploiement n’est pas en --prod');
+  // Le CLI n'est pas une dépendance (AGENTS.md §1.7) : chaque appel le prend à une version exacte.
+  for (const appel of yaml.match(/vercel@\S*/g) ?? []) {
+    if (!/^vercel@\d+\.\d+\.\d+$/.test(appel)) ecarts.push(`CLI Vercel sans version exacte : ${appel}`);
+  }
+  if (/npm exec[^\n]*vercel|^\s+vercel /m.test(yaml)) ecarts.push('CLI Vercel appelé sans version épinglée');
 
   if (!yaml.includes('secrets.VERCEL_TOKEN')) ecarts.push('jeton non lu dans secrets.VERCEL_TOKEN');
   if (/VERCEL_TOKEN=\S|--token[ =]/.test(yaml)) ecarts.push('jeton écrit en clair ou sur la ligne de commande');
@@ -61,12 +66,17 @@ describe('.github/workflows/deploiement.yml (#420, D-140)', () => {
       '    steps:',
       '      - env:',
       '          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}',
-      '        run: npm exec --no -- vercel deploy --prod',
+      '        run: npx --yes vercel@64.0.2 deploy --prod',
       ''
     ].join('\n');
     const ecarts = manquements(fabrique).join('\n');
     expect(ecarts).toMatch(/build absent/);
     expect(ecarts).toMatch(/jeton manquant ne fait pas échouer/);
+  });
+
+  it('le contrôle mord : un CLI Vercel sans version exacte est refusé', () => {
+    const flottant = workflow.replaceAll('vercel@64.0.2', 'vercel@latest');
+    expect(manquements(flottant).join('\n')).toMatch(/sans version exacte/);
   });
 
   it('le contrôle mord : un déclenchement sur les branches ou un jeton en clair sont refusés', () => {

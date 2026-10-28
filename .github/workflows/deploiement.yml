@@ -106,6 +106,8 @@ jobs:
 
       # `vercel build` produit la sortie préconstruite, celle que `--prebuilt` publie : ce qui part
       # est ce que ce job vient de construire, pas une seconde build distante.
+      # Le CLI n'est **pas** une dépendance du dépôt (AGENTS.md §1.7) : `npx` le prend à une version
+      # **exacte**, ici seulement, au moment du déploiement. La monter se fait ici, et dans le test.
       - name: Publier en production (CLI Vercel)
         if: steps.deja.outputs.deja == '0'
         env:
@@ -113,5 +115,5 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          npm exec --no -- vercel build --prod
-          npm exec --no -- vercel deploy --prebuilt --prod
+          npx --yes vercel@64.0.2 build --prod
+          npx --yes vercel@64.0.2 deploy --prebuilt --prod

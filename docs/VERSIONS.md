@@ -114,7 +114,7 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    chemin strict.
 8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
-**Entre deux releases, rien ne se déploie (D-140).** Une fusion sur `main` ne publie plus la production : elle rend `main` déployable, et c'est le tag qui la publie. Un aperçu de PR ne se déploie plus non plus.
+**Entre deux releases, rien ne se déploie (D-140)** — **une fois la bascule faite**. Le workflow de tag existe (#420, étape 1) ; la bascule demande encore trois gestes humains : poser `VERCEL_TOKEN`, `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` dans les secrets GitHub, **réussir un premier déploiement par tag**, puis seulement couper l'auto-déploiement de Vercel (`git.deploymentEnabled`). D'ici là, une fusion sur `main` publie encore la production, et un aperçu de PR se déploie encore.
 
 **Cadence (D-128).** Une release part quand un **lot cohérent** est prêt, et **pas plus d'une par
 jour** : deux releases le même jour ont déjà eu lieu, et le testeur doit pouvoir dire « je suis sur
