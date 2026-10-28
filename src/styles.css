@@ -4304,3 +4304,47 @@ h2 {
   margin: 0;
 }
 
+/* ---------- La Collection et le Deck, deux rôles (#276) ---------- */
+
+/* La phrase qui dit le rôle de la Collection : ce qu'on possède, pas ce qu'on joue. */
+.collection__role {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin: 0.3rem 0 0;
+}
+
+/* **Les contraintes du Deck** : quatre lignes lues d'un coup d'œil, avant le geste. */
+.deck-contraintes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.deck-contraintes__titre {
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.deck-contraintes__liste {
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  gap: 0.3rem 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.deck-contraintes__liste strong {
+  color: var(--text);
+}
+
+/* Le sélecteur borné du Deck : la recherche prend la largeur, la grille suit. */
+.deck-selecteur .field--search {
+  margin-bottom: 0.75rem;
+  max-width: 26rem;
+}
+
