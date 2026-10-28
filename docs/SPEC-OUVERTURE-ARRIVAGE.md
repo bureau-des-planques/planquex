@@ -81,10 +81,11 @@ première visite (PWA, #357).
 | Ordre | l'ordre du tirage, une carte après l'autre (décalage ≈ 80 ms) |
 | Son | « pop » grave et court à l'ouverture |
 
-**Dette assumée** : dans le prototype, l'éventail se pose trop haut et les cartes sont petites
-(30 % de la largeur de la zone, qui fait 315 px). Dans la vraie modale elles prennent leur taille, et
-l'éventail doit se poser **devant le sachet**. C'est le seul temps qui reste « à affiner » à la
-validation du 28/10/2026.
+**Ce qui a changé depuis le prototype, en écrivant le vrai code** : les cartes ne tenaient pas dans
+la largeur de la pochette (315 px) et s'empilaient. Elles émergent donc dans la bande du haut, puis
+se posent en **rangée sous le sachet**, à la taille du dialogue — et la rangée **garde sa place**
+même avant l'ouverture, sinon le sachet rétrécit d'un coup quand elle apparaît (saut de mise en page
+vu sur la planche).
 
 ## 4. La machine d'états
 
@@ -149,10 +150,26 @@ doigt) suit le geste bien mieux qu'un fichier déclenché au clic : piste à gar
 
 ## 8. Ce qui reste ouvert
 
-1. **La sortie des cartes** (cf. §3.4) : éventail, taille, place, et la descente du sachet.
-2. **Le repli sans WebGL** : quelle image montrer à la place du creux.
-3. **Les planches définitives** : sept photos par sachet, mais combien de sachets ? Un seul pour
-   l'instant — l'Arrivage n'a pas de variante visuelle, et rien ne le demande.
-4. **Le tracé de la déchirure** : le prototype fond entre trois photos ; une vraie déchirure qui
-   suit le doigt au millimètre demanderait un tracé vectoriel (recherche §2) — à trancher si le
-   fondu ne suffit pas à l'usage.
+1. **Le tracé de la déchirure** : on **fond** entre trois photos ; une déchirure qui suive le doigt
+   au millimètre demanderait un tracé vectoriel (recherche §2). À trancher si le fondu ne suffit
+   pas à l'usage — c'est le seul temps qui n'est pas cranté au pixel.
+2. **Les planches définitives** : sept photos par sachet, pour **un** sachet. L'Arrivage n'a pas de
+   variante visuelle, et rien ne la demande aujourd'hui.
+3. **Le son** : trois moments sont exposés (`contact`, `dechirure`, `ouverture`), aucun n'est joué.
+   D-137 n'autorise **qu'un** son d'Arrivage : c'est #378 qui décide du branchement, #379 du timbre.
+4. **La mesure sur appareil** : rien n'a été mesuré en images par seconde. Le creux est un shader
+   WebGL2 ; sa tenue sur un téléphone milieu de gamme n'est **pas** prouvée.
+
+## 9. Où en est le code (28/10/2026)
+
+| Morceau | Fichier | Gardé par |
+|---|---|---|
+| Les cinq phases et les trois seuils | `src/animation/ouverture/etats.ts` | `etats.test.ts` (14 cas, dont les bornes exactes et des cas fautifs) |
+| Le shader du creux, facultatif | `src/animation/ouverture/creux.ts` | rendu `null` sans WebGL2 ; repli CSS dans la scène |
+| La scène et les gestes | `src/animation/ouverture/SceneOuverture.tsx` | `SceneOuverture.test.tsx` (6 cas : cartes dès le premier rendu, geste annulé, titre compté, réouverture, mouvement réduit) |
+| Le poids du lot photo | `src/animation/ouverture/plates/` | `plates.test.ts` — **budget de 400 Ko**, neuf fichiers attendus |
+| La preuve de rendu | `docs/preuves/ouverture-arrivage-2026-10-28/` | planche de frames + la commande exacte |
+
+Commandes passées le 28/10/2026 : `npm run check` (exit 0), `npx vitest run` (**173 fichiers,
+2069 tests**), `npm run garde-fous` (**28/28 mutations**), `npm run build` (exit 0, `dist/index.html`
+et `dist/sw.js` présents).
