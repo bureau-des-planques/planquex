@@ -247,11 +247,13 @@ rareté, `.card__face` est la carte elle-même.
 ### 2.2 Grille et marges
 
 - Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem — **deux colonnes** à 420 px (cartes de 188 × 263 px). Sous **420 px** elle est **forcée à deux colonnes** (`repeat(2, minmax(0, 1fr))`) : à 360 px la page offre 328 px, deux cartes de 160 px avec leur gouttière en demandent 332, et `auto-fill` retombait à une colonne (#131).
-- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **4 px** (l'anneau), rayon 10 px.
-- Face : rayon 6 px, filet noir intérieur, `gap` 0.3rem ; chaque bloc porte son propre espacement horizontal (0.4rem).
-- Illustration : **elle prend l'espace restant** (`flex`), rayon 4 px, filet interne double (noir à l'extérieur, clair à l'intérieur), cadrage **haut** (`50% 28%`) — les illustrations sont des portraits.
+- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **4 px** (l'anneau), rayon 12 px. L'ombre est noire et portée (`0 12px 24px -8px`), jamais colorée : c'est le relief, pas un halo.
+- Face : rayon 8 px (le rayon de l'anneau moins son padding), filet noir extérieur et filet clair intérieur, `gap` 0.3rem ; chaque bloc porte son propre espacement horizontal (0.4rem).
+- Illustration : **elle prend l'espace restant** (`flex`), rayon 6 px, filet interne triple (clair, puis noir), un voile sombre en bas (`.card__art::before`) pour que le pied s'y détache, cadrage **haut** (`50% 28%`) — les illustrations sont des portraits. L'image elle-même n'est jamais retouchée.
 - Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
 - Pips de café : 8 px, `gap` 2 px — **hors du combat** ; dans `.battle` : 14 px (18 px dans la fiche du camp), anneau crème, `gap` 0,3 rem (#290).
+- **Le pied et les Pressions** (`.card__attacks`) : le café, le nom et les dégâts s'alignent en colonnes d'une carte à l'autre ; les dégâts passent en titre (`--font-display`, 800). Le pied (`.card__footer`) porte un voile sombre.
+- **Le dos de carte** (`.ouverture__dos`, `SceneOuverture.tsx`) : bleu nuit, treillis d'or, cadre à trois filets, médaillon « BP », deux losanges sur l'axe vertical. Une carte rare, brillante ou secrète prend sa **rareté** pour or (`--dos-or`), filets compris ; son appel (`ouverture-appel`) repart de `--dos-cadre` pour ne pas perdre le cadre.
 
 ### 2.3 États
 
