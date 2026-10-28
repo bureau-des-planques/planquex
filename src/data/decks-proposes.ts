@@ -2,9 +2,9 @@ import type { CafeType, Vivier } from './types';
 
 /**
  * Les **Decks proposés** (#141, D-063, D-069, D-149) : des Decks de 20 cartes que le joueur
- * charge en un geste depuis l'écran du Deck, quelle que soit sa Collection. **Trois**, un par
- * archétype (D-149, qui amende les cinq de D-069) : ce sont aussi les Decks que joue la Direction
- * selon sa difficulté (`src/game/deck-direction.ts`).
+ * charge en un geste depuis l'écran du Deck, quelle que soit sa Collection. Le joueur en a
+ * **cinq** (D-069) ; **trois** portent un `archetype`, un par archétype (D-125 (3), D-149) : ce
+ * sont les Decks que joue la Direction selon sa difficulté (`src/game/deck-direction.ts`).
  *
  * ⚠️ **Les listes sont PROVISOIRES.** D-069 acte le jeu d'archétypes (cinq Decks proposés, leur
  * stratégie, leur faiblesse) mais réserve la **fabrication des listes** à après la vague
@@ -18,8 +18,11 @@ export interface DeckPropose {
   vivier: Vivier | 'MIXTE';
   /** Les types de café du Deck proposé (1 à 3, productibles) : ils partent avec lui (#91). */
   cafeTypes: readonly CafeType[];
-  /** L'archétype du Deck (D-125 (3)) : un Deck proposé par archétype. */
-  archetype: 'agressif' | 'controle' | 'milieu';
+  /**
+   * L'archétype du Deck, pour les trois que joue la Direction (D-125 (3), D-149) : un par
+   * archétype. Les deux autres Decks proposés n'en portent pas : le joueur seul les charge.
+   */
+  archetype?: 'agressif' | 'controle' | 'milieu';
   /** Ce qu'il fait, en une phrase. */
   strategie: string;
   /** Contre quoi il est faible, en une phrase. */
@@ -79,6 +82,29 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
     ]
   },
   {
+    id: 'la-paperasse',
+    name: 'La paperasse',
+    vivier: 'BUREAUX',
+    cafeTypes: ['SSE', 'RH'],
+    strategie: 'Endurance : du soin et des Talents de ressource, il gagne en durant.',
+    faiblesse: 'Un burst qui l’abat avant qu’il ait soigné quoi que ce soit.',
+    cartes: [
+      ...x('sse-infirmier-site', 2),
+      ...x('sse-infirmiere-travail', 2),
+      ...x('sse-medecin-travail'),
+      ...x('sse-preventeur', 2),
+      ...x('sse-ergonome', 2),
+      ...x('rh-assistant-rh', 2),
+      ...x('rh-charge-recrutement', 2),
+      ...x('rh-drh'),
+      ...x('rh-gestionnaire-formation', 2),
+      ...x('rh-responsable-formation'),
+      ...x('sse-trousse-secours'),
+      ...x('sse-visite-medicale'),
+      ...x('rh-reunion-individuelle')
+    ]
+  },
+  {
     id: 'la-bonne-humeur',
     name: 'La bonne humeur',
     vivier: 'BUREAUX',
@@ -98,6 +124,30 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
       ...x('qvt-chef-projet-qvt', 2),
       ...x('qvt-charge-mission', 2),
       ...x('qvt-yoga-du-rire')
+    ]
+  },
+  {
+    id: 'les-renforts',
+    name: 'Les renforts',
+    vivier: 'MIXTE',
+    // D-069 écrit « ATELIER + INTERIM », mais INTERIM (Dragon) n'est jamais un type de café
+    // (D-034). Les Pressions des Intérimaires exigent la paire RH + ATELIER (D-037 (3)),
+    // comme `SIMULATION_CAFE_TYPES` : c'est elle qui arme le joker incolore.
+    cafeTypes: ['ATELIER', 'RH'],
+    strategie: 'Le joker incolore : des Intérimaires qui s’adaptent, soutenus par la maintenance de l’Atelier.',
+    faiblesse: 'Les Decks d’un seul type, plus réguliers et plus rapides.',
+    cartes: [
+      ...x('interim-interimaire', 2),
+      ...x('interim-interimaire-confirme', 2),
+      ...x('interim-chef-equipe-interimaire'),
+      ...x('interim-consultant-interimaire', 2),
+      ...x('interim-responsable-interim'),
+      ...x('atelier-joueur-de-flute', 2),
+      ...x('atelier-technicien-systeme', 2),
+      ...x('atelier-opticien', 2),
+      ...x('atelier-rpo', 2),
+      ...x('atelier-regleur', 2),
+      ...x('atelier-rpi', 2)
     ]
   }
 ];

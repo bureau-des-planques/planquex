@@ -32,13 +32,14 @@ describe('Decks proposés (#141)', () => {
     for (const vivier of ['ATELIER', 'ETAGE', 'BUREAUX']) expect(viviers.has(vivier as never)).toBe(true);
   });
 
-  it('en propose trois, aux identifiants uniques (D-149, amende D-069)', () => {
-    expect(DECKS_PROPOSES).toHaveLength(3);
-    expect(new Set(DECKS_PROPOSES.map((deckPropose) => deckPropose.id)).size).toBe(3);
+  it('en propose cinq au joueur, aux identifiants uniques (D-069, D-149)', () => {
+    expect(DECKS_PROPOSES).toHaveLength(5);
+    expect(new Set(DECKS_PROPOSES.map((deckPropose) => deckPropose.id)).size).toBe(5);
   });
 
-  it('un par archétype : agressif, contrôle, milieu (D-125 (3))', () => {
-    expect(DECKS_PROPOSES.map((deckPropose) => deckPropose.archetype).sort()).toEqual(['agressif', 'controle', 'milieu']);
+  it('trois portent un archétype, un de chaque : agressif, contrôle, milieu (D-125 (3), D-149)', () => {
+    const archetypes = DECKS_PROPOSES.flatMap((deckPropose) => (deckPropose.archetype ? [deckPropose.archetype] : []));
+    expect(archetypes.sort()).toEqual(['agressif', 'controle', 'milieu']);
   });
 
   it('le contrôle mord : un Deck proposé à 21 cartes est refusé', () => {
