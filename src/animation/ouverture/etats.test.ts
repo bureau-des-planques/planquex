@@ -85,6 +85,24 @@ describe('l’ouverture d’un Arrivage — la machine des quatre temps (#283)',
     expect(etat.dechirure).toBe(0);
   });
 
+  it('le seuil se joue à la borne : juste en dessous on referme, exactement dessus on ouvre', () => {
+    // Deux cas fautifs qui encadrent la constante : c'est ce qui prouve que le seuil sert à
+    // quelque chose, et pas seulement qu'une ligne de code existe.
+    const avant: EtatOuverture = { phase: 'dechirure', etiquette: 1, dechirure: SEUIL_DECHIRURE - 0.01 };
+    expect(relacher(avant).phase).toBe('dechirure');
+    const pile: EtatOuverture = { phase: 'dechirure', etiquette: 1, dechirure: SEUIL_DECHIRURE };
+    expect(relacher(pile).phase).toBe('ouvert');
+  });
+
+  it('le seuil de l’étiquette se joue aussi à la borne', () => {
+    const avant: EtatOuverture = { phase: 'etiquette', etiquette: SEUIL_ETIQUETTE - 0.01, dechirure: 0 };
+    const apres = relacher(avant);
+    expect(apres.phase).toBe('ferme');
+    expect(apres.etiquette).toBe(0);
+    const pile: EtatOuverture = { phase: 'etiquette', etiquette: SEUIL_ETIQUETTE, dechirure: 0 };
+    expect(relacher(pile).phase).toBe('dechirure');
+  });
+
   it('la ligne parcourue en entier ouvre le sachet', () => {
     let etat = detacher(creer());
     etat = demarrer(etat, 'dechirure');

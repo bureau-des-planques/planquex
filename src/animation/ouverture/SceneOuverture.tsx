@@ -276,6 +276,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
           ref={zoneRef}
           className="ouverture__zone"
           data-zone
+          role="group"
+          aria-label="Le sachet"
+          aria-describedby="ouverture-consigne"
           onPointerDown={surAppui}
           onPointerMove={surMouvement}
           onPointerUp={surRelache}
@@ -325,7 +328,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         </div>
       </div>
 
-      <p className="ouverture__consigne" data-consigne>
+      <p className="ouverture__consigne" id="ouverture-consigne" data-consigne>
         {etat.phase === 'ferme' && "Touche le sachet, puis tire l'étiquette"}
         {etat.phase === 'etiquette' && 'Tire encore, ou lâche : elle se recolle'}
         {etat.phase === 'dechirure' && 'Glisse le doigt sur les pointillés'}

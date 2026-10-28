@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ALL_CARDS } from '@/data';
 import { SceneOuverture } from './SceneOuverture';
 import { useStore } from '@/store/useStore';
@@ -43,6 +43,25 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(within(scene as HTMLElement).getAllByText('Nouvelle')).toHaveLength(2);
     // Le contrôle mord : si les cartes n'étaient rendues qu'à l'ouverture, ce test tomberait.
     expect(scene.dataset.etape).toBe('ferme');
+  });
+
+  it('le titre compte les cartes neuves, il n’annonce plus « cinq nouvelles cartes »', () => {
+    const scene = monter();
+    const titre = scene.querySelector('.ouverture__titre') as HTMLElement;
+    expect(titre.textContent).toContain('5 cartes');
+    expect(titre.textContent).toContain('2 nouvelles');
+    // Le cas fautif que le ticket vise : annoncer cinq nouvelles alors que deux le sont.
+    expect(titre.textContent).not.toMatch(/cinq nouvelles/i);
+  });
+
+  it('rouvrir un Arrivage repart d’un sachet fermé', () => {
+    const premier = monter();
+    fireEvent.click(within(premier as HTMLElement).getByRole('button', { name: /Tout afficher/i }));
+    expect(premier.dataset.etape).toBe('ouvert');
+    cleanup();
+    const second = monter();
+    expect(second.dataset.etape).toBe('ferme');
+    expect(second.dataset.dechirure).toBe('0.00');
   });
 
   it('le bouton « Tout afficher » mène à l’état final — c’est le chemin sans glissement', () => {
