@@ -6,6 +6,7 @@ export interface Options {
   branche: string;
   worktree: string;
   decision: boolean;
+  reprise: boolean;
   json: boolean;
   erreurs: string[];
 }
@@ -17,7 +18,9 @@ export interface Ticket {
   labels: Array<string | { name: string }>;
 }
 
-export function prochainNumero(journal: string): string;
+export function prochainNumero(...journaux: string[]): string;
+
+export function journalLePlusRecent(options?: { lancer?: (argv: string[], silencieux?: boolean) => string }): string;
 
 export function analyserArguments(argv: string[], options?: { racine?: string }): Options;
 
@@ -30,6 +33,7 @@ export function composer(entree: {
   worktree: string;
   decision: string | null;
   worktreeExiste?: boolean;
+  reprise?: boolean;
   depot?: string;
 }): string;
 

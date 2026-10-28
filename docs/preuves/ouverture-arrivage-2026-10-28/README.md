@@ -31,6 +31,28 @@ python3 $D/planche.py /tmp/tel planche.png 6 0.42
 Le script ne s'arrête pas sur une erreur de console : il l'**imprime** à la fin ; les deux passes du
 28/10/2026 en ont imprimé **zéro** (`erreurs: []`).
 
+
+## Le retournement, filmé par l'outil du dépôt (28/10/2026) — `planche-retournement-2026-10-28.png`
+
+Les planches `v3` viennent d'un script **du dossier de preuve**. Celle-ci vient de
+`scripts/filmer-animation.mjs`, l'outil que `AGENTS.md` §6 nomme : le retournement d'une carte
+est rejoué par la commande standard, sans code dédié. Seize frames, 60 ms d'écart, la zone des
+cartes ; la première carte passe du dos au recto, **aucune image ne montre de texte en miroir**
+et la carte ne disparaît à aucun instant — c'est ce que trois défauts successifs du 28/10
+avaient cassé sans témoin.
+
+```bash
+npm run build && npx vite preview --port 4181 --strictPort &
+BASE_URL=http://localhost:4181 node scripts/filmer-animation.mjs \
+  --chemin / \
+  --clic '.hero__ouvrir' --attendre '.ouverture' \
+  --clic '[data-ouvrir]' --attendre '.ouverture[data-etape="revelation"]' --pause 600 \
+  --clic '.ouverture__carte' --zone '.ouverture__cartes' \
+  --images 16 --intervalle 60 --colonnes 4
+```
+
+La planche sort dans `captures/film/planche.png` ; celle du dossier est une copie datée.
+
 ## La première version — `planche-frames.png`
 
 ## Ce que la planche montre
