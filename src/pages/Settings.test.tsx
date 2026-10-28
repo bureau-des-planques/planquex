@@ -137,10 +137,10 @@ describe('Settings — écran des Réglages', () => {
 
     expect(screen.getByText(/parties terminées sont gardées sous ton compte, solo comme à deux/i)).toBeInTheDocument();
     // D-086 : une **mention**, pas un consentement par combat — aucune case ne concerne
-    // les traces. Les deux cases de l'écran sont des réglages d'affichage : le mouvement
-    // réduit, et les raccourcis clavier du combat (#189).
-    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
-    for (const nom of [/Réduire les animations/i, /Raccourcis clavier au combat/i]) {
+    // les traces. Les trois cases de l'écran sont des réglages : le mouvement réduit, les
+    // raccourcis clavier du combat (#189), et les deux sons du jeu (D-137, #378).
+    expect(screen.getAllByRole('checkbox')).toHaveLength(3);
+    for (const nom of [/Réduire les animations/i, /Raccourcis clavier au combat/i, /Sons du jeu/i]) {
       expect(screen.getByRole('checkbox', { name: nom })).toBeInTheDocument();
     }
   });

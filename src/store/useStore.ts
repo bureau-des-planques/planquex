@@ -40,7 +40,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 11;
+export const STORAGE_VERSION = 12;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
@@ -154,6 +154,12 @@ export interface AppState {
   packsOpened: number;
   reducedMotion: boolean;
   /**
+   * **Les deux sons du jeu** (D-137, #378) : `true` par défaut. Coché, l'Arrivage et le verdict se
+   * font entendre ; décoché, `@/audio/sons` ne demande **aucune** lecture — la coupure est
+   * immédiate, il n'y a rien à recharger.
+   */
+  sons: boolean;
+  /**
    * **La densité de l'écran de combat** (#189, `SPEC-COMBAT-UI` §4.3) : `false` = `sobre`
    * (le défaut, la redite coupée), `true` = `détaillé` (les annotations remises). Ce n'est
    * qu'un réglage d'affichage : il ne cache **aucune valeur qui change une décision** — le
@@ -207,6 +213,7 @@ export interface AppState {
   reset: () => void;
   setName: (name: string) => void;
   setReducedMotion: (value: boolean) => void;
+  setSons: (value: boolean) => void;
   /** Pose la densité du combat (`true` = détaillé, `false` = sobre). */
   setCombatDetaille: (value: boolean) => void;
   /** Bascule `sobre` ↔ `détaillé` — le geste du bouton `ⓘ` et des raccourcis (#189). */
@@ -243,6 +250,7 @@ export type PersistedState = Pick<
   | 'cafeTypes'
   | 'packsOpened'
   | 'reducedMotion'
+  | 'sons'
   | 'combatDetaille'
   | 'raccourcisCombat'
   | 'rng'
@@ -259,6 +267,7 @@ export function partializeState(state: AppState): PersistedState {
     cafeTypes: state.cafeTypes,
     packsOpened: state.packsOpened,
     reducedMotion: state.reducedMotion,
+    sons: state.sons,
     combatDetaille: state.combatDetaille,
     raccourcisCombat: state.raccourcisCombat,
     rng: state.rng,
@@ -291,6 +300,7 @@ export const useStore = create<AppState>()(
       cafeTypes: [],
       packsOpened: 0,
       reducedMotion: false,
+      sons: true,
       combatDetaille: false,
       raccourcisCombat: true,
       rng: seedRng(Date.now()),
@@ -378,6 +388,7 @@ export const useStore = create<AppState>()(
         }),
       setName: (name) => set({ name }),
       setReducedMotion: (value) => set({ reducedMotion: value }),
+      setSons: (value) => set({ sons: value }),
       setCombatDetaille: (value) => set({ combatDetaille: value }),
       basculerCombatDetaille: () => set((state) => ({ combatDetaille: !state.combatDetaille })),
       setRaccourcisCombat: (value) => set({ raccourcisCombat: value }),
@@ -490,6 +501,9 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // actifs. Une valeur d'un autre type est écartée comme une absence.
     combatDetaille: typeof migrated.combatDetaille === 'boolean' ? migrated.combatDetaille : false,
     raccourcisCombat: typeof migrated.raccourcisCombat === 'boolean' ? migrated.raccourcisCombat : true,
+    // **v11 → v12** : les deux sons arrivent cochés (D-137). Un état v11 n'a pas le champ : il prend
+    // le défaut, et rien d'autre de son état ne bouge.
+    sons: typeof migrated.sons === 'boolean' ? migrated.sons : true,
     // **v4 → v5** : un état v4 a **déjà été joué** (on ne lui remontre pas la Journée
     // d'intégration, `true` d'office) ; une partie neuve n'a aucun état à migrer et
     // part de `false`.

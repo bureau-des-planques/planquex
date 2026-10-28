@@ -22,6 +22,7 @@ import { useStore } from '@/store/useStore';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
 import type { Decks, Reprise } from '@/store/partie';
 import { combatTermine, tracerCombat } from '@/store/combats';
+import { jouer } from '@/audio/sons';
 import {
   aiTurnAction,
   CAMP_NAME,
@@ -1054,6 +1055,17 @@ export function Battle() {
     // affichée, et un rejet non traité ne doit jamais remonter d'un simple effet.
     void tracerCombat(combat);
   }, [state, match, decksSolo]);
+
+  /**
+   * **Le verdict** (#378, D-137) : le second et dernier son du jeu. Il part **une fois**, quand la
+   * partie se termine — victoire ou défaite, c'est le même mécanisme.
+   */
+  const verdictJoue = useRef(false);
+  useEffect(() => {
+    if (state.phase !== 'ended' || verdictJoue.current) return;
+    verdictJoue.current = true;
+    jouer('verdict');
+  }, [state.phase]);
 
   /** Le code de la partie, recalculé à chaque état : il décrit ce qui est à l'écran. */
   const code = useMemo(() => (match ? matchCode(state, match) : ''), [state, match]);

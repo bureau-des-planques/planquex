@@ -8,6 +8,7 @@ import { useStore } from '@/store/useStore';
 import { avancementTirable, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { SceneOuverture } from '@/animation/ouverture/SceneOuverture';
+import { jouer } from '@/audio/sons';
 
 export function Home() {
   const { owned, deck, openPack, packsOpened } = useStore();
@@ -22,6 +23,9 @@ export function Home() {
   const { pourcent: completion } = avancementTirable(owned);
 
   const handleOpenPack = () => {
+    // **Le son de l'Arrivage part au clic** (D-137) : le geste est ce qui autorise l'audio, et le
+    // son accompagne l'ouverture, pas la révélation.
+    jouer('arrivage');
     const connues = new Set(Object.keys(owned).filter((id) => (owned[id] ?? 0) > 0));
     const cartes = openPack();
     const neuves = new Set<number>();
