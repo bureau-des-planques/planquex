@@ -1408,7 +1408,16 @@ describe('Battle — le plateau en cartes, sans perdre le pas-à-pas (T3, #286)'
     // l'écran, et la refonte du plateau ne l'a pas raccourci.
     expect([...cibles]).toHaveLength(7);
 
-    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    // La **graine** vient du test, pas de l'horloge (#392) : un combat neuf lancé sans
+    // partie reprise prend `Date.now()` et le plateau change de milliseconde en milliseconde.
+    // On range donc une partie **déterministe** (dix Entrants en double : le Poste et le Banc
+    // sont garnis pour les deux camps), rejouée par le chemin existant `partie` → `reprendrePartie`.
+    const entrants = ALL_CARDS.filter((card) => isPlanque(card) && isBasic(card) && !card.variantOf);
+    const deck = entrants.slice(0, 10).flatMap((card) => [card.id, card.id]);
+    const partie = partieSauvegardee(createBattle(deck, deck, 392), null, { playerDeck: deck, aiDeck: deck });
+    if (!partie) throw new Error('partie terminée : rien à rendre');
+
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
     const cartes = container.querySelectorAll('.poste__carte .card, .bench__carte .card');
     expect(cartes.length).toBeGreaterThanOrEqual(4);
     for (const carte of cartes) {

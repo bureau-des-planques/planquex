@@ -1,15 +1,17 @@
 // @vitest-environment node
 /**
  * Le mur s'annonce dans #comite — la migration `0013_discord_comite.sql` (#318, D-120 (2),
- * (3) et (5)).
+ * (3) et (5)), et son annonce d'arrivée remplacée par `0017_annonce_resume.sql` (#339).
  *
  * Même banc que les autres gardes de la base : **toutes** les migrations réelles, lues sur
  * disque et jouées dans PGlite (PostgreSQL en WASM, RLS comprise). Rien n'est recopié.
  *
  * Ce que le tuyau doit tenir, et que ce fichier éprouve :
  *
- *   (a) un post-it neuf produit **une** annonce — famille, titre, pseudo, lien ;
- *   (b) un gueulage s'annonce **sans titre ni texte** (D-085) : la fuite la plus grave du flux ;
+ *   (a) un post-it neuf produit **une** annonce — famille, titre, pseudo, **résumé**, **points**,
+ *       lien (0017) ;
+ *   (b) un gueulage s'annonce **sans titre, sans texte et sans résumé** (D-085) : la fuite la
+ *       plus grave du flux ;
  *   (c) un vrai changement de statut s'annonce **une fois**, avec la raison d'un `écarté` ;
  *       une écriture qui nomme `statut` sans le changer, une correction de texte, un
  *       déplacement, un vote ou un commentaire n'annoncent **rien** ;
@@ -27,7 +29,8 @@
  * **Le contrôle mord** (#112) : la migration est relue, un motif est remplacé, puis rejouée —
  * le déclencheur neutralisé doit produire le **doublon**, la condition à `true` la **fuite**,
  * et le plafond retiré la **rafale**. Les motifs sont des ancres : si la migration change de
- * forme, la mutation échoue bruyamment au lieu de se décaler en silence.
+ * forme, la mutation échoue bruyamment au lieu de se décaler en silence. Depuis #339, les
+ * mutations du **résumé** visent `0017` : c'est elle qui compose la phrase d'arrivée.
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -46,8 +49,12 @@ const MIGRATION_DISCORD = fichiersMigrations().find(
 );
 if (!MIGRATION_DISCORD) throw new Error('supabase/migrations/0013_discord_comite.sql introuvable');
 
+/** `0017_annonce_resume.sql` : elle remplace la phrase d'arrivée, résumé et points compris. */
+const MIGRATION_RESUME = fichiersMigrations().find((sql) => sql.includes('public.resume_postit'));
+if (!MIGRATION_RESUME) throw new Error('supabase/migrations/0017_annonce_resume.sql introuvable');
+
 /** Les migrations **avant** celle-ci : l'état du mur le jour de l'installation. */
-const AVANT_DISCORD = fichiersMigrations().filter((sql) => sql !== MIGRATION_DISCORD);
+const AVANT_DISCORD = fichiersMigrations().filter((sql) => sql !== MIGRATION_DISCORD && sql !== MIGRATION_RESUME);
 
 const URL_WEBHOOK = 'https://discord.test/api/webhooks/1/jeton-de-test';
 const LIEN = 'https://planquex.4k7.org/comite';
@@ -114,11 +121,25 @@ async function aPoste(db: Base, titre: string, options: { pseudo?: string; gueul
 
 /** Un post-it posé par A, dont on connaît l'identifiant — pour le tri et les annonces. */
 async function coller(db: Base, id: string, titre: string, gueulage = false): Promise<void> {
+  await collerTexte(
+    db,
+    id,
+    titre,
+    gueulage ? 'Ce que je pense de la direction.' : `Texte du post-it « ${titre} ».`,
+    gueulage
+  );
+}
+
+/**
+ * Un post-it posé par A, avec **son** texte : c'est lui que la 0017 résume (#339). Le texte
+ * d'un gueulage ne sort jamais, mais il est posé là pour que la fuite soit constatable.
+ */
+async function collerTexte(db: Base, id: string, titre: string, texte: string, gueulage = false): Promise<void> {
   await avecAppareil(db, APPAREIL_A, () =>
     db.query(
       `insert into public.postits (id, kind, titre, texte, version, pseudo, gueulage)
        values ($1, $2, $3, $4, $5, 'Nora', $6)`,
-      [id, gueulage ? null : 'IP', titre, gueulage ? 'Ce que je pense de la direction.' : 'Texte.', VERSION, gueulage]
+      [id, gueulage ? null : 'IP', titre, texte, VERSION, gueulage]
     )
   );
 }
@@ -169,7 +190,7 @@ const repondre = (db: Base, id: number | string, status: number | null, options:
  * ---------------------------------------------------------------------------------------- */
 
 describe('ce qui annonce (0013)', () => {
-  it('(a) un post-it neuf : famille, titre, pseudo, lien — et aucune donnée de compte', async () => {
+  it('(a) un post-it neuf : famille, titre, pseudo, résumé, lien — et aucune donnée de compte', async () => {
     const db = await base();
     try {
       await monde(db);
@@ -179,7 +200,9 @@ describe('ce qui annonce (0013)', () => {
       expect(lignes).toHaveLength(1);
       expect(lignes[0].type).toBe('postit');
       expect(lignes[0].etat).toBe('en attente');
-      expect(contenu(lignes[0])).toBe(`Nouveau post-it IP — « Le bouton ne répond pas » (Nora) · ${LIEN}`);
+      expect(contenu(lignes[0])).toBe(
+        `Nouveau post-it IP — « Le bouton ne répond pas » (Nora) · ${LIEN}\nTexte du post-it « Le bouton ne répond pas ».`
+      );
 
       // D-120 (2) : le pseudo est la seule identité admise — ni `auteur`, ni courriel, ni id.
       const brut = JSON.stringify(lignes[0].corps);
@@ -203,7 +226,7 @@ describe('ce qui annonce (0013)', () => {
         )
       );
       expect(contenu((await annonces(db))[0])).toBe(
-        `Nouveau post-it OUF — « Le deck perd une carte » (Nora) · ${LIEN}`
+        `Nouveau post-it OUF — « Le deck perd une carte » (Nora) · ${LIEN}\nTexte.`
       );
     } finally {
       await db.close();
@@ -347,6 +370,128 @@ describe('ce qui annonce (0013)', () => {
 });
 
 /* -------------------------------------------------------------------------------------------
+ * (d) — le résumé et les points de l'annonce d'arrivée (0017, #339)
+ * ---------------------------------------------------------------------------------------- */
+
+/** La phrase d'un post-it posé avec ce texte, telle que la base la compose. */
+async function phraseAvecTexte(texte: string, titre = 'Le bouton ne répond pas'): Promise<string> {
+  const db = await base();
+  try {
+    await monde(db);
+    await collerTexte(db, 'p-texte', titre, texte);
+    return contenu((await annonces(db))[0]);
+  } finally {
+    await db.close();
+  }
+}
+
+const ENTETE = (titre = 'Le bouton ne répond pas', famille = 'IP') =>
+  `Nouveau post-it ${famille} — « ${titre} » (Nora) · ${LIEN}`;
+
+describe('l’annonce porte le résumé et les points (0017, #339)', () => {
+  it('un post-it sans puce n’annonce que son résumé', async () => {
+    const phrase = await phraseAvecTexte(
+      'Le bouton ne répond pas depuis hier.\n\nLe détail du second paragraphe ne part pas.'
+    );
+
+    expect(phrase).toBe(`${ENTETE()}\nLe bouton ne répond pas depuis hier.`);
+    // Le second paragraphe reste sur le mur : le salon est un rappel, pas une copie.
+    expect(phrase).not.toContain('second paragraphe');
+  });
+
+  it('un post-it à puces annonce son résumé puis ses points, marqueurs retirés', async () => {
+    const phrase = await phraseAvecTexte(
+      [
+        'Trois choses sur le comité.',
+        '',
+        '- le bouton gris',
+        '* le compteur figé',
+        '• la pastille qui ne s’éteint plus',
+        '→ le tri qui saute',
+        '5. la cinquième puce, qui ne part pas'
+      ].join('\n')
+    );
+
+    expect(phrase).toBe(
+      `${ENTETE()}\nTrois choses sur le comité.\n• le bouton gris\n• le compteur figé\n• la pastille qui ne s’éteint plus\n• le tri qui saute`
+    );
+    // **Quatre au plus** : la cinquième reste sur le mur.
+    expect(phrase).not.toContain('cinquième puce');
+    // Les marqueurs d'origine ne survivent pas dans la phrase.
+    expect(phrase).not.toContain('- le bouton');
+    expect(phrase).not.toContain('5.');
+  });
+
+  it('un texte long est tronqué proprement : résumé à 200, puce à 100', async () => {
+    const phrase = await phraseAvecTexte(`${'A'.repeat(500)}\n\n- ${'B'.repeat(300)}`);
+    const [, resume, puce] = phrase.split('\n');
+
+    expect(resume).toBe(`${'A'.repeat(199)}…`);
+    expect(resume).toHaveLength(200);
+    expect(puce).toBe(`• ${'B'.repeat(99)}…`);
+    expect(puce).toHaveLength(102);
+    // La limite du salon est de 2 000 caractères (docs/INTEGRATIONS-DISCORD.md §9).
+    expect(phrase.length).toBeLessThanOrEqual(2000);
+  });
+
+  it('un gueulage ne laisse sortir ni titre, ni texte, ni résumé, ni puce (D-085)', async () => {
+    const db = await base();
+    try {
+      await monde(db);
+      await collerTexte(
+        db,
+        'p-gueulage-muet',
+        'Marre de tout',
+        'Ce que je pense de la direction.\n\n- la réunion de trop\n- le mail de trop',
+        true
+      );
+
+      const phrase = contenu((await annonces(db))[0]);
+      expect(phrase).toBe(`Un gueulage vient d’arriver sur le mur (Nora) · ${LIEN}`);
+      for (const fuite of ['Marre de tout', 'direction', 'réunion', '•']) {
+        expect(phrase, `le gueulage laisse fuir « ${fuite} »`).not.toContain(fuite);
+      }
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('un texte vide ne casse pas l’annonce : l’en-tête et le lien, rien de plus', async () => {
+    const db = await base();
+    try {
+      // Le repli est éprouvé **sur la fonction** : la base refuse un post-it au texte vide
+      // (contrainte `texte` de 0001), donc le cas ne peut pas venir d'une ligne réelle.
+      for (const vide of ['', '   ', '\n\n', '  \n  \n  ']) {
+        const phrase = (
+          await db.query<{ phrase: string }>(
+            `select public.phrase_postit_neuf('IP', false, 'Le bouton ne répond pas', 'Nora', $1) as phrase`,
+            [vide]
+          )
+        ).rows[0].phrase;
+        expect(phrase, `repli pour ${JSON.stringify(vide)}`).toBe(ENTETE());
+      }
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('0017 remplace la signature à quatre arguments au lieu d’en ajouter une', async () => {
+    const db = await base();
+    try {
+      const signatures = (
+        await db.query<{ signature: string }>(
+          `select oid::regprocedure::text as signature from pg_proc where proname = 'phrase_postit_neuf'`
+        )
+      ).rows.map((ligne) => ligne.signature);
+
+      expect(signatures).toEqual(['phrase_postit_neuf(text,boolean,text,text,text)']);
+    } finally {
+      await db.close();
+    }
+  });
+});
+
+/* -------------------------------------------------------------------------------------------
  * (e) — une seule couture, un faux, et le vrai `net.http_post` jamais appelé
  * ---------------------------------------------------------------------------------------- */
 
@@ -381,7 +526,9 @@ describe('le transport est une seule couture (0013)', () => {
       const vus = await appels(db);
       expect(vus).toHaveLength(1);
       expect(vus[0].url).toBe(URL_WEBHOOK);
-      expect(vus[0].corps.content).toBe(`Nouveau post-it IP — « Le bouton ne répond pas » (Nora) · ${LIEN}`);
+      expect(vus[0].corps.content).toBe(
+        `Nouveau post-it IP — « Le bouton ne répond pas » (Nora) · ${LIEN}\nTexte du post-it « Le bouton ne répond pas ».`
+      );
 
       // Le vrai transport n'a pas été touché : le test ne parle pas à Discord.
       const requetes = await db.query(`select count(*)::int as n from net._http_request`);
@@ -550,6 +697,7 @@ describe('l’installation se tait sur le passé, et la table est fermée (0013)
 
       // Le jour de l'installation : la migration arrive sur un mur déjà rempli.
       await db.exec(MIGRATION_DISCORD);
+      await db.exec(MIGRATION_RESUME);
 
       const anciennes = await annonces(db);
       expect(anciennes).toHaveLength(1);
@@ -578,6 +726,7 @@ describe('l’installation se tait sur le passé, et la table est fermée (0013)
       const avant = await annonces(db);
 
       await db.exec(MIGRATION_DISCORD);
+      await db.exec(MIGRATION_RESUME);
 
       expect(await annonces(db)).toHaveLength(avant.length);
       const jobs = await db.query<{ jobname: string; schedule: string; command: string }>(
@@ -640,13 +789,26 @@ async function refus(db: Base, appareil: string, sql: string): Promise<string> {
 
 /** Rejoue **toutes** les migrations, celle du Discord **mutée** : c'est le contrôle qui mord. */
 async function baseMutee(motif: string, remplacement: string): Promise<Base> {
-  const mutee = MIGRATION_DISCORD.replace(motif, remplacement);
-  if (mutee === MIGRATION_DISCORD) {
-    throw new Error(`mutation sans effet — le motif n’est plus dans 0013 : ${motif}`);
+  return baseMuteeDans(MIGRATION_DISCORD, motif, remplacement);
+}
+
+/**
+ * La même chose, sur **une** migration nommée : depuis #339, ce qui compose la phrase
+ * d'arrivée n'est plus dans 0013 mais dans 0017, et muter la mauvaise ne prouverait rien.
+ */
+async function baseMuteeDans(
+  migration: string,
+  motif: string,
+  remplacement: string,
+  options: { tous?: boolean } = {}
+): Promise<Base> {
+  const mutee = options.tous ? migration.replaceAll(motif, remplacement) : migration.replace(motif, remplacement);
+  if (mutee === migration) {
+    throw new Error(`mutation sans effet — le motif n’est plus dans la migration : ${motif}`);
   }
   return base(
     fichiersMigrations()
-      .map((sql) => (sql === MIGRATION_DISCORD ? mutee : sql))
+      .map((sql) => (sql === migration ? mutee : sql))
       .join('\n')
   );
 }
@@ -682,14 +844,15 @@ describe('le contrôle mord : la migration mutée laisse voir le défaut', () =>
     }
   });
 
-  it('branche du gueulage à `false` → le titre du gueulage fuit dans le salon', async () => {
-    const db = await baseMutee('when coalesce(p_gueulage, false) then', 'when false then');
+  it('branche du gueulage à `false` → le titre et le texte du gueulage fuient dans le salon', async () => {
+    const db = await baseMuteeDans(MIGRATION_RESUME, 'when coalesce(p_gueulage, false) then', 'when false then');
     try {
       await monde(db);
       await coller(db, 'p-fuite', 'Marre de tout', true);
 
       const phrase = contenu((await annonces(db))[0]);
       expect(phrase, 'la mutation doit laisser fuir le titre').toContain('Marre de tout');
+      expect(phrase, 'la mutation doit laisser fuir le texte').toContain('direction');
     } finally {
       await db.close();
     }
@@ -720,6 +883,45 @@ describe('le contrôle mord : la migration mutée laisse voir le défaut', () =>
 
       const issue = await refus(db, APPAREIL_A, `select count(*) from public.annonces_discord`);
       expect(issue, 'la mutation doit laisser fuir la file').toBe('accepté');
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('troncature du résumé retirée → le salon reçoit les 500 caractères du texte', async () => {
+    const db = await baseMuteeDans(
+      MIGRATION_RESUME,
+      'public.resume_postit(p_texte, 200)',
+      'public.resume_postit(p_texte, 5000)',
+      {
+        tous: true
+      }
+    );
+    try {
+      await monde(db);
+      await collerTexte(db, 'p-sans-troncature', 'Le bouton ne répond pas', 'A'.repeat(500));
+
+      const resume = contenu((await annonces(db))[0]).split('\n')[1];
+      expect(resume, 'la mutation doit laisser déborder le résumé').toHaveLength(500);
+      expect(resume).not.toContain('…');
+    } finally {
+      await db.close();
+    }
+  });
+
+  it('plafond des points retiré → les dix puces partent dans le salon', async () => {
+    const db = await baseMuteeDans(MIGRATION_RESUME, 'limit p_max_points', 'limit 100');
+    try {
+      await monde(db);
+      const texte = ['Un post-it à dix puces.', '', ...Array.from({ length: 10 }, (_, i) => `- puce ${i + 1}`)].join(
+        '\n'
+      );
+      await collerTexte(db, 'p-dix-puces', 'Le bouton ne répond pas', texte);
+
+      const puces = contenu((await annonces(db))[0])
+        .split('\n')
+        .filter((ligne) => ligne.startsWith('• '));
+      expect(puces, 'la mutation doit produire les dix puces').toHaveLength(10);
     } finally {
       await db.close();
     }

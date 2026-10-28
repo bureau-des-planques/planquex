@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 137 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 138 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -143,3 +143,4 @@
 | D-135 | 27/10/2026 | Le service du profil reste décoratif — et c'est une… |
 | D-136 | 27/10/2026 | La Journée d'intégration reste sautable, et le bouton dit ce… |
 | D-137 | 27/10/2026 | Deux sons dans l'alpha, et un réglage qui les coupe… |
+| D-138 | 27/10/2026 | Les migrations à venir suivent le disque : 0017 puis… |
