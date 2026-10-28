@@ -4386,6 +4386,24 @@ h2 {
   width: 100%;
 }
 
+/* **Repli du creux, sans WebGL** : une ombre en dégradé qui suit le doigt. Moins fidèle qu'un
+   shader, mais l'appui répond toujours (la spec rend le repli obligatoire). */
+.ouverture__creux-repli {
+  background: radial-gradient(
+    circle,
+    rgba(4, 8, 18, 0.62) 0%,
+    rgba(4, 8, 18, 0.28) 38%,
+    rgba(255, 255, 255, 0.16) 52%,
+    rgba(4, 8, 18, 0) 70%
+  );
+  border-radius: 50%;
+  height: 26%;
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 26%;
+}
+
 /* Le shader du creux : au-dessus des plaques, sous les cartes. */
 .ouverture__creux {
   height: 100%;

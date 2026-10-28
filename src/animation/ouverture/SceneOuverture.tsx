@@ -95,12 +95,22 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const point = useRef({ px: 0.5, py: 0.55 });
   const image = useRef(0);
   const lancer = useRef<(() => void) | null>(null);
+  const repliRef = useRef<HTMLSpanElement>(null);
 
   const geometrie = useCallback((): Geometrie => {
     const el = zoneRef.current;
     const largeur = el?.clientWidth || 315;
     const hauteur = el?.clientHeight || 560;
     return { largeur, hauteur, ligne: hauteur * LIGNE, tolerance: hauteur * TOLERANCE };
+  }, []);
+
+  // Les plaques sont décodées d'avance : un fondu vers une image non décodée fait un blanc.
+  useEffect(() => {
+    for (const src of [...PLAQUES, etiquetteVolee]) {
+      const image = new Image();
+      image.src = src;
+      void image.decode?.().catch(() => undefined);
+    }
   }, []);
 
   // Le creux : monté seulement si le mouvement n'est pas réduit, et jamais indispensable.
@@ -171,6 +181,14 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const avancerCreux = useCallback((px: number, py: number, vers: number) => {
     point.current = { px, py };
     cible.current = vers;
+    // Sans WebGL, le creux est une **ombre en dégradé** : moins fidèle, mais l'appui répond
+    // toujours (spec §7.3 : le repli est obligatoire, pas optionnel).
+    const repli = repliRef.current;
+    if (!creux.current && repli) {
+      repli.style.left = `${px * 100}%`;
+      repli.style.top = `${py * 100}%`;
+      repli.style.opacity = String(vers);
+    }
     lancer.current?.();
   }, []);
 
@@ -241,7 +259,13 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const nombre = cartes.length;
 
   return (
-    <div className="ouverture" data-etape={etat.phase}>
+    <div
+      className="ouverture"
+      data-etape={etat.phase}
+      data-etiquette={etat.etiquette.toFixed(2)}
+      data-dechirure={etat.dechirure.toFixed(2)}
+      data-testid="ouverture"
+    >
       <p className="ouverture__titre">
         Arrivage : {nombre} carte{nombre > 1 ? 's' : ''}
         {neuves && neuves.size > 0 ? ` · ${neuves.size} nouvelle${neuves.size > 1 ? 's' : ''}` : ''}
@@ -269,6 +293,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                 style={{ opacity: poids[i], transform: `scaleX(${miroir})` }}
               />
             ))}
+            {!reduit && !creuxPret && etat.phase !== 'ouvert' && (
+              <span ref={repliRef} className="ouverture__creux-repli" aria-hidden="true" />
+            )}
             {creuxPret && etat.phase !== 'ouvert' && (
               <canvas ref={canvasRef} className="ouverture__creux" aria-hidden="true" />
             )}
