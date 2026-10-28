@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ETAPES_REGLES } from '@/components/regles-etapes';
+import { ETAPES_REGLES, cheminImageRegle } from '@/components/regles-etapes';
 import {
   Dialog,
   DialogContent,
@@ -71,6 +71,16 @@ export function EtapesRegles() {
         {etape.titre}
       </h3>
       <p className="regles__texte">{etape.texte}</p>
+      {etape.image && (
+        <img
+          className="regles__image"
+          src={cheminImageRegle(etape)}
+          alt={etape.image.alt}
+          width={420}
+          height={900}
+          decoding="async"
+        />
+      )}
       <div className="actions actions--tight">
         <button type="button" className="button" onClick={() => setCran(index - 1)} disabled={index === 0}>
           Précédent
