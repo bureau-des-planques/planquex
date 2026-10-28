@@ -259,6 +259,18 @@ describe('le serveur (#184)', () => {
     expect(await avec.text()).toContain('Poste de pilotage');
   });
 
+  it('lit le carnet dans la page, sans remplacer la page par du JSON brut', async () => {
+    // Le lien d'en-tête pointait sur `/api/journal` : le navigateur quittait la page pour
+    // afficher la réponse JSON de l'API. Le carnet est une section de la page ; le lien y
+    // mène par son ancre, et le clic relit le journal au passage.
+    const m = await monde();
+    const page = await (await api(m, '/')).text();
+    expect(page).not.toContain('href="/api/journal"');
+    expect(page).toContain('href="#carnet"');
+    expect(page).toContain('id="carnet"');
+    expect(page).toContain("querySelector('#lien-carnet')");
+  });
+
   it('sert le module de suivi de la page, sous le même jeton', async () => {
     const m = await monde();
     expect((await fetch(`${m.serveur.baseUrl}/suivi.mjs`)).status).toBe(401);

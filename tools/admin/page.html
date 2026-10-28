@@ -56,7 +56,7 @@
   <span class="muet">Bureau des Planqués · alpha</span>
   <span id="fraicheur" class="muet" aria-live="off"></span>
   <button id="rafraichir" type="button">Rafraîchir</button>
-  <a class="lien" href="/api/journal" data-json>Carnet →</a>
+  <a class="lien" id="lien-carnet" href="#carnet">Carnet →</a>
 </header>
 <div id="nouveau" hidden><button type="button" id="nouveau-bouton"></button></div>
 <main>
@@ -81,7 +81,7 @@
     <pre id="sql-sortie" hidden></pre>
   </section>
 
-  <section>
+  <section id="carnet">
     <h2>Carnet (journal)</h2>
     <pre id="journal-sortie" class="muet">chargement…</pre>
   </section>
@@ -354,6 +354,9 @@
   });
 
   document.querySelector('#rafraichir').addEventListener('click', () => { relire({ manuel: true }); });
+  // Le carnet vit dans la page : le lien y descend, et le clic relit le journal (il n'est pas
+  // dans la relecture automatique, qui ne concerne que l'état et les trois listes).
+  document.querySelector('#lien-carnet').addEventListener('click', () => { journalVue(); });
   document.querySelector('#nouveau-bouton').addEventListener('click', () => {
     cacherNouveaux();
     document.querySelector('#comptes').scrollIntoView({ block: 'start', behavior: 'smooth' });
