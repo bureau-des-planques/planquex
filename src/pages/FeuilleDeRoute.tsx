@@ -30,8 +30,7 @@
  * que personne n'a acté.
  */
 import type { ReactNode } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { RetourEcran } from '@/components/RetourEcran';
 import { APP_LABEL, APP_VERSION } from '@/version';
 import { notesAffichees, type NoteVersion } from '@/data/notes-affichees';
 import {
@@ -130,6 +129,7 @@ export function FeuilleDeRoute({ features = FEATURES_PREVUES }: { features?: Fea
 
   return (
     <div className="page feuille-de-route">
+      <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Feuille de route</h1>
         <p className="muted m-0 max-w-[62ch]">
@@ -285,12 +285,6 @@ export function FeuilleDeRoute({ features = FEATURES_PREVUES }: { features?: Fea
           </div>
         </section>
       )}
-
-      <p className="m-0">
-        <Link className="button" to="/">
-          <ArrowLeft size={16} /> Retour au bureau
-        </Link>
-      </p>
     </div>
   );
 }

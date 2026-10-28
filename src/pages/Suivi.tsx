@@ -18,8 +18,7 @@
  * suivi ne se déclare jamais vide parce que le réseau a hoqueté.
  */
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { RetourEcran } from '@/components/RetourEcran';
 import { SousOngletsComite } from '@/components/SousOngletsComite';
 import { marquerComiteVu, murEstConfigure } from '@/lib/murBase';
 import { useMur } from '@/lib/useMur';
@@ -171,9 +170,7 @@ export function Suivi() {
             </p>
           </div>
           <div className="actions">
-            <Link className="button" to="/">
-              <ArrowLeft size={16} /> Retour au bureau
-            </Link>
+            <RetourEcran vers="/" libelle="Retour au bureau" />
           </div>
         </div>
 
