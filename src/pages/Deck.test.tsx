@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lent : à la limite des 5 s, chaque cas rend l'écran du Deck dans jsdom avec le catalogue entier ; le coût est le rendu.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Deck } from './Deck';
