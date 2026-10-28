@@ -30,6 +30,12 @@ function manquements(yaml: string): string[] {
   if (deploiement === -1) ecarts.push('aucun `vercel deploy`');
   else if (avantBuild === -1 || avantBuild > deploiement) ecarts.push('build absent ou placé après le déploiement');
   if (!/^\s+npx --yes vercel@\S+ deploy[^\n]*--prod/m.test(yaml)) ecarts.push('le déploiement n’est pas en --prod');
+  // `vercel build` sans `vercel pull` avant lui n'a ni réglages de projet ni variables de production.
+  const pull = yaml.search(/vercel@\S+ pull --yes --environment=production/);
+  const buildVercel = yaml.search(/vercel@\S+ build/);
+  if (buildVercel !== -1 && (pull === -1 || pull > buildVercel)) {
+    ecarts.push('`vercel build` sans `vercel pull --environment=production` avant lui');
+  }
   // Le CLI n'est pas une dépendance (AGENTS.md §1.7) : chaque appel le prend à une version exacte.
   for (const appel of yaml.match(/vercel@\S*/g) ?? []) {
     if (!/^vercel@\d+\.\d+\.\d+$/.test(appel)) ecarts.push(`CLI Vercel sans version exacte : ${appel}`);
@@ -72,6 +78,12 @@ describe('.github/workflows/deploiement.yml (#420, D-140)', () => {
     const ecarts = manquements(fabrique).join('\n');
     expect(ecarts).toMatch(/build absent/);
     expect(ecarts).toMatch(/jeton manquant ne fait pas échouer/);
+  });
+
+  it('le contrôle mord : un `vercel build` sans `vercel pull` avant lui est refusé', () => {
+    const sansPull = workflow.replace(/^\s+npx --yes vercel@\S+ pull[^\n]*\n/m, '\n');
+    expect(sansPull).not.toBe(workflow);
+    expect(manquements(sansPull).join('\n')).toMatch(/sans `vercel pull/);
   });
 
   it('le contrôle mord : un CLI Vercel sans version exacte est refusé', () => {

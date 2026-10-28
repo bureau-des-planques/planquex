@@ -104,6 +104,9 @@ jobs:
           npm run build
           ls -la dist/index.html dist/sw.js
 
+      # `vercel pull` rapatrie les réglages du projet et ses variables de production
+      # (`VITE_SUPABASE_*`, `VITE_DISCORD_INVITE`) : sans lui, `vercel build` s'arrête (« No Project
+      # Settings found locally »), et une build sans ces variables publierait un mur en repli local.
       # `vercel build` produit la sortie préconstruite, celle que `--prebuilt` publie : ce qui part
       # est ce que ce job vient de construire, pas une seconde build distante.
       # Le CLI n'est **pas** une dépendance du dépôt (AGENTS.md §1.7) : `npx` le prend à une version
@@ -115,5 +118,6 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
+          npx --yes vercel@64.0.2 pull --yes --environment=production
           npx --yes vercel@64.0.2 build --prod
           npx --yes vercel@64.0.2 deploy --prebuilt --prod
