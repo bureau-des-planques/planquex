@@ -13,33 +13,27 @@
 
 ## 1. Tableau final
 
-| # | Type | Faction | Rôle mécanique | Vulnérabilité | Carte signature |
-|---|---|---|---|---|---|
-| 1 | Plante | **SSE** | Soin, statuts, résilience | Management | Médecin du travail |
-| 2 | Feu | **Management** | Dégâts, burn-out, pression | QVT | Responsable d’unité |
-| 3 | Eau | **QVT** | Énergie, relève, flux | Amélioration continue | Chief Happiness Officer |
-| 4 | Électricité | **Amélioration continue** | Dégâts étalés, gel, tempo | Atelier | Directeur qualité |
-| 5 | Psychique | **RH** | Dérive, Banc, manipulation | Direction | DRH |
-| 6 | Combat | **Atelier** | Gros dégâts, gros Seuil | RH | Chef d’atelier |
-| 7 | Obscurité | **Direction** | Disruption, contrôle | Atelier | PDG |
-| 8 | Métal | **Syndicat** | Tank, soin, protection | Management | Secrétaire général |
-| 9 | Dragon | **Intérim** | Multi-énergie, chaos, aucune faiblesse | Aucune | Intérimaire légendaire |
-| 10 | Incolore | **Support** | Polyvalent, pioche, recherche | Atelier | Responsable support |
+| # | Type | Faction | Rôle mécanique | Carte signature |
+|---|---|---|---|---|
+| 1 | Plante | **SSE** | Soin, statuts, résilience | Médecin du travail |
+| 2 | Feu | **Management** | Dégâts, burn-out, pression | Responsable d’unité |
+| 3 | Eau | **QVT** | Énergie, relève, flux | Chief Happiness Officer |
+| 4 | Électricité | **Amélioration continue** | Dégâts étalés, gel, tempo | Directeur qualité |
+| 5 | Psychique | **RH** | Dérive, Banc, manipulation | DRH |
+| 6 | Combat | **Atelier** | Gros dégâts, gros Seuil | Chef d’atelier |
+| 7 | Obscurité | **Direction** | Disruption, contrôle | PDG |
+| 8 | Métal | **Syndicat** | Tank, soin, protection | Secrétaire général |
+| 9 | Dragon | **Intérim** | Multi-énergie, chaos, aucune faiblesse | Intérimaire légendaire |
+| 10 | Incolore | **Support** | Polyvalent, pioche, recherche | Responsable support |
 
-**Cycle des faiblesses** :
+**La Vulnérabilité ne s'écrit pas dans ce document.** Elle vit dans `src/data/factions.ts`
+(`FACTION_META.weakness`), seule source. `AGENTS.md` §3.2 la reprend, et
+`src/data/factions.test.ts` vérifie que les deux disent la même chose.
 
-| Faction | Vulnérable à |
-|---|---|
-| SSE | Management |
-| Management | QVT |
-| QVT | Amélioration continue |
-| Amélioration continue | Atelier |
-| RH | Direction |
-| Atelier | RH |
-| Direction | Atelier |
-| Syndicat | Management |
-| Intérim | Aucune |
-| Support | Atelier |
+**Hors du set** : les **Outils** et les **Lieux** ne sont pas des cartes du lancement
+(D-020 ; `AGENTS.md` §4, « Outils / Lieux »). Leurs lignes ne sont plus dans les tables par
+faction : elles sont regroupées, étiquetées, dans la section « Hors périmètre du lancement »
+en fin de document.
 
 ---
 
@@ -49,7 +43,6 @@
   Prévention, arrêts, registre des accidents, bilan de santé. On soigne les dégâts
   que les autres infligent.
 - **Rôle** : soin, statuts, lignes d’évolution solides, jeu lent mais increvable.
-- **Vulnérabilité** : Management (le burn-out finit par gagner).
 - **Ligne d’évolution** : Infirmier de site → Infirmière du travail → Médecin du travail.
 - **COMEX (ex)** : **Médecin du travail** — « Il a lu ton dossier. Il a soupiré. »
 
@@ -64,9 +57,7 @@
 | Trousse de secours | Objet | Soin |
 | Registre des accidents | Objet | Pioche |
 | Arrêt de travail | Objet | Protège un Planqué |
-| Gants de protection | Outil | +20 Seuil |
 | Visite médicale | Collègue | Soin + pioche |
-| Salle de repos | Lieu | +Seuil au Banc |
 | **COMEX : Médecin du travail** | ex | 2 Interventions, soin de zone |
 
 - **Direction artistique** : blanc, vert menthe, infirmerie, lumière froide, plantes.
@@ -78,7 +69,6 @@
 - **Identité** : le management de proximité, les objectifs, les deadlines, les
   réunions d’urgence. Le feu, c’est la pression.
 - **Rôle** : dégâts, burn-out, défausse d’énergie, jeu agressif.
-- **Vulnérabilité** : QVT (le bien-être éteint la pression).
 - **Ligne d’évolution** : Jeune manager → Manager de proximité → Responsable d’unité.
 - **COMEX (ex)** : **Responsable d’unité** — « Il a dit “famille” dans un mail. »
 
@@ -92,9 +82,7 @@
 | Réunion d’urgence | Objet | Défausse une énergie |
 | Deadline hier | Objet | +20 dégâts |
 | Objectif irréaliste | Objet | Épuisement |
-| Tableau Excel | Outil | +10 dégâts |
 | Entretien annuel | Collègue | Défausse + pioche |
-| Bureau partagé | Lieu | +10 dégâts aux attaques Feu |
 | Prime variable | Objet | Pioche / défausse |
 | **COMEX : Responsable d’unité** | ex | 2 Interventions, attaque de zone |
 
@@ -107,7 +95,6 @@
 - **Identité** : la QVT, les perks, les afterworks, les plantes vertes, la corbeille
   de fruits. Le bonheur comme process. L’eau, c’est le flux et le bien-être.
 - **Rôle** : accélération d’énergie, relève, dégâts au Banc, jeu de flux.
-- **Vulnérabilité** : Amélioration continue (l’audit tue la vibe).
 - **Ligne d’évolution** : Chargé QVT → Happiness Manager → Chief Happiness Officer.
 - **COMEX (ex)** : **Chief Happiness Officer** — « Le bonheur est obligatoire, 9 h–18 h. »
 
@@ -120,10 +107,8 @@
 | Chief Happiness Officer | N+2 | Gros Seuil, soin global |
 | Afterwork | Objet | Pioche + soin |
 | Corbeille de fruits | Objet | Soin |
-| Plante verte | Outil | +10 Seuil |
 | Yoga du rire | Collègue | Soin global |
 | Team building | Collègue | Buff |
-| Babyfoot | Lieu | +1 café |
 | Massage en entreprise | Objet | Soin + relève |
 | **COMEX : Chief Happiness Officer** | ex | 2 Interventions, soin de zone |
 
@@ -136,7 +121,6 @@
 - **Identité** : le Lean, la qualité, les audits, les KPI, les tableaux de bord.
   Chaque petit progrès est une décharge. Le process est partout.
 - **Rôle** : dégâts étalés, gel, tempo, agressivité.
-- **Vulnérabilité** : Atelier (le terrain casse le process).
 - **Ligne d’évolution** : Chargé qualité → Auditeur qualité → Directeur qualité.
 - **COMEX (ex)** : **Directeur qualité** — « On a amélioré le process d’amélioration. »
 
@@ -150,10 +134,8 @@
 | Tableau de bord | Objet | Pioche |
 | KPI | Objet | +10 dégâts |
 | Ticket qualité | Objet | Défausse |
-| Norme ISO | Outil | +20 Seuil |
 | Réunion de suivi | Collègue | Pioche + énergie |
 | Kaizen | Objet | Buff |
-| Salle de réunion | Lieu | +10 dégâts aux attaques Électrique |
 | **COMEX : Directeur qualité** | ex | 2 Interventions, attaque de zone |
 
 - **Direction artistique** : jaune électrique, cyan, dashboards, post-its, néons.
@@ -165,7 +147,6 @@
 - **Identité** : le recrutement, les entretiens, les plans de carrière, la manipulation
   douce. Le sourire est une arme.
 - **Rôle** : dérive, dégâts au Banc, contrôle, manipulation.
-- **Vulnérabilité** : Direction (le pouvoir renvoie la manipulation).
 - **Ligne d’évolution** : Assistant RH → Chargé de recrutement → DRH.
 - **COMEX (ex)** : **DRH** — « Il a lu ton CV, il sait où tu habites. »
 
@@ -179,9 +160,7 @@
 | Entretien annuel | Objet | Défausse |
 | Offre d’emploi | Objet | Recherche |
 | Plan de carrière | Objet | Pioche / défausse |
-| Badge nominatif | Outil | +10 dégâts |
 | Réunion individuelle | Collègue | Contrôle |
-| Salle d’entretien | Lieu | +10 dégâts aux attaques Psychique |
 | **COMEX : DRH** | ex | 2 Interventions, dégâts au Banc |
 
 - **Direction artistique** : violet, rose poudré, miroirs, sourires trop blancs.
@@ -193,7 +172,6 @@
 - **Identité** : la maintenance, le terrain, les outils, les pannes. Ça parle fort et
   ça répare. Le physique contre la paperasse.
 - **Rôle** : gros dégâts, gros Seuil, dégâts au Banc, jeu direct.
-- **Vulnérabilité** : RH (la paperasse gagne toujours).
 - **Ligne d’évolution** : Apprenti → Technicien de maintenance → Chef d’atelier.
 - **COMEX (ex)** : **Chef d’atelier** — « Il a un plan. Le plan est une clé de 12. »
 
@@ -206,11 +184,8 @@
 | Technicien de maintenance | N+1 | Évolution, buff |
 | Chef d’atelier | N+2 | Gros dégâts, Banc |
 | Tournevis | Objet | +10 dégâts |
-| Multimètre | Outil | +10 dégâts |
-| Échelle | Outil | +20 Seuil |
 | Intervention | Objet | Pioche |
 | Panne | Objet | Empêche une attaque |
-| Atelier | Lieu | +10 dégâts aux attaques Combat |
 | **COMEX : Chef d’atelier** | ex | 2 Interventions, attaque de zone |
 
 - **Direction artistique** : brun, ocre, casques, outils, atelier, contre-jour.
@@ -222,7 +197,6 @@
 - **Identité** : le N+2, les plans de départ, les consultants, les fusions. Le vide
   organisé. Le pouvoir qui décide sans comprendre.
 - **Rôle** : disruption, contrôle, surcharge, attaques pas chères.
-- **Vulnérabilité** : Atelier (le réel finit toujours par revenir).
 - **Ligne d’évolution** : Chef de projet fantôme → Directeur adjoint → PDG.
 - **COMEX (ex)** : **PDG** — « Il repart avec la prime, tu restes avec le plan. »
 
@@ -235,11 +209,9 @@
 | PDG | N+2 | Gros dégâts, contrôle |
 | Plan de départ | Objet | Défausse |
 | Note de service | Objet | Contrôle |
-| Costume trois pièces | Outil | +10 dégâts |
 | Réunion qui aurait pu être un mail | Collègue | Défausse + pioche |
 | Audit surprise | Objet | Défausse |
 | Fusion-acquisition | Objet | Pioche / contrôle |
-| Salle du N+2 | Lieu | +10 dégâts aux attaques Obscurité |
 | **COMEX : PDG** | ex | 2 Interventions, attaque de contrôle |
 
 - **Direction artistique** : noir, or, verre fumé, cravates, reflets de tableau.
@@ -251,7 +223,6 @@
 - **Identité** : le CSE, les délégués, les tracts, les heures de délégation. Le
   blindage, c’est la procédure.
 - **Rôle** : tank, soin, protection, anti-statut.
-- **Vulnérabilité** : Management (le feu fait fondre le métal).
 - **Ligne d’évolution** : Délégué du personnel → Représentant CSE → Secrétaire général.
 - **COMEX (ex)** : **Secrétaire général** — « Il a obtenu une réunion. Elle a duré 4 heures. »
 
@@ -264,11 +235,8 @@
 | Secrétaire général | N+2 | Gros Seuil, anti-statut |
 | Heure de délégation | Objet | Pioche |
 | Motion de censure | Objet | Défausse |
-| Badge syndical | Outil | +20 Seuil |
 | Assemblée générale | Collègue | Soin global |
 | Grève | Objet | Empêche une attaque |
-| Convention collective | Outil | +20 Seuil |
-| Local syndical | Lieu | +Seuil |
 | **COMEX : Secrétaire général** | ex | 2 Interventions, tank |
 
 - **Direction artistique** : acier, rouge, gris, métal brossé, affiches.
@@ -280,7 +248,6 @@
 - **Identité** : la mission courte, l’agence, le badge temporaire, le site qu’on
   découvre. La précarité comme énergie brute. Ils gèrent tout, on ne les garde pas.
 - **Rôle** : multi-énergie, gros dégâts, aucune faiblesse, jeu à haut risque.
-- **Vulnérabilité** : aucune (comme les Dragons).
 - **Ligne d’évolution** : Intérimaire → Intérimaire confirmé → Chef d’équipe intérimaire.
 - **COMEX (ex)** : **Intérimaire légendaire** — « Il connaît le site mieux que le directeur. »
 
@@ -292,11 +259,9 @@
 | Intérimaire confirmé | N+1 | Évolution, accélération |
 | Chef d’équipe intérimaire | N+2 | Gros dégâts, chaos |
 | Contrat | Objet | Recherche |
-| Badge temporaire | Outil | +10 dégâts |
 | Café renversé | Objet | Défausse |
 | Formation express | Collègue | Buff |
 | Prime de précarité | Objet | Pioche |
-| Site différent | Lieu | +1 café |
 | Arrivée demain | Objet | Rotation |
 | **COMEX : Intérimaire légendaire** | ex | 2 Interventions, attaque multi-énergie |
 
@@ -309,7 +274,6 @@
 - **Identité** : le helpdesk, le support N1, les assistants, les tickets, les FAQ,
   les escalades. Toujours poli, jamais écouté.
 - **Rôle** : polyvalent, pioche, recherche, dégâts propres.
-- **Vulnérabilité** : Atelier (le terrain court-circuite le support).
 - **Ligne d’évolution** : Agent support → Technicien support → Responsable support.
 - **COMEX (ex)** : **Responsable support** — « Avez-vous essayé de redémarrer votre demande ? »
 
@@ -322,11 +286,8 @@
 | Responsable support | N+2 | Gros dégâts, contrôle |
 | Ticket | Objet | Pioche |
 | FAQ | Objet | Recherche |
-| Chatbot | Outil | +10 dégâts |
-| Casque téléphonique | Outil | +10 Seuil |
 | Escalade | Collègue | Buff global |
 | Procédure | Objet | Protection |
-| Salle de support | Lieu | +10 dégâts aux attaques Incolore |
 | **COMEX : Responsable support** | ex | 2 Interventions, attaque de zone |
 
 - **Direction artistique** : rose, cyan, écrans, casques, sourires de plaquette.
@@ -362,3 +323,85 @@ sans changer les cartes.
 2. Définir les **3 viviers de lancement** et leurs cartes exclusives.
 3. Produire la **direction artistique** : palette, gabarit de carte, 3 planches.
 4. Scaffolder le monorepo et le design system.
+
+---
+
+## Hors périmètre du lancement
+
+Les **Outils** et les **Lieux** ci-dessous ne sont pas dans le périmètre du lancement (D-020 ;
+`AGENTS.md` §4, « Outils / Lieux : hors périmètre du lancement »). Ils sont gardés ici pour que
+l'idée ne se perde pas : ce ne sont ni des cartes du set ni une promesse, et aucun ne doit être
+implémenté sans décision datée dans `docs/DECISIONS.md`.
+
+### SSE — Plante
+
+| Carte | Type | Effet |
+|---|---|---|
+| Gants de protection | Outil | +20 Seuil |
+| Salle de repos | Lieu | +Seuil au Banc |
+
+### Management — Feu
+
+| Carte | Type | Effet |
+|---|---|---|
+| Tableau Excel | Outil | +10 dégâts |
+| Bureau partagé | Lieu | +10 dégâts aux attaques Feu |
+
+### QVT — Eau
+
+| Carte | Type | Effet |
+|---|---|---|
+| Plante verte | Outil | +10 Seuil |
+| Babyfoot | Lieu | +1 café |
+
+### Amélioration continue — Électricité
+
+| Carte | Type | Effet |
+|---|---|---|
+| Norme ISO | Outil | +20 Seuil |
+| Salle de réunion | Lieu | +10 dégâts aux attaques Électrique |
+
+### RH — Psychique
+
+| Carte | Type | Effet |
+|---|---|---|
+| Badge nominatif | Outil | +10 dégâts |
+| Salle d’entretien | Lieu | +10 dégâts aux attaques Psychique |
+
+### Atelier — Combat
+
+| Carte | Type | Effet |
+|---|---|---|
+| Multimètre | Outil | +10 dégâts |
+| Échelle | Outil | +20 Seuil |
+| Atelier | Lieu | +10 dégâts aux attaques Combat |
+
+### Direction — Obscurité
+
+| Carte | Type | Effet |
+|---|---|---|
+| Costume trois pièces | Outil | +10 dégâts |
+| Salle du N+2 | Lieu | +10 dégâts aux attaques Obscurité |
+
+### Syndicat — Métal
+
+| Carte | Type | Effet |
+|---|---|---|
+| Badge syndical | Outil | +20 Seuil |
+| Convention collective | Outil | +20 Seuil |
+| Local syndical | Lieu | +Seuil |
+
+### Intérim — Dragon
+
+| Carte | Type | Effet |
+|---|---|---|
+| Badge temporaire | Outil | +10 dégâts |
+| Site différent | Lieu | +1 café |
+
+### Support — Incolore
+
+| Carte | Type | Effet |
+|---|---|---|
+| Chatbot | Outil | +10 dégâts |
+| Casque téléphonique | Outil | +10 Seuil |
+| Salle de support | Lieu | +10 dégâts aux attaques Incolore |
