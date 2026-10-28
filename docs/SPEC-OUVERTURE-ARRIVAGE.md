@@ -12,7 +12,8 @@
 | Ticket | **#283** — « Ouverture d'un paquet : l'animation » |
 | Prototype | branche **`prototype/ouverture-283`**, `src/prototype/ouverture.html` (DEV seulement) |
 | Forme | **animation**, pas vidéo (#269) ; la vidéo a servi de **brief**, jamais de livrable |
-| Recherche | `outils.md` et `techniques.md` (28/10/2026), cités au fil des sections |
+| Recherche | `docs/preuves/ouverture-arrivage-2026-10-28/recherche-outils.md` et `…/recherche-techniques.md` (28/10/2026) |
+| Preuve de rendu | `docs/preuves/ouverture-arrivage-2026-10-28/` — planche de frames de l'écran réel, avec la commande |
 
 Le prototype a servi à trancher **par l'œil**, pas par l'argument : trois rendus du creux
 (dégradés CSS, shader WebGL, filtres SVG), puis les gestes sur des **photos** du sachet. Ce qui
