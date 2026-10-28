@@ -4920,14 +4920,15 @@ h2 {
   pointer-events: none;
 }
 
-/* La carte arrive en tournant sur elle-même, puis se tient sous le doigt comme une vraie. */
+/* La carte est déjà face visible : elle **pivote** jusqu'à sa place, sans jamais montrer son dos
+   (une pirouette de 360° l'affichait à l'envers au premier instant). Moins de 90°, elle reste de face. */
 .ouverture__carte[data-fiche='oui'] .ouverture__retourne {
-  animation: ouverture-pirouette 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation: ouverture-fiche-pivot 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes ouverture-pirouette {
+@keyframes ouverture-fiche-pivot {
   from {
-    transform: rotateY(-360deg);
+    transform: rotateY(-70deg);
   }
   to {
     transform: rotateY(0deg);
