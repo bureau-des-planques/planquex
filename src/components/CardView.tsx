@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { FACTION_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card, Rarity } from '@/data/types';
-import { artUrl } from '@/art';
+import { artFileOf, artUrl } from '@/art';
 import { CafePips } from './CafePips';
 
 interface Props {
@@ -62,6 +62,8 @@ const HOLO_RARITIES: Rarity[] = ['1S', '2S', '3S', 'COU'];
 const APLAT_FACTION = 'color-mix(in srgb, var(--accent) 26%, var(--bg-deep))';
 
 export function CardView({ card, onClick, compact, selected, calme, stress, seuil, plateau, annotations }: Props) {
+  // La planche de la carte, ou celle de sa base (D-139) : une seule résolution.
+  const art = artFileOf(card);
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
@@ -146,8 +148,10 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
           // **Chargement** (#131) : sous l'image, l'aplat de faction (`APLAT_FACTION`) en
           // seconde couche — le temps que l'illustration arrive, ou si elle ne vient pas
           // (hors ligne, hors précache), la carte garde son fond au lieu d'un trou.
-          background: artUrl(card.art)
-            ? `url('${artUrl(card.art)}') 50% 28% / cover no-repeat, ${APLAT_FACTION}`
+          // **Une variante sans planche montre celle de sa base** (D-139) : le repli se fait
+          // par **résolution** (`artFileOf`), jamais par une copie dans les données.
+          background: artUrl(art)
+            ? `url('${artUrl(art)}') 50% 28% / cover no-repeat, ${APLAT_FACTION}`
             : APLAT_FACTION
         }}
       >
