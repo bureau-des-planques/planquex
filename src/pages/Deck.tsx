@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Info, Sparkles, Trash2 } from 'lucide-react';
+import type { CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
+import { Info, Search, Sparkles, Trash2 } from 'lucide-react';
 import { DECKS_PROPOSES } from '@/data/decks-proposes';
 import type { DeckPropose } from '@/data/decks-proposes';
 import { ALL_CARDS, FACTION_META, STAGE_META, VIVIER_META, isPlanque } from '@/data';
@@ -26,6 +28,12 @@ import { TriCartes } from '@/components/TriCartes';
 import { TRI_DEFAUT, trierCartes } from '@/components/tri-cartes';
 import type { Tri } from '@/components/tri-cartes';
 
+/**
+ * Le nombre de cartes que le sélecteur du Deck montre d'un coup (#276) : de quoi remplir
+ * largement un Deck (2 × 20), pas la Collection entière. Au-delà, on cherche un nom.
+ */
+export const SELECTEUR_CARTES = DECK_SIZE * 2;
+
 export function Deck() {
   const {
     owned,
@@ -40,8 +48,10 @@ export function Deck() {
     toggleCafeType
   } = useStore();
   const [selected, setSelected] = useState<Card | null>(null);
-  /** Un seul tri pour « Dedans » et pour la Collection du Deck : les deux se lisent pareil. */
+  /** Un seul tri pour « Dedans » et pour le sélecteur : les deux se lisent pareil. */
   const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
+  /** La recherche du **sélecteur borné** (#276) : la page Deck ne déroule pas la Collection. */
+  const [recherche, setRecherche] = useState('');
 
   /**
    * Le choix **normalisé**, lu ici et pas seul dans le moteur : l'écran est le dernier à
@@ -86,7 +96,14 @@ export function Deck() {
     [owned]
   );
   const dedansTrie = useMemo(() => trierCartes(inDeck, tri, owned), [inDeck, tri, owned]);
-  const availableTrie = useMemo(() => trierCartes(available, tri, owned), [available, tri, owned]);
+  const availableTrie = useMemo(() => {
+    const needle = recherche.trim().toLowerCase();
+    const gardees = needle ? available.filter((card) => card.name.toLowerCase().includes(needle)) : available;
+    return trierCartes(gardees, tri, owned);
+  }, [available, recherche, tri, owned]);
+  /** Ce que le sélecteur montre : un **sous-ensemble** de la Collection, jamais son tout. */
+  const proposes = availableTrie.slice(0, SELECTEUR_CARTES);
+  const restantes = availableTrie.length - proposes.length;
 
   return (
     <div className="page deck">
@@ -126,6 +143,32 @@ export function Deck() {
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
         {legality.ok ? 'Deck valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
+
+      {/* **Les contraintes du Deck** (#276) : la page dit ce qu'elle demande, en quatre
+          lignes. Les valeurs viennent des constantes du moteur (`@/game/deck`), pas d'une
+          copie — `AGENTS.md` §4 en est la règle, ce bandeau n'en est que la lecture. */}
+      <section className="panel deck-contraintes" aria-labelledby="deck-contraintes-titre">
+        <h2 id="deck-contraintes-titre" className="deck-contraintes__titre">
+          Ce que le Deck doit respecter
+        </h2>
+        <ul className="deck-contraintes__liste">
+          <li>
+            <strong>
+              {deck.length}/{DECK_SIZE}
+            </strong>{' '}
+            cartes, toutes prises dans ta Collection
+          </li>
+          <li>
+            <strong>{MAX_COPIES_PER_NAME}</strong> exemplaires au plus du même nom
+          </li>
+          <li>
+            au moins <strong>1 Planqué Entrant</strong>
+          </li>
+          <li>
+            jusqu’à <strong>{MAX_DECK_CAFE_TYPES}</strong> types de café pour la Machine
+          </li>
+        </ul>
+      </section>
 
       <section className="section panel decks-proposes">
         <div className="section__head">
@@ -182,27 +225,30 @@ export function Deck() {
           {cafeProposals.map((type) => {
             const chosen = chosenCafeTypes.includes(type);
             const inDeck = proposed.includes(type);
-            // Trois types déjà choisis : les autres cases se ferment, comme le plafond.
+            // Trois types déjà choisis : les autres capsules se ferment, comme le plafond.
             const full = !chosen && chosenCafeTypes.length >= MAX_DECK_CAFE_TYPES;
+            const meta = FACTION_META[type];
             return (
               <button
                 key={type}
                 type="button"
-                className={`cafe-picker__type ${chosen ? 'is-chosen' : ''} ${inDeck ? 'is-proposed' : ''}`}
+                className={`cafe-picker__type cafe-capsule ${chosen ? 'is-chosen' : ''} ${inDeck ? 'is-proposed' : ''}`}
                 aria-pressed={chosen}
+                // L'état est **dit**, pas seulement colorié (#279) : un lecteur d'écran
+                // apprend « choisi » ou « non choisi » sans voir la capsule.
+                aria-label={`${meta.name}, ${chosen ? 'choisi' : 'non choisi'}${inDeck ? ', présent au Deck' : ''}`}
                 disabled={full}
-                title={`${FACTION_META[type].name}${inDeck ? ' — présent au Deck' : ''}`}
+                title={`${meta.name}${inDeck ? ' — présent au Deck' : ''}`}
+                style={{ '--cafe': meta.color } as CSSProperties}
                 onClick={() => toggleCafeType(type)}
               >
-                <span
-                  className="cafe-picker__glyph"
-                  aria-hidden="true"
-                  style={{ background: FACTION_META[type].color }}
-                >
-                  {FACTION_META[type].glyph}
+                <span className="cafe-capsule__lid" aria-hidden="true">
+                  {meta.glyph}
                 </span>
-                {FACTION_META[type].short}
-                {inDeck && <span className="cafe-picker__tag">au Deck</span>}
+                <span className="cafe-capsule__sigle">{meta.short}</span>
+                <span className="cafe-capsule__etat" aria-hidden="true">
+                  {chosen ? '✓ choisi' : 'choisir'}
+                </span>
               </button>
             );
           })}
@@ -251,37 +297,63 @@ export function Deck() {
         )}
       </section>
 
-      <section className="section">
+      {/* **Le sélecteur borné** (#276) : la page Deck ne déroule pas la Collection. On y
+          cherche, et seules les premières cartes compatibles s'affichent — le reste du
+          catalogue se parcourt sur `/collection`. */}
+      <section className="section deck-selecteur">
         <div className="section__head">
-          <h2>Collection ({available.length})</h2>
+          <h2>Collection — ajouter une carte ({available.length})</h2>
           <span className="muted">clic = ajouter au deck</span>
         </div>
         {available.length === 0 ? (
           <p className="empty">Aucune carte possédée. Ouvre un Arrivage depuis l’accueil.</p>
         ) : (
-          <div className="card-grid">
-            {availableTrie.map((card) => {
-              const used = byName[card.name] ?? 0;
-              const canAdd = deckCanAdd(deck, card.id);
-              return (
-                <CardSlot
-                  key={card.id}
-                  card={card}
-                  owned={owned[card.id] ?? 0}
-                  inDeck={used}
-                  full={!canAdd}
-                  selected={used > 0}
-                  onClick={() => addToDeck(card.id)}
-                  quick={{
-                    icon: <Info size={14} />,
-                    label: `Fiche de ${card.name}`,
-                    title: `Fiche de ${card.name}`,
-                    onClick: () => setSelected(card)
-                  }}
-                />
-              );
-            })}
-          </div>
+          <>
+            <label className="field field--search">
+              <Search size={16} />
+              <input
+                type="search"
+                value={recherche}
+                placeholder="Chercher dans ma Collection"
+                onChange={(event) => setRecherche(event.target.value)}
+              />
+            </label>
+            {proposes.length === 0 ? (
+              <p className="empty" role="status">
+                Aucune carte de ta Collection ne porte ce nom.
+              </p>
+            ) : (
+              <div className="card-grid">
+                {proposes.map((card) => {
+                  const used = byName[card.name] ?? 0;
+                  const canAdd = deckCanAdd(deck, card.id);
+                  return (
+                    <CardSlot
+                      key={card.id}
+                      card={card}
+                      owned={owned[card.id] ?? 0}
+                      inDeck={used}
+                      full={!canAdd}
+                      selected={used > 0}
+                      onClick={() => addToDeck(card.id)}
+                      quick={{
+                        icon: <Info size={14} />,
+                        label: `Fiche de ${card.name}`,
+                        title: `Fiche de ${card.name}`,
+                        onClick: () => setSelected(card)
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            )}
+            {restantes > 0 && (
+              <p className="muted">
+                … et {restantes} autres cartes de ta Collection : cherche un nom, ou trie autrement. La Collection
+                entière se parcourt sur <Link to="/collection">la page Collection</Link>.
+              </p>
+            )}
+          </>
         )}
       </section>
 

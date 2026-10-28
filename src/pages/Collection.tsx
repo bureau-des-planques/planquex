@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, STAGE_META, isPlanque } from '@/data';
 import type { Card, Faction, Stage } from '@/data/types';
@@ -63,6 +64,12 @@ export function Collection() {
           <p className="muted">
             {visible.length} affichés · {HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum à tirer est{' '}
             {PLAFOND_TIRABLE}
+          </p>
+          {/* Le **rôle** de la page (#276) : ici on regarde ce qu'on possède ; le Deck, lui, se
+              compose sur sa propre page. Deux lieux, deux gestes — une phrase le dit. */}
+          <p className="collection__role">
+            Tout ce que tu possèdes : cherche, filtre, ouvre une fiche. Pour composer ton Deck, va sur{' '}
+            <Link to="/deck">la page Deck</Link>.
           </p>
         </div>
       </section>
