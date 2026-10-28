@@ -4643,11 +4643,7 @@ h2 {
 .ouverture__retourne {
   height: 100%;
   position: relative;
-  transform: rotateY(180deg);
-  transform-style: preserve-3d;
-  transition:
-    transform 950ms cubic-bezier(0.25, 0.9, 0.3, 1),
-    translate 260ms ease;
+  transition: translate 260ms ease;
   width: 100%;
 }
 
@@ -4680,33 +4676,34 @@ h2 {
   }
 }
 
-.ouverture__carte[data-face='recto'] .ouverture__retourne {
-  transform: rotateY(0deg);
-}
-
 .ouverture__face,
 .ouverture__dos {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
   border-radius: 10px;
   inset: 0;
   position: absolute;
 }
 
-/* Face cachée, la face est **retirée** et non seulement tournée : certains navigateurs laissent
-   voir son texte en miroir malgré `backface-visibility`. Le retrait se fait au passage de la carte
-   de profil (≈ 150 ms sur les 950 ms du retournement), jamais pendant qu'elle est de face. */
+/* Le retournement n'imbrique plus de 3D : le dos part de face (0° → 90°) pendant que la face arrive
+   de profil (−90° → 0°). Chaque élément reste dans ±90°, donc jamais vu à l'envers ni en miroir,
+   et ne dépend ni de `preserve-3d` ni de `backface-visibility`, que certains navigateurs ignorent. */
 .ouverture__carte[data-face='verso'] .ouverture__face {
+  transform: perspective(1200px) rotateY(-90deg);
   visibility: hidden;
 }
 
 .ouverture__carte[data-face='recto'] .ouverture__face {
-  transition: visibility 0s 150ms;
+  transform: perspective(1200px) rotateY(0deg);
+  transition:
+    transform 520ms cubic-bezier(0.3, 0.7, 0.6, 1) 430ms,
+    visibility 0s 430ms;
   visibility: visible;
 }
 
 .ouverture__carte[data-face='recto'] .ouverture__dos {
-  transition: visibility 0s 150ms;
+  transform: perspective(1200px) rotateY(90deg);
+  transition:
+    transform 430ms cubic-bezier(0.4, 0, 0.6, 1),
+    visibility 0s 430ms;
   visibility: hidden;
 }
 
@@ -4733,10 +4730,6 @@ h2 {
     0 18px 40px -12px rgb(0 0 0 / 70%);
   display: flex;
   justify-content: center;
-}
-
-.ouverture__retourne > .ouverture__dos {
-  transform: rotateY(180deg);
 }
 
 .ouverture__dos-sigle {
@@ -4953,7 +4946,7 @@ h2 {
 }
 
 .ouverture__carte[data-fiche='oui'] .ouverture__face {
-  transform: rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg));
+  transform: perspective(1200px) rotateX(var(--ty, 0deg)) rotateY(var(--tx, 0deg));
   transition: transform 140ms ease-out;
 }
 
@@ -5195,6 +5188,8 @@ h2 {
 [data-mouvement-reduit='true'] .ouverture__rayons,
 [data-mouvement-reduit='true'] .ouverture__carte,
 [data-mouvement-reduit='true'] .ouverture__retourne,
+[data-mouvement-reduit='true'] .ouverture__face,
+[data-mouvement-reduit='true'] .ouverture__dos,
 [data-mouvement-reduit='true'] .ouverture__neuve {
   transition: none;
 }
