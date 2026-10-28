@@ -1186,11 +1186,15 @@ h2 {
 }
 
 /*
- * Le gabarit de carte.
+ * Le gabarit de carte — refonte du 28/10/2026 (prototypes C et B, `DESIGN.md` §2.1).
  *
  * `--accent` porte la couleur **de la faction** (posée en ligne par `CardView`, dérivée
  * de `FACTION_META`) ; `--rarity` porte celle de la rareté (`RARITY_META`). Aucune
  * couleur de faction n'est recopiée ici.
+ *
+ * Deux gabarits sur la même boîte : **hors plateau**, le gabarit Pocket (en-tête, fenêtre
+ * d'illustration, Pressions en colonnes, pied) ; **au plateau** (`.card--plateau`), le
+ * portrait plein (l'illustration couvre la carte, un voile en bas porte nom et Stress).
  */
 .card {
   --rarity: var(--line);
@@ -1200,52 +1204,64 @@ h2 {
      garantit que toutes les cartes font la même taille, quel que soit le nombre de
      Pressions, la longueur du nom ou celle de la flavour. */
   aspect-ratio: 63 / 88;
-  /* Le cadre est un **anneau plein** de 4 px, en dégradé de la couleur de rareté ; la face
+  /* La carte est le conteneur de son propre texte : `cqw` y mesure sa largeur (échelle, plus bas). */
+  container-type: inline-size;
+  /* Le cadre est un **anneau plein**, en dégradé de la couleur de rareté ; la face
      (`.card__face`) est la carte elle-même. La rareté colore l'anneau **entier**, pas un
      filet sur un seul côté (tell d'UI IA). */
   background: linear-gradient(
-    150deg,
-    color-mix(in srgb, var(--frame) 88%, white),
-    color-mix(in srgb, var(--frame) 46%, var(--bg-deep)) 52%,
-    color-mix(in srgb, var(--frame) 78%, var(--bg-deep))
+    160deg,
+    color-mix(in srgb, var(--frame) 85%, white),
+    color-mix(in srgb, var(--frame) 55%, #111)
   );
   border: 1px solid color-mix(in srgb, var(--frame) 60%, black);
-  border-radius: 10px;
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 22%),
-    0 8px 20px rgb(0 0 0 / 28%);
+  border-radius: 12px;
+  box-shadow: 0 10px 22px -8px rgb(0 0 0 / 70%);
   color: inherit;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   font: inherit;
   overflow: hidden;
-  padding: 4px;
+  padding: 2.5%;
   position: relative;
   text-align: left;
   width: 100%;
 }
 
-/* La face : le corps de la carte, sous l'anneau. Le filet noir intérieur la détache du cadre. */
+/* La face : un **aplat** de la faction, pas un dégradé — un dégradé cyan (QVT) ou violet (RH,
+   Intérim) sur fond sombre est un tell d'UI générée (#208). Le blanc dessus tient 6,6:1 au pire
+   (AC, jaune). L'échelle du texte : `1em` vaut 5,6 % de la largeur de la carte (10 px à 188 px). */
 .card__face {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%);
-  border-radius: 6px;
-  box-shadow: 0 0 0 1px rgb(0 0 0 / 60%);
+  background: color-mix(in srgb, var(--accent) 55%, #10161f);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 18%),
+    inset 0 0 0 1px rgb(0 0 0 / 45%);
+  color: #fff;
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: 0.3rem;
+  font-size: 5.6cqw;
+  gap: 0.25em;
+  line-height: 1.2;
   min-height: 0;
   overflow: hidden;
+  padding: 0.35em 0.45em 0.3em;
+  position: relative;
 }
 
-/* **La Couronne** : son filet est violet, et DESIGN.md §3 dit « filet violet » — il est donc
-   **plat**, pas un dégradé de violet (#208). Un dégradé violet est un tell d'UI générée
-   (`impeccable`, `ai-color-palette`, relevé sur les trois COU de `/collection`), et la teinte
-   reste celle de `RARITY_META`, atténuée pour ne pas devenir un néon sur le fond sombre.
-   `:not(.card--plateau)` : au plateau, la carte est une seule surface avec son propre fond. */
-.card[data-rarity='COU']:not(.card--plateau) {
+/* **La Couronne** : son anneau est **plat** — un dégradé de violet est un tell d'UI générée
+   (`impeccable`, `ai-color-palette`, #208), et la teinte reste celle de `RARITY_META`, atténuée
+   pour ne pas devenir un néon sur le fond sombre. */
+.card[data-rarity='COU'] {
   background: color-mix(in srgb, var(--rarity) 62%, var(--bg-deep));
+}
+
+/* Statut COMEX (D-026) : l'anneau est or — il vaut 2 Interventions. L'or **est** l'anneau. */
+.card--comex {
+  --frame: var(--gold);
+  border-color: var(--gold-deep);
 }
 
 .card--selected {
@@ -1263,338 +1279,10 @@ h2 {
   transition: none;
 }
 
-/* **Au plateau** (D-093, #187) : la carte se dépouille pour tenir à 64 px de large. Elle
-   garde ce qui décide — illustration, nom, Seuil, Stress — et laisse le reste à
-   l'inspecteur (#188). Un nom tronqué (« SE-CH… ») n'est pas une carte, c'est un débris. */
-.card--plateau .card__kind,
-.card--plateau .card__attacks,
-.card--plateau .card__footer,
-.card--plateau .card__flavor {
-  display: none;
-}
-
-/* Sur le plateau, la carte est **une** surface : l'anneau de rareté et le corps sont deux fonds de
-   la même boîte (le corps sur `padding-box`, l'anneau sur `border-box`, bordure transparente de 4 px).
-   La face n'a plus de fond ni de cadre : une face qui porte un fond **dans** la carte est une carte dans
-   une carte (`nested-cards`, `impeccable detect`, relevé sur `/battle`). Hors plateau, rien ne change. */
-.card--plateau {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%) padding-box,
-    linear-gradient(
-        150deg,
-        color-mix(in srgb, var(--frame) 88%, white),
-        color-mix(in srgb, var(--frame) 46%, var(--bg-deep)) 52%,
-        color-mix(in srgb, var(--frame) 78%, var(--bg-deep))
-      )
-      border-box;
-  border: 4px solid transparent;
-  padding: 0;
-}
-
-.card--plateau .card__face {
-  background: none;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.card--plateau .card__top {
-  padding: 0.2rem 0.22rem 0.22rem;
-}
-
-/* Trois lignes, et non deux : à 61 px de large, « Agent d'entretien » se coupe en deux lignes
-   sur « AGENT D'ENTR… ». Le cadre reste à 63 × 88 : c'est l'illustration qui cède la place. */
-.card--plateau .card__name {
-  /* #201 : au-dessus du plancher `--fs-xs` (0,7rem = 11,2 px). Le nom d'un Planqué est ce
-     qui décide si on joue la carte ; à 8,6 px il ne servait qu'à décorer. Deux lignes, pas
-     trois : la carte du Poste fait 88 px de large. */
-  font-size: 0.7rem;
-  letter-spacing: 0.01em;
-  line-height: 1.1;
-  /* Trois lignes : à 11,2 px, « Psychologue du travail » en prend trois dans 84 px. Deux
-     lignes avec ellipse ne montraient plus que « PSYCHOLOGUE DU… » — un nom tronqué au
-     milieu d'une information qui décide. */
-  -webkit-line-clamp: 3;
-  /* #200 : la coupure se fait **sur les espaces** (et à la césure de la langue, `hyphens: auto` hérité
-     de `.card__name`). `anywhere` coupait « TRAVAIL » au milieu du mot : c'est ce qui donnait « TRA-VAIL ». */
-  overflow-wrap: break-word;
-}
-
-/* Le Seuil sort de la ligne du nom : sur 61 ou 92 px, la pastille prenait la moitié de la ligne et le
-   nom se réduisait à « KI. » (constaté, `npm run capturer`, #187). Il se pose en coin de l'illustration,
-   au-dessus de la barre de Stress ; le nom reprend toute la largeur. */
-.card--plateau .card__seuil-badge {
-  bottom: 1.1rem;
-  border-radius: 4px;
-  /* #201 : le Seuil est une décision (combien de Stress avant de craquer), pas un ornement. */
-  font-size: var(--fs-xs);
-  padding: 0.05rem 0.16rem;
-  position: absolute;
-  right: 0.3rem;
-  z-index: 1;
-}
-
-.card--plateau .card__seuil-badge::before {
-  /* #290 : 0,42 rem (6,7 px) était illisible ; le plancher du combat est `--fs-2xs`. Et la plaque
-     n'est opaque qu'à 72 % : sur une illustration blanche, `--text-muted` y tombait à 3,40:1 ; en
-     `--text` le pire cas est 6,93:1 (DESIGN.md §1.5). */
-  color: var(--text);
-  font-size: var(--fs-2xs);
-  letter-spacing: 0.06em;
-}
-
-.card--plateau .card__seuil {
-  gap: 0.25rem;
-  padding: 0.14rem 0.22rem 0.2rem;
-}
-
-/* La densité du combat (#189, SPEC-COMBAT-UI §4.3) : en `détaillé`, la carte du Poste remet
-   les annotations que `sobre` coupe — le chiffre du Stress, le nom des Conditions, les types
-   de café. **Pas les Pressions** : à 88 px de large, deux rangées d'attaque cassaient la carte
-   (mesuré le 25/10 : le nom chevauchait la plaque de Seuil). Elles vivent dans la barre
-   d'action, avec leur coût, et dans l'inspecteur. Une annotation ne remplace jamais une
-   décision : le nom, le Seuil et la barre restent dans les deux modes. */
-
-.card__stress-chiffre {
-  color: var(--text);
-  flex: none;
-  font-family: var(--font-display);
-  /* #201 : le chiffre du Stress est une mesure, pas une annotation — il passe au plancher. */
-  font-size: var(--fs-xs);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.card--plateau .card__emblem {
-  font-size: var(--fs-2xs);
-}
-
-/* Statut COMEX (D-026) : un cadre or, il vaut 2 Interventions. L'or **est** l'anneau (`--frame`) :
-   il n'y a pas de second filet — l'ancien `::before`, sans `content`, ne rendait rien (#131). */
-.card--comex {
-  --frame: var(--gold);
-  border-color: var(--gold-deep);
-}
-
-/* La barre de nom : pleine largeur, teintée de la faction — la première chose qu'on lit
-   sur une carte. Le stade la surmonte, le Seuil la ferme à droite. */
-.card__top {
-  align-items: start;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 26%, var(--bg-raised)),
-    color-mix(in srgb, var(--accent) 12%, var(--bg-raised))
-  );
-  border-bottom: 1px solid color-mix(in srgb, var(--frame) 45%, var(--line));
-  /* Le stade et le Seuil partagent la **première** ligne ; le nom prend **toute** la largeur de la
-     seconde. Avant, le Seuil se posait à côté du nom et lui volait la moitié de sa colonne : « PRÉVENTEU /
-     R », « ERGONOM / IE » sur bureau comme sur téléphone. */
-  display: grid;
-  gap: 0.15rem 0.4rem;
-  grid-template-areas:
-    'kind seuil'
-    'name name';
-  grid-template-columns: minmax(0, 1fr) auto;
-  padding: 0.3rem 0.4rem 0.35rem 0.45rem;
-}
-
-.card__title {
-  display: contents;
-}
-
-.card__kind {
-  grid-area: kind;
-}
-
-.card__name {
-  grid-area: name;
-}
-
-/* Le stade (ou la catégorie d'une carte Action) et le statut COMEX, au-dessus du nom. */
-.card__kind {
-  align-items: center;
-  display: flex;
-  font-size: var(--fs-2xs);
-  gap: 0.3rem;
-  letter-spacing: 0.06em;
-  overflow: hidden;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* Le Seuil : une plaque dorée à droite de la barre — la place d'une jauge de vie. Le mot
-   « Seuil » est dessiné au-dessus du chiffre, par `data-label`. */
-.card__seuil-badge {
-  align-items: center;
-  grid-area: seuil;
-  background: rgb(7 12 22 / 72%);
-  border: 1px solid var(--gold-deep);
-  border-radius: 6px;
-  color: var(--gold-soft);
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 800;
-  line-height: 1;
-  min-width: 2rem;
-  padding: 0.18rem 0.25rem 0.22rem;
-}
-
-.card__seuil-badge::before {
-  color: var(--text-muted);
-  content: attr(data-label);
-  font-size: 0.5rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  line-height: 1.3;
-  text-transform: uppercase;
-}
-
-/* Le nom a **deux lignes, toujours** : il tient en entier à cette hauteur-là (les
-   « Responsable d'unité COMEX » compris), et la réserve fixe garde les cartes toutes
-   identiques. Au-delà de deux lignes, il s'abrège — aucune carte ne s'allonge. */
-.card__name {
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  display: -webkit-box;
-  font-family: var(--font-display);
-  /* 0,74 rem : à 0,8, la pastille du Seuil réduisait la colonne du nom et « PRÉVENTEUR », « ERGONOMIE »
-     se coupaient en plein mot sur bureau comme sur téléphone (mesuré le 25/10). */
-  font-size: 0.74rem;
-  font-weight: 700;
-  hyphens: auto;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
-  min-height: 2.4em;
-  overflow: hidden;
-  /* Un mot plus long que la ligne (« Électromécanicien ») se coupe au lieu d'être rogné. */
-  overflow-wrap: anywhere;
-  text-transform: uppercase;
-}
-
-/* Sur un téléphone, le nom de la carte cède un cran : la pastille du Seuil réduit sa colonne, et
-   « PRÉVENTEUR » se coupait en « PRÉVENTEU / R ». Le nom reste entier, à deux lignes au plus. Cette
-   règle vient **après** `.card__name` : à même spécificité, la dernière l'emporte. */
-@media (max-width: 420px) {
-  .card__name {
-    font-size: 0.72rem;
-  }
-}
-
-.card__stage {
-  background: rgb(255 255 255 / 5%);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  /* Le stade sit sur le dégradé de la faction : en gris atténué il tombait sous 4,5:1 (`impeccable`,
-     #205). L'encre pleine le tient, la pastille reste discrète. */
-  color: var(--text);
-  padding: 0.05rem 0.42rem;
-}
-
-.card__stage--n1,
-.card__stage--n2 {
-  border-color: var(--line-strong);
-  color: var(--text);
-}
-
-.card__stage--action {
-  border-style: dashed;
-}
-
-.card__comex {
-  /* Un **aplat** d'or, pas un dégradé (#208) : le dégradé passait sous 4,5:1 à l'endroit où
-     le détecteur l'échantillonne (3,6:1), et l'or plein tient 9,75:1 avec l'encre COMEX. */
-  background: var(--gold);
-  border-radius: 999px;
-  color: #1c1304;
-  font-weight: 700;
-  padding: 0.05rem 0.42rem;
-}
-
-.card__faction {
-  align-items: center;
-  /* Le **sigle** de la faction est du texte, pas une décoration : la couleur pure tombait
-     entre 2,7 et 4,1:1 sur la face teintée (`impeccable`, #208). Éclaircie de 35 % de blanc,
-     elle garde sa teinte et passe au-dessus de 5,6:1 — la pastille, elle, reste pure. */
-  color: color-mix(in srgb, var(--accent) 65%, white);
-  display: inline-flex;
-  font-size: var(--fs-2xs);
-  font-weight: 600;
-  gap: 0.28rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.card__faction-dot {
-  background: var(--accent);
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 32%, transparent);
-  display: inline-block;
-  height: 7px;
-  width: 7px;
-}
-
-/* La fenêtre d'illustration : elle prend **tout l'espace qui reste**, donc deux cartes du
-   même format ont exactement la même image, que le texte soit long ou court. */
-.card__art {
-  align-items: center;
-  border: 1px solid rgb(0 0 0 / 55%);
-  border-radius: 4px;
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 8%),
-    inset 0 0 26px rgb(0 0 0 / 34%);
-  display: grid;
-  flex: 1 1 auto;
-  margin-inline: 0.4rem;
-  min-height: 0;
-  overflow: hidden;
-  place-items: center;
-  position: relative;
-}
-
-/* L'emblème de la faction : un médaillon à son coin bas-gauche (la couleur et le glyphe
-   viennent de `FACTION_META`). */
-.card__emblem {
-  background: var(--accent);
-  border: 2px solid rgb(7 12 22 / 85%);
-  border-radius: 999px;
-  bottom: 0.3rem;
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--frame) 70%, transparent);
-  color: #0b1220;
-  display: grid;
-  font-size: 0.72rem;
-  height: 22px;
-  left: 0.3rem;
-  place-items: center;
-  position: absolute;
-  width: 22px;
-}
-
-.card__glyph {
-  font-size: 2rem;
-  opacity: 0.85;
-  text-shadow: 0 2px 10px rgb(0 0 0 / 45%);
-}
-
-.card__shine {
-  background: linear-gradient(115deg, rgb(255 255 255 / 26%) 0%, transparent 46%);
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-}
-
-/* Traitement holographique des raretés hautes (étoiles et Couronne, CARD-SPEC §1). */
-.card--holo .card__art::after {
-  background: linear-gradient(
-    115deg,
-    transparent 22%,
-    rgb(255 255 255 / 26%) 44%,
-    rgb(244 214 138 / 26%) 58%,
-    transparent 80%
-  );
+/* Le voile holographique des raretés étoilées et de la Couronne (`CARD-SPEC.md` §1), sur
+   toute la face : une bande claire en biais, en `screen`, qui ne cache rien. */
+.card--holo .card__face::after {
+  background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 20%) 45%, transparent 60%);
   content: '';
   inset: 0;
   mix-blend-mode: screen;
@@ -1602,28 +1290,507 @@ h2 {
   position: absolute;
 }
 
-/* Seuil / Stress : la carte montre le **Seuil** (la capacité) ; au combat, la même
-   barre `.stress` montre le Stress qui monte (D-026). */
-.card__seuil {
+/* ---------- Hors plateau : le gabarit Pocket ---------- */
+
+/* L'en-tête : le nom (deux lignes), le Seuil, le médaillon de faction. */
+.card__top {
   align-items: center;
   display: flex;
-  padding-inline: 0.4rem;
+  gap: 0.3em;
+  min-height: 2.3em;
 }
 
-.card__seuil-bar {
-  height: 7px;
+.card__name {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  flex: 1 1 auto;
+  font-family: var(--font-display);
+  font-size: 1em;
+  font-weight: 800;
+  hyphens: auto;
+  line-height: 1.05;
+  min-width: 0;
+  overflow: hidden;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 50%);
+  text-wrap: balance;
 }
 
+/* Un nom long (plus de 18 signes, `CardView`) passe un cran plus petit : 41 signes tiennent
+   sur deux lignes (« Responsable développement des compétences »). */
+.card__name[data-long] {
+  font-size: 0.84em;
+}
+
+/* Le Seuil, en gros chiffre à droite : la lecture Pocket immédiate. Le mot n'est qu'un repère. */
+.card__seuil-badge {
+  align-items: baseline;
+  display: flex;
+  flex: none;
+  font-family: var(--font-display);
+  font-size: 1.2em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  gap: 0.12em;
+  line-height: 1;
+}
+
+.card:not(.card--plateau) .card__seuil-badge::before {
+  content: attr(data-label);
+  font-size: 0.42em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  opacity: 0.9;
+  text-transform: uppercase;
+}
+
+/* Le médaillon de faction : un jeton de la couleur de la faction, cerné de crème, comme une
+   pastille de café — il ne se confond pas avec le bouton « + » du slot. */
+.card__emblem {
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 0.1em var(--text),
+    0 0 0 0.2em rgb(0 0 0 / 40%);
+  color: #fff;
+  display: grid;
+  flex: none;
+  font-size: 0.75em;
+  font-style: normal;
+  height: 1.45em;
+  line-height: 1;
+  place-items: center;
+  width: 1.45em;
+}
+
+/* La fenêtre d'illustration : ratio fixe 4:3, filet de rareté, cadrage haut (portraits). */
+.card__art {
+  aspect-ratio: 4 / 3;
+  border-radius: 0.25em;
+  /* Le filet de rareté est un **contour**, pas une ombre : une fenêtre ombrée dans la face se
+     lisait comme une carte dans la carte (`impeccable`, `nested-cards`, relevé sur /collection). */
+  flex: none;
+  outline: 0.18em solid color-mix(in srgb, var(--rarity) 70%, #fff);
+  margin: 0 0.1em;
+  position: relative;
+}
+
+.card__glyph {
+  color: #fff;
+  font-size: 4em;
+  left: 50%;
+  opacity: 0.4;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Le stade, posé sur l'illustration (la place du médaillon d'évolution chez Pocket), avec le
+   statut COMEX à côté. */
+.card__stage {
+  align-items: center;
+  background: rgb(7 12 22 / 80%);
+  border-radius: 0.5em;
+  display: inline-flex;
+  font-size: 0.66em;
+  font-weight: 700;
+  gap: 0.35em;
+  left: 0.35em;
+  letter-spacing: 0.04em;
+  padding: 0.15em 0.45em;
+  position: absolute;
+  top: 0.35em;
+}
+
+/* COMEX : un aplat or (9,75:1), plus un dégradé (#208). */
+.card__comex {
+  background: var(--gold);
+  border-radius: 0.3em;
+  color: #1c1304;
+  font-weight: 800;
+  padding: 0 0.3em;
+}
+
+/* La légende : ce qui est nouveau — « évolue de … », la faction d'un Entrant, la règle d'une Action. */
+.card__legende {
+  background: rgb(0 0 0 / 28%);
+  border-radius: 0.2em;
+  color: rgb(255 255 255 / 90%);
+  font-size: 0.68em;
+  font-style: italic;
+  overflow: hidden;
+  padding: 0.1em 0.5em;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Talent et Pressions, calés en haut : la première Pression tombe à la même hauteur d'une
+   carte à l'autre. Trois colonnes — cafés, nom, dégâts — que le Talent suit. */
 .card__attacks {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
-  gap: 0.2rem;
-  padding-inline: 0.4rem;
+  gap: 0.2em;
+  min-height: 0;
+  padding-top: 0.25em;
+}
+
+/* Une ligne ne se tasse jamais sous son contenu : sans `flex: none`, la colonne rétrécissait les
+   Pressions de la carte en grand, et leur effet chevauchait la ligne suivante. */
+.card__attacks > * {
+  flex: none;
+}
+
+.card__attacks .attack {
+  align-items: center;
+  display: grid;
+  gap: 0.1em 0.35em;
+  grid-template-columns: 3em 1fr auto;
+  min-height: 1.5em;
 }
 
 .card__attacks .attack__name {
+  font-size: 0.9em;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card__attacks .attack__dmg {
+  font-family: var(--font-display);
+  font-size: 1.15em;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  min-width: 1.7em;
+  text-align: right;
+}
+
+/* La pastille de café se voit sur sa propre faction : c'est l'anneau qui la fait exister (#290). */
+.card__face .pips {
+  gap: 0.15em;
+}
+
+.card__face .pip {
+  box-shadow:
+    0 0 0 1px var(--bg-deep),
+    0 0 0 1.5px var(--text);
+  height: 0.9em;
+  width: 0.9em;
+}
+
+.card__face .pip--free {
+  border-color: var(--text);
+  box-shadow: none;
+}
+
+.card__talent {
+  align-items: center;
+  display: grid;
+  font-size: 0.8em;
+  gap: 0.1em 0.35em;
+  grid-template-columns: 3.75em 1fr;
+}
+
+.card__talent em {
+  background: #b3261e;
+  border-radius: 0.2em;
+  font-size: 0.7em;
+  font-style: normal;
+  font-weight: 800;
+  padding: 0.05em 0.35em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.card__talent span {
+  font-weight: 700;
+}
+
+/* L'effet d'un Talent ou d'une Pression : seulement sur la carte en grand, deux lignes au plus. */
+.attack__effet {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: rgb(255 255 255 / 85%);
+  display: -webkit-box;
+  font-size: 0.7em;
+  grid-column: 2 / -1;
+  line-height: 1.2;
+  overflow: hidden;
+}
+
+.card__talent .attack__effet {
+  font-size: 0.85em;
+}
+
+/* Le texte d'une carte Action, dans un encart. */
+.card__texte {
+  background: rgb(0 0 0 / 22%);
+  border-radius: 0.3em;
+  font-size: 0.88em;
+  line-height: 1.35;
+  text-wrap: pretty;
+  margin: auto 0;
+  padding: 0.5em 0.6em;
+  text-align: center;
+}
+
+/* **La carte en grand** (fiche, ouverture d'Arrivage) porte en plus les effets et la flavour :
+   c'est l'illustration qui cède la place (elle prend le reste, 30 % au moins), jamais le texte —
+   sinon les effets débordaient sur la flavour. */
+.card:not(.card--compact) .card__art {
+  aspect-ratio: auto;
+  flex: 1 1 0;
+  min-height: 30%;
+}
+
+.card:not(.card--compact) .card__attacks {
+  flex: none;
+}
+
+/* La flavour : deux lignes au plus — seulement sur la carte en grand. */
+.card__flavor {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: rgb(255 255 255 / 80%);
+  display: -webkit-box;
+  font-size: 0.68em;
+  font-style: italic;
+  margin: 0;
+  overflow: hidden;
+}
+
+/* Vulnérabilité (nommée : glyphe + sigle) et Rotation (en pastilles incolores). */
+.card__bas {
+  border-top: 1px solid rgb(255 255 255 / 25%);
+  display: grid;
+  gap: 0.4em;
+  grid-template-columns: 1fr 1fr;
+  padding-top: 0.2em;
+}
+
+.card__bas > span {
+  align-items: center;
+  display: flex;
+  gap: 0.3em;
+  justify-content: center;
+}
+
+.card__bas small {
+  font-size: 0.62em;
+  letter-spacing: 0.04em;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.card__bas b {
+  align-items: center;
+  display: inline-flex;
+  white-space: nowrap;
+  font-size: 0.82em;
+  gap: 0.2em;
+}
+
+.card__bas b i {
+  border-radius: 50%;
+  display: inline-grid;
+  font-size: 0.8em;
+  font-style: normal;
+  height: 1.5em;
+  place-items: center;
+  width: 1.5em;
+}
+
+/* Le pied : rareté (sa couleur) et sigle de faction, à gauche — le bouton « + » du slot se pose
+   dans le coin bas-gauche, la pastille « ×n » à droite : le pied leur laisse la place. */
+.card__footer {
+  align-items: center;
+  display: flex;
+  gap: 0.4em;
+  min-height: 2.5em;
+  padding-left: 2.2rem;
+}
+
+.card:not(.card--compact) .card__footer {
+  justify-content: center;
+  min-height: 1.4em;
+  padding-left: 0;
+}
+
+.card__rarity {
+  color: var(--rarity);
+  font-size: 0.85em;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 70%);
+}
+
+/* Le sigle de faction : la paire « sigle de faction » de `DESIGN.md` §1.5 (AA). */
+.card__faction {
+  color: color-mix(in srgb, var(--accent) 35%, #fff);
+  font-size: 0.75em;
+  font-weight: 700;
+}
+
+.card__faction::before {
+  content: '· ';
+}
+
+.card__id {
+  color: rgb(255 255 255 / 70%);
+  font-family: var(--font-display);
+  font-size: 0.7em;
+  margin-left: auto;
+}
+
+/* La barre de Stress hors plateau (une carte `calme` sans `plateau`) : sous la légende. */
+.card:not(.card--plateau) .card__seuil {
+  align-items: center;
+  display: flex;
+  gap: 0.3em;
+}
+
+/* ---------- Au plateau : le portrait plein ---------- */
+
+/* La carte est **une** surface : un filet de rareté de 2 px, l'illustration dessous, le voile
+   par-dessus. À 56–88 px de large (Banc, main, Poste), les tailles sont en `rem`, pas en `cqw` :
+   le plancher du combat est `--fs-2xs` (#290). */
+.card--plateau {
+  background: var(--bg-deep);
+  border: 2px solid color-mix(in srgb, var(--frame) 80%, #222);
+  border-radius: 8px;
+  box-shadow: 0 6px 14px -6px rgb(0 0 0 / 80%);
+  padding: 0;
+}
+
+.card--plateau.card--comex {
+  border-color: var(--gold);
+}
+
+.card--plateau .card__face {
+  background: none;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 50%);
+  font-size: var(--fs-2xs);
+  gap: 0;
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.card--plateau .card__art {
+  aspect-ratio: auto;
+  border-radius: 0;
+  outline: none;
+  inset: 0;
+  margin: 0;
+  position: absolute;
+}
+
+.card--plateau .card__glyph {
+  font-size: var(--fs-2xl);
+  top: 38%;
+}
+
+/* Le médaillon de faction et le Seuil, aux deux coins du haut. Le Seuil est une **plaque
+   discrète** — fond sombre, chiffre or : il se lit sans manger l'illustration. */
+.card--plateau .card__emblem {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 50%);
+  font-size: var(--fs-2xs);
+  height: 1.35rem;
+  left: 4%;
+  position: absolute;
+  top: 4%;
+  width: 1.35rem;
+}
+
+.card--plateau .card__seuil-badge {
+  background: rgb(4 8 16 / 78%);
+  border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
+  border-radius: 4px;
+  color: var(--gold-soft);
+  font-size: var(--fs-2xs);
+  padding: 1px 3px;
+  position: absolute;
+  right: 4%;
+  top: 4%;
+}
+
+.card__voile {
+  background: linear-gradient(180deg, transparent, rgb(4 8 16 / 85%) 30%, rgb(4 8 16 / 95%));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14% 5% 5%;
+  position: relative;
+}
+
+.card--plateau .card__stage {
+  background: none;
+  color: var(--gold-soft);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.04em;
+  padding: 0;
+  position: static;
+  text-transform: uppercase;
+}
+
+/* Le nom du plateau : deux lignes, coupé à la **césure de la langue** (`<html lang="fr">`),
+   jamais n'importe où (#200, #233). */
+.card--plateau .card__name {
+  -webkit-line-clamp: 2;
+  font-size: var(--fs-2xs);
+  hyphens: auto;
+  overflow-wrap: break-word;
+  text-shadow: 0 1px 2px #000;
+}
+
+/* La carte du Poste, plus large, prend le cran du dessus. */
+.poste__carte .card--plateau .card__name {
+  font-size: var(--fs-xs);
+}
+
+/* Les Pressions, annotation du mode `détaillé` (#189) : une ligne chacune, nom et dégâts. */
+.card--plateau .card__attacks {
+  gap: 1px;
+  padding-top: 1px;
+}
+
+.card--plateau .card__attacks .attack {
+  display: flex;
+  gap: 2px;
+  min-height: 0;
+}
+
+.card--plateau .card__attacks .pips {
+  display: none;
+}
+
+.card--plateau .card__attacks .attack__name,
+.card--plateau .card__attacks .attack__dmg {
+  font-size: var(--fs-2xs);
+  min-width: 0;
+}
+
+/* La jauge de Stress (`.stress`, dix crans) : elle se voit même vide. */
+.card--plateau .card__seuil {
+  align-items: center;
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.card--plateau .card__seuil-bar {
+  height: 7px;
+}
+
+.card__stress-chiffre {
+  color: var(--text);
+  flex: none;
+  font-family: var(--font-display);
+  /* #201 : le chiffre du Stress est une mesure, pas une annotation — il passe au plancher. */
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -1706,44 +1873,6 @@ h2 {
 
 .battle .pips {
   gap: 0.3rem;
-}
-
-/* La flavour : deux lignes au plus, coupées proprement — c'est ce qui garde les cartes
-   de la même hauteur sans lui interdire d'exister. */
-.card__flavor {
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  color: var(--text-muted);
-  display: -webkit-box;
-  font-size: 0.72rem;
-  font-style: italic;
-  line-height: 1.3;
-  margin: 0;
-  overflow: hidden;
-  padding-inline: 0.4rem;
-}
-
-.card__footer {
-  align-items: center;
-  border-top: 1px solid color-mix(in srgb, var(--frame) 35%, var(--line));
-  display: flex;
-  font-size: var(--fs-xs);
-  gap: 0.5rem;
-  /* Collé au bas de la carte : c'est ce qui aligne les pieds de toutes les cartes,
-     quelle que soit la longueur du texte au-dessus. */
-  margin-top: auto;
-  padding: 0.28rem 0.45rem 0.32rem;
-}
-
-.card__rarity {
-  color: var(--rarity);
-  letter-spacing: 0.08em;
-}
-
-.card__id {
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
-  margin-left: auto;
 }
 
 /* ---------- Dialogues ----------
@@ -2890,20 +3019,18 @@ h2 {
   height: 24px;
   justify-content: center;
   position: absolute;
-  right: 0.4rem;
-  top: 0.4rem;
+  bottom: 0.45rem;
+  left: 0.45rem;
   width: 24px;
 }
 
-/* Le bouton rapide occupe le coin haut-droit, **sur le cadre** : il recouvre le coin de la
-   plaque de Seuil (qu'il décale donc vers la gauche) sans lui voler de place. */
-.card-slot .card__top {
-  padding-right: 1.8rem;
-}
-
-/* Le pied réserve la place des pastilles de possession et de Deck, au coin bas-droit. */
+/* Le bouton rapide occupe le coin **bas-gauche**, que le pied de la carte lui réserve
+   (`.card__footer`, `padding-left`) : en haut à droite, il recouvrait le Seuil et le médaillon
+   de faction (refonte du 28/10/2026). Le pied réserve aussi, à droite, la place des pastilles
+   de possession et de Deck. */
 .card-slot .card__footer {
-  padding-right: 6.2rem;
+  overflow: hidden;
+  padding-right: 2.6rem;
 }
 
 /* La pastille reste de 24 px, sa **cible** fait 44 px : une zone invisible la déborde de 10 px
@@ -3096,22 +3223,14 @@ h2 {
   align-self: flex-end;
 }
 
-/* Le Banc à 64 px : un nom sur deux lignes, coupé **entre** les mots. La césure automatique est
-   coupée sur le plateau, et la taille du nom suit la place : « Agent d’entretien » tient sans se
-   couper au milieu d'un mot (reçu de #200). */
-.battle .card--plateau .card__name {
-  hyphens: manual;
-}
-
+/* Le Banc à 56 px : un nom sur deux lignes, jamais trois — à cette largeur, une troisième ligne
+   ne montre qu'une syllabe. Mieux vaut une ellipse qu'un mot amputé. #201 : la place du Banc ne
+   permet pas `--fs-xs` ; le nom reste au plancher documenté `--fs-2xs` (`DESIGN.md` §2.4). Le nom
+   n'est plus en capitales depuis la refonte du 28/10/2026 : la césure de la langue (« Psycho-
+   logue ») suffit, sans couper au milieu d'un mot (#200). */
 .battle .bench__carte .card--plateau .card__name {
-  /* Deux lignes, jamais trois : à 56 px de place, une troisième ligne ne montre qu'une
-     syllabe (« D'ENTRETIEN N »). Mieux vaut une ellipse qu'un mot amputé.
-     #201 : la place du Banc ne permet pas `--fs-xs` (0,7rem) — « TRAVAIL » y prendrait
-     trois lignes. On monte au plancher documenté `--fs-2xs` (0,62rem), et l'écart est
-     inscrit dans `DESIGN.md` §2.4 plutôt que masqué. */
   -webkit-line-clamp: 2;
   font-size: var(--fs-2xs);
-  hyphens: manual;
   line-height: 1.12;
 }
 
@@ -3584,15 +3703,10 @@ h2 {
   background: linear-gradient(90deg, #c0442e, var(--scene-danger));
 }
 
-/* Le cadre des cartes **standard** de la scène : métal ardoise, teinté de la rareté (l'anneau
-   garde sa couleur). Le COMEX garde son or (`.card--comex`, plus loin). */
-.battle .card:not(.card--comex) {
-  background: linear-gradient(
-    150deg,
-    color-mix(in srgb, var(--frame) 22%, var(--scene-steel)),
-    var(--scene-steel-deep) 55%,
-    color-mix(in srgb, var(--frame) 14%, var(--scene-steel))
-  );
+/* Le filet des cartes **standard** de la scène : métal ardoise, teinté de la rareté (#190, `DESIGN.md`
+   §2.4) — l'or reste au COMEX (`.card--plateau.card--comex`) et aux mesures qui se remplissent. */
+.battle .card--plateau:not(.card--comex) {
+  border-color: color-mix(in srgb, var(--frame) 22%, var(--scene-steel));
 }
 
 /* « Fin du tour » porte l'état de la main (T10, SPEC-COMBAT-UI §6.8.3) : **émeraude** quand c'est
@@ -3776,11 +3890,6 @@ h2 {
   hyphens: auto;
 }
 
-.battle .hand .card--plateau .card__top {
-  padding-left: 0.1rem;
-  padding-right: 0.1rem;
-}
-
 .hand__name {
   font-family: var(--font-display);
   font-size: 0.82rem;
@@ -3854,7 +3963,7 @@ h2 {
      largeur du téléphone et de repousser le texte sous la ligne de flottaison (#131). */
   .card-detail__visual {
     margin-inline: auto;
-    max-width: 220px;
+    max-width: 280px;
     width: 100%;
   }
 
@@ -5013,14 +5122,12 @@ h2 {
 @keyframes ouverture-appel {
   from {
     box-shadow:
-      inset 0 0 0 5px #0b1220,
-      inset 0 0 0 6px var(--rarete),
+      var(--dos-cadre),
       0 0 14px 2px color-mix(in srgb, var(--rarete) 45%, transparent);
   }
   to {
     box-shadow:
-      inset 0 0 0 5px #0b1220,
-      inset 0 0 0 6px var(--rarete),
+      var(--dos-cadre),
       0 0 34px 8px color-mix(in srgb, var(--rarete) 70%, transparent);
   }
 }
@@ -5033,7 +5140,7 @@ h2 {
 .ouverture__dos {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  border-radius: 10px;
+  border-radius: 12px;
   inset: 0;
   position: absolute;
 }
@@ -5047,20 +5154,57 @@ h2 {
   width: 100%;
 }
 
-/* Le dos des cartes : bleu nuit, filet d'or, monogramme. */
+/* Le dos des cartes : bleu nuit, treillis d'or, cadre à trois filets, monogramme en médaillon. `--dos-or`
+   est l'or du dos ; une carte rare, brillante ou secrète le prend à sa rareté (règle plus bas).
+   `--dos-cadre` est l'ombre des filets, reprise par les images d'appel (`ouverture-appel`,
+   `ouverture-charge`) pour qu'elles ne la perdent pas en se lançant. */
 .ouverture__dos {
+  --dos-or: var(--gold);
+  --dos-cadre:
+    inset 0 0 0 4px #0b1220,
+    inset 0 0 0 5px color-mix(in srgb, var(--dos-or) 62%, transparent),
+    inset 0 0 0 9px #0b1220,
+    inset 0 0 0 10px color-mix(in srgb, var(--dos-or) 22%, transparent);
   align-items: center;
   background:
-    radial-gradient(circle at 50% 50%, rgb(230 182 76 / 18%) 0%, transparent 46%),
-    repeating-linear-gradient(45deg, rgb(255 255 255 / 3%) 0 6px, transparent 6px 12px),
-    linear-gradient(160deg, #1b2a4a 0%, #0b1220 60%, #070c16 100%);
+    linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 7%) 50%, transparent 60%),
+    radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--dos-or) 22%, transparent) 0%, transparent 55%),
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--dos-or) 7%, transparent) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--dos-or) 7%, transparent) 0 1px, transparent 1px 11px),
+    linear-gradient(160deg, #1d2d4f 0%, #0b1220 58%, #070c16 100%);
   border: 2px solid var(--gold-deep);
-  box-shadow:
-    inset 0 0 0 5px #0b1220,
-    inset 0 0 0 6px color-mix(in srgb, var(--gold) 55%, transparent),
-    0 18px 40px -12px rgb(0 0 0 / 70%);
+  box-shadow: var(--dos-cadre), 0 18px 40px -12px rgb(0 0 0 / 70%);
   display: flex;
   justify-content: center;
+}
+
+/* Deux losanges d'or, en haut et en bas : le dos a un axe, comme une carte à jouer. */
+.ouverture__dos::before,
+.ouverture__dos::after {
+  background: var(--dos-or);
+  content: '';
+  height: 9px;
+  left: 50%;
+  opacity: 0.85;
+  position: absolute;
+  rotate: 45deg;
+  translate: -50% 0;
+  width: 9px;
+}
+
+.ouverture__dos::before {
+  top: 1.25rem;
+}
+
+.ouverture__dos::after {
+  bottom: 1.25rem;
+}
+
+/* Une carte rare, brillante ou secrète : son dos prend sa rareté, filets compris. */
+.ouverture__carte[data-palier='rare'] .ouverture__dos,
+.ouverture__carte[data-palier='brillante'] .ouverture__dos,
+.ouverture__carte[data-palier='secrete'] .ouverture__dos {
+  --dos-or: var(--rarete);
 }
 
 .ouverture__retourne > .ouverture__dos {
@@ -5068,16 +5212,22 @@ h2 {
 }
 
 .ouverture__dos-sigle {
-  border: 2px solid color-mix(in srgb, var(--gold) 70%, transparent);
+  background: radial-gradient(circle at 50% 35%, #26407a 0%, #0b1220 78%);
+  border: 2px solid color-mix(in srgb, var(--dos-or) 80%, transparent);
   border-radius: 50%;
-  color: var(--gold);
+  box-shadow:
+    0 0 0 5px #0b1220,
+    0 0 0 6px color-mix(in srgb, var(--dos-or) 35%, transparent),
+    0 10px 24px rgb(0 0 0 / 55%);
+  color: var(--gold-soft);
   display: grid;
   font-family: var(--font-display);
-  font-size: 2.6rem;
+  font-size: 2.4rem;
   font-weight: 800;
   height: 5.5rem;
   letter-spacing: 0.04em;
   place-items: center;
+  text-shadow: 0 2px 0 rgb(0 0 0 / 45%);
   width: 5.5rem;
 }
 
@@ -5134,8 +5284,7 @@ h2 {
   to {
     border-color: var(--rarete);
     box-shadow:
-      inset 0 0 0 5px #0b1220,
-      inset 0 0 0 6px var(--rarete),
+      var(--dos-cadre),
       0 0 30px 6px color-mix(in srgb, var(--rarete) 70%, transparent),
       0 0 90px 24px color-mix(in srgb, var(--rarete) 35%, transparent);
   }
@@ -5158,7 +5307,7 @@ h2 {
 
 /* Le reflet des cartes rares : un éclat qui passe au retournement ; holographique au-delà. */
 .ouverture__holo {
-  border-radius: 10px;
+  border-radius: 12px;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -5229,13 +5378,14 @@ h2 {
   opacity: 0;
   padding: 0.18rem 0.55rem;
   pointer-events: none;
+  left: 50%;
   position: absolute;
-  right: -0.35rem;
   scale: 0.4;
   text-transform: uppercase;
-  top: -0.55rem;
+  top: -0.7rem;
   transform: scale(var(--contre));
-  transform-origin: 100% 0;
+  transform-origin: 50% 0;
+  translate: -50% 0;
   transition:
     opacity 200ms ease,
     scale 380ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -5286,7 +5436,7 @@ h2 {
 
 .ouverture__reflet-fiche {
   background: radial-gradient(circle at var(--gx, 50%) var(--gy, 30%), rgb(255 255 255 / 35%) 0%, transparent 45%);
-  border-radius: 10px;
+  border-radius: 12px;
   inset: 0;
   mix-blend-mode: overlay;
   opacity: 0;

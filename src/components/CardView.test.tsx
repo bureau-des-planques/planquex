@@ -94,7 +94,7 @@ describe('CardView — le gabarit à cadre', () => {
     expect(cadre.querySelector(':scope > .card__face')).not.toBeNull();
   });
 
-  it('une carte avec illustration reçoit l’emblème de sa faction ; sans, le glyphe du fond suffit', () => {
+  it('le médaillon de faction vit dans l’en-tête, avec ou sans illustration ; le glyphe du fond reste le repli', () => {
     expect(avecArt, 'le catalogue a au moins une illustration').toBeDefined();
     expect(sansArt, 'le catalogue a au moins une carte sans illustration').toBeDefined();
 
@@ -104,7 +104,7 @@ describe('CardView — le gabarit à cadre', () => {
     avec.unmount();
 
     const sans = render(<CardView card={sansArt!} compact />);
-    expect(sans.container.querySelector('.card__emblem')).toBeNull();
+    expect(sans.container.querySelector('.card__emblem')).toHaveTextContent(FACTION_META[sansArt!.faction].glyph);
     expect(sans.container.querySelector('.card__glyph')).not.toBeNull();
     // Le repli sur l'aplat : le fond est la palette de la carte.
     expect((sans.container.querySelector('.card__art') as HTMLElement).style.background).not.toBe('');
