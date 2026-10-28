@@ -1757,6 +1757,29 @@ h2 {
   color: var(--text);
 }
 
+/* Le tour de jeu, joué dans le dialogue (#334, D-136) : un gabarit de tour, pas une image.
+   Le Stress se lit dans une ligne qui prend la couleur de la barre (`--gold-soft`), et les
+   deux gestes restent des boutons de la taille requise pour un doigt (44 px, D-120). */
+.journee__tour {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+}
+
+.journee__tour .button {
+  min-height: 2.75rem;
+}
+
+.journee__stress {
+  color: var(--gold-soft);
+  font-size: 0.86rem;
+  margin: 0;
+}
+
 /* ---------- Pas-à-pas du combat (#143, #169) ---------- */
 
 /* **En haut et collé** (#169) : il reste sous les yeux pendant que « Suivant » fait défiler

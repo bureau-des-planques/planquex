@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ETAPES_JOURNEE, MOTS_PAR_MINUTE, secondesDeLecture } from './journee-etapes';
+import { ETAPES_JOURNEE, MOTS_PAR_MINUTE, libelleSaut, nombreDePhrases, secondesDeLecture } from './journee-etapes';
 
 /**
  * La « Journée d'intégration » (#130, D-066) — le contenu, mesuré.
@@ -31,9 +31,11 @@ function routeDeclaree(cible: string): boolean {
   return new RegExp(`path="${cible.replace(/^\//, '')}"`).test(app);
 }
 
-describe('les quatre choses qu’un testeur ne devine pas (#130)', () => {
-  it('tient en quatre étapes, une par sujet', () => {
-    expect(ETAPES_JOURNEE).toHaveLength(4);
+describe('les cinq choses qu’un testeur ne devine pas (#130, D-136)', () => {
+  it('tient en cinq étapes : les quatre de #130 et le tour de jeu (#334)', () => {
+    expect(ETAPES_JOURNEE).toHaveLength(5);
+    expect(ETAPES_JOURNEE[4].titre).toBe('Le tour de jeu');
+    expect(ETAPES_JOURNEE[4].geste).toBe('tour');
   });
 
   it('explique le Seuil et le Stress, et que le Stress monte', () => {
@@ -78,9 +80,40 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
     }
   });
 
-  it('ne renvoie pas deux fois au même écran', () => {
+  it('ne renvoie pas deux fois au même écran, sauf le tour de jeu qui mène au combat (#334)', () => {
     const cibles = ETAPES_JOURNEE.map((etape) => etape.cible);
-    expect(new Set(cibles).size).toBe(cibles.length);
+    // Le tour de jeu se **fait dans le dialogue** ; son bouton ne fait qu'ouvrir le combat
+    // où le geste se rejoue — le même écran que « la fin d'un combat », et c'est voulu.
+    const horsTour = ETAPES_JOURNEE.filter((etape) => !etape.geste).map((etape) => etape.cible);
+    expect(new Set(horsTour).size).toBe(horsTour.length);
+    expect(cibles).toHaveLength(5);
+  });
+});
+
+describe('deux phrases au plus et un seul geste par étape (D-136)', () => {
+  it('aucune étape ne dépasse deux phrases', () => {
+    for (const etape of ETAPES_JOURNEE) {
+      expect(nombreDePhrases(etape.texte), etape.titre).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('chaque étape a son geste, et son libellé est unique', () => {
+    const actions = ETAPES_JOURNEE.map((etape) => etape.action);
+    expect(new Set(actions).size).toBe(actions.length);
+    // Une seule étape se joue dans le dialogue : le tour de jeu.
+    expect(ETAPES_JOURNEE.filter((etape) => etape.geste === 'tour')).toHaveLength(1);
+  });
+
+  it('le libellé du saut nomme ce qui est perdu (#334)', () => {
+    // **Le contrôle mord** : un saut qui dirait seulement « Passer » laisserait le testeur
+    // sauter à l'aveugle — ce test tombe dès que le libellé ne nomme plus le tour de jeu.
+    expect(libelleSaut(0)).toMatch(/passer/i);
+    expect(libelleSaut(0)).toMatch(/tour de jeu/i);
+    // Sur l'étape du tour, il est encore à venir : le saut le nomme toujours.
+    expect(libelleSaut(4)).toMatch(/tour de jeu/i);
+    // Une fois le tour joué, il n'y a plus rien à perdre : le bouton ne promet plus de perte.
+    expect(libelleSaut(4, true)).toMatch(/terminer/i);
+    expect(libelleSaut(4, true)).not.toMatch(/tour de jeu/i);
   });
 });
 

@@ -195,7 +195,8 @@ export function Settings() {
       <section className="section panel" aria-labelledby="reglages-journee">
         <h2 id="reglages-journee">Journée d’intégration</h2>
         <p className="muted max-w-[62ch]">
-          Quatre étapes, chacune ouvre son écran : le Seuil et le Stress, l’Arrivage, le Deck, la fin d’un combat.
+          Cinq étapes, un geste chacune : le Seuil et le Stress, l’Arrivage, le Deck, la fin d’un combat, et le tour de
+          jeu.
         </p>
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
