@@ -12,6 +12,8 @@ dans `docs/DECISIONS.md` ; les chiffres vivent ici.
 | `111-essais-recherche-2-coups.md` | **Piste 2, recherche à deux coups** : ce qui a été retenu, le protocole d'équité, les pièges, et ce qui est réutilisable pour un niveau 3 |
 | `111-recherche-pistes.md` | **La recherche bibliographique** : les pistes possibles (évaluation, recherche, PIMC, ISMCTS, MCTS, évaluation apprise), leurs coûts et leurs risques, avec les sources |
 | `94-niveau3-expectiminimax.md` | **Le niveau 3** (#94) : expectiminimax + K déterminisations, profondeur 3. Mesure : **55,94 %** contre le niveau 2 au contrôle (ratio 1,270), une seule fois lancé. **Non branché** |
+| `354-mesure-direction.md` | **La Direction contre un joueur de référence** (#354, D-134) : 1 000 parties en miroir, la recherche à deux coups de l'écran contre la politique scriptée, bande **40–60 %** des décidées avec IC 95 %. Le **taux**, son intervalle, les tours médians et le coût d'une décision, puis la recommandation |
+| `360-table-archetypes.md` | **La table des archétypes** (#360, D-134 (2)) : les 45 affrontements entre Decks proposés, **40 parties par paire** en miroir, bande **40–60 %** et alerte au-delà de **15 points** d'écart. Table **produite** par `npm run mesure:archetypes`, mesurée après #352 |
 
 **Ce qui a été retenu** (D-084) : la **recherche à deux coups** est **le niveau 2 acté** de l'alpha.
 Elle gagne **60,4 %** contre le niveau 1 sur des graines neuves (ratio 1,53), là où le glouton

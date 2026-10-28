@@ -12,6 +12,11 @@ jamais déployé, et il ne peut pas être atteint depuis le réseau.
 - **État de l'alpha** : comptes par état (dont les approbations en attente), parties terminées
   et leur poids moyen, post-its par statut, volume de la base. Les courriels sont **masqués**
   (`chapax***@gmail.com`) ; une action explicite les révèle, et ce geste entre au journal.
+- **Sortie d'alpha** (D-123, #337) : le nombre de **testeurs distincts** ayant terminé une
+  partie, croisé aux comptes `approuve`, le seuil de **5** avec son état (atteint / pas atteint),
+  la liste des identifiants, et la requête à rejouer ailleurs. Un compte approuvé sans partie ne
+  compte pas, une partie d'un compte refusé non plus, et **deux parties du même testeur font un
+  testeur** — c'est une personne, pas une partie. Lecture seule, par le rôle `lecteur`.
 - **Gestes nommés**, chacun une route : approuver un compte, le refuser **avec une raison
   obligatoire**, le marquer administrateur, trier un post-it (statut, raison, ticket),
   réattribuer les post-its anonymes à un compte choisi.
