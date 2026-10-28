@@ -21,14 +21,23 @@ import { PGlite } from '@electric-sql/pglite';
 
 export const DOSSIER_MIGRATIONS = fileURLToPath(new URL('./migrations/', import.meta.url));
 
+/**
+ * Les migrations sont **lues une fois par worker** (#422). Elles ne changent pas pendant une
+ * exécution, et les relire à chaque `base()` coûtait 16 ouvertures de fichier par montage de
+ * base — 91 montages par passage du projet `node`.
+ */
+let migrationsLues: string[] | null = null;
+
 /** Les migrations, **fichier par fichier**, dans l'ordre de leur nom. */
 export function fichiersMigrations(): string[] {
+  if (migrationsLues) return [...migrationsLues];
   const noms = readdirSync(DOSSIER_MIGRATIONS)
     .filter((nom) => nom.endsWith('.sql'))
     .sort();
   // Une base sans migration passerait tous les scénarios sans rien prouver : on refuse.
   if (noms.length === 0) throw new Error(`Aucune migration dans ${DOSSIER_MIGRATIONS}`);
-  return noms.map((nom) => readFileSync(new URL(`./migrations/${nom}`, import.meta.url), 'utf8'));
+  migrationsLues = noms.map((nom) => readFileSync(new URL(`./migrations/${nom}`, import.meta.url), 'utf8'));
+  return [...migrationsLues];
 }
 
 /** Toutes les migrations bout à bout : ce que `supabase db push` applique, dans l'ordre. */
@@ -213,12 +222,139 @@ export async function approuverAppareils(db: Base): Promise<void> {
 
 export type Base = PGlite;
 
-/** Une base neuve, shim puis migrations : l'état d'un projet Supabase juste après `db push`. */
-export async function base(sql: string = migrations()): Promise<Base> {
-  const db = new PGlite();
+/**
+ * **Une base par worker, migrée une fois, vidée entre les cas** (#422, D-143 (4)).
+ *
+ * Mesuré le 28/10/2026 : `base()` coûtait **1 170 ms**, dont **~1 120 ms** pour le seul
+ * démarrage de PostgreSQL en WASM (`initdb` d'un dossier de données neuf) et **~43 ms** pour
+ * le rejeu des 16 migrations. Le projet `node` montait **91 bases** par passage : c'était le
+ * plus gros poste de la suite, et neuf des douze fichiers les plus lents en vivaient.
+ *
+ * Trois mécanismes, du moins cher au plus cher :
+ *
+ * 1. **Le gabarit** : un dossier de données déjà migré, vidé une fois en `gzip` (~350 ms), puis
+ *    rechargé par `new PGlite({ loadDataDir })` — **~310 ms** au lieu de 1 170. Il n'est
+ *    fabriqué que si un **deuxième** cas vivant en réclame un : un fichier qui ne monte qu'une
+ *    base ne paie rien de plus qu'avant.
+ * 2. **Le recyclage** : `close()` ne ferme pas l'instance, il la **vide** (`truncate` de toutes
+ *    les tables, `reset role; reset all`) et la rend au pool — **~10 ms**. Le cas suivant qui
+ *    monte une base la reprend. C'est ce qui fait tomber 21 montages de `discord.test.ts` à un
+ *    seul démarrage.
+ * 3. **La lecture des migrations**, mémoïsée.
+ *
+ * **L'isolation, elle, ne bouge pas** : le `truncate` a lieu **avant** de rendre l'instance,
+ * jamais après l'avoir prêtée, donc deux `base()` ont toujours deux connexions distinctes —
+ * et une base rendue qui servirait encore **lève** au lieu de rendre des lignes vides
+ * (`base.test.ts` le prouve, et le refuse sur un cas fautif).
+ */
+const instancesLibres: PGlite[] = [];
+
+/** Le gabarit migré, fabriqué une fois par worker et seulement si l'on en a besoin. */
+let gabarit: Promise<Blob> | null = null;
+
+/** Vrai dès qu'une base neuve a été montée : la deuxième passera par le gabarit. */
+let dejaMontee = false;
+
+/** Le shim, puis les migrations : l'état d'un projet Supabase juste après `db push`. */
+async function migrer(db: PGlite, sql: string): Promise<PGlite> {
   await db.exec(SHIM);
   await db.exec(sql);
   return db;
+}
+
+function fabriquerGabarit(): Promise<Blob> {
+  gabarit ??= (async () => {
+    const db = await migrer(new PGlite(), migrations());
+    const dump = await db.dumpDataDir('gzip');
+    await db.close();
+    return dump;
+  })();
+  return gabarit;
+}
+
+/**
+ * Une instance **migrée et vide**. Le pool est vidé à la restitution (`close()`), donc ce
+ * qu'on y reprend est propre ; sinon on paie le gabarit, sinon un montage complet.
+ */
+async function instanceMigree(): Promise<PGlite> {
+  const recyclee = instancesLibres.pop();
+  if (recyclee) return recyclee;
+  if (!dejaMontee) {
+    dejaMontee = true;
+    return migrer(new PGlite(), migrations());
+  }
+  return new PGlite({ loadDataDir: await fabriquerGabarit() });
+}
+
+/**
+ * Toutes les tables que le shim et les migrations ont créées — **calculées**, jamais recopiées :
+ * une migration qui ajoute une table entre seule dans le vidage, et une garde qui l'oublierait
+ * ferait fuir ses lignes d'un cas à l'autre.
+ */
+const TABLES_VIDEES = `select format('%I.%I', schemaname, tablename) as nom
+  from pg_tables
+ where schemaname not in ('pg_catalog', 'information_schema')`;
+
+/**
+ * Remet une instance dans l'état d'« après migrations » : rôle et réglages de session rendus,
+ * toutes les tables vidées, compteurs d'identité remis à zéro.
+ */
+async function vider(db: PGlite): Promise<void> {
+  // Une session réutilisée repart du rôle et des réglages par défaut : un cas qui a changé de
+  // rôle sans le rendre (`set role authenticated` oublié) ne doit pas hériter chez le suivant.
+  await db.exec('reset role; reset all;');
+  const { rows } = await db.query<{ nom: string }>(TABLES_VIDEES);
+  if (rows.length === 0) throw new Error('aucune table à vider : la base n’a pas été migrée');
+  await db.exec(`truncate ${rows.map((ligne) => ligne.nom).join(', ')} restart identity cascade`);
+}
+
+/**
+ * Rend l'instance au pool au lieu de la fermer. Une base ainsi rendue **n'est plus
+ * utilisable** : y toucher lève, plutôt que de rendre les lignes du cas suivant — c'est le
+ * faux vert qu'une base partagée produirait sans ce garde.
+ */
+function recyclable(db: PGlite): Base {
+  let rendue = false;
+  const proxy = new Proxy(db, {
+    get(cible, propriete) {
+      if (propriete === 'close') {
+        return async (): Promise<void> => {
+          if (rendue) return;
+          rendue = true;
+          try {
+            await vider(cible);
+            instancesLibres.push(cible);
+          } catch {
+            // Une instance qu'on n'a pas su vider n'est **jamais** réutilisée : on la ferme.
+            await cible.close();
+          }
+        };
+      }
+      if (rendue && (propriete === 'query' || propriete === 'exec')) {
+        throw new Error(
+          'cette base a été rendue à son pool (close()) : elle n’est plus utilisable — ' +
+            'en monter une autre avec base(), sinon les deux cas partageraient la même connexion'
+        );
+      }
+      const valeur: unknown = Reflect.get(cible, propriete, cible);
+      return typeof valeur === 'function' ? (valeur as (...a: unknown[]) => unknown).bind(cible) : valeur;
+    }
+  });
+  return proxy as Base;
+}
+
+/**
+ * Une base neuve, shim puis migrations : l'état d'un projet Supabase juste après `db push`.
+ *
+ * Une **instance distincte** à chaque appel, comme avant. Seul le coût du montage change : la
+ * deuxième base d'un même worker repart d'une instance recyclée ou du gabarit migré (voir plus
+ * haut). Le SQL passé par un cas — les migrations **mutées** du « contrôle mord », les scénarios
+ * d'`anon.test.ts` — prend toujours un montage complet : c'est le shim et la migration qu'il
+ * vérifie, pas un état recyclé.
+ */
+export async function base(sql: string = migrations()): Promise<Base> {
+  if (sql !== migrations()) return migrer(new PGlite(), sql);
+  return recyclable(await instanceMigree());
 }
 
 /**

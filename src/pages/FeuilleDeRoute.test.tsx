@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lenteur justifiée (D-143 (5)) — rend la Feuille de route sous jsdom, bloc par bloc
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { cleanup, render, screen, within } from '@testing-library/react';

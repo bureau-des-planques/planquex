@@ -25,6 +25,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { binairePrettier, messageAbsent, versionDemandee } from './format-check.mjs';
 
 /** Décide si `npm ci` peut partir. Pur : testé sans git ni disque. */
 export function verdict({ gitDir, communDir, nodeModulesEstLien, principalVoulu = false }) {
@@ -74,5 +75,15 @@ if (estLance) {
   }
   console.log(`installer : npm ci dans ${process.cwd()}`);
   const { status } = spawnSync('npm', ['ci', ...args.filter((a) => a !== '--principal')], { stdio: 'inherit' });
-  process.exit(status ?? 1);
+  if ((status ?? 1) !== 0) process.exit(status ?? 1);
+
+  // **Le formateur, vérifié et non supposé** (#422). Une installation qui laisse `prettier`
+  // dehors rend `npm run format:check` menteur — c'est ce qui a fait tomber deux PR le
+  // 28/10/2026. On le dit ici, une fois, plutôt que de le découvrir au premier contrôle.
+  if (!binairePrettier()) {
+    console.error(messageAbsent());
+    process.exit(1);
+  }
+  console.log(`installer : prettier ${versionDemandee()} présent dans node_modules`);
+  process.exit(0);
 }

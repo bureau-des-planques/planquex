@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lenteur justifiée (D-143 (5)) — PGlite, et un cas fautif qui rejoue les migrations mutées sur une base neuve
 /**
  * Le gueulage dans la base — la migration `0003_gueulage.sql` (D-085).
  *

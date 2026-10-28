@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — les cas exercent le cliquet d'écrans sur des sorties fabriquées
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';

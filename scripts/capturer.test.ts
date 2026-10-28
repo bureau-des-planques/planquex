@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — 53 cas exercent le harnais de capture : fichiers, mesures, planches
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

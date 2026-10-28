@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lenteur justifiée (D-143 (5)) — PGlite : un SQL sur mesure par cas (droits, fonctions), montage complet
 /**
  * Qui exécute quoi, dans `public` — #341 (migration `0018_pgnet_et_fonctions_fermees.sql`).
  *

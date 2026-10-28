@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lenteur justifiée (D-143 (5)) — PGlite : un scénario d'approbation par cas, et son SQL
 /**
  * Les comptes et la validation manuelle de l'alpha — la migration `0005_comptes.sql` (#181,
  * D-088).

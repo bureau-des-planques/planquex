@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — des parties entières en headless : c'est le simulateur qui coûte
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';

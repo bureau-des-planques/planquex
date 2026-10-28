@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lenteur justifiée (D-143 (5)) — chaque cas démarre un serveur HTTP et le monde PGlite d'un compte
 /**
  * Le poste de pilotage local — `tools/admin/` (#184, D-088, D-089, D-091).
  *

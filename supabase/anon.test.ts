@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lenteur justifiée (D-143 (5)) — PGlite : trois bases distinctes, chacune avec son SQL de droits
 /**
  * `anon` n'exécute aucune fonction `security definer` de `public` — #247, migration
  * `0011_anon_hors_fonctions.sql`.

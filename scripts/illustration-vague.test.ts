@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — 60 cas rejouent le wizard, avec de vraies images fabriquées par Pillow
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lenteur justifiée (D-143 (5)) — PGlite : les dates figées, et deux cas à migrations mutées
 /**
  * Les dates du comité sont posées par le serveur, jamais par un client (#238,
  * migration `0009_commentaires_dates.sql`).

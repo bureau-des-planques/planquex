@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lenteur justifiée (D-143 (5)) — PGlite, dont un cas qui rejoue les migrations mutées
 /**
  * Le repère du comité — `updated_at`, `vu_le` et `marquer_comite_vu()` (#209, D-097 (5),
  * migration `0008_comite.sql`).

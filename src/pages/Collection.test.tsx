@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lenteur justifiée (D-143 (5)) — 17 cas rendent l'écran Collection entier sous jsdom : le rendu DOM coûte
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Collection } from './Collection';

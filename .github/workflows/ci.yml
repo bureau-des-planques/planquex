@@ -12,6 +12,23 @@ name: CI
 # contrôles. `npm test` en local reste **la commande unique** qui lance les deux : la CI ne
 # fait que les répartir sur deux machines.
 #
+# **Ce qui a été mesuré et REFUSÉ le 28/10/2026** (#422, D-143 (4)) — ne pas le reproposer sans
+# une mesure qui contredise celle-ci :
+#
+# - **Un job d'installation partagé, `node_modules` en artefact.** `node_modules` pèse
+#   **1,9 Go / 36 625 fichiers** ici : le transférer coûte plus que le `npm ci` qu'il remplace
+#   (le cache `npm` de `setup-node` est déjà chaud). Et surtout, un préalable commun **sérialise**
+#   les trois jobs : ils ne sont plus un maximum mais une somme, ce que D-115 a précisément
+#   écarté (job unique = 11 min 41 s).
+# - **Un build unique partagé en `dist/`.** Même raison : la porte est un **maximum** (murs
+#   mesurés 1 min 46 / 2 min 03 / 3 min 37), et le mur est `tests du noyau` — économiser
+#   20 s sur les deux autres jobs ne déplace pas d'une seconde le temps de la PR. `dist/` fait
+#   29 Mo, pour un build de 9,4 s en local.
+# - **`isolate: false`.** Mesuré deux fois : le projet `node` donne le même compte de tests
+#   (1 904) et zéro échec, mais le projet `ui` **casse** — 46 puis 28 échecs, et le nombre de
+#   succès change d'un run à l'autre (493 puis 511). Un état fuit : refusé.
+
+#
 # Mesures du 26/10/2026 en local (12 cœurs) : `node` 63 s / 1379 tests, `ui` 37 s / 346 tests,
 # 149 fichiers vus pour 149 sur le disque.
 on:

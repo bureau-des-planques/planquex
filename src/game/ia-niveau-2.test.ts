@@ -1,3 +1,4 @@
+// Lenteur justifiée (D-143 (5)) — l'IA de niveau 2 joue de vraies recherches à chaque cas
 import { describe, expect, it, vi } from 'vitest';
 import type { BattleAction, BattleState } from '@/data/types';
 import { applyAction, createBattle, legalActions } from '@/game/engine';
