@@ -1,8 +1,10 @@
 import type { CafeType, Vivier } from './types';
 
 /**
- * Les **Decks proposés** (#141, D-063, D-069) : des Decks de 20 cartes que le joueur
- * charge en un geste depuis l'écran du Deck, quelle que soit sa Collection.
+ * Les **Decks proposés** (#141, D-063, D-069, D-149) : des Decks de 20 cartes que le joueur
+ * charge en un geste depuis l'écran du Deck, quelle que soit sa Collection. **Trois**, un par
+ * archétype (D-149, qui amende les cinq de D-069) : ce sont aussi les Decks que joue la Direction
+ * selon sa difficulté (`src/game/deck-direction.ts`).
  *
  * ⚠️ **Les listes sont PROVISOIRES.** D-069 acte le jeu d'archétypes (cinq Decks proposés, leur
  * stratégie, leur faiblesse) mais réserve la **fabrication des listes** à après la vague
@@ -16,6 +18,8 @@ export interface DeckPropose {
   vivier: Vivier | 'MIXTE';
   /** Les types de café du Deck proposé (1 à 3, productibles) : ils partent avec lui (#91). */
   cafeTypes: readonly CafeType[];
+  /** L'archétype du Deck (D-125 (3)) : un Deck proposé par archétype. */
+  archetype: 'agressif' | 'controle' | 'milieu';
   /** Ce qu'il fait, en une phrase. */
   strategie: string;
   /** Contre quoi il est faible, en une phrase. */
@@ -32,6 +36,7 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
     id: 'coup-de-marteau',
     name: 'Le coup de marteau',
     vivier: 'ATELIER',
+    archetype: 'agressif',
     cafeTypes: ['ATELIER', 'MANAGEMENT'],
     strategie: 'Agression brute : de gros Seuils et des Pressions dès les premiers tours, presque aucun effet.',
     faiblesse: 'Le soin et l’endurance le laissent à court de Stress à infliger.',
@@ -54,6 +59,7 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
     id: 'la-reorganisation',
     name: 'La réorganisation',
     vivier: 'ETAGE',
+    archetype: 'controle',
     cafeTypes: ['AMELIORATION', 'DIRECTION'],
     strategie: 'Contrôle : des statuts et des tapes larges qui échangent du tempo contre de la maîtrise.',
     faiblesse: 'L’agression pure le submerge avant que ses statuts ne pèsent.',
@@ -73,32 +79,10 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
     ]
   },
   {
-    id: 'la-paperasse',
-    name: 'La paperasse',
-    vivier: 'BUREAUX',
-    cafeTypes: ['SSE', 'RH'],
-    strategie: 'Endurance : du soin et des Talents de ressource, il gagne en durant.',
-    faiblesse: 'Un burst qui l’abat avant qu’il ait soigné quoi que ce soit.',
-    cartes: [
-      ...x('sse-infirmier-site', 2),
-      ...x('sse-infirmiere-travail', 2),
-      ...x('sse-medecin-travail'),
-      ...x('sse-preventeur', 2),
-      ...x('sse-ergonome', 2),
-      ...x('rh-assistant-rh', 2),
-      ...x('rh-charge-recrutement', 2),
-      ...x('rh-drh'),
-      ...x('rh-gestionnaire-formation', 2),
-      ...x('rh-responsable-formation'),
-      ...x('sse-trousse-secours'),
-      ...x('sse-visite-medicale'),
-      ...x('rh-reunion-individuelle')
-    ]
-  },
-  {
     id: 'la-bonne-humeur',
     name: 'La bonne humeur',
     vivier: 'BUREAUX',
+    archetype: 'milieu',
     cafeTypes: ['QVT'],
     strategie: 'Tempo et soin : un seul type de café, une partie qui se gagne au long cours.',
     faiblesse: 'Le contrôle : les statuts cassent son rythme et le privent de son tempo.',
@@ -114,30 +98,6 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
       ...x('qvt-chef-projet-qvt', 2),
       ...x('qvt-charge-mission', 2),
       ...x('qvt-yoga-du-rire')
-    ]
-  },
-  {
-    id: 'les-renforts',
-    name: 'Les renforts',
-    vivier: 'MIXTE',
-    // D-069 écrit « ATELIER + INTERIM », mais INTERIM (Dragon) n'est jamais un type de café
-    // (D-034). Les Pressions des Intérimaires exigent la paire RH + ATELIER (D-037 (3)),
-    // comme `SIMULATION_CAFE_TYPES` : c'est elle qui arme le joker incolore.
-    cafeTypes: ['ATELIER', 'RH'],
-    strategie: 'Le joker incolore : des Intérimaires qui s’adaptent, soutenus par la maintenance de l’Atelier.',
-    faiblesse: 'Les Decks d’un seul type, plus réguliers et plus rapides.',
-    cartes: [
-      ...x('interim-interimaire', 2),
-      ...x('interim-interimaire-confirme', 2),
-      ...x('interim-chef-equipe-interimaire'),
-      ...x('interim-consultant-interimaire', 2),
-      ...x('interim-responsable-interim'),
-      ...x('atelier-joueur-de-flute', 2),
-      ...x('atelier-technicien-systeme', 2),
-      ...x('atelier-opticien', 2),
-      ...x('atelier-rpo', 2),
-      ...x('atelier-regleur', 2),
-      ...x('atelier-rpi', 2)
     ]
   }
 ];
