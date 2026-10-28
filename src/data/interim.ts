@@ -16,12 +16,21 @@ import { planqueBase } from './planque';
  * Seuil par stade/rareté et dégâts par café conformes à `CARD-SPEC.md` §2 (D-021,
  * D-023) ; COMEX `ex: true` en 4D, valant 2 Interventions (D-020).
  *
- * **Types de café (#116)** : `INTERIM` n'est pas un type produit, donc chaque Pression à
- * **2 cafés et plus** mêle **deux types produits distincts** (D-037 (3)) ; une Pression
+ * **Types de café (#116, #412)** : `INTERIM` n'est pas un type produit, donc chaque Pression
+ * à **2 cafés et plus** mêle **deux types produits distincts** (D-037 (3)) ; une Pression
  * à **1 café** n'en porte qu'un, et le Deck doit le produire. Une **ligne d'évolution** doit
  * rester payable avec le plafond de **3 types** d'un Deck (D-034, D-037 (4)) : chaque
  * ligne garde donc **une paire stable**, et l'Entrant (`SSE`) est le troisième type.
  * `interim.test.ts` le contrôle **par ligne**, pas carte par carte.
+ *
+ * **La faction entière tient dans ces trois types (#412, D-134 (2))** : jusqu'à #412, la
+ * ligne 1 coûtait `MANAGEMENT` + `QVT` et la ligne 2 `RH` + `ATELIER`, soit **cinq** types
+ * pour la faction — et **aucun** Deck de trois types ne pouvait payer l'ensemble. Mesuré par
+ * `npm run mesure:archetypes`, le Deck d'archétype (qui prend toutes les cartes de la
+ * faction) ne pouvait pas lancer **57 % de ses Pressions** : le COMEX et le N+2 de la ligne 1,
+ * entre autres, ne pouvaient pas attaquer. Toutes les Pressions de la faction demandent
+ * désormais `SSE` (Entrant) ou la paire **`RH` + `ATELIER`**, qui est celle de la ligne 2 :
+ * trois types, un Deck jouable, le plafond de D-034 respecté.
  */
 
 /** Le socle de faction (#54) : identité, vulnérabilité, dégradé et glyphe. */
@@ -53,7 +62,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
       kind: 'attachEnergy',
       oncePerTurn: true
     },
-    attacks: [{ name: 'Démerde', cost: ['MANAGEMENT', 'QVT'], damage: 50, text: 'Le Planqué adverse se fait déborder par un débrouillard. Il fait le travail de trois personnes, payé pour une.' }],
+    attacks: [{ name: 'Démerde', cost: ['RH', 'ATELIER'], damage: 50, text: 'Le Planqué adverse se fait déborder par un débrouillard. Il fait le travail de trois personnes, payé pour une.' }],
     flavor: 'Il a fait le boulot de trois personnes. Il est payé pour une.',
     art: 'interim-interimaire-confirme.webp'
   }),
@@ -68,14 +77,14 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Site différent',
-        cost: ['QVT', 'MANAGEMENT'],
+        cost: ['RH', 'ATELIER'],
         damage: 60,
         text: 'Échange ce Planqué avec un Planqué du Banc.',
         effects: [{ kind: 'switchSelf' }]
       },
       {
         name: 'Prime de précarité',
-        cost: ['QVT', 'QVT', 'MANAGEMENT'],
+        cost: ['RH', 'ATELIER', 'RH'],
         damage: 100,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
@@ -97,14 +106,14 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Renfort express',
-        cost: ['MANAGEMENT', 'QVT'],
+        cost: ['RH', 'ATELIER'],
         damage: 70,
         text: 'Envoie 1 café du Planqué adverse au rebut.',
         effects: [{ kind: 'discardEnergy', target: 'opponent' }]
       },
       {
         name: 'Prime de précarité',
-        cost: ['QVT', 'QVT', 'MANAGEMENT'],
+        cost: ['RH', 'ATELIER', 'RH'],
         damage: 120,
         text: 'Ce Planqué prend 20 de stress.',
         effects: [{ kind: 'selfDamage', amount: 20 }]
@@ -190,7 +199,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Renfort d’un jour',
-        cost: ['QVT'],
+        cost: ['ATELIER'],
         damage: 20,
         text: 'Ce Planqué prend 10 de stress.',
         effects: [{ kind: 'selfDamage', amount: 10 }]
@@ -208,7 +217,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Livrable',
-        cost: ['MANAGEMENT'],
+        cost: ['SSE'],
         damage: 10,
         text: 'Pioche 1 carte.',
         effects: [{ kind: 'draw', amount: 1 }]
@@ -227,7 +236,7 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     attacks: [
       {
         name: 'Reporting express',
-        cost: ['MANAGEMENT', 'QVT'],
+        cost: ['RH', 'ATELIER'],
         damage: 50,
         text: 'Échange ce Planqué avec un Planqué du Banc.',
         effects: [{ kind: 'switchSelf' }]

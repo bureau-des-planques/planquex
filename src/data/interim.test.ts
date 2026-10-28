@@ -211,3 +211,34 @@ describe('Intérim — lignes payables avec les types du Deck (#116, D-034, D-03
     expect(typesExiges(avant).length).toBeGreaterThan(MAX_DECK_CAFE_TYPES);
   });
 });
+
+/**
+ * **La faction entière tient dans trois types** (#412, D-034, D-037 (4)).
+ *
+ * Le contrôle de #116 porte **par ligne** : chaque ligne est payable, mais la table des
+ * archétypes joue le Deck que `factionDeck` dérive, qui prend **toutes** les cartes de la
+ * faction. Tant que la ligne 1 coûtait `MANAGEMENT` + `QVT` et la ligne 2 `RH` + `ATELIER`,
+ * la faction demandait **cinq** types et le Deck ne pouvait pas lancer **57 %** de ses
+ * Pressions (le COMEX et le N+2 de la ligne 1, entre autres) : mesuré à 41,6 % avant
+ * correction. Le contrôle est désormais posé **sur la faction**, pas seulement par ligne.
+ */
+describe('Intérim — la faction tient dans les trois types d’un Deck (#412)', () => {
+  it(`n’exige pas plus de ${MAX_DECK_CAFE_TYPES} types pour la faction entière`, () => {
+    const types = typesDeLigne(PLANQUES_INTERIM);
+    expect(types.length, types.join(', ')).toBeLessThanOrEqual(MAX_DECK_CAFE_TYPES);
+  });
+
+  it('le contrôle mord : les coûts d’avant #412 (cinq types pour la faction) sont refusés', () => {
+    // Ligne 1 en `MANAGEMENT` + `QVT`, ligne 2 en `RH` + `ATELIER`, Entrants en `SSE` et
+    // `QVT` : cinq types, et aucun Deck de trois types ne paye l'ensemble.
+    const avant: CafeSymbol[][] = [
+      ['SSE'],
+      ['MANAGEMENT', 'QVT'],
+      ['QVT', 'QVT', 'MANAGEMENT'],
+      ['RH', 'ATELIER'],
+      ['QVT'],
+      ['ATELIER']
+    ];
+    expect(typesExiges(avant).length).toBeGreaterThan(MAX_DECK_CAFE_TYPES);
+  });
+});

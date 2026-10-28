@@ -5,8 +5,10 @@ import {
   GRAINE_MESURE_ARCHETYPES,
   ecartAlerte,
   ecartEnPoints,
+  formatTableArchetypes,
   mesurerArchetypes,
-  pairesArchetypes
+  pairesArchetypes,
+  pressionPayable
 } from '@/game/mesure-archetypes';
 import { GRAINES_DE_LA_POLITIQUE, GRAINE_MESURE_DIRECTION } from '@/game/mesure-direction';
 
@@ -65,6 +67,42 @@ describe('table des archétypes (#360)', () => {
 
   it('dix factions font quarante-cinq affrontements', () => {
     expect(pairesArchetypes()).toHaveLength(45);
+  });
+
+  /**
+   * **La forme des Decks** (#412) : un écart entre deux archétypes se lit d'abord dans le
+   * Deck, pas dans la courbe de ses Pressions. Publiée avec la table, elle doit rester vraie
+   * — un Deck qui perd son N+2 n'a pas de réponse à un COMEX de 180 de Seuil, et le document
+   * de mesure n'a pas à le deviner.
+   */
+  it('publie la forme des Decks mesurés, lue dans le catalogue (#412)', () => {
+    const rapport = mesurerArchetypes(OPTIONS);
+    expect(rapport.decks.map((deck) => deck.faction)).toEqual(['ATELIER', 'RH', 'SSE']);
+    for (const deck of rapport.decks) {
+      // Un Deck d'archétype fait 20 cartes ; ses stades et ses Actions les partagent tous.
+      expect(deck.cartes, deck.faction).toBe(20);
+      expect(deck.entrants + deck.n1 + deck.n2 + deck.actions, deck.faction).toBe(deck.cartes);
+      // Les COMEX font partie des N+2 : la somme ne les compte pas deux fois.
+      expect(deck.comex, deck.faction).toBeLessThanOrEqual(deck.n2);
+      expect(deck.seuilMax, deck.faction).toBeGreaterThan(0);
+      // Chaque Pression du Deck est comptée, et les payables en sont un sous-ensemble.
+      expect(deck.pressions, deck.faction).toBeGreaterThan(0);
+      expect(deck.payables, deck.faction).toBeLessThanOrEqual(deck.pressions);
+    }
+    // Le contrôle mord : la forme est publiée par le formateur, pas seulement calculée.
+    const markdown = formatTableArchetypes(rapport);
+    expect(markdown).toContain('### La forme des Decks mesurés');
+    expect(markdown).toMatch(/\| SSE \| 20 \|/);
+  });
+
+  it('compte une Pression payable comme le moteur la paie (D-037) : le contrôle mord', () => {
+    // L'incolore accepte n'importe quel café ; un symbole typé exige son type.
+    expect(pressionPayable(['INCOLORE'], [])).toBe(true);
+    expect(pressionPayable(['SSE'], ['SSE'])).toBe(true);
+    expect(pressionPayable(['SSE'], ['RH', 'ATELIER'])).toBe(false);
+    expect(pressionPayable(['RH', 'ATELIER'], ['SSE', 'RH', 'ATELIER'])).toBe(true);
+    // Une Pression entièrement impayable ne compte pas, même à un seul symbole près.
+    expect(pressionPayable(['RH', 'ATELIER'], ['SSE', 'ATELIER'])).toBe(false);
   });
 
   it('les graines de la table sont disjointes de celles de la politique et de la Direction', () => {
