@@ -136,33 +136,41 @@ export function VarianteB(props: VarianteProps) {
 
 /* ───────────────────────── C · Gabarit Pocket ───────────────────────── */
 
+/** La règle d'une carte Action, en un mot (AGENTS §4) : c'est elle qui décide quand la jouer. */
+const REGLE_ACTION = { OBJET: 'illimité', COLLEAGUE: '1 par tour' } as const;
+
 export function VarianteC(props: VarianteProps) {
   const { card, grand } = props;
   const i = infos(card);
   const p = isPlanque(card) ? card : null;
+  // La légende ne répète pas le stade (il est sur l'illustration) : elle dit ce qui est nouveau.
   const legende = p
     ? i.parent
-      ? `${i.stade} · évolue de ${i.parent.name}`
-      : `${i.stade} · ${i.faction.name}`
-    : i.stade;
+      ? `évolue de ${i.parent.name}`
+      : i.faction.name
+    : `${i.stade.split(' · ')[0]} · ${REGLE_ACTION[card.kind as keyof typeof REGLE_ACTION]}`;
   return (
     <Coque variante="c" props={props} style={i.style}>
       <header className="pv-c__tete">
-        <span className="pv-c__stade">{p ? i.stade : 'Action'}</span>
-        <span className="pv-c__nom">{card.name}</span>
+        <span className="pv-c__nom" data-long={card.name.length > 18 || undefined}>
+          {card.name}
+        </span>
         {p && (
-          <span className="pv-c__seuil">
-            <small>Seuil</small>
+          <span className="pv-c__seuil" aria-label={`Seuil ${p.hp}`}>
+            <small aria-hidden>Seuil</small>
             {p.hp}
           </span>
         )}
-        <span className="pv-c__glyphe" title={i.faction.name}>
+        <span className="pv-c__glyphe" title={i.faction.name} aria-hidden>
           {i.faction.glyph}
         </span>
       </header>
       <div className="pv-c__art" style={{ background: i.fond }}>
         {!i.url && <span className="pv-c__glyphe-fond">{card.glyph}</span>}
-        {i.comex && <b className="pv-comex pv-c__comex">COMEX</b>}
+        <span className="pv-c__stade">
+          {i.stade}
+          {i.comex && <b className="pv-c__comex">COMEX</b>}
+        </span>
       </div>
       <div className="pv-c__legende">{legende}</div>
       <div className="pv-c__corps">
@@ -170,6 +178,7 @@ export function VarianteC(props: VarianteProps) {
           <div className="pv-c__talent">
             <em>Talent</em>
             <span>{p.ability.name}</span>
+            {grand && <small className="pv-c__effet">{p.ability.text}</small>}
           </div>
         )}
         {p ? (
@@ -178,6 +187,7 @@ export function VarianteC(props: VarianteProps) {
               <CafePips symbols={a.cost} />
               <span className="pv-c__pnom">{a.name}</span>
               <span className="pv-c__dgt">{a.damage || ''}</span>
+              {grand && a.text && <small className="pv-c__effet">{a.text}</small>}
             </div>
           ))
         ) : (
@@ -188,23 +198,25 @@ export function VarianteC(props: VarianteProps) {
       {p && (
         <div className="pv-c__stats">
           <span>
-            <small>Vulnérabilité</small>
+            <small>{grand ? 'Vulnérabilité' : 'Vuln.'}</small>
             {i.weakness ? (
               <b>
-                <i style={{ background: i.weakness.color }}>{i.weakness.glyph}</i>+{WEAKNESS_BONUS}
+                <i style={{ background: i.weakness.color }}>{i.weakness.glyph}</i>
+                {i.weakness.short} +{WEAKNESS_BONUS}
               </b>
             ) : (
-              <b>—</b>
+              <b>aucune</b>
             )}
           </span>
           <span>
-            <small>Rotation</small>
+            <small>{grand ? 'Rotation' : 'Rot.'}</small>
             <CafePips symbols={Array.from({ length: p.retreat }, () => 'INCOLORE' as const)} />
           </span>
         </div>
       )}
       <footer className="pv-c__pied">
         <span className="pv-c__rarete">{i.rarity.label}</span>
+        <span className="pv-c__sigle">· {i.faction.short}</span>
       </footer>
     </Coque>
   );
@@ -406,66 +418,85 @@ const CSS = `
 .pv-b__faction i { background: var(--accent); border-radius: 50%; color: #fff; display: inline-grid; font-style: normal; height: 1.5em; place-items: center; width: 1.5em; }
 .pv-b__rarete { color: var(--rarity); letter-spacing: 0.05em; }
 
-/* ── C · Gabarit Pocket ── */
+/* ── C · Gabarit Pocket ── (relu : aplat de faction, plancher de taille, chrome du slot) */
 .pv-c {
   background: linear-gradient(160deg, color-mix(in srgb, var(--rarity) 85%, white), color-mix(in srgb, var(--rarity) 55%, #111));
   box-shadow: 0 10px 22px -8px rgb(0 0 0 / 70%);
   padding: 2.5%;
 }
+.pv-c[data-rarity='COU'] { background: color-mix(in srgb, var(--rarity) 62%, var(--bg-deep)); }
+.pv-c:has(.pv-c__comex) { background: linear-gradient(160deg, var(--gold-soft), var(--gold-deep)); }
 .pv-c .pv__face {
-  background:
-    radial-gradient(120% 60% at 50% 0%, color-mix(in srgb, var(--accent) 55%, #fff) 0%, transparent 70%),
-    linear-gradient(180deg, color-mix(in srgb, var(--accent) 62%, #10161f), color-mix(in srgb, var(--accent) 30%, #0c111a));
+  background: color-mix(in srgb, var(--accent) 55%, #10161f);
   border-radius: 8px;
-  gap: 0.28em;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), inset 0 0 0 1px rgb(0 0 0 / 45%);
+  gap: 0.25em;
   padding: 0.35em 0.45em 0.3em;
 }
-.pv-c__tete { align-items: center; display: flex; gap: 0.3em; min-height: 1.9em; }
-.pv-c__stade {
-  background: rgb(0 0 0 / 35%); border-radius: 0.6em; color: #fff; flex: none; font-size: 0.56em; font-weight: 700;
-  letter-spacing: 0.06em; padding: 0.15em 0.45em; text-transform: uppercase;
+.pv-c .pv__face::before {
+  background: var(--holo, none); content: ''; inset: 0; mix-blend-mode: screen; pointer-events: none; position: absolute;
 }
+.pv-c__tete { align-items: center; display: flex; gap: 0.3em; min-height: 2.3em; }
 .pv-c__nom {
-  color: #fff; flex: 1 1 auto; font-family: var(--font-display); font-size: 0.98em; font-weight: 800; line-height: 1;
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 0 rgb(0 0 0 / 50%); white-space: nowrap;
+  -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #fff; display: -webkit-box; flex: 1 1 auto;
+  font-family: var(--font-display); font-size: 1em; font-weight: 800; line-height: 1.05; min-width: 0; overflow: hidden;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 50%); text-wrap: balance;
 }
-.pv-c__seuil { align-items: baseline; color: #fff; display: flex; flex: none; font-family: var(--font-display); font-size: 1.15em; font-weight: 800; gap: 0.12em; }
-.pv-c__seuil small { font-size: 0.42em; font-weight: 700; letter-spacing: 0.04em; opacity: 0.85; text-transform: uppercase; }
+.pv-c__nom[data-long] { font-size: 0.84em; }
+.pv-c__seuil { align-items: baseline; color: #fff; display: flex; flex: none; font-family: var(--font-display); font-size: 1.2em; font-weight: 800; gap: 0.12em; }
+.pv-c__seuil small { font-size: 0.42em; font-weight: 700; letter-spacing: 0.04em; opacity: 0.9; text-transform: uppercase; }
 .pv-c__glyphe {
-  background: #fff; border-radius: 50%; box-shadow: 0 0 0 0.12em rgb(0 0 0 / 35%); color: var(--accent); display: grid;
-  flex: none; font-size: 0.75em; height: 1.45em; place-items: center; width: 1.45em;
+  background: var(--accent); border-radius: 50%; box-shadow: 0 0 0 0.1em var(--text), 0 0 0 0.2em rgb(0 0 0 / 40%); color: #fff;
+  display: grid; flex: none; font-size: 0.75em; height: 1.45em; place-items: center; width: 1.45em;
 }
 .pv-c__art {
-  aspect-ratio: 16 / 11; border-radius: 0.25em; box-shadow: 0 0 0 0.18em color-mix(in srgb, var(--rarity) 70%, #fff), 0 0.15em 0.4em rgb(0 0 0 / 50%);
+  aspect-ratio: 4 / 3; border-radius: 0.25em; box-shadow: 0 0 0 0.18em color-mix(in srgb, var(--rarity) 70%, #fff), 0 0.15em 0.4em rgb(0 0 0 / 50%);
   flex: none; margin: 0 0.1em; position: relative;
 }
-.pv-c__art::after { background: var(--holo, none); content: ''; inset: 0; mix-blend-mode: screen; position: absolute; }
 .pv-c__glyphe-fond { color: #fff; font-size: 4em; left: 50%; opacity: 0.4; position: absolute; top: 50%; transform: translate(-50%, -50%); }
-.pv-c__comex { bottom: 0.3em; left: 0.3em; margin: 0; position: absolute; }
+.pv-c__stade {
+  align-items: center; background: rgb(7 12 22 / 80%); border-radius: 0.5em; color: #fff; display: inline-flex; font-size: 0.66em;
+  font-weight: 700; gap: 0.35em; left: 0.35em; letter-spacing: 0.04em; padding: 0.15em 0.45em; position: absolute; top: 0.35em;
+}
+.pv-c__comex { background: var(--gold); border-radius: 0.3em; color: #1c1304; font-weight: 800; padding: 0 0.3em; }
 .pv-c__legende {
-  background: rgb(0 0 0 / 28%); border-radius: 0.2em; color: rgb(255 255 255 / 85%); font-size: 0.52em; font-style: italic;
+  background: rgb(0 0 0 / 28%); border-radius: 0.2em; color: rgb(255 255 255 / 90%); font-size: 0.68em; font-style: italic;
   overflow: hidden; padding: 0.1em 0.5em; text-align: center; text-overflow: ellipsis; white-space: nowrap;
 }
-.pv-c__corps { display: flex; flex: 1 1 auto; flex-direction: column; gap: 0.2em; justify-content: center; min-height: 0; }
-.pv-c__talent { align-items: center; display: flex; font-size: 0.72em; gap: 0.35em; }
-.pv-c__talent em { background: #b3261e; border-radius: 0.2em; color: #fff; font-size: 0.85em; font-style: normal; font-weight: 800; padding: 0 0.35em; text-transform: uppercase; }
+.pv-c__corps { display: flex; flex: 1 1 auto; flex-direction: column; gap: 0.2em; justify-content: flex-start; min-height: 0; padding-top: 0.25em; }
+.pv-c__talent { align-items: center; display: grid; font-size: 0.8em; gap: 0.1em 0.35em; grid-template-columns: 3.75em 1fr; }
+.pv-c__talent em { background: #b3261e; border-radius: 0.2em; color: #fff; font-size: 0.7em; font-style: normal; font-weight: 800; padding: 0.05em 0.35em; text-align: center; text-transform: uppercase; }
 .pv-c__talent span { color: #fff; font-weight: 700; }
-.pv-c__pression { align-items: center; display: grid; gap: 0.35em; grid-template-columns: 3em 1fr auto; }
-.pv-c__pnom { color: #fff; font-size: 0.82em; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pv-c__dgt { color: #fff; font-family: var(--font-display); font-size: 1.15em; font-weight: 800; }
-.pv-c__texte { color: #fff; font-size: 0.74em; margin: 0; }
-.pv-c__flavour { color: rgb(255 255 255 / 75%); font-size: 0.62em; font-style: italic; margin: 0; }
+.pv-c__pression { align-items: center; display: grid; gap: 0.1em 0.35em; grid-template-columns: 3em 1fr auto; min-height: 1.5em; }
+.pv-c__pnom { color: #fff; font-size: 0.9em; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-c__dgt { color: #fff; font-family: var(--font-display); font-size: 1.15em; font-variant-numeric: tabular-nums; font-weight: 800; min-width: 1.7em; text-align: right; }
+.pv-c__effet {
+  -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: rgb(255 255 255 / 85%); display: -webkit-box; font-size: 0.7em;
+  grid-column: 2 / -1; line-height: 1.2; overflow: hidden;
+}
+.pv-c__talent .pv-c__effet { font-size: 0.85em; }
+.pv-c .pip { box-shadow: 0 0 0 1px var(--bg-deep), 0 0 0 1.5px var(--text); height: 0.9em; width: 0.9em; }
+.pv-c .pip--free { border-color: var(--text); box-shadow: none; }
+.pv-c__texte {
+  background: rgb(0 0 0 / 22%); border-radius: 0.3em; color: #fff; font-size: 0.88em; margin: auto 0; padding: 0.5em 0.6em; text-align: center;
+}
+.pv-c__flavour { color: rgb(255 255 255 / 80%); font-size: 0.68em; font-style: italic; margin: 0; }
 .pv-c__stats {
   border-top: 1px solid rgb(255 255 255 / 25%); display: grid; gap: 0.4em; grid-template-columns: 1fr 1fr; padding-top: 0.2em;
 }
 .pv-c__stats > span { align-items: center; color: #fff; display: flex; gap: 0.3em; justify-content: center; }
-.pv-c__stats small { font-size: 0.5em; letter-spacing: 0.04em; opacity: 0.8; text-transform: uppercase; }
-.pv-c__stats b { align-items: center; display: inline-flex; font-size: 0.7em; gap: 0.15em; }
-.pv-c__stats b i { border-radius: 50%; color: #fff; display: inline-grid; font-size: 0.85em; font-style: normal; height: 1.3em; place-items: center; width: 1.3em; }
-.pv-c__pied { align-items: center; display: flex; justify-content: center; min-height: 2.5em; }
-.pv-c.is-grand .pv-c__pied { min-height: 1.4em; }
-.pv-c__rarete { color: #fff; font-size: 0.6em; letter-spacing: 0.08em; text-shadow: 0 0 0.3em var(--rarity); }
+.pv-c__stats small { font-size: 0.62em; letter-spacing: 0.04em; opacity: 0.85; text-transform: uppercase; }
+.pv-c__stats b { align-items: center; display: inline-flex; font-size: 0.82em; gap: 0.2em; }
+.pv-c__stats b i { border-radius: 50%; color: #fff; display: inline-grid; font-size: 0.8em; font-style: normal; height: 1.5em; place-items: center; width: 1.5em; }
+.pv-c__pied { align-items: center; display: flex; gap: 0.4em; justify-content: flex-start; min-height: 2.5em; padding-left: 2.2rem; }
+.pv-c.is-grand .pv-c__pied { justify-content: center; min-height: 1.4em; padding-left: 0; }
+.pv-c__rarete { color: var(--rarity); font-size: 0.85em; letter-spacing: 0.08em; text-shadow: 0 1px 0 rgb(0 0 0 / 70%); }
+.pv-c__sigle { color: color-mix(in srgb, var(--accent) 35%, #fff); font-size: 0.75em; font-weight: 700; }
 [data-proto-variante='C'] .card-slot__quick { bottom: 0.45rem; left: 0.45rem; right: auto; top: auto; }
+.card-slot.is-missing .pv-c { filter: none; }
+.card-slot.is-missing .pv-c .pv__face { filter: grayscale(1); }
+.card-slot.is-missing .pv-c__art { opacity: 0.4; }
+.card-detail__visual:has(.pv-c) { max-width: 280px; }
 
 /* ── D · Badge d'employé ── */
 .pv-d {
