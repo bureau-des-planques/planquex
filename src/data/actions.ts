@@ -166,22 +166,29 @@ export const ACTION_CARDS: ActionCard[] = [
  * **même** carte. Le nom, le texte, les effets et, s'il existe, l'`itemKind` sont
  * hérités de la base (`AGENTS.md` §5) ; seuls l'identifiant (`-star` / `-star2`) et
  * la rareté changent.
+ *
+ * **L'illustration ne s'hérite pas** (D-139), comme pour les Planqués : `art` est écarté,
+ * et une variante qui a sa planche la déclare. Les huit variantes de Collègues sont
+ * comprises dans les 75 variantes de la décision.
  */
 const variant = (
   baseId: string,
   id: string,
   rarity: ActionCard['rarity'],
-  glyph?: string
+  glyph?: string,
+  art?: string
 ): ActionCard => {
   const source = ACTION_CARDS.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte Action introuvable: ${baseId}`);
+  const { art: _heritee, ...herite } = source;
   return {
-    ...source,
+    ...herite,
     id,
     rarity,
     variantOf: baseId,
     glyph: glyph ?? source.glyph,
-    flavor: source.flavor
+    flavor: source.flavor,
+    ...(art === undefined ? {} : { art })
   };
 };
 

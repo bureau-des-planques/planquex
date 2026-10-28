@@ -191,6 +191,12 @@ export const DIRECTION_CARDS: PlanqueCard[] = [
     flavor: 'Le casque est neuf. Le reste aussi.'
   })
 ];
+
+// Une variante, dans la forme réelle du dépôt : c'est cette ligne que cabler doit
+// savoir compléter depuis D-139 (une variante déclare sa planche).
+export const SSE_VARIANTS: Card[] = [
+  secretVariant(SSE_CARDS, 'sse-medecin-travail', 'star3', '✚')
+];
 `;
 
 beforeEach(() => {
@@ -1116,6 +1122,83 @@ describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
     expect(sujet, `${CARTE} doit avoir un sujet`).not.toBe('');
     expect(prompt).toContain(sujet);
     expect(prompt).toContain(`muted ${accent} accent.`);
+  }, DELAI);
+});
+
+/**
+ * **D-139** — la table des sujets accepte les variantes.
+ *
+ * Le refus « n'est pas dans la table des sujets » était une **garde de production**,
+ * pas une règle de contenu : la table porte une ligne par carte de **base**, et une
+ * variante n'en mérite pas une (c'est la même carte, dans un autre cadre). Le wizard
+ * résout donc l'id de base depuis le suffixe (`base_de_variante`), et emprunte le sujet.
+ * Ce que la garde doit continuer de refuser : un id inventé.
+ */
+describe('Wizard — une variante a le sujet de sa base (D-139)', () => {
+  it('une variante n’est pas « hors de la table des sujets »', () => {
+    const r = wizard(['--prompt', 'sse-medecin-travail-star3']);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).not.toBe('');
+  });
+
+  it('son prompt est exactement celui de sa base', () => {
+    // La variante est la même carte : même sujet, même accent de faction. Une planche
+    // de variante se distingue par le **cadre** (3 étoiles, Couronne), pas par le sujet.
+    const base = wizard(['--prompt', 'sse-medecin-travail']);
+    const variante = wizard(['--prompt', 'sse-medecin-travail-star3']);
+    expect(variante.status, variante.stderr).toBe(0);
+    expect(variante.stdout).toBe(base.stdout);
+  });
+
+  it('les quatre suffixes de variante sont connus, les autres non', () => {
+    for (const suffixe of ['star', 'star2', 'star3', 'crown']) {
+      expect(wizard(['--prompt', `sse-medecin-travail-${suffixe}`]).status, suffixe).toBe(0);
+    }
+    // `-ex` est un **statut** (D-026), pas une variante : il a sa propre carte de base.
+    expect(wizard(['--prompt', 'sse-medecin-travail-ex']).status).toBe(2);
+  });
+
+  it('le contrôle mord : un id inventé reste refusé, variante comprise', () => {
+    expect(wizard(['--prompt', 'sse-carte-fantome']).status).toBe(2);
+    expect(wizard(['--prompt', 'sse-carte-fantome-star3']).status).toBe(2);
+    // Une variante d'une base connue mais **sans sujet** ne passe pas non plus : la
+    // résolution ne doit pas accepter n'importe quel suffixe sur un préfixe connu.
+    const sujets = join(bac, 'sujets.md');
+    writeFileSync(sujets, '| `direction-pdg` | a test subject, in a test coat, holding a test object, testing a test gesture, calm |\n');
+    expect(
+      wizard(['--prompt', 'direction-qui-nexiste-pas-crown'], '', { GFLOW_ILLUSTRATION_SUJETS: sujets }).status
+    ).toBe(2);
+  });
+
+  it('le mode direct refuse une variante d’une base inconnue, sans appeler gflow', () => {
+    const r = wizard(['--direct', 'direction-fantome-crown']);
+    expect(r.status).toBe(2);
+    expect(appels()).toHaveLength(0);
+  });
+
+  it('le contrôle mord : une ligne de variante dans la table des sujets est une orpheline', () => {
+    // Les sujets se lisent **par base** : une ligne de variante serait une seconde
+    // source, qui divergerait de celle de sa base.
+    const avec = [
+      ...lireSujets(),
+      { id: 'sse-medecin-travail-star3', sujet: 'a doctor, in a coat, holding a file, waiting, calm' }
+    ];
+    expect(controlerSujets(avec).join('\n')).toContain('sse-medecin-travail-star3');
+  });
+
+  it('une variante se range, se consigne et se câble (D-139)', () => {
+    // Le bac porte une vraie ligne `secretVariant(...)` : c'est elle que `cabler` complète,
+    // en cinquième argument, faute de quoi l'image resterait orpheline.
+    const image = join(bac, 'image.png');
+    writeFileSync(image, png());
+    const r = wizard(['sse-medecin-travail-star3', '--installe', image], stdinInstalle());
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+    expect(existsSync(join(registre, 'sse-medecin-travail-star3.webp')), 'l’image doit être au registre').toBe(true);
+    expect(readFileSync(readme, 'utf8'), 'la ligne de journal').toMatch(/`sse-medecin-travail-star3`/);
+    const source = readFileSync(join(donnees, 'direction.ts'), 'utf8');
+    expect(source, 'la variante doit déclarer sa planche').toContain(
+      "secretVariant(SSE_CARDS, 'sse-medecin-travail', 'star3', '✚', 'sse-medecin-travail-star3.webp')"
+    );
   }, DELAI);
 });
 

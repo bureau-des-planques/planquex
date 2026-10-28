@@ -145,20 +145,31 @@ export function planqueBase(faction: Faction): (card: PlanqueInput) => PlanqueCa
  * flavour) et ne change que son identifiant, sa rareté et, au besoin, son glyphe.
  * Le suffixe porte la rareté : `star` → `1S`, `star2` → `2S`, `star3` → `3S`,
  * `crown` → `COU` (#87).
+ *
+ * **L'illustration ne s'hérite pas** (D-139) : `art` n'est jamais recopié de la carte
+ * de base — une variante qui a sa planche la **déclare** (`art`, cinquième argument),
+ * et une variante qui n'en a pas encore laisse le champ vide. L'écran, lui, résout le
+ * repli (`artFileOf`, `src/art.ts`) : la donnée ne porte pas de copie, qui divergerait
+ * à la première regénération de la base.
  */
 export function secretVariant(
   cards: readonly PlanqueCard[],
   baseId: string,
   suffix: SecretSuffix,
-  glyph?: string
+  glyph?: string,
+  art?: string
 ): PlanqueCard {
   const source = cards.find((card) => card.id === baseId);
   if (!source) throw new Error(`Carte introuvable : ${baseId}`);
+  // `art` est écarté par la déstructuration : c'est **la** ligne de D-139, et
+  // `src/data/art.test.ts` refuse qu'une variante recopie l'image de sa base.
+  const { art: _heritee, ...herite } = source;
   return {
-    ...source,
+    ...herite,
     id: `${baseId}-${suffix}`,
     rarity: SECRET_RARITY[suffix],
     variantOf: baseId,
-    glyph: glyph ?? source.glyph
+    glyph: glyph ?? source.glyph,
+    ...(art === undefined ? {} : { art })
   };
 }

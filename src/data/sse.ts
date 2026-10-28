@@ -364,7 +364,7 @@ export const SSE_VARIANTS: Card[] = [
   secretVariant(SSE_CARDS, 'sse-chef-secours', 'star', '✚'),
   secretVariant(SSE_CARDS, 'sse-responsable-hygiene', 'star', '✦'),
   secretVariant(SSE_CARDS, 'sse-psychiatre', 'star', '◉'),
-  secretVariant(SSE_CARDS, 'sse-medecin-travail', 'star3', '✚'),
+  secretVariant(SSE_CARDS, 'sse-medecin-travail', 'star3', '✚', 'sse-medecin-travail-star3.webp'),
   secretVariant(SSE_CARDS, 'sse-responsable-sse', 'star2', '✦'),
   secretVariant(SSE_CARDS, 'sse-medecin-chef', 'star2', '✚'),
   secretVariant(SSE_CARDS, 'sse-psychologue', 'star2', '◉'),

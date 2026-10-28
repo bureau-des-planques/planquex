@@ -387,7 +387,7 @@ export const ATELIER_VARIANTS: Card[] = [
   secretVariant(ATELIER_CARDS, 'atelier-rpo', 'star', '⌁'),
   secretVariant(ATELIER_CARDS, 'atelier-responsable-qualite', 'star', '✦'),
   secretVariant(ATELIER_CARDS, 'atelier-rpi', 'star', '◉'),
-  secretVariant(ATELIER_CARDS, 'atelier-responsable-process', 'star3', '⚒'),
+  secretVariant(ATELIER_CARDS, 'atelier-responsable-process', 'star3', '⚒', 'atelier-responsable-process-star3.webp'),
   secretVariant(ATELIER_CARDS, 'atelier-rui', 'star2', '✦'),
   secretVariant(ATELIER_CARDS, 'atelier-responsable-flux', 'star2', '⚒'),
   secretVariant(ATELIER_CARDS, 'atelier-joueur-de-flute', 'star2', '◉')

@@ -38,8 +38,35 @@
 
 Les **dix cartes signature sont produites** (voir le journal, en bas). Les autres cartes de
 base restent à faire : `npm run status` en donne le compte (`cards`), et la liste des lignes
-de sujets est celle de **`SUJETS-flow.md`**. Les **variantes** n'en demandent **aucune** —
-`secretVariant` recopie `art` de sa base, et `src/data/art.test.ts` l'impose.
+de sujets est celle de **`SUJETS-flow.md`**.
+
+## Les variantes — une planche chacune, à leur tour (D-139)
+
+Une variante **ne recopie plus** l'illustration de sa base. `secretVariant`
+(`src/data/planque.ts`) écarte `art`, une variante qui a sa planche la **déclare**
+(`art: '<son id>.webp'`, cinquième argument de `secretVariant`), et l'écran résout le
+repli quand elle n'en a pas encore : `artFileOf` (`src/art.ts`) rend l'image de
+`variantOf`, ou rien si la base non plus n'en a pas. `src/data/art.test.ts` garde les
+trois règles — l'image porte l'**id de la carte qui la déclare**, aucune orpheline, et le
+gabarit (carré, ≥ 1024 px, < 1 Mo).
+
+**L'ordre de D-126 ne change pas** : les bases, puis les **sept variantes hautes**
+(4 × `3S`, 3 × `COU`), puis les `1S`/`2S`. Une variante **n'a pas de ligne de sujet à
+elle** : elle emprunte celui de sa base (`base_de_variante` dans
+`scripts/illustration-vague.sh`), et le wizard accepte donc son id.
+
+| Variante (`id`) | Rareté | Base | État |
+|---|---|---|---|
+| `sse-medecin-travail-star3` | `3S` | `sse-medecin-travail` | **produite** — graine `0` |
+| `amelioration-directeur-qualite-star3` | `3S` | `amelioration-directeur-qualite` | **produite** — graine `125557385` |
+| `qvt-chief-happiness-officer-star3` | `3S` | `qvt-chief-happiness-officer` | **produite** — graine `1626243013` |
+| `atelier-responsable-process-star3` | `3S` | `atelier-responsable-process` | **produite** — graine `0` |
+| `rh-drh-crown` | `COU` | `rh-drh` | **produite** — graine `92169534` |
+| `direction-pdg-crown` | `COU` | `direction-pdg` | **produite** — graine `602849386` |
+| `syndicat-secretaire-general-crown` | `COU` | `syndicat-secretaire-general` | **produite** — graine `1019569493` |
+
+Les **68 autres variantes** n'ont pas encore de planche : elles affichent celle de leur
+base, par résolution (D-139), et `npm run status` ne les compte pas comme manquantes.
 
 Pour ces cartes, **le sujet et l'accent sont désormais écrits**, et l'obstacle ouvert de #97
 est levé par #121 :
@@ -354,3 +381,10 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-26 · `rh-gestionnaire-formation` · modèle `NARWHAL` · graine `1592319664` · `rh-gestionnaire-formation.webp`
 - 2026-10-26 · `rh-responsable-formation` · modèle `NARWHAL` · graine `300403632` · `rh-responsable-formation.webp`
 - 2026-10-26 · `direction-auditeur-direction` · **fichier renommé** avec son id (D-096 (4)), graine reprise de la production du 25/10/2026 `direction-auditeur-interne` · graine `1811249482` · `direction-auditeur-direction.webp`
+- 2026-10-28 · `sse-medecin-travail-star3` · modèle `NARWHAL` · graine `0` · `sse-medecin-travail-star3.webp`
+- 2026-10-28 · `amelioration-directeur-qualite-star3` · modèle `NARWHAL` · graine `125557385` · `amelioration-directeur-qualite-star3.webp`
+- 2026-10-28 · `qvt-chief-happiness-officer-star3` · modèle `NARWHAL` · graine `1626243013` · `qvt-chief-happiness-officer-star3.webp`
+- 2026-10-28 · `atelier-responsable-process-star3` · modèle `NARWHAL` · graine `0` · `atelier-responsable-process-star3.webp`
+- 2026-10-28 · `rh-drh-crown` · modèle `NARWHAL` · graine `92169534` · `rh-drh-crown.webp`
+- 2026-10-28 · `direction-pdg-crown` · modèle `NARWHAL` · graine `602849386` · `direction-pdg-crown.webp`
+- 2026-10-28 · `syndicat-secretaire-general-crown` · modèle `NARWHAL` · graine `1019569493` · `syndicat-secretaire-general-crown.webp`

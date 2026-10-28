@@ -38,6 +38,11 @@ de base — les Planqués en cinq créneaux (`<rôle>, <tenue>, holding <objet>,
 Le prompt se compose donc : `<socle aplati> <sujet>, muted <accent> accent.` — c'est
 exactement ce que `scripts/illustration-vague.sh` envoie.
 
+**Une variante emprunte le sujet de sa base** (D-139) : elle rejoue la même scène, dans
+un cadre de rareté haute (`3S`, `COU`), et le wizard résout l'id de base depuis le suffixe
+(`sse-medecin-travail-star3` → `sse-medecin-travail`). Il n'y a donc **pas** de ligne de
+sujet pour une variante : une seule scène par personnage, deux planches possibles.
+
 > Ce fichier ne gardait qu'une table de dix signature ; elle est retirée (#121) parce que
 > `SUJETS-flow.md` la couvre, et une seconde source de sujets dériverait.
 
