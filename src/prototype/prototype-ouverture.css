@@ -275,28 +275,112 @@ body {
   width: 26px;
 }
 
-/* les cinq cartes qui sortent, une fois le sachet ouvert */
+/* ── le sachet, son intérieur, et les cartes ─────────────────────────────── */
+.sachet__sac {
+  inset: 0;
+  position: absolute;
+  transition: transform 900ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 2;
+}
+
+/* Le sachet descend pendant que les cartes sortent. */
+.sachet__sac--descend {
+  transform: translateY(26%);
+}
+
+/* L'intérieur : la bande du haut seulement, au-dessus de la ligne de déchirure.
+   Les cartes y montent, donc on les voit émerger de l'ouverture et non apparaître. */
+.sachet__interieur {
+  clip-path: inset(0 0 86% 0);
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: 1;
+}
+
+.sachet__devant {
+  inset: 0;
+  position: absolute;
+  z-index: 3;
+}
+
 .sachet__carte {
-  animation: carte-sort 900ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
-  animation-delay: calc(var(--i) * 90ms);
   left: 50%;
   pointer-events: none;
   position: absolute;
-  top: 22%;
-  transform-origin: 50% 100%;
-  width: 34%;
+  top: 8%;
+  width: 30%;
 }
 
-@keyframes carte-sort {
+.sachet__carte--monte {
+  animation: carte-monte 620ms cubic-bezier(0.3, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+@keyframes carte-monte {
   0% {
-    opacity: 0;
-    transform: translate(-50%, 40px) rotate(0deg) scale(0.6);
+    transform: translate(-50%, 90px);
   }
-  60% {
-    opacity: 1;
+  100% {
+    transform: translate(-50%, 26px);
+  }
+}
+
+.sachet__carte--eventail {
+  animation: carte-eventail 780ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 80ms);
+}
+
+@keyframes carte-eventail {
+  0% {
+    opacity: 0.15;
+    transform: translate(-50%, 10px) scale(0.9);
   }
   100% {
     opacity: 1;
-    transform: translate(calc(-50% + (var(--i) - 2) * 46px), -70px) rotate(calc((var(--i) - 2) * 7deg)) scale(1);
+    transform: translate(calc(-50% + (var(--i) - 2) * 52px), 132px) rotate(calc((var(--i) - 2) * 6deg)) scale(1);
   }
+}
+
+/* L'étiquette détourée : elle sort du cadre dans le sens du doigt, puis disparaît. */
+.sachet__vole {
+  animation: etiquette-vole 880ms cubic-bezier(0.3, 0.5, 0.4, 1) both;
+  left: 32%;
+  pointer-events: none;
+  position: absolute;
+  top: 8%;
+  width: 40%;
+  z-index: 4;
+}
+
+@keyframes etiquette-vole {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(1);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(calc(var(--sens) * 96px), -78px) rotate(calc(var(--sens) * 22deg)) scale(0.95);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--sens) * 170px), -150px) rotate(calc(var(--sens) * 44deg)) scale(0.8);
+  }
+}
+
+/* le front de déchirure */
+.sachet__front {
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.85) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  filter: blur(1px);
+  height: 3px;
+  pointer-events: none;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 26px;
+  z-index: 2;
 }

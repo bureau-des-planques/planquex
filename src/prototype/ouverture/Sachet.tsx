@@ -27,6 +27,9 @@ const PLAQUES = [
   new URL('./plates/p6.jpg', import.meta.url).href
 ];
 
+/** L'autocollant détouré, tiré par gflow puis détouré sur fond noir : il s'envole, il ne s'efface pas. */
+const VOLEE = new URL('./plates/etiquette-volee.png', import.meta.url).href;
+
 /** La boîte de l'étiquette, en fraction de la zone. */
 const ETIQUETTE = { x: 0.285, y: 0.1, w: 0.43, h: 0.11 };
 /** L'ordonnée de la ligne de pointillés, en fraction de la hauteur. */
@@ -132,7 +135,8 @@ function synthetiseur() {
 export function Sachet() {
   const [etat, setEtat] = useState<Etat>(creer);
   const [muet, setMuet] = useState(false);
-  const [cartons, setCartons] = useState(false);
+  const [vol, setVol] = useState(false);
+  const [sortie, setSortie] = useState<'aucune' | 'montent' | 'eventail'>('aucune');
   const zone = useRef<HTMLDivElement>(null);
   const depart = useRef({ x: 0, y: 0, t: 0 });
   const prise = useRef<Zone | null>(null);
@@ -148,11 +152,13 @@ export function Sachet() {
     }
   }, []);
 
-  // Les cartes ne sortent qu'une fois : la déchirure finie déclenche l'ouverture et le jet.
+  // La déchirure finie ouvre le sachet : les cartes montent de l'intérieur, puis s'ouvrent
+  // en éventail devant, pendant que le sachet descend.
   useEffect(() => {
     if (etat.phase !== 'ouvert') return undefined;
     son.ouvrir();
-    const t = window.setTimeout(() => setCartons(true), 220);
+    setSortie('montent');
+    const t = window.setTimeout(() => setSortie('eventail'), 560);
     return () => window.clearTimeout(t);
   }, [etat.phase, son]);
 
@@ -213,7 +219,11 @@ export function Sachet() {
     prise.current = null;
     setEtat((courant) => {
       const { etat: suivant } = relacher(courant);
-      if (suivant.phase === 'dechirure' && courant.phase === 'etiquette') son.dechirer();
+      if (suivant.phase === 'dechirure' && courant.phase === 'etiquette') {
+        son.dechirer();
+        setVol(true);
+        window.setTimeout(() => setVol(false), 900);
+      }
       return suivant;
     });
   };
@@ -236,16 +246,56 @@ export function Sachet() {
         onPointerCancel={surRelache}
         onLostPointerCapture={surRelache}
       >
-        {PLAQUES.map((src, i) => (
+        {sortie === 'montent' && (
+          <div className="sachet__interieur" aria-hidden="true">
+            {carts.map((carte, i) => (
+              <div
+                key={carte.id}
+                className="sachet__carte sachet__carte--monte"
+                style={{ ['--i' as string]: String(i) }}
+              >
+                <CardView card={carte} compact />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className={`sachet__sac${etat.phase === 'ouvert' ? ' sachet__sac--descend' : ''}`}>
+          {PLAQUES.map((src, i) => (
+            <img
+              key={src}
+              className="sachet__plaque"
+              src={src}
+              alt=""
+              draggable={false}
+              style={{ opacity: poids[i], transform: `scaleX(${miroir})` }}
+            />
+          ))}
+        </div>
+
+        {sortie === 'eventail' && (
+          <div className="sachet__devant">
+            {carts.map((carte, i) => (
+              <div
+                key={carte.id}
+                className="sachet__carte sachet__carte--eventail"
+                style={{ ['--i' as string]: String(i) }}
+              >
+                <CardView card={carte} compact />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {vol && (
           <img
-            key={src}
-            className="sachet__plaque"
-            src={src}
+            className="sachet__vole"
+            src={VOLEE}
             alt=""
             draggable={false}
-            style={{ opacity: poids[i], transform: `scaleX(${miroir})` }}
+            style={{ ['--sens' as string]: String(sens.current) }}
           />
-        ))}
+        )}
 
         {etat.phase === 'dechirure' && etat.dechirure > 0.02 && (
           <span
@@ -254,13 +304,6 @@ export function Sachet() {
             style={{ left: `${etat.dechirure * 100}%`, top: `${LIGNE * 100}%` }}
           />
         )}
-
-        {cartons &&
-          carts.map((carte, i) => (
-            <div key={carte.id} className="sachet__carte" style={{ ['--i' as string]: String(i) }}>
-              <CardView card={carte} compact />
-            </div>
-          ))}
       </div>
 
       <p className="sachet__consigne" data-consigne>
