@@ -21,8 +21,9 @@
  * l'écran d'un compte non administrateur — pour les comptes **et** pour le mur.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Check, RefreshCw, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { RetourEcran } from '@/components/RetourEcran';
 import { deciderCompte, libelleEtat, listerComptes, type Compte } from '@/lib/comptes';
 import type { TriPostit } from '@/lib/murBase';
 import { useMur } from '@/lib/useMur';
@@ -160,9 +161,7 @@ export function Administration() {
             Cette version du jeu n’est pas reliée à une base : il n’y a ni compte à valider ni administration. Le mur
             lit le fichier du dépôt.
           </p>
-          <Link className="button" to="/">
-            Retour au bureau
-          </Link>
+          <RetourEcran vers="/" libelle="Retour au bureau" />
         </section>
       </div>
     );
@@ -171,6 +170,7 @@ export function Administration() {
   if (chargement && !compte) {
     return (
       <div className="page">
+        <RetourEcran vers="/" libelle="Retour au bureau" />
         <section className="section panel">
           <h1>Les comptes de l’alpha</h1>
           <p className="m-0 text-[0.9rem] text-ink-muted">Vérification de ton compte…</p>
@@ -182,6 +182,7 @@ export function Administration() {
   if (!session) {
     return (
       <div className="page">
+        <RetourEcran vers="/" libelle="Retour au bureau" />
         <section className="section panel">
           <h1>Les comptes de l’alpha</h1>
           <p className="m-0">
@@ -201,9 +202,7 @@ export function Administration() {
             Cette page liste les comptes de l’alpha et décide de leur validation. Elle n’est ouverte qu’aux comptes
             marqués administrateurs ; le tien ne l’est pas.
           </p>
-          <Link className="button" to="/">
-            Retour au bureau
-          </Link>
+          <RetourEcran vers="/" libelle="Retour au bureau" />
         </section>
       </div>
     );

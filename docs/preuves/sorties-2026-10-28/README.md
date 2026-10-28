@@ -169,3 +169,12 @@ est disponible, mais ces deux sources n'ont pas pu être relues cette session.
 - Sources primaires Pocket (FAQ, 2026) et Master Duel (Yugipedia) : **non relues aujourd'hui** (403).
 - Hearthstone wiki et Out of Games : **secondaires**.
 - Aucune capture d'écran de ce lot : le constat est fait par DOM, CSS et gestes.
+
+## 7. Suite : le retour partout (#428)
+
+Les écrans sans barre du bas ont un retour explicite : `src/components/RetourEcran.tsx` (d'où l'on
+vient si une entrée précède l'écran, sinon le parent nommé « Retour au bureau »). Le composant sert
+à Confidentialité, Feuille de route et Installation (en haut de page, le bas de page ne se voyait pas
+sans défiler), à Connexion, Suivi, Administration et Attente. La garde est `src/components/RetourEcran.test.tsx`
+(chaque route de `ECRANS_SANS_BARRE` rend un lien « Retour… » ; la hauteur de `.button` reste à 44 px).
+La position au pouce à 420 × 900 n'est pas relevée ici : elle reste **non vérifiée**.
