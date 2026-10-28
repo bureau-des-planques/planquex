@@ -1730,7 +1730,18 @@ export function Battle() {
         elle qui libère la hauteur dont la main a besoin. Elle ne rend que ce que dit la liste du
         moteur : en partie à deux, le tour de l'autre ne lui prête aucun bouton (#125).
       */}
-      <section className="combat-barre" aria-label="Actions du tour" data-pas-a-pas={pasAPas.designe('poste-actions')}>
+      {/* `cramped-padding` est désactivé **ici et pour une raison écrite** (#205, AGENTS.md §6) :
+            la règle demande 8 px entre les lignes de la barre et son cadre ; D-094 (3) exige, elle,
+            20 px entre le bas de la barre et le bas de l'écran, et `npm run capturer` le mesure à
+            420 × 900. Les deux ne tiennent pas ensemble : les 16 px d'inset font tomber la marge à
+            14 px (mesuré le 28/10/2026). La marge protège le pouce, l'inset est cosmétique —
+            c'est la marge qui gagne, et la règle se tait ici plutôt que de rougir une fois sur deux. */}
+        <section
+          className="combat-barre"
+          aria-label="Actions du tour"
+          data-impeccable-ignore="cramped-padding"
+          data-pas-a-pas={pasAPas.designe('poste-actions')}
+        >
         {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
             qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
             information temporaire n'a pas à occuper une bande de plus. */}
