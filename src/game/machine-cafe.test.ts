@@ -168,8 +168,10 @@ describe('Battle.tsx — le plateau rend les cafés typés', () => {
     // Sans ce passage, l'écran de combat jouerait la dérivation alors que le joueur
     // a choisi ses types au Deck : le défaut serait invisible côté moteur.
     expect(battleSource).toMatch(/state\.cafeTypes/);
+    // Le Deck adverse est celui de la difficulté (#251) ; ce que la garde tient, c'est que
+    // les types **choisis** du joueur passent au moteur, quel que soit ce Deck.
     expect(battleSource).toMatch(
-      /createBattle\(playerDeck, testDeck\(\), undefined, \{ playerCafeTypes: chosenCafeTypes \}\)/
+      /createBattle\(playerDeck, directionDeck, undefined, \{ playerCafeTypes: chosenCafeTypes \}\)/
     );
   });
 });

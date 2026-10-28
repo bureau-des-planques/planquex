@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Lenteur justifiée (D-143 (5)) — 7 cas rendent l'écran Collection sous jsdom : recherche, vide
+// Lent : chaque cas rend la Collection complète dans jsdom, catalogue entier ; le coût est le rendu de la grille.
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { Collection } from './Collection';

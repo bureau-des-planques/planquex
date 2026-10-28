@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lenteur justifiée (D-143 (5)) — PGlite : trois bases distinctes, chacune avec son SQL de droits
+// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * `anon` n'exécute aucune fonction `security definer` de `public` — #247, migration
  * `0011_anon_hors_fonctions.sql`.

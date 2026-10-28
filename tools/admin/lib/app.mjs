@@ -25,6 +25,7 @@ import { classerSql, STATUTS } from './classification.mjs';
 import { lireEtat, masquerCourriel } from './etat.mjs';
 import { lireJournal } from './journal.mjs';
 import { initialiserRegistre, listerMigrations, appliquerMigration } from './migrations.mjs';
+import { CONFIRMATION, apercuReset, executerReset, texteApercu } from './reset.mjs';
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const PAGE = readFileSync(join(ICI, '..', 'page.html'), 'utf8');
@@ -369,6 +370,21 @@ export async function demarrerServeur(options) {
 
   const journalLignes = () => ({ status: 200, body: { lignes: lireJournal(journal.chemin).slice(-100) } });
 
+  // Le reset de la beta (#342, D-130) : un geste, jamais une migration. L'aperçu est une lecture ;
+  // l'exécution exige la confirmation tapée (refusée sans rien effacer) et rend le compte rendu.
+  const apercuDuReset = () =>
+    geste('apercu-reset', 'lecteur', async () => {
+      const apercu = await apercuReset(adapter);
+      return { status: 200, body: { apercu, texte: texteApercu(apercu), confirmation: CONFIRMATION } };
+    });
+
+  const reinitialiserBeta = (corps) =>
+    geste('reinitialiser-beta', 'admin', async () => {
+      const { rapport, texte } = await executerReset(adapter, corps?.confirmation);
+      const lignes = rapport.tables.reduce((somme, t) => somme + t.lignes, 0);
+      return { status: 200, body: { rapport, texte }, meta: { cible: 'beta', lignes } };
+    });
+
   // ----------------------------------------------------------------------------- le routage
 
   const ROUTES = [
@@ -388,6 +404,8 @@ export async function demarrerServeur(options) {
     [/^\/api\/migrations$/, 'GET', () => migrations()],
     [/^\/api\/migrations\/([^/]+)\/appliquer$/, 'POST', ([fichier]) => appliquer(fichier)],
     [/^\/api\/sql$/, 'POST', (_, corps) => sqlLibre(corps)],
+    [/^\/api\/reset$/, 'GET', () => apercuDuReset()],
+    [/^\/api\/reset$/, 'POST', (_, corps) => reinitialiserBeta(corps)],
     [/^\/api\/journal$/, 'GET', () => journalLignes()]
   ];
 

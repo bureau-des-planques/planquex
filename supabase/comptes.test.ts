@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lenteur justifiée (D-143 (5)) — PGlite : un scénario d'approbation par cas, et son SQL
+// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * Les comptes et la validation manuelle de l'alpha — la migration `0005_comptes.sql` (#181,
  * D-088).

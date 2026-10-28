@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lenteur justifiée (D-143 (5)) — PGlite : les dates figées, et deux cas à migrations mutées
+// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * Les dates du comité sont posées par le serveur, jamais par un client (#238,
  * migration `0009_commentaires_dates.sql`).

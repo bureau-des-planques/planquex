@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Lenteur justifiée (D-143 (5)) — 10 cas filtrent tout le catalogue à l'écran sous jsdom, mordants compris
+// Lent : chaque cas rend la Collection complète dans jsdom et filtre la grille du catalogue entier ; le coût est le rendu répété.
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { Collection } from './Collection';

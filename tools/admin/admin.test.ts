@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lenteur justifiée (D-143 (5)) — chaque cas démarre un serveur HTTP et le monde PGlite d'un compte
+// Lent : chaque scénario démarre le serveur sur une base PGlite neuve, migrée à chaque fois (`supabase/pglite.ts`) ; le coût est ce montage. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * Le poste de pilotage local — `tools/admin/` (#184, D-088, D-089, D-091).
  *

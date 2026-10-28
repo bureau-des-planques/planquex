@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lenteur justifiée (D-143 (5)) — PGlite, dont un cas qui rejoue les migrations mutées
+// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * Le repère du comité — `updated_at`, `vu_le` et `marquer_comite_vu()` (#209, D-097 (5),
  * migration `0008_comite.sql`).

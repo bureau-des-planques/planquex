@@ -90,14 +90,21 @@ describe('niveaux et difficulté nommés (#251, D-125)', () => {
     expect(politique(inversee[1])(state)).not.toEqual(nextAction(state, 1));
   });
 
-  it('la difficulté par défaut est la Sérieuse, c’est-à-dire la recherche de l’écran (D-084)', () => {
+  it('la difficulté par défaut est Normal, c’est-à-dire la recherche de l’écran (D-084, D-145)', () => {
     const state = tourDeLaDirection();
-    expect(DIFFICULTE_PAR_DEFAUT).toBe('serieuse');
+    expect(DIFFICULTE_PAR_DEFAUT).toBe('normal');
     expect(POLITIQUE_DE_DIFFICULTE[DIFFICULTE_PAR_DEFAUT]).toBe('recherche');
     expect(nextAiAction(state)).toEqual(politique(POLITIQUE_DE_DIFFICULTE[DIFFICULTE_PAR_DEFAUT])(state));
   });
 
-  it('la Simple joue le glouton, de mesure (D-125)', () => {
-    expect(POLITIQUE_DE_DIFFICULTE.simple).toBe('glouton');
+  it('trois crans nommés, trois politiques nommées (D-145)', () => {
+    expect(POLITIQUE_DE_DIFFICULTE.facile).toBe('scripte');
+    expect(POLITIQUE_DE_DIFFICULTE.normal).toBe('recherche');
+    expect(POLITIQUE_DE_DIFFICULTE.difficile).toBe('expectiminimax');
+    // Le contrôle mord : aucun cran ne désigne la Direction par un chiffre.
+    for (const politiqueDuCran of Object.values(POLITIQUE_DE_DIFFICULTE)) {
+      expect(typeof politiqueDuCran).toBe('string');
+      expect(['scripte', 'glouton', 'recherche', 'expectiminimax']).toContain(politiqueDuCran);
+    }
   });
 });

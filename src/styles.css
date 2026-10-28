@@ -727,6 +727,113 @@ h2 {
   margin: 0;
 }
 
+/* Le nom du Deck ouvre sa présentation (#251) : un bouton qui se lit comme un titre, pas
+   comme une action. Il garde la cible de 44 px et ne prend pas la couleur de lien. */
+.decks-proposes__nom {
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 2.75rem;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 0.2rem;
+}
+
+.decks-proposes__nom:hover,
+.decks-proposes__nom:focus-visible {
+  text-decoration-color: var(--gold);
+}
+
+/* Ce que la Direction joue à quel cran (#251, D-145) : une étiquette, pas un bouton. */
+.decks-proposes__direction {
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--gold-soft);
+  display: inline-block;
+  font-size: var(--fs-xs);
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  vertical-align: middle;
+}
+
+/* La présentation d'un Deck proposé (#251) : le panneau non modal de l'inspecteur du
+   combat (#188), posé à droite sur écran large et en feuille basse sur téléphone. */
+.presentation-deck {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  bottom: max(0.5rem, env(safe-area-inset-bottom));
+  box-shadow: 0 18px 40px -18px rgb(0 0 0 / 80%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  left: 0.5rem;
+  max-height: 75dvh;
+  overflow-y: auto;
+  padding: 0.9rem;
+  position: fixed;
+  right: 0.5rem;
+  z-index: 30;
+}
+
+@media (min-width: 900px), (orientation: landscape) and (min-width: 600px) {
+  .presentation-deck {
+    bottom: 1rem;
+    left: auto;
+    right: 1rem;
+    top: 4.5rem;
+    width: min(26rem, 42vw);
+  }
+}
+
+.presentation-deck__titre {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  line-height: 1.15;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.presentation-deck__ligne,
+.presentation-deck__bloc p {
+  margin: 0;
+}
+
+.presentation-deck__bloc {
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-top: 0.6rem;
+}
+
+.presentation-deck__bloc h3 {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.presentation-deck__cartes {
+  columns: 2;
+  font-size: var(--fs-sm);
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.presentation-deck__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .cafe-picker {
   display: flex;
   flex-direction: column;
@@ -2497,19 +2604,27 @@ h2 {
   gap: 0.35rem;
 }
 
-/* La rangée café / Rotation / Talent défile plutôt que de passer à la ligne : la barre garde sa
-   hauteur. Elle prend la place que les Pressions lui laissent (au moins 6 rem : de quoi lire et
-   toucher un bouton), et sa barre de défilement est masquée pour ne pas ajouter de hauteur. */
+/* La rangée Rotation / Talent ne passe pas à la ligne : la barre garde sa hauteur. Elle prend la
+   place que les Pressions lui laissent (au moins 6 rem : de quoi lire et toucher un bouton). Ce
+   qui ne tient pas se raccourcit ; elle ne défile pas, cachée ou non (#455, D-147). */
 .combat-barre .combat-barre__rang {
   flex: 1 1 6rem;
   flex-wrap: nowrap;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden;
 }
 
-.combat-barre__rang .button {
-  flex: none;
+/* Une entrée de la rangée se raccourcit (son détail prend une ellipse) au lieu de défiler (#455,
+   D-147) : aucune rangée de la barre ne défile cachée, et un contrôle n'y vit jamais hors du cadre. */
+.combat-barre__rang > .button {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.combat-barre__rang > .button > span:not(.attack__dmg) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -2958,6 +3073,27 @@ h2 {
   accent-color: var(--gold);
   height: 1.25rem;
   width: 1.25rem;
+}
+
+/* Le sélecteur de difficulté (#251, D-145) : trois lignes de texte long. Le texte passe à
+   la ligne, la cible reste toute la ligne (44 px, D-116) et la case ne rétrécit pas. */
+.settings__difficulte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings__difficulte-cran {
+  align-items: flex-start;
+}
+
+.settings__difficulte-cran input {
+  flex: none;
+  margin-top: 0.15rem;
+}
+
+.settings__difficulte-cran span {
+  line-height: 1.4;
 }
 
 /* La zone de sauvegarde : un texte qu'un joueur copie ou colle à la main. */
@@ -5161,10 +5297,8 @@ h2 {
 .ouverture__dos {
   --dos-or: var(--gold);
   --dos-cadre:
-    inset 0 0 0 4px #0b1220,
-    inset 0 0 0 5px color-mix(in srgb, var(--dos-or) 62%, transparent),
-    inset 0 0 0 9px #0b1220,
-    inset 0 0 0 10px color-mix(in srgb, var(--dos-or) 22%, transparent);
+    inset 0 0 0 4px #0b1220, inset 0 0 0 5px color-mix(in srgb, var(--dos-or) 62%, transparent),
+    inset 0 0 0 9px #0b1220, inset 0 0 0 10px color-mix(in srgb, var(--dos-or) 22%, transparent);
   align-items: center;
   background:
     linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 7%) 50%, transparent 60%),
@@ -5173,7 +5307,9 @@ h2 {
     repeating-linear-gradient(-45deg, color-mix(in srgb, var(--dos-or) 7%, transparent) 0 1px, transparent 1px 11px),
     linear-gradient(160deg, #1d2d4f 0%, #0b1220 58%, #070c16 100%);
   border: 2px solid var(--gold-deep);
-  box-shadow: var(--dos-cadre), 0 18px 40px -12px rgb(0 0 0 / 70%);
+  box-shadow:
+    var(--dos-cadre),
+    0 18px 40px -12px rgb(0 0 0 / 70%);
   display: flex;
   justify-content: center;
 }
@@ -5704,13 +5840,12 @@ h2 {
   flex-wrap: nowrap;
   gap: 0.35rem;
   min-width: 0;
-  overflow-x: auto;
+  overflow: hidden;
   /* **8 px au moins entre le texte et le bord** (#205, règle « cramped padding »). Le
      détecteur le voyait par intermittence : la rangée ne portait aucun rembourrage, et le
      titre du café comme l'aide se lisaient collés au bord de la barre. En ligne seulement :
      la barre ne gagne pas de hauteur (420 × 900, `npm run capturer`). */
   padding-inline: 0.5rem;
-  scrollbar-width: none;
 }
 
 .combat-barre__cafe-titre {

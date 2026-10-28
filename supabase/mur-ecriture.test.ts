@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Lenteur justifiée (D-143 (5)) — PGlite : l'écriture du mur, ses refus de colonnes, un cas muté
+// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * Les écritures du mur : commenter, corriger, retirer, et le tri de l'administration
  * (#138, #139, migration `0006_tri_et_corrections.sql`, D-088).

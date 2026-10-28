@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// Lenteur justifiée (D-143 (5)) — 15 cas rendent l'écran Deck sous jsdom, avec ses états
+// Lent : à la limite des 5 s, chaque cas rend l'écran du Deck dans jsdom avec le catalogue entier ; le coût est le rendu.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Deck } from './Deck';
