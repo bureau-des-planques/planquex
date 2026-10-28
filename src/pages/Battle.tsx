@@ -713,6 +713,17 @@ function Camp({
 }
 
 /**
+ * **Qui joue**, en solo, dans l'en-tête du combat. C'est `campToAct` qui décide, comme pour les
+ * boutons : une relève en attente appartient au camp qui doit la choisir, même pendant le tour
+ * de l'autre. Lire `state.current` affichait « à la Direction » pendant que le testeur devait
+ * choisir sa relève — trouvé par le harnais de partie jouée (#424).
+ */
+export function libelleDuTour(state: BattleState): string {
+  if (state.phase === 'ended') return 'partie terminée';
+  return campToAct(state) === 'player' ? 'à toi' : 'à la Direction';
+}
+
+/**
  * Le bandeau de fin dit **pourquoi** la partie s'arrête (#84) : le moteur pose la raison
  * (`endReason`), l'écran ne la déduit plus du seul vainqueur.
  *
@@ -1407,14 +1418,7 @@ export function Battle() {
         <div className="battle__title">
           <h1>Combat</h1>
           <p className="muted">
-            Tour {state.turn} ·{' '}
-            {match
-              ? campLine(state, match)
-              : state.phase === 'ended'
-                ? 'partie terminée'
-                : isPlayerTurn
-                  ? 'à toi'
-                  : 'à la Direction'}
+            Tour {state.turn} · {match ? campLine(state, match) : libelleDuTour(state)}
           </p>
           {/* L'attente de la Direction (#131) : annoncée au lecteur d'écran, et elle disparaît
               dès que le coup est joué. Aucun point animé : le mouvement réduit n'a rien à couper. */}
