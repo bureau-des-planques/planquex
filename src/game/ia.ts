@@ -17,7 +17,8 @@ import { satisfiesCafeCost } from '@/game/rules';
  * **Trois niveaux**, un seul module : le niveau est un **paramètre**, jamais une
  * seconde implémentation (spec #92). Le **niveau 3** (expectiminimax + déterminisations,
  * ticket #94) est **expérimental** : il n'est ni le défaut de l'écran ni celui du
- * simulateur, et `nextAiAction` ne le joue pas — voir `nextExpectiminimaxAction`.
+ * simulateur. Depuis D-145, l'écran ne le joue **que** sur la difficulté `difficile`
+ * (voir `nextExpectiminimaxAction`).
  *
  * - **Niveau 1 — la Direction** (scripté, sobre, déterministe). Politique, dans
  *   l'ordre — celui de la simulation d'origine, préservé tel quel pour que le
@@ -148,7 +149,8 @@ export function nextAiAction(state: BattleState, nom: Politique = 'recherche'): 
  * passaient « 2 ». Le nom supprime l'ambiguïté : à l'écran, `'recherche'` (D-084) ; dans le
  * simulateur et `pesage`, `'glouton'`, qui est la **référence de mesure** (D-109).
  *
- * `expectiminimax` est nommable pour être mesuré ; il n'est **branché nulle part** (D-084).
+ * `expectiminimax` n'est **jamais le défaut** (D-084) ; depuis D-145, il n'est joué à
+ * l'écran que sur la difficulté `difficile`.
  */
 export type Politique = 'scripte' | 'glouton' | 'recherche' | 'expectiminimax';
 
@@ -174,15 +176,27 @@ export function politique(nom: Politique): (state: BattleState) => BattleAction 
 export const POLITIQUE_DU_NIVEAU: Readonly<Record<AiLevel, Politique>> = { 1: 'scripte', 2: 'glouton' };
 
 /**
- * La difficulté que le testeur choisit (#251, D-125) : elle règle la **politique** de la
- * Direction ; le Deck joué en est la seconde moitié (non branchée ici, voir D-146).
- * `serieuse` est le défaut : c'est le niveau 2 de l'écran (D-084, D-109), qui ne change pas.
+ * **Les trois crans de difficulté** (#251, D-145) : ils règlent ensemble la **politique**
+ * de la Direction et le **Deck** qu'elle joue (`src/game/deck-direction.ts`).
+ *
+ * `normal` est le défaut : c'est la recherche à deux coups de l'écran (D-084, D-109), donc
+ * rien ne change tant qu'on ne touche à rien. `facile` joue la politique **scriptée**,
+ * `difficile` la politique **expectiminimax** (écrite, jamais le défaut — D-084).
+ *
+ * Le nom se lit partout (`@/components/difficulte`) : un écran n'affiche jamais un chiffre.
  */
-export type Difficulte = 'simple' | 'serieuse';
-export const DIFFICULTE_PAR_DEFAUT: Difficulte = 'serieuse';
+export type Difficulte = 'facile' | 'normal' | 'difficile';
+export const DIFFICULTE_PAR_DEFAUT: Difficulte = 'normal';
+export const DIFFICULTES: readonly Difficulte[] = ['facile', 'normal', 'difficile'];
+
+/** Une difficulté lue d'un état persisté : une valeur forgée ne passe pas (`migratePersisted`). */
+export function estDifficulte(valeur: unknown): valeur is Difficulte {
+  return valeur === 'facile' || valeur === 'normal' || valeur === 'difficile';
+}
 export const POLITIQUE_DE_DIFFICULTE: Readonly<Record<Difficulte, Politique>> = {
-  simple: 'glouton',
-  serieuse: 'recherche'
+  facile: 'scripte',
+  normal: 'recherche',
+  difficile: 'expectiminimax'
 };
 
 /** L'ordre de préférence des actions non terminales de la politique. */
@@ -981,9 +995,10 @@ export function nextSearchAction(
  * (`nextSearchAction`, `level2Fallback`) — jamais une erreur, jamais un coup nul, et jamais
  * moins bien que le niveau 2 qu'elle remplace. L'échéance est le seul terme non déterministe.
  *
- * **Ce que le niveau 3 n'est pas.** Il n'est **pas** le défaut : `nextAiAction` joue
- * toujours le niveau 2 (D-084), et l'écran ne le branche pas. Le journal
- * `docs/ia/94-niveau3-expectiminimax.md` dit ce qu'il bat, et à quel prix.
+ * **Ce que le niveau 3 n'est pas.** Il n'est **pas** le défaut : sans difficulté réglée,
+ * `nextAiAction` joue la recherche à deux coups (D-084) ; l'écran ne le demande que pour
+ * la difficulté `difficile` (D-145). Le journal `docs/ia/94-niveau3-expectiminimax.md`
+ * dit ce qu'il bat, et à quel prix.
  */
 export interface ExpectiminimaxOptions {
   /** Profondeur en **tours** (plis) : 2 = mon tour + réponse adverse ; 3 = + mon tour suivant. */

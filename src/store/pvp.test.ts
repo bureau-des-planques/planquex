@@ -193,6 +193,22 @@ describe('pvp — l’IA ne joue jamais à deux (#125)', () => {
     expect(aiTurnAction(state, null)).toBeNull();
     expect(mockedAi).not.toHaveBeenCalled();
   });
+
+  it('passe à nextAiAction le nom de la politique du cran (#251, D-145)', () => {
+    const { state } = createMatch(testDeck(), testDeck(), seedFor('ai'));
+    mockedAi.mockReturnValue({ type: 'endTurn' });
+    mockedAi.mockClear();
+
+    aiTurnAction(state, null, 'scripte');
+    expect(mockedAi).toHaveBeenLastCalledWith(state, 'scripte');
+
+    aiTurnAction(state, null, 'expectiminimax');
+    expect(mockedAi).toHaveBeenLastCalledWith(state, 'expectiminimax');
+
+    // Le contrôle mord : le défaut n'est pas un chiffre, c'est la recherche de l'écran.
+    aiTurnAction(state, null);
+    expect(mockedAi).toHaveBeenLastCalledWith(state, 'recherche');
+  });
 });
 
 /**
@@ -204,7 +220,8 @@ const battle = readFileSync(fileURLToPath(new URL('../pages/Battle.tsx', import.
 
 describe('pvp — gardes de l’écran de combat', () => {
   it('ne branche l’IA que par aiTurnAction, donc jamais à deux', () => {
-    expect(battle).toMatch(/aiTurnAction\(state, match\)/);
+    // Depuis #251, l'écran lui passe la politique de la difficulté : le nom, jamais un chiffre.
+    expect(battle).toMatch(/aiTurnAction\(state, match, reglage\.politique\)/);
     expect(battle).not.toMatch(/nextAiAction/);
   });
 

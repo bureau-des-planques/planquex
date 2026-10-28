@@ -4,6 +4,10 @@ import { Link } from 'react-router-dom';
 import { Info, Search, Sparkles, Trash2 } from 'lucide-react';
 import { DECKS_PROPOSES } from '@/data/decks-proposes';
 import type { DeckPropose } from '@/data/decks-proposes';
+import { DECK_DE_LA_DIRECTION } from '@/game/deck-direction';
+import { DIFFICULTES } from '@/game/ia';
+import { LIBELLE_DIFFICULTE } from '@/components/difficulte';
+import { PresentationDeck } from '@/components/PresentationDeck';
 import { ALL_CARDS, FACTION_META, RARITY_META, STAGE_META, VIVIER_META, isPlanque } from '@/data';
 import type { Card, CafeType, Rarity } from '@/data/types';
 import {
@@ -73,6 +77,8 @@ export function Deck() {
   const [codeAColler, setCodeAColler] = useState('');
   /** Le retour de la dernière copie ou du dernier import : dit ce qui s'est passé. */
   const [retour, setRetour] = useState<{ ok: boolean; texte: string } | null>(null);
+  /** Le Deck proposé **présenté** (#251) : un panneau, pas une page — il sert à choisir. */
+  const [presentation, setPresentation] = useState<DeckPropose | null>(null);
 
   /**
    * Le choix **normalisé**, lu ici et pas seul dans le moteur : l'écran est le dernier à
@@ -104,7 +110,15 @@ export function Deck() {
   const chargerDeck = (deckPropose: DeckPropose) => {
     setDeck([...deckPropose.cartes]);
     setCafeTypes([...deckPropose.cafeTypes]);
+    setPresentation(null);
   };
+
+  /**
+   * **Quelles difficultés jouent ce Deck** (#251, D-145) : la Direction en joue un par
+   * cran, et la liste le dit — le choix se lit sans ouvrir Réglages.
+   */
+  const difficultesDuDeck = (id: DeckPropose['id']) =>
+    DIFFICULTES.filter((cran) => DECK_DE_LA_DIRECTION[cran] === id).map((cran) => LIBELLE_DIFFICULTE[cran]);
 
   /** Le code du Deck tel qu'on le partage : cartes et types **choisis** (vide = auto). */
   const codeDuDeck = useMemo(() => encodeDeckCode(deck, chosenCafeTypes), [deck, chosenCafeTypes]);
@@ -300,11 +314,23 @@ export function Deck() {
             <li key={deckPropose.id} className="decks-proposes__item">
               <div>
                 <h3>
-                  {deckPropose.name}{' '}
+                  <button
+                    type="button"
+                    className="decks-proposes__nom"
+                    aria-label={`Présentation de ${deckPropose.name}`}
+                    onClick={() => setPresentation(deckPropose)}
+                  >
+                    {deckPropose.name}
+                  </button>{' '}
                   <span className="muted">
                     — {deckPropose.vivier === 'MIXTE' ? 'Mixte' : VIVIER_META[deckPropose.vivier].label} ·{' '}
                     {cafeSigles(deckPropose.cafeTypes)}
                   </span>
+                  {difficultesDuDeck(deckPropose.id).length > 0 && (
+                    <span className="decks-proposes__direction">
+                      Direction en {difficultesDuDeck(deckPropose.id).join(' et ')}
+                    </span>
+                  )}
                 </h3>
                 <p>{deckPropose.strategie}</p>
                 <p className="muted">Faible : {deckPropose.faiblesse}</p>
@@ -606,6 +632,14 @@ export function Deck() {
           onClose={() => setSelected(null)}
           onAddDeck={() => addToDeck(selected.id)}
           onAddCard={() => addCard(selected.id)}
+        />
+      )}
+
+      {presentation && (
+        <PresentationDeck
+          deck={presentation}
+          onClose={() => setPresentation(null)}
+          onCharger={() => chargerDeck(presentation)}
         />
       )}
     </div>

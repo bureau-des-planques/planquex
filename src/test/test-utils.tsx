@@ -7,6 +7,7 @@ import { ALL_CARDS } from '@/data';
 import type { Faction } from '@/data/types';
 import type { DernierePartie } from '@/store/derniere';
 import type { PartieSauvegardee } from '@/store/partie';
+import type { Difficulte } from '@/game/ia';
 
 /**
  * État de store préconfiguré pour les tests d'écran.
@@ -30,6 +31,8 @@ export interface TestStoreState {
   partie?: PartieSauvegardee | null;
   /** La dernière partie terminée (#366) ; absente = aucune. */
   derniere?: DernierePartie | null;
+  /** Le cran de difficulté de la Direction (#251) ; absent = `normal`. */
+  difficulte?: Difficulte;
 }
 
 /**
@@ -60,7 +63,8 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     tutorielVu: initialState.tutorielVu ?? true,
     pasAPasCombatVu: initialState.pasAPasCombatVu ?? true,
     partie: initialState.partie ?? null,
-    derniere: initialState.derniere ?? null
+    derniere: initialState.derniere ?? null,
+    difficulte: initialState.difficulte ?? 'normal'
   });
 }
 

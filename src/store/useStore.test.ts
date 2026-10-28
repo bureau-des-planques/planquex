@@ -164,10 +164,11 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 13', () => {
+  it('déclare la version 14', () => {
     // 11 : le reset de la beta (D-130). 12 : les deux sons et leur réglage (D-137, #378).
     // 13 : la dernière partie terminée, pour la revoir (#366).
-    expect(STORAGE_VERSION).toBe(13);
+    // 14 : la difficulté de la Direction (#251, D-145).
+    expect(STORAGE_VERSION).toBe(14);
   });
 
   it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {
@@ -818,5 +819,41 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
     const migre = migratePersisted({ name: 'Testeur', derniere: { mode: 'solo', verdict: 'oups' } }, 12);
     expect(migre.derniere).toBeNull();
     expect(migre.name).toBe('Testeur');
+  });
+
+  it('un état v13 n’a pas de difficulté : Normal, et rien d’autre ne bouge (v13 → v14, #251)', () => {
+    // Le cas fautif : une migration qui perd la Collection ou la partie en cours pour ajouter
+    // le cran. Un état v13 n'a que le champ absent : il prend `normal` (D-084 ne change pas).
+    const v13 = {
+      name: 'Testeur',
+      owned: { 'sse-psychologue': 2 },
+      deck: ['sse-psychologue'],
+      packsOpened: 7,
+      sons: false,
+      derniere: null,
+      rng: 4242
+    };
+    const migre = migratePersisted(v13, 13);
+    expect(migre.difficulte).toBe('normal');
+    expect(migre.owned).toEqual({ 'sse-psychologue': 2 });
+    expect(migre.deck).toEqual(['sse-psychologue']);
+    expect(migre.packsOpened).toBe(7);
+    expect(migre.sons).toBe(false);
+    expect(migre.rng).toBe(4242);
+  });
+
+  it('respecte une difficulté déjà écrite, et écarte une valeur forgée', () => {
+    expect(migratePersisted({ difficulte: 'difficile' }, 14).difficulte).toBe('difficile');
+    // Contrôle mord : un cran inconnu ne devient pas un cran joué.
+    expect(migratePersisted({ difficulte: 'impossible' }, 14).difficulte).toBe('normal');
+    expect(migratePersisted({ difficulte: 2 }, 13).difficulte).toBe('normal');
+  });
+
+  it('persiste la difficulté et la remet à Normal à la réinitialisation', () => {
+    useStore.getState().setDifficulte('difficile');
+    expect(useStore.getState().difficulte).toBe('difficile');
+    expect(partializeState(useStore.getState()).difficulte).toBe('difficile');
+    useStore.getState().reset();
+    expect(useStore.getState().difficulte).toBe('normal');
   });
 });

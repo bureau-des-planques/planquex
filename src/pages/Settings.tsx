@@ -4,6 +4,9 @@ import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-re
 import { Confirmation } from '@/components/Confirmation';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
+import { LIBELLE_DIFFICULTE, LIBELLE_POLITIQUE, RESUME_POLITIQUE } from '@/components/difficulte';
+import { reglageDirection } from '@/game/deck-direction';
+import { DIFFICULTES } from '@/game/ia';
 import { estApprouve, libelleEtat } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
@@ -27,6 +30,7 @@ import { APP_LABEL } from '@/version';
 export const CATEGORIES_REGLAGES = [
   'Identité',
   'Compte',
+  'Difficulté',
   'Accessibilité',
   'Journée d’intégration',
   'Les règles',
@@ -49,6 +53,8 @@ export function Settings() {
     setReducedMotion,
     raccourcisCombat,
     setRaccourcisCombat,
+    difficulte,
+    setDifficulte,
     reset,
     setTutorielVu,
     setPasAPasCombatVu
@@ -169,6 +175,40 @@ export function Settings() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* **La difficulté** (#251, D-145) : un cran règle **deux** choses, et le bloc le dit
+          sans chiffre — la politique par son nom, le Deck par le sien. « Normal » est le
+          défaut : la recherche à deux coups de D-084, donc rien ne change pour qui n'y touche
+          pas. Le réglage est persisté ; le combat en cours garde le cran de son montage. */}
+      <section className="section panel" aria-labelledby="reglages-difficulte">
+        <h2 id="reglages-difficulte">Difficulté</h2>
+        <p className="muted max-w-[62ch]">
+          Chaque cran règle la politique de la Direction <strong>et</strong> le Deck qu’elle joue. Il s’applique au
+          prochain combat.
+        </p>
+        <div className="settings__difficulte" role="radiogroup" aria-label="Difficulté de la Direction">
+          {DIFFICULTES.map((cran) => {
+            const reglage = reglageDirection(cran);
+            return (
+              <label key={cran} className="settings__toggle settings__difficulte-cran">
+                <input
+                  type="radio"
+                  name="difficulte"
+                  value={cran}
+                  checked={difficulte === cran}
+                  onChange={() => setDifficulte(cran)}
+                />
+                <span>
+                  <strong>{LIBELLE_DIFFICULTE[cran]}</strong>
+                  {' · '}
+                  {LIBELLE_POLITIQUE[reglage.politique]} — {RESUME_POLITIQUE[reglage.politique]}
+                  <span className="muted"> · Deck « {reglage.deck.name} »</span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </section>
 
       {/* Accessibilité (#277) : les deux réglages de confort, rassemblés — ils étaient

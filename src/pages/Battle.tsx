@@ -29,6 +29,7 @@ import type {
   Status
 } from '@/data/types';
 import { applyAction, createBattle, dessusDuDeck, isOpeningTurn, legalActions, legalAttacks } from '@/game/engine';
+import { deckDeLaDirection, reglageDirection } from '@/game/deck-direction';
 import { DECK_SIZE, MAX_COPIES_PER_NAME, deckLegal } from '@/game/deck';
 import { HAND_LIMIT, POINTS_TO_WIN } from '@/game/rules';
 import { useStore } from '@/store/useStore';
@@ -805,6 +806,16 @@ function endBanner(state: BattleState, myCamp: PlayerId | null): string {
 
 export function Battle() {
   const storeDeck = useStore((state) => state.deck);
+  /**
+   * **La difficulté du combat** (#251, D-145) : elle est **figée au montage**, et relue
+   * seulement par « Nouveau combat ». Changer le cran dans Réglages ne déplace donc pas
+   * la politique au milieu d'une partie — un combat garde la Direction qu'il a commencée.
+   */
+  const difficulteReglee = useStore((state) => state.difficulte);
+  const [difficulte, setDifficulte] = useState(difficulteReglee);
+  const reglage = useMemo(() => reglageDirection(difficulte), [difficulte]);
+  /** Le Deck que la Direction joue : un Deck proposé, légal, choisi par la difficulté. */
+  const directionDeck = useMemo(() => [...reglage.deck.cartes], [reglage]);
   /** Les types de café choisis au Deck (#91), lus bruts dans le store. */
   const storedCafeTypes = useStore((state) => state.cafeTypes);
   /**
@@ -862,9 +873,9 @@ export function Battle() {
     const reprise = tutoriel ? null : reprendrePartie(useStore.getState().partie);
     if (reprise) return { ...reprise, reprise: true };
     return {
-      state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
+      state: createBattle(playerDeck, directionDeck, undefined, { playerCafeTypes: chosenCafeTypes }),
       match: null,
-      decksSolo: { playerDeck, aiDeck: testDeck() },
+      decksSolo: { playerDeck, aiDeck: directionDeck },
       reprise: false
     };
   });
@@ -1106,7 +1117,7 @@ export function Battle() {
    * montre (« La Direction réfléchit… », #131) — sans elle, 600 ms de silence par action
    * ressemblaient à un écran figé.
    */
-  const aiAction = useMemo(() => aiTurnAction(state, match), [state, match]);
+  const aiAction = useMemo(() => aiTurnAction(state, match, reglage.politique), [state, match, reglage.politique]);
 
   useEffect(() => {
     if (!aiAction) return;
@@ -1148,8 +1159,13 @@ export function Battle() {
     setMenu(MENU_FERME);
     setCodeAnnonce(null);
     setNouveauDemande(false);
-    setDecksSolo({ playerDeck, aiDeck: testDeck() });
-    setState(createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }));
+    // « Nouveau combat » est le moment où le cran réglé dans Réglages prend effet
+    // (#251, D-145) : le combat en cours, lui, a gardé celui de son montage.
+    const nouvelle = useStore.getState().difficulte;
+    const aiDeck = [...deckDeLaDirection(nouvelle).cartes];
+    setDifficulte(nouvelle);
+    setDecksSolo({ playerDeck, aiDeck });
+    setState(createBattle(playerDeck, aiDeck, undefined, { playerCafeTypes: chosenCafeTypes }));
   }, [playerDeck, chosenCafeTypes]);
 
   /**
