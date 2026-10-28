@@ -22,16 +22,47 @@ import { basename, dirname, join, resolve } from 'node:path';
 const AGENTS = ['codeur', 'auditeur', 'chercheur', 'orienteur', 'redacteur', 'explore'];
 
 /** Le prochain numéro de décision libre, lu dans le journal. `D-145` si le max est 144. */
-export function prochainNumero(texte) {
-  const numeros = [...texte.matchAll(/^\|\s*D-(\d{3})\s*\|/gm)].map((m) => Number(m[1]));
+export function prochainNumero(...textes) {
+  const numeros = textes
+    .flatMap((texte) => [...String(texte ?? '').matchAll(/^\|\s*D-(\d{3})\s*\|/gm)])
+    .map((m) => Number(m[1]));
   if (numeros.length === 0) throw new Error('aucune décision lue dans le journal');
   return `D-${String(Math.max(...numeros) + 1).padStart(3, '0')}`;
+}
+
+/**
+ * Le numéro se lit sur **`origin/main` autant que sur le disque** : deux agents dispatchés en
+ * parallèle partent du même maximum local, et se réservent le même numéro (constaté le
+ * 28/10/2026 : « Arrêt de numérotation » dans cinq messages). La lecture fraîche ne rend pas la
+ * réservation atomique — elle retire la cause la plus fréquente, la branche en retard.
+ */
+export function journalLePlusRecent({ lancer = lancerGit } = {}) {
+  let origin = '';
+  try {
+    lancer(['fetch', 'origin', 'main', '--quiet'], true);
+    origin = lancer(['show', 'origin/main:docs/DECISIONS.md']);
+  } catch {
+    // Hors ligne, ou pas de remote : le journal local reste la seule source.
+  }
+  return origin;
+}
+
+function lancerGit(args, silencieux = false) {
+  return execFileSync('git', args, { encoding: 'utf8', stdio: silencieux ? 'ignore' : 'pipe' });
 }
 
 /** Lit les arguments ; rend `{ ticket, agent, branche, worktree, decision, json, erreurs }`. */
 export function analyserArguments(argv, { racine = process.cwd() } = {}) {
   const erreurs = [];
-  const options = { ticket: null, agent: 'codeur', branche: null, worktree: null, decision: false, json: false };
+  const options = {
+    ticket: null,
+    agent: 'codeur',
+    branche: null,
+    worktree: null,
+    decision: false,
+    reprise: false,
+    json: false
+  };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     const valeur = () => argv[++i] ?? '';
@@ -44,6 +75,7 @@ export function analyserArguments(argv, { racine = process.cwd() } = {}) {
     else if (a === '--worktree') options.worktree = valeur();
     else if (a.startsWith('--worktree=')) options.worktree = a.slice('--worktree='.length);
     else if (a === '--decision') options.decision = true;
+    else if (a === '--reprise') options.reprise = true;
     else if (a === '--json') options.json = true;
     else erreurs.push(`option inconnue : ${a}`);
   }
@@ -95,9 +127,29 @@ export function composer({
   branche,
   worktree,
   decision,
+  reprise = false,
   worktreeExiste = true,
   depot = 'bureau-des-planques/planquex'
 }) {
+  if (reprise) {
+    return `Le travail précédent a été **coupé** (« Free usage limit reached » ou une session interrompue), pas par un défaut de ta part. **Reprends exactement où tu en étais** ; ne repars pas de zéro.
+
+## Où
+- **Worktree (chemin ABSOLU)** : \`${worktree}\`
+- **Branche** : \`${branche}\`
+- Ticket : **#${ticket.number} « ${ticket.title} »**
+
+## Avant de continuer, trois commandes
+1. \`git status --short\` — ce qui est là mais non commité : c'est ton travail, ne l'écrase pas.
+2. \`git log --oneline -5\` — ce qui est déjà commité.
+3. \`gh issue view ${ticket.number} --json number,title,body,labels\` — le ticket, si tu ne l'as plus en tête.
+
+## Ce que tu rends d'abord
+Trois lignes : **fait**, **en cours**, **reste**. Puis tu continues.
+Ne refais pas ce qui est commité, et ne réécris pas un fichier entier pour « repartir propre » : c'est ainsi qu'on perd le travail d'un autre agent.
+
+${blocDeFini(agent)}`;
+  }
   const corps = (ticket.body ?? '').trim();
   const etiquettes = (ticket.labels ?? []).map((l) => (typeof l === 'string' ? l : l.name)).join(', ');
   const où = worktreeExiste
@@ -116,7 +168,7 @@ ${corps || '(corps du ticket vide — lis-le par `gh issue view ' + ticket.numbe
 
 ## Ce que tu ne touches pas
 - Les zones d'un autre agent en cours : \`git status\` et \`docs/agents/parallelisme.md\` §1. Si le ticket en couvre plusieurs, dis-le et arrête-toi.
-- \`AGENTS.md\` §4, le vocabulaire, une règle de jeu : ils ne changent que par une décision datée.
+- \`docs/JEU.md\` §4, le vocabulaire, une règle de jeu : ils ne changent que par une décision datée.
 
 ${blocDeFini(agent)}
 ${decision ? `\n## Décision\nSi le ticket demande une décision datée, prends **${decision}** (réservé par ce dispatch) et mets à jour \`docs/DECISIONS-INDEX.md\` (\`npm run index:decisions\`).\n` : ''}`;
@@ -142,7 +194,10 @@ if (estLance) {
   try {
     const ticket = lireTicket(options.ticket);
     const journal = join(dirname(process.argv[1]), '..', 'docs/DECISIONS.md');
-    const decision = options.decision && existsSync(journal) ? prochainNumero(readFileSync(journal, 'utf8')) : null;
+    const decision =
+      options.decision && existsSync(journal)
+        ? prochainNumero(readFileSync(journal, 'utf8'), journalLePlusRecent())
+        : null;
     const prompt = composer({ ...options, ticket, decision, worktreeExiste: existsSync(options.worktree) });
     if (options.json) {
       console.log(

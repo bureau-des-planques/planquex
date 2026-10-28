@@ -18,6 +18,12 @@ describe('prochainNumero', () => {
     expect(prochainNumero(journal)).toBe('D-144');
   });
 
+  it("prend le maximum des journaux qu'on lui donne : origin/main peut être en avance", () => {
+    const local = '| D-143 | 28/10/2026 | a |';
+    const origin = '| D-143 | 28/10/2026 | a |\n| D-145 | 28/10/2026 | b |';
+    expect(prochainNumero(local, origin)).toBe('D-146');
+  });
+
   it('refuse un journal sans décision plutôt que de rendre D-001', () => {
     expect(() => prochainNumero('# Journal\n\nrien')).toThrow(/aucune décision/);
   });
@@ -38,6 +44,12 @@ describe('analyserArguments', () => {
     expect(analyserArguments([], { racine: '/x' }).erreurs.join(' ')).toMatch(/ticket manquant/);
     expect(analyserArguments(['--ticket', 'abc'], { racine: '/x' }).erreurs.join(' ')).toMatch(/ticket invalide/);
     expect(analyserArguments(['--ticket', '1', '--agent', 'nimporte'], { racine: '/x' }).erreurs.join(' ')).toMatch(/agent inconnu/);
+  });
+
+  it('accepte --reprise', () => {
+    const o = analyserArguments(['--ticket', '1', '--reprise'], { racine: '/x' });
+    expect(o.erreurs).toEqual([]);
+    expect(o.reprise).toBe(true);
   });
 
   it('rend un worktree absolu même fourni en relatif', () => {
@@ -77,6 +89,17 @@ describe('composer', () => {
     const absent = composer({ ...base, worktreeExiste: false });
     expect(absent).not.toContain('Il existe déjà');
     expect(absent).toContain('worktree:nouveau -- 427 --branche agent/427');
+  });
+
+  it('rend un prompt de reprise court : le point de reprise, pas le ticket entier', () => {
+    const p = composer({ ...base, reprise: true });
+    expect(p).toContain('Reprends exactement où tu en étais');
+    expect(p).toContain('`/wt/427`');
+    expect(p).toContain('`agent/427`');
+    expect(p).toContain('**fait**');
+    expect(p).toContain('git status --short');
+    // Le corps du ticket n'a pas à être recopié : la coupure ne l'a pas effacé.
+    expect(p).not.toContain('Le corps du ticket.');
   });
 
   it("adapte le fini au métier de l'agent : un auditeur rend un rapport, il ne passe pas la suite", () => {

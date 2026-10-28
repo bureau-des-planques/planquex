@@ -17,7 +17,8 @@ la consigne de livraison.
 | `--agent` | `codeur` | `codeur`, `auditeur`, `chercheur`, `orienteur`, `redacteur`, `explore` |
 | `--branche` | `agent/N` | la branche du worktree |
 | `--worktree` | `~/.local/share/opencode/worktree/<dépôt>/N` | chemin absolu ; un chemin relatif est résolu depuis le dépôt |
-| `--decision` | absent | **réserve le prochain numéro** de `docs/DECISIONS.md` et l'inscrit dans le prompt |
+| `--decision` | absent | **réserve le prochain numéro** de `docs/DECISIONS.md` et l'inscrit dans le prompt. Il se lit sur **`origin/main` autant que sur le disque** : une branche en retard réservait deux fois le même numéro |
+| `--reprise` | absent | rend le prompt **court** d'une reprise après coupure : worktree, branche, trois commandes de constat, « fait / en cours / reste ». Le corps du ticket n'est pas recopié |
 | `--json` | absent | rend `{ ticket, titre, worktree, branche, decision, prompt }` |
 
 ## Pourquoi ce gabarit
@@ -32,6 +33,21 @@ caractères de prompts écrits à la main, médiane 2 915 caractères. Les même
 
 Le gabarit ne supprime pas les coupures, mais il rend le **point de reprise** évident :
 worktree, branche, ticket, définition de fini.
+
+## La coupure de quota
+
+Une coupure (« Free usage limit reached ») n'est pas un échec de l'agent : le routeur
+n'ouvre pas de nouveau tour, et le sous-agent s'arrête au milieu de son travail. Le geste
+d'alors était de réécrire à la main « Reprends exactement où tu en étais » — trois fois sur
+la période, chaque fois avec les mêmes chemins recopiés à la main.
+
+```bash
+npm run dispatch -- --ticket 427 --reprise
+```
+
+Le prompt qui sort ne redonne **pas** le corps du ticket : il rappelle où est le travail, quoi
+regarder avant de continuer, et ce qu'il faut rendre d'abord. Il ne rend pas la coupure
+impossible — il rend la reprise identique à chaque fois.
 
 ## Ce qu'il ne fait pas
 
