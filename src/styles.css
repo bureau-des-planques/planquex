@@ -4693,6 +4693,23 @@ h2 {
   position: absolute;
 }
 
+/* Face cachée, la face est **retirée** et non seulement tournée : certains navigateurs laissent
+   voir son texte en miroir malgré `backface-visibility`. Le retrait se fait au passage de la carte
+   de profil (≈ 150 ms sur les 950 ms du retournement), jamais pendant qu'elle est de face. */
+.ouverture__carte[data-face='verso'] .ouverture__face {
+  visibility: hidden;
+}
+
+.ouverture__carte[data-face='recto'] .ouverture__face {
+  transition: visibility 0s 150ms;
+  visibility: visible;
+}
+
+.ouverture__carte[data-face='recto'] .ouverture__dos {
+  transition: visibility 0s 150ms;
+  visibility: hidden;
+}
+
 .ouverture__face {
   box-shadow: 0 18px 40px -12px rgb(0 0 0 / 70%);
 }
