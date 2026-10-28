@@ -4348,3 +4348,66 @@ h2 {
   max-width: 26rem;
 }
 
+/* ---------- La machine à café du Deck : des capsules (#279) ---------- */
+
+/* Une **capsule** par type de café, de la couleur de sa faction. `--cafe` est posée en ligne
+   depuis `FACTION_META`, la seule source des couleurs (`AGENTS.md` §6) : aucune teinte recopiée
+   ici. L'état ne se lit pas qu'à la couleur — le sigle, le mot « choisi » et l'anneau autour de
+   la capsule retenue le disent aussi (les capsules portent leur nom en `aria-label`, #279). */
+.cafe-capsule {
+  align-items: center;
+  background: var(--bg-sunken);
+  border: 1px solid color-mix(in srgb, var(--cafe) 55%, var(--line));
+  border-radius: 0.3rem 0.3rem 0.85rem 0.85rem;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-height: 4.3rem;
+  min-width: 3.4rem;
+  padding: 0.3rem 0.55rem 0.4rem;
+}
+
+.cafe-capsule__lid {
+  background: var(--cafe);
+  border-radius: 0.2rem 0.2rem 999px 999px;
+  color: #0b1220;
+  display: grid;
+  font-size: 0.62rem;
+  height: 0.95rem;
+  place-items: center;
+  width: 100%;
+}
+
+.cafe-capsule__sigle {
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cafe-capsule__etat {
+  color: var(--text-dim);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cafe-capsule.is-chosen {
+  background: color-mix(in srgb, var(--cafe) 16%, var(--bg-sunken));
+  box-shadow: 0 0 0 2px var(--text);
+}
+
+.cafe-capsule.is-chosen .cafe-capsule__etat {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.cafe-capsule:not(.is-chosen) {
+  opacity: 0.72;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cafe-capsule {
+    transition: none;
+  }
+}

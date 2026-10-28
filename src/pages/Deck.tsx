@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, Search, Sparkles, Trash2 } from 'lucide-react';
 import { DECKS_PROPOSES } from '@/data/decks-proposes';
@@ -224,27 +225,30 @@ export function Deck() {
           {cafeProposals.map((type) => {
             const chosen = chosenCafeTypes.includes(type);
             const inDeck = proposed.includes(type);
-            // Trois types déjà choisis : les autres cases se ferment, comme le plafond.
+            // Trois types déjà choisis : les autres capsules se ferment, comme le plafond.
             const full = !chosen && chosenCafeTypes.length >= MAX_DECK_CAFE_TYPES;
+            const meta = FACTION_META[type];
             return (
               <button
                 key={type}
                 type="button"
-                className={`cafe-picker__type ${chosen ? 'is-chosen' : ''} ${inDeck ? 'is-proposed' : ''}`}
+                className={`cafe-picker__type cafe-capsule ${chosen ? 'is-chosen' : ''} ${inDeck ? 'is-proposed' : ''}`}
                 aria-pressed={chosen}
+                // L'état est **dit**, pas seulement colorié (#279) : un lecteur d'écran
+                // apprend « choisi » ou « non choisi » sans voir la capsule.
+                aria-label={`${meta.name}, ${chosen ? 'choisi' : 'non choisi'}${inDeck ? ', présent au Deck' : ''}`}
                 disabled={full}
-                title={`${FACTION_META[type].name}${inDeck ? ' — présent au Deck' : ''}`}
+                title={`${meta.name}${inDeck ? ' — présent au Deck' : ''}`}
+                style={{ '--cafe': meta.color } as CSSProperties}
                 onClick={() => toggleCafeType(type)}
               >
-                <span
-                  className="cafe-picker__glyph"
-                  aria-hidden="true"
-                  style={{ background: FACTION_META[type].color }}
-                >
-                  {FACTION_META[type].glyph}
+                <span className="cafe-capsule__lid" aria-hidden="true">
+                  {meta.glyph}
                 </span>
-                {FACTION_META[type].short}
-                {inDeck && <span className="cafe-picker__tag">au Deck</span>}
+                <span className="cafe-capsule__sigle">{meta.short}</span>
+                <span className="cafe-capsule__etat" aria-hidden="true">
+                  {chosen ? '✓ choisi' : 'choisir'}
+                </span>
               </button>
             );
           })}
