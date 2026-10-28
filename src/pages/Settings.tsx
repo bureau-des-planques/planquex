@@ -208,9 +208,16 @@ export function Settings() {
         <p className="muted max-w-[62ch]">
           Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression, les Conditions et la fin.
         </p>
-        <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
-          Revoir le pas-à-pas du combat
-        </button>
+        <div className="actions actions--tight">
+          <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
+            Revoir le pas-à-pas du combat
+          </button>
+          {/* **Le combat guidé** (#272) : une page de combat, pas un état de plus dans le
+              store — le lien la rouvre au début, quel que soit l'état du pas-à-pas. */}
+          <Link className="button" to="/battle?tutoriel=1">
+            Rejouer le combat guidé
+          </Link>
+        </div>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-sauvegarde">

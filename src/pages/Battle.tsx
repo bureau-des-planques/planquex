@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, Info, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque, kindLabel } from '@/data';
 import type {
@@ -738,11 +739,20 @@ export function Battle() {
   /** Les raccourcis clavier du combat, réglés dans Réglages (#189). */
   const raccourcisCombat = useStore((state) => state.raccourcisCombat);
   /**
+   * **Le combat guidé** (#272) : `?tutoriel=1` ouvre le pas-à-pas du premier combat même
+   * quand le drapeau dit « déjà vu », puis le referme — le testeur finit la partie seul.
+   * Aucune règle ne change : c'est le même moteur, le niveau de la Direction par défaut
+   * (D-084), et le guidage n'est pas un dialogue : il ne bloque rien.
+   */
+  const [parametres] = useSearchParams();
+  const tutoriel = parametres.get('tutoriel') === '1';
+
+  /**
    * Le **pas-à-pas du premier combat** (#143) : son ouverture, son cran et ses cibles
    * vivent dans un seul module (`usePasAPasCombat`) — la page ne fait que poser
    * l'attribut qui met l'élément désigné en avant, et rendre le panneau.
    */
-  const pasAPas = usePasAPasCombat();
+  const pasAPas = usePasAPasCombat(tutoriel);
 
   // Le deck du joueur est utilisé s'il est légal, sinon on retombe sur un
   // deck de test. Calculé une seule fois par rendu : `deckLegal` est appelé
@@ -769,7 +779,9 @@ export function Battle() {
    */
   const [depart] = useState<Reprise>(
     () =>
-      reprendrePartie(useStore.getState().partie) ?? {
+      // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
+      // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
+      (tutoriel ? null : reprendrePartie(useStore.getState().partie)) ?? {
         state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
         match: null,
         decksSolo: { playerDeck, aiDeck: testDeck() }
@@ -1062,8 +1074,11 @@ export function Battle() {
    */
   const enregistrerPartie = useStore((store) => store.enregistrerPartie);
   useEffect(() => {
+    // Un combat guidé ne s'enregistre pas : le testeur qui le rejoue ne doit pas perdre la
+    // partie qu'il avait en cours (#272).
+    if (tutoriel) return;
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
-  }, [state, match, decksSolo, enregistrerPartie]);
+  }, [state, match, decksSolo, enregistrerPartie, tutoriel]);
 
   /**
    * **La trace du combat** (#173, D-086 ; #228, D-105) : une partie **terminée** part en
@@ -1465,6 +1480,24 @@ export function Battle() {
 
       {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
       <PasAPasCombat pasAPas={pasAPas} />
+
+      {/* **Le combat guidé** (#272) : le bandeau dit ce qui se passe et ce qui suit. Le
+          guidage ne bloque rien — on peut le passer à tout moment et jouer dessous. */}
+      {tutoriel && (
+        <p className={`notice ${pasAPas.ouvert ? 'notice--ok' : ''}`} role="status">
+          {pasAPas.ouvert ? (
+            <>
+              <strong>Combat guidé</strong> contre la Direction : cinq étapes, puis tu joues seul. « Passer le pas-à-pas
+              » te rend la main tout de suite.
+            </>
+          ) : (
+            <>
+              <strong>À toi de jouer.</strong> Le guidage est fini : la partie continue normalement, et « Nouveau combat
+              » en relance une.
+            </>
+          )}
+        </p>
+      )}
 
       {state.phase === 'ended' && (
         <p className={`notice ${state.winner === myCamp ? 'notice--ok' : 'notice--warn'}`}>
