@@ -15,7 +15,7 @@ import type {
   PlayerState,
   Status
 } from '@/data/types';
-import { applyAction, createBattle, dessusDuDeck, legalActions, legalAttacks } from '@/game/engine';
+import { applyAction, createBattle, dessusDuDeck, isOpeningTurn, legalActions, legalAttacks } from '@/game/engine';
 import { DECK_SIZE, MAX_COPIES_PER_NAME, deckLegal } from '@/game/deck';
 import { HAND_LIMIT, POINTS_TO_WIN } from '@/game/rules';
 import { useStore } from '@/store/useStore';
@@ -46,6 +46,8 @@ import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
 import { phraseDePortee } from './portee';
+import { phraseCafeAuPoste } from '@/components/cafe-au-poste';
+import { PanneauAttacheCafe } from '@/components/PanneauAttacheCafe';
 import { SceneAttaque } from '@/animation/SceneAttaque';
 import type { EffetCombat } from '@/components/effets-combat';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
@@ -238,14 +240,21 @@ const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
 /**
  * Les cafés **attachés** d'un Planqué, en pastilles typées (D-037) : chaque pastille
  * porte la couleur de sa faction, vide si rien n'est attaché.
+ *
+ * Le rang est **nommé** (#399) : à côté de la Machine, deux pastilles voisines se
+ * ressemblaient trop, et un café en Machine se lisait comme « le second café attaché ».
+ * `data-cafes` et `aria-label` disent lequel est lequel ; la Machine, elle, porte une
+ * tasse et une pastille carrée (`styles.css`).
  */
 function CafesPips({ cafes }: { cafes: readonly CafeSymbol[] }) {
   const names = cafes.map((cafe) => cafeLabel(cafe));
   return (
-    <CafePips
-      symbols={cafes}
-      label={names.length > 0 ? `Cafés attachés : ${names.join(' · ')}` : 'Aucun café attaché'}
-    />
+    <span className="poste__cafes" data-cafes="attaches" role="group" aria-label="Cafés attachés au Poste">
+      <CafePips
+        symbols={cafes}
+        label={names.length > 0 ? `Cafés attachés : ${names.join(' · ')}` : 'Aucun café attaché'}
+      />
+    </span>
   );
 }
 
@@ -272,7 +281,14 @@ function MachinePips({
   // par le nom accessible, comme l'ancien `title` (SPEC-COMBAT-UI §6.7). En `détaillé`, les
   // types du Deck sont une annotation visible (#189).
   return (
-    <span className="poste__machine" data-pas-a-pas={designe ? 'machine' : undefined}>
+    <span
+      className="poste__machine"
+      data-cafes="machine"
+      role="group"
+      aria-label="Machine à café"
+      data-pas-a-pas={designe ? 'machine' : undefined}
+    >
+      <Coffee size={12} className="poste__machine-icone" aria-hidden="true" />
       <span aria-hidden="true">{zone ? <CafeDot cafe={zone} /> : <i className="pip pip--free" />}</span>
       <span className="sr-only">{texteMachine(side)}</span>
       {detaille && <span className="poste__machine-types">{types || 'aucun type particulier'}</span>}
@@ -823,6 +839,21 @@ export function Battle() {
   const boardActions = playable.filter(
     (action) => action.type === 'attachEnergy' || action.type === 'retreat' || action.type === 'ability'
   );
+  /**
+   * **Le café a son panneau** (#399) : l'attachement quitte la rangée générique des gestes.
+   * Son panneau dit **quel** café attend en Machine (couleur et nom) avant le choix de la
+   * cible, et **pourquoi** rien n'est offert quand ce n'est pas possible — au lieu du
+   * silence d'un bouton absent (`phraseCafeAuPoste`).
+   */
+  const attachements = playable.filter((action) => action.type === 'attachEnergy');
+  const gestesDuPoste = boardActions.filter((action) => action.type !== 'attachEnergy');
+  const raisonCafe = phraseCafeAuPoste({
+    aMoi: myMove,
+    premierTour: isOpeningTurn(state),
+    dejaAttache: mySide.energyAttached,
+    cafe: mySide.energyZone ?? undefined,
+    aCible: mySide.active !== null || mySide.bench.some(Boolean)
+  });
   const pressions = playable.filter((action) => action.type === 'attack');
   const promotions = playable.filter((action) => action.type === 'promoteActive');
   const choices = playable.filter((action) => action.type === 'choose');
@@ -1393,6 +1424,9 @@ export function Battle() {
                   </button>
                 </li>
                 <li>
+                  {/* **Les règles en une minute** (#270) : le même panneau que dans Réglages —
+                      un seul corps, deux entrées. La légende des Conditions reste sur le
+                      bouton de la barre d'état, à sa place. */}
                   <Dialog>
                     <DialogTrigger render={<button type="button" className="combat-menu__entree" />}>
                       <BookOpen size={16} aria-hidden="true" /> Règles
@@ -1671,7 +1705,7 @@ export function Battle() {
             Pression est jouable, la rangée des gestes dessous porte le café, la Rotation, le Talent
             et la Pression — « Fin du tour » ne descend donc plus jamais sur une ligne de plus, sous
             la barre de navigation (420 × 900, `npm run capturer` le mesure). */}
-        {(lastLog || porteeLine || turnActions.length > 0) && (
+        {(lastLog || porteeLine || raisonCafe || turnActions.length > 0) && (
           <div className="combat-barre__tete">
             <div className="combat-barre__texte">
               {lastLog && (
@@ -1689,6 +1723,9 @@ export function Battle() {
                 </AnimatePresence>
               )}
               {porteeLine && <p className="muted combat-barre__portee">{porteeLine}</p>}
+              {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
+                  de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
+              {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
             </div>
             {turnActions.map((action) => (
               <span className="combat-barre__fin" key={JSON.stringify(action)}>
@@ -1743,11 +1780,26 @@ export function Battle() {
             font pas quatre lignes), et les Pressions viennent à côté. « Fin du tour » est sur la
             ligne du journal, au-dessus (#320). La barre ne doit jamais recouvrir la main ni passer
             sous la navigation (`npm run capturer` le mesure). */}
-        {(boardActions.length > 0 || pressions.length > 0) && (
+        {(gestesDuPoste.length > 0 || pressions.length > 0 || attachements.length > 0) && (
           <div className="combat-barre__gestes">
-            {boardActions.length > 0 && (
+            {attachements.length > 0 && (
+              <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe}>
+                <div className="actions actions--tight combat-barre__cafe-cibles">
+                  {attachements.map((action) => (
+                    <ActionButton
+                      key={JSON.stringify(action)}
+                      state={state}
+                      action={action}
+                      myCamp={myCamp}
+                      onAction={play}
+                    />
+                  ))}
+                </div>
+              </PanneauAttacheCafe>
+            )}
+            {gestesDuPoste.length > 0 && (
               <div className="actions actions--tight combat-barre__rang">
-                {boardActions.map((action) => (
+                {gestesDuPoste.map((action) => (
                   <ActionButton
                     key={JSON.stringify(action)}
                     state={state}

@@ -4232,3 +4232,65 @@ h2 {
   animation: none;
   opacity: 0;
 }
+
+/* **Le café, deux rangs nommés** (#399, OUF `p-mvrome4s-f93mg6`).
+
+   Sur la fiche du camp, deux pastilles voisines — les cafés attachés au Poste et le café
+   de la Machine — se ressemblaient : un café en Machine se lisait comme « le second café
+   attaché », et l'attachement semblait le faire changer de place en laissant un vide. Les
+   deux rangs sont maintenant distincts par la forme et par une tasse : la pastille ronde
+   reste le café attaché, la Machine porte une tasse et une pastille carrée. Aucun texte
+   recopié : le nom des rangs est dans `aria-label` (`Battle.tsx`). */
+.battle .poste__machine-icone {
+  color: var(--text-dim);
+  flex: none;
+}
+
+.battle .poste__machine .pip {
+  border-radius: 4px;
+}
+
+/* **Le panneau d'attache du café** (#399) : il prend la place du bouton muet dans la rangée
+   des gestes, montre le café de la Machine avant le choix de la cible, et dit pourquoi
+   l'attachement n'est pas offert. Il tient sur une ligne — la barre ne gagne pas de hauteur
+   (420 × 900, `npm run capturer`), et la phrase d'aide ne s'affiche qu'en `détaillé`. */
+.combat-barre__cafe {
+  align-items: center;
+  display: flex;
+  flex: 1 1 8rem;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.combat-barre__cafe-titre {
+  align-items: center;
+  display: inline-flex;
+  flex: none;
+  gap: 0.25rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.combat-barre__cafe-aide {
+  display: none;
+  margin: 0;
+}
+
+.battle--detaille .combat-barre__cafe-aide {
+  display: block;
+}
+
+.combat-barre__cafe-cibles {
+  flex: none;
+  flex-wrap: nowrap;
+}
+
+/* La raison du refus se range sous le journal, à la place de la ligne de portée (#320) :
+   elle se lit comme elle, sur toute la largeur du bloc de texte. */
+.combat-barre__cafe-raison {
+  margin: 0;
+}
+
