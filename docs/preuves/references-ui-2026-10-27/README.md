@@ -23,4 +23,4 @@ Il ne tranche **aucun** périmètre. Ce qui est rangé « pas maintenant » par 
 
 ## Convention à compléter
 
-`docs/preuves/README.md` liste les usages du dossier. Le type **`references-ui-<AAAA-MM-JJ>/`** n'y figurait pas ; sa ligne est ajoutée par le même commit.
+`docs/preuves/README.md` liste les usages du dossier. Le type **`references-ui-<AAAA-MM-JJ>/`** y figure, avec sa ligne ; ce lot n'a rien d'autre à y ajouter.
