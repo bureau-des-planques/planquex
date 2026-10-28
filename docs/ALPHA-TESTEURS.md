@@ -1,4 +1,4 @@
-# Message aux testeurs de l'alpha — **{libellé}**
+# Message aux testeurs de l'alpha
 
 **Adresse** : https://planquex.4k7.org
 

@@ -97,7 +97,7 @@ describe('version de l’application', () => {
   it('le message aux testeurs ne recopie aucun numéro de version', () => {
     const message = readFileSync(new URL('../docs/ALPHA-TESTEURS.md', import.meta.url), 'utf8');
     expect(versionsEnDur('docs/ALPHA-TESTEURS.md', message)).toEqual([]);
-    expect(message.split('\n')[0]).toContain('{libellé}');
+    expect(message.split('\n')[0]).not.toMatch(/\d+\.\d+\.\d+/);
   });
 
   it('le contrôle mord : un message qui recopie 0.1.13 est refusé', () => {
