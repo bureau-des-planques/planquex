@@ -103,3 +103,82 @@ describe('Talent « en jouant » — déclenchement à la mise en jeu (#163, D-0
     expect(legalActions(apres).some((action) => action.type === 'endTurn')).toBe(false);
   });
 });
+
+/**
+ * **Le Talent « en jouant » collecte ses faits** (#353, D-081).
+ *
+ * Le Talent s'exécutait déjà à la pose et à l'évolution (#163), mais `playBasic` et
+ * `evolve` ne portaient pas le collecteur de `applyAction` : la transition produisait son
+ * Stress sans le dire, et le journal restait muet là où une Pression ou un Talent à la
+ * demande parlent (#250). Ce bloc tient les trois cas du ticket :
+ *
+ * 1. la **pose directe** collecte le fait, une seule fois ;
+ * 2. l'**évolution** collecte le fait du Planqué qui arrive (D-081 : la mise en jeu est la
+ *    pose *ou* l'évolution — comportement de #163, inchangé) ;
+ * 3. la **relève** (promotion depuis le Banc) ne le collecte **pas** : le Planqué n'est pas
+ *    *joué*, il remplace un Poste vide, et son Talent « en jouant » ne se déclenche pas.
+ */
+describe('Talent « en jouant » — les faits de la mise en jeu (#353, D-081)', () => {
+  /** Un Talent « en jouant » qui se blesse : la seule primitive qui écrit un fait de Stress. */
+  const enregistrerEntrantQuiSeBlesse = () => {
+    CARD_BY_ID.set('test-entrant-en-jouant', {
+      ...basePlanque(),
+      id: 'test-entrant-en-jouant',
+      ability: {
+        name: 'Sourcing',
+        text: 'En jouant : ce Planqué prend 10 de stress.',
+        kind: 'effects',
+        effects: [{ kind: 'selfDamage', amount: 10 }],
+        trigger: 'onPlay'
+      }
+    });
+  };
+
+  /** Les faits de l'entrée de journal de la dernière action. */
+  const faitsDeLaDerniereAction = (state: BattleState) => state.actionLog.at(-1)?.faits ?? [];
+
+  it('la pose au Poste collecte le fait de Stress du Talent, une seule fois', () => {
+    enregistrerEntrantQuiSeBlesse();
+    const avant = scene();
+    avant.players.player.active = null;
+    avant.players.player.hand = [createInstance('test-entrant-en-jouant', 0, 'jouant-fait')];
+    const apres = applyAction(avant, { type: 'playBasic', uid: 'jouant-fait', slot: 'active' });
+
+    const faits = faitsDeLaDerniereAction(apres);
+    const stress = faits.filter((fait) => fait.type === 'stress');
+    // Le fait vient du moteur : c'est le Stress réellement appliqué au Planqué qui arrive.
+    expect(stress).toEqual([{ type: 'stress', uid: 'jouant-fait', montant: 10, auPoste: true }]);
+    // Une seule fois : la pose ne rejoue pas le Talent.
+    expect(stress).toHaveLength(1);
+    expect(apres.actionLog.at(-1)?.action).toEqual({ type: 'playBasic', uid: 'jouant-fait', slot: 'active' });
+  });
+
+  it('l’évolution collecte le fait du Planqué qui arrive', () => {
+    enregistrerEntrant([]);
+    enregistrerEvolution([{ kind: 'selfDamage', amount: 10 }]);
+    const avant = scene();
+    avant.players.player.active = createInstance('test-entrant-en-jouant', 0, 'base-poste');
+    avant.players.player.hand = [createInstance('test-n1-en-jouant', 0, 'evolue-fait')];
+    const apres = applyAction(avant, { type: 'evolve', uid: 'evolue-fait', targetUid: 'base-poste' });
+
+    expect(apres.players.player.active?.cardId).toBe('test-n1-en-jouant');
+    const stress = faitsDeLaDerniereAction(apres).filter((fait) => fait.type === 'stress');
+    // Le Planqué garde son instance : c'est bien le Poste `base-poste` qui porte le fait.
+    expect(stress).toEqual([{ type: 'stress', uid: 'base-poste', montant: 10, auPoste: true }]);
+  });
+
+  it('la relève ne collecte aucun fait : le Planqué n’est pas *joué*', () => {
+    enregistrerEntrantQuiSeBlesse();
+    const avant = scene();
+    // Un Poste vide à pourvoir : le Banc porte le Planqué au Talent « en jouant ».
+    avant.players.player.active = null;
+    avant.players.player.bench[0] = createInstance('test-entrant-en-jouant', 0, 'releve-fait');
+    avant.pendingPromotion = 'player';
+    const apres = applyAction(avant, { type: 'promoteActive', benchIndex: 0 });
+
+    expect(apres.players.player.active?.uid).toBe('releve-fait');
+    // Mord : aucune entrée de journal ne porte le fait, et le Stress n'a pas bougé.
+    expect(faitsDeLaDerniereAction(apres)).toEqual([]);
+    expect(apres.players.player.active?.hp).toBe(apres.players.player.active?.maxHp);
+  });
+});

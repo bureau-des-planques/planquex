@@ -22,14 +22,16 @@ const byId = (id: string): PlanqueCard | undefined => {
 const LINE = ['interim-interimaire', 'interim-interimaire-confirme', 'interim-chef-equipe-interimaire'];
 
 describe('Intérim — enregistrement (ticket #22)', () => {
-  it('compte 6 entrées, toutes des bases (vague 2, #86 : +1 ligne à 3 stades)', () => {
+  it('compte 10 entrées, toutes des bases (vague 2, #86 ; vague #352)', () => {
     // Les 4 entrées de `PROPOSITION.md` §4.3 (la ligne à 3 stades + la carte signature
     // COMEX) sont dépassées de 2 : la vague 2 (#86) ajoute une ligne à 3 stades pour
-    // atteindre la cible de rareté `CARD-SPEC.md` §1 (42 cartes en 3◆). L'écart avec le
-    // quota de faction est signalé au ticket #63.
-    expect(INTERIM_CARDS).toHaveLength(6);
+    // atteindre la cible de rareté `CARD-SPEC.md` §1 (42 cartes en 3◆). La vague #352
+    // ajoute 4 bases (Vacataire, Chargé de mission → Coordinateur intérimaire,
+    // Suppléant) : la faction atteint **10 noms de base**, le minimum pour un Deck
+    // mono-faction de 20 cartes. L'écart avec le quota de faction est signalé au ticket #63.
+    expect(INTERIM_CARDS).toHaveLength(10);
     expect(INTERIM_VARIANTS).toHaveLength(0);
-    expect(ALL_INTERIM_CARDS).toHaveLength(6);
+    expect(ALL_INTERIM_CARDS).toHaveLength(10);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {
@@ -109,8 +111,10 @@ const PLANQUES_INTERIM: PlanqueCard[] = ALL_INTERIM_CARDS.filter(isPlanque);
 
 /**
  * Les **lignes d'évolution** de la faction : chaque chemin d'une racine (Entrant) à une
- * feuille (une carte sans successeur). Le graphe en compte **trois** : la N+1
- * `interim-interimaire-confirme` se ramifie vers le N+2 et vers le COMEX.
+ * feuille (une carte sans successeur). Le graphe en compte **six** (#352) : la N+1
+ * `interim-interimaire-confirme` se ramifie vers le N+2 et vers le COMEX, la ligne
+ * `interim-charge-mission → interim-coordinateur-interimaire` est nouvelle, et les deux
+ * Entrants seuls (`interim-vacataire`, `interim-suppleant`) sont des lignes d'un stade.
  */
 function lignesDEvolution(cards: readonly PlanqueCard[]): PlanqueCard[][] {
   const enfants = new Map<string, PlanqueCard[]>();
@@ -155,13 +159,17 @@ describe('Intérim — lignes payables avec les types du Deck (#116, D-034, D-03
   const LIGNES = lignesDEvolution(PLANQUES_INTERIM);
   const etiquette = (ligne: readonly PlanqueCard[]): string => ligne.map((card) => card.id).join(' → ');
 
-  it('décrit trois lignes : deux partagent la N+1, la troisième a sa propre N+1', () => {
-    expect(LIGNES).toHaveLength(3);
+  it('décrit six lignes : deux partagent la N+1, les autres ont leur propre sortie', () => {
+    expect(LIGNES).toHaveLength(6);
     expect(new Set(LIGNES.map((ligne) => ligne[ligne.length - 1].id))).toEqual(
       new Set([
         'interim-chef-equipe-interimaire',
         'interim-interimaire-legendaire-ex',
-        'interim-responsable-interim'
+        'interim-responsable-interim',
+        // Vague #352 : un Entrant seul de chaque côté de la ligne nouvelle.
+        'interim-vacataire',
+        'interim-coordinateur-interimaire',
+        'interim-suppleant'
       ])
     );
     expect(LIGNES.filter((ligne) => ligne[1]?.id === 'interim-interimaire-confirme')).toHaveLength(2);
@@ -177,7 +185,11 @@ describe('Intérim — lignes payables avec les types du Deck (#116, D-034, D-03
   });
 
   it('garde la même paire de types du N+1 au N+2', () => {
-    for (const ligne of LIGNES) {
+    // Une ligne d'un seul stade (un Entrant seul, #352) n'a pas de paire à garder : la
+    // règle porte sur les Pressions à 2 cafés, qui n'existent qu'à partir du N+1.
+    const evolutives = LIGNES.filter((ligne) => ligne.some((card) => card.stage !== 'ENTRANT'));
+    expect(evolutives.length, 'aucune ligne évolutive à contrôler').toBeGreaterThan(0);
+    for (const ligne of evolutives) {
       const paires = pairesDeLigne(ligne);
       expect(paires.length, etiquette(ligne)).toBeGreaterThan(0);
       for (const paire of paires) expect(paire.split(' + '), etiquette(ligne)).toHaveLength(2);

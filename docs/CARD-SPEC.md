@@ -4,8 +4,9 @@
 > du ton, des noms et des courbes de stats.
 
 > **Note d'autorité (D-063, #152)** : la cible de contenu est celle de **D-063** — **autour de
-> 300** cartes, **sans compter** (le set est à 225 bases + 75 variantes) — et les décomptes
-> réels se lisent dans `npm run status`. La table de §1 est l'**instantané daté de D-005**
+> 300** cartes, **sans compter** — et les décomptes réels se lisent dans `npm run status`
+> (bases **et** variantes : le nombre de bases a bougé avec les vagues de contenu, la
+> dernière en date étant #352). La table de §1 est l'**instantané daté de D-005**
 > (18/10/2026) : elle n'est pas un engagement, et ses chiffres ne se recopient pas.
 
 ---

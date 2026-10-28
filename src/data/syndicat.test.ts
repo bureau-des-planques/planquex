@@ -21,14 +21,16 @@ const byId = (id: string): PlanqueCard | undefined => {
 const LINE = ['syndicat-delegue-personnel', 'syndicat-representant-cse', 'syndicat-secretaire-general'];
 
 describe('Syndicat — enregistrement (ticket #21)', () => {
-  it('compte 7 entrées, dont 6 bases et 1 variante secrète (vague 2, #86 : +1 ligne en 3◆)', () => {
+  it('compte 11 entrées, dont 10 bases et 1 variante secrète (vague 2, #86 ; vague #352)', () => {
     // La vague 2 (#86) ajoute une ligne à 3 stades (Trésorier CSE → Président CSE)
-    // pour atteindre la cible de rareté `CARD-SPEC.md` §1 : 42 cartes en 3◆. Le quota
-    // de `PROPOSITION.md` §4.3 (5 entrées) est dépassé de 2 : l'écart est signalé au
-    // ticket #63.
-    expect(SYNDICAT_CARDS).toHaveLength(6);
+    // pour atteindre la cible de rareté `CARD-SPEC.md` §1 : 42 cartes en 3◆. La vague
+    // #352 ajoute 4 bases (Délégué syndical → Permanent syndical, le Collectif d’atelier
+    // et le Représentant de section) : la faction atteint **10 noms de base**, le minimum
+    // pour un Deck mono-faction de 20 cartes (2 exemplaires par nom). Le quota de
+    // `PROPOSITION.md` §4.3 (5 entrées) est dépassé : l'écart est signalé au ticket #63.
+    expect(SYNDICAT_CARDS).toHaveLength(10);
     expect(SYNDICAT_VARIANTS).toHaveLength(1);
-    expect(ALL_SYNDICAT_CARDS).toHaveLength(7);
+    expect(ALL_SYNDICAT_CARDS).toHaveLength(11);
   });
 
   it('est enregistrée dans ALL_CARDS et CARD_BY_ID', () => {

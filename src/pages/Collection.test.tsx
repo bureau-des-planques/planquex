@@ -15,8 +15,11 @@ describe('Collection — écran de la Collection', () => {
     const owned = { 'sse-infirmier-site': 2, 'management-responsable-unite': 1 };
     renderWithStore(<Collection />, { owned, tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/2\/300 cartes/)).toBeInTheDocument();
-    expect(screen.getByText(/300 affichés/)).toBeInTheDocument();
+    // Le **total** se dérive d'`ALL_CARDS`, il ne se recopie pas : #352 a fait passer le
+    // catalogue de 300 à 308, et ce test annonçait encore « 300 ».
+    const total = ALL_CARDS.length;
+    expect(screen.getByText(new RegExp(`2/${total} cartes`))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${total} affichés`))).toBeInTheDocument();
   });
 
   it('affiche les filtres de recherche', () => {

@@ -210,8 +210,9 @@ describe('Cartes — cibles par rareté (CARD-SPEC.md §1, ticket #103)', () => 
     // **Fermer la table est ce qui empêche une régression de contenu d'être silenciée** :
     // sans cela, un futur agent pourrait écrire `{ '1D': -1, '3D': -5 }` et faire passer
     // la disparition de trois cartes `3◆`. Ajouter une clé exige donc de venir ici — un
-    // acte délibéré, visible en revue (relecture de #103).
-    expect(Object.keys(ECARTS_CONNUS), 'table des écarts connus').toEqual(['1D']);
+    // acte délibéré, visible en revue (relecture de #103). `1D` et `2D` sont les deux
+    // raretés que la vague #352 dépasse.
+    expect(Object.keys(ECARTS_CONNUS), 'table des écarts connus').toEqual(['1D', '2D']);
     for (const [rarity, exception] of Object.entries(ECARTS_CONNUS)) {
       expect(Number.isInteger(exception.ticket), `${rarity} : un ticket entier est requis`).toBe(true);
       expect(exception.ticket, `${rarity} : ticket`).toBeGreaterThan(0);
@@ -241,10 +242,15 @@ const RARETES_BASES = Object.keys(CIBLES_BASES) as RareteBase[];
 /**
  * Écarts **constatés et suivis** : une entrée ici est une dette, pas une tolérance.
  *
- * `1D` : **101** bases pour **102** attendues. La carte manquante ne peut pas être écrite
- * sans trancher les quotas par faction de `PROPOSITION.md` §4.3 — les dix factions sont à
- * leur quota ou au-dessus (281 entrées pour 267). La décision est suivie par le ticket
- * **#104** (`ready-for-human`).
+ * Un écart se lit **dans les deux sens** (D-063 : « une bonne idée entre ») :
+ * - **déficit** — `1D` était à **101** bases pour **102** attendues ; la carte manquante ne
+ *   pouvait pas être écrite sans trancher les quotas par faction de `PROPOSITION.md` §4.3
+ *   (ticket **#104**). La vague #352 a **refermé** ce déficit : les cartes du Syndicat et de
+ *   l'Intérim sont des `1D` et `2D`, et la cible est dépassée ;
+ * - **excédent** — la vague **#352** ajoute 8 cartes de base (4 Syndicat, 4 Intérim) pour
+ *   rendre ces deux factions jouables seules : `1D` passe à **107** (+5) et `2D` à **69**
+ *   (+2). L'instantané de `CARD-SPEC.md` §1 est celui de **D-005**, daté et non maintenu : un
+ *   excédent n'y est pas une erreur, mais il se **déclare** ici, avec son ticket.
  *
  * **Chaque entrée cite son ticket, et la table est fermée** (relecture de #103) : sans ces
  * deux gardes, cette table serait un **faux garde-fou** — un futur agent pourrait y ajouter
@@ -254,7 +260,8 @@ const RARETES_BASES = Object.keys(CIBLES_BASES) as RareteBase[];
  * (qui réclame le retrait de **toute** entrée dont la cible est atteinte).
  */
 const ECARTS_CONNUS: Partial<Record<RareteBase, { ecart: number; ticket: number }>> = {
-  '1D': { ecart: -1, ticket: 104 }
+  '1D': { ecart: 5, ticket: 352 },
+  '2D': { ecart: 2, ticket: 352 }
 };
 
 /**
@@ -355,11 +362,12 @@ const PRODUITS: CafeSymbol[] = ['SSE', 'MANAGEMENT', 'QVT', 'AMELIORATION', 'RH'
  * Total des cafés de toutes les Pressions **de base**, avant et après migration (#33).
  *
  * Le nombre est un **instantané** du contenu : il change quand une carte est écrite
- * (la vague 2, #86, ajoute 9 cartes en 3◆ et 45 cafés) et quand une Pression change
- * de coût. Il sert à prouver que la migration au café typé (D-037) n'a pas changé le
- * **nombre** de cafés d'une Pression — pas à figer un contenu.
+ * (la vague 2, #86, ajoute 9 cartes en 3◆ et 45 cafés ; la vague #352, 8 cartes de base
+ * et 10 cafés) et quand une Pression change de coût. Il sert à prouver que la migration
+ * au café typé (D-037) n'a pas changé le **nombre** de cafés d'une Pression — pas à
+ * figer un contenu.
  */
-const TOTAL_CAFES_BASES = 522;
+const TOTAL_CAFES_BASES = 532;
 
 describe('Coût en café typé — forme (D-037 (1), #35)', () => {
   it('chaque Pression porte une liste de symboles : type produit ou `INCOLORE`', () => {

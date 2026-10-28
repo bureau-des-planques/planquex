@@ -130,10 +130,12 @@ function addCard(deck: string[], cardId: string) {
 /**
  * Deck d'archétype d'une faction : ses cartes d'abord, complétées si besoin.
  *
- * Deux factions n'ont pas encore 20 cartes (Syndicat, Intérim) : leur Deck est
- * complété par des cartes des autres factions, dans l'ordre de `ALL_CARDS`. Il
- * reste **légal** (20 cartes, 2 par nom, au moins un Entrant) et il est étiqueté
- * par sa faction d'origine — c'est l'archétype mesuré, pas une liste figée.
+ * Les dix factions atteignent désormais **10 noms de base** (#352), donc un Deck de
+ * 20 cartes avec 2 exemplaires par nom : `SYNDICAT` et `INTERIM` ne reçoivent plus de
+ * carte étrangère. Le complément reste en place pour une faction future qui n'y
+ * arriverait pas : il irait chercher des cartes des autres factions, dans l'ordre de
+ * `ALL_CARDS`. Le Deck reste **légal** (20 cartes, 2 par nom, au moins un Entrant) et il
+ * est étiqueté par sa faction d'origine — c'est l'archétype mesuré, pas une liste figée.
  */
 export function factionDeck(faction: Faction): string[] {
   const deck: string[] = [];

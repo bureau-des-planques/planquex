@@ -157,6 +157,86 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
     ],
     flavor: 'Il préside une réunion de deux personnes. Le procès-verbal fait douze pages.',
     art: 'syndicat-president-cse.webp'
+  }),
+
+  // Ligne 3 et Entrants seuls (vague #352) : la faction atteint **10 noms de base**, le
+  // minimum pour un Deck mono-faction de 20 cartes (2 exemplaires par nom). Ton de la
+  // faction : tank / contrôle (CARD-SPEC.md §3), Atelier, CSE, délégué.
+  // Pas de champ `art` : l'illustration n'est pas produite (spec #95, D-045) ; son
+  // **sujet** est écrit dans `design/illustrations/SUJETS-flow.md`, la carte affiche son
+  // glyphe. Une fois le rendu passé par `scripts/illustration-vague.sh`, `art` s'ajoute ici.
+  base({
+    id: 'syndicat-delegue-syndical',
+    name: 'Délégué syndical',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 70,
+    retreat: 1,
+    attacks: [
+      {
+        name: 'Permanence',
+        cost: ['SYNDICAT'],
+        damage: 20,
+        text: 'Soigne 10 de ce Planqué.',
+        effects: [{ kind: 'healSelf', amount: 10 }]
+      }
+    ],
+    flavor: 'Il tient sa permanence le mardi. Personne ne vient le mardi.'
+  }),
+  base({
+    id: 'syndicat-permanent-syndical',
+    evolvesFrom: 'syndicat-delegue-syndical',
+    name: 'Permanent syndical',
+    stage: 'N+1',
+    rarity: '2D',
+    hp: 100,
+    retreat: 2,
+    attacks: [
+      {
+        name: 'Tournée des ateliers',
+        cost: ['SYNDICAT', 'INCOLORE'],
+        damage: 50,
+        text: 'Le Planqué adverse est en Sieste.',
+        effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }]
+      }
+    ],
+    flavor: 'Il passe voir les équipes. Il ne s’arrête à aucune.'
+  }),
+  base({
+    id: 'syndicat-collectif-atelier',
+    name: 'Collectif d’atelier',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 60,
+    retreat: 1,
+    attacks: [
+      {
+        name: 'Pétition',
+        cost: ['SYNDICAT'],
+        damage: 10,
+        text: 'Ce Planqué subit 10 de moins au prochain tour.',
+        effects: [{ kind: 'reduceDamage', amount: 10 }]
+      }
+    ],
+    flavor: 'Quatre-vingts signatures, deux écritures. La direction demande l’original.'
+  }),
+  base({
+    id: 'syndicat-representant-section',
+    name: 'Représentant de section',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 70,
+    retreat: 1,
+    attacks: [
+      {
+        name: 'Note contestée',
+        cost: ['SYNDICAT'],
+        damage: 20,
+        text: 'Pioche 1 carte.',
+        effects: [{ kind: 'draw', amount: 1 }]
+      }
+    ],
+    flavor: 'Il rend la note annotée. La direction en fait une deuxième note.'
   })
 ];
 
