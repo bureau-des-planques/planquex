@@ -166,6 +166,25 @@ export function politique(nom: Politique): (state: BattleState) => BattleAction 
   }
 }
 
+/**
+ * Le niveau numérique (`AiLevel`, entrée de `nextAction` et du simulateur) et la politique
+ * nommée qu'il joue (#251, D-125). Le chiffre reste pour l'entrée numérique ; le nom dit le
+ * comportement, et `politiques.test.ts` vérifie que la table ne ment pas.
+ */
+export const POLITIQUE_DU_NIVEAU: Readonly<Record<AiLevel, Politique>> = { 1: 'scripte', 2: 'glouton' };
+
+/**
+ * La difficulté que le testeur choisit (#251, D-125) : elle règle la **politique** de la
+ * Direction ; le Deck joué en est la seconde moitié (non branchée ici, voir D-146).
+ * `serieuse` est le défaut : c'est le niveau 2 de l'écran (D-084, D-109), qui ne change pas.
+ */
+export type Difficulte = 'simple' | 'serieuse';
+export const DIFFICULTE_PAR_DEFAUT: Difficulte = 'serieuse';
+export const POLITIQUE_DE_DIFFICULTE: Readonly<Record<Difficulte, Politique>> = {
+  simple: 'glouton',
+  serieuse: 'recherche'
+};
+
 /** L'ordre de préférence des actions non terminales de la politique. */
 const NON_TERMINAL_ORDER = ['playAction', 'evolve', 'playBasic', 'ability', 'attachEnergy'] as const;
 

@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "tests:lents": "vitest run --reporter=json --outputFile=node_modules/.durees-tests.json && node scripts/durees-tests.mjs",
     "check": "tsc -b",
     "status": "node scripts/status.mjs",
     "simulate": "node scripts/simulate.mjs",

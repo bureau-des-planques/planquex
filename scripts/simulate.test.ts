@@ -1,3 +1,4 @@
+// Lent : chaque cas lance `scripts/simulate.mjs` en sous-processus, qui joue des parties complètes ; le délai de 30 s est posé par cas.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
