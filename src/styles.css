@@ -1122,6 +1122,8 @@ h2 {
      garantit que toutes les cartes font la même taille, quel que soit le nombre de
      Pressions, la longueur du nom ou celle de la flavour. */
   aspect-ratio: 63 / 88;
+  /* La carte est le conteneur de son propre texte : `cqw` y mesure sa largeur (échelle, plus bas). */
+  container-type: inline-size;
   /* Le cadre est un **anneau plein** de 4 px, en dégradé de la couleur de rareté ; la face
      (`.card__face`) est la carte elle-même. La rareté colore l'anneau **entier**, pas un
      filet sur un seul côté (tell d'UI IA). */
@@ -1407,11 +1409,6 @@ h2 {
 /* Sur un téléphone, le nom de la carte cède un cran : la pastille du Seuil réduit sa colonne, et
    « PRÉVENTEUR » se coupait en « PRÉVENTEU / R ». Le nom reste entier, à deux lignes au plus. Cette
    règle vient **après** `.card__name` : à même spécificité, la dernière l'emporte. */
-@media (max-width: 420px) {
-  .card__name {
-    font-size: 0.72rem;
-  }
-}
 
 .card__stage {
   background: rgb(255 255 255 / 5%);
@@ -1700,6 +1697,112 @@ h2 {
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
   margin-left: auto;
+}
+
+/* **L'échelle de la carte** (hors plateau) : la carte règle la taille de son texte sur sa largeur
+   (`cqw`), et tout le reste se mesure en `em` de ce texte. Une carte agrandie (la fiche de l'Arrivage,
+   le détail) grandit donc d'un bloc : le nom ne reste pas petit, les Pressions ne se disloquent pas.
+   Le plateau garde ses `rem` : son format est imposé (#187, `styles-combat.test.ts`). */
+.card:not(.card--plateau) .card__face {
+  font-size: 6.6cqw;
+  gap: 0.3em;
+}
+
+.card:not(.card--plateau) .card__top {
+  gap: 0.15em 0.4em;
+  padding-block: 0.4em;
+  padding-left: 0.5em;
+}
+
+.card:not(.card--plateau) .card__kind,
+.card:not(.card--plateau) .card__faction {
+  font-size: 0.84em;
+}
+
+.card:not(.card--plateau) .card__name {
+  font-size: 1em;
+}
+
+.card:not(.card--plateau) .card__stage,
+.card:not(.card--plateau) .card__comex {
+  padding: 0.05em 0.42em;
+}
+
+.card:not(.card--plateau) .card__faction-dot {
+  height: 0.6em;
+  width: 0.6em;
+}
+
+.card:not(.card--plateau) .card__seuil-badge {
+  border-radius: 0.5em;
+  font-size: 1.35em;
+  min-width: 2.7em;
+  padding: 0.18em 0.3em 0.22em;
+}
+
+.card:not(.card--plateau) .card__seuil-badge::before {
+  font-size: 0.68em;
+}
+
+.card:not(.card--plateau) .card__seuil {
+  padding-inline: 0.4em;
+}
+
+.card:not(.card--plateau) .card__seuil-bar {
+  height: 0.6em;
+}
+
+.card:not(.card--plateau) .card__art {
+  margin-inline: 0.4em;
+}
+
+.card:not(.card--plateau) .card__glyph {
+  font-size: 2.7em;
+}
+
+.card:not(.card--plateau) .card__emblem {
+  bottom: 0.3em;
+  font-size: 0.9em;
+  height: 1.9em;
+  left: 0.3em;
+  width: 1.9em;
+}
+
+.card:not(.card--plateau) .card__attacks {
+  gap: 0.3em;
+  padding-inline: 0.4em;
+}
+
+/* Une colonne de café à la largeur de trois pastilles : le nom commence au même endroit sur toutes les
+   cartes, et « Rapport d'incident » ne se tronque plus pour une seconde pastille. */
+.card:not(.card--plateau) .card__attacks .pips {
+  min-width: 2.6em;
+  width: 2.6em;
+}
+
+.card:not(.card--plateau) .card__attacks .pip {
+  height: 0.68em;
+  width: 0.68em;
+}
+
+.card:not(.card--plateau) .card__attacks .attack__name {
+  font-size: 1.05em;
+}
+
+.card:not(.card--plateau) .card__attacks .attack__dmg {
+  font-size: 1.28em;
+}
+
+.card:not(.card--plateau) .card__flavor {
+  font-size: 0.97em;
+  padding-inline: 0.45em;
+}
+
+.card:not(.card--plateau) .card__footer {
+  font-size: 0.95em;
+  gap: 0.6em;
+  padding-block: 0.28em 0.32em;
+  padding-left: 0.45em;
 }
 
 /* ---------- Dialogues ----------
