@@ -35,6 +35,7 @@ import { useStore } from '@/store/useStore';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
 import type { Decks, Reprise } from '@/store/partie';
 import { combatTermine, tracerCombat } from '@/store/combats';
+import { derniereDe } from '@/store/derniere';
 import { jouer } from '@/audio/sons';
 import {
   aiTurnAction,
@@ -1089,12 +1090,16 @@ export function Battle() {
    * qu'écrire ; l'écran reste seul maître de l'état.
    */
   const enregistrerPartie = useStore((store) => store.enregistrerPartie);
+  const enregistrerDerniere = useStore((store) => store.enregistrerDerniere);
   useEffect(() => {
     // Un combat guidé ne s'enregistre pas : le testeur qui le rejoue ne doit pas perdre la
     // partie qu'il avait en cours (#272).
     if (tutoriel) return;
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
-  }, [state, match, decksSolo, enregistrerPartie, tutoriel]);
+    // La dernière partie terminée (#366) : une partie finie se revoit depuis Réglages.
+    const derniere = derniereDe(state, match, decksSolo);
+    if (derniere !== null) enregistrerDerniere(derniere);
+  }, [state, match, decksSolo, enregistrerPartie, enregistrerDerniere, tutoriel]);
 
   /**
    * **La trace du combat** (#173, D-086 ; #228, D-105) : une partie **terminée** part en

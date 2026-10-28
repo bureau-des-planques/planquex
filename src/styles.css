@@ -5800,3 +5800,79 @@ h2 {
     transition: none;
   }
 }
+
+/* ---------- Revoir une partie : le rejeu (#366) ---------- */
+
+/* Les commandes du pas-à-pas : des cibles de 44 px, qui passent à la ligne au téléphone. */
+.rejeu__commandes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rejeu__commandes .button {
+  min-height: 44px;
+  min-width: 44px;
+  justify-content: center;
+}
+
+.rejeu__curseur {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.rejeu__curseur input {
+  flex: 1;
+  min-height: 44px;
+  min-width: 0;
+}
+
+.rejeu__plateau {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .rejeu__plateau {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.rejeu__fiche {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.rejeu__fiche div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.rejeu__fiche dt {
+  color: var(--color-ink-muted);
+  min-width: 9ch;
+}
+
+.rejeu__fiche dd {
+  margin: 0;
+}
+
+.rejeu__journal {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+  padding-left: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rejeu__commandes .button {
+    transition: none;
+  }
+}
