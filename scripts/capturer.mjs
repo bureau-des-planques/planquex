@@ -58,6 +58,9 @@ const PAGES = [
   ['deck', '/deck'],
   ['combat', '/battle'],
   ['reglages', '/settings'],
+  // Revoir une partie (#366) : hors du combat, depuis Réglages ; une route de l'application
+  // sans capture est une page que personne ne regarde (le contrat de capturer.test.ts).
+  ['rejeu', '/rejeu'],
   // Les trois écrans de compte (D-088) : sans configuration, ils montrent leur état
   // inerte — c'est aussi un état d'écran que D-060 demande de voir.
   // La confidentialité est publique et hors garde : elle doit se lire sans compte.
