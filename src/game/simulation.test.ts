@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getCard, isBasic, isPlanque } from '@/data';
-import type { BattleAction, CafeSymbol, Stage } from '@/data/types';
+import { ALL_CARDS, getCard, isBasic, isPlanque } from '@/data';
+import type { BattleAction, CafeSymbol, Card, PlanqueCard, Stage } from '@/data/types';
 import { DECK_SIZE, MAX_DECK_CAFE_TYPES, deckLegal, isCafeType } from '@/game/deck';
 import { applyAction, createBattle, isOpeningTurn } from '@/game/engine';
 import { nextAction } from '@/game/ia';
@@ -12,6 +12,7 @@ import {
   factionCafeTypes,
   factionDeck,
   factionDecks,
+  construireDeckDerive,
   formatReport,
   pairFactions,
   simulate
@@ -26,6 +27,52 @@ import {
  */
 
 const SEED = 42;
+
+/** Une faction fabriquée (#417) : 22 Entrants, puis une ligne Entrant → N+1 → N+2 au tardif. */
+function fabriquerFactionVingtDeux(): Card[] {
+  const base = (id: string, stage: PlanqueCard['stage'], extra: Partial<PlanqueCard> = {}): PlanqueCard => ({
+    kind: 'PLANQUE',
+    id,
+    name: `Nom ${id}`,
+    faction: 'SSE',
+    rarity: '1D',
+    flavor: 'Fabriqué pour le test.',
+    glyph: 'x',
+    palette: 'x',
+    stage,
+    hp: 60,
+    retreat: 1,
+    weakness: null,
+    attacks: [],
+    ...extra
+  });
+  const entrants = Array.from({ length: 22 }, (_, index) =>
+    base(`fab-entrant-${String(index + 1).padStart(2, '0')}`, 'ENTRANT')
+  );
+  // Six Actions de la faction : sans tri par profondeur, le Deck se remplit d'Entrants et
+  // d'Actions avant d'arriver aux évolutions, et le N+2 n'entre jamais (le repli final,
+  // lui, ne tient pas compte de la ligne).
+  const action = (id: string): Card => ({
+    kind: 'OBJET',
+    id,
+    name: `Nom ${id}`,
+    faction: 'SSE',
+    rarity: '1D',
+    flavor: 'Fabriqué pour le test.',
+    glyph: 'x',
+    palette: 'x',
+    text: 'Sans effet, pour le test.',
+    effects: []
+  });
+  const actions = Array.from({ length: 6 }, (_, index) => action(`fab-action-${index + 1}`));
+  return [
+    ...entrants,
+    base('fab-zz-entrant', 'ENTRANT'),
+    base('fab-zz-n1', 'N+1', { evolvesFrom: 'fab-zz-entrant' }),
+    base('fab-zz-n2', 'N+2', { evolvesFrom: 'fab-zz-n1' }),
+    ...actions
+  ];
+}
 
 describe('simulate — reproductibilité', () => {
   it('produit un rapport strictement identique pour la même graine', () => {
@@ -134,6 +181,47 @@ describe('simulate — contenu du rapport', () => {
 });
 
 describe('Decks de simulation', () => {
+  it('garde une ligne d’évolution complète dans un Deck de faction à 22 Entrants (#417) : le contrôle mord', () => {
+    // 22 Entrants sans évolution, puis une ligne Entrant → N+1 → N+2 dont l'Entrant a l'id
+    // le plus tardif : sans plafond, ou sans tri par profondeur, la ligne est coupée.
+    const cards = fabriquerFactionVingtDeux();
+    const deck = construireDeckDerive('SSE', cards);
+    expect(deck).toHaveLength(DECK_SIZE);
+    expect(deck).toContain('fab-zz-n2');
+    expect(deck).toContain('fab-zz-n1');
+    // Le plafond par défaut tient : au plus 8 Entrants distincts de la faction.
+    const entrants = new Set(deck.filter((id) => id.startsWith('fab-entrant-') || id === 'fab-zz-entrant'));
+    expect(entrants.size).toBeLessThanOrEqual(8);
+  });
+
+  it('sans plafond (Infinity), la faction à 22 Entrants remplit son Deck et perd son N+2 : c’est le contrôle', () => {
+    const deck = construireDeckDerive('SSE', fabriquerFactionVingtDeux(), { entrantsMax: Infinity });
+    expect(deck).toHaveLength(DECK_SIZE);
+    expect(deck).not.toContain('fab-zz-n2');
+  });
+
+  it('respecte le plafond nommé : `entrantsMax` règle le nombre d’Entrants distincts', () => {
+    const deck = construireDeckDerive('SSE', fabriquerFactionVingtDeux(), { entrantsMax: 4 });
+    const entrants = new Set(deck.filter((id) => id.startsWith('fab-entrant-') || id === 'fab-zz-entrant'));
+    expect(entrants.size).toBe(4);
+    expect(deck).toContain('fab-zz-n2');
+  });
+
+  it('un Deck dérivé du catalogue reste légal et garde le N+2 de chaque faction qui en porte un', () => {
+    for (const faction of FACTION_ORDER) {
+      const deck = factionDeck(faction);
+      expect(deckLegal(deck), faction).toEqual({ ok: true, reasons: [] });
+      const n2DuCatalogue = ALL_CARDS.some(
+        (card) => isPlanque(card) && card.stage === 'N+2' && card.faction === faction && !card.variantOf
+      );
+      const n2AuDeck = deck.some((id) => {
+        const card = getCard(id);
+        return isPlanque(card) && card.stage === 'N+2';
+      });
+      if (n2DuCatalogue) expect(n2AuDeck, `${faction} : un N+2 dans le Deck`).toBe(true);
+    }
+  });
+
   it('construit un Deck légal de 20 cartes pour chacune des dix factions', () => {
     for (const faction of FACTION_ORDER) {
       const deck = factionDeck(faction);
