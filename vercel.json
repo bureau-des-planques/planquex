@@ -1,10 +1,36 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "*": false
+    }
+  },
   "redirects": [
-    { "source": "/parc", "destination": "/collection", "permanent": true },
-    { "source": "/chariot", "destination": "/deck", "permanent": true },
-    { "source": "/idees", "destination": "/comite", "permanent": true },
-    { "source": "/nouveautes", "destination": "/feuille-de-route", "permanent": true }
+    {
+      "source": "/parc",
+      "destination": "/collection",
+      "permanent": true
+    },
+    {
+      "source": "/chariot",
+      "destination": "/deck",
+      "permanent": true
+    },
+    {
+      "source": "/idees",
+      "destination": "/comite",
+      "permanent": true
+    },
+    {
+      "source": "/nouveautes",
+      "destination": "/feuille-de-route",
+      "permanent": true
+    }
   ],
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
