@@ -893,20 +893,20 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   }
 
   /**
-   * La première graine qui finit ainsi. Déterministe (la boucle part de 1) : le code obtenu
-   * est le même à chaque exécution, et le test ne dépend plus d'une graine figée qu'une
-   * modification du catalogue (D-095) rend caduque.
+   * **La graine, figée** — parce que la chercher coûtait une minute.
+   *
+   * Ces deux valeurs sont le résultat d'une recherche **déterministe** (la boucle partait de
+   * 1) : les rejouer à chaque exécution rend le même code, et ne prouve rien de plus.
+   * Mesuré le 28/10/2026 : `plateauVide` demandait de balayer **506** graines, chacune jusqu'à
+   * 400 étapes en essayant **toutes** les actions légales — un seul test frisait les 60 s et
+   * expirait sous charge.
+   *
+   * Si le moteur ou la politique change au point qu'une graine ne finit plus ainsi,
+   * `codeDuneFin` **jette** et dit de réancrer : c'est le comportement voulu, un échec nommé
+   * plutôt qu'une assertion incompréhensible.
    */
-  function premiereFinPour(raison: 'interventions' | 'plateauVide'): string {
-    for (let seed = 1; seed < 5000; seed += 1) {
-      try {
-        return codeDuneFin(raison, seed);
-      } catch {
-        // Cette graine ne finit pas ainsi : la suivante.
-      }
-    }
-    throw new Error(`aucune graine ne finit par « ${raison} »`);
-  }
+  const GRAINE_INTERVENTIONS = 2;
+  const GRAINE_PLATEAU_VIDE = 506;
 
   /** Coller un code, comme le testeur : le champ, puis le bouton (#128). */
   function coller(code: string) {
@@ -919,7 +919,7 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   it('trois Interventions terminent la partie, et le bandeau nomme le vainqueur', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    coller(premiereFinPour('interventions'));
+    coller(codeDuneFin('interventions', GRAINE_INTERVENTIONS));
 
     // Le vainqueur, la raison, et **le vocabulaire du PvP** : « la Direction » n'apparaît
     // pas dans le bandeau d'une partie à deux.
@@ -931,11 +931,12 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
   it('une partie sans aucun Planqué se termine aussi, et le bandeau dit pourquoi', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    coller(premiereFinPour('plateauVide'));
+    coller(codeDuneFin('plateauVide', GRAINE_PLATEAU_VIDE));
 
     expect(screen.getByText('Victoire : l’autre camp n’a plus aucun Planqué.')).toBeInTheDocument();
-    // La recherche de graine (`premiereFinPour`) peut parcourir beaucoup de graines avant la fin voulue.
-  }, 60_000);
+    // Graine figée : le balayage de 506 graines qui la trouvait est tombé le 28/10/2026
+    // (il frisait les 60 s). Le test repasse sous la seconde.
+  });
 
   it('l’abandon tombe sur le camp qui le déclare, et l’écran le dit des deux côtés', () => {
     // Une graine figée : la partie à deux se crée depuis l'horloge.
