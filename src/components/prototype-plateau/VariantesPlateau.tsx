@@ -98,20 +98,21 @@ export function VarianteB(props: VariantePlateauProps) {
       <span className="pp-b__faction" aria-hidden>
         {i.faction.glyph}
       </span>
-      {i.p && <span className="pp-b__seuil">{i.max}</span>}
+      {i.p && (
+        <span className="pp-b__seuil" aria-label={`Seuil ${i.max}`}>
+          {i.max}
+        </span>
+      )}
       <div className="pp-b__bas">
         {!i.p && <span className="pp-b__type">{kindLabel(card).split(' · ')[0]}</span>}
         <span className="pp-b__nom" lang="fr">
           {card.name}
         </span>
-        {i.p && (
-          <span
-            className="pp-b__barre"
-            role={i.vivant ? 'img' : undefined}
-            aria-label={i.vivant ? `Stress ${i.stress} sur ${i.max}` : undefined}
-          >
+        {/* La barre n'existe qu'au plateau (Stress vivant) : en main, un Planqué n'a pas encore de Stress. */}
+        {i.p && i.vivant && (
+          <span className="pp-b__barre" role="img" aria-label={`Stress ${i.stress} sur ${i.max}`}>
             <span className={`pp-b__fill ${i.niveau}`} />
-            {i.vivant && annotations && (
+            {annotations && (
               <b className="pp-b__chiffre">
                 {i.stress}/{i.max}
               </b>
@@ -237,9 +238,10 @@ const CSS = `
   font-size: max(8px, 13cqw); height: max(13px, 21cqw); left: 4%; place-items: center; position: absolute; top: 4%; width: max(13px, 21cqw);
 }
 .pp-b__seuil {
-  background: linear-gradient(180deg, var(--gold-soft), var(--gold-deep)); border: 1px solid rgb(0 0 0 / 60%); border-radius: 5px;
-  color: #241800; font-family: var(--font-display); font-size: max(10px, 17cqw); font-weight: 800; line-height: 1;
-  padding: 2px 3px; position: absolute; right: 4%; top: 4%;
+  /* Retouché : une plaque discrète (fond sombre, chiffre or), plus un lingot qui mange l'image. */
+  background: rgb(4 8 16 / 78%); border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent); border-radius: 4px;
+  color: var(--gold-soft); font-family: var(--font-display); font-size: max(8.5px, 12cqw); font-variant-numeric: tabular-nums;
+  font-weight: 800; line-height: 1; padding: 1px 3px; position: absolute; right: 4%; top: 4%;
 }
 .pp-b__bas {
   background: linear-gradient(180deg, transparent, rgb(4 8 16 / 85%) 30%, rgb(4 8 16 / 95%));
@@ -250,11 +252,20 @@ const CSS = `
   -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #fff; display: -webkit-box; font-family: var(--font-display);
   font-size: max(9.5px, 14.5cqw); font-weight: 800; line-height: 1.05; overflow: hidden; text-shadow: 0 1px 2px #000;
 }
-.pp-b__barre { background: rgb(255 255 255 / 14%); display: block; height: max(5px, 9cqw); margin: 2px -6% 0; position: relative; }
+.pp-b__barre {
+  /* Retouché : une jauge qui se voit même vide — piste sombre, filet clair, dix crans. */
+  background: rgb(0 0 0 / 60%); border: 1px solid rgb(255 255 255 / 55%); border-radius: 2px; display: block;
+  height: max(6px, 10cqw); margin: 3px 0 5%; overflow: hidden; position: relative;
+}
+.pp-b__barre::after {
+  background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgb(0 0 0 / 70%) calc(10% - 1px) 10%);
+  content: ''; inset: 0; position: absolute;
+}
 .pp-b__fill { background: var(--stress-bas); display: block; height: 100%; transition: width 300ms ease; width: var(--pct); }
 .pp-b__fill.is-mid { background: var(--stress-mid); }
 .pp-b__fill.is-high { background: var(--stress-haut); }
 .pp-b__chiffre {
+  z-index: 1;
   color: #fff; font-size: max(8px, 11cqw); left: 50%; line-height: 1; position: absolute; text-shadow: 0 0 2px #000, 0 0 2px #000;
   top: 50%; transform: translate(-50%, -50%);
 }
