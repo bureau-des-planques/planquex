@@ -38,9 +38,7 @@ import {
 import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
-// PROTOTYPE JETABLE (cartes au plateau) : revenir à `CardView` une fois la variante choisie.
-import { CartePlateauSelonVariante } from '@/components/prototype-plateau/CartePlateauSelonVariante';
-import { PrototypeSwitcherPlateau } from '@/components/prototype-plateau/PrototypeSwitcherPlateau';
+import { CardView } from '@/components/CardView';
 import { CarteSurvolable, FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
 import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
@@ -158,9 +156,10 @@ function CartePlateau({
       onInspecter={onInspecter}
       fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
     >
-      <CartePlateauSelonVariante
+      <CardView
         card={definition}
-        lieu={className.includes('poste') ? 'poste' : 'banc'}
+        calme
+        plateau
         annotations={annotations}
         stress={instance.maxHp - instance.hp}
         seuil={instance.maxHp}
@@ -581,7 +580,7 @@ function Camp({
           et le journal restent les porteurs de l'information sous mouvement réduit. */}
       {craquage && craquage.auPoste && (
         <div className="craquage__carte" data-uid={craquage.uid} aria-hidden="true">
-          {craquageDefinition && <CartePlateauSelonVariante card={craquageDefinition} lieu="poste" />}
+          {craquageDefinition && <CardView card={craquageDefinition} calme plateau />}
         </div>
       )}
       {/* L'arc de Condition (#294) : un liseré qui pulse deux fois autour de la carte du Poste, puis
@@ -1372,7 +1371,6 @@ export function Battle() {
          porte l'attribut — donc aucun contour. */
       data-pas-a-pas-cibles={pasAPas.cibles}
     >
-      <PrototypeSwitcherPlateau />
       <section className="battle__head">
         <div className="battle__title">
           <h1>Combat</h1>
@@ -1664,7 +1662,7 @@ export function Battle() {
                     >
                       {definition && (
                         <div className="hand__visuel" aria-hidden>
-                          <CartePlateauSelonVariante card={definition} lieu="main" />
+                          <CardView card={definition} calme plateau />
                         </div>
                       )}
                       <button

@@ -5,8 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { WEAKNESS_BONUS } from '@/game/rules';
 import { outilsDeTest } from '@/lib/outils-de-test';
 import { CafePips } from './CafePips';
-// PROTOTYPE JETABLE (variantes de carte) : revenir à `CardView` une fois la variante choisie.
-import { CarteSelonVariante } from './prototype-cartes/CarteSelonVariante';
+import { CardView } from './CardView';
 
 interface Props {
   card: Card;
@@ -33,7 +32,7 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
       <DialogContent className="card-detail-dialog" style={style}>
         <div className="card-detail">
           <div className="card-detail__visual">
-            <CarteSelonVariante card={card} />
+            <CardView card={card} />
           </div>
           <div className="card-detail__body">
             <p className="eyebrow">

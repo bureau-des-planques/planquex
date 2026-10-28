@@ -230,30 +230,43 @@ Deux variables pilotent tout l'habillage, **posées en ligne depuis les données
 ### 2.1 Anatomie (de haut en bas)
 
 Depuis #179 (23/10/2026) la carte est un **cadre** et une **face** : `.card` est l'anneau de
-rareté, `.card__face` est la carte elle-même.
+rareté, `.card__face` est la carte elle-même. Depuis la **refonte du 28/10/2026** (prototypes
+`?variant=` sur `/collection` et `/battle`, variantes retenues C et B, relecture design), la même
+boîte porte **deux gabarits** : le **gabarit Pocket** hors plateau, et le **portrait plein** au
+plateau (`.card--plateau`).
+
+**Hors plateau** (Collection, Deck, fiche, ouverture d'Arrivage) :
 
 | Zone | Classe | Contenu |
 |---|---|---|
-| Cadre | `.card` | un **anneau plein de 4 px** en dégradé de `--rarity` (de `--gold` pour un COMEX, `--frame`) — la rareté colore l'anneau **entier**, pas un filet sur un seul côté (tell d'UI générée). **Exception : la Couronne** (`COU`), dont l'anneau est **plat** — un dégradé de violet est un tell d'UI générée (`ai-color-palette`, #208, §3) |
-| Titre | `.card__top` / `.card__title` | barre pleine largeur teintée de la faction. En haut, le **stade** (`.card__stage`, Entrant / N+1 / N+2, ou la catégorie d'une carte Action) et le badge **COMEX** (`.card__comex`, or) ; dessous le **nom** (`.card__name`, Outfit 700, capitales, **deux lignes réservées**, un mot trop long se coupe) |
-| Seuil | `.card__seuil-badge` | **plaque dorée** à droite du titre : le mot « Seuil » (dessiné par `data-label`) au-dessus du chiffre |
-| Illustration | `.card__art` | l'image du registre **posée sur l'aplat de faction** — `color-mix` sur `--accent`, une **couleur plate** (`APLAT_FACTION`, `CardView`) : un dégradé violet ou cyan sur fond sombre est un tell d'UI générée (#208, `ai-color-palette`), alors qu'un aplat non. Deuxième couche : la carte garde son fond de faction pendant le chargement, ou si l'image n'arrive pas hors ligne (#131) ; sinon l'aplat seul + glyphe (`.card__glyph`) ; voile `.card__shine` ; les raretés étoilées reçoivent en plus un voile holographique (`.card--holo`). La palette dérivée `card.palette` (un dégradé, `planquePalette`) reste la **donnée** d'identité de la faction, et son test la garde |
-| Médaillon de faction | `.card__emblem--entete` | médaillon de la **faction** (couleur et glyphe de `FACTION_META`) dans l'en-tête, à gauche du Seuil. Hors plateau seulement ; au plateau, l'emblème reste sur l'illustration (`.card__emblem`) |
-| Barre de Seuil | `.card__seuil` | au plateau seulement : la barre de **Stress** qui monte (D-026). Hors plateau, la barre de capacité n'est pas rendue (`.card__seuil-bar--capacite`) |
-| Pressions | `.card__attacks` | une ligne par Pression : pastilles de café (`.pips` / `.pip`), nom, dégâts |
-| Ambiance | `.card__flavor` | la description (flavour), deux lignes au plus ; masquée sous 240 px de texte |
-| Faiblesse / Retraite | `.card__bas` | « Vulnérable à [faction] (+20) » à gauche, « Rotation n » à droite. Planqué hors plateau ; sous 175 px, masquée |
-| Pied | `.card__footer` | rareté (diamants/étoiles, couleur `--rarity`), faction (point + sigle) ; l'identifiant court (`.card__id`) **seulement sur la carte en grand** |
+| Cadre | `.card` | un **anneau plein** (padding 2,5 %) en dégradé de `--rarity` (de `--gold` pour un COMEX, `--frame`) — la rareté colore l'anneau **entier**, pas un filet sur un seul côté (tell d'UI générée). **Exception : la Couronne** (`COU`), dont l'anneau est **plat** — un dégradé de violet est un tell d'UI générée (`ai-color-palette`, #208, §3) |
+| Face | `.card__face` | un **aplat** de la faction (`color-mix(--accent 55%, #10161f)`), pas un dégradé : le blanc dessus tient 6,6:1 au pire (AC). `1em` = 5,6 % de la largeur de la carte (`cqw`) |
+| En-tête | `.card__top` | le **nom** (`.card__name`, Outfit 800, **deux lignes**, un cran plus petit au-delà de 18 signes, `data-long`), le **Seuil** (`.card__seuil-badge`, gros chiffre ; le mot « Seuil » est dessiné par `data-label`), le **médaillon de faction** (`.card__emblem`, jeton de la couleur de la faction cerné de crème) |
+| Illustration | `.card__art` | fenêtre à **ratio 4:3**, filet de rareté, cadrage haut (`50% 22%`). L'image du registre est **posée sur l'aplat de faction** (`APLAT_FACTION`, `CardView`) : la carte garde son fond pendant le chargement ou hors ligne (#131) ; sans image, l'aplat seul + glyphe (`.card__glyph`). Sur l'illustration, en haut à gauche, le **stade** (`.card__stage`) et le badge **COMEX** (`.card__comex`, aplat or) |
+| Légende | `.card__legende` | ce qui est nouveau : « évolue de … » (N+1, N+2), la faction d'un Entrant, ou la catégorie et la règle d'une Action (« Collègue · 1 par tour », « Objet · illimité ») |
+| Talent et Pressions | `.card__attacks` | calés en haut ; trois colonnes — cafés (pastilles cerclées de crème), nom, dégâts (chiffres tabulaires). Le **Talent** (`.card__talent`) suit les colonnes. En grand, l'effet de chacun (`.attack__effet`, deux lignes). Une Action y porte son texte (`.card__texte`) |
+| Ambiance | `.card__flavor` | la flavour, deux lignes, **seulement en grand** |
+| Vulnérabilité / Rotation | `.card__bas` | la faction **nommée** (glyphe + sigle, « MGT +20 ») et la Rotation en pastilles incolores |
+| Pied | `.card__footer` | rareté (couleur `--rarity`) et sigle de faction (`.card__faction`) à gauche, après la place du bouton « + » du slot ; l'identifiant court (`.card__id`) **seulement en grand** |
+
+**Au plateau** (Poste, Banc, main, craquage — `.card--plateau`) :
+
+| Zone | Classe | Contenu |
+|---|---|---|
+| Cadre | `.card--plateau` | un filet de 2 px ; dans la scène, **métal ardoise teinté de la rareté** (#190, §2.4), or pour un COMEX |
+| Illustration | `.card__art` | elle **couvre la carte** (portrait plein) |
+| Coins du haut | `.card__emblem`, `.card__seuil-badge` | le médaillon de faction à gauche ; le **Seuil** à droite, en **plaque discrète** (fond sombre, chiffre or) |
+| Voile | `.card__voile` | en bas : la catégorie d'une Action, le **nom** (deux lignes, césure de la langue), les Pressions en `détaillé` (#189), la **jauge de Stress** (`.card__seuil`, `.stress`, dix crans, visible même vide) et son chiffre en `détaillé` (`.card__stress-chiffre`). En main, pas de jauge : une carte n'y a pas encore de Stress |
 
 ### 2.2 Grille et marges
 
 - Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem — **deux colonnes** à 420 px (cartes de 188 × 263 px). Sous **420 px** elle est **forcée à deux colonnes** (`repeat(2, minmax(0, 1fr))`) : à 360 px la page offre 328 px, deux cartes de 160 px avec leur gouttière en demandent 332, et `auto-fill` retombait à une colonne (#131).
-- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Padding **4 px** (l'anneau), rayon 12 px. L'ombre est noire et portée (`0 12px 24px -8px`), jamais colorée : c'est le relief, pas un halo.
-- Face : rayon 8 px (le rayon de l'anneau moins son padding), filet noir extérieur et filet clair intérieur, `gap` 0.3rem ; chaque bloc porte son propre espacement horizontal (0.4rem).
-- Illustration : **elle prend l'espace restant** (`flex`), rayon 6 px, filet interne triple (clair, puis noir), un voile sombre en bas (`.card__art::before`) pour que le pied s'y détache, cadrage **haut** (`50% 28%`) — les illustrations sont des portraits. L'image elle-même n'est jamais retouchée.
-- Barre de Seuil : hauteur 7 px sur la carte, **12 px** au combat, dix crans (`.stress`, `::after`).
-- Pips de café : 8 px, `gap` 2 px — **hors du combat** ; dans `.battle` : 14 px (18 px dans la fiche du camp), anneau crème, `gap` 0,3 rem (#290).
-- **Le pied et les Pressions** (`.card__attacks`) : le café, le nom et les dégâts s'alignent en colonnes d'une carte à l'autre ; les dégâts passent en titre (`--font-display`, 800). Le pied (`.card__footer`) porte un voile sombre.
+- Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Rayon 12 px. L'ombre est noire et portée, jamais colorée : c'est le relief, pas un halo.
+- **Le chrome du slot** (`.card-slot`) : le bouton « + » se pose au coin **bas-gauche**, que le pied réserve ; la pastille « ×n » (et « Deck ×n ») au coin bas-droit. En haut à droite, il recouvrait le Seuil.
+- **La carte en grand** (fiche : 280 px de large) : l'illustration cède la place au texte (`flex`, 30 % au moins), jamais l'inverse.
+- Jauge de Stress : 7 px au plateau, dix crans (`.stress`, `::after`).
+- Pips de café : 0,9 em sur la carte, cerclés de crème ; dans `.battle` : 14 px (18 px dans la fiche du camp), anneau crème, `gap` 0,3 rem (#290).
+- **Les illustrations** n'ont pas de cadre incrusté : 15 planches qui en portaient un (blanc, 30 à 82 px sur 1024) ont été rognées le 28/10/2026.
 - **Le dos de carte** (`.ouverture__dos`, `SceneOuverture.tsx`) : bleu nuit, treillis d'or, cadre à trois filets, médaillon « BP », deux losanges sur l'axe vertical. Une carte rare, brillante ou secrète prend sa **rareté** pour or (`--dos-or`), filets compris ; son appel (`ouverture-appel`) repart de `--dos-cadre` pour ne pas perdre le cadre.
 
 ### 2.3 États
@@ -262,12 +275,12 @@ rareté, `.card__face` est la carte elle-même.
 |---|---|
 | `.card--selected` | bordure `--accent` + halo `color-mix(--accent 18%)` |
 | `.card--comex` | `--frame` = `--gold` : l'anneau est or — le statut COMEX (D-026). L'or **est** l'anneau : il n'y a pas de second filet (l'ancien `.card--comex::before`, déclaré sans `content`, ne rendait rien ; retiré, #131) |
-| `.card--holo` | voile holographique sur l'illustration (1S, 2S, 3S, COU) |
+| `.card--holo` | voile holographique sur toute la face (1S, 2S, 3S, COU) |
 | `.card--compact` | masque la flavour et l'identifiant (grilles) |
 | `.card-slot.is-full` | carte à 60 % d'opacité (plus d'exemplaire possible au Deck) |
 | `.card-slot.is-missing` | carte **non possédée** : grisée (`grayscale(1)`) et son illustration et sa barre de Seuil à 40 % d'opacité — le **texte**, lui, garde son contraste (#208 : à 40 % d'opacité sur toute la carte, le nom tombait à 2,1–3,5:1, et une carte illisible n'est pas une carte éteinte). Sa pastille « ×0 » (pointillés) et la mention « Non possédée » restent **hors de `.card`** : elles ne s'éteignent pas avec elle |
 
-**Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : un bouton rond au coin haut-droit (ajouter, ou ouvrir la fiche), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
+**Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : un bouton rond au coin **bas-gauche** (ajouter, ou ouvrir la fiche ; au coin haut-droit avant le 28/10/2026), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
 
 **Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
@@ -458,7 +471,7 @@ fautif.
   **métal ardoise**, et que l'or est réservé au COMEX. Les deux ne peuvent pas être vrais du même anneau.
 - **Décision** : l'anneau **garde la rareté** — il reste plein, et sa **teinte** est celle de
   `RARITY_META`. Dans la scène, sa **matière** change : un cadre standard prend le métal ardoise,
-  teinté à 14–22 % de la couleur de rareté (`.battle .card:not(.card--comex)`). Le **COMEX** garde
+  teinté à 22 % de la couleur de rareté (`.battle .card--plateau:not(.card--comex)`, le filet du portrait plein depuis le 28/10/2026). Le **COMEX** garde
   l'or seul, comme le veut §2.3 (`.card--comex`, `--frame: var(--gold)`).
 - **Hors scène**, §2.3 reste la règle : la Collection, le Deck et la fiche gardent l'anneau de rareté
   pur. La matière métal ne vit que dans la table.

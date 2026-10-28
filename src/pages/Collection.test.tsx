@@ -48,7 +48,7 @@ describe('Collection — écran de la Collection', () => {
     fireEvent.change(factionSelect, { target: { value: 'SSE' } });
 
     expect(factionSelect).toHaveValue('SSE');
-    expect(screen.getByText(/Infirmier de site/)).toBeInTheDocument();
+    expect(screen.getByText('Infirmier de site')).toBeInTheDocument();
     expect(screen.queryByText(/Responsable d'unité/)).not.toBeInTheDocument();
   });
 
@@ -60,7 +60,7 @@ describe('Collection — écran de la Collection', () => {
     fireEvent.change(stageSelect, { target: { value: 'ENTRANT' } });
 
     expect(stageSelect).toHaveValue('ENTRANT');
-    expect(screen.getByText(/Infirmier de site/)).toBeInTheDocument();
+    expect(screen.getByText('Infirmier de site')).toBeInTheDocument();
   });
 
   it('affiche un message quand aucune carte ne correspond', () => {
