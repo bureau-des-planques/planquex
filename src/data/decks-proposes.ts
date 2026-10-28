@@ -1,8 +1,10 @@
 import type { CafeType, Vivier } from './types';
 
 /**
- * Les **Decks proposés** (#141, D-063, D-069) : des Decks de 20 cartes que le joueur
- * charge en un geste depuis l'écran du Deck, quelle que soit sa Collection.
+ * Les **Decks proposés** (#141, D-063, D-069, D-149) : des Decks de 20 cartes que le joueur
+ * charge en un geste depuis l'écran du Deck, quelle que soit sa Collection. Le joueur en a
+ * **cinq** (D-069) ; **trois** portent un `archetype`, un par archétype (D-125 (3), D-149) : ce
+ * sont les Decks que joue la Direction selon sa difficulté (`src/game/deck-direction.ts`).
  *
  * ⚠️ **Les listes sont PROVISOIRES.** D-069 acte le jeu d'archétypes (cinq Decks proposés, leur
  * stratégie, leur faiblesse) mais réserve la **fabrication des listes** à après la vague
@@ -16,6 +18,11 @@ export interface DeckPropose {
   vivier: Vivier | 'MIXTE';
   /** Les types de café du Deck proposé (1 à 3, productibles) : ils partent avec lui (#91). */
   cafeTypes: readonly CafeType[];
+  /**
+   * L'archétype du Deck, pour les trois que joue la Direction (D-125 (3), D-149) : un par
+   * archétype. Les deux autres Decks proposés n'en portent pas : le joueur seul les charge.
+   */
+  archetype?: 'agressif' | 'controle' | 'milieu';
   /** Ce qu'il fait, en une phrase. */
   strategie: string;
   /** Contre quoi il est faible, en une phrase. */
@@ -32,6 +39,7 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
     id: 'coup-de-marteau',
     name: 'Le coup de marteau',
     vivier: 'ATELIER',
+    archetype: 'agressif',
     cafeTypes: ['ATELIER', 'MANAGEMENT'],
     strategie: 'Agression brute : de gros Seuils et des Pressions dès les premiers tours, presque aucun effet.',
     faiblesse: 'Le soin et l’endurance le laissent à court de Stress à infliger.',
@@ -54,6 +62,7 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
     id: 'la-reorganisation',
     name: 'La réorganisation',
     vivier: 'ETAGE',
+    archetype: 'controle',
     cafeTypes: ['AMELIORATION', 'DIRECTION'],
     strategie: 'Contrôle : des statuts et des tapes larges qui échangent du tempo contre de la maîtrise.',
     faiblesse: 'L’agression pure le submerge avant que ses statuts ne pèsent.',
@@ -99,6 +108,7 @@ export const DECKS_PROPOSES: readonly DeckPropose[] = [
     id: 'la-bonne-humeur',
     name: 'La bonne humeur',
     vivier: 'BUREAUX',
+    archetype: 'milieu',
     cafeTypes: ['QVT'],
     strategie: 'Tempo et soin : un seul type de café, une partie qui se gagne au long cours.',
     faiblesse: 'Le contrôle : les statuts cassent son rythme et le privent de son tempo.',
