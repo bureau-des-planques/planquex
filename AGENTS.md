@@ -341,5 +341,5 @@ D-113 (26/10/2026). Le modèle est **GitHub flow** : une seule branche longue, `
 - **Le dépôt du jeu est public, l'exploitation est privée** (D-118) : `bureau-des-planques/planquex-infra` porte le lieu de session, la skill `infra-planquex` et les runbooks. `supabase/migrations/` **reste ici** : `supabase/pglite.ts` la lit par un chemin relatif et la CI la rejoue en PostgreSQL WASM ; un dépôt public dont la CI dépend d'un dépôt privé demanderait un jeton.
 - **Pas de branche `dev`.** Elle a été retirée le 26/10/2026 (son contenu était déjà sur `main` ; le dernier état reste au tag `archive/dev-2026-10-26`). Une session qui n'a pas de ticket prend une branche jetable issue de `main`.
 - La CI des PR est celle de `main` (§6). Les fichiers générés se vérifient **à la release**, pas à chaque PR (§6, `docs/VERSIONS.md` §4).
-- Fermer ou ouvrir une issue `alpha` périme `src/data/plan-dev.ts` : `npm run plan:dev` quand on prépare une release.
+- Fermer, ouvrir ou re-étiqueter une issue **`alpha` ou `beta`** périme `src/data/plan-dev.ts` : `npm run plan:dev` quand on prépare une release. Le générateur lit **les deux** étiquettes (#336, D-133) : le label dit le **jalon**, pas la fenêtre de travail.
 - Les règles de parallélisme (zones, worktrees, `npm run isolation`, modèles) sont dans `docs/agents/parallelisme.md`.

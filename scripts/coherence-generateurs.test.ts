@@ -71,15 +71,11 @@ const LIGNE_GENERATEUR = /plan:dev|plan-dev\.ts/;
  * retire au lieu de la laisser traîner.
  */
 const DETTES_ETIQUETTES: readonly { fichier: string; manque: readonly string[]; ticket: string; raison: string }[] = [
-  {
-    fichier: 'AGENTS.md',
-    manque: ['beta'],
-    ticket: '#359',
-    raison:
-      '§11 dit encore « Fermer ou ouvrir une issue `alpha` périme `src/data/plan-dev.ts` », alors que le ' +
-      'générateur lit `alpha` **et** `beta` depuis #336. `AGENTS.md` est un document d’autorité : la ligne ' +
-      'appartient à Bastien, pas à un agent. Corriger la phrase, puis retirer cette entrée.'
-  }
+  // **Vide, et c'est le but.** La seule dette connue (`AGENTS.md` §11 ne nommait que l'étiquette
+  // `alpha`) est levée : la phrase nomme désormais **`alpha` et `beta`**, comme le générateur
+  // depuis #336. Une dette se déclare ici avec son ticket, et se retire quand la phrase est
+  // corrigée — la garde vérifie qu'une dette décrit un manque **réel**, donc une dette périmée
+  // fait échouer le contrôle au lieu de dormir.
 ];
 
 /** Le libellé d'une étiquette, entre backticks ou nu (`` `alpha` ``, « issues alpha »). */
