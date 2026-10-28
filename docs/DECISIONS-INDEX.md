@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 147 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 148 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -152,4 +152,5 @@
 | D-144 | 28/10/2026 | Le jeu sort d'AGENTS.md : vocabulaire, règles et écriture des… |
 | D-145 | 28/10/2026 | Le café se touche sur le Planqué : la barre… |
 | D-146 | 28/10/2026 | Les niveaux numériques portent leur politique, et la difficulté se… |
+| D-147 | 28/10/2026 | La Rotation tient en une entrée dans la barre :… |
 | D-148 | 28/10/2026 | Le profil du testeur (pseudo, service, intitulé) vit sur le… |

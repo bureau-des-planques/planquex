@@ -2497,19 +2497,27 @@ h2 {
   gap: 0.35rem;
 }
 
-/* La rangée café / Rotation / Talent défile plutôt que de passer à la ligne : la barre garde sa
-   hauteur. Elle prend la place que les Pressions lui laissent (au moins 6 rem : de quoi lire et
-   toucher un bouton), et sa barre de défilement est masquée pour ne pas ajouter de hauteur. */
+/* La rangée Rotation / Talent ne passe pas à la ligne : la barre garde sa hauteur. Elle prend la
+   place que les Pressions lui laissent (au moins 6 rem : de quoi lire et toucher un bouton). Ce
+   qui ne tient pas se raccourcit ; elle ne défile pas, cachée ou non (#455, D-147). */
 .combat-barre .combat-barre__rang {
   flex: 1 1 6rem;
   flex-wrap: nowrap;
   min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: hidden;
 }
 
-.combat-barre__rang .button {
-  flex: none;
+/* Une entrée de la rangée se raccourcit (son détail prend une ellipse) au lieu de défiler (#455,
+   D-147) : aucune rangée de la barre ne défile cachée, et un contrôle n'y vit jamais hors du cadre. */
+.combat-barre__rang > .button {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.combat-barre__rang > .button > span:not(.attack__dmg) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -5704,13 +5712,12 @@ h2 {
   flex-wrap: nowrap;
   gap: 0.35rem;
   min-width: 0;
-  overflow-x: auto;
+  overflow: hidden;
   /* **8 px au moins entre le texte et le bord** (#205, règle « cramped padding »). Le
      détecteur le voyait par intermittence : la rangée ne portait aucun rembourrage, et le
      titre du café comme l'aide se lisaient collés au bord de la barre. En ligne seulement :
      la barre ne gagne pas de hauteur (420 × 900, `npm run capturer`). */
   padding-inline: 0.5rem;
-  scrollbar-width: none;
 }
 
 .combat-barre__cafe-titre {
