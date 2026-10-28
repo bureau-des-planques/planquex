@@ -17,14 +17,19 @@
  *    ouvertes, pour qu'une liste de chantiers ne se désynchronise pas en silence. L'étape
  *    du ticket dit **à quel jalon il appartient**, pas quand on le travaille : un ticket
  *    `beta` se travaille pendant l'alpha (#336) ;
- * 3. **aucun lien vers le dépôt** dans cette version : les liens des releases et des
- *    chantiers sont le ticket **#343** (D-132), pas celui-ci. Le numéro et le titre
- *    suffisent en attendant.
+ * 3. **les liens mènent au dépôt, mais seulement à ce qui intéresse un testeur** (D-132) :
+ *    les **releases** et les **chantiers ouverts**. Le dépôt en général et le **code** ne
+ *    sont **pas** liés — un testeur veut savoir ce qui arrive, pas lire du TypeScript. La
+ *    règle inverse (« aucun lien », D-097 (3)) tenait à ce que le dépôt était **privé** ;
+ *    il est **public depuis D-118**, la prémisse est tombée. Les deux portes sont ouvertes
+ *    en nouvel onglet, avec `rel="noreferrer noopener"`, comme le lien du serveur des
+ *    testeurs (`src/components/InvitationTesteurs.tsx`).
  *
  * Ce que la page **ne montre jamais** : les **modes parkés** de D-019, ni les règles
  * maison rangées hors du standard. Une page publique qui les annoncerait promettrait ce
  * que personne n'a acté.
  */
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { APP_LABEL, APP_VERSION } from '@/version';
@@ -42,6 +47,33 @@ import { FEATURES_PREVUES, type EtapeProjet, type FeaturePrevue } from '@/data/p
 
 /** Les étapes qui se lisent ici, dans l'ordre : l'alpha d'abord, la beta ensuite. */
 const ETAPES_ARRIVAGE: EtapeProjet[] = ['alpha', 'beta'];
+
+/**
+ * **Le dépôt du jeu**, public depuis D-118 — la racine, qui ne se lie **jamais** : les deux
+ * portes ouvertes par D-132 sont les releases et les issues (`lienIssue`), pas le code.
+ */
+export const DEPOT = 'https://github.com/bureau-des-planques/planquex';
+
+/** **Les releases publiées** (D-132) : ce qu'un testeur a sous les yeux, version par version. */
+export const LIEN_RELEASES = `${DEPOT}/releases`;
+
+/** **Un chantier ouvert** (D-132) : son issue, où lire ce qui est prévu et où en c'est. */
+export function lienIssue(numero: number): string {
+  return `${DEPOT}/issues/${numero}`;
+}
+
+/**
+ * Un lien **sortant**, dans le seul style du dépôt : nouvel onglet, et le `rel` de sécurité
+ * que `InvitationTesteurs` pose déjà (`noreferrer noopener`). La page ne lie que ce que
+ * D-132 a tranché — les releases et les chantiers —, jamais le dépôt nu.
+ */
+function LienDepot({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noreferrer noopener">
+      {children}
+    </a>
+  );
+}
 
 /** La date se lit en français (« 21 octobre 2026 ») : `date` est un jour, pas un instant. */
 function dateLongue(jour: string): string {
@@ -127,6 +159,10 @@ export function FeuilleDeRoute({ features = FEATURES_PREVUES }: { features?: Fea
             toutes là.
           </p>
         )}
+        <p className="muted m-0 max-w-[62ch] text-[0.85rem]">
+          Les versions publiées, avec leur journal, s’ouvrent sur le dépôt :{' '}
+          <LienDepot href={LIEN_RELEASES}>les releases</LienDepot>.
+        </p>
       </section>
 
       <section className="section">
@@ -178,7 +214,12 @@ export function FeuilleDeRoute({ features = FEATURES_PREVUES }: { features?: Fea
                     {chantiers.map((feature) => (
                       <li key={feature.numero} className="feuille-de-route__arrivage">
                         <span className="feuille-de-route__etape">{feature.etape}</span>
-                        <strong>#{feature.numero}</strong> · {feature.titre}
+                        {/* Le numéro **est** le lien vers l'issue (D-132) : un testeur lit
+                            ce qui est prévu sans qu'on lui ouvre le code. */}
+                        <LienDepot href={lienIssue(feature.numero)}>
+                          <strong>#{feature.numero}</strong>
+                        </LienDepot>{' '}
+                        · {feature.titre}
                       </li>
                     ))}
                   </ul>

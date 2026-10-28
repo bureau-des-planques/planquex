@@ -21,8 +21,9 @@ import { FEATURES_PREVUES } from '@/data/plan-dev';
  *    « alpha » ni dans « beta », et la page afficherait un chantier sans jalon ;
  * 3. **les deux étapes entrent** : un ticket `beta` se travaille pendant l'alpha (#336),
  *    donc la liste ne se limite plus aux issues `alpha` ;
- * 4. **aucun lien n'est engendré** : les liens vers le dépôt sont le ticket #343 (D-132),
- *    pas ce fichier ;
+ * 4. **aucun lien n'est engendré** : le fichier ne porte que des numéros, et la page en
+ *    fait les liens que D-132 a tranchés (releases, issues) — un href dans un fichier généré
+ *    vieillirait avec l'état du tracker ;
  * 5. le fichier commité est **exactement** ce que le générateur écrirait — c'est le
  *    `--verifie` de la commande, mais hors ligne, donc dans la CI ;
  * 6. **le contrôle mord** (#231) : la fonction de comparaison du `--verifie`, confrontée
@@ -109,7 +110,7 @@ describe('plan-dev — le fichier engendré', () => {
     expect(divergence(`${attendu}\n`, attendu)).toMatch(/divergé/);
   });
 
-  it('ne porte aucun lien — les liens sont le ticket #343 (D-132)', () => {
+  it('ne porte aucun lien — la page compose les liens de D-132 à partir du numéro', () => {
     const fichier = readFileSync(new URL('../src/data/plan-dev.ts', import.meta.url), 'utf8');
     expect(fichier).not.toMatch(/https?:\/\/|github\.com/i);
     expect(rendreFichier([{ numero: 1, titre: 'Un titre', etape: 'beta' }])).not.toMatch(/https?:\/\/|github\.com/i);

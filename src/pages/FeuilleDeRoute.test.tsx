@@ -8,7 +8,7 @@ import { APP_LABEL, APP_VERSION } from '@/version';
 import { NOTES_VERSIONS } from '@/data/versions';
 import { CRITERES_ALPHA, DECIDE_PLUS_TARD, JALONS, PAS_MAINTENANT } from '@/data/plan';
 import { FEATURES_PREVUES, type FeaturePrevue } from '@/data/plan-dev';
-import { FeuilleDeRoute } from '@/pages/FeuilleDeRoute';
+import { FeuilleDeRoute, DEPOT, LIEN_RELEASES, lienIssue } from '@/pages/FeuilleDeRoute';
 
 /**
  * **La feuille de route publique** (D-097 (3), #214) — `/feuille-de-route`.
@@ -24,8 +24,9 @@ import { FeuilleDeRoute } from '@/pages/FeuilleDeRoute';
  * 1. **les blocs sont là**, avec leur contenu — un bloc vide ne renseigne personne ;
  * 2. **la version courante est celle de `package.json`**, lue par `APP_LABEL` — jamais un
  *    numéro recopié dans la page ;
- * 3. **aucun lien ne mène au dépôt** dans cette version : les liens sont le ticket #343
- *    (D-132), pas celui-ci ;
+ * 3. **les liens mènent au dépôt, mais à ce qui intéresse un testeur** (D-132) : les
+ *    releases et les chantiers ouverts, en nouvel onglet et avec le `rel` de sécurité. Le
+ *    dépôt nu et le code ne sont **pas** liés ;
  * 4. **la page vit hors de la garde** dans `src/App.tsx` — elle se lit sans compte ;
  * 5. **les modes parkés n'y sont pas** (D-019) : ils ne s'annoncent jamais.
  *
@@ -162,21 +163,40 @@ describe('Feuille de route — les blocs de la page', () => {
     }
   });
 
-  it('ne mène jamais vers le dépôt — les liens sont le ticket #343 (D-132)', () => {
+  it('n’ouvre que les portes du dépôt que D-132 a tranchées — releases et issues', () => {
     const { container } = rendre();
-    // Aucun `href` sortant : la page n'a que ses liens internes (retour au bureau).
-    for (const lien of [...container.querySelectorAll('a')]) {
+    // La règle inverse (« aucun lien vers le dépôt », D-097 (3)) s'appuyait sur un dépôt
+    // **privé** qui rendait un 404 ; il est public depuis D-118. D-132 ouvre les
+    // **releases** et les **chantiers ouverts**, et rien d'autre : ni le dépôt nu, ni le
+    // code, ni une ressource distante d'un autre site.
+    const liens = [...container.querySelectorAll('a')];
+    const externes = liens.filter((lien) => /^https?:/i.test(lien.getAttribute('href') ?? ''));
+    expect(externes.length, 'aucune porte du dépôt n’est ouverte').toBeGreaterThan(0);
+
+    for (const lien of externes) {
       const href = lien.getAttribute('href') ?? '';
-      expect(href.startsWith('/'), `${href} n’est pas interne`).toBe(true);
+      const permises = [LIEN_RELEASES, ...FEATURES_PREVUES.map((feature) => lienIssue(feature.numero))];
+      expect(permises, `${href} n’est ni une release ni une issue`).toContain(href);
+      // Nouvel onglet et `rel` de sécurité, comme le lien du serveur des testeurs (D-120).
+      expect(lien.getAttribute('target'), `${href} s’ouvre dans l’onglet courant`).toBe('_blank');
+      expect(lien.getAttribute('rel'), `${href} n’a pas le rel de sécurité`).toBe('noreferrer noopener');
     }
-    // Et aucune ressource distante : l'`xmlns` du SVG est un espace de noms, pas un lien.
-    for (const element of [...container.querySelectorAll('[href], [src], [srcSet]')]) {
-      for (const attribut of ['href', 'src', 'srcSet']) {
-        const valeur = element.getAttribute(attribut);
-        if (valeur) expect(valeur, `${attribut} distant`).not.toMatch(/^https?:/i);
-      }
+    // Le dépôt **nu** et le code ne sont jamais liés : c'est la moitié de la décision.
+    for (const href of externes.map((lien) => lien.getAttribute('href') ?? '')) {
+      expect(href).not.toBe(DEPOT);
+      expect(href).not.toMatch(/\/tree\/|\/blob\/|\/pulls?\/|\.git$/);
+      expect(href).not.toMatch(/discord|\.(png|jpe?g|svg|webp)$/i);
     }
-    expect(container.textContent ?? '').not.toMatch(/https?:\/\/|github\.com/i);
+  });
+
+  it('le contrôle mord : un lien vers le code est refusé', () => {
+    // Le contrôle lit une **liste blanche** (releases, issues). Confronté à un href de
+    // code, il doit le refuser — sinon il ne garderait que ce que la page fait aujourd'hui.
+    const permises = [LIEN_RELEASES, lienIssue(214)];
+    expect(permises).toContain(lienIssue(214));
+    expect(permises).not.toContain(`${DEPOT}/tree/main/src`);
+    expect(permises).not.toContain(`${DEPOT}/blob/main/AGENTS.md`);
+    expect(permises).not.toContain(DEPOT);
   });
 
   it('n’annonce aucun mode parké (D-019)', () => {
