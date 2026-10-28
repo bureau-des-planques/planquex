@@ -36,56 +36,6 @@ export interface FeaturePrevue {
 /** Les issues `alpha` et `beta` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
-    numero: 452,
-    titre: 'Combat — les gestes du tour ne doivent pas vivre derrière un défilement caché',
-    etape: 'beta'
-  },
-  {
-    numero: 429,
-    titre: 'Preuve — filmer un parcours, et refuser un écran trop loin de l\'accueil',
-    etape: 'beta'
-  },
-  {
-    numero: 425,
-    titre: 'Carte — l\'ergonomie de bout en bout : se déplacer, sortir, revenir',
-    etape: 'beta'
-  },
-  {
-    numero: 415,
-    titre: 'Règles — les six étapes ne montrent aucune capture, alors que #336 l\'exigeait',
-    etape: 'beta'
-  },
-  {
-    numero: 362,
-    titre: 'Spec — ce que trois références font, et ce qu\'on en garde (UI, parcours, fonctionnalités)',
-    etape: 'beta'
-  },
-  {
-    numero: 345,
-    titre: 'Spec — le passage en beta : un reset qui épargne le compte, une médaille, et deux dettes de base',
-    etape: 'beta'
-  },
-  {
-    numero: 342,
-    titre: 'Beta — le reset à l\'ouverture : traces et mur partent, les comptes restent (D-130)',
-    etape: 'beta'
-  },
-  {
-    numero: 336,
-    titre: 'Spec — l\'entrée dans le jeu : le parcours se joue, l\'accueil répond, la barre se retire en combat',
-    etape: 'alpha'
-  },
-  {
-    numero: 325,
-    titre: 'Première connexion — le parcours pseudo → service → intitulé',
-    etape: 'beta'
-  },
-  {
-    numero: 271,
-    titre: 'Appel à participer : bug, idée, développement, dessin',
-    etape: 'beta'
-  },
-  {
     numero: 251,
     titre: 'Difficulté, Deck de la Direction et pages de présentation des Decks proposés',
     etape: 'beta'
