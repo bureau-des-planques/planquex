@@ -15,7 +15,7 @@ import { FACTION_META } from './factions';
  */
 
 /**
- * Le nom d'un camp dans une partie à deux (`AGENTS.md` §3, critère #125) : « camp Toi »,
+ * Le nom d'un camp dans une partie à deux (`docs/JEU.md` §3, critère #125) : « camp Toi »,
  * « camp Direction ». Ce sont les **sièges** du moteur, pas des personnes.
  *
  * `store/pvp.ts` le ré-exporte ; `engine.ts` l'emploie pour le journal à deux camps.

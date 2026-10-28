@@ -5,7 +5,7 @@
 `nextExpectiminimaxAction`, `DEFAULT_EXPECTIMINIMAX_OPTIONS`) · Tests :
 `src/game/ia-expectiminimax.test.ts`*
 
-Ce journal consigne **la mesure** du niveau 3, pas une décision : `AGENTS.md` §4 et
+Ce journal consigne **la mesure** du niveau 3, pas une décision : `docs/JEU.md` §4 et
 `docs/DECISIONS.md` restent seuls juges. Le niveau 3 n'est **pas** branché : ni l'écran ni
 le simulateur ne le jouent, et le défaut reste le niveau 2 (D-084).
 

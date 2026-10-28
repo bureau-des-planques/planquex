@@ -51,7 +51,7 @@ export function drawRandom(holder: RngHolder): number {
   return step.value;
 }
 
-/** Les deux côtés du **lancer de tampon** (`AGENTS.md` §3.1). */
+/** Les deux côtés du **lancer de tampon** (`docs/JEU.md` §3.1). */
 export type StampSide = 'face' | 'pile';
 
 /**

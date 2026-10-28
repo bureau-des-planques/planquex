@@ -208,6 +208,56 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     expect(capture().viewport).toEqual(tailleDeD060());
   });
 
+  /**
+   * **Les gabarits de D-142** : la fenêtre réelle d'un téléphone (portrait et paysage) et le PC. Les
+   * tailles ne sont pas recopiées : elles sont relues dans la ligne D-142, comme D-060 plus haut.
+   */
+  function gabaritsDeD142(): { width: number; height: number }[] {
+    const lignes = read('docs/DECISIONS.md')
+      .split('\n')
+      .filter((ligne) => ligne.startsWith('| D-142 |'));
+    expect(lignes, 'ligne D-142 introuvable dans docs/DECISIONS.md').toHaveLength(1);
+    return [...lignes[0].matchAll(/\*\*\((\d+)×(\d+)\)\*\*/g)].map((taille) => ({
+      width: Number(taille[1]),
+      height: Number(taille[2])
+    }));
+  }
+
+  it('mesure aussi les gabarits que D-142 nomme, et seulement eux', () => {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const plan = JSON.parse(
+      execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
+    ) as { gabarits: { viewport: { width: number; height: number } }[] };
+    const attendus = gabaritsDeD142();
+    // La garde mord : une décision qui ne nommerait plus aucun gabarit ne passerait pas pour vide.
+    expect(attendus.length).toBeGreaterThanOrEqual(5);
+    expect(plan.gabarits.map(({ viewport }) => viewport)).toEqual(attendus);
+  });
+
+  it("capture l'ouverture d'un Arrivage, et refuse une scène qui ne se révèle pas", () => {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const plan = JSON.parse(
+      execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
+    ) as { preparations: { slug: string; route: string }[] };
+    // Une scène qu'aucune capture ne regarde est une scène que personne ne juge : c'est là que
+    // trois défauts de rendu se sont succédé sans témoin (#283, rétro du 28/10/2026).
+    expect(plan.preparations.map(({ slug }) => slug)).toContain('arrivage');
+    const source = read('scripts/capturer.mjs');
+    expect(source).toContain('.ouverture[data-etape="revelation"]');
+    expect(source).toContain('[data-tout-afficher]');
+  });
+
+  it('joue les gardes de hauteur sur chaque gabarit, à sa taille', () => {
+    const source = read('scripts/capturer.mjs');
+    // Sans ce lien, un gabarit serait photographié mais jugé à 420 × 900 — ou pas jugé du tout.
+    expect(source).toContain('for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);');
+    expect(source).toContain('await controlerHauteur(page, etat, ROUTE_COMBAT, viewport);');
+  });
+
   it('capture la fenêtre, pas la page entière', () => {
     expect(capture().pleinePage).toBe(false);
   });
@@ -481,7 +531,9 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer
     // à ne mesurer que la main.
     expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
-    expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
+    // La taille par défaut est la référence (420 × 900) ; un gabarit de D-142 passe la sienne.
+    expect(source).toContain('async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {');
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport, etat: contexte })');
     expect(source).toContain('problems.push(`${route} · ${probleme}`)');
   });
 });
@@ -664,7 +716,9 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
     expect(source).toContain('document.documentElement.scrollHeight - window.innerHeight');
     // Les huit passages passent tous par `controlerHauteur`, qui transmet la mesure entière.
     expect(source.match(/await controlerHauteur\(/g)?.length).toBeGreaterThanOrEqual(3);
-    expect(source).toContain('controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })');
+    // La taille par défaut est la référence (420 × 900) ; un gabarit de D-142 passe la sienne.
+    expect(source).toContain('async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {');
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport, etat: contexte })');
   });
 });
 

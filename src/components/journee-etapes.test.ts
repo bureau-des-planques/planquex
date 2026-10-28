@@ -7,7 +7,7 @@ import { ETAPES_JOURNEE, MOTS_PAR_MINUTE, libelleSaut, nombreDePhrases, secondes
  * La « Journée d'intégration » (#130, D-066) — le contenu, mesuré.
  *
  * Le ticket demande quatre choses précises, **trente secondes de lecture par étape au
- * maximum**, et le vocabulaire d'`AGENTS.md` §3. Ces trois exigences se vérifient sur
+ * maximum**, et le vocabulaire d'`docs/JEU.md` §3. Ces trois exigences se vérifient sur
  * les données elles-mêmes : les étapes vivent dans `./journee-etapes`, donc un test les
  * lit sans monter de navigateur. Ce qu'il ne prouve pas — qu'elles **s'affichent** et
  * qu'elles **ouvrent leur écran** — est gardé par `JourneeIntegration.test.ts` et par la
@@ -129,7 +129,7 @@ describe('trente secondes de lecture par étape au maximum (ticket #130)', () =>
   });
 });
 
-describe('le vocabulaire est celui du jeu, aucun mot interdit (AGENTS.md §3)', () => {
+describe('le vocabulaire est celui du jeu, aucun mot interdit (docs/JEU.md §3)', () => {
   /**
    * La liste qui fait foi est `FORBIDDEN_ANY_CASE` (`src/data/cards.test.ts`), et c'est
    * la copie du tutoriel ci-dessous. Deux raisons de ne pas l'importer : c'est un

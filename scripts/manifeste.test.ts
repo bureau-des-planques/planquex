@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * Le texte du manifeste PWA est vu par un invité qui **installe** le jeu : il parle donc la
- * langue du jeu (`AGENTS.md` §3). Il disait « bacs à courrier » — l'ancien nom de l'Arrivage,
+ * langue du jeu (`docs/JEU.md` §3). Il disait « bacs à courrier » — l'ancien nom de l'Arrivage,
  * dans la liste des termes abandonnés (D-024, D-026) — sans qu'aucun test ne lise ce fichier :
  * `cards.test.ts` ne garde que les textes de cartes (#131).
  */

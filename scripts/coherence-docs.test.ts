@@ -148,6 +148,7 @@ function commandesNonCitees(table: string, scripts: string[]): string[] {
  */
 const DOCUMENTS_VIVANTS = [
   'AGENTS.md',
+  'docs/JEU.md',
   'README.md',
   'CONTRIBUTING.md',
   'GLOSSARY.md',
@@ -179,7 +180,7 @@ type Occurrence = { ligne: number; mot: string; extrait: string };
 /**
  * Les mots retirés employés **nus** dans un texte.
  *
- * Une **mention** n'est pas un **emploi** : `AGENTS.md` §3.1 écrit que le deck s'appelait
+ * Une **mention** n'est pas un **emploi** : `docs/JEU.md` §3.1 écrit que le deck s'appelait
  * « Chariot » de D-026 à D-075, et `docs/DECISIONS.md` que les routes `/parc` et `/chariot`
  * redirigent. Ces formes-là sont donc retirées avant le contrôle — le mot entre « guillemets »
  * ou entre `backticks` cite, il n'emploie pas. Ce qui reste est le mot **nu**, et c'est celui
@@ -359,7 +360,7 @@ describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
   });
 
   it('le contrôle mord : la citation passe, l’emploi non', () => {
-    // Une **mention** (`AGENTS.md` §3.1, l'index du journal) n'est pas un emploi.
+    // Une **mention** (`docs/JEU.md` §3.1, l'index du journal) n'est pas un emploi.
     expect(vocabulaireRetire('| Deck | « Chariot » depuis D-026 jusqu’à D-075 |')).toEqual([]);
     // Les routes retirées, en `backticks`, et le nom de l'engin (D-075) restent dicibles.
     expect(vocabulaireRetire('les routes sont `/parc` et `/chariot` redirigent, et le Parc…')).toEqual([

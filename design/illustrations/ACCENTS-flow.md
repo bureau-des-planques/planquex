@@ -19,7 +19,7 @@
 ```
 
 La clé est le **code de faction** (`Faction`, `src/data/types.ts`) — le même que la première
-partie de l'`id` d'une carte (`sse-…`, `direction-…`, `AGENTS.md` §5). C'est ce préfixe que
+partie de l'`id` d'une carte (`sse-…`, `direction-…`, `docs/JEU.md` §5). C'est ce préfixe que
 `scripts/illustration-vague.sh` lit pour résoudre l'accent d'une carte : aucun accent n'est
 donc saisi carte par carte.
 

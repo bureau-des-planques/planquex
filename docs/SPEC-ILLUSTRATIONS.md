@@ -31,7 +31,7 @@ couvrent **toutes** les cartes de base, et le nombre qui fait foi est celui de
 `npm run status` (`cards`) — pas un chiffre écrit ici. Le chiffre n'est pas corrigé ici pour ne
 pas réécrire un plan daté : il est **signalé** (constat du 22/10/2026, #121).
 
-**Une cible qui a changé, et un `AGENTS.md` qui a suivi** : `AGENTS.md` §4.2 n'annonce plus de
+**Une cible qui a changé, et un `AGENTS.md` qui a suivi** : `docs/JEU.md` §4.2 n'annonce plus de
 compte. Depuis **D-063** (22/10/2026), la cible est **autour de 300** — 225 bases + 75 variantes,
 **sans compter** —, et ce qui compte est ce qu'on peut jouer. L'ancienne cible chiffrée (celle de
 **D-005**, acte daté qui ne se réécrit pas) n'est plus citée ici : c'est **ce document** qui avait

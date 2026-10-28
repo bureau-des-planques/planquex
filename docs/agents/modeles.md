@@ -2,7 +2,7 @@
 
 Le choix des modèles gratuits n'est pas une intuition : il vient du **benchmark
 `bench/`** du projet `Chapax/opencode-config`, sur une **tâche fixe de ce
-dépôt** (la règle « 2 exemplaires maximum du même nom », `AGENTS.md` §4 ;
+dépôt** (la règle « 2 exemplaires maximum du même nom », `docs/JEU.md` §4 ;
 défaut réel de `deckLegal()` qui comptait par `id`).
 
 Sources datées, dans `~/.config/opencode` :

@@ -3,7 +3,7 @@
 > Mesure du **21/10/2026**, sur la branche `agent/111-pesage-ia`.
 > Ce document ne décide **pas** entre re-peser, retirer ou assumer le niveau 2 : il
 > consigne le fait mesuré qui permettra cette décision humaine.
-> Il ne change **aucune règle** : `AGENTS.md` §4 et `docs/DECISIONS.md` restent seuls
+> Il ne change **aucune règle** : `docs/JEU.md` §4 et `docs/DECISIONS.md` restent seuls
 > juges.
 
 ## 1. Les deux défauts de modèle corrigés avant de peser

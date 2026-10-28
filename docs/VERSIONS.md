@@ -1,7 +1,7 @@
 # Les versions — la règle, et comment on la publie
 
 > Référence unique du projet sur le nom des versions. Elle **ne crée aucune règle de jeu** :
-> les règles vivent dans `AGENTS.md` §4 et `docs/DECISIONS.md`. Les actes datés qui l'ont
+> les règles vivent dans `docs/JEU.md` §4 et `docs/DECISIONS.md`. Les actes datés qui l'ont
 > écrite : **D-048** (trois étapes nommées), **D-050** (l'étape est un mot, le numéro est la
 > version), **D-051** (une ligne de version par étape), **D-090** (la note de version vit
 > aussi **dans l'application**, prise aux releases GitHub).
@@ -97,7 +97,7 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    deux gestes ne sont pas faits, la page Confidentialité **décrit un envoi qui n'a pas lieu** :
    c'est le premier pas à cocher, et la preuve qu'il est fait est **une annonce réelle** arrivée
    dans le salon (un post-it collé, une minute d'attente, `§10.4`), pas une migration « appliquée ».
-5. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser.
+5. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser. **Ce push déploie la production** (`.github/workflows/deploiement.yml`, D-140) : le workflow refuse un tag qui ne porte pas la version de `package.json`, refuse un commit déjà déployé (il sort proprement et le dit), construit l'application (`npm run build`), puis publie avec le CLI Vercel. Un secret manquant fait échouer le job au lieu de se taire. Ce déploiement se vérifie dans l'onglet Actions, puis en ouvrant `https://planquex.4k7.org` et en lisant la version dans Réglages.
 6. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
    message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes. C'est
    cette publication qui rend le brouillon du tag **attendu** aux yeux du contrôle
@@ -113,6 +113,8 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    commit. Une fois l'étape faite, la tolérance ne sert plus et le contrôle repasse par le
    chemin strict.
 8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
+
+**Entre deux releases, rien ne se déploie (D-140)** — **une fois la bascule faite**. Le workflow de tag existe (#420, étape 1) ; la bascule demande encore trois gestes humains : poser `VERCEL_TOKEN`, `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` dans les secrets GitHub, **réussir un premier déploiement par tag**, puis seulement couper l'auto-déploiement de Vercel (`git.deploymentEnabled`). D'ici là, une fusion sur `main` publie encore la production, et un aperçu de PR se déploie encore.
 
 **Cadence (D-128).** Une release part quand un **lot cohérent** est prêt, et **pas plus d'une par
 jour** : deux releases le même jour ont déjà eu lieu, et le testeur doit pouvoir dire « je suis sur

@@ -1,8 +1,20 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useSearchParams } from 'react-router-dom';
-import { BookOpen, ClipboardPaste, Coffee, Copy, Flag, Info, RotateCcw, ScrollText, Swords, Users } from 'lucide-react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  ArrowLeft,
+  BookOpen,
+  ClipboardPaste,
+  Coffee,
+  Copy,
+  Flag,
+  Info,
+  RotateCcw,
+  ScrollText,
+  Swords,
+  Users
+} from 'lucide-react';
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque, kindLabel } from '@/data';
 import type {
   AttackEffect,
@@ -23,6 +35,7 @@ import { useStore } from '@/store/useStore';
 import { partieSauvegardee, reprendrePartie } from '@/store/partie';
 import type { Decks, Reprise } from '@/store/partie';
 import { combatTermine, tracerCombat } from '@/store/combats';
+import { derniereDe } from '@/store/derniere';
 import { jouer } from '@/audio/sons';
 import {
   aiTurnAction,
@@ -241,6 +254,18 @@ function dansUnChampDeSaisie(cible: EventTarget | null): boolean {
 const MENU_FERME: EtatMenu = { ouvert: false, vue: 'racine' };
 
 /**
+ * Les écrans joignables depuis le menu du combat (#427). Ce sont les entrées de la barre du
+ * bas (`Layout`, cinq onglets) et les Réglages, que l'en-tête cache sur téléphone.
+ */
+const ECRANS_DU_MENU = [
+  { to: '/', label: 'Accueil' },
+  { to: '/collection', label: 'Collection' },
+  { to: '/deck', label: 'Deck' },
+  { to: '/comite', label: 'Comité' },
+  { to: '/settings', label: 'Réglages' }
+] as const;
+
+/**
  * Les cafés **attachés** d'un Planqué, en pastilles typées (D-037) : chaque pastille
  * porte la couleur de sa faction, vide si rien n'est attaché.
  *
@@ -318,7 +343,7 @@ interface ActionView {
 /**
  * Le libellé d'une action, **à partir de l'action seule** : l'écran n'a pas de liste
  * écrite à la main, donc une transition ajoutée au moteur apparaît ici sans être
- * oubliée (ticket #58). Les noms viennent du vocabulaire d'`AGENTS.md` §3.
+ * oubliée (ticket #58). Les noms viennent du vocabulaire d'`docs/JEU.md` §3.
  *
  * `myCamp` sert aux deux libellés qui nomment un camp — la relève et la fin de tour
  * (#125) : en solo il vaut `player`, donc le texte d'avant ne bouge pas.
@@ -701,6 +726,17 @@ function Camp({
 }
 
 /**
+ * **Qui joue**, en solo, dans l'en-tête du combat. C'est `campToAct` qui décide, comme pour les
+ * boutons : une relève en attente appartient au camp qui doit la choisir, même pendant le tour
+ * de l'autre. Lire `state.current` affichait « à la Direction » pendant que le testeur devait
+ * choisir sa relève — trouvé par le harnais de partie jouée (#424).
+ */
+export function libelleDuTour(state: BattleState): string {
+  if (state.phase === 'ended') return 'partie terminée';
+  return campToAct(state) === 'player' ? 'à toi' : 'à la Direction';
+}
+
+/**
  * Le bandeau de fin dit **pourquoi** la partie s'arrête (#84) : le moteur pose la raison
  * (`endReason`), l'écran ne la déduit plus du seul vainqueur.
  *
@@ -748,6 +784,8 @@ export function Battle() {
    */
   const [parametres] = useSearchParams();
   const tutoriel = parametres.get('tutoriel') === '1';
+  const location = useLocation();
+  const navigate = useNavigate();
 
   /**
    * Le **pas-à-pas du premier combat** (#143) : son ouverture, son cran et ses cibles
@@ -779,17 +817,25 @@ export function Battle() {
    * et son journal. À défaut (rien de rangé, partie terminée, journal qui ne rejoue pas),
    * un combat neuf contre la Direction, comme avant.
    */
-  const [depart] = useState<Reprise>(
-    () =>
-      // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
-      // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
-      (tutoriel ? null : reprendrePartie(useStore.getState().partie)) ?? {
-        state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
-        match: null,
-        decksSolo: { playerDeck, aiDeck: testDeck() }
-      }
-  );
+  const [depart] = useState<Reprise & { reprise: boolean }>(() => {
+    // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
+    // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
+    const reprise = tutoriel ? null : reprendrePartie(useStore.getState().partie);
+    if (reprise) return { ...reprise, reprise: true };
+    return {
+      state: createBattle(playerDeck, testDeck(), undefined, { playerCafeTypes: chosenCafeTypes }),
+      match: null,
+      decksSolo: { playerDeck, aiDeck: testDeck() },
+      reprise: false
+    };
+  });
   const [state, setState] = useState<BattleState>(depart.state);
+  /**
+   * **Ce que le testeur sait de sa partie quittée** (#427) : une partie rangée est reprise
+   * seule au retour, et l'écran le **dit** jusqu'au premier coup. Sans ce mot, la sortie
+   * de la veille ressemblait à un abandon.
+   */
+  const [partieReprise, setPartieReprise] = useState(depart.reprise);
   /** Les Decks du combat solo : une partie à deux porte les siens dans son `Match`. */
   const [decksSolo, setDecksSolo] = useState<Decks>(depart.decksSolo);
 
@@ -920,6 +966,7 @@ export function Battle() {
 
   const play = useCallback((action: BattleAction) => {
     setSelectedUid(null);
+    setPartieReprise(false);
     setState((current) => applyAction(current, action));
   }, []);
 
@@ -1075,12 +1122,16 @@ export function Battle() {
    * qu'écrire ; l'écran reste seul maître de l'état.
    */
   const enregistrerPartie = useStore((store) => store.enregistrerPartie);
+  const enregistrerDerniere = useStore((store) => store.enregistrerDerniere);
   useEffect(() => {
     // Un combat guidé ne s'enregistre pas : le testeur qui le rejoue ne doit pas perdre la
     // partie qu'il avait en cours (#272).
     if (tutoriel) return;
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
-  }, [state, match, decksSolo, enregistrerPartie, tutoriel]);
+    // La dernière partie terminée (#366) : une partie finie se revoit depuis Réglages.
+    const derniere = derniereDe(state, match, decksSolo);
+    if (derniere !== null) enregistrerDerniere(derniere);
+  }, [state, match, decksSolo, enregistrerPartie, enregistrerDerniere, tutoriel]);
 
   /**
    * **La trace du combat** (#173, D-086 ; #228, D-105) : une partie **terminée** part en
@@ -1372,18 +1423,34 @@ export function Battle() {
       data-pas-a-pas-cibles={pasAPas.cibles}
     >
       <section className="battle__head">
+        {/* **La sortie du combat** : la barre du bas n'existe plus en combat (#275), et sur un écran
+            court la barre du haut s'efface aussi (`styles.css`, « écran court »). Ce lien reste donc
+            le chemin vers l'accueil, en un geste. Ce n'est **pas** un forfait : la partie est rangée
+            à chaque coup (`enregistrerPartie`, #126) et reprend au retour. */}
+        <Link
+          to="/"
+          className="battle__sortie"
+          aria-label={tutoriel ? 'Quitter le combat guidé' : 'Quitter le combat, la partie est gardée'}
+          onClick={(evenement) => {
+            // **Le retour va là d'où l'on vient** (#427) : entré par le Deck, on revient au Deck.
+            // Sans page précédente dans l'application (lien direct, PWA rouverte), l'accueil.
+            if (location.key === 'default') return;
+            evenement.preventDefault();
+            void navigate(-1);
+          }}
+        >
+          <ArrowLeft size={18} aria-hidden="true" />
+        </Link>
         <div className="battle__title">
           <h1>Combat</h1>
           <p className="muted">
-            Tour {state.turn} ·{' '}
-            {match
-              ? campLine(state, match)
-              : state.phase === 'ended'
-                ? 'partie terminée'
-                : isPlayerTurn
-                  ? 'à toi'
-                  : 'à la Direction'}
+            Tour {state.turn} · {match ? campLine(state, match) : libelleDuTour(state)}
           </p>
+          {partieReprise && (
+            <p className="battle__reprise" role="status">
+              Partie reprise au tour {state.turn}, comme tu l’as laissée.
+            </p>
+          )}
           {/* L'attente de la Direction (#131) : annoncée au lecteur d'écran, et elle disparaît
               dès que le coup est joué. Aucun point animé : le mouvement réduit n'a rien à couper. */}
           {aiAction && (
@@ -1440,6 +1507,19 @@ export function Battle() {
             if (menu.vue === 'pvp') return partieADeux;
             return (
               <ul className="combat-menu__liste">
+                {/* **La navigation en combat** (#427) : la barre du bas est retirée (#275) et la
+                    barre du haut s'efface sur téléphone. Ces liens la rendent ici, dans le panneau
+                    qui s'ouvre déjà — rien ne reprend la place du plateau. Un lien ne déclare pas de
+                    forfait : la partie est rangée à chaque coup (#126) et reprend au retour. */}
+                <li>
+                  <nav className="combat-menu__ailleurs" aria-label="Aller à un autre écran">
+                    {ECRANS_DU_MENU.map((ecran) => (
+                      <Link key={ecran.to} to={ecran.to} className="combat-menu__lien">
+                        {ecran.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </li>
                 <li>
                   <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('journal')}>
                     <ScrollText size={16} aria-hidden="true" /> Journal
@@ -1731,118 +1811,78 @@ export function Battle() {
               </button>
             </section>
           )}
-        </div>
-      </div>
-
-      {/*
-        **La barre d'action** (D-093, #191) : collée au-dessus de la navigation, elle porte ce qui
-        se joue au Poste — café, Rotation, Talent, les Pressions, « Fin du tour » — et, quand le
-        moteur l'ouvre, la relève ou le choix en attente. Elle est **toujours là** (`.combat-barre`,
-        mesurée par `npm run capturer`) : c'est la cible « poste-actions » du pas-à-pas, et c'est
-        elle qui libère la hauteur dont la main a besoin. Elle ne rend que ce que dit la liste du
-        moteur : en partie à deux, le tour de l'autre ne lui prête aucun bouton (#125).
-      */}
-      {/* `cramped-padding` est désactivé **ici et pour une raison écrite** (#205, AGENTS.md §6) :
-            la règle demande 8 px entre les lignes de la barre et son cadre ; D-094 (3) exige, elle,
-            20 px entre le bas de la barre et le bas de l'écran, et `npm run capturer` le mesure à
-            420 × 900. Les deux ne tiennent pas ensemble : les 16 px d'inset font tomber la marge à
-            14 px (mesuré le 28/10/2026). La marge protège le pouce, l'inset est cosmétique —
-            c'est la marge qui gagne, et la règle se tait ici plutôt que de rougir une fois sur deux. */}
-      <section
-        className="combat-barre"
-        aria-label="Actions du tour"
-        data-impeccable-ignore="cramped-padding"
-        data-pas-a-pas={pasAPas.designe('poste-actions')}
-      >
-        {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
-            qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
-            information temporaire n'a pas à occuper une bande de plus. */}
-        {/* **« Fin du tour » vit sur cette ligne** (#320), à droite de la phrase du journal : c'est
-            l'action principale, et elle garde la même place à chaque état du tour. Quand une
-            Pression est jouable, la rangée des gestes dessous porte le café, la Rotation, le Talent
-            et la Pression — « Fin du tour » ne descend donc plus jamais sur une ligne de plus, sous
-            la barre de navigation (420 × 900, `npm run capturer` le mesure). */}
-        {(lastLog || porteeLine || raisonCafe || turnActions.length > 0) && (
-          <div className="combat-barre__tete">
-            <div className="combat-barre__texte">
-              {lastLog && (
-                <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.p
-                    key={state.log.length}
-                    className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
-                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6 }}
-                    transition={{ type: 'spring', stiffness: 320, damping: 26 }}
-                  >
-                    {lastLog}
-                  </motion.p>
-                </AnimatePresence>
-              )}
-              {porteeLine && <p className="muted combat-barre__portee">{porteeLine}</p>}
-              {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
-                  de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
-              {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
-            </div>
-            {turnActions.map((action) => (
-              <span className="combat-barre__fin" key={JSON.stringify(action)}>
-                <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
-              </span>
-            ))}
-          </div>
-        )}
-
-        {state.pendingPromotion && (
-          <section className="notice notice--warn promotion">
-            {state.pendingPromotion === myCamp ? (
-              <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
-            ) : match === null ? (
-              <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
-            ) : (
-              <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
+          {/* La barre vit **dans la console** : en colonne (téléphone en portrait) elle suit la main
+              comme avant ; sur un écran large (paysage, PC) elle reste sous la main, dans la colonne
+              de droite, au lieu de flotter sous le plateau. */}
+          {/*
+            **La barre d'action** (D-093, #191) : collée au-dessus de la navigation, elle porte ce qui
+            se joue au Poste — café, Rotation, Talent, les Pressions, « Fin du tour » — et, quand le
+            moteur l'ouvre, la relève ou le choix en attente. Elle est **toujours là** (`.combat-barre`,
+            mesurée par `npm run capturer`) : c'est la cible « poste-actions » du pas-à-pas, et c'est
+            elle qui libère la hauteur dont la main a besoin. Elle ne rend que ce que dit la liste du
+            moteur : en partie à deux, le tour de l'autre ne lui prête aucun bouton (#125).
+          */}
+          {/* `cramped-padding` est désactivé **ici et pour une raison écrite** (#205, AGENTS.md §6) :
+                la règle demande 8 px entre les lignes de la barre et son cadre ; D-094 (3) exige, elle,
+                20 px entre le bas de la barre et le bas de l'écran, et `npm run capturer` le mesure à
+                420 × 900. Les deux ne tiennent pas ensemble : les 16 px d'inset font tomber la marge à
+                14 px (mesuré le 28/10/2026). La marge protège le pouce, l'inset est cosmétique —
+                c'est la marge qui gagne, et la règle se tait ici plutôt que de rougir une fois sur deux. */}
+          <section
+            className="combat-barre"
+            aria-label="Actions du tour"
+            data-impeccable-ignore="cramped-padding"
+            data-pas-a-pas={pasAPas.designe('poste-actions')}
+          >
+            {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
+                qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
+                information temporaire n'a pas à occuper une bande de plus. */}
+            {/* **« Fin du tour » vit sur cette ligne** (#320), à droite de la phrase du journal : c'est
+                l'action principale, et elle garde la même place à chaque état du tour. Quand une
+                Pression est jouable, la rangée des gestes dessous porte le café, la Rotation, le Talent
+                et la Pression — « Fin du tour » ne descend donc plus jamais sur une ligne de plus, sous
+                la barre de navigation (420 × 900, `npm run capturer` le mesure). */}
+            {(lastLog || porteeLine || raisonCafe || turnActions.length > 0) && (
+              <div className="combat-barre__tete">
+                <div className="combat-barre__texte">
+                  {lastLog && (
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      <motion.p
+                        key={state.log.length}
+                        className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
+                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 6 }}
+                        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                      >
+                        {lastLog}
+                      </motion.p>
+                    </AnimatePresence>
+                  )}
+                  {porteeLine && <p className="muted combat-barre__portee">{porteeLine}</p>}
+                  {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
+                      de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
+                  {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
+                </div>
+                {turnActions.map((action) => (
+                  <span className="combat-barre__fin" key={JSON.stringify(action)}>
+                    <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
+                  </span>
+                ))}
+              </div>
             )}
-            <div className="actions actions--tight">
-              {promotions.map((action) => (
-                <ActionButton
-                  key={JSON.stringify(action)}
-                  state={state}
-                  action={action}
-                  myCamp={myCamp}
-                  onAction={play}
-                />
-              ))}
-            </div>
-          </section>
-        )}
 
-        {choices.length > 0 && (
-          <section className="notice notice--warn choix">
-            <p>Un effet te demande de désigner une carte.</p>
-            <div className="actions actions--tight">
-              {choices.map((action) => (
-                <ActionButton
-                  key={JSON.stringify(action)}
-                  state={state}
-                  action={action}
-                  myCamp={myCamp}
-                  onAction={play}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
-            Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
-            font pas quatre lignes), et les Pressions viennent à côté. « Fin du tour » est sur la
-            ligne du journal, au-dessus (#320). La barre ne doit jamais recouvrir la main ni passer
-            sous la navigation (`npm run capturer` le mesure). */}
-        {(gestesDuPoste.length > 0 || pressions.length > 0 || attachements.length > 0) && (
-          <div className="combat-barre__gestes">
-            {attachements.length > 0 && (
-              <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe}>
-                <div className="actions actions--tight combat-barre__cafe-cibles">
-                  {attachements.map((action) => (
+            {state.pendingPromotion && (
+              <section className="notice notice--warn promotion">
+                {state.pendingPromotion === myCamp ? (
+                  <p>Ton Poste a craqué. À toi de choisir ta relève.</p>
+                ) : match === null ? (
+                  <p>Le Poste de la Direction a craqué. Elle choisit sa relève toute seule.</p>
+                ) : (
+                  <p>Le Poste adverse a craqué : c’est à l’autre joueur de choisir sa relève. Transmets-lui le code.</p>
+                )}
+                <div className="actions actions--tight">
+                  {promotions.map((action) => (
                     <ActionButton
                       key={JSON.stringify(action)}
                       state={state}
@@ -1852,11 +1892,62 @@ export function Battle() {
                     />
                   ))}
                 </div>
-              </PanneauAttacheCafe>
+              </section>
             )}
-            {gestesDuPoste.length > 0 && (
-              <div className="actions actions--tight combat-barre__rang">
-                {gestesDuPoste.map((action) => (
+
+            {choices.length > 0 && (
+              <section className="notice notice--warn choix">
+                <p>Un effet te demande de désigner une carte.</p>
+                <div className="actions actions--tight">
+                  {choices.map((action) => (
+                    <ActionButton
+                      key={JSON.stringify(action)}
+                      state={state}
+                      action={action}
+                      myCamp={myCamp}
+                      onAction={play}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
+                Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
+                font pas quatre lignes), et les Pressions viennent à côté. « Fin du tour » est sur la
+                ligne du journal, au-dessus (#320). La barre ne doit jamais recouvrir la main ni passer
+                sous la navigation (`npm run capturer` le mesure). */}
+            {(gestesDuPoste.length > 0 || pressions.length > 0 || attachements.length > 0) && (
+              <div className="combat-barre__gestes">
+                {attachements.length > 0 && (
+                  <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe}>
+                    <div className="actions actions--tight combat-barre__cafe-cibles">
+                      {attachements.map((action) => (
+                        <ActionButton
+                          key={JSON.stringify(action)}
+                          state={state}
+                          action={action}
+                          myCamp={myCamp}
+                          onAction={play}
+                        />
+                      ))}
+                    </div>
+                  </PanneauAttacheCafe>
+                )}
+                {gestesDuPoste.length > 0 && (
+                  <div className="actions actions--tight combat-barre__rang">
+                    {gestesDuPoste.map((action) => (
+                      <ActionButton
+                        key={JSON.stringify(action)}
+                        state={state}
+                        action={action}
+                        myCamp={myCamp}
+                        onAction={play}
+                      />
+                    ))}
+                  </div>
+                )}
+                {pressions.map((action) => (
                   <ActionButton
                     key={JSON.stringify(action)}
                     state={state}
@@ -1867,32 +1958,23 @@ export function Battle() {
                 ))}
               </div>
             )}
-            {pressions.map((action) => (
-              <ActionButton
-                key={JSON.stringify(action)}
-                state={state}
-                action={action}
-                myCamp={myCamp}
-                onAction={play}
-              />
-            ))}
-          </div>
-        )}
 
-        {playable.length === 0 && (
-          <p className="muted combat-barre__repos">
-            {idleLine}
-            {attendLAutre && (
-              <>
-                {' '}
-                <button type="button" className="link-button" onClick={() => setMenu({ ouvert: true, vue: 'pvp' })}>
-                  Coller un code
-                </button>
-              </>
+            {playable.length === 0 && (
+              <p className="muted combat-barre__repos">
+                {idleLine}
+                {attendLAutre && (
+                  <>
+                    {' '}
+                    <button type="button" className="link-button" onClick={() => setMenu({ ouvert: true, vue: 'pvp' })}>
+                      Coller un code
+                    </button>
+                  </>
+                )}
+              </p>
             )}
-          </p>
-        )}
-      </section>
+          </section>
+        </div>
+      </div>
 
       <Confirmation
         open={forfaitDemande !== null && forfeitAction !== undefined}

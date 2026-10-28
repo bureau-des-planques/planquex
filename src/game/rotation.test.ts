@@ -30,7 +30,7 @@ function readyToRetreat(state: BattleState): { state: BattleState; slot: number 
   if (slot < 0) throw new Error('Banc vide');
   const activeCard = getCard(player.active.cardId);
   if (!isPlanque(activeCard)) throw new Error('Carte inconnue');
-  // La Rotation se paye **au nombre** de cafés (`AGENTS.md` §4) : une liste de son
+  // La Rotation se paye **au nombre** de cafés (`docs/JEU.md` §4) : une liste de son
   // coût suffit, sans exigence de type.
   player.active.energy = Array(activeCard.retreat).fill('SSE');
   player.hasRetreated = false;

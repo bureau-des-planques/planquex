@@ -6,6 +6,11 @@ import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS, isPlanque } from '@/data';
 
+// Les filtres vivent dans l'adresse (#365) : chaque test, dans tout le fichier, repart de `/collection` nu.
+beforeEach(() => {
+  window.history.replaceState(null, '', '/');
+});
+
 describe('Collection — écran de la Collection', () => {
   beforeEach(() => {
     vi.clearAllMocks();

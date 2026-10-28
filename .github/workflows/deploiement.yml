@@ -1,0 +1,123 @@
+name: Déploiement
+
+# La production part **sur un tag de version**, et sur rien d'autre (D-140, #420). Une fusion sur
+# `main` ne publie plus : `main` reste déployable, mais la production suit la release (D-128), pas
+# le rythme des fusions. Les aperçus de PR ne se déploient plus non plus : une PR se relit par ses
+# captures (`npm run capturer`), son `detect:ui:page` et ses tests.
+#
+# Le tag doit porter la version de `package.json` (`v<version>`, `docs/VERSIONS.md` §4) : un tag
+# qui ne dit pas la version ne déploie rien. Un tag déjà déployé sur son commit n'est pas redéployé.
+#
+# Le jeton `VERCEL_TOKEN` et les deux identifiants de projet (`VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`)
+# vivent dans les secrets GitHub, jamais dans le dépôt. Sans eux, le job ÉCHOUE au lieu de se
+# taire : un déploiement qui ne part pas doit se voir.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+# `contents: read` pour le dépôt ; `actions: read` pour savoir si ce commit a déjà été déployé.
+permissions:
+  contents: read
+  actions: read
+
+# Deux déploiements de production ne se chevauchent jamais : le second attend le premier.
+concurrency:
+  group: deploiement-production
+  cancel-in-progress: false
+
+jobs:
+  production:
+    name: publier la production (tag de version)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Installer Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      # Un déploiement se lance depuis un tag `v*` et nulle part ailleurs (y compris
+      # « Run workflow » sur une branche).
+      - name: Vérifier que le déploiement part d'un tag de version
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/v*) ;;
+            *)
+              echo "::error::Déploiement refusé : la production ne part que d'un tag v* (ref trouvée : $GITHUB_REF). Lance-le depuis le tag de la release."
+              exit 1
+              ;;
+          esac
+
+      - name: Vérifier que le tag porte la version de package.json
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version="$(node -p 'require("./package.json").version')"
+          if [ "$tag" != "v$version" ]; then
+            echo "::error::Déploiement refusé : le tag $tag ne correspond pas à package.json (v$version). Un tag dit la version (docs/VERSIONS.md §4)."
+            exit 1
+          fi
+          echo "Tag $tag = version $version"
+
+      # Un commit déjà déployé avec succès n'est pas redéployé : le job sort proprement, et le dit.
+      # Un échec de la requête ÉCHOUE le job (pas de déploiement sur un doute).
+      - name: Vérifier que ce commit n'a pas déjà été déployé
+        id: deja
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          total="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/deploiement.yml/runs?head_sha=$GITHUB_SHA&status=success&per_page=1" --jq '.total_count')" || {
+            echo "::error::Impossible de lire l'historique des déploiements : rien n'est déployé dans le doute."
+            exit 1
+          }
+          echo "deja=$total" >> "$GITHUB_OUTPUT"
+          if [ "$total" != "0" ]; then
+            echo "::notice::Le commit $GITHUB_SHA est déjà déployé en production ($total run(s) réussi(s)) : pas de second déploiement."
+          fi
+
+      - name: Vérifier que les secrets de déploiement sont posés
+        if: steps.deja.outputs.deja == '0'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          for nom in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!nom:-}" ]; then
+              echo "::error::Déploiement non lancé — le secret $nom est absent des secrets GitHub du dépôt. Un déploiement qui ne part pas doit se voir : pose-le (docs/INTEGRATIONS-DISCORD.md et la session infra), ne saute pas l'étape."
+              exit 1
+            fi
+          done
+
+      - name: Installer les dépendances
+        if: steps.deja.outputs.deja == '0'
+        run: npm ci
+
+      # La porte : une build cassée ne part pas en production.
+      - name: Construire l'application
+        if: steps.deja.outputs.deja == '0'
+        run: |
+          npm run build
+          ls -la dist/index.html dist/sw.js
+
+      # `vercel pull` rapatrie les réglages du projet et ses variables de production
+      # (`VITE_SUPABASE_*`, `VITE_DISCORD_INVITE`) : sans lui, `vercel build` s'arrête (« No Project
+      # Settings found locally »), et une build sans ces variables publierait un mur en repli local.
+      # `vercel build` produit la sortie préconstruite, celle que `--prebuilt` publie : ce qui part
+      # est ce que ce job vient de construire, pas une seconde build distante.
+      # Le CLI n'est **pas** une dépendance du dépôt (AGENTS.md §1.7) : `npx` le prend à une version
+      # **exacte**, ici seulement, au moment du déploiement. La monter se fait ici, et dans le test.
+      - name: Publier en production (CLI Vercel)
+        if: steps.deja.outputs.deja == '0'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npx --yes vercel@64.0.2 pull --yes --environment=production
+          npx --yes vercel@64.0.2 build --prod
+          npx --yes vercel@64.0.2 deploy --prebuilt --prod

@@ -7,7 +7,7 @@
 >
 > État : **première passe** (20/10/2026). Elle fixe les jetons de couleur, le gabarit de
 > carte et les planches de style ; la **curation carte par carte** viendra ensuite.
-> Ce document ne crée **aucune règle de jeu** : les règles vivent dans `AGENTS.md` §4 et
+> Ce document ne crée **aucune règle de jeu** : les règles vivent dans `docs/JEU.md` §4 et
 > `docs/DECISIONS.md`. Il décrit l'apparence, pas la mécanique.
 >
 > Il suit `docs/PROPOSITION.md` §4.6 : direction « **corporate dark premium** »,
@@ -286,6 +286,11 @@ plateau (`.card--plateau`).
 
 ### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121 ; écart de collage de la barre daté le 27/10/2026, #289, #323)
 
+> **Depuis D-142 (28/10/2026)**, cette section décrit la **référence 420 × 900**. Sur un écran plus
+> court, en paysage et sur PC, la disposition change : la barre du haut s'efface en combat (une
+> sortie `←` entre dans l'en-tête), le Banc passe à côté du Poste, la barre d'action vit dans la
+> console. Voir §2.7.
+
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
 doivent rester au-dessus de la navigation (limite **830 px**, haut de la barre de navigation, avec
@@ -512,6 +517,27 @@ trombones, feuilles) — ce sont des assets, et l'univers est l'atelier MRO (D-0
 
 ---
 
+### 2.7 Téléphone, portrait, paysage et PC (D-142, 28/10/2026)
+
+L'écran se mesure à **six gabarits** : la référence **420 × 900** (D-060, D-094), puis la fenêtre
+réelle d'un téléphone — **360 × 640**, **390 × 664** (Safari, barre comprise) —, le **paysage** —
+**740 × 360**, **844 × 390** — et le **PC**, **1280 × 800**. `npm run capturer` les joue tous ; ce
+qui suit est ce que `src/styles.css` fait de chacun.
+
+| Situation | Média | Ce qui change |
+|---|---|---|
+| Combat sur téléphone | `max-width: 899px` | la barre du haut s'efface (comme celle du bas, #275) ; la **sortie** `←` de l'en-tête mène à l'accueil — pas un forfait, la partie est rangée |
+| Écran court | `max-height: 860px` (portrait) | chaque camp range son **Banc à côté du Poste**, sa fiche sous le Banc ; la fiche s'écoule en lignes |
+| Très court | `max-height: 700px` (portrait) | le titre « Ta main » cède sa ligne (le compte reste dans la fiche) ; Banc 52 px, main 60 px |
+| Paysage de téléphone | `orientation: landscape` et `max-height: 600px` | plateau à gauche, **main et barre d'action** à droite ; un camp sur **une** rangée (Poste 80, Banc 52, fiche) ; la console défile en elle-même ; l'inspecteur est une colonne, pas une feuille basse ; hors combat, l'en-tête se serre et la barre du bas met icône et libellé côte à côte |
+| Écran large | `min-width: 900px`, ou paysage ≥ 600 px | plateau à gauche, console à droite, barre d'action **dans** la console |
+| PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et main **grandissent avec la hauteur** (`clamp`, D-094 (1) en plancher) |
+| Grand écran | `min-width: 1440px` | la coquille passe de 1080 à 1280 px (`--shell-max`, lu aussi par la barre du bas) : une colonne de cartes de plus en Collection et au Deck |
+| Partout | — | `min-height: 100dvh` ; encoches (`env(safe-area-inset-*)`) sur l'en-tête et les bords ; **44 px** pour un bouton, un champ, une case de Réglages, un onglet du comité, et la zone tactile du `+` d'une carte (la pastille garde 24 px) |
+
+**Règle** : la **disposition** cède avant la **lisibilité**. Les tailles de D-094 (1) ne baissent
+qu'aux deux cas nommés (très court, paysage), et seulement d'un cran.
+
 ## 3. Cadre de rareté, rareté par rareté
 
 La source est `RARITY_META` (`src/data/index.ts`) : le libellé **et** la couleur y vivent,
@@ -536,7 +562,7 @@ holographique s'applique déjà : `HOLO_RARITIES` les inclut (`src/components/Ca
 
 ## 4. Badges de statut
 
-Les cinq conditions (`AGENTS.md` §4) sont rendues par `src/components/StatusBadge.tsx`,
+Les cinq conditions (`docs/JEU.md` §4) sont rendues par `src/components/StatusBadge.tsx`,
 `STATUS_META` : libellé, description et icône en **une seule** source. `Battle.tsx` les
 affiche sur le Poste et dans une légende « Conditions » ; il ne recopie plus aucun libellé.
 
@@ -577,7 +603,7 @@ bureau, **tasse de café or** fumante, plante d'angle, puis le nom en bas.
 - Le personnage : silhouette simple, tête ronde, calotte sombre, yeux fermés, épaules
   basses, un bras posé sur le bureau, l'autre vers la tasse.
 - Pas de visage détaillé, pas de logo réel, pas de marque : on ridiculise la posture,
-  jamais une personne (`AGENTS.md` §4.2).
+  jamais une personne (`docs/JEU.md` §4.2).
 - La barre du haut reprend la **tasse** seule (`src/components/Layout.tsx`) : même dessin,
   simplifié pour tenir dans 30 px.
 - La **marque du README** (`design/logo/`) reprend la tasse de l'icône du serveur des testeurs
@@ -645,7 +671,7 @@ socle ; seuls le sujet et le cadrage changent.
 
 - **Sujet** : **un lieu de travail vide de tout visage**, vu de loin : un atelier, un
   étage de bureaux ou une aile administrative. Trois variantes = les trois viviers
-  (`AGENTS.md` §4.2) : **Atelier** (outils, établis, machines), **Étage** (couloir de
+  (`docs/JEU.md` §4.2) : **Atelier** (outils, établis, machines), **Étage** (couloir de
   bureaux, baies vitrées, plantes), **Bureaux** (plateau partagé, cloisons, imprimante).
 - **Cadrage** : plan large, un point de fuite marqué, perspective à hauteur d'épaule.
 - **Lumière** : éclairage mixte fin de journée — lumière froide des néons, lumière chaude

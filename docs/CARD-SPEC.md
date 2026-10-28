@@ -103,7 +103,7 @@ ci-dessus est un repère de lecture ; elle ne plafonne rien.
 | 3 | 70–120 | coûte 20 à 40 dégâts |
 | 4 | 100–160 | coûte 20 à 70 dégâts |
 
-> **Écart assumé (D-039, #102 (c))** : le coût de Pression `0` (`cost: []`) est **autorisé par le code** (`DAMAGE_BY_COST[0] = [0, 30]`, commentaire `src/data/types.ts` « une liste vide est une attaque gratuite »), mais **aucune carte du set ne le porte** (`grep -r "cost: \[\]" src/data/` → 0 résultat). La table normative commence au **1 café** (`CARD-SPEC.md` §2) et reste inchangée ; le premier joueur conserve son droit d'attaquer au tour 1 (`AGENTS.md` §4), sans contradiction.
+> **Écart assumé (D-039, #102 (c))** : le coût de Pression `0` (`cost: []`) est **autorisé par le code** (`DAMAGE_BY_COST[0] = [0, 30]`, commentaire `src/data/types.ts` « une liste vide est une attaque gratuite »), mais **aucune carte du set ne le porte** (`grep -r "cost: \[\]" src/data/` → 0 résultat). La table normative commence au **1 café** (`CARD-SPEC.md` §2) et reste inchangée ; le premier joueur conserve son droit d'attaquer au tour 1 (`docs/JEU.md` §4), sans contradiction.
 
 Un **effet** (statut, soin, pioche, défausse, échange) ne coûte **pas** de dégâts à 1 et 2 cafés ;
 à partir de 3 cafés il en coûte 20 à 40. Un **fardeau** (se blesser, défausser ses propres cafés)

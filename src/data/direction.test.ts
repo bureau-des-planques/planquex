@@ -42,7 +42,7 @@ describe('Direction — enregistrement (ticket #50)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `direction-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `direction-` (docs/JEU.md §5)', () => {
     for (const card of ALL_DIRECTION_CARDS) {
       expect(card.id, card.id).toMatch(/^direction-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('DIRECTION');

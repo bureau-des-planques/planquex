@@ -16,7 +16,7 @@ const FIGURES = new Set(
 );
 
 describe('les étapes des règles (#270)', () => {
-  it('couvre les lignes d’AGENTS.md §4 qu’un nouvel inscrit doit connaître', () => {
+  it('couvre les lignes d’docs/JEU.md §4 qu’un nouvel inscrit doit connaître', () => {
     const titres = ETAPES_REGLES.map((etape) => etape.titre);
     expect(titres).toHaveLength(6);
     expect(titres.join(' · ')).toMatch(/Seuil/);

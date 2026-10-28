@@ -70,7 +70,7 @@ export type RefusalKind =
 export interface Refusal {
   ok: false;
   kind: RefusalKind;
-  /** Phrase française, affichable telle quelle (vocabulaire d'`AGENTS.md` §3). */
+  /** Phrase française, affichable telle quelle (vocabulaire d'`docs/JEU.md` §3). */
   raison: string;
 }
 
@@ -81,6 +81,15 @@ export const CODEC_PREFIX = 'PLQ';
 
 /** Version du **format** (pas du jeu) : elle change si la charge utile change de forme. */
 export const CODEC_VERSION = '1';
+
+/**
+ * Étiquette de la charge utile d'un **Deck partagé** (#363). Même enveloppe (préfixe,
+ * version, empreinte) que la partie : seule la charge change. Une partie n'a pas de `k`.
+ */
+export const DECK_CODE_KIND = 'deck';
+
+/** Borne haute d'un Deck partagé : un Deck illégal peut dépasser 20, pas le bourrage. */
+export const DECK_CODE_MAX_CARDS = 60;
 
 /** L'empreinte fait toujours 7 caractères base36 (`padStart`), donc une place fixe. */
 const CHECKSUM_LENGTH = 7;
@@ -379,14 +388,13 @@ function readDeck(value: unknown, who: string): { deck: string[] } | Refusal {
 }
 
 /**
- * Un code → un match, ou un **refus motivé**. Ne lève jamais, ne mute rien.
- *
- * L'ordre des contrôles est celui des raisons : préfixe, version, forme, **empreinte**,
- * base64, JSON, charge, Decks, types de café, puis **rejeu**. L'empreinte passe avant
- * le décodage : c'est elle qui empêche une altération de produire une autre partie
- * silencieusement valide.
+ * Ouvre un code scellé (préfixe, version, forme, **empreinte**, base64, JSON) et rend sa
+ * charge utile **brute**, ou un refus motivé. C'est l'étage **commun** aux deux codes —
+ * la partie (`decodeMatch`) et le Deck (`decodeDeckCode`) : un seul format d'enveloppe.
+ * Ne lève jamais, ne mute rien. L'empreinte passe avant le décodage : c'est elle qui
+ * empêche une altération de produire une autre charge valide en silence.
  */
-export function decodeMatch(code: string): DecodeResult {
+function ouvrirEnveloppe(code: string): { ok: true; raw: unknown } | Refusal {
   if (typeof code !== 'string') return refus('pas-un-code', 'Ce texte n’est pas un code de partie.');
   // Le code voyage par message : les espaces et retours à la ligne autour ne comptent pas.
   const trimmed = code.trim();
@@ -437,6 +445,22 @@ export function decodeMatch(code: string): DecodeResult {
     raw = JSON.parse(untexto.decode(bytes));
   } catch {
     return refus('json', 'La charge utile du code n’est pas du JSON lisible.');
+  }
+  return { ok: true, raw };
+}
+
+/**
+ * Un code de partie → un match, ou un **refus motivé**. Ne lève jamais, ne mute rien.
+ *
+ * L'ordre des contrôles est celui des raisons : préfixe, version, forme, **empreinte**,
+ * base64, JSON, charge, Decks, types de café, puis **rejeu**.
+ */
+export function decodeMatch(code: string): DecodeResult {
+  const enveloppe = ouvrirEnveloppe(code);
+  if (!enveloppe.ok) return enveloppe;
+  const raw = enveloppe.raw;
+  if (isRecord(raw) && raw.k === DECK_CODE_KIND) {
+    return refus('charge', 'Ce code est un Deck partagé, pas un code de partie.');
   }
 
   if (!isRecord(raw)) {
@@ -504,4 +528,72 @@ export function decodeMatch(code: string): DecodeResult {
       actions
     }
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Deck partagé (#363)                                                 */
+/* ------------------------------------------------------------------ */
+
+/** Un Deck tel qu'il se partage : ses cartes et ses types de café **choisis** (vide = auto). */
+export interface DeckCode {
+  cartes: string[];
+  cafeTypes: CafeType[];
+}
+
+export type DeckDecodeResult = { ok: true; deck: DeckCode } | Refusal;
+
+/**
+ * Un Deck → un code. **Total** : il encode un Deck même illégal (20 cartes exigées,
+ * 2 exemplaires max, un Entrant). L'avertissement est l'affaire de l'écran, pas du codec :
+ * le partage s'ouvre, le combat ne s'ouvre pas sans un Deck légal.
+ */
+export function encodeDeckCode(deck: readonly string[], cafeTypes: readonly CafeType[]): string {
+  const wire = { k: DECK_CODE_KIND, d: [...deck], c: [...cafeTypes] };
+  return sealCode(toBase64Url(texto.encode(JSON.stringify(wire))));
+}
+
+/**
+ * Un code de Deck → un Deck, ou un refus motivé. Ne lève jamais, ne mute rien.
+ *
+ * Un Deck **illégal mais connu** est accepté : il s'importe, il reste consultable, et
+ * l'écran dit ce qui cloche. Seules les cartes **inconnues de ce jeu** et les types de café
+ * impossibles font refuser le code, parce qu'on ne saurait pas l'afficher ni le jouer.
+ */
+export function decodeDeckCode(code: string): DeckDecodeResult {
+  const enveloppe = ouvrirEnveloppe(code);
+  if (!enveloppe.ok) return enveloppe;
+  const raw = enveloppe.raw;
+  if (!isRecord(raw)) {
+    return refus('charge', 'Ce code n’est pas un Deck de ce jeu : son contenu est illisible.');
+  }
+  if (raw.k !== DECK_CODE_KIND) {
+    return refus(
+      'charge',
+      Number.isSafeInteger(raw.s)
+        ? 'Ce code est une partie, pas un Deck : il se colle dans le combat, pas ici.'
+        : 'Ce code n’est pas un Deck de ce jeu.'
+    );
+  }
+
+  const cartes = readStringList(raw.d);
+  if (cartes === null) {
+    return refus('charge', 'Ce Deck est illisible : la liste de ses cartes manque.');
+  }
+  if (cartes.length > DECK_CODE_MAX_CARDS) {
+    return refus(
+      'charge',
+      `Ce Deck porte ${cartes.length} cartes : au-delà de ${DECK_CODE_MAX_CARDS}, il n’est pas lisible.`
+    );
+  }
+  const inconnue = cartes.find((id) => !getCard(id));
+  if (inconnue !== undefined) {
+    return refus('deck', `Ce Deck contient une carte que ce jeu ne connaît pas : « ${inconnue} ».`);
+  }
+
+  const cafeTypes = readCafeTypes(raw.c);
+  if (cafeTypes === null) {
+    return refus('cafe', 'Types de café illégaux : il faut au plus trois factions productrices, sans doublon (D-034).');
+  }
+
+  return { ok: true, deck: { cartes, cafeTypes } };
 }

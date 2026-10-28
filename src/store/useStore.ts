@@ -8,12 +8,15 @@ import type { RngHolder } from '@/game/rng';
 import type { Card, CafeType, Rarity } from '@/data/types';
 import { lirePartie } from '@/store/partie';
 import type { PartieSauvegardee } from '@/store/partie';
+import { lireDerniere } from '@/store/derniere';
+import type { DernierePartie } from '@/store/derniere';
 
 /** Clé de persistance. Source unique : `Settings.tsx` l'affiche, `persist` l'écrit. */
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **10** — voir `migratePersisted` pour l'historique complet
+ * Version de la forme persistée. **13** : le store gagne `derniere`, la dernière partie terminée
+ * (ticket #366), absente d'un état v12 : elle vaut `null`. Voir `migratePersisted` pour l'historique complet
  * (v8 : la densité du combat et les raccourcis ; v9 et v10 : les renommages de D-095 et
  * D-096). Une constante qui annonce un autre chiffre que le sien est un piège : elle a dit
  * **8** jusqu'au 26/10/2026 alors qu'elle valait déjà 10 (#249).
@@ -40,10 +43,10 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
  * dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 12;
+export const STORAGE_VERSION = 13;
 
 /**
- * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
+ * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
  * suit le nom** — et, pour une variante, la rareté. Quand l'un des deux change, l'id
  * change au lieu de rester un alias introuvable, et l'état persisté doit suivre,
  * sinon la carte quitte silencieusement la Collection et le Deck.
@@ -98,7 +101,7 @@ export const CARD_ID_RENAMES: Readonly<Record<string, string>> = {
   'atelier-stagiaire-atelier': 'atelier-assistant-rpo',
   'atelier-chef-atelier-ex': 'atelier-rpo-sans-rui-ex',
   'atelier-responsable-maintenance-ex': 'atelier-rui-non-toxique-ex',
-  // D-096 (dix cartes dont l'id ne suivait pas le nom, AGENTS.md §5).
+  // D-096 (dix cartes dont l'id ne suivait pas le nom, docs/JEU.md §5).
   'qvt-ambassadeur-bienveillance': 'qvt-charge-mission',
   'qvt-cueilleur-fruits': 'qvt-charge-logistique',
   'qvt-organisateur-afterwork': 'qvt-responsable-evenementiel',
@@ -143,7 +146,7 @@ export interface AppState {
    * du **nouveau** contenu. Ajuster le Deck carte par carte (`addToDeck`,
    * `toggleDeck`) le **garde** : c'est le même Deck qu'on édite.
    *
-   * Pourquoi « attribut du Deck » plutôt que « du joueur » : `AGENTS.md` §4 dit
+   * Pourquoi « attribut du Deck » plutôt que « du joueur » : `docs/JEU.md` §4 dit
    * « Jusqu'à 3 types **par Deck**, choisis par le joueur » et §6 parle des
    * « types de café choisis **du Deck** » ; `resolveCafeTypes(deck, chosen)` prend
    * déjà le Deck en premier argument. Le laisser survivre à un remplacement
@@ -199,6 +202,12 @@ export interface AppState {
    * jamais recalculée ici : les règles restent dans `@/game/engine`.
    */
   partie: PartieSauvegardee | null;
+  /**
+   * La **dernière partie terminée** (ticket #366) : de quoi la rejouer et son verdict, pour la
+   * revoir depuis Réglages. `null` tant qu'aucune partie n'est finie. Écrite en fin de combat
+   * par l'écran de combat ; remise à zéro par « Réinitialiser la progression ».
+   */
+  derniere: DernierePartie | null;
   openPack: () => Card[];
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
@@ -226,6 +235,8 @@ export interface AppState {
   setPasAPasCombatVu: (value: boolean) => void;
   /** Range la partie en cours (`null` pour n'en garder aucune). */
   enregistrerPartie: (partie: PartieSauvegardee | null) => void;
+  /** Range la dernière partie terminée (`null` pour l'effacer). */
+  enregistrerDerniere: (derniere: DernierePartie | null) => void;
   /** La sauvegarde locale, telle qu'un joueur peut la copier et la coller ailleurs. */
   exporterSauvegarde: () => string;
   /**
@@ -257,6 +268,7 @@ export type PersistedState = Pick<
   | 'tutorielVu'
   | 'pasAPasCombatVu'
   | 'partie'
+  | 'derniere'
 >;
 
 export function partializeState(state: AppState): PersistedState {
@@ -273,7 +285,8 @@ export function partializeState(state: AppState): PersistedState {
     rng: state.rng,
     tutorielVu: state.tutorielVu,
     pasAPasCombatVu: state.pasAPasCombatVu,
-    partie: state.partie
+    partie: state.partie,
+    derniere: state.derniere
   };
 }
 
@@ -307,6 +320,7 @@ export const useStore = create<AppState>()(
       tutorielVu: false,
       pasAPasCombatVu: false,
       partie: null,
+      derniere: null,
       openPack: () => {
         // La composition de l'Arrivage (3 communes, 1 peu commune, 1 rare) est
         // une règle de jeu : elle vit dans `@/game/pack` (ticket #57). Ici, on ne
@@ -382,6 +396,8 @@ export const useStore = create<AppState>()(
           pasAPasCombatVu: false,
           // La partie en cours fait partie de la progression remise à zéro (#126).
           partie: null,
+          // La dernière partie terminée se remet à zéro avec la progression (#366).
+          derniere: null,
           // Un nouveau départ change la suite des Arrivages : sinon le premier
           // Arrivage d'après remise à zéro rejouerait le précédent.
           rng: seedRng(Date.now())
@@ -395,6 +411,7 @@ export const useStore = create<AppState>()(
       setTutorielVu: (value) => set({ tutorielVu: value }),
       setPasAPasCombatVu: (value) => set({ pasAPasCombatVu: value }),
       enregistrerPartie: (partie) => set({ partie }),
+      enregistrerDerniere: (derniere) => set({ derniere }),
       exporterSauvegarde: () =>
         JSON.stringify({ jeu: SAVE_FORMAT, version: STORAGE_VERSION, etat: partializeState(get()) }, null, 2),
       importerSauvegarde: (texte) => {
@@ -436,6 +453,8 @@ export const useStore = create<AppState>()(
         // Une sauvegarde sans `partie` (d'avant #126) n'efface pas la partie en cours :
         // importer une progression ne touche pas au combat qu'on est en train de jouer.
         if (!('partie' in etat)) migre.partie = get().partie;
+        // Idem pour la dernière partie terminée (#366) : une sauvegarde d'avant ne l'a pas.
+        if (!('derniere' in etat)) migre.derniere = get().derniere;
         set(migre);
         return { ok: true };
       }
@@ -488,6 +507,9 @@ export const useStore = create<AppState>()(
  * d'id. `CARD_ID_RENAMES` remappe `owned` et `deck`. Une partie **en cours** qui porte un id
  * renommé est écartée (`partie: null`) : son journal d'actions référence les anciens ids et ne
  * se rejouerait pas à l'identique.
+ *
+ * **v12 → v13** (#366) : le store gagne `derniere`, la dernière partie terminée (de quoi la
+ * rejouer et son verdict). Un état v12 n'en a pas : `null`. Rien d'autre ne bouge.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState>;
@@ -497,6 +519,9 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now()),
     partie: lirePartie(migrated.partie),
+    // **v12 → v13** (#366) : la dernière partie terminée. Un état v12 n'en a pas : `null`. Une
+    // forme mal faite est écartée (`lireDerniere`), comme la partie en cours.
+    derniere: lireDerniere(migrated.derniere),
     // **v7 → v8** : l'affichage du combat reprend ses défauts — `sobre`, et les raccourcis
     // actifs. Une valeur d'un autre type est écartée comme une absence.
     combatDetaille: typeof migrated.combatDetaille === 'boolean' ? migrated.combatDetaille : false,

@@ -42,6 +42,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import { preview } from 'vite';
+import { STORAGE_KEY, VIEWPORT, INSTANTS_COMBAT, GABARITS, amorcageStore } from './capturer-socle.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const outDir = join(root, 'captures');
@@ -58,6 +59,9 @@ const PAGES = [
   ['deck', '/deck'],
   ['combat', '/battle'],
   ['reglages', '/settings'],
+  // Revoir une partie (#366) : hors du combat, depuis Réglages ; une route de l'application
+  // sans capture est une page que personne ne regarde (le contrat de capturer.test.ts).
+  ['rejeu', '/rejeu'],
   // Les trois écrans de compte (D-088) : sans configuration, ils montrent leur état
   // inerte — c'est aussi un état d'écran que D-060 demande de voir.
   // La confidentialité est publique et hors garde : elle doit se lire sans compte.
@@ -102,18 +106,12 @@ const ROUTE_COMBAT = '/battle';
  * Liste à part, et non dans `PAGES` : « une page par route » reste vrai (le contrat de
  * `scripts/capturer.test.ts`), et `/battle` est déjà photographiée à son arrivée.
  */
-const PREPARATIONS = [{ slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' }];
-
-/**
- * Les instants figés qui fixent la graine d'une partie (`createBattle`, seed = `Date.now()`) :
- * plusieurs donnes, pour que la garde de rendu ne se fie pas à une seule main (#170).
- * Le premier sert à la capture `combat.png`.
- */
-const INSTANTS_COMBAT = [
-  Date.UTC(2026, 9, 22, 9, 0),
-  Date.UTC(2026, 9, 22, 14, 30),
-  Date.UTC(2026, 9, 22, 20, 5),
-  Date.UTC(2026, 9, 23, 7, 45)
+const PREPARATIONS = [
+  { slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' },
+  // L'ouverture d'un Arrivage (#283) n'existe à aucune arrivée de page : elle s'ouvre au clic
+  // sur l'accueil. C'est l'écran où trois défauts de rendu se sont succédé sans qu'aucune
+  // capture ne les voie (texte en miroir, pivot, 3D imbriquée, 28/10/2026).
+  { slug: 'arrivage', route: '/', amorce: true, preparation: 'arrivage' }
 ];
 
 /** Attend le tour du joueur (« à toi ») — l'IA joue seule — puis le défilement d'arrivée (smooth). */
@@ -145,7 +143,7 @@ const MODELE_BADGE = {
   icone: { largeur: 12, hauteur: 12 },
   nom: 'status-chip__nom',
   masque: 'sr-only',
-  // Les **trois** Conditions qu'un même Poste peut porter ensemble (AGENTS.md §4) : Surcharge
+  // Les **trois** Conditions qu'un même Poste peut porter ensemble (docs/JEU.md §4) : Surcharge
   // et Épuisement se cumulent avec une Condition d'état — Immobilisation ici, la plus longue.
   statuts: [
     { code: 'SURCHARGE', nom: 'Surcharge' },
@@ -166,10 +164,11 @@ async function arriverAuCombat(page, instant) {
  * recopiaient (contexte, `pageerror`, horloge figée, navigation, attente). Une copie qui prend
  * du retard, c'est un état du plan qui n'écoute plus les erreurs de page (#324).
  */
-async function ouvrirCombat(browser, instant, supplement = {}) {
+async function ouvrirCombat(browser, instant, supplement = {}, gabarit = { viewport: VIEWPORT, mobile: true }) {
   const context = await browser.newContext({
-    viewport: VIEWPORT,
-    isMobile: true,
+    viewport: gabarit.viewport,
+    isMobile: gabarit.mobile,
+    hasTouch: gabarit.mobile,
     storageState: amorcageStore(origine, supplement)
   });
   const page = await context.newPage();
@@ -351,10 +350,10 @@ function controlesHauteur({
  * `contexte` est le **libellé de l'état** mesuré (graine, ou « pas-à-pas terminé ») : il part
  * dans le message de la garde, pour qu'un échec nomme l'état et pas seulement la surface (#237).
  */
-async function controlerHauteur(page, contexte, route) {
+async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {
   const hauteur = await page.evaluate(mesureHauteur, CIBLES_HAUTEUR);
   console.log(`combat · ${contexte} · ${JSON.stringify(hauteur)}`);
-  for (const probleme of controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })) {
+  for (const probleme of controlesHauteur({ ...hauteur, viewport, etat: contexte })) {
     problems.push(`${route} · ${probleme}`);
   }
 }
@@ -529,6 +528,72 @@ async function mesurerAvecUnePression(browser, detaille = false) {
 }
 
 /**
+ * **Un gabarit de D-142** : chaque page sous la garde de largeur, puis le combat sous les gardes de
+ * hauteur — à l'arrivée, puis avec une Pression jouable et le pire cas. Une capture par page et par
+ * état, préfixée du nom du gabarit (`telephone-petit-combat.png`).
+ */
+async function mesurerGabarit(browser, gabarit) {
+  const { nom, viewport, mobile } = gabarit;
+  const taille = `${viewport.width} × ${viewport.height}`;
+  for (const [slug, route] of PAGES.filter(([, route]) => route !== ROUTE_COMBAT)) {
+    const context = await browser.newContext({
+      viewport,
+      isMobile: mobile,
+      hasTouch: mobile,
+      storageState: amorcageStore(origine)
+    });
+    const page = await context.newPage();
+    page.on('pageerror', (error) => problems.push(`${route} (${taille}) · pageerror : ${error.message}`));
+    await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(300);
+    const debordement = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    if (debordement > 0) {
+      problems.push(`${route} · la page déborde de ${debordement} px en largeur à ${taille} (D-142)`);
+    }
+    await page.screenshot({ path: join(outDir, `${nom}-${slug}.png`), fullPage: PLEINE_PAGE });
+    await context.close();
+  }
+
+  const instant = INSTANTS_COMBAT[0];
+  // Le **pas-à-pas ouvert** de la première partie : une centaine de pixels collés en haut, à
+  // l'arrivée — l'état le plus haut qu'un nouveau testeur voit sur son téléphone.
+  {
+    const { context, page } = await ouvrirCombat(browser, instant, {}, gabarit);
+    await controlerHauteur(
+      page,
+      `${new Date(instant).toISOString()} (${nom}, pas-à-pas ouvert)`,
+      ROUTE_COMBAT,
+      viewport
+    );
+    await page.screenshot({ path: join(outDir, `${nom}-combat-pas-a-pas.png`), fullPage: PLEINE_PAGE });
+    await context.close();
+  }
+  const etat = `${new Date(instant).toISOString()} (${nom}, pas-à-pas terminé)`;
+  {
+    const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true }, gabarit);
+    await controlerHauteur(page, etat, ROUTE_COMBAT, viewport);
+    await page.screenshot({ path: join(outDir, `${nom}-combat.png`), fullPage: PLEINE_PAGE });
+    await context.close();
+  }
+  const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true }, gabarit);
+  const tour = await jusquAUnePression(page);
+  if (tour === null) {
+    problems.push(
+      `${ROUTE_COMBAT} · ${nom} : aucune Pression jouable atteinte, la barre n'est mesurée que sans Pression`
+    );
+  } else {
+    await controlerHauteur(page, `${etat}, Pression jouable, tour ${tour}`, ROUTE_COMBAT, viewport);
+    await page.evaluate(poserLePireCas, [false, MODELE_BADGE]);
+    await page.waitForTimeout(300);
+    await controlerHauteur(page, `${etat}, Pression jouable, tour ${tour}, pire cas`, ROUTE_COMBAT, viewport);
+    await page.screenshot({ path: join(outDir, `${nom}-combat-pression.png`), fullPage: PLEINE_PAGE });
+  }
+  await context.close();
+}
+
+/**
  * **Préparer le code d'une partie à deux** (#128) et le mesurer.
  *
  * Les gestes sont ceux des deux invités : ouvrir la section (repliée tant qu'aucune
@@ -582,35 +647,6 @@ async function preparerCodePvp(page) {
     };
   });
 }
-
-/** La clé du store persisté — `STORAGE_KEY`, `src/store/useStore.ts`. */
-const STORAGE_KEY = 'bureau-des-planques-v1';
-
-/**
- * L'amorçage du store (#150) : le blob que `persist` relit à l'hydratation, avec
- * `tutorielVu: true`. `version` est omise **à dessein** : `persist` ne migre que sur
- * une version **numérique différente** de la sienne (zustand, `middleware.js`), et ce
- * blob ne porte qu'un booléen — aucune forme à migrer, donc aucune version à recopier.
- */
-function amorcageStore(origin, supplement = {}) {
-  return {
-    cookies: [],
-    origins: [
-      {
-        origin,
-        localStorage: [{ name: STORAGE_KEY, value: JSON.stringify({ state: { tutorielVu: true, ...supplement } }) }]
-      }
-    ]
-  };
-}
-
-/**
- * La **fenêtre d'un téléphone**, telle que le critère (4) de **D-060** la nomme :
- * « on regarde les captures à la taille d'un téléphone (420×900) ». C'est un acte
- * daté, et `AGENTS.md` §2 met les actes au-dessus du code : l'écart
- * `360 × 800` du script était un bug, donc on suit la décision (#153).
- */
-const VIEWPORT = { width: 420, height: 900 };
 
 /**
  * Capture de la **fenêtre**, jamais de la page entière (#153).
@@ -677,6 +713,7 @@ if (process.argv.includes('--plan')) {
     JSON.stringify({
       amorcage: amorcageStore(origine),
       capture: { viewport: VIEWPORT, pleinePage: PLEINE_PAGE },
+      gabarits: GABARITS,
       captures: shots,
       preparations: PREPARATIONS,
       hauteur: CIBLES_HAUTEUR,
@@ -758,6 +795,39 @@ try {
       if (code.debordement > 0) {
         problems.push(`${slug} · la page déborde de ${code.debordement} px en largeur : la mise en page casse`);
       }
+    } else if (preparation === 'arrivage') {
+      // L'arrivage se prépare au geste du testeur : l'accueil, le bouton, puis la scène.
+      // On photographie les deux états qui comptent — cartes **face cachée**, puis
+      // **retournées** — et la garde échoue si l'un des deux n'est pas atteint : une
+      // capture d'un écran qui n'a pas fini de s'ouvrir ne prouve rien.
+      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+      await page.click('.hero__ouvrir');
+      await page.waitForSelector('.ouverture', { timeout: 15000 });
+      // Le sachet s'ouvre au geste : « Ouvrir » joue la déchirure sans glissement (le chemin
+      // accessible de la spec §5), puis l'envol porte les cartes à la révélation.
+      await page.click('[data-ouvrir]');
+      await page.waitForSelector('.ouverture[data-etape="revelation"]', { timeout: 30000 });
+      const cachees = await page.evaluate(() => ({
+        cartes: document.querySelectorAll('.ouverture__carte').length,
+        verso: document.querySelectorAll('.ouverture__carte[data-face="verso"]').length,
+        etape: document.querySelector('.ouverture')?.getAttribute('data-etape')
+      }));
+      if (cachees.cartes < 5 || cachees.verso < 5) {
+        problems.push(
+          `${slug} · la révélation ne montre pas cinq cartes face cachée (${cachees.cartes} cartes, ${cachees.verso} en verso)`
+        );
+      }
+      await page.screenshot({ path: join(outDir, `${slug}-face-cachee.png`), fullPage: PLEINE_PAGE });
+
+      await page.click('[data-tout-afficher]');
+      await page.waitForFunction(
+        () =>
+          document.querySelectorAll('.ouverture__carte').length > 0 &&
+          document.querySelectorAll('.ouverture__carte[data-face="verso"]').length === 0,
+        null,
+        { timeout: 15000 }
+      );
+      await page.waitForTimeout(1200);
     } else if (route === ROUTE_COMBAT) {
       // Le combat se photographie **à l'arrivée**, au tour du joueur (#170) : la graine de
       // la partie vient de l'horloge, donc on la fige (`page.clock`) pour une capture
@@ -800,6 +870,9 @@ try {
   await mesurerDensite(browser, true);
   await mesurerDensite(browser, false);
   await mesurerAvecUnePression(browser, true);
+
+  // Les gabarits de D-142 : la fenêtre réelle d'un téléphone, en portrait et en paysage, et le PC.
+  for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);
 } finally {
   await browser.close();
   await server?.close();
@@ -813,5 +886,5 @@ if (problems.length) {
 
 console.log(
   `✔ ${shots.length + PREPARATIONS.length} captures dans captures/ (${base}) — dont la première visite ` +
-    `et ${PREPARATIONS.length} état(s) dédié(s)`
+    `et ${PREPARATIONS.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-142`
 );

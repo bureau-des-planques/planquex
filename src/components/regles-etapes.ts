@@ -2,7 +2,7 @@ import { BENCH_SIZE, HAND_LIMIT, POINTS_TO_WIN, STARTING_HAND, WEAKNESS_BONUS } 
 import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 
 /**
- * **Les règles en une minute** (#270) : les lignes d'`AGENTS.md` §4 qu'un nouvel inscrit
+ * **Les règles en une minute** (#270) : les lignes d'`docs/JEU.md` §4 qu'un nouvel inscrit
  * doit connaître avant de jouer, en étapes courtes — pas un manuel.
  *
  * **Aucun chiffre n'est écrit ici.** Chaque volume vient de sa source : `@/game/rules`

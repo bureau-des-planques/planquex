@@ -3,7 +3,7 @@
 > COMEX acté par **D-018** : le miroir de référence est *Pokémon TCG Pocket*
 > **dans son état de 2026**, et non la version de lancement (A1, octobre 2024).
 > Vérification documentaire du **19/10/2026**, par recherche sourcée. Les valeurs du
-> standard restent `AGENTS.md` §4.
+> standard restent `docs/JEU.md` §4.
 
 ## 0. COMEX retenu, et ce qui en a été exclu
 
@@ -50,7 +50,7 @@ de café** et son ordre aléatoire ; la **main de départ à 5** ; la règle « 
 slot du haut est occupé » ; la **reprise de poste** (absente). Citations :
 `docs/preuves/regles-2026-10-20/README.md` §2.
 
-### ⚠️ Trois écarts entre `AGENTS.md` §4 et les captures
+### ⚠️ Trois écarts entre `docs/JEU.md` §4 et les captures
 
 Une capture qui **contredit** `§4` vaut plus qu'une qui la confirme : elle évite
 d'implémenter une règle inventée. Trois points appellent une **décision datée**.
@@ -105,7 +105,7 @@ aucune règle de base. C'est bien la capture qui fait la preuve : `docs/PROTOCOL
 |---|---|---|---|
 | 1 | **Méga-Évolution ex = 3 Interventions** | « Mega Absol ex gives **three points** upon being Knocked Out—immediately losing you the game » | Pokémon.com, 26/11/2025 |
 | 2 | **Vulnérabilité ×2 possible** | Le Lieu **Bounded Field** (série B3) fait passer la Faiblesse de +20 à ×2. Exemple officiel : « 50 × 2 – 20 = 80 » | FAQ officielle (astuces) |
-| 3 | **Pokémon à double type** | « Dual-type Pokémon will also be debuting in the new series » → casse l'hypothèse « une faction = un type » de `AGENTS.md` §3.2 | Lettre aux producteurs, 15/10/2026 |
+| 3 | **Pokémon à double type** | « Dual-type Pokémon will also be debuting in the new series » → casse l'hypothèse « une faction = un type » de `docs/JEU.md` §3.2 | Lettre aux producteurs, 15/10/2026 |
 | 4 | **Outils et Lieux existent dans le jeu de référence** | Le libellé « extensions ultérieures » est un **choix de périmètre**, pas une description du miroir | Pokémon.com (Rocky Helmet, Giant Cape) ; FAQ (Stade Bounded Field) |
 
 ⚠️ **Piège sur l'écart 2** : la seule mention *officielle* de la Faiblesse sur le web
@@ -113,7 +113,7 @@ passe par cet exemple **avec le Lieu en jeu**. Elle ne prouve **pas** que la rè
 base soit ×2. Le « +20 » de base n'est attesté que par des wikis de fans.
 
 ⚠️ **Écart 1** : un COMEX à 3 Interventions n'existe pas dans `src/data/types.ts`. La phrase
-« aucune valeur mathématique ne change » (`AGENTS.md` §4) est donc **fausse en 2026**
+« aucune valeur mathématique ne change » (`docs/JEU.md` §4) est donc **fausse en 2026**
 tant que l'écart n'est pas traité.
 
 ## 4. À vérifier — aucun arbitrage possible aujourd'hui
@@ -168,7 +168,7 @@ Code du même moteur (niveau 3, mais vérifiable) — `src/state/mod.rs`, `src/d
 ## 6. Prochaine action vérifiable
 
 1. ~~Trancher O-014~~ : **fait** (D-034) — 1 attachement par tour, le moteur était déjà juste.
-2. **Intégrer ou exclure** explicitement les écarts du §3 dans `AGENTS.md` §4 et
+2. **Intégrer ou exclure** explicitement les écarts du §3 dans `docs/JEU.md` §4 et
    `src/data/types.ts` (une décision datée par écart).
 3. **Coder le plafond des 3 types de café** (établi par la recherche, D-034) : chaîne du café typé
    #61 → #33 → #35. Plus aucune capture n'est requise pour §4.

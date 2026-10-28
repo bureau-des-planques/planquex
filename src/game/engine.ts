@@ -37,7 +37,7 @@ import { CAMP_NAME, CAMP_SUJET, cafeLabel } from '@/data/vocabulaire';
 let uidCounter = 0;
 
 /**
- * Premier tour d'un joueur : impossible d'y faire évoluer (AGENTS.md §4).
+ * Premier tour d'un joueur : impossible d'y faire évoluer (docs/JEU.md §4).
  *
  * Le **premier joueur** est tiré au sort (D-033 (6)) et son tout premier tour est le
  * tour 1 ; le second joueur joue donc son premier tour au tour 2. Un tour de table
@@ -67,7 +67,7 @@ export function isOpeningTurn(state: BattleState): boolean {
 }
 
 /**
- * Vrai quand une **décision** attend : une relève (un Poste a craqué, AGENTS.md §4) ou un
+ * Vrai quand une **décision** attend : une relève (un Poste a craqué, docs/JEU.md §4) ou un
  * **choix** du joueur (D-076). Tant que c'est vrai, aucune action du tour n'est acceptée :
  * il faut résoudre la décision d'abord. Une seule garde pour toutes les transitions.
  */
@@ -486,7 +486,7 @@ export function retreat(state: BattleState, benchIndex: number): BattleState {
   const card = getCard(player.active.cardId);
   if (!isPlanque(card) || player.active.energy.length < card.retreat) return state;
   // Le café n'est **pas consommé** par une Pression, mais la Rotation défausse
-  // autant de cafés que son coût (`AGENTS.md` §4). Les cafés sont typés
+  // autant de cafés que son coût (`docs/JEU.md` §4). Les cafés sont typés
   // (D-037) : le tirage des premiers de la liste est un choix **au nombre** —
   // le coût de Rotation n'est pas un coût typé.
   discardFirstCafes(player.active, card.retreat);
@@ -658,7 +658,7 @@ export function attackDamage(
 }
 
 /**
- * Défausse les **premiers** cafés d'une instance (au nombre, `AGENTS.md` §4) : le
+ * Défausse les **premiers** cafés d'une instance (au nombre, `docs/JEU.md` §4) : le
  * coût de Rotation défausse autant de cafés, et l'effet `discardEnergy` un seul.
  * Les cafés ne sont pas des cartes : ils disparaissent, sans rejoindre le Rebut.
  * Le choix `premiers de la liste` est déterministe ; un choix manuel du café
@@ -1003,7 +1003,7 @@ function applyEffects(
 }
 
 /**
- * Effets d'une carte Action jouée depuis la main (`AGENTS.md` §4).
+ * Effets d'une carte Action jouée depuis la main (`docs/JEU.md` §4).
  *
  * Les cartes Action se résolvent avec les mêmes primitives que les Pressions, mais sans
  * attaquant : `healAll` et `draw` visent le camp qui joue, `status` et `discardEnergy`
@@ -1056,7 +1056,7 @@ function applyActionEffects(state: BattleState, who: PlayerId, effects: AttackEf
 /**
  * Une carte Action est-elle jouable maintenant ?
  *
- * Règles (`AGENTS.md` §4) : un **Objet** est **illimité** dans le tour ; un **Collègue**
+ * Règles (`docs/JEU.md` §4) : un **Objet** est **illimité** dans le tour ; un **Collègue**
  * est limité à **1 par tour**. La carte doit être en main et ne pas être un Planqué.
  */
 export function canPlayAction(state: BattleState, uid: string): boolean {
@@ -1071,7 +1071,7 @@ export function canPlayAction(state: BattleState, uid: string): boolean {
 
 /**
  * Jouer une carte Action depuis la main : elle part au Rebut et son effet se résout.
- * Objet illimité, Collègue 1 par tour (`AGENTS.md` §4). Le premier joueur peut jouer un
+ * Objet illimité, Collègue 1 par tour (`docs/JEU.md` §4). Le premier joueur peut jouer un
  * Collègue à son premier tour — §4 ne l'en prive pas, contrairement au café (D-030).
  */
 export function playAction(state: BattleState, uid: string): BattleState {
