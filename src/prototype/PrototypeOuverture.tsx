@@ -34,12 +34,15 @@ function cleInitiale(): Cle {
 declare global {
   interface Window {
     /** Les sondes du banc : c'est par elles qu'une planche de frames règle l'état et le relit. */
-    __ouverture?: { jouer: () => void; etat: () => { creux: number; cle: Cle; coutMs: number } };
+    __ouverture?: { jouer: () => void; etat: () => { creux: number; cle: Cle; coutMs: number; graine: number } };
   }
 }
 
 export function PrototypeOuverture() {
-  const pression = useMemo(() => new Pression(), []);
+  const pression = useMemo(() => {
+    const g = new URLSearchParams(window.location.search).get('graine');
+    return new Pression(g === null ? undefined : Number(g) >>> 0);
+  }, []);
   const base = useMemo(creerBase, []);
   const baseUrl = useMemo(() => base.toDataURL('image/png'), [base]);
   const [cle, setCle] = useState<Cle>(cleInitiale);
@@ -61,7 +64,12 @@ export function PrototypeOuverture() {
   useEffect(() => {
     window.__ouverture = {
       jouer: () => pression.jouer(),
-      etat: () => ({ creux: pression.etat.creux, cle: cleRef.current, coutMs: pression.coutMs })
+      etat: () => ({
+        creux: pression.etat.creux,
+        cle: cleRef.current,
+        coutMs: pression.coutMs,
+        graine: pression.graine
+      })
     };
     const lire = window.setInterval(
       () =>
@@ -135,7 +143,7 @@ export function PrototypeOuverture() {
         </label>
         <output className="proto-ouv__etat" data-etat>
           {courante.cle} · creux {lecture.creux.toFixed(2)} · point ({lecture.px.toFixed(2)} ; {lecture.py.toFixed(2)})
-          · rendu {lecture.cout.toFixed(2)} ms/image
+          · rendu {lecture.cout.toFixed(2)} ms/image · graine {pression.graine}
         </output>
       </div>
 

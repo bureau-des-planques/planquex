@@ -23,6 +23,15 @@ export class Pression {
   readonly etat: EtatPression = { px: 0.5, py: 0.55, creux: 0, cible: 0, vitesse: 0 };
   /** Réglage du banc, lu par le shader : plis en étoile (la cible E) plutôt qu'anneaux (le clip 0). */
   readonly options = { radial: false };
+  /** La graine du motif en cours : un appui = un tirage neuf, rejouable par `?graine=`. */
+  graine: number;
+  /** Les huit nombres du motif (0..1), tirés de la graine : le shader en fait des plis irréguliers. */
+  readonly motif = new Float32Array(8);
+
+  constructor(graineInitiale?: number) {
+    this.graine = graineInitiale ?? Math.floor(Math.random() * 1_000_000_000);
+    this.tirer();
+  }
   /** Temps moyen passé dans les écouteurs, en ms par image (moyenne glissante). */
   coutMs = 0;
   private readonly ecouteurs = new Set<Ecouteur>();
@@ -38,10 +47,25 @@ export class Pression {
   }
 
   appuyer(px: number, py: number): void {
+    // Un appui neuf n'a pas le motif du précédent : la graine avance d'un pas, le tirage suit.
+    this.graine = (Math.imul(this.graine, 1664525) + 1013904223) >>> 0;
+    this.tirer();
     this.etat.px = px;
     this.etat.py = py;
     this.etat.cible = 1;
     this.lancer();
+  }
+
+  /** Remplit `motif` avec un générateur seedé (mulberry32) : pas de `Math.random()` au tirage lui-même. */
+  private tirer(): void {
+    let a = this.graine >>> 0;
+    for (let i = 0; i < this.motif.length; i += 1) {
+      a = (a + 0x6d2b79f5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      this.motif[i] = ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
   }
 
   deplacer(px: number, py: number): void {

@@ -25,6 +25,8 @@ uniform vec2 u_p;
 uniform float u_c;
 uniform float u_aspect;
 uniform float u_radial;
+uniform vec4 u_m1;
+uniform vec4 u_m2;
 
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float bruit(vec2 p) {
@@ -35,12 +37,23 @@ float bruit(vec2 p) {
 }
 float hauteur(vec2 uv) {
   vec2 d = (uv - u_p) * vec2(u_aspect, 1.0);
-  float r = length(d);
-  float s = mix(0.17, 0.085, u_radial);
-  float creux = -u_c * mix(0.075, 0.05, u_radial) * exp(-r * r / (2.0 * s * s));
+  // Le creux n'est pas rond : tourné d'un angle tiré à l'appui et étiré d'un rapport tiré aussi.
+  float a0 = u_m2.z * 6.28318;
+  vec2 dr = vec2(cos(a0) * d.x + sin(a0) * d.y, -sin(a0) * d.x + cos(a0) * d.y);
+  dr.x *= mix(1.0, 0.7 + 0.6 * u_m2.w, u_radial);
+  float r = length(dr);
+  float s = mix(0.17, 0.065, u_radial);
+  float profondeur = mix(1.0, 0.8 + 0.4 * u_m1.x, u_radial);
+  float creux = -u_c * mix(0.075, 0.062, u_radial) * profondeur * exp(-r * r / (2.0 * s * s));
   float anneaux = (1.0 - u_radial) * u_c * 0.0035 * sin(r * 95.0) * exp(-r * r / (2.0 * s * s * 1.4));
-  float ang = atan(d.y, d.x);
-  float etoile = u_radial * u_c * 0.0042 * cos(ang * 9.0 + 3.0 * bruit(vec2(ang * 2.0, 4.0))) * smoothstep(0.0, 0.05, r) * exp(-r * r / (2.0 * s * s * 3.0));
+  // Les plis : un bruit pris sur le cercle (sans couture), à fréquence, phase et amplitude tirées.
+  vec2 u = dr / max(r, 0.0001);
+  float lobes = bruit(u * 2.2 + u_m1.xy * 17.0) * 2.0 - 1.0;
+  float fins = bruit(u * (5.0 + 4.0 * u_m1.z) + vec2(u_m1.w, u_m2.x) * 23.0) * 2.0 - 1.0;
+  float menus = bruit(u * 13.0 + u_m2.xy * 31.0) * 2.0 - 1.0;
+  float pli = 0.9 * (0.5 * fins + 0.7 * lobes + 0.2 * menus);
+  float portee = s * (0.65 + 0.9 * bruit(u * 1.7 + u_m2.zw * 13.0));
+  float etoile = u_radial * u_c * 0.0024 * pli * smoothstep(0.0, 0.05, r) * exp(-r * r / (2.0 * portee * portee * 3.0));
   float plis = anneaux + etoile;
   float froisse = 0.004 * (bruit(uv * vec2(7.0, 11.0)) + 0.5 * bruit(uv * vec2(19.0, 27.0)));
   return creux + plis + froisse;
@@ -58,7 +71,7 @@ void main() {
   float env = smoothstep(-0.5, 0.6, n.x * 0.9 + n.y * 0.6);
   vec3 col = base * (0.72 + 0.35 * diff);
   col += mix(vec3(0.30, 0.36, 0.48), vec3(0.9, 0.95, 1.0), env) * (1.0 - n.z) * 1.1;
-  col += spec * vec3(0.85, 0.93, 1.0) * (0.35 + 0.65 * clamp(u_c, 0.0, 1.0));
+  col += spec * vec3(0.85, 0.93, 1.0) * (0.35 + 0.65 * clamp(u_c, 0.0, 1.0)) * mix(1.0, 0.5, u_radial);
   o = vec4(col, 1.0);
 }`;
 
@@ -112,6 +125,8 @@ export function VarianteB({ pression, base }: Props) {
       const uP = gl.getUniformLocation(prog, 'u_p');
       const uC = gl.getUniformLocation(prog, 'u_c');
       const uR = gl.getUniformLocation(prog, 'u_radial');
+      const uM1 = gl.getUniformLocation(prog, 'u_m1');
+      const uM2 = gl.getUniformLocation(prog, 'u_m2');
       gl.uniform1i(gl.getUniformLocation(prog, 'u_tex'), 0);
       gl.uniform1f(gl.getUniformLocation(prog, 'u_aspect'), LARGEUR / HAUTEUR);
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -120,6 +135,9 @@ export function VarianteB({ pression, base }: Props) {
         gl.uniform2f(uP, e.px, e.py);
         gl.uniform1f(uC, e.creux);
         gl.uniform1f(uR, pression.options.radial ? 1 : 0);
+        const m = pression.motif;
+        gl.uniform4f(uM1, m[0], m[1], m[2], m[3]);
+        gl.uniform4f(uM2, m[4], m[5], m[6], m[7]);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       });
       return () => {
