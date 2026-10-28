@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALL_SUPPORT_CARDS, SUPPORT_CARDS, SUPPORT_VARIANTS } from '@/data/support';
 import { ALL_CARDS, CARD_BY_ID, FACTION_META, getCard, isPlanque, vivierOf } from '@/data';
+import { damageBand } from '@/game/curves';
 import type { PlanqueCard } from '@/data/types';
 
 /**
@@ -87,5 +88,45 @@ describe('Support — ligne et COMEX (D-020)', () => {
     for (const variant of SUPPORT_VARIANTS.filter(isPlanque)) {
       expect(variant.ex, variant.id).toBeUndefined();
     }
+  });
+});
+
+/**
+ * **La lecture de bande** (#412, D-021, D-134 (2)).
+ *
+ * Mesurée, la faction lisait le **plancher** de chaque bande : 10 dégâts à 1 café (bas de
+ * 10–30), 40 à 2 cafés (bas de 40–80). Elle perdait alors **toutes** ses parties décidées
+ * contre cinq archétypes (27,5 %, hors bande de D-134 (2)) — le plancher n'est pas une
+ * identité de faction, c'est une carte qui n'utilise pas sa bande.
+ *
+ * Le contrôle porte sur un **prédicat nommé** pour qu'un test « le contrôle mord » puisse le
+ * confronter aux valeurs d'avant #412 : une assertion qui ne peut pas échouer ne garde rien
+ * (AGENTS.md §6).
+ */
+const auDessusDuPlancher = (damage: number, cout: number): boolean => {
+  const band = damageBand(cout);
+  if (!band) return false;
+  return damage > band[0];
+};
+
+describe('Support — la lecture de bande (#412, D-021)', () => {
+  const PRESSIONS = SUPPORT_CARDS.flatMap((card) =>
+    card.attacks.map((attack) => ({ card, attack, cout: attack.cost.length }))
+  );
+
+  it('ne lit plus le plancher de sa bande sur aucune Pression', () => {
+    for (const { card, attack, cout } of PRESSIONS) {
+      expect(auDessusDuPlancher(attack.damage, cout), `${card.id}/${attack.name} à ${cout} café(s)`).toBe(true);
+    }
+  });
+
+  it('le contrôle mord : les valeurs d’avant #412 sont refusées', () => {
+    // 10 à 1 café et 40 à 2 cafés : exactement le bas des bandes 10–30 et 40–80.
+    expect(auDessusDuPlancher(10, 1)).toBe(false);
+    expect(auDessusDuPlancher(40, 2)).toBe(false);
+    expect(auDessusDuPlancher(20, 1)).toBe(true);
+    expect(auDessusDuPlancher(70, 2)).toBe(true);
+    // Un coût que la table ne couvre pas ne passe pas par accident.
+    expect(auDessusDuPlancher(100, 9)).toBe(false);
   });
 });

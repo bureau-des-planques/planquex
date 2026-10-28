@@ -1,4 +1,6 @@
-import type { Faction } from '@/data/types';
+import { CARD_BY_ID, isPlanque } from '@/data';
+import type { CafeSymbol, Faction, PlanqueCard } from '@/data/types';
+import { deckCafeTypes } from '@/game/deck';
 import type { Politique } from '@/game/ia';
 import {
   DEFAULT_MAX_TURNS,
@@ -123,6 +125,42 @@ export interface ArchetypeAgrege {
   horsBande: boolean;
 }
 
+/**
+ * La **forme** du Deck d'un archétype (ticket #412).
+ *
+ * Un écart entre deux archétypes se lit d'abord ici : un Deck qui ne porte **aucun** N+2 n'a
+ * pas de réponse à un COMEX à 180 de Seuil, quelle que soit la courbe de ses Pressions. La
+ * table publiait le **résultat** sans publier le **Deck** ; ce bloc publie l'objet mesuré.
+ */
+export interface FormeDeck {
+  faction: Faction;
+  /** Cartes effectivement dans le Deck d'archétype (20 par construction). */
+  cartes: number;
+  entrants: number;
+  n1: number;
+  n2: number;
+  /** Les COMEX du Deck : chacun vaut deux Interventions, donc le Deck en porte la menace. */
+  comex: number;
+  actions: number;
+  /** Le plus haut Seuil du Deck : le plafond que l'archétype peut opposer. */
+  seuilMax: number;
+  /** Les noms distincts (Deck de 20 cartes, deux exemplaires par nom au plus). */
+  noms: number;
+  /** Les Pressions que le Deck porte (une par Pression de chaque carte). */
+  pressions: number;
+  /**
+   * Les Pressions **payables** avec les types de café du Deck (D-037) : un symbole typé
+   * exige un café de son type, l'incolore accepte tout. C'est la mesure qui a désigné
+   * INTERIM en #412 — 12 sur 28, et le COMEX ne pouvait pas attaquer.
+   */
+  payables: number;
+}
+
+/** Une Pression est-elle payable avec ces types de café (D-037) ? */
+export function pressionPayable(cost: readonly CafeSymbol[], types: readonly string[]): boolean {
+  return cost.every((symbol) => symbol === 'INCOLORE' || types.includes(symbol));
+}
+
 export interface RapportArchetypes {
   graine: number;
   politique: Politique;
@@ -133,8 +171,40 @@ export interface RapportArchetypes {
   seuilAlerte: number;
   paires: LigneArchetype[];
   archetypes: ArchetypeAgrege[];
+  /** La forme des Decks mesurés, dans l'ordre des factions (#412). */
+  decks: FormeDeck[];
   /** Les affrontements à corriger avant la beta, du plus déséquilibré au moins. */
   alertes: LigneArchetype[];
+}
+
+/** La forme d'un Deck d'archétype, lue dans le catalogue (`CARD_BY_ID`). */
+export function formeDeck(faction: Faction, deck: readonly string[]): FormeDeck {
+  const planques: PlanqueCard[] = [];
+  let actions = 0;
+  for (const id of deck) {
+    const card = CARD_BY_ID.get(id);
+    if (card && isPlanque(card)) planques.push(card);
+    else actions += 1;
+  }
+  const auStade = (stage: PlanqueCard['stage']) => planques.filter((card) => card.stage === stage).length;
+  // Les types que la partie utilise réellement : la table explicite du harnais (#113)
+  // quand l'archétype en a besoin, la dérivation du Deck sinon — exactement ce que
+  // `mesurerArchetypes` passe à `createBattle`.
+  const types = factionCafeTypes(faction) ?? deckCafeTypes(deck);
+  const pressions = planques.flatMap((card) => card.attacks);
+  return {
+    faction,
+    cartes: deck.length,
+    entrants: auStade('ENTRANT'),
+    n1: auStade('N+1'),
+    n2: auStade('N+2'),
+    comex: planques.filter((card) => card.ex === true).length,
+    actions,
+    seuilMax: planques.reduce((max, card) => Math.max(max, card.hp), 0),
+    noms: new Set(deck).size,
+    pressions: pressions.length,
+    payables: pressions.filter((attack) => pressionPayable(attack.cost, types)).length
+  };
 }
 
 export interface OptionsMesureArchetypes {
@@ -251,6 +321,7 @@ export function mesurerArchetypes(options: OptionsMesureArchetypes = {}): Rappor
     seuilAlerte,
     paires: lignes,
     archetypes,
+    decks: factions.map((faction) => formeDeck(faction, decks.get(faction) ?? [])),
     alertes: lignes.filter((ligne) => ligne.alerte).sort((x, y) => y.ecart - x.ecart || (x.a < y.a ? -1 : 1))
   };
 }
@@ -275,6 +346,23 @@ export function formatTableArchetypes(rapport: RapportArchetypes): string {
     lignes.push(
       `| ${ligne.faction} | ${ligne.parties} | ${ligne.victoires} | ${ligne.decidees} | ${pourcent(ligne.taux)} | ` +
         `${pourcent(ligne.intervalle[0])} – ${pourcent(ligne.intervalle[1])} | ${ligne.horsBande ? '**hors bande**' : 'dans la bande'} |`
+    );
+  }
+
+  lignes.push(
+    '',
+    '### La forme des Decks mesurés',
+    '',
+    'Un écart se lit d’abord ici : un Deck sans N+2 n’a pas de réponse à un COMEX de 180 de Seuil,',
+    'et un Deck dont les Pressions ne sont pas payables par ses trois types de café (D-037) ne peut pas attaquer.',
+    '',
+    '| Archétype | Cartes | Entrants | N+1 | N+2 | COMEX | Actions | Noms | Seuil max | Pressions payables |',
+    '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|'
+  );
+  for (const deck of rapport.decks) {
+    lignes.push(
+      `| ${deck.faction} | ${deck.cartes} | ${deck.entrants} | ${deck.n1} | ${deck.n2} | ${deck.comex} | ` +
+        `${deck.actions} | ${deck.noms} | ${deck.seuilMax} | ${deck.payables} / ${deck.pressions} |`
     );
   }
 
