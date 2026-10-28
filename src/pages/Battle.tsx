@@ -1736,12 +1736,12 @@ export function Battle() {
             420 × 900. Les deux ne tiennent pas ensemble : les 16 px d'inset font tomber la marge à
             14 px (mesuré le 28/10/2026). La marge protège le pouce, l'inset est cosmétique —
             c'est la marge qui gagne, et la règle se tait ici plutôt que de rougir une fois sur deux. */}
-        <section
-          className="combat-barre"
-          aria-label="Actions du tour"
-          data-impeccable-ignore="cramped-padding"
-          data-pas-a-pas={pasAPas.designe('poste-actions')}
-        >
+      <section
+        className="combat-barre"
+        aria-label="Actions du tour"
+        data-impeccable-ignore="cramped-padding"
+        data-pas-a-pas={pasAPas.designe('poste-actions')}
+      >
         {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
             qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
             information temporaire n'a pas à occuper une bande de plus. */}
