@@ -21,7 +21,7 @@ import type { Attack, BattleState, Card, PlanqueCard } from '@/data/types';
  * (rules.ts) — et le moteur n'en déphase aucun appel : les Pressions listées
  * (`legalAttacks`), exécutées (`attack`) et prévisualisées (`attackPreview`)
  * répondent pareil. La **Rotation**, elle, reste le seul paiement **au nombre** de
- * cafés (`AGENTS.md` §4) : son coût n'est pas un coût typé.
+ * cafés (`docs/JEU.md` §4) : son coût n'est pas un coût typé.
  */
 const SEED = 5;
 

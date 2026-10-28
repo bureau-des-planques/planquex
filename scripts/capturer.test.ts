@@ -236,6 +236,21 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     expect(plan.gabarits.map(({ viewport }) => viewport)).toEqual(attendus);
   });
 
+  it("capture l'ouverture d'un Arrivage, et refuse une scène qui ne se révèle pas", () => {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const plan = JSON.parse(
+      execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
+    ) as { preparations: { slug: string; route: string }[] };
+    // Une scène qu'aucune capture ne regarde est une scène que personne ne juge : c'est là que
+    // trois défauts de rendu se sont succédé sans témoin (#283, rétro du 28/10/2026).
+    expect(plan.preparations.map(({ slug }) => slug)).toContain('arrivage');
+    const source = read('scripts/capturer.mjs');
+    expect(source).toContain('.ouverture[data-etape="revelation"]');
+    expect(source).toContain('[data-tout-afficher]');
+  });
+
   it('joue les gardes de hauteur sur chaque gabarit, à sa taille', () => {
     const source = read('scripts/capturer.mjs');
     // Sans ce lien, un gabarit serait photographié mais jugé à 420 × 900 — ou pas jugé du tout.

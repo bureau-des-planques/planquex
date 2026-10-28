@@ -82,7 +82,7 @@ son rôle, sinon il perdrait la vue des salons cachés).
 Le règlement épinglé dans `#règles` le 27/10/2026, tel qu'il est écrit sur le serveur. Si le
 salon est recréé, coller **ce** texte (les mentions deviennent des liens de salon) et
 l'épingler. Ce sont les règles du **serveur** : elles ne remplacent pas celles du jeu, qui vivent
-dans `AGENTS.md` §4.
+dans `docs/JEU.md` §4.
 
 ```text
 📜 Règlement intérieur

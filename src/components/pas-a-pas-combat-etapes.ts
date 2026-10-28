@@ -13,7 +13,7 @@ import { MOTS_PAR_MINUTE } from '@/components/journee-etapes';
  * contour : une étape qui désignerait un élément disparu échoue là-bas, pas sur une
  * capture.
  *
- * Les textes emploient le vocabulaire du jeu (`AGENTS.md` §3) et aucun mot interdit.
+ * Les textes emploient le vocabulaire du jeu (`docs/JEU.md` §3) et aucun mot interdit.
  * Le plafond de lecture vient du ticket : **trente secondes par étape**.
  * `secondesDeLecture` est exporté pour que le test le **mesure** au lieu de le croire,
  * et il réutilise la vitesse de la Journée d'intégration : une seule définition de

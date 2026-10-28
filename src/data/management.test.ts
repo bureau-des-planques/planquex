@@ -4,7 +4,7 @@ import { ALL_CARDS, isPlanque, vivierOf } from '@/data';
 /**
  * Contrôle de la faction **Management** (`MGT`), issue #15.
  * Le nombre cible vient de `docs/PROPOSITION.md` §4.3 (28 entrées, variantes incluses) ;
- * le vivier de `AGENTS.md` §3.2 et D-026.
+ * le vivier de `docs/JEU.md` §3.2 et D-026.
  */
 const MANAGEMENT = ALL_CARDS.filter((card) => isPlanque(card) && card.faction === 'MANAGEMENT');
 

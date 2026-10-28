@@ -3,10 +3,10 @@ import type { ActionCard } from './types';
 /**
  * Cartes Action du lancement : **8 Collègues** et **3 Objets** (`CARD-SPEC.md` §1,
  * `D-005`). Elles se jouent depuis la main puis partent au Rebut : un **Objet** est
- * illimité par tour, un **Collègue** une fois par tour (`AGENTS.md` §4).
+ * illimité par tour, un **Collègue** une fois par tour (`docs/JEU.md` §4).
  *
  * Conventions d'écriture : `D-027` (un Objet est **NEUF** ou **MRO**, la flavour est une
- * scène de site dont la chute vise le système) et `AGENTS.md` §5 (primitives d'effet
+ * scène de site dont la chute vise le système) et `docs/JEU.md` §5 (primitives d'effet
  * existantes uniquement). Les huit Collègues couvrent huit factions ; l'Atelier et
  * l'Intérim n'en ont pas, leurs cartes Action du lancement sont des Objets.
  */
@@ -164,7 +164,7 @@ export const ACTION_CARDS: ActionCard[] = [
 /**
  * Variante d'une carte Action — même motif que `sse.ts` : une autre apparence de la
  * **même** carte. Le nom, le texte, les effets et, s'il existe, l'`itemKind` sont
- * hérités de la base (`AGENTS.md` §5) ; seuls l'identifiant (`-star` / `-star2`) et
+ * hérités de la base (`docs/JEU.md` §5) ; seuls l'identifiant (`-star` / `-star2`) et
  * la rareté changent.
  *
  * **L'illustration ne s'hérite pas** (D-139), comme pour les Planqués : `art` est écarté,

@@ -2,7 +2,7 @@ import { POINTS_TO_WIN } from '@/game/rules';
 
 /**
  * La piste d'Interventions (D-093, #190) : le score du combat, en hexagones, à la place de
- * `★★☆`. Une étoile est une **rareté** (`1S`, `2S`, `3S`, `AGENTS.md` §3) ; un hexagone ne
+ * `★★☆`. Une étoile est une **rareté** (`1S`, `2S`, `3S`, `docs/JEU.md` §3) ; un hexagone ne
  * se confond avec aucune rareté, et il se lit d'un coup d'œil à 420 px.
  *
  * Trois hexagones par camp, remplis **dans l'ordre** : les premiers sont acquis, en or. Chacun

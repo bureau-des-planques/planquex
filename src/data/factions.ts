@@ -1,7 +1,7 @@
 import type { Faction, Vivier } from './types';
 
 /**
- * L'identité d'une faction, déclarée **une seule fois** (`AGENTS.md` §3.2).
+ * L'identité d'une faction, déclarée **une seule fois** (`docs/JEU.md` §3.2).
  *
  * Ce module vit **au-dessus** des fichiers de faction : les dix fichiers
  * `src/data/<faction>.ts` construisent leurs cartes au chargement du module, donc
@@ -17,7 +17,7 @@ export interface FactionMeta {
   glyph: string;
   vivier: Vivier;
   /**
-   * Vulnérabilité (+20, `AGENTS.md` §3.2) : **unique** source de ce champ. Une carte
+   * Vulnérabilité (+20, `docs/JEU.md` §3.2) : **unique** source de ce champ. Une carte
    * Planqué ne le déclare pas, elle l'hérite de sa faction. `null` = aucune, comme
    * l'Intérim.
    */

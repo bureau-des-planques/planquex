@@ -53,6 +53,11 @@ migrations de store, au moteur et aux revues de session. Le reste reste gratuit.
 
 ### Appeler `subagent` — `model` explicite, repli, `sessionID`
 
+**Le prompt se rend par `npm run dispatch -- --ticket N --decision`** (rétro du 28/10/2026,
+`docs/agents/dispatch.md`) : worktree absolu, branche, corps du ticket, zones, définition de
+fini, numéro de décision réservé. 74 dispatchs écrits à la main sur la période, dont les
+oublis se payaient en messages de rattrapage.
+
 Mesuré du 23 au 26/10/2026 (94 appels `subagent`) :
 
 - **Toujours passer `model`.** Sans lui, l'agent prend le modèle lié à son profil, c'est-à-dire le
@@ -139,7 +144,11 @@ seul coût, voir §6).
     absents pendant cinq minutes. `npm run installer` refuse le dépôt principal et refuse un
     `node_modules` qui est un lien symbolique vers lui (le geste des worktrees de comparaison :
     `ln -s …/node_modules`, puis un `npm ci` qui viderait la cible). Un worktree de comparaison
-    en lecture seule garde son lien, et n'installe rien.
+    en lecture seule garde son lien, et n'installe rien. **Le geste est mécanique depuis le
+    28/10/2026** : `npm run worktree:nouveau -- <nom>` fait le fetch, le `git worktree add` et
+    l'installation **ensemble**, dans un dossier absolu
+    (`~/.local/share/opencode/worktree/<dépôt>/<nom>`). 14 sorties d'erreur citaient encore
+    `prettier` ou `vitest` manquants du 26 au 28/10 : la règle écrite ne suffisait pas.
 11. **Éditer par remplacement ciblé, jamais en réécrivant un fichier entier** (#258) : ancrer le
     passage, élargir l'ancre si elle n'est pas unique, lire une **plage** plutôt que le fichier.
     Une réécriture complète **écrase la modification d'un autre agent** entre la lecture et

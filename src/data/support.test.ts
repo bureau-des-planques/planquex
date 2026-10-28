@@ -41,7 +41,7 @@ describe('Support — enregistrement (ticket #23)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `support-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `support-` (docs/JEU.md §5)', () => {
     for (const card of ALL_SUPPORT_CARDS) {
       expect(card.id, card.id).toMatch(/^support-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('SUPPORT');

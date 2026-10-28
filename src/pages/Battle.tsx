@@ -343,7 +343,7 @@ interface ActionView {
 /**
  * Le libellé d'une action, **à partir de l'action seule** : l'écran n'a pas de liste
  * écrite à la main, donc une transition ajoutée au moteur apparaît ici sans être
- * oubliée (ticket #58). Les noms viennent du vocabulaire d'`AGENTS.md` §3.
+ * oubliée (ticket #58). Les noms viennent du vocabulaire d'`docs/JEU.md` §3.
  *
  * `myCamp` sert aux deux libellés qui nomment un camp — la relève et la fin de tour
  * (#125) : en solo il vaut `player`, donc le texte d'avant ne bouge pas.

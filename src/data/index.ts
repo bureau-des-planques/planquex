@@ -36,7 +36,7 @@ export function isPlanque(card: Card | undefined): card is PlanqueCard {
 
 /**
  * Vrai pour un **Planqué Entrant** : le seul qu'on peut poser au Poste, et l'unique
- * exigence légale d'un Deck (`AGENTS.md` §4). Prédicat unique — il était recopié dans
+ * exigence légale d'un Deck (`docs/JEU.md` §4). Prédicat unique — il était recopié dans
  * le moteur, le Deck, la simulation et l'UI.
  */
 export function isBasic(card: Card | undefined): card is PlanqueCard {
@@ -53,7 +53,7 @@ export const CARD_BY_ID = new Map(ALL_CARDS.map((card) => [card.id, card]));
 /**
  * L'identité des factions vit dans `./factions` : les fichiers de faction la lisent au
  * chargement, avant que ce module agrégateur n'ait fini de s'évaluer. Ré-export pour que
- * les appelants continuent d'importer `FACTION_META` depuis `@/data` (`AGENTS.md` §3.2).
+ * les appelants continuent d'importer `FACTION_META` depuis `@/data` (`docs/JEU.md` §3.2).
  */
 export { FACTION_META };
 
@@ -91,7 +91,7 @@ export const RARITY_META: Record<Rarity, { label: string; color: string; order: 
 
 /**
  * Nature d'une carte Action, pour l'affichage (Objet / Collègue). `rule` est la règle de
- * pose du tour (`AGENTS.md` §4) : elle est dite ici une fois, pas dans chaque écran.
+ * pose du tour (`docs/JEU.md` §4) : elle est dite ici une fois, pas dans chaque écran.
  */
 export const ACTION_KIND_META: Record<ActionCard['kind'], { label: string; short: string; rule: string }> = {
   OBJET: { label: 'Objet', short: 'OBJ', rule: 'Utilisable autant de fois que voulu dans le tour.' },

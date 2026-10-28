@@ -17,7 +17,7 @@ import {
  * endroits où un testeur la cherche —, et se referme par la croix que porte le dialogue.
  *
  * Ce n'est **pas** un second tutoriel : la Journée d'intégration (#130) et le pas-à-pas du
- * combat (#143) restent ce qu'ils sont. Ici, on lit les lignes d'`AGENTS.md` §4 qui décident
+ * combat (#143) restent ce qu'ils sont. Ici, on lit les lignes d'`docs/JEU.md` §4 qui décident
  * d'une partie, et le dernier écran propose le **combat guidé** (#272) à qui veut jouer.
  *
  * Les textes viennent de `regles-etapes.ts`, les chiffres de leurs sources : rien n'est

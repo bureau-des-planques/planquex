@@ -87,7 +87,7 @@ export interface AttackEffect {
 export type Keyword = 'priorityShift';
 
 /**
- * Type d'un **café** (l'énergie du projet, `AGENTS.md` §3.1) : celui d'une **faction**
+ * Type d'un **café** (l'énergie du projet, `docs/JEU.md` §3.1) : celui d'une **faction**
  * (§3.2). `SSE` = Plante, `MANAGEMENT` = Feu… Ces types sont ceux que la Machine à café
  * peut **produire** ; `INTERIM` (Dragon) et `SUPPORT` (Incolore) n'en produisent jamais
  * (D-034).
@@ -160,7 +160,7 @@ export interface Ability {
 /**
  * Nature de la carte. Un **Planqué** se pose au Poste ou au Banc ; une **carte Action**
  * se joue depuis la main puis part au Rebut : **Objet** (illimité par tour) ou
- * **Collègue** (1 par tour) — `AGENTS.md` §4.
+ * **Collègue** (1 par tour) — `docs/JEU.md` §4.
  */
 export type CardKind = 'PLANQUE' | 'OBJET' | 'COLLEAGUE';
 
@@ -195,7 +195,7 @@ export interface PlanqueCard extends CardBase {
 
 /**
  * Une carte Action. Les effets réutilisent les primitives d'attaque (`AttackEffect`) :
- * aucune primitive maison n'est ajoutée (`AGENTS.md` §5).
+ * aucune primitive maison n'est ajoutée (`docs/JEU.md` §5).
  */
 export interface ActionCard extends CardBase {
   kind: 'OBJET' | 'COLLEAGUE';
@@ -263,7 +263,7 @@ export interface PlayerState {
   hasUsedAbility: boolean;
   /** « Changement de priorité » (D-004) : une fois par tour. */
   hasUsedPriorityShift: boolean;
-  /** Collègue : 1 par tour (`AGENTS.md` §4). Les Objets restent illimités. */
+  /** Collègue : 1 par tour (`docs/JEU.md` §4). Les Objets restent illimités. */
   hasPlayedSupporter: boolean;
 }
 
@@ -327,7 +327,7 @@ export type PendingChoice =
   /** Choisir le Planqué du Banc qui reçoit le café `cafe` (D-082). */
   | { kind: 'attacher'; who: PlayerId; cafe: CafeSymbol };
 
-/** Les quatre façons dont une partie s'arrête (`AGENTS.md` §4, #84). */
+/** Les quatre façons dont une partie s'arrête (`docs/JEU.md` §4, #84). */
 export type EndReason = 'interventions' | 'plateauVide' | 'forfait' | 'limiteDeTours';
 
 export interface BattleState {
@@ -354,7 +354,7 @@ export interface BattleState {
   endReason: EndReason | null;
   /**
    * Joueur dont le Poste vient de craquer et qui doit **choisir** sa relève
-   * (AGENTS.md §4, D-031 : la relève est choisie par le camp dont le Planqué a
+   * (docs/JEU.md §4, D-031 : la relève est choisie par le camp dont le Planqué a
    * craqué, et l'attaquant choisit en premier sur un double craquage). Tant que
    * ce champ est renseigné, aucune autre action n'est acceptée : il faut d'abord
    * trancher. `null` quand rien n'est en attente, ou quand le joueur n'a plus de

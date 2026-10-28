@@ -5,7 +5,7 @@ import { PACK_COMPOSITION } from '@/game/pack';
 /**
  * Les cartes qu'un Arrivage **peut** donner : celles dont la rareté figure dans une ligne
  * de `PACK_COMPOSITION`. Les raretés hautes (`3S`, `COU`) sont au catalogue mais ne sortent
- * d'aucun Arrivage (`AGENTS.md` §5, D-044) : sept cartes que personne ne peut tirer.
+ * d'aucun Arrivage (`docs/JEU.md` §5, D-044) : sept cartes que personne ne peut tirer.
  *
  * Dériver ce plafond de la **table de tirage** — et non d'un `293` écrit ici — le fait
  * suivre le jour où une ligne s'ouvre aux raretés hautes (#131, point 6).

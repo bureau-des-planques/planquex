@@ -630,7 +630,7 @@ describe('Statuts — exclusivité et portée (D-030)', () => {
     const active = player.active;
     const slot = player.bench.findIndex(Boolean);
     if (!active || slot < 0) throw new Error('Poste ou Banc vide');
-    // La rotation est payée **au nombre** de cafés (`AGENTS.md` §4) : une liste du
+    // La rotation est payée **au nombre** de cafés (`docs/JEU.md` §4) : une liste du
     // coût de relève suffit, sans exigence de type.
     const activeCard = getCard(active.cardId);
     if (!isPlanque(activeCard)) throw new Error('Carte inconnue');
@@ -878,7 +878,7 @@ describe('retreat() — Relève', () => {
     if (!benchCard) throw new Error('Banc vide');
 
     // On met assez de café sur le Planqué actif pour couvrir le coût de relève :
-    // la Rotation se paye **au nombre** de cafés (`AGENTS.md` §4).
+    // la Rotation se paye **au nombre** de cafés (`docs/JEU.md` §4).
     const activeCard = getCard(active.cardId);
     const retreatCost = isPlanque(activeCard) ? activeCard.retreat : 1;
     active.energy = Array(retreatCost).fill('SSE');
@@ -1043,7 +1043,7 @@ describe('attachEnergy() — Attachement de café', () => {
   });
 });
 
-describe('Cartes Action — Objet illimité, Collègue 1 par tour (AGENTS.md §4)', () => {
+describe('Cartes Action — Objet illimité, Collègue 1 par tour (docs/JEU.md §4)', () => {
   /** Trois cartes Action aux effets distincts, pour prouver chaque primitive. */
   const OBJET_SOIN = 'sse-trousse-secours'; // Objet MRO : soigne 10 de tous tes Planqués
   const OBJET_PIOCHE = 'amelioration-baie-test'; // Objet NEUF : pioche 2

@@ -11,7 +11,7 @@
  * phrases, `action` nomme le geste, et le pas de lecture est **mesuré** par le test
  * (`secondesDeLecture`) au lieu d'être supposé.
  *
- * Les textes emploient le vocabulaire du jeu (`AGENTS.md` §3) et aucun mot interdit.
+ * Les textes emploient le vocabulaire du jeu (`docs/JEU.md` §3) et aucun mot interdit.
  */
 export interface EtapeJournee {
   /** Le titre de l'étape : il devient le titre du dialogue. */

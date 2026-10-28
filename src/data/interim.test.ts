@@ -45,7 +45,7 @@ describe('Intérim — enregistrement (ticket #22)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `interim-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `interim-` (docs/JEU.md §5)', () => {
     for (const card of ALL_INTERIM_CARDS) {
       expect(card.id, card.id).toMatch(/^interim-[a-z0-9-]*$/);
       expect(card.faction, card.id).toBe('INTERIM');
@@ -60,7 +60,7 @@ describe('Intérim — enregistrement (ticket #22)', () => {
   });
 });
 
-describe('Intérim — Dragon sans faiblesse (AGENTS.md §3.2)', () => {
+describe('Intérim — Dragon sans faiblesse (docs/JEU.md §3.2)', () => {
   it('ne donne aucune vulnérabilité à la faction', () => {
     for (const card of ALL_INTERIM_CARDS.filter(isPlanque)) {
       expect(card.weakness, card.id).toBeNull();

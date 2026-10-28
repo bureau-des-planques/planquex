@@ -24,7 +24,7 @@ entre.
 
 Ce qui ne se négocie pas dans une PR, parce que c'est tranché ailleurs :
 
-- **Les règles du jeu** sont un miroir de TCG Pocket (`AGENTS.md` §4). Changer une règle, un mot du
+- **Les règles du jeu** sont un miroir de TCG Pocket (`docs/JEU.md` §4). Changer une règle, un mot du
   vocabulaire ou le périmètre demande une **décision datée**, pas un commit.
 - **Le jeu est en français** : interface, cartes, docs. Les identifiants de code restent en anglais.
 - **Le moteur est pur** : ni React ni DOM dans `src/game/`, et aucun `Math.random()` — le hasard
@@ -223,7 +223,7 @@ ou repartir de zéro — sur un fork, par exemple. Les réponses qui corresponde
 |---|---|---|
 | **A** — Issue tracker | où vivent les tickets ? | **GitHub** — `bureau-des-planques/planquex`, par `gh` |
 | **B** — Triage labels | garder les étiquettes par défaut ? | **oui** — les cinq états gardent leur nom ; catégories et étapes sont décrites dans `docs/agents/triage-labels.md` |
-| **C** — Domain docs | un contexte ou plusieurs ? | **un seul** (*single-context*) — le vocabulaire est `AGENTS.md` §3 |
+| **C** — Domain docs | un contexte ou plusieurs ? | **un seul** (*single-context*) — le vocabulaire est `docs/JEU.md` §3 |
 
 ⚠️ **Le setup écrit dans `CLAUDE.md` dès que ce fichier existe** — et il existe ici, pour Claude
 Code. Après une relance, remettre le bloc `## Agent skills` dans `AGENTS.md` §10 et laisser
@@ -235,7 +235,7 @@ Code. Après une relance, remettre le bloc `## Agent skills` dans `AGENTS.md` §
 |---|---|---|
 | ne pas savoir par où commencer | `ask-matt` | le skill et l'enchaînement qui conviennent |
 | trier ce qui est arrivé | `triage` | une issue qui avance d'un état, avec ses étiquettes |
-| clarifier une idée avant d'écrire | `grill-with-docs` | une idée tranchée, le vocabulaire de `AGENTS.md` §3 tenu |
+| clarifier une idée avant d'écrire | `grill-with-docs` | une idée tranchée, le vocabulaire de `docs/JEU.md` §3 tenu |
 | écrire le ticket | `to-spec`, puis `to-tickets` | une spec sur le tracker, puis des tickets avec leurs blocages |
 | un chantier qui dépasse une session | `wayfinder` | une carte de tickets de décision, résolus un par un |
 | faire le ticket | `implement` — qui enchaîne `tdd` et finit par `code-review` | du code testé sur sa branche |

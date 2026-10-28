@@ -9,7 +9,7 @@ import type { BattleState, Status } from '@/data/types';
 /**
  * Ticket #82 — **un seul lancer de tampon, `face` = succès**.
  *
- * Vocabulaire `AGENTS.md` §3.1 : **Lancer de tampon** — `pile` = **tampon**,
+ * Vocabulaire `docs/JEU.md` §3.1 : **Lancer de tampon** — `pile` = **tampon**,
  * `face` = **agrafe**. Source `docs/preuves/astuces-2026-10-20/README.md` §`07` :
  * « Si c'est **face**, le Pokémon est **guéri** » (Épuisement, Sieste) et
  * « Si c'est **face**, l'attaque fonctionne normalement » (Dérive).

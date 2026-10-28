@@ -106,7 +106,13 @@ const ROUTE_COMBAT = '/battle';
  * Liste à part, et non dans `PAGES` : « une page par route » reste vrai (le contrat de
  * `scripts/capturer.test.ts`), et `/battle` est déjà photographiée à son arrivée.
  */
-const PREPARATIONS = [{ slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' }];
+const PREPARATIONS = [
+  { slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' },
+  // L'ouverture d'un Arrivage (#283) n'existe à aucune arrivée de page : elle s'ouvre au clic
+  // sur l'accueil. C'est l'écran où trois défauts de rendu se sont succédé sans qu'aucune
+  // capture ne les voie (texte en miroir, pivot, 3D imbriquée, 28/10/2026).
+  { slug: 'arrivage', route: '/', amorce: true, preparation: 'arrivage' }
+];
 
 /** Attend le tour du joueur (« à toi ») — l'IA joue seule — puis le défilement d'arrivée (smooth). */
 async function arriveeAuTourDuJoueur(page) {
@@ -137,7 +143,7 @@ const MODELE_BADGE = {
   icone: { largeur: 12, hauteur: 12 },
   nom: 'status-chip__nom',
   masque: 'sr-only',
-  // Les **trois** Conditions qu'un même Poste peut porter ensemble (AGENTS.md §4) : Surcharge
+  // Les **trois** Conditions qu'un même Poste peut porter ensemble (docs/JEU.md §4) : Surcharge
   // et Épuisement se cumulent avec une Condition d'état — Immobilisation ici, la plus longue.
   statuts: [
     { code: 'SURCHARGE', nom: 'Surcharge' },
@@ -789,6 +795,39 @@ try {
       if (code.debordement > 0) {
         problems.push(`${slug} · la page déborde de ${code.debordement} px en largeur : la mise en page casse`);
       }
+    } else if (preparation === 'arrivage') {
+      // L'arrivage se prépare au geste du testeur : l'accueil, le bouton, puis la scène.
+      // On photographie les deux états qui comptent — cartes **face cachée**, puis
+      // **retournées** — et la garde échoue si l'un des deux n'est pas atteint : une
+      // capture d'un écran qui n'a pas fini de s'ouvrir ne prouve rien.
+      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+      await page.click('.hero__ouvrir');
+      await page.waitForSelector('.ouverture', { timeout: 15000 });
+      // Le sachet s'ouvre au geste : « Ouvrir » joue la déchirure sans glissement (le chemin
+      // accessible de la spec §5), puis l'envol porte les cartes à la révélation.
+      await page.click('[data-ouvrir]');
+      await page.waitForSelector('.ouverture[data-etape="revelation"]', { timeout: 30000 });
+      const cachees = await page.evaluate(() => ({
+        cartes: document.querySelectorAll('.ouverture__carte').length,
+        verso: document.querySelectorAll('.ouverture__carte[data-face="verso"]').length,
+        etape: document.querySelector('.ouverture')?.getAttribute('data-etape')
+      }));
+      if (cachees.cartes < 5 || cachees.verso < 5) {
+        problems.push(
+          `${slug} · la révélation ne montre pas cinq cartes face cachée (${cachees.cartes} cartes, ${cachees.verso} en verso)`
+        );
+      }
+      await page.screenshot({ path: join(outDir, `${slug}-face-cachee.png`), fullPage: PLEINE_PAGE });
+
+      await page.click('[data-tout-afficher]');
+      await page.waitForFunction(
+        () =>
+          document.querySelectorAll('.ouverture__carte').length > 0 &&
+          document.querySelectorAll('.ouverture__carte[data-face="verso"]').length === 0,
+        null,
+        { timeout: 15000 }
+      );
+      await page.waitForTimeout(1200);
     } else if (route === ROUTE_COMBAT) {
       // Le combat se photographie **à l'arrivée**, au tour du joueur (#170) : la graine de
       // la partie vient de l'horloge, donc on la fige (`page.clock`) pour une capture

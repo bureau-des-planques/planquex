@@ -70,7 +70,7 @@ export type RefusalKind =
 export interface Refusal {
   ok: false;
   kind: RefusalKind;
-  /** Phrase française, affichable telle quelle (vocabulaire d'`AGENTS.md` §3). */
+  /** Phrase française, affichable telle quelle (vocabulaire d'`docs/JEU.md` §3). */
   raison: string;
 }
 

@@ -6,7 +6,7 @@ import { FACTION_META } from './factions';
  * recopiaient — le constructeur de Planqué, la variante secrète, le dégradé et le glyphe.
  * Une faction ne déclare plus que ses cartes ; son identité est dans `./factions`.
  *
- * Le vocabulaire du jeu (`AGENTS.md` §3) ne change pas : ces noms sont ceux du code,
+ * Le vocabulaire du jeu (`docs/JEU.md` §3) ne change pas : ces noms sont ceux du code,
  * comme `PlanqueCard` et `isPlanque`.
  */
 
