@@ -84,7 +84,7 @@ renvoie la carte à sa place. Le badge « **Nouvelle** » apparaît au retournem
 
 ### 3.5 La fiche d'une carte
 
-Une carte **retournée** se touche pour ouvrir sa **fiche** : elle arrive en tournant sur elle-même,
+Une carte **retournée** se touche pour ouvrir sa **fiche** : elle arrive en pivotant de côté (moins de 90°, son dos ne se montre jamais),
 se tient sous le doigt (inclinaison et reflet), et à côté d'elle (écran large) ou en dessous
 (téléphone) **tout ce qu'elle porte en toutes lettres** — faction, nature, Seuil, Rotation, rareté,
 Talent, chaque Pression avec son coût et son texte entier, Vulnérabilité, flavour (`FicheCarte.tsx`,
