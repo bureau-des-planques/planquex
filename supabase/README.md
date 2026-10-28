@@ -20,6 +20,7 @@ s'appuyer dessus.
 | `supabase/migrations/0012_combats_pvp.sql` | la trace des parties à deux (#228, D-105) : `combats.mode` admet `'pvp'` à côté de `'solo'` — pas de colonne, pas de politique, pas de droit nouveau |
 | `supabase/migrations/0013_discord_comite.sql` | les annonces du mur dans `#comite` (#318, D-120) : la table `annonces_discord`, les deux déclencheurs qui **composent la phrase**, la couture `poster_discord(url, corps)`, la réconciliation de `pg_net`, la passe de dix, le secret lu dans **Vault**, le passé marqué `sans_webhook` — et **aucun privilège client** |
 | `supabase/migrations/0016_medaille_periode_essai.sql` | la « Médaille de la période d'essai » (#346, D-130 (3)) : `comptes.medaille_periode_essai` et sa date, la contrainte qui les lie — aucune fonction, aucun déclencheur, **aucun droit** : ce qui ferme ces deux colonnes au client est le `grant update (etat, raison)` **colonne par colonne** de la 0005, et c'est tout (une révocation de colonne ne retirerait rien — les trois lignes de la 0016 qui le prétendaient sont parties, #372) |
+| `supabase/migrations/0017_annonce_resume.sql` | l'annonce du post-it porte son **résumé** et ses **points** (#339, D-120) : `phrase_postit_neuf` prend le texte, le premier paragraphe est coupé à 200 et les lignes à puces (quatre au plus) à 100 ; un gueulage reste muet, un texte vide n'ajoute aucune ligne — aucune fonction `security definer` nouvelle, aucun droit client |
 | `supabase/migrations/0018_pgnet_et_fonctions_fermees.sql` | `pg_net` sort de `public` pour `extensions` (#341, D-133 (1), D-138) — supprimée puis réinstallée, `SET SCHEMA` n'étant pas supporté par l'extension ; et les fonctions de `public` sont triées (D-133 (2), (3)) : les deux déclencheurs `comptes_creation`/`comptes_decision` **fermés**, les six déclencheurs sans `security definer` que la 0011 avait laissés sous le `EXECUTE` de `PUBLIC` **fermés aussi**, et les cinq fonctions que le client ou la RLS appellent **réaffirmées ouvertes**. Aucun droit client nouveau |
 | `supabase/fonctions.test.ts` | la garde des droits d'exécution (#341) : `anon` n'exécute aucune fonction de `public`, `authenticated` exécute **exactement** les cinq justifiées, la migration se rejoue — et une fonction fabriquée laissée ouverte de plus est dénoncée |
 | `supabase/imports/comite-fichier-2026-10-26.sql` | l'import des deux post-its de `docs/comite.json` en base (#136) — données, pas schéma : auteur sentinelle, date de collecte reprise de l'id, écran vide devenu `null` |
@@ -557,6 +558,17 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
   quelque part : la 0005 a révoqué celui-là et ne rend que deux colonnes, et c'est **cela seul**
   qui ferme la médaille — la 0016 ne porte aucune ligne de droit, une révocation de colonne ne
   retirant rien (#372). La garde `supabase/comptes.test.ts` fabrique ce cas et le refuse.
+- **appliquer la migration 0017** (le résumé et les points de l'annonce, #339/D-120) — à faire
+  par le poste de pilotage, comme la 0013 (`docs/INTEGRATIONS-DISCORD.md` §10.3). Elle
+  **remplace** la phrase d'arrivée posée par 0013 : l'ancienne signature à quatre arguments est
+  retirée, le déclencheur `postits_annonce_neuve` n'est pas retouché. Idempotente, aucune ligne
+  existante touchée — les annonces déjà en file gardent le corps composé par 0013.
+
+  ```sql
+  -- La signature à cinq arguments, et plus qu'elle (attendu : 1 ligne)
+  select oid::regprocedure::text from pg_proc where proname = 'phrase_postit_neuf';
+  ```
+
 - **appliquer la migration 0018** (`pg_net` dans `extensions`, et les fonctions de `public`
   triées, #341/D-133) — **à faire** dans la même fenêtre que la 0017 (#339), et **après**
   elle : elle supprime puis réinstalle `pg_net` (`SET SCHEMA` n'est pas supporté), ce qui
@@ -576,7 +588,7 @@ Le mur **parle** dans le salon `#comite` du serveur des testeurs : un post-it ne
 
 | Sort | Ne sort jamais |
 |---|---|
-| la **famille** (IP / OUF), le **titre**, le **pseudo**, le lien vers `/comite` | le **texte** d'un gueulage (D-085) — on annonce qu'il est arrivé, pas ce qu'il dit ; ni son titre |
+| la **famille** (IP / OUF), le **titre**, le **pseudo**, le **résumé** du texte (premier paragraphe, 200 caractères), ses **points** (lignes à puces, quatre au plus, 100 caractères), le lien vers `/comite` | le **texte** d'un gueulage (D-085) — on annonce qu'il est arrivé, pas ce qu'il dit ; ni son titre, ni son résumé |
 | le **statut** atteint (`retenu`, `en cours`, `fait`, `écarté`) et la **raison** d'un écarté, tronquée | `auteur`, le courriel, l'identifiant du compte, les votes, les commentaires |
 
 Un gueulage s'annonce donc en une ligne, sans famille : `Un gueulage vient d'arriver sur le
