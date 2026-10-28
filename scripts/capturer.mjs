@@ -371,7 +371,7 @@ const TOURS_MAX_POUR_UNE_PRESSION = 8;
  * L'arrivée n'affiche que « Fin du tour » : la barre d'action y est à sa hauteur **minimale**, et
  * la mesure y disait `defilement = 0` pendant que, au tour 3, avec un café attaché, la barre
  * passait sur deux rangées et « Fin du tour » sortait sous la navigation. Cette fonction joue les
- * gestes d'un testeur — « Attacher 1 café » puis « Fin du tour », tant qu'aucune Pression n'est
+ * gestes d'un testeur — toucher le Planqué qui reçoit le café (#454, D-145), puis « Fin du tour », tant qu'aucune Pression n'est
  * proposée — et rend le **tour** atteint, ou `null` quand le Poste n'en offre aucune dans la borne.
  *
  * Une Pression jouable est un bouton `button--primary` de la barre (`ActionButton`, `attack`).
@@ -380,7 +380,7 @@ async function jusquAUnePression(page) {
   const barre = page.locator('.combat-barre');
   const pression = barre.locator('.button--primary');
   for (let essai = 0; essai < TOURS_MAX_POUR_UNE_PRESSION; essai += 1) {
-    const attacher = barre.getByRole('button', { name: /Attacher 1 café/ });
+    const attacher = page.getByRole('button', { name: /Attacher le café à/ });
     if ((await attacher.count()) > 0) {
       await attacher.first().click();
       await page.waitForTimeout(500);

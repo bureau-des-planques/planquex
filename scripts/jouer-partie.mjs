@@ -120,6 +120,61 @@ async function lirePartieRangee(page) {
   }
 }
 
+/**
+ * Les cibles du café (#454, D-145) : chaque Planqué à moi qui reçoit le café en Machine se touche
+ * sur le plateau. Le nom accessible porte l'action ; `aria-hidden` écarte le clone de la scène.
+ */
+const CIBLES_CAFE = '[role="button"][aria-label^="Attacher le café à"]';
+
+async function lireCiblesCafe(page) {
+  return page.evaluate(
+    (selecteur) =>
+      [...document.querySelectorAll(selecteur)]
+        .filter((b) => !b.closest('[aria-hidden="true"]'))
+        .map((b) => {
+          const rect = b.getBoundingClientRect();
+          return {
+            uid: b.getAttribute('data-uid'),
+            texte: b.getAttribute('aria-label'),
+            visible: rect.width > 0 && rect.height > 0,
+            actif: true
+          };
+        }),
+    CIBLES_CAFE
+  );
+}
+
+/**
+ * Mesure une cible du café **sans la faire défiler** (#454) : `scrollIntoView` masquait le défaut
+ * qu'on cherche — une cible qui n'existe qu'après un glissement. Hors de la fenêtre, le jugement
+ * le dit (`hors-fenetre`).
+ */
+async function viserCafe(page, uid) {
+  return page.evaluate(
+    ({ selecteur, uid }) => {
+      const cible = [...document.querySelectorAll(selecteur)].find(
+        (b) => b.getAttribute('data-uid') === uid && !b.closest('[aria-hidden="true"]')
+      );
+      document.querySelectorAll('[data-jouer-cible]').forEach((el) => el.removeAttribute('data-jouer-cible'));
+      if (!cible) return null;
+      cible.setAttribute('data-jouer-cible', '1');
+      const rect = cible.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const dessus = document.elementFromPoint(x, y);
+      return {
+        x,
+        y,
+        visible: rect.width > 0 && rect.height > 0,
+        actif: true,
+        dansLaFenetre: x >= 0 && y >= 0 && x <= innerWidth && y <= innerHeight,
+        dessusEstCible: !!dessus && (dessus === cible || cible.contains(dessus))
+      };
+    },
+    { selecteur: CIBLES_CAFE, uid }
+  );
+}
+
 /** Fait voir l'élément n° `index` (dans la liste du sélecteur) et mesure son centre. */
 async function viser(page, selecteur, index) {
   return page.evaluate(
@@ -253,9 +308,18 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
         .map((b) => ({ type: classerBouton(b.texte), actif: b.actif && b.visible }));
       const sansType = boutons.filter((b) => b.zone === 'barre' && classerBouton(b.texte) === null);
       for (const b of sansType) await echec('bouton-sans-type', `« ${b.texte} » ne correspond à aucune action`);
-      const boutonsDeBarre = jouables.filter((a) => !GESTES_DE_MAIN.includes(a.type));
+      const boutonsDeBarre = jouables.filter((a) => !GESTES_DE_MAIN.includes(a.type) && a.type !== 'attachEnergy');
       for (const a of comparerAffordances({ legales: boutonsDeBarre, visibles: barre })) {
         await echec(a.type, `${a.geste} : attendu ${a.attendu}, offert ${a.offert}`);
+      }
+      // L'oracle, côté café : chaque attachement légal a sa cible sur un Planqué, et inversement.
+      const ciblesCafe = await lireCiblesCafe(page);
+      const attachLegaux = jouables.filter((a) => a.type === 'attachEnergy');
+      for (const a of comparerAffordances({
+        legales: attachLegaux,
+        visibles: ciblesCafe.map((c) => ({ type: 'attachEnergy', actif: c.visible && c.actif }))
+      })) {
+        await echec(a.type, `café : attendu ${a.attendu} cible(s), offert ${a.offert}`);
       }
 
       const choix = choisirAction(legales, muettes);
@@ -268,7 +332,18 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
       // Le geste. Une action de main passe par la carte (aria-pressed) puis le bouton de la pose.
       let index;
       let libelle;
-      if (GESTES_DE_MAIN.includes(choix.type)) {
+      let mesure = null;
+      if (choix.type === 'attachEnergy') {
+        // Le café se touche sur le Planqué qui le reçoit (#454) : la cible est celle de son `uid`.
+        const voulue = ciblesCafe.find((c) => c.uid === choix.targetUid);
+        if (!voulue) {
+          await echec('sans-bouton', `attachement vers ${choix.targetUid} : aucune cible affichée`);
+          muettes.add(cle(choix));
+          continue;
+        }
+        libelle = voulue.texte;
+        mesure = await viserCafe(page, choix.targetUid);
+      } else if (GESTES_DE_MAIN.includes(choix.type)) {
         const nomCarte = moteur.nomDeCarte(state, choix.uid);
         const cartes = await lireMain(page);
         const occurrences = cartes.map((nom, i) => (nom === nomCarte ? i : -1)).filter((i) => i >= 0);
@@ -337,7 +412,7 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
 
       const avant = await page.locator('.battle').textContent();
       const actionsAvant = partie.actions.length;
-      const cible = await viser(page, BOUTONS, index);
+      const cible = mesure ?? (await viser(page, BOUTONS, index));
       const anomaliesCible = cible ? jugerCible(cible) : ['introuvable'];
       if (anomaliesCible.length) {
         await echec(anomaliesCible[0], `« ${libelle} »`);
