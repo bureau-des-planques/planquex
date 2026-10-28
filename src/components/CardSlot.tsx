@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Card } from '@/data/types';
-import { CardView } from './CardView';
+// PROTOTYPE JETABLE (variantes de carte) : revenir à `CardView` une fois la variante choisie.
+import { CarteSelonVariante } from './prototype-cartes/CarteSelonVariante';
 
 interface Props {
   card: Card;
@@ -35,7 +36,7 @@ export function CardSlot({ card, onClick, quick, owned, inDeck = 0, full = false
 
   return (
     <div className={classes} data-card-id={card.id}>
-      <CardView card={card} compact selected={selected} onClick={onClick} />
+      <CarteSelonVariante card={card} compact selected={selected} onClick={onClick} />
       <button
         type="button"
         className="card-slot__quick"

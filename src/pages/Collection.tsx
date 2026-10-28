@@ -10,6 +10,8 @@ import { CardDetail } from '@/components/CardDetail';
 import { causeDuVide } from '@/components/cause-du-vide';
 import { HORS_ARRIVAGE, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { TriCartes } from '@/components/TriCartes';
+// PROTOTYPE JETABLE (variantes de carte).
+import { PrototypeSwitcher } from '@/components/prototype-cartes/PrototypeSwitcher';
 import { TRI_DEFAUT, trierCartes } from '@/components/tri-cartes';
 import type { Tri } from '@/components/tri-cartes';
 
@@ -164,6 +166,7 @@ export function Collection() {
           onAddCard={() => addCard(selected.id)}
         />
       )}
+      <PrototypeSwitcher />
     </div>
   );
 }
