@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { PointerEvent as PointerReact } from 'react';
 import { Pression } from './ouverture/pression';
-import { creerBase, HAUTEUR, LARGEUR } from './ouverture/base';
+import { BASE_URL, LARGEUR, HAUTEUR } from './ouverture/base';
 import { VarianteA } from './ouverture/VarianteA';
 import { VarianteB } from './ouverture/VarianteB';
 import { VarianteC } from './ouverture/VarianteC';
@@ -43,8 +43,7 @@ export function PrototypeOuverture() {
     const g = new URLSearchParams(window.location.search).get('graine');
     return new Pression(g === null ? undefined : Number(g) >>> 0);
   }, []);
-  const base = useMemo(creerBase, []);
-  const baseUrl = useMemo(() => base.toDataURL('image/png'), [base]);
+  const baseUrl = BASE_URL;
   const [cle, setCle] = useState<Cle>(cleInitiale);
   const [reference, setReference] = useState(false);
   const [radial, setRadial] = useState(() => new URLSearchParams(window.location.search).get('radial') === '1');
@@ -119,7 +118,7 @@ export function PrototypeOuverture() {
           onLostPointerCapture={() => pression.relacher()}
         >
           {cle === 'A' && <VarianteA pression={pression} baseUrl={baseUrl} />}
-          {cle === 'B' && <VarianteB pression={pression} base={base} />}
+          {cle === 'B' && <VarianteB pression={pression} />}
           {cle === 'C' && <VarianteC pression={pression} baseUrl={baseUrl} />}
         </div>
         {reference && (

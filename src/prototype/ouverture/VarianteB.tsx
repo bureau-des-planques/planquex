@@ -1,11 +1,10 @@
 /* PROTOTYPE JETABLE (#283) — variante B : un shader WebGL2. Le relief et le reflet se calculent par pixel. */
 import { useEffect, useRef, useState } from 'react';
 import type { Pression } from './pression';
-import { HAUTEUR, LARGEUR } from './base';
+import { HAUTEUR, LARGEUR, preparerTexture } from './base';
 
 interface Props {
   pression: Pression;
-  base: HTMLCanvasElement;
 }
 
 const SOMMET = `#version 300 es
@@ -42,9 +41,9 @@ float hauteur(vec2 uv) {
   vec2 dr = vec2(cos(a0) * d.x + sin(a0) * d.y, -sin(a0) * d.x + cos(a0) * d.y);
   dr.x *= mix(1.0, 0.7 + 0.6 * u_m2.w, u_radial);
   float r = length(dr);
-  float s = mix(0.17, 0.052 + 0.028 * u_m2.w, u_radial);
+  float s = mix(0.17, 0.046 + 0.022 * u_m2.w, u_radial);
   float profondeur = mix(1.0, 0.75 + 0.5 * u_m1.x, u_radial);
-  float creux = -u_c * mix(0.075, 0.07, u_radial) * profondeur * exp(-r * r / (2.0 * s * s));
+  float creux = -u_c * mix(0.075, 0.135, u_radial) * profondeur * exp(-r * r / (2.0 * s * s));
   float anneaux = (1.0 - u_radial) * u_c * 0.0035 * sin(r * 95.0) * exp(-r * r / (2.0 * s * s * 1.4));
   // Les plis : un bruit pris sur le cercle (sans couture). Peu de branches, et chaque appui a
   // sa fréquence, sa phase, son ampleur et sa portée — deux appuis ne se ressemblent pas.
@@ -60,11 +59,11 @@ float hauteur(vec2 uv) {
   float pince = -u_c * 0.02 * (0.4 + 0.6 * u_m2.z) * exp(-r2 * r2 / (2.0 * 0.035 * 0.035));
   float etoile = u_radial * u_c * 0.0038 * pli * smoothstep(0.0, 0.04, r) * exp(-r * r / (2.0 * portee * portee * 2.4));
   float plis = anneaux + etoile;
-  float froisse = 0.004 * (bruit(uv * vec2(7.0, 11.0)) + 0.5 * bruit(uv * vec2(19.0, 27.0)));
+  float froisse = 0.0008 * (bruit(uv * vec2(7.0, 11.0)) + 0.5 * bruit(uv * vec2(19.0, 27.0)));
   return creux + pince + plis + froisse;
 }
 void main() {
-  vec2 e = vec2(1.0 / 300.0, 1.0 / 440.0);
+  vec2 e = vec2(1.0 / 315.0, 1.0 / 560.0);
   float hx = hauteur(v_uv + vec2(e.x, 0.0)) - hauteur(v_uv - vec2(e.x, 0.0));
   float hy = hauteur(v_uv + vec2(0.0, e.y)) - hauteur(v_uv - vec2(0.0, e.y));
   // L'axe vertical de l'écran va vers le BAS : la lumière vient d'en haut, donc L.y est négatif.
@@ -75,16 +74,21 @@ void main() {
   float spec = pow(max(dot(n, H), 0.0), 90.0);
   float diff = dot(n, L);
   // Le film est clair : on assombrit peu à la lumière, et le creux s'assombrit de lui-même.
-  vec3 base = texture(u_tex, v_uv + n.xy * 0.008).rgb;
+  vec3 base = texture(u_tex, v_uv + n.xy * 0.010).rgb;
   float env = smoothstep(-0.4, 0.7, -n.y * 1.0 - n.x * 0.35);
   vec3 col = base * (0.92 + 0.14 * diff);
   // L'occlusion : au fond du creux la lumière manque. C'est ce qui fait lire « trou » et non « bosse ».
   vec2 d0 = (v_uv - u_p) * vec2(u_aspect, 1.0);
-  float ao = exp(-dot(d0, d0) / (2.0 * 0.055 * 0.055));
-  col *= 1.0 - 0.34 * ao * clamp(u_c, 0.0, 1.0);
+  float r0 = length(d0);
+  float s0 = mix(0.17, 0.046 + 0.022 * u_m2.w, u_radial);
+  float ao = exp(-r0 * r0 / (2.0 * (s0 * 0.95) * (s0 * 0.95)));
+  col *= 1.0 - 0.62 * ao * clamp(u_c, 0.0, 1.0);
   col *= 1.0 - 0.22 * clamp(-diff, 0.0, 1.0);
   col += mix(vec3(0.34, 0.40, 0.52), vec3(1.0), env) * (1.0 - n.z) * 0.30;
-  col += spec * vec3(0.92, 0.97, 1.0) * (0.14 + 0.42 * clamp(u_c, 0.0, 1.0)) * mix(1.0, 0.40, u_radial);
+  col += spec * vec3(0.92, 0.97, 1.0) * (0.14 + 0.42 * clamp(u_c, 0.0, 1.0)) * mix(1.0, 0.50, u_radial);
+  // L'anneau clair du bord : c'est lui qui donne l'épaisseur du creux sur l'image E.
+  float anneau = exp(-pow((r0 - s0 * 1.15) / (s0 * 0.42), 2.0));
+  col += anneau * u_c * mix(0.0, 0.30, u_radial) * vec3(0.95, 0.97, 1.0);
   o = vec4(col, 1.0);
 }`;
 
@@ -97,13 +101,28 @@ function compiler(gl: WebGL2RenderingContext, type: number, source: string): Web
   return s;
 }
 
-export function VarianteB({ pression, base }: Props) {
+export function VarianteB({ pression }: Props) {
   const ref = useRef<HTMLCanvasElement>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [texture, setTexture] = useState<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    let vivant = true;
+    preparerTexture()
+      .then((c) => {
+        if (vivant) setTexture(c);
+      })
+      .catch((e: unknown) => {
+        if (vivant) setErreur(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      vivant = false;
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = ref.current;
-    if (!canvas) return undefined;
+    if (!canvas || !texture) return undefined;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = LARGEUR * dpr;
     canvas.height = HAUTEUR * dpr;
@@ -127,9 +146,9 @@ export function VarianteB({ pression, base }: Props) {
       gl.enableVertexAttribArray(a);
       gl.vertexAttribPointer(a, 2, gl.FLOAT, false, 0, 0);
 
-      const texture = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, texture);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, base);
+      const tex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -161,7 +180,7 @@ export function VarianteB({ pression, base }: Props) {
       setErreur(e instanceof Error ? e.message : String(e));
       return undefined;
     }
-  }, [pression, base]);
+  }, [pression, texture]);
 
   if (erreur) return <p className="proto-ouv__erreur">{erreur}</p>;
   return <canvas ref={ref} className="vb" />;
