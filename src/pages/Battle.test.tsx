@@ -10,6 +10,7 @@ import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat'
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
 import type { BattleAction, BattleState } from '@/data/types';
+import type { PartieSauvegardee } from '@/store/partie';
 import { encodeMatch } from '@/game/codec';
 import { autoDeck } from '@/game/deck';
 import { applyAction, createBattle, legalActions } from '@/game/engine';
@@ -36,8 +37,16 @@ function partieCommencee() {
   return { partie, tour: jouee.turn, etat: jouee, deck };
 }
 
-/** Une partie où **mon** Poste vient de craquer : la relève est à choisir (D-030). */
+/**
+ * Une partie où **mon** Poste vient de craquer : la relève est à choisir (D-030).
+ *
+ * **Mémoïsée** : la recherche est déterministe (graines 1, 2, 3… et aucune horloge), donc
+ * la refaire à chaque appel rend le même résultat. Elle coûtait **33 s** pour la page
+ * entière, appelée six fois ; le cache la ramène à une seule recherche par scénario.
+ */
+let cacheReleve: { partie: unknown; etat: unknown } | null = null;
 function partieAvecReleve() {
+  if (cacheReleve) return cacheReleve as { partie: PartieSauvegardee; etat: BattleState };
   const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
   const deck = autoDeck(owned).deck;
   for (let seed = 1; seed < 300; seed += 1) {
@@ -45,7 +54,10 @@ function partieAvecReleve() {
     for (let i = 0; i < 400 && s.phase === 'playing'; i += 1) {
       if (s.pendingPromotion === 'player' && legalActions(s).some((a) => a.type === 'promoteActive')) {
         const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
-        if (partie) return { partie, etat: s };
+        if (partie) {
+          cacheReleve = { partie, etat: s };
+          return { partie, etat: s };
+        }
       }
       const legales = legalActions(s).filter((a) => a.type !== 'forfeit');
       const action =
@@ -62,8 +74,10 @@ function partieAvecReleve() {
   throw new Error('aucune partie ne donne une relève au joueur');
 }
 
-/** Un tour du joueur où une Pression est à portée : la barre doit la porter. */
+/** Un tour du joueur où une Pression est à portée : la barre doit la porter. Mémoïsée, même raison. */
+let cachePression: { partie: unknown; etat: unknown } | null = null;
 function partieAvecPression() {
+  if (cachePression) return cachePression as { partie: PartieSauvegardee; etat: BattleState };
   const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
   const deck = autoDeck(owned).deck;
   for (let seed = 1; seed < 400; seed += 1) {
@@ -72,7 +86,10 @@ function partieAvecPression() {
       const auTourDuJoueur = s.current === 'player' && s.pendingPromotion === null && s.pendingChoice === null;
       if (auTourDuJoueur && legalActions(s).some((a) => a.type === 'attack')) {
         const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
-        if (partie) return { partie, etat: s };
+        if (partie) {
+          cachePression = { partie, etat: s };
+          return { partie, etat: s };
+        }
       }
       // La Direction joue sa politique ; le joueur attache un café, sinon passe son tour.
       const legales = legalActions(s);
