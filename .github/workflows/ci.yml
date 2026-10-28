@@ -40,10 +40,29 @@ jobs:
           node-version: 24
           cache: npm
 
+      # **Le chemin rapide** (D-143, #422) : une PR qui ne touche que de la documentation (`docs/**`,
+      # `*.md` hors `design/` et `src/`) ne rejoue que les tests qui **lisent un document**. Le job
+      # **tourne toujours** et sort vite en succès : un job non déclenché (`paths-ignore`) ne
+      # reporterait jamais son statut, et le ruleset de `main` attend les trois noms ci-dessous.
+      # Un push sur `main` n'a pas de base : il prend toujours la suite complète.
+      - name: Calculer ce que le changement peut casser (D-143)
+        id: chemins
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE" ]; then
+            git fetch --no-tags --depth=1 origin "$BASE"
+            node scripts/ci-chemins.mjs --base "$BASE"
+          else
+            node scripts/ci-chemins.mjs
+          fi
+
       - name: Installer les dépendances
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm ci
 
       - name: Vérifier les types
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm run check
 
       # Le formatage (rétro du 26/10/2026) : le dépôt n'avait **aucun** formateur, et 316
@@ -53,17 +72,20 @@ jobs:
       # et `.prettierignore` dit ce qu'il ne touche **pas** (src/data : un texte de carte par
       # ligne, un repli changerait le texte affiché).
       - name: Vérifier le formatage
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm run format:check
 
       # Garde-fous (ticket #112) : mute un invariant critique et EXIGE que la suite échoue.
       # Une mutation qui passe inaperçue désigne une assertion qui ne garde rien — trois
       # cas ont été trouvés en une session (#101, #107, #103), d'où ce harnais.
       - name: Vérifier que les garde-fous peuvent échouer
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm run garde-fous
 
       # Garde de l'épinglage (#146), qui doit pouvoir échouer : remplacer la version par
       # `"latest"` dans package.json, ou `--no` par `--yes` ci-dessous → exit 1.
       - name: Vérifier que le détecteur d'UI reste épinglé
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: |
           node -e '
             const fs = require("node:fs");
@@ -82,16 +104,24 @@ jobs:
           '
 
       - name: Détecter les anti-patterns d'interface
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm exec --no -- impeccable detect src/
 
       - name: Construire la production
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm run build
 
       # Un build valide produit ces deux fichiers (AGENTS.md §7 et §8.3).
       - name: Vérifier les artefacts du build
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: ls -la dist/index.html dist/sw.js
 
   # Le moteur, les données, les scripts, la migration du mur — le gros du temps de test.
+
+      - name: Chemin rapide — documentation seule, rien à contrôler ici (D-143)
+        if: steps.chemins.outputs.doc_seulement == 'true'
+        run: echo "PR de documentation seule : types, format, garde-fous et build ne peuvent pas changer."
+
   tests-noyau:
     name: tests du noyau (projet node)
     runs-on: ubuntu-latest
@@ -105,6 +135,23 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      # **Le chemin rapide** (D-143, #422) : une PR qui ne touche que de la documentation (`docs/**`,
+      # `*.md` hors `design/` et `src/`) ne rejoue que les tests qui **lisent un document**. Le job
+      # **tourne toujours** et sort vite en succès : un job non déclenché (`paths-ignore`) ne
+      # reporterait jamais son statut, et le ruleset de `main` attend les trois noms ci-dessous.
+      # Un push sur `main` n'a pas de base : il prend toujours la suite complète.
+      - name: Calculer ce que le changement peut casser (D-143)
+        id: chemins
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE" ]; then
+            git fetch --no-tags --depth=1 origin "$BASE"
+            node scripts/ci-chemins.mjs --base "$BASE"
+          else
+            node scripts/ci-chemins.mjs
+          fi
 
       - name: Installer les dépendances
         run: npm ci
@@ -127,9 +174,19 @@ jobs:
       # `src/ci.test.ts` vérifie que les deux jobs couvrent exactement les projets déclarés
       # dans `vitest.config.ts` : ajouter un projet sans l'appeler ici fait échouer la suite.
       - name: Lancer les tests du noyau
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm test -- --project=node
 
   # Les écrans, rendus sous jsdom, puis le contrôle visuel des pages servies depuis `dist/`.
+
+      # Le chemin rapide : les tests du projet `node` qui lisent un document (les gardes de
+      # cohérence de D-143 (1), `capturer.test.ts` qui relit D-142…). Calculés, pas recopiés.
+      - name: Chemin rapide — les tests qui lisent un document (D-143)
+        if: steps.chemins.outputs.doc_seulement == 'true'
+        env:
+          TESTS: ${{ steps.chemins.outputs.tests_node }}
+        run: npx vitest run $TESTS
+
   tests-ecrans:
     name: tests des écrans + contrôle visuel
     runs-on: ubuntu-latest
@@ -144,13 +201,32 @@ jobs:
           node-version: 24
           cache: npm
 
+      # **Le chemin rapide** (D-143, #422) : une PR qui ne touche que de la documentation (`docs/**`,
+      # `*.md` hors `design/` et `src/`) ne rejoue que les tests qui **lisent un document**. Le job
+      # **tourne toujours** et sort vite en succès : un job non déclenché (`paths-ignore`) ne
+      # reporterait jamais son statut, et le ruleset de `main` attend les trois noms ci-dessous.
+      # Un push sur `main` n'a pas de base : il prend toujours la suite complète.
+      - name: Calculer ce que le changement peut casser (D-143)
+        id: chemins
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE" ]; then
+            git fetch --no-tags --depth=1 origin "$BASE"
+            node scripts/ci-chemins.mjs --base "$BASE"
+          else
+            node scripts/ci-chemins.mjs
+          fi
+
       - name: Installer les dépendances
         run: npm ci
 
       - name: Lancer les tests des écrans
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm test -- --project=ui
 
       - name: Construire la production
+        if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm run build
 
       # **Le contrôle visuel qui compte** (#205, #234) : `impeccable detect` sur les écrans
@@ -168,6 +244,7 @@ jobs:
       # tourné n'est pas un contrôle vert (même règle que #231 et que `npm run capturer`).
       # Le message dit quoi installer. Aucun secret : le navigateur est dans l'image.
       - name: Contrôler les écrans dans un navigateur (#205, #234)
+        if: steps.chemins.outputs.doc_seulement != 'true'
         env:
           IMPECCABLE_BROWSER: /usr/bin/google-chrome
         run: |
@@ -177,3 +254,9 @@ jobs:
           fi
           "$IMPECCABLE_BROWSER" --version
           npm run detect:ui:page
+
+      - name: Chemin rapide — les tests d'écran qui lisent un document (D-143)
+        if: steps.chemins.outputs.doc_seulement == 'true'
+        env:
+          TESTS: ${{ steps.chemins.outputs.tests_ui }}
+        run: npx vitest run $TESTS
