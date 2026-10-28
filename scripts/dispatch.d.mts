@@ -21,12 +21,15 @@ export function prochainNumero(journal: string): string;
 
 export function analyserArguments(argv: string[], options?: { racine?: string }): Options;
 
+export function blocDeFini(agent: string): string;
+
 export function composer(entree: {
   ticket: Ticket;
   agent: string;
   branche: string;
   worktree: string;
   decision: string | null;
+  worktreeExiste?: boolean;
   depot?: string;
 }): string;
 

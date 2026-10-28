@@ -57,16 +57,58 @@ export function analyserArguments(argv, { racine = process.cwd() } = {}) {
   return { ...options, erreurs };
 }
 
+/** Le bloc « fini / livraison » selon le métier de l'agent. */
+export function blocDeFini(agent) {
+  if (['auditeur', 'chercheur', 'explore'].includes(agent)) {
+    return `## Fini
+- Un **rapport** : ce que tu as lu (fichier, ligne), ce que tu as mesuré (commande, code de sortie), ce qui reste incertain.
+- Aucune écriture hors de ton bac à sable. Une affirmation sans source citée est une hypothèse, dis-le.
+- Ta réponse finale : le constat, les preuves, les suites proposées.`;
+  }
+  if (agent === 'redacteur') {
+    return `## Fini, au sens du dépôt (\`AGENTS.md\` §8.4)
+- \`npm run format:check\` : exit 0 ; \`npm test\` si un test lit le document que tu touches.
+- Une affirmation sans fichier, commande ou test cité est une hypothèse, pas un fait.
+- Docs cohérentes avec \`docs/DECISIONS-INDEX.md\` : une règle nouvelle demande une décision datée, pas une phrase dans un coin.
+
+## Livraison
+- Commits en français, sujet \`type(zone): …\`, un commit par intention.
+- Pas de \`git push\`, pas de PR : l'orchestrateur s'en charge.
+- Ta réponse finale : ce qui est écrit, où, et ce qui reste à trancher.`;
+  }
+  return `## Fini, au sens du dépôt (\`AGENTS.md\` §8.4)
+- \`npm run check\`, \`npm run format:check\`, \`npm test\`, \`npm run garde-fous\`, \`npm run build\` : exit 0 chacun.
+- Un test couvre le changement, et **le contrôle mord** : il est confronté à un cas fautif.
+- \`npm test\` et \`npm run garde-fous\` **jamais en parallèle** : les gardes mutent les sources.
+- Docs mises à jour si une commande, une règle ou un contenu change.
+
+## Livraison
+- Commits en français, sujet \`type(zone): …\`, un commit par intention.
+- Pas de \`git push\`, pas de PR : l'orchestrateur s'en charge.
+- Ta réponse finale : ce qui est fait, les commandes et leurs codes de sortie, ce qui reste ouvert.`;
+}
+
 /** Le prompt, à partir du ticket lu et des options. Pur : il ne lit ni le réseau ni le disque. */
-export function composer({ ticket, agent, branche, worktree, decision, depot = 'bureau-des-planques/planquex' }) {
+export function composer({
+  ticket,
+  agent,
+  branche,
+  worktree,
+  decision,
+  worktreeExiste = true,
+  depot = 'bureau-des-planques/planquex'
+}) {
   const corps = (ticket.body ?? '').trim();
   const etiquettes = (ticket.labels ?? []).map((l) => (typeof l === 'string' ? l : l.name)).join(', ');
-  return `Tu traites le ticket **#${ticket.number} « ${ticket.title} »** du dépôt \`${depot}\`${etiquettes ? ` (${etiquettes})` : ''}.
+  const où = worktreeExiste
+    ? `- Il existe déjà, dépendances installées.`
+    : `- Il **n'existe pas encore** : \`npm run worktree:nouveau -- ${ticket.number} --branche ${branche}\` le crée, dépendances comprises.`;
+  return `Tu es l'agent \`${agent}\` : tu traites le ticket **#${ticket.number} « ${ticket.title} »** du dépôt \`${depot}\`${etiquettes ? ` (${etiquettes})` : ''}.
 
 ## Où
 - **Worktree (chemin ABSOLU)** : \`${worktree}\`
 - **Branche** : \`${branche}\`
-- Il existe déjà, dépendances installées. S'il n'existe pas : \`npm run worktree:nouveau -- ${ticket.number} --branche ${branche}\`.
+${où}
 - Tu ne travailles **que** là. Jamais dans le dépôt principal, jamais dans un autre worktree.
 
 ## Quoi
@@ -76,16 +118,7 @@ ${corps || '(corps du ticket vide — lis-le par `gh issue view ' + ticket.numbe
 - Les zones d'un autre agent en cours : \`git status\` et \`docs/agents/parallelisme.md\` §1. Si le ticket en couvre plusieurs, dis-le et arrête-toi.
 - \`AGENTS.md\` §4, le vocabulaire, une règle de jeu : ils ne changent que par une décision datée.
 
-## Fini, au sens du dépôt (\`AGENTS.md\` §8.4)
-- \`npm run check\`, \`npm run format:check\`, \`npm test\`, \`npm run garde-fous\`, \`npm run build\` : exit 0 chacun.
-- Un test couvre le changement, et **le contrôle mord** : il est confronté à un cas fautif.
-- \`npm test\` et \`npm run garde-fous\` **jamais en parallèle** : les gardes mutent les sources.
-- Docs mises à jour si une commande, une règle ou un contenu change.
-
-## Livraison
-- Commits en français, sujet \`type(zone): …\`, un commit par intention.
-- Pas de \`git push\`, pas de PR : l'orchestrateur s'en charge.
-- Ta réponse finale : ce qui est fait, les commandes et leurs codes de sortie, ce qui reste ouvert.
+${blocDeFini(agent)}
 ${decision ? `\n## Décision\nSi le ticket demande une décision datée, prends **${decision}** (réservé par ce dispatch) et mets à jour \`docs/DECISIONS-INDEX.md\` (\`npm run index:decisions\`).\n` : ''}`;
 }
 
@@ -110,7 +143,7 @@ if (estLance) {
     const ticket = lireTicket(options.ticket);
     const journal = join(dirname(process.argv[1]), '..', 'docs/DECISIONS.md');
     const decision = options.decision && existsSync(journal) ? prochainNumero(readFileSync(journal, 'utf8')) : null;
-    const prompt = composer({ ...options, ticket, decision });
+    const prompt = composer({ ...options, ticket, decision, worktreeExiste: existsSync(options.worktree) });
     if (options.json) {
       console.log(
         JSON.stringify(

@@ -1,3 +1,5 @@
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { analyserArguments, composer, prochainNumero } from './dispatch.mjs';
 
@@ -25,7 +27,8 @@ describe('analyserArguments', () => {
   it('donne le worktree absolu et la branche par défaut', () => {
     const o = analyserArguments(['--ticket', '427'], { racine: '/depot/planquex' });
     expect(o.erreurs).toEqual([]);
-    expect(o.worktree).toBe('/home/chapax/.local/share/opencode/worktree/planquex/427');
+    // Le foyer est celui de la machine : un chemin en dur casserait sur un runner de CI.
+    expect(o.worktree).toBe(join(homedir(), '.local/share/opencode/worktree/planquex/427'));
     expect(o.branche).toBe('agent/427');
     expect(o.agent).toBe('codeur');
     expect(o.decision).toBe(false);
@@ -67,5 +70,20 @@ describe('composer', () => {
   it('dit quoi faire quand le corps du ticket est vide', () => {
     const p = composer({ ...base, ticket: { number: 1, title: 'Vide', body: '  ', labels: [] } });
     expect(p).toContain('gh issue view 1 --json');
+  });
+
+  it("n'affirme pas qu'un worktree absent existe, et donne le geste qui le crée", () => {
+    expect(composer(base)).toContain('Il existe déjà');
+    const absent = composer({ ...base, worktreeExiste: false });
+    expect(absent).not.toContain('Il existe déjà');
+    expect(absent).toContain('worktree:nouveau -- 427 --branche agent/427');
+  });
+
+  it("adapte le fini au métier de l'agent : un auditeur rend un rapport, il ne passe pas la suite", () => {
+    const lecture = composer({ ...base, agent: 'auditeur' });
+    expect(lecture).toContain('Un **rapport**');
+    expect(lecture).not.toContain('npm run garde-fous');
+    expect(composer({ ...base, agent: 'redacteur' })).toContain('format:check');
+    expect(composer(base)).toContain('npm run garde-fous');
   });
 });
