@@ -99,4 +99,11 @@ describe('filtres de la Collection (#365)', () => {
     const cartes: Card[] = ALL_CARDS;
     expect(filtrerCartes(cartes, FILTRES_DEFAUT, {})).toHaveLength(cartes.length);
   });
+
+  it('une adresse sans coût ne filtre pas, même si une Pression gratuite existait (D-039)', () => {
+    // `Number(null)` vaut 0 : sans garde, l'absence de `cout` se lirait « Gratuite ».
+    expect(lireFiltres(new URLSearchParams('')).filtres.cout).toBe('ALL');
+    expect(lireFiltres(new URLSearchParams('cout=')).filtres.cout).toBe('ALL');
+    expect(lireFiltres(new URLSearchParams('cout=0')).filtres.cout).toBe(COUTS_PRESENTS.includes(0) ? 0 : 'ALL');
+  });
 });

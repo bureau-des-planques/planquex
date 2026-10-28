@@ -100,7 +100,10 @@ export function lireFiltres(params: URLSearchParams): { filtres: Filtres; tri: T
   const choisi = <T extends string>(valeur: string | null, valides: readonly T[]): T | undefined =>
     valides.find((item) => item === valeur);
 
-  const cout = Number(params.get('cout'));
+  // `Number(null)` vaut 0 : sans ce garde, une adresse sans `cout` filtrerait sur les Pressions
+  // gratuites dès qu'une carte en porterait une (le coût 0 existe, D-039).
+  const brut = params.get('cout');
+  const cout = brut === null || brut === '' ? Number.NaN : Number(brut);
   const tri = choisi(params.get('tri'), TRIS);
 
   return {
