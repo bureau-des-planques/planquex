@@ -14,9 +14,11 @@
  * GitHub est le script, lancé au build de l'auteur — jamais dans la CI, qui n'a ni `gh`
  * ni réseau vers GitHub.
  *
- * **Sans lien** : ce fichier ne porte **aucune URL**. Les liens vers le dépôt qui
- * intéressent un testeur sont un autre ticket, **#343** (D-132) ;
- * `scripts/plan-dev.test.ts` vérifie qu'aucune adresse ne s'est glissée ici.
+ * **Sans lien** : ce fichier ne porte **aucune URL**. Les seuls liens vers le dépôt que
+ * D-132 ouvre — les **releases** et les **chantiers ouverts** — sont composés par la page
+ * (`lienIssue`, `LIEN_RELEASES`) à partir du **numéro** ; une adresse écrite ici
+ * vieillirait avec l'état du tracker, et `scripts/plan-dev.test.ts` vérifie qu'aucune
+ * ne s'y glisse.
  */
 
 /** Une étape du projet : le jalon auquel un chantier appartient (D-048). */
@@ -34,13 +36,83 @@ export interface FeaturePrevue {
 /** Les issues `alpha` et `beta` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
   {
-    numero: 347,
-    titre: 'Beta — la migration de store qui remet la progression à zéro, sans toucher au compte',
+    numero: 379,
+    titre: 'Son — choisir les deux timbres, libres de droits et légers',
+    etape: 'alpha'
+  },
+  {
+    numero: 378,
+    titre: 'Son — deux sons dans l\'alpha : l\'Arrivage et le verdict, avec un réglage qui les coupe',
+    etape: 'alpha'
+  },
+  {
+    numero: 366,
+    titre: 'Rejeu — revoir une partie terminée, depuis le profil',
     etape: 'beta'
   },
   {
-    numero: 346,
-    titre: 'Alpha — la Médaille de la période d\'essai, sur le profil (D-130)',
+    numero: 365,
+    titre: 'Collection — filtrer par rareté et par coût, et dire quand rien ne sort',
+    etape: 'beta'
+  },
+  {
+    numero: 364,
+    titre: 'Deck — montrer la courbe de coût, le compte de cartes et les filtres par valeur',
+    etape: 'beta'
+  },
+  {
+    numero: 363,
+    titre: 'Deck — partager et importer un Deck par code, avec les cartes manquantes visibles',
+    etape: 'beta'
+  },
+  {
+    numero: 362,
+    titre: 'Spec — ce que trois références font, et ce qu\'on en garde (UI, parcours, fonctionnalités)',
+    etape: 'beta'
+  },
+  {
+    numero: 360,
+    titre: 'Équilibrage — publier la table des taux de victoire par archétype',
+    etape: 'beta'
+  },
+  {
+    numero: 358,
+    titre: 'Alpha — lire les traces de combat : la boucle tient-elle, et où ?',
+    etape: 'alpha'
+  },
+  {
+    numero: 357,
+    titre: 'PWA — la première visite télécharge 28 Mo, et la Collection charge 300 illustrations d\'un coup',
+    etape: 'alpha'
+  },
+  {
+    numero: 355,
+    titre: 'PWA — dire qu\'une nouvelle version est prête, et recharger d\'un geste',
+    etape: 'alpha'
+  },
+  {
+    numero: 354,
+    titre: 'IA — mesurer la Direction contre un joueur de référence, avant les testeurs',
+    etape: 'alpha'
+  },
+  {
+    numero: 353,
+    titre: 'Moteur — le Talent « en jouant » ne collecte pas ses faits (D-081)',
+    etape: 'beta'
+  },
+  {
+    numero: 352,
+    titre: 'Contenu — Syndicat et Intérim ne peuvent pas faire un Deck de 20 cartes',
+    etape: 'beta'
+  },
+  {
+    numero: 351,
+    titre: 'Moteur — un fuzz d\'invariants : jouer des centaines de parties au hasard légal',
+    etape: 'alpha'
+  },
+  {
+    numero: 347,
+    titre: 'Beta — la migration de store qui remet la progression à zéro, sans toucher au compte',
     etape: 'beta'
   },
   {
@@ -59,18 +131,8 @@ export const FEATURES_PREVUES: FeaturePrevue[] = [
     etape: 'beta'
   },
   {
-    numero: 341,
-    titre: 'Infra — pg_net hors de public, et sept fonctions SECURITY DEFINER à trier',
-    etape: 'beta'
-  },
-  {
     numero: 340,
     titre: 'Illustrations — les sept variantes hautes, avant les autres (D-126)',
-    etape: 'beta'
-  },
-  {
-    numero: 339,
-    titre: 'Comité — l\'annonce porte le résumé du post-it, et ses points (migration 0014)',
     etape: 'beta'
   },
   {

@@ -16,9 +16,10 @@
  * réseau et de l'API, pour une liste qui change quand une issue s'ouvre. Ce script est
  * donc le seul pont avec GitHub, lancé au build de l'auteur, jamais dans la CI.
  *
- * **Sans lien** : le fichier ne porte **jamais** d'URL. Les liens vers le dépôt qui
- * intéressent un testeur sont le ticket **#343** (D-132), pas celui-ci ; le test vérifie
- * qu'aucune adresse ne s'est glissée ici en attendant.
+ * **Sans lien** : le fichier ne porte **jamais** d'URL. Les seuls liens vers le dépôt que
+ * D-132 ouvre — les **releases** et les **chantiers ouverts** — sont composés par la page
+ * (`lienIssue`, `LIEN_RELEASES`) à partir du **numéro** ; une adresse écrite ici
+ * vieillirait avec l'état du tracker, et le test vérifie qu'aucune ne s'y glisse.
  *
  * Usage :
  *   npm run plan:dev              écrit src/data/plan-dev.ts
@@ -104,7 +105,7 @@ function ghJson(args) {
   }
 }
 
-/** Le fichier entier : l'en-tête, le type, la liste. Aucune URL, jamais (#343, D-132). */
+/** Le fichier entier : l'en-tête, le type, la liste. Aucune URL, jamais (D-132). */
 export function rendreFichier(features) {
   const corps = features
     .map(
@@ -128,9 +129,11 @@ export function rendreFichier(features) {
  * GitHub est le script, lancé au build de l'auteur — jamais dans la CI, qui n'a ni \`gh\`
  * ni réseau vers GitHub.
  *
- * **Sans lien** : ce fichier ne porte **aucune URL**. Les liens vers le dépôt qui
- * intéressent un testeur sont un autre ticket, **#343** (D-132) ;
- * \`scripts/plan-dev.test.ts\` vérifie qu'aucune adresse ne s'est glissée ici.
+ * **Sans lien** : ce fichier ne porte **aucune URL**. Les seuls liens vers le dépôt que
+ * D-132 ouvre — les **releases** et les **chantiers ouverts** — sont composés par la page
+ * (\`lienIssue\`, \`LIEN_RELEASES\`) à partir du **numéro** ; une adresse écrite ici
+ * vieillirait avec l'état du tracker, et \`scripts/plan-dev.test.ts\` vérifie qu'aucune
+ * ne s'y glisse.
  */
 
 /** Une étape du projet : le jalon auquel un chantier appartient (D-048). */

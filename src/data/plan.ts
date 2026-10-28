@@ -93,8 +93,9 @@ export const JALONS: Jalon[] = [
     // **Les trois critères, pas deux** : le jalon affiché reprenait la liste sans le (b),
     // alors que D-056 (b) — « plus aucun bug qui casse la boucle » — n'a jamais quitté
     // l'alpha (D-117 n'a amendé que le (a) et sorti le (d)). La source est `CRITERES_ALPHA`,
-    // recopiée ici pour la forme du jalon ; `plan.test.ts` exige maintenant l'égalité, pour
-    // qu'une des deux listes ne puisse plus prendre du retard sur l'autre.
+    // prise **par référence** pour que les deux listes ne puissent pas diverger ;
+    // `plan.test.ts` confronte les deux au **texte attendu écrit en clair** (#375), pour que
+    // retirer un critère ou changer un mot fasse échouer le test.
     criteres: CRITERES_ALPHA
   },
   {

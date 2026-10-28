@@ -23,6 +23,40 @@ import {
 /** Une décision citée : `D-019`, `D-056`… trois chiffres, préfixés par `D-`. */
 const DECISION = /^D-\d{3}$/;
 
+/**
+ * **Les trois critères de sortie d'alpha, écrits en clair** — le contenu attendu, pas la
+ * référence (#375).
+ *
+ * Le test affirmait `expect(alpha?.criteres).toEqual(CRITERES_ALPHA)` alors que `plan.ts`
+ * pose `criteres: CRITERES_ALPHA` : la **même référence**, donc une valeur comparée à
+ * elle-même. Il ne pouvait échouer que sur une copie littérale réintroduite, et laissait
+ * passer la dérive réelle — un critère retiré de la liste, le (b) qui avait déjà disparu
+ * de la page. La liste est donc recopiée ici **mot pour mot**, pour que la retirer ou
+ * changer un mot la fasse échouer :
+ *
+ * - (a) « cinq testeurs réels… » — D-056 (a), reformulé par D-117 (1), **mesuré** par D-123 ;
+ * - (b) « plus aucun bug qui casse la boucle… » — D-056, jamais amendé ;
+ * - (c) « la Journée d'intégration est finie » — D-056, jamais amendé.
+ *
+ * Ce n'est pas une deuxième source : c'est l'**attendu** que la source doit satisfaire.
+ * Changer la formulation d'un critère se fait dans D-117 ou D-056, puis ici.
+ */
+const CRITERES_ALPHA_ATTENDUS: ElementPlan[] = [
+  {
+    texte:
+      'Cinq testeurs réels ont terminé une partie complète — mesuré dans les traces de combat, pas déclaré.',
+    decision: 'D-123'
+  },
+  {
+    texte: 'Plus aucun bug qui casse la boucle n’est ouvert.',
+    decision: 'D-056'
+  },
+  {
+    texte: 'La Journée d’intégration est finie.',
+    decision: 'D-056'
+  }
+];
+
 /** Les entrées dont la décision manque — extrait pour pouvoir le confronter à un cas fautif. */
 function sansDecision(entrees: ElementPlan[]): string[] {
   return entrees.filter((entree) => !DECISION.test(entree.decision)).map((entree) => entree.texte);
@@ -38,18 +72,14 @@ describe('plan — l’étape en cours', () => {
 });
 
 describe('plan — les critères de sortie d’alpha (D-056)', () => {
-  it('sont ceux de la décision, chacun avec sa source', () => {
+  it('sont ceux de la décision, mot pour mot et dans l’ordre', () => {
     // Les trois critères de D-056 (a) à (c), et pas un de plus : le (d) est sorti de
     // l'alpha le 27/10/2026 (D-117), et une liste qui gonfle repousse indéfiniment le
-    // passage à la beta — c'est la raison d'être de la décision.
-    expect(CRITERES_ALPHA).toHaveLength(3);
+    // passage à la beta — c'est la raison d'être de la décision. Le contenu est comparé à
+    // l'**attendu écrit en clair** (`CRITERES_ALPHA_ATTENDUS`), pas à la constante
+    // elle-même : c'est ce qui fait mordre le test (#375).
+    expect(CRITERES_ALPHA).toEqual(CRITERES_ALPHA_ATTENDUS);
     expect(sansDecision(CRITERES_ALPHA)).toEqual([]);
-    for (const critere of CRITERES_ALPHA) {
-      // (a) est reformulé par D-117, puis **mesuré** par D-123 (cinq testeurs, preuve
-      // dans `public.combats`) ; (b) et (c) restent ceux de D-056.
-      expect(['D-056', 'D-117', 'D-123'], critere.texte).toContain(critere.decision);
-      expect(critere.texte.trim()).not.toBe('');
-    }
   });
 
   it('le contrôle mord : un critère sans décision est signalé', () => {
@@ -69,11 +99,11 @@ describe('plan — les jalons (D-048)', () => {
 
   it('le jalon alpha porte les trois critères de sortie, pas une copie partielle', () => {
     // Constat du 27/10/2026 : `JALONS` reprenait D-056 en oubliant le (b), donc la feuille
-    // de route affichait **deux** critères là où la décision en pose **trois**. Le test
-    // n'exigeait qu'une liste non vide : une copie qui prend du retard passait. Les deux
-    // listes sont maintenant la même source (`CRITERES_ALPHA`), et cette assertion le garde.
+    // de route affichait **deux** critères là où la décision en pose **trois**. Le jalon
+    // reprend `CRITERES_ALPHA`, et l'attendu est écrit **en clair** (#375) : une copie qui
+    // prend du retard, ou un mot changé dans le jalon, échoue ici aussi.
     const alpha = JALONS.find((jalon) => jalon.etape === 'alpha');
-    expect(alpha?.criteres).toEqual(CRITERES_ALPHA);
+    expect(alpha?.criteres).toEqual(CRITERES_ALPHA_ATTENDUS);
   });
 
   it('n’écrit aucun numéro de version : la version vit dans package.json', () => {

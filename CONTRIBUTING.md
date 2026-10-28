@@ -139,6 +139,13 @@ Avant de proposer, la définition de « fini » (`AGENTS.md` §8.4) :
   Sujet : `merge: <ce que ça change> (#n)`. Un ticket entier se défait par `git revert -m 1 <merge>`.
 - **Avant de fusionner** : `npm run ci:etat` — si `main` est rouge, on ne fusionne pas sans savoir
   pourquoi.
+- **Qui fusionne, et après quoi** ([`docs/agents/parallelisme.md`](docs/agents/parallelisme.md) §5) :
+  seul le compte de **Bastien** fusionne (D-131). **Sa propre PR** part sur les trois jobs verts,
+  sans relecture obligatoire ; une **PR venue d'un autre auteur** reçoit d'abord la **relecture
+  d'un agent qui n'a pas écrit le code**, son compte rendu publié ici, puis la **validation écrite**
+  de Bastien.
+- **Le moment de la release n'est pas celui de la PR** : une release part sur un **lot cohérent**,
+  **jamais plus d'une par jour** (D-128) — la règle et son geste complet sont `docs/VERSIONS.md` §4.
 - **Après** : la branche est supprimée par GitHub ; le worktree se retire à la main
   (`git worktree remove`, puis `git branch -d`).
 
