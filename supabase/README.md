@@ -124,9 +124,10 @@ La 0011 a fermé `anon` sur toutes les fonctions `security definer` de `public`.
 
 Les déclencheurs `comptes_creation` et `comptes_decision` ne sont **pas** dans cette liste : un
 déclencheur ne vérifie pas l'`EXECUTE` de son appelant, donc le droit ne servait à rien. D-133 (2)
-le leur retire ; ce retrait est porté par la migration `0015`, qui **n'est pas dans le dépôt** à la
-date de cette rédaction. Tant qu'elle n'y est pas, le dépôt laisse ces deux fonctions exécutables par
-`authenticated` : c'est un écart à lever, pas un état voulu.
+le leur retire, et c'est la migration **`0018`** qui le fait (#341, fusionnée le 28/10/2026) — elle
+ferme ces deux fonctions, et aussi les six déclencheurs sans `security definer` que la 0011 avait
+laissés sous l'`EXECUTE` de `PUBLIC`. La garde `supabase/fonctions.test.ts` le vérifie : `anon`
+n'exécute aucune fonction de `public`, et `authenticated` exécute exactement les cinq du tableau.
 
 Les fonctions d'annonce Discord (0013) ne sont ouvertes à **aucun** client : `revoke ... from public,
 anon, authenticated`.
