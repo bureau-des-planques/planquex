@@ -33,7 +33,9 @@ export default defineConfig({
         theme_color: '#0b1220',
         background_color: '#0b1220',
         display: 'standalone',
-        orientation: 'portrait',
+        // Portrait **et** paysage (D-142) : l'application installée suit la rotation du téléphone.
+        // L'écran de combat a sa mise en page de paysage (`styles.css`, « écran court, paysage »).
+        orientation: 'any',
         lang: 'fr',
         start_url: '/',
         // Des PNG d'abord : sans icône raster, Chromium/Brave n'installe qu'un raccourci
