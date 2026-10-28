@@ -14,8 +14,17 @@
 --
 -- **Le client ne peut pas se l'attribuer.** Les droits d'écriture de `authenticated` sont
 -- **colonne par colonne** depuis la 0005 (`etat`, `raison`) : les deux colonnes ci-dessous
--- n'entrent dans aucun `grant`, et la révocation explicite plus bas les referme pour de bon.
--- Seul le rôle d'administration (celui des migrations et du poste de pilotage) les écrit.
+-- n'entrent dans aucun `grant`, et **c'est cela seul** qui les ferme. Seul le rôle
+-- d'administration (celui des migrations et du poste de pilotage) les écrit.
+--
+-- **Aucune révocation ici, et c'est mesuré** (#372, 27/10/2026). Ce fichier portait trois
+-- `revoke all (medaille_periode_essai, …) on public.comptes` : ils ne retirent **rien**. D'une
+-- part un droit accordé **au niveau table** (le `select` de la 0005) n'est pas entamé par une
+-- révocation de colonne ; d'autre part ces deux colonnes ne sont **jamais accordées**, donc il
+-- n'y a rien à retirer — la ligne est inopérante et **ne peut pas échouer**. Vérifié dans PGlite :
+-- la même base, avec et sans ces trois lignes, rend les mêmes droits (les deux colonnes en
+-- `update` : `false` ; `select` sur la table : `true`). Elles sont donc retirées, et c'est le
+-- **test** qui garde la fermeture (`supabase/comptes.test.ts`), pas une ligne de ce fichier.
 --
 -- **Le booléen et sa date ne se séparent pas** : la contrainte `comptes_medaille_a_sa_date` exige
 -- l'accord des deux. Une médaille sans date ne dit pas quand, une date sans médaille ment sur le
@@ -24,11 +33,11 @@
 -- **Le contrôle mord** : `supabase/comptes.test.ts` (PGlite) — la médaille est fausse par défaut,
 -- deux comptes approuvés au même instant ne la reçoivent pas ensemble (elle ne se déduit pas de
 -- `created_at`), le serveur l'attribue et le compte la lit, un client la tente en vain
--- (`permission denied`), et la migration **mutée** (colonnes ajoutées au `grant`) laisse le
--- client se l'attribuer.
+-- (`permission denied`), le `grant update (etat, raison)` de la 0005 **élargi à la table** laisse
+-- le client se l'attribuer, et aucune ligne de droit ne nomme les deux colonnes ici.
 --
 -- **Idempotente** : rejouable sans erreur (`add column if not exists`, `drop constraint if
--- exists` puis `add constraint`, `comment`, `revoke`).
+-- exists` puis `add constraint`, `comment`).
 
 begin;
 
@@ -58,24 +67,23 @@ alter table public.comptes
   check (medaille_periode_essai = (medaille_periode_essai_le is not null));
 
 -- ---------------------------------------------------------------------------------------------
--- 2. Aucun droit d'écriture client — la fermeture, dite explicitement
+-- 2. Aucun droit d'écriture client — et aucune ligne de droit à écrire ici
 -- ---------------------------------------------------------------------------------------------
 
--- La **vraie** garde est le `grant update (etat, raison)` de la 0005 : une colonne qui n'y est
--- pas n'est pas modifiable, et ces deux-là n'y sont pas. Cette révocation ne remplace pas cette
--- règle, elle la **redit** là où les colonnes naissent : un `grant update on public.comptes`
--- (sans liste de colonnes) glissé un jour dans une migration serait alors la seule façon de
--- rouvrir l'écriture, et ce fichier dit que c'est interdit.
+-- La garde est le `grant update (etat, raison)` de la 0005 : une colonne qui n'y est pas n'est
+-- pas modifiable, et ces deux-là n'y sont pas. Ce fichier ne porte donc **aucune** ligne
+-- `grant`/`revoke` qui nomme les deux colonnes : une révocation de colonne ne retire rien (voir
+-- l'en-tête, #372), et un `grant` les ouvrirait.
+--
+-- La seule façon de rouvrir l'écriture serait un `grant update` **au niveau table** — ce que la
+-- 0005 a révoqué —, et c'est cette régression-là que la garde fabrique et refuse
+-- (`supabase/comptes.test.ts`, mutation « grant élargi à la table »).
 --
 -- `select`, lui, n'est pas touché : la 0005 donne la table entière, donc les deux colonnes
 -- **nouvelles** sont lisibles par leur propriétaire — c'est ainsi que Réglages affiche la
--- médaille.
-revoke all (medaille_periode_essai, medaille_periode_essai_le) on public.comptes from public;
-revoke all (medaille_periode_essai, medaille_periode_essai_le) on public.comptes from anon;
-revoke all (medaille_periode_essai, medaille_periode_essai_le) on public.comptes from authenticated;
-
--- Les politiques de la 0005 ne bougent pas : celle de lecture (`id = auth.uid()` ou
--- administrateur) porte la médaille avec le reste de la ligne, et celle d'écriture ne vise que
--- `etat` et `raison` par le grant — aucune politique n'ouvre ces colonnes.
+-- médaille. Les politiques de la 0005 ne bougent pas non plus : celle de lecture
+-- (`id = auth.uid()` ou administrateur) porte la médaille avec le reste de la ligne, et celle
+-- d'écriture ne vise que `etat` et `raison` par le grant — aucune politique n'ouvre ces
+-- colonnes.
 
 commit;
