@@ -49,6 +49,7 @@ import { useEffetsDeCombat } from '@/components/effets-combat';
 import { phraseDePortee } from './portee';
 import { phraseCafeAuPoste } from '@/components/cafe-au-poste';
 import { PanneauAttacheCafe } from '@/components/PanneauAttacheCafe';
+import { PresentationRegles } from '@/components/PresentationRegles';
 import { SceneAttaque } from '@/animation/SceneAttaque';
 import type { EffetCombat } from '@/components/effets-combat';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
@@ -1442,19 +1443,19 @@ export function Battle() {
                   {/* **Les règles en une minute** (#270) : le même panneau que dans Réglages —
                       un seul corps, deux entrées. La légende des Conditions reste sur le
                       bouton de la barre d'état, à sa place. */}
-                  <Dialog>
-                    <DialogTrigger render={<button type="button" className="combat-menu__entree" />}>
-                      <BookOpen size={16} aria-hidden="true" /> Règles
-                      <span className="muted">les Conditions</span>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Conditions</DialogTitle>
-                        <DialogDescription>Ce qu’un Planqué au Poste peut subir.</DialogDescription>
-                      </DialogHeader>
-                      {conditionsLegend}
-                    </DialogContent>
-                  </Dialog>
+                  <PresentationRegles
+                    className="combat-menu__entree"
+                    extra={
+                      <>
+                        <h3>Conditions</h3>
+                        <p className="muted">Ce qu’un Planqué au Poste peut subir.</p>
+                        {conditionsLegend}
+                      </>
+                    }
+                  >
+                    <BookOpen size={16} aria-hidden="true" /> Règles
+                    <span className="muted">une minute</span>
+                  </PresentationRegles>
                 </li>
                 {forfeitAction && (
                   <li>

@@ -207,7 +207,9 @@ describe('Battle — écran de combat', () => {
     expect(screen.queryByRole('button', { name: /Règles/i })).toBeNull();
     fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /Règles/i }));
 
-    const dialogue = screen.getByRole('dialog', { name: /Conditions/i });
+    // Le menu ouvre **les règles en une minute** (#270) : la légende des Conditions y est,
+    // à la suite des étapes — un seul panneau, deux contenus.
+    const dialogue = screen.getByRole('dialog', { name: /règles en une minute/i });
     expect(dialogue).toHaveTextContent(/10 de Stress par Contrôle/);
     expect(dialogue).toHaveTextContent(/ce qu.un Planqué au Poste peut subir/i);
   });

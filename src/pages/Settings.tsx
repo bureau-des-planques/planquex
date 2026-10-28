@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
+import { PresentationRegles } from '@/components/PresentationRegles';
 import { estApprouve, libelleEtat } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
@@ -28,6 +29,7 @@ export const CATEGORIES_REGLAGES = [
   'Compte',
   'Accessibilité',
   'Journée d’intégration',
+  'Les règles',
   'Pas-à-pas du combat',
   'Sauvegarde',
   'Traces de combat',
@@ -201,6 +203,17 @@ export function Settings() {
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
         </button>
+      </section>
+
+      {/* **Les règles en une minute** (#270) : la présentation du nouvel inscrit, lisible et
+          rejouable ici. */}
+      <section className="section panel" aria-labelledby="reglages-regles">
+        <h2 id="reglages-regles">Les règles</h2>
+        <p className="muted max-w-[62ch]">
+          Six étapes, une minute : le Seuil et le Stress, le plateau, le Deck, la Pression et le café, les Conditions,
+          la fin de la partie.
+        </p>
+        <PresentationRegles>Les règles en une minute</PresentationRegles>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-pas-a-pas">

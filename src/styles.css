@@ -4294,3 +4294,32 @@ h2 {
   margin: 0;
 }
 
+/* **Les règles en une minute** (#270) : six étapes dans un dialogue, une seule à la fois.
+   La largeur de lecture est bornée — un paragraphe de règles se lit, il ne s'étale pas sur
+   toute la feuille — et le compte des étapes reste discret, au-dessus du titre. */
+.regles-dialogue {
+  max-width: min(32rem, calc(100% - 2rem));
+}
+
+.regles {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.regles__compte {
+  margin: 0;
+  font-size: var(--fs-xs);
+}
+
+.regles__titre {
+  margin: 0;
+}
+
+.regles__texte {
+  margin: 0;
+  max-width: 62ch;
+}
+
+.regles__essai {
+  margin: 0;
+}
