@@ -225,12 +225,20 @@ critère 5), et la garde la refuse.
 | `syndicat-secretaire-general-ex` | the union's general secretary, in a dark suit with a gold-tipped badge, holding a forty-page report, walking out of a negotiation, imperious and tired |
 | `syndicat-tresorier-cse` | a works-council treasurer, in a knitted vest over a shirt, holding a cash box, counting coins for coffee, precise and worried |
 | `syndicat-president-cse` | a works-council chair, in a navy suit with a lanyard, holding a wooden gavel, calling a room to order, stern and bored |
+| `syndicat-delegue-syndical` | a union delegate, in a corduroy jacket with a union pin, holding a single folded notice, knocking on a closed office door, defiant and tired |
+| `syndicat-permanent-syndical` | a full-time union officer, in a tweed blazer over a shirt, holding a battered briefcase, pacing a factory walkway, watchful and dry |
+| `syndicat-collectif-atelier` | a shop-floor collective, in matching overalls, holding a signed petition sheet, standing shoulder to shoulder, proud and stoic |
+| `syndicat-representant-section` | a section representative, in a high-vis vest over a jacket, holding an annotated memo, reading it aloud at a bench, precise and mildly smug |
 | `interim-interimaire` | a temp worker, in a borrowed overall and a blank visitor badge, holding a folder of instructions, standing at the wrong workstation, hopeful and nervous |
 | `interim-interimaire-confirme` | a seasoned temp, in a clean overall with several badges, holding a mug, straddling two workstations, cheerful and unbothered |
 | `interim-chef-equipe-interimaire` | a temp team leader, in a hi-vis vest with no name on it, holding a shift sheet, pointing a clipboard at one colleague, brisk and unimpressed |
 | `interim-interimaire-legendaire-ex` | a legendary temp, in a gold-trimmed overall with stacked visitor badges, holding a faded laminated badge, standing on a loading dock at dawn, bright and smug |
 | `interim-consultant-interimaire` | an interim consultant, in a sharp grey suit with no badge, holding a laptop, pinning a timeline to a wall, calm and detached |
 | `interim-responsable-interim` | an interim supply manager, in a navy suit with a phone headset, holding a staffing schedule, dialling at a cluttered desk, cheerful and dry |
+| `interim-vacataire` | a day-rate temp, in a thin fleece over a polo, holding a one-day contract, clocking in at a turnstile, hopeful and tired |
+| `interim-charge-mission` | a mission officer, in a pressed shirt with no badge, holding a slide deck printout, walking past an empty desk, calm and detached |
+| `interim-coordinateur-interimaire` | a temp coordinator, in a navy vest over a shirt, holding three phones, juggling them at a whiteboard, brisk and overworked |
+| `interim-suppleant` | a stand-in worker, in a too-large boiler suit, holding a predecessor's handwritten notes, shrugging at a machine panel, apologetic and unbothered |
 | `support-agent-support` | a support agent, in a polo shirt with a headset, holding a printed ticket, closing it without reading, tired and unbothered |
 | `support-technicien-support` | a support technician, in a dark hoodie and a lanyard, holding a headset, repeating a reboot instruction, patient and deadpan |
 | `support-responsable-support` | a support team lead, in a charcoal shirt with a headset, holding a response script, standing behind a row of screens, patient and weary |

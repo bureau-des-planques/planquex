@@ -7,15 +7,18 @@ import { planqueBase } from './planque';
  * (`CARD-SPEC.md` §3). Les intitulés sont des postes réels, les Pressions des
  * tâches ou documents de mission, les Talents des compétences de métier (D-027).
  *
- * 6 entrées, toutes des bases : la ligne à 3 stades, la carte signature COMEX, et
- * la ligne à 3 stades de la vague 2 (#86, les 9 cartes `3D` manquantes). Le quota
+ * 10 entrées, toutes des bases : la ligne à 3 stades, la carte signature COMEX, la
+ * ligne à 3 stades de la vague 2 (#86, les 9 cartes `3D` manquantes), et la vague #352
+ * (un Entrant seul, deux Entrants, une ligne à 2 stades) qui porte la faction à **10
+ * noms de base** — le minimum pour un Deck mono-faction de 20 cartes. Le quota
  * de `PROPOSITION.md` §4.3 (4 entrées) est dépassé : la cible de rareté
  * `CARD-SPEC.md` §1 (42 cartes en 3◆) prime, l'écart est signalé au ticket #63.
  * Seuil par stade/rareté et dégâts par café conformes à `CARD-SPEC.md` §2 (D-021,
  * D-023) ; COMEX `ex: true` en 4D, valant 2 Interventions (D-020).
  *
- * **Types de café (#116)** : `INTERIM` n'est pas un type produit, donc chaque Pression
- * mêle **deux types produits distincts** (D-037 (3)). Une **ligne d'évolution** doit
+ * **Types de café (#116)** : `INTERIM` n'est pas un type produit, donc chaque Pression à
+ * **2 cafés et plus** mêle **deux types produits distincts** (D-037 (3)) ; une Pression
+ * à **1 café** n'en porte qu'un, et le Deck doit le produire. Une **ligne d'évolution** doit
  * rester payable avec le plafond de **3 types** d'un Deck (D-034, D-037 (4)) : chaque
  * ligne garde donc **une paire stable**, et l'Entrant (`SSE`) est le troisième type.
  * `interim.test.ts` le contrôle **par ligne**, pas carte par carte.
@@ -168,6 +171,87 @@ export const INTERIM_CARDS: PlanqueCard[] = [
     ],
     flavor: 'Il fournit du personnel. Le personnel ne sait pas où il va.',
     art: 'interim-responsable-interim.webp'
+  }),
+
+  // Vague #352 : la faction atteint **10 noms de base**, le minimum pour un Deck
+  // mono-faction de 20 cartes (2 exemplaires par nom). Même contrainte de café que les
+  // lignes existantes (#116) : les Pressions à 2 cafés gardent la paire de la ligne 1
+  // (`MANAGEMENT` + `QVT`), les Entrants seuls n'emploient qu'un type **déjà** dans le
+  // budget de trois de la ligne qu'ils rejoignent.
+  // Pas de champ `art` : l'illustration n'est pas produite (spec #95, D-045) ; son
+  // **sujet** est écrit dans `design/illustrations/SUJETS-flow.md`.
+  base({
+    id: 'interim-vacataire',
+    name: 'Vacataire',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 60,
+    retreat: 1,
+    attacks: [
+      {
+        name: 'Renfort d’un jour',
+        cost: ['QVT'],
+        damage: 20,
+        text: 'Ce Planqué prend 10 de stress.',
+        effects: [{ kind: 'selfDamage', amount: 10 }]
+      }
+    ],
+    flavor: 'Il a signé pour une journée. Il en est à sa troisième semaine.'
+  }),
+  base({
+    id: 'interim-charge-mission',
+    name: 'Chargé de mission',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 70,
+    retreat: 1,
+    attacks: [
+      {
+        name: 'Livrable',
+        cost: ['MANAGEMENT'],
+        damage: 10,
+        text: 'Pioche 1 carte.',
+        effects: [{ kind: 'draw', amount: 1 }]
+      }
+    ],
+    flavor: 'Il rend un livrable. Personne ne sait ce qu’il contient, tout le monde le valide.'
+  }),
+  base({
+    id: 'interim-coordinateur-interimaire',
+    evolvesFrom: 'interim-charge-mission',
+    name: 'Coordinateur intérimaire',
+    stage: 'N+1',
+    rarity: '2D',
+    hp: 100,
+    retreat: 2,
+    attacks: [
+      {
+        name: 'Reporting express',
+        cost: ['MANAGEMENT', 'QVT'],
+        damage: 50,
+        text: 'Échange ce Planqué avec un Planqué du Banc.',
+        effects: [{ kind: 'switchSelf' }]
+      }
+    ],
+    flavor: 'Il coordonne trois missions qu’il n’a pas le droit de nommer.'
+  }),
+  base({
+    id: 'interim-suppleant',
+    name: 'Suppléant',
+    stage: 'ENTRANT',
+    rarity: '1D',
+    hp: 70,
+    retreat: 1,
+    attacks: [
+      {
+        name: 'Remplacement minute',
+        cost: ['ATELIER'],
+        damage: 20,
+        text: 'Soigne 10 de ce Planqué.',
+        effects: [{ kind: 'healSelf', amount: 10 }]
+      }
+    ],
+    flavor: 'On lui a dit de faire comme son prédécesseur. Il ne l’a jamais croisé.'
   })
 ];
 

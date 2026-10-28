@@ -106,8 +106,8 @@ export const MUTATIONS = [
     ticket: 103,
     titre: 'la table des écarts connus accepte une clé de plus',
     fichier: 'src/data/cards.test.ts',
-    motif: "  '1D': { ecart: -1, ticket: 104 }",
-    remplacement: "  '1D': { ecart: -1, ticket: 104 },\n  '3D': { ecart: -1, ticket: 999 }",
+    motif: "  '1D': { ecart: 5, ticket: 352 }",
+    remplacement: "  '1D': { ecart: 5, ticket: 352 },\n  '3D': { ecart: -1, ticket: 999 }",
     tests: ['src/data/cards.test.ts'],
     garde: 'sans fermeture, une régression de contenu (3 cartes 3◆ disparues) passe inaperçue'
   },
