@@ -42,36 +42,49 @@ float hauteur(vec2 uv) {
   vec2 dr = vec2(cos(a0) * d.x + sin(a0) * d.y, -sin(a0) * d.x + cos(a0) * d.y);
   dr.x *= mix(1.0, 0.7 + 0.6 * u_m2.w, u_radial);
   float r = length(dr);
-  float s = mix(0.17, 0.065, u_radial);
-  float profondeur = mix(1.0, 0.8 + 0.4 * u_m1.x, u_radial);
-  float creux = -u_c * mix(0.075, 0.062, u_radial) * profondeur * exp(-r * r / (2.0 * s * s));
+  float s = mix(0.17, 0.052 + 0.028 * u_m2.w, u_radial);
+  float profondeur = mix(1.0, 0.75 + 0.5 * u_m1.x, u_radial);
+  float creux = -u_c * mix(0.075, 0.07, u_radial) * profondeur * exp(-r * r / (2.0 * s * s));
   float anneaux = (1.0 - u_radial) * u_c * 0.0035 * sin(r * 95.0) * exp(-r * r / (2.0 * s * s * 1.4));
-  // Les plis : un bruit pris sur le cercle (sans couture), à fréquence, phase et amplitude tirées.
+  // Les plis : un bruit pris sur le cercle (sans couture). Peu de branches, et chaque appui a
+  // sa fréquence, sa phase, son ampleur et sa portée — deux appuis ne se ressemblent pas.
   vec2 u = dr / max(r, 0.0001);
-  float lobes = bruit(u * 2.2 + u_m1.xy * 17.0) * 2.0 - 1.0;
-  float fins = bruit(u * (5.0 + 4.0 * u_m1.z) + vec2(u_m1.w, u_m2.x) * 23.0) * 2.0 - 1.0;
-  float menus = bruit(u * 13.0 + u_m2.xy * 31.0) * 2.0 - 1.0;
-  float pli = 0.9 * (0.5 * fins + 0.7 * lobes + 0.2 * menus);
-  float portee = s * (0.65 + 0.9 * bruit(u * 1.7 + u_m2.zw * 13.0));
-  float etoile = u_radial * u_c * 0.0024 * pli * smoothstep(0.0, 0.05, r) * exp(-r * r / (2.0 * portee * portee * 3.0));
+  float lobes = bruit(u * (1.4 + 0.9 * u_m1.y) + u_m1.xy * 17.0) * 2.0 - 1.0;
+  float fins = bruit(u * (3.0 + 3.0 * u_m1.z) + vec2(u_m1.w, u_m2.x) * 23.0) * 2.0 - 1.0;
+  float menus = bruit(u * 8.0 + u_m2.xy * 31.0) * 2.0 - 1.0;
+  float pli = 0.55 * lobes + 0.3 * fins + 0.1 * menus;
+  float portee = s * (0.55 + 1.0 * bruit(u * 1.3 + u_m2.zw * 13.0));
+  // Le second creux, ailleurs, casse la symétrie de l'étoile.
+  vec2 d2 = d - (u_m2.xy - 0.5) * 0.22;
+  float r2 = length(d2);
+  float pince = -u_c * 0.02 * (0.4 + 0.6 * u_m2.z) * exp(-r2 * r2 / (2.0 * 0.035 * 0.035));
+  float etoile = u_radial * u_c * 0.0038 * pli * smoothstep(0.0, 0.04, r) * exp(-r * r / (2.0 * portee * portee * 2.4));
   float plis = anneaux + etoile;
   float froisse = 0.004 * (bruit(uv * vec2(7.0, 11.0)) + 0.5 * bruit(uv * vec2(19.0, 27.0)));
-  return creux + plis + froisse;
+  return creux + pince + plis + froisse;
 }
 void main() {
   vec2 e = vec2(1.0 / 300.0, 1.0 / 440.0);
   float hx = hauteur(v_uv + vec2(e.x, 0.0)) - hauteur(v_uv - vec2(e.x, 0.0));
   float hy = hauteur(v_uv + vec2(0.0, e.y)) - hauteur(v_uv - vec2(0.0, e.y));
+  // L'axe vertical de l'écran va vers le BAS : la lumière vient d'en haut, donc L.y est négatif.
+  // Avant ce correctif, la lumière venait d'en bas et le creux se lisait comme une bosse.
   vec3 n = normalize(vec3(-hx / (2.0 * e.x) * 2.2, -hy / (2.0 * e.y) * 2.2, 1.0));
-  vec3 L = normalize(vec3(-0.45, 0.55, 0.7));
+  vec3 L = normalize(vec3(-0.5, -0.62, 0.62));
   vec3 H = normalize(L + vec3(0.0, 0.0, 1.0));
-  float spec = pow(max(dot(n, H), 0.0), 70.0);
+  float spec = pow(max(dot(n, H), 0.0), 90.0);
   float diff = dot(n, L);
-  vec3 base = texture(u_tex, v_uv + n.xy * 0.02).rgb;
-  float env = smoothstep(-0.5, 0.6, n.x * 0.9 + n.y * 0.6);
-  vec3 col = base * (0.72 + 0.35 * diff);
-  col += mix(vec3(0.30, 0.36, 0.48), vec3(0.9, 0.95, 1.0), env) * (1.0 - n.z) * 1.1;
-  col += spec * vec3(0.85, 0.93, 1.0) * (0.35 + 0.65 * clamp(u_c, 0.0, 1.0)) * mix(1.0, 0.5, u_radial);
+  // Le film est clair : on assombrit peu à la lumière, et le creux s'assombrit de lui-même.
+  vec3 base = texture(u_tex, v_uv + n.xy * 0.008).rgb;
+  float env = smoothstep(-0.4, 0.7, -n.y * 1.0 - n.x * 0.35);
+  vec3 col = base * (0.92 + 0.14 * diff);
+  // L'occlusion : au fond du creux la lumière manque. C'est ce qui fait lire « trou » et non « bosse ».
+  vec2 d0 = (v_uv - u_p) * vec2(u_aspect, 1.0);
+  float ao = exp(-dot(d0, d0) / (2.0 * 0.055 * 0.055));
+  col *= 1.0 - 0.34 * ao * clamp(u_c, 0.0, 1.0);
+  col *= 1.0 - 0.22 * clamp(-diff, 0.0, 1.0);
+  col += mix(vec3(0.34, 0.40, 0.52), vec3(1.0), env) * (1.0 - n.z) * 0.30;
+  col += spec * vec3(0.92, 0.97, 1.0) * (0.14 + 0.42 * clamp(u_c, 0.0, 1.0)) * mix(1.0, 0.40, u_radial);
   o = vec4(col, 1.0);
 }`;
 
