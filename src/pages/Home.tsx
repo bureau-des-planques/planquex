@@ -65,10 +65,8 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
     <div className="page home">
       <section className="hero">
         <h1>
-          Ton atelier.
-          <br />
-          Tes Interventions.
-          <br />
+          Ton atelier. <br />
+          Tes Interventions. <br />
           Ta survie.
         </h1>
         <p className="hero__lead">
