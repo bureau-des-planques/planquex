@@ -1,10 +1,10 @@
 import { ALL_CARDS, isPlanque } from '@/data';
-import type { BattleState, CafeType, Faction, PlayerId } from '@/data/types';
+import type { BattleAction, BattleState, CafeType, Faction, PlayerId } from '@/data/types';
 import { DECK_SIZE, deckCanAdd, deckLegal } from '@/game/deck';
 import { applyAction, createBattle } from '@/game/engine';
 import type { BattleCafeTypes } from '@/game/engine';
-import { nextAction } from '@/game/ia';
-import type { AiLevel } from '@/game/ia';
+import { nextAction, politique, searchDecision } from '@/game/ia';
+import type { AiLevel, Politique, SearchOptions } from '@/game/ia';
 import { drawRandom, seedRng } from '@/game/rng';
 
 /**
@@ -315,6 +315,115 @@ export function playGameWithStats(
     state = after;
   }
   return { state, attacks };
+}
+
+/* ------------------------------------------------------------------ */
+/* Parties à politiques nommées (#354, #360)                        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * **Une politique nommée par camp** (#253). C'est ce qui manquait pour mesurer la
+ * Direction **réellement jouée** — `nextAiAction`, c'est-à-dire la recherche à deux
+ * coups (D-084, D-109) — contre une référence scriptée : `playerLevel`/`aiLevel` ne
+ * savent nommer que `1` et `2`, et « 2 » ne veut pas dire la même chose à l'écran et
+ * dans le simulateur (#253).
+ */
+export interface PolitiquesDePartie {
+  player: Politique;
+  ai: Politique;
+}
+
+/** Le coût des décisions d'**un** camp : coups joués, temps total, pic, replis de budget. */
+export interface CoutDecisions {
+  /** Nombre de décisions prises par le camp chronométré. */
+  coups: number;
+  /** Somme des durées, en millisecondes (`performance.now`). */
+  msTotal: number;
+  /** Durée de la décision la plus lente. */
+  msMax: number;
+  /** Décisions où le plafond de nœuds a mordu : le coup rendu est le repli glouton (#172). */
+  replis: number;
+}
+
+export interface OptionsPartiePolitiques {
+  maxTurns?: number;
+  cafeTypes?: BattleCafeTypes;
+  /**
+   * Camp dont on **chronomètre** les décisions ; `null` (défaut) ne chronomètre rien.
+   * Le temps est une **mesure**, jamais une entrée de la politique.
+   */
+  chrono?: PlayerId | null;
+  /**
+   * Réglages de la recherche à deux coups, quand un camp la joue. `maxMs: Infinity`
+   * neutralise la seule borne **non déterministe** de la décision (#172) : c'est ce que
+   * demande une mesure qui doit se rejouer à l'identique.
+   */
+  recherche?: SearchOptions;
+}
+
+export interface PartiePolitiques {
+  state: BattleState;
+  /** Pressions réellement appliquées, par camp (même compteur que #113). */
+  attacks: Record<PlayerId, number>;
+  /** Coût des décisions du camp `chrono` ; zéro partout quand il n'y en a pas. */
+  cout: CoutDecisions;
+}
+
+/**
+ * Joue **une** partie headless où chaque camp joue la **politique nommée** qu'on lui
+ * donne, et rend l'état final, les Pressions et le coût des décisions d'un camp.
+ *
+ * Le protocole est celui de `playGameWithStats` — une action de `legalActions` à la fois,
+ * même dispatcher `applyAction`, même garde d'arrêt —, seule la politique change. La
+ * recherche (#204) rend son verdict de repli (`searchDecision`) pour que la mesure dise
+ * si le **budget** contraint la Direction, comme le fait `pesage`.
+ *
+ * Aucun `Math.random()` : les tirages de la recherche passent par les générateurs
+ * dérivés de la graine de la partie (`ia.ts`), donc la partie se rejoue.
+ */
+export function jouerPartiePolitiques(
+  playerDeck: string[],
+  aiDeck: string[],
+  seed: number,
+  politiques: PolitiquesDePartie,
+  options: OptionsPartiePolitiques = {}
+): PartiePolitiques {
+  const maxTurns = options.maxTurns ?? DEFAULT_MAX_TURNS;
+  const chrono = options.chrono ?? null;
+  const coups: Record<PlayerId, Politique> = { player: politiques.player, ai: politiques.ai };
+  const choisie: Record<PlayerId, (state: BattleState) => BattleAction | null> = {
+    player: politique(politiques.player),
+    ai: politique(politiques.ai)
+  };
+
+  let state = createBattle(playerDeck, aiDeck, seed, options.cafeTypes ?? {});
+  const attacks: Record<PlayerId, number> = { player: 0, ai: 0 };
+  const cout: CoutDecisions = { coups: 0, msTotal: 0, msMax: 0, replis: 0 };
+
+  while (state.phase === 'playing' && state.turn <= maxTurns) {
+    const who = state.pendingPromotion ?? state.current;
+    const debut = chrono === who ? performance.now() : 0;
+    let action: BattleAction | null;
+    if (coups[who] === 'recherche') {
+      const decision = searchDecision(state, options.recherche);
+      action = decision.action;
+      if (chrono === who) cout.replis += decision.fallback ? 1 : 0;
+    } else {
+      action = choisie[who](state);
+    }
+    if (chrono === who) {
+      const duree = performance.now() - debut;
+      cout.coups += 1;
+      cout.msTotal += duree;
+      cout.msMax = Math.max(cout.msMax, duree);
+    }
+    if (!action) break;
+    const after = applyAction(state, action);
+    if (after === state) break;
+    if (action.type === 'attack') attacks[who] += 1;
+    state = after;
+  }
+  return { state, attacks, cout };
 }
 
 /** `playGame` sans les compteurs : l'état final seul, pour les appelants d'avant #113. */
