@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 149 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 150 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -74,7 +74,7 @@
 | D-066 | 22/10/2026 | La Journée d'intégration en deux temps : pour l'alpha, la… |
 | D-067 | 22/10/2026 | Le périmètre de la couverture d'illustrations : les 7 cartes… |
 | D-068 | 22/10/2026 | Le mur a une page, trois apparences, et une disposition… |
-| D-069 | 22/10/2026 | #141 — les cinq Chariots proposés de l'alpha . Ce… |
+| D-069 | 22/10/2026 | ⚠ Complétée le 28/10/2026 — voir D-149 : le joueur… |
 | D-070 | 22/10/2026 | Le nom de l'ancien projet quitte la documentation, et la… |
 | D-071 | 22/10/2026 | La bascule vers planquex.4k7.org est faite (session planquex-infra) — l'exécution… |
 | D-072 | 22/10/2026 | planquex.vercel.app redirige en 308 vers planquex.4k7.org : l'ancienne adresse n'est… |
@@ -154,4 +154,5 @@
 | D-146 | 28/10/2026 | Les niveaux numériques portent leur politique, et la difficulté se… |
 | D-147 | 28/10/2026 | La Rotation tient en une entrée dans la barre :… |
 | D-148 | 28/10/2026 | Le profil du testeur (pseudo, service, intitulé) vit sur le… |
+| D-149 | 28/10/2026 | La Direction joue trois Decks, un par archétype, et la… |
 | D-150 | 28/10/2026 | Le reset de la beta est un geste du poste,… |

@@ -9,7 +9,7 @@
 src/data/**/*.ts
 
 # Documents : le dépôt est écrit à la main, en français, avec des tableaux alignés et des
-# retours à la ligne qui portent du sens. Prettier reformaterait 149 décisions et 30 docs.
+# retours à la ligne qui portent du sens. Prettier reformaterait 150 décisions et 30 docs.
 docs/**/*.md
 AGENTS.md
 DESIGN.md
