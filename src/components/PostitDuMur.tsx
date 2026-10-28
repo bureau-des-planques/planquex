@@ -108,6 +108,8 @@ export function PostitDuMur({
   const papierAssocie = associe ? PAPIERS[apparenceDe(associe)] : null;
   /** La prise n'existe qu'en mode placement, et seulement sur un post-it qu'on a le droit de ranger. */
   const poignee = placement && deplacable;
+  /** L'identifiant du détail : `aria-controls` du bouton le désigne, et le bloc le porte. */
+  const detailId = `postit-detail-${postit.id}`;
 
   const cadre: CSSProperties = {
     left: `${position.x}%`,
@@ -133,12 +135,23 @@ export function PostitDuMur({
 
       <span className="mt-2 block font-heading text-[1.02rem] font-bold leading-tight">{postit.titre}</span>
 
+      {/* **Compact** (#280) : trois lignes au repos pour parcourir le mur d'un coup d'œil ;
+          le texte entier revient quand le post-it est ouvert. */}
       <span
-        className={`mt-1.5 block leading-snug whitespace-pre-line ${postit.gueulage ? 'text-[0.94rem]' : 'text-[0.83rem]'}`}
+        className={`mt-1.5 leading-snug whitespace-pre-line ${
+          postit.gueulage ? 'text-[0.94rem]' : 'text-[0.83rem]'
+        } ${agrandi ? 'block' : 'line-clamp-3'}`}
         data-postit-texte
       >
         {postit.texte}
       </span>
+
+      {/* L'affordance du clic : elle dit qu'un détail existe, sans promettre une navigation. */}
+      {!placement && (
+        <span className="mt-2 block text-[0.72rem] font-bold uppercase tracking-[0.14em] opacity-90" aria-hidden="true">
+          {agrandi ? 'Réduire' : 'Ouvrir'}
+        </span>
+      )}
     </>
   );
 
@@ -156,7 +169,8 @@ export function PostitDuMur({
       onPointerCancel={poignee ? glisser.fin : undefined}
     >
       <article
-        className="relative rounded-[3px] px-4 pt-4 pb-3.5 text-left shadow-[4px_6px_16px_rgba(0,0,0,0.45)] transition-shadow duration-200 hover:shadow-[6px_10px_24px_rgba(0,0,0,0.55)]"
+        data-ouvert={agrandi}
+        className="relative rounded-[3px] px-3.5 pt-3.5 pb-3 text-left shadow-[4px_6px_16px_rgba(0,0,0,0.45)] transition-shadow duration-200 hover:shadow-[6px_10px_24px_rgba(0,0,0,0.55)] hover:brightness-[1.03] focus-within:ring-2 focus-within:ring-current focus-within:ring-offset-2"
         style={feuille}
       >
         {/* Le morceau de scotch : c'est lui qui dit « collé », avec l'inclinaison. */}
@@ -167,8 +181,9 @@ export function PostitDuMur({
         ) : (
           <button
             type="button"
-            className="block w-full cursor-pointer text-left"
+            className="block w-full cursor-pointer rounded-[2px] text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
             aria-expanded={agrandi}
+            aria-controls={detailId}
             aria-label={`Agrandir le post-it « ${postit.titre} »`}
             onClick={() => onAgrandir(postit.id)}
           >
@@ -176,37 +191,45 @@ export function PostitDuMur({
           </button>
         )}
 
-        {/* Sur écran large, le statut et le ticket vivent sur le post-it ; en étroit,
-            ils se rangent derrière une pression (D-068). */}
-        <div className={agrandi ? 'mt-3 flex flex-col gap-1.5' : 'mt-3 hidden flex-col gap-1.5 min-[900px]:flex'}>
+        {/* Le statut, le ticket et la version **au repos** : c'est ce qu'on lit sans ouvrir
+            (#280). Le fil, la correction et le retrait suivent, dans le détail. */}
+        <div id={detailId} className="mt-2.5 flex flex-col gap-1.5">
           {pouces && <PoucesDuMur postit={postit} pouces={pouces} />}
 
-          <span className="flex items-center gap-2 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
-            <span
-              aria-hidden="true"
-              className="h-2 w-2 rounded-full"
-              style={{ background: TEINTE_STATUT[postit.statut] }}
-            />
-            {postit.statut}
-          </span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.7rem] font-bold uppercase tracking-[0.1em]">
+            <span className="flex items-center gap-2">
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 rounded-full"
+                style={{ background: TEINTE_STATUT[postit.statut] }}
+              />
+              {postit.statut}
+            </span>
+            {postit.ticket !== null && (
+              <a
+                className="inline-flex items-center gap-1 text-[0.72rem] font-bold underline underline-offset-2"
+                href={`https://github.com/bureau-des-planques/planquex/issues/${postit.ticket}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onPointerDown={(event) => event.stopPropagation()}
+              >
+                Ticket #{postit.ticket} <ExternalLink size={12} />
+              </a>
+            )}
+          </div>
 
           {postit.statut === 'écarté' && postit.raison && (
             <span className="block text-[0.76rem] leading-snug italic opacity-80">Raison : {postit.raison}</span>
           )}
 
-          {postit.ticket !== null && (
-            <a
-              className="inline-flex items-center gap-1 self-start text-[0.76rem] font-semibold underline underline-offset-2"
-              href={`https://github.com/bureau-des-planques/planquex/issues/${postit.ticket}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onPointerDown={(event) => event.stopPropagation()}
-            >
-              Ticket #{postit.ticket} <ExternalLink size={12} />
-            </a>
-          )}
+          {/* La version, une seule fois : elle dit de quand date le post-it (#280). */}
+          {postit.version && <span className="block text-[0.72rem] opacity-80">Écrit en {postit.version}</span>}
 
-          {postit.version && <span className="block text-[0.7rem] opacity-80">Écrit en {postit.version}</span>}
+          {/* Le détail (#280) : le fil et la relecture ne se déplient qu'à la demande, et un
+              seul post-it à la fois (la page tient `agrandi`). */}
+          {agrandi && !placement && correction && <CorrectionDuPostit postit={postit} correction={correction} />}
+          {agrandi && !placement && retrait && <RetraitDuPostit postit={postit} retrait={retrait} />}
+          {agrandi && !placement && fil && <FilDuPostit postit={postit} fil={fil} />}
         </div>
 
         {/* Un post-it qui a des commentaires le dit **même replié** : sans ça, personne
@@ -217,13 +240,6 @@ export function PostitDuMur({
             {fil.commentaires.length} commentaire{fil.commentaires.length > 1 ? 's' : ''} — ouvrir pour lire
           </p>
         )}
-
-        {/* Le fil et la relecture vivent **dans** le post-it agrandi, sur tous les écrans :
-            c'est la place que D-068 leur donne, et elle ne dépend pas du mode de placement
-            (qui n'écrit que le fichier). */}
-        {agrandi && !placement && correction && <CorrectionDuPostit postit={postit} correction={correction} />}
-        {agrandi && !placement && retrait && <RetraitDuPostit postit={postit} retrait={retrait} />}
-        {agrandi && !placement && fil && <FilDuPostit postit={postit} fil={fil} />}
 
         {/* Le post-it associé (D-085) : petit, incliné, avec son scotch — il se lit
             **collé sur** le gueulage, jamais comme un second post-it libre. Sa teinte
