@@ -12,14 +12,21 @@
  *
  * États (D-060) : chargement (vérification de la session), erreur (refus de Supabase), et
  * l'état « déjà connecté », qui renvoie vers l'attente ou le bureau.
+ *
+ * Un compte connecté **sans profil complet** fait d'abord le parcours de première connexion
+ * (#325, D-148) : pseudo, service, intitulé. Le profil est lu sur le compte (la base), pas sur
+ * l'appareil ; il n'exige pas l'approbation, donc le parcours se fait avant la validation.
  */
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { RetourEcran } from '@/components/RetourEcran';
+import { ParcoursProfil } from '@/components/ParcoursProfil';
 import { estApprouve } from '@/lib/comptes';
+import { etapeDuProfil } from '@/lib/profil';
 import { useComptes } from '@/store/comptes';
+import { useProfil } from '@/store/profil';
 
 type Mode = 'connexion' | 'inscription';
 
@@ -34,6 +41,9 @@ export function Connexion() {
   const connecterCourriel = useComptes((state) => state.connecterCourriel);
   const inscrireCourriel = useComptes((state) => state.inscrireCourriel);
   const connecterGoogle = useComptes((state) => state.connecterGoogle);
+  const profil = useProfil((state) => state.profil);
+  const profilCharge = useProfil((state) => state.charge);
+  const chargerProfil = useProfil((state) => state.charger);
 
   const [mode, setMode] = useState<Mode>('connexion');
   const [courriel, setCourriel] = useState('');
@@ -46,11 +56,18 @@ export function Connexion() {
     if (configure) void rafraichir();
   }, [configure, rafraichir]);
 
-  // Déjà connecté : l'attente si le compte n'est pas approuvé, le bureau sinon.
+  // Le profil du compte connecté : lu une fois, avant de décider où aller.
   useEffect(() => {
-    if (!configure || !session || chargement) return;
+    if (configure && session && compte && !profilCharge) void chargerProfil(compte.id);
+  }, [configure, session, compte, profilCharge, chargerProfil]);
+
+  // Déjà connecté : le parcours s'il manque une étape, puis l'attente si le compte n'est pas
+  // approuvé, le bureau sinon.
+  const parcoursEnCours = Boolean(session && compte && profilCharge && etapeDuProfil(profil) !== 'fait');
+  useEffect(() => {
+    if (!configure || !session || chargement || !compte || !profilCharge || parcoursEnCours) return;
     navigate(estApprouve(compte) ? '/' : '/attente', { replace: true });
-  }, [configure, session, compte, chargement, navigate]);
+  }, [configure, session, compte, chargement, profilCharge, parcoursEnCours, navigate]);
 
   if (!configure) {
     return (
@@ -75,6 +92,29 @@ export function Connexion() {
           <h1>Connexion</h1>
           <p className="m-0 text-[0.9rem] text-ink-muted">Vérification de ta session…</p>
         </section>
+      </div>
+    );
+  }
+
+  if (session && compte && !profilCharge) {
+    return (
+      <div className="page">
+        <section className="section panel">
+          <h1>Connexion</h1>
+          <p className="m-0 text-[0.9rem] text-ink-muted">Lecture de ton profil…</p>
+        </section>
+      </div>
+    );
+  }
+
+  if (parcoursEnCours && compte) {
+    return (
+      <div className="page">
+        <section className="section">
+          <h1>Bienvenue dans le bureau</h1>
+          <p className="muted max-w-[64ch]">Trois étapes pour ton profil. Ensuite, tu entres.</p>
+        </section>
+        <ParcoursProfil uid={compte.id} />
       </div>
     );
   }
