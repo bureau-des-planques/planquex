@@ -496,10 +496,13 @@ export function Deck() {
             {availableTrie.length} carte{availableTrie.length > 1 ? 's' : ''} trouvée
             {availableTrie.length > 1 ? 's' : ''}
           </span>
-          <span>
+          {/* L'état du Deck ne se coupe pas en deux : « 20/20 au Deck · Deck complet » se lit
+              d'un bloc, même à 360 px. Seule la recherche peut passer à la ligne au-dessus. */}
+          <span className="deck-compte__etat">
             {deck.length}/{DECK_SIZE} au Deck
+            <span aria-hidden="true"> · </span>
+            {manquent > 0 ? `il en manque ${manquent}` : 'Deck complet'}
           </span>
-          <span>{manquent > 0 ? `il en manque ${manquent}` : 'Deck complet'}</span>
         </p>
         {available.length === 0 ? (
           <p className="empty">Aucune carte possédée. Ouvre un Arrivage depuis l’accueil.</p>

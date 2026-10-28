@@ -6002,10 +6002,9 @@ h2 {
   margin: 0 0 0.75rem;
 }
 
-.deck-compte span + span::before {
-  color: var(--text-dim);
-  content: '·';
-  margin-right: 1rem;
+/* L'état du Deck (« 20/20 au Deck · Deck complet ») est un seul morceau : il ne se coupe pas. */
+.deck-compte__etat {
+  white-space: nowrap;
 }
 
 /* Les filtres du sélecteur : la recherche prend la ligne, rareté et coût se partagent la suivante. */
