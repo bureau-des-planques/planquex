@@ -196,8 +196,8 @@ résultat identique entre la machine de développement et la CI.
 >
 > La machine de développement n'a **ni Docker ni CLI Supabase**, et la session de
 > développement n'a **aucun accès** au projet Supabase (pas de MCP : la politique de la maison
-> réserve `supabase` à une session d'infrastructure). Les commandes ci-dessous restent la
-> procédure pour **un autre projet**, ou pour rejouer une migration future.
+> réserve `supabase` à une session d'infrastructure). Le geste de ce projet est le poste de
+> pilotage (§4.2) ; le CLI Supabase n'y est pas utilisé.
 
 ### 4.1 Créer (ou retrouver) le projet, et activer l'identité anonyme
 
@@ -216,39 +216,28 @@ ne lit pas le mur : il voit l'écran de connexion. Mesuré le 26/10/2026 : le r�
 
 Le même écran active les fournisseurs voulus (**Google**, **Email**) : voir §5.
 
-### 4.2 Chemin normal : le CLI
+### 4.2 Le geste réel : le poste de pilotage (D-091)
 
-```bash
-# une fois
-npm install -g supabase            # ou : brew install supabase/tap/supabase
-supabase login
-supabase link --project-ref <project-ref>
+Une migration s'applique **par le poste de pilotage**, ni par le *SQL Editor*, ni par le CLI :
 
-# à chaque migration nouvelle
-supabase db push                   # demande le mot de passe de la base
-```
+1. `npm run admin` (sur `127.0.0.1:5199`, identifiants dans `~/.secrets/supabase-admin.json`, `chmod 600`) ;
+2. l'onglet **Migrations** applique la migration voulue, **une seule à la fois**, dans sa transaction ;
+3. le poste inscrit alors le fichier, son empreinte `sha256` et la date dans `admin.migrations` (origine `registre`).
 
-`db push` enregistre la version dans `supabase_migrations.schema_migrations`, donc la suivante
-sait ce qui est déjà passé. Il ne demande **pas** Docker (seul `supabase start`, le Supabase
-local, en a besoin).
+Un second essai répond « déjà appliquée », et une empreinte changée est signalée **sans** être rejouée.
+`supabase db push` et `supabase migration repair` ne sont pas les gestes de ce projet : ils
+n'écrivent pas dans ce registre, et la migration suivante rejouerait ou divergerait.
 
-⚠️ **Nom de fichier** : le CLI nomme ses migrations `AAAAMMJJHHmmss_description.sql` (14
-chiffres). Le fichier de ce dépôt s'appelle `0001_mur.sql`, pour rester lisible et se ranger
-avant les suivantes. **Non vérifié ici** (pas de CLI sur la machine) : si `supabase db push`
-ignore le fichier ou le refuse, le renommer en `<horodatage>_mur.sql` — **le test lit le
-dossier `supabase/migrations/`, pas le nom du fichier**, la garde suit donc le renommage sans
-retouche.
+### 4.3 Une migration déjà appliquée hors du poste
 
-### 4.3 Chemin de dépannage : le tableau de bord
+Une migration appliquée **sans** le poste (au *SQL Editor*, par exemple) **ne se rejoue pas**. Elle
+s'inscrit dans `admin.migrations` avec l'origine `anterieure` : c'est ce qui a été fait pour
+0001-0006 le 26/10/2026 (`tools/admin/README.md`). Cette inscription est un geste d'administration
+de la session infra. Le poste n'a pas de bouton pour elle ; il affiche ensuite `anterieure` et ne la
+repropose jamais.
 
-*SQL Editor* → coller **tout** `supabase/migrations/0001_mur.sql` → *Run*. Puis, pour que le CLI
-ne rejoue pas la migration plus tard, l'enregistrer comme appliquée :
-
-```bash
-supabase migration repair --status applied 0001
-```
-
-(la version est le préfixe du fichier ; **non vérifié** ici pour la même raison).
+Avant tout geste, l'état réel se lit dans l'onglet Migrations, ou dans `admin.migrations` : le
+contrôle se fait sur la base, pas sur ce document.
 
 ### 4.4 Ce qu'il faut vérifier après
 
@@ -292,7 +281,7 @@ npx vitest run supabase/mur.test.ts
 
 ## 5. Les comptes (D-088, #181) — la marche à suivre
 
-La 0005 est **à appliquer par Bastien** dans le SQL Editor, comme 0001 à 0004. Avant elle, rien
+La 0005 est **à appliquer par Bastien**, par le poste (§4.2), comme 0001 à 0004. Avant elle, rien
 ne change (l'identité anonyme écrit encore) ; après elle, **seul un compte approuvé écrit**.
 
 ### 5.1 Côté Google Cloud
@@ -320,8 +309,7 @@ ne change (l'identité anonyme écrit encore) ; après elle, **seul un compte ap
 4. **SMTP** (facultatif mais nécessaire aux courriels de confirmation / mot de passe oublié) :
    *Authentication → SMTP Settings*, hôte Brevo (`smtp-relay.brevo.com`, port 587), l'identifiant
    et la clé SMTP Brevo. Les accès Brevo existent déjà.
-5. *SQL Editor* → coller **tout** `supabase/migrations/0005_comptes.sql` → *Run*. Puis, pour le
-   CLI : `supabase migration repair --status applied 0005`.
+5. Appliquer `supabase/migrations/0005_comptes.sql` par le poste (§4.2).
 
 ### 5.3 Marquer le compte administrateur (une fois)
 
@@ -397,8 +385,7 @@ La 0006 est **à appliquer par Bastien**, **après** la 0005 (elle appelle `est_
 et `compte_approuve()`). Avant elle, l'écran d'administration n'a pas le droit d'écrire le tri,
 et l'auteur ne peut ni corriger ni retirer son post-it.
 
-1. *SQL Editor* → coller **tout** `supabase/migrations/0006_tri_et_corrections.sql` → *Run*.
-2. Pour que le CLI ne la rejoue pas : `supabase migration repair --status applied 0006`.
+1. Appliquer `supabase/migrations/0006_tri_et_corrections.sql` par le poste (§4.2).
 
 Ce qu'elle change, et ce qui se vérifie tout de suite :
 
@@ -489,12 +476,7 @@ elle dit qu'ajouter le `mode` et les camps du journal ne change pas le coût d'u
 
 ### Appliquer 0002
 
-Comme 0001 : coller **tout** `supabase/migrations/0002_combats.sql` dans *SQL Editor* → *Run*
-(ou `supabase db push`). Puis, pour que le CLI ne la rejoue pas :
-
-```bash
-supabase migration repair --status applied 0002
-```
+Appliquer `supabase/migrations/0002_combats.sql` par le poste (§4.2).
 
 Après application, le contrôle qui compte :
 
@@ -505,28 +487,17 @@ npx vitest run supabase/combats.test.ts
 ### Appliquer 0003
 
 Le gueulage de D-085 n'a pas de famille et son identifiant dépasse 32 caractères : sans cette
-migration, la base refuse son import et son dépôt depuis le jeu. Comme 0001 : coller **tout**
-`supabase/migrations/0003_gueulage.sql` dans *SQL Editor* → *Run*. Elle est **idempotente**
+migration, la base refuse son import et son dépôt depuis le jeu. Appliquer `supabase/migrations/0003_gueulage.sql` par le poste (§4.2). Elle est **idempotente**
 (rejouable sans erreur) et remet à `null` le `kind` de tout gueulage déjà posté avec la famille de
-substitution `IP` (le jeu l'envoyait avant D-085). Puis :
-
-```bash
-supabase migration repair --status applied 0003
-```
+substitution `IP` (le jeu l'envoyait avant D-085).
 
 Le contrôle qui compte : `npx vitest run supabase/gueulage.test.ts`.
 
 ### Appliquer 0004
 
-Les pouces (#137) : un auteur ne vote pas pour son propre post-it. Comme 0001 : coller **tout**
-`supabase/migrations/0004_pouces.sql` dans *SQL Editor* → *Run*. Elle est **idempotente**
+Les pouces (#137) : un auteur ne vote pas pour son propre post-it. Appliquer `supabase/migrations/0004_pouces.sql` par le poste (§4.2). Elle est **idempotente**
 (`drop policy if exists`, puis `create policy`), ne touche ni aux tables, ni aux droits, ni à la
 vue, et retire — s'il en existe — les votes qu'un auteur aurait déjà posés sur son propre post-it.
-Puis :
-
-```bash
-supabase migration repair --status applied 0004
-```
 
 Le contrôle qui compte : `npx vitest run supabase/pouces.test.ts`. **Tant qu'elle n'est pas
 appliquée**, l'écran propose quand même les pouces et la base accepterait un vote pour soi

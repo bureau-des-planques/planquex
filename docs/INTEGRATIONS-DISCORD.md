@@ -284,6 +284,11 @@ C'est ce qui a été fait le **27/10/2026** : `0013` est appliquée en productio
 `d3a42bb512fd2ffb…`. `supabase db push` et `supabase migration repair` ne sont **pas** les gestes
 de ce projet.
 
+**Si `0013` a été appliquée hors du poste** (au *SQL Editor*, par exemple, sans ligne dans
+`admin.migrations`), elle **ne se rejoue pas** : elle s'inscrit avec l'origine `anterieure`, selon
+`supabase/README.md` §4.3. Ce paragraphe dit qu'elle a été appliquée **par le poste** le 27/10/2026 ;
+le registre seul tranche. L'état se lit dans l'onglet Migrations **avant** tout geste.
+
 Ce qu'elle fait, dans l'ordre : installe `pg_cron` et `pg_net` **si la base les propose**
 (mesuré installables le 27/10/2026), crée la table, ferme la table aux clients, pose les deux
 déclencheurs, la couture, la réconciliation, la passe, **programme le job `annonces_discord`
