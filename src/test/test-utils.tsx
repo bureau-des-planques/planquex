@@ -5,6 +5,7 @@ import { useStore } from '@/store/useStore';
 import { seedRng } from '@/game/rng';
 import { ALL_CARDS } from '@/data';
 import type { Faction } from '@/data/types';
+import type { DernierePartie } from '@/store/derniere';
 import type { PartieSauvegardee } from '@/store/partie';
 
 /**
@@ -27,6 +28,8 @@ export interface TestStoreState {
   pasAPasCombatVu?: boolean;
   /** La partie en cours à reprendre (#126) ; absente = aucune. */
   partie?: PartieSauvegardee | null;
+  /** La dernière partie terminée (#366) ; absente = aucune. */
+  derniere?: DernierePartie | null;
 }
 
 /**
@@ -56,7 +59,8 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     rng: initialState.rng ?? seedRng(12345),
     tutorielVu: initialState.tutorielVu ?? true,
     pasAPasCombatVu: initialState.pasAPasCombatVu ?? true,
-    partie: initialState.partie ?? null
+    partie: initialState.partie ?? null,
+    derniere: initialState.derniere ?? null
   });
 }
 
