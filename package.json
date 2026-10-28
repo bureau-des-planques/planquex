@@ -17,6 +17,7 @@
     "mesure:direction": "node scripts/mesure-direction.mjs",
     "mesure:archetypes": "node scripts/mesure-archetypes.mjs",
     "capturer": "node scripts/capturer.mjs",
+    "jouer-partie": "node scripts/jouer-partie.mjs",
     "icones": "node scripts/icones.mjs",
     "garde-fous": "node scripts/garde-fous.mjs",
     "pesage": "node scripts/pesage.mjs",

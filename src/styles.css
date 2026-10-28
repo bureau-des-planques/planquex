@@ -5801,6 +5801,24 @@ h2 {
   }
 }
 
+/* ---------- Le Deck partagé par un code (#363) ---------- */
+.deck-partage__code {
+  width: 100%;
+  min-height: 44px;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--fs-sm);
+  word-break: break-all;
+  resize: vertical;
+}
+
+.deck-partage .button {
+  min-height: 44px;
+}
+
+.deck-partage__retour {
+  margin-top: 0.5rem;
+}
+
 /* ---------- Les filtres de la Collection (#365) ---------- */
 
 /* Rareté, coût et possession s'ajoutent à la recherche, la faction et le stade : chaque champ
