@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 import { Info, Search, Sparkles, Trash2 } from 'lucide-react';
 import { DECKS_PROPOSES } from '@/data/decks-proposes';
 import type { DeckPropose } from '@/data/decks-proposes';
-import { ALL_CARDS, FACTION_META, STAGE_META, VIVIER_META, isPlanque } from '@/data';
-import type { Card, CafeType } from '@/data/types';
+import { ALL_CARDS, FACTION_META, RARITY_META, STAGE_META, VIVIER_META, isPlanque } from '@/data';
+import type { Card, CafeType, Rarity } from '@/data/types';
 import {
   autoDeck,
   CAFE_FACTIONS,
@@ -28,6 +28,18 @@ import { CardDetail } from '@/components/CardDetail';
 import { TriCartes } from '@/components/TriCartes';
 import { TRI_DEFAUT, trierCartes } from '@/components/tri-cartes';
 import type { Tri } from '@/components/tri-cartes';
+import {
+  COUTS_PRESENTS,
+  FILTRES_DEFAUT,
+  filtrerCartes,
+  filtresActifs,
+  libelleCout
+} from '@/components/filtres-collection';
+import type { Filtres } from '@/components/filtres-collection';
+import { causeDuVide } from '@/components/cause-du-vide';
+import { courbeDeck } from '@/components/courbe-deck';
+
+const RARETES = Object.keys(RARITY_META) as Rarity[];
 
 /**
  * Le nombre de cartes que le sélecteur du Deck montre d'un coup (#276) : de quoi remplir
@@ -51,8 +63,12 @@ export function Deck() {
   const [selected, setSelected] = useState<Card | null>(null);
   /** Un seul tri pour « Dedans » et pour le sélecteur : les deux se lisent pareil. */
   const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
-  /** La recherche du **sélecteur borné** (#276) : la page Deck ne déroule pas la Collection. */
-  const [recherche, setRecherche] = useState('');
+  /**
+   * Les filtres du **sélecteur borné** (#276, #364) : la recherche, la rareté et le coût. Ils
+   * vivent en mémoire de la page (pas dans l'adresse) : c'est un outil de composition, pas une
+   * adresse à partager. Les filtres de la Collection (`filtres-collection.ts`) en sont la logique.
+   */
+  const [filtres, setFiltres] = useState<Filtres>(FILTRES_DEFAUT);
   /** Le code qu'on colle pour importer un Deck partagé (#363). */
   const [codeAColler, setCodeAColler] = useState('');
   /** Le retour de la dernière copie ou du dernier import : dit ce qui s'est passé. */
@@ -135,14 +151,22 @@ export function Deck() {
     [owned]
   );
   const dedansTrie = useMemo(() => trierCartes(inDeck, tri, owned), [inDeck, tri, owned]);
-  const availableTrie = useMemo(() => {
-    const needle = recherche.trim().toLowerCase();
-    const gardees = needle ? available.filter((card) => card.name.toLowerCase().includes(needle)) : available;
-    return trierCartes(gardees, tri, owned);
-  }, [available, recherche, tri, owned]);
+  const availableTrie = useMemo(
+    () => trierCartes(filtrerCartes(available, filtres, owned), tri, owned),
+    [available, filtres, tri, owned]
+  );
   /** Ce que le sélecteur montre : un **sous-ensemble** de la Collection, jamais son tout. */
   const proposes = availableTrie.slice(0, SELECTEUR_CARTES);
   const restantes = availableTrie.length - proposes.length;
+  /** La courbe de coût du Deck (#364) : une lecture, jamais une règle. */
+  const courbe = useMemo(() => courbeDeck(inDeck), [inDeck]);
+  /** Ce qui manque pour atteindre 20 : le compte du sélecteur le dit en permanence. */
+  const manquent = Math.max(0, DECK_SIZE - deck.length);
+  /** Le nombre de filtres posés hors recherche : il dit la cause d'un sélecteur vide. */
+  const filtresActifsN = filtresActifs(filtres);
+  const filtreHorsRecherche = filtresActifsN > (filtres.texte.trim() !== '' ? 1 : 0);
+  const videParce = causeDuVide(filtres.texte, filtreHorsRecherche);
+  const modifierFiltres = (patch: Partial<Filtres>) => setFiltres((actuels) => ({ ...actuels, ...patch }));
 
   return (
     <div className="page deck">
@@ -215,6 +239,51 @@ export function Deck() {
             jusqu’à <strong>{MAX_DECK_CAFE_TYPES}</strong> types de café pour la Machine
           </li>
         </ul>
+      </section>
+
+      {/* **La courbe de coût** (#364) : à quelle vitesse le Deck démarre. Une lecture des cartes
+          déjà au Deck — elle ne change ni la légalité ni le moteur. Le coût 0, s'il existe, est
+          nommé à part (D-039) ; les cartes Action ne paient pas de café et ne sont pas comptées. */}
+      <section className="section panel deck-courbe" aria-labelledby="deck-courbe-titre">
+        <div className="section__head">
+          <div>
+            <h2 id="deck-courbe-titre">Courbe de coût</h2>
+            <p className="muted">
+              Le coût d’un Planqué, c’est celui de sa Pression la moins chère, en cafés. Une carte qui démarre tôt
+              compte à gauche.
+            </p>
+          </div>
+        </div>
+        {inDeck.length === 0 ? (
+          <p className="empty">Le Deck est vide : la courbe apparaîtra dès qu’il a des cartes.</p>
+        ) : (
+          <>
+            <ol className="deck-courbe__barres" aria-label="Nombre de cartes par coût en café">
+              {courbe.barres.map((barre) => (
+                <li key={barre.cout} className="deck-courbe__barre">
+                  <span className="deck-courbe__cout">{libelleCout(barre.cout)}</span>
+                  <span className="deck-courbe__piste" aria-hidden="true">
+                    <span
+                      className="deck-courbe__remplissage"
+                      style={{ width: courbe.plusHaute > 0 ? `${(barre.cartes / courbe.plusHaute) * 100}%` : '0%' }}
+                    />
+                  </span>
+                  <span className="deck-courbe__nombre">{barre.cartes}</span>
+                </li>
+              ))}
+            </ol>
+            {courbe.zero.length > 0 && (
+              <p className="deck-courbe__zero">
+                Coût 0 : {courbe.zero.length} carte{courbe.zero.length > 1 ? 's' : ''} ({courbe.zero.join(', ')}).
+              </p>
+            )}
+            {courbe.actions > 0 && (
+              <p className="muted deck-courbe__actions">
+                {courbe.actions} carte{courbe.actions > 1 ? 's' : ''} Action : pas de café, hors de la courbe.
+              </p>
+            )}
+          </>
+        )}
       </section>
 
       <section className="section panel decks-proposes">
@@ -420,23 +489,78 @@ export function Deck() {
           <h2>Collection — ajouter une carte ({available.length})</h2>
           <span className="muted">clic = ajouter au deck</span>
         </div>
+        {/* **Le compte, en permanence** (#364) : combien de cartes la recherche rend, et combien
+            il en manque au Deck pour atteindre 20. Il reste là pendant la recherche et les filtres. */}
+        <p className="deck-compte" aria-live="polite">
+          <span>
+            {availableTrie.length} carte{availableTrie.length > 1 ? 's' : ''} trouvée
+            {availableTrie.length > 1 ? 's' : ''}
+          </span>
+          <span>
+            {deck.length}/{DECK_SIZE} au Deck
+          </span>
+          <span>{manquent > 0 ? `il en manque ${manquent}` : 'Deck complet'}</span>
+        </p>
         {available.length === 0 ? (
           <p className="empty">Aucune carte possédée. Ouvre un Arrivage depuis l’accueil.</p>
         ) : (
           <>
-            <label className="field field--search">
-              <Search size={16} />
-              <input
-                type="search"
-                value={recherche}
-                placeholder="Chercher dans ma Collection"
-                onChange={(event) => setRecherche(event.target.value)}
-              />
-            </label>
+            <div className="filters deck-selecteur__filtres">
+              <label className="field field--search">
+                <Search size={16} />
+                <input
+                  type="search"
+                  value={filtres.texte}
+                  placeholder="Chercher dans ma Collection"
+                  onChange={(event) => modifierFiltres({ texte: event.target.value })}
+                />
+              </label>
+              <label className="field">
+                <span className="field__label">Rareté</span>
+                <select
+                  value={filtres.rarete}
+                  onChange={(event) => modifierFiltres({ rarete: event.target.value as Rarity | 'ALL' })}
+                >
+                  <option value="ALL">Toutes</option>
+                  {RARETES.map((key) => (
+                    <option key={key} value={key}>
+                      {RARITY_META[key].label} ({key})
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="field">
+                <span className="field__label">Coût en café</span>
+                <select
+                  value={filtres.cout === 'ALL' ? 'ALL' : String(filtres.cout)}
+                  onChange={(event) =>
+                    modifierFiltres({ cout: event.target.value === 'ALL' ? 'ALL' : Number(event.target.value) })
+                  }
+                >
+                  <option value="ALL">Tous</option>
+                  {COUTS_PRESENTS.map((cafes) => (
+                    <option key={cafes} value={cafes}>
+                      {libelleCout(cafes)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {filtresActifsN > 0 && (
+              <div className="filtres-actifs">
+                <span className="muted">
+                  {filtresActifsN} filtre{filtresActifsN > 1 ? 's' : ''} actif{filtresActifsN > 1 ? 's' : ''}
+                </span>
+                <button type="button" className="button" onClick={() => setFiltres(FILTRES_DEFAUT)}>
+                  Tout effacer
+                </button>
+              </div>
+            )}
             {proposes.length === 0 ? (
-              <p className="empty" role="status">
-                Aucune carte de ta Collection ne porte ce nom.
-              </p>
+              <div className="empty" role="status">
+                <p className="m-0">Aucune carte de ta Collection ne correspond à {videParce}.</p>
+                <p className="m-0 mt-2">Retire un filtre, ou efface-les tous pour revoir ta Collection.</p>
+              </div>
             ) : (
               <div className="card-grid">
                 {proposes.map((card) => {

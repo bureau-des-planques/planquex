@@ -5861,3 +5861,84 @@ h2 {
 .filtres-actifs .button {
   min-height: 2.75rem;
 }
+
+/* ---------- Le Deck : courbe de coût, compte et filtres (#364) ---------- */
+
+/* La courbe : une ligne par coût — l'étiquette, la piste, le nombre. Lecture seule : rien n'est cliquable. */
+.deck-courbe__barres {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.deck-courbe__barre {
+  align-items: center;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 4.5rem 1fr 2rem;
+}
+
+.deck-courbe__cout,
+.deck-courbe__nombre {
+  font-size: 0.88rem;
+}
+
+.deck-courbe__nombre {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.deck-courbe__piste {
+  background: var(--surface-2, rgba(127, 127, 127, 0.15));
+  border-radius: 0.3rem;
+  display: block;
+  height: 1.1rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.deck-courbe__remplissage {
+  background: var(--accent, currentColor);
+  border-radius: 0.3rem;
+  display: block;
+  height: 100%;
+  min-width: 0;
+  transition: width 0.2s ease;
+}
+
+.deck-courbe__zero,
+.deck-courbe__actions {
+  font-size: 0.85rem;
+  margin: 0.6rem 0 0;
+}
+
+/* Le compte du sélecteur : trois morceaux qui se lisent d'un coup, qui passent à la ligne en 420 px. */
+.deck-compte {
+  color: var(--text-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+  gap: 0.3rem 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.deck-compte span + span::before {
+  color: var(--text-dim);
+  content: '·';
+  margin-right: 1rem;
+}
+
+/* Les filtres du sélecteur : la recherche prend la ligne, rareté et coût se partagent la suivante. */
+.deck-selecteur__filtres .field {
+  flex: 1 1 9.5rem;
+  min-width: 0;
+}
+
+.deck-selecteur__filtres .field--search {
+  flex: 1 1 100%;
+  max-width: none;
+}
