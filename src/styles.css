@@ -5772,6 +5772,19 @@ h2 {
   margin: 0;
 }
 
+/* **La capture d'une règle** (#415) : une image réelle du jeu, à sa proportion (420 × 900), bornée
+   en hauteur pour que le dialogue tienne dans la fenêtre d'un téléphone. Elle remplace du texte,
+   elle ne s'y ajoute pas. Fixe : rien ne s'anime, donc rien à réduire sous « Mouvement réduit ». */
+.regles__image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: min(50vh, 26rem);
+  margin: 0 auto;
+  border-radius: 0.5rem;
+}
+
 /* ---------- L'accueil : le gros bouton d'Arrivage et son compteur (#273) ---------- */
 
 /* **Le gros bouton d'Arrivage** (#273). Ce n'est pas un composant nouveau : c'est la taille du

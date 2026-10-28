@@ -6,6 +6,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App } from '@/App';
 import { setupTestStore } from '@/test/test-utils';
+import { EXCEPTIONS } from '../scripts/parcours.mjs';
 
 /**
  * La garde des sorties (#426, inventaire `docs/preuves/sorties-2026-10-28/README.md`).
@@ -43,17 +44,7 @@ const ROUTES_ECRAN = [
   '/administration'
 ];
 
-/**
- * Les routes que rien dans l'application ne relie à l'accueil, **en build sans base**
- * (le build par défaut, sans `VITE_SUPABASE_*`), avec leur raison. Chacune est un
- * cul-de-sac **constaté**, pas corrigé ici : #427 et #428 le traitent.
- */
-const EXCEPTIONS: Readonly<Record<string, string>> = {
-  '/connexion': 'sans base, GardeComptes ne renvoie vers la connexion que si le compte est configuré',
-  '/attente': 'lien seulement depuis la bandeau de compte en attente (compte configuré)',
-  '/administration': 'lien seulement depuis Réglages, pour un compte administrateur (compte configuré)',
-  '/installation': 'aucun lien interne : la note de release la désigne hors de l’application'
-};
+// Les exceptions vivent dans `scripts/parcours.mjs` (#429) : une seule liste pour la garde des sorties et le seuil.
 
 /** Un chemin sans la requête ni l'ancre, ou `null` si ce n'est pas une adresse interne. */
 function cheminInterne(href: string): string | null {
