@@ -248,11 +248,11 @@ describe('le café se touche sur le Planqué (#454, D-145)', () => {
 });
 
 /**
- * **Le contrôle mord** (#454) : une cible d'action du combat ne doit pas être atteignable
+ * **Le contrôle mord** (#454, #455) : une cible d'action du combat ne doit pas être atteignable
  * seulement en faisant défiler une rangée sans barre (`overflow-x: auto; scrollbar-width: none`,
  * ce que D-103 interdit). Le test lit les règles de `styles.css`, en retient les rangées qui
- * défilent cachées, et refuse qu'un contrôle d'action y vive — sauf la rangée de Rotation, qui
- * garde son défaut : la piste (a) n'est pas tranchée (#454, hors périmètre).
+ * défilent cachées, et refuse qu'un contrôle d'action y vive. Aucune exemption : la rangée de
+ * Rotation n'en a plus (#455, D-147).
  */
 function rangeesSansBarre(css: string): string[] {
   const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -270,34 +270,30 @@ function rangeesSansBarre(css: string): string[] {
   return selecteurs;
 }
 
-function controlesCaches(racine: ParentNode, selecteurs: string[], exemptees: readonly string[]): HTMLElement[] {
-  return controles(racine).filter((el) =>
-    selecteurs.some((selecteur) => !exemptees.includes(selecteur) && el.closest(selecteur) !== null)
-  );
+function controlesCaches(racine: ParentNode, selecteurs: string[]): HTMLElement[] {
+  return controles(racine).filter((el) => selecteurs.some((selecteur) => el.closest(selecteur) !== null));
 }
-
-/** La rangée de Rotation garde son défaut (piste (a) du #454, non tranchée). */
-const EXEMPTEES = ['.combat-barre .combat-barre__rang'];
 
 describe('le contrôle mord : pas de cible d’action dans une rangée qui défile cachée (#454)', () => {
   it('mord sur un cas fautif fabriqué : un contrôle dans une rangée cachée est signalé', () => {
     const css = '.faux-rangee { overflow-x: auto; scrollbar-width: none; }';
     const racine = document.createElement('div');
     racine.innerHTML = '<div class="faux-rangee"><button type="button">Attacher le café à Faux</button></div>';
-    expect(controlesCaches(racine, rangeesSansBarre(css), [])).toHaveLength(1);
+    expect(controlesCaches(racine, rangeesSansBarre(css))).toHaveLength(1);
   });
 
   it('ne mord pas sur un contrôle hors rangée cachée', () => {
     const css = '.faux-rangee { overflow-x: auto; scrollbar-width: none; }';
     const racine = document.createElement('div');
     racine.innerHTML = '<div class="rangee"><button type="button">Fin du tour</button></div>';
-    expect(controlesCaches(racine, rangeesSansBarre(css), [])).toHaveLength(0);
+    expect(controlesCaches(racine, rangeesSansBarre(css))).toHaveLength(0);
   });
 
-  it('le plateau réel n’a aucun contrôle d’action dans une rangée cachée', () => {
+  it('aucune rangée de la barre ne défile plus cachée, et le plateau n’a aucun contrôle caché', () => {
     const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
-    expect(rangeesSansBarre(css)).toContain('.combat-barre__cafe');
+    // #455, D-147 : la rangée de Rotation n'a plus d'exemption, et aucune rangée de la barre défile.
+    expect(rangeesSansBarre(css).filter((selecteur) => selecteur.includes('combat-barre'))).toEqual([]);
     const { container } = rendre();
-    expect(controlesCaches(container, rangeesSansBarre(css), EXEMPTEES)).toEqual([]);
+    expect(controlesCaches(container, rangeesSansBarre(css))).toEqual([]);
   });
 });

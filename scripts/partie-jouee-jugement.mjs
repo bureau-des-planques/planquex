@@ -79,6 +79,20 @@ export function comparerAffordances({ legales, visibles }) {
 }
 
 /**
+ * Ce que la **barre** offre pour les Rotations (#455, D-147) : une seule entrée « Rotation »,
+ * quel que soit le nombre de Planqués du Banc. Les cibles sont au panneau du Poste, jugées à part.
+ */
+export function affordancesDeBarre(actions) {
+  let entreeVue = false;
+  return actions.filter((action) => {
+    if (action.type !== 'retreat') return true;
+    if (entreeVue) return false;
+    entreeVue = true;
+    return true;
+  });
+}
+
+/**
  * La **cible** d'un clic (#424, « cliquable à son centre ») : visible, active, dans la fenêtre,
  * et l'élément rendu au centre est la cible elle-même ou l'un de ses descendants. Les quatre
  * booléens sont mesurés dans le navigateur ; ici on ne fait que les lire.

@@ -216,7 +216,7 @@ function localiser(
 
 /**
  * Les gestes qu'une carte **porte**, pris dans la liste du moteur : attacher un café, évoluer,
- * Talent (au Poste), Rotation (vers elle, ou depuis le Poste), relève (depuis le Banc). Rien d'autre :
+ * Talent (au Poste), Rotation (depuis le Poste : une cible par Planqué du Banc), relève (depuis le Banc). Rien d'autre :
  * un geste qui n'est pas dans la liste n'est pas offert (SPEC-COMBAT-UI §6.4).
  */
 function gestesDeLaCarte(
@@ -232,14 +232,21 @@ function gestesDeLaCarte(
         return action.targetUid === uid;
       case 'ability':
         return auPoste;
+      // La Rotation n'a qu'une entrée, au Poste : ses cibles sont dans son panneau (#455, D-147).
       case 'retreat':
-        return auPoste || action.benchIndex === rang;
+        return auPoste;
       case 'promoteActive':
         return action.benchIndex === rang;
       default:
         return false;
     }
   });
+}
+
+/** Le coût d'une Rotation, en mots : le nombre de cafés que le Poste défausse (D-033). */
+function coutRotation(cafes: number): string {
+  if (cafes === 0) return 'aucun café';
+  return `${cafes} café${cafes > 1 ? 's' : ''}`;
 }
 
 /** Les cinq conditions, dans l'ordre d'affichage de la légende. */
@@ -386,8 +393,19 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
       return { label: 'Changement de priorité', detail: `archiver ${instanceName(handCard(action.uid))}` };
     case 'attachEnergy':
       return { label: 'Attacher 1 café', detail: instanceName(posted(action.targetUid)), icon: 'coffee' };
-    case 'retreat':
-      return { label: 'Rotation', detail: `vers ${instanceName(side.bench[action.benchIndex])}`, icon: 'coffee' };
+    /*
+     * **Une cible par Planqué du Banc** (#455, D-147) : la barre n'en porte qu'une entrée, et le
+     * panneau du Poste liste ces cibles. Chacune nomme le Planqué qui monte et le coût, c'est-à-dire
+     * les cafés que le Poste défausse (`retreat`, la règle n'y change rien).
+     */
+    case 'retreat': {
+      const cout = activeCard && isPlanque(activeCard) ? activeCard.retreat : 0;
+      return {
+        label: 'Rotation',
+        detail: `vers ${instanceName(side.bench[action.benchIndex])} · coût ${coutRotation(cout)}`,
+        icon: 'coffee'
+      };
+    }
     case 'ability': {
       const ability = activeCard && isPlanque(activeCard) ? activeCard.ability : undefined;
       return { label: 'Talent', detail: ability?.name };
@@ -456,7 +474,14 @@ function ActionButton({
       <span>{view.label}</span>
       {view.cafes && <CafePips symbols={view.cafes} />}
       {view.damage !== undefined && <span className="attack__dmg">{view.damage}</span>}
-      {view.detail && <span className="button__detail">{view.detail}</span>}
+      {/* Un espace entre le libellé et le détail : le nom accessible dit « Rotation vers … », pas
+          « Rotationvers … » (#455). Il est invisible en `flex`. */}
+      {view.detail && (
+        <>
+          {' '}
+          <span className="button__detail">{view.detail}</span>
+        </>
+      )}
     </button>
   );
 }
@@ -932,7 +957,12 @@ export function Battle() {
     const geste = attachements.find((action) => action.type === 'attachEnergy' && action.targetUid === uid);
     if (geste) play(geste);
   };
-  const gestesDuPoste = boardActions.filter((action) => action.type !== 'attachEnergy');
+  /**
+   * **Une seule entrée « Rotation »** (#455, D-147) : la barre ne porte pas une cible par Planqué du
+   * Banc. Elle ouvre le panneau du Poste, qui les liste (`gestesDeLaCarte`, la même liste du moteur).
+   */
+  const cibles = boardActions.filter((action) => action.type === 'retreat');
+  const gestesDuPoste = boardActions.filter((action) => action.type !== 'attachEnergy' && action.type !== 'retreat');
   const raisonCafe = phraseCafeAuPoste({
     aMoi: myMove,
     premierTour: isOpeningTurn(state),
@@ -1283,20 +1313,27 @@ export function Battle() {
   const gestesDuPanneau =
     inspecteur && inspecteur.camp === myCamp ? (
       gestesInspectes.length > 0 ? (
-        <div className="actions actions--tight">
-          {gestesInspectes.map((action) => (
-            <ActionButton
-              key={JSON.stringify(action)}
-              state={state}
-              action={action}
-              myCamp={myCamp}
-              onAction={(geste) => {
-                setInspecte(null);
-                play(geste);
-              }}
-            />
-          ))}
-        </div>
+        <>
+          {inspecteur.auPoste && gestesInspectes.some((action) => action.type === 'retreat') && (
+            <p className="muted inspecteur__rotation">
+              Rotation : choisis le Planqué du Banc qui prend le Poste. Le Poste défausse les cafés du coût.
+            </p>
+          )}
+          <div className="actions actions--tight">
+            {gestesInspectes.map((action) => (
+              <ActionButton
+                key={JSON.stringify(action)}
+                state={state}
+                action={action}
+                myCamp={myCamp}
+                onAction={(geste) => {
+                  setInspecte(null);
+                  play(geste);
+                }}
+              />
+            ))}
+          </div>
+        </>
       ) : (
         <p className="muted">Aucun geste pour cette carte ce tour.</p>
       )
@@ -1945,13 +1982,22 @@ export function Battle() {
                 font pas quatre lignes), et les Pressions viennent à côté. « Fin du tour » est sur la
                 ligne du journal, au-dessus (#320). La barre ne doit jamais recouvrir la main ni passer
                 sous la navigation (`npm run capturer` le mesure). */}
-            {(gestesDuPoste.length > 0 || pressions.length > 0 || attachements.length > 0) && (
+            {(gestesDuPoste.length > 0 || cibles.length > 0 || pressions.length > 0 || attachements.length > 0) && (
               <div className="combat-barre__gestes">
                 {attachements.length > 0 && (
                   <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe} />
                 )}
-                {gestesDuPoste.length > 0 && (
+                {(gestesDuPoste.length > 0 || cibles.length > 0) && (
                   <div className="actions actions--tight combat-barre__rang">
+                    {mySide.active && cibles.length > 0 && (
+                      <button type="button" className="button" onClick={() => setInspecte(mySide.active?.uid ?? null)}>
+                        <Coffee size={16} />
+                        <span>Rotation</span>{' '}
+                        <span className="button__detail">
+                          {cibles.length} cible{cibles.length > 1 ? 's' : ''}
+                        </span>
+                      </button>
+                    )}
                     {gestesDuPoste.map((action) => (
                       <ActionButton
                         key={JSON.stringify(action)}

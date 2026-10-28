@@ -37,6 +37,9 @@ export function comparerAffordances(entree: {
 }): { type: string; geste: string; attendu: number; offert: number }[];
 
 /** Une cible cliquable à son centre : les anomalies relevées. */
+/** Ce que la barre offre pour les Rotations : une seule entrée (#455, D-147). */
+export function affordancesDeBarre<A extends ActionMoteur>(actions: readonly A[]): A[];
+
 export function jugerCible(mesure: {
   visible: boolean;
   actif: boolean;

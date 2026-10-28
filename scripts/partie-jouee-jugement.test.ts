@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import {
+  affordancesDeBarre,
   choisirAction,
   classerBouton,
   comparerAffordances,
@@ -235,5 +236,29 @@ describe('jouePar (qui doit jouer)', () => {
 
   it('mord : une relève de la Direction ne rend pas la main au joueur', () => {
     expect(jouePar({ current: 'player', pendingPromotion: 'ai', pendingChoice: null })).toBe('ai');
+  });
+});
+
+describe('affordancesDeBarre — une seule entrée « Rotation » (#455, D-147)', () => {
+  const deuxRotations: Action[] = [
+    { type: 'attachEnergy', targetUid: 'a' },
+    { type: 'retreat', benchIndex: 0 },
+    { type: 'retreat', benchIndex: 2 }
+  ];
+
+  it('ne garde qu’une Rotation dans la barre, et laisse le reste', () => {
+    const barre = affordancesDeBarre(deuxRotations);
+    expect(barre.filter((a) => a.type === 'retreat')).toHaveLength(1);
+    expect(barre.filter((a) => a.type === 'attachEnergy')).toHaveLength(1);
+  });
+
+  it('le contrôle mord : une barre qui offre deux Rotations est signalée, une barre à une entrée passe', () => {
+    const visibles = [{ type: 'retreat', actif: true }];
+    expect(comparerAffordances({ legales: deuxRotations.filter((a) => a.type === 'retreat'), visibles })).toEqual([
+      expect.objectContaining({ type: 'sans-bouton', geste: 'retreat', attendu: 2, offert: 1 })
+    ]);
+    expect(
+      comparerAffordances({ legales: affordancesDeBarre(deuxRotations).filter((a) => a.type === 'retreat'), visibles })
+    ).toEqual([]);
   });
 });
