@@ -168,10 +168,11 @@ export function nomFrame(index) {
 export function htmlPlanche(frames, { colonnes, intervalle }) {
   const cases = frames
     .map((frame, i) => {
-      const { src, t, compte } = typeof frame === 'string' ? { src: frame } : frame;
+      const { src, t, compte, libelle } = typeof frame === 'string' ? { src: frame } : frame;
       // Une prise **pendant un geste** n'a pas d'instant : sa légende dit le geste, pas le temps
       // (le doigt peut s'arrêter, et c'est justement ce que la planche doit montrer).
-      const legende = t === null ? `geste ${i + 1}` : `${Math.round(t ?? i * intervalle)} ms`;
+      // Un `libelle` (la planche d'un parcours, #429) remplace l'instant : il dit l'écran, pas le temps.
+      const legende = libelle ?? (t === null ? `geste ${i + 1}` : `${Math.round(t ?? i * intervalle)} ms`);
       const suite = compte === undefined ? '' : ` · DOM : ${compte}`;
       return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${legende}${suite}</figcaption></figure>`;
     })
