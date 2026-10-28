@@ -1,6 +1,6 @@
 import { ALL_CARDS, isPlanque } from '@/data';
-import type { BattleAction, BattleState, CafeType, Faction, PlayerId } from '@/data/types';
-import { DECK_SIZE, deckCanAdd, deckLegal } from '@/game/deck';
+import type { BattleAction, BattleState, Card, CafeType, Faction, PlanqueCard, PlayerId } from '@/data/types';
+import { DECK_SIZE, MAX_COPIES_PER_NAME, deckLegal } from '@/game/deck';
 import { applyAction, createBattle } from '@/game/engine';
 import type { BattleCafeTypes } from '@/game/engine';
 import { nextAction, politique, searchDecision } from '@/game/ia';
@@ -125,25 +125,76 @@ export interface SimulationReport {
 /** Entrant → N+1 → N+2 (D-026) ; sert uniquement à ordonner un Deck. */
 const STAGE_ORDER = { ENTRANT: 0, 'N+1': 1, 'N+2': 2 } as const;
 
-function addCard(deck: string[], cardId: string) {
-  if (deck.length >= DECK_SIZE) return;
-  if (deckCanAdd(deck, cardId)) deck.push(cardId);
+/**
+ * Plafond par défaut d'**Entrants distincts** (un nom = un Entrant) dans un Deck dérivé
+ * (#417). Sans lui, une faction de plus de dix Entrants remplit ses 20 cartes avant d'avoir
+ * une seule évolution : la table comparait des Decks inégaux. Le chiffre est un **choix de
+ * mesure**, nommé ici, pas une règle de jeu.
+ */
+export const ENTRANTS_MAX_DECK_DERIVE = 8;
+
+export interface OptionsDeckDerive {
+  /**
+   * Nombre maximal d'Entrants **distincts de la faction** dans le Deck. Au-delà du plafond,
+   * les Entrants dont la ligne d'évolution est la plus longue passent en premier, puis le
+   * Deck se complète par les évolutions et les Actions. Le complément des autres factions
+   * n'est pas plafonné (inchangé). `Infinity` rend le comportement d'avant #417.
+   * Défaut : `ENTRANTS_MAX_DECK_DERIVE`.
+   */
+  entrantsMax?: number;
 }
 
 /**
- * Deck d'archétype d'une faction : ses cartes d'abord, complétées si besoin.
- *
- * Les dix factions atteignent désormais **10 noms de base** (#352), donc un Deck de
- * 20 cartes avec 2 exemplaires par nom : `SYNDICAT` et `INTERIM` ne reçoivent plus de
- * carte étrangère. Le complément reste en place pour une faction future qui n'y
- * arriverait pas : il irait chercher des cartes des autres factions, dans l'ordre de
- * `ALL_CARDS`. Le Deck reste **légal** (20 cartes, 2 par nom, au moins un Entrant) et il
- * est étiqueté par sa faction d'origine — c'est l'archétype mesuré, pas une liste figée.
+ * Profondeur de la ligne d'évolution d'un Planqué du catalogue : 2 si une évolution porte
+ * un N+2, 1 si elle n'a qu'un N+1, 0 sinon. Sert à choisir les Entrants quand le plafond
+ * coupe (#417) — un Entrant sans ligne ne rapporte rien au Deck qui le garde.
  */
-export function factionDeck(faction: Faction): string[] {
+function profondeurLignee(card: PlanqueCard, planques: readonly PlanqueCard[]): number {
+  const enfants = planques.filter((other) => other.evolvesFrom === card.id);
+  if (enfants.length === 0) return 0;
+  return enfants.some((enfant) => planques.some((other) => other.evolvesFrom === enfant.id)) ? 2 : 1;
+}
+
+/**
+ * Deck d'archétype d'une faction, construit à partir de `cards` (le catalogue, ou un
+ * catalogue de test). Ordre : les Entrants (plafonnés, #417), puis les évolutions dont la
+ * base est là, puis les Actions, puis un second exemplaire ; le complément vient des autres
+ * factions, dans l'ordre de `cards`.
+ */
+export function construireDeckDerive(
+  faction: Faction,
+  cards: readonly Card[],
+  options: OptionsDeckDerive = {}
+): string[] {
+  const entrantsMax = options.entrantsMax ?? ENTRANTS_MAX_DECK_DERIVE;
+  const parId = new Map(cards.map((card) => [card.id, card]));
   const deck: string[] = [];
-  const own = ALL_CARDS.filter((card) => card.faction === faction && !card.variantOf);
-  const others = ALL_CARDS.filter((card) => card.faction !== faction && !card.variantOf);
+
+  /** Les Entrants **de la faction** déjà au Deck, par nom (le complément ne compte pas). */
+  const nombreEntrantsDistincts = () =>
+    new Set(
+      deck.filter((id) => {
+        const card = parId.get(id);
+        return card !== undefined && card.faction === faction && isPlanque(card) && card.stage === 'ENTRANT';
+      })
+    ).size;
+
+  /** Le même contrôle que `deckCanAdd`, sans `getCard` : le catalogue est un paramètre. */
+  const peutAjouter = (card: Card): boolean => {
+    if (deck.length >= DECK_SIZE) return false;
+    const exemplaires = deck.filter((id) => parId.get(id)?.name === card.name).length;
+    if (exemplaires >= MAX_COPIES_PER_NAME) return false;
+    if (card.faction === faction && isPlanque(card) && card.stage === 'ENTRANT' && !deck.includes(card.id)) {
+      if (nombreEntrantsDistincts() >= entrantsMax) return false;
+    }
+    return true;
+  };
+  const add = (card: Card) => {
+    if (peutAjouter(card)) deck.push(card.id);
+  };
+
+  const own = cards.filter((card) => card.faction === faction && !card.variantOf);
+  const others = cards.filter((card) => card.faction !== faction && !card.variantOf);
 
   for (const pool of [own, others]) {
     const planques = pool.filter(isPlanque).sort(
@@ -154,24 +205,31 @@ export function factionDeck(faction: Faction): string[] {
         (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
     );
 
-    // 1. un Entrant de chaque, socle du Deck.
-    for (const card of planques) {
-      if (card.stage === 'ENTRANT') addCard(deck, card.id);
-    }
+    // 1. un Entrant de chaque, socle du Deck. Au-delà du plafond, les lignes les plus
+    //    longues d'abord (#417) : sinon le plafond coupe les Entrants sans évolution.
+    const entrants = planques.filter((card) => card.stage === 'ENTRANT');
+    const ordre =
+      pool === own && entrants.length > entrantsMax
+        ? [...entrants].sort(
+            (a, b) =>
+              profondeurLignee(b, planques) - profondeurLignee(a, planques) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+          )
+        : entrants;
+    for (const card of ordre) add(card);
     // 2. les évolutions dont la base est déjà là, N+1 puis N+2.
     for (const stage of ['N+1', 'N+2'] as const) {
       for (const card of planques) {
         if (card.stage === stage && card.evolvesFrom && deck.includes(card.evolvesFrom)) {
-          addCard(deck, card.id);
+          add(card);
         }
       }
     }
     // 3. les cartes Action de la faction (elles ne se posent pas, mais se jouent).
     for (const card of pool) {
-      if (!isPlanque(card)) addCard(deck, card.id);
+      if (!isPlanque(card)) add(card);
     }
     // 4. un second exemplaire, pour épaissir les lignes déjà présentes.
-    for (const card of planques) addCard(deck, card.id);
+    for (const card of planques) add(card);
 
     if (deck.length >= DECK_SIZE) break;
   }
@@ -179,18 +237,30 @@ export function factionDeck(faction: Faction): string[] {
   // 5. dernier recours : n'importe quelle carte encore légale.
   for (const card of [...own, ...others]) {
     if (deck.length >= DECK_SIZE) break;
-    addCard(deck, card.id);
+    add(card);
   }
 
-  const trimmed = deck.slice(0, DECK_SIZE);
-  const { ok, reasons } = deckLegal(trimmed);
+  return deck;
+}
+
+/**
+ * Deck d'archétype d'une faction du catalogue, légal (20 cartes, 2 par nom, au moins un
+ * Entrant) et étiqueté par sa faction d'origine — c'est l'archétype mesuré, pas une liste
+ * figée. Voir `construireDeckDerive` pour l'ordre de construction.
+ */
+export function factionDeck(faction: Faction, options: OptionsDeckDerive = {}): string[] {
+  const deck = construireDeckDerive(faction, ALL_CARDS, options);
+  const { ok, reasons } = deckLegal(deck);
   if (!ok) throw new Error(`Deck de simulation illégal (${faction}) : ${reasons.join(' ')}`);
-  return trimmed;
+  return deck;
 }
 
 /** Les Decks des factions demandées, construits une fois par exécution. */
-export function factionDecks(factions: readonly Faction[] = FACTION_ORDER): Map<Faction, string[]> {
-  return new Map(factions.map((faction) => [faction, factionDeck(faction)]));
+export function factionDecks(
+  factions: readonly Faction[] = FACTION_ORDER,
+  options: OptionsDeckDerive = {}
+): Map<Faction, string[]> {
+  return new Map(factions.map((faction) => [faction, factionDeck(faction, options)]));
 }
 
 /* ------------------------------------------------------------------ */
