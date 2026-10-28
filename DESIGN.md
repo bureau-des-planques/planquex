@@ -496,6 +496,26 @@ trombones, feuilles) — ce sont des assets, et l'univers est l'atelier MRO (D-0
 
 ---
 
+### 2.7 Téléphone, portrait, paysage et PC (D-142, 28/10/2026)
+
+L'écran se mesure à **six gabarits** : la référence **420 × 900** (D-060, D-094), puis la fenêtre
+réelle d'un téléphone — **360 × 640**, **390 × 664** (Safari, barre comprise) —, le **paysage** —
+**740 × 360**, **844 × 390** — et le **PC**, **1280 × 800**. `npm run capturer` les joue tous ; ce
+qui suit est ce que `src/styles.css` fait de chacun.
+
+| Situation | Média | Ce qui change |
+|---|---|---|
+| Combat sur téléphone | `max-width: 899px` | la barre du haut s'efface (comme celle du bas, #275) ; la **sortie** `←` de l'en-tête mène à l'accueil — pas un forfait, la partie est rangée |
+| Écran court | `max-height: 860px` (portrait) | chaque camp range son **Banc à côté du Poste**, sa fiche sous le Banc ; la fiche s'écoule en lignes |
+| Très court | `max-height: 700px` (portrait) | le titre « Ta main » cède sa ligne (le compte reste dans la fiche) ; Banc 52 px, main 60 px |
+| Paysage de téléphone | `orientation: landscape` et `max-height: 600px` | plateau à gauche, **main et barre d'action** à droite ; un camp sur **une** rangée (Poste 80, Banc 52, fiche) ; la console défile en elle-même ; l'inspecteur est une colonne, pas une feuille basse ; hors combat, l'en-tête se serre et la barre du bas met icône et libellé côte à côte |
+| Écran large | `min-width: 900px`, ou paysage ≥ 600 px | plateau à gauche, console à droite, barre d'action **dans** la console |
+| PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et main **grandissent avec la hauteur** (`clamp`, D-094 (1) en plancher) |
+| Partout | — | `min-height: 100dvh` ; encoches (`env(safe-area-inset-*)`) sur l'en-tête et les bords ; **44 px** pour un bouton, un champ, une case de Réglages, un onglet du comité, et la zone tactile du `+` d'une carte (la pastille garde 24 px) |
+
+**Règle** : la **disposition** cède avant la **lisibilité**. Les tailles de D-094 (1) ne baissent
+qu'aux deux cas nommés (très court, paysage), et seulement d'un cran.
+
 ## 3. Cadre de rareté, rareté par rareté
 
 La source est `RARITY_META` (`src/data/index.ts`) : le libellé **et** la couleur y vivent,

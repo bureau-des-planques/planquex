@@ -166,10 +166,11 @@ async function arriverAuCombat(page, instant) {
  * recopiaient (contexte, `pageerror`, horloge figée, navigation, attente). Une copie qui prend
  * du retard, c'est un état du plan qui n'écoute plus les erreurs de page (#324).
  */
-async function ouvrirCombat(browser, instant, supplement = {}) {
+async function ouvrirCombat(browser, instant, supplement = {}, gabarit = { viewport: VIEWPORT, mobile: true }) {
   const context = await browser.newContext({
-    viewport: VIEWPORT,
-    isMobile: true,
+    viewport: gabarit.viewport,
+    isMobile: gabarit.mobile,
+    hasTouch: gabarit.mobile,
     storageState: amorcageStore(origine, supplement)
   });
   const page = await context.newPage();
@@ -351,10 +352,10 @@ function controlesHauteur({
  * `contexte` est le **libellé de l'état** mesuré (graine, ou « pas-à-pas terminé ») : il part
  * dans le message de la garde, pour qu'un échec nomme l'état et pas seulement la surface (#237).
  */
-async function controlerHauteur(page, contexte, route) {
+async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {
   const hauteur = await page.evaluate(mesureHauteur, CIBLES_HAUTEUR);
   console.log(`combat · ${contexte} · ${JSON.stringify(hauteur)}`);
-  for (const probleme of controlesHauteur({ ...hauteur, viewport: VIEWPORT, etat: contexte })) {
+  for (const probleme of controlesHauteur({ ...hauteur, viewport, etat: contexte })) {
     problems.push(`${route} · ${probleme}`);
   }
 }
@@ -529,6 +530,59 @@ async function mesurerAvecUnePression(browser, detaille = false) {
 }
 
 /**
+ * **Un gabarit de D-142** : chaque page sous la garde de largeur, puis le combat sous les gardes de
+ * hauteur — à l'arrivée, puis avec une Pression jouable et le pire cas. Une capture par page et par
+ * état, préfixée du nom du gabarit (`telephone-petit-combat.png`).
+ */
+async function mesurerGabarit(browser, gabarit) {
+  const { nom, viewport, mobile } = gabarit;
+  const taille = `${viewport.width} × ${viewport.height}`;
+  for (const [slug, route] of PAGES.filter(([, route]) => route !== ROUTE_COMBAT)) {
+    const context = await browser.newContext({
+      viewport,
+      isMobile: mobile,
+      hasTouch: mobile,
+      storageState: amorcageStore(origine)
+    });
+    const page = await context.newPage();
+    page.on('pageerror', (error) => problems.push(`${route} (${taille}) · pageerror : ${error.message}`));
+    await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(300);
+    const debordement = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+    );
+    if (debordement > 0) {
+      problems.push(`${route} · la page déborde de ${debordement} px en largeur à ${taille} (D-142)`);
+    }
+    await page.screenshot({ path: join(outDir, `${nom}-${slug}.png`), fullPage: PLEINE_PAGE });
+    await context.close();
+  }
+
+  const instant = INSTANTS_COMBAT[0];
+  const etat = `${new Date(instant).toISOString()} (${nom}, pas-à-pas terminé)`;
+  {
+    const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true }, gabarit);
+    await controlerHauteur(page, etat, ROUTE_COMBAT, viewport);
+    await page.screenshot({ path: join(outDir, `${nom}-combat.png`), fullPage: PLEINE_PAGE });
+    await context.close();
+  }
+  const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true }, gabarit);
+  const tour = await jusquAUnePression(page);
+  if (tour === null) {
+    problems.push(
+      `${ROUTE_COMBAT} · ${nom} : aucune Pression jouable atteinte, la barre n'est mesurée que sans Pression`
+    );
+  } else {
+    await controlerHauteur(page, `${etat}, Pression jouable, tour ${tour}`, ROUTE_COMBAT, viewport);
+    await page.evaluate(poserLePireCas, [false, MODELE_BADGE]);
+    await page.waitForTimeout(300);
+    await controlerHauteur(page, `${etat}, Pression jouable, tour ${tour}, pire cas`, ROUTE_COMBAT, viewport);
+    await page.screenshot({ path: join(outDir, `${nom}-combat-pression.png`), fullPage: PLEINE_PAGE });
+  }
+  await context.close();
+}
+
+/**
  * **Préparer le code d'une partie à deux** (#128) et le mesurer.
  *
  * Les gestes sont ceux des deux invités : ouvrir la section (repliée tant qu'aucune
@@ -613,6 +667,27 @@ function amorcageStore(origin, supplement = {}) {
 const VIEWPORT = { width: 420, height: 900 };
 
 /**
+ * **Les gabarits de D-142** — la fenêtre réelle d'un téléphone, et le PC (28/10/2026).
+ *
+ * 420 × 900 reste la **référence** (D-060, D-094) : toutes les gardes ci-dessus y tournent. Mais
+ * c'est un téléphone sans barre de navigateur ; mesuré le 28/10/2026, le combat défilait de 159 px
+ * à 360 × 640 et la barre d'action recouvrait le plateau en paysage. Chaque gabarit joue donc
+ * **le combat** (arrivée, puis une Pression jouable et le pire cas, pas-à-pas terminé) sous les
+ * mêmes gardes — défilement, marge de 20 px, cibles de 44 px — et **chaque page** sous la garde
+ * de largeur : une page qui déborde en largeur casse la mise en page (le critère de #128).
+ *
+ * Les tailles sont relues dans la ligne D-142 de `docs/DECISIONS.md` par `scripts/capturer.test.ts`.
+ * `mobile: false` pour le PC : ni `isMobile` ni écran tactile.
+ */
+const GABARITS = [
+  { nom: 'telephone-petit', viewport: { width: 360, height: 640 }, mobile: true },
+  { nom: 'telephone', viewport: { width: 390, height: 664 }, mobile: true },
+  { nom: 'paysage-petit', viewport: { width: 740, height: 360 }, mobile: true },
+  { nom: 'paysage', viewport: { width: 844, height: 390 }, mobile: true },
+  { nom: 'pc', viewport: { width: 1280, height: 800 }, mobile: false }
+];
+
+/**
  * Capture de la **fenêtre**, jamais de la page entière (#153).
  *
  * `fullPage: true` photographiait tout le document : la Collection mesurait ainsi
@@ -677,6 +752,7 @@ if (process.argv.includes('--plan')) {
     JSON.stringify({
       amorcage: amorcageStore(origine),
       capture: { viewport: VIEWPORT, pleinePage: PLEINE_PAGE },
+      gabarits: GABARITS,
       captures: shots,
       preparations: PREPARATIONS,
       hauteur: CIBLES_HAUTEUR,
@@ -800,6 +876,9 @@ try {
   await mesurerDensite(browser, true);
   await mesurerDensite(browser, false);
   await mesurerAvecUnePression(browser, true);
+
+  // Les gabarits de D-142 : la fenêtre réelle d'un téléphone, en portrait et en paysage, et le PC.
+  for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);
 } finally {
   await browser.close();
   await server?.close();
@@ -813,5 +892,5 @@ if (problems.length) {
 
 console.log(
   `✔ ${shots.length + PREPARATIONS.length} captures dans captures/ (${base}) — dont la première visite ` +
-    `et ${PREPARATIONS.length} état(s) dédié(s)`
+    `et ${PREPARATIONS.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-142`
 );

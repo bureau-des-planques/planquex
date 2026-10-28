@@ -22,6 +22,18 @@ import { Dialog, DialogClose, DialogPanneau, DialogPortal, DialogTitle } from '@
 /** Le délai avant l'infobulle au survol : assez pour ne pas clignoter en balayant le plateau. */
 const DELAI_SURVOL_MS = 300;
 
+/**
+ * **L'écran large** (D-142) : à partir de 900 px, ou en paysage de téléphone, le panneau est une
+ * colonne de la console, pas une feuille basse. C'est le média de `styles.css` (« Sur écran large,
+ * le panneau… ») : les deux se lisent ensemble, sinon le panneau calcule une feuille qu'il n'est pas.
+ */
+export const ECRAN_LARGE = '(min-width: 900px), (orientation: landscape) and (min-width: 600px)';
+
+function ecranLarge(): boolean {
+  // jsdom n'a pas `matchMedia` : la largeur seule y décide, comme avant D-142.
+  return typeof window.matchMedia === 'function' ? window.matchMedia(ECRAN_LARGE).matches : window.innerWidth >= 900;
+}
+
 /** La carte du plateau portant ce `uid`, pour rendre le focus à la carte qu'on vient de fermer. */
 function trouverCarte(uid: string | null): HTMLElement | null {
   if (!uid) return null;
@@ -269,7 +281,7 @@ export function InspecteurCombat({
   useLayoutEffect(() => {
     if (!ouvert || !ancre) return;
     const carte = trouverCarte(ancre);
-    if (!carte || window.innerWidth >= 900) {
+    if (!carte || ecranLarge()) {
       setHaut(null);
       return;
     }

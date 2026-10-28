@@ -27,7 +27,7 @@ export function SousOngletsComite() {
           to={onglet.to}
           end={onglet.fin}
           className={({ isActive }) =>
-            `rounded-[var(--radius-sm)] px-3 py-1.5 text-[0.86rem] no-underline transition-colors ${
+            `inline-flex min-h-11 items-center rounded-[var(--radius-sm)] px-3 py-1.5 text-[0.86rem] no-underline transition-colors ${
               isActive ? 'bg-bg-raised font-semibold text-gold' : 'text-ink-muted hover:text-ink'
             }`
           }
