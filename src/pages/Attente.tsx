@@ -13,8 +13,9 @@
  * états de la demande.
  */
 import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { RetourEcran } from '@/components/RetourEcran';
 import { estApprouve, libelleEtat } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 
@@ -40,9 +41,7 @@ export function Attente() {
             Cette version du jeu n’est pas reliée à une base : il n’y a ni compte ni validation. Tout fonctionne comme
             avant.
           </p>
-          <Link className="button" to="/">
-            Retour au bureau
-          </Link>
+          <RetourEcran vers="/" libelle="Retour au bureau" />
         </section>
       </div>
     );
