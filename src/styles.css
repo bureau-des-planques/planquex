@@ -455,6 +455,39 @@ h2 {
   top: -0.5rem;
 }
 
+/* ---------- La barre du bas, refaite (#275) ----------
+   Trois ajouts, aucune règle existante réécrite :
+   - la **cible** d'un onglet fait au moins 44 px de haut et de large (D-120, #322), pour
+     le doigt sur un écran de 420 px (D-116) ;
+   - l'**onglet actif** se reconnaît à sa pastille dorée, qui reste visible même quand la
+     couleur seule ne suffit pas (jamais la couleur pour seule information) ;
+   - la barre **respire** l'encoche basse du téléphone au lieu de passer dessous. */
+.bottom-nav {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+
+.bottom-nav__item {
+  justify-content: center;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+
+/* Le témoin de l'onglet actif : un contour doré **et** le voyant du haut, déjà là. */
+.bottom-nav__item.is-active {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 38%, transparent);
+}
+
+.bottom-nav__item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* En combat, la barre n'est pas rendue (#275) : le shell ne garde donc pas la marge du bas
+   qui lui laissait la place, et le plateau gagne la hauteur (D-116). */
+.app-shell:has(.battle) {
+  padding-bottom: 0.5rem;
+}
+
 /* ---------- Blocs de page ---------- */
 
 .page {
@@ -517,6 +550,44 @@ h2 {
   color: var(--warn);
   flex: none;
   margin-top: 0.15rem;
+}
+
+/* Une nouvelle version est prête (#355) : un bandeau **discret**, sous l'en-tête, et
+   **absent du DOM** quand il n'a rien à dire — donc aucun trou de mise en page. Les deux
+   boutons font 44 px (D-120), et le texte passe à la ligne tout seul à 420 px (D-116). */
+.bandeau-version {
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0.8rem;
+}
+
+.bandeau-version svg {
+  color: var(--accent);
+  flex: none;
+}
+
+.bandeau-version__texte {
+  flex: 1 1 12rem;
+  font-size: 0.86rem;
+  margin: 0;
+  min-width: 0;
+}
+
+.bandeau-version .button {
+  min-height: 2.75rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.bandeau-version__fermer {
+  justify-content: center;
+  padding: 0.4rem;
+  width: 2.75rem;
 }
 
 /* Erreur de rendu et adresse inconnue (#131) : deux écrans de repli, une seule mise en page. */
@@ -1733,6 +1804,29 @@ h2 {
 
 .journee__passer:hover {
   color: var(--text);
+}
+
+/* Le tour de jeu, joué dans le dialogue (#334, D-136) : un gabarit de tour, pas une image.
+   Le Stress se lit dans une ligne qui prend la couleur de la barre (`--gold-soft`), et les
+   deux gestes restent des boutons de la taille requise pour un doigt (44 px, D-120). */
+.journee__tour {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.7rem 0.8rem;
+}
+
+.journee__tour .button {
+  min-height: 2.75rem;
+}
+
+.journee__stress {
+  color: var(--gold-soft);
+  font-size: 0.86rem;
+  margin: 0;
 }
 
 /* ---------- Pas-à-pas du combat (#143, #169) ---------- */

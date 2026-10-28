@@ -6,6 +6,7 @@ import { useStore } from '@/store/useStore';
 import { JourneeIntegration } from '@/components/JourneeIntegration';
 import { AlerteComite } from '@/components/AlerteComite';
 import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
+import { BandeauNouvelleVersion } from '@/components/BandeauNouvelleVersion';
 import { ErreurDeRendu } from '@/components/ErreurDeRendu';
 import { GardeComptes } from '@/components/GardeComptes';
 import { estApprouve } from '@/lib/comptes';
@@ -38,10 +39,13 @@ export function Layout() {
   const enAttente = configure && session !== null && compte !== null && !estApprouve(compte);
 
   /**
-   * L'entrée du **comité** (D-058, D-097) est **absente pendant un combat** : c'est ce
-   * qui permet au mur d'être une **page** (D-068) sans risquer une partie en cours — on
-   * ne la quitte pas pour aller lire des post-its. Elle revient dès qu'on quitte l'écran
-   * de combat, fin de partie ou retour au bureau.
+   * **La barre du bas s'efface en combat** (#275, D-116) : le plateau est l'écran qui a le
+   * plus besoin de hauteur, et une barre fixe lui en prend. Elle n'est pas *cachée* (pas de
+   * `display: none`) : elle **n'est pas rendue**, donc elle ne prend ni place, ni focus, ni
+   * rôle pour le lecteur d'écran. Elle revient dès qu'on quitte `/battle`.
+   *
+   * C'est aussi ce qui permet au mur d'être une **page** (D-068) sans risquer une partie en
+   * cours — on ne la quitte pas pour aller lire des post-its (D-058, D-097).
    */
   const enCombat = pathname.startsWith('/battle');
 
@@ -79,14 +83,10 @@ export function Layout() {
   }, [pathname, base, enCombat, surLeSuivi]);
 
   /**
-   * L'onglet **Comité** suit la même règle que la bulle : **cinq** onglets hors combat,
-   * **quatre** pendant. L'onglet est **masqué**, pas grisé : un onglet désactivé reste une
-   * invitation au doigt qui ne répond pas, alors que D-058 dit *masquée* — ce qui n'existe
-   * pas pendant la partie ne se montre pas. La place laissée est reprise par les autres,
-   * et la barre reste d'une seule ligne (`flex: 1` par onglet).
+   * Les **cinq** onglets (D-097) ne se réduisent pas en combat : la barre n'y est plus du
+   * tout (#275). Ce qui existait avant — masquer l'onglet Comité et garder quatre entrées —
+   * a disparu avec la barre.
    */
-  const onglets = enCombat ? tabs.filter((tab) => tab.to !== '/comite') : tabs;
-
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -145,6 +145,9 @@ export function Layout() {
       </header>
 
       <BandeauHorsLigne />
+      {/* Une nouvelle version est prête (#355) : le testeur décide de recharger, et le
+          bandeau ne s'affiche pas en combat. */}
+      <BandeauNouvelleVersion />
 
       {enAttente && (
         <div className="notice notice--warn" role="status">
@@ -174,33 +177,37 @@ export function Layout() {
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
       {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
 
-      <nav className="bottom-nav" aria-label="Navigation principale">
-        {onglets.map((tab) => {
-          const Icon = tab.icon;
-          // La pastille ne vit que sur l'onglet **Comité** : elle dit « choses à voir »,
-          // et le nom accessible du lien la porte pour le lecteur d'écran (#212).
-          const pastille = tab.to === '/comite' ? aVoir : 0;
-          return (
-            <NavLink
-              key={tab.to}
-              to={tab.to}
-              end={tab.to === '/'}
-              aria-label={
-                pastille > 0 ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir` : undefined
-              }
-              className={({ isActive }) => `bottom-nav__item ${isActive ? 'is-active' : ''}`}
-            >
-              <Icon size={20} strokeWidth={1.8} />
-              <span>{tab.label}</span>
-              {pastille > 0 && (
-                <span className="bottom-nav__pastille" aria-hidden="true">
-                  {pastille}
-                </span>
-              )}
-            </NavLink>
-          );
-        })}
-      </nav>
+      {/* La barre du bas : **cinq onglets**, et **rien du tout en combat** (#275). Le shell
+          seul la rend — aucun écran ne la redessine. */}
+      {!enCombat && (
+        <nav className="bottom-nav" aria-label="Navigation principale">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            // La pastille ne vit que sur l'onglet **Comité** : elle dit « choses à voir »,
+            // et le nom accessible du lien la porte pour le lecteur d'écran (#212).
+            const pastille = tab.to === '/comite' ? aVoir : 0;
+            return (
+              <NavLink
+                key={tab.to}
+                to={tab.to}
+                end={tab.to === '/'}
+                aria-label={
+                  pastille > 0 ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir` : undefined
+                }
+                className={({ isActive }) => `bottom-nav__item ${isActive ? 'is-active' : ''}`}
+              >
+                <Icon size={20} strokeWidth={1.8} aria-hidden="true" />
+                <span>{tab.label}</span>
+                {pastille > 0 && (
+                  <span className="bottom-nav__pastille" aria-hidden="true">
+                    {pastille}
+                  </span>
+                )}
+              </NavLink>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 }
