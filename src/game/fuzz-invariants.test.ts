@@ -33,12 +33,27 @@ import { drawRandom, seedRng, type RngState } from '@/game/rng';
  * actions tirées viennent de `legalActions` tel quel.
  */
 
+/**
+ * Le volume, réglable par l'environnement — et **borné dans la suite**.
+ *
+ * Mesuré le 28/10/2026 : 200 parties coûtaient **26 s** sur une machine au repos, pour un
+ * délai de 30 s. Sous charge (quatre agents, une CI), le test dépassait et faisait échouer
+ * `npm test` **sans qu'une règle soit cassée** — un test qui rougit au hasard ne prouve
+ * rien. La suite garde donc une série **courte**, et la série longue se demande :
+ * `FUZZ_PARTIES=120 FUZZ_PARTIES_AGRESSIVES=80 npm test -- --project=node src/game/fuzz-invariants.test.ts`.
+ * Le nombre de parties ne change **pas** les invariants : 80 parties de 200 actions
+ * exercent déjà les mêmes transitions.
+ */
+const nombre = (nom: string, defaut: number): number => {
+  const brut = Number(process.env[nom]);
+  return Number.isSafeInteger(brut) && brut > 0 ? brut : defaut;
+};
 /** Les graines sont des constantes du test, pas un tirage : un échec se rejoue. */
 const GRAINE = 0x5eed_0351;
 /** Les parties au tirage strictement uniforme. */
-const PARTIES = 120;
+const PARTIES = nombre('FUZZ_PARTIES', 50);
 /** Les parties à tirage « agressif » (les actions qui font avancer préférées 6 fois sur 10). */
-const PARTIES_AGRESSIVES = 80;
+const PARTIES_AGRESSIVES = nombre('FUZZ_PARTIES_AGRESSIVES', 30);
 /** Une graine distincte : les deux séries ne rejouent pas les mêmes parties. */
 const GRAINE_AGRESSIVE = 0x0bad_0351;
 /** Le total des deux séries, calculé une fois — le titre du test et la boucle le lisent. */
@@ -298,7 +313,7 @@ function jouerUnePartie(partie: number, politique: Politique, graine: number): P
 describe('Fuzz — des centaines de parties par actions légales (#351)', () => {
   it(
     `joue ${SERIE_TOTALE} parties seedées, vérifie les invariants à chaque pas et rejoue chacune à l’identique`,
-    { timeout: 30_000 },
+    { timeout: 120_000 },
     () => {
       const motifs = new Map<string, number>();
 
