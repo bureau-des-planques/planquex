@@ -36,7 +36,9 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"scripts/**/*.mjs\" \"tools/**/*.mjs\" \"supabase/**/*.ts\" \"*.json\" \"*.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"scripts/**/*.mjs\" \"tools/**/*.mjs\" \"supabase/**/*.ts\" \"*.json\" \"*.ts\"",
     "index:decisions": "node scripts/index-decisions.mjs",
-    "ci:etat": "node scripts/ci-etat.mjs"
+    "ci:etat": "node scripts/ci-etat.mjs",
+    "sons": "node scripts/sons.mjs",
+    "sons:verifier": "node scripts/sons.mjs --verifier"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

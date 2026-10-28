@@ -51,7 +51,11 @@ export default defineConfig({
         // dans le graphe de modules (Vite les hache dans `dist/assets/`), et les précacher
         // faisait payer **28 Mo** à la première visite avant d'avoir vu une carte. Elles
         // restent servies par le réseau, et la carte qui s'affiche les demande alors.
-        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        // **`wav` depuis #413** : les deux sons de l'alpha vivent dans `public/sons/` et ne sont
+        // pas hachés par Vite, donc aucun `import` ne les met dans le graphe de modules. Sans cette
+        // extension, le jeu était **muet hors ligne** — le mode que #357 a rendu utilisable.
+        // 74 Ko pour deux sons : le prix est dérisoire, le silence ne l'est pas.
+        globPatterns: ['**/*.{js,css,html,svg,woff2,wav}'],
         navigateFallback: '/index.html',
         // Les illustrations pèsent : 1,2 Mo par image en 1024². Le précache les veut toutes
         // (c'est le jeu hors ligne), mais il ne doit pas être purgé d'office.

@@ -57,6 +57,7 @@ const STORAGE_KEY = 'bureau-des-planques-v1';
 const DEFAUTS = {
   chemin: '/battle',
   clics: [],
+  glissers: [],
   etapes: [],
   survols: [],
   horloge: null,
@@ -66,13 +67,14 @@ const DEFAUTS = {
   images: 24,
   intervalle: 70,
   colonnes: 6,
+  pendant: 0,
   stockage: {},
   sortie: 'captures/film'
 };
 
 /** Lit `--option valeur` ; refuse une option inconnue ou une valeur non numérique. */
 export function analyserArguments(argv) {
-  const config = { ...DEFAUTS, clics: [], etapes: [], survols: [], stockage: {} };
+  const config = { ...DEFAUTS, clics: [], glissers: [], etapes: [], survols: [], stockage: {} };
   const entiers = new Set(['images', 'intervalle', 'colonnes']);
   for (let i = 0; i < argv.length; i += 1) {
     const option = argv[i];
@@ -84,6 +86,8 @@ export function analyserArguments(argv) {
     const connues = [
       'chemin',
       'clic',
+      'glisser',
+      'pendant',
       'survol',
       'attendre',
       'pause',
@@ -106,6 +110,22 @@ export function analyserArguments(argv) {
     if (nom === 'clic') {
       config.clics.push(valeur);
       config.etapes.push({ type: 'clic', selecteur: valeur });
+    } else if (nom === 'glisser') {
+      // « sélecteur:x0,y0>x1,y1 », en fractions de la boîte de l'élément : un glissement se décrit
+      // par où le doigt se pose et où il arrive, jamais par des pixels absolus (la zone bouge).
+      const m = /^(.*?):(-?[\d.]+),(-?[\d.]+)>(-?[\d.]+),(-?[\d.]+)$/.exec(valeur);
+      if (!m) throw new Error(`--glisser attend « sélecteur:x0,y0>x1,y1 » (reçu « ${valeur} »)`);
+      const [, selecteur, ...nombres] = m;
+      const [x0, y0, x1, y1] = nombres.map(Number);
+      if ([x0, y0, x1, y1].some((n) => Number.isNaN(n))) {
+        throw new Error(`--glisser attend des fractions numériques (reçu « ${valeur} »)`);
+      }
+      config.glissers.push(valeur);
+      config.etapes.push({ type: 'glisser', selecteur, x0, y0, x1, y1 });
+    } else if (nom === 'pendant') {
+      const n = Number(valeur);
+      if (!Number.isInteger(n) || n < 1) throw new Error(`--pendant attend un entier ≥ 1 (reçu « ${valeur} »)`);
+      config.pendant = n;
     } else if (nom === 'survol') {
       config.survols.push(valeur);
     } else if (nom === 'attendre') config.etapes.push({ type: 'attendre', selecteur: valeur });
@@ -149,9 +169,11 @@ export function htmlPlanche(frames, { colonnes, intervalle }) {
   const cases = frames
     .map((frame, i) => {
       const { src, t, compte } = typeof frame === 'string' ? { src: frame } : frame;
-      const instant = Math.round(t ?? i * intervalle);
+      // Une prise **pendant un geste** n'a pas d'instant : sa légende dit le geste, pas le temps
+      // (le doigt peut s'arrêter, et c'est justement ce que la planche doit montrer).
+      const legende = t === null ? `geste ${i + 1}` : `${Math.round(t ?? i * intervalle)} ms`;
       const suite = compte === undefined ? '' : ` · DOM : ${compte}`;
-      return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${instant} ms${suite}</figcaption></figure>`;
+      return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${legende}${suite}</figcaption></figure>`;
     })
     .join('');
   return `<!doctype html><meta charset="utf-8"><style>
@@ -187,9 +209,36 @@ async function filmer(config) {
     );
     if (config.horloge) await page.clock.setFixedTime(new Date(config.horloge));
     await page.goto(new URL(config.chemin, base).href, { waitUntil: 'networkidle' });
+    /** Les prises faites **pendant** les gestes : elles passent avant les prises minutées. */
+    const pendant = [];
+    let geste = 0;
     for (const etape of config.etapes) {
       if (etape.type === 'clic') await page.locator(etape.selecteur).first().click();
-      else if (etape.type === 'attendre') {
+      else if (etape.type === 'glisser') {
+        // Un vrai geste : poser, glisser en douze pas (un seul `move` ne produit pas de
+        // `pointermove` intermédiaire), puis lever. C'est ce que le doigt fait.
+        const boite = await page.locator(etape.selecteur).first().boundingBox();
+        if (!boite) throw new Error(`La zone « ${etape.selecteur} » du glissement n'a pas de boîte`);
+        const x0 = boite.x + boite.width * etape.x0;
+        const y0 = boite.y + boite.height * etape.y0;
+        const x1 = boite.x + boite.width * etape.x1;
+        const y1 = boite.y + boite.height * etape.y1;
+        await page.mouse.move(x0, y0);
+        await page.mouse.down();
+        for (let pas = 1; pas <= 12; pas += 1) {
+          await page.mouse.move(x0 + ((x1 - x0) * pas) / 12, y0 + ((y1 - y0) * pas) / 12);
+          if (config.pendant > 0 && pas % Math.max(1, Math.floor(12 / config.pendant)) === 0) {
+            const nom = `g${geste}_${pas}.png`;
+            await page
+              .locator(config.zone)
+              .first()
+              .screenshot({ path: join(sortie, nom), animations: 'allow' });
+            pendant.push({ src: nom, t: null, compte: undefined });
+          }
+        }
+        await page.mouse.up();
+        geste += 1;
+      } else if (etape.type === 'attendre') {
         await page.locator(etape.selecteur).first().waitFor({ state: 'visible', timeout: 60000 });
       } else await page.waitForTimeout(etape.ms);
     }
@@ -197,7 +246,7 @@ async function filmer(config) {
       await page.locator(selecteur).first().hover();
     }
     const zone = page.locator(config.zone).first();
-    const frames = [];
+    const frames = pendant;
     // `performance.now()` n'est pas figé par `setFixedTime` : c'est l'horloge réelle de la page.
     const t0 = await page.evaluate(() => performance.now());
     for (let i = 0; i < config.images; i += 1) {

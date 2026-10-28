@@ -164,8 +164,9 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 11', () => {
-    expect(STORAGE_VERSION).toBe(11);
+  it('déclare la version 12', () => {
+    // 11 : le reset de la beta (D-130). 12 : les deux sons et leur réglage (D-137, #378).
+    expect(STORAGE_VERSION).toBe(12);
   });
 
   it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {
@@ -764,5 +765,32 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
     expect(useStore.getState().importerSauvegarde(ancienne)).toEqual({ ok: true });
     expect(useStore.getState().combatDetaille).toBe(false);
     expect(useStore.getState().raccourcisCombat).toBe(true);
+  });
+
+  it('un état v11 gagne les sons cochés sans rien perdre (v11 → v12)', () => {
+    // Le cas fautif : une migration qui repart de zéro effacerait la Collection d'un testeur qui
+    // n'a rien demandé. D-137 demande **un champ de plus**, pas une remise à zéro (D-130 ne vise
+    // que la v10, celle de la beta).
+    const v11 = {
+      name: 'Testeur',
+      owned: { 'sse-psychologue': 2 },
+      deck: ['sse-psychologue'],
+      packsOpened: 7,
+      reducedMotion: true,
+      combatDetaille: true,
+      raccourcisCombat: false,
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      partie: null,
+      rng: 4242
+    };
+    const migre = migratePersisted(v11, 11);
+    expect(migre.sons).toBe(true);
+    expect(migre.owned).toEqual({ 'sse-psychologue': 2 });
+    expect(migre.packsOpened).toBe(7);
+    expect(migre.reducedMotion).toBe(true);
+    expect(migre.rng).toBe(4242);
+    // Et un réglage explicite est respecté : couper le son ne se réactive pas au rechargement.
+    expect(migratePersisted({ ...v11, sons: false }, 11).sons).toBe(false);
   });
 });

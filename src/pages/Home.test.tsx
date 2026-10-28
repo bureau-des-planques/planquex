@@ -36,10 +36,10 @@ describe("Home — écran d'accueil", () => {
     fireEvent.click(openButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/Arrivage : cinq nouvelles cartes/i)).toBeInTheDocument();
+      expect(screen.getByText(/Arrivage : 5 cartes/i)).toBeInTheDocument();
     });
 
-    const packReveal = screen.getByText(/Arrivage : cinq nouvelles cartes/i).closest('div');
+    const packReveal = screen.getByText(/Arrivage : 5 cartes/i).closest('div');
     const cards = packReveal?.querySelectorAll('.card') ?? [];
     expect(cards.length).toBe(5);
 
@@ -47,7 +47,7 @@ describe("Home — écran d'accueil", () => {
     fireEvent.click(closeButton);
 
     await waitFor(() => {
-      expect(screen.queryByText(/Arrivage : cinq nouvelles cartes/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Arrivage : 5 cartes/i)).not.toBeInTheDocument();
     });
   });
 
@@ -67,6 +67,6 @@ describe("Home — écran d'accueil", () => {
   it("n'affiche pas le modal tant qu'aucun Arrivage n'est ouvert", () => {
     renderWithStore(<Home />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.queryByText(/Arrivage : cinq nouvelles cartes/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Arrivage : 5 cartes/i)).not.toBeInTheDocument();
   });
 });

@@ -28,6 +28,12 @@ describe('filmer-animation', () => {
     expect(config).toMatchObject({ clics: ['a', 'b'], images: 10, stockage: { x: 1 }, chemin: '/battle' });
     expect(() => analyserArguments(['--bidon', '1'])).toThrow(/inconnue/);
     expect(() => analyserArguments(['--images', 'zéro'])).toThrow(/entier/);
+    // Un geste de glissement se décrit par deux points **en fractions** de la boîte : des pixels
+    // absolus casseraient à la première zone qui bouge ou qui change de taille.
+    const geste = analyserArguments(['--glisser', '.zone:0.5,0.16>0.5,-0.1']);
+    expect(geste.etapes).toEqual([{ type: 'glisser', selecteur: '.zone', x0: 0.5, y0: 0.16, x1: 0.5, y1: -0.1 }]);
+    expect(geste.glissers).toEqual(['.zone:0.5,0.16>0.5,-0.1']);
+    expect(() => analyserArguments(['--glisser', '.zone:gauche'])).toThrow(/sélecteur:x0,y0>x1,y1/);
     expect(() => analyserArguments(['--images'])).toThrow(/valeur/);
   });
 

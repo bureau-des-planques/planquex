@@ -37,7 +37,9 @@ describe('Home — finition', () => {
     renderWithStore(<Home />, { tutorielVu: true, pasAPasCombatVu: true });
     fireEvent.click(screen.getByRole('button', { name: /Ouvrir un Arrivage/ }));
 
-    const dialogue = await screen.findByRole('dialog', { name: /Arrivage : cinq nouvelles cartes/ });
+    // Le titre ne dit plus « cinq nouvelles cartes » : le dialogue annonce le tirage, et le
+    // nombre de cartes neuves vient du badge (#283). Le nom accessible reste « Arrivage ».
+    const dialogue = await screen.findByRole('dialog', { name: /Arrivage/ });
     expect(dialogue.querySelectorAll('.card')).toHaveLength(5);
 
     await userEvent.keyboard('{Escape}');
@@ -54,7 +56,7 @@ describe('Home — finition', () => {
     // **distinctes** tirées — c'est autant de « Nouvelle » (une carte tirée deux fois ne l'est qu'une).
     const distinctes = Object.keys(useStore.getState().owned).filter((id) => (useStore.getState().owned[id] ?? 0) > 0);
     expect(neuves).toHaveLength(distinctes.length);
-    expect(dialogue.querySelectorAll('.pack-reveal__card')).toHaveLength(5);
+    expect(dialogue.querySelectorAll('.ouverture__carte')).toHaveLength(5);
   });
 
   it('avec tout le catalogue en main, aucune carte de l’Arrivage n’est « Nouvelle »', async () => {

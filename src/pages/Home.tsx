@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Coffee, PackageOpen, Swords } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
 import { NOTES_VERSIONS, type NoteVersion } from '@/data/versions';
 import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
 import { APP_LABEL, APP_VERSION } from '@/version';
-import { CardView } from '@/components/CardView';
 import { avancementTirable, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { SceneOuverture } from '@/animation/ouverture/SceneOuverture';
+import { jouer } from '@/audio/sons';
 
 /** La date se lit en français (« 21 octobre 2026 ») : `date` est un jour, pas un instant. */
 function dateLongue(jour: string): string {
@@ -46,6 +46,9 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
   const { pourcent: completion } = avancementTirable(owned);
 
   const handleOpenPack = () => {
+    // **Le son de l'Arrivage part au clic** (D-137) : le geste est ce qui autorise l'audio, et le
+    // son accompagne l'ouverture, pas la révélation.
+    jouer('arrivage');
     const connues = new Set(Object.keys(owned).filter((id) => (owned[id] ?? 0) > 0));
     const cartes = openPack();
     const neuves = new Set<number>();
@@ -148,27 +151,11 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
           focus piégé en viennent. `lastPack` reste porté jusqu'à la fermeture. */}
       <Dialog open={lastPack !== null} onOpenChange={(ouvert) => !ouvert && setLastPack(null)}>
         <DialogContent className="pack-reveal">
-          <DialogTitle>Arrivage : cinq nouvelles cartes</DialogTitle>
+          <DialogTitle className="sr-only">Arrivage</DialogTitle>
           <DialogDescription className="sr-only">
             Les cartes de l’Arrivage sont rangées dans ta Collection.
           </DialogDescription>
-          <div className="pack-reveal__cards">
-            {lastPack?.map((card, index) => (
-              <motion.div
-                key={`${card.id}-${index}`}
-                className="pack-reveal__card"
-                initial={{ opacity: 0, y: 24, rotate: -2 }}
-                animate={{ opacity: 1, y: 0, rotate: 0 }}
-                transition={{ delay: index * 0.08, type: 'spring', stiffness: 260, damping: 24 }}
-              >
-                {nouvelles.has(index) && <span className="pack-reveal__neuve">Nouvelle</span>}
-                <CardView card={card} compact />
-              </motion.div>
-            ))}
-          </div>
-          <button type="button" className="button button--primary" onClick={() => setLastPack(null)}>
-            Ranger dans la Collection
-          </button>
+          {lastPack && <SceneOuverture cartes={lastPack} neuves={nouvelles} onRanger={() => setLastPack(null)} />}
         </DialogContent>
       </Dialog>
     </div>
