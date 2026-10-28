@@ -46,8 +46,13 @@ export default defineConfig({
     // 2,4 s) dépassent le seuil alors que rien n'est cassé. Mesuré le 23/10/2026 :
     // 5 exécutions simultanées échouaient **uniquement** sur des délais, dans quatre
     // fichiers hors du périmètre de #176. Un délai plus large ne masque pas une boucle
-    // infinie : il la fait durer 20 s au lieu de 5, et le test garde son échec nommé.
-    testTimeout: 20_000,
+    // infinie : il la fait durer 60 s au lieu de 5, et le test garde son échec nommé.
+    //
+    // **60 s depuis le 28/10/2026** : `Battle.test.tsx` dure **31 s au repos** (77 tests
+    // qui jouent de vraies parties), et sous charge — cinq agents, une CI — ses tests
+    // dépassaient 20 s alors qu'aucune assertion n'échouait. Un délai qui rougit au hasard
+    // ne prouve rien ; 60 s laisse la marge d'une machine occupée sans excuser un blocage.
+    testTimeout: 60_000,
     hookTimeout: 30_000,
     projects: [
       {
