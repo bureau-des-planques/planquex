@@ -6,7 +6,7 @@ import { act, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { Battle } from './Battle';
+import { Battle, libelleDuTour } from './Battle';
 import { renderWithStore, setupTestStore } from '@/test/test-utils';
 import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
@@ -1510,5 +1510,21 @@ describe('Battle — la sortie du combat (D-142, #427)', () => {
     );
     fireEvent.click(screen.getByRole('link', { name: 'Quitter le combat, la partie est gardée' }));
     expect(await screen.findByText('page Accueil')).toBeInTheDocument();
+  });
+});
+
+/**
+ * **Qui joue**, dans l'en-tête (#424) : le harnais de partie jouée a vu « à la Direction » pendant
+ * que le testeur devait choisir sa relève. Le libellé suit `campToAct`, comme les boutons.
+ */
+describe('Battle — le libellé du tour suit le camp qui doit agir (#424)', () => {
+  it('une relève du joueur, pendant le tour de la Direction, est « à toi » ; le contrôle mord', () => {
+    const deck = autoDeck(Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]))).deck;
+    const base = createBattle(deck, deck, 42);
+    const releve: BattleState = { ...base, phase: 'playing', current: 'ai', pendingPromotion: 'player' };
+    expect(libelleDuTour(releve)).toBe('à toi');
+    // Sans relève, c'est bien le tour de la Direction : le libellé n'est pas figé sur « à toi ».
+    expect(libelleDuTour({ ...releve, pendingPromotion: null })).toBe('à la Direction');
+    expect(libelleDuTour({ ...releve, phase: 'ended' })).toBe('partie terminée');
   });
 });
