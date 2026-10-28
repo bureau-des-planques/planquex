@@ -1,0 +1,68 @@
+/* BANC D'ÉCOUTE — DEV seulement (#378). Le CSS du banc, rien de plus. */
+body {
+  background: var(--bg-deep);
+  margin: 0;
+}
+
+.banc-sons {
+  box-sizing: border-box;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 30rem;
+  padding: 1.2rem 1rem 2rem;
+}
+
+.banc-sons h1 {
+  font-family: var(--font-display, inherit);
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.banc-sons__note {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.banc-sons__carte {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.9rem;
+}
+
+.banc-sons__carte h2 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.banc-sons__quand {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin: 0;
+}
+
+.banc-sons__lecteur {
+  height: 2rem;
+  width: 100%;
+}
+
+.banc-sons__carte--avis ul {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.banc-sons__carte--avis strong {
+  color: var(--text);
+}
