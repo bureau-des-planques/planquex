@@ -175,7 +175,7 @@ export const POLITIQUE_DU_NIVEAU: Readonly<Record<AiLevel, Politique>> = { 1: 's
 
 /**
  * La difficulté que le testeur choisit (#251, D-125) : elle règle la **politique** de la
- * Direction ; le Deck joué en est la seconde moitié (non branchée ici, voir D-147).
+ * Direction ; le Deck joué en est la seconde moitié (non branchée ici, voir D-146).
  * `serieuse` est le défaut : c'est le niveau 2 de l'écran (D-084, D-109), qui ne change pas.
  */
 export type Difficulte = 'simple' | 'serieuse';

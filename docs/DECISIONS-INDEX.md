@@ -150,4 +150,4 @@
 | D-142 | 28/10/2026 | Le jeu se joue sur un vrai téléphone, en portrait… |
 | D-143 | 28/10/2026 | La CI rejoue ce que le changement peut casser, et… |
 | D-144 | 28/10/2026 | Le jeu sort d'AGENTS.md : vocabulaire, règles et écriture des… |
-| D-147 | 28/10/2026 | Les niveaux numériques portent leur politique, et la difficulté se… |
+| D-146 | 28/10/2026 | Les niveaux numériques portent leur politique, et la difficulté se… |
