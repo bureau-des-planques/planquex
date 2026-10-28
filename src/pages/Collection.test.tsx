@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Lent : chaque cas rend la Collection complète dans jsdom, avec le catalogue entier et le store réinitialisé ; le coût est le rendu de la grille.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Collection } from './Collection';

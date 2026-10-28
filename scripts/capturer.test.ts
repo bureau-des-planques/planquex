@@ -1,3 +1,4 @@
+// Lent : chaque cas lance `scripts/capturer.mjs --plan` en sous-processus Node (environ 1 s chacun) ; c'est le contrat de la commande, vérifié en la lançant.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';

@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * La place des post-its, et le retrait d'administration (#185, #186, migration
  * `0007_place_et_retrait_admin.sql`).

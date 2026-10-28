@@ -18,6 +18,7 @@ cd /home/chapax/Documents/opencode/gamedev/planquex
 | `npm test` | `vitest run` |  |
 | `npm test -- --project=node` | **La moitié `node` de la suite** — moteur, données, `scripts/`, `supabase/`, `tools/`. C'est ce que lance le job `tests-noyau` (D-115, #257), pour reproduire une CI rouge en local |  |
 | `npm test -- --project=ui` | **La moitié `ui`** — les écrans sous jsdom. C'est ce que lance le job `tests-ecrans` (D-115, #257) |  |
+| `npm run tests:lents` | **Les tests les plus lents, et la règle des 5 s** (D-143 (5), #422). Lance la suite entière (les deux projets) et écrit `node_modules/.durees-tests.json` (plusieurs minutes : sous `flock /tmp/planquex-lourd.lock` pour un agent), puis imprime les **dix plus lents** et **sort 1** si un fichier au-delà de 5 s n'a pas de ligne `Lent :` en tête. `node scripts/durees-tests.mjs [rapport]` relit un rapport sans relancer la suite | Table publiée à la fin de ce document, mesure du 28/10/2026 |
 | `npm run format` | **Formate** le code (`prettier --write`) — src, scripts, tools, supabase, JSON et TS de la racine. `src/data/`, les docs et les sorties de build sont exclus : `.prettierignore` dit pourquoi, ligne à ligne |  |
 | `npm run format:check` | **Vérifie** le formatage sans écrire. La CI le lance après `check` ; épinglé en devDependency exacte |  |
 | `npm run test:watch` | Vitest en watch |  |
@@ -75,3 +76,22 @@ Vite répond **`200` en `Content-Type: text/html`** à **tout** chemin inconnu (
 Conséquence : si le navigateur charge encore la page du **build** — service worker `VitePWA` enregistré sur `localhost:5178`, ou onglet resté ouvert depuis un `preview` — il demande `/assets/index-<hash>.js`, reçoit du HTML, et refuse de l'exécuter comme module. L'écran reste **blanc**, la console dit à peu près *« Expected a JavaScript module script but the server responded with a MIME type of text/html »*, et **le terminal du serveur n'affiche aucune erreur** : il a répondu `200`.
 
 Le réflexe : **DevTools → Application → Service Workers → Unregister**, puis **Storage → Clear site data**, et recharger (une fenêtre privée suffit aussi). Chaque fusion change les *hash* des assets, donc le piège se rejoue à chaque merge tant qu'on ne purge pas. Pour changer d'origine sans purger : `npm run dev -- --port 5199` — un service worker est enregistré **par origine**, et un autre port en est une autre.
+
+## Les tests les plus lents (D-143 (5), #422)
+
+Mesure du **28/10/2026**, `npm run tests:lents` : les deux projets, durée **du fichier entier** (montage et `beforeAll` compris), classés par durée. Les fichiers tournent en parallèle, donc ces durées ne s'additionnent pas. **Vingt** fichiers dépassent 5 s ; tous portent leur ligne `Lent :` en tête, et le script refuse ceux qui n'en portent pas.
+
+| Fichier | Durée (s) |
+|---|---|
+| `supabase/discord.test.ts` | 79,3 |
+| `supabase/place.test.ts` | 68,4 |
+| `tools/admin/admin.test.ts` | 65,3 |
+| `supabase/comptes.test.ts` | 65,3 |
+| `supabase/dates.test.ts` | 62,8 |
+| `scripts/capturer.test.ts` | 52,1 |
+| `supabase/comite.test.ts` | 51,3 |
+| `supabase/pouces.test.ts` | 50,5 |
+| `supabase/mur-ecriture.test.ts` | 45,0 |
+| `scripts/illustration-vague.test.ts` | 38,1 |
+
+Huit des dix montent une base PGlite par cas : la cause est le montage, pas la logique testée. La table se régénère par la commande ci-dessus ; elle ne se recopie pas à la main d'une mesure à l'autre.

@@ -1,4 +1,5 @@
 // @vitest-environment node
+// Lent : chaque `base()` monte un PGlite neuf et rejoue les migrations réelles (`supabase/pglite.ts`) ; le coût est ce montage, pas la règle testée. Voir D-143 (4) : on le partage, on ne retire aucun cas.
 /**
  * Qui exécute quoi, dans `public` — #341 (migration `0018_pgnet_et_fonctions_fermees.sql`).
  *
