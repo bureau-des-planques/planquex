@@ -25,7 +25,7 @@
 | Deux gestes (décoller l'autocollant, puis déchirer) | **un seul** : déchirer le long des pointillés, depuis le bord choisi | le premier geste doublait le second sans rien raconter de plus |
 | Déchirure **fondue** entre trois photos | déchirure **au doigt** : la bande et le corps découpent un même tracé dentelé, la bande pivote sur son bout encore attaché | c'était le point ouvert n° 1 de la première spec (« le seul temps qui n'est pas cranté au pixel ») |
 | Creux du film en shader WebGL2 | inclinaison 3D + reflet holographique qui suit le doigt | même effet de matière, sans WebGL ni repli à maintenir |
-| Cartes posées d'un coup, en rangée, en vignettes | **révélation carte par carte**, puis récapitulatif | c'est le moment que le joueur attend ; il se joue une carte à la fois |
+| Cartes posées d'un coup, en rangée, en vignettes | cartes **étalées face cachée**, retournées **une à une, dans l'ordre choisi** ; une rare monte au centre avec une **annonce** ; une carte retournée ouvre sa **fiche** | c'est le moment que le joueur attend ; il se joue une carte à la fois (deuxième passe du 28/10/2026 : « plus de temps pour sortir et révéler », « qu'on clique pour les retourner », « une phrase marrante pour une rare ») |
 
 ## 3. Les temps de l'ouverture
 
@@ -50,38 +50,49 @@
 | Seuil | **0,9** : lâcher avant referme (la bande retombe, ressort de 240 ms), lâcher après ouvre |
 | Rendu | la bande pivote jusqu'à 15° sur son bout attaché, un trait de lumière court sur la partie ouverte, des étincelles naissent au front ; une vibration par dixième de course, là où l'appareil la permet |
 
-### 3.3 L'envol — 1 150 ms
+### 3.3 L'envol — 2 900 ms
 
 | Instant | Ce qui se passe |
 |---|---|
-| 0 | la bande s'envole, **éclair** plein écran, secousse, gerbe d'étincelles à la couleur du tirage |
-| 140 ms | les cartes, **dos tourné**, émergent **par la fente** : elles sont derrière le corps du sachet, qui les cache sous la ligne |
-| 600–640 ms | le sachet tombe et s'efface ; les cartes gagnent le centre en pile |
-| 1 150 ms | la révélation commence |
+| 0 | la bande s'envole (1 s), **éclair** plein écran, secousse, gerbe d'étincelles à la couleur du tirage |
+| 300 ms | les cartes, **dos tourné**, montent **lentement par la fente** (1,3 s), en léger éventail : elles sont derrière le corps du sachet, qui les cache sous la ligne |
+| 1 500 ms | le sachet tombe et s'efface (1 s) |
+| 1 700 ms | les cartes quittent le sachet et **s'étalent** sur le bureau, une à une (140 ms d'écart), posées un peu de travers |
+| 2 900 ms | la révélation commence ; la première carte a le focus |
 
-### 3.4 La révélation, carte par carte
+### 3.4 La révélation, au choix du testeur
 
-Les cartes viennent **dans l'ordre du tirage** (`openPackCards` : du plus courant au plus rare) — la
-tension monte sans rien truquer. La carte du dessus se retourne après une attente qui **croît avec
-son palier** (`revelation.ts`) :
+Les cartes sont étalées **face cachée**, dans la grille qui les rend les plus grandes (deux colonnes
+sur un téléphone en hauteur, une rangée sur un écran large : `poseRecap`). Comme dans les grands jeux
+de cartes, **le dos d'une carte rare luit de sa couleur** (lueur lente de 1,8 s) : on sait qu'il y a
+quelque chose, on choisit quand le voir. Sous le doigt, une carte cachée se soulève.
 
-| Palier | Raretés | Attente | Mise en scène |
-|---|---|---:|---|
-| `simple` | ◆, ◆◆ | 160 ms | elle se retourne |
-| `rare` | ◆◆◆ | 420 ms | halo, éclat qui traverse la carte, gerbe, rayons qui s'avivent |
-| `brillante` | ◆◆◆◆ | 900 ms | le dos **s'allume et tremble** avant ; éclair, secousse, reflet holographique |
-| `secrete` | ★ et au-delà | 1 300 ms | tout cela, plus **une pluie d'étoiles** sur toute la largeur |
+Le testeur **touche une carte pour la retourner**. La mise en scène croît avec le palier
+(`revelation.ts`) :
 
-Un **toucher** fait passer la carte (ou la retourne tout de suite si elle attend encore) ; un
-**glissement** la jette dans son sens (au-delà de 70 px, ou d'un geste vif). Le badge
-« **Nouvelle** » apparaît au retournement.
+| Palier | Raretés | Au toucher | Retournée |
+|---|---|---|---|
+| `simple` | ◆, ◆◆ | se retourne **sur place** (950 ms) | quelques étincelles |
+| `rare` | ◆◆◆ | **monte au centre**, les autres s'assombrissent ; 900 ms d'attente | halo, éclat, gerbe, rayons qui s'avivent, **annonce** ; 1,9 s au centre |
+| `brillante` | ◆◆◆◆ | monte au centre, **son dos s'allume et tremble** de plus en plus ; 1,4 s | éclair, secousse, reflet holographique, **annonce** ; 2,3 s au centre |
+| `secrete` | ★ et au-delà | idem ; 1,9 s | tout cela, plus **une pluie d'étoiles** sur toute la largeur, **annonce** ; 2,9 s au centre |
 
-### 3.5 Le récapitulatif
+**L'annonce** est une phrase de la maison, tirée au hasard dans le palier de la carte (`ANNONCES`) :
+« Validé en comité ! », « Prime exceptionnelle ! », « Hors grille salariale ! »… — avec, dessous, la
+rareté et le nom. Elle est lue par un lecteur d'écran (`role="status"`). Un toucher pendant la tenue
+renvoie la carte à sa place. Le badge « **Nouvelle** » apparaît au retournement.
 
-Les cinq cartes, face visible, dans la grille qui les rend **les plus grandes** : deux colonnes sur un
-téléphone en hauteur, trois ou une rangée sur un écran large (`poseRecap`). Une carte touchée se
-montre **en grand**, les autres s'assombrissent ; touchée de nouveau, elle se repose. Le bouton
-**« Ranger dans la Collection »** ferme.
+### 3.5 La fiche d'une carte
+
+Une carte **retournée** se touche pour ouvrir sa **fiche** : elle arrive en tournant sur elle-même,
+se tient sous le doigt (inclinaison et reflet), et à côté d'elle (écran large) ou en dessous
+(téléphone) **tout ce qu'elle porte en toutes lettres** — faction, nature, Seuil, Rotation, rareté,
+Talent, chaque Pression avec son coût et son texte entier, Vulnérabilité, flavour (`FicheCarte.tsx`,
+`poseFiche`). « Reposer », un toucher sur la carte ou à côté, ou **Échap** la referment — Échap ne
+ferme pas l'Arrivage tant qu'une fiche est ouverte.
+
+Toutes retournées, la scène se calme (plus de poussière) et propose **« Ranger dans la
+Collection »**.
 
 ## 4. Les machines
 
@@ -94,29 +105,30 @@ ferme ──appui sur les pointillés──▶ dechirure ──relâche ≥ 0,9�
 ```
 
 **La scène** (`SceneOuverture.tsx`) expose son étape dans `data-etape` : `ferme` · `dechirure` ·
-`ouverture` · `revelation` · `ouvert` (le récapitulatif).
+`ouverture` · `revelation` · `ouvert` (toutes les cartes retournées). Chaque carte porte
+`data-face` (`verso` / `recto`), et pendant sa révélation `data-tension` puis `data-fetee`.
 
 **Invariants gardés par un test qui mord** (AGENTS.md §6) : un appui hors de la ligne ne déchire
 rien ; la déchirure suit le doigt dans les deux sens et part du bord le plus proche ; `ouvert` n'est
 atteignable que par la déchirure ; un geste annulé (`pointercancel`, `lostpointercapture`) se
 traite **exactement** comme un relâchement ; le palier ne redescend jamais quand la rareté monte ;
-le récapitulatif tient dans la scène sans chevauchement.
+une rare n'est pas retournée avant la fin de son attente ; l'étalage et la fiche tiennent dans la
+scène sans chevauchement.
 
 ## 5. Ce qui n'est pas négociable
 
-- **Mouvement réduit** (D-098) : sous `useMouvementReduit()`, la scène s'ouvre **directement sur le
-  récapitulatif** — ni sachet, ni particules, ni transition.
+- **Mouvement réduit** (D-098) : sous `useMouvementReduit()`, la scène s'ouvre **directement sur les
+  cartes retournées** — ni sachet, ni particules, ni transition, ni boucle.
 - **Accès sans glissement** (les critères WCAG d'accès au pointeur) : **« Ouvrir »** joue la
-  déchirure seul, **« Tout afficher »** saute au récapitulatif depuis n'importe quelle étape ; à la
-  révélation, la scène prend le focus et **Entrée**, **Espace** ou les **flèches** font passer les
-  cartes ; au récapitulatif, chaque carte se prend au clavier.
+  déchirure seul, **« Tout afficher »** retourne tout depuis n'importe quelle étape ; à la
+  révélation, la première carte prend le focus, **Entrée** ou **Espace** retournent la carte ciblée
+  et ouvrent sa fiche, **Tab** passe de l'une à l'autre.
 - **Aucune information dans l'animation** : les cinq `CardView` et leurs badges sont **dans le DOM
   dès le premier rendu**, dos tourné ou non.
-- **Les bornes de SPEC-COMBAT-UI §6.8**, qui valent pour toute la feuille : aucune animation CSS de
-  plus de 800 ms, aucune boucle sans fin, aucun flou animé (`effets-combat.test.ts`). Les rayons du
-  fond sont donc **fixes** (ils pivotent par transition aux grands retournements), l'éclat des
-  pointillés est **rejoué** sur événement, et le tremblement avant une carte brillante est une seule
-  animation de 780 ms.
+- **Ses propres bornes d'animation** (D-141) : la scène est **hors** des bornes du combat
+  (SPEC-COMBAT-UI §6.8.3, 800 ms et pas de boucle) ; les siennes — boucles **lentes** (1 s au moins,
+  jamais un clignotement), 3 s au plus pour une animation qui finit, aucun flou animé — sont gardées
+  par `effets-combat.test.ts` (`bornesDeLArrivage`).
 - **Pas de texte cuit dans une image** : la pochette est un SVG, son texte est du texte.
 
 ## 6. Le son
@@ -127,11 +139,11 @@ Arrivage » (`Home.tsx`), et la refonte n'en ajoute aucun. `etats.ts` expose enc
 
 ## 7. Les preuves
 
-- **jsdom** : `etats.test.ts` (la déchirure), `revelation.test.ts` (paliers, lueur, tracé,
-  dispositions), `SceneOuverture.test.tsx` (le parcours entier au doigt, au bouton et au clavier ;
-  geste annulé ; mouvement réduit).
-- **planches de frames** : `docs/preuves/ouverture-arrivage-2026-10-28/planche-v2-*.jpg`, filmées sur
-  le serveur de développement par les scripts du même dossier.
+- **jsdom** : `etats.test.ts` (la déchirure), `revelation.test.ts` (paliers, attentes, annonces,
+  lueur, tracé, étalage, fiche), `SceneOuverture.test.tsx` (le parcours entier au doigt, au bouton et
+  au clavier ; retournement au choix ; annonce ; fiche ; geste annulé ; mouvement réduit).
+- **planches de frames** : `docs/preuves/ouverture-arrivage-2026-10-28/planche-v3-*.jpg`, filmées sur
+  le serveur de développement par `filmer.cjs`, du même dossier.
 
 ## 8. Ce qui reste ouvert
 
@@ -146,8 +158,9 @@ Arrivage » (`Home.tsx`), et la refonte n'en ajoute aucun. `etats.ts` expose enc
 | Morceau | Fichier | Gardé par |
 |---|---|---|
 | La déchirure : trois phases, un seuil | `src/animation/ouverture/etats.ts` | `etats.test.ts` |
-| Paliers, attente, lueur, tracé, dispositions | `src/animation/ouverture/revelation.ts` | `revelation.test.ts` |
+| Paliers, attentes, annonces, lueur, tracé, étalage, fiche | `src/animation/ouverture/revelation.ts` | `revelation.test.ts` |
+| La fiche : tous les textes d'une carte | `src/animation/ouverture/FicheCarte.tsx` | `SceneOuverture.test.tsx` |
 | La pochette vectorielle | `src/animation/ouverture/Pochette.tsx` | rendue dans `SceneOuverture.test.tsx` |
 | Les particules (canvas 2D) | `src/animation/ouverture/particules.ts` | décoratif ; absent sous mouvement réduit |
 | La scène et les gestes | `src/animation/ouverture/SceneOuverture.tsx` | `SceneOuverture.test.tsx` |
-| Le style | `src/styles.css`, bloc « L'ouverture d'un Arrivage » | `effets-combat.test.ts` (bornes) |
+| Le style | `src/styles.css`, bloc « L'ouverture d'un Arrivage » | `effets-combat.test.ts` (bornes de D-141) |

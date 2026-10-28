@@ -2,16 +2,20 @@ import { describe, expect, it } from 'vitest';
 import { RARITY_META } from '@/data';
 import type { Rarity } from '@/data/types';
 import {
+  annonce,
+  ANNONCES,
   auMoins,
   CARTE,
   decoupes,
   lueur,
   meilleure,
   meilleurPalier,
+  inclinaisonCachee,
   palier,
-  posePile,
+  poseFiche,
   poseRecap,
   SUSPENSE,
+  TENUE,
   traceDechirure
 } from './revelation';
 
@@ -67,13 +71,59 @@ describe('la révélation d’un Arrivage — la mise en scène (#283)', () => {
     }
   });
 
-  it('dans la pile, la carte du dessus est droite et les suivantes débordent à peine', () => {
-    const dessus = posePile(0, 390, 700);
-    expect(dessus.rotation).toBe(0);
-    expect(dessus.x).toBe(0);
-    const dessous = posePile(2, 390, 700);
-    expect(Math.abs(dessous.rotation)).toBeGreaterThan(0);
-    expect(dessous.echelle).toBeLessThan(dessus.echelle);
+  it('une carte rare reste au centre plus longtemps qu’elle ne s’est fait attendre, une simple pas du tout', () => {
+    expect(SUSPENSE.simple).toBe(0);
+    expect(TENUE.simple).toBe(0);
+    for (const niveau of ['rare', 'brillante', 'secrete'] as const) {
+      expect(TENUE[niveau], niveau).toBeGreaterThan(SUSPENSE[niveau]);
+    }
+  });
+
+  it('une annonce pour chaque carte rare, aucune pour une simple, rejouable par sa graine', () => {
+    expect(annonce('simple', 1)).toBeNull();
+    for (const niveau of ['rare', 'brillante', 'secrete'] as const) {
+      expect(ANNONCES[niveau].length, niveau).toBeGreaterThanOrEqual(3);
+      const texte = annonce(niveau, 42);
+      expect(ANNONCES[niveau]).toContain(texte);
+      expect(annonce(niveau, 42)).toBe(texte);
+    }
+    // Plusieurs graines tirent plusieurs phrases : l'annonce n'est pas toujours la même.
+    const tirees = new Set(Array.from({ length: 40 }, (_, g) => annonce('secrete', g)));
+    expect(tirees.size).toBeGreaterThan(1);
+  });
+
+  it('les annonces restent dans le vocabulaire du jeu', () => {
+    for (const texte of Object.values(ANNONCES).flat()) {
+      // Le cas fautif : un mot de l'ancien univers ou du jeu de référence dans un texte du jeu.
+      expect(texte).not.toMatch(/gal[eè]re|pok[eé]mon/i);
+      expect(texte.length, texte).toBeLessThanOrEqual(42);
+    }
+  });
+
+  it('les cartes face cachée sont posées de travers, chacune à sa façon', () => {
+    const angles = [0, 1, 2, 3, 4].map(inclinaisonCachee);
+    expect(new Set(angles).size).toBe(5);
+    for (const a of angles) expect(Math.abs(a)).toBeLessThanOrEqual(4);
+  });
+
+  it('la fiche tient dans la scène : carte et texte côte à côte sur un écran large, superposés sur un téléphone', () => {
+    for (const [largeur, hauteur, attendue] of [
+      [358, 690, 'dessous'],
+      [1334, 680, 'cote']
+    ] as const) {
+      const fiche = poseFiche(largeur, hauteur);
+      expect(fiche.disposition).toBe(attendue);
+      const l = (CARTE.largeur * fiche.carte.echelle) / 2;
+      const h = (CARTE.hauteur * fiche.carte.echelle) / 2;
+      expect(Math.abs(fiche.carte.x) + l).toBeLessThanOrEqual(largeur / 2 + 0.5);
+      expect(Math.abs(fiche.carte.y) + h).toBeLessThanOrEqual(hauteur / 2 + 0.5);
+      const { panneau } = fiche;
+      expect(panneau.x + panneau.largeur).toBeLessThanOrEqual(largeur + 0.5);
+      expect(panneau.y + panneau.hauteur).toBeLessThanOrEqual(hauteur + 0.5);
+      // Le contrôle mord : la carte et le texte ne se recouvrent pas.
+      if (attendue === 'cote') expect(largeur / 2 + fiche.carte.x + l).toBeLessThanOrEqual(panneau.x + 0.5);
+      else expect(hauteur / 2 + fiche.carte.y + h).toBeLessThanOrEqual(panneau.y + 0.5);
+    }
   });
 
   it('le récapitulatif tient dans la scène, sans chevauchement', () => {

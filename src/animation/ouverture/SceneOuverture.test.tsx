@@ -2,8 +2,9 @@ import { act } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ALL_CARDS } from '@/data';
+import type { Card, Rarity } from '@/data/types';
 import { SceneOuverture } from './SceneOuverture';
-import { SUSPENSE } from './revelation';
+import { ANNONCES, SUSPENSE, TENUE } from './revelation';
 import { useStore } from '@/store/useStore';
 
 /**
@@ -13,17 +14,24 @@ import { useStore } from '@/store/useStore';
  *  - **les cartes et le badge existent dès le premier rendu** — « aucune information ne vit dans
  *    l'animation » (D-098) : un testeur qui n'attend pas, ou qui lit avec un lecteur d'écran, doit
  *    avoir le tirage ;
- *  - **le parcours entier** : déchirure, envol, révélation carte par carte, récapitulatif — au doigt,
- *    au bouton et au clavier ;
+ *  - **le parcours entier** : déchirure, envol, cartes étalées face cachée, retournées une à une
+ *    dans l'ordre choisi, annonce des rares, fiche d'une carte — au doigt, au bouton et au clavier ;
  *  - **un geste annulé se traite comme un relâchement** (spec Pointer Events §3.3) ;
- *  - **« Mouvement réduit » arrive directement au récapitulatif** (D-098).
+ *  - **« Mouvement réduit » arrive directement aux cartes retournées** (D-098).
  *
  * jsdom ne calcule aucune mise en page : la scène retombe sur sa géométrie par défaut (un sachet de
  * 300 × 500, la ligne à 44 px), et c'est ce que les gestes visent.
  */
-const CARTES = ALL_CARDS.slice(0, 5);
-/** La plus longue attente avant un retournement : de quoi retourner n'importe quelle carte. */
-const ATTENTE_MAX = Math.max(...Object.values(SUSPENSE));
+function une(rarete: Rarity): Card {
+  const carte = ALL_CARDS.find((c) => c.rarity === rarete);
+  if (!carte) throw new Error(`aucune carte ${rarete}`);
+  return carte;
+}
+
+/** Un tirage comme `openPackCards` en donne : trois simples, une ◆◆◆, une étoile. */
+const CARTES: Card[] = [une('1D'), une('1D'), une('2D'), une('3D'), une('1S')];
+/** De quoi aller au bout de n'importe quelle révélation. */
+const LONGTEMPS = Math.max(...Object.values(SUSPENSE)) + Math.max(...Object.values(TENUE)) + 1000;
 
 beforeEach(() => {
   // `setPointerCapture` n'existe pas dans jsdom : un double suffit, la capture n'est pas le sujet.
@@ -40,7 +48,7 @@ afterEach(() => {
 });
 
 function monter(onRanger = () => undefined) {
-  render(<SceneOuverture cartes={CARTES} neuves={new Set([0, 1])} onRanger={onRanger} />);
+  render(<SceneOuverture cartes={CARTES} neuves={new Set([0, 3])} onRanger={onRanger} />);
   return screen.getByTestId('ouverture');
 }
 
@@ -48,6 +56,10 @@ function attendre(ms: number): void {
   act(() => {
     vi.advanceTimersByTime(ms);
   });
+}
+
+function carte(scene: HTMLElement, i: number): HTMLElement {
+  return scene.querySelectorAll<HTMLElement>('.ouverture__carte')[i] as HTMLElement;
 }
 
 /** Le geste complet : appui sur les pointillés, glissement jusqu'au bout, relâchement. */
@@ -59,16 +71,13 @@ function dechirer(scene: HTMLElement): void {
   fireEvent.pointerUp(zone, { clientX: 260, clientY: 44, pointerId: 1 });
 }
 
-/** Fait passer toutes les cartes de la pile, d'un toucher chacune, une fois retournées. */
-function toutPasser(scene: HTMLElement): void {
-  for (let i = 0; i < CARTES.length; i += 1) {
-    attendre(ATTENTE_MAX + 20);
-    const carte = scene.querySelectorAll('.ouverture__carte')[i] as HTMLElement;
-    expect(carte.dataset.face, `la carte ${i + 1} doit être retournée avant de passer`).toBe('recto');
-    fireEvent.pointerDown(carte, { clientX: 100, clientY: 100, pointerId: 2 });
-    fireEvent.pointerUp(carte, { clientX: 100, clientY: 100, pointerId: 2 });
-  }
-  attendre(600);
+/** Jusqu'aux cartes étalées face cachée, par le bouton « Ouvrir » — le chemin sans glissement. */
+function jusquALaRevelation(scene: HTMLElement): void {
+  fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
+  attendre(800);
+  expect(scene.dataset.etape).toBe('ouverture');
+  attendre(3200);
+  expect(scene.dataset.etape).toBe('revelation');
 }
 
 describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
@@ -111,59 +120,87 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(scene.dataset.dechirure).toBe('0.00');
   });
 
-  it('le parcours au doigt : déchirure, envol, révélation carte par carte, récapitulatif', () => {
-    const onRanger = vi.fn();
-    const scene = monter(onRanger);
+  it('au doigt : la déchirure ouvre, et les cartes sortent lentement avant de s’étaler face cachée', () => {
+    const scene = monter();
     dechirer(scene);
     expect(scene.dataset.etape).toBe('ouverture');
-    attendre(1300);
+    // Le contrôle mord : à 1,5 s, les cartes sortent encore — la révélation n'a pas commencé.
+    attendre(1500);
+    expect(scene.dataset.etape).toBe('ouverture');
+    attendre(1600);
     expect(scene.dataset.etape).toBe('revelation');
-    // La carte du dessus est encore de dos : on ne la voit qu'après l'attente.
-    const premiere = scene.querySelectorAll('.ouverture__carte')[0] as HTMLElement;
-    expect(premiere.dataset.face).toBe('verso');
-    toutPasser(scene);
+    const faces = [...scene.querySelectorAll<HTMLElement>('.ouverture__carte')].map((c) => c.dataset.face);
+    expect(faces).toEqual(['verso', 'verso', 'verso', 'verso', 'verso']);
+  });
+
+  it('une carte simple se retourne sur place, au toucher, sans annonce', () => {
+    const scene = monter();
+    jusquALaRevelation(scene);
+    fireEvent.click(carte(scene, 1));
+    expect(carte(scene, 1).dataset.face).toBe('recto');
+    // Les autres restent cachées : c'est le testeur qui choisit l'ordre.
+    expect(carte(scene, 0).dataset.face).toBe('verso');
+    expect(within(scene).queryByRole('status')).toBeNull();
+  });
+
+  it('une carte rare monte au centre, se fait attendre, puis se retourne avec son annonce', () => {
+    const scene = monter();
+    jusquALaRevelation(scene);
+    const etoile = carte(scene, 4);
+    fireEvent.click(etoile);
+    expect(etoile.dataset.tension).toBe('oui');
+    // Le contrôle mord : elle n'est pas retournée avant la fin de son attente.
+    attendre(SUSPENSE.secrete - 50);
+    expect(etoile.dataset.face).toBe('verso');
+    attendre(100);
+    expect(etoile.dataset.face).toBe('recto');
+    expect(etoile.dataset.fetee).toBe('oui');
+    const statut = within(scene).getByRole('status');
+    expect(ANNONCES.secrete.some((phrase) => statut.textContent?.includes(phrase))).toBe(true);
+    // Un toucher la repose avant la fin de sa tenue.
+    fireEvent.click(etoile);
+    expect(etoile.dataset.fetee).toBeUndefined();
+    expect(within(scene).queryByRole('status')).toBeNull();
+  });
+
+  it('toutes retournées, la révélation se termine et « Ranger » ferme', () => {
+    const onRanger = vi.fn();
+    const scene = monter(onRanger);
+    jusquALaRevelation(scene);
+    for (let i = 0; i < CARTES.length; i += 1) {
+      fireEvent.click(carte(scene, i));
+      attendre(LONGTEMPS);
+    }
+    // La dernière reposée, la scène laisse une demi-seconde avant de se dire finie.
+    attendre(600);
     expect(scene.dataset.etape).toBe('ouvert');
     fireEvent.click(within(scene).getByRole('button', { name: /Ranger dans la Collection/ }));
     expect(onRanger).toHaveBeenCalledOnce();
   });
 
-  it('« Ouvrir » joue la déchirure sans glissement (accès au pointeur)', () => {
+  it('le clavier retourne les cartes : la première a le focus, Entrée la retourne', () => {
     const scene = monter();
-    fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
-    attendre(800);
-    expect(scene.dataset.etape).toBe('ouverture');
-    attendre(1300);
-    expect(scene.dataset.etape).toBe('revelation');
+    jusquALaRevelation(scene);
+    expect(document.activeElement).toBe(carte(scene, 0));
+    fireEvent.keyDown(carte(scene, 0), { key: 'Enter' });
+    expect(carte(scene, 0).dataset.face).toBe('recto');
   });
 
-  it('le clavier fait passer les cartes', () => {
+  it('une carte retournée se touche pour voir sa fiche, avec tous ses textes', () => {
     const scene = monter();
-    fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
-    attendre(2200);
-    const zone = scene.querySelector('.ouverture__scene') as HTMLElement;
-    for (let i = 0; i < CARTES.length; i += 1) {
-      attendre(ATTENTE_MAX + 20);
-      fireEvent.keyDown(zone, { key: 'Enter' });
-    }
-    attendre(600);
-    expect(scene.dataset.etape).toBe('ouvert');
+    fireEvent.click(within(scene).getByRole('button', { name: /Tout afficher/ }));
+    const etoile = CARTES[4] as Card;
+    fireEvent.click(carte(scene, 4));
+    expect(carte(scene, 4).dataset.fiche).toBe('oui');
+    const fiche = within(scene).getByRole('region', { name: `Fiche : ${etoile.name}` });
+    expect(within(fiche).getByText(`« ${etoile.flavor} »`)).toBeTruthy();
+    // « Reposer » referme la fiche.
+    fireEvent.click(within(fiche).getByRole('button', { name: 'Reposer' }));
+    expect(carte(scene, 4).dataset.fiche).toBeUndefined();
+    expect(within(scene).queryByRole('region')).toBeNull();
   });
 
-  it('pendant la révélation, toucher à côté de la carte la fait passer aussi', () => {
-    const scene = monter();
-    fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
-    attendre(2200);
-    attendre(ATTENTE_MAX + 20);
-    const premiere = scene.querySelectorAll('.ouverture__carte')[0] as HTMLElement;
-    expect(premiere.dataset.face).toBe('recto');
-    fireEvent.click(scene.querySelector('.ouverture__scene') as HTMLElement);
-    // Le contrôle mord : la deuxième carte est maintenant celle du dessus, la première est partie.
-    const deuxieme = scene.querySelectorAll('.ouverture__carte')[1] as HTMLElement;
-    expect(deuxieme.dataset.courante).toBe('oui');
-    expect(premiere.dataset.courante).toBeUndefined();
-  });
-
-  it('« Tout afficher » mène au récapitulatif, de n’importe quelle étape', () => {
+  it('« Tout afficher » retourne tout, de n’importe quelle étape', () => {
     const scene = monter();
     fireEvent.click(within(scene).getByRole('button', { name: /Tout afficher/ }));
     expect(scene.dataset.etape).toBe('ouvert');
@@ -181,17 +218,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(second.dataset.dechirure).toBe('0.00');
   });
 
-  it('dans le récapitulatif, une carte touchée se montre en grand, puis se repose', () => {
-    const scene = monter();
-    fireEvent.click(within(scene).getByRole('button', { name: /Tout afficher/ }));
-    const carte = scene.querySelectorAll('.ouverture__carte')[2] as HTMLElement;
-    fireEvent.pointerUp(carte, { pointerId: 3 });
-    expect(carte.dataset.zoom).toBe('oui');
-    fireEvent.pointerUp(carte, { pointerId: 3 });
-    expect(carte.dataset.zoom).toBeUndefined();
-  });
-
-  it('sous « Mouvement réduit », on arrive au récapitulatif sans sachet ni geste', () => {
+  it('sous « Mouvement réduit », on arrive aux cartes retournées sans sachet ni geste', () => {
     useStore.setState({ reducedMotion: true });
     const scene = monter();
     expect(scene.dataset.etape).toBe('ouvert');

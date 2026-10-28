@@ -8,29 +8,28 @@
 > La version n'est pas recopiée ici : elle se lit dans `package.json` et s'affiche dans Réglages
 > (`docs/VERSIONS.md`).
 
-## La refonte (28/10/2026, après-midi) — `planche-v2-*.jpg`
+## La refonte (28/10/2026) — `planche-v3-*.jpg`
 
-La première version (plus bas) a été refondue le même jour : plein écran, pochette vectorielle,
-déchirure au doigt, révélation carte par carte (`docs/SPEC-OUVERTURE-ARRIVAGE.md` §2). Trois
-planches, filmées sur le serveur de développement :
+La première version (plus bas) a été refondue le même jour, en deux passes : plein écran, pochette
+vectorielle, déchirure au doigt ; puis cartes étalées **face cachée** et retournées au choix, annonce
+des rares, fiche d'une carte (`docs/SPEC-OUVERTURE-ARRIVAGE.md` §2-3). Deux planches, filmées sur le
+serveur de développement :
 
 | Planche | Écran | Ce qu'elle montre |
 |---|---|---|
-| `planche-v2-telephone.jpg` | 390 × 844 | le parcours entier au doigt : arrivée, déchirure à 40 % puis 75 %, envol (les cartes émergent **par la fente**), les cinq retournements, le récapitulatif en deux colonnes, une carte en grand |
-| `planche-v2-bureau.jpg` | 1366 × 768 | le même parcours ; le récapitulatif passe en une rangée |
-| `planche-v2-secrete.jpg` | 390 × 844 | un tirage avec une **carte étoilée** : lueur dorée du sachet, rappel des pointillés, « Ouvrir » sans geste, tension du dos, éclair, rayons, pluie d'étoiles, reflet holographique |
+| `planche-v3-telephone.jpg` | 390 × 844 | un tirage avec une **carte étoilée** : sachet, déchirure, envol (les cartes montent par la fente puis s'étalent), dos des rares qui luisent, trois simples retournées sur place, la ◆◆◆ au centre (tension, éclat, annonce), l'étoile (tension, éclair, pluie d'étoiles, annonce), toutes retournées, puis la **fiche** d'une carte |
+| `planche-v3-bureau.jpg` | 1366 × 768 | le même parcours ; l'étalage est une rangée, la fiche s'ouvre **à côté** de la carte |
 
 ```bash
 npm run dev -- --port 5178
 D=docs/preuves/ouverture-arrivage-2026-10-28
-node $D/filmer-parcours.cjs /tmp/tel            # 390 × 844
-node $D/filmer-parcours.cjs /tmp/bureau 1366 768
-node $D/filmer-secrete.cjs /tmp/secrete         # rouvre des Arrivages jusqu'à une ★
-python3 $D/planche.py /tmp/tel planche.png 5 0.5
+node $D/filmer.cjs /tmp/tel 390 844 --secrete   # rouvre des Arrivages jusqu'à une ★
+node $D/filmer.cjs /tmp/bureau 1366 768
+python3 $D/planche.py /tmp/tel planche.png 6 0.42
 ```
 
-Les scripts ne s'arrêtent pas sur une erreur de console : ils l'**impriment** à la fin ; les trois
-passes du 28/10/2026 en ont imprimé **zéro** (`erreurs: []`).
+Le script ne s'arrête pas sur une erreur de console : il l'**imprime** à la fin ; les deux passes du
+28/10/2026 en ont imprimé **zéro** (`erreurs: []`).
 
 ## La première version — `planche-frames.png`
 

@@ -6,19 +6,21 @@
  *     holographiques suivent l'inclinaison ;
  *  2. **la déchirure** suit le doigt le long des pointillés, depuis le bord choisi : la bande se
  *     soulève, la lumière de l'intérieur filtre par la fente — **de la couleur de la meilleure carte** ;
- *  3. **l'ouverture** : la bande s'envole, éclair, gerbe d'étincelles, les cartes montent du sachet ;
- *  4. **la révélation**, carte par carte : chacune se retourne avec une mise en scène qui croît avec
- *     sa rareté (`revelation.ts`), et part d'un glissement ; puis le **récapitulatif**, où une carte
- *     touchée se montre en grand.
+ *  3. **l'envol** : la bande s'envole, éclair, gerbe d'étincelles ; les cartes montent lentement par
+ *     la fente, puis s'étalent sur le bureau, **face cachée** ;
+ *  4. **la révélation** : le testeur retourne les cartes **une à une, dans l'ordre qu'il veut**. Le
+ *     dos d'une carte rare luit de sa couleur ; retournée, elle monte au centre, tremble, éclate, et
+ *     une **annonce** la fête (`revelation.ts`). Une carte retournée se **touche** pour voir sa
+ *     fiche : la carte en grand, et tout ce qu'elle porte en toutes lettres.
  *
  * Les règles vivent dans `etats.ts` et `revelation.ts` (purs, testés) ; ici il n'y a que le rendu,
  * les gestes et l'horloge de la mise en scène.
  *
  * Trois choses ne sont **pas** facultatives, et viennent des décisions :
  *  - **Mouvement réduit** (D-098) : sous la bascule du store ou `prefers-reduced-motion`, on arrive
- *    directement au récapitulatif, sans sachet, sans particules ni cascade ;
- *  - **un chemin sans glissement** (les critères WCAG d'accès au pointeur, spec §5) : « Ouvrir » joue la déchirure
- *    seul, « Tout afficher » saute au récapitulatif ; le clavier fait passer les cartes ;
+ *    directement aux cartes retournées, sans sachet, sans particules ni cascade ;
+ *  - **un chemin sans glissement** (les critères WCAG d'accès au pointeur, spec §5) : « Ouvrir » joue
+ *    la déchirure seul, « Tout afficher » retourne tout ; chaque carte se prend au clavier ;
  *  - **aucune information ne vit dans l'animation** : les cinq cartes et leurs badges « Nouvelle »
  *    sont dans le DOM dès le premier rendu, retournées ou non.
  */
@@ -28,19 +30,23 @@ import { RARITY_META } from '@/data';
 import { CardView } from '@/components/CardView';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import { avancer, creer, demarrer, relacher, surLaLigne, type EtatOuverture, type Geometrie } from './etats';
+import { FicheCarte } from './FicheCarte';
 import { LIGNE, MASQUE_SILHOUETTE, Pochette } from './Pochette';
 import { Particules } from './particules';
 import {
+  annonce,
   auMoins,
   CARTE,
   decoupes,
   echelleGrande,
+  inclinaisonCachee,
   lueur,
   meilleurPalier,
   palier,
-  posePile,
+  poseFiche,
   poseRecap,
   SUSPENSE,
+  TENUE,
   traceDechirure,
   type Palier,
   type Pose
@@ -54,16 +60,25 @@ interface Props {
   onRanger: () => void;
 }
 
-/** Ce qui suit la déchirure : l'envol, la révélation carte par carte, puis le récapitulatif. */
+/** Ce qui suit la déchirure : l'envol, la révélation au choix, puis toutes les cartes retournées. */
 type Apres = 'ouverture' | 'revelation' | 'ouvert';
 export type Etape = 'ferme' | 'dechirure' | Apres;
 
-/** Durée de l'envol, de l'éclair à la pile posée au centre. */
-const DUREE_OUVERTURE = 1150;
-/** Au-delà de ce glissement (px), la carte du dessus part ; en deçà, elle revient. */
-const SEUIL_JET = 70;
-/** Un appui qui bouge moins que ça est un toucher, pas un glissement. */
-const TOUCHER = 8;
+/** Les instants de l'envol, depuis la déchirure complète. */
+const ENVOL = {
+  /** Les cartes commencent à monter par la fente. */
+  montee: 300,
+  /** Elles quittent le sachet pour s'étaler sur le bureau. */
+  etalage: 1700,
+  /** Elles sont posées : la révélation commence. */
+  revelation: 2900
+} as const;
+
+/** Une carte en cours de révélation : montée au centre (`levee`), puis retournée et fêtée (`tenue`). */
+interface EnCours {
+  index: number;
+  phase: 'levee' | 'tenue';
+}
 
 /** Une interpolation sur l'horloge d'affichage, annulable ; sans `requestAnimationFrame` (jsdom), un pas de 16 ms. */
 function animer(duree: number, image: (k: number) => void, fin: () => void): () => void {
@@ -112,7 +127,8 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const raretes = useMemo(() => cartes.map((c) => c.rarity), [cartes]);
   const couleurLueur = useMemo(() => lueur(raretes), [raretes]);
   const palierTirage = useMemo(() => meilleurPalier(raretes), [raretes]);
-  const trace = useMemo(() => traceDechirure(Math.floor(Math.random() * 1e9), LIGNE * 100), []);
+  const graine = useMemo(() => Math.floor(Math.random() * 1e9), []);
+  const trace = useMemo(() => traceDechirure(graine, LIGNE * 100), [graine]);
   const clips = useMemo(() => decoupes(trace), [trace]);
 
   const [etat, setEtat] = useState<EtatOuverture>(() =>
@@ -121,15 +137,14 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const [apres, setApres] = useState<Apres | null>(() => (reduit ? 'ouvert' : null));
   const [refermant, setRefermant] = useState(false);
   const [presse, setPresse] = useState(false);
-  const [courante, setCourante] = useState(0);
-  const [retournee, setRetournee] = useState(false);
-  const [tension, setTension] = useState(false);
-  const [parties, setParties] = useState<Record<number, 1 | -1>>({});
-  const [glisse, setGlisse] = useState<{ dx: number; dy: number } | null>(null);
-  const [zoom, setZoom] = useState<number | null>(null);
-  const [eclat, setEclat] = useState<Palier | null>(null);
-  /** L'envol en trois temps : 0 dans le sachet, 1 émergées par la fente, 2 posées au centre. */
+  /** Rejoue l'éclat qui parcourt les pointillés : un appui tombé à côté le rappelle. */
+  const [rappel, setRappel] = useState(0);
+  /** L'envol en trois temps : 0 dans le sachet, 1 émergées par la fente, 2 étalées sur le bureau. */
   const [sortie, setSortie] = useState<0 | 1 | 2>(0);
+  const [retournees, setRetournees] = useState<readonly boolean[]>(() => cartes.map(() => reduit));
+  const [enCours, setEnCours] = useState<EnCours | null>(null);
+  const [fiche, setFiche] = useState<number | null>(null);
+  const [eclat, setEclat] = useState<Palier | null>(null);
   const [taille, setTaille] = useState({ largeur: 390, hauteur: 560 });
 
   const racine = useRef<HTMLDivElement>(null);
@@ -138,16 +153,16 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const sachet = useRef<HTMLDivElement>(null);
   const eclair = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const cartesRef = useRef<Array<HTMLLIElement | null>>([]);
   const particules = useRef<Particules | null>(null);
   const minuteurs = useRef(new Set<number>());
   const annulations = useRef(new Set<() => void>());
+  /** Le jeton de la révélation en cours : un minuteur d'une révélation passée ne touche à rien. */
+  const jeton = useRef(0);
   const depart = useRef({ x: 0, y: 0 });
   const tire = useRef(false);
   const dernierCran = useRef(0);
   const inclinaison = useRef({ cx: 0, cy: 0, x: 0, y: 0, actif: false, repos: 0 });
-  /** Rejoue l'éclat qui parcourt les pointillés : un appui tombé à côté le rappelle. */
-  const [rappel, setRappel] = useState(0);
-  const geste = useRef<{ x: number; y: number; t: number; bouge: boolean } | null>(null);
 
   const plus = useCallback((ms: number, f: () => void) => {
     const id = window.setTimeout(() => {
@@ -165,7 +180,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     []
   );
 
-  // La taille de la scène : elle règle la pochette, la pile et le récapitulatif.
+  // La taille de la scène : elle règle la pochette, l'étalage et la fiche.
   useEffect(() => {
     const el = scene.current;
     if (!el) return undefined;
@@ -222,6 +237,16 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     return versRacine(r.left + r.width / 2, r.top + r.height / 2);
   }, [taille, versRacine]);
 
+  /** Le centre d'une carte à l'écran, dans le repère de la racine. */
+  const centreCarte = useCallback(
+    (index: number) => {
+      const r = cartesRef.current[index]?.getBoundingClientRect();
+      if (!r || r.width === 0) return centreScene();
+      return versRacine(r.left + r.width / 2, r.top + r.height / 2);
+    },
+    [centreScene, versRacine]
+  );
+
   const flash = useCallback((couleur: string, force: number) => {
     eclair.current?.animate?.(
       [
@@ -229,7 +254,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         { opacity: force, offset: 0.18 },
         { opacity: 0 }
       ],
-      { duration: 620, easing: 'ease-out' }
+      { duration: 700, easing: 'ease-out' }
     );
   }, []);
 
@@ -243,7 +268,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         { transform: `translate(${amplitude * 0.3}px, ${amplitude * 0.2}px)` },
         { transform: 'translate(0, 0)' }
       ],
-      { duration: 380, easing: 'ease-out' }
+      { duration: 420, easing: 'ease-out' }
     );
   }, []);
 
@@ -254,8 +279,8 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     let raf = 0;
     const pas = (t: number): void => {
       const inc = inclinaison.current;
-      // Au repos, le sachet se balance, et le balancement **s'éteint** en quatre secondes : rien ne
-      // bouge sans fin à l'écran (SPEC-COMBAT-UI §6.8), le doigt le relance.
+      // Au repos, le sachet se balance, et le balancement s'éteint en quatre secondes ; le doigt
+      // le relance.
       if (!inc.repos) inc.repos = t;
       const ampleur = inc.actif ? 0 : Math.max(0, 1 - (t - inc.repos) / 4000);
       const cibleX = inc.actif ? inc.cx : Math.sin(t / 1700) * 0.35 * ampleur;
@@ -297,11 +322,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     [couleurLueur, versRacine]
   );
 
-  /** L'envol : la bande part, éclair, gerbe, les cartes montent ; puis la révélation. */
+  /** L'envol : la bande part, éclair, gerbe ; les cartes montent lentement, puis s'étalent. */
   const lancerOuverture = useCallback(() => {
     setApres('ouverture');
-    setCourante(0);
-    setRetournee(false);
     vibrer([18, 30, 40]);
     const fort = auMoins(palierTirage, 'brillante');
     flash(couleurLueur, fort ? 0.95 : 0.75);
@@ -331,105 +354,134 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       });
     }
     setSortie(0);
-    plus(140, () => setSortie(1));
-    plus(640, () => setSortie(2));
-    plus(DUREE_OUVERTURE, () => setApres('revelation'));
+    plus(ENVOL.montee, () => setSortie(1));
+    plus(ENVOL.etalage, () => setSortie(2));
+    plus(ENVOL.revelation, () => setApres('revelation'));
   }, [couleurLueur, flash, palierTirage, plus, secouer, versRacine]);
 
-  // La carte du dessus se retourne, après une attente qui croît avec sa rareté.
-  useEffect(() => {
-    if (apres !== 'revelation' || courante >= nombre) return undefined;
-    const carte = cartes[courante];
-    if (!carte) return undefined;
-    const niveau = palier(carte.rarity);
-    setRetournee(false);
-    setTension(auMoins(niveau, 'brillante'));
-    const id = window.setTimeout(() => setRetournee(true), SUSPENSE[niveau]);
-    return () => window.clearTimeout(id);
-  }, [apres, courante, cartes, nombre]);
-
-  // La mise en scène du retournement : rien pour une carte simple, tout pour une secrète.
-  useEffect(() => {
-    if (!retournee || apres !== 'revelation') return;
-    setTension(false);
-    const carte = cartes[courante];
-    if (!carte) return;
-    const niveau = palier(carte.rarity);
-    if (niveau === 'simple') return;
-    const couleur = RARITY_META[carte.rarity].color;
-    const centre = centreScene();
-    const moteur = particules.current;
-    setEclat(niveau);
-    plus(niveau === 'secrete' ? 2200 : 1300, () => setEclat(null));
-    if (niveau === 'rare') {
-      vibrer(12);
-      moteur?.emettre({
-        ...centre,
-        nombre: 46,
-        couleurs: [couleur, '#ffffff'],
-        vitesse: [160, 420],
-        duree: [0.4, 0.9]
-      });
-      return;
-    }
-    vibrer(niveau === 'secrete' ? [30, 50, 30, 50, 80] : [20, 40, 40]);
-    flash(couleur, niveau === 'secrete' ? 0.9 : 0.6);
-    secouer(niveau === 'secrete' ? 10 : 5);
-    moteur?.emettre({
-      ...centre,
-      nombre: niveau === 'secrete' ? 160 : 90,
-      couleurs: [couleur, couleur, '#ffffff', '#fff6d8'],
-      vitesse: [240, 760],
-      duree: [0.6, 1.3],
-      taille: [1, 2.8]
-    });
-    if (niveau === 'secrete') {
-      // La pluie d'étoiles tombe sur toute la largeur, pas en grappe au-dessus de la carte.
-      for (let k = 0; k < 8; k += 1) {
+  /** La fête d'une carte qui se retourne : rien pour une simple, tout pour une secrète. */
+  const feter = useCallback(
+    (index: number) => {
+      const carte = cartes[index];
+      if (!carte) return;
+      const niveau = palier(carte.rarity);
+      const couleur = RARITY_META[carte.rarity].color;
+      const centre = centreCarte(index);
+      const moteur = particules.current;
+      if (niveau === 'simple') {
+        vibrer(6);
         moteur?.emettre({
-          x: centre.x + (k / 7 - 0.5) * taille.largeur * 0.95,
-          y: centre.y - taille.hauteur * 0.5,
-          nombre: 9,
-          couleurs: [couleur, '#ffffff', '#c9a2ff', '#9fc4e8'],
-          vitesse: [20, 120],
-          direction: Math.PI / 2,
-          ouverture: 1.6,
-          duree: [1.8, 2.8],
-          taille: [1.4, 3.2],
-          gravite: 160,
-          frein: 0.8,
-          forme: 'etoile'
+          ...centre,
+          nombre: 14,
+          couleurs: ['#cfe3ff', '#ffffff'],
+          vitesse: [60, 180],
+          duree: [0.3, 0.7],
+          gravite: 200
         });
-      }
-    }
-  }, [retournee, apres, courante, cartes, centreScene, flash, plus, secouer, taille.hauteur, taille.largeur]);
-
-  /** La carte du dessus part, dans le sens du geste ; la dernière ouvre le récapitulatif. */
-  const jeter = useCallback(
-    (sens: 1 | -1) => {
-      if (apres !== 'revelation' || courante >= nombre) return;
-      setParties((avant) => ({ ...avant, [courante]: sens }));
-      setGlisse(null);
-      vibrer(8);
-      const suivante = courante + 1;
-      setCourante(suivante);
-      if (suivante >= nombre) plus(380, () => setApres('ouvert'));
-    },
-    [apres, courante, nombre, plus]
-  );
-
-  /** Toucher la carte du dessus : la retourner tout de suite, ou la faire passer. */
-  const toucherCourante = useCallback(
-    (sens: 1 | -1 = -1) => {
-      if (apres !== 'revelation') return;
-      if (!retournee) {
-        setRetournee(true);
         return;
       }
-      jeter(sens);
+      setEclat(niveau);
+      plus(TENUE[niveau], () => setEclat(null));
+      if (niveau === 'rare') {
+        vibrer(14);
+        flash(couleur, 0.35);
+        moteur?.emettre({
+          ...centre,
+          nombre: 60,
+          couleurs: [couleur, '#ffffff'],
+          vitesse: [160, 460],
+          duree: [0.5, 1]
+        });
+        return;
+      }
+      vibrer(niveau === 'secrete' ? [30, 50, 30, 50, 80] : [20, 40, 40]);
+      flash(couleur, niveau === 'secrete' ? 0.95 : 0.65);
+      secouer(niveau === 'secrete' ? 11 : 6);
+      moteur?.emettre({
+        ...centre,
+        nombre: niveau === 'secrete' ? 180 : 110,
+        couleurs: [couleur, couleur, '#ffffff', '#fff6d8'],
+        vitesse: [240, 780],
+        duree: [0.6, 1.4],
+        taille: [1, 2.8]
+      });
+      if (niveau === 'secrete') {
+        // La pluie d'étoiles tombe sur toute la largeur, pas en grappe au-dessus de la carte.
+        for (let k = 0; k < 8; k += 1) {
+          moteur?.emettre({
+            x: centre.x + (k / 7 - 0.5) * taille.largeur * 0.95,
+            y: centre.y - taille.hauteur * 0.5,
+            nombre: 10,
+            couleurs: [couleur, '#ffffff', '#c9a2ff', '#9fc4e8'],
+            vitesse: [20, 120],
+            direction: Math.PI / 2,
+            ouverture: 1.6,
+            duree: [2, 3],
+            taille: [1.4, 3.2],
+            gravite: 140,
+            frein: 0.8,
+            forme: 'etoile'
+          });
+        }
+      }
     },
-    [apres, retournee, jeter]
+    [cartes, centreCarte, flash, plus, secouer, taille.hauteur, taille.largeur]
   );
+
+  /** La carte retournée regagne sa place sur le bureau. */
+  const poser = useCallback(() => {
+    jeton.current += 1;
+    setEnCours(null);
+  }, []);
+
+  /** Retourner la carte `index` : sur place si elle est simple, au centre et fêtée sinon. */
+  const retourner = useCallback(
+    (index: number) => {
+      const carte = cartes[index];
+      if (!carte || retournees[index] || enCours) return;
+      const niveau = palier(carte.rarity);
+      if (niveau === 'simple') {
+        setRetournees((avant) => avant.map((r, i) => r || i === index));
+        // La fête attend que la carte soit à moitié retournée : c'est là qu'on voit sa face.
+        plus(260, () => feter(index));
+        return;
+      }
+      const moi = (jeton.current += 1);
+      setEnCours({ index, phase: 'levee' });
+      vibrer(8);
+      plus(SUSPENSE[niveau], () => {
+        if (jeton.current !== moi) return;
+        setRetournees((avant) => avant.map((r, i) => r || i === index));
+        setEnCours({ index, phase: 'tenue' });
+        plus(240, () => feter(index));
+        plus(TENUE[niveau], () => {
+          if (jeton.current === moi) poser();
+        });
+      });
+    },
+    [cartes, enCours, feter, plus, poser, retournees]
+  );
+
+  // Toutes retournées et reposées : la révélation est finie.
+  useEffect(() => {
+    if (apres !== 'revelation' || enCours || !retournees.every(Boolean)) return undefined;
+    const id = window.setTimeout(() => setApres('ouvert'), 500);
+    return () => window.clearTimeout(id);
+  }, [apres, enCours, retournees]);
+
+  /** Toucher une carte : la retourner, la reposer si elle est au centre, ou ouvrir sa fiche. */
+  const activer = (index: number): void => {
+    if (apres !== 'revelation' && apres !== 'ouvert') return;
+    if (enCours) {
+      if (enCours.index === index && enCours.phase === 'tenue') poser();
+      return;
+    }
+    if (!retournees[index]) {
+      retourner(index);
+      return;
+    }
+    setFiche((f) => (f === index ? null : index));
+  };
 
   const geometrie = useCallback((): Geometrie => {
     const el = zoneRef.current;
@@ -505,7 +557,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     setEtat({ phase: 'dechirure', dechirure: 0, sens: 1 });
     let derniere = 0;
     const annuler = animer(
-      620,
+      700,
       (k) => {
         const p = 1 - (1 - k) * (1 - k);
         if (p - derniere > 0.04) {
@@ -523,87 +575,52 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     annulations.current.add(annuler);
   };
 
-  /** « Tout afficher » : le récapitulatif, tout de suite. */
+  /** « Tout afficher » : toutes les cartes retournées, tout de suite. */
   const toutAfficher = (): void => {
     for (const annuler of annulations.current) annuler();
     annulations.current.clear();
     for (const id of minuteurs.current) window.clearTimeout(id);
     minuteurs.current.clear();
+    jeton.current += 1;
     tire.current = false;
     setEtat({ phase: 'ouvert', dechirure: 1, sens: 1 });
-    setCourante(nombre);
-    setRetournee(true);
-    setTension(false);
-    setGlisse(null);
+    setRetournees(cartes.map(() => true));
+    setEnCours(null);
+    setEclat(null);
+    setSortie(2);
     setApres('ouvert');
   };
 
-  // Les gestes sur la carte du dessus : un toucher la fait passer, un glissement la jette.
-  const surAppuiCarte = (e: React.PointerEvent<HTMLLIElement>, index: number): void => {
-    if (apres === 'ouvert') return;
-    if (apres !== 'revelation' || index !== courante) return;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    geste.current = { x: e.clientX, y: e.clientY, t: performance.now(), bouge: false };
+  /** Sur la carte en fiche, le reflet suit le doigt : la carte se tient comme une vraie. */
+  const surMouvementFiche = (e: React.PointerEvent<HTMLLIElement>, index: number): void => {
+    if (fiche !== index || reduit) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    if (r.width === 0) return;
+    const fx = (e.clientX - r.left) / r.width - 0.5;
+    const fy = (e.clientY - r.top) / r.height - 0.5;
+    e.currentTarget.style.setProperty('--tx', `${(fx * 18).toFixed(2)}deg`);
+    e.currentTarget.style.setProperty('--ty', `${(-fy * 14).toFixed(2)}deg`);
+    e.currentTarget.style.setProperty('--gx', `${((fx + 0.5) * 100).toFixed(1)}%`);
+    e.currentTarget.style.setProperty('--gy', `${((fy + 0.5) * 100).toFixed(1)}%`);
   };
 
-  const surMouvementCarte = (e: React.PointerEvent<HTMLLIElement>): void => {
-    const g = geste.current;
-    if (!g || !retournee) return;
-    const dx = e.clientX - g.x;
-    const dy = e.clientY - g.y;
-    if (!g.bouge && Math.hypot(dx, dy) < TOUCHER) return;
-    g.bouge = true;
-    setGlisse({ dx, dy: dy * 0.35 });
-  };
-
-  const surRelacheCarte = (e: React.PointerEvent<HTMLLIElement>, index: number): void => {
-    if (apres === 'ouvert') {
-      setZoom((z) => (z === index ? null : index));
-      return;
-    }
-    const g = geste.current;
-    geste.current = null;
-    if (!g) return;
-    if (!g.bouge) {
-      toucherCourante(-1);
-      return;
-    }
-    const dx = e.clientX - g.x;
-    const vitesse = dx / Math.max(1, performance.now() - g.t);
-    if (Math.abs(dx) > SEUIL_JET || Math.abs(vitesse) > 0.6) {
-      jeter(dx >= 0 ? 1 : -1);
-      return;
-    }
-    setGlisse(null);
-  };
-
-  const surAnnuleCarte = (): void => {
-    geste.current = null;
-    setGlisse(null);
-  };
-
-  const surClavier = (e: React.KeyboardEvent<HTMLDivElement>): void => {
-    if (apres === 'revelation' && ['Enter', ' ', 'ArrowRight', 'ArrowLeft'].includes(e.key)) {
-      e.preventDefault();
-      toucherCourante(e.key === 'ArrowRight' ? 1 : -1);
-    }
-    if (apres === 'ouvert' && e.key === 'Escape' && zoom !== null) {
-      e.stopPropagation();
-      setZoom(null);
-    }
+  const surSortieFiche = (e: React.PointerEvent<HTMLLIElement>): void => {
+    e.currentTarget.style.setProperty('--tx', '0deg');
+    e.currentTarget.style.setProperty('--ty', '0deg');
   };
 
   const etape: Etape = apres ?? (etat.phase === 'ouvert' ? 'ouverture' : etat.phase);
 
-  // La révélation prend le focus : le clavier fait passer les cartes sans chercher où appuyer.
+  // La révélation donne le focus à la première carte : le clavier retourne sans chercher.
   useEffect(() => {
-    if (apres === 'revelation') scene.current?.focus({ preventScroll: true });
+    if (apres === 'revelation') cartesRef.current[0]?.focus({ preventScroll: true });
   }, [apres]);
 
-  // La poussière ne flotte que pendant l'ouverture : le récapitulatif est un écran calme.
+  // La poussière ne flotte que pendant l'ouverture : les cartes retournées, l'écran se calme.
   useEffect(() => {
     particules.current?.ambiance(etape !== 'ouvert');
   }, [etape]);
+
   const decoupe = etat.phase !== 'ferme' || refermant || apres === 'ouverture';
   const p = etat.dechirure;
   const sens = etat.sens;
@@ -612,57 +629,69 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const hauteurPochette = Math.min(taille.hauteur * 0.86, (taille.largeur * 0.8) / 0.6, 640);
   const largeurPochette = hauteurPochette * 0.6;
 
-  const echelle = echelleGrande(taille.largeur, taille.hauteur);
+  const grande = echelleGrande(taille.largeur, taille.hauteur);
+  const disposition = poseFiche(taille.largeur, taille.hauteur);
 
-  function poseDe(i: number): { pose: Pose; opacite: number; face: boolean; z: number } {
-    if (apres === 'ouvert') {
-      if (zoom === i) return { pose: { x: 0, y: 0, echelle, rotation: 0 }, opacite: 1, face: true, z: 60 };
-      return { pose: poseRecap(i, nombre, taille.largeur, taille.hauteur), opacite: 1, face: true, z: 10 + i };
-    }
-    const rang = Math.max(0, i - courante);
-    if (apres === 'revelation') {
-      const parti = parties[i];
-      if (parti) {
+  function poseDe(i: number): { pose: Pose; opacite: number; transition: string; z: number } {
+    const etalee = poseRecap(i, nombre, taille.largeur, taille.hauteur);
+    if (apres === 'revelation' || apres === 'ouvert') {
+      if (fiche === i) return { pose: disposition.carte, opacite: 1, transition: '760ms', z: 70 };
+      if (enCours?.index === i) {
         return {
-          pose: { x: parti * (taille.largeur / 2 + CARTE.largeur * echelle), y: -50, echelle, rotation: parti * 28 },
-          opacite: 0,
-          face: true,
-          z: 40
+          pose: { x: 0, y: -taille.hauteur * 0.05, echelle: grande * 0.95, rotation: 0 },
+          opacite: 1,
+          transition: '900ms',
+          z: 60
         };
       }
-      const pose = posePile(rang, taille.largeur, taille.hauteur);
-      if (rang === 0 && glisse) {
-        pose.x += glisse.dx;
-        pose.y += glisse.dy;
-        pose.rotation += glisse.dx / 14;
-      }
-      return { pose, opacite: rang > 3 ? 0 : 1, face: rang === 0 && retournee, z: 30 - rang };
+      const pose = retournees[i] ? etalee : { ...etalee, rotation: inclinaisonCachee(i) };
+      return { pose, opacite: 1, transition: '800ms', z: 10 + i };
     }
-    // Avant la révélation, les cartes sont **dans le sachet**, derrière son corps : elles émergent
-    // par la fente (`sortie` 1), puis gagnent le centre pendant que le sachet tombe (`sortie` 2).
-    const pile = posePile(rang, taille.largeur, taille.hauteur);
-    if (apres === 'ouverture' && sortie === 2) return { pose: pile, opacite: 1, face: false, z: 30 - rang };
+    if (apres === 'ouverture' && sortie === 2) {
+      return {
+        pose: { ...etalee, rotation: inclinaisonCachee(i) },
+        opacite: 1,
+        transition: `1000ms ${i * 140}ms`,
+        z: 30 - i
+      };
+    }
+    // Avant l'étalage, les cartes sont **dans le sachet**, derrière son corps : elles émergent
+    // par la fente (`sortie` 1), lentement, en léger éventail.
     const echelleSachet = (largeurPochette * 0.8) / CARTE.largeur;
     const hauteurCarte = CARTE.hauteur * echelleSachet;
     const fente = -hauteurPochette / 2 + hauteurPochette * LIGNE;
-    const haut = apres === 'ouverture' && sortie === 1 ? fente - hauteurCarte * (0.5 - rang * 0.06) : fente + 8;
+    const ecart = i - (nombre - 1) / 2;
+    const monte = apres === 'ouverture' && sortie === 1;
+    const haut = monte ? fente - hauteurCarte * (0.55 - Math.abs(ecart) * 0.05) : fente + 8;
     return {
-      pose: { x: pile.x * 0.5, y: haut + hauteurCarte / 2, echelle: echelleSachet, rotation: pile.rotation * 0.4 },
+      pose: {
+        x: monte ? ecart * largeurPochette * 0.06 : 0,
+        y: haut + hauteurCarte / 2,
+        echelle: echelleSachet,
+        rotation: monte ? ecart * 4 : 0
+      },
       opacite: apres === 'ouverture' ? 1 : 0,
-      face: false,
-      z: 30 - rang
+      transition: monte ? `1300ms ${i * 60}ms` : '300ms',
+      z: 30 - i
     };
   }
+
+  const nombreRetournees = retournees.filter(Boolean).length;
+  const carteEnCours = enCours ? cartes[enCours.index] : undefined;
+  const texteAnnonce =
+    enCours?.phase === 'tenue' && carteEnCours ? annonce(palier(carteEnCours.rarity), graine + enCours.index) : null;
 
   const consigne = (() => {
     if (etape === 'ferme') return 'Glisse le doigt le long des pointillés';
     if (etape === 'dechirure') return 'Jusqu’au bout…';
     if (etape === 'ouverture') return '';
+    if (fiche !== null) return 'Touche la carte pour la reposer';
     if (etape === 'revelation') {
-      const rang = Math.min(courante + 1, nombre);
-      return retournee ? `${rang} / ${nombre} · touche ou glisse pour la suivante` : `${rang} / ${nombre}`;
+      if (enCours?.phase === 'tenue') return 'Touche la carte pour la poser';
+      if (enCours) return '…';
+      return `Touche une carte pour la retourner · ${nombreRetournees} / ${nombre}`;
     }
-    return zoom === null ? 'Touche une carte pour la voir en grand' : 'Touche-la encore pour la reposer';
+    return 'Touche une carte pour la voir en entier';
   })();
 
   return (
@@ -689,13 +718,19 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       <div
         ref={scene}
         className="ouverture__scene"
-        tabIndex={apres === 'revelation' ? 0 : -1}
-        onKeyDown={surClavier}
-        onClick={(e) => {
-          // Pendant la révélation, toucher **à côté** de la carte la fait passer aussi.
-          if (apres === 'revelation' && !(e.target as HTMLElement).closest('.ouverture__carte')) toucherCourante(-1);
-        }}
         aria-describedby="ouverture-consigne"
+        onClick={() => {
+          // Toucher à côté : la fiche se referme, la carte fêtée regagne sa place.
+          if (fiche !== null) setFiche(null);
+          else if (enCours?.phase === 'tenue') poser();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' && fiche !== null) {
+            // L'Échap referme la fiche, pas l'Arrivage.
+            e.stopPropagation();
+            setFiche(null);
+          }
+        }}
       >
         {!reduit && apres !== 'revelation' && apres !== 'ouvert' && (
           <div
@@ -755,51 +790,66 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         {/* Les cartes sont **toujours** dans le DOM, même avant l'ouverture : le tirage et le badge
           « Nouvelle » ne dépendent d'aucune animation (D-098). */}
         <ol
-          className={`ouverture__cartes${zoom !== null ? ' ouverture__cartes--zoom' : ''}${
-            apres === 'ouverture' || !apres ? ' ouverture__cartes--dedans' : ''
-          }`}
+          className={`ouverture__cartes${fiche !== null ? ' ouverture__cartes--fiche' : ''}${
+            enCours ? ' ouverture__cartes--scene' : ''
+          }${apres === 'ouverture' || !apres ? ' ouverture__cartes--dedans' : ''}`}
           data-cartes
           aria-label="Le tirage"
         >
           {cartes.map((carte, i) => {
-            const { pose, opacite, face, z } = poseDe(i);
+            const { pose, opacite, transition, z } = poseDe(i);
             const niveau = palier(carte.rarity);
-            const enMain = apres === 'revelation' && i === courante;
+            const face = retournees[i] === true;
+            const actif = apres === 'revelation' || apres === 'ouvert';
+            const leve = enCours?.index === i;
             return (
               <li
                 key={`${carte.id}-${i}`}
+                ref={(el) => {
+                  cartesRef.current[i] = el;
+                }}
                 className="ouverture__carte"
                 data-palier={niveau}
                 data-face={face ? 'recto' : 'verso'}
-                data-tension={enMain && tension && !retournee ? 'oui' : undefined}
-                data-glisse={enMain && glisse ? 'oui' : undefined}
-                data-zoom={zoom === i ? 'oui' : undefined}
-                data-courante={enMain ? 'oui' : undefined}
-                tabIndex={apres === 'ouvert' ? 0 : undefined}
-                aria-label={apres === 'ouvert' ? `${carte.name}${neuves?.has(i) ? ', nouvelle' : ''}` : undefined}
+                data-tension={leve && enCours?.phase === 'levee' ? 'oui' : undefined}
+                data-fetee={leve && enCours?.phase === 'tenue' ? 'oui' : undefined}
+                data-fiche={fiche === i ? 'oui' : undefined}
+                tabIndex={actif ? 0 : undefined}
+                role={actif ? 'button' : undefined}
+                aria-label={
+                  actif
+                    ? face
+                      ? `${carte.name}${neuves?.has(i) ? ', nouvelle' : ''} — voir la fiche`
+                      : `Carte ${i + 1}, face cachée — la retourner`
+                    : undefined
+                }
                 style={{
                   transform: transformDe(pose),
                   opacity: opacite,
                   zIndex: z,
-                  transitionDelay: apres === 'ouvert' && zoom === null ? `${i * 70}ms` : '0ms',
+                  transition: `transform ${transition} cubic-bezier(0.2, 0.8, 0.2, 1), opacity 400ms ease, filter 500ms ease`,
                   ['--rarete' as string]: RARITY_META[carte.rarity].color,
-                  ['--contre' as string]: (1 / pose.echelle).toFixed(3)
+                  ['--contre' as string]: (1 / pose.echelle).toFixed(3),
+                  ['--suspense' as string]: `${SUSPENSE[niveau]}ms`
                 }}
-                onPointerDown={(e) => surAppuiCarte(e, i)}
-                onPointerMove={surMouvementCarte}
-                onPointerUp={(e) => surRelacheCarte(e, i)}
-                onPointerCancel={surAnnuleCarte}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  activer(i);
+                }}
                 onKeyDown={(e) => {
-                  if (apres === 'ouvert' && (e.key === 'Enter' || e.key === ' ')) {
+                  if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    setZoom((zz) => (zz === i ? null : i));
+                    activer(i);
                   }
                 }}
+                onPointerMove={(e) => surMouvementFiche(e, i)}
+                onPointerLeave={surSortieFiche}
               >
                 <div className="ouverture__retourne">
                   <div className="ouverture__face">
                     <CardView card={carte} />
                     {auMoins(niveau, 'rare') && <span className="ouverture__holo" aria-hidden="true" />}
+                    <span className="ouverture__reflet-fiche" aria-hidden="true" />
                   </div>
                   <div className="ouverture__dos" aria-hidden="true">
                     <span className="ouverture__dos-sigle">BP</span>
@@ -810,6 +860,37 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
             );
           })}
         </ol>
+
+        {texteAnnonce && carteEnCours && enCours && (
+          <div
+            key={`annonce-${enCours.index}`}
+            className="ouverture__annonce"
+            data-palier={palier(carteEnCours.rarity)}
+            role="status"
+            style={{ ['--rarete' as string]: RARITY_META[carteEnCours.rarity].color }}
+          >
+            <strong className="ouverture__annonce-texte">{texteAnnonce}</strong>
+            <span className="ouverture__annonce-sous">
+              {RARITY_META[carteEnCours.rarity].label} · {carteEnCours.name}
+            </span>
+          </div>
+        )}
+
+        {fiche !== null && cartes[fiche] && (
+          <FicheCarte
+            key={fiche}
+            carte={cartes[fiche]}
+            neuve={neuves?.has(fiche) === true}
+            disposition={disposition.disposition}
+            style={{
+              left: `${disposition.panneau.x}px`,
+              top: `${disposition.panneau.y}px`,
+              width: `${disposition.panneau.largeur}px`,
+              height: `${disposition.panneau.hauteur}px`
+            }}
+            onFermer={() => setFiche(null)}
+          />
+        )}
       </div>
 
       <canvas ref={canvas} className="ouverture__particules" aria-hidden="true" />
