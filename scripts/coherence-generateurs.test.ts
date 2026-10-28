@@ -236,6 +236,33 @@ function porteManquante(
 }
 
 // ---------------------------------------------------------------------------------------
+// 5. Les étiquettes de travail (#282, D-129)
+// ---------------------------------------------------------------------------------------
+
+/** Le document qui fixe le vocabulaire des étiquettes — seule source (D-129). */
+const TRIAGE = 'docs/agents/triage-labels.md';
+
+/**
+ * Les **cinq rôles canoniques** (D-129) et les **étapes** que la feuille de route lit. Les
+ * deux listes viennent de sources différentes et doivent se retrouver dans le même
+ * document : renommer une étiquette d'étape dans le générateur (`ETAPES`) sans la renommer
+ * ici laisse des tickets étiquetés avec un mot que la page ne lit plus — la feuille de
+ * route se vide, sans erreur. Le blocage par un autre ticket ne s'étiquette pas : il
+ * s'écrit dans le corps (`docs/agents/triage-labels.md`), et il n'existe pas d'étiquette
+ * `blocked`.
+ */
+const ROLES_TRIAGE = ['needs-triage', 'needs-info', 'ready-for-agent', 'ready-for-human', 'wontfix'] as const;
+
+/** Les étiquettes manquantes d'un document, rôle par rôle et étape par étape. */
+function etiquettesDeTravailManquantes(
+  texte: string,
+  roles: readonly string[] = ROLES_TRIAGE,
+  etapes: readonly string[] = ETAPES
+): string[] {
+  return [...roles, ...etapes].filter((etiquette) => !new RegExp(`\`${etiquette}\``).test(texte));
+}
+
+// ---------------------------------------------------------------------------------------
 // Les contrôles sur les fichiers du dépôt
 // ---------------------------------------------------------------------------------------
 
@@ -321,6 +348,39 @@ describe('La porte des pull requests est écrite (#268)', () => {
     expect(manquantes).toContain('la validation écrite de Bastien');
     expect(manquantes).toContain('le renvoi à la cadence de release (D-128, docs/VERSIONS.md §4)');
     expect(manquantes).not.toContain('la fusion réservée à Bastien (D-131)');
+  });
+});
+
+describe('Les étiquettes de travail sont documentées (#282, D-129)', () => {
+  it('le document de triage nomme les cinq rôles et les étapes que la feuille de route lit', () => {
+    const manquantes = etiquettesDeTravailManquantes(read(TRIAGE));
+    expect(
+      manquantes,
+      `${TRIAGE} ne nomme plus ${manquantes.join(', ')} : les cinq rôles viennent de D-129, les étapes ` +
+        `de \`ETAPES\` (\`scripts/plan-dev.mjs\`). Une étiquette d'étape renommée d'un côté seulement ` +
+        'laisse la feuille de route lire un mot que plus aucun ticket ne porte.'
+    ).toEqual([]);
+  });
+
+  it('le contrôle mord : une étiquette retirée du document est vue', () => {
+    const faux = 'Les états sont `needs-triage`, `ready-for-agent`. Les étapes sont `alpha` et `beta`.';
+    expect(etiquettesDeTravailManquantes(faux, ROLES_TRIAGE, ['alpha', 'beta'])).toEqual([
+      'needs-info',
+      'ready-for-human',
+      'wontfix'
+    ]);
+    // Et une étape du générateur absente du document l'est aussi.
+    expect(etiquettesDeTravailManquantes('`alpha` seul', ['alpha'], ['alpha', 'beta'])).toEqual(['beta']);
+  });
+
+  it('AGENTS.md renvoie aux cinq rôles, et le document les porte', () => {
+    // `AGENTS.md` §10 nomme les cinq rôles « par défaut » ; le document les explique. Le
+    // raccord se lit dans les deux sens, sinon l'un liste un rôle que l'autre ignore.
+    const agents = read('AGENTS.md');
+    for (const role of ROLES_TRIAGE) {
+      if (!agents.includes(role)) continue; // un rôle que §10 ne cite pas n'a rien à raccorder
+      expect(read(TRIAGE), `${role} est cité par AGENTS.md §10 mais absent de ${TRIAGE}`).toContain(role);
+    }
   });
 });
 
