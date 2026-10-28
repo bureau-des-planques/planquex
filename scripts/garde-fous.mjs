@@ -124,8 +124,10 @@ export const MUTATIONS = [
     ticket: 116,
     titre: 'une ligne d’évolution de l’Intérim réclame un quatrième type',
     fichier: 'src/data/interim.ts',
-    motif: "cost: ['QVT', 'MANAGEMENT'],",
-    remplacement: "cost: ['QVT', 'AMELIORATION'],",
+    // Réancré par #412 : la ligne 1 ne coûte plus `MANAGEMENT` + `QVT` mais la paire de la
+    // ligne 2, `RH` + `ATELIER`. La mutation introduit un type que la ligne n'emploie pas.
+    motif: "cost: ['RH', 'ATELIER'],",
+    remplacement: "cost: ['RH', 'AMELIORATION'],",
     tests: ['src/data/interim.test.ts'],
     garde: 'une ligne payable en 3 types au plus (D-034) redevient injouable en cours d’évolution'
   },
@@ -400,6 +402,21 @@ export const MUTATIONS = [
     tests: ['src/game/ia-recherche.test.ts'],
     garde:
       '6 candidats mesuraient 62,57 % des parties décidées contre la référence scriptée, hors de la bande 40–60 % de D-134 ; y revenir sans une nouvelle mesure est une régression de jeu, pas un réglage'
+  },
+  {
+    ticket: 412,
+    titre: 'une faction qui demande un quatrième type de café est rendue payable',
+    fichier: 'src/data/interim.ts',
+    // La ligne 1 coûtait `MANAGEMENT` + `QVT` et la ligne 2 `RH` + `ATELIER` : cinq types
+    // pour une faction, donc **57 %** de ses Pressions impayables par le Deck d'archétype, et
+    // 41,6 % à la table (#412). Le contrôle de #116 ne regardait qu'une **ligne** ; celui-ci
+    // regarde la **faction**, et c'est la mutation qui le prouve : `QVT` sur le Vacataire et
+    // la faction en réclame quatre.
+    motif: "cost: ['ATELIER'],",
+    remplacement: "cost: ['QVT'],",
+    tests: ['src/data/interim.test.ts'],
+    garde:
+      'la faction entière doit tenir dans les trois types d’un Deck (D-034) : sinon le Deck d’archétype ne peut pas payer une partie de ses Pressions, et la table mesure un Deck qui n’attaque pas'
   }
 ];
 

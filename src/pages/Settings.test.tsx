@@ -137,12 +137,22 @@ describe('Settings — écran des Réglages', () => {
 
     expect(screen.getByText(/parties terminées sont gardées sous ton compte, solo comme à deux/i)).toBeInTheDocument();
     // D-086 : une **mention**, pas un consentement par combat — aucune case ne concerne
-    // les traces. Les deux cases de l'écran sont des réglages d'affichage : le mouvement
-    // réduit, et les raccourcis clavier du combat (#189).
-    expect(screen.getAllByRole('checkbox')).toHaveLength(2);
-    for (const nom of [/Réduire les animations/i, /Raccourcis clavier au combat/i]) {
+    // les traces. Les trois cases de l'écran sont des réglages : le mouvement réduit, les
+    // raccourcis clavier du combat (#189), et les deux sons du jeu (D-137, #378).
+    expect(screen.getAllByRole('checkbox')).toHaveLength(3);
+    for (const nom of [/Réduire les animations/i, /Raccourcis clavier au combat/i, /Sons du jeu/i]) {
       expect(screen.getByRole('checkbox', { name: nom })).toBeInTheDocument();
     }
+  });
+
+  it('la case « Sons du jeu » coupe les deux sons et se retient (#378, D-137)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+    const case_ = screen.getByRole('checkbox', { name: /Sons du jeu/i });
+    // Cochée par défaut : D-137 veut que le testeur entende l'Arrivage sans rien régler.
+    expect(case_).toBeChecked();
+    fireEvent.click(case_);
+    expect(useStore.getState().sons).toBe(false);
+    expect(case_).not.toBeChecked();
   });
 
   it('affiche la section Données locales avec le bouton Réinitialiser', () => {

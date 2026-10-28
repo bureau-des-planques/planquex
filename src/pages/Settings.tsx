@@ -43,6 +43,8 @@ export function Settings() {
     name,
     setName,
     reducedMotion,
+    sons,
+    setSons,
     setReducedMotion,
     raccourcisCombat,
     setRaccourcisCombat,
@@ -177,6 +179,15 @@ export function Settings() {
           <input type="checkbox" checked={reducedMotion} onChange={(event) => setReducedMotion(event.target.checked)} />
           <span>Réduire les animations</span>
         </label>
+        {/* D-137 : le jeu n'a **que** deux sons, et une case qui les coupe. Cochée par défaut ; la
+            décocher coupe immédiatement, sans rechargement (le module lit le store à chaque lecture). */}
+        <label className="settings__toggle">
+          <input type="checkbox" checked={sons} onChange={(event) => setSons(event.target.checked)} />
+          <span>Sons du jeu</span>
+        </label>
+        <p className="muted max-w-[62ch]">
+          L’ouverture d’un Arrivage et la fin d’un combat. Rien d’autre, et rien au chargement.
+        </p>
         {/* Le critère WCAG sur les raccourcis à une touche (#189, SPEC-COMBAT-UI §4.2) : la case **désactive** les deux gestes,
             `I` comme `Ctrl`+`I`. Cochée par défaut, et c'est aussi le rappel des commandes
             du combat (GAG : « allowance reminder of controls »). */}

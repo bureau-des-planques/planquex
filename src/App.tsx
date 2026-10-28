@@ -18,6 +18,7 @@ import { Introuvable } from '@/pages/Introuvable';
 import { REDIRECTIONS, REDIRECTIONS_PUBLIQUES } from '@/redirections';
 import { useComptes } from '@/store/comptes';
 import { useMouvementReduitGlobal } from '@/components/use-mouvement-reduit';
+import { deverrouiller } from '@/audio/sons';
 
 /**
  * Les anciennes adresses (D-075), en routes qui redirigent.
@@ -44,6 +45,19 @@ export function App() {
   // « Mouvement réduit » (store **et** `prefers-reduced-motion`) relié au CSS par un
   // attribut de la racine : le réglage existait, aucun CSS ne le lisait (#192).
   useMouvementReduitGlobal();
+
+  // **L'audio ne se débloque que sur un geste** (D-137, spec HTML) : on profite donc du **premier**
+  // geste de la session, quel qu'il soit, pour créer le contexte et décoder les deux sons. Rien
+  // n'est joué ici — sans ça, le premier Arrivage serait muet, le temps du décodage.
+  useEffect(() => {
+    const amorcer = (): void => deverrouiller();
+    document.addEventListener('pointerup', amorcer, { once: true, capture: true });
+    document.addEventListener('keydown', amorcer, { once: true, capture: true });
+    return () => {
+      document.removeEventListener('pointerup', amorcer, { capture: true });
+      document.removeEventListener('keydown', amorcer, { capture: true });
+    };
+  }, []);
 
   return (
     <Routes>
