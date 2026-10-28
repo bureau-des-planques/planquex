@@ -89,6 +89,51 @@ répond 401. Aucun en-tête CORS n'est émis : le jeton ne sort jamais en cross-
 - Le rôle à deux têtes est acté par **D-091** (`docs/DECISIONS.md`) ; la dépendance `pg` est
   signalée dans `AGENTS.md` §1.7.
 
+## Le reset de la beta (#342, D-130, D-150)
+
+Le reset remet à zéro **les traces de combat et le mur**, garde **chaque compte**, et pose la
+**Médaille de la période d'essai** sur les comptes approuvés, **une seule fois**. Ce n'est pas une
+migration : `admin.migrations` n'est pas touché. Il se fait dans la section **Reset de la beta** de
+la page, jamais en SQL libre.
+
+**Avant** (la veille, hors de toute partie) :
+
+1. Vérifier que l'annonce est dans `docs/ALPHA-TESTEURS.md` (« Le reset de la beta »).
+2. Lire **Voir ce qui partirait** : traces, post-its, comptes, médailles déjà posées.
+3. Vérifier les annonces Discord en attente, dans le **SQL Editor** du projet (rôle administrateur ;
+   le rôle `lecteur` ne lit pas `annonces_discord`, voir plus bas) :
+   `select etat, count(*) from public.annonces_discord group by etat;`. Une ligne `en attente` partira
+   après le reset : la laisser partir, ou attendre qu'elle soit remise.
+4. Disposer d'une **sauvegarde restaurable** prise avant le geste. Ce que l'offre Supabase conserve
+   n'est pas vérifié ici : le vérifier sur le tableau de bord. Pour garder les traces lisibles, exporter
+   à la main les tables voulues (`select … ` dans le SQL Editor) avant le geste.
+
+**Le geste** : taper exactement `remettre à zéro la beta` dans le champ (le bouton reste grisé tant
+que ce n'est pas le cas), puis **Remettre à zéro**. Une phrase fausse est refusée : **rien n'est lu
+ni écrit**. Le compte rendu s'affiche, par table ; **Copier le compte rendu** le met dans le
+presse-papiers.
+
+**Après** : relire le compte rendu. Il doit n'avoir **aucune ligne `ANOMALIE`** ; `comptes : N ligne(s)
+conservée(s), 0 supprimée(s)` ; `médailles : K attribuée(s)`, K étant le nombre de comptes approuvés.
+Se connecter avec un compte approuvé et vérifier qu'il est toujours là, avec sa médaille dans Réglages.
+
+**Ce que le geste ne fait pas** : il ne vide pas `annonces_discord` (le journal de ce qui a été dit dans
+`#comite`, que Discord ne retire pas), ne touche ni `admin.migrations`, ni `auth.users`, ni `public.profils`
+(#325). La Collection et le Deck vivent dans le navigateur : ils repartent par la migration de store (#347),
+pas par ce geste.
+
+**Rejouer** : le geste est sans effet sur ce qui est déjà vide. Une médaille déjà posée n'est pas reposée ;
+un compte approuvé **après** le premier reset n'en reçoit donc jamais (la garde est « aucune médaille
+n'existe encore »).
+
+**Revenir en arrière** : il n'existe pas de défaire. Le geste est **une seule instruction** : si elle échoue,
+rien n'est effacé. Une fois réussi, la seule voie est la **restauration de la sauvegarde** prise en 4 ; les
+comptes créés depuis seraient alors perdus, et il faut le savoir avant.
+
+**Écart connu** : le rôle `lecteur` (`supabase/admin/roles.sql`) n'a de politique de lecture que sur
+`postits`, `votes`, `commentaires`, `combats` et `comptes`. `annonces_discord` lui apparaît vide : l'aperçu
+ne la compte donc pas, et la vérification se fait avec le rôle administrateur.
+
 ## Structure
 
 | Fichier | Rôle |
@@ -100,7 +145,9 @@ répond 401. Aucun en-tête CORS n'est émis : le jeton ne sort jamais en cross-
 | `lib/etat.mjs` | l'état de l'alpha et le masquage des courriels |
 | `lib/migrations.mjs` | le registre `admin.migrations` (empreinte, déjà appliquée, changée) |
 | `lib/journal.mjs` | le journal JSONL hors dépôt |
+| `lib/reset.mjs` | le reset de la beta (#342) : aperçu, confirmation, instruction unique, compte rendu |
 | `lib/suivi.mjs` | la logique **pure** du rafraîchissement (nouveau ? bandeau, titre, fraîcheur) |
 | `page.html` | la page statique (HTML + fetch, aucun build) |
 | `admin.test.ts` | la garde : une seule couture, l'API HTTP, sur `pglite`, sans réseau |
+| `reset.test.ts` | le reset de la beta sur PGlite : périmètre, confirmation, médaille, mutations (le contrôle mord) |
 | `suivi.test.ts` | la garde de `lib/suivi.mjs` (le calcul du nouveau, muté par `garde-fous`) |

@@ -30,7 +30,14 @@ const LIGNE = /^\|\s*(D-\d+)\s*\|/;
  * (décision retirée puis renumérotée, par exemple). Vide tant qu'aucun cas ne l'exige —
  * vérifié sur le fichier du 21/10/2026, qui va de D-001 à D-049 sans manque.
  */
-const SANS_TROU_EXCEPTIONS = new Set<string>([]);
+const SANS_TROU_EXCEPTIONS = new Set<string>([
+  // Réservés par la salve du 28/10/2026 (D-147 = #455, D-148 = #325, D-149 = #251) : inscrits sur
+  // leurs branches, pas encore sur `main`. D-150 (#342) est écrit avant eux. À retirer de cette
+  // liste dès que la fusion qui les écrit arrive : la continuité redevient alors stricte.
+  'D-147',
+  'D-148',
+  'D-149',
+]);
 
 /** Ce qu'une ligne du journal doit porter : `| ID | date | décision | raison |` = 4 colonnes. */
 const COLONNES = 4;
