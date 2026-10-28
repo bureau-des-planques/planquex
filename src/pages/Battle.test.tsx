@@ -908,7 +908,9 @@ describe('Battle — la fin d’une partie à deux (#127)', () => {
    * plutôt qu'une assertion incompréhensible.
    */
   const GRAINE_INTERVENTIONS = 2;
-  const GRAINE_PLATEAU_VIDE = 506;
+  // Réancrée le 28/10/2026 (#417) : les Decks MANAGEMENT / ATELIER ont changé, la graine 506
+  // ne finit plus en `plateauVide`. Balayage de 1 à 600 : 7, 86, 87, 132, 139.
+  const GRAINE_PLATEAU_VIDE = 7;
 
   /** Coller un code, comme le testeur : le champ, puis le bouton (#128). */
   function coller(code: string) {

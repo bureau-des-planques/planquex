@@ -118,16 +118,35 @@ describe('.github/workflows/ci.yml', () => {
     const bloc = blocJob('tests-ecrans');
     const debut = bloc.indexOf('Contrôler les écrans dans un navigateur');
     expect(debut, 'étape « contrôle visuel en navigateur » absente').toBeGreaterThanOrEqual(0);
-    const apres = bloc.slice(debut);
+    const suite = bloc.slice(debut);
+    const finEtape = suite.slice(1).search(/^ {6}- name:/m);
+    const apres = finEtape === -1 ? suite : suite.slice(0, finEtape + 1);
     expect(apres).toContain('npm run detect:ui:page');
     // Il lui faut un navigateur, et l'étape le nomme (Chromium de l'image du runner).
     expect(apres).toContain('IMPECCABLE_BROWSER');
-    // Pas de saut : sans navigateur, elle échoue explicitement.
-    expect(apres).not.toMatch(/^\s*if:/m);
+    // Pas de saut : sans navigateur, elle échoue explicitement. **Une seule condition est
+    // admise** : le chemin rapide d'une PR de documentation seule (D-143 (1), #422), qui ne peut
+    // changer aucun écran. Toute autre condition rendrait le contrôle sautable.
+    expect(apres.match(/^\s*if:.*$/gm) ?? []).toEqual(["        if: steps.chemins.outputs.doc_seulement != 'true'"]);
     expect(apres).toMatch(/exit 1/);
     // Elle lit `dist/` : le build doit avoir tourné avant, **dans le même job**.
     expect(bloc.indexOf('run: npm run build')).toBeGreaterThanOrEqual(0);
     expect(bloc.indexOf('run: npm run build')).toBeLessThan(debut);
+  });
+
+  it('le chemin rapide ne saute rien d’autre que ce que D-143 (1) nomme (#422)', () => {
+    // Chaque job calcule les chemins changés, et **tourne toujours** : pas de `paths-ignore`.
+    expect(workflow).not.toMatch(/^\s+paths(-ignore)?:/m);
+    for (const nom of ['controles', 'tests-noyau', 'tests-ecrans']) {
+      expect(blocJob(nom), nom).toContain('node scripts/ci-chemins.mjs');
+    }
+    // Une condition ne porte que sur le chemin rapide : ni secret, ni branche, ni autre drapeau.
+    for (const condition of workflow.match(/^\s*if:.*$/gm) ?? []) {
+      expect(condition.trim()).toMatch(/^if: steps\.chemins\.outputs\.doc_seulement [!=]= 'true'$/);
+    }
+    // Le chemin rapide joue des tests dans les deux jobs de tests : il ne remplace pas la preuve par rien.
+    expect(blocJob('tests-noyau')).toContain('steps.chemins.outputs.tests_node');
+    expect(blocJob('tests-ecrans')).toContain('steps.chemins.outputs.tests_ui');
   });
 
   it('échoue si une étape échoue et n’exige aucun secret', () => {

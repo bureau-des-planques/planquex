@@ -1,0 +1,194 @@
+{
+  "base": "http://localhost:4194",
+  "largeur": "360",
+  "hauteur": "640",
+  "mesures": [
+    {
+      "route": "/collection",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 1,
+      "arriveeOk": true,
+      "cheminAller": [
+        "barre du bas « Collection »"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "barre du bas « Accueil »"
+      ],
+      "retourNavigateurPas": 1,
+      "erreursPage": []
+    },
+    {
+      "route": "/deck",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 1,
+      "arriveeOk": true,
+      "cheminAller": [
+        "barre du bas « Deck »"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "barre du bas « Accueil »"
+      ],
+      "retourNavigateurPas": 1,
+      "erreursPage": []
+    },
+    {
+      "route": "/battle",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 1,
+      "arriveeOk": true,
+      "cheminAller": [
+        "« Affronter la Direction » (accueil)"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "lien ← du combat"
+      ],
+      "retourNavigateurPas": 1,
+      "erreursPage": []
+    },
+    {
+      "route": "/comite",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 1,
+      "arriveeOk": true,
+      "cheminAller": [
+        "barre du bas « Comité »"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "barre du bas « Accueil »"
+      ],
+      "retourNavigateurPas": 1,
+      "erreursPage": []
+    },
+    {
+      "route": "/comite/suivi",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 2,
+      "arriveeOk": true,
+      "cheminAller": [
+        "barre du bas « Comité »",
+        "sous-onglet « Le suivi »"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "barre du bas « Accueil »"
+      ],
+      "retourNavigateurPas": 2,
+      "erreursPage": []
+    },
+    {
+      "route": "/settings",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 1,
+      "arriveeOk": true,
+      "cheminAller": [
+        "engrenage (en-tête)"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "barre du bas « Accueil »"
+      ],
+      "retourNavigateurPas": 1,
+      "erreursPage": []
+    },
+    {
+      "route": "/confidentialite",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 2,
+      "arriveeOk": true,
+      "cheminAller": [
+        "engrenage (en-tête)",
+        "lien « la page de confidentialité » (Réglages)"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "« Retour au bureau »"
+      ],
+      "retourNavigateurPas": 2,
+      "erreursPage": []
+    },
+    {
+      "route": "/feuille-de-route",
+      "largeur": "360",
+      "hauteur": "640",
+      "gestesAller": 1,
+      "arriveeOk": true,
+      "cheminAller": [
+        "« Voir toutes les versions » (accueil)"
+      ],
+      "gestesRetourControle": 1,
+      "retourControleOk": true,
+      "cheminRetour": [
+        "« Retour au bureau »"
+      ],
+      "retourNavigateurPas": 1,
+      "erreursPage": []
+    }
+  ],
+  "combat": {
+    "largeur": "360",
+    "hauteur": "640",
+    "navPresente": 0,
+    "controlesVisibles": [
+      "Quitter le combat, la partie est gardée",
+      "Conditions",
+      "Infos détaillées",
+      "Menu du combat",
+      "Suivant",
+      "Plus",
+      "Trousse de secoursObjet · MROJouable",
+      "Agent d’entretienEntrant",
+      "Fin du tour"
+    ],
+    "entreesMenu": [
+      "Journal",
+      "Partie à deux\nun code à se passer, sans serveur",
+      "Règles\nune minute",
+      "Abandonner",
+      "Nouveau combat"
+    ]
+  },
+  "sansLien": [
+    {
+      "route": "/installation",
+      "titre": "Installer le jeu",
+      "liensVersAccueil": 1,
+      "barreDuBas": 0
+    },
+    {
+      "route": "/connexion",
+      "titre": "Pas de compte sans base",
+      "liensVersAccueil": 1,
+      "barreDuBas": 0
+    },
+    {
+      "route": "/attente",
+      "titre": "Pas de compte sans base",
+      "liensVersAccueil": 2,
+      "barreDuBas": 1
+    },
+    {
+      "route": "/administration",
+      "titre": "Pas de comptes sans base",
+      "liensVersAccueil": 2,
+      "barreDuBas": 1
+    }
+  ]
+}
