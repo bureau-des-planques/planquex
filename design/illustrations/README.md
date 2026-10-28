@@ -62,7 +62,7 @@ elle** : elle emprunte celui de sa base (`base_de_variante` dans
 | `qvt-chief-happiness-officer-star3` | `3S` | `qvt-chief-happiness-officer` | **produite** — graine `1626243013` |
 | `atelier-responsable-process-star3` | `3S` | `atelier-responsable-process` | **produite** — graine `0` |
 | `rh-drh-crown` | `COU` | `rh-drh` | **produite** — graine `92169534` |
-| `direction-pdg-crown` | `COU` | `direction-pdg` | à produire |
+| `direction-pdg-crown` | `COU` | `direction-pdg` | **produite** — graine `602849386` |
 | `syndicat-secretaire-general-crown` | `COU` | `syndicat-secretaire-general` | à produire |
 
 Les **68 autres variantes** n'ont pas encore de planche : elles affichent celle de leur
@@ -386,3 +386,4 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-28 · `qvt-chief-happiness-officer-star3` · modèle `NARWHAL` · graine `1626243013` · `qvt-chief-happiness-officer-star3.webp`
 - 2026-10-28 · `atelier-responsable-process-star3` · modèle `NARWHAL` · graine `0` · `atelier-responsable-process-star3.webp`
 - 2026-10-28 · `rh-drh-crown` · modèle `NARWHAL` · graine `92169534` · `rh-drh-crown.webp`
+- 2026-10-28 · `direction-pdg-crown` · modèle `NARWHAL` · graine `602849386` · `direction-pdg-crown.webp`
