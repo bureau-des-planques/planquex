@@ -26,6 +26,8 @@ export type Zone = 'etiquette' | 'dechirure';
 export interface Geometrie {
   /** Largeur de la zone du sachet, en pixels. */
   largeur: number;
+  /** Hauteur de la zone du sachet, en pixels (elle sert aux boîtes, pas aux seuils). */
+  hauteur: number;
   /** Ordonnée de la ligne de pointillés, en pixels. */
   ligne: number;
   /** Demi-bande verticale où la ligne de pointillés accepte le doigt. */

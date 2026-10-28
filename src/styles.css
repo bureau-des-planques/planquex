@@ -1,6 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
 
 /*
  * D-035 — Tailwind v4 (mode CSS-first) est le **moteur de style**. Ce bloc `@theme`
@@ -170,8 +170,7 @@ body {
 body {
   background:
     radial-gradient(circle at 18% -12%, #1a2949 0%, transparent 46%),
-    radial-gradient(circle at 100% 0%, rgb(230 182 76 / 7%) 0%, transparent 38%),
-    var(--bg);
+    radial-gradient(circle at 100% 0%, rgb(230 182 76 / 7%) 0%, transparent 38%), var(--bg);
   background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
@@ -285,7 +284,9 @@ h2 {
   background: linear-gradient(150deg, #1a2949, #0d1526);
   border: 1px solid var(--gold-deep);
   border-radius: var(--radius-sm);
-  box-shadow: inset 0 0 0 1px rgb(230 182 76 / 18%), 0 6px 18px rgb(0 0 0 / 42%);
+  box-shadow:
+    inset 0 0 0 1px rgb(230 182 76 / 18%),
+    0 6px 18px rgb(0 0 0 / 42%);
   display: grid;
   flex: none;
   height: 40px;
@@ -523,7 +524,12 @@ h2 {
 /* Le cadre de jeu : un panneau usiné, pas une carte de tableau de bord. Biseau doré
    en haut, ombre de bas de plaque, rayon court — une console, pas une app SaaS. */
 .panel {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)),
+    var(--bg-raised) 38%,
+    var(--bg-sunken)
+  );
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   box-shadow:
@@ -743,8 +749,7 @@ h2 {
 /* Le halo doré d'angle a été retiré (#131) : un voile radial de couleur sur page sombre est un
    tell d'UI générée ; le filet or du haut (`.hero::after`) suffit à dire « apparat ». */
 .hero {
-  background:
-    linear-gradient(150deg, #16233f, var(--bg-raised) 60%, var(--bg-sunken));
+  background: linear-gradient(150deg, #16233f, var(--bg-raised) 60%, var(--bg-sunken));
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   box-shadow:
@@ -1167,7 +1172,9 @@ h2 {
 
 .card--selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent), 0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 0 5px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 /* **Figée** — la carte du plateau de combat (D-093, #187) : elle ne se soulève pas au
@@ -1196,11 +1203,11 @@ h2 {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, var(--bg-raised)), var(--bg-raised) 46%) padding-box,
     linear-gradient(
-      150deg,
-      color-mix(in srgb, var(--frame) 88%, white),
-      color-mix(in srgb, var(--frame) 46%, var(--bg-deep)) 52%,
-      color-mix(in srgb, var(--frame) 78%, var(--bg-deep))
-    )
+        150deg,
+        color-mix(in srgb, var(--frame) 88%, white),
+        color-mix(in srgb, var(--frame) 46%, var(--bg-deep)) 52%,
+        color-mix(in srgb, var(--frame) 78%, var(--bg-deep))
+      )
       border-box;
   border: 4px solid transparent;
   padding: 0;
@@ -1503,7 +1510,13 @@ h2 {
 
 /* Traitement holographique des raretés hautes (étoiles et Couronne, CARD-SPEC §1). */
 .card--holo .card__art::after {
-  background: linear-gradient(115deg, transparent 22%, rgb(255 255 255 / 26%) 44%, rgb(244 214 138 / 26%) 58%, transparent 80%);
+  background: linear-gradient(
+    115deg,
+    transparent 22%,
+    rgb(255 255 255 / 26%) 44%,
+    rgb(244 214 138 / 26%) 58%,
+    transparent 80%
+  );
   content: '';
   inset: 0;
   mix-blend-mode: screen;
@@ -1835,7 +1848,12 @@ h2 {
    la page vers sa cible. Pas de fond assombri, rien ne bloque : c'est une carte, pas un
    dialogue. Sous la barre de navigation (z-index 20) et sous les dialogues. */
 .pas-a-pas {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)),
+    var(--bg-raised) 38%,
+    var(--bg-sunken)
+  );
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   box-shadow:
@@ -2194,7 +2212,12 @@ h2 {
    jamais passer devant elle ; plus haut que la table. `sticky` (et non `fixed`) garde la barre
    dans le flux : quand tout tient dans la fenêtre, elle est simplement sous la main. */
 .combat-barre {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)), var(--bg-raised) 38%, var(--bg-sunken));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)),
+    var(--bg-raised) 38%,
+    var(--bg-sunken)
+  );
   border: 1px solid var(--line-strong);
   border-radius: 6px;
   bottom: 4.7rem;
@@ -3675,7 +3698,6 @@ h2 {
   line-height: 1.2;
 }
 
-
 .hand__kind {
   color: var(--text-muted);
   font-size: var(--fs-2xs);
@@ -3862,7 +3884,9 @@ h2 {
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .pouce:hover:not(:disabled) {
@@ -4093,8 +4117,7 @@ h2 {
    aucun hex (D-035). */
 .feuille-de-route__courante {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 46%),
-    var(--bg-raised);
+    linear-gradient(180deg, color-mix(in srgb, var(--gold) 12%, transparent), transparent 46%), var(--bg-raised);
   border-color: color-mix(in srgb, var(--gold) 42%, var(--line-strong));
 }
 
@@ -4231,4 +4254,187 @@ h2 {
      et une animation l'emporte sur une simple déclaration. */
   animation: none;
   opacity: 0;
+}
+
+/* ───────────────────────── L'ouverture d'un Arrivage (#283) ─────────────────────────
+   Quatre temps : le sachet se creuse, l'étiquette se décolle, la ligne se déchire, les cartes
+   sortent de l'intérieur. La scène est un **sachet photographié** : sept plaques tirées par gflow,
+   qu'on fond l'une dans l'autre, et un shader qui déforme le film (`src/animation/ouverture/`).
+   Rien d'informatif ne vit dans l'animation : les cartes, le badge « Nouvelle » et les boutons
+   sont lisibles à l'arrêt (D-098). */
+
+.ouverture {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-width: min(420px, calc(100vw - 3rem));
+}
+
+.ouverture__titre {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.ouverture__zone {
+  aspect-ratio: 315 / 560;
+  border-radius: 12px;
+  margin: 0 auto;
+  max-height: 56vh;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  width: 100%;
+  -webkit-user-select: none;
+}
+
+/* Les cartes restent dans le DOM dès le premier rendu : c'est le tirage qui compte, pas l'effet. */
+.ouverture__cartes {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 3;
+}
+
+.ouverture__cartes--aucune {
+  opacity: 0;
+}
+
+.ouverture__collectif {
+  display: contents;
+}
+
+.ouverture__carte {
+  left: 50%;
+  position: absolute;
+  top: 6%;
+  width: 34%;
+}
+
+.ouverture__cartes--monte .ouverture__carte {
+  animation: ouverture-monte 620ms cubic-bezier(0.3, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+.ouverture__cartes--eventail .ouverture__carte {
+  animation: ouverture-eventail 780ms cubic-bezier(0.22, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 80ms);
+}
+
+@keyframes ouverture-monte {
+  from {
+    transform: translate(-50%, 96px);
+  }
+  to {
+    transform: translate(-50%, 26px);
+  }
+}
+
+@keyframes ouverture-eventail {
+  from {
+    opacity: 0.15;
+    transform: translate(-50%, 10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(calc(-50% + (var(--i) - 2) * 15%), 132px) rotate(calc((var(--i) - 2) * 6deg));
+  }
+}
+
+.ouverture__sac {
+  inset: 0;
+  position: absolute;
+  transition: transform 760ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 2;
+}
+
+.ouverture__sac--descend {
+  transform: translateY(26%);
+}
+
+.ouverture__plaque {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+/* Le shader du creux : au-dessus des plaques, sous les cartes. */
+.ouverture__creux {
+  height: 100%;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+}
+
+.ouverture__neuve {
+  background: var(--gold);
+  border-radius: 999px;
+  color: #1c1304;
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 0.1rem 0.45rem;
+  position: absolute;
+  right: 0.25rem;
+  text-transform: uppercase;
+  top: -0.35rem;
+  z-index: 1;
+}
+
+.ouverture__vole {
+  animation: ouverture-vole 780ms cubic-bezier(0.3, 0.5, 0.4, 1) both;
+  left: 22%;
+  pointer-events: none;
+  position: absolute;
+  top: 7%;
+  width: 56%;
+  z-index: 4;
+}
+
+@keyframes ouverture-vole {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(calc(var(--sens) * 32%), -80px) rotate(calc(var(--sens) * 20deg));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--sens) * 56%), -155px) rotate(calc(var(--sens) * 40deg));
+  }
+}
+
+.ouverture__consigne {
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  margin: 0;
+  text-align: center;
+}
+
+.ouverture__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+/* **Mouvement réduit** : l'état final, sans cascade ni shader (D-098). */
+[data-mouvement-reduit='true'] .ouverture__carte,
+[data-mouvement-reduit='true'] .ouverture__vole,
+[data-mouvement-reduit='true'] .ouverture__sac {
+  animation: none;
+  transition: none;
+}
+
+[data-mouvement-reduit='true'] .ouverture__cartes--aucune {
+  opacity: 1;
 }

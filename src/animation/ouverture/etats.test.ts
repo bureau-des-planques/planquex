@@ -21,7 +21,7 @@ import {
  * ne garde rien. Les seuils sont lus sur les constantes, jamais recopiés ici — un réglage change
  * dans `etats.ts` et ces tests le suivent.
  */
-const GEO: Geometrie = { largeur: 315, ligne: 42, tolerance: 25 };
+const GEO: Geometrie = { largeur: 315, hauteur: 560, ligne: 42, tolerance: 25 };
 const BOITE_ETIQUETTE = { x: 90, y: 56, w: 135, h: 62 };
 
 /** Un appui au centre de l'étiquette, et le chemin jusqu'à la détacher. */

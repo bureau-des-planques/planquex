@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Coffee, PackageOpen, Swords } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
 import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
-import { CardView } from '@/components/CardView';
+
 import { avancementTirable, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { SceneOuverture } from '@/animation/ouverture/SceneOuverture';
 
 export function Home() {
   const { owned, deck, openPack, packsOpened } = useStore();
@@ -86,27 +86,11 @@ export function Home() {
           focus piégé en viennent. `lastPack` reste porté jusqu'à la fermeture. */}
       <Dialog open={lastPack !== null} onOpenChange={(ouvert) => !ouvert && setLastPack(null)}>
         <DialogContent className="pack-reveal">
-          <DialogTitle>Arrivage : cinq nouvelles cartes</DialogTitle>
+          <DialogTitle className="sr-only">Arrivage</DialogTitle>
           <DialogDescription className="sr-only">
             Les cartes de l’Arrivage sont rangées dans ta Collection.
           </DialogDescription>
-          <div className="pack-reveal__cards">
-            {lastPack?.map((card, index) => (
-              <motion.div
-                key={`${card.id}-${index}`}
-                className="pack-reveal__card"
-                initial={{ opacity: 0, y: 24, rotate: -2 }}
-                animate={{ opacity: 1, y: 0, rotate: 0 }}
-                transition={{ delay: index * 0.08, type: 'spring', stiffness: 260, damping: 24 }}
-              >
-                {nouvelles.has(index) && <span className="pack-reveal__neuve">Nouvelle</span>}
-                <CardView card={card} compact />
-              </motion.div>
-            ))}
-          </div>
-          <button type="button" className="button button--primary" onClick={() => setLastPack(null)}>
-            Ranger dans la Collection
-          </button>
+          {lastPack && <SceneOuverture cartes={lastPack} neuves={nouvelles} onRanger={() => setLastPack(null)} />}
         </DialogContent>
       </Dialog>
     </div>
