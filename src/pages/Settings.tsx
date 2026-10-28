@@ -8,6 +8,34 @@ import { useComptes } from '@/store/comptes';
 import { STORAGE_KEY, useStore } from '@/store/useStore';
 import { APP_LABEL } from '@/version';
 
+/**
+ * Les catégories des Réglages (#277), dans l'ordre où un testeur les cherche : d'abord qui
+ * il est et où en est son compte, puis ce qui change son confort (accessibilité), puis les
+ * parcours de découverte, puis ce qu'il peut sauver ou effacer, et enfin ce qui engage le
+ * jeu (confidentialité, version).
+ *
+ * **La liste est la garde** : `Settings.test.tsx` vérifie que chaque catégorie est rendue,
+ * porte au moins un réglage, et qu'aucune autre n'apparaît (pas de réglage orphelin, pas
+ * de réglage en double). `Impeccable` n'a rien à y redire : chaque bloc reste un `.panel`.
+ *
+ * **Pourquoi « Affichage » n'y est plus** : ses deux seuls réglages — « Réduire les
+ * animations » et « Raccourcis clavier au combat » — sont des réglages d'**accessibilité**
+ * (D-060, #189 ; recherche du 27/10/2026). Un bloc vidé de son contenu ne se garde pas pour
+ * l'esthétique : il ferait un titre sans réglage.
+ */
+export const CATEGORIES_REGLAGES = [
+  'Identité',
+  'Compte',
+  'Accessibilité',
+  'Journée d’intégration',
+  'Pas-à-pas du combat',
+  'Sauvegarde',
+  'Traces de combat',
+  'Données locales',
+  'Confidentialité',
+  'Version'
+] as const;
+
 export function Settings() {
   const {
     name,
@@ -64,8 +92,8 @@ export function Settings() {
         </div>
       </section>
 
-      <section className="section panel">
-        <h2>Identité</h2>
+      <section className="section panel" aria-labelledby="reglages-identite">
+        <h2 id="reglages-identite">Identité</h2>
         <form
           className="settings__row"
           onSubmit={(event) => {
@@ -84,8 +112,8 @@ export function Settings() {
         </form>
       </section>
 
-      <section className="section panel">
-        <h2>Compte</h2>
+      <section className="section panel" aria-labelledby="reglages-compte">
+        <h2 id="reglages-compte">Compte</h2>
         {!configure ? (
           <p className="muted m-0 max-w-[62ch]">
             Le jeu n’est pas relié à une base : il n’y a ni compte ni connexion. Ta progression reste dans ce
@@ -138,8 +166,11 @@ export function Settings() {
         )}
       </section>
 
-      <section className="section panel">
-        <h2>Affichage</h2>
+      {/* Accessibilité (#277) : les deux réglages de confort, rassemblés — ils étaient
+          rangés dans « Affichage », qui n'existe plus faute de contenu propre. Aucun autre
+          réglage n'est ajouté : un réglage qui n'existe pas ne s'invente pas. */}
+      <section className="section panel" aria-labelledby="reglages-accessibilite">
+        <h2 id="reglages-accessibilite">Accessibilité</h2>
         <label className="settings__toggle">
           <input type="checkbox" checked={reducedMotion} onChange={(event) => setReducedMotion(event.target.checked)} />
           <span>Réduire les animations</span>
@@ -155,36 +186,34 @@ export function Settings() {
           />
           <span>Raccourcis clavier au combat</span>
         </label>
-        <p className="muted">
-          Cochée, « I » ou « Ctrl+I » bascule les infos du combat entre sobre et détaillé. Décochée, les deux ne font
-          plus rien — taper « i » dans le code d’une partie à deux reste toujours un « i ».
+        <p className="muted max-w-[62ch]">
+          « I » ou « Ctrl+I » bascule les infos du combat entre sobre et détaillé ; décochée, les deux ne font plus
+          rien.
         </p>
       </section>
 
-      <section className="section panel">
-        <h2>Journée d’intégration</h2>
-        <p className="muted">
-          Quatre étapes, et chacune ouvre son écran : le Seuil et le Stress, l’Arrivage, le Deck, la fin d’un combat. À
-          revoir quand tu veux.
+      <section className="section panel" aria-labelledby="reglages-journee">
+        <h2 id="reglages-journee">Journée d’intégration</h2>
+        <p className="muted max-w-[62ch]">
+          Quatre étapes, chacune ouvre son écran : le Seuil et le Stress, l’Arrivage, le Deck, la fin d’un combat.
         </p>
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
         </button>
       </section>
 
-      <section className="section panel">
-        <h2>Pas-à-pas du combat</h2>
-        <p className="muted">
-          Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression, les Conditions et la fin. À
-          revoir quand tu veux.
+      <section className="section panel" aria-labelledby="reglages-pas-a-pas">
+        <h2 id="reglages-pas-a-pas">Pas-à-pas du combat</h2>
+        <p className="muted max-w-[62ch]">
+          Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression, les Conditions et la fin.
         </p>
         <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
           Revoir le pas-à-pas du combat
         </button>
       </section>
 
-      <section className="section panel">
-        <h2>Sauvegarde</h2>
+      <section className="section panel" aria-labelledby="reglages-sauvegarde">
+        <h2 id="reglages-sauvegarde">Sauvegarde</h2>
         {/* `max-w-[62ch]` (et non la largeur du panneau) : c'est un paragraphe de prose de
             quatre lignes, et `impeccable` (line-length) le refusait dès que le texte tient
             sur des lignes de plus de 80 caractères. Le rendu du texte était le même avant et
@@ -223,8 +252,8 @@ export function Settings() {
         )}
       </section>
 
-      <section className="section panel">
-        <h2>Traces de combat</h2>
+      <section className="section panel" aria-labelledby="reglages-traces">
+        <h2 id="reglages-traces">Traces de combat</h2>
         {/* `max-w-[56ch]` (et non 64) : depuis le texte à deux (D-105), les lignes à 64ch
             dépassaient 80 caractères — `impeccable`, line-length, cliquet #208. */}
         <p className="muted max-w-[56ch]">
@@ -234,8 +263,8 @@ export function Settings() {
         </p>
       </section>
 
-      <section className="section panel">
-        <h2>Données locales</h2>
+      <section className="section panel" aria-labelledby="reglages-donnees">
+        <h2 id="reglages-donnees">Données locales</h2>
         <button type="button" className="button" onClick={() => setConfirmeReset(true)}>
           <RotateCcw size={16} /> Réinitialiser la progression
         </button>
@@ -256,16 +285,16 @@ export function Settings() {
 
       <InvitationTesteurs ou="reglages" />
 
-      <section className="section panel">
-        <h2>Confidentialité</h2>
+      <section className="section panel" aria-labelledby="reglages-confidentialite">
+        <h2 id="reglages-confidentialite">Confidentialité</h2>
         <p className="muted">
           Ce que le jeu garde de toi — un compte, ce que tu écris sur le mur, et le déroulé de tes parties :{' '}
           <Link to="/confidentialite">la page de confidentialité</Link>.
         </p>
       </section>
 
-      <section className="section panel">
-        <h2>Version</h2>
+      <section className="section panel" aria-labelledby="reglages-version">
+        <h2 id="reglages-version">Version</h2>
         <p className="muted">
           <strong className="settings__version">{APP_LABEL}</strong> — dis-moi ce libellé si quelque chose ne va pas :
           c’est lui qui dit quelle version tu as sous les yeux. Ce qu’elle contient, et ce que les précédentes ont

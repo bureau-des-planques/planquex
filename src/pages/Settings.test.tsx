@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { Settings } from './Settings';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { Settings, CATEGORIES_REGLAGES } from './Settings';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { useComptes } from '@/store/comptes';
@@ -48,13 +48,15 @@ describe('Settings — écran des Réglages', () => {
     expect(saveButton).toBeDisabled();
   });
 
-  it("affiche la section Affichage avec l'option Réduire les animations", () => {
+  it("affiche le bloc Accessibilité avec l'option Réduire les animations (#277)", () => {
     renderWithStore(<Settings />, { reducedMotion: false, tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/Affichage/)).toBeInTheDocument();
-    expect(screen.getByText(/Réduire les animations/)).toBeInTheDocument();
+    // Le bloc s'appelle **Accessibilité** : « Affichage » n'existe plus (ses deux seuls
+    // réglages y vivaient, et un bloc vidé ferait un titre sans réglage).
+    const bloc = screen.getByRole('region', { name: 'Accessibilité' });
+    expect(within(bloc).getByText(/Réduire les animations/)).toBeInTheDocument();
 
-    const checkbox = screen.getByRole('checkbox', { name: /Réduire les animations/i });
+    const checkbox = within(bloc).getByRole('checkbox', { name: /Réduire les animations/i });
     expect(checkbox).not.toBeChecked();
 
     fireEvent.click(checkbox);
@@ -250,5 +252,76 @@ describe('Settings — le serveur des testeurs (#317)', () => {
     expect(lien).toHaveAttribute('href', 'https://discord.gg/planquex-test');
     expect(lien).toHaveAttribute('target', '_blank');
     expect(lien).toHaveAttribute('rel', 'noreferrer noopener');
+  });
+});
+
+/**
+ * Les Réglages par catégories (#277).
+ *
+ * Ce qui est gardé ici, c'est la **forme** : chaque catégorie est rendue, aucune n'est un
+ * titre vide, aucun réglage n'apparaît deux fois, et les deux réglages d'accessibilité
+ * vivent dans **Accessibilité** (et non dans l'ancien bloc « Affichage »).
+ */
+describe('Settings — des catégories, pas une liste (#277)', () => {
+  const COMPTE: Compte = {
+    id: 'compte-a',
+    courriel: 'a@exemple.test',
+    etat: 'approuve',
+    raison: '',
+    administrateur: false,
+    medaille_periode_essai: false,
+    medaille_periode_essai_le: null,
+    created_at: '2026-10-23T10:00:00.000Z'
+  };
+
+  function monterReglages() {
+    useComptes.setState({
+      configure: true,
+      chargement: false,
+      session: { id: COMPTE.id, courriel: COMPTE.courriel },
+      compte: COMPTE,
+      erreur: null
+    });
+    return renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+  }
+
+  afterEach(() => {
+    useComptes.setState({ configure: false, chargement: false, session: null, compte: null, erreur: null });
+  });
+
+  it('rend chaque catégorie, dans l’ordre, et aucune n’est un titre vide', () => {
+    monterReglages();
+    for (const categorie of CATEGORIES_REGLAGES) {
+      const bloc = screen.getByRole('region', { name: categorie });
+      // Un titre sans réglage ne compte pas : le bloc porte du texte ou un contrôle.
+      expect(bloc.textContent?.trim().length, categorie).toBeGreaterThan(20);
+    }
+    const titres = screen.getAllByRole('heading', { level: 2 }).map((titre) => titre.textContent);
+    expect(titres).toEqual([...CATEGORIES_REGLAGES]);
+  });
+
+  it('aucun réglage orphelin : chaque bloc est une catégorie connue', () => {
+    monterReglages();
+    const connues = new Set<string>(CATEGORIES_REGLAGES);
+    for (const bloc of screen.getAllByRole('region')) {
+      const nom = bloc.getAttribute('aria-labelledby');
+      expect(nom, 'bloc sans catégorie').not.toBeNull();
+      expect(connues.has(document.getElementById(nom ?? '')?.textContent ?? ''), nom ?? '').toBe(true);
+    }
+  });
+
+  it('les deux réglages d’accessibilité sont dans Accessibilité, une seule fois chacun (#277)', () => {
+    monterReglages();
+    const accessibilite = screen.getByRole('region', { name: 'Accessibilité' });
+
+    for (const nom of [/Réduire les animations/i, /Raccourcis clavier au combat/i]) {
+      // **Le contrôle mord** : un doublon (le même réglage laissé dans « Affichage » en
+      // plus du nouveau bloc) fait tomber `getAllByRole` à deux, et le test échoue.
+      const cases = within(accessibilite).getAllByRole('checkbox', { name: nom });
+      expect(cases).toHaveLength(1);
+      expect(screen.getAllByRole('checkbox', { name: nom })).toHaveLength(1);
+    }
+    // « Affichage » n'existe plus comme catégorie, et nulle part ailleurs.
+    expect(screen.queryByText('Affichage')).toBeNull();
   });
 });
