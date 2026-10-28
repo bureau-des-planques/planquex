@@ -1,0 +1,201 @@
+/* PROTOTYPE JETABLE (#283) — le banc d'essai du creux du sachet. */
+body {
+  background: var(--bg-deep, #070c16);
+  margin: 0;
+}
+
+.proto-ouv {
+  align-items: center;
+  box-sizing: border-box;
+  color: var(--text, #e8eef8);
+  display: flex;
+  flex-direction: column;
+  font:
+    0.8rem system-ui,
+    sans-serif;
+  gap: 0.8rem;
+  min-height: 100vh;
+  padding: 0.6rem 0.8rem 5rem;
+}
+
+.proto-ouv__bandeau {
+  color: #f7e264;
+  font-weight: 600;
+  margin: 0;
+}
+
+.proto-ouv__scene {
+  align-items: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.proto-ouv__zone {
+  border-radius: 8px;
+  cursor: grab;
+  overflow: hidden;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.proto-ouv__ref {
+  margin: 0;
+  width: 220px;
+}
+
+.proto-ouv__ref img {
+  border-radius: 8px;
+  display: block;
+  width: 100%;
+}
+
+.proto-ouv__ref figcaption {
+  color: var(--text-muted, #9aa9c2);
+  margin-top: 0.25rem;
+}
+
+.proto-ouv__regie {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  justify-content: center;
+}
+
+.proto-ouv__etat {
+  color: var(--text-muted, #9aa9c2);
+  font-variant-numeric: tabular-nums;
+}
+
+.proto-ouv__erreur {
+  color: #ff9a8a;
+  padding: 1rem;
+}
+
+.proto-ouv__barre {
+  align-items: center;
+  background: #f7e264;
+  border-radius: 999px;
+  bottom: 1rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  color: #111;
+  display: flex;
+  font-weight: 700;
+  gap: 0.8rem;
+  left: 50%;
+  padding: 0.35rem 0.5rem;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.proto-ouv__barre button {
+  background: #111;
+  border: 0;
+  border-radius: 999px;
+  color: #f7e264;
+  cursor: pointer;
+  font: inherit;
+  height: 2rem;
+  width: 2rem;
+}
+
+/* ───────── A — une pile de dégradés CSS ───────── */
+.va {
+  --px: 150px;
+  --py: 242px;
+  --creux: 0;
+  --dx: 0;
+  --dy: 0;
+  background-size: 100% 100%;
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+}
+
+.va__creux {
+  background: radial-gradient(
+    circle,
+    rgba(6, 12, 26, 0.62) 0%,
+    rgba(6, 12, 26, 0.34) 30%,
+    rgba(6, 12, 26, 0.1) 52%,
+    transparent 70%
+  );
+  border-radius: 50%;
+  height: 260px;
+  left: calc(var(--px) - 130px);
+  opacity: var(--creux);
+  pointer-events: none;
+  position: absolute;
+  top: calc(var(--py) - 130px);
+  transform: scale(calc(0.55 + 0.45 * var(--creux)));
+  width: 260px;
+}
+
+.va__anneaux {
+  background: repeating-radial-gradient(
+    circle,
+    transparent 0 9px,
+    rgba(255, 255, 255, 0.34) 10px 11px,
+    rgba(14, 22, 40, 0.3) 12px 15px,
+    transparent 16px 23px
+  );
+  border-radius: 50%;
+  height: 220px;
+  left: calc(var(--px) - 110px);
+  mask-image: radial-gradient(circle, #000 25%, transparent 68%);
+  opacity: calc(var(--creux) * 0.9);
+  pointer-events: none;
+  position: absolute;
+  top: calc(var(--py) - 110px);
+  transform: scale(calc(0.6 + 0.4 * var(--creux)));
+  width: 220px;
+}
+
+.va__reflet {
+  inset: -20%;
+  pointer-events: none;
+  position: absolute;
+}
+
+.va__reflet--1 {
+  background: linear-gradient(
+    105deg,
+    transparent 38%,
+    rgba(235, 244, 255, 0.42) 47%,
+    rgba(235, 244, 255, 0.08) 53%,
+    transparent 60%
+  );
+  opacity: calc(0.3 + 0.5 * var(--creux));
+  transform: translate(calc(var(--dx) * -70px * var(--creux)), calc(var(--dy) * 30px * var(--creux)));
+}
+
+.va__reflet--2 {
+  background: linear-gradient(80deg, transparent 52%, rgba(190, 215, 255, 0.3) 58%, transparent 66%);
+  opacity: calc(0.2 + 0.6 * var(--creux));
+  transform: translate(calc(var(--dx) * 60px * var(--creux)), calc(var(--dy) * -26px * var(--creux)));
+}
+
+/* ───────── B — un shader WebGL ───────── */
+.vb {
+  display: block;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+}
+
+/* ───────── C — des filtres SVG ───────── */
+.vc__defs {
+  position: absolute;
+}
+
+.vc {
+  background-size: 100% 100%;
+  inset: 0;
+  position: absolute;
+}
