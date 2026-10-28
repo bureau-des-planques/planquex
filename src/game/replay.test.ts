@@ -71,7 +71,7 @@ describe('applyAction — seul point de journalisation (#83)', () => {
     const [playerDeck, aiDeck] = decksFor(42);
     const state = createBattle(playerDeck, aiDeck, 42);
 
-    // `evolve` est refusé au premier tour du joueur (AGENTS.md §4) : la transition
+    // `evolve` est refusé au premier tour du joueur (docs/JEU.md §4) : la transition
     // rend `state` lui-même, donc rien n'est journalisé et rien ne mute.
     const refused = applyAction(state, { type: 'evolve', uid: 'inconnu', targetUid: 'inconnu' });
 

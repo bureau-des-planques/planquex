@@ -1,7 +1,7 @@
 import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque } from '@/data';
 import type { Card, CafeType, Faction, Stage } from '@/data/types';
 
-/** Règles du Deck (AGENTS.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
+/** Règles du Deck (docs/JEU.md §4). Source unique : le moteur et l'UI s'y réfèrent. */
 export const DECK_SIZE = 20;
 export const MAX_COPIES_PER_NAME = 2;
 

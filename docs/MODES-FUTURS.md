@@ -1,12 +1,12 @@
 # Modes futurs — rangés hors du mode standard
 
 > **Rien dans ce document ne fait autorité.** Le mode standard est défini par
-> `AGENTS.md` §4 : miroir de *Pokémon TCG Pocket* (état 2026, D-018) plus le seul
+> `docs/JEU.md` §4 : miroir de *Pokémon TCG Pocket* (état 2026, D-018) plus le seul
 > mot-clé maison **« Changement de priorité »** (D-004). Décision de rangement : **D-019**.
 
 ## Pourquoi ce fichier existe
 
-Les règles maison `RULES-4b` étaient présentées dans `AGENTS.md` §4.1 et
+Les règles maison `RULES-4b` étaient présentées dans `docs/JEU.md` §4.1 et
 `PROPOSITION.md` §3.1, au milieu des règles du **standard**. Résultat : des audits
 ont attribué au standard des règles qui n'en font pas partie, et une contradiction
 apparente a été signalée sur la fin de partie quand plus aucun Planqué n'est en jeu

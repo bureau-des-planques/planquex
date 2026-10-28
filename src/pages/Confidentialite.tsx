@@ -22,7 +22,7 @@ import { RetourEcran } from '@/components/RetourEcran';
  *
  * **À confirmer par Bastien avant publication** : c'est la seule adresse publiée du site, et
  * elle doit être une adresse qui lui appartient et qu'il relève. Elle ne doit pas porter
- * l'ancien nom du projet (`AGENTS.md` §3).
+ * l'ancien nom du projet (`docs/JEU.md` §3).
  */
 export const CONTACT = 'planquex@4k7.org';
 

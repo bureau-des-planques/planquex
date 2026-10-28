@@ -46,7 +46,7 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
 export const STORAGE_VERSION = 13;
 
 /**
- * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `AGENTS.md` §5 : **un id
+ * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
  * suit le nom** — et, pour une variante, la rareté. Quand l'un des deux change, l'id
  * change au lieu de rester un alias introuvable, et l'état persisté doit suivre,
  * sinon la carte quitte silencieusement la Collection et le Deck.
@@ -101,7 +101,7 @@ export const CARD_ID_RENAMES: Readonly<Record<string, string>> = {
   'atelier-stagiaire-atelier': 'atelier-assistant-rpo',
   'atelier-chef-atelier-ex': 'atelier-rpo-sans-rui-ex',
   'atelier-responsable-maintenance-ex': 'atelier-rui-non-toxique-ex',
-  // D-096 (dix cartes dont l'id ne suivait pas le nom, AGENTS.md §5).
+  // D-096 (dix cartes dont l'id ne suivait pas le nom, docs/JEU.md §5).
   'qvt-ambassadeur-bienveillance': 'qvt-charge-mission',
   'qvt-cueilleur-fruits': 'qvt-charge-logistique',
   'qvt-organisateur-afterwork': 'qvt-responsable-evenementiel',
@@ -146,7 +146,7 @@ export interface AppState {
    * du **nouveau** contenu. Ajuster le Deck carte par carte (`addToDeck`,
    * `toggleDeck`) le **garde** : c'est le même Deck qu'on édite.
    *
-   * Pourquoi « attribut du Deck » plutôt que « du joueur » : `AGENTS.md` §4 dit
+   * Pourquoi « attribut du Deck » plutôt que « du joueur » : `docs/JEU.md` §4 dit
    * « Jusqu'à 3 types **par Deck**, choisis par le joueur » et §6 parle des
    * « types de café choisis **du Deck** » ; `resolveCafeTypes(deck, chosen)` prend
    * déjà le Deck en premier argument. Le laisser survivre à un remplacement

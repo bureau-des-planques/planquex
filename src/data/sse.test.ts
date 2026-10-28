@@ -53,7 +53,7 @@ describe('SSE — enregistrement (ticket #99)', () => {
     );
   });
 
-  it('identifie chaque carte par le préfixe `sse-` (AGENTS.md §5)', () => {
+  it('identifie chaque carte par le préfixe `sse-` (docs/JEU.md §5)', () => {
     for (const card of ALL_SSE_CARDS) {
       expect(card.id, card.id).toMatch(/^sse-[a-z0-9-]+$/);
       expect(card.faction, card.id).toBe('SSE');
@@ -69,7 +69,7 @@ describe('SSE — enregistrement (ticket #99)', () => {
   });
 });
 
-describe('SSE — conventions de nom (AGENTS.md §5, D-026)', () => {
+describe('SSE — conventions de nom (docs/JEU.md §5, D-026)', () => {
   it('suffixe chaque variante par le suffixe de sa rareté, et lui laisse le nom de sa base', () => {
     for (const variant of SSE_VARIANTS.filter(isPlanque)) {
       const source = variant.variantOf ? byId(variant.variantOf) : undefined;
@@ -92,7 +92,7 @@ describe('SSE — conventions de nom (AGENTS.md §5, D-026)', () => {
   });
 });
 
-describe('SSE — Vulnérabilité MANAGEMENT (AGENTS.md §3.2)', () => {
+describe('SSE — Vulnérabilité MANAGEMENT (docs/JEU.md §3.2)', () => {
   it('déclare `MANAGEMENT` comme Vulnérabilité de la faction, dans FACTION_META seule', () => {
     expect(FACTION_META.SSE.weakness).toBe('MANAGEMENT');
   });
@@ -136,7 +136,7 @@ describe('SSE — coût en café typé (D-037)', () => {
   });
 });
 
-describe('SSE — lignes d’évolution (AGENTS.md §5)', () => {
+describe('SSE — lignes d’évolution (docs/JEU.md §5)', () => {
   it('a une ligne signature complète Entrant → N+1 → N+2', () => {
     const [entrant, n1, n2] = LINE.map(byId);
     expect(entrant?.stage).toBe('ENTRANT');

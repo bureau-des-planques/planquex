@@ -27,11 +27,11 @@
 | 10 | Incolore | **Support** | Polyvalent, pioche, recherche | Responsable support |
 
 **La Vulnérabilité ne s'écrit pas dans ce document.** Elle vit dans `src/data/factions.ts`
-(`FACTION_META.weakness`), seule source. `AGENTS.md` §3.2 la reprend, et
+(`FACTION_META.weakness`), seule source. `docs/JEU.md` §3.2 la reprend, et
 `src/data/factions.test.ts` vérifie que les deux disent la même chose.
 
 **Hors du set** : les **Outils** et les **Lieux** ne sont pas des cartes du lancement
-(D-020 ; `AGENTS.md` §4, « Outils / Lieux »). Leurs lignes ne sont plus dans les tables par
+(D-020 ; `docs/JEU.md` §4, « Outils / Lieux »). Leurs lignes ne sont plus dans les tables par
 faction : elles sont regroupées, étiquetées, dans la section « Hors périmètre du lancement »
 en fin de document.
 
@@ -329,7 +329,7 @@ sans changer les cartes.
 ## Hors périmètre du lancement
 
 Les **Outils** et les **Lieux** ci-dessous ne sont pas dans le périmètre du lancement (D-020 ;
-`AGENTS.md` §4, « Outils / Lieux : hors périmètre du lancement »). Ils sont gardés ici pour que
+`docs/JEU.md` §4, « Outils / Lieux : hors périmètre du lancement »). Ils sont gardés ici pour que
 l'idée ne se perde pas : ce ne sont ni des cartes du set ni une promesse, et aucun ne doit être
 implémenté sans décision datée dans `docs/DECISIONS.md`.
 

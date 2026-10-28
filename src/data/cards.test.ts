@@ -19,7 +19,7 @@ import { damageBand, hpBand } from '@/game/curves';
 /**
  * Fichier de contrôle des conventions d'écriture des cartes.
  *
- * Chaque assertion cite sa règle : `AGENTS.md` §3 (vocabulaire), §5 (écriture des
+ * Chaque assertion cite sa règle : `docs/JEU.md` §3 (vocabulaire), §5 (écriture des
  * cartes) ou `docs/CARD-SPEC.md` §1-2. Une carte qui échoue ici est une carte à
  * rectifier — pas un test à assouplir.
  *
@@ -98,7 +98,7 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
     }
   });
 
-  it('identifie chaque carte en kebab-case préfixé par sa faction (AGENTS.md §5)', () => {
+  it('identifie chaque carte en kebab-case préfixé par sa faction (docs/JEU.md §5)', () => {
     for (const card of ALL_CARDS) {
       expect(card.id, card.id).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
       expect(card.id.startsWith(`${card.faction.toLowerCase()}-`), `${card.id} vs ${card.faction}`).toBe(true);
@@ -121,11 +121,11 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
     }
   });
 
-  it('n’utilise que les primitives d’effet et de talent déclarées (AGENTS.md §5)', () => {
+  it('n’utilise que les primitives d’effet et de talent déclarées (docs/JEU.md §5)', () => {
     for (const card of PLANQUES) {
       for (const attack of card.attacks) {
         // La contrainte de coût ne vit **pas** ici : ce `describe` porte sur les
-        // primitives d'effet et de talent (AGENTS.md §5). Le refus du coût vide pour un
+        // primitives d'effet et de talent (docs/JEU.md §5). Le refus du coût vide pour un
         // Planqué **typé** (D-037 (3)) est affirmé dans le `describe` dédié
         // « Coût en café typé — attribution », par le prédicat `coutTypeConforme`.
         // On ne l'étend pas à `SUPPORT` : `Attack.cost` documente la liste vide comme
@@ -146,7 +146,7 @@ describe('Cartes — structure (CARD-SPEC.md §1)', () => {
     }
   });
 
-  it('n’utilise, pour un effet de carte Action, que les primitives existantes (AGENTS.md §5)', () => {
+  it('n’utilise, pour un effet de carte Action, que les primitives existantes (docs/JEU.md §5)', () => {
     for (const card of ACTIONS) {
       expect(card.effects.length, card.id).toBeGreaterThan(0);
       for (const effect of card.effects) {
@@ -265,7 +265,7 @@ const ECARTS_CONNUS: Partial<Record<RareteBase, { ecart: number; ticket: number 
 };
 
 /**
- * Socle des raretés hautes — `CARD-SPEC.md` §1 et `AGENTS.md` §3.2.
+ * Socle des raretés hautes — `CARD-SPEC.md` §1 et `docs/JEU.md` §3.2.
  * Les cartes ci-dessous sont **synthétiques** et ne sont jamais enregistrées dans
  * `ALL_CARDS` : elles prouvent que le type et les métadonnées acceptent les paliers
  * **avant** qu'une carte réelle ne les emploie. Les variantes réelles sont contrôlées
@@ -294,7 +294,7 @@ const carteSynthetique = (rarity: Rarity, cost: CafeSymbol[] = ['SSE']): Planque
   palette: '#24303c'
 });
 
-describe('Raretés hautes — socle de type (CARD-SPEC.md §1, AGENTS.md §3.2)', () => {
+describe('Raretés hautes — socle de type (CARD-SPEC.md §1, docs/JEU.md §3.2)', () => {
   it('accepte `3S` et `COU` dans `Rarity` et `RARITY_META`, après `2S`', () => {
     expect(Object.keys(RARITY_META).sort()).toEqual([...TOUTES_LES_RARETES].sort());
     for (const rarity of RARITES_HAUTES) {
@@ -458,7 +458,7 @@ describe('Coût en café typé — attribution (D-037 (3), #33, #101)', () => {
   });
 });
 
-describe('Cartes — lignes d’évolution (AGENTS.md §5)', () => {
+describe('Cartes — lignes d’évolution (docs/JEU.md §5)', () => {
   it('fait pointer `evolvesFrom` vers la carte du stade précédent', () => {
     for (const card of BASE_PLANQUES) {
       const index = STAGE_ORDER.indexOf(card.stage);
@@ -527,7 +527,7 @@ describe('Cartes — dégâts par café (CARD-SPEC.md §2, normatif depuis D-021
   });
 });
 
-describe('Cartes — COMEX et Vulnérabilité (AGENTS.md §3.2, §5)', () => {
+describe('Cartes — COMEX et Vulnérabilité (docs/JEU.md §3.2, §5)', () => {
   /**
    * La vulnérabilité est portée par `FACTION_META` (`src/data/factions.ts`), pas par la
    * carte. Ce test ne relit donc pas les cartes — il vérifierait la même source que le
@@ -566,7 +566,7 @@ describe('Cartes — les COMEX de la vague 1 (#66)', () => {
   const COMEX = PLANQUES.filter((card) => card.ex);
 
   it('compte 15 COMEX : les dix factions en portent au moins un, cinq en portent deux', () => {
-    // CARD-SPEC.md §1 : 15 cartes en 4◆. Les dix signatures (AGENTS.md §3.2) plus les
+    // CARD-SPEC.md §1 : 15 cartes en 4◆. Les dix signatures (docs/JEU.md §3.2) plus les
     // cinq seconds COMEX de la vague 1 (#66).
     expect(COMEX).toHaveLength(15);
     const parFaction = new Map<Faction, number>();
@@ -610,7 +610,7 @@ describe('Cartes — rareté 3◆ (CARD-SPEC.md §1, vague 2, #86)', () => {
   });
 });
 
-describe('Cartes — textes (AGENTS.md §3, §5)', () => {
+describe('Cartes — textes (docs/JEU.md §3, §5)', () => {
   it('écrit les textes en français, sans mot interdit ni « rack »', () => {
     for (const card of ALL_CARDS) {
       for (const text of texts(card)) {
@@ -692,7 +692,7 @@ const varianteActionConforme = (variant: ActionCard, sourceId: string): boolean 
   return suffix !== undefined && variant.id === `${sourceId}-${suffix}`;
 };
 
-describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)', () => {
+describe('Cartes Action — Collègues et Objets (D-005, D-027, docs/JEU.md §4)', () => {
   it('compte 8 Collègues et 3 Objets au lancement, plus 8 variantes de Collègues (CARD-SPEC.md §1)', () => {
     expect(BASE_ACTIONS.filter((card) => card.kind === 'COLLEAGUE')).toHaveLength(8);
     expect(BASE_ACTIONS.filter((card) => card.kind === 'OBJET')).toHaveLength(3);
@@ -737,7 +737,7 @@ describe('Cartes Action — Collègues et Objets (D-005, D-027, AGENTS.md §4)',
     }
   });
 
-  it('fait hériter chaque variante de Collègue de sa base, sans variante de variante (AGENTS.md §5)', () => {
+  it('fait hériter chaque variante de Collègue de sa base, sans variante de variante (docs/JEU.md §5)', () => {
     const seen = new Set<string>();
     for (const variant of ACTION_VARIANTS) {
       const source = variant.variantOf ? getCard(variant.variantOf) : undefined;

@@ -6,7 +6,7 @@ Layout: **single-context**.
 
 ## Before exploring, read these
 
-1. **`AGENTS.md` §3 « Vocabulaire »** — the canonical FR ↔ TCG term table (Planqué, Seuil, Stress, Café, Pression, Intervention…). This is the glossary for this repo.
+1. **`docs/JEU.md` §3 « Vocabulaire »** — the canonical FR ↔ TCG term table (Planqué, Seuil, Stress, Café, Pression, Intervention…). This is the glossary for this repo.
 2. **`docs/DECISIONS.md`** — dated decisions. Per `AGENTS.md` §2, this is the final authority when documents conflict.
 3. **`docs/adr/`** — if it appears later, read the ADRs that touch the area you're about to work in.
 4. **`GLOSSARY.md`** at the repo root — if it appears later, it complements §3 rather than replacing it.
@@ -15,7 +15,7 @@ If a file in steps 3–4 doesn't exist, **proceed silently**. Don't flag its abs
 
 ## Use the glossary's vocabulary
 
-When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `AGENTS.md` §3. Don't drift to synonyms the glossary explicitly avoids.
+When your output names a domain concept (in an issue title, a refactor proposal, a hypothesis, a test name), use the term as defined in `docs/JEU.md` §3. Don't drift to synonyms the glossary explicitly avoids.
 
 Banned terms: `Galère`, `GalèreMon`, `Pokémon`, plus the project's former name and its universe's vocabulary, must never appear in `src/`, the UI or card data — the executable list is `FORBIDDEN_ANY_CASE` in `src/data/cards.test.ts`, and it is the one that counts. `docs/` may cite « Pokémon TCG Pocket » as an external reference only. The collection is **Collection** (renamed by D-075; « Galérodex » is the abandoned legacy name); « Galère » alone is always wrong.
 

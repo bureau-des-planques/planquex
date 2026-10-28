@@ -4,7 +4,7 @@ import type { Status } from '@/data/types';
 import { BURNOUT_DAMAGE, SURCHARGE_DAMAGE } from '@/game/rules';
 
 /**
- * Les cinq conditions de combat (`AGENTS.md` §4), avec leur libellé, leur règle et leur
+ * Les cinq conditions de combat (`docs/JEU.md` §4), avec leur libellé, leur règle et leur
  * icône. Une **seule** source : `Battle.tsx` n'a plus sa propre table de libellés, et une
  * condition ajoutée au type s'affiche ici avant d'atteindre l'écran.
  */

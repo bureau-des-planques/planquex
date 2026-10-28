@@ -90,7 +90,7 @@ sur les cartes réelles, à la table d'avant correction ; le « comment ça se r
 - Mais SUPPORT perdait aussi **100 %** de ses parties décidées contre **MANAGEMENT**,
   **AMELIORATION**, **SYNDICAT** et **QVT** (0–20, 0–20, 0–18, 0–17), qui n'ont **aucune**
   Vulnérabilité sur lui : le Incolore n'a qu'un seul type dans le cycle de D-024.
-- Et **INTERIM n'a aucune Vulnérabilité** (Dragon, AGENTS.md §3.2) : il portait pourtant
+- Et **INTERIM n'a aucune Vulnérabilité** (Dragon, docs/JEU.md §3.2) : il portait pourtant
   **cinq** des douze alertes.
 
 **Comment ces chiffres se refont** : la **forme du Deck** et les **Pressions payables** sont

@@ -143,7 +143,7 @@ const MODELE_BADGE = {
   icone: { largeur: 12, hauteur: 12 },
   nom: 'status-chip__nom',
   masque: 'sr-only',
-  // Les **trois** Conditions qu'un même Poste peut porter ensemble (AGENTS.md §4) : Surcharge
+  // Les **trois** Conditions qu'un même Poste peut porter ensemble (docs/JEU.md §4) : Surcharge
   // et Épuisement se cumulent avec une Condition d'état — Immobilisation ici, la plus longue.
   statuts: [
     { code: 'SURCHARGE', nom: 'Surcharge' },

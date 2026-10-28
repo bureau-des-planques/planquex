@@ -1,6 +1,6 @@
 # Glossaire du code
 
-Les termes du **jeu** sont dans `AGENTS.md` §3 : c'est l'autorité, et ce glossaire ne la
+Les termes du **jeu** sont dans `docs/JEU.md` §3 : c'est l'autorité, et ce glossaire ne la
 double pas. Ici, uniquement le vocabulaire du **code** — les mots qu'on emploie en lisant
 `src/`, et qui ne sont pas des mots du jeu.
 
@@ -13,7 +13,7 @@ faction dans `src/data/factions.ts` (`FACTION_META`). Un fichier de faction ne d
 que ses cartes : ni constructeur, ni palette, ni glyphe local, ni vulnérabilité.
 
 Le mot ne s'emploie pas pour parler du jeu : un « socle » n'est pas une carte, une faction
-ni une règle. C'est pourquoi il n'entre pas dans `AGENTS.md` §3.
+ni une règle. C'est pourquoi il n'entre pas dans `docs/JEU.md` §3.
 
 | Ce que le socle porte | Où |
 |---|---|

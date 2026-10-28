@@ -5,10 +5,10 @@ import { FACTION_META } from './factions';
 /**
  * La table des factions n'a **qu'une** source de valeurs : `FACTION_META` (#369).
  *
- * `AGENTS.md` §3.2 reprend le vivier, la Vulnérabilité et l'étiquette pour les agents, et
- * `docs/FACTIONS.md` n'en recopie plus aucune. Cette garde lit la table d'`AGENTS.md` et
- * échoue si elle dit autre chose que le code. Elle ne **réécrit** rien : `AGENTS.md` est un
- * document d'autorité, c'est le code qui fait foi et la table qui suit.
+ * `docs/JEU.md` §3.2 reprend le vivier, la Vulnérabilité et l'étiquette pour les agents, et
+ * `docs/FACTIONS.md` n'en recopie plus aucune. Cette garde lit la table de `docs/JEU.md` et
+ * échoue si elle dit autre chose que le code. Elle ne **réécrit** rien : c'est un document
+ * d'autorité, c'est le code qui fait foi et la table qui suit.
  */
 
 const lire = (chemin: string) => readFileSync(new URL(`../../${chemin}`, import.meta.url), 'utf8');
@@ -30,7 +30,7 @@ interface LigneTable {
   vivier: string;
 }
 
-/** Les lignes de la table d'`AGENTS.md` §3.2, telles qu'un agent les lit. */
+/** Les lignes de la table d'`docs/JEU.md` §3.2, telles qu'un agent les lit. */
 function lignesDeLaTable(texte: string): LigneTable[] {
   return [...texte.matchAll(LIGNE_FACTION)].map(([, code, etiquette, , vulnerable, vivier]) => ({
     code,
@@ -75,9 +75,9 @@ function sansHorsPerimetre(doc: string): string {
 }
 
 describe('la table des factions', () => {
-  it('AGENTS.md §3.2 dit les mêmes valeurs que FACTION_META', () => {
-    expect(lignesDeLaTable(lire('AGENTS.md'))).toHaveLength(10);
-    expect(ecarts(lire('AGENTS.md'))).toEqual([]);
+  it('docs/JEU.md §3.2 dit les mêmes valeurs que FACTION_META', () => {
+    expect(lignesDeLaTable(lire('docs/JEU.md'))).toHaveLength(10);
+    expect(ecarts(lire('docs/JEU.md'))).toEqual([]);
   });
 
   it('docs/FACTIONS.md renvoie à la source, et ne recopie plus la Vulnérabilité', () => {
@@ -99,7 +99,7 @@ describe('la table des factions', () => {
   it('le contrôle mord : une Vulnérabilité fausse est refusée', () => {
     const attendue = FACTION_META.SSE.weakness;
     const fausse = attendue === 'QVT' ? 'RH' : 'QVT';
-    const faux = lire('AGENTS.md').replace(
+    const faux = lire('docs/JEU.md').replace(
       '| `SSE` | `SSE` | Plante | `MANAGEMENT` | Bureaux |',
       `| \`SSE\` | \`SSE\` | Plante | \`${fausse}\` | Bureaux |`
     );
@@ -110,7 +110,7 @@ describe('la table des factions', () => {
     const attendu = FACTION_META.RH.vivier;
     const fauxVivier = attendu === 'ETAGE' ? 'ATELIER' : 'ETAGE';
     const libelle = Object.entries(VIVIER_DE_LA_TABLE).find(([, v]) => v === fauxVivier)![0];
-    const texte = lire('AGENTS.md').replace(
+    const texte = lire('docs/JEU.md').replace(
       '| `RH` | `RH` | Psychique | `DIRECTION` | Bureaux |',
       `| \`RH\` | \`RH\` | Psychique | \`DIRECTION\` | ${libelle} |`
     );

@@ -55,7 +55,7 @@ export const TENUE: Record<Palier, number> = { simple: 0, rare: 1900, brillante:
 /**
  * **Les annonces** : la phrase qui s'affiche quand une carte rare se retourne, à la façon d'un
  * jeu de cartes à collectionner qui fête ses légendaires — mais dans la langue de la maison. La
- * chute vise le système, jamais une personne (AGENTS.md §4.2).
+ * chute vise le système, jamais une personne (docs/JEU.md §4.2).
  */
 export const ANNONCES: Record<Exclude<Palier, 'simple'>, readonly string[]> = {
   rare: ['Validé en comité !', 'Bon pour accord !', 'Remonté à la hiérarchie !', 'Promotion interne !'],
