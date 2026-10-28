@@ -11,6 +11,8 @@
  *   npm run mesure:direction -- --json             # le rapport complet, pour un script
  *   npm run mesure:direction -- --parties 200      # une mesure plus courte (le chiffre bouge)
  *   npm run mesure:direction -- --bande 0.50:0.51  # le contrôle mord : la bande fausse
+ *   npm run mesure:direction -- --politique glouton  # la variante mesurée (#411) : la Direction
+ *                                                   # joue le glouton, la référence ne bouge pas
  *
  * Le chiffre publié est celui du premier appel, dans `docs/ia/354-mesure-direction.md`.
  * Les **durées** de décision varient d'un poste à l'autre (une mesure, pas une règle) ;
@@ -26,6 +28,9 @@ const USAGE = `Usage : npm run mesure:direction -- [options]
       --max-turns <N>   arrêt d'urgence d'une partie (défaut : 200)
       --factions <liste> factions à opposer, séparées par des virgules (défaut : les dix)
       --bande <bas:haut> bande du verdict, en taux (défaut : 0.40:0.60 — D-134)
+      --politique <nom> politique de la Direction : scripte, glouton, recherche (défaut),
+                        expectiminimax. La référence reste scriptée : c'est la Direction
+                        qu'on fait varier (#411)
       --json            rapport JSON au lieu du texte
   -h, --help            cette aide
 
@@ -57,6 +62,9 @@ function readBande(raw) {
   return { bas: b, haut: h };
 }
 
+/** Les politiques nommables de la Direction (`Politique`, `src/game/ia.ts`). */
+const POLITIQUES = ['scripte', 'glouton', 'recherche', 'expectiminimax'];
+
 function parseArgs(argv) {
   const options = {
     parties: null,
@@ -64,6 +72,7 @@ function parseArgs(argv) {
     maxTurns: null,
     factions: null,
     bande: null,
+    politique: null,
     json: false,
     help: false
   };
@@ -84,6 +93,10 @@ function parseArgs(argv) {
     else if (name === '--graine' || name === '-s') options.graine = readInteger(value(), '--graine');
     else if (name === '--max-turns') options.maxTurns = readInteger(value(), '--max-turns');
     else if (name === '--bande') options.bande = readBande(value());
+    else if (name === '--politique')
+      options.politique = String(value() ?? '')
+        .trim()
+        .toLowerCase();
     else if (name === '--factions') {
       options.factions = (value() ?? '')
         .split(',')
@@ -108,6 +121,8 @@ if (!options) {
   fail('--parties doit être un entier ≥ 1.');
 } else if (options.parties !== null && options.parties % 2 !== 0) {
   fail('--parties doit être PAIR : le miroir joue deux fois chaque paire.');
+} else if (options.politique !== null && !POLITIQUES.includes(options.politique)) {
+  fail(`--politique inconnue : « ${options.politique} ». Valeurs acceptées : ${POLITIQUES.join(', ')}.`);
 } else {
   const server = await createServer({
     server: { middlewareMode: true },
@@ -133,6 +148,7 @@ if (!options) {
         graine: options.graine ?? undefined,
         maxTurns: options.maxTurns ?? undefined,
         factions: options.factions ?? undefined,
+        politique: options.politique ?? undefined,
         bande: options.bande ?? undefined
       });
       process.stdout.write(

@@ -594,16 +594,30 @@ export interface SearchOptions {
 /**
  * Réglages par défaut de la recherche. Choisis avant toute mesure du contrôle (protocole).
  *
+ * `candidates` : **2**, depuis #411. La valeur de #111 était **6**, et la mesure de la
+ * Direction contre un joueur de référence scripté (D-134, `npm run mesure:direction`,
+ * graine 20261028, 1 000 parties) donnait alors **62,57 %** des parties décidées, **hors**
+ * de la bande 40–60 % : la recherche était **trop forte** contre la référence scriptée.
+ * À 2 candidats elle rend **52,95 %** (IC 95 % 49,32–56,55, entièrement dans la bande),
+ * pour **2,5 fois moins de travail** par décision (215,27 → 86,35 nœuds) et **aucun repli
+ * de budget** (2 → 0). Les autres réglages (`worlds`, `replies`) ont été essayés seuls et
+ * n'ont pas bougé le chiffre (§ « Les variantes testées » de
+ * `docs/ia/354-mesure-direction.md`) : c'est `candidates` qui porte la force, parce que
+ * c'est le nombre de **mes** coups explorés en entier. Le changement de réglage est une
+ * décision (D-134 : « on mesure, puis on décide ») ; la mesure qui le justifie vit dans le
+ * document cité, et le chiffre ci-dessus est celui de la commande, pas une impression.
+ *
  * `maxNodes` : 800 nœuds, soit ~55 ms au coût mesuré d'un `applyAction` (~70 µs sur les
  * états de partie, `docs/ia/111-essais-recherche-2-coups.md` §6). La médiane d'une décision
- * en consomme ~200, le p99 avant #172 ~500 et le maximum observé ~700 : le plafond ne mord
+ * en consommait ~200 à 6 candidats (215 en moyenne, #411), le p99 avant #172 ~500 et le
+ * maximum observé ~700 ; à 2 candidats la moyenne tombe à 86 nœuds. Le plafond ne mord donc
  * que sur la queue, et le repli glouton prend alors la main.
  *
  * `maxMs` : 60 ms, sous le budget de 100 ms, pour que même un nœud anormalement lent ne
  * pousse pas la décision au-delà.
  */
 export const DEFAULT_SEARCH_OPTIONS: SearchOptions = {
-  candidates: 6,
+  candidates: 2,
   worlds: 3,
   replies: 4,
   maxNodes: 800,

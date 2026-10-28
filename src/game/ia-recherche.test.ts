@@ -260,3 +260,40 @@ describe('recherche à deux coups — équité', () => {
     expect(Math.max(...counts.values())).toBeLessThanOrEqual(2);
   });
 });
+
+/**
+ * **Le budget de candidats de #411** (D-134). La force de la recherche contre un joueur
+ * scripté vient du nombre de **mes** coups explorés en entier : `candidates` est donc une
+ * décision de jeu, pas un réglage de confort. Deux gardes, et chacune **peut** échouer :
+ *
+ * 1. la valeur par défaut est **celle qui a été mesurée** (52,95 %, D-134) — revenir à 6
+ *    sans une nouvelle mesure casse ce test, et c'est voulu : c'est un cliquet, pas une
+ *    opinion ;
+ * 2. le réglage **mord** sur le travail de la décision (`nodes`) : à 1 candidat la
+ *    recherche ne cherche rien et rend le coup du glouton ; à 2 puis 4 elle travaille
+ *    strictement plus. Si `candidates` cessait d'être lu, le second point tomberait.
+ */
+describe('recherche à deux coups — le budget de candidats (#411)', () => {
+  const positions = [1, 7, 11].flatMap((seed) => aiDecisionPositions(seed, 8));
+
+  it('le défaut est le réglage mesuré contre la référence scriptée', () => {
+    // Mesuré par `npm run mesure:direction` (graine 20261028, 1 000 parties) : 6 candidats
+    // donnaient 62,57 % des décidées (hors bande), 2 donnent 52,95 % (dans la bande).
+    expect(DEFAULT_SEARCH_OPTIONS.candidates).toBe(2);
+  });
+
+  it('le nombre de candidats borne le travail de la décision (le réglage mord)', () => {
+    for (const state of positions) {
+      const un = searchDecision(state, { ...SANS_GARDE_DE_TEMPS, candidates: 1 });
+      const deux = searchDecision(state, { ...SANS_GARDE_DE_TEMPS, candidates: 2 });
+      const quatre = searchDecision(state, { ...SANS_GARDE_DE_TEMPS, candidates: 4 });
+
+      // Un seul candidat : aucune ligne à comparer, le coup est le glouton, zéro nœud.
+      expect(un.nodes).toBe(0);
+      expect(un.action).toEqual(nextAction(state, 2));
+      // Deux et quatre candidats : de vrais nœuds, et strictement plus à quatre.
+      expect(deux.nodes).toBeGreaterThan(0);
+      expect(quatre.nodes).toBeGreaterThan(deux.nodes);
+    }
+  });
+});

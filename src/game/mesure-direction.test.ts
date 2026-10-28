@@ -1,15 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_SEARCH_OPTIONS } from '@/game/ia';
 import {
   BANDE_DIRECTION,
   GRAINE_MESURE_DIRECTION,
   GRAINES_DE_LA_POLITIQUE,
   PARTIES_DIRECTION,
+  RECHERCHE_REJOUABLE,
+  TRANCHES_DE_TOURS,
   dansLaBande,
+  formatRapportDirection,
   grainesDisjointes,
   intervalleWilson,
   mediane,
-  mesurerDirection
+  mesurerDirection,
+  tauxDe,
+  trancheDeTours
 } from '@/game/mesure-direction';
+import type { PartieDirection } from '@/game/mesure-direction';
 
 /**
  * **La mesure de la Direction mord-elle ?** (#354, D-134)
@@ -96,6 +103,86 @@ describe('mesure de la Direction (#354)', () => {
     // Cas dégénérés : aucune décidée ne rend pas un intervalle fantôme.
     expect(intervalleWilson(0, 0)).toEqual([0, 0]);
     expect(intervalleWilson(100, 100)[1]).toBeLessThanOrEqual(1);
+  });
+
+  it('la mesure lit les réglages de l’écran, elle ne les recopie pas (#411)', () => {
+    // Un réglage de recherche recopié ici aurait mesuré une politique que plus personne
+    // ne joue : la constante **dérive** des défauts, et c'est cette ligne qui le garde.
+    expect(RECHERCHE_REJOUABLE).toEqual({ ...DEFAULT_SEARCH_OPTIONS, maxMs: Infinity });
+    expect(RECHERCHE_REJOUABLE.maxMs).toBe(Infinity);
+    const rapport = mesurerDirection(OPTIONS);
+    // Le rapport dit **quelle** politique il a mesurée, et avec quels réglages.
+    expect(rapport.politique).toBe('recherche');
+    expect(rapport.recherche).toEqual(RECHERCHE_REJOUABLE);
+    expect(formatRapportDirection(rapport)).toContain('Direction : recherche');
+  });
+
+  it('la politique de la Direction est un paramètre, la référence non (#411)', () => {
+    const glouton = mesurerDirection({ ...OPTIONS, politique: 'glouton' });
+    expect(glouton.politique).toBe('glouton');
+    // La référence reste la politique scriptée : ses parties sont les mêmes graines,
+    // donc le miroir existe toujours (2 parties, 1 paire).
+    expect(glouton.parties).toBe(2);
+    expect(glouton.paires).toBe(1);
+    expect(formatRapportDirection(glouton)).toContain('Direction : glouton');
+  });
+
+  it('le travail se compte en nœuds, pas seulement en millisecondes (#411)', () => {
+    const cherche = mesurerDirection(OPTIONS);
+    // La recherche travaille : le compte est positif et par décision.
+    expect(cherche.ia.coups).toBeGreaterThan(0);
+    expect(cherche.ia.noeuds).toBeGreaterThan(0);
+    expect(cherche.ia.noeudsParDecision).toBeGreaterThan(0);
+    // La politique scriptée ne cherche rien : zéro nœud, et le chiffre reste lisible.
+    const scripte = mesurerDirection({ ...OPTIONS, politique: 'scripte' });
+    expect(scripte.ia.noeuds).toBe(0);
+    expect(scripte.ia.noeudsParDecision).toBe(0);
+    // La mesure reste complète sans nœuds : les parties sont jouées, le chiffre se lit.
+    expect(scripte.decidees + scripte.nulles).toBe(2);
+  });
+
+  it('les nulles ne comptent ni pour ni contre, et un agrégat vide ne vaut jamais 0 %', () => {
+    const partie = (issue: PartieDirection['issue']): PartieDirection => ({
+      paire: 0,
+      seed: 1,
+      siege: 'ai',
+      direction: 'DIRECTION',
+      reference: 'RH',
+      issue,
+      tours: 12,
+      raison: 'interventions'
+    });
+    const taux = tauxDe([partie('gagnee'), partie('perdue'), partie('nulle')]);
+    expect(taux).toMatchObject({ parties: 3, decidees: 2, gagnees: 1, perdues: 1, nulles: 1 });
+    expect(taux.taux).toBe(0.5);
+    // La borne qui compte : aucune décidée n'est « 0 % », c'est « on ne sait pas ».
+    expect(tauxDe([]).taux).toBe(Number.NaN);
+    expect(tauxDe([partie('nulle')]).taux).toBe(Number.NaN);
+    expect(tauxDe([partie('nulle')]).decidees).toBe(0);
+  });
+
+  it('les agrégats se recoupent avec le chiffre global, et la limite lue est celle du moteur', () => {
+    const rapport = mesurerDirection(OPTIONS);
+    const somme = (lignes: readonly { parties: number }[]) => lignes.reduce((n, l) => n + l.parties, 0);
+    expect(somme(rapport.parFaction)).toBe(rapport.parties);
+    expect(somme(rapport.parFin)).toBe(rapport.parties);
+    expect(somme(rapport.parTour)).toBe(rapport.parties);
+    expect(rapport.parFaction.reduce((n, l) => n + l.decidees, 0)).toBe(rapport.decidees);
+    expect(rapport.parFaction.reduce((n, l) => n + l.gagnees, 0)).toBe(rapport.gagnees);
+    // Chaque ligne porte son propre taux : une ligne décidée ne rend pas `NaN`.
+    for (const ligne of rapport.parFaction.filter((l) => l.decidees > 0)) {
+      expect(ligne.taux).toBeCloseTo(ligne.gagnees / ligne.decidees, 10);
+    }
+    // Les tranches couvrent la partie entière, sans trou ni recouvrement.
+    expect(rapport.parTour.map((l) => l.tranche)).toEqual(TRANCHES_DE_TOURS.map((t) => `${t.debut}–${t.fin}`));
+    // Les égalités sont celles du **moteur** (`TURN_LIMIT`, 30 tours), pas du harnais :
+    // `maxTurns` ne peut pas mordre une partie que le moteur arrête avant lui.
+    expect(rapport.limiteMoteur).toBeLessThan(rapport.maxTurns);
+    expect(rapport.nullesAuHarnais).toBe(0);
+    expect(rapport.nullesALaLimite).toBeLessThanOrEqual(rapport.nulles);
+    // Le contrôle mord : la borne haute du moteur est bien comptée, la suivante non.
+    expect(trancheDeTours(rapport.limiteMoteur)).toBe(`${21}–${rapport.limiteMoteur}`);
+    expect(trancheDeTours(0)).toBeNull();
   });
 
   it('la médiane des tours se lit sur les parties jouées', () => {

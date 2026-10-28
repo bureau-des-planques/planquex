@@ -346,6 +346,13 @@ export interface CoutDecisions {
   msMax: number;
   /** Décisions où le plafond de nœuds a mordu : le coup rendu est le repli glouton (#172). */
   replis: number;
+  /**
+   * Somme des nœuds (`applyAction`) consommés par les décisions de recherche — la
+   * **densité de travail**, indépendante de la charge de la machine, donc comparable
+   * d'une mesure à l'autre (contrairement aux durées). Zéro quand le camp ne cherche pas
+   * (#411 : c'est ce qui rend le « moins de travail » d'un réglage vérifiable).
+   */
+  noeuds: number;
 }
 
 export interface OptionsPartiePolitiques {
@@ -401,7 +408,7 @@ export function jouerPartiePolitiques(
 
   let state = createBattle(playerDeck, aiDeck, seed, options.cafeTypes ?? {});
   const attacks: Record<PlayerId, number> = { player: 0, ai: 0 };
-  const cout: CoutDecisions = { coups: 0, msTotal: 0, msMax: 0, replis: 0 };
+  const cout: CoutDecisions = { coups: 0, msTotal: 0, msMax: 0, replis: 0, noeuds: 0 };
 
   while (state.phase === 'playing' && state.turn <= maxTurns) {
     const who = state.pendingPromotion ?? state.current;
@@ -410,7 +417,10 @@ export function jouerPartiePolitiques(
     if (coups[who] === 'recherche') {
       const decision = searchDecision(state, options.recherche);
       action = decision.action;
-      if (chrono === who) cout.replis += decision.fallback ? 1 : 0;
+      if (chrono === who) {
+        cout.replis += decision.fallback ? 1 : 0;
+        cout.noeuds += decision.nodes;
+      }
     } else {
       action = choisie[who](state);
     }
