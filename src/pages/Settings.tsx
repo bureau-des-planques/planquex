@@ -287,7 +287,7 @@ export function Settings() {
             section « Traces de combat » (#208). */}
         <p className="muted max-w-[62ch]">
           Ton Deck et ta Collection sont encore dans ce navigateur (clé <code>{STORAGE_KEY}</code>) tant que la synchro
-          avec le compte n'est pas livrée. Ton nom aussi reste ici.{' '}
+          avec le compte n’est pas livrée. Ton nom aussi reste ici.{' '}
           <strong>Vider les données du navigateur efface tout cela</strong> : copie ce texte avant.
         </p>
         <textarea

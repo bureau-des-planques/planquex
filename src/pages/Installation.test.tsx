@@ -78,7 +78,8 @@ describe('Installation — le guide public (#300)', () => {
     // Aujourd’hui, le compte ne suit pas les données locales (Deck, Collection, pseudo,
     // partie). Bientôt, elles vivront sur le compte.
     expect(screen.getByText(/ton compte ne suit pas les données locales/i)).toBeTruthy();
-    expect(screen.getByText(/bientôt, côté serveur/i)).toBeTruthy();
+    expect(screen.getByText(/aujourd’hui, côté serveur/i)).toBeTruthy();
+    expect(screen.getByText(/bientôt en plus/i)).toBeTruthy();
   });
 
   it('envoie vers la sauvegarde de Réglages, avec ses deux libellés exacts', () => {

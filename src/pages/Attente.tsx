@@ -123,7 +123,7 @@ export function Attente() {
           </li>
           <li>
             <Link to="/settings">Tes réglages</Link> — ta Collection et ton Deck sont encore dans ce navigateur tant que
-            la synchro n'est pas livrée.
+            la synchro n’est pas livrée.
           </li>
         </ul>
       </section>

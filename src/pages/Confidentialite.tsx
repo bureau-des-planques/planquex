@@ -109,7 +109,7 @@ const QUESTIONS: Rubrique[] = [
     titre: 'Un doute',
     lignes: [
       'Écris-nous : le comité est là pour ça, et un courriel marche aussi.',
-      'Les rubriques « Ce qui viendra » et « Le serveur des testeurs (facultatif) » décrivent ce qui n’est pas implémenté encore : elles ne décrivent pas ce que fait le jeu aujourd’hui. Pour le reste, cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.'
+      'La rubrique « Ce qui viendra (bientôt) » décrit ce qui n’est pas implémenté encore. Le serveur des testeurs existe déjà (D-120, #317). Pour le reste, cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.'
     ]
   }
 ];

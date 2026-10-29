@@ -176,9 +176,9 @@ export function Installation() {
             Rien de cela ne part sur un serveur. Ton compte ne suit pas les données locales.
           </li>
           <li>
-            <strong>Bientôt, côté serveur</strong> : ton compte, ce que tu écris sur le mur, le déroulé de tes combats
-            terminés, ton Deck et ta Collection : ils vivront sur ton compte, tu les retrouveras après un changement
-            d’appareil.
+            <strong>Aujourd’hui, côté serveur</strong> : ton compte, ce que tu écris sur le mur, le déroulé de tes
+            combats terminés. <strong>Bientôt en plus</strong> : ton Deck et ta Collection, sur ton compte — tu les
+            retrouveras après un changement d’appareil.
           </li>
         </ul>
         <p className="muted m-0 max-w-[62ch] text-[0.86rem]">
