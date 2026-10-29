@@ -42,6 +42,17 @@ describe('Installation — le guide public (#300)', () => {
     expect(screen.getByText(ADRESSE)).toBeTruthy();
   });
 
+  it('ouvre sur le module « Banc prêt », et garde les procédures en dessous', () => {
+    rendre();
+    // Sans navigateur (jsdom) : ni invite, ni iPhone, ni messagerie — le module renvoie aux
+    // étapes manuelles, et ne montre **pas** de bouton qui ne ferait rien.
+    const module = screen.getByRole('region', { name: 'Banc prêt' });
+    expect(screen.queryByRole('button', { name: /installer le jeu/i })).toBeNull();
+    // Le module vient **avant** les procédures : c'est lui que la vitrine annonce.
+    const premiereProcedure = screen.getByRole('heading', { level: 2, name: PROCEDURES[0]!.titre });
+    expect(module.compareDocumentPosition(premiereProcedure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('donne une procédure numérotée pour chaque appareil retenu', () => {
     rendre();
 

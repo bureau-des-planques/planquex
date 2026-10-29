@@ -49,8 +49,7 @@ export const SEUIL = Object.freeze({ aller: 2, retour: 1 });
 export const EXCEPTIONS = Object.freeze({
   '/connexion': 'sans base, GardeComptes ne renvoie vers la connexion que si le compte est configuré',
   '/attente': 'lien seulement depuis la bandeau de compte en attente (compte configuré)',
-  '/administration': 'lien seulement depuis Réglages, pour un compte administrateur (compte configuré)',
-  '/installation': 'aucun lien interne : la note de release la désigne hors de l’application'
+  '/administration': 'lien seulement depuis Réglages, pour un compte administrateur (compte configuré)'
 });
 
 /** Le parcours filmé : une frame après chaque étape. Un geste est `clic` ou `attendre` (un sélecteur). */

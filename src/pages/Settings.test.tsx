@@ -112,6 +112,14 @@ describe('Settings — écran des Réglages', () => {
     expect(state.pasAPasCombatVu).toBe(false);
   });
 
+  it('mène à la page d’installation depuis Réglages, une seule fois (sinon le module est introuvable une fois installé)', () => {
+    renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const liens = screen.getAllByRole('link', { name: /préarmer/i });
+    expect(liens).toHaveLength(1);
+    expect(liens[0]).toHaveAttribute('href', '/installation');
+  });
+
   it('affiche la section Sauvegarde', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
@@ -135,7 +143,7 @@ describe('Settings — écran des Réglages', () => {
   it('dit que les parties terminées, solo comme à deux, sont gardées sous le compte, sans case à cocher (D-086, D-088, D-105)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/parties terminées sont gardées sous ton compte, solo comme à deux/i)).toBeInTheDocument();
+    expect(screen.getByText(/parties terminées sont gardées sous ton compte/i)).toBeInTheDocument();
     // D-086 : une **mention**, pas un consentement par combat — aucune case ne concerne
     // les traces. Les trois cases de l'écran sont des réglages : le mouvement réduit, les
     // raccourcis clavier du combat (#189), et les deux sons du jeu (D-137, #378).

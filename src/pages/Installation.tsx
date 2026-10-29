@@ -18,11 +18,18 @@
  * 3. **la page porte sa date de vérification** : elle est revue à chaque release, et au
  *    plus tard à chaque changement d'étape (`VERIFIE_LE`).
  *
+ * **Le module « Banc prêt »** (`BancPret`) ouvre la page, sous l'introduction : le bouton
+ * « Installer le jeu » quand le navigateur le permet, sinon l'aide qui le remplace (iPhone,
+ * navigateur d'une messagerie, application déjà installée). C'est ici que **la vitrine**
+ * (`planquex-site`, dossier frère) envoie ses visiteurs, parce que seule l'adresse du jeu
+ * peut installer le jeu. Les procédures restent affichées en dessous, dans tous les cas.
+ *
  * Le libellé d'un menu change avec la version du navigateur : on décrit le **chemin**, pas
  * une capture qui vieillit. Des captures servent à juger le rendu de cette page
  * (`npm run capturer`), pas à guider un doigt.
  */
 import { Link } from 'react-router-dom';
+import { BancPret } from '@/components/BancPret';
 import { RetourEcran } from '@/components/RetourEcran';
 
 /**
@@ -117,6 +124,8 @@ export function Installation() {
           étapes de ton appareil. Le jeu marche aussi sans installation.
         </p>
       </section>
+
+      <BancPret lien={`https://${ADRESSE}/installation`} />
 
       <section className="section panel">
         <h2 className="m-0">Les navigateurs retenus</h2>

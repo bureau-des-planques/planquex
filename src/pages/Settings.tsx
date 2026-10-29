@@ -30,6 +30,7 @@ import { APP_LABEL } from '@/version';
 export const CATEGORIES_REGLAGES = [
   'Identité',
   'Compte',
+  'Installer le jeu',
   'Difficulté',
   'Accessibilité',
   'Journée d’intégration',
@@ -126,10 +127,7 @@ export function Settings() {
       <section className="section panel" aria-labelledby="reglages-compte">
         <h2 id="reglages-compte">Compte</h2>
         {!configure ? (
-          <p className="muted m-0 max-w-[62ch]">
-            Le jeu n’est pas relié à une base : il n’y a ni compte ni connexion. Ta progression reste dans ce
-            navigateur, et le mur lit le fichier du dépôt.
-          </p>
+          <p className="muted m-0 max-w-[62ch]">Pas de compte : ta progression reste dans ce navigateur.</p>
         ) : !session ? (
           <p className="m-0 max-w-[62ch]">
             Aucun compte connecté. <Link to="/connexion">Se connecter</Link> — l’alpha est réservée aux testeurs.
@@ -177,16 +175,23 @@ export function Settings() {
         )}
       </section>
 
+      <section className="section panel" aria-labelledby="reglages-installation">
+        <h2 id="reglages-installation">Installer le jeu</h2>
+        <p className="muted m-0 max-w-[62ch]">Ajoute Planquex à tes applications, depuis la page d’installation.</p>
+        <div className="actions actions--tight">
+          <Link className="button button--terminal" to="/installation">
+            Préarmer le déploiement
+          </Link>
+        </div>
+      </section>
+
       {/* **La difficulté** (#251, D-145) : un cran règle **deux** choses, et le bloc le dit
           sans chiffre — la politique par son nom, le Deck par le sien. « Normal » est le
           défaut : la recherche à deux coups de D-084, donc rien ne change pour qui n'y touche
           pas. Le réglage est persisté ; le combat en cours garde le cran de son montage. */}
       <section className="section panel" aria-labelledby="reglages-difficulte">
         <h2 id="reglages-difficulte">Difficulté</h2>
-        <p className="muted max-w-[62ch]">
-          Chaque cran règle la politique de la Direction <strong>et</strong> le Deck qu’elle joue. Il s’applique au
-          prochain combat.
-        </p>
+        <p className="muted max-w-[62ch]">Règle la Direction et le Deck qu’elle joue. Effet au prochain combat.</p>
         <div className="settings__difficulte" role="radiogroup" aria-label="Difficulté de la Direction">
           {DIFFICULTES.map((cran) => {
             const reglage = reglageDirection(cran);
@@ -226,9 +231,7 @@ export function Settings() {
           <input type="checkbox" checked={sons} onChange={(event) => setSons(event.target.checked)} />
           <span>Sons du jeu</span>
         </label>
-        <p className="muted max-w-[62ch]">
-          L’ouverture d’un Arrivage et la fin d’un combat. Rien d’autre, et rien au chargement.
-        </p>
+        <p className="muted max-w-[62ch]">Ouverture d’un Arrivage et fin de combat.</p>
         {/* Le critère WCAG sur les raccourcis à une touche (#189, SPEC-COMBAT-UI §4.2) : la case **désactive** les deux gestes,
             `I` comme `Ctrl`+`I`. Cochée par défaut, et c'est aussi le rappel des commandes
             du combat (GAG : « allowance reminder of controls »). */}
@@ -240,18 +243,12 @@ export function Settings() {
           />
           <span>Raccourcis clavier au combat</span>
         </label>
-        <p className="muted max-w-[62ch]">
-          « I » ou « Ctrl+I » bascule les infos du combat entre sobre et détaillé ; décochée, les deux ne font plus
-          rien.
-        </p>
+        <p className="muted max-w-[62ch]">« I » ou « Ctrl+I » : infos du combat, sobre ou détaillé.</p>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-journee">
         <h2 id="reglages-journee">Journée d’intégration</h2>
-        <p className="muted max-w-[62ch]">
-          Cinq étapes, un geste chacune : le Seuil et le Stress, l’Arrivage, le Deck, la fin d’un combat, et le tour de
-          jeu.
-        </p>
+        <p className="muted max-w-[62ch]">Cinq étapes, un geste chacune.</p>
         <button type="button" className="button" onClick={() => setTutorielVu(false)}>
           Revoir la journée d’intégration
         </button>
@@ -261,18 +258,13 @@ export function Settings() {
           rejouable ici. */}
       <section className="section panel" aria-labelledby="reglages-regles">
         <h2 id="reglages-regles">Les règles</h2>
-        <p className="muted max-w-[62ch]">
-          Six étapes, une minute : le Seuil et le Stress, le plateau, le Deck, la Pression et le café, les Conditions,
-          la fin de la partie.
-        </p>
+        <p className="muted max-w-[62ch]">Six étapes, une minute.</p>
         <PresentationRegles>Les règles en une minute</PresentationRegles>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-pas-a-pas">
         <h2 id="reglages-pas-a-pas">Pas-à-pas du combat</h2>
-        <p className="muted max-w-[62ch]">
-          Cinq étapes sur le premier combat : le Poste, le Banc, le café, la Pression, les Conditions et la fin.
-        </p>
+        <p className="muted max-w-[62ch]">Cinq étapes sur le premier combat.</p>
         <div className="actions actions--tight">
           <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
             Revoir le pas-à-pas du combat
@@ -294,10 +286,8 @@ export function Settings() {
             la **largeur de lecture** qui manquait, pas le formateur. Même remède que la
             section « Traces de combat » (#208). */}
         <p className="muted max-w-[62ch]">
-          Ta progression de jeu — Collection, Deck, nom — vit dans ce navigateur sous la clé <code>{STORAGE_KEY}</code>{' '}
-          : elle n’est pas envoyée à la base, et <strong>vider les données du navigateur l’efface</strong>. Copie ce
-          texte quelque part avant, il contient tout. Les traces de combat, elles, partent à la base quand elle est
-          configurée (voir plus bas).
+          Collection, Deck et nom restent dans ce navigateur (clé <code>{STORAGE_KEY}</code>).{' '}
+          <strong>Vider les données du navigateur les efface</strong> : copie ce texte avant.
         </p>
         <textarea
           className="settings__save"
@@ -330,18 +320,14 @@ export function Settings() {
         {/* `max-w-[56ch]` (et non 64) : depuis le texte à deux (D-105), les lignes à 64ch
             dépassaient 80 caractères — `impeccable`, line-length, cliquet #208. */}
         <p className="muted max-w-[56ch]">
-          Les parties terminées sont gardées sous ton compte, solo comme à deux — la graine, les deux Decks, les types
-          de café et le journal des coups — pour voir comment le jeu se joue et l’améliorer. Ni ton nom ni aucun texte
-          libre n’est envoyé ; seul ton identifiant de compte relie la trace à toi (D-086, D-088, D-105).
+          Les parties terminées sont gardées sous ton compte pour améliorer le jeu. Ni ton nom ni aucun texte libre n’y
+          figure (D-086, D-105).
         </p>
       </section>
 
       <section className="section panel" aria-labelledby="reglages-rejeu">
         <h2 id="reglages-rejeu">Revoir une partie</h2>
-        <p className="muted max-w-[56ch]">
-          Ta dernière partie terminée se revoit pas à pas, coup par coup. Le rejeu rejoue le journal avec le moteur, et
-          compare son verdict à celui de la partie d’origine : il ne joue rien et ne rejuge rien.
-        </p>
+        <p className="muted max-w-[56ch]">Ta dernière partie terminée, coup par coup.</p>
         <div className="actions actions--tight">
           <Link className="button" to="/rejeu">
             <History size={16} /> Revoir ma dernière partie

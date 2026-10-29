@@ -5,7 +5,12 @@ import '@fontsource-variable/inter';
 import '@fontsource-variable/outfit';
 import { App } from './App';
 import { ErreurDeRendu } from './components/ErreurDeRendu';
+import { capterInviteInstallation } from './lib/invite-installation';
 import './styles.css';
+
+// L'invite d'installation de Chromium part **une fois**, souvent avant le premier rendu : on
+// l'écoute avant de monter React, pour que `/installation` puisse la rejouer au clic.
+capterInviteInstallation(window);
 
 const container = document.getElementById('root');
 

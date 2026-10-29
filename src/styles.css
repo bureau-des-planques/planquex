@@ -1113,6 +1113,84 @@ h2 {
   font-weight: 700;
 }
 
+/* Le préarmement en terminal : sobre, vert sur noir, et des lignes de journal satiriques.
+   Sans dégradé ni lueur. */
+.button--terminal,
+.button--terminal-tir {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.button--terminal {
+  background: #050a06;
+  border: 1px solid var(--ok);
+  color: var(--ok);
+}
+
+.button--terminal-tir {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #04100a;
+}
+
+.button--terminal::before,
+.button--terminal-tir::before {
+  content: '> ';
+}
+
+.terminal {
+  display: grid;
+  gap: 0.3rem;
+  background: #050a06;
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+  color: var(--ok);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+.terminal__curseur::after {
+  content: '_';
+}
+
+/* Les lignes s'écrivent une à une : 160 ms chacune, décalées de 160 ms, soit 640 ms au plus. */
+.terminal > p {
+  animation: ligne-console 160ms ease-out both;
+}
+
+.terminal > p:nth-child(2) {
+  animation-delay: 160ms;
+}
+
+.terminal > p:nth-child(3) {
+  animation-delay: 320ms;
+}
+
+.terminal > p:nth-child(4) {
+  animation-delay: 480ms;
+}
+
+@keyframes ligne-console {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terminal > p {
+    animation: none;
+  }
+}
+
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
