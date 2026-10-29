@@ -8,7 +8,7 @@ import type { Environnement } from '@/lib/installation';
 import type { CapteurInvite, EtatInvite, ResultatInstallation } from '@/lib/invite-installation';
 
 /**
- * **Le banc d'installation** (#504) — le contenu de la future page, non branchée.
+ * **Le banc d'installation** (#504) — la page `/installation`, branchée dans `src/App.tsx`.
  *
  * Trois coutures suffisent à ne dépendre d'aucun vrai navigateur : l'**environnement**,
  * le **capteur** de l'invite, et les **durées** d'allumage (mises à `0` pour les cas de

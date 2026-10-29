@@ -1,8 +1,7 @@
 /**
- * **Le banc d'installation** — le contenu de la future page `/installation` (#504), posé
- * dans un fichier séparé le temps que #478 fusionne `src/App.tsx` et son routage.
+ * **Le banc d'installation** — la page `/installation` (#504), branchée dans `src/App.tsx`
+ * (chargée à la demande, hors du `Layout`).
  *
- * Le composant n'est **branché nulle part** : il est exporté par défaut, et c'est tout.
  * Il ne lit ni le store, ni le mur, ni le réseau : c'est du rendu pur, plus trois coutures
  * de test (l'environnement, le capteur d'invite, le mouvement réduit).
  *
