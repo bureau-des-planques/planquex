@@ -108,7 +108,7 @@
    - `actionLog` dans `BattleState` (déjà implémenté, `src/data/types.ts`) prouve le pattern « journal d'actions rejouables ».
    - Export/Import de sauvegarde (lignes 436-480) montre la sérialisation JSON versionnée attendue.
 
-3. **Offline-first réel** : Le testeur ouvre des Arrivages, modifie son Deck, construit des stratégies **sans réseau**. La synchro se fait en arrière-plan à la reconnexion (comme `tracerCombat` qui « avale le rejet », `src/store/combats.ts:159-166`).
+3. **Offline-first réel** : Le testeur ouvre des Arrivages, modifie son Deck, construit des stratégies **sans réseau**. La synchro se fait en arrière-plan à la reconnexion (comme `tracerCombat` qui « avale le rejet », `src/store/combats.ts:159`).
 
 4. **Coût maîtrisé** (estimation non mesurée) : 
    - Collection : fonction SQL `merge_collection` + 1 champ `lastSyncedAt` store.
