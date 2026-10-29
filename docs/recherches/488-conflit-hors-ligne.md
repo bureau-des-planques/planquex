@@ -23,7 +23,7 @@
 - **Observé** : `src/store/combats.ts` envoie les traces **en silence**, n'interrompt jamais le jeu (lignes 11-14, 131-149)
 
 ### Schéma Supabase (cible de synchronisation future)
-- **Migrations** : `supabase/migrations/` — 18 migrations, rejouées par PGlite dans les tests
+- **Migrations** : `supabase/migrations/` — 17 migrations, rejouées par PGlite dans les tests
 - **Tables actuelles** : `postits`, `votes`, `commentaires`, `combats`, `comptes`, `profils`, `annonces_discord`
 - **Pas de table** : `decks`, `user_cards` (Collection), `deck_cards` — prévues dans `PROPOSITION.md` §6.3 mais **non créées**
 
@@ -36,7 +36,7 @@
 ### Vocabulaire (D-075, D-026)
 - **Deck** = ancien « Chariot » (20 cartes)
 - **Collection** = ancien « Parc » (toutes les cartes possédées avec quantités)
-- Identifiants de code déjà en anglais : `deck`, `owned`, `CardInstance`
+- Identifiants de code déjà en anglais : `deck`, `owned`, `Card` (union de `PlanqueCard` et `ActionCard` dans `src/data/types.ts`)
 
 ---
 
@@ -89,7 +89,7 @@
 | **Coût** | Modéré-élevé. Collection : simple. Deck : file d'opérations (array persistant dans le store), replay côté serveur (RPC) ou client (download → merge → upload). |
 | **Risque de perte de données** | **Très faible**. Collection : zéro perte. Deck : seule une réorganisation concurrente non commutative (ex. A ajoute carte X, B retire carte Y, les deux valides séparément mais ensemble >20) demande arbitrage. L'UI de résolution est **explicite**, pas silencieuse. |
 | **Lien avec D-048 critère 5** | **Respecté**. Aucune perte silencieuse. Le testeur récupère ses cartes (Collection) et son Deck (avec résolution explicite si conflit rare). |
-| **Complexité implémentation** | Modérée. Réutilise `migratePersisted` comme modèle (transformation d'état versionnée). File d'opérations ≈ `actionLog` de `BattleState` (déjà existant, `src/store/partie.ts`). |
+| **Complexité implémentation** | Modérée. Réutilise `migratePersisted` comme modèle (transformation d'état versionnée). File d'opérations ≈ `actionLog` de `BattleState` (déjà existant, `src/data/types.ts`). |
 | **Adéquation PWA offline-first** | Forte. Écriture locale immédiate, synchro différée, résolution explicite seulement si nécessaire. |
 
 ---
@@ -104,14 +104,14 @@
 
 2. **Compatible avec l'existant** : 
    - Le store utilise déjà `migratePersisted` pour transformer l'état versionné (ligne 539-587) — même patron pour le journal d'opérations Deck.
-   - `actionLog` dans `BattleState` (déjà implémenté, `src/store/partie.ts`) prouve le pattern « journal d'actions rejouables ».
+   - `actionLog` dans `BattleState` (déjà implémenté, `src/data/types.ts`) prouve le pattern « journal d'actions rejouables ».
    - Export/Import de sauvegarde (lignes 436-480) montre la sérialisation JSON versionnée attendue.
 
 3. **Offline-first réel** : Le testeur ouvre des Arrivages, modifie son Deck, construit des stratégies **sans réseau**. La synchro se fait en arrière-plan à la reconnexion (comme `envoyerCombat` qui « avale le rejet », `src/store/combats.ts:159-166`).
 
-4. **Coût maîtrisé** : 
-   - Collection : ~50 lignes SQL (fonction `merge_collection`) + 1 champ `lastSyncedAt` store.
-   - Deck : file d'opérations dans le store (nouveau champ `deckOps: DeckOp[]`), RPC `replay_deck_ops(uuid, jsonb, base_version)` côté serveur, UI de résolution conflits (rare).
+4. **Coût maîtrisé** (estimation non mesurée) : 
+   - Collection : fonction SQL `merge_collection` + 1 champ `lastSyncedAt` store.
+   - Deck : file d'opérations dans le store (nouveau champ `deckOps: DeckOp[]`, mécanisme à construire), RPC `replay_deck_ops(uuid, jsonb, base_version)` côté serveur, UI de résolution conflits (rare).
    - Pas d'Edge Functions pour chaque mutation — le store reste source de vérité locale.
 
 5. **Évolutivité** : Le journal d'opérations Deck sert aussi le **replay** (déjà requis pour PvP, D-008/D-105) et le **debug** (actionLog existant).
@@ -119,10 +119,16 @@
 ### Ce qu'il faut construire (pour T4)
 
 1. **Tables Supabase** (migration) : `user_cards`, `decks`, `deck_cards` — avec `version integer not null default 1` pour optimistic locking.
-2. **Store** : champ `deckOps: DeckOp[]` persisté, `lastSyncedAt: number | null`, fonctions `enqueueDeckOp`, `flushDeckOps`.
+2. **Store** : champ `deckOps: DeckOp[]` persisté (mécanisme à construire), `lastSyncedAt: number | null`, fonctions `enqueueDeckOp`, `flushDeckOps`.
 3. **RPC Supabase** : `merge_collection(uuid, jsonb)`, `replay_deck_ops(uuid, jsonb, base_version)` retournant `{ success, deck, version, conflicts }`.
 4. **UI** : Écran « Résolution conflit Deck » (rare) — liste des opérations en conflit, choix utilisateur.
 5. **Tests** : Scénario « deux appareils hors ligne modifient Collection/Deck » — vérifie `max` Collection et replay Deck sans perte.
+
+---
+
+## Risques du Deck
+
+Sans re-validation des règles de jeu, deux ajouts concurrents peuvent donner un Deck illégal (plus de 3 exemplaires, plus de 21 cartes) ; deux retraits peuvent le rendre sous la taille minimale ; la résolution de conflit demande une UI qui n'existe pas. Ce risque doit être traité avant la beta : sans elle, deux modifications simultanées peuvent produire un Deck invalide sans alerte.
 
 ---
 
@@ -144,7 +150,6 @@
 - **D-086** : Traces de combat — écriture silencieuse, jamais bloquante
 - **D-090** : Application marche hors ligne (note de version embarquée)
 - **D-124** : Reset beta épargne compte, efface progression (Collection/Deck via migration store)
-- **D-130** : Reset beta = mode poste de pilotage, médaille période d'essai
 - **D-148** : Profil testeur en colonne Supabase (pas dans store)
 - **PROPOSITION.md §6.3** : Modèle de données cible (`user_cards`, `decks`, `deck_cards`)
 
@@ -155,9 +160,9 @@
 - `src/store/useStore.ts` — store principal, `migratePersisted`, export/import
 - `src/store/combats.ts` — envoi silencieux, pattern « avaler le rejet »
 - `src/store/partie.ts` — `actionLog`, `BattleState`, replay
-- `src/lib/supabase.ts` — client inerte sans config, `ecrireLigne`
+- `src/lib/supabase.ts` — client inerte sans config, `ecrireLigne` (ligne 241)
 - `supabase/migrations/` — schéma cible, RLS, PGlite tests
-- `docs/DECISIONS.md` — D-048, D-075, D-086, D-090, D-124, D-130, D-148
+- `docs/DECISIONS.md` — D-048, D-075, D-086, D-090, D-124, D-148
 - `docs/PROPOSITION.md` §6.3 — modèle de données serveur
 
 ---
