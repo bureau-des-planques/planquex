@@ -2,7 +2,7 @@
  * **Ce qui arrive** — les chantiers prévus, par étape (D-097 (3), #214, #336).
  *
  * **Fichier généré : ne pas éditer à la main.** Il est écrit par `npm run plan:dev`
- * (`scripts/plan-dev.mjs`) à partir des **issues `alpha` et `beta` ouvertes** du
+ * (`scripts/generateurs/plan-dev.mjs`) à partir des **issues `alpha` et `beta` ouvertes** du
  * dépôt, qui restent la source de ce qui arrive. Le label d'étape dit **à quel jalon un
  * ticket appartient**, pas quand on le travaille : un ticket `beta` se travaille pendant
  * l'alpha. Fermer une issue la retire de cette liste à la génération suivante.
@@ -17,7 +17,7 @@
  * **Sans lien** : ce fichier ne porte **aucune URL**. Les seuls liens vers le dépôt que
  * D-132 ouvre — les **releases** et les **chantiers ouverts** — sont composés par la page
  * (`lienIssue`, `LIEN_RELEASES`) à partir du **numéro** ; une adresse écrite ici
- * vieillirait avec l'état du tracker, et `scripts/plan-dev.test.ts` vérifie qu'aucune
+ * vieillirait avec l'état du tracker, et `scripts/generateurs/plan-dev.test.ts` vérifie qu'aucune
  * ne s'y glisse.
  */
 

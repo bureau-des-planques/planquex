@@ -8,8 +8,8 @@ import { FEATURES_PREVUES, type FeaturePrevue } from '@/data/plan-dev';
  * **Le générateur de ce qui arrive** (`npm run plan:dev`, D-097 (3), #214, #336).
  *
  * L'écran `/feuille-de-route` montre les **issues `alpha` et `beta` ouvertes** du dépôt.
- * Elles ne s'écrivent pas à la main : `scripts/plan-dev.mjs` les prend à GitHub et
- * réécrit `src/data/plan-dev.ts`, exactement comme `scripts/notes-versions.mjs` le fait
+ * Elles ne s'écrivent pas à la main : `scripts/generateurs/plan-dev.mjs` les prend à GitHub et
+ * réécrit `src/data/plan-dev.ts`, exactement comme `scripts/generateurs/notes-versions.mjs` le fait
  * pour les notes de version (D-090). Ce test éprouve la mise en forme **sans réseau** : il
  * donne au générateur des issues fabriquées.
  *
@@ -91,7 +91,7 @@ describe('plan-dev — le fichier engendré', () => {
   it('est exactement ce que le générateur écrirait (le `--verifie` hors ligne)', () => {
     // `rendreFichier` est la seule mise en forme : un fichier édité à la main serait
     // effacé en silence par la prochaine exécution de `npm run plan:dev`. On le dit ici.
-    const fichier = readFileSync(new URL('../src/data/plan-dev.ts', import.meta.url), 'utf8');
+    const fichier = readFileSync(new URL('../../src/data/plan-dev.ts', import.meta.url), 'utf8');
     expect(fichier).toBe(rendreFichier(FEATURES_PREVUES));
   });
 
@@ -117,7 +117,7 @@ describe('plan-dev — le fichier engendré', () => {
   });
 
   it('ne porte aucun lien — la page compose les liens de D-132 à partir du numéro', () => {
-    const fichier = readFileSync(new URL('../src/data/plan-dev.ts', import.meta.url), 'utf8');
+    const fichier = readFileSync(new URL('../../src/data/plan-dev.ts', import.meta.url), 'utf8');
     expect(fichier).not.toMatch(/https?:\/\/|github\.com/i);
     expect(rendreFichier([{ numero: 1, titre: 'Un titre', etape: 'beta' }])).not.toMatch(/https?:\/\/|github\.com/i);
   });
@@ -125,11 +125,11 @@ describe('plan-dev — le fichier engendré', () => {
 
 describe('plan-dev — la commande', () => {
   it('est déclarée dans package.json, et n’ajoute aucune dépendance', () => {
-    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+    const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
       scripts: Record<string, string>;
       dependencies: Record<string, string>;
     };
-    expect(pkg.scripts['plan:dev']).toBe('node scripts/plan-dev.mjs');
+    expect(pkg.scripts['plan:dev']).toBe('node scripts/generateurs/plan-dev.mjs');
     // Le pont avec GitHub est `gh` (la CLI, déjà là) : aucun paquet de plus dans le bundle.
     expect(Object.keys(pkg.dependencies)).not.toContain('@octokit/rest');
     expect(readFileSync(fileURLToPath(new URL('./plan-dev.mjs', import.meta.url)), 'utf8')).toContain(

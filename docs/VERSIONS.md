@@ -64,7 +64,7 @@ que l'ancienne règle visait : **un compteur de pré-version** (`-alpha.2`) et *
 l'étape.
 
 Trois endroits lisent le suffixe, et ils sont testés : le workflow de déploiement (le tag doit
-valoir `v<version>-<stage>`, ou `v<version>` en release), `scripts/notes-versions.mjs` (il
+valoir `v<version>-<stage>`, ou `v<version>` en release), `scripts/generateurs/notes-versions.mjs` (il
 **retire** le suffixe du tag pour retrouver la version de `package.json`), et `src/version.test.ts`.
 
 **Ne jamais écrire un numéro ni un mot d'étape dans un composant** : `src/version.test.ts`
@@ -113,7 +113,7 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.
    **Le nom de la release est le tag lui-même** (`--title v0.1.15-alpha`, D-152) : pas de
    suffixe descriptif, et donc aucune divergence possible avec `titreDe`
-   (`scripts/notes-versions.mjs`) — une release sans titre descriptif retombe sur
+   (`scripts/generateurs/notes-versions.mjs`) — une release sans titre descriptif retombe sur
    « Version 0.1.15 », et c'est ce que la note doit dire. C'est
    cette publication qui rend le brouillon du tag **attendu** aux yeux du contrôle
    `-- --verifie` (D-122) : avant elle, aucune tolérance — la note écrite d'avance est
@@ -175,7 +175,7 @@ un testeur : pas de nom de fichier, pas de jargon interne sans l'expliquer.
 
 Les **autres informations** (migration, sauvegarde, pièges connus) vont **après** les deux
 catégories, sous `## Pour un testeur` : ce titre est dans `SECTIONS_ECARTEES`
-(`scripts/notes-versions.mjs`), donc il reste dans la release et sort de la note du jeu.
+(`scripts/generateurs/notes-versions.mjs`), donc il reste dans la release et sort de la note du jeu.
 
 Les **problèmes connus** de la version se lisent en base et se collent sous ce même titre :
 `npm run problemes` imprime le bloc (D-119, `docs/COMITE.md` §5.2), et il le rend **sans titre
@@ -196,8 +196,8 @@ entre dans la note du jeu : ne pas en créer sans raison.
   réconcilie à la publication : c'est la release qui a le dernier mot, et
   `src/data/versions.test.ts` refuse une version sans note.
 - **Ne pas** éditer `src/data/versions.ts` à la main au-delà de la note à venir : le fichier
-  est **généré** (`scripts/notes-versions.mjs`), et `npm run notes:versions -- --verifie`
-  (relayé hors ligne par `scripts/notes-versions.test.ts`) dit s'il a divergé.
+  est **généré** (`scripts/generateurs/notes-versions.mjs`), et `npm run notes:versions -- --verifie`
+  (relayé hors ligne par `scripts/generateurs/notes-versions.test.ts`) dit s'il a divergé.
 - **Ne pas** inventer un numéro pour « faire beau » (un saut de `0.1.3` à `0.5.0` ne dit rien).
 - **Ne pas** renommer un tag publié : on monte la version. Le **nom de la release**, lui,
   se met au format courant (`gh release edit <tag> --title "v<version>-<stage>"`) : c'est un

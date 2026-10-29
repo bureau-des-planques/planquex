@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { STATUTS, lireMur } from '../src/store/mur';
+import { STATUTS, lireMur } from '../../src/store/mur';
 
 /**
  * Le déplacement d'un post-it du mur (#140).
@@ -19,9 +19,9 @@ import { STATUTS, lireMur } from '../src/store/mur';
  * inconnu, un fichier déjà invalide, et une relecture fautive qui doit restaurer
  * l'original. Neutraliser le contrôle correspondant fait échouer le test.
  */
-const RACINE = fileURLToPath(new URL('..', import.meta.url));
+const RACINE = fileURLToPath(new URL('../..', import.meta.url));
 const MUR_SOURCE = join(RACINE, 'docs', 'comite.json');
-const SCRIPT = 'scripts/statut-mur.mjs';
+const SCRIPT = 'scripts/generateurs/statut-mur.mjs';
 
 /** Le post-it structuré (OUF) du fichier réel — celui qu'on déplace dans les tests. */
 const ID = 'p-23-10-2026-01-37-45-papi';
@@ -242,7 +242,7 @@ describe('npm run statut — la commande elle-même', () => {
     const pkg = JSON.parse(readFileSync(join(RACINE, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
     };
-    expect(pkg.scripts.statut).toBe('node scripts/statut-mur.mjs');
+    expect(pkg.scripts.statut).toBe('node scripts/generateurs/statut-mur.mjs');
   });
 
   it('--aide ne lit aucun fichier et sort à zéro', () => {

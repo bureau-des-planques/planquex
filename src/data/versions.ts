@@ -2,7 +2,7 @@
  * **Le journal des versions** — ce que chaque version publiée contient.
  *
  * **Fichier généré : ne pas éditer à la main.** Il est écrit par
- * `npm run notes:versions` (`scripts/notes-versions.mjs`) à partir des **releases
+ * `npm run notes:versions` (`scripts/generateurs/notes-versions.mjs`) à partir des **releases
  * GitHub** du dépôt, qui restent la source des notes. Une version publiée sans release
  * n'a donc pas d'entrée ici, et `src/data/versions.test.ts` refuse que la version de
  * `package.json` manque.

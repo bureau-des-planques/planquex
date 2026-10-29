@@ -8,7 +8,7 @@
  *    `écarté` sort, une IP sort, et un **gueulage ne sort jamais** (ni son titre, ni son
  *    texte) : c'est l'OUF qu'il désigne qui porte le signalement ;
  * 2. **le rendu** — le bloc se colle sous `## Pour un testeur`, et `analyserCorps`
- *    (`scripts/notes-versions.mjs`) ne le fait **pas** entrer dans la note du jeu : la
+ *    (`scripts/generateurs/notes-versions.mjs`) ne le fait **pas** entrer dans la note du jeu : la
  *    section est écartée par son titre, pas par le contenu ;
  * 3. **la lecture** — la requête ne demande ni `texte` ni `pseudo`, et le rôle de connexion
  *    doit être `lecteur`. Un `postgres` est refusé **avant** de se connecter.
@@ -34,7 +34,7 @@ import {
   roleDe,
   verifierLectureSeule
 } from './problemes-connus.mjs';
-import { APPAREIL_A, baseAvecAppareils, avecAppareil, type Base } from '../supabase/pglite';
+import { APPAREIL_A, baseAvecAppareils, avecAppareil, type Base } from '../../supabase/pglite';
 
 type Ligne = Record<string, unknown> & {
   id: string;
@@ -48,8 +48,8 @@ type Ligne = Record<string, unknown> & {
   ecran?: string | null;
 };
 
-const RACINE = fileURLToPath(new URL('..', import.meta.url));
-const SCRIPT = 'scripts/statut-mur.mjs';
+const RACINE = fileURLToPath(new URL('../..', import.meta.url));
+const SCRIPT = 'scripts/generateurs/statut-mur.mjs';
 const TITRE_GUEULAGE = 'C’EST DE LA MERDE TON JEUX';
 
 function ligne(id: string, statut: string, extra: Partial<Ligne> = {}): Ligne {

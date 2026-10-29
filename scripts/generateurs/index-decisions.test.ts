@@ -15,7 +15,7 @@ import { decisions, rendre } from './index-decisions.mjs';
  * l'index, et à une décision ajoutée sans ligne d'index.
  */
 
-const lire = (f: string) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8');
+const lire = (f: string) => readFileSync(new URL(`../../${f}`, import.meta.url), 'utf8');
 
 describe("l'index des décisions couvre le journal (26/10/2026)", () => {
   it('docs/DECISIONS-INDEX.md est à jour — `npm run index:decisions` le réécrit', () => {

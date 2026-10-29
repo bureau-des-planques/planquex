@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
  *
  * Le dépôt avait déjà ce patron, et ce fichier s'y range plutôt que d'inventer le sien :
  * `scripts/compteurs.test.ts` garde les **décomptes de cartes**, `scripts/decisions.test.ts`
- * la **continuité du journal**, `scripts/index-decisions.test.ts` la **synchro de l'index**.
+ * la **continuité du journal**, `scripts/generateurs/index-decisions.test.ts` la **synchro de l'index**.
  * Ici, quatre contrôles, tous par **lecture de fichier** (aucun réseau, aucune commande) :
  *
  * 1. le **compte de décisions** annoncé dans `AGENTS.md` §1, dans `docs/DECISIONS-INDEX.md`
@@ -50,7 +50,7 @@ const chemin = (file: string) => fileURLToPath(new URL(`../${file}`, import.meta
  * en silence — c'est exactement l'incident de `AGENTS.md` §1 (113 annoncées, 133 réelles).
  *
  * Les deux autres mentions du nombre dans le dépôt sont des **citations datées** et ne sont pas
- * gardées : `scripts/index-decisions.mjs` et `scripts/index-decisions.test.ts` racontent que
+ * gardées : `scripts/generateurs/index-decisions.mjs` et `scripts/generateurs/index-decisions.test.ts` racontent que
  * §1.1 disait « 113 décisions » — c'est l'histoire de la règle, pas son état.
  */
 const SITES_DU_COMPTE = ['AGENTS.md', 'docs/DECISIONS-INDEX.md', '.prettierignore'] as const;

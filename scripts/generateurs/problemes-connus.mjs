@@ -34,7 +34,7 @@
  *
  * **La requête ne lit ni `texte` ni `pseudo`.** Un gueulage ne peut donc pas exposer son
  * texte, même si le filtre se trompait : la colonne n'est pas demandée. La garde le vérifie
- * sur la requête elle-même (`scripts/problemes-connus.test.ts`).
+ * sur la requête elle-même (`scripts/generateurs/problemes-connus.test.ts`).
  *
  * Usage :
  *   npm run problemes             imprime le bloc à coller sous « ## Pour un testeur »
@@ -108,7 +108,7 @@ export function etiquetteProbleme(probleme) {
 
 /**
  * Le bloc de release. **Aucun titre markdown** : `SECTIONS_ECARTEES`
- * (`scripts/notes-versions.mjs`) écarte une section **par son titre**, et un `###` sous
+ * (`scripts/generateurs/notes-versions.mjs`) écarte une section **par son titre**, et un `###` sous
  * `## Pour un testeur` rouvrirait le groupe — les problèmes connus entreraient alors dans
  * `/feuille-de-route`, ce qui n'est pas leur place. La ligne en gras n'est pas un titre
  * pour `titreDeLigne` : elle porte une phrase après le gras.

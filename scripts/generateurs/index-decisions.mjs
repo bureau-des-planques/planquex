@@ -23,7 +23,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
  * écrire : c'est ce que la CI demande).
  */
 
-const RACINE = new URL('..', import.meta.url);
+const RACINE = new URL('../..', import.meta.url);
 const JOURNAL = fileURLToPath(new URL('docs/DECISIONS.md', RACINE));
 const INDEX = fileURLToPath(new URL('docs/DECISIONS-INDEX.md', RACINE));
 

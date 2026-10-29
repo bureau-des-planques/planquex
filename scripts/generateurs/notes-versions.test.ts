@@ -19,7 +19,7 @@ import { notesAffichees } from '@/data/notes-affichees';
  * **Le générateur des notes de version** (`npm run notes:versions`, D-090).
  *
  * Les notes affichées par `/feuille-de-route` ne s'écrivent plus à la main : elles sont prises
- * aux **releases GitHub** par `scripts/notes-versions.mjs`. Ce test éprouve la mise en
+ * aux **releases GitHub** par `scripts/generateurs/notes-versions.mjs`. Ce test éprouve la mise en
  * forme, **sans réseau** : il donne au générateur des corps de release réels (recopiés
  * ici), et regarde ce qu'il en fait.
  *
@@ -192,7 +192,7 @@ describe('notes-versions — le fichier commité', () => {
     // `rendreFichier` est la seule mise en forme : si le fichier sur le disque n'est pas
     // ce qu'elle produit, c'est qu'il a été édité à la main — et la prochaine exécution
     // de `npm run notes:versions` effacerait cette édition en silence. On le dit ici.
-    const fichier = readFileSync(new URL('../src/data/versions.ts', import.meta.url), 'utf8');
+    const fichier = readFileSync(new URL('../../src/data/versions.ts', import.meta.url), 'utf8');
     expect(fichier).toBe(rendreFichier(NOTES_VERSIONS));
   });
 
@@ -361,11 +361,11 @@ describe('notes-versions — lire les releases', () => {
 
 describe('notes-versions — la commande', () => {
   it('est déclarée dans package.json, et n’ajoute aucune dépendance', () => {
-    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+    const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as {
       scripts: Record<string, string>;
       dependencies: Record<string, string>;
     };
-    expect(pkg.scripts['notes:versions']).toBe('node scripts/notes-versions.mjs');
+    expect(pkg.scripts['notes:versions']).toBe('node scripts/generateurs/notes-versions.mjs');
     // Le pont avec GitHub est `gh` (la CLI, déjà là) : aucun paquet de plus dans le bundle.
     expect(Object.keys(pkg.dependencies)).not.toContain('@octokit/rest');
     expect(readFileSync(CHEMIN, 'utf8')).toContain("execFileSync('gh'");

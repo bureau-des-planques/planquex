@@ -35,7 +35,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const CIBLE = join(root, 'src/data/versions.ts');
 const SOURCE = pathToFileURL(CIBLE).href;
 
@@ -97,7 +97,7 @@ function titreDeLigne(ligne) {
  * ignoré : c'est du commentaire, pas un changement. Les sections de `SECTIONS_ECARTEES`
  * et leur contenu sont jetées.
  *
- * Fonction pure, et exportée : `scripts/notes-versions.test.ts` l'éprouve sur des corps
+ * Fonction pure, et exportée : `scripts/generateurs/notes-versions.test.ts` l'éprouve sur des corps
  * réels, sans réseau.
  */
 export function analyserCorps(corps) {
@@ -267,7 +267,7 @@ export function rendreFichier(notes) {
  * **Le journal des versions** — ce que chaque version publiée contient.
  *
  * **Fichier généré : ne pas éditer à la main.** Il est écrit par
- * \`npm run notes:versions\` (\`scripts/notes-versions.mjs\`) à partir des **releases
+ * \`npm run notes:versions\` (\`scripts/generateurs/notes-versions.mjs\`) à partir des **releases
  * GitHub** du dépôt, qui restent la source des notes. Une version publiée sans release
  * n'a donc pas d'entrée ici, et \`src/data/versions.test.ts\` refuse que la version de
  * \`package.json\` manque.

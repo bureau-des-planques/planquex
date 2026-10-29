@@ -1,7 +1,7 @@
 /**
  * **Ce que l'écran `/feuille-de-route` montre** (D-090) — module **à part**, et c'est exprès :
  * `src/data/versions.ts` est **généré** par `npm run notes:versions`, et
- * `scripts/notes-versions.test.ts` exige qu'il soit exactement la sortie du générateur.
+ * `scripts/generateurs/notes-versions.test.ts` exige qu'il soit exactement la sortie du générateur.
  * Une fonction écrite à la main n'y survivrait pas. Elle vit donc ici, et se teste sur des
  * **fixtures**.
  */

@@ -28,7 +28,7 @@ import {
   titreDeTicket,
   verifierPostit
 } from './ouf.mjs';
-import { APPAREIL_A, baseAvecAppareils, avecAppareil, type Base } from '../supabase/pglite';
+import { APPAREIL_A, baseAvecAppareils, avecAppareil, type Base } from '../../supabase/pglite';
 
 const POSTIT = {
   id: 'p-mvrome4s-f93mg6',

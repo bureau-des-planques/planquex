@@ -370,13 +370,13 @@ export const MUTATIONS = [
   {
     ticket: 299,
     titre: 'un problème « fait » reste dans les problèmes connus de la release',
-    fichier: 'scripts/problemes-connus.mjs',
+    fichier: 'scripts/generateurs/problemes-connus.mjs',
     // La règle de D-119 : `fait` sort de la note (le correctif part dans la même release),
     // `en attente` aussi (personne ne l'a trié). La mutation ouvre la porte à tous les
     // statuts ; la suite doit tomber sur « un fait sort ».
     motif: `.filter((ligne) => STATUTS_PUBLIES.includes(String(ligne.statut ?? '').trim()))`,
     remplacement: '.filter(() => true)',
-    tests: ['scripts/problemes-connus.test.ts'],
+    tests: ['scripts/generateurs/problemes-connus.test.ts'],
     garde:
       'sans ce filtre, la note de version annoncerait « problème connu » pour un correctif déjà livré, et pour un post-it que personne n’a trié — une note qui ment sur son propre contenu'
   },

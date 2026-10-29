@@ -31,7 +31,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const CIBLE = join(root, 'src/data/plan-dev.ts');
 
 /** Les libellés des issues qui entrent : une **étape du projet**, et rien d'autre (D-048, #336). */
@@ -42,7 +42,7 @@ export const ETAPES = ['alpha', 'beta'];
  *
  * Elle **lève** au lieu de tolérer une entrée vide ou sans étape : une puce sans titre ne
  * dit rien, et une puce sans étape ne se range dans aucune des deux listes. C'est la garde
- * qui mord, et `scripts/plan-dev.test.ts` la confronte à une issue fautive.
+ * qui mord, et `scripts/generateurs/plan-dev.test.ts` la confronte à une issue fautive.
  */
 export function entreeDe(issue) {
   const numero = Number(issue?.number);
@@ -117,7 +117,7 @@ export function rendreFichier(features) {
  * **Ce qui arrive** — les chantiers prévus, par étape (D-097 (3), #214, #336).
  *
  * **Fichier généré : ne pas éditer à la main.** Il est écrit par \`npm run plan:dev\`
- * (\`scripts/plan-dev.mjs\`) à partir des **issues \`alpha\` et \`beta\` ouvertes** du
+ * (\`scripts/generateurs/plan-dev.mjs\`) à partir des **issues \`alpha\` et \`beta\` ouvertes** du
  * dépôt, qui restent la source de ce qui arrive. Le label d'étape dit **à quel jalon un
  * ticket appartient**, pas quand on le travaille : un ticket \`beta\` se travaille pendant
  * l'alpha. Fermer une issue la retire de cette liste à la génération suivante.
@@ -132,7 +132,7 @@ export function rendreFichier(features) {
  * **Sans lien** : ce fichier ne porte **aucune URL**. Les seuls liens vers le dépôt que
  * D-132 ouvre — les **releases** et les **chantiers ouverts** — sont composés par la page
  * (\`lienIssue\`, \`LIEN_RELEASES\`) à partir du **numéro** ; une adresse écrite ici
- * vieillirait avec l'état du tracker, et \`scripts/plan-dev.test.ts\` vérifie qu'aucune
+ * vieillirait avec l'état du tracker, et \`scripts/generateurs/plan-dev.test.ts\` vérifie qu'aucune
  * ne s'y glisse.
  */
 
@@ -159,7 +159,7 @@ ${corps}
  * **Le contrôle de fraîcheur, hors réseau** : `null` quand le fichier est exactement ce
  * que le générateur écrirait, sinon la phrase qui dit l'écart et le geste à faire.
  *
- * Exporté pour que `scripts/plan-dev.test.ts` le confronte à un fichier **volontairement
+ * Exporté pour que `scripts/generateurs/plan-dev.test.ts` le confronte à un fichier **volontairement
  * périmé** : sans ce cas, on ne garderait que l'apparence du contrôle (#231). C'est la
  * fonction que le `--verifie` appelle, pas une copie — un test qui passe à côté du code
  * de production ne garde rien.

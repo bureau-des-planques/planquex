@@ -38,7 +38,7 @@
  *
  * `--problemes` **lit la base** et imprime les problèmes connus d'une release (#299,
  * D-119) : c'est le seul mode de cette commande qui parle à la base, et il est **en lecture
- * seule** (rôle `lecteur`). Il délègue à `scripts/problemes-connus.mjs`, que
+ * seule** (rôle `lecteur`). Il délègue à `scripts/generateurs/problemes-connus.mjs`, que
  * `npm run problemes` expose aussi. Le tri, lui, continue de déplacer le **fichier** : quand
  * la base est configurée, le tri réel se fait dans l'écran d'administration (D-088).
  *
@@ -53,7 +53,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { principalProblemes } from './problemes-connus.mjs';
 
-const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
+const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FICHIER_MUR = join(RACINE, 'docs', 'comite.json');
 
 const AIDE = `Usage : npm run statut <post-it> <statut> [options]

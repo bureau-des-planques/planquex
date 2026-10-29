@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ETAPES } from './plan-dev.mjs';
+import { ETAPES } from './generateurs/plan-dev.mjs';
 
 /**
  * **Les générateurs et les documents qui les décrivent** — la garde du #359.
@@ -120,9 +120,9 @@ function etiquettesManquantes(
  * laisser la doc citer une commande morte.
  */
 const FICHIERS_GENERES = [
-  { fichier: 'src/data/plan-dev.ts', script: 'plan:dev', fichierScript: 'scripts/plan-dev.mjs' },
-  { fichier: 'src/data/versions.ts', script: 'notes:versions', fichierScript: 'scripts/notes-versions.mjs' },
-  { fichier: 'docs/DECISIONS-INDEX.md', script: 'index:decisions', fichierScript: 'scripts/index-decisions.mjs' }
+  { fichier: 'src/data/plan-dev.ts', script: 'plan:dev', fichierScript: 'scripts/generateurs/plan-dev.mjs' },
+  { fichier: 'src/data/versions.ts', script: 'notes:versions', fichierScript: 'scripts/generateurs/notes-versions.mjs' },
+  { fichier: 'docs/DECISIONS-INDEX.md', script: 'index:decisions', fichierScript: 'scripts/generateurs/index-decisions.mjs' }
 ] as const;
 
 // ---------------------------------------------------------------------------------------
@@ -363,7 +363,7 @@ describe('Les étiquettes de travail sont documentées (#282, D-129)', () => {
     expect(
       manquantes,
       `${TRIAGE} ne nomme plus ${manquantes.join(', ')} : les cinq rôles viennent de D-129, les étapes ` +
-        `de \`ETAPES\` (\`scripts/plan-dev.mjs\`). Une étiquette d'étape renommée d'un côté seulement ` +
+        `de \`ETAPES\` (\`scripts/generateurs/plan-dev.mjs\`). Une étiquette d'étape renommée d'un côté seulement ` +
         'laisse la feuille de route lire un mot que plus aucun ticket ne porte.'
     ).toEqual([]);
   });
