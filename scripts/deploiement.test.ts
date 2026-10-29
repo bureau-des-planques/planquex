@@ -25,6 +25,12 @@ function manquements(yaml: string): string[] {
   if (/continue-on-error/.test(yaml)) ecarts.push('continue-on-error');
   if (!/^concurrency:/m.test(yaml)) ecarts.push('pas de concurrency (deux déploiements se chevaucheraient)');
 
+  // **Le tag porte le numéro ET l'étape** (D-152) : `v0.1.15-alpha`, `v1.0.0` en release.
+  // Sans ce contrôle, un workflow qui n'accepterait que `v<version>` refuserait tout tag
+  // d'alpha au moment du push — c'est-à-dire au pire endroit pour l'apprendre.
+  if (!/stage="\$\(node -p '[^']*stage'/.test(yaml)) ecarts.push('l’étape n’est pas lue dans package.json');
+  if (!/attendu="v\$version-\$stage"/.test(yaml)) ecarts.push('le tag attendu ne porte pas l’étape (D-152)');
+
   const avantBuild = yaml.indexOf('npm run build');
   const deploiement = yaml.search(/vercel(@\S+)? deploy/);
   if (deploiement === -1) ecarts.push('aucun `vercel deploy`');
@@ -96,6 +102,12 @@ describe('.github/workflows/deploiement.yml (#420, D-140)', () => {
     expect(manquements(branches).join('\n')).toMatch(/déclenchement sur une branche/);
     const enClair = workflow.replace('--prod\n', '--prod --token abc123\n');
     expect(manquements(enClair).join('\n')).toMatch(/en clair/);
+  });
+
+  it('le contrôle mord : un tag qui n’accepte que `v<version>` est refusé (D-152)', () => {
+    const sansEtape = workflow.replace('attendu="v$version-$stage"', 'attendu="v$version"');
+    expect(sansEtape).not.toBe(workflow);
+    expect(manquements(sansEtape).join('\n')).toMatch(/ne porte pas l’étape/);
   });
 
   it('n’exige aucun secret hors de VERCEL_*, et ne masque aucun échec', () => {

@@ -5,11 +5,12 @@
  * build par `vite.config.ts`. On ne recopie jamais ni un numéro ni un mot d'étape dans
  * un composant : `version.test.ts` échoue si quelqu'un le fait.
  *
- * **Pourquoi l'étape n'est pas dans le numéro** (D-050) : `0.2.0-alpha.2` se lisait
- * « alpha deux », ce que personne ne veut dire. Le numéro est donc une version
- * ordinaire, et l'étape est un mot à côté — `Alpha · 0.2.0`. Une nouvelle build donnée
- * aux testeurs se distingue par **sa version** (une correction monte `0.2.1`), pas par
- * un compteur d'alphas.
+ * **Pourquoi l'étape n'est pas dans le numéro** (D-050, complétée par D-152) :
+ * `0.2.0-alpha.2` se lisait « alpha deux », ce que personne ne veut dire. Le numéro
+ * reste une version ordinaire dans `package.json` (`0.2.0`), et l'étape est un mot
+ * **en suffixe** du libellé — `v0.2.0-alpha`. Une nouvelle build donnée aux testeurs se
+ * distingue par **sa version** (une correction monte `0.2.1`), pas par un compteur
+ * d'alphas.
  */
 
 /** L'étape, dérivée de `package.json` et validée : le doute retombe sur la plus prudente. */
@@ -24,12 +25,11 @@ export function asStage(value: string): AppStage {
 export const APP_VERSION = __APP_VERSION__;
 export const APP_STAGE: AppStage = asStage(__APP_STAGE__);
 
-/** Le mot d'étape tel qu'il s'affiche. */
-export const APP_STAGE_LABEL: Record<AppStage, string> = {
-  alpha: 'Alpha',
-  beta: 'Bêta',
-  release: 'Version finale'
-};
-
-/** Le libellé complet : « Alpha · 0.2.0 ». */
-export const APP_LABEL = `${APP_STAGE_LABEL[APP_STAGE]} · ${APP_VERSION}`;
+/**
+ * Le libellé complet : **`v0.2.0-alpha`** — le numéro, puis l'étape en suffixe (D-152,
+ * 29/10/2026). En `release`, il n'y a **pas** de suffixe : `v1.0.0`.
+ *
+ * C'est le même mot que le tag et que la release : le testeur recopie **une** chose, et
+ * elle se lit partout de la même façon (Réglages, release, tag).
+ */
+export const APP_LABEL = APP_STAGE === 'release' ? `v${APP_VERSION}` : `v${APP_VERSION}-${APP_STAGE}`;

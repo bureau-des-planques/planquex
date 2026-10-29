@@ -209,7 +209,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.13',
     date: '2026-10-26',
-    titre: 'Le comité se suit, et le combat tient dans l’écran',
+    titre: 'Version 0.1.13',
     points: [
       {
         groupe: 'Le combat',
@@ -264,7 +264,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.12',
     date: '2026-10-26',
-    titre: 'Une chorégraphie par Pression',
+    titre: 'Version 0.1.12',
     points: [
       {
         groupe: 'Le combat',
@@ -323,7 +323,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.11',
     date: '2026-10-25',
-    titre: 'Les quatre temps dans l’ordre',
+    titre: 'Version 0.1.11',
     points: [
       {
         groupe: 'Le combat',
@@ -338,7 +338,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.10',
     date: '2026-10-25',
-    titre: 'Le combat se voit partir',
+    titre: 'Version 0.1.10',
     points: [
       {
         groupe: 'Le combat',
@@ -357,7 +357,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.9',
     date: '2026-10-25',
-    titre: 'L’écran de combat, refait',
+    titre: 'Version 0.1.9',
     points: [
       {
         groupe: 'Le combat',
@@ -392,7 +392,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.8',
     date: '2026-10-25',
-    titre: 'Le mur se range, les Chariots arrivent',
+    titre: 'Version 0.1.8',
     points: [
       {
         groupe: 'Le mur',
@@ -427,7 +427,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.7',
     date: '2026-10-25',
-    titre: 'Les comptes, et le mur qui écrit',
+    titre: 'Version 0.1.7',
     points: [
       {
         groupe: 'Comptes',
@@ -494,15 +494,18 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.6',
     date: '2026-10-23',
-    titre: 'L’Atelier a ses illustrations',
+    titre: 'Version 0.1.6',
     points: [
       {
+        groupe: 'L’Atelier a ses illustrations',
         texte: 'Les 27 cartes de l’Atelier sont illustrées (26 nouvelles, plus le Chef d’atelier déjà au registre) : le pilote #132 est livré, et c’est la première faction complète.'
       },
       {
+        groupe: 'L’Atelier a ses illustrations',
         texte: 'Chaque image est au registre avec sa graine, et la carte porte son art: — le gabarit l’affiche, avec repli sur l’aplat si l’image manque.'
       },
       {
+        groupe: 'L’Atelier a ses illustrations',
         texte: 'Quatre variantes ont été écartées pour un défaut visible : un cadre blanc, et du texte anglais incrusté (« STUCK AGAIN », « MAINTENANCE PLAN », « SPARE PARTS AREA », « BAY 3 »).'
       },
       {
@@ -522,18 +525,22 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.5',
     date: '2026-10-22',
-    titre: 'Le mur des retours fonctionne de bout en bout',
+    titre: 'Version 0.1.5',
     points: [
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'Les réponses du formulaire de la Boîte à idées sont importées automatiquement vers le mur : npm run mur:import lit la feuille de réponses en CSV et ajoute les post-its manquants (#177).'
       },
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'L’import est idempotent (deux exécutions n’ajoutent rien), ne touche jamais à un post-it déjà trié, et n’écrit rien si le CSV est illisible.'
       },
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'Les deux premiers post-its réels sont sur le mur.'
       },
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'Règle de rangement appliquée : « Remonter un bug » → OUF, « Proposer une feature » et « Donner ton avis » → IP ; un gueulage sans titre en fabrique un avec ses premiers mots, et le post-it le dit.'
       },
       {
@@ -561,15 +568,18 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.4',
     date: '2026-10-22',
-    titre: 'Le combat se lit d’un coup',
+    titre: 'Version 0.1.4',
     points: [
       {
+        groupe: 'Le combat se lit d’un coup',
         texte: 'Le pas-à-pas est en haut, collé, et « Suivant » amène la cible de l’étape à l’écran (#169).'
       },
       {
+        groupe: 'Le combat se lit d’un coup',
         texte: 'La main reste visible sans défiler sur téléphone (#170).'
       },
       {
+        groupe: 'Le combat se lit d’un coup',
         texte: 'Poser une carte se fait en deux temps, avec les gestes nommés (#169).'
       },
       {
@@ -625,7 +635,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.3',
     date: '2026-10-22',
-    titre: 'La partie à deux, et le mur des retours',
+    titre: 'Version 0.1.3',
     points: [
       {
         groupe: 'Jeu',
@@ -672,7 +682,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.2',
     date: '2026-10-21',
-    titre: 'Illustrations servies par Vite',
+    titre: 'Version 0.1.2',
     points: [
       {
         groupe: 'Ce qui change',
@@ -691,7 +701,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.1',
     date: '2026-10-21',
-    titre: 'L’alpha ouvre ses portes',
+    titre: 'Version 0.1.1',
     points: [
       {
         groupe: 'Ce qui marche',

@@ -218,7 +218,7 @@ l'erreur ne devient pas un zéro qui aurait l'air vrai.
       "texte": "Le retour tel qu'il a été écrit, à peine nettoyé",
       "ecran": "Combat",          // Accueil | Collection | Deck | Combat | Réglages | Autre
       "pseudo": "Employé 404",    // le nom local du posteur
-      "version": "Alpha · 0.1.2", // ce que Réglages affichait chez lui
+      "version": "v0.1.2-alpha", // ce que Réglages affichait chez lui
       "statut": "en attente",     // en attente | retenu | en cours | fait | écarté
       "raison": "",               // obligatoire dès que le statut vaut « écarté »
       "ticket": null,             // le numéro d'issue GitHub dès qu'il y en a un
@@ -320,7 +320,7 @@ fait la différence).
 
 | # | Champ | Type | Obligatoire | Texte d'aide |
 |---|---|---|---|---|
-| 1 | **Version du jeu** | Réponse courte | **oui** | « En bas de Réglages, par exemple `Alpha · 0.1.2`. Recopie-la telle quelle. » |
+| 1 | **Version du jeu** | Réponse courte | **oui** | « En bas de Réglages, par exemple `v0.1.2-alpha`. Recopie-la telle quelle. » |
 | 2 | **Tu veux quoi ?** | Choix multiples (une seule) | **oui** | « Un bug = quelque chose casse ou ment. Une idée = quelque chose manque ou ferait mieux. Gueuler = les deux à la fois. » |
 
 **Section « Post-it OUF »** (un signalement — aiguillage : *Remonter un bug*, *Gueuler*)

@@ -78,21 +78,6 @@ function memeTitre(a, b) {
   return plat(a) === plat(b);
 }
 
-/**
- * Les titres que GitHub **ne porte pas** : quand le nom de la release est nu
- * (« Alpha · 0.1.6 »), il n'y a rien à lire. C'est un **libellé**, pas du contenu — le
- * corps de la release, lui, n'est jamais touché. Un nom qui porte déjà son titre après un
- * tiret (0.1.2) se lit tout seul et n'a pas besoin d'entrer ici.
- */
-const TITRES = {
-  '0.1.1': 'L’alpha ouvre ses portes',
-  '0.1.3': 'La partie à deux, et le mur des retours',
-  '0.1.4': 'Le combat se lit d’un coup',
-  '0.1.5': 'Le mur des retours fonctionne de bout en bout',
-  '0.1.6': 'L’Atelier a ses illustrations',
-  '0.1.13': 'Le comité se suit, et le combat tient dans l’écran'
-};
-
 /** Un titre de groupe : `## …`, `### …`, ou une ligne en gras toute seule. */
 function titreDeLigne(ligne) {
   const titre = ligne.match(/^#{2,4}\s+(.+)$/);
@@ -156,9 +141,20 @@ function capitaliser(texte) {
 }
 
 /**
+ * La version d'un tag, **sans le `v` ni le suffixe d'étape** (D-152, 29/10/2026) :
+ * `v0.1.15-alpha` → `0.1.15`. C'est la forme que `package.json` porte, et donc celle que
+ * `versions.test.ts` compare. Un tag de release (`v1.0.0`) n'a pas de suffixe.
+ */
+function versionDe(tagName) {
+  return tagName.replace(/^v/, '').replace(/-(alpha|beta)$/, '');
+}
+
+/**
  * Le titre de la note. GitHub le porte dans le **nom** de la release, après un tiret
- * (« Alpha · 0.1.2 — illustrations servies par Vite ») ; sinon il est dans `TITRES`.
- * Il ne s'invente jamais ailleurs.
+ * (« Alpha · 0.1.2 — illustrations servies par Vite ») ; sinon la note s'appelle
+ * `Version 0.1.2`. **Aucun titre nulle part** (Bastien, 29/10/2026) : le nom d'une release
+ * est son tag (`v0.1.15-alpha`), donc il n'y a **rien** à lire — la table de titres
+ * écrite à la main a été retirée avec les noms descriptifs.
  */
 export function titreDe(release) {
   const nom = (release.name ?? '').trim();
@@ -168,8 +164,8 @@ export function titreDe(release) {
     .join(' — ')
     .trim();
   if (apres) return capitaliser(apres);
-  const version = release.tagName.replace(/^v/, '');
-  return TITRES[version] ?? `Version ${version}`;
+  const version = versionDe(release.tagName);
+  return `Version ${version}`;
 }
 
 /** Le jour de publication, en `AAAA-MM-JJ` — le format que la page sait lire. */
@@ -179,7 +175,7 @@ function jourDe(release) {
 
 /** Une release GitHub → une entrée de `versions.ts`. */
 export function entreeDe(release) {
-  const version = release.tagName.replace(/^v/, '');
+  const version = versionDe(release.tagName);
   const groupes = analyserCorps(release.body);
   const titre = titreDe(release);
 

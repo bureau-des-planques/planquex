@@ -108,11 +108,15 @@ describe('notes-versions — le titre et l’entrée', () => {
     );
   });
 
-  it('retombe sur le titre écrit dans le script quand le nom est nu', () => {
-    // `Alpha · 0.1.6` ne dit pas ce que la version contient : le libellé est dans `TITRES`.
-    expect(titreDe({ tagName: 'v0.1.6', name: 'Alpha · 0.1.6' })).toBe('L’Atelier a ses illustrations');
-    // Une version inconnue ne se voit pas inventer de titre.
+  it('retombe sur « Version X » quand le nom ne porte pas de titre', () => {
+    // **Aucun titre nulle part** (Bastien, 29/10/2026) : le nom d'une release est son tag
+    // (`v0.1.6-alpha`), donc il n'y a rien après un tiret. Plus de table de titres à la
+    // main : le titre est neutre, et les points de la note portent le contenu.
+    expect(titreDe({ tagName: 'v0.1.6', name: 'v0.1.6-alpha' })).toBe('Version 0.1.6');
     expect(titreDe({ tagName: 'v0.9.9', name: '' })).toBe('Version 0.9.9');
+    // L'ancienne écriture (« Alpha · 0.1.6 ») se lit de la même façon : rien après un
+    // tiret, donc rien à inventer.
+    expect(titreDe({ tagName: 'v0.1.6', name: 'Alpha · 0.1.6' })).toBe('Version 0.1.6');
   });
 
   it('ne perd pas les points du groupe qui porte le titre', () => {
@@ -122,18 +126,44 @@ describe('notes-versions — le titre et l’entrée', () => {
       publishedAt: '2026-10-23T00:13:43Z',
       body: CORPS_ATELIER
     });
-    expect(note.titre).toBe('L’Atelier a ses illustrations');
-    // Les deux puces du groupe-titre sont là, sans étiquette ; celles du second groupe
-    // gardent la leur.
+    expect(note.titre).toBe('Version 0.1.6');
+    // **Le titre de la release est neutre depuis le 29/10/2026** (D-152 (5)) : la ligne en
+    // gras du corps n'est donc plus absorbée par le titre, et elle devient l'**étiquette**
+    // du groupe — le contenu reste, et il se lit même mieux. Les deux puces sont là ;
+    // celles du second groupe gardent leur propre étiquette.
     expect(note.points).toEqual([
-      { texte: 'Les 27 cartes de l’Atelier sont illustrées : le pilote #132 est livré.' },
       {
+        groupe: 'L’Atelier a ses illustrations',
+        texte: 'Les 27 cartes de l’Atelier sont illustrées : le pilote #132 est livré.'
+      },
+      {
+        groupe: 'L’Atelier a ses illustrations',
         texte: 'Chaque image est au registre avec sa graine, et la carte porte son art:.'
       },
       { groupe: 'Le gueulage est à part', texte: 'Un gueulage n’est plus étiqueté IP ni OUF (D-085).' }
     ]);
     expect(note.date).toBe('2026-10-23');
     expect(note.brouillon).toBeUndefined();
+  });
+
+  it('retire le suffixe d’étape du tag pour retrouver la version de package.json (D-152)', () => {
+    // Depuis D-152, le tag s'appelle `v0.1.15-alpha` ; la version, elle, reste `0.1.15`,
+    // et `versions.test.ts` la compare telle quelle à `package.json`.
+    const note = entreeDe({
+      tagName: 'v0.1.15-alpha',
+      name: 'v0.1.15-alpha',
+      publishedAt: '2026-10-29T00:00:00Z',
+      body: '- Une nouveauté.'
+    });
+    expect(note.version).toBe('0.1.15');
+    // Le nom de la release étant le tag, il n'y a pas de suffixe descriptif : le titre
+    // retombe sur « Version 0.1.15 », comme la note écrite d'avance.
+    expect(note.titre).toBe('Version 0.1.15');
+
+    // Une étape `release` n'a pas de suffixe du tout.
+    expect(
+      entreeDe({ tagName: 'v1.0.0', name: 'v1.0.0', publishedAt: '2026-12-01T00:00:00Z', body: '- Fin.' }).version
+    ).toBe('1.0.0');
   });
 
   it('marque une release brouillon de GitHub, et une version écrite d’avance', () => {
