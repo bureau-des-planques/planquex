@@ -1113,6 +1113,29 @@ h2 {
   font-weight: 700;
 }
 
+/* Le bouton armé : un verrou rouge à ouvrir avant le tir, puis le tir plein. Sans dégradé ni lueur. */
+.button--prearm {
+  background: var(--bg-raised);
+  border: 2px solid var(--danger);
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.button--prearm svg {
+  color: var(--danger);
+}
+
+.button--tir {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .button:disabled {
   cursor: not-allowed;
   opacity: 0.45;

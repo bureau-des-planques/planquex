@@ -11,8 +11,8 @@ describe('Settings — finition', () => {
   it('le gras de la sauvegarde est du gras : aucun astérisque de Markdown à l’écran', () => {
     const { container } = renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
     expect(container.textContent).not.toContain('**');
-    const gras = within(screen.getByText(/Ta progression de jeu/)).getByText(
-      /vider les données du navigateur l’efface/
+    const gras = within(screen.getByText(/Collection, Deck et nom restent/)).getByText(
+      /vider les données du navigateur les efface/i
     );
     expect(gras.tagName).toBe('STRONG');
   });

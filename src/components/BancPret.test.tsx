@@ -80,6 +80,11 @@ function monter(
 }
 
 describe('BancPret — le bouton d’installation, selon l’appareil', () => {
+  const armerEtLancer = async () => {
+    await userEvent.click(screen.getByRole('button', { name: /préarmer/i }));
+    await userEvent.click(screen.getByRole('button', { name: /lancer l.installation/i }));
+  };
+
   it('se présente comme le module « Banc prêt »', () => {
     monter();
     expect(screen.getByRole('region', { name: 'Banc prêt' })).toBeTruthy();
@@ -88,22 +93,36 @@ describe('BancPret — le bouton d’installation, selon l’appareil', () => {
   it('sans invite, renvoie vers les étapes du menu, sans bouton d’installation', () => {
     monter();
     expect(screen.getByRole('heading', { level: 2, name: /depuis le menu du navigateur/i })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /installer le jeu/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /préarmer/i })).toBeNull();
   });
 
   it('une invite arrivée après le rendu fait apparaître le bouton', async () => {
     const { capteur, recevoirInvite } = capteurFactice();
     monter({ capteur });
-    expect(screen.queryByRole('button', { name: /installer le jeu/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /préarmer/i })).toBeNull();
     await recevoirInvite();
-    expect(screen.getByRole('button', { name: /installer le jeu/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /préarmer/i })).toBeTruthy();
   });
 
-  it('au clic, montre l’invite du navigateur ; acceptée, dit où trouver l’icône', async () => {
+  it('le premier geste arme sans rien lancer ; « Désarmer » annule, et le second lance', async () => {
     const { capteur, installer } = capteurFactice({ disponible: true, installe: false }, 'accepted');
     monter({ capteur });
 
-    await userEvent.click(screen.getByRole('button', { name: /installer le jeu/i }));
+    await userEvent.click(screen.getByRole('button', { name: /préarmer/i }));
+    expect(installer).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: /désarmer/i }));
+    expect(screen.getByRole('button', { name: /préarmer/i })).toBeTruthy();
+    expect(installer).not.toHaveBeenCalled();
+
+    await armerEtLancer();
+    expect(installer).toHaveBeenCalledTimes(1);
+  });
+
+  it('au lancement, montre l’invite du navigateur ; acceptée, dit où trouver l’icône', async () => {
+    const { capteur, installer } = capteurFactice({ disponible: true, installe: false }, 'accepted');
+    monter({ capteur });
+
+    await armerEtLancer();
 
     expect(installer).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('heading', { level: 2, name: /c’est installé/i })).toBeTruthy();
@@ -122,7 +141,7 @@ describe('BancPret — le bouton d’installation, selon l’appareil', () => {
     });
     monter({ capteur });
 
-    await userEvent.click(screen.getByRole('button', { name: /installer le jeu/i }));
+    await armerEtLancer();
 
     expect(screen.getByRole('heading', { level: 2, name: /confirme dans la fenêtre du navigateur/i })).toBeTruthy();
     expect(screen.queryByText(/ne propose pas d’installation/i)).toBeNull();
@@ -134,24 +153,24 @@ describe('BancPret — le bouton d’installation, selon l’appareil', () => {
     const { capteur } = capteurFactice({ disponible: true, installe: false }, 'dismissed');
     monter({ capteur });
 
-    await userEvent.click(screen.getByRole('button', { name: /installer le jeu/i }));
+    await armerEtLancer();
 
     expect(screen.getByRole('status').textContent).toMatch(/installation annulée/i);
-    expect(screen.queryByRole('button', { name: /installer le jeu/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /préarmer/i })).toBeNull();
   });
 
   it('sur iPhone, renvoie vers Safari et prévient que l’icône ne partage pas les données', () => {
     monter({ env: environnement({ userAgent: UA_IPHONE, platform: 'iPhone', maxTouchPoints: 5 }) });
     expect(screen.getByRole('heading', { level: 2, name: /iphone et ipad/i })).toBeTruthy();
     expect(screen.getByText(/ne partage pas les données de Safari/i)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /installer le jeu/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /préarmer/i })).toBeNull();
   });
 
   it('dans l’application installée, il n’y a plus rien à installer', () => {
     const { capteur } = capteurFactice({ disponible: true, installe: false });
     monter({ env: environnement({ standalone: true }), capteur });
     expect(screen.getByRole('heading', { level: 2, name: /déjà dans l’application/i })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /installer le jeu/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /préarmer/i })).toBeNull();
   });
 
   it('dans une messagerie, propose de copier le lien, et dit si la copie a marché', async () => {

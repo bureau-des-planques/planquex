@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from 'react';
+import { Lock } from 'lucide-react';
 import { lireEnvironnement, situationDInstallation, type Environnement } from '@/lib/installation';
 import { capteurInvite, type CapteurInvite, type ResultatInstallation } from '@/lib/invite-installation';
 
@@ -53,6 +54,8 @@ export function BancPret({
   const [copie, setCopie] = useState<Copie>('aucune');
   /** La fenêtre du navigateur est ouverte : l'invite est consommée, la réponse pas encore là. */
   const [enAttente, setEnAttente] = useState(false);
+  /** Le premier geste arme ; rien ne part tant que le second ne l'a pas lancé. */
+  const [arme, setArme] = useState(false);
 
   const situation = situationDInstallation(env, invite);
 
@@ -80,14 +83,31 @@ export function BancPret({
         <>
           <h2 className="m-0">Installer en un geste</h2>
           <p className="muted m-0 max-w-[62ch]">
-            Ton navigateur sait installer le jeu : l’icône Planquex rejoint tes applications, et le jeu s’ouvre dans sa
-            propre fenêtre, sans la barre du navigateur.
+            L’icône Planquex rejoint tes applications et ouvre le jeu sans la barre du navigateur.
           </p>
-          <div>
-            <button type="button" className="button button--gold button--big" onClick={() => void installer()}>
-              Installer le jeu
-            </button>
-          </div>
+          {arme ? (
+            <div className="actions actions--tight">
+              <button
+                type="button"
+                className="button button--big button--tir"
+                onClick={() => {
+                  setArme(false);
+                  void installer();
+                }}
+              >
+                Lancer l’installation
+              </button>
+              <button type="button" className="button" onClick={() => setArme(false)}>
+                Désarmer
+              </button>
+            </div>
+          ) : (
+            <div>
+              <button type="button" className="button button--big button--prearm" onClick={() => setArme(true)}>
+                <Lock size={18} aria-hidden="true" /> Préarmer
+              </button>
+            </div>
+          )}
         </>
       )}
 
