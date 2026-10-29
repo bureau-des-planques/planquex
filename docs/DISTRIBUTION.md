@@ -54,7 +54,7 @@ compte pour nous : des milliers de jeux de cartes/plateau, des millions de parti
 
 | Limite | Conséquence pour nous |
 |---|---|
-| **iOS Safari** | pas de Vibration API, installation manuelle (pas d'invite), plein écran capricieux — **c'est lui qui fixe le niveau commun** |
+| **iOS Safari** | pas de Vibration API, installation manuelle (pas d'invite), plein écran capricieux — **c'est lui qui fixe le niveau commun**. L'icône ajoutée à l'écran d'accueil **ne partage pas le stockage de Safari** ([WebKit, bogue 181849](https://bugs.webkit.org/show_bug.cgi?id=181849)) : une Collection commencée dans Safari ne suit pas dans l'application, d'où le conseil d'installer **avant** la première partie (`src/components/BancPret.tsx`). À revérifier sur un iPhone de test |
 | **Son** | muet jusqu'au premier geste (peu grave : un jeu attend toujours un tap) |
 | **Arrière-plan** | pas de calcul fiable en fond — indifférent en tour par tour |
 | **Mémoire** | un onglet gourmand peut être tué sur téléphone d'entrée de gamme |
