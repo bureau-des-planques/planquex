@@ -21,7 +21,7 @@ La règle est : **un agent par zone, jamais deux** ; un ticket qui couvre plusie
 
 **Zones partagées, à attribuer explicitement** (source des trois conflits de la session) :
 
-- `scripts/garde-fous.mjs` et `scripts/garde-fous.test.ts` — **un seul auteur par vague**, et
+- `scripts/ci/garde-fous.mjs` et `scripts/ci/garde-fous.test.ts` — **un seul auteur par vague**, et
   **vérification par commande avant tout commit** (voir §5) ;
 - `src/data/cards.test.ts` — touché par tous les tickets de contenu ; le rattacher à la **zone
   DONNÉES** ;
@@ -94,7 +94,7 @@ NOUVELLE VAGUE : worktrees recréés depuis le nouveau main
 
 - **deux tickets de la même zone** — `ia.ts` (#114/#109/#94), `useStore.ts` (#117/#106),
   `cards.test.ts` (tous les tickets de contenu) ;
-- **`scripts/garde-fous.mjs`** — un seul auteur par vague ;
+- **`scripts/ci/garde-fous.mjs`** — un seul auteur par vague ;
 - **une fusion pendant qu'un agent travaille sur une branche qui touche les mêmes fichiers** ;
 - **un relecteur sur une branche non commitée** : il lirait un état mouvant.
 
@@ -116,7 +116,7 @@ seul coût, voir §6).
 4. **Périmètre borné et bornes explicites** : ce qu'il ne doit **pas** faire, et quoi faire
    s'il croit nécessaire de sortir du périmètre (**s'arrêter et le dire**).
 5. **Une garde nouvelle s'ancre** : un test « le contrôle mord », ou une entrée dans
-   `scripts/garde-fous.mjs` (`AGENTS.md` §6).
+   `scripts/ci/garde-fous.mjs` (`AGENTS.md` §6).
 6. **La doc de la zone se met à jour dans la même branche** si une règle, une forme ou une
    commande change.
 7. **Après chaque agent, l'orchestrateur lance `npm run isolation`** — c'est **le** contrôle qui
@@ -239,7 +239,7 @@ dans `AGENTS.md` §6 et §8.4 : cette section ne les réécrit pas, elle dit **q
   déjà dans la session, et l'agent ne repart pas de zéro. L'ordre de repli est celui du
   benchmark : `opencode/deepseek-v4.1-flash-free` → `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`
   → `openrouter/thinkingmachines/inkling:free`.
-- **`npm run garde-fous` MUTE les fichiers sources en place** (`scripts/garde-fous.mjs`) : il
+- **`npm run garde-fous` MUTE les fichiers sources en place** (`scripts/ci/garde-fous.mjs`) : il
   écrit la mutation, lance `vitest run`, puis restaure. Donc **un seul processus par worktree**
   — jamais `garde-fous` pendant qu'un autre lit ou compile le même arbre. Constaté le
   21/10/2026 : un relecteur a vu **195 tests échouer** (`TypeError: types is not iterable`) parce
@@ -249,7 +249,7 @@ dans `AGENTS.md` §6 et §8.4 : cette section ne les réécrit pas, elle dit **q
   il attend son verdict, ou lui donne un autre worktree.
   **Interrompu en cours de route** (Ctrl-C, session tuée, fenêtre fermée), son `finally` ne
   restaure pas : l'arbre reste **sale**, avec la source mutée — constaté le 22/10/2026 sur
-  `scripts/illustration-vague.sh` dans le dépôt principal. La sortie de secours est
+  `scripts/ressources/illustration-vague.sh` dans le dépôt principal. La sortie de secours est
   `git checkout -- <fichier>` (§4.8) : la version commitée est la vérité, et le `git status`
   qui précède l'écriture suivante dit quel fichier a été touché.
 - **`npm run status` et `npm run build` ne se lancent pas ensemble** (déjà en §5) : `vite` vide

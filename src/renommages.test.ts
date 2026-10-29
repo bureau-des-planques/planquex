@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
  * remet à vivre au premier fichier recopié : c'est un *Mysterious Name* (`docs/JEU.md` §5),
  * et c'est exactement ce que D-097 (9) demande de refuser.
  *
- * Le contrôle lit le dépôt, comme `scripts/compteurs.test.ts` : pas de linter de plus. Deux
+ * Le contrôle lit le dépôt, comme `scripts/gardes/compteurs.test.ts` : pas de linter de plus. Deux
  * exceptions seulement, chacune avec sa raison, et le second test montre que le contrôle
  * **mord** — un bac fabriqué qui réintroduit un nom est trouvé.
  */

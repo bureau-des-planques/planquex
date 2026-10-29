@@ -70,7 +70,7 @@ mesure : quand les deux se contredisent, **ce tableau-ci l'emporte**.
 
 **Le critère « en navigateur » de #290** (T7) : `npm run detect:ui:page` **est** le
 `impeccable detect <url>` demandé — il sert `dist/` et passe le détecteur sur chacun des
-**treize** écrans servis, un par un (`scripts/detect-ui-pages.mjs`, `docs/COMMANDES.md`). Le
+**treize** écrans servis, un par un (`scripts/ci/detect-ui-pages.mjs`, `docs/COMMANDES.md`). Le
 critère est donc tenu par cette commande, pas par une inspection à la main.
 
 | Paire | Ratio | Verdict |

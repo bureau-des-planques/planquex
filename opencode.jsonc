@@ -4,7 +4,7 @@
   // ── planquex : le projet actif ──
   //
   // Le projet parle à un seul serveur MCP : gflow, qui produit les illustrations
-  // (ticket #97, `scripts/illustration-vague.sh`). Il expose 18 outils, dont 3 qui
+  // (ticket #97, `scripts/ressources/illustration-vague.sh`). Il expose 18 outils, dont 3 qui
   // dépensent des crédits Veo : seuls les outils image sont autorisés (AGENTS.md §6).
   //
   // Ce qui ne se fait pas tous les jours est ailleurs :

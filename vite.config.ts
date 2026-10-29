@@ -40,7 +40,7 @@ export default defineConfig({
         start_url: '/',
         // Des PNG d'abord : sans icône raster, Chromium/Brave n'installe qu'un raccourci
         // avec son propre badge (constaté le 21/10/2026). Le SVG reste en repli vectoriel.
-        // Les PNG se régénèrent par `npm run icones`. Garde : `scripts/icones.test.ts`.
+        // Les PNG se régénèrent par `npm run icones`. Garde : `scripts/ressources/icones.test.ts`.
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

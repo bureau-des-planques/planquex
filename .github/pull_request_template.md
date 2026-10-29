@@ -17,7 +17,7 @@ Closes #
 - [ ] `npm run check`
 - [ ] `npm run format:check`
 - [ ] `npm test` — avec au moins un test qui couvre le changement
-- [ ] `npm run garde-fous` — une garde nouvelle est ancrée (test « le contrôle mord » ou entrée de `scripts/garde-fous.mjs`)
+- [ ] `npm run garde-fous` — une garde nouvelle est ancrée (test « le contrôle mord » ou entrée de `scripts/ci/garde-fous.mjs`)
 - [ ] `npm run build` — `dist/index.html` et `dist/sw.js` présents
 - [ ] Un écran touché : une capture (`npm run capturer`), pas la lecture du JSX
 - [ ] Une règle, un mot ou un périmètre touché : la décision datée dans `docs/DECISIONS.md` et la doc à jour

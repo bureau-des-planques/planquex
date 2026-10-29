@@ -77,7 +77,7 @@ export const PARTIES_DIRECTION = 1000;
 export const GRAINE_MESURE_DIRECTION = 20261028;
 
 /**
- * Les graines qui ont servi à **choisir** la politique (#111, `scripts/pesage.mjs`) :
+ * Les graines qui ont servi à **choisir** la politique (#111, `scripts/preuves/pesage.mjs`) :
  * entraînement et contrôle. La mesure de #354 ne doit en réutiliser aucune, sinon elle se
  * juge sur les graines qui ont réglé le candidat.
  */

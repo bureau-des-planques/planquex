@@ -22,8 +22,8 @@ import { factionDeck, simulate, type SimulationReport } from '@/game/simulation'
  * **Protocole de mesure (#111), écrit ici pour être rejoué :**
  *
  * ```bash
- * node scripts/simulate.mjs --games 60 --seed <S> --json --player-level 1 --ai-level 2
- * node scripts/simulate.mjs --games 60 --seed <S> --json --player-level 2 --ai-level 1
+ * node scripts/preuves/simulate.mjs --games 60 --seed <S> --json --player-level 1 --ai-level 2
+ * node scripts/preuves/simulate.mjs --games 60 --seed <S> --json --player-level 2 --ai-level 1
  * ```
  *
  * Le camp de niveau 2 est `ai` dans la première série, `player` dans la seconde ; on

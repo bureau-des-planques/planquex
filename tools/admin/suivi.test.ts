@@ -3,7 +3,7 @@
  * La logique pure du rafraîchissement (#184).
  *
  * Chaque contrôle **mord** : le premier chargement ne crie pas, une baisse ne crie pas, une
- * hausse crie — et `scripts/garde-fous.mjs` mute la ligne de la hausse en `Math.abs(...)`
+ * hausse crie — et `scripts/ci/garde-fous.mjs` mute la ligne de la hausse en `Math.abs(...)`
  * pour vérifier que le cas « la baisse crie » fait bien échouer ce fichier.
  */
 import { describe, expect, it } from 'vitest';

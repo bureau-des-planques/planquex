@@ -69,9 +69,9 @@ jobs:
         run: |
           if [ -n "$BASE" ]; then
             git fetch --no-tags --depth=1 origin "$BASE"
-            node scripts/ci-chemins.mjs --base "$BASE"
+            node scripts/ci/ci-chemins.mjs --base "$BASE"
           else
-            node scripts/ci-chemins.mjs
+            node scripts/ci/ci-chemins.mjs
           fi
 
       - name: Installer les dépendances
@@ -165,16 +165,16 @@ jobs:
         run: |
           if [ -n "$BASE" ]; then
             git fetch --no-tags --depth=1 origin "$BASE"
-            node scripts/ci-chemins.mjs --base "$BASE"
+            node scripts/ci/ci-chemins.mjs --base "$BASE"
           else
-            node scripts/ci-chemins.mjs
+            node scripts/ci/ci-chemins.mjs
           fi
 
       - name: Installer les dépendances
         run: npm ci
 
       # Pillow — dépendance du tuyau d'illustration (AGENTS.md §6) : le wizard
-      # `scripts/illustration-vague.sh` convertit les rendus de gflow (JPEG) en
+      # `scripts/ressources/illustration-vague.sh` convertit les rendus de gflow (JPEG) en
       # webp, et son test fabrique de vraies images. Le paquet `python3-pil`
       # fournit `PIL` au python3 du runner, sans heurter PEP 668 (`pip` y refuse
       # l'installation système). Sans cette étape, 8 tests tombent en
@@ -229,9 +229,9 @@ jobs:
         run: |
           if [ -n "$BASE" ]; then
             git fetch --no-tags --depth=1 origin "$BASE"
-            node scripts/ci-chemins.mjs --base "$BASE"
+            node scripts/ci/ci-chemins.mjs --base "$BASE"
           else
-            node scripts/ci-chemins.mjs
+            node scripts/ci/ci-chemins.mjs
           fi
 
       - name: Installer les dépendances
@@ -246,7 +246,7 @@ jobs:
         run: npm run build
 
       # **Le contrôle visuel qui compte** (#205, #234) : `impeccable detect` sur les écrans
-      # **servis depuis `dist/`**, avec le cliquet de `scripts/detect-ui-pages.mjs`
+      # **servis depuis `dist/`**, avec le cliquet de `scripts/ci/detect-ui-pages.mjs`
       # (`ECRANS` = 12 écrans, `BASELINE` = leur compte mesuré). `detect:ui` ne lit que les
       # sources et sous-compte ; celui-ci voit le rendu réel.
       #

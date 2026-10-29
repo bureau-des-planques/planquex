@@ -9,7 +9,7 @@ import { partieSauvegardee } from '@/store/partie';
  * **Des parties où un coup précis est jouable** (#294) — l'écran reprend une partie en la
  * rejouant depuis sa graine, donc ces parties sont cherchées **en jouant légalement**, jamais
  * bricolées. Partagé par `Battle.effets.test.tsx` (les replis) et par la prise de la planche de
- * frames (`scripts/filmer-animation.mjs`).
+ * frames (`scripts/preuves/filmer-animation.mjs`).
  */
 
 /** Le Deck de tous les jours : ce que le joueur tirerait avec toute la collection. */

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
  *
  * `noUnusedLocals` attrape les **locales** mortes, jamais les exports : un
  * `export const` que personne n'importe compile sans un mot. Le motif du dépôt pour
- * ce genre de contrôle est un test qui lit le code, comme `scripts/compteurs.test.ts` :
+ * ce genre de contrôle est un test qui lit le code, comme `scripts/gardes/compteurs.test.ts` :
  * pas de linter de plus, et la liste d'exceptions se relit.
  *
  * La liste des exports est **dérivée** de `src/` à chaque exécution : il n'y a aucun

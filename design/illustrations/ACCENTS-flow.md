@@ -7,7 +7,7 @@
 >
 > **La source canonique est `FACTION_META.color`** (`src/data/factions.ts`) : c'est elle qui
 > pilote le dégradé de la carte (`planquePalette`). Les mots ci-dessous en sont
-> **ré-dérivés** — la dérivation est **codée** dans `scripts/illustration-vague.test.ts`
+> **ré-dérivés** — la dérivation est **codée** dans `scripts/ressources/illustration-vague.test.ts`
 > (teinte en degrés, puis saturation), donc changer une couleur dans `src/data` **fait
 > échouer** la garde tant que l'accent n'a pas suivi. Une couleur et son illustration ne
 > peuvent plus se contredire.
@@ -20,7 +20,7 @@
 
 La clé est le **code de faction** (`Faction`, `src/data/types.ts`) — le même que la première
 partie de l'`id` d'une carte (`sse-…`, `direction-…`, `docs/JEU.md` §5). C'est ce préfixe que
-`scripts/illustration-vague.sh` lit pour résoudre l'accent d'une carte : aucun accent n'est
+`scripts/ressources/illustration-vague.sh` lit pour résoudre l'accent d'une carte : aucun accent n'est
 donc saisi carte par carte.
 
 Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`

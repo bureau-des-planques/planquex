@@ -915,7 +915,7 @@ casse les tests, ensuite ce qui ajoute.
   3. au clic, le panneau **est** un dialogue et contient au moins un bouton ;
   4. le contenu contient le Stress **chiffré** et le nom **entier** de la carte, même quand le
      nom est tronqué à l'écran.
-- **Garde** : une entrée dans `scripts/garde-fous.mjs` pour le point 1 (une infobulle qui
+- **Garde** : une entrée dans `scripts/ci/garde-fous.mjs` pour le point 1 (une infobulle qui
   contient un bouton est une régression d'accessibilité silencieuse).
 
 ### T5 — La bascule et le raccourci
@@ -1001,7 +1001,7 @@ casse les tests, ensuite ce qui ajoute.
      nœud animé n'est pas créé (ou porte une classe sans `animation`) — et l'information
      reste lisible (badge, barre, bandeau) ;
   2. aucune `@keyframes` ne dure plus de **800 ms** ni ne boucle plus de **deux** fois
-     (grep sur `styles.css`, plus une entrée dans `scripts/garde-fous.mjs`) ;
+     (grep sur `styles.css`, plus une entrée dans `scripts/ci/garde-fous.mjs`) ;
   3. au plus **quatre** éléments animés simultanément : le compteur est tenu par le composant,
      pas par le CSS ;
   4. `npm run detect:ui` vert — un `filter: blur` en mouvement ou un `backdrop-filter` sur une

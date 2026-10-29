@@ -109,7 +109,7 @@ gh issue view 328 --json number,title,body,labels,comments   # --json est obliga
    ([`docs/agents/parallelisme.md`](docs/agents/parallelisme.md)).
 4. **Le test d'abord.** Un défaut se reproduit par un test rouge avant d'être corrigé. Une garde
    nouvelle doit **pouvoir échouer** : un test « le contrôle mord », ou une entrée de
-   `scripts/garde-fous.mjs`.
+   `scripts/ci/garde-fous.mjs`.
 5. **Éditer par remplacement ciblé, jamais en réécrivant le fichier.** Une écriture touche les
    lignes de son intention : on ancre le passage (trois lignes de contexte avant et après), on
    élargit l'ancre si elle n'est pas unique, et on **lit une plage** plutôt que 3 900 lignes
@@ -147,7 +147,7 @@ Avant de proposer, la définition de « fini » (`AGENTS.md` §8.4) :
 - **Avant de fusionner** : `npm run ci:etat` — si `main` est rouge, on ne fusionne pas sans savoir
   pourquoi. C'est une **case à cocher du [modèle de PR](.github/pull_request_template.md)**
   (section « Le risque à la fusion ») : le rappel arrive donc avec la PR, à l'endroit où la
-  fusion se décide, et pas seulement dans une doc qu'on ne relit pas. `scripts/garde-fusion.test.ts`
+  fusion se décide, et pas seulement dans une doc qu'on ne relit pas. `scripts/ci/garde-fusion.test.ts`
   échoue si cette citation disparaît d'un des quatre endroits qui portent la procédure de fusion.
 - **Qui fusionne, et après quoi** ([`docs/agents/parallelisme.md`](docs/agents/parallelisme.md) §5) :
   seul le compte de **Bastien** fusionne (D-131). **Sa propre PR** part sur les trois jobs verts,
@@ -292,7 +292,7 @@ Quatre commandes pour démarrer ; le reste, dont celles qui précèdent une PR, 
 | `gh issue view 42` sans `--json` | sort 1 : l'avertissement « Projects (classic) » compte comme une erreur | toujours `--json number,title,body,labels,comments` |
 | `gh pr edit --body-file` | échoue pour la même raison | `gh api --method PATCH repos/bureau-des-planques/planquex/pulls/<n>` avec un JSON `{"body": …}` |
 | écran blanc en dev | un service worker de build répond sur `localhost:5178` | DevTools → Application → *Unregister*, puis *Clear site data* ([détail](docs/COMMANDES.md#71-piège-connu--le-service-worker-casse-le-dev-sur-la-même-origine)) |
-| un décompte écrit dans une doc | `scripts/compteurs.test.ts` le refuse | renvoyer à `npm run status` ou `npm test` |
+| un décompte écrit dans une doc | `scripts/gardes/compteurs.test.ts` le refuse | renvoyer à `npm run status` ou `npm test` |
 | un numéro de version écrit dans `src/` | `src/version.test.ts` le refuse | lire `src/version.ts`, seule porte vers `package.json` |
 | un fichier de `src/data/` reformaté | un texte de carte change à l'écran | `.prettierignore` l'exclut ; `.vscode/settings.json` le respecte à l'enregistrement |
 

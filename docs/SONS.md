@@ -7,7 +7,7 @@
 ## Ce que sont ces fichiers
 
 `public/sons/arrivage.wav` et `public/sons/verdict.wav` sont **fabriqués par le projet**, par
-`scripts/sons.mjs`. Ils ne viennent d'aucune banque de sons.
+`scripts/ressources/sons.mjs`. Ils ne viennent d'aucune banque de sons.
 
 | Fichier | Ce qu'on entend | Poids |
 |---|---|---|
@@ -35,11 +35,11 @@ ligne dans ce fichier.
 ## Les régénérer
 
 ```bash
-node scripts/sons.mjs             # réécrit les deux fichiers
-node scripts/sons.mjs --verifier  # contrôle poids et fondus, sans rien écrire
+node scripts/ressources/sons.mjs             # réécrit les deux fichiers
+node scripts/ressources/sons.mjs --verifier  # contrôle poids et fondus, sans rien écrire
 ```
 
-Le contrôle est aussi un test (`scripts/sons.test.ts`) : deux fichiers, sous 100 Ko, qui commencent
+Le contrôle est aussi un test (`scripts/ressources/sons.test.ts`) : deux fichiers, sous 100 Ko, qui commencent
 vite et finissent en fondu. Un son qui « colle » au silence s'entend plus qu'il ne s'écoute.
 
 ## Comment ils sont joués
@@ -59,6 +59,6 @@ Nulle part ailleurs il n'y a d'`Audio` ni de `<audio>`.
   verrouillage) n'a pas été éprouvé sur un vrai téléphone.
 - **Le précache est fait** (depuis #414, phrase corrigée à la revue du 29/10) : les deux WAV sont
   dans le service worker — `globPatterns` de `vite.config.ts` porte `wav` — et
-  `scripts/precache.test.ts` refuse un fichier de `public/` que le jeu charge sans le servir
+  `scripts/gardes/precache.test.ts` refuse un fichier de `public/` que le jeu charge sans le servir
   hors ligne. Ce qui reste vrai : un son qui ne se décode pas ne casse rien, et le module se
   tait alors, sans erreur.

@@ -53,7 +53,7 @@ gabarit (carré, ≥ 1024 px, < 1 Mo).
 **L'ordre de D-126 ne change pas** : les bases, puis les **sept variantes hautes**
 (4 × `3S`, 3 × `COU`), puis les `1S`/`2S`. Une variante **n'a pas de ligne de sujet à
 elle** : elle emprunte celui de sa base (`base_de_variante` dans
-`scripts/illustration-vague.sh`), et le wizard accepte donc son id.
+`scripts/ressources/illustration-vague.sh`), et le wizard accepte donc son id.
 
 | Variante (`id`) | Rareté | Base | État |
 |---|---|---|---|
@@ -76,7 +76,7 @@ est levé par #121 :
 - **l'accent**, une ligne par faction, dans **`ACCENTS-flow.md`** : `FACTION_META.color`
   reste la seule source, l'accent en est **ré-dérivé** et la dérivation est **testée**, donc
   une couleur qui bouge sans son mot fait échouer la garde (D-046) ;
-- **la garde** qui vérifie les deux tables, dans `scripts/illustration-vague.test.ts`. Elle
+- **la garde** qui vérifie les deux tables, dans `scripts/ressources/illustration-vague.test.ts`. Elle
   remplace le second rôle de #120 (comparer deux copies) : la source unique a supprimé la
   seconde copie, il restait à vérifier que **chaque** carte de base a un sujet utilisable.
 
@@ -114,7 +114,7 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 
 ## Journal des productions
 
-> Tenu par `scripts/illustration-vague.sh` : une ligne par image produite ou
+> Tenu par `scripts/ressources/illustration-vague.sh` : une ligne par image produite ou
 > regénérée, la plus récente en bas. Les deux tableaux ci-dessus sont
 > l'instantané du 20/10/2026 ; **ce journal est le registre vivant**.
 
