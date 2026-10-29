@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { ALL_CARDS } from '@/data';
 
 /**
- * Garde-fou des **documents vivants** — ticket #36, `AGENTS.md` §8.3.
+ * Garde-fou des **documents vivants** — ticket #36, `docs/agents/audit.md` (pièges connus).
  *
  * La classe de bug a déjà été corrigée deux fois (`c550739`, `565c7e8`) : les docs
  * annonçaient encore un décompte de cartes quand le code, lui, avait grossi. Un
