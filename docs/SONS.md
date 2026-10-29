@@ -57,5 +57,8 @@ Nulle part ailleurs il n'y a d'`Audio` ni de `<audio>`.
 
 - **Aucune mesure sur appareil.** Le déblocage iOS (interrupteur silencieux, `resume()` après
   verrouillage) n'a pas été éprouvé sur un vrai téléphone.
-- **Pas de précache** : les deux WAV ne sont pas dans le service worker. Hors ligne, ils manquent —
-  et le module se tait alors, sans erreur.
+- **Le précache est fait** (depuis #414, phrase corrigée à la revue du 29/10) : les deux WAV sont
+  dans le service worker — `globPatterns` de `vite.config.ts` porte `wav` — et
+  `scripts/precache.test.ts` refuse un fichier de `public/` que le jeu charge sans le servir
+  hors ligne. Ce qui reste vrai : un son qui ne se décode pas ne casse rien, et le module se
+  tait alors, sans erreur.

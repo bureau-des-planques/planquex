@@ -566,7 +566,7 @@ function Camp({
   detaille,
   effets = [],
   cibleScene,
-  deckDeTest = false,
+  raisonsDeckDeTest = [],
   cafeAttachable,
   onInspecter,
   onAttacherCafe
@@ -592,7 +592,7 @@ function Camp({
    * L'avertissement tenait sur sa propre ligne (30 px) ; il est désormais une étiquette de la
    * fiche du camp, où la place existait déjà.
    */
-  deckDeTest?: boolean;
+  raisonsDeckDeTest?: readonly string[];
   /** Les Planqués qui reçoivent le café en Machine, par `uid` (#454, D-145). */
   cafeAttachable?: ReadonlySet<string>;
   /** Toucher un Planqué de `cafeAttachable` attache le café à lui. */
@@ -675,13 +675,16 @@ function Camp({
       <header className="board__head">
         <h2>{label}</h2>
         <span className="board__counts muted">main {side.hand.length}</span>
-        {deckDeTest && (
+        {raisonsDeckDeTest.length > 0 && (
           <span
             className="board__test"
             title={`Un deck valide : ${DECK_SIZE} cartes, ${MAX_COPIES_PER_NAME} exemplaires max, 1 Entrant minimum.`}
           >
             <span aria-hidden="true">deck de test</span>
-            <span className="sr-only">Ton deck n’est pas valide : ce combat utilise un deck de test.</span>
+            <span className="sr-only">
+              Ton deck n’est pas valide : ce combat utilise un deck de test.
+              {raisonsDeckDeTest.length > 0 ? ` ${raisonsDeckDeTest.join(' ')}` : ''}
+            </span>
           </span>
         )}
         {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
@@ -799,8 +802,16 @@ function endBanner(state: BattleState, myCamp: PlayerId | null): string {
       return won ? `Victoire : ${other} déclare forfait.` : 'Défaite : tu as déclaré forfait.';
     case 'limiteDeTours':
       return 'Égalité : la limite de tours est atteinte.';
-    default:
+    case null:
+      // Une partie terminée porte toujours une raison : ce cas n'arrive que sur un état forgé.
       return won ? 'Victoire.' : state.winner === null ? 'Égalité.' : 'Défaite.';
+    default: {
+      // **Exhaustif, et il doit le rester** : ajouter une raison de fin au moteur sans lui
+      // donner de phrase ici casse la compilation, au lieu de tomber en silence sur un
+      // bandeau générique (#84, revue du 29/10/2026).
+      const jamais: never = state.endReason;
+      return jamais;
+    }
   }
 }
 
@@ -847,7 +858,14 @@ export function Battle() {
   // Le deck du joueur est utilisé s'il est légal, sinon on retombe sur un
   // deck de test. Calculé une seule fois par rendu : `deckLegal` est appelé
   // au plus une fois, et l'identité de la référence dit si on a replié.
-  const playerDeck = useMemo(() => (deckLegal(storeDeck).ok ? storeDeck : testDeck()), [storeDeck]);
+  /**
+   * Le Deck joué, et **pourquoi** on a replié sur le deck de test (#251, revue du 29/10/2026) :
+   * le bandeau disait « ton deck n'est pas valide » sans jamais dire quelle règle était violée,
+   * alors que `deckLegal` la connaît. Un refus qui n'explique pas ne s'apprend pas.
+   */
+  const legaliteDuDeck = useMemo(() => deckLegal(storeDeck), [storeDeck]);
+  const playerDeck = useMemo(() => (legaliteDuDeck.ok ? storeDeck : testDeck()), [legaliteDuDeck, storeDeck]);
+  const raisonsDeckDeTest = legaliteDuDeck.ok ? [] : legaliteDuDeck.reasons;
   const usedTestDeck = playerDeck !== storeDeck;
 
   /**
@@ -1726,7 +1744,7 @@ export function Battle() {
                 detaille={combatDetaille}
                 effets={effets.filter((effet) => effet.camp === id)}
                 cibleScene={sansMouvement ? undefined : effetAttaque?.uidCible}
-                deckDeTest={usedTestDeck && id === myCamp}
+                raisonsDeckDeTest={usedTestDeck && id === myCamp ? raisonsDeckDeTest : undefined}
                 cafeAttachable={id === myCamp ? cafeAttachable : undefined}
                 onAttacherCafe={attacherCafe}
                 onInspecter={setInspecte}

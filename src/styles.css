@@ -70,6 +70,8 @@
   --bg: #0b1220;
   --bg-deep: #070c16;
   --bg-raised: #131c2e;
+  /* Le haut du dégradé du dos de carte (#283) : le seul bleu plus clair que `--bg`. */
+  --bg-haut: #1d2d4f;
   --bg-sunken: #0e1626;
   --line: #243049;
   --line-strong: #34456a;
@@ -882,7 +884,7 @@ h2 {
 
 .cafe-picker__glyph {
   border-radius: 999px;
-  color: #0b1220;
+  color: var(--bg);
   display: grid;
   font-size: 0.68rem;
   height: 18px;
@@ -3862,7 +3864,7 @@ h2 {
 .battle .button--fin.is-a-toi {
   background: var(--scene-go);
   border-color: var(--scene-go);
-  color: #0b1220;
+  color: var(--bg);
 }
 
 .battle .button--fin.is-direction {
@@ -4857,7 +4859,7 @@ h2 {
   background:
     radial-gradient(ellipse 70% 55% at 50% 42%, color-mix(in srgb, var(--lueur) 9%, #142039) 0%, transparent 70%),
     radial-gradient(ellipse 120% 90% at 50% 110%, #050911 30%, transparent 70%),
-    linear-gradient(180deg, #0a1222 0%, #070c16 100%);
+    linear-gradient(180deg, #0a1222 0%, var(--bg-deep) 100%);
   color: var(--text);
   display: flex;
   flex-direction: column;
@@ -5311,15 +5313,15 @@ h2 {
 .ouverture__dos {
   --dos-or: var(--gold);
   --dos-cadre:
-    inset 0 0 0 4px #0b1220, inset 0 0 0 5px color-mix(in srgb, var(--dos-or) 62%, transparent),
-    inset 0 0 0 9px #0b1220, inset 0 0 0 10px color-mix(in srgb, var(--dos-or) 22%, transparent);
+    inset 0 0 0 4px var(--bg), inset 0 0 0 5px color-mix(in srgb, var(--dos-or) 62%, transparent),
+    inset 0 0 0 9px var(--bg), inset 0 0 0 10px color-mix(in srgb, var(--dos-or) 22%, transparent);
   align-items: center;
   background:
     linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 7%) 50%, transparent 60%),
     radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--dos-or) 22%, transparent) 0%, transparent 55%),
     repeating-linear-gradient(45deg, color-mix(in srgb, var(--dos-or) 7%, transparent) 0 1px, transparent 1px 11px),
     repeating-linear-gradient(-45deg, color-mix(in srgb, var(--dos-or) 7%, transparent) 0 1px, transparent 1px 11px),
-    linear-gradient(160deg, #1d2d4f 0%, #0b1220 58%, #070c16 100%);
+    linear-gradient(160deg, var(--bg-haut) 0%, var(--bg) 58%, var(--bg-deep) 100%);
   border: 2px solid var(--gold-deep);
   box-shadow:
     var(--dos-cadre),
@@ -5362,11 +5364,11 @@ h2 {
 }
 
 .ouverture__dos-sigle {
-  background: radial-gradient(circle at 50% 35%, #26407a 0%, #0b1220 78%);
+  background: radial-gradient(circle at 50% 35%, #26407a 0%, var(--bg) 78%);
   border: 2px solid color-mix(in srgb, var(--dos-or) 80%, transparent);
   border-radius: 50%;
   box-shadow:
-    0 0 0 5px #0b1220,
+    0 0 0 5px var(--bg),
     0 0 0 6px color-mix(in srgb, var(--dos-or) 35%, transparent),
     0 10px 24px rgb(0 0 0 / 55%);
   color: var(--gold-soft);
@@ -6070,7 +6072,7 @@ h2 {
 .cafe-capsule__lid {
   background: var(--cafe);
   border-radius: 0.2rem 0.2rem 999px 999px;
-  color: #0b1220;
+  color: var(--bg);
   display: grid;
   font-size: 0.62rem;
   height: 0.95rem;
