@@ -198,8 +198,11 @@ export function lireReleases(gh = ghJson) {
   const releases = liste
     .map((release) => gh(['release', 'view', release.tagName, '--json', 'tagName,name,body,publishedAt,isDraft']))
     // Un tag qui n'est pas une version (`v0.1.1` oui, `alpha-2026` non) n'a pas sa note ici.
-    .filter((release) => /^v\d+\.\d+\.\d+$/.test(release.tagName));
-  return releases.sort((a, b) => comparer(b.tagName.replace(/^v/, ''), a.tagName.replace(/^v/, '')));
+    // **Le suffixe d'étape est admis** (D-152) : `v0.1.15-alpha` est une version, et c'est
+    // même la forme de tous les tags depuis 0.1.15. Sans lui, la release publiée serait
+    // ignorée et la note écrite d'avance resterait un brouillon pour toujours.
+    .filter((release) => /^v\d+\.\d+\.\d+(-(alpha|beta))?$/.test(release.tagName));
+  return releases.sort((a, b) => comparer(versionDe(b.tagName), versionDe(a.tagName)));
 }
 
 function ghJson(args) {
