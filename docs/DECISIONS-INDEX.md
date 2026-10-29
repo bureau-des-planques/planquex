@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 154 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 155 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -160,3 +160,4 @@
 | D-152 | 29/10/2026 | La version s'écrit v<numéro>-<étape>, partout . (1) Le tag, le… |
 | D-153 | 29/10/2026 | Le Deck et la Collection vivent sur le compte, et… |
 | D-154 | 29/10/2026 | Le rangement de scripts/ vit en cinq dossiers, et un… |
+| D-155 | 29/10/2026 | La page /installation est hors du jeu, et le garde-fou… |
