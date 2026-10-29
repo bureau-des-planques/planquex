@@ -33,18 +33,16 @@ describe('Home — finition', () => {
     expect(screen.getByText('100%')).toBeInTheDocument();
   });
 
-  it('les jauges suivent leur chiffre : Collection à 100 % pleine, Deck vide à 0 %, jamais au-delà', () => {
-    const { container } = renderWithStore(<Home />, {
-      owned: tout(ALL_CARDS),
-      deck: [],
-      tutorielVu: true,
-      pasAPasCombatVu: true
-    });
-    const [collection, deck] = Array.from(container.querySelectorAll<HTMLElement>('.stat-card__jauge > span'));
-    expect(collection.style.width).toBe('100%');
-    expect(deck.style.width).toBe('0%');
-    // Décoratives : le chiffre écrit porte l'information, la jauge ne se lit pas deux fois.
-    expect(collection.parentElement).toHaveAttribute('aria-hidden', 'true');
+  it('la jauge de la Collection suit son chiffre : pleine à 100 %, vide à 0 %, et décorative', () => {
+    const plein = renderWithStore(<Home />, { owned: tout(ALL_CARDS), tutorielVu: true, pasAPasCombatVu: true });
+    const jauge = plein.container.querySelector<HTMLElement>('.stat-card__jauge > span')!;
+    expect(jauge.style.width).toBe('100%');
+    // Décorative : le chiffre écrit porte l'information, la jauge ne se lit pas deux fois.
+    expect(jauge.parentElement).toHaveAttribute('aria-hidden', 'true');
+    plein.unmount();
+
+    const vide = renderWithStore(<Home />, { owned: {}, tutorielVu: true, pasAPasCombatVu: true });
+    expect(vide.container.querySelector<HTMLElement>('.stat-card__jauge > span')!.style.width).toBe('0%');
   });
 
   it('l’Arrivage est un dialogue, Échap le ferme', async () => {

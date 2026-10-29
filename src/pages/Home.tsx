@@ -97,12 +97,12 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
       </section>
 
       <section className="stats-grid">
-        <article className="stat-card stat-card--large">
+        <article className="stat-card">
           <span className="stat-card__label">Collection</span>
           <strong>{completion}%</strong>
-          {/* La jauge redit le pourcentage écrit au-dessus : décorative, le chiffre porte l'information. */}
+          {/* La jauge redit le pourcentage écrit au-dessus : décorative (le rail coupe au-delà de 100 %). */}
           <span className="stat-card__jauge" aria-hidden="true">
-            <span style={{ width: `${Math.min(100, completion)}%` }} />
+            <span style={{ width: `${completion}%` }} />
           </span>
           <span className="muted">
             {uniqueOwned}/{ALL_CARDS.length} cartes uniques · plafond {PLAFOND_TIRABLE} par Arrivage
@@ -116,9 +116,6 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
         <article className="stat-card">
           <span className="stat-card__label">Deck</span>
           <strong>{deck.length}/20</strong>
-          <span className="stat-card__jauge" aria-hidden="true">
-            <span style={{ width: `${Math.min(100, (deck.length / 20) * 100)}%` }} />
-          </span>
           <span className="muted">cartes équipées</span>
         </article>
       </section>

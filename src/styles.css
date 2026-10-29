@@ -1005,7 +1005,7 @@ h2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.stat-card--large {
+.stats-grid > .stat-card:first-child {
   grid-column: 1 / -1;
 }
 
@@ -1014,7 +1014,7 @@ h2 {
     grid-template-columns: 2fr 1fr 1fr;
   }
 
-  .stat-card--large {
+  .stats-grid > .stat-card:first-child {
     grid-column: auto;
   }
 }
