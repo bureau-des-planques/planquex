@@ -30,6 +30,7 @@
  * que personne n'a acté.
  */
 import type { ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { RetourEcran } from '@/components/RetourEcran';
 import { APP_LABEL, APP_VERSION } from '@/version';
 import { notesAffichees, type NoteVersion } from '@/data/notes-affichees';
@@ -274,14 +275,22 @@ export function FeuilleDeRoute({ features = FEATURES_PREVUES }: { features?: Fea
         <section className="section">
           <h2>Les versions précédentes</h2>
           <div className="feuille-de-route__liste">
+            {/* Chaque version précédente se **replie** en une ligne (version, titre, date) : toutes
+                ouvertes, l'historique faisait 15 000 px à 420 × 900. Le texte reste dans la page — la
+                recherche du navigateur ouvre le volet qui le contient. */}
             {precedentes.map((note) => (
-              <article key={note.version} className="panel feuille-de-route__note">
-                <h3 className="feuille-de-route__titre">
-                  {note.version} · {note.titre}
-                </h3>
-                <p className="muted m-0 text-[0.82rem]">{dateLongue(note.date)}</p>
+              <details key={note.version} className="panel feuille-de-route__note volet">
+                <summary className="volet__tete">
+                  <div>
+                    <h3 className="feuille-de-route__titre">
+                      {note.version} · {note.titre}
+                    </h3>
+                    <p className="muted m-0 text-[0.82rem]">{dateLongue(note.date)}</p>
+                  </div>
+                  <ChevronDown className="volet__chevron" size={20} aria-hidden="true" />
+                </summary>
                 <Points note={note} />
-              </article>
+              </details>
             ))}
           </div>
         </section>
