@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { divergence, entreeDe, lireIssues, rendreFichier } from './plan-dev.mjs';
-import { FEATURES_PREVUES } from '@/data/plan-dev';
+import { FEATURES_PREVUES, type FeaturePrevue } from '@/data/plan-dev';
 
 /**
  * **Le générateur de ce qui arrive** (`npm run plan:dev`, D-097 (3), #214, #336).
@@ -98,11 +98,17 @@ describe('plan-dev — le fichier engendré', () => {
   it('le contrôle mord : un fichier amputé est une divergence, pas un vert (#231)', () => {
     // C'est la fonction que `-- --verifie` appelle (CI, étape « fichiers générés »).
     // Sans ce cas, elle pourrait toujours répondre `null` et personne ne le verrait.
-    const attendu = rendreFichier(FEATURES_PREVUES);
+    // Une liste **fabriquée** : le jour où toutes les issues sont fermées, `FEATURES_PREVUES`
+    // est vide et « une entrée de moins » ne changerait plus rien (29/10/2026).
+    const fabriquees: FeaturePrevue[] = [
+      { numero: 901, titre: 'Un chantier fabriqué', etape: 'alpha' },
+      { numero: 902, titre: 'Un autre chantier', etape: 'beta' }
+    ];
+    const attendu = rendreFichier(fabriquees);
     expect(divergence(attendu, attendu)).toBeNull();
 
     // Une entrée de moins, comme un fichier édité à la main après un merge.
-    const sansUne = rendreFichier(FEATURES_PREVUES.slice(0, -1));
+    const sansUne = rendreFichier(fabriquees.slice(0, -1));
     expect(sansUne).not.toBe(attendu);
     expect(divergence(sansUne, attendu)).toMatch(/a divergé de GitHub — lance `npm run plan:dev`/);
 

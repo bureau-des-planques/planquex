@@ -112,7 +112,8 @@ nous permet de **suivre ce que tu remontes** d'une fois à l'autre. Sans pseudo,
 
 Et le point qui compte le plus :
 
-> **Recopie ta version.** Elle est tout en bas de **Réglages**, après « Alpha · ».
+> **Recopie ta version.** Elle est tout en bas de **Réglages** : un `v`, le numéro, puis l’étape
+> (`-alpha`). C’est la même chose sur la page de la release.
 > Sans elle, on ne sait pas si ce que tu signales existe encore aujourd'hui : c'est le seul
 > repère qui nous dit quoi corriger.
 

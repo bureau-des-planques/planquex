@@ -27,9 +27,9 @@ Deux réflexes : quand la mineure monte, le correctif **repart à zéro** (`0.1.
 
 | Étape | Ligne de version | Affiché dans Réglages |
 |---|---|---|
-| **alpha** | `0.1.x` | `Alpha · 0.1.1` |
-| **beta** | `0.2.x` | `Bêta · 0.2.0` |
-| **release** | `1.0.0` | `Version finale · 1.0.0` |
+| **alpha** | `0.1.x` | `v0.1.1-alpha` |
+| **beta** | `0.2.x` | `v0.2.0-beta` |
+| **release** | `1.0.0` | `v1.0.0` |
 
 **Dans une étape, tout monte le correctif** — une correction comme une nouveauté. Pourquoi :
 l'étape annonce déjà que le périmètre est incomplet, donc distinguer « correctif » et
@@ -39,22 +39,33 @@ testeurs ne se confondent pas.
 **Changer d'étape monte la mineure.** La beta ne reprend pas le numéro de l'alpha : sinon
 `v0.1.4` désignerait deux builds différents, et le tag ne dirait plus rien.
 
-## 3. L'étape est un mot, pas un suffixe
+## 3. L'étape est un mot, en suffixe du numéro (D-152)
 
-**Interdit** : `0.1.1-alpha.2`, `0.1.1-beta`. Personne ne dit « alpha deux », et un testeur ne
-recopie pas ça. L'étape s'écrit **à côté** du numéro, et elle vit dans `package.json` :
+Le tag, la release et le libellé affiché portent **le numéro puis l'étape**, séparés par un
+tiret : **`v0.1.15-alpha`**. En `release`, il n'y a **pas** de suffixe : `v1.0.0`.
 
 ```jsonc
 {
-  "version": "0.1.1",
+  "version": "0.1.15",
   "stage": "alpha"
 }
 ```
 
 Les deux sont injectés au build (`vite.config.ts` → `__APP_VERSION__`, `__APP_STAGE__`), lus par
-**`src/version.ts`** seul, et affichés par `APP_LABEL` (`Alpha · 0.1.1`). Valeurs admises pour
-`stage` : `alpha`, `beta`, `release`. Un mot inconnu retombe sur `alpha` — on ne fait jamais
+**`src/version.ts`** seul, et affichés par `APP_LABEL` (**`v0.1.15-alpha`**). Valeurs admises
+pour `stage` : `alpha`, `beta`, `release`. Un mot inconnu retombe sur `alpha` — on ne fait jamais
 croire à une version finale par accident.
+
+**Ce que D-152 change, et pourquoi** (Bastien, 29/10/2026) : l'ancienne règle interdisait tout
+suffixe (`0.1.1-alpha.2`, `0.1.1-beta`) et affichait « Alpha · 0.1.1 ». Un testeur recopie
+désormais **une seule chaîne**, la même dans Réglages, sur la release et sur le tag — il n'y a
+plus « Alpha · 0.1.15 » d'un côté et « v0.1.15 » de l'autre. Ce qui reste interdit, et c'est ce
+que l'ancienne règle visait : **un compteur de pré-version** (`-alpha.2`) et **deux sources** de
+l'étape.
+
+Trois endroits lisent le suffixe, et ils sont testés : le workflow de déploiement (le tag doit
+valoir `v<version>-<stage>`, ou `v<version>` en release), `scripts/notes-versions.mjs` (il
+**retire** le suffixe du tag pour retrouver la version de `package.json`), et `src/version.test.ts`.
 
 **Ne jamais écrire un numéro ni un mot d'étape dans un composant** : `src/version.test.ts`
 échoue si un `1.2.3` apparaît quelque part dans `src/`. Une seule source, `package.json`.
@@ -97,9 +108,13 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    deux gestes ne sont pas faits, la page Confidentialité **décrit un envoi qui n'a pas lieu** :
    c'est le premier pas à cocher, et la preuve qu'il est fait est **une annonce réelle** arrivée
    dans le salon (un post-it collé, une minute d'attente, `§10.4`), pas une migration « appliquée ».
-5. **Commiter**, puis **poser le tag** `v<version>` (`v0.1.2`) et le pousser. **Ce push déploie la production** (`.github/workflows/deploiement.yml`, D-140) : le workflow refuse un tag qui ne porte pas la version de `package.json`, refuse un commit déjà déployé (il sort proprement et le dit), construit l'application (`npm run build`), puis publie avec le CLI Vercel. Un secret manquant fait échouer le job au lieu de se taire. Ce déploiement se vérifie dans l'onglet Actions, puis en ouvrant `https://planquex.4k7.org` et en lisant la version dans Réglages.
+5. **Commiter**, puis **poser le tag** `v<version>-<stage>` (`v0.1.2-alpha`, ou `v1.0.0` en release) et le pousser. **Ce push déploie la production** (`.github/workflows/deploiement.yml`, D-140) : le workflow refuse un tag qui ne porte pas le numéro **et l'étape** de `package.json`, refuse un commit déjà déployé (il sort proprement et le dit), construit l'application (`npm run build`), puis publie avec le CLI Vercel. Un secret manquant fait échouer le job au lieu de se taire. Ce déploiement se vérifie dans l'onglet Actions, puis en ouvrant `https://planquex.4k7.org` et en lisant la version dans Réglages.
 6. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
-   message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes. C'est
+   message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.
+   **Le nom de la release est le tag lui-même** (`--title v0.1.15-alpha`, D-152) : pas de
+   suffixe descriptif, et donc aucune divergence possible avec `titreDe`
+   (`scripts/notes-versions.mjs`) — une release sans titre descriptif retombe sur
+   « Version 0.1.15 », et c'est ce que la note doit dire. C'est
    cette publication qui rend le brouillon du tag **attendu** aux yeux du contrôle
    `-- --verifie` (D-122) : avant elle, aucune tolérance — la note écrite d'avance est
    simplement ce que le générateur garde.
@@ -114,7 +129,15 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    chemin strict.
 8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
-**Entre deux releases, rien ne se déploie (D-140)** — **une fois la bascule faite**. Le workflow de tag existe (#420, étape 1) ; la bascule demande encore trois gestes humains : poser `VERCEL_TOKEN`, `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` dans les secrets GitHub, **réussir un premier déploiement par tag**, puis seulement couper l'auto-déploiement de Vercel (`git.deploymentEnabled`). D'ici là, une fusion sur `main` publie encore la production, et un aperçu de PR se déploie encore.
+**Entre deux releases, rien ne se déploie (D-140)** — la bascule est **faite**, le 29/10/2026 :
+les trois secrets sont posés (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`),
+`vercel.json` porte `git.deploymentEnabled: false`, et le **lien Git du projet Vercel est
+coupé** (`vercel git disconnect`, #460) : plus aucun aperçu de PR, plus aucune production à
+la fusion. **Le tag est le seul chemin** — `deploiement.yml` construit puis publie avec le CLI.
+
+Deux conséquences à connaître : **un « Redeploy » du tableau de bord rejoue l'ancien commit**
+(il ne connaît plus `main`), donc il ne sert jamais un travail récent ; et les nouveaux
+déploiements ne portent plus `gitRepo`, donc le tableau de bord ne les relie plus à un commit.
 
 **Cadence (D-128).** Une release part quand un **lot cohérent** est prêt, et **pas plus d'une par
 jour** : deux releases le même jour ont déjà eu lieu, et le testeur doit pouvoir dire « je suis sur
@@ -176,7 +199,10 @@ entre dans la note du jeu : ne pas en créer sans raison.
   est **généré** (`scripts/notes-versions.mjs`), et `npm run notes:versions -- --verifie`
   (relayé hors ligne par `scripts/notes-versions.test.ts`) dit s'il a divergé.
 - **Ne pas** inventer un numéro pour « faire beau » (un saut de `0.1.3` à `0.5.0` ne dit rien).
-- **Ne pas** renommer un tag publié : on monte la version.
-- Les testeurs citent **ce que Réglages affiche** (`Alpha · 0.1.2`) : c'est ce que
+- **Ne pas** renommer un tag publié : on monte la version. Le **nom de la release**, lui,
+  se met au format courant (`gh release edit <tag> --title "v<version>-<stage>"`) : c'est un
+  libellé, pas un point de retour — les 14 releases antérieures l'ont été le 29/10/2026
+  (D-152 (5)).
+- Les testeurs citent **ce que Réglages affiche** (`v0.1.2-alpha`) : c'est ce que
   `docs/ALPHA-TESTEURS.md` leur demande de recopier, et c'est aussi le libellé mis en avant
   sur `/feuille-de-route`.

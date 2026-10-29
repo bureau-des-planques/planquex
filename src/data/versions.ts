@@ -60,9 +60,89 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.15',
+    date: '2026-10-29',
+    titre: 'Version 0.1.15',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'On quitte une partie sans la perdre : la sortie est distincte du forfait, et l’on revient là d’où l’on vient.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La Rotation tient en une seule entrée, et ses cibles s’ouvrent dans le panneau du Poste au lieu d’encombrer la barre.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le café s’attache en touchant le Planqué : la barre ne porte plus ses propres cibles, et la couleur du café se lit.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Les cartes prennent au plateau le gabarit du jeu de référence — portrait plein — et gardent le format compact hors du plateau.'
+      },
+      {
+        groupe: 'La Direction',
+        texte: 'Trois crans de difficulté : Facile, Normal, Difficile. Chacun change la politique de la Direction et le Deck qu’elle joue, et se règle dans Réglages.'
+      },
+      {
+        groupe: 'La Direction',
+        texte: 'Chaque Deck proposé a sa page : sa stratégie, sa difficulté à jouer, sa faiblesse et son contenu.'
+      },
+      {
+        groupe: 'Ton Deck',
+        texte: 'La courbe de coût, le compte de cartes et les filtres par valeur dans la même vue, avec la raison quand rien ne correspond.'
+      },
+      {
+        groupe: 'Ton Deck',
+        texte: 'Un Deck se partage et s’importe par un code ; les cartes qui te manquent sont grisées, pas cachées.'
+      },
+      {
+        groupe: 'La Collection',
+        texte: 'Filtrer par rareté, par coût et par possession, ensemble ou séparément, en disant toujours pourquoi la grille est vide.'
+      },
+      {
+        groupe: 'Après la partie',
+        texte: 'Revoir une partie terminée, action par action, avec son verdict — et l’écart signalé si le rejeu ne raconte pas la même fin.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'La première connexion demande un pseudo, un service et un intitulé, tiré au sort et relançable une fois.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'Les règles en une minute : six étapes, chacune avec une capture réelle du jeu, sautables et rejouables depuis Réglages.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'Un appel à participer ferme la Journée d’intégration : deux portes, le comité et le dépôt.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'Quatre temps : le sachet se creuse, l’étiquette se décolle, la ligne se déchire, les cartes sortent — et se retournent une à une, dans l’ordre que tu veux.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'Le retournement d’une carte ne montre plus son dos en miroir, et une carte ne disparaît plus au moment de se retourner.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'Deux sons : l’Arrivage et le verdict, avec une case dans Réglages pour les couper.'
+      },
+      {
+        groupe: 'Partout',
+        texte: 'Le jeu tient sur un vrai téléphone, en portrait comme en paysage, et sur PC.'
+      },
+      {
+        groupe: 'Partout',
+        texte: 'Chaque écran sans barre a un retour nommé : plus de cul-de-sac, et le bouton du navigateur ne casse plus rien.'
+      }
+    ]
+  },
+  {
     version: '0.1.14',
     date: '2026-10-27',
-    titre: 'Le combat se lit à 420 px, et le café se voit',
+    titre: 'Version 0.1.14',
     points: [
       {
         groupe: 'Le combat',
@@ -129,7 +209,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.13',
     date: '2026-10-26',
-    titre: 'Le comité se suit, et le combat tient dans l’écran',
+    titre: 'Version 0.1.13',
     points: [
       {
         groupe: 'Le combat',
@@ -184,7 +264,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.12',
     date: '2026-10-26',
-    titre: 'Une chorégraphie par Pression',
+    titre: 'Version 0.1.12',
     points: [
       {
         groupe: 'Le combat',
@@ -243,7 +323,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.11',
     date: '2026-10-25',
-    titre: 'Les quatre temps dans l’ordre',
+    titre: 'Version 0.1.11',
     points: [
       {
         groupe: 'Le combat',
@@ -258,7 +338,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.10',
     date: '2026-10-25',
-    titre: 'Le combat se voit partir',
+    titre: 'Version 0.1.10',
     points: [
       {
         groupe: 'Le combat',
@@ -277,7 +357,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.9',
     date: '2026-10-25',
-    titre: 'L’écran de combat, refait',
+    titre: 'Version 0.1.9',
     points: [
       {
         groupe: 'Le combat',
@@ -312,7 +392,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.8',
     date: '2026-10-25',
-    titre: 'Le mur se range, les Chariots arrivent',
+    titre: 'Version 0.1.8',
     points: [
       {
         groupe: 'Le mur',
@@ -347,7 +427,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.7',
     date: '2026-10-25',
-    titre: 'Les comptes, et le mur qui écrit',
+    titre: 'Version 0.1.7',
     points: [
       {
         groupe: 'Comptes',
@@ -414,15 +494,18 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.6',
     date: '2026-10-23',
-    titre: 'L’Atelier a ses illustrations',
+    titre: 'Version 0.1.6',
     points: [
       {
+        groupe: 'L’Atelier a ses illustrations',
         texte: 'Les 27 cartes de l’Atelier sont illustrées (26 nouvelles, plus le Chef d’atelier déjà au registre) : le pilote #132 est livré, et c’est la première faction complète.'
       },
       {
+        groupe: 'L’Atelier a ses illustrations',
         texte: 'Chaque image est au registre avec sa graine, et la carte porte son art: — le gabarit l’affiche, avec repli sur l’aplat si l’image manque.'
       },
       {
+        groupe: 'L’Atelier a ses illustrations',
         texte: 'Quatre variantes ont été écartées pour un défaut visible : un cadre blanc, et du texte anglais incrusté (« STUCK AGAIN », « MAINTENANCE PLAN », « SPARE PARTS AREA », « BAY 3 »).'
       },
       {
@@ -442,18 +525,22 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.5',
     date: '2026-10-22',
-    titre: 'Le mur des retours fonctionne de bout en bout',
+    titre: 'Version 0.1.5',
     points: [
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'Les réponses du formulaire de la Boîte à idées sont importées automatiquement vers le mur : npm run mur:import lit la feuille de réponses en CSV et ajoute les post-its manquants (#177).'
       },
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'L’import est idempotent (deux exécutions n’ajoutent rien), ne touche jamais à un post-it déjà trié, et n’écrit rien si le CSV est illisible.'
       },
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'Les deux premiers post-its réels sont sur le mur.'
       },
       {
+        groupe: 'Le mur des retours fonctionne de bout en bout',
         texte: 'Règle de rangement appliquée : « Remonter un bug » → OUF, « Proposer une feature » et « Donner ton avis » → IP ; un gueulage sans titre en fabrique un avec ses premiers mots, et le post-it le dit.'
       },
       {
@@ -481,15 +568,18 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.4',
     date: '2026-10-22',
-    titre: 'Le combat se lit d’un coup',
+    titre: 'Version 0.1.4',
     points: [
       {
+        groupe: 'Le combat se lit d’un coup',
         texte: 'Le pas-à-pas est en haut, collé, et « Suivant » amène la cible de l’étape à l’écran (#169).'
       },
       {
+        groupe: 'Le combat se lit d’un coup',
         texte: 'La main reste visible sans défiler sur téléphone (#170).'
       },
       {
+        groupe: 'Le combat se lit d’un coup',
         texte: 'Poser une carte se fait en deux temps, avec les gestes nommés (#169).'
       },
       {
@@ -545,7 +635,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.3',
     date: '2026-10-22',
-    titre: 'La partie à deux, et le mur des retours',
+    titre: 'Version 0.1.3',
     points: [
       {
         groupe: 'Jeu',
@@ -592,7 +682,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.2',
     date: '2026-10-21',
-    titre: 'Illustrations servies par Vite',
+    titre: 'Version 0.1.2',
     points: [
       {
         groupe: 'Ce qui change',
@@ -611,7 +701,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
   {
     version: '0.1.1',
     date: '2026-10-21',
-    titre: 'L’alpha ouvre ses portes',
+    titre: 'Version 0.1.1',
     points: [
       {
         groupe: 'Ce qui marche',

@@ -57,8 +57,12 @@ jobs:
         run: |
           tag="${GITHUB_REF#refs/tags/}"
           version="$(node -p 'require("./package.json").version')"
-          if [ "$tag" != "v$version" ]; then
-            echo "::error::Déploiement refusé : le tag $tag ne correspond pas à package.json (v$version). Un tag dit la version (docs/VERSIONS.md §4)."
+          stage="$(node -p 'require("./package.json").stage')"
+          # Depuis D-152, le tag porte l'étape en suffixe (`v0.1.15-alpha`) ; en `release`, pas
+          # de suffixe (`v1.0.0`). Le tag doit dire **le numéro et l'étape** de package.json.
+          if [ "$stage" = "release" ]; then attendu="v$version"; else attendu="v$version-$stage"; fi
+          if [ "$tag" != "$attendu" ]; then
+            echo "::error::Déploiement refusé : le tag $tag ne correspond pas à package.json ($attendu). Un tag dit la version et l'étape (docs/VERSIONS.md §4)."
             exit 1
           fi
           echo "Tag $tag = version $version"

@@ -61,9 +61,9 @@ function versionsEnDurDansSrc(): string[] {
 describe('version de l’application', () => {
   it('vient de package.json, et de nulle part ailleurs', () => {
     expect(APP_VERSION).toBe(pkg.version);
-    expect(APP_LABEL).toBe(
-      `${APP_STAGE === 'alpha' ? 'Alpha' : APP_STAGE === 'beta' ? 'Bêta' : 'Version finale'} · ${pkg.version}`
-    );
+    // D-152 (29/10/2026) : le numéro puis l'étape en suffixe — le **même mot** que le tag et
+    // la release, pour que le testeur recopie une seule chaîne. En `release`, pas de suffixe.
+    expect(APP_LABEL).toBe(APP_STAGE === 'release' ? `v${pkg.version}` : `v${pkg.version}-${APP_STAGE}`);
   });
 
   it('porte l’étape en clair, à côté du numéro (D-050)', () => {

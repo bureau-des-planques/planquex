@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 151 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 152 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -157,3 +157,4 @@
 | D-149 | 28/10/2026 | La Direction joue trois Decks, un par archétype, et la… |
 | D-150 | 28/10/2026 | Le reset de la beta est un geste du poste,… |
 | D-151 | 28/10/2026 | La difficulté a trois crans nommés, et chacun change la… |
+| D-152 | 29/10/2026 | La version s'écrit v<numéro>-<étape>, partout . (1) Le tag, le… |
