@@ -3,7 +3,8 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { BancPret } from './BancPret';
-import type { EtatInvite, Environnement } from '@/lib/installation';
+import type { Environnement } from '@/lib/installation';
+import type { EtatInvite } from '@/lib/invite-installation';
 import type { CapteurInvite, ResultatInstallation } from '@/lib/invite-installation';
 
 /**
