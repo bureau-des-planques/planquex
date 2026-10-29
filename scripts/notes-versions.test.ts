@@ -6,6 +6,7 @@ import {
   brouillonAttendu,
   comparer,
   entreeDe,
+  lireReleases,
   nettoyer,
   rendreFichier,
   titreDe,
@@ -322,6 +323,41 @@ describe('notes-versions — le brouillon attendu sur le tag (D-122)', () => {
 
 /** Le chemin du script, pour le message d'erreur des contrôles ci-dessus. */
 const CHEMIN = fileURLToPath(new URL('./notes-versions.mjs', import.meta.url));
+
+describe('notes-versions — lire les releases', () => {
+  it('garde une release dont le tag porte l’étape, et la range à sa place (D-152)', () => {
+    // `gh` est injecté : rien n'est appelé. C'est le filtre et le tri qu'on éprouve, pas le
+    // réseau — les tags depuis 0.1.15 s'appellent `v0.1.15-alpha`, et un filtre qui n'accepte
+    // que `v1.2.3` les jetterait en silence (la note resterait un brouillon pour toujours).
+    const vues = new Map([
+      ['v0.1.15-alpha', { tagName: 'v0.1.15-alpha', name: 'v0.1.15-alpha', body: '- Une chose.', publishedAt: '2026-10-29T00:00:00Z', isDraft: false }],
+      ['v0.1.14', { tagName: 'v0.1.14', name: 'v0.1.14-alpha', body: '- Une autre.', publishedAt: '2026-10-27T00:00:00Z', isDraft: false }],
+      ['v0.1.9', { tagName: 'v0.1.9', name: 'v0.1.9-alpha', body: '- La neuvième.', publishedAt: '2026-10-25T00:00:00Z', isDraft: false }],
+      ['alpha-2026', { tagName: 'alpha-2026', name: 'alpha-2026', body: '', publishedAt: '2026-10-20T00:00:00Z', isDraft: false }]
+    ]);
+    const fauxGh = (args: string[]) => {
+      if (args[0] === 'release' && args[1] === 'list') {
+        return [...vues.values()].map((r) => ({
+          tagName: r.tagName,
+          publishedAt: r.publishedAt,
+          name: r.name,
+          isDraft: r.isDraft
+        }));
+      }
+      const tag = args[2];
+      const vue = vues.get(tag);
+      if (!vue) throw new Error(`tag inconnu : ${tag}`);
+      return vue;
+    };
+
+    const notes = lireReleases(fauxGh as never).map((release) => entreeDe(release));
+    // Le tag qui n'est pas une version est écarté ; celui qui porte l'étape est gardé, et
+    // la version redevient celle de `package.json`.
+    expect(notes.map((note) => note.version)).toEqual(['0.1.15', '0.1.14', '0.1.9']);
+    expect(notes[0].titre).toBe('Version 0.1.15');
+    expect(notes[0].brouillon).toBeUndefined();
+  });
+});
 
 describe('notes-versions — la commande', () => {
   it('est déclarée dans package.json, et n’ajoute aucune dépendance', () => {
