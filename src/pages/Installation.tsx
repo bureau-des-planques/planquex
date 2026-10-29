@@ -172,16 +172,14 @@ export function Installation() {
         <h2 className="m-0">Ce qui est gardé, et où</h2>
         <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
           <li>
-            <strong>Sur ton appareil</strong> : ta Collection, ton Deck, ton pseudo et ta partie en cours. Rien de cela
-            ne part sur un serveur.
+            <strong>Sur ton appareil</strong> : ton pseudo et ta partie en cours. Rien de cela ne part sur un serveur.
           </li>
           <li>
-            <strong>Sur le serveur du jeu</strong> : ton compte, ce que tu écris sur le mur, et le déroulé de tes
-            combats terminés.
+            <strong>Sur le serveur du jeu</strong> : ton compte, ce que tu écris sur le mur, le déroulé de tes combats
+            terminés, et bientôt ton Deck et ta Collection.
           </li>
           <li>
-            <strong>Ton compte te suit</strong> d’un appareil à l’autre ; ta Collection, non : elle vit dans le
-            navigateur où tu joues.
+            <strong>Ton compte te suit</strong> d’un appareil à l’autre ; bientôt, ton Deck et ta Collection aussi.
           </li>
         </ul>
         <p className="muted m-0 max-w-[62ch] text-[0.86rem]">
@@ -195,7 +193,8 @@ export function Installation() {
         <h2 className="m-0">Ta sauvegarde, avant de changer d’appareil</h2>
         <p className="m-0 max-w-[62ch] text-[0.92rem] leading-relaxed">
           Changer d’appareil ou de navigateur, vider les données, désinstaller l’application : dans ces trois cas, la
-          Collection, le Deck, le pseudo et la partie en cours sont effacés de ce navigateur, sans retour.
+          Collection, le Deck, ton pseudo et ta partie en cours sont effacés de ce navigateur, sans retour. Bientôt, ton
+          Deck et ta Collection seront stockés sur ton compte : tu les retrouveras après un changement d’appareil.
         </p>
         <ol className="m-0 flex list-decimal flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
           {SAUVEGARDE.map((etape) => (

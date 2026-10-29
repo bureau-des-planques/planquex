@@ -57,6 +57,12 @@ const COLLECTE: Rubrique[] = [
     ]
   },
   {
+    titre: 'Ton Deck et ta Collection',
+    lignes: [
+      'Ton Deck et ta Collection seront stockés sur le serveur, liés à ton compte : tu les retrouveras après un changement d’appareil.'
+    ]
+  },
+  {
     titre: 'Ce qui part du mur quand il bouge',
     lignes: [
       'Quand un post-it arrive sur le mur, et chaque fois que son statut change (retenu, en cours, fait, écarté avec sa raison), une annonce part dans le salon #comite du serveur des testeurs : la famille (idée ou signalement), le titre, ton pseudo et le lien vers la page du comité.',
