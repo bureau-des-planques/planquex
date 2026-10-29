@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
  * faite **à la main**, et rien n'empêchait la suivante : un document n'est lu par aucun test.
  *
  * Le dépôt avait déjà ce patron, et ce fichier s'y range plutôt que d'inventer le sien :
- * `scripts/ressources/compteurs.test.ts` garde les **décomptes de cartes**, `scripts/ressources/decisions.test.ts`
+ * `scripts/gardes/compteurs.test.ts` garde les **décomptes de cartes**, `scripts/gardes/decisions.test.ts`
  * la **continuité du journal**, `scripts/generateurs/index-decisions.test.ts` la **synchro de l'index**.
  * Ici, quatre contrôles, tous par **lecture de fichier** (aucun réseau, aucune commande) :
  *
@@ -25,7 +25,7 @@ import { describe, expect, it } from 'vitest';
  *    (D-075) — n'est plus employé **nu** dans les documents d'autorité et les docs vivants ;
  * 4. `README.md` **renvoie** à `docs/COMMANDES.md` au lieu de recopier ses commandes.
  *
- * Le point (4) ne refait **pas** le contrôle de `scripts/ressources/compteurs.test.ts` : celui-ci exige
+ * Le point (4) ne refait **pas** le contrôle de `scripts/gardes/compteurs.test.ts` : celui-ci exige
  * déjà `npm run status` dans `README.md` et `docs/COMMANDES.md` (« les deux renvoient à
  * `npm run status`, la source unique »). Le refaire ici dupliquerait la garde, et une garde en
  * double se corrige deux fois ; seul le renvoi vers la table des commandes est ajouté.
@@ -286,7 +286,7 @@ describe('Cohérence des documents — le vocabulaire retiré (D-075, D-083)', (
 
 describe('Cohérence des documents — le renvoi, pas la copie (27/10/2026)', () => {
   /**
-   * `npm run status` comme source des décomptes est déjà gardé par `scripts/ressources/compteurs.test.ts`
+   * `npm run status` comme source des décomptes est déjà gardé par `scripts/gardes/compteurs.test.ts`
    * (« les deux renvoient à `npm run status`, la source unique ») : non dupliqué ici.
    * Ce qui n'était gardé nulle part, c'est le renvoi vers la **table des commandes** elle-même.
    */
@@ -306,7 +306,7 @@ describe('Cohérence des documents — le renvoi, pas la copie (27/10/2026)', ()
 /**
  * Sans ce bloc, les trois gardes s'appuient sur des fichiers **sains aujourd'hui** : une
  * assertion qui ne peut pas échouer ne garde rien (`AGENTS.md` §6, #112). C'est le patron du
- * bloc « La garde des décomptes mord » de `scripts/ressources/compteurs.test.ts`.
+ * bloc « La garde des décomptes mord » de `scripts/gardes/compteurs.test.ts`.
  */
 describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
   const journal = (n: number) =>

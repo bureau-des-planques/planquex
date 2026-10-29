@@ -103,7 +103,7 @@ describe('Garde-fous — la table est ancrée et bornée (#112)', () => {
   });
 
   it('chaque entrée cite un ticket, un titre et la règle qu’elle garde', () => {
-    // Lecture de la **source** de la table, comme `scripts/ressources/compteurs.test.ts` lit les
+    // Lecture de la **source** de la table, comme `scripts/gardes/compteurs.test.ts` lit les
     // docs : une entrée sans justification se glisse plus vite qu'une entrée sans motif.
     // Le comptage est **ancré en début de ligne** : compter `ticket:` en sous-chaîne est
     // faux, car la mutation de #103 porte `ticket: 104` et `ticket: 999` **dans ses

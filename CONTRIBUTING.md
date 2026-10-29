@@ -292,7 +292,7 @@ Quatre commandes pour démarrer ; le reste, dont celles qui précèdent une PR, 
 | `gh issue view 42` sans `--json` | sort 1 : l'avertissement « Projects (classic) » compte comme une erreur | toujours `--json number,title,body,labels,comments` |
 | `gh pr edit --body-file` | échoue pour la même raison | `gh api --method PATCH repos/bureau-des-planques/planquex/pulls/<n>` avec un JSON `{"body": …}` |
 | écran blanc en dev | un service worker de build répond sur `localhost:5178` | DevTools → Application → *Unregister*, puis *Clear site data* ([détail](docs/COMMANDES.md#71-piège-connu--le-service-worker-casse-le-dev-sur-la-même-origine)) |
-| un décompte écrit dans une doc | `scripts/ressources/compteurs.test.ts` le refuse | renvoyer à `npm run status` ou `npm test` |
+| un décompte écrit dans une doc | `scripts/gardes/compteurs.test.ts` le refuse | renvoyer à `npm run status` ou `npm test` |
 | un numéro de version écrit dans `src/` | `src/version.test.ts` le refuse | lire `src/version.ts`, seule porte vers `package.json` |
 | un fichier de `src/data/` reformaté | un texte de carte change à l'écran | `.prettierignore` l'exclut ; `.vscode/settings.json` le respecte à l'enregistrement |
 

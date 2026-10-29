@@ -59,6 +59,6 @@ Nulle part ailleurs il n'y a d'`Audio` ni de `<audio>`.
   verrouillage) n'a pas été éprouvé sur un vrai téléphone.
 - **Le précache est fait** (depuis #414, phrase corrigée à la revue du 29/10) : les deux WAV sont
   dans le service worker — `globPatterns` de `vite.config.ts` porte `wav` — et
-  `scripts/ressources/precache.test.ts` refuse un fichier de `public/` que le jeu charge sans le servir
+  `scripts/gardes/precache.test.ts` refuse un fichier de `public/` que le jeu charge sans le servir
   hors ligne. Ce qui reste vrai : un son qui ne se décode pas ne casse rien, et le module se
   tait alors, sans erreur.

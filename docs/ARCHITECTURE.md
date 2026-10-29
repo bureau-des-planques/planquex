@@ -28,7 +28,7 @@ copie prend vite du retard. Pour l'état réel, `ls <dossier>` ; pour les écran
 | **Configuration de contribution** | `.github/` (CI, modèles de ticket et de PR), `CONTRIBUTING.md`, `CLAUDE.md` (qui n'importe que `AGENTS.md`), `.vscode/`, `.nvmrc` | le geste de contribution, et Node 24 comme version de la CI |
 | **Documentation** | `docs/` ; `AGENTS.md` pour les règles d'agent | `AGENTS.md` §2 dit l'ordre d'autorité |
 
-**`scripts/`, cinq dossiers par métier** (#481 à #485, 29/10/2026). Le dossier a vécu à **83 fichiers à plat** : on y range par **ce que le script fait**, et un fichier de test reste toujours à côté de son exécutable.
+**`scripts/`, cinq dossiers par métier** (#481 à #485, 29/10/2026). Le dossier a vécu à **83 fichiers à plat** : on y range par **ce que le script fait**. Un test de script reste **à côté de son exécutable** ; les gardes de cohérence, qui n'ont pas d'exécutable à côté et lisent plusieurs modules, vivent dans `gardes/`.
 
 | Dossier | Ce qu'il porte |
 |---|---|

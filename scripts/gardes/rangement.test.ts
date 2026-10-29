@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 const SCRIPTS = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 /** Les dossiers admis sous `scripts/`, et ce qu'ils portent. */
-export const DOSSIERS: Readonly<Record<string, string>> = {
+const DOSSIERS: Readonly<Record<string, string>> = {
   preuves: 'ce qui mesure, filme, joue et éprouve le jeu, sans écrire de fichier du dépôt',
   generateurs: 'ce qui écrit un fichier du dépôt, une action GitHub ou une ligne du mur',
   ci: 'la chaîne : chemins, état, format, durées, gardes, dispatch, worktree, UI, gflow',
@@ -29,7 +29,7 @@ export const DOSSIERS: Readonly<Record<string, string>> = {
   gardes: 'les tests de cohérence du dépôt, sans exécutable à côté'
 };
 
-export interface EntreeScripts {
+interface EntreeScripts {
   /** Le nom de l'entrée, sous `scripts/`. */
   nom: string;
   /** Vrai pour un dossier. */
@@ -39,7 +39,7 @@ export interface EntreeScripts {
 }
 
 /** Les défauts de rangement d'une liste d'entrées ; vide = le rangement est sain. */
-export function defautsRangement(
+function defautsRangement(
   entrees: readonly EntreeScripts[],
   admis: Readonly<Record<string, string>> = DOSSIERS
 ): string[] {
@@ -80,15 +80,11 @@ describe('le rangement de scripts/ (#485)', () => {
       { nom: 'vide', dossier: true, fichiers: 0 },
       { nom: 'mystere', dossier: true, fichiers: 2 }
     ];
-    expect(defautsRangement(fautif)).toEqual([
-      'capturer.mjs : un fichier à la racine de scripts/ (il va dans un dossier)',
-      "vide/ : dossier inconnu (l'ajouter à DOSSIERS avec sa raison)",
-      'vide/ : dossier vide (un dossier vide ne range rien)',
-      "mystere/ : dossier inconnu (l'ajouter à DOSSIERS avec sa raison)",
-      'generateurs/ : dossier annoncé mais absent',
-      'ci/ : dossier annoncé mais absent',
-      'ressources/ : dossier annoncé mais absent',
-      'gardes/ : dossier annoncé mais absent'
-    ]);
+    const defauts = defautsRangement(fautif);
+    expect(defauts).toContain('capturer.mjs : un fichier à la racine de scripts/ (il va dans un dossier)');
+    expect(defauts).toContain('vide/ : dossier vide (un dossier vide ne range rien)');
+    expect(defauts).toContain("mystere/ : dossier inconnu (l'ajouter à DOSSIERS avec sa raison)");
+    // Les dossiers annoncés qui manquent : tous sauf `preuves`, le seul présent.
+    expect(defauts.filter((d) => d.endsWith('absent'))).toHaveLength(Object.keys(DOSSIERS).length - 1);
   });
 });

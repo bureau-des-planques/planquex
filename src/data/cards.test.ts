@@ -232,7 +232,7 @@ describe('Cartes — cibles par rareté (CARD-SPEC.md §1, ticket #103)', () => 
  *
  * **Recopie assumée, la seule légitime** : ces nombres sont des **cibles normatives** du
  * document, pas un décompte du code. L'observé, lui, se dérive d'`ALL_CARDS` ci-dessous —
- * il reste la source unique de ce que le dépôt contient (`scripts/ressources/compteurs.test.ts`,
+ * il reste la source unique de ce que le dépôt contient (`scripts/gardes/compteurs.test.ts`,
  * ticket #36). Un test qui recopierait les deux côtés ne prouverait rien.
  */
 const CIBLES_BASES = { '1D': 102, '2D': 67, '3D': 42, '4D': 15 } as const;

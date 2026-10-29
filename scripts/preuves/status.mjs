@@ -6,7 +6,7 @@
  * Le décompte des cartes n'est jamais recopié : il se **dérive d'`ALL_CARDS`**
  * (`src/data/index.ts`), chargé par Vite tel qu'il est écrit. C'est la seule
  * source de ce nombre — `AGENTS.md` §7 et `README.md` renvoient ici, et
- * `scripts/ressources/compteurs.test.ts` échoue si un décompte en dur y revient.
+ * `scripts/gardes/compteurs.test.ts` échoue si un décompte en dur y revient.
  */
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
