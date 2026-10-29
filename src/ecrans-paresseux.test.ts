@@ -29,6 +29,14 @@ export function ecransParesseux(source: string): string[] {
   return [...source.matchAll(/lazy\(\(\) => import\('@\/pages\/(\w+)'\)/g)].map((m) => m[1]).sort();
 }
 
+/**
+ * Les modules de `src/pages/` qui ne sont **pas des écrans** : ils ne se routent pas, donc
+ * `src/App.tsx` ne les importe pas. `Installation` est la source des faits du guide
+ * (`ADRESSE`, `PROCEDURES`), importée par `InstallationBanc` (#508) ; le test suivant garde
+ * ce fait, pour que l'exclusion ne puisse pas avaler un écran par distraction.
+ */
+const MODULES_DE_FAITS = new Set(['Installation']);
+
 describe('les écrans se chargent à la demande (#478)', () => {
   const source = readFileSync(join(process.cwd(), 'src', 'App.tsx'), 'utf8');
 
@@ -47,8 +55,20 @@ describe('les écrans se chargent à la demande (#478)', () => {
   it('tous les autres écrans de `src/pages/` sont chargés à la demande', () => {
     const pages = readdirSync(join(process.cwd(), 'src', 'pages'))
       .filter((fichier) => fichier.endsWith('.tsx') && !fichier.endsWith('.test.tsx'))
+      .filter((fichier) => !MODULES_DE_FAITS.has(fichier.replace(/\.tsx$/, '')))
       .map((fichier) => fichier.replace(/\.tsx$/, ''))
       .sort();
     expect([...ecransEnDur(source), ...ecransParesseux(source)].sort()).toEqual(pages);
+  });
+
+  it('un module de faits reste hors du routeur, et garde ses faits', () => {
+    const installation = readFileSync(join(process.cwd(), 'src', 'pages', 'Installation.tsx'), 'utf8');
+    const banc = readFileSync(join(process.cwd(), 'src', 'pages', 'InstallationBanc.tsx'), 'utf8');
+    // `Installation.tsx` n'est plus un écran (#508) : c'est la source de `ADRESSE` et
+    // `PROCEDURES`, que le banc importe. Si l'import disparaît, l'exclusion ci-dessus
+    // avalerait un vrai écran.
+    expect(installation).toContain('export const ADRESSE');
+    expect(installation).toContain('export const PROCEDURES');
+    expect(banc).toMatch(/import \{ ADRESSE, PROCEDURES \} from '@\/pages\/Installation';/);
   });
 });
