@@ -198,11 +198,13 @@ export function Rejeu() {
       ) : (
         <Revue partie={derniere} />
       )}
-      <p>
-        <Link className="button" to="/settings">
-          Retour aux Réglages
-        </Link>
-      </p>
+      {derniere !== null && (
+        <p>
+          <Link className="button" to="/settings">
+            Retour aux Réglages
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
