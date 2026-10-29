@@ -34,7 +34,7 @@ function liensRendus(conteneur: HTMLElement): string[] {
 describe('le parcours (#429) — chaque écran rendu', () => {
   afterEach(cleanup);
 
-  it("chaque ecran est atteignable depuis l'accueil dans le seuil, et l'on en revient dans le seuil", async () => {
+  it('chaque écran est atteignable depuis l’accueil dans le seuil, et l’on en revient dans le seuil', async () => {
     const graphe: Record<string, string[]> = {};
     for (const chemin of [RACINE, ...ecrans]) {
       const { container, unmount } = await rendreApplication({ chemin, storeState: { deck: [] } });

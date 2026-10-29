@@ -101,7 +101,7 @@ function liensRendus(conteneur: HTMLElement): string[] {
 }
 
 describe('la garde des sorties (#426) — le contrôle mord', () => {
-  it("une route sans lien vers l'accueil est signalée", () => {
+  it('une route sans lien vers l’accueil est signalée', () => {
     const graphe = { '/': ['/collection'], '/collection': ['/', '/deck'], '/fabriquee': ['/deck'] };
     expect(cheminsSansRetour(graphe)).toEqual(['/fabriquee']);
   });
@@ -124,7 +124,7 @@ describe('la garde des sorties (#426) — le contrôle mord', () => {
   });
 });
 
-describe("App — chaque écran a une voie de retour et une entrée depuis l'accueil", () => {
+describe('App — chaque écran a une voie de retour et une entrée depuis l’accueil', () => {
   afterEach(cleanup);
 
   it('les routes déclarées ici sont exactement celles de src/App.tsx', () => {

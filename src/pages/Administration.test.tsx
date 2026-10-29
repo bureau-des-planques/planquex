@@ -153,7 +153,7 @@ describe('la route n’est pas ouverte à un compte non administrateur', () => {
     expect(mocks.lister).not.toHaveBeenCalled();
   });
 
-  it("la route /administration, atteinte par l'adresse, refuse aussi", async () => {
+  it('la route /administration, atteinte par l’adresse, refuse aussi', async () => {
     poser({ compte: { ...APPROUVE }, session: { id: APPROUVE.id, courriel: APPROUVE.courriel } });
 
     await rendreApplication({ chemin: '/administration' });

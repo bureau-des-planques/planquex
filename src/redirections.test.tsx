@@ -9,6 +9,9 @@ import { App } from '@/App';
 import { REDIRECTIONS, REDIRECTIONS_PUBLIQUES } from '@/redirections';
 import { setupTestStore } from '@/test/test-utils';
 
+// Exception au critère 2 de #477 : ce fichier garde son montage manuel de `<App />` parce qu'il
+// teste les redirections d'adresses et lit l'adresse courante via `<Adresse />`.
+
 /**
  * Les anciennes adresses (`/parc`, `/chariot`, `/idees`, `/nouveautes`) redirigent vers les
  * nouvelles (D-075, #168 ; D-097, #210).
