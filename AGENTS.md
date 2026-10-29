@@ -6,7 +6,7 @@
 
 ## 1. Règles d'or
 
-1. Lire ce fichier. Pour `docs/DECISIONS.md` (153 décisions, 37 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (154 décisions, 37 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier le **dossier frère des versions abandonnées** (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
@@ -73,7 +73,7 @@ Application **Vite plate** ; le monorepo de `PROPOSITION.md` §6.1 est une cible
 
 Tableau des commandes, wizards et gotchas : **`docs/COMMANDES.md`**, depuis `planquex/`. Après une modification : `npm run check`, `npm test`, `npm run garde-fous`, `npm run build` (§8.4).
 
-- **Où vit un script** : `scripts/` a **cinq dossiers par métier** — `preuves/` (mesurer), `generateurs/` (écrire), `ci/` (la chaîne), `ressources/` (ce que le jeu sert, et le poste), `gardes/` (les tests de cohérence). Un script se pose **dans un dossier**, jamais à la racine de `scripts/` : `scripts/gardes/rangement.test.ts` le garde (#485), et `docs/ARCHITECTURE.md` dit ce qui va où.
+- **Où vit un script** : `scripts/` a **cinq dossiers par métier** — `preuves/` (mesurer), `generateurs/` (écrire), `ci/` (la chaîne), `ressources/` (ce que le jeu sert, et le poste), `gardes/` (les tests de cohérence). Un script se pose **dans un dossier**, jamais à la racine de `scripts/` : `scripts/gardes/rangement.test.ts` le garde (#485, D-154), et `docs/ARCHITECTURE.md` dit ce qui va où.
 
 - **Installer les dépendances** : `npm run installer` dans le worktree. `npm ci` vide `node_modules/` et ne se lance jamais dans le dépôt principal (`scripts/ressources/installer.mjs` le refuse).
 - **Formater** : `npm run format` (écrit), `npm run format:check` (vérifie, ce que la CI lance). Un fichier de données de carte (`src/data/`) n'est **pas** reformaté : un texte par ligne, un repli changerait le texte affiché.
