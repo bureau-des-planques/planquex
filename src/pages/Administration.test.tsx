@@ -42,8 +42,7 @@ vi.mock('@/lib/comptes', async () => {
 });
 
 import { Administration } from './Administration';
-import { App } from '@/App';
-import { setupTestStore } from '@/test/test-utils';
+import { rendreApplication } from '@/test/test-utils';
 
 const EN_ATTENTE: Compte = {
   id: 'compte-a',
@@ -154,17 +153,14 @@ describe('la route n’est pas ouverte à un compte non administrateur', () => {
     expect(mocks.lister).not.toHaveBeenCalled();
   });
 
-  it('la route /administration, atteinte par l’adresse, refuse aussi', () => {
-    setupTestStore({ tutorielVu: true, pasAPasCombatVu: true });
+  it("la route /administration, atteinte par l'adresse, refuse aussi", async () => {
     poser({ compte: { ...APPROUVE }, session: { id: APPROUVE.id, courriel: APPROUVE.courriel } });
 
-    render(
-      <MemoryRouter initialEntries={['/administration']}>
-        <App />
-      </MemoryRouter>
-    );
+    await rendreApplication({ chemin: '/administration' });
 
-    expect(screen.getByRole('heading', { level: 1, name: /Réservé à l’administration/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: /R\u00e9serv\u00e9 \u00e0 l\u2019administration/ })
+    ).toBeInTheDocument();
     expect(mocks.lister).not.toHaveBeenCalled();
   });
 

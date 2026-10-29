@@ -5,9 +5,8 @@ import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
-import { App } from '@/App';
 import { RetourEcran } from '@/components/RetourEcran';
-import { setupTestStore } from '@/test/test-utils';
+import { rendreApplication } from '@/test/test-utils';
 
 /**
  * Le retour des écrans sans barre du bas (#428, parent #425).
@@ -110,15 +109,10 @@ describe('RetourEcran', () => {
 describe('App — chaque écran sans barre a un retour', () => {
   afterEach(cleanup);
 
-  it('chaque route sans barre rend un lien « Retour… »', () => {
+  it('chaque route sans barre rend un lien « Retour… »', async () => {
     const liens: Record<string, string[]> = {};
     for (const chemin of ECRANS_SANS_BARRE) {
-      setupTestStore({ deck: [], tutorielVu: true, pasAPasCombatVu: true });
-      const { container, unmount } = render(
-        <MemoryRouter initialEntries={[chemin]}>
-          <App />
-        </MemoryRouter>
-      );
+      const { container, unmount } = await rendreApplication({ chemin, storeState: { deck: [] } });
       liens[chemin] = [...container.querySelectorAll('a')].map((a) => a.textContent?.trim() ?? '');
       unmount();
       cleanup();

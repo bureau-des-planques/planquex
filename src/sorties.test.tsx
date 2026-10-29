@@ -2,11 +2,9 @@
 // Lenteur justifiée (D-143 (5)) — lit le routeur et ses liens : le coût est le démarrage de jsdom
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { cleanup, render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { cleanup } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { App } from '@/App';
-import { setupTestStore } from '@/test/test-utils';
+import { rendreApplication } from '@/test/test-utils';
 import { EXCEPTIONS } from '../scripts/preuves/parcours.mjs';
 
 /**
@@ -103,7 +101,7 @@ function liensRendus(conteneur: HTMLElement): string[] {
 }
 
 describe('la garde des sorties (#426) — le contrôle mord', () => {
-  it('une route sans lien vers l’accueil est signalée', () => {
+  it("une route sans lien vers l'accueil est signalée", () => {
     const graphe = { '/': ['/collection'], '/collection': ['/', '/deck'], '/fabriquee': ['/deck'] };
     expect(cheminsSansRetour(graphe)).toEqual(['/fabriquee']);
   });
@@ -126,7 +124,7 @@ describe('la garde des sorties (#426) — le contrôle mord', () => {
   });
 });
 
-describe('App — chaque écran a une voie de retour et une entrée depuis l’accueil', () => {
+describe("App — chaque écran a une voie de retour et une entrée depuis l'accueil", () => {
   afterEach(cleanup);
 
   it('les routes déclarées ici sont exactement celles de src/App.tsx', () => {
@@ -135,19 +133,14 @@ describe('App — chaque écran a une voie de retour et une entrée depuis l’a
     expect(declarees).toEqual([...ROUTES_ECRAN].sort());
   });
 
-  it('le graphe rendu : aucune route sans retour, aucune route inatteignable hors exceptions', () => {
+  it('le graphe rendu : aucune route sans retour, aucune route inatteignable hors exceptions', async () => {
     // Le graphe se construit en **rendant** chaque page réelle, à partir de l'accueil.
     const graphe: Record<string, string[]> = {};
     const file = ['/'];
     const vus = new Set<string>(file);
     while (file.length > 0) {
       const chemin = file.shift() as string;
-      setupTestStore({ deck: [], tutorielVu: true, pasAPasCombatVu: true });
-      const { container, unmount } = render(
-        <MemoryRouter initialEntries={[chemin]}>
-          <App />
-        </MemoryRouter>
-      );
+      const { container, unmount } = await rendreApplication({ chemin, storeState: { deck: [] } });
       const liens = liensRendus(container);
       graphe[chemin] = liens;
       unmount();

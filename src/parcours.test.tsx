@@ -1,11 +1,9 @@
 // @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { cleanup, render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { cleanup } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { App } from '@/App';
-import { setupTestStore } from '@/test/test-utils';
+import { rendreApplication } from '@/test/test-utils';
 import { EXCEPTIONS, RACINE, cheminInterne, evaluerParcours, routesDeclarees } from '../scripts/preuves/parcours.mjs';
 
 /**
@@ -36,15 +34,10 @@ function liensRendus(conteneur: HTMLElement): string[] {
 describe('le parcours (#429) — chaque écran rendu', () => {
   afterEach(cleanup);
 
-  it('chaque écran est atteignable depuis l’accueil dans le seuil, et l’on en revient dans le seuil', () => {
+  it("chaque ecran est atteignable depuis l'accueil dans le seuil, et l'on en revient dans le seuil", async () => {
     const graphe: Record<string, string[]> = {};
     for (const chemin of [RACINE, ...ecrans]) {
-      setupTestStore({ deck: [], tutorielVu: true, pasAPasCombatVu: true });
-      const { container, unmount } = render(
-        <MemoryRouter initialEntries={[chemin]}>
-          <App />
-        </MemoryRouter>
-      );
+      const { container, unmount } = await rendreApplication({ chemin, storeState: { deck: [] } });
       graphe[chemin] = liensRendus(container);
       unmount();
       cleanup();
