@@ -28,12 +28,15 @@ describe('Rejeu — revoir une partie terminée', () => {
   it('sans partie gardée, dit qu’il n’y a rien à revoir et renvoie aux Réglages', () => {
     renderWithStore(<Rejeu />, { derniere: null, tutorielVu: true, pasAPasCombatVu: true });
     expect(screen.getByText(/Aucune partie terminée à revoir/)).toBeInTheDocument();
-    expect(screen.getAllByRole('link', { name: 'Retour aux Réglages' })[0]).toHaveAttribute('href', '/settings');
+    const liens = screen.getAllByRole('link', { name: 'Retour aux Réglages' });
+    expect(liens).toHaveLength(1);
+    expect(liens[0]).toHaveAttribute('href', '/settings');
   });
 
   it('une partie rejouée annonce un verdict identique', () => {
     const { partie } = partieTerminee();
     renderWithStore(<Rejeu />, { derniere: partie, tutorielVu: true, pasAPasCombatVu: true });
+    expect(screen.getAllByRole('link', { name: 'Retour aux Réglages' })).toHaveLength(1);
     expect(screen.getByRole('status')).toHaveTextContent('Verdict du rejeu identique');
     expect(screen.queryByRole('alert')).toBeNull();
   });

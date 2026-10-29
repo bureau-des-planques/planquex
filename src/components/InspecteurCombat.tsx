@@ -146,7 +146,7 @@ export function CarteSurvolable({
   const [ecartee, setEcartee] = useState(false);
   const minuterie = useRef<number | null>(null);
   const carte = useRef<HTMLDivElement | null>(null);
-  const [ancre, setAncre] = useState<{ x: number; y: number; dessus: boolean } | null>(null);
+  const [ancre, setAncre] = useState<{ x: number; y: number; dessus: boolean; hote: Element } | null>(null);
   const etaitInspectee = useRef(inspectee);
 
   const annulerMinuterie = () => {
@@ -166,15 +166,26 @@ export function CarteSurvolable({
   // **L'infobulle sort du plateau** : le plateau isole ses plans (`isolation`, D-098) pour que le
   // canvas de fond passe sous ses cartes, et cette isolation y enfermait aussi l'infobulle —
   // la main en éventail, qui vit hors du plateau, passait devant elle (mesuré au navigateur :
-  // `elementFromPoint` rendait `hand__card`). Elle est donc posée dans `body`, à la verticale de
-  // sa carte. Le survol reste continu : la marge haute de l'infobulle fait le pont.
+  // `elementFromPoint` rendait `hand__card`). Elle est donc posée **dans l'écran `.battle`**, hors du
+  // plateau, à la verticale de sa carte. Pas dans `body` : ses règles (`.battle .infobulle`) et les
+  // jetons de la scène (`--scene-card`) ne s'appliquent que sous `.battle` — dans `body`, elle tombait
+  // nue au bas du document et faisait défiler l'écran de combat de 177 px (D-103). `body` reste le
+  // repli d'une carte rendue hors de l'écran. Le survol reste continu : la marge haute fait le pont.
   useEffect(() => {
     if (!visible || !carte.current) return;
     const r = carte.current.getBoundingClientRect();
     // Pas de place sous la carte (le Banc du joueur, sous 900 px) : l'infobulle s'ouvre au-dessus,
     // sinon elle sort de l'écran — mesuré au navigateur, `elementFromPoint` tombait sur la barre.
     const dessus = r.bottom + 220 > window.innerHeight;
-    setAncre({ x: r.left + r.width / 2, y: dessus ? r.top : r.bottom, dessus });
+    const hote = carte.current.closest('.battle') ?? document.body;
+    // Centrée sur sa carte, mais **bornée à la fenêtre** : une carte au bord gauche (le Planqué du
+    // joueur, 420 px) poussait la moitié de l'infobulle hors de l'écran. La largeur est celle du CSS,
+    // `min(17rem, 80vw)` ; 8 px de marge de chaque côté.
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const demi = Math.min(17 * rem, 0.8 * window.innerWidth) / 2;
+    const centre = r.left + r.width / 2;
+    const x = Math.min(Math.max(centre, demi + 8), window.innerWidth - demi - 8);
+    setAncre({ x, y: dessus ? r.top : r.bottom, dessus, hote });
   }, [visible]);
 
   // Échap ferme l'infobulle où que soit le focus (le même critère : fermable sans bouger le pointeur).
@@ -247,7 +258,7 @@ export function CarteSurvolable({
             {/* Aucun élément focusable ici : l'APG interdit qu'une infobulle reçoive le focus. */}
             <span className="infobulle__corps">{fiche}</span>
           </div>,
-          document.body
+          ancre.hote
         )}
     </div>
   );

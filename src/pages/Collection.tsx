@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, RARITY_META, STAGE_META } from '@/data';
 import type { Card, Faction, Rarity, Stage } from '@/data/types';
 import { deckCanAdd, deckCountsByName, MAX_COPIES_PER_NAME } from '@/game/deck';
@@ -33,6 +33,13 @@ export function Collection() {
   const [params, setParams] = useSearchParams();
   const { filtres, tri } = useMemo(() => lireFiltres(params), [params]);
   const [selected, setSelected] = useState<Card | null>(null);
+  // Le volet des filtres (faction, stade, rareté, coût, possession) : replié par défaut pour que la
+  // première carte se voie sans défiler à 420 × 900 (il prenait 330 px), **ouvert** d'emblée si
+  // l'adresse porte déjà un filtre — on ne cache pas un filtre qui agit.
+  const [voletOuvert, setVoletOuvert] = useState(() => {
+    const { filtres: initiaux } = lireFiltres(params);
+    return filtresActifs({ ...initiaux, texte: '' }) > 0;
+  });
 
   const modifier = (patch: Partial<Filtres>, nouveauTri: Tri = tri) => {
     setParams((precedent) => ecrireFiltres(precedent, { ...filtres, ...patch }, nouveauTri), { replace: true });
@@ -96,71 +103,90 @@ export function Collection() {
           />
         </label>
 
-        <label className="field">
-          <span className="field__label">Faction</span>
-          <select
-            value={filtres.faction}
-            onChange={(event) => modifier({ faction: event.target.value as Faction | 'ALL' })}
-          >
-            <option value="ALL">Toutes</option>
-            {factions.map((key) => (
-              <option key={key} value={key}>
-                {FACTION_META[key].name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <details
+          className="filtres-volet"
+          open={voletOuvert}
+          onToggle={(event) => setVoletOuvert(event.currentTarget.open)}
+        >
+          <summary className="button filtres-volet__bouton">
+            <SlidersHorizontal size={16} aria-hidden="true" /> Filtres
+            {filtreHorsRecherche && (
+              <span className="filtres-volet__compte">{nbFiltres - (rechercheActive ? 1 : 0)}</span>
+            )}
+          </summary>
+          <div className="filtres-volet__corps">
+            <label className="field">
+              <span className="field__label">Faction</span>
+              <select
+                value={filtres.faction}
+                onChange={(event) => modifier({ faction: event.target.value as Faction | 'ALL' })}
+              >
+                <option value="ALL">Toutes</option>
+                {factions.map((key) => (
+                  <option key={key} value={key}>
+                    {FACTION_META[key].name}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="field">
-          <span className="field__label">Stade</span>
-          <select value={filtres.stade} onChange={(event) => modifier({ stade: event.target.value as Stage | 'ALL' })}>
-            <option value="ALL">Tous</option>
-            {STAGES.map((key) => (
-              <option key={key} value={key}>
-                {STAGE_META[key].label}
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="field">
+              <span className="field__label">Stade</span>
+              <select
+                value={filtres.stade}
+                onChange={(event) => modifier({ stade: event.target.value as Stage | 'ALL' })}
+              >
+                <option value="ALL">Tous</option>
+                {STAGES.map((key) => (
+                  <option key={key} value={key}>
+                    {STAGE_META[key].label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="field">
-          <span className="field__label">Rareté</span>
-          <select
-            value={filtres.rarete}
-            onChange={(event) => modifier({ rarete: event.target.value as Rarity | 'ALL' })}
-          >
-            <option value="ALL">Toutes</option>
-            {RARETES.map((key) => (
-              <option key={key} value={key}>
-                {RARITY_META[key].label} ({key})
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="field">
+              <span className="field__label">Rareté</span>
+              <select
+                value={filtres.rarete}
+                onChange={(event) => modifier({ rarete: event.target.value as Rarity | 'ALL' })}
+              >
+                <option value="ALL">Toutes</option>
+                {RARETES.map((key) => (
+                  <option key={key} value={key}>
+                    {RARITY_META[key].label} ({key})
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="field">
-          <span className="field__label">Coût en café</span>
-          <select
-            value={filtres.cout === 'ALL' ? 'ALL' : String(filtres.cout)}
-            onChange={(event) => modifier({ cout: event.target.value === 'ALL' ? 'ALL' : Number(event.target.value) })}
-          >
-            <option value="ALL">Tous</option>
-            {COUTS_PRESENTS.map((cafes) => (
-              <option key={cafes} value={cafes}>
-                {libelleCout(cafes)}
-              </option>
-            ))}
-          </select>
-        </label>
+            <label className="field">
+              <span className="field__label">Coût en café</span>
+              <select
+                value={filtres.cout === 'ALL' ? 'ALL' : String(filtres.cout)}
+                onChange={(event) =>
+                  modifier({ cout: event.target.value === 'ALL' ? 'ALL' : Number(event.target.value) })
+                }
+              >
+                <option value="ALL">Tous</option>
+                {COUTS_PRESENTS.map((cafes) => (
+                  <option key={cafes} value={cafes}>
+                    {libelleCout(cafes)}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-        <label className="filtre-case">
-          <input
-            type="checkbox"
-            checked={filtres.possedees}
-            onChange={(event) => modifier({ possedees: event.target.checked })}
-          />
-          <span>Seulement ce que je possède</span>
-        </label>
+            <label className="filtre-case">
+              <input
+                type="checkbox"
+                checked={filtres.possedees}
+                onChange={(event) => modifier({ possedees: event.target.checked })}
+              />
+              <span>Seulement ce que je possède</span>
+            </label>
+          </div>
+        </details>
 
         <TriCartes value={tri} onChange={setTri} />
       </div>

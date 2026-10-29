@@ -33,6 +33,18 @@ describe('Home — finition', () => {
     expect(screen.getByText('100%')).toBeInTheDocument();
   });
 
+  it('la jauge de la Collection suit son chiffre : pleine à 100 %, vide à 0 %, et décorative', () => {
+    const plein = renderWithStore(<Home />, { owned: tout(ALL_CARDS), tutorielVu: true, pasAPasCombatVu: true });
+    const jauge = plein.container.querySelector<HTMLElement>('.stat-card__jauge > span')!;
+    expect(jauge.style.width).toBe('100%');
+    // Décorative : le chiffre écrit porte l'information, la jauge ne se lit pas deux fois.
+    expect(jauge.parentElement).toHaveAttribute('aria-hidden', 'true');
+    plein.unmount();
+
+    const vide = renderWithStore(<Home />, { owned: {}, tutorielVu: true, pasAPasCombatVu: true });
+    expect(vide.container.querySelector<HTMLElement>('.stat-card__jauge > span')!.style.width).toBe('0%');
+  });
+
   it('l’Arrivage est un dialogue, Échap le ferme', async () => {
     renderWithStore(<Home />, { tutorielVu: true, pasAPasCombatVu: true });
     fireEvent.click(screen.getByRole('button', { name: /Ouvrir un Arrivage/ }));
