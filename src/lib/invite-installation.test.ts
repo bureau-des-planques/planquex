@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { creerCapteurInvite } from '@/lib/invite-installation';
 
@@ -114,3 +116,33 @@ describe('creerCapteurInvite — l’invite gardée pour le bouton du jeu', () =
     expect(abonne).toHaveBeenCalledTimes(0);
   });
 });
+
+/**
+ * **Le branchement** : sans l'appel dans `main.tsx`, `capteurInvite()` rend le capteur inerte,
+ * le bouton n'apparaît plus jamais en production — et tous les tests d'écran resteraient
+ * verts, puisqu'ils injectent un capteur factice. Ce garde le tient, et il mord.
+ */
+describe('main.tsx pose le capteur avant le rendu', () => {
+  it('appelle capterInviteInstallation(window) avant createRoot', () => {
+    const main = readFileSync(join(process.cwd(), 'src/main.tsx'), 'utf8');
+    expect(captureAvantRendu(main), 'le capteur doit être posé avant `createRoot(`').toBe(true);
+  });
+
+  it('le contrôle mord : un appel absent, commenté ou posé après le rendu est refusé', () => {
+    expect(captureAvantRendu('createRoot(container).render(<App />);')).toBe(false);
+    expect(captureAvantRendu('// capterInviteInstallation(window);\ncreateRoot(container).render(<App />);')).toBe(
+      false
+    );
+    expect(captureAvantRendu('createRoot(container).render(<App />);\ncapterInviteInstallation(window);')).toBe(false);
+    expect(captureAvantRendu('capterInviteInstallation(window);\ncreateRoot(container).render(<App />);')).toBe(true);
+  });
+});
+
+/** L'appel est-il une vraie ligne de code (pas un commentaire), placée avant `createRoot(` ? */
+function captureAvantRendu(source: string): boolean {
+  const lignes = source.split('\n').filter((ligne) => !ligne.trim().startsWith('//'));
+  const code = lignes.join('\n');
+  const appel = code.indexOf('capterInviteInstallation(window)');
+  const rendu = code.indexOf('createRoot(');
+  return appel >= 0 && rendu >= 0 && appel < rendu;
+}

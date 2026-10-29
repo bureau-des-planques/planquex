@@ -1,5 +1,3 @@
-import type { EtatInvite } from '@/lib/installation';
-
 /**
  * **Le capteur de l'invite d'installation** — `beforeinstallprompt`, gardée pour le bouton
  * « Installer le jeu » du module « Banc prêt » (`src/components/BancPret.tsx`).
@@ -20,12 +18,25 @@ import type { EtatInvite } from '@/lib/installation';
  * module retombe sur les étapes manuelles.
  */
 
-export type ResultatInstallation = 'accepted' | 'dismissed' | 'indisponible';
+/** L'état de l'invite d'installation, lu par `src/lib/installation.ts`. */
+export interface EtatInvite {
+  /** Le navigateur a proposé l'installation, et l'invite n'a pas encore servi. */
+  disponible: boolean;
+  /** L'installation a été faite pendant cette session (`appinstalled`, ou invite acceptée). */
+  installe: boolean;
+}
+
+/** Avant toute invite : rien de disponible, rien d'installé. */
+export const ETAT_INVITE_INITIAL: EtatInvite = Object.freeze({ disponible: false, installe: false });
+
+/** Le choix rendu par le navigateur (`userChoice.outcome`, ses mots), ou l'invite absente. */
+export type ChoixNavigateur = 'accepted' | 'dismissed';
+export type ResultatInstallation = ChoixNavigateur | 'indisponible';
 
 /** Le contrat de `BeforeInstallPromptEvent`, absent de `lib.dom` (l'API n'est pas standard). */
 interface EvenementInvite extends Event {
   prompt(): Promise<void>;
-  readonly userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+  readonly userChoice: Promise<{ outcome: ChoixNavigateur; platform: string }>;
 }
 
 export interface CapteurInvite {
@@ -38,7 +49,7 @@ export interface CapteurInvite {
 
 export function creerCapteurInvite(cible: EventTarget): CapteurInvite {
   let evenement: EvenementInvite | null = null;
-  let etat: EtatInvite = { disponible: false, installe: false };
+  let etat: EtatInvite = ETAT_INVITE_INITIAL;
   const abonnes = new Set<() => void>();
 
   const poser = (suivant: EtatInvite) => {
@@ -86,10 +97,7 @@ export function creerCapteurInvite(cible: EventTarget): CapteurInvite {
 
 /** Un capteur qui n'a jamais rien capté : le rendu sans navigateur (tests, rendu serveur). */
 const CAPTEUR_INERTE: CapteurInvite = {
-  etat: (() => {
-    const fige: EtatInvite = { disponible: false, installe: false };
-    return () => fige;
-  })(),
+  etat: () => ETAT_INVITE_INITIAL,
   abonner: () => () => {},
   installer: () => Promise.resolve('indisponible')
 };
@@ -100,7 +108,7 @@ let capteurDuJeu: CapteurInvite | null = null;
  * Pose le capteur de l'application, **une fois** — appelé par `main.tsx` avant le rendu.
  * Un second appel rend le même capteur : deux écouteurs se disputeraient l'invite.
  */
-export function capterInviteInstallation(cible: EventTarget = window): CapteurInvite {
+export function capterInviteInstallation(cible: EventTarget): CapteurInvite {
   capteurDuJeu ??= creerCapteurInvite(cible);
   return capteurDuJeu;
 }

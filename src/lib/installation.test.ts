@@ -14,6 +14,8 @@ import {
  * L'ordre des cas est la règle que ces tests tiennent :
  *
  * 1. **déjà dans l'application installée** : plus rien à installer, quoi que dise le reste ;
+ *    une installation **faite pendant la session** vient juste après — la page est encore
+ *    dans l'onglet, et il faut dire où est passée l'icône ;
  * 2. **un navigateur de messagerie** (WhatsApp, Messenger…) : on ne peut rien y installer,
  *    même si une invite arrivait — il faut rouvrir le lien ailleurs ;
  * 3. **l'invite du navigateur est là** (`beforeinstallprompt` capté) : un bouton suffit ;
@@ -81,8 +83,14 @@ describe('estIOS — iPhone et iPad, iPad déguisé en Mac compris', () => {
 
 describe('situationDInstallation — l’ordre des cas', () => {
   it('dans l’application installée, il n’y a plus rien à installer', () => {
-    expect(situationDInstallation(env({ standalone: true }), avecInvite)).toBe('installe');
-    expect(situationDInstallation(env({ userAgent: UA.safariIphone, standalone: true }), sansInvite)).toBe('installe');
+    expect(situationDInstallation(env({ standalone: true }), avecInvite)).toBe('application');
+    expect(situationDInstallation(env({ userAgent: UA.safariIphone, standalone: true }), sansInvite)).toBe(
+      'application'
+    );
+    // Même une messagerie ne l'emporte pas : la fenêtre de l'application est la preuve.
+    expect(situationDInstallation(env({ userAgent: UA.whatsappAndroid, standalone: true }), sansInvite)).toBe(
+      'application'
+    );
   });
 
   it('une installation faite pendant la session compte comme installée', () => {

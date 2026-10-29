@@ -58,7 +58,7 @@ function capteurFactice(
     },
     installer
   };
-  return { capteur, installer, recevoirInvite: () => act(() => poser({ ...etat, disponible: true })) };
+  return { capteur, installer, poser, recevoirInvite: () => act(() => poser({ ...etat, disponible: true })) };
 }
 
 function monter(
@@ -107,6 +107,26 @@ describe('BancPret — le bouton d’installation, selon l’appareil', () => {
     expect(installer).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('heading', { level: 2, name: /c’est installé/i })).toBeTruthy();
     expect(screen.getByText(/écran d’accueil/i)).toBeTruthy();
+  });
+
+  it('pendant que la fenêtre du navigateur est ouverte, demande de confirmer, sans dire « pas d’installation »', async () => {
+    let repondre: (choix: ResultatInstallation) => void = () => {};
+    const { capteur, poser } = capteurFactice({ disponible: true, installe: false });
+    // Comme le vrai capteur : l'invite est consommée **avant** la réponse du navigateur.
+    capteur.installer = vi.fn(() => {
+      poser({ disponible: false, installe: false });
+      return new Promise<ResultatInstallation>((resoudre) => {
+        repondre = resoudre;
+      });
+    });
+    monter({ capteur });
+
+    await userEvent.click(screen.getByRole('button', { name: /installer le jeu/i }));
+
+    expect(screen.getByRole('heading', { level: 2, name: /confirme dans la fenêtre du navigateur/i })).toBeTruthy();
+    expect(screen.queryByText(/ne propose pas d’installation/i)).toBeNull();
+    await act(async () => repondre('dismissed'));
+    expect(screen.getByRole('status').textContent).toMatch(/installation annulée/i);
   });
 
   it('refusée, le dit sans insister, et renvoie vers le menu du navigateur', async () => {

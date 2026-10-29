@@ -1,5 +1,4 @@
 import { useState, useSyncExternalStore } from 'react';
-import { Link } from 'react-router-dom';
 import { lireEnvironnement, situationDInstallation, type Environnement } from '@/lib/installation';
 import { capteurInvite, type CapteurInvite, type ResultatInstallation } from '@/lib/invite-installation';
 
@@ -19,7 +18,8 @@ import { capteurInvite, type CapteurInvite, type ResultatInstallation } from '@/
  *   que l'icône **ne partage pas les données de Safari** (`docs/DISTRIBUTION.md` §3) ;
  * - **messagerie** — rien ne s'installe dans le navigateur d'une messagerie : on propose de
  *   copier le lien, pour le rouvrir dans Chrome ou Safari ;
- * - **installe** — déjà dans l'application, ou installation tout juste acceptée ;
+ * - **application** — la page tourne déjà dans la fenêtre de l'application ;
+ * - **installe** — l'installation vient d'être faite : on dit où est passée l'icône ;
  * - **manuel** — le reste : les étapes de la page, par le menu du navigateur.
  *
  * Les **étapes appareil par appareil restent affichées** sous ce module, quelle que soit la
@@ -51,11 +51,16 @@ export function BancPret({
   const invite = useSyncExternalStore(capteur.abonner, capteur.etat);
   const [resultat, setResultat] = useState<ResultatInstallation | null>(null);
   const [copie, setCopie] = useState<Copie>('aucune');
+  /** La fenêtre du navigateur est ouverte : l'invite est consommée, la réponse pas encore là. */
+  const [enAttente, setEnAttente] = useState(false);
 
   const situation = situationDInstallation(env, invite);
 
   const installer = async () => {
-    setResultat(await capteur.installer());
+    setEnAttente(true);
+    const reponse = await capteur.installer();
+    setEnAttente(false);
+    setResultat(reponse);
   };
 
   const copierLeLien = async () => {
@@ -69,11 +74,9 @@ export function BancPret({
 
   return (
     <section className="section panel" aria-label="Banc prêt">
-      <p className="m-0 font-mono text-[0.75rem] font-semibold tracking-[0.16em] text-[var(--gold-soft)] uppercase">
-        Banc prêt
-      </p>
+      <p className="eyebrow text-gold-soft">Banc prêt</p>
 
-      {situation === 'invite' && (
+      {situation === 'invite' && !enAttente && (
         <>
           <h2 className="m-0">Installer en un geste</h2>
           <p className="muted m-0 max-w-[62ch]">
@@ -88,21 +91,29 @@ export function BancPret({
         </>
       )}
 
-      {situation === 'installe' && !env.standalone && (
+      {enAttente && (
         <>
-          <h2 className="m-0">C’est installé</h2>
-          <p className="m-0 max-w-[62ch]">
-            L’icône Planquex est sur ton écran d’accueil : ouvre le jeu depuis là, il démarre dans sa propre fenêtre.
+          <h2 className="m-0">Confirme dans la fenêtre du navigateur</h2>
+          <p className="muted m-0 max-w-[62ch]" role="status">
+            Ton navigateur te demande de confirmer l’installation.
           </p>
         </>
       )}
 
-      {situation === 'installe' && env.standalone && (
+      {situation === 'installe' && (
+        <>
+          <h2 className="m-0">C’est installé</h2>
+          <p className="m-0 max-w-[62ch]">
+            L’icône Planquex est avec tes applications : sur ton écran d’accueil au téléphone, dans le menu des
+            applications ou le Dock sur ordinateur. Ouvre le jeu depuis là, il démarre dans sa propre fenêtre.
+          </p>
+        </>
+      )}
+
+      {situation === 'application' && (
         <>
           <h2 className="m-0">Tu es déjà dans l’application</h2>
-          <p className="muted m-0 max-w-[62ch]">
-            Le jeu est installé sur cet appareil. <Link to="/">Retour au bureau</Link>
-          </p>
+          <p className="muted m-0 max-w-[62ch]">Le jeu est installé sur cet appareil : il n’y a plus rien à faire.</p>
         </>
       )}
 
@@ -113,8 +124,8 @@ export function BancPret({
             Safari n’a pas de bouton d’installation : suis les gestes « Sur iPhone et iPad », plus bas.
           </p>
           <p className="notice notice--warn max-w-[62ch]">
-            Ajoute l’icône avant ta première partie : sur iPhone, l’application de l’écran d’accueil ne partage pas les
-            données de Safari. Une Collection commencée dans Safari ne la suit pas.
+            Ajoute l’icône avant ta première partie : sur iPhone et iPad, l’application de l’écran d’accueil ne partage
+            pas les données de Safari. Une Collection commencée dans Safari ne la suit pas.
           </p>
         </>
       )}
@@ -144,7 +155,7 @@ export function BancPret({
         </>
       )}
 
-      {situation === 'manuel' && (
+      {situation === 'manuel' && !enAttente && (
         <>
           <h2 className="m-0">Installer depuis le menu du navigateur</h2>
           <p className="muted m-0 max-w-[62ch]">
