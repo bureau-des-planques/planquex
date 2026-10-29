@@ -34,8 +34,8 @@ const ECRANS_EXIGES = [
   '/comite',
   '/comite/suivi',
   '/feuille-de-route',
-  // #300 : le guide d'installation, public — la couverture ne peut pas le perdre en silence.
-  '/installation',
+  // `/installation` est sorti de la mesure d'écran servi (D-155, #514) : hors du jeu, il se
+  // vérifie à la main sur téléphone avant fusion. La couverture ne le perd donc pas en silence.
   '/connexion',
   '/attente',
   '/confidentialite',

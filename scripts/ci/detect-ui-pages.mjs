@@ -50,6 +50,12 @@ const RACINE = fileURLToPath(new URL('../..', import.meta.url));
  * compte) ; les autres passent par le `Layout`. Sans base configurée, `/attente` et
  * `/administration` montrent leur état inerte « Pas de compte sans base » : c'est bien un
  * écran distinct, et c'est celui-ci qu'un invité voit sur l'alpha sans backend.
+ *
+ * **`/installation` est hors du jeu et hors du scan (D-155, #514)** : le guide d'installation
+ * n'applique pas les règles de style du jeu (libellé au-dessus du titre, carte dans une carte)
+ * et ne relève donc pas de ce garde-fou. Sa lisibilité — taille, contraste, cibles — se vérifie
+ * **à la main, sur téléphone, avant chaque fusion**. Le détecteur de sources (`npm run detect:ui`)
+ * continue de le lire : ce qui part, c'est la mesure d'écran servi.
  */
 export const ECRANS = [
   '/',
@@ -60,9 +66,6 @@ export const ECRANS = [
   '/comite',
   '/comite/suivi',
   '/feuille-de-route',
-  // Le guide d'installation (#300) : public, et la note de release y renvoie — un écran
-  // qu'un testeur ouvre sans compte se mesure comme les autres.
-  '/installation',
   '/connexion',
   '/attente',
   '/confidentialite',
@@ -118,10 +121,6 @@ export const BASELINE = {
   '/comite': 0,
   '/comite/suivi': 0,
   '/feuille-de-route': 0,
-  // Mesuré le 27/10/2026 avec le Chromium de `ms-playwright` : **0**. Le premier passage
-  // donnait 1 (`body-text-viewport-edge`) sur la ligne de vérification posée hors panneau ;
-  // elle est entrée dans le panneau, et le compte est retombé à zéro.
-  '/installation': 0,
   '/connexion': 0,
   '/attente': 0,
   '/confidentialite': 0,

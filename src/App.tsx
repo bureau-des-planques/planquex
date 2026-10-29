@@ -35,7 +35,7 @@ const Comite = lazy(() => import('@/pages/Comite').then((m) => ({ default: m.Com
 const Suivi = lazy(() => import('@/pages/Suivi').then((m) => ({ default: m.Suivi })));
 const Confidentialite = lazy(() => import('@/pages/Confidentialite').then((m) => ({ default: m.Confidentialite })));
 const FeuilleDeRoute = lazy(() => import('@/pages/FeuilleDeRoute').then((m) => ({ default: m.FeuilleDeRoute })));
-const Installation = lazy(() => import('@/pages/Installation').then((m) => ({ default: m.Installation })));
+const InstallationBanc = lazy(() => import('@/pages/InstallationBanc'));
 const Connexion = lazy(() => import('@/pages/Connexion').then((m) => ({ default: m.Connexion })));
 const Attente = lazy(() => import('@/pages/Attente').then((m) => ({ default: m.Attente })));
 const Administration = lazy(() => import('@/pages/Administration').then((m) => ({ default: m.Administration })));
@@ -98,8 +98,9 @@ export function App() {
         <Route path="feuille-de-route" element={<FeuilleDeRoute />} />
         {/* Le guide d'installation (#300) : la note de release y renvoie, et un testeur doit
           pouvoir le lire avant de créer un compte. Même raison que la feuille de route,
-          même place — hors de la garde. */}
-        <Route path="installation" element={<Installation />} />
+          même place — hors de la garde. Le contenu est le **banc** relu dans #504 ; ses
+          faits (`ADRESSE`, `PROCEDURES`) sont toujours dans `src/pages/Installation.tsx`. */}
+        <Route path="installation" element={<InstallationBanc />} />
         {/* Les anciennes adresses dont la destination est publique restent hors de la garde. */}
         {routesDeRedirection(true)}
         <Route element={<Layout />}>
