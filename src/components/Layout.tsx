@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Library, Layers, Settings, StickyNote, Swords } from 'lucide-react';
 import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
@@ -8,6 +8,7 @@ import { AlerteComite } from '@/components/AlerteComite';
 import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
 import { BandeauNouvelleVersion } from '@/components/BandeauNouvelleVersion';
 import { ErreurDeRendu } from '@/components/ErreurDeRendu';
+import { RepliChargement } from '@/components/RepliChargement';
 import { GardeComptes } from '@/components/GardeComptes';
 import { estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
@@ -165,7 +166,14 @@ export function Layout() {
           {/* D-088 : sans session, aucune page du jeu — la garde renvoie vers la connexion.
               Sans backend, elle laisse tout passer. */}
           <GardeComptes>
-            <Outlet />
+            {/* Le repli des écrans du jeu (#478) vit **ici**, et non au-dessus du routeur :
+                pendant qu'un morceau se télécharge, l'en-tête, les bandeaux et la barre du bas
+                restent en place — la barre ne bouge pas sous le pouce. En combat elle n'est de
+                toute façon pas rendue (#275), donc le plateau reste plein écran. Le garde-fou
+                d'erreur est **au-dessus** : un morceau manquant tombe dans « Recharger ». */}
+            <Suspense fallback={<RepliChargement />}>
+              <Outlet />
+            </Suspense>
           </GardeComptes>
         </ErreurDeRendu>
       </main>

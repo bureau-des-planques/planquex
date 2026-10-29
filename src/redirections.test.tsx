@@ -7,7 +7,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App } from '@/App';
 import { REDIRECTIONS, REDIRECTIONS_PUBLIQUES } from '@/redirections';
-import { setupTestStore } from '@/test/test-utils';
+import { attendreEcran, setupTestStore } from '@/test/test-utils';
 
 // Exception au critère 2 de #477 : ce fichier garde son montage manuel de `<App />` parce qu'il
 // teste les redirections d'adresses et lit l'adresse courante via `<Adresse />`.
@@ -78,7 +78,16 @@ function Adresse() {
   return <output data-testid="adresse">{useLocation().pathname}</output>;
 }
 
-function visite(adresse: string) {
+/**
+ * Depuis #478, l'écran d'arrivée est un **morceau** chargé à la demande : la visite attend qu'il
+ * soit monté (`attendreEcran`, de `test/test-utils.tsx`), sinon elle lirait le shell sans écran.
+ * Une redirection est de plus jouée en **transition** : rien ne s'affiche avant que le morceau de
+ * la destination ne soit prêt.
+ *
+ * `attendu` est le texte que le test va chercher, **le même** : l'attente dit donc quel écran
+ * elle attend, et une redirection qui mène ailleurs échoue ici, pas trois lignes plus bas.
+ */
+async function visite(adresse: string, attendu?: RegExp) {
   setupTestStore({ deck: [], tutorielVu: true, pasAPasCombatVu: true });
   render(
     <MemoryRouter initialEntries={[adresse]}>
@@ -86,36 +95,37 @@ function visite(adresse: string) {
       <Adresse />
     </MemoryRouter>
   );
+  await attendreEcran(attendu);
 }
 
 describe('App — les anciennes adresses mènent aux nouvelles', () => {
   afterEach(cleanup);
 
-  it('/parc arrive sur /collection', () => {
-    visite('/parc');
+  it('/parc arrive sur /collection', async () => {
+    await visite('/parc');
     expect(screen.getByTestId('adresse')).toHaveTextContent('/collection');
   });
 
-  it('/chariot arrive sur /deck, et l’écran du Deck s’affiche', () => {
-    visite('/chariot');
+  it('/chariot arrive sur /deck, et l’écran du Deck s’affiche', async () => {
+    await visite('/chariot', /Remplir/i);
     expect(screen.getByTestId('adresse')).toHaveTextContent('/deck');
     expect(screen.getByRole('button', { name: /Remplir/i })).toBeInTheDocument();
   });
 
-  it('/idees arrive sur /comite, et le mur du comité s’affiche (D-097)', () => {
-    visite('/idees');
+  it('/idees arrive sur /comite, et le mur du comité s’affiche (D-097)', async () => {
+    await visite('/idees', /comité/i);
     expect(screen.getByTestId('adresse')).toHaveTextContent('/comite');
     expect(screen.getByRole('heading', { level: 1, name: /comité/i })).toBeInTheDocument();
   });
 
-  it('/nouveautes arrive sur /feuille-de-route (D-097)', () => {
-    visite('/nouveautes');
+  it('/nouveautes arrive sur /feuille-de-route (D-097)', async () => {
+    await visite('/nouveautes', /feuille de route/i);
     expect(screen.getByTestId('adresse')).toHaveTextContent('/feuille-de-route');
     expect(screen.getByRole('heading', { level: 1, name: /feuille de route/i })).toBeInTheDocument();
   });
 
-  it('les nouvelles adresses ne bougent pas', () => {
-    visite('/deck');
+  it('les nouvelles adresses ne bougent pas', async () => {
+    await visite('/deck');
     expect(screen.getByTestId('adresse')).toHaveTextContent('/deck');
   });
 

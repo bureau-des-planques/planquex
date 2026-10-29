@@ -553,6 +553,30 @@ h2 {
   gap: 1.5rem;
 }
 
+/*
+ * Le repli de chargement des écrans (#478). Il remplace le contenu pendant qu'un morceau se
+ * télécharge : sa hauteur est donc **réservée** sur un écran moyen, sans quoi la barre du bas
+ * remonterait sous le pouce à l'arrivée du contenu — le saut de mise en page que le ticket
+ * interdit. Il vit à l'intérieur de `main` (donc sous la barre) comme dans la page nue des
+ * écrans publics : d'où un `min-height` en `vh` et non une hauteur du shell.
+ *
+ * Aucune animation : `src/components/effets-combat.test.ts` (#294) borne la feuille à 800 ms et
+ * deux tours, et la seule boucle sans fin admise est la scène d'Arrivage (D-141). Le texte suffit
+ * à dire l'attente ; un indicateur qui bat la mesure serait une exception de plus.
+ */
+.repli-chargement {
+  align-items: center;
+  color: var(--text-muted);
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.repli-chargement__texte {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
 .section {
   display: flex;
   flex-direction: column;
