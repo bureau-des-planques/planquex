@@ -24,9 +24,11 @@ describe('Home — la dernière release (#274)', () => {
   it('affiche la dernière release publiée, avec sa date, et mène à la feuille de route', () => {
     renderWithStore(<Home />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const publiee = NOTES_VERSIONS.find((note) => !note.brouillon && note.version === APP_VERSION);
-    // La note de la version courante est exigée par `versions.test.ts` : elle est là.
-    expect(publiee).toBeTruthy();
+    // **La dernière release publiée**, et non la version courante : au moment du tag, la note
+    // de la version qui part est encore un **brouillon** (docs/VERSIONS.md §4), et un
+    // brouillon ne s'annonce pas comme sorti — c'est la règle que ce test défend plus bas.
+    const publiee = NOTES_VERSIONS.find((note) => !note.brouillon);
+    expect(publiee, 'au moins une release publiée doit exister').toBeTruthy();
     expect(screen.getByText(new RegExp(publiee!.titre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeInTheDocument();
 
     const lien = screen.getByRole('link', { name: /Voir toutes les versions/i });

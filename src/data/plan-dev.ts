@@ -35,9 +35,5 @@ export interface FeaturePrevue {
 
 /** Les issues `alpha` et `beta` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
-  {
-    numero: 251,
-    titre: 'Difficulté, Deck de la Direction et pages de présentation des Decks proposés',
-    etape: 'beta'
-  }
+
 ];

@@ -1,7 +1,7 @@
 {
   "name": "bureau-des-planques",
   "private": true,
-  "version": "0.1.14",
+  "version": "0.1.15",
   "stage": "alpha",
   "type": "module",
   "description": "Bureau des Planqués — un TCG Pocket-like satirique dans l'univers corporate",

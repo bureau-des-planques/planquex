@@ -114,7 +114,15 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    chemin strict.
 8. **Le tag dit la version, pas l'étape** : c'est la release qui porte le drapeau *pre-release*.
 
-**Entre deux releases, rien ne se déploie (D-140)** — **une fois la bascule faite**. Le workflow de tag existe (#420, étape 1) ; la bascule demande encore trois gestes humains : poser `VERCEL_TOKEN`, `VERCEL_ORG_ID` et `VERCEL_PROJECT_ID` dans les secrets GitHub, **réussir un premier déploiement par tag**, puis seulement couper l'auto-déploiement de Vercel (`git.deploymentEnabled`). D'ici là, une fusion sur `main` publie encore la production, et un aperçu de PR se déploie encore.
+**Entre deux releases, rien ne se déploie (D-140)** — la bascule est **faite**, le 29/10/2026 :
+les trois secrets sont posés (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`),
+`vercel.json` porte `git.deploymentEnabled: false`, et le **lien Git du projet Vercel est
+coupé** (`vercel git disconnect`, #460) : plus aucun aperçu de PR, plus aucune production à
+la fusion. **Le tag est le seul chemin** — `deploiement.yml` construit puis publie avec le CLI.
+
+Deux conséquences à connaître : **un « Redeploy » du tableau de bord rejoue l'ancien commit**
+(il ne connaît plus `main`), donc il ne sert jamais un travail récent ; et les nouveaux
+déploiements ne portent plus `gitRepo`, donc le tableau de bord ne les relie plus à un commit.
 
 **Cadence (D-128).** Une release part quand un **lot cohérent** est prêt, et **pas plus d'une par
 jour** : deux releases le même jour ont déjà eu lieu, et le testeur doit pouvoir dire « je suis sur

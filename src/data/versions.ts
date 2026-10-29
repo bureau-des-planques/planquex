@@ -60,9 +60,89 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.15',
+    date: '2026-10-29',
+    titre: 'Version 0.1.15',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'On quitte une partie sans la perdre : la sortie est distincte du forfait, et l’on revient là d’où l’on vient.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La Rotation tient en une seule entrée, et ses cibles s’ouvrent dans le panneau du Poste au lieu d’encombrer la barre.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le café s’attache en touchant le Planqué : la barre ne porte plus ses propres cibles, et la couleur du café se lit.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Les cartes prennent au plateau le gabarit du jeu de référence — portrait plein — et gardent le format compact hors du plateau.'
+      },
+      {
+        groupe: 'La Direction',
+        texte: 'Trois crans de difficulté : Facile, Normal, Difficile. Chacun change la politique de la Direction et le Deck qu’elle joue, et se règle dans Réglages.'
+      },
+      {
+        groupe: 'La Direction',
+        texte: 'Chaque Deck proposé a sa page : sa stratégie, sa difficulté à jouer, sa faiblesse et son contenu.'
+      },
+      {
+        groupe: 'Ton Deck',
+        texte: 'La courbe de coût, le compte de cartes et les filtres par valeur dans la même vue, avec la raison quand rien ne correspond.'
+      },
+      {
+        groupe: 'Ton Deck',
+        texte: 'Un Deck se partage et s’importe par un code ; les cartes qui te manquent sont grisées, pas cachées.'
+      },
+      {
+        groupe: 'La Collection',
+        texte: 'Filtrer par rareté, par coût et par possession, ensemble ou séparément, en disant toujours pourquoi la grille est vide.'
+      },
+      {
+        groupe: 'Après la partie',
+        texte: 'Revoir une partie terminée, action par action, avec son verdict — et l’écart signalé si le rejeu ne raconte pas la même fin.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'La première connexion demande un pseudo, un service et un intitulé, tiré au sort et relançable une fois.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'Les règles en une minute : six étapes, chacune avec une capture réelle du jeu, sautables et rejouables depuis Réglages.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'Un appel à participer ferme la Journée d’intégration : deux portes, le comité et le dépôt.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'Quatre temps : le sachet se creuse, l’étiquette se décolle, la ligne se déchire, les cartes sortent — et se retournent une à une, dans l’ordre que tu veux.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'Le retournement d’une carte ne montre plus son dos en miroir, et une carte ne disparaît plus au moment de se retourner.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'Deux sons : l’Arrivage et le verdict, avec une case dans Réglages pour les couper.'
+      },
+      {
+        groupe: 'Partout',
+        texte: 'Le jeu tient sur un vrai téléphone, en portrait comme en paysage, et sur PC.'
+      },
+      {
+        groupe: 'Partout',
+        texte: 'Chaque écran sans barre a un retour nommé : plus de cul-de-sac, et le bouton du navigateur ne casse plus rien.'
+      }
+    ]
+  },
+  {
     version: '0.1.14',
     date: '2026-10-27',
-    titre: 'Le combat se lit à 420 px, et le café se voit',
+    titre: 'Version 0.1.14',
     points: [
       {
         groupe: 'Le combat',

@@ -83,7 +83,12 @@ describe('Feuille de route — les blocs de la page', () => {
   it('montre ce qui arrive, avec le numéro, le titre et l’étape', () => {
     rendre();
     expect(screen.getByRole('heading', { level: 2, name: /ce qui arrive/i })).toBeTruthy();
-    expect(FEATURES_PREVUES.length).toBeGreaterThan(0);
+    // **Le bloc sait être vide** (29/10/2026) : le jour où toutes les issues sont fermées,
+    // `plan-dev.ts` n'a aucune entrée, et la page dit une bonne nouvelle au lieu d'un blanc.
+    if (FEATURES_PREVUES.length === 0) {
+      expect(document.body.textContent).toMatch(/Aucun chantier ouvert pour le moment/i);
+      return;
+    }
     for (const feature of FEATURES_PREVUES) {
       expect(screen.getAllByText(new RegExp(`#${feature.numero}`)).length, `issue ${feature.numero}`).toBeGreaterThan(
         0
