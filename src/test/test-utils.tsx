@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
+import { render, RenderOptions, waitFor } from '@testing-library/react';
+import { MemoryRouter, BrowserRouter } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { seedRng } from '@/game/rng';
 import { ALL_CARDS } from '@/data';
@@ -8,6 +8,7 @@ import type { Faction } from '@/data/types';
 import type { DernierePartie } from '@/store/derniere';
 import type { PartieSauvegardee } from '@/store/partie';
 import type { Difficulte } from '@/game/ia';
+import { App } from '@/App';
 
 /**
  * État de store préconfiguré pour les tests d'écran.
@@ -86,4 +87,48 @@ export function renderWithStore(
 ) {
   setupTestStore(initialState);
   return render(ui, { wrapper: TestWrapper, ...options });
+}
+
+/**
+ * Options pour `rendreApplication`.
+ */
+export interface RendreApplicationOptions {
+  /** Le chemin à visiter (ex: '/', '/collection', '/battle'). */
+  chemin: string;
+  /** État de store additionnel (par défaut : tutorielVu et pasAPasCombatVu à true). */
+  storeState?: TestStoreState;
+  /** Composants additionnels à rendre à côté de `<App />` dans le même routeur. */
+  extra?: React.ReactNode;
+}
+
+/**
+ * Rend l'application complète à l'adresse demandée et attend que le rendu soit stable.
+ *
+ * Cette fonction unique remplace le montage manuel de `<App />` dans un `MemoryRouter`
+ * avec `setupTestStore` — ce que six fichiers de test faisaient chacun à leur façon.
+ * L'attente d'une microtâche (`waitFor`) garantit que les écrans chargés à la demande
+ * (ticket suivant) sont bien rendus avant que le test ne continue.
+ *
+ * @returns Le résultat de `render` (contenant `container`, `unmount`, `rerender`, etc.).
+ */
+export async function rendreApplication({ chemin, storeState = {}, extra }: RendreApplicationOptions) {
+  const etatComplet: TestStoreState = {
+    tutorielVu: true,
+    pasAPasCombatVu: true,
+    ...storeState
+  };
+
+  setupTestStore(etatComplet);
+
+  const resultat = render(
+    <MemoryRouter initialEntries={[chemin]}>
+      <App />
+      {extra}
+    </MemoryRouter>
+  );
+
+  // Attendre une microtâche : les écrans paresseux (prochain ticket) auront le temps de monter.
+  await waitFor(() => {});
+
+  return resultat;
 }
