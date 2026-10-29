@@ -71,11 +71,14 @@ describe('Installation — le guide public (#300)', () => {
   it('dit ce qui est gardé sur l’appareil, et que le compte ne suit pas les données locales', () => {
     rendre();
     // Les quatre choses locales nommées par `docs/ALPHA-TESTEURS.md` : Collection, Deck,
-    // pseudo, partie en cours.
+    // pseudo, partie en cours. Aujourd’hui, elles sont toutes sur l’appareil.
     for (const quoi of [/collection/i, /\bdeck\b/i, /pseudo/i, /partie en cours/i]) {
       expect(screen.getAllByText(quoi).length, String(quoi)).toBeGreaterThan(0);
     }
-    expect(screen.getByText(/ton compte te suit/i)).toBeTruthy();
+    // Aujourd’hui, le compte ne suit pas les données locales (Deck, Collection, pseudo,
+    // partie). Bientôt, elles vivront sur le compte.
+    expect(screen.getByText(/ton compte ne suit pas les données locales/i)).toBeTruthy();
+    expect(screen.getByText(/bientôt, côté serveur/i)).toBeTruthy();
   });
 
   it('envoie vers la sauvegarde de Réglages, avec ses deux libellés exacts', () => {

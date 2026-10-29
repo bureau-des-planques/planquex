@@ -8,8 +8,9 @@
  *
  * Trois règles d'écriture, et elles ne bougeront pas :
  *
- * 1. **on écrit ce qu'on fait, pas ce qu'on aimerait faire** : chaque ligne correspond à une
- *    colonne réellement écrite en base (`supabase/migrations/`) ;
+ * 1. **on écrit ce qu'on fait, pas ce qu'on aimerait faire** : les rubriques « Un compte »,
+ *    « Ce que tu écris sur le mur » et « Tes parties terminées » correspondent à des colonnes
+ *    réellement écrites en base (`supabase/migrations/`) ;
  * 2. **aucun jargon** : pas de « données à caractère personnel », pas de « finalité
  *    légitime » — des phrases, et des exemples ;
  * 3. **elle se lit sans compte** : la route est déclarée hors de `Layout`, comme
@@ -57,9 +58,9 @@ const COLLECTE: Rubrique[] = [
     ]
   },
   {
-    titre: 'Ton Deck et ta Collection',
+    titre: 'Ce qui viendra (bientôt)',
     lignes: [
-      'Ton Deck et ta Collection seront stockés sur le serveur, liés à ton compte : tu les retrouveras après un changement d’appareil.'
+      'Le Deck et la Collection vivront sur ton compte : tu les retrouveras après un changement d’appareil. Cette synchro est condition de la beta (D-153), mais elle n’est pas encore implémentée.'
     ]
   },
   {
@@ -108,7 +109,7 @@ const QUESTIONS: Rubrique[] = [
     titre: 'Un doute',
     lignes: [
       'Écris-nous : le comité est là pour ça, et un courriel marche aussi.',
-      'Cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.'
+      'Les rubriques « Ce qui viendra » et « Le serveur des testeurs (facultatif) » décrivent ce qui n’est pas implémenté encore : elles ne décrivent pas ce que fait le jeu aujourd’hui. Pour le reste, cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.'
     ]
   }
 ];

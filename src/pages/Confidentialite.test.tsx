@@ -32,7 +32,7 @@ describe('Confidentialité — la page publique', () => {
     expect(screen.getByRole('heading', { level: 1, name: /confidentialité/i })).toBeTruthy();
   });
 
-  it('nomme les quatre familles de données réellement collectées', () => {
+  it('nomme les trois familles de données réellement collectées', () => {
     rendre();
     // 1. le compte (Google ou courriel)
     expect(screen.getByText(/adresse de courriel et un identifiant technique/i)).toBeTruthy();
@@ -40,10 +40,6 @@ describe('Confidentialité — la page publique', () => {
     expect(screen.getByText(/un post-it : son titre, son texte/i)).toBeTruthy();
     // 3. le déroulé des parties, solo comme à deux (D-105)
     expect(screen.getByText(/la graine de hasard, les deux Decks/i)).toBeTruthy();
-    // 4. le Deck et la Collection, stockés sur le serveur liés au compte (D-153)
-    expect(
-      screen.getByText(/ton Deck et ta Collection seront stockés sur le serveur, liés à ton compte/i)
-    ).toBeTruthy();
   });
 
   it('dit aussi ce qu’on ne fait pas, et donne un moyen d’écrire', () => {
@@ -85,7 +81,7 @@ describe('Confidentialité — le serveur des testeurs (#317)', () => {
     rendre();
 
     expect(screen.getByRole('heading', { level: 2, name: /serveur des testeurs/i })).toBeTruthy();
-    expect(screen.getByText(/facultatif/i)).toBeTruthy();
+    expect(screen.getAllByText(/facultatif/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/discord/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/hors du jeu|service à part/i)).toBeTruthy();
     expect(screen.getByText(/ses propres règles|sa propre politique/i)).toBeTruthy();
