@@ -2,10 +2,10 @@
 /**
  * La logique de jugement du harnais de partie au clic (#424), **sans navigateur**.
  *
- * `scripts/jouer-partie.mjs` pilote Chromium ; ce module dit ce qu'il faut en penser :
+ * `scripts/preuves/jouer-partie.mjs` pilote Chromium ; ce module dit ce qu'il faut en penser :
  * la partie est-elle finie, chaque action légale a-t-elle un bouton, un clic a-t-il un effet,
  * la cible est-elle vraiment cliquable, et quel geste jouer. Tout est fonction pure sur des
- * données fabriquées : `scripts/partie-jouee-jugement.test.ts` la fait **mordre** sur des cas
+ * données fabriquées : `scripts/preuves/partie-jouee-jugement.test.ts` la fait **mordre** sur des cas
  * fautifs, comme `controlesHauteur` dans `capturer.test.ts`.
  *
  * Les libellés des boutons sont ceux de `describeAction` (`src/pages/Battle.tsx`) : ce fichier

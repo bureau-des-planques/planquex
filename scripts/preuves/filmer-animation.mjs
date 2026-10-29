@@ -12,9 +12,9 @@
  * de console, comme `npm run capturer`.
  *
  * Usage :
- *   BASE_URL=http://localhost:5178 node scripts/filmer-animation.mjs \
+ *   BASE_URL=http://localhost:5178 node scripts/preuves/filmer-animation.mjs \
  *     --chemin /battle --clic 'button.button--primary' --zone .board --images 24 --intervalle 70
- *   node scripts/filmer-animation.mjs --plan ...   (imprime la configuration, sans navigateur)
+ *   node scripts/preuves/filmer-animation.mjs --plan ...   (imprime la configuration, sans navigateur)
  *
  * Options :
  *   --chemin      route à ouvrir (défaut : /battle)
@@ -189,7 +189,7 @@ async function filmer(config) {
   if (!base)
     throw new Error('BASE_URL est requis : lancer le serveur (npm run dev) puis BASE_URL=http://localhost:5178');
   const { chromium } = await import('playwright-core');
-  const racine = fileURLToPath(new URL('..', import.meta.url));
+  const racine = fileURLToPath(new URL('../..', import.meta.url));
   const executablePath =
     process.env.CHROME_PATH ?? join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
   if (!existsSync(executablePath)) throw new Error(`Chromium introuvable : ${executablePath} (CHROME_PATH)`);

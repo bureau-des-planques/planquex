@@ -41,7 +41,7 @@ const RACINE = fileURLToPath(new URL('..', import.meta.url));
  * `/settings`, pas `/reglages` (#208) : la route de l'écran est **anglaise** (`src/App.tsx`,
  * `redirections.ts`), et `/reglages` n'en est pas une — le détecteur scannait donc l'écran
  * **404** (`Introuvable`) en croyant lire les Réglages. La capture, elle, visait déjà
- * `/settings` (`scripts/capturer.mjs`) : c'est ce contrôle-ci qui était décalé.
+ * `/settings` (`scripts/preuves/capturer.mjs`) : c'est ce contrôle-ci qui était décalé.
  *
  * **Étendus le 26/10/2026 (#234)** aux pages publiques et de compte : le contrôle ne
  * couvrait que le jeu, alors qu'un invité voit aussi `/connexion`, `/attente`,
@@ -229,7 +229,7 @@ async function attendreServeur(url) {
 
 async function principal(args) {
   // `--plan` : les écrans et le port, sans rien lancer — le test les lit là, comme
-  // `scripts/capturer.mjs --plan` pour la garde de hauteur.
+  // `scripts/preuves/capturer.mjs --plan` pour la garde de hauteur.
   if (args.includes('--plan')) {
     console.log(
       JSON.stringify({
@@ -296,7 +296,7 @@ async function principal(args) {
     return 1;
   }
 
-  // Le serveur est lancé **dans ce processus** (API `vite`, comme `scripts/capturer.mjs`) :
+  // Le serveur est lancé **dans ce processus** (API `vite`, comme `scripts/preuves/capturer.mjs`) :
   // `server.close()` libère le port à coup sûr. Un `npx vite preview` tué par son parent
   // laissait son `vite` orphelin sur le port (constaté le 25/10/2026, pid 393608 sur 4179).
   const serveur = await preview({

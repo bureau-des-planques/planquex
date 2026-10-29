@@ -1,4 +1,4 @@
-// Lent : chaque cas lance `scripts/simulate.mjs` en sous-processus, qui joue des parties complètes ; le délai de 30 s est posé par cas.
+// Lent : chaque cas lance `scripts/preuves/simulate.mjs` en sous-processus, qui joue des parties complètes ; le délai de 30 s est posé par cas.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -11,16 +11,16 @@ import { describe, expect, it } from 'vitest';
  * sorties, ce qui vérifie la reproductibilité de bout en bout (arguments, chargement
  * Vite, rapport).
  */
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 
 function run(args: string[]) {
-  return spawnSync(process.execPath, ['scripts/simulate.mjs', ...args], {
+  return spawnSync(process.execPath, ['scripts/preuves/simulate.mjs', ...args], {
     cwd: root,
     encoding: 'utf8'
   });
 }
 
-describe('scripts/simulate.mjs — commande headless', () => {
+describe('scripts/preuves/simulate.mjs — commande headless', () => {
   it(
     'lance N parties et imprime le même rapport pour la même graine',
     { timeout: 30_000 },

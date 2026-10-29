@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { STORAGE_KEY, analyserArguments, etatAmorce, htmlPlanche, nomFrame } from './filmer-animation.mjs';
 
 /**
- * Le contrat de `scripts/filmer-animation.mjs`, sans navigateur. La prise réelle se vérifie à la
- * main (`BASE_URL=… node scripts/filmer-animation.mjs …`) ; ce test garde ce qui se casse en
+ * Le contrat de `scripts/preuves/filmer-animation.mjs`, sans navigateur. La prise réelle se vérifie à la
+ * main (`BASE_URL=… node scripts/preuves/filmer-animation.mjs …`) ; ce test garde ce qui se casse en
  * silence : une planche vide parce que « Mouvement réduit » était actif, une clé de store périmée.
  */
 describe('filmer-animation', () => {
@@ -19,7 +19,7 @@ describe('filmer-animation', () => {
   });
 
   it('utilise la clé de store de l’application', () => {
-    const store = readFileSync(new URL('../src/store/useStore.ts', import.meta.url), 'utf8');
+    const store = readFileSync(new URL('../../src/store/useStore.ts', import.meta.url), 'utf8');
     expect(store).toContain(`'${STORAGE_KEY}'`);
   });
 

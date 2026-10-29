@@ -12,7 +12,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const ignored = new Set(['node_modules', 'dist', 'coverage', 'captures', '.git']);
 
 async function walk(dir) {

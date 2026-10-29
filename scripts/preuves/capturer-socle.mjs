@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Socle partagé des captures (`scripts/capturer.mjs`) et du harnais de partie au clic
- * (`scripts/jouer-partie.mjs`, #424) : les instants qui fixent la graine, la fenêtre de
+ * Socle partagé des captures (`scripts/preuves/capturer.mjs`) et du harnais de partie au clic
+ * (`scripts/preuves/jouer-partie.mjs`, #424) : les instants qui fixent la graine, la fenêtre de
  * référence, les gabarits de D-142 et l’amorçage du store. Extrait de `capturer.mjs` tel quel :
  * le comportement des captures ne change pas.
  *
@@ -61,7 +61,7 @@ export const VIEWPORT = { width: 420, height: 900 };
  * mêmes gardes — défilement, marge de 20 px, cibles de 44 px — et **chaque page** sous la garde
  * de largeur : une page qui déborde en largeur casse la mise en page (le critère de #128).
  *
- * Les tailles sont relues dans la ligne D-142 de `docs/DECISIONS.md` par `scripts/capturer.test.ts`.
+ * Les tailles sont relues dans la ligne D-142 de `docs/DECISIONS.md` par `scripts/preuves/capturer.test.ts`.
  * `mobile: false` pour le PC : ni `isMobile` ni écran tactile.
  */
 export const GABARITS = [

@@ -5,7 +5,7 @@
  * Lance N parties **sans navigateur** et affiche un rapport lisible (console par
  * défaut, JSON avec `--json`). Le cœur est dans `src/game/simulation.ts`, donc
  * type-checké par `tsc -b` : ce script ne fait que lire les arguments et charger
- * le module. Vite sert de chargeur TypeScript, comme `scripts/status.mjs`.
+ * le module. Vite sert de chargeur TypeScript, comme `scripts/preuves/status.mjs`.
  *
  * Usage :
  *   npm run simulate -- --games 100 --seed 42

@@ -18,8 +18,8 @@
  *
  * Usage :
  *   npm run parcours                            (Chromium + serveur : BASE_URL, CHROME_PATH)
- *   node scripts/parcours.mjs --graphe <f.json> (le seuil seul, sur un graphe fourni, sans navigateur)
- *   node scripts/parcours.mjs --plan            (imprime le seuil et le parcours, sans navigateur)
+ *   node scripts/preuves/parcours.mjs --graphe <f.json> (le seuil seul, sur un graphe fourni, sans navigateur)
+ *   node scripts/preuves/parcours.mjs --plan            (imprime le seuil et le parcours, sans navigateur)
  *
  * Variables : BASE_URL (serveur déjà lancé, requis pour la planche), CHROME_PATH (binaire Chromium).
  * Le dossier `captures/` est ignoré par git : la planche est une preuve de travail.
@@ -197,7 +197,7 @@ async function executer(config) {
   if (!base)
     throw new Error('BASE_URL est requis : lancer le serveur (npm run dev) puis BASE_URL=http://localhost:5178');
   const { chromium } = await import('playwright-core');
-  const racine = fileURLToPath(new URL('..', import.meta.url));
+  const racine = fileURLToPath(new URL('../..', import.meta.url));
   const executablePath =
     process.env.CHROME_PATH ?? join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
   if (!existsSync(executablePath)) throw new Error(`Chromium introuvable : ${executablePath} (CHROME_PATH)`);

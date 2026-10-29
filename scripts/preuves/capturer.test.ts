@@ -1,4 +1,4 @@
-// Lent : chaque cas lance `scripts/capturer.mjs --plan` en sous-processus Node (environ 1 s chacun) ; c'est le contrat de la commande, vérifié en la lançant.
+// Lent : chaque cas lance `scripts/preuves/capturer.mjs --plan` en sous-processus Node (environ 1 s chacun) ; c'est le contrat de la commande, vérifié en la lançant.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -13,8 +13,8 @@ import { describe, expect, it } from 'vitest';
  * sans capture, un dossier de sortie qui n'est plus ignoré par git, une commande
  * déclarée nulle part.
  */
-const root = fileURLToPath(new URL('..', import.meta.url));
-const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+const root = fileURLToPath(new URL('../..', import.meta.url));
+const read = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 
 /** Les routes de l'application, lues dans `src/App.tsx` (la joker `*` exclue). */
 function appRoutes(): string[] {
@@ -26,9 +26,9 @@ function appRoutes(): string[] {
 
 /** Les captures du script : `PAGES = [['slug', '/route'], …]`. */
 function capturedRoutes(): { slugs: string[]; routes: string[] } {
-  const source = read('scripts/capturer.mjs');
+  const source = read('scripts/preuves/capturer.mjs');
   const block = source.match(/const PAGES = \[([\s\S]*?)\n\];/);
-  expect(block, 'tableau PAGES introuvable dans scripts/capturer.mjs').not.toBeNull();
+  expect(block, 'tableau PAGES introuvable dans scripts/preuves/capturer.mjs').not.toBeNull();
   const pages = [...block![1].matchAll(/\['([a-z-]+)',\s*'([^']*)'\]/g)].map(([, slug, route]) => ({ slug, route }));
   return { slugs: pages.map((page) => page.slug), routes: pages.map((page) => page.route).sort() };
 }
@@ -48,18 +48,18 @@ describe('`npm run capturer` — ticket #53', () => {
       .split('\n')
       .map((line) => line.trim());
     expect(ignored).toContain('captures/');
-    expect(read('scripts/capturer.mjs')).toContain("'captures'");
+    expect(read('scripts/preuves/capturer.mjs')).toContain("'captures'");
   });
 
   it('est déclarée dans package.json, avec playwright-core en devDependency', () => {
     const pkg = JSON.parse(read('package.json'));
-    expect(pkg.scripts.capturer).toBe('node scripts/capturer.mjs');
+    expect(pkg.scripts.capturer).toBe('node scripts/preuves/capturer.mjs');
     expect(pkg.devDependencies['playwright-core']).toBeDefined();
     expect(pkg.dependencies?.['playwright-core']).toBeUndefined();
   });
 
   it('laisse le binaire et le serveur surchargeables, et documente les deux', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     expect(source).toContain('process.env.CHROME_PATH');
     expect(source).toContain('process.env.BASE_URL');
     expect(read('README.md')).toContain('npm run capturer');
@@ -74,7 +74,7 @@ describe('`npm run capturer` — ticket #53', () => {
  * qui rendait le critère (4) de D-060 inapplicable. Le script amorce donc le store
  * (`tutorielVu: true`) **avant la navigation**, et garde **une** capture de la visite.
  *
- * La garde lit le **plan réel** (`node scripts/capturer.mjs --plan`), pas une chaîne
+ * La garde lit le **plan réel** (`node scripts/preuves/capturer.mjs --plan`), pas une chaîne
  * du source : retirer l'amorçage fait tomber les assertions au lieu de les laisser
  * passer. Le seul contrôle statique est celui qui relie le plan au contexte — sans
  * lui, on pourrait calculer un bel amorçage et ne jamais le donner à `newContext`.
@@ -95,7 +95,7 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
     const env = { ...process.env };
     delete env.BASE_URL;
     delete env.PORT;
-    const output = execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+    const output = execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], {
       cwd: root,
       encoding: 'utf8',
       env
@@ -122,7 +122,7 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
   });
 
   it('donne cet amorçage au contexte, donc avant `page.goto`', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     // Les pages : l'amorçage est donné au contexte, la navigation vient après.
     expect(source).toContain('storageState: amorce ? amorcageStore(origine) : undefined');
     // Le combat : il n'y a plus qu'**un** endroit qui monte son contexte (`ouvrirCombat`, #324).
@@ -186,7 +186,7 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     const env = { ...process.env };
     delete env.BASE_URL;
     delete env.PORT;
-    const output = execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+    const output = execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], {
       cwd: root,
       encoding: 'utf8',
       env
@@ -229,7 +229,7 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     delete env.BASE_URL;
     delete env.PORT;
     const plan = JSON.parse(
-      execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
+      execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
     ) as { gabarits: { viewport: { width: number; height: number } }[] };
     const attendus = gabaritsDeD142();
     // La garde mord : une décision qui ne nommerait plus aucun gabarit ne passerait pas pour vide.
@@ -242,18 +242,18 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     delete env.BASE_URL;
     delete env.PORT;
     const plan = JSON.parse(
-      execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
+      execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
     ) as { preparations: { slug: string; route: string }[] };
     // Une scène qu'aucune capture ne regarde est une scène que personne ne juge : c'est là que
     // trois défauts de rendu se sont succédé sans témoin (#283, rétro du 28/10/2026).
     expect(plan.preparations.map(({ slug }) => slug)).toContain('arrivage');
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     expect(source).toContain('.ouverture[data-etape="revelation"]');
     expect(source).toContain('[data-tout-afficher]');
   });
 
   it('joue les gardes de hauteur sur chaque gabarit, à sa taille', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     // Sans ce lien, un gabarit serait photographié mais jugé à 420 × 900 — ou pas jugé du tout.
     expect(source).toContain('for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);');
     expect(source).toContain('await controlerHauteur(page, etat, ROUTE_COMBAT, viewport);');
@@ -264,7 +264,7 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
   });
 
   it('relie le plan au contexte et à la capture', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     // Sans ces liens, le plan pourrait annoncer une belle taille et un cadrage
     // fenêtré, et la capture réelle continuerait en `fullPage: true`.
     expect(source).toContain('viewport: VIEWPORT');
@@ -311,7 +311,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
 
   /** Les cibles que le script surveille vraiment (publiées dans `--plan`). */
   function cibles(): HauteurCible[] {
-    const output = execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+    const output = execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], {
       cwd: root,
       encoding: 'utf8',
       env: sansEnvDeVitest()
@@ -323,7 +323,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
   function controle(mesures: Mesure[], limite = 830, pasAPasOuvert = false, etat = ''): string[] {
     const output = execFileSync(
       process.execPath,
-      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, pasAPasOuvert, etat })],
+      ['scripts/preuves/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, pasAPasOuvert, etat })],
       { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
     );
     return JSON.parse(output) as string[];
@@ -421,7 +421,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
   });
 
   it('joue aussi le combat pas-à-pas terminé, là où le recouvrement est jugé (#191)', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     expect(source).toContain('ouvrirCombat(browser, instant, { pasAPasCombatVu: true })');
     expect(source).toContain('(pas-à-pas terminé)');
   });
@@ -445,7 +445,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
       const output = execFileSync(
         process.execPath,
         [
-          'scripts/capturer.mjs',
+          'scripts/preuves/capturer.mjs',
           '--controle-hauteur',
           JSON.stringify({ limite: 830, mesures, defilement, pasAPasOuvert: true, etat: 'Pression jouable, tour 3' })
         ],
@@ -483,7 +483,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
         const output = execFileSync(
           process.execPath,
           [
-            'scripts/capturer.mjs',
+            'scripts/preuves/capturer.mjs',
             '--controle-hauteur',
             JSON.stringify({ limite: 830, mesures: geometrie(), etat: 'Pression jouable', boutonsPetits })
           ],
@@ -504,13 +504,13 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     });
 
     it('mesure les boutons de la barre et du pas-à-pas tels que rendus', () => {
-      const source = read('scripts/capturer.mjs');
+      const source = read('scripts/preuves/capturer.mjs');
       expect(source).toContain('.combat-barre .button, .pas-a-pas__ligne button');
       expect(source).toContain('boutonsPetits');
     });
 
     it('joue réellement un état « Pression jouable », et échoue s’il n’en atteint aucun', () => {
-      const source = read('scripts/capturer.mjs');
+      const source = read('scripts/preuves/capturer.mjs');
       // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer à ne
       // mesurer que l'arrivée, où la barre n'a qu'une rangée.
       expect(source).toContain('await mesurerAvecUnePression(browser)');
@@ -528,7 +528,7 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
   });
 
   it('relie le contrôle au passage réel sur le combat', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer
     // à ne mesurer que la main.
     expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
@@ -577,7 +577,7 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
   function controle(mesures: Mesure[], etat = '', limite = LIMITE): string[] {
     const output = execFileSync(
       process.execPath,
-      ['scripts/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, etat })],
+      ['scripts/preuves/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, etat })],
       { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
     );
     return JSON.parse(output) as string[];
@@ -663,7 +663,7 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
   });
 
   it('passe le libellé de l’état mesuré au contrôle, dans la capture réelle', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     expect(source).toContain('etat: contexte');
     expect(source).toContain('(pas-à-pas terminé)');
   });
@@ -687,7 +687,7 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
     const sortie = execFileSync(
       process.execPath,
       [
-        'scripts/capturer.mjs',
+        'scripts/preuves/capturer.mjs',
         '--controle-hauteur',
         JSON.stringify({ limite: 830, mesures, defilement, etat, pasAPasOuvert })
       ],
@@ -713,7 +713,7 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
   });
 
   it('mesure le défilement dans la capture réelle, sur les huit états', () => {
-    const source = read('scripts/capturer.mjs');
+    const source = read('scripts/preuves/capturer.mjs');
     expect(source).toContain('document.documentElement.scrollHeight - window.innerHeight');
     // Les huit passages passent tous par `controlerHauteur`, qui transmet la mesure entière.
     expect(source.match(/await controlerHauteur\(/g)?.length).toBeGreaterThanOrEqual(3);
@@ -747,7 +747,7 @@ describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292
     const sortie = execFileSync(
       process.execPath,
       [
-        'scripts/capturer.mjs',
+        'scripts/preuves/capturer.mjs',
         '--controle-hauteur',
         JSON.stringify({ limite: 830, pasAPasOuvert: false, etat: '(détaillé, pire cas)', ...geometrie })
       ],
@@ -768,7 +768,7 @@ describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292
   });
 
   it('joue réellement `détaillé` à chaque graine, pas-à-pas ouvert et terminé, et pose le pire cas', () => {
-    const source = readFileSync(new URL('../scripts/capturer.mjs', import.meta.url), 'utf8');
+    const source = readFileSync(new URL('./capturer.mjs', import.meta.url), 'utf8');
     // Sans ces liens, le contrôle pourrait mordre dans son test et la capture ne mesurer que `sobre`.
     expect(source).toContain('await mesurerDensite(browser, true)');
     expect(source).toContain('await mesurerAvecUnePression(browser, true)');
@@ -779,7 +779,7 @@ describe('`npm run capturer` — le mode détaillé tient dans la fenêtre (#292
   });
 
   it('range les Conditions en ligne dans les deux densités, et ne garde à `détaillé` que la largeur (feuille de style)', () => {
-    const css = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
+    const css = readFileSync(new URL('../../src/styles.css', import.meta.url), 'utf8');
     expect(css).toMatch(/\n\.poste__info\s*\{[^}]*flex-wrap:\s*wrap/);
     expect(css).not.toMatch(/\n\.poste__info\s*\{[^}]*flex-direction:\s*column/);
     expect(css).toMatch(/\.battle--detaille \.board__fiche\s*\{[^}]*max-width:\s*15rem/);
@@ -809,7 +809,7 @@ describe('`npm run capturer` — `sobre` tient dans la fenêtre avec trois Condi
     const sortie = execFileSync(
       process.execPath,
       [
-        'scripts/capturer.mjs',
+        'scripts/preuves/capturer.mjs',
         '--controle-hauteur',
         JSON.stringify({ limite: 830, pasAPasOuvert: true, etat: '(sobre), pire cas', mesures: m, defilement })
       ],
@@ -831,7 +831,7 @@ describe('`npm run capturer` — `sobre` tient dans la fenêtre avec trois Condi
   });
 
   it('joue `sobre` avec le pire cas, à l’arrivée et au tour d’une Pression jouable', () => {
-    const source = readFileSync(new URL('../scripts/capturer.mjs', import.meta.url), 'utf8');
+    const source = readFileSync(new URL('./capturer.mjs', import.meta.url), 'utf8');
     expect(source).toContain('await mesurerDensite(browser, false)');
     expect(source).toContain("`.battle--${detaille ? 'detaille' : 'sobre'}`");
     // Le pire cas du tour d'une Pression jouable, dans les deux densités.

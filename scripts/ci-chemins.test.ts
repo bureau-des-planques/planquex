@@ -50,7 +50,7 @@ describe('scripts/ci-chemins.mjs — le chemin rapide (D-143, #422)', () => {
         garde
       ).toBe(true);
     }
-    expect(node).toContain('scripts/capturer.test.ts');
+    expect(node).toContain('scripts/preuves/capturer.test.ts');
     expect(ui.length).toBeGreaterThan(0);
     for (const chemin of ui) expect(chemin).toMatch(/\.test\.tsx$/);
   });

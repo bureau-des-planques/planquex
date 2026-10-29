@@ -7,14 +7,14 @@
  * bouton cliquable à son centre, que chaque clic a un effet visible, et que la partie se termine.
  * Le moteur ne sert qu'à **lire** : `rejouer` reconstitue l'état depuis le journal rangé dans le
  * store (`bureau-des-planques-v1`), `legalActions` dit ce qui était légal. Le jugement est dans
- * `scripts/partie-jouee-jugement.mjs`.
+ * `scripts/preuves/partie-jouee-jugement.mjs`.
  *
  * Une graine = un instant figé (`page.clock`) : `createBattle` prend `Date.now()` pour graine.
  *
  * Usage :
  *   npm run build && npm run jouer-partie
- *   node scripts/jouer-partie.mjs --graines 1,2 --gabarits telephone-petit,pc
- *   node scripts/jouer-partie.mjs --json
+ *   node scripts/preuves/jouer-partie.mjs --graines 1,2 --gabarits telephone-petit,pc
+ *   node scripts/preuves/jouer-partie.mjs --json
  *
  * Options : --graines <a,b,…> (instants, défaut : ceux de `capturer`) ; --gabarits <nom,…>
  * (défaut : telephone) ; --max-clics <N> (défaut 1200) ; --json ; -h.
@@ -44,7 +44,7 @@ import {
   rangDansLeType
 } from './partie-jouee-jugement.mjs';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const sortieDir = join(root, 'captures', 'jouer-partie');
 const distIndex = join(root, 'dist/index.html');
 const executablePath =

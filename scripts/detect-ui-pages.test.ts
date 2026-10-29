@@ -138,7 +138,7 @@ describe('le contrôle visuel en CI (#205, #208, #234)', () => {
     // `npm run capturer` photographie des routes : un écran mesuré mais jamais photographié
     // n'est pas *regardé*, et D-060 demande justement qu'on regarde les captures.
     const photos = JSON.parse(
-      execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+      execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], {
         cwd: root,
         encoding: 'utf8',
         // Vitest exporte `BASE_URL` (Vite aussi) : le script des captures exige une URL

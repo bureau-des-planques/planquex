@@ -4,7 +4,7 @@
  *
  * Le protocole et les calculs vivent dans `src/game/mesure-direction.ts`, donc
  * type-checkés par `tsc -b` : ce script ne fait que lire les arguments, charger le module
- * et imprimer. Vite sert de chargeur TypeScript, comme `scripts/simulate.mjs`.
+ * et imprimer. Vite sert de chargeur TypeScript, comme `scripts/preuves/simulate.mjs`.
  *
  * Usage :
  *   npm run mesure:direction                       # 1 000 parties, graine 20261028

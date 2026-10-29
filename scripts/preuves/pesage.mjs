@@ -5,7 +5,7 @@
  * ## Pourquoi un script
  *
  * La question a été posée **quatre fois** en une session, et chaque fois à la main : dix appels
- * à `scripts/simulate.mjs` (5 graines × 2 sièges), un agrégat sur `results[].winner`, un ratio,
+ * à `scripts/preuves/simulate.mjs` (5 graines × 2 sièges), un agrégat sur `results[].winner`, un ratio,
  * un taux, un verdict. Trois fois le chiffre a été **contesté** — et une fois, il était
  * **faux** (#108 : le gain de #93 était un artefact de mesure).
  *
@@ -59,7 +59,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 
-const racine = join(dirname(fileURLToPath(import.meta.url)), '..');
+const racine = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /** Les jeux de graines du protocole de #111 — **disjoints** par construction. */
 const ENTRAINEMENT = [1, 7, 42, 11, 23];
@@ -262,7 +262,7 @@ function executer(seed, niveaux, options) {
   const sortie = execFileSync(
     'node',
     [
-      'scripts/simulate.mjs',
+      'scripts/preuves/simulate.mjs',
       '--games',
       String(options.games),
       '--seed',

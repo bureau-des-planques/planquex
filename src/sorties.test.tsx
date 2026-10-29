@@ -7,7 +7,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it } from 'vitest';
 import { App } from '@/App';
 import { setupTestStore } from '@/test/test-utils';
-import { EXCEPTIONS } from '../scripts/parcours.mjs';
+import { EXCEPTIONS } from '../scripts/preuves/parcours.mjs';
 
 /**
  * La garde des sorties (#426, inventaire `docs/preuves/sorties-2026-10-28/README.md`).
@@ -45,7 +45,7 @@ const ROUTES_ECRAN = [
   '/administration'
 ];
 
-// Les exceptions vivent dans `scripts/parcours.mjs` (#429) : une seule liste pour la garde des sorties et le seuil.
+// Les exceptions vivent dans `scripts/preuves/parcours.mjs` (#429) : une seule liste pour la garde des sorties et le seuil.
 
 /** Un chemin sans la requête ni l'ancre, ou `null` si ce n'est pas une adresse interne. */
 function cheminInterne(href: string): string | null {

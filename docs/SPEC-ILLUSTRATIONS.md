@@ -10,7 +10,7 @@
 
 ## 1. Où on en est
 
-`node scripts/status.mjs` — **la source unique des décomptes** :
+`node scripts/preuves/status.mjs` — **la source unique des décomptes** :
 
 | | |
 |---|---|

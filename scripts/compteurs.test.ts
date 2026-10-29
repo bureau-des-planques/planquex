@@ -12,7 +12,7 @@ import { ALL_CARDS } from '@/data';
  * décompte recopié ne casse rien au moment où il diverge — ce test est donc le seul
  * mécanisme qui le rend visible.
  *
- * Le nombre réel se dérive d'`ALL_CARDS` en un seul endroit : `scripts/status.mjs`
+ * Le nombre réel se dérive d'`ALL_CARDS` en un seul endroit : `scripts/preuves/status.mjs`
  * (champ `cards`). `AGENTS.md` §7 et `README.md` y renvoient, et n'ont le droit de
  * citer que les volumes qui sont des **règles** — une **cible** se dit sans le nom juste
  * après le nombre (voir `RULE_VOLUMES`), jamais un décompte du code.
@@ -94,7 +94,7 @@ describe('La garde des décomptes mord — cible retirée (ticket #151)', () => 
 
 describe('`npm run status` — décompte dérivé d’ALL_CARDS', () => {
   it('lit les cartes dans `src/data`, sans littéral', () => {
-    const output = execFileSync(process.execPath, ['scripts/status.mjs'], {
+    const output = execFileSync(process.execPath, ['scripts/preuves/status.mjs'], {
       cwd: root,
       encoding: 'utf8'
     });

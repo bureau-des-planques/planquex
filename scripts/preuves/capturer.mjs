@@ -24,8 +24,8 @@
  *   npm run build && npm run capturer
  *   BASE_URL=http://localhost:5178 npm run capturer
  *   CHROME_PATH=/chemin/vers/chrome npm run capturer
- *   node scripts/capturer.mjs --plan   (imprime l'état amorcé et le plan, sans navigateur)
- *   node scripts/capturer.mjs --controle-hauteur '<géométrie JSON>'  (joue le contrôle de
+ *   node scripts/preuves/capturer.mjs --plan   (imprime l'état amorcé et le plan, sans navigateur)
+ *   node scripts/preuves/capturer.mjs --controle-hauteur '<géométrie JSON>'  (joue le contrôle de
  *     hauteur sur une géométrie fournie, sans navigateur : c'est ce que teste #194)
  *
  * Variables d'environnement :
@@ -44,7 +44,7 @@ import { chromium } from 'playwright-core';
 import { preview } from 'vite';
 import { STORAGE_KEY, VIEWPORT, INSTANTS_COMBAT, GABARITS, amorcageStore } from './capturer-socle.mjs';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const outDir = join(root, 'captures');
 const distIndex = join(root, 'dist/index.html');
 
@@ -104,7 +104,7 @@ const ROUTE_COMBAT = '/battle';
  * et la garde plus bas **échoue** si le code n'est pas à l'écran, ou si la page déborde.
  *
  * Liste à part, et non dans `PAGES` : « une page par route » reste vrai (le contrat de
- * `scripts/capturer.test.ts`), et `/battle` est déjà photographiée à son arrivée.
+ * `scripts/preuves/capturer.test.ts`), et `/battle` est déjà photographiée à son arrivée.
  */
 const PREPARATIONS = [
   { slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' },
@@ -698,7 +698,7 @@ if (new Set(slugs).size !== slugs.length) {
   stop(`deux captures portent le même nom d’image : ${slugs.sort().join(', ')}`);
 }
 
-// Sonde de `scripts/capturer.test.ts` : imprime le **plan** réel des captures —
+// Sonde de `scripts/preuves/capturer.test.ts` : imprime le **plan** réel des captures —
 // l'état amorcé et la liste des couples (slug, route, amorce) — puis sort, sans
 // navigateur ni serveur. La garde lit donc le vrai plan, elle ne cherche pas une
 // chaîne dans ce fichier.
@@ -723,7 +723,7 @@ if (process.argv.includes('--plan')) {
   process.exit(0);
 }
 
-// Sonde de `scripts/capturer.test.ts` (#194) : joue le **contrôle de géométrie** sur une
+// Sonde de `scripts/preuves/capturer.test.ts` (#194) : joue le **contrôle de géométrie** sur une
 // géométrie fournie en JSON — `{ limite, mesures: [{ nom, selecteur, present, haut, bas }] }` —
 // et imprime les problèmes trouvés, sans navigateur ni serveur. C'est ce qui permet au
 // contrôle de **mordre** dans un test : une assertion qui ne peut pas échouer ne garde rien.

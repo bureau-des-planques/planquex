@@ -13,7 +13,7 @@ import {
   rangDansLeType
 } from './partie-jouee-jugement.mjs';
 
-const lire = (fichier: string) => readFileSync(new URL(`../${fichier}`, import.meta.url), 'utf8');
+const lire = (fichier: string) => readFileSync(new URL(`../../${fichier}`, import.meta.url), 'utf8');
 
 /** Une action de moteur, réduite à ce qui compte pour le jugement. */
 type Action = {

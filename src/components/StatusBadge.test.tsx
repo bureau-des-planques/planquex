@@ -30,7 +30,7 @@ describe('StatusBadge — le nom est une annotation (#189)', () => {
 /**
  * **Le harnais de `npm run capturer` suit le composant** (#324).
  *
- * `scripts/capturer.mjs` pose le « pire cas » — trois Conditions par camp — **dans le DOM**,
+ * `scripts/preuves/capturer.mjs` pose le « pire cas » — trois Conditions par camp — **dans le DOM**,
  * parce qu'atteindre ces Conditions en jouant dépend de la graine. Il en connaît donc le
  * balisage : une puce `status-chip`, l'icône à sa taille, puis le nom (visible en `détaillé`,
  * `sr-only` en `sobre`). Recopié à la main, ce balisage survivait au composant : le jour où
@@ -42,7 +42,7 @@ describe('StatusBadge — le nom est une annotation (#189)', () => {
  * mesurer un badge qui n'existe pas.
  */
 
-/** Le modèle du harnais, lu dans `scripts/capturer.mjs --plan` (pas dans son source). */
+/** Le modèle du harnais, lu dans `scripts/preuves/capturer.mjs --plan` (pas dans son source). */
 interface ModeleBadge {
   racine: string;
   modificateur: string;
@@ -58,7 +58,7 @@ function modeleDuHarnais(): ModeleBadge {
   // base qui n'est pas une URL absolue.
   delete env.BASE_URL;
   delete env.PORT;
-  const sortie = execFileSync(process.execPath, ['scripts/capturer.mjs', '--plan'], {
+  const sortie = execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], {
     cwd: process.cwd(),
     encoding: 'utf8',
     env
@@ -141,7 +141,7 @@ describe('StatusBadge — le pire cas du harnais de capture vient du composant (
   });
 
   it('le harnais pose ce modèle-là : son balisage n’est plus recopié à la main', () => {
-    const source = readFileSync('scripts/capturer.mjs', 'utf8');
+    const source = readFileSync('scripts/preuves/capturer.mjs', 'utf8');
     expect(source).toContain('page.evaluate(poserLePireCas, [detaille, MODELE_BADGE])');
     // Le HTML n'est plus écrit à la main : ni la puce, ni le 12 px de l'icône.
     expect(source).not.toContain('puce.className = `status-chip status-chip--${classe}`');
