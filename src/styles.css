@@ -3353,8 +3353,9 @@ h2 {
 
 /* L'infobulle de lecture : posée sous la carte. Sa marge haute n'est pas un vide : le pointeur passe
    de la carte à l'infobulle sans la perdre (SC 1.4.13, survolable). Aucun bouton n'y vit. */
-/* Posée dans `body` (portail), à la verticale de sa carte : le plateau isole ses plans pour la
-   scène d'attaque (D-098), et une infobulle restée dedans passait sous la main en éventail. */
+/* Posée dans l'écran `.battle` (portail), hors du plateau, à la verticale de sa carte : le plateau isole
+   ses plans pour la scène d'attaque (D-098), et une infobulle restée dedans passait sous la main en
+   éventail. Pas dans `body` : ces règles et les jetons `--scene-*` n'y portent pas (D-103). */
 .battle .infobulle {
   padding-top: 0.45rem;
   position: fixed;

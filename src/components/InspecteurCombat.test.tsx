@@ -133,4 +133,32 @@ describe('InspecteurCombat — deux rendus, un seul contenu (T4, #287)', () => {
     expect(infobulle).toHaveTextContent(NOM_ENTIER);
     expect(infobulle).toHaveTextContent(`${INSTANCE.maxHp - INSTANCE.hp}/${INSTANCE.maxHp} de Stress`);
   });
+
+  it('5. l’infobulle se pose dans l’écran `.battle`, pas dans `body` : ses règles et ses jetons n’existent que là (D-103)', async () => {
+    // Dans `body`, `.battle .infobulle` ne s'appliquait pas : l'infobulle tombait nue au bas du
+    // document, et l'écran de combat défilait de 177 px dès qu'une carte gardait le focus.
+    render(
+      <div className="battle">
+        <InspecteurDeTest />
+      </div>
+    );
+
+    await userEvent.hover(carte());
+    const infobulle = await screen.findByRole('tooltip');
+
+    expect(infobulle.closest('.battle')).not.toBeNull();
+    expect(infobulle.parentElement).toBe(document.querySelector('.battle'));
+  });
+
+  it('6. l’infobulle reste dans la fenêtre : une carte au bord gauche ne la pousse pas dehors', async () => {
+    render(<InspecteurDeTest />);
+
+    // jsdom pose la carte en (0, 0) : centrée sur elle, la moitié de l'infobulle sortirait à gauche.
+    await userEvent.hover(carte());
+    const infobulle = await screen.findByRole('tooltip');
+
+    // `min(17rem, 80vw)` = 272 px à 1024 px de large : la moitié (136) plus la marge (8).
+    const demi = Math.min(17 * 16, 0.8 * window.innerWidth) / 2;
+    expect(infobulle.style.left).toBe(`${demi + 8}px`);
+  });
 });
