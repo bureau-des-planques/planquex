@@ -106,8 +106,10 @@ export interface RendreApplicationOptions {
  *
  * Cette fonction unique remplace le montage manuel de `<App />` dans un `MemoryRouter`
  * avec `setupTestStore` — ce que six fichiers de test faisaient chacun à leur façon.
- * L'attente d'une microtâche (`waitFor`) garantit que les écrans chargés à la demande
- * (ticket suivant) sont bien rendus avant que le test ne continue.
+ * Depuis #478, les écrans autres que l'Accueil sont **chargés à la demande** : `render` rend la
+ * main sur le repli de chargement (`.repli-chargement`), et le morceau arrive après. L'attente
+ * porte donc sur **ce repli qui disparaît** — une condition, pas un délai deviné : aucun test ne
+ * peut lire un écran qui n'est pas encore monté.
  *
  * @returns Le résultat de `render` (contenant `container`, `unmount`, `rerender`, etc.).
  */
@@ -127,8 +129,35 @@ export async function rendreApplication({ chemin, storeState = {}, extra }: Rend
     </MemoryRouter>
   );
 
-  // Attendre une microtâche : les écrans paresseux (prochain ticket) auront le temps de monter.
-  await waitFor(() => {});
+  await attendreEcran();
 
   return resultat;
+}
+
+/**
+ * Attend que l'écran de l'adresse courante soit **monté** (#478).
+ *
+ * Deux attentes, et une raison pour chacune :
+ * - le **repli de chargement** quitte le document quand le morceau de l'écran est arrivé et rendu ;
+ * - une **redirection** (`<Navigate>`, D-075) est jouée par React Router en **transition** : le
+ *   premier rendu ne montre que le shell, `main` vide et aucun repli, parce que React garde
+ *   l'ancien écran tant que le nouveau n'est pas prêt. Tant qu'aucun `.page` n'est là, rien ne
+ *   s'est monté.
+ *
+ * L'Accueil est déjà monté (il n'est pas paresseux) : la condition est vraie d'emblée.
+ *
+ * `attendu`, quand il est donné, est le **texte que le test va chercher** : l'attente dit alors
+ * quel écran elle attend, au lieu de se contenter d'« une page quelconque ».
+ */
+export async function attendreEcran(attendu?: RegExp): Promise<void> {
+  await waitFor(
+    () => {
+      if (document.querySelector('.repli-chargement')) throw new Error('écran encore en chargement');
+      if (!document.querySelector('.page')) throw new Error('écran pas encore monté');
+      if (attendu && !attendu.test(document.body.textContent ?? '')) {
+        throw new Error(`écran monté, mais « ${attendu} » n’y est pas encore`);
+      }
+    },
+    { timeout: 5_000 }
+  );
 }
