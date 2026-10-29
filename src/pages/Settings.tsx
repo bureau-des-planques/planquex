@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardPaste, Copy, History, Lock, RotateCcw, ShieldCheck } from 'lucide-react';
+import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
@@ -179,8 +179,8 @@ export function Settings() {
         <h2 id="reglages-installation">Installer le jeu</h2>
         <p className="muted m-0 max-w-[62ch]">Ajoute Planquex à tes applications, depuis la page d’installation.</p>
         <div className="actions actions--tight">
-          <Link className="button button--prearm" to="/installation">
-            <Lock size={16} aria-hidden="true" /> Préarmer
+          <Link className="button button--terminal" to="/installation">
+            Préarmer le déploiement
           </Link>
         </div>
       </section>

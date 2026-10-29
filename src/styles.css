@@ -1113,27 +1113,47 @@ h2 {
   font-weight: 700;
 }
 
-/* Le bouton armé : un verrou rouge à ouvrir avant le tir, puis le tir plein. Sans dégradé ni lueur. */
-.button--prearm {
-  background: var(--bg-raised);
-  border: 2px solid var(--danger);
-  color: var(--text);
+/* Le préarmement en terminal : sobre, vert sur noir, et des lignes de journal satiriques.
+   Sans dégradé ni lueur. */
+.button--terminal,
+.button--terminal-tir {
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.button--prearm svg {
-  color: var(--danger);
+.button--terminal {
+  background: #050a06;
+  border: 1px solid var(--ok);
+  color: var(--ok);
 }
 
-.button--tir {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: #fff;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+.button--terminal-tir {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #04100a;
+}
+
+.button--terminal::before,
+.button--terminal-tir::before {
+  content: '> ';
+}
+
+.terminal {
+  display: grid;
+  gap: 0.3rem;
+  background: #050a06;
+  border: 1px solid color-mix(in srgb, var(--ok) 45%, transparent);
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+  color: var(--ok);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+.terminal__curseur::after {
+  content: '_';
 }
 
 .button:disabled {

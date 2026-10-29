@@ -1,5 +1,4 @@
 import { useState, useSyncExternalStore } from 'react';
-import { Lock } from 'lucide-react';
 import { lireEnvironnement, situationDInstallation, type Environnement } from '@/lib/installation';
 import { capteurInvite, type CapteurInvite, type ResultatInstallation } from '@/lib/invite-installation';
 
@@ -86,25 +85,36 @@ export function BancPret({
             L’icône Planquex rejoint tes applications et ouvre le jeu sans la barre du navigateur.
           </p>
           {arme ? (
-            <div className="actions actions--tight">
-              <button
-                type="button"
-                className="button button--big button--tir"
-                onClick={() => {
-                  setArme(false);
-                  void installer();
-                }}
-              >
-                Lancer l’installation
-              </button>
-              <button type="button" className="button" onClick={() => setArme(false)}>
-                Désarmer
-              </button>
-            </div>
+            <>
+              <div className="terminal" role="log" aria-label="Journal du préarmement">
+                <p className="m-0">Préarmement engagé. Le jeu ne s’installe pas sans l’accord de la Direction.</p>
+                <p className="m-0">Verrou de conformité : validé en comité, à l’unanimité des absents.</p>
+                <p className="m-0">Aucune donnée ne quitte ce poste pendant le déploiement.</p>
+                <p className="m-0">
+                  Tir en attente de l’ordre de la Direction
+                  <span className="terminal__curseur" aria-hidden="true" />
+                </p>
+              </div>
+              <div className="actions actions--tight">
+                <button
+                  type="button"
+                  className="button button--big button--terminal-tir"
+                  onClick={() => {
+                    setArme(false);
+                    void installer();
+                  }}
+                >
+                  Lancer l’installation
+                </button>
+                <button type="button" className="button button--terminal" onClick={() => setArme(false)}>
+                  Désarmer
+                </button>
+              </div>
+            </>
           ) : (
             <div>
-              <button type="button" className="button button--big button--prearm" onClick={() => setArme(true)}>
-                <Lock size={18} aria-hidden="true" /> Préarmer
+              <button type="button" className="button button--big button--terminal" onClick={() => setArme(true)}>
+                Préarmer le déploiement
               </button>
             </div>
           )}
