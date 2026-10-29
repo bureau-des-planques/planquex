@@ -85,6 +85,20 @@ de 10 pour rester lisibles.
 | N+2 3◆ | 140–160 | 2 attaques | 50–80 | 2 |
 | N+2 4◆ (ex) | 170–190 | 2 attaques | 70–120 | 2–3 |
 
+**Où l'on écrit dans la bande** (#412, D-134 (2) ; revue du 29/10/2026). Une bande n'est pas
+une cible à atteindre par le bas : c'est un **intervalle d'écriture**, et sa lecture est fixée.
+
+- Une Pression **sans effet** prend le **haut** de sa bande de dégâts — 30 à 1 café, 80 à 2.
+- Une Pression **à effet** prend **un cran en dessous** — 20 à 1 café, 70 à 2 — l'effet restant
+  **gratuit** (D-021) : un effet ne se paie pas en dégâts tant qu'on est à 1 ou 2 cafés.
+- Le **Seuil** prend le haut de sa bande de stade et de rareté.
+- Une faction ne lit **jamais** le plancher : c'est ce qui a coûté à SUPPORT **27,5 %** de
+  parties décidées (#412), et la mesure l'avait désigné sans ambiguïté.
+
+Cette lecture vivait dans un commentaire de `src/data/support.ts` ; elle est ici, où le §2 est
+**normatif** (`AGENTS.md` §2), et `src/data/support.test.ts` garde qu'aucune Pression ne
+retombe au plancher.
+
 **Le Seuil suit le jeu réel** (D-023), à ±10 près sur chaque borne pour garder une
 progression lisible entre raretés d'un même stade : Basique **50–80**, Stade 1
 **90–120**, Stade 2 **140–160**, ex **170–190** (relevés du 19/10/2026). Notre

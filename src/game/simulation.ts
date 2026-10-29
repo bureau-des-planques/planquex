@@ -1,6 +1,6 @@
 import { ALL_CARDS, isPlanque } from '@/data';
 import type { BattleAction, BattleState, Card, CafeType, Faction, PlanqueCard, PlayerId } from '@/data/types';
-import { DECK_SIZE, MAX_COPIES_PER_NAME, deckLegal } from '@/game/deck';
+import { DECK_SIZE, MAX_COPIES_PER_NAME, deckCountsByName, deckLegal } from '@/game/deck';
 import { applyAction, createBattle } from '@/game/engine';
 import type { BattleCafeTypes } from '@/game/engine';
 import { nextAction, politique, searchDecision } from '@/game/ia';
@@ -179,11 +179,15 @@ export function construireDeckDerive(
       })
     ).size;
 
-  /** Le même contrôle que `deckCanAdd`, sans `getCard` : le catalogue est un paramètre. */
+  /**
+   * Les limites du Deck viennent de `deck.ts` — **une seule fois** (#248, `AGENTS.md` §6).
+   * `deckCanAdd` n'est pas appelable ici : il lit le catalogue global par `getCard`, alors que
+   * le Deck dérivé reçoit le sien en paramètre. On réutilise donc ce qui est commun sans le
+   * recopier : `DECK_SIZE` et `deckCountsByName`.
+   */
   const peutAjouter = (card: Card): boolean => {
     if (deck.length >= DECK_SIZE) return false;
-    const exemplaires = deck.filter((id) => parId.get(id)?.name === card.name).length;
-    if (exemplaires >= MAX_COPIES_PER_NAME) return false;
+    if ((deckCountsByName(deck)[card.name] ?? 0) >= MAX_COPIES_PER_NAME) return false;
     if (card.faction === faction && isPlanque(card) && card.stage === 'ENTRANT' && !deck.includes(card.id)) {
       if (nombreEntrantsDistincts() >= entrantsMax) return false;
     }

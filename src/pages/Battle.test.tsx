@@ -21,6 +21,7 @@ import { nextAiAction } from '@/game/ia';
 import { factionDeck } from '@/game/simulation';
 import { partieSauvegardee } from '@/store/partie';
 import { useStore } from '@/store/useStore';
+import { deckLegal } from '@/game/deck';
 
 /** Une partie **commencée** (vingt coups joués), rendue au tour du joueur : rien ne joue seul. */
 function partieCommencee() {
@@ -413,6 +414,25 @@ describe('Battle — écran de combat', () => {
     expect(etiquette?.closest('.notice')).toBeNull();
     expect(document.querySelectorAll('.board__test')).toHaveLength(1);
     expect(screen.getByText('deck de test')).toBeInTheDocument();
+  });
+
+  it('dit POURQUOI le deck est refusé, et pas seulement qu’il l’est (#251, revue du 29/10)', () => {
+    // Le bandeau disait « ton deck n'est pas valide » sans jamais nommer la règle violée, alors
+    // que `deckLegal` la connaît. Un refus qui n'explique pas ne s'apprend pas : le testeur ne
+    // sait pas s'il manque des cartes, s'il en a trop, ou s'il a trop d'exemplaires du même nom.
+    const store = useStore.getState();
+    store.setDeck(['sse-infirmier-site']);
+
+    renderWithStore(<Battle />, {
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      deck: ['sse-infirmier-site']
+    });
+
+    const raisons = deckLegal(['sse-infirmier-site']).reasons;
+    expect(raisons.length).toBeGreaterThan(0);
+    const etiquette = screen.getByText(/Ton deck n’est pas valide/);
+    for (const raison of raisons) expect(etiquette.textContent).toContain(raison);
   });
 
   it("n'affiche aucune étiquette de deck de test quand le deck du joueur est valide", () => {

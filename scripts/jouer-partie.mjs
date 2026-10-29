@@ -116,7 +116,11 @@ async function lirePartieRangee(page) {
   if (!brut) return null;
   try {
     return JSON.parse(brut).state?.partie ?? null;
-  } catch {
+  } catch (erreur) {
+    // **On ne se tait pas** (revue du 29/10/2026) : une partie rangée illisible n'est pas
+    // « aucune partie ». La confondre avec l'absence ferait jouer une partie neuve en croyant
+    // reprendre, et le rapport dirait « fini » sans avoir rien rejoué.
+    console.warn(`Partie rangée illisible (${erreur.message}) : le harnais repart d'une partie neuve.`);
     return null;
   }
 }
