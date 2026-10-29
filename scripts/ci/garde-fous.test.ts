@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * Garde-fou **du** garde-fou (ticket #112).
  *
- * `scripts/garde-fous.mjs` exige que la suite échoue quand on casse un invariant critique.
+ * `scripts/ci/garde-fous.mjs` exige que la suite échoue quand on casse un invariant critique.
  * Le risque évident serait qu'on puisse **vider la table** en silence : ce fichier la
  * compare donc à une **liste attendue**, et fait échouer `npm test` si une entrée disparaît
  * ou si un motif n'est plus ancré dans le code.
@@ -23,21 +23,21 @@ import { describe, expect, it } from 'vitest';
  * table : la cohabitation reste une règle de lancement (la CI enchaîne les deux), et
  * l'état lu par `npm test` ne dépend plus d'un `cwd` ni d'une écriture.
  */
-const LANCER = 'scripts/garde-fous.mjs';
+const LANCER = 'scripts/ci/garde-fous.mjs';
 
 /**
  * La racine du dépôt, et **non le répertoire courant** du worker : un sous-processus
  * lancé avec un chemin relatif dépend du `cwd` que `vitest` a bien voulu donner.
  * Depuis #176, le harnais est lancé par son **chemin absolu**, dans la racine — un
- * test qui lançait `node scripts/garde-fous.mjs` héritait du `cwd` et pouvait lire un
+ * test qui lançait `node scripts/ci/garde-fous.mjs` héritait du `cwd` et pouvait lire un
  * autre fichier que celui du dépôt testé.
  */
-const racine = fileURLToPath(new URL('..', import.meta.url));
+const racine = fileURLToPath(new URL('../..', import.meta.url));
 const SCRIPT = join(racine, LANCER);
 
 /** Les gardes attendues, une par invariant **critique** déjà pris en défaut dans le dépôt. */
 // #113, #116 et #118 sont arrivées en parallèle : toutes les entrées sont conservées, et
-// la liste est ce que `scripts/garde-fous.test.ts` compare — l'oublier ferait échouer `npm test`.
+// la liste est ce que `scripts/ci/garde-fous.test.ts` compare — l'oublier ferait échouer `npm test`.
 // #114 : l'évaluation du niveau 2 ne doit pas repartir du flux de hasard de la partie.
 // #97 : le wizard d'illustration — le nom du fichier rangé, l'arrêt sur une vérification
 // ratée, et le message du registre, qui ne doit pas annoncer ce qui n'a pas eu lieu.

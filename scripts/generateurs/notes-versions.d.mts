@@ -1,8 +1,8 @@
 /**
- * Les types de `scripts/notes-versions.mjs` — le générateur des notes de version (D-090).
+ * Les types de `scripts/generateurs/notes-versions.mjs` — le générateur des notes de version (D-090).
  *
  * Le script est du **JavaScript** (comme les autres scripts du dépôt : `capturer.mjs`,
- * `status.mjs`…), et `scripts/notes-versions.test.ts` l'importe pour éprouver sa mise en
+ * `status.mjs`…), et `scripts/generateurs/notes-versions.test.ts` l'importe pour éprouver sa mise en
  * forme. Cette déclaration est le contrat de cet import : ce que le test a le droit
  * d'appeler, et avec quoi.
  *

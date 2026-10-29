@@ -1,9 +1,9 @@
 /**
- * Les types de `scripts/plan-dev.mjs` — le générateur de ce qui arrive
+ * Les types de `scripts/generateurs/plan-dev.mjs` — le générateur de ce qui arrive
  * (D-097 (3), #214, #336).
  *
  * Le script est du **JavaScript** (comme `notes-versions.mjs`, `capturer.mjs`…), et
- * `scripts/plan-dev.test.ts` l'importe pour éprouver sa mise en forme. Cette déclaration
+ * `scripts/generateurs/plan-dev.test.ts` l'importe pour éprouver sa mise en forme. Cette déclaration
  * est le contrat de cet import : ce que le test a le droit d'appeler, et avec quoi.
  *
  * Elle ne décrit **pas** le fichier engendré (`src/data/plan-dev.ts` a ses propres types,

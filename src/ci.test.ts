@@ -138,7 +138,7 @@ describe('.github/workflows/ci.yml', () => {
     // Chaque job calcule les chemins changés, et **tourne toujours** : pas de `paths-ignore`.
     expect(workflow).not.toMatch(/^\s+paths(-ignore)?:/m);
     for (const nom of ['controles', 'tests-noyau', 'tests-ecrans']) {
-      expect(blocJob(nom), nom).toContain('node scripts/ci-chemins.mjs');
+      expect(blocJob(nom), nom).toContain('node scripts/ci/ci-chemins.mjs');
     }
     // Une condition ne porte que sur le chemin rapide : ni secret, ni branche, ni autre drapeau.
     for (const condition of workflow.match(/^\s*if:.*$/gm) ?? []) {

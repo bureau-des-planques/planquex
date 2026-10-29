@@ -34,7 +34,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const racine = join(dirname(fileURLToPath(import.meta.url)), '..');
+const racine = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const git = (args, cwd = racine) =>
   execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();

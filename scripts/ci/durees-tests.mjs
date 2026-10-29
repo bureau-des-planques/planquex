@@ -13,7 +13,7 @@
  *
  * Usage :
  *   npm run tests:lents                      lance la suite (les deux projets) et relit le rapport
- *   node scripts/durees-tests.mjs [rapport]  relit un rapport déjà écrit, sans relancer la suite
+ *   node scripts/ci/durees-tests.mjs [rapport]  relit un rapport déjà écrit, sans relancer la suite
  *
  * Sortie : 0 si chaque fichier au-delà de 5 s est justifié, 1 sinon. Le rapport par défaut est
  * `node_modules/.durees-tests.json` (ignoré par git, produit par `npm run tests:lents`).
@@ -25,7 +25,7 @@ import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const racine = fileURLToPath(new URL('..', import.meta.url));
+const racine = fileURLToPath(new URL('../..', import.meta.url));
 
 /** Au-delà de ce seuil, un fichier doit se justifier en tête. */
 export const SEUIL_SECONDES = 5;

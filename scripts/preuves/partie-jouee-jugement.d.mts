@@ -1,8 +1,8 @@
 /**
- * Les types de `scripts/partie-jouee-jugement.mjs` — le jugement du harnais de partie au clic (#424).
+ * Les types de `scripts/preuves/partie-jouee-jugement.mjs` — le jugement du harnais de partie au clic (#424).
  *
  * Comme `ouf.d.mts` : le script est du **JavaScript**, et cette déclaration est le contrat de
- * l'import que fait `scripts/partie-jouee-jugement.test.ts`.
+ * l'import que fait `scripts/preuves/partie-jouee-jugement.test.ts`.
  */
 
 /** Les gestes qui se font en deux temps : une carte de la main, puis le bouton de la pose. */

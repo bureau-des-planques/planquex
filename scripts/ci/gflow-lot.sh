@@ -45,16 +45,16 @@
 #
 # ## Usage
 #
-#     bash scripts/gflow-lot.sh --toutes [--ranger] [--commit]
-#     bash scripts/gflow-lot.sh --ids /tmp/opencode/gen/ids-restants.txt --ranger
-#     bash scripts/gflow-lot.sh atelier-rpo atelier-rui            # deux cartes
-#     bash scripts/gflow-lot.sh --toutes --par-carte               # lent, mais autonome
-#     bash scripts/gflow-lot.sh --toutes --simuler                 # ne lance rien
+#     bash scripts/ci/gflow-lot.sh --toutes [--ranger] [--commit]
+#     bash scripts/ci/gflow-lot.sh --ids /tmp/opencode/gen/ids-restants.txt --ranger
+#     bash scripts/ci/gflow-lot.sh atelier-rpo atelier-rui            # deux cartes
+#     bash scripts/ci/gflow-lot.sh --toutes --par-carte               # lent, mais autonome
+#     bash scripts/ci/gflow-lot.sh --toutes --simuler                 # ne lance rien
 #
 # Options : voir `--aide`. Tous les chemins sont **surchargeables par
 # l'environnement** (`GFLOW_LOT_*`) : c'est ce qui rend le script testable dans
 # un bac temporaire, sans réseau et sans navigateur
-# (`scripts/gflow-lot.test.ts`).
+# (`scripts/ci/gflow-lot.test.ts`).
 
 set -euo pipefail
 
@@ -100,7 +100,7 @@ aide() {
   cat <<'TXT'
 Lot d'illustrations par gflow-cli — voir l'en-tête du script pour le pourquoi.
 
-  bash scripts/gflow-lot.sh [options] [id-de-carte…]
+  bash scripts/ci/gflow-lot.sh [options] [id-de-carte…]
 
 Quelles cartes
   --toutes                 toutes les cartes de la table des sujets sans image

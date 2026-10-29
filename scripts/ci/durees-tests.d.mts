@@ -1,4 +1,4 @@
-/** Types de `scripts/durees-tests.mjs` (D-143 (5), #422), pour ses tests. */
+/** Types de `scripts/ci/durees-tests.mjs` (D-143 (5), #422), pour ses tests. */
 export const SEUIL_SECONDES: number;
 export const TOP: number;
 export const MARQUEUR: RegExp;

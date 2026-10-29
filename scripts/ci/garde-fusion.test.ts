@@ -33,7 +33,7 @@ import { describe, expect, it } from 'vitest';
  * peut pas échouer ne garde rien (`AGENTS.md` §6, #112).
  */
 
-const lire = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+const lire = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 
 /** La commande, écrite une seule fois : c'est elle que les portes de fusion doivent citer. */
 const RAPPEL = 'npm run ci:etat';
@@ -139,7 +139,7 @@ describe('la règle d’édition ciblée est écrite là où un agent la lit (#2
   it('la page est un fichier lisible par un humain, pas un renvoi mort', () => {
     // Vérifié par le chemin : `readFileSync` lèverait si la page disparaissait, mais un test
     // qui échoue sur une exception dit moins que celui qui dit quoi faire.
-    expect(fileURLToPath(new URL(`../${PAGE_EDITION}`, import.meta.url))).toContain('edition-ciblee.md');
+    expect(fileURLToPath(new URL(`../../${PAGE_EDITION}`, import.meta.url))).toContain('edition-ciblee.md');
     expect(manquesEdition('')).toHaveLength(EXIGENCES_EDITION.length);
   });
 

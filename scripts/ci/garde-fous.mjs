@@ -31,12 +31,12 @@
  *
  * ## Contrat
  *
- * - `node scripts/garde-fous.mjs` — applique chaque mutation, lance les tests ciblés,
+ * - `node scripts/ci/garde-fous.mjs` — applique chaque mutation, lance les tests ciblés,
  *   **exige un échec**, restaure le fichier. Sort 1 si une mutation n'échoue pas, ou si un
  *   motif a disparu du code (entrée périmée : à réancrer, pas à ignorer).
- * - `node scripts/garde-fous.mjs --verifie` — **contrôle statique** : chaque motif est
+ * - `node scripts/ci/garde-fous.mjs --verifie` — **contrôle statique** : chaque motif est
  *   présent, chaque fichier de test existe. Ne mute rien, ne lance aucun test. C'est ce que
- *   `scripts/garde-fous.test.ts` appelle, pour que la table ne pourrisse pas en silence.
+ *   `scripts/ci/garde-fous.test.ts` appelle, pour que la table ne pourrisse pas en silence.
  *
  * Le dossier de travail n'est jamais laissé dans un état intermédiaire : chaque fichier est
  * restauré dans un `finally`, et l'égalité est **relue** après restauration.
@@ -46,7 +46,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const racine = join(dirname(fileURLToPath(import.meta.url)), '..');
+const racine = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const vitest = join(racine, 'node_modules', '.bin', process.platform === 'win32' ? 'vitest.cmd' : 'vitest');
 
 /**
@@ -459,7 +459,7 @@ if (problemes.length > 0) {
 }
 
 if (VERIFIE) {
-  // `--json` sert à `scripts/garde-fous.test.ts` : il compare la table à une **liste
+  // `--json` sert à `scripts/ci/garde-fous.test.ts` : il compare la table à une **liste
   // attendue**, donc retirer une entrée fait échouer `npm test`. Un harnais qu'on peut
   // vider discrètement serait le faux garde-fou de plus.
   if (process.argv.includes('--json')) {

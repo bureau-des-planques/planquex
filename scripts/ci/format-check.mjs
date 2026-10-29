@@ -27,7 +27,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const RACINE = fileURLToPath(new URL('..', import.meta.url));
+export const RACINE = fileURLToPath(new URL('../..', import.meta.url));
 
 /**
  * Ce que le formateur touche. `src/data/`, les docs et `dist/` n'y sont pas : `.prettierignore`

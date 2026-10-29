@@ -12,8 +12,8 @@
  * (`Advisory`) non. Le seuil est ici, une fois, et pas dans la tête de celui qui lit la sortie.
  *
  * Usage :
- *   node scripts/detect-ui-pages.mjs                 # sert dist/ et contrôle les écrans
- *   node scripts/detect-ui-pages.mjs --controle '<json>'     # sonde : lit une sortie `--json` et
+ *   node scripts/ci/detect-ui-pages.mjs                 # sert dist/ et contrôle les écrans
+ *   node scripts/ci/detect-ui-pages.mjs --controle '<json>'     # sonde : lit une sortie `--json` et
  *                                                   # dit si elle échoue (le test s'en sert, sans
  *                                                   # navigateur ni réseau)
  *
@@ -33,7 +33,7 @@ import process from 'node:process';
 import { preview } from 'vite';
 
 /** La racine du dépôt : `dist/` y est servi. */
-const RACINE = fileURLToPath(new URL('..', import.meta.url));
+const RACINE = fileURLToPath(new URL('../..', import.meta.url));
 
 /**
  * Les écrans qui existent, et qu'un invité peut ouvrir.
@@ -245,7 +245,7 @@ async function principal(args) {
     return 0;
   }
 
-  // Sonde de `scripts/detect-ui-pages.test.ts` (#234) : joue la règle des plafonds sur un
+  // Sonde de `scripts/ci/detect-ui-pages.test.ts` (#234) : joue la règle des plafonds sur un
   // plan fourni — `{ ecrans, baseline }` — et sort 1 si un écran n'a pas de compte. C'est
   // ce qui permet au test de confronter la règle à un **cas fautif**, sans navigateur.
   const iPlan = args.indexOf('--controle-plan');

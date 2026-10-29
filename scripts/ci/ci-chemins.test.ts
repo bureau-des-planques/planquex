@@ -6,7 +6,7 @@ import { docSeulement, estCheminDoc, litUnDocument, testsQuiLisentLesDocs } from
  * de plus. Chaque règle de D-143 (1) et (2) est confrontée à un **cas fautif** : sans elle, une
  * illustration orpheline (`design/`) ou une PR mixte passerait par le chemin rapide.
  */
-describe('scripts/ci-chemins.mjs — le chemin rapide (D-143, #422)', () => {
+describe('scripts/ci/ci-chemins.mjs — le chemin rapide (D-143, #422)', () => {
   it('reconnaît la documentation : docs/**, preuves comprises, et les *.md de la racine', () => {
     for (const chemin of ['docs/DECISIONS.md', 'docs/preuves/x/planche.png', 'AGENTS.md', 'README.md']) {
       expect(estCheminDoc(chemin), chemin).toBe(true);
@@ -33,7 +33,7 @@ describe('scripts/ci-chemins.mjs — le chemin rapide (D-143, #422)', () => {
   });
 
   it('repère un test qui lit un document, et pas un test qui ne fait que le citer', () => {
-    expect(litUnDocument("const t = readFileSync(new URL('../docs/DECISIONS.md', import.meta.url), 'utf8');")).toBe(
+    expect(litUnDocument("const t = readFileSync(new URL('../../docs/DECISIONS.md', import.meta.url), 'utf8');")).toBe(
       true
     );
     expect(litUnDocument("readFileSync(chemin('AGENTS.md'))")).toBe(true);

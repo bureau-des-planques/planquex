@@ -1,4 +1,4 @@
-/** Types de `scripts/dispatch.mjs` (rétro du 28/10/2026), pour ses tests. */
+/** Types de `scripts/ci/dispatch.mjs` (rétro du 28/10/2026), pour ses tests. */
 
 export interface Options {
   ticket: string | null;

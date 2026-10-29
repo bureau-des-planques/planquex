@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
  * fichier (aucun écart) et à des **workflows fabriqués** qui publient sans builder, ou sans jeton :
  * sans eux, le contrôle pourrait passer vert sans rien garder.
  */
-const WORKFLOW_PATH = fileURLToPath(new URL('../.github/workflows/deploiement.yml', import.meta.url));
+const WORKFLOW_PATH = fileURLToPath(new URL('../../.github/workflows/deploiement.yml', import.meta.url));
 const workflow = readFileSync(WORKFLOW_PATH, 'utf8');
 
 function manquements(yaml: string): string[] {

@@ -18,7 +18,7 @@ import { resolve } from 'node:path';
  * d'une page propre, donc une sortie vide n'est pas une panne — et `[]` avec le code 1 en est
  * une. Les deux cas sont testés ici, parce que les confondre est exactement le défaut d'origine.
  */
-const root = resolve(import.meta.dirname, '..');
+const root = resolve(import.meta.dirname, '..', '..');
 
 /**
  * Les écrans que le ticket **#234** exige : publics, et de compte. Le contrôle peut en
@@ -51,7 +51,7 @@ interface Plan {
 }
 
 function plan(): Plan {
-  const sortie = execFileSync(process.execPath, ['scripts/detect-ui-pages.mjs', '--plan'], {
+  const sortie = execFileSync(process.execPath, ['scripts/ci/detect-ui-pages.mjs', '--plan'], {
     cwd: root,
     encoding: 'utf8'
   });
@@ -70,7 +70,7 @@ function sondePlan(
   try {
     const sortie = execFileSync(
       process.execPath,
-      ['scripts/detect-ui-pages.mjs', '--controle-plan', JSON.stringify({ ecrans, baseline })],
+      ['scripts/ci/detect-ui-pages.mjs', '--controle-plan', JSON.stringify({ ecrans, baseline })],
       { cwd: root, encoding: 'utf8' }
     );
     return JSON.parse(sortie) as { sansPlafond: string[]; echec: boolean };
@@ -87,7 +87,7 @@ function sonde(sortieImpeccable: string, code = 0): { compte: number | null; ech
   try {
     const resultat = execFileSync(
       process.execPath,
-      ['scripts/detect-ui-pages.mjs', '--controle', sortieImpeccable, '--code', String(code)],
+      ['scripts/ci/detect-ui-pages.mjs', '--controle', sortieImpeccable, '--code', String(code)],
       { cwd: root, encoding: 'utf8' }
     );
     return JSON.parse(resultat) as { compte: number | null; echec: boolean; message: string | null };

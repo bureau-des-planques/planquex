@@ -1,8 +1,8 @@
 /**
- * Les types de `scripts/ouf.mjs` — le post-it du mur qui devient une issue (#400).
+ * Les types de `scripts/generateurs/ouf.mjs` — le post-it du mur qui devient une issue (#400).
  *
  * Comme `problemes-connus.d.mts` : le script est du **JavaScript**, et cette déclaration est
- * le contrat de l'import que fait `scripts/ouf.test.ts`. Elle ne décrit pas la base : elle
+ * le contrat de l'import que fait `scripts/generateurs/ouf.test.ts`. Elle ne décrit pas la base : elle
  * décrit ce que la commande demande, compose et rend.
  */
 

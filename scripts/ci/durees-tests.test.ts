@@ -14,7 +14,7 @@ const rapport = (fichiers: [string, number][]) => ({
 const sansTete = 'import { it } from "vitest";\nit("x", () => {});\n';
 const avecTete = `// Lent : chaque cas monte une base.\n${sansTete}`;
 
-describe('scripts/durees-tests.mjs — les tests les plus lents (D-143 (5), #422)', () => {
+describe('scripts/ci/durees-tests.mjs — les tests les plus lents (D-143 (5), #422)', () => {
   it('classe du plus lent au plus rapide, avec des chemins relatifs à la racine', () => {
     const lignes = classer(
       rapport([

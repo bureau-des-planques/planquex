@@ -15,7 +15,7 @@
  * lire un document entre seul dans le chemin rapide.
  *
  * Usage (CI) :
- *   node scripts/ci-chemins.mjs --base <sha>   écrit dans $GITHUB_OUTPUT (ou sur stdout)
+ *   node scripts/ci/ci-chemins.mjs --base <sha>   écrit dans $GITHUB_OUTPUT (ou sur stdout)
  *     doc_seulement=true|false
  *     tests_node=<fichiers du projet node qui lisent un document>
  *     tests_ui=<fichiers du projet ui qui lisent un document>
@@ -25,7 +25,7 @@ import { appendFileSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const racine = fileURLToPath(new URL('..', import.meta.url));
+const racine = fileURLToPath(new URL('../..', import.meta.url));
 
 /**
  * Un chemin de **documentation** au sens de D-143 (1) : `docs/**` (preuves comprises), ou un

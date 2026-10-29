@@ -25,7 +25,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { binairePrettier, messageAbsent, versionDemandee } from './format-check.mjs';
+import { binairePrettier, messageAbsent, versionDemandee } from './ci/format-check.mjs';
 
 /** Décide si `npm ci` peut partir. Pur : testé sans git ni disque. */
 export function verdict({ gitDir, communDir, nodeModulesEstLien, principalVoulu = false }) {

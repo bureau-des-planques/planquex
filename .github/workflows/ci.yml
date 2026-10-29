@@ -69,9 +69,9 @@ jobs:
         run: |
           if [ -n "$BASE" ]; then
             git fetch --no-tags --depth=1 origin "$BASE"
-            node scripts/ci-chemins.mjs --base "$BASE"
+            node scripts/ci/ci-chemins.mjs --base "$BASE"
           else
-            node scripts/ci-chemins.mjs
+            node scripts/ci/ci-chemins.mjs
           fi
 
       - name: Installer les dépendances
@@ -165,9 +165,9 @@ jobs:
         run: |
           if [ -n "$BASE" ]; then
             git fetch --no-tags --depth=1 origin "$BASE"
-            node scripts/ci-chemins.mjs --base "$BASE"
+            node scripts/ci/ci-chemins.mjs --base "$BASE"
           else
-            node scripts/ci-chemins.mjs
+            node scripts/ci/ci-chemins.mjs
           fi
 
       - name: Installer les dépendances
@@ -229,9 +229,9 @@ jobs:
         run: |
           if [ -n "$BASE" ]; then
             git fetch --no-tags --depth=1 origin "$BASE"
-            node scripts/ci-chemins.mjs --base "$BASE"
+            node scripts/ci/ci-chemins.mjs --base "$BASE"
           else
-            node scripts/ci-chemins.mjs
+            node scripts/ci/ci-chemins.mjs
           fi
 
       - name: Installer les dépendances
@@ -246,7 +246,7 @@ jobs:
         run: npm run build
 
       # **Le contrôle visuel qui compte** (#205, #234) : `impeccable detect` sur les écrans
-      # **servis depuis `dist/`**, avec le cliquet de `scripts/detect-ui-pages.mjs`
+      # **servis depuis `dist/`**, avec le cliquet de `scripts/ci/detect-ui-pages.mjs`
       # (`ECRANS` = 12 écrans, `BASELINE` = leur compte mesuré). `detect:ui` ne lit que les
       # sources et sous-compte ; celui-ci voit le rendu réel.
       #

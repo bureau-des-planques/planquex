@@ -1,4 +1,4 @@
-/** Types de `scripts/worktree-nouveau.mjs` (rétro du 28/10/2026), pour ses tests. */
+/** Types de `scripts/ci/worktree-nouveau.mjs` (rétro du 28/10/2026), pour ses tests. */
 
 export interface Plan {
   nom: string | null;

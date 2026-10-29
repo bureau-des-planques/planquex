@@ -1,8 +1,8 @@
 /**
- * Les types de `scripts/problemes-connus.mjs` — les problèmes connus d'une release (#299, D-119).
+ * Les types de `scripts/generateurs/problemes-connus.mjs` — les problèmes connus d'une release (#299, D-119).
  *
  * Le script est du **JavaScript**, comme les autres outils du dépôt ; cette déclaration est le
- * contrat de l'import que fait `scripts/problemes-connus.test.ts` (même choix que
+ * contrat de l'import que fait `scripts/generateurs/problemes-connus.test.ts` (même choix que
  * `notes-versions.d.mts` et `plan-dev.d.mts`).
  *
  * Elle ne décrit **pas** la base : `LignePostit` est ce que la requête **demande** — ni `texte`

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 /**
- * Lot d'illustrations — `scripts/gflow-lot.sh`.
+ * Lot d'illustrations — `scripts/ci/gflow-lot.sh`.
  *
  * Trois choses sont vérifiées ici, et ce sont exactement celles qui peuvent
  * mentir en silence :
@@ -27,8 +27,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
  * `operations`) : une doublure qui ne produirait rien laisserait passer un
  * script qui ne range rien — le piège déjà rencontré sur `illustration-vague`.
  */
-const racine = fileURLToPath(new URL('..', import.meta.url));
-const SCRIPT = 'scripts/gflow-lot.sh';
+const racine = fileURLToPath(new URL('../..', import.meta.url));
+const SCRIPT = 'scripts/ci/gflow-lot.sh';
 const delai = 30_000;
 
 let bac = '';

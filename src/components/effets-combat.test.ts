@@ -240,7 +240,7 @@ function animationsDe(declaration: string): string[] {
 /**
  * Les bornes de `SPEC-COMBAT-UI` §6.8, vérifiées sur **la feuille servie** : aucune
  * `animation` de plus de 800 ms, aucune boucle de plus de deux tours, aucun flou en
- * mouvement. C'est cette garde que `scripts/garde-fous.mjs` mute (#192).
+ * mouvement. C'est cette garde que `scripts/ci/garde-fous.mjs` mute (#192).
  */
 describe('styles.css — les bornes des effets (#192, SPEC-COMBAT-UI §6.8)', () => {
   const animations = () =>

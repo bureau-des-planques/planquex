@@ -1,4 +1,4 @@
-/** Types de `scripts/parcours.mjs` (#429), pour ses tests et la garde des sorties. */
+/** Types de `scripts/preuves/parcours.mjs` (#429), pour ses tests et la garde des sorties. */
 export const RACINE: string;
 export const SEUIL: { readonly aller: number; readonly retour: number };
 export const EXCEPTIONS: Readonly<Record<string, string>>;

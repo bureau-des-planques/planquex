@@ -1,8 +1,8 @@
 /**
- * Les types de `scripts/traces-combat.mjs` — la lecture des traces de combat (#358).
+ * Les types de `scripts/preuves/traces-combat.mjs` — la lecture des traces de combat (#358).
  *
  * Le script est du **JavaScript**, comme les autres outils du dépôt ; cette déclaration est
- * le contrat de l'import que fait `scripts/traces-combat.test.ts` (même choix que
+ * le contrat de l'import que fait `scripts/preuves/traces-combat.test.ts` (même choix que
  * `problemes-connus.d.mts`).
  *
  * Elle ne décrit **pas** la table : `TraceCombat` est ce que la requête **demande** — pas
