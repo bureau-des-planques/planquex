@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Coffee, PackageOpen, Swords } from 'lucide-react';
+import { PackageOpen, Swords } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
 import { NOTES_VERSIONS, type NoteVersion } from '@/data/versions';
 import type { Card } from '@/data/types';
@@ -94,17 +94,18 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
           </p>
           {packsOpened === 0 && <p className="hero__packs-invite">Aucun Arrivage ouvert : le premier est pour toi.</p>}
         </div>
-        <div className="hero__hint">
-          <Coffee size={14} /> {uniqueOwned}/{ALL_CARDS.length} cartes uniques
-        </div>
       </section>
 
       <section className="stats-grid">
-        <article className="stat-card">
+        <article className="stat-card stat-card--large">
           <span className="stat-card__label">Collection</span>
           <strong>{completion}%</strong>
+          {/* La jauge redit le pourcentage écrit au-dessus : décorative, le chiffre porte l'information. */}
+          <span className="stat-card__jauge" aria-hidden="true">
+            <span style={{ width: `${Math.min(100, completion)}%` }} />
+          </span>
           <span className="muted">
-            {uniqueOwned} cartes uniques · plafond {PLAFOND_TIRABLE} par Arrivage
+            {uniqueOwned}/{ALL_CARDS.length} cartes uniques · plafond {PLAFOND_TIRABLE} par Arrivage
           </span>
         </article>
         <article className="stat-card">
@@ -115,6 +116,9 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
         <article className="stat-card">
           <span className="stat-card__label">Deck</span>
           <strong>{deck.length}/20</strong>
+          <span className="stat-card__jauge" aria-hidden="true">
+            <span style={{ width: `${Math.min(100, (deck.length / 20) * 100)}%` }} />
+          </span>
           <span className="muted">cartes équipées</span>
         </article>
       </section>
