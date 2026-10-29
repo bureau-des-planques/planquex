@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import InstallationBanc from './InstallationBanc';
 import { PROCEDURES } from '@/pages/Installation';
@@ -83,6 +83,39 @@ function monter(
   );
 }
 
+/**
+ * Monte la page **dans de vraies routes** : `/installation` porte le banc, `/` porte un
+ * repère. C'est ce qui permet de prouver la navigation, pas seulement le rendu.
+ */
+function monterDansLeRoutage(
+  options: {
+    env?: Environnement;
+    reduireMouvement?: boolean;
+    dureeAllumage?: number;
+    dureeCourte?: number;
+  } = {}
+) {
+  render(
+    <MemoryRouter initialEntries={['/installation']}>
+      <Routes>
+        <Route path="/" element={<h1>Le bureau</h1>} />
+        <Route
+          path="/installation"
+          element={
+            <InstallationBanc
+              environnement={options.env ?? environnement()}
+              capteur={capteurFactice().capteur}
+              reduireMouvement={options.reduireMouvement ?? true}
+              dureeAllumage={options.dureeAllumage ?? 0}
+              dureeCourte={options.dureeCourte ?? 0}
+            />
+          }
+        />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
@@ -142,10 +175,17 @@ describe('InstallationBanc — le contenu de la future page (#504)', () => {
     expect(screen.queryByRole('link', { name: /ouvrir dans le navigateur/i })).toBeNull();
   });
 
-  it('déjà installé, ouvre directement le jeu après l’allumage court', () => {
+  it('déjà installé, s’ouvre tout seul après l’allumage court', () => {
+    monterDansLeRoutage({ env: environnement({ standalone: true }) });
+    expect(screen.getByRole('heading', { level: 1, name: /le bureau/i })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /ouvrir le jeu/i })).toBeNull();
+  });
+
+  it('déjà installé, dit qu’il ouvre, sans bouton « Ouvrir le jeu »', () => {
     monter({ env: environnement({ standalone: true }) });
     expect(screen.getByRole('heading', { level: 2, name: /tu es déjà dans l’application/i })).toBeTruthy();
-    expect(screen.getByRole('link', { name: /ouvrir le jeu/i }).getAttribute('href')).toBe('/');
+    expect(screen.getByRole('status').textContent).toMatch(/ouverture du jeu en cours/i);
+    expect(screen.queryByRole('link', { name: /ouvrir le jeu/i })).toBeNull();
   });
 
   it('sur un autre navigateur, ne propose que de jouer', () => {

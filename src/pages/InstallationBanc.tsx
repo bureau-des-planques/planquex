@@ -20,9 +20,13 @@
  * installé se lit par `display-mode: standalone` et `navigator.standalone`, déjà dans
  * `lireEnvironnement`), et elle n'ajoute aucune animation CSS : l'allumage est une suite
  * de lignes de terminal, celle que `.terminal` anime déjà.
+ *
+ * Quand le jeu tourne **déjà dans son application** (`env.standalone`), la page ne propose
+ * rien : à la fin de l'allumage court elle navigue d'elle-même vers `/`, sans bouton
+ * « Ouvrir le jeu » (#504). Le mouvement réduit garde la même règle, sans la durée.
  */
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { RetourEcran } from '@/components/RetourEcran';
 import { ADRESSE, PROCEDURES } from '@/pages/Installation';
 import { estIOS, estMessagerie, lireEnvironnement, type Environnement } from '@/lib/installation';
@@ -97,6 +101,7 @@ export default function InstallationBanc({
 }: InstallationBancProps = {}) {
   const [env] = useState(() => environnement ?? lireEnvironnement());
   const [reduit] = useState(() => reduireMouvement ?? mouvementReduit());
+  const naviguer = useNavigate();
   const invite = useSyncExternalStore(capteur.abonner, capteur.etat);
   const [resultat, setResultat] = useState<ResultatInstallation | null>(null);
   const [enAttente, setEnAttente] = useState(false);
@@ -121,6 +126,14 @@ export default function InstallationBanc({
       window.clearTimeout(fin);
     };
   }, [animer, duree, dejaInstalle]);
+
+  // Le jeu tourne déjà dans son application : l'allumage court le rouvre tout seul, sans
+  // bouton. Avec le mouvement réduit, `allume` vaut vrai dès le montage : l'ouverture est
+  // immédiate, la même règle passant simplement sous la durée.
+  useEffect(() => {
+    if (!dejaInstalle || !allume) return;
+    naviguer('/', { replace: true });
+  }, [dejaInstalle, allume, naviguer]);
 
   const installer = async () => {
     setEnAttente(true);
@@ -176,14 +189,10 @@ export default function InstallationBanc({
         <section className="section panel" aria-label="Application déjà installée">
           <p className="eyebrow text-gold-soft">Banc prêt</p>
           <h2 className="m-0">Tu es déjà dans l’application</h2>
-          <p className="muted m-0 max-w-[62ch]">
-            Le jeu est installé sur cet appareil : la page s’efface et le bureau s’ouvre.
+          <p className="muted m-0 max-w-[62ch]">Le jeu est installé sur cet appareil : le bureau s’ouvre tout seul.</p>
+          <p className="notice" role="status">
+            Ouverture du jeu en cours…
           </p>
-          <div>
-            <Link to="/" className="button button--gold button--big">
-              Ouvrir le jeu
-            </Link>
-          </div>
         </section>
       )}
 
