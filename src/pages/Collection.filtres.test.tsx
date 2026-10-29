@@ -124,3 +124,32 @@ describe('Collection — filtres de rareté, de coût et de possession (#365)', 
     expect(idsAffiches(container)).toEqual(avant);
   });
 });
+
+describe('Collection — le volet des filtres', () => {
+  beforeEach(() => {
+    window.history.replaceState(null, '', '/');
+  });
+
+  it('est replié sans filtre : la recherche et le tri restent visibles, le reste attend derrière « Filtres »', () => {
+    const { container } = renderWithStore(<Collection />, base);
+    const volet = container.querySelector<HTMLDetailsElement>('details.filtres-volet');
+    expect(volet).not.toBeNull();
+    expect(volet!.open).toBe(false);
+    // Les champs repliés vivent **dans** le volet ; la recherche, non.
+    expect(volet!.contains(screen.getByLabelText(/Rareté/i))).toBe(true);
+    expect(volet!.contains(screen.getByPlaceholderText('Chercher une carte'))).toBe(false);
+  });
+
+  it('s’ouvre d’emblée si l’adresse porte un filtre, et son bouton en dit le nombre (le contrôle mord : la recherche seule ne l’ouvre pas)', () => {
+    window.history.replaceState(null, '', '/?q=chef');
+    const { container, unmount } = renderWithStore(<Collection />, base);
+    expect(container.querySelector<HTMLDetailsElement>('details.filtres-volet')!.open).toBe(false);
+    unmount();
+
+    window.history.replaceState(null, '', '/?rarete=1S&possedees=1&q=chef');
+    const rendu = renderWithStore(<Collection />, base);
+    const volet = rendu.container.querySelector<HTMLDetailsElement>('details.filtres-volet')!;
+    expect(volet.open).toBe(true);
+    expect(volet.querySelector('.filtres-volet__compte')).toHaveTextContent('2');
+  });
+});

@@ -6324,6 +6324,47 @@ h2 {
   flex: 1 1 100%;
 }
 
+/* Le volet des filtres : un bouton « Filtres » (avec le nombre de filtres actifs), et dessous les
+   cinq champs. Replié, il tient sur une ligne ; ouvert, il reprend la grille d'avant. */
+.filtres-volet {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.filtres-volet__bouton {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+  list-style: none;
+}
+
+.filtres-volet__bouton::-webkit-details-marker {
+  display: none;
+}
+
+.filtres-volet[open] > .filtres-volet__bouton {
+  border-color: var(--line-strong);
+}
+
+.filtres-volet__compte {
+  background: var(--accent);
+  border-radius: 999px;
+  color: var(--bg-deep);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  line-height: 1;
+  min-width: 1.25rem;
+  padding: 0.2rem 0.35rem;
+  text-align: center;
+}
+
+.filtres-volet__corps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
 /* « Seulement ce que je possède » : une case dont toute la ligne est la cible (44 px). */
 .filtre-case {
   align-items: center;
