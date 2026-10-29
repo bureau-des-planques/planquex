@@ -90,9 +90,9 @@ function analyser(texte: string) {
   };
 }
 
-const lire = () => readFileSync(new URL('../docs/DECISIONS.md', import.meta.url), 'utf8');
+const lire = () => readFileSync(new URL('../../docs/DECISIONS.md', import.meta.url), 'utf8');
 const etat = () => analyser(lire());
-const fichier = fileURLToPath(new URL('../docs/DECISIONS.md', import.meta.url));
+const fichier = fileURLToPath(new URL('../../docs/DECISIONS.md', import.meta.url));
 
 describe('docs/DECISIONS.md — journal des décisions (21/10/2026)', () => {
   it('le contrôle mord : un trou au milieu est signalé', () => {

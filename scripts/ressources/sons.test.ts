@@ -6,7 +6,7 @@ import { silences } from './sons.mjs';
 /**
  * **Les deux fichiers son de l'alpha** (#378, #379, D-137).
  *
- * Ils sont **générés** par `scripts/sons.mjs` : aucune licence tierce à attribuer, et deux
+ * Ils sont **générés** par `scripts/ressources/sons.mjs` : aucune licence tierce à attribuer, et deux
  * exécutions donnent le même fichier. Ce test garde les trois exigences du ticket :
  *
  *  - **deux fichiers, pas plus** — D-137 n'autorise qu'un son d'Arrivage et un de verdict ;
@@ -14,7 +14,7 @@ import { silences } from './sons.mjs';
  *  - **un fondu** : un son qui commence ou finit sur un échantillon non nul fait un claquement,
  *    ce qui s'entend plus que le son lui-même.
  */
-const DOSSIER = new URL('../public/sons/', import.meta.url).pathname;
+const DOSSIER = new URL('../../public/sons/', import.meta.url).pathname;
 const ATTENDUS = ['arrivage.wav', 'verdict.wav'];
 const PLAFOND_OCTETS = 100 * 1024;
 

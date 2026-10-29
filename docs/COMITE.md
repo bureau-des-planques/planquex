@@ -205,7 +205,7 @@ l'erreur ne devient pas un zéro qui aurait l'air vrai.
 
 ## 3. Le fichier du mur
 
-`design/…` non : le mur vit dans **`docs/comite.json`**, versionné avec le dépôt : c'est un fichier seedé, régénéré par `npm run statut` (`scripts/generateurs/statut-mur.mjs`) ou importé depuis un CSV par `scripts/mur-import.mjs`, et lu par le jeu sans backend (D-058, D-097).
+`design/…` non : le mur vit dans **`docs/comite.json`**, versionné avec le dépôt : c'est un fichier seedé, régénéré par `npm run statut` (`scripts/generateurs/statut-mur.mjs`) ou importé depuis un CSV par `scripts/ressources/mur-import.mjs`, et lu par le jeu sans backend (D-058, D-097).
 
 ```jsonc
 {

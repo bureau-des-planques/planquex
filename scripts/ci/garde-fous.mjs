@@ -154,30 +154,30 @@ export const MUTATIONS = [
   {
     ticket: 97,
     titre: 'l’image rangée ne porte plus le nom de la carte',
-    fichier: 'scripts/illustration-vague.sh',
+    fichier: 'scripts/ressources/illustration-vague.sh',
     // Réancré le 21/10/2026 (D-045) : le motif vivait sur la ligne du `local` groupé, que
     // la source unique a supprimée (`serv` a disparu). La mutation garde la même règle —
     // le fichier rangé doit porter l'id de la carte — sur la ligne qui la porte aujourd'hui.
     motif: '  local reg="$REGISTRE/$id.webp"',
     remplacement: '  local reg="$REGISTRE/.webp"',
-    tests: ['scripts/illustration-vague.test.ts'],
+    tests: ['scripts/ressources/illustration-vague.test.ts'],
     garde:
       'le nom venait d’un `local` groupé, dont bash évalue toutes les expansions avant la moindre affectation : l’image s’appelait `.webp` et le message de succès affichait le bon nom (observé à la première génération réelle)'
   },
   {
     ticket: 97,
     titre: 'le wizard n’arrête plus sur une vérification ratée',
-    fichier: 'scripts/illustration-vague.sh',
+    fichier: 'scripts/ressources/illustration-vague.sh',
     motif: 'if (( ECHEC )); then',
     remplacement: 'if (( 0 )); then',
-    tests: ['scripts/illustration-vague.test.ts'],
+    tests: ['scripts/ressources/illustration-vague.test.ts'],
     garde:
       'un échec de `npm run check` ou des tests n’était qu’un avertissement : le wizard continuait et invitait à commiter un état cassé'
   },
   {
     ticket: 97,
     titre: 'le registre prétend avoir corrigé un tableau qu’il n’a pas touché',
-    fichier: 'scripts/illustration-vague.sh',
+    fichier: 'scripts/ressources/illustration-vague.sh',
     // Réancré le 22/10/2026 (#121) : les planches sont renommées par rôle (Q9), et
     // « Planche 1 » est devenue la planche **Portrait**. La règle est la même — le message
     // des cartes hors tableaux ne doit pas annoncer une mise à jour qui n'a pas eu lieu.
@@ -186,7 +186,7 @@ export const MUTATIONS = [
         note "Seule la ligne de journal ci-dessus a été ajoutée." ;;`,
     remplacement:
       '        note "Et la graine des tableaux est à jour : « Cartes produites » corrigée, « Non produites » retirée." ;;',
-    tests: ['scripts/illustration-vague.test.ts'],
+    tests: ['scripts/ressources/illustration-vague.test.ts'],
     garde:
       'les deux tableaux ne couvrent que la planche Portrait : pour les autres cartes, le journal seul change — l’ancien message annonçait une mise à jour qui n’avait pas eu lieu'
   },

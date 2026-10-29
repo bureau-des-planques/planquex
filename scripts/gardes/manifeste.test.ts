@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
  * dans la liste des termes abandonnés (D-024, D-026) — sans qu'aucun test ne lise ce fichier :
  * `cards.test.ts` ne garde que les textes de cartes (#131).
  */
-const config = readFileSync(new URL('../vite.config.ts', import.meta.url), 'utf8');
+const config = readFileSync(new URL('../../vite.config.ts', import.meta.url), 'utf8');
 
 /** La description du manifeste, telle qu'écrite dans `vite.config.ts`. */
 function description(source: string): string {

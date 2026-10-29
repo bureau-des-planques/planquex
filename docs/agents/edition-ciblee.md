@@ -61,7 +61,7 @@ lisible**.
 | un script doit produire le fichier (générateur) | c'est légitime : il est **déterministe** et relu par son test — ce n'est pas une réécriture manuelle |
 
 La dernière ligne compte : `scripts/generateurs/plan-dev.mjs`, `scripts/generateurs/index-decisions.mjs` ou
-`scripts/icones.mjs` écrivent des fichiers entiers **par conception**. La règle vise l'édition
+`scripts/ressources/icones.mjs` écrivent des fichiers entiers **par conception**. La règle vise l'édition
 d'un fichier **écrit à la main**.
 
 ## 5. Ce qui reste ouvert

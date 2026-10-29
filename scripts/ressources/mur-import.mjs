@@ -22,7 +22,7 @@
  * réapparaître le post-it au prochain import ; §3 demande déjà un id **stable**.
  *
  * Usage :
- *   node scripts/mur-import.mjs [--dry-run] [--fichier <csv>] [--mur <json>]
+ *   node scripts/ressources/mur-import.mjs [--dry-run] [--fichier <csv>] [--mur <json>]
  *
  * `--mur` n'existe que pour les tests : il évite d'écrire dans le vrai fichier du mur.
  */
@@ -30,7 +30,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..');
+const RACINE = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const FICHIER_MUR = join(RACINE, 'docs', 'comite.json');
 
 /** Les écrans admis (`src/store/mur.ts`), écrits ici pour la traduction du formulaire. */
@@ -43,7 +43,7 @@ const ECRANS = {
   autre: 'Autre'
 };
 
-const AIDE = `Usage : node scripts/mur-import.mjs [options]
+const AIDE = `Usage : node scripts/ressources/mur-import.mjs [options]
 
 Lit le CSV publié de la feuille de réponses du formulaire et ajoute au mur les
 post-its absents (clé : horodatage + titre). Ne modifie jamais un post-it existant.

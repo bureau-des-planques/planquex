@@ -19,8 +19,8 @@ import { ALL_CARDS } from '@/data';
  *
  * `docs/STATUS.md` est un **instantané daté** : il garde ses chiffres et n'est pas lu ici.
  */
-const root = fileURLToPath(new URL('..', import.meta.url));
-const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+const root = fileURLToPath(new URL('../..', import.meta.url));
+const read = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
 
 /**
  * Nombres qu'un document vivant peut écrire sans mentir sur l'état du code :

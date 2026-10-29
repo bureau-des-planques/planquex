@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { lireMur } from '../src/store/mur';
+import { lireMur } from '../../src/store/mur';
 
 /**
  * L'import des réponses du formulaire (#177).
@@ -21,9 +21,9 @@ import { lireMur } from '../src/store/mur';
  * Chaque garde est confrontée à un cas fautif — un CSV vide, sans en-tête, un post-it
  * déjà trié (ticket #112 : une assertion qui ne peut pas échouer ne garde rien).
  */
-const RACINE = fileURLToPath(new URL('..', import.meta.url));
+const RACINE = fileURLToPath(new URL('../..', import.meta.url));
 const MUR_SOURCE = join(RACINE, 'docs', 'comite.json');
-const SCRIPT = 'scripts/mur-import.mjs';
+const SCRIPT = 'scripts/ressources/mur-import.mjs';
 
 const q = (valeur: string) => `"${valeur.replace(/"/g, '""')}"`;
 const ligne = (valeurs: string[]) => valeurs.map(q).join(',');
@@ -252,7 +252,7 @@ describe('les deux réponses réelles du 23/10/2026', () => {
   });
 });
 
-describe('scripts/mur-import.mjs — le CSV publié devient des post-its', () => {
+describe('scripts/ressources/mur-import.mjs — le CSV publié devient des post-its', () => {
   it('lit un CSV correct : guillemets échappés, virgules et retours à la ligne dans un champ', () => {
     const { dossier, mur } = bac();
     const fichier = ecrireCsv(
@@ -583,6 +583,6 @@ describe('--dry-run', () => {
     const pkg = JSON.parse(readFileSync(join(RACINE, 'package.json'), 'utf8')) as {
       scripts: Record<string, string>;
     };
-    expect(pkg.scripts['mur:import']).toBe('node scripts/mur-import.mjs');
+    expect(pkg.scripts['mur:import']).toBe('node scripts/ressources/mur-import.mjs');
   });
 });

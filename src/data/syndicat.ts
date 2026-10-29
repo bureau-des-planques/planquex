@@ -164,7 +164,7 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
   // faction : tank / contrôle (CARD-SPEC.md §3), Atelier, CSE, délégué.
   // Pas de champ `art` : l'illustration n'est pas produite (spec #95, D-045) ; son
   // **sujet** est écrit dans `design/illustrations/SUJETS-flow.md`, la carte affiche son
-  // glyphe. Une fois le rendu passé par `scripts/illustration-vague.sh`, `art` s'ajoute ici.
+  // glyphe. Une fois le rendu passé par `scripts/ressources/illustration-vague.sh`, `art` s'ajoute ici.
   base({
     id: 'syndicat-delegue-syndical',
     name: 'Délégué syndical',

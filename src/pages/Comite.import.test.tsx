@@ -9,7 +9,7 @@ import { MemoryRouter } from 'react-router-dom';
  * Le document ci-dessous est **exactement** la forme que produit le script : `statut`
  * `en attente`, `ticket` nul, `votes` à zéro, position en pourcentage, et la capture
  * déjà fondue dans le `texte` (le post-it n'a pas de champ pour elle, §3). Le test de
- * `scripts/mur-import.test.ts` vérifie que ce document passe `lireMur` ; celui-ci rend
+ * `scripts/ressources/mur-import.test.ts` vérifie que ce document passe `lireMur` ; celui-ci rend
  * la page sur ce même document et regarde ce que le testeur voit.
  *
  * On mocke `DOCUMENT_MUR` parce que la page le lit **une fois**, à l'import du module.

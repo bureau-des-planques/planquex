@@ -6,9 +6,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { crc32, deflateSync } from 'node:zlib';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ALL_CARDS } from '../src/data/index';
-import { FACTION_META } from '../src/data/factions';
-import type { Faction } from '../src/data/types';
+import { ALL_CARDS } from '../../src/data/index';
+import { FACTION_META } from '../../src/data/factions';
+import type { Faction } from '../../src/data/types';
 
 /**
  * Wizard d'illustration — ce qui part vers `gflow` doit être **résolu** (#97).
@@ -52,8 +52,8 @@ import type { Faction } from '../src/data/types';
  * réelle**. Et comme le wizard travaille sur des chemins en dur, ils sont
  * surchargeables par l'environnement : sans ça, le test écrirait dans le dépôt.
  */
-const racine = fileURLToPath(new URL('..', import.meta.url));
-const WIZARD = 'scripts/illustration-vague.sh';
+const racine = fileURLToPath(new URL('../..', import.meta.url));
+const WIZARD = 'scripts/ressources/illustration-vague.sh';
 const CARTE = 'direction-pdg';
 
 /** Timeout des tests qui lancent le wizard : python3 + Pillow, ça ne va pas vite. */
@@ -150,7 +150,7 @@ const README_BAC = `# Illustrations — bac de test
 
 ## Journal des productions
 
-> Tenu par \`scripts/illustration-vague.sh\`.
+> Tenu par \`scripts/ressources/illustration-vague.sh\`.
 
 - 2026-10-20 · \`sse-medecin-travail\` · modèle \`NARWHAL\` · graine \`900000001\` · \`sse-medecin-travail.webp\`
 `;
@@ -1048,7 +1048,7 @@ describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
   });
 
   it('le préfixe de l’id est la faction — c’est ce que le wizard lit pour l’accent', () => {
-    // `faction_de()` (`scripts/illustration-vague.sh`) ne lit que le préfixe : si une
+    // `faction_de()` (`scripts/ressources/illustration-vague.sh`) ne lit que le préfixe : si une
     // carte changeait de faction sans changer d'id, elle porterait l'accent d'une autre.
     const fautives = ALL_CARDS.filter((carte) => carte.id.split('-')[0].toUpperCase() !== carte.faction);
     expect(fautives.map((carte) => carte.id)).toEqual([]);

@@ -21,7 +21,7 @@
 #   - un profil créé avec `--browser internal` n'a pas le marqueur `chrome` :
 #     les générations suivantes rouvrent Chromium au lieu de Chrome réel.
 #
-# Usage : bash scripts/illustration-vague.sh [id-de-carte]
+# Usage : bash scripts/ressources/illustration-vague.sh [id-de-carte]
 #
 # Everything above the "STAGES" marker is the wizard library: do not hand-edit
 # it. Author the per-step stages below the marker.
@@ -222,7 +222,7 @@ run_wizard() {
 
 TOTAL_STAGES=6
 
-cd "$(dirname "$0")/.." 2>/dev/null || true
+cd "$(dirname "$0")/../.." 2>/dev/null || true
 
 # Tous les chemins sont **surchargeables par l'environnement**, sur le modèle de
 # `GFLOW_ILLUSTRATION_SCRATCH`. Sans ça, le wizard n'est testable qu'à moitié : il
@@ -246,7 +246,7 @@ CHECK_CMD="${GFLOW_ILLUSTRATION_CHECK_CMD:-npm run check}"
 TEST_CMD="${GFLOW_ILLUSTRATION_TEST_CMD:-npm test -- src/data/art.test.ts}"
 #
 # Où tombent les variantes. Surchargeable par l'environnement **exprès** : sans
-# ça, scripts/illustration-vague.test.ts lisait le vrai `.scratch/` du dépôt, et
+# ça, scripts/ressources/illustration-vague.test.ts lisait le vrai `.scratch/` du dépôt, et
 # passait tant que personne n'avait généré — puis cassait dès la première vraie
 # génération, parce qu'il trouvait quatre variantes réelles et attendait un choix
 # qu'il ne pouvait pas donner. Un test qui dépend de l'état du développeur ne
@@ -290,7 +290,7 @@ SUFFIXES_VARIANTE="star star2 star3 crown"
 # `sse-medecin-travail`), ou un échec pour tout autre id. La table des sujets ne porte
 # **qu'une ligne par carte de base** : une variante n'y a pas sa ligne, elle emprunte
 # celle de sa base (D-139 — c'est la même carte, dans un autre cadre). Ce n'est donc pas
-# une « ligne orpheline » (scripts/illustration-vague.test.ts le vérifie dans les deux sens).
+# une « ligne orpheline » (scripts/ressources/illustration-vague.test.ts le vérifie dans les deux sens).
 base_de_variante() {
   local id="$1" suffixe s
   suffixe="${id##*-}"
@@ -625,7 +625,7 @@ consigner() {
 
   if ! grep -q '^## Journal des productions' "$tmp"; then
     printf '\n## Journal des productions\n\n' >> "$tmp"
-    printf '> Tenu par `scripts/illustration-vague.sh` : une ligne par image produite ou\n' >> "$tmp"
+    printf '> Tenu par `scripts/ressources/illustration-vague.sh` : une ligne par image produite ou\n' >> "$tmp"
     printf '> regénérée, la plus récente en bas. Les deux tableaux ci-dessus sont\n' >> "$tmp"
     printf "> l'instantané du 20/10/2026 ; **ce journal est le registre vivant**.\n\n" >> "$tmp"
   fi
@@ -777,7 +777,7 @@ mode_direct() {
     say "✓ payload écrit : $SCRATCH/$carte/payload.json"
     say "Fichiers, chacun avec SA graine :"
     graines_du_run "$json" | awk -F'\t' '{ n = $1; sub(/^.*\//, "", n); printf "    %s  graine %s\n", n, $2 }'
-    note "Rangement : bash scripts/illustration-vague.sh $carte --installe <image>"
+    note "Rangement : bash scripts/ressources/illustration-vague.sh $carte --installe <image>"
     return 0
   else
     code=$?
@@ -787,7 +787,7 @@ mode_direct() {
 }
 
 # Point d'entrée non interactif : `--modele <nom>` résout et sort. C'est le seam
-# que scripts/illustration-vague.test.ts exerce, et il sert aussi à la personne
+# que scripts/ressources/illustration-vague.test.ts exerce, et il sert aussi à la personne
 # qui veut juste savoir quel alias correspond à « Nano Banana 2.1 ».
 if [[ "${1:-}" == "--modele" ]]; then
   if alias=$(modele_alias "${2:-}"); then

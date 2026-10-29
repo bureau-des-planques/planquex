@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
  * pour qu'une réécriture du motif ne le rende pas silencieusement inerte (#112).
  */
 
-const RACINE = fileURLToPath(new URL('..', import.meta.url));
+const RACINE = fileURLToPath(new URL('../..', import.meta.url));
 
 /** Les documents lus par les agents : AGENTS.md, docs/ et les skills versionnés. */
 function documents(): string[] {

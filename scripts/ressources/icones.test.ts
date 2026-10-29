@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
  * qui manquait — **au moins un PNG de 192 et un de 512, `purpose` « any »** — et vérifie
  * que les fichiers déclarés existent et ont vraiment la taille annoncée.
  */
-const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url));
+const read = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url));
 
 type Icone = { src: string; sizes: string; type: string; purpose: string };
 
@@ -50,7 +50,7 @@ describe('icône de l’application installée (D-054)', () => {
 
   it('se régénère par une commande déclarée', () => {
     const pkg = JSON.parse(read('package.json').toString('utf8'));
-    expect(pkg.scripts.icones).toBe('node scripts/icones.mjs');
+    expect(pkg.scripts.icones).toBe('node scripts/ressources/icones.mjs');
   });
 
   // Sans ce cas, la première garde ne garderait rien.

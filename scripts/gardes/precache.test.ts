@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
  * Les deux gardes sont confrontées à un cas fautif (un fichier fabriqué, une configuration sans
  * `wav`) : elles doivent échouer, sinon elles ne gardent rien.
  */
-const RACINE = new URL('..', import.meta.url);
+const RACINE = new URL('../..', import.meta.url);
 const CONFIG = readFileSync(new URL('vite.config.ts', RACINE), 'utf8');
 const PUBLIC = fileURLToPath(new URL('public/', RACINE));
 

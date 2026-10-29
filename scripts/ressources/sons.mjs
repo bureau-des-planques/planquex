@@ -12,8 +12,8 @@
  *    la barre).
  *
  * Usage :
- *   node scripts/sons.mjs            # écrit public/sons/arrivage.wav et verdict.wav
- *   node scripts/sons.mjs --verifier # ne réécrit rien, vérifie poids et silences (CI)
+ *   node scripts/ressources/sons.mjs            # écrit public/sons/arrivage.wav et verdict.wav
+ *   node scripts/ressources/sons.mjs --verifier # ne réécrit rien, vérifie poids et silences (CI)
  *
  * Le WAV est volontairement **non compressé** : la machine n'a pas d'encodeur audio, et un WAV
  * court reste plus petit que la barre des 100 Ko. Un jour, un `.opus` le remplacera sans changer
@@ -23,7 +23,7 @@ import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const RACINE = fileURLToPath(new URL('..', import.meta.url));
+const RACINE = fileURLToPath(new URL('../..', import.meta.url));
 const DOSSIER = join(RACINE, 'public/sons');
 const FREQUENCE = 22050;
 const PLAFOND_OCTETS = 100 * 1024;
@@ -233,7 +233,7 @@ function verifier() {
     try {
       taille = statSync(chemin).size;
     } catch {
-      console.error(`✗ ${cle}.wav manque — lancer node scripts/sons.mjs`);
+      console.error(`✗ ${cle}.wav manque — lancer node scripts/ressources/sons.mjs`);
       echec = 1;
       continue;
     }

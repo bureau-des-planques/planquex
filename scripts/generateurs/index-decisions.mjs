@@ -12,7 +12,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
  *
  * Cet index la rend tenable **sans toucher au journal** : une ligne par décision
  * (`| D-NNN | date | début de l'intitulé |`), puis on ouvre la ligne du tableau. Il vit dans
- * `docs/DECISIONS-INDEX.md`, **dérivé**, jamais écrit à la main, et `scripts/decisions.test.ts`
+ * `docs/DECISIONS-INDEX.md`, **dérivé**, jamais écrit à la main, et `scripts/ressources/decisions.test.ts`
  * refuse un index qui ne couvre pas exactement les décisions du journal, dans l'ordre.
  *
  * Un fichier à part, et pas un bloc en tête du journal : le tableau de `DECISIONS.md` est lu

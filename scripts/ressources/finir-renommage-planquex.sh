@@ -4,7 +4,7 @@
 # Décisions de référence : D-036 (le nom technique est « planquex ») et D-038
 # (le site legacy est retiré, le projet Vercel reste en pause).
 #
-# Complément de scripts/etapes-infra-tcg.sh : celui-ci MONTE l'infra (#10),
+# Complément de scripts/ressources/etapes-infra-tcg.sh : celui-ci MONTE l'infra (#10),
 # celui-là la FINIT (#100). Les étapes déjà faites par le premier — projet
 # Supabase créé, projet Vercel lié — ne sont pas répétées ici.
 #
@@ -217,7 +217,7 @@ TOTAL_STAGES=7
 # Les valeurs capturées ici vont dans le .env du dépôt : c'est là que vivent
 # déjà VERCEL_URL et BREVO_SENDER_*. Le fichier n'est pas suivi (.gitignore:2).
 # Aucun secret n'est capturé — la clé SMTP Brevo reste dans Supabase (D-017).
-cd "$(dirname "$0")/.." 2>/dev/null || true
+cd "$(dirname "$0")/../.." 2>/dev/null || true
 ENV_FILE="${ENV_FILE:-$PWD/.env}"
 
 DASH="https://supabase.com/dashboard"
@@ -313,7 +313,7 @@ note "Rappel D-017 : la clé SMTP vit dans la config Custom SMTP de Supabase, ja
 # (l'adresse expéditeur d'origine) pour dire si le critère de #100 est satisfait.
 # Elle ne s'écrit pas ici : le dépôt passe en public (#267), et une adresse
 # personnelle n'a pas à entrer dans son historique. On la passe à l'exécution —
-#   LEGACY_SENDER_EMAIL=<adresse d'origine> bash scripts/finir-renommage-planquex.sh
+#   LEGACY_SENDER_EMAIL=<adresse d'origine> bash scripts/ressources/finir-renommage-planquex.sh
 LEGACY_SENDER_EMAIL="${LEGACY_SENDER_EMAIL:-}"
 if [[ -z "$LEGACY_SENDER_EMAIL" ]]; then
   note "Contrôle « expéditeur inchangé » inactif : relance avec LEGACY_SENDER_EMAIL=<adresse d'origine> pour l'armer."

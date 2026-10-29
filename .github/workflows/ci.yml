@@ -174,7 +174,7 @@ jobs:
         run: npm ci
 
       # Pillow — dépendance du tuyau d'illustration (AGENTS.md §6) : le wizard
-      # `scripts/illustration-vague.sh` convertit les rendus de gflow (JPEG) en
+      # `scripts/ressources/illustration-vague.sh` convertit les rendus de gflow (JPEG) en
       # webp, et son test fabrique de vraies images. Le paquet `python3-pil`
       # fournit `PIL` au python3 du runner, sans heurter PEP 668 (`pip` y refuse
       # l'installation système). Sans cette étape, 8 tests tombent en

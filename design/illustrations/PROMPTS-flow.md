@@ -36,7 +36,7 @@ de base — les Planqués en cinq créneaux (`<rôle>, <tenue>, holding <objet>,
 **par faction**, dans **`ACCENTS-flow.md`** (D-046).
 
 Le prompt se compose donc : `<socle aplati> <sujet>, muted <accent> accent.` — c'est
-exactement ce que `scripts/illustration-vague.sh` envoie.
+exactement ce que `scripts/ressources/illustration-vague.sh` envoie.
 
 **Une variante emprunte le sujet de sa base** (D-139) : elle rejoue la même scène, dans
 un cadre de rareté haute (`3S`, `COU`), et le wizard résout l'id de base depuis le suffixe

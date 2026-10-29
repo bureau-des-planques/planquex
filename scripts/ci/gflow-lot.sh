@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Lot d'illustrations : produire **plusieurs cartes d'affilée** avec gflow-cli,
-# puis les ranger au registre. Compagnon de `scripts/illustration-vague.sh`, qui
+# puis les ranger au registre. Compagnon de `scripts/ressources/illustration-vague.sh`, qui
 # reste le wizard d'UNE carte et **la seule source** du prompt, du rangement
 # (`--installe`) et du câblage `art:` — ce script ne réécrit rien de tout ça, il
 # l'appelle.
@@ -58,10 +58,10 @@
 
 set -euo pipefail
 
-cd "$(dirname "$0")/.." 2>/dev/null || true
+cd "$(dirname "$0")/../.." 2>/dev/null || true
 
 # ── Réglages (surchargeables : les seams du test) ───────────────────────────
-WIZARD="${GFLOW_LOT_WIZARD:-scripts/illustration-vague.sh}"
+WIZARD="${GFLOW_LOT_WIZARD:-scripts/ressources/illustration-vague.sh}"
 GFLOW_BIN="${GFLOW_LOT_GFLOW:-gflow}"
 SUJETS="${GFLOW_LOT_SUJETS:-design/illustrations/SUJETS-flow.md}"
 REGISTRE="${GFLOW_LOT_REGISTRE:-design/illustrations}"

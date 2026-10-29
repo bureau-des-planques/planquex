@@ -10,7 +10,7 @@
 >
 > **La source des `id` est le code** (`src/data/**`), et le compte se lit avec
 > `npm run status` (`cards.base`). Ce fichier ne recopie **aucun** nombre : la garde
-> (`scripts/illustration-vague.test.ts`) compare ses lignes à `ALL_CARDS` **dans les deux
+> (`scripts/ressources/illustration-vague.test.ts`) compare ses lignes à `ALL_CARDS` **dans les deux
 > sens** — une carte manquante, une ligne orpheline.
 
 ## Le format

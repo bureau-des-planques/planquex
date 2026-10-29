@@ -8,7 +8,7 @@
  *     strictement que les autres) ;
  *  2. **le réglage coupe tout** : `sons` dans le store, coché par défaut ; quand il est faux, ce
  *     module ne demande **aucune** lecture, même si un écran l'appelle ;
- *  3. **deux sons, pas une bande-son** : `arrivage` et `verdict`, générés par `scripts/sons.mjs`
+ *  3. **deux sons, pas une bande-son** : `arrivage` et `verdict`, générés par `scripts/ressources/sons.mjs`
  *     (aucune licence tierce, aucun asset des versions abandonnées).
  *
  * Si le contexte n'est pas encore prêt au moment de jouer, on **saute** le son : le jouer en retard

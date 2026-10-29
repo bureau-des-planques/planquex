@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ETAPES } from './generateurs/plan-dev.mjs';
+import { ETAPES } from '../generateurs/plan-dev.mjs';
 
 /**
  * **Les générateurs et les documents qui les décrivent** — la garde du #359.
@@ -17,10 +17,10 @@ import { ETAPES } from './generateurs/plan-dev.mjs';
  * **Ce que cette garde ne refait pas**, et pourquoi (une garde en double se corrige deux
  * fois) :
  *
- * - le **compte de décisions** est déjà gardé par `scripts/coherence-docs.test.ts` §1 ;
+ * - le **compte de décisions** est déjà gardé par `scripts/ressources/coherence-docs.test.ts` §1 ;
  * - les **commandes** citées le sont aussi (`docs/COMMANDES.md` ↔ `package.json`), ainsi que
- *   les **décomptes de cartes** (`scripts/compteurs.test.ts`) et la **continuité du
- *   journal** (`scripts/decisions.test.ts`).
+ *   les **décomptes de cartes** (`scripts/ressources/compteurs.test.ts`) et la **continuité du
+ *   journal** (`scripts/ressources/decisions.test.ts`).
  *
  * Ici, trois contrôles neufs, tous par **lecture de fichier** (aucun réseau, aucune
  * commande) :
@@ -40,8 +40,8 @@ import { ETAPES } from './generateurs/plan-dev.mjs';
  * **fabriqués**, et exige l'échec (`AGENTS.md` §6, #112).
  */
 
-const read = (file: string) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
-const chemin = (file: string) => fileURLToPath(new URL(`../${file}`, import.meta.url));
+const read = (file: string) => readFileSync(new URL(`../../${file}`, import.meta.url), 'utf8');
+const chemin = (file: string) => fileURLToPath(new URL(`../../${file}`, import.meta.url));
 
 // ---------------------------------------------------------------------------------------
 // 1. Les étiquettes d'étape du générateur
@@ -132,7 +132,7 @@ const FICHIERS_GENERES = [
 /**
  * Les documents **vivants** lus par la promesse : ceux qu'un agent suit pour produire un
  * artefact (une release, un message, une intégration). Plus étroit que la liste de
- * `scripts/coherence-docs.test.ts` §3, et volontairement : la promesse porte sur un geste,
+ * `scripts/ressources/coherence-docs.test.ts` §3, et volontairement : la promesse porte sur un geste,
  * pas sur le vocabulaire. Les décisions et les instantanés datés n'y sont pas — un acte
  * daté ne se réécrit pas (D-111).
  */
@@ -310,7 +310,7 @@ describe('Générateurs — les fichiers générés et leur script (#359)', () =
   });
 
   it('tout fichier annoncé comme généré par une doc a sa commande', () => {
-    // La garde des commandes (`scripts/coherence-docs.test.ts` §2) vérifie que `npm run X`
+    // La garde des commandes (`scripts/ressources/coherence-docs.test.ts` §2) vérifie que `npm run X`
     // existe ; celle-ci vérifie le lien inverse, celui qui a menti le 28/10/2026 : un
     // fichier annoncé « généré » sans que rien ne le génère.
     const annonces = FICHIERS_GENERES.filter(({ fichier, script }) => {

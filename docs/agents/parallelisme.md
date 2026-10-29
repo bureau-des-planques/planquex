@@ -249,7 +249,7 @@ dans `AGENTS.md` §6 et §8.4 : cette section ne les réécrit pas, elle dit **q
   il attend son verdict, ou lui donne un autre worktree.
   **Interrompu en cours de route** (Ctrl-C, session tuée, fenêtre fermée), son `finally` ne
   restaure pas : l'arbre reste **sale**, avec la source mutée — constaté le 22/10/2026 sur
-  `scripts/illustration-vague.sh` dans le dépôt principal. La sortie de secours est
+  `scripts/ressources/illustration-vague.sh` dans le dépôt principal. La sortie de secours est
   `git checkout -- <fichier>` (§4.8) : la version commitée est la vérité, et le `git status`
   qui précède l'écriture suivante dit quel fichier a été touché.
 - **`npm run status` et `npm run build` ne se lancent pas ensemble** (déjà en §5) : `vite` vide

@@ -12,7 +12,7 @@ import { verdict } from './installer.mjs';
  * a vidé `node_modules/` pendant que la session d'infra y testait. Le contrôle est confronté à
  * ses cas fautifs, pas seulement au cas qui passe.
  */
-const racine = fileURLToPath(new URL('..', import.meta.url));
+const racine = fileURLToPath(new URL('../..', import.meta.url));
 
 describe('installer — le contrôle mord', () => {
   it('refuse le dépôt principal (git-dir = git-common-dir)', () => {
@@ -39,8 +39,8 @@ describe('installer — le contrôle mord', () => {
 
 describe('installer — câblage', () => {
   it('est déclaré dans package.json', () => {
-    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { scripts: Record<string, string> };
-    expect(pkg.scripts.installer).toBe('node scripts/installer.mjs');
+    const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { scripts: Record<string, string> };
+    expect(pkg.scripts.installer).toBe('node scripts/ressources/installer.mjs');
   });
 
   it('refuse bien dans un vrai dépôt principal, sans rien installer', () => {
@@ -50,7 +50,7 @@ describe('installer — câblage', () => {
     let code = 0;
     let stderr = '';
     try {
-      execFileSync('node', [`${racine}scripts/installer.mjs`], { cwd: dossier, encoding: 'utf8', stdio: 'pipe' });
+      execFileSync('node', [`${racine}scripts/ressources/installer.mjs`], { cwd: dossier, encoding: 'utf8', stdio: 'pipe' });
     } catch (erreur) {
       const e = erreur as { status: number; stderr: string };
       code = e.status;

@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../..', import.meta.url));
 const svg = readFileSync(join(root, 'public/icon-512.svg'), 'utf8');
 const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 

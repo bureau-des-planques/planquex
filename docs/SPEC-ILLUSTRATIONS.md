@@ -21,7 +21,7 @@
 
 **L'obstacle** (levé le **22/10/2026** par #121) : le sujet et l'accent des cartes restantes
 n'existaient nulle part — `design/illustrations/PROMPTS-flow.md` ne décrivait que la
-**Planche 1** (devenue **Portrait**), ses 10 cartes signature, et `scripts/illustration-vague.sh`
+**Planche 1** (devenue **Portrait**), ses 10 cartes signature, et `scripts/ressources/illustration-vague.sh`
 (`cartes()`, `accent_de()`) ne connaissait qu'elles. Les deux tables sont désormais écrites
 (`SUJETS-flow.md`, `ACCENTS-flow.md`), le wizard les lit, et une garde les vérifie.
 
@@ -63,7 +63,7 @@ Toutes dans `design/illustrations/`, à côté du registre et du socle.
   **en anglais** (les modèles répondent mieux), avec les **5 créneaux** du §4.
 - **`ACCENTS-flow.md`** — une ligne par **faction** : `` | `FACTION` | accent | ``. Dix lignes, et
   elles seules : l'accent n'est **jamais** recopié sur les lignes de sujets.
-- **`PROMPTS-flow.md`** — garde le **socle** (`socle()`, `scripts/illustration-vague.sh`) et perd
+- **`PROMPTS-flow.md`** — garde le **socle** (`socle()`, `scripts/ressources/illustration-vague.sh`) et perd
   sa table des 10 signature, qui part dans `SUJETS-flow.md`.
 
 Le prompt final reste : `<socle aplati> <sujet>, muted <accent> accent.`
@@ -98,7 +98,7 @@ faction fantôme (`FACTION`) — le wizard et la garde sautent donc les blocs, t
    **relecture humaine d'un échantillon reste à faire** — c'est le point d'arrêt.
 4. **La table des accents** (10 lignes) et **la garde** qui remplace #120. ~~à faire~~ **fait
    le 22/10/2026** (#121) : `ACCENTS-flow.md`, et la garde dans
-   `scripts/illustration-vague.test.ts` (une ligne par base, critère du §4, accent **ré-dérivé**
+   `scripts/ressources/illustration-vague.test.ts` (une ligne par base, critère du §4, accent **ré-dérivé**
    de `FACTION_META.color`). Chaque règle y est confrontée à un **cas fautif fabriqué** (#112).
 5. **Le pilote sur une faction** — Support (32 bases) ou Atelier (26).
 6. **Les 214**, puis les 3 viviers.
@@ -107,7 +107,7 @@ faction fantôme (`FACTION`) — le wizard et la garde sautent donc les blocs, t
 
 - **`art` change de nature** : d'une chaîne nue (`'sse-medecin-travail.webp'`) à une **URL de
   module**. Donc `src/components/CardView.tsx`, `src/data/art.test.ts` et la convention de #96.
-- **`scripts/illustration-vague.sh`** se recâble sur les nouvelles tables — `cartes()` lit
+- **`scripts/ressources/illustration-vague.sh`** se recâble sur les nouvelles tables — `cartes()` lit
   `SUJETS-flow.md` et `accent_de()` `ACCENTS-flow.md` ~~connaissent~~ **connaissaient** seulement
   la Planche 1. Fait le 22/10/2026 (#121) : l'`id` donne la faction par son préfixe, l'accent suit
   la faction.
@@ -115,7 +115,7 @@ faction fantôme (`FACTION`) — le wizard et la garde sautent donc les blocs, t
   turquoise (conséquence assumée de Q3 + Q15).
 - **`scripts/illustrations-servies.test.ts`** a disparu ; son rôle est tenu par
   `src/data/art.test.ts` (Q14) — et la garde de la table des sujets est **écrite** :
-  `scripts/illustration-vague.test.ts` (22/10/2026, #121).
+  `scripts/ressources/illustration-vague.test.ts` (22/10/2026, #121).
 
 ## 7. Déjà vérifié — à ne pas refaire
 
