@@ -21,6 +21,7 @@
 - **Observé** : Aucun Background Sync, Service Worker queue, ni file d'attente maison dans `public/` (glob négatif)
 - **Observé** : `src/lib/supabase.ts` est **inerte sans configuration** (lignes 5-8, 176-191) — l'alpha fonctionne sans backend
 - **Observé** : `src/store/combats.ts` envoie les traces **en silence**, n'interrompt jamais le jeu (lignes 11-14, 131-149)
+- **Observé** : Aucune table `decks`, `user_cards` (Collection), `deck_cards` dans le schéma Supabase (grep migrations négatif)
 
 ### Schéma Supabase (cible de synchronisation future)
 - **Migrations** : `supabase/migrations/` — 17 migrations, rejouées par PGlite dans les tests
@@ -29,14 +30,14 @@
 
 ### Critères D-048 (beta) — critère 5
 > **« Aucune perte de données possible pour un testeur »** (D-048, ligne 58 du DECISIONS.md)
-- Ce critère **vaut après le reset de beta** (D-124), pas contre lui
-- Le reset beta efface `combats`, `postits`, `votes`, `commentaires` — **pas** les comptes
-- Collection et Deck **tombent d'eux-mêmes par migration de store** (ils vivent dans le navigateur, D-086)
+- Ce critère **vaut après le reset de beta** (D-130), pas contre lui
+- Le reset beta efface `combats`, `postits`, `votes`, `commentaires`, `annonces_discord` — **pas** les comptes (D-150)
+- Collection et Deck **tombent d'eux-mêmes par migration de store** (ils vivent dans le navigateur, D-130 (2))
 
 ### Vocabulaire (D-075, D-026)
 - **Deck** = ancien « Chariot » (20 cartes)
 - **Collection** = ancien « Parc » (toutes les cartes possédées avec quantités)
-- Identifiants de code déjà en anglais : `deck`, `owned`, `Card` (union de `PlanqueCard` et `ActionCard` dans `src/data/types.ts`)
+- Identifiants de code déjà en anglais : `deck`, `owned`, `Card` (union de `PlanqueCard` et `ActionCard` dans `src/data/types.ts`) ; `CardInstance` existe encore (66 occurrences dans le code).
 
 ---
 
@@ -87,7 +88,7 @@
 | Aspect | Analyse |
 |--------|---------|
 | **Coût** | Modéré-élevé. Collection : simple. Deck : file d'opérations (array persistant dans le store), replay côté serveur (RPC) ou client (download → merge → upload). |
-| **Risque de perte de données** | **Très faible**. Collection : zéro perte. Deck : seule une réorganisation concurrente non commutative (ex. A ajoute carte X, B retire carte Y, les deux valides séparément mais ensemble >20) demande arbitrage. L'UI de résolution est **explicite**, pas silencieuse. |
+| **Risque de perte de données** | **Très faible**. Collection : zéro perte. Deck : un ajout ou un retrait concurrent peut produire un Deck illégal (21e carte ou 3e exemplaire) — nécessite re-validation + choix utilisateur ou heuristique (ex. garder les 20 premières). L'UI de résolution est **explicite**, pas silencieuse.
 | **Lien avec D-048 critère 5** | **Respecté**. Aucune perte silencieuse. Le testeur récupère ses cartes (Collection) et son Deck (avec résolution explicite si conflit rare). |
 | **Complexité implémentation** | Modérée. Réutilise `migratePersisted` comme modèle (transformation d'état versionnée). File d'opérations ≈ `actionLog` de `BattleState` (déjà existant, `src/data/types.ts`). |
 | **Adéquation PWA offline-first** | Forte. Écriture locale immédiate, synchro différée, résolution explicite seulement si nécessaire. |
@@ -107,7 +108,7 @@
    - `actionLog` dans `BattleState` (déjà implémenté, `src/data/types.ts`) prouve le pattern « journal d'actions rejouables ».
    - Export/Import de sauvegarde (lignes 436-480) montre la sérialisation JSON versionnée attendue.
 
-3. **Offline-first réel** : Le testeur ouvre des Arrivages, modifie son Deck, construit des stratégies **sans réseau**. La synchro se fait en arrière-plan à la reconnexion (comme `envoyerCombat` qui « avale le rejet », `src/store/combats.ts:159-166`).
+3. **Offline-first réel** : Le testeur ouvre des Arrivages, modifie son Deck, construit des stratégies **sans réseau**. La synchro se fait en arrière-plan à la reconnexion (comme `tracerCombat` qui « avale le rejet », `src/store/combats.ts:159-166`).
 
 4. **Coût maîtrisé** (estimation non mesurée) : 
    - Collection : fonction SQL `merge_collection` + 1 champ `lastSyncedAt` store.
@@ -128,7 +129,7 @@
 
 ## Risques du Deck
 
-Sans re-validation des règles de jeu, deux ajouts concurrents peuvent donner un Deck illégal (plus de 3 exemplaires, plus de 21 cartes) ; deux retraits peuvent le rendre sous la taille minimale ; la résolution de conflit demande une UI qui n'existe pas. Ce risque doit être traité avant la beta : sans elle, deux modifications simultanées peuvent produire un Deck invalide sans alerte.
+Sans re-validation des règles de jeu, un ajout ou un retrait concurrent peut donner un Deck illégal (21e carte ou 3e exemplaire) ; deux retraits peuvent le rendre sous la taille minimale ; la résolution de conflit demande une UI qui n'existe pas. Ce risque doit être traité avant la beta : sans elle, deux modifications simultanées peuvent produire un Deck invalide sans alerte.
 
 ---
 
@@ -136,7 +137,7 @@ Sans re-validation des règles de jeu, deux ajouts concurrents peuvent donner un
 
 | Hypothèse | Pourquoi non vérifiée | Comment valider |
 |-----------|----------------------|-----------------|
-| Les tables `user_cards`/`decks` n'existent pas encore | Schéma Supabase actuel ne les contient pas (grep migrations) | Créer migration test, rejouer avec PGlite |
+| **Les tables `user_cards`/`decks` n'existent pas encore** | **Schéma Supabase actuel ne les contient pas** (grep migrations) | Créer migration test, rejouer avec PGlite |
 | Le replay d'opérations Deck est déterministe | Dépend de l'ordre des opérations + re-validation règles | Test propriété `fast-check` : même opérations → même Deck final |
 | L'UI de résolution conflit est rare | Deux appareils modifiant le même Deck en même temps = cas marginal | Mesurer en beta : logger les conflits réels |
 | `max(local, remote)` suffit pour Collection | Suppose pas de suppression intentionnelle concurrente | Ajouter `deleted_at` soft-delete si besoin (future) |
@@ -146,10 +147,11 @@ Sans re-validation des règles de jeu, deux ajouts concurrents peuvent donner un
 ## Références décisions
 
 - **D-048** : Critères alpha/beta — critère 5 « aucune perte de données possible »
+- **D-086** : Traces de combat — écriture silencieuse, jamais bloquante (code)
 - **D-075** : « Chariot » → « Deck », « Parc » → « Collection »
-- **D-086** : Traces de combat — écriture silencieuse, jamais bloquante
 - **D-090** : Application marche hors ligne (note de version embarquée)
-- **D-124** : Reset beta épargne compte, efface progression (Collection/Deck via migration store)
+- **D-130** : Reset beta épargne compte, efface traces de combat et mur (Collection/Deck via migration store)
+- **D-150** : Reset beta — effacement exact (`combats`, `postits`, `votes`, `commentaires`, `annonces_discord` ; `comptes` conservés)
 - **D-148** : Profil testeur en colonne Supabase (pas dans store)
 - **PROPOSITION.md §6.3** : Modèle de données cible (`user_cards`, `decks`, `deck_cards`)
 
@@ -158,11 +160,13 @@ Sans re-validation des règles de jeu, deux ajouts concurrents peuvent donner un
 ## Fichiers cités
 
 - `src/store/useStore.ts` — store principal, `migratePersisted`, export/import
-- `src/store/combats.ts` — envoi silencieux, pattern « avaler le rejet »
-- `src/store/partie.ts` — `actionLog`, `BattleState`, replay
+- `src/store/combats.ts` — `tracerCombat` (ligne 159) qui « avale le rejet », `envoyerCombat` (ligne 135)
+- `src/game/engine.ts` — `replayBattle` (ligne 1512)
+- `src/store/partie.ts` — enveloppe de sauvegarde pour `replayBattle`
+- `src/data/types.ts` — `BattleState` et `actionLog`
 - `src/lib/supabase.ts` — client inerte sans config, `ecrireLigne` (ligne 241)
 - `supabase/migrations/` — schéma cible, RLS, PGlite tests
-- `docs/DECISIONS.md` — D-048, D-075, D-086, D-090, D-124, D-148
+- `docs/DECISIONS.md` — D-048, D-075, D-090, D-130, D-148, D-150
 - `docs/PROPOSITION.md` §6.3 — modèle de données serveur
 
 ---
@@ -171,6 +175,6 @@ Sans re-validation des règles de jeu, deux ajouts concurrents peuvent donner un
 
 1. **Option D (hybride) est la seule qui respecte D-048 critère 5** tout en gardant l'offline-first réel : Collection = fusion commutative `max` (zéro perte) ; Deck = journal d'intentions replayé (perte uniquement sur réorganisation concurrente rare, résolue explicitement).
 
-2. **Aucun code de synchronisation n'existe aujourd'hui** — le store est purement local (`bureau-des-planques-v1`, v14), Supabase ne porte que mur/combats/comptes/profils. La synchro Deck/Collection demande nouvelles tables + RPC + file d'opérations locale.
+2. **Aucun code de synchronisation n'existe aujourd'hui** — le store est purement local (`bureau-des-planques-v1`, v14), Supabase ne porte que `postits`, `votes`, `commentaires`, `combats`, `comptes`, `profils`, `annonces_discord`. La synchro Deck/Collection demande nouvelles tables + RPC + file d'opérations locale.
 
-3. **Le pattern existe déjà dans le codebase** : `migratePersisted` (transformation versionnée), `actionLog` (journal rejouable), `envoyerCombat` (envoi silencieux non bloquant) — réutiliser ces patrons réduit le coût et le risque.
+3. **Le pattern existe déjà dans le codebase** : `migratePersisted` (transformation versionnée), `actionLog` (journal rejouable), `tracerCombat` (envoi silencieux non bloquant) — réutiliser ces patrons réduit le coût et le risque.
