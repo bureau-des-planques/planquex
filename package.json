@@ -24,6 +24,7 @@
     "icones": "node scripts/ressources/icones.mjs",
     "garde-fous": "node scripts/ci/garde-fous.mjs",
     "pesage": "node scripts/preuves/pesage.mjs",
+    "mesure:paquets": "node scripts/ci/taille-paquets.mjs",
     "installer": "node scripts/ressources/installer.mjs",
     "worktree:nouveau": "node scripts/ci/worktree-nouveau.mjs",
     "isolation": "node scripts/ci/isolation.mjs",

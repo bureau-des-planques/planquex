@@ -133,6 +133,15 @@ jobs:
         if: steps.chemins.outputs.doc_seulement != 'true'
         run: ls -la dist/index.html dist/sw.js
 
+      # **La taille des paquets, mesurée et gardée** (#480) : échoue si un morceau dépasse
+      # 500 000 octets, ou si le paquet principal passe son cliquet (`scripts/ci/taille-paquets.mjs`,
+      # valeur mesurée et datée dans le script). L'étape vient **juste après le build** : `dist/`
+      # est de la même exécution, et la garde ne reconstruit que si une source est plus récente
+      # que `dist/index.html` — ici, jamais.
+      - name: Mesurer la taille des paquets
+        if: steps.chemins.outputs.doc_seulement != 'true'
+        run: npm run mesure:paquets
+
       - name: Chemin rapide — documentation seule, rien à contrôler ici (D-143)
         if: steps.chemins.outputs.doc_seulement == 'true'
         run: |
