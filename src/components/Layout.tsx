@@ -64,7 +64,10 @@ export function Layout() {
   const surLeSuivi = pathname.startsWith('/comite/suivi');
 
   useEffect(() => {
-    if (!base || enCombat || surLeSuivi) {
+    // Sans **compte** connecté, il n'y a rien à compter — et depuis D-156 (#527) la lecture
+    // ne signe plus personne : un visiteur sans compte n'obtient pas d'identité anonyme pour
+    // une pastille (c'était la porte par laquelle on entrait dans le jeu).
+    if (!base || enCombat || surLeSuivi || session === null || session.anonyme) {
       setAVoir(0);
       return;
     }
@@ -81,7 +84,7 @@ export function Layout() {
     return () => {
       vivant = false;
     };
-  }, [pathname, base, enCombat, surLeSuivi]);
+  }, [pathname, base, enCombat, surLeSuivi, session]);
 
   /**
    * Les **cinq** onglets (D-097) ne se réduisent pas en combat : la barre n'y est plus du

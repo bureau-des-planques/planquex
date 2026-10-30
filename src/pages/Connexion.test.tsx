@@ -188,7 +188,7 @@ describe('les deux portes (D-088)', () => {
 describe('un compte déjà connecté ne reste pas sur la page', () => {
   it('un compte en attente part vers l’attente', async () => {
     poser({
-      session: { id: 'compte-a', courriel: 'a@exemple.test' },
+      session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
       compte: PENDING
     });
     rendre();
@@ -197,7 +197,7 @@ describe('un compte déjà connecté ne reste pas sur la page', () => {
 
   it('un compte approuvé part vers le bureau', async () => {
     poser({
-      session: { id: 'compte-a', courriel: 'a@exemple.test' },
+      session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
       compte: { ...PENDING, etat: 'approuve' }
     });
     rendre();
@@ -205,7 +205,13 @@ describe('un compte déjà connecté ne reste pas sur la page', () => {
   });
 
   it('un compte connecté sans profil fait le parcours avant d’aller au bureau', async () => {
-    poser({ session: { id: 'compte-a', courriel: 'a@exemple.test' }, compte: { ...PENDING, etat: 'approuve' } }, null);
+    poser(
+      {
+        session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+        compte: { ...PENDING, etat: 'approuve' }
+      },
+      null
+    );
     rendre();
     expect(await screen.findByRole('heading', { name: /Ton pseudo/ })).toBeInTheDocument();
     expect(screen.queryByText('le bureau')).toBeNull();

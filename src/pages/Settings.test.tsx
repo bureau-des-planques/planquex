@@ -212,7 +212,7 @@ describe('Settings — le compte, et la médaille de la période d’essai (#346
     useComptes.setState({
       configure: true,
       chargement: false,
-      session: { id: compte.id, courriel: compte.courriel },
+      session: { id: compte.id, courriel: compte.courriel, anonyme: false },
       compte,
       erreur: null
     });
@@ -296,7 +296,7 @@ describe('Settings — des catégories, pas une liste (#277)', () => {
     useComptes.setState({
       configure: true,
       chargement: false,
-      session: { id: COMPTE.id, courriel: COMPTE.courriel },
+      session: { id: COMPTE.id, courriel: COMPTE.courriel, anonyme: false },
       compte: COMPTE,
       erreur: null
     });

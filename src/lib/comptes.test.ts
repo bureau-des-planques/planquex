@@ -40,6 +40,8 @@ const COMPTE = {
 
 interface Reponses {
   session?: { id: string; email?: string | null } | null;
+  /** Le porteur est une identité anonyme (`is_anonymous`) : ni courriel, ni ligne de compte. */
+  anonyme?: boolean;
   lignes?: unknown[];
   lignesEcrites?: unknown[];
   erreurLecture?: string;
@@ -60,7 +62,9 @@ function fauxClient(reponses: Reponses = {}) {
       session:
         reponses.session === null
           ? null
-          : { user: { id: reponses.session?.id ?? 'compte-a', email: reponses.session?.email ?? 'a@exemple.test' } }
+          : reponses.anonyme
+            ? { user: { id: reponses.session?.id ?? 'appareil-anonyme', is_anonymous: true } }
+            : { user: { id: reponses.session?.id ?? 'compte-a', email: reponses.session?.email ?? 'a@exemple.test' } }
     }
   }));
   type RetourConnexion = {
@@ -79,12 +83,10 @@ function fauxClient(reponses: Reponses = {}) {
     error: null
   }));
   const signOut = vi.fn(async (): Promise<{ error: { message: string } | null }> => ({ error: null }));
-  const signInAnonymously = vi.fn(async () => ({ data: { user: { id: 'anonyme' } }, error: null }));
 
   const client = {
     auth: {
       getSession,
-      signInAnonymously,
       signInWithOAuth,
       signInWithPassword,
       signUp,
@@ -212,10 +214,20 @@ describe('la lecture d’un compte', () => {
   it('avec une session, lit la ligne de l’appelant — et seulement la sienne', async () => {
     const faux = fauxClient({ lignes: [COMPTE] });
     const lu = await lireMonCompte(faux.charger);
-    expect(lu?.session).toEqual({ id: 'compte-a', courriel: 'a@exemple.test' });
+    expect(lu?.session).toEqual({ id: 'compte-a', courriel: 'a@exemple.test', anonyme: false });
     expect(lu?.compte).toEqual(COMPTE);
     expect(faux.lectures[0].table).toBe('comptes');
     expect(faux.lectures[0].filtres).toEqual([['id', 'compte-a']]);
+  });
+
+  it('une identité anonyme porte son drapeau, et n’a pas de compte (#527)', async () => {
+    // Le déclencheur de 0005 ne crée rien sans courriel : la session serait `compte: null`
+    // comme une base en retard, d'où le drapeau — c'est lui que la garde interroge (D-156).
+    const faux = fauxClient({ lignes: [], anonyme: true });
+    const lu = await lireMonCompte(faux.charger);
+    expect(lu?.session).toEqual({ id: 'appareil-anonyme', courriel: '', anonyme: true });
+    expect(lu?.compte).toBeNull();
+    expect(lu?.erreur).toBeNull();
   });
 
   it('une ligne manquante n’invente pas un état', async () => {

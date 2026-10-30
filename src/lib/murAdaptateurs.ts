@@ -18,7 +18,7 @@
  * **Le choix entre les deux sources réelles vit ici aussi** (`resoudreAdaptateur`) : la base
  * quand elle est configurée, le fichier sinon. Le port, lui, ne sait pas d'où il lit.
  */
-import { clientMur, configurerMur, identiteAppareil, type ClientMur } from '@/lib/supabase';
+import { clientMur, configurerMur, identiteSession, type ClientMur } from '@/lib/supabase';
 import {
   DOCUMENT_MUR,
   STATUTS,
@@ -134,7 +134,7 @@ export function adaptateurBase(
     refus: () => null,
 
     async charger() {
-      const identite = await identiteAppareil(chargerClient);
+      const identite = await identiteSession(chargerClient);
       if (!identite) {
         throw new Error('Aucune session : la base refuse la lecture du mur.');
       }
@@ -175,7 +175,7 @@ export function adaptateurBase(
     },
 
     async poster(ligne: LignePostit) {
-      const identite = await identiteAppareil(chargerClient);
+      const identite = await identiteSession(chargerClient);
       if (!identite) {
         throw new Error('Aucune session : le post-it ne peut pas être signé.');
       }
@@ -203,7 +203,7 @@ export function adaptateurBase(
     },
 
     async voter(postitId: string, demande: SensVote, geste: GesteVote) {
-      const identite = await identiteAppareil(chargerClient);
+      const identite = await identiteSession(chargerClient);
       if (!identite) throw new Error('Aucune session : le vote ne peut pas être signé.');
 
       // Le client n'écrit **jamais** `votant` : à l'insertion, `{ postit_id, sens }`
@@ -249,7 +249,7 @@ export function adaptateurBase(
     },
 
     async deplacer(id: string, position: PositionPostit) {
-      const identite = await identiteAppareil(chargerClient);
+      const identite = await identiteSession(chargerClient);
       if (!identite) throw new Error('Aucune session : la place ne peut pas être signée.');
 
       // La fonction `deplacer_postit` (0007), et **pas** un `update` : une politique RLS ne
@@ -274,7 +274,7 @@ export function adaptateurBase(
     },
 
     async corriger(id: string, correction: Correction) {
-      const identite = await identiteAppareil(chargerClient);
+      const identite = await identiteSession(chargerClient);
       if (!identite) throw new Error('Aucune session : la correction ne peut pas être signée.');
 
       // La fonction `corriger_postit` (0006) : le client n'a pas de droit direct sur `titre`
@@ -295,7 +295,7 @@ export function adaptateurBase(
     },
 
     async retirer(id: string) {
-      const identite = await identiteAppareil(chargerClient);
+      const identite = await identiteSession(chargerClient);
       if (!identite) throw new Error('Aucune session : le retrait ne peut pas être signé.');
 
       // **Pas de filtre sur `auteur`** (#186) : c'est la RLS qui décide, et elle en connaît

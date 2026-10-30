@@ -1,7 +1,7 @@
 # Le socle backend du mur (#135)
 
-Le mur du comité, côté base : **les tables**, **l'identité anonyme par appareil** et
-**les règles d'accès** qui vont avec. Rien d'autre — le mur complet (#137) et le PvP viendront
+Le mur du comité, côté base : **les tables**, **l'identité de l'appareil** (un compte depuis
+D-088 ; plus aucune signature anonyme depuis D-156) et **les règles d'accès** qui vont avec. Rien d'autre — le mur complet (#137) et le PvP viendront
 s'appuyer dessus.
 
 | Fichier | Ce qu'il porte |
@@ -40,7 +40,7 @@ s'appuyer dessus.
 | `supabase/mur.test.ts` | la garde : joue **la migration réelle** dans PGlite (PostgreSQL en WASM, RLS comprise) et **exige** que les politiques mordent |
 | `supabase/mur-ecriture.test.ts` | la garde des écritures du mur (#138, #139) : commenter, corriger, retirer, trier — un compte en attente refusé, un administrateur qui trie sans réécrire, et chaque contrôle neutralisé laisse passer le fautif |
 | `supabase/combats.test.ts` | la même garde pour les combats : un autre appareil ne lit pas, `anon` n'a rien, un auteur forgé est refusé, et la migration mutée fuit |
-| `src/lib/supabase.ts` | la configuration, l'identité anonyme et l'écriture d'une ligne côté jeu (inerte sans `.env`) |
+| `src/lib/supabase.ts` | la configuration, la session et l'écriture d'une ligne côté jeu (inerte sans `.env`) |
 | `src/lib/supabase.test.ts` | la garde de la clé : publique seulement, et l'alpha inerte sans backend |
 | `src/store/combats.ts` | ce qui est gardé d'un combat solo terminé, et l'envoi silencieux (#173) |
 | `src/lib/murBase.ts` | la **couture** du mur (#136) : lit `postits_avec_votes`, poste dans `postits`, retombe sur le fichier sans configuration |
@@ -114,7 +114,8 @@ C'est cette condition (`auteur = auth.uid()`, `votant = auth.uid()`) que la gard
 `true` pour prouver qu'elle mord.
 
 Le rôle **`anon`** (appareil non identifié) n'a **aucun** privilège : `revoke all` dans la
-migration. Le jeu signe d'abord (identité anonyme, rôle `authenticated`), puis lit.
+migration. Le jeu lit avec la session d'un **compte** (rôle `authenticated`) ; depuis D-156, il
+ne **signe** plus personne pour un visiteur sans compte.
 
 ### Les fonctions que `authenticated` peut encore exécuter (D-133 (3))
 
@@ -150,24 +151,25 @@ anon, authenticated`.
 - **inerte** quand les deux variables manquent : `configurerMur()` rend `null`, rien n'est
   contacté, et `npm run build` / `npm run capturer` marchent sans configuration. C'est la
   contrainte de l'alpha : le mur lit `docs/comite.json` (D-058) ;
-- `identiteAppareil()` rend l'identité de la session persistée, ou en **signe une** anonymement à
-  la première visite (`signInAnonymously`, session gardée par `@supabase/supabase-js`) ;
+- `identiteSession()` rend l'identité de la session persistée — un compte — ou `null` ; depuis
+  **D-156** (#527), elle ne **signe plus** jamais (`signInAnonymously` a quitté le client) ;
 - la bibliothèque est chargée **à la demande** : sans configuration, son code ne part même pas
   dans le premier chargement.
 
-Depuis #136, **le mur s'en sert** : `src/lib/murBase.ts` signe l'appareil avec
-`identiteAppareil()` puis lit la vue, et le formulaire du mur poste dans `postits`. Le socle
-reste inerte sans configuration.
+Depuis #136, **le mur s'en sert** : `src/lib/murBase.ts` lit la vue avec la session du compte
+(`identiteSession()`) et le formulaire du mur poste dans `postits`. Le socle reste inerte sans
+configuration.
 
 **Depuis D-088 (#181)**, l'identité d'écriture est un **compte** : `src/lib/comptes.ts` porte
 la connexion (Google ou courriel + mot de passe), `src/store/comptes.ts` garde la session et
 l'état de la demande, et les écrans `Connexion`, `Attente` et `Administration` s'en servent.
-L'identité anonyme **n'ouvre plus la lecture** : la garde d'entrée (`GardeComptes`) renvoie
-vers `/connexion` tout visiteur sans compte — décidé par Bastien le 26/10/2026, « il faut un
-compte pour entrer dans le jeu ». Elle reste l'auteur des deux post-its d'avant la 0005, et
-`identiteAppareil` sait toujours signer un appareil sans compte (les connexions anonymes
-restent actives, O-016, #252) ; un appareil anonyme ne peut pas écrire, puisque la 0005 exige un compte
-approuvé.
+**Depuis D-156 (30/10/2026, #527), l'identité anonyme n'ouvre plus rien** — ni le jeu, ni la
+lecture du mur, qui est une page du jeu : la garde d'entrée (`GardeComptes`) renvoie vers
+`/connexion` tout visiteur sans **compte**, et le client ne signe plus d'appareil. Une session
+anonyme déjà posée dans un navigateur est **ignorée** (elle n'a pas de courriel, donc pas de
+ligne `comptes`). Les deux post-its d'avant la 0005 gardent leur auteur sentinelle (D-107).
+Le réglage « Anonymous sign-ins » reste actif le temps que #527 soit déployé, puis se ferme
+(D-156 (6)).
 
 ## 3. Les variables d'environnement
 
@@ -203,20 +205,20 @@ résultat identique entre la machine de développement et la CI.
 > réserve `supabase` à une session d'infrastructure). Le geste de ce projet est le poste de
 > pilotage (§4.2) ; le CLI Supabase n'y est pas utilisé.
 
-### 4.1 Créer (ou retrouver) le projet, et activer l'identité anonyme
+### 4.1 Créer (ou retrouver) le projet — et fermer l'identité anonyme
 
 **Avant D-088**, il fallait activer *Authentication → Sign In / Providers → **Anonymous
-sign-ins*** : sans ce réglage, `signInAnonymously()` répond `Anonymous sign-ins are disabled`,
-et la garde de `src/lib/supabase.test.ts` le dit.
+sign-ins*** : le client signait l'appareil à la première visite. **Depuis D-088**, l'alpha
+s'ouvre par un **compte** ; **depuis D-156** (#527), le client ne signe plus personne et le
+réglage ne sert plus qu'aux lignes d'avant la 0005 (les deux post-its, auteur sentinelle,
+D-107).
 
-**Depuis D-088 et la décision de Bastien du 26/10/2026, ce n'est plus un chemin de lecture** :
-l'alpha s'ouvre par un **compte**, et `GardeComptes` renvoie un visiteur sans compte vers
-`/connexion`. Le réglage reste **actif** (O-016, #252) parce que le code porte encore l'appel et que
-les deux post-its d'avant la 0005 ont été écrits sous cette identité — mais un visiteur neuf
-ne lit pas le mur : il voit l'écran de connexion. Mesuré le 26/10/2026 : le réglage
-`external_anonymous_users_enabled` vaut `true`, une session anonyme s'obtient
-(`POST /auth/v1/signup` → `200`), et avec son jeton la vue `postits_avec_votes` se lit
-(`200`, deux lignes) ; sans jeton, `401 permission denied`.
+**Ce qu'il faut faire** : laisser le réglage actif tant que #527 n'est pas déployé, puis le
+**fermer** (`Anonymous sign-ins` → off), avec la preuve que le mur se lit avec un compte et
+que plus rien ne remonte `Anonymous sign-ins are disabled`. Mesuré le 26/10/2026, avant
+D-156 : `external_anonymous_users_enabled` valait `true`, une session anonyme s'obtenait
+(`POST /auth/v1/signup` → `200`) et lisait `postits_avec_votes` (`200`) ; sans jeton, `401
+permission denied`. Ces mesures datent d'avant l'acte et ne le remplacent pas.
 
 Le même écran active les fournisseurs voulus (**Google**, **Email**) : voir §5.
 

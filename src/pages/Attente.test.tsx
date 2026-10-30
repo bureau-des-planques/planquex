@@ -42,7 +42,7 @@ function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
   useComptes.setState({
     configure: true,
     chargement: false,
-    session: { id: 'compte-a', courriel: 'a@exemple.test' },
+    session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
     compte: PENDING,
     erreur: null,
     ...actions(),

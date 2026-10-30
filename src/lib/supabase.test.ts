@@ -6,15 +6,15 @@ import {
   clientMur,
   configurerMur,
   ecrireLigne,
-  identiteAppareil,
+  identiteSession,
   VARIABLE_CLE,
   VARIABLE_URL,
-  type AppareilAnonyme,
+  type SessionPersistee,
   type ConfigurationMur
 } from '@/lib/supabase';
 
 /**
- * La configuration du mur et l'identité anonyme (#135).
+ * La configuration du mur et l'identité de la session (#135, #527).
  *
  * Trois choses sont gardées ici, et chacune peut réellement échouer :
  *
@@ -34,17 +34,16 @@ function jwt(charge: Record<string, unknown>): string {
 
 const CLE_PUBLIQUE_FAUSSE = 'sb_publishable_exemple-cle-publique-fausse';
 
-/** Un faux client : les trois gestes dont `identiteAppareil` a besoin, et rien de plus. */
-function fauxAppareil(options: { session?: string; erreur?: string } = {}) {
-  const signInAnonymously = vi.fn(async () => ({
-    data: { user: options.erreur ? null : { id: 'appareil-neuf' } },
-    error: options.erreur ? { message: options.erreur } : null
-  }));
+/**
+ * Un faux client : la seule méthode dont `identiteSession` a besoin, et rien de plus. Depuis
+ * D-156 (#527) le client ne **signe** plus : l'absence de session reste une absence.
+ */
+function fauxAppareil(options: { session?: string } = {}) {
   const getSession = vi.fn(async () => ({
     data: { session: options.session ? { user: { id: options.session } } : null }
   }));
-  const appareil: AppareilAnonyme = { auth: { getSession, signInAnonymously } };
-  return { appareil, getSession, signInAnonymously };
+  const appareil: SessionPersistee = { auth: { getSession } };
+  return { appareil, getSession };
 }
 
 describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)', () => {
@@ -124,35 +123,29 @@ describe('écrire une ligne (#173 : la trace des combats passe par ici)', () => 
   });
 });
 
-describe('l’identité anonyme de l’appareil (D-059 : ni compte, ni mot de passe, ni courriel)', () => {
+describe('l’identité de la session — un compte (D-088), jamais une signature (D-156)', () => {
   it('rend null sans backend configuré, sans lever', async () => {
     // Le test ne doit pas dépendre du `.env` local : on vide les deux variables explicitement.
     vi.stubEnv('VITE_SUPABASE_URL', '');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
     try {
-      await expect(identiteAppareil(async () => null)).resolves.toBeNull();
+      await expect(identiteSession(async () => null)).resolves.toBeNull();
       await expect(clientMur()).resolves.toBeNull();
     } finally {
       vi.unstubAllEnvs();
     }
   });
 
-  it('signe anonymement un appareil neuf, à sa première visite', async () => {
+  it('rend l’identité de la session persistée — un compte (D-088)', async () => {
+    const faux = fauxAppareil({ session: 'compte-a' });
+    await expect(identiteSession(async () => faux.appareil)).resolves.toBe('compte-a');
+  });
+
+  it('ne signe personne quand aucune session n’existe (#527, D-156 (4))', async () => {
+    // C'était la porte d'entrée du bug : le compteur du comité signait l'appareil, et la
+    // garde prenait ensuite cette identité anonyme pour un compte.
     const faux = fauxAppareil();
-    const identite = await identiteAppareil(async () => faux.appareil);
-    expect(identite).toBe('appareil-neuf');
-    expect(faux.signInAnonymously).toHaveBeenCalledTimes(1);
-  });
-
-  it('reprend la session persistée, et ne resign pas', async () => {
-    const faux = fauxAppareil({ session: 'appareil-deja-signe' });
-    const identite = await identiteAppareil(async () => faux.appareil);
-    expect(identite).toBe('appareil-deja-signe');
-    expect(faux.signInAnonymously).not.toHaveBeenCalled();
-  });
-
-  it('dit clairement quand la signature anonyme est refusée (réglage du projet)', async () => {
-    const faux = fauxAppareil({ erreur: 'Anonymous sign-ins are disabled' });
-    await expect(identiteAppareil(async () => faux.appareil)).rejects.toThrow(/Identité anonyme impossible/);
+    await expect(identiteSession(async () => faux.appareil)).resolves.toBeNull();
+    expect(faux.getSession).toHaveBeenCalledTimes(1);
   });
 });
