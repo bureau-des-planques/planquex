@@ -89,17 +89,17 @@ répond 401. Aucun en-tête CORS n'est émis : le jeton ne sort jamais en cross-
 - Le rôle à deux têtes est acté par **D-091** (`docs/DECISIONS.md`) ; la dépendance `pg` est
   signalée dans `AGENTS.md` §1.7.
 
-## Le reset de la beta (#342, D-130, D-150)
+## Le reset de la beta (#342, D-130, D-150, D-153)
 
-Le reset remet à zéro **les traces de combat et le mur**, garde **chaque compte**, et pose la
-**Médaille de la période d'essai** sur les comptes approuvés, **une seule fois**. Ce n'est pas une
-migration : `admin.migrations` n'est pas touché. Il se fait dans la section **Reset de la beta** de
-la page, jamais en SQL libre.
+Le reset remet à zéro **les traces de combat et le mur**, ainsi que **le Deck et la Collection du
+compte** (D-153 (2)), garde **chaque compte**, et pose la **Médaille de la période d'essai** sur les
+comptes approuvés, **une seule fois**. Ce n'est pas une migration : `admin.migrations` n'est pas
+touché. Il se fait dans la section **Reset de la beta** de la page, jamais en SQL libre.
 
 **Avant** (la veille, hors de toute partie) :
 
 1. Vérifier que l'annonce est dans `docs/ALPHA-TESTEURS.md` (« Le reset de la beta »).
-2. Lire **Voir ce qui partirait** : traces, post-its, comptes, médailles déjà posées.
+2. Lire **Voir ce qui partirait** : traces, post-its, Deck, Collection, comptes, médailles déjà posées.
 3. Vérifier les annonces Discord en attente, dans le **SQL Editor** du projet (rôle administrateur ;
    le rôle `lecteur` ne lit pas `annonces_discord`, voir plus bas) :
    `select etat, count(*) from public.annonces_discord group by etat;`. Une ligne `en attente` partira
@@ -119,8 +119,8 @@ Se connecter avec un compte approuvé et vérifier qu'il est toujours là, avec 
 
 **Ce que le geste ne fait pas** : il ne vide pas `annonces_discord` (le journal de ce qui a été dit dans
 `#comite`, que Discord ne retire pas), ne touche ni `admin.migrations`, ni `auth.users`, ni `public.profils`
-(#325). La Collection et le Deck vivent dans le navigateur : ils repartent par la migration de store (#347),
-pas par ce geste.
+(#325). Le Deck et la Collection, eux, sont **vidés par ce geste** : ils vivent sur le compte depuis
+D-153 (2), dans `public.deck` et `public.collection`.
 
 **Rejouer** : le geste est sans effet sur ce qui est déjà vide. Une médaille déjà posée n'est pas reposée ;
 un compte approuvé **après** le premier reset n'en reçoit donc jamais (la garde est « aucune médaille
@@ -131,8 +131,8 @@ rien n'est effacé. Une fois réussi, la seule voie est la **restauration de la 
 comptes créés depuis seraient alors perdus, et il faut le savoir avant.
 
 **Écart connu** : le rôle `lecteur` (`supabase/admin/roles.sql`) n'a de politique de lecture que sur
-`postits`, `votes`, `commentaires`, `combats` et `comptes`. `annonces_discord` lui apparaît vide : l'aperçu
-ne la compte donc pas, et la vérification se fait avec le rôle administrateur.
+`postits`, `votes`, `commentaires`, `combats`, `comptes`, `collection` et `deck`. `annonces_discord` lui
+apparaît vide : l'aperçu ne la compte donc pas, et la vérification se fait avec le rôle administrateur.
 
 ## Structure
 

@@ -1,12 +1,12 @@
 /**
  * Le reset de la beta (#342, D-130, D-150) — un geste du poste de pilotage, jamais une migration.
  *
- * Ce qui part : les **traces de combat** (`combats`) et **le mur** (`postits`, avec leurs `votes`
- * et `commentaires`). Ce qui reste : **chaque compte** (`comptes` : courriel, mot de passe,
+ * Ce qui part : les **traces de combat** (`combats`), **le mur** (`postits`, avec leurs `votes`
+ * et `commentaires`), et le **Deck** et la **Collection** du compte (`deck`, `collection`) que
+ * D-153 (2) a posés côté base. Ce qui reste : **chaque compte** (`comptes` : courriel, mot de passe,
  * approbation). Et, une seule fois, la **Médaille de la période d'essai** est posée sur les comptes
  * approuvés (`medaille_periode_essai`, 0016). `admin.migrations` n'est pas touché : un reset ne
- * décrit pas le schéma (D-130 (4)). Les Collection et Deck vivent dans le navigateur : ils ne sont
- * pas atteignables d'ici, et tombent par la migration de store (#347).
+ * décrit pas le schéma (D-130 (4)).
  *
  * Le geste tient en **une seule instruction** SQL : les effacements et la médaille réussissent
  * ensemble ou pas du tout, et chaque compte rendu vient de la même instruction que l'effacement
@@ -22,22 +22,32 @@ export const CONFIRMATION = 'remettre à zéro la beta';
 
 /** Ce qui est vidé, ce qui est gardé, et ce que le geste ne touche jamais (le compte rendu le dit). */
 export const PERIMETRE = Object.freeze({
-  vides: ['public.votes', 'public.commentaires', 'public.postits', 'public.combats'],
+  vides: [
+    'public.votes',
+    'public.commentaires',
+    'public.postits',
+    'public.combats',
+    'public.collection',
+    'public.deck'
+  ],
   gardes: ['public.comptes'],
   intactes: ['admin.migrations', 'public.annonces_discord', 'auth.users', 'public.profils (si elle existe, #325)']
 });
 
 /**
  * Le reset, en une instruction. Les enfants (`votes`, `commentaires`) avant leur parent (`postits`) :
- * chaque `delete` compte **ses** lignes. La médaille ne va qu'aux comptes `approuve`, et **une seule
- * fois** : tant qu'une médaille existe déjà, un reset rejoué n'en pose pas de nouvelle (sinon un compte
- * approuvé après la beta la recevrait).
+ * chaque `delete` compte **ses** lignes. Le Deck et la Collection du compte partent dans le même
+ * geste (D-153 (2)). La médaille ne va qu'aux comptes `approuve`, et **une seule fois** : tant
+ * qu'une médaille existe déjà, un reset rejoué n'en pose pas de nouvelle (sinon un compte approuvé
+ * après la beta la recevrait).
  */
 export const SQL_RESET = `with
   votes_vides as (delete from public.votes returning 1),
   commentaires_vides as (delete from public.commentaires returning 1),
   postits_vides as (delete from public.postits returning 1),
   combats_vides as (delete from public.combats returning 1),
+  collection_vides as (delete from public.collection returning 1),
+  deck_vides as (delete from public.deck returning 1),
   medailles as (
     update public.comptes
        set medaille_periode_essai = true,
@@ -52,6 +62,8 @@ select
   (select count(*) from commentaires_vides)::int as commentaires,
   (select count(*) from postits_vides)::int as postits,
   (select count(*) from combats_vides)::int as combats,
+  (select count(*) from collection_vides)::int as collection,
+  (select count(*) from deck_vides)::int as deck,
   (select count(*) from medailles)::int as medailles`;
 
 /** L'état avant le geste : ce qui partirait, ce qui reste. Lecture seule (rôle `lecteur`). */
@@ -60,6 +72,8 @@ export const SQL_APERCU = `select
   (select count(*) from public.postits)::int as postits,
   (select count(*) from public.votes)::int as votes,
   (select count(*) from public.commentaires)::int as commentaires,
+  (select count(*) from public.collection)::int as collection,
+  (select count(*) from public.deck)::int as deck,
   (select count(*) from public.comptes)::int as comptes,
   (select count(*) from public.comptes where etat = 'approuve')::int as approuves,
   (select count(*) from public.comptes where medaille_periode_essai)::int as medailles_posees`;
@@ -90,6 +104,8 @@ function lireApercu(lu) {
     postits: n(ligne.postits),
     votes: n(ligne.votes),
     commentaires: n(ligne.commentaires),
+    collection: n(ligne.collection),
+    deck: n(ligne.deck),
     comptes: n(ligne.comptes),
     approuves: n(ligne.approuves),
     medaillesPosees: n(ligne.medailles_posees)
@@ -109,6 +125,8 @@ export function texteApercu(apercu) {
     'Ce qui partirait :',
     `  traces de combat : ${apercu.combats}`,
     `  post-its : ${apercu.postits} (votes : ${apercu.votes}, commentaires : ${apercu.commentaires})`,
+    `  Collection : ${apercu.collection} ligne(s)`,
+    `  Deck : ${apercu.deck} ligne(s)`,
     'Ce qui reste :',
     `  comptes : ${apercu.comptes} (approuvés : ${apercu.approuves})`,
     `  médailles déjà posées : ${apercu.medaillesPosees}`,
@@ -128,7 +146,9 @@ export function composerRapport({ avant, apres, compte, idsAvant, idsApres }) {
     ['combats', apres.combats],
     ['postits', apres.postits],
     ['votes', apres.votes],
-    ['commentaires', apres.commentaires]
+    ['commentaires', apres.commentaires],
+    ['collection', apres.collection],
+    ['deck', apres.deck]
   ].filter(([, n]) => n > 0);
   return {
     confirme: true,
@@ -138,6 +158,8 @@ export function composerRapport({ avant, apres, compte, idsAvant, idsApres }) {
       { table: 'public.postits', sort: 'vidée', lignes: compte.postits },
       { table: 'public.votes', sort: 'vidée', lignes: compte.votes },
       { table: 'public.commentaires', sort: 'vidée', lignes: compte.commentaires },
+      { table: 'public.collection', sort: 'vidée', lignes: compte.collection },
+      { table: 'public.deck', sort: 'vidée', lignes: compte.deck },
       { table: 'public.comptes', sort: 'gardée', lignes: idsApres.size, supprimees: absents.length },
       { table: 'public.comptes (médaille)', sort: 'attribuée', lignes: compte.medailles }
     ],
@@ -187,6 +209,8 @@ export async function executerReset(adapter, saisie, { sql = SQL_RESET } = {}) {
     postits: Number(ligne.postits ?? 0),
     votes: Number(ligne.votes ?? 0),
     commentaires: Number(ligne.commentaires ?? 0),
+    collection: Number(ligne.collection ?? 0),
+    deck: Number(ligne.deck ?? 0),
     medailles: Number(ligne.medailles ?? 0)
   };
 

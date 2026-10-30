@@ -62,11 +62,15 @@ alter default privileges in schema admin  grant select on tables to lecteur;
 -- politique ne le nommait — il ne verrait donc **aucune ligne**. On lui en donne une par
 -- table existante, en lecture seule, et sans toucher aux politiques du jeu. `drop` puis
 -- `create` rend le fichier rejouable.
+--
+-- `collection` et `deck` sont là pour l'**aperçu du reset** (#494, D-153 (2)) : leur RLS est
+-- **activée et forcée** (0020), donc sans politique nommée `lecteur` les lirait zéro ligne en
+-- silence, et l'aperçu mentirait.
 do $policies_lecteur$
 declare
   table_cible text;
 begin
-  foreach table_cible in array array['postits', 'votes', 'commentaires', 'combats', 'comptes']
+  foreach table_cible in array array['postits', 'votes', 'commentaires', 'combats', 'comptes', 'collection', 'deck']
   loop
     execute format('drop policy if exists "lecteur lit tout" on public.%I', table_cible);
     execute format(
