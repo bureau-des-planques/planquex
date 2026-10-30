@@ -150,14 +150,28 @@ async function medailles(db: Base) {
 
 describe('le reset de la beta (#342, D-130)', () => {
   it('vide traces et mur, garde chaque compte, pose la médaille aux seuls comptes approuvés', async () => {
-    const { db, a } = await nouvelleAlpha();
+    const { db, a: brut } = await nouvelleAlpha();
+    // **D-150 (1)** : le reset est **une seule instruction**, un seul aller-retour. Le pilote
+    // accepte plusieurs instructions dans un même envoi ; sans cette assertion, la règle ne
+    // tiendrait que par la forme du littéral, et une seconde instruction glissée dans `SQL_RESET`
+    // passerait inaperçue.
+    const envoyees: number[] = [];
+    const a = {
+      ...brut,
+      async ecrire(sql: string, params: unknown[] = []) {
+        const lu = await brut.ecrire(sql, params);
+        envoyees.push(lu.instructions ?? 1);
+        return lu;
+      }
+    };
     const comptesAvant = await comptes(db);
-    await initialiserRegistre(a);
+    await initialiserRegistre(brut);
     const migrationsAvant = await compter(db, 'select count(*)::int as n from admin.migrations');
     // Les annonces partent d'un déclencheur à chaque post-it : on mesure leur état, pas un nombre supposé.
     const annoncesAvant = await compter(db, "select count(*)::int as n from public.annonces_discord where etat = 'en attente'");
 
     const { rapport } = await executerReset(a, CONFIRMATION);
+    expect(envoyees, 'le reset doit tenir en une seule instruction').toEqual([1]);
 
     expect(await compter(db, 'select count(*)::int as n from public.combats')).toBe(0);
     expect(await compter(db, 'select count(*)::int as n from public.postits')).toBe(0);

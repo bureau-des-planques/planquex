@@ -72,6 +72,12 @@ Puis appliquer **une fois** `supabase/admin/roles.sql` dans le SQL Editor (il cr
 `lecteur`, `select` seul), et poser son mot de passe hors dépôt (`alter role lecteur with
 password '…'`).
 
+**À rejouer après chaque migration qui crée une table** (le fichier est idempotent) : l'aperçu
+du reset et le contrôle d'anomalies lisent avec le rôle `lecteur`, et une table sans politique
+pour lui rend **zéro ligne en silence**. C'est vrai depuis la `0020` pour `public.deck` et
+`public.collection` : sans ce rejeu, l'aperçu afficherait « Deck : 0 » alors que le reset
+(rôle d'administration) les vide bien.
+
 Au démarrage, le serveur **ouvre le navigateur** tout seul sur
 `http://127.0.0.1:5199/?jeton=…` (s'il y en a un) ; sinon il affiche l'adresse à ouvrir à la
 main, comme avant. Le jeton est exigé sur chaque requête, et **la première visite le pose en
