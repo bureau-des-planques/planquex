@@ -254,6 +254,24 @@ jobs:
         if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm run build
 
+      # **La hauteur du combat, gardée avant la fusion** (#513). `npm run capturer` a échoué une
+      # semaine sur `main` sans que personne le voie : aucun job ne le lançait, et une PR qui
+      # faisait défiler le combat restait verte (le défaut de D-142, #512). Depuis, la commande
+      # rejoue le combat aux cinq gabarits et **sort 1** si « Fin du tour » sort de la fenêtre,
+      # si un bouton descend sous 44 px ou si la marge passe sous 20 px.
+      #
+      # Elle lit le `dist/` que ce job vient de construire, et **réutilise le Chrome de
+      # l'image** (`/usr/bin/google-chrome`, celui de `IMPECCABLE_BROWSER`) sous le nom que lit
+      # le script, `CHROME_PATH` : aucun second navigateur à installer. Coût mesuré en local
+      # le 30/10/2026 : **6 min 14 s** — il tient dans le maximum du job (D-143), et le budget
+      # se gagne sur les répétitions, jamais sur les preuves. Une PR de documentation seule ne
+      # la lance pas (chemin rapide, D-143 (1)).
+      - name: Garder la hauteur du combat (#513)
+        if: steps.chemins.outputs.doc_seulement != 'true'
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        run: npm run capturer
+
       # **Le contrôle visuel qui compte** (#205, #234) : `impeccable detect` sur les écrans
       # **servis depuis `dist/`**, avec le cliquet de `scripts/ci/detect-ui-pages.mjs`
       # (`ECRANS` = 12 écrans, `BASELINE` = leur compte mesuré). `detect:ui` ne lit que les

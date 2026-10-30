@@ -134,6 +134,24 @@ describe('.github/workflows/ci.yml', () => {
     expect(bloc.indexOf('run: npm run build')).toBeLessThan(debut);
   });
 
+  it('garde la hauteur du combat dans la CI, sans saut possible (#513)', () => {
+    // `npm run capturer` est resté rouge une semaine sur `main` sans que personne le voie :
+    // aucun job ne le lançait. Retirer l'étape rendrait la CI verte sans mesurer la hauteur
+    // du combat — exactement le trou que #513 bouche.
+    const bloc = blocJob('tests-ecrans');
+    const build = bloc.indexOf('run: npm run build');
+    const capture = bloc.indexOf('run: npm run capturer');
+    expect(capture, 'étape « capturer » absente de tests-ecrans').toBeGreaterThanOrEqual(0);
+    expect(build, 'build absent de tests-ecrans').toBeGreaterThanOrEqual(0);
+    // Les captures lisent `dist/` : le build doit avoir tourné avant, dans le même job.
+    expect(build, 'le build doit précéder les captures').toBeLessThan(capture);
+    // Le Chrome de l'image, sous le nom que lit le script : pas de second navigateur installé.
+    const etape = bloc.slice(bloc.lastIndexOf('- name:', capture));
+    expect(etape).toContain('CHROME_PATH: /usr/bin/google-chrome');
+    // Même condition que les autres étapes : une PR de documentation seule ne la lance pas.
+    expect(etape).toContain("if: steps.chemins.outputs.doc_seulement != 'true'");
+  });
+
   it('le chemin rapide ne saute rien d’autre que ce que D-143 (1) nomme (#422)', () => {
     // Chaque job calcule les chemins changés, et **tourne toujours** : pas de `paths-ignore`.
     expect(workflow).not.toMatch(/^\s+paths(-ignore)?:/m);
