@@ -241,8 +241,9 @@ export async function ecrireLigne(table: string, ligne: Record<string, unknown>)
   const supabase = await clientSupabase();
   if (!supabase) return { erreur: 'Supabase n’est pas configuré.' };
 
-  const identite = await identiteSession(async () => supabase);
-  if (!identite) return { erreur: 'Aucune session : la ligne ne peut pas être signée.' };
+  if (!(await identiteSession(async () => supabase))) {
+    return { erreur: 'Aucune session : la ligne ne peut pas être signée.' };
+  }
   const { error } = await supabase.from(table).insert(ligne);
   return { erreur: error ? error.message : null };
 }

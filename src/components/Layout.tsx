@@ -67,7 +67,7 @@ export function Layout() {
     // Sans **compte** connecté, il n'y a rien à compter — et depuis D-156 (#527) la lecture
     // ne signe plus personne : un visiteur sans compte n'obtient pas d'identité anonyme pour
     // une pastille (c'était la porte par laquelle on entrait dans le jeu).
-    if (!base || enCombat || surLeSuivi || session === null || session.anonyme) {
+    if (!base || enCombat || surLeSuivi || !session || session.anonyme) {
       setAVoir(0);
       return;
     }

@@ -66,24 +66,6 @@ export interface SessionCompte {
 }
 
 /**
- * La session est-elle un **compte** ? Une identité anonyme ne l'est pas : c'est le prédicat
- * que la garde d'entrée interroge (D-156), et il ne juge pas l'état du compte.
- */
-export function estCompte(session: SessionCompte | null): session is SessionCompte {
-  return session !== null && !session.anonyme;
-}
-
-/**
- * Le porteur est-il une identité anonyme ? `is_anonymous` est le drapeau de Supabase ; un
- * jeton qui ne le porte pas et qui n'a pas de courriel vient d'un anonyme (un compte a
- * toujours une adresse : Google ou courriel + mot de passe).
- */
-function estAnonyme(user: { email?: string | null; is_anonymous?: boolean }): boolean {
-  if (typeof user.is_anonymous === 'boolean') return user.is_anonymous;
-  return !user.email;
-}
-
-/**
  * Le sous-ensemble du client Supabase dont ce module a besoin. Structurel, comme
  * `AppareilAnonyme` : un faux client à quelques méthodes rend ces fonctions éprouvables
  * sans réseau.
@@ -242,7 +224,9 @@ export async function lireMonCompte(
   const user = data.session?.user;
   if (!user) return { session: null, compte: null, erreur: null };
 
-  const session = { id: user.id, courriel: user.email ?? '', anonyme: estAnonyme(user) };
+  // `is_anonymous` est le drapeau de Supabase ; un jeton qui ne le porte pas et qui n'a pas
+  // de courriel vient d'un anonyme (un compte a toujours une adresse).
+  const session = { id: user.id, courriel: user.email ?? '', anonyme: user.is_anonymous ?? !user.email };
   const { data: lignes, error } = await client.from('comptes').select('*').eq('id', user.id);
   if (error) {
     return {

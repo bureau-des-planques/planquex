@@ -24,7 +24,6 @@
  */
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { estCompte } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 
 export function GardeComptes({ children }: { children: ReactNode }) {
@@ -51,7 +50,7 @@ export function GardeComptes({ children }: { children: ReactNode }) {
   }
 
   // Pas de session, ou une **identité anonyme** : ce n'est pas un compte (D-156 (2)).
-  if (!estCompte(session)) {
+  if (!session || session.anonyme) {
     return <Navigate to="/connexion" replace state={{ depuis: `${pathname}${search}` }} />;
   }
 
