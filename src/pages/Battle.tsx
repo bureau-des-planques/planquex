@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  Activity,
   ArrowLeft,
   BookOpen,
   ClipboardPaste,
@@ -474,7 +475,15 @@ function ActionButton({
       {view.icon === 'swords' && <Swords size={16} />}
       <span>{view.label}</span>
       {view.cafes && <CafePips symbols={view.cafes} />}
-      {view.damage !== undefined && <span className="attack__dmg">{view.damage}</span>}
+      {/* Le dégât se **lit** « 20 de Stress » : un nombre nu ne dit rien à un lecteur d'écran (WCAG, nom, rôle, valeur). */}
+      {view.damage !== undefined && (
+        <>
+          <span className="attack__dmg" aria-hidden="true">
+            {view.damage}
+          </span>
+          <span className="sr-only">, {view.damage} de Stress</span>
+        </>
+      )}
       {/* Un espace entre le libellé et le détail : le nom accessible dit « Rotation vers … », pas
           « Rotationvers … » (#455). Il est invisible en `flex`. */}
       {view.detail && (
@@ -1021,7 +1030,8 @@ export function Battle() {
     aMoi: myMove,
     poste: myCard,
     dejaPortee: mySide.hasAttacked,
-    enPortee: inReach
+    enPortee: inReach,
+    statuts: mySide.active?.statuses
   });
 
   /**
@@ -1044,6 +1054,15 @@ export function Battle() {
    * sous le doigt. La marge basse de `.pose` laisse la barre de navigation à sa place.
    */
   const poseRef = useRef<HTMLElement | null>(null);
+  /**
+   * **Le focus ne tombe pas sur `body` après un coup** (WCAG, ordre du focus). Le geste joué fait disparaître le
+   * bouton qui avait le focus (la Pression, un geste de la pose, la sélection vidée) : le clavier
+   * repartait du haut de la page. Quand le focus était dans le combat et qu'il n'a plus de place,
+   * il revient sur la barre d'action — le point stable de l'écran. Un focus parti ailleurs (un
+   * autre onglet de l'application, un champ) n'est jamais repris.
+   */
+  const barreRef = useRef<HTMLElement | null>(null);
+  const focusDansLeCombat = useRef(false);
   useEffect(() => {
     if (!selectedUid) return;
     poseRef.current?.scrollIntoView({ behavior: comportementDeDefilement(), block: 'nearest' });
@@ -1122,6 +1141,11 @@ export function Battle() {
       if (event.key !== 'i' && event.key !== 'I') return;
       if ((event.ctrlKey || event.metaKey) && event.shiftKey) return;
       if (dansUnChampDeSaisie(event.target)) return;
+      // Un dialogue **modal** ouvert (Confirmation, Conditions, Règles) : la bascule changerait le
+      // plateau derrière lui, sans retour visible. Base UI ne pose pas `aria-modal` : le modal se
+      // reconnaît à son `data-slot` (`ui/dialog.tsx`) ; le panneau de l'inspecteur, non modal
+      // (`dialog-panneau`), laisse le raccourci agir.
+      if (document.querySelector('[data-slot="dialog-content"], [role="alertdialog"]')) return;
       event.preventDefault();
       basculerCombatDetaille();
     };
@@ -1506,8 +1530,22 @@ export function Battle() {
     </div>
   );
 
+  useEffect(() => {
+    const actif = document.activeElement;
+    if (focusDansLeCombat.current && (actif === null || actif === document.body)) {
+      barreRef.current?.focus({ preventScroll: true });
+    }
+  }, [state]);
+
   return (
     <div
+      onFocusCapture={() => {
+        focusDansLeCombat.current = true;
+      }}
+      onBlurCapture={(evenement) => {
+        const suivant = evenement.relatedTarget as Node | null;
+        if (suivant && !evenement.currentTarget.contains(suivant)) focusDansLeCombat.current = false;
+      }}
       className={`page battle battle--${combatDetaille ? 'detaille' : 'sobre'}${
         pasAPas.ouvert ? ' battle--pas-a-pas' : ''
       }${sansMouvement ? ' battle--mouvement-reduit' : ''}`}
@@ -1540,7 +1578,9 @@ export function Battle() {
         </Link>
         <div className="battle__title">
           <h1>Combat</h1>
-          <p className="muted">
+          {/* `aria-live` : la ligne change au changement de tour et de camp, et un lecteur d'écran
+              l'entend alors (WCAG, messages d’état) ; le moteur ne journalise pas les tours. */}
+          <p className="muted" aria-live="polite">
             Tour {state.turn} · {match ? campLine(state, match) : libelleDuTour(state)}
           </p>
           {partieReprise && (
@@ -1565,7 +1605,10 @@ export function Battle() {
               <button type="button" className="battle__conditions" data-pas-a-pas={pasAPas.designe('conditions')} />
             }
           >
-            Conditions
+            {/* Sous 400 px, le libellé se cache (il reste le nom accessible) et l'icône tient la place :
+                « Tour N · à toi » ne se coupait plus qu'au profit de ce bouton (relecture du combat). */}
+            <Activity className="battle__conditions-icone" size={18} aria-hidden="true" />
+            <span className="battle__conditions-libelle">Conditions</span>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -1690,7 +1733,9 @@ export function Battle() {
       )}
 
       {state.phase === 'ended' && (
-        <p className={`notice ${state.winner === myCamp ? 'notice--ok' : 'notice--warn'}`}>
+        // `role="alert"` : le verdict est annoncé à son apparition (WCAG, messages d’état) ; il n'était porté que
+        // par un son.
+        <p className={`notice ${state.winner === myCamp ? 'notice--ok' : 'notice--warn'}`} role="alert">
           {endBanner(state, match ? myCamp : null)}
         </p>
       )}
@@ -1928,11 +1973,22 @@ export function Battle() {
                 14 px (mesuré le 28/10/2026). La marge protège le pouce, l'inset est cosmétique —
                 c'est la marge qui gagne, et la règle se tait ici plutôt que de rougir une fois sur deux. */}
           <section
+            ref={barreRef}
+            tabIndex={-1}
+            /* Une Pression jouable : « Fin du tour » cède le plein à la Pression (feuille de styles). */
+            data-pression-jouable={myMove && pressions.length > 0 ? 'true' : undefined}
             className="combat-barre"
             aria-label="Actions du tour"
             data-impeccable-ignore="cramped-padding"
             data-pas-a-pas={pasAPas.designe('poste-actions')}
           >
+            {/* **L'annonce du coup** (WCAG, messages d’état) : une zone **persistante** — jamais re-montée, sinon un
+                lecteur d'écran ne l'entend pas changer — qui reçoit la dernière ligne du journal. La
+                ligne visible, elle, est re-montée à chaque coup pour son entrée animée : elle ne peut
+                pas porter l'annonce. En fin de partie, c'est le bandeau du haut qui parle (`alert`). */}
+            <p className="sr-only" aria-live="polite" data-testid="annonce-du-coup">
+              {state.phase === 'ended' ? '' : lastLog}
+            </p>
             {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
                 qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
                 information temporaire n'a pas à occuper une bande de plus. */}
@@ -1946,13 +2002,15 @@ export function Battle() {
                 <div className="combat-barre__texte">
                   {lastLog && (
                     <AnimatePresence mode="popLayout" initial={false}>
+                      {/* Sous « Mouvement réduit », la ligne change sans glisser ni rebondir : le
+                          réglage ne coupait que le CSS, framer-motion ne le lisait pas. */}
                       <motion.p
                         key={state.log.length}
                         className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
-                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                        initial={sansMouvement ? false : { opacity: 0, y: -10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 6 }}
-                        transition={{ type: 'spring', stiffness: 320, damping: 26 }}
+                        exit={sansMouvement ? undefined : { opacity: 0, y: 6 }}
+                        transition={sansMouvement ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 26 }}
                       >
                         {lastLog}
                       </motion.p>
@@ -2067,6 +2125,17 @@ export function Battle() {
                   </>
                 )}
               </p>
+            )}
+            {/* **Rejouer, là où l'œil cherche l'action** (relecture du combat, 30/10/2026) : en fin de
+                partie, la barre n'offrait qu'une phrase, et « Nouveau combat » vivait dans `⋯`. Le
+                bandeau du haut garde le verdict ; D-030 n'écarte que l'écran plein de victoire, pas un
+                bouton. Une partie finie n'a rien à perdre : le geste est direct. */}
+            {state.phase === 'ended' && (
+              <div className="combat-barre__gestes">
+                <button type="button" className="button button--primary" onClick={demanderNouveauCombat}>
+                  <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
+                </button>
+              </div>
             )}
           </section>
         </div>

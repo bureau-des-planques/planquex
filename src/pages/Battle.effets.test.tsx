@@ -141,3 +141,50 @@ describe('Battle — la carte de main soulevée et son repli (T11, #294)', () =>
     expect(await screen.findByRole('dialog')).toHaveAccessibleName(nom);
   });
 });
+
+describe('Battle — le bouton de Pression se lit en entier (4.1.2)', () => {
+  afterEach(cleanup);
+
+  it('son nom dit le dégât « de Stress », pas un nombre nu (le contrôle mord : le chiffre visible est caché aux lecteurs)', () => {
+    const { partie, nom } = partieOuLaPressionFait(faitCraquer);
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const bouton = screen.getByRole('button', { name: new RegExp(nom) });
+    expect(bouton).toHaveAccessibleName(new RegExp(`${nom}.*\\d+ de Stress`));
+    expect(bouton.querySelector('.attack__dmg')).toHaveAttribute('aria-hidden', 'true');
+  });
+});
+
+describe('Battle — le focus après une Pression (2.4.3)', () => {
+  afterEach(cleanup);
+
+  it('le bouton de la Pression disparaît : le focus revient sur la barre, pas sur `body`', async () => {
+    const { partie, nom } = partieOuLaPressionFait(faitCraquer);
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+
+    const bouton = screen.getByRole('button', { name: new RegExp(nom) });
+    bouton.focus();
+    fireEvent.click(bouton);
+
+    await waitFor(() => expect(bouton.isConnected).toBe(false));
+    await waitFor(() => expect(document.activeElement).not.toBe(document.body));
+    expect(screen.getByRole('region', { name: 'Actions du tour' }).contains(document.activeElement)).toBe(true);
+  });
+});
+
+describe('Battle — un seul bouton plein quand une Pression est jouable', () => {
+  afterEach(cleanup);
+
+  it('la barre le signale à la feuille de styles, et « Fin du tour » garde sa place (le contrôle mord : sans Pression, pas de marque)', () => {
+    const { partie, nom } = partieOuLaPressionFait(faitCraquer);
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(barre).toHaveAttribute('data-pression-jouable', 'true');
+    expect(screen.getByRole('button', { name: new RegExp(nom) })).toHaveClass('button--primary');
+    expect(screen.getByRole('button', { name: 'Fin du tour' })).toHaveClass('button--fin', 'is-a-toi');
+    cleanup();
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    expect(screen.getByRole('region', { name: 'Actions du tour' })).not.toHaveAttribute('data-pression-jouable');
+  });
+});
