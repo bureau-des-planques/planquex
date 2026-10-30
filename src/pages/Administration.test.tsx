@@ -110,7 +110,7 @@ function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
   useComptes.setState({
     configure: true,
     chargement: false,
-    session: { id: ADMIN.id, courriel: ADMIN.courriel },
+    session: { id: ADMIN.id, courriel: ADMIN.courriel, anonyme: false },
     compte: ADMIN,
     erreur: null,
     ...actions(),
@@ -145,7 +145,7 @@ afterEach(cleanup);
 
 describe('la route n’est pas ouverte à un compte non administrateur', () => {
   it('l’écran refuse, et la liste n’est même pas demandée', () => {
-    poser({ compte: { ...APPROUVE }, session: { id: APPROUVE.id, courriel: APPROUVE.courriel } });
+    poser({ compte: { ...APPROUVE }, session: { id: APPROUVE.id, courriel: APPROUVE.courriel, anonyme: false } });
     rendre();
 
     expect(screen.getByRole('heading', { level: 1, name: /Réservé à l’administration/ })).toBeInTheDocument();
@@ -154,7 +154,7 @@ describe('la route n’est pas ouverte à un compte non administrateur', () => {
   });
 
   it('la route /administration, atteinte par l’adresse, refuse aussi', async () => {
-    poser({ compte: { ...APPROUVE }, session: { id: APPROUVE.id, courriel: APPROUVE.courriel } });
+    poser({ compte: { ...APPROUVE }, session: { id: APPROUVE.id, courriel: APPROUVE.courriel, anonyme: false } });
 
     await rendreApplication({ chemin: '/administration' });
 

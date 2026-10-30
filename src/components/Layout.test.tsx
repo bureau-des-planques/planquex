@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Layout } from './Layout';
 import { setupTestStore } from '@/test/test-utils';
+import { useComptes } from '@/store/comptes';
 
 /**
  * Le compteur « choses à voir » du comité (#212). La **couture réseau** est mockée — comme
@@ -157,6 +158,23 @@ describe('Layout — la barre à cinq onglets (#213, D-097 (4))', () => {
  * c'est la page qui vient de les voir.
  */
 describe('Layout — le compteur du comité (#212, D-097 (5))', () => {
+  /**
+   * Depuis D-156 (#527), le compteur ne lit que pour un **compte** : un visiteur sans compte
+   * n'obtient plus d'identité anonyme pour une pastille. On pose donc un compte connecté.
+   */
+  beforeEach(() => {
+    useComptes.setState({
+      session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+      compte: null,
+      chargement: false,
+      erreur: null
+    });
+  });
+
+  afterEach(() => {
+    useComptes.setState({ session: null, compte: null });
+  });
+
   function barre() {
     return screen.getByRole('navigation', { name: 'Navigation principale' });
   }
@@ -187,6 +205,15 @@ describe('Layout — le compteur du comité (#212, D-097 (5))', () => {
     expect(within(barre()).getByRole('link', { name: 'Comité' })).toBeInTheDocument();
     expect(within(barre()).queryByText('0')).toBeNull();
     expect(screen.queryByRole('link', { name: ALERTE })).toBeNull();
+  });
+
+  it('sans compte connecté, rien n’est compté — et rien n’est signé (#527, D-156)', async () => {
+    mocks.murEstConfigure.mockReturnValue(true);
+    useComptes.setState({ session: null });
+    monter('/sain');
+
+    expect(within(barre()).getByRole('link', { name: 'Comité' })).toBeInTheDocument();
+    expect(mocks.compter).not.toHaveBeenCalled();
   });
 
   it('sans base, rien n’est compté et rien ne s’affiche (repli inerte)', () => {

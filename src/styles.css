@@ -3049,7 +3049,7 @@ h2 {
      et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur.
      Le Poste revient aux **88 px de D-094 (1)** (#218) : 8 px de large valent ~22 px de haut sur les
      deux camps, et le rapport de 1,57 avec le Banc est celui que la décision a acté.
-     **D-156 (30/10/2026)** : la barre de navigation n'est plus rendue en combat (#275) et l'écran
+     **D-157 (30/10/2026)** : la barre de navigation n'est plus rendue en combat (#275) et l'écran
      laissait ~160 px de feutre vide en bas à 420 × 900 ; le Poste passe à 96 px et le Banc à 64 px
      (rapport 1,5, dans la fourchette de #188), la garde de `capturer` décidant toujours. */
   --poste-w: 6rem;
@@ -3584,7 +3584,7 @@ h2 {
 
 /* Le nom au Banc : deux lignes, jamais trois — une troisième ligne ne montre qu'une syllabe. Mieux
    vaut une ellipse qu'un mot amputé. #201 : à 56 px, la place ne permettait pas `--fs-xs` ; depuis
-   D-156 le Banc fait 64 px à 420 × 900, et la taille **suit la largeur** — `--fs-xs` (11,2 px) à
+   D-157 le Banc fait 64 px à 420 × 900, et la taille **suit la largeur** — `--fs-xs` (11,2 px) à
    64 px et plus, le plancher `--fs-2xs` sur les écrans courts où le Banc redescend à 52 px. La dette
    « nom du Banc sous le plancher de lecture » (`DESIGN.md` §1.6) est close à la référence. Le nom
    n'est plus en capitales depuis la refonte du 28/10/2026 : la césure de la langue suffit (#200). */
@@ -3775,7 +3775,7 @@ h2 {
 
 /* La piste d'Interventions : six hexagones, trois par camp, remplis dans l'ordre ; l'or pour
    ceux qui sont acquis (l'or répond à celui du COMEX). Posés sur le feutre, sans fond. */
-/* Les deux trios se tiennent **autour de l'axe central**, plus aux deux bords (D-157, #520) : la
+/* Les deux trios se tiennent **autour de l'axe central**, plus aux deux bords (D-158, #520) : la
    condition de victoire se lit d'un coup d'œil, et sur PC les trios n'étaient plus à 600 px l'un de
    l'autre. */
 .piste {
@@ -4177,7 +4177,7 @@ h2 {
      ligne de l'écran. Les noms longs s'y replient sur deux ou trois lignes, et la fiche « Carte
      choisie » les redonne entiers au toucher. Elle reste plus étroite que le Poste, 5,5 rem (R4).
      Le conteneur est assez haut pour la carte entière et son inclinaison : rien n'est rogné en bas,
-     le Seuil reste visible. D-156 (30/10/2026) : 72 px, sur la place que la barre de navigation a
+     le Seuil reste visible. D-157 (30/10/2026) : 72 px, sur la place que la barre de navigation a
      rendue en combat. */
   --carte-w: 4.5rem;
   /* Le pas : deux cartes ne se chevauchent pas quand la largeur le permet (leurs noms restent lisibles),
@@ -4289,7 +4289,7 @@ h2 {
 
 /* **Le nom de la carte de main à 64 px** (#233) : la césure manuelle du plateau coupait
    « VISITE MÉDICAL E » et « PRÉVENT EUR » en plein mot, et « TROUSSE DE SECOURS » sortait en
-   ellipse. Le chiffre de la carte (4,5 rem depuis D-156) ne bouge pas ici ; c'est la place du nom qui change :
+   ellipse. Le chiffre de la carte (4,5 rem depuis D-157) ne bouge pas ici ; c'est la place du nom qui change :
    la césure **automatique de la langue** (`lang="fr"`, `index.html`) fait des coupures
    marquées d'un trait d'union (« MÉDI-CALE », « PRÉVEN-TEUR »), et la barre de nom du
    **plateau** de la main cède ses marges latérales (0,22 → 0,1 rem, +4 px) pour que
@@ -4677,7 +4677,7 @@ h2 {
   }
 }
 
-/* Le journal dans la console (D-157, #520) : sur écran large, il occupe la place laissée sous la
+/* Le journal dans la console (D-158, #520) : sur écran large, il occupe la place laissée sous la
    barre d'action et défile en lui-même. Il n'est rendu qu'à partir de 900 px (`useEcranLarge`). */
 /* Le conteneur n'a **pas de cadre** : la liste `.log` porte déjà le sien, et deux cadres l'un dans
    l'autre sont une carte dans une carte (le détecteur d'UI le refuse, `nested-cards`). */
@@ -4713,9 +4713,9 @@ h2 {
     max-width: 1360px;
   }
 
-  /* **D-157 (30/10/2026, #520)** : les plafonds montent — Poste 11 rem, Banc 7 rem, carte de main
+  /* **D-158 (30/10/2026, #520)** : les plafonds montent — Poste 11 rem, Banc 7 rem, carte de main
      8 rem. À 1920 × 1080, le Poste voulait 190 px et restait bloqué à 136 : le combat s'arrêtait à
-     712 px de haut sur un écran de 1 080. Les planchers sont ceux de D-156. */
+     712 px de haut sur un écran de 1 080. Les planchers sont ceux de D-157. */
   .board__zone {
     --poste-w: clamp(6rem, calc((100dvh - 15rem) / 4.4), 11rem);
     --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 7rem);

@@ -837,7 +837,7 @@ function endBanner(state: BattleState, myCamp: PlayerId | null): string {
 }
 
 /**
- * L'écran est-il assez large pour que la console porte le journal (D-157, #520) ? Vrai seulement
+ * L'écran est-il assez large pour que la console porte le journal (D-158, #520) ? Vrai seulement
  * si `matchMedia` existe et que `ECRAN_LARGE` correspond. Sans `matchMedia` (jsdom), faux : les
  * tests existants ne doivent pas voir le journal en double, et le journal reste dans `⋯`.
  */
@@ -2187,7 +2187,7 @@ export function Battle() {
               </div>
             )}
           </section>
-          {/* Le journal dans la console (D-157, #520) : la console était vide sous la barre d'action
+          {/* Le journal dans la console (D-158, #520) : la console était vide sous la barre d'action
               sur écran large. Le journal reste aussi dans `⋯`. Pas d'`aria-live` : l'annonce du
               coup a déjà sa zone. */}
           {ecranLarge && (

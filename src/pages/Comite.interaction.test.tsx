@@ -115,7 +115,7 @@ function poserCompte(etat: Partial<Compte> | null = null) {
   useComptes.setState({
     configure: etat !== null,
     chargement: false,
-    session: etat ? { id: 'compte-a', courriel: 'a@exemple.test' } : null,
+    session: etat ? { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false } : null,
     compte: etat ? { ...COMPTE, ...etat } : null,
     erreur: null,
     rafraichir: vi.fn(async () => {}),

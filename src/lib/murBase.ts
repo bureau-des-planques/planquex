@@ -21,7 +21,7 @@
  * fait lire le fichier avec la notice de la panne : c'est le port qui décide de ce repli
  * (`creerMur(adaptateur, { secours })`), jamais la page (D-058).
  */
-import { clientMur, identiteAppareil, type ClientMur } from '@/lib/supabase';
+import { clientMur, identiteSession, type ClientMur } from '@/lib/supabase';
 import { adaptateurFichier, resoudreAdaptateur } from '@/lib/murAdaptateurs';
 import { creerMur, estEntier, estObjet, type PortMur } from '@/lib/mur';
 
@@ -196,7 +196,7 @@ export async function chargerCommentaires(
   const client = await chargerClient();
   if (!client) return [];
 
-  const identite = await identiteAppareil(chargerClient);
+  const identite = await identiteSession(chargerClient);
   if (!identite) throw new Error('Aucune session : la base refuse la lecture des commentaires.');
 
   const { data, error } = await client
@@ -224,7 +224,7 @@ export async function commenterPostit(
   const client = await chargerClient();
   if (!client) throw new Error('Le mur n’est pas configuré : on ne commente pas.');
 
-  const identite = await identiteAppareil(chargerClient);
+  const identite = await identiteSession(chargerClient);
   if (!identite) throw new Error('Aucune session : le commentaire ne peut pas être signé.');
 
   const { data, error } = await client
@@ -257,7 +257,7 @@ export async function supprimerCommentaire(
   const client = await chargerClient();
   if (!client) throw new Error('Le mur n’est pas configuré : on ne retire pas de commentaire.');
 
-  const identite = await identiteAppareil(chargerClient);
+  const identite = await identiteSession(chargerClient);
   if (!identite) throw new Error('Aucune session : le retrait ne peut pas être signé.');
 
   const { data, error } = await client.from('commentaires').delete().eq('id', id).eq('auteur', identite).select('id');
@@ -401,7 +401,7 @@ export async function compterChosesAVoir(
   const client = await chargerClient();
   if (!client) return null;
 
-  const identite = await identiteAppareil(chargerClient);
+  const identite = await identiteSession(chargerClient);
   if (!identite) throw new Error('Aucune session : la base refuse de compter le comité.');
 
   const { data: comptes, error: erreurRepere } = await client.from('comptes').select('vu_le').eq('id', identite);
