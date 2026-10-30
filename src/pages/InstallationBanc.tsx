@@ -151,7 +151,7 @@ export default function InstallationBanc({
   if (!allume) {
     const texte = dejaInstalle ? LIGNES_ALLUMAGE_COURT : LIGNES_ALLUMAGE;
     return (
-      <div className="page installation">
+      <div className="page page--nue installation">
         <RetourEcran vers="/" libelle="Retour au bureau" />
         <section className="section panel" aria-busy="true" aria-live="polite">
           <p className="eyebrow text-gold-soft">Mise sous tension</p>
@@ -172,7 +172,7 @@ export default function InstallationBanc({
   }
 
   return (
-    <div className="page installation">
+    <div className="page page--nue installation">
       <RetourEcran vers="/" libelle="Retour au bureau" />
 
       <section className="section panel">

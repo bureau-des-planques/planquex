@@ -9,6 +9,14 @@ import type { Compte } from '@/lib/comptes';
 import type { Profil } from '@/lib/profil';
 import { Connexion } from './Connexion';
 
+// La récupération vit dans `@/lib/recuperation` (module à part, D-159) : on l'isole ici pour
+// vérifier le geste, pas le réseau.
+const { recuperationMotDePasse, changerMotDePasse } = vi.hoisted(() => ({
+  recuperationMotDePasse: vi.fn(async (_courriel: string, _options?: unknown) => {}),
+  changerMotDePasse: vi.fn(async (_motDePasse: string) => {})
+}));
+vi.mock('@/lib/recuperation', () => ({ recuperationMotDePasse, changerMotDePasse }));
+
 /**
  * L'écran de connexion (D-088, #181).
  *
@@ -43,8 +51,6 @@ const actions = () => ({
     })
   ),
   connecterGoogle: vi.fn(async (_redirectTo?: string): Promise<string | null> => null),
-  recuperer: vi.fn(async (_courriel: string): Promise<string | null> => null),
-  changerMotDePasse: vi.fn(async (_motDePasse: string): Promise<string | null> => null),
   deconnecter: vi.fn(async () => {})
 });
 
@@ -353,6 +359,11 @@ describe('le parcours de première connexion (revue du 30/10/2026)', () => {
  * lien des testeurs, visible par quelqu'un qui n'est pas encore entré.
  */
 describe('les secours de l’entrée (D-159)', () => {
+  beforeEach(() => {
+    recuperationMotDePasse.mockClear();
+    changerMotDePasse.mockClear();
+  });
+
   afterEach(() => {
     window.history.replaceState(null, '', '/');
     vi.unstubAllEnvs();
@@ -371,7 +382,11 @@ describe('les secours de l’entrée (D-159)', () => {
     fireEvent.change(screen.getByLabelText(/Courriel/), { target: { value: 'a@exemple.test' } });
     fireEvent.click(screen.getByRole('button', { name: 'Recevoir un lien' }));
 
-    await waitFor(() => expect(etat.recuperer).toHaveBeenCalledWith('a@exemple.test'));
+    await waitFor(() =>
+      expect(recuperationMotDePasse).toHaveBeenCalledWith('a@exemple.test', {
+        redirectTo: expect.stringMatching(/\/connexion$/)
+      })
+    );
     expect(await screen.findByRole('status')).toHaveTextContent(/si cette adresse a un compte/i);
   });
 
@@ -391,7 +406,7 @@ describe('les secours de l’entrée (D-159)', () => {
 
     fireEvent.change(screen.getByLabelText(/^Mot de passe/), { target: { value: 'nouveau1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Changer mon mot de passe' }));
-    await waitFor(() => expect(etat.changerMotDePasse).toHaveBeenCalledWith('nouveau1'));
+    await waitFor(() => expect(changerMotDePasse).toHaveBeenCalledWith('nouveau1'));
   });
 
   it('le lien des testeurs s’affiche sur la connexion, en nouvel onglet', () => {

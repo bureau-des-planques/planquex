@@ -130,7 +130,7 @@ export function FeuilleDeRoute({ features = FEATURES_PREVUES }: { features?: Fea
   const { courante, precedentes } = notesAffichees(APP_VERSION);
 
   return (
-    <div className="page feuille-de-route">
+    <div className="page page--nue feuille-de-route">
       <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Feuille de route</h1>

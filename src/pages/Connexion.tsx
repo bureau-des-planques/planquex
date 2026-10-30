@@ -30,6 +30,7 @@ import { RetourEcran } from '@/components/RetourEcran';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { ParcoursProfil } from '@/components/ParcoursProfil';
 import { estApprouve } from '@/lib/comptes';
+import { changerMotDePasse, recuperationMotDePasse } from '@/lib/recuperation';
 import { etapeDuProfil } from '@/lib/profil';
 import { fonctionProfil } from '@/game/intitule';
 import { useComptes } from '@/store/comptes';
@@ -58,8 +59,7 @@ export function Connexion() {
   const connecterCourriel = useComptes((state) => state.connecterCourriel);
   const inscrireCourriel = useComptes((state) => state.inscrireCourriel);
   const connecterGoogle = useComptes((state) => state.connecterGoogle);
-  const recuperer = useComptes((state) => state.recuperer);
-  const changerMotDePasse = useComptes((state) => state.changerMotDePasse);
+
   const profil = useProfil((state) => state.profil);
   const profilCharge = useProfil((state) => state.charge);
   const lectureEchouee = useProfil((state) => state.lectureEchouee);
@@ -73,6 +73,9 @@ export function Connexion() {
   const [motDePasse, setMotDePasse] = useState('');
   const [message, setMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
   const [nouveau, setNouveau] = useState('');
+  // Les deux gestes de récupération vivent hors du store (module à part, D-159) : leur attente
+  // se tient donc ici.
+  const [envoi, setEnvoi] = useState(false);
   // Le lien de récupération **connecte** : tant qu'il n'a pas servi, on ne renvoie pas le
   // testeur vers le bureau — il choisirait son mot de passe dans le vide (D-159).
   const [recuperation, setRecuperation] = useState(lienDeRecuperation);
@@ -132,10 +135,14 @@ export function Connexion() {
   const demanderLien = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
-    const refus = await recuperer(courriel);
-    if (refus) {
-      setMessage({ ton: 'ko', texte: refus });
+    setEnvoi(true);
+    try {
+      await recuperationMotDePasse(courriel, { redirectTo: `${window.location.origin}/connexion` });
+    } catch (refus) {
+      setMessage({ ton: 'ko', texte: refus instanceof Error ? refus.message : String(refus) });
       return;
+    } finally {
+      setEnvoi(false);
     }
     setMessage({
       ton: 'ok',
@@ -147,10 +154,14 @@ export function Connexion() {
   const poserMotDePasse = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage(null);
-    const refus = await changerMotDePasse(nouveau);
-    if (refus) {
-      setMessage({ ton: 'ko', texte: refus });
+    setEnvoi(true);
+    try {
+      await changerMotDePasse(nouveau);
+    } catch (refus) {
+      setMessage({ ton: 'ko', texte: refus instanceof Error ? refus.message : String(refus) });
       return;
+    } finally {
+      setEnvoi(false);
     }
     setNouveau('');
     setRecuperation(false);
@@ -163,7 +174,7 @@ export function Connexion() {
   // renvoyer qui que ce soit vers le bureau (D-159).
   if (recuperation && session) {
     return (
-      <div className="page">
+      <div className="page page--nue">
         <section className="section">
           <h1>Un nouveau mot de passe</h1>
           <p className="muted max-w-[64ch]">
@@ -191,8 +202,8 @@ export function Connexion() {
               C’est ce mot de passe qui rouvrira la porte la prochaine fois.
             </p>
             <div className="actions actions--tight">
-              <button type="submit" className="button button--primary" disabled={chargement || nouveau.length < 6}>
-                {chargement ? 'Patiente…' : 'Changer mon mot de passe'}
+              <button type="submit" className="button button--primary" disabled={envoi || nouveau.length < 6}>
+                {envoi ? 'Patiente…' : 'Changer mon mot de passe'}
               </button>
             </div>
           </form>
@@ -213,7 +224,7 @@ export function Connexion() {
 
   if (!configure) {
     return (
-      <div className="page">
+      <div className="page page--nue">
         <section className="section panel">
           <h1>Pas de compte sans base</h1>
           <p className="muted max-w-[62ch]">
@@ -228,7 +239,7 @@ export function Connexion() {
 
   if (chargement && !session) {
     return (
-      <div className="page">
+      <div className="page page--nue">
         <RetourEcran vers="/" libelle="Retour au bureau" />
         <section className="section panel">
           <h1>Connexion</h1>
@@ -242,7 +253,7 @@ export function Connexion() {
 
   if (session && compte && !profilCharge) {
     return (
-      <div className="page">
+      <div className="page page--nue">
         <section className="section panel">
           <h1>Connexion</h1>
           <p className="m-0 text-md text-ink-muted" role="status">
@@ -257,7 +268,7 @@ export function Connexion() {
   // deux issues — réessayer, ou se déconnecter — au lieu de renvoyer au pseudo.
   if (profilIllisible && compte) {
     return (
-      <div className="page">
+      <div className="page page--nue">
         <section className="section panel" aria-labelledby="profil-erreur">
           <h1 id="profil-erreur">Ton profil n’a pas pu être lu</h1>
           <p className="muted max-w-[64ch]">
@@ -284,7 +295,7 @@ export function Connexion() {
   // Un compte refusé n'entre pas dans le parcours : il part vers la page qui dit pourquoi.
   if (session && compte && refuse) {
     return (
-      <div className="page">
+      <div className="page page--nue">
         <section className="section panel">
           <h1>Ton compte est refusé</h1>
           <p className="m-0 text-md text-ink-muted" role="status">
@@ -297,7 +308,7 @@ export function Connexion() {
 
   if (parcoursEnCours && compte) {
     return (
-      <div className="page">
+      <div className="page page--nue">
         <section className="section">
           <h1>Bienvenue dans le bureau</h1>
           <p className="muted max-w-[64ch]">
@@ -321,7 +332,7 @@ export function Connexion() {
     };
 
     return (
-      <div className="page">
+      <div className="page page--nue">
         <section className="section">
           <h1>Bienvenue, {profil.pseudo}</h1>
           <p className="muted max-w-[64ch]">
@@ -382,7 +393,7 @@ export function Connexion() {
   };
 
   return (
-    <div className="page">
+    <div className="page page--nue">
       <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section">
         <h1>Entrer dans l’alpha</h1>
@@ -417,8 +428,8 @@ export function Connexion() {
                 />
               </label>
               <div className="actions actions--tight">
-                <button type="submit" className="button button--primary" disabled={chargement || !courriel.trim()}>
-                  {chargement ? 'Patiente…' : 'Recevoir un lien'}
+                <button type="submit" className="button button--primary" disabled={envoi || !courriel.trim()}>
+                  {envoi ? 'Patiente…' : 'Recevoir un lien'}
                 </button>
               </div>
             </form>

@@ -132,7 +132,7 @@ function Bloc({ rubrique }: { rubrique: Rubrique }) {
 
 export function Confidentialite() {
   return (
-    <div className="page">
+    <div className="page page--nue">
       <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Confidentialité</h1>

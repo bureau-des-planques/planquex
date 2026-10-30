@@ -114,7 +114,7 @@ export function Installation() {
   });
 
   return (
-    <div className="page installation">
+    <div className="page page--nue installation">
       <RetourEcran vers="/" libelle="Retour au bureau" />
       <section className="section panel">
         <h1 className="m-0 font-heading text-[1.5rem] font-bold">Installer le jeu</h1>

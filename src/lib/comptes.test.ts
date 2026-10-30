@@ -8,8 +8,6 @@ import {
   deconnexion,
   estApprouve,
   inscriptionCourriel,
-  changerMotDePasse,
-  recuperationMotDePasse,
   libelleEtat,
   lireCompte,
   lireMonCompte,
@@ -302,39 +300,6 @@ describe('se connecter, s’inscrire, se déconnecter', () => {
     await deconnexion(faux.charger);
     expect(faux.signOut).toHaveBeenCalledTimes(1);
     await expect(deconnexion(async () => null)).resolves.toBeUndefined();
-  });
-});
-
-describe('le mot de passe oublié (D-159)', () => {
-  it('le lien part vers l’adresse de retour, sans dire si le compte existe', async () => {
-    const faux = fauxClient();
-    await recuperationMotDePasse('  a@exemple.test ', {
-      chargerClient: faux.charger,
-      redirectTo: 'https://planquex.4k7.org/connexion'
-    });
-    expect(faux.resetPasswordForEmail).toHaveBeenCalledWith('a@exemple.test', {
-      redirectTo: 'https://planquex.4k7.org/connexion'
-    });
-  });
-
-  it('sans configuration, il n’y a pas de lien à envoyer', async () => {
-    await expect(recuperationMotDePasse('a@exemple.test', { chargerClient: async () => null })).rejects.toThrow(
-      /pas configuré/
-    );
-  });
-
-  it('une limitation de débit se dit en français, sans le code anglais', async () => {
-    const faux = fauxClient();
-    faux.resetPasswordForEmail.mockResolvedValueOnce({ error: { message: 'Email rate limit exceeded' } });
-    await expect(recuperationMotDePasse('a@exemple.test', { chargerClient: faux.charger })).rejects.toThrow(
-      /Trop de demandes/
-    );
-  });
-
-  it('le nouveau mot de passe passe par `updateUser`', async () => {
-    const faux = fauxClient();
-    await changerMotDePasse('nouveau1', faux.charger);
-    expect(faux.updateUser).toHaveBeenCalledWith({ password: 'nouveau1' });
   });
 });
 

@@ -278,11 +278,15 @@ h2 {
   padding: 0 max(1rem, env(safe-area-inset-right)) 5.5rem max(1rem, env(safe-area-inset-left));
 }
 
-/* Les écrans **hors du `Layout`** portent la même coquille que le reste du jeu (revue du 30/10/2026) : sans
-   elle, le panneau de la connexion commençait au pixel 0 et s'étalait sur 1280 px au PC. Pas de
-   barre du bas sur ces pages : leur rembourrage de pied est plus court que celui du jeu. */
-.app-shell--nue {
-  padding-bottom: 2.5rem;
+/* Les écrans **hors du `Layout`** (connexion, confidentialité, feuille de route, installation)
+   portent la coquille du jeu sans en porter le composant (`revue du 30/10/2026`) : sans elle, leur
+   panneau commençait au pixel 0 et s'étalait sur 1280 px au PC. Une classe et non une route
+   d'enveloppe : le paquet principal a un cliquet, et un écran ne paie pas ce qu'il n'affiche pas.
+   Pas de barre du bas ici, donc un rembourrage de pied plus court que celui du jeu. */
+.page--nue {
+  margin: 0 auto;
+  max-width: var(--shell-max);
+  padding: 0 max(1rem, env(safe-area-inset-right)) 2.5rem max(1rem, env(safe-area-inset-left));
 }
 
 .topbar {
