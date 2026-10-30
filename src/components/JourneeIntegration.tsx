@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AppelParticiper } from '@/components/AppelParticiper';
 import { ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
 import { useStore } from '@/store/useStore';
@@ -47,16 +46,21 @@ function TourDeJeu({ onFait }: { onFait: () => void }) {
  * La « Journée d'intégration » : ce qu'un testeur ne devine pas (`docs/JEU.md` §3 — le
  * tutoriel s'appelle comme ça, jamais « onboarding »).
  *
- * **Cinq étapes, deux phrases, un geste** (D-136, #334) : les quatre étapes de #130, plus le
- * **tour de jeu**, qui se fait dans le dialogue (café, Pression, Stress) avant de conduire
- * au combat. Chaque autre étape **ouvre l'écran qu'elle décrit** — un geste, pas un renvoi
- * de documentation.
+ * **Un panneau, plus un dialogue** (30/10/2026). Elle était un `Dialog` : un fond sombre,
+ * la page figée, et des étapes qui se lisaient sans qu'on puisse rien faire dessous. Or la
+ * suite du parcours demande des **gestes réels** — ouvrir un Arrivage, choisir un Deck —
+ * qu'un dialogue modal rend impossibles. Elle devient donc le **même motif que le
+ * pas-à-pas du combat** : un panneau posé sur l'écran, sans fond sombre.
+ *
+ * **Ce qui la rend contraignante** : tant qu'elle est ouverte, tout ce qui n'est pas le
+ * panneau (`data-journee-panneau`) ou un élément qu'elle désigne (`data-journee-cible`)
+ * est **inerte** — un écouteur en phase de capture avale le clic avant React. On ne sort
+ * donc pas du parcours en touchant la barre du bas sans le vouloir ; la seule sortie est
+ * « Passer », qui **dit ce qu'elle coûte** (`libelleSaut`, D-136).
  *
  * Elle se montre **une fois** (`tutorielVu`, forme persistée v5 : aucun champ nouveau, donc
- * aucune migration), se referme par n'importe quel chemin de fermeture — la croix, Échap, le
- * fond, « Suivant » jusqu'au bout, le saut —, et se rouvre depuis **Réglages** (le drapeau y
- * repasse à `false`). Le **saut** dit ce qu'il coûte (`libelleSaut`, D-136) : un testeur
- * pressé sait qu'il ne verra pas le tour de jeu.
+ * aucune migration), se referme par n'importe quel chemin de fermeture — « Suivant »
+ * jusqu'au bout, le saut —, et se rouvre depuis **Réglages** (le drapeau y repasse à `false`).
  *
  * **Le mur du comité (`/comite`) est exclu** : la visite guidée s'abstient sur cette page
  * (voir le commentaire de `surLeMur`).
@@ -79,12 +83,38 @@ export function JourneeIntegration() {
   /**
    * Le mur (D-058, D-068) est le seul écran où la visite **s'abstient**. Il ne s'ouvre
    * que par la bulle, pas par la barre de navigation : un testeur qui le lit d'abord n'a
-   * pas commencé à jouer, et lui poser un dialogue de jeu par-dessus le premier contenu
+   * pas commencé à jouer, et lui poser un panneau de jeu par-dessus le premier contenu
    * qu'il découvre serait le seul écran de l'application où l'on ne peut rien lire. Rien
    * n'est perdu : `tutorielVu` reste `false`, et la visite se montre dès qu'on quitte le
    * mur — d'autant que ses étapes emmènent justement ailleurs.
    */
   const surLeMur = pathname.startsWith('/comite');
+  const ouvert = !tutorielVu && !surLeMur;
+
+  /**
+   * **La garde** : hors du panneau et hors des éléments désignés, le clic n'arrive pas.
+   * L'écouteur est posé en **capture** sur `document`, donc avant les gestionnaires de
+   * React comme ceux du navigateur (un lien, un bouton natif). On ne fige pas la page :
+   * elle défile, elle se lit, et un élément désigné reste cliquable.
+   */
+  useEffect(() => {
+    if (!ouvert) return;
+    const autorise = (cible: EventTarget | null) =>
+      cible instanceof Element && cible.closest('[data-journee-panneau], [data-journee-cible]') !== null;
+    const bloquer = (evenement: Event) => {
+      if (autorise(evenement.target)) return;
+      evenement.preventDefault();
+      evenement.stopPropagation();
+    };
+    document.addEventListener('pointerdown', bloquer, true);
+    document.addEventListener('click', bloquer, true);
+    return () => {
+      document.removeEventListener('pointerdown', bloquer, true);
+      document.removeEventListener('click', bloquer, true);
+    };
+  }, [ouvert]);
+
+  if (!ouvert) return null;
 
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
   const derniere = etape >= ETAPES_JOURNEE.length - 1;
@@ -92,66 +122,70 @@ export function JourneeIntegration() {
   const gesteFait = courante.geste !== 'tour' || tourFait;
 
   return (
-    <Dialog
-      open={!tutorielVu && !surLeMur}
-      onOpenChange={(ouvert) => {
-        if (!ouvert) terminer();
-      }}
+    <aside
+      className="journee"
+      data-journee-panneau
+      role="dialog"
+      aria-labelledby="journee-titre"
+      aria-describedby="journee-texte"
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{courante.titre}</DialogTitle>
-          <DialogDescription>
-            Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length}
-          </DialogDescription>
-        </DialogHeader>
+      <p className="journee__compte">
+        <span aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
+        <span className="sr-only">
+          Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length}
+        </span>
+      </p>
 
-        <p>{courante.texte}</p>
+      <h2 id="journee-titre" className="journee__titre">
+        {courante.titre}
+      </h2>
 
-        {courante.geste === 'tour' && <TourDeJeu onFait={() => setTourFait(true)} />}
+      <p id="journee-texte" className="journee__texte">
+        {courante.texte}
+      </p>
 
-        {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
-            La visite reste ouverte par-dessus, pour qu'on lise l'étape en regardant
-            l'écran qu'elle décrit — sauf la dernière, qui referme la Journée en menant au
-            combat. */}
-        <div className="actions actions--tight">
+      {courante.geste === 'tour' && <TourDeJeu onFait={() => setTourFait(true)} />}
+
+      {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
+          Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
+          qu'elle décrit — sauf la dernière, qui referme la Journée en menant au combat. */}
+      <div className="actions actions--tight">
+        <button
+          type="button"
+          className="button button--primary"
+          disabled={!gesteFait}
+          onClick={() => {
+            navigate(courante.cible);
+            if (derniere) terminer();
+          }}
+        >
+          {courante.action}
+        </button>
+        {derniere ? (
+          <button type="button" className="button" onClick={terminer} disabled={!gesteFait}>
+            Plus tard
+          </button>
+        ) : (
           <button
             type="button"
-            className="button button--primary"
-            disabled={!gesteFait}
+            className="button"
             onClick={() => {
-              navigate(courante.cible);
-              if (derniere) terminer();
+              setEtape((courant) => courant + 1);
+              setTourFait(false);
             }}
           >
-            {courante.action}
+            Suivant
           </button>
-          {derniere ? (
-            <button type="button" className="button" onClick={terminer} disabled={!gesteFait}>
-              Plus tard
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="button"
-              onClick={() => {
-                setEtape((courant) => courant + 1);
-                setTourFait(false);
-              }}
-            >
-              Suivant
-            </button>
-          )}
-        </div>
+        )}
+      </div>
 
-        <button type="button" className="journee__passer" onClick={terminer}>
-          {libelleSaut(etape, tourFait)}
-        </button>
+      <button type="button" className="journee__passer" onClick={terminer}>
+        {libelleSaut(etape, tourFait)}
+      </button>
 
-        {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée
-            jusqu'à sa dernière étape. */}
-        {derniere && <AppelParticiper surComite={terminer} />}
-      </DialogContent>
-    </Dialog>
+      {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée
+          jusqu'à sa dernière étape. */}
+      {derniere && <AppelParticiper surComite={terminer} />}
+    </aside>
   );
 }

@@ -18,12 +18,13 @@ const lire = (chemin: string) => readFileSync(fileURLToPath(new URL(chemin, impo
 
 const composant = lire('./JourneeIntegration.tsx');
 const etapes = lire('./journee-etapes.ts');
+const styles = lire('../styles.css');
 const settings = lire('../pages/Settings.tsx');
 
 describe('elle se montre une fois, et se referme (ticket #130)', () => {
   it('tient son ouverture du drapeau `tutorielVu`, pas d’un état local', () => {
     expect(composant).toMatch(/state\.tutorielVu/);
-    expect(composant).toMatch(/open=\{!tutorielVu && !surLeMur\}/);
+    expect(composant).toMatch(/const ouvert = !tutorielVu && !surLeMur;/);
   });
 
   it('écrit le drapeau à la fermeture, et remet l’étape à zéro', () => {
@@ -31,17 +32,44 @@ describe('elle se montre une fois, et se referme (ticket #130)', () => {
     expect(composant).toMatch(/setEtape\(0\)/);
   });
 
-  it('n’a pas de bouton de fermeture à elle : toutes les sorties passent par `terminer`', () => {
-    // La croix et Échap viennent du dialogue et passent par `onOpenChange` → `terminer`.
-    // Un `DialogClose` ajouté à la main fermerait sans écrire le drapeau : elle se
-    // remontrerait aussitôt, et à chaque fermeture.
-    expect(composant).not.toMatch(/DialogClose/);
-    expect(composant).toMatch(/onOpenChange=\{\(ouvert\) => \{\s*if \(!ouvert\) terminer\(\);/);
+  it('n’a qu’un seul écrivain du drapeau : toutes les sorties passent par `terminer`', () => {
+    // Le panneau n'a plus de `DialogClose` ni d'`onOpenChange` (30/10/2026) : une sortie
+    // ajoutée à la main écrirait le drapeau ailleurs, ou pas du tout — et la Journée se
+    // remontrerait aussitôt.
+    expect(composant).not.toMatch(/DialogClose|onOpenChange/);
+    expect(composant.match(/setTutorielVu\(true\)/g)).toHaveLength(1);
+    // « Suivant » et le geste avancent ; « Passer » et « Plus tard » sortent par `terminer`.
+    expect(composant.match(/onClick=\{terminer\}/g)).toHaveLength(2);
   });
 
   it('se rouvre depuis Réglages', () => {
     expect(settings).toMatch(/Journée d’intégration/);
     expect(settings).toMatch(/setTutorielVu\(false\)/);
+  });
+});
+
+describe('le panneau ne se quitte pas par accident (30/10/2026)', () => {
+  it('laisse passer le panneau et les éléments désignés, et rien d’autre', () => {
+    expect(composant).toMatch(/data-journee-panneau/);
+    expect(composant).toMatch(/closest\('\[data-journee-panneau\], \[data-journee-cible\]'\)/);
+    // En **capture** sur `document` : avant React, donc avant tout gestionnaire de bouton.
+    expect(composant).toMatch(/document\.addEventListener\('click', bloquer, true\)/);
+    expect(composant).toMatch(/document\.addEventListener\('pointerdown', bloquer, true\)/);
+    expect(composant).toMatch(/evenement\.preventDefault\(\)/);
+  });
+
+  it('n’est pas un dialogue modal : pas de fond assombri, la page reste lisible', () => {
+    expect(composant).not.toMatch(/aria-modal="true"/);
+    expect(composant).not.toMatch(/<Dialog/);
+    expect(composant).toMatch(/className="journee"/);
+  });
+
+  it('le halo ne déplace rien : un contour, jamais une bordure qui prendrait de la place', () => {
+    // **Le contrôle mord** : une `border` sur la cible décalerait le bouton au moment où
+    // l'étape le désigne — la mise en page bougerait sous le doigt.
+    const regle = styles.match(/\n\[data-journee-cible\] \{([^}]*)\}/)?.[1] ?? '';
+    expect(regle).toMatch(/outline:/);
+    expect(regle).not.toMatch(/(^|\s)border:/);
   });
 });
 

@@ -2468,6 +2468,70 @@ h2 {
 
 /* ---------- Journée d'intégration (D-066, #130) ---------- */
 
+/* **Le panneau** (30/10/2026). Il était un `Dialog` : fond sombre, page figée. Il devient
+   le même motif que le pas-à-pas du combat — une carte posée en haut de l'écran, sans
+   fond assombri —, parce que la suite du parcours demande des **gestes réels** qu'un
+   dialogue modal rend impossibles. Ce qui la rend contraignante n'est pas le voile, c'est
+   la garde de `JourneeIntegration` : hors du panneau et hors d'un `[data-journee-cible]`,
+   le clic n'arrive pas. Il passe **au-dessus de la barre du bas** (z-index 20) : c'est lui
+   qu'on doit voir, et la barre qu'on ne doit pas toucher par accident.
+   `--fs-*` et les jetons : `DESIGN.md` §1 et §6. */
+.journee {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-raised) 90%, var(--line-strong)),
+    var(--bg-raised) 40%,
+    var(--bg-sunken)
+  );
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
+    0 18px 40px -16px rgb(0 0 0 / 70%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  left: 0.6rem;
+  max-width: min(34rem, calc(100% - 1.2rem));
+  padding: 0.75rem 0.85rem;
+  position: fixed;
+  right: 0.6rem;
+  top: max(0.6rem, env(safe-area-inset-top, 0px));
+  z-index: 40;
+}
+
+/* **Le halo** (30/10/2026) : l'élément que l'étape désigne. Le même contour doré que le
+   pas-à-pas du combat (`[data-pas-a-pas]`) — un seul langage pour les deux tutoriels — et
+   il reste **cliquable** : la garde de `JourneeIntegration` laisse passer ce qui est dans
+   `[data-journee-cible]`. Aucun déplacement : `outline` ne prend pas de place, donc la
+   mise en page ne bouge pas quand une étape désigne un bouton. */
+[data-journee-cible] {
+  border-radius: 4px;
+  outline: 2px solid color-mix(in srgb, var(--gold) 70%, transparent);
+  outline-offset: 3px;
+}
+
+.journee__compte {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.journee__titre {
+  font-size: 1rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.journee__texte {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 62ch;
+}
+
 /* La sortie de la visite, sous les actions : un lien discret, pas un troisième bouton —
    « Suivant » doit rester lisible à côté du geste de l'étape. */
 .journee__passer {
