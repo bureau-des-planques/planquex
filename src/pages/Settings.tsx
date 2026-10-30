@@ -286,8 +286,9 @@ export function Settings() {
             la **largeur de lecture** qui manquait, pas le formateur. Même remède que la
             section « Traces de combat » (#208). */}
         <p className="muted max-w-[62ch]">
-          Collection, Deck et nom restent dans ce navigateur (clé <code>{STORAGE_KEY}</code>).{' '}
-          <strong>Vider les données du navigateur les efface</strong> : copie ce texte avant.
+          Ton Deck et ta Collection sont encore dans ce navigateur (clé <code>{STORAGE_KEY}</code>) tant que la synchro
+          avec le compte n’est pas livrée. Ton nom aussi reste ici.{' '}
+          <strong>Vider les données du navigateur efface tout cela</strong> : copie ce texte avant.
         </p>
         <textarea
           className="settings__save"

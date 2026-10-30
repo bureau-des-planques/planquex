@@ -11,8 +11,8 @@ describe('Settings — finition', () => {
   it('le gras de la sauvegarde est du gras : aucun astérisque de Markdown à l’écran', () => {
     const { container } = renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
     expect(container.textContent).not.toContain('**');
-    const gras = within(screen.getByText(/Collection, Deck et nom restent/)).getByText(
-      /vider les données du navigateur les efface/i
+    const gras = within(screen.getByText(/Ton Deck et ta Collection sont encore dans ce navigateur/)).getByText(
+      /vider les données du navigateur efface tout/i
     );
     expect(gras.tagName).toBe('STRONG');
   });

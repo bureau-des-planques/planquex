@@ -122,7 +122,8 @@ export function Attente() {
             <Link to="/comite">Lire le mur</Link> — les post-its et les compteurs de pouces sont ouverts à tout compte.
           </li>
           <li>
-            <Link to="/settings">Tes réglages</Link> — ta Collection et ton Deck restent dans ce navigateur.
+            <Link to="/settings">Tes réglages</Link> — ta Collection et ton Deck sont encore dans ce navigateur tant que
+            la synchro n’est pas livrée.
           </li>
         </ul>
       </section>

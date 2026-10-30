@@ -8,8 +8,9 @@
  *
  * Trois règles d'écriture, et elles ne bougeront pas :
  *
- * 1. **on écrit ce qu'on fait, pas ce qu'on aimerait faire** : chaque ligne correspond à une
- *    colonne réellement écrite en base (`supabase/migrations/`) ;
+ * 1. **on écrit ce qu'on fait, pas ce qu'on aimerait faire** : les rubriques « Un compte »,
+ *    « Ce que tu écris sur le mur » et « Tes parties terminées » correspondent à des colonnes
+ *    réellement écrites en base (`supabase/migrations/`) ;
  * 2. **aucun jargon** : pas de « données à caractère personnel », pas de « finalité
  *    légitime » — des phrases, et des exemples ;
  * 3. **elle se lit sans compte** : la route est déclarée hors de `Layout`, comme
@@ -37,7 +38,8 @@ const COLLECTE: Rubrique[] = [
     lignes: [
       'Si tu te connectes avec Google, on reçoit ton adresse de courriel et un identifiant technique.',
       'Si tu crées un compte avec un mot de passe, on garde ton adresse de courriel ; le mot de passe est chiffré et nous ne le voyons jamais.',
-      'Ton pseudo est choisi dans Réglages. Il vit sur ton appareil et il accompagne ce que tu écris ; sans pseudo, c’est « anonyme ».'
+      'À la première connexion, tu choisis ton profil : un pseudo, un service et un intitulé. Ce profil est gardé sur ton compte, pas dans ton navigateur.',
+      'Le nom affiché, dans Réglages, reste dans ton navigateur : il signe tes post-its ; sans lui, c’est « anonyme ».'
     ]
   },
   {
@@ -54,6 +56,13 @@ const COLLECTE: Rubrique[] = [
       'Le déroulé de la partie, solo comme à deux : la graine de hasard, les deux Decks, les types de café et la suite des actions jouées.',
       'Cela sert à voir comment le jeu est réellement joué, et où il coince.',
       'Ni ton pseudo, ni ton adresse, ni aucun texte de ta part n’y figurent.'
+    ]
+  },
+  {
+    titre: 'Ce qui viendra (bientôt)',
+    lignes: [
+      // D-153 : la synchro du Deck et de la Collection sur le compte est une condition de la beta.
+      'Le Deck et la Collection vivront sur ton compte : tu les retrouveras après un changement d’appareil. Cette synchro est une condition de la beta, mais elle n’est pas encore implémentée.'
     ]
   },
   {
@@ -102,7 +111,8 @@ const QUESTIONS: Rubrique[] = [
     titre: 'Un doute',
     lignes: [
       'Écris-nous : le comité est là pour ça, et un courriel marche aussi.',
-      'Cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.'
+      // D-120 et #317 : le serveur des testeurs existe déjà, la rubrique « bientôt » ne le concerne pas.
+      'La rubrique « Ce qui viendra (bientôt) » décrit ce qui n’est pas implémenté encore. Le serveur des testeurs existe déjà. Pour le reste, cette page dit ce que le jeu fait aujourd’hui. Si elle cesse d’être vraie, c’est un bug, et on la corrige.'
     ]
   }
 ];

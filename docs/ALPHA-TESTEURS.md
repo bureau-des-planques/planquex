@@ -60,11 +60,14 @@ Tu commences avec une Collection déjà garnie : tu peux composer un Deck et te 
 
 ## Ce qui est gardé, et où
 
-- **Sur ton appareil** : ta Collection, ton Deck, ton pseudo et ta partie en cours. Rien de
-  cela ne part sur un serveur.
-- **Sur le serveur du jeu** : ton compte (adresse de courriel et identifiant technique), ce que
-  tu écris sur le mur (post-its, commentaires, pouces), et le déroulé de tes combats solo
-  terminés (graine, Decks, actions jouées — sans ton pseudo ni ton adresse).
+- **Sur ton appareil** : ta Collection, ton Deck, ton **nom affiché** (celui qui signe tes
+  post-its) et ta partie en cours. Rien de cela ne part sur un serveur.
+- **Sur le serveur du jeu** : ton compte (adresse de courriel et identifiant technique), ton
+  **profil** (pseudo, service, intitulé — D-148), ce que tu écris sur le mur (post-its,
+  commentaires, pouces), et le déroulé de tes combats solo terminés (graine, Decks, actions
+  jouées — sans ton pseudo ni ton adresse).
+- **Bientôt, en plus, sur ton compte** : ta Collection et ton Deck, pour les retrouver après un
+  changement d'appareil (D-153). Ça n'est pas encore livré.
 - La page **Confidentialité** (`/confidentialite`) dit tout cela en clair, et se lit sans compte.
 
 ## ⚠️ Ta sauvegarde

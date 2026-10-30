@@ -172,16 +172,14 @@ export function Installation() {
         <h2 className="m-0">Ce qui est gardé, et où</h2>
         <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
           <li>
-            <strong>Sur ton appareil</strong> : ta Collection, ton Deck, ton pseudo et ta partie en cours. Rien de cela
-            ne part sur un serveur.
+            <strong>Aujourd’hui, sur ton appareil</strong> : ton nom affiché (il signe tes post-its), ta partie en
+            cours, ton Deck et ta Collection. Ce nom reste dans le navigateur ; ton compte ne suit pas les données
+            locales.
           </li>
           <li>
-            <strong>Sur le serveur du jeu</strong> : ton compte, ce que tu écris sur le mur, et le déroulé de tes
-            combats terminés.
-          </li>
-          <li>
-            <strong>Ton compte te suit</strong> d’un appareil à l’autre ; ta Collection, non : elle vit dans le
-            navigateur où tu joues.
+            <strong>Aujourd’hui, côté serveur</strong> : ton compte, ton profil (pseudo, service, intitulé), ce que tu
+            écris sur le mur, le déroulé de tes combats terminés. <strong>Bientôt en plus</strong> : ton Deck et ta
+            Collection, sur ton compte — tu les retrouveras après un changement d’appareil.
           </li>
         </ul>
         <p className="muted m-0 max-w-[62ch] text-[0.86rem]">
@@ -194,8 +192,10 @@ export function Installation() {
       <section className="section panel">
         <h2 className="m-0">Ta sauvegarde, avant de changer d’appareil</h2>
         <p className="m-0 max-w-[62ch] text-[0.92rem] leading-relaxed">
-          Changer d’appareil ou de navigateur, vider les données, désinstaller l’application : dans ces trois cas, la
-          Collection, le Deck, le pseudo et la partie en cours sont effacés de ce navigateur, sans retour.
+          Aujourd’hui, changer d’appareil ou de navigateur, vider les données, désinstaller l’application : dans ces
+          trois cas, la Collection, le Deck, ton pseudo et ta partie en cours sont effacés de ce navigateur, sans
+          retour. Plus tard, ton Deck et ta Collection seront stockés sur ton compte : tu les retrouveras après un
+          changement d’appareil.
         </p>
         <ol className="m-0 flex list-decimal flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
           {SAUVEGARDE.map((etape) => (
