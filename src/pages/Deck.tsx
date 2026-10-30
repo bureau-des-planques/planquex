@@ -513,7 +513,6 @@ export function Deck() {
                 quick={{
                   icon: <Info size={14} />,
                   label: `Fiche de ${card.name}`,
-                  title: `Fiche de ${card.name}`,
                   onClick: () => setSelected(card)
                 }}
               />
@@ -622,7 +621,6 @@ export function Deck() {
                       quick={{
                         icon: <Info size={14} />,
                         label: `Fiche de ${card.name}`,
-                        title: `Fiche de ${card.name}`,
                         onClick: () => setSelected(card)
                       }}
                     />

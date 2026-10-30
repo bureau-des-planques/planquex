@@ -90,8 +90,13 @@ export const SEUIL_PAQUET = 500_000;
  * page Collection) : le **nom lu** d'une carte (`label` de `CardView`, calculé par le slot —
  * possession, Deck) et les **jetons de filtres** de la Collection. Les deux vivent dans le
  * paquet principal, avec le reste de la coquille.
+ *
+ * **Relevé de 115 octets le 30/10/2026** (290 925 octets) (constat de Bastien : la bulle
+ * native recouvrait le coût au survol) : `CafePips` apprend `sansTitre`, et `CardView` cesse
+ * de poser `title` sur la carte compacte (emblème, rareté, faction, coût, Rotation). La bulle
+ * du navigateur est partie ; la fiche garde ses libellés.
  */
-export const PLAFOND_PRINCIPAL = 290_810;
+export const PLAFOND_PRINCIPAL = 290_925;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];

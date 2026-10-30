@@ -11,15 +11,16 @@ import type { CafeSymbol } from '@/data/types';
  * pointillés) plutôt que coloré. La couleur vient de `FACTION_META`, la seule
  * source des couleurs de faction (`AGENTS.md` §6).
  */
-export function CafeDot({ cafe }: { cafe: CafeSymbol }) {
-  if (cafe === 'INCOLORE') return <i className="pip pip--free" title={cafeLabel(cafe)} />;
+export function CafeDot({ cafe, sansTitre = false }: { cafe: CafeSymbol; sansTitre?: boolean }) {
+  const titre = sansTitre ? undefined : cafeLabel(cafe);
+  if (cafe === 'INCOLORE') return <i className="pip pip--free" title={titre} />;
   const { color, glyph } = FACTION_META[cafe];
   const style = { '--cafe': color, '--cafe-encre': encreSur(color) } as CSSProperties;
   // **Le glyphe de la faction** (#525) : un café ne se distinguait que par sa couleur (le critère WCAG sur la couleur seule).
   // Il n'est montré que là où la pastille est assez grande pour le porter (le combat, 14 à 18 px) ;
   // le sélecteur de texte U+FE0E garde ✊ et ☺ en symboles, jamais en émoji.
   return (
-    <i className="pip pip--typed" style={style} title={cafeLabel(cafe)}>
+    <i className="pip pip--typed" style={style} title={titre}>
       <span className="pip__glyphe" aria-hidden="true">
         {glyph}
         {'\uFE0E'}
@@ -69,6 +70,12 @@ interface Props {
   symbols: readonly CafeSymbol[];
   /** Libellé de survol ; déduit de la liste quand il n'est pas fourni. */
   label?: string;
+  /**
+   * **Pas de bulle native.** Sur une carte de grille, le `title` du groupe s'affiche au
+   * survol et **recouvre le coût** et le reste de la carte (constat du 30/10/2026) : la
+   * vue compacte s'en passe, l'`aria-label` reste, et la fiche nomme les cafés.
+   */
+  sansTitre?: boolean;
 }
 
 /**
@@ -78,14 +85,14 @@ interface Props {
  * Un seul rendu pour la carte (`CardView`), la fiche (`CardDetail`) et le plateau
  * (`Battle`) : le mot « café » reste du code, la pastille est le motif de la maison.
  */
-export function CafePips({ symbols, label }: Props) {
+export function CafePips({ symbols, label, sansTitre = false }: Props) {
   const names = symbols.map(cafeLabel);
   const title = label ?? (names.length > 0 ? `Coût : ${names.join(' · ')}` : 'Aucun café requis');
   return (
     // `role="img"` : sans rôle, l'`aria-label` d'un `<span>` n'est pas un nom fiable (#525).
-    <span className="pips" role="img" title={title} aria-label={title}>
+    <span className="pips" role="img" title={sansTitre ? undefined : title} aria-label={title}>
       {names.length > 0 ? (
-        symbols.map((cafe, index) => <CafeDot key={`${index}-${cafe}`} cafe={cafe} />)
+        symbols.map((cafe, index) => <CafeDot key={`${index}-${cafe}`} cafe={cafe} sansTitre={sansTitre} />)
       ) : (
         <i className="pip pip--free" />
       )}
