@@ -1345,15 +1345,15 @@ describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-C
    * et le chiffre de D-094 (1) qui ne bouge pas. La mesure vit dans
    * `docs/preuves/main-64px-2026-10-26/` et dans `npm run capturer`.
    */
-  it('à 64 px, le nom de la main se coupe à la césure de la langue — et la carte reste à 4 rem (#233)', () => {
+  it('le nom de la main se coupe à la césure de la langue — et la carte garde le chiffre de D-156 (#233)', () => {
     const nom = css().match(/\n\.battle \.hand \.card--plateau \.card__name \{([^}]*)\}/)?.[1] ?? '';
     // Sans `hyphens: auto`, la césure manuelle du plateau revient et « PRÉVENT EUR » avec elle.
     expect(nom).toMatch(/hyphens:\s*auto/);
     // La césure automatique n'existe que si la langue de la page est connue : `<html lang="fr">`.
     expect(readFileSync(resolve(process.cwd(), 'index.html'), 'utf8')).toMatch(/<html lang="fr"/);
-    // D-094 (1) : le chiffre ne bouge pas, la marge de hauteur de D-094 (3) non plus.
+    // D-156 amende D-094 (1) : 72 px (4,5 rem) à la référence ; la marge de D-094 (3), elle, ne bouge pas.
     const carteDeMain = css().match(/\n\.hand \{([^}]*)\}/)?.[1] ?? '';
-    expect(carteDeMain).toMatch(/--carte-w:\s*4rem/);
+    expect(carteDeMain).toMatch(/--carte-w:\s*4\.5rem/);
   });
 });
 
