@@ -4677,6 +4677,37 @@ h2 {
   }
 }
 
+/* Le journal dans la console (D-157, #520) : sur écran large, il occupe la place laissée sous la
+   barre d'action et défile en lui-même. Il n'est rendu qu'à partir de 900 px (`useEcranLarge`). */
+.journal-console {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 0;
+  padding: 0.6rem 0.75rem;
+}
+
+.journal-console__titre {
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  margin: 0;
+}
+
+.journal-console__liste {
+  display: flex;
+  flex-direction: column-reverse;
+  font-size: var(--fs-sm);
+  gap: 0.2rem;
+  margin: 0;
+  overflow-y: auto;
+  padding-left: 1.1rem;
+}
+
 /* PC : la scène prend la largeur, et les cartes suivent la hauteur de la fenêtre — 88 px à
    800 px de haut n'occupaient pas le tiers de l'écran. Les bornes basses sont celles de D-094 (1). */
 @media (min-width: 1200px) and (min-height: 700px) {
