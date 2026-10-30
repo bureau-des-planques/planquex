@@ -3775,12 +3775,15 @@ h2 {
 
 /* La piste d'Interventions : six hexagones, trois par camp, remplis dans l'ordre ; l'or pour
    ceux qui sont acquis (l'or répond à celui du COMEX). Posés sur le feutre, sans fond. */
+/* Les deux trios se tiennent **autour de l'axe central**, plus aux deux bords (D-157, #520) : la
+   condition de victoire se lit d'un coup d'œil, et sur PC les trios n'étaient plus à 600 px l'un de
+   l'autre. */
 .piste {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem 1rem;
-  justify-content: space-between;
+  gap: 0.2rem 2.5rem;
+  justify-content: center;
 }
 
 .piste__camp {
@@ -4681,13 +4684,16 @@ h2 {
     max-width: 1360px;
   }
 
+  /* **D-157 (30/10/2026, #520)** : les plafonds montent — Poste 11 rem, Banc 7 rem, carte de main
+     8 rem. À 1920 × 1080, le Poste voulait 190 px et restait bloqué à 136 : le combat s'arrêtait à
+     712 px de haut sur un écran de 1 080. Les planchers sont ceux de D-156. */
   .board__zone {
-    --poste-w: clamp(6rem, calc((100dvh - 15rem) / 4.4), 8.5rem);
-    --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 5.5rem);
+    --poste-w: clamp(6rem, calc((100dvh - 15rem) / 4.4), 11rem);
+    --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 7rem);
   }
 
   .battle .hand {
-    --carte-w: clamp(4.5rem, calc((100dvh - 15rem) / 6), 6.5rem);
+    --carte-w: clamp(4.5rem, calc((100dvh - 15rem) / 6), 8rem);
   }
 }
 
