@@ -2810,6 +2810,36 @@ h2 {
   padding: 0.3rem 0.6rem;
 }
 
+.battle__conditions-icone {
+  display: none;
+}
+
+/* **Petit téléphone** (relecture du combat, 30/10/2026) : à 360 px, « Tour 1 · … » perdait « à toi »,
+   que seule la teinte du liseré disait encore (WCAG 1.4.1). « Conditions » cède son libellé — il reste
+   le nom accessible, masqué à l'œil — et tient en une icône de 44 px. */
+@media (max-width: 399.98px) {
+  .battle__conditions {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    padding: 0;
+    width: 2.75rem;
+  }
+
+  .battle__conditions-icone {
+    display: block;
+  }
+
+  .battle__conditions-libelle {
+    clip-path: inset(50%);
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+}
+
 /* La **bascule d'infos** (#189) : la cible de doigt de 44 px du menu `⋯`, sa place dans la
    barre d'état. Elle porte `aria-pressed` (le mode) et `aria-keyshortcuts="I"` (le raccourci). */
 .battle__infos {
@@ -2922,12 +2952,13 @@ h2 {
   box-shadow: inset 2px 0 0 var(--scene-danger);
 }
 
+/* Le nom du camp en **casse normale** (« La Direction », « Toi ») : à 15 px, les capitales lisaient comme
+   un gabarit. Les étiquettes de 13 px et moins (piles, piste) gardent les leurs. */
 .board__head h2 {
   font-family: var(--font-display);
   font-size: 0.95rem;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.005em;
   margin: 0;
-  text-transform: uppercase;
 }
 
 .board__head {
@@ -3088,9 +3119,11 @@ h2 {
   width: var(--banc-w);
 }
 
+/* La place libre du Banc est la cible de « Mettre au Banc » et des relèves : son pointillé passe de
+   `--line` (1,22–1,46:1, presque invisible) à `--text-muted` (≥ 3,79:1 sur les feutres, WCAG 1.4.11). */
 .bench__slot.is-free {
   aspect-ratio: 63 / 88;
-  border: 1px dashed var(--line);
+  border: 1px dashed var(--text-muted);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -3455,7 +3488,6 @@ h2 {
   line-height: 1.15;
   margin: 0;
   overflow-wrap: break-word;
-  text-transform: uppercase;
 }
 
 .battle .inspecteur__fiche {
@@ -3626,12 +3658,17 @@ h2 {
   gap: 0.3rem;
 }
 
+/* Les piles Deck / Rebut sont une information **secondaire** : elles pesaient plus que le Stress et la
+   piste (bord de 2 px, ombre portée), et avaient l'allure d'un bouton alors que le Rebut ne s'ouvre pas.
+   Le parchemin reste (D-093) ; le bord passe à 1 px et l'ombre portée devient courte — une zone
+   **posée** garde son ombre (DESIGN.md §2.6, règle 2), mais plus la grosse ombre de 14 px avec son
+   filet (relecture du combat, 30/10/2026). Le contour parchemin sur feutre reste à 5,23:1 (§1.5). */
 .pile {
   align-items: center;
   background: var(--scene-parch);
-  border: 2px solid var(--scene-parch-dark);
+  border: 1px solid var(--scene-parch-dark);
   border-radius: 6px;
-  box-shadow: 0 6px 14px rgb(0 0 0 / 45%);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 35%);
   color: var(--scene-ink-parch);
   display: inline-flex;
   font-family: var(--font-display);
@@ -3682,8 +3719,12 @@ h2 {
   text-transform: uppercase;
 }
 
+/* Le contour d'un hexagone **vide** : `--text-muted`, pour qu'un état graphique tienne 3:1 sur les trois
+   feutres (3,79 à 7,76:1, DESIGN.md §1.5). `--line-strong` y tombait à 1,06–1,94:1 : la condition de
+   victoire était l'élément le plus discret du plateau (relecture du combat, 30/10/2026). C'est un filet,
+   pas du texte : l'interdit de `--text-muted` sur le centre éclairé (#198) vise le texte. */
 .piste__hex {
-  background: var(--line-strong);
+  background: var(--text-muted);
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   display: block;
   height: 1.1rem;
@@ -3999,6 +4040,21 @@ h2 {
   background: var(--scene-steel-deep);
   border-color: var(--scene-danger);
   color: #fff;
+}
+
+/* **Un seul bouton plein quand une Pression est jouable** (relecture du combat, 30/10/2026). La
+   Pression et « Fin du tour » terminent toutes deux le tour, et leurs deux pleins (bleu, émeraude)
+   se touchaient presque : un tap trop haut abandonnait la Pression. « Fin du tour » passe alors en
+   ardoise à filet émeraude — même place (#320), même taille, même libellé —, et la rangée des
+   gestes s'écarte de 8 px. Texte `--text` sur `--scene-steel-deep` : 7,6:1 (DESIGN.md §1.5). */
+.combat-barre[data-pression-jouable='true'] .button--fin.is-a-toi {
+  background: var(--scene-steel-deep);
+  border-color: var(--scene-go);
+  color: var(--text);
+}
+
+.combat-barre[data-pression-jouable='true'] .combat-barre__gestes {
+  margin-top: 0.5rem;
 }
 
 /* Le libellé d'attente est plus long que « Fin du tour » : il se range sur **deux lignes** dans une

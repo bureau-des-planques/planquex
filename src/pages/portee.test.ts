@@ -100,4 +100,20 @@ describe('phraseDePortee — la phrase de portée de la barre (#320, #324)', () 
       'Pression déjà portée ce tour.'
     );
   });
+
+  it('sous Sieste ou Immobilisation, la ligne nomme la Condition, pas le café (le contrôle mord : sans les statuts, elle accuse le café)', () => {
+    const poste = planque([pressionSimple]);
+    // Le moteur ne rend aucune Pression sous ces deux Conditions (`legalAttacks`, D-033 §2).
+    expect(phraseDePortee({ aMoi: true, poste, dejaPortee: false, enPortee: [], statuts: ['IMMOBILISATION'] })).toBe(
+      'Immobilisation au Poste : ni Pression ni Rotation.'
+    );
+    expect(
+      phraseDePortee({ aMoi: true, poste, dejaPortee: false, enPortee: [], statuts: ['SURCHARGE', 'SIESTE'] })
+    ).toBe('Sieste au Poste : ni Pression ni Rotation.');
+    expect(phraseDePortee({ aMoi: true, poste, dejaPortee: false, enPortee: [] })).toMatch(/^Hors de portée du café/);
+    // Une Condition qui n'interdit rien laisse la ligne parler du café.
+    expect(phraseDePortee({ aMoi: true, poste, dejaPortee: false, enPortee: [], statuts: ['SURCHARGE'] })).toMatch(
+      /^Hors de portée du café/
+    );
+  });
 });

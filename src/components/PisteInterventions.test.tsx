@@ -25,7 +25,7 @@ describe('PisteInterventions — six hexagones, trois par camp', () => {
       const groupe = screen.getByRole('group', { name: label });
       expect(within(groupe).getAllByRole('img')).toHaveLength(3);
     }
-    expect(screen.getByRole('img', { name: 'Intervention 2 sur 3, La Direction' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Intervention 2 sur 3, La Direction, à venir' })).toBeInTheDocument();
   });
 
   it('remplit les hexagones dans l’ordre : les premières Interventions sont acquises', () => {
@@ -36,6 +36,12 @@ describe('PisteInterventions — six hexagones, trois par camp', () => {
 
     expect(toi.map((hex) => hex.classList.contains('is-acquise'))).toEqual([true, true, false]);
     expect(direction.map((hex) => hex.classList.contains('is-acquise'))).toEqual([true, false, false]);
+    // L'état se dit aussi au lecteur d'écran, pas seulement par le remplissage (4.1.2).
+    expect(toi.map((hex) => hex.getAttribute('aria-label')?.split(', ').at(-1))).toEqual([
+      'acquise',
+      'acquise',
+      'à venir'
+    ]);
   });
 
   it('porte le point de désignation du pas-à-pas sur son conteneur seul', () => {
