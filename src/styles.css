@@ -4679,16 +4679,14 @@ h2 {
 
 /* Le journal dans la console (D-157, #520) : sur écran large, il occupe la place laissée sous la
    barre d'action et défile en lui-même. Il n'est rendu qu'à partir de 900 px (`useEcranLarge`). */
+/* Le conteneur n'a **pas de cadre** : la liste `.log` porte déjà le sien, et deux cadres l'un dans
+   l'autre sont une carte dans une carte (le détecteur d'UI le refuse, `nested-cards`). */
 .journal-console {
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
   gap: 0.35rem;
   min-height: 0;
-  padding: 0.6rem 0.75rem;
 }
 
 .journal-console__titre {
