@@ -63,7 +63,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     titre: 'Le combat',
     texte:
       'Trois Interventions et la partie est gagnée, et un COMEX en vaut deux. Le combat guidé t’apprend le Poste, le café et la Pression, sur le vrai plateau.',
-    cible: '/battle?scene=fin',
+    cible: '/battle?tutoriel=1&scene=fin',
     action: 'Jouer mon premier combat'
   },
   {

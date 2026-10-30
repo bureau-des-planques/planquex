@@ -27,6 +27,8 @@ import {
 } from '@/game/deck';
 import { decodeDeckCode, encodeDeckCode } from '@/game/codec';
 import { useStore } from '@/store/useStore';
+import { useEstCibleJournee } from '@/components/journee-cible';
+import { CartesJournee } from '@/components/CartesJournee';
 import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
 import { TriCartes } from '@/components/TriCartes';
@@ -62,9 +64,10 @@ export function Deck() {
     clearDeck,
     addCard,
     setCafeTypes,
-    toggleCafeType,
-    tutorielVu
+    toggleCafeType
   } = useStore();
+  /** Le halo du volet, et les cartes du tutoriel, seulement quand la Journée y est. */
+  const cibleDecks = useEstCibleJournee('decks-proposes');
   const [selected, setSelected] = useState<Card | null>(null);
   /** Un seul tri pour « Dedans » et pour le sélecteur : les deux se lisent pareil. */
   const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
@@ -312,7 +315,7 @@ export function Deck() {
           /* Le geste de l'étape « La Collection et le Deck » (30/10/2026) : le volet des
              Decks proposés est ce que la Journée désigne, et charger un Deck est ce qu'elle
              attend. Une fois le tutoriel vu, l'attribut disparaît. */
-          data-journee-cible={tutorielVu ? undefined : 'decks-proposes'}
+          data-journee-cible={cibleDecks ? 'decks-proposes' : undefined}
           open={proposesOuverts}
           onToggle={(event) => setProposesOuverts(event.currentTarget.open)}
         >
@@ -325,6 +328,10 @@ export function Deck() {
             </div>
             <ChevronDown className="volet__chevron" size={20} aria-hidden="true" />
           </summary>
+          {/* **Les cartes du tutoriel vivent ici** (30/10/2026) : elles étaient dans le panneau
+              de la Journée, qui montait alors à 54 % de l'écran. Elles ne s'affichent que
+              pendant l'étape qui les montre. */}
+          {cibleDecks && <CartesJournee />}
           <ul className="decks-proposes__list">
             {DECKS_PROPOSES.map((deckPropose) => (
               <li key={deckPropose.id} className="decks-proposes__item">

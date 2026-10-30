@@ -132,7 +132,9 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
 
   it('envoie le combat sur la **fin scriptée** (30/10/2026)', () => {
     // Le testeur la joue, il ne la regarde pas : la position de départ vient du scénario.
-    expect(ETAPES_JOURNEE[2].cible).toBe('/battle?scene=fin');
+    // Le pas-à-pas (tutoriel) **et** la position gagnable (scene) : sans le premier, l'étape
+    // promettait un guidage qu'elle n'ouvrait pas (critique du 30/10/2026, P1).
+    expect(ETAPES_JOURNEE[2].cible).toBe('/battle?tutoriel=1&scene=fin');
   });
 
   it('nomme les écrans comme le jeu', () => {

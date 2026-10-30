@@ -5,6 +5,7 @@ import { Settings, CATEGORIES_REGLAGES } from './Settings';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { estGesteFait, oublierGestes } from '@/components/journee-gestes';
+import { poserCibleJournee } from '@/components/journee-cible';
 import { useComptes } from '@/store/comptes';
 import type { Compte } from '@/lib/comptes';
 import { APP_LABEL } from '@/version';
@@ -125,10 +126,11 @@ describe('Settings — écran des Réglages', () => {
 
   it('« Créer ma sauvegarde » est le geste de l’étape「 Tes données 」(30/10/2026)', async () => {
     oublierGestes();
+    // Le halo n'apparaît que si la Journée **tient cette étape** (critique du 30/10/2026).
+    poserCibleJournee('sauvegarde');
     renderWithStore(<Settings />, { tutorielVu: false, pasAPasCombatVu: true });
 
     const bouton = screen.getByRole('button', { name: /Créer ma sauvegarde/i });
-    // La Journée n'est pas finie : c'est cet élément qu'elle désigne.
     expect(bouton).toHaveAttribute('data-journee-cible', 'sauvegarde');
     expect(estGesteFait('sauvegarde')).toBe(false);
 

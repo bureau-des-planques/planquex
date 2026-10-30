@@ -1,50 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppelParticiper } from '@/components/AppelParticiper';
-import { CARTES_MONTREES, ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
+import { ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
+import { CIBLE_DE_GESTE } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
-import { CARD_BY_ID } from '@/data';
-import type { Card } from '@/data/types';
+import { poserCibleJournee } from '@/components/journee-cible';
 import { useStore } from '@/store/useStore';
 
-/** Les cartes montrées à l'étape « La Collection et le Deck » — la carte parle, on n'ajoute rien. */
-function CartesMontrees() {
-  const cartes = CARTES_MONTREES.map((id) => CARD_BY_ID.get(id)).filter((card): card is Card => Boolean(card));
-  return (
-    <ul className="journee__cartes" aria-label="Quelques cartes, pour le plaisir">
-      {cartes.map((card) => (
-        <li key={card.id} className="journee__carte">
-          <strong>{card.name}</strong>
-          {'flavor' in card && card.flavor ? <em>{card.flavor}</em> : null}
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/**
- * La « Journée d'intégration » : ce qu'un testeur ne devine pas (`docs/JEU.md` §3 — le
- * tutoriel s'appelle comme ça, jamais « onboarding »).
- *
- * **Un panneau, plus un dialogue** (30/10/2026). Elle était un `Dialog` : un fond sombre,
- * la page figée, et des étapes qui se lisaient sans qu'on puisse rien faire dessous. Or la
- * suite du parcours demande des **gestes réels** — ouvrir un Arrivage, choisir un Deck —
- * qu'un dialogue modal rend impossibles. Elle devient donc le **même motif que le
- * pas-à-pas du combat** : un panneau posé sur l'écran, sans fond sombre.
- *
- * **Ce qui la rend contraignante** : tant qu'elle est ouverte, tout ce qui n'est pas le
- * panneau (`data-journee-panneau`) ou un élément qu'elle désigne (`data-journee-cible`)
- * est **inerte** — un écouteur en phase de capture avale le clic avant React. On ne sort
- * donc pas du parcours en touchant la barre du bas sans le vouloir ; la seule sortie est
- * « Passer », qui **dit ce qu'elle coûte** (`libelleSaut`, D-136).
- *
- * Elle se montre **une fois** (`tutorielVu`, forme persistée v5 : aucun champ nouveau, donc
- * aucune migration), se referme par n'importe quel chemin de fermeture — « Suivant »
- * jusqu'au bout, le saut —, et se rouvre depuis **Réglages** (le drapeau y repasse à `false`).
- *
- * **Le mur du comité (`/comite`) est exclu** : la visite guidée s'abstient sur cette page
- * a été levée le 30/10/2026 (D-161).
- */
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
   const setTutorielVu = useStore((state) => state.setTutorielVu);
@@ -90,11 +52,22 @@ export function JourneeIntegration() {
       evenement.preventDefault();
       evenement.stopPropagation();
     };
+    /**
+     * **Le blocage parle** (critique du 30/10/2026, P1) : `Échap` sort, et le panneau prend
+     * le focus à l'ouverture. Sans cela, un utilisateur au clavier n'avait aucune sortie et
+     * ne savait pas que la page était inerte.
+     */
+    const sortir = (evenement: KeyboardEvent) => {
+      if (evenement.key === 'Escape') terminer();
+    };
     document.addEventListener('pointerdown', bloquer, true);
     document.addEventListener('click', bloquer, true);
+    document.addEventListener('keydown', sortir);
+    panneauRef.current?.focus();
     return () => {
       document.removeEventListener('pointerdown', bloquer, true);
       document.removeEventListener('click', bloquer, true);
+      document.removeEventListener('keydown', sortir);
     };
   }, [ouvert]);
 
@@ -113,13 +86,38 @@ export function JourneeIntegration() {
    * « Ouvrir un Arrivage » disparaissait sous le panneau). À chaque étape, on amène la
    * première cible **en haut**, sous le panneau, dont la hauteur réelle devient la marge.
    */
+  const amenerLaCible = () => {
+    document.querySelector('[data-journee-cible]')?.scrollIntoView({ block: 'center' });
+  };
+
   useEffect(() => {
     if (!ouvert) return;
     const panneau = panneauRef.current;
-    if (panneau) {
-      document.documentElement.style.setProperty('--journee-hauteur', `${panneau.offsetHeight}px`);
-    }
-    document.querySelector('[data-journee-cible]')?.scrollIntoView({ block: 'start' });
+    if (!panneau) return;
+    // **La cible de l'étape, et elle seule** : les pages ne s'allument plus toutes ensemble.
+    poserCibleJournee(courante.geste ? CIBLE_DE_GESTE[courante.geste] : null);
+
+    /**
+     * **La hauteur se mesure en continu** (`ResizeObserver`) : elle était lue une fois, au
+     * montage, avant que la police ne change la hauteur d'une ligne — d'où une cible
+     * mesurée 14 px sous le panneau (critique du 30/10/2026, P0). Elle alimente
+     * `--journee-hauteur`, donc le `scroll-margin-top` du halo.
+     */
+    const poser = () => document.documentElement.style.setProperty('--journee-hauteur', `${panneau.offsetHeight}px`);
+    poser();
+    const observateur = typeof ResizeObserver === 'function' ? new ResizeObserver(poser) : null;
+    observateur?.observe(panneau);
+
+    // **La cible vient au centre** : en haut, elle se retrouvait sous le panneau, et le
+    // premier écran du produit n'offrait plus aucun chemin visible vers l'avant.
+    amenerLaCible();
+    // Les polices arrivent après le premier rendu : on replace la cible une fois posées.
+    void document.fonts?.ready.then(() => amenerLaCible());
+
+    return () => {
+      observateur?.disconnect();
+      poserCibleJournee(null);
+    };
   }, [ouvert, etape, pathname]);
 
   if (!ouvert) return null;
@@ -140,8 +138,10 @@ export function JourneeIntegration() {
       className="journee"
       data-journee-panneau
       role="dialog"
+      aria-modal="true"
       aria-labelledby="journee-titre"
       aria-describedby="journee-texte"
+      tabIndex={-1}
     >
       <p className="journee__compte">
         <span aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
@@ -158,13 +158,13 @@ export function JourneeIntegration() {
         {courante.texte}
       </p>
 
-      {courante.montreCartes && <CartesMontrees />}
-
-      {!gesteFait && (
-        <p className="journee__geste" role="status">
-          Fais le geste sur la page : « Suivant » s’ouvrira ensuite.
-        </p>
-      )}
+      {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
+          apparaît, mais il entend un texte qui change. */}
+      <p className="journee__geste" role="status">
+        {gesteFait
+          ? 'C’est fait : « Suivant » est ouvert.'
+          : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}
+      </p>
 
       {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
@@ -172,7 +172,7 @@ export function JourneeIntegration() {
       <div className="actions actions--tight">
         {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
             place au geste lui-même (c'est l'élément désigné qui le porte). */}
-        {pathname !== courante.cible && (
+        {pathname !== courante.cible ? (
           <button
             type="button"
             className="button button--primary"
@@ -183,12 +183,18 @@ export function JourneeIntegration() {
           >
             {courante.action}
           </button>
-        )}
-        {derniere ? (
-          <button type="button" className="button" onClick={terminer}>
-            Plus tard
-          </button>
         ) : (
+          /* **Sur l'écran de l'étape**, le panneau garde une action : « Montrer le bouton ».
+             Il ne fait pas le geste à la place du testeur, il amène la cible sous ses yeux —
+             sans lui, l'écran n'offrait qu'un « Suivant » éteint (critique du 30/10/2026). */
+          <button type="button" className="button button--primary" onClick={amenerLaCible}>
+            Montrer le bouton
+          </button>
+        )}
+        {/* **Deux sorties, pas trois** (30/10/2026) : « Plus tard » faisait exactement ce que
+            fait le lien du dessous, et promettait un retour qui n'arrive jamais — `terminer`
+            écrit le drapeau. À la dernière étape, le geste principal suffit. */}
+        {!derniere && (
           <button
             type="button"
             className="button"
@@ -203,7 +209,7 @@ export function JourneeIntegration() {
       </div>
 
       <button type="button" className="journee__passer" onClick={terminer}>
-        {libelleSaut(etape)}
+        {derniere ? 'Relire la journée plus tard, depuis Réglages' : libelleSaut(etape)}
       </button>
 
       {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée

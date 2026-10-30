@@ -26,12 +26,14 @@ Object.defineProperty(navigator, 'clipboard', {
   }
 });
 
-// Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn()
-}));
+// Mock ResizeObserver — une **classe**, pas une flèche : les composants l'instancient avec
+// `new`, et un `vi.fn()` en flèche n'est pas un constructeur (vu le 30/10/2026).
+class ResizeObserverMock {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+global.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 
 // Mock scrollIntoView
 Element.prototype.scrollIntoView = vi.fn();

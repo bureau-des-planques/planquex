@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { marquerGeste } from '@/components/journee-gestes';
+import { useEstCibleJournee } from '@/components/journee-cible';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
 import { LIBELLE_DIFFICULTE, LIBELLE_POLITIQUE, RESUME_POLITIQUE } from '@/components/difficulte';
@@ -58,9 +59,10 @@ export function Settings() {
     difficulte,
     setDifficulte,
     reset,
-    setTutorielVu,
-    tutorielVu
+    setTutorielVu
   } = useStore();
+  /** Le halo de « Créer ma sauvegarde » : seulement quand la Journée est à cette étape. */
+  const cibleSauvegarde = useEstCibleJournee('sauvegarde');
   const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
   const importerSauvegarde = useStore((state) => state.importerSauvegarde);
   const configure = useComptes((state) => state.configure);
@@ -308,7 +310,7 @@ export function Settings() {
             type="button"
             className="button"
             /* L'étape « Tes données » désigne ce bouton : le testeur repart avec sa copie. */
-            data-journee-cible={tutorielVu ? undefined : 'sauvegarde'}
+            data-journee-cible={cibleSauvegarde ? 'sauvegarde' : undefined}
             onClick={creerSauvegarde}
           >
             <Copy size={16} /> Créer ma sauvegarde

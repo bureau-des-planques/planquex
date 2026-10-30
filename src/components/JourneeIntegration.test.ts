@@ -38,8 +38,9 @@ describe('elle se montre une fois, et se referme (ticket #130)', () => {
     // remontrerait aussitôt.
     expect(composant).not.toMatch(/DialogClose|onOpenChange/);
     expect(composant.match(/setTutorielVu\(true\)/g)).toHaveLength(1);
-    // « Suivant » et le geste avancent ; « Passer » et « Plus tard » sortent par `terminer`.
-    expect(composant.match(/onClick=\{terminer\}/g)).toHaveLength(2);
+    // « Suivant » avance ; **une seule** sortie passe par `terminer` depuis que « Plus tard »
+    // a disparu (30/10/2026) : le lien « Relire la journée… ».
+    expect(composant.match(/onClick=\{terminer\}/g)).toHaveLength(1);
   });
 
   it('se rouvre depuis Réglages', () => {
@@ -63,10 +64,15 @@ describe('le panneau ne se quitte pas par accident (30/10/2026)', () => {
     expect(composant).toMatch(/evenement\.preventDefault\(\)/);
   });
 
-  it('n’est pas un dialogue modal : pas de fond assombri, la page reste lisible', () => {
-    expect(composant).not.toMatch(/aria-modal="true"/);
+  it('n’est pas un dialogue : pas de fond assombri, et il bloque pourtant', () => {
+    // Depuis la critique du 30/10/2026 il bloque réellement (halo + garde), donc il se
+    // déclare modal — mais sans le fond assombri du `Dialog` : la page reste lisible.
+    expect(composant).toMatch(/aria-modal="true"/);
     expect(composant).not.toMatch(/<Dialog/);
     expect(composant).toMatch(/className="journee"/);
+    // Échap sort, et le panneau prend le focus : un blocage qui parle.
+    expect(composant).toMatch(/evenement\.key === 'Escape'/);
+    expect(composant).toMatch(/panneauRef\.current\?\.focus\(\)/);
   });
 
   it('le halo ne déplace rien : un contour, jamais une bordure qui prendrait de la place', () => {
@@ -84,7 +90,7 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
     expect(composant).toMatch(/ETAPES_JOURNEE/);
     expect(etapes).toMatch(/cible: '\/'/);
     expect(etapes).toMatch(/cible: '\/deck'/);
-    expect(etapes).toMatch(/cible: '\/battle\?scene=fin'/);
+    expect(etapes).toMatch(/cible: '\/battle\?tutoriel=1&scene=fin'/);
     expect(etapes).toMatch(/cible: '\/settings'/);
     expect(etapes).toMatch(/cible: '\/comite'/);
   });
