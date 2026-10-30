@@ -51,7 +51,12 @@ describe('elle se montre une fois, et se referme (ticket #130)', () => {
 describe('le panneau ne se quitte pas par accident (30/10/2026)', () => {
   it('laisse passer le panneau et les éléments désignés, et rien d’autre', () => {
     expect(composant).toMatch(/data-journee-panneau/);
-    expect(composant).toMatch(/closest\('\[data-journee-panneau\], \[data-journee-cible\]'\)/);
+    expect(composant).toMatch(
+      /closest\('\[data-journee-panneau\], \[data-journee-cible\], \[role="dialog"\], \.ouverture'\)/
+    );
+    // La scène d'ouverture d'un Arrivage passe au-dessus : sans elle, le testeur ne peut
+    // plus fermer son sachet pendant la visite.
+    expect(composant).toMatch(/\.ouverture/);
     // En **capture** sur `document` : avant React, donc avant tout gestionnaire de bouton.
     expect(composant).toMatch(/document\.addEventListener\('click', bloquer, true\)/);
     expect(composant).toMatch(/document\.addEventListener\('pointerdown', bloquer, true\)/);

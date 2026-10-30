@@ -1,7 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { ETAPES_JOURNEE, MOTS_PAR_MINUTE, libelleSaut, nombreDePhrases, secondesDeLecture } from './journee-etapes';
+import {
+  CARTES_MONTREES,
+  ETAPES_JOURNEE,
+  MOTS_PAR_MINUTE,
+  libelleSaut,
+  nombreDePhrases,
+  secondesDeLecture
+} from './journee-etapes';
+import { CARD_BY_ID } from '@/data';
 
 /**
  * La « Journée d'intégration » (#130, D-066 ; refonte du 30/10/2026, D-160) — le contenu,
@@ -78,6 +86,26 @@ describe('cinq étapes, et plus de recouvrement avec le combat (30/10/2026)', ()
     expect(texteDe(4)).toMatch(/comité/);
     expect(texteDe(4)).toMatch(/IP/);
     expect(texteDe(4)).toMatch(/OUF/);
+  });
+});
+
+describe('les cartes montrées à l’étape 2 (30/10/2026)', () => {
+  it('montre des cartes qui existent au catalogue', () => {
+    expect(CARTES_MONTREES.length).toBeGreaterThanOrEqual(5);
+    for (const id of CARTES_MONTREES) {
+      expect(CARD_BY_ID.has(id), id).toBe(true);
+    }
+  });
+
+  it('montre une évolution, pas seulement des vannes : flûte → technicien système', () => {
+    const technicien = CARD_BY_ID.get('atelier-technicien-systeme');
+    expect(technicien && 'evolvesFrom' in technicien ? technicien.evolvesFrom : null).toBe('atelier-joueur-de-flute');
+  });
+
+  it('n’est demandée que par l’étape qui en parle', () => {
+    const avecCartes = ETAPES_JOURNEE.filter((etape) => etape.montreCartes);
+    expect(avecCartes).toHaveLength(1);
+    expect(avecCartes[0].titre).toBe('La Collection et le Deck');
   });
 });
 

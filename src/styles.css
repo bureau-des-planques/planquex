@@ -2509,6 +2509,10 @@ h2 {
   border-radius: 4px;
   outline: 2px solid color-mix(in srgb, var(--gold) 70%, transparent);
   outline-offset: 3px;
+  /* L'élément désigné est amené **sous le panneau**, jamais derrière : sa hauteur réelle
+     est posée par `JourneeIntegration` dans `--journee-hauteur`. Même remède que le
+     pas-à-pas du combat. */
+  scroll-margin-top: calc(var(--journee-hauteur, 0px) + 1rem);
 }
 
 .journee__compte {
@@ -2530,6 +2534,52 @@ h2 {
   line-height: 1.4;
   margin: 0;
   max-width: 62ch;
+}
+
+/* Les cartes drôles de l'étape « La Collection et le Deck » (30/10/2026) : une bande
+   horizontale, jamais un mur. Six cartes tiendraient sur trois lignes de panel et
+   pousseraient les boutons hors du téléphone ; là, on les fait glisser. La vanne est la
+   `flavor` de la carte, alors elle se lit en retrait (`--text-muted`, 7,87:1 sur `--bg`),
+   sous le nom qui reste en `--text`. */
+.journee__cartes {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.1rem 0 0.35rem;
+  scroll-snap-type: x proximity;
+}
+
+.journee__carte {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex: 0 0 9.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  scroll-snap-align: start;
+}
+
+.journee__carte strong {
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.journee__carte em {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+/* Le geste qui reste à faire : dit pourquoi « Suivant » est éteint, à la place où l'œil
+   cherche la raison. `--gold-soft` sur le fond du panneau : 12,03:1, AAA. */
+.journee__geste {
+  color: var(--gold-soft);
+  font-size: 0.8rem;
+  margin: 0;
 }
 
 /* La sortie de la visite, sous les actions : un lien discret, pas un troisième bouton —

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { JourneeIntegration } from './JourneeIntegration';
@@ -16,7 +16,14 @@ import { useStore } from '@/store/useStore';
  * saut mène au même état que la fin. Les trois se voient ici, dans un panneau réel.
  */
 function monter() {
-  setupTestStore({ tutorielVu: false, pasAPasCombatVu: true });
+  // Les deux gestes de la Journée sont faits : ce fichier éprouve l'enchaînement, et le
+  // test dédié ci-dessous éprouve la garde du geste.
+  setupTestStore({
+    tutorielVu: false,
+    pasAPasCombatVu: true,
+    packsOpened: 1,
+    deck: ['atelier-joueur-de-flute']
+  });
   return render(
     <MemoryRouter initialEntries={['/']}>
       <JourneeIntegration />
@@ -33,6 +40,31 @@ function action(nom: RegExp) {
 }
 
 describe('la Journée d’intégration se joue (D-160)', () => {
+  it('« Suivant » attend les gestes : un Arrivage ouvert, un Deck chargé', async () => {
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    const suivant = () => screen.getByRole('button', { name: /^Suivant$/i });
+
+    // **Le contrôle mord** : sans le geste, on ne traverse pas la Journée en lecture.
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      useStore.getState().openPack();
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
+
+    await userEvent.click(suivant());
+    expect(screen.getByRole('heading', { name: 'La Collection et le Deck' })).toBeInTheDocument();
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      useStore.getState().setDeck(['atelier-joueur-de-flute']);
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
+  });
+
   it('annonce cinq étapes, et les fait défiler jusqu’au comité', async () => {
     monter();
     expect(screen.getByText('Journée d’intégration — étape 1 sur 5')).toBeInTheDocument();

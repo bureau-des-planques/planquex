@@ -33,7 +33,7 @@ function derniereRelease(notes: readonly NoteVersion[]): NoteVersion | undefined
 }
 
 export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[] } = {}) {
-  const { owned, deck, openPack, packsOpened } = useStore();
+  const { owned, deck, openPack, packsOpened, tutorielVu } = useStore();
   const derniere = derniereRelease(notes);
   const [lastPack, setLastPack] = useState<Card[] | null>(null);
   /** Les cartes de l'Arrivage que le testeur n'avait pas : une carte tirée deux fois n'est neuve qu'une. */
@@ -74,7 +74,16 @@ export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[
           ta main.
         </p>
         <div className="hero__actions">
-          <button type="button" className="button button--gold button--big hero__ouvrir" onClick={handleOpenPack}>
+          {/* **Le geste de la Journée** (30/10/2026) : tant qu'elle n'est pas finie, ce
+              bouton est l'élément qu'elle désigne — le halo vient de `[data-journee-cible]`,
+              et la garde du panneau laisse passer ce clic-là. Rien ne change une fois le
+              tutoriel vu. */}
+          <button
+            type="button"
+            className="button button--gold button--big hero__ouvrir"
+            data-journee-cible={tutorielVu ? undefined : 'arrivage'}
+            onClick={handleOpenPack}
+          >
             <PackageOpen size={22} /> Ouvrir un Arrivage
           </button>
           <Link className="button button--primary button--big" to="/battle">

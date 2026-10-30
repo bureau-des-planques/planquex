@@ -1,8 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppelParticiper } from '@/components/AppelParticiper';
-import { ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
+import { CARTES_MONTREES, ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
+import { CARD_BY_ID } from '@/data';
+import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
+
+/** Les cartes montrées à l'étape « La Collection et le Deck » — la carte parle, on n'ajoute rien. */
+function CartesMontrees() {
+  const cartes = CARTES_MONTREES.map((id) => CARD_BY_ID.get(id)).filter((card): card is Card => Boolean(card));
+  return (
+    <ul className="journee__cartes" aria-label="Quelques cartes, pour le plaisir">
+      {cartes.map((card) => (
+        <li key={card.id} className="journee__carte">
+          <strong>{card.name}</strong>
+          {'flavor' in card && card.flavor ? <em>{card.flavor}</em> : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 /**
  * La « Journée d'intégration » : ce qu'un testeur ne devine pas (`docs/JEU.md` §3 — le
@@ -30,9 +47,14 @@ import { useStore } from '@/store/useStore';
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
   const setTutorielVu = useStore((state) => state.setTutorielVu);
+  /** Les deux gestes que la Journée attend (30/10/2026) : un Arrivage ouvert, un Deck chargé. */
+  const packsOpened = useStore((state) => state.packsOpened);
+  const deck = useStore((state) => state.deck);
   const [etape, setEtape] = useState(0);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  /** Le panneau, pour mesurer sa hauteur et garder l'élément désigné **sous** lui. */
+  const panneauRef = useRef<HTMLElement | null>(null);
 
   const terminer = () => {
     setTutorielVu(true);
@@ -58,8 +80,13 @@ export function JourneeIntegration() {
    */
   useEffect(() => {
     if (!ouvert) return;
+    // **Ce qui prend la main passe au-dessus de la visite.** L'ouverture d'un Arrivage est
+    // une scène plein écran (`.ouverture`, dans un dialogue Radix) : sans ces deux
+    // exceptions, le testeur qui vient d'ouvrir son sachet ne peut plus le fermer — la
+    // visite bloque les boutons de la scène (constaté le 30/10/2026).
     const autorise = (cible: EventTarget | null) =>
-      cible instanceof Element && cible.closest('[data-journee-panneau], [data-journee-cible]') !== null;
+      cible instanceof Element &&
+      cible.closest('[data-journee-panneau], [data-journee-cible], [role="dialog"], .ouverture') !== null;
     const bloquer = (evenement: Event) => {
       if (autorise(evenement.target)) return;
       evenement.preventDefault();
@@ -73,13 +100,36 @@ export function JourneeIntegration() {
     };
   }, [ouvert]);
 
+  const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
+
+  /**
+   * **L'élément désigné vient sous les yeux.** Le panneau occupe le haut de l'écran : sans
+   * cela, le bouton qu'il désigne peut être caché derrière lui (constaté sur l'accueil, où
+   * « Ouvrir un Arrivage » disparaissait sous le panneau). À chaque étape, on amène la
+   * première cible **en haut**, sous le panneau, dont la hauteur réelle devient la marge.
+   */
+  useEffect(() => {
+    if (!ouvert) return;
+    const panneau = panneauRef.current;
+    if (panneau) {
+      document.documentElement.style.setProperty('--journee-hauteur', `${panneau.offsetHeight}px`);
+    }
+    document.querySelector('[data-journee-cible]')?.scrollIntoView({ block: 'start' });
+  }, [ouvert, etape, pathname]);
+
   if (!ouvert) return null;
 
-  const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
   const derniere = etape >= ETAPES_JOURNEE.length - 1;
+  /**
+   * **Le geste réel** : « Suivant » ne s'ouvre qu'une fois fait. C'est ce qui empêche de
+   * traverser la Journée en lecture — et c'est pour ça qu'elle a cessé d'être un dialogue
+   * modal : le geste se fait sur la page, pas dans le panneau.
+   */
+  const gesteFait = courante.geste === undefined || (courante.geste === 'arrivage' ? packsOpened > 0 : deck.length > 0);
 
   return (
     <aside
+      ref={panneauRef}
       className="journee"
       data-journee-panneau
       role="dialog"
@@ -101,20 +151,32 @@ export function JourneeIntegration() {
         {courante.texte}
       </p>
 
+      {courante.montreCartes && <CartesMontrees />}
+
+      {!gesteFait && (
+        <p className="journee__geste" role="status">
+          Fais le geste sur la page : « Suivant » s’ouvrira ensuite.
+        </p>
+      )}
+
       {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
           qu'elle décrit — sauf la dernière, qui referme la Journée en menant au combat. */}
       <div className="actions actions--tight">
-        <button
-          type="button"
-          className="button button--primary"
-          onClick={() => {
-            navigate(courante.cible);
-            if (derniere) terminer();
-          }}
-        >
-          {courante.action}
-        </button>
+        {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
+            place au geste lui-même (c'est l'élément désigné qui le porte). */}
+        {pathname !== courante.cible && (
+          <button
+            type="button"
+            className="button button--primary"
+            onClick={() => {
+              navigate(courante.cible);
+              if (derniere) terminer();
+            }}
+          >
+            {courante.action}
+          </button>
+        )}
         {derniere ? (
           <button type="button" className="button" onClick={terminer}>
             Plus tard
@@ -123,6 +185,7 @@ export function JourneeIntegration() {
           <button
             type="button"
             className="button"
+            disabled={!gesteFait}
             onClick={() => {
               setEtape((courant) => courant + 1);
             }}

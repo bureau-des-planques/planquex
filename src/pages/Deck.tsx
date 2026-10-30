@@ -62,7 +62,8 @@ export function Deck() {
     clearDeck,
     addCard,
     setCafeTypes,
-    toggleCafeType
+    toggleCafeType,
+    tutorielVu
   } = useStore();
   const [selected, setSelected] = useState<Card | null>(null);
   /** Un seul tri pour « Dedans » et pour le sélecteur : les deux se lisent pareil. */
@@ -308,6 +309,10 @@ export function Deck() {
       <section className="section panel decks-proposes">
         <details
           className="volet"
+          /* Le geste de l'étape « La Collection et le Deck » (30/10/2026) : le volet des
+             Decks proposés est ce que la Journée désigne, et charger un Deck est ce qu'elle
+             attend. Une fois le tutoriel vu, l'attribut disparaît. */
+          data-journee-cible={tutorielVu ? undefined : 'decks-proposes'}
           open={proposesOuverts}
           onToggle={(event) => setProposesOuverts(event.currentTarget.open)}
         >

@@ -27,6 +27,18 @@ export interface EtapeJournee {
   readonly cible: string;
   /** Le libellé du bouton : il nomme le geste, jamais « en savoir plus ». */
   readonly action: string;
+  /**
+   * Le **geste réel** que l'étape exige avant de passer à la suivante (30/10/2026).
+   * Sans lui, la Journée se lisait : « ouvre un Arrivage » était un conseil, pas une
+   * étape. `arrivage` attend un Arrivage ouvert (`packsOpened`), `deck` attend un Deck
+   * chargé (`deck.length`).
+   */
+  readonly geste?: 'arrivage' | 'deck';
+  /**
+   * L'étape montre les cartes drôles du set (30/10/2026). C'est la carte qui parle : sa
+   * `flavor` est déjà la vanne, on n'en ajoute pas une seconde.
+   */
+  readonly montreCartes?: boolean;
 }
 
 export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
@@ -35,14 +47,17 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     texte:
       'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Clique le bouton de l’accueil : les cartes rejoignent ta Collection.',
     cible: '/',
-    action: 'Ouvrir un Arrivage'
+    action: 'Aller à l’accueil',
+    geste: 'arrivage'
   },
   {
     titre: 'La Collection et le Deck',
     texte:
       'La Collection montre ce que tu possèdes, et le Deck compose vingt cartes avec. Choisis un Deck proposé et charge-le : c’est celui que tu joueras.',
     cible: '/deck',
-    action: 'Composer mon Deck'
+    action: 'Aller au Deck',
+    geste: 'deck',
+    montreCartes: true
   },
   {
     titre: 'Le combat',
@@ -66,6 +81,22 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     action: 'Voir le comité'
   }
 ];
+
+/**
+ * Les cartes montrées à l'étape « La Collection et le Deck » (30/10/2026).
+ *
+ * Des **identifiants**, pas des textes : la vanne est la `flavor` de la carte, lue dans
+ * `src/data` — un fait, un fichier. La paire Joueur de flûte → Technicien système est là
+ * pour montrer une **évolution** (Entrant → N+1), pas seulement pour faire rire.
+ */
+export const CARTES_MONTREES = [
+  'atelier-joueur-de-flute',
+  'atelier-technicien-systeme',
+  'direction-chef-projet-fantome',
+  'rh-charge-recrutement',
+  'qvt-happiness-manager',
+  'interim-interimaire'
+] as const;
 
 /**
  * Ce que le saut coûte, écrit sur le bouton (D-136, reformulé le 30/10/2026).
