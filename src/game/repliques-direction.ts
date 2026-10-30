@@ -23,32 +23,32 @@ export type EvenementDirection = 'ouverture' | 'pression' | 'craquage' | 'victoi
 export const REPLIQUES_DIRECTION: Record<EvenementDirection, readonly string[]> = {
   ouverture: [
     'Je t’ai mis dans la boucle. Tu ne sais pas laquelle.',
-    'Tu as cinq minutes ? Elles sont décomptées.',
+    'Tu as cinq minutes ? Elles sont prises sur ton compteur.',
     'Ça tombe bien, j’avais un point à te faire.'
   ],
   pression: [
-    'Ambitieux. On repère vite les gens ambitieux.',
-    'C’est noté dans ton dossier.',
-    'Continue. Ça m’occupe.',
-    'Tu veux vraiment qu’on en parle en revue ?'
+    'Tu attaques. C’est courageux, pour ton statut.',
+    'C’est noté. À un endroit que tu ne verras pas.',
+    'Tu me rappelles quelqu’un. Il est parti.',
+    'On en parlera à ton EPDP. Avec tes objectifs.'
   ],
   craquage: [
     'Il était en réunion. Depuis 2019.',
-    'Un départ, pas un problème : une réorganisation.',
+    'Ce n’est pas un départ. C’est une fin de mission.',
     'On va mutualiser son poste.',
     'Un bras cassé de moins. On respire.'
   ],
   victoire: [
     'Je déléguerai. À personne.',
     'Le sujet est clos. Le dossier reste ouvert.',
-    'On fera un retour d’expérience. Sans toi.',
-    'Tu gagnes. Ça ne compte pas dans ton évaluation.'
+    'On fera un REX. Tu n’es pas convié.',
+    'Bravo. Ça ne figurera pas dans ton bilan.'
   ],
   defaite: [
-    'Je te mets en copie. Pour information.',
-    'On garde la porte ouverte. Elle donne sur le parking.',
-    'Ce sera un excellent point pour ta revue.',
-    'Tu as perdu. Évidemment.'
+    'Je te mets en copie. Pour information seulement.',
+    'La porte reste ouverte. Celle de sortie.',
+    'Je transmets à ton manager. Il appréciera le contexte.',
+    'Ce n’était pas un test. C’était un entretien.'
   ]
 };
 
