@@ -1078,6 +1078,14 @@ export function Battle() {
   useEffect(() => {
     if (!selectedUid) return;
     poseRef.current?.scrollIntoView({ behavior: comportementDeDefilement(), block: 'nearest' });
+    // Le focus reste dans la main après un choix : le panneau de pose apparaît sans être annoncé,
+    // et le clavier doit refaire jusqu'à 10 cartes pour atteindre les gestes. Le critère WCAG sur
+    // l'ordre du focus veut que le focus suive le contenu qui vient d'apparaître (#525). Un clic
+    // à la souris a le même effet (le bouton cliqué a le focus) : c'est voulu. Un focus parti
+    // ailleurs n'est jamais déplacé.
+    if (document.activeElement?.closest('.hand')) {
+      poseRef.current?.focus({ preventScroll: true });
+    }
   }, [selectedUid]);
 
   const play = useCallback((action: BattleAction) => {
@@ -1930,7 +1938,7 @@ export function Battle() {
             sous la barre de navigation.
           */}
           {selected && (
-            <section className="pose panel" aria-label="Poser la carte choisie" ref={poseRef}>
+            <section className="pose panel" aria-label="Poser la carte choisie" tabIndex={-1} ref={poseRef}>
               <p className="pose__titre">
                 <span className="muted">Carte choisie</span> <strong>{cardName(selected.cardId)}</strong>{' '}
                 <span className="hand__kind">{selectedDefinition && kindLabel(selectedDefinition)}</span>

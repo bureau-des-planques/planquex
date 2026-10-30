@@ -1618,3 +1618,18 @@ describe('Battle — la carte du plateau se décrit au focus (#525)', () => {
     for (const poste of postes) expect(poste).toHaveAccessibleDescription(/^\d+ sur \d+ de Stress\./);
   });
 });
+
+describe('Battle — le panneau de pose prend le focus au clavier (#525)', () => {
+  it('choisir une carte de la main amène le focus sur « Poser la carte choisie »', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    // Le camp qui ouvre dépend de la graine : on attend le tour du joueur, avec sa main.
+    await screen.findByRole('button', { name: 'Fin du tour' });
+    const carte = document.querySelector<HTMLButtonElement>('.hand .hand__card');
+    expect(carte).not.toBeNull();
+    carte!.focus();
+    fireEvent.click(carte!);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Poser la carte choisie' }));
+    });
+  });
+});
