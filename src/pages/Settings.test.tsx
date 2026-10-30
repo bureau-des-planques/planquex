@@ -4,6 +4,7 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { Settings, CATEGORIES_REGLAGES } from './Settings';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
+import { estGesteFait, oublierGestes } from '@/components/journee-gestes';
 import { useComptes } from '@/store/comptes';
 import type { Compte } from '@/lib/comptes';
 import { APP_LABEL } from '@/version';
@@ -120,6 +121,19 @@ describe('Settings — écran des Réglages', () => {
     const liens = screen.getAllByRole('link', { name: /préarmer/i });
     expect(liens).toHaveLength(1);
     expect(liens[0]).toHaveAttribute('href', '/installation');
+  });
+
+  it('« Créer ma sauvegarde » est le geste de l’étape「 Tes données 」(30/10/2026)', async () => {
+    oublierGestes();
+    renderWithStore(<Settings />, { tutorielVu: false, pasAPasCombatVu: true });
+
+    const bouton = screen.getByRole('button', { name: /Créer ma sauvegarde/i });
+    // La Journée n'est pas finie : c'est cet élément qu'elle désigne.
+    expect(bouton).toHaveAttribute('data-journee-cible', 'sauvegarde');
+    expect(estGesteFait('sauvegarde')).toBe(false);
+
+    fireEvent.click(bouton);
+    expect(estGesteFait('sauvegarde')).toBe(true);
   });
 
   it('affiche la section Sauvegarde', () => {

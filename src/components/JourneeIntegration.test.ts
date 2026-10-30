@@ -24,7 +24,7 @@ const settings = lire('../pages/Settings.tsx');
 describe('elle se montre une fois, et se referme (ticket #130)', () => {
   it('tient son ouverture du drapeau `tutorielVu`, pas d’un état local', () => {
     expect(composant).toMatch(/state\.tutorielVu/);
-    expect(composant).toMatch(/const ouvert = !tutorielVu && !surLeMur;/);
+    expect(composant).toMatch(/const ouvert = !tutorielVu;/);
   });
 
   it('écrit le drapeau à la fermeture, et remet l’étape à zéro', () => {
@@ -101,18 +101,17 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
   });
 });
 
-describe('le mur du comité est exclu de la visite (#130)', () => {
-  it('s’abstient sur `/comite`, et rien d’autre', () => {
-    expect(composant).toMatch(/pathname\.startsWith\('\/comite'\)/);
-    // Une seule exclusion : le mur. En combat la visite reste, elle ne fait que passer.
-    expect(composant).toMatch(/const surLeMur = pathname\.startsWith\('\/comite'\);/);
-    expect(composant.match(/startsWith\(/g)).toHaveLength(1);
+describe('le mur du comité n’est plus exclu (D-161)', () => {
+  it('se montre partout, sans exception d’écran', () => {
+    // **Le contrôle mord** : une exclusion réintroduite (`surLeMur`) ferait échouer ici.
+    expect(composant).not.toMatch(/surLeMur/);
+    expect(composant).not.toMatch(/startsWith\('\/comite'\)/);
+    expect(composant).toMatch(/const ouvert = !tutorielVu;/);
   });
 
-  it('ne perd pas la visite : le drapeau n’est pas écrit par l’exclusion', () => {
-    // `surLeMur` ne fait que fermer le dialogue ; `terminer` est le seul écrivain du
-    // drapeau, et il n’écrit que `true`. Un testeur qui lit le mur d’abord verra donc la
-    // visite en le quittant — et l’exclusion ne peut pas la marquer « vue » par erreur.
+  it('ne perd pas la visite : le drapeau n’a qu’un écrivain', () => {
+    // `terminer` est le seul écrivain, et il n'écrit que `true` : rien ne peut marquer la
+    // Journée « vue » par accident.
     expect(composant.match(/setTutorielVu\((true|false)\)/g)).toEqual(['setTutorielVu(true)']);
   });
 });

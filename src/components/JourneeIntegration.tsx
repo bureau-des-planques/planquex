@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppelParticiper } from '@/components/AppelParticiper';
 import { CARTES_MONTREES, ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
+import { useGesteFait } from '@/components/journee-gestes';
 import { CARD_BY_ID } from '@/data';
 import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
@@ -42,7 +43,7 @@ function CartesMontrees() {
  * jusqu'au bout, le saut —, et se rouvre depuis **Réglages** (le drapeau y repasse à `false`).
  *
  * **Le mur du comité (`/comite`) est exclu** : la visite guidée s'abstient sur cette page
- * (voir le commentaire de `surLeMur`).
+ * a été levée le 30/10/2026 (D-161).
  */
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
@@ -62,15 +63,12 @@ export function JourneeIntegration() {
   };
 
   /**
-   * Le mur (D-058, D-068) est le seul écran où la visite **s'abstient**. Il ne s'ouvre
-   * que par la bulle, pas par la barre de navigation : un testeur qui le lit d'abord n'a
-   * pas commencé à jouer, et lui poser un panneau de jeu par-dessus le premier contenu
-   * qu'il découvre serait le seul écran de l'application où l'on ne peut rien lire. Rien
-   * n'est perdu : `tutorielVu` reste `false`, et la visite se montre dès qu'on quitte le
-   * mur — d'autant que ses étapes emmènent justement ailleurs.
+   * **Elle se montre partout** (30/10/2026, D-161). Le mur du comité en était exclu
+   * (D-066, D-058) : on ne posait pas un dialogue de jeu sur le premier contenu qu'un
+   * testeur découvre. Depuis que la Journée est un panneau qui se laisse lire et qui
+   * s'efface, l'exclusion n'a plus de raison — et l'étape 5 la mène justement au comité.
    */
-  const surLeMur = pathname.startsWith('/comite');
-  const ouvert = !tutorielVu && !surLeMur;
+  const ouvert = !tutorielVu;
 
   /**
    * **La garde** : hors du panneau et hors des éléments désignés, le clic n'arrive pas.
@@ -100,6 +98,13 @@ export function JourneeIntegration() {
     };
   }, [ouvert]);
 
+  /**
+   * La sauvegarde est un fait de session : il se lit dans `journee-gestes`, pas dans le
+   * store. **Ce hook se lit avant le retour anticipé** : un `useSyncExternalStore` placé
+   * après `if (!ouvert) return null` change le nombre de hooks quand la Journée se ferme
+   * (« Rendered fewer hooks than expected », vu par le test d'écran).
+   */
+  const sauvegardeFaite = useGesteFait('sauvegarde');
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
 
   /**
@@ -125,7 +130,9 @@ export function JourneeIntegration() {
    * traverser la Journée en lecture — et c'est pour ça qu'elle a cessé d'être un dialogue
    * modal : le geste se fait sur la page, pas dans le panneau.
    */
-  const gesteFait = courante.geste === undefined || (courante.geste === 'arrivage' ? packsOpened > 0 : deck.length > 0);
+  const gesteFait =
+    courante.geste === undefined ||
+    (courante.geste === 'arrivage' ? packsOpened > 0 : courante.geste === 'deck' ? deck.length > 0 : sauvegardeFaite);
 
   return (
     <aside

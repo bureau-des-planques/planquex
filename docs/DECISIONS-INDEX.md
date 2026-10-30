@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 160 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 161 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -166,3 +166,4 @@
 | D-158 | 30/10/2026 | Sur PC, le combat grandit avec l'écran et sa console… |
 | D-159 | 30/10/2026 | Les services du parcours sont ceux d'un immeuble, et l'entrée… |
 | D-160 | 30/10/2026 | La Journée d'intégration ne dit plus ce que le combat… |
+| D-161 | 30/10/2026 | Le mur du comité n'est plus exclu de la Journée… |

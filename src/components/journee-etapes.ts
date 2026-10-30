@@ -33,7 +33,7 @@ export interface EtapeJournee {
    * étape. `arrivage` attend un Arrivage ouvert (`packsOpened`), `deck` attend un Deck
    * chargé (`deck.length`).
    */
-  readonly geste?: 'arrivage' | 'deck';
+  readonly geste?: 'arrivage' | 'deck' | 'sauvegarde';
   /**
    * L'étape montre les cartes drôles du set (30/10/2026). C'est la carte qui parle : sa
    * `flavor` est déjà la vanne, on n'en ajoute pas une seconde.
@@ -71,12 +71,13 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     texte:
       'Ta Collection et ton Deck vivent dans ce navigateur. Réglages → « Créer ma sauvegarde » avant de vider quoi que ce soit : c’est ta seule copie.',
     cible: '/settings',
-    action: 'Ouvrir mes réglages'
+    action: 'Aller aux réglages',
+    geste: 'sauvegarde'
   },
   {
     titre: 'Le comité',
     texte:
-      'Le comité est le mur des retours : un post-it IP pour une idée, un OUF pour un défaut. Il reste ouvert après la Journée, quand tu auras quelque chose à dire.',
+      'Le comité est le mur des retours, dans la barre du bas : un post-it IP pour une idée, un OUF pour un défaut. Il reste ouvert après la Journée, quand tu auras quelque chose à dire.',
     cible: '/comite',
     action: 'Voir le comité'
   }

@@ -2583,6 +2583,133 @@ h2 {
   margin: 0;
 }
 
+/* ---------- La scène de fin (30/10/2026) ---------- */
+
+/* Le verdict du combat scripté, **posé comme un tampon** : le plateau recule sous un voile
+   sombre, le tampon tombe de biais, la phrase de la Direction arrive dessous. Trois temps,
+   pas dix : la scène dure le temps d'un souffle, et un clic n'importe où la referme. */
+.scene-fin {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 60;
+}
+
+.scene-fin__voile {
+  animation: scene-fin-voile 220ms ease-out both;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(4 8 16 / 55%) 0%,
+    rgb(4 8 16 / 82%) 55%,
+    rgb(4 8 16 / 92%) 100%
+  );
+  inset: 0;
+  position: absolute;
+}
+
+.scene-fin__corps {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-width: min(22rem, 88vw);
+  padding: 1rem;
+  position: relative;
+  text-align: center;
+}
+
+/* Le tampon : un cadre épais, incliné, qui tombe et rebondit une fois. */
+.scene-fin__tampon {
+  animation: scene-fin-tampon 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  border: 3px solid var(--gold);
+  border-radius: 6px;
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 9vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  transform: rotate(-6deg);
+}
+
+.scene-fin__tampon.is-perdu {
+  border-color: var(--scene-danger);
+  color: var(--scene-danger);
+}
+
+.scene-fin__sous {
+  color: var(--text);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.scene-fin__replique {
+  animation: scene-fin-ligne 320ms ease-out 380ms both;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+@keyframes scene-fin-voile {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scene-fin-tampon {
+  0% {
+    opacity: 0;
+    transform: rotate(-14deg) scale(1.8);
+  }
+
+  60% {
+    opacity: 1;
+    transform: rotate(-5deg) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: rotate(-6deg) scale(1);
+  }
+}
+
+@keyframes scene-fin-ligne {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Sous mouvement réduit (ou quand le store le demande), la scène est **déjà posée** : le
+   verdict se lit, rien ne tombe. */
+.scene-fin--calme *,
+.scene-fin--calme *::after,
+.scene-fin--calme *::before {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-fin *,
+  .scene-fin *::after,
+  .scene-fin *::before {
+    animation: none !important;
+  }
+}
+
 /* La réplique de la Direction (30/10/2026) : une ligne, en italique, dans la même colonne
    que le journal — elle ne prend pas de bande à elle (D-103 tient). `--text-muted` sur la
    barre d'action : 7,16:1 au pire, AA. */

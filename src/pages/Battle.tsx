@@ -60,6 +60,7 @@ import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { etatFinScriptee } from '@/game/scenario-fin';
+import { SceneFin } from '@/components/SceneFin';
 import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
@@ -966,6 +967,8 @@ export function Battle() {
    * de la veille ressemblait à un abandon.
    */
   const [partieReprise, setPartieReprise] = useState(depart.reprise);
+  /** La scène de fin du tutoriel a-t-elle été refermée ? (30/10/2026) */
+  const [sceneFinFermee, setSceneFinFermee] = useState(false);
   /** Les Decks du combat solo : une partie à deux porte les siens dans son `Match`. */
   const [decksSolo, setDecksSolo] = useState<Decks>(depart.decksSolo);
 
@@ -1787,6 +1790,18 @@ export function Battle() {
 
       {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
       <PasAPasCombat pasAPas={pasAPas} />
+
+      {/* **La scène de fin** (30/10/2026) : dans la fin scriptée seulement, le verdict se
+          pose comme un tampon, avec la phrase de la Direction. Un clic la referme ; la
+          barre d'action garde ensuite le bandeau et les deux boutons. */}
+      {sceneFin && state.phase === 'ended' && !sceneFinFermee && (
+        <SceneFin
+          gagne={state.winner === myCamp}
+          replique={repliqueDirection}
+          calme={sansMouvement}
+          onFermer={() => setSceneFinFermee(true)}
+        />
+      )}
 
       {/* **Le combat guidé** (#272) : le bandeau dit ce qui se passe et ce qui suit. Le
           guidage ne bloque rien — on peut le passer à tout moment et jouer dessous. */}

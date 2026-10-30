@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { JourneeIntegration } from './JourneeIntegration';
 import { ETAPES_JOURNEE } from './journee-etapes';
+import { marquerGeste, oublierGestes } from './journee-gestes';
 import { setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 
@@ -24,6 +25,9 @@ function monter() {
     packsOpened: 1,
     deck: ['atelier-joueur-de-flute']
   });
+  // Le troisième geste (créer sa sauvegarde) vit hors du store : il se marque à la main.
+  oublierGestes();
+  marquerGeste('sauvegarde');
   return render(
     <MemoryRouter initialEntries={['/']}>
       <JourneeIntegration />
@@ -61,6 +65,18 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     expect(suivant()).toBeDisabled();
     act(() => {
       useStore.getState().setDeck(['atelier-joueur-de-flute']);
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
+
+    // L'étape 4 attend la sauvegarde, qui ne laisse aucune trace dans le store :
+    // on traverse d'abord l'étape 3 (le combat), qui n'a pas de geste.
+    await userEvent.click(suivant());
+    expect(screen.getByRole('heading', { name: 'Le combat' })).toBeInTheDocument();
+    await userEvent.click(suivant());
+    expect(screen.getByRole('heading', { name: 'Tes données' })).toBeInTheDocument();
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      marquerGeste('sauvegarde');
     });
     await waitFor(() => expect(suivant()).toBeEnabled());
   });

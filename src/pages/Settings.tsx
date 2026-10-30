@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
+import { marquerGeste } from '@/components/journee-gestes';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
 import { LIBELLE_DIFFICULTE, LIBELLE_POLITIQUE, RESUME_POLITIQUE } from '@/components/difficulte';
@@ -57,7 +58,8 @@ export function Settings() {
     difficulte,
     setDifficulte,
     reset,
-    setTutorielVu
+    setTutorielVu,
+    tutorielVu
   } = useStore();
   const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
   const importerSauvegarde = useStore((state) => state.importerSauvegarde);
@@ -74,6 +76,9 @@ export function Settings() {
   const creerSauvegarde = () => {
     const texte = exporterSauvegarde();
     setSauvegarde(texte);
+    // **Le geste de l'étape « Tes données »** (30/10/2026) : il n'a pas d'autre trace que
+    // celle-ci, et c'est un fait de session — le panneau de la Journée s'ouvre aussitôt.
+    marquerGeste('sauvegarde');
     // Le presse-papier peut être refusé (contexte non sécurisé, permission) : le texte
     // reste dans la zone, il suffit de le sélectionner. On ne ment pas dans le message.
     navigator.clipboard?.writeText(texte).then(
@@ -299,7 +304,13 @@ export function Settings() {
           rows={6}
         />
         <div className="actions actions--tight">
-          <button type="button" className="button" onClick={creerSauvegarde}>
+          <button
+            type="button"
+            className="button"
+            /* L'étape « Tes données » désigne ce bouton : le testeur repart avec sa copie. */
+            data-journee-cible={tutorielVu ? undefined : 'sauvegarde'}
+            onClick={creerSauvegarde}
+          >
             <Copy size={16} /> Créer ma sauvegarde
           </button>
           <button type="button" className="button" onClick={restaurerSauvegarde} disabled={!sauvegarde.trim()}>
