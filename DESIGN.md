@@ -161,17 +161,18 @@ d'information. #196 avait mesuré **23 nœuds de texte visibles sous 11,2 px** �
 | Texte mesuré | Taille avant | Aujourd'hui | Verdict |
 |---|---:|---:|---|
 | Nom du Planqué (Poste) | 8,96 px | **11,2 px** (0.7rem, **trois** lignes) | **réglé** — « Psychologue du travail » se lit en entier |
-| Nom du Planqué (Banc) | 8,64 px | **9,92 px** (`--fs-2xs`) | **écart inscrit** : la place fait 56 px, et « TRAVAIL » à 11,2 px prendrait trois lignes dans une vignette de deux. Le nom entier est dans l'inspecteur ; le groupe porte son `aria-label` |
+| Nom du Planqué (Banc) | 8,64 px | **11,2 px** (`--fs-xs`) à 420 × 900, **9,92 px** (`--fs-2xs`) sur écran court | **réglé à la référence** (D-156, 30/10/2026) : le Banc fait 64 px, et la taille suit sa largeur. Sur écran court (Banc 52 px), le plancher reste ; le nom entier est dans l'inspecteur, le groupe porte son `aria-label` |
 | Numéro de Seuil | 9,6 px | **11,2 px** | **réglé** — c'est une décision (avant de craquer), pas un ornement |
 | Chiffre de Stress (`détaillé`) | 9,92 px | **11,2 px** | **réglé** — une mesure se lit |
 | Nom d'une Condition | 9,92 px | **11,2 px** | **réglé** — la règle se lit, elle ne se devine pas |
 | Mot « Seuil », étiquettes de pile, nom du camp sur la piste, types de café, nature dans la pose | 6,7 à 10,2 px | **9,92 px** (`--fs-2xs`) partout, **11,2 px** pour les types de café du `détaillé` | **réglé en #290** — le mot « Seuil » (0,42 rem, **6,7 px**), l'emblème de faction (0,55 rem) et le nom du camp sur la piste (0,6 rem) étaient les trois seules règles du combat sous `--fs-2xs` ; elles y sont |
 
-**Ce qui reste, dit franchement** : un seul texte porteur d'information est encore sous le plancher,
-le **nom du Planqué au Banc** (9,92 px), et c'est un arbitrage de place, pas un oubli : à 56 px de
-large et deux lignes, `--fs-xs` amputerait le nom au milieu d'un mot. Le passage à 64 px coûterait
-22 px de hauteur, que la garde ne donne pas. La porte de lecture reste l'inspecteur (nom entier à
-0.85rem), et le `aria-label` du groupe ne dépend pas de la taille.
+**Ce qui reste, dit franchement** : le **nom du Planqué au Banc** n'est plus sous le plancher à la
+référence. Depuis D-156 (30/10/2026), le Banc fait 64 px à 420 × 900 et le nom y prend `--fs-xs`
+(11,2 px) ; la taille suit la largeur du Banc et ne redescend à 9,92 px que sur les écrans courts,
+où le Banc revient à 52 px. Les 22 px de hauteur que coûtait ce passage, la garde les donne depuis
+que la barre de navigation n'est plus rendue en combat (#275). La porte de lecture reste
+l'inspecteur (nom entier à 0.85rem), et le `aria-label` du groupe ne dépend pas de la taille.
 
 La règle « aucun
 texte porteur d'information sous `--fs-xs` » **n'est donc pas satisfaite** : c'est une dette
@@ -295,17 +296,18 @@ plateau (`.card--plateau`).
 
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
-doivent rester au-dessus de la navigation (limite **830 px**, haut de la barre de navigation, avec
-**20 px** de marge exigés par D-094 (3)). Remesuré le 27/10/2026 (`npm run capturer`, #322) sur les
+doivent rester au-dessus de la navigation (limite : le haut de la barre de navigation, ou le **bas de
+la fenêtre** quand elle n'est pas rendue — c'est le cas en combat depuis #275 ; les « 830 px » d'avant
+datent de cette barre — avec **20 px** de marge exigés par D-094 (3)). Remesuré le 27/10/2026 (`npm run capturer`, #322) sur les
 64 états du passage de combat, cibles de 44 px comprises : **aucun défilement** (D-103) ; pas-à-pas
 **terminé**, le bas de la **main** est à **663–667 px** et celui de la **barre d'action** à
 **711–758 px** (72–119 px de marge) ; pas-à-pas **ouvert** (`1 / 5`, il ajoute sa bande), la main
 finit à **714–717 px** et la barre à **762–809 px** (**21–68 px** de marge). Un tour chargé (relève,
 choix) fait défiler la barre **en elle-même** (`max-height: 42dvh`) plutôt que de recouvrir la table.
 
-Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 88 px** (`--poste-w:
-5.5rem`), **Banc 56 px** (`--banc-w: 3.5rem`), **carte de main 64 px** (`--carte-w: 4rem`) dans
-un conteneur de **105 px** (la carte entière, son inclinaison et la place du soulèvement) :
+Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 96 px** (`--poste-w:
+6rem`), **Banc 64 px** (`--banc-w: 4rem`), **carte de main 72 px** (`--carte-w: 4.5rem`) depuis
+**D-156** (30/10/2026, avant : 88, 56 et 64 px), dans un conteneur à la hauteur de la carte (la carte entière, son inclinaison et la place du soulèvement) :
 **rien n'est rogné**, le Seuil reste visible.
 
 | Zone | Classe | Ce que fait l'écran |
@@ -315,7 +317,7 @@ un conteneur de **105 px** (la carte entière, son inclinaison et la place du so
 | Table | `.board` | deux camps **empilés** : l'adversaire lit **Banc puis Poste**, le mien **Poste puis Banc**, donc les deux **Postes se font face** au centre. Une seule lumière au centre (§2.6) ; aucun cadre autour d'un camp. |
 | Camp | `.board__side`, `.board__zone`, `.board__fiche` | la carte du **Poste** à gauche, sa **fiche** à droite : nom du camp, `main n`, les **piles Deck / Rebut** avec leur compte, les cafés attachés, la Machine, les Conditions. Le **Banc** est une rangée de trois places ; une place libre garde la forme d'une carte, en pointillé. |
 | Piste d'Interventions | `.piste` | **horizontale**, entre les deux camps : le nom de chaque camp et trois hexagones (l'adversaire à gauche, toi à droite) ; l'or marque une Intervention acquise. **Une** cible `data-pas-a-pas="interventions"`, sur le conteneur. |
-| Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (64 px), inclinées, qui ne se chevauchent que quand la largeur l'exige ; la carte se soulève au survol et au focus (pas sous « Mouvement réduit » : c'est alors le panneau de l'inspecteur qui s'ouvre). Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
+| Main | `.hand`, `.hand__carte` | un **éventail** de vraies cartes du gabarit (72 px, D-156), inclinées, qui ne se chevauchent que quand la largeur l'exige ; la carte se soulève au survol et au focus (pas sous « Mouvement réduit » : c'est alors le panneau de l'inspecteur qui s'ouvre). Le bouton transparent posé dessus porte le geste et le nom lu ; « Jouable » est un filet néon, l'état choisi un filet plus épais. |
 | Pose | `.pose` | une carte **choisie** ouvre un panneau sous la main qui la nomme et donne **où** la jouer : « Poser au Poste », « Mettre au Banc 2 », « Jouer cet Objet ». |
 | Inspecteur | `.infobulle`, `.inspecteur` | **survol ou focus = lire**, **clic, tap ou Entrée = agir** (D-121). Chaque carte du Poste et du Banc est un `role="button"` nommé par le Planqué entier (`CarteSurvolable`, `InspecteurCombat.tsx`), et **décrit** en permanence par « x sur y de Stress. Conditions. » (`aria-describedby`, #525). À la fermeture du panneau, le focus revient à ce qui l'avait à l'ouverture (la carte, ou « Rotation ») ; ouvert au focus d'une carte de la main (« Mouvement réduit »), le panneau ne prend pas le focus. La lecture est une infobulle `role="tooltip"` : 300 ms à la souris seule (au tactile le tap ouvre le panneau, pas l'infobulle), aucun élément focusable, Échap la ferme. Posée dans l'écran `.battle`, hors du plateau, à la verticale de sa carte (au-dessus pour **mes** cartes quand elle y tient — dessous, elle couvrait ma main et la barre ; pour celles de la Direction, sous la carte ; et le côté se corrige **une fois l'infobulle mesurée**, l'estimation de 220 px ne suffisant pas, #525) et bornée à la fenêtre (8 px de marge), 17 rem de large au plus — pas dans `body`, où ses règles et les jetons `--scene-*` ne portaient pas : elle y tombait nue au bas du document et faisait défiler le combat de 177 px (D-103). Le panneau **non modal**, sans voile, montre la fiche entière — nom entier, stade, faction, rareté, `x/y de Stress (Seuil y)`, cafés, Conditions, Pressions, Talent, Machine — et les gestes de la carte. Sur téléphone, feuille basse (`top: --inspecteur-haut`, posé sous la carte décrite, et jamais plus haut que 45 % de la fenêtre) ; à partir de 900 px, colonne collée dans la console. |
 | Barre d'action | `.combat-barre` | **collante** au-dessus de la navigation — **au-dessus de 640 px de large seulement** : sous 640 px (donc à la cible de 420 px de D-060) elle repasse en `position: static` et se range sous la main, sinon elle remontait par-dessus le bas de la main (#289, écart **assumé**, `src/styles.css`). Elle porte la **dernière ligne du journal**, puis la relève ou le choix en attente, la ligne « Hors de portée du café : … », les gestes du Poste (café, Rotation, Talent), les Pressions et **Fin du tour** (vert quand c'est à toi ; **ardoise à filet vert quand une Pression est jouable**, pour qu'un seul bouton plein — la Pression — porte l'action, et la rangée des gestes s'écarte alors de 8 px). En fin de partie, elle porte **« Nouveau combat »** (bouton principal) sous la ligne « Rien à faire ». Une zone `aria-live` invisible y répète la dernière ligne du journal pour les lecteurs d'écran ; le verdict du bandeau du haut est une alerte. C'est la cible `poste-actions` du pas-à-pas. |
@@ -372,10 +374,11 @@ n'est pas celui de l'écran.
    `src/components/ui/dialog.tsx` et `button.tsx`. Le choix de fond — shadcn/ui pour les
    composants génériques seulement — tient ; le nom du moteur, lui, est Base UI. Le journal ne
    réécrit pas D-035 : sa ligne porte un ⚠️ de lecture daté du 27/10/2026 qui renvoie à D-121 (b).
-3. **La largeur du Poste : 116 px dans D-093, 88 px sur l'écran.** L'acte écrit « le Poste à
+3. **La largeur du Poste : 116 px dans D-093, 96 px sur l'écran.** L'acte écrit « le Poste à
    116 px, le Banc à 64 px » (la direction visuelle, elle, dit 112, `docs/DIRECTION-SCENE-COMBAT.md`
-   §3.1) ; l'écran mesure **88 px** pour le Poste (`--poste-w: 5.5rem`) et **56 px** pour le Banc
-   (`--banc-w: 3.5rem`). L'écart n'est pas une nouvelle règle : c'est la **plus grande combinaison
+   §3.1) ; l'écran mesure **96 px** pour le Poste (`--poste-w: 6rem`) et **64 px** pour le Banc
+   (`--banc-w: 4rem`) depuis D-156 (30/10/2026 ; 88 et 56 px avant) : le Banc rejoint le chiffre de
+   l'acte. L'écart du Poste n'est pas une nouvelle règle : c'est la **plus grande combinaison
    qui garde la main et la barre d'action au-dessus de la navigation** à 420 × 900 (20 px de marge
    au moins, ci-dessus). Les deux chiffres de l'acte restent écrits ; c'est l'écran qui est plus petit que
    la cible.

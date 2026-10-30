@@ -3048,9 +3048,12 @@ h2 {
   /* Le Banc passe à 64 px (#188, mesuré) : le Poste garde un rapport de 1,5 à 1,8 avec lui. Le Stress
      et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur.
      Le Poste revient aux **88 px de D-094 (1)** (#218) : 8 px de large valent ~22 px de haut sur les
-     deux camps, et le rapport de 1,57 avec le Banc est celui que la décision a acté. */
-  --poste-w: 5.5rem;
-  --banc-w: 3.5rem;
+     deux camps, et le rapport de 1,57 avec le Banc est celui que la décision a acté.
+     **D-156 (30/10/2026)** : la barre de navigation n'est plus rendue en combat (#275) et l'écran
+     laissait ~160 px de feutre vide en bas à 420 × 900 ; le Poste passe à 96 px et le Banc à 64 px
+     (rapport 1,5, dans la fourchette de #188), la garde de `capturer` décidant toujours. */
+  --poste-w: 6rem;
+  --banc-w: 4rem;
   align-items: center;
   display: flex;
   flex-direction: column;
@@ -3579,14 +3582,15 @@ h2 {
   align-self: flex-end;
 }
 
-/* Le Banc à 56 px : un nom sur deux lignes, jamais trois — à cette largeur, une troisième ligne
-   ne montre qu'une syllabe. Mieux vaut une ellipse qu'un mot amputé. #201 : la place du Banc ne
-   permet pas `--fs-xs` ; le nom reste au plancher documenté `--fs-2xs` (`DESIGN.md` §2.4). Le nom
-   n'est plus en capitales depuis la refonte du 28/10/2026 : la césure de la langue (« Psycho-
-   logue ») suffit, sans couper au milieu d'un mot (#200). */
+/* Le nom au Banc : deux lignes, jamais trois — une troisième ligne ne montre qu'une syllabe. Mieux
+   vaut une ellipse qu'un mot amputé. #201 : à 56 px, la place ne permettait pas `--fs-xs` ; depuis
+   D-156 le Banc fait 64 px à 420 × 900, et la taille **suit la largeur** — `--fs-xs` (11,2 px) à
+   64 px et plus, le plancher `--fs-2xs` sur les écrans courts où le Banc redescend à 52 px. La dette
+   « nom du Banc sous le plancher de lecture » (`DESIGN.md` §1.6) est close à la référence. Le nom
+   n'est plus en capitales depuis la refonte du 28/10/2026 : la césure de la langue suffit (#200). */
 .battle .bench__carte .card--plateau .card__name {
   -webkit-line-clamp: 2;
-  font-size: var(--fs-2xs);
+  font-size: clamp(var(--fs-2xs), calc(var(--banc-w) * 0.175), var(--fs-xs));
   line-height: 1.12;
 }
 
@@ -4170,8 +4174,9 @@ h2 {
      ligne de l'écran. Les noms longs s'y replient sur deux ou trois lignes, et la fiche « Carte
      choisie » les redonne entiers au toucher. Elle reste plus étroite que le Poste, 5,5 rem (R4).
      Le conteneur est assez haut pour la carte entière et son inclinaison : rien n'est rogné en bas,
-     le Seuil reste visible. */
-  --carte-w: 4rem;
+     le Seuil reste visible. D-156 (30/10/2026) : 72 px, sur la place que la barre de navigation a
+     rendue en combat. */
+  --carte-w: 4.5rem;
   /* Le pas : deux cartes ne se chevauchent pas quand la largeur le permet (leurs noms restent lisibles),
      et se recouvrent juste assez pour tenir dans la largeur quand la main grandit. */
   --pas: min(calc(var(--carte-w) + 0.2rem), calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
@@ -4281,7 +4286,7 @@ h2 {
 
 /* **Le nom de la carte de main à 64 px** (#233) : la césure manuelle du plateau coupait
    « VISITE MÉDICAL E » et « PRÉVENT EUR » en plein mot, et « TROUSSE DE SECOURS » sortait en
-   ellipse. Le chiffre de D-094 (1) ne bouge pas (4 rem) ; c'est la place du nom qui change :
+   ellipse. Le chiffre de la carte (4,5 rem depuis D-156) ne bouge pas ici ; c'est la place du nom qui change :
    la césure **automatique de la langue** (`lang="fr"`, `index.html`) fait des coupures
    marquées d'un trait d'union (« MÉDI-CALE », « PRÉVEN-TEUR »), et la barre de nom du
    **plateau** de la main cède ses marges latérales (0,22 → 0,1 rem, +4 px) pour que
@@ -4677,12 +4682,12 @@ h2 {
   }
 
   .board__zone {
-    --poste-w: clamp(5.5rem, calc((100dvh - 15rem) / 4.4), 8.5rem);
-    --banc-w: clamp(3.5rem, calc(var(--poste-w) * 0.64), 5.5rem);
+    --poste-w: clamp(6rem, calc((100dvh - 15rem) / 4.4), 8.5rem);
+    --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 5.5rem);
   }
 
   .battle .hand {
-    --carte-w: clamp(4rem, calc((100dvh - 15rem) / 6), 6.5rem);
+    --carte-w: clamp(4.5rem, calc((100dvh - 15rem) / 6), 6.5rem);
   }
 }
 
