@@ -293,19 +293,17 @@ describe('CarteSurvolable — l’infobulle mesurée change de côté si elle d�
 describe('CarteSurvolable — mes cartes s’ouvrent vers l’adversaire (#525)', () => {
   it('dans mon camp, l’infobulle passe au-dessus quand elle y tient (le contrôle mord : chez la Direction, elle reste dessous)', async () => {
     const hauteur = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(120);
-    const rect = vi
-      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockReturnValue({
-        top: 350,
-        bottom: 500,
-        left: 0,
-        right: 100,
-        width: 100,
-        height: 150,
-        x: 0,
-        y: 350,
-        toJSON: () => ({})
-      });
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: 350,
+      bottom: 500,
+      left: 0,
+      right: 100,
+      width: 100,
+      height: 150,
+      x: 0,
+      y: 350,
+      toJSON: () => ({})
+    });
     try {
       const { unmount } = render(
         <article className="board__side">

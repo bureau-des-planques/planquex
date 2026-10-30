@@ -70,8 +70,13 @@ export const SEUIL_PAQUET = 500_000;
  * **Le cliquet du paquet principal**, mesuré le 29/10/2026 à la fusion de #480 : 290 251 octets,
  * soit « 290,25 kB » au rapport de Vite (`index-*.js`, 78,25 kB gzip). Il ne monte pas sans une
  * décision écrite dans le commit qui le relève ; il descend avec le code qui le permet.
+ *
+ * **Relevé le 30/10/2026 à 290 697 octets** (+446, décision de Bastien, #525) : le glyphe de faction
+ * dans la pastille de café (`CafePips`, qui vit dans le paquet principal) et le choix de son encre.
+ * Un café ne se lisait que par sa couleur (le critère WCAG sur la couleur seule) ; la variante en
+ * CSS seul (couleur relative OKLCH) a été écartée pour ne pas dépendre d'une syntaxe récente.
  */
-export const PLAFOND_PRINCIPAL = 290_251;
+export const PLAFOND_PRINCIPAL = 290_697;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
@@ -129,7 +134,7 @@ export function verdict(mesures, { seuil = SEUIL_PAQUET, plafond = PLAFOND_PRINC
   if (mesures.principal && mesures.principal.octets > plafond) {
     echecs.push(
       `le paquet principal ${mesures.principal.nom} : ${enKb(mesures.principal.octets)} — ` +
-        `au-dessus du cliquet de ${enKb(plafond)} (mesuré le 29/10/2026, #480) : ` +
+        `au-dessus du cliquet de ${enKb(plafond)} (relevé le 30/10/2026, #525) : ` +
         'descendre le code, ou relever le cliquet dans un commit qui le dit'
     );
   }
@@ -176,7 +181,7 @@ export function plan() {
   const etat = existsSync(join(DIST, 'index.html')) ? (estPerime() ? 'périmé' : 'à jour') : 'absent';
   return [
     'seuil par paquet     : ' + `${enKb(SEUIL_PAQUET)} (l’avertissement de Vite, en échec)`,
-    'cliquet du principal : ' + `${enKb(PLAFOND_PRINCIPAL)} (mesuré le 29/10/2026, #480)`,
+    'cliquet du principal : ' + `${enKb(PLAFOND_PRINCIPAL)} (relevé le 30/10/2026, #525)`,
     'référence 29/10/2026 : ' + 'principal 1 032 kB avant, 290,3 kB après #479 ; plus gros paquet 219 kB',
     'dist/                : ' + etat
   ].join('\n');
