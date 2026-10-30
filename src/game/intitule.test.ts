@@ -10,11 +10,11 @@ import { INTITULES, SERVICES, graineDe, phraseProfil, serviceDe, tirerIntitule }
  */
 describe('services du parcours', () => {
   it('compte les cinq groupes du ticket, dans son ordre', () => {
-    expect(SERVICES.map((service) => service.code)).toEqual(['red-chaussee', 'rez-de-chaussee', '1er', '2e', '3e']);
+    expect(SERVICES.map((service) => service.code)).toEqual(['rez-de-chaussee', '1er', '2e', '3e', '4e']);
   });
 
   it('retrouve un service par son code, et rien pour un code inconnu', () => {
-    expect(serviceDe('2e')?.libelle).toBe('2e');
+    expect(serviceDe('2e')?.libelle).toBe('2ème');
     expect(serviceDe('sous-sol')).toBeUndefined();
     expect(serviceDe(null)).toBeUndefined();
   });
@@ -60,13 +60,13 @@ describe('tirage de l’intitulé', () => {
 describe('phrase du profil', () => {
   it('suit le gabarit du ticket', () => {
     expect(phraseProfil({ pseudo: 'Anaïs', service: '2e', intitule: 'sculpteur de fumée' })).toBe(
-      'Anaïs / planqué du 2e — sculpteur de fumée'
+      'Anaïs / planqué du 2ème — sculpteur de fumée'
     );
   });
 
-  it('accorde le groupe de la Red Chaussée', () => {
-    expect(phraseProfil({ pseudo: 'Léo', service: 'red-chaussee', intitule: 'gardien du café froid' })).toBe(
-      'Léo / planqué de la Red Chaussée — gardien du café froid'
+  it('accorde le groupe du rez-de-chaussée', () => {
+    expect(phraseProfil({ pseudo: 'Léo', service: 'rez-de-chaussee', intitule: 'gardien du café froid' })).toBe(
+      'Léo / planqué du rez-de-chaussée — gardien du café froid'
     );
   });
 });

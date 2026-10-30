@@ -171,6 +171,8 @@ describe('profil du testeur (#325, D-088, D-148)', () => {
     refuse(await creer(db, APPAREIL_A, 'x'.repeat(25)), /profils_pseudo_check|check constraint/i);
     accepte(await creer(db, APPAREIL_A, 'Anaïs'));
     refuse(await poserService(db, APPAREIL_A, 'sous-sol'), /profils_service_check|check constraint/i);
+    // D-157 : « Red Chaussée » était une coquille, l'immeuble monte jusqu'au 4e.
+    refuse(await poserService(db, APPAREIL_A, 'red-chaussee'), /profils_service_check|check constraint/i);
     accepte(await poserService(db, APPAREIL_A, '2e'));
     refuse(await poserIntitule(db, APPAREIL_A, 'x'.repeat(81)), /profils_intitule_check|check constraint/i);
   });

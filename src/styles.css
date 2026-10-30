@@ -1327,6 +1327,43 @@ h2 {
   font-size: var(--fs-sm);
 }
 
+/* L'intitulé tiré au sort : le moment du parcours où le testeur voit son personnage. Il se lit
+   en grand, à la police d'affichage et dans l'or clair (12,03:1 sur `--bg-raised`, DESIGN §1.5) —
+   en gras de phrase sur deux lignes, il ne ressortait pas (D-157). */
+.parcours__tirage {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--gold) 12%, transparent) 0%, transparent 70%),
+    var(--bg-sunken);
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem 1rem;
+  text-align: center;
+}
+
+.parcours__tirage-label {
+  color: var(--text-dim);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.parcours__intitule {
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+  font-size: clamp(1.3rem, 6vw, var(--fs-2xl));
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.12;
+  margin: 0.3rem 0 0;
+  text-wrap: balance;
+}
+
+.parcours__badge-fonction {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  margin-top: 0.4rem;
+}
+
 /* La phrase du profil : le seul endroit où le testeur voit son badge prendre forme. */
 .parcours__badge {
   background: var(--bg-sunken);
@@ -1422,10 +1459,15 @@ h2 {
   font-size: var(--fs-sm);
 }
 
-/* La bascule « pas encore de compte » est un lien, pas un second bouton plein : deux actions
-   pleines dans le même panneau, c'est deux primaires (revue du 30/10/2026). */
+/* Les bascules « pas encore de compte », « mot de passe oublié » sont des liens, pas des
+   boutons pleins : deux actions pleines dans le même panneau, c'est deux primaires. */
 .connexion__bascule {
-  align-self: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.15rem;
+}
+
+.connexion__bascule button {
   background: none;
   border: 0;
   color: var(--text-muted);
@@ -1436,7 +1478,7 @@ h2 {
   text-underline-offset: 0.2em;
 }
 
-.connexion__bascule:hover {
+.connexion__bascule button:hover {
   color: var(--text);
 }
 

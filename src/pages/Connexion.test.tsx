@@ -43,6 +43,8 @@ const actions = () => ({
     })
   ),
   connecterGoogle: vi.fn(async (_redirectTo?: string): Promise<string | null> => null),
+  recuperer: vi.fn(async (_courriel: string): Promise<string | null> => null),
+  changerMotDePasse: vi.fn(async (_motDePasse: string): Promise<string | null> => null),
   deconnecter: vi.fn(async () => {})
 });
 
@@ -301,7 +303,9 @@ describe('le parcours de première connexion (revue du 30/10/2026)', () => {
     act(() => useProfil.setState({ profil: PROFIL_FAIT }));
 
     const entrer = await screen.findByRole('button', { name: 'Entrer dans le bureau' });
-    expect(screen.getByText(/Anaïs \/ planqué du 2e — sculpteur de fumée/)).toBeInTheDocument();
+    // Le badge de la fin se lit en deux temps : l'intitulé en grand, puis la fonction.
+    expect(screen.getByTestId('badge-intitule')).toHaveTextContent('sculpteur de fumée');
+    expect(screen.getByText(/Anaïs \/ planqué du 2ème/)).toBeInTheDocument();
 
     fireEvent.click(entrer);
     expect(await screen.findByText('le mur du comité')).toBeInTheDocument();
@@ -341,5 +345,61 @@ describe('le parcours de première connexion (revue du 30/10/2026)', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Entrer dans le bureau' }));
     await waitFor(() => expect(useStore.getState().name).toBe('Le Stagiaire'));
+  });
+});
+
+/**
+ * D-157 — les deux secours de l'entrée : un mot de passe oublié qui mène quelque part, et le
+ * lien des testeurs, visible par quelqu'un qui n'est pas encore entré.
+ */
+describe('les secours de l’entrée (D-157)', () => {
+  afterEach(() => {
+    window.history.replaceState(null, '', '/');
+    vi.unstubAllEnvs();
+  });
+
+  it('« Mot de passe oublié » bascule le panneau et envoie un lien', async () => {
+    const etat = actions();
+    poser(etat);
+    rendre();
+
+    fireEvent.click(screen.getByRole('button', { name: /Mot de passe oublié/ }));
+    expect(screen.getByRole('heading', { name: 'Mot de passe oublié' })).toBeInTheDocument();
+    // Le panneau ne demande plus de mot de passe : on n'en a justement pas.
+    expect(document.querySelector('input[type="password"]')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(/Courriel/), { target: { value: 'a@exemple.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Recevoir un lien' }));
+
+    await waitFor(() => expect(etat.recuperer).toHaveBeenCalledWith('a@exemple.test'));
+    expect(await screen.findByRole('status')).toHaveTextContent(/si cette adresse a un compte/i);
+  });
+
+  it('le lien de récupération ouvre le formulaire du nouveau mot de passe, pas le bureau', async () => {
+    window.history.replaceState(null, '', '/connexion#access_token=jeton&type=recovery');
+    const etat = actions();
+    poser({
+      ...etat,
+      session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+      compte: { ...PENDING, etat: 'approuve' }
+    });
+    rendre();
+
+    expect(await screen.findByRole('heading', { name: 'Un nouveau mot de passe' })).toBeInTheDocument();
+    // Le contrôle mord : sans le drapeau de récupération, la session mènerait au bureau.
+    expect(screen.queryByText('le bureau')).toBeNull();
+
+    fireEvent.change(screen.getByLabelText(/^Mot de passe/), { target: { value: 'nouveau1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Changer mon mot de passe' }));
+    await waitFor(() => expect(etat.changerMotDePasse).toHaveBeenCalledWith('nouveau1'));
+  });
+
+  it('le lien des testeurs s’affiche sur la connexion, en nouvel onglet', () => {
+    vi.stubEnv('VITE_DISCORD_INVITE', 'https://discord.gg/planquex');
+    rendre();
+    const lien = screen.getByRole('link', { name: /Rejoindre le serveur des testeurs/ });
+    expect(lien).toHaveAttribute('href', 'https://discord.gg/planquex');
+    expect(lien).toHaveAttribute('target', '_blank');
+    expect(lien).toHaveAttribute('rel', 'noreferrer noopener');
   });
 });

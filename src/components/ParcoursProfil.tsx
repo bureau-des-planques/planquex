@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { etapeDuProfil } from '@/lib/profil';
-import { SERVICES, phraseProfil, tirerIntitule, type CodeService } from '@/game/intitule';
+import { SERVICES, fonctionProfil, tirerIntitule, type CodeService } from '@/game/intitule';
 import { useProfil } from '@/store/profil';
 
 /** Le titre de chaque étape : une étape, une phrase, et c'est le titre qui prend le focus. */
@@ -150,11 +150,15 @@ export function ParcoursProfil({ uid }: { uid: string }) {
 
       {etape === 'intitule' && profil && (
         <form className="flex flex-col gap-3" onSubmit={garder}>
-          <p className="m-0">
-            Tiré au sort : <strong data-testid="intitule-tire">{intitule}</strong>
-          </p>
-          <p className="parcours__badge m-0" data-testid="apercu-profil">
-            Ton profil : {phraseProfil({ pseudo: profil.pseudo, service: profil.service ?? '', intitule })}
+          <div className="parcours__tirage">
+            <p className="parcours__tirage-label m-0">Tiré au sort</p>
+            <p className="parcours__intitule" data-testid="intitule-tire">
+              {intitule}
+            </p>
+          </div>
+          {/* La fonction, sous le titre : l'intitulé n'est pas répété une seconde fois. */}
+          <p className="parcours__badge-fonction m-0" data-testid="apercu-profil">
+            {fonctionProfil({ pseudo: profil.pseudo, service: profil.service ?? '' })}
           </p>
           <p className="parcours__aide m-0">
             {relanceIdentique

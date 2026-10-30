@@ -14,6 +14,8 @@
 import { create } from 'zustand';
 import {
   comptesEstConfigure,
+  changerMotDePasse as changerMotDePasseLib,
+  recuperationMotDePasse,
   connexionCourriel,
   connexionGoogle,
   deconnexion,
@@ -40,6 +42,10 @@ export interface ComptesState {
     motDePasse: string
   ) => Promise<{ erreur: string | null; courrielEnvoye: boolean }>;
   connecterGoogle: (redirectTo?: string) => Promise<string | null>;
+  /** Le lien de récupération d'un mot de passe oublié (D-157), ou le refus dit en français. */
+  recuperer: (courriel: string) => Promise<string | null>;
+  /** Le nouveau mot de passe d'une session ouverte par le lien (D-157). */
+  changerMotDePasse: (motDePasse: string) => Promise<string | null>;
   deconnecter: () => Promise<void>;
 }
 
@@ -108,6 +114,32 @@ export const useComptes = create<ComptesState>((set, get) => ({
       const message = messageDe(erreur);
       set({ chargement: false, erreur: message });
       return { erreur: message, courrielEnvoye: false };
+    }
+  },
+
+  recuperer: async (courriel) => {
+    set({ chargement: true, erreur: null });
+    try {
+      await recuperationMotDePasse(courriel, { redirectTo: retourOAuth() });
+      set({ chargement: false });
+      return null;
+    } catch (erreur) {
+      const message = messageDe(erreur);
+      set({ chargement: false, erreur: message });
+      return message;
+    }
+  },
+
+  changerMotDePasse: async (motDePasse) => {
+    set({ chargement: true, erreur: null });
+    try {
+      await changerMotDePasseLib(motDePasse);
+      set({ chargement: false });
+      return null;
+    } catch (erreur) {
+      const message = messageDe(erreur);
+      set({ chargement: false, erreur: message });
+      return message;
     }
   },
 

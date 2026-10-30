@@ -27,15 +27,21 @@ import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { RetourEcran } from '@/components/RetourEcran';
+import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { ParcoursProfil } from '@/components/ParcoursProfil';
 import { estApprouve } from '@/lib/comptes';
 import { etapeDuProfil } from '@/lib/profil';
-import { phraseProfil } from '@/game/intitule';
+import { fonctionProfil } from '@/game/intitule';
 import { useComptes } from '@/store/comptes';
 import { useProfil } from '@/store/profil';
 import { useStore } from '@/store/useStore';
 
-type Mode = 'connexion' | 'inscription';
+type Mode = 'connexion' | 'inscription' | 'oubli';
+
+/** Le lien de récupération de Supabase pose son jeton dans le fragment de l'adresse. */
+function lienDeRecuperation(): boolean {
+  return typeof window !== 'undefined' && /(^|[#&])type=recovery/.test(window.location.hash);
+}
 
 /** Le nom local d'un joueur neuf : c'est lui qu'on remplace par le pseudo, à l'entrée. */
 const NOM_NEUF = 'Employé 404';
@@ -52,6 +58,8 @@ export function Connexion() {
   const connecterCourriel = useComptes((state) => state.connecterCourriel);
   const inscrireCourriel = useComptes((state) => state.inscrireCourriel);
   const connecterGoogle = useComptes((state) => state.connecterGoogle);
+  const recuperer = useComptes((state) => state.recuperer);
+  const changerMotDePasse = useComptes((state) => state.changerMotDePasse);
   const profil = useProfil((state) => state.profil);
   const profilCharge = useProfil((state) => state.charge);
   const lectureEchouee = useProfil((state) => state.lectureEchouee);
@@ -64,6 +72,10 @@ export function Connexion() {
   const [courriel, setCourriel] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [message, setMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
+  const [nouveau, setNouveau] = useState('');
+  // Le lien de récupération **connecte** : tant qu'il n'a pas servi, on ne renvoie pas le
+  // testeur vers le bureau — il choisirait son mot de passe dans le vide (D-157).
+  const [recuperation, setRecuperation] = useState(lienDeRecuperation);
   // Le parcours a été montré : sa fin devient un moment (le badge), pas une redirection sèche.
   const [aVuParcours, setAVuParcours] = useState(false);
 
@@ -101,7 +113,7 @@ export function Connexion() {
 
   useEffect(() => {
     if (!configure || !session || chargement || !compte || !profilCharge || parcoursEnCours || ceremonie) return;
-    if (profilIllisible) return;
+    if (profilIllisible || recuperation) return;
     navigate(refuse || !estApprouve(compte) ? '/attente' : (destination ?? '/'), { replace: true });
   }, [
     configure,
@@ -116,6 +128,88 @@ export function Connexion() {
     destination,
     navigate
   ]);
+
+  const demanderLien = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage(null);
+    const refus = await recuperer(courriel);
+    if (refus) {
+      setMessage({ ton: 'ko', texte: refus });
+      return;
+    }
+    setMessage({
+      ton: 'ok',
+      texte:
+        'Si cette adresse a un compte, le lien vient de partir. Regarde ta boîte — et les indésirables. Il te ramènera ici.'
+    });
+  };
+
+  const poserMotDePasse = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setMessage(null);
+    const refus = await changerMotDePasse(nouveau);
+    if (refus) {
+      setMessage({ ton: 'ko', texte: refus });
+      return;
+    }
+    setNouveau('');
+    setRecuperation(false);
+    // Le jeton reste dans le fragment : on l'efface pour qu'un rechargement ne rejoue pas
+    // le formulaire dans le vide.
+    window.history.replaceState(null, '', '/connexion');
+  };
+
+  // Le lien de récupération ouvre une session : on demande le mot de passe **avant** de
+  // renvoyer qui que ce soit vers le bureau (D-157).
+  if (recuperation && session) {
+    return (
+      <div className="page">
+        <section className="section">
+          <h1>Un nouveau mot de passe</h1>
+          <p className="muted max-w-[64ch]">
+            Le lien t’a ramené jusqu’ici, et t’a déjà ouvert la porte. Choisis un mot de passe : c’est lui qui la
+            rouvrira la prochaine fois.
+          </p>
+        </section>
+        <section className="section panel" aria-labelledby="recuperation-titre">
+          <h2 id="recuperation-titre">Nouveau mot de passe</h2>
+          <form className="flex flex-col gap-3" onSubmit={poserMotDePasse}>
+            <label className="field">
+              <span className="field__label">Mot de passe</span>
+              <input
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={6}
+                value={nouveau}
+                onChange={(event) => setNouveau(event.target.value)}
+                placeholder="Six caractères au moins"
+                aria-describedby="recuperation-aide"
+              />
+            </label>
+            <p id="recuperation-aide" className="m-0 text-sm text-ink-dim">
+              C’est ce mot de passe qui rouvrira la porte la prochaine fois.
+            </p>
+            <div className="actions actions--tight">
+              <button type="submit" className="button button--primary" disabled={chargement || nouveau.length < 6}>
+                {chargement ? 'Patiente…' : 'Changer mon mot de passe'}
+              </button>
+            </div>
+          </form>
+          {erreur && (
+            <p className="notice notice--warn m-0" role="alert">
+              {erreur}
+            </p>
+          )}
+          {message && (
+            <p className={message.ton === 'ok' ? 'notice notice--ok m-0' : 'notice notice--warn m-0'} role="alert">
+              {message.texte}
+            </p>
+          )}
+        </section>
+      </div>
+    );
+  }
 
   if (!configure) {
     return (
@@ -236,9 +330,14 @@ export function Connexion() {
         </section>
         <section className="section panel" aria-labelledby="badge-titre">
           <h2 id="badge-titre">Ton badge</h2>
-          <p className="parcours__badge m-0">
-            {phraseProfil({ pseudo: profil.pseudo, service: profil.service ?? '', intitule: profil.intitule ?? '' })}
-          </p>
+          <div className="parcours__tirage">
+            <p className="parcours__intitule" data-testid="badge-intitule">
+              {profil.intitule}
+            </p>
+            <p className="parcours__badge-fonction m-0">
+              {fonctionProfil({ pseudo: profil.pseudo, service: profil.service ?? '' })}
+            </p>
+          </div>
           <p className="parcours__aide m-0">
             Ton service ne change rien aux règles ; ton intitulé est là pour rire. Les deux sont désormais figés.
           </p>
@@ -295,59 +394,120 @@ export function Connexion() {
       </section>
 
       <section className="section panel" aria-labelledby="connexion-titre">
-        <h2 id="connexion-titre">{mode === 'connexion' ? 'Se connecter' : 'Créer un compte'}</h2>
+        <h2 id="connexion-titre">
+          {mode === 'connexion' ? 'Se connecter' : mode === 'inscription' ? 'Créer un compte' : 'Mot de passe oublié'}
+        </h2>
 
-        {/* Une seule action pleine à l'écran (revue du 30/10/2026) : l'or va à la porte d'un clic, le courriel
-            est l'alternative et garde un bouton de second rang. */}
-        <button type="button" className="button button--gold" onClick={google} disabled={chargement}>
-          <LogIn size={16} /> Continuer avec Google
-        </button>
-
-        <p className="m-0 my-2 text-center text-sm text-ink-dim">ou par courriel</p>
-
-        <form className="flex flex-col gap-3" onSubmit={soumettre}>
-          <label className="field">
-            <span className="field__label">Courriel</span>
-            <input
-              type="email"
-              autoComplete="email"
-              required
-              value={courriel}
-              onChange={(event) => setCourriel(event.target.value)}
-              placeholder="prenom.nom@exemple.fr"
-            />
-          </label>
-
-          <label className="field">
-            <span className="field__label">Mot de passe</span>
-            <input
-              type="password"
-              autoComplete={mode === 'connexion' ? 'current-password' : 'new-password'}
-              required
-              minLength={6}
-              value={motDePasse}
-              onChange={(event) => setMotDePasse(event.target.value)}
-              placeholder="Six caractères au moins"
-            />
-          </label>
-
-          <div className="actions actions--tight">
-            <button type="submit" className="button" disabled={chargement || !courriel.trim() || motDePasse.length < 6}>
-              {chargement ? 'Patiente…' : mode === 'connexion' ? 'Se connecter' : 'Créer mon compte'}
+        {mode === 'oubli' ? (
+          <>
+            <p className="muted m-0">
+              Indique ton courriel : si un compte y est attaché, un lien part tout de suite. Il te ramènera ici, et tu y
+              choisiras un mot de passe.
+            </p>
+            <form className="flex flex-col gap-3" onSubmit={demanderLien}>
+              <label className="field">
+                <span className="field__label">Courriel</span>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={courriel}
+                  onChange={(event) => setCourriel(event.target.value)}
+                  placeholder="prenom.nom@exemple.fr"
+                />
+              </label>
+              <div className="actions actions--tight">
+                <button type="submit" className="button button--primary" disabled={chargement || !courriel.trim()}>
+                  {chargement ? 'Patiente…' : 'Recevoir un lien'}
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <>
+            {/* Une seule action pleine à l'écran (revue du 30/10/2026) : l'or va à la porte d'un clic, le
+                courriel est l'alternative et garde un bouton de second rang. */}
+            <button type="button" className="button button--gold" onClick={google} disabled={chargement}>
+              <LogIn size={16} /> Continuer avec Google
             </button>
-          </div>
-        </form>
 
-        <button
-          type="button"
-          className="connexion__bascule"
-          onClick={() => {
-            setMode(mode === 'connexion' ? 'inscription' : 'connexion');
-            setMessage(null);
-          }}
-        >
-          {mode === 'connexion' ? 'Pas encore de compte ? Crée-le' : 'J’ai déjà un compte'}
-        </button>
+            <p className="m-0 my-2 text-center text-sm text-ink-dim">ou par courriel</p>
+
+            <form className="flex flex-col gap-3" onSubmit={soumettre}>
+              <label className="field">
+                <span className="field__label">Courriel</span>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={courriel}
+                  onChange={(event) => setCourriel(event.target.value)}
+                  placeholder="prenom.nom@exemple.fr"
+                />
+              </label>
+
+              <label className="field">
+                <span className="field__label">Mot de passe</span>
+                <input
+                  type="password"
+                  autoComplete={mode === 'connexion' ? 'current-password' : 'new-password'}
+                  required
+                  minLength={6}
+                  value={motDePasse}
+                  onChange={(event) => setMotDePasse(event.target.value)}
+                  placeholder="Six caractères au moins"
+                />
+              </label>
+
+              <div className="actions actions--tight">
+                <button
+                  type="submit"
+                  className="button"
+                  disabled={chargement || !courriel.trim() || motDePasse.length < 6}
+                >
+                  {chargement ? 'Patiente…' : mode === 'connexion' ? 'Se connecter' : 'Créer mon compte'}
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+
+        <div className="connexion__bascule">
+          {mode === 'oubli' ? (
+            <button
+              type="button"
+              onClick={() => {
+                setMode('connexion');
+                setMessage(null);
+              }}
+            >
+              Revenir à la connexion
+            </button>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(mode === 'connexion' ? 'inscription' : 'connexion');
+                  setMessage(null);
+                }}
+              >
+                {mode === 'connexion' ? 'Pas encore de compte ? Crée-le' : 'J’ai déjà un compte'}
+              </button>
+              {mode === 'connexion' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('oubli');
+                    setMessage(null);
+                  }}
+                >
+                  Mot de passe oublié ?
+                </button>
+              )}
+            </>
+          )}
+        </div>
 
         {erreur && (
           <p className="notice notice--warn m-0" role="alert">
@@ -363,6 +523,9 @@ export function Connexion() {
           </p>
         )}
       </section>
+
+      {/* Le seul secours qui serve à quelqu'un encore dehors (D-157, amende D-120 (2)). */}
+      <InvitationTesteurs ou="connexion" />
 
       <p className="m-0 text-sm text-ink-dim">
         Ton mot de passe ne passe que par le service d’authentification ; le jeu ne le garde pas. Le courriel sert à te

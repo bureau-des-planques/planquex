@@ -72,7 +72,7 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     expect(await screen.findByRole('heading', { name: /Ton service/ })).toBeInTheDocument();
     expect(container.querySelector('[data-etape]')).toHaveAttribute('data-etape', 'service');
 
-    fireEvent.click(screen.getByRole('radio', { name: /^2e/ }));
+    fireEvent.click(screen.getByRole('radio', { name: /^2ème/ }));
     fireEvent.click(screen.getByRole('button', { name: /Valider mon service/ }));
     expect(await screen.findByRole('heading', { name: /Ton intitulé/ })).toBeInTheDocument();
     expect(useProfil.getState().profil?.service).toBe('2e');
@@ -80,7 +80,10 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     // L'intitulé affiché est celui du tirage seedé, et l'aperçu suit le gabarit du ticket.
     const tire = tirerIntitule(UID, 0);
     expect(screen.getByTestId('intitule-tire')).toHaveTextContent(tire);
-    expect(screen.getByTestId('apercu-profil')).toHaveTextContent(`Anaïs / planqué du 2e — ${tire}`);
+    // Le badge se lit en deux temps : le titre en grand, puis la fonction — l'intitulé n'est
+    // pas répété une seconde fois sous lui.
+    expect(screen.getByTestId('apercu-profil')).toHaveTextContent('Anaïs / planqué du 2ème');
+    expect(screen.queryByText(new RegExp(`— ${tire}`))).toBeNull();
   });
 
   it('dit ce que le service engage — et qu’il ne change aucune règle (D-135)', async () => {
@@ -88,7 +91,7 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     render(<ParcoursProfil uid={UID} />);
 
     // Chaque service porte sa phrase : le choix ne se fait plus sur un mot nu.
-    expect(screen.getByText('L’étage dont personne ne prononce le nom.')).toBeInTheDocument();
+    expect(screen.getByText('L’accueil, les badges et les colis mal étiquetés.')).toBeInTheDocument();
     // Et l'aide dit la vérité : décoratif (D-135), figé quand même (D-148).
     expect(screen.getByText(/ne change aucune règle du jeu/)).toBeInTheDocument();
     expect(screen.getByText(/figé dès que tu le valides/)).toBeInTheDocument();

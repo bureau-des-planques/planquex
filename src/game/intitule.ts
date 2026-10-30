@@ -17,14 +17,8 @@ import { seedRng, stepRng } from './rng';
 /** Les cinq groupes du parcours. `complement` se lit après « planqué ». */
 export const SERVICES = [
   {
-    code: 'red-chaussee',
-    libelle: 'Red Chaussée',
-    complement: 'de la Red Chaussée',
-    dit: 'L’étage dont personne ne prononce le nom.'
-  },
-  {
     code: 'rez-de-chaussee',
-    libelle: 'rez-de-chaussée',
+    libelle: 'Rez-de-chaussée',
     complement: 'du rez-de-chaussée',
     dit: 'L’accueil, les badges et les colis mal étiquetés.'
   },
@@ -36,14 +30,20 @@ export const SERVICES = [
   },
   {
     code: '2e',
-    libelle: '2e',
-    complement: 'du 2e',
+    libelle: '2ème',
+    complement: 'du 2ème',
     dit: 'Les tableurs, la machine à café, le silence.'
   },
   {
     code: '3e',
-    libelle: '3e',
-    complement: 'du 3e',
+    libelle: '3ème',
+    complement: 'du 3ème',
+    dit: 'Les dossiers qu’on ne rouvre pas.'
+  },
+  {
+    code: '4e',
+    libelle: '4ème',
+    complement: 'du 4ème',
     dit: 'La direction, paraît-il.'
   }
 ] as const;
@@ -93,9 +93,14 @@ export function tirerIntitule(compte: string, relances: number): string {
   return INTITULES[index]!;
 }
 
-/** La phrase du profil, telle qu'elle s'affiche : « pseudo / planqué du 2e — sculpteur de fumée ». */
-export function phraseProfil(profil: { pseudo: string; service: string; intitule: string }): string {
+/** La « fonction » du testeur : « Anaïs / planqué du 2ème ». Elle se lit sous l'intitulé. */
+export function fonctionProfil(profil: { pseudo: string; service: string }): string {
   const service = serviceDe(profil.service);
   const groupe = service ? service.complement : '';
-  return `${profil.pseudo} / planqué ${groupe} — ${profil.intitule}`.replace(/\s+/g, ' ');
+  return `${profil.pseudo} / planqué ${groupe}`.replace(/\s+/g, ' ');
+}
+
+/** La phrase du profil, telle qu'elle s'affiche : « pseudo / planqué du 2ème — sculpteur de fumée ». */
+export function phraseProfil(profil: { pseudo: string; service: string; intitule: string }): string {
+  return `${fonctionProfil(profil)} — ${profil.intitule}`.replace(/\s+/g, ' ');
 }
