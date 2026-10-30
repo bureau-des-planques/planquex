@@ -187,6 +187,18 @@ describe('une seule source pour les nombres (#490)', () => {
     expect(deckTs).toContain('Planqué Entrant');
     expect(sql).toContain('Planqué Entrant');
   });
+
+  it('(g) la liste des stades de `deck_stade_check` est celle du moteur', () => {
+    // Sans cette assertion, un stade ajouté à `Stage` serait **refusé en base** sans qu'aucun
+    // test ne rougisse : la base garderait une copie muette du vocabulaire du moteur.
+    const liste = /check\s*\(\s*stade\s+is\s+null\s+or\s+stade\s+in\s*\(([^)]*)\)/.exec(sql);
+    expect(liste, 'la liste de stades est introuvable dans la 0021').not.toBeNull();
+    const stades = (liste![1] as string)
+      .split(',')
+      .map((valeur) => valeur.trim().replace(/^'|'$/g, ''))
+      .filter(Boolean);
+    expect(stades.sort()).toEqual(Object.keys(STAGE_META).sort());
+  });
 });
 
 describe('le contrôle mord — la 0021 neutralisée laisse passer le Deck illégal', () => {
@@ -204,6 +216,15 @@ describe('le contrôle mord — la 0021 neutralisée laisse passer le Deck illé
     await remplir(db, APPAREIL_A, DECK_SIZE, { entrant: true });
 
     accepte(await ajouterAuDeck(db, APPAREIL_A, 'carte-20', 20, 1, 'Carte 20'));
+  });
+
+  it('sans la garde des exemplaires, un troisième du même nom est accepté', async () => {
+    const db = await base(migrationsSansGarde('if pire > max_par_nom then', 'if false then'));
+    await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+    // Deux exemplaires d'une base, puis sa variante : trois portent le même nom.
+    accepte(await ajouterAuDeck(db, APPAREIL_A, 'carte-a', 0, 2, 'Carte a', 'ENTRANT'));
+
+    accepte(await ajouterAuDeck(db, APPAREIL_A, 'carte-a-star', 1, 1, 'Carte a', 'N+1'));
   });
 
   it('sans la garde d’Entrant, un Deck complet sans Entrant est accepté', async () => {

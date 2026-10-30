@@ -86,8 +86,11 @@ grant update (quantite, rang, nom, stade) on public.deck to authenticated;
 -- un écran pourra la lire. Une contrainte de table ne convient pas : la règle porte sur
 -- l'ensemble des lignes du Deck, pas sur une ligne.
 --
--- **Différée au commit** (`deferrable initially deferred`) : un Deck écrit d'un seul
--- `insert` de 20 lignes est jugé une fois, à la fin, quand toutes ses lignes sont là.
+-- **Différée au commit** (`deferrable initially deferred`) : la garde ne juge pas un Deck
+-- pendant qu'on l'écrit, mais une fois la transaction fermée, quand toutes ses lignes sont là.
+-- Le déclencheur est `for each row` : il est mis en file **une fois par ligne** et rejoue
+-- l'agrégat complet à chaque fois, toujours sur l'état final — les trois contrôles sont des
+-- fonctions pures de cet état, donc le résultat ne dépend pas du nombre de lignes touchées.
 create or replace function public.deck_gardes()
 returns trigger
 language plpgsql
