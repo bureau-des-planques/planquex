@@ -24,6 +24,12 @@ export interface CampPiste {
    * remplissage de `is-acquise` suffit déjà.
    */
   readonly fraiches?: readonly number[];
+  /**
+   * Le camp qui **vient de gagner** (30/10/2026) : ses trois hexagones s'allument **en
+   * séquence**, comme un verdict qui se pose. C'est la fin du tutoriel de combat — un
+   * combat ordinaire garde ses crans et son bandeau, sans cette cérémonie.
+   */
+  readonly finale?: boolean;
 }
 
 export function PisteInterventions({
@@ -38,7 +44,7 @@ export function PisteInterventions({
 
   return (
     <div className="piste" role="group" aria-label={`Interventions : ${lecture}`} data-pas-a-pas={designe}>
-      {camps.map(({ label, points, fraiches = [] }) => (
+      {camps.map(({ label, points, fraiches = [], finale }) => (
         <div className="piste__camp" role="group" aria-label={label} key={label}>
           <span className="piste__nom" aria-hidden="true">
             {label}
@@ -53,7 +59,7 @@ export function PisteInterventions({
                 aria-label={`Intervention ${numero} sur ${POINTS_TO_WIN}, ${label}, ${numero <= points ? 'acquise' : 'à venir'}`}
                 className={`piste__hex${numero <= points ? ' is-acquise' : ''}${
                   fraiches.includes(numero) ? ' is-fraiche' : ''
-                }`}
+                }${finale ? ' is-finale' : ''}`}
               />
             );
           })}

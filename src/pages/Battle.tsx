@@ -1843,6 +1843,9 @@ export function Battle() {
                   camps={[otherCamp(myCamp), myCamp].map((camp) => ({
                     label: pisteLabel(camp),
                     points: state.players[camp].points,
+                    /* Le camp qui a gagné **allume sa piste** : la fin se voit avant de se
+                       lire (30/10/2026). */
+                    finale: state.phase === 'ended' && state.winner === camp,
                     /* Les crans qui viennent d'être acquis (#192) : leur hexagone rebondit
                        une fois ; sous mouvement réduit, il est simplement déjà rempli. */
                     fraiches: effets

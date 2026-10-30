@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { PisteInterventions } from './PisteInterventions';
 
 /**
@@ -50,5 +52,34 @@ describe('PisteInterventions — six hexagones, trois par camp', () => {
     const designes = container.querySelectorAll('[data-pas-a-pas="interventions"]');
     expect(designes).toHaveLength(1);
     expect(designes[0]).toHaveAttribute('role', 'group');
+  });
+});
+
+describe('la fin du combat s’allume (30/10/2026)', () => {
+  const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+
+  it('le camp vainqueur porte `is-finale` sur ses trois hexagones, l’autre non', () => {
+    render(
+      <PisteInterventions
+        camps={[
+          { label: 'Toi', points: 3, finale: true },
+          { label: 'La Direction', points: 1 }
+        ]}
+      />
+    );
+    const toi = screen.getByRole('group', { name: 'Toi' });
+    const direction = screen.getByRole('group', { name: 'La Direction' });
+    // **Le contrôle mord** : sans la classe, la fin ne se voit pas.
+    for (const hex of within(toi).getAllByRole('img')) expect(hex).toHaveClass('is-finale');
+    for (const hex of within(direction).getAllByRole('img')) expect(hex).not.toHaveClass('is-finale');
+  });
+
+  it('s’allume en séquence, et ne bouge pas sous mouvement réduit', () => {
+    expect(css).toMatch(/\.piste__hex\.is-finale \{[^}]*animation: piste-finale/);
+    // Trois départs décalés : la séquence, pas trois hexagones qui clignotent ensemble.
+    expect(css).toMatch(/is-finale:nth-of-type\(3\) \{[^}]*animation-delay: 180ms/);
+    expect(css).toMatch(/is-finale:nth-of-type\(4\) \{[^}]*animation-delay: 360ms/);
+    // Sous mouvement réduit, c'est le remplissage qui parle.
+    expect(css).toMatch(/prefers-reduced-motion: reduce\)[\s\S]{0,200}\.piste__hex\.is-finale \{\s*animation: none;/);
   });
 });
