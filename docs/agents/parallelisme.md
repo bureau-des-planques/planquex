@@ -48,8 +48,12 @@ Jamais le modèle qui a implémenté ne relit. La chaîne vient du **benchmark**
 | **revue de session** — toute une série de fusions | `anthropic/claude-opus-5-5#high` | c'est elle qui a trouvé ce que les relecteurs par branche ne pouvaient pas voir (le harnais biaisé) |
 | **contrôle ponctuel** | `google/gemma-4-26b-a4b-it` | **un seul appel, aucun outil** : `AGENTS.md` est injecté à chaque requête, le palier gratuit plafonne à 16 k jetons d'entrée/minute |
 
-**Budget** : seuls Sonnet et Opus sont payants (abonnement existant). Les réserver aux
-migrations de store, au moteur et aux revues de session. Le reste reste gratuit.
+**Budget** : trois modèles payants, à deux titres. **Sonnet** et **Opus** le sont par
+abonnement existant : les réserver aux migrations de store, au moteur et aux revues de
+session. **`openrouter/deepseek/deepseek-v4.1-flash-1017`** l'est à la carte et **hors
+chaîne** : c'est le repli quand tout le gratuit est épuisé, il ne part que si on le choisit,
+et le routeur ne le remplace pas (détail : `modeles.md` §« Le repli payant, hors
+chaîne »). Le reste reste gratuit.
 
 ### Appeler `subagent` — `model` explicite, repli, `sessionID`
 
@@ -67,7 +71,9 @@ Mesuré du 23 au 26/10/2026 (94 appels `subagent`) :
   dans l'appel, et la réponse « ce n'est pas réglable depuis cette session » est fausse.
 - **`Free usage limit reached` coupe tout `opencode/*`, pas un seul modèle** : le repli saute le
   fournisseur. Repli payant bon marché utilisé avec succès : `openrouter/deepseek/deepseek-v4.1-flash-1017`
-  (`variant` par défaut). Relancer le même modèle quatre fois en parallèle ne sert à rien.
+  (`variant` par défaut). Il est **hors chaîne** : le routeur l'annonce et ne le remplace
+  pas, et `cout_max_usd_jour` ne le borne pas (`modeles.md` §« Le repli payant, hors
+  chaîne »). Relancer le même modèle quatre fois en parallèle ne sert à rien.
 - **`sessionID` n'est jamais un placeholder.** Huit appels ont passé `sessionID: "ses"` et reçu
   `Subagent session not found`. Une valeur vient du retour d'un appel précédent (`ses_…`, entière) ;
   à défaut, appel neuf, brief complet.
