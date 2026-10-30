@@ -212,3 +212,22 @@ describe('Deck — tri et gabarit (#179)', () => {
     expect(enCollection).not.toHaveClass('is-missing');
   });
 });
+
+describe('Deck — les panneaux longs se replient', () => {
+  const base = { tutorielVu: true, pasAPasCombatVu: true };
+  const volet = (titre: RegExp) =>
+    screen.getByRole('heading', { name: titre }).closest('details') as HTMLDetailsElement;
+
+  it('Deck vide : les Decks proposés sont ouverts (on commence là), le partage est replié', () => {
+    renderWithStore(<Deck />, { ...base, deck: [] });
+    expect(volet(/Decks proposés/).open).toBe(true);
+    expect(volet(/Partager le Deck/).open).toBe(false);
+  });
+
+  it('Deck commencé : les Decks proposés se replient aussi (le contrôle mord : seul le Deck vide les ouvre)', () => {
+    renderWithStore(<Deck />, { ...base, deck: ['sse-infirmier-site'] });
+    expect(volet(/Decks proposés/).open).toBe(false);
+    // Replié n'est pas retiré : les Decks restent dans la page, prêts à s'ouvrir.
+    expect(screen.getAllByRole('button', { name: 'Charger' })).toHaveLength(DECKS_PROPOSES.length);
+  });
+});

@@ -6349,6 +6349,45 @@ h2 {
   flex: 1 1 100%;
 }
 
+/* Un panneau repliable (`details.volet` dans un `.panel`) : la tête est l'en-tête de la section,
+   un chevron à droite dit l'état. Fermé, le panneau tient en une ligne de titre et sa phrase. */
+.volet__tete {
+  align-items: flex-start;
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 2.75rem;
+}
+
+.volet__tete::-webkit-details-marker {
+  display: none;
+}
+
+.volet__tete h2 {
+  margin: 0;
+}
+
+.volet__tete .muted {
+  margin: 0.35rem 0 0;
+}
+
+.volet__chevron {
+  color: var(--text-muted);
+  flex: none;
+  margin-top: 0.2rem;
+  transition: transform 160ms ease;
+}
+
+.volet[open] > .volet__tete .volet__chevron {
+  transform: rotate(180deg);
+}
+
+.volet[open] > .volet__tete {
+  margin-bottom: 0.9rem;
+}
+
 /* Le volet des filtres : un bouton « Filtres » (avec le nombre de filtres actifs), et dessous les
    cinq champs. Replié, il tient sur une ligne ; ouvert, il reprend la grille d'avant. */
 .filtres-volet {

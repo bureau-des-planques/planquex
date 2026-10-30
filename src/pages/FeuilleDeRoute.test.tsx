@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { APP_LABEL, APP_VERSION } from '@/version';
 import { NOTES_VERSIONS } from '@/data/versions';
 import { CRITERES_ALPHA, DECIDE_PLUS_TARD, JALONS, PAS_MAINTENANT } from '@/data/plan';
+import { notesAffichees } from '@/data/notes-affichees';
 import { FEATURES_PREVUES, type FeaturePrevue } from '@/data/plan-dev';
 import { FeuilleDeRoute, DEPOT, LIEN_RELEASES, lienIssue } from '@/pages/FeuilleDeRoute';
 
@@ -63,6 +64,19 @@ describe('Feuille de route — les blocs de la page', () => {
     for (const note of publiees) {
       expect(screen.getByText(note.points[0].texte), `points de ${note.version}`).toBeTruthy();
     }
+  });
+
+  it('replie chaque version précédente en une ligne, et garde son texte dans la page', () => {
+    const { container } = rendre();
+    const volets = Array.from(container.querySelectorAll<HTMLDetailsElement>('details.feuille-de-route__note'));
+    const { precedentes } = notesAffichees(APP_VERSION);
+    // Le contrôle mord : sans versions précédentes, la garde ne regarderait rien.
+    expect(precedentes.length).toBeGreaterThan(0);
+    expect(volets).toHaveLength(precedentes.length);
+    expect(volets.every((volet) => !volet.open)).toBe(true);
+    // La ligne repliée dit la version ; le détail reste dans le volet, pas retiré.
+    expect(volets[0].querySelector('summary')).toHaveTextContent(precedentes[0].version);
+    expect(volets[0]).toHaveTextContent(precedentes[0].points[0].texte);
   });
 
   it('montre l’étape en cours, les critères et les jalons', () => {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, Search, Sparkles, Trash2 } from 'lucide-react';
+import { ChevronDown, Info, Search, Sparkles, Trash2 } from 'lucide-react';
 import { DECKS_PROPOSES } from '@/data/decks-proposes';
 import type { DeckPropose } from '@/data/decks-proposes';
 import { DECK_DE_LA_DIRECTION } from '@/game/deck-direction';
@@ -79,6 +79,8 @@ export function Deck() {
   const [retour, setRetour] = useState<{ ok: boolean; texte: string } | null>(null);
   /** Le Deck proposé **présenté** (#251) : un panneau, pas une page — il sert à choisir. */
   const [presentation, setPresentation] = useState<DeckPropose | null>(null);
+  /** Le volet des Decks proposés : ouvert d'emblée tant que le Deck est vide. */
+  const [proposesOuverts, setProposesOuverts] = useState(() => deck.length === 0);
 
   /**
    * Le choix **normalisé**, lu ici et pas seul dans le moteur : l'écran est le dernier à
@@ -300,47 +302,57 @@ export function Deck() {
         )}
       </section>
 
+      {/* Les deux panneaux longs de la page (Decks proposés, Partage) se **replient** : à 420 × 900,
+          ils repoussaient le contenu du Deck à 3 100 px. Les Decks proposés restent ouverts tant que
+          le Deck est vide — c'est là qu'un nouveau venu commence. */}
       <section className="section panel decks-proposes">
-        <div className="section__head">
-          <div>
-            <h2>Decks proposés</h2>
-            <p className="muted">
-              Des Decks prêts à jouer, indépendants de ta Collection. Charger remplace le Deck actuel.
-            </p>
-          </div>
-        </div>
-        <ul className="decks-proposes__list">
-          {DECKS_PROPOSES.map((deckPropose) => (
-            <li key={deckPropose.id} className="decks-proposes__item">
-              <div>
-                <h3>
-                  <button
-                    type="button"
-                    className="decks-proposes__nom"
-                    aria-label={`Présentation de ${deckPropose.name}`}
-                    onClick={() => setPresentation(deckPropose)}
-                  >
-                    {deckPropose.name}
-                  </button>{' '}
-                  <span className="muted">
-                    — {deckPropose.vivier === 'MIXTE' ? 'Mixte' : VIVIER_META[deckPropose.vivier].label} ·{' '}
-                    {cafeSigles(deckPropose.cafeTypes)}
-                  </span>
-                  {difficultesDuDeck(deckPropose.id).length > 0 && (
-                    <span className="decks-proposes__direction">
-                      Direction en {difficultesDuDeck(deckPropose.id).join(' et ')}
+        <details
+          className="volet"
+          open={proposesOuverts}
+          onToggle={(event) => setProposesOuverts(event.currentTarget.open)}
+        >
+          <summary className="volet__tete">
+            <div>
+              <h2>Decks proposés ({DECKS_PROPOSES.length})</h2>
+              <p className="muted">
+                Des Decks prêts à jouer, indépendants de ta Collection. Charger remplace le Deck actuel.
+              </p>
+            </div>
+            <ChevronDown className="volet__chevron" size={20} aria-hidden="true" />
+          </summary>
+          <ul className="decks-proposes__list">
+            {DECKS_PROPOSES.map((deckPropose) => (
+              <li key={deckPropose.id} className="decks-proposes__item">
+                <div>
+                  <h3>
+                    <button
+                      type="button"
+                      className="decks-proposes__nom"
+                      aria-label={`Présentation de ${deckPropose.name}`}
+                      onClick={() => setPresentation(deckPropose)}
+                    >
+                      {deckPropose.name}
+                    </button>{' '}
+                    <span className="muted">
+                      — {deckPropose.vivier === 'MIXTE' ? 'Mixte' : VIVIER_META[deckPropose.vivier].label} ·{' '}
+                      {cafeSigles(deckPropose.cafeTypes)}
                     </span>
-                  )}
-                </h3>
-                <p>{deckPropose.strategie}</p>
-                <p className="muted">Faible : {deckPropose.faiblesse}</p>
-              </div>
-              <button type="button" className="button" onClick={() => chargerDeck(deckPropose)}>
-                Charger
-              </button>
-            </li>
-          ))}
-        </ul>
+                    {difficultesDuDeck(deckPropose.id).length > 0 && (
+                      <span className="decks-proposes__direction">
+                        Direction en {difficultesDuDeck(deckPropose.id).join(' et ')}
+                      </span>
+                    )}
+                  </h3>
+                  <p>{deckPropose.strategie}</p>
+                  <p className="muted">Faible : {deckPropose.faiblesse}</p>
+                </div>
+                <button type="button" className="button" onClick={() => chargerDeck(deckPropose)}>
+                  Charger
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
       </section>
 
       <section className="section panel cafe-picker">
@@ -410,62 +422,65 @@ export function Deck() {
           rien ne part sans un clic. Un Deck illégal
           s'exporte quand même, avec son avertissement — c'est le partage qui s'ouvre. */}
       <section className="section panel deck-partage" aria-labelledby="deck-partage-titre">
-        <div className="section__head">
-          <div>
-            <h2 id="deck-partage-titre">Partager le Deck</h2>
-            <p className="muted">
-              Un code à copier : il porte les cartes et les types de café, pas ta Collection. Un Deck reçu montre ce qui
-              te manque.
+        <details className="volet">
+          <summary className="volet__tete">
+            <div>
+              <h2 id="deck-partage-titre">Partager le Deck</h2>
+              <p className="muted">
+                Un code à copier : il porte les cartes et les types de café, pas ta Collection. Un Deck reçu montre ce
+                qui te manque.
+              </p>
+            </div>
+            <ChevronDown className="volet__chevron" size={20} aria-hidden="true" />
+          </summary>
+
+          <label className="field">
+            <span>Ton code</span>
+            <textarea
+              className="deck-partage__code"
+              readOnly
+              rows={3}
+              value={codeDuDeck}
+              aria-label="Code du Deck à partager"
+              onFocus={(event) => event.currentTarget.select()}
+            />
+          </label>
+          {!legality.ok && (
+            <p className="notice notice--warn">
+              Ce code porte un Deck illégal (raisons ci-dessus). Il s’exporte quand même, et s’importe de même.
             </p>
+          )}
+          <div className="section__actions">
+            <button type="button" className="button button--primary" onClick={copierLeCode}>
+              Copier le code
+            </button>
           </div>
-        </div>
 
-        <label className="field">
-          <span>Ton code</span>
-          <textarea
-            className="deck-partage__code"
-            readOnly
-            rows={3}
-            value={codeDuDeck}
-            aria-label="Code du Deck à partager"
-            onFocus={(event) => event.currentTarget.select()}
-          />
-        </label>
-        {!legality.ok && (
-          <p className="notice notice--warn">
-            Ce code porte un Deck illégal (raisons ci-dessus). Il s’exporte quand même, et s’importe de même.
-          </p>
-        )}
-        <div className="section__actions">
-          <button type="button" className="button button--primary" onClick={copierLeCode}>
-            Copier le code
-          </button>
-        </div>
+          <label className="field">
+            <span>Coller un code reçu</span>
+            <textarea
+              className="deck-partage__code"
+              rows={3}
+              value={codeAColler}
+              placeholder="PLQ1.…"
+              onChange={(event) => setCodeAColler(event.target.value)}
+            />
+          </label>
+          <div className="section__actions">
+            <button type="button" className="button" onClick={importerLeCode} disabled={codeAColler.trim() === ''}>
+              Importer ce Deck
+            </button>
+          </div>
 
-        <label className="field">
-          <span>Coller un code reçu</span>
-          <textarea
-            className="deck-partage__code"
-            rows={3}
-            value={codeAColler}
-            placeholder="PLQ1.…"
-            onChange={(event) => setCodeAColler(event.target.value)}
-          />
-        </label>
-        <div className="section__actions">
-          <button type="button" className="button" onClick={importerLeCode} disabled={codeAColler.trim() === ''}>
-            Importer ce Deck
-          </button>
-        </div>
-
-        {retour && (
-          <p
-            className={`notice ${retour.ok ? 'notice--ok' : 'notice--warn'} deck-partage__retour`}
-            role={retour.ok ? 'status' : 'alert'}
-          >
-            {retour.texte}
-          </p>
-        )}
+          {retour && (
+            <p
+              className={`notice ${retour.ok ? 'notice--ok' : 'notice--warn'} deck-partage__retour`}
+              role={retour.ok ? 'status' : 'alert'}
+            >
+              {retour.texte}
+            </p>
+          )}
+        </details>
       </section>
 
       <div className="filters filters--deck">
