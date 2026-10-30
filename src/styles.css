@@ -1489,7 +1489,8 @@ h2 {
 .field--search {
   flex-direction: row;
   align-items: center;
-  background: var(--bg-sunken);  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   flex: 1 1 240px;
   gap: 0.5rem;
@@ -2580,6 +2581,13 @@ h2 {
   color: var(--gold-soft);
   font-size: 0.8rem;
   margin: 0;
+}
+
+/* La réplique de la Direction (30/10/2026) : une ligne, en italique, dans la même colonne
+   que le journal — elle ne prend pas de bande à elle (D-103 tient). `--text-muted` sur la
+   barre d'action : 7,16:1 au pire, AA. */
+.combat-replique {
+  font-style: italic;
 }
 
 /* La sortie de la visite, sous les actions : un lien discret, pas un troisième bouton —

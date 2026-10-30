@@ -60,6 +60,7 @@ import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { etatFinScriptee } from '@/game/scenario-fin';
+import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
@@ -1003,6 +1004,14 @@ export function Battle() {
   const myCard = mySide.active ? getCard(mySide.active.cardId) : undefined;
   /** Dernière ligne du journal : ce qui vient de se passer, mis en avant. */
   const lastLog = state.log.at(-1) ?? '';
+  /**
+   * **La Direction parle** (30/10/2026), dans la fin scriptée seulement : elle réagit à ce
+   * qui vient de se passer (une Pression, un craquage) et à l'issue. Choix déterministe
+   * par le tour, donc une partie rejouée dit les mêmes phrases.
+   */
+  const evenementDirection =
+    state.phase === 'ended' ? (state.winner === 'player' ? 'victoire' : 'defaite') : evenementDuJournal(lastLog);
+  const repliqueDirection = sceneFin && evenementDirection ? choisirReplique(evenementDirection, state.turn) : null;
 
   /** Le moteur dit ce qui est possible ; l'écran ne fait que le rendre. */
   const legal = useMemo(() => legalActions(state), [state]);
@@ -2091,6 +2100,11 @@ export function Battle() {
                   {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
                       de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
                   {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
+                  {repliqueDirection && (
+                    <p className="muted combat-barre__portee combat-replique">
+                      <strong>La Direction</strong> · {repliqueDirection}
+                    </p>
+                  )}
                 </div>
                 {turnActions.map((action) => (
                   <span className="combat-barre__fin" key={JSON.stringify(action)}>
@@ -2203,6 +2217,15 @@ export function Battle() {
                 bouton. Une partie finie n'a rien à perdre : le geste est direct. */}
             {state.phase === 'ended' && (
               <div className="combat-barre__gestes">
+                {/* **La fin du tutoriel propose la suite** (30/10/2026) : une partie complète
+                    avec le Deck chargé à l'étape 2, ou la reprise de la Journée par son propre
+                    panneau (« Suivant », resté ouvert au-dessus). Ici, seul le premier choix
+                    a besoin d'un bouton. */}
+                {sceneFin && state.winner === 'player' && (
+                  <Link className="button" to="/battle">
+                    Une partie complète
+                  </Link>
+                )}
                 <button type="button" className="button button--primary" onClick={demanderNouveauCombat}>
                   <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
                 </button>
