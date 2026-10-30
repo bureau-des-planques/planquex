@@ -2007,6 +2007,18 @@ h2 {
   min-width: 0;
 }
 
+/* En `détaillé`, le nom de la Pression **se lit** : il passe sur deux lignes au plus au lieu de
+   l'ellipse d'une ligne (« Massage … 20 » à 88 px, #525). La bascule promet le nom et les dégâts. */
+.card--plateau .card__attacks .attack__name {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  hyphens: auto;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.1;
+  white-space: normal;
+}
+
 /* La jauge de Stress (`.stress`, dix crans) : elle se voit même vide. */
 .card--plateau .card__seuil {
   align-items: center;
@@ -3619,6 +3631,24 @@ h2 {
 .status-chip svg {
   flex: none;
   opacity: 0.9;
+}
+
+/* **En `sobre`, une pastille ronde à la mesure de son icône** (#525) : la capsule gardait sa marge de
+   texte autour d'une icône de 12 px, et trois Conditions se lisaient comme trois ovales de couleur
+   vides. Or la Sieste et l'Immobilisation décident du tour. La pastille fait 22 px, l'icône 14 px ; le
+   nom reste lu par un lecteur d'écran, et revient en `détaillé`. Le balisage ne change pas
+   (`MODELE_BADGE` de `capturer` le garde) : seule la feuille le dimensionne. */
+.battle--sobre .status-chip {
+  height: 1.375rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.375rem;
+}
+
+.battle--sobre .status-chip svg {
+  height: 14px;
+  opacity: 1;
+  width: 14px;
 }
 
 .status-chip--surcharge {

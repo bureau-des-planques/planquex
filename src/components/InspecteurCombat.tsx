@@ -164,7 +164,16 @@ export function CarteSurvolable({
   const [ecartee, setEcartee] = useState(false);
   const minuterie = useRef<number | null>(null);
   const carte = useRef<HTMLDivElement | null>(null);
-  const [ancre, setAncre] = useState<{ x: number; y: number; dessus: boolean; hote: Element } | null>(null);
+  const [ancre, setAncre] = useState<{
+    x: number;
+    y: number;
+    dessus: boolean;
+    hote: Element;
+    /** Le haut et le bas de la carte : la seconde passe y replace l'infobulle une fois mesurée. */
+    haut: number;
+    bas: number;
+  } | null>(null);
+  const infobulle = useRef<HTMLDivElement | null>(null);
   const etaitInspectee = useRef(inspectee);
 
   const annulerMinuterie = () => {
@@ -203,8 +212,25 @@ export function CarteSurvolable({
     const demi = Math.min(17 * rem, 0.8 * window.innerWidth) / 2;
     const centre = r.left + r.width / 2;
     const x = Math.min(Math.max(centre, demi + 8), window.innerWidth - demi - 8);
-    setAncre({ x, y: dessus ? r.top : r.bottom, dessus, hote });
+    setAncre({ x, y: dessus ? r.top : r.bottom, dessus, hote, haut: r.top, bas: r.bottom });
   }, [visible]);
+
+  // **La seconde passe : la hauteur réelle** (#525). Les 220 px ci-dessus sont une estimation ; la
+  // fiche d'un Planqué en rend ~263, et l'infobulle débordait sous la barre. Une fois rendue, on la
+  // mesure : si elle sort de la fenêtre de son côté et tient de l'autre, elle change de côté.
+  useLayoutEffect(() => {
+    const el = infobulle.current;
+    if (!ancre || !el) return;
+    const h = el.offsetHeight;
+    const tientDessous = ancre.bas + h <= window.innerHeight - 8;
+    const tientDessus = ancre.haut - h >= 8;
+    // **Mes cartes s'ouvrent vers l'adversaire** : dessous, l'infobulle de mon Poste couvrait ma main
+    // et la barre d'action — ce qu'on regarde au même moment. Au-dessus, elle couvre la table.
+    const mienne = carte.current?.closest('.board__side:not(.is-direction)') != null;
+    const dessus =
+      mienne && tientDessus ? true : ancre.dessus ? !(tientDessous && !tientDessus) : !tientDessous && tientDessus;
+    if (dessus !== ancre.dessus) setAncre({ ...ancre, dessus, y: dessus ? ancre.haut : ancre.bas });
+  }, [ancre]);
 
   // Échap ferme l'infobulle où que soit le focus (le même critère : fermable sans bouger le pointeur).
   useEffect(() => {
@@ -272,6 +298,7 @@ export function CarteSurvolable({
         ancre &&
         createPortal(
           <div
+            ref={infobulle}
             role="tooltip"
             id={id}
             className={`infobulle${ancre.dessus ? ' infobulle--dessus' : ''}`}

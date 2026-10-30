@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getCard } from '@/data';
 import type { Card, CardInstance } from '@/data/types';
@@ -254,5 +254,78 @@ describe('InspecteurCombat — le focus après le panneau (#525)', () => {
     main.focus();
     await screen.findByRole('dialog');
     expect(main).toHaveFocus();
+  });
+});
+
+describe('CarteSurvolable — l’infobulle mesurée change de côté si elle déborde (#525)', () => {
+  it('l’estimation la mettait dessous ; mesurée à 300 px, elle passe au-dessus (le contrôle mord : petite, elle reste dessous)', async () => {
+    const hauteur = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get');
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: 350,
+      bottom: 500,
+      left: 0,
+      right: 100,
+      width: 100,
+      height: 150,
+      x: 0,
+      y: 350,
+      toJSON: () => ({})
+    });
+    try {
+      hauteur.mockReturnValue(300);
+      const { unmount } = render(<InspecteurDeTest />);
+      await userEvent.hover(carte());
+      await waitFor(() => expect(screen.getByRole('tooltip')).toHaveClass('infobulle--dessus'));
+      unmount();
+
+      hauteur.mockReturnValue(120);
+      render(<InspecteurDeTest />);
+      await userEvent.hover(carte());
+      const petite = await screen.findByRole('tooltip');
+      expect(petite).not.toHaveClass('infobulle--dessus');
+    } finally {
+      hauteur.mockRestore();
+      rect.mockRestore();
+    }
+  });
+});
+
+describe('CarteSurvolable — mes cartes s’ouvrent vers l’adversaire (#525)', () => {
+  it('dans mon camp, l’infobulle passe au-dessus quand elle y tient (le contrôle mord : chez la Direction, elle reste dessous)', async () => {
+    const hauteur = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(120);
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({
+        top: 350,
+        bottom: 500,
+        left: 0,
+        right: 100,
+        width: 100,
+        height: 150,
+        x: 0,
+        y: 350,
+        toJSON: () => ({})
+      });
+    try {
+      const { unmount } = render(
+        <article className="board__side">
+          <InspecteurDeTest />
+        </article>
+      );
+      await userEvent.hover(carte());
+      await waitFor(() => expect(screen.getByRole('tooltip')).toHaveClass('infobulle--dessus'));
+      unmount();
+
+      render(
+        <article className="board__side is-direction">
+          <InspecteurDeTest />
+        </article>
+      );
+      await userEvent.hover(carte());
+      expect(await screen.findByRole('tooltip')).not.toHaveClass('infobulle--dessus');
+    } finally {
+      hauteur.mockRestore();
+      rect.mockRestore();
+    }
   });
 });
