@@ -16,9 +16,19 @@ begin;
 
 alter table public.profils drop constraint if exists profils_service_check;
 
+-- **La garde doit se taire le temps de la correction.** `profils_gardes` refuse tout changement
+-- de `service` une fois posé — y compris celui-ci, qui ne corrige pas un choix mais une
+-- coquille (`red-chaussee` n'a jamais été un étage). Vu en production le 30/10/2026 : sans
+-- cette parenthèse, l'application répondait `profils_service_fige` et n'écrivait rien.
+-- L'écriture et le rétablissement sont dans la même transaction : aucun client ne voit la
+-- garde désarmée, et rien ne peut s'y glisser entre les deux.
+alter table public.profils disable trigger profils_gardes;
+
 update public.profils
 set service = 'rez-de-chaussee'
 where service = 'red-chaussee';
+
+alter table public.profils enable trigger profils_gardes;
 
 do $$
 begin
