@@ -57,8 +57,7 @@ export function Settings() {
     difficulte,
     setDifficulte,
     reset,
-    setTutorielVu,
-    setPasAPasCombatVu
+    setTutorielVu
   } = useStore();
   const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
   const importerSauvegarde = useStore((state) => state.importerSauvegarde);
@@ -265,14 +264,16 @@ export function Settings() {
       <section className="section panel" aria-labelledby="reglages-pas-a-pas">
         <h2 id="reglages-pas-a-pas">Pas-à-pas du combat</h2>
         <p className="muted max-w-[62ch]">Cinq étapes sur le premier combat.</p>
+        {/* **Un seul bouton** (30/10/2026). Ils étaient deux, et ils faisaient la même
+            chose : « Revoir le pas-à-pas » ne remettait qu'un drapeau — depuis Réglages,
+            **rien ne se passait**, il fallait aller au combat pour le voir —, et « Rejouer
+            le combat guidé » ouvrait ce même panneau tout de suite. Le drapeau n'est plus
+            touché ici : le combat guidé ouvre le pas-à-pas quel que soit son état
+            (`usePasAPasCombat(force)`), et rejouer le tutoriel ne prive pas la première
+            vraie partie du sien. */}
         <div className="actions actions--tight">
-          <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
-            Revoir le pas-à-pas du combat
-          </button>
-          {/* **Le combat guidé** (#272) : une page de combat, pas un état de plus dans le
-              store — le lien la rouvre au début, quel que soit l'état du pas-à-pas. */}
           <Link className="button" to="/battle?tutoriel=1">
-            Rejouer le combat guidé
+            Revoir le pas-à-pas du combat
           </Link>
         </div>
       </section>

@@ -48,7 +48,7 @@ describe('PresentationRegles — l’ouverture et la fermeture (#270)', () => {
     expect(within(dialogue).getByRole('link', { name: /combat guidé/i })).toHaveAttribute('href', '/battle?tutoriel=1');
   });
 
-  it('s’ouvre depuis Réglages, et de là on rejoue le combat guidé (#272)', () => {
+  it('s’ouvre depuis Réglages, et de là on rejoue le pas-à-pas dans le combat guidé (#272)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     fireEvent.click(screen.getByRole('button', { name: 'Les règles en une minute' }));
@@ -56,8 +56,12 @@ describe('PresentationRegles — l’ouverture et la fermeture (#270)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Fermer/i }));
     expect(screen.queryByRole('dialog')).toBeNull();
 
-    // Le combat guidé se rejoue aussi depuis Réglages : un lien, pas un état de store.
-    expect(screen.getByRole('link', { name: /combat guidé/i })).toHaveAttribute('href', '/battle?tutoriel=1');
+    // Le pas-à-pas se rejoue aussi depuis Réglages : **un** lien, pas un état de store
+    // (30/10/2026 : les deux boutons qui faisaient la même chose n'en font plus qu'un).
+    expect(screen.getByRole('link', { name: /Revoir le pas-à-pas du combat/i })).toHaveAttribute(
+      'href',
+      '/battle?tutoriel=1'
+    );
   });
 
   it('s’ouvre depuis le menu du combat', () => {

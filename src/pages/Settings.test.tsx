@@ -99,17 +99,19 @@ describe('Settings — écran des Réglages', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Pas-à-pas du combat/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Revoir le pas-à-pas du combat/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Revoir le pas-à-pas du combat/i })).toBeInTheDocument();
   });
 
-  it('remet le pas-à-pas à false au clic', () => {
+  it('un seul bouton, et il ouvre le combat guidé (30/10/2026)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const button = screen.getByRole('button', { name: /Revoir le pas-à-pas du combat/i });
-    fireEvent.click(button);
-
-    const state = useStore.getState();
-    expect(state.pasAPasCombatVu).toBe(false);
+    // **Le contrôle mord** : deux boutons pour un seul effet, c'était le doublon — et
+    // « Revoir le pas-à-pas » ne faisait rien de visible depuis Réglages.
+    expect(screen.queryByRole('button', { name: /Revoir le pas-à-pas du combat/i })).toBeNull();
+    const lien = screen.getByRole('link', { name: /Revoir le pas-à-pas du combat/i });
+    expect(lien).toHaveAttribute('href', '/battle?tutoriel=1');
+    // Le drapeau de la première partie n'est **pas** touché depuis cet écran.
+    expect(useStore.getState().pasAPasCombatVu).toBe(true);
   });
 
   it('mène à la page d’installation depuis Réglages, une seule fois (sinon le module est introuvable une fois installé)', () => {
