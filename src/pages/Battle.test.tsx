@@ -1646,3 +1646,35 @@ describe('Battle — le bouton Infos montre sa touche (#525)', () => {
     expect(within(bouton).queryByText('I')).toBe(touche);
   });
 });
+
+describe('Battle — le journal remplit la console sur écran large (D-157, #520)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('sans matchMedia, la console ne porte pas le journal', async () => {
+    // Le cas « sans matchMedia » : on retire la simulation de setup-jsdom.ts pour ce test.
+    vi.stubGlobal('matchMedia', undefined);
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    await screen.findByRole('button', { name: 'Infos détaillées' });
+    expect(screen.queryByRole('region', { name: 'Journal du combat' })).toBeNull();
+  });
+
+  it('sur écran large, la console porte le journal, sans aria-live', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: true,
+      media: q,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false
+    }));
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    await screen.findByRole('button', { name: 'Infos détaillées' });
+    const journal = screen.getByRole('region', { name: 'Journal du combat' });
+    expect(within(journal).getAllByRole('listitem').length).toBeGreaterThan(0);
+    expect(journal).not.toHaveAttribute('aria-live');
+  });
+});
