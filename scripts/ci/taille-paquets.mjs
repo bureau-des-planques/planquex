@@ -70,8 +70,12 @@ export const SEUIL_PAQUET = 500_000;
  * **Le cliquet du paquet principal**, mesuré le 29/10/2026 à la fusion de #480 : 290 251 octets,
  * soit « 290,25 kB » au rapport de Vite (`index-*.js`, 78,25 kB gzip). Il ne monte pas sans une
  * décision écrite dans le commit qui le relève ; il descend avec le code qui le permet.
+ *
+ * **Relevé de 69 octets le 30/10/2026 (#527, D-156)** : le drapeau d'anonymat porté par la
+ * session et le refus d'un compte non approuvé. Le code a été resserré avant de relever
+ * (prédicat en ligne, lecture du compteur conditionnée) ; il reste 290 320 octets.
  */
-export const PLAFOND_PRINCIPAL = 290_251;
+export const PLAFOND_PRINCIPAL = 290_320;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];

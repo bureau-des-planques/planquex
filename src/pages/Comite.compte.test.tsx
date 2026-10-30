@@ -74,7 +74,7 @@ function poserCompte(etat: Partial<Compte> | null = {}) {
   useComptes.setState({
     configure: true,
     chargement: false,
-    session: etat ? { id: 'compte-a', courriel: 'a@exemple.test' } : null,
+    session: etat ? { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false } : null,
     compte: etat ? { ...COMPTE, ...etat } : null,
     erreur: null
   });

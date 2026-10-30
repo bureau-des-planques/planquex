@@ -57,6 +57,12 @@ export interface Compte {
 export interface SessionCompte {
   id: string;
   courriel: string;
+  /**
+   * **Identité anonyme** (D-059, D-110) : ni courriel, ni ligne `comptes`, et depuis
+   * **D-156** (#527) plus aucune page du jeu. Le drapeau vient du JWT (`is_anonymous`) —
+   * jamais de l'absence de ligne `comptes`, qui est aussi le cas d'une base en retard.
+   */
+  anonyme: boolean;
 }
 
 /**
@@ -67,11 +73,9 @@ export interface SessionCompte {
 export interface ClientComptes {
   auth: {
     getSession(): Promise<{
-      data: { session: { user: { id: string; email?: string | null } } | null };
-    }>;
-    signInAnonymously(): Promise<{
-      data: { user: { id: string } | null };
-      error: { message: string } | null;
+      data: {
+        session: { user: { id: string; email?: string | null; is_anonymous?: boolean } } | null;
+      };
     }>;
     signInWithOAuth(options: {
       provider: 'google';
@@ -205,6 +209,10 @@ export interface LectureCompte {
  * encore jouée) rend `compte: null` : l'écran le dit, il n'invente pas un état. Une **erreur
  * de lecture** ne fait pas perdre la session : sans cette distinction, une base en retard
  * fermerait l'entrée à tout le monde, alors que lire et jouer ne dépendent pas de `comptes`.
+ *
+ * Une **identité anonyme** (D-059) rend aussi `compte: null` — le déclencheur de 0005 exige
+ * un courriel — mais sa session porte `anonyme: true` : c'est ce drapeau, et non l'absence de
+ * ligne, qui dit à la garde que ce n'est pas un compte (D-156).
  */
 export async function lireMonCompte(
   chargerClient: () => Promise<ClientComptes | null> = clientComptes
@@ -216,7 +224,9 @@ export async function lireMonCompte(
   const user = data.session?.user;
   if (!user) return { session: null, compte: null, erreur: null };
 
-  const session = { id: user.id, courriel: user.email ?? '' };
+  // `is_anonymous` est le drapeau de Supabase ; un jeton qui ne le porte pas et qui n'a pas
+  // de courriel vient d'un anonyme (un compte a toujours une adresse).
+  const session = { id: user.id, courriel: user.email ?? '', anonyme: user.is_anonymous ?? !user.email };
   const { data: lignes, error } = await client.from('comptes').select('*').eq('id', user.id);
   if (error) {
     return {

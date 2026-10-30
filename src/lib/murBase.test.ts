@@ -160,10 +160,6 @@ function fauxClient(reponses: Reponses = {}) {
   const ecritures: Ecriture[] = [];
   const lectures: Array<{ table: string; filtres: Array<[string, string | number]> }> = [];
   const appelsRpc: AppelRpc[] = [];
-  const signIn = vi.fn(async () => ({
-    data: { user: { id: 'appareil-neuf' } },
-    error: null
-  }));
   const getSession = vi.fn(async () => ({
     data: {
       session: reponses.session === false ? null : { user: { id: 'appareil-A' } }
@@ -203,7 +199,7 @@ function fauxClient(reponses: Reponses = {}) {
   });
 
   const client = {
-    auth: { getSession, signInAnonymously: signIn },
+    auth: { getSession },
     rpc,
     from(table: string): RequeteMur {
       let ecriture: Ecriture | null = null;
@@ -321,7 +317,6 @@ function fauxClient(reponses: Reponses = {}) {
     ecritures,
     lectures,
     appelsRpc,
-    signIn,
     getSession
   };
 }
@@ -337,11 +332,11 @@ describe('la lecture du mur passe par la base quand elle est configurée (#136)'
     expect(charger).toHaveBeenCalledTimes(1);
   });
 
-  it('signe l’appareil anonyme avant de lire la vue, puis rend le contrat', async () => {
-    const faux = fauxClient({ lignes: [LIGNE], session: false });
+  it('lit la vue avec la session du compte, puis rend le contrat', async () => {
+    const faux = fauxClient({ lignes: [LIGNE] });
     const postits = await chargerPostitsDuMur(async () => faux.client);
 
-    expect(faux.signIn).toHaveBeenCalledTimes(1);
+    expect(faux.getSession).toHaveBeenCalledTimes(1);
     expect(postits).toHaveLength(1);
     expect(postits?.[0]).toMatchObject({
       id: 'p-001',
@@ -358,10 +353,9 @@ describe('la lecture du mur passe par la base quand elle est configurée (#136)'
     });
   });
 
-  it('reprend la session persistée : pas de seconde signature à chaque lecture', async () => {
-    const faux = fauxClient({ lignes: [LIGNE] });
-    await chargerPostitsDuMur(async () => faux.client);
-    expect(faux.signIn).not.toHaveBeenCalled();
+  it('sans session, lève : la page retombe sur le fichier, et rien n’est signé (#527)', async () => {
+    const faux = fauxClient({ lignes: [LIGNE], session: false });
+    await expect(chargerPostitsDuMur(async () => faux.client)).rejects.toThrow(/Aucune session/);
   });
 
   it('lève quand la base répond une erreur — la page retombe sur le fichier', async () => {

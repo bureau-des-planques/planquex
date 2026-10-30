@@ -20,21 +20,19 @@
  *
  * **Identité** : depuis **D-088** (#181), l'alpha s'ouvre par un **compte** (Google ou
  * courriel) validé à la main — c'est `@/lib/comptes` qui porte la connexion et
- * `supabase/migrations/0005_comptes.sql` qui décide qui écrit. L'**identité anonyme** de
- * D-059 **n'ouvre plus la lecture** : la garde d'entrée (`src/components/GardeComptes.tsx`)
- * renvoie vers `/connexion` tout visiteur sans **compte**, donc le mur ne s'atteint pas sans
- * session de compte — Bastien, 26/10/2026 : « il faut un compte pour entrer dans le jeu ».
- * `identiteAppareil` sait toujours signer un appareil sans compte (les connexions anonymes
- * restent actives, O-016, #252 — et c'est l'auteur des deux post-its d'avant la 0005), mais
- * un tel appareil ne peut plus **écrire** — les politiques de la 0005 exigent un compte
- * approuvé, pas seulement une session.
+ * `supabase/migrations/0005_comptes.sql` qui décide qui écrit. Depuis **D-156** (30/10/2026,
+ * #527), l'**identité anonyme** de D-059 n'ouvre plus rien — ni le jeu, ni même la lecture
+ * du mur : la garde d'entrée renvoie vers `/connexion` tout visiteur sans compte, et ce
+ * module **ne signe plus personne** (`identiteSession` rend la session persistée, ou `null`).
+ * Les connexions anonymes restent actives côté projet uniquement pour les lignes d'avant la
+ * 0005 (les deux post-its, auteur sentinelle, D-107) ; elles se ferment après #527.
  *
  * La bibliothèque est chargée **à la demande** (`import()` dynamique) : sans configuration, son
  * code ne part même pas dans le premier chargement.
  *
  * **La trace des combats** (#173, D-086) se dépose par `ecrireLigne` — même configuration,
- * même identité anonyme, et **inerte sans configuration**. Ce module ne décide pas *quoi*
- * envoyer : la ligne est construite par `@/store/combats`, seule source de ce qui est gardé.
+ * même session, et **inerte sans configuration**. Ce module ne décide pas *quoi* envoyer :
+ * la ligne est construite par `@/store/combats`, seule source de ce qui est gardé.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -54,17 +52,16 @@ export interface ConfigurationMur {
 }
 
 /**
- * Le sous-ensemble d'un client Supabase dont ce module a besoin. Le déclarer ici, en
- * structurel, c'est ce qui rend `identiteAppareil` testable **sans réseau** : un faux client
- * à trois méthodes suffit.
+ * Le sous-ensemble d'un client Supabase dont ce module a besoin pour lire **qui** parle.
+ * Le déclarer ici, en structurel, c'est ce qui rend `identiteSession` testable **sans
+ * réseau** : un faux client à une méthode suffit.
+ *
+ * Depuis D-156 (#527), il ne **signe** plus : une visite sans compte ne crée plus
+ * d'utilisateur anonyme.
  */
-export interface AppareilAnonyme {
+export interface SessionPersistee {
   auth: {
     getSession(): Promise<{ data: { session: { user: { id: string } } | null } }>;
-    signInAnonymously(): Promise<{
-      data: { user: { id: string } | null };
-      error: { message: string } | null;
-    }>;
   };
 }
 
@@ -100,8 +97,8 @@ export interface RequeteMur<T = unknown> extends PromiseLike<ReponseMur<T>> {
   delete(): RequeteMur<T>;
 }
 
-/** Un client Supabase : l'identité anonyme, l'accès aux tables, et les fonctions SQL. */
-export interface ClientMur extends AppareilAnonyme {
+/** Un client Supabase : la session, l’accès aux tables, et les fonctions SQL. */
+export interface ClientMur extends SessionPersistee {
   from(table: string): RequeteMur;
   /**
    * Appelle une fonction SQL (`public.corriger_postit`, 0006). C'est le seul chemin
@@ -220,54 +217,54 @@ async function clientSupabase(): Promise<SupabaseClient | null> {
 }
 
 /**
- * Le client, réduit à ce que le mur en demande (session et signature anonyme). Le test
- * injecte un faux appareil : c'est ce qui rend `identiteAppareil` éprouvable **sans réseau**.
+ * Le client, réduit à ce que le mur en demande (la session). Le test
+ * injecte un faux appareil : c’est ce qui rend `identiteSession` éprouvable **sans réseau**.
  */
 export async function clientMur(): Promise<ClientMur | null> {
   return (await clientSupabase()) as ClientMur | null;
 }
 
 /**
- * Écrit **une** ligne dans une table, au nom de la session en cours (le compte, D-088 ; ou
- * l'identité anonyme d'un appareil d'avant, qui sera refusée à l'écriture par la 0005).
+ * Écrit **une** ligne dans une table, au nom de la session en cours — un **compte** (D-088).
+ * Sans session, rien n'est tenté : la raison est rendue, et l'appelant choisit de ne pas
+ * interrompre le jeu (#527, D-156 : on ne signe plus pour écrire).
  *
  * Rend l'erreur que la base ou le réseau a donnée (`null` si la ligne est passée) ; **ne
  * décide pas** de ce que l'appelant en fait — `@/store/combats` choisit de ne jamais
  * interrompre le jeu. Sans configuration, rien n'est contacté et la raison est rendue.
  *
  * L'insertion s'appuie sur `auth.uid()` (`auteur` a cette valeur par défaut dans
- * `0002_combats.sql`) : on signe donc **avant** d'écrire, sinon la RLS refuserait la ligne.
+ * `0002_combats.sql`) : la session doit donc exister **avant** l'écriture, sinon la RLS
+ * refuserait la ligne. Depuis D-156, on ne la **fabrique** plus (plus de signature anonyme).
  */
 export async function ecrireLigne(table: string, ligne: Record<string, unknown>): Promise<{ erreur: string | null }> {
   const supabase = await clientSupabase();
   if (!supabase) return { erreur: 'Supabase n’est pas configuré.' };
 
-  await identiteAppareil(async () => supabase);
+  if (!(await identiteSession(async () => supabase))) {
+    return { erreur: 'Aucune session : la ligne ne peut pas être signée.' };
+  }
   const { error } = await supabase.from(table).insert(ligne);
   return { erreur: error ? error.message : null };
 }
 
 /**
- * L'identité de la session persistée si elle existe (un compte, D-088), sinon une signature
- * anonyme neuve (première visite, lecture seule). Rend `null` quand le backend n'est pas
- * configuré.
+ * L'identité de la session persistée — un **compte** (D-088) — ou `null`. Rend `null` quand
+ * le backend n'est pas configuré, ou quand personne n'est connecté.
+ *
+ * Depuis **D-156** (#527), elle ne signe **plus** jamais : un visiteur sans compte ne crée
+ * plus d'utilisateur anonyme dans Supabase. C'est ce qui a fermé la porte par laquelle #527
+ * laissait entrer — le compteur du comité signait l'appareil à chaque montage.
  *
  * `chargerClient` est un paramètre pour que le test puisse injecter un faux appareil, sans
  * réseau ni navigateur.
  */
-export async function identiteAppareil(
-  chargerClient: () => Promise<AppareilAnonyme | null> = clientMur
+export async function identiteSession(
+  chargerClient: () => Promise<SessionPersistee | null> = clientMur
 ): Promise<string | null> {
   const supabase = await chargerClient();
   if (!supabase) return null;
 
   const { data } = await supabase.auth.getSession();
-  const dejaSigne = data.session?.user?.id;
-  if (dejaSigne) return dejaSigne;
-
-  const { data: neuve, error } = await supabase.auth.signInAnonymously();
-  if (error) {
-    throw new Error(`Identité anonyme impossible : ${error.message}`);
-  }
-  return neuve.user?.id ?? null;
+  return data.session?.user?.id ?? null;
 }
