@@ -553,6 +553,26 @@ describe('Battle — la barre d’action (#191)', () => {
     expect(within(barre).queryAllByRole('button')).toHaveLength(0);
   });
 
+  it('un lecteur d’écran entend le coup, le tour et le verdict (4.1.3)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    // La zone d'annonce est **persistante** et porte la dernière ligne du journal.
+    const annonce = screen.getByTestId('annonce-du-coup');
+    expect(annonce).toHaveAttribute('aria-live', 'polite');
+    const ligneVisible = document.querySelector('.combat-barre__journal');
+    expect(ligneVisible).not.toBeNull();
+    expect(annonce).toHaveTextContent(ligneVisible!.textContent ?? '');
+    // La ligne du tour s'annonce aussi : le moteur ne journalise pas les tours.
+    expect(screen.getByText(/^Tour \d+ ·/)).toHaveAttribute('aria-live', 'polite');
+
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Abandonner/ }));
+    // Le verdict est une alerte (il n'était porté que par un son), et la zone du journal se tait
+    // pour ne pas le doubler.
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Défaite : tu as déclaré forfait.'));
+    expect(screen.getByTestId('annonce-du-coup')).toBe(annonce);
+    expect(annonce).toHaveTextContent('');
+  });
+
   it('au tour de l’autre, en partie à deux : une ligne, « Coller un code », aucun bouton d’action', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     fireEvent.click(within(menuSurLaVue('Partie à deux')).getByRole('button', { name: /Créer une partie à deux/i }));
@@ -1116,8 +1136,10 @@ describe('Battle — la scène : la piste d’Interventions (#190)', () => {
     // Le score ne se lit plus en étoiles : une étoile est une rareté (`1S`, `2S`, `3S`).
     expect(plateau.textContent ?? '').not.toMatch(/[★☆]/);
     expect(within(plateau).getAllByRole('img', { name: /^Intervention \d sur 3, / })).toHaveLength(6);
-    expect(within(plateau).getByRole('img', { name: 'Intervention 1 sur 3, Toi' })).toBeInTheDocument();
-    expect(within(plateau).getByRole('img', { name: 'Intervention 3 sur 3, La Direction' })).toBeInTheDocument();
+    expect(within(plateau).getByRole('img', { name: 'Intervention 1 sur 3, Toi, à venir' })).toBeInTheDocument();
+    expect(
+      within(plateau).getByRole('img', { name: 'Intervention 3 sur 3, La Direction, à venir' })
+    ).toBeInTheDocument();
   });
 
   it('désigne la piste par le pas-à-pas une seule fois, sur son conteneur', () => {
@@ -1174,6 +1196,26 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
 
     // L'alias reste permanent : un utilisateur de dictée n'est jamais coincé avec la touche nue.
     fireEvent.keyDown(document, { key: 'I', ctrlKey: true });
+    expect(boutonInfos()).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('un dialogue modal ouvert : `I` ne bascule pas le plateau derrière lui (le contrôle mord : fermé, il rebascule)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    const dialogue = screen.getByRole('dialog');
+    expect(
+      dialogue.closest('[data-slot="dialog-content"]') ??
+        dialogue.querySelector('[data-slot="dialog-content"]') ??
+        dialogue
+    ).toHaveAttribute('data-slot', 'dialog-content');
+
+    fireEvent.keyDown(document, { key: 'i' });
+    // Derrière un modal, la page est cachée aux technologies d'assistance : le bouton se lit au DOM.
+    expect(document.querySelector('button[aria-keyshortcuts]')).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(within(dialogue).getByRole('button', { name: /Annuler/ }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    fireEvent.keyDown(document, { key: 'i' });
     expect(boutonInfos()).toHaveAttribute('aria-pressed', 'true');
   });
 
@@ -1547,5 +1589,14 @@ describe('Battle — le libellé du tour suit le camp qui doit agir (#424)', () 
     // Sans relève, c'est bien le tour de la Direction : le libellé n'est pas figé sur « à toi ».
     expect(libelleDuTour({ ...releve, pendingPromotion: null })).toBe('à la Direction');
     expect(libelleDuTour({ ...releve, phase: 'ended' })).toBe('partie terminée');
+  });
+});
+
+describe('Battle — le focus après un coup (2.4.3)', () => {
+  it('un focus jamais entré dans le combat n’est pas pris d’office', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+    // Le camp qui ouvre dépend de la graine : on attend que la main revienne au joueur.
+    fireEvent.click(await screen.findByRole('button', { name: 'Fin du tour' }));
+    expect(document.activeElement).toBe(document.body);
   });
 });

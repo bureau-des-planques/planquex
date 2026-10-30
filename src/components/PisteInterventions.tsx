@@ -49,7 +49,8 @@ export function PisteInterventions({
               <span
                 key={numero}
                 role="img"
-                aria-label={`Intervention ${numero} sur ${POINTS_TO_WIN}, ${label}`}
+                // L'état se **dit** : il n'était porté que par le remplissage de l'hexagone (WCAG, nom, rôle, valeur).
+                aria-label={`Intervention ${numero} sur ${POINTS_TO_WIN}, ${label}, ${numero <= points ? 'acquise' : 'à venir'}`}
                 className={`piste__hex${numero <= points ? ' is-acquise' : ''}${
                   fraiches.includes(numero) ? ' is-fraiche' : ''
                 }`}
