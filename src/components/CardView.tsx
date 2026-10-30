@@ -180,7 +180,7 @@ export function CardView({
   const pressions = planque
     ? planque.attacks.map((attack) => (
         <div className="attack" key={attack.name}>
-          <CafePips symbols={attack.cost} />
+          <CafePips symbols={attack.cost} sansTitre={compact} />
           <span className="attack__name">{attack.name}</span>
           <span className="attack__dmg">{attack.damage}</span>
           {!reduite && !plateau && attack.text && <small className="attack__effet">{attack.text}</small>}
@@ -216,7 +216,7 @@ export function CardView({
           {card.name}
         </span>
         {seuilBadge}
-        <span className="card__emblem" title={faction.name} aria-hidden>
+        <span className="card__emblem" title={compact ? undefined : faction.name} aria-hidden>
           {faction.glyph}
         </span>
       </header>
@@ -260,15 +260,16 @@ export function CardView({
             <CafePips
               symbols={Array.from({ length: planque.retreat }, () => 'INCOLORE' as const)}
               label={`Rotation ${planque.retreat}`}
+              sansTitre={compact}
             />
           </span>
         </div>
       )}
       <footer className="card__footer">
-        <span className="card__rarity" title={`Rareté ${card.rarity}`}>
+        <span className="card__rarity" title={compact ? undefined : `Rareté ${card.rarity}`}>
           {rarity.label}
         </span>
-        <span className="card__faction" title={faction.name}>
+        <span className="card__faction" title={compact ? undefined : faction.name}>
           {faction.short}
         </span>
         {!reduite && <span className="card__id">#{card.id.split('-').slice(-1)[0]}</span>}

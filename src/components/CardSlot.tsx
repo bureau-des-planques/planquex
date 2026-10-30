@@ -7,7 +7,7 @@ interface Props {
   /** Le clic sur la carte. */
   onClick: () => void;
   /** Le bouton rond du coin : ajouter au Deck, ou ouvrir la fiche. Absent, le slot n'en porte pas. */
-  quick?: { icon: ReactNode; label: string; title: string; onClick: () => void; disabled?: boolean };
+  quick?: { icon: ReactNode; label: string; onClick: () => void; disabled?: boolean };
   /**
    * Exemplaires **possédés**. Absent, le slot n'écrit rien de la possession (« Dedans »).
    * À **zéro**, la carte est atténuée et son absence est écrite : « ×0 », « Non possédée ».
@@ -51,7 +51,6 @@ export function CardSlot({ card, onClick, quick, owned, inDeck = 0, full = false
         <button
           type="button"
           className="card-slot__quick"
-          title={quick.title}
           aria-label={quick.label}
           disabled={quick.disabled}
           onClick={quick.onClick}
@@ -61,21 +60,8 @@ export function CardSlot({ card, onClick, quick, owned, inDeck = 0, full = false
       )}
       {missing && <span className="card-slot__absent">Non possédée</span>}
       <div className="card-slot__plates">
-        {inDeck > 0 && (
-          <span className="card-slot__deck" title={`${inDeck} exemplaire(s) de « ${card.name} » au Deck`}>
-            Deck ×{inDeck}
-          </span>
-        )}
-        {owned !== undefined && (
-          <span
-            className={`card-slot__count ${missing ? 'is-missing' : ''}`}
-            title={
-              missing ? `« ${card.name} » : non possédée` : `${owned} exemplaire(s) de « ${card.name} » possédé(s)`
-            }
-          >
-            ×{owned}
-          </span>
-        )}
+        {inDeck > 0 && <span className="card-slot__deck">Deck ×{inDeck}</span>}
+        {owned !== undefined && <span className={`card-slot__count ${missing ? 'is-missing' : ''}`}>×{owned}</span>}
       </div>
     </div>
   );

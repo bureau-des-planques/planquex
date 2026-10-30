@@ -7,7 +7,7 @@ import { ALL_CARDS } from '@/data';
 import { CardSlot } from './CardSlot';
 
 const carte = ALL_CARDS[0];
-const quick = { icon: <i />, label: 'Ajouter', title: 'Ajouter', onClick: () => undefined };
+const quick = { icon: <i />, label: 'Ajouter', onClick: () => undefined };
 
 /** Le corps de la **première** règle CSS dont le sélecteur est exactement `selecteur`. */
 function regle(css: string, selecteur: string): string {
@@ -60,6 +60,15 @@ describe('CardSlot — la possession se lit (#179)', () => {
     const { container } = render(<CardSlot card={carte} owned={1} onClick={() => undefined} />);
     expect(container.firstElementChild).toHaveClass('card-slot--sans-quick');
     expect(container.querySelector('.card-slot__quick')).toBeNull();
+  });
+
+  it('aucune bulle native sur la carte : le survol ne recouvre plus le coût (constat du 30/10/2026)', () => {
+    const { container } = render(
+      <CardSlot card={carte} owned={2} inDeck={1} quick={quick} onClick={() => undefined} />
+    );
+    // Un `title` sur la carte, ses pastilles ou son bouton fait surgir la bulle du navigateur
+    // au survol : elle passe par-dessus le coût en café et le pied.
+    expect(container.querySelector('[title]')).toBeNull();
   });
 
   it('le nom lu par un lecteur d’écran dit la possession et le Deck (critique du 30/10/2026, P1)', () => {

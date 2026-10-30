@@ -215,7 +215,9 @@ le ratio n'est pas garanti — **écart connu, laissé** (voir le rapport de #13
 
 Aucune paire de texte du tableau n'est en dessous de AA : la seule qui y tombe (`--text-muted` sur
 feutre éclairci, 3,79:1) est **interdite sur la table** par composition (ci-dessus, #198). Les pips de café (or sur fond sombre)
-restent décoratifs : l'information est aussi portée par le `title` et l'`aria-label`.
+restent décoratifs : l'information est aussi portée par l'`aria-label`, et par le `title` **sauf sur
+la carte compacte** — la bulle native du navigateur y recouvrait le coût au survol, donc elle a été
+retirée (constat du 30/10/2026) ; la fiche garde le `title` et nomme les cafés.
 
 ### 1.6 Échelles
 
