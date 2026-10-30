@@ -208,3 +208,32 @@ describe('aucun halo coloré sur le combat (T12, #295)', () => {
     expect(halos(permis)).toEqual([]);
   });
 });
+
+describe('les états graphiques de la table tiennent 3:1 (relecture du combat, 30/10/2026)', () => {
+  const FEUTRES = ['--scene-felt-lit', '--scene-felt', '--scene-felt-deep'];
+
+  /** Le jeton qu'une règle pose dans une propriété (`background: var(--x)`, `border: 1px dashed var(--x)`). */
+  function jetonDe(selecteur: string, propriete: string): string {
+    const bloc = sansCommentaires(CSS).match(new RegExp(`${selecteur.replace(/\./g, '\\.')}\\s*\\{([^}]*)\\}`));
+    const valeur = bloc?.[1].match(new RegExp(`${propriete}:[^;]*var\\((--[a-z-]+)\\)`));
+    if (!valeur) throw new Error(`${selecteur} { ${propriete} } introuvable`);
+    return valeur[1];
+  }
+
+  const cas: Array<[string, string, string]> = [
+    ['le contour d’un hexagone vide', '.piste__hex', 'background'],
+    ['le pointillé d’une place libre du Banc', '.bench__slot.is-free', 'border']
+  ];
+
+  for (const [quoi, selecteur, propriete] of cas) {
+    it(`${quoi} tient 3:1 sur les trois feutres`, () => {
+      const couleur = jeton(jetonDe(selecteur, propriete));
+      for (const feutre of FEUTRES) expect(ratio(couleur, jeton(feutre)), feutre).toBeGreaterThanOrEqual(3);
+    });
+  }
+
+  it('le contrôle mord : les anciens jetons (`--line-strong`, `--line`) tombent sous 3:1', () => {
+    expect(ratio(jeton('--line-strong'), jeton('--scene-felt'))).toBeLessThan(3);
+    expect(ratio(jeton('--line'), jeton('--scene-felt'))).toBeLessThan(3);
+  });
+});
