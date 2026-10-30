@@ -3,8 +3,9 @@
  * Le reset de la beta — `tools/admin/lib/reset.mjs` (#342, D-130, D-150).
  *
  * Le reset se juge **sur l'état des tables après** (PGlite, les migrations réelles du dépôt, le rôle
- * `lecteur` de `supabase/admin/roles.sql`). Ce qui part : traces de combat et mur. Ce qui reste : chaque
- * compte, `admin.migrations`, `annonces_discord`. La médaille : une seule fois, aux seuls comptes approuvés.
+ * `lecteur` de `supabase/admin/roles.sql`). Ce qui part : traces de combat, mur, **Deck et Collection
+ * du compte** (D-153 (2)). Ce qui reste : chaque compte, `admin.migrations`, `annonces_discord`. La
+ * médaille : une seule fois, aux seuls comptes approuvés.
  *
  * Le contrôle mord : chaque mutation de l'instruction (un compte effacé, une trace laissée, une médaille
  * reposée) doit être **vue** — par le compte rendu (anomalie) ou par le fait que la garde échoue.
@@ -27,6 +28,7 @@ import {
 } from '../../supabase/pglite';
 import {
   CONFIRMATION,
+  PERIMETRE,
   SQL_RESET,
   executerReset,
   apercuReset,
@@ -95,6 +97,17 @@ async function alpha() {
        values ('solo', 2, '{"playerDeck":[],"aiDeck":[]}'::jsonb, '{"playerCafeTypes":[],"aiCafeTypes":[]}'::jsonb, '[]'::jsonb)`,
     );
   });
+  // Le Deck et la Collection vivent sur le compte depuis D-153 : le reset les efface aussi.
+  await db.query(
+    `insert into public.collection (compte_id, carte_id, quantite)
+     values ($1, 'planque-entrant-1', 3), ($1, 'planque-entrant-2', 1)`,
+    [APPAREIL_A],
+  );
+  await db.query(
+    `insert into public.deck (compte_id, carte_id, quantite, rang)
+     values ($1, 'planque-entrant-1', 2, 0), ($1, 'planque-entrant-2', 1, 1), ($1, 'planque-entrant-3', 1, 2)`,
+    [APPAREIL_A],
+  );
   await db.query(`insert into public.votes (postit_id, votant, sens) values ('p1', $1, 'up'), ('p2', $1, 'down')`, [APPAREIL_A]);
   await db.query(`insert into public.commentaires (postit_id, auteur, texte) values ('p1', $1, 'Un commentaire.')`, [APPAREIL_A]);
   // Une annonce Discord en attente : elle ne fait pas partie du périmètre et doit survivre au reset.
@@ -137,19 +150,35 @@ async function medailles(db: Base) {
 
 describe('le reset de la beta (#342, D-130)', () => {
   it('vide traces et mur, garde chaque compte, pose la médaille aux seuls comptes approuvés', async () => {
-    const { db, a } = await nouvelleAlpha();
+    const { db, a: brut } = await nouvelleAlpha();
+    // **D-150 (1)** : le reset est **une seule instruction**, un seul aller-retour. Le pilote
+    // accepte plusieurs instructions dans un même envoi ; sans cette assertion, la règle ne
+    // tiendrait que par la forme du littéral, et une seconde instruction glissée dans `SQL_RESET`
+    // passerait inaperçue.
+    const envoyees: number[] = [];
+    const a = {
+      ...brut,
+      async ecrire(sql: string, params: unknown[] = []) {
+        const lu = await brut.ecrire(sql, params);
+        envoyees.push(lu.instructions ?? 1);
+        return lu;
+      }
+    };
     const comptesAvant = await comptes(db);
-    await initialiserRegistre(a);
+    await initialiserRegistre(brut);
     const migrationsAvant = await compter(db, 'select count(*)::int as n from admin.migrations');
     // Les annonces partent d'un déclencheur à chaque post-it : on mesure leur état, pas un nombre supposé.
     const annoncesAvant = await compter(db, "select count(*)::int as n from public.annonces_discord where etat = 'en attente'");
 
     const { rapport } = await executerReset(a, CONFIRMATION);
+    expect(envoyees, 'le reset doit tenir en une seule instruction').toEqual([1]);
 
     expect(await compter(db, 'select count(*)::int as n from public.combats')).toBe(0);
     expect(await compter(db, 'select count(*)::int as n from public.postits')).toBe(0);
     expect(await compter(db, 'select count(*)::int as n from public.votes')).toBe(0);
     expect(await compter(db, 'select count(*)::int as n from public.commentaires')).toBe(0);
+    expect(await compter(db, 'select count(*)::int as n from public.collection')).toBe(0);
+    expect(await compter(db, 'select count(*)::int as n from public.deck')).toBe(0);
 
     // Chaque compte est là, à l'identique (courriel, mot de passe hors table, état, raison, décision).
     expect(await comptes(db)).toBe(comptesAvant);
@@ -171,6 +200,8 @@ describe('le reset de la beta (#342, D-130)', () => {
     expect(par['public.postits']).toBe(2);
     expect(par['public.votes']).toBe(2);
     expect(par['public.commentaires']).toBe(1);
+    expect(par['public.collection']).toBe(2);
+    expect(par['public.deck']).toBe(3);
     expect(par['public.comptes']).toBe(4);
     expect(par['public.comptes (médaille)']).toBe(2);
     expect(rapport.anomalies).toEqual([]);
@@ -211,7 +242,17 @@ describe('le reset de la beta (#342, D-130)', () => {
     const { db, a } = await nouvelleAlpha();
     const apercu = await apercuReset(a);
     expect(Object.keys(apercu)).not.toContain('annoncesEnAttente');
-    expect(apercu).toMatchObject({ combats: 2, postits: 2, votes: 2, commentaires: 1, comptes: 4, approuves: 2, medaillesPosees: 0 });
+    expect(apercu).toMatchObject({
+      combats: 2,
+      postits: 2,
+      votes: 2,
+      commentaires: 1,
+      collection: 2,
+      deck: 3,
+      comptes: 4,
+      approuves: 2,
+      medaillesPosees: 0,
+    });
     expect(await compter(db, 'select count(*)::int as n from public.postits')).toBe(2);
   });
 
@@ -248,6 +289,28 @@ describe('le contrôle mord : une mutation de l’instruction est vue', () => {
     expect(rapport.anomalies.join('\n')).toMatch(/combats : 2 ligne\(s\) restée\(s\)/);
   });
 
+  it('un Deck laissé par le reset produit une anomalie', async () => {
+    const { a } = await nouvelleAlpha();
+    const mutant = SQL_RESET.replace(
+      'deck_vides as (delete from public.deck returning 1),',
+      'deck_vides as (select 1 from public.deck),',
+    );
+    expect(mutant).not.toBe(SQL_RESET);
+    const { rapport } = await executerReset(a, CONFIRMATION, { sql: mutant });
+    expect(rapport.anomalies.join('\n')).toMatch(/deck : 3 ligne\(s\) restée\(s\)/);
+  });
+
+  it('une Collection laissée par le reset produit une anomalie', async () => {
+    const { a } = await nouvelleAlpha();
+    const mutant = SQL_RESET.replace(
+      'collection_vides as (delete from public.collection returning 1),',
+      'collection_vides as (select 1 from public.collection),',
+    );
+    expect(mutant).not.toBe(SQL_RESET);
+    const { rapport } = await executerReset(a, CONFIRMATION, { sql: mutant });
+    expect(rapport.anomalies.join('\n')).toMatch(/collection : 2 ligne\(s\) restée\(s\)/);
+  });
+
   it('sans la garde « une seule fois », une médaille serait reposée : la vraie instruction l’empêche', async () => {
     const { db, a } = await nouvelleAlpha();
     await executerReset(a, CONFIRMATION);
@@ -273,6 +336,13 @@ describe('le périmètre, dans le texte de l’instruction', () => {
       expect(SQL_RESET).not.toContain(interdit);
     }
     expect(SQL_RESET).not.toMatch(/delete\s+from\s+public\.comptes/);
+  });
+
+  it('nomme le Deck et la Collection au périmètre vidé et dans l’instruction', () => {
+    for (const table of ['public.collection', 'public.deck']) {
+      expect(PERIMETRE.vides).toContain(table);
+      expect(SQL_RESET).toContain(`delete from ${table}`);
+    }
   });
 });
 
@@ -300,7 +370,10 @@ describe('la route du poste de pilotage', () => {
     const { db, appel } = await demarrer();
     const apercu = await appel('GET');
     expect(apercu.status).toBe(200);
-    expect((await apercu.json()).texte).toContain('traces de combat : 2');
+    const texte = (await apercu.json()).texte;
+    expect(texte).toContain('traces de combat : 2');
+    expect(texte).toContain('Collection : 2 ligne(s)');
+    expect(texte).toContain('Deck : 3 ligne(s)');
 
     const refus = await appel('POST', { confirmation: 'oui' });
     expect(refus.status).toBe(400);
