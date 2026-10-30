@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
+  Activity,
   ArrowLeft,
   BookOpen,
   ClipboardPaste,
@@ -1604,7 +1605,10 @@ export function Battle() {
               <button type="button" className="battle__conditions" data-pas-a-pas={pasAPas.designe('conditions')} />
             }
           >
-            Conditions
+            {/* Sous 400 px, le libellé se cache (il reste le nom accessible) et l'icône tient la place :
+                « Tour N · à toi » ne se coupait plus qu'au profit de ce bouton (relecture du combat). */}
+            <Activity className="battle__conditions-icone" size={18} aria-hidden="true" />
+            <span className="battle__conditions-libelle">Conditions</span>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
@@ -1971,6 +1975,8 @@ export function Battle() {
           <section
             ref={barreRef}
             tabIndex={-1}
+            /* Une Pression jouable : « Fin du tour » cède le plein à la Pression (feuille de styles). */
+            data-pression-jouable={myMove && pressions.length > 0 ? 'true' : undefined}
             className="combat-barre"
             aria-label="Actions du tour"
             data-impeccable-ignore="cramped-padding"
@@ -2119,6 +2125,17 @@ export function Battle() {
                   </>
                 )}
               </p>
+            )}
+            {/* **Rejouer, là où l'œil cherche l'action** (relecture du combat, 30/10/2026) : en fin de
+                partie, la barre n'offrait qu'une phrase, et « Nouveau combat » vivait dans `⋯`. Le
+                bandeau du haut garde le verdict ; D-030 n'écarte que l'écran plein de victoire, pas un
+                bouton. Une partie finie n'a rien à perdre : le geste est direct. */}
+            {state.phase === 'ended' && (
+              <div className="combat-barre__gestes">
+                <button type="button" className="button button--primary" onClick={demanderNouveauCombat}>
+                  <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
+                </button>
+              </div>
             )}
           </section>
         </div>

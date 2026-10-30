@@ -171,3 +171,20 @@ describe('Battle — le focus après une Pression (2.4.3)', () => {
     expect(screen.getByRole('region', { name: 'Actions du tour' }).contains(document.activeElement)).toBe(true);
   });
 });
+
+describe('Battle — un seul bouton plein quand une Pression est jouable', () => {
+  afterEach(cleanup);
+
+  it('la barre le signale à la feuille de styles, et « Fin du tour » garde sa place (le contrôle mord : sans Pression, pas de marque)', () => {
+    const { partie, nom } = partieOuLaPressionFait(faitCraquer);
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(barre).toHaveAttribute('data-pression-jouable', 'true');
+    expect(screen.getByRole('button', { name: new RegExp(nom) })).toHaveClass('button--primary');
+    expect(screen.getByRole('button', { name: 'Fin du tour' })).toHaveClass('button--fin', 'is-a-toi');
+    cleanup();
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    expect(screen.getByRole('region', { name: 'Actions du tour' })).not.toHaveAttribute('data-pression-jouable');
+  });
+});

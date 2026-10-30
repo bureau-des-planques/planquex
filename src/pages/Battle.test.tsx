@@ -550,7 +550,16 @@ describe('Battle — la barre d’action (#191)', () => {
     await waitFor(() => expect(screen.getByText('Défaite : tu as déclaré forfait.')).toBeInTheDocument());
     const barre = screen.getByRole('region', { name: 'Actions du tour' });
     expect(barre).toHaveTextContent('Rien à faire : la partie est terminée.');
-    expect(within(barre).queryAllByRole('button')).toHaveLength(0);
+    // Aucun geste de jeu : seulement « Nouveau combat », là où l'œil cherche l'action.
+    expect(
+      within(barre)
+        .getAllByRole('button')
+        .map((b) => b.textContent?.trim())
+    ).toEqual(['Nouveau combat']);
+    fireEvent.click(within(barre).getByRole('button', { name: 'Nouveau combat' }));
+    // Une partie finie n'a rien à perdre : pas de confirmation, une partie neuve démarre.
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await waitFor(() => expect(screen.queryByText('Défaite : tu as déclaré forfait.')).toBeNull());
   });
 
   it('un lecteur d’écran entend le coup, le tour et le verdict (4.1.3)', async () => {
