@@ -1015,6 +1015,8 @@ export function Battle() {
   const evenementDirection =
     state.phase === 'ended' ? (state.winner === 'player' ? 'victoire' : 'defaite') : evenementDuJournal(lastLog);
   const repliqueDirection = sceneFin && evenementDirection ? choisirReplique(evenementDirection, state.turn) : null;
+  /** La scène de fin est ouverte : c'est elle qui dit le verdict et la phrase de la Direction. */
+  const sceneFinOuverte = sceneFin && state.phase === 'ended' && !sceneFinFermee;
 
   /** Le moteur dit ce qui est possible ; l'écran ne fait que le rendre. */
   const legal = useMemo(() => legalActions(state), [state]);
@@ -1794,7 +1796,7 @@ export function Battle() {
       {/* **La scène de fin** (30/10/2026) : dans la fin scriptée seulement, le verdict se
           pose comme un tampon, avec la phrase de la Direction. Un clic la referme ; la
           barre d'action garde ensuite le bandeau et les deux boutons. */}
-      {sceneFin && state.phase === 'ended' && !sceneFinFermee && (
+      {sceneFinOuverte && (
         <SceneFin
           gagne={state.winner === myCamp}
           replique={repliqueDirection}
@@ -2118,7 +2120,7 @@ export function Battle() {
                   {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
                       de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
                   {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
-                  {repliqueDirection && (
+                  {repliqueDirection && !sceneFinOuverte && (
                     <p className="muted combat-barre__portee combat-replique">
                       <strong>La Direction</strong> · {repliqueDirection}
                     </p>
