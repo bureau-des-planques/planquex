@@ -63,7 +63,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     titre: 'Le combat',
     texte:
       'Trois Interventions et la partie est gagnée, et un COMEX en vaut deux. Le combat guidé t’apprend le Poste, le café et la Pression, sur le vrai plateau.',
-    cible: '/battle',
+    cible: '/battle?scene=fin',
     action: 'Jouer mon premier combat'
   },
   {
@@ -107,7 +107,7 @@ export const CARTES_MONTREES = [
  * et le bouton le dit : « Terminer ».
  */
 export function libelleSaut(etape: number): string {
-  const resteLeCombat = etape < ETAPES_JOURNEE.findIndex((courante) => courante.cible === '/battle');
+  const resteLeCombat = etape < ETAPES_JOURNEE.findIndex((courante) => courante.cible.split('?')[0] === '/battle');
   return resteLeCombat ? 'Passer : tu ne verras pas le combat' : 'Terminer la journée d’intégration';
 }
 

@@ -84,7 +84,7 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
     expect(composant).toMatch(/ETAPES_JOURNEE/);
     expect(etapes).toMatch(/cible: '\/'/);
     expect(etapes).toMatch(/cible: '\/deck'/);
-    expect(etapes).toMatch(/cible: '\/battle'/);
+    expect(etapes).toMatch(/cible: '\/battle\?scene=fin'/);
     expect(etapes).toMatch(/cible: '\/settings'/);
     expect(etapes).toMatch(/cible: '\/comite'/);
   });

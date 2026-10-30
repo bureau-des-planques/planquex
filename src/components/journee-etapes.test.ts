@@ -33,8 +33,10 @@ function texteDe(index: number): string {
  * pointerait vers un écran supprimé échouerait ici.
  */
 function routeDeclaree(cible: string): boolean {
-  if (cible === '/') return /<Route index element=/.test(app);
-  return new RegExp(`path="${cible.replace(/^\//, '')}"`).test(app);
+  // La route, sans la requête : `?scene=fin` est un état d'écran, pas une route.
+  const chemin = cible.split('?')[0];
+  if (chemin === '/') return /<Route index element=/.test(app);
+  return new RegExp(`path="${chemin.replace(/^\//, '')}"`).test(app);
 }
 
 describe('cinq étapes, et plus de recouvrement avec le combat (30/10/2026)', () => {
@@ -118,14 +120,19 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
 
   it('n’envoie nulle part ailleurs qu’à l’écran : ni URL externe, ni documentation', () => {
     for (const etape of ETAPES_JOURNEE) {
-      expect(etape.cible).toMatch(/^\/[\w-]*$/);
+      expect(etape.cible).toMatch(/^\/[\w-]*(\?[\w=&-]*)?$/);
       expect(`${etape.action} ${etape.cible}`).not.toMatch(/https?:|\.md\b|Wikipédia/i);
     }
   });
 
   it('ne renvoie pas deux fois au même écran', () => {
-    const cibles = ETAPES_JOURNEE.map((etape) => etape.cible);
+    const cibles = ETAPES_JOURNEE.map((etape) => etape.cible.split('?')[0]);
     expect(new Set(cibles).size).toBe(cibles.length);
+  });
+
+  it('envoie le combat sur la **fin scriptée** (30/10/2026)', () => {
+    // Le testeur la joue, il ne la regarde pas : la position de départ vient du scénario.
+    expect(ETAPES_JOURNEE[2].cible).toBe('/battle?scene=fin');
   });
 
   it('nomme les écrans comme le jeu', () => {

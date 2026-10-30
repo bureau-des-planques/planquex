@@ -59,6 +59,7 @@ import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
+import { etatFinScriptee } from '@/game/scenario-fin';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
@@ -889,6 +890,13 @@ export function Battle() {
    */
   const [parametres] = useSearchParams();
   const tutoriel = parametres.get('tutoriel') === '1';
+  /**
+   * **La fin scriptée** du tutoriel de combat (30/10/2026) : `?scene=fin` ouvre une
+   * position déjà gagnable — deux Interventions partout, un Poste adverse à 10 — pour
+   * que le testeur **joue** la fin au lieu de la regarder (`etatFinScriptee`).
+   * Aucune règle ne change : c'est le même moteur, et la partie n'est pas rangée.
+   */
+  const sceneFin = parametres.get('scene') === 'fin';
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -930,6 +938,15 @@ export function Battle() {
    * un combat neuf contre la Direction, comme avant.
    */
   const [depart] = useState<Reprise & { reprise: boolean }>(() => {
+    // La fin scriptée impose sa position : rien n'est repris, rien n'est écrasé.
+    if (sceneFin) {
+      return {
+        state: etatFinScriptee(playerDeck, directionDeck, chosenCafeTypes),
+        match: null,
+        decksSolo: { playerDeck, aiDeck: directionDeck },
+        reprise: false
+      };
+    }
     // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
     // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
     const reprise = tutoriel ? null : reprendrePartie(useStore.getState().partie);
@@ -1283,7 +1300,7 @@ export function Battle() {
   useEffect(() => {
     // Un combat guidé ne s'enregistre pas : le testeur qui le rejoue ne doit pas perdre la
     // partie qu'il avait en cours (#272).
-    if (tutoriel) return;
+    if (tutoriel || sceneFin) return;
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
     // La dernière partie terminée (#366) : une partie finie se revoit depuis Réglages.
     const derniere = derniereDe(state, match, decksSolo);
@@ -2030,6 +2047,11 @@ export function Battle() {
             aria-label="Actions du tour"
             data-impeccable-ignore="cramped-padding"
             data-pas-a-pas={pasAPas.designe('poste-actions')}
+            /* **La fin scriptée se joue** (30/10/2026) : la Journée laisse passer ce que
+               son étape désigne, et cette scène n'existe que pour elle. Sans cet attribut,
+               la garde de la visite rendrait la barre d'action inerte et le testeur ne
+               pourrait pas lancer la Pression qui gagne. */
+            data-journee-cible={sceneFin ? 'combat-actions' : undefined}
           >
             {/* **L'annonce du coup** (WCAG, messages d’état) : une zone **persistante** — jamais re-montée, sinon un
                 lecteur d'écran ne l'entend pas changer — qui reçoit la dernière ligne du journal. La
