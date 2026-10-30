@@ -2007,6 +2007,18 @@ h2 {
   min-width: 0;
 }
 
+/* En `détaillé`, le nom de la Pression **se lit** : il passe sur deux lignes au plus au lieu de
+   l'ellipse d'une ligne (« Massage … 20 » à 88 px, #525). La bascule promet le nom et les dégâts. */
+.card--plateau .card__attacks .attack__name {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  hyphens: auto;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  line-height: 1.1;
+  white-space: normal;
+}
+
 /* La jauge de Stress (`.stress`, dix crans) : elle se voit même vide. */
 .card--plateau .card__seuil {
   align-items: center;
@@ -2091,6 +2103,32 @@ h2 {
   height: 14px;
   margin: 1.5px;
   width: 14px;
+}
+
+/* **Le glyphe de la faction** dans la pastille (#525) : la couleur ne porte plus seule le type de
+   café (WCAG 1.4.1). Caché hors du combat, où la pastille fait 8 px ; l'encre est la plus lisible
+   du blanc et du bleu nuit (`encreSur`, ≥ 4,36:1 sur les dix couleurs de faction). */
+.pip__glyphe {
+  display: none;
+}
+
+.battle .pip--typed {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.battle .pip--typed .pip__glyphe {
+  color: var(--cafe-encre, #fff);
+  display: block;
+  font-size: var(--fs-2xs);
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.battle .poste__info .pip--typed .pip__glyphe {
+  font-size: 11px;
 }
 
 /* La fiche du camp (cafés attachés, Machine) est lue d'un coup d'œil : plus grand. */
@@ -2853,12 +2891,32 @@ h2 {
   flex: none;
   height: 2.75rem;
   justify-content: center;
+  position: relative;
   width: 2.75rem;
 }
 
 .battle__infos[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--gold) 16%, var(--bg-raised));
   border-color: var(--gold);
   color: var(--gold);
+}
+
+/* La touche `I`, dans le coin du bouton (#525) : le raccourci n'était lisible nulle part à l'écran,
+   et l'état pressé n'était qu'un liseré. La pastille reste au plancher `--fs-2xs` du combat, et sa
+   couleur suit l'état pressé pour rester lisible sur le fond teinté. */
+.battle__infos-touche {
+  bottom: 2px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  line-height: 1;
+  position: absolute;
+  right: 2px;
+}
+
+.battle__infos[aria-pressed='true'] .battle__infos-touche {
+  color: var(--gold-soft);
 }
 
 /* La ligne de journal de la barre d'action (#199) : une phrase entière, lisible, qui passe à la ligne
@@ -2990,9 +3048,12 @@ h2 {
   /* Le Banc passe à 64 px (#188, mesuré) : le Poste garde un rapport de 1,5 à 1,8 avec lui. Le Stress
      et la Machine écrits sur le plateau sont partis dans l'inspecteur, ce qui libère cette largeur.
      Le Poste revient aux **88 px de D-094 (1)** (#218) : 8 px de large valent ~22 px de haut sur les
-     deux camps, et le rapport de 1,57 avec le Banc est celui que la décision a acté. */
-  --poste-w: 5.5rem;
-  --banc-w: 3.5rem;
+     deux camps, et le rapport de 1,57 avec le Banc est celui que la décision a acté.
+     **D-157 (30/10/2026)** : la barre de navigation n'est plus rendue en combat (#275) et l'écran
+     laissait ~160 px de feutre vide en bas à 420 × 900 ; le Poste passe à 96 px et le Banc à 64 px
+     (rapport 1,5, dans la fourchette de #188), la garde de `capturer` décidant toujours. */
+  --poste-w: 6rem;
+  --banc-w: 4rem;
   align-items: center;
   display: flex;
   flex-direction: column;
@@ -3521,14 +3582,15 @@ h2 {
   align-self: flex-end;
 }
 
-/* Le Banc à 56 px : un nom sur deux lignes, jamais trois — à cette largeur, une troisième ligne
-   ne montre qu'une syllabe. Mieux vaut une ellipse qu'un mot amputé. #201 : la place du Banc ne
-   permet pas `--fs-xs` ; le nom reste au plancher documenté `--fs-2xs` (`DESIGN.md` §2.4). Le nom
-   n'est plus en capitales depuis la refonte du 28/10/2026 : la césure de la langue (« Psycho-
-   logue ») suffit, sans couper au milieu d'un mot (#200). */
+/* Le nom au Banc : deux lignes, jamais trois — une troisième ligne ne montre qu'une syllabe. Mieux
+   vaut une ellipse qu'un mot amputé. #201 : à 56 px, la place ne permettait pas `--fs-xs` ; depuis
+   D-157 le Banc fait 64 px à 420 × 900, et la taille **suit la largeur** — `--fs-xs` (11,2 px) à
+   64 px et plus, le plancher `--fs-2xs` sur les écrans courts où le Banc redescend à 52 px. La dette
+   « nom du Banc sous le plancher de lecture » (`DESIGN.md` §1.6) est close à la référence. Le nom
+   n'est plus en capitales depuis la refonte du 28/10/2026 : la césure de la langue suffit (#200). */
 .battle .bench__carte .card--plateau .card__name {
   -webkit-line-clamp: 2;
-  font-size: var(--fs-2xs);
+  font-size: clamp(var(--fs-2xs), calc(var(--banc-w) * 0.175), var(--fs-xs));
   line-height: 1.12;
 }
 
@@ -3593,6 +3655,24 @@ h2 {
 .status-chip svg {
   flex: none;
   opacity: 0.9;
+}
+
+/* **En `sobre`, une pastille ronde à la mesure de son icône** (#525) : la capsule gardait sa marge de
+   texte autour d'une icône de 12 px, et trois Conditions se lisaient comme trois ovales de couleur
+   vides. Or la Sieste et l'Immobilisation décident du tour. La pastille fait 22 px, l'icône 14 px ; le
+   nom reste lu par un lecteur d'écran, et revient en `détaillé`. Le balisage ne change pas
+   (`MODELE_BADGE` de `capturer` le garde) : seule la feuille le dimensionne. */
+.battle--sobre .status-chip {
+  height: 1.375rem;
+  justify-content: center;
+  padding: 0;
+  width: 1.375rem;
+}
+
+.battle--sobre .status-chip svg {
+  height: 14px;
+  opacity: 1;
+  width: 14px;
 }
 
 .status-chip--surcharge {
@@ -3695,12 +3775,15 @@ h2 {
 
 /* La piste d'Interventions : six hexagones, trois par camp, remplis dans l'ordre ; l'or pour
    ceux qui sont acquis (l'or répond à celui du COMEX). Posés sur le feutre, sans fond. */
+/* Les deux trios se tiennent **autour de l'axe central**, plus aux deux bords (D-158, #520) : la
+   condition de victoire se lit d'un coup d'œil, et sur PC les trios n'étaient plus à 600 px l'un de
+   l'autre. */
 .piste {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem 1rem;
-  justify-content: space-between;
+  gap: 0.2rem 2.5rem;
+  justify-content: center;
 }
 
 .piste__camp {
@@ -4094,8 +4177,9 @@ h2 {
      ligne de l'écran. Les noms longs s'y replient sur deux ou trois lignes, et la fiche « Carte
      choisie » les redonne entiers au toucher. Elle reste plus étroite que le Poste, 5,5 rem (R4).
      Le conteneur est assez haut pour la carte entière et son inclinaison : rien n'est rogné en bas,
-     le Seuil reste visible. */
-  --carte-w: 4rem;
+     le Seuil reste visible. D-157 (30/10/2026) : 72 px, sur la place que la barre de navigation a
+     rendue en combat. */
+  --carte-w: 4.5rem;
   /* Le pas : deux cartes ne se chevauchent pas quand la largeur le permet (leurs noms restent lisibles),
      et se recouvrent juste assez pour tenir dans la largeur quand la main grandit. */
   --pas: min(calc(var(--carte-w) + 0.2rem), calc((100% - var(--carte-w) - 1rem) / max(1, var(--n) - 1)));
@@ -4166,9 +4250,14 @@ h2 {
   z-index: 1;
 }
 
+/* **Le focus ne ressemble à aucun état de la main** (#525) : « jouable » est un filet néon, « choisie »
+   un filet néon clair de 3 px — le focus en était la copie exacte. Il devient un anneau **crème**
+   (`--text`) doublé d'un liseré sombre, posé **à l'intérieur** de la carte : la main est en
+   `overflow: hidden` sans marge basse, un anneau extérieur y était rogné en bas. */
 .hand__card:focus-visible {
-  outline: 3px solid var(--scene-neon-core);
-  outline-offset: 2px;
+  box-shadow: inset 0 0 0 5px var(--bg-deep);
+  outline: 3px solid var(--text);
+  outline-offset: -3px;
 }
 
 /* Une carte jouable porte un **filet** néon ; l'état choisi, un filet plus épais. La forme du filet
@@ -4200,7 +4289,7 @@ h2 {
 
 /* **Le nom de la carte de main à 64 px** (#233) : la césure manuelle du plateau coupait
    « VISITE MÉDICAL E » et « PRÉVENT EUR » en plein mot, et « TROUSSE DE SECOURS » sortait en
-   ellipse. Le chiffre de D-094 (1) ne bouge pas (4 rem) ; c'est la place du nom qui change :
+   ellipse. Le chiffre de la carte (4,5 rem depuis D-157) ne bouge pas ici ; c'est la place du nom qui change :
    la césure **automatique de la langue** (`lang="fr"`, `index.html`) fait des coupures
    marquées d'un trait d'union (« MÉDI-CALE », « PRÉVEN-TEUR »), et la barre de nom du
    **plateau** de la main cède ses marges latérales (0,22 → 0,1 rem, +4 px) pour que
@@ -4588,6 +4677,35 @@ h2 {
   }
 }
 
+/* Le journal dans la console (D-158, #520) : sur écran large, il occupe la place laissée sous la
+   barre d'action et défile en lui-même. Il n'est rendu qu'à partir de 900 px (`useEcranLarge`). */
+/* Le conteneur n'a **pas de cadre** : la liste `.log` porte déjà le sien, et deux cadres l'un dans
+   l'autre sont une carte dans une carte (le détecteur d'UI le refuse, `nested-cards`). */
+.journal-console {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-height: 0;
+}
+
+.journal-console__titre {
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  margin: 0;
+}
+
+.journal-console__liste {
+  display: flex;
+  flex-direction: column-reverse;
+  font-size: var(--fs-sm);
+  gap: 0.2rem;
+  margin: 0;
+  overflow-y: auto;
+  padding-left: 1.1rem;
+}
+
 /* PC : la scène prend la largeur, et les cartes suivent la hauteur de la fenêtre — 88 px à
    800 px de haut n'occupaient pas le tiers de l'écran. Les bornes basses sont celles de D-094 (1). */
 @media (min-width: 1200px) and (min-height: 700px) {
@@ -4595,13 +4713,20 @@ h2 {
     max-width: 1360px;
   }
 
+  /* **D-158 (30/10/2026, #520)** : les plafonds montent — Poste 11 rem, Banc 7 rem, carte de main
+     8 rem. À 1920 × 1080, le Poste voulait 190 px et restait bloqué à 136 : le combat s'arrêtait à
+     712 px de haut sur un écran de 1 080. Les planchers sont ceux de D-157. */
   .board__zone {
-    --poste-w: clamp(5.5rem, calc((100dvh - 15rem) / 4.4), 8.5rem);
-    --banc-w: clamp(3.5rem, calc(var(--poste-w) * 0.64), 5.5rem);
+    --poste-w: clamp(6rem, calc((100dvh - 15rem) / 4.4), 11rem);
+    --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 7rem);
   }
 
+  /* La main grandit jusqu'à 8 rem : les cartes des bords, inclinées, débordaient la réserve de 1 rem
+     du pas et se faisaient rogner par la console à cinq cartes (1920 × 1080). Une marge latérale les
+     garde entières. */
   .battle .hand {
-    --carte-w: clamp(4rem, calc((100dvh - 15rem) / 6), 6.5rem);
+    --carte-w: clamp(4.5rem, calc((100dvh - 15rem) / 6), 8rem);
+    padding-inline: 1.25rem;
   }
 }
 

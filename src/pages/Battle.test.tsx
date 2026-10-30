@@ -1345,15 +1345,15 @@ describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-C
    * et le chiffre de D-094 (1) qui ne bouge pas. La mesure vit dans
    * `docs/preuves/main-64px-2026-10-26/` et dans `npm run capturer`.
    */
-  it('à 64 px, le nom de la main se coupe à la césure de la langue — et la carte reste à 4 rem (#233)', () => {
+  it('le nom de la main se coupe à la césure de la langue — et la carte garde le chiffre de D-157 (#233)', () => {
     const nom = css().match(/\n\.battle \.hand \.card--plateau \.card__name \{([^}]*)\}/)?.[1] ?? '';
     // Sans `hyphens: auto`, la césure manuelle du plateau revient et « PRÉVENT EUR » avec elle.
     expect(nom).toMatch(/hyphens:\s*auto/);
     // La césure automatique n'existe que si la langue de la page est connue : `<html lang="fr">`.
     expect(readFileSync(resolve(process.cwd(), 'index.html'), 'utf8')).toMatch(/<html lang="fr"/);
-    // D-094 (1) : le chiffre ne bouge pas, la marge de hauteur de D-094 (3) non plus.
+    // D-157 amende D-094 (1) : 72 px (4,5 rem) à la référence ; la marge de D-094 (3), elle, ne bouge pas.
     const carteDeMain = css().match(/\n\.hand \{([^}]*)\}/)?.[1] ?? '';
-    expect(carteDeMain).toMatch(/--carte-w:\s*4rem/);
+    expect(carteDeMain).toMatch(/--carte-w:\s*4\.5rem/);
   });
 });
 
@@ -1607,5 +1607,74 @@ describe('Battle — le focus après un coup (2.4.3)', () => {
     // Le camp qui ouvre dépend de la graine : on attend que la main revienne au joueur.
     fireEvent.click(await screen.findByRole('button', { name: 'Fin du tour' }));
     expect(document.activeElement).toBe(document.body);
+  });
+});
+
+describe('Battle — la carte du plateau se décrit au focus (#525)', () => {
+  it('le Poste dit son Stress sur son Seuil, sans ouvrir le panneau', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const postes = [...container.querySelectorAll<HTMLElement>('[role="button"][data-uid]')];
+    expect(postes.length).toBeGreaterThan(0);
+    for (const poste of postes) expect(poste).toHaveAccessibleDescription(/^\d+ sur \d+ de Stress\./);
+  });
+});
+
+describe('Battle — le panneau de pose prend le focus au clavier (#525)', () => {
+  it('choisir une carte de la main amène le focus sur « Poser la carte choisie »', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    // Le camp qui ouvre dépend de la graine : on attend le tour du joueur, avec sa main.
+    await screen.findByRole('button', { name: 'Fin du tour' });
+    const carte = document.querySelector<HTMLButtonElement>('.hand .hand__card');
+    expect(carte).not.toBeNull();
+    carte!.focus();
+    fireEvent.click(carte!);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Poser la carte choisie' }));
+    });
+  });
+});
+
+describe('Battle — le bouton Infos montre sa touche (#525)', () => {
+  it('la pastille affiche « I » sans changer le nom accessible du bouton', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const bouton = await screen.findByRole('button', { name: 'Infos détaillées' });
+    const touche = bouton.querySelector<HTMLElement>('.battle__infos-touche');
+    expect(touche).not.toBeNull();
+    expect(touche!.textContent).toBe('I');
+    expect(touche).toHaveAttribute('aria-hidden', 'true');
+    expect(bouton).toHaveAccessibleName('Infos détaillées');
+    expect(within(bouton).queryByText('I')).toBe(touche);
+  });
+});
+
+describe('Battle — le journal remplit la console sur écran large (D-158, #520)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('sans matchMedia, la console ne porte pas le journal', async () => {
+    // Le cas « sans matchMedia » : on retire la simulation de setup-jsdom.ts pour ce test.
+    vi.stubGlobal('matchMedia', undefined);
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    await screen.findByRole('button', { name: 'Infos détaillées' });
+    expect(screen.queryByRole('region', { name: 'Journal du combat' })).toBeNull();
+  });
+
+  it('sur écran large, la console porte le journal, sans aria-live', async () => {
+    vi.stubGlobal('matchMedia', (q: string) => ({
+      matches: true,
+      media: q,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false
+    }));
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    await screen.findByRole('button', { name: 'Infos détaillées' });
+    const journal = screen.getByRole('region', { name: 'Journal du combat' });
+    expect(within(journal).getAllByRole('listitem').length).toBeGreaterThan(0);
+    expect(journal).not.toHaveAttribute('aria-live');
   });
 });
