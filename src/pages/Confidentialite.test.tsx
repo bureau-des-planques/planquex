@@ -81,7 +81,9 @@ describe('Confidentialité — le serveur des testeurs (#317)', () => {
     rendre();
 
     expect(screen.getByRole('heading', { level: 2, name: /serveur des testeurs/i })).toBeTruthy();
-    expect(screen.getAllByText(/facultatif/i).length).toBeGreaterThan(0);
+    // « facultatif » vit dans le titre de la rubrique : une recherche sur la page entière ne
+    // dirait pas d'où le mot vient, et passerait même s'il quittait la rubrique.
+    expect(screen.getByRole('heading', { level: 2, name: /serveur des testeurs \(facultatif\)/i })).toBeTruthy();
     expect(screen.getAllByText(/discord/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/hors du jeu|service à part/i)).toBeTruthy();
     expect(screen.getByText(/ses propres règles|sa propre politique/i)).toBeTruthy();

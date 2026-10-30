@@ -172,13 +172,14 @@ export function Installation() {
         <h2 className="m-0">Ce qui est gardé, et où</h2>
         <ul className="liste-points m-0 flex flex-col gap-2 pl-5 text-[0.92rem] leading-relaxed">
           <li>
-            <strong>Aujourd’hui, sur ton appareil</strong> : ton pseudo, ta partie en cours, ton Deck et ta Collection.
-            Rien de cela ne part sur un serveur. Ton compte ne suit pas les données locales.
+            <strong>Aujourd’hui, sur ton appareil</strong> : ton nom affiché (il signe tes post-its), ta partie en
+            cours, ton Deck et ta Collection. Ce nom reste dans le navigateur ; ton compte ne suit pas les données
+            locales.
           </li>
           <li>
-            <strong>Aujourd’hui, côté serveur</strong> : ton compte, ce que tu écris sur le mur, le déroulé de tes
-            combats terminés. <strong>Bientôt en plus</strong> : ton Deck et ta Collection, sur ton compte — tu les
-            retrouveras après un changement d’appareil.
+            <strong>Aujourd’hui, côté serveur</strong> : ton compte, ton profil (pseudo, service, intitulé), ce que tu
+            écris sur le mur, le déroulé de tes combats terminés. <strong>Bientôt en plus</strong> : ton Deck et ta
+            Collection, sur ton compte — tu les retrouveras après un changement d’appareil.
           </li>
         </ul>
         <p className="muted m-0 max-w-[62ch] text-[0.86rem]">
