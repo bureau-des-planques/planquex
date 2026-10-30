@@ -13,8 +13,44 @@ import type { CafeSymbol } from '@/data/types';
  */
 export function CafeDot({ cafe }: { cafe: CafeSymbol }) {
   if (cafe === 'INCOLORE') return <i className="pip pip--free" title={cafeLabel(cafe)} />;
-  const style = { '--cafe': FACTION_META[cafe].color } as CSSProperties;
-  return <i className="pip pip--typed" style={style} title={cafeLabel(cafe)} />;
+  const { color, glyph } = FACTION_META[cafe];
+  const style = { '--cafe': color, '--cafe-encre': encreSur(color) } as CSSProperties;
+  // **Le glyphe de la faction** (#525) : un café ne se distinguait que par sa couleur (le critère WCAG sur la couleur seule).
+  // Il n'est montré que là où la pastille est assez grande pour le porter (le combat, 14 à 18 px) ;
+  // le sélecteur de texte U+FE0E garde ✊ et ☺ en symboles, jamais en émoji.
+  return (
+    <i className="pip pip--typed" style={style} title={cafeLabel(cafe)}>
+      <span className="pip__glyphe" aria-hidden="true">
+        {glyph}
+        {'\uFE0E'}
+      </span>
+    </i>
+  );
+}
+
+const ENCRE_CLAIRE = '#ffffff';
+const ENCRE_SOMBRE = '#0b1220';
+
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** Le rapport de contraste WCAG entre deux couleurs hexadécimales `#rrggbb`. */
+export function contraste(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)];
+  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+
+/**
+ * L'encre du glyphe sur la couleur d'une faction : le blanc ou le bleu nuit (`--bg`), **le plus
+ * lisible des deux**. Le pire des dix, SSE, reste à 4,36:1 — au-dessus des 3:1 d'un symbole.
+ */
+export function encreSur(couleur: string): string {
+  return contraste(couleur, ENCRE_CLAIRE) >= contraste(couleur, ENCRE_SOMBRE) ? ENCRE_CLAIRE : ENCRE_SOMBRE;
 }
 
 /**
@@ -46,7 +82,8 @@ export function CafePips({ symbols, label }: Props) {
   const names = symbols.map(cafeLabel);
   const title = label ?? (names.length > 0 ? `Coût : ${names.join(' · ')}` : 'Aucun café requis');
   return (
-    <span className="pips" title={title} aria-label={title}>
+    // `role="img"` : sans rôle, l'`aria-label` d'un `<span>` n'est pas un nom fiable (#525).
+    <span className="pips" role="img" title={title} aria-label={title}>
       {names.length > 0 ? (
         symbols.map((cafe, index) => <CafeDot key={`${index}-${cafe}`} cafe={cafe} />)
       ) : (

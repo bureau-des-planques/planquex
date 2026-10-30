@@ -2093,6 +2093,32 @@ h2 {
   width: 14px;
 }
 
+/* **Le glyphe de la faction** dans la pastille (#525) : la couleur ne porte plus seule le type de
+   café (WCAG 1.4.1). Caché hors du combat, où la pastille fait 8 px ; l'encre est la plus lisible
+   du blanc et du bleu nuit (`encreSur`, ≥ 4,36:1 sur les dix couleurs de faction). */
+.pip__glyphe {
+  display: none;
+}
+
+.battle .pip--typed {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.battle .pip--typed .pip__glyphe {
+  color: var(--cafe-encre, #fff);
+  display: block;
+  font-size: var(--fs-2xs);
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.battle .poste__info .pip--typed .pip__glyphe {
+  font-size: 11px;
+}
+
 /* La fiche du camp (cafés attachés, Machine) est lue d'un coup d'œil : plus grand. */
 .battle .poste__info .pip {
   height: 18px;
@@ -4166,9 +4192,14 @@ h2 {
   z-index: 1;
 }
 
+/* **Le focus ne ressemble à aucun état de la main** (#525) : « jouable » est un filet néon, « choisie »
+   un filet néon clair de 3 px — le focus en était la copie exacte. Il devient un anneau **crème**
+   (`--text`) doublé d'un liseré sombre, posé **à l'intérieur** de la carte : la main est en
+   `overflow: hidden` sans marge basse, un anneau extérieur y était rogné en bas. */
 .hand__card:focus-visible {
-  outline: 3px solid var(--scene-neon-core);
-  outline-offset: 2px;
+  box-shadow: inset 0 0 0 5px var(--bg-deep);
+  outline: 3px solid var(--text);
+  outline-offset: -3px;
 }
 
 /* Une carte jouable porte un **filet** néon ; l'état choisi, un filet plus épais. La forme du filet
