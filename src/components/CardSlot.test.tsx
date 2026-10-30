@@ -7,7 +7,7 @@ import { ALL_CARDS } from '@/data';
 import { CardSlot } from './CardSlot';
 
 const carte = ALL_CARDS[0];
-const quick = { icon: <i />, label: 'Ajouter', title: 'Ajouter', onClick: () => undefined };
+const quick = { icon: <i />, label: 'Ajouter', onClick: () => undefined };
 
 /** Le corps de la **première** règle CSS dont le sélecteur est exactement `selecteur`. */
 function regle(css: string, selecteur: string): string {
@@ -55,6 +55,30 @@ describe('CardSlot — la possession se lit (#179)', () => {
     expect(surBouton).toHaveBeenCalledTimes(1);
     expect(surCarte).not.toHaveBeenCalled();
   });
+
+  it('sans bouton (la vitrine de la Collection) : pas de bouton, et la classe qui libère le pied', () => {
+    const { container } = render(<CardSlot card={carte} owned={1} onClick={() => undefined} />);
+    expect(container.firstElementChild).toHaveClass('card-slot--sans-quick');
+    expect(container.querySelector('.card-slot__quick')).toBeNull();
+  });
+
+  it('aucune bulle native sur la carte : le survol ne recouvre plus le coût (constat du 30/10/2026)', () => {
+    const { container } = render(
+      <CardSlot card={carte} owned={2} inDeck={1} quick={quick} onClick={() => undefined} />
+    );
+    // Un `title` sur la carte, ses pastilles ou son bouton fait surgir la bulle du navigateur
+    // au survol : elle passe par-dessus le coût en café et le pied.
+    expect(container.querySelector('[title]')).toBeNull();
+  });
+
+  it('le nom lu par un lecteur d’écran dit la possession et le Deck (critique du 30/10/2026, P1)', () => {
+    const { unmount } = render(<CardSlot card={carte} owned={2} inDeck={1} quick={quick} onClick={() => undefined} />);
+    expect(screen.getByRole('button', { name: `${carte.name}, 2 possédées, 1 au Deck` })).toBeInTheDocument();
+    unmount();
+
+    render(<CardSlot card={carte} owned={0} quick={quick} onClick={() => undefined} />);
+    expect(screen.getByRole('button', { name: `${carte.name}, non possédée` })).toBeInTheDocument();
+  });
 });
 
 describe('styles.css — l’atténuation est réelle', () => {
@@ -78,5 +102,13 @@ describe('styles.css — l’atténuation est réelle', () => {
     // Si `.card-slot__count` s'atténuait, le « ×0 » serait le premier à disparaître.
     expect(regle(css, '.card-slot__plates')).not.toMatch(/opacity/);
     expect(regle(css, '.card-slot__absent')).not.toMatch(/opacity/);
+  });
+
+  it('une vitrine sans bouton ne garde pas la place du bouton dans le pied', () => {
+    expect(regle(css, '.card-slot--sans-quick .card__footer')).toMatch(/padding-left:\s*0/);
+  });
+
+  it('le sigle de faction d’une carte éteinte prend l’encre du texte (3,7:1 sinon, #533)', () => {
+    expect(regle(css, '.card-slot.is-missing .card__faction')).toMatch(/color:\s*var\(--text\)/);
   });
 });

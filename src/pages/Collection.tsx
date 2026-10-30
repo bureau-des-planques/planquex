@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { ALL_CARDS, FACTION_META, RARITY_META, STAGE_META } from '@/data';
 import type { Card, Faction, Rarity, Stage } from '@/data/types';
-import { deckCanAdd, deckCountsByName, MAX_COPIES_PER_NAME } from '@/game/deck';
+import { DECK_SIZE, deckCanAdd, deckCountsByName } from '@/game/deck';
 import { useStore } from '@/store/useStore';
 import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
 import { causeDuVide } from '@/components/cause-du-vide';
-import { HORS_ARRIVAGE, PLAFOND_TIRABLE } from '@/components/plafond-collection';
+import { avancementTirable, HORS_ARRIVAGE } from '@/components/plafond-collection';
 import { TriCartes } from '@/components/TriCartes';
 import { trierCartes } from '@/components/tri-cartes';
 import type { Tri } from '@/components/tri-cartes';
@@ -62,6 +62,9 @@ export function Collection() {
   );
 
   const uniqueOwned = ALL_CARDS.filter((card) => (owned[card.id] ?? 0) > 0).length;
+  // La jauge se lit sur ce qu'un Arrivage **peut** donner (301), pas sur le catalogue (308) :
+  // un testeur qui a tout tiré lirait sinon 98 %, jamais 100 % (`plafond-collection.ts`, #196).
+  const { possedees, plafond, pourcent } = avancementTirable(owned);
   const nbFiltres = filtresActifs(filtres);
 
   /** Pourquoi la grille est vide : ce que le message accuse (`causeDuVide`). */
@@ -72,31 +75,93 @@ export function Collection() {
     setParams((precedent) => ecrireFiltres(precedent, FILTRES_DEFAUT, tri), { replace: true });
   };
 
+  // Les filtres posés, **nommés** et retirables un par un : un compteur obligeait à rouvrir le
+  // volet pour savoir ce qui agissait (critique du 30/10/2026, P2). La recherche en fait
+  // partie : elle filtre autant que les autres.
+  const jetons: { cle: string; libelle: string; retirer: () => void }[] = [];
+  if (rechercheActive) {
+    jetons.push({
+      cle: 'texte',
+      libelle: `Recherche : « ${filtres.texte.trim()} »`,
+      retirer: () => modifier({ texte: '' })
+    });
+  }
+  if (filtres.faction !== 'ALL') {
+    jetons.push({
+      cle: 'faction',
+      libelle: `Faction : ${FACTION_META[filtres.faction].name}`,
+      retirer: () => modifier({ faction: 'ALL' })
+    });
+  }
+  if (filtres.stade !== 'ALL') {
+    jetons.push({
+      cle: 'stade',
+      libelle: `Stade : ${STAGE_META[filtres.stade].label}`,
+      retirer: () => modifier({ stade: 'ALL' })
+    });
+  }
+  if (filtres.rarete !== 'ALL') {
+    jetons.push({
+      cle: 'rarete',
+      libelle: `Rareté : ${RARITY_META[filtres.rarete].label} (${filtres.rarete})`,
+      retirer: () => modifier({ rarete: 'ALL' })
+    });
+  }
+  if (filtres.cout !== 'ALL') {
+    jetons.push({
+      cle: 'cout',
+      libelle: `Coût : ${libelleCout(filtres.cout)}`,
+      retirer: () => modifier({ cout: 'ALL' })
+    });
+  }
+  if (filtres.possedees) {
+    jetons.push({
+      cle: 'possedees',
+      libelle: 'Seulement ce que je possède',
+      retirer: () => modifier({ possedees: false })
+    });
+  }
+  /** L'état vide ne propose que le geste qui le résout : la recherche seule n'a pas de filtre à retirer. */
+  const videParRecherche = rechercheActive && !filtreHorsRecherche;
+
   return (
     <div className="page collection">
       <section className="section__head">
         <div>
           <h1>
-            {uniqueOwned}/{ALL_CARDS.length} cartes
+            {possedees}/{plafond} cartes tirables
           </h1>
-          <p className="muted">
-            {visible.length} affichés · {HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum à tirer est{' '}
-            {PLAFOND_TIRABLE}
+          <div
+            className="collection__jauge"
+            role="progressbar"
+            aria-label="Avancement de la collection"
+            aria-valuemin={0}
+            aria-valuemax={plafond}
+            aria-valuenow={possedees}
+            aria-valuetext={`${possedees} sur ${plafond} cartes tirables`}
+          >
+            <span style={{ width: `${pourcent}%` }} />
+          </div>
+          <p className="muted" aria-live="polite">
+            {visible.length} affichés
           </p>
-          {/* Le **rôle** de la page (#276) : ici on regarde ce qu'on possède ; le Deck, lui, se
-              compose sur sa propre page. Deux lieux, deux gestes — une phrase le dit. */}
+          <p className="collection__plafond muted">{HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage.</p>
+          {/* Le **rôle** de la page (#276, vitrine depuis le 30/10/2026) : ici on regarde ce qu'on
+              possède ; le Deck se compose sur sa page, et la grille n'y ajoute plus rien. L'ajout
+              d'une carte vit dans la fiche, où c'est un geste délibéré. */}
           <p className="collection__role">
-            Tout ce que tu possèdes : cherche, filtre, ouvre une fiche. Pour composer ton Deck, va sur{' '}
-            <Link to="/deck">la page Deck</Link>.
+            Tout ce que tu possèdes : cherche, filtre, ouvre une fiche. Le Deck se compose sur{' '}
+            <Link to="/deck">la page Deck</Link> ; une fiche peut y ajouter sa carte.
           </p>
         </div>
       </section>
 
       <div className="filters">
         <label className="field field--search">
-          <Search size={16} />
+          <Search size={16} aria-hidden="true" />
           <input
             type="search"
+            aria-label="Chercher une carte"
             value={filtres.texte}
             placeholder="Chercher une carte"
             onChange={(event) => modifier({ texte: event.target.value })}
@@ -193,9 +258,16 @@ export function Collection() {
 
       {nbFiltres > 0 && (
         <div className="filtres-actifs">
-          <span className="muted">
-            {nbFiltres} filtre{nbFiltres > 1 ? 's' : ''} actif{nbFiltres > 1 ? 's' : ''}
-          </span>
+          <ul className="jetons" aria-label="Filtres actifs">
+            {jetons.map((jeton) => (
+              <li key={jeton.cle}>
+                <button type="button" className="jeton" onClick={jeton.retirer} aria-label={`Retirer ${jeton.libelle}`}>
+                  {jeton.libelle}
+                  <X size={12} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
           <button type="button" className="button" onClick={toutEffacer}>
             Tout effacer
           </button>
@@ -210,33 +282,35 @@ export function Collection() {
       )}
 
       {visible.length === 0 ? (
-        <div className="empty" role="status">
-          <p className="m-0">Aucune carte ne correspond à {videParce}.</p>
-          <p className="m-0 mt-2">Retire un filtre, ou efface-les tous pour revoir les {ALL_CARDS.length} cartes.</p>
+        <div className="empty">
+          <p className="m-0" role="status">
+            Aucune carte ne correspond à {videParce}.
+          </p>
+          <p className="m-0 mt-2">
+            {videParRecherche
+              ? `Efface la recherche pour revoir les ${ALL_CARDS.length} cartes.`
+              : `Retire un filtre, ou efface-les tous pour revoir les ${ALL_CARDS.length} cartes.`}
+          </p>
+          <button
+            type="button"
+            className="button"
+            onClick={videParRecherche ? () => modifier({ texte: '' }) : toutEffacer}
+          >
+            {videParRecherche ? 'Effacer la recherche' : 'Effacer les filtres'}
+          </button>
         </div>
       ) : (
         <div className="card-grid">
           {visible.map((card) => {
             const used = byName[card.name] ?? 0;
-            const canAdd = deckCanAdd(deck, card.id);
             return (
               <CardSlot
                 key={card.id}
                 card={card}
                 owned={owned[card.id] ?? 0}
                 inDeck={used}
-                full={!canAdd}
                 selected={used > 0}
                 onClick={() => setSelected(card)}
-                quick={{
-                  icon: <Plus size={14} />,
-                  label: `Ajouter ${card.name} au deck`,
-                  title: canAdd
-                    ? `Ajouter « ${card.name} » au deck (${used}/${MAX_COPIES_PER_NAME})`
-                    : `Deck complet pour « ${card.name} »`,
-                  disabled: !canAdd,
-                  onClick: () => addToDeck(card.id)
-                }}
               />
             );
           })}
@@ -250,6 +324,11 @@ export function Collection() {
           onClose={() => setSelected(null)}
           onAddDeck={() => addToDeck(selected.id)}
           onAddCard={() => addCard(selected.id)}
+          deck={{
+            taille: deck.length,
+            max: DECK_SIZE,
+            peutAjouter: deckCanAdd(deck, selected.id)
+          }}
         />
       )}
     </div>

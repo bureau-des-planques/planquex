@@ -349,10 +349,10 @@ describe('le parcours de première connexion (revue du 30/10/2026)', () => {
 });
 
 /**
- * D-157 — les deux secours de l'entrée : un mot de passe oublié qui mène quelque part, et le
+ * D-159 — les deux secours de l'entrée : un mot de passe oublié qui mène quelque part, et le
  * lien des testeurs, visible par quelqu'un qui n'est pas encore entré.
  */
-describe('les secours de l’entrée (D-157)', () => {
+describe('les secours de l’entrée (D-159)', () => {
   afterEach(() => {
     window.history.replaceState(null, '', '/');
     vi.unstubAllEnvs();

@@ -89,12 +89,12 @@ export interface ClientComptes {
       data: { session: { user: { id: string; email?: string | null } } | null };
       error: { message: string } | null;
     }>;
-    /** Le lien de récupération (D-157) : Supabase envoie le courriel, nous le bouton. */
+    /** Le lien de récupération (D-159) : Supabase envoie le courriel, nous le bouton. */
     resetPasswordForEmail(
       email: string,
       options?: { redirectTo?: string }
     ): Promise<{ error: { message: string } | null }>;
-    /** Le nouveau mot de passe, une fois le lien ouvert (D-157). */
+    /** Le nouveau mot de passe, une fois le lien ouvert (D-159). */
     updateUser(attributes: { password: string }): Promise<{ error: { message: string } | null }>;
     signOut(): Promise<{ error: { message: string } | null }>;
   };
@@ -281,7 +281,7 @@ export async function connexionCourriel(
 }
 
 /**
- * La récupération d'un mot de passe oublié (D-157) : Supabase envoie un lien, rien de plus.
+ * La récupération d'un mot de passe oublié (D-159) : Supabase envoie un lien, rien de plus.
  *
  * **Le message ne dit jamais si l'adresse existe** : c'est la règle de Supabase (il répond
  * pareil dans les deux cas), et c'est aussi la bonne — une porte qui avoue « ce courriel
@@ -314,7 +314,7 @@ export async function recuperationMotDePasse(
 }
 
 /**
- * Pose le nouveau mot de passe d'une session ouverte par un lien de récupération (D-157).
+ * Pose le nouveau mot de passe d'une session ouverte par un lien de récupération (D-159).
  * Le lien de Supabase **connecte** ; il ne change rien tant que ce geste n'est pas fait.
  */
 export async function changerMotDePasse(

@@ -237,3 +237,29 @@ describe('les états graphiques de la table tiennent 3:1 (relecture du combat, 3
     expect(ratio(jeton('--line'), jeton('--scene-felt'))).toBeLessThan(3);
   });
 });
+
+describe('le focus d’une carte de la main ne copie aucun état (#525)', () => {
+  function regle(selecteur: string): string {
+    const bloc = sansCommentaires(CSS).match(
+      new RegExp(`${selecteur.replace(/[.:]/g, (c) => `\\${c}`)}\\s*\\{([^}]*)\\}`)
+    );
+    if (!bloc) throw new Error(`${selecteur} introuvable`);
+    return bloc[1];
+  }
+  const couleurDuFiletDe = (decl: string) => decl.match(/outline:\s*\d+px solid var\((--[a-z-]+)\)/)?.[1];
+
+  it('son anneau n’a pas la couleur du filet « choisie » ni « jouable », et il est intérieur (jamais rogné)', () => {
+    const focus = regle('.hand__card:focus-visible');
+    const choisie = regle('.hand__carte.is-selected .hand__visuel .card');
+    const jouable = regle('.hand__carte.is-playable .hand__visuel .card');
+    expect(couleurDuFiletDe(focus)).toBeDefined();
+    expect(couleurDuFiletDe(focus)).not.toBe(couleurDuFiletDe(choisie));
+    expect(couleurDuFiletDe(focus)).not.toBe(couleurDuFiletDe(jouable));
+    expect(focus).toMatch(/outline-offset:\s*-\d/);
+  });
+
+  it('le contrôle mord : l’ancien anneau (néon clair, décalé vers l’extérieur) copiait « choisie »', () => {
+    const ancien = 'outline: 3px solid var(--scene-neon-core); outline-offset: 2px;';
+    expect(couleurDuFiletDe(ancien)).toBe(couleurDuFiletDe(regle('.hand__carte.is-selected .hand__visuel .card')));
+  });
+});

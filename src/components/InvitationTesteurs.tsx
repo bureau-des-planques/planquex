@@ -72,7 +72,7 @@ export function invitationDiscord(env: Environnement = import.meta.env): string 
 }
 
 /**
- * Le lien, posé à **trois endroits** depuis D-157 : la section de **Réglages**, le **pied du
+ * Le lien, posé à **trois endroits** depuis D-159 : la section de **Réglages**, le **pied du
  * comité**, et la **page de connexion** — le seul qui serve à quelqu'un qui n'est pas encore
  * entré. Le même module rend les trois, pour que `rel` et le libellé ne divergent pas.
  */

@@ -305,7 +305,7 @@ describe('se connecter, s’inscrire, se déconnecter', () => {
   });
 });
 
-describe('le mot de passe oublié (D-157)', () => {
+describe('le mot de passe oublié (D-159)', () => {
   it('le lien part vers l’adresse de retour, sans dire si le compte existe', async () => {
     const faux = fauxClient();
     await recuperationMotDePasse('  a@exemple.test ', {

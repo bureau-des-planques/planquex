@@ -74,8 +74,29 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 69 octets le 30/10/2026 (#527, D-156)** : le drapeau d'anonymat porté par la
  * session et le refus d'un compte non approuvé. Le code a été resserré avant de relever
  * (prédicat en ligne, lecture du compteur conditionnée) ; il reste 290 320 octets.
+ *
+ * **Relevé encore de 462 octets le 30/10/2026** (290 782 octets) (décision de Bastien, #525) : le glyphe de faction
+ * dans la pastille de café (`CafePips`, qui vit dans le paquet principal) et le choix de son encre.
+ * Un café ne se lisait que par sa couleur (le critère WCAG sur la couleur seule) ; la variante en
+ * CSS seul (couleur relative OKLCH) a été écartée pour ne pas dépendre d'une syntaxe récente.
+ *
+ * **Relevé de 1 octet le 30/10/2026 (#534)** : la Collection devient une vitrine et la fiche
+ * reçoit l'état du Deck. Ce code vit dans des morceaux **paresseux** ; le principal gagne
+ * **1 octet** parce que la carte d'exports du morceau partagé `ui` change d'ordre quand les
+ * modules changent. Le code a été resserré avant de relever (classe du slot en `&&`, motif du
+ * refus écrit dans la fiche) ; il reste 290 783 octets.
+ *
+ * **Relevé de 27 octets le 30/10/2026** (290 810 octets) (critique du 30/10/2026, P1 de la
+ * page Collection) : le **nom lu** d'une carte (`label` de `CardView`, calculé par le slot —
+ * possession, Deck) et les **jetons de filtres** de la Collection. Les deux vivent dans le
+ * paquet principal, avec le reste de la coquille.
+ *
+ * **Relevé de 115 octets le 30/10/2026** (290 925 octets) (constat de Bastien : la bulle
+ * native recouvrait le coût au survol) : `CafePips` apprend `sansTitre`, et `CardView` cesse
+ * de poser `title` sur la carte compacte (emblème, rareté, faction, coût, Rotation). La bulle
+ * du navigateur est partie ; la fiche garde ses libellés.
  */
-export const PLAFOND_PRINCIPAL = 290_320;
+export const PLAFOND_PRINCIPAL = 290_925;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
@@ -133,7 +154,7 @@ export function verdict(mesures, { seuil = SEUIL_PAQUET, plafond = PLAFOND_PRINC
   if (mesures.principal && mesures.principal.octets > plafond) {
     echecs.push(
       `le paquet principal ${mesures.principal.nom} : ${enKb(mesures.principal.octets)} — ` +
-        `au-dessus du cliquet de ${enKb(plafond)} (mesuré le 29/10/2026, #480) : ` +
+        `au-dessus du cliquet de ${enKb(plafond)} (relevé le 30/10/2026, #527 et #525) : ` +
         'descendre le code, ou relever le cliquet dans un commit qui le dit'
     );
   }
@@ -180,7 +201,7 @@ export function plan() {
   const etat = existsSync(join(DIST, 'index.html')) ? (estPerime() ? 'périmé' : 'à jour') : 'absent';
   return [
     'seuil par paquet     : ' + `${enKb(SEUIL_PAQUET)} (l’avertissement de Vite, en échec)`,
-    'cliquet du principal : ' + `${enKb(PLAFOND_PRINCIPAL)} (mesuré le 29/10/2026, #480)`,
+    'cliquet du principal : ' + `${enKb(PLAFOND_PRINCIPAL)} (relevé le 30/10/2026, #527 et #525)`,
     'référence 29/10/2026 : ' + 'principal 1 032 kB avant, 290,3 kB après #479 ; plus gros paquet 219 kB',
     'dist/                : ' + etat
   ].join('\n');

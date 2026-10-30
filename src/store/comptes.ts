@@ -42,9 +42,9 @@ export interface ComptesState {
     motDePasse: string
   ) => Promise<{ erreur: string | null; courrielEnvoye: boolean }>;
   connecterGoogle: (redirectTo?: string) => Promise<string | null>;
-  /** Le lien de récupération d'un mot de passe oublié (D-157), ou le refus dit en français. */
+  /** Le lien de récupération d'un mot de passe oublié (D-159), ou le refus dit en français. */
   recuperer: (courriel: string) => Promise<string | null>;
-  /** Le nouveau mot de passe d'une session ouverte par le lien (D-157). */
+  /** Le nouveau mot de passe d'une session ouverte par le lien (D-159). */
   changerMotDePasse: (motDePasse: string) => Promise<string | null>;
   deconnecter: () => Promise<void>;
 }

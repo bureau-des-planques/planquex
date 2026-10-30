@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 // Lent : chaque cas rend la Collection complète dans jsdom, catalogue entier ; le coût est le rendu de la grille.
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { Collection } from './Collection';
@@ -59,10 +61,40 @@ describe('Collection — finition', () => {
 
   it('le plafond réel est écrit : sept cartes ne sortent d’aucun Arrivage', () => {
     renderWithStore(<Collection />, base);
-    expect(
-      screen.getByText(
-        new RegExp(`${HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage : le maximum à tirer est ${PLAFOND_TIRABLE}`)
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`${HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage`))).toBeInTheDocument();
+  });
+
+  it('la jauge se lit sur ce qui est tirable, pas sur le catalogue', () => {
+    renderWithStore(<Collection />, { ...base, owned: { 'sse-infirmier-site': 1 } });
+    const jauge = screen.getByRole('progressbar', { name: /Avancement de la collection/i });
+    expect(jauge).toHaveAttribute('aria-valuemax', String(PLAFOND_TIRABLE));
+    expect(jauge).toHaveAttribute('aria-valuenow', '1');
+    expect(jauge).toHaveAttribute('aria-valuetext', `1 sur ${PLAFOND_TIRABLE} cartes tirables`);
+  });
+
+  it('la recherche a un nom accessible et un compteur de résultats annoncé', () => {
+    renderWithStore(<Collection />, base);
+    expect(screen.getByLabelText('Chercher une carte')).toBeInTheDocument();
+    expect(screen.getByText(/^\d+ affichés$/)).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('une recherche sans résultat propose le geste qui la résout', () => {
+    renderWithStore(<Collection />, base);
+    fireEvent.change(screen.getByPlaceholderText(/Chercher une carte/i), { target: { value: 'zzzz-aucune' } });
+    expect(screen.getByText(/Efface la recherche pour revoir les 308/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Effacer la recherche' }));
+    expect(screen.getByPlaceholderText(/Chercher une carte/i)).toHaveValue('');
+  });
+});
+
+describe('styles.css — la Collection lisible (critique du 30/10/2026)', () => {
+  const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
+
+  it('la plus petite colonne de la grille fait 200 px', () => {
+    expect(css).toMatch(/grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(200px,\s*1fr\)\)/);
+  });
+
+  it('la recherche garde un anneau de focus sur son cadre', () => {
+    expect(css).toMatch(/\.field--search:focus-within\s*\{[^}]*border-color:\s*var\(--gold\)/);
   });
 });

@@ -1,4 +1,4 @@
--- Les cinq services du parcours changent de noms — D-157 (30/10/2026, amende D-148 (1)).
+-- Les cinq services du parcours changent de noms — D-159 (30/10/2026, amende D-148 (1)).
 --
 -- « Red Chaussée » était une **coquille** pour « Rez-de-chaussée » : elle disparaît, et
 -- l'immeuble monte jusqu'au 4e. La liste devient, dans l'ordre :
@@ -36,6 +36,6 @@ end;
 $$;
 
 comment on column public.profils.service is
-  'Le groupe du testeur (cinq valeurs, D-157). Figé dès qu''il est posé. Ce n''est pas le service des factions (AGENTS.md §3.2).';
+  'Le groupe du testeur (cinq valeurs, D-159). Figé dès qu''il est posé. Ce n''est pas le service des factions (AGENTS.md §3.2).';
 
 commit;

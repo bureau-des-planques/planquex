@@ -74,7 +74,7 @@ export function Connexion() {
   const [message, setMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
   const [nouveau, setNouveau] = useState('');
   // Le lien de récupération **connecte** : tant qu'il n'a pas servi, on ne renvoie pas le
-  // testeur vers le bureau — il choisirait son mot de passe dans le vide (D-157).
+  // testeur vers le bureau — il choisirait son mot de passe dans le vide (D-159).
   const [recuperation, setRecuperation] = useState(lienDeRecuperation);
   // Le parcours a été montré : sa fin devient un moment (le badge), pas une redirection sèche.
   const [aVuParcours, setAVuParcours] = useState(false);
@@ -160,7 +160,7 @@ export function Connexion() {
   };
 
   // Le lien de récupération ouvre une session : on demande le mot de passe **avant** de
-  // renvoyer qui que ce soit vers le bureau (D-157).
+  // renvoyer qui que ce soit vers le bureau (D-159).
   if (recuperation && session) {
     return (
       <div className="page">
@@ -524,7 +524,7 @@ export function Connexion() {
         )}
       </section>
 
-      {/* Le seul secours qui serve à quelqu'un encore dehors (D-157, amende D-120 (2)). */}
+      {/* Le seul secours qui serve à quelqu'un encore dehors (D-159, amende D-120 (2)). */}
       <InvitationTesteurs ou="connexion" />
 
       <p className="m-0 text-sm text-ink-dim">

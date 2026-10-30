@@ -513,7 +513,6 @@ export function Deck() {
                 quick={{
                   icon: <Info size={14} />,
                   label: `Fiche de ${card.name}`,
-                  title: `Fiche de ${card.name}`,
                   onClick: () => setSelected(card)
                 }}
               />
@@ -622,7 +621,6 @@ export function Deck() {
                       quick={{
                         icon: <Info size={14} />,
                         label: `Fiche de ${card.name}`,
-                        title: `Fiche de ${card.name}`,
                         onClick: () => setSelected(card)
                       }}
                     />
@@ -647,6 +645,11 @@ export function Deck() {
           onClose={() => setSelected(null)}
           onAddDeck={() => addToDeck(selected.id)}
           onAddCard={() => addCard(selected.id)}
+          deck={{
+            taille: deck.length,
+            max: DECK_SIZE,
+            peutAjouter: deckCanAdd(deck, selected.id)
+          }}
         />
       )}
 

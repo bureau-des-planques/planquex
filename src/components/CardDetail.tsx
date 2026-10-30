@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { CSSProperties } from 'react';
+import { Link } from 'react-router-dom';
 import { ACTION_KIND_META, FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -13,9 +15,18 @@ interface Props {
   onClose: () => void;
   onAddDeck?: () => void;
   onAddCard?: () => void;
+  /**
+   * L'état du Deck, quand l'écran qui ouvre la fiche sait y ajouter. La fiche affiche alors le
+   * compte (`Deck 12/20`) et, quand l'ajout est refusé, **le motif du refus** — un bouton
+   * désactivé qui ne dit rien est un bouton mort (#533, P0 de la critique du 30/10/2026).
+   */
+  deck?: { taille: number; max: number; peutAjouter: boolean };
 }
 
-export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props) {
+export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard, deck }: Props) {
+  // L'identifiant de la carte **ajoutée**, pas un booléen : la fiche peut passer d'une carte à
+  // l'autre sans être démontée, et la confirmation ne doit pas suivre la mauvaise.
+  const [confirme, setConfirme] = useState<string | null>(null);
   const faction = FACTION_META[card.faction];
   const rarity = RARITY_META[card.rarity];
   const planque = isPlanque(card);
@@ -116,9 +127,39 @@ export function CardDetail({ card, owned, onClose, onAddDeck, onAddCard }: Props
 
             <div className="card-detail__actions">
               {onAddDeck && (
-                <button type="button" className="button button--primary" onClick={onAddDeck}>
-                  Ajouter au Deck
-                </button>
+                <div className="card-detail__deck">
+                  {owned === 0 && (
+                    <p className="card-detail__note">Non possédée — l’ajout au Deck reste possible pour l’alpha.</p>
+                  )}
+                  <button
+                    type="button"
+                    className="button button--primary"
+                    disabled={deck ? !deck.peutAjouter : false}
+                    aria-describedby={deck && 'deck-note'}
+                    onClick={() => {
+                      onAddDeck();
+                      setConfirme(card.id);
+                    }}
+                  >
+                    Ajouter au Deck
+                  </button>
+                  {deck && (
+                    <p className="card-detail__note muted" id="deck-note" role="status">
+                      {confirme === card.id ? (
+                        `Ajouté au Deck — ${deck.taille}/${deck.max}.`
+                      ) : deck.peutAjouter ? (
+                        `Deck ${deck.taille}/${deck.max}.`
+                      ) : (
+                        <>
+                          {deck.taille >= deck.max
+                            ? `Ton Deck fait ${deck.max} cartes.`
+                            : 'Deux exemplaires de ce nom au maximum.'}{' '}
+                          <Link to="/deck">Voir le Deck</Link>.
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
               )}
               {onAddCard && outilsDeTest() && (
                 <button type="button" className="button" onClick={onAddCard}>

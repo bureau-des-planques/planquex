@@ -6,6 +6,7 @@ import { Collection } from './Collection';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS, isPlanque } from '@/data';
+import { PLAFOND_TIRABLE } from '@/components/plafond-collection';
 
 // Les filtres vivent dans l'adresse (#365) : chaque test, dans tout le fichier, repart de `/collection` nu.
 beforeEach(() => {
@@ -21,10 +22,11 @@ describe('Collection — écran de la Collection', () => {
     const owned = { 'sse-infirmier-site': 2, 'management-responsable-unite': 1 };
     renderWithStore(<Collection />, { owned, tutorielVu: true, pasAPasCombatVu: true });
 
-    // Le **total** se dérive d'`ALL_CARDS`, il ne se recopie pas : #352 a fait passer le
-    // catalogue de 300 à 308, et ce test annonçait encore « 300 ».
+    // Le **total** se dérive de `PLAFOND_TIRABLE`, il ne se recopie pas : le catalogue (308)
+    // promettait un 100 % que les 7 cartes hors Arrivage ne donnent jamais (critique du
+    // 30/10/2026, P1).
     const total = ALL_CARDS.length;
-    expect(screen.getByText(new RegExp(`2/${total} cartes`))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`2/${PLAFOND_TIRABLE} cartes tirables`))).toBeInTheDocument();
     expect(screen.getByText(new RegExp(`${total} affichés`))).toBeInTheDocument();
   });
 
@@ -78,22 +80,52 @@ describe('Collection — écran de la Collection', () => {
     expect(screen.getByText(/Aucune carte ne correspond/i)).toBeInTheDocument();
   });
 
-  it('ajoute une carte au Deck via le bouton +', () => {
+  it('la grille n’ajoute plus au Deck : le coin de la carte est vide (vitrine, 30/10/2026)', () => {
+    renderWithStore(<Collection />, { owned: { 'sse-infirmier-site': 1 }, tutorielVu: true, pasAPasCombatVu: true });
+
+    const slot = screen.getAllByRole('button', { name: /Infirmier de site/i })[0].closest('.card-slot') as HTMLElement;
+    expect(slot.querySelector('.card-slot__quick')).toBeNull();
+    expect(slot).toHaveClass('card-slot--sans-quick');
+    expect(within(slot).queryByRole('button', { name: /Ajouter/i })).toBeNull();
+  });
+
+  it('la fiche ajoute au Deck et annonce le compte (le contrôle mord : le Deck le contient)', () => {
     const entrant = ALL_CARDS.find(
       (c) => isPlanque(c) && c.stage === 'ENTRANT' && !c.ex && c.id === 'sse-infirmier-site'
     );
     expect(entrant).toBeTruthy();
 
-    renderWithStore(<Collection />, { tutorielVu: true, pasAPasCombatVu: true });
+    renderWithStore(<Collection />, { owned: { 'sse-infirmier-site': 1 }, tutorielVu: true, pasAPasCombatVu: true });
 
-    const cardButtons = screen.getAllByRole('button', { name: /Infirmier de site/i });
-    const cardViewButton = cardButtons[0];
-    const cardSlot = cardViewButton.closest('.card-slot') as HTMLElement;
-    const addButton = within(cardSlot).getByRole('button', { name: /Ajouter/i });
-    fireEvent.click(addButton);
+    fireEvent.click(screen.getAllByRole('button', { name: /Infirmier de site/i })[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter au Deck' }));
 
-    const state = useStore.getState();
-    expect(state.deck).toContain(entrant!.id);
+    expect(useStore.getState().deck).toContain(entrant!.id);
+    expect(screen.getByRole('status')).toHaveTextContent('Ajouté au Deck — 1/20');
+  });
+
+  it('un Deck plein : la fiche désactive l’ajout et dit pourquoi, au lieu de le laisser sans effet', () => {
+    const deck = ALL_CARDS.slice(0, 20).map((card) => card.id);
+    renderWithStore(<Collection />, {
+      deck,
+      owned: { 'sse-infirmier-site': 1 },
+      tutorielVu: true,
+      pasAPasCombatVu: true
+    });
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Infirmier de site/i })[0]);
+
+    expect(screen.getByRole('button', { name: 'Ajouter au Deck' })).toBeDisabled();
+    expect(screen.getByRole('status')).toHaveTextContent('Ton Deck fait 20 cartes');
+    expect(screen.getByRole('link', { name: 'Voir le Deck' })).toHaveAttribute('href', '/deck');
+  });
+
+  it('une carte non possédée reste ajoutable, et la fiche le dit (alpha)', () => {
+    renderWithStore(<Collection />, { owned: {}, tutorielVu: true, pasAPasCombatVu: true });
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Infirmier de site/i })[0]);
+    expect(screen.getByText(/Non possédée — l’ajout au Deck reste possible pour l’alpha/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ajouter au Deck' })).toBeEnabled();
   });
 
   it('ouvre la fiche de détail au clic sur une carte', () => {

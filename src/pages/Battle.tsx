@@ -54,7 +54,7 @@ import type { Match } from '@/store/pvp';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { CardView } from '@/components/CardView';
-import { CarteSurvolable, FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
+import { CarteSurvolable, ECRAN_LARGE, FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
 import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
@@ -131,6 +131,17 @@ function choixName(side: PlayerState, uid: string): string | undefined {
  * Le groupe porte le **nom** du Planqué : c'est par lui qu'on le retrouve, au Poste comme au
  * Banc. Sans définition connue, le nom seul reste lisible.
  */
+/**
+ * **Ce qu'une carte du plateau dit au focus** (#525) : son Stress sur son Seuil, puis ses Conditions.
+ * Le chiffre visible est un `role="img"` rendu présentationnel par la carte-bouton : sans cette
+ * phrase, Stress et Seuil n'existaient pour un lecteur d'écran qu'une fois le panneau ouvert.
+ */
+function resumeDeCarte(instance: CardInstance): string {
+  const stress = `${instance.maxHp - instance.hp} sur ${instance.maxHp} de Stress`;
+  const conditions = instance.statuses.map((statut) => STATUS_META[statut].label);
+  return conditions.length > 0 ? `${stress}. ${conditions.join(', ')}.` : `${stress}.`;
+}
+
 function CartePlateau({
   instance,
   className,
@@ -173,6 +184,7 @@ function CartePlateau({
       inspectee={inspectee}
       onInspecter={onInspecter}
       onAttacher={onAttacher}
+      resume={resumeDeCarte(instance)}
       fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
     >
       <CardView
@@ -824,7 +836,30 @@ function endBanner(state: BattleState, myCamp: PlayerId | null): string {
   }
 }
 
+/**
+ * L'écran est-il assez large pour que la console porte le journal (D-158, #520) ? Vrai seulement
+ * si `matchMedia` existe et que `ECRAN_LARGE` correspond. Sans `matchMedia` (jsdom), faux : les
+ * tests existants ne doivent pas voir le journal en double, et le journal reste dans `⋯`.
+ */
+function useEcranLarge(): boolean {
+  const [large, setLarge] = useState(
+    () => typeof window.matchMedia === 'function' && window.matchMedia(ECRAN_LARGE).matches
+  );
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const liste = window.matchMedia(ECRAN_LARGE);
+    // Le même rappel sert au premier passage et aux changements : une rotation de l'appareil
+    // ou une fenêtre redimensionnée met la console à jour sans recharger la page.
+    const suit = () => setLarge(liste.matches);
+    suit();
+    liste.addEventListener('change', suit);
+    return () => liste.removeEventListener('change', suit);
+  }, []);
+  return large;
+}
+
 export function Battle() {
+  const ecranLarge = useEcranLarge();
   const storeDeck = useStore((state) => state.deck);
   /**
    * **La difficulté du combat** (#251, D-145) : elle est **figée au montage**, et relue
@@ -1066,6 +1101,14 @@ export function Battle() {
   useEffect(() => {
     if (!selectedUid) return;
     poseRef.current?.scrollIntoView({ behavior: comportementDeDefilement(), block: 'nearest' });
+    // Le focus reste dans la main après un choix : le panneau de pose apparaît sans être annoncé,
+    // et le clavier doit refaire jusqu'à 10 cartes pour atteindre les gestes. Le critère WCAG sur
+    // l'ordre du focus veut que le focus suive le contenu qui vient d'apparaître (#525). Un clic
+    // à la souris a le même effet (le bouton cliqué a le focus) : c'est voulu. Un focus parti
+    // ailleurs n'est jamais déplacé.
+    if (document.activeElement?.closest('.hand')) {
+      poseRef.current?.focus({ preventScroll: true });
+    }
   }, [selectedUid]);
 
   const play = useCallback((action: BattleAction) => {
@@ -1632,6 +1675,11 @@ export function Battle() {
           onClick={basculerCombatDetaille}
         >
           <Info size={18} aria-hidden="true" />
+          {/* La touche, affichée à l'écran (#525) : le raccourci `I` n'était lisible nulle part. Elle est
+              `aria-hidden` : le nom accessible reste « Infos détaillées », et le geste est déjà dans `aria-keyshortcuts`. */}
+          <span className="battle__infos-touche" aria-hidden="true">
+            I
+          </span>
         </button>
         <MenuCombat etat={menu} onChange={setMenu}>
           {(menuApi) => {
@@ -1826,6 +1874,7 @@ export function Battle() {
             }}
             nom={inspecteur ? cardName(inspecteur.carte.cardId) : ''}
             ancre={inspecte}
+            garderLeFocus={mySide.hand.some((carte) => carte.uid === inspecte)}
             fiche={
               inspecteur && inspecteurDefinition ? (
                 <FicheCarte
@@ -1917,7 +1966,7 @@ export function Battle() {
             sous la barre de navigation.
           */}
           {selected && (
-            <section className="pose panel" aria-label="Poser la carte choisie" ref={poseRef}>
+            <section className="pose panel" aria-label="Poser la carte choisie" tabIndex={-1} ref={poseRef}>
               <p className="pose__titre">
                 <span className="muted">Carte choisie</span> <strong>{cardName(selected.cardId)}</strong>{' '}
                 <span className="hand__kind">{selectedDefinition && kindLabel(selectedDefinition)}</span>
@@ -2138,6 +2187,19 @@ export function Battle() {
               </div>
             )}
           </section>
+          {/* Le journal dans la console (D-158, #520) : la console était vide sous la barre d'action
+              sur écran large. Le journal reste aussi dans `⋯`. Pas d'`aria-live` : l'annonce du
+              coup a déjà sa zone. */}
+          {ecranLarge && (
+            <section className="journal-console" aria-label="Journal du combat">
+              <h2 className="journal-console__titre">Journal</h2>
+              <ol className="log journal-console__liste">
+                {state.log.slice(-12).map((line, index) => (
+                  <li key={`${index}-${line}`}>{line}</li>
+                ))}
+              </ol>
+            </section>
+          )}
         </div>
       </div>
 
