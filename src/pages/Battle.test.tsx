@@ -10,7 +10,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { Battle, libelleDuTour } from './Battle';
 import { renderWithStore, setupTestStore } from '@/test/test-utils';
 import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat';
-import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
+import { ETAPES_COMBAT, premierePhrase } from '@/components/pas-a-pas-combat-etapes';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
 import type { BattleAction, BattleState } from '@/data/types';
 import type { PartieSauvegardee } from '@/store/partie';
@@ -702,6 +702,24 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
     fireEvent.click(lire);
     expect(panneau).toHaveClass('pas-a-pas--detail');
     expect(within(panneau).getByRole('button', { name: 'Replier le détail' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('montre la phrase de l’étape, même replié ; « Lire le détail » la remplace par le texte entier (30/10/2026)', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
+    const panneau = screen.getByRole('complementary', { name: /Pas-à-pas du combat/i });
+    const etape = ETAPES_COMBAT[0];
+
+    // Replié, le panneau ne montrait que le titre : il montre désormais sa phrase d'entrée.
+    const resume = within(panneau).getByText(premierePhrase(etape.texte));
+    expect(resume).toHaveClass('pas-a-pas__resume');
+    // Le texte entier reste rendu (#199) mais replié : la feuille de style le cache.
+    expect(panneau).not.toHaveClass('pas-a-pas--detail');
+
+    fireEvent.click(within(panneau).getByRole('button', { name: 'Plus' }));
+    fireEvent.click(within(panneau).getByRole('button', { name: 'Lire le détail' }));
+    expect(within(panneau).getByText(etape.texte)).toHaveClass('pas-a-pas__texte');
+    // Déplié, la phrase d'entrée laisserait la première ligne du texte en double.
+    expect(panneau.querySelector('.pas-a-pas__resume')).toBeNull();
   });
 
   it('« Passer le pas-à-pas », replié dans « Plus », ferme le pas-à-pas', () => {
