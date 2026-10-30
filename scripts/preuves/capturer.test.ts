@@ -214,14 +214,16 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
    * tailles ne sont pas recopiées : elles sont relues dans la ligne D-142, comme D-060 plus haut.
    */
   function gabaritsDeD142(): { width: number; height: number }[] {
-    const lignes = read('docs/DECISIONS.md')
-      .split('\n')
-      .filter((ligne) => ligne.startsWith('| D-142 |'));
-    expect(lignes, 'ligne D-142 introuvable dans docs/DECISIONS.md').toHaveLength(1);
-    return [...lignes[0].matchAll(/\*\*\((\d+)×(\d+)\)\*\*/g)].map((taille) => ({
-      width: Number(taille[1]),
-      height: Number(taille[2])
-    }));
+    // D-157 (#520) ajoute le grand écran : on relit les deux lignes, dans l'ordre du journal.
+    const journal = read('docs/DECISIONS.md').split('\n');
+    const lignes = ['| D-142 |', '| D-157 |'].map((tete) => journal.filter((ligne) => ligne.startsWith(tete)));
+    for (const [index, trouvees] of lignes.entries()) {
+      expect(trouvees, `ligne ${['D-142', 'D-157'][index]} introuvable dans docs/DECISIONS.md`).toHaveLength(1);
+    }
+    return lignes
+      .flat()
+      .flatMap((ligne) => [...ligne.matchAll(/\*\*\((\d+)×(\d+)\)\*\*/g)])
+      .map((taille) => ({ width: Number(taille[1]), height: Number(taille[2]) }));
   }
 
   it('mesure aussi les gabarits que D-142 nomme, et seulement eux', () => {

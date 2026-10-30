@@ -61,7 +61,7 @@ export const VIEWPORT = { width: 420, height: 900 };
  * mêmes gardes — défilement, marge de 20 px, cibles de 44 px — et **chaque page** sous la garde
  * de largeur : une page qui déborde en largeur casse la mise en page (le critère de #128).
  *
- * Les tailles sont relues dans la ligne D-142 de `docs/DECISIONS.md` par `scripts/preuves/capturer.test.ts`.
+ * Les tailles sont relues dans les lignes D-142 et D-157 de `docs/DECISIONS.md` par `scripts/preuves/capturer.test.ts`.
  * `mobile: false` pour le PC : ni `isMobile` ni écran tactile.
  */
 export const GABARITS = [
@@ -69,5 +69,7 @@ export const GABARITS = [
   { nom: 'telephone', viewport: { width: 390, height: 664 }, mobile: true },
   { nom: 'paysage-petit', viewport: { width: 740, height: 360 }, mobile: true },
   { nom: 'paysage', viewport: { width: 844, height: 390 }, mobile: true },
-  { nom: 'pc', viewport: { width: 1280, height: 800 }, mobile: false }
+  { nom: 'pc', viewport: { width: 1280, height: 800 }, mobile: false },
+  // D-157 (#520) : le grand écran, où le combat grandit avec la hauteur et la console porte le journal.
+  { nom: 'grand-ecran', viewport: { width: 1920, height: 1080 }, mobile: false }
 ];

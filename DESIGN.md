@@ -524,9 +524,9 @@ trombones, feuilles) — ce sont des assets, et l'univers est l'atelier MRO (D-0
 
 ### 2.7 Téléphone, portrait, paysage et PC (D-142, 28/10/2026)
 
-L'écran se mesure à **six gabarits** : la référence **420 × 900** (D-060, D-094), puis la fenêtre
+L'écran se mesure à **sept gabarits** : la référence **420 × 900** (D-060, D-094), puis la fenêtre
 réelle d'un téléphone — **360 × 640**, **390 × 664** (Safari, barre comprise) —, le **paysage** —
-**740 × 360**, **844 × 390** — et le **PC**, **1280 × 800**. `npm run capturer` les joue tous ; ce
+**740 × 360**, **844 × 390** — le **PC**, **1280 × 800**, et le **grand écran**, **1920 × 1080** (D-157). `npm run capturer` les joue tous ; ce
 qui suit est ce que `src/styles.css` fait de chacun.
 
 | Situation | Média | Ce qui change |
@@ -537,7 +537,7 @@ qui suit est ce que `src/styles.css` fait de chacun.
 | Très court | `max-height: 700px` (portrait) | le titre « Ta main » cède sa ligne (le compte reste dans la fiche) ; Banc 52 px, main 60 px |
 | Paysage de téléphone | `orientation: landscape` et `max-height: 600px` | plateau à gauche, **main et barre d'action** à droite ; un camp sur **une** rangée (Poste 80, Banc 52, fiche) ; la console défile en elle-même ; l'inspecteur est une colonne, pas une feuille basse ; hors combat, l'en-tête se serre et la barre du bas met icône et libellé côte à côte |
 | Écran large | `min-width: 900px`, ou paysage ≥ 600 px | plateau à gauche, console à droite, barre d'action **dans** la console |
-| PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et main **grandissent avec la hauteur** (`clamp`, D-094 (1) en plancher) |
+| PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et main **grandissent avec la hauteur** (`clamp` : planchers de D-156, plafonds de D-157 — Poste 11 rem, Banc 7 rem, main 8 rem) ; la console porte sous la barre les **12 dernières lignes du journal** (≥ 900 px, D-157) ; la barre du haut reste, c'est la navigation |
 | Grand écran | `min-width: 1440px` | la coquille passe de 1080 à 1280 px (`--shell-max`, lu aussi par la barre du bas) : une colonne de cartes de plus en Collection et au Deck |
 | Partout | — | `min-height: 100dvh` ; encoches (`env(safe-area-inset-*)`) sur l'en-tête et les bords ; **44 px** pour un bouton, un champ, une case de Réglages, un onglet du comité, et la zone tactile du `+` d'une carte (la pastille garde 24 px) |
 
