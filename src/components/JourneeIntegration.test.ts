@@ -77,10 +77,11 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
   it('lit ses étapes dans `journee-etapes` — une seule source', () => {
     expect(composant).toMatch(/from '@\/components\/journee-etapes'/);
     expect(composant).toMatch(/ETAPES_JOURNEE/);
-    expect(etapes).toMatch(/cible: '\/collection'/);
     expect(etapes).toMatch(/cible: '\/'/);
     expect(etapes).toMatch(/cible: '\/deck'/);
     expect(etapes).toMatch(/cible: '\/battle'/);
+    expect(etapes).toMatch(/cible: '\/settings'/);
+    expect(etapes).toMatch(/cible: '\/comite'/);
   });
 
   it('navigue par le routeur, au clic du geste de l’étape', () => {
