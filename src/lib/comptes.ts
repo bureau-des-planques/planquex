@@ -89,6 +89,13 @@ export interface ClientComptes {
       data: { session: { user: { id: string; email?: string | null } } | null };
       error: { message: string } | null;
     }>;
+    /** Le lien de récupération (D-159) : Supabase envoie le courriel, nous le bouton. */
+    resetPasswordForEmail(
+      email: string,
+      options?: { redirectTo?: string }
+    ): Promise<{ error: { message: string } | null }>;
+    /** Le nouveau mot de passe, une fois le lien ouvert (D-159). */
+    updateUser(attributes: { password: string }): Promise<{ error: { message: string } | null }>;
     signOut(): Promise<{ error: { message: string } | null }>;
   };
   from(table: string): RequeteMur;

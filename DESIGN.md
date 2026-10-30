@@ -413,6 +413,25 @@ Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors lign
 | Combat | sans objet (deck de démonstration) | « La Direction réfléchit… » pendant son tour | — | bandeau (le combat est local) |
 | Réglages | sans objet | sans objet | refus d'import annoncé (`role="alert"`) | bandeau |
 | Idées | « Le mur est encore vide » | « Le mur se charge… » (branché sur la base) | notice si la base ne répond pas, repli sur le fichier | repli sur le fichier + bandeau |
+| Connexion | sans base : « Pas de compte sans base », et rien à cliquer | « Vérification de ta session… », « Lecture de ton profil… » (`role="status"`, la revue du 30/10/2026) | `notice--warn` + `role="alert"` | — (page publique, hors du `Layout`) |
+
+**La première connexion (#325, D-148 ; relue le 30/10/2026, la revue du 30/10/2026)** tient en trois étapes sous
+un **rail de trois pas** : pseudo, service, intitulé tiré au sort. Ce qui s'affiche à chacun :
+
+| État | Ce que voit le testeur | Sortie |
+|---|---|---|
+| Étape 1 — pseudo | un champ, le compteur `N sur 24 caractères`, et ce que le pseudo engage (« il te suivra sur le mur ») | « Continuer », ou `Entrée` |
+| Étape 2 — service | **Rez-de-chaussée, 1er, 2ème, 3ème, 4ème** (D-159) en cinq lignes de **44 px**, radio à l'or du jeu, chacune avec sa phrase ; l'aide dit que le service **ne change aucune règle** (D-135) et qu'il est figé (D-148) | « Valider mon service » |
+| Étape 3 — intitulé | le titre tiré **en grand** — police d'affichage, or clair, `clamp(1.3rem, 6vw, --fs-2xl)` dans un cadre doré — puis la fonction (« Anaïs / planqué du 2ème ») ; l'intitulé n'est pas répété une seconde fois | « Garder celui-là » (ou `Entrée`), et « Essayer un autre titre » **une fois** |
+| Relance identique | si le second tirage est le même (le tirage est déterministe : environ une fois sur huit), la relance n'est **pas proposée** et l'écran le dit | « Garder celui-là » |
+| Fin | un **moment** : « Bienvenue, <pseudo> », le badge, et un seul bouton | « Entrer dans le bureau » — vers `depuis`, sinon l'accueil ou l'attente |
+| Erreur de geste | `notice--warn` en `role="alert"`, sous le formulaire | le geste se retente |
+| Profil illisible | « Ton profil n'a pas pu être lu » — la base n'a pas répondu | « Réessayer » et « Me déconnecter » ; jamais le formulaire du pseudo, qui écraserait une étape déjà faite |
+| Mot de passe oublié | le panneau ne demande plus que le courriel ; la réponse ne dit jamais si l'adresse a un compte (D-159) | « Recevoir un lien », et « Revenir à la connexion » |
+| Lien de récupération | « Un nouveau mot de passe » : Supabase **connecte** par le lien, il ne change rien | « Changer mon mot de passe » ; le jeton est retiré de l'adresse, puis le parcours ou le bureau reprend |
+
+Le focus suit l'étape : chaque validation porte le focus sur le titre de l'étape suivante
+(`tabIndex={-1}`), sans quoi il retombait sur `<body>` et un lecteur d'écran n'annonçait rien.
 
 **Le combat — ses états d'écran (D-093)** : l'inspecteur et le menu `⋯` ne sont pas des pages,
 mais des **états de la même vue**. Ils sont listés ici pour qu'on sache quoi regarder sur une

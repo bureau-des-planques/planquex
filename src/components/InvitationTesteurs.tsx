@@ -72,11 +72,11 @@ export function invitationDiscord(env: Environnement = import.meta.env): string 
 }
 
 /**
- * Le lien, posé à **deux endroits** et nulle part ailleurs : la section de **Réglages**, et
- * le **pied du comité**. Le même module rend les deux, pour que `rel` et le libellé ne
- * divergent pas.
+ * Le lien, posé à **trois endroits** depuis D-159 : la section de **Réglages**, le **pied du
+ * comité**, et la **page de connexion** — le seul qui serve à quelqu'un qui n'est pas encore
+ * entré. Le même module rend les trois, pour que `rel` et le libellé ne divergent pas.
  */
-export function InvitationTesteurs({ ou }: { ou: 'reglages' | 'comite' }) {
+export function InvitationTesteurs({ ou }: { ou: 'reglages' | 'comite' | 'connexion' }) {
   const invitation = invitationDiscord();
   if (!invitation) return null;
 
@@ -101,6 +101,15 @@ export function InvitationTesteurs({ ou }: { ou: 'reglages' | 'comite' }) {
         </p>
         <p className="m-0">{lien}</p>
       </section>
+    );
+  }
+
+  if (ou === 'connexion') {
+    return (
+      <p className="m-0 max-w-[64ch] text-sm text-ink-dim">
+        Un coup de main ? Les testeurs se retrouvent aussi sur le serveur Discord de l’alpha — c’est{' '}
+        <strong>facultatif</strong>. {lien}
+      </p>
     );
   }
 

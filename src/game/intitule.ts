@@ -16,11 +16,36 @@ import { seedRng, stepRng } from './rng';
 
 /** Les cinq groupes du parcours. `complement` se lit après « planqué ». */
 export const SERVICES = [
-  { code: 'red-chaussee', libelle: 'Red Chaussée', complement: 'de la Red Chaussée' },
-  { code: 'rez-de-chaussee', libelle: 'rez-de-chaussée', complement: 'du rez-de-chaussée' },
-  { code: '1er', libelle: '1er', complement: 'du 1er' },
-  { code: '2e', libelle: '2e', complement: 'du 2e' },
-  { code: '3e', libelle: '3e', complement: 'du 3e' }
+  {
+    code: 'rez-de-chaussee',
+    libelle: 'Rez-de-chaussée',
+    complement: 'du rez-de-chaussée',
+    dit: 'L’accueil, les badges et les colis mal étiquetés.'
+  },
+  {
+    code: '1er',
+    libelle: '1er',
+    complement: 'du 1er',
+    dit: 'Les réunions qui auraient pu être un courriel.'
+  },
+  {
+    code: '2e',
+    libelle: '2ème',
+    complement: 'du 2ème',
+    dit: 'Les tableurs, la machine à café, le silence.'
+  },
+  {
+    code: '3e',
+    libelle: '3ème',
+    complement: 'du 3ème',
+    dit: 'Les dossiers qu’on ne rouvre pas.'
+  },
+  {
+    code: '4e',
+    libelle: '4ème',
+    complement: 'du 4ème',
+    dit: 'La direction, paraît-il.'
+  }
 ] as const;
 
 export type CodeService = (typeof SERVICES)[number]['code'];
@@ -68,9 +93,14 @@ export function tirerIntitule(compte: string, relances: number): string {
   return INTITULES[index]!;
 }
 
-/** La phrase du profil, telle qu'elle s'affiche : « pseudo / planqué du 2e — sculpteur de fumée ». */
-export function phraseProfil(profil: { pseudo: string; service: string; intitule: string }): string {
+/** La « fonction » du testeur : « Anaïs / planqué du 2ème ». Elle se lit sous l'intitulé. */
+export function fonctionProfil(profil: { pseudo: string; service: string }): string {
   const service = serviceDe(profil.service);
   const groupe = service ? service.complement : '';
-  return `${profil.pseudo} / planqué ${groupe} — ${profil.intitule}`.replace(/\s+/g, ' ');
+  return `${profil.pseudo} / planqué ${groupe}`.replace(/\s+/g, ' ');
+}
+
+/** La phrase du profil, telle qu'elle s'affiche : « pseudo / planqué du 2ème — sculpteur de fumée ». */
+export function phraseProfil(profil: { pseudo: string; service: string; intitule: string }): string {
+  return `${fonctionProfil(profil)} — ${profil.intitule}`.replace(/\s+/g, ' ');
 }

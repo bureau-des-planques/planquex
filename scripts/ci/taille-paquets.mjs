@@ -95,8 +95,16 @@ export const SEUIL_PAQUET = 500_000;
  * native recouvrait le coût au survol) : `CafePips` apprend `sansTitre`, et `CardView` cesse
  * de poser `title` sur la carte compacte (emblème, rareté, faction, coût, Rotation). La bulle
  * du navigateur est partie ; la fiche garde ses libellés.
+ *
+ * **Relevé de 18 octets le 30/10/2026** (290 943 octets) (D-159, première connexion) : la page
+ * de connexion affiche le lien du serveur des testeurs, donc son morceau **dépend** d'un
+ * morceau de plus (`InvitationTesteurs`), et la carte de dépendances du principal gagne
+ * `,18` — 18 octets, aucun code nouveau. Le reste a été sorti du principal avant de relever :
+ * la récupération de mot de passe vit dans `src/lib/recuperation.ts` (morceau paresseux), et
+ * la coquille nue des écrans publics est une **classe** (`.page--nue`), pas une route
+ * d'enveloppe — 1,4 kB puis 200 octets rendus au paquet avant ce dernier écart.
  */
-export const PLAFOND_PRINCIPAL = 290_925;
+export const PLAFOND_PRINCIPAL = 290_943;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
@@ -154,7 +162,7 @@ export function verdict(mesures, { seuil = SEUIL_PAQUET, plafond = PLAFOND_PRINC
   if (mesures.principal && mesures.principal.octets > plafond) {
     echecs.push(
       `le paquet principal ${mesures.principal.nom} : ${enKb(mesures.principal.octets)} — ` +
-        `au-dessus du cliquet de ${enKb(plafond)} (relevé le 30/10/2026, #527 et #525) : ` +
+        `au-dessus du cliquet de ${enKb(plafond)} (relevé le 30/10/2026, #525, #527 et D-159) : ` +
         'descendre le code, ou relever le cliquet dans un commit qui le dit'
     );
   }

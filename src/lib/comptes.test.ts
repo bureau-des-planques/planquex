@@ -83,6 +83,8 @@ function fauxClient(reponses: Reponses = {}) {
     error: null
   }));
   const signOut = vi.fn(async (): Promise<{ error: { message: string } | null }> => ({ error: null }));
+  const resetPasswordForEmail = vi.fn(async (): Promise<{ error: { message: string } | null }> => ({ error: null }));
+  const updateUser = vi.fn(async (): Promise<{ error: { message: string } | null }> => ({ error: null }));
 
   const client = {
     auth: {
@@ -90,7 +92,9 @@ function fauxClient(reponses: Reponses = {}) {
       signInWithOAuth,
       signInWithPassword,
       signUp,
-      signOut
+      signOut,
+      resetPasswordForEmail,
+      updateUser
     },
     from(table: string): RequeteMur {
       let geste: 'select' | 'update' = 'select';
@@ -143,6 +147,8 @@ function fauxClient(reponses: Reponses = {}) {
     signInWithOAuth,
     signInWithPassword,
     signUp,
+    resetPasswordForEmail,
+    updateUser,
     signOut,
     lectures,
     ecritures,

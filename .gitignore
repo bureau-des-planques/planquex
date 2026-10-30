@@ -31,3 +31,6 @@ captures/
 
 # OpenChamber — captures et artefacts de session (hors du jeu).
 .openchamber/
+
+# Revues Impeccable — l'archive locale d'une passe de critique, pas du code.
+.impeccable/critique/

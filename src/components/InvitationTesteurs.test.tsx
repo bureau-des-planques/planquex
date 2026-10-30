@@ -64,9 +64,9 @@ describe('l’invitation Discord — le seul module qui la lit', () => {
 });
 
 describe('InvitationTesteurs — le rendu', () => {
-  it('sans invitation, ne rend rien du tout, ni à Réglages ni au comité', () => {
+  it('sans invitation, ne rend rien du tout, ni à Réglages, ni au comité, ni à la connexion', () => {
     vi.stubEnv(VARIABLE_INVITATION, '');
-    for (const ou of ['reglages', 'comite'] as const) {
+    for (const ou of ['reglages', 'comite', 'connexion'] as const) {
       const { container, unmount } = render(<InvitationTesteurs ou={ou} />);
       expect(container.innerHTML, ou).toBe('');
       unmount();
@@ -75,7 +75,7 @@ describe('InvitationTesteurs — le rendu', () => {
 
   it('renseignée, rend un seul lien, externe, avec le bon `rel` et le mot « testeur »', () => {
     vi.stubEnv(VARIABLE_INVITATION, INVITATION);
-    for (const ou of ['reglages', 'comite'] as const) {
+    for (const ou of ['reglages', 'comite', 'connexion'] as const) {
       const { container, unmount } = render(<InvitationTesteurs ou={ou} />);
       const liens = container.querySelectorAll('a');
       expect(liens, ou).toHaveLength(1);
@@ -100,9 +100,9 @@ describe('InvitationTesteurs — le rendu', () => {
     expect(container.querySelector('iframe, script, embed, object')).toBeNull();
   });
 
-  it('dit que c’est facultatif, dans les deux emplacements', () => {
+  it('dit que c’est facultatif, dans les trois emplacements', () => {
     vi.stubEnv(VARIABLE_INVITATION, INVITATION);
-    for (const ou of ['reglages', 'comite'] as const) {
+    for (const ou of ['reglages', 'comite', 'connexion'] as const) {
       const { unmount } = render(<InvitationTesteurs ou={ou} />);
       expect(screen.getAllByText(/facultatif/i).length, ou).toBeGreaterThanOrEqual(1);
       unmount();

@@ -15,6 +15,11 @@ export interface ProfilState {
   profil: Profil | null;
   /** Vrai dès que la lecture a eu lieu une fois (même si le profil est absent). */
   charge: boolean;
+  /**
+   * La **lecture** a échoué (réseau, RLS) : ce n'est pas « pas de profil », et le parcours ne
+   * doit pas repartir de l'étape 1 avec un pseudo qui existe déjà (revue du 30/10/2026).
+   */
+  lectureEchouee: boolean;
   chargement: boolean;
   erreur: string | null;
 
@@ -35,7 +40,7 @@ async function geste(
   set({ chargement: true, erreur: null });
   try {
     const profil = await action();
-    set({ profil, chargement: false, charge: true });
+    set({ profil, chargement: false, charge: true, lectureEchouee: false });
     return null;
   } catch (erreur) {
     const message = messageDe(erreur);
@@ -47,20 +52,23 @@ async function geste(
 export const useProfil = create<ProfilState>((set, get) => ({
   profil: null,
   charge: false,
+  lectureEchouee: false,
   chargement: false,
   erreur: null,
 
   charger: async (uid) => {
     if (!comptesEstConfigure()) {
-      set({ charge: true, profil: null });
+      set({ charge: true, profil: null, lectureEchouee: false });
       return;
     }
     set({ chargement: true, erreur: null });
     try {
       const profil = await lireMonProfil(uid);
-      set({ profil, charge: true, chargement: false });
+      set({ profil, charge: true, chargement: false, lectureEchouee: false });
     } catch (erreur) {
-      set({ charge: true, chargement: false, erreur: messageDe(erreur) });
+      // `profil` reste nul : c'est `lectureEchouee` qui distingue « rien en base » de
+      // « on n'a pas pu lire », sans quoi l'écran renvoie un testeur de l'étape 3 à l'étape 1.
+      set({ charge: true, chargement: false, erreur: messageDe(erreur), lectureEchouee: true });
     }
   },
 
