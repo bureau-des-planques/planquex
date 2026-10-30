@@ -4721,8 +4721,12 @@ h2 {
     --banc-w: clamp(4rem, calc(var(--poste-w) * 0.64), 7rem);
   }
 
+  /* La main grandit jusqu'à 8 rem : les cartes des bords, inclinées, débordaient la réserve de 1 rem
+     du pas et se faisaient rogner par la console à cinq cartes (1920 × 1080). Une marge latérale les
+     garde entières. */
   .battle .hand {
     --carte-w: clamp(4.5rem, calc((100dvh - 15rem) / 6), 8rem);
+    padding-inline: 1.25rem;
   }
 }
 
