@@ -262,10 +262,13 @@ jobs:
       #
       # Elle lit le `dist/` que ce job vient de construire, et **réutilise le Chrome de
       # l'image** (`/usr/bin/google-chrome`, celui de `IMPECCABLE_BROWSER`) sous le nom que lit
-      # le script, `CHROME_PATH` : aucun second navigateur à installer. Coût mesuré en local
-      # le 30/10/2026 : **6 min 14 s** — il tient dans le maximum du job (D-143), et le budget
-      # se gagne sur les répétitions, jamais sur les preuves. Une PR de documentation seule ne
-      # la lance pas (chemin rapide, D-143 (1)).
+      # le script, `CHROME_PATH` : aucun second navigateur à installer.
+      #
+      # **Coût : 6 min 14 s mesurées en local le 30/10/2026**, à confirmer sur le premier run
+      # de la PR — le workflow documente lui-même jusqu'à 1,8× d'écart entre deux runs du même
+      # code, et le job plafonne à 15 min. Si la mesure réelle s'en écarte, c'est ce
+      # commentaire qu'on corrige, pas la garde : le budget se gagne sur les répétitions,
+      # jamais sur les preuves. Une PR de documentation seule ne la lance pas (D-143 (1)).
       - name: Garder la hauteur du combat (#513)
         if: steps.chemins.outputs.doc_seulement != 'true'
         env:

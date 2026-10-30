@@ -145,11 +145,21 @@ describe('.github/workflows/ci.yml', () => {
     expect(build, 'build absent de tests-ecrans').toBeGreaterThanOrEqual(0);
     // Les captures lisent `dist/` : le build doit avoir tourné avant, dans le même job.
     expect(build, 'le build doit précéder les captures').toBeLessThan(capture);
+    // L'étape #513, **bornée à la suivante** : sans la borne, `slice` va jusqu'à la fin du job
+    // et la condition de l'étape d'après (`detect:ui:page`) satisferait l'assertion — le `if:`
+    // de #513 pourrait disparaître sans que ce test rougisse.
+    const suite = bloc.slice(bloc.lastIndexOf('- name:', capture));
+    const finEtape = suite.slice(1).search(/^ {6}- name:/m);
+    const etape = finEtape === -1 ? suite : suite.slice(0, finEtape + 1);
     // Le Chrome de l'image, sous le nom que lit le script : pas de second navigateur installé.
-    const etape = bloc.slice(bloc.lastIndexOf('- name:', capture));
     expect(etape).toContain('CHROME_PATH: /usr/bin/google-chrome');
     // Même condition que les autres étapes : une PR de documentation seule ne la lance pas.
-    expect(etape).toContain("if: steps.chemins.outputs.doc_seulement != 'true'");
+    // Une seule condition est admise, comme pour `detect:ui:page` : toute autre rendrait la
+    // garde sautable.
+    expect(etape.match(/^\s*if:.*$/gm) ?? []).toEqual(["        if: steps.chemins.outputs.doc_seulement != 'true'"]);
+    // Une seule fois dans le workflow : une seconde occurrence ailleurs (par exemple dans
+    // `controles`) doublerait le coût sans rien garder de plus.
+    expect(workflow.match(/run: npm run capturer\b/g) ?? []).toHaveLength(1);
   });
 
   it('le chemin rapide ne saute rien d’autre que ce que D-143 (1) nomme (#422)', () => {
