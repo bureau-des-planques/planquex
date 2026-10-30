@@ -269,7 +269,8 @@ plateau (`.card--plateau`).
 
 ### 2.2 Grille et marges
 
-- Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem — **deux colonnes** à 420 px (cartes de 188 × 263 px). Sous **420 px** elle est **forcée à deux colonnes** (`repeat(2, minmax(0, 1fr))`) : à 360 px la page offre 328 px, deux cartes de 160 px avec leur gouttière en demandent 332, et `auto-fill` retombait à une colonne (#131).
+- Grille de la Collection : `repeat(auto-fill, minmax(200px, 1fr))`, écart 0.75rem — **cinq colonnes** à 1440 (cartes de 240 px) et **une** à 390 (358 px). 200 px est le plancher de lisibilité : en dessous, `1em = 5.6cqw` tombe sous les 11,2 px de `--fs-xs`, et la légende, la Vulnérabilité et la Rotation ne se lisent plus (critique du 30/10/2026, P2). La grille **forcée à deux colonnes** sous 420 px a disparu avec ce plancher : à 390, une carte lisible bat deux cartes muettes.
+- La **jauge** de la Collection se lit sur `PLAFOND_TIRABLE` (301) et non sur le catalogue (308) : `avancementTirable()` (`plafond-collection.ts`) donne le compte et le pourcentage, la barre les rend d'un coup d'œil. Un testeur qui a tout tiré lit 100 %, pas 98 % (critique du 30/10/2026, P1).
 - Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Rayon 12 px. L'ombre est noire et portée, jamais colorée : c'est le relief, pas un halo.
 - **Le chrome du slot** (`.card-slot`) : un bouton rond **facultatif** au coin **bas-gauche**, que le pied réserve ; la pastille « ×n » (et « Deck ×n ») au coin bas-droit. En haut à droite, il recouvrait le Seuil. Depuis le 30/10/2026, la grille de la **Collection** est une **vitrine** et n'a plus de bouton (`card-slot--sans-quick`, le pied reprend sa marge) : l'ajout au Deck se fait dans la fiche. Le Deck, lui, garde le sien pour ouvrir la fiche.
 - **La carte en grand** (fiche : 280 px de large) : l'illustration cède la place au texte (`flex`, 30 % au moins), jamais l'inverse.
@@ -292,6 +293,8 @@ plateau (`.card--plateau`).
 **Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : au coin **bas-gauche** un bouton rond **facultatif** (ouvrir la fiche ; la Collection n'en porte plus depuis le 30/10/2026, #533), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
 
 **Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
+
+**Les filtres actifs** sont des **jetons nommés** (`.jeton`, dans `Collection`) : chacun dit son filtre (« Faction : SSE », « Recherche : « chef » ») et le retire seul, à côté de « Tout effacer ». Il n'y a plus de compteur nu à rouvrir pour savoir ce qui agit (critique du 30/10/2026, P2) ; le jeton est une cible de 44 px, comme les autres boutons.
 
 ### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121 ; écart de collage de la barre daté le 27/10/2026, #289, #323)
 
@@ -403,7 +406,7 @@ Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors lign
 | Écran | Vide | Chargement | Erreur | Hors ligne |
 |---|---|---|---|---|
 | Accueil | une Collection neuve a des cartes de départ | l'aplat de faction sous l'illustration (`.card__art`) | — | bandeau |
-| Collection | « Ta Collection est vide » ; grille vide : la cause est nommée (recherche, filtre, ou les deux) + « Tout effacer » | idem | — | bandeau |
+| Collection | « Ta Collection est vide » ; grille vide : la cause est nommée (recherche, filtre, ou les deux) + le geste qui la résout (« Effacer la recherche » ou « Effacer les filtres ») | idem | — | bandeau |
 | Deck | « Le deck est vide » ; « Aucune carte possédée » | idem | l'illégalité est dite (`notice--warn`) | bandeau |
 | Combat | sans objet (deck de démonstration) | « La Direction réfléchit… » pendant son tour | — | bandeau (le combat est local) |
 | Réglages | sans objet | sans objet | refus d'import annoncé (`role="alert"`) | bandeau |

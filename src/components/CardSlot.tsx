@@ -38,10 +38,15 @@ export function CardSlot({ card, onClick, quick, owned, inDeck = 0, full = false
   const classes = ['card-slot', missing && 'is-missing', full && 'is-full', !quick && 'card-slot--sans-quick']
     .filter(Boolean)
     .join(' ');
+  // Le nom lu par un lecteur d'écran : la carte, puis ce que le slot sait et que la carte ne
+  // dit pas (possession, Deck). Sans lui, les 308 cartes se ressemblent (critique du
+  // 30/10/2026, P1).
+  const possession = owned === undefined ? '' : missing ? 'non possédée' : `${owned} possédée${owned > 1 ? 's' : ''}`;
+  const label = [card.name, possession, inDeck > 0 ? `${inDeck} au Deck` : ''].filter(Boolean).join(', ');
 
   return (
     <div className={classes} data-card-id={card.id}>
-      <CardView card={card} compact selected={selected} onClick={onClick} />
+      <CardView card={card} compact selected={selected} onClick={onClick} label={label} />
       {quick && (
         <button
           type="button"

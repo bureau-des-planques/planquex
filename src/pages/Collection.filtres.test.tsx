@@ -80,14 +80,25 @@ describe('Collection — filtres de rareté, de coût et de possession (#365)', 
     expect(screen.getByText(new RegExp(`^${compte} affichés`))).toBeInTheDocument();
   });
 
-  it('les filtres actifs se comptent, et « Tout effacer » les retire tous, sans toucher au tri', () => {
+  it('les filtres actifs sont nommés, retirables un par un, et « Tout effacer » les retire tous', () => {
     const { container } = renderWithStore(<Collection />, base);
     expect(screen.queryByRole('button', { name: 'Tout effacer' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Filtres actifs' })).toBeNull();
 
     fireEvent.change(screen.getByLabelText(/Rareté/i), { target: { value: '1S' } });
     fireEvent.change(screen.getByLabelText(/Trier par/i), { target: { value: 'nom' } });
-    expect(screen.getByText('1 filtre actif')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Retirer Rareté : ★ \(1S\)/ })).toBeInTheDocument();
+    // Pas de compteur nu : le nom du filtre est écrit, il n'y a rien à rouvrir.
+    expect(screen.queryByText(/filtre(s)? actif/)).toBeNull();
 
+    // Un jeton retiré ne retire que **son** filtre ; le tri, lui, ne bouge pas.
+    const avant = idsAffiches(container).length;
+    fireEvent.click(screen.getByRole('button', { name: /Retirer Rareté/ }));
+    expect(idsAffiches(container).length).toBeGreaterThan(avant);
+    expect(screen.getByLabelText(/Rareté/i)).toHaveValue('ALL');
+    expect(screen.getByLabelText(/Trier par/i)).toHaveValue('nom');
+
+    fireEvent.change(screen.getByLabelText(/Rareté/i), { target: { value: '1S' } });
     fireEvent.click(screen.getByRole('button', { name: 'Tout effacer' }));
     expect(screen.getByLabelText(/Rareté/i)).toHaveValue('ALL');
     expect(screen.getByLabelText(/Trier par/i)).toHaveValue('nom');
@@ -104,23 +115,24 @@ describe('Collection — filtres de rareté, de coût et de possession (#365)', 
 
   it('les filtres survivent au démontage de l’écran (retour de fiche, de page) : ils sont dans l’adresse', () => {
     const first = renderWithStore(<Collection />, base);
-    fireEvent.change(screen.getByLabelText(/Faction/i), { target: { value: 'SSE' } });
-    fireEvent.change(screen.getByLabelText(/Rareté/i), { target: { value: '1D' } });
+    // `combobox` : le jeton « Retirer Faction : SSE » porte aussi le mot Faction.
+    fireEvent.change(screen.getByRole('combobox', { name: /Faction/i }), { target: { value: 'SSE' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /Rareté/i }), { target: { value: '1D' } });
     first.unmount();
 
     const { container } = renderWithStore(<Collection />, base);
-    expect(screen.getByLabelText(/Faction/i)).toHaveValue('SSE');
-    expect(screen.getByLabelText(/Rareté/i)).toHaveValue('1D');
+    expect(screen.getByRole('combobox', { name: /Faction/i })).toHaveValue('SSE');
+    expect(screen.getByRole('combobox', { name: /Rareté/i })).toHaveValue('1D');
     expect(idsAffiches(container).every((id) => rareteDe(id) === '1D')).toBe(true);
   });
 
   it('une fiche ouverte puis fermée garde les filtres', () => {
     const { container } = renderWithStore(<Collection />, { ...base, owned: { 'sse-infirmier-site': 1 } });
-    fireEvent.change(screen.getByLabelText(/Rareté/i), { target: { value: '1D' } });
+    fireEvent.change(screen.getByRole('combobox', { name: /Rareté/i }), { target: { value: '1D' } });
     const avant = idsAffiches(container);
     fireEvent.click(screen.getAllByRole('button', { name: /Infirmier de site/i })[0]);
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-    expect(screen.getByLabelText(/Rareté/i)).toHaveValue('1D');
+    expect(screen.getByRole('combobox', { name: /Rareté/i })).toHaveValue('1D');
     expect(idsAffiches(container)).toEqual(avant);
   });
 });

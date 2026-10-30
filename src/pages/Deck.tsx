@@ -647,6 +647,11 @@ export function Deck() {
           onClose={() => setSelected(null)}
           onAddDeck={() => addToDeck(selected.id)}
           onAddCard={() => addCard(selected.id)}
+          deck={{
+            taille: deck.length,
+            max: DECK_SIZE,
+            peutAjouter: deckCanAdd(deck, selected.id)
+          }}
         />
       )}
 
