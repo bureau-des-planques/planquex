@@ -69,6 +69,32 @@ de la qualité du modèle. Un modèle `:free` peut disparaître du catalogue :
 `tools.opencode.models` est la source de ce qui existe **aujourd'hui**, le
 benchmark est la source de ce qui **tient**.
 
+## Le repli payant, hors chaîne (relevé du 30/10/2026)
+
+`openrouter/deepseek/deepseek-v4.1-flash-1017` est le repli payant bon marché que
+`parallelisme.md` §2 emploie quand tout `opencode/*` est coupé (`Free usage limit
+reached`). Il n'est **pas un maillon de la chaîne** : au 30/10/2026, la chaîne du routeur
+(`~/.config/opencode/opencode.jsonc`, option `chaine`) ne contient que
+`opencode/deepseek-v4.1-flash-free` puis `openrouter/recursive/flint-v1.0:free`, et
+`chaineDeRepli` (`agents.config.json`) que les trois gratuits du benchmark. La règle de
+D-099 — le gratuit avant le payant — ne change pas ; c'est la configuration qui s'arrête
+aux gratuits.
+
+Ce que ça implique, et qui n'est pas un oubli (#221, D-099) :
+
+- **choisi à la main, il est conservé** — le routeur l'annonce une fois par session
+  (`quota · … hors chaîne (payant) — choix conservé, la chaîne ne le remplace pas`) et
+  ne le ramène pas au premier maillon ;
+- **`cout_max_usd_jour` ne le borne pas** — le plafond retire les **maillons payants de
+  la chaîne** ; un modèle hors chaîne est laissé finir, plafond atteint ou non
+  (`~/.config/opencode/plugin/quota-router/test/plafond.test.mjs`, « modèle choisi à la
+  main hors chaîne : conservé, même plafond atteint »). Pour le borner : choisir un autre
+  modèle, ou remettre le payant dans la chaîne pour que le plafond s'applique ;
+- **le coût se lit dans le carnet** — `/quota` dans la session, ou
+  `~/.local/share/opencode/quota/CARNET.md`. Du 26 au 29/10/2026, il porte 47,86 $ sur
+  51,51 $ de dépense, soit 93 % : le gratuit reste le défaut, ce payant est celui qu'on
+  ouvre quand la journée ne tient pas autrement.
+
 ## Relecteurs — Gemma 4 (décision de Bastien, 20/10/2026)
 
 L'agent `auditeur` (relecture indépendante) emploie **`google/gemma-4-26b-a4b-it#none`**
