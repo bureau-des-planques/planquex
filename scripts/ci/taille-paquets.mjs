@@ -74,8 +74,14 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 69 octets le 30/10/2026 (#527, D-156)** : le drapeau d'anonymat porté par la
  * session et le refus d'un compte non approuvé. Le code a été resserré avant de relever
  * (prédicat en ligne, lecture du compteur conditionnée) ; il reste 290 320 octets.
+ *
+ * **Relevé de 1 octet le 30/10/2026 (#534)** : la Collection devient une vitrine et la fiche
+ * reçoit l'état du Deck. Ce code vit dans des morceaux **paresseux** ; le principal gagne
+ * **1 octet** parce que la carte d'exports du morceau partagé `ui` change d'ordre quand les
+ * modules changent. Le code a été resserré avant de relever (classe du slot en `&&`, motif du
+ * refus écrit dans la fiche) ; il reste 290 321 octets.
  */
-export const PLAFOND_PRINCIPAL = 290_320;
+export const PLAFOND_PRINCIPAL = 290_321;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];

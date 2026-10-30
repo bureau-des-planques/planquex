@@ -55,6 +55,12 @@ describe('CardSlot — la possession se lit (#179)', () => {
     expect(surBouton).toHaveBeenCalledTimes(1);
     expect(surCarte).not.toHaveBeenCalled();
   });
+
+  it('sans bouton (la vitrine de la Collection) : pas de bouton, et la classe qui libère le pied', () => {
+    const { container } = render(<CardSlot card={carte} owned={1} onClick={() => undefined} />);
+    expect(container.firstElementChild).toHaveClass('card-slot--sans-quick');
+    expect(container.querySelector('.card-slot__quick')).toBeNull();
+  });
 });
 
 describe('styles.css — l’atténuation est réelle', () => {
@@ -78,5 +84,13 @@ describe('styles.css — l’atténuation est réelle', () => {
     // Si `.card-slot__count` s'atténuait, le « ×0 » serait le premier à disparaître.
     expect(regle(css, '.card-slot__plates')).not.toMatch(/opacity/);
     expect(regle(css, '.card-slot__absent')).not.toMatch(/opacity/);
+  });
+
+  it('une vitrine sans bouton ne garde pas la place du bouton dans le pied', () => {
+    expect(regle(css, '.card-slot--sans-quick .card__footer')).toMatch(/padding-left:\s*0/);
+  });
+
+  it('le sigle de faction d’une carte éteinte prend l’encre du texte (3,7:1 sinon, #533)', () => {
+    expect(regle(css, '.card-slot.is-missing .card__faction')).toMatch(/color:\s*var\(--text\)/);
   });
 });

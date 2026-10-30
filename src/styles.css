@@ -2207,6 +2207,21 @@ h2 {
   margin-top: 1rem;
 }
 
+/* L'ajout au Deck et son état : le bouton, puis le compte ou le motif du refus. Un bouton
+   désactivé sans phrase est un bouton mort (#533). */
+.card-detail__deck {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.card-detail__note {
+  font-size: var(--fs-xs);
+  line-height: 1.35;
+  margin: 0;
+  max-width: 34ch;
+}
+
 /* ---------- Journée d'intégration (D-066, #130) ---------- */
 
 /* La sortie de la visite, sous les actions : un lien discret, pas un troisième bouton —
@@ -3331,6 +3346,12 @@ h2 {
   padding-right: 2.6rem;
 }
 
+/* La Collection est une **vitrine** (30/10/2026) : pas de bouton dans le coin, donc pas de
+   place à lui réserver. Le pied repart de la marge de la face, au lieu de garder un vide. */
+.card-slot--sans-quick .card__footer {
+  padding-left: 0;
+}
+
 /* La pastille reste de 24 px, sa **cible** fait 44 px : une zone invisible la déborde de 10 px
    de chaque côté (D-116 (1)). Le doigt n'a pas à viser 24 px sur une grille de 300 cartes. */
 .card-slot__quick::after {
@@ -3374,6 +3395,14 @@ h2 {
 
 .card-slot.is-missing .card-slot__quick {
   opacity: 0.55;
+}
+
+/* Le **sigle de faction** d'une carte éteinte : le gris du `grayscale` ramenait le mélange
+   coloré à **3,7:1** sur le voile d'une carte holographique (#533, relevé par
+   `npm run detect:ui:page`). Il prend l'encre du texte : la couleur de faction, déjà éteinte,
+   ne portait plus l'information. */
+.card-slot.is-missing .card__faction {
+  color: var(--text);
 }
 
 /* ---------- Retour visuel du combat ---------- */
