@@ -1633,3 +1633,16 @@ describe('Battle — le panneau de pose prend le focus au clavier (#525)', () =>
     });
   });
 });
+
+describe('Battle — le bouton Infos montre sa touche (#525)', () => {
+  it('la pastille affiche « I » sans changer le nom accessible du bouton', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const bouton = await screen.findByRole('button', { name: 'Infos détaillées' });
+    const touche = bouton.querySelector<HTMLElement>('.battle__infos-touche');
+    expect(touche).not.toBeNull();
+    expect(touche!.textContent).toBe('I');
+    expect(touche).toHaveAttribute('aria-hidden', 'true');
+    expect(bouton).toHaveAccessibleName('Infos détaillées');
+    expect(within(bouton).queryByText('I')).toBe(touche);
+  });
+});

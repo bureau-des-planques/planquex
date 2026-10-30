@@ -1652,6 +1652,11 @@ export function Battle() {
           onClick={basculerCombatDetaille}
         >
           <Info size={18} aria-hidden="true" />
+          {/* La touche, affichée à l'écran (#525) : le raccourci `I` n'était lisible nulle part. Elle est
+              `aria-hidden` : le nom accessible reste « Infos détaillées », et le geste est déjà dans `aria-keyshortcuts`. */}
+          <span className="battle__infos-touche" aria-hidden="true">
+            I
+          </span>
         </button>
         <MenuCombat etat={menu} onChange={setMenu}>
           {(menuApi) => {

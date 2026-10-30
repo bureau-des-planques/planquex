@@ -2891,12 +2891,32 @@ h2 {
   flex: none;
   height: 2.75rem;
   justify-content: center;
+  position: relative;
   width: 2.75rem;
 }
 
 .battle__infos[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--gold) 16%, var(--bg-raised));
   border-color: var(--gold);
   color: var(--gold);
+}
+
+/* La touche `I`, dans le coin du bouton (#525) : le raccourci n'était lisible nulle part à l'écran,
+   et l'état pressé n'était qu'un liseré. La pastille reste au plancher `--fs-2xs` du combat, et sa
+   couleur suit l'état pressé pour rester lisible sur le fond teinté. */
+.battle__infos-touche {
+  bottom: 2px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  line-height: 1;
+  position: absolute;
+  right: 2px;
+}
+
+.battle__infos[aria-pressed='true'] .battle__infos-touche {
+  color: var(--gold-soft);
 }
 
 /* La ligne de journal de la barre d'action (#199) : une phrase entière, lisible, qui passe à la ligne
