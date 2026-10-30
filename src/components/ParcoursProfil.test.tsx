@@ -72,7 +72,7 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     expect(await screen.findByRole('heading', { name: /Ton service/ })).toBeInTheDocument();
     expect(container.querySelector('[data-etape]')).toHaveAttribute('data-etape', 'service');
 
-    fireEvent.click(screen.getByLabelText('2e'));
+    fireEvent.click(screen.getByRole('radio', { name: /^2e/ }));
     fireEvent.click(screen.getByRole('button', { name: /Valider mon service/ }));
     expect(await screen.findByRole('heading', { name: /Ton intitulé/ })).toBeInTheDocument();
     expect(useProfil.getState().profil?.service).toBe('2e');
@@ -83,15 +83,69 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     expect(screen.getByTestId('apercu-profil')).toHaveTextContent(`Anaïs / planqué du 2e — ${tire}`);
   });
 
+  it('dit ce que le service engage — et qu’il ne change aucune règle (D-135)', async () => {
+    poserStore({ id: UID, pseudo: 'Anaïs', service: null, intitule: null, intitule_relances: 0 });
+    render(<ParcoursProfil uid={UID} />);
+
+    // Chaque service porte sa phrase : le choix ne se fait plus sur un mot nu.
+    expect(screen.getByText('L’étage dont personne ne prononce le nom.')).toBeInTheDocument();
+    // Et l'aide dit la vérité : décoratif (D-135), figé quand même (D-148).
+    expect(screen.getByText(/ne change aucune règle du jeu/)).toBeInTheDocument();
+    expect(screen.getByText(/figé dès que tu le valides/)).toBeInTheDocument();
+  });
+
+  it('porte le focus sur le titre de l’étape suivante (un lecteur d’écran l’annonce)', async () => {
+    const { container } = render(<ParcoursProfil uid={UID} />);
+    expect(document.activeElement).toBe(document.body);
+
+    fireEvent.change(screen.getByLabelText(/Pseudo/), { target: { value: 'Anaïs' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+
+    const titre = await screen.findByRole('heading', { name: /Ton service/ });
+    expect(document.activeElement).toBe(titre);
+    expect(container.querySelector('[data-etape]')).toHaveAttribute('data-etape', 'service');
+    // Le contrôle mord : sans le `useEffect` de focus, l'actif reste `<body>`.
+    expect(document.activeElement).not.toBe(document.body);
+  });
+
   it('relance l’intitulé une fois, puis plus de relance', async () => {
     poserStore({ id: UID, pseudo: 'Anaïs', service: '3e', intitule: null, intitule_relances: 0 });
     render(<ParcoursProfil uid={UID} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Relancer une fois' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Essayer un autre titre' }));
     await waitFor(() => expect(useProfil.getState().profil?.intitule_relances).toBe(1));
     // Le contrôle mord : après la relance, le bouton n'existe plus.
-    expect(screen.queryByRole('button', { name: 'Relancer une fois' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Essayer un autre titre' })).toBeNull();
     expect(screen.getByTestId('intitule-tire')).toHaveTextContent(tirerIntitule(UID, 1));
+  });
+
+  it('ne propose pas une relance qui rendrait le même titre (revue du 30/10/2026)', () => {
+    // Le tirage est déterministe : pour ce compte, les deux tirages sont identiques. Proposer
+    // la relance consommerait l'unique essai pour rien ; l'écran le dit au lieu de le cacher.
+    expect(tirerIntitule('compte-0', 0)).toBe(tirerIntitule('compte-0', 1));
+    poserStore({ id: 'compte-0', pseudo: 'Anaïs', service: '2e', intitule: null, intitule_relances: 0 });
+    render(<ParcoursProfil uid="compte-0" />);
+
+    expect(screen.queryByRole('button', { name: 'Essayer un autre titre' })).toBeNull();
+    expect(screen.getByText(/le sort s’acharne/i)).toBeInTheDocument();
+    // Le contrôle mord : sur un compte où la relance change le titre, le bouton est là.
+    cleanup();
+    poserStore({ id: UID, pseudo: 'Anaïs', service: '2e', intitule: null, intitule_relances: 0 });
+    render(<ParcoursProfil uid={UID} />);
+    expect(screen.getByRole('button', { name: 'Essayer un autre titre' })).toBeInTheDocument();
+  });
+
+  it('l’intitulé se garde aussi par Entrée : l’étape 3 est un formulaire', async () => {
+    poserStore({ id: UID, pseudo: 'Anaïs', service: '1er', intitule: null, intitule_relances: 0 });
+    const { container } = render(<ParcoursProfil uid={UID} />);
+    const tire = screen.getByTestId('intitule-tire').textContent ?? '';
+
+    // `requestSubmit` est ce que fait Entrée dans un formulaire : c'est le geste du clavier.
+    const formulaire = container.querySelector('[data-etape="intitule"] form');
+    expect(formulaire).not.toBeNull();
+    fireEvent.submit(formulaire!);
+
+    await waitFor(() => expect(useProfil.getState().profil?.intitule).toBe(tire));
   });
 
   it('garder l’intitulé l’enregistre et le fige (le parcours est fini)', async () => {
@@ -99,7 +153,7 @@ describe('le parcours, à l’écran (#325, D-148)', () => {
     const { container } = render(<ParcoursProfil uid={UID} />);
     const tire = screen.getByTestId('intitule-tire').textContent ?? '';
 
-    fireEvent.click(screen.getByRole('button', { name: 'Garder cet intitulé' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Garder celui-là' }));
     await waitFor(() => expect(useProfil.getState().profil?.intitule).toBe(tire));
     expect(container.firstChild).toBeNull();
   });

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { RepliChargement } from '@/components/RepliChargement';
 import { Home } from '@/pages/Home';
@@ -26,6 +26,20 @@ import { deverrouiller } from '@/audio/sons';
  * l'`import()` : l'erreur remonte au `ErreurDeRendu` du `Layout`, qui affiche « Recharger » —
  * jamais un écran blanc (#131).
  */
+/**
+ * La coquille des écrans **hors du `Layout`** — connexion, confidentialité, feuille de route,
+ * installation (revue du 30/10/2026). Sans elle, ces quatre pages n'avaient ni largeur maximale ni rembourrage :
+ * le panneau commençait au pixel 0 et mesurait 1280 px sur un écran de PC, alors que le reste du
+ * jeu vit dans la colonne de `.app-shell`. Pas de barre du bas ici, donc pas son rembourrage.
+ */
+function CoquilleNue() {
+  return (
+    <div className="app-shell app-shell--nue">
+      <Outlet />
+    </div>
+  );
+}
+
 const Collection = lazy(() => import('@/pages/Collection').then((m) => ({ default: m.Collection })));
 const Deck = lazy(() => import('@/pages/Deck').then((m) => ({ default: m.Deck })));
 const Battle = lazy(() => import('@/pages/Battle').then((m) => ({ default: m.Battle })));
@@ -86,23 +100,28 @@ export function App() {
     <Suspense fallback={<RepliChargement />}>
       <Routes>
         {/* La connexion est **hors** du `Layout` : ni barre de navigation ni bulle du mur
-          tant qu'on n'est pas entré. Les autres pages passent par la garde, dans `Layout`. */}
-        <Route path="connexion" element={<Connexion />} />
-        {/* La confidentialité est **publique** : elle doit se lire sans compte, sinon un
-          visiteur devrait s'inscrire pour savoir ce qu'on collecte. Elle est donc hors
-          de la garde, comme la connexion. */}
-        <Route path="confidentialite" element={<Confidentialite />} />
-        {/* La feuille de route aussi : un testeur doit pouvoir lire ce qu'une version
-          apporte, et ce qui arrive, **avant** de s'inscrire (D-097 (3)). Même raison,
-          même place, hors de la garde. */}
-        <Route path="feuille-de-route" element={<FeuilleDeRoute />} />
-        {/* Le guide d'installation (#300) : la note de release y renvoie, et un testeur doit
-          pouvoir le lire avant de créer un compte. Même raison que la feuille de route,
-          même place — hors de la garde. Le contenu est le **banc** relu dans #504 ; ses
-          faits (`ADRESSE`, `PROCEDURES`) sont toujours dans `src/pages/Installation.tsx`. */}
-        <Route path="installation" element={<InstallationBanc />} />
-        {/* Les anciennes adresses dont la destination est publique restent hors de la garde. */}
-        {routesDeRedirection(true)}
+          tant qu'on n'est pas entré. Les autres pages passent par la garde, dans `Layout`.
+          Elle vit quand même dans la coquille (revue du 30/10/2026), comme la confidentialité, la feuille de
+          route, le guide d'installation et les redirections publiques : sans elle, leur
+          panneau touchait les bords de l'écran. */}
+        <Route element={<CoquilleNue />}>
+          <Route path="connexion" element={<Connexion />} />
+          {/* La confidentialité est **publique** : elle doit se lire sans compte, sinon un
+            visiteur devrait s'inscrire pour savoir ce qu'on collecte. Elle est donc hors
+            de la garde, comme la connexion. */}
+          <Route path="confidentialite" element={<Confidentialite />} />
+          {/* La feuille de route aussi : un testeur doit pouvoir lire ce qu'une version
+            apporte, et ce qui arrive, **avant** de s'inscrire (D-097 (3)). Même raison,
+            même place, hors de la garde. */}
+          <Route path="feuille-de-route" element={<FeuilleDeRoute />} />
+          {/* Le guide d'installation (#300) : la note de release y renvoie, et un testeur doit
+            pouvoir le lire avant de créer un compte. Même raison que la feuille de route,
+            même place — hors de la garde. Le contenu est le **banc** relu dans #504 ; ses
+            faits (`ADRESSE`, `PROCEDURES`) sont toujours dans `src/pages/Installation.tsx`. */}
+          <Route path="installation" element={<InstallationBanc />} />
+          {/* Les anciennes adresses dont la destination est publique restent hors de la garde. */}
+          {routesDeRedirection(true)}
+        </Route>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="collection" element={<Collection />} />

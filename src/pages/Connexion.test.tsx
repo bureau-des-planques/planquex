@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useComptes } from '@/store/comptes';
 import { useProfil } from '@/store/profil';
+import { useStore } from '@/store/useStore';
 import type { Compte } from '@/lib/comptes';
 import type { Profil } from '@/lib/profil';
 import { Connexion } from './Connexion';
@@ -71,6 +72,7 @@ function poser(
   useProfil.setState({
     charge: true,
     chargement: false,
+    lectureEchouee: false,
     erreur: null,
     charger: async () => {},
     profil: profil === null ? null : { ...PROFIL_FAIT, ...profil }
@@ -223,5 +225,121 @@ describe('un compte déjà connecté ne reste pas sur la page', () => {
     rendre();
     expect(screen.getByText(/Vérification de ta session/)).toBeInTheDocument();
     expect(screen.queryByLabelText(/Mot de passe/)).toBeNull();
+  });
+});
+
+/**
+ * Revue du 30/10/2026 — les trois fautes de la première connexion que ces tests gardent : un compte **refusé**
+ * ne fait pas le parcours (D-156 (3)), la fin est un moment qui rend le badge, et le pseudo
+ * remplace « Employé 404 » dans l'en-tête du jeu.
+ */
+describe('le parcours de première connexion (revue du 30/10/2026)', () => {
+  beforeEach(() => {
+    useStore.setState({ name: 'Employé 404' });
+  });
+
+  it('un compte refusé n’entre pas dans le parcours : il part vers l’attente', async () => {
+    poser(
+      {
+        session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+        compte: { ...PENDING, etat: 'refuse', raison: 'Pas cette fois.' }
+      },
+      null
+    );
+    rendre();
+
+    // La redirection part tout de suite : le parcours ne s'affiche à aucun moment.
+    expect(await screen.findByText('écran d’attente')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /Ton pseudo/ })).toBeNull();
+    expect(screen.queryByRole('heading', { name: /Ton compte est refusé/ })).toBeNull();
+  });
+
+  it('un profil illisible ne renvoie pas au pseudo : il propose de réessayer', async () => {
+    const etat = actions();
+    poser(
+      {
+        session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+        compte: { ...PENDING, etat: 'approuve' },
+        ...etat
+      },
+      null
+    );
+    useProfil.setState({ lectureEchouee: true, erreur: 'Réseau indisponible.' });
+    rendre();
+
+    expect(screen.getByRole('heading', { name: /n’a pas pu être lu/ })).toBeInTheDocument();
+    // Le contrôle mord : sans `lectureEchouee`, l'étape 1 s'afficherait à la place.
+    expect(screen.queryByRole('heading', { name: /Ton pseudo/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Me déconnecter' }));
+    await waitFor(() => expect(etat.deconnecter).toHaveBeenCalledTimes(1));
+  });
+
+  it('la fin du parcours montre le badge, puis entre d’où le testeur venait', async () => {
+    poser(
+      {
+        session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+        compte: { ...PENDING, etat: 'approuve' }
+      },
+      { pseudo: 'Anaïs', service: '2e', intitule: null }
+    );
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/connexion', state: { depuis: '/comite' } }]}>
+        <Routes>
+          <Route path="/connexion" element={<Connexion />} />
+          <Route path="/attente" element={<p>écran d’attente</p>} />
+          <Route path="/" element={<p>le bureau</p>} />
+          <Route path="/comite" element={<p>le mur du comité</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Le parcours est en cours : c'est son passage qui ouvre droit au badge.
+    expect(await screen.findByRole('heading', { name: /Ton intitulé/ })).toBeInTheDocument();
+
+    act(() => useProfil.setState({ profil: PROFIL_FAIT }));
+
+    const entrer = await screen.findByRole('button', { name: 'Entrer dans le bureau' });
+    expect(screen.getByText(/Anaïs \/ planqué du 2e — sculpteur de fumée/)).toBeInTheDocument();
+
+    fireEvent.click(entrer);
+    expect(await screen.findByText('le mur du comité')).toBeInTheDocument();
+    expect(screen.queryByText('le bureau')).toBeNull();
+  });
+
+  it('le pseudo remplace « Employé 404 » à l’entrée (continuité d’identité)', async () => {
+    poser(
+      {
+        session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+        compte: { ...PENDING, etat: 'approuve' }
+      },
+      { pseudo: 'Anaïs', service: '2e', intitule: null }
+    );
+    rendre();
+
+    expect(await screen.findByRole('heading', { name: /Ton intitulé/ })).toBeInTheDocument();
+    act(() => useProfil.setState({ profil: PROFIL_FAIT }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Entrer dans le bureau' }));
+    await waitFor(() => expect(useStore.getState().name).toBe('Anaïs'));
+  });
+
+  it('un nom déjà choisi dans Réglages n’est pas écrasé par le pseudo', async () => {
+    useStore.setState({ name: 'Le Stagiaire' });
+    poser(
+      {
+        session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+        compte: { ...PENDING, etat: 'approuve' }
+      },
+      { pseudo: 'Anaïs', service: '2e', intitule: null }
+    );
+    rendre();
+
+    expect(await screen.findByRole('heading', { name: /Ton intitulé/ })).toBeInTheDocument();
+    act(() => useProfil.setState({ profil: PROFIL_FAIT }));
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Entrer dans le bureau' }));
+    await waitFor(() => expect(useStore.getState().name).toBe('Le Stagiaire'));
   });
 });

@@ -65,7 +65,10 @@ export function messageDeProfil(message: string): string {
   if (/intitule_relances_check/.test(message)) return 'Une seule relance est permise.';
   if (/row-level security|permission denied/i.test(message)) return 'La base refuse ce changement de profil.';
   if (/jwt|session/i.test(message)) return 'Ta session a expiré : reconnecte-toi.';
-  return `Le profil n’a pas été enregistré (${message}).`;
+  // Le message brut de PostgREST est de l'anglais technique : il part en console pour qui
+  // cherche, jamais à l'écran d'un testeur (revue du 30/10/2026).
+  console.error(`profil : ${message}`);
+  return 'Le profil n’a pas été enregistré. Réessaie dans un instant.';
 }
 
 async function client(chargerClient: () => Promise<ClientProfil | null>): Promise<ClientProfil> {
