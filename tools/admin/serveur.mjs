@@ -9,9 +9,10 @@
  * Les secrets ne vivent **jamais** dans un fichier du dépôt ni dans `.env` : ils sont lus ici,
  * et ne passent jamais au navigateur (la page parle au serveur, le serveur parle à la base).
  */
-import { readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { demarrerServeur } from './lib/app.mjs';
@@ -56,6 +57,40 @@ export function chargerConfiguration(env = process.env) {
 }
 
 /**
+ * Le fichier où le jeton est **gardé d'un lancement à l'autre**, à côté du journal.
+ *
+ * Sans lui, chaque `npm run admin` tirait un jeton neuf : l'onglet resté ouvert répondait
+ * `401` à tout, sans rien dire, et un redémarrage au mauvais moment faisait croire que « le
+ * bouton ne fait rien » (constaté le 30/10/2026). Le fichier est en `0600`, hors du dépôt.
+ */
+export function cheminJeton(env = process.env) {
+  return resolve(dirname(cheminJournalParDefaut(env)), 'jeton');
+}
+
+/**
+ * Le jeton du poste : `ADMIN_JETON` s'il est posé (tests, poste partagé), sinon celui du
+ * fichier, sinon un neuf — qu'on écrit pour la prochaine fois.
+ */
+export function resoudreJeton({ env = process.env, chemin = cheminJeton(env) } = {}) {
+  const impose = String(env.ADMIN_JETON ?? '').trim();
+  if (impose) return impose;
+  try {
+    const lu = readFileSync(chemin, 'utf8').trim();
+    if (lu) return lu;
+  } catch {
+    // Premier lancement : il n'y a rien à relire.
+  }
+  const nouveau = randomBytes(24).toString('hex');
+  try {
+    mkdirSync(dirname(chemin), { recursive: true });
+    writeFileSync(chemin, nouveau, { mode: 0o600 });
+  } catch {
+    // Disque en lecture seule : le jeton vivra le temps du processus, comme avant.
+  }
+  return nouveau;
+}
+
+/**
  * Ouvre le navigateur sur l'URL complète (avec le jeton), ou rend `false` sans lever si aucun
  * navigateur n'est disponible. Non bloquant : le processus en est détaché, le serveur continue
  * de vivre. Ne plante jamais l'appelant — l'adresse est affichée dans tous les cas.
@@ -96,7 +131,13 @@ export async function principal(env = process.env, argv = process.argv.slice(2))
 
   try {
     await acces.demarrer();
-    const serveur = await demarrerServeur({ adapter: acces, journal, port, hote: '127.0.0.1' });
+    const serveur = await demarrerServeur({
+      adapter: acces,
+      journal,
+      port,
+      hote: '127.0.0.1',
+      jeton: resoudreJeton(env)
+    });
     const adresse = `${serveur.baseUrl}/?jeton=${serveur.jeton}`;
 
     const ouvrirNavigateurAuto = env.ADMIN_OUVRIR_NAVIGATEUR !== 'false';

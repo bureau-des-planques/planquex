@@ -1,526 +1,1165 @@
 <!doctype html>
 <html lang="fr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Poste de pilotage — Bureau des Planqués</title>
-<style>
-  :root { --bg:#0b1220; --panneau:#111a2e; --bord:#1f2b45; --texte:#e7ecf5; --muet:#8b98b3; --accent:#4ade80; --accent-fonce:#166534; --danger:#f87171; --lien:#7dd3fc; }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--texte); font:14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { padding:18px 22px; border-bottom:1px solid var(--bord); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-  header h1 { font-size:24px; margin:0; font-weight:700; line-height:1.15; }
-  header .lien { color:var(--lien); text-decoration:none; }
-  main { max-width: 1080px; margin:0 auto; padding:20px 22px 60px; display:grid; gap:20px; }
-  section { background:var(--panneau); border:1px solid var(--bord); border-radius:10px; padding:16px 18px; min-width:0; }
-  h2 { font-size:17px; margin:0 0 12px; font-weight:700; line-height:1.2; }
-  h3 { font-size:12px; margin:16px 0 8px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--muet); }
-  .tableau { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-  table { width:100%; border-collapse:collapse; font-size:13px; min-width:520px; }
-  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--bord); vertical-align:top; }
-  th { color:var(--muet); font-weight:600; white-space:nowrap; }
-  button { background:#16213a; color:var(--texte); border:1px solid var(--bord); border-radius:6px; padding:5px 10px; cursor:pointer; font:inherit; }
-  button:hover { border-color:var(--accent); }
-  button.vert { background:var(--accent-fonce); border-color:var(--accent-fonce); }
-  button.rouge { background:#7f1d1d; border-color:#7f1d1d; }
-  input, textarea, select { background:#0b1220; color:var(--texte); border:1px solid var(--bord); border-radius:6px; padding:6px 9px; font:inherit; width:100%; }
-  input[type="checkbox"] { width:auto; }
-  .grille { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:18px 24px; }
-  .chiffre { padding:4px 0 4px 12px; border-left:2px solid var(--bord); }
-  .chiffre b { display:block; font-size:26px; line-height:1.15; font-weight:700; }
-  .chiffre span { color:var(--muet); font-size:13px; }
-  .chiffre.cle { border-left-color:var(--accent); }
-  .chiffre.cle b { color:var(--accent); }
-  input::placeholder, textarea::placeholder { color:var(--muet); opacity:1; }
-  .etat-pill { padding:1px 8px; border-radius:999px; font-size:12px; background:#0b1220; border:1px solid var(--bord); }
-  .erreur { color:var(--danger); white-space:pre-wrap; }
-  .muet { color:var(--muet); }
-  #retour { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); max-width:92vw;
-    background:#14532d; border:1px solid var(--accent); color:var(--texte); border-radius:8px;
-    padding:9px 14px; font-size:13px; box-shadow:0 6px 24px rgba(0,0,0,.45); z-index:10; }
-  #retour.rouge { background:#450a0a; border-color:var(--danger); }
-  #retour[hidden] { display:none; }
-  #fraicheur { margin-left:auto; font-size:12px; }
-  #nouveau { background:#14532d; border-bottom:1px solid var(--accent); padding:6px 22px; font-size:13px; }
-  #nouveau[hidden] { display:none; }
-  #nouveau button { background:none; border:0; padding:0; color:var(--accent); text-decoration:underline; }
-  .ligne-forme { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  #mot-destructif { color:var(--danger); font-weight:700; letter-spacing:1px; }
-  pre { background:#0b1220; border:1px solid var(--bord); border-radius:6px; padding:10px; overflow:auto; max-height:340px; font-size:12px; }
-  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-</style>
-</head>
-<body>
-<header>
-  <h1>Poste de pilotage</h1>
-  <span class="muet">Bureau des Planqués · alpha</span>
-  <span id="fraicheur" class="muet" aria-live="off"></span>
-  <button id="rafraichir" type="button">Rafraîchir</button>
-  <a class="lien" id="lien-carnet" href="#carnet">Carnet →</a>
-</header>
-<div id="nouveau" hidden><button type="button" id="nouveau-bouton"></button></div>
-<main>
-  <section id="etat" aria-live="polite"><h2>État de l'alpha</h2><div class="muet">chargement…</div></section>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Poste de pilotage — Bureau des Planqués</title>
+    <style>
+      /* Un poste de pilotage est un écran de **travail** : la densité et la lisibilité passent avant
+     l'effet. Trois tons (fond, surface, surface en retrait), un accent vert pour ce qui avance,
+     un rouge réservé au danger. Tout le reste est du texte et des filets. */
+      :root {
+        --bg: #0b1220;
+        --surface: #111a2e;
+        --surface-2: #0d1524;
+        --line: #1f2b45;
+        --line-fort: #2d3d5e;
+        --text: #e8eef8;
+        --muted: #94a3b8;
+        --accent: #4ade80;
+        --accent-ink: #06210f;
+        --danger: #f87171;
+        --warn: #fbbf24;
+        --lien: #7dd3fc;
+        --mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        --r: 8px;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          14px/1.55 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      code,
+      .mono {
+        font-family: var(--mono);
+        font-size: 12.5px;
+      }
 
-  <section id="comptes" aria-live="polite"><h2>Comptes</h2><div class="muet">chargement…</div></section>
+      /* ---- en-tête ---------------------------------------------------------------- */
+      .entete {
+        align-items: center;
+        background: color-mix(in srgb, var(--bg) 88%, transparent);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        gap: 12px;
+        padding: 14px 22px;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+      }
+      .entete__marque {
+        align-items: baseline;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .entete h1 {
+        font-size: 19px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+      .entete__sous {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      #fraicheur {
+        color: var(--muted);
+        font-size: 12px;
+        margin-left: auto;
+        font-variant-numeric: tabular-nums;
+      }
+      .lien {
+        color: var(--lien);
+        text-decoration: none;
+        font-size: 13px;
+      }
+      .lien:hover {
+        text-decoration: underline;
+      }
 
-  <section id="postits" aria-live="polite"><h2>Post-its</h2><div class="muet">chargement…</div></section>
+      /* ---- bandeaux --------------------------------------------------------------- */
+      .bandeau {
+        border-bottom: 1px solid var(--line);
+        font-size: 13px;
+        padding: 10px 22px;
+      }
+      .bandeau[hidden] {
+        display: none;
+      }
+      .bandeau--danger {
+        background: color-mix(in srgb, var(--danger) 12%, var(--bg));
+        border-bottom-color: var(--danger);
+      }
+      .bandeau--info {
+        background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+        border-bottom-color: var(--accent);
+      }
+      .bandeau button {
+        background: none;
+        border: 0;
+        color: inherit;
+        cursor: pointer;
+        font: inherit;
+        padding: 0;
+        text-decoration: underline;
+      }
 
-  <section id="migrations" aria-live="polite"><h2>Migrations</h2><div class="muet">chargement…</div></section>
+      /* ---- page ------------------------------------------------------------------- */
+      main {
+        display: grid;
+        gap: 16px;
+        margin: 0 auto;
+        max-width: 1120px;
+        padding: 22px 22px 80px;
+      }
+      .carte {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        min-width: 0;
+        padding: 16px 18px 18px;
+      }
+      .carte__tete {
+        align-items: center;
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+        margin-bottom: 14px;
+      }
+      .carte h2 {
+        font-size: 15px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+      .carte h3 {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        margin: 20px 0 8px;
+        text-transform: uppercase;
+      }
+      .carte h3:first-of-type {
+        margin-top: 4px;
+      }
+      .muet {
+        color: var(--muted);
+      }
+      .petit {
+        font-size: 12.5px;
+      }
+      p {
+        margin: 0 0 10px;
+      }
+      p:last-child {
+        margin-bottom: 0;
+      }
 
-  <section id="reset">
-    <h2>Reset de la beta</h2>
-    <p class="muet">Efface <strong>les traces de combat et le mur</strong> (post-its, votes, commentaires) ainsi que <strong>le Deck et la Collection du compte</strong> (D-153). <strong>Garde chaque compte</strong> (courriel, mot de passe, approbation) et pose la <strong>Médaille de la période d'essai</strong> sur les comptes approuvés, <strong>une seule fois</strong>. Ce n'est pas une migration : <code>admin.migrations</code> n'est pas touché (D-130). Procédure : <code>tools/admin/README.md</code>.</p>
-    <div class="ligne-forme"><button type="button" id="reset-apercu">Voir ce qui partirait</button></div>
-    <pre id="reset-apercu-sortie" class="muet" hidden></pre>
-    <div class="ligne-forme" style="margin-top:8px">
-      <label>Tapez exactement <code>remettre à zéro la beta</code> : <input id="reset-confirmation" autocomplete="off" style="width:22em"></label>
-      <button type="button" id="reset-executer" disabled>Remettre à zéro</button>
-    </div>
-    <pre id="reset-rapport" hidden></pre>
-    <div class="ligne-forme" style="margin-top:8px"><button type="button" id="reset-copier" hidden>Copier le compte rendu</button></div>
-  </section>
+      /* ---- chiffres --------------------------------------------------------------- */
+      /* Des tuiles, pas des barres : une seule catégorie ne doit pas s'étirer sur toute la largeur. */
+      .chiffres {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+        justify-items: start;
+      }
+      .chiffre {
+        background: var(--surface-2);
+        max-width: 260px;
+        min-width: 132px;
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        padding: 10px 12px;
+      }
+      .chiffre b {
+        display: block;
+        font-size: 22px;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+      }
+      .chiffre span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .chiffre--cle b {
+        color: var(--accent);
+      }
 
-  <section>
-    <h2>SQL libre</h2>
-    <p class="muet">Lecture → rôle <code>lecteur</code> (la base refuse l'écriture). Écriture → accusé obligatoire. <code>drop</code>/<code>truncate</code>/<code>delete</code>/<code>update</code> sans <code>where</code> → mot annoncé.</p>
-    <textarea id="sql" rows="4" placeholder="select * from public.comptes;"></textarea>
-    <div class="ligne-forme" style="margin-top:8px">
-      <label><input type="checkbox" id="accuse"> accuse (écriture)</label>
-      <label>mot : <input id="mot" style="width:12em" placeholder="si demandé"></label>
-      <button id="executer" onclick="executerSql()">Exécuter</button>
-      <span id="mot-destructif"></span>
-    </div>
-    <pre id="sql-sortie" hidden></pre>
-  </section>
+      /* ---- tableaux --------------------------------------------------------------- */
+      .tableau {
+        margin: 0 -4px;
+        overflow-x: auto;
+      }
+      table {
+        border-collapse: collapse;
+        font-size: 13px;
+        width: 100%;
+        min-width: 540px;
+      }
+      th {
+        border-bottom: 1px solid var(--line-fort);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        padding: 0 8px 8px;
+        text-align: left;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 9px 8px;
+        vertical-align: middle;
+      }
+      tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      tbody tr:hover {
+        background: color-mix(in srgb, var(--text) 3%, transparent);
+      }
+      td.actions {
+        white-space: nowrap;
+      }
+      .cellule-titre {
+        max-width: 320px;
+      }
+      .cellule-titre .muet {
+        display: block;
+        margin-top: 2px;
+      }
 
-  <section id="carnet">
-    <h2>Carnet (journal)</h2>
-    <pre id="journal-sortie" class="muet">chargement…</pre>
-  </section>
-</main>
+      /* ---- pastilles -------------------------------------------------------------- */
+      .pill {
+        align-items: center;
+        background: var(--surface-2);
+        border: 1px solid var(--line-fort);
+        border-radius: 999px;
+        color: var(--muted);
+        display: inline-flex;
+        font-size: 11px;
+        font-weight: 600;
+        height: 20px;
+        letter-spacing: 0.02em;
+        padding: 0 9px;
+        white-space: nowrap;
+      }
+      .pill--ok {
+        border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+        color: var(--accent);
+      }
+      .pill--attente {
+        border-color: color-mix(in srgb, var(--warn) 50%, var(--line));
+        color: var(--warn);
+      }
+      .pill--danger {
+        border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+        color: var(--danger);
+      }
 
-<div id="retour" role="status" aria-live="polite" hidden></div>
+      /* ---- contrôles -------------------------------------------------------------- */
+      .btn {
+        align-items: center;
+        background: var(--surface-2);
+        border: 1px solid var(--line-fort);
+        border-radius: 6px;
+        color: var(--text);
+        cursor: pointer;
+        display: inline-flex;
+        font: inherit;
+        font-size: 13px;
+        gap: 6px;
+        height: 30px;
+        padding: 0 12px;
+        transition:
+          border-color 120ms ease,
+          background 120ms ease;
+      }
+      .btn:hover:not(:disabled) {
+        border-color: var(--accent);
+      }
+      .btn:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+      .btn--primaire {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 650;
+      }
+      .btn--primaire:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--accent) 85%, white);
+      }
+      .btn--danger {
+        border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+        color: var(--danger);
+      }
+      .btn--danger:hover:not(:disabled) {
+        background: color-mix(in srgb, var(--danger) 12%, transparent);
+      }
+      .btn--discret {
+        background: none;
+        border-color: transparent;
+        color: var(--muted);
+      }
+      .btn--discret:hover:not(:disabled) {
+        border-color: var(--line-fort);
+        color: var(--text);
+      }
 
-<script type="module">
-  import {
-    libelleFraicheur,
-    libelleNouveaux,
-    nouveauxEnAttente,
-    titreOnglet,
-  } from './suivi.mjs';
+      input,
+      textarea,
+      select {
+        background: var(--bg);
+        border: 1px solid var(--line-fort);
+        border-radius: 6px;
+        color: var(--text);
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 9px;
+        width: 100%;
+      }
+      input:focus-visible,
+      textarea:focus-visible,
+      select:focus-visible {
+        border-color: var(--accent);
+        outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+        outline-offset: 1px;
+      }
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--muted);
+        opacity: 1;
+      }
+      input[type='checkbox'] {
+        height: 15px;
+        width: 15px;
+        accent-color: var(--accent);
+      }
+      .ligne-forme {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .ligne-forme label {
+        align-items: center;
+        color: var(--muted);
+        display: inline-flex;
+        font-size: 13px;
+        gap: 6px;
+      }
 
-  // Le titre de l'onglet porte le nombre d'attentes : on garde le titre normal sous la main.
-  const TITRE_NORMAL = document.title;
-  // La relecture automatique, dix secondes : c'est ce qui fait apparaître une inscription
-  // arrivée depuis le jeu sans F5.
-  const INTERVALLE_MS = 10_000;
+      .vide {
+        border: 1px dashed var(--line-fort);
+        border-radius: var(--r);
+        color: var(--muted);
+        font-size: 13px;
+        padding: 14px;
+        text-align: center;
+      }
+      pre {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 0 0 10px;
+        max-height: 340px;
+        overflow: auto;
+        padding: 10px 12px;
+        white-space: pre-wrap;
+      }
+      pre[hidden] {
+        display: none;
+      }
+      details summary {
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 12.5px;
+      }
+      details summary:hover {
+        color: var(--text);
+      }
+      .erreur {
+        color: var(--danger);
+        white-space: pre-wrap;
+      }
 
-  // Le jeton n'est plus relu ici : à la première visite `?jeton=` pose un cookie `HttpOnly`, et
-  // les `fetch` le renvoient d'eux-mêmes (même origine). La page n'a plus à retaper le jeton.
-  async function api(chemin, options = {}) {
-    const reponse = await fetch(chemin, options);
-    const texte = await reponse.text();
-    let corps = null;
-    try { corps = texte ? JSON.parse(texte) : null; } catch { corps = { brut: texte }; }
-    if (!reponse.ok) {
-      const erreur = new Error(corps?.erreur || `HTTP ${reponse.status}`);
-      erreur.corps = corps;
-      throw erreur;
-    }
-    return corps;
-  }
+      /* ---- retour et alerte de session ------------------------------------------- */
+      #retour {
+        background: var(--surface);
+        border: 1px solid var(--accent);
+        border-radius: var(--r);
+        bottom: 20px;
+        box-shadow: 0 10px 30px -12px rgb(0 0 0 / 80%);
+        font-size: 13px;
+        left: 50%;
+        max-width: min(92vw, 560px);
+        padding: 10px 14px;
+        position: fixed;
+        transform: translateX(-50%);
+        z-index: 30;
+      }
+      #retour--erreur,
+      #retour.erreur {
+        border-color: var(--danger);
+        color: var(--danger);
+      }
+      #retour[hidden] {
+        display: none;
+      }
 
-  // ------------------------------------------------------------------ le rendu sans clignotement
-  // Le contenu est réécrit seulement s'il a changé. Une section dont un **champ** a le focus
-  // n'est pas touchée du tout (la saisie en cours survit) ; les valeurs déjà tapées, la
-  // position de défilement de la page et celle des tableaux sont restituées.
-  const rendus = new WeakMap();
-
-  /** Le focus est-il dans un champ de cette section ? Un bouton ne compte pas : un geste
-   *  doit pouvoir rafraîchir la liste qu'il vient de changer. */
-  function champActifDans(section) {
-    const actif = document.activeElement;
-    return Boolean(actif && actif.matches && actif.matches('input, select, textarea') && section.contains(actif));
-  }
-
-  function instantaneSaisie(section) {
-    const valeurs = [];
-    for (const el of section.querySelectorAll('input, select, textarea')) {
-      if (!el.id) continue;
-      valeurs.push({ id: el.id, type: el.type, valeur: el.value, coche: el.checked });
-    }
-    return valeurs;
-  }
-
-  function rendre(section, html) {
-    if (rendus.get(section) === html) return true;
-    if (champActifDans(section)) return false;
-    const y = window.scrollY;
-    const tableaux = [...section.querySelectorAll('.tableau')].map((el) => el.scrollLeft);
-    const saisies = instantaneSaisie(section);
-    section.innerHTML = html;
-    [...section.querySelectorAll('.tableau')].forEach((el, i) => {
-      if (tableaux[i] !== undefined) el.scrollLeft = tableaux[i];
-    });
-    for (const { id, type, valeur, coche } of saisies) {
-      const el = document.getElementById(id);
-      if (!el || !section.contains(el)) continue;
-      if (type === 'checkbox') el.checked = coche;
-      else if (valeur) el.value = valeur;
-    }
-    rendus.set(section, html);
-    window.scrollTo(0, y);
-    return true;
-  }
-
-  async function etat() {
-    const e = await api('/api/etat');
-    const comptes = e.comptes || {};
-    const postits = e.postits || {};
-    // Les catégories vides (zéro) ne s'affichent pas : « 0 refusé » n'apprend rien.
-    const ch = (obj) => Object.entries(obj).filter(([, v]) => Number(v) > 0)
-      .map(([k, v]) => `<div class="chiffre"><b>${v}</b><span>${k}</span></div>`).join('');
-    const grilleComptes = ch(comptes);
-    const grillePostits = ch(postits);
-    // La **sortie d'alpha** (D-123) : cinq testeurs distincts ayant terminé une partie. Le
-    // chiffre se lit, le seuil se voit, et la requête se copie pour être rejouée ailleurs.
-    const sortie = e.sortieAlpha || { seuil: 5, testeurs: 0, atteint: false, liste: [], requete: '' };
-    const etatSortie = sortie.atteint
-      ? `<span class="etat-pill" style="color:var(--accent)">atteint</span>`
-      : `<span class="etat-pill">pas atteint</span>`;
-    const listeSortie = sortie.liste.length
-      ? `<ul class="muet">${sortie.liste.map((t) => `<li><code>${t}</code></li>`).join('')}</ul>`
-      : '<div class="muet">aucun testeur n’a encore terminé de partie</div>';
-    rendre(document.querySelector('#etat'), `
-      <h2>État de l'alpha</h2>
-      <div class="grille">
-        <div class="chiffre cle"><b>${e.approbationsEnAttente}</b><span>comptes en attente</span></div>
-        <div class="chiffre"><b>${e.parties.terminees}</b><span>parties terminées</span></div>
-        <div class="chiffre"><b>${e.parties.poidsMoyen} o</b><span>poids moyen</span></div>
-        <div class="chiffre"><b>${(e.volumeOctets / 1048576).toFixed(2)} Mo</b><span>volume</span></div>
+      @media (max-width: 620px) {
+        main {
+          padding: 16px 14px 72px;
+        }
+        .entete {
+          padding: 12px 14px;
+        }
+        #fraicheur {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="entete">
+      <div class="entete__marque">
+        <h1>Poste de pilotage</h1>
+        <span class="entete__sous">Bureau des Planqués · alpha</span>
       </div>
-      <h3>Sortie d'alpha — ${sortie.testeurs} testeur(s) distinct(s) sur ${sortie.seuil} ${etatSortie}</h3>
-      <p class="muet">Critère de D-123 : ${sortie.seuil} testeurs <strong>distincts</strong> ayant terminé une partie, croisés aux comptes approuvés. Deux parties du même testeur font un testeur.</p>
+      <span id="fraicheur" aria-live="off"></span>
+      <button id="rafraichir" type="button" class="btn">Rafraîchir</button>
+      <a class="lien" id="lien-carnet" href="#carnet">Carnet</a>
+    </header>
+
+    <div id="session" class="bandeau bandeau--danger" role="alert" hidden>
+      <strong>Session expirée.</strong> Le poste de pilotage a redémarré et son jeton a changé : relance
+      <code>npm run admin</code> et ouvre l’adresse qu’il affiche. Les gestes ci-dessous ne partent plus.
+    </div>
+
+    <div id="nouveau" class="bandeau bandeau--info" hidden><button type="button" id="nouveau-bouton"></button></div>
+
+    <main>
+      <section class="carte" id="etat" aria-live="polite">
+        <h2>État de l'alpha</h2>
+        <div class="muet">chargement…</div>
+      </section>
+
+      <section class="carte" id="comptes" aria-live="polite">
+        <h2>Comptes</h2>
+        <div class="muet">chargement…</div>
+      </section>
+
+      <section class="carte" id="postits" aria-live="polite">
+        <h2>Post-its</h2>
+        <div class="muet">chargement…</div>
+      </section>
+
+      <section class="carte" id="migrations" aria-live="polite">
+        <h2>Migrations</h2>
+        <div class="muet">chargement…</div>
+      </section>
+
+      <section id="reset" class="carte">
+        <div class="carte__tete">
+          <h2>Reset de la beta</h2>
+          <span class="pill pill--danger">irréversible</span>
+        </div>
+        <p class="muet petit">
+          Efface <strong>les traces de combat et le mur</strong> (post-its, votes, commentaires) ainsi que
+          <strong>le Deck et la Collection du compte</strong> (D-153). <strong>Garde chaque compte</strong> (courriel,
+          mot de passe, approbation) et pose la <strong>Médaille de la période d'essai</strong> sur les comptes
+          approuvés, <strong>une seule fois</strong>. Ce n'est pas une migration : <code>admin.migrations</code> n'est
+          pas touché (D-130). Procédure : <code>tools/admin/README.md</code>.
+        </p>
+        <div class="ligne-forme">
+          <button type="button" id="reset-apercu" class="btn">Voir ce qui partirait</button>
+        </div>
+        <pre id="reset-apercu-sortie" class="muet" hidden></pre>
+        <div class="ligne-forme" style="margin-top: 12px">
+          <label
+            >Tapez exactement <code>remettre à zéro la beta</code> :
+            <input id="reset-confirmation" autocomplete="off" style="width: 22em" />
+          </label>
+          <button type="button" id="reset-executer" class="btn btn--danger" disabled>Remettre à zéro</button>
+        </div>
+        <pre id="reset-rapport" hidden></pre>
+        <div class="ligne-forme" style="margin-top: 12px">
+          <button type="button" id="reset-copier" class="btn" hidden>Copier le compte rendu</button>
+        </div>
+      </section>
+
+      <section class="carte">
+        <h2>SQL libre</h2>
+        <p class="muet petit">
+          Lecture → rôle <code>lecteur</code> (la base refuse l'écriture). Écriture → accusé obligatoire.
+          <code>drop</code>/<code>truncate</code>/<code>delete</code>/<code>update</code> sans <code>where</code> → mot
+          annoncé.
+        </p>
+        <textarea id="sql" rows="4" placeholder="select * from public.comptes;"></textarea>
+        <div class="ligne-forme" style="margin-top: 10px">
+          <label><input type="checkbox" id="accuse" /> accuse (écriture)</label>
+          <label>mot : <input id="mot" style="width: 12em" placeholder="si demandé" /></label>
+          <button id="executer" type="button" class="btn">Exécuter</button>
+          <span id="mot-destructif" class="erreur"></span>
+        </div>
+        <pre id="sql-sortie" hidden></pre>
+      </section>
+
+      <section class="carte" id="carnet">
+        <div class="carte__tete">
+          <h2>Carnet (journal)</h2>
+          <span class="muet petit">les 100 derniers gestes</span>
+        </div>
+        <pre id="journal-sortie" class="muet">chargement…</pre>
+      </section>
+    </main>
+
+    <div id="retour" role="status" aria-live="polite" hidden></div>
+
+    <script type="module">
+      import { libelleFraicheur, libelleNouveaux, nouveauxEnAttente, titreOnglet } from './suivi.mjs';
+
+      // Le titre de l'onglet porte le nombre d'attentes : on garde le titre normal sous la main.
+      const TITRE_NORMAL = document.title;
+      // La relecture automatique, dix secondes : c'est ce qui fait apparaître une inscription
+      // arrivée depuis le jeu sans F5.
+      const INTERVALLE_MS = 10_000;
+
+      // Le jeton n'est plus relu ici : à la première visite `?jeton=` pose un cookie `HttpOnly`, et
+      // les `fetch` le renvoient d'eux-mêmes (même origine). La page n'a plus à retaper le jeton.
+
+      /**
+       * **Ce qui sort de la base est du texte, pas du HTML** : un titre de post-it, une raison de
+       * refus ou un courriel peuvent porter `<`, `&` ou des guillemets. Tout ce qui vient d'une
+       * donnée passe par `esc()` — la page assemblait des chaînes brutes.
+       */
+      function esc(valeur) {
+        return String(valeur ?? '').replace(
+          /[&<>"']/g,
+          (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
+        );
+      }
+
+      /** L'erreur d'un appel, avec son code : c'est `401` qui distingue « session morte ». */
+      class ErreurApi extends Error {
+        constructor(message, statut, corps) {
+          super(message);
+          this.statut = statut;
+          this.corps = corps;
+        }
+      }
+
+      async function api(chemin, options = {}) {
+        let reponse;
+        try {
+          reponse = await fetch(chemin, options);
+        } catch (e) {
+          throw new ErreurApi('le poste de pilotage ne répond pas — est-il toujours lancé ?', 0, null);
+        }
+        const texte = await reponse.text();
+        let corps = null;
+        try {
+          corps = texte ? JSON.parse(texte) : null;
+        } catch {
+          corps = { brut: texte };
+        }
+        if (!reponse.ok) {
+          throw new ErreurApi(corps?.erreur || `HTTP ${reponse.status}`, reponse.status, corps);
+        }
+        return corps;
+      }
+
+      // ------------------------------------------------------------------ les erreurs se voient
+      // Un geste qui échoue ne doit jamais être muet : c'est ce qui a fait croire que « le bouton
+      // ne fait rien » (30/10/2026 — jeton tourné, puis transaction avortée). Trois chemins :
+      // le toast pour un refus ordinaire, le bandeau pour une session morte, et le filet
+      // `unhandledrejection` pour ce qu'on aurait oublié d'attraper.
+      let sessionMorte = false;
+
+      function sessionExpiree() {
+        if (sessionMorte) return;
+        sessionMorte = true;
+        document.querySelector('#session').hidden = false;
+        arreterMinuteurs();
+      }
+
+      function signalerErreur(erreur) {
+        if (erreur instanceof ErreurApi && erreur.statut === 401) {
+          sessionExpiree();
+          return;
+        }
+        retour(erreur?.message || 'le geste a échoué', true);
+      }
+
+      window.addEventListener('unhandledrejection', (ev) => {
+        signalerErreur(ev.reason);
+        ev.preventDefault();
+      });
+
+      /** Un geste : il part, il se dit, il relit. Une erreur prend le même chemin, visiblement. */
+      let gestesEnCours = 0;
+      async function geste(bouton, action, reussite) {
+        gestesEnCours += 1;
+        if (bouton) bouton.disabled = true;
+        let resultat = null;
+        let echec = null;
+        try {
+          resultat = await action();
+        } catch (e) {
+          echec = e;
+        } finally {
+          // Le compteur retombe **avant** la relecture : sinon `rendre()` refuserait de repeindre
+          // la liste que le geste vient justement de changer.
+          gestesEnCours -= 1;
+          if (bouton) bouton.disabled = false;
+        }
+        if (echec) {
+          signalerErreur(echec);
+          return null;
+        }
+        retour(typeof reussite === 'function' ? reussite(resultat) : reussite);
+        await charger();
+        return resultat;
+      }
+
+      // ------------------------------------------------------------------ le rendu sans clignotement
+      // Le contenu est réécrit seulement s'il a changé. Une section dont un **champ** a le focus
+      // n'est pas touchée du tout (la saisie en cours survit) ; les valeurs déjà tapées, la
+      // position de défilement de la page et celle des tableaux sont restituées.
+      const rendus = new WeakMap();
+
+      /** Le focus est-il dans un champ de cette section ? Un bouton ne compte pas : un geste
+       *  doit pouvoir rafraîchir la liste qu'il vient de changer. */
+      function champActifDans(section) {
+        const actif = document.activeElement;
+        return Boolean(actif && actif.matches && actif.matches('input, select, textarea') && section.contains(actif));
+      }
+
+      function instantaneSaisie(section) {
+        const valeurs = [];
+        for (const el of section.querySelectorAll('input, select, textarea')) {
+          if (!el.id) continue;
+          valeurs.push({ id: el.id, type: el.type, valeur: el.value, coche: el.checked });
+        }
+        return valeurs;
+      }
+
+      function rendre(section, html) {
+        if (rendus.get(section) === html) return true;
+        if (champActifDans(section)) return false;
+        // Un geste en vol ne doit pas voir le bouton qu'il vient de presser remplacé sous lui.
+        if (gestesEnCours > 0) return false;
+        const y = window.scrollY;
+        const tableaux = [...section.querySelectorAll('.tableau')].map((el) => el.scrollLeft);
+        const saisies = instantaneSaisie(section);
+        section.innerHTML = html;
+        [...section.querySelectorAll('.tableau')].forEach((el, i) => {
+          if (tableaux[i] !== undefined) el.scrollLeft = tableaux[i];
+        });
+        for (const { id, type, valeur, coche } of saisies) {
+          const el = document.getElementById(id);
+          if (!el || !section.contains(el)) continue;
+          if (type === 'checkbox') el.checked = coche;
+          else if (valeur) el.value = valeur;
+        }
+        rendus.set(section, html);
+        window.scrollTo(0, y);
+        return true;
+      }
+
+      const liste = (html, vide) =>
+        html ? `<div class="tableau"><table>${html}</table></div>` : `<div class="vide">${vide}</div>`;
+
+      async function etat() {
+        const e = await api('/api/etat');
+        const comptes = e.comptes || {};
+        const postits = e.postits || {};
+        // Les catégories vides (zéro) ne s'affichent pas : « 0 refusé » n'apprend rien.
+        const ch = (obj) =>
+          Object.entries(obj)
+            .filter(([, v]) => Number(v) > 0)
+            .map(([k, v]) => `<div class="chiffre"><b>${Number(v)}</b><span>${esc(k)}</span></div>`)
+            .join('');
+        const grilleComptes = ch(comptes);
+        const grillePostits = ch(postits);
+        // La **sortie d'alpha** (D-123) : cinq testeurs distincts ayant terminé une partie. Le
+        // chiffre se lit, le seuil se voit, et la requête se copie pour être rejouée ailleurs.
+        const sortie = e.sortieAlpha || { seuil: 5, testeurs: 0, atteint: false, liste: [], requete: '' };
+        const etatSortie = sortie.atteint
+          ? '<span class="pill pill--ok">atteint</span>'
+          : '<span class="pill">pas atteint</span>';
+        const listeSortie = sortie.liste.length
+          ? `<ul class="muet petit">${sortie.liste.map((t) => `<li><code>${esc(t)}</code></li>`).join('')}</ul>`
+          : '<div class="vide">aucun testeur n’a encore terminé de partie</div>';
+        rendre(
+          document.querySelector('#etat'),
+          `
+      <div class="carte__tete"><h2>État de l'alpha</h2><button type="button" class="btn btn--discret" data-geste="carnet">Voir le carnet</button></div>
+      <div class="chiffres">
+        <div class="chiffre chiffre--cle"><b>${Number(e.approbationsEnAttente ?? 0)}</b><span>comptes en attente</span></div>
+        <div class="chiffre"><b>${Number(e.parties?.terminees ?? 0)}</b><span>parties terminées</span></div>
+        <div class="chiffre"><b>${Number(e.parties?.poidsMoyen ?? 0)} o</b><span>poids moyen</span></div>
+        <div class="chiffre"><b>${(Number(e.volumeOctets ?? 0) / 1048576).toFixed(2)} Mo</b><span>volume</span></div>
+      </div>
+      <h3>Sortie d'alpha — ${Number(sortie.testeurs)} testeur(s) distinct(s) sur ${Number(sortie.seuil)} ${etatSortie}</h3>
+      <p class="muet petit">Critère de D-123 : ${Number(sortie.seuil)} testeurs <strong>distincts</strong> ayant terminé une partie, croisés aux comptes approuvés. Deux parties du même testeur font un testeur.</p>
       ${listeSortie}
-      <details><summary class="muet">la requête, à rejouer ailleurs</summary><pre>${sortie.requete}</pre></details>
+      <details><summary>la requête, à rejouer ailleurs</summary><pre>${esc(sortie.requete)}</pre></details>
       <h3>Comptes par état</h3>
-      ${grilleComptes ? `<div class="grille">${grilleComptes}</div>` : '<div class="muet">aucun compte</div>'}
+      ${grilleComptes ? `<div class="chiffres">${grilleComptes}</div>` : '<div class="vide">aucun compte</div>'}
       <h3>Post-its par statut</h3>
-      ${grillePostits ? `<div class="grille">${grillePostits}</div>` : '<div class="muet">aucun post-it</div>'}
-    `);
-    return Number(e.approbationsEnAttente ?? 0);
-  }
+      ${grillePostits ? `<div class="chiffres">${grillePostits}</div>` : '<div class="vide">aucun post-it</div>'}
+    `
+        );
+        return Number(e.approbationsEnAttente ?? 0);
+      }
 
-  async function comptes() {
-    const e = await api('/api/comptes');
-    const lignes = (e.comptes || []).map((c) => `
+      const pillEtat = (etat) =>
+        etat === 'approuve'
+          ? '<span class="pill pill--ok">approuvé</span>'
+          : etat === 'refuse'
+            ? '<span class="pill pill--danger">refusé</span>'
+            : `<span class="pill pill--attente">${esc(etat)}</span>`;
+
+      async function comptes() {
+        const e = await api('/api/comptes');
+        const lignes = (e.comptes || [])
+          .map(
+            (c) => `
       <tr>
-        <td><code>${c.id.slice(0, 8)}…</code></td>
-        <td>${c.courriel}</td>
-        <td><span class="etat-pill">${c.etat}</span>${c.administrateur ? ' <span class="etat-pill">admin</span>' : ''}</td>
-        <td>
-          <button class="vert" onclick="approuver('${c.id}')">approuver</button>
-          <button class="rouge" onclick="refuser('${c.id}')">refuser</button>
-          ${c.administrateur ? '' : `<button onclick="marquerAdmin('${c.id}', true)">admin</button>`}
-          <button onclick="reveler('${c.id}')">courriel</button>
+        <td><code>${esc(c.id.slice(0, 8))}…</code></td>
+        <td>${esc(c.courriel)}</td>
+        <td>${pillEtat(c.etat)}${c.administrateur ? ' <span class="pill">admin</span>' : ''}</td>
+        <td class="actions">
+          <button type="button" class="btn btn--primaire" data-geste="approuver" data-id="${esc(c.id)}">approuver</button>
+          <button type="button" class="btn btn--danger" data-geste="refuser" data-id="${esc(c.id)}">refuser</button>
+          ${c.administrateur ? '' : `<button type="button" class="btn" data-geste="admin" data-id="${esc(c.id)}">admin</button>`}
+          <button type="button" class="btn btn--discret" data-geste="reveler" data-id="${esc(c.id)}">courriel</button>
         </td>
-      </tr>`).join('');
-    rendre(document.querySelector('#comptes'), `
-      <h2>Comptes</h2>
-      ${lignes ? `<div class="tableau"><table><thead><tr><th>id</th><th>courriel</th><th>état</th><th>gestes</th></tr></thead>
-      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucun compte en attente</div>'}
-    `);
-  }
+      </tr>`
+          )
+          .join('');
+        rendre(
+          document.querySelector('#comptes'),
+          `
+      <div class="carte__tete"><h2>Comptes</h2><span class="muet petit">${(e.comptes || []).length} ligne(s)</span></div>
+      ${liste(lignes ? `<thead><tr><th>id</th><th>courriel</th><th>état</th><th>gestes</th></tr></thead><tbody>${lignes}</tbody>` : '', 'aucun compte en attente')}
+    `
+        );
+      }
 
-  async function postits() {
-    const e = await api('/api/postits');
-    const lignes = (e.postits || []).map((p) => `
+      async function postits() {
+        const e = await api('/api/postits');
+        const lignes = (e.postits || [])
+          .map(
+            (p) => `
       <tr>
-        <td><code>${p.id}</code></td>
-        <td>${p.titre ?? ''}</td>
-        <td>${p.statut}${p.raison ? `<div class="muet">${p.raison}</div>` : ''}</td>
+        <td><code>${esc(p.id)}</code></td>
+        <td class="cellule-titre">${esc(p.titre ?? '')}${p.raison ? `<span class="muet petit">${esc(p.raison)}</span>` : ''}</td>
+        <td>${esc(p.statut)}</td>
         <td>${p.ticket ?? ''}</td>
-        <td>${p.auteur ? `<code>${p.auteur.slice(0, 8)}…</code>` : '—'}</td>
-        <td>
-          <select id="s-${p.id}">
+        <td>${p.auteur ? `<code>${esc(p.auteur.slice(0, 8))}…</code>` : '<span class="muet">—</span>'}</td>
+        <td class="actions">
+          <select id="s-${esc(p.id)}" aria-label="statut">
             <option>en attente</option><option>retenu</option><option>en cours</option><option>fait</option><option>écarté</option>
           </select>
-          <input id="r-${p.id}" placeholder="raison (écarté)" style="width:12em">
-          <input id="t-${p.id}" placeholder="ticket" style="width:6em">
-          <button onclick="trier('${p.id}')">trier</button>
+          <input id="r-${esc(p.id)}" placeholder="raison (écarté)" style="width:12em" aria-label="raison">
+          <input id="t-${esc(p.id)}" placeholder="ticket" style="width:6em" aria-label="ticket">
+          <button type="button" class="btn" data-geste="trier" data-id="${esc(p.id)}">trier</button>
         </td>
-      </tr>`).join('');
-    rendre(document.querySelector('#postits'), `
-      <h2>Post-its</h2>
-      <div style="margin-bottom:10px" class="ligne-forme">
-        <span class="muet">Réattribuer les post-its anonymes à un compte :</span>
-        <input id="cible-reattribuer" placeholder="uuid du compte" style="width:16em;min-width:0">
-        <button onclick="reattribuer()">réattribuer</button>
+      </tr>`
+          )
+          .join('');
+        rendre(
+          document.querySelector('#postits'),
+          `
+      <div class="carte__tete"><h2>Post-its</h2><span class="muet petit">${(e.postits || []).length} ligne(s)</span></div>
+      <div class="ligne-forme" style="margin-bottom:12px">
+        <span class="muet petit">Réattribuer les post-its anonymes à un compte :</span>
+        <input id="cible-reattribuer" placeholder="uuid du compte" style="width:20em;min-width:0" aria-label="uuid du compte">
+        <button type="button" class="btn" data-geste="reattribuer">réattribuer</button>
       </div>
-      ${lignes ? `<div class="tableau"><table><thead><tr><th>id</th><th>titre</th><th>statut</th><th>ticket</th><th>auteur</th><th>tri</th></tr></thead>
-      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucun post-it</div>'}
-    `);
-  }
-
-  async function migrations() {
-    const e = await api('/api/migrations');
-    const lignes = (e.migrations || []).map((m) => {
-      const badge = m.etat === 'appliquee'
-        ? '<span class="etat-pill">appliquée</span>'
-        : m.etat === 'empreinte-changee'
-          ? '<span class="etat-pill" style="color:var(--danger)">empreinte changée</span>'
-          : m.etat === 'anterieure'
-            ? '<span class="etat-pill" style="color:var(--muet)">antérieure au registre</span>'
-            : '<span class="etat-pill">manquante</span>';
-      const bouton = m.etat === 'manquante'
-        ? `<button class="vert" onclick="appliquer('${m.fichier}')">appliquer</button>`
-        : '';
-      return `<tr><td><code>${m.fichier}</code></td><td>${badge}</td><td><code>${m.empreinte.slice(0, 16)}…</code></td><td>${bouton}</td></tr>`;
-    }).join('');
-    rendre(document.querySelector('#migrations'), `
-      <h2>Migrations</h2>
-      ${lignes ? `<div class="tableau"><table><thead><tr><th>fichier</th><th>état</th><th>empreinte</th><th>geste</th></tr></thead>
-      <tbody>${lignes}</tbody></table></div>` : '<div class="muet">aucune migration</div>'}
-      <p class="muet">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée ; antérieure au registre → jamais rejouée.</p>
-    `);
-  }
-
-  async function journalVue() {
-    const e = await api('/api/journal');
-    document.querySelector('#journal-sortie').textContent =
-      (e.lignes || []).map((l) => `${l.date} ${l.geste} (${l.role}) ${l.resultat}${l.motif ? ' — ' + l.motif : ''}`).join('\n') || '— vide —';
-  }
-
-  // --------------------------------------------------------------- la relecture automatique
-  let enAttentePrecedent = null;
-  let derniereRelecture = 0;
-  let relectureEnCours = null;
-  let minuteurRelecture = null;
-  let minuteurFraicheur = null;
-
-  function signalerNouveaux(nombre) {
-    document.querySelector('#nouveau-bouton').textContent = `${libelleNouveaux(nombre)} →`;
-    document.querySelector('#nouveau').hidden = false;
-  }
-
-  function cacherNouveaux() {
-    document.querySelector('#nouveau').hidden = true;
-  }
-
-  function majFraicheur() {
-    document.querySelector('#fraicheur').textContent = derniereRelecture
-      ? libelleFraicheur(Date.now() - derniereRelecture)
-      : '';
-  }
-
-  async function relireMaintenant({ manuel = false } = {}) {
-    // Onglet caché : rien ne part. Le minuteur est arrêté, et une relecture lancée juste
-    // avant de cacher l'onglet ne doit pas non plus enchaîner.
-    if (document.visibilityState !== 'visible') return;
-    try {
-      const enAttente = await etat();
-      await Promise.all([comptes(), postits(), migrations()]);
-      if (manuel) await journalVue();
-
-      const avant = enAttentePrecedent;
-      const nouveaux = nouveauxEnAttente(avant, enAttente);
-      enAttentePrecedent = enAttente;
-      document.title = titreOnglet(enAttente, TITRE_NORMAL);
-      if (nouveaux > 0) signalerNouveaux(nouveaux);
-      else if (avant !== null && enAttente < avant) cacherNouveaux();
-
-      derniereRelecture = Date.now();
-      majFraicheur();
-    } catch (e) {
-      const sectionEtat = document.querySelector('#etat');
-      if (!rendus.has(sectionEtat)) {
-        sectionEtat.innerHTML = `<h2>État de l'alpha</h2><div class="erreur">${e.message}</div>`;
-      } else {
-        retour(`rafraîchissement impossible : ${e.message}`, true);
+      ${liste(lignes ? `<thead><tr><th>id</th><th>titre</th><th>statut</th><th>ticket</th><th>auteur</th><th>tri</th></tr></thead><tbody>${lignes}</tbody>` : '', 'aucun post-it')}
+    `
+        );
       }
-    }
-  }
 
-  /** Une seule relecture à la fois : deux réponses ne se marchent pas dessus. */
-  function relire(options = {}) {
-    if (relectureEnCours) return relectureEnCours;
-    relectureEnCours = relireMaintenant(options).finally(() => { relectureEnCours = null; });
-    return relectureEnCours;
-  }
-
-  /** Après un geste : laisser finir la relecture en cours, puis en lancer une à jour. */
-  async function charger() {
-    if (relectureEnCours) await relectureEnCours.catch(() => {});
-    await relire({ manuel: true });
-  }
-
-  function demarrerMinuteurs() {
-    if (minuteurRelecture !== null) return;
-    minuteurRelecture = setInterval(() => { relire(); }, INTERVALLE_MS);
-    minuteurFraicheur = setInterval(majFraicheur, 1000);
-  }
-
-  function arreterMinuteurs() {
-    if (minuteurRelecture !== null) clearInterval(minuteurRelecture);
-    if (minuteurFraicheur !== null) clearInterval(minuteurFraicheur);
-    minuteurRelecture = null;
-    minuteurFraicheur = null;
-  }
-
-  // Au retour sur l'onglet : relecture immédiate, puis les minuteurs reprennent. En le
-  // quittant, tout s'arrête — rien ne tourne en arrière-plan.
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      demarrerMinuteurs();
-      relire();
-    } else {
-      arreterMinuteurs();
-    }
-  });
-
-  document.querySelector('#rafraichir').addEventListener('click', () => { relire({ manuel: true }); });
-  // Le carnet vit dans la page : le lien y descend, et le clic relit le journal (il n'est pas
-  // dans la relecture automatique, qui ne concerne que l'état et les trois listes).
-  document.querySelector('#lien-carnet').addEventListener('click', () => { journalVue(); });
-  document.querySelector('#nouveau-bouton').addEventListener('click', () => {
-    cacherNouveaux();
-    document.querySelector('#comptes').scrollIntoView({ block: 'start', behavior: 'smooth' });
-  });
-
-  // Le résultat d'un geste, affiché au bas de l'écran au lieu d'une page muette. Disparaît seul.
-  let retourMinute = null;
-  function retour(message, rouge = false) {
-    const bloc = document.querySelector('#retour');
-    bloc.hidden = false;
-    bloc.textContent = message;
-    bloc.classList.toggle('rouge', rouge);
-    if (retourMinute) clearTimeout(retourMinute);
-    retourMinute = setTimeout(() => { bloc.hidden = true; }, 5000);
-  }
-
-  // Gestes
-  window.approuver = async (id) => {
-    await api(`/api/comptes/${id}/approuver`, { method: 'POST' });
-    retour('compte approuvé ✓');
-    await charger();
-  };
-  window.refuser = async (id) => {
-    const raison = prompt('Raison du refus (obligatoire) :');
-    if (!raison || !raison.trim()) return alert('un refus exige une raison');
-    await api(`/api/comptes/${id}/refuser`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ raison }) });
-    retour('compte refusé');
-    await charger();
-  };
-  window.marquerAdmin = async (id, administrateur) => {
-    await api(`/api/comptes/${id}/administrateur`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ administrateur }) });
-    retour(administrateur ? 'compte promu administrateur' : 'compte rétrogradé');
-    await charger();
-  };
-  window.reveler = async (id) => { const r = await api(`/api/comptes/${id}/courriel`, { method: 'POST' }); alert(`Courriel : ${r.courriel}`); };
-  window.trier = async (id) => {
-    const statut = document.querySelector(`#s-${id}`).value;
-    const raison = document.querySelector(`#r-${id}`).value.trim();
-    const ticket = document.querySelector(`#t-${id}`).value.trim();
-    const corps = { statut };
-    if (raison) corps.raison = raison;
-    if (ticket) corps.ticket = Number(ticket);
-    await api(`/api/postits/${id}/trier`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(corps) });
-    retour(`post-it trié → ${statut}`);
-    await charger();
-  };
-  window.reattribuer = async () => {
-    const compte = document.querySelector('#cible-reattribuer').value.trim();
-    if (!compte) return alert('un compte est requis');
-    const r = await api('/api/postits/reattribuer', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ compte }) });
-    retour(`${r.reattribues} post-it(s) réattribué(s)`);
-    await charger();
-  };
-  window.appliquer = async (fichier) => {
-    const r = await api(`/api/migrations/${fichier}/appliquer`, { method: 'POST' });
-    retour(`migration appliquée : ${r.fichier}`);
-    await charger();
-  };
-
-  // Le reset (#342). La phrase est celle de `lib/reset.mjs` (CONFIRMATION), gardée par un test ;
-  // le serveur refait la vérification : ce bouton ne fait qu'éviter un envoi inutile.
-  const RESET_PHRASE = 'remettre à zéro la beta';
-  const resetSaisie = document.querySelector('#reset-confirmation');
-  const resetBouton = document.querySelector('#reset-executer');
-  resetSaisie.addEventListener('input', () => { resetBouton.disabled = resetSaisie.value !== RESET_PHRASE; });
-  document.querySelector('#reset-apercu').addEventListener('click', async () => {
-    const sortie = document.querySelector('#reset-apercu-sortie');
-    try {
-      const r = await api('/api/reset');
-      sortie.hidden = false;
-      sortie.textContent = r.texte;
-    } catch (e) {
-      sortie.hidden = false;
-      sortie.textContent = e.message;
-    }
-  });
-  resetBouton.addEventListener('click', async () => {
-    const rapport = document.querySelector('#reset-rapport');
-    const copier = document.querySelector('#reset-copier');
-    try {
-      const r = await api('/api/reset', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ confirmation: resetSaisie.value })
-      });
-      rapport.hidden = false;
-      rapport.textContent = r.texte;
-      copier.hidden = false;
-      resetSaisie.value = '';
-      resetBouton.disabled = true;
-      retour('reset effectué : voir le compte rendu');
-      await charger();
-    } catch (e) {
-      rapport.hidden = false;
-      rapport.textContent = e.message;
-      retour(e.message, true);
-    }
-  });
-  document.querySelector('#reset-copier').addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(document.querySelector('#reset-rapport').textContent);
-      retour('compte rendu copié');
-    } catch {
-      retour('copie impossible : sélectionnez le texte à la main', true);
-    }
-  });
-
-  window.executerSql = async () => {
-    const sortie = document.querySelector('#sql-sortie');
-    const mot = document.querySelector('#mot-destructif');
-    mot.textContent = '';
-    const accuse = document.querySelector('#accuse').checked;
-    const motFourni = document.querySelector('#mot').value.trim();
-    try {
-      const r = await api('/api/sql', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ sql: document.querySelector('#sql').value, accuse, mot: motFourni || undefined })
-      });
-      sortie.hidden = false;
-      sortie.textContent = JSON.stringify(r, null, 2);
-    } catch (e) {
-      sortie.hidden = false;
-      sortie.textContent = e.message;
-      if (e.corps && e.corps.mot) {
-        mot.textContent = `Tapez le mot : ${e.corps.mot}`;
-        document.querySelector('#mot').value = e.corps.mot;
+      async function migrations() {
+        const e = await api('/api/migrations');
+        const lignes = (e.migrations || [])
+          .map((m) => {
+            const badge =
+              m.etat === 'appliquee'
+                ? '<span class="pill pill--ok">appliquée</span>'
+                : m.etat === 'empreinte-changee'
+                  ? '<span class="pill pill--danger">empreinte changée</span>'
+                  : m.etat === 'anterieure'
+                    ? '<span class="pill">antérieure au registre</span>'
+                    : '<span class="pill pill--attente">manquante</span>';
+            const bouton =
+              m.etat === 'manquante'
+                ? `<button type="button" class="btn btn--primaire" data-geste="appliquer" data-fichier="${esc(m.fichier)}">appliquer</button>`
+                : '';
+            return `<tr><td><code>${esc(m.fichier)}</code></td><td>${badge}</td><td><code class="muet">${esc(m.empreinte.slice(0, 16))}…</code></td><td class="actions">${bouton}</td></tr>`;
+          })
+          .join('');
+        rendre(
+          document.querySelector('#migrations'),
+          `
+      <div class="carte__tete"><h2>Migrations</h2><span class="muet petit">${(e.migrations || []).length} fichier(s)</span></div>
+      ${liste(lignes ? `<thead><tr><th>fichier</th><th>état</th><th>empreinte</th><th>geste</th></tr></thead><tbody>${lignes}</tbody>` : '', 'aucune migration')}
+      <p class="muet petit" style="margin-top:12px">Une seule à la fois, dans sa transaction ; réappliquer → refusé ; empreinte changée → signalée, non rejouée ; antérieure au registre → jamais rejouée.</p>
+    `
+        );
       }
-    }
-    journalVue();
-  };
 
-  // Premier chargement : onglet visible → on lit tout de suite et on démarre la relecture ;
-  // onglet caché → `visibilitychange` fera les deux à son ouverture, sans travailler avant.
-  if (document.visibilityState === 'visible') {
-    demarrerMinuteurs();
-    relire({ manuel: true });
-  }
-</script>
-</body>
+      async function journalVue() {
+        const e = await api('/api/journal');
+        document.querySelector('#journal-sortie').textContent =
+          (e.lignes || [])
+            .map((l) => `${l.date} ${l.geste} (${l.role}) ${l.resultat}${l.motif ? ' — ' + l.motif : ''}`)
+            .join('\n') || '— vide —';
+      }
+
+      // --------------------------------------------------------------- la relecture automatique
+      let enAttentePrecedent = null;
+      let derniereRelecture = 0;
+      let relectureEnCours = null;
+      let minuteurRelecture = null;
+      let minuteurFraicheur = null;
+
+      function signalerNouveaux(nombre) {
+        document.querySelector('#nouveau-bouton').textContent = `${libelleNouveaux(nombre)} →`;
+        document.querySelector('#nouveau').hidden = false;
+      }
+
+      function cacherNouveaux() {
+        document.querySelector('#nouveau').hidden = true;
+      }
+
+      function majFraicheur() {
+        document.querySelector('#fraicheur').textContent = derniereRelecture
+          ? libelleFraicheur(Date.now() - derniereRelecture)
+          : '';
+      }
+
+      async function relireMaintenant({ manuel = false } = {}) {
+        // Onglet caché : rien ne part. Le minuteur est arrêté, et une relecture lancée juste
+        // avant de cacher l'onglet ne doit pas non plus enchaîner.
+        if (document.visibilityState !== 'visible') return;
+        if (sessionMorte) return;
+        try {
+          const enAttente = await etat();
+          await Promise.all([comptes(), postits(), migrations()]);
+          if (manuel) await journalVue();
+
+          const avant = enAttentePrecedent;
+          const nouveaux = nouveauxEnAttente(avant, enAttente);
+          enAttentePrecedent = enAttente;
+          document.title = titreOnglet(enAttente, TITRE_NORMAL);
+          if (nouveaux > 0) signalerNouveaux(nouveaux);
+          else if (avant !== null && enAttente < avant) cacherNouveaux();
+
+          derniereRelecture = Date.now();
+          majFraicheur();
+        } catch (e) {
+          const sectionEtat = document.querySelector('#etat');
+          if (!rendus.has(sectionEtat)) {
+            sectionEtat.innerHTML = `<h2>État de l'alpha</h2><div class="erreur">${esc(e.message)}</div>`;
+          }
+          signalerErreur(e);
+        }
+      }
+
+      /** Une seule relecture à la fois : deux réponses ne se marchent pas dessus. */
+      function relire(options = {}) {
+        if (relectureEnCours) return relectureEnCours;
+        relectureEnCours = relireMaintenant(options).finally(() => {
+          relectureEnCours = null;
+        });
+        return relectureEnCours;
+      }
+
+      /** Après un geste : laisser finir la relecture en cours, puis en lancer une à jour. */
+      async function charger() {
+        if (relectureEnCours) await relectureEnCours.catch(() => {});
+        await relire({ manuel: true });
+      }
+
+      function demarrerMinuteurs() {
+        if (minuteurRelecture !== null) return;
+        minuteurRelecture = setInterval(() => {
+          relire();
+        }, INTERVALLE_MS);
+        minuteurFraicheur = setInterval(majFraicheur, 1000);
+      }
+
+      function arreterMinuteurs() {
+        if (minuteurRelecture !== null) clearInterval(minuteurRelecture);
+        if (minuteurFraicheur !== null) clearInterval(minuteurFraicheur);
+        minuteurRelecture = null;
+        minuteurFraicheur = null;
+      }
+
+      // Au retour sur l'onglet : relecture immédiate, puis les minuteurs reprennent. En le
+      // quittant, tout s'arrête — rien ne tourne en arrière-plan.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          demarrerMinuteurs();
+          relire();
+        } else {
+          arreterMinuteurs();
+        }
+      });
+
+      document.querySelector('#rafraichir').addEventListener('click', () => {
+        relire({ manuel: true });
+      });
+      // Le carnet vit dans la page : le lien y descend, et le clic relit le journal (il n'est pas
+      // dans la relecture automatique, qui ne concerne que l'état et les trois listes).
+      document.querySelector('#lien-carnet').addEventListener('click', () => {
+        journalVue();
+      });
+      document.querySelector('#nouveau-bouton').addEventListener('click', () => {
+        cacherNouveaux();
+        document.querySelector('#comptes').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      });
+
+      // Le résultat d'un geste, affiché au bas de l'écran au lieu d'une page muette. Disparaît seul.
+      let retourMinute = null;
+      function retour(message, rouge = false) {
+        const bloc = document.querySelector('#retour');
+        bloc.hidden = false;
+        bloc.textContent = message;
+        bloc.classList.toggle('erreur', rouge);
+        if (retourMinute) clearTimeout(retourMinute);
+        retourMinute = setTimeout(
+          () => {
+            bloc.hidden = true;
+          },
+          rouge ? 9000 : 5000
+        );
+      }
+
+      // --------------------------------------------------------------- les gestes, délégués
+      // Un seul écouteur sur `<main>` : les boutons sont **remplacés** par la relecture toutes les
+      // dix secondes, et un `onclick` posé dans le HTML mourait avec son nœud — un clic tombé au
+      // mauvais moment ne faisait rien, sans rien dire. La délégation survit au remplacement.
+      const gestes = {
+        approuver: (bouton) =>
+          geste(
+            bouton,
+            () => api(`/api/comptes/${bouton.dataset.id}/approuver`, { method: 'POST' }),
+            'compte approuvé'
+          ),
+        refuser: (bouton) => {
+          const raison = prompt('Raison du refus (obligatoire) :');
+          if (!raison || !raison.trim()) {
+            retour('un refus exige une raison', true);
+            return;
+          }
+          return geste(
+            bouton,
+            () =>
+              api(`/api/comptes/${bouton.dataset.id}/refuser`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ raison })
+              }),
+            'compte refusé'
+          );
+        },
+        admin: (bouton) =>
+          geste(
+            bouton,
+            () =>
+              api(`/api/comptes/${bouton.dataset.id}/administrateur`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ administrateur: true })
+              }),
+            'compte promu administrateur'
+          ),
+        reveler: async (bouton) => {
+          try {
+            const r = await api(`/api/comptes/${bouton.dataset.id}/courriel`, { method: 'POST' });
+            prompt('Courriel du compte (copiable) :', r.courriel);
+            retour('courriel révélé');
+          } catch (e) {
+            signalerErreur(e);
+          }
+        },
+        trier: (bouton) => {
+          const id = bouton.dataset.id;
+          const corps = { statut: document.querySelector(`#s-${id}`).value };
+          const raison = document.querySelector(`#r-${id}`).value.trim();
+          const ticket = document.querySelector(`#t-${id}`).value.trim();
+          if (raison) corps.raison = raison;
+          if (ticket) corps.ticket = Number(ticket);
+          return geste(
+            bouton,
+            () =>
+              api(`/api/postits/${id}/trier`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(corps)
+              }),
+            `post-it trié → ${corps.statut}`
+          );
+        },
+        reattribuer: (bouton) => {
+          const compte = document.querySelector('#cible-reattribuer').value.trim();
+          if (!compte) {
+            retour('un compte est requis', true);
+            return;
+          }
+          return geste(
+            bouton,
+            () =>
+              api('/api/postits/reattribuer', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ compte })
+              }),
+            (r) => `${r.reattribues} post-it(s) réattribué(s)`
+          );
+        },
+        appliquer: (bouton) =>
+          geste(
+            bouton,
+            () => api(`/api/migrations/${bouton.dataset.fichier}/appliquer`, { method: 'POST' }),
+            (r) => `migration appliquée : ${r.fichier}`
+          ),
+        carnet: () => {
+          journalVue();
+        }
+      };
+
+      document.querySelector('main').addEventListener('click', (ev) => {
+        const bouton = ev.target.closest('[data-geste]');
+        if (!bouton) return;
+        const action = gestes[bouton.dataset.geste];
+        if (!action) return;
+        ev.preventDefault();
+        Promise.resolve(action(bouton)).catch(signalerErreur);
+      });
+
+      // Le reset (#342). La phrase est celle de `lib/reset.mjs` (CONFIRMATION), gardée par un test ;
+      // le serveur refait la vérification : ce bouton ne fait qu'éviter un envoi inutile.
+      const RESET_PHRASE = 'remettre à zéro la beta';
+      const resetSaisie = document.querySelector('#reset-confirmation');
+      const resetBouton = document.querySelector('#reset-executer');
+      resetSaisie.addEventListener('input', () => {
+        resetBouton.disabled = resetSaisie.value !== RESET_PHRASE;
+      });
+      document.querySelector('#reset-apercu').addEventListener('click', async () => {
+        const sortie = document.querySelector('#reset-apercu-sortie');
+        try {
+          const r = await api('/api/reset');
+          sortie.hidden = false;
+          sortie.textContent = r.texte;
+        } catch (e) {
+          sortie.hidden = false;
+          sortie.textContent = e.message;
+          signalerErreur(e);
+        }
+      });
+      resetBouton.addEventListener('click', async () => {
+        const rapport = document.querySelector('#reset-rapport');
+        const copier = document.querySelector('#reset-copier');
+        await geste(
+          resetBouton,
+          async () => {
+            const r = await api('/api/reset', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ confirmation: resetSaisie.value })
+            });
+            rapport.hidden = false;
+            rapport.textContent = r.texte;
+            copier.hidden = false;
+            resetSaisie.value = '';
+            resetBouton.disabled = true;
+            return r;
+          },
+          'reset effectué : voir le compte rendu'
+        );
+      });
+      document.querySelector('#reset-copier').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(document.querySelector('#reset-rapport').textContent);
+          retour('compte rendu copié');
+        } catch {
+          retour('copie impossible : sélectionnez le texte à la main', true);
+        }
+      });
+
+      document.querySelector('#executer').addEventListener('click', async (ev) => {
+        const bouton = ev.currentTarget;
+        const sortie = document.querySelector('#sql-sortie');
+        const mot = document.querySelector('#mot-destructif');
+        mot.textContent = '';
+        gestesEnCours += 1;
+        bouton.disabled = true;
+        try {
+          const r = await api('/api/sql', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              sql: document.querySelector('#sql').value,
+              accuse: document.querySelector('#accuse').checked,
+              mot: document.querySelector('#mot').value.trim() || undefined
+            })
+          });
+          sortie.hidden = false;
+          sortie.textContent = JSON.stringify(r, null, 2);
+          retour('requête exécutée');
+        } catch (e) {
+          // Le refus d'un geste destructif n'est pas un plantage : le mot annoncé s'affiche.
+          sortie.hidden = false;
+          sortie.textContent = e.message;
+          if (e.corps && e.corps.mot) {
+            mot.textContent = `Tapez le mot : ${e.corps.mot}`;
+            document.querySelector('#mot').value = e.corps.mot;
+          }
+          signalerErreur(e);
+        } finally {
+          gestesEnCours -= 1;
+          bouton.disabled = false;
+        }
+        journalVue().catch(() => {});
+      });
+
+      // Premier chargement : onglet visible → on lit tout de suite et on démarre la relecture ;
+      // onglet caché → `visibilitychange` fera les deux à son ouverture, sans travailler avant.
+      if (document.visibilityState === 'visible') {
+        demarrerMinuteurs();
+        relire({ manuel: true });
+      }
+    </script>
+  </body>
 </html>

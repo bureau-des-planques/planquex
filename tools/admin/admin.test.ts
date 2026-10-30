@@ -30,7 +30,7 @@ import {
   base,
   creerCompte,
   DOSSIER_MIGRATIONS,
-  type Base,
+  type Base
 } from '../../supabase/pglite';
 import { STATUTS as STATUTS_POSTE } from './lib/classification.mjs';
 import { STATUTS as STATUTS_APP } from '../../src/store/mur';
@@ -38,7 +38,7 @@ import { creerJournal } from './lib/journal.mjs';
 import { empreinte } from './lib/migrations.mjs';
 import { demarrerServeur } from './lib/app.mjs';
 import { sortieAlpha } from './lib/etat.mjs';
-import { chargerConfiguration, ouvrirNavigateur } from './serveur.mjs';
+import { chargerConfiguration, ouvrirNavigateur, resoudreJeton } from './serveur.mjs';
 
 const RACINE = fileURLToPath(new URL('../../', import.meta.url));
 const ROLES_SQL = readFileSync(join(RACINE, 'supabase', 'admin', 'roles.sql'), 'utf8');
@@ -63,7 +63,7 @@ function adaptateurPglite(db: Base) {
       }
       const r = await db.exec(sql);
       return { rows: [], command: null, instructions: Array.isArray(r) ? r.length : 1 };
-    },
+    }
   };
 }
 
@@ -94,7 +94,7 @@ async function demarrerMonde(options: { migrations?: string } = {}) {
     jeton: JETON,
     port: 0,
     hote: '127.0.0.1',
-    dossierMigrations: options.migrations ?? DOSSIER_MIGRATIONS,
+    dossierMigrations: options.migrations ?? DOSSIER_MIGRATIONS
   });
   return { db, adapter, journal, serveur };
 }
@@ -117,7 +117,7 @@ async function monde(options: { migrations?: string } = {}): Promise<Monde> {
 async function api(m: Monde, chemin: string, init: RequestInit = {}) {
   return fetch(`${m.serveur.baseUrl}${chemin}`, {
     ...init,
-    headers: { 'x-poste-jeton': JETON, ...(init.headers ?? {}) },
+    headers: { 'x-poste-jeton': JETON, ...(init.headers ?? {}) }
   });
 }
 
@@ -130,8 +130,8 @@ const coller = (db: Base, appareil: string, id: string) =>
   avecAppareil(db, appareil, () =>
     db.query(
       `insert into public.postits (id, kind, titre, texte, version) values ($1, 'IP', 'Titre', 'Texte.', 'Alpha') returning *`,
-      [id],
-    ),
+      [id]
+    )
   );
 
 type Issue = { accepte: boolean; message?: string; lignes?: Array<Record<string, unknown>> };
@@ -154,11 +154,9 @@ describe('la configuration (#184)', () => {
       ...process.env,
       ADMIN_SECRETS_FICHIER: chemin,
       ADMIN_LECTEUR_URL: '',
-      ADMIN_ADMIN_URL: '',
+      ADMIN_ADMIN_URL: ''
     };
-    expect(() => chargerConfiguration(env)).toThrow(
-      /pas de configuration : créer .*supabase-admin\.json/,
-    );
+    expect(() => chargerConfiguration(env)).toThrow(/pas de configuration : créer .*supabase-admin\.json/);
   });
 
   it('lire les deux clés, du fichier ou de l’environnement', async () => {
@@ -166,11 +164,11 @@ describe('la configuration (#184)', () => {
       ...process.env,
       ADMIN_SECRETS_FICHIER: join(tmpdir(), 'inexistant.json'),
       ADMIN_LECTEUR_URL: 'postgresql://lecteur.x@pooler/…',
-      ADMIN_ADMIN_URL: 'postgresql://postgres.x@pooler/…',
+      ADMIN_ADMIN_URL: 'postgresql://postgres.x@pooler/…'
     };
     expect(chargerConfiguration(env)).toEqual({
       lecteur_url: 'postgresql://lecteur.x@pooler/…',
-      admin_url: 'postgresql://postgres.x@pooler/…',
+      admin_url: 'postgresql://postgres.x@pooler/…'
     });
   });
 
@@ -196,18 +194,18 @@ describe('la configuration (#184)', () => {
     expect(ouvrirNavigateur(url, casse)).toBe(false);
   });
 
-  it('`ADMIN_OUVRIR_NAVIGATEUR=false` n\'ouvre pas le navigateur', async () => {
+  it("`ADMIN_OUVRIR_NAVIGATEUR=false` n'ouvre pas le navigateur", async () => {
     const env = {
       ...process.env,
       ADMIN_SECRETS_FICHIER: join(tmpdir(), 'inexistant.json'),
       ADMIN_LECTEUR_URL: 'postgresql://lecteur.x@pooler/…',
       ADMIN_ADMIN_URL: 'postgresql://postgres.x@pooler/…',
-      ADMIN_OUVRIR_NAVIGATEUR: 'false',
+      ADMIN_OUVRIR_NAVIGATEUR: 'false'
     };
     const config = chargerConfiguration(env);
     expect(config).toEqual({
       lecteur_url: 'postgresql://lecteur.x@pooler/…',
-      admin_url: 'postgresql://postgres.x@pooler/…',
+      admin_url: 'postgresql://postgres.x@pooler/…'
     });
     // La variable est lue dans `principal()` : pas d'ouverture auto.
   });
@@ -221,8 +219,8 @@ describe('la configuration (#184)', () => {
         ...process.env,
         ADMIN_SECRETS_FICHIER: chemin,
         ADMIN_LECTEUR_URL: '',
-        ADMIN_ADMIN_URL: '',
-      },
+        ADMIN_ADMIN_URL: ''
+      }
     });
     expect(resultat.status).toBe(1);
     expect(resultat.stderr).toContain('pas de configuration');
@@ -244,7 +242,7 @@ describe('le serveur (#184)', () => {
     const sansJeton = await fetch(`${m.serveur.baseUrl}/api/etat`);
     expect(sansJeton.status).toBe(401);
     const mauvaisJeton = await fetch(`${m.serveur.baseUrl}/api/etat`, {
-      headers: { 'x-poste-jeton': 'mauvais' },
+      headers: { 'x-poste-jeton': 'mauvais' }
     });
     expect(mauvaisJeton.status).toBe(401);
     const page = await api(m, '/api/etat');
@@ -294,10 +292,51 @@ describe('le serveur (#184)', () => {
       'setInterval',
       'document.title',
       'Rafraîchir',
-      'activeElement',
+      'activeElement'
     ]) {
       expect(page, `la page doit porter « ${attendu} »`).toContain(attendu);
     }
+  });
+
+  it('le jeton survit au redémarrage, sauf s’il est imposé', async () => {
+    // Un jeton neuf à chaque lancement laissait les onglets ouverts répondre `401` en silence
+    // (30/10/2026). Le fichier du jeton vit à côté du journal, hors du dépôt.
+    const dossier = mkdtempSync(join(tmpdir(), 'poste-jeton-'));
+    const chemin = join(dossier, 'jeton');
+
+    const premier = resoudreJeton({ env: {}, chemin });
+    expect(premier).toMatch(/^[a-f0-9]{48}$/);
+    // Le contrôle mord : deux lancements rendent le **même** jeton tant que le fichier existe.
+    expect(resoudreJeton({ env: {}, chemin })).toBe(premier);
+    expect(readFileSync(chemin, 'utf8').trim()).toBe(premier);
+
+    // `ADMIN_JETON` gagne sur le fichier : c'est le chemin des tests et d'un poste partagé.
+    expect(resoudreJeton({ env: { ADMIN_JETON: 'impose' }, chemin })).toBe('impose');
+
+    // Un fichier vidé repart sur un jeton neuf.
+    writeFileSync(chemin, '  \n');
+    expect(resoudreJeton({ env: {}, chemin })).not.toBe(premier);
+  });
+
+  it('la page dit ses erreurs, et ses gestes survivent au remplacement des boutons', async () => {
+    // Deux défauts constatés le 30/10/2026 : un geste qui échoue ne s'affichait pas (« le bouton
+    // ne fait rien »), et les `onclick` posés dans le HTML mouraient avec le nœud remplacé par
+    // la relecture de dix secondes. Le câblage est ici gardé de la même façon : par sa présence.
+    const m = await monde();
+    const page = await (await api(m, '/')).text();
+    for (const attendu of [
+      "window.addEventListener('unhandledrejection'",
+      'Session expirée',
+      'data-geste',
+      'function esc(',
+      'signalerErreur',
+      "document.querySelector('main').addEventListener('click'"
+    ]) {
+      expect(page, `la page doit porter « ${attendu} »`).toContain(attendu);
+    }
+    // Le contenu de la base passe par `esc()` : un titre de post-it n'est pas du HTML.
+    expect(page).toContain('esc(p.titre');
+    expect(page).not.toContain('onclick=');
   });
 
   it('masque les courriels, et les révèle par un geste explicite', async () => {
@@ -323,7 +362,7 @@ describe('le serveur (#184)', () => {
     await api(m, `/api/comptes/${APPAREIL_C}/refuser`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ raison: 'Pas un invité.' }),
+      body: JSON.stringify({ raison: 'Pas un invité.' })
     });
 
     const carnet = await corpsJson(await api(m, '/api/journal'));
@@ -364,7 +403,7 @@ describe('le jeton retenu par cookie (D-091)', () => {
     const premier = await fetch(`${m.serveur.baseUrl}/?jeton=${JETON}`);
     const cookie = premier.headers.get('set-cookie')!;
     const sansParam = await fetch(`${m.serveur.baseUrl}/api/etat`, {
-      headers: { cookie },
+      headers: { cookie }
     });
     expect(sansParam.status).toBe(200);
     // Réponse JSON saine, pas un refus.
@@ -375,7 +414,7 @@ describe('le jeton retenu par cookie (D-091)', () => {
   it('refuse un cookie invalide, et répond 401 en l’effaçant', async () => {
     const m = await monde();
     const reponse = await fetch(`${m.serveur.baseUrl}/api/etat`, {
-      headers: { cookie: 'poste-jeton=mauvais-jeton' },
+      headers: { cookie: 'poste-jeton=mauvais-jeton' }
     });
     expect(reponse.status).toBe(401);
     const cookie = reponse.headers.get('set-cookie');
@@ -387,7 +426,7 @@ describe('le jeton retenu par cookie (D-091)', () => {
   it('refuse un `?jeton=` invalide même avec un cookie valide, et l’efface', async () => {
     const m = await monde();
     const reponse = await fetch(`${m.serveur.baseUrl}/api/etat?jeton=mauvais`, {
-      headers: { cookie: `poste-jeton=${JETON}` },
+      headers: { cookie: `poste-jeton=${JETON}` }
     });
     expect(reponse.status).toBe(401);
     const cookie = reponse.headers.get('set-cookie');
@@ -417,13 +456,11 @@ describe('les gestes nommés (#184)', () => {
     const avant = await tenter(
       m.db,
       APPAREIL_C,
-      `insert into public.postits (id, kind, titre, texte, version) values ('p-attente', 'IP', 'T', 'T.', 'a') returning *`,
+      `insert into public.postits (id, kind, titre, texte, version) values ('p-attente', 'IP', 'T', 'T.', 'a') returning *`
     );
     expect(avant.accepte).toBe(false);
 
-    const approbation = await corpsJson(
-      await api(m, `/api/comptes/${APPAREIL_C}/approuver`, { method: 'POST' }),
-    );
+    const approbation = await corpsJson(await api(m, `/api/comptes/${APPAREIL_C}/approuver`, { method: 'POST' }));
     expect(approbation).toMatchObject({ ok: true, etat: 'approuve' });
 
     // Après approbation, il écrit.
@@ -432,7 +469,7 @@ describe('les gestes nommés (#184)', () => {
     const autre = await tenter(
       m.db,
       enRetard,
-      `insert into public.postits (id, kind, titre, texte, version) values ('p-encore-attente', 'IP', 'T', 'T.', 'a') returning *`,
+      `insert into public.postits (id, kind, titre, texte, version) values ('p-encore-attente', 'IP', 'T', 'T.', 'a') returning *`
     );
     expect(autre.accepte).toBe(false);
   });
@@ -448,7 +485,7 @@ describe('les gestes nommés (#184)', () => {
     const avec = await api(m, `/api/comptes/${APPAREIL_C}/refuser`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ raison: 'Pas un invité.' }),
+      body: JSON.stringify({ raison: 'Pas un invité.' })
     });
     expect(avec.status).toBe(200);
     expect(await corpsJson(avec)).toMatchObject({ ok: true, etat: 'refuse' });
@@ -464,8 +501,8 @@ describe('les gestes nommés (#184)', () => {
       await api(m, `/api/comptes/${APPAREIL_B}/administrateur`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ administrateur: true }),
-      }),
+        body: JSON.stringify({ administrateur: true })
+      })
     );
     expect(admin).toMatchObject({ ok: true, administrateur: true });
 
@@ -473,8 +510,8 @@ describe('les gestes nommés (#184)', () => {
       await api(m, '/api/postits/p-b/trier', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ statut: 'écarté', raison: 'Hors périmètre.', ticket: 100 }),
-      }),
+        body: JSON.stringify({ statut: 'écarté', raison: 'Hors périmètre.', ticket: 100 })
+      })
     );
     expect(tri).toMatchObject({ id: 'p-b', statut: 'écarté', raison: 'Hors périmètre.', ticket: 100 });
   });
@@ -485,7 +522,7 @@ describe('les gestes nommés (#184)', () => {
     // Un post-it d'une identité **sans compte** : le cas des deux post-its d'avant la 0005.
     await m.db.query(
       `insert into public.postits (id, kind, titre, texte, version, auteur) values ('p-anonyme', 'IP', 'Titre', 'Texte.', 'Alpha', $1)`,
-      [APPAREIL_C],
+      [APPAREIL_C]
     );
     const anonyme = await m.db.query(`select auteur from public.postits where id = 'p-anonyme'`);
     expect(anonyme.rows[0].auteur).toBe(APPAREIL_C);
@@ -494,8 +531,8 @@ describe('les gestes nommés (#184)', () => {
       await api(m, '/api/postits/reattribuer', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ compte: APPAREIL_A }),
-      }),
+        body: JSON.stringify({ compte: APPAREIL_A })
+      })
     );
     expect(reattribue).toMatchObject({ reattribues: 1 });
 
@@ -513,7 +550,7 @@ describe('le SQL libre (#184)', () => {
     const lecture = await api(m, '/api/sql', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sql: 'select 1 as un' }),
+      body: JSON.stringify({ sql: 'select 1 as un' })
     });
     expect(lecture.status).toBe(200);
     expect(await corpsJson(lecture)).toMatchObject({ nature: 'lecture', role: 'lecteur' });
@@ -522,8 +559,8 @@ describe('le SQL libre (#184)', () => {
     // refuse, indépendamment de la classification du poste.
     await expect(
       m.adapter.lire(
-        `insert into public.postits (id, kind, titre, texte, version) values ('intrusion', 'IP', 'T', 'T.', 'a')`,
-      ),
+        `insert into public.postits (id, kind, titre, texte, version) values ('intrusion', 'IP', 'T', 'T.', 'a')`
+      )
     ).rejects.toThrow(/permission denied/i);
   });
 
@@ -535,7 +572,7 @@ describe('le SQL libre (#184)', () => {
     const sans = await api(m, '/api/sql', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sql: `update public.postits set statut = 'retenu' where id = 'p-b'`, accuse: false }),
+      body: JSON.stringify({ sql: `update public.postits set statut = 'retenu' where id = 'p-b'`, accuse: false })
     });
     expect(sans.status).toBe(400);
     expect((await corpsJson(sans)).erreur).toContain('accusé');
@@ -543,7 +580,7 @@ describe('le SQL libre (#184)', () => {
     const avec = await api(m, '/api/sql', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sql: `update public.postits set statut = 'retenu' where id = 'p-b'`, accuse: true }),
+      body: JSON.stringify({ sql: `update public.postits set statut = 'retenu' where id = 'p-b'`, accuse: true })
     });
     expect(avec.status).toBe(200);
     expect(await corpsJson(avec)).toMatchObject({ nature: 'ecriture', role: 'admin' });
@@ -561,7 +598,7 @@ describe('le SQL libre (#184)', () => {
     const sansMot = await api(m, '/api/sql', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sql: 'delete from public.postits', accuse: true }),
+      body: JSON.stringify({ sql: 'delete from public.postits', accuse: true })
     });
     expect(sansMot.status).toBe(428);
     const annonce = await corpsJson(sansMot);
@@ -571,7 +608,7 @@ describe('le SQL libre (#184)', () => {
     const avecWhere = await api(m, '/api/sql', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sql: `update public.postits set statut = 'fait' where id = 'p-b'`, accuse: true }),
+      body: JSON.stringify({ sql: `update public.postits set statut = 'fait' where id = 'p-b'`, accuse: true })
     });
     expect(avecWhere.status).toBe(200);
 
@@ -579,7 +616,7 @@ describe('le SQL libre (#184)', () => {
     const avecMot = await api(m, '/api/sql', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ sql: 'delete from public.postits', accuse: true, mot: annonce.mot }),
+      body: JSON.stringify({ sql: 'delete from public.postits', accuse: true, mot: annonce.mot })
     });
     expect(avecMot.status).toBe(200);
     expect((await tenter(m.db, APPAREIL_B, `select count(*)::int as n from public.postits`)).lignes?.[0]?.n).toBe(0);
@@ -598,16 +635,14 @@ describe('les migrations (#184)', () => {
     expect(liste.map((x: { etat: string }) => x.etat)).toEqual(['manquante', 'manquante']);
 
     // Appliquer la première : elle passe, dans sa transaction.
-    const appliquee = await corpsJson(
-      await api(m, '/api/migrations/0001_test.sql/appliquer', { method: 'POST' }),
-    );
+    const appliquee = await corpsJson(await api(m, '/api/migrations/0001_test.sql/appliquer', { method: 'POST' }));
     expect(appliquee.fichier).toBe('0001_test.sql');
     expect(appliquee.empreinte).toBeTruthy();
 
     liste = (await corpsJson(await api(m, '/api/migrations'))).migrations;
     expect(liste.map((x: { etat: string }) => x.etat)).toEqual(['appliquee', 'manquante']);
     // La table créée par la migration existe bien.
-    expect((await m.adapter.lire('select to_regclass(\'public.admin_mig_1\') as t')).rows[0].t).not.toBeNull();
+    expect((await m.adapter.lire("select to_regclass('public.admin_mig_1') as t")).rows[0].t).not.toBeNull();
 
     // Réappliquer la même → refusée.
     const rejoue = await api(m, '/api/migrations/0001_test.sql/appliquer', { method: 'POST' });
@@ -635,7 +670,7 @@ describe('les migrations (#184)', () => {
     await m.adapter.ecrire(
       `insert into admin.migrations (fichier, empreinte, origine)
        values ($1, $2, 'anterieure')`,
-      ['0002_test.sql', empreinte(contenu)],
+      ['0002_test.sql', empreinte(contenu)]
     );
 
     const liste = (await corpsJson(await api(m, '/api/migrations'))).migrations;
@@ -668,7 +703,7 @@ describe('la sortie d’alpha, lue dans le poste (#337, D-123)', () => {
                '{"playerDeck": [], "aiDeck": []}'::jsonb,
                '{"playerCafeTypes": [], "aiCafeTypes": []}'::jsonb,
                '[]'::jsonb)`,
-      [auteur],
+      [auteur]
     );
   }
 
@@ -678,7 +713,7 @@ describe('la sortie d’alpha, lue dans le poste (#337, D-123)', () => {
       '11111111-1111-4111-8111-111111111111',
       '22222222-2222-4222-8222-222222222222',
       '33333333-3333-4333-8333-333333333333',
-      '44444444-4444-4444-8444-444444444444',
+      '44444444-4444-4444-8444-444444444444'
     ];
     for (const id of testeurs) await creerCompte(m.db, id, { etat: 'approuve' });
     // Un compte **refusé** qui a déposé une partie : elle ne compte pas (D-123).

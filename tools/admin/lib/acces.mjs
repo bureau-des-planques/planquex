@@ -23,7 +23,7 @@ import { Client } from 'pg';
  * Ceci n'est **pas** parcouru par les tests (ils injectent `pglite`, hors réseau) : voir le
  * rapport du ticket pour ce qui reste non vérifié.
  */
-export function creerAccesPg({ lecteur_url, admin_url }) {
+export function creerAccesPg({ lecteur_url, admin_url }, { creerClient = (options) => new Client(options) } = {}) {
   let lecteurClient = null;
   let adminClient = null;
 
@@ -41,8 +41,8 @@ export function creerAccesPg({ lecteur_url, admin_url }) {
 
   return {
     async demarrer() {
-      lecteurClient = new Client({ connectionString: lecteur_url });
-      adminClient = new Client({ connectionString: admin_url });
+      lecteurClient = creerClient({ connectionString: lecteur_url });
+      adminClient = creerClient({ connectionString: admin_url });
       await lecteurClient.connect();
       await adminClient.connect();
     },
@@ -50,7 +50,22 @@ export function creerAccesPg({ lecteur_url, admin_url }) {
       return normaliser(await lecteurClient.query(sql, params));
     },
     async ecrire(sql, params) {
-      return normaliser(await adminClient.query(sql, params));
+      try {
+        return normaliser(await adminClient.query(sql, params));
+      } catch (erreur) {
+        // **Une écriture qui échoue laisse la connexion dans une transaction avortée** dès que
+        // son SQL portait un `begin` : `pg` s'arrête à l'instruction fautive et n'exécute jamais
+        // le `commit`. Tous les gestes suivants répondaient alors « current transaction is
+        // aborted » jusqu'au redémarrage du poste (constaté le 30/10/2026, migration 0022).
+        // Le `rollback` ramène la connexion à un état utilisable ; hors transaction, PostgreSQL
+        // ne fait que l'avertir, ce qui ne casse rien.
+        try {
+          await adminClient.query('rollback');
+        } catch {
+          // Connexion perdue : inutile d'en dire plus, le prochain geste le signalera.
+        }
+        throw erreur;
+      }
     },
     async fermer() {
       await lecteurClient?.end();
