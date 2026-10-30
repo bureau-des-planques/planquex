@@ -61,6 +61,15 @@ describe('CardSlot — la possession se lit (#179)', () => {
     expect(container.firstElementChild).toHaveClass('card-slot--sans-quick');
     expect(container.querySelector('.card-slot__quick')).toBeNull();
   });
+
+  it('le nom lu par un lecteur d’écran dit la possession et le Deck (critique du 30/10/2026, P1)', () => {
+    const { unmount } = render(<CardSlot card={carte} owned={2} inDeck={1} quick={quick} onClick={() => undefined} />);
+    expect(screen.getByRole('button', { name: `${carte.name}, 2 possédées, 1 au Deck` })).toBeInTheDocument();
+    unmount();
+
+    render(<CardSlot card={carte} owned={0} quick={quick} onClick={() => undefined} />);
+    expect(screen.getByRole('button', { name: `${carte.name}, non possédée` })).toBeInTheDocument();
+  });
 });
 
 describe('styles.css — l’atténuation est réelle', () => {

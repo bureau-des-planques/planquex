@@ -6,6 +6,7 @@ import { Collection } from './Collection';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { ALL_CARDS, isPlanque } from '@/data';
+import { PLAFOND_TIRABLE } from '@/components/plafond-collection';
 
 // Les filtres vivent dans l'adresse (#365) : chaque test, dans tout le fichier, repart de `/collection` nu.
 beforeEach(() => {
@@ -21,10 +22,11 @@ describe('Collection — écran de la Collection', () => {
     const owned = { 'sse-infirmier-site': 2, 'management-responsable-unite': 1 };
     renderWithStore(<Collection />, { owned, tutorielVu: true, pasAPasCombatVu: true });
 
-    // Le **total** se dérive d'`ALL_CARDS`, il ne se recopie pas : #352 a fait passer le
-    // catalogue de 300 à 308, et ce test annonçait encore « 300 ».
+    // Le **total** se dérive de `PLAFOND_TIRABLE`, il ne se recopie pas : le catalogue (308)
+    // promettait un 100 % que les 7 cartes hors Arrivage ne donnent jamais (critique du
+    // 30/10/2026, P1).
     const total = ALL_CARDS.length;
-    expect(screen.getByText(new RegExp(`2/${total} cartes`))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`2/${PLAFOND_TIRABLE} cartes tirables`))).toBeInTheDocument();
     expect(screen.getByText(new RegExp(`${total} affichés`))).toBeInTheDocument();
   });
 

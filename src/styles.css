@@ -1303,6 +1303,14 @@ h2 {
   outline: none;
 }
 
+/* Le champ de recherche garde un **anneau de focus** : le `outline: none` de l'input l'avait
+   retiré, et c'était le seul contrôle de la page sans indicateur (critique du 30/10/2026, P1).
+   L'anneau se pose sur le cadre, pas sur l'input nu. */
+.field--search:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 40%, transparent);
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -1332,10 +1340,13 @@ h2 {
 
 /* ---------- Cartes ---------- */
 
+/* **200 px au moins** : en dessous, le `font-size: 5.6cqw` de la carte tombait à 8–9 px et
+   la légende, la Vulnérabilité et la Rotation ne se lisaient plus (critique du 30/10/2026,
+   P2). À 1440, la grille donne cinq colonnes de ~240 px ; à 390, une seule de 358. */
 .card-grid {
   display: grid;
   gap: 0.75rem;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
 /* **Une carte hors écran ne se peint pas** (#357). La Collection monte ses 225 cartes d'un
@@ -1345,17 +1356,8 @@ h2 {
    pour que la barre de défilement ne saute pas quand une carte entre dans le champ.
    Le rendu à l'écran ne change pas : la carte visible est peinte comme avant. */
 .card-grid > * {
-  contain-intrinsic-size: auto 14rem;
+  contain-intrinsic-size: auto 17rem;
   content-visibility: auto;
-}
-
-/* Un téléphone : **deux** colonnes, toujours. À 360 px la page offre 328 px, et deux cartes
-   de 160 px avec leur gouttière en demandent 332 : `auto-fill` retombait à une colonne, et
-   la Collection devenait un rouleau de cartes plein écran (#131). */
-@media (max-width: 420px) {
-  .card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 .card-slot {
@@ -6353,6 +6355,29 @@ h2 {
   margin: 0.3rem 0 0;
 }
 
+/* L'avancement se lit sur ce qu'un Arrivage peut donner (301), et la barre le rend d'un coup
+   d'œil. L'or est la mesure, comme la barre de Stress du combat (#534, critique du 30/10/2026). */
+.collection__jauge {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  height: 0.45rem;
+  margin: 0.55rem 0 0.45rem;
+  max-width: 22rem;
+  overflow: hidden;
+}
+
+.collection__jauge > span {
+  background: var(--gold);
+  display: block;
+  height: 100%;
+}
+
+.collection__plafond {
+  font-size: var(--fs-xs);
+  margin: 0.15rem 0 0;
+}
+
 /* **Les contraintes du Deck** : quatre lignes lues d'un coup d'œil, avant le geste. */
 .deck-contraintes {
   display: flex;
@@ -6656,13 +6681,47 @@ h2 {
   width: 1.25rem;
 }
 
-/* La ligne des filtres actifs : leur nombre, et « Tout effacer » pour les retirer d'un geste. */
+/* Les filtres actifs, **nommés** : un jeton par filtre, retirable seul, et « Tout effacer »
+   pour les retirer d'un geste. Un compteur obligeait à rouvrir le volet pour savoir ce qui
+   agissait (critique du 30/10/2026, P2). */
 .filtres-actifs {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
   justify-content: space-between;
+}
+
+.jetons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jeton {
+  align-items: center;
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  font-size: var(--fs-xs);
+  gap: 0.35rem;
+  min-height: 2.75rem; /* cible de doigt (D-116 (1)), comme les autres boutons */
+  padding: 0 0.8rem;
+}
+
+.jeton:hover {
+  border-color: var(--accent);
+}
+
+/* Le geste de sortie est **dans** le vide, là où l'on regarde, et ne nomme que ce qui le
+   résout : une recherche seule n'a pas de filtre à retirer (critique du 30/10/2026, P2). */
+.empty .button {
+  margin-top: 1rem;
 }
 
 .filtres-actifs .button {

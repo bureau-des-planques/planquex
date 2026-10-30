@@ -39,6 +39,13 @@ interface Props {
    */
   plateau?: boolean;
   /**
+   * **Le nom lu par un lecteur d'écran**, quand la carte est un bouton. Sans lui, le nom
+   * accessible est tout le contenu de la carte (nom, Seuil, Pressions, Vuln., rareté…) et
+   * **ne dit ni la possession ni le Deck** : sur 308 cartes, l'écran ne se trie plus
+   * (critique du 30/10/2026, P1). Les cartes d'un plateau n'en ont pas besoin.
+   */
+  label?: string;
+  /**
    * **Les annotations remises** (#189, `SPEC-COMBAT-UI` §4.3) : le mode `détaillé` du combat
    * réaffiche ce que `plateau` avait coupé — le nom des Pressions et leurs dégâts sur la
    * carte du Poste, le chiffre du Stress. Rien de ce qui décide n'apparaît ni ne disparaît
@@ -68,7 +75,18 @@ const REGLE_ACTION = { OBJET: 'illimité', COLLEAGUE: '1 par tour' } as const;
 /** Au-delà de ce nombre de signes, le nom passe un cran plus petit pour tenir sur deux lignes. */
 const NOM_LONG = 18;
 
-export function CardView({ card, onClick, compact, selected, calme, stress, seuil, plateau, annotations }: Props) {
+export function CardView({
+  card,
+  onClick,
+  compact,
+  selected,
+  calme,
+  stress,
+  seuil,
+  plateau,
+  annotations,
+  label
+}: Props) {
   // La planche de la carte, ou celle de sa base (D-139) : une seule résolution.
   const art = artFileOf(card);
   const url = artUrl(art);
@@ -279,7 +297,7 @@ export function CardView({ card, onClick, compact, selected, calme, stress, seui
   return immobile && !onClick ? (
     <motion.div {...commun}>{contenu}</motion.div>
   ) : (
-    <motion.button type="button" {...commun}>
+    <motion.button type="button" aria-label={label} {...commun}>
       {contenu}
     </motion.button>
   );

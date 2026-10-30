@@ -85,8 +85,13 @@ export const SEUIL_PAQUET = 500_000;
  * **1 octet** parce que la carte d'exports du morceau partagé `ui` change d'ordre quand les
  * modules changent. Le code a été resserré avant de relever (classe du slot en `&&`, motif du
  * refus écrit dans la fiche) ; il reste 290 783 octets.
+ *
+ * **Relevé de 27 octets le 30/10/2026** (290 810 octets) (critique du 30/10/2026, P1 de la
+ * page Collection) : le **nom lu** d'une carte (`label` de `CardView`, calculé par le slot —
+ * possession, Deck) et les **jetons de filtres** de la Collection. Les deux vivent dans le
+ * paquet principal, avec le reste de la coquille.
  */
-export const PLAFOND_PRINCIPAL = 290_783;
+export const PLAFOND_PRINCIPAL = 290_810;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
