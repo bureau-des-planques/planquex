@@ -133,6 +133,12 @@ critère est donc tenu par cette commande, pas par une inspection à la main.
 | Étiquette « Jouable » de la main : `--gold-soft` sur teinte or 18 % de `--bg-raised` / de `--scene-card` | 8.32 / 7.72 | AAA |
 | **Hexagone vide** de la piste et **place libre** du Banc : contour `--text-muted` sur `--scene-felt-lit` / `--scene-felt` / `--scene-felt-deep` (relecture du combat, 30/10/2026) | 3.79 / 6.91 / 7.76 | 3:1 non-texte ✓ — avant : `--line-strong` (hexagone) **1,06 à 1,94** ✗ et `--line` (place libre) **1,25 à 1,46** ✗. C'est un filet : l'interdit de `--text-muted` sur le centre éclairé (#198) vise le texte |
 
+**Une carte non possédée** est éteinte par `grayscale(1)` : le gris fait tomber le **sigle de
+faction** à **3,7:1** sur le voile d'une carte holographique (relevé par `npm run detect:ui:page`
+le 30/10/2026, #533, quand le pied de la carte a repris sa marge). Sur ces cartes, le sigle prend
+`--text` (`card-slot.is-missing .card__faction`) : la teinte de faction, déjà éteinte, ne portait
+plus l'information.
+
 Méthode : luminance relative et ratio de la formule WCAG 2.1 calculés sur les valeurs hexadécimales
 de `src/styles.css` (bloc `.battle`, jetons `--scene-*` de #190) et de `:root` ; pastilles :
 la teinte à 22 % est composée sur `#0e1626` (`--bg-sunken`) avant le calcul. Les ratios ont été
@@ -250,7 +256,7 @@ plateau (`.card--plateau`).
 | Talent et Pressions | `.card__attacks` | calés en haut ; trois colonnes — cafés (pastilles cerclées de crème), nom, dégâts (chiffres tabulaires). Le **Talent** (`.card__talent`) suit les colonnes. En grand, l'effet de chacun (`.attack__effet`, deux lignes). Une Action y porte son texte (`.card__texte`) |
 | Ambiance | `.card__flavor` | la flavour, deux lignes, **seulement en grand** |
 | Vulnérabilité / Rotation | `.card__bas` | la faction **nommée** (glyphe + sigle, « MGT +20 ») et la Rotation en pastilles incolores |
-| Pied | `.card__footer` | rareté (couleur `--rarity`) et sigle de faction (`.card__faction`) à gauche, après la place du bouton « + » du slot ; l'identifiant court (`.card__id`) **seulement en grand** |
+| Pied | `.card__footer` | rareté (couleur `--rarity`) et sigle de faction (`.card__faction`) à gauche, après la place du bouton du slot **quand il y en a un** ; l'identifiant court (`.card__id`) **seulement en grand** |
 
 **Au plateau** (Poste, Banc, main, craquage — `.card--plateau`) :
 
@@ -265,7 +271,7 @@ plateau (`.card--plateau`).
 
 - Grille de la Collection : `repeat(auto-fill, minmax(160px, 1fr))`, écart 0.75rem — **deux colonnes** à 420 px (cartes de 188 × 263 px). Sous **420 px** elle est **forcée à deux colonnes** (`repeat(2, minmax(0, 1fr))`) : à 360 px la page offre 328 px, deux cartes de 160 px avec leur gouttière en demandent 332, et `auto-fill` retombait à une colonne (#131).
 - Carte : **`aspect-ratio: 63 / 88`** — le format réel d'une carte, et ce qui garantit que toutes font la même taille quel que soit leur texte. Rayon 12 px. L'ombre est noire et portée, jamais colorée : c'est le relief, pas un halo.
-- **Le chrome du slot** (`.card-slot`) : le bouton « + » se pose au coin **bas-gauche**, que le pied réserve ; la pastille « ×n » (et « Deck ×n ») au coin bas-droit. En haut à droite, il recouvrait le Seuil.
+- **Le chrome du slot** (`.card-slot`) : un bouton rond **facultatif** au coin **bas-gauche**, que le pied réserve ; la pastille « ×n » (et « Deck ×n ») au coin bas-droit. En haut à droite, il recouvrait le Seuil. Depuis le 30/10/2026, la grille de la **Collection** est une **vitrine** et n'a plus de bouton (`card-slot--sans-quick`, le pied reprend sa marge) : l'ajout au Deck se fait dans la fiche. Le Deck, lui, garde le sien pour ouvrir la fiche.
 - **La carte en grand** (fiche : 280 px de large) : l'illustration cède la place au texte (`flex`, 30 % au moins), jamais l'inverse.
 - Jauge de Stress : 7 px au plateau, dix crans (`.stress`, `::after`).
 - Pips de café : 0,9 em sur la carte, cerclés de crème ; dans `.battle` : 14 px (18 px dans la fiche du camp), anneau crème, `gap` 0,3 rem (#290).
@@ -283,7 +289,7 @@ plateau (`.card--plateau`).
 | `.card-slot.is-full` | carte à 60 % d'opacité (plus d'exemplaire possible au Deck) |
 | `.card-slot.is-missing` | carte **non possédée** : grisée (`grayscale(1)`) et son illustration et sa barre de Seuil à 40 % d'opacité — le **texte**, lui, garde son contraste (#208 : à 40 % d'opacité sur toute la carte, le nom tombait à 2,1–3,5:1, et une carte illisible n'est pas une carte éteinte). Sa pastille « ×0 » (pointillés) et la mention « Non possédée » restent **hors de `.card`** : elles ne s'éteignent pas avec elle |
 
-**Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : un bouton rond au coin **bas-gauche** (ajouter, ou ouvrir la fiche ; au coin haut-droit avant le 28/10/2026), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
+**Le slot** (`CardSlot`, `src/components/CardSlot.tsx`) enveloppe la carte dans la Collection, dans « Dedans » et dans la Collection du Deck : au coin **bas-gauche** un bouton rond **facultatif** (ouvrir la fiche ; la Collection n'en porte plus depuis le 30/10/2026, #533), et au coin bas-droit les pastilles — **possession** (`×2`, or) et **Deck** (`Deck ×1`, filet de la faction, seulement au-dessus de zéro).
 
 **Le tri** (`TriCartes`, `src/components/tri-cartes.ts`) est le même sur la Collection et sur le Deck : par défaut, faction, stade, rareté (la plus rare d'abord), nom, possédées d'abord. La liste montre le choix courant ; « Réinitialiser » le rend à « par défaut ».
 
@@ -422,7 +428,7 @@ capture.
 | Aucun geste | tour de la Direction, ou partie terminée | la ligne de repos de la barre d'action, **sans bouton grisé** : l'écran ne rend que `legalActions` | attendre le tour, ou `⋯` |
 | Mouvement réduit | `Réglages` → « Réduire les animations », ou `prefers-reduced-motion` | les mêmes informations, sans mouvement : chiffre de Stress fixe, éventail qui ne se soulève pas, carte craquée désaturée | — |
 
-**Les dialogues** — la fiche d'une carte, l'Arrivage, la Journée d'intégration, les Conditions, la confirmation — passent tous par `components/ui/dialog.tsx` (D-035) : rôle, Échap, focus piégé et fond sont les siens. Il n'y a plus de dialogue maison (`.modal` a disparu).
+**Les dialogues** — la fiche d'une carte, l'Arrivage, la Journée d'intégration, les Conditions, la confirmation — passent tous par `components/ui/dialog.tsx` (D-035) : rôle, Échap, focus piégé et fond sont les siens. Il n'y a plus de dialogue maison (`.modal` a disparu). La fiche dit l'état du Deck quand l'écran qui l'ouvre sait y ajouter (`Deck 12/20`) ; quand l'ajout est refusé, elle écrit le motif et mène à `/deck` au lieu de laisser un bouton mort, et après le geste elle confirme (`Ajouté au Deck — 13/20`). Une carte non possédée y est annoncée comme telle : l'ajout reste possible pour l'alpha (30/10/2026, #533).
 
 ### 2.6 La scène de combat (D-093, 25/10/2026)
 

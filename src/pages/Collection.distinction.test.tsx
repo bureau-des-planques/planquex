@@ -10,8 +10,8 @@ import { ALL_CARDS } from '@/data';
  * **La Collection est « ce que je possède »** (#276) : on y cherche, on voit, on filtre.
  *
  * Elle ne porte ni les emplacements du Deck, ni sa machine à café : deux pages, deux rôles.
- * Le `+` de la Collection (user story 4 de #276) reste : ajouter une carte au Deck **depuis**
- * la Collection, c'est un geste de la Collection, pas un second écran de Deck.
+ * Depuis le 30/10/2026, la grille est une **vitrine** : le `+` du coin a disparu (#533), et
+ * l'ajout au Deck vit dans la fiche, où c'est un geste délibéré — la Collection ne compose plus.
  */
 describe('Collection — le rôle de la page (#276)', () => {
   it('n’affiche ni les emplacements du Deck, ni la machine à café', () => {

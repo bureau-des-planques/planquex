@@ -79,8 +79,14 @@ export const SEUIL_PAQUET = 500_000;
  * dans la pastille de café (`CafePips`, qui vit dans le paquet principal) et le choix de son encre.
  * Un café ne se lisait que par sa couleur (le critère WCAG sur la couleur seule) ; la variante en
  * CSS seul (couleur relative OKLCH) a été écartée pour ne pas dépendre d'une syntaxe récente.
+ *
+ * **Relevé de 1 octet le 30/10/2026 (#534)** : la Collection devient une vitrine et la fiche
+ * reçoit l'état du Deck. Ce code vit dans des morceaux **paresseux** ; le principal gagne
+ * **1 octet** parce que la carte d'exports du morceau partagé `ui` change d'ordre quand les
+ * modules changent. Le code a été resserré avant de relever (classe du slot en `&&`, motif du
+ * refus écrit dans la fiche) ; il reste 290 783 octets.
  */
-export const PLAFOND_PRINCIPAL = 290_782;
+export const PLAFOND_PRINCIPAL = 290_783;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
