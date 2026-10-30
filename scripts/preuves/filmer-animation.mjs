@@ -248,11 +248,25 @@ async function filmer(config) {
     }
     const zone = page.locator(config.zone).first();
     const frames = pendant;
+    /**
+     * **Chauffer le pipeline avant la première prise** (#543, 30/10/2026). La première
+     * capture d'une page coûte ~500 ms : la planche de la scène de fin montrait le tampon
+     * **déjà posé** sur une image légendée « 1 ms », c'est-à-dire toute la chute perdue.
+     * Une capture jetée paie ce coût une fois, hors du temps filmé.
+     */
+    await zone.screenshot({ path: join(sortie, 'echauffement.png'), animations: 'allow' });
+    rmSync(join(sortie, 'echauffement.png'), { force: true });
     // `performance.now()` n'est pas figé par `setFixedTime` : c'est l'horloge réelle de la page.
     const t0 = await page.evaluate(() => performance.now());
     for (let i = 0; i < config.images; i += 1) {
       const nom = nomFrame(i);
-      const t = (await page.evaluate(() => performance.now())) - t0;
+      /**
+       * L'instant se mesure **autour** de la prise, pas avant : la capture elle-même prend
+       * des dizaines de millisecondes (et ~500 ms à froid). La légende disait « 1 ms » sur
+       * une image prise une demi-seconde plus tard — une planche qui ment sur son temps ne
+       * prouve rien. On écrit le milieu de la prise.
+       */
+      const avant = (await page.evaluate(() => performance.now())) - t0;
       const compte = config.compter ? await page.locator(config.compter).count() : undefined;
       if (config.marge > 0) {
         // La boîte est relue à chaque frame : la zone peut bouger. Bornée à la fenêtre.
@@ -271,7 +285,8 @@ async function filmer(config) {
           }
         });
       } else await zone.screenshot({ path: join(sortie, nom), animations: 'allow' });
-      frames.push({ src: nom, t, compte });
+      const apres = (await page.evaluate(() => performance.now())) - t0;
+      frames.push({ src: nom, t: Math.round((avant + apres) / 2), compte });
       await page.waitForTimeout(config.intervalle);
     }
     writeFileSync(join(sortie, 'planche.html'), htmlPlanche(frames, config));
