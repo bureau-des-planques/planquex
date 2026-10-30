@@ -1489,7 +1489,8 @@ h2 {
 .field--search {
   flex-direction: row;
   align-items: center;
-  background: var(--bg-sunken);  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   flex: 1 1 240px;
   gap: 0.5rem;
@@ -2590,6 +2591,52 @@ h2 {
 .pas-a-pas__plus[aria-expanded='true'] {
   border-color: var(--gold);
   color: var(--gold);
+}
+
+/* La phrase d'entrée du panneau (30/10/2026) : sous la ligne, deux lignes au plus. Le panneau
+   apprend quelque chose sans qu'on ouvre « Plus » ; au-delà de deux lignes, c'est le texte
+   entier, derrière « Lire le détail ». --text sur le fond du panneau : 14,61:1, AA.
+   **La place est mesurée, pas supposée** : D-103 exige que le combat ne défile jamais, et la
+   phrase ajoute de la hauteur. À 420 × 900 il reste 63 px sous la barre d'action, donc deux
+   lignes passent ; à 800 px de haut (PC) il n'en restait pas, la phrase se replie à une ligne ;
+   sous 420 px de haut (téléphone couché), elle se retire et « Plus » la rend. `npm run
+   capturer` tranche, sur les huit états et les six gabarits. */
+.pas-a-pas__resume {
+  color: var(--text);
+  display: -webkit-box;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+@media (max-height: 859px) {
+  .pas-a-pas__resume {
+    -webkit-line-clamp: 1;
+  }
+}
+
+@media (max-height: 419px) {
+  .pas-a-pas__resume {
+    display: none;
+  }
+}
+
+/* Sur PC, la composition du combat est celle de D-158 : la table grandit, et l'écran n'a
+   **aucune marge** — mesuré, la phrase y faisait défiler de 13 px, alors que 400 px de feutre
+   restent vides sous la barre. Le panneau y garde donc sa ligne d'avant ; la phrase revient
+   quand cette composition aura une marge mesurée (ticket à ouvrir). */
+@media (min-width: 1024px) {
+  .pas-a-pas__resume {
+    display: none;
+  }
+}
+
+/* Déplié, le texte entier commence par cette même phrase : la garder la doublerait. */
+.pas-a-pas--detail .pas-a-pas__resume {
+  display: none;
 }
 
 /* Le reste du panneau est replié tant que « Plus » ne le déplie pas (hors de l'arbre visuel, pas
