@@ -41,6 +41,16 @@ function trouverCarte(uid: string | null): HTMLElement | null {
 }
 
 /**
+ * **Ce qui peut recevoir le focus** dans une carte : la carte du plateau est elle-même un bouton, mais
+ * celle de la main est un `<li data-uid>` qui **porte** un bouton (#525). Lui rendre le focus le perdait.
+ */
+function focusable(el: HTMLElement | null): HTMLElement | null {
+  if (!el) return null;
+  if (el.tabIndex >= 0) return el;
+  return el.querySelector<HTMLElement>('button, [tabindex="0"]') ?? el;
+}
+
+/**
  * Ce qu'une carte **dit d'elle-même** : nom entier, stade, faction, rareté, Seuil, Stress chiffré,
  * cafés attachés, Conditions en clair, Pressions (coût et Stress), Talent. Aucun bouton.
  * `machine` n'est donné que pour le Poste : la Machine à café est une affaire de camp.
@@ -120,11 +130,18 @@ export function CarteSurvolable({
   inspectee,
   onInspecter,
   onAttacher,
+  resume,
   children
 }: {
   uid: string;
   /** Le nom entier : c'est le nom accessible du groupe. */
   nom: string;
+  /**
+   * **Ce qu'un lecteur d'écran entend au focus**, sans ouvrir le panneau : Stress, Seuil et
+   * Conditions (relecture du combat, #525). Une description **permanente** — l'infobulle, elle,
+   * n'existe qu'après un second rendu et ne s'annonçait pas au focus. Le nom reste le Planqué.
+   */
+  resume?: string;
   className: string;
   fiche: ReactNode;
   /** Vrai quand le panneau montre cette carte : l'infobulle s'efface devant lui. */
@@ -141,6 +158,7 @@ export function CarteSurvolable({
   const attachable = onAttacher !== undefined;
   const activer = () => (onAttacher ? onAttacher() : onInspecter());
   const id = useId();
+  const idResume = useId();
   const [survol, setSurvol] = useState(false);
   const [focus, setFocus] = useState(false);
   const [ecartee, setEcartee] = useState(false);
@@ -219,7 +237,7 @@ export function CarteSurvolable({
       className={attachable ? `${className} is-attachable` : className}
       data-uid={uid}
       tabIndex={0}
-      aria-describedby={visible ? id : undefined}
+      aria-describedby={[resume ? idResume : '', visible ? id : ''].filter(Boolean).join(' ') || undefined}
       onClick={activer}
       onKeyDown={onKeyDown}
       onFocus={() => setFocus(true)}
@@ -245,6 +263,11 @@ export function CarteSurvolable({
       }}
     >
       {children}
+      {resume && (
+        <span id={idResume} className="sr-only">
+          {resume}
+        </span>
+      )}
       {visible &&
         ancre &&
         createPortal(
@@ -275,7 +298,8 @@ export function InspecteurCombat({
   nom,
   ancre,
   fiche,
-  gestes
+  gestes,
+  garderLeFocus = false
 }: {
   ouvert: boolean;
   onOpenChange: (ouvert: boolean) => void;
@@ -286,15 +310,29 @@ export function InspecteurCombat({
   fiche: ReactNode;
   /** Les gestes de la carte. `undefined` : carte qu'on ne joue pas, lecture seule. */
   gestes?: ReactNode;
+  /**
+   * **Ne pas prendre le focus à l'ouverture** (#525) : le panneau ouvert au focus d'une carte de la
+   * main (« Mouvement réduit ») volait le focus à chaque tabulation — le clavier ne passait plus
+   * d'une carte à l'autre.
+   */
+  garderLeFocus?: boolean;
 }) {
   /** Le `uid` de la dernière carte montrée : c'est elle qui reçoit le focus à la fermeture. */
   const derniere = useRef<string | null>(null);
+  /** Ce qui avait le focus à l'ouverture (la carte, ou le bouton « Rotation ») : il le retrouve. */
+  const avant = useRef<HTMLElement | null>(null);
   const repere = useRef<HTMLDivElement | null>(null);
   const [haut, setHaut] = useState<number | null>(null);
 
   useEffect(() => {
     if (ancre) derniere.current = ancre;
   }, [ancre]);
+
+  useLayoutEffect(() => {
+    if (!ouvert) return;
+    const actif = document.activeElement;
+    avant.current = actif instanceof HTMLElement && actif !== document.body ? actif : null;
+  }, [ouvert]);
 
   // Sur téléphone, le panneau est une feuille basse : sa tête se pose **sous** la carte décrite,
   // pour que la carte reste dans la partie haute. Si la carte est trop basse, on la remonte.
@@ -322,7 +360,8 @@ export function InspecteurCombat({
           <DialogPanneau
             className="inspecteur"
             style={haut !== null ? ({ '--inspecteur-haut': `${haut}px` } as CSSProperties) : undefined}
-            finalFocus={() => trouverCarte(derniere.current)}
+            initialFocus={garderLeFocus ? false : undefined}
+            finalFocus={() => (avant.current?.isConnected ? avant.current : focusable(trouverCarte(derniere.current)))}
           >
             <DialogTitle className="inspecteur__titre">{nom}</DialogTitle>
             {fiche}

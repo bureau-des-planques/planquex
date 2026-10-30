@@ -1609,3 +1609,12 @@ describe('Battle — le focus après un coup (2.4.3)', () => {
     expect(document.activeElement).toBe(document.body);
   });
 });
+
+describe('Battle — la carte du plateau se décrit au focus (#525)', () => {
+  it('le Poste dit son Stress sur son Seuil, sans ouvrir le panneau', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const postes = [...container.querySelectorAll<HTMLElement>('[role="button"][data-uid]')];
+    expect(postes.length).toBeGreaterThan(0);
+    for (const poste of postes) expect(poste).toHaveAccessibleDescription(/^\d+ sur \d+ de Stress\./);
+  });
+});

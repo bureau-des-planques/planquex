@@ -131,6 +131,17 @@ function choixName(side: PlayerState, uid: string): string | undefined {
  * Le groupe porte le **nom** du Planqué : c'est par lui qu'on le retrouve, au Poste comme au
  * Banc. Sans définition connue, le nom seul reste lisible.
  */
+/**
+ * **Ce qu'une carte du plateau dit au focus** (#525) : son Stress sur son Seuil, puis ses Conditions.
+ * Le chiffre visible est un `role="img"` rendu présentationnel par la carte-bouton : sans cette
+ * phrase, Stress et Seuil n'existaient pour un lecteur d'écran qu'une fois le panneau ouvert.
+ */
+function resumeDeCarte(instance: CardInstance): string {
+  const stress = `${instance.maxHp - instance.hp} sur ${instance.maxHp} de Stress`;
+  const conditions = instance.statuses.map((statut) => STATUS_META[statut].label);
+  return conditions.length > 0 ? `${stress}. ${conditions.join(', ')}.` : `${stress}.`;
+}
+
 function CartePlateau({
   instance,
   className,
@@ -173,6 +184,7 @@ function CartePlateau({
       inspectee={inspectee}
       onInspecter={onInspecter}
       onAttacher={onAttacher}
+      resume={resumeDeCarte(instance)}
       fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
     >
       <CardView
@@ -1826,6 +1838,7 @@ export function Battle() {
             }}
             nom={inspecteur ? cardName(inspecteur.carte.cardId) : ''}
             ancre={inspecte}
+            garderLeFocus={mySide.hand.some((carte) => carte.uid === inspecte)}
             fiche={
               inspecteur && inspecteurDefinition ? (
                 <FicheCarte

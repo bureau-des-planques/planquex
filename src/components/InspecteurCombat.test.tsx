@@ -162,3 +162,97 @@ describe('InspecteurCombat — deux rendus, un seul contenu (T4, #287)', () => {
     expect(infobulle.style.left).toBe(`${demi + 8}px`);
   });
 });
+
+describe('CarteSurvolable — ce qu’un lecteur d’écran entend au focus (#525)', () => {
+  it('le résumé décrit la carte dès le focus, sans attendre l’infobulle (le contrôle mord : sans résumé, aucune description)', () => {
+    const { rerender } = render(
+      <CarteSurvolable
+        uid="u"
+        nom={NOM_ENTIER}
+        className="c"
+        fiche={null}
+        inspectee={false}
+        onInspecter={() => {}}
+        resume="40 sur 110 de Stress. Surcharge."
+      >
+        <span>{NOM_TRONQUE}</span>
+      </CarteSurvolable>
+    );
+    expect(carte()).toHaveAccessibleName(NOM_ENTIER);
+    expect(carte()).toHaveAccessibleDescription('40 sur 110 de Stress. Surcharge.');
+
+    rerender(
+      <CarteSurvolable uid="u" nom={NOM_ENTIER} className="c" fiche={null} inspectee={false} onInspecter={() => {}}>
+        <span>{NOM_TRONQUE}</span>
+      </CarteSurvolable>
+    );
+    expect(carte()).not.toHaveAttribute('aria-describedby');
+  });
+});
+
+describe('InspecteurCombat — le focus après le panneau (#525)', () => {
+  function OuvertParUnBouton() {
+    const [ouvert, setOuvert] = useState(false);
+    return (
+      <>
+        <CarteSurvolable
+          uid="u-1"
+          nom={NOM_ENTIER}
+          className="c"
+          fiche={null}
+          inspectee={ouvert}
+          onInspecter={() => setOuvert(true)}
+        >
+          <span>{NOM_TRONQUE}</span>
+        </CarteSurvolable>
+        <button type="button" onClick={() => setOuvert(true)}>
+          Rotation
+        </button>
+        <InspecteurCombat
+          ouvert={ouvert}
+          onOpenChange={(v) => !v && setOuvert(false)}
+          nom={NOM_ENTIER}
+          ancre="u-1"
+          fiche={null}
+        />
+      </>
+    );
+  }
+
+  it('ouvert par « Rotation », il rend le focus à « Rotation », pas à la carte (le contrôle mord : ce n’est pas la carte)', async () => {
+    render(<OuvertParUnBouton />);
+    const rotation = screen.getByRole('button', { name: 'Rotation' });
+    rotation.focus();
+    await userEvent.click(rotation);
+    await screen.findByRole('dialog');
+    await userEvent.keyboard('{Escape}');
+    expect(rotation).toHaveFocus();
+    expect(carte()).not.toHaveFocus();
+  });
+
+  it('`garderLeFocus` : le panneau s’ouvre sans voler le focus de ce qui l’a demandé', async () => {
+    function OuvertAuFocus() {
+      const [ouvert, setOuvert] = useState(false);
+      return (
+        <>
+          <button type="button" onFocus={() => setOuvert(true)}>
+            Carte de la main
+          </button>
+          <InspecteurCombat
+            ouvert={ouvert}
+            onOpenChange={(v) => !v && setOuvert(false)}
+            nom={NOM_ENTIER}
+            ancre={null}
+            fiche={null}
+            garderLeFocus
+          />
+        </>
+      );
+    }
+    render(<OuvertAuFocus />);
+    const main = screen.getByRole('button', { name: 'Carte de la main' });
+    main.focus();
+    await screen.findByRole('dialog');
+    expect(main).toHaveFocus();
+  });
+});
