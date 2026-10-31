@@ -164,6 +164,16 @@ describe('le contrôle visuel en CI (#205, #208, #234)', () => {
     expect(verdict.message).toContain('2 anti-patterns');
   });
 
+  it('nomme la règle refusée : un compte nu ne dit pas quoi corriger (31/10/2026)', () => {
+    const verdict = sonde(JSON.stringify([constat('undersized-ui-text'), constat('nested-cards')]));
+    expect(verdict.echec).toBe(true);
+    // Le contrôle mord : sans `reglesRefusees`, le message s'arrêterait à « 2 anti-patterns ».
+    expect(verdict.message).toContain('undersized-ui-text');
+    expect(verdict.message).toContain('nested-cards');
+    // Les avis ne se nomment pas : ils ne comptent pas.
+    expect(verdict.message).not.toContain('repeating-stripes-gradient');
+  });
+
   it('ne compte pas les avis', () => {
     const verdict = sonde(JSON.stringify([constat('repeating-stripes-gradient', true)]));
     expect(verdict.compte).toBe(0);
