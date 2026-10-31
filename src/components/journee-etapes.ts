@@ -1,11 +1,16 @@
 /**
- * Les étapes de la « Journée d'intégration » (#130, D-066 ; jouée, D-136, #334).
+ * Les étapes de la « Journée d'intégration » (#130, D-066 ; refonte du 30/10/2026).
  *
- * **Cinq étapes** : les quatre du ticket #130 — le Seuil et le Stress, l'Arrivage, le Deck,
- * la fin d'un combat — plus **le tour de jeu** (D-136). Chacune **ouvre l'écran qu'elle
- * décrit** (`cible`, une route de `src/App.tsx`), sauf le tour de jeu, qui se **fait** dans
- * le dialogue avant de conduire au combat : attacher un café, lancer une Pression, lire le
- * Stress (`geste: 'tour'`).
+ * **Cinq étapes, zéro recouvrement avec le pas-à-pas du combat.** La Journée couvre ce
+ * qui existe **hors** du combat — l'Arrivage, la Collection et le Deck, les données du
+ * navigateur, le comité — et elle **remet le combat** à son propre tutoriel : le
+ * pas-à-pas, qui parle du Poste, du café, de la Pression et de la fin là où ces mots
+ * veulent dire quelque chose (30/10/2026, décision D-160).
+ *
+ * Avant, trois de ses cinq étapes redisaient ce que le combat explique mieux : « Le Seuil
+ * et le Stress » ouvrait la Collection, « La fin d'un combat » doublait « La fin », et
+ * « Le tour de jeu » rejouait le café et la Pression dans une maquette. Un testeur
+ * recevait dix étapes pour cinq choses.
  *
  * **Deux phrases au plus et un seul geste par étape** (D-136) : `texte` tient en deux
  * phrases, `action` nomme le geste, et le pas de lecture est **mesuré** par le test
@@ -14,7 +19,7 @@
  * Les textes emploient le vocabulaire du jeu (`docs/JEU.md` §3) et aucun mot interdit.
  */
 export interface EtapeJournee {
-  /** Le titre de l'étape : il devient le titre du dialogue. */
+  /** Le titre de l'étape : il devient le titre du panneau. */
   readonly titre: string;
   /** Ce qu'on ne devine pas, en deux phrases au plus. */
   readonly texte: string;
@@ -23,64 +28,105 @@ export interface EtapeJournee {
   /** Le libellé du bouton : il nomme le geste, jamais « en savoir plus ». */
   readonly action: string;
   /**
-   * Le geste qui se **fait dans le dialogue**, quand l'étape ne peut pas se comprendre
-   * seulement en ouvrant un écran. Seul le tour de jeu en a un (D-136) : il faut avoir
-   * attaché un café et lancé une Pression pour passer.
+   * Le **geste réel** que l'étape exige avant de passer à la suivante (30/10/2026).
+   * Sans lui, la Journée se lisait : « ouvre un Arrivage » était un conseil, pas une
+   * étape. `arrivage` attend un Arrivage ouvert (`packsOpened`), `deck` attend un Deck
+   * chargé (`deck.length`).
    */
-  readonly geste?: 'tour';
+  readonly geste?: 'arrivage' | 'deck' | 'sauvegarde' | 'combat';
+  /**
+   * **La Direction accueille le nouveau** (31/10/2026, copie validée par Bastien). Une
+   * ligne, provocante, dans la voix du produit : les cinq textes d'étape sont justes mais
+   * neutres, et la satire ne vivait que sur les cartes et la scène de fin. Elle se dit
+   * dans le panneau, au-dessus du geste, comme la réplique de fin de combat.
+   */
+  readonly direction: string;
+  /**
+   * L'étape montre les cartes drôles du set (30/10/2026). C'est la carte qui parle : sa
+   * `flavor` est déjà la vanne, on n'en ajoute pas une seconde.
+   */
+  readonly montreCartes?: boolean;
 }
 
 export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   {
-    titre: 'Le Seuil et le Stress',
-    texte:
-      'Le Seuil est la limite avant la casse, et le Stress monte à chaque Pression. Au combat, la barre montre le Stress approcher du Seuil.',
-    cible: '/collection',
-    action: 'Voir ma Collection'
-  },
-  {
     titre: 'L’Arrivage',
     texte:
-      'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Le bouton de l’accueil l’ouvre, et les cartes rejoignent ta Collection.',
+      'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Clique « Ouvrir un Arrivage » : les cartes rejoignent ta Collection.',
     cible: '/',
-    action: 'Ouvrir un Arrivage'
+    action: 'Aller à l’accueil',
+    geste: 'arrivage',
+    direction: 'Ouvre ton Arrivage. La Direction a fait un effort : elle a mis des cartes dedans.'
   },
   {
-    titre: 'Le Deck',
+    titre: 'La Collection et le Deck',
     texte:
-      'Un Deck, c’est vingt cartes, deux exemplaires maximum du même nom, et au moins un Planqué Entrant. Choisis aussi de un à trois types de café : ce sont eux qui paient tes Pressions.',
+      'La Collection montre ce que tu possèdes, et tu composes ton Deck avec vingt de ces cartes. Choisis un Deck proposé et charge-le : c’est celui que tu joueras.',
     cible: '/deck',
-    action: 'Composer mon Deck'
+    action: 'Aller au Deck',
+    geste: 'deck',
+    montreCartes: true,
+    direction: 'Vingt cartes, et surtout pas une de plus. Tu n’es pas payé à la réflexion.'
   },
   {
-    titre: 'La fin d’un combat',
-    texte:
-      'Le premier à trois Interventions gagne, et un COMEX en vaut deux. Quand un Planqué craque, c’est son joueur qui choisit la relève ; plus de Planqué en jeu, c’est la défaite.',
-    cible: '/battle',
-    action: 'Aller au combat'
+    titre: 'Le combat',
+    texte: 'Le combat guidé t’apprend le Poste, le café et la Pression, sur le vrai plateau, jusqu’à la victoire.',
+    cible: '/battle?tutoriel=1&scene=fin',
+    action: 'Jouer mon premier combat',
+    direction: 'Trois Interventions et tu gagnes. Nous, on a déjà compté les tiennes.',
+    // **Le combat est un geste** (31/10/2026) : sans lui, l'étape qui compte se traversait
+    // en lecture. Il se marque à la scène de fin — gagner le combat guidé est la preuve
+    // qu'on l'a joué. Sur `/battle`, le panneau s'efface (le pas-à-pas parle seul).
+    geste: 'combat'
   },
   {
-    titre: 'Le tour de jeu',
+    titre: 'Tes données',
     texte:
-      'Un tour, c’est un café attaché, une Pression lancée, et un Stress qui monte. Fais-le ici : le geste est le même en combat.',
-    cible: '/battle',
-    action: 'Jouer mon premier tour',
-    geste: 'tour'
+      'Ta Collection et ton Deck vivent dans ce navigateur. Réglages → « Créer ma sauvegarde » avant de vider quoi que ce soit : c’est ta seule copie.',
+    cible: '/settings',
+    action: 'Aller aux réglages',
+    geste: 'sauvegarde',
+    direction: 'Fais une sauvegarde. Si tu perds tes cartes, on dira que tu n’avais qu’à pas les perdre.'
+  },
+  {
+    titre: 'Le comité',
+    texte:
+      'Le comité est le mur des retours, dans la barre du bas : un post-it IP pour une idée, un OUF pour un défaut. Il reste ouvert après la Journée, quand tu auras quelque chose à dire.',
+    cible: '/comite',
+    action: 'Voir le comité',
+    direction: 'Une idée ? Un défaut ? Le mur est là. On ne lira pas, mais on l’affichera.'
   }
 ];
 
 /**
- * Ce que le saut coûte, écrit sur le bouton (D-136).
+ * Les cartes montrées à l'étape « La Collection et le Deck » (30/10/2026).
  *
- * Un testeur pressé saute d'un clic, mais il **sait** ce qu'il perd : tant que le tour de
- * jeu reste à voir, le bouton le nomme. Passé cette étape, il n'y a plus rien à perdre, et
- * le bouton le dit aussi.
+ * Des **identifiants**, pas des textes : la vanne est la `flavor` de la carte, lue dans
+ * `src/data` — un fait, un fichier. La paire Joueur de flûte → Technicien système est là
+ * pour montrer une **évolution** (Entrant → N+1), pas seulement pour faire rire.
  */
-export function libelleSaut(etape: number, tourFait = false): string {
-  const restantes = ETAPES_JOURNEE.slice(Math.max(0, etape));
-  const tour = restantes.find((courante) => courante.geste === 'tour');
-  if (!tour || tourFait) return 'Terminer la journée d’intégration';
-  return `Passer : tu ne verras pas ${tour.titre.toLowerCase()}`;
+export const CARTES_MONTREES = [
+  'atelier-joueur-de-flute',
+  'atelier-technicien-systeme',
+  'direction-chef-projet-fantome',
+  'rh-charge-recrutement',
+  'qvt-happiness-manager',
+  'interim-interimaire'
+] as const;
+
+/**
+ * Ce que le saut coûte, écrit sur le bouton (D-136, reformulé le 30/10/2026).
+ *
+ * Un testeur pressé saute d'un clic, mais il **sait** ce qu'il perd. Tant que le combat
+ * reste à voir, le bouton le nomme — c'est l'étape qui compte, celle que la Journée ne
+ * fait qu'annoncer. Passé le combat, il n'y a plus rien à perdre que la fin du parcours,
+ * et le bouton le dit : « Terminer ».
+ */
+export function libelleSaut(etape: number): string {
+  // **`<=` et non `<`** (31/10/2026) : à l'étape du combat, « Terminer » promettait de tout
+  // garder alors qu'on perdait le seul écran que la Journée voulait montrer.
+  const resteLeCombat = etape <= ETAPES_JOURNEE.findIndex((courante) => courante.cible.split('?')[0] === '/battle');
+  return resteLeCombat ? 'Passer : tu ne verras pas le combat' : 'Terminer la journée d’intégration';
 }
 
 /**
@@ -89,9 +135,12 @@ export function libelleSaut(etape: number, tourFait = false): string {
  */
 export const MOTS_PAR_MINUTE = 180;
 
-/** Les mots que l'étape demande de lire : son titre, son texte et le libellé du geste. */
+/**
+ * Les mots que l'étape demande de lire : son titre, son texte, le libellé du geste et la
+ * ligne de la Direction (31/10/2026 — elle se lit aussi).
+ */
 export function motsDeLEtape(etape: EtapeJournee): number {
-  return `${etape.titre} ${etape.texte} ${etape.action}`.split(/\s+/).filter(Boolean).length;
+  return `${etape.titre} ${etape.texte} ${etape.action} ${etape.direction}`.split(/\s+/).filter(Boolean).length;
 }
 
 /** La lecture de l'étape, en secondes, à `MOTS_PAR_MINUTE`. */

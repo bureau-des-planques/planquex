@@ -792,7 +792,9 @@ h2 {
   border-radius: 999px;
   color: var(--gold-soft);
   display: inline-block;
-  font-size: var(--fs-xs);
+  /* **12 px** (#547) : `tiny-text` relève le corps de texte sous 12 px, et cette pastille
+     porte un mot lisible (« La Direction »), pas une mention légale. */
+  font-size: max(var(--fs-xs), 0.75rem);
   margin-left: 0.5rem;
   padding: 0.1rem 0.5rem;
   vertical-align: middle;
@@ -1615,7 +1617,10 @@ h2 {
   border: 1px dashed var(--text-dim);
   border-radius: 999px;
   color: var(--text);
-  font-size: 0.68rem;
+  /* **Plancher de lisibilité** (31/10/2026) : à 0,68rem (10,88 px), ce texte fonctionnel
+     passait sous le seuil de 11 px du détecteur — 132 emplacements vides sur un écran
+     vierge. Arrondi au centième de rem au-dessus du plancher. */
+  font-size: 0.7rem;
   font-weight: 700;
   left: 50%;
   letter-spacing: 0.08em;
@@ -1749,7 +1754,9 @@ h2 {
   display: -webkit-box;
   flex: 1 1 auto;
   font-family: var(--font-display);
-  font-size: 1em;
+  /* **Plancher de la vignette** (#547) : le nom se lit à 200 px de carte. Mesuré : 2 noms
+     extrêmes sur 308 se replient au point d'être rognés, la hauteur de carte ne bouge pas. */
+  font-size: max(1em, 0.7rem);
   font-weight: 800;
   hyphens: auto;
   line-height: 1.05;
@@ -1762,7 +1769,9 @@ h2 {
 /* Un nom long (plus de 18 signes, `CardView`) passe un cran plus petit : 41 signes tiennent
    sur deux lignes (« Responsable développement des compétences »). */
 .card__name[data-long] {
-  font-size: 0.84em;
+  /* La règle des noms longs garde sa réduction **et** le plancher : sans elle, un nom de
+     18 signes resterait à 8,8 px sur une carte de 200 px (#547). */
+  font-size: max(0.84em, 0.7rem);
 }
 
 /* Le Seuil, en gros chiffre à droite : la lecture Pocket immédiate. Le mot n'est qu'un repère. */
@@ -1771,7 +1780,9 @@ h2 {
   display: flex;
   flex: none;
   font-family: var(--font-display);
-  font-size: 1.2em;
+  /* Sur une carte compacte, la base est réduite par les container queries : `max()` garde la
+     proportion sur les grandes cartes et le plancher de 11,2 px sur les vignettes. */
+  font-size: max(1.2em, 0.7rem);
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   gap: 0.12em;
@@ -1835,7 +1846,8 @@ h2 {
   background: rgb(7 12 22 / 80%);
   border-radius: 0.5em;
   display: inline-flex;
-  font-size: 0.66em;
+  /* **Plancher de la vignette** (#547, 31/10/2026) : le stade se lit (11,2 px). */
+  font-size: max(0.66em, 0.7rem);
   font-weight: 700;
   gap: 0.35em;
   left: 0.35em;
@@ -1859,7 +1871,8 @@ h2 {
   background: rgb(0 0 0 / 28%);
   border-radius: 0.2em;
   color: rgb(255 255 255 / 90%);
-  font-size: 0.68em;
+  /* Plancher de la vignette (#547) : la légende se lit. */
+  font-size: max(0.68em, 0.7rem);
   font-style: italic;
   overflow: hidden;
   padding: 0.1em 0.5em;
@@ -1894,7 +1907,8 @@ h2 {
 }
 
 .card__attacks .attack__name {
-  font-size: 0.9em;
+  /* Le plancher garde la valeur d'origine (0,9em) sur les grandes cartes. */
+  font-size: max(0.9em, 0.7rem);
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1933,13 +1947,16 @@ h2 {
   display: grid;
   font-size: 0.8em;
   gap: 0.1em 0.35em;
-  grid-template-columns: 3.75em 1fr;
+  /* **La colonne du badge se mesure sur son contenu** (#547) : à 11,2 px, « TALENT » ne
+     tenait pas dans 3,75em et débordait de 16 px (constat `text-overflow` du détecteur). */
+  grid-template-columns: auto 1fr;
 }
 
 .card__talent em {
   background: #b3261e;
   border-radius: 0.2em;
-  font-size: 0.7em;
+  /* Plancher : 11,2 px même sur une carte réduite (`max` garde l'échelle des grandes). */
+  font-size: max(0.7em, 0.7rem);
   font-style: normal;
   font-weight: 800;
   padding: 0.05em 0.35em;
@@ -1948,6 +1965,9 @@ h2 {
 }
 
 .card__talent span {
+  /* Plancher (#547) : hérite de `.card__talent` (0,8em), donc sous 11 px sur une vignette.
+     `1em` garde la proportion du parent, `max()` pose le plancher. */
+  font-size: max(1em, 0.7rem);
   font-weight: 700;
 }
 
@@ -1971,7 +1991,8 @@ h2 {
 .card__texte {
   background: rgb(0 0 0 / 22%);
   border-radius: 0.3em;
-  font-size: 0.88em;
+  /* Plancher (#547) : le texte d'une Pression se lit sur une vignette. */
+  font-size: max(0.88em, 0.7rem);
   line-height: 1.35;
   text-wrap: pretty;
   margin: auto 0;
@@ -2021,7 +2042,8 @@ h2 {
 }
 
 .card__bas small {
-  font-size: 0.62em;
+  /* Plancher de la vignette (#547) : « Vuln. » / « Rot. » se lisent. */
+  font-size: max(0.62em, 0.7rem);
   letter-spacing: 0.04em;
   opacity: 0.85;
   text-transform: uppercase;
@@ -2030,9 +2052,10 @@ h2 {
 .card__bas b {
   align-items: center;
   display: inline-flex;
-  white-space: nowrap;
-  font-size: 0.82em;
+  /* Plancher de la vignette (#547) : « ▲MGT +20 » se lit et tient dans sa colonne. */
+  font-size: max(0.82em, 0.7rem);
   gap: 0.2em;
+  white-space: nowrap;
 }
 
 .card__bas b i {
@@ -2063,15 +2086,18 @@ h2 {
 
 .card__rarity {
   color: var(--rarity);
-  font-size: 0.85em;
+  /* Plancher de la vignette (#547) : la rareté se lit (11,2 px). */
+  font-size: max(0.85em, 0.7rem);
   letter-spacing: 0.08em;
   text-shadow: 0 1px 0 rgb(0 0 0 / 70%);
 }
 
 /* Le sigle de faction : la paire « sigle de faction » de `DESIGN.md` §1.5 (AA). */
 .card__faction {
-  color: color-mix(in srgb, var(--accent) 35%, #fff);
-  font-size: 0.75em;
+  /* **Contraste** (#547) : 35 % d'accent donnait 4,4:1 sur une carte dorée ; 30 % passe
+     l'AA sans changer la teinte perçue du sigle. */
+  color: color-mix(in srgb, var(--accent) 30%, #fff);
+  font-size: max(0.75em, 0.7rem);
   font-weight: 700;
 }
 
@@ -2151,7 +2177,9 @@ h2 {
   border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
   border-radius: 4px;
   color: var(--gold-soft);
-  font-size: var(--fs-2xs);
+  /* **11,2 px** (31/10/2026) : le badge de Seuil est un chiffre qu'on lit. Il était au
+     plancher `--fs-2xs` (9,92 px), sous le seuil de 11 px du détecteur d'UI. */
+  font-size: var(--fs-xs);
   padding: 1px 3px;
   position: absolute;
   right: 4%;
@@ -2210,7 +2238,9 @@ h2 {
 
 .card--plateau .card__attacks .attack__name,
 .card--plateau .card__attacks .attack__dmg {
-  font-size: var(--fs-2xs);
+  /* **Mode détaillé** (#547) : le nom de la Pression se lit. `max()` le garde au-dessus du
+     plancher mécanique `--fs-2xs`, donc `styles-combat.test.ts` reste vert. */
+  font-size: max(var(--fs-2xs), 0.7rem);
   min-width: 0;
 }
 
@@ -2259,7 +2289,10 @@ h2 {
 
 .attack__name {
   flex: 1;
-  font-size: 0.78rem;
+  /* Plancher (#547) : le nom de Pression reste **affiché** (DESIGN.md §2.1) et gagne le
+     seuil de lisibilité. Mesuré : 21 noms longs sur 389 passent en ellipse à 200 px, ce
+     que `.attack__name` fait déjà par conception ; la carte pleine taille ne bouge pas. */
+  font-size: max(0.78rem, 0.7rem);
 }
 
 .attack__dmg,
@@ -2469,6 +2502,254 @@ h2 {
 
 /* ---------- Journée d'intégration (D-066, #130) ---------- */
 
+/* **Le panneau** (30/10/2026). Il était un `Dialog` : fond sombre, page figée. Il devient
+   le même motif que le pas-à-pas du combat — une carte posée en haut de l'écran, sans
+   fond assombri —, parce que la suite du parcours demande des **gestes réels** qu'un
+   dialogue modal rend impossibles. Ce qui la rend contraignante n'est pas le voile, c'est
+   la garde de `JourneeIntegration` : hors du panneau et hors d'un `[data-journee-cible]`,
+   le clic n'arrive pas. Il passe **au-dessus de la barre du bas** (z-index 20) : c'est lui
+   qu'on doit voir, et la barre qu'on ne doit pas toucher par accident.
+   `--fs-*` et les jetons : `DESIGN.md` §1 et §6. */
+.journee {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-raised) 90%, var(--line-strong)),
+    var(--bg-raised) 40%,
+    var(--bg-sunken)
+  );
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
+    0 18px 40px -16px rgb(0 0 0 / 70%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  left: 0.6rem;
+  max-width: min(34rem, calc(100% - 1.2rem));
+  padding: 0.75rem 0.85rem;
+  position: fixed;
+  right: 0.6rem;
+  top: max(0.6rem, env(safe-area-inset-top, 0px));
+  z-index: 40;
+}
+
+/* **Le halo** (30/10/2026) : l'élément que l'étape désigne. Le même contour doré que le
+   pas-à-pas du combat (`[data-pas-a-pas]`) — un seul langage pour les deux tutoriels — et
+   il reste **cliquable** : la garde de `JourneeIntegration` laisse passer ce qui est dans
+   `[data-journee-cible]`. Aucun déplacement : `outline` ne prend pas de place, donc la
+   mise en page ne bouge pas quand une étape désigne un bouton. */
+[data-journee-cible] {
+  border-radius: 4px;
+  outline: 2px solid color-mix(in srgb, var(--gold) 70%, transparent);
+  outline-offset: 3px;
+  /* L'élément désigné est amené **sous le panneau**, jamais derrière : sa hauteur réelle
+     est posée par `JourneeIntegration` dans `--journee-hauteur`. Même remède que le
+     pas-à-pas du combat. */
+  scroll-margin-top: calc(var(--journee-hauteur, 0px) + 1rem);
+}
+
+.journee__compte {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.journee__titre {
+  font-size: 1rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.journee__texte {
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 62ch;
+}
+
+/* Les cartes drôles de l'étape « La Collection et le Deck » (30/10/2026) : une bande
+   horizontale, jamais un mur. Six cartes tiendraient sur trois lignes de panel et
+   pousseraient les boutons hors du téléphone ; là, on les fait glisser. La vanne est la
+   `flavor` de la carte, alors elle se lit en retrait (`--text-muted`, 7,87:1 sur `--bg`),
+   sous le nom qui reste en `--text`. */
+.journee__cartes {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.1rem 0 0.35rem;
+  scroll-snap-type: x proximity;
+}
+
+.journee__carte {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex: 0 0 9.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  scroll-snap-align: start;
+}
+
+.journee__carte strong {
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
+.journee__carte em {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.3;
+}
+
+/* Le geste qui reste à faire : dit pourquoi « Suivant » est éteint, à la place où l'œil
+   cherche la raison. `--gold-soft` sur le fond du panneau : 12,03:1, AAA. */
+.journee__geste {
+  color: var(--gold-soft);
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* ---------- La scène de fin (30/10/2026) ---------- */
+
+/* Le verdict du combat scripté, **posé comme un tampon** : le plateau recule sous un voile
+   sombre, le tampon tombe de biais, la phrase de la Direction arrive dessous. Trois temps,
+   pas dix : la scène dure le temps d'un souffle, et un clic n'importe où la referme. */
+.scene-fin {
+  align-items: center;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: fixed;
+  z-index: 60;
+}
+
+.scene-fin__voile {
+  animation: scene-fin-voile 220ms ease-out both;
+  background: radial-gradient(
+    ellipse at center,
+    rgb(4 8 16 / 55%) 0%,
+    rgb(4 8 16 / 82%) 55%,
+    rgb(4 8 16 / 92%) 100%
+  );
+  inset: 0;
+  position: absolute;
+}
+
+.scene-fin__corps {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-width: min(22rem, 88vw);
+  padding: 1rem;
+  position: relative;
+  text-align: center;
+}
+
+/* Le tampon : un cadre épais, incliné, qui tombe et rebondit une fois. */
+.scene-fin__tampon {
+  animation: scene-fin-tampon 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  border: 3px solid var(--gold);
+  border-radius: 6px;
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 9vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  margin: 0;
+  padding: 0.45rem 0.8rem;
+  transform: rotate(-6deg);
+}
+
+.scene-fin__tampon.is-perdu {
+  border-color: var(--scene-danger);
+  color: var(--scene-danger);
+}
+
+.scene-fin__sous {
+  color: var(--text);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.scene-fin__replique {
+  animation: scene-fin-ligne 320ms ease-out 380ms both;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-style: italic;
+  margin: 0;
+}
+
+@keyframes scene-fin-voile {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scene-fin-tampon {
+  0% {
+    opacity: 0;
+    transform: rotate(-14deg) scale(1.8);
+  }
+
+  60% {
+    opacity: 1;
+    transform: rotate(-5deg) scale(0.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: rotate(-6deg) scale(1);
+  }
+}
+
+@keyframes scene-fin-ligne {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Sous mouvement réduit (ou quand le store le demande), la scène est **déjà posée** : le
+   verdict se lit, rien ne tombe. */
+.scene-fin--calme *,
+.scene-fin--calme *::after,
+.scene-fin--calme *::before {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene-fin *,
+  .scene-fin *::after,
+  .scene-fin *::before {
+    animation: none !important;
+  }
+}
+
+/* La réplique de la Direction (30/10/2026) : une ligne, en italique, dans la même colonne
+   que le journal — elle ne prend pas de bande à elle (D-103 tient). `--text-muted` sur la
+   barre d'action : 7,16:1 au pire, AA. */
+.combat-replique {
+  font-style: italic;
+}
+
 /* La sortie de la visite, sous les actions : un lien discret, pas un troisième bouton —
    « Suivant » doit rester lisible à côté du geste de l'étape. */
 .journee__passer {
@@ -2476,9 +2757,15 @@ h2 {
   border: 0;
   color: var(--text-muted);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
   font: inherit;
   font-size: 0.82rem;
-  padding: 0;
+  /* **44 px de haut** (31/10/2026) : c'était la seule sortie, et elle mesurait 20 px —
+     sous la cible tactile du dépôt (44 px, D-120), pour le seul bouton qui doit rester
+     joignable au pouce. Le soulignement reste le signal d'un lien. */
+  min-height: 44px;
+  padding: 10px 0;
   text-align: left;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -2487,6 +2774,117 @@ h2 {
 
 .journee__passer:hover {
   color: var(--text);
+}
+
+/* **La pause** (31/10/2026) : `Échap` met la visite de côté au lieu de la terminer. Une
+   barre d'une ligne, qui ne bloque rien (la garde est éteinte) et dit où l'on en est. */
+/* **L'espace du panneau** (31/10/2026) : réservé au-dessus du contenu tant que la Journée est
+   ouverte. Il se mesure en continu (`--journee-hauteur`), donc il suit la police et la ligne
+   de la Direction. Sans lui, la cible de l'étape 1 restait sous le panneau. */
+/* **L'en-tête** (31/10/2026) : le titre et sa sortie sur la même ligne, pour ne pas payer
+   deux rangées. La sortie garde 44 px de haut et se replie à droite. */
+.journee__tete {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.journee__tete > div {
+  min-width: 0;
+}
+
+.journee__tete .journee__passer {
+  flex: none;
+  max-width: 46%;
+  text-align: right;
+}
+
+.journee__compte {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  margin-right: 6px;
+}
+
+.journee-espace {
+  flex: none;
+  height: calc(var(--journee-hauteur, 0px) + 1rem);
+}
+
+/* **La voix de la Direction** (31/10/2026) : son portrait, puis sa phrase, dans une bulle
+   compacte qui **sort** — une apparition courte, la même famille que les autres entrées du
+   produit (sous « Mouvement réduit », la règle globale la ramène à rien). Le portrait est
+   l'illustration du PDG (`src/art`), la seule qui représente la Direction. */
+.journee__bulle {
+  align-items: flex-start;
+  animation: journee-bulle 220ms ease-out both;
+  display: flex;
+  gap: 8px;
+}
+
+@keyframes journee-bulle {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.journee__portrait {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  flex: none;
+  height: 36px;
+  object-fit: cover;
+  /* Le visage est en haut du carré de l'illustration : on le garde dans le cercle. */
+  object-position: center 30%;
+  width: 36px;
+}
+
+.journee__direction {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.journee__direction strong {
+  color: var(--text);
+  font-style: normal;
+}
+
+.journee--pause {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 13.6px;
+}
+
+.journee--pause p {
+  margin: 0;
+}
+
+/* **« Montrer le bouton » fait quelque chose** (31/10/2026) : la cible pulse une fois. Un
+   clic sans effet se lit comme un bouton cassé, même quand l'élément est déjà visible. */
+@keyframes journee-montre {
+  50% {
+    outline-color: var(--gold);
+    outline-offset: 8px;
+  }
+}
+
+[data-journee-cible].est-montre {
+  /* Deux tours de 300 ms : la borne du dépôt est 800 ms **au total** (#294). */
+  animation: journee-montre 300ms ease-out 2;
 }
 
 /* Le tour de jeu, joué dans le dialogue (#334, D-136) : un gabarit de tour, pas une image.
@@ -4034,10 +4432,11 @@ h2 {
   color: var(--scene-ink-parch);
   display: inline-flex;
   font-family: var(--font-display);
-  font-size: var(--fs-2xs);
+  /* 11,2 px : « Deck » et « Rebut » sont des libellés fonctionnels (31/10/2026). */
+  font-size: var(--fs-xs);
   font-weight: 600;
   gap: 0.3rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.12rem;
   padding: 0.12rem 0.3rem 0.12rem 0.4rem;
   text-transform: uppercase;
 }
@@ -4106,6 +4505,45 @@ h2 {
   position: absolute;
   right: 1.5px;
   top: 1.5px;
+}
+
+/* **La fin se voit** (30/10/2026) : les trois hexagones du camp vainqueur s'allument en
+   séquence, de gauche à droite — 0, 180, 360 ms. Le nom du camp est le premier `span` de
+   la rangée, d'où les `nth-of-type` à partir de 2. Sous mouvement réduit, rien ne bouge :
+   c'est déjà rempli. */
+.piste__hex.is-finale {
+  animation: piste-finale 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.piste__hex.is-finale:nth-of-type(3) {
+  animation-delay: 180ms;
+}
+
+.piste__hex.is-finale:nth-of-type(4) {
+  animation-delay: 360ms;
+}
+
+@keyframes piste-finale {
+  0% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+
+  40% {
+    filter: brightness(1.9);
+    transform: scale(1.28);
+  }
+
+  100% {
+    filter: brightness(1);
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .piste__hex.is-finale {
+    animation: none;
+  }
 }
 
 .piste__hex.is-acquise {
@@ -6585,7 +7023,8 @@ h2 {
 
 .home__version-titre {
   color: var(--text-dim);
-  font-size: var(--fs-2xs);
+  /* 11,2 px : c'est un titre, pas une mention légale (31/10/2026). */
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.1em;
   margin: 0;
@@ -6625,7 +7064,8 @@ h2 {
 }
 
 .collection__plafond {
-  font-size: var(--fs-xs);
+  /* 12 px : `tiny-text` relève le corps de texte sous 12 px, et cette ligne est du texte. */
+  font-size: max(var(--fs-xs), 0.75rem);
   margin: 0.15rem 0 0;
 }
 

@@ -191,8 +191,18 @@ inchangée) ; le plancher **mécanique** du combat — ce qu'aucune règle `.bat
 `--fs-2xs` (0,62 rem = 9,92 px). `src/styles-combat.test.ts` lit la feuille, **échoue** si une
 déclaration passe dessous (il voit une règle de 0,42 rem comme de 8 px : le contrôle mord) et a été vu
 **rouge** avant la correction sur trois règles (0,42 / 0,55 / 0,6 rem). Mesure à l'écran, 420 × 900,
-arrivée **et** tour 3 avec un café attaché : **aucun nœud de texte visible sous 9,92 px** (le plus petit
-est 9,92 px : noms du Banc, emblèmes, « Deck » / « Rebut », noms des camps de la piste). Ce que la
+arrivée **et** tour 3 avec un café attaché : **aucun nœud de texte visible sous 9,92 px**. Depuis le
+31/10/2026, « Deck » / « Rebut », le badge de Seuil et le titre de version passent à **11,2 px**
+(`--fs-xs`) : le plancher `--fs-2xs` reste la borne, mais plus rien ne s'y tient.
+
+**La vignette de carte a son propre plancher** (#547, 31/10/2026). Une `card--compact` réduit
+sa base en `em` pour tenir dans 200 px de large, et ses libellés — nom, nom long (`data-long`),
+stade, légende, « Vuln. » / « Rot. », faiblesse, nom de Pression — portent chacun un
+`max(<em actuel>, 0.7rem)` (11,2 px). Le **mode détaillé** du plateau applique le même plancher
+au nom de Pression (`max(var(--fs-2xs), 0.7rem)`), sans relever le jeton. Effet mesuré, à
+200 px : **21 noms de Pression sur 389** passent en ellipse (l'affordance existante de
+`.attack__name`), **2 noms de Planqué sur 308** se replient au point d'être rognés ; la hauteur
+de carte ne change pas (279,36 px), et le nombre de colonnes non plus. Ce que la
 mesure ne prouve pas : les pseudo-éléments (`::before` « SEUIL ») ne sont pas des nœuds de texte, c'est
 le test de la feuille qui les couvre.
 

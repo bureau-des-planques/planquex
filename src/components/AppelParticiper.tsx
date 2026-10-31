@@ -15,7 +15,7 @@ export const ROUTE_COMITE = '/comite';
 export function AppelParticiper({ surComite }: { surComite: () => void }) {
   return (
     <p className="journee__appel m-0 max-w-[66ch] text-[0.78rem] text-ink-dim">
-      Envie d’aider ? Un bug ou une idée, c’est sur{' '}
+      Envie d’aider ? Un défaut ou une idée, c’est sur{' '}
       <Link to={ROUTE_COMITE} onClick={surComite} className="underline underline-offset-2">
         le comité
       </Link>

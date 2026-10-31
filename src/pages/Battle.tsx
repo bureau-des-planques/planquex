@@ -59,6 +59,11 @@ import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
+import { etatFinScriptee } from '@/game/scenario-fin';
+import { marquerGeste } from '@/components/journee-gestes';
+import { avancerJournee, etapeJournee } from '@/components/journee-etape';
+import { SceneFin } from '@/components/SceneFin';
+import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
@@ -861,6 +866,8 @@ function useEcranLarge(): boolean {
 export function Battle() {
   const ecranLarge = useEcranLarge();
   const storeDeck = useStore((state) => state.deck);
+  /** La Journée est-elle encore ouverte ? Seule la visite enchaîne après la scène de fin. */
+  const tutorielVu = useStore((state) => state.tutorielVu);
   /**
    * **La difficulté du combat** (#251, D-145) : elle est **figée au montage**, et relue
    * seulement par « Nouveau combat ». Changer le cran dans Réglages ne déplace donc pas
@@ -889,6 +896,13 @@ export function Battle() {
    */
   const [parametres] = useSearchParams();
   const tutoriel = parametres.get('tutoriel') === '1';
+  /**
+   * **La fin scriptée** du tutoriel de combat (30/10/2026) : `?scene=fin` ouvre une
+   * position déjà gagnable — deux Interventions partout, un Poste adverse à 10 — pour
+   * que le testeur **joue** la fin au lieu de la regarder (`etatFinScriptee`).
+   * Aucune règle ne change : c'est le même moteur, et la partie n'est pas rangée.
+   */
+  const sceneFin = parametres.get('scene') === 'fin';
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -930,6 +944,15 @@ export function Battle() {
    * un combat neuf contre la Direction, comme avant.
    */
   const [depart] = useState<Reprise & { reprise: boolean }>(() => {
+    // La fin scriptée impose sa position : rien n'est repris, rien n'est écrasé.
+    if (sceneFin) {
+      return {
+        state: etatFinScriptee(playerDeck, directionDeck, chosenCafeTypes),
+        match: null,
+        decksSolo: { playerDeck, aiDeck: directionDeck },
+        reprise: false
+      };
+    }
     // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
     // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
     const reprise = tutoriel ? null : reprendrePartie(useStore.getState().partie);
@@ -948,6 +971,8 @@ export function Battle() {
    * de la veille ressemblait à un abandon.
    */
   const [partieReprise, setPartieReprise] = useState(depart.reprise);
+  /** La scène de fin du tutoriel a-t-elle été refermée ? (30/10/2026) */
+  const [sceneFinFermee, setSceneFinFermee] = useState(false);
   /** Les Decks du combat solo : une partie à deux porte les siens dans son `Match`. */
   const [decksSolo, setDecksSolo] = useState<Decks>(depart.decksSolo);
 
@@ -986,6 +1011,24 @@ export function Battle() {
   const myCard = mySide.active ? getCard(mySide.active.cardId) : undefined;
   /** Dernière ligne du journal : ce qui vient de se passer, mis en avant. */
   const lastLog = state.log.at(-1) ?? '';
+  /**
+   * **La Direction parle** (30/10/2026), dans la fin scriptée seulement : elle réagit à ce
+   * qui vient de se passer (une Pression, un craquage) et à l'issue. Choix déterministe
+   * par le tour, donc une partie rejouée dit les mêmes phrases.
+   */
+  const evenementDirection =
+    state.phase === 'ended' ? (state.winner === 'player' ? 'victoire' : 'defaite') : evenementDuJournal(lastLog);
+  const repliqueDirection = sceneFin && evenementDirection ? choisirReplique(evenementDirection, state.turn) : null;
+  /** La scène de fin est ouverte : c'est elle qui dit le verdict et la phrase de la Direction. */
+  const sceneFinOuverte = sceneFin && state.phase === 'ended' && !sceneFinFermee;
+  /**
+   * **Le combat guidé est un geste de la Journée** (31/10/2026) : elle s'efface sur
+   * `/battle`, donc elle ne peut pas voir le plateau. La fin du combat — joué jusqu'au
+   * verdict, gagné ou perdu — est la preuve qu'on l'a joué ; `Suivant` s'ouvre alors.
+   */
+  useEffect(() => {
+    if (sceneFinOuverte) marquerGeste('combat');
+  }, [sceneFinOuverte]);
 
   /** Le moteur dit ce qui est possible ; l'écran ne fait que le rendre. */
   const legal = useMemo(() => legalActions(state), [state]);
@@ -1283,7 +1326,7 @@ export function Battle() {
   useEffect(() => {
     // Un combat guidé ne s'enregistre pas : le testeur qui le rejoue ne doit pas perdre la
     // partie qu'il avait en cours (#272).
-    if (tutoriel) return;
+    if (tutoriel || sceneFin) return;
     enregistrerPartie(partieSauvegardee(state, match, decksSolo));
     // La dernière partie terminée (#366) : une partie finie se revoit depuis Réglages.
     const derniere = derniereDe(state, match, decksSolo);
@@ -1762,6 +1805,28 @@ export function Battle() {
       {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
       <PasAPasCombat pasAPas={pasAPas} />
 
+      {/* **La scène de fin** (30/10/2026) : dans la fin scriptée seulement, le verdict se
+          pose comme un tampon, avec la phrase de la Direction. Un clic la referme ; la
+          barre d'action garde ensuite le bandeau et les deux boutons. */}
+      {sceneFinOuverte && (
+        <SceneFin
+          gagne={state.winner === myCamp}
+          replique={repliqueDirection}
+          calme={sansMouvement}
+          onFermer={() => setSceneFinFermee(true)}
+          /* **Continuer continue la visite** (31/10/2026) : le panneau est caché sur le
+             plateau, donc sans cet enchaînement le testeur restait au combat sans savoir
+             qu'il restait deux étapes. Hors Journée, « Continuer » ferme seulement. */
+          onContinuer={() => {
+            if (!sceneFin || tutorielVu) return;
+            // L'étape du combat est la troisième (index 2) : on ne l'avance que depuis elle,
+            // sinon un rejeu du combat plus tard sauterait une étape de la visite.
+            if (etapeJournee() === 2) avancerJournee();
+            navigate('/settings');
+          }}
+        />
+      )}
+
       {/* **Le combat guidé** (#272) : le bandeau dit ce qui se passe et ce qui suit. Le
           guidage ne bloque rien — on peut le passer à tout moment et jouer dessous. */}
       {tutoriel && (
@@ -1817,6 +1882,9 @@ export function Battle() {
                   camps={[otherCamp(myCamp), myCamp].map((camp) => ({
                     label: pisteLabel(camp),
                     points: state.players[camp].points,
+                    /* Le camp qui a gagné **allume sa piste** : la fin se voit avant de se
+                       lire (30/10/2026). */
+                    finale: state.phase === 'ended' && state.winner === camp,
                     /* Les crans qui viennent d'être acquis (#192) : leur hexagone rebondit
                        une fois ; sous mouvement réduit, il est simplement déjà rempli. */
                     fraiches: effets
@@ -2030,6 +2098,9 @@ export function Battle() {
             aria-label="Actions du tour"
             data-impeccable-ignore="cramped-padding"
             data-pas-a-pas={pasAPas.designe('poste-actions')}
+            /* Plus de halo local : la cible de la Journée vient d'un seul module
+               (`journee-cible`), et le panneau s'efface sur le plateau (31/10/2026) —
+               c'est le pas-à-pas qui désigne, ici. */
           >
             {/* **L'annonce du coup** (WCAG, messages d’état) : une zone **persistante** — jamais re-montée, sinon un
                 lecteur d'écran ne l'entend pas changer — qui reçoit la dernière ligne du journal. La
@@ -2069,6 +2140,11 @@ export function Battle() {
                   {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
                       de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
                   {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
+                  {repliqueDirection && !sceneFinOuverte && (
+                    <p className="muted combat-barre__portee combat-replique">
+                      <strong>La Direction</strong> · {repliqueDirection}
+                    </p>
+                  )}
                 </div>
                 {turnActions.map((action) => (
                   <span className="combat-barre__fin" key={JSON.stringify(action)}>
@@ -2181,6 +2257,15 @@ export function Battle() {
                 bouton. Une partie finie n'a rien à perdre : le geste est direct. */}
             {state.phase === 'ended' && (
               <div className="combat-barre__gestes">
+                {/* **La fin du tutoriel propose la suite** (30/10/2026) : une partie complète
+                    avec le Deck chargé à l'étape 2, ou la reprise de la Journée par son propre
+                    panneau (« Suivant », resté ouvert au-dessus). Ici, seul le premier choix
+                    a besoin d'un bouton. */}
+                {sceneFin && state.winner === 'player' && (
+                  <Link className="button" to="/battle">
+                    Une partie complète
+                  </Link>
+                )}
                 <button type="button" className="button button--primary" onClick={demanderNouveauCombat}>
                   <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
                 </button>

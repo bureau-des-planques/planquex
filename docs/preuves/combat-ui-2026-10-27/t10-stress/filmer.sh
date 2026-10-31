@@ -17,8 +17,9 @@ etapes=()
 for _ in 1 2 3 4 5 6; do
   etapes+=(--clic '.combat-barre__fin .button.is-a-toi' --pause 400 --attendre '.battle__head:has-text("à toi")' --pause 1000)
 done
-# Dernière étape : le tour qui fait monter le Stress sans Pression. On filme dès que le chiffre est là.
-etapes+=(--clic '.combat-barre__fin .button.is-a-toi' --attendre '.stress-flottant:not(.is-scene)')
+# Dernière étape : le tour qui fait monter le Stress sans Pression. Le clic est le **déclencheur**
+# (joué à t0, 30/10/2026) : on attend le chiffre après lui, dans la fenêtre filmée.
+etapes+=(--declencheur '.combat-barre__fin .button.is-a-toi' --attendre '.stress-flottant:not(.is-scene)')
 
 node scripts/filmer-animation.mjs \
   --horloge 2026-10-22T09:00:00Z --stockage "$stockage" "${etapes[@]}" \

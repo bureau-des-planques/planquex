@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
+import { marquerGeste, oublierGestes } from '@/components/journee-gestes';
+import { useEstCibleJournee } from '@/components/journee-cible';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
 import { LIBELLE_DIFFICULTE, LIBELLE_POLITIQUE, RESUME_POLITIQUE } from '@/components/difficulte';
@@ -57,9 +59,10 @@ export function Settings() {
     difficulte,
     setDifficulte,
     reset,
-    setTutorielVu,
-    setPasAPasCombatVu
+    setTutorielVu
   } = useStore();
+  /** Le halo de « Créer ma sauvegarde » : seulement quand la Journée est à cette étape. */
+  const cibleSauvegarde = useEstCibleJournee('sauvegarde');
   const exporterSauvegarde = useStore((state) => state.exporterSauvegarde);
   const importerSauvegarde = useStore((state) => state.importerSauvegarde);
   const configure = useComptes((state) => state.configure);
@@ -75,6 +78,9 @@ export function Settings() {
   const creerSauvegarde = () => {
     const texte = exporterSauvegarde();
     setSauvegarde(texte);
+    // **Le geste de l'étape « Tes données »** (30/10/2026) : il n'a pas d'autre trace que
+    // celle-ci, et c'est un fait de session — le panneau de la Journée s'ouvre aussitôt.
+    marquerGeste('sauvegarde');
     // Le presse-papier peut être refusé (contexte non sécurisé, permission) : le texte
     // reste dans la zone, il suffit de le sélectionner. On ne ment pas dans le message.
     navigator.clipboard?.writeText(texte).then(
@@ -248,9 +254,23 @@ export function Settings() {
 
       <section className="section panel" aria-labelledby="reglages-journee">
         <h2 id="reglages-journee">Journée d’intégration</h2>
-        <p className="muted max-w-[62ch]">Cinq étapes, un geste chacune.</p>
-        <button type="button" className="button" onClick={() => setTutorielVu(false)}>
-          Revoir la journée d’intégration
+        <p className="muted max-w-[62ch]">Cinq étapes, quatre gestes : le comité se visite.</p>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            /**
+             * **« Revoir » remet à zéro les gestes de session** (31/10/2026). Sans cela, la
+             * réouverture affichait « C'est fait » partout : `oublierGestes` n'était appelé
+             * que par les tests. Les deux gestes du store (Arrivage, Deck) restent faits —
+             * on ne « dé-ouvre » pas un paquet, et effacer la progression pour rejouer un
+             * tutoriel serait un bug.
+             */
+            oublierGestes();
+            setTutorielVu(false);
+          }}
+        >
+          Revoir la Journée d’intégration
         </button>
       </section>
 
@@ -265,14 +285,16 @@ export function Settings() {
       <section className="section panel" aria-labelledby="reglages-pas-a-pas">
         <h2 id="reglages-pas-a-pas">Pas-à-pas du combat</h2>
         <p className="muted max-w-[62ch]">Cinq étapes sur le premier combat.</p>
+        {/* **Un seul bouton** (30/10/2026). Ils étaient deux, et ils faisaient la même
+            chose : « Revoir le pas-à-pas » ne remettait qu'un drapeau — depuis Réglages,
+            **rien ne se passait**, il fallait aller au combat pour le voir —, et « Rejouer
+            le combat guidé » ouvrait ce même panneau tout de suite. Le drapeau n'est plus
+            touché ici : le combat guidé ouvre le pas-à-pas quel que soit son état
+            (`usePasAPasCombat(force)`), et rejouer le tutoriel ne prive pas la première
+            vraie partie du sien. */}
         <div className="actions actions--tight">
-          <button type="button" className="button" onClick={() => setPasAPasCombatVu(false)}>
-            Revoir le pas-à-pas du combat
-          </button>
-          {/* **Le combat guidé** (#272) : une page de combat, pas un état de plus dans le
-              store — le lien la rouvre au début, quel que soit l'état du pas-à-pas. */}
           <Link className="button" to="/battle?tutoriel=1">
-            Rejouer le combat guidé
+            Revoir le pas-à-pas du combat
           </Link>
         </div>
       </section>
@@ -298,7 +320,13 @@ export function Settings() {
           rows={6}
         />
         <div className="actions actions--tight">
-          <button type="button" className="button" onClick={creerSauvegarde}>
+          <button
+            type="button"
+            className="button"
+            /* L'étape « Tes données » désigne ce bouton : le testeur repart avec sa copie. */
+            data-journee-cible={cibleSauvegarde ? 'sauvegarde' : undefined}
+            onClick={creerSauvegarde}
+          >
             <Copy size={16} /> Créer ma sauvegarde
           </button>
           <button type="button" className="button" onClick={restaurerSauvegarde} disabled={!sauvegarde.trim()}>
