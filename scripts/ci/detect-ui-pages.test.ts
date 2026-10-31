@@ -83,6 +83,24 @@ function sondePlan(
   }
 }
 
+/** La sonde d'écran (#547) : le test lui donne une **mesure fabriquée**, sans navigateur. */
+function sondeEcran(mesures: Record<string, unknown>): { muet: boolean; raison: string | null } {
+  try {
+    const sortie = execFileSync(
+      process.execPath,
+      ['scripts/ci/detect-ui-pages.mjs', '--controle-sonde', JSON.stringify(mesures)],
+      { cwd: root, encoding: 'utf8' }
+    );
+    return JSON.parse(sortie) as { muet: boolean; raison: string | null };
+  } catch (erreur) {
+    // La sonde sort 1 quand elle refuse : sa mesure reste sur `stdout`.
+    return JSON.parse((erreur as { stdout?: string }).stdout ?? '{}') as {
+      muet: boolean;
+      raison: string | null;
+    };
+  }
+}
+
 function sonde(sortieImpeccable: string, code = 0): { compte: number | null; echec: boolean; message: string | null } {
   try {
     const resultat = execFileSync(
@@ -191,5 +209,48 @@ describe('le contrôle visuel en CI (#205, #208, #234)', () => {
     expect(verdict.compte).toBeNull();
     expect(verdict.echec).toBe(true);
     expect(verdict.message).toContain('code de sortie 1');
+  });
+
+  /**
+   * **Le scan muet** (#547, défaut 1) : `impeccable detect --json` rend `[]` et le code 0 pour une
+   * page propre **et** pour une page qu'il n'a pas vue. Aucune sortie ne sépare les deux cas —
+   * mesuré le 31/10/2026, où la page de test recouverte (un `div` plein écran sur `dist/`) a rendu
+   * `[]` non compté, exactement comme une page propre. La sonde ouvre la page elle-même.
+   */
+  it('refuse une page qu’il n’a pas vue : le contrôle mord (#547)', () => {
+    const viewport = { largeur: 1280, hauteur: 800 };
+    // Le cas fautif exact : un calque plein écran, collé en haut à gauche, au-dessus du contenu.
+    const masque = sondeEcran({
+      texte: 900,
+      viewport,
+      calques: [{ selecteur: 'div#voile-temoins', rect: { x: 0, y: 0, largeur: 1280, hauteur: 800 }, z: 9999 }]
+    });
+    expect(masque.muet).toBe(true);
+    expect(masque.raison).toContain('div#voile-temoins');
+
+    // Un `#root` vide : le scan ne trouverait rien à mesurer, quelle que soit la sortie du détecteur.
+    expect(sondeEcran({ texte: 0, calques: [], viewport }).muet).toBe(true);
+
+    // Et un viewport nul (page jamais rendue) n'est pas une page propre.
+    expect(sondeEcran({ texte: 12, calques: [], viewport: { largeur: 0, hauteur: 0 } }).muet).toBe(true);
+  });
+
+  it('ne refuse pas ce qui ne recouvre pas l’écran : la sonde ne crie pas au loup', () => {
+    const viewport = { largeur: 1280, hauteur: 800 };
+    // Le panneau de la Journée (300 px à droite), une bulle, un bandeau : la page reste vue.
+    const journee = sondeEcran({
+      texte: 900,
+      viewport,
+      calques: [{ selecteur: 'aside.panneau-journee', rect: { x: 980, y: 0, largeur: 300, hauteur: 800 }, z: 40 }]
+    });
+    expect(journee.muet).toBe(false);
+    expect(journee.raison).toBeNull();
+
+    const bandeau = sondeEcran({
+      texte: 900,
+      viewport,
+      calques: [{ selecteur: 'div.bandeau', rect: { x: 0, y: 0, largeur: 1280, hauteur: 120 }, z: 10 }]
+    });
+    expect(bandeau.muet).toBe(false);
   });
 });
