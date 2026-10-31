@@ -60,6 +60,7 @@ import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { etatFinScriptee } from '@/game/scenario-fin';
+import { marquerGeste } from '@/components/journee-gestes';
 import { SceneFin } from '@/components/SceneFin';
 import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
@@ -864,6 +865,8 @@ function useEcranLarge(): boolean {
 export function Battle() {
   const ecranLarge = useEcranLarge();
   const storeDeck = useStore((state) => state.deck);
+  /** La Journée est-elle encore ouverte ? Seule la visite enchaîne après la scène de fin. */
+  const tutorielVu = useStore((state) => state.tutorielVu);
   /**
    * **La difficulté du combat** (#251, D-145) : elle est **figée au montage**, et relue
    * seulement par « Nouveau combat ». Changer le cran dans Réglages ne déplace donc pas
@@ -1017,6 +1020,14 @@ export function Battle() {
   const repliqueDirection = sceneFin && evenementDirection ? choisirReplique(evenementDirection, state.turn) : null;
   /** La scène de fin est ouverte : c'est elle qui dit le verdict et la phrase de la Direction. */
   const sceneFinOuverte = sceneFin && state.phase === 'ended' && !sceneFinFermee;
+  /**
+   * **Le combat guidé est un geste de la Journée** (31/10/2026) : elle s'efface sur
+   * `/battle`, donc elle ne peut pas voir le plateau. La fin du combat — joué jusqu'au
+   * verdict, gagné ou perdu — est la preuve qu'on l'a joué ; `Suivant` s'ouvre alors.
+   */
+  useEffect(() => {
+    if (sceneFinOuverte) marquerGeste('combat');
+  }, [sceneFinOuverte]);
 
   /** Le moteur dit ce qui est possible ; l'écran ne fait que le rendre. */
   const legal = useMemo(() => legalActions(state), [state]);
@@ -1802,6 +1813,12 @@ export function Battle() {
           replique={repliqueDirection}
           calme={sansMouvement}
           onFermer={() => setSceneFinFermee(true)}
+          /* **Continuer continue la visite** (31/10/2026) : le panneau est caché sur le
+             plateau, donc sans cet enchaînement le testeur restait au combat sans savoir
+             qu'il restait deux étapes. Hors Journée, « Continuer » ferme seulement. */
+          onContinuer={() => {
+            if (sceneFin && !tutorielVu) navigate('/settings');
+          }}
         />
       )}
 
@@ -2076,11 +2093,9 @@ export function Battle() {
             aria-label="Actions du tour"
             data-impeccable-ignore="cramped-padding"
             data-pas-a-pas={pasAPas.designe('poste-actions')}
-            /* **La fin scriptée se joue** (30/10/2026) : la Journée laisse passer ce que
-               son étape désigne, et cette scène n'existe que pour elle. Sans cet attribut,
-               la garde de la visite rendrait la barre d'action inerte et le testeur ne
-               pourrait pas lancer la Pression qui gagne. */
-            data-journee-cible={sceneFin ? 'combat-actions' : undefined}
+            /* Plus de halo local : la cible de la Journée vient d'un seul module
+               (`journee-cible`), et le panneau s'efface sur le plateau (31/10/2026) —
+               c'est le pas-à-pas qui désigne, ici. */
           >
             {/* **L'annonce du coup** (WCAG, messages d’état) : une zone **persistante** — jamais re-montée, sinon un
                 lecteur d'écran ne l'entend pas changer — qui reçoit la dernière ligne du journal. La

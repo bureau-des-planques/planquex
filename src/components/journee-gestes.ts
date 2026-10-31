@@ -4,9 +4,9 @@ import { useSyncExternalStore } from 'react';
  * **Les gestes de la Journée d'intégration** (30/10/2026) — ce que le testeur a vraiment fait.
  *
  * Deux gestes se lisent dans le store, parce qu'ils laissent une trace qu'on veut garder :
- * le nombre d'Arrivages ouverts (`packsOpened`) et le Deck chargé (`deck.length`). Le
- * troisième, **créer sa sauvegarde**, n'a aucune trace à garder — seulement un fait de la
- * session : « il l'a fait une fois ».
+ * le nombre d'Arrivages ouverts (`packsOpened`) et le Deck chargé (`deck.length`). Les deux
+ * autres, **créer sa sauvegarde** et **gagner le combat guidé**, n'ont aucune trace à
+ * garder dans la progression — seulement un fait de la session : « il l'a fait une fois ».
  *
  * Ce module le retient donc en mémoire, **sans le persister** : un rechargement redemande
  * le geste, ce qui est le comportement juste pour un tutoriel. Pas de champ de plus dans
@@ -15,7 +15,7 @@ import { useSyncExternalStore } from 'react';
  * Il expose un abonnement (`useSyncExternalStore`) : le panneau se redessine quand la
  * sauvegarde est créée, quelle que soit la page où le geste a eu lieu.
  */
-export type GesteJournee = 'sauvegarde';
+export type GesteJournee = 'sauvegarde' | 'combat';
 
 const faits = new Set<GesteJournee>();
 const abonnes = new Set<() => void>();

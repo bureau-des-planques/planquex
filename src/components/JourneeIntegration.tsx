@@ -2,18 +2,24 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppelParticiper } from '@/components/AppelParticiper';
 import { ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
-import { CIBLE_DE_GESTE } from '@/components/journee-cible';
+import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
-import { poserCibleJournee } from '@/components/journee-cible';
 import { useStore } from '@/store/useStore';
 
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
   const setTutorielVu = useStore((state) => state.setTutorielVu);
-  /** Les deux gestes que la Journée attend (30/10/2026) : un Arrivage ouvert, un Deck chargé. */
+  /** Les gestes que la Journée attend (30/10/2026) : un Arrivage ouvert, un Deck chargé. */
   const packsOpened = useStore((state) => state.packsOpened);
   const deck = useStore((state) => state.deck);
   const [etape, setEtape] = useState(0);
+  /**
+   * **La pause** (31/10/2026). `Échap` ne termine plus la visite, il la met de côté :
+   * `terminer()` écrit `tutorielVu`, donc un abandon **définitif** au premier réflexe de
+   * fermeture — le contraire de « contraindre sans enfermer ». La barre de pause dit où
+   * l'on en est et offre les deux issues.
+   */
+  const [enPause, setEnPause] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
   /** Le panneau, pour mesurer sa hauteur et garder l'élément désigné **sous** lui. */
@@ -22,15 +28,21 @@ export function JourneeIntegration() {
   const terminer = () => {
     setTutorielVu(true);
     setEtape(0);
+    setEnPause(false);
   };
 
   /**
-   * **Elle se montre partout** (30/10/2026, D-161). Le mur du comité en était exclu
-   * (D-066, D-058) : on ne posait pas un dialogue de jeu sur le premier contenu qu'un
-   * testeur découvre. Depuis que la Journée est un panneau qui se laisse lire et qui
-   * s'efface, l'exclusion n'a plus de raison — et l'étape 5 la mène justement au comité.
+   * **Sur le plateau, la Journée s'efface** (31/10/2026). D-160 (1) promet « zéro
+   * recouvrement » ; mesuré le 30/10, le panneau (`y 10 → 258`) couvrait **tout** le
+   * pas-à-pas du combat (`y 50 → 99`) et sa garde le **gelait** : le guidage était
+   * invisible et impossible, alors que le panneau annonçait justement « le combat guidé
+   * t'apprend… ». Le combat a son propre tutoriel : ici, il parle seul. L'étape se valide
+   * à sa fin (`geste: 'combat'`, marqué par la scène de fin).
    */
-  const ouvert = !tutorielVu;
+  const surLeCombat = pathname === '/battle';
+  /** Le panneau ou sa barre de pause ; `ouvert` est le panneau complet, avec sa garde. */
+  const visible = !tutorielVu && !surLeCombat;
+  const ouvert = visible && !enPause;
 
   /**
    * **La garde** : hors du panneau et hors des éléments désignés, le clic n'arrive pas.
@@ -43,59 +55,85 @@ export function JourneeIntegration() {
     // **Ce qui prend la main passe au-dessus de la visite.** L'ouverture d'un Arrivage est
     // une scène plein écran (`.ouverture`, dans un dialogue Radix) : sans ces deux
     // exceptions, le testeur qui vient d'ouvrir son sachet ne peut plus le fermer — la
-    // visite bloque les boutons de la scène (constaté le 30/10/2026).
+    // visite bloque les boutons de la scène (constaté le 30/10/2026). Le pas-à-pas du
+    // combat, la main et le plateau sont joints depuis que le panneau s'efface sur
+    // `/battle` : c'est le même principe, appliqué aux écrans que la visite traverse.
     const autorise = (cible: EventTarget | null) =>
       cible instanceof Element &&
-      cible.closest('[data-journee-panneau], [data-journee-cible], [role="dialog"], .ouverture') !== null;
+      cible.closest(
+        '[data-journee-panneau], [data-journee-cible], [data-pas-a-pas], .hand, .board, [role="dialog"], .ouverture'
+      ) !== null;
     const bloquer = (evenement: Event) => {
       if (autorise(evenement.target)) return;
       evenement.preventDefault();
       evenement.stopPropagation();
     };
     /**
-     * **Le blocage parle** (critique du 30/10/2026, P1) : `Échap` sort, et le panneau prend
-     * le focus à l'ouverture. Sans cela, un utilisateur au clavier n'avait aucune sortie et
-     * ne savait pas que la page était inerte.
+     * **Le blocage parle** (30/10/2026) : `Échap` **met en pause** depuis le 31/10 — il ne
+     * termine plus. Le panneau prend le focus à l'ouverture, pour que le clavier entre dans
+     * la visite plutôt que de traverser les contrôles que le pointeur ne peut pas activer.
      */
-    const sortir = (evenement: KeyboardEvent) => {
-      if (evenement.key === 'Escape') terminer();
+    const mettreEnPause = (evenement: KeyboardEvent) => {
+      if (evenement.key === 'Escape') {
+        evenement.preventDefault();
+        setEnPause(true);
+      }
     };
     document.addEventListener('pointerdown', bloquer, true);
     document.addEventListener('click', bloquer, true);
-    document.addEventListener('keydown', sortir);
+    document.addEventListener('keydown', mettreEnPause);
     panneauRef.current?.focus();
     return () => {
       document.removeEventListener('pointerdown', bloquer, true);
       document.removeEventListener('click', bloquer, true);
-      document.removeEventListener('keydown', sortir);
+      document.removeEventListener('keydown', mettreEnPause);
     };
   }, [ouvert]);
 
   /**
-   * La sauvegarde est un fait de session : il se lit dans `journee-gestes`, pas dans le
-   * store. **Ce hook se lit avant le retour anticipé** : un `useSyncExternalStore` placé
-   * après `if (!ouvert) return null` change le nombre de hooks quand la Journée se ferme
-   * (« Rendered fewer hooks than expected », vu par le test d'écran).
+   * La sauvegarde et le combat sont des faits de session : ils se lisent dans
+   * `journee-gestes`, pas dans le store. **Ces hooks se lisent avant tout retour
+   * anticipé** : un `useSyncExternalStore` placé après `return null` change le nombre de
+   * hooks quand la Journée se ferme (« Rendered fewer hooks than expected »).
    */
   const sauvegardeFaite = useGesteFait('sauvegarde');
+  const combatFait = useGesteFait('combat');
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
 
   /**
    * **L'élément désigné vient sous les yeux.** Le panneau occupe le haut de l'écran : sans
    * cela, le bouton qu'il désigne peut être caché derrière lui (constaté sur l'accueil, où
-   * « Ouvrir un Arrivage » disparaissait sous le panneau). À chaque étape, on amène la
-   * première cible **en haut**, sous le panneau, dont la hauteur réelle devient la marge.
+   * « Ouvrir un Arrivage » disparaissait sous le panneau).
+   *
+   * `block: 'start'` et non `'center'` (31/10/2026) : `scroll-margin-top` — la hauteur du
+   * panneau — ne s'applique qu'au début de l'alignement. Centré, un volet de 1 299 px
+   * posait son en-tête **hors écran** et ses cartes **derrière** le panneau.
    */
-  const amenerLaCible = () => {
-    document.querySelector('[data-journee-cible]')?.scrollIntoView({ block: 'center' });
+  const amenerLaCible = (doucement = false) => {
+    const cible = document.querySelector('[data-journee-cible]');
+    if (!cible) return;
+    cible.scrollIntoView({ block: 'start', behavior: doucement ? 'smooth' : 'auto' });
+  };
+
+  /**
+   * « Montrer le bouton » doit **faire quelque chose**, même quand la cible est déjà à
+   * l'écran : un clic qui ne produit rien se lit comme un bouton cassé (mesuré le 30/10,
+   * `scrollY` 0 → 0). La cible pulse une fois, son contour doré s'élargit.
+   */
+  const montrerLaCible = () => {
+    const cible = document.querySelector('[data-journee-cible]');
+    amenerLaCible(true);
+    if (!cible) return;
+    cible.classList.add('est-montre');
+    window.setTimeout(() => cible.classList.remove('est-montre'), 1400);
   };
 
   useEffect(() => {
     if (!ouvert) return;
     const panneau = panneauRef.current;
     if (!panneau) return;
-    // **La cible de l'étape, et elle seule** : les pages ne s'allument plus toutes ensemble.
-    poserCibleJournee(courante.geste ? CIBLE_DE_GESTE[courante.geste] : null);
+    // **La cible de l'étape, et elle seule** : `combat` n'en a pas (le pas-à-pas désigne).
+    poserCibleJournee(courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null);
 
     /**
      * **La hauteur se mesure en continu** (`ResizeObserver`) : elle était lue une fois, au
@@ -108,8 +146,6 @@ export function JourneeIntegration() {
     const observateur = typeof ResizeObserver === 'function' ? new ResizeObserver(poser) : null;
     observateur?.observe(panneau);
 
-    // **La cible vient au centre** : en haut, elle se retrouvait sous le panneau, et le
-    // premier écran du produit n'offrait plus aucun chemin visible vers l'avant.
     amenerLaCible();
     // Les polices arrivent après le premier rendu : on replace la cible une fois posées.
     void document.fonts?.ready.then(() => amenerLaCible());
@@ -120,7 +156,7 @@ export function JourneeIntegration() {
     };
   }, [ouvert, etape, pathname]);
 
-  if (!ouvert) return null;
+  if (!visible) return null;
 
   const derniere = etape >= ETAPES_JOURNEE.length - 1;
   /**
@@ -130,49 +166,98 @@ export function JourneeIntegration() {
    */
   const gesteFait =
     courante.geste === undefined ||
-    (courante.geste === 'arrivage' ? packsOpened > 0 : courante.geste === 'deck' ? deck.length > 0 : sauvegardeFaite);
+    (courante.geste === 'arrivage'
+      ? packsOpened > 0
+      : courante.geste === 'deck'
+        ? deck.length > 0
+        : courante.geste === 'sauvegarde'
+          ? sauvegardeFaite
+          : combatFait);
+
+  /** Sur l'écran de l'étape : `pathname` n'a pas de requête, la cible peut en avoir une. */
+  const surLaPage = pathname === courante.cible.split('?')[0];
+
+  /** La barre de pause : elle ne bloque rien, et elle dit les deux issues. */
+  if (enPause) {
+    return (
+      <aside
+        ref={panneauRef}
+        className="journee journee--pause"
+        data-journee-panneau
+        aria-label="Journée d’intégration en pause"
+      >
+        <p>
+          Journée en pause · {etape + 1}/{ETAPES_JOURNEE.length}
+        </p>
+        <button type="button" className="button" onClick={() => setEnPause(false)}>
+          Reprendre
+        </button>
+        <button type="button" className="journee__passer" onClick={terminer}>
+          Terminer
+        </button>
+      </aside>
+    );
+  }
 
   return (
     <aside
       ref={panneauRef}
       className="journee"
       data-journee-panneau
-      role="dialog"
-      aria-modal="true"
+      /**
+       * **Une région, pas un dialogue** (31/10/2026). Le couple « dialogue » + « modal »
+       * annonçait une page inerte et un focus piégé : la garde ne bloque que le pointeur,
+       * `Tab` sortait du panneau, et la page restait lisible — le marquage mentait. Une
+       * région nommée dit ce qu'elle est, et `aria-live` annonce le changement d'étape.
+       */
+      role="region"
       aria-labelledby="journee-titre"
       aria-describedby="journee-texte"
       tabIndex={-1}
     >
-      <p className="journee__compte">
-        <span aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
-        <span className="sr-only">
-          Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length}
-        </span>
-      </p>
+      <div aria-live="polite" aria-atomic="true">
+        <p className="journee__compte">
+          <span aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
+          <span className="sr-only">
+            Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length}
+          </span>
+        </p>
 
-      <h2 id="journee-titre" className="journee__titre">
-        {courante.titre}
-      </h2>
+        <h2 id="journee-titre" className="journee__titre">
+          {courante.titre}
+        </h2>
+      </div>
 
       <p id="journee-texte" className="journee__texte">
         {courante.texte}
       </p>
 
-      {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
-          apparaît, mais il entend un texte qui change. */}
-      <p className="journee__geste" role="status">
-        {gesteFait
-          ? 'C’est fait : « Suivant » est ouvert.'
-          : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}
+      {/* **La Direction parle** (31/10/2026) : une ligne, sa voix, au-dessus du geste.
+          Même formule que la réplique de fin de combat — le produit a une seule Direction. */}
+      <p className="journee__direction">
+        <strong>La Direction</strong> · {courante.direction}
       </p>
+
+      {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
+          apparaît, mais il entend un texte qui change. Elle ne parle que des étapes qui
+          **exigent** un geste : aux autres, « C'est fait » serait faux. */}
+      {courante.geste !== undefined && (
+        <p className="journee__geste" role="status">
+          {gesteFait
+            ? 'C’est fait : « Suivant » est ouvert.'
+            : courante.geste === 'combat'
+              ? 'Joue le combat guidé : « Suivant » s’ouvrira à sa fin.'
+              : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}
+        </p>
+      )}
 
       {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
           qu'elle décrit — sauf la dernière, qui referme la Journée en menant au combat. */}
       <div className="actions actions--tight">
         {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
-            place au geste lui-même (c'est l'élément désigné qui le porte). */}
-        {pathname !== courante.cible ? (
+            place au geste lui-même. Et sans geste, il n'y a rien à montrer. */}
+        {!surLaPage ? (
           <button
             type="button"
             className="button button--primary"
@@ -183,14 +268,15 @@ export function JourneeIntegration() {
           >
             {courante.action}
           </button>
-        ) : (
+        ) : courante.geste !== undefined ? (
           /* **Sur l'écran de l'étape**, le panneau garde une action : « Montrer le bouton ».
-             Il ne fait pas le geste à la place du testeur, il amène la cible sous ses yeux —
-             sans lui, l'écran n'offrait qu'un « Suivant » éteint (critique du 30/10/2026). */
-          <button type="button" className="button button--primary" onClick={amenerLaCible}>
+             Il ne fait pas le geste à la place du testeur, il amène la cible sous ses yeux
+             et la fait pulser — sans lui, l'écran n'offrait qu'un « Suivant » éteint
+             (critique du 30/10/2026). */
+          <button type="button" className="button button--primary" onClick={montrerLaCible}>
             Montrer le bouton
           </button>
-        )}
+        ) : null}
         {/* **Deux sorties, pas trois** (30/10/2026) : « Plus tard » faisait exactement ce que
             fait le lien du dessous, et promettait un retour qui n'arrive jamais — `terminer`
             écrit le drapeau. À la dernière étape, le geste principal suffit. */}

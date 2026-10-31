@@ -2724,9 +2724,15 @@ h2 {
   border: 0;
   color: var(--text-muted);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
   font: inherit;
   font-size: 0.82rem;
-  padding: 0;
+  /* **44 px de haut** (31/10/2026) : c'était la seule sortie, et elle mesurait 20 px —
+     sous la cible tactile du dépôt (44 px, D-120), pour le seul bouton qui doit rester
+     joignable au pouce. Le soulignement reste le signal d'un lien. */
+  min-height: 44px;
+  padding: 10px 0;
   text-align: left;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -2735,6 +2741,48 @@ h2 {
 
 .journee__passer:hover {
   color: var(--text);
+}
+
+/* **La pause** (31/10/2026) : `Échap` met la visite de côté au lieu de la terminer. Une
+   barre d'une ligne, qui ne bloque rien (la garde est éteinte) et dit où l'on en est. */
+/* **La voix de la Direction** (31/10/2026) : italique, en retrait, comme la réplique de
+   fin de combat — la même Direction parle dans les deux. `--text-muted` sur le fond du
+   panneau : au-delà de l'AA (mesuré 7,87:1 le 30/10/2026). */
+.journee__direction {
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
+.journee__direction strong {
+  color: var(--text);
+  font-style: normal;
+}
+
+.journee--pause {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 13.6px;
+}
+
+.journee--pause p {
+  margin: 0;
+}
+
+/* **« Montrer le bouton » fait quelque chose** (31/10/2026) : la cible pulse une fois. Un
+   clic sans effet se lit comme un bouton cassé, même quand l'élément est déjà visible. */
+@keyframes journee-montre {
+  50% {
+    outline-color: var(--gold);
+    outline-offset: 8px;
+  }
+}
+
+[data-journee-cible].est-montre {
+  /* Deux tours de 300 ms : la borne du dépôt est 800 ms **au total** (#294). */
+  animation: journee-montre 300ms ease-out 2;
 }
 
 /* Le tour de jeu, joué dans le dialogue (#334, D-136) : un gabarit de tour, pas une image.

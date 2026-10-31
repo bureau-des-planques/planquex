@@ -25,9 +25,12 @@ function monter() {
     packsOpened: 1,
     deck: ['atelier-joueur-de-flute']
   });
-  // Le troisième geste (créer sa sauvegarde) vit hors du store : il se marque à la main.
+  // Les deux gestes de session (sauvegarde, combat guidé) vivent hors du store : ils se
+  // marquent à la main. Le combat est le troisième depuis le 31/10/2026 — sans lui, l'étape
+  // qui compte se traversait en lecture.
   oublierGestes();
   marquerGeste('sauvegarde');
+  marquerGeste('combat');
   return render(
     <MemoryRouter initialEntries={['/']}>
       <JourneeIntegration />
@@ -68,10 +71,14 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     });
     await waitFor(() => expect(suivant()).toBeEnabled());
 
-    // L'étape 4 attend la sauvegarde, qui ne laisse aucune trace dans le store :
-    // on traverse d'abord l'étape 3 (le combat), qui n'a pas de geste.
+    // L'étape 3 attend le combat guidé, qui ne laisse aucune trace dans le store.
     await userEvent.click(suivant());
     expect(screen.getByRole('heading', { name: 'Le combat' })).toBeInTheDocument();
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      marquerGeste('combat');
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
     await userEvent.click(suivant());
     expect(screen.getByRole('heading', { name: 'Tes données' })).toBeInTheDocument();
     expect(suivant()).toBeDisabled();
@@ -102,7 +109,7 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     // **Le contrôle mord** : sans écriture du drapeau, la Journée se remonterait sur le
     // comité — c'est l'exclusion `surLeMur` qui le ferait, et le test tomberait ici.
     expect(useStore.getState().tutorielVu).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
     expect(screen.getByText('l’écran ouvert')).toBeInTheDocument();
   });
 
@@ -111,7 +118,7 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     const bouton = screen.getByRole('button', { name: /passer : tu ne verras pas le combat/i });
     await userEvent.click(bouton);
     expect(useStore.getState().tutorielVu).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
     saut.unmount();
 
     // La fin, par le même panneau : même drapeau, même état de store.
@@ -135,6 +142,22 @@ describe('la Journée d’intégration se joue (D-160)', () => {
 
     await userEvent.click(screen.getByRole('link', { name: 'le comité' }));
     expect(useStore.getState().tutorielVu).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+  });
+});
+
+describe('le plateau garde son tutoriel (31/10/2026)', () => {
+  it('sur /battle, le panneau s’efface : le pas-à-pas du combat parle seul', () => {
+    // Mesuré le 30/10 : le panneau (y 10 → 258) recouvrait le pas-à-pas (y 50 → 99) et sa
+    // garde le gelait. D-160 (1) promet « zéro recouvrement ».
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: false, packsOpened: 1, deck: [] });
+    oublierGestes();
+    render(
+      <MemoryRouter initialEntries={['/battle?tutoriel=1&scene=fin']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    // **Le contrôle mord** : le panneau reparaîtrait ici si l'exclusion tombait.
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
   });
 });

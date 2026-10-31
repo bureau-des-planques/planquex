@@ -13,8 +13,12 @@ import { useSyncExternalStore } from 'react';
  */
 export type CibleJournee = 'arrivage' | 'decks-proposes' | 'sauvegarde';
 
-/** Le geste de l'étape → la cible qu'elle désigne. Un geste, une cible, jamais deux. */
-export const CIBLE_DE_GESTE: Record<'arrivage' | 'deck' | 'sauvegarde', CibleJournee> = {
+/**
+ * Le geste de l'étape → la cible qu'elle désigne. Un geste, une cible, jamais deux.
+ * `combat` n'a **pas** de halo hors du combat : sur `/battle`, le panneau s'efface et c'est
+ * le pas-à-pas qui désigne (31/10/2026). D'où le `Partial`.
+ */
+export const CIBLE_DE_GESTE: Partial<Record<'arrivage' | 'deck' | 'sauvegarde' | 'combat', CibleJournee>> = {
   arrivage: 'arrivage',
   deck: 'decks-proposes',
   sauvegarde: 'sauvegarde'

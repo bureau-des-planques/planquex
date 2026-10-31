@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
-import { marquerGeste } from '@/components/journee-gestes';
+import { marquerGeste, oublierGestes } from '@/components/journee-gestes';
 import { useEstCibleJournee } from '@/components/journee-cible';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
@@ -255,7 +255,21 @@ export function Settings() {
       <section className="section panel" aria-labelledby="reglages-journee">
         <h2 id="reglages-journee">Journée d’intégration</h2>
         <p className="muted max-w-[62ch]">Cinq étapes, un geste chacune.</p>
-        <button type="button" className="button" onClick={() => setTutorielVu(false)}>
+        <button
+          type="button"
+          className="button"
+          onClick={() => {
+            /**
+             * **« Revoir » remet à zéro les gestes de session** (31/10/2026). Sans cela, la
+             * réouverture affichait « C'est fait » partout : `oublierGestes` n'était appelé
+             * que par les tests. Les deux gestes du store (Arrivage, Deck) restent faits —
+             * on ne « dé-ouvre » pas un paquet, et effacer la progression pour rejouer un
+             * tutoriel serait un bug.
+             */
+            oublierGestes();
+            setTutorielVu(false);
+          }}
+        >
           Revoir la journée d’intégration
         </button>
       </section>

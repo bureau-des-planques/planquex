@@ -21,10 +21,10 @@ import { CARD_BY_ID } from '@/data';
  */
 const app = readFileSync(fileURLToPath(new URL('../App.tsx', import.meta.url)), 'utf8');
 
-/** Le texte que le testeur lit vraiment : le titre, la phrase et le libellé du geste. */
+/** Le texte que le testeur lit vraiment : le titre, la phrase, le geste et la Direction. */
 function texteDe(index: number): string {
   const etape = ETAPES_JOURNEE[index];
-  return `${etape.titre} ${etape.texte} ${etape.action}`;
+  return `${etape.titre} ${etape.texte} ${etape.action} ${etape.direction}`;
 }
 
 /**
@@ -165,9 +165,13 @@ describe('deux phrases au plus et un seul geste par étape (D-136)', () => {
     expect(libelleSaut(0)).toMatch(/passer/i);
     expect(libelleSaut(0)).toMatch(/combat/i);
     expect(libelleSaut(1)).toMatch(/combat/i);
-    // Passé le combat (index 2), il n'y a plus que la fin du parcours à perdre.
-    expect(libelleSaut(2)).toMatch(/terminer/i);
-    expect(libelleSaut(2)).not.toMatch(/combat/i);
+    // **L'étape du combat compte aussi** (31/10/2026) : sur elle seule, « Terminer »
+    // promettait de tout garder alors qu'on perdait l'écran que la Journée voulait montrer.
+    expect(libelleSaut(2)).toMatch(/combat/i);
+    expect(libelleSaut(2)).not.toMatch(/terminer/i);
+    // Passé le combat, il n'y a plus que la fin du parcours à perdre.
+    expect(libelleSaut(3)).toMatch(/terminer/i);
+    expect(libelleSaut(3)).not.toMatch(/combat/i);
     expect(libelleSaut(4)).toMatch(/terminer/i);
   });
 });
@@ -216,5 +220,22 @@ describe('le vocabulaire est celui du jeu, aucun mot interdit (docs/JEU.md §3)'
       const texte = texteDe(index);
       expect(texte, etape.titre).not.toMatch(/\bHP\b|\bPV\b|onboarding|\bK\.O\./i);
     }
+  });
+});
+
+describe('la Direction accueille le nouveau (31/10/2026)', () => {
+  it('chaque étape a sa ligne, et aucune ne se répète', () => {
+    const lignes = ETAPES_JOURNEE.map((etape) => etape.direction);
+    for (const [index, ligne] of lignes.entries()) {
+      // **Le contrôle mord** : une ligne vide laisserait le panneau sans voix.
+      expect(ligne.trim().length, ETAPES_JOURNEE[index].titre).toBeGreaterThan(20);
+      // Une réplique se mesure en **mots**, pas en phrases : celle du comité (« Une idée ?
+      // Un défaut ? Le mur est là. ») fait quatre phrases courtes, et c'est la copie
+      // validée par Bastien. La borne de deux phrases (D-136) reste celle des textes
+      // d'étape. Vingt mots : au-delà, la Direction fait un discours.
+      const mots = ligne.split(/\s+/).filter(Boolean).length;
+      expect(mots, ETAPES_JOURNEE[index].titre).toBeLessThanOrEqual(20);
+    }
+    expect(new Set(lignes).size).toBe(lignes.length);
   });
 });

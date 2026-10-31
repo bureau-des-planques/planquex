@@ -20,7 +20,8 @@ export function SceneFin({
   gagne,
   replique,
   calme = false,
-  onFermer
+  onFermer,
+  onContinuer
 }: {
   /** Vrai quand le joueur a gagné : le tampon change de mot, jamais de place. */
   readonly gagne: boolean;
@@ -29,6 +30,11 @@ export function SceneFin({
   /** Mouvement réduit : la scène paraît déjà posée. */
   readonly calme?: boolean;
   readonly onFermer: () => void;
+  /**
+   * « Continuer » : ce que la suite du parcours attend (31/10/2026). Le clic sur le fond
+   * ferme seulement — il ne fait pas avancer la visite à la place du testeur.
+   */
+  readonly onContinuer?: () => void;
 }) {
   const [ferme, setFerme] = useState(false);
   if (ferme) return null;
@@ -65,6 +71,7 @@ export function SceneFin({
             // Le clic sur la scène ferme déjà : le bouton ne doit pas le doubler.
             evenement.stopPropagation();
             fermer();
+            onContinuer?.();
           }}
         >
           Continuer

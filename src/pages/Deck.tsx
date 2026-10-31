@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Info, Search, Sparkles, Trash2 } from 'lucide-react';
@@ -68,6 +68,14 @@ export function Deck() {
   } = useStore();
   /** Le halo du volet, et les cartes du tutoriel, seulement quand la Journée y est. */
   const cibleDecks = useEstCibleJournee('decks-proposes');
+  /**
+   * **À l'étape 2, le volet est ouvert** (31/10/2026) : il s'initialise fermé quand un Deck
+   * est déjà chargé, et les cartes du tutoriel vivent dedans — la critique a mesuré un
+   * panneau qui demande de charger un Deck devant une liste repliée, sans les cartes.
+   */
+  useEffect(() => {
+    if (cibleDecks) setProposesOuverts(true);
+  }, [cibleDecks]);
   const [selected, setSelected] = useState<Card | null>(null);
   /** Un seul tri pour « Dedans » et pour le sélecteur : les deux se lisent pareil. */
   const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
