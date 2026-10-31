@@ -6,6 +6,10 @@ import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
 import { allerAEtape, remettreJourneeAuDebut, useEtapeJournee } from '@/components/journee-etape';
 import { useStore } from '@/store/useStore';
+import { artUrl } from '@/art';
+
+/** Le visage de la Direction : l'illustration du PDG, la seule qui la représente. */
+const PORTRAIT_DIRECTION = artUrl('direction-pdg.webp');
 
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
@@ -104,6 +108,21 @@ export function JourneeIntegration() {
    */
   const sauvegardeFaite = useGesteFait('sauvegarde');
   const combatFait = useGesteFait('combat');
+
+  /**
+   * **On reprend à la première étape non faite** (31/10/2026). Au rechargement, l'étape
+   * vivait en mémoire et l'on repartait à « 1/5 » avec le combat à rejouer. Les gestes du
+   * store (Arrivage, Deck) disent ce qui est déjà fait ; ceux de session disent le reste.
+   * Une seule fois par montage : ensuite, c'est « Suivant » qui commande.
+   */
+  const repriseFaite = useRef(false);
+  useEffect(() => {
+    if (repriseFaite.current || tutorielVu) return;
+    repriseFaite.current = true;
+    const faits = [packsOpened > 0, deck.length > 0, combatFait, sauvegardeFaite];
+    const premiere = faits.findIndex((fait) => !fait);
+    if (premiere > 0) allerAEtape(premiere === -1 ? ETAPES_JOURNEE.length - 1 : premiere);
+  }, [tutorielVu, packsOpened, deck.length, combatFait, sauvegardeFaite]);
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
 
   /**
@@ -223,41 +242,69 @@ export function JourneeIntegration() {
       aria-describedby="journee-texte"
       tabIndex={-1}
     >
-      <div aria-live="polite" aria-atomic="true">
-        <p className="journee__compte">
-          <span aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
-          <span className="sr-only">
-            Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length}
-          </span>
-        </p>
+      {/* **Le compteur passe dans le titre** (31/10/2026) : il tenait une ligne à lui seul.
+          Il reste lu par les lecteurs d'écran dans la même région vive. */}
+      <div className="journee__tete">
+        <div aria-live="polite" aria-atomic="true">
+          <h2 id="journee-titre" className="journee__titre">
+            <span className="journee__compte" aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
+            <span className="sr-only">
+              Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length} :
+            </span>
+            {courante.titre}
+          </h2>
+        </div>
 
-        <h2 id="journee-titre" className="journee__titre">
-          {courante.titre}
-        </h2>
+        {/* **La sortie monte dans l'en-tête** : elle tenait une ligne de 44 px en bas, et
+            c'est elle qui interceptait le clic destiné à la cible de l'étape 1. Elle garde sa
+            hauteur tactile et son libellé qui nomme ce qu'on perd (D-136). */}
+        <button type="button" className="journee__passer" onClick={terminer}>
+          {derniere ? 'Relire la Journée plus tard, depuis Réglages' : libelleSaut(etape)}
+        </button>
       </div>
 
       <p id="journee-texte" className="journee__texte">
         {courante.texte}
       </p>
 
-      {/* **La Direction parle** (31/10/2026) : une ligne, sa voix, au-dessus du geste.
-          Même formule que la réplique de fin de combat — le produit a une seule Direction. */}
-      <p className="journee__direction">
-        <strong>La Direction</strong> · {courante.direction}
-      </p>
+      {/* **La Direction sort de sa bulle** (31/10/2026) : son portrait, puis sa phrase.
+          Même voix que la réplique de fin de combat — le produit a une seule Direction. La
+          bulle est compacte et paraît d'un coup, pour que le panneau reste court. */}
+      <div className="journee__bulle">
+        {PORTRAIT_DIRECTION ? (
+          <img
+            className="journee__portrait"
+            src={PORTRAIT_DIRECTION}
+            alt=""
+            aria-hidden="true"
+            width={36}
+            height={36}
+            loading="lazy"
+          />
+        ) : null}
+        <p className="journee__direction">
+          <strong>La Direction</strong> · {courante.direction}
+        </p>
+      </div>
 
       {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
           apparaît, mais il entend un texte qui change. Elle ne parle que des étapes qui
           **exigent** un geste : aux autres, « C'est fait » serait faux. */}
-      {courante.geste !== undefined && (
-        <p className="journee__geste" role="status">
-          {gesteFait
-            ? 'C’est fait : « Suivant » est ouvert.'
-            : courante.geste === 'combat'
+      {courante.geste !== undefined &&
+        (gesteFait ? (
+          // **Fait : la ligne se tait** (31/10/2026). Elle explique un « Suivant » fermé ; une
+          // fois ouvert, « Suivant » et le halo le disent. Elle reste annoncée aux lecteurs
+          // d'écran, et le panneau gagne la hauteur d'une ligne.
+          <p className="sr-only" role="status">
+            C’est fait : « Suivant » est ouvert.
+          </p>
+        ) : (
+          <p className="journee__geste" role="status">
+            {courante.geste === 'combat'
               ? 'Joue le combat guidé : « Suivant » s’ouvrira à sa fin.'
               : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}
-        </p>
-      )}
+          </p>
+        ))}
 
       {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
@@ -304,10 +351,6 @@ export function JourneeIntegration() {
           </button>
         )}
       </div>
-
-      <button type="button" className="journee__passer" onClick={terminer}>
-        {derniere ? 'Relire la Journée plus tard, depuis Réglages' : libelleSaut(etape)}
-      </button>
 
       {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée
           jusqu'à sa dernière étape. */}

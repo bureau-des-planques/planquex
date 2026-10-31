@@ -68,7 +68,7 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     await waitFor(() => expect(suivant()).toBeEnabled());
 
     await userEvent.click(suivant());
-    expect(screen.getByRole('heading', { name: 'La Collection et le Deck' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
     expect(suivant()).toBeDisabled();
     act(() => {
       useStore.getState().setDeck(['atelier-joueur-de-flute']);
@@ -77,14 +77,14 @@ describe('la Journée d’intégration se joue (D-160)', () => {
 
     // L'étape 3 attend le combat guidé, qui ne laisse aucune trace dans le store.
     await userEvent.click(suivant());
-    expect(screen.getByRole('heading', { name: 'Le combat' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Le combat/ })).toBeInTheDocument();
     expect(suivant()).toBeDisabled();
     act(() => {
       marquerGeste('combat');
     });
     await waitFor(() => expect(suivant()).toBeEnabled());
     await userEvent.click(suivant());
-    expect(screen.getByRole('heading', { name: 'Tes données' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Tes données/ })).toBeInTheDocument();
     expect(suivant()).toBeDisabled();
     act(() => {
       marquerGeste('sauvegarde');
@@ -94,13 +94,13 @@ describe('la Journée d’intégration se joue (D-160)', () => {
 
   it('annonce cinq étapes, et les fait défiler jusqu’au comité', async () => {
     monter();
-    expect(screen.getByText('Journée d’intégration — étape 1 sur 5')).toBeInTheDocument();
+    expect(screen.getByText(/Journée d’intégration — étape 1 sur 5/)).toBeInTheDocument();
 
     for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
       await userEvent.click(action(/^Suivant$/i));
     }
-    expect(screen.getByRole('heading', { name: 'Le comité' })).toBeInTheDocument();
-    expect(screen.getByText('Journée d’intégration — étape 5 sur 5')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Le comité/ })).toBeInTheDocument();
+    expect(screen.getByText(/Journée d’intégration — étape 5 sur 5/)).toBeInTheDocument();
   });
 
   it('le dernier geste ouvre son écran et referme la Journée', async () => {

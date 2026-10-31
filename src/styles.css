@@ -1615,7 +1615,10 @@ h2 {
   border: 1px dashed var(--text-dim);
   border-radius: 999px;
   color: var(--text);
-  font-size: 0.68rem;
+  /* **Plancher de lisibilité** (31/10/2026) : à 0,68rem (10,88 px), ce texte fonctionnel
+     passait sous le seuil de 11 px du détecteur — 132 emplacements vides sur un écran
+     vierge. Arrondi au centième de rem au-dessus du plancher. */
+  font-size: 0.7rem;
   font-weight: 700;
   left: 50%;
   letter-spacing: 0.08em;
@@ -1771,7 +1774,9 @@ h2 {
   display: flex;
   flex: none;
   font-family: var(--font-display);
-  font-size: 1.2em;
+  /* Sur une carte compacte, la base est réduite par les container queries : `max()` garde la
+     proportion sur les grandes cartes et le plancher de 11,2 px sur les vignettes. */
+  font-size: max(1.2em, 0.7rem);
   font-variant-numeric: tabular-nums;
   font-weight: 800;
   gap: 0.12em;
@@ -1939,7 +1944,8 @@ h2 {
 .card__talent em {
   background: #b3261e;
   border-radius: 0.2em;
-  font-size: 0.7em;
+  /* Plancher : 11,2 px même sur une carte réduite (`max` garde l'échelle des grandes). */
+  font-size: max(0.7em, 0.7rem);
   font-style: normal;
   font-weight: 800;
   padding: 0.05em 0.35em;
@@ -2071,7 +2077,7 @@ h2 {
 /* Le sigle de faction : la paire « sigle de faction » de `DESIGN.md` §1.5 (AA). */
 .card__faction {
   color: color-mix(in srgb, var(--accent) 35%, #fff);
-  font-size: 0.75em;
+  font-size: max(0.75em, 0.7rem);
   font-weight: 700;
 }
 
@@ -2151,7 +2157,9 @@ h2 {
   border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
   border-radius: 4px;
   color: var(--gold-soft);
-  font-size: var(--fs-2xs);
+  /* **11,2 px** (31/10/2026) : le badge de Seuil est un chiffre qu'on lit. Il était au
+     plancher `--fs-2xs` (9,92 px), sous le seuil de 11 px du détecteur d'UI. */
+  font-size: var(--fs-xs);
   padding: 1px 3px;
   position: absolute;
   right: 4%;
@@ -2748,17 +2756,78 @@ h2 {
 /* **L'espace du panneau** (31/10/2026) : réservé au-dessus du contenu tant que la Journée est
    ouverte. Il se mesure en continu (`--journee-hauteur`), donc il suit la police et la ligne
    de la Direction. Sans lui, la cible de l'étape 1 restait sous le panneau. */
+/* **L'en-tête** (31/10/2026) : le titre et sa sortie sur la même ligne, pour ne pas payer
+   deux rangées. La sortie garde 44 px de haut et se replie à droite. */
+.journee__tete {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.journee__tete > div {
+  min-width: 0;
+}
+
+.journee__tete .journee__passer {
+  flex: none;
+  max-width: 46%;
+  text-align: right;
+}
+
+.journee__compte {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  margin-right: 6px;
+}
+
 .journee-espace {
   flex: none;
   height: calc(var(--journee-hauteur, 0px) + 1rem);
 }
 
-/* **La voix de la Direction** (31/10/2026) : italique, en retrait, comme la réplique de
-   fin de combat — la même Direction parle dans les deux. `--text-muted` sur le fond du
-   panneau : au-delà de l'AA (mesuré 7,87:1 le 30/10/2026). */
+/* **La voix de la Direction** (31/10/2026) : son portrait, puis sa phrase, dans une bulle
+   compacte qui **sort** — une apparition courte, la même famille que les autres entrées du
+   produit (sous « Mouvement réduit », la règle globale la ramène à rien). Le portrait est
+   l'illustration du PDG (`src/art`), la seule qui représente la Direction. */
+.journee__bulle {
+  align-items: flex-start;
+  animation: journee-bulle 220ms ease-out both;
+  display: flex;
+  gap: 8px;
+}
+
+@keyframes journee-bulle {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.journee__portrait {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  flex: none;
+  height: 36px;
+  object-fit: cover;
+  /* Le visage est en haut du carré de l'illustration : on le garde dans le cercle. */
+  object-position: center 30%;
+  width: 36px;
+}
+
 .journee__direction {
   color: var(--text-muted);
+  font-size: 0.8rem;
   font-style: italic;
+  line-height: 1.35;
   margin: 0;
 }
 
@@ -4338,10 +4407,11 @@ h2 {
   color: var(--scene-ink-parch);
   display: inline-flex;
   font-family: var(--font-display);
-  font-size: var(--fs-2xs);
+  /* 11,2 px : « Deck » et « Rebut » sont des libellés fonctionnels (31/10/2026). */
+  font-size: var(--fs-xs);
   font-weight: 600;
   gap: 0.3rem;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.12rem;
   padding: 0.12rem 0.3rem 0.12rem 0.4rem;
   text-transform: uppercase;
 }
@@ -6928,7 +6998,8 @@ h2 {
 
 .home__version-titre {
   color: var(--text-dim);
-  font-size: var(--fs-2xs);
+  /* 11,2 px : c'est un titre, pas une mention légale (31/10/2026). */
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.1em;
   margin: 0;
@@ -6968,7 +7039,8 @@ h2 {
 }
 
 .collection__plafond {
-  font-size: var(--fs-xs);
+  /* 12 px : `tiny-text` relève le corps de texte sous 12 px, et cette ligne est du texte. */
+  font-size: max(var(--fs-xs), 0.75rem);
   margin: 0.15rem 0 0;
 }
 
