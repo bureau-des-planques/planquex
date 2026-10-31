@@ -2272,8 +2272,11 @@ h2 {
   color: var(--text);
   flex: none;
   font-family: var(--font-display);
-  /* #201 : le chiffre du Stress est une mesure, pas une annotation — il passe au plancher. */
-  font-size: var(--fs-2xs);
+  /* #201 : le chiffre du Stress est une mesure, pas une annotation — il passe au plancher.
+     Depuis qu'il s'affiche **dans les deux densités** (D-165), `impeccable detect` le voit sur la
+     page servie et le refuse sous 10 px (`undersized-ui-text`) : il prend le plancher de lecture
+     `max(--fs-2xs, --fs-xs)`, comme les libellés de vignette de #543. */
+  font-size: max(var(--fs-2xs), var(--fs-xs));
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   white-space: nowrap;
