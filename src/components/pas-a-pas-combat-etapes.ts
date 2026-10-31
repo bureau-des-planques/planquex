@@ -79,6 +79,26 @@ export const ETAPES_COMBAT: readonly EtapeCombat[] = [
   }
 ];
 
+/**
+ * La **première phrase** du texte d'une étape : ce que le panneau montre sans qu'on
+ * déplie quoi que ce soit.
+ *
+ * **Pourquoi** (constat du 30/10/2026, capture `combat.png`) : replié, le panneau
+ * n'affichait que le numéro et le titre — « 1/5 Le Poste et le Banc » —, et le testeur
+ * devait ouvrir « Plus » puis « Lire le détail » pour apprendre ce que l'étape désignait.
+ * Un tutoriel qui cache sa phrase n'apprend rien. La phrase d'entrée se montre donc
+ * **toujours** ; le reste du texte attend « Lire le détail » (#199 tient : le panneau
+ * gagne deux lignes, pas un paragraphe).
+ *
+ * Le découpage est celui de la langue : un point, un point d'interrogation ou un point
+ * d'exclamation terminent la phrase. Le point d'abréviation (« cf. ») n'existe dans aucun
+ * des cinq textes, et un texte qui n'a pas de point rend son tout.
+ */
+export function premierePhrase(texte: string): string {
+  const phrase = texte.split(/(?<=[.!?])\s+/)[0]?.trim() ?? '';
+  return phrase || texte.trim();
+}
+
 /** Les mots que l'étape demande de lire : son titre et son texte. */
 export function motsDeLEtape(etape: EtapeCombat): number {
   return `${etape.titre} ${etape.texte}`.split(/\s+/).filter(Boolean).length;

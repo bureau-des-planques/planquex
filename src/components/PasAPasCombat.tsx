@@ -1,16 +1,19 @@
 import { useState } from 'react';
-import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
+import { ETAPES_COMBAT, premierePhrase } from '@/components/pas-a-pas-combat-etapes';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 
 /**
  * Le **pas-à-pas du premier combat** (#143) — le panneau, et rien d'autre : il ne lit
  * ni n'écrit l'état, il rend celui que `usePasAPasCombat` lui donne.
  *
- * **Il tient sur une ligne** (#199) : le numéro, le titre de l'étape et « Suivant ». Tout le
- * reste — « Précédent », « Passer le pas-à-pas », « Lire le détail » — se replie derrière
- * « Plus », pour rendre la hauteur au plateau. Le panneau reste **collé en haut** (`position:
- * sticky`, `styles.css`) : il suit la lecture, et « Suivant » fait défiler la page vers
- * l'élément qu'il désigne (`usePasAPasCombat`).
+ * **Il tient sur une ligne, et il dit sa phrase** (#199, corrigé le 30/10/2026) : le
+ * numéro, le titre de l'étape, « Suivant » — puis, sous la ligne, la **première phrase**
+ * du texte (`premierePhrase`). Replié, le panneau n'apprenait rien : le testeur voyait
+ * « 1/5 Le Poste et le Banc » et devait ouvrir « Plus » puis « Lire le détail » pour
+ * savoir ce que l'étape désignait. Tout le reste — « Précédent », « Passer le pas-à-pas »,
+ * le texte entier — se replie derrière « Plus ». Le panneau reste **collé en haut**
+ * (`position: sticky`, `styles.css`) : il suit la lecture, et « Suivant » fait défiler la
+ * page vers l'élément qu'il désigne (`usePasAPasCombat`).
  *
  * **Il ne bloque rien** (critère du ticket). Ce n'est pas un dialogue : pas de fond
  * assombri, pas de focus pris, pas de page figée. C'est une carte qu'on peut ignorer et
@@ -65,6 +68,9 @@ export function PasAPasCombat({ pasAPas }: { pasAPas: PasAPasCombatEtat }) {
           Plus
         </button>
       </div>
+      {/* La phrase d'entrée, toujours visible : elle dit ce que l'étape désigne. Replier le
+          détail la masque, sinon elle doublerait la première ligne du texte. */}
+      {!detailOuvert && <p className="pas-a-pas__resume">{premierePhrase(pasAPas.courante.texte)}</p>}
       <div className="pas-a-pas__reste">
         <div className="pas-a-pas__actions">
           <button

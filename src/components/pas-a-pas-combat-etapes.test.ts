@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ETAPES_COMBAT, secondesDeLecture } from './pas-a-pas-combat-etapes';
+import { ETAPES_COMBAT, premierePhrase, secondesDeLecture } from './pas-a-pas-combat-etapes';
 
 /**
  * Le **pas-à-pas du combat** (#143) : le contrat du contenu, mesuré — le même
@@ -41,6 +41,25 @@ describe('les cinq choses du premier combat (#143)', () => {
       for (const mot of interdits) {
         expect(texte).not.toContain(mot);
       }
+    }
+  });
+});
+
+describe('le panneau dit ce qu’il désigne, même replié (30/10/2026)', () => {
+  it('la première phrase d’une étape est sa phrase d’entrée', () => {
+    expect(premierePhrase('Une phrase. Une autre phrase.')).toBe('Une phrase.');
+    expect(premierePhrase('Et pourquoi ? Parce que.')).toBe('Et pourquoi ?');
+    expect(premierePhrase('Sans point final')).toBe('Sans point final');
+    expect(premierePhrase('')).toBe('');
+  });
+
+  it('chaque étape du combat a une phrase d’entrée non vide, plus courte que son texte', () => {
+    for (const etape of ETAPES_COMBAT) {
+      const resume = premierePhrase(etape.texte);
+      expect(resume.length, etape.titre).toBeGreaterThan(0);
+      expect(resume.length, etape.titre).toBeLessThanOrEqual(etape.texte.length);
+      // Le résumé est bien le début du texte : on ne réécrit pas la règle en double.
+      expect(etape.texte.startsWith(resume), etape.titre).toBe(true);
     }
   });
 });
