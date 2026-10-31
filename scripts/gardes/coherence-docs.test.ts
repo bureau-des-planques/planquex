@@ -162,7 +162,8 @@ const DOCUMENTS_VIVANTS = [
   'docs/ALPHA-TESTEURS.md',
   'docs/INTEGRATIONS-DISCORD.md',
   'docs/SPEC-COMBAT-UI.md',
-  'docs/MIROIR-2026-DELTAS.md'
+  'docs/MIROIR-2026-DELTAS.md',
+  'docs/IMPECCABLE.md'
 ] as const;
 
 /** Les trois mots retirés : « Chariot » (D-075), « Rack » (D-083), « Parc » (D-075). */

@@ -12,7 +12,7 @@
 | **Entrée CLI** | `npx impeccable <verbe>` ou `.opencode/skills/impeccable/scripts/impeccable <verbe>` |
 | **Version** | 4.7.0, Apache 2.0 |
 | **Détecteur** | 61 règles déterministes : tells d'UI générée par IA, accessibilité, qualité de design |
-| **État du dépôt** | `PRODUCT.md` absent · `DESIGN.md` présent (1<sup>re</sup> passe) · `.impeccable/` présent (un instantané de critique) |
+| **État du dépôt** | `PRODUCT.md` absent du dépôt · `DESIGN.md` présent (1<sup>re</sup> passe) · `.impeccable/` présent en local seulement (un instantané de critique, gitignoré) |
 
 ## Sommaire
 
@@ -106,8 +106,8 @@ Si le lanceur refuse ou échoue, envoyez **d'abord un message séparé** (« Con
 |---|---|---|
 | `PRODUCT.md` | Absent | `context` répond `NO_PRODUCT_MD` ; une nouvelle surface ou un remplacement visuel passe par `init` d'abord |
 | `DESIGN.md` | Présent, première passe, structure maison | `document` ne l'écrase pas en silence ; les jetons vivent dans `src/styles.css` |
-| `.impeccable/` | Présent : un instantané de `critique` sur `/collection` | Pas encore de config détecteur ni de hooks ; l'instantané est une archive de revue, pas une autorité |
-| Scan source | `[]` sur 326 fichiers au dernier passage | Sous-comptage assumé : ce n'est pas un brevet de propreté |
+| `.impeccable/` | Présent **en local seulement** — un instantané de `critique` sur `/collection`, sous `.impeccable/critique/` que `.gitignore` ne publie pas | Pas encore de config détecteur ni de hooks ; l'instantané est une archive de revue, pas une autorité, et un clone ne le porte pas |
+| Scan source | `[]` sur 330 fichiers (relevé le 31/10/2026) | Sous-comptage assumé : ce n'est pas un brevet de propreté |
 | Porte CI | 12 écrans, plafond `BASELINE` | `npm run detect:ui:page` reste la mesure qui compte |
 
 ### 3.3 Trois commandes de contexte, trois rôles
@@ -226,7 +226,7 @@ Un build guidé par un comp approuvé passe par des portes humaines, pas par une
 | **Non-HTML** (CSS, JSX, TSX, Vue, Svelte) | Correspondance regex | Des motifs de code, pas un rendu |
 | **URL** (`http(s)://`, `file://`) | Navigateur complet via Puppeteer | La page telle qu'elle s'affiche, CSS lié inclus |
 
-Conséquence décisive : un scan de sources ne fait pas tourner les règles qui exigent une page parsée — `tiny-text`, `low-contrast` et les autres règles d'éléments. Le détecteur le dit lui-même : *« findings are an undercount, not a clean bill of health »*. Sur ce dépôt, `impeccable detect --json src/` renvoie `[]` sur 326 fichiers au dernier passage, et ce `[]` ne veut pas dire « écran propre ».
+Conséquence décisive : un scan de sources ne fait pas tourner les règles qui exigent une page parsée — `tiny-text`, `low-contrast` et les autres règles d'éléments. Le détecteur le dit lui-même : *« findings are an undercount, not a clean bill of health »*. Sur ce dépôt, `impeccable detect --json src/` renvoie `[]` sur 330 fichiers (relevé le 31/10/2026), et ce `[]` ne veut pas dire « écran propre ».
 
 ### 6.2 Codes de sortie
 
@@ -321,12 +321,12 @@ npx impeccable detect --cdp 9222 --target "Bureau" --json
 
 | Commande | Ce qu'elle fait | Ce qu'elle vaut |
 |---|---|---|
-| `npm run detect:ui` | `impeccable detect src/` : regex (326 fichiers au dernier passage) | Test de fumée. Il a laissé passer deux `nested-cards` que le navigateur voyait |
+| `npm run detect:ui` | `impeccable detect src/` : regex (330 fichiers, relevé le 31/10/2026) | Test de fumée. Il a laissé passer deux `nested-cards` que le navigateur voyait |
 | `npm run detect:ui:page` | `node scripts/ci/detect-ui-pages.mjs` : sert `dist/` et scanne chaque écran | La porte. C'est la mesure qui compte |
 
 ### 7.2 Trois décisions de gouvernance
 
-- **`ECRANS`** : douze routes réellement ouvertes à un invité — `/`, `/collection`, `/deck`, `/battle`, `/settings`, `/comite`, `/comite/suivi`, `/feuille-de-route`, `/connexion`, `/attente`, `/confidentialite`, `/administration`. `/installation` est exclu volontairement (D-155, #514) : le guide ne suit pas les règles de style du jeu, et sa lisibilité se vérifie à la main sur téléphone. La portée est une décision, pas un oubli.
+- **`ECRANS`** : douze routes réellement servies à un navigateur — `/`, `/collection`, `/deck`, `/battle`, `/settings`, `/comite`, `/comite/suivi`, `/feuille-de-route`, `/connexion`, `/attente`, `/confidentialite`, `/administration`. `/installation` est exclu volontairement (D-155, #514) : le guide ne suit pas les règles de style du jeu, et sa lisibilité se vérifie à la main sur téléphone. La portée est une décision, pas un oubli.
 - **`BASELINE`** : un plafond par écran, un **cliquet**. Le gate ne demande pas zéro par principe : il demande **pas plus qu'hier**, et chaque baisse se fait dans le commit qui corrige. Depuis le 26/10/2026, le plafond du dépôt est à zéro, donc il exige zéro. Le plafond a été abaissé par vagues — Collection 42 → 32 → 3 → 0, Deck 12 → 11 → 6 → 0 — chaque fois dans le commit qui corrige.
 - **Le seuil est écrit une fois**, pas dans la tête du lecteur : un anti-pattern compte, un avis non.
 
@@ -534,7 +534,7 @@ Les verbes de la compétence — `context`, `signals`, `pin`, `hooks`, `doctor` 
 <a id="sources"></a>
 ## 13. Sources
 
-Relevé le 30/10/2026, version 4.7.0. Les faits de ce document viennent des fichiers suivants :
+Relevé le 30/10/2026, contrôles refaits le 31/10/2026, version 4.7.0. Les faits de ce document viennent des fichiers suivants :
 
 - `.opencode/skills/impeccable/SKILL.md` — principes, modes, table des 24 commandes, routing, hooks, doctor, pin.
 - `.opencode/skills/impeccable/reference/` — `init.md`, `document.md`, `extract.md`, `shape.md`, `critique.md`, `audit.md`, `polish.md`, `harden.md`, `live.md`, `generate.md`, `doctor.md`, `hooks.md`, `routing.md`, `craft-floor.md`, `region-map.md`, `component-review.md`.
@@ -543,7 +543,7 @@ Relevé le 30/10/2026, version 4.7.0. Les faits de ce document viennent des fich
 - `scripts/ci/detect-ui-pages.mjs` — `ECRANS`, `BASELINE`, mode `--controle`, historique #205, #208, #234, D-155.
 - `package.json` — scripts `detect:ui` et `detect:ui:page`, `devDependency` `impeccable@4.7.0`.
 - `DESIGN.md`, `.gitignore` — état du système visuel, fichiers locaux ignorés.
-- `.impeccable/critique/2026-10-30T06-14-58Z__src-pages-collection-tsx.md` — instantané de `critique` sur `/collection` (méthode dual-agent, 23/40), observé le 30/10/2026.
-- Sorties observées : `impeccable context` (`NO_PRODUCT_MD`), `impeccable detect --json src/` (`[]`, 326 fichiers au dernier passage, avertissement de sous-comptage), `impeccable detect --help`, `impeccable ignores --help`, `impeccable pin --help`, `impeccable doctor --help`, `impeccable help`.
+- `.impeccable/critique/2026-10-30T06-14-58Z__src-pages-collection-tsx.md` — instantané de `critique` sur `/collection` (méthode dual-agent, 23/40), observé le 30/10/2026 ; fichier **local**, `.gitignore` ne le publie pas.
+- Sorties observées : `impeccable context` (`NO_PRODUCT_MD`), `impeccable detect --json src/` (`[]`, 330 fichiers le 31/10/2026, avertissement de sous-comptage), `impeccable detect --help`, `impeccable ignores --help`, `impeccable pin --help`, `impeccable doctor --help`, `impeccable help`.
 
 > **Ce document ne remplace aucune des références ci-dessus.** En cas de doute sur un comportement, la référence de la commande fait foi ; en cas de conflit documentaire dans le dépôt, `AGENTS.md` §2 tranche.
