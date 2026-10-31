@@ -29,7 +29,15 @@ import type {
   PlayerState,
   Status
 } from '@/data/types';
-import { applyAction, createBattle, dessusDuDeck, isOpeningTurn, legalActions, legalAttacks } from '@/game/engine';
+import {
+  applyAction,
+  createBattle,
+  degatsDePression,
+  dessusDuDeck,
+  isOpeningTurn,
+  legalActions,
+  legalAttacks
+} from '@/game/engine';
 import { deckDeLaDirection, reglageDirection } from '@/game/deck-direction';
 import { DECK_SIZE, MAX_COPIES_PER_NAME, deckLegal } from '@/game/deck';
 import { HAND_LIMIT, POINTS_TO_WIN } from '@/game/rules';
@@ -361,7 +369,14 @@ interface ActionView {
   detail?: string;
   /** Le coût **typé** d'une Pression (D-037) : pastilles de `CafePips`, pas des points. */
   cafes?: readonly CafeSymbol[];
+  /** Le Stress **appliqué** à la cible (Vulnérabilité et réduction comprises), pas le chiffre imprimé. */
   damage?: number;
+  /**
+   * Ce qui sépare le chiffre imprimé du Stress appliqué : `+20 vuln.` ou `−10`.
+   * Il est **écrit** à côté du total (critique du 31/10/2026) : sans lui, le joueur ne peut pas
+   * savoir pourquoi 20 devient 40, et la règle de Vulnérabilité reste à mémoriser.
+   */
+  note?: string;
   icon?: 'coffee' | 'swords';
 }
 
@@ -426,10 +441,27 @@ function describeAction(state: BattleState, action: BattleAction, myCamp: Player
     }
     case 'attack': {
       const entry = activeCard && isPlanque(activeCard) ? activeCard.attacks[action.attackIndex] : undefined;
+      /*
+       * Le chiffre du bouton est le **Stress appliqué**, pas celui imprimé sur la carte
+       * (critique du 31/10/2026, P1) : la Vulnérabilité ajoute +20 et la défense du défenseur
+       * en retire. Le calcul vient du moteur (`degatsDePression`), donc il ne peut pas diverger
+       * de ce que `applyAction` fera.
+       */
+      const defenseur = state.players[state.current === 'player' ? 'ai' : 'player'].active;
+      const degats =
+        side.active && defenseur && entry ? degatsDePression(side.active, defenseur, entry, 'poste') : undefined;
+      const note = degats
+        ? degats.vulnerabilite > 0
+          ? `+${degats.vulnerabilite} vuln.`
+          : degats.reduction > 0
+            ? `−${degats.reduction}`
+            : undefined
+        : undefined;
       return {
         label: entry?.name ?? 'Pression',
         cafes: entry?.cost,
-        damage: entry?.damage,
+        damage: degats?.applique ?? entry?.damage,
+        note,
         icon: 'swords'
       };
     }
@@ -493,7 +525,17 @@ function ActionButton({
           <span className="attack__dmg" aria-hidden="true">
             {view.damage}
           </span>
-          <span className="sr-only">, {view.damage} de Stress</span>
+          {/* Ce qui sépare le chiffre imprimé du Stress appliqué (critique du 31/10/2026) :
+              le total seul laisserait croire à une erreur de carte. */}
+          {view.note && (
+            <span className="attack__note" aria-hidden="true">
+              {view.note}
+            </span>
+          )}
+          <span className="sr-only">
+            , {view.damage} de Stress
+            {view.note ? (view.note.startsWith('+') ? ', Vulnérabilité comprise' : ', réduction comprise') : ''}
+          </span>
         </>
       )}
       {/* Un espace entre le libellé et le détail : le nom accessible dit « Rotation vers … », pas
@@ -1671,12 +1713,15 @@ export function Battle() {
           className="battle__infos"
           aria-pressed={combatDetaille}
           aria-keyshortcuts="I"
-          aria-label="Infos détaillées"
+          /* **Le nom dit l'effet, pas la matière** (critique du 31/10/2026) : « Infos détaillées »
+             laissait croire à une fiche ou un journal, alors que le bouton **change la densité** du
+             plateau (chiffre de Stress, dégâts des Pressions, noms des Conditions). */
+          aria-label="Plus de détail sur les cartes"
           onClick={basculerCombatDetaille}
         >
           <Info size={18} aria-hidden="true" />
           {/* La touche, affichée à l'écran (#525) : le raccourci `I` n'était lisible nulle part. Elle est
-              `aria-hidden` : le nom accessible reste « Infos détaillées », et le geste est déjà dans `aria-keyshortcuts`. */}
+              `aria-hidden` : le nom accessible reste « Plus de détail sur les cartes », et le geste est déjà dans `aria-keyshortcuts`. */}
           <span className="battle__infos-touche" aria-hidden="true">
             I
           </span>

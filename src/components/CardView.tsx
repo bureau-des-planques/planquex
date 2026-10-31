@@ -156,16 +156,23 @@ export function CardView({
 
   // La barre de Stress **vivant** (D-026) : au plateau, elle **est** la mesure, donc elle se lit
   // à voix haute pour qui ne la voit pas. Le chiffre n'est qu'une **annotation** (#189).
+  /*
+   * **Le chiffre du Stress est là dans les deux densités** (critique du 31/10/2026, P1).
+   *
+   * Il était une annotation de `détaillé` (#189) ; or c'est **la** mesure qui décide : à combien
+   * de Stress du Seuil le Planqué adverse craque. En `sobre`, un joueur devait ouvrir la fiche
+   * pour le lire, ou compter les crans d'une barre de 7 px, avant une Pression qui **termine son
+   * tour**. `sobre` garde ce qui est vraiment secondaire — le nom et les dégâts des Pressions, les
+   * types de café, le nom des Conditions.
+   */
   const barre = vivant && (
     <div className="card__seuil">
       <span className="stress card__seuil-bar" role="img" aria-label={`Stress ${vivant.stress} sur ${vivant.seuil}`}>
         <span className={`stress__fill ${niveauStress}`} style={{ width: `${pctStress}%` }} />
       </span>
-      {annotations && (
-        <span className="card__stress-chiffre">
-          {vivant.stress}/{vivant.seuil}
-        </span>
-      )}
+      <span className="card__stress-chiffre">
+        {vivant.stress}/{vivant.seuil}
+      </span>
     </div>
   );
 

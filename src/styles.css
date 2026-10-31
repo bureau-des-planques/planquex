@@ -2269,6 +2269,25 @@ h2 {
   font-weight: 700;
 }
 
+/* **Ce qui sépare le chiffre imprimé du Stress appliqué** (critique du 31/10/2026) : la
+   Vulnérabilité du Poste (+20, D-031) ou une réduction. Il se lit à côté du total, au plancher
+   du combat, et ne prend jamais la place du chiffre. */
+.attack__note {
+  color: var(--text-muted);
+  flex: none;
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Sur la barre d'action, `--text-muted` tombe sous AA sur la barre teintée : le bouton est un
+   aplat, on reprend l'encre courante, atténuée par le poids et non par le contraste. */
+.combat-barre .attack__note {
+  color: var(--text);
+  font-weight: 600;
+  opacity: 0.85;
+}
+
 /* Une pastille par café. L'or est la couleur de la tasse — le motif maison. */
 .pips {
   align-items: center;

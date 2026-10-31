@@ -54,7 +54,11 @@ export function PasAPasCombat({ pasAPas }: { pasAPas: PasAPasCombatEtat }) {
         </h2>
         <button
           type="button"
-          className="button button--primary button--small pas-a-pas__suivant"
+          /* **Le pas-à-pas ne concurrence pas le jeu** (critique du 31/10/2026) : « Suivant » était
+             un bouton plein, à égalité avec « Fin du tour », alors que le geste attendu est de
+             jouer une carte. Il reste au même endroit et à la même taille (44 px), mais en filet ;
+             seule la **dernière** étape reprend l'aplat — « C'est compris » ferme le panneau. */
+          className={`button button--small pas-a-pas__suivant${pasAPas.derniere ? ' button--primary' : ''}`}
           onClick={pasAPas.derniere ? pasAPas.terminer : pasAPas.suivante}
         >
           {pasAPas.derniere ? 'C’est compris' : 'Suivant'}

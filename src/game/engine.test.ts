@@ -10,6 +10,7 @@ import {
   canPlayAction,
   createBattle,
   createInstance,
+  degatsDePression,
   endTurn,
   evolve,
   isFirstTurnFor,
@@ -347,6 +348,48 @@ describe('Pression — dégâts et café', () => {
     try {
       expect(attackDamage(attacker, benched, pression, 'poste')).toBe(pression.damage + 20);
       expect(attackDamage(attacker, benched, pression, 'rack')).toBe(pression.damage);
+    } finally {
+      CARD_BY_ID.set(benchCard.id, original);
+    }
+  });
+
+  /**
+   * **L'écran lit le même calcul que le moteur** (critique du 31/10/2026, P1) : le bouton de
+   * Pression affichait le chiffre imprimé, alors que la Vulnérabilité ajoute 20. `degatsDePression`
+   * rend les quatre nombres ; `attackDamage` n'est plus que son `applique`. Le contrôle mord : si
+   * l'écran recalculait de son côté, ce test ne verrait rien — mais si `attackDamage` cessait de
+   * passer par cette décomposition, les deux valeurs divergeraient ici.
+   */
+  it('décompose le Stress d’une Pression : base, Vulnérabilité, réduction', () => {
+    const state = freshBattle();
+    const attacker = state.players.player.active;
+    if (!attacker) throw new Error('Poste vide');
+    const attackerCard = getCard(attacker.cardId);
+    if (!isPlanque(attackerCard)) throw new Error('Carte inconnue');
+    const pression = attackerCard.attacks[0];
+    if (!pression) throw new Error('Aucune Pression');
+
+    const benchCard = ALL_CARDS.find(
+      (card) => isPlanque(card) && !card.ability && !card.variantOf && card.stage === 'ENTRANT'
+    );
+    if (!benchCard) throw new Error('Aucun Planqué de Banc');
+    const benched = createInstance(benchCard.id);
+    const original = CARD_BY_ID.get(benchCard.id);
+    if (!original || !isPlanque(original)) throw new Error('Carte inconnue');
+    CARD_BY_ID.set(benchCard.id, { ...original, weakness: attackerCard.faction });
+    try {
+      const degats = degatsDePression(attacker, benched, pression, 'poste');
+      expect(degats.base).toBe(pression.damage);
+      expect(degats.vulnerabilite).toBe(20);
+      expect(degats.reduction).toBe(0);
+      expect(degats.applique).toBe(pression.damage + 20);
+
+      // Une réduction posée sur l'instance se voit dans la décomposition, et le total la suit.
+      const reduit = { ...benched, damageReduction: 10 };
+      const attenue = degatsDePression(attacker, reduit, pression, 'poste');
+      expect(attenue.reduction).toBe(10);
+      expect(attenue.applique).toBe(pression.damage + 10);
+      expect(attackDamage(attacker, reduit, pression, 'poste')).toBe(attenue.applique);
     } finally {
       CARD_BY_ID.set(benchCard.id, original);
     }

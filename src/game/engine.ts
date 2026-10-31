@@ -633,12 +633,44 @@ export function attackDamage(
   attack: Attack,
   slot: 'poste' | 'rack'
 ): number {
+  return degatsDePression(attacker, defender, attack, slot).applique;
+}
+
+/**
+ * Les **quatre nombres** d'une Pression, décomposés : ce que la carte imprime (`base`), ce que
+ * la Vulnérabilité ajoute, ce que la défense retire, et ce que le Planqué encaisse vraiment.
+ *
+ * **Pourquoi une fonction, et pas un calcul dans l'écran** (critique du 31/10/2026, P1) : le
+ * bouton de Pression affichait `entry.damage` — le chiffre imprimé — alors que le moteur
+ * applique la Vulnérabilité. Le joueur devait donc additionner de tête, pour une décision
+ * **irréversible** (la Pression termine le tour). L'écran et `applyAction` lisent désormais
+ * **la même** fonction : il n'y a plus deux vérités à tenir d'accord.
+ */
+export interface DegatsDePression {
+  /** Le chiffre imprimé sur la carte. */
+  readonly base: number;
+  /** Le bonus de Vulnérabilité réellement appliqué (0 hors Poste ou hors faiblesse, D-031). */
+  readonly vulnerabilite: number;
+  /** Ce que la défense du défenseur retire (Talent `reduceDamage` + réduction d'instance). */
+  readonly reduction: number;
+  /** Ce que le Planqué encaisse : `base + vulnerabilite − reduction`, jamais négatif. */
+  readonly applique: number;
+}
+
+export function degatsDePression(
+  attacker: CardInstance,
+  defender: CardInstance,
+  attack: Attack,
+  slot: 'poste' | 'rack'
+): DegatsDePression {
   const attackerCard = getCard(attacker.cardId);
   const defenderCard = getCard(defender.cardId);
-  if (!isPlanque(attackerCard) || !isPlanque(defenderCard)) return 0;
+  if (!isPlanque(attackerCard) || !isPlanque(defenderCard)) {
+    return { base: 0, vulnerabilite: 0, reduction: 0, applique: 0 };
+  }
 
   // 1. Les dégâts de la Pression.
-  let damage = attack.damage;
+  const base = attack.damage;
 
   // 2. Les effets qui affectent l'attaquant. Aucune primitive du set ne modifie les
   //    dégâts sortants aujourd'hui : c'est ici qu'un tel effet s'insérerait. La
@@ -646,15 +678,14 @@ export function attackDamage(
   //    l'étape 4 quand ce Planqué est la cible.
 
   // 3. La Vulnérabilité : +20, **au Poste seulement** (#70).
-  if (slot === 'poste' && defenderCard.weakness === attackerCard.faction) damage += WEAKNESS_BONUS;
+  const vulnerabilite = slot === 'poste' && defenderCard.weakness === attackerCard.faction ? WEAKNESS_BONUS : 0;
 
   // 4. Les effets qui affectent le défenseur : son Talent `reduceDamage`, puis la
   //    réduction d'instance posée par une Pression, valable le tour adverse.
   const abilityReduction = defenderCard.ability?.kind === 'reduceDamage' ? (defenderCard.ability.amount ?? 0) : 0;
-  damage -= abilityReduction;
-  damage -= defender.damageReduction ?? 0;
+  const reduction = abilityReduction + (defender.damageReduction ?? 0);
 
-  return Math.max(0, damage);
+  return { base, vulnerabilite, reduction, applique: Math.max(0, base + vulnerabilite - reduction) };
 }
 
 /**
