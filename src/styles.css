@@ -3471,8 +3471,14 @@ h2 {
    `--line` (1,22–1,46:1, presque invisible) à `--text-muted` (≥ 3,79:1 sur les feutres, WCAG 1.4.11). */
 .bench__slot.is-free {
   aspect-ratio: 63 / 88;
+  /* **Un creux, pas une carte** (D-161, critique du 31/10/2026) : la place libre garde sa forme et
+     son filet (3,79:1 au pire, WCAG 1.4.11) pour rester une place, mais elle s'enfonce dans le
+     feutre au lieu de peser comme une carte. Au tour 1, cinq places vides ne doivent plus écraser
+     le score. */
+  background: color-mix(in srgb, var(--scene-felt-deep) 55%, transparent);
   border: 1px dashed var(--text-muted);
-  border-radius: 10px;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 4px rgb(0 0 0 / 45%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3874,6 +3880,18 @@ h2 {
   padding-left: 0.5rem;
 }
 
+/* **La flavour, en bas de la fiche** (D-161) : un filet la sépare des règles et dit qu'elle
+   change de registre — c'est de l'écriture, pas une valeur de jeu. Elle est atténuée sans
+   passer sous AA : `--text-muted` sur la surface de la fiche vaut 7,16:1 (DESIGN.md §1.5). */
+.battle .inspecteur__flavour {
+  border-top: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-style: italic;
+  margin: 0.35rem 0 0;
+  padding-top: 0.35rem;
+}
+
 .battle .inspecteur__gestes {
   border-top: 1px solid var(--line);
   padding-top: 0.5rem;
@@ -4079,12 +4097,18 @@ h2 {
 /* Les deux trios se tiennent **autour de l'axe central**, plus aux deux bords (D-158, #520) : la
    condition de victoire se lit d'un coup d'œil, et sur PC les trios n'étaient plus à 600 px l'un de
    l'autre. */
+/* **La bande de score** (D-161, critique du 31/10/2026) : la piste est un objet **posé** sur la
+   table, pas un filet de texte entre deux camps. Elle porte le score écrit (`0 — 0`, `sur 3`) sur
+   l'axe central, et ses hexagones sont les plus gros éléments de mesure du plateau. */
 .piste {
   align-items: center;
+  background: color-mix(in srgb, var(--scene-felt-deep) 90%, transparent);
+  border-block: 1px solid color-mix(in srgb, var(--gold) 38%, var(--line-strong));
   display: flex;
   flex-wrap: wrap;
-  gap: 0.2rem 2.5rem;
+  gap: 0.1rem 0.7rem;
   justify-content: center;
+  padding: 0.06rem 0.45rem;
 }
 
 .piste__camp {
@@ -4095,12 +4119,46 @@ h2 {
 }
 
 /* Le nom du camp est posé sur la table, près du centre éclairé : encre principale (#198, voir `.board .muted`). */
+/* Le nom du camp sort vers les bords, les hexagones restent près du centre : le score se lit
+   `La Direction ⬡⬡⬡ | 0 — 0 sur 3 | ⬡⬡⬡ Toi`, symétrique autour de l'axe. */
+.piste__camp:last-child .piste__nom {
+  order: 1;
+}
+
 .piste__nom {
   color: var(--text);
   font-family: var(--font-display);
-  font-size: var(--fs-2xs);
-  letter-spacing: 0.1em;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+/* La capsule de score, entre les deux camps. Elle est `aria-hidden` : le groupe de la piste dit
+   déjà « La Direction 0 sur 3, Toi 0 sur 3 ». L'or clair sur le feutre profond vaut 12,03:1. */
+.piste__score {
+  align-items: baseline;
+  background: var(--scene-felt-deep);
+  border: 1px solid color-mix(in srgb, var(--gold) 50%, var(--line-strong));
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  gap: 0.25rem;
+  line-height: 1;
+  padding: 0.14rem 0.5rem;
+}
+
+.piste__points {
+  color: var(--gold-soft);
+  font-size: var(--fs-md);
+  font-weight: 800;
+}
+
+.piste__seuil {
+  color: var(--text);
+  font-size: var(--fs-2xs);
+  font-weight: 600;
 }
 
 /* Le contour d'un hexagone **vide** : `--text-muted`, pour qu'un état graphique tienne 3:1 sur les trois
@@ -4111,9 +4169,9 @@ h2 {
   background: var(--text-muted);
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   display: block;
-  height: 1.1rem;
+  height: 1.35rem;
   position: relative;
-  width: 0.95rem;
+  width: 1.15rem;
 }
 
 .piste__hex::after {
@@ -4884,6 +4942,45 @@ h2 {
   .battle .hand {
     --carte-w: 3.75rem;
   }
+
+  /* **Le pire cas rend 4 px** : à 360 × 640, pas-à-pas terminé avec une Pression jouable, il ne
+     restait que 18 px de marge sous la barre d'action (20 exigés, D-094 (3)). La bande de score
+     coûte 4 px de plus que l'ancienne piste — filets haut/bas et hexagones : elle les rend ici, sur
+     un écran où la hauteur est la ressource rare. */
+  .piste {
+    border-block: 0;
+  }
+
+  .piste__hex {
+    height: 1.05rem;
+    width: 0.95rem;
+  }
+
+  /* **La bande de score tient sur une ligne** (D-161) : les noms de camps agrandis et la capsule
+     faisaient passer la piste à deux lignes sur un écran court, et le combat défilait. Ici, tout
+     redescend d'un cran — le chiffre du score reste à `--fs-sm`, au-dessus du plancher de 11,2 px. */
+  .piste {
+    gap: 0.08rem 0.45rem;
+    padding: 0.05rem 0.35rem;
+  }
+
+  .piste__nom {
+    font-size: var(--fs-2xs);
+    letter-spacing: 0.04em;
+  }
+
+  .piste__hex {
+    height: 1.15rem;
+    width: 1rem;
+  }
+
+  .piste__score {
+    padding: 0 0.35rem;
+  }
+
+  .piste__points {
+    font-size: var(--fs-sm);
+  }
 }
 
 /* Paysage de téléphone : la hauteur manque, la largeur abonde. Chaque camp tient sur **une**
@@ -4902,6 +4999,32 @@ h2 {
   .board__fiche,
   .battle--detaille .board__fiche {
     max-width: 9.5rem;
+  }
+
+  /* **La bande de score tient sur une ligne** (D-161) : les noms de camps agrandis et la capsule
+     faisaient passer la piste à deux lignes sur un écran court, et le combat défilait. Ici, tout
+     redescend d'un cran — le chiffre du score reste à `--fs-sm`, au-dessus du plancher de 11,2 px. */
+  .piste {
+    gap: 0.08rem 0.45rem;
+    padding: 0.05rem 0.35rem;
+  }
+
+  .piste__nom {
+    font-size: var(--fs-2xs);
+    letter-spacing: 0.04em;
+  }
+
+  .piste__hex {
+    height: 1.15rem;
+    width: 1rem;
+  }
+
+  .piste__score {
+    padding: 0 0.35rem;
+  }
+
+  .piste__points {
+    font-size: var(--fs-sm);
   }
 }
 
@@ -7127,4 +7250,24 @@ h2 {
    lit cette hauteur et échoue si elle repasse sous 44 px. */
 .retour-ecran {
   margin-bottom: 0.75rem;
+}
+
+/* **Le paysage est le plus serré** (360 px de haut) : la bande de score y rend 4 px — hexagones et
+   rembourrage d'un cran —, sinon le combat défile de 3 px (mesuré le 31/10/2026 à 740 × 360). */
+@media (orientation: landscape) and (max-height: 600px) {
+  /* C'est la **capsule** qui donne sa hauteur à la bande, pas les hexagones : elle perd son
+     rembourrage vertical et son filet haut/bas, la piste garde son fond et ses chiffres. */
+  .piste {
+    border-block: 0;
+    padding: 0.02rem 0.3rem;
+  }
+
+  .piste__score {
+    padding: 0 0.3rem;
+  }
+
+  .piste__hex {
+    height: 1.05rem;
+    width: 0.95rem;
+  }
 }

@@ -8,19 +8,23 @@
  *     strictement que les autres) ;
  *  2. **le réglage coupe tout** : `sons` dans le store, coché par défaut ; quand il est faux, ce
  *     module ne demande **aucune** lecture, même si un écran l'appelle ;
- *  3. **deux sons, pas une bande-son** : `arrivage` et `verdict`, générés par `scripts/ressources/sons.mjs`
- *     (aucune licence tierce, aucun asset des versions abandonnées).
+ *  3. **des timbres courts, pas une bande-son** : `arrivage` et `verdict` (D-137), plus les trois
+ *     gestes du combat — `pression`, `craquage`, `intervention` (D-161) —, générés par
+ *     `scripts/ressources/sons.mjs` (aucune licence tierce, aucun asset des versions abandonnées).
  *
  * Si le contexte n'est pas encore prêt au moment de jouer, on **saute** le son : le jouer en retard
  * serait pire que le silence (recherche `techniques.md` §6.2).
  */
 import { useStore } from '@/store/useStore';
 
-export type CleSon = 'arrivage' | 'verdict';
+export type CleSon = 'arrivage' | 'verdict' | 'pression' | 'craquage' | 'intervention';
 
 const CHEMINS: Record<CleSon, string> = {
   arrivage: '/sons/arrivage.wav',
-  verdict: '/sons/verdict.wav'
+  verdict: '/sons/verdict.wav',
+  pression: '/sons/pression.wav',
+  craquage: '/sons/craquage.wav',
+  intervention: '/sons/intervention.wav'
 };
 
 type Contexte = AudioContext;
@@ -61,7 +65,7 @@ export function deverrouiller(): void {
   void contexte.resume();
 }
 
-/** Vrai quand les deux tampons sont décodés — l'écran n'a rien à en faire, les tests oui. */
+/** Vrai quand tous les tampons sont décodés — l'écran n'a rien à en faire, les tests oui. */
 export function pret(): boolean {
   return tampons.size === Object.keys(CHEMINS).length;
 }

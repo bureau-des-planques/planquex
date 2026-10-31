@@ -44,6 +44,18 @@ describe('PisteInterventions — six hexagones, trois par camp', () => {
     ]);
   });
 
+  it('écrit le score et le seuil entre les deux camps (D-161)', () => {
+    render(<PisteInterventions camps={camps} />);
+
+    // `2 — 1` : les deux camps, dans l'ordre où l'écran les rend (Toi, puis La Direction).
+    expect(screen.getByText('2 — 1')).toBeInTheDocument();
+    expect(screen.getByText('sur 3')).toBeInTheDocument();
+    // La capsule est une **aide visuelle** : le lecteur d'écran lit déjà le groupe de la piste.
+    expect(
+      screen.getByRole('group', { name: /Interventions : Toi 2 sur 3, La Direction 1 sur 3/ })
+    ).toBeInTheDocument();
+  });
+
   it('porte le point de désignation du pas-à-pas sur son conteneur seul', () => {
     const { container } = render(<PisteInterventions camps={camps} designe="interventions" />);
 

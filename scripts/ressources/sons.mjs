@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * **Les deux sons de l'alpha** (#378, #379, D-137) — générés, pas téléchargés.
+ * **Les sons de l'alpha** (#378, #379, D-137 ; trois sons de combat depuis D-161) — générés, pas
+ * téléchargés.
  *
- * D-137 demande deux sons, libres, documentés, et **aucun asset repris** des versions
+ * D-137 demande des sons libres, documentés, et **aucun asset repris** des versions
  * abandonnées. Plutôt que de chercher une banque sous licence (et de dépendre de ses conditions),
  * on **fabrique** les deux timbres ici : du bruit filtré et deux oscillateurs. Conséquences :
  *
@@ -12,7 +13,7 @@
  *    la barre).
  *
  * Usage :
- *   node scripts/ressources/sons.mjs            # écrit public/sons/arrivage.wav et verdict.wav
+ *   node scripts/ressources/sons.mjs            # écrit public/sons/*.wav (cinq sons)
  *   node scripts/ressources/sons.mjs --verifier # ne réécrit rien, vérifie poids et silences (CI)
  *
  * Le WAV est volontairement **non compressé** : la machine n'a pas d'encodeur audio, et un WAV
@@ -163,6 +164,104 @@ function verdict() {
   return sortie;
 }
 
+/**
+ * **Pression** (D-161) : le coup porté. Un claquement filtré, sec, et un corps grave qui tombe —
+ * court, parce qu'il se joue **à chaque attaque** et que la scène dure déjà 1,4 à 3,2 s.
+ */
+function pression() {
+  const duree = 0.34;
+  const n = Math.round(duree * FREQUENCE);
+  const sortie = new Float32Array(n);
+  const alea = graine(613);
+
+  // 1. le claquement : du bruit aigu, très court, pour l'impact
+  const longueur = Math.round(0.06 * FREQUENCE);
+  const bruit = new Float32Array(longueur);
+  for (let i = 0; i < longueur; i += 1) bruit[i] = (alea() * 2 - 1) * 0.8;
+  const filtre = passeBande(bruit, 1800, 0.7);
+  const env = enveloppe(longueur, { attaque: 0.001, chute: 0.03 });
+  for (let i = 0; i < longueur; i += 1) sortie[i] += filtre[i] * env[i] * 1.5;
+
+  // 2. le corps : une sinusoïde qui tombe de 150 à 55 Hz — le souffle du coup
+  const debutCorps = Math.round(0.008 * FREQUENCE);
+  const reste = n - debutCorps;
+  const envCorps = enveloppe(reste, { attaque: 0.003, chute: 0.16 });
+  for (let i = 0; i < reste; i += 1) {
+    const t = i / FREQUENCE;
+    const f = 150 * Math.exp(-t * 16) + 55;
+    sortie[debutCorps + i] += Math.sin(2 * Math.PI * f * t) * envCorps[i] * 0.7;
+  }
+
+  return sortie;
+}
+
+/**
+ * **Craquage** (D-161) : le Planqué cède. Trois grains de rupture, puis une chute grave — le
+ * son le plus fort du jeu, et le seul qui récompense.
+ */
+function craquage() {
+  const duree = 0.62;
+  const n = Math.round(duree * FREQUENCE);
+  const sortie = new Float32Array(n);
+  const alea = graine(707);
+
+  // 1. la rupture : trois grains courts, de plus en plus graves
+  let curseur = 0.01;
+  for (const [frequence, gain] of [
+    [2400, 1.2],
+    [1500, 1.0],
+    [900, 0.8]
+  ]) {
+    const debut = Math.round(curseur * FREQUENCE);
+    const longueur = Math.round(0.05 * FREQUENCE);
+    const bruit = new Float32Array(longueur);
+    for (let i = 0; i < longueur; i += 1) bruit[i] = (alea() * 2 - 1) * 0.9;
+    const filtre = passeBande(bruit, frequence, 0.8);
+    const env = enveloppe(longueur, { attaque: 0.001, chute: 0.03 });
+    for (let i = 0; i < longueur && debut + i < n; i += 1) sortie[debut + i] += filtre[i] * env[i] * gain;
+    curseur += 0.055 + alea() * 0.02;
+  }
+
+  // 2. la chute : un corps grave qui descend, plus long que l'impact d'une Pression
+  const debutChute = Math.round(0.14 * FREQUENCE);
+  const reste = n - debutChute;
+  const envChute = enveloppe(reste, { attaque: 0.01, chute: 0.3 });
+  for (let i = 0; i < reste; i += 1) {
+    const t = i / FREQUENCE;
+    const f = 120 * Math.exp(-t * 5) + 42;
+    sortie[debutChute + i] += Math.sin(2 * Math.PI * f * t) * envChute[i] * 0.6;
+  }
+
+  return sortie;
+}
+
+/**
+ * **Intervention** (D-161) : le point marqué. Deux notes montantes, timbre de vibraphone — la
+ * même famille que le verdict, mais **vers le haut** : c'est une récompense, pas une conclusion.
+ */
+function intervention() {
+  const duree = 0.5;
+  const n = Math.round(duree * FREQUENCE);
+  const sortie = new Float32Array(n);
+
+  const notes = [
+    { debut: 0, duree: 0.26, f: 523.25 },
+    { debut: 0.12, duree: 0.34, f: 783.99 }
+  ];
+  for (const note of notes) {
+    const debut = Math.round(note.debut * FREQUENCE);
+    const m = Math.round(note.duree * FREQUENCE);
+    const envNote = enveloppe(m, { attaque: 0.008, chute: 0.2 });
+    for (let i = 0; i < m && debut + i < n; i += 1) {
+      const t = i / FREQUENCE;
+      const onde = Math.sin(2 * Math.PI * note.f * t) * 0.6 + Math.sin(2 * Math.PI * note.f * 2.01 * t) * 0.14;
+      sortie[debut + i] += onde * envNote[i] * 0.4;
+    }
+  }
+
+  return sortie;
+}
+
 /** Un fondu global : rien ne doit commencer ni finir sur un claquement. */
 function finir(echantillons, { debut = 0.004, fin = 0.05 } = {}) {
   const a = Math.round(debut * FREQUENCE);
@@ -200,7 +299,11 @@ function wav(echantillons) {
 
 export const SONS = [
   { cle: 'arrivage', fabrique: arrivage },
-  { cle: 'verdict', fabrique: verdict }
+  { cle: 'verdict', fabrique: verdict },
+  // Les trois sons du **combat** (D-161) : le coup, la casse, le point marqué.
+  { cle: 'pression', fabrique: pression },
+  { cle: 'craquage', fabrique: craquage },
+  { cle: 'intervention', fabrique: intervention }
 ];
 
 /** Le silence de début et de fin : un son qui « colle » au silence s'entend plus qu'il ne s'écoute. */

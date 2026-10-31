@@ -1,20 +1,24 @@
-# Les deux sons du jeu
+# Les sons du jeu
 
 > **D-137** : l'alpha a **deux** sons — l'ouverture d'un **Arrivage** et la **fin d'un combat** — et
-> une case dans Réglages qui les coupe. Rien d'autre : ni musique, ni ambiance, ni effets de Pression.
+> une case dans Réglages qui les coupe. **D-161** y ajoute les **trois gestes du combat** (Pression,
+> craquage, Intervention). Toujours rien d'autre : ni musique, ni ambiance.
 > Branchement : **#378**. Choix des timbres : **#379**.
 
 ## Ce que sont ces fichiers
 
-`public/sons/arrivage.wav` et `public/sons/verdict.wav` sont **fabriqués par le projet**, par
+Les cinq fichiers de `public/sons/` sont **fabriqués par le projet**, par
 `scripts/ressources/sons.mjs`. Ils ne viennent d'aucune banque de sons.
 
 | Fichier | Ce qu'on entend | Poids |
 |---|---|---|
 | `arrivage.wav` | le film du sachet qui craque, une déchirure, puis un « pop » sourd quand la lèvre s'ouvre | **39,7 Ko** |
 | `verdict.wav` | un tampon qui s'abat, puis deux notes descendantes — le dossier qu'on classe | **33,6 Ko** |
+| `pression.wav` | le coup porté : un claquement filtré et un corps grave qui tombe (D-161) | **14,7 Ko** |
+| `craquage.wav` | le Planqué qui cède : trois grains de rupture, puis une chute grave (D-161) | **26,7 Ko** |
+| `intervention.wav` | le point marqué : deux notes montantes, timbre de vibraphone (D-161) | **21,6 Ko** |
 
-Le plafond du ticket #379 est de **100 Ko par fichier** : les deux y tiennent avec de la marge. Le
+Le plafond du ticket #379 est de **100 Ko par fichier** : les cinq y tiennent avec de la marge. Le
 format est du **WAV mono 22,05 kHz** parce que la machine n'a pas d'encodeur audio et qu'un fichier
 d'une seconde reste plus petit que le plafond. Un `.opus` le remplacera un jour sans toucher au
 module qui les joue.
@@ -35,20 +39,21 @@ ligne dans ce fichier.
 ## Les régénérer
 
 ```bash
-node scripts/ressources/sons.mjs             # réécrit les deux fichiers
+node scripts/ressources/sons.mjs             # réécrit les cinq fichiers
 node scripts/ressources/sons.mjs --verifier  # contrôle poids et fondus, sans rien écrire
 ```
 
-Le contrôle est aussi un test (`scripts/ressources/sons.test.ts`) : deux fichiers, sous 100 Ko, qui commencent
+Le contrôle est aussi un test (`scripts/ressources/sons.test.ts`) : cinq fichiers, sous 100 Ko, qui commencent
 vite et finissent en fondu. Un son qui « colle » au silence s'entend plus qu'il ne s'écoute.
 
 ## Comment ils sont joués
 
-Un seul module touche à l'audio : **`src/audio/sons.ts`** (`jouer('arrivage')`, `jouer('verdict')`).
+Un seul module touche à l'audio : **`src/audio/sons.ts`** (`jouer('arrivage')`, `jouer('verdict')`,
+`jouer('pression')`, `jouer('craquage')`, `jouer('intervention')`).
 Nulle part ailleurs il n'y a d'`Audio` ni de `<audio>`.
 
 - **Rien au chargement** : le contexte se crée sur le **premier geste** de la session (`App.tsx`),
-  et les deux fichiers sont décodés à ce moment-là. Les sons ne se déclenchent jamais d'eux-mêmes.
+  et les fichiers sont décodés à ce moment-là. Les sons ne se déclenchent jamais d'eux-mêmes.
 - **Le réglage coupe tout** : `sons` dans le store, **coché par défaut**, persisté (`STORAGE_VERSION`
   **12**). Le module lit le store **à chaque lecture** : décocher coupe immédiatement.
 - **Un contexte suspendu ne joue pas** : mieux vaut le silence qu'un son en retard.

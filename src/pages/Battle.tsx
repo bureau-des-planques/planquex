@@ -1179,6 +1179,29 @@ export function Battle() {
   const effets = useEffetsDeCombat(state, sansMouvement);
 
   /**
+   * **Les trois gestes du combat ont un son** (D-161, critique du 31/10/2026, P2) : le coup, la
+   * casse, le point marqué. Le jeu n'en jouait **aucun** en combat — seul le verdict — alors que
+   * l'ouverture d'un Arrivage avait le sien : la récompense la plus forte (faire craquer) était
+   * muette.
+   *
+   * Chaque effet porte un `id` qui ne revient pas pendant sa vie ; on joue **une fois** par id, et
+   * on oublie les ids sortis du DOM (ils expirent après 800 ms). Aucun son n'est créé ici : le
+   * module audio ne joue que si le testeur l'a autorisé et si le contexte est débloqué (D-137).
+   */
+  const sonsJoues = useRef(new Set<number>());
+  useEffect(() => {
+    const vivants = new Set(effets.map((effet) => effet.id));
+    for (const id of sonsJoues.current) if (!vivants.has(id)) sonsJoues.current.delete(id);
+    for (const effet of effets) {
+      if (sonsJoues.current.has(effet.id)) continue;
+      sonsJoues.current.add(effet.id);
+      if (effet.nature === 'attaque') jouer('pression');
+      else if (effet.nature === 'craquage') jouer('craquage');
+      else if (effet.nature === 'intervention') jouer('intervention');
+    }
+  }, [effets]);
+
+  /**
    * **La chorégraphie de la Pression** (D-098) : l'effet d'attaque dit qui frappe qui, le
    * journal dit quelle Pression (`attackIndex`). La carte est retrouvée par son `uid` au Poste
    * ou au Banc **des deux camps**. Un attaquant qui a craqué sur son propre coup
