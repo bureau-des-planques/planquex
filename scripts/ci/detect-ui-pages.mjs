@@ -165,6 +165,31 @@ export function compteAntiPatterns(sortie) {
 }
 
 /**
+ * **Les règles refusées, nommées** (31/10/2026). Un message qui ne dit que « 1 anti-pattern » ne
+ * laisse rien à corriger : le 31/10, `/battle` a été refusé deux fois par un constat unique,
+ * introuvable à la main dans les quatre tailles d'écran. Le nom de la règle et le sélecteur
+ * suffisent à savoir où regarder — et un scan instable se reconnaît à ce qu'il change de règle.
+ *
+ * Ce sont les mêmes constats que `compteAntiPatterns` : les avis ne comptent pas et ne se nomment
+ * donc pas ici.
+ */
+export function reglesRefusees(sortie) {
+  let constats;
+  try {
+    constats = JSON.parse(sortie);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(constats)) return [];
+  const noms = constats
+    .filter((constat) => constat?.advisory !== true)
+    .map(
+      (constat) => `${constat?.antipattern ?? 'règle inconnue'}${constat?.selector ? ` (${constat.selector})` : ''}`
+    );
+  return [...new Set(noms)].sort();
+}
+
+/**
  * Le verdict d'un écran : `null` = on n'a pas pu mesurer (échec), `0` = propre,
  * `> 0` = anti-patterns.
  *
@@ -179,12 +204,14 @@ export function verdict(sortie, code = 0) {
 }
 
 /** Le message d'échec, qui **nomme l'écran** et son compte. */
-export function messageEchec(ecran, compte, raison = '') {
+export function messageEchec(ecran, compte, raison = '', regles = []) {
   if (compte === null) {
     const detail = raison.trim().split('\n')[0]?.slice(0, 160);
     return `${ecran} : le détecteur n'a pas pu scanner${detail ? ` (${detail})` : ''}`;
   }
-  return `${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''}`;
+  // Le nom des règles : un compte nu ne dit pas quoi corriger (31/10/2026).
+  const detail = regles.length > 0 ? ` — ${regles.slice(0, 4).join(', ')}${regles.length > 4 ? '…' : ''}` : '';
+  return `${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''}${detail}`;
 }
 
 /**
@@ -273,7 +300,7 @@ async function principal(args) {
       JSON.stringify({
         compte,
         echec: compte !== 0,
-        message: compte === 0 ? null : messageEchec(ecran, compte, raison)
+        message: compte === 0 ? null : messageEchec(ecran, compte, raison, reglesRefusees(sortie))
       })
     );
     return compte === 0 ? 0 : 1;
@@ -331,7 +358,7 @@ async function principal(args) {
           console.log(`  ⚠ ${ecran} est sous son plafond (${permis}) : baisse BASELINE dans ce commit.`);
         continue;
       }
-      const message = `${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''}, au-dessus du plafond de ${permis}`;
+      const message = `${messageEchec(ecran, compte, '', reglesRefusees(sortie))}, au-dessus du plafond de ${permis}`;
       echecs.push(message);
       console.error(`✖ ${message}`);
     }
