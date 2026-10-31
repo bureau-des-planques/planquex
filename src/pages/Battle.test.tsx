@@ -1397,6 +1397,31 @@ describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-C
  * réglage du store arrive au CSS, une carte de la main ne se soulève pas sans mouvement,
  * et une Pression laisse bien un chiffre de Stress sur la table.
  */
+/**
+ * **La ligne de journal ne se recouvre pas elle-même** (#551, mesuré le 31/10/2026).
+ *
+ * Avec `mode="popLayout"`, la ligne qui s'en va passe en `position: absolute` et la nouvelle la
+ * recouvre : deux `<p class="banner combat-barre__journal">` occupent le même rectangle pendant
+ * **510 ms** (mesuré : 113 → 627 ms, 734 → 1246 ms après le chargement), et le détecteur d'écrans
+ * lit là un `text-occlusion` qui a refusé `/battle` sur `main` (run #586). `mode="wait"` garde la
+ * sortante dans le flux et laisse entrer la nouvelle après elle : jamais deux lignes superposées.
+ *
+ * Le contrôle mord : il relit le bloc réel de `Battle.tsx`, pas une chaîne recopiée.
+ */
+describe('Battle — la ligne de journal ne se superpose pas (#551)', () => {
+  it('fait passer le changement de ligne par `wait`, jamais par `popLayout`', () => {
+    const source = readFileSync(resolve(process.cwd(), 'src/pages/Battle.tsx'), 'utf8');
+    const debut = source.indexOf('{lastLog && (');
+    expect(debut).toBeGreaterThan(-1);
+    const bloc = source.slice(debut, source.indexOf('</AnimatePresence>', debut));
+    expect(bloc).toContain('combat-barre__journal');
+    expect(bloc).toContain('mode="wait"');
+    // `popLayout` sort la ligne en `absolute` : c'est exactement le recouvrement mesuré. On
+    // regarde la **prop**, pas le mot du commentaire qui explique pourquoi elle est partie.
+    expect(bloc).not.toContain('mode="popLayout"');
+  });
+});
+
 describe('Battle — les effets de la scène et leur repli (#192)', () => {
   it('« Mouvement réduit » du store porte une classe et un attribut que le CSS lit', () => {
     const { container, unmount } = renderWithStore(<Battle />, {
