@@ -649,8 +649,10 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
   it('le défilement suit chaque étape : Suivant et Précédent amènent la première cible sous le pas-à-pas', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: false });
 
-    // À l'ouverture : la première cible de l'étape 1.
-    expect(elementsDefiles().at(-1)).toBe(cibleDe('plateau'));
+    // À l'ouverture : la première cible de l'étape 1 — la **main**, puisque la phrase d'entrée
+    // dit « touche une carte de ta main, puis choisis où la poser » (critique du 31/10/2026 :
+    // l'étape commençait par la géométrie du plateau, et le geste attendu n'était écrit nulle part).
+    expect(elementsDefiles().at(-1)).toBe(cibleDe('main'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     expect(elementsDefiles().at(-1)).toBe(cibleDe('machine'));
@@ -683,7 +685,17 @@ describe('Battle — le pas-à-pas est en haut et défile vers sa cible (#169)',
     // La ligne : le titre de l'étape et « Suivant », rien d'autre.
     const ligne = panneau.querySelector('.pas-a-pas__ligne') as HTMLElement;
     expect(within(ligne).getByRole('heading', { name: 'Le Poste et le Banc' })).toBeInTheDocument();
-    expect(within(ligne).getByRole('button', { name: 'Suivant' })).toBeInTheDocument();
+    const suivant = within(ligne).getByRole('button', { name: 'Suivant' });
+    expect(suivant).toBeInTheDocument();
+    // **Il ne concurrence pas le jeu** (critique du 31/10/2026) : à l'arrivée, le seul aplat de
+    // l'écran doit être celui qui joue — « Fin du tour » —, pas le bouton du tutoriel. Le contrôle
+    // mord : remettre `button--primary` sur « Suivant » le fait échouer.
+    expect(suivant).not.toHaveClass('button--primary');
+
+    // **La phrase d'entrée est un ordre** (critique du 31/10/2026) : replié, le panneau montre
+    // `premierePhrase`, donc la première phrase doit dire *quoi faire*, pas *à quoi ça ressemble*.
+    // Le contrôle mord : remettre « Le plateau a deux rangées… » en tête le fait échouer.
+    expect(premierePhrase(ETAPES_COMBAT[0].texte)).toMatch(/^Touche une carte de ta main/);
 
     // Replié : « Plus » dit qu'il ne déplie rien encore ; le reste est là, sous ses doigts.
     const plus = within(panneau).getByRole('button', { name: 'Plus' });
@@ -1187,7 +1199,7 @@ describe('Battle — la scène : la piste d’Interventions (#190)', () => {
 });
 
 describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-UI §4)', () => {
-  const boutonInfos = () => screen.getByRole('button', { name: 'Infos détaillées' });
+  const boutonInfos = () => screen.getByRole('button', { name: 'Plus de détail sur les cartes' });
 
   it('le bouton ⓘ est dans la barre d’état, porte le raccourci, et bascule sobre / détaillé', () => {
     const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
@@ -1285,7 +1297,7 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
     expect(boutonInfos()).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('en `sobre`, les annotations partent ; les décisions restent', () => {
+  it('en `sobre`, les annotations partent ; les décisions restent — dont le Stress chiffré', () => {
     const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     // Ce qui reste : qui est au Poste, la barre de Stress, les Interventions et le tour.
@@ -1294,8 +1306,12 @@ describe('Battle — la bascule d’infos et ses raccourcis (#189, SPEC-COMBAT-U
     expect(container.querySelectorAll('[role="img"][aria-label^="Intervention"]')).toHaveLength(6);
     expect(screen.getByText(/Tour 1/)).toBeInTheDocument();
 
-    // Ce qui part : le chiffre du Stress, les Pressions de la carte, les types de café.
-    expect(container.querySelector('.card__stress-chiffre')).toBeNull();
+    // **Le Stress chiffré reste, même en `sobre`** (critique du 31/10/2026, P1) : c'est la mesure
+    // qui dit à combien du craquage on est, pour une Pression qui termine le tour. Le contrôle
+    // mord : le remettre derrière `annotations` le fait disparaître ici.
+    expect(container.querySelector('.card__stress-chiffre')?.textContent).toMatch(/^\d+\/\d+$/);
+
+    // Ce qui part : les Pressions de la carte, les types de café, le nom des Conditions.
     expect(container.querySelector('.poste__carte .card__attacks')).toBeNull();
     expect(container.querySelector('.poste__machine-types')).toBeNull();
     expect(container.querySelector('.status-chip__nom')).toBeNull();
@@ -1655,12 +1671,12 @@ describe('Battle — le panneau de pose prend le focus au clavier (#525)', () =>
 describe('Battle — le bouton Infos montre sa touche (#525)', () => {
   it('la pastille affiche « I » sans changer le nom accessible du bouton', async () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
-    const bouton = await screen.findByRole('button', { name: 'Infos détaillées' });
+    const bouton = await screen.findByRole('button', { name: 'Plus de détail sur les cartes' });
     const touche = bouton.querySelector<HTMLElement>('.battle__infos-touche');
     expect(touche).not.toBeNull();
     expect(touche!.textContent).toBe('I');
     expect(touche).toHaveAttribute('aria-hidden', 'true');
-    expect(bouton).toHaveAccessibleName('Infos détaillées');
+    expect(bouton).toHaveAccessibleName('Plus de détail sur les cartes');
     expect(within(bouton).queryByText('I')).toBe(touche);
   });
 });
@@ -1674,7 +1690,7 @@ describe('Battle — le journal remplit la console sur écran large (D-158, #520
     // Le cas « sans matchMedia » : on retire la simulation de setup-jsdom.ts pour ce test.
     vi.stubGlobal('matchMedia', undefined);
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
-    await screen.findByRole('button', { name: 'Infos détaillées' });
+    await screen.findByRole('button', { name: 'Plus de détail sur les cartes' });
     expect(screen.queryByRole('region', { name: 'Journal du combat' })).toBeNull();
   });
 
@@ -1690,7 +1706,7 @@ describe('Battle — le journal remplit la console sur écran large (D-158, #520
       dispatchEvent: () => false
     }));
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
-    await screen.findByRole('button', { name: 'Infos détaillées' });
+    await screen.findByRole('button', { name: 'Plus de détail sur les cartes' });
     const journal = screen.getByRole('region', { name: 'Journal du combat' });
     expect(within(journal).getAllByRole('listitem').length).toBeGreaterThan(0);
     expect(journal).not.toHaveAttribute('aria-live');

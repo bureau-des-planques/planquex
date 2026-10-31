@@ -199,3 +199,43 @@ describe('le retour d’action sans mouvement (T10, #293)', () => {
     expect(reglesFin[2].corps).toMatch(/background:\s*var\(--scene-steel-deep\)/);
   });
 });
+
+/**
+ * **La bande de score** (D-166, critique du 31/10/2026) : le score existait en hexagones, mais
+ * **aucun chiffre** ne disait combien d'Interventions étaient marquées, ni combien il en faut.
+ * Ces gardes tiennent les trois choses qui font exister le score à l'écran : une capsule écrite,
+ * des hexagones plus gros que les autres mesures, et des places libres qui ne pèsent plus comme
+ * des cartes.
+ */
+describe('la bande de score et les places libres (D-166)', () => {
+  function reglesDe(css: string): { selecteur: string; corps: string }[] {
+    const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    return [...sans.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].map((m) => ({
+      selecteur: m[1].trim().replace(/\s+/g, ' '),
+      corps: m[2]
+    }));
+  }
+  const trouve = (selecteur: string) => reglesDe(CSS).find((r) => r.selecteur === selecteur);
+
+  it('le score s’écrit : capsule, chiffres et seuil ont un style (le contrôle mord : sans règle, le score retombe en texte nu)', () => {
+    expect(trouve('.piste__score')?.corps).toMatch(/border:\s*1px solid/);
+    expect(trouve('.piste__score')?.corps).toMatch(/border-radius:\s*999px/);
+    expect(trouve('.piste__points')?.corps).toMatch(/font-size:\s*var\(--fs-md\)/);
+    expect(trouve('.piste__seuil')?.corps).toMatch(/font-size:\s*var\(--fs-2xs\)/);
+  });
+
+  it('les hexagones du score sont les plus gros éléments de mesure du plateau', () => {
+    // 1,35 rem = 21,6 px de haut (17,6 px avant D-166) ; les écrans courts les ramènent d'un cran
+    // sous média, et c'est cette première règle-ci qui dit la taille de référence.
+    expect(trouve('.piste__hex')?.corps).toMatch(/height:\s*1\.35rem/);
+    expect(trouve('.piste__hex')?.corps).toMatch(/width:\s*1\.15rem/);
+  });
+
+  it('la place libre s’enfonce dans le feutre au lieu de peser comme une carte', () => {
+    const libre = trouve('.bench__slot.is-free');
+    expect(libre?.corps).toMatch(/box-shadow:\s*inset/);
+    expect(libre?.corps).toMatch(/background:\s*color-mix/);
+    // Le filet reste `--text-muted` : c'est lui qui tient les 3:1 (WCAG 1.4.11).
+    expect(libre?.corps).toMatch(/border:\s*1px dashed var\(--text-muted\)/);
+  });
+});

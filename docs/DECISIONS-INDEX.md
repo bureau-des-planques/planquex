@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 164 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 167 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -170,3 +170,6 @@
 | D-162 | 31/10/2026 | La Journée est une région qui se met en pause,… |
 | D-163 | 31/10/2026 | Le panneau réserve sa place, et l'étape vit hors de… |
 | D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |
+| D-165 | 31/10/2026 | Le combat montre la mesure qui décide, et le tutoriel… |
+| D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |
+| D-167 | 31/10/2026 | Les tailles du plateau ne bougent pas : à 420… |

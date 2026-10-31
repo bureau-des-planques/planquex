@@ -134,6 +134,14 @@ describe('InspecteurCombat — deux rendus, un seul contenu (T4, #287)', () => {
     expect(infobulle).toHaveTextContent(`${INSTANCE.maxHp - INSTANCE.hp}/${INSTANCE.maxHp} de Stress`);
   });
 
+  it('4 bis. la fiche porte la flavour de la carte (D-166)', () => {
+    // La flavour n'apparaissait qu'en Collection et sur la carte en grand : l'écran du combat,
+    // celui où le testeur passe le plus de temps, la taisait. Le contrôle mord : la retirer de
+    // `FicheCarte` fait échouer cette ligne.
+    render(<FicheCarte instance={INSTANCE} card={CARTE} />);
+    expect(screen.getByText(CARTE.flavor)).toBeInTheDocument();
+  });
+
   it('5. l’infobulle se pose dans l’écran `.battle`, pas dans `body` : ses règles et ses jetons n’existent que là (D-103)', async () => {
     // Dans `body`, `.battle .infobulle` ne s'appliquait pas : l'infobulle tombait nue au bas du
     // document, et l'écran de combat défilait de 177 px dès qu'une carte gardait le focus.

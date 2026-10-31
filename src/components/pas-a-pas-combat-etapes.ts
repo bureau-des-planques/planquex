@@ -50,8 +50,8 @@ export const ETAPES_COMBAT: readonly EtapeCombat[] = [
   {
     titre: 'Le Poste et le Banc',
     texte:
-      'Le plateau a deux rangées : le Poste, un seul Planqué, celui qui prend les Pressions ; et le Banc, trois places pour préparer la suite. Tu poses depuis ta main : un Planqué Entrant au Poste ou au Banc, un N+1 ou un N+2 sur son prédécesseur.',
-    cibles: ['plateau', 'main']
+      'Touche une carte de ta main, puis choisis où la poser. Le Poste, un seul Planqué, prend les Pressions ; le Banc, trois places, prépare la suite. Un Planqué Entrant se pose au Poste ou au Banc ; un N+1 ou un N+2, sur son prédécesseur.',
+    cibles: ['main', 'plateau']
   },
   {
     titre: 'Le café',
