@@ -4,6 +4,8 @@ import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { Settings, CATEGORIES_REGLAGES } from './Settings';
 import { renderWithStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
+import { estGesteFait, oublierGestes } from '@/components/journee-gestes';
+import { poserCibleJournee } from '@/components/journee-cible';
 import { useComptes } from '@/store/comptes';
 import type { Compte } from '@/lib/comptes';
 import { APP_LABEL } from '@/version';
@@ -81,14 +83,15 @@ describe('Settings — écran des Réglages', () => {
   it("affiche la section Journée d'intégration", () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/Journée d.intégration/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Revoir la journée d.intégration/i })).toBeInTheDocument();
+    // Le titre, pas le bouton : depuis le 31/10/2026 les deux portent la majuscule.
+    expect(screen.getByRole('heading', { name: /Journée d.intégration/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Revoir la Journée d.intégration/ })).toBeInTheDocument();
   });
 
-  it('remet le tutoriel à false au clic sur "Revoir la journée d\'intégration"', () => {
+  it('remet le tutoriel à false au clic sur "Revoir la Journée d\'intégration"', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const button = screen.getByRole('button', { name: /Revoir la journée d.intégration/i });
+    const button = screen.getByRole('button', { name: /Revoir la Journée d.intégration/ });
     fireEvent.click(button);
 
     const state = useStore.getState();
@@ -99,17 +102,19 @@ describe('Settings — écran des Réglages', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(screen.getByText(/Pas-à-pas du combat/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Revoir le pas-à-pas du combat/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Revoir le pas-à-pas du combat/i })).toBeInTheDocument();
   });
 
-  it('remet le pas-à-pas à false au clic', () => {
+  it('un seul bouton, et il ouvre le combat guidé (30/10/2026)', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const button = screen.getByRole('button', { name: /Revoir le pas-à-pas du combat/i });
-    fireEvent.click(button);
-
-    const state = useStore.getState();
-    expect(state.pasAPasCombatVu).toBe(false);
+    // **Le contrôle mord** : deux boutons pour un seul effet, c'était le doublon — et
+    // « Revoir le pas-à-pas » ne faisait rien de visible depuis Réglages.
+    expect(screen.queryByRole('button', { name: /Revoir le pas-à-pas du combat/i })).toBeNull();
+    const lien = screen.getByRole('link', { name: /Revoir le pas-à-pas du combat/i });
+    expect(lien).toHaveAttribute('href', '/battle?tutoriel=1');
+    // Le drapeau de la première partie n'est **pas** touché depuis cet écran.
+    expect(useStore.getState().pasAPasCombatVu).toBe(true);
   });
 
   it('mène à la page d’installation depuis Réglages, une seule fois (sinon le module est introuvable une fois installé)', () => {
@@ -118,6 +123,20 @@ describe('Settings — écran des Réglages', () => {
     const liens = screen.getAllByRole('link', { name: /préarmer/i });
     expect(liens).toHaveLength(1);
     expect(liens[0]).toHaveAttribute('href', '/installation');
+  });
+
+  it('« Créer ma sauvegarde » est le geste de l’étape「 Tes données 」(30/10/2026)', async () => {
+    oublierGestes();
+    // Le halo n'apparaît que si la Journée **tient cette étape** (critique du 30/10/2026).
+    poserCibleJournee('sauvegarde');
+    renderWithStore(<Settings />, { tutorielVu: false, pasAPasCombatVu: true });
+
+    const bouton = screen.getByRole('button', { name: /Créer ma sauvegarde/i });
+    expect(bouton).toHaveAttribute('data-journee-cible', 'sauvegarde');
+    expect(estGesteFait('sauvegarde')).toBe(false);
+
+    fireEvent.click(bouton);
+    expect(estGesteFait('sauvegarde')).toBe(true);
   });
 
   it('affiche la section Sauvegarde', () => {

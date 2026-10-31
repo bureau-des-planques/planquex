@@ -110,7 +110,7 @@ export function FicheCarte({ instance, card, machine }: { instance: CardInstance
       )}
       {machine && <p className="muted inspecteur__machine">{machine}</p>}
       {/*
-       * **La flavour a sa place dans la fiche** (D-161, critique du 31/10/2026, P2) : elle
+       * **La flavour a sa place dans la fiche** (D-166, critique du 31/10/2026, P2) : elle
        * n'existait qu'en Collection et sur la carte en grand. L'écran où le testeur passe le plus
        * de temps était donc le seul à taire l'écriture qui rend le jeu drôle. La fiche défile
        * déjà : deux lignes de plus ne coûtent aucune hauteur au plateau.

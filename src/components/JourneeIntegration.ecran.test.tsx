@@ -1,22 +1,39 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { JourneeIntegration } from './JourneeIntegration';
 import { ETAPES_JOURNEE } from './journee-etapes';
+import { marquerGeste, oublierGestes } from './journee-gestes';
+import { remettreJourneeAuDebut } from './journee-etape';
 import { setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 
 /**
- * La « Journée d'intégration » **jouée** (#334, D-136) — le rendu, pas la source.
+ * La « Journée d'intégration » **jouée** (30/10/2026) — le rendu, pas la source.
  *
- * Ce que `journee-etapes.test.ts` ne peut pas prouver : qu'une étape **consomme son geste**
- * avant de laisser passer, que le **saut** mène au même état que la fin, et que le libellé
- * du saut nomme ce qu'on perd. Les trois se voient ici, dans un dialogue réel.
+ * Ce que `journee-etapes.test.ts` ne peut pas prouver : que les étapes **s'enchaînent**
+ * dans le panneau, que la dernière referme la Journée en menant à son écran, et que le
+ * saut mène au même état que la fin. Les trois se voient ici, dans un panneau réel.
  */
 function monter() {
-  setupTestStore({ tutorielVu: false, pasAPasCombatVu: true });
+  // Les deux gestes de la Journée sont faits : ce fichier éprouve l'enchaînement, et le
+  // test dédié ci-dessous éprouve la garde du geste.
+  setupTestStore({
+    tutorielVu: false,
+    pasAPasCombatVu: true,
+    packsOpened: 1,
+    deck: ['atelier-joueur-de-flute']
+  });
+  // Les deux gestes de session (sauvegarde, combat guidé) vivent hors du store : ils se
+  // marquent à la main. Le combat est le troisième depuis le 31/10/2026 — sans lui, l'étape
+  // qui compte se traversait en lecture.
+  oublierGestes();
+  marquerGeste('sauvegarde');
+  marquerGeste('combat');
+  // L'étape vit hors du panneau (31/10/2026) : elle doit repartir du début entre deux tests.
+  remettreJourneeAuDebut();
   return render(
     <MemoryRouter initialEntries={['/']}>
       <JourneeIntegration />
@@ -32,59 +49,89 @@ function action(nom: RegExp) {
   return screen.getByRole('button', { name: nom });
 }
 
-describe('la Journée d’intégration se joue (#334, D-136)', () => {
-  it('annonce cinq étapes, et les fait défiler jusqu’au tour de jeu', async () => {
-    monter();
-    expect(screen.getByText('Journée d’intégration — étape 1 sur 5')).toBeInTheDocument();
+describe('la Journée d’intégration se joue (D-160)', () => {
+  it('« Suivant » attend les gestes : un Arrivage ouvert, un Deck chargé', async () => {
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    remettreJourneeAuDebut();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    const suivant = () => screen.getByRole('button', { name: /^Suivant$/i });
 
-    for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
-      await userEvent.click(action(/^Suivant$/i));
-    }
-    expect(screen.getByRole('heading', { name: 'Le tour de jeu' })).toBeInTheDocument();
-    expect(screen.getByText('Journée d’intégration — étape 5 sur 5')).toBeInTheDocument();
+    // **Le contrôle mord** : sans le geste, on ne traverse pas la Journée en lecture.
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      useStore.getState().openPack();
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
+
+    await userEvent.click(suivant());
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      useStore.getState().setDeck(['atelier-joueur-de-flute']);
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
+
+    // L'étape 3 attend le combat guidé, qui ne laisse aucune trace dans le store.
+    await userEvent.click(suivant());
+    expect(screen.getByRole('heading', { name: /Le combat/ })).toBeInTheDocument();
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      marquerGeste('combat');
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
+    await userEvent.click(suivant());
+    expect(screen.getByRole('heading', { name: /Tes données/ })).toBeInTheDocument();
+    expect(suivant()).toBeDisabled();
+    act(() => {
+      marquerGeste('sauvegarde');
+    });
+    await waitFor(() => expect(suivant()).toBeEnabled());
   });
 
-  it('le tour de jeu consomme ses deux gestes : café, puis Pression, et le Stress se lit', async () => {
+  it('annonce cinq étapes, et les fait défiler jusqu’au comité', async () => {
+    monter();
+    expect(screen.getByText(/Journée d’intégration — étape 1 sur 5/)).toBeInTheDocument();
+
+    for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
+      await userEvent.click(action(/^Suivant$/i));
+    }
+    expect(screen.getByRole('heading', { name: /Le comité/ })).toBeInTheDocument();
+    expect(screen.getByText(/Journée d’intégration — étape 5 sur 5/)).toBeInTheDocument();
+  });
+
+  it('le dernier geste ouvre son écran et referme la Journée', async () => {
     monter();
     for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
       await userEvent.click(action(/^Suivant$/i));
     }
 
-    const aller = action(/Jouer mon premier tour/i);
-    // **Le contrôle mord** : sans le geste, on ne passe pas. Un bouton actif ici ferait
-    // de l'étape une étape lue, exactement ce que D-136 refuse.
-    expect(aller).toBeDisabled();
-
-    await userEvent.click(action(/Attacher un café/i));
-    expect(aller).toBeDisabled();
-
-    await userEvent.click(action(/Lancer une Pression/i));
-    expect(aller).toBeEnabled();
-    // « lire le Stress » : il est à l'écran, et il monte.
-    expect(screen.getByRole('status')).toHaveTextContent(/Stress 20 sur un Seuil de 60/);
+    await userEvent.click(action(/Voir le comité/i));
+    // **Le contrôle mord** : sans écriture du drapeau, la Journée se remonterait sur le
+    // comité — c'est l'exclusion `surLeMur` qui le ferait, et le test tomberait ici.
+    expect(useStore.getState().tutorielVu).toBe(true);
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+    expect(screen.getByText('l’écran ouvert')).toBeInTheDocument();
   });
 
   it('le saut dit ce qu’il coûte, et mène au même état que la fin', async () => {
     const saut = monter();
-    const bouton = screen.getByRole('button', { name: /passer : tu ne verras pas le tour de jeu/i });
+    const bouton = screen.getByRole('button', { name: /passer : tu ne verras pas le combat/i });
     await userEvent.click(bouton);
     expect(useStore.getState().tutorielVu).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
     saut.unmount();
 
-    // La fin, par le même dialogue : mêmes drapeaux, même état de store.
+    // La fin, par le même panneau : même drapeau, même état de store.
     monter();
     for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
       await userEvent.click(action(/^Suivant$/i));
     }
-    await userEvent.click(action(/Attacher un café/i));
-    await userEvent.click(action(/Lancer une Pression/i));
-    await userEvent.click(action(/Jouer mon premier tour/i));
-
+    await userEvent.click(action(/Voir le comité/i));
     expect(useStore.getState().tutorielVu).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
-    // Le geste de l'étape mène au combat : c'est lui qui referme la Journée.
-    expect(screen.getByText('l’écran ouvert')).toBeInTheDocument();
   });
 
   it('l’appel à participer n’apparaît qu’à la fin, et son lien comité referme la Journée (#271)', async () => {
@@ -99,6 +146,23 @@ describe('la Journée d’intégration se joue (#334, D-136)', () => {
 
     await userEvent.click(screen.getByRole('link', { name: 'le comité' }));
     expect(useStore.getState().tutorielVu).toBe(true);
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+  });
+});
+
+describe('le plateau garde son tutoriel (31/10/2026)', () => {
+  it('sur /battle, le panneau s’efface : le pas-à-pas du combat parle seul', () => {
+    // Mesuré le 30/10 : le panneau (y 10 → 258) recouvrait le pas-à-pas (y 50 → 99) et sa
+    // garde le gelait. D-160 (1) promet « zéro recouvrement ».
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: false, packsOpened: 1, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    render(
+      <MemoryRouter initialEntries={['/battle?tutoriel=1&scene=fin']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    // **Le contrôle mord** : le panneau reparaîtrait ici si l'exclusion tombait.
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
   });
 });

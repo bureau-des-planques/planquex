@@ -9,7 +9,7 @@
  *  2. **le réglage coupe tout** : `sons` dans le store, coché par défaut ; quand il est faux, ce
  *     module ne demande **aucune** lecture, même si un écran l'appelle ;
  *  3. **des timbres courts, pas une bande-son** : `arrivage` et `verdict` (D-137), plus les trois
- *     gestes du combat — `pression`, `craquage`, `intervention` (D-161) —, générés par
+ *     gestes du combat — `pression`, `craquage`, `intervention` (D-166) —, générés par
  *     `scripts/ressources/sons.mjs` (aucune licence tierce, aucun asset des versions abandonnées).
  *
  * Si le contexte n'est pas encore prêt au moment de jouer, on **saute** le son : le jouer en retard

@@ -134,7 +134,7 @@ describe('InspecteurCombat — deux rendus, un seul contenu (T4, #287)', () => {
     expect(infobulle).toHaveTextContent(`${INSTANCE.maxHp - INSTANCE.hp}/${INSTANCE.maxHp} de Stress`);
   });
 
-  it('4 bis. la fiche porte la flavour de la carte (D-161)', () => {
+  it('4 bis. la fiche porte la flavour de la carte (D-166)', () => {
     // La flavour n'apparaissait qu'en Collection et sur la carte en grand : l'écran du combat,
     // celui où le testeur passe le plus de temps, la taisait. Le contrôle mord : la retirer de
     // `FicheCarte` fait échouer cette ligne.

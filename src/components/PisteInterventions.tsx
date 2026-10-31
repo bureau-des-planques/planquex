@@ -10,7 +10,7 @@ import { POINTS_TO_WIN } from '@/game/rules';
  * porte son `aria-label` (« Intervention 2 sur 3, La Direction ») pour le lecteur d'écran ; le
  * groupe de chaque camp donne le nom du camp, et le conteneur la lecture d'ensemble.
  *
- * **Le score s'écrit entre les deux camps** (D-161, critique du 31/10/2026) : `0 — 0` et le
+ * **Le score s'écrit entre les deux camps** (D-166, critique du 31/10/2026) : `0 — 0` et le
  * seuil de victoire `/ 3`, une seule fois, sur l'axe central. Avant, la condition de victoire
  * n'existait qu'en hexagones : il fallait les compter, et rien à l'écran ne disait « trois ».
  *
@@ -29,6 +29,12 @@ export interface CampPiste {
    * remplissage de `is-acquise` suffit déjà.
    */
   readonly fraiches?: readonly number[];
+  /**
+   * Le camp qui **vient de gagner** (30/10/2026) : ses trois hexagones s'allument **en
+   * séquence**, comme un verdict qui se pose. C'est la fin du tutoriel de combat — un
+   * combat ordinaire garde ses crans et son bandeau, sans cette cérémonie.
+   */
+  readonly finale?: boolean;
 }
 
 export function PisteInterventions({
@@ -46,7 +52,7 @@ export function PisteInterventions({
 
   return (
     <div className="piste" role="group" aria-label={`Interventions : ${lecture}`} data-pas-a-pas={designe}>
-      {camps.map(({ label, points, fraiches = [] }, campIndex) => (
+      {camps.map(({ label, points, fraiches = [], finale }, campIndex) => (
         <Fragment key={label}>
           {campIndex === 1 && (
             <span className="piste__score" aria-hidden="true">
@@ -68,7 +74,7 @@ export function PisteInterventions({
                   aria-label={`Intervention ${numero} sur ${POINTS_TO_WIN}, ${label}, ${numero <= points ? 'acquise' : 'à venir'}`}
                   className={`piste__hex${numero <= points ? ' is-acquise' : ''}${
                     fraiches.includes(numero) ? ' is-fraiche' : ''
-                  }`}
+                  }${finale ? ' is-finale' : ''}`}
                 />
               );
             })}

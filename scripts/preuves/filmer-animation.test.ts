@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-// @ts-expect-error — module .mjs sans déclaration de types
-import { STORAGE_KEY, analyserArguments, etatAmorce, htmlPlanche, nomFrame } from './filmer-animation.mjs';
+// @ts-expect-error — module .mjs sans déclaration de types (deux imports : la directive ne
+// couvre qu'une ligne, et Prettier replie un import long).
+import { analyserArguments, etatAmorce, htmlPlanche, nomFrame } from './filmer-animation.mjs';
+// @ts-expect-error — même module, mêmes types implicites.
+import { STORAGE_KEY, ageDeLEchantillon, deroulementDeFilm } from './filmer-animation.mjs';
 
 /**
  * Le contrat de `scripts/preuves/filmer-animation.mjs`, sans navigateur. La prise réelle se vérifie à la
@@ -21,6 +24,13 @@ describe('filmer-animation', () => {
   it('utilise la clé de store de l’application', () => {
     const store = readFileSync(new URL('../../src/store/useStore.ts', import.meta.url), 'utf8');
     expect(store).toContain(`'${STORAGE_KEY}'`);
+  });
+
+  it('amorce le store à sa version courante — le contrôle mord quand le store monte sans l’amorce', () => {
+    const store = readFileSync(new URL('../../src/store/useStore.ts', import.meta.url), 'utf8');
+    const version = Number(/export const STORAGE_VERSION = (\d+)/.exec(store)?.[1]);
+    expect(version).toBeGreaterThan(0);
+    expect(etatAmorce().version).toBe(version);
   });
 
   it('lit les options et refuse une option inconnue ou un entier invalide', () => {
@@ -64,12 +74,27 @@ describe('filmer-animation', () => {
     expect(config.clics).toEqual(['a', 'c']);
   });
 
+  it('lit --ralenti, le refuse sinon, et le garde distinct des entiers', () => {
+    expect(analyserArguments(['--ralenti', '0.2']).ralenti).toBe(0.2);
+    expect(analyserArguments([]).ralenti).toBe(1);
+    expect(() => analyserArguments(['--ralenti', '0'])).toThrow(/nombre > 0/);
+    expect(() => analyserArguments(['--ralenti', 'abc'])).toThrow(/nombre > 0/);
+  });
+
   it('lit l’horloge figée, la marge et le sélecteur compté — et refuse les valeurs fausses', () => {
     const config = analyserArguments(['--horloge', '2026-10-22T09:00:00Z', '--marge', '48', '--compter', '.x']);
     expect(config).toMatchObject({ horloge: '2026-10-22T09:00:00Z', marge: 48, compter: '.x' });
     expect(() => analyserArguments(['--horloge', 'hier'])).toThrow(/date ISO/);
     expect(() => analyserArguments(['--marge', '-3'])).toThrow(/entier ≥ 0/);
     expect(() => analyserArguments(['--pause', '0'])).toThrow(/entier ≥ 1/);
+  });
+
+  it('une planche ralentie le dit : sinon ses instants mentiraient sur leur temps', () => {
+    const planche = htmlPlanche([{ src: 'f00.png', t: 24 }], { colonnes: 1, intervalle: 70, ralenti: 0.2 });
+    expect(planche).toContain('ralenti ×5');
+    expect(planche).toContain("l'âge de l'animation");
+    // Le contrôle mord : sans ralenti, aucun marqueur affiché, et les instants restent réels.
+    expect(htmlPlanche([{ src: 'f00.png', t: 24 }], { colonnes: 1, intervalle: 70 })).not.toContain('ralenti ×');
   });
 
   it('légende la planche avec l’instant mesuré et le compte du DOM — de quoi prouver un retrait', () => {
@@ -84,5 +109,49 @@ describe('filmer-animation', () => {
     expect(html).toContain('509 ms · DOM : 0');
     // Le contrôle mord : sans `compte`, la légende ne ment pas en inventant un « DOM : 0 ».
     expect(htmlPlanche([{ src: 'f00.png', t: 5 }], { colonnes: 1, intervalle: 70 })).not.toContain('DOM');
+  });
+
+  it('le déclencheur est nommé : ce qui le précède prépare, ce qui le suit se joue dans la fenêtre', () => {
+    const etapes = [
+      { type: 'clic', selecteur: 'a' },
+      { type: 'attendre', selecteur: 'b' },
+      { type: 'declencheur', selecteur: 'c' },
+      { type: 'pause', ms: 400 }
+    ];
+    expect(deroulementDeFilm(etapes)).toEqual({
+      preparation: [
+        { type: 'clic', selecteur: 'a' },
+        { type: 'attendre', selecteur: 'b' }
+      ],
+      declencheur: { type: 'declencheur', selecteur: 'c' },
+      suite: [{ type: 'pause', ms: 400 }]
+    });
+    // **Le contrôle mord** : sans `--declencheur`, *tout* est préparation — une preuve
+    // historique (glissement, survol, animation au chargement) garde exactement ses légendes.
+    expect(deroulementDeFilm([{ type: 'clic', selecteur: 'a' }, { type: 'pause', ms: 500 }])).toEqual({
+      preparation: [
+        { type: 'clic', selecteur: 'a' },
+        { type: 'pause', ms: 500 }
+      ],
+      declencheur: null,
+      suite: []
+    });
+  });
+
+  it('lit --declencheur, le place dans l’ordre des étapes, et refuse d’en avoir deux', () => {
+    const config = analyserArguments(['--clic', 'a', '--declencheur', 'b', '--pause', '300']);
+    expect(config.declencheur).toBe('b');
+    expect(config.etapes).toEqual([
+      { type: 'clic', selecteur: 'a' },
+      { type: 'declencheur', selecteur: 'b' },
+      { type: 'pause', ms: 300 }
+    ]);
+    expect(() => analyserArguments(['--declencheur', 'a', '--declencheur', 'b'])).toThrow(/une fois/);
+  });
+
+  it('remet l’instant mesuré à l’échelle du ralenti — le contrôle mord sans ralenti', () => {
+    expect(ageDeLEchantillon(120, 1)).toBe(120);
+    expect(ageDeLEchantillon(120, 0.2)).toBe(24);
+    expect(ageDeLEchantillon(120)).toBe(120);
   });
 });

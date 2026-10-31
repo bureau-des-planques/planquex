@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Info, Search, Sparkles, Trash2 } from 'lucide-react';
@@ -27,6 +27,8 @@ import {
 } from '@/game/deck';
 import { decodeDeckCode, encodeDeckCode } from '@/game/codec';
 import { useStore } from '@/store/useStore';
+import { useEstCibleJournee } from '@/components/journee-cible';
+import { CartesJournee } from '@/components/CartesJournee';
 import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
 import { TriCartes } from '@/components/TriCartes';
@@ -64,6 +66,16 @@ export function Deck() {
     setCafeTypes,
     toggleCafeType
   } = useStore();
+  /** Le halo du volet, et les cartes du tutoriel, seulement quand la Journée y est. */
+  const cibleDecks = useEstCibleJournee('decks-proposes');
+  /**
+   * **À l'étape 2, le volet est ouvert** (31/10/2026) : il s'initialise fermé quand un Deck
+   * est déjà chargé, et les cartes du tutoriel vivent dedans — la critique a mesuré un
+   * panneau qui demande de charger un Deck devant une liste repliée, sans les cartes.
+   */
+  useEffect(() => {
+    if (cibleDecks) setProposesOuverts(true);
+  }, [cibleDecks]);
   const [selected, setSelected] = useState<Card | null>(null);
   /** Un seul tri pour « Dedans » et pour le sélecteur : les deux se lisent pareil. */
   const [tri, setTri] = useState<Tri>(TRI_DEFAUT);
@@ -308,6 +320,10 @@ export function Deck() {
       <section className="section panel decks-proposes">
         <details
           className="volet"
+          /* Le geste de l'étape « La Collection et le Deck » (30/10/2026) : le volet des
+             Decks proposés est ce que la Journée désigne, et charger un Deck est ce qu'elle
+             attend. Une fois le tutoriel vu, l'attribut disparaît. */
+          data-journee-cible={cibleDecks ? 'decks-proposes' : undefined}
           open={proposesOuverts}
           onToggle={(event) => setProposesOuverts(event.currentTarget.open)}
         >
@@ -320,6 +336,10 @@ export function Deck() {
             </div>
             <ChevronDown className="volet__chevron" size={20} aria-hidden="true" />
           </summary>
+          {/* **Les cartes du tutoriel vivent ici** (30/10/2026) : elles étaient dans le panneau
+              de la Journée, qui montait alors à 54 % de l'écran. Elles ne s'affichent que
+              pendant l'étape qui les montre. */}
+          {cibleDecks && <CartesJournee />}
           <ul className="decks-proposes__list">
             {DECKS_PROPOSES.map((deckPropose) => (
               <li key={deckPropose.id} className="decks-proposes__item">

@@ -1,7 +1,7 @@
 # Les sons du jeu
 
 > **D-137** : l'alpha a **deux** sons — l'ouverture d'un **Arrivage** et la **fin d'un combat** — et
-> une case dans Réglages qui les coupe. **D-161** y ajoute les **trois gestes du combat** (Pression,
+> une case dans Réglages qui les coupe. **D-166** y ajoute les **trois gestes du combat** (Pression,
 > craquage, Intervention). Toujours rien d'autre : ni musique, ni ambiance.
 > Branchement : **#378**. Choix des timbres : **#379**.
 
@@ -14,9 +14,9 @@ Les cinq fichiers de `public/sons/` sont **fabriqués par le projet**, par
 |---|---|---|
 | `arrivage.wav` | le film du sachet qui craque, une déchirure, puis un « pop » sourd quand la lèvre s'ouvre | **39,7 Ko** |
 | `verdict.wav` | un tampon qui s'abat, puis deux notes descendantes — le dossier qu'on classe | **33,6 Ko** |
-| `pression.wav` | le coup porté : un claquement filtré et un corps grave qui tombe (D-161) | **14,7 Ko** |
-| `craquage.wav` | le Planqué qui cède : trois grains de rupture, puis une chute grave (D-161) | **26,7 Ko** |
-| `intervention.wav` | le point marqué : deux notes montantes, timbre de vibraphone (D-161) | **21,6 Ko** |
+| `pression.wav` | le coup porté : un claquement filtré et un corps grave qui tombe (D-166) | **14,7 Ko** |
+| `craquage.wav` | le Planqué qui cède : trois grains de rupture, puis une chute grave (D-166) | **26,7 Ko** |
+| `intervention.wav` | le point marqué : deux notes montantes, timbre de vibraphone (D-166) | **21,6 Ko** |
 
 Le plafond du ticket #379 est de **100 Ko par fichier** : les cinq y tiennent avec de la marge. Le
 format est du **WAV mono 22,05 kHz** parce que la machine n'a pas d'encodeur audio et qu'un fichier

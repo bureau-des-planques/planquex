@@ -201,13 +201,13 @@ describe('le retour d’action sans mouvement (T10, #293)', () => {
 });
 
 /**
- * **La bande de score** (D-161, critique du 31/10/2026) : le score existait en hexagones, mais
+ * **La bande de score** (D-166, critique du 31/10/2026) : le score existait en hexagones, mais
  * **aucun chiffre** ne disait combien d'Interventions étaient marquées, ni combien il en faut.
  * Ces gardes tiennent les trois choses qui font exister le score à l'écran : une capsule écrite,
  * des hexagones plus gros que les autres mesures, et des places libres qui ne pèsent plus comme
  * des cartes.
  */
-describe('la bande de score et les places libres (D-161)', () => {
+describe('la bande de score et les places libres (D-166)', () => {
   function reglesDe(css: string): { selecteur: string; corps: string }[] {
     const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
     return [...sans.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].map((m) => ({
@@ -225,7 +225,7 @@ describe('la bande de score et les places libres (D-161)', () => {
   });
 
   it('les hexagones du score sont les plus gros éléments de mesure du plateau', () => {
-    // 1,35 rem = 21,6 px de haut (17,6 px avant D-161) ; les écrans courts les ramènent d'un cran
+    // 1,35 rem = 21,6 px de haut (17,6 px avant D-166) ; les écrans courts les ramènent d'un cran
     // sous média, et c'est cette première règle-ci qui dit la taille de référence.
     expect(trouve('.piste__hex')?.corps).toMatch(/height:\s*1\.35rem/);
     expect(trouve('.piste__hex')?.corps).toMatch(/width:\s*1\.15rem/);

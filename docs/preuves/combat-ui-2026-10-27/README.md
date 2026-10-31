@@ -207,9 +207,9 @@ prouvent chacune leur propriété ; elles ne se superposent pas image pour image
   mais il le recouvre. Non corrigé ici : le placement du chiffre « hors carte » est celui de #192.
 
 **Ce que les planches ne prouvent pas** : le ressenti (une planche est un échantillon à ~35 ms, pas un
-film) ; le **commencement exact** — `t` part de la fin de l'étape de déclenchement, et l'attente du
-chiffre ajoute quelques dizaines de ms, donc « 508 ms » est ~500 ms depuis la naissance du chiffre, pas
-une mesure au pixel ; le tactile ; la fusion « pas d'empilement au troisième coup » (elle est testée dans
+film) ; le **commencement exact** — `t` part du **clic déclencheur** (`--declencheur`, 30/10/2026 ;
+avant cette option, de la fin de l'étape de déclenchement), et l'attente du chiffre ajoute quelques
+dizaines de ms, donc « 508 ms » est ~500 ms depuis la naissance du chiffre, pas une mesure au pixel ; le tactile ; la fusion « pas d'empilement au troisième coup » (elle est testée dans
 `src/components/effets-combat.test.ts`, pas filmée).
 
 **Corrections du script** (`scripts/filmer-animation.mjs`) : il ne savait pas viser cet effet — il

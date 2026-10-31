@@ -22,12 +22,12 @@ court).
 
 Ce que ces captures **ne prouvent pas** : le rendu sur un vrai téléphone, le son (les WAV sont
 vérifiés par `scripts/ressources/sons.test.ts` — poids, fondus, aucun son au chargement), et la
-lisibilité du nom au plateau, qui reste tronqué (D-162 : la hauteur manque, le trade-off est ouvert).
+lisibilité du nom au plateau, qui reste tronqué (D-167 : la hauteur manque, le trade-off est ouvert).
 
 ## Les décisions de la passe
 
-- **D-160** — Stress `x/y` dans les deux densités, Stress appliqué sur la Pression, étape 1 du
+- **D-165** — Stress `x/y` dans les deux densités, Stress appliqué sur la Pression, étape 1 du
   tutoriel à l'impératif, `ⓘ` renommé.
-- **D-161** — la bande de score écrite, trois sons de combat générés, la flavour dans la fiche.
-- **D-162** — les tailles de D-157 ne bougent pas : l'essai à 104 / 72 / 76 px a été refusé par
+- **D-166** — la bande de score écrite, trois sons de combat générés, la flavour dans la fiche.
+- **D-167** — les tailles de D-157 ne bougent pas : l'essai à 104 / 72 / 76 px a été refusé par
   `npm run capturer` (17 à 19 px de marge, jusqu'à 34 px de défilement).
