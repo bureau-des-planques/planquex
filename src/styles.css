@@ -792,7 +792,9 @@ h2 {
   border-radius: 999px;
   color: var(--gold-soft);
   display: inline-block;
-  font-size: var(--fs-xs);
+  /* **12 px** (#547) : `tiny-text` relève le corps de texte sous 12 px, et cette pastille
+     porte un mot lisible (« La Direction »), pas une mention légale. */
+  font-size: max(var(--fs-xs), 0.75rem);
   margin-left: 0.5rem;
   padding: 0.1rem 0.5rem;
   vertical-align: middle;
@@ -1752,7 +1754,9 @@ h2 {
   display: -webkit-box;
   flex: 1 1 auto;
   font-family: var(--font-display);
-  font-size: 1em;
+  /* **Plancher de la vignette** (#547) : le nom se lit à 200 px de carte. Mesuré : 2 noms
+     extrêmes sur 308 se replient au point d'être rognés, la hauteur de carte ne bouge pas. */
+  font-size: max(1em, 0.7rem);
   font-weight: 800;
   hyphens: auto;
   line-height: 1.05;
@@ -1765,7 +1769,9 @@ h2 {
 /* Un nom long (plus de 18 signes, `CardView`) passe un cran plus petit : 41 signes tiennent
    sur deux lignes (« Responsable développement des compétences »). */
 .card__name[data-long] {
-  font-size: 0.84em;
+  /* La règle des noms longs garde sa réduction **et** le plancher : sans elle, un nom de
+     18 signes resterait à 8,8 px sur une carte de 200 px (#547). */
+  font-size: max(0.84em, 0.7rem);
 }
 
 /* Le Seuil, en gros chiffre à droite : la lecture Pocket immédiate. Le mot n'est qu'un repère. */
@@ -1840,7 +1846,8 @@ h2 {
   background: rgb(7 12 22 / 80%);
   border-radius: 0.5em;
   display: inline-flex;
-  font-size: 0.66em;
+  /* **Plancher de la vignette** (#547, 31/10/2026) : le stade se lit (11,2 px). */
+  font-size: max(0.66em, 0.7rem);
   font-weight: 700;
   gap: 0.35em;
   left: 0.35em;
@@ -1864,7 +1871,8 @@ h2 {
   background: rgb(0 0 0 / 28%);
   border-radius: 0.2em;
   color: rgb(255 255 255 / 90%);
-  font-size: 0.68em;
+  /* Plancher de la vignette (#547) : la légende se lit. */
+  font-size: max(0.68em, 0.7rem);
   font-style: italic;
   overflow: hidden;
   padding: 0.1em 0.5em;
@@ -1899,7 +1907,8 @@ h2 {
 }
 
 .card__attacks .attack__name {
-  font-size: 0.9em;
+  /* Le plancher garde la valeur d'origine (0,9em) sur les grandes cartes. */
+  font-size: max(0.9em, 0.7rem);
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1938,7 +1947,9 @@ h2 {
   display: grid;
   font-size: 0.8em;
   gap: 0.1em 0.35em;
-  grid-template-columns: 3.75em 1fr;
+  /* **La colonne du badge se mesure sur son contenu** (#547) : à 11,2 px, « TALENT » ne
+     tenait pas dans 3,75em et débordait de 16 px (constat `text-overflow` du détecteur). */
+  grid-template-columns: auto 1fr;
 }
 
 .card__talent em {
@@ -1954,6 +1965,9 @@ h2 {
 }
 
 .card__talent span {
+  /* Plancher (#547) : hérite de `.card__talent` (0,8em), donc sous 11 px sur une vignette.
+     `1em` garde la proportion du parent, `max()` pose le plancher. */
+  font-size: max(1em, 0.7rem);
   font-weight: 700;
 }
 
@@ -1977,7 +1991,8 @@ h2 {
 .card__texte {
   background: rgb(0 0 0 / 22%);
   border-radius: 0.3em;
-  font-size: 0.88em;
+  /* Plancher (#547) : le texte d'une Pression se lit sur une vignette. */
+  font-size: max(0.88em, 0.7rem);
   line-height: 1.35;
   text-wrap: pretty;
   margin: auto 0;
@@ -2027,7 +2042,8 @@ h2 {
 }
 
 .card__bas small {
-  font-size: 0.62em;
+  /* Plancher de la vignette (#547) : « Vuln. » / « Rot. » se lisent. */
+  font-size: max(0.62em, 0.7rem);
   letter-spacing: 0.04em;
   opacity: 0.85;
   text-transform: uppercase;
@@ -2036,9 +2052,10 @@ h2 {
 .card__bas b {
   align-items: center;
   display: inline-flex;
-  white-space: nowrap;
-  font-size: 0.82em;
+  /* Plancher de la vignette (#547) : « ▲MGT +20 » se lit et tient dans sa colonne. */
+  font-size: max(0.82em, 0.7rem);
   gap: 0.2em;
+  white-space: nowrap;
 }
 
 .card__bas b i {
@@ -2069,14 +2086,17 @@ h2 {
 
 .card__rarity {
   color: var(--rarity);
-  font-size: 0.85em;
+  /* Plancher de la vignette (#547) : la rareté se lit (11,2 px). */
+  font-size: max(0.85em, 0.7rem);
   letter-spacing: 0.08em;
   text-shadow: 0 1px 0 rgb(0 0 0 / 70%);
 }
 
 /* Le sigle de faction : la paire « sigle de faction » de `DESIGN.md` §1.5 (AA). */
 .card__faction {
-  color: color-mix(in srgb, var(--accent) 35%, #fff);
+  /* **Contraste** (#547) : 35 % d'accent donnait 4,4:1 sur une carte dorée ; 30 % passe
+     l'AA sans changer la teinte perçue du sigle. */
+  color: color-mix(in srgb, var(--accent) 30%, #fff);
   font-size: max(0.75em, 0.7rem);
   font-weight: 700;
 }
@@ -2218,7 +2238,9 @@ h2 {
 
 .card--plateau .card__attacks .attack__name,
 .card--plateau .card__attacks .attack__dmg {
-  font-size: var(--fs-2xs);
+  /* **Mode détaillé** (#547) : le nom de la Pression se lit. `max()` le garde au-dessus du
+     plancher mécanique `--fs-2xs`, donc `styles-combat.test.ts` reste vert. */
+  font-size: max(var(--fs-2xs), 0.7rem);
   min-width: 0;
 }
 
@@ -2267,7 +2289,10 @@ h2 {
 
 .attack__name {
   flex: 1;
-  font-size: 0.78rem;
+  /* Plancher (#547) : le nom de Pression reste **affiché** (DESIGN.md §2.1) et gagne le
+     seuil de lisibilité. Mesuré : 21 noms longs sur 389 passent en ellipse à 200 px, ce
+     que `.attack__name` fait déjà par conception ; la carte pleine taille ne bouge pas. */
+  font-size: max(0.78rem, 0.7rem);
 }
 
 .attack__dmg,
