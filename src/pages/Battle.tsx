@@ -2189,7 +2189,15 @@ export function Battle() {
               <div className="combat-barre__tete">
                 <div className="combat-barre__texte">
                   {lastLog && (
-                    <AnimatePresence mode="popLayout" initial={false}>
+                    /* **`wait`, pas `popLayout`** (#551, mesuré le 31/10/2026) : `popLayout` sort
+                       la ligne qui s'en va en `position: absolute`, et la nouvelle ligne la
+                       recouvre pendant la sortie. La ligne sortante reste alors **510 ms** en
+                       place à l'opacité 0 (mesuré : 113 → 627 ms, 734 → 1246 ms après le
+                       chargement) — deux paragraphes superposés, que le détecteur lit comme
+                       `text-occlusion`, et qui se marcheraient dessus à l'œil pendant la sortie.
+                       `wait` garde la ligne sortante dans le flux (pas de saut de hauteur) et
+                       laisse la nouvelle entrer quand elle a fini. */
+                    <AnimatePresence mode="wait" initial={false}>
                       {/* Sous « Mouvement réduit », la ligne change sans glisser ni rebondir : le
                           réglage ne coupait que le CSS, framer-motion ne le lisait pas. */}
                       <motion.p
@@ -2197,7 +2205,9 @@ export function Battle() {
                         className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
                         initial={sansMouvement ? false : { opacity: 0, y: -10, scale: 0.98 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={sansMouvement ? undefined : { opacity: 0, y: 6 }}
+                        /* Une sortie **courte** : c'est elle qui borne l'attente de `wait`, et
+                           120 ms suffisent à ne pas voir la ligne tomber. */
+                        exit={sansMouvement ? undefined : { opacity: 0, y: 6, transition: { duration: 0.12 } }}
                         transition={sansMouvement ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 26 }}
                       >
                         {lastLog}
