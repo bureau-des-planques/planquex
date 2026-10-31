@@ -16,6 +16,8 @@
  *   node scripts/ci/detect-ui-pages.mjs --controle '<json>'     # sonde : lit une sortie `--json` et
  *                                                   # dit si elle échoue (le test s'en sert, sans
  *                                                   # navigateur ni réseau)
+ *   node scripts/ci/detect-ui-pages.mjs --controle-sonde '<json>'   # sonde d'écran : juge une mesure
+ *                                                   # fabriquée (texte, calques, viewport)
  *
  * **Pourquoi le JSON et le code de sortie (#208)** : le détecteur ne dit rien d'une page
  * **propre** — il n'imprime ni « 0 anti-patterns found. » ni avis, et sort en `0`. `/` et
@@ -23,17 +25,43 @@
  * propres** : la phrase cherchée n'existe que s'il y a quelque chose à dire. La mesure vient
  * désormais de `--json` (`[]` = aucun constat), et le code de sortie départage les deux cas
  * qu'une sortie vide confondait : `0`/`2` = le scan a tourné, `1` = cible non scannée.
+ *
+ * **Et ce que le code de sortie ne dit toujours pas (#547)** : `[]` avec le code 0 se lit pareil
+ * pour une page **propre** et pour une page **recouverte** — le détecteur a tourné, mais il n'a
+ * rien vu. Mesuré le 31/10/2026 : un `div` plein écran posé sur `dist/` rend `[]` non compté,
+ * comme une page propre. D'où la **sonde d'écran** : notre propre Chromium ouvre chaque page
+ * avant le scan et exige qu'elle montre du texte, et qu'aucun calque plein écran ne la couvre.
+ * Un écran muet est un **échec**, jamais un zéro.
  */
 
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import process from 'node:process';
+import { chromium } from 'playwright-core';
 import { preview } from 'vite';
 
 /** La racine du dépôt : `dist/` y est servi. */
 const RACINE = fileURLToPath(new URL('../..', import.meta.url));
+
+/**
+ * Le premier navigateur qui existe, dans l'ordre où la CI les nomme : la sonde ouvre la page pour
+ * de vrai, donc elle a besoin d'un Chromium, pas d'un DOM simulé.
+ *
+ * - `CHROME_PATH` : ce que la CI donne à `npm run capturer` ;
+ * - `IMPECCABLE_BROWSER` : ce qu'elle donne au scan d'URLs (`/usr/bin/google-chrome` sur le
+ *   runner, où le cache `ms-playwright` n'existe **pas** — c'est ce que la CI a refusé le
+ *   31/10/2026) ;
+ * - le cache local de `ms-playwright`, le même binaire que les captures.
+ */
+const CANDIDATS_CHROMIUM = [
+  process.env.CHROME_PATH,
+  process.env.IMPECCABLE_BROWSER,
+  join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome')
+].filter(Boolean);
+const CHROMIUM = CANDIDATS_CHROMIUM.find((chemin) => existsSync(chemin)) ?? CANDIDATS_CHROMIUM[0];
 
 /**
  * Les écrans qui existent, et qu'un invité peut ouvrir.
@@ -139,6 +167,88 @@ export const BASELINE = {
  */
 export function ecransSansPlafond(ecrans, baseline) {
   return ecrans.filter((ecran) => typeof baseline[ecran] !== 'number');
+}
+
+/**
+ * **La sonde d'écran** (#547, défaut 1) : le détecteur rend `[]` et le code 0 aussi bien pour une
+ * page **propre** que pour une page qu'il n'a **pas vue** — un calque plein écran, un `#root`
+ * vide, et le silence se lit comme un succès. Aucun flux de sortie ne sépare les deux cas
+ * (mesuré le 31/10/2026 : `/connexion` et `/confidentialite`, pages propres, n'écrivent rien
+ * non plus, en texte comme avec `--quiet`). Le signal vient donc d'ailleurs : on ouvre la page
+ * nous-mêmes, et on exige qu'elle **montre** quelque chose.
+ *
+ * Le calque retenu est celui qui **recouvre l'écran** : au moins 90 % de la largeur et de la
+ * hauteur, collé en haut à gauche, et au-dessus du contenu (`z-index` positif). Un panneau de
+ * 300 px, une bulle ou un bandeau ne comptent pas — la Journée d'intégration reste mesurable.
+ */
+export function recouvreEcran(rect, viewport) {
+  if (!rect || !viewport) return false;
+  const { largeur, hauteur } = viewport;
+  if (!(largeur > 0 && hauteur > 0)) return false;
+  return (
+    rect.largeur >= largeur * 0.9 &&
+    rect.hauteur >= hauteur * 0.9 &&
+    rect.x <= largeur * 0.05 &&
+    rect.y <= hauteur * 0.05
+  );
+}
+
+/** Le verdict de la sonde : `muet` = le scan dirait « propre » sans avoir rien vu. */
+export function verdictSonde({ texte = 0, calques = [], viewport } = {}) {
+  if (!viewport || !(viewport.largeur > 0 && viewport.hauteur > 0)) {
+    return { muet: true, raison: "le navigateur n'a rendu aucun viewport" };
+  }
+  if (!(texte > 0)) {
+    return { muet: true, raison: "l'écran ne rend aucun texte" };
+  }
+  const couvrants = calques.filter((calque) => recouvreEcran(calque?.rect, viewport));
+  if (couvrants.length > 0) {
+    const nom = couvrants[0].selecteur ?? '(sans sélecteur)';
+    return { muet: true, raison: `un calque plein écran recouvre l'écran (${nom})` };
+  }
+  return { muet: false, raison: null };
+}
+
+/**
+ * Ouvre l'écran dans un Chromium neuf et rend sa mesure : la longueur du texte rendu, et les
+ * calques susceptibles de le couvrir. C'est notre propre navigateur, pas celui du détecteur :
+ * même URL, même fraîcheur — si le contenu est caché ici, il l'est aussi pour lui.
+ */
+async function mesurerEcran(navigateur, url) {
+  const page = await navigateur.newPage({ viewport: { width: 1280, height: 800 } });
+  try {
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
+    // La police et les animations d'entrée arrivent après `networkidle` : on laisse un souffle,
+    // sinon le panneau de la Journée n'a pas encore sa taille et le texte pas sa hauteur.
+    await page.waitForTimeout(400);
+    const mesures = await page.evaluate(() => {
+      const racine = document.querySelector('#root') ?? document.body;
+      const texte = (racine.innerText ?? '').trim().length;
+      const calques = [];
+      for (const element of document.querySelectorAll('body *')) {
+        const style = getComputedStyle(element);
+        if (style.display === 'none' || style.visibility === 'hidden') continue;
+        if (Number(style.opacity) === 0 || style.pointerEvents === 'none') continue;
+        if (style.position !== 'fixed' && style.position !== 'absolute') continue;
+        const z = Number.parseInt(style.zIndex, 10);
+        if (!Number.isFinite(z) || z <= 0) continue;
+        const r = element.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+        const classes =
+          typeof element.className === 'string' ? element.className.trim().split(/\s+/).filter(Boolean) : [];
+        calques.push({
+          selecteur:
+            element.tagName.toLowerCase() + (element.id ? `#${element.id}` : '') + classes.map((c) => `.${c}`).join(''),
+          rect: { x: r.x, y: r.y, largeur: r.width, hauteur: r.height },
+          z
+        });
+      }
+      return { texte, calques, viewport: { largeur: innerWidth, hauteur: innerHeight } };
+    });
+    return verdictSonde(mesures);
+  } finally {
+    await page.close();
+  }
 }
 
 /** Le port du serveur de contrôle : **pas 4180**, que `npm run capturer` occupe. */
@@ -265,7 +375,10 @@ async function principal(args) {
         baseline: BASELINE,
         // La règle est publiée avec le plan : le test la lit ici, et compare `ECRANS` à
         // `BASELINE` une seule fois, au même endroit que le contrôle qui s'en sert.
-        sansPlafond: ecransSansPlafond(ECRANS, BASELINE)
+        sansPlafond: ecransSansPlafond(ECRANS, BASELINE),
+        // Le binaire que la sonde ouvrira : le test vérifie qu'elle suit `CHROME_PATH` et
+        // `IMPECCABLE_BROWSER`, comme la CI les nomme.
+        chromium: CHROMIUM ?? null
       })
     );
     return 0;
@@ -306,6 +419,22 @@ async function principal(args) {
     return compte === 0 ? 0 : 1;
   }
 
+  // Sonde de la sonde (#547) : le test lui donne une **mesure fabriquée** — pas de navigateur —
+  // et vérifie que le contrôle mord sur une page qu'il n'a pas vue.
+  const iSonde = args.indexOf('--controle-sonde');
+  if (iSonde !== -1) {
+    let mesures;
+    try {
+      mesures = JSON.parse(args[iSonde + 1] ?? '');
+    } catch {
+      console.error('--controle-sonde attend un JSON { texte, calques, viewport }.');
+      return 1;
+    }
+    const resultat = verdictSonde(mesures);
+    console.log(JSON.stringify(resultat));
+    return resultat.muet ? 1 : 0;
+  }
+
   if (!existsSync(join(RACINE, 'dist', 'index.html'))) {
     console.error('✖ dist/index.html absent : lance `npm run build` avant ce contrôle.');
     return 1;
@@ -331,6 +460,17 @@ async function principal(args) {
     logLevel: 'error'
   });
 
+  // La sonde a besoin d'un navigateur, et d'un seul pour les douze écrans : un Chromium par page
+  // coûterait plus que la mesure elle-même.
+  if (!CHROMIUM || !existsSync(CHROMIUM)) {
+    console.error(
+      `✖ Chromium introuvable. Essayé :\n  ${CANDIDATS_CHROMIUM.join('\n  ')}\n  Renseigne CHROME_PATH (ou IMPECCABLE_BROWSER).`
+    );
+    await serveur.close();
+    return 1;
+  }
+  const navigateur = await chromium.launch({ executablePath: CHROMIUM, args: ['--no-sandbox'] });
+
   try {
     if (!(await attendreServeur(`${ORIGINE}/`))) {
       console.error(`✖ Le serveur de prévisualisation n'a pas répondu sur ${ORIGINE}.`);
@@ -340,6 +480,15 @@ async function principal(args) {
     const echecs = [];
     for (const ecran of ECRANS) {
       const url = `${ORIGINE}${ecran}`;
+      // **Avant** le détecteur (#547) : une page que nous ne voyons pas ne sera pas vue par lui,
+      // et son `[]` se lirait comme une page propre. Le scan muet se dit ici, pas dans le silence.
+      const sonde = await mesurerEcran(navigateur, url);
+      if (sonde.muet) {
+        const message = `${ecran} : scan muet — ${sonde.raison}`;
+        echecs.push(message);
+        console.error(`✖ ${message}`);
+        continue;
+      }
       // Asynchrone : le serveur tourne dans ce même processus, et un `spawnSync` le figerait
       // (le navigateur du détecteur ne recevrait plus rien → « Navigation timeout »).
       const { sortie, erreur, code } = await lancerDetecteur(url);
@@ -374,6 +523,7 @@ async function principal(args) {
   } finally {
     // Le serveur doit mourir **même** en cas d'échec : sinon le port reste pris, et le
     // prochain `npm run capturer` échoue pour une raison qui n'a rien à voir.
+    await navigateur.close();
     await serveur.close();
   }
 }
