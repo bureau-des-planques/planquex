@@ -48,12 +48,14 @@ interface Plan {
   seuil: number;
   baseline: Record<string, number | null>;
   sansPlafond: string[];
+  chromium: string | null;
 }
 
-function plan(): Plan {
+function plan(env: Record<string, string | undefined> = process.env): Plan {
   const sortie = execFileSync(process.execPath, ['scripts/ci/detect-ui-pages.mjs', '--plan'], {
     cwd: root,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    env
   });
   return JSON.parse(sortie) as Plan;
 }
@@ -150,6 +152,20 @@ describe('le contrôle visuel en CI (#205, #208, #234)', () => {
     expect(sondePlan(['/a'], { '/a': null }).echec).toBe(true);
     // Un plan complet passe : la sonde ne refuse pas tout.
     expect(sondePlan(['/a'], { '/a': 0 }).echec).toBe(false);
+  });
+
+  it('ouvre le navigateur que la CI nomme, sinon le cache local (#547)', () => {
+    // La CI ne pose pas le même nom pour `capturer` (CHROME_PATH) et pour le scan
+    // (IMPECCABLE_BROWSER), et sur le runner le cache `ms-playwright` n'existe pas : la sonde
+    // doit suivre les deux variables, sinon elle refuse de mesurer douze écrans (run du
+    // 31/10/2026, « Chromium introuvable »). `process.execPath` tient lieu de binaire existant.
+    const exe = process.execPath;
+    expect(plan({ ...process.env, CHROME_PATH: exe }).chromium).toBe(exe);
+    expect(plan({ ...process.env, CHROME_PATH: undefined, IMPECCABLE_BROWSER: exe }).chromium).toBe(exe);
+    // Un `CHROME_PATH` qui n'existe pas ne condamne pas la mesure : le candidat suivant prend.
+    expect(
+      plan({ ...process.env, CHROME_PATH: '/chemin/absent/chrome', IMPECCABLE_BROWSER: exe }).chromium
+    ).toBe(exe);
   });
 
   it('exige une capture pour chaque écran mesuré (AGENTS.md §6, D-060)', () => {

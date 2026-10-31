@@ -47,11 +47,21 @@ import { preview } from 'vite';
 const RACINE = fileURLToPath(new URL('../..', import.meta.url));
 
 /**
- * Le Chromium de `ms-playwright`, le même que les captures (`scripts/preuves/capturer.mjs`) :
- * la sonde ouvre la page pour de vrai, donc elle a besoin d'un navigateur, pas d'un DOM simulé.
- * `CHROME_PATH` reste la porte de sortie d'une autre machine.
+ * Le premier navigateur qui existe, dans l'ordre où la CI les nomme : la sonde ouvre la page pour
+ * de vrai, donc elle a besoin d'un Chromium, pas d'un DOM simulé.
+ *
+ * - `CHROME_PATH` : ce que la CI donne à `npm run capturer` ;
+ * - `IMPECCABLE_BROWSER` : ce qu'elle donne au scan d'URLs (`/usr/bin/google-chrome` sur le
+ *   runner, où le cache `ms-playwright` n'existe **pas** — c'est ce que la CI a refusé le
+ *   31/10/2026) ;
+ * - le cache local de `ms-playwright`, le même binaire que les captures.
  */
-const CHROMIUM = process.env.CHROME_PATH ?? join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
+const CANDIDATS_CHROMIUM = [
+  process.env.CHROME_PATH,
+  process.env.IMPECCABLE_BROWSER,
+  join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome')
+].filter(Boolean);
+const CHROMIUM = CANDIDATS_CHROMIUM.find((chemin) => existsSync(chemin)) ?? CANDIDATS_CHROMIUM[0];
 
 /**
  * Les écrans qui existent, et qu'un invité peut ouvrir.
@@ -365,7 +375,10 @@ async function principal(args) {
         baseline: BASELINE,
         // La règle est publiée avec le plan : le test la lit ici, et compare `ECRANS` à
         // `BASELINE` une seule fois, au même endroit que le contrôle qui s'en sert.
-        sansPlafond: ecransSansPlafond(ECRANS, BASELINE)
+        sansPlafond: ecransSansPlafond(ECRANS, BASELINE),
+        // Le binaire que la sonde ouvrira : le test vérifie qu'elle suit `CHROME_PATH` et
+        // `IMPECCABLE_BROWSER`, comme la CI les nomme.
+        chromium: CHROMIUM ?? null
       })
     );
     return 0;
@@ -449,8 +462,10 @@ async function principal(args) {
 
   // La sonde a besoin d'un navigateur, et d'un seul pour les douze écrans : un Chromium par page
   // coûterait plus que la mesure elle-même.
-  if (!existsSync(CHROMIUM)) {
-    console.error(`✖ Chromium introuvable : ${CHROMIUM}\n  Renseigne CHROME_PATH.`);
+  if (!CHROMIUM || !existsSync(CHROMIUM)) {
+    console.error(
+      `✖ Chromium introuvable. Essayé :\n  ${CANDIDATS_CHROMIUM.join('\n  ')}\n  Renseigne CHROME_PATH (ou IMPECCABLE_BROWSER).`
+    );
     await serveur.close();
     return 1;
   }
