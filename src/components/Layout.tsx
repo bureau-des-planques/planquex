@@ -1,9 +1,17 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Library, Layers, Settings, StickyNote, Swords } from 'lucide-react';
 import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
 import { useStore } from '@/store/useStore';
-import { JourneeIntegration } from '@/components/JourneeIntegration';
+/**
+ * **La Journée d'intégration arrive à la demande** (31/10/2026) : elle ne sert qu'aux
+ * testeurs qui ne l'ont pas vue, et son panneau pèse plus que le cliquet du paquet
+ * principal ne l'autorisait. Sortie du tronc, elle ne coûte rien à qui l'a déjà vue —
+ * et `tutorielVu` la démonte avant même de demander son morceau.
+ */
+const JourneeIntegration = lazy(() =>
+  import('@/components/JourneeIntegration').then((module) => ({ default: module.JourneeIntegration }))
+);
 import { AlerteComite } from '@/components/AlerteComite';
 import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
 import { BandeauNouvelleVersion } from '@/components/BandeauNouvelleVersion';
@@ -28,6 +36,7 @@ const tabs = [
 
 export function Layout() {
   const name = useStore((state) => state.name);
+  const tutorielVu = useStore((state) => state.tutorielVu);
   const { pathname } = useLocation();
   /**
    * L'état du compte (D-088). Un compte **en attente** joue et lit : le bandeau le lui
@@ -162,6 +171,12 @@ export function Layout() {
         </div>
       )}
 
+      {/* **La place du panneau est réservée** (31/10/2026). Mesuré : à l'étape 1, le bouton
+          « Ouvrir un Arrivage » (y 303) passait sous le panneau (y 10 → 347), et la page ne
+          pouvait pas défiler assez pour le dégager — `scrollIntoView` n'a rien à faire d'un
+          élément déjà en haut du document. Un espace de la hauteur du panneau pousse le
+          contenu dessous, donc la cible reste visible et cliquable. */}
+      {!tutorielVu && !enCombat && <div className="journee-espace" aria-hidden="true" />}
       <main className="main">
         {/* Un écran qui plante ne prend pas la barre de navigation avec lui, et changer
             d'écran referme l'erreur (`reinitialiseSur`). */}
@@ -181,8 +196,13 @@ export function Layout() {
         </ErreurDeRendu>
       </main>
 
-      {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). */}
-      <JourneeIntegration />
+      {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). Montée
+          seulement tant qu'elle est à faire — un testeur qui l'a vue ne télécharge rien. */}
+      {!tutorielVu && (
+        <Suspense fallback={null}>
+          <JourneeIntegration />
+        </Suspense>
+      )}
 
       {/* L'alerte du comité (D-058, #212) : partout sauf en combat et sur Le suivi, et
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}

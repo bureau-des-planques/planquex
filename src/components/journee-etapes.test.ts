@@ -74,7 +74,7 @@ describe('cinq étapes, et plus de recouvrement avec le combat (30/10/2026)', ()
   it('réunit Collection et Deck, et fait charger un Deck proposé', () => {
     expect(texteDe(1)).toMatch(/Collection/);
     expect(texteDe(1)).toMatch(/Deck/);
-    expect(texteDe(1)).toMatch(/vingt cartes/);
+    expect(texteDe(1)).toMatch(/vingt de ces cartes/);
     expect(texteDe(1)).toMatch(/Deck proposé/);
   });
 

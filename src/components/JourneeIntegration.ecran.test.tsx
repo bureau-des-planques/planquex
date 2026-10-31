@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { JourneeIntegration } from './JourneeIntegration';
 import { ETAPES_JOURNEE } from './journee-etapes';
 import { marquerGeste, oublierGestes } from './journee-gestes';
+import { remettreJourneeAuDebut } from './journee-etape';
 import { setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 
@@ -31,6 +32,8 @@ function monter() {
   oublierGestes();
   marquerGeste('sauvegarde');
   marquerGeste('combat');
+  // L'étape vit hors du panneau (31/10/2026) : elle doit repartir du début entre deux tests.
+  remettreJourneeAuDebut();
   return render(
     <MemoryRouter initialEntries={['/']}>
       <JourneeIntegration />
@@ -49,6 +52,7 @@ function action(nom: RegExp) {
 describe('la Journée d’intégration se joue (D-160)', () => {
   it('« Suivant » attend les gestes : un Arrivage ouvert, un Deck chargé', async () => {
     setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    remettreJourneeAuDebut();
     render(
       <MemoryRouter initialEntries={['/']}>
         <JourneeIntegration />
@@ -152,6 +156,7 @@ describe('le plateau garde son tutoriel (31/10/2026)', () => {
     // garde le gelait. D-160 (1) promet « zéro recouvrement ».
     setupTestStore({ tutorielVu: false, pasAPasCombatVu: false, packsOpened: 1, deck: [] });
     oublierGestes();
+    remettreJourneeAuDebut();
     render(
       <MemoryRouter initialEntries={['/battle?tutoriel=1&scene=fin']}>
         <JourneeIntegration />

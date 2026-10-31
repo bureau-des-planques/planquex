@@ -4,6 +4,7 @@ import { AppelParticiper } from '@/components/AppelParticiper';
 import { ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
 import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
+import { allerAEtape, remettreJourneeAuDebut, useEtapeJournee } from '@/components/journee-etape';
 import { useStore } from '@/store/useStore';
 
 export function JourneeIntegration() {
@@ -12,7 +13,12 @@ export function JourneeIntegration() {
   /** Les gestes que la Journée attend (30/10/2026) : un Arrivage ouvert, un Deck chargé. */
   const packsOpened = useStore((state) => state.packsOpened);
   const deck = useStore((state) => state.deck);
-  const [etape, setEtape] = useState(0);
+  /**
+   * **L'étape vit hors du panneau** (31/10/2026) : le combat la fait avancer en revenant de
+   * la scène de fin, sinon « Continuer » ramenait sur Réglages à l'étape 3, avec un bouton
+   * mort. Voir `journee-etape`.
+   */
+  const etape = useEtapeJournee();
   /**
    * **La pause** (31/10/2026). `Échap` ne termine plus la visite, il la met de côté :
    * `terminer()` écrit `tutorielVu`, donc un abandon **définitif** au premier réflexe de
@@ -27,7 +33,7 @@ export function JourneeIntegration() {
 
   const terminer = () => {
     setTutorielVu(true);
-    setEtape(0);
+    remettreJourneeAuDebut();
     setEnPause(false);
   };
 
@@ -187,13 +193,15 @@ export function JourneeIntegration() {
         aria-label="Journée d’intégration en pause"
       >
         <p>
-          Journée en pause · {etape + 1}/{ETAPES_JOURNEE.length}
+          Journée en pause · {Math.min(etape, ETAPES_JOURNEE.length - 1) + 1}/{ETAPES_JOURNEE.length}
         </p>
         <button type="button" className="button" onClick={() => setEnPause(false)}>
           Reprendre
         </button>
+        {/* **La sortie nomme ce qu'elle coûte** (D-136) : la barre disait « Terminer », sans
+            dire qu'on perdait le combat. Elle prend le libellé du panneau. */}
         <button type="button" className="journee__passer" onClick={terminer}>
-          Terminer
+          {libelleSaut(etape)}
         </button>
       </aside>
     );
@@ -256,7 +264,10 @@ export function JourneeIntegration() {
           qu'elle décrit — sauf la dernière, qui referme la Journée en menant au combat. */}
       <div className="actions actions--tight">
         {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
-            place au geste lui-même. Et sans geste, il n'y a rien à montrer. */}
+            place au geste lui-même. Et sans geste, il n'y a rien à montrer.
+            **Une fois le geste fait, il disparaît** (31/10/2026) : laisser un bouton
+            principal qui ne sert plus, à côté d'un « Suivant » en contour, inversait la
+            hiérarchie au moment précis où l'on attend « Suivant ». */}
         {!surLaPage ? (
           <button
             type="button"
@@ -268,7 +279,7 @@ export function JourneeIntegration() {
           >
             {courante.action}
           </button>
-        ) : courante.geste !== undefined ? (
+        ) : courante.geste !== undefined && !gesteFait ? (
           /* **Sur l'écran de l'étape**, le panneau garde une action : « Montrer le bouton ».
              Il ne fait pas le geste à la place du testeur, il amène la cible sous ses yeux
              et la fait pulser — sans lui, l'écran n'offrait qu'un « Suivant » éteint
@@ -283,10 +294,10 @@ export function JourneeIntegration() {
         {!derniere && (
           <button
             type="button"
-            className="button"
+            className={gesteFait ? 'button button--primary' : 'button'}
             disabled={!gesteFait}
             onClick={() => {
-              setEtape((courant) => courant + 1);
+              allerAEtape(etape + 1);
             }}
           >
             Suivant
@@ -295,7 +306,7 @@ export function JourneeIntegration() {
       </div>
 
       <button type="button" className="journee__passer" onClick={terminer}>
-        {derniere ? 'Relire la journée plus tard, depuis Réglages' : libelleSaut(etape)}
+        {derniere ? 'Relire la Journée plus tard, depuis Réglages' : libelleSaut(etape)}
       </button>
 
       {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée

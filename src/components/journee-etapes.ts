@@ -52,7 +52,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   {
     titre: 'L’Arrivage',
     texte:
-      'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Clique le bouton de l’accueil : les cartes rejoignent ta Collection.',
+      'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Clique « Ouvrir un Arrivage » : les cartes rejoignent ta Collection.',
     cible: '/',
     action: 'Aller à l’accueil',
     geste: 'arrivage',
@@ -61,7 +61,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   {
     titre: 'La Collection et le Deck',
     texte:
-      'La Collection montre ce que tu possèdes, et le Deck compose vingt cartes avec. Choisis un Deck proposé et charge-le : c’est celui que tu joueras.',
+      'La Collection montre ce que tu possèdes, et tu composes ton Deck avec vingt de ces cartes. Choisis un Deck proposé et charge-le : c’est celui que tu joueras.',
     cible: '/deck',
     action: 'Aller au Deck',
     geste: 'deck',
@@ -70,8 +70,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   },
   {
     titre: 'Le combat',
-    texte:
-      'Trois Interventions et la partie est gagnée, et un COMEX en vaut deux. Le combat guidé t’apprend le Poste, le café et la Pression, sur le vrai plateau.',
+    texte: 'Le combat guidé t’apprend le Poste, le café et la Pression, sur le vrai plateau, jusqu’à la victoire.',
     cible: '/battle?tutoriel=1&scene=fin',
     action: 'Jouer mon premier combat',
     direction: 'Trois Interventions et tu gagnes. Nous, on a déjà compté les tiennes.',

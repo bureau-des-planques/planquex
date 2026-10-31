@@ -254,7 +254,7 @@ export function Settings() {
 
       <section className="section panel" aria-labelledby="reglages-journee">
         <h2 id="reglages-journee">Journée d’intégration</h2>
-        <p className="muted max-w-[62ch]">Cinq étapes, un geste chacune.</p>
+        <p className="muted max-w-[62ch]">Cinq étapes, quatre gestes : le comité se visite.</p>
         <button
           type="button"
           className="button"
@@ -270,7 +270,7 @@ export function Settings() {
             setTutorielVu(false);
           }}
         >
-          Revoir la journée d’intégration
+          Revoir la Journée d’intégration
         </button>
       </section>
 

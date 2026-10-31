@@ -33,7 +33,9 @@ describe('elle se montre une fois, et se referme (ticket #130)', () => {
 
   it('écrit le drapeau à la fermeture, et remet l’étape à zéro', () => {
     expect(composant).toMatch(/setTutorielVu\(true\)/);
-    expect(composant).toMatch(/setEtape\(0\)/);
+    // L'étape vit hors du panneau depuis le 31/10/2026 (le combat la fait avancer).
+    expect(composant).toMatch(/remettreJourneeAuDebut\(\)/);
+    expect(composant).toMatch(/from '@\/components\/journee-etape'/);
   });
 
   it('n’a qu’un seul écrivain du drapeau : toutes les sorties passent par `terminer`', () => {
@@ -155,7 +157,9 @@ describe('la critique du 30/10/2026, corrigée (31/10/2026)', () => {
     // `pathname` n'a pas de requête : l'étape 3 (`/battle?…`) ne pouvait jamais être
     // « sur la page », donc son bouton re-naviguait sans effet.
     expect(composant).toMatch(/pathname === courante\.cible\.split\('\?'\)\[0\]/);
-    expect(composant).toMatch(/courante\.geste !== undefined \?/);
+    // Le bouton disparaît aussi **une fois le geste fait** (31/10/2026) : laisser un bouton
+    // principal qui ne sert plus à côté d'un « Suivant » en contour inversait la hiérarchie.
+    expect(composant).toMatch(/courante\.geste !== undefined && !gesteFait/);
     // Un clic qui ne fait rien se lit comme un bouton cassé : la cible pulse.
     expect(composant).toMatch(/est-montre/);
   });

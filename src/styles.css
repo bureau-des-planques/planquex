@@ -2745,6 +2745,14 @@ h2 {
 
 /* **La pause** (31/10/2026) : `Échap` met la visite de côté au lieu de la terminer. Une
    barre d'une ligne, qui ne bloque rien (la garde est éteinte) et dit où l'on en est. */
+/* **L'espace du panneau** (31/10/2026) : réservé au-dessus du contenu tant que la Journée est
+   ouverte. Il se mesure en continu (`--journee-hauteur`), donc il suit la police et la ligne
+   de la Direction. Sans lui, la cible de l'étape 1 restait sous le panneau. */
+.journee-espace {
+  flex: none;
+  height: calc(var(--journee-hauteur, 0px) + 1rem);
+}
+
 /* **La voix de la Direction** (31/10/2026) : italique, en retrait, comme la réplique de
    fin de combat — la même Direction parle dans les deux. `--text-muted` sur le fond du
    panneau : au-delà de l'AA (mesuré 7,87:1 le 30/10/2026). */

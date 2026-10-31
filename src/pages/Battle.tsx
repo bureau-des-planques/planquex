@@ -61,6 +61,7 @@ import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { etatFinScriptee } from '@/game/scenario-fin';
 import { marquerGeste } from '@/components/journee-gestes';
+import { avancerJournee, etapeJournee } from '@/components/journee-etape';
 import { SceneFin } from '@/components/SceneFin';
 import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
@@ -1817,7 +1818,11 @@ export function Battle() {
              plateau, donc sans cet enchaînement le testeur restait au combat sans savoir
              qu'il restait deux étapes. Hors Journée, « Continuer » ferme seulement. */
           onContinuer={() => {
-            if (sceneFin && !tutorielVu) navigate('/settings');
+            if (!sceneFin || tutorielVu) return;
+            // L'étape du combat est la troisième (index 2) : on ne l'avance que depuis elle,
+            // sinon un rejeu du combat plus tard sauterait une étape de la visite.
+            if (etapeJournee() === 2) avancerJournee();
+            navigate('/settings');
           }}
         />
       )}

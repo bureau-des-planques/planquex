@@ -83,14 +83,15 @@ describe('Settings — écran des Réglages', () => {
   it("affiche la section Journée d'intégration", () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    expect(screen.getByText(/Journée d.intégration/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Revoir la journée d.intégration/i })).toBeInTheDocument();
+    // Le titre, pas le bouton : depuis le 31/10/2026 les deux portent la majuscule.
+    expect(screen.getByRole('heading', { name: /Journée d.intégration/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Revoir la Journée d.intégration/ })).toBeInTheDocument();
   });
 
-  it('remet le tutoriel à false au clic sur "Revoir la journée d\'intégration"', () => {
+  it('remet le tutoriel à false au clic sur "Revoir la Journée d\'intégration"', () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const button = screen.getByRole('button', { name: /Revoir la journée d.intégration/i });
+    const button = screen.getByRole('button', { name: /Revoir la Journée d.intégration/ });
     fireEvent.click(button);
 
     const state = useStore.getState();
