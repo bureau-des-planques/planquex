@@ -6124,6 +6124,23 @@ h2 {
   initial-value: 40%;
 }
 
+/* **La déchirure ne s'hérite pas non plus** (#566) : `--p` (avancement, 0 → 1) et `--sens` (bord
+   de départ, ±1) changent à chaque mouvement du doigt et sont écrites sur leurs trois
+   consommateurs — la bande, l'intérieur, la fente — jamais sur `.ouverture__sachet`, où elles
+   s'héritaient dans les deux SVG de la Pochette et dans tout le reste du sachet. `inherits: false`
+   coupe la descente dans la Pochette de la bande, qui n'en lit rien. */
+@property --p {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --sens {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
 .ouverture {
   --lueur: #cfe3ff;
   background:
@@ -6372,6 +6389,10 @@ h2 {
 
 /* L'intérieur : une lumière derrière la bande, qui n'apparaît que par la fente. */
 .ouverture__interieur {
+  /* Consommateur de `--p` : la valeur lui est écrite par la scène, sur lui (#566). La déclarer
+     ici donne la valeur de repos aux navigateurs sans `@property`. */
+  --p: 0;
+  --sens: 1;
   background: radial-gradient(
     ellipse 60% 28% at 50% 12%,
     #fff 0%,
@@ -6386,6 +6407,10 @@ h2 {
 }
 
 .ouverture__bande {
+  /* `--p`/`--sens` : écrites sur la bande elle-même par la scène (#566). Sous `@property`, elles
+     ne descendent pas dans sa Pochette ; sans `@property`, la valeur de repos est ici. */
+  --p: 0;
+  --sens: 1;
   transform: translateY(calc(var(--p) * -2.5%)) rotate(calc(var(--sens) * var(--p) * 15deg));
   transform-origin: calc(50% + var(--sens) * 50%) calc(44 / 500 * 100%);
   transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -6397,6 +6422,9 @@ h2 {
 
 /* La fente : un trait de lumière, de la couleur du tirage, sur la partie déjà déchirée. */
 .ouverture__fente {
+  /* Consommateur de `--p`/`--sens`, comme la bande et l'intérieur (#566). */
+  --p: 0;
+  --sens: 1;
   background: linear-gradient(90deg, transparent, #fff 12%, var(--lueur) 50%, #fff 88%, transparent);
   border-radius: 2px;
   box-shadow:

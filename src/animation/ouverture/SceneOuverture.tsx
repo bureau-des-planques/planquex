@@ -29,7 +29,7 @@ import type { Card } from '@/data/types';
 import { RARITY_META } from '@/data';
 import { CardView } from '@/components/CardView';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
-import { avancer, creer, demarrer, relacher, surLaLigne, type EtatOuverture, type Geometrie } from './etats';
+import { avancer, creer, demarrer, relacher, surLaLigne, type EtatOuverture, type Geometrie, type Sens } from './etats';
 import { FicheCarte } from './FicheCarte';
 import { LIGNE, MASQUE_SILHOUETTE, Pochette } from './Pochette';
 import { Particules } from './particules';
@@ -134,6 +134,18 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const [etat, setEtat] = useState<EtatOuverture>(() =>
     reduit ? { phase: 'ouvert', dechirure: 1, sens: 1 } : creer()
   );
+  /**
+   * **La vérité de la déchirure, hors de React** (#566). Le glissement du doigt écrit `--p` et
+   * `--sens` directement sur leurs trois consommateurs ; `etat` ne change donc qu'aux **phases**
+   * (appui, relâchement, « Ouvrir », « Tout afficher »), et la scène ne se re-rend plus à chaque
+   * `pointermove`. Ce ref est la source que lisent les gestes, là où `etat` serait en retard
+   * d'un rendu.
+   */
+  const etatRef = useRef(etat);
+  const appliquer = useCallback((nouveau: EtatOuverture) => {
+    etatRef.current = nouveau;
+    setEtat(nouveau);
+  }, []);
   const [apres, setApres] = useState<Apres | null>(() => (reduit ? 'ouvert' : null));
   const [presse, setPresse] = useState(false);
   /** Rejoue l'éclat qui parcourt les pointillés : un appui tombé à côté le rappelle. */
@@ -167,6 +179,16 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const scene = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
   const sachet = useRef<HTMLDivElement>(null);
+  /** **Les trois seuls consommateurs de `--p`/`--sens`** : la bande, l'intérieur, la fente.
+   * La déchirure s'écrit sur eux, jamais sur le sachet — une propriété personnalisée s'hérite,
+   * et ces valeurs changent à chaque image du geste (#566). */
+  const bande = useRef<HTMLDivElement>(null);
+  const interieur = useRef<HTMLDivElement>(null);
+  const fente = useRef<HTMLSpanElement>(null);
+  /** La boîte du sachet et sa géométrie, **lues une fois par geste** : `getBoundingClientRect()`
+   * à chaque `pointermove` forçait une lecture de mise en page au milieu des écritures de style. */
+  const rectZone = useRef<DOMRect | null>(null);
+  const geoZone = useRef<Geometrie | null>(null);
   const eclair = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const cartesRef = useRef<Array<HTMLLIElement | null>>([]);
@@ -325,10 +347,34 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     return () => cancelAnimationFrame(raf);
   }, [reduit, apres]);
 
+  /**
+   * **Peint la déchirure sans passer par React** (#566) : `--p` et `--sens` sur la bande,
+   * l'intérieur et la fente — pas sur le sachet, où elles s'héritaient dans les deux SVG de la
+   * Pochette. Aucun état n'est écrit : l'appelant est libre d'appeler ça à chaque `pointermove`
+   * ou à chaque image, la scène ne se re-rend pas.
+   */
+  const peindre = useCallback((valeur: number, sens: Sens) => {
+    const p = valeur.toFixed(3);
+    const s = String(sens);
+    for (const el of [bande.current, interieur.current, fente.current]) {
+      if (!el) continue;
+      el.style.setProperty('--p', p);
+      el.style.setProperty('--sens', s);
+    }
+    if (racine.current) racine.current.dataset.dechirure = valeur.toFixed(2);
+  }, []);
+
+  // La déchirure se rattrape après chaque rendu : montage de la bande, relâchement sous le seuil
+  // (D-170 : la déchirure acquise reste), « Ouvrir », « Tout afficher ». Le glissement, lui, ne
+  // déclenche aucun rendu : c'est `peindre` qui l'avance directement dans le geste.
+  useEffect(() => {
+    peindre(etat.dechirure, etat.sens);
+  }, [etat, peindre]);
+
   /** Les étincelles du front de déchirure, au fil du geste. */
   const etincelles = useCallback(
     (p: number, sens: 1 | -1, nombreEtincelles: number) => {
-      const r = zoneRef.current?.getBoundingClientRect();
+      const r = rectZone.current ?? zoneRef.current?.getBoundingClientRect();
       if (!r || !particules.current) return;
       const fx = r.left + (sens === 1 ? p : 1 - p) * r.width;
       const point = versRacine(fx, r.top + LIGNE * r.height);
@@ -529,13 +575,15 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   }, []);
 
   const surAppuiSachet = (e: React.PointerEvent<HTMLDivElement>): void => {
-    if (etat.phase !== 'ferme' || apres) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    if (etatRef.current.phase !== 'ferme' || apres) return;
+    // **Une seule lecture de mise en page par geste** : la boîte du sachet et sa géométrie ne
+    // bougent pas pendant le glissement (#566).
+    const rect = (rectZone.current = e.currentTarget.getBoundingClientRect());
+    const geo = (geoZone.current = geometrie());
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const geo = geometrie();
     inclinaison.current.actif = true;
-    if (!surLaLigne(etat, y, geo)) {
+    if (!surLaLigne(etatRef.current, y, geo)) {
       // Un appui sur le corps presse le sachet, et rappelle où l'on déchire.
       setPresse(true);
       setRappel((n) => n + 1);
@@ -544,35 +592,43 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     e.currentTarget.setPointerCapture?.(e.pointerId);
     depart.current = { x, y };
     tire.current = true;
-    dernierCran.current = 0;
+    dernierCran.current = Math.floor(etatRef.current.dechirure * 10);
     vibrer(10);
-    setEtat(demarrer(etat, x, geo));
+    appliquer(demarrer(etatRef.current, x, geo));
   };
 
   const surMouvementSachet = (e: React.PointerEvent<HTMLDivElement>): void => {
-    const rect = e.currentTarget.getBoundingClientRect();
+    const el = e.currentTarget;
+    const rect = rectZone.current ?? (rectZone.current = el.getBoundingClientRect());
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    if (rect.width > 0) {
+    if (rect.width > 0 && rect.height > 0) {
       inclinaison.current.actif = true;
       inclinaison.current.cx = Math.max(-1, Math.min(1, (x / rect.width) * 2 - 1));
       inclinaison.current.cy = Math.max(-1, Math.min(1, (y / rect.height) * 2 - 1));
     }
     if (!tire.current) return;
-    const suivant = avancer(etat, x - depart.current.x, geometrie());
-    if (suivant.dechirure > etat.dechirure) etincelles(suivant.dechirure, suivant.sens, 3);
+    // **Aucun état React ici** (#566) : la déchirure avance dans le style, la scène ne se re-rend
+    // pas. C'est ce que `peindre` écrit, et `etatRef` garde la valeur pour le geste suivant.
+    const avant = etatRef.current;
+    const suivant = avancer(avant, x - depart.current.x, geoZone.current ?? geometrie());
+    if (suivant === avant) return;
+    if (suivant.dechirure > avant.dechirure) etincelles(suivant.dechirure, suivant.sens, 3);
     const cran = Math.floor(suivant.dechirure * 10);
     if (cran > dernierCran.current) vibrer(4);
     dernierCran.current = cran;
-    setEtat(suivant);
+    etatRef.current = suivant;
+    peindre(suivant.dechirure, suivant.sens);
   };
 
   const surRelacheSachet = (): void => {
     setPresse(false);
+    rectZone.current = null;
+    geoZone.current = null;
     if (!tire.current) return;
     tire.current = false;
-    const suivant = relacher(etat);
-    setEtat(suivant);
+    const suivant = relacher(etatRef.current);
+    appliquer(suivant);
     if (suivant.phase === 'ouvert') lancerOuverture();
     // Sous le seuil, **la bande ne retombe plus** : la déchirure reste acquise et le geste
     // suivant reprend où il s'est arrêté (D-170). Avant, elle se refermait sans un mot.
@@ -581,14 +637,16 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const surSortieSachet = (): void => {
     inclinaison.current.actif = false;
     inclinaison.current.repos = performance.now();
+    rectZone.current = null;
+    geoZone.current = null;
     setPresse(false);
   };
 
   /** « Ouvrir » : la déchirure se joue seule, sans glissement (accès au pointeur), puis l'envol. */
   const ouvrirSansGeste = (): void => {
-    if (etat.phase !== 'ferme' || apres) return;
+    if (etatRef.current.phase !== 'ferme' || apres) return;
     tire.current = false;
-    setEtat({ phase: 'dechirure', dechirure: 0, sens: 1 });
+    appliquer({ phase: 'dechirure', dechirure: 0, sens: 1 });
     let derniere = 0;
     const annuler = animer(
       700,
@@ -598,11 +656,14 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
           etincelles(p, 1, 4);
           derniere = p;
         }
-        setEtat({ phase: 'dechirure', dechirure: p, sens: 1 });
+        // **La boucle d'affichage écrit le style, pas l'état** (#566) : jouer la déchirure seule
+        // re-rendait la scène soixante fois par seconde, exactement comme le doigt.
+        etatRef.current = { phase: 'dechirure', dechirure: p, sens: 1 };
+        peindre(p, 1);
       },
       () => {
         annulations.current.delete(annuler);
-        setEtat({ phase: 'ouvert', dechirure: 1, sens: 1 });
+        appliquer({ phase: 'ouvert', dechirure: 1, sens: 1 });
         lancerOuverture();
       }
     );
@@ -617,7 +678,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     minuteurs.current.clear();
     jeton.current += 1;
     tire.current = false;
-    setEtat({ phase: 'ouvert', dechirure: 1, sens: 1 });
+    appliquer({ phase: 'ouvert', dechirure: 1, sens: 1 });
     setRetournees(cartes.map(() => true));
     setEnCours(null);
     setEclat(null);
@@ -656,8 +717,6 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   }, [etape]);
 
   const decoupe = etat.phase !== 'ferme' || apres === 'ouverture';
-  const p = etat.dechirure;
-  const sens = etat.sens;
 
   // La pochette : la plus grande qui tienne dans la scène, au format 3 × 5.
   const hauteurPochette = Math.min(taille.hauteur * 0.86, (taille.largeur * 0.8) / 0.6, 640);
@@ -739,7 +798,6 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       data-etape={etape}
       data-palier={palierTirage}
       data-eclat={eclat ?? undefined}
-      data-dechirure={p.toFixed(2)}
       data-testid="ouverture"
       style={{ ['--lueur' as string]: couleurLueur }}
     >
@@ -791,20 +849,17 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                 className="ouverture__sachet"
                 data-decoupe={decoupe ? 'oui' : 'non'}
                 data-tire={tire.current ? 'oui' : 'non'}
-                style={{
-                  ['--p' as string]: p.toFixed(3),
-                  ['--sens' as string]: String(sens),
-                  ['--masque' as string]: MASQUE_SILHOUETTE
-                }}
+                style={{ ['--masque' as string]: MASQUE_SILHOUETTE }}
               >
                 {/* L'intérieur : la lumière qui filtre par la fente, de la couleur du tirage. */}
-                <div className="ouverture__interieur" />
+                <div ref={interieur} className="ouverture__interieur" />
                 <div className="ouverture__corps" style={decoupe ? { clipPath: clips.corps } : undefined}>
                   <Pochette nombre={nombre} />
                   <span className="ouverture__reflet-sachet" />
                 </div>
                 {decoupe && (
                   <div
+                    ref={bande}
                     className={`ouverture__bande${apres === 'ouverture' ? ' ouverture__bande--envol' : ''}`}
                     style={{ clipPath: clips.bande }}
                   >
@@ -812,7 +867,10 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                     <span className="ouverture__reflet-sachet" />
                   </div>
                 )}
-                {etat.phase === 'dechirure' && p > 0.01 && <span className="ouverture__fente" />}
+                {/* La fente existe dès la phase de déchirure : sa longueur vient de `--p`, que le
+                    geste écrit sans re-rendre — un `p > 0.01` lu à l'état ne s'ouvrirait qu'au
+                    premier rendu (#566). */}
+                {etat.phase === 'dechirure' && <span ref={fente} className="ouverture__fente" />}
                 {etape === 'ferme' && (
                   <span
                     key={rappel}
