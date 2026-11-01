@@ -2656,12 +2656,12 @@ h2 {
 
 .scene-fin__voile {
   animation: scene-fin-voile 220ms ease-out both;
-  background: radial-gradient(
-    ellipse at center,
-    rgb(4 8 16 / 55%) 0%,
-    rgb(4 8 16 / 82%) 55%,
-    rgb(4 8 16 / 92%) 100%
-  );
+  /* **Le verdict se lit sur son propre fond** (critique du 01/11/2026) : à 55 % au centre, le
+     plateau passait à travers la réplique — cartes dorées, « DECK 15 », tampon de score — et la
+     phrase de la Direction se lisait par-dessus deux lignes d'interface. Mesuré à 420 × 900 et
+     390 × 664. Le voile monte à 88 % au centre, 96 % aux bords : la table reste devinée, plus
+     lue. Il ne cache rien : la scène est un dialogue qui se ferme d'un clic. */
+  background: radial-gradient(ellipse at center, rgb(4 8 16 / 88%) 0%, rgb(4 8 16 / 94%) 55%, rgb(4 8 16 / 96%) 100%);
   inset: 0;
   position: absolute;
 }
@@ -3138,6 +3138,30 @@ h2 {
 .link-button:hover,
 .pas-a-pas__passer:hover {
   color: var(--text);
+}
+
+/* **La cible de doigt fait 44 px, la ligne ne bouge pas** (D-116 (1), SPEC-COMBAT-UI §5.1).
+   Mesuré le 01/11/2026 : « Passer le pas-à-pas » 122,9 × 18,7, « Lire le détail » 70,9 × 18,7,
+   « Reprendre une autre carte » 153,9 × 18,7 — trois cibles sous le seuil, et aucune dans un état
+   que `npm run capturer` photographiait. Le rembourrage porte l'aire à 44 px ; la marge négative
+   rend la hauteur de mise en page, donc le plateau ne perd pas un pixel (D-167 : la hauteur est
+   la ressource rare). Le lien du panneau de pose, lui, s'étend **vers le bas** : il est le
+   dernier de son panneau, et il ne doit pas voler le bas des boutons au-dessus. */
+.pas-a-pas__lire,
+.pas-a-pas__passer {
+  align-items: center;
+  display: inline-flex;
+  margin-block: -0.72rem;
+  min-height: 2.75rem;
+  padding-block: 0.72rem;
+}
+
+.pose .link-button {
+  align-items: center;
+  display: inline-flex;
+  margin-block: 0 -0.72rem;
+  min-height: 2.75rem;
+  padding-block: 0.72rem 0;
 }
 
 /* ---------- Combat ---------- */
@@ -3864,6 +3888,29 @@ h2 {
 
 .bench__slot {
   min-width: 0;
+}
+
+/* **La place libre est une cible** (critique du 01/11/2026) : quand la carte choisie peut y être
+   posée, la place déjà dessinée reçoit le geste — le bouton remplit la forme, il n'en ajoute pas
+   une seconde. Le filet passe au doré (`--gold`) pour dire qu'elle est cliquable ; le nom
+   accessible vient de `Battle.tsx` (« Poser <carte> au Banc 2 »). */
+.bench__slot.is-cible {
+  border-color: var(--gold);
+}
+
+.bench__place {
+  background: none;
+  border: 0;
+  border-radius: inherit;
+  cursor: pointer;
+  height: 100%;
+  padding: 0;
+  width: 100%;
+}
+
+.bench__place:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .bench__carte {

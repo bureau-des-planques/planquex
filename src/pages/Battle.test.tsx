@@ -108,6 +108,45 @@ function partieAvecPression() {
   throw new Error('aucune partie ne propose de Pression au joueur');
 }
 
+/**
+ * Un tour du joueur où une carte de la main se pose **au Banc** (critique du 01/11/2026) : la
+ * place libre du plateau doit être la cible du `playBasic`, sans passer par le panneau.
+ * Mémoïsée, même raison que les deux autres : la recherche est déterministe et lente à refaire.
+ */
+let cacheBanc: { partie: unknown; etat: unknown } | null = null;
+function partieAvecPlaceAuBanc() {
+  if (cacheBanc) return cacheBanc as { partie: PartieSauvegardee; etat: BattleState };
+  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+  const deck = autoDeck(owned).deck;
+  for (let seed = 1; seed < 240; seed += 1) {
+    let s: BattleState = createBattle(deck, deck, seed);
+    for (let i = 0; i < 400 && s.phase === 'playing'; i += 1) {
+      const auTourDuJoueur = s.current === 'player' && s.pendingPromotion === null && s.pendingChoice === null;
+      const placeLibre = s.players.player.bench.some((place) => !place);
+      if (
+        auTourDuJoueur &&
+        placeLibre &&
+        legalActions(s).some((a) => a.type === 'playBasic' && typeof a.slot === 'number')
+      ) {
+        const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
+        if (partie) {
+          cacheBanc = { partie, etat: s };
+          return { partie, etat: s };
+        }
+      }
+      const action =
+        s.pendingPromotion === 'player'
+          ? legalActions(s).find((a) => a.type === 'promoteActive')
+          : s.pendingChoice?.who === 'player'
+            ? legalActions(s).find((a) => a.type === 'choose')
+            : (nextAiAction(s, 'scripte') ?? legalActions(s).find((a) => a.type === 'endTurn'));
+      if (!action) break;
+      s = applyAction(s, action);
+    }
+  }
+  throw new Error('aucune partie ne laisse une carte à poser au Banc');
+}
+
 describe('Battle — écran de combat', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -549,7 +588,10 @@ describe('Battle — la barre d’action (#191)', () => {
 
     await waitFor(() => expect(screen.getByText('Défaite : tu as déclaré forfait.')).toBeInTheDocument());
     const barre = screen.getByRole('region', { name: 'Actions du tour' });
-    expect(barre).toHaveTextContent('Rien à faire : la partie est terminée.');
+    // **Le verdict est dit une fois** (critique du 01/11/2026) : la barre le répétait sous le
+    // bandeau du haut (« Rien à faire : la partie est terminée. »), et à 390 × 664 cette ligne
+    // de plus poussait « Nouveau combat » sous le pli. Le bandeau reste seul porteur.
+    expect(barre).not.toHaveTextContent('Rien à faire : la partie est terminée.');
     // Aucun geste de jeu : seulement « Nouveau combat », là où l'œil cherche l'action.
     expect(
       within(barre)
@@ -822,6 +864,27 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
       return carte;
     });
   }
+
+  it('la place libre du Banc pose la carte d’un seul geste (critique du 01/11/2026)', async () => {
+    const { partie } = partieAvecPlaceAuBanc();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    // La place est **déjà dessinée** : on cherche la carte de la main dont la pose l'ouvre, puis on
+    // touche la place elle-même — pas le bouton « Mettre au Banc 2 » du panneau, qui vit plus bas.
+    let place: HTMLElement | null = null;
+    for (const carte of Array.from(document.querySelectorAll<HTMLElement>('button.hand__card'))) {
+      fireEvent.click(carte);
+      place = document.querySelector<HTMLElement>('button.bench__place');
+      if (place) break;
+      fireEvent.click(carte);
+    }
+    if (!place) throw new Error('aucune place du Banc n’est devenue une cible : le geste a disparu');
+    expect(place.getAttribute('aria-label')).toMatch(/^Poser .+ au Banc \d$/);
+
+    const avant = document.querySelectorAll('.bench__carte').length;
+    fireEvent.click(place);
+    await waitFor(() => expect(document.querySelectorAll('.bench__carte').length).toBe(avant + 1));
+  });
 
   it('choisir une carte la désigne, la nomme et offre des gestes explicites', async () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
