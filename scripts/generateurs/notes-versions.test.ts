@@ -9,10 +9,12 @@ import {
   lireReleases,
   nettoyer,
   rendreFichier,
+  rendreResume,
   titreDe,
   verifierNotes
 } from './notes-versions.mjs';
 import { NOTES_VERSIONS } from '@/data/versions';
+import { NOTES_RESUME } from '@/data/notes-resume';
 import { notesAffichees } from '@/data/notes-affichees';
 
 /**
@@ -196,6 +198,19 @@ describe('notes-versions — le fichier commité', () => {
     expect(fichier).toBe(rendreFichier(NOTES_VERSIONS));
   });
 
+  it('le résumé ne porte que version, date et titre — aucun texte de note dans le paquet principal', () => {
+    // `Home` est la porte d'entrée : elle lit ce fichier-là, et lui seul. Un point de note qui
+    // s'y glisserait ramènerait dans le principal les ~19 kB que la sortie a retirés.
+    const fichier = readFileSync(new URL('../../src/data/notes-resume.ts', import.meta.url), 'utf8');
+    expect(fichier).toBe(rendreResume(NOTES_VERSIONS));
+    for (const note of NOTES_VERSIONS) {
+      for (const point of note.points) expect(fichier).not.toContain(point.texte);
+    }
+    // Une note, un résumé : les deux fichiers parlent des mêmes versions, dans le même ordre.
+    expect(NOTES_RESUME.map((n) => n.version)).toEqual(NOTES_VERSIONS.map((n) => n.version));
+    expect(NOTES_RESUME.every((n) => !('points' in n))).toBe(true);
+  });
+
   it('tient une note écrite d’avance hors de l’historique, et montre celle de la version courante', () => {
     // **Fixtures, pas le fichier** : le 25/10/2026, ce test affirmait que la 0.1.7 restait
     // un brouillon ; le jour de sa publication il est devenu faux. Un contrôle de règle ne
@@ -330,10 +345,40 @@ describe('notes-versions — lire les releases', () => {
     // réseau — les tags depuis 0.1.15 s'appellent `v0.1.15-alpha`, et un filtre qui n'accepte
     // que `v1.2.3` les jetterait en silence (la note resterait un brouillon pour toujours).
     const vues = new Map([
-      ['v0.1.15-alpha', { tagName: 'v0.1.15-alpha', name: 'v0.1.15-alpha', body: '- Une chose.', publishedAt: '2026-10-29T00:00:00Z', isDraft: false }],
-      ['v0.1.14', { tagName: 'v0.1.14', name: 'v0.1.14-alpha', body: '- Une autre.', publishedAt: '2026-10-27T00:00:00Z', isDraft: false }],
-      ['v0.1.9', { tagName: 'v0.1.9', name: 'v0.1.9-alpha', body: '- La neuvième.', publishedAt: '2026-10-25T00:00:00Z', isDraft: false }],
-      ['alpha-2026', { tagName: 'alpha-2026', name: 'alpha-2026', body: '', publishedAt: '2026-10-20T00:00:00Z', isDraft: false }]
+      [
+        'v0.1.15-alpha',
+        {
+          tagName: 'v0.1.15-alpha',
+          name: 'v0.1.15-alpha',
+          body: '- Une chose.',
+          publishedAt: '2026-10-29T00:00:00Z',
+          isDraft: false
+        }
+      ],
+      [
+        'v0.1.14',
+        {
+          tagName: 'v0.1.14',
+          name: 'v0.1.14-alpha',
+          body: '- Une autre.',
+          publishedAt: '2026-10-27T00:00:00Z',
+          isDraft: false
+        }
+      ],
+      [
+        'v0.1.9',
+        {
+          tagName: 'v0.1.9',
+          name: 'v0.1.9-alpha',
+          body: '- La neuvième.',
+          publishedAt: '2026-10-25T00:00:00Z',
+          isDraft: false
+        }
+      ],
+      [
+        'alpha-2026',
+        { tagName: 'alpha-2026', name: 'alpha-2026', body: '', publishedAt: '2026-10-20T00:00:00Z', isDraft: false }
+      ]
     ]);
     const fauxGh = (args: string[]) => {
       if (args[0] === 'release' && args[1] === 'list') {

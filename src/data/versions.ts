@@ -135,7 +135,7 @@ export const NOTES_VERSIONS: NoteVersion[] = [
       },
       {
         groupe: 'Plus léger',
-        texte: 'Les écrans se chargent à la demande et les dépendances sont découpées par famille : le premier affichage est plus court.'
+        texte: 'Les écrans se chargent à la demande, les dépendances sont découpées par famille, et l’historique des notes ne pèse plus sur l’entrée : le premier affichage est plus court de 24 kB.'
       },
       {
         groupe: 'À savoir avant de jouer',

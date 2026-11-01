@@ -12,15 +12,7 @@ import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  PLAFOND_PRINCIPAL,
-  SEUIL_PAQUET,
-  enKb,
-  estPerime,
-  mesurer,
-  paquetsDe,
-  verdict
-} from './taille-paquets.mjs';
+import { PLAFOND_PRINCIPAL, SEUIL_PAQUET, enKb, estPerime, mesurer, paquetsDe, verdict } from './taille-paquets.mjs';
 
 /** Un paquet fabriqué : seul le nom et la taille comptent pour la garde. */
 function paquet(nom: string, octets: number) {
@@ -78,11 +70,15 @@ describe('la mesure classe le principal et le plus gros (#480)', () => {
 
 describe('le verdict de la garde de taille (#480)', () => {
   it('juste sous le seuil, il passe', () => {
-    expect(verdict(mesurer([paquet('index-a.js', 290_000), paquet('react-b.js', SEUIL_PAQUET)]))).toEqual([]);
+    expect(verdict(mesurer([paquet('index-a.js', PLAFOND_PRINCIPAL - 1), paquet('react-b.js', SEUIL_PAQUET)]))).toEqual(
+      []
+    );
   });
 
   it('le contrôle mord : un octet de plus que le seuil, il échoue', () => {
-    const echecs = verdict(mesurer([paquet('index-a.js', 290_000), paquet('react-b.js', SEUIL_PAQUET + 1)]));
+    const echecs = verdict(
+      mesurer([paquet('index-a.js', PLAFOND_PRINCIPAL - 1), paquet('react-b.js', SEUIL_PAQUET + 1)])
+    );
     expect(echecs).toHaveLength(1);
     expect(echecs[0]).toContain('react-b.js');
     expect(echecs[0]).toContain('au-dessus du seuil');
