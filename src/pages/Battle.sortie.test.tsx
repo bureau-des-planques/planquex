@@ -116,6 +116,23 @@ describe('la sortie du combat (#427)', () => {
     expect(screen.queryByText(/Partie reprise/)).toBeNull();
   });
 
+  it('la sortie n’interrompt pas le pas-à-pas : le drapeau reste tel quel', () => {
+    const { partie } = partieCommencee();
+    // Le pas-à-pas est **en cours** : `tutorielVu` est vrai, `pasAPasCombatVu` est faux.
+    setupTestStore({ tutorielVu: true, pasAPasCombatVu: false, partie });
+    rendreDepuisAccueil(['/', '/battle'], 1);
+
+    // Il est bien ouvert avant de partir — sans quoi le test ne prouverait rien.
+    expect(screen.getByLabelText('Pas-à-pas du combat')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('link', { name: SORTIE }));
+
+    expect(dernierChemin).toBe('/');
+    // **Le contrôle mord** : si la sortie passait par `terminer` (le seul écrivain du
+    // drapeau), la valeur deviendrait `true` et le pas-à-pas serait perdu pour le testeur.
+    expect(useStore.getState().pasAPasCombatVu).toBe(false);
+  });
+
   it('le menu du combat mène aux autres écrans, sans forfait', () => {
     const { partie } = partieCommencee();
     setupTestStore({ tutorielVu: true, pasAPasCombatVu: true, partie });
