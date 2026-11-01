@@ -52,6 +52,28 @@ function monter(onRanger = () => undefined) {
   return screen.getByTestId('ouverture');
 }
 
+/**
+ * **Un écran étroit** (D-169) : jsdom ne calcule aucun média, donc on ment sur `matchMedia` —
+ * la seule bascule que la scène lit (`(max-width: 419.98px)`). Tout le reste reste faux, y
+ * compris `prefers-reduced-motion`.
+ */
+function ecranEtroit(): () => void {
+  const initial = window.matchMedia;
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes('419.98px'),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  })) as unknown as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = initial;
+  };
+}
+
 function attendre(ms: number): void {
   act(() => {
     vi.advanceTimersByTime(ms);
@@ -219,6 +241,37 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     fireEvent.click(within(fiche).getByRole('button', { name: 'Reposer' }));
     expect(carte(scene, 4).dataset.fiche).toBeUndefined();
     expect(within(scene).queryByRole('region')).toBeNull();
+  });
+
+  it('sous 420 px, le premier tap retourne la carte et ouvre sa fiche (D-169)', () => {
+    const rendre = ecranEtroit();
+    try {
+      const scene = monter();
+      jusquALaRevelation(scene);
+      fireEvent.click(carte(scene, 0));
+      attendre(LONGTEMPS);
+
+      // La carte étalée fait 118 px et son texte 6 à 8 px : retourner, c'est lire.
+      expect(carte(scene, 0).dataset.fiche).toBe('oui');
+      expect(within(scene).getByRole('region', { name: `Fiche : ${(CARTES[0] as Card).name}` })).toBeTruthy();
+      expect(scene.querySelector('[data-consigne]')?.textContent).toBe('Touche la carte pour la reposer');
+      // La consigne annonce le geste qui a lieu, pas l'étape intermédiaire.
+      expect(scene.querySelector('[data-consigne]')?.textContent).not.toMatch(/retourner/);
+    } finally {
+      rendre();
+    }
+  });
+
+  it('au-dessus de 420 px, un tap retourne et le second ouvre la fiche (D-169)', () => {
+    const scene = monter();
+    jusquALaRevelation(scene);
+    fireEvent.click(carte(scene, 0));
+    attendre(LONGTEMPS);
+    // Le contrôle mord : sur écran large, le premier tap ne doit **pas** ouvrir la fiche.
+    expect(carte(scene, 0).dataset.fiche).toBeUndefined();
+
+    fireEvent.click(carte(scene, 0));
+    expect(carte(scene, 0).dataset.fiche).toBe('oui');
   });
 
   it('« Tout afficher » retourne tout, de n’importe quelle étape', () => {

@@ -2058,6 +2058,21 @@ h2 {
   white-space: nowrap;
 }
 
+/* **Le gabarit complet ne tient pas sa ligne « Vulnérabilité / Rotation » sous 240 px**
+   (critique du 01/11/2026). Les deux colonnes mesurent ~95 px ; « VULNÉRABILITÉ » en réclame
+   une centaine à lui seul au plancher de #547, et la ligne sortait de la carte — 32 à 54 px
+   coupés, mesuré sur la carte de l'Arrivage à 420 et à 1280, et sur la fiche d'une carte à
+   1280. Sous 240 px, les deux cellules se rangent l'une **sous** l'autre (une colonne de 197 px
+   suffit) ; au-delà, elles restent côte à côte. Les vignettes compactes (`card--compact`, la
+   Collection et le Deck) ne sont pas concernées : elles abrègent déjà en « Vuln. / Rot. ».
+   `.card` est déjà le conteneur (`container-type: inline-size`, §2.1) : la mesure est la sienne,
+   pas celle de l'écran. */
+@container (max-width: 240px) {
+  .card:not(.card--compact) .card__bas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .card__bas b i {
   border-radius: 50%;
   display: inline-grid;
@@ -6615,8 +6630,12 @@ h2 {
   --dos-or: var(--rarete);
 }
 
+/* Le dos part de **face** (0°), pas de 180° : `rotateY(180deg)` en faisait un miroir, et le
+   monogramme « BP » se lisait « ꟼᗺ » sur les cinq cartes (critique du 01/11/2026). La valeur
+   reste écrite — une transition ne part pas de `none` — et c'est l'état `recto` plus haut
+   (ligne 6548, plus spécifique) qui le porte à 90°, dans la même liste de fonctions. */
 .ouverture__retourne > .ouverture__dos {
-  transform: rotateY(180deg);
+  transform: perspective(1200px) rotateY(0deg);
 }
 
 .ouverture__dos-sigle {
@@ -6773,7 +6792,12 @@ h2 {
   }
 }
 
-/* « Nouvelle » : contre-échelonnée, elle reste lisible quelle que soit la taille de la carte. */
+/* « Nouvelle » : contre-échelonnée, elle garde sa taille d'écran quelle que soit celle de la
+   carte. Elle se pose **sur l'illustration, jamais dans la zone du nom** (critique du
+   01/11/2026) : centrée sur le bord haut, une pastille de 81 px sur une carte de 118 recouvrait
+   59 des 72 px du nom, et le seul mot qui dit ce qu'on vient de gagner était caché par
+   l'étiquette qui le félicite. `top: 13.5%` est le haut de `.card__art`, mesuré à 390, 420 et
+   1280 ; la transformation part du coin haut-droit, donc la pastille grandit vers l'intérieur. */
 .ouverture__neuve {
   background: var(--gold);
   border-radius: 999px;
@@ -6786,14 +6810,13 @@ h2 {
   opacity: 0;
   padding: 0.18rem 0.55rem;
   pointer-events: none;
-  left: 50%;
   position: absolute;
+  right: 3.5%;
   scale: 0.4;
   text-transform: uppercase;
-  top: -0.7rem;
+  top: 13.5%;
   transform: scale(var(--contre));
-  transform-origin: 50% 0;
-  translate: -50% 0;
+  transform-origin: 100% 0;
   transition:
     opacity 200ms ease,
     scale 380ms cubic-bezier(0.16, 1, 0.3, 1);

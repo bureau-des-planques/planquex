@@ -289,7 +289,9 @@ plateau (`.card--plateau`).
 - Jauge de Stress : 7 px au plateau, dix crans (`.stress`, `::after`).
 - Pips de café : 0,9 em sur la carte, cerclés de crème ; dans `.battle` : 14 px (18 px dans la fiche du camp), anneau crème, `gap` 0,3 rem (#290).
 - **Les illustrations** n'ont pas de cadre incrusté : 15 planches qui en portaient un (blanc, 30 à 82 px sur 1024) ont été rognées le 28/10/2026.
-- **Le dos de carte** (`.ouverture__dos`, `SceneOuverture.tsx`) : bleu nuit, treillis d'or, cadre à trois filets, médaillon « BP », deux losanges sur l'axe vertical. Une carte rare, brillante ou secrète prend sa **rareté** pour or (`--dos-or`), filets compris ; son appel (`ouverture-appel`) repart de `--dos-cadre` pour ne pas perdre le cadre.
+- **Le dos de carte** (`.ouverture__dos`, `SceneOuverture.tsx`) : bleu nuit, treillis d'or, cadre à trois filets, médaillon « BP », deux losanges sur l'axe vertical. Une carte rare, brillante ou secrète prend sa **rareté** pour or (`--dos-or`), filets compris ; son appel (`ouverture-appel`) repart de `--dos-cadre` pour ne pas perdre le cadre. Le dos part de **face** (`rotateY(0deg)`) et se retourne vers 90° : à `180deg` le médaillon se lisait en miroir (D-169).
+- **La carte de l'Arrivage** (`SceneOuverture`, D-169) : au-dessus de 420 px, elle garde le gabarit complet ; en dessous, elle prend `card--compact` (libellés abrégés, pas de flavour) et le **premier tap** ouvre sa fiche — à 118 px de large, son texte rendu tombe à 6-8 px, et la fiche est la seule surface de lecture. La pastille « Nouvelle » se pose **sur l'illustration** (haut 13,5 %, coin droit), jamais dans la zone du nom.
+- **Vulnérabilité et Rotation s'empilent sous 240 px de carte** (D-169) : le gabarit complet ne tenait pas ses deux colonnes de 95 px — « VULNÉRABILITÉ », au plancher de #547, en réclame une centaine à lui seul, et la ligne sortait de 32 à 54 px. Les vignettes compactes abrègent en « Vuln. / Rot. » et restent sur une ligne.
 
 ### 2.3 États
 

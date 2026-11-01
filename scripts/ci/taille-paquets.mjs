@@ -119,8 +119,15 @@ export const SEUIL_PAQUET = 500_000;
  * recalcul de style sur 2,5 s de scène (−66 %), 1,423 s → 0,836 s de tâche (−41 %). Le code a
  * été resserré avant de relever (une boucle sur les reflets, sans `querySelectorAll` ni tableau) ;
  * il reste 266 645 octets.
+ *
+ * **Relevé de 456 octets le 01/11/2026** (267 101 octets) (critique d'interface de l'ouverture,
+ * #567, D-169) : le dos des cartes ne part plus en miroir, la carte étalée prend le gabarit
+ * compact sous 420 px et son premier tap ouvre la fiche, la pastille « Nouvelle » se pose sur
+ * l'illustration, et un dialogue modal rend `#root` inerte (l'attribut `inert` qui manquait).
+ * Le code a été resserré avant de relever — un `useMemo` retiré, la largeur lue directement —
+ * et il reste 267 101 octets.
  */
-export const PLAFOND_PRINCIPAL = 266_645;
+export const PLAFOND_PRINCIPAL = 267_101;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
