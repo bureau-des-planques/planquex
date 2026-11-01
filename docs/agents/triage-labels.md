@@ -24,34 +24,41 @@ revient se recrée en une commande.
 
 | Label in mattpocock/skills | Label in our tracker | Meaning                                  |
 | -------------------------- | -------------------- | ---------------------------------------- |
-| `needs-triage`             | `needs-triage`       | **Une décision manque** (ou le ticket dépend d'un autre travail) : un humain tranche, puis l'agent exécute |
-| `needs-info`               | `needs-info`         | Waiting on reporter for more information |
+| `needs-triage`             | `needs-triage`       | **Une décision manque** — choix de conception, jugement, orientation — ou le ticket dépend d'un autre travail : un humain tranche, puis l'agent exécute |
+| `needs-info`               | `needs-info`         | **On attend une information de la personne qui a signalé** : on lui écrit ce qui manque, et le ticket revient en `needs-triage` dès sa réponse |
 | `ready-for-agent`          | `ready-for-agent`    | Fully specified, ready for an AFK agent  |
-| `ready-for-human`          | `ready-for-human`    | **Geste qu'aucun agent ne peut faire** : compte, clé, serveur, validation manuelle |
+| `ready-for-human`          | `ready-for-human`    | **Geste qu'aucun agent ne peut faire** : appareil réel, écoute, compte, clé, serveur, fusion — jamais un travail qui se termine par du code |
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
 **Ce que l'état dit, et ce qu'il ne dit pas** (**D-129**, 27/10/2026). Les états disent **qui agit**, pas où en est le travail :
 
-- `needs-triage` — **une décision manque**. Ce n'est pas « quelqu'un doit coder » : c'est « personne ne sait encore quoi coder ». Un ticket **bloqué par un autre travail** porte aussi `needs-triage`, et **dit son bloqueur dans le corps** (« Bloqué par #251 ») : il n'existe pas d'étiquette `blocked`, qui serait une liste de plus à tenir.
+- `needs-triage` — **une décision manque**. Ce n'est pas « quelqu'un doit coder » : c'est « personne ne sait encore quoi coder ». Un **choix de conception, un jugement, une orientation** en font partie : on tranche, on l'écrit dans le ticket, puis un agent exécute. Un ticket **bloqué par un autre travail** porte aussi `needs-triage`, et **dit son bloqueur dans le corps** (« Bloqué par #251 ») : il n'existe pas d'étiquette `blocked`, qui serait une liste de plus à tenir.
 - `ready-for-agent` — **spécifié**, un agent peut le prendre tel quel et rendre ses preuves.
-- `ready-for-human` — un **geste** qu'aucun agent ne peut faire : créer un serveur, poser un secret, valider un compte, trancher une orientation. Rare, et jamais pour dire « c'est du code, mais je préfère le faire moi-même ».
+- `ready-for-human` — un **geste** qu'aucun agent ne peut faire : créer un serveur, poser un secret, valider un compte, mesurer sur un téléphone réel, écouter un son dans une vraie fin de combat, fusionner une PR. Rare, et jamais pour dire « c'est du code, mais je préfère le faire moi-même » : un travail qui se termine par du code n'est pas `ready-for-human`, il est `needs-triage` (la décision manque encore) ou `ready-for-agent`.
+- `needs-info` — **on attend une information de la personne qui a signalé** : un testeur arrivé par le formulaire, par le comité (post-it IP/OUF, #400) ou par Discord. On y poste deux listes — « ce qui est établi » et « ce qu'il nous faut de @rapporteur » —, avec des questions précises, et le ticket **repasse en `needs-triage` dès que la réponse arrive** (la transition de la compétence amont). Un ticket de **mainteneur** qui attend un arbitrage n'est jamais `needs-info` : il n'y a personne à qui écrire, ni personne à attendre.
 
 Avant D-129, douze tickets portaient `ready-for-human` alors que neuf n'attendaient qu'une décision : le label faisait croire que douze tickets attendaient une personne, et le travail ne démarrait pas.
+
+**La frontière « décision / geste », et pourquoi ces lignes existent** (01/11/2026). D-129 liste **trois** états ; `needs-info` survit à D-062 mais D-129 ne dit rien de lui, et sa seule définition était une phrase anglaise sans sujet. Mesuré : **il n'a servi que trois fois** dans l'histoire du dépôt (#554, #555, #556, le 31/10/2026), les trois fois pour une **décision interne** ou une mesure, jamais pour un rapport de testeur incomplet. Et deux formulations nées dans ce document plutôt que dans l'acte — « trancher une orientation » ici, « une décision, un prototype » dans `CONTRIBUTING.md` — même responsabilité : elles envoyaient des décisions dans un état où aucun agent ne vient les chercher. D'où les trois lignes ci-dessus : une décision est `needs-triage`, un geste est `ready-for-human`, et `needs-info` n'attend qu'un **rapporteur**.
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
 **Tout ticket ouvert porte les deux** (Bastien, 27/10/2026) : exactement une **catégorie** et
 exactement un **état**. Mesuré le 27/10/2026 : **35 tickets ouverts, 35 catégories, 35 états** —
-`ready-for-agent` 16, `ready-for-human` 18, `needs-triage` 1, `needs-info` 0, `wontfix` 0. Un
-ticket neuf reçoit donc `needs-triage` et sa catégorie à la création (`gh issue create --label`),
-et non « rien » en attendant.
+`ready-for-agent` 16, `ready-for-human` 18, `needs-triage` 1, `needs-info` 0, `wontfix` 0. Mesuré
+le 01/11/2026, après le triage des trois tickets sans étiquette (#560, #566, #569) et des trois
+`needs-info` : **22 tickets ouverts, 22 catégories, 22 états** — `ready-for-agent` 14,
+`ready-for-human` 4, `needs-triage` 4, `needs-info` 0, `wontfix` 0 ; par étape, `alpha` 5,
+`beta` 13, et 4 sans étape. Un ticket neuf reçoit donc `needs-triage` et sa catégorie à la
+création (`gh issue create --label`), et non « rien » en attendant.
 
 **Les cartes wayfinder en portent aussi.** Le skill `wayfinder` écrit qu'une carte et ses tickets
 ne portent **que** des étiquettes `wayfinder:` ; ici, c'est l'inverse qui a été choisi : #264 et
 ses tickets #267, #268 et #269 portent leur catégorie et leur état comme les autres, pour qu'un
 seul filtre lise « tout ce qui est ouvert ». L'état dit alors qui attend quoi : `ready-for-human`
-pour une décision ou un prototype qui a besoin de Bastien (les grillings, le prototype d'ouverture
-de paquet, le transfert d'organisation), `ready-for-agent` pour la carte elle-même, dont une
+pour un **geste** de Bastien (réagir au prototype d'ouverture de paquet, valider une manipulation)
+et `needs-triage` pour une **décision** qu'il tranche et qu'un agent exécute ensuite (les
+grillings, le transfert d'organisation), `ready-for-agent` pour la carte elle-même, dont une
 session peut prendre le prochain ticket de la frontière.
 
 **Étape du projet** — une troisième dimension, **orthogonale** aux catégories et aux états.
