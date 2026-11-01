@@ -296,7 +296,7 @@ export function Collection() {
             className="button"
             onClick={videParRecherche ? () => modifier({ texte: '' }) : toutEffacer}
           >
-            {videParRecherche ? 'Effacer la recherche' : 'Effacer les filtres'}
+            {videParRecherche ? 'Effacer la recherche' : 'Tout effacer'}
           </button>
         </div>
       ) : (
