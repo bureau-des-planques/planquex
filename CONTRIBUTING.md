@@ -100,8 +100,13 @@ gh issue view 328 --json number,title,body,labels,comments   # --json est obliga
 
 **Lire le ticket, poser un test qui échoue, corriger le minimum, prouver.**
 
-1. **Prendre le ticket** : `gh issue edit <n> --add-assignee @me`. Un ticket `ready-for-human`
-   attend une personne (une décision, un prototype) ; un `ready-for-agent` est spécifié pour un agent.
+1. **Prendre le ticket** : `gh issue edit <n> --add-assignee @me`. Les états disent **qui agit**
+   (`docs/agents/triage-labels.md`) : `ready-for-agent` est spécifié pour un agent ; `needs-triage`
+   attend une **décision** (un choix de conception, un jugement, une orientation), que l'agent
+   exécute ensuite ; `ready-for-human` attend un **geste** que nous seuls pouvons faire — un
+   appareil réel, une écoute, une clé, une fusion — et jamais un travail qui se termine par du
+   code ; `needs-info` attend une information de **la personne qui a signalé** (un testeur), et le
+   ticket repasse en `needs-triage` quand elle répond.
 2. **Une branche par ticket**, depuis `main`, nommée `<type>/<sujet>` — `feat/`, `fix/`, `docs/`,
    `chore/`, `refactor/` — dans son worktree.
 3. **Rester dans sa zone** : moteur (`src/game/`), données (`src/data/`), store/UI, scripts/CI,
