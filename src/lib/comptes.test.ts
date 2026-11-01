@@ -6,6 +6,7 @@ import {
   connexionGoogle,
   deciderCompte,
   deconnexion,
+  diagnosticComptes,
   estApprouve,
   inscriptionCourriel,
   libelleEtat,
@@ -14,6 +15,7 @@ import {
   listerComptes,
   messageDeCompte,
   messageDeConnexion,
+  raisonConfigurationCassee,
   type ClientComptes
 } from '@/lib/comptes';
 import type { RequeteMur, ReponseMur } from '@/lib/supabase';
@@ -355,7 +357,26 @@ describe('les messages d’erreur', () => {
     expect(
       comptesEstConfigure({ VITE_SUPABASE_URL: 'https://x.test', VITE_SUPABASE_ANON_KEY: 'sb_publishable_x' })
     ).toBe(true);
-    // Une configuration à moitié posée vaut « pas de base » pour l'écran, jamais une page blanche.
+    // Une configuration à moitié posée n'arme pas la base — mais elle n'est pas muette (#529).
     expect(comptesEstConfigure({ VITE_SUPABASE_URL: 'https://x.test' })).toBe(false);
+  });
+
+  it('une configuration cassée est dite cassée, avec sa raison — jamais « pas de base » (#529)', () => {
+    // Sous le code d'avant #529, ce cas était avalé par un `catch` et rendu `false`, comme
+    // une absence : le jeu s'ouvrait sans garde, sans un mot.
+    const urlSeule = { VITE_SUPABASE_URL: 'https://x.test' };
+    expect(diagnosticComptes(urlSeule).etat).toBe('cassee');
+    expect(raisonConfigurationCassee(urlSeule)).toMatch(/incomplète/);
+    expect(raisonConfigurationCassee(urlSeule)).toContain('VITE_SUPABASE_ANON_KEY');
+
+    const cleSecrete = { VITE_SUPABASE_URL: 'https://x.test', VITE_SUPABASE_ANON_KEY: 'sb_secret_exemple' };
+    expect(diagnosticComptes(cleSecrete).etat).toBe('cassee');
+    expect(raisonConfigurationCassee(cleSecrete)).toMatch(/clé de service/i);
+
+    // Absente et bien configurée n'ont pas de raison de refus.
+    expect(raisonConfigurationCassee({})).toBeNull();
+    expect(
+      raisonConfigurationCassee({ VITE_SUPABASE_URL: 'https://x.test', VITE_SUPABASE_ANON_KEY: 'sb_publishable_x' })
+    ).toBeNull();
   });
 });

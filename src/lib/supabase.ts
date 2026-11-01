@@ -52,6 +52,48 @@ export interface ConfigurationMur {
 }
 
 /**
+ * Ce que dit la configuration du mur, **sans lever** (#529) : c'est ce qui permet à l'écran
+ * de distinguer ce que le code confondait.
+ *
+ * - `absente` : aucune des deux variables — l'alpha sans backend, assumée (avant D-088) ;
+ * - `configuree` : les deux variables, la clé publique ;
+ * - `cassee` : **déploiement fautif** — une seule variable, ou une clé de service. Ce n'est
+ *   pas « pas de base » : la raison est rendue pour que l'écran la dise, au lieu de laisser
+ *   le jeu s'ouvrir sans garde en silence.
+ */
+export type DiagnosticMur =
+  { etat: 'absente' } | { etat: 'configuree'; configuration: ConfigurationMur } | { etat: 'cassee'; raison: string };
+
+/**
+ * Diagnostique la configuration du mur. **Ne lève jamais** : une configuration cassée est un
+ * état rendu, pas une exception avalée par un `catch` qui la confondrait avec l'absence.
+ */
+export function diagnostiquerMur(env: Environnement = import.meta.env): DiagnosticMur {
+  const url = texte(env[VARIABLE_URL]);
+  const clePublique = texte(env[VARIABLE_CLE]);
+
+  if (!url && !clePublique) return { etat: 'absente' };
+
+  if (!url || !clePublique) {
+    const manquante = !url ? VARIABLE_URL : VARIABLE_CLE;
+    return {
+      etat: 'cassee',
+      raison:
+        `Configuration Supabase incomplète : ${manquante} manque. ${VARIABLE_URL} et ${VARIABLE_CLE} ` +
+        'vont ensemble (voir .env.example). Sans les deux, le mur reste sur son fichier JSON.'
+    };
+  }
+
+  try {
+    assertClePublique(clePublique);
+  } catch (erreur) {
+    return { etat: 'cassee', raison: erreur instanceof Error ? erreur.message : String(erreur) };
+  }
+
+  return { etat: 'configuree', configuration: { url, clePublique } };
+}
+
+/**
  * Le sous-ensemble d'un client Supabase dont ce module a besoin pour lire **qui** parle.
  * Le déclarer ici, en structurel, c'est ce qui rend `identiteSession` testable **sans
  * réseau** : un faux client à une méthode suffit.
@@ -171,20 +213,9 @@ export function assertClePublique(cle: string): void {
  * - une clé de service → erreur (`assertClePublique`).
  */
 export function configurerMur(env: Environnement = import.meta.env): ConfigurationMur | null {
-  const url = texte(env[VARIABLE_URL]);
-  const clePublique = texte(env[VARIABLE_CLE]);
-
-  if (!url && !clePublique) return null;
-
-  if (!url || !clePublique) {
-    throw new Error(
-      `Configuration Supabase incomplète : ${VARIABLE_URL} et ${VARIABLE_CLE} vont ensemble ` +
-        '(voir .env.example). Sans les deux, le mur reste sur son fichier JSON.'
-    );
-  }
-
-  assertClePublique(clePublique);
-  return { url, clePublique };
+  const diagnostic = diagnostiquerMur(env);
+  if (diagnostic.etat === 'cassee') throw new Error(diagnostic.raison);
+  return diagnostic.etat === 'configuree' ? diagnostic.configuration : null;
 }
 
 let configuration: ConfigurationMur | null | undefined;

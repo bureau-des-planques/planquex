@@ -19,6 +19,7 @@ import {
   deconnexion,
   inscriptionCourriel,
   lireMonCompte,
+  raisonConfigurationCassee,
   type Compte,
   type SessionCompte
 } from '@/lib/comptes';
@@ -26,6 +27,12 @@ import {
 export interface ComptesState {
   /** Le backend est-il configuré ? Faux dans l'alpha sans `.env`, et dans les tests. */
   configure: boolean;
+  /**
+   * La raison d'une configuration **cassée** (une seule variable, ou une clé de service), ou
+   * `null` quand la base est absente ou bien configurée (#529). La garde l'affiche : le jeu
+   * ne s'ouvre pas « sans un mot » sur un déploiement fautif.
+   */
+  configurationCassee: string | null;
   chargement: boolean;
   session: SessionCompte | null;
   /** La ligne de `public.comptes`, ou `null` tant qu'on ne l'a pas lue. */
@@ -54,6 +61,7 @@ function retourOAuth(): string {
 
 export const useComptes = create<ComptesState>((set, get) => ({
   configure: comptesEstConfigure(),
+  configurationCassee: raisonConfigurationCassee(),
   // Avec une base, la session persistée n'est pas encore lue : la garde attend plutôt que
   // de renvoyer un testeur déjà connecté vers la page de connexion.
   chargement: comptesEstConfigure(),
