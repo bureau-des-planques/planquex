@@ -108,6 +108,10 @@ const ROUTE_COMBAT = '/battle';
  */
 const PREPARATIONS = [
   { slug: 'code-pvp', route: ROUTE_COMBAT, amorce: true, preparation: 'code-pvp' },
+  // **La fin d'une partie** (critique du 01/11/2026) : aucune capture ne montrait l'état terminé,
+  // et la garde de hauteur ne mesurait que des états en cours — « Nouveau combat » pouvait donc
+  // sortir de l'écran, au moment exact où on le cherche, sans que rien ne rougisse.
+  { slug: 'fin', route: ROUTE_COMBAT, amorce: true, preparation: 'fin' },
   // L'ouverture d'un Arrivage (#283) n'existe à aucune arrivée de page : elle s'ouvre au clic
   // sur l'accueil. C'est l'écran où trois défauts de rendu se sont succédé sans qu'aucune
   // capture ne les voie (texte en miroir, pivot, 3D imbriquée, 28/10/2026).
@@ -606,6 +610,40 @@ async function mesurerGabarit(browser, gabarit) {
  * déborde en largeur font échouer `npm run capturer` — la capture ne peut donc pas
  * « prouver » #128 sans rien montrer.
  */
+/**
+ * **La fin d'une partie** (critique du 01/11/2026) : le forfait est le chemin le plus court vers
+ * l'état terminé, et il ne dépend d'aucune graine. Ce que la garde mesure : le verdict est là,
+ * la page ne défile pas, ne déborde pas en largeur, et « Nouveau combat » est **entier dans la
+ * fenêtre** — c'est le geste que le produit vend (« envie de refaire une partie », `PRODUCT.md`).
+ */
+async function preparerFin(page) {
+  await page.getByRole('button', { name: 'Menu du combat' }).click();
+  await page.getByRole('button', { name: /^Abandonner$/ }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: /Abandonner/ })
+    .click();
+  await page.getByRole('button', { name: 'Nouveau combat' }).waitFor({ timeout: 15000 });
+  await page.waitForTimeout(300);
+  return page.evaluate(() => {
+    const doc = document.documentElement;
+    const bouton = [...document.querySelectorAll('button')].find((candidat) =>
+      /Nouveau combat/.test(candidat.textContent ?? '')
+    );
+    const rect = bouton ? bouton.getBoundingClientRect() : null;
+    const verdict = document.querySelector('[role="alert"]');
+    return {
+      defilement: doc.scrollHeight - doc.clientHeight,
+      debordement: doc.scrollWidth - doc.clientWidth,
+      verdict: verdict ? (verdict.textContent ?? '').trim().slice(0, 60) : '',
+      bouton: rect
+        ? { haut: Math.round(rect.top), bas: Math.round(rect.bottom), hauteur: Math.round(rect.height) }
+        : null,
+      fenetre: window.innerHeight
+    };
+  });
+}
+
 async function preparerCodePvp(page) {
   // Depuis #191 la Partie à deux vit derrière le menu `⋯` : on l'ouvre comme l'invité.
   await page.getByRole('button', { name: 'Menu du combat' }).click();
@@ -794,6 +832,33 @@ try {
       }
       if (code.debordement > 0) {
         problems.push(`${slug} · la page déborde de ${code.debordement} px en largeur : la mise en page casse`);
+      }
+    } else if (preparation === 'fin') {
+      await arriverAuCombat(page, INSTANTS_COMBAT[0]);
+      const fin = await preparerFin(page);
+      console.log(`fin · ${slug} · ${JSON.stringify(fin)}`);
+      if (!fin.verdict) problems.push(`${slug} · la fin de partie n’affiche aucun verdict`);
+      if (fin.defilement > 0) {
+        problems.push(
+          `${slug} · la fin de partie défile de ${fin.defilement} px (${VIEWPORT.width} × ${VIEWPORT.height}) : ` +
+            `« Nouveau combat » sort du cadre quand on le cherche (D-103)`
+        );
+      }
+      if (fin.debordement > 0) {
+        problems.push(`${slug} · la fin de partie déborde de ${fin.debordement} px en largeur`);
+      }
+      if (!fin.bouton) {
+        problems.push(`${slug} · « Nouveau combat » est absent de la fin de partie`);
+      } else {
+        if (fin.bouton.haut < 0 || fin.bouton.bas > fin.fenetre) {
+          problems.push(
+            `${slug} · « Nouveau combat » sort de la fenêtre (${fin.bouton.haut} → ${fin.bouton.bas} px, ` +
+              `fenêtre de ${fin.fenetre} px) : le geste qui relance une partie n’est pas atteignable`
+          );
+        }
+        if (fin.bouton.hauteur < 44) {
+          problems.push(`${slug} · « Nouveau combat » ne fait que ${fin.bouton.hauteur} px de haut (44 exigés)`);
+        }
       }
     } else if (preparation === 'arrivage') {
       // L'arrivage se prépare au geste du testeur : l'accueil, le bouton, puis la scène.

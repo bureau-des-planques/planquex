@@ -60,9 +60,11 @@ const SCRIPT = join(racine, LANCER);
 // la note, et un post-it `en attente` n'y entre pas.
 // #317 : la porte du serveur des testeurs (D-120) — une invitation vide ne rend rien, et le
 // lien qui est rendu porte `noreferrer noopener` : deux entrées, une par moitié de la règle.
+// #561 : la critique du 01/11/2026 — le verdict n'est dit qu'une fois en fin de partie, et la
+// place libre du Banc reste la cible de pose : deux entrées, deux moitiés de l'écran de combat.
 const TICKETS_ATTENDUS = [
   49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 294, 294, 294, 294,
-  299, 317, 317, 411, 411, 412
+  299, 317, 317, 411, 411, 412, 561, 561
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {

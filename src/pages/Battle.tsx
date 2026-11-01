@@ -637,7 +637,10 @@ function Camp({
   raisonsDeckDeTest = [],
   cafeAttachable,
   onInspecter,
-  onAttacherCafe
+  onAttacherCafe,
+  onPoserPlace,
+  nomAPoser,
+  placesPosables
 }: {
   label: string;
   side: PlayerState;
@@ -665,6 +668,16 @@ function Camp({
   cafeAttachable?: ReadonlySet<string>;
   /** Toucher un Planqué de `cafeAttachable` attache le café à lui. */
   onAttacherCafe?: (uid: string) => void;
+  /**
+   * **La place libre est la cible** (critique du 01/11/2026) : quand une carte de la main peut
+   * être posée au Banc, la place vide — déjà dessinée à sa taille — reçoit le geste. Le panneau de
+   * pose garde ses boutons, mais on n'a plus à faire défiler l'écran pour trouver « Banc 2 ».
+   */
+  onPoserPlace?: (slot: number) => void;
+  /** Le nom de la carte à poser, pour le nom accessible de la place. */
+  nomAPoser?: string;
+  /** Les places du Banc où le moteur accepte la carte choisie (`playBasic`). */
+  placesPosables?: ReadonlySet<number>;
   onInspecter: (uid: string) => void;
 }) {
   const attacher = (uid: string) =>
@@ -786,7 +799,12 @@ function Camp({
       <span className="sr-only">Banc</span>
       <ul className="bench">
         {side.bench.map((slot, index) => (
-          <li className={`bench__slot ${slot ? '' : 'is-free'}`} key={index}>
+          <li
+            className={`bench__slot ${slot ? '' : 'is-free'}${
+              !slot && onPoserPlace && placesPosables?.has(index) ? ' is-cible' : ''
+            }`}
+            key={index}
+          >
             {slot ? (
               <CartePlateau
                 instance={slot}
@@ -797,6 +815,15 @@ function Camp({
                 onInspecter={() => onInspecter(slot.uid)}
                 onAttacher={attacher(slot.uid)}
               />
+            ) : onPoserPlace && placesPosables?.has(index) ? (
+              <button
+                type="button"
+                className="bench__place"
+                onClick={() => onPoserPlace(index)}
+                aria-label={`Poser ${nomAPoser ?? 'cette carte'} au Banc ${index + 1}`}
+              >
+                <span className="sr-only">Place libre</span>
+              </button>
             ) : (
               <span className="sr-only">Place libre</span>
             )}
@@ -1556,6 +1583,21 @@ export function Battle() {
     : [];
 
   /**
+   * **La place libre du Banc reçoit le geste** (critique du 01/11/2026) : le plateau dessine déjà
+   * la place à la taille d'une carte ; quand le moteur y accepte la carte choisie, la place
+   * devient la cible du `playBasic` que le panneau proposait trois cents pixels plus bas.
+   */
+  const placesPosables = new Set(
+    selectedActions.flatMap((action) =>
+      action.type === 'playBasic' && typeof action.slot === 'number' ? [action.slot] : []
+    )
+  );
+  const poserAuBanc = (slot: number) => {
+    const action = selectedActions.find((candidat) => candidat.type === 'playBasic' && candidat.slot === slot);
+    if (action) play(action);
+  };
+
+  /**
    * Ce que dit la barre d'action quand elle n'a rien à offrir : la partie est finie, c'est à
    * l'autre joueur d'agir (partie à deux), ou — le temps d'un rendu — rien n'est ouvert.
    */
@@ -1870,8 +1912,12 @@ export function Battle() {
         </MenuCombat>
       </section>
 
-      {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture. */}
-      <PasAPasCombat pasAPas={pasAPas} />
+      {/* Le pas-à-pas est **en haut**, collé sous l'en-tête (#169) : il suit la lecture.
+          **Il s'efface en fin de partie** (critique du 01/11/2026) : à `?scene=fin`, son panneau
+          ouvert plus le bandeau du verdict poussaient la barre d'action 7 à 8 px sous la fenêtre
+          (mesuré à 420 × 900 et 390 × 664) — et il n'a plus rien à enseigner une fois la partie
+          finie. Le verdict et « Nouveau combat » prennent sa place (D-103). */}
+      {state.phase !== 'ended' && <PasAPasCombat pasAPas={pasAPas} />}
 
       {/* **La scène de fin** (30/10/2026) : dans la fin scriptée seulement, le verdict se
           pose comme un tampon, avec la phrase de la Direction. Un clic la referme ; la
@@ -1897,7 +1943,7 @@ export function Battle() {
 
       {/* **Le combat guidé** (#272) : le bandeau dit ce qui se passe et ce qui suit. Le
           guidage ne bloque rien — on peut le passer à tout moment et jouer dessous. */}
-      {tutoriel && (
+      {tutoriel && state.phase !== 'ended' && (
         <p className={`notice ${pasAPas.ouvert ? 'notice--ok' : ''}`} role="status">
           {pasAPas.ouvert ? (
             <>
@@ -1976,6 +2022,9 @@ export function Battle() {
                 raisonsDeckDeTest={usedTestDeck && id === myCamp ? raisonsDeckDeTest : undefined}
                 cafeAttachable={id === myCamp ? cafeAttachable : undefined}
                 onAttacherCafe={attacherCafe}
+                onPoserPlace={id === myCamp && selected ? poserAuBanc : undefined}
+                nomAPoser={selected ? cardName(selected.cardId) : undefined}
+                placesPosables={id === myCamp && selected ? placesPosables : undefined}
                 onInspecter={setInspecte}
               />
             </Fragment>
@@ -2316,7 +2365,7 @@ export function Battle() {
               </div>
             )}
 
-            {playable.length === 0 && (
+            {playable.length === 0 && state.phase !== 'ended' && (
               <p className="muted combat-barre__repos">
                 {idleLine}
                 {attendLAutre && (
