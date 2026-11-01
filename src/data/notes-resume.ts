@@ -30,8 +30,7 @@ export const NOTES_RESUME: ResumeNote[] = [
   {
     version: '0.1.16',
     date: '2026-11-01',
-    titre: 'Version 0.1.16',
-    brouillon: true
+    titre: 'Version 0.1.16'
   },
   {
     version: '0.1.15',
