@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 168 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 169 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -174,3 +174,4 @@
 | D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |
 | D-167 | 31/10/2026 | Les tailles du plateau ne bougent pas : à 420… |
 | D-168 | 31/10/2026 | Le contrôle des écrans refuserait un scan muet . impeccable… |
+| D-169 | 01/11/2026 | L'ouverture d'un Arrivage se lit à 420 px . (1)… |

@@ -893,6 +893,59 @@ try {
         { timeout: 15000 }
       );
       await page.waitForTimeout(1200);
+
+      // **Deux mesures que la critique du 01/11/2026 a rendues nécessaires** (D-169) : la pastille
+      // « Nouvelle » ne recouvre pas le nom de la carte, et la ligne Vulnérabilité / Rotation ne
+      // sort pas de la carte. Elles se mesurent ici, dans le navigateur, parce que jsdom ne
+      // calcule aucune mise en page — et toutes deux échouaient avant le correctif.
+      //
+      // **Pourquoi deux gabarits** : la pastille déborde surtout à 390 × 664, où la carte fait
+      // 118 px de haut (à 420 elle est 46 % plus haute et le débordement se réduit à 2 px) ;
+      // la ligne Vulnérabilité / Rotation, elle, ne se coupe qu'à partir de 420, où la carte
+      // reprend son gabarit complet. Un seul gabarit laisserait passer l'un des deux.
+      const mesurerLisible = () =>
+        page.evaluate(() => {
+          const R = (el) => el.getBoundingClientRect();
+          const aire = (a, b) =>
+            Math.max(0, Math.min(R(a).right, R(b).right) - Math.max(R(a).left, R(b).left)) *
+            Math.max(0, Math.min(R(a).bottom, R(b).bottom) - Math.max(R(a).top, R(b).top));
+          return [...document.querySelectorAll('.ouverture__carte')].map((carte, i) => {
+            const nom = carte.querySelector('.card__name');
+            const pastille = carte.querySelector('.ouverture__neuve');
+            const bas = carte.querySelector('.card__bas');
+            return {
+              i,
+              recouvrement: nom && pastille ? Math.round(aire(nom, pastille)) : 0,
+              coupe: bas ? bas.scrollWidth - bas.clientWidth : 0
+            };
+          });
+        });
+      const lisible = await mesurerLisible();
+      await page.setViewportSize({ width: 390, height: 664 });
+      await page.waitForTimeout(500);
+      const lisibleTelephone = await mesurerLisible();
+      await page.setViewportSize(VIEWPORT);
+
+      for (const [gabarit, mesures] of [
+        ['420 × 900', lisible],
+        ['390 × 664', lisibleTelephone]
+      ]) {
+        for (const carte of mesures) {
+          if (carte.recouvrement > 0) {
+            problems.push(
+              `${slug} · à ${gabarit}, la pastille « Nouvelle » recouvre le nom de la carte ${carte.i + 1} ` +
+                `(${carte.recouvrement} px²) : le mot qui dit ce qu’on vient de gagner est masqué ` +
+                'par l’étiquette qui le félicite'
+            );
+          }
+          if (carte.coupe > 0) {
+            problems.push(
+              `${slug} · à ${gabarit}, la carte ${carte.i + 1} coupe sa ligne Vulnérabilité / Rotation ` +
+                `(${carte.coupe} px hors de la carte) : on lit « … ROTAT » au lieu de la rotation`
+            );
+          }
+        }
+      }
     } else if (route === ROUTE_COMBAT) {
       // Le combat se photographie **à l'arrivée**, au tour du joueur (#170) : la graine de
       // la partie vient de l'horloge, donc on la fige (`page.clock`) pour une capture

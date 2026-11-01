@@ -147,6 +147,21 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const [eclat, setEclat] = useState<Palier | null>(null);
   const [taille, setTaille] = useState({ largeur: 390, hauteur: 560 });
 
+  /**
+   * **L'écran est étroit** (moins de 420 px, D-142) : c'est la largeur où une carte étalée
+   * fait 118 px de large et où son texte ne se lit plus (critique du 01/11/2026). La scène
+   * s'y comporte autrement : la carte prend le **format compact** de `CardView` (libellés
+   * abrégés, pas de flavour — la fiche les donne entiers), et le **premier tap** sur une
+   * carte face cachée ouvre sa fiche, seule surface de lecture à cette taille.
+   *
+   * `matchMedia` d'abord, parce qu'il suit la fenêtre sans dépendre d'une mesure ; à défaut
+   * (environnement sans média), la largeur mesurée de la scène.
+   */
+  const etroit =
+    typeof window.matchMedia === 'function'
+      ? window.matchMedia('(max-width: 419.98px)').matches
+      : taille.largeur > 0 && taille.largeur < 420;
+
   const racine = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
@@ -452,6 +467,11 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         setRetournees((avant) => avant.map((r, i) => r || i === index));
         // La fête attend que la carte soit à moitié retournée : c'est là qu'on voit sa face.
         plus(260, () => feter(index));
+        // **Sur un écran étroit, retourner c'est lire** : la carte étalée fait 118 px et son
+        // texte 6 à 8 px, donc la fiche s'ouvre d'elle-même après le retournement. Sinon la
+        // récompense resterait une vignette illisible (critique du 01/11/2026). `f ?? index`
+        // : si une autre carte a déjà ouvert sa fiche, on ne la remplace pas.
+        if (etroit) plus(560, () => setFiche((f) => f ?? index));
         return;
       }
       const moi = (jeton.current += 1);
@@ -463,11 +483,15 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         setEnCours({ index, phase: 'tenue' });
         plus(240, () => feter(index));
         plus(TENUE[niveau], () => {
-          if (jeton.current === moi) poser();
+          if (jeton.current === moi) {
+            poser();
+            // Après la mise en scène, la fiche prend le relais sur écran étroit (idem ci-dessus).
+            if (etroit) setFiche(index);
+          }
         });
       });
     },
-    [cartes, enCours, feter, plus, poser, retournees]
+    [cartes, enCours, etroit, feter, plus, poser, retournees]
   );
 
   // Toutes retournées et reposées : la révélation est finie.
@@ -481,7 +505,12 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const activer = (index: number): void => {
     if (apres !== 'revelation' && apres !== 'ouvert') return;
     if (enCours) {
-      if (enCours.index === index && enCours.phase === 'tenue') poser();
+      if (enCours.index === index && enCours.phase === 'tenue') {
+        poser();
+        // Sur écran étroit, toucher la carte au centre veut dire « je veux la lire » : la
+        // fiche s'ouvre, comme après une révélation simple (critique du 01/11/2026).
+        if (etroit) setFiche(index);
+      }
       return;
     }
     if (!retournees[index]) {
@@ -697,7 +726,11 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     if (etape === 'revelation') {
       if (enCours?.phase === 'tenue') return 'Touche la carte pour la poser';
       if (enCours) return '…';
-      return `Touche une carte pour la retourner · ${nombreRetournees} / ${nombre}`;
+      // Sur un écran étroit, le tap ne fait pas que retourner : il ouvre la fiche. La
+      // consigne dit donc ce qui arrive, pas l'étape intermédiaire (critique du 01/11/2026).
+      return etroit
+        ? `Touche une carte pour la lire · ${nombreRetournees} / ${nombre}`
+        : `Touche une carte pour la retourner · ${nombreRetournees} / ${nombre}`;
     }
     return 'Touche une carte pour la voir en entier';
   })();
@@ -855,7 +888,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
               >
                 <div className="ouverture__retourne">
                   <div className="ouverture__face">
-                    <CardView card={carte} />
+                    <CardView card={carte} compact={etroit} />
                     {auMoins(niveau, 'rare') && <span className="ouverture__holo" aria-hidden="true" />}
                     <span className="ouverture__reflet-fiche" aria-hidden="true" />
                   </div>

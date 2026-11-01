@@ -34,6 +34,44 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
   );
 }
 
+/**
+ * **Le reste de la page devient inerte** tant qu'un dialogue modal est ouvert (#567).
+ *
+ * Base UI marque le fond — `aria-hidden` et `data-base-ui-inert` — mais ne pose pas l'attribut
+ * `inert`. Le clavier entrait donc quand même dans la page : dix `Tab` depuis l'Arrivage
+ * atteignaient « Ouvrir un Arrivage » sous `#root[aria-hidden]`, et `Entrée` ouvrait **un second
+ * paquet** derrière le dialogue (mesuré le 01/11/2026 : `packsOpened` 1 → 2, `owned` 178 → 180,
+ * scène remise à zéro). Chrome le disait lui-même : « Consider using the inert attribute
+ * instead ». On le pose sur la racine de l'application ; un compteur tient les dialogues
+ * empilés (une fiche ouverte par-dessus les Conditions, par exemple), et le dernier fermé
+ * rend la page.
+ */
+let dialoguesModauxOuverts = 0;
+
+function useInertRequis() {
+  React.useEffect(() => {
+    const racine = document.getElementById('root');
+    if (!racine) return undefined;
+    if (dialoguesModauxOuverts === 0) racine.setAttribute('inert', '');
+    dialoguesModauxOuverts += 1;
+    return () => {
+      dialoguesModauxOuverts -= 1;
+      if (dialoguesModauxOuverts === 0) racine.removeAttribute('inert');
+    };
+  }, []);
+}
+
+/**
+ * Le porteur du `inert` : un composant **à part**, monté par le portail — donc seulement quand
+ * le dialogue est ouvert. Posé dans `DialogContent` lui-même, il s'exécuterait même fermé (le
+ * composant est toujours dans l'arbre React, c'est le portail qui ne rend rien), et la page
+ * entière deviendrait inerte au chargement de l'accueil.
+ */
+function InertReste() {
+  useInertRequis();
+  return null;
+}
+
 function DialogContent({
   className,
   children,
@@ -44,6 +82,7 @@ function DialogContent({
 }) {
   return (
     <DialogPortal>
+      <InertReste />
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
