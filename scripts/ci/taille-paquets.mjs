@@ -126,8 +126,14 @@ export const SEUIL_PAQUET = 500_000;
  * l'illustration, et un dialogue modal rend `#root` inerte (l'attribut `inert` qui manquait).
  * Le code a été resserré avant de relever — un `useMemo` retiré, la largeur lue directement —
  * et il reste 267 101 octets.
+ *
+ * **Relevé de 431 octets le 01/11/2026** (267 532 octets) (seconde passe de la critique de
+ * l'ouverture, #570, D-170) : le seuil de lecture se prend sur l'échelle **rendue** de la carte,
+ * une carte n'est plus un bouton dans un bouton (`CardView calme`), la déchirure reste acquise
+ * sous le seuil, la fiche gagne une bande de défilement et une carte plus petite en portrait, et
+ * le tirage survit à la fermeture (« Revoir le dernier Arrivage »). Il reste 267 532 octets.
  */
-export const PLAFOND_PRINCIPAL = 267_101;
+export const PLAFOND_PRINCIPAL = 267_532;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];

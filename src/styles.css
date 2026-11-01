@@ -6899,6 +6899,26 @@ h2 {
   border-radius: 16px 16px 0 0;
 }
 
+/* Le repère de défilement de la fiche (D-170) : une bande **opaque** collée au bas du viseur, qui
+   dit qu'il reste du texte. Sans elle, le panneau coupait sans barre ni dégradé, et sa dernière
+   Pression se lisait tranchée par le bord. Elle s'efface quand on arrive au bout (l'état `defile`
+   tombe à zéro) — un dégradé laissait voir le texte à travers, ce qui se lisait comme un
+   chevauchement. */
+.ouverture__fiche-suite {
+  background: var(--bg-raised);
+  border-top: 1px solid var(--line);
+  bottom: -1.3rem;
+  color: var(--text-muted);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.08em;
+  margin: 0.4rem -1.1rem 0;
+  padding: 0.35rem 0 1.3rem;
+  pointer-events: none;
+  position: sticky;
+  text-align: center;
+  text-transform: uppercase;
+}
+
 @keyframes ouverture-fiche {
   from {
     opacity: 0;
@@ -7244,6 +7264,10 @@ h2 {
   font-weight: 800;
   letter-spacing: 0.01em;
   line-height: 1;
+}
+
+.hero__revoir {
+  margin-top: 0.5rem;
 }
 
 .hero__packs-invite {

@@ -66,10 +66,21 @@ describe('l’ouverture d’un Arrivage — la déchirure (#283)', () => {
     expect(glisser(3).dechirure).toBe(1);
   });
 
-  it('lâchée juste sous le seuil, elle se referme', () => {
+  it('lâchée juste sous le seuil, la déchirure reste acquise', () => {
     const etat = relacher(glisser(SEUIL_DECHIRURE - 0.01));
     expect(etat.phase).toBe('ferme');
-    expect(etat.dechirure).toBe(0);
+    // **D-170** : la bande ne se referme plus. Avant, la déchirure revenait à 0 sans un mot, et
+    // le geste suivant repartait de l'autre bout — c'était le seul geste obligatoire de l'écran.
+    expect(etat.dechirure).toBeCloseTo(SEUIL_DECHIRURE - 0.01, 3);
+    expect(etat.dechirure).not.toBe(0);
+  });
+
+  it('un second geste reprend la déchirure acquise au lieu de repartir de zéro', () => {
+    const interrompu = relacher(glisser(0.4));
+    const repris = avancer(demarrer(interrompu, 10, GEO), COURSE * 0.1, GEO);
+    expect(repris.dechirure).toBeCloseTo(0.5, 3);
+    // Le contrôle mord : sans la reprise, on repartirait de 0,1.
+    expect(repris.dechirure).not.toBeCloseTo(0.1, 3);
   });
 
   it('lâchée au seuil exact, le sachet s’ouvre', () => {

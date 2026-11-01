@@ -39,6 +39,14 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
   const cibleArrivage = useEstCibleJournee('arrivage');
   const derniere = derniereRelease(notes);
   const [lastPack, setLastPack] = useState<Card[] | null>(null);
+  /**
+   * **Le tirage se garde après la fermeture** (D-170) : les cartes sont acquises dès le clic sur
+   * « Ouvrir un Arrivage », donc fermer au milieu ne perd rien — mais l'écran qui le disait
+   * disparaissait pour de bon, et un Échap réflexe effaçait le seul moment où l'on apprend ce
+   * qu'on a gagné. `lastPack` reste en mémoire, et l'accueil propose de le revoir : la scène se
+   * rejoue, sans retirer de paquet ni ajouter de carte.
+   */
+  const [arrivageOuvert, setArrivageOuvert] = useState(false);
   /** Les cartes de l'Arrivage que le testeur n'avait pas : une carte tirée deux fois n'est neuve qu'une. */
   const [nouvelles, setNouvelles] = useState<ReadonlySet<number>>(() => new Set());
 
@@ -62,6 +70,7 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
     });
     setNouvelles(neuves);
     setLastPack(cartes);
+    setArrivageOuvert(true);
   };
 
   return (
@@ -105,6 +114,11 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
             </strong>
           </p>
           {packsOpened === 0 && <p className="hero__packs-invite">Aucun Arrivage ouvert : le premier est pour toi.</p>}
+          {lastPack && !arrivageOuvert && (
+            <button type="button" className="button hero__revoir" onClick={() => setArrivageOuvert(true)}>
+              Revoir le dernier Arrivage
+            </button>
+          )}
         </div>
       </section>
 
@@ -159,14 +173,17 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
       </section>
 
       {/* L'Arrivage est un dialogue du composant générique (D-035, #131) : rôle, Échap et
-          focus piégé en viennent. `lastPack` reste porté jusqu'à la fermeture. */}
-      <Dialog open={lastPack !== null} onOpenChange={(ouvert) => !ouvert && setLastPack(null)}>
+          focus piégé en viennent. `lastPack` **survit** à la fermeture (D-170) : l'accueil
+          propose de revoir le tirage, sans redistribuer de cartes. */}
+      <Dialog open={arrivageOuvert} onOpenChange={(ouvert) => !ouvert && setArrivageOuvert(false)}>
         <DialogContent className="pack-reveal">
           <DialogTitle className="sr-only">Arrivage</DialogTitle>
           <DialogDescription className="sr-only">
             Les cartes de l’Arrivage sont rangées dans ta Collection.
           </DialogDescription>
-          {lastPack && <SceneOuverture cartes={lastPack} neuves={nouvelles} onRanger={() => setLastPack(null)} />}
+          {lastPack && (
+            <SceneOuverture cartes={lastPack} neuves={nouvelles} onRanger={() => setArrivageOuvert(false)} />
+          )}
         </DialogContent>
       </Dialog>
     </div>
