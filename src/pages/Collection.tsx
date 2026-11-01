@@ -146,11 +146,11 @@ export function Collection() {
             {visible.length} affichés
           </p>
           <p className="collection__plafond muted">{HORS_ARRIVAGE} cartes ne sortent d’aucun Arrivage.</p>
-          {/* Le **rôle** de la page (#276, vitrine depuis le 30/10/2026) : ici on regarde ce qu'on
-              possède ; le Deck se compose sur sa page, et la grille n'y ajoute plus rien. L'ajout
-              d'une carte vit dans la fiche, où c'est un geste délibéré. */}
+          {/* Le **rôle** de la page (#276, vitrine depuis le 30/10/2026) : ici on parcourt le
+              catalogue, possédé ou non ; le Deck se compose sur sa page, et la grille n'y ajoute
+              plus rien. L'ajout d'une carte vit dans la fiche, où c'est un geste délibéré. */}
           <p className="collection__role">
-            Tout ce que tu possèdes : cherche, filtre, ouvre une fiche. Le Deck se compose sur{' '}
+            Tout le catalogue : cherche, filtre, ouvre une fiche. Le Deck se compose sur{' '}
             <Link to="/deck">la page Deck</Link> ; une fiche peut y ajouter sa carte.
           </p>
         </div>

@@ -7,7 +7,7 @@ import { renderWithStore } from '@/test/test-utils';
 import { ALL_CARDS } from '@/data';
 
 /**
- * **La Collection est « ce que je possède »** (#276) : on y cherche, on voit, on filtre.
+ * **La Collection parcourt le catalogue** (#276) : on y cherche, on voit, on filtre — possédé ou non.
  *
  * Elle ne porte ni les emplacements du Deck, ni sa machine à café : deux pages, deux rôles.
  * Depuis le 30/10/2026, la grille est une **vitrine** : le `+` du coin a disparu (#533), et
@@ -35,7 +35,7 @@ describe('Collection — le rôle de la page (#276)', () => {
 
     // La Collection, elle, va jusqu'au bout du catalogue : c'est son métier.
     expect(container.querySelectorAll('.card-slot')).toHaveLength(ALL_CARDS.length);
-    expect(screen.getByText(/Tout ce que tu possèdes/)).toBeInTheDocument();
+    expect(screen.getByText(/Tout le catalogue/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /la page Deck/i })).toHaveAttribute('href', '/deck');
   });
 });
