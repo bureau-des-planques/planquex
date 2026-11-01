@@ -112,8 +112,15 @@ export const SEUIL_PAQUET = 500_000;
  * `src/data/notes-resume.ts` (version, date, titre, drapeau) pour `Home`, et `versions.ts`
  * (l'historique complet) que seul le morceau **paresseux** de `/feuille-de-route` lit. Rien
  * n'a été retiré à l'écran : le principal perd 25,4 kB, gzip 78,3 → 69,5 kB.
+ *
+ * **Relevé de 66 octets le 01/11/2026** (266 645 octets) (revue de performance de l'ouverture,
+ * #565) : l'inclinaison du sachet pose `--mx`/`--my` sur le **reflet**, son seul consommateur,
+ * au lieu du sachet, et `@property` cesse de les faire hériter. Mesuré : 0,811 s → 0,276 s de
+ * recalcul de style sur 2,5 s de scène (−66 %), 1,423 s → 0,836 s de tâche (−41 %). Le code a
+ * été resserré avant de relever (une boucle sur les reflets, sans `querySelectorAll` ni tableau) ;
+ * il reste 266 645 octets.
  */
-export const PLAFOND_PRINCIPAL = 266_579;
+export const PLAFOND_PRINCIPAL = 266_645;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];

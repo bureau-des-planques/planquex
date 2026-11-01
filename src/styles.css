@@ -6042,8 +6042,7 @@ h2 {
   opacity: 0;
 }
 
-/* ───────────────────────── L'ouverture d'un Arrivage (#283) ─────────────────────────
-   Plein écran : le sachet flotte dans un faisceau, se déchire le long des pointillés, s'envole ;
+/* ───────────────────────── L'ouverture d'un Arrivage (#283) ─────────────────────────   Plein écran : le sachet flotte dans un faisceau, se déchire le long des pointillés, s'envole ;
    les cartes s'étalent face cachée, le testeur les retourne une à une, avec une mise en scène qui
    croît avec la rareté (`src/animation/ouverture/revelation.ts`), et une carte retournée ouvre sa
    fiche. La scène est **hors des bornes du combat** (D-141) : ses boucles d'ambiance sont lentes,
@@ -6075,6 +6074,39 @@ h2 {
   right: max(0.75rem, env(safe-area-inset-right));
   top: max(0.75rem, env(safe-area-inset-top));
   z-index: 80;
+}
+
+/* **Les variables de l'inclinaison ne s'héritent plus** (critique de performance du 01/11/2026) :
+   la scène les réécrit à **chaque image** pendant le balancement du sachet. Une propriété
+   personnalisée non déclarée s'hérite : le SVG du sachet (30 nœuds, deux fois : corps et bande)
+   recalculait donc son style soixante fois par seconde. `@property` les rend typées et **non
+   héritées** ; `--rx`/`--ry` ne servent qu'à la transformation du sachet, `--mx`/`--my` sont posées
+   sur le reflet lui-même, son seul consommateur (`SceneOuverture.tsx`).
+   Mesuré à 390 × 664, processeur bridé ×6, 2,5 s de scène : **0,79 s de recalcul de style avant,
+   0,21 s après ; 1,39 s de tâche avant, 0,63 s après** (`/tmp/opencode/mesure-ouverture3.mjs`).
+   Navigateurs sans `@property` : la scène reste juste, elle redevient seulement héritée. */
+@property --rx {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --ry {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --mx {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 50%;
+}
+
+@property --my {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 40%;
 }
 
 .ouverture {
@@ -6229,10 +6261,11 @@ h2 {
 }
 
 .ouverture__sachet {
+  /* `--rx`/`--ry` : l'inclinaison du sachet, écrite à chaque image par la scène. `--mx`/`--my`
+     ne sont **plus** déclarées ici : elles ne s'héritent plus (`@property` plus haut) et le reflet
+     les reçoit sur lui-même — les poser ici ne ferait rien, et laissait croire l'inverse. */
   --rx: 0deg;
   --ry: 0deg;
-  --mx: 50%;
-  --my: 40%;
   filter: drop-shadow(0 28px 36px rgb(0 0 0 / 55%))
     drop-shadow(0 0 40px color-mix(in srgb, var(--lueur) 18%, transparent));
   height: 100%;

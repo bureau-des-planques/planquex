@@ -292,8 +292,16 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       if (el) {
         el.style.setProperty('--ry', `${(inc.x * 16).toFixed(2)}deg`);
         el.style.setProperty('--rx', `${(-inc.y * 12).toFixed(2)}deg`);
-        el.style.setProperty('--mx', `${(50 + inc.x * 45).toFixed(1)}%`);
-        el.style.setProperty('--my', `${(40 + inc.y * 40).toFixed(1)}%`);
+        // **Le reflet est le seul consommateur de `--mx`/`--my`** : la variable se pose sur lui,
+        // pas sur le sachet. Sinon elle s'hérite dans tout le sachet (le SVG compris, deux fois)
+        // et chaque image recalculait le style de dizaines de nœuds pour rien — mesuré le
+        // 01/11/2026 : 0,79 s de recalcul de style sur 2,5 s, ramenés à 0,21 s.
+        const mx = `${(50 + inc.x * 45).toFixed(1)}%`;
+        const my = `${(40 + inc.y * 40).toFixed(1)}%`;
+        for (const reflet of el.getElementsByClassName('ouverture__reflet-sachet') as HTMLCollectionOf<HTMLElement>) {
+          reflet.style.setProperty('--mx', mx);
+          reflet.style.setProperty('--my', my);
+        }
       }
       raf = requestAnimationFrame(pas);
     };

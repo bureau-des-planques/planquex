@@ -89,6 +89,27 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(scene.dataset.etape).toBe('ferme');
   });
 
+  it('l’inclinaison ne s’hérite pas : le reflet porte --mx/--my, le sachet seulement --rx/--ry', () => {
+    const scene = monter();
+    const zone = scene.querySelector('[data-zone]') as HTMLElement;
+    const sachet = scene.querySelector('.ouverture__sachet') as HTMLElement;
+    const reflet = scene.querySelector('.ouverture__reflet-sachet') as HTMLElement;
+
+    // Le doigt relance l'inclinaison : le ressort tourne dans la boucle d'affichage.
+    fireEvent.pointerMove(zone, { clientX: 150, clientY: 300, pointerId: 1 });
+    attendre(120);
+
+    // `--rx`/`--ry` ne servent qu'à la transformation du sachet : elles restent sur lui.
+    expect(sachet.style.getPropertyValue('--rx')).toMatch(/deg$/);
+    expect(sachet.style.getPropertyValue('--ry')).toMatch(/deg$/);
+    // `--mx`/`--my` n'ont qu'un consommateur, le reflet. Posées sur le sachet, elles s'héritaient
+    // dans tout son sous-arbre à chaque image (0,79 s de recalcul de style sur 2,5 s, mesuré).
+    // Le contrôle mord : remettre les deux `setProperty` sur `el` fait tomber ces deux assertions.
+    expect(sachet.style.getPropertyValue('--mx')).toBe('');
+    expect(reflet.style.getPropertyValue('--mx')).toMatch(/%$/);
+    expect(reflet.style.getPropertyValue('--my')).toMatch(/%$/);
+  });
+
   it('le titre compte les cartes neuves, il n’annonce pas « cinq nouvelles cartes »', () => {
     const scene = monter();
     const titre = scene.querySelector('.ouverture__titre') as HTMLElement;
