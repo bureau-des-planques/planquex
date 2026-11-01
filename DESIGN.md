@@ -418,7 +418,7 @@ Chaque écran a ses états — **vide**, **chargement**, **erreur**, **hors lign
 | Écran | Vide | Chargement | Erreur | Hors ligne |
 |---|---|---|---|---|
 | Accueil | une Collection neuve a des cartes de départ | l'aplat de faction sous l'illustration (`.card__art`) | — | bandeau |
-| Collection | « Ta Collection est vide » ; grille vide : la cause est nommée (recherche, filtre, ou les deux) + le geste qui la résout (« Effacer la recherche » ou « Effacer les filtres ») | idem | — | bandeau |
+| Collection | « Ta Collection est vide » ; grille vide : la cause est nommée (recherche, filtre, ou les deux) + le geste qui la résout (« Effacer la recherche » quand seule la recherche agit, sinon « Tout effacer ») | idem | — | bandeau |
 | Deck | « Le deck est vide » ; « Aucune carte possédée » | idem | l'illégalité est dite (`notice--warn`) | bandeau |
 | Combat | sans objet (deck de démonstration) | « La Direction réfléchit… » pendant son tour | — | bandeau (le combat est local) |
 | Réglages | sans objet | sans objet | refus d'import annoncé (`role="alert"`) | bandeau |

@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { Collection } from './Collection';
 import { renderWithStore } from '@/test/test-utils';
 import { causeDuVide } from '@/components/cause-du-vide';
@@ -37,7 +37,14 @@ describe('Collection — finition', () => {
     fireEvent.change(screen.getByLabelText(/Faction/i), { target: { value: 'SSE' } });
     expect(screen.getByText('Aucune carte ne correspond à cette recherche et ces filtres.')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tout effacer' }));
+    // Deux boutons portent ce nom : la rangée des jetons et l'état vide. Chacun dans sa zone.
+    const jetons = within(document.querySelector('.filtres-actifs') as HTMLElement);
+    expect(jetons.getByRole('button', { name: 'Tout effacer' })).toBeInTheDocument();
+    const etatVide = within(document.querySelector('.empty') as HTMLElement);
+    expect(etatVide.getByRole('button', { name: 'Tout effacer' })).toBeInTheDocument();
+
+    // L'état vide l'annonce, et le fait : la recherche part avec les filtres.
+    fireEvent.click(etatVide.getByRole('button', { name: 'Tout effacer' }));
     expect(screen.queryByText(/Aucune carte ne correspond/)).toBeNull();
     expect(screen.getByPlaceholderText(/Chercher une carte/i)).toHaveValue('');
     expect(screen.getByLabelText(/Faction/i)).toHaveValue('ALL');
