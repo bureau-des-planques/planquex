@@ -22,9 +22,10 @@ La date exacte sera annoncée avant le reset. Rien ne part sans que ce soit dit 
 - **Ton compte** : l'alpha s'ouvre par une connexion — **Google** en un clic, ou **courriel et
   mot de passe** — et le compte est **validé à la main**. En attendant, tu **joues et tu lis**
   tout ; écrire sur le mur, voter et laisser la trace de tes combats s'ouvre une fois le compte
-  approuvé (D-088).
-- **Journée d'intégration** : quatre écrans pour les bases, au premier lancement. On peut la
-  revoir depuis Réglages.
+  approuvé (D-088). **Mot de passe oublié** : un lien part par courriel et rouvre l'écran du
+  nouveau mot de passe ; la réponse ne dit jamais si l'adresse a un compte.
+- **Journée d'intégration** : cinq étapes — l'Arrivage, la Collection et le Deck, le combat,
+  tes données, le comité — au premier lancement. On peut la revoir depuis Réglages.
 - **Arrivages** : 5 cartes à chaque ouverture — 3 communes, 1 peu commune, 1 rare au minimum.
 - **Collection** : toutes tes cartes, avec recherche, filtres par faction et par stade, et la
   fiche de chaque carte. **Les 225 cartes de base ont leur illustration**, et chaque variante

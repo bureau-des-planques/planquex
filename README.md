@@ -153,20 +153,38 @@ sont détaillés dans [`CONTRIBUTING.md`](CONTRIBUTING.md#outiller-son-agent).
 
 ## Déploiement
 
-**Un push sur `main` publie.** Le projet Vercel `planquex` est lié au dépôt ; il n'y a ni étape
-manuelle ni branche de préproduction.
+**Un tag de version publie, et rien d'autre** (D-140, #460). Une fusion sur `main` ne déploie
+plus : la production suit la release, pas le rythme des fusions. Le projet Vercel n'est lié à
+aucun dépôt — le lien Git a été coupé — et [`vercel.json`](vercel.json) porte
+`git.deploymentEnabled: false` : ni aperçu de PR, ni production à la fusion.
 
 | Événement | Ce qui se passe |
 |---|---|
-| Pull request vers `main` | la CI (contrôles, tests du noyau, tests des écrans) et une préversion Vercel — protégée par défaut par l'authentification Vercel, donc réservée à l'équipe |
-| Fusion sur `main` | la production, servie sur [`planquex.4k7.org`](https://planquex.4k7.org) |
+| Pull request vers `main` | la CI (contrôles, tests du noyau, tests des écrans) — et rien de déployé : une PR se relit par ses captures (`npm run capturer`) et son `detect:ui:page` |
+| Fusion sur `main` | **rien n'est publié** : `main` reste déployable, la production attend la release |
+| Tag `v<version>-<stage>` | [`.github/workflows/deploiement.yml`](.github/workflows/deploiement.yml) refuse un tag qui ne porte pas la version **et l'étape** de `package.json`, construit, puis publie en production avec le CLI Vercel |
+| Tag `v*` | `fichiers-generes.yml` vérifie en plus que les fichiers générés de la feuille de route (`versions.ts`, `plan-dev.ts`) sont à jour |
 | `planquex.vercel.app` | redirige en `308` vers le domaine : une seule origine, donc un seul stockage local par testeur |
 | Visite directe d'une route (`/collection`, `/deck`…) | réécrite vers `index.html` par [`vercel.json`](vercel.json) |
-| Tag `v*` | `fichiers-generes.yml` vérifie que les fichiers générés de la feuille de route (`versions.ts`, `plan-dev.ts`) sont à jour |
 
 `main` est protégée : un push direct est refusé, propriétaire compris, et les trois jobs de la CI
 sont exigés. La version suit [`docs/VERSIONS.md`](docs/VERSIONS.md) — `0.1.x` pour l'alpha, `0.2.x`
 pour la beta, `1.0.0` pour la sortie — et la version servie se lit dans **Réglages**.
+
+### Publier une release
+
+La procédure complète est [`docs/VERSIONS.md`](docs/VERSIONS.md) §4 ; les cinq gestes, dans
+l'ordre, sont : **la note** de la version à venir dans `src/data/versions.ts` (marquée
+`brouillon: true`) ; **la version** (`npm version 0.1.x --no-git-tag-version`) ; **les gardes**
+(`npm run check`, `npm test`, `npm run garde-fous`, `npm run build`, puis `npm run plan:dev` et
+`npm run notes:versions` avec `-- --verifie`) ; **le tag** `v<version>-<stage>`, poussé — c'est lui
+qui déploie ; **la release GitHub** (`--prerelease` en alpha, `--title` égal au tag), puis
+`npm run notes:versions` de nouveau pour reprendre la note publiée dans l'application et retirer
+son `brouillon`.
+
+Entre deux releases, la production ne bouge pas : c'est voulu. Un « Redeploy » du tableau de bord
+rejoue l'ancien commit du déploiement — il ne connaît plus `main`, donc il ne sert jamais un
+travail récent.
 
 ## Où lire quoi
 
