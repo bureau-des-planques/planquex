@@ -417,6 +417,31 @@ export const MUTATIONS = [
     tests: ['src/data/interim.test.ts'],
     garde:
       'la faction entière doit tenir dans les trois types d’un Deck (D-034) : sinon le Deck d’archétype ne peut pas payer une partie de ses Pressions, et la table mesure un Deck qui n’attaque pas'
+  },
+  {
+    ticket: 561,
+    titre: 'la barre d’action répète le verdict en fin de partie',
+    fichier: 'src/pages/Battle.tsx',
+    // Critique du 01/11/2026 : la barre écrivait « Rien à faire : la partie est terminée. » sous
+    // le bandeau du haut, et cette ligne de plus poussait la barre 8 px sous la fenêtre à
+    // `?scene=fin` (420 × 900 et 390 × 664, mesuré). Le bandeau du verdict porte seul la phrase.
+    motif: "{playable.length === 0 && state.phase !== 'ended' && (",
+    remplacement: '{playable.length === 0 && (',
+    tests: ['src/pages/Battle.test.tsx'],
+    garde:
+      'une phrase redite coûte la hauteur que D-167 dit rare : le geste qui relance la partie sort alors du cadre, au moment où on le cherche (D-103)'
+  },
+  {
+    ticket: 561,
+    titre: 'la place libre du Banc cesse d’être une cible de pose',
+    fichier: 'src/pages/Battle.tsx',
+    // La place est **déjà dessinée** à la taille d'une carte : elle reçoit le `playBasic` que le
+    // panneau de pose proposait 232 px plus bas, derrière un défilement.
+    motif: ') : onPoserPlace && placesPosables?.has(index) ? (',
+    remplacement: ') : false && onPoserPlace && placesPosables?.has(index) ? (',
+    tests: ['src/pages/Battle.test.tsx'],
+    garde:
+      'sans elle, poser un Planqué redemande un défilement et fait perdre l’indicateur de tour : c’est l’action la plus fréquente du jeu'
   }
 ];
 
