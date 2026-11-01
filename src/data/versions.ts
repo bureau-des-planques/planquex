@@ -60,6 +60,90 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.16',
+    date: '2026-11-01',
+    titre: 'Version 0.1.16',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Le combat',
+        texte: 'Le Stress se lit d’un coup d’œil, et la Pression dit ce qu’elle applique : plus besoin d’ouvrir la fiche pour savoir ce qui va tomber.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le score s’écrit, les gestes sonnent, et la fiche d’un Planqué dit sa flavour.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La Direction parle : vingt répliques, du commentaire sec à la provocation — jamais l’insulte à la personne.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'La fin d’une partie s’allume dans la piste d’Interventions, et la scène de fin ne double plus la phrase de la barre.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Le journal ne se superpose plus à lui-même, et sur écran large il remplit la console.'
+      },
+      {
+        groupe: 'Le combat',
+        texte: 'Au clavier et au lecteur d’écran : l’infobulle d’une carte se pose dans l’écran, le panneau de pose prend le focus et le rend, et l’état des boutons se dit.'
+      },
+      {
+        groupe: 'La Journée d’intégration',
+        texte: 'Le tutoriel n’est plus une fenêtre qui fige la page : c’est un panneau posé en haut, qui laisse faire les gestes qu’il demande.'
+      },
+      {
+        groupe: 'La Journée d’intégration',
+        texte: 'L’étape du combat se joue vraiment : une position déjà gagnable, une Pression, et la troisième Intervention.'
+      },
+      {
+        groupe: 'La Journée d’intégration',
+        texte: 'Une scène de fin tombe sur la partie scriptée — le tampon, la raison, la phrase de la Direction — et le mur du comité n’est plus exclu du parcours.'
+      },
+      {
+        groupe: 'La Journée d’intégration',
+        texte: 'On ne sort plus du parcours par accident : « Passer » reste la seule sortie, avec ce qu’elle coûte.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'Un mot de passe oublié : le lien part, et le retour ouvre l’écran du nouveau mot de passe. La réponse ne dit jamais si l’adresse a un compte.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'Le lien du serveur des testeurs s’affiche aussi sur la page de connexion, là où il sert à quelqu’un qui n’est pas encore entré.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'Les cinq services sont ceux d’un immeuble — Rez-de-chaussée, 1er, 2ème, 3ème, 4ème — et « Red Chaussée » disparaît.'
+      },
+      {
+        groupe: 'L’entrée dans le jeu',
+        texte: 'L’intitulé tiré au sort se lit en grand, sous la fonction, au lieu de se noyer dans une phrase.'
+      },
+      {
+        groupe: 'La Collection et le Deck',
+        texte: 'La grille de la Collection devient une vitrine, et sa jauge ne ment plus : elle compte les cartes tirables, pas celles qui existent.'
+      },
+      {
+        groupe: 'La Collection et le Deck',
+        texte: 'La Collection se lit au clavier et au lecteur d’écran : la recherche a un nom, le compteur s’annonce, et le nom lu d’une carte dit sa possession et son Deck.'
+      },
+      {
+        groupe: 'La Collection et le Deck',
+        texte: 'Les filtres, les Decks proposés et les versions passées se replient derrière un bouton.'
+      },
+      {
+        groupe: 'Plus léger',
+        texte: 'Les écrans se chargent à la demande, les dépendances sont découpées par famille, et l’historique des notes ne pèse plus sur l’entrée : le premier affichage est plus court de 24 kB.'
+      },
+      {
+        groupe: 'À savoir avant de jouer',
+        texte: 'L’entrée exige un compte : une session anonyme ne joue plus, et un compte refusé ne voit que la page d’attente.'
+      }
+    ]
+  },
+  {
     version: '0.1.15',
     date: '2026-10-29',
     titre: 'Version 0.1.15',

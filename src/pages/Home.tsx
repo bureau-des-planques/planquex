@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PackageOpen, Swords } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
-import { NOTES_VERSIONS, type NoteVersion } from '@/data/versions';
+import { NOTES_RESUME, type ResumeNote } from '@/data/notes-resume';
 import type { Card } from '@/data/types';
 import { useStore } from '@/store/useStore';
 import { useEstCibleJournee } from '@/components/journee-cible';
@@ -25,15 +25,15 @@ function dateLongue(jour: string): string {
 /**
  * **La dernière release publiée** (#274) : la note de la version sous les yeux si elle est
  * sortie, sinon la plus récente des notes **publiées** — un brouillon attend sa release et
- * ne s'annonce donc pas ici. La donnée vient de `src/data/versions.ts` (D-090), jamais d'un
+ * ne s'annonce donc pas ici. La donnée vient de `src/data/notes-resume.ts` (D-090), jamais d'un
  * numéro recopié ; `notes` est injectable pour que le test éprouve le cas du brouillon sans
  * dépendre de l'état du journal un jour donné.
  */
-function derniereRelease(notes: readonly NoteVersion[]): NoteVersion | undefined {
+function derniereRelease(notes: readonly ResumeNote[]): ResumeNote | undefined {
   return notes.find((note) => !note.brouillon && note.version === APP_VERSION) ?? notes.find((note) => !note.brouillon);
 }
 
-export function Home({ notes = NOTES_VERSIONS }: { notes?: readonly NoteVersion[] } = {}) {
+export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] } = {}) {
   const { owned, deck, openPack, packsOpened } = useStore();
   /** Le halo n'apparaît que si c'est **cette** étape que la Journée tient. */
   const cibleArrivage = useEstCibleJournee('arrivage');

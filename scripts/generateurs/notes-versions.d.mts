@@ -89,6 +89,13 @@ export function verifierNotes(args: {
 /** Le fichier entier : l'en-tête, les types, l'historique, et les deux fonctions. */
 export function rendreFichier(notes: NoteVersion[]): string;
 
+/**
+ * Le **résumé** des notes (`src/data/notes-resume.ts`) : version, date, titre et drapeau de
+ * brouillon, sans aucun texte de point. C'est ce que `Home` lit, et c'est ce qui garde
+ * l'historique hors du paquet principal.
+ */
+export function rendreResume(notes: NoteVersion[]): string;
+
 /** Les notes à écrire, et ce qui a été gardé ou lu. */
 export function construire(
   releases: Release[],

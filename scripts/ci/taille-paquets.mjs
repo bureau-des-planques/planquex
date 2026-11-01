@@ -103,8 +103,17 @@ export const SEUIL_PAQUET = 500_000;
  * la récupération de mot de passe vit dans `src/lib/recuperation.ts` (morceau paresseux), et
  * la coquille nue des écrans publics est une **classe** (`.page--nue`), pas une route
  * d'enveloppe — 1,4 kB puis 200 octets rendus au paquet avant ce dernier écart.
+ * **Baissé de 24 364 octets le 01/11/2026** (266 579 octets) (release 0.1.16, choix de Bastien
+ * après la CI rouge) : `Home` est la **porte d'entrée**, jamais paresseuse, et elle importait
+ * `src/data/versions.ts` pour n'afficher que le **titre** et la **date** de la dernière release.
+ * Les ~19 kB de texte des notes — 159 points, 16 versions — entraient donc dans le paquet
+ * principal, et chaque publication le poussait d'environ 1 kB. Le générateur
+ * (`scripts/generateurs/notes-versions.mjs`) écrit maintenant **deux** fichiers :
+ * `src/data/notes-resume.ts` (version, date, titre, drapeau) pour `Home`, et `versions.ts`
+ * (l'historique complet) que seul le morceau **paresseux** de `/feuille-de-route` lit. Rien
+ * n'a été retiré à l'écran : le principal perd 25,4 kB, gzip 78,3 → 69,5 kB.
  */
-export const PLAFOND_PRINCIPAL = 290_943;
+export const PLAFOND_PRINCIPAL = 266_579;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];

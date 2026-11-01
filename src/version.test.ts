@@ -47,13 +47,21 @@ function versionsEnDur(nom: string, source: string): string[] {
 const JOURNAL_DES_VERSIONS = 'data/versions.ts';
 
 /**
- * `version.ts` manipule la version, et `data/versions.ts` la raconte : tout le reste
- * doit passer par `APP_VERSION` / `APP_LABEL`.
+ * Le **résumé** du même journal (`src/data/notes-resume.ts`, généré par le même
+ * `npm run notes:versions`) : `Home` le lit pour nommer la dernière release, et il porte
+ * forcément les numéros. Même raison que le journal, et il ne contient **aucun texte de
+ * note** — c'est ce qui le garde hors du paquet principal.
+ */
+const RESUME_DES_VERSIONS = 'data/notes-resume.ts';
+
+/**
+ * `version.ts` manipule la version, `data/versions.ts` la raconte et `data/notes-resume.ts`
+ * la nomme : tout le reste doit passer par `APP_VERSION` / `APP_LABEL`.
  */
 function versionsEnDurDansSrc(): string[] {
   return fichiersSource().flatMap((fichier) => {
     const nom = fichier.slice(SRC.length);
-    if (nom === 'version.ts' || nom === JOURNAL_DES_VERSIONS) return [];
+    if (nom === 'version.ts' || nom === JOURNAL_DES_VERSIONS || nom === RESUME_DES_VERSIONS) return [];
     return versionsEnDur(nom, readFileSync(fichier, 'utf8'));
   });
 }

@@ -35,5 +35,64 @@ export interface FeaturePrevue {
 
 /** Les issues `alpha` et `beta` ouvertes, **de la plus récente à la plus ancienne**. */
 export const FEATURES_PREVUES: FeaturePrevue[] = [
-
+  {
+    numero: 545,
+    titre: 'Fusionner les pages Collection et Deck',
+    etape: 'alpha'
+  },
+  {
+    numero: 544,
+    titre: 'Les répliques de la Direction hors du tutoriel',
+    etape: 'alpha'
+  },
+  {
+    numero: 530,
+    titre: 'Connexion sans issue quand la session n\'a pas de compte lisible',
+    etape: 'alpha'
+  },
+  {
+    numero: 529,
+    titre: 'Une configuration Supabase incomplète ouvre le jeu sans garde, en silence',
+    etape: 'alpha'
+  },
+  {
+    numero: 528,
+    titre: 'Changer de compte garde le profil du précédent : B entre sans parcours',
+    etape: 'alpha'
+  },
+  {
+    numero: 504,
+    titre: 'Installation — valider le module « Banc prêt » sur iPhone et sur les navigateurs',
+    etape: 'beta'
+  },
+  {
+    numero: 499,
+    titre: 'Jalon bêta (critère 4 de D-048) : recenser les illustrations des 225 bases',
+    etape: 'beta'
+  },
+  {
+    numero: 497,
+    titre: 'Preuve de rendu : captures de la synchro',
+    etape: 'beta'
+  },
+  {
+    numero: 495,
+    titre: 'Export et import : suffisent-ils une fois le compte en place ?',
+    etape: 'beta'
+  },
+  {
+    numero: 493,
+    titre: 'Synchro de la Collection',
+    etape: 'beta'
+  },
+  {
+    numero: 492,
+    titre: 'Migration du store : importer le Deck local dans le compte',
+    etape: 'beta'
+  },
+  {
+    numero: 491,
+    titre: 'Synchro du Deck : écriture en ligne et file d\'attente hors ligne',
+    etape: 'beta'
+  }
 ];

@@ -37,6 +37,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const CIBLE = join(root, 'src/data/versions.ts');
+/**
+ * **Le résumé, à part** : `Home` (la porte d'entrée, jamais paresseuse) n'affiche que le
+ * **titre** et la **date** de la dernière release. Importer `versions.ts` y faisait entrer les
+ * ~19 kB de texte des notes — pour deux chaînes — et le paquet principal grossissait d'environ
+ * 1 kB à chaque version. Ce second fichier ne porte que ces trois champs : l'historique complet
+ * reste dans `versions.ts`, que seul l'écran paresseux `/feuille-de-route` lit.
+ */
+const CIBLE_RESUME = join(root, 'src/data/notes-resume.ts');
 const SOURCE = pathToFileURL(CIBLE).href;
 
 /**
@@ -355,8 +363,11 @@ export function noteManquante(
 }
 
 /** Une entrée, mise en forme comme le reste du dépôt : deux espaces, guillemets simples. */
+function q(texte) {
+  return `'${String(texte).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+}
+
 function rendreEntree(note) {
-  const q = (texte) => `'${String(texte).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
   const points = note.points
     .map((point) => {
       const texte = `        texte: ${q(point.texte)}`;
@@ -379,6 +390,57 @@ ${points}
 function stop(message) {
   console.error(`✖ ${message}`);
   process.exit(1);
+}
+
+/**
+ * **Le fichier de résumé** : la version, la date, le titre, et le drapeau de brouillon.
+ *
+ * C'est tout ce que `Home` lit d'une note — et c'est ce qui laisse les ~19 kB de texte des
+ * notes hors du paquet principal. Les deux fichiers sortent du **même** `notes`, donc ils ne
+ * peuvent pas se contredire : une note présente ici a son entrée dans `versions.ts`.
+ */
+export function rendreResume(notes) {
+  const corps = notes
+    .map(
+      (note) =>
+        `  {\n    version: ${q(note.version)},\n    date: ${q(note.date)},\n    titre: ${q(note.titre)}${
+          note.brouillon ? ',\n    brouillon: true' : ''
+        }\n  }`
+    )
+    .join(',\n');
+
+  return `/**
+ * **Le résumé des notes de version** — de quoi nommer une version et la dater.
+ *
+ * **Fichier généré : ne pas éditer à la main.** Il est écrit par \`npm run notes:versions\`
+ * (\`scripts/generateurs/notes-versions.mjs\`), en même temps que \`src/data/versions.ts\`.
+ *
+ * **Pourquoi deux fichiers** : \`Home\` est la porte d'entrée, et elle n'affiche d'une note que
+ * son **titre** et sa **date**. Importer \`versions.ts\` y faisait entrer tout le texte de
+ * l'historique — le paquet principal grossissait d'environ 1 kB à chaque release, et le cliquet
+ * de \`scripts/ci/taille-paquets.mjs\` le refusait. Le texte des notes ne vit donc que dans
+ * \`versions.ts\`, lu par le morceau **paresseux** de \`/feuille-de-route\`.
+ *
+ * La forme est gardée par \`scripts/generateurs/notes-versions.test.ts\` : le fichier commité doit
+ * être exactement ce que le générateur écrit.
+ */
+
+export interface ResumeNote {
+  /** Le numéro, sans le \`v\` du tag : \`0.1.16\`. */
+  version: string;
+  /** Le jour de la publication, au format \`AAAA-MM-JJ\`. */
+  date: string;
+  /** Le titre de la release : \`Version 0.1.16\`. */
+  titre: string;
+  /** Écrite d'avance : sa release n'est pas encore publiée, donc \`Home\` ne l'annonce pas. */
+  brouillon?: boolean;
+}
+
+/** Le résumé, **de la plus récente à la plus ancienne**, comme \`versions.ts\`. */
+export const NOTES_RESUME: ResumeNote[] = [
+${corps}
+];
+`;
 }
 
 /** Ce que le script a produit : les notes, et ce qu'il faut savoir sur elles. */
@@ -453,25 +515,33 @@ if (estEntree) {
   } else if (option === '--verifie') {
     const actuel = readFileSync(CIBLE, 'utf8');
     const version = versionCourante();
+    const actuelles = await notesEnPlace();
     const verdict = verifierNotes({
       actuel,
       notes,
       surGithub,
-      actuelles: await notesEnPlace(),
+      actuelles,
       version
     });
-    if (!verdict.ok) {
-      const avant = new Set((actuel.match(/version: '([^']+)'/g) ?? []).map((ligne) => ligne.slice(10, -1)));
-      const apres = new Set(notes.map((note) => note.version));
-      const absentes = notes.filter((note) => !avant.has(note.version)).map((note) => note.version);
-      const enTrop = [...avant].filter((numero) => !apres.has(numero));
-      stop(
-        'src/data/versions.ts a divergé de GitHub — lance `npm run notes:versions`.\n' +
-          (absentes.length ? `  manquantes : ${absentes.join(', ')}\n` : '') +
-          (enTrop.length ? `  en trop : ${enTrop.join(', ')}\n` : '')
-      );
+    // Le résumé suit le verdict : s'il tolère le brouillon attendu, les deux fichiers le tolèrent.
+    const attendues = verdict.tolere ? (brouillonAttendu({ notes, surGithub, actuelles, version }) ?? notes) : notes;
+    const resumeActuel = readFileSync(CIBLE_RESUME, 'utf8');
+    if (!verdict.ok || resumeActuel !== rendreResume(attendues)) {
+      if (!verdict.ok) {
+        const avant = new Set((actuel.match(/version: '([^']+)'/g) ?? []).map((ligne) => ligne.slice(10, -1)));
+        const apres = new Set(notes.map((note) => note.version));
+        const absentes = notes.filter((note) => !avant.has(note.version)).map((note) => note.version);
+        const enTrop = [...avant].filter((numero) => !apres.has(numero));
+        stop(
+          'src/data/versions.ts a divergé de GitHub — lance `npm run notes:versions`.\n' +
+            (absentes.length ? `  manquantes : ${absentes.join(', ')}\n` : '') +
+            (enTrop.length ? `  en trop : ${enTrop.join(', ')}\n` : '')
+        );
+      }
+      stop('src/data/notes-resume.ts a divergé — lance `npm run notes:versions`.');
     }
     console.log(`✔ src/data/versions.ts est à jour (${notes.length} notes, dont ${brouillons.length} brouillon(s))`);
+    console.log(`✔ src/data/notes-resume.ts est à jour (${attendues.length} résumés)`);
     if (verdict.tolere) {
       console.log(
         `  brouillon attendu sur le tag : la note ${version} est encore écrite d'avance ` +
@@ -481,10 +551,10 @@ if (estEntree) {
     }
   } else {
     writeFileSync(CIBLE, contenu);
+    writeFileSync(CIBLE_RESUME, rendreResume(notes));
     console.log(
-      `✔ src/data/versions.ts écrit — ${surGithub.length} release(s) lue(s) sur GitHub, ` +
-        `${brouillons.length} brouillon(s) conservé(s)` +
-        (brouillons.length ? ` : ${brouillons.map((note) => note.version).join(', ')}` : '')
+      `✔ src/data/versions.ts et src/data/notes-resume.ts écrits — ${surGithub.length} release(s) lue(s) ` +
+        `sur GitHub, ${brouillons.length} brouillon(s) conservé(s)`
     );
   }
 }

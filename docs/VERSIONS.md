@@ -70,7 +70,9 @@ valoir `v<version>-<stage>`, ou `v<version>` en release), `scripts/generateurs/n
 **Ne jamais écrire un numéro ni un mot d'étape dans un composant** : `src/version.test.ts`
 échoue si un `1.2.3` apparaît quelque part dans `src/`. Une seule source, `package.json`.
 **Une exception nommée** : `src/data/versions.ts` — l'historique des notes, **généré** depuis
-les releases GitHub (`npm run notes:versions`, §4). C'est l'historique, donc il nomme les
+les releases GitHub (`npm run notes:versions`, §4), et son **résumé** `src/data/notes-resume.ts`
+(même générateur : version, date, titre, sans un mot de note) que lit l'accueil pour nommer la
+dernière release — l'historique reste ainsi hors du paquet principal. C'est l'historique, donc il nomme les
 versions passées ; la version **courante**, elle, ne s'y lit pas non plus — elle vient
 d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
 
