@@ -5,6 +5,7 @@
  * entiers, comme la fiche de la Collection (`CardDetail`), mais **dans** la scène : un second
  * dialogue par-dessus celui de l'Arrivage volerait le focus et l'Échap.
  */
+import { useEffect, useRef, useState } from 'react';
 import { ACTION_KIND_META, FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
 import { CafePips } from '@/components/CafePips';
@@ -22,8 +23,27 @@ export function FicheCarte({ carte, neuve, style, disposition, onFermer }: Props
   const faction = FACTION_META[carte.faction];
   const rarete = RARITY_META[carte.rarity];
   const planque = isPlanque(carte);
+
+  /**
+   * **La fiche défile-t-elle encore ?** (D-170) À 390 × 664, le panneau mesure 254 px pour 323 px
+   * de texte : 71 px coupés, sans barre ni dégradé — et comme son bas tombe sur le pied, la
+   * dernière Pression se lisait tranchée par le bord. Le repère ne s'affiche que s'il reste du
+   * texte **sous** le viseur, et s'efface quand on arrive au bout.
+   */
+  const boite = useRef<HTMLElement>(null);
+  const [defile, setDefile] = useState(false);
+  useEffect(() => {
+    const el = boite.current;
+    if (!el) return undefined;
+    const mesurer = () => setDefile(el.scrollHeight - el.scrollTop - el.clientHeight > 8);
+    mesurer();
+    el.addEventListener('scroll', mesurer, { passive: true });
+    return () => el.removeEventListener('scroll', mesurer);
+  }, [carte.id, disposition]);
+
   return (
     <section
+      ref={boite}
       className="ouverture__fiche"
       data-disposition={disposition}
       aria-label={`Fiche : ${carte.name}`}
@@ -111,6 +131,12 @@ export function FicheCarte({ carte, neuve, style, disposition, onFermer }: Props
       )}
 
       <p className="ouverture__fiche-flavour">« {carte.flavor} »</p>
+
+      {defile && (
+        <p className="ouverture__fiche-suite" aria-hidden="true">
+          La suite ↓
+        </p>
+      )}
     </section>
   );
 }

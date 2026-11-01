@@ -2,6 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { Home } from './Home';
+import { useStore } from '@/store/useStore';
 import { renderWithStore } from '@/test/test-utils';
 
 describe("Home — écran d'accueil", () => {
@@ -49,6 +50,29 @@ describe("Home — écran d'accueil", () => {
     await waitFor(() => {
       expect(screen.queryByText(/Arrivage : 5 cartes/i)).not.toBeInTheDocument();
     });
+  });
+
+  it('garde le tirage après la fermeture et le rejoue sans ouvrir de paquet', async () => {
+    renderWithStore(<Home />, { tutorielVu: true, pasAPasCombatVu: true });
+    fireEvent.click(screen.getByRole('button', { name: /Ouvrir un Arrivage/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Arrivage : 5 cartes/i)).toBeInTheDocument();
+    });
+    const ouverts = useStore.getState().packsOpened;
+
+    // Fermer au milieu ne perd plus le tirage (D-170) : les cartes sont déjà acquises, mais le
+    // seul écran qui dit *ce qu'on a gagné* ne doit pas disparaître pour de bon.
+    fireEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
+    await waitFor(() => {
+      expect(screen.queryByText(/Arrivage : 5 cartes/i)).not.toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Revoir le dernier Arrivage/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/Arrivage : 5 cartes/i)).toBeInTheDocument();
+    });
+    // Le contrôle mord : revoir n'est pas rouvrir — aucun paquet de plus, aucune carte de plus.
+    expect(useStore.getState().packsOpened).toBe(ouverts);
   });
 
   it("incrémente le compteur d'Arrivages ouverts", () => {

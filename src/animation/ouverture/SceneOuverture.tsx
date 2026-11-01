@@ -135,7 +135,6 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     reduit ? { phase: 'ouvert', dechirure: 1, sens: 1 } : creer()
   );
   const [apres, setApres] = useState<Apres | null>(() => (reduit ? 'ouvert' : null));
-  const [refermant, setRefermant] = useState(false);
   const [presse, setPresse] = useState(false);
   /** Rejoue l'éclat qui parcourt les pointillés : un appui tombé à côté le rappelle. */
   const [rappel, setRappel] = useState(0);
@@ -148,19 +147,21 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const [taille, setTaille] = useState({ largeur: 390, hauteur: 560 });
 
   /**
-   * **L'écran est étroit** (moins de 420 px, D-142) : c'est la largeur où une carte étalée
-   * fait 118 px de large et où son texte ne se lit plus (critique du 01/11/2026). La scène
-   * s'y comporte autrement : la carte prend le **format compact** de `CardView` (libellés
-   * abrégés, pas de flavour — la fiche les donne entiers), et le **premier tap** sur une
-   * carte face cachée ouvre sa fiche, seule surface de lecture à cette taille.
+   * **La carte étalée est-elle trop petite pour se lire ?** (D-170, critique du 01/11/2026).
    *
-   * `matchMedia` d'abord, parce qu'il suit la fenêtre sans dépendre d'une mesure ; à défaut
-   * (environnement sans média), la largeur mesurée de la scène.
+   * Ce qui décide n'est pas la largeur de la fenêtre mais **la taille rendue** : `poseRecap`
+   * plafonne l'échelle à 1 (une carte de 220 px) et la réduit ensuite par `transform: scale()`,
+   * ce qui divise les polices en silence — les planchers typographiques sont écrits en `em` de
+   * carte, donc ils ne voient rien. Mesuré : échelle 0,537 à 390 (nom à 6,2 px), **0,783 à
+   * 420** (nom à 8,8 px, effet à 6,4), 1 à 1280.
+   *
+   * D-169 posait le seuil sur la fenêtre (419,98 px) : la référence du projet, 420 × 900,
+   * tombait donc du mauvais côté — moins lisible qu'un iPhone plus petit, et sans secours
+   * automatique. Sous l'échelle 1, le premier tap ouvre la fiche ; au-dessus, les deux temps
+   * restent (un tap retourne, deux lisent).
    */
-  const etroit =
-    typeof window.matchMedia === 'function'
-      ? window.matchMedia('(max-width: 419.98px)').matches
-      : taille.largeur > 0 && taille.largeur < 420;
+  const echelleEtalage = poseRecap(0, nombre, taille.largeur, taille.hauteur).echelle;
+  const cartePetite = echelleEtalage < 1;
 
   const racine = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLDivElement>(null);
@@ -471,7 +472,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         // texte 6 à 8 px, donc la fiche s'ouvre d'elle-même après le retournement. Sinon la
         // récompense resterait une vignette illisible (critique du 01/11/2026). `f ?? index`
         // : si une autre carte a déjà ouvert sa fiche, on ne la remplace pas.
-        if (etroit) plus(560, () => setFiche((f) => f ?? index));
+        if (cartePetite) plus(560, () => setFiche((f) => f ?? index));
         return;
       }
       const moi = (jeton.current += 1);
@@ -486,12 +487,12 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
           if (jeton.current === moi) {
             poser();
             // Après la mise en scène, la fiche prend le relais sur écran étroit (idem ci-dessus).
-            if (etroit) setFiche(index);
+            if (cartePetite) setFiche(index);
           }
         });
       });
     },
-    [cartes, enCours, etroit, feter, plus, poser, retournees]
+    [cartePetite, cartes, enCours, feter, plus, poser, retournees]
   );
 
   // Toutes retournées et reposées : la révélation est finie.
@@ -509,7 +510,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         poser();
         // Sur écran étroit, toucher la carte au centre veut dire « je veux la lire » : la
         // fiche s'ouvre, comme après une révélation simple (critique du 01/11/2026).
-        if (etroit) setFiche(index);
+        if (cartePetite) setFiche(index);
       }
       return;
     }
@@ -572,13 +573,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     tire.current = false;
     const suivant = relacher(etat);
     setEtat(suivant);
-    if (suivant.phase === 'ouvert') {
-      lancerOuverture();
-      return;
-    }
-    // La bande retombe : on garde le découpage le temps que le ressort la ramène.
-    setRefermant(true);
-    plus(280, () => setRefermant(false));
+    if (suivant.phase === 'ouvert') lancerOuverture();
+    // Sous le seuil, **la bande ne retombe plus** : la déchirure reste acquise et le geste
+    // suivant reprend où il s'est arrêté (D-170). Avant, elle se refermait sans un mot.
   };
 
   const surSortieSachet = (): void => {
@@ -658,7 +655,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     particules.current?.ambiance(etape !== 'ouvert');
   }, [etape]);
 
-  const decoupe = etat.phase !== 'ferme' || refermant || apres === 'ouverture';
+  const decoupe = etat.phase !== 'ferme' || apres === 'ouverture';
   const p = etat.dechirure;
   const sens = etat.sens;
 
@@ -728,7 +725,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       if (enCours) return '…';
       // Sur un écran étroit, le tap ne fait pas que retourner : il ouvre la fiche. La
       // consigne dit donc ce qui arrive, pas l'étape intermédiaire (critique du 01/11/2026).
-      return etroit
+      return cartePetite
         ? `Touche une carte pour la lire · ${nombreRetournees} / ${nombre}`
         : `Touche une carte pour la retourner · ${nombreRetournees} / ${nombre}`;
     }
@@ -888,7 +885,11 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
               >
                 <div className="ouverture__retourne">
                   <div className="ouverture__face">
-                    <CardView card={carte} compact={etroit} />
+                    {/* **`calme` : la carte n'est pas un bouton dans un bouton** (D-170). Sans lui,
+                        `CardView` rend un `<button>` à l'intérieur du `<li role="button">` — deux arrêts
+                        de tabulation par carte, dont un nom accessible de 177 caractères. Il impose
+                        aussi la vignette, qui est le bon gabarit pour une carte de 220 px au plus. */}
+                    <CardView card={carte} calme />
                     {auMoins(niveau, 'rare') && <span className="ouverture__holo" aria-hidden="true" />}
                     <span className="ouverture__reflet-fiche" aria-hidden="true" />
                   </div>

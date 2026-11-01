@@ -53,24 +53,18 @@ function monter(onRanger = () => undefined) {
 }
 
 /**
- * **Un écran étroit** (D-169) : jsdom ne calcule aucun média, donc on ment sur `matchMedia` —
- * la seule bascule que la scène lit (`(max-width: 419.98px)`). Tout le reste reste faux, y
- * compris `prefers-reduced-motion`.
+ * **Un écran d'une taille donnée** (D-170) : jsdom n'a pas de mise en page (`clientWidth` vaut 0),
+ * donc la scène garde sa taille par défaut. On ment sur la mesure, ce qui est exactement ce que
+ * la bascule lit : l'échelle des cartes étalées, et donc leur taille rendue.
  */
-function ecranEtroit(): () => void {
-  const initial = window.matchMedia;
-  window.matchMedia = ((query: string) => ({
-    matches: query.includes('419.98px'),
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn()
-  })) as unknown as typeof window.matchMedia;
+function ecranTaille(largeur: number, hauteur: number): () => void {
+  const l = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+  const h = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
+  Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, get: () => largeur });
+  Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, get: () => hauteur });
   return () => {
-    window.matchMedia = initial;
+    if (l) Object.defineProperty(HTMLElement.prototype, 'clientWidth', l);
+    if (h) Object.defineProperty(HTMLElement.prototype, 'clientHeight', h);
   };
 }
 
@@ -150,7 +144,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(scene.dataset.dechirure).toBe('0.00');
   });
 
-  it('un geste annulé referme le sachet, il ne le laisse pas entrouvert', () => {
+  it('un geste annulé garde la déchirure acquise, le sachet ne se referme pas', () => {
     const scene = monter();
     const zone = scene.querySelector('[data-zone]') as HTMLElement;
     fireEvent.pointerDown(zone, { clientX: 10, clientY: 44, pointerId: 1 });
@@ -160,7 +154,9 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(Number(scene.dataset.dechirure)).toBeGreaterThan(0.5);
     fireEvent.pointerCancel(zone, { pointerId: 1 });
     expect(scene.dataset.etape).toBe('ferme');
-    expect(scene.dataset.dechirure).toBe('0.00');
+    // D-170 : sous le seuil, la déchirure reste où le doigt l'a laissée. Avant, elle revenait à
+    // 0 sans un mot — un geste raté était perdu, et le test d'alors l'exigeait.
+    expect(Number(scene.dataset.dechirure)).toBeGreaterThan(0.5);
   });
 
   it('au doigt : la déchirure ouvre, et les cartes sortent lentement avant de s’étaler face cachée', () => {
@@ -243,8 +239,19 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(within(scene).queryByRole('region')).toBeNull();
   });
 
-  it('sous 420 px, le premier tap retourne la carte et ouvre sa fiche (D-169)', () => {
-    const rendre = ecranEtroit();
+  it('une carte n’est pas un bouton dans un bouton : un seul arrêt de tabulation par carte', () => {
+    const scene = monter();
+    fireEvent.click(within(scene).getByRole('button', { name: /Tout afficher/ }));
+
+    // D-170 : `CardView` en `calme` rend un `div`. Avant, chaque carte portait un second bouton
+    // dont le nom accessible était **tout le texte de la carte** (177 caractères mesurés) :
+    // deux arrêts de tabulation par carte, et une structure ARIA invalide.
+    expect(scene.querySelectorAll('.ouverture__carte[role="button"]')).toHaveLength(5);
+    expect(scene.querySelectorAll('.ouverture__carte button')).toHaveLength(0);
+  });
+
+  it('sur une petite carte, le premier tap retourne la carte et ouvre sa fiche (D-170)', () => {
+    const rendre = ecranTaille(390, 664);
     try {
       const scene = monter();
       jusquALaRevelation(scene);
@@ -262,16 +269,21 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     }
   });
 
-  it('au-dessus de 420 px, un tap retourne et le second ouvre la fiche (D-169)', () => {
-    const scene = monter();
-    jusquALaRevelation(scene);
-    fireEvent.click(carte(scene, 0));
-    attendre(LONGTEMPS);
-    // Le contrôle mord : sur écran large, le premier tap ne doit **pas** ouvrir la fiche.
-    expect(carte(scene, 0).dataset.fiche).toBeUndefined();
+  it('sur une carte à sa taille pleine (1280), un tap retourne et le second ouvre la fiche', () => {
+    const rendre = ecranTaille(1280, 800);
+    try {
+      const scene = monter();
+      jusquALaRevelation(scene);
+      fireEvent.click(carte(scene, 0));
+      attendre(LONGTEMPS);
+      // Le contrôle mord : à l'échelle 1, le premier tap ne doit **pas** ouvrir la fiche.
+      expect(carte(scene, 0).dataset.fiche).toBeUndefined();
 
-    fireEvent.click(carte(scene, 0));
-    expect(carte(scene, 0).dataset.fiche).toBe('oui');
+      fireEvent.click(carte(scene, 0));
+      expect(carte(scene, 0).dataset.fiche).toBe('oui');
+    } finally {
+      rendre();
+    }
   });
 
   it('« Tout afficher » retourne tout, de n’importe quelle étape', () => {

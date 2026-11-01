@@ -894,56 +894,35 @@ try {
       );
       await page.waitForTimeout(1200);
 
-      // **Deux mesures que la critique du 01/11/2026 a rendues nécessaires** (D-169) : la pastille
-      // « Nouvelle » ne recouvre pas le nom de la carte, et la ligne Vulnérabilité / Rotation ne
-      // sort pas de la carte. Elles se mesurent ici, dans le navigateur, parce que jsdom ne
-      // calcule aucune mise en page — et toutes deux échouaient avant le correctif.
-      //
-      // **Pourquoi deux gabarits** : la pastille déborde surtout à 390 × 664, où la carte fait
-      // 118 px de haut (à 420 elle est 46 % plus haute et le débordement se réduit à 2 px) ;
-      // la ligne Vulnérabilité / Rotation, elle, ne se coupe qu'à partir de 420, où la carte
-      // reprend son gabarit complet. Un seul gabarit laisserait passer l'un des deux.
-      const mesurerLisible = () =>
-        page.evaluate(() => {
-          const R = (el) => el.getBoundingClientRect();
-          const aire = (a, b) =>
-            Math.max(0, Math.min(R(a).right, R(b).right) - Math.max(R(a).left, R(b).left)) *
-            Math.max(0, Math.min(R(a).bottom, R(b).bottom) - Math.max(R(a).top, R(b).top));
-          return [...document.querySelectorAll('.ouverture__carte')].map((carte, i) => {
-            const nom = carte.querySelector('.card__name');
-            const pastille = carte.querySelector('.ouverture__neuve');
-            const bas = carte.querySelector('.card__bas');
-            return {
-              i,
-              recouvrement: nom && pastille ? Math.round(aire(nom, pastille)) : 0,
-              coupe: bas ? bas.scrollWidth - bas.clientWidth : 0
-            };
-          });
-        });
-      const lisible = await mesurerLisible();
+      // **La pastille « Nouvelle » ne recouvre pas le nom de la carte** (D-169, D-170). Elle se
+      // mesure à **390 × 664**, le gabarit où la carte est la plus petite : la pastille est
+      // contre-échelonnée, donc elle ne rétrécit pas avec elle, et c'est là qu'elle pèse le plus.
+      // La ligne Vulnérabilité / Rotation n'est plus mesurée ici : depuis D-170 la carte de
+      // l'Arrivage est **toujours** la vignette compacte (« Vuln. / Rot. »), qui ne déborde pas ;
+      // la règle `@container` du gabarit complet est gardée par `styles-ouverture.test.ts`, et
+      // son sujet réel est la fiche d'une carte à 1280.
       await page.setViewportSize({ width: 390, height: 664 });
       await page.waitForTimeout(500);
-      const lisibleTelephone = await mesurerLisible();
+      const pastilles = await page.evaluate(() => {
+        const R = (el) => el.getBoundingClientRect();
+        const aire = (a, b) =>
+          Math.max(0, Math.min(R(a).right, R(b).right) - Math.max(R(a).left, R(b).left)) *
+          Math.max(0, Math.min(R(a).bottom, R(b).bottom) - Math.max(R(a).top, R(b).top));
+        return [...document.querySelectorAll('.ouverture__carte')].map((carte, i) => {
+          const nom = carte.querySelector('.card__name');
+          const pastille = carte.querySelector('.ouverture__neuve');
+          return { i, recouvrement: nom && pastille ? Math.round(aire(nom, pastille)) : 0 };
+        });
+      });
       await page.setViewportSize(VIEWPORT);
 
-      for (const [gabarit, mesures] of [
-        ['420 × 900', lisible],
-        ['390 × 664', lisibleTelephone]
-      ]) {
-        for (const carte of mesures) {
-          if (carte.recouvrement > 0) {
-            problems.push(
-              `${slug} · à ${gabarit}, la pastille « Nouvelle » recouvre le nom de la carte ${carte.i + 1} ` +
-                `(${carte.recouvrement} px²) : le mot qui dit ce qu’on vient de gagner est masqué ` +
-                'par l’étiquette qui le félicite'
-            );
-          }
-          if (carte.coupe > 0) {
-            problems.push(
-              `${slug} · à ${gabarit}, la carte ${carte.i + 1} coupe sa ligne Vulnérabilité / Rotation ` +
-                `(${carte.coupe} px hors de la carte) : on lit « … ROTAT » au lieu de la rotation`
-            );
-          }
+      for (const carte of pastilles) {
+        if (carte.recouvrement > 0) {
+          problems.push(
+            `${slug} · à 390 × 664, la pastille « Nouvelle » recouvre le nom de la carte ${carte.i + 1} ` +
+              `(${carte.recouvrement} px²) : le mot qui dit ce qu’on vient de gagner est masqué ` +
+              'par l’étiquette qui le félicite'
+          );
         }
       }
     } else if (route === ROUTE_COMBAT) {

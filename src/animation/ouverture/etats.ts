@@ -25,6 +25,12 @@ export interface EtatOuverture {
   dechirure: number;
   /** Le bord d'où part la déchirure, décidé par l'appui. */
   sens: Sens;
+  /**
+   * **La déchirure déjà acquise au moment de l'appui** (D-170) : `avancer` mesure le geste depuis
+   * ce point, pas depuis zéro. Sans lui, relâcher à mi-course ramenait la valeur à 0 et le geste
+   * suivant repartait de l'autre bout — c'est ce qui rendait un geste raté muet **et** perdu.
+   */
+  depart?: number;
 }
 
 export interface Geometrie {
@@ -61,7 +67,8 @@ export function surLaLigne(etat: EtatOuverture, y: number, geo: Geometrie): bool
  */
 export function demarrer(etat: EtatOuverture, x: number, geo: Geometrie): EtatOuverture {
   if (etat.phase !== 'ferme') return etat;
-  return { phase: 'dechirure', dechirure: 0, sens: x <= geo.largeur / 2 ? 1 : -1 };
+  // La déchirure **acquise** reste : un geste interrompu se reprend là où il s'est arrêté (D-170).
+  return { phase: 'dechirure', dechirure: etat.dechirure, depart: etat.dechirure, sens: x <= geo.largeur / 2 ? 1 : -1 };
 }
 
 /**
@@ -73,7 +80,7 @@ export function demarrer(etat: EtatOuverture, x: number, geo: Geometrie): EtatOu
 export function avancer(etat: EtatOuverture, dx: number, geo: Geometrie): EtatOuverture {
   if (etat.phase !== 'dechirure') return etat;
   const course = Math.max(1, geo.largeur * COURSE_DECHIRURE);
-  const p = Math.min(1, Math.max(0, (dx * etat.sens) / course));
+  const p = Math.min(1, Math.max(0, (etat.depart ?? 0) + (dx * etat.sens) / course));
   return { ...etat, dechirure: p };
 }
 
@@ -81,11 +88,19 @@ export function avancer(etat: EtatOuverture, dx: number, geo: Geometrie): EtatOu
  * Le doigt s'est levé — ou le geste a été annulé (`pointercancel`, `lostpointercapture`), ce qui
  * revient au même : un geste annulé est un geste relâché.
  */
+/**
+ * Le doigt s'est levé.
+ *
+ * Sous le seuil, la déchirure **reste acquise** (D-170) : la bande ne se referme pas, le geste
+ * suivant reprend où l'on s'est arrêté. Avant, elle revenait à 0 — et comme rien ne le disait,
+ * un premier testeur qui s'arrêtait à mi-course n'apprenait ni qu'il était près, ni qu'il fallait
+ * aller au bout : c'était le seul geste obligatoire de l'écran, et son échec était muet.
+ */
 export function relacher(etat: EtatOuverture): EtatOuverture {
   if (etat.phase !== 'dechirure') return etat;
   return etat.dechirure >= SEUIL_DECHIRURE
     ? { ...etat, phase: 'ouvert', dechirure: 1 }
-    : { ...etat, phase: 'ferme', dechirure: 0 };
+    : { ...etat, phase: 'ferme', dechirure: etat.dechirure };
 }
 
 /** Les phases franchies par un geste, pour les moments à sonoriser (#378) — jamais un effet ici. */
