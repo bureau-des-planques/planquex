@@ -18,6 +18,9 @@ import type { Compte } from '@/lib/comptes';
  * 4. un compte **approuvé** → le jeu ;
  * 5. un compte **refusé** → l'attente, sa raison, et lui seul.
  *
+ * Et deux cas de configuration : **sans base**, elle laisse passer (avant D-088) ; une
+ * configuration **cassée** affiche le refus au lieu du jeu (#529).
+ *
  * Et le cas de la base en retard : un compte réel dont la ligne est illisible traverse
  * (`compte: null`, `erreur` renseignée) — D-088 veut que l'erreur de lecture ne ferme pas
  * l'entrée.
@@ -44,6 +47,7 @@ const SESSION_ANONYME = { id: 'appareil-anonyme', courriel: '', anonyme: true };
 function poser(etat: Partial<ReturnType<typeof useComptes.getState>> = {}) {
   useComptes.setState({
     configure: true,
+    configurationCassee: null,
     chargement: false,
     session: null,
     compte: null,
@@ -133,6 +137,20 @@ describe('la garde d’entrée (D-088, D-156)', () => {
     poser({ configure: false });
     rendre('/');
     expect(screen.getByText('le bureau')).toBeInTheDocument();
+  });
+
+  it('une configuration cassée affiche le refus, et n’ouvre ni le jeu ni la connexion (#529)', () => {
+    // Sous le code d'avant #529, `configure` valait `false` et la garde laissait passer :
+    // une alpha réservée redevenait publique en silence.
+    poser({
+      configure: false,
+      configurationCassee: 'Configuration Supabase incomplète : VITE_SUPABASE_ANON_KEY manque.'
+    });
+    rendre('/');
+    expect(screen.queryByText('le bureau')).toBeNull();
+    expect(screen.queryByText(/la connexion/)).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: /mal configurée/ })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/VITE_SUPABASE_ANON_KEY manque/);
   });
 
   it('au premier rendu, attend la session au lieu de renvoyer un testeur déjà connecté', () => {

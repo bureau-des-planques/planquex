@@ -29,6 +29,7 @@ import { LogIn } from 'lucide-react';
 import { RetourEcran } from '@/components/RetourEcran';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { ParcoursProfil } from '@/components/ParcoursProfil';
+import { RefusConfiguration } from '@/components/RefusConfiguration';
 import { estApprouve } from '@/lib/comptes';
 import { changerMotDePasse, recuperationMotDePasse } from '@/lib/recuperation';
 import { etapeDuProfil } from '@/lib/profil';
@@ -51,6 +52,7 @@ export function Connexion() {
   const navigate = useNavigate();
   const location = useLocation();
   const configure = useComptes((state) => state.configure);
+  const configurationCassee = useComptes((state) => state.configurationCassee);
   const chargement = useComptes((state) => state.chargement);
   const session = useComptes((state) => state.session);
   const compte = useComptes((state) => state.compte);
@@ -221,6 +223,10 @@ export function Connexion() {
       </div>
     );
   }
+
+  // Une configuration **cassée** n'est pas « pas de base » (#529) : on ne propose pas de
+  // connexion sur un déploiement fautif, on dit ce qui cloche.
+  if (configurationCassee) return <RefusConfiguration raison={configurationCassee} />;
 
   if (!configure) {
     return (

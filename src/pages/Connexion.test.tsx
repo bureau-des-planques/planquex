@@ -69,6 +69,7 @@ function poser(
 ) {
   useComptes.setState({
     configure: true,
+    configurationCassee: null,
     chargement: false,
     session: null,
     compte: null,
@@ -111,6 +112,18 @@ describe('sans configuration, l’écran ne propose rien (comportement d’avant
     expect(screen.queryByRole('button', { name: /Continuer avec Google/ })).toBeNull();
     expect(screen.queryByLabelText(/Mot de passe/)).toBeNull();
     expect(screen.getByRole('link', { name: /Retour au bureau/ })).toHaveAttribute('href', '/');
+  });
+
+  it('une configuration cassée n’est pas « pas de base » : l’écran dit le déploiement fautif (#529)', () => {
+    poser({
+      configure: false,
+      configurationCassee: 'Configuration Supabase incomplète : VITE_SUPABASE_ANON_KEY manque.'
+    });
+    rendre();
+
+    expect(screen.queryByRole('heading', { level: 1, name: /Pas de compte sans base/ })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1, name: /mal configurée/ })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/incomplète/);
   });
 });
 
