@@ -1,4 +1,4 @@
-import { act } from 'react';
+import { act, Profiler } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ALL_CARDS } from '@/data';
@@ -124,6 +124,45 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(sachet.style.getPropertyValue('--mx')).toBe('');
     expect(reflet.style.getPropertyValue('--mx')).toMatch(/%$/);
     expect(reflet.style.getPropertyValue('--my')).toMatch(/%$/);
+  });
+
+  it('le glissement du doigt ne re-rend pas la scène : la déchirure avance par le style', () => {
+    let rendus = 0;
+    render(
+      <Profiler id="ouverture" onRender={() => (rendus += 1)}>
+        <SceneOuverture cartes={CARTES} neuves={new Set([0, 3])} onRanger={() => undefined} />
+      </Profiler>
+    );
+    const scene = screen.getByTestId('ouverture');
+    const zone = scene.querySelector('[data-zone]') as HTMLElement;
+    const sachet = scene.querySelector('.ouverture__sachet') as HTMLElement;
+
+    fireEvent.pointerDown(zone, { clientX: 10, clientY: 44, pointerId: 1 });
+    attendre(50);
+    const avant = rendus;
+    for (let i = 1; i <= 40; i += 1) {
+      fireEvent.pointerMove(zone, { clientX: 10 + i * 6, clientY: 44, pointerId: 1 });
+    }
+
+    // Le contrôle mord : sous l'état réactif d'avant, chaque `pointermove` écrivait `setEtat` et
+    // commitait — ces deux assertions tombaient (plusieurs dizaines de rendus pour 40 mouvements).
+    expect(rendus).toBe(avant);
+    // La déchirure avance quand même : écrite sur ses trois consommateurs, en style en ligne.
+    const bande = scene.querySelector('.ouverture__bande') as HTMLElement;
+    const interieur = scene.querySelector('.ouverture__interieur') as HTMLElement;
+    const fente = scene.querySelector('.ouverture__fente') as HTMLElement;
+    expect(Number(bande.style.getPropertyValue('--p'))).toBeGreaterThan(0.4);
+    expect(bande.style.getPropertyValue('--sens')).toBe('1');
+    expect(interieur.style.getPropertyValue('--p')).toBe(bande.style.getPropertyValue('--p'));
+    expect(fente.style.getPropertyValue('--p')).toBe(bande.style.getPropertyValue('--p'));
+    // `--p`/`--sens` ne sont plus posées sur le sachet : elles s'y héritaient dans tout son
+    // sous-arbre (les deux SVG de la Pochette) à chaque mouvement.
+    expect(sachet.style.getPropertyValue('--p')).toBe('');
+    expect(sachet.style.getPropertyValue('--sens')).toBe('');
+    // Le relâchement, lui, change de phase : un rendu unique, et le sachet s'ouvre.
+    fireEvent.pointerUp(zone, { clientX: 200, clientY: 44, pointerId: 1 });
+    expect(rendus).toBeGreaterThan(avant);
+    expect(scene.dataset.etape).toBe('ouverture');
   });
 
   it('le titre compte les cartes neuves, il n’annonce pas « cinq nouvelles cartes »', () => {
