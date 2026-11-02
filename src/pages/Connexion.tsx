@@ -103,6 +103,10 @@ export function Connexion() {
   // approuvé, le bureau sinon. Un compte **refusé** n'a rien à faire dans le parcours : la
   // seule page qui lui reste est l'attente, qui dit pourquoi (D-156 (3)).
   const refuse = compte?.etat === 'refuse';
+  const sessionAnonyme = Boolean(session?.anonyme);
+  // L'identité vient de la session, pas de la ligne `comptes` (D-156). Une ligne absente ou
+  // illisible ne transforme donc pas une session réelle en personne à qui redemander un mot de passe.
+  const compteIllisible = Boolean(session && !session.anonyme && !compte);
   // Une lecture de profil en échec n'est pas « pas de profil » : sans cette distinction, un
   // testeur de l'étape 3 revoyait le formulaire du pseudo, et son second insert échouait.
   const profilIllisible = Boolean(session && compte && profilCharge && lectureEchouee && !profil);
@@ -174,7 +178,7 @@ export function Connexion() {
 
   // Le lien de récupération ouvre une session : on demande le mot de passe **avant** de
   // renvoyer qui que ce soit vers le bureau (D-159).
-  if (recuperation && session) {
+  if (recuperation && session && !session.anonyme) {
     return (
       <div className="page page--nue">
         <section className="section">
@@ -252,6 +256,78 @@ export function Connexion() {
           <p className="m-0 text-md text-ink-muted" role="status">
             Vérification de ta session…
           </p>
+        </section>
+      </div>
+    );
+  }
+
+  // Une identité anonyme n'est pas un compte (#527, D-156). La connexion ne doit pas faire
+  // comme si elle était dehors : elle ferme cette session, puis la personne pourra choisir
+  // une vraie identité.
+  if (sessionAnonyme) {
+    return (
+      <div className="page page--nue">
+        <section className="section panel" aria-labelledby="session-anonyme-titre">
+          <h1 id="session-anonyme-titre">Cette session n’est pas un compte</h1>
+          <p className="notice notice--warn m-0" role="alert">
+            Ta session anonyme ne donne pas accès au jeu. Déconnecte-toi pour choisir un compte.
+          </p>
+          <div className="actions actions--tight">
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => void deconnecter()}
+              disabled={chargement}
+            >
+              {chargement ? 'Déconnexion…' : 'Me déconnecter'}
+            </button>
+          </div>
+          {erreur && (
+            <p className="notice notice--warn m-0" role="alert">
+              {erreur}
+            </p>
+          )}
+        </section>
+      </div>
+    );
+  }
+
+  // La session confirme l'identité, mais la ligne de compte ne répond pas (ou manque dans
+  // une base en retard). On ne peut pas connaître son état d'approbation : l'erreur est dite,
+  // on propose de relire, et on ne ferme pas l'entrée pour autant (D-088, D-156).
+  if (compteIllisible) {
+    return (
+      <div className="page page--nue">
+        <section className="section panel" aria-labelledby="compte-illisible-titre">
+          <h1 id="compte-illisible-titre">La ligne de ton compte est illisible</h1>
+          {chargement ? (
+            <p className="m-0 text-md text-ink-muted" role="status">
+              Lecture de ton compte…
+            </p>
+          ) : (
+            <>
+              <p className="notice notice--warn m-0" role="alert">
+                {erreur ?? 'La base n’a pas renvoyé ta ligne de compte.'}
+              </p>
+              <p className="muted max-w-[64ch]">
+                Ta session est active : tu peux entrer. Si cela dure, signale cet incident.
+              </p>
+            </>
+          )}
+          <div className="actions actions--tight">
+            <button type="button" className="button" onClick={() => void rafraichir()} disabled={chargement}>
+              {chargement ? 'Lecture…' : 'Revérifier mon compte'}
+            </button>
+            {!chargement && (
+              <button
+                type="button"
+                className="button button--primary"
+                onClick={() => navigate(destination ?? '/', { replace: true })}
+              >
+                Entrer dans le bureau
+              </button>
+            )}
+          </div>
         </section>
       </div>
     );
