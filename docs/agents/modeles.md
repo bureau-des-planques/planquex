@@ -29,7 +29,7 @@ proprement — pas de timeout, pas d'erreur de fournisseur, reset prouvé).
 |---|---|---|---|
 | `opencode/deepseek-v4.1-flash-free` | **3/3** | **27–47 s** | maillon 1 |
 | `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` | 3/3 | 42–71 s | maillon 2 |
-| `openrouter/thinkingmachines/inkling:free` | 3/3 | 26–145 s | maillon 3 |
+| ~~`openrouter/thinkingmachines/inkling:free`~~ | 3/3 | 26–145 s | **disparu du catalogue** (02/11/2026) |
 | `opencode/nemotron-3.5-super-vl-free` | 2/3 | 45–80 s | réserve |
 | `openrouter/cohere/north-mini-code:free` | 1/3 | 50 → 180 s (coupé) | écarté |
 | `nvidia/*` (routage NVIDIA) | 1/6 | — | **inutilisable** |
@@ -52,9 +52,12 @@ proprement — pas de timeout, pas d'erreur de fournisseur, reset prouvé).
    **moins chère en tokens et fait moins d'appels d'outils** que `none`
    (`bench(#12)`).
 2. **Repli** : `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`, puis
-   `openrouter/thinkingmachines/inkling:free` — l'ordre de `chaineDeRepli`
-   dans `~/.config/opencode/agents.config.json` (repli appliqué après un 429,
-   avec mise en cooldown du fournisseur).
+   ~~`openrouter/thinkingmachines/inkling:free`~~ **disparu du catalogue le 02/11/2026** :
+   il ne reste qu'`inkling-small`, **payant**. Le troisième maillon gratuit du
+   benchmark n'existe donc plus ; `~/.config/opencode/agents.config.json`
+   porte encore l'ancien nom, et un 429 sur les deux premiers n'a plus de
+   troisième gratuit où aller — d'où la politique payante ci-dessous.
+   La chaîne s'applique après un 429, avec mise en cooldown du fournisseur.
 3. **Concurrence** : la passe 3 sessions simultanées montre que **la charge
    dégrade les gratuits** (nemotron-ultra : TTFT 2,6 s → 8,8 s, coupé à 180 s).
    Ne pas dépasser **2 sessions par fournisseur**.

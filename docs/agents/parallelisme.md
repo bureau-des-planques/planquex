@@ -41,19 +41,26 @@ Jamais le modèle qui a implémenté ne relit. La chaîne vient du **benchmark**
 
 | Rôle | Modèle | Pourquoi |
 |---|---|---|
-| **implémenteur** — code, moteur, tests | `opencode/deepseek-v4.1-flash-free#high` | maillon 1 du benchmark : 3/3, 27–47 s, variante `high` la moins consommatrice |
-| **implémenteur** — contenu, rédaction FR | `openrouter/thinkingmachines/inkling:free` | 3/3 au benchmark ; la prose française ne dépend pas du code |
-| **relecteur courant** — un lot de tests, une doc, du contenu | `openrouter/thinkingmachines/inkling:free` | 3/3, et **différent** de l'implémenteur |
+| **implémenteur** — code, moteur, tests | `openrouter/deepseek/deepseek-v4.1-flash-1017#high` | payant à la carte, **0,30 / 1,20 $** par million ; c'est le choix de Bastien le 02/11/2026 : le gratuit ne se réserve plus au travail principal |
+| **implémenteur** — alternative moins chère | `openrouter/openai/gpt-6-luna#high` | **0,10 / 0,50 $** ; tient un ticket borné de bout en bout (#530, 1 commit, tous les contrôles verts) |
+| **relecteur courant** — un lot de tests, une doc, du contenu | `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` | gratuit, **autre fournisseur** que l'implémenteur ; convient à une relecture bornée |
 | **relecteur lourd** — migration de store, moteur, spec | `anthropic/claude-sonnet-5-5#high` | abonnement Claude Pro déjà authentifié ; la voie à restrictions faibles |
 | **revue de session** — toute une série de fusions | `anthropic/claude-opus-5-5#high` | c'est elle qui a trouvé ce que les relecteurs par branche ne pouvaient pas voir (le harnais biaisé) |
-| **contrôle ponctuel** | `google/gemma-4-26b-a4b-it` | **un seul appel, aucun outil** : `AGENTS.md` est injecté à chaque requête, le palier gratuit plafonne à 16 k jetons d'entrée/minute |
 
-**Budget** : trois modèles payants, à deux titres. **Sonnet** et **Opus** le sont par
-abonnement existant : les réserver aux migrations de store, au moteur et aux revues de
-session. **`openrouter/deepseek/deepseek-v4.1-flash-1017`** l'est à la carte et **hors
-chaîne** : c'est le repli quand tout le gratuit est épuisé, il ne part que si on le choisit,
-et le routeur ne le remplace pas (détail : `modeles.md` §« Le repli payant, hors
-chaîne »). Le reste reste gratuit.
+> **02/11/2026 — le gratuit change de rôle** (Bastien : « envoie bien les gratuits que sur des
+> sujets bien bornés »). Un gratuit ne prend plus un ticket de bout en bout : il sert aux tâches
+> **courtes et vérifiables** — lire un fichier, corriger une ligne, relire une branche finie,
+> exécuter une commande et rendre sa sortie. La raison n'est pas idéologique, elle est mesurée
+> sur la journée : **2 coupures de fournisseur** sur 11 exécutions, et **2 défauts que les tests
+> de l'agent ne voyaient pas** (+5,7 kB de paquet sur #528, une exception de numérotation sur
+> #583). Ce que le gratuit coûte, c'est la **vérification** par l'orchestrateur.
+
+**Budget** : **Sonnet** et **Opus** le sont par abonnement existant : les réserver aux
+migrations de store, au moteur et aux revues de session. Le reste se paie à la carte chez
+OpenRouter, entre **0,08 et 1,20 $** le million de jetons — le prix se lit dans le catalogue,
+pas de mémoire. **`openrouter/deepseek/deepseek-v4.1-flash-1017`** est **hors chaîne** : le
+routeur ne le remplace pas et ne le choisit pas (détail : `modeles.md` §« Le repli payant,
+hors chaîne »).
 
 ### Appeler `subagent` — `model` explicite, repli, `sessionID`
 
