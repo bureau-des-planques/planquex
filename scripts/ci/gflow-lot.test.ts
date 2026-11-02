@@ -68,9 +68,13 @@ while IFS= read -r ligne; do
   f="$out/prompt_\${i}_0.jpg"
   printf 'jpeg' > "$f"
   if [ "\${FAUX_GFLOW_SANS_BASE:-0}" != "1" ]; then
-    python3 - "$GFLOW_LOT_DB" "$f" "$ligne" "$((i * 7 + 11))" "$i" <<'PY'
+    python3 - "$GFLOW_LOT_DB" "$f" "$ligne" "$((i * 7 + 11))" <<'PY'
 import sqlite3, sys
-db, chemin, prompt, graine, n = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4]), sys.argv[5]
+db, chemin, prompt, graine = sys.argv[1], sys.argv[2], sys.argv[3], int(sys.argv[4])
+# Les identifiants se dérivent du **chemin** : deux paquets repartent tous deux de
+# prompt_0_0, donc un identifiant fondé sur le rang entrerait en collision (et
+# gflow, lui, identifie bien chaque média).
+ident = chemin
 con = sqlite3.connect(db)
 con.executescript("""
 create table if not exists assets(id text primary key, seed integer, model text);
@@ -78,10 +82,10 @@ create table if not exists local_files(id text primary key, asset_id text, path 
 create table if not exists operations(id text primary key, prompt text, model text);
 create table if not exists operation_assets(asset_id text, operation_id text);
 """)
-con.execute("insert into operations values ('o' || ?, ?, 'NARWHAL')", (n, prompt))
-con.execute("insert into assets values ('a' || ?, ?, null)", (n, graine))
-con.execute("insert into local_files values ('l' || ?, 'a' || ?, ?)", (n, n, chemin))
-con.execute("insert into operation_assets values ('a' || ?, 'o' || ?)", (n, n))
+con.execute("insert into operations values (?, ?, 'NARWHAL')", ('o' + ident, prompt))
+con.execute("insert into assets values (?, ?, null)", ('a' + ident, graine))
+con.execute("insert into local_files values (?, ?, ?)", ('l' + ident, 'a' + ident, chemin))
+con.execute("insert into operation_assets values (?, ?)", ('a' + ident, 'o' + ident))
 con.commit()
 con.close()
 PY
@@ -294,6 +298,156 @@ describe('gflow-lot.sh — ce qui ne doit rien lancer', () => {
       // Le faux wizard n'écrit pas dans la base : la graine vient de SON payload.
       expect(lirePayload('atelier-deux').images[0]?.seed).toBe(42);
       expect(lignesJournal()).toContain('atelier-deux GENERE');
+    },
+    delai,
+  );
+});
+
+/**
+ * **Le découpage en paquets** (02/11/2026, #609).
+ *
+ * gflow refuse **plus de 50 prompts par invocation** (`MAX_PROMPTS = 50` dans
+ * `image_batch.py`, `_validate_prompt_count` → « Prompt source must contain
+ * between 1 and 50 prompts », rendu en **exit 2**). Avant ce découpage, une file
+ * de plus de cinquante cartes s'arrêtait au premier appel, sans une image.
+ *
+ * Le piège du découpage est le **rang** : gflow nomme ses sorties
+ * `prompt_<i>_<k>` avec `<i>` = l'indice du prompt **dans l'invocation**, donc
+ * le rang repart de 0 à chaque paquet. Lire ce rang dans la liste de départ, ou
+ * écrire deux paquets dans le même dossier, et les images changent de carte sans
+ * que rien ne casse.
+ */
+describe('gflow-lot.sh — le découpage en paquets de 50 (gflow refuse davantage)', () => {
+  /** Soixante cartes connues : deux paquets (50 + 10), et un rang qui repart. */
+  const N = 60;
+  const ids = Array.from({ length: N }, (_, i) => `atelier-${String(i + 1).padStart(2, '0')}`);
+
+  /** Le fichier des sujets du bac, remplacé par soixante cartes. */
+  const sujetsDe60 = () => {
+    const chemin = join(bac, 'sujets-60.md');
+    const lignes = ids.map((id) => `| \`${id}\` | un sujet pour ${id} |`).join('\n');
+    writeFileSync(chemin, `## La table\n\n| Carte (\`id\`) | Sujet |\n|---|---|\n${lignes}\n`);
+    return chemin;
+  };
+
+  /** Chaque appel reçu par gflow, ses arguments dans l'ordre (`ARG` par ligne). */
+  const appels = () => {
+    const tous: string[][] = [];
+    let courant: string[] | null = null;
+    for (const ligne of readFileSync(journal, 'utf8').split('\n')) {
+      if (ligne === 'CALL') {
+        courant = [];
+        tous.push(courant);
+        continue;
+      }
+      if (courant && ligne.startsWith('ARG ')) courant.push(ligne.slice(4));
+    }
+    return tous;
+  };
+
+  /** La valeur de l'option `nom` dans un appel. */
+  const option = (args: string[], nom: string) => args[args.indexOf(nom) + 1];
+
+  /** Les prompts contenus dans une invocation, un par ligne non vide. */
+  const promptsDeLAppel = (n: number) => {
+    const fichier = option(appels()[n] ?? [], '--prompts-file');
+    return fichier ? readFileSync(fichier, 'utf8').split('\n').filter(Boolean) : [];
+  };
+
+  /** Le dossier de sortie de la n-ième invocation. */
+  const sortieDeLAppel = (n: number) => option(appels()[n] ?? [], '--out') ?? '';
+
+  it(
+    'le contrôle mord : soixante cartes font deux paquets, et chaque image retombe sur SA carte',
+    () => {
+      const { code, sortie: texte } = lancer(['--toutes', '--force'], { GFLOW_LOT_SUJETS: sujetsDe60() });
+      expect(code, texte).toBe(0);
+
+      // Deux invocations, 50 puis 10 prompts : gflow refuserait davantage.
+      const appels = readFileSync(journal, 'utf8').match(/^CALL$/gm) ?? [];
+      expect(appels, 'soixante cartes, deux invocations').toHaveLength(2);
+      expect(promptsDeLAppel(0)).toHaveLength(50);
+      expect(promptsDeLAppel(1)).toHaveLength(10);
+      // Chaque paquet a **son** dossier : mêmes noms de fichiers, sinon le second
+      // écraserait les `prompt_0_*` du premier.
+      expect(sortieDeLAppel(0)).not.toBe(sortieDeLAppel(1));
+
+      // Le rang repart de 0 : la 51ᵉ carte est le prompt 0 du second paquet, et sa
+      // graine est celle que gflow a notée pour ce fichier-là (i * 7 + 11).
+      expect(lirePayload('atelier-01').images[0]).toMatchObject({
+        seed: 11,
+        local_path: expect.stringMatching(/images\/1\/prompt_0_0\.jpg$/),
+      });
+      expect(lirePayload('atelier-51').images[0]).toMatchObject({
+        seed: 11,
+        local_path: expect.stringMatching(/images\/2\/prompt_0_0\.jpg$/),
+      });
+      // Et la dernière carte du second paquet : prompt 9, graine 74.
+      expect(lirePayload('atelier-60').images[0]).toMatchObject({
+        seed: 74,
+        local_path: expect.stringMatching(/images\/2\/prompt_9_0\.jpg$/),
+      });
+      // Les soixante cartes ont leur image : un seul reclassement décalé laisserait
+      // des cartes vides, ou pire, l'image d'une autre.
+      for (const id of ids) {
+        expect(existsSync(join(sortie, id, 'payload.json')), `${id} sans payload`).toBe(true);
+      }
+    },
+    delai,
+  );
+
+  it(
+    'le contrôle mord : sans base, le nom se lit dans le paquet qui a produit le fichier',
+    () => {
+      // Le repli par le nom est le seul endroit où le rang est déchiffré : avec la
+      // liste de départ au lieu de celle du paquet, `prompt_0` du second paquet
+      // désignerait la **première** carte, déjà servie — et dix cartes resteraient
+      // sans image.
+      const { code, sortie: texte } = lancer(['--toutes', '--force'], {
+        GFLOW_LOT_SUJETS: sujetsDe60(),
+        FAUX_GFLOW_SANS_BASE: '1',
+      });
+      expect(code, texte).toBe(0);
+
+      const charge = lirePayload('atelier-51');
+      expect(charge.images[0]?.seed).toBeNull();
+      expect(charge.images[0]?.local_path).toMatch(/images\/2\/prompt_0_0\.jpg$/);
+      expect(lirePayload('atelier-60').images[0]?.local_path).toMatch(/images\/2\/prompt_9_0\.jpg$/);
+      for (const id of ids) {
+        expect(existsSync(join(sortie, id, 'payload.json')), `${id} sans payload`).toBe(true);
+      }
+      // Une graine absente reste absente : le repli ne fabrique pas de numéro.
+      expect(lignesJournal().filter((l) => l.includes('graine=inconnue'))).toHaveLength(N);
+    },
+    delai,
+  );
+
+  it(
+    'soixante cartes restent deux paquets quand on demande plus de 50 prompts par invocation',
+    () => {
+      const { code, sortie: texte } = lancer(['--toutes', '--force', '--max-prompts', '80'], {
+        GFLOW_LOT_SUJETS: sujetsDe60(),
+      });
+      expect(code, texte).toBe(0);
+      // gflow refuserait 80 : le script plafonne et le dit, au lieu d'envoyer un
+      // paquet que gflow rejetterait en exit 2.
+      expect(texte).toContain('50');
+      expect((readFileSync(journal, 'utf8').match(/^CALL$/gm) ?? [])).toHaveLength(2);
+      for (const n of [0, 1]) expect(promptsDeLAppel(n).length).toBeLessThanOrEqual(50);
+    },
+    delai,
+  );
+
+  it(
+    'le mode --par-carte n’est pas découpé : le wizard fait une invocation par carte',
+    () => {
+      const { code } = lancer(['--toutes', '--par-carte', '--force'], { GFLOW_LOT_SUJETS: sujetsDe60() });
+      expect(code).toBe(0);
+      // Aucun appel de génération groupée : le découpage ne concerne que `--lot`.
+      expect(readFileSync(journal, 'utf8')).toBe('');
+      for (const id of ids) {
+        expect(existsSync(join(sortie, id, 'payload.json')), `${id} sans payload`).toBe(true);
+      }
     },
     delai,
   );
