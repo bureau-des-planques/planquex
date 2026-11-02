@@ -218,11 +218,19 @@ describe('pvp — l’IA ne joue jamais à deux (#125)', () => {
  */
 const battle = readFileSync(fileURLToPath(new URL('../pages/Battle.tsx', import.meta.url)), 'utf8');
 
+/**
+ * **#556, décision du 02/11/2026 : une garde suit le code.** La mécanique de tour a quitté
+ * `Battle.tsx` pour `src/combat/useCombat.ts` (la Direction, la partie à deux) : les règles
+ * gardées ci-dessous sont les mêmes, elles se lisent seulement là où le code vit maintenant.
+ * Une garde ne meurt que si la règle meurt.
+ */
+const combat = readFileSync(fileURLToPath(new URL('../combat/useCombat.ts', import.meta.url)), 'utf8');
+
 describe('pvp — gardes de l’écran de combat', () => {
   it('ne branche l’IA que par aiTurnAction, donc jamais à deux', () => {
     // Depuis #251, l'écran lui passe la politique de la difficulté : le nom, jamais un chiffre.
-    expect(battle).toMatch(/aiTurnAction\(state, match, reglage\.politique\)/);
-    expect(battle).not.toMatch(/nextAiAction/);
+    expect(combat).toMatch(/aiTurnAction\(state, match, reglage\.politique\)/);
+    expect(battle + combat).not.toMatch(/nextAiAction/);
   });
 
   it('ne montre de la main adverse que son compte', () => {
@@ -235,7 +243,7 @@ describe('pvp — gardes de l’écran de combat', () => {
     expect(battle).toMatch(/who: myCamp/);
     expect(battle).not.toMatch(/who: 'player'/);
     expect(battle).toMatch(/handover\(state, match\)/);
-    expect(battle).toMatch(/joinMatch\(/);
+    expect(combat).toMatch(/joinMatch\(/);
   });
 });
 
