@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Home, Library, Layers, Settings, StickyNote, Swords } from 'lucide-react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Home, Library, Settings, StickyNote, Swords } from 'lucide-react';
 import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
 import { useStore } from '@/store/useStore';
 /**
@@ -22,16 +22,32 @@ import { estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 
 /**
- * La barre du bas, **cinq onglets** (D-097 (4), #213) : le **comité** prend la place des
- * **Réglages**, qui passent à l'engrenage de l'en-tête. Le post-it est l'objet du comité —
+ * Vrai quand `chemin` est l'adresse `cible` ou l'une de ses sous-pages. C'est la règle de
+ * `NavLink` — exacte pour `/`, préfixe de **segment** sinon (`/comite` couvre
+ * `/comite/suivi`, `/collection` ne couvre pas `/collection-de-truc`) —, écrite ici parce
+ * que l'entrée « Cartes » couvre deux adresses (#545) et que `NavLink` ne juge que la sienne.
+ */
+export function couvreAdresse(chemin: string, cible: string): boolean {
+  if (cible === '/') return chemin === '/';
+  return chemin === cible || chemin.startsWith(`${cible}/`);
+}
+
+/**
+ * La barre du bas, **quatre onglets** (#545) : la Collection et le Deck sont un seul écran,
+ * deux onglets — ils ne prennent donc qu'une entrée, « Cartes ». Les trois autres ne bougent
+ * pas : l'**Accueil**, le **Combat**, et le **comité** (D-097 (4), #213), qui a pris la place
+ * des **Réglages**, passés à l'engrenage de l'en-tête. Le post-it est l'objet du comité —
  * une note qu'on laisse sur le mur —, pas un dessin maison.
+ *
+ * « Cartes » plutôt que « Collection » : l'entrée mène aux **deux** métiers, et l'onglet
+ * Collection est celui qui s'ouvre par défaut. `aussi` dit les adresses que l'entrée couvre
+ * sans être la sienne : sur `/deck`, aucune autre entrée ne s'allumerait.
  */
 const tabs = [
-  { to: '/', label: 'Accueil', icon: Home },
-  { to: '/collection', label: 'Collection', icon: Library },
-  { to: '/deck', label: 'Deck', icon: Layers },
-  { to: '/battle', label: 'Combat', icon: Swords },
-  { to: '/comite', label: 'Comité', icon: StickyNote }
+  { to: '/', label: 'Accueil', icon: Home, aussi: [] as readonly string[] },
+  { to: '/collection', label: 'Cartes', icon: Library, aussi: ['/deck'] },
+  { to: '/battle', label: 'Combat', icon: Swords, aussi: [] as readonly string[] },
+  { to: '/comite', label: 'Comité', icon: StickyNote, aussi: [] as readonly string[] }
 ];
 
 export function Layout() {
@@ -208,8 +224,8 @@ export function Layout() {
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
       {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
 
-      {/* La barre du bas : **cinq onglets**, et **rien du tout en combat** (#275). Le shell
-          seul la rend — aucun écran ne la redessine. */}
+      {/* La barre du bas : **quatre onglets** (#545), et **rien du tout en combat** (#275).
+          Le shell seul la rend — aucun écran ne la redessine. */}
       {!enCombat && (
         <nav className="bottom-nav" aria-label="Navigation principale">
           {tabs.map((tab) => {
@@ -217,15 +233,20 @@ export function Layout() {
             // La pastille ne vit que sur l'onglet **Comité** : elle dit « choses à voir »,
             // et le nom accessible du lien la porte pour le lecteur d'écran (#212).
             const pastille = tab.to === '/comite' ? aVoir : 0;
+            // L'entrée « Cartes » couvre **deux** adresses (#545) : sur `/deck`, elle reste
+            // l'onglet courant, sans quoi la barre n'en montrerait aucun. `NavLink` ne sait
+            // juger que sa propre adresse — et il écrase un `aria-current` passé de
+            // l'extérieur —, d'où le `Link` et l'état calculé ici.
+            const courant = [tab.to, ...tab.aussi].some((cible) => couvreAdresse(pathname, cible));
             return (
-              <NavLink
+              <Link
                 key={tab.to}
                 to={tab.to}
-                end={tab.to === '/'}
                 aria-label={
                   pastille > 0 ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir` : undefined
                 }
-                className={({ isActive }) => `bottom-nav__item ${isActive ? 'is-active' : ''}`}
+                aria-current={courant ? 'page' : undefined}
+                className={`bottom-nav__item ${courant ? 'is-active' : ''}`}
               >
                 <Icon size={20} strokeWidth={1.8} aria-hidden="true" />
                 <span>{tab.label}</span>
@@ -234,7 +255,7 @@ export function Layout() {
                     {pastille}
                   </span>
                 )}
-              </NavLink>
+              </Link>
             );
           })}
         </nav>
