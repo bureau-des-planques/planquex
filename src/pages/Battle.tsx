@@ -16,49 +16,25 @@ import {
   Swords,
   Users
 } from 'lucide-react';
-import { ALL_CARDS, FACTION_META, getCard, isBasic, isPlanque, kindLabel } from '@/data';
+import { FACTION_META, getCard, isPlanque, kindLabel } from '@/data';
 import type {
   AttackEffect,
   BattleAction,
   BattleState,
   CafeSymbol,
-  CafeType,
   Card,
   CardInstance,
   PlayerId,
   PlayerState,
   Status
 } from '@/data/types';
-import {
-  applyAction,
-  createBattle,
-  degatsDePression,
-  dessusDuDeck,
-  isOpeningTurn,
-  legalActions,
-  legalAttacks
-} from '@/game/engine';
-import { deckDeLaDirection, reglageDirection } from '@/game/deck-direction';
-import { DECK_SIZE, MAX_COPIES_PER_NAME, deckLegal } from '@/game/deck';
+import { degatsDePression, dessusDuDeck, isOpeningTurn, legalActions, legalAttacks } from '@/game/engine';
+import { DECK_SIZE, MAX_COPIES_PER_NAME } from '@/game/deck';
 import { HAND_LIMIT, POINTS_TO_WIN } from '@/game/rules';
 import { useStore } from '@/store/useStore';
-import { partieSauvegardee, reprendrePartie } from '@/store/partie';
-import type { Decks, Reprise } from '@/store/partie';
-import { combatTermine, tracerCombat } from '@/store/combats';
-import { derniereDe } from '@/store/derniere';
 import { jouer } from '@/audio/sons';
-import {
-  aiTurnAction,
-  CAMP_NAME,
-  campLine,
-  campToAct,
-  createMatch,
-  handover,
-  joinMatch,
-  matchCode,
-  otherCamp
-} from '@/store/pvp';
-import type { Match } from '@/store/pvp';
+import { CAMP_NAME, campLine, campToAct, handover, matchCode, otherCamp } from '@/store/pvp';
+import { useCombat } from '@/combat/useCombat';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { CardView } from '@/components/CardView';
@@ -67,7 +43,6 @@ import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
-import { etatFinScriptee } from '@/game/scenario-fin';
 import { marquerGeste } from '@/components/journee-gestes';
 import { avancerJournee, etapeJournee } from '@/components/journee-etape';
 import { SceneFin } from '@/components/SceneFin';
@@ -91,33 +66,6 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
-
-/**
- * Deck de test, quand le deck du joueur n'est pas encore valide : 8 cartes
- * Action (2 Objets et 2 Collègues distincts, en double) puis des Planqués, en
- * commençant par les Entrants.
- *
- * Les cartes Action y sont volontairement : depuis le ticket #58 la main est
- * affichée et ses cartes se jouent, et un deck de démonstration sans aucun
- * Objet ne montrerait jamais cette partie de l'écran.
- */
-function testDeck(): string[] {
-  const planques = ALL_CARDS.filter(isPlanque).filter((card) => !card.variantOf);
-  const ordered = [...planques.filter(isBasic), ...planques.filter((card) => !isBasic(card))];
-  const actionCards = ALL_CARDS.filter((card) => !isPlanque(card)).filter((card) => !card.variantOf);
-  const showcase = [
-    ...actionCards.filter((card) => card.kind === 'OBJET').slice(0, 2),
-    ...actionCards.filter((card) => card.kind === 'COLLEAGUE').slice(0, 2)
-  ];
-  const deck: string[] = [];
-  for (const card of showcase) deck.push(card.id, card.id);
-  for (const card of ordered) {
-    if (deck.length >= DECK_SIZE) break;
-    deck.push(card.id);
-    if (deck.length < DECK_SIZE) deck.push(card.id);
-  }
-  return deck.slice(0, DECK_SIZE);
-}
 
 function cardName(cardId: string): string {
   return getCard(cardId)?.name ?? 'Carte inconnue';
@@ -934,21 +882,8 @@ function useEcranLarge(): boolean {
 
 export function Battle() {
   const ecranLarge = useEcranLarge();
-  const storeDeck = useStore((state) => state.deck);
   /** La Journée est-elle encore ouverte ? Seule la visite enchaîne après la scène de fin. */
   const tutorielVu = useStore((state) => state.tutorielVu);
-  /**
-   * **La difficulté du combat** (#251, D-145) : elle est **figée au montage**, et relue
-   * seulement par « Nouveau combat ». Changer le cran dans Réglages ne déplace donc pas
-   * la politique au milieu d'une partie — un combat garde la Direction qu'il a commencée.
-   */
-  const difficulteReglee = useStore((state) => state.difficulte);
-  const [difficulte, setDifficulte] = useState(difficulteReglee);
-  const reglage = useMemo(() => reglageDirection(difficulte), [difficulte]);
-  /** Le Deck que la Direction joue : un Deck proposé, légal, choisi par la difficulté. */
-  const directionDeck = useMemo(() => [...reglage.deck.cartes], [reglage]);
-  /** Les types de café choisis au Deck (#91), lus bruts dans le store. */
-  const storedCafeTypes = useStore((state) => state.cafeTypes);
   /**
    * **La densité d'infos** (#189, `SPEC-COMBAT-UI` §4.3) : `sobre` par défaut, `détaillé`
    * sur geste. Elle vit dans le store persisté : le choix survit au rechargement.
@@ -982,74 +917,39 @@ export function Battle() {
    */
   const pasAPas = usePasAPasCombat(tutoriel);
 
-  // Le deck du joueur est utilisé s'il est légal, sinon on retombe sur un
-  // deck de test. Calculé une seule fois par rendu : `deckLegal` est appelé
-  // au plus une fois, et l'identité de la référence dit si on a replié.
+  /** « Mouvement réduit » : il coupe les animations **et** l'attente de la Direction. */
+  const sansMouvement = useMouvementReduit();
   /**
-   * Le Deck joué, et **pourquoi** on a replié sur le deck de test (#251, revue du 29/10/2026) :
-   * le bandeau disait « ton deck n'est pas valide » sans jamais dire quelle règle était violée,
-   * alors que `deckLegal` la connaît. Un refus qui n'explique pas ne s'apprend pas.
+   * **La carte choisie dans la main** (#169). Poser est un geste à deux temps : on touche
+   * la carte, puis on choisit **où** elle va. La sélection reste visible (cadre accentué,
+   * panneau de pose) tant qu'aucune action ne l'a consommée : `jouer` la vide par `onCoup`,
+   * et une sélection dont la carte a quitté la main ne montre plus rien (`selected`, plus bas).
    */
-  const legaliteDuDeck = useMemo(() => deckLegal(storeDeck), [storeDeck]);
-  const playerDeck = useMemo(() => (legaliteDuDeck.ok ? storeDeck : testDeck()), [legaliteDuDeck, storeDeck]);
-  const raisonsDeckDeTest = legaliteDuDeck.ok ? [] : legaliteDuDeck.reasons;
-  const usedTestDeck = playerDeck !== storeDeck;
+  const [selectedUid, setSelectedUid] = useState<string | null>(null);
 
   /**
-   * Le choix **appliqué à ce combat** (#117). Il appartient au Deck du joueur
-   * (`useStore`, `cafeTypes`) : le poser sur un **deck de test** ferait afficher
-   * les types d'un contenu à la place d'un autre. Replié sur le deck de test, le
-   * combat repart donc en **proposition automatique** (`[]`), dérivée de ce deck —
-   * ce que dit aussi le bandeau « ce combat utilise un deck de test ».
+   * **La mécanique de tour vit dans son module** (`useCombat`, #556) : la table, les coups,
+   * la Direction, la sauvegarde. L'écran ne garde que le rendu, et ses propres panneaux.
    */
-  const chosenCafeTypes = useMemo<CafeType[]>(
-    () => (usedTestDeck ? [] : storedCafeTypes),
-    [usedTestDeck, storedCafeTypes]
-  );
-
-  /**
-   * **La partie reprise** (#126) : la partie rangée dans le store, rejouée depuis sa graine
-   * et son journal. À défaut (rien de rangé, partie terminée, journal qui ne rejoue pas),
-   * un combat neuf contre la Direction, comme avant.
-   */
-  const [depart] = useState<Reprise & { reprise: boolean }>(() => {
-    // La fin scriptée impose sa position : rien n'est repris, rien n'est écrasé.
-    if (sceneFin) {
-      return {
-        state: etatFinScriptee(playerDeck, directionDeck, chosenCafeTypes),
-        match: null,
-        decksSolo: { playerDeck, aiDeck: directionDeck },
-        reprise: false
-      };
-    }
-    // Le combat guidé part d'une table neuve : une partie rangée n'est pas reprise, et
-    // elle n'est pas écrasée non plus (voir l'enregistrement, plus bas).
-    const reprise = tutoriel ? null : reprendrePartie(useStore.getState().partie);
-    if (reprise) return { ...reprise, reprise: true };
-    return {
-      state: createBattle(playerDeck, directionDeck, undefined, { playerCafeTypes: chosenCafeTypes }),
-      match: null,
-      decksSolo: { playerDeck, aiDeck: directionDeck },
-      reprise: false
-    };
+  const {
+    state,
+    match,
+    jouer: play,
+    recommencer,
+    creerPartieADeux,
+    reprendre,
+    partieReprise,
+    usedTestDeck,
+    raisonsDeckDeTest,
+    directionReflechit
+  } = useCombat({
+    tutoriel,
+    sceneFin,
+    sansMouvement,
+    // Un coup part : la carte choisie ne tient plus, le panneau de pose se referme.
+    onCoup: () => setSelectedUid(null)
   });
-  const [state, setState] = useState<BattleState>(depart.state);
-  /**
-   * **Ce que le testeur sait de sa partie quittée** (#427) : une partie rangée est reprise
-   * seule au retour, et l'écran le **dit** jusqu'au premier coup. Sans ce mot, la sortie
-   * de la veille ressemblait à un abandon.
-   */
-  const [partieReprise, setPartieReprise] = useState(depart.reprise);
-  /** La scène de fin du tutoriel a-t-elle été refermée ? (30/10/2026) */
-  const [sceneFinFermee, setSceneFinFermee] = useState(false);
-  /** Les Decks du combat solo : une partie à deux porte les siens dans son `Match`. */
-  const [decksSolo, setDecksSolo] = useState<Decks>(depart.decksSolo);
 
-  /**
-   * **La partie à deux** (#125) : `null` en solo. Le **code** reste le moyen de la passer
-   * d'un onglet à l'autre ; la reprise après rechargement passe par le store (#126).
-   */
-  const [match, setMatch] = useState<Match | null>(depart.match);
   /** Ce que le champ de code dit : la raison d'un refus (telle quelle), ou la reprise. */
   const [codeMessage, setCodeMessage] = useState<{ ton: 'ok' | 'ko'; texte: string } | null>(null);
   /** Le code collé par l'autre joueur. */
@@ -1063,6 +963,8 @@ export function Battle() {
   const [codeAnnonce, setCodeAnnonce] = useState<string | null>(null);
   /** « Nouveau combat » sur une partie commencée demande confirmation (comme le forfait). */
   const [nouveauDemande, setNouveauDemande] = useState(false);
+  /** La scène de fin du tutoriel a-t-elle été refermée ? (30/10/2026) */
+  const [sceneFinFermee, setSceneFinFermee] = useState(false);
 
   /**
    * Le camp que **je** tiens. En solo c'est `player` ; en partie à deux, celui que le
@@ -1210,14 +1112,6 @@ export function Battle() {
   const regard = useMemo(() => regardDuDernierGeste(state, myCamp), [state, myCamp]);
 
   /**
-   * **La carte choisie dans la main** (#169). Poser est un geste à deux temps : on touche
-   * la carte, puis on choisit **où** elle va. La sélection reste visible (cadre accentué,
-   * panneau de pose) tant qu'aucune action ne l'a consommée : `play` la vide, et une
-   * sélection dont la carte a quitté la main ne montre plus rien (`selected`, plus bas).
-   */
-  const [selectedUid, setSelectedUid] = useState<string | null>(null);
-
-  /**
    * Le panneau de pose vient sous la main : choisir une carte le **cadre** (`nearest` —
    * rien ne bouge s'il est déjà tout entier à l'écran), pour que le geste suivant soit
    * sous le doigt. La marge basse de `.pose` laisse la barre de navigation à sa place.
@@ -1244,24 +1138,6 @@ export function Battle() {
       poseRef.current?.focus({ preventScroll: true });
     }
   }, [selectedUid]);
-
-  const play = useCallback((action: BattleAction) => {
-    setSelectedUid(null);
-    setPartieReprise(false);
-    setState((current) => applyAction(current, action));
-  }, []);
-
-  /**
-   * **IA de niveau 1, en solo seulement** : quand c'est à la Direction de jouer — ou de
-   * choisir sa relève après un craquage —, ses actions s'enchaînent seules, une par un
-   * court délai pour rester lisibles. `prefers-reduced-motion` supprime le délai, comme
-   * pour les animations de l'écran.
-   *
-   * La décision appartient à `aiTurnAction` (`@/store/pvp`) : en **partie à deux**, elle
-   * rend `null` **sans appeler** la politique — le camp `ai` est tenu par quelqu'un, et
-   * l'écran ne doit pas jouer son tour à sa place (critère du #125).
-   */
-  const sansMouvement = useMouvementReduit();
 
   /**
    * **Les effets de la scène** (#192) : le chiffre de Stress, la traînée de craquage, la pile
@@ -1354,20 +1230,6 @@ export function Battle() {
   }, [raccourcisCombat, basculerCombatDetaille]);
 
   /**
-   * Ce que la Direction va jouer, ou `null` quand ce n'est pas à elle (ou en partie à deux).
-   * Lu au rendu, et pas seulement dans l'effet : sa **présence** est l'attente que l'écran
-   * montre (« La Direction réfléchit… », #131) — sans elle, 600 ms de silence par action
-   * ressemblaient à un écran figé.
-   */
-  const aiAction = useMemo(() => aiTurnAction(state, match, reglage.politique), [state, match, reglage.politique]);
-
-  useEffect(() => {
-    if (!aiAction) return;
-    const timer = window.setTimeout(() => play(aiAction), sansMouvement ? 0 : 600);
-    return () => window.clearTimeout(timer);
-  }, [aiAction, sansMouvement, play]);
-
-  /**
    * **Forfait** (D-030) : la seule action que la Direction ne peut pas porter. Elle
    * vient de `legalActions` (le moteur dit si la partie vit encore, relève comprise) —
    * l'écran ne décide rien — et elle passe par `applyAction` comme les autres boutons.
@@ -1393,91 +1255,33 @@ export function Battle() {
   const [forfaitDemande, setForfaitDemande] = useState<BattleAction | null>(null);
   const gagnantDuForfait = match ? 'L’autre camp' : 'La Direction';
 
-  const restart = useCallback(() => {
+  /**
+   * **« Nouveau combat » referme d'abord les panneaux de l'écran** : la carte choisie, le menu,
+   * le code annoncé, la confirmation. La table neuve, elle, vient de `useCombat` (`recommencer`)
+   * — c'est elle qui relit le cran de difficulté réglé dans Réglages (#251, D-145).
+   */
+  const restart = () => {
     setSelectedUid(null);
-    setMatch(null);
     setCodeMessage(null);
     setIncoming('');
     setMenu(MENU_FERME);
     setCodeAnnonce(null);
     setNouveauDemande(false);
-    // « Nouveau combat » est le moment où le cran réglé dans Réglages prend effet
-    // (#251, D-145) : le combat en cours, lui, a gardé celui de son montage.
-    const nouvelle = useStore.getState().difficulte;
-    const aiDeck = [...deckDeLaDirection(nouvelle).cartes];
-    setDifficulte(nouvelle);
-    setDecksSolo({ playerDeck, aiDeck });
-    setState(createBattle(playerDeck, aiDeck, undefined, { playerCafeTypes: chosenCafeTypes }));
-  }, [playerDeck, chosenCafeTypes]);
+    recommencer();
+  };
 
   /**
-   * **Créer une partie à deux** : elle a sa **graine** (l'horloge, comme le `createBattle`
-   * par défaut d'un combat solo), **mon Deck** au siège `player`, et le Deck de
-   * démonstration pour le camp adverse — l'échange des deux Decks est le ticket
-   * suivant, le code porte déjà les deux. Le lancer de tampon décide qui ouvre (D-033) :
-   * si la Direction ouvre, le code est prêt tout de suite, et c'est à l'autre joueur de
-   * commencer.
+   * **Créer une partie à deux** : la table vient de `useCombat` (`creerPartieADeux`). La table est
+   * rendue au joueur : c'est à lui de jouer, et si un code est déjà à passer (la Direction
+   * ouvrait), le menu se rouvre seul au rendu qui suit.
    */
-  const startTwoPlayer = useCallback(() => {
-    const created = createMatch(playerDeck, testDeck(), Date.now(), { playerCafeTypes: chosenCafeTypes });
+  const startTwoPlayer = () => {
     setSelectedUid(null);
-    setMatch(created.match);
-    setState(created.state);
     setCodeMessage(null);
     setIncoming('');
-    // La table est rendue au joueur : c'est à lui de jouer. Si un code est déjà à passer (la
-    // Direction ouvrait), le menu se rouvre seul au rendu qui suit.
     setMenu(MENU_FERME);
-  }, [playerDeck, chosenCafeTypes]);
-
-  /**
-   * **Ranger la partie** (#126) : à chaque état, le store garde de quoi la rejouer. Une
-   * partie terminée n'y reste pas (`partieSauvegardee` rend `null`). Le store ne fait
-   * qu'écrire ; l'écran reste seul maître de l'état.
-   */
-  const enregistrerPartie = useStore((store) => store.enregistrerPartie);
-  const enregistrerDerniere = useStore((store) => store.enregistrerDerniere);
-  useEffect(() => {
-    // Un combat guidé ne s'enregistre pas : le testeur qui le rejoue ne doit pas perdre la
-    // partie qu'il avait en cours (#272).
-    if (tutoriel || sceneFin) return;
-    enregistrerPartie(partieSauvegardee(state, match, decksSolo));
-    // La dernière partie terminée (#366) : une partie finie se revoit depuis Réglages.
-    const derniere = derniereDe(state, match, decksSolo);
-    if (derniere !== null) enregistrerDerniere(derniere);
-  }, [state, match, decksSolo, enregistrerPartie, enregistrerDerniere, tutoriel]);
-
-  /**
-   * **La trace du combat** (#173, D-086 ; #228, D-105) : une partie **terminée** part en
-   * arrière-plan, une seule fois — solo comme à deux, le mode de la ligne le dit. Sans
-   * configuration, rien ne part ; un échec réseau ne touche pas l'écran — la partie n'a
-   * jamais été perdue, elle vit dans le store (`partieSauvegardee` ci-dessus).
-   *
-   * La clé évite un second envoi : la fin d'une partie peut re-rendre l'écran (choix, relève),
-   * et la même trace ne se dépose qu'une fois.
-   */
-  const tracesEnvoyees = useRef<Set<string>>(new Set());
-  useEffect(() => {
-    const combat = combatTermine(state, match, decksSolo);
-    if (combat === null) return;
-    const cle = `${combat.graine}:${combat.journal.length}`;
-    if (tracesEnvoyees.current.has(cle)) return;
-    tracesEnvoyees.current.add(cle);
-    // `tracerCombat` avale le rejet : une trace perdue ne change rien à la fin de partie
-    // affichée, et un rejet non traité ne doit jamais remonter d'un simple effet.
-    void tracerCombat(combat);
-  }, [state, match, decksSolo]);
-
-  /**
-   * **Le verdict** (#378, D-137) : le second et dernier son du jeu. Il part **une fois**, quand la
-   * partie se termine — victoire ou défaite, c'est le même mécanisme.
-   */
-  const verdictJoue = useRef(false);
-  useEffect(() => {
-    if (state.phase !== 'ended' || verdictJoue.current) return;
-    verdictJoue.current = true;
-    jouer('verdict');
-  }, [state.phase]);
+    creerPartieADeux();
+  };
 
   /** Le code de la partie, recalculé à chaque état : il décrit ce qui est à l'écran. */
   const code = useMemo(() => (match ? matchCode(state, match) : ''), [state, match]);
@@ -1522,21 +1326,19 @@ export function Battle() {
   }, [code]);
 
   /** **Coller un code** : la partie reprend, et je prends le camp qui doit jouer. */
-  const join = useCallback(() => {
-    const joined = joinMatch(incoming);
-    if (!joined.ok) {
+  const join = () => {
+    const resultat = reprendre(incoming);
+    if (!resultat.ok) {
       // La raison du codec est déjà une phrase française : on l'affiche telle quelle.
-      setCodeMessage({ ton: 'ko', texte: joined.raison });
+      setCodeMessage({ ton: 'ko', texte: resultat.raison });
       return;
     }
     setSelectedUid(null);
-    setMatch(joined.match);
-    setState(joined.state);
     setIncoming('');
     // La partie est reprise : la table redevient l'écran (le menu se rouvre seul si un code est prêt).
     setMenu(MENU_FERME);
-    setCodeMessage({ ton: 'ok', texte: `Partie reprise : tu joues le ${CAMP_NAME[joined.match.camp]}.` });
-  }, [incoming]);
+    setCodeMessage({ ton: 'ok', texte: `Partie reprise : tu joues le ${CAMP_NAME[resultat.camp]}.` });
+  };
 
   const campLabel = (id: PlayerId) =>
     match ? `${id === myCamp ? 'Toi' : 'Adversaire'} · ${CAMP_NAME[id]}` : id === 'player' ? 'Toi' : 'La Direction';
@@ -1804,8 +1606,9 @@ export function Battle() {
             </p>
           )}
           {/* L'attente de la Direction (#131) : annoncée au lecteur d'écran, et elle disparaît
-              dès que le coup est joué. Aucun point animé : le mouvement réduit n'a rien à couper. */}
-          {aiAction && (
+              dès que le coup est joué. Aucun point animé : le mouvement réduit n'a rien à couper.
+              Sa présence vient de `useCombat` : c'est la Direction qui a une action en main. */}
+          {directionReflechit && (
             <p className="battle__attente" role="status">
               La Direction réfléchit…
             </p>
