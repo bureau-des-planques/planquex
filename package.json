@@ -19,6 +19,7 @@
     "mesure:direction": "node scripts/preuves/mesure-direction.mjs",
     "mesure:archetypes": "node scripts/preuves/mesure-archetypes.mjs",
     "mesure:illustrations": "node scripts/preuves/mesure-illustrations.mjs",
+    "mesurer:glissement": "node scripts/preuves/mesurer-glissement.mjs",
     "capturer": "node scripts/preuves/capturer.mjs",
     "parcours": "node scripts/preuves/parcours.mjs",
     "jouer-partie": "node scripts/preuves/jouer-partie.mjs",
