@@ -210,33 +210,101 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
   });
 
   /**
-   * **Les gabarits de D-142** : la fenêtre réelle d'un téléphone (portrait et paysage) et le PC. Les
-   * tailles ne sont pas recopiées : elles sont relues dans la ligne D-142, comme D-060 plus haut.
+   * **Les gabarits de D-171** : téléphones portrait seulement et PC. Les tailles ne sont pas
+   * recopiées : elles sont relues dans la décision, comme D-060 plus haut.
    */
-  function gabaritsDeD142(): { width: number; height: number }[] {
-    // D-158 (#520) ajoute le grand écran : on relit les deux lignes, dans l'ordre du journal.
+  function gabaritsDeD171(): { width: number; height: number }[] {
+    // D-158 (#520) garde le grand écran ; 420 × 900 reste dans la capture principale (D-060).
     const journal = read('docs/DECISIONS.md').split('\n');
-    const lignes = ['| D-142 |', '| D-158 |'].map((tete) => journal.filter((ligne) => ligne.startsWith(tete)));
+    const lignes = ['| D-171 |', '| D-158 |'].map((tete) => journal.filter((ligne) => ligne.startsWith(tete)));
     for (const [index, trouvees] of lignes.entries()) {
-      expect(trouvees, `ligne ${['D-142', 'D-158'][index]} introuvable dans docs/DECISIONS.md`).toHaveLength(1);
+      expect(trouvees, `ligne ${['D-171', 'D-158'][index]} introuvable dans docs/DECISIONS.md`).toHaveLength(1);
     }
-    return lignes
-      .flat()
-      .flatMap((ligne) => [...ligne.matchAll(/\*\*\((\d+)×(\d+)\)\*\*/g)])
-      .map((taille) => ({ width: Number(taille[1]), height: Number(taille[2]) }));
+    const reference = tailleDeD060();
+    const uniques = new Map<string, { width: number; height: number }>();
+    for (const ligne of lignes.flat()) {
+      for (const taille of ligne.matchAll(/(\d+)\s*×\s*(\d+)/g)) {
+        const gabarit = { width: Number(taille[1]), height: Number(taille[2]) };
+        if (gabarit.width === reference.width && gabarit.height === reference.height) continue;
+        uniques.set(`${gabarit.width}×${gabarit.height}`, gabarit);
+      }
+    }
+    return [...uniques.values()];
   }
 
-  it('mesure aussi les gabarits que D-142 nomme, et seulement eux', () => {
+  it('mesure les gabarits portrait et PC de D-171, et aucun paysage mobile', () => {
     const env = { ...process.env };
     delete env.BASE_URL;
     delete env.PORT;
     const plan = JSON.parse(
       execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
     ) as { gabarits: { viewport: { width: number; height: number } }[] };
-    const attendus = gabaritsDeD142();
+    const attendus = gabaritsDeD171();
     // La garde mord : une décision qui ne nommerait plus aucun gabarit ne passerait pas pour vide.
-    expect(attendus.length).toBeGreaterThanOrEqual(5);
+    expect(attendus.length).toBeGreaterThanOrEqual(4);
     expect(plan.gabarits.map(({ viewport }) => viewport)).toEqual(attendus);
+  });
+
+  it('le calcul de défilement de l’accueil ne masque pas un document trop haut', () => {
+    const defilement = (documentHeight: number, viewportHeight: number) => {
+      const env = { ...process.env };
+      delete env.BASE_URL;
+      delete env.PORT;
+      const sortie = execFileSync(
+        process.execPath,
+        [
+          'scripts/preuves/capturer.mjs',
+          '--controle-defilement-vertical',
+          JSON.stringify({ documentHeight, viewportHeight })
+        ],
+        { cwd: root, encoding: 'utf8', env }
+      );
+      return JSON.parse(sortie) as number;
+    };
+    expect(defilement(640, 640)).toBe(0);
+    expect(defilement(639, 640)).toBe(0);
+    // Le contrôle mord sur une page qui dépasse d’un pixel.
+    expect(defilement(641, 640)).toBe(1);
+  });
+
+  it('refuse aussi une section de l’accueil cachée sous la barre, même sans défilement du document', () => {
+    const controle = (sections: { nom: string; present: boolean; haut: number; bas: number }[]) => {
+      const env = { ...process.env };
+      delete env.BASE_URL;
+      delete env.PORT;
+      const sortie = execFileSync(
+        process.execPath,
+        [
+          'scripts/preuves/capturer.mjs',
+          '--controle-accueil',
+          JSON.stringify({ documentHeight: 640, viewportHeight: 640, limite: 600, sections })
+        ],
+        { cwd: root, encoding: 'utf8', env }
+      );
+      return JSON.parse(sortie) as string[];
+    };
+    expect(controle([{ nom: '.hero', present: true, haut: 20, bas: 200 }])).toEqual([]);
+    // Le contrôle mord si la dernière section est recouverte, même quand scrollHeight ne dépasse pas.
+    expect(controle([{ nom: '.home__version', present: true, haut: 500, bas: 601 }])).toEqual([
+      '.home__version sort de la fenêtre utilisable (500 → 601, limite 600)'
+    ]);
+  });
+
+  it('le plan capture l’accueil avec une garde verticale dédiée', () => {
+    const env = { ...process.env };
+    delete env.BASE_URL;
+    delete env.PORT;
+    const plan = JSON.parse(
+      execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
+    ) as { pagesSansDefilementVertical: string[]; margeMaxCombatPortrait: number };
+    expect(plan.pagesSansDefilementVertical).toEqual(['accueil']);
+    const decision = read('docs/DECISIONS.md').split('\n').find((ligne) => ligne.startsWith('| D-171 |'));
+    const margeMax = decision?.match(/20 à (\d+) px/);
+    expect(margeMax, 'D-171 ne nomme plus de borne supérieure').not.toBeNull();
+    expect(plan.margeMaxCombatPortrait).toBe(Number(margeMax![1]));
+    const source = read('scripts/preuves/capturer.mjs');
+    expect(source).toContain('controlerAccueilSansDefilement(page, slug, viewport)');
+    expect(source).toContain('controlerAccueilSansDefilement(page, slug, VIEWPORT)');
   });
 
   it("capture l'ouverture d'un Arrivage, et refuse une scène qui ne se révèle pas", () => {
@@ -534,9 +602,9 @@ describe('`npm run capturer` — la garde de hauteur du combat (#194)', () => {
     // Sans ces liens, la sonde pourrait mordre dans son test et la capture continuer
     // à ne mesurer que la main.
     expect(source).toContain('page.evaluate(mesureHauteur, CIBLES_HAUTEUR)');
-    // La taille par défaut est la référence (420 × 900) ; un gabarit de D-142 passe la sienne.
+    // La taille par défaut est la référence (420 × 900) ; un gabarit de D-171 passe la sienne.
     expect(source).toContain('async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {');
-    expect(source).toContain('controlesHauteur({ ...hauteur, viewport, etat: contexte })');
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport, margeMax, etat: contexte })');
     expect(source).toContain('problems.push(`${route} · ${probleme}`)');
   });
 });
@@ -576,10 +644,10 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
    * Le contrôle réel du script, joué sur une géométrie construite à la main. `etat` est le
    * libellé du passage mesuré, comme `controlerHauteur` le passe à la capture.
    */
-  function controle(mesures: Mesure[], etat = '', limite = LIMITE): string[] {
+  function controle(mesures: Mesure[], etat = '', limite = LIMITE, margeMax?: number): string[] {
     const output = execFileSync(
       process.execPath,
-      ['scripts/preuves/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, etat })],
+      ['scripts/preuves/capturer.mjs', '--controle-hauteur', JSON.stringify({ limite, mesures, etat, margeMax })],
       { cwd: root, encoding: 'utf8', env: sansEnvDeVitest() }
     );
     return JSON.parse(output) as string[];
@@ -593,6 +661,17 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
     expect(lignes, 'ligne D-094 introuvable dans docs/DECISIONS.md').toHaveLength(1);
     const marge = lignes[0].match(/au moins (\d+) px/);
     expect(marge, 'D-094 ne nomme plus de marge « au moins N px »').not.toBeNull();
+    return Number(marge![1]);
+  }
+
+  /** La borne haute du vide sous la barre, lue dans D-171 et pas recopiée dans le test. */
+  function margeMaxDeD171(): number {
+    const lignes = read('docs/DECISIONS.md')
+      .split('\n')
+      .filter((ligne) => ligne.startsWith('| D-171 |'));
+    expect(lignes, 'ligne D-171 introuvable dans docs/DECISIONS.md').toHaveLength(1);
+    const marge = lignes[0].match(/20 à (\d+) px/);
+    expect(marge, 'D-171 ne nomme plus de borne « 20 à N px »').not.toBeNull();
     return Number(marge![1]);
   }
 
@@ -664,6 +743,19 @@ describe('`npm run capturer` — la marge de hauteur de D-094 (3) (#237)', () =>
     expect(problemes[0]).toContain("la main n'a que 10 px de marge");
   });
 
+  it('le vide sous la barre reste entre 20 et 32 px en portrait : la borne haute mord', () => {
+    const maximum = margeMaxDeD171();
+    expect(maximum).toBe(32);
+    expect(controle(barreA(LIMITE - 20), '', LIMITE, maximum)).toEqual([]);
+    expect(controle(barreA(LIMITE - maximum), '', LIMITE, maximum)).toEqual([]);
+
+    const problemes = controle(barreA(LIMITE - maximum - 1), 'pas-à-pas terminé', LIMITE, maximum);
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain(`la barre d'action du combat laisse ${maximum + 1} px de vide`);
+    expect(problemes[0]).toContain(`${maximum} px maximum (D-171)`);
+    expect(problemes[0]).toContain('pas-à-pas terminé');
+  });
+
   it('passe le libellé de l’état mesuré au contrôle, dans la capture réelle', () => {
     const source = read('scripts/preuves/capturer.mjs');
     expect(source).toContain('etat: contexte');
@@ -719,9 +811,9 @@ describe('`npm run capturer` — l’écran de combat ne défile pas (D-103, #24
     expect(source).toContain('document.documentElement.scrollHeight - window.innerHeight');
     // Les huit passages passent tous par `controlerHauteur`, qui transmet la mesure entière.
     expect(source.match(/await controlerHauteur\(/g)?.length).toBeGreaterThanOrEqual(3);
-    // La taille par défaut est la référence (420 × 900) ; un gabarit de D-142 passe la sienne.
+    // La taille par défaut est la référence (420 × 900) ; un gabarit de D-171 passe la sienne.
     expect(source).toContain('async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {');
-    expect(source).toContain('controlesHauteur({ ...hauteur, viewport, etat: contexte })');
+    expect(source).toContain('controlesHauteur({ ...hauteur, viewport, margeMax, etat: contexte })');
   });
 });
 

@@ -52,7 +52,7 @@ const executablePath =
 const PORT = Number(process.env.PORT ?? 4195);
 const ROUTE = '/battle';
 
-/** Les gabarits joués : la référence de D-060 (420 × 900) d'abord, puis ceux de D-142. */
+/** Les gabarits joués : la référence de D-060 (420 × 900) d'abord, puis ceux de D-171. */
 const GABARITS_JOUES = [{ nom: 'reference', viewport: VIEWPORT, mobile: true }, ...GABARITS];
 
 /** Les boutons d'action : barre du tour, pose de la carte choisie, promotion, choix. Un seul sélecteur. */
