@@ -53,7 +53,7 @@ const SOURCE = pathToFileURL(CIBLE).href;
  * (« ce qui n'existe pas encore »), pas ce que la version contient. La liste est courte
  * et choisie : un titre qui n'y est pas entre dans la note.
  */
-const SECTIONS_ECARTEES = [
+export const SECTIONS_ECARTEES = [
   /^ta sauvegarde$/i,
   /^comment remonter un retour$/i,
   /^pour un testeur$/i,
@@ -86,8 +86,12 @@ function memeTitre(a, b) {
   return plat(a) === plat(b);
 }
 
-/** Un titre de groupe : `## …`, `### …`, ou une ligne en gras toute seule. */
-function titreDeLigne(ligne) {
+/**
+ * Un titre de groupe : `## …`, `### …`, ou une ligne en gras toute seule. Exporté pour
+ * `scripts/generateurs/verifie-corps.mjs` (#624) : le contrôle d'un corps de release doit
+ * reconnaître un titre **comme le générateur**, pas avec une expression voisine.
+ */
+export function titreDeLigne(ligne) {
   const titre = ligne.match(/^#{2,4}\s+(.+)$/);
   if (titre) return nettoyer(titre[1].replace(/[⚠️✅🚧🔧]+\s*/gu, ''));
   const gras = ligne.match(/^\*\*(.+?)\*\*[.:]?\s*$/);

@@ -119,7 +119,13 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    dans le salon (un post-it collé, une minute d'attente, `§10.4`), pas une migration « appliquée ».
 5. **Commiter**, puis **poser le tag** `v<version>-<stage>` (`v0.1.2-alpha`, ou `v1.0.0` en release) et le pousser. **Ce push déploie la production** (`.github/workflows/deploiement.yml`, D-140) : le workflow refuse un tag qui ne porte pas le numéro **et l'étape** de `package.json`, refuse un commit déjà déployé (il sort proprement et le dit), construit l'application (`npm run build`), puis publie avec le CLI Vercel. Un secret manquant fait échouer le job au lieu de se taire. Ce déploiement se vérifie dans l'onglet Actions, puis en ouvrant `https://planquex.4k7.org` et en lisant la version dans Réglages.
 6. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
-   message aux testeurs (`docs/ALPHA-TESTEURS.md` tant qu'on est en alpha) en notes.
+   **corps de la release** en notes : des **sections thématiques** (`## Le combat`, `## Les
+   sons`…), chaque point une phrase complète, **aucun markdown en ligne** dans les titres et les
+   points (voir §4.2). **Le message aux testeurs n'est pas le corps** :
+   `docs/ALPHA-TESTEURS.md` est le message diffusé ailleurs, sur le serveur des testeurs
+   (D-120) ; il est plein de gras et de code, et son contenu ne doit pas finir en notes. Avant
+   de publier, le corps se vérifie : `npm run release:verifie --corps <fichier>` sort 0 s'il est
+   publiable, 1 en nommant la ligne fautive.
    **Le nom de la release est le tag lui-même** (`--title v0.1.15-alpha`, D-152) : pas de
    suffixe descriptif, et donc aucune divergence possible avec `titreDe`
    (`scripts/generateurs/notes-versions.mjs`) — une release sans titre descriptif retombe sur
@@ -161,7 +167,7 @@ coup, c'est un mensonge. Si la build était fausse, on monte la version et on re
 
 | Endroit | Ce qu'il porte | Qui le lit |
 |---|---|---|
-| **La release GitHub** | le journal complet, daté, avec le message aux testeurs | le dépôt, l'historique, `npm run notes:versions` |
+| **La release GitHub** | le journal complet, daté, en **sections thématiques** — le message aux testeurs, lui, vit dans `docs/ALPHA-TESTEURS.md` et se diffuse sur le serveur des testeurs | le dépôt, l'historique, `npm run notes:versions` |
 | **`/feuille-de-route`** (dans le jeu) | la version courante mise en avant, puis l'historique — et, depuis D-097 (3), l'étape en cours, les critères de sortie, les jalons et ce qui est prévu | **le testeur**, sans compte, sans sortir du jeu |
 
 **Pourquoi le fichier de données est embarqué au build et pas lu en direct** : le dépôt est
@@ -171,29 +177,52 @@ releases par `npm run notes:versions` — elle marche **hors ligne**, et il n'y 
 configurer. Le script tourne **avant de taguer**, jamais pendant `npm run build` : la CI n'a
 ni `gh` ni accès à GitHub, et un build qui dépend du réseau ne se rejoue pas.
 
-### 4.2 Le corps de la release, dans cet ordre
+### 4.2 Le corps de la release, thématique et en texte brut
 
-Depuis le 26/10/2026, le corps de chaque release GitHub a **deux catégories**, dans cet ordre :
+Le corps de chaque release GitHub est **thématique** : des sections `##` libres, dont le titre dit
+ce que la version a changé (`## Le combat`, `## Les sons`, `## Sur le téléphone`…), et sous chacune
+les points qui la concernent. C'est ce que portent les releases 0.1.16 et 0.1.17, et c'est ce que
+le parseur lit : chaque `##` devient un groupe de `src/data/versions.ts`, donc les sections
+apparaissent telles quelles dans `/feuille-de-route`.
 
-1. **`## Ajouts et améliorations`** — ce qui est nouveau ou mieux qu'avant.
-2. **`## Corrections de bugs`** — ce qui était cassé et ne l'est plus.
+Un paragraphe d'introduction (`Version 0.1.16, étape alpha…`) peut précéder les sections : le
+générateur le jette, il ne va pas dans la note. Une section qui ne porte aucun point se retire —
+et le contrôle la refuse, plutôt que de la laisser disparaître en silence.
 
-Un paragraphe d'introduction (`Version 0.1.13, étape alpha…`) peut précéder les deux. Une catégorie
-vide se retire, plutôt que de rester avec « rien ». Chaque point est une phrase complète, lue par
-un testeur : pas de nom de fichier, pas de jargon interne sans l'expliquer.
+**Aucun markdown en ligne dans les titres et les points** : ni `**`, ni backtick, ni lien
+`[texte](url)`. Le même texte nourrit la note du jeu, qui est en texte brut : un `**` qui reste se
+lirait tel quel à l'écran. Le contrôle porte sur ce que le générateur **garde** ; un paragraphe
+d'introduction ou une section écartée peut en porter, parce qu'il ne va pas dans la note.
 
-Les **autres informations** (migration, sauvegarde, pièges connus) vont **après** les deux
-catégories, sous `## Pour un testeur` : ce titre est dans `SECTIONS_ECARTEES`
+Chaque point est une **phrase complète**, lue par un testeur : au moins trois mots, une
+ponctuation de fin de phrase (`.`, `!`, `?`, `…`), pas de nom de fichier, pas de jargon interne
+sans l'expliquer. Une phrase repliée sur deux lignes est recollée par le générateur : elle compte
+pour un point.
+
+Le **message aux testeurs** (`docs/ALPHA-TESTEURS.md`) n'est **pas** le corps de la release : il se
+diffuse ailleurs, sur le serveur des testeurs (D-120), et il est plein de gras et de code. Son
+contenu ne doit **jamais** finir en notes — c'est l'erreur qui a coûté la release 0.1.17, le
+02/11/2026 : publiée avec ce document, refusée après coup par `src/data/versions.test.ts`, puis
+réécrite à la main et republiée.
+
+**Le contrôle, avant de publier** : `npm run release:verifie --corps <fichier>` relit un corps et
+dit ce que le générateur en ferait. Il sort **0** quand le corps est publiable, **1** en nommant la
+ligne fautive (markdown en ligne, section vide, point sans phrase). Il se lance **avant**
+`gh release create`, et c'est le geste qui manquait le 02/11/2026.
+
+Les **autres informations** (migration, sauvegarde, pièges connus) vont **après** les sections
+thématiques, sous `## Pour un testeur` : ce titre est dans `SECTIONS_ECARTEES`
 (`scripts/generateurs/notes-versions.mjs`), donc il reste dans la release et sort de la note du jeu.
+C'est aussi la seule section où le markdown est toléré, parce qu'elle ne va pas dans la note.
 
 Les **problèmes connus** de la version se lisent en base et se collent sous ce même titre :
 `npm run problemes` imprime le bloc (D-119, `docs/COMITE.md` §5.2), et il le rend **sans titre
 markdown** — un `###` sous `## Pour un testeur` rouvrirait la section, et les problèmes
 entreraient dans `/feuille-de-route` comme s'ils étaient des nouveautés.
 
-Le parseur lit chaque `##` comme un groupe de `src/data/versions.ts` : les deux catégories
-apparaissent donc telles quelles dans `/feuille-de-route`. Un titre inventé hors de ce modèle
-entre dans la note du jeu : ne pas en créer sans raison.
+Un titre de section s'écrit `##`, jamais en gras : `**Le combat**` n'est pas un titre de section
+pour le contrôle, et le markdown y est refusé. Le parseur lit chaque `##` comme un groupe : les
+sections thématiques apparaissent donc telles quelles dans `/feuille-de-route`.
 
 ## 5. Ce qu'un agent doit faire, et ne pas faire
 
