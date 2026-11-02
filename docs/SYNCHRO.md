@@ -1,6 +1,6 @@
 # Deck et Collection : conception de la synchronisation (T1)
 
-> **Proposition de conception, pas une décision.** Ce document décrit l'état observé, chiffre trois options et recommande une piste à soumettre à Bastien. Il ne modifie ni D-153 ni le schéma. La décision datée reste à écrire par Bastien.
+> **Proposition de conception, pas une décision globale de synchro.** Elle décrit l'état observé, chiffre trois options et recommande une piste à soumettre à Bastien. Elle ne modifie ni D-153 ni le schéma. L'arbitrage d'export du 02/11 rapporté pour #495 est noté plus bas, sans modifier `docs/DECISIONS.md`.
 >
 > **État des sources consultées : 02/11/2026.** Les estimations sont des ordres de grandeur, pas des mesures ni un engagement de délai.
 
@@ -12,9 +12,9 @@
 - `PersistedState` et `partializeState` (`useStore.ts:264-307`) enregistrent notamment `owned` (quantités par identifiant de carte), `deck` (liste ordonnée), `cafeTypes`, `packsOpened`, le générateur, les réglages et les sauvegardes de partie. Aucun champ de synchro, de version serveur ou de file d'opérations n'y figure.
 - `openPack` ajoute les cinq cartes tirées à `owned` et incrémente `packsOpened` (`useStore.ts:341-353`, `src/game/pack.ts:19-20`). Les gestes Deck modifient directement `deck` et, selon le geste, `cafeTypes` (`useStore.ts:360-398`).
 - La version 14 **ne promet pas une synchro** : son dernier palier ajoute `difficulte`, avec défaut `normal` (`useStore.ts:20-50, 535-552`). Elle promet la persistance locale de la forme et ses migrations, pas la reprise sur un autre appareil.
-- Le cas historique est important : un état dont la version source vaut exactement 10 reçoit volontairement `starterOwned()`, `deck: []`, `cafeTypes: []`, zéro Arrivage et `partie: null` (`useStore.ts:569-585`). La remise à zéro v10→v11 est intentionnelle (D-130) ; une future restauration cloud ne doit pas prendre cette forme vide pour une demande de suppression de la sauvegarde du compte.
-- L'export/import JSON versionné est un outil manuel (`useStore.ts:436-480`), pas une
-  file hors ligne, un transport de changements, ni un mécanisme de conflit.
+- **Trou v10 à fermer avant la synchro :** un navigateur qui porte encore l'ancienne Collection locale v10 la perd lors de la migration : `migratePersisted` remplace `owned` par `starterOwned()`, vide le Deck et les types de café, remet les Arrivages à zéro et efface `partie` (`useStore.ts:569-585`). Ce reset v10→v11 est intentionnel (D-130), mais il précède toute synchro ; si cette Collection n'a pas été exportée ou copiée avant la migration, aucune ligne distante ne la récupère et un upload ultérieur ne connaîtra que l'état vide/de départ. Il faut donc un transfert explicite avant cette purge, sans traiter l'état migré comme une suppression distante.
+- L'export/import JSON actuel est lié au store : `SaveFile.version` reçoit `STORAGE_VERSION`, et l'export sérialise tout `partializeState`, dont `owned` et `deck` (`useStore.ts:264-319, 436-480`). Il n'est ni une file hors ligne, ni un transport de changements, ni un mécanisme de conflit.
+- **Arbitrage Bastien communiqué pour #495 le 02/11 : étendre l'export/import.** Après synchro, l'archive doit garder les réglages locaux ; Deck et Collection sont lus depuis le compte, pas restaurés depuis un snapshot du navigateur. Cela impose un numéro de format d'archive distinct de `STORAGE_VERSION`, une allowlist explicite des réglages exportés et un import qui n'écrase pas les lignes serveur. Les anciennes archives v14 contenant `owned`/`deck` demandent une règle de compatibilité ; si elles servent à l'amorçage du compte, elles passent par la même garantie d'import unique que #492, sinon les champs cloud ne sont pas restaurés.
 
 ### Dans Supabase
 
@@ -76,7 +76,7 @@ atomiquement entre deux snapshots complets.
   `A + D` appels. Avec un état complet par appel : jusqu'à `(A + D) × (C + 20)` lignes
   remplacées/retouchées au pire ; en différé, un appel et jusqu'à `C + 20` lignes.
   Une transaction de remplacement peut réduire les appels, pas le risque de conflit.
-- **Coût estimé : 3–5 jours-personne.** Le chemin client/SQL est le plus court, mais
+- **Coût estimé : 3–5 jours-personne (ordre de grandeur non mesuré au 02/11/2026).** Le chemin client/SQL est le plus court, mais
   bootstrap, révision atomique, contrôle Deck et tests de deux appareils restent à faire.
   Cette option contredit l'exigence de conservation de D-048 et l'approche de D-153 ;
   le faible coût n'en fait pas une option recommandable.
@@ -102,7 +102,7 @@ Le journal doit distinguer ajout, retrait, changement de quantité et intentions
   insérées ; un lot peut tenir dans un RPC, suivi de jusqu'à `C + 20` lignes d'état
   matérialisé. Agréger les cinq tirages par identifiant réduit le premier terme à au
   plus `5A`, souvent moins, sans supprimer le besoin d'idempotence.
-- **Coût estimé : 10–16 jours-personne.** C'est l'option la plus générale : format et
+- **Coût estimé : 10–16 jours-personne (ordre de grandeur non mesuré au 02/11/2026).** C'est l'option la plus générale : format et
   rétention de journal, identité des opérations/appareils, replay serveur, compaction,
   reprise après acquittement ambigu, ordre/conflits pour Collection et Deck, migrations
   et UI. Elle s'écarte du choix hybride déjà posé par D-153.
@@ -130,7 +130,7 @@ pas silencieusement.
   matérialisées. En immédiat, la Collection change au plus une ligne par identifiant
   touché ; le Deck ajoute une intention par geste. Les déclencheurs différés de 0021
   se déclenchent pour les lignes Deck modifiées et vérifient le Deck final au commit.
-- **Coût estimé : 6–10 jours-personne**, hors clarification ci-dessous : RPC de merge et
+- **Coût estimé : 6–10 jours-personne (ordre de grandeur non mesuré au 02/11/2026)**, hors clarification ci-dessous : RPC de merge et
   replay, intégration à la porte de compte, migration/version du store, file durable,
   idempotence, tests PGlite à deux appareils et résolution Deck minimale. Le blocage
   Collection peut ajouter du travail si `max` doit préserver des ajouts concurrents.
@@ -150,47 +150,23 @@ pas à elle seule la conservation des Arrivages concurrentes. Il faut demander s
 quantité doit être alimentée par des événements/additions idempotents avant agrégation.
 Cette précision est une question de conception, pas un changement tacite de D-153.
 
-## 3. Questions à trancher explicitement
+## 3. Questions à classer avant l'implémentation
 
-1. **Durabilité de la file.** Les intentions hors ligne doivent-elles survivre à un
-   simple rechargement ? À une fermeture/redémarrage de PWA ? À l'effacement du stockage
-   local ? `localStorage`, IndexedDB ou un journal exportable ? Une file en mémoire ne
-   couvre qu'une coupure réseau sans rechargement et ne satisfait pas la reprise après
-   fermeture.
-2. **Même Planqué sur deux appareils.** Que signifie deux ajouts concurrents du même
-   identifiant, deux retraits, ou un ajout face à un retrait ? Les opérations sont-elles
-   fusionnées, annulées par ordre, ou montrées au testeur ? La quantité et le Deck ne
-   peuvent pas être traités comme la même donnée.
-3. **Ordre des intentions Deck.** L'ordre est-il global par compte (séquence serveur),
-   par appareil avec arbitrage, ou par carte ? Une collection d'intentions par carte
-   ne suffit pas pour définir le `rang` global unique exigé par `public.deck`.
-4. **Deck local face au Deck du compte (#492).** Au premier chargement, le compte a
-   déjà un Deck et le navigateur en a un autre : garder le compte, garder le local,
-   fusionner via intentions, ou demander un choix ? Le client ne doit pas remplacer
-   silencieusement l'un par l'autre. Le même arbitrage existe pour une Collection
-   locale non encore envoyée.
-5. **Migration v10.** Si la migration locale v10 vide volontairement `owned` et
-   `deck`, le serveur est-il chargé avant cette migration, après, ou dans un parcours
-   de restauration séparé ? L'état vide migré ne doit pas devenir un snapshot LWW ni
-   être interprété comme une collection supprimée.
-6. **Sémantique Collection.** Comment la fusion `max` respecte-t-elle deux gains
-   concurrents et un appareil en retard ? Faut-il versionner l'époque de progression,
-   garder des incréments idempotents, ou accepter que `max` ne cumule pas les gains
-   concurrents ? La réponse doit être compatible avec le critère 5 de D-048.
-7. **Résolution Deck.** À partir de quelle erreur demande-t-on une intervention
-   (conflit d'ordre, 21e carte, 3e exemplaire, absence d'Entrant) ? Le testeur choisit-il
-   parmi les deux Decks, édite le résultat, ou conserve deux variantes ? Combien de
-   temps garde-t-on les intentions non résolues ?
-8. **Périmètre synchronisé.** D-153 vise `owned`/Collection et Deck. `cafeTypes` est
-   pourtant un attribut du contenu du Deck dans le store (`useStore.ts:138-160`) : suit-il
-   le même journal et le même conflit que le Deck, ou reste-t-il un réglage local ?
-9. **Accusé et reprise.** Quelle réponse serveur prouve qu'une opération est durable ?
-   Combien de tentatives, quel backoff et quelle interface après refus RLS, session
-   expirée, carte inconnue ou Deck refusé par `deck_gardes` ? Un indicateur `online`
-   ne prouve pas que Supabase est joignable.
-10. **Initialisation et reset beta.** À la première connexion, comment distinguer
-    compte vide, nouvel appareil et données locales héritées ? Le reset D-150 doit-il
-    aussi invalider un journal local ancien afin qu'il ne recrée pas les données effacées ?
+### À trancher avant d'implémenter #491
+
+1. **Durabilité de la file (#491).** Le ticket exige explicitement que le Deck offline soit retrouvé après rechargement puis synchronisé au retour du réseau : exigence proposée, oui, la file doit être persistante. Il reste à choisir IndexedDB ou un autre stockage durable, et à décider si la promesse couvre aussi fermeture/redémarrage de la PWA.
+2. **Retour du réseau et accusé.** Au signal `online`, proposer le drainage des intentions en ordre choisi, avec identifiants idempotents ; ne les retirer qu'après accusé serveur, puis lire/réconcilier le Deck serveur. Si le serveur refuse ou ne répond pas, la file reste disponible et l'état/conflit est montré au testeur. Fixer tentatives/backoff et l'expérience après session expirée ou Deck invalide.
+3. **Même Planqué sur deux appareils.** Définir ajout contre ajout, retrait contre ajout, et modification du même Planqué sur deux appareils. Le journal seul ne choisit pas si l'opération tardive gagne, si les intentions se combinent ou si le testeur arbitre.
+4. **Ordre des intentions.** Le Deck est ordonné et `rang` est global/unique par compte : décider si le journal a une séquence globale serveur ou un ordre par appareil avec arbitrage. Un journal « par carte » seul ne définit pas le rang final.
+5. **Initialisation (#492).** Au premier login, la migration locale v14 doit proposer le Deck local au compte ; si le compte a déjà un Deck, le conserver, importer le local ou demander un choix ? Le « une seule fois » exige un marqueur serveur atomique par compte (ou mécanisme équivalent), posé avec l'import réussi : un booléen local peut être rejoué sur un autre appareil et dupliquer l'import. La purge v10 décrite en §1 doit avoir une voie de transfert avant de s'exécuter.
+6. **Périmètre Deck.** `cafeTypes` est l'attribut du Deck dans le store (`useStore.ts:138-160`) : décider s'il est inclus dans la même intention/snapshot et suit les mêmes conflits.
+7. **Reset.** D-150 efface les données serveur ; décider comment invalider une file locale plus ancienne pour qu'un appareil hors ligne ne recrée pas le Deck après le reset.
+
+### Peuvent attendre #491 (mais avant leur ticket d'exécution)
+
+- **Sémantique de Collection (#493).** `max` scalaire perd des acquisitions concurrentes (voir §2) ; décider si la règle est conservée telle quelle ou complétée par des additions idempotentes/compteurs par appareil avant d'implémenter cette synchro.
+- **Format d'archive (#495).** L'extension est tranchée le 02/11 ; restent à fixer l'allowlist des réglages, le traitement des anciennes archives qui contiennent `owned`/`deck`, et l'interface d'import, avant de modifier Réglages.
+- **Captures (#497).** La preuve complète peut attendre que les parcours de synchro existent ; le protocole de capture proposé est en fin de document.
 
 ## 4. Recommandation (à confirmer, non tranchée)
 
@@ -201,7 +177,7 @@ le `max` scalaire suffit à satisfaire D-048 avant que Bastien tranche la séman
 acquisitions concurrentes. La règle de D-153 reste la source d'autorité : ce document
 met en évidence son point technique à préciser, il ne la remplace pas.
 
-**Coût assumé :** estimation initiale de 6–10 jours-personne, avec un risque de hausse
+**Coût assumé :** estimation initiale de 6–10 jours-personne (ordre de grandeur non mesuré au 02/11/2026), avec un risque de hausse
 sur la Collection. Il faut une file persistante et idempotente, les RPC, le bootstrap
 sans écrasement, les gardes/testeurs à deux appareils, l'UI minimale de conflit et un
 test de panne/rechargement. La réponse à #492 et aux questions 1, 2, 3 et 6 conditionne
@@ -217,11 +193,16 @@ résolveur de conflit.
   inspecté. Les appels à un serveur d'action sont hors du périmètre de cette conception.
 - Les coûts et volumes ci-dessus sont des calculs de borne à partir de `A`, `C` et `D`,
   pas des traces d'usage ; aucune partie type n'a été mesurée.
-- Le scénario précis du ticket #492 et les corps/commentaires des tickets #491, #493,
-  #495 et #497 n'ont pas été consultés dans GitHub. Le document s'appuie sur les faits
-  locaux, D-153 et les questions telles qu'elles sont données pour cette tâche.
+- Les corps des tickets #491, #492, #493, #495 et #497 ont été consultés via `gh issue view <numéro> --json number,title,body` ; leurs commentaires n'ont pas été lus. Leur demande est résumée et attribuée ticket par ticket ci-dessous.
 - `docs/recherches/488-conflit-hors-ligne.md` a été lu comme recherche antérieure ; ses
   descriptions historiques des tables ne remplacent pas l'état courant observé dans
   les migrations 0020/0021. Il n'a pas été corrigé dans ce travail.
-- Aucune commande de build, aucun test d'intégration PGlite de synchro et aucun essai
-  visuel d'écran n'a été ajouté : ce livrable ne contient que la conception.
+- Aucun test d'intégration PGlite de synchro, essai visuel ou parcours réel à deux appareils n'a été ajouté : ce livrable ne contient que la conception. Les estimations ne remplacent pas les mesures demandées par #493.
+
+## 6. Ce que ce document répond, ticket par ticket
+
+- **#491 — Synchro du Deck.** Le ticket demande une écriture en base, une file hors ligne renvoyée au réseau, survie au rechargement, conflit sans écrasement silencieux et preuve sur un second appareil. Piste : journal Deck de D-153 ; oui, les intentions doivent survivre au rechargement dans un stockage durable, rester jusqu'à l'accusé idempotent, puis être envoyées/réconciliées au retour du réseau. La technologie de stockage, ordre et UI de conflit restent à trancher avant code.
+- **#492 — Migration du store.** Le ticket demande de migrer depuis la forme v14, d'importer le Deck local une seule fois et de faire échouer le test si l'import est rejoué. Au premier login, l'import doit être atomique/idempotent avec un marqueur conservé côté compte ; un second login constate ce marqueur et ne rejoue rien. Si le compte porte déjà un Deck, l'arbitrage est ouvert ; la migration v10 (voir §1) est un cas antérieur qui peut détruire la seule copie locale avant cet import.
+- **#493 — Synchro de la Collection.** Le ticket demande le même niveau hors ligne, une mesure du poids et du nombre d'écritures (≈300 cartes possibles selon le ticket) et des captures avant/après. Garder `max` scalaire tel quel perd au moins un des deux gains concurrents quand les appareils partent du même compte ; pour ne rien perdre, il faut des additions identifiées/idempotentes ou des compteurs par appareil agrégés, pas seulement `max`. Les formules de §2 sont des bornes, pas la mesure exigée par le ticket.
+- **#495 — Export/import.** Le ticket demande de décider si l'export/import est supprimé, gardé en secours ou étendu ; Bastien a tranché « étendre » le 02/11. Comme le code actuel sérialise `PersistedState` sous la version du store, il faut séparer version d'archive et `STORAGE_VERSION`, garder les réglages locaux dans le payload, exclure les snapshots `owned`/`deck` (Collection/Deck viennent du compte) et traiter explicitement les anciennes archives qui les contiennent sans écraser le serveur. Ajouter un aller-retour export/import qui prouve que les réglages reviennent sans remplacer le Deck/Collection du compte ; réviser aussi le texte actuel de Réglages (`Settings.tsx:310-314, 96-101`), qui promet encore que la copie/restauration couvre ces données locales.
+- **#497 — Captures de la synchro.** Le ticket demande `Settings` et `Collection` avant/après, au minimum aux gabarits 420×900 et 360×640, `npm run capturer` sans erreur console, puis inspection à taille téléphone. Quand la synchro existera, la preuve doit montrer deux contextes/appareils : état local avant envoi (source hors ligne), puis même compte relu après reconnexion sur l'autre appareil ; capturer les écrans demandés aux deux étapes. Ce parcours n'est pas encore capturable aujourd'hui.
