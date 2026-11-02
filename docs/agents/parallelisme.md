@@ -226,11 +226,12 @@ dans `AGENTS.md` §6 et §8.4 : cette section ne les réécrit pas, elle dit **q
 5. **Ne jamais lancer `npm run status` en parallèle de `npm run build`** (piège nº 2) : `vite`
    vide `dist/`, donc `status` lit un `dist/` en cours d'écriture et annonce
    `distIndex: false`. Constaté par un agent de la session.
-6. **Une branche qui ajoute une dépendance exige `npm ci` dans le dépôt principal après la
-   fusion** (constaté le 22/10/2026) : `package.json` et `package-lock.json` arrivent par la
-   fusion, mais le `node_modules/` du dépôt principal ne bouge pas — `npm run check` et
+6. **Une branche qui ajoute une dépendance exige une installation dans le dépôt principal
+   après la fusion** (constaté le 22/10/2026) : `package.json` et `package-lock.json` arrivent
+   par la fusion, mais le `node_modules/` du dépôt principal ne bouge pas — `npm run check` et
    `npm test` échouent alors sur `Cannot find module '@supabase/supabase-js'` (#135) **alors
-   que la branche était verte**. Dès que la fusion touche `package.json`, lancer `npm ci`
+   que la branche était verte**. Dès que la fusion touche `package.json`, lancer
+   **`npm run installer -- --principal`** (§4.10 : `npm ci` ne s'y lance pas à la main)
    **avant** `check` et `test`, et le dire dans le compte rendu de fusion.
 7. Après fusion : `check`, `test`, `build` (`+ garde-fous`, `+ pesage` si la mesure est en jeu),
    puis **pousser**. La CI refait `garde-fous` de son côté.
