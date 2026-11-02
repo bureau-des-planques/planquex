@@ -331,11 +331,20 @@ describe('le contrôle mord : une mutation de l’instruction est vue', () => {
 });
 
 describe('le périmètre, dans le texte de l’instruction', () => {
-  it('ne nomme ni le registre, ni les annonces, ni les comptes en écriture', () => {
+  it('ne supprime aucun compte, ne tronque rien et ne nomme ni le registre, ni les annonces, ni `auth.users`', () => {
     for (const interdit of ['admin.migrations', 'annonces_discord', 'auth.', 'profils']) {
       expect(SQL_RESET).not.toContain(interdit);
     }
     expect(SQL_RESET).not.toMatch(/delete\s+from\s+public\.comptes/);
+    expect(SQL_RESET).not.toMatch(/\btruncate\b/i);
+
+    // Le contrôle mord : l'instruction tronquerait, le même contrôle le verrait.
+    const tronque = SQL_RESET.replace(
+      'deck_vides as (delete from public.deck returning 1),',
+      'deck_vides as (truncate public.deck),',
+    );
+    expect(tronque).not.toBe(SQL_RESET);
+    expect(tronque).toMatch(/\btruncate\b/i);
   });
 
   it('nomme le Deck et la Collection au périmètre vidé et dans l’instruction', () => {
