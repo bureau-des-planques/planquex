@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 174 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 175 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -180,3 +180,4 @@
 | D-172 | 02/11/2026 | La courbe du Deck ne nomme plus un coût qui… |
 | D-173 | 02/11/2026 | PWA d'abord, navigateur en plancher ; plein écran là où… |
 | D-174 | 02/11/2026 | Un socle par planche, et un casting qui ne ressemble… |
+| D-175 | 02/11/2026 | La barre du bas passe à quatre entrées : Accueil,… |
