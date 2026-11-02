@@ -177,14 +177,14 @@ critère 5), et la garde la refuse.
 | `rh-charge-sirh` | an HRIS officer, in a grey hoodie and trousers, holding a hard drive, waiting for an export bar, tired and focused |
 | `rh-drh-ex` | a senior HR director, in a midnight suit with gold trim, holding a single dossier, standing in an empty office, imperious and dry |
 | `rh-directeur-talents-ex` | a group talent director, in a black suit with gold cufflinks, holding a signed contract, watching the signatory walk away, smug and weary |
-| `atelier-joueur-de-flute` | a flute player, in a shirt with rolled sleeves, holding a flute, playing through a team meeting, unbothered |
-| `atelier-technicien-systeme` | a systems technician, in a grey polo, holding a power cable, rebooting a server rack, hopeful |
+| `atelier-joueur-de-flute` | a flute player, in a worn blue work overall with rolled sleeves, holding a flute, playing through a team meeting, unbothered |
+| `atelier-technicien-systeme` | a systems technician, in a navy work overall with a badge clip, holding a power cable, rebooting a server rack, hopeful |
 | `atelier-responsable-process` | a process manager, in a suit jacket over overalls, holding a procedure binder, pointing at a flowchart, stern |
 | `atelier-opticien` | an optician, in a white lab coat, holding a screwdriver, adjusting a spectacle frame on a bench, focused and tired |
 | `atelier-rpo` | an operations coordinator, in a blue jacket, holding meeting notes, reading a whiteboard, tired |
-| `atelier-rui` | a unit manager, in a dark jacket, holding a badge, looking at a distant factory, proud |
-| `atelier-regleur` | a setter, in a grey coat, holding a micrometer, adjusting a machine dial, precise and skeptical |
-| `atelier-rpi` | an interface manager, in a casual shirt, holding a cable adapter, checking a wall of connectors, nervous and polite |
+| `atelier-rui` | a unit manager, in a dark work jacket over a polo, holding a badge, looking at a distant factory, proud |
+| `atelier-regleur` | a setter, in a grey work overall with a tool belt, holding a micrometer, adjusting a machine dial, precise and skeptical |
+| `atelier-rpi` | an interface manager, in a grey work jacket, holding a cable adapter, checking a wall of connectors, nervous and polite |
 | `atelier-responsable-flux` | a flow manager, in a hi-vis vest, holding a tablet, watching arrows on a wall map, under pressure |
 | `atelier-controleur-vibration` | a vibration tester, in a lab coat, holding ear protectors, watching a shaker table, bored |
 | `atelier-responsable-qualite` | a quality manager, in a blazer, holding a stamped form, reviewing a red stamp, stern |
@@ -193,13 +193,13 @@ critère 5), et la garde la refuse.
 | `atelier-monteur-optique` | an optical assembler, in a clean-room suit, holding a lens with tweezers, placing it under a magnifier, patient |
 | `atelier-technicien-banc-essai` | a test-bench technician, in a navy overall, holding a tablet, checking a bench readout, smug |
 | `atelier-pointeur` | a measurer, in a grey overall, holding a precision gauge, measuring a part, doubtful |
-| `atelier-ordonnanceur` | a scheduler, in a cardigan, holding a marker, updating a planning board, overworked |
+| `atelier-ordonnanceur` | a scheduler, in a navy work jacket, holding a marker, updating a planning board, overworked |
 | `atelier-responsable-pole` | a department manager, in a deep blue blazer, holding a headcount sheet, surveying a production floor, proud |
 | `atelier-cariste-salle-blanche` | a forklift driver, in a clean-room suit, holding a pallet list, pushing a pallet trolley through an airlock door, cheerful |
-| `atelier-planificateur-moyens-essai` | a test scheduler, in a cardigan, holding a wall calendar, marking a test bench, precise |
+| `atelier-planificateur-moyens-essai` | a test scheduler, in a burgundy work jacket, holding a wall calendar, marking a test bench, precise |
 | `atelier-gardien-usine` | a night watchman, in a dark uniform and a peaked cap, holding a torch, patrolling an empty yard, placid and watchful |
 | `atelier-magasinier` | a storekeeper, in a blue work coat, holding a barcode scanner, scanning a shelf of bins, tired and precise |
-| `atelier-assistant-rpo` | an assistant, in a casual shirt, holding a stack of notes, waiting by a door, eager |
+| `atelier-assistant-rpo` | an assistant, in a pale blue work jacket, holding a stack of notes, waiting by a door, eager |
 | `atelier-agent-maintenance` | a maintenance hand, in a grey overall and a flat cap, holding an oil can, greasing a chain, placid and methodical |
 | `atelier-rpo-sans-rui-ex` | a senior production manager, in a dark suit, holding a signed form, standing alone in a meeting room, imperious |
 | `atelier-rui-non-toxique-ex` | a senior unit manager, in a dark suit, holding a parking badge, leaning on a car, unbothered |

@@ -76,10 +76,10 @@ Par faction, la garde exige en plus : **aucune faction au-delà de 70 %** d'un m
 | `sse-infirmier-site` | blanc | homme | 40 |
 | `sse-infirmiere-travail` | maghrebin | femme | 30 |
 | `sse-medecin-travail` | blanc | homme | 50 |
-| `sse-preventeur` | noir | homme | 20 |
+| `sse-preventeur` | noir | homme | 40 |
 | `sse-ergonome` | blanc | femme | 40 |
 | `sse-responsable-sse` | metis | homme | 60 |
-| `sse-kine-travail` | blanc | femme | 30 |
+| `sse-kine-travail` | blanc | femme | 50 |
 | `sse-sophrologue` | blanc | homme | 50 |
 | `sse-medecin-chef` | asiatique | femme | 40 |
 | `sse-secouriste` | blanc | homme | 30 |
@@ -212,8 +212,8 @@ Par faction, la garde exige en plus : **aucune faction au-delà de 70 %** d'un m
 | `rh-directeur-talents-ex` | blanc | homme | 60 |
 
 <!-- atelier — 26 cartes -->
-| `atelier-joueur-de-flute` | blanc | homme | 40 |
-| `atelier-technicien-systeme` | blanc | homme | 50 |
+| `atelier-joueur-de-flute` | blanc | homme | 20 |
+| `atelier-technicien-systeme` | blanc | homme | 30 |
 | `atelier-responsable-process` | maghrebin | homme | 30 |
 | `atelier-opticien` | blanc | homme | 20 |
 | `atelier-rpo` | noir | femme | 40 |
