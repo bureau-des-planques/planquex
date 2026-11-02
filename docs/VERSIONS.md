@@ -78,10 +78,17 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
 
 ## 4. Publier une build
 
-1. **Écrire la note** de la version à venir dans `src/data/versions.ts` — c'est ce que
+1. **Écrire la note** de la version à venir — c'est ce que
    l'écran `/feuille-de-route` affiche, et c'est **le geste qui rend la règle tenable** : le tag
    part **avant** la release GitHub, donc la note est écrite d'abord, avec son
-   `brouillon: true`. `src/data/versions.test.ts` **échoue** si la version de
+   `brouillon: true`. Elle **ne s'écrit pas à la main** : `src/data/versions.ts` est **généré**
+   et son en-tête l'interdit. Le geste est
+   `npm run note:brouillon -- --version 0.1.18 --points points.txt` : le fichier de points porte
+   **une ligne par point** (`groupe | texte`, le groupe étant facultatif), et la commande écrit
+   **les deux** fichiers (`src/data/versions.ts` et `src/data/notes-resume.ts`) par le
+   générateur, avec le titre `Version 0.1.18` et la date du jour. Elle refuse une version déjà
+   présente, une liste vide, une ligne vide et un point sans texte.
+   `src/data/versions.test.ts` **échoue** si la version de
    `package.json` n'a pas sa note : on ne publie pas une version sans dire ce qu'elle
    contient. Le **message aux testeurs** (`docs/ALPHA-TESTEURS.md`) ne recopie **aucun** numéro
    de version : son titre n'en porte pas, et il demande au testeur de lire le sien dans Réglages.
