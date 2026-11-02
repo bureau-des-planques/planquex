@@ -6,7 +6,9 @@
 >
 > Les trois planches s'appellent désormais **Portrait / Objet / Lieu** (#121) : ce dossier
 > tient le **registre** des images produites, `SUJETS-flow.md` les **sujets** (une ligne par
-> carte de base) et `ACCENTS-flow.md` l'**accent par faction** (D-046).
+> carte de base), `ACCENTS-flow.md` l'**accent par faction** (D-046) et `CASTING-flow.md` le
+> **casting** (une ligne par Planqué de base : origine, genre, âge — D-174, #583). `PROMPTS-flow.md`
+> porte un **socle par planche** (Portrait et Objet) et le wizard le choisit par `socle_de(id)`.
 
 - **Modèle** : Space Hugging Face `mcp-tools/FLUX.1-Krea-dev`, 1024×1024,
   `num_inference_steps` 24, `guidance_scale` 4.5.

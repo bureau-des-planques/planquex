@@ -236,6 +236,11 @@ PROMPTS="${GFLOW_ILLUSTRATION_PROMPTS:-design/illustrations/PROMPTS-flow.md}"
 # seconde source que D-046 supprime, et la recopier ici la ferait revenir.
 SUJETS="${GFLOW_ILLUSTRATION_SUJETS:-design/illustrations/SUJETS-flow.md}"
 ACCENTS="${GFLOW_ILLUSTRATION_ACCENTS:-design/illustrations/ACCENTS-flow.md}"
+# Le **casting** est une ligne par **Planqué de base** (`CASTING-flow.md`, D-174) : origine,
+# genre, âge. Il n'y a pas de ligne pour une variante (elle emprunte sa base, D-139) ni pour
+# une Action (un objet n'a pas de visage). C'est aussi lui qui dit la **planche** : une carte
+# qui a un casting est un portrait, les autres sont des objets (#583).
+CASTING="${GFLOW_ILLUSTRATION_CASTING:-design/illustrations/CASTING-flow.md}"
 REGISTRE="${GFLOW_ILLUSTRATION_REGISTRE:-design/illustrations}"
 README="${GFLOW_ILLUSTRATION_README:-$REGISTRE/README.md}"
 DONNEES="${GFLOW_ILLUSTRATION_DONNEES:-src/data}"
@@ -335,16 +340,90 @@ accent_de() {
     if ($2 == f) { gsub(/^ +| +$/, "", $3); print $3 } }' "$ACCENTS"
 }
 
-# socle() : le bloc de code de « ## Socle commun » — le seul endroit où il vit.
-socle() {
-  awk '/^## Socle commun/{ f = 1; next }
+# socle_de_planche PLAN : le bloc de code du socle nommé (`## Socle Portrait` ou
+# `## Socle Objet` dans PROMPTS-flow.md). Un socle **par planche** depuis #583 : le socle
+# portrait (« waist-up ») appliqué à un objet faisait entrer un bonhomme dans 8 des 11
+# cartes Action.
+socle_de_planche() {
+  awk -v titre="$1" '
+       $0 ~ ("^## Socle " titre) { f = 1; next }
        f && /^```/ { n++; if (n == 2) exit; next }
        f && n == 1 { print }' "$PROMPTS"
 }
-# socle_ligne() : le même, aplati sur une ligne. Le socle est un bloc de code
-# multiligne ; `$(socle)` quoté garde ses retours à la ligne, et un prompt
-# multiligne ne se journalise pas, ne se compare pas et ne se cherche pas.
-socle_ligne() { socle | tr '\n' ' ' | tr -s ' ' | sed -e 's/^ //' -e 's/ $//'; }
+# socle() : le socle **Portrait** — le nom historique, gardé pour les appelants.
+socle() { socle_de_planche "Portrait"; }
+# socle_objet() : le socle de la planche Objet.
+socle_objet() { socle_de_planche "Objet"; }
+# socle_ligne() / socle_objet_ligne() : le même, aplati sur une ligne. Le socle est un bloc de
+# code multiligne ; `$(socle)` quoté garde ses retours à la ligne, et un prompt multiligne
+# ne se journalise pas, ne se compare pas et ne se cherche pas.
+aplatir() { tr '\n' ' ' | tr -s ' ' | sed -e 's/^ //' -e 's/ $//'; }
+socle_ligne() { socle | aplatir; }
+socle_objet_ligne() { socle_objet | aplatir; }
+
+# castings : id <TAB> origine <TAB> genre <TAB> âge — la table de CASTING-flow.md.
+# Les blocs de code sont sautés, comme dans `cartes` et `accent_de` (le format s'y montre).
+castings() {
+  awk -F'|' '/^```/ { bloc = !bloc; next }
+    !bloc && /^\| `/{ id=$2; origine=$3; genre=$4; age=$5
+    gsub(/^[ `]+|[ `]+$/, "", id)
+    gsub(/^ +| +$/, "", origine); gsub(/^ +| +$/, "", genre); gsub(/^ +| +$/, "", age)
+    printf "%s\t%s\t%s\t%s\n", id, origine, genre, age }' "$CASTING"
+}
+
+# casting_de ID : la ligne de casting de la carte — la sienne, ou celle de sa base pour
+# une variante. Vide pour une Action (planche Objet) : c'est ce qui distingue les planches.
+casting_de() {
+  local id="$1" base=""
+  base=$(base_de_variante "$id" || true)
+  castings | awk -F'\t' -v id="$id" -v base="$base" '
+    $1 == id { print; exit }
+    base != "" && $1 == base { print; exit }'
+}
+
+# planche_de ID : « Portrait » si la carte a un casting (un Planqué), « Objet » sinon
+# (une carte Action). Une seule règle, lue dans la table — pas une liste d'ids recopiée.
+planche_de() {
+  if [[ -n "$(casting_de "$1")" ]]; then printf 'Portrait'; else printf 'Objet'; fi
+}
+
+# casting_phrase ID : le morceau de prompt du casting, en anglais, p. ex.
+# « a Black woman in her forties ». Traduit le vocabulaire fermé de CASTING-flow.md.
+casting_phrase() {
+  local ligne origine genre age mot article possessif decade
+  ligne=$(casting_de "$1")
+  [[ -n "$ligne" ]] || return 1
+  origine=$(printf '%s' "$ligne" | cut -f2)
+  genre=$(printf '%s' "$ligne" | cut -f3)
+  age=$(printf '%s' "$ligne" | cut -f4)
+  case "$origine" in
+    blanc) mot="white" ;;
+    maghrebin) mot="North African" ;;
+    noir) mot="Black" ;;
+    metis) mot="mixed-race" ;;
+    asiatique) mot="Asian" ;;
+    autre) mot="Mediterranean" ;;
+    *) mot="$origine" ;;
+  esac
+  case "$genre" in
+    femme) genre="woman"; possessif="her" ;;
+    homme) genre="man"; possessif="his" ;;
+    *) genre="person"; possessif="their" ;;
+  esac
+  case "$age" in
+    20) decade="twenties" ;;
+    30) decade="thirties" ;;
+    40) decade="forties" ;;
+    50) decade="fifties" ;;
+    60) decade="sixties" ;;
+    *) decade="${age}s" ;;
+  esac
+  case "$mot" in
+    [aeiouAEIOU]*) article="an" ;;
+    *) article="a" ;;
+  esac
+  printf '%s %s %s in %s %s' "$article" "$mot" "$genre" "$possessif" "$decade"
+}
 
 # ── Les modèles : noms humains ↔ alias gflow ──────────────────────────────
 #
@@ -697,11 +776,20 @@ ligne_journal() {
   grep -qF "$motif" "$README"
 }
 
-# construire_prompt ID : le prompt complet — socle + sujet + accent — sur une seule
-# ligne. Une seule source : la génération interactive et le mode direct l'appellent,
-# et `--prompt` le rend tel quel (le test le compare à une chaîne attendue, #156).
+# construire_prompt ID : le prompt complet — socle de la planche + casting (Planqué) +
+# sujet + accent — sur une seule ligne. Une seule source : la génération interactive et le
+# mode direct l'appellent, et `--prompt` le rend tel quel (les goldens du test le comparent,
+# #156). Depuis #583, une carte Action reçoit le socle **Objet** et **pas** de casting.
 construire_prompt() {
-  printf '%s %s, muted %s accent.' "$(socle_ligne)" "$(sujet_de "$1")" "$(accent_de "$1")"
+  local id="$1" socle_part casting_part
+  if [[ "$(planche_de "$id")" == "Objet" ]]; then
+    printf '%s %s, muted %s accent.' \
+      "$(socle_objet_ligne)" "$(sujet_de "$id")" "$(accent_de "$id")"
+  else
+    casting_part=$(casting_phrase "$id")
+    printf '%s %s, %s, muted %s accent.' \
+      "$(socle_ligne)" "$casting_part" "$(sujet_de "$id")" "$(accent_de "$id")"
+  fi
 }
 
 # gflow_generer CARTE ALIAS PROMPT NB : lance `gflow image t2i --json` et rend son
@@ -954,6 +1042,7 @@ say ""
 say "Carte retenue : $CARTE"
 note "Sujet  : $(sujet_de "$CARTE")"
 note "Accent : $(accent_de "$CARTE")"
+note "Planche: $(planche_de "$CARTE") · casting : $(casting_phrase "$CARTE" || printf 'aucun (Objet)')"
 note "État   : $(etat_de "$CARTE")"
 pause "Entrée pour générer"
 
@@ -1000,7 +1089,7 @@ if [[ -n "$INSTALLE" ]]; then
   fi
 else
 PROMPT="$(construire_prompt "$CARTE")"
-say "Prompt envoyé (socle §6.1 + sujet), aplati sur une seule ligne :"
+say "Prompt envoyé (socle de la planche + casting + sujet), aplati sur une seule ligne :"
 printf '\n%s\n\n' "$PROMPT" | fold -s -w 96 | sed 's/^/    /'
 note "Le socle impose la lumière principale sur le VISAGE : c'est le correctif de la"
 note "première vague, dont les 8 images ont les visages dans l'ombre. Ne l'enlève pas."
