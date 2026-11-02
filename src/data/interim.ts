@@ -205,7 +205,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'selfDamage', amount: 10 }]
       }
     ],
-    flavor: 'Il a signé pour une journée. Il en est à sa troisième semaine.'
+    flavor: 'Il a signé pour une journée. Il en est à sa troisième semaine.',
+    art: 'interim-vacataire.webp'
   }),
   base({
     id: 'interim-charge-mission',
@@ -223,7 +224,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'draw', amount: 1 }]
       }
     ],
-    flavor: 'Il rend un livrable. Personne ne sait ce qu’il contient, tout le monde le valide.'
+    flavor: 'Il rend un livrable. Personne ne sait ce qu’il contient, tout le monde le valide.',
+    art: 'interim-charge-mission.webp'
   }),
   base({
     id: 'interim-coordinateur-interimaire',
@@ -242,7 +244,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'switchSelf' }]
       }
     ],
-    flavor: 'Il coordonne trois missions qu’il n’a pas le droit de nommer.'
+    flavor: 'Il coordonne trois missions qu’il n’a pas le droit de nommer.',
+    art: 'interim-coordinateur-interimaire.webp'
   }),
   base({
     id: 'interim-suppleant',
@@ -260,7 +263,8 @@ export const INTERIM_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'healSelf', amount: 10 }]
       }
     ],
-    flavor: 'On lui a dit de faire comme son prédécesseur. Il ne l’a jamais croisé.'
+    flavor: 'On lui a dit de faire comme son prédécesseur. Il ne l’a jamais croisé.',
+    art: 'interim-suppleant.webp'
   })
 ];
 

@@ -388,3 +388,11 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-10-28 · `rh-drh-crown` · modèle `NARWHAL` · graine `92169534` · `rh-drh-crown.webp`
 - 2026-10-28 · `direction-pdg-crown` · modèle `NARWHAL` · graine `602849386` · `direction-pdg-crown.webp`
 - 2026-10-28 · `syndicat-secretaire-general-crown` · modèle `NARWHAL` · graine `1019569493` · `syndicat-secretaire-general-crown.webp`
+- 2026-11-02 · `interim-vacataire` · modèle `NARWHAL` · graine `955141975` · `interim-vacataire.webp`
+- 2026-11-02 · `interim-charge-mission` · modèle `NARWHAL` · graine `1191838800` · `interim-charge-mission.webp`
+- 2026-11-02 · `interim-coordinateur-interimaire` · modèle `NARWHAL` · graine `1083064293` · `interim-coordinateur-interimaire.webp`
+- 2026-11-02 · `interim-suppleant` · modèle `NARWHAL` · graine `1882403512` · `interim-suppleant.webp`
+- 2026-11-02 · `syndicat-delegue-syndical` · modèle `NARWHAL` · graine `1198728965` · `syndicat-delegue-syndical.webp`
+- 2026-11-02 · `syndicat-permanent-syndical` · modèle `NARWHAL` · graine `663377566` · `syndicat-permanent-syndical.webp`
+- 2026-11-02 · `syndicat-collectif-atelier` · modèle `NARWHAL` · graine `582407928` · `syndicat-collectif-atelier.webp`
+- 2026-11-02 · `syndicat-representant-section` · modèle `NARWHAL` · graine `1608660515` · `syndicat-representant-section.webp`

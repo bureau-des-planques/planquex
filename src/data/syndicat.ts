@@ -181,7 +181,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'healSelf', amount: 10 }]
       }
     ],
-    flavor: 'Il tient sa permanence le mardi. Personne ne vient le mardi.'
+    flavor: 'Il tient sa permanence le mardi. Personne ne vient le mardi.',
+    art: 'syndicat-delegue-syndical.webp'
   }),
   base({
     id: 'syndicat-permanent-syndical',
@@ -200,7 +201,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'status', status: 'SIESTE', target: 'opponent' }]
       }
     ],
-    flavor: 'Il passe voir les équipes. Il ne s’arrête à aucune.'
+    flavor: 'Il passe voir les équipes. Il ne s’arrête à aucune.',
+    art: 'syndicat-permanent-syndical.webp'
   }),
   base({
     id: 'syndicat-collectif-atelier',
@@ -218,7 +220,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'reduceDamage', amount: 10 }]
       }
     ],
-    flavor: 'Quatre-vingts signatures, deux écritures. La direction demande l’original.'
+    flavor: 'Quatre-vingts signatures, deux écritures. La direction demande l’original.',
+    art: 'syndicat-collectif-atelier.webp'
   }),
   base({
     id: 'syndicat-representant-section',
@@ -236,7 +239,8 @@ export const SYNDICAT_CARDS: PlanqueCard[] = [
         effects: [{ kind: 'draw', amount: 1 }]
       }
     ],
-    flavor: 'Il rend la note annotée. La direction en fait une deuxième note.'
+    flavor: 'Il rend la note annotée. La direction en fait une deuxième note.',
+    art: 'syndicat-representant-section.webp'
   })
 ];
 
