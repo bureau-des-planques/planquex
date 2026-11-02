@@ -28,7 +28,7 @@ La date exacte sera annoncée avant le reset. Rien ne part sans que ce soit dit 
   tes données, le comité — au premier lancement. On peut la revoir depuis Réglages.
 - **Arrivages** : 5 cartes à chaque ouverture — 3 communes, 1 peu commune, 1 rare au minimum.
 - **Collection** : toutes tes cartes, avec recherche, filtres par faction et par stade, et la
-  fiche de chaque carte. **Les 225 cartes de base ont leur illustration**, et chaque variante
+  fiche de chaque carte. **Les 233 cartes de base ont leur illustration**, et chaque variante
   reprend celle de sa base : tout le set s'affiche illustré.
 - **Deck** : 20 cartes, au moins un Planqué Entrant, 2 exemplaires maximum du même nom.
   Le bouton « Remplir » en compose un tout seul. Tu choisis aussi jusqu'à 3 types de café.

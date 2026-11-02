@@ -63,7 +63,6 @@ export const NOTES_VERSIONS: NoteVersion[] = [
     version: '0.1.17',
     date: '2026-11-02',
     titre: 'Version 0.1.17',
-    brouillon: true,
     points: [
       {
         groupe: 'Les illustrations',
@@ -83,7 +82,11 @@ export const NOTES_VERSIONS: NoteVersion[] = [
       },
       {
         groupe: 'Sur le téléphone',
-        texte: 'Installée, l’application passe en plein écran sur Android et dessine sous la barre d’état sur iPhone. Un écran de 700 à 860 pixels de haut — un Pixel 7 — a enfin ses propres tailles.'
+        texte: 'Installée, l’application passe en plein écran sur Android et dessine sous la barre d’état sur iPhone.'
+      },
+      {
+        groupe: 'Sur le téléphone',
+        texte: 'Un écran de 700 à 860 pixels de haut — un Pixel 7 — a enfin ses propres tailles : la bande vide sous la barre d’action disparaît.'
       },
       {
         groupe: 'Collection et Deck',
@@ -103,7 +106,19 @@ export const NOTES_VERSIONS: NoteVersion[] = [
       },
       {
         groupe: 'L’entrée et le mur',
-        texte: 'Un post-it naît toujours « en attente » : le tri reste le geste du comité. Et une configuration de base incomplète se voit, au lieu d’ouvrir le jeu en silence.'
+        texte: 'Un post-it naît toujours « en attente » : le tri reste le geste du comité.'
+      },
+      {
+        groupe: 'L’entrée et le mur',
+        texte: 'Une configuration de base incomplète se voit, au lieu d’ouvrir le jeu en silence.'
+      },
+      {
+        groupe: 'À savoir avant de jouer',
+        texte: 'L’entrée exige un compte : une session anonyme ne joue plus, et un compte refusé ne voit que la page d’attente.'
+      },
+      {
+        groupe: 'À savoir avant de jouer',
+        texte: 'Le reset de la bêta est toujours annoncé : ton compte reste, tes traces de combat et le mur partent.'
       }
     ]
   },
