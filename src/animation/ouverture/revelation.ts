@@ -227,10 +227,12 @@ export function poseFiche(largeur: number, hauteur: number): Fiche {
       disposition: 'cote'
     };
   }
-  // La carte garde **le texte la priorité** en portrait (D-170) : à 0,5 de la hauteur, le panneau
-  // tombait à 254 px pour 323 px de contenu à 390 × 664. À 0,42, il rend ~45 px au texte — et la
-  // carte reste la « carte en grand » (235 px), la fiche donnant tout ce qu'elle abrège.
-  const echelle = Math.min(1.3, (hauteur * 0.42) / CARTE.hauteur, (largeur * 0.8) / CARTE.largeur);
+  // La carte garde **le texte la priorité** en portrait (D-170, #569) : à 0,5 de la hauteur, le
+  // panneau tombait à 254 px pour 323 px de contenu à 390 × 664 ; D-170 l'a passé à 0,42, et le
+  // plus long texte mesuré demandait encore 130 px de défilement (#569). À 0,34, le viseur rend
+  // ~65 px de plus, et la carte reste la « carte en grand » (172 px de haut, contre 118 px pour
+  // une carte étalée) : la fiche donne tout ce que la carte abrège.
+  const echelle = Math.min(1.3, (hauteur * 0.34) / CARTE.hauteur, (largeur * 0.8) / CARTE.largeur);
   const h = CARTE.hauteur * echelle;
   const haut = 4;
   return {

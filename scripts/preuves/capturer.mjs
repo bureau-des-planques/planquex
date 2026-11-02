@@ -983,6 +983,25 @@ try {
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
       await page.click('.hero__ouvrir');
       await page.waitForSelector('.ouverture', { timeout: 15000 });
+      // **La croix du dialogue fait 44 px** (#569, D-116) : la même cible de doigt que le combat,
+      // lue ici sur le dialogue de l'Arrivage — `size="icon-sm"` la laissait à 26,9 × 26,9 px.
+      const croix = await page.evaluate(() => {
+        const el = document.querySelector('.pack-reveal [data-slot="dialog-close"]');
+        if (!el) return null;
+        // `offsetWidth`/`offsetHeight` : la taille de mise en page, insensible au `zoom-in`
+        // transitoire du dialogue (mesuré à 42 px pendant la première animation).
+        return { largeur: el.offsetWidth, hauteur: el.offsetHeight };
+      });
+      if (!croix) {
+        problems.push(
+          `${slug} · la croix de fermeture de l’Arrivage est absente : sa cible de doigt n’est pas mesurable`
+        );
+      } else if (croix.largeur < 43.5 || croix.hauteur < 43.5) {
+        problems.push(
+          `${slug} · la croix de l’Arrivage fait ${croix.largeur} × ${croix.hauteur} px (${VIEWPORT.width} × ${VIEWPORT.height}) : ` +
+            `la cible de doigt est de 44 px (D-116)`
+        );
+      }
       // Le sachet s'ouvre au geste : « Ouvrir » joue la déchirure sans glissement (le chemin
       // accessible de la spec §5), puis l'envol porte les cartes à la révélation.
       await page.click('[data-ouvrir]');

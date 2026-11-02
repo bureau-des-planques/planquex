@@ -68,6 +68,28 @@ function ecranTaille(largeur: number, hauteur: number): () => void {
   };
 }
 
+/**
+ * **Un pointeur donné** (#569) : jsdom n'a pas de périphérique, et son `matchMedia` simulé
+ * répond toujours `false`. On dit donc explicitement si l'appareil a un doigt (`coarse`) ou une
+ * souris (`fine`) : c'est ce que lit la consigne.
+ */
+function pointeur(type: 'coarse' | 'fine'): () => void {
+  const initial = window.matchMedia;
+  window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+    matches: query.includes('pointer: coarse') ? type === 'coarse' : false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  })) as unknown as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = initial;
+  };
+}
+
 function attendre(ms: number): void {
   act(() => {
     vi.advanceTimersByTime(ms);
@@ -256,6 +278,54 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(onRanger).toHaveBeenCalledOnce();
   });
 
+  it('pendant l’envol, la consigne dit l’attente : `aria-live` n’annonce plus du vide (#569)', () => {
+    const scene = monter();
+    fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
+    attendre(800);
+    expect(scene.dataset.etape).toBe('ouverture');
+    // Le contrôle mord : la consigne d'avant était la chaîne vide, et la ligne gardait sa
+    // hauteur — un lecteur d'écran n'annonçait donc rien pendant les 2,9 s de montée.
+    const consigne = scene.querySelector('[data-consigne]')?.textContent ?? '';
+    expect(consigne.length).toBeGreaterThan(0);
+    expect(consigne).toContain('ouvre');
+  });
+
+  it('la fin dit le compteur et le bilan, avant le bouton (#569)', () => {
+    const scene = monter();
+    fireEvent.click(within(scene).getByRole('button', { name: /Tout afficher/ }));
+    attendre(100);
+    expect(scene.dataset.etape).toBe('ouvert');
+    // Le compteur ne disparaît plus quand tout est retourné.
+    expect(scene.querySelector('[data-consigne]')?.textContent).toContain('5 / 5');
+    // Le bouton or n'est plus seul : le bilan dit ce que l'Arrivage a donné.
+    const bilan = scene.querySelector('.ouverture__bilan');
+    expect(bilan?.textContent).toBe('5 cartes dans ta Collection · 2 nouvelles');
+    expect(within(scene).getByRole('button', { name: /Ranger dans la Collection/ })).toBeTruthy();
+  });
+
+  it('« Tout afficher » ne pèse pas plus que « Ouvrir » (#569)', () => {
+    const scene = monter();
+    const ouvrir = scene.querySelector('[data-ouvrir]') as HTMLElement;
+    const tout = scene.querySelector('[data-tout-afficher]') as HTMLElement;
+    // Le contrôle mord : sans la classe de second plan, les deux boutons sont `.button` et rien
+    // ne les distingue — c'était le défaut mesuré (même classe, même graisse, même dégradé).
+    expect(ouvrir.className).not.toContain('ouverture__tout-afficher');
+    expect(tout.className).toContain('ouverture__tout-afficher');
+  });
+
+  it('à la souris, la consigne ne parle ni du doigt ni du toucher (#569)', () => {
+    const rendrePointeur = pointeur('fine');
+    try {
+      const scene = monter();
+      expect(scene.querySelector('[data-consigne]')?.textContent).toBe('Glisse le long des pointillés');
+      fireEvent.click(within(scene).getByRole('button', { name: /Tout afficher/ }));
+      attendre(100);
+      expect(scene.querySelector('[data-consigne]')?.textContent).toContain('clique une carte pour la lire');
+    } finally {
+      rendrePointeur();
+    }
+  });
+
   it('le clavier retourne les cartes : la première a le focus, Entrée la retourne', () => {
     const scene = monter();
     jusquALaRevelation(scene);
@@ -291,6 +361,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
 
   it('sur une petite carte, le premier tap retourne la carte et ouvre sa fiche (D-170)', () => {
     const rendre = ecranTaille(390, 664);
+    const rendrePointeur = pointeur('coarse');
     try {
       const scene = monter();
       jusquALaRevelation(scene);
@@ -304,6 +375,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
       // La consigne annonce le geste qui a lieu, pas l'étape intermédiaire.
       expect(scene.querySelector('[data-consigne]')?.textContent).not.toMatch(/retourner/);
     } finally {
+      rendrePointeur();
       rendre();
     }
   });

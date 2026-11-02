@@ -53,6 +53,33 @@ describe('la feuille de l’ouverture d’un Arrivage (D-169)', () => {
     expect(CSS).toMatch(/@container \(max-width: 240px\) \{\s*\.card:not\(\.card--compact\) \.card__bas \{/);
   });
 
+  it('la croix du dialogue fait 44 × 44 px (D-116, #569)', () => {
+    // La croix de l'Arrivage tombait à 26,9 × 26,9 px : `size="icon-sm"` fait 1,75 rem, la seule
+    // cible fautive du projet. Le contrôle mord : sans les deux déclarations, le bloc n'a que
+    // sa couleur et sa position, et la garde tombe.
+    const croix = bloc(".pack-reveal [data-slot='dialog-close']");
+    expect(croix).toMatch(/height:\s*44px;/);
+    expect(croix).toMatch(/width:\s*44px;/);
+  });
+
+  it('le titre est centré sur la scène et passe au-dessus de la bande (#569)', () => {
+    const titre = bloc('.ouverture__titre');
+    // Le défaut mesuré : `padding-right: 2.5rem` seul décalait le texte de 20 px vers la gauche.
+    expect(titre).not.toMatch(/padding-right:\s*2\.5rem/);
+    expect(titre).toMatch(/padding-inline:\s*3\.5rem;/);
+    // La bande arrachée traversait le titre : le titre est au-dessus de la scène.
+    expect(titre).toMatch(/position:\s*relative;/);
+    expect(titre).toMatch(/z-index:\s*8;/);
+  });
+
+  it('« Tout afficher » et le bilan ont leur règle (#569)', () => {
+    const tout = bloc('.ouverture__tout-afficher');
+    // Le contrôle mord : sans fond ni ombre retirés, il garde le poids de « Ouvrir ».
+    expect(tout).toMatch(/background:\s*transparent;/);
+    expect(tout).toMatch(/box-shadow:\s*none;/);
+    expect(bloc('.ouverture__bilan')).toMatch(/text-align:\s*center;/);
+  });
+
   it('`--p`/`--sens` se posent sur leurs trois consommateurs, pas sur le sachet (#566)', () => {
     // Le défaut mesuré : les deux variables vivaient sur `.ouverture__sachet`, donc s'héritaient
     // dans tout son sous-arbre (les deux SVG de la Pochette) à chaque `pointermove`.
