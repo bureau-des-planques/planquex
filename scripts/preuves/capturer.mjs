@@ -42,7 +42,15 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 import { preview } from 'vite';
-import { STORAGE_KEY, VIEWPORT, INSTANTS_COMBAT, GABARITS, amorcageStore } from './capturer-socle.mjs';
+import {
+  STORAGE_KEY,
+  VIEWPORT,
+  INSTANTS_COMBAT,
+  GABARITS,
+  amorcageStore,
+  defilementVertical,
+  controlesAccueil
+} from './capturer-socle.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const outDir = join(root, 'captures');
@@ -83,6 +91,9 @@ const PAGES = [
   // une page de l'application sans capture est une page que personne ne regarde.
   ['comite-suivi', '/comite/suivi']
 ];
+
+/** Pages dont le document ne défile pas sur les gabarits portrait de téléphone (D-171). */
+const PAGES_SANS_DEFILEMENT_VERTICAL = ['accueil'];
 
 /**
  * La **première visite** (#150) : le seul écran photographié **sans** amorçage.
@@ -203,6 +214,9 @@ const CIBLES_HAUTEUR = [
   { nom: '« Fin du tour »', selecteur: '.combat-barre__fin .button' }
 ];
 
+/** D-171 : D-094 garde son plancher de 20 px ; la borne haute supprime le vide du combat. */
+const MARGE_MAX_COMBAT_PORTRAIT = 32;
+
 /**
  * Mesure, **dans le navigateur**, le haut et le bas de chaque cible, et la limite à ne pas
  * franchir : le haut de la barre de navigation fixe (ou le bas de la fenêtre sans elle).
@@ -273,6 +287,7 @@ function controlesHauteur({
   limite,
   mesures,
   viewport,
+  margeMax,
   pasAPasOuvert = false,
   defilement = 0,
   etat = '',
@@ -323,6 +338,20 @@ function controlesHauteur({
     );
   }
 
+  // Le plancher de D-094 protège la cible ; D-171 borne aussi le grand vide observé sur téléphone.
+  const barreAction = mesures.find(({ selecteur }) => selecteur === '.combat-barre');
+  if (
+    typeof margeMax === 'number' &&
+    barreAction?.present &&
+    !hors.includes(barreAction) &&
+    limite - barreAction.bas > margeMax
+  ) {
+    problemes.push(
+      `la barre d'action du combat laisse ${limite - barreAction.bas} px de vide (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+        `${margeMax} px maximum (D-171)`
+    );
+  }
+
   // **La barre ne recouvre pas la main** (#191). Être dans la fenêtre ne suffit pas : une barre
   // collée en bas peut tenir à l'écran **et** cacher le bas des cartes. On ne le dit que quand
   // les deux sont dans la fenêtre — un élément déjà hors de la fenêtre est nommé plus haut, et
@@ -357,9 +386,63 @@ function controlesHauteur({
 async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {
   const hauteur = await page.evaluate(mesureHauteur, CIBLES_HAUTEUR);
   console.log(`combat · ${contexte} · ${JSON.stringify(hauteur)}`);
-  for (const probleme of controlesHauteur({ ...hauteur, viewport, etat: contexte })) {
+  const margeMax = viewport.width < 900 && viewport.height > viewport.width ? MARGE_MAX_COMBAT_PORTRAIT : undefined;
+  for (const probleme of controlesHauteur({ ...hauteur, viewport, margeMax, etat: contexte })) {
     problems.push(`${route} · ${probleme}`);
   }
+}
+
+/**
+ * **Le pire cas de l'accueil** (#553) : une partie rangée ajoute « Une partie t'attend au tour N »
+ * sous les deux gestes. L'amorçage des captures ne porte que `tutorielVu`, donc la ligne n'est
+ * jamais rendue — et une hauteur mesurée sans elle ne dit rien du cas réel. On la **pose** le
+ * temps de la mesure, avec sa classe et son texte, puis on la retire : la capture ne montre pas
+ * un état que la partie n'a pas.
+ */
+async function poserAttentePireCas(page) {
+  await page.evaluate(() => {
+    const actions = document.querySelector('.hero__actions');
+    if (!actions || document.querySelector('.hero__attente')) return;
+    const ligne = document.createElement('p');
+    ligne.className = 'muted hero__attente pire-cas';
+    ligne.textContent = 'Une partie t’attend au tour 7.';
+    actions.after(ligne);
+  });
+}
+
+/** Retire la ligne du pire cas : la capture reprend l'état réel de l'amorçage. */
+async function retirerAttentePireCas(page) {
+  await page.evaluate(() => document.querySelector('.hero__attente.pire-cas')?.remove());
+}
+
+/** Refuse un document d'accueil plus haut que sa fenêtre portrait, sans masquer son contenu. */
+async function controlerAccueilSansDefilement(page, slug, viewport) {
+  await poserAttentePireCas(page);
+  const hauteur = await page.evaluate(() => ({
+    document: document.documentElement.scrollHeight,
+    fenetre: window.innerHeight,
+    limite: Math.round(document.querySelector('.bottom-nav')?.getBoundingClientRect().top ?? window.innerHeight),
+    sections: ['.hero', '.stats-grid', '.home__version'].map((selecteur) => {
+      const rect = document.querySelector(selecteur)?.getBoundingClientRect();
+      return {
+        nom: selecteur,
+        present: !!rect,
+        haut: rect ? Math.round(rect.top) : null,
+        bas: rect ? Math.round(rect.bottom) : null
+      };
+    })
+  }));
+  for (const probleme of controlesAccueil({
+    documentHeight: hauteur.document,
+    viewportHeight: hauteur.fenetre,
+    limite: hauteur.limite,
+    sections: hauteur.sections
+  })) {
+    problems.push(
+      `${slug} · ${probleme} (${viewport.width} × ${viewport.height}) : l'accueil portrait doit tenir sans contenu coupé (D-171)`
+    );
+  }
+  await retirerAttentePireCas(page);
 }
 
 /**
@@ -532,7 +615,7 @@ async function mesurerAvecUnePression(browser, detaille = false) {
 }
 
 /**
- * **Un gabarit de D-142** : chaque page sous la garde de largeur, puis le combat sous les gardes de
+ * **Un gabarit de D-171** : chaque page sous la garde de largeur, puis le combat sous les gardes de
  * hauteur — à l'arrivée, puis avec une Pression jouable et le pire cas. Une capture par page et par
  * état, préfixée du nom du gabarit (`telephone-petit-combat.png`).
  */
@@ -550,11 +633,14 @@ async function mesurerGabarit(browser, gabarit) {
     page.on('pageerror', (error) => problems.push(`${route} (${taille}) · pageerror : ${error.message}`));
     await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(300);
+    if (PAGES_SANS_DEFILEMENT_VERTICAL.includes(slug) && mobile && viewport.height > viewport.width) {
+      await controlerAccueilSansDefilement(page, slug, viewport);
+    }
     const debordement = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth
     );
     if (debordement > 0) {
-      problems.push(`${route} · la page déborde de ${debordement} px en largeur à ${taille} (D-142)`);
+      problems.push(`${route} · la page déborde de ${debordement} px en largeur à ${taille} (D-171)`);
     }
     await page.screenshot({ path: join(outDir, `${nom}-${slug}.png`), fullPage: PLEINE_PAGE });
     await context.close();
@@ -755,9 +841,38 @@ if (process.argv.includes('--plan')) {
       captures: shots,
       preparations: PREPARATIONS,
       hauteur: CIBLES_HAUTEUR,
+      pagesSansDefilementVertical: PAGES_SANS_DEFILEMENT_VERTICAL,
+      margeMaxCombatPortrait: MARGE_MAX_COMBAT_PORTRAIT,
       badge: MODELE_BADGE
     })
   );
+  process.exit(0);
+}
+
+// Sonde de la garde verticale de l'accueil : la même formule est exercée sur un cas fautif
+// sans ouvrir de navigateur, pour que le contrôle morde sur un document trop haut.
+if (process.argv.includes('--controle-defilement-vertical')) {
+  const arg = process.argv[process.argv.indexOf('--controle-defilement-vertical') + 1];
+  let geometrie;
+  try {
+    geometrie = JSON.parse(arg);
+  } catch {
+    stop(`--controle-defilement-vertical attend une géométrie JSON, reçu : « ${arg} »`);
+  }
+  console.log(JSON.stringify(defilementVertical(geometrie.documentHeight, geometrie.viewportHeight)));
+  process.exit(0);
+}
+
+// Sonde de la garde de l'accueil : défilement du document et contenu essentiel sous la navigation.
+if (process.argv.includes('--controle-accueil')) {
+  const arg = process.argv[process.argv.indexOf('--controle-accueil') + 1];
+  let geometrie;
+  try {
+    geometrie = JSON.parse(arg);
+  } catch {
+    stop(`--controle-accueil attend une géométrie JSON, reçu : « ${arg} »`);
+  }
+  console.log(JSON.stringify(controlesAccueil(geometrie)));
   process.exit(0);
 }
 
@@ -936,6 +1051,9 @@ try {
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.waitForTimeout(450);
+      if (PAGES_SANS_DEFILEMENT_VERTICAL.includes(slug)) {
+        await controlerAccueilSansDefilement(page, slug, VIEWPORT);
+      }
     }
     await page.screenshot({ path: join(outDir, `${slug}.png`), fullPage: PLEINE_PAGE });
     await context.close();
@@ -968,7 +1086,7 @@ try {
   await mesurerDensite(browser, false);
   await mesurerAvecUnePression(browser, true);
 
-  // Les gabarits de D-142 : la fenêtre réelle d'un téléphone, en portrait et en paysage, et le PC.
+  // Les gabarits de D-171 : téléphones portrait et PC, sans gabarit de paysage mobile.
   for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);
 } finally {
   await browser.close();
@@ -983,5 +1101,5 @@ if (problems.length) {
 
 console.log(
   `✔ ${shots.length + PREPARATIONS.length} captures dans captures/ (${base}) — dont la première visite ` +
-    `et ${PREPARATIONS.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-142`
+    `et ${PREPARATIONS.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-171`
 );

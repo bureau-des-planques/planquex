@@ -2,7 +2,7 @@
 /**
  * Socle partagé des captures (`scripts/preuves/capturer.mjs`) et du harnais de partie au clic
  * (`scripts/preuves/jouer-partie.mjs`, #424) : les instants qui fixent la graine, la fenêtre de
- * référence, les gabarits de D-142 et l’amorçage du store. Extrait de `capturer.mjs` tel quel :
+ * référence, les gabarits de D-171 et l’amorçage du store. Extrait de `capturer.mjs` tel quel :
  * le comportement des captures ne change pas.
  *
  * `capturer.mjs` exécute sa suite au chargement, donc on ne peut pas l’importer : ce module
@@ -50,25 +50,40 @@ export function amorcageStore(origin, supplement = {}) {
  */
 export const VIEWPORT = { width: 420, height: 900 };
 
+/** Défilement vertical du document, jamais négatif. Partagé avec la garde de l'accueil. */
+export function defilementVertical(documentHeight, viewportHeight) {
+  return Math.max(0, documentHeight - viewportHeight);
+}
+
+/** Les sections principales de l'accueil restent entièrement dans la fenêtre, sous la navigation. */
+export function controlesAccueil({ documentHeight, viewportHeight, limite, sections }) {
+  const problemes = [];
+  const defilement = defilementVertical(documentHeight, viewportHeight);
+  if (defilement > 0) problemes.push(`document défile de ${defilement} px`);
+  for (const { nom, present, haut, bas } of sections) {
+    if (present && (haut < 0 || bas > limite))
+      problemes.push(`${nom} sort de la fenêtre utilisable (${haut} → ${bas}, limite ${limite})`);
+  }
+  return problemes;
+}
+
 /**
- * **Les gabarits de D-142** — la fenêtre réelle d'un téléphone, et le PC (28/10/2026).
+ * **Les gabarits de D-171** — les téléphones en portrait et le PC (01/11/2026).
  *
  * 420 × 900 reste la **référence** (D-060, D-094) : toutes les gardes ci-dessus y tournent. Mais
- * c'est un téléphone sans barre de navigateur ; mesuré le 28/10/2026, le combat défilait de 159 px
- * à 360 × 640 et la barre d'action recouvrait le plateau en paysage. Chaque gabarit joue donc
+ * c'est un téléphone sans barre de navigateur ; D-171 ajoute 360 × 640 et 390 × 664 en portrait.
+ * Chaque gabarit joue donc
  * **le combat** (arrivée pas-à-pas ouvert, puis pas-à-pas terminé : arrivée, Pression jouable et
  * pire cas) sous les
  * mêmes gardes — défilement, marge de 20 px, cibles de 44 px — et **chaque page** sous la garde
  * de largeur : une page qui déborde en largeur casse la mise en page (le critère de #128).
  *
- * Les tailles sont relues dans les lignes D-142 et D-158 de `docs/DECISIONS.md` par `scripts/preuves/capturer.test.ts`.
+ * Les tailles sont relues dans D-171 et D-158 de `docs/DECISIONS.md` par `scripts/preuves/capturer.test.ts`.
  * `mobile: false` pour le PC : ni `isMobile` ni écran tactile.
  */
 export const GABARITS = [
   { nom: 'telephone-petit', viewport: { width: 360, height: 640 }, mobile: true },
   { nom: 'telephone', viewport: { width: 390, height: 664 }, mobile: true },
-  { nom: 'paysage-petit', viewport: { width: 740, height: 360 }, mobile: true },
-  { nom: 'paysage', viewport: { width: 844, height: 390 }, mobile: true },
   { nom: 'pc', viewport: { width: 1280, height: 800 }, mobile: false },
   // D-158 (#520) : le grand écran, où le combat grandit avec la hauteur et la console porte le journal.
   { nom: 'grand-ecran', viewport: { width: 1920, height: 1080 }, mobile: false }
