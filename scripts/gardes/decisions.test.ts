@@ -29,6 +29,11 @@ const LIGNE = /^\|\s*(D-\d+)\s*\|/;
  * Exceptions au contrôle de continuité : un identifiant **volontairement absent** du journal
  * (décision retirée puis renumérotée, par exemple). Vide tant qu'aucun cas ne l'exige —
  * vérifié sur le fichier du 21/10/2026, qui va de D-001 à D-049 sans manque.
+ *
+ * **D-171, D-172 et D-173** : réservés le 02/11/2026 par trois tickets menés en parallèle
+ * (session portrait, #555, #580). Leurs branches ne sont pas encore fusionnées, donc ces
+ * lignes n'existent pas dans cette copie de travail ; elles disparaissent de cette liste
+ * au merge. Ce n'est pas un trou d'édition.
  */
 const SANS_TROU_EXCEPTIONS = new Set<string>([]);
 

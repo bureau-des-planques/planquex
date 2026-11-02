@@ -1127,6 +1127,195 @@ describe('Les tables de #121 — sujets et accents (Q10, Q14, D-046)', () => {
 });
 
 /**
+ * **D-174** — la table de casting (#583).
+ *
+ * Les 225 planches partageaient un seul visage : homme blanc, 45–60 ans, lunettes, et
+ * les seules personnes visiblement racisées étaient la carte « diversité / inclusion ».
+ * La table `CASTING-flow.md` donne une ligne par **Planqué de base** — origine, genre,
+ * tranche d'âge — et le prompt devient `socle + casting + sujet + accent`.
+ *
+ * La garde vérifie les seuils que D-174 acte, et **chacun mord** sur une table fautive :
+ * une ligne manquante, une orpheline, une faction à plus de 70 % d'un groupe, une
+ * faction de 10 cartes et plus à moins de 3 groupes, une part de femmes hors de 40–60 %.
+ * Elle ne juge **pas** le prestige : « le PDG peut être une femme noire » est une règle
+ * de rédaction, vérifiée par relecture.
+ */
+const CASTING_FICHIER = 'design/illustrations/CASTING-flow.md';
+
+/** Le vocabulaire **fermé** de la table (D-174). */
+const ORIGINES = ['blanc', 'maghrebin', 'noir', 'metis', 'asiatique', 'autre'] as const;
+const GENRES = ['femme', 'homme'] as const;
+const AGES = ['20', '30', '40', '50', '60'] as const;
+
+/** La distribution validée, en cartes : 222 Planqués, 111 femmes, ces âges-là. */
+const CIBLE_ORIGINES: Record<(typeof ORIGINES)[number], number> = {
+  blanc: 133,
+  maghrebin: 27,
+  noir: 22,
+  metis: 18,
+  asiatique: 11,
+  autre: 11
+};
+const CIBLE_AGES: Record<(typeof AGES)[number], number> = { 20: 33, 30: 56, 40: 67, 50: 44, 60: 22 };
+const FEMMES_VISEES = 111;
+const PART_GROUPE_MAX = 0.7;
+const PART_FEMMES_MIN = 0.4;
+const PART_FEMMES_MAX = 0.6;
+const GROUPES_MIN = 3;
+const FACTION_MIN_POUR_GROUPES = 10;
+
+type LigneCasting = { id: string; origine: string; genre: string; age: string };
+
+function lireCasting(chemin = join(racine, CASTING_FICHIER)): LigneCasting[] {
+  const lignes: LigneCasting[] = [];
+  for (const brute of lignesDeTable(chemin)) {
+    const m = /^\| `([a-z0-9-]+)` \| ([a-z]+) \| ([a-z]+) \| (\d+) \|$/.exec(brute.trim());
+    if (m) lignes.push({ id: m[1], origine: m[2], genre: m[3], age: m[4] });
+  }
+  return lignes;
+}
+
+/** Le contrôle complet de la table de casting ; vide = la distribution est tenue. */
+function controlerCasting(lignes: LigneCasting[]): string[] {
+  const problemes: string[] = [];
+  const bases = ALL_CARDS.filter((carte) => !carte.variantOf && carte.kind === 'PLANQUE');
+  const parId = new Map(lignes.map((ligne) => [ligne.id, ligne]));
+  if (parId.size !== lignes.length) problemes.push('une même carte a deux lignes de casting');
+
+  // Vocabulaire fermé : une valeur inventée ferait un prompt imprévisible.
+  for (const ligne of lignes) {
+    if (!(ORIGINES as readonly string[]).includes(ligne.origine))
+      problemes.push(`${ligne.id} : origine « ${ligne.origine} » hors du vocabulaire`);
+    if (!(GENRES as readonly string[]).includes(ligne.genre))
+      problemes.push(`${ligne.id} : genre « ${ligne.genre} » hors du vocabulaire`);
+    if (!(AGES as readonly string[]).includes(ligne.age))
+      problemes.push(`${ligne.id} : âge « ${ligne.age} » hors du vocabulaire`);
+  }
+
+  const basesConnues = new Set(bases.map((carte) => carte.id));
+  for (const carte of bases) {
+    if (!parId.has(carte.id)) problemes.push(`${carte.id} : carte de base sans casting`);
+  }
+  // Une variante emprunte le casting de sa base (D-139) ; une Action n'a pas de visage.
+  for (const ligne of lignes) {
+    if (!basesConnues.has(ligne.id)) problemes.push(`${ligne.id} : ligne orpheline (aucune carte de base Planqué)`);
+  }
+
+  // Ce qui a une ligne : les comptes doivent tomber juste (la distribution validée).
+  const compteOrigines: Record<string, number> = {};
+  const compteAges: Record<string, number> = {};
+  let femmes = 0;
+  for (const ligne of lignes) {
+    compteOrigines[ligne.origine] = (compteOrigines[ligne.origine] ?? 0) + 1;
+    compteAges[ligne.age] = (compteAges[ligne.age] ?? 0) + 1;
+    if (ligne.genre === 'femme') femmes++;
+  }
+  for (const [origine, vise] of Object.entries(CIBLE_ORIGINES)) {
+    if ((compteOrigines[origine] ?? 0) !== vise)
+      problemes.push(`origine ${origine} : ${compteOrigines[origine] ?? 0} cartes (cible ${vise})`);
+  }
+  for (const [age, vise] of Object.entries(CIBLE_AGES)) {
+    if ((compteAges[age] ?? 0) !== vise) problemes.push(`âge ${age} : ${compteAges[age] ?? 0} cartes (cible ${vise})`);
+  }
+  if (femmes !== FEMMES_VISEES) problemes.push(`${femmes} femmes au total (cible ${FEMMES_VISEES})`);
+
+  // Par faction : aucune au-delà de 70 % d'un groupe, ≥ 3 groupes dès 10 cartes,
+  // et 40 à 60 % de femmes.
+  const factions = [...new Set(bases.map((carte) => carte.faction))];
+  for (const faction of factions) {
+    const cartes = bases.filter((carte) => carte.faction === faction);
+    const deLaFaction = cartes.map((carte) => parId.get(carte.id)).filter((l): l is LigneCasting => l !== undefined);
+    if (deLaFaction.length !== cartes.length) continue; // déjà dit : ligne manquante
+
+    const groupes = new Map<string, number>();
+    let factionFemmes = 0;
+    for (const ligne of deLaFaction) {
+      groupes.set(ligne.origine, (groupes.get(ligne.origine) ?? 0) + 1);
+      if (ligne.genre === 'femme') factionFemmes++;
+    }
+    for (const [groupe, n] of groupes) {
+      if (n > cartes.length * PART_GROUPE_MAX)
+        problemes.push(`${faction} : ${groupe} dépasse 70 % (${n}/${cartes.length})`);
+    }
+    if (cartes.length >= FACTION_MIN_POUR_GROUPES && groupes.size < GROUPES_MIN)
+      problemes.push(`${faction} : ${groupes.size} groupes seulement pour ${cartes.length} cartes (min ${GROUPES_MIN})`);
+    const partFemmes = factionFemmes / cartes.length;
+    if (partFemmes < PART_FEMMES_MIN || partFemmes > PART_FEMMES_MAX)
+      problemes.push(`${faction} : ${factionFemmes} femmes sur ${cartes.length} (attendu 40–60 %)`);
+  }
+  return problemes;
+}
+
+describe('Le casting — une ligne par Planqué, et les seuils de D-174 (#583)', () => {
+  it('la table livrée tient la distribution validée', () => {
+    const problemes = controlerCasting(lireCasting());
+    expect(problemes, problemes.join('\n')).toEqual([]);
+  });
+
+  it('les 222 Planqués ont une ligne, les 11 Actions n’en ont pas', () => {
+    const lignes = lireCasting();
+    expect(lignes).toHaveLength(222);
+    const bases = ALL_CARDS.filter((carte) => !carte.variantOf && carte.kind === 'PLANQUE');
+    expect(bases).toHaveLength(222);
+  });
+
+  it('le contrôle mord : une carte de base sans casting est refusée', () => {
+    const sans = lireCasting().filter((ligne) => ligne.id !== 'rh-drh');
+    expect(controlerCasting(sans).join('\n')).toContain('rh-drh : carte de base sans casting');
+  });
+
+  it('le contrôle mord : une ligne orpheline (Action ou id inventé) est refusée', () => {
+    const avec = [...lireCasting(), { id: 'sse-trousse-secours', origine: 'blanc', genre: 'homme', age: '40' }];
+    expect(controlerCasting(avec).join('\n')).toContain('sse-trousse-secours : ligne orpheline');
+    const fantome = [...lireCasting(), { id: 'sse-carte-fantome', origine: 'blanc', genre: 'homme', age: '40' }];
+    expect(controlerCasting(fantome).join('\n')).toContain('sse-carte-fantome : ligne orpheline');
+  });
+
+  it('le contrôle mord : une faction au-delà de 70 % d’un même groupe est refusée', () => {
+    // SSE a 28 cartes : 20 blancs font 71 % — au-dessus du seuil de 70 %.
+    let n = 0;
+    const fautive = lireCasting().map((ligne) => {
+      if (ligne.id.startsWith('sse-') && n < 20) {
+        n++;
+        return { ...ligne, origine: 'blanc' };
+      }
+      return ligne;
+    });
+    expect(controlerCasting(fautive).join('\n')).toContain('SSE : blanc dépasse 70 %');
+  });
+
+  it('le contrôle mord : une faction de 10 cartes et plus avec moins de 3 groupes est refusée', () => {
+    // SYNDICAT a 10 cartes : 5 blancs + 5 maghrébins = 2 groupes, 50 % chacun — le
+    // seuil des 70 % passe, celui des 3 groupes doit tomber.
+    let rang = 0;
+    const fautive = lireCasting().map((ligne) => {
+      if (!ligne.id.startsWith('syndicat-')) return ligne;
+      const origine = rang++ < 5 ? 'blanc' : 'maghrebin';
+      return { ...ligne, origine };
+    });
+    expect(controlerCasting(fautive).join('\n')).toContain('SYNDICAT : 2 groupes');
+  });
+
+  it('le contrôle mord : une part de femmes hors de 40–60 % est refusée', () => {
+    const tropHommes = lireCasting().map((ligne) =>
+      ligne.id.startsWith('syndicat-') ? { ...ligne, genre: 'homme' } : ligne
+    );
+    expect(controlerCasting(tropHommes).join('\n')).toContain('SYNDICAT : 0 femmes');
+    const tropFemmes = lireCasting().map((ligne) =>
+      ligne.id.startsWith('syndicat-') ? { ...ligne, genre: 'femme' } : ligne
+    );
+    expect(controlerCasting(tropFemmes).join('\n')).toContain('SYNDICAT : 10 femmes');
+  });
+
+  it('le contrôle mord : un vocabulaire inventé est refusé', () => {
+    const fautive = lireCasting().map((ligne) =>
+      ligne.id === 'rh-drh' ? { ...ligne, origine: 'martien' } : ligne
+    );
+    expect(controlerCasting(fautive).join('\n')).toContain('rh-drh : origine « martien »');
+  });
+});
+
+/**
  * **D-139** — la table des sujets accepte les variantes.
  *
  * Le refus « n'est pas dans la table des sujets » était une **garde de production**,
@@ -1286,24 +1475,47 @@ describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', ()
     expect(generations()).toHaveLength(0);
   }, DELAI);
 
-  it('le prompt de atelier-cariste-salle-blanche est celui du registre (772 caractères)', () => {
-    // Golden : socle + sujet + accent, tels que la table les donne. Si le socle ou
-    // la table bougent, ce test le dit — c'est voulu : le prompt envoyé à Flow a changé.
-    // (D-095 : le cariste devient « cariste de salle blanche » ; l'ancien prompt, de 773
-    // caractères, n'est plus généré.)
+  it('le prompt d’un Planqué est le golden du socle Portrait (socle + casting + sujet + accent)', () => {
+    // Golden : socle Portrait + casting + sujet + accent, tels que les tables les donnent.
+    // Si le socle ou la table bougent, ce test le dit — c'est voulu : le prompt envoyé à
+    // Flow a changé. (D-095 : le cariste devient « cariste de salle blanche » ; #583 ajoute
+    // le socle par planche et le casting, D-174.)
     const attendu =
       'Editorial trading-card illustration for a corporate-satire deck, semi-realistic painterly rendering, ' +
       'end-of-day office mood, satirical but never mean. Deep midnight-blue palette (#0b1220, #131c2e) with one ' +
       'muted saturated faction accent. A soft warm KEY light fully illuminates the FACE — well-exposed skin, ' +
       'clearly visible features, no shadow over the eyes; only a subtle gold (#e6b64c) rim light on the shoulders ' +
       'and hair. Matte surfaces, subtle film grain, subject centered and isolated on a darker background, ' +
-      'occupying ~70% of the frame, waist-up, square 1:1. No text, no logo, no watermark, no brand, no real person. ' +
+      'occupying ~70% of the frame, waist-up, square 1:1. Sheets of paper blank or turned away, no legible ' +
+      'writing, no signage. No text, no logo, no watermark, no brand, no real person. ' +
+      'a white woman in her sixties, ' +
       'a forklift driver, in a clean-room suit, holding a pallet list, pushing a pallet trolley through an airlock door, ' +
       'cheerful, muted rust bronze accent.';
-    expect([...attendu]).toHaveLength(772);
+    expect([...attendu]).toHaveLength(872);
     const r = wizard(['--prompt', 'atelier-cariste-salle-blanche']);
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout.replace(/\n$/, '')).toBe(attendu);
+  });
+
+  it('le prompt d’une Action est le golden du socle Objet, sans casting (#583)', () => {
+    // Le défaut mesuré : les 11 cartes Action recevaient le socle portrait, et 8 sur 11
+    // montraient un bonhomme. Le socle Objet dit « still life, single object, no person,
+    // no hands, macro », et un objet n'a pas de casting.
+    const attendu =
+      'Still life editorial illustration for a corporate-satire deck, semi-realistic painterly rendering, ' +
+      'end-of-day office mood, satirical but never mean. Deep midnight-blue palette (#0b1220, #131c2e) with one ' +
+      'muted saturated faction accent. A soft warm KEY light clearly models the object; only a subtle gold ' +
+      '(#e6b64c) rim light on its edges. Matte surfaces, subtle film grain, the object centered and isolated on ' +
+      'a darker background, occupying ~70% of the frame, still life, single object, no person, no hands, macro, ' +
+      'square 1:1. Sheets of paper blank or turned away, no legible writing, no signage. No text, no logo, ' +
+      'no watermark, no brand, no real person. ' +
+      'an open first-aid box with dusty bandages and an untouched register, muted emerald green accent.';
+    expect([...attendu]).toHaveLength(750);
+    const r = wizard(['--prompt', 'sse-trousse-secours']);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout.replace(/\n$/, '')).toBe(attendu);
+    expect(r.stdout, 'une Action ne reçoit aucun casting').not.toContain(' in her ');
+    expect(r.stdout).not.toContain(' in his ');
   });
 });
 
