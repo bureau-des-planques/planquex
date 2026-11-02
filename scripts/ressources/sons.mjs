@@ -9,8 +9,9 @@
  *
  *  - **aucune licence tierce** : l'œuvre est celle du projet, il n'y a rien à attribuer ;
  *  - **reproductible** : le générateur est seedé, les fichiers se régénèrent à l'identique ;
- *  - **léger** : deux WAV mono 22,05 kHz d'une seconde, sous 100 Ko chacun (le ticket #379 fixe
- *    la barre).
+ *  - **léger** : des WAV mono 22,05 kHz de une à deux secondes, sous 100 Ko chacun (le ticket #379
+ *    fixe la barre). Le verdict a été rallongé et enrichi le 02/11/2026 (#606) : quatre couches, des
+ *    partiels inharmoniques et une queue réverbérée sur une impulsion synthétisée ici.
  *
  * Usage :
  *   node scripts/ressources/sons.mjs            # écrit public/sons/*.wav (cinq sons)
@@ -79,6 +80,78 @@ function enveloppe(n, { attaque = 0.01, chute = 0.12 } = {}) {
 }
 
 /**
+ * Une enveloppe de **décroissance naturelle** (#606) : attaque linéaire courte, puis une
+ * exponentielle qui s'éteint sans jamais être coupée. `tau` est la constante de temps, en secondes.
+ */
+function declin(n, { attaque = 0.004, tau = 0.2 } = {}) {
+  const env = new Float32Array(n);
+  const a = Math.max(1, Math.round(attaque * FREQUENCE));
+  const k = 1 / (Math.max(0.001, tau) * FREQUENCE);
+  for (let i = 0; i < n; i += 1) {
+    const montee = i < a ? i / a : 1;
+    env[i] = montee * Math.exp(-i * k);
+  }
+  return env;
+}
+
+/**
+ * Un sinus dont la fréquence **glisse** de `de` vers `a` (#606). La phase est intégrée : une
+ * fréquence écrite à la main dans `Math.sin(2π f(t) t)` déphase et fait des sauts de hauteur.
+ */
+function glissando(n, { de, a, tau = 0.1 }) {
+  const sortie = new Float32Array(n);
+  let phase = 0;
+  for (let i = 0; i < n; i += 1) {
+    const t = i / FREQUENCE;
+    const f = a + (de - a) * Math.exp(-t / tau);
+    phase += (2 * Math.PI * f) / FREQUENCE;
+    sortie[i] = Math.sin(phase);
+  }
+  return sortie;
+}
+
+/**
+ * **La réverbération** (#606) : une impulsion **synthétisée ici**, pas un fichier tiers — du bruit
+ * filtré qui s'éteint en exponentielle, ramené à une énergie unitaire pour que le mélange se règle
+ * sur un seul coefficient. Aucune licence, et deux exécutions donnent la même impulsion.
+ */
+function impulsion({ duree = 0.9, preDelai = 0.016, tau = 0.3, brillance = 0.45 } = {}) {
+  const n = Math.round(duree * FREQUENCE);
+  const ir = new Float32Array(n);
+  const alea = graine(9001);
+  const d = Math.round(preDelai * FREQUENCE);
+  let bas = 0; // un pôle : les aigus s'éteignent avant les graves, comme dans une salle
+  let energie = 0;
+  for (let i = d; i < n; i += 1) {
+    bas += (alea() * 2 - 1 - bas) * brillance;
+    ir[i] = bas * Math.exp(-(i - d) / (tau * FREQUENCE));
+    energie += ir[i] * ir[i];
+  }
+  const norme = Math.sqrt(energie) || 1;
+  for (let i = 0; i < n; i += 1) ir[i] /= norme;
+  return ir;
+}
+
+/** La convolution sèche/mouillée, en clair : le noyau est court, le coût reste sous la seconde. */
+function convoluer(signal, noyau) {
+  const sortie = new Float32Array(signal.length);
+  for (let i = 0; i < signal.length; i += 1) {
+    const limite = Math.min(i + 1, noyau.length);
+    let somme = 0;
+    for (let j = 0; j < limite; j += 1) somme += signal[i - j] * noyau[j];
+    sortie[i] = somme;
+  }
+  return sortie;
+}
+
+/** Ajoute une queue réverbérée au signal sec : c'est ce qui donne de la **matière**. */
+function reverberer(signal, { melange = 0.45, ...impulsionOptions } = {}) {
+  const queue = convoluer(signal, impulsion(impulsionOptions));
+  for (let i = 0; i < signal.length; i += 1) signal[i] += queue[i] * melange;
+  return signal;
+}
+
+/**
  * **Arrivage** : le sachet qu'on ouvre. Un craquement de film (grains de bruit filtrés), une
  * déchirure qui monte en fréquence, puis un « pop » sourd quand la lèvre s'ouvre.
  */
@@ -124,44 +197,63 @@ function arrivage() {
 }
 
 /**
- * **Verdict** : la fin d'un combat. Un tampon qui s'abat (bruit grave + corps), puis deux notes
- * descendantes — le bureau qui classe le dossier.
+ * **Verdict** : la fin d'un combat (#606, repris le 02/11/2026). Le tampon qui s'abat, deux notes
+ * descendantes — le bureau qui classe le dossier — puis la salle qui les éteint.
+ *
+ * Trois couches explicites, là où la version précédente n'avait qu'un grain et deux sinus :
+ *
+ *  1. **le transitoire** — un claquement large bande, très court : le tampon touche le papier ;
+ *  2. **le corps** — une masse grave à 96 Hz qui retombe, avec sa deuxième harmonique ;
+ *  3. **les notes** — la quinte puis la tonique, avec les **partiels inharmoniques** d'une barre
+ *     frappée (3,93 f, 10 f) : c'est ce qui fait un vibraphone plutôt qu'une sinusoïde ;
+ *  4. **la queue** — une réverbération sur impulsion synthétisée, qui laisse le son s'éteindre au
+ *     lieu de le couper. Durée totale 1,6 s, contre 0,78 s avant.
  */
 function verdict() {
-  const duree = 0.78;
+  const duree = 1.6;
   const n = Math.round(duree * FREQUENCE);
-  const sortie = new Float32Array(n);
+  const sec = new Float32Array(n);
   const alea = graine(379);
 
-  // le tampon : bruit très filtré + un corps sinusoïdal à 90 Hz
-  const longueur = Math.round(0.16 * FREQUENCE);
-  const bruit = new Float32Array(longueur);
-  for (let i = 0; i < longueur; i += 1) bruit[i] = (alea() * 2 - 1) * 0.7;
-  const filtre = passeBande(bruit, 220, 1.1);
-  const env = enveloppe(longueur, { attaque: 0.002, chute: 0.09 });
-  for (let i = 0; i < longueur; i += 1) {
-    const t = i / FREQUENCE;
-    sortie[i] += (filtre[i] * 1.4 + Math.sin(2 * Math.PI * 90 * t) * 0.5) * env[i];
+  // 1. le transitoire : 70 ms de bruit filtré haut, très court — l'impact, pas le corps
+  const nTransitoire = Math.round(0.07 * FREQUENCE);
+  const bruit = new Float32Array(nTransitoire);
+  for (let i = 0; i < nTransitoire; i += 1) bruit[i] = alea() * 2 - 1;
+  const claquement = passeBande(bruit, 2300, 0.65);
+  const envTransitoire = declin(nTransitoire, { attaque: 0.0008, tau: 0.012 });
+  for (let i = 0; i < nTransitoire; i += 1) sec[i] += claquement[i] * envTransitoire[i] * 1.2;
+
+  // 2. le corps : une masse grave qui retombe de 96 à 70 Hz, avec sa deuxième harmonique
+  const nCorps = Math.round(0.7 * FREQUENCE);
+  const fondamental = glissando(nCorps, { de: 96, a: 70, tau: 0.09 });
+  const harmonique = glissando(nCorps, { de: 192, a: 140, tau: 0.09 });
+  const envCorps = declin(nCorps, { attaque: 0.003, tau: 0.17 });
+  for (let i = 0; i < nCorps; i += 1) {
+    sec[i] += (fondamental[i] * 0.75 + harmonique[i] * 0.22) * envCorps[i] * 0.6;
   }
 
-  // deux notes : la quinte descend, puis la tonique — courtes, mates
+  // 3. les deux notes : la quinte descend, puis la tonique — plus longues, plus riches
   const notes = [
-    { debut: 0.2, duree: 0.22, f: 392 },
-    { debut: 0.4, duree: 0.34, f: 294 }
+    { debut: 0.16, duree: 0.62, f: 392, gain: 0.3 },
+    { debut: 0.4, duree: 0.9, f: 293.66, gain: 0.34 }
   ];
   for (const note of notes) {
     const debut = Math.round(note.debut * FREQUENCE);
-    const m = Math.round(note.duree * FREQUENCE);
-    const envNote = enveloppe(m, { attaque: 0.012, chute: 0.14 });
-    for (let i = 0; i < m && debut + i < n; i += 1) {
+    const m = Math.min(Math.round(note.duree * FREQUENCE), n - debut);
+    const envNote = declin(m, { attaque: 0.006, tau: 0.22 });
+    for (let i = 0; i < m; i += 1) {
       const t = i / FREQUENCE;
-      // une harmonique impaire légèrement détunée : un timbre de vibraphone, pas une sirène
-      const onde = Math.sin(2 * Math.PI * note.f * t) * 0.6 + Math.sin(2 * Math.PI * note.f * 2.01 * t) * 0.12;
-      sortie[debut + i] += onde * envNote[i] * 0.34;
+      // les partiels d'une barre frappée : fondamental, 3,93 f et 10 f — inharmoniques à dessein
+      const onde =
+        Math.sin(2 * Math.PI * note.f * t) +
+        0.22 * Math.sin(2 * Math.PI * note.f * 3.93 * t) +
+        0.07 * Math.sin(2 * Math.PI * note.f * 10.0 * t);
+      sec[debut + i] += onde * envNote[i] * note.gain;
     }
   }
 
-  return sortie;
+  // 4. la queue : la salle éteint le tout, sur une impulsion fabriquée ici
+  return reverberer(sec, { melange: 0.4, duree: 0.9, preDelai: 0.016, tau: 0.3 });
 }
 
 /**
@@ -262,13 +354,18 @@ function intervention() {
   return sortie;
 }
 
-/** Un fondu global : rien ne doit commencer ni finir sur un claquement. */
-function finir(echantillons, { debut = 0.004, fin = 0.05 } = {}) {
+/**
+ * Un fondu global : rien ne doit commencer ni finir sur un claquement.
+ *
+ * `courbe` > 1 adoucit la sortie (#606) : la queue d'une réverbération s'éteint lentement, et un
+ * fondu linéaire sur 50 ms laisserait encore un échantillon audible au dernier tour.
+ */
+function finir(echantillons, { debut = 0.004, fin = 0.05, courbe = 1 } = {}) {
   const a = Math.round(debut * FREQUENCE);
   const f = Math.round(fin * FREQUENCE);
   const n = echantillons.length;
   for (let i = 0; i < a && i < n; i += 1) echantillons[i] *= i / a;
-  for (let i = 0; i < f && i < n; i += 1) echantillons[n - 1 - i] *= i / f;
+  for (let i = 0; i < f && i < n; i += 1) echantillons[n - 1 - i] *= (i / f) ** courbe;
   return echantillons;
 }
 
@@ -299,7 +396,8 @@ function wav(echantillons) {
 
 export const SONS = [
   { cle: 'arrivage', fabrique: arrivage },
-  { cle: 'verdict', fabrique: verdict },
+  // Le verdict s'éteint dans une réverbération : sa sortie se fond plus longuement (#606).
+  { cle: 'verdict', fabrique: verdict, fondu: { debut: 0.0015, fin: 0.14, courbe: 2 } },
   // Les trois sons du **combat** (D-161) : le coup, la casse, le point marqué.
   { cle: 'pression', fabrique: pression },
   { cle: 'craquage', fabrique: craquage },
@@ -318,11 +416,22 @@ export function silences(chemin) {
   return { debutMs: Math.round((debut / FREQUENCE) * 1000), finMs: Math.round((fin / FREQUENCE) * 1000) };
 }
 
+/**
+ * Les octets WAV **exacts** qu'`ecrire()` pose sur le disque pour un son donné. Exporté pour que le
+ * test puisse vérifier deux choses d'un coup (#606) : deux générations donnent le même fichier, et
+ * le fichier du dépôt est bien celui-là — un `.wav` retouché à la main ne peut pas passer.
+ */
+export function generer(cle) {
+  const son = SONS.find((candidat) => candidat.cle === cle);
+  if (!son) throw new Error(`son inconnu : ${cle}`);
+  return wav(finir(son.fabrique(), son.fondu));
+}
+
 function ecrire() {
   mkdirSync(DOSSIER, { recursive: true });
-  for (const { cle, fabrique } of SONS) {
+  for (const { cle } of SONS) {
     const chemin = join(DOSSIER, `${cle}.wav`);
-    writeFileSync(chemin, wav(finir(fabrique())));
+    writeFileSync(chemin, generer(cle));
     const taille = statSync(chemin).size;
     console.log(`${chemin} — ${(taille / 1024).toFixed(1)} Ko`);
   }
