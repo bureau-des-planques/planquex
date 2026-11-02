@@ -153,6 +153,7 @@ const DOCUMENTS_VIVANTS = [
   'CONTRIBUTING.md',
   'GLOSSARY.md',
   'DESIGN.md',
+  'PRODUCT.md',
   'docs/ARCHITECTURE.md',
   'docs/CARD-SPEC.md',
   'docs/FACTIONS.md',
@@ -272,6 +273,10 @@ describe('Cohérence des documents — les commandes, dans les deux sens (27/10/
 });
 
 describe('Cohérence des documents — le vocabulaire retiré (D-075, D-083)', () => {
+  it('PRODUCT.md est un document vivant dont le vocabulaire est gardé', () => {
+    expect(DOCUMENTS_VIVANTS).toContain('PRODUCT.md');
+  });
+
   it.each([...DOCUMENTS_VIVANTS])('%s n’emploie plus Chariot, Rack ni Parc', (fichier) => {
     expect(existsSync(chemin(fichier)), `${fichier} a disparu : la garde du vocabulaire ne le lit plus`).toBe(true);
     const fautes = vocabulaireRetire(read(fichier));
