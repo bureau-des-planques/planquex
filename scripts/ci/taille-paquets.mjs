@@ -167,8 +167,10 @@ export const SEUIL_PAQUET = 500_000;
  * d'affichage, `@property` — et retire le passage par l'état. Il reste 268 361 octets.
  *
  * **Relevé de 1 486 octets le 02/11/2026** (269 847 octets) — le diagnostic de configuration cassée et son panneau de refus (#529)
+ *
+ * **Relevé de 1 137 octets le 02/11/2026** (270 984 octets) — les 8 planches Intérim et Syndicat entrent dans le paquet (#499)
  */
-export const PLAFOND_PRINCIPAL = 269_847;
+export const PLAFOND_PRINCIPAL = 270_984;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de
