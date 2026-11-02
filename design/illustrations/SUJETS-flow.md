@@ -277,7 +277,7 @@ critère 5), et la garde la refuse.
 | `management-entretien-annuel` | a blank annual-review form and a pen still capped on a meeting table |
 | `qvt-yoga-du-rire` | a rolled laughing-yoga mat left alone in a meeting room |
 | `amelioration-reunion-de-suivi` | a whiteboard of action points that concern no product |
-| `rh-reunion-individuelle` | a career plan written on a single post-it stuck to a desk |
-| `direction-reunion-qui-aurait-pu-etre-un-mail` | an empty meeting room with forty-five minutes left on the clock |
+| `rh-reunion-individuelle` | a single post-it stuck to a desk, its writing reduced to faint grey marks, a pen laid beside it |
+| `direction-reunion-qui-aurait-pu-etre-un-mail` | an empty meeting room, forty-five untouched chairs, a projector still glowing on the wall |
 | `syndicat-assemblee-generale` | a folded general-meeting agenda beside an untouched microphone |
 | `support-escalade` | a printed support ticket pinned to the wrong department's door |
