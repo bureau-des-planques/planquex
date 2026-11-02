@@ -274,7 +274,7 @@ export const MUTATIONS = [
   {
     ticket: 294,
     titre: 'l’arc de Condition est créé sous « Mouvement réduit »',
-    fichier: 'src/pages/Battle.tsx',
+    fichier: 'src/combat/plateau.tsx',
     // SPEC-COMBAT-UI §6.8.3 : sous « Mouvement réduit », il n'y a **aucun arc** — le badge nommé
     // dit la Condition. La mutation retire le drapeau `anime` de l'effet : le liseré naît
     // alors même que le réglage coupe le mouvement.
@@ -434,7 +434,7 @@ export const MUTATIONS = [
   {
     ticket: 561,
     titre: 'la place libre du Banc cesse d’être une cible de pose',
-    fichier: 'src/pages/Battle.tsx',
+    fichier: 'src/combat/plateau.tsx',
     // La place est **déjà dessinée** à la taille d'une carte : elle reçoit le `playBasic` que le
     // panneau de pose proposait 232 px plus bas, derrière un défilement.
     motif: ') : onPoserPlace && placesPosables?.has(index) ? (',

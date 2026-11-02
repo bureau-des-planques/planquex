@@ -217,6 +217,7 @@ describe('pvp — l’IA ne joue jamais à deux (#125)', () => {
  * qu'on lit. Elles échouent si la régression revient, pas si le code change de forme.
  */
 const battle = readFileSync(fileURLToPath(new URL('../pages/Battle.tsx', import.meta.url)), 'utf8');
+const plateau = readFileSync(fileURLToPath(new URL('../combat/plateau.tsx', import.meta.url)), 'utf8');
 
 /**
  * **#556, décision du 02/11/2026 : une garde suit le code.** La mécanique de tour a quitté
@@ -235,7 +236,7 @@ describe('pvp — gardes de l’écran de combat', () => {
 
   it('ne montre de la main adverse que son compte', () => {
     expect(battle).toMatch(/mySide\.hand\.map\(/);
-    expect(battle).toMatch(/side\.hand\.length/);
+    expect(plateau).toMatch(/side\.hand\.length/);
     expect(battle).not.toMatch(/side\.hand\.map\(/);
   });
 
