@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 177 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 178 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -158,7 +158,7 @@
 | D-150 | 28/10/2026 | Le reset de la beta est un geste du poste,… |
 | D-151 | 28/10/2026 | La difficulté a trois crans nommés, et chacun change la… |
 | D-152 | 29/10/2026 | La version s'écrit v<numéro>-<étape>, partout . (1) Le tag, le… |
-| D-153 | 29/10/2026 | Le Deck et la Collection vivent sur le compte, et… |
+| D-153 | 29/10/2026 | ⚠ Amendé le 02/11/2026 — voir D-178 : au point… |
 | D-154 | 29/10/2026 | Le rangement de scripts/ vit en cinq dossiers, et un… |
 | D-155 | 29/10/2026 | La page /installation est hors du jeu, et le garde-fou… |
 | D-156 | 30/10/2026 | L'entrée du jeu exige un compte, le mur compris ;… |
@@ -183,3 +183,4 @@
 | D-175 | 02/11/2026 | La barre du bas passe à quatre entrées : Accueil,… |
 | D-176 | 02/11/2026 | PRODUCT.md entre au dépôt comme contexte dérivé pour impeccable, pas… |
 | D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |
+| D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |
