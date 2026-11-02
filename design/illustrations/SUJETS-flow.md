@@ -251,7 +251,7 @@ critère 5), et la garde la refuse.
 | `support-ingenieur-systemes` | a systems engineer, in a grey shirt with rolled sleeves, holding a continuity plan, reading it by a dead rack, grim and focused |
 | `support-redacteur-technique` | a technical writer, in a soft shirt and cardigan, holding a procedure manual, crossing out a whole chapter, focused and sad |
 | `support-charge-documentation` | a documentation officer, in a light blouse with a lanyard, holding a knowledge-base printout, filing it under an old product name, precise and bored |
-| `support-responsable-documentation` | a documentation manager, in a grey blazer, holding a documentation standard, pinning it to a partition, resigned and polite |
+| `support-responsable-documentation` | a documentation manager, in a grey fleece with a lanyard, holding a documentation standard, pinning it to a partition, resigned and polite |
 | `support-technicien-reseau` | a network technician, in a hi-vis vest over a shirt, holding a patch cable, tracing it under a raised floor, focused and doubtful |
 | `support-administrateur-reseau` | a network administrator, in a dark fleece with a badge, holding a firewall printout, reading it at a locked door, dry and smug |
 | `support-correspondant-informatique` | an IT correspondent, in a company polo with a lanyard, holding an incident sheet, taping a notice on an unlit IT office door, hopeful and tired |
@@ -264,7 +264,7 @@ critère 5), et la garde la refuse.
 | `support-superviseur-support` | a support supervisor, in a dark shirt with a headset, holding a shift rota, crossing out a name, brisk and grim |
 | `support-assistant-administratif` | an administrative assistant, in a beige blouse, holding a paper form, retyping it into a screen, patient and bored |
 | `support-archiviste` | an archivist, in a grey work coat, holding an archive box, sealing it with tape, placid and precise |
-| `support-receptionniste` | a receptionist, in a neat blazer over a blouse, holding a visitor badge, waving a courier through, cheerful and watchful |
+| `support-receptionniste` | a receptionist, in a neat blouse with a lanyard, holding a visitor badge, waving a courier through, cheerful and watchful |
 | `support-teleconseiller` | a call-centre adviser, in a light shirt and a headset, holding a call script, reading it upside down, cheerful and glazed |
 | `support-operateur-saisie` | a data-entry operator, in a plain shirt with a badge, holding a keyboard, typing faster than the screen responds, focused and blank |
 | `support-testeur-logiciel` | a software tester, in a hoodie and a lanyard, holding a test plan, ticking the happy path only, precise and sheepish |
