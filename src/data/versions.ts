@@ -60,6 +60,54 @@ export interface NoteVersion {
  */
 export const NOTES_VERSIONS: NoteVersion[] = [
   {
+    version: '0.1.17',
+    date: '2026-11-02',
+    titre: 'Version 0.1.17',
+    brouillon: true,
+    points: [
+      {
+        groupe: 'Les illustrations',
+        texte: 'Les 233 planches sont refaites : les visages ne se ressemblent plus, le Bureau ressemble à la France, et les gens d’atelier portent un bleu de travail au lieu d’un costume.'
+      },
+      {
+        groupe: 'Les illustrations',
+        texte: 'Les cartes sans Planqué montrent enfin un objet — une trousse de secours, un tapis de yoga, un ticket punaisé — au lieu d’un bonhomme.'
+      },
+      {
+        groupe: 'Les sons',
+        texte: 'Les cinq sons sont des objets du Bureau : un tampon, un tiroir, du papier, une manche. Plus une seule note de musique, donc plus de carillon.'
+      },
+      {
+        groupe: 'Sur le téléphone',
+        texte: 'L’accueil et le combat tiennent sans défilement en portrait, et la barre d’action reste à portée du pouce. Le paysage n’est plus promis sur téléphone.'
+      },
+      {
+        groupe: 'Sur le téléphone',
+        texte: 'Installée, l’application passe en plein écran sur Android et dessine sous la barre d’état sur iPhone. Un écran de 700 à 860 pixels de haut — un Pixel 7 — a enfin ses propres tailles.'
+      },
+      {
+        groupe: 'Collection et Deck',
+        texte: 'Les deux pages n’en font plus qu’une, à deux onglets, et la barre du bas passe à quatre entrées. Tes liens habituels continuent de marcher.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'Elle dit où tu en es — « 5 / 5 retournées » — annonce ce qu’elle fait pendant l’envol, et sa croix de fermeture est enfin assez grande pour un doigt.'
+      },
+      {
+        groupe: 'L’ouverture d’un Arrivage',
+        texte: 'La première carte ne saccade plus quand elle se retourne : la fiche attendait la fin de la rotation.'
+      },
+      {
+        groupe: 'L’entrée et le mur',
+        texte: 'Une session dont le compte ne se lit pas ne te redemande plus de mot de passe, et changer de compte repart bien du début du parcours.'
+      },
+      {
+        groupe: 'L’entrée et le mur',
+        texte: 'Un post-it naît toujours « en attente » : le tri reste le geste du comité. Et une configuration de base incomplète se voit, au lieu d’ouvrir le jeu en silence.'
+      }
+    ]
+  },
+  {
     version: '0.1.16',
     date: '2026-11-01',
     titre: 'Version 0.1.16',

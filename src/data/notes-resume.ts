@@ -28,6 +28,12 @@ export interface ResumeNote {
 /** Le résumé, **de la plus récente à la plus ancienne**, comme `versions.ts`. */
 export const NOTES_RESUME: ResumeNote[] = [
   {
+    version: '0.1.17',
+    date: '2026-11-02',
+    titre: 'Version 0.1.17',
+    brouillon: true
+  },
+  {
     version: '0.1.16',
     date: '2026-11-01',
     titre: 'Version 0.1.16'
