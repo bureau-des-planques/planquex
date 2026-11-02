@@ -152,11 +152,34 @@ function reverberer(signal, { melange = 0.45, ...impulsionOptions } = {}) {
 }
 
 /**
- * **Arrivage** : le sachet qu'on ouvre. Un craquement de film (grains de bruit filtrés), une
- * déchirure qui monte en fréquence, puis un « pop » sourd quand la lèvre s'ouvre.
+ * Un grain de bruit filtré, posé dans `sortie` à `debut` : la brique du froissement, du frottement et
+ * des impacts mats (#606). `aleatoire` est le générateur seedé **du son qui l'appelle**, pour que
+ * l'ordre des tirages reste celui de ce son.
+ */
+function poser(sortie, debut, longueur, frequence, largeur, gain, tau, aleatoire) {
+  const bruit = new Float32Array(longueur);
+  for (let i = 0; i < longueur; i += 1) bruit[i] = aleatoire() * 2 - 1;
+  const filtre = passeBande(bruit, frequence, largeur);
+  const env = declin(longueur, { attaque: 0.0004, tau });
+  for (let i = 0; i < longueur && debut + i < sortie.length; i += 1) sortie[debut + i] += filtre[i] * env[i] * gain;
+}
+
+/**
+ * L'ambiance d'un objet posé sur le bureau (#606) : une réverbération **courte et discrète**, pour que
+ * les cinq sons soient dans la même pièce sans sonner comme une salle de concert.
+ */
+function ambiance(signal, melange = 0.14) {
+  return reverberer(signal, { melange, duree: 0.35, preDelai: 0.008, tau: 0.09 });
+}
+
+/**
+ * **Arrivage** : le sachet de café qu'on ouvre (#606, repris le 02/11/2026). Le film craque sous les
+ * doigts, la déchirure ouvre le sachet, puis l'air s'échappe — le **souffle** qui se dégonfle et le
+ * **claquement** du film qui retombe. La version d'avant finissait sur un « pop » **sinusoïdal** :
+ * une note grave, donc un son musical au milieu d'un bruit. Remplacé par deux bruits filtrés.
  */
 function arrivage() {
-  const duree = 0.92;
+  const duree = 0.95;
   const n = Math.round(duree * FREQUENCE);
   const sortie = new Float32Array(n);
   const alea = graine(283);
@@ -183,17 +206,30 @@ function arrivage() {
   const envDechirure = enveloppe(reste, { attaque: 0.03, chute: 0.16 });
   for (let i = 0; i < reste; i += 1) sortie[debutDechirure + i] += filtre[i] * envDechirure[i] * 1.1;
 
-  // 3. le pop de l'ouverture : une sinusoïde qui tombe de 190 à 70 Hz
-  const debutPop = Math.round(0.62 * FREQUENCE);
-  const restePop = n - debutPop;
-  const envPop = enveloppe(restePop, { attaque: 0.004, chute: 0.22 });
-  for (let i = 0; i < restePop; i += 1) {
+  // 3. le claquement du film : le bord qui se détend d'un coup, 8 ms de bruit large — pas de note
+  poser(sortie, Math.round(0.6 * FREQUENCE), Math.round(0.012 * FREQUENCE), 1400, 1.9, 1.8, 0.004, alea);
+
+  // 4. le souffle : l'air du sachet qui se dégonfle. Du bruit **grave** (autour de 400 Hz), lent à
+  //    s'ouvrir, avec la turbulence d'un écoulement : aucune hauteur, juste de l'air.
+  const debutSouffle = Math.round(0.62 * FREQUENCE);
+  const nSouffle = Math.min(Math.round(0.32 * FREQUENCE), n - debutSouffle);
+  const bruitSouffle = new Float32Array(nSouffle);
+  for (let i = 0; i < nSouffle; i += 1) bruitSouffle[i] = alea() * 2 - 1;
+  const souffle = passeBande(bruitSouffle, 420, 1.4);
+  const secours = passeBande(bruitSouffle, 1100, 0.9);
+  let turbulence = 1;
+  let prochaine = 0;
+  for (let i = 0; i < nSouffle; i += 1) {
     const t = i / FREQUENCE;
-    const f = 190 * Math.exp(-t * 9) + 70;
-    sortie[debutPop + i] += Math.sin(2 * Math.PI * f * t) * envPop[i] * 0.55;
+    const ouverture = Math.min(1, t / 0.05) * Math.exp(-t / 0.12);
+    if (i >= prochaine) {
+      turbulence = 0.65 + alea() * 0.35;
+      prochaine = i + Math.round((0.008 + alea() * 0.012) * FREQUENCE);
+    }
+    sortie[debutSouffle + i] += (souffle[i] + secours[i] * 0.35) * ouverture * turbulence * 1.4;
   }
 
-  return sortie;
+  return ambiance(sortie, 0.18);
 }
 
 /**
@@ -238,17 +274,8 @@ function verdict() {
   const sec = new Float32Array(n);
   const alea = graine(379);
 
-  /** Un grain de bruit filtré, posé à `debut` : la brique du froissement et du frottement. */
-  const poser = (debut, longueur, frequence, largeur, gain, tau) => {
-    const bruit = new Float32Array(longueur);
-    for (let i = 0; i < longueur; i += 1) bruit[i] = alea() * 2 - 1;
-    const filtre = passeBande(bruit, frequence, largeur);
-    const env = declin(longueur, { attaque: 0.0004, tau });
-    for (let i = 0; i < longueur && debut + i < n; i += 1) sec[debut + i] += filtre[i] * env[i] * gain;
-  };
-
   // 1. le tampon : impact mat (bruit large) + la masse qui retombe dessous
-  poser(0, Math.round(0.05 * FREQUENCE), 900, 1.8, 1.7, 0.008);
+  poser(sec, 0, Math.round(0.05 * FREQUENCE), 900, 1.8, 1.7, 0.008, alea);
   const nMasse = Math.round(0.12 * FREQUENCE);
   const masse = glissando(nMasse, { de: 78, a: 46, tau: 0.018 });
   const envMasse = declin(nMasse, { attaque: 0.0015, tau: 0.03 });
@@ -260,12 +287,14 @@ function verdict() {
     const grain = 0.004 + alea() * 0.014;
     const essoufflement = 1 - (curseur - 0.035) / 0.3;
     poser(
+      sec,
       Math.round(curseur * FREQUENCE),
       Math.round(grain * FREQUENCE),
       2400 + alea() * 4600,
       0.6 + alea() * 0.9,
       (0.25 + alea() * 0.9) * essoufflement * 1.5,
-      grain * 0.3
+      grain * 0.3,
+      alea
     );
     curseur += 0.005 + alea() * 0.011;
   }
@@ -301,7 +330,7 @@ function verdict() {
 
   // 4. la butée : le tiroir tombe en fin de course
   const debutButee = Math.round(0.88 * FREQUENCE);
-  poser(debutButee, Math.round(0.03 * FREQUENCE), 1500, 1.6, 2.2, 0.005);
+  poser(sec, debutButee, Math.round(0.03 * FREQUENCE), 1500, 1.6, 2.2, 0.005, alea);
   const nClonk = Math.round(0.16 * FREQUENCE);
   const clonk = glissando(nClonk, { de: 132, a: 68, tau: 0.012 });
   const envClonk = declin(nClonk, { attaque: 0.001, tau: 0.045 });
@@ -319,15 +348,18 @@ function verdict() {
   }
 
   // 5. l'ambiance : courte et discrète, pour que les deux gestes soient dans la même pièce
-  return reverberer(sec, { melange: 0.16, duree: 0.35, preDelai: 0.008, tau: 0.09 });
+  return ambiance(sec, 0.16);
 }
 
 /**
- * **Pression** (D-161) : le coup porté. Un claquement filtré, sec, et un corps grave qui tombe —
- * court, parce qu'il se joue **à chaque attaque** et que la scène dure déjà 1,4 à 3,2 s.
+ * **Pression** (D-161, repris le 02/11/2026) : le coup porté. Un claquement filtré, sec, une masse
+ * grave **très courte**, puis le **frottement de la manche** — la version d'avant laissait tomber
+ * une sinusoïde de 150 à 55 Hz pendant 160 ms : un glissando, donc une note qui s'entend.
+ *
+ * Court à dessein : il se joue **à chaque attaque**, et la scène dure déjà 1,4 à 3,2 s.
  */
 function pression() {
-  const duree = 0.34;
+  const duree = 0.32;
   const n = Math.round(duree * FREQUENCE);
   const sortie = new Float32Array(n);
   const alea = graine(613);
@@ -340,25 +372,42 @@ function pression() {
   const env = enveloppe(longueur, { attaque: 0.001, chute: 0.03 });
   for (let i = 0; i < longueur; i += 1) sortie[i] += filtre[i] * env[i] * 1.5;
 
-  // 2. le corps : une sinusoïde qui tombe de 150 à 55 Hz — le souffle du coup
-  const debutCorps = Math.round(0.008 * FREQUENCE);
-  const reste = n - debutCorps;
-  const envCorps = enveloppe(reste, { attaque: 0.003, chute: 0.16 });
-  for (let i = 0; i < reste; i += 1) {
-    const t = i / FREQUENCE;
-    const f = 150 * Math.exp(-t * 16) + 55;
-    sortie[debutCorps + i] += Math.sin(2 * Math.PI * f * t) * envCorps[i] * 0.7;
+  // 2. la masse sous le coup : elle retombe de 110 à 75 Hz en 10 ms et s'éteint en 30 ms — un « toc »,
+  //    trop court pour qu'on y entende une hauteur
+  const nMasse = Math.round(0.09 * FREQUENCE);
+  const masse = glissando(nMasse, { de: 110, a: 75, tau: 0.01 });
+  const envMasse = declin(nMasse, { attaque: 0.0015, tau: 0.03 });
+  for (let i = 0; i < nMasse; i += 1) sortie[i] += masse[i] * envMasse[i] * 0.6;
+
+  // 3. le frottement de la manche : la toile qui ripe sur le bureau après le coup. Des grains de
+  //    bruit moyen qui se recouvrent, de moins en moins forts — du tissu, pas un sifflement.
+  let curseur = 0.035;
+  while (curseur < 0.24) {
+    const grain = 0.006 + alea() * 0.012;
+    poser(
+      sortie,
+      Math.round(curseur * FREQUENCE),
+      Math.round(grain * FREQUENCE),
+      700 + alea() * 1800,
+      0.7 + alea() * 0.6,
+      (0.2 + alea() * 0.5) * (1 - (curseur - 0.035) / 0.22) * 2.4,
+      grain * 0.35,
+      alea
+    );
+    curseur += 0.008 + alea() * 0.014;
   }
 
-  return sortie;
+  return ambiance(sortie, 0.1);
 }
 
 /**
- * **Craquage** (D-161) : le Planqué cède. Trois grains de rupture, puis une chute grave — le
- * son le plus fort du jeu, et le seul qui récompense.
+ * **Craquage** (D-161, repris le 02/11/2026) : le Planqué cède. Trois grains de rupture, puis la
+ * **rupture de fibres** (un crépitement serré dans les aigus) et le **carton qui se déchire** — le
+ * son le plus fort du jeu, et le seul qui récompense. La version d'avant finissait sur une sinusoïde
+ * de 120 à 42 Hz : la chute d'une note, remplacée par de la matière.
  */
 function craquage() {
-  const duree = 0.62;
+  const duree = 0.75;
   const n = Math.round(duree * FREQUENCE);
   const sortie = new Float32Array(n);
   const alea = graine(707);
@@ -380,44 +429,95 @@ function craquage() {
     curseur += 0.055 + alea() * 0.02;
   }
 
-  // 2. la chute : un corps grave qui descend, plus long que l'impact d'une Pression
-  const debutChute = Math.round(0.14 * FREQUENCE);
-  const reste = n - debutChute;
-  const envChute = enveloppe(reste, { attaque: 0.01, chute: 0.3 });
-  for (let i = 0; i < reste; i += 1) {
-    const t = i / FREQUENCE;
-    const f = 120 * Math.exp(-t * 5) + 42;
-    sortie[debutChute + i] += Math.sin(2 * Math.PI * f * t) * envChute[i] * 0.6;
+  // 2. la rupture de fibres : un crépitement serré, très aigu, qui s'épuise — les fils du carton qui
+  //    lâchent un par un (Zheng & James : un squelette de micro-flambages, pas une texture tonale)
+  let fibres = 0.14;
+  while (fibres < 0.5) {
+    const grain = 0.002 + alea() * 0.006;
+    poser(
+      sortie,
+      Math.round(fibres * FREQUENCE),
+      Math.round(grain * FREQUENCE),
+      2600 + alea() * 4400,
+      0.7 + alea() * 0.8,
+      (0.3 + alea() * 0.7) * (1 - (fibres - 0.14) / 0.36) * 1.1,
+      grain * 0.3,
+      alea
+    );
+    fibres += 0.006 + alea() * 0.012;
   }
 
-  return sortie;
+  // 3. le carton qui se déchire : une bande large (900–4 000 Hz) arrachée par à-coups irréguliers
+  const debutDechire = Math.round(0.16 * FREQUENCE);
+  const nDechire = Math.min(Math.round(0.5 * FREQUENCE), n - debutDechire);
+  const bruitDechire = new Float32Array(nDechire);
+  for (let i = 0; i < nDechire; i += 1) bruitDechire[i] = alea() * 2 - 1;
+  const dechire = new Float32Array(nDechire);
+  for (const { f, largeur, gain } of [
+    { f: 1200, largeur: 1.2, gain: 1.0 },
+    { f: 3200, largeur: 0.7, gain: 0.5 }
+  ]) {
+    const bande = passeBande(bruitDechire, f, largeur);
+    for (let i = 0; i < nDechire; i += 1) dechire[i] += bande[i] * gain;
+  }
+  let arrachement = 1;
+  let suivante = 0;
+  for (let i = 0; i < nDechire; i += 1) {
+    const t = i / FREQUENCE;
+    // le déchirement ne va pas d'un trait : il avance par paquets de 10 à 30 ms
+    if (i >= suivante) {
+      arrachement = 0.4 + alea() * 0.6;
+      suivante = i + Math.round((0.01 + alea() * 0.02) * FREQUENCE);
+    }
+    const ouverture = Math.min(1, t / 0.04) * Math.exp(-t / 0.22);
+    sortie[debutDechire + i] += dechire[i] * arrachement * ouverture * 0.9;
+  }
+
+  return ambiance(sortie, 0.14);
 }
 
 /**
- * **Intervention** (D-161) : le point marqué. Deux notes montantes, timbre de vibraphone — la
- * même famille que le verdict, mais **vers le haut** : c'est une récompense, pas une conclusion.
+ * **Intervention** (D-161, refait le 02/11/2026) : le point marqué. La version d'avant jouait **deux
+ * notes montantes** de vibraphone — c'était le son le plus exposé au carillon. Ici, deux gestes
+ * d'objet : le **tampon de caoutchouc** qu'on pose sur le bureau (« validé »), puis le **frottement
+ * du stylo** qui coche la case. Aucune hauteur, aucun intervalle : c'est une récompense, pas une
+ * mélodie.
  */
 function intervention() {
   const duree = 0.5;
   const n = Math.round(duree * FREQUENCE);
   const sortie = new Float32Array(n);
+  const alea = graine(811);
 
-  const notes = [
-    { debut: 0, duree: 0.26, f: 523.25 },
-    { debut: 0.12, duree: 0.34, f: 783.99 }
-  ];
-  for (const note of notes) {
-    const debut = Math.round(note.debut * FREQUENCE);
-    const m = Math.round(note.duree * FREQUENCE);
-    const envNote = enveloppe(m, { attaque: 0.008, chute: 0.2 });
-    for (let i = 0; i < m && debut + i < n; i += 1) {
-      const t = i / FREQUENCE;
-      const onde = Math.sin(2 * Math.PI * note.f * t) * 0.6 + Math.sin(2 * Math.PI * note.f * 2.01 * t) * 0.14;
-      sortie[debut + i] += onde * envNote[i] * 0.4;
-    }
+  // 1. le tampon de caoutchouc : un impact mou — du bruit large et grave, très court, une masse
+  //    amortie dessous. Le caoutchouc ne résonne pas : pas de partiels, pas de queue.
+  poser(sortie, 0, Math.round(0.04 * FREQUENCE), 650, 1.7, 1.8, 0.007, alea);
+  const nMasse = Math.round(0.08 * FREQUENCE);
+  const masse = glissando(nMasse, { de: 95, a: 72, tau: 0.012 });
+  const envMasse = declin(nMasse, { attaque: 0.002, tau: 0.025 });
+  for (let i = 0; i < nMasse; i += 1) sortie[i] += masse[i] * envMasse[i] * 0.5;
+
+  // 2. le stylo : le trait qui coche. Du bruit serré (2 à 5 kHz) en grains de 5 à 15 ms, plus dense
+  //    au milieu du trait qu'à ses extrémités — un frottement, jamais une note.
+  let plume = 0.09;
+  while (plume < 0.42) {
+    const grain = 0.005 + alea() * 0.01;
+    const avancement = (plume - 0.09) / 0.33;
+    const trait = Math.sin(Math.PI * avancement) ** 0.7; // le trait appuie au milieu
+    poser(
+      sortie,
+      Math.round(plume * FREQUENCE),
+      Math.round(grain * FREQUENCE),
+      2000 + alea() * 3000,
+      0.6 + alea() * 0.7,
+      (0.2 + alea() * 0.5) * trait * 2.0,
+      grain * 0.35,
+      alea
+    );
+    plume += 0.007 + alea() * 0.012;
   }
 
-  return sortie;
+  return ambiance(sortie, 0.12);
 }
 
 /**
@@ -461,13 +561,15 @@ function wav(echantillons) {
 }
 
 export const SONS = [
-  { cle: 'arrivage', fabrique: arrivage },
+  // L'arrivage finit sur l'air du sachet : sa sortie se fond plus longuement, comme le verdict.
+  { cle: 'arrivage', fabrique: arrivage, fondu: { fin: 0.1, courbe: 2 } },
   // Le verdict s'éteint dans une réverbération : sa sortie se fond plus longuement (#606).
   { cle: 'verdict', fabrique: verdict, fondu: { debut: 0.0015, fin: 0.14, courbe: 2 } },
-  // Les trois sons du **combat** (D-161) : le coup, la casse, le point marqué.
-  { cle: 'pression', fabrique: pression },
-  { cle: 'craquage', fabrique: craquage },
-  { cle: 'intervention', fabrique: intervention }
+  // Les trois sons du **combat** (D-161) : le coup, la casse, le point marqué. Tous les trois
+  // finissent sur une ambiance courte : leur sortie se fond sur 80 ms (#606).
+  { cle: 'pression', fabrique: pression, fondu: { fin: 0.08, courbe: 2 } },
+  { cle: 'craquage', fabrique: craquage, fondu: { fin: 0.08, courbe: 2 } },
+  { cle: 'intervention', fabrique: intervention, fondu: { fin: 0.08, courbe: 2 } }
 ];
 
 /** Le silence de début et de fin : un son qui « colle » au silence s'entend plus qu'il ne s'écoute. */

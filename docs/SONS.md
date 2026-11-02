@@ -12,49 +12,59 @@ Les cinq fichiers de `public/sons/` sont **fabriqués par le projet**, par
 
 | Fichier | Ce qu'on entend | Poids |
 |---|---|---|
-| `arrivage.wav` | le film du sachet qui craque, une déchirure, puis un « pop » sourd quand la lèvre s'ouvre | **39,7 Ko** |
+| `arrivage.wav` | le film du sachet qui craque, la déchirure, le claquement du film, puis l'air qui se dégonfle (#606) | **41,0 Ko** |
 | `verdict.wav` | un tampon qui s'abat sur un dossier, puis le tiroir du classeur qui se ferme (#606) | **62,5 Ko** |
-| `pression.wav` | le coup porté : un claquement filtré et un corps grave qui tombe (D-166) | **14,7 Ko** |
-| `craquage.wav` | le Planqué qui cède : trois grains de rupture, puis une chute grave (D-166) | **26,7 Ko** |
-| `intervention.wav` | le point marqué : deux notes montantes, timbre de vibraphone (D-166) | **21,6 Ko** |
+| `pression.wav` | le coup porté : un claquement sec, une masse grave très courte, le frottement de la manche (#606) | **13,8 Ko** |
+| `craquage.wav` | le Planqué qui cède : trois grains, la rupture de fibres, le carton qui se déchire (#606) | **32,3 Ko** |
+| `intervention.wav` | le point marqué : le tampon de caoutchouc sur le bureau, puis le trait de stylo (#606) | **21,6 Ko** |
 
 Le plafond du ticket #379 est de **100 Ko par fichier** : les cinq y tiennent. Le plus lourd est le
-verdict depuis #606 (62,5 Ko pour 1,45 s), et c'est le plafond qui a borné la première version : une
-queue plus longue demanderait du `.opus` avant de demander du disque. Le format reste du **WAV mono
-22,05 kHz** parce que la machine n'a pas d'encodeur audio. Un `.opus` le remplacera un jour sans
-toucher au module qui les joue.
+verdict (62,5 Ko pour 1,45 s), et c'est le plafond qui a borné sa première version : une queue plus
+longue demanderait du `.opus` avant de demander du disque. Le format reste du **WAV mono 22,05 kHz**
+parce que la machine n'a pas d'encodeur audio. Un `.opus` le remplacera un jour sans toucher au module
+qui les joue.
 
-## Le timbre du verdict (#606)
+## Le principe : un objet du Bureau, jamais une note (#606)
 
-Bastien, le 02/11/2026, en écoutant `verdict.wav` : « **trop courts et trop basiques** ». La route A
-a été retenue (améliorer la synthèse plutôt que sourcer des fichiers CC0), et sur **un seul son**
-d'abord — le verdict, celui qu'il avait entendu.
+Bastien, le 02/11/2026, en écoutant les sons : « **trop courts et trop basiques** ». La route A a été
+retenue (améliorer la synthèse plutôt que sourcer des fichiers CC0), et sur **un seul son** d'abord —
+le verdict, celui qu'il avait entendu.
 
-La première reprise a rallongé et enrichi le son, mais gardé **deux notes** : « c'est mieux mais ça
-fait toujours un peu une cloche d'ascenseur ». Le diagnostic est juste — deux hauteurs définies et un
-intervalle s'écoutent comme une mélodie, et un timbre frappé qui joue une mélodie, c'est un carillon.
-D'où la **deuxième passe** : plus de note du tout, un **objet**. La recherche qui fonde ce choix (impact
-mat, froissement de papier, frottement, et pourquoi un objet n'est pas un carillon) est citée en
-commentaire au-dessus du générateur, dans `sons.mjs`.
+Sa première reprise rallongeait et enrichissait le son, mais gardait **deux notes** : « c'est mieux
+mais ça fait toujours un peu une cloche d'ascenseur ». Le diagnostic est juste — deux hauteurs définies
+et un intervalle s'écoutent comme une mélodie, et un timbre frappé qui joue une mélodie, c'est un
+carillon. Le verdict refait en **objet** a ensuite été validé (« oui c'est mieux le son »), et le
+principe a été appliqué aux quatre autres : **chaque son est un objet du Bureau, jamais une note**.
 
-| | première version | aujourd'hui |
+Concrètement, et c'est écrit en commentaire au-dessus du générateur du verdict, avec ses sources :
+
+- on **filtre du bruit dans le temps** (van den Doel & Pai 1998 ; NoiseBandNet ; Farnell 2010) au lieu
+  d'empiler des oscillateurs ;
+- on entend un **événement et une source**, pas des hauteurs (Rocchesso & Fontana, *The Sounding
+  Object*, 2003) ;
+- le papier est un squelette de **micro-flambages** (Zheng & James 2016), le frottement une myriade de
+  **micro-contacts** qui tend vers du bruit coloré (DAFx-15) ;
+- aucune hauteur **tenue** nulle part : les seules sinusoïdes qui restent sont des masses graves qui
+  meurent en 30 ms — un « toc », pas une note.
+
+Le test le vérifie maintenant pour les cinq : une **autocorrélation** (signal pré-accentué) mesure la
+périodicité, et un son qui se répète est refusé. Les anciens fichiers donnaient 0,97 à 1,00 sur la
+Pression, le Craquage et l'Intervention ; les nouveaux restent sous 0,2.
+
+| Son | avant | aujourd'hui |
 |---|---|---|
-| durée | 0,78 s, queue coupée | **1,45 s**, deux gestes séparés par un silence |
-| poids | 33,6 Ko | **62,5 Ko** (plafond 100 Ko) |
-| contenu | un grain, un corps à 90 Hz, **deux notes** (quinte puis tonique) | **aucune hauteur tenue** : cinq couches de bruit filtré |
-| tampon | un grain + une sinusoïde | impact large bande de 50 ms + une masse 78 → 46 Hz qui retombe en 30 ms, puis le **froissement du papier** (grains de 4 à 18 ms qui se recouvrent) |
-| tiroir | — | un **glissement** de 330 ms (trois bandes de frottement, modulation irrégulière en stick-slip), puis la **butée** : claquement, « clonk » grave, deux résonances **inharmoniques** (1 180 et 2 790 Hz) qui meurent en 25 ms |
-| queue | aucune | une **réverbération courte** (0,35 s, mélange 0,16) sur impulsion synthétisée ici : un objet dans une pièce, pas une salle de concert |
+| `arrivage` | 0,92 s, finissait sur un **pop sinusoïdal** (190 → 70 Hz) | 0,95 s : grains du film, déchirure, **claquement du film** (8 ms de bruit large), **souffle** de l'air qui se dégonfle (bruit grave, turbulence) |
+| `pression` | 0,34 s, **glissando** de 150 à 55 Hz sur 160 ms | 0,32 s : claquement, **masse** 110 → 75 Hz qui meurt en 30 ms, puis le **frottement de la manche** (grains de bruit 0,7–2,5 kHz) |
+| `craquage` | 0,62 s, **chute sinusoïdale** de 120 à 42 Hz | 0,75 s : trois grains, **rupture de fibres** (crépitement 2,6–7 kHz), **carton qui se déchire** (bande large arrachée par paquets) |
+| `intervention` | 0,50 s, **deux notes montantes** de vibraphone (523 et 784 Hz) | 0,50 s : **tampon de caoutchouc** (impact mou, masse amortie) puis **trait de stylo** (grains serrés 2–5 kHz, plus appuyé au milieu) |
+| `verdict` | 0,78 s, deux notes descendantes | 1,45 s : tampon + froissement, puis tiroir : glissement et butée |
 
-Rien de tiers : l'impulsion est fabriquée par le générateur (graine fixe), il n'y a **ni fichier
-d'IR ni plugin**, et le générateur reste **seedé** — deux exécutions donnent le fichier au bit près.
-La phase des glissandos est **intégrée** (une fréquence écrite dans `Math.sin(2π f(t) t)` déphase),
-et la sortie se fond sur 50 ms : le son s'éteint au lieu d'être coupé net. Le script tourne en moins
-d'une demi-seconde.
-
-Les quatre autres sons n'ont **pas bougé d'un octet** (mêmes empreintes qu'avant #606) : c'est à
-l'écoute du verdict que Bastien tranchera s'il faut les reprendre de la même façon. Le principe à
-retenir pour eux : **un geste, pas une note**.
+Rien de tiers : l'impulsion de réverbération est fabriquée par le générateur (graine fixe), il n'y a
+**ni fichier d'IR ni plugin**, et le générateur reste **seedé** — deux exécutions donnent le fichier au
+bit près. La phase des glissandos est **intégrée** (une fréquence écrite dans `Math.sin(2π f(t) t)`
+déphase). Chaque son reçoit une **ambiance courte** (0,35 s, mélange 0,1 à 0,18) : un objet dans une
+pièce, pas une salle de concert ; sa sortie se fond sur 50 à 140 ms selon qu'il finit sur un impact ou
+sur une queue. Les cinq se régénèrent en moins d'une seconde.
 
 ## Pourquoi générés, et pas téléchargés
 
@@ -78,10 +88,11 @@ node scripts/ressources/sons.mjs --verifier  # contrôle poids et fondus, sans r
 
 Le contrôle est aussi un test (`scripts/ressources/sons.test.ts`) : sous 100 Ko, des sons qui
 commencent vite et finissent en fondu — un son qui « colle » au silence s'entend plus qu'il ne
-s'écoute. Depuis #606, le verdict y a ses propres gardes : durée entre 1,2 et 1,8 s, du signal encore
-présent à 60 % de la durée, **deux générations identiques**, et le `.wav` du dépôt **égal aux octets
-que le générateur produit** — un fichier retouché à la main, ou un générateur modifié sans
-régénérer, fait échouer le test.
+s'écoute. Depuis #606, **les cinq** y ont leurs gardes, une par son : durée dans sa fourchette, du
+signal encore présent à 60 % de la durée et une fin qui s'éteint, **deux générations identiques**, le
+`.wav` du dépôt **égal aux octets que le générateur produit** (un fichier retouché à la main, ou un
+générateur modifié sans régénérer, fait échouer le test), et **aucune périodicité** : un son qui se
+répète est un carillon et se refuse.
 
 ## Comment ils sont joués
 
@@ -99,7 +110,7 @@ Nulle part ailleurs il n'y a d'`Audio` ni de `<audio>`.
 
 - **Aucune mesure sur appareil.** Le déblocage iOS (interrupteur silencieux, `resume()` après
   verrouillage) n'a pas été éprouvé sur un vrai téléphone.
-- **Le précache est fait** (depuis #414, phrase corrigée à la revue du 29/10) : les deux WAV sont
+- **Le précache est fait** (depuis #414, phrase corrigée à la revue du 29/10) : les cinq WAV sont
   dans le service worker — `globPatterns` de `vite.config.ts` porte `wav` — et
   `scripts/gardes/precache.test.ts` refuse un fichier de `public/` que le jeu charge sans le servir
   hors ligne. Ce qui reste vrai : un son qui ne se décode pas ne casse rien, et le module se
