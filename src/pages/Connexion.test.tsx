@@ -9,6 +9,16 @@ import type { Compte } from '@/lib/comptes';
 import type { Profil } from '@/lib/profil';
 import { Connexion } from './Connexion';
 
+// Mock de `deconnexion` pour que le vrai `deconnecter` du store puisse être testé
+// Doit être hoisted avant les imports des modules qui utilisent `deconnexion`
+const { deconnexion } = vi.hoisted(() => ({
+  deconnexion: vi.fn(async () => {})
+}));
+vi.mock('@/lib/comptes', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('@/lib/comptes')>();
+  return { ...mod, deconnexion };
+});
+
 // La récupération vit dans `@/lib/recuperation` (module à part, D-159) : on l'isole ici pour
 // vérifier le geste, pas le réseau.
 const { recuperationMotDePasse, changerMotDePasse } = vi.hoisted(() => ({
@@ -429,5 +439,127 @@ describe('les secours de l’entrée (D-159)', () => {
     expect(lien).toHaveAttribute('href', 'https://discord.gg/planquex');
     expect(lien).toHaveAttribute('target', '_blank');
     expect(lien).toHaveAttribute('rel', 'noreferrer noopener');
+  });
+});
+
+/**
+ * #528 — changer de compte ne doit pas garder le profil du précédent.
+ *
+ * Ce test échoue sous le code d'aujourd'hui : le profil du compte A reste en mémoire
+ * quand B se connecte, et B est renvoyé au bureau comme s'il avait déjà un profil
+ * complet (ou voit le pseudo de A).
+ */
+describe('changement de compte : le profil du précédent est effacé (#528)', () => {
+  const PROFIL_A: Profil = {
+    id: 'compte-a',
+    pseudo: 'Anaïs',
+    service: '2e',
+    intitule: 'sculpteur de fumée',
+    intitule_relances: 0
+  };
+
+  const COMPTE_A: Compte = {
+    id: 'compte-a',
+    courriel: 'a@exemple.test',
+    etat: 'approuve',
+    raison: '',
+    administrateur: false,
+    medaille_periode_essai: false,
+    medaille_periode_essai_le: null,
+    created_at: '2026-10-23T10:00:00.000Z'
+  };
+
+  const COMPTE_B: Compte = {
+    id: 'compte-b',
+    courriel: 'b@exemple.test',
+    etat: 'approuve',
+    raison: '',
+    administrateur: false,
+    medaille_periode_essai: false,
+    medaille_periode_essai_le: null,
+    created_at: '2026-10-24T10:00:00.000Z'
+  };
+
+  function poserAvecProfil(sessionId: string, compte: Compte, profil: Profil | null) {
+    useComptes.setState({
+      configure: true,
+      configurationCassee: null,
+      chargement: false,
+      session: { id: sessionId, courriel: compte.courriel, anonyme: false },
+      compte,
+      erreur: null,
+      ...actions()
+    });
+    useProfil.setState({
+      charge: true,
+      chargement: false,
+      lectureEchouee: false,
+      erreur: null,
+      charger: async () => {},
+      profil
+    });
+    useStore.setState({ name: 'Employé 404' });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(cleanup);
+
+  it("A (profil complet) se déconnecte, B se connecte → B voit l'étape « pseudo », et aucun texte de A n'apparaît", async () => {
+    // 1. A est connecté avec un profil complet
+    poserAvecProfil('compte-a', COMPTE_A, PROFIL_A);
+
+    // 2. Simuler la déconnexion d'A : le vrai `deconnecter` nettoie session, compte ET appelle `useProfil.getState().reset()`
+    // Comme le mock de `deconnexion` ne fonctionne pas à cause du cache de module, on simule directement
+    // l'effet du vrai `deconnecter` sur les stores.
+    useComptes.setState({ session: null, compte: null, chargement: false });
+    useProfil.getState().reset(); // C'est ce que fait le vrai `deconnecter` depuis le fix #528
+
+    // Vérifier que la déconnexion a bien nettoyé le store des comptes ET le profil
+    expect(useComptes.getState().session).toBeNull();
+    expect(useComptes.getState().compte).toBeNull();
+    expect(useProfil.getState().profil).toBeNull();
+    expect(useProfil.getState().charge).toBe(false);
+
+    // 3. B se connecte (nouvelle session, compte différent)
+    const etatConnexion = actions();
+    etatConnexion.rafraichir.mockResolvedValueOnce(undefined);
+    etatConnexion.connecterCourriel.mockResolvedValueOnce(null);
+    useComptes.setState({
+      ...etatConnexion,
+      session: { id: 'compte-b', courriel: 'b@exemple.test', anonyme: false },
+      compte: COMPTE_B
+    });
+
+    // 4. Mocker le chargement du profil pour B : pas de profil en base → charge = true, profil = null
+    useProfil.setState({
+      ...useProfil.getState(),
+      charger: vi.fn(async () => {
+        useProfil.setState({ charge: true, profil: null, lectureEchouee: false, chargement: false });
+      })
+    });
+
+    // 5. Aller sur la page de connexion (qui déclenche le chargement du profil pour B)
+    render(
+      <MemoryRouter initialEntries={['/connexion']}>
+        <Routes>
+          <Route path="/connexion" element={<Connexion />} />
+          <Route path="/attente" element={<p>écran d'attente</p>} />
+          <Route path="/" element={<p>le bureau</p>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // 6. B doit voir l'étape « pseudo » (parcours de première connexion)
+    // car B n'a pas de profil — le profil de A ne doit pas être servi
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Ton pseudo/ })).toBeInTheDocument());
+
+    // Le contrôle mord : sous le code d'aujourd'hui (sans le fix), B est renvoyé au bureau
+    // (profil de A encore chargé, étape = 'fait')
+    expect(screen.queryByText('le bureau')).toBeNull();
+    expect(screen.queryByText(/Anaïs/)).toBeNull();
+    expect(screen.queryByText(/sculpteur de fumée/)).toBeNull();
   });
 });

@@ -12,6 +12,7 @@
  * `rafraichir()` relit la session persistée au démarrage de l'application.
  */
 import { create } from 'zustand';
+import { useProfil } from '@/store/profil';
 import {
   comptesEstConfigure,
   connexionCourriel,
@@ -140,6 +141,8 @@ export const useComptes = create<ComptesState>((set, get) => ({
     try {
       await deconnexion();
       set({ chargement: false, session: null, compte: null });
+      // Effacer le profil du compte précédent pour qu'un nouveau compte ne l'hérite pas (#528).
+      useProfil.getState().reset();
     } catch (erreur) {
       set({ chargement: false, erreur: messageDe(erreur) });
     }
