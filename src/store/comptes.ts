@@ -140,6 +140,12 @@ export const useComptes = create<ComptesState>((set, get) => ({
     try {
       await deconnexion();
       set({ chargement: false, session: null, compte: null });
+      // Effacer le profil du compte précédent pour qu'un nouveau compte ne l'hérite pas (#528).
+      // **Import dynamique** : `@/store/profil` tirerait `@/lib/profil` dans le paquet principal
+      // (+5,7 kB mesurés) alors que la déconnexion est déjà asynchrone. Le module reste dans son
+      // morceau paresseux, et le geste est le même.
+      const { useProfil } = await import('@/store/profil');
+      useProfil.getState().reset();
     } catch (erreur) {
       set({ chargement: false, erreur: messageDe(erreur) });
     }

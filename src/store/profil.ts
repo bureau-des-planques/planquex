@@ -22,12 +22,16 @@ export interface ProfilState {
   lectureEchouee: boolean;
   chargement: boolean;
   erreur: string | null;
+  /** L'identifiant du compte pour lequel le profil a été chargé. */
+  dernierUid: string | null;
 
   charger: (uid: string) => Promise<void>;
   creerPseudo: (uid: string, pseudo: string) => Promise<string | null>;
   choisirService: (uid: string, service: CodeService) => Promise<string | null>;
   relancer: (uid: string) => Promise<string | null>;
   valider: (uid: string, intitule: string) => Promise<string | null>;
+  /** Efface le profil (appelé à la déconnexion pour ne pas hériter du profil du compte précédent). */
+  reset: () => void;
 }
 
 const messageDe = (erreur: unknown): string => (erreur instanceof Error ? erreur.message : String(erreur));
@@ -55,20 +59,25 @@ export const useProfil = create<ProfilState>((set, get) => ({
   lectureEchouee: false,
   chargement: false,
   erreur: null,
+  dernierUid: null,
 
   charger: async (uid) => {
+    // Si l'identité a changé, forcer le rechargement même si charge === true (#528).
+    const doitRecharger = get().dernierUid !== uid;
+    if (!doitRecharger && get().charge) return;
+
     if (!comptesEstConfigure()) {
-      set({ charge: true, profil: null, lectureEchouee: false });
+      set({ charge: true, profil: null, lectureEchouee: false, dernierUid: uid });
       return;
     }
     set({ chargement: true, erreur: null });
     try {
       const profil = await lireMonProfil(uid);
-      set({ profil, charge: true, chargement: false, lectureEchouee: false });
+      set({ profil, charge: true, chargement: false, lectureEchouee: false, dernierUid: uid });
     } catch (erreur) {
       // `profil` reste nul : c'est `lectureEchouee` qui distingue « rien en base » de
       // « on n'a pas pu lire », sans quoi l'écran renvoie un testeur de l'étape 3 à l'étape 1.
-      set({ charge: true, chargement: false, erreur: messageDe(erreur), lectureEchouee: true });
+      set({ charge: true, chargement: false, erreur: messageDe(erreur), lectureEchouee: true, dernierUid: uid });
     }
   },
 
@@ -78,5 +87,8 @@ export const useProfil = create<ProfilState>((set, get) => ({
 
   relancer: (uid) => geste(set, () => relancerIntitule(uid, get().profil?.intitule_relances ?? 0)),
 
-  valider: (uid, intitule) => geste(set, () => poserIntitule(uid, intitule))
+  valider: (uid, intitule) => geste(set, () => poserIntitule(uid, intitule)),
+
+  reset: () =>
+    set({ profil: null, charge: false, lectureEchouee: false, chargement: false, erreur: null, dernierUid: null })
 }));
