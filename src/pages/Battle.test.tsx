@@ -22,6 +22,7 @@ import { factionDeck } from '@/game/simulation';
 import { partieSauvegardee } from '@/store/partie';
 import { useStore } from '@/store/useStore';
 import { deckLegal } from '@/game/deck';
+import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
 
 /** Une partie **commencée** (vingt coups joués), rendue au tour du joueur : rien ne joue seul. */
 function partieCommencee() {
@@ -1798,5 +1799,61 @@ describe('Battle — le journal remplit la console sur écran large (D-158, #520
     const journal = screen.getByRole('region', { name: 'Journal du combat' });
     expect(within(journal).getAllByRole('listitem').length).toBeGreaterThan(0);
     expect(journal).not.toHaveAttribute('aria-live');
+  });
+});
+
+/**
+ * **Les répliques de la Direction hors du tutoriel** (#544) : aux trois moments —
+ * craquage encaissé, fin gagnée, fin perdue. Une seule à l'écran, dans la barre de journal,
+ * annoncée par aria-live polie. En partie à deux, jamais pour un joueur humain.
+ */
+describe('Battle — les répliques de la Direction (#544)', () => {
+  it('le calcul de repliqueDirection ne produit rien sans événement', () => {
+    // Test unitaire de la logique : sans match (solo), sans événement, pas de réplique
+    const { etat: s } = partieCommencee();
+    // Au début d'une partie, lastLog ne contient pas de craquage/Pression
+    const evenement = evenementDuJournal(s.log.at(-1) ?? '');
+    expect(evenement).toBeNull();
+  });
+
+  it('evenementDuJournal reconnaît un craquage', () => {
+    expect(evenementDuJournal('Le Planqué adverse craque : 1 Intervention.')).toBe('craquage');
+    expect(evenementDuJournal('Le Planqué craque')).toBe('craquage');
+  });
+
+  it('evenementDuJournal reconnaît une fin de partie', () => {
+    // La fin de partie est gérée par state.phase === 'ended' dans Battle.tsx
+    // Ce test vérifie que evenementDuJournal ne dit rien pour une fin
+    expect(evenementDuJournal('Victoire : 3 Interventions.')).toBeNull();
+  });
+
+  it('choisirReplique est déterministe pour chaque événement', () => {
+    for (const ev of ['craquage', 'victoire', 'defaite'] as const) {
+      const r1 = choisirReplique(ev, 5);
+      const r2 = choisirReplique(ev, 5);
+      expect(r1).toBe(r2);
+    }
+  });
+
+  it("en partie à deux, un joueur humain n'hérite jamais des répliques de la Direction", () => {
+    const mienne = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    fireEvent.click(within(menuSurLaVue('Partie à deux')).getByRole('button', { name: /Créer une partie à deux/i }));
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Abandonner/ }));
+
+    // En partie à deux, pas de réplique "La Direction"
+    expect(screen.queryByText(/La Direction · /)).not.toBeInTheDocument();
+    // L'annonce aria-live est vide
+    const annonce = screen.getByTestId('annonce-replique-direction');
+    expect(annonce.textContent).toBe('');
+    mienne.unmount();
+  });
+
+  it("la zone d'annonce aria-live pour la réplique existe dans le DOM", () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+
+    const annonce = screen.getByTestId('annonce-replique-direction');
+    expect(annonce).toHaveAttribute('aria-live', 'polite');
+    expect(annonce).toHaveClass('sr-only');
   });
 });
