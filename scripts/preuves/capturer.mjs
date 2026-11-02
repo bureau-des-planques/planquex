@@ -392,8 +392,32 @@ async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {
   }
 }
 
+/**
+ * **Le pire cas de l'accueil** (#553) : une partie rangée ajoute « Une partie t'attend au tour N »
+ * sous les deux gestes. L'amorçage des captures ne porte que `tutorielVu`, donc la ligne n'est
+ * jamais rendue — et une hauteur mesurée sans elle ne dit rien du cas réel. On la **pose** le
+ * temps de la mesure, avec sa classe et son texte, puis on la retire : la capture ne montre pas
+ * un état que la partie n'a pas.
+ */
+async function poserAttentePireCas(page) {
+  await page.evaluate(() => {
+    const actions = document.querySelector('.hero__actions');
+    if (!actions || document.querySelector('.hero__attente')) return;
+    const ligne = document.createElement('p');
+    ligne.className = 'muted hero__attente pire-cas';
+    ligne.textContent = 'Une partie t’attend au tour 7.';
+    actions.after(ligne);
+  });
+}
+
+/** Retire la ligne du pire cas : la capture reprend l'état réel de l'amorçage. */
+async function retirerAttentePireCas(page) {
+  await page.evaluate(() => document.querySelector('.hero__attente.pire-cas')?.remove());
+}
+
 /** Refuse un document d'accueil plus haut que sa fenêtre portrait, sans masquer son contenu. */
 async function controlerAccueilSansDefilement(page, slug, viewport) {
+  await poserAttentePireCas(page);
   const hauteur = await page.evaluate(() => ({
     document: document.documentElement.scrollHeight,
     fenetre: window.innerHeight,
@@ -418,6 +442,7 @@ async function controlerAccueilSansDefilement(page, slug, viewport) {
       `${slug} · ${probleme} (${viewport.width} × ${viewport.height}) : l'accueil portrait doit tenir sans contenu coupé (D-171)`
     );
   }
+  await retirerAttentePireCas(page);
 }
 
 /**

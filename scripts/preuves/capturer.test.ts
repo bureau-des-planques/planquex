@@ -307,6 +307,23 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     expect(source).toContain('controlerAccueilSansDefilement(page, slug, VIEWPORT)');
   });
 
+  it('l’accueil est mesuré avec la partie qui attend (#553), puis rendu à son état', () => {
+    const source = read('scripts/preuves/capturer.mjs');
+    // La ligne de #553 n'est pas dans l'amorçage : sans elle, la hauteur mesurée est celle d'un
+    // accueil qui n'existe que la première fois. Le pire cas se pose donc avant la mesure…
+    expect(source).toContain('await poserAttentePireCas(page);');
+    expect(source).toContain("ligne.className = 'muted hero__attente pire-cas'");
+    // …et se retire après, sinon la capture montrerait une partie qui n'attend pas.
+    expect(source).toContain('await retirerAttentePireCas(page);');
+    expect(source).toContain("document.querySelector('.hero__attente.pire-cas')?.remove()");
+    const appel = source.indexOf('await poserAttentePireCas(page);');
+    const mesure = source.indexOf('const hauteur = await page.evaluate', appel);
+    const retrait = source.indexOf('await retirerAttentePireCas(page);', mesure);
+    expect(appel).toBeGreaterThan(-1);
+    expect(mesure).toBeGreaterThan(appel);
+    expect(retrait).toBeGreaterThan(mesure);
+  });
+
   it("capture l'ouverture d'un Arrivage, et refuse une scène qui ne se révèle pas", () => {
     const env = { ...process.env };
     delete env.BASE_URL;
