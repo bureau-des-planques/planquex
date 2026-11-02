@@ -313,22 +313,21 @@ plateau (`.card--plateau`).
 
 ### 2.4 L'écran de combat (D-093 ; #169, #187–#200 ; relu sur le code le 27/10/2026, #291, D-121 ; écart de collage de la barre daté le 27/10/2026, #289, #323)
 
-> **Depuis D-171 (01/11/2026)**, cette section décrit la **référence 420 × 900**. Sur un écran portrait
-> plus court et sur PC, la disposition change : la barre du haut s'efface en combat (une
+> **Depuis D-142 (28/10/2026)**, cette section décrit la **référence 420 × 900**. Sur un écran plus
+> court, en paysage et sur PC, la disposition change : la barre du haut s'efface en combat (une
 > sortie `←` entre dans l'en-tête), le Banc passe à côté du Poste, la barre d'action vit dans la
 > console. Voir §2.7.
 
-L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). D-103 exige que le combat
-ne fasse pas défiler le document ; D-171 garde cette règle en portrait et ajoute la borne supérieure
-du vide sous la barre. `npm run capturer` mesure le défilement du document et les surfaces qui doivent
-rester visibles (limite : le haut de la barre de navigation, ou le **bas de la fenêtre** quand elle
-n'est pas rendue — c'est le cas en combat depuis #275 ; les « 830 px » d'avant datent de cette barre).
-D-094 (3) garde **20 px au minimum** ; D-171 borne le vide sous la barre d'action à **32 px au plus**
-sur téléphone portrait. La mesure du 27/10/2026 (`npm run capturer`, #322) reste un état historique :
-sur les 64 états de ce passage, cibles de 44 px comprises, le combat ne défilait pas ; pas-à-pas
-terminé, le bas de la main était à 663–667 px et celui de la barre d'action à 711–758 px ; pas-à-pas
-ouvert, la main finissait à 714–717 px et la barre à 762–809 px. Un tour chargé (relève, choix) fait
-défiler la barre **en elle-même** (`max-height: 42dvh`) plutôt que de recouvrir la table.
+L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
+tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
+doivent rester au-dessus de la navigation (limite : le haut de la barre de navigation, ou le **bas de
+la fenêtre** quand elle n'est pas rendue — c'est le cas en combat depuis #275 ; les « 830 px » d'avant
+datent de cette barre — avec **20 px** de marge exigés par D-094 (3)). Remesuré le 27/10/2026 (`npm run capturer`, #322) sur les
+64 états du passage de combat, cibles de 44 px comprises : **aucun défilement** (D-103) ; pas-à-pas
+**terminé**, le bas de la **main** est à **663–667 px** et celui de la **barre d'action** à
+**711–758 px** (72–119 px de marge) ; pas-à-pas **ouvert** (`1 / 5`, il ajoute sa bande), la main
+finit à **714–717 px** et la barre à **762–809 px** (**21–68 px** de marge). Un tour chargé (relève,
+choix) fait défiler la barre **en elle-même** (`max-height: 42dvh`) plutôt que de recouvrir la table.
 
 Les tailles sont celles de l'écran, pas celles de la maquette : **Poste 96 px** (`--poste-w:
 6rem`), **Banc 64 px** (`--banc-w: 4rem`), **carte de main 72 px** (`--carte-w: 4.5rem`) depuis
@@ -566,29 +565,29 @@ trombones, feuilles) — ce sont des assets, et l'univers est l'atelier MRO (D-0
 
 ---
 
-### 2.7 Téléphone portrait et PC (D-171, 01/11/2026)
+### 2.7 Téléphone, portrait, paysage et PC (D-142, 28/10/2026)
 
-Le téléphone se joue **en portrait**. `npm run capturer` conserve la référence **420 × 900**
-(D-060, D-094), ajoute les fenêtres courtes **360 × 640** et **390 × 664** (Safari, barre comprise),
-puis le **PC** **1280 × 800** et le **grand écran** **1920 × 1080** (D-158). Il ne mesure plus le
-paysage mobile. Le manifeste demande `orientation: portrait` ; les navigateurs qui ignorent cette
-préférence ne sont pas garantis en paysage.
+L'écran se mesure à **huit gabarits** : la référence **420 × 900** (D-060, D-094), puis la fenêtre
+réelle d'un téléphone — **360 × 640**, **390 × 664** (Safari, barre comprise), **412 × 810** (Pixel 7
+en navigation, D-171) —, le **paysage** — **740 × 360**, **844 × 390** — le **PC**, **1280 × 800**, et le
+**grand écran**, **1920 × 1080** (D-158). `npm run capturer` les joue tous ; ce
+qui suit est ce que `src/styles.css` fait de chacun.
 
 | Situation | Média | Ce qui change |
 |---|---|---|
-| Accueil sur téléphone | gabarits portrait de D-171 | la page tient dans la fenêtre, sans défilement du document ni contenu coupé ; les sections se resserrent avant de disparaître |
 | Combat sur téléphone | `max-width: 899px` | la barre du haut s'efface (comme celle du bas, #275) ; la **sortie** `←` de l'en-tête mène à l'accueil — pas un forfait, la partie est rangée |
-| Écran portrait court | `max-width: 899px` et `max-height: 860px` | chaque camp range son **Banc à côté du Poste**, sa fiche sous le Banc ; la fiche s'écoule en lignes |
+| Écran court | `max-height: 860px` (portrait) | chaque camp range son **Banc à côté du Poste**, sa fiche sous le Banc ; la fiche s'écoule en lignes |
+| Palier du milieu | `min-height: 701px` et `max-height: 860px` (portrait) | les tailles se **dérivent de `100dvh`** (D-171) : à 860 px, celles de la référence ; à 701 px, celles du palier court. C'est la bande du Pixel 7 en navigation (412 × 810) |
 | Petit téléphone | `max-width: 399.98px` | « Conditions » ne garde que son **icône** (libellé masqué, toujours nom accessible) : « Tour N · à toi » n'est plus coupé, et le camp qui joue ne se lit plus par la seule teinte du liseré |
-| Très court | `max-width: 899px` et `max-height: 700px` | le titre « Ta main » cède sa ligne (le compte reste dans la fiche) ; Banc 52 px, main 60 px |
-| Barre d'action | gabarits portrait de D-171 | le document ne défile pas ; le vide sous la barre reste entre **20 et 32 px** ; si de nombreux choix sont proposés, la barre défile en elle-même |
-| Écran large | `min-width: 900px` | plateau à gauche, console à droite, barre d'action **dans** la console |
+| Très court | `max-height: 700px` (portrait) | le titre « Ta main » cède sa ligne (le compte reste dans la fiche) ; Banc 52 px, main 60 px |
+| Paysage de téléphone | `orientation: landscape` et `max-height: 600px` | plateau à gauche, **main et barre d'action** à droite ; un camp sur **une** rangée (Poste 80, Banc 52, fiche) ; la console défile en elle-même ; l'inspecteur est une colonne, pas une feuille basse ; hors combat, l'en-tête se serre et la barre du bas met icône et libellé côte à côte |
+| Écran large | `min-width: 900px`, ou paysage ≥ 600 px | plateau à gauche, console à droite, barre d'action **dans** la console |
 | PC | `min-width: 1200px` et `min-height: 700px` | le combat prend 1360 px de large ; Poste, Banc et main **grandissent avec la hauteur** (`clamp` : planchers de D-157, plafonds de D-158 — Poste 11 rem, Banc 7 rem, main 8 rem) ; la console porte sous la barre les **12 dernières lignes du journal** (≥ 900 px, D-158) ; la barre du haut reste, c'est la navigation |
 | Grand écran | `min-width: 1440px` | la coquille passe de 1080 à 1280 px (`--shell-max`, lu aussi par la barre du bas) : une colonne de cartes de plus en Collection et au Deck |
 | Partout | — | `min-height: 100dvh` ; encoches (`env(safe-area-inset-*)`) sur l'en-tête et les bords ; **44 px** pour un bouton, un champ, une case de Réglages, un onglet du comité, et la zone tactile du `+` d'une carte (la pastille garde 24 px) |
 
-**Règle** : la **disposition** cède avant la **lisibilité**. Les tailles de cartes de D-157 restent
-les planchers ; le zoom natif du navigateur reste disponible.
+**Règle** : la **disposition** cède avant la **lisibilité**. Les tailles de D-094 (1) ne baissent
+qu'aux deux cas nommés (très court, paysage), et seulement d'un cran.
 
 ## 3. Cadre de rareté, rareté par rareté
 
