@@ -212,6 +212,21 @@ Les trois jobs, `npm run ci:etat` et la vérification des fichiers générés au
 dans `AGENTS.md` §6 et §8.4 : cette section ne les réécrit pas, elle dit **qui** les regarde et
 **ce qui** se fusionne.
 
+**Deux gestes, mesurés le 02/11/2026** (#626) : **42** `git rebase` pour **37** fusions de PR,
+et **29** `sleep` d'affilée pour attendre une CI. Ce ne sont pas des règles neuves — D-113
+impose le **merge commit** depuis le 26/10/2026 — c'est la **discipline du geste** qui manquait :
+
+- **On ne rebase que sur conflit.** D-113 impose le **merge commit** : une PR `CLEAN` se
+  fusionne **telle quelle**, GitHub fusionne dans `main` sans qu'on la rebase. Un rebase suivi
+  d'un push **relance les trois jobs** — jusqu'à **10 min 40** pour les écrans —, et une PR
+  propre n'en a pas besoin. Le rebase se réserve au cas où GitHub dit la PR **en conflit** :
+  c'est le seul cas qui le demande.
+- **Attendre une PR, c'est `pr.watch` ou `gh pr checks --watch`**, jamais une boucle de
+  `sleep`. `pr.watch` (l'outil d'OpenChamber) **réveille la session** quand un check tombe,
+  quand tout passe ou quand la PR est fusionnée ; `gh pr checks --watch` fait le même travail à
+  la main. Une boucle de `sleep` ne rend la main qu'**à l'aveugle** : on paie le temps mort, et
+  on le paie plein tarif.
+
 1. **`git merge-tree --write-tree --name-only main <branche>`** : connaître les conflits
    **avant** de toucher l'arbre. Il ne voit **pas** les conflits **sémantiques** — deux tests
    qui divergent, un `energy` devenu tableau — donc il complète la lecture, il ne la remplace pas.
