@@ -442,6 +442,20 @@ export const MUTATIONS = [
     tests: ['src/pages/Battle.test.tsx'],
     garde:
       'sans elle, poser un Planqué redemande un défilement et fait perdre l’indicateur de tour : c’est l’action la plus fréquente du jeu'
+  },
+  {
+    ticket: 544,
+    titre: 'le craquage de la Direction se confond avec celui du joueur',
+    fichier: 'src/pages/Battle.tsx',
+    // Les répliques de craquage parlent de **son** personnel (« On va mutualiser son poste »,
+    // « Il était en réunion. Depuis 2019. ») : la Direction commente son Planqué qui tombe, pas
+    // le nôtre. Le craquage se lit dans les faits de la dernière action (#250), avec son camp —
+    // la ligne du journal est toujours suivie de celle de la relève ou du verdict.
+    motif: "(fait) => fait.type === 'craquage' && fait.camp === 'ai'",
+    remplacement: "(fait) => fait.type === 'craquage' && fait.camp === 'player'",
+    tests: ['src/pages/Battle.test.tsx'],
+    garde:
+      'sans elle, la voix de la Direction se déclenche sur la chute de nos Planqués, et le test du craquage ne trouve plus de réplique à l’écran'
   }
 ];
 
