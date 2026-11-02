@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 177 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 178 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -183,3 +183,4 @@
 | D-175 | 02/11/2026 | La barre du bas passe à quatre entrées : Accueil,… |
 | D-176 | 02/11/2026 | PRODUCT.md entre au dépôt comme contexte dérivé pour impeccable, pas… |
 | D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |
+| D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |
