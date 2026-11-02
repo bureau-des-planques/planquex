@@ -59,7 +59,7 @@ describe('Raison de fin de partie (#84)', () => {
 });
 
 describe('Bandeau de fin — il lit la raison (#84)', () => {
-  const source = readFileSync(fileURLToPath(new URL('../pages/Battle.tsx', import.meta.url)), 'utf8');
+  const source = readFileSync(fileURLToPath(new URL('../combat/presentation.tsx', import.meta.url)), 'utf8');
 
   it('distingue les quatre fins au lieu de dire « 3 Interventions » à toutes', () => {
     expect(source).toContain('state.endReason');

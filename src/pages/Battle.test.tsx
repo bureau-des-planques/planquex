@@ -7,7 +7,8 @@ import { act, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { Battle, libelleDuTour } from './Battle';
+import { libelleDuTour } from '@/combat/presentation';
+import { Battle } from './Battle';
 import { renderWithStore, setupTestStore } from '@/test/test-utils';
 import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat';
 import { ETAPES_COMBAT, premierePhrase } from '@/components/pas-a-pas-combat-etapes';
@@ -1587,7 +1588,8 @@ describe('Battle — les effets de la scène et leur repli (#192)', () => {
  */
 describe('Battle — le plateau en cartes, sans perdre le pas-à-pas (T3, #286)', () => {
   it('ne garde qu’un `title=` dans la page : celui du bandeau de deck de test', () => {
-    const source = readFileSync(resolve(process.cwd(), 'src/pages/Battle.tsx'), 'utf8');
+    // Le bandeau vit maintenant dans `Camp` (`src/combat/plateau.tsx`) ; la garde suit le composant.
+    const source = readFileSync(resolve(process.cwd(), 'src/combat/plateau.tsx'), 'utf8');
     // Le `title` est le pire des trois supports : il ne s'ouvre ni au clavier ni au doigt. Ce qui
     // était dit par un `title` est soit écrit, soit lu par le nom accessible.
     expect(source.match(/title=/g) ?? []).toHaveLength(1);

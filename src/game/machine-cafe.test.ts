@@ -148,26 +148,25 @@ describe('Machine à café — les types choisis par le joueur (#91)', () => {
  * seul motif. Même technique que `Battle.test.ts` : le contrat porte sur la source,
  * donc c'est la source qu'on lit.
  */
-const battleSource = readFileSync(fileURLToPath(new URL('../pages/Battle.tsx', import.meta.url)), 'utf8');
 /**
- * **#556, décision du 02/11/2026 : une garde suit le code.** Le montage de la table (les types
- * de café choisis, le `createBattle` du départ) a quitté `Battle.tsx` pour
- * `src/combat/useCombat.ts` : la règle est la même, elle se lit là où le code vit.
+ * **#556, décision du 02/11/2026 : une garde suit le code.** Les gabarits de café ont quitté
+ * `Battle.tsx` pour `src/combat/plateau.tsx` : la règle est la même, elle se lit là où le code vit.
  */
+const plateauSource = readFileSync(fileURLToPath(new URL('../combat/plateau.tsx', import.meta.url)), 'utf8');
 const combatSource = readFileSync(fileURLToPath(new URL('../combat/useCombat.ts', import.meta.url)), 'utf8');
 
-describe('Battle.tsx — le plateau rend les cafés typés', () => {
+describe('plateau de combat — les cafés typés', () => {
   it('dessine les cafés par les pastilles de la maison (CafePips / CafeDot / cafeLabel)', () => {
-    expect(battleSource).toMatch(/<CafePips\b/);
-    expect(battleSource).toMatch(/<CafeDot\b/);
-    expect(battleSource).toMatch(/cafeLabel\(/);
+    expect(plateauSource).toMatch(/<CafePips\b/);
+    expect(plateauSource).toMatch(/<CafeDot\b/);
+    expect(plateauSource).toMatch(/cafeLabel\(/);
   });
 
   it('pose ses deux gabarits dédiés : CafesPips et MachinePips', () => {
     // `CafesPips` dessine les cafés attachés d'un Planqué, `MachinePips` la zone
     // de la Machine : deux gabarits, un seul motif de pastille.
-    expect(battleSource).toMatch(/<CafesPips\b/);
-    expect(battleSource).toMatch(/<MachinePips\b/);
+    expect(plateauSource).toMatch(/<CafesPips\b/);
+    expect(plateauSource).toMatch(/<MachinePips\b/);
   });
 
   it('passe au moteur les types de café choisis du Deck (#91)', () => {

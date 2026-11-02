@@ -8,7 +8,7 @@
  * données fabriquées : `scripts/preuves/partie-jouee-jugement.test.ts` la fait **mordre** sur des cas
  * fautifs, comme `controlesHauteur` dans `capturer.test.ts`.
  *
- * Les libellés des boutons sont ceux de `describeAction` (`src/pages/Battle.tsx`) : ce fichier
+ * Les libellés des boutons sont ceux de `describeAction` (`src/combat/actions.tsx`) : ce fichier
  * les recopie **en un seul endroit**, et un test les confronte à la liste des libellés que le
  * composant rend (voir `partie-jouee-jugement.test.ts`).
  */
@@ -17,7 +17,7 @@
 export const GESTES_DE_MAIN = ['playBasic', 'playAction', 'evolve', 'priorityShift'];
 
 /**
- * Le libellé d'un bouton, selon `describeAction` (Battle.tsx). Un préfixe, pas une égalité : le
+ * Le libellé d'un bouton, selon `describeAction` (`src/combat/actions.tsx`). Un préfixe, pas une égalité : le
  * détail (nom de la cible, dégâts) suit le libellé dans le texte du bouton.
  */
 const LIBELLES = [

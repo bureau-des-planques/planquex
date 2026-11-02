@@ -48,10 +48,10 @@ describe('classerBouton', () => {
     expect(classerBouton('   ')).toBeNull();
   });
 
-  it('confronte les libellés à `Battle.tsx` : chaque préfixe existe dans le composant', () => {
+  it('confronte les libellés à `src/combat/actions.tsx` : chaque préfixe existe dans le composant', () => {
     // Le jugement recopie les libellés de `describeAction` : si le composant change un libellé,
     // ce test tombe, au lieu de laisser le harnais compter « sans bouton » à tort.
-    const source = lire('src/pages/Battle.tsx');
+    const source = lire('src/combat/actions.tsx');
     for (const libelle of [
       'Poser au Poste',
       'Mettre au Banc ',
@@ -68,7 +68,7 @@ describe('classerBouton', () => {
       'Passer le tour de la Direction',
       'Abandonner'
     ]) {
-      expect(source, `libellé « ${libelle} » absent de Battle.tsx`).toContain(libelle);
+      expect(source, `libellé « ${libelle} » absent de src/combat/actions.tsx`).toContain(libelle);
     }
   });
 });
