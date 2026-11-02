@@ -34,11 +34,29 @@
  *   ci-dessous avec sa date. Il ne monte pas sans une décision écrite ; il descend avec le code
  *   qui le permet. C'est le même geste que les cliquets de captures et de compteurs.
  *
+ * ## Le geste de relevé, et pourquoi il est une commande (#581)
+ *
+ * Une vague de PR parallèles dépasse toujours le cliquet : le 02/11/2026 il a fallu le relever
+ * **trois fois à la main** (#553 → #566 → #529), avec deux rebascules. Le geste est mécanique —
+ * mesurer, réécrire le nombre, ajouter une ligne datée — et se fait mal à la main. La commande
+ * le fait, et **exige sa raison** :
+ *
+ * ```bash
+ * npm run taille:cliquet -- --raison "le diagnostic de configuration cassée (#529)"
+ * ```
+ *
+ * Elle refuse sans `--raison`, refuse un delta de plus de **5 000 octets** sans `--assume` (au-delà,
+ * ce n'est plus une négociation de cliquet, c'est une régression à regarder), et **n'écrit rien**
+ * quand le paquet tient déjà. Les deux refus se décident dans `deciderReleve`, une fonction pure
+ * que le test confronte à ses cas fautifs.
+ *
  * ## Usage
  *
  * ```bash
  * npm run mesure:paquets                # construit si dist/ est périmé, mesure, échoue au-delà
  * npm run mesure:paquets -- --sans-build  # mesure dist/ tel quel (ce que fait la CI après son build)
+ * npm run taille:cliquet -- --raison "…"   # relève le cliquet, avec sa date et sa raison
+ * npm run taille:cliquet -- --raison "…" --assume   # delta de plus de 5 000 octets, assumé
  * node scripts/ci/taille-paquets.mjs --plan   # les seuils et l'état de dist/, sans rien construire
  * ```
  *
@@ -47,10 +65,12 @@
  * récente que `dist/index.html`).
  *
  * Garde du contrôle : `scripts/ci/taille-paquets.test.ts` le confronte à des tailles fabriquées
- * — juste sous le seuil (passe), juste au-dessus (échoue) — et à un dossier de paquets fabriqués.
+ * — juste sous le seuil (passe), juste au-dessus (échoue) —, à un dossier de paquets fabriqués,
+ * et aux deux refus du relevé (sans raison, delta de plus de 5 000 octets) sur la fonction pure
+ * `deciderReleve`, sans lancer le shell.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
@@ -148,6 +168,106 @@ export const SEUIL_PAQUET = 500_000;
  */
 export const PLAFOND_PRINCIPAL = 268_361;
 
+/**
+ * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de
+ * Vite). Au-delà, ce n'est plus une négociation de cliquet, c'est une régression à regarder
+ * avant de l'inscrire dans le nombre.
+ */
+export const DELTA_MAX_SANS_ASSUME = 5_000;
+
+/** Un entier à la française : « 290 782 » (les espaces des commentaires du cliquet). */
+function espaces(octets) {
+  return String(octets).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+/** Un entier à la façon d'un littéral TypeScript : « 290_782 ». */
+function souligne(octets) {
+  return String(octets).replace(/\B(?=(\d{3})+(?!\d))/g, '_');
+}
+
+/** Une date au format `JJ/MM/AAAA`, celui des relevés déjà écrits dans le commentaire. */
+export function dateCourte(date) {
+  const jour = String(date.getDate()).padStart(2, '0');
+  const mois = String(date.getMonth() + 1).padStart(2, '0');
+  return `${jour}/${mois}/${date.getFullYear()}`;
+}
+
+/**
+ * La ligne datée qu'un relevé ajoute au commentaire du cliquet, dans la forme déjà employée :
+ * `**Relevé de <delta> octets le JJ/MM/AAAA** (<nouveau total> octets) — <raison>.`
+ */
+export function ligneReleve({ delta, octets, raison, date }) {
+  return `**Relevé de ${espaces(delta)} octets le ${dateCourte(date)}** (${espaces(octets)} octets) — ${raison}`;
+}
+
+/**
+ * **Ce que le relevé doit faire** — fonction pure, c'est elle que le test confronte aux refus.
+ *
+ * - sans raison, elle refuse et dit la commande à taper ;
+ * - quand le paquet tient déjà sous le cliquet, elle ne fait rien (« rien à relever ») ;
+ * - au-delà de `DELTA_MAX_SANS_ASSUME` sans `assume`, elle refuse le relevé ;
+ * - sinon elle donne le delta et la raison nettoyée.
+ */
+export function deciderReleve({ octets, plafond = PLAFOND_PRINCIPAL, raison, assume = false }) {
+  const motif = String(raison ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (motif === '') {
+    return {
+      releve: false,
+      delta: 0,
+      octets,
+      raison: motif,
+      refus:
+        'il manque la raison : `npm run taille:cliquet -- --raison "<pourquoi ce relevé>"` — ' +
+        'un cliquet ne monte pas sans dire pourquoi.'
+    };
+  }
+  if (octets <= plafond) {
+    return { releve: false, delta: 0, octets, raison: motif };
+  }
+  const delta = octets - plafond;
+  if (delta > DELTA_MAX_SANS_ASSUME && !assume) {
+    return {
+      releve: false,
+      delta,
+      octets,
+      raison: motif,
+      refus:
+        `le paquet principal grossit de ${espaces(delta)} octets, au-delà des ` +
+        `${espaces(DELTA_MAX_SANS_ASSUME)} tolérés sans examen : regarder d'où vient la régression, ` +
+        'puis relancer avec `--assume` si elle est voulue.'
+    };
+  }
+  return { releve: true, delta, octets, raison: motif };
+}
+
+/**
+ * **La source réécrite d'un relevé** — fonction pure, sur le texte du fichier, donc testable
+ * sans toucher au dépôt : le nombre de `PLAFOND_PRINCIPAL` prend la valeur mesurée, et la ligne
+ * datée s'ajoute à la fin du commentaire qui le précède, juste avant sa fermeture.
+ */
+export function releveDansSource(source, { octets, delta, raison, date }) {
+  const marque = /export const PLAFOND_PRINCIPAL = \d[\d_]*;/g;
+  const trouves = source.match(marque) ?? [];
+  if (trouves.length !== 1) {
+    throw new Error(
+      `« export const PLAFOND_PRINCIPAL = …; » trouvé ${trouves.length} fois : le relevé ne sait pas où écrire`
+    );
+  }
+  const index = source.indexOf(trouves[0]);
+  const fermeture = source.lastIndexOf(' */', index);
+  if (fermeture === -1) {
+    throw new Error('le commentaire qui précède PLAFOND_PRINCIPAL est introuvable : le relevé ne sait pas où écrire');
+  }
+  const ligne = ligneReleve({ delta, octets, raison, date });
+  const avecNombre =
+    source.slice(0, index) +
+    `export const PLAFOND_PRINCIPAL = ${souligne(octets)};` +
+    source.slice(index + trouves[0].length);
+  return avecNombre.slice(0, fermeture) + ` *\n * ${ligne}\n` + avecNombre.slice(fermeture);
+}
+
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
 
@@ -204,8 +324,9 @@ export function verdict(mesures, { seuil = SEUIL_PAQUET, plafond = PLAFOND_PRINC
   if (mesures.principal && mesures.principal.octets > plafond) {
     echecs.push(
       `le paquet principal ${mesures.principal.nom} : ${enKb(mesures.principal.octets)} — ` +
-        `au-dessus du cliquet de ${enKb(plafond)} (relevé le 02/11/2026, #566 ; avant, #553) : ` +
-        'descendre le code, ou relever le cliquet dans un commit qui le dit'
+        `au-dessus du cliquet de ${enKb(plafond)} (ses relevés datés vivent dans le commentaire de ` +
+        '`PLAFOND_PRINCIPAL`) : descendre le code, ou le relever par ' +
+        '`npm run taille:cliquet -- --raison "…"`'
     );
   }
   return echecs;
@@ -251,10 +372,85 @@ export function plan() {
   const etat = existsSync(join(DIST, 'index.html')) ? (estPerime() ? 'périmé' : 'à jour') : 'absent';
   return [
     'seuil par paquet     : ' + `${enKb(SEUIL_PAQUET)} (l’avertissement de Vite, en échec)`,
-    'cliquet du principal : ' + `${enKb(PLAFOND_PRINCIPAL)} (relevé le 02/11/2026, #566 ; avant, #553)`,
+    'cliquet du principal : ' +
+      `${enKb(PLAFOND_PRINCIPAL)} (ses relevés datés vivent dans le commentaire de PLAFOND_PRINCIPAL)`,
     'référence 29/10/2026 : ' + 'principal 1 032 kB avant, 290,3 kB après #479 ; plus gros paquet 219 kB',
     'dist/                : ' + etat
   ].join('\n');
+}
+
+/** La valeur d'une option `--nom valeur` ou `--nom=valeur` ; `undefined` si elle manque. */
+function option(argv, nom) {
+  const avecEgal = argv.find((arg) => arg.startsWith(`--${nom}=`));
+  if (avecEgal !== undefined) return avecEgal.slice(nom.length + 3);
+  const index = argv.indexOf(`--${nom}`);
+  const valeur = index === -1 ? undefined : argv[index + 1];
+  return valeur === undefined || valeur.startsWith('--') ? undefined : valeur;
+}
+
+/**
+ * Construit `dist/` s'il est absent ou périmé, comme la mesure le fait déjà. Rend `false` quand
+ * `--sans-build` interdit une construction qui serait nécessaire (l'appelant sort en 2).
+ */
+function distPret(sansBuild) {
+  if (!existsSync(ASSETS)) {
+    if (sansBuild) {
+      console.error('dist/assets/ est absent et --sans-build interdit de construire : rien à mesurer.');
+      return false;
+    }
+    construire(RACINE);
+  } else if (!sansBuild && estPerime()) {
+    construire(RACINE);
+  }
+  return true;
+}
+
+/**
+ * **Le relevé du cliquet (#581)** : mesure le principal, et quand il dépasse le cliquet réécrit
+ * `PLAFOND_PRINCIPAL` avec sa valeur, en laissant la ligne datée de la raison dans le
+ * commentaire. Ne touche à rien quand le paquet tient déjà. Les refus viennent de
+ * `deciderReleve`, donc de la même fonction pure que le test.
+ */
+function relever(argv) {
+  const raison = option(argv, 'raison');
+  const assume = argv.includes('--assume');
+  // La raison se vérifie **avant** de construire : un refus ne coûte pas un build.
+  const prealable = deciderReleve({ octets: PLAFOND_PRINCIPAL, raison });
+  if (prealable.refus) {
+    console.error(prealable.refus);
+    return 2;
+  }
+  if (!distPret(argv.includes('--sans-build'))) return 2;
+
+  const mesures = mesurer(paquetsDe());
+  if (!mesures.principal) {
+    const echecs = verdict(mesures);
+    console.error('relevé impossible : ' + (echecs.join(' ; ') || 'le paquet principal n’est pas identifiable'));
+    return 2;
+  }
+  const octets = mesures.principal.octets;
+  const decision = deciderReleve({ octets, raison, assume });
+  if (!decision.releve) {
+    if (decision.refus) {
+      console.error(decision.refus);
+      return 2;
+    }
+    console.log(
+      `Rien à relever : ${mesures.principal.nom} fait ${enKb(octets)}, ` +
+        `sous le cliquet de ${enKb(PLAFOND_PRINCIPAL)}.`
+    );
+    return 0;
+  }
+
+  const date = new Date();
+  const fichier = fileURLToPath(import.meta.url);
+  writeFileSync(
+    fichier,
+    releveDansSource(readFileSync(fichier, 'utf8'), { octets, delta: decision.delta, raison: decision.raison, date })
+  );
+  console.log(`Cliquet relevé : ${enKb(PLAFOND_PRINCIPAL)} → ${enKb(octets)} (+${decision.delta} octets).`);
+  console.log(`  ${ligneReleve({ delta: decision.delta, octets, raison: decision.raison, date })}`);
+  return 0;
 }
 
 function principal(argv) {
@@ -263,15 +459,7 @@ function principal(argv) {
     console.log(plan());
     return 0;
   }
-  if (!existsSync(ASSETS)) {
-    if (sansBuild) {
-      console.error('dist/assets/ est absent et --sans-build interdit de construire : rien à mesurer.');
-      return 2;
-    }
-    construire(RACINE);
-  } else if (!sansBuild && estPerime()) {
-    construire(RACINE);
-  }
+  if (!distPret(sansBuild)) return 2;
 
   const mesures = mesurer(paquetsDe());
   const echecs = verdict(mesures);
@@ -300,5 +488,6 @@ function principal(argv) {
 
 // Le module est importé par son test : le CLI ne part que lancé directement.
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
-  process.exitCode = principal(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  process.exitCode = argv.includes('--cliquet') ? relever(argv) : principal(argv);
 }
