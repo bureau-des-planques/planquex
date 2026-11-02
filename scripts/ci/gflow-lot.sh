@@ -26,6 +26,27 @@
 # 60 à 90 s par carte en mode « une invocation par carte » (démarrage de Chrome
 # à chaque fois).
 #
+# ## Ce qui relie un fichier à sa carte : le **rang dans le paquet**
+#
+# En passe groupée, gflow nomme ses fichiers `prompt_<i>_<k>.<ext>` — `<i>` =
+# l'indice du prompt **dans l'invocation** (0-based), `<k>` = le numéro de
+# variante, l'extension suivant les octets (`#96`, un JPEG s'appelle `.jpg`).
+# Lu dans la source installée (`image_batch.py` : `output_filename =
+# f"prompt_{item.prompt_index}"`, `prompt_index = len(parsed)`) et vérifié dans
+# la base locale de gflow, qui porte des `prompt_0_0.jpg` de vraies passes
+# groupées. Le rang **repart donc de 0 à chaque invocation**.
+#
+# ## Cinquante prompts au plus par invocation
+#
+# gflow refuse davantage (`MAX_PROMPTS = 50` dans `image_batch.py`,
+# `_validate_prompt_count` → « Prompt source must contain between 1 and 50
+# prompts », rendu en **exit 2**) : au-delà de 50 cartes, ce script échouait au
+# premier appel, avant même d'écrire une image. Le lot part donc en **paquets**
+# de 50 au plus (`GFLOW_LOT_MAX_PROMPTS`, jamais au-delà de 50), chacun avec sa
+# propre `--out` — sans dossier par paquet, le deuxième écraserait les
+# `prompt_0_*` du premier — et le rang se relit dans le paquet qui a produit le
+# fichier, jamais dans le fichier de départ.
+#
 # ## La graine survit à la passe groupée (contrairement à ce qu'on croyait)
 #
 # Le 25/10/2026, une session a conclu que la passe groupée **perdait la
@@ -69,6 +90,10 @@ DONNEES="${GFLOW_LOT_DONNEES:-src/data}"
 CHECK_CMD="${GFLOW_LOT_CHECK_CMD:-npm run check}"
 TEST_CMD="${GFLOW_LOT_TEST_CMD:-npm test -- src/data/art.test.ts}"
 MODELE="${GFLOW_LOT_MODELE:-Nano Banana 2.1}"
+# Prompts par invocation gflow. gflow en refuse plus de 50 (`MAX_PROMPTS` dans
+# `image_batch.py`, exit 2) : au-delà, le lot se découpe. JAMAIS plus de 50, même
+# si l'environnement le demande — ce serait un refus à la première carte du paquet.
+MAX_PROMPTS="${GFLOW_LOT_MAX_PROMPTS:-50}"
 # Les bases SQLite de gflow, dans l'ordre (même convention que le wizard).
 BASES="${GFLOW_LOT_DB:-$HOME/.gflow/gflow.db:$HOME/.local/share/gflow-cli/gflow.db}"
 
@@ -108,7 +133,9 @@ Quelles cartes
   <id>…                    des ids nommés
 
 Comment générer
-  --lot                    (défaut) une passe --prompts-file : une fenêtre, un projet
+  --lot                    (défaut) une passe --prompts-file par paquet : une fenêtre
+                           et un projet par paquet (gflow refuse plus de 50 prompts
+                           par invocation, donc le lot part en paquets de 50 au plus)
   --par-carte              une invocation gflow par carte (--json), plus lent
 
 Après
@@ -126,6 +153,8 @@ Réglages
                            (`0` pour la couper ; défaut de gflow : 0.5-1.5 s). Gagne
                            ~1 s par carte, et rapproche les envois — gflow conseille
                            de l'ÉLARGIR quand les 403 arrivent (WAF)
+  --max-prompts <n>        prompts par invocation, 50 au plus (défaut 50) : gflow
+                           refuse davantage, le lot se découpe donc en paquets
   --force                  lance même si une génération gflow tourne déjà
 
   --aide                   ce texte
@@ -147,6 +176,7 @@ while (( $# )); do
     --modele) MODELE="${2:?--modele attend un nom}"; shift 2 ;;
     --max-echecs) MAX_ECHECS="${2:?--max-echecs attend un nombre}"; shift 2 ;;
     --jitter) JITTER="${2:?--jitter attend une valeur}"; shift 2 ;;
+    --max-prompts) MAX_PROMPTS="${2:?--max-prompts attend un nombre}"; shift 2 ;;
     --force) FORCE=1; shift ;;
     -*) erreur "option inconnue : $1"; exit 2 ;;
     *) IDS+=("$1"); shift ;;
@@ -154,6 +184,12 @@ while (( $# )); do
 done
 
 case "$MAX_ECHECS" in ''|*[!0-9]*) MAX_ECHECS=3 ;; esac
+case "$MAX_PROMPTS" in ''|*[!0-9]*) MAX_PROMPTS=50 ;; esac
+if (( MAX_PROMPTS < 1 )); then MAX_PROMPTS=50; fi
+if (( MAX_PROMPTS > 50 )); then
+  alerte "plus de 50 prompts par invocation demandés : gflow refuse au-delà (exit 2) — 50 est retenu."
+  MAX_PROMPTS=50
+fi
 # Le même réglage, en variable d'environnement : le mode « une par carte » passe
 # par le wizard, qui n'a pas de drapeau `--jitter` — gflow lit celle-ci.
 if [[ -n "$JITTER" ]]; then export GFLOW_CLI_JITTER_RANGE="$JITTER"; fi
@@ -297,20 +333,47 @@ fi
 # ── Génération ─────────────────────────────────────────────────────────────
 code_gen=0
 if [[ "$MODE" == "lot" ]]; then
-  dit "Passe groupée : une fenêtre, un projet, tous les prompts."
-  args=(image t2i --prompts-file "$prompts_fichier" --model "$ALIAS" --aspect 1:1
-        --out "$SORTIE/images")
-  [[ -n "$PROJET" ]] && args+=(--project "$PROJET")
-  [[ -n "$JITTER" ]] && args+=(--jitter "$JITTER")
-  set +e
-  "$GFLOW_BIN" "${args[@]}" > "$SORTIE/gflow.out" 2> "$SORTIE/gflow.err"
-  code_gen=$?
-  set -e
-  # `--continue-on-error` est le défaut : un prompt en échec n'arrête pas la passe.
-  note "sortie de gflow : exit $code_gen · $SORTIE/gflow.out"
-  if (( code_gen != 0 )); then
-    alerte "gflow a rendu $code_gen — les images déjà écrites restent valables."
-  fi
+  # gflow refuse **plus de 50 prompts par invocation** (`MAX_PROMPTS = 50`,
+  # `image_batch.py` : « Prompt source must contain between 1 and 50 prompts »,
+  # rendu en exit 2). Une file plus longue part donc en **paquets** — et chaque
+  # paquet a **sa** `--out` : gflow nomme ses sorties `prompt_<i>_<k>` avec `<i>`
+  # l'indice du prompt **dans l'invocation**, donc deux paquets dans le même
+  # dossier écriraient les mêmes noms, et le second écraserait le premier.
+  nb_cartes=$(wc -l < "$cartes_fichier" | tr -d ' ')
+  nb_paquets=$(( (nb_cartes + MAX_PROMPTS - 1) / MAX_PROMPTS ))
+  dit "Passe groupée : $nb_paquets paquet(s) de $MAX_PROMPTS prompt(s) au plus, une fenêtre par paquet."
+  paquet=0
+  debut=1
+  while (( debut <= nb_cartes )); do
+    paquet=$(( paquet + 1 ))
+    fin=$(( debut + MAX_PROMPTS - 1 ))
+    if (( fin > nb_cartes )); then fin=$nb_cartes; fi
+    bloc_prompts="$SORTIE/prompts-$paquet.txt"
+    bloc_cartes="$SORTIE/cartes-$paquet.tsv"
+    sortie_paquet="$SORTIE/images/$paquet"
+    sed -n "${debut},${fin}p" "$prompts_fichier" > "$bloc_prompts"
+    sed -n "${debut},${fin}p" "$cartes_fichier" > "$bloc_cartes"
+    mkdir -p "$sortie_paquet"
+    note "paquet $paquet : $(( fin - debut + 1 )) prompt(s) · $bloc_prompts → $sortie_paquet"
+    args=(image t2i --prompts-file "$bloc_prompts" --model "$ALIAS" --aspect 1:1
+          --out "$sortie_paquet")
+    [[ -n "$PROJET" ]] && args+=(--project "$PROJET")
+    [[ -n "$JITTER" ]] && args+=(--jitter "$JITTER")
+    set +e
+    "$GFLOW_BIN" "${args[@]}" > "$SORTIE/gflow-$paquet.out" 2> "$SORTIE/gflow-$paquet.err"
+    code_paquet=$?
+    set -e
+    journaliser "paquet-$paquet" "exit=$code_paquet prompts=$(( fin - debut + 1 ))"
+    note "sortie de gflow : exit $code_paquet · $SORTIE/gflow-$paquet.out"
+    if (( code_paquet != 0 )); then
+      # `--continue-on-error` est le défaut : un prompt en échec n'arrête pas la
+      # passe, et ce qui est déjà écrit reste valable. Le script rend le code du
+      # **dernier** paquet en échec — un lot n'est vert que si tous le sont.
+      alerte "gflow a rendu $code_paquet sur le paquet $paquet — les images déjà écrites restent valables."
+      code_gen=$code_paquet
+    fi
+    debut=$(( fin + 1 ))
+  done
 else
   dit "Une invocation par carte (le wizard, mode --direct)."
   echecs_suite=0
@@ -359,10 +422,32 @@ if [[ "$MODE" == "carte" ]]; then
 fi
 
 # ── Associer chaque fichier à sa carte, sa graine et son modèle ────────────
+
+# cartes_du_paquet CHEMIN : le fichier de cartes du paquet où gflow a écrit ce
+# fichier. Les paquets écrivent dans `images/<paquet>/` (§ Génération) ; un
+# fichier hors de ces dossiers (écrit à la main, ou par une version antérieure)
+# retombe sur la liste entière.
+cartes_du_paquet() {
+  local chemin="$1" reste paquet
+  reste="${chemin#"$SORTIE/images/"}"
+  case "$reste" in
+    */*)
+      paquet="${reste%%/*}"
+      if [[ -f "$SORTIE/cartes-$paquet.tsv" ]]; then
+        printf '%s' "$SORTIE/cartes-$paquet.tsv"
+        return 0
+      fi
+      ;;
+  esac
+  printf '%s' "$cartes_fichier"
+}
+
 # Trois sources, dans cet ordre, et **jamais** une valeur inventée :
 #   1. la base locale de gflow (`local_files` → `assets.seed`, `operations.prompt`) ;
-#   2. à défaut, le nom du fichier `prompt_<n>_<k>.jpg` → la (n+1)ᵉ ligne de
-#      `prompts.txt` (convention observée de gflow en passe groupée) ;
+#   2. à défaut, le nom du fichier `prompt_<n>_<k>.jpg` → la (n+1)ᵉ ligne du
+#      fichier de cartes du **paquet qui l'a produit** (`cartes-<paquet>.tsv`) :
+#      le rang de gflow est l'indice du prompt **dans l'invocation**, il repart de
+#      0 à chaque paquet (convention observée de gflow en passe groupée) ;
 #   3. à défaut, la carte reste « sans association » et le script le dit.
 associer() {
   local lignes
@@ -444,11 +529,11 @@ while IFS= read -r chemin; do
   id=""
   [[ -n "$prompt" ]] && id="${carte_du_prompt[$prompt]:-}"
   if [[ -z "$id" ]]; then
-    # 2. le nom du fichier : prompt_<n>_<k>.<ext>
+    # 2. le nom du fichier : prompt_<n>_<k>.<ext>, rang **dans son paquet**.
     base="${chemin##*/}"
     if [[ "$base" =~ ^prompt_([0-9]+)_ ]]; then
       n=$(( BASH_REMATCH[1] + 1 ))
-      id=$(sed -n "${n}p" "$cartes_fichier" 2>/dev/null | cut -f1)
+      id=$(sed -n "${n}p" "$(cartes_du_paquet "$chemin")" 2>/dev/null | cut -f1)
     fi
   fi
   if [[ -z "$id" ]]; then
