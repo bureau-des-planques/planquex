@@ -13,7 +13,7 @@ import type { Card, PlanqueCard } from '@/data/types';
  */
 
 export interface BarreCourbe {
-  /** Le nombre de cafés (1, 2, 3…). Le coût 0 n'a pas de barre : il est nommé à part. */
+  /** Le nombre de cafés (1, 2, 3…). Le coût 0 n'a pas de barre : aucune carte du set ne le porte (D-172). */
   cout: number;
   /** Les Planqués dont la Pression la moins chère coûte `cout` cafés. */
   cartes: number;
@@ -24,8 +24,6 @@ export interface CourbeDeck {
   barres: BarreCourbe[];
   /** Le plus grand nombre de cartes d'une barre (0 si le Deck est vide) : l'échelle. */
   plusHaute: number;
-  /** Les Planqués à coût 0, **nommés** (D-039 : le code l'autorise, aucune carte ne le porte). */
-  zero: string[];
   /** Les cartes Action : elles ne paient pas de café, elles ne sont pas dans la courbe. */
   actions: number;
 }
@@ -48,7 +46,6 @@ export function coutDuPlanque(card: PlanqueCard): number {
  */
 export function courbeDeck(cartes: readonly Card[]): CourbeDeck {
   const compte = new Map<number, number>();
-  const zero: string[] = [];
   let actions = 0;
 
   for (const card of cartes) {
@@ -57,10 +54,10 @@ export function courbeDeck(cartes: readonly Card[]): CourbeDeck {
       continue;
     }
     const cout = coutDuPlanque(card);
-    if (cout === 0) {
-      zero.push(card.name);
-      continue;
-    }
+    // Le coût 0 est autorisé par le moteur (D-039), mais aucune carte du set vivant ne le porte :
+    // la courbe n'a pas de barre 0 et ne nomme plus ces cartes (D-172). Le jour où une carte à
+    // coût 0 existe, sa ligne revient avec elle.
+    if (cout === 0) continue;
     compte.set(cout, (compte.get(cout) ?? 0) + 1);
   }
 
@@ -70,5 +67,5 @@ export function courbeDeck(cartes: readonly Card[]): CourbeDeck {
   }
   const plusHaute = barres.reduce((max, barre) => Math.max(max, barre.cartes), 0);
 
-  return { barres, plusHaute, zero, actions };
+  return { barres, plusHaute, actions };
 }
