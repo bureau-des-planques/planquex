@@ -398,3 +398,6 @@ au lieu d'afficher un aplat en silence. Le champ `art` reste le **nom de fichier
 - 2026-11-02 · `syndicat-permanent-syndical` · modèle `NARWHAL` · graine `663377566` · `syndicat-permanent-syndical.webp`
 - 2026-11-02 · `syndicat-collectif-atelier` · modèle `NARWHAL` · graine `582407928` · `syndicat-collectif-atelier.webp`
 - 2026-11-02 · `syndicat-representant-section` · modèle `NARWHAL` · graine `1608660515` · `syndicat-representant-section.webp`
+- 2026-11-02 · `atelier-joueur-de-flute` · modèle `NARWHAL` · graine `1298853787` · `atelier-joueur-de-flute.webp`
+- 2026-11-02 · `atelier-technicien-systeme` · modèle `NARWHAL` · graine `755826770` · `atelier-technicien-systeme.webp`
+- 2026-11-02 · `atelier-regleur` · modèle `NARWHAL` · graine `1581896954` · `atelier-regleur.webp`
