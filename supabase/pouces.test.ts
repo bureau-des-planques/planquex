@@ -228,7 +228,20 @@ describe('les pouces dans la base — la 0004 (#137)', () => {
   });
 
   it('un post-it écarté reste votable ; un post-it effacé ne l’est plus (clé étrangère)', async () => {
-    accepte(await coller(db, APPAREIL_A, 'p-ecarte', 'écarté'));
+    // Depuis #552, **aucun** post-it ne naît trié : le déclencheur force « en attente » à
+    // l'insertion, client ou non. Un post-it déjà trié se pose donc en deux gestes, comme le
+    // tri lui-même : l'insertion, puis le `update` de statut en propriétaire de la table (le
+    // chemin d'un import ou d'un geste d'administration).
+    await db.query(
+      `insert into public.postits (id, kind, titre, texte, version, auteur)
+       values ('p-ecarte', 'IP', 'Titre', 'Texte.', 'Alpha · 0.1.7', $1)`,
+      [APPAREIL_A]
+    );
+    const trie = await db.query<{ statut: string }>(
+      `update public.postits set statut = 'écarté', raison = 'Hors périmètre.'
+        where id = 'p-ecarte' returning statut`
+    );
+    expect(trie.rows[0].statut).toBe('écarté');
     accepte(await voter(db, APPAREIL_B, 'p-ecarte', 'down'));
     refuse(await voter(db, APPAREIL_B, 'p-fantome', 'up'), /foreign key|votes_postit_id_fkey/);
 

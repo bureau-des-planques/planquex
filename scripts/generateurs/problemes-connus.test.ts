@@ -337,6 +337,21 @@ describe('la lecture de la base (D-119)', () => {
         ''
       ]);
 
+      // Depuis #552, **aucun** post-it ne naît trié : le statut d'insertion est forcé à
+      // « en attente », client compris. Les statuts voulus se posent donc après coup, en
+      // propriétaire de la table — le chemin d'un import ou d'un geste d'administration,
+      // jamais celui d'un client.
+      for (const [id, statut] of [
+        ['p-ouf-retenu', 'retenu'],
+        ['p-ouf-en-cours', 'en cours'],
+        ['p-ouf-fait', 'fait'],
+        ['p-ouf-ecarte', 'écarté'],
+        ['p-ip', 'en cours'],
+        ['p-gueulage', 'en cours']
+      ] as const) {
+        await db.query(`update public.postits set statut = $2 where id = $1`, [id, statut]);
+      }
+
       const problemes = await lireProblemesConnus((sql: string) => db.query(sql));
       expect(problemes.map((probleme: Probleme) => probleme.id)).toEqual(['p-ouf-retenu', 'p-ouf-en-cours']);
 
