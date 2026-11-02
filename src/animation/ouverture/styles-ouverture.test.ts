@@ -52,4 +52,22 @@ describe('la feuille de l’ouverture d’un Arrivage (D-169)', () => {
   it('Vulnérabilité et Rotation s’empilent sous 240 px de carte, sauf en vignette compacte', () => {
     expect(CSS).toMatch(/@container \(max-width: 240px\) \{\s*\.card:not\(\.card--compact\) \.card__bas \{/);
   });
+
+  it('`--p`/`--sens` se posent sur leurs trois consommateurs, pas sur le sachet (#566)', () => {
+    // Le défaut mesuré : les deux variables vivaient sur `.ouverture__sachet`, donc s'héritaient
+    // dans tout son sous-arbre (les deux SVG de la Pochette) à chaque `pointermove`.
+    const sachet = bloc('.ouverture__sachet');
+    expect(sachet).not.toMatch(/--p:/);
+    expect(sachet).not.toMatch(/--sens:/);
+    for (const selecteur of ['.ouverture__interieur', '.ouverture__fente']) {
+      expect(bloc(selecteur)).toMatch(/--p:\s*0;/);
+      expect(bloc(selecteur)).toMatch(/--sens:\s*1;/);
+    }
+    // `.ouverture__bande` a deux blocs (la géométrie, puis la transformation) : c'est celui qui
+    // lit `var(--p)` qui porte les valeurs de repos.
+    expect(CSS).toMatch(/\.ouverture__bande \{[^}]*--p: 0;[^}]*--sens: 1;[^}]*var\(--p\)/);
+    // Et `inherits: false` coupe la descente dans la Pochette de la bande.
+    expect(CSS).toMatch(/@property --p \{\s*syntax: '<number>';\s*inherits: false;/);
+    expect(CSS).toMatch(/@property --sens \{\s*syntax: '<number>';\s*inherits: false;/);
+  });
 });
