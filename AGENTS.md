@@ -7,7 +7,7 @@
 ## 1. Règles d'or
 
 
-1. Lire ce fichier. Pour `docs/DECISIONS.md` (175 décisions, 36 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (176 décisions, 36 000 jetons), ouvrir son **index** (`docs/DECISIONS-INDEX.md`, une ligne par décision) et lire la ou les décisions qui touchent ta zone — pas le journal entier. Un point de règle non tranché par une décision se signale, il ne s'invente pas.
 
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier le **dossier frère des versions abandonnées** (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
@@ -27,6 +27,8 @@ En cas de conflit, appliquer cet ordre :
 4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus entre le tableau §4 de `docs/JEU.md` et le jeu de référence 2026, avec leurs sources. Décrit les écarts **et leurs verdicts** (O-008 → D-020, O-009 → D-022) ; il ne reste plus d'écart ouvert sur §4 (O-014 tranché par D-034) : ne pas s'en servir pour modifier une règle sans décision datée.
 5. **Le code et les commandes** — ce qui existe réellement. Un écart avec les docs est un bug ou une tâche, pas une nouvelle règle.
 6. **`docs/STATUS.md` et `docs/AUDIT-*.md`** — instantanés d'audit datés. Ce ne sont pas des vérités live : relancer les commandes.
+
+`PRODUCT.md` est un document dérivé de contexte pour la compétence `impeccable` (`init`, `context`, `critique`, `shape`), pas une source d'autorité supplémentaire : l'ordre ci-dessus tranche en cas de conflit (D-176).
 
 **Gelés, hors de l'ordre d'autorité** (D-112) : `docs/PROPOSITION.md` §3–5, `docs/CORRESPONDANCES.md` et `docs/NOMMAGE.md` gardent le vocabulaire d'avant D-026 et D-075 (« Chariot », « Parc », « Rack ») et documentent le **périmètre d'origine**, pas les règles vivantes. Le gel est un acte (D-075, D-083) : on ne s'en sert pas pour trancher un conflit, et on ne les « remet à jour » pas non plus — les règles vivantes sont dans `docs/JEU.md` §4, le périmètre dans `docs/DECISIONS.md`.
 

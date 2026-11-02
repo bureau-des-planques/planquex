@@ -12,7 +12,7 @@
 | **Entrée CLI** | `npx impeccable <verbe>` ou `.opencode/skills/impeccable/scripts/impeccable <verbe>` |
 | **Version** | 4.7.0, Apache 2.0 |
 | **Détecteur** | 61 règles déterministes : tells d'UI générée par IA, accessibilité, qualité de design |
-| **État du dépôt** | `PRODUCT.md` absent du dépôt · `DESIGN.md` présent (1<sup>re</sup> passe) · `.impeccable/` présent en local seulement (un instantané de critique, gitignoré) |
+| **État du dépôt** | `PRODUCT.md` présent comme document dérivé (D-176) · `DESIGN.md` présent (1<sup>re</sup> passe) · `.impeccable/` présent en local seulement (un instantané de critique, gitignoré) |
 
 ## Sommaire
 
@@ -104,7 +104,7 @@ Si le lanceur refuse ou échoue, envoyez **d'abord un message séparé** (« Con
 
 | Élément | État | Conséquence |
 |---|---|---|
-| `PRODUCT.md` | Absent | `context` répond `NO_PRODUCT_MD` ; une nouvelle surface ou un remplacement visuel passe par `init` d'abord |
+| `PRODUCT.md` | Présent, document dérivé (D-176) | `context` charge le contexte produit ; `init` peut le mettre à jour si le produit change |
 | `DESIGN.md` | Présent, première passe, structure maison | `document` ne l'écrase pas en silence ; les jetons vivent dans `src/styles.css` |
 | `.impeccable/` | Présent **en local seulement** — un instantané de `critique` sur `/collection`, sous `.impeccable/critique/` que `.gitignore` ne publie pas | Pas encore de config détecteur ni de hooks ; l'instantané est une archive de revue, pas une autorité, et un clone ne le porte pas |
 | Scan source | `[]` sur 330 fichiers (relevé le 31/10/2026) | Sous-comptage assumé : ce n'est pas un brevet de propreté |
@@ -544,6 +544,6 @@ Relevé le 30/10/2026, contrôles refaits le 31/10/2026, version 4.7.0. Les fait
 - `package.json` — scripts `detect:ui` et `detect:ui:page`, `devDependency` `impeccable@4.7.0`.
 - `DESIGN.md`, `.gitignore` — état du système visuel, fichiers locaux ignorés.
 - `.impeccable/critique/2026-10-30T06-14-58Z__src-pages-collection-tsx.md` — instantané de `critique` sur `/collection` (méthode dual-agent, 23/40), observé le 30/10/2026 ; fichier **local**, `.gitignore` ne le publie pas.
-- Sorties observées : `impeccable context` (`NO_PRODUCT_MD`), `impeccable detect --json src/` (`[]`, 330 fichiers le 31/10/2026, avertissement de sous-comptage), `impeccable detect --help`, `impeccable ignores --help`, `impeccable pin --help`, `impeccable doctor --help`, `impeccable help`.
+- Sorties observées : `impeccable context` (chargement de `PRODUCT.md` et `DESIGN.md`), `impeccable detect --json src/` (`[]`, 330 fichiers le 31/10/2026, avertissement de sous-comptage), `impeccable detect --help`, `impeccable ignores --help`, `impeccable pin --help`, `impeccable doctor --help`, `impeccable help`.
 
 > **Ce document ne remplace aucune des références ci-dessus.** En cas de doute sur un comportement, la référence de la commande fait foi ; en cas de conflit documentaire dans le dépôt, `AGENTS.md` §2 tranche.
