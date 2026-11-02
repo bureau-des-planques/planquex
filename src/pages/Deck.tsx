@@ -270,8 +270,10 @@ export function Deck() {
       </section>
 
       {/* **La courbe de coût** (#364) : à quelle vitesse le Deck démarre. Une lecture des cartes
-          déjà au Deck — elle ne change ni la légalité ni le moteur. Le coût 0, s'il existe, est
-          nommé à part (D-039) ; les cartes Action ne paient pas de café et ne sont pas comptées. */}
+          déjà au Deck — elle ne change ni la légalité ni le moteur. Aucune carte du set vivant ne
+          coûte 0 : la ligne « Coût 0 » est partie avec le test qui la couvrait (D-172), et elle
+          reviendra le jour où une carte à coût 0 existera. Les cartes Action ne paient pas de
+          café et ne sont pas comptées. */}
       <section className="section panel deck-courbe" aria-labelledby="deck-courbe-titre">
         <div className="section__head">
           <div>
@@ -300,11 +302,6 @@ export function Deck() {
                 </li>
               ))}
             </ol>
-            {courbe.zero.length > 0 && (
-              <p className="deck-courbe__zero">
-                Coût 0 : {courbe.zero.length} carte{courbe.zero.length > 1 ? 's' : ''} ({courbe.zero.join(', ')}).
-              </p>
-            )}
             {courbe.actions > 0 && (
               <p className="muted deck-courbe__actions">
                 {courbe.actions} carte{courbe.actions > 1 ? 's' : ''} Action : pas de café, hors de la courbe.
