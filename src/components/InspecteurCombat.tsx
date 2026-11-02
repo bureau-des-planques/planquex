@@ -23,7 +23,7 @@ import { Dialog, DialogClose, DialogPanneau, DialogPortal, DialogTitle } from '@
 const DELAI_SURVOL_MS = 300;
 
 /**
- * **L'écran large** (D-171) : à partir de 900 px, le panneau est une colonne de la console, pas une
+ * **L'écran large** (D-158) : à partir de 900 px, le panneau est une colonne de la console, pas une
  * feuille basse. C'est le média de `styles.css` (« Sur écran large, le panneau… ») : les deux se
  * lisent ensemble, sinon le panneau calcule une feuille qu'il n'est pas.
  */

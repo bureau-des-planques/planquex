@@ -40,7 +40,7 @@ export default defineConfig({
         // **On ne piège pas le retour** : Chromium saute les `pushState` sans geste utilisateur, et
         // le « back button hijacking » est un spam explicite pour Google Search (13/04/2026).
         display_override: ['fullscreen', 'standalone'],
-        // Portrait seulement sur téléphone (D-171) : le paysage mobile sort du périmètre ; le PC
+        // Portrait seulement sur téléphone (D-173) : le paysage mobile sort du périmètre ; le PC
         // garde sa mise en page large dans le navigateur.
         orientation: 'portrait',
         lang: 'fr',

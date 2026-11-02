@@ -253,7 +253,7 @@ h2 {
 
 /* ---------- Coquille ---------- */
 
-/* La largeur de la coquille, lue aussi par la barre du bas. Sur un grand écran de PC (D-171), la
+/* La largeur de la coquille, lue aussi par la barre du bas. Sur un grand écran de PC (D-158), la
    Collection et le Deck prennent une colonne de cartes de plus au lieu de laisser deux marges vides. */
 :root {
   --shell-max: 1080px;
@@ -286,7 +286,7 @@ h2 {
 .page--nue {
   margin: 0 auto;
   max-width: var(--shell-max);
-  /* **D-171 (#580)** : ces écrans n'ont pas de `.topbar`, et sous
+  /* **D-173 (#580)** : ces écrans n'ont pas de `.topbar`, et sous
      `apple-mobile-web-app-status-bar-style: black-translucent` la page passe **sous** la barre
      d'état iOS : sans ce rembourrage, le panneau commençait au pixel 0, sous l'heure. */
   padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 2.5rem
@@ -518,7 +518,7 @@ h2 {
 }
 
 /* En combat, la barre de navigation n'est pas rendue (#275) : le téléphone portrait garde
-   l'inset bas de D-171 pour que la barre d'action reste à portée du pouce. */
+   l'inset bas de D-173 pour que la barre d'action reste à portée du pouce. */
 .app-shell:has(.battle) {
   padding-bottom: 0.5rem;
 }
@@ -5283,7 +5283,7 @@ h2 {
 
 /* ---------- Combat : téléphone portrait et grand écran ----------
 
-   Le téléphone se joue en portrait (D-171) : la référence est 420 × 900, et les fenêtres
+   Le téléphone se joue en portrait (D-173) : la référence est 420 × 900, et les fenêtres
    360 × 640 et 390 × 664 vérifient les cas courts. Le desktop garde sa disposition large.
 
    Les tailles de cartes de D-157 restent les planchers : c'est la **disposition** qui cède,
@@ -5398,7 +5398,7 @@ h2 {
   white-space: nowrap;
 }
 
-/* **Le palier du milieu** (D-171, #580) : 701 à 860 px utiles — la bande du **Pixel 7 en
+/* **Le palier du milieu** (D-173, #580) : 701 à 860 px utiles — la bande du **Pixel 7 en
    navigation** (412 × 915 CSS, ≈ 800–820 utiles) — n'avait aucune taille propre : elle reprenait
    celles de la référence 420 × 900 (Poste 96, Banc 64, main 72) et seul le placement changeait.
    Ici les tailles se **dérivent de `100dvh`**, comme le PC de D-158, au lieu de figer un second
@@ -7242,7 +7242,7 @@ h2 {
   margin: 0;
 }
 
-/* Accueil portrait sans défilement (D-171) : les deux gestes et les trois compteurs restent visibles.
+/* Accueil portrait sans défilement (D-173) : les deux gestes et les trois compteurs restent visibles.
    La hauteur se gagne dans la composition, pas en rognant le document derrière la navigation.
    Deux états sont tenus : la première visite, et la partie qui attend (#553, une ligne sous les
    gestes) — c'est elle qui serre le plus, mesuré à 360 × 640 le 02/11/2026. */

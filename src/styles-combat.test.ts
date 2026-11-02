@@ -241,14 +241,14 @@ describe('la bande de score et les places libres (D-166)', () => {
 });
 
 /**
- * **Trois paliers de hauteur, pas un** (D-171, #580) : la référence 420 × 900, le **milieu**
+ * **Trois paliers de hauteur, pas un** (D-173, #580) : la référence 420 × 900, le **milieu**
  * 700–860 px (le Pixel 7 en navigation) et le **court** ≤ 700 px. Le palier du milieu n'avait
- * aucune taille propre — il reprenait celles de la référence — et D-171 exige qu'il se
+ * aucune taille propre — il reprenait celles de la référence — et D-173 exige qu'il se
  * **dérive de `100dvh`**, comme le PC de D-158, plutôt qu'un second jeu de constantes figées.
  * La garde vérifie la **forme** de cette dérivation, pas ses chiffres : ce sont les paliers qui
  * dictent les tailles, `npm run capturer` qui dit ce qui tient (D-094, D-157, D-167).
  */
-describe('les trois paliers de hauteur du combat (D-171)', () => {
+describe('les trois paliers de hauteur du combat (D-173)', () => {
   /** Les blocs `@media` de la feuille, commentaires retirés, avec leur en-tête et leur corps. */
   function medias(css: string): { requete: string; corps: string }[] {
     const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
