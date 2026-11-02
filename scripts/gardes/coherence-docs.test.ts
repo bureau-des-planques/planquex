@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { ALL_CARDS } from '@/data';
 
 /**
  * Cohérence des documents — le verrou posé après l'audit du 27/10/2026.
@@ -14,7 +15,7 @@ import { describe, expect, it } from 'vitest';
  * Le dépôt avait déjà ce patron, et ce fichier s'y range plutôt que d'inventer le sien :
  * `scripts/gardes/compteurs.test.ts` garde les **décomptes de cartes**, `scripts/gardes/decisions.test.ts`
  * la **continuité du journal**, `scripts/generateurs/index-decisions.test.ts` la **synchro de l'index**.
- * Ici, quatre contrôles, tous par **lecture de fichier** (aucun réseau, aucune commande) :
+ * Ici, cinq contrôles, tous par **lecture de fichier** (aucun réseau, aucune commande) :
  *
  * 1. le **compte de décisions** annoncé dans `AGENTS.md` §1, dans `docs/DECISIONS-INDEX.md`
  *    et dans `.prettierignore` égale le nombre de lignes `| D-` du journal ;
@@ -23,7 +24,11 @@ import { describe, expect, it } from 'vitest';
  *    dans `docs/COMMANDES.md` ;
  * 3. le **vocabulaire retiré** — `Chariot` (D-075), `Rack` (D-083), `Parc` pour la collection
  *    (D-075) — n'est plus employé **nu** dans les documents d'autorité et les docs vivants ;
- * 4. `README.md` **renvoie** à `docs/COMMANDES.md` au lieu de recopier ses commandes.
+ * 4. `README.md` **renvoie** à `docs/COMMANDES.md` au lieu de recopier ses commandes ;
+ * 5. le **compte des cartes de base** cité dans un document vivant (« Les N cartes de base
+ *    ont leur illustration ») égale le nombre de cartes d'`ALL_CARDS` sans `variantOf` (#625).
+ *    Un document qui parle aux testeurs fait une **promesse** : « 225 cartes » pour 233 était
+ *    une promesse fausse, trouvée par hasard.
  *
  * Le point (4) ne refait **pas** le contrôle de `scripts/gardes/compteurs.test.ts` : celui-ci exige
  * déjà `npm run status` dans `README.md` et `docs/COMMANDES.md` (« les deux renvoient à
@@ -211,6 +216,58 @@ function rendreFautes(fichier: string, fautes: Occurrence[]): string {
 }
 
 // ---------------------------------------------------------------------------------------
+// 4. Le compte des cartes de base cité dans un document vivant
+// ---------------------------------------------------------------------------------------
+
+/**
+ * Le nombre de **bases** du set — la seule définition, déjà employée par
+ * `scripts/preuves/status.mjs` (`cards.base`) et `scripts/preuves/mesure-illustrations.mjs` :
+ * une carte d'`ALL_CARDS` **sans `variantOf`**. `ALL_CARDS` compte les variantes aussi : un
+ * compte naïf d'`ALL_CARDS` serait faux, et c'est pourquoi la définition se dit ici une fois.
+ *
+ * Il ne se recopie **pas** : `docs/ALPHA-TESTEURS.md` a annoncé « les 225 cartes de base ont
+ * leur illustration » alors que le set en comptait 233, et le chiffre faux est resté jusqu'à ce
+ * qu'on tombe dessus par hasard (#625).
+ */
+const basesDuSet = (cartes: readonly { variantOf?: string }[]): number => cartes.filter((card) => !card.variantOf).length;
+
+/**
+ * « Les N cartes de base ont leur illustration » — **une** formulation, gardée ici.
+ *
+ * Le ticket #625 le dit : ne pas élargir aux variantes ni aux planches sans le dire. Le jour où
+ * un document vivant invente « N bases illustrées », c'est cette formulation-là qu'il faudra
+ * couvrir ; d'ici là, une garde large refuserait des citations légitimes (les preuves datées,
+ * `docs/NOMMAGE.md` gelé).
+ */
+const COMPTE_DE_BASES = /\b(\d+)\s+cartes?\s+de\s+base\b/gi;
+
+/** Un compte de bases cité : son chiffre, sa ligne, la phrase qui le porte. */
+type CompteCite = { ligne: number; chiffre: number; extrait: string };
+
+/** Les comptes de bases cités dans un texte, une entrée par occurrence. */
+function comptesDeBases(texte: string): CompteCite[] {
+  const trouves: CompteCite[] = [];
+  texte.split('\n').forEach((brute, index) => {
+    for (const trouve of brute.matchAll(COMPTE_DE_BASES)) {
+      trouves.push({ ligne: index + 1, chiffre: Number(trouve[1]), extrait: brute.trim().slice(0, 160) });
+    }
+  });
+  return trouves;
+}
+
+/** Les comptes cités qui ne sont pas le compte réel. */
+function comptesFaux(texte: string, reel: number): CompteCite[] {
+  return comptesDeBases(texte).filter(({ chiffre }) => chiffre !== reel);
+}
+
+/** Le rapport lisible : fichier, ligne, chiffre écrit, chiffre compté. */
+function rendreComptes(fichier: string, fautes: CompteCite[], reel: number): string {
+  return fautes
+    .map(({ ligne, chiffre, extrait }) => `${fichier}:${ligne} — écrit ${chiffre}, compté ${reel} — ${extrait}`)
+    .join('\n  ');
+}
+
+// ---------------------------------------------------------------------------------------
 // Les contrôles sur les fichiers du dépôt
 // ---------------------------------------------------------------------------------------
 
@@ -305,12 +362,52 @@ describe('Cohérence des documents — le renvoi, pas la copie (27/10/2026)', ()
   });
 });
 
+describe('Cohérence des documents — le compte des cartes de base (#625)', () => {
+  const reel = basesDuSet(ALL_CARDS);
+
+  it('le compte des bases se lit dans ALL_CARDS, qui mélange bases et variantes', () => {
+    expect(reel, `aucune carte de base dans ALL_CARDS (${chemin('src/data/index.ts')})`).toBeGreaterThan(0);
+    expect(
+      ALL_CARDS.some((card) => card.variantOf),
+      'ALL_CARDS ne porte aucune variante : « une base est une carte sans `variantOf` » ne ' +
+        'discrimine plus rien, et le compte passerait pour la mauvaise raison. Vérifier la ' +
+        'définition avant de conclure que le set est sain.'
+    ).toBe(true);
+  });
+
+  it.each([...DOCUMENTS_VIVANTS])('%s ne cite que le compte réel de cartes de base', (fichier) => {
+    expect(existsSync(chemin(fichier)), `${fichier} a disparu : la garde du compte des bases ne le lit plus`).toBe(
+      true
+    );
+    const fautes = comptesFaux(read(fichier), reel);
+    expect(
+      fautes,
+      `compte de cartes de base faux dans ${fichier} :\n  ${rendreComptes(fichier, fautes, reel)}\n` +
+        'Le compte ne se recopie pas : une **base** est une carte d’`ALL_CARDS` sans `variantOf` ' +
+        `(\`src/data/index.ts\`), et \`npm run status\` la publie en \`cards.base\` — ${reel} ` +
+        'aujourd’hui. Corriger le chiffre écrit, jamais le compte.'
+    ).toEqual([]);
+  });
+
+  it('un document vivant cite encore « N cartes de base » (sinon la garde n’a plus de sujet)', () => {
+    const cites = DOCUMENTS_VIVANTS.flatMap((fichier) =>
+      comptesDeBases(read(fichier)).map(({ ligne, chiffre }) => `${fichier}:${ligne} (${chiffre})`)
+    );
+    expect(
+      cites.length,
+      'aucun document vivant ne cite « N cartes de base » : la garde ne garde plus rien. Si la ' +
+        'formulation a changé, couvrir la nouvelle dans `COMPTE_DE_BASES` ; si la promesse a ' +
+        'disparu du document, retirer cette garde en le disant.'
+    ).toBeGreaterThan(0);
+  });
+});
+
 // ---------------------------------------------------------------------------------------
 // Le contrôle mord — les textes fabriqués
 // ---------------------------------------------------------------------------------------
 
 /**
- * Sans ce bloc, les trois gardes s'appuient sur des fichiers **sains aujourd'hui** : une
+ * Sans ce bloc, les gardes s'appuient sur des fichiers **sains aujourd'hui** : une
  * assertion qui ne peut pas échouer ne garde rien (`AGENTS.md` §6, #112). C'est le patron du
  * bloc « La garde des décomptes mord » de `scripts/gardes/compteurs.test.ts`.
  */
@@ -373,5 +470,24 @@ describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
       { ligne: 1, mot: 'Parc', extrait: 'les routes sont `/parc` et `/chariot` redirigent, et le Parc…' }
     ]);
     expect(vocabulaireRetire('l’attaque « Chariot élévateur » de l’Atelier')).toEqual([]);
+  });
+
+  it('le contrôle mord : « 225 cartes de base » est refusé, le compte réel passe (#625)', () => {
+    const reel = basesDuSet(ALL_CARDS);
+    // La phrase exacte que portait `docs/ALPHA-TESTEURS.md` : 225 annoncées pour 233 réelles.
+    const fautive =
+      'la fiche de chaque carte. **Les 225 cartes de base ont leur illustration**, et chaque variante';
+    expect(comptesDeBases(fautive).map(({ ligne, chiffre }) => `${ligne}:${chiffre}`)).toEqual(['1:225']);
+    const fautes = comptesFaux(fautive, reel);
+    expect(fautes).toHaveLength(1);
+    // Le message doit être actionnable : fichier, ligne, chiffre écrit, chiffre compté.
+    const rapport = rendreComptes('docs/fabrique.md', fautes, reel);
+    expect(rapport).toContain('docs/fabrique.md:1');
+    expect(rapport).toContain(`écrit 225, compté ${reel}`);
+    // Le bon chiffre passe, et deux occurrences sur deux lignes sont vues séparément.
+    expect(comptesFaux(`**Les ${reel} cartes de base ont leur illustration**`, reel)).toEqual([]);
+    expect(
+      comptesDeBases(`Les ${reel} cartes de base.\n\nLes 225 cartes de base.`).map(({ ligne }) => ligne)
+    ).toEqual([1, 3]);
   });
 });
