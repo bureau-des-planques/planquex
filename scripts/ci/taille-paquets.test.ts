@@ -12,7 +12,20 @@ import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { PLAFOND_PRINCIPAL, SEUIL_PAQUET, enKb, estPerime, mesurer, paquetsDe, verdict } from './taille-paquets.mjs';
+import {
+  DELTA_MAX_SANS_ASSUME,
+  PLAFOND_PRINCIPAL,
+  SEUIL_PAQUET,
+  dateCourte,
+  deciderReleve,
+  enKb,
+  estPerime,
+  ligneReleve,
+  mesurer,
+  paquetsDe,
+  releveDansSource,
+  verdict
+} from './taille-paquets.mjs';
 
 /** Un paquet fabriqué : seul le nom et la taille comptent pour la garde. */
 function paquet(nom: string, octets: number) {
@@ -126,5 +139,102 @@ describe('la lecture de dist/ (#480)', () => {
     // Une source touchée après le build : `dist/` ment, il faut reconstruire.
     utimesSync(source, new Date('2026-10-29T11:00:00Z'), new Date('2026-10-29T11:00:00Z'));
     expect(estPerime({ dist, racine, sources: ['src.ts'] })).toBe(true);
+  });
+});
+
+/** Le 02/11/2026, la date des relevés du ticket #581. */
+const LE_02_11_2026 = new Date(2026, 10, 2);
+
+/** Une source fabriquée : la forme exacte du fichier, réduite au commentaire et au cliquet. */
+const SOURCE = `/**
+ * Le cliquet du paquet principal.
+ *
+ * **Relevé de 673 octets le 02/11/2026** (268 361 octets) (#566) : la déchirure.
+ */
+export const PLAFOND_PRINCIPAL = 268_361;
+`;
+
+describe('le relevé du cliquet exige sa raison (#581)', () => {
+  it('la ligne datée reprend la forme des relevés déjà écrits', () => {
+    expect(dateCourte(LE_02_11_2026)).toBe('02/11/2026');
+    expect(ligneReleve({ delta: 462, octets: 268_823, raison: 'le glyphe (#525)', date: LE_02_11_2026 })).toBe(
+      '**Relevé de 462 octets le 02/11/2026** (268 823 octets) — le glyphe (#525)'
+    );
+    // Les milliers s'écrivent avec une espace, comme dans les relevés du commentaire.
+    expect(ligneReleve({ delta: 12_345, octets: 280_706, raison: 'x', date: LE_02_11_2026 })).toContain(
+      '**Relevé de 12 345 octets le 02/11/2026** (280 706 octets)'
+    );
+  });
+
+  it('le contrôle mord : sans raison, il refuse et dit la commande à taper', () => {
+    const refus = deciderReleve({ octets: PLAFOND_PRINCIPAL + 1, raison: '' });
+    expect(refus.releve).toBe(false);
+    expect(refus.refus).toContain('--raison');
+    expect(deciderReleve({ octets: PLAFOND_PRINCIPAL + 1, raison: '   ' }).releve).toBe(false);
+  });
+
+  it('le contrôle mord : au-delà de 5 000 octets, il refuse sans --assume', () => {
+    const plafond = PLAFOND_PRINCIPAL;
+    expect(DELTA_MAX_SANS_ASSUME).toBe(5_000);
+    const refus = deciderReleve({ octets: plafond + DELTA_MAX_SANS_ASSUME + 1, raison: 'gros ajout' });
+    expect(refus.releve).toBe(false);
+    expect(refus.refus).toContain('--assume');
+    // La borne est inclusive : 5 000 octets passent, 5 001 non.
+    expect(deciderReleve({ octets: plafond + DELTA_MAX_SANS_ASSUME, raison: 'gros ajout' }).releve).toBe(true);
+    expect(
+      deciderReleve({ octets: plafond + DELTA_MAX_SANS_ASSUME + 1, raison: 'gros ajout', assume: true }).releve
+    ).toBe(true);
+  });
+
+  it('rien à relever quand le paquet tient déjà sous le cliquet', () => {
+    expect(deciderReleve({ octets: PLAFOND_PRINCIPAL, raison: 'x' })).toEqual({
+      releve: false,
+      delta: 0,
+      octets: PLAFOND_PRINCIPAL,
+      raison: 'x'
+    });
+    expect(deciderReleve({ octets: PLAFOND_PRINCIPAL - 10_000, raison: 'x' }).releve).toBe(false);
+  });
+
+  it('la raison tient sur une ligne, même écrite avec des retours', () => {
+    const decision = deciderReleve({ octets: PLAFOND_PRINCIPAL + 10, raison: '  une raison\n  sur deux lignes  ' });
+    expect(decision.raison).toBe('une raison sur deux lignes');
+  });
+
+  it('le relevé réécrit le nombre et pose la ligne datée dans le commentaire', () => {
+    const releve = releveDansSource(SOURCE, {
+      octets: 268_823,
+      delta: 462,
+      raison: 'le glyphe (#525)',
+      date: LE_02_11_2026
+    });
+    expect(
+      releve.endsWith(
+        ' *\n * **Relevé de 462 octets le 02/11/2026** (268 823 octets) — le glyphe (#525)\n */\n' +
+          'export const PLAFOND_PRINCIPAL = 268_823;\n'
+      )
+    ).toBe(true);
+    // Le relevé précédent reste, et le nombre n'apparaît qu'une fois sous sa nouvelle valeur.
+    expect(releve).toContain('**Relevé de 673 octets le 02/11/2026** (268 361 octets) (#566)');
+    expect(releve.match(/export const PLAFOND_PRINCIPAL/g)).toHaveLength(1);
+  });
+
+  it('le relevé est idempotent : au nouveau plafond, il n’y a plus rien à relever', () => {
+    const releve = releveDansSource(SOURCE, {
+      octets: 268_823,
+      delta: 462,
+      raison: 'le glyphe (#525)',
+      date: LE_02_11_2026
+    });
+    const nouveau = Number(/export const PLAFOND_PRINCIPAL = (\d[\d_]*);/.exec(releve)![1].replaceAll('_', ''));
+    expect(nouveau).toBe(268_823);
+    // Ce que la commande redemande au second passage : la mesure égale au cliquet ne réécrit rien.
+    expect(deciderReleve({ octets: nouveau, plafond: nouveau, raison: 'le glyphe (#525)' }).releve).toBe(false);
+  });
+
+  it('le contrôle mord : une source sans PLAFOND_PRINCIPAL lève au lieu d’écrire à l’aveugle', () => {
+    expect(() =>
+      releveDansSource('export const AUTRE = 1;\n', { octets: 2, delta: 1, raison: 'x', date: LE_02_11_2026 })
+    ).toThrow(/PLAFOND_PRINCIPAL/);
   });
 });
