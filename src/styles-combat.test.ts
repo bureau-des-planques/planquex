@@ -239,3 +239,72 @@ describe('la bande de score et les places libres (D-166)', () => {
     expect(libre?.corps).toMatch(/border:\s*1px dashed var\(--text-muted\)/);
   });
 });
+
+/**
+ * **Trois paliers de hauteur, pas un** (D-171, #580) : la référence 420 × 900, le **milieu**
+ * 700–860 px (le Pixel 7 en navigation) et le **court** ≤ 700 px. Le palier du milieu n'avait
+ * aucune taille propre — il reprenait celles de la référence — et D-171 exige qu'il se
+ * **dérive de `100dvh`**, comme le PC de D-158, plutôt qu'un second jeu de constantes figées.
+ * La garde vérifie la **forme** de cette dérivation, pas ses chiffres : ce sont les paliers qui
+ * dictent les tailles, `npm run capturer` qui dit ce qui tient (D-094, D-157, D-167).
+ */
+describe('les trois paliers de hauteur du combat (D-171)', () => {
+  /** Les blocs `@media` de la feuille, commentaires retirés, avec leur en-tête et leur corps. */
+  function medias(css: string): { requete: string; corps: string }[] {
+    const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const out: { requete: string; corps: string }[] = [];
+    const re = /@media([^{]+)\{/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(sans))) {
+      let i = re.lastIndex;
+      let profondeur = 1;
+      while (i < sans.length && profondeur > 0) {
+        if (sans[i] === '{') profondeur++;
+        else if (sans[i] === '}') profondeur--;
+        i++;
+      }
+      out.push({ requete: m[1].replace(/\s+/g, ' ').trim(), corps: sans.slice(re.lastIndex, i - 1) });
+    }
+    return out;
+  }
+
+  /** Le palier 700–860 : sa présence, et le fait que ses tailles ne soient pas figées. */
+  function fautesDesPaliers(css: string): string[] {
+    const blocs = medias(css).filter(
+      (b) => /min-height:\s*701px/.test(b.requete) && /max-height:\s*860px/.test(b.requete)
+    );
+    if (blocs.length === 0) return ['palier 700–860 absent : la bande du Pixel 7 n’a pas de taille propre'];
+    const fautes: string[] = [];
+    for (const bloc of blocs) {
+      if (!/100dvh/.test(bloc.corps)) fautes.push('le palier 700–860 ne dérive pas de 100dvh');
+      const poste = bloc.corps.match(/--poste-w:\s*([^;]+);/);
+      if (!poste) fautes.push('le palier 700–860 ne pose pas --poste-w');
+      else if (!/(clamp|100dvh|var\()/.test(poste[1])) fautes.push(`--poste-w figé : ${poste[1].trim()}`);
+      const carte = bloc.corps.match(/--carte-w[^:]*:\s*([^;]+);/);
+      if (!carte) fautes.push('le palier 700–860 ne pose pas --carte-w');
+      else if (!/(clamp|100dvh|var\()/.test(carte[1])) fautes.push(`--carte-w figé : ${carte[1].trim()}`);
+    }
+    return fautes;
+  }
+
+  it('le palier 700–860 dérive ses tailles de la hauteur de la fenêtre', () => {
+    expect(fautesDesPaliers(CSS)).toEqual([]);
+  });
+
+  it('la feuille garde les trois paliers : référence > 860, milieu 700–860, court ≤ 700', () => {
+    const requetes = medias(CSS).map((b) => b.requete);
+    expect(requetes.some((r) => /min-height:\s*701px/.test(r) && /max-height:\s*860px/.test(r))).toBe(true);
+    expect(requetes.some((r) => /max-height:\s*700px/.test(r))).toBe(true);
+    // La référence (420 × 900) reste le Poste de D-157 : 6 rem.
+    expect(CSS).toMatch(/\.board__zone\s*\{[^}]*--poste-w:\s*6rem/);
+  });
+
+  it('le contrôle mord : un second jeu de constantes figées est refusé', () => {
+    const fautif = `${CSS}\n@media (max-width: 899px) and (min-height: 701px) and (max-height: 860px) { .board__zone { --poste-w: 5.5rem; --banc-w: 3.5rem; } .battle .hand { --carte-w: 4.25rem; } }`;
+    expect(fautesDesPaliers(fautif)).toEqual([
+      'le palier 700–860 ne dérive pas de 100dvh',
+      '--poste-w figé : 5.5rem',
+      '--carte-w figé : 4.25rem'
+    ]);
+  });
+});

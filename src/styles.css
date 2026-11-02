@@ -5398,6 +5398,28 @@ h2 {
   white-space: nowrap;
 }
 
+/* **Le palier du milieu** (D-171, #580) : 701 à 860 px utiles — la bande du **Pixel 7 en
+   navigation** (412 × 915 CSS, ≈ 800–820 utiles) — n'avait aucune taille propre : elle reprenait
+   celles de la référence 420 × 900 (Poste 96, Banc 64, main 72) et seul le placement changeait.
+   Ici les tailles se **dérivent de `100dvh`**, comme le PC de D-158, au lieu de figer un second
+   jeu de constantes : à 860 px on retrouve la référence, à 701 px celles du palier court. Les
+   chiffres sont **mesurés** par `npm run capturer` (gabarit `telephone-android`) — la garde est un
+   plancher, ce sont les paliers qui dictent les tailles (D-094, D-157, D-167). */
+@media (max-width: 899px) and (min-height: 701px) and (max-height: 860px) and (orientation: portrait) {
+  .app-shell:has(.battle) {
+    --carte-w-bande: clamp(3.75rem, calc((100dvh - 26rem) / 6), 4.5rem);
+  }
+
+  .board__zone {
+    --poste-w: clamp(5rem, calc(var(--carte-w-bande) * 4 / 3), 6rem);
+    --banc-w: clamp(3.25rem, calc(var(--poste-w) * 2 / 3), 4rem);
+  }
+
+  .battle .hand {
+    --carte-w: var(--carte-w-bande);
+  }
+}
+
 /* **Téléphone très court** (640 à 700 px utiles, barre du navigateur comprise) : le titre « Ta main »
    cède sa ligne — le compte de la main est déjà dans la fiche du camp (« TOI main 4 ») et le titre
    reste lu par le lecteur d'écran —, et le Banc et la main perdent un cran (52 et 60 px). Mesuré à
