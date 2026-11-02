@@ -86,5 +86,10 @@ export const GABARITS = [
   { nom: 'telephone', viewport: { width: 390, height: 664 }, mobile: true },
   { nom: 'pc', viewport: { width: 1280, height: 800 }, mobile: false },
   // D-158 (#520) : le grand écran, où le combat grandit avec la hauteur et la console porte le journal.
-  { nom: 'grand-ecran', viewport: { width: 1920, height: 1080 }, mobile: false }
+  { nom: 'grand-ecran', viewport: { width: 1920, height: 1080 }, mobile: false },
+  // **D-173 (#580)** : le **Pixel 7** en navigation — 412 × 915 CSS, hauteur utile ≈ 800–820. C'est
+  // la bande 700–860 px, qui n'avait aucun gabarit à largeur téléphone (390 × 664 est en dessous,
+  // 420 × 900 au-dessus) et donc aucune taille propre. Le navigateur reste couvert par un seul
+  // gabarit, le pire cas réel (390 × 664) : « PWA d'abord, navigateur en plancher ».
+  { nom: 'telephone-android', viewport: { width: 412, height: 810 }, mobile: true }
 ];

@@ -215,10 +215,13 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
    */
   function gabaritsDeD171(): { width: number; height: number }[] {
     // D-158 (#520) garde le grand écran ; 420 × 900 reste dans la capture principale (D-060).
+    // D-171 (portrait) nomme les tailles de téléphone, D-173 (#580) ajoute le Pixel 7 en
+    // navigation : on relit les trois lignes, dans l'ordre du journal (c'est l'ordre de GABARITS).
     const journal = read('docs/DECISIONS.md').split('\n');
-    const lignes = ['| D-171 |', '| D-158 |'].map((tete) => journal.filter((ligne) => ligne.startsWith(tete)));
+    const tetes = ['| D-171 |', '| D-158 |', '| D-173 |'];
+    const lignes = tetes.map((tete) => journal.filter((ligne) => ligne.startsWith(tete)));
     for (const [index, trouvees] of lignes.entries()) {
-      expect(trouvees, `ligne ${['D-171', 'D-158'][index]} introuvable dans docs/DECISIONS.md`).toHaveLength(1);
+      expect(trouvees, `ligne ${tetes[index]} introuvable dans docs/DECISIONS.md`).toHaveLength(1);
     }
     const reference = tailleDeD060();
     const uniques = new Map<string, { width: number; height: number }>();

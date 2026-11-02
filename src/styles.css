@@ -253,7 +253,7 @@ h2 {
 
 /* ---------- Coquille ---------- */
 
-/* La largeur de la coquille, lue aussi par la barre du bas. Sur un grand écran de PC (D-171), la
+/* La largeur de la coquille, lue aussi par la barre du bas. Sur un grand écran de PC (D-158), la
    Collection et le Deck prennent une colonne de cartes de plus au lieu de laisser deux marges vides. */
 :root {
   --shell-max: 1080px;
@@ -286,7 +286,11 @@ h2 {
 .page--nue {
   margin: 0 auto;
   max-width: var(--shell-max);
-  padding: 0 max(1rem, env(safe-area-inset-right)) 2.5rem max(1rem, env(safe-area-inset-left));
+  /* **D-173 (#580)** : ces écrans n'ont pas de `.topbar`, et sous
+     `apple-mobile-web-app-status-bar-style: black-translucent` la page passe **sous** la barre
+     d'état iOS : sans ce rembourrage, le panneau commençait au pixel 0, sous l'heure. */
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 2.5rem
+    max(1rem, env(safe-area-inset-left));
 }
 
 .topbar {
@@ -514,7 +518,7 @@ h2 {
 }
 
 /* En combat, la barre de navigation n'est pas rendue (#275) : le téléphone portrait garde
-   l'inset bas de D-171 pour que la barre d'action reste à portée du pouce. */
+   l'inset bas de D-173 pour que la barre d'action reste à portée du pouce. */
 .app-shell:has(.battle) {
   padding-bottom: 0.5rem;
 }
@@ -5279,7 +5283,7 @@ h2 {
 
 /* ---------- Combat : téléphone portrait et grand écran ----------
 
-   Le téléphone se joue en portrait (D-171) : la référence est 420 × 900, et les fenêtres
+   Le téléphone se joue en portrait (D-173) : la référence est 420 × 900, et les fenêtres
    360 × 640 et 390 × 664 vérifient les cas courts. Le desktop garde sa disposition large.
 
    Les tailles de cartes de D-157 restent les planchers : c'est la **disposition** qui cède,
@@ -5392,6 +5396,28 @@ h2 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* **Le palier du milieu** (D-173, #580) : 701 à 860 px utiles — la bande du **Pixel 7 en
+   navigation** (412 × 915 CSS, ≈ 800–820 utiles) — n'avait aucune taille propre : elle reprenait
+   celles de la référence 420 × 900 (Poste 96, Banc 64, main 72) et seul le placement changeait.
+   Ici les tailles se **dérivent de `100dvh`**, comme le PC de D-158, au lieu de figer un second
+   jeu de constantes : à 860 px on retrouve la référence, à 701 px celles du palier court. Les
+   chiffres sont **mesurés** par `npm run capturer` (gabarit `telephone-android`) — la garde est un
+   plancher, ce sont les paliers qui dictent les tailles (D-094, D-157, D-167). */
+@media (max-width: 899px) and (min-height: 701px) and (max-height: 860px) and (orientation: portrait) {
+  .app-shell:has(.battle) {
+    --carte-w-bande: clamp(3.75rem, calc((100dvh - 26rem) / 6), 4.5rem);
+  }
+
+  .board__zone {
+    --poste-w: clamp(5rem, calc(var(--carte-w-bande) * 4 / 3), 6rem);
+    --banc-w: clamp(3.25rem, calc(var(--poste-w) * 2 / 3), 4rem);
+  }
+
+  .battle .hand {
+    --carte-w: var(--carte-w-bande);
+  }
 }
 
 /* **Téléphone très court** (640 à 700 px utiles, barre du navigateur comprise) : le titre « Ta main »
@@ -7216,7 +7242,7 @@ h2 {
   margin: 0;
 }
 
-/* Accueil portrait sans défilement (D-171) : les deux gestes et les trois compteurs restent visibles.
+/* Accueil portrait sans défilement (D-173) : les deux gestes et les trois compteurs restent visibles.
    La hauteur se gagne dans la composition, pas en rognant le document derrière la navigation.
    Deux états sont tenus : la première visite, et la partie qui attend (#553, une ligne sous les
    gestes) — c'est elle qui serre le plus, mesuré à 360 × 640 le 02/11/2026. */
