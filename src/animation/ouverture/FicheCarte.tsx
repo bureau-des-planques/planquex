@@ -36,9 +36,16 @@ export function FicheCarte({ carte, neuve, style, disposition, onFermer }: Props
     const el = boite.current;
     if (!el) return undefined;
     const mesurer = () => setDefile(el.scrollHeight - el.scrollTop - el.clientHeight > 8);
-    mesurer();
+    // **La mesure attend la première peinture** (#605) : lire `scrollHeight` dans l'effet de
+    // montage forçait la mise en page du panneau qui vient d'être inséré, dans l'image même où
+    // la fiche apparaît — celle du retournement, sur un écran étroit. Une tâche plus tard, le
+    // panneau est peint, et le repère « La suite ↓ » se pose sans retarder l'image.
+    const id = window.setTimeout(mesurer, 0);
     el.addEventListener('scroll', mesurer, { passive: true });
-    return () => el.removeEventListener('scroll', mesurer);
+    return () => {
+      window.clearTimeout(id);
+      el.removeEventListener('scroll', mesurer);
+    };
   }, [carte.id, disposition]);
 
   return (
