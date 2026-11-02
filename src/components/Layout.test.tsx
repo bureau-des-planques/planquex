@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { Layout } from './Layout';
+import { Layout, couvreAdresse } from './Layout';
 import { setupTestStore } from '@/test/test-utils';
 import { useComptes } from '@/store/comptes';
 
@@ -40,6 +40,10 @@ function monter(chemin: string) {
           <Route index element={<p>écran d’accueil</p>} />
           <Route path="plante" element={<Plante />} />
           <Route path="sain" element={<p>écran sain</p>} />
+          {/* Les deux adresses de la page des Cartes (#545) : la barre y marque la même
+              entrée, et il faut une route enfant pour que le `Layout` se monte. */}
+          <Route path="collection" element={<p>écran collection</p>} />
+          <Route path="deck" element={<p>écran deck</p>} />
           {/* Une route de combat : `enCombat` se lit dans l'adresse (#213). */}
           <Route path="battle" element={<p>écran de combat</p>} />
           {/* Les deux pages du comité (D-097 (2)) : le compteur s'y éteint (#212). */}
@@ -104,19 +108,50 @@ describe('Layout — les états transverses (#131)', () => {
   });
 });
 
-describe('Layout — la barre à cinq onglets (#213, D-097 (4))', () => {
+describe('Layout — la barre à quatre onglets (#545, D-097 (4))', () => {
   function barre() {
     return screen.getByRole('navigation', { name: 'Navigation principale' });
   }
 
-  it('les cinq onglets, dans l’ordre — Comité remplace Réglages', () => {
+  it('les quatre onglets, dans l’ordre — Collection et Deck n’en font plus qu’un', () => {
     monter('/sain');
     const liens = within(barre()).getAllByRole('link');
-    // La liste entière, pas seulement la présence : remettre Réglages dans la barre
-    // (six entrées) ou déplacer Comité ailleurs fait échouer ce test.
-    expect(liens.map((lien) => lien.textContent)).toEqual(['Accueil', 'Collection', 'Deck', 'Combat', 'Comité']);
+    // La liste entière, pas seulement la présence : remettre Réglages dans la barre (cinq
+    // entrées), rendre au Deck son entrée propre (six) ou déplacer Comité ailleurs fait
+    // échouer ce test.
+    expect(liens.map((lien) => lien.textContent)).toEqual(['Accueil', 'Cartes', 'Combat', 'Comité']);
     expect(within(barre()).getByRole('link', { name: 'Comité' })).toHaveAttribute('href', '/comite');
+    expect(within(barre()).getByRole('link', { name: 'Cartes' })).toHaveAttribute('href', '/collection');
     expect(within(barre()).queryByRole('link', { name: 'Réglages' })).toBeNull();
+    // Le Deck n'a plus d'entrée à lui : sa route reste servie par la page des Cartes (#545).
+    expect(within(barre()).queryByRole('link', { name: 'Deck' })).toBeNull();
+  });
+
+  it('« Cartes » reste l’onglet courant sur les deux adresses qu’elle couvre (#545)', () => {
+    for (const chemin of ['/collection', '/deck']) {
+      const rendu = monter(chemin);
+      const onglet = within(barre()).getByRole('link', { name: 'Cartes' });
+      expect(onglet, chemin).toHaveAttribute('aria-current', 'page');
+      expect(onglet, chemin).toHaveClass('is-active');
+      // Une seule entrée courante : les trois autres ne le sont pas.
+      expect(
+        within(barre())
+          .getAllByRole('link')
+          .filter((lien) => lien.hasAttribute('aria-current'))
+      ).toHaveLength(1);
+      rendu.unmount();
+    }
+  });
+
+  it('une entrée ne couvre pas ses voisines : la règle d’adresse est bien bornée', () => {
+    // Le contrôle mord : si `couvreAdresse` répondait « préfixe de chaîne », `/deck` et
+    // `/deck-du-jour` allumeraient l'entrée Cartes, et `/collection-de-truc` aussi.
+    expect(couvreAdresse('/deck', '/deck')).toBe(true);
+    expect(couvreAdresse('/collection', '/collection')).toBe(true);
+    expect(couvreAdresse('/comite/suivi', '/comite')).toBe(true);
+    expect(couvreAdresse('/collection-de-truc', '/collection')).toBe(false);
+    expect(couvreAdresse('/battle', '/collection')).toBe(false);
+    expect(couvreAdresse('/deck', '/')).toBe(false);
   });
 
   it('l’engrenage des Réglages est dans l’en-tête, à côté du pseudo', () => {

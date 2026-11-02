@@ -1,5 +1,5 @@
 // Projet `node` : ce fichier lit des sources, il ne rend rien (#478)
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -38,7 +38,24 @@ export function ecransParesseux(source: string): string[] {
 const MODULES_DE_FAITS = new Set(['Installation']);
 
 describe('les écrans se chargent à la demande (#478)', () => {
-  const source = readFileSync(join(process.cwd(), 'src', 'App.tsx'), 'utf8');
+  const dossierPages = join(process.cwd(), 'src', 'pages');
+  const app = readFileSync(join(process.cwd(), 'src', 'App.tsx'), 'utf8');
+
+  /**
+   * **Les coquilles** (#545) : une page chargée à la demande qui charge elle-même des pages.
+   * Depuis la fusion, `App.tsx` ne nomme plus `Collection` ni `Deck` — c'est la page des
+   * Cartes qui les charge, chacune son morceau. Leurs imports comptent donc autant que ceux
+   * d'`App.tsx` : sans cette relecture, la garde les verrait comme des écrans orphelins (et
+   * un import en dur remis dans la coquille lui échapperait).
+   *
+   * Un seul niveau : une coquille de coquille ne se déclare pas. Le jour où elle arriverait,
+   * ce test échouerait sur ses pages, et c'est la bonne réponse.
+   */
+  const coquilles = ecransParesseux(app)
+    .map((nom) => join(dossierPages, `${nom}.tsx`))
+    .filter((chemin) => existsSync(chemin))
+    .map((chemin) => readFileSync(chemin, 'utf8'));
+  const source = [app, ...coquilles].join('\n');
 
   it('le contrôle mord : il distingue un import en dur d’un import paresseux', () => {
     const fabrique =
@@ -53,12 +70,20 @@ describe('les écrans se chargent à la demande (#478)', () => {
   });
 
   it('tous les autres écrans de `src/pages/` sont chargés à la demande', () => {
-    const pages = readdirSync(join(process.cwd(), 'src', 'pages'))
+    const pages = readdirSync(dossierPages)
       .filter((fichier) => fichier.endsWith('.tsx') && !fichier.endsWith('.test.tsx'))
       .filter((fichier) => !MODULES_DE_FAITS.has(fichier.replace(/\.tsx$/, '')))
       .map((fichier) => fichier.replace(/\.tsx$/, ''))
       .sort();
     expect([...ecransEnDur(source), ...ecransParesseux(source)].sort()).toEqual(pages);
+  });
+
+  it('la page des Cartes charge ses deux onglets elle-même : rien ne retombe dans le principal (#545)', () => {
+    const coquille = readFileSync(join(dossierPages, 'CollectionDeck.tsx'), 'utf8');
+    // Les deux onglets sont bien **paresseux** : un import en dur les ramènerait dans le
+    // morceau de la coquille, et ouvrir `/collection` téléchargerait le Deck.
+    expect(ecransParesseux(coquille).sort()).toEqual(['Collection', 'Deck']);
+    expect(ecransEnDur(coquille)).toEqual([]);
   });
 
   it('un module de faits reste hors du routeur, et garde ses faits', () => {

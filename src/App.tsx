@@ -26,8 +26,12 @@ import { deverrouiller } from '@/audio/sons';
  * l'`import()` : l'erreur remonte au `ErreurDeRendu` du `Layout`, qui affiche « Recharger » —
  * jamais un écran blanc (#131).
  */
-const Collection = lazy(() => import('@/pages/Collection').then((m) => ({ default: m.Collection })));
-const Deck = lazy(() => import('@/pages/Deck').then((m) => ({ default: m.Deck })));
+/**
+ * **La Collection et le Deck sont un seul écran** (#545), deux onglets : son morceau est
+ * donc un shell, qui charge à son tour le contenu de l'onglet demandé. Les deux contenus
+ * gardent chacun le leur — ouvrir `/collection` ne télécharge pas le Deck.
+ */
+const CollectionDeck = lazy(() => import('@/pages/CollectionDeck').then((m) => ({ default: m.CollectionDeck })));
 const Battle = lazy(() => import('@/pages/Battle').then((m) => ({ default: m.Battle })));
 const Rejeu = lazy(() => import('@/pages/Rejeu').then((m) => ({ default: m.Rejeu })));
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })));
@@ -105,8 +109,9 @@ export function App() {
         {routesDeRedirection(true)}
         <Route element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="collection" element={<Collection />} />
-          <Route path="deck" element={<Deck />} />
+          {/* Deux adresses, un écran (#545) : chacune ouvre la page sur son onglet. */}
+          <Route path="collection" element={<CollectionDeck onglet="collection" />} />
+          <Route path="deck" element={<CollectionDeck onglet="deck" />} />
           <Route path="battle" element={<Battle />} />
           {/* Le comité a **deux pages** (D-097 (2)) : le mur (`/comite`) et le suivi
             (`/comite/suivi`), sous la même barre de sous-onglets. */}
