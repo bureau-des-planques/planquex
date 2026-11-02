@@ -32,6 +32,7 @@ import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import { avancer, creer, demarrer, relacher, surLaLigne, type EtatOuverture, type Geometrie, type Sens } from './etats';
 import { FicheCarte } from './FicheCarte';
 import { LIGNE, MASQUE_SILHOUETTE, Pochette } from './Pochette';
+import { usePointeurTactile } from './pointeur';
 import { Particules } from './particules';
 import {
   annonce,
@@ -123,6 +124,9 @@ const COULEURS_ETINCELLES = ['#fff6d8', '#f4d68a', '#e6b64c', '#ffffff'];
 
 export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const reduit = useMouvementReduit();
+  /** **Le doigt ou la souris** (#569) : la consigne nomme un geste que l'appareil permet. */
+  const doigt = usePointeurTactile();
+  const geste = doigt ? 'Touche' : 'Clique';
   const nombre = cartes.length;
   const raretes = useMemo(() => cartes.map((c) => c.rarity), [cartes]);
   const couleurLueur = useMemo(() => lueur(raretes), [raretes]);
@@ -775,21 +779,33 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     enCours?.phase === 'tenue' && carteEnCours ? annonce(palier(carteEnCours.rarity), graine + enCours.index) : null;
 
   const consigne = (() => {
-    if (etape === 'ferme') return 'Glisse le doigt le long des pointillés';
+    if (etape === 'ferme') return doigt ? 'Glisse le doigt le long des pointillés' : 'Glisse le long des pointillés';
     if (etape === 'dechirure') return 'Jusqu’au bout…';
-    if (etape === 'ouverture') return '';
-    if (fiche !== null) return 'Touche la carte pour la reposer';
+    // **La consigne ne se vide plus pendant l'envol** (#569) : les 2,9 s de montée n'annonçaient
+    // rien à `aria-live`, et l'écran semblait avoir perdu son fil. Le texte dit l'attente.
+    if (etape === 'ouverture') return 'L’Arrivage s’ouvre…';
+    if (fiche !== null) return `${geste} la carte pour la reposer`;
     if (etape === 'revelation') {
-      if (enCours?.phase === 'tenue') return 'Touche la carte pour la poser';
+      if (enCours?.phase === 'tenue') return `${geste} la carte pour la poser`;
       if (enCours) return '…';
       // Sur un écran étroit, le tap ne fait pas que retourner : il ouvre la fiche. La
       // consigne dit donc ce qui arrive, pas l'étape intermédiaire (critique du 01/11/2026).
       return cartePetite
-        ? `Touche une carte pour la lire · ${nombreRetournees} / ${nombre}`
-        : `Touche une carte pour la retourner · ${nombreRetournees} / ${nombre}`;
+        ? `${geste} une carte pour la lire · ${nombreRetournees} / ${nombre}`
+        : `${geste} une carte pour la retourner · ${nombreRetournees} / ${nombre}`;
     }
-    return 'Touche une carte pour la voir en entier';
+    // **La fin dit où l'on en est** (#569) : le compteur ne disparaît plus quand tout est
+    // retourné — cinq cartes sur cinq, et ce qu'il reste à faire.
+    return `${nombreRetournees} / ${nombre} retournées · ${geste.toLowerCase()} une carte pour la lire`;
   })();
+
+  /**
+   * **Le bilan de l'Arrivage** (#569) : la fin était un bouton or sans un mot sur ce qu'on
+   * venait de gagner. Il dit le tirage et les cartes neuves, sans répéter le titre.
+   */
+  const bilan = `${nombre} carte${nombre > 1 ? 's' : ''} dans ta Collection${
+    neuves && neuves.size > 0 ? ` · ${neuves.size} nouvelle${neuves.size > 1 ? 's' : ''}` : ''
+  }`;
 
   return (
     <div
@@ -982,12 +998,26 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
             carte={cartes[fiche]}
             neuve={neuves?.has(fiche) === true}
             disposition={disposition.disposition}
-            style={{
-              left: `${disposition.panneau.x}px`,
-              top: `${disposition.panneau.y}px`,
-              width: `${disposition.panneau.largeur}px`,
-              height: `${disposition.panneau.hauteur}px`
-            }}
+            /* **La fiche s'ajuste à son texte** (#569) : sur PC, un panneau de 440 × 622 pour
+               ~300 px de contenu laissait la moitié vide. En `cote`, il prend la hauteur de son
+               contenu (plafonnée à la place disponible) et se centre au lieu de rester collé
+               en haut ; en `dessous`, il garde la hauteur du viseur, qui est la place du texte. */
+            style={
+              disposition.disposition === 'cote'
+                ? {
+                    left: `${disposition.panneau.x}px`,
+                    top: '50%',
+                    width: `${disposition.panneau.largeur}px`,
+                    maxHeight: `${disposition.panneau.hauteur}px`,
+                    translate: '0 -50%'
+                  }
+                : {
+                    left: `${disposition.panneau.x}px`,
+                    top: `${disposition.panneau.y}px`,
+                    width: `${disposition.panneau.largeur}px`,
+                    height: `${disposition.panneau.hauteur}px`
+                  }
+            }
             onFermer={() => setFiche(null)}
           />
         )}
@@ -1000,6 +1030,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         <p className="ouverture__consigne" id="ouverture-consigne" data-consigne aria-live="polite">
           {consigne}
         </p>
+        {etape === 'ouvert' && <p className="ouverture__bilan">{bilan}</p>}
         <div className="ouverture__actions">
           {etape === 'ferme' && (
             <button type="button" className="button" data-ouvrir onClick={ouvrirSansGeste}>
@@ -1007,7 +1038,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
             </button>
           )}
           {etape !== 'ouvert' && (
-            <button type="button" className="button" data-tout-afficher onClick={toutAfficher}>
+            /* **« Tout afficher » passe au second plan** (#569) : sauter la célébration ne doit
+               pas attirer autant que la déclencher. Même cible de 44 px, moins de poids. */
+            <button type="button" className="button ouverture__tout-afficher" data-tout-afficher onClick={toutAfficher}>
               Tout afficher
             </button>
           )}

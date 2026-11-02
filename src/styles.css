@@ -5990,8 +5990,12 @@ h2 {
 
 .pack-reveal [data-slot='dialog-close'] {
   color: var(--text);
+  /* **La cible de 44 px de D-116 s'applique aussi au dialogue** (#569) : `size="icon-sm"` de
+     `dialog.tsx` donnait 28 × 28 px, la seule cible fautive du projet (mesuré à 26,9 px). */
+  height: 44px;
   right: max(0.75rem, env(safe-area-inset-right));
   top: max(0.75rem, env(safe-area-inset-top));
+  width: 44px;
   z-index: 80;
 }
 
@@ -6132,9 +6136,19 @@ h2 {
   font-weight: 700;
   letter-spacing: 0.14em;
   margin: 0;
-  padding-right: 2.5rem;
+  /* **Le titre est centré sur la scène, pas décalé de la croix** (#569) : `padding-right` seul
+     poussait le texte de 20 px vers la gauche (mesuré : centre à 175 pour une boîte à 195). Un
+     rembourrage **symétrique** garde le centre, et laisse la place de la croix de 44 px de
+     chaque côté. Le texte peut passer sur deux lignes sur un téléphone : deux lignes centrées
+     valent mieux qu'une ligne décalée. */
+  padding-inline: 3.5rem;
+  position: relative;
   text-align: center;
   text-transform: uppercase;
+  text-wrap: balance;
+  /* La bande arrachée s'envole vers le haut et traversait le titre pendant la déchirure : le
+     titre passe au-dessus de la scène (#569). */
+  z-index: 8;
 }
 
 .ouverture__scene {
@@ -7042,6 +7056,33 @@ h2 {
   flex-wrap: wrap;
   gap: 0.6rem;
   justify-content: center;
+}
+
+/* **« Tout afficher » au second plan** (#569) : même cible de 44 px, mais un bouton discret —
+   sauter la célébration ne doit pas se lire comme l'action principale. */
+.ouverture__tout-afficher {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.ouverture__tout-afficher:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--bg-raised) 60%, transparent);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+/* **Le bilan de la fin** (#569) : ce que l'Arrivage a donné, juste avant le bouton or. */
+.ouverture__bilan {
+  color: var(--gold-soft);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0;
+  text-align: center;
 }
 
 /* **Mouvement réduit** : le récapitulatif, à plat, sans rayons ni cascade (D-098). */
