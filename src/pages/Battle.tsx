@@ -71,7 +71,7 @@ import { etatFinScriptee } from '@/game/scenario-fin';
 import { marquerGeste } from '@/components/journee-gestes';
 import { avancerJournee, etapeJournee } from '@/components/journee-etape';
 import { SceneFin } from '@/components/SceneFin';
-import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
+import { choisirReplique, type EvenementDirection } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
@@ -1085,15 +1085,30 @@ export function Battle() {
    * une fin gagnée, une fin perdue. Pas à chaque Pression : la voix deviendrait du bruit.
    * En solo seulement : en partie à deux, un joueur humain n'hérite jamais de ses vannes.
    * Le choix est déterministe par le tour (comme le moteur).
+   *
+   * **Le craquage se lit dans les faits, jamais dans la phrase du journal** (#544) : la ligne
+   * « … craque : 1 Intervention. » n'est jamais la dernière, le moteur y ajoute aussitôt celle
+   * de la relève ou du verdict — `evenementDuJournal` ne pouvait donc pas la voir passer (0
+   * occurrence sur 10 946 états de parties réelles). Les faits (#250) nomment l'événement là où
+   * il est décidé, et disent de qui le Planqué est tombé : la Direction commente **son**
+   * personnel, jamais la chute du nôtre.
    */
-  const evenementDirection =
-    state.phase === 'ended' ? (state.winner === myCamp ? 'victoire' : 'defaite') : evenementDuJournal(lastLog);
+  const craquageDeLaDirection = (state.actionLog.at(-1)?.faits ?? []).some(
+    (fait) => fait.type === 'craquage' && fait.camp === 'ai'
+  );
+  const evenementDirection: EvenementDirection | null =
+    state.phase === 'ended'
+      ? // Une **égalité** (limite de tours, D-031) n'est ni gagnée ni perdue : elle ne parle pas.
+        state.winner === null
+        ? null
+        : state.winner === myCamp
+          ? 'victoire'
+          : 'defaite'
+      : craquageDeLaDirection
+        ? 'craquage'
+        : null;
   // La Direction ne parle que pour elle-même (camp 'ai' en solo). En partie à deux, pas de Direction.
-  const evenementQuiParle =
-    match === null &&
-    (evenementDirection === 'craquage' || evenementDirection === 'victoire' || evenementDirection === 'defaite')
-      ? evenementDirection
-      : null;
+  const evenementQuiParle = match === null ? evenementDirection : null;
   const repliqueDirection = evenementQuiParle ? choisirReplique(evenementQuiParle, state.turn) : null;
   /** La scène de fin est ouverte : c'est elle qui dit le verdict et la phrase de la Direction. */
   const sceneFinOuverte = sceneFin && state.phase === 'ended' && !sceneFinFermee;
@@ -2281,7 +2296,10 @@ export function Battle() {
                       de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
                   {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
                   {repliqueDirection && (
-                    <p className="muted combat-barre__portee combat-replique">
+                    /* `data-testid` : le `<strong>` coupe le texte en deux nœuds, donc
+                       `getByText` ne peut pas lire la ligne entière — les tests visent
+                       l'élément, pas sa mise en forme (#544). */
+                    <p className="muted combat-barre__portee combat-replique" data-testid="replique-direction">
                       <strong>La Direction</strong> · {repliqueDirection}
                     </p>
                   )}
