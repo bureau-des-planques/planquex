@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 // @ts-expect-error — module .mjs sans déclaration de types.
-import { CONFIGURATION, creerMouvements, deltasMesures, emettreMouvements } from './mesurer-glissement.mjs';
+import { CONFIGURATION, RETOURNEMENT, analyserCadence, creerMouvements, deltasMesures, emettreMouvements } from './mesurer-glissement.mjs';
 
 const lire = (fichier: string) => readFileSync(new URL(`../../${fichier}`, import.meta.url), 'utf8');
 
@@ -14,6 +14,10 @@ describe('`npm run mesurer:glissement` — la mesure reproductible du geste (#57
       depart: 0.1,
       arrivee: 0.6
     });
+  });
+
+  it('fixe la fenêtre du retournement : même durée pour la référence et le geste (#605)', () => {
+    expect(RETOURNEMENT).toEqual({ attenteRevelation: 600, duree: 1400 });
   });
 
   it('place les 60 mouvements sur la ligne, de 10 % à 60 % de la largeur', () => {
@@ -88,6 +92,23 @@ describe('`npm run mesurer:glissement` — la mesure reproductible du geste (#57
     expect(() => deltasMesures({ metrics: [] }, { metrics: [] })).toThrow('Métrique CDP absente : TaskDuration');
   });
 
+  it('nomme les images trop longues, avec leur instant : c’est la saccade (#605)', () => {
+    const frames = [
+      { t: 0, now: 0 },
+      { t: 16, now: 16 },
+      { t: 32, now: 32 },
+      { t: 82, now: 82 }, // une image de 50 ms
+      { t: 98, now: 98 }
+    ];
+    const cadence = analyserCadence(frames);
+    expect(cadence.images).toBe(5);
+    expect(cadence.mediane).toBe(16);
+    expect(cadence.pire).toBe(50);
+    expect(cadence.longues).toEqual([{ ecart: 50, offset: 82 }]);
+    // Le contrôle mord : une cadence régulière ne signale rien.
+    expect(analyserCadence(frames.slice(0, 3)).longues).toEqual([]);
+  });
+
   it('est déclarée et documentée comme commande du dépôt', () => {
     const paquet = JSON.parse(lire('package.json')) as { scripts: Record<string, string> };
     expect(paquet.scripts['mesurer:glissement']).toBe('node scripts/preuves/mesurer-glissement.mjs');
@@ -106,5 +127,16 @@ describe('`npm run mesurer:glissement` — la mesure reproductible du geste (#57
     expect(source).toContain("'.hero__ouvrir'");
     expect(source).toContain("'[data-zone]'");
     expect(source).toContain('headless: true');
+  });
+
+  it('mesure le retournement de la première carte, sur le même appareil simulé (#605)', () => {
+    const source = lire('scripts/preuves/mesurer-glissement.mjs');
+    // Le mode s'ajoute au glissement, il ne le remplace pas.
+    expect(source).toContain("process.argv.includes('--retournement')");
+    expect(source).toContain("'.ouverture__carte'");
+    expect(source).toContain("dataset.etape === 'revelation'");
+    // La fenêtre de référence existe : sans elle, le bruit des particules d'ambiance se lisait
+    // comme le coût du retournement.
+    expect(source).toContain('mesurerFenetre');
   });
 });
