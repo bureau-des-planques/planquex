@@ -132,8 +132,15 @@ export const SEUIL_PAQUET = 500_000;
  * une carte n'est plus un bouton dans un bouton (`CardView calme`), la déchirure reste acquise
  * sous le seuil, la fiche gagne une bande de défilement et une carte plus petite en portrait, et
  * le tirage survit à la fermeture (« Revoir le dernier Arrivage »). Il reste 267 532 octets.
+ *
+ * **Relevé de 156 octets le 02/11/2026** (267 688 octets) (#553) : l'accueil dit qu'une partie
+ * attend. Le tour ne se lit pas dans l'état persisté (`PartieSauvegardee` ne range que la
+ * graine, les Decks, les cafés et le journal) : il faut **rejouer** la partie, donc importer
+ * `@/store/partie` aussi dans `Home.tsx`, où il n'entrait pas. Le module était déjà servi au
+ * combat ; c'est le seul ajout, et il n'y a rien à resserrer dans une ligne d'état. Il reste
+ * 267 688 octets.
  */
-export const PLAFOND_PRINCIPAL = 267_532;
+export const PLAFOND_PRINCIPAL = 267_688;
 
 /** Les fichiers du dépôt qui entrent dans le build : une source plus récente périme `dist/`. */
 const SOURCES = ['src', 'public', 'index.html', 'package.json', 'package-lock.json', 'vite.config.ts', 'tsconfig.json'];
@@ -191,7 +198,7 @@ export function verdict(mesures, { seuil = SEUIL_PAQUET, plafond = PLAFOND_PRINC
   if (mesures.principal && mesures.principal.octets > plafond) {
     echecs.push(
       `le paquet principal ${mesures.principal.nom} : ${enKb(mesures.principal.octets)} — ` +
-        `au-dessus du cliquet de ${enKb(plafond)} (relevé le 30/10/2026, #525, #527 et D-159) : ` +
+        `au-dessus du cliquet de ${enKb(plafond)} (relevé le 02/11/2026, #553 ; avant, le 30/10/2026, #525, #527 et D-159) : ` +
         'descendre le code, ou relever le cliquet dans un commit qui le dit'
     );
   }
@@ -238,7 +245,8 @@ export function plan() {
   const etat = existsSync(join(DIST, 'index.html')) ? (estPerime() ? 'périmé' : 'à jour') : 'absent';
   return [
     'seuil par paquet     : ' + `${enKb(SEUIL_PAQUET)} (l’avertissement de Vite, en échec)`,
-    'cliquet du principal : ' + `${enKb(PLAFOND_PRINCIPAL)} (relevé le 30/10/2026, #527 et #525)`,
+    'cliquet du principal : ' +
+      `${enKb(PLAFOND_PRINCIPAL)} (relevé le 02/11/2026, #553 ; avant, le 30/10/2026, #527 et #525)`,
     'référence 29/10/2026 : ' + 'principal 1 032 kB avant, 290,3 kB après #479 ; plus gros paquet 219 kB',
     'dist/                : ' + etat
   ].join('\n');

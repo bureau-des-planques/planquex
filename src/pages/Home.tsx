@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PackageOpen, Swords } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
 import { NOTES_RESUME, type ResumeNote } from '@/data/notes-resume';
 import type { Card } from '@/data/types';
+import { reprendrePartie } from '@/store/partie';
 import { useStore } from '@/store/useStore';
 import { useEstCibleJournee } from '@/components/journee-cible';
 import { APP_LABEL, APP_VERSION } from '@/version';
@@ -34,7 +35,16 @@ function derniereRelease(notes: readonly ResumeNote[]): ResumeNote | undefined {
 }
 
 export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] } = {}) {
-  const { owned, deck, openPack, packsOpened } = useStore();
+  const { owned, deck, openPack, packsOpened, partie } = useStore();
+  /**
+   * **La partie qui attend** (#553, reste de #427). La sortie du combat range la partie
+   * (`@/store/partie`, #126) ; l'écran de combat le dit au retour, l'accueil ne le disait
+   * pas — on rouvrait `/battle` pour l'apprendre. Le tour n'est pas rangé tel quel : il se
+   * **rejoue** (`reprendrePartie`, la même lecture que l'écran de combat), et `null` veut
+   * dire « rien n'attend » — aucune partie, ou une partie qui ne rejoue pas. Une ligne
+   * d'état qui ne s'afficherait pas vaut mieux qu'une ligne qui promet une reprise perdue.
+   */
+  const partieEnCours = useMemo(() => reprendrePartie(partie), [partie]);
   /** Le halo n'apparaît que si c'est **cette** étape que la Journée tient. */
   const cibleArrivage = useEstCibleJournee('arrivage');
   const derniere = derniereRelease(notes);
@@ -102,6 +112,14 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
             <Swords size={20} /> Affronter la Direction
           </Link>
         </div>
+        {/* **La partie qui attend** (#553) : la même action mène au combat, mais elle
+            reprend une partie au lieu d'en commencer une — et le dire ici évite de le
+            découvrir sur l'écran de combat. La copie est une écriture d'écran, à valider
+            par Bastien ; elle n'a **pas** de date : `PartieSauvegardee` n'en range aucune
+            (`@/store/partie`), et l'ajouter demanderait une forme persistée de plus. */}
+        {partieEnCours && (
+          <p className="muted hero__attente">Une partie t’attend au tour {partieEnCours.state.turn}.</p>
+        )}
         {/* Le compteur (#273) : ce qu'un testeur a ouvert depuis le début. L'alpha ne limite
             rien (D-127, Arrivages illimités et gratuits) : aucun quota, aucun prix, aucun
             bouton grisé ici — la cadence est une décision de beta. */}
