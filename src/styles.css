@@ -6107,9 +6107,12 @@ h2 {
   opacity: 0.35;
   position: absolute;
   top: 44%;
-  transition:
-    opacity 600ms ease,
-    filter 600ms ease;
+  /* **Pas de transition sur `filter`** (#605) : `data-eclat` pose un `brightness/saturate` sur
+     cette couche de 220vmax, masquée par un dégradé radial. Animer ce filtre sur 600 ms
+     re-rastérisait la couche à chaque image — mesuré à 390 × 664 et ×6 : une célébration de
+     carte secrète passait de 33 ms à 50–100 ms par image. Le filtre s'applique d'un coup, la
+     couche est ensuite mise en cache et seule sa rotation s'anime. */
+  transition: opacity 600ms ease;
   translate: -50% -50%;
   width: 220vmax;
 }

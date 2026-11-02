@@ -80,6 +80,21 @@ describe('la feuille de l’ouverture d’un Arrivage (D-169)', () => {
     expect(bloc('.ouverture__bilan')).toMatch(/text-align:\s*center;/);
   });
 
+  it('la couche des rayons ne transitionne pas son filtre (#605)', () => {
+    // Le défaut mesuré : `data-eclat` pose un `brightness/saturate` sur une couche de 220vmax
+    // masquée, et la transition de 600 ms la re-rastérisait à chaque image. Une célébration de
+    // carte secrète passait de 33 ms à 50–100 ms par image (390 × 664, CPU ×6).
+    const debut = DECLARATIONS.indexOf('.ouverture__rayons {');
+    expect(debut).toBeGreaterThanOrEqual(0);
+    const rayons = DECLARATIONS.slice(debut, DECLARATIONS.indexOf('}', debut) + 1);
+    expect(rayons).toMatch(/transition:\s*opacity 600ms ease;/);
+    expect(rayons).not.toMatch(/transition:[^;]*filter/);
+    // Le contrôle mord : le filtre lui-même reste — c'est sa transition qui coûtait, pas lui.
+    expect(DECLARATIONS).toMatch(
+      /\.ouverture\[data-eclat='secrete'\] \.ouverture__rayons \{\s*filter: brightness\(1\.6\) saturate\(1\.3\);/
+    );
+  });
+
   it('`--p`/`--sens` se posent sur leurs trois consommateurs, pas sur le sachet (#566)', () => {
     // Le défaut mesuré : les deux variables vivaient sur `.ouverture__sachet`, donc s'héritaient
     // dans tout son sous-arbre (les deux SVG de la Pochette) à chaque `pointermove`.

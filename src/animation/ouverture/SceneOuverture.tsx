@@ -24,7 +24,7 @@
  *  - **aucune information ne vit dans l'animation** : les cinq cartes et leurs badges « Nouvelle »
  *    sont dans le DOM dès le premier rendu, retournées ou non.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '@/data/types';
 import { RARITY_META } from '@/data';
 import { CardView } from '@/components/CardView';
@@ -75,6 +75,16 @@ const ENVOL = {
   revelation: 2900
 } as const;
 
+/**
+ * **La fiche attend que la carte ait fini de se retourner** (#605). Le retournement dure plus
+ * longtemps qu'il n'y paraît : le dos part en 430 ms, la face arrive à 950 ms (430 ms d'attente
+ * + 520 ms de rotation), et la carte elle-même se redresse en 800 ms. À 560 ms, la fiche
+ * s'insérait **au milieu de la rotation** : sur un téléphone, sa mise en page tombait dans la
+ * même image que la fin du geste — mesuré à 390 × 664 et ×6, une image de 50 ms perdue, sur un
+ * CPU bridé. Une seconde plus tard, la carte est posée, et la fiche apparaît entre deux images.
+ */
+const APRES_RETOURNEMENT = 1000;
+
 /** Une carte en cours de révélation : montée au centre (`levee`), puis retournée et fêtée (`tenue`). */
 interface EnCours {
   index: number;
@@ -119,6 +129,17 @@ function vibrer(motif: number | number[]): void {
 function transformDe(p: Pose): string {
   return `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) rotate(${p.rotation.toFixed(2)}deg) scale(${p.echelle.toFixed(3)})`;
 }
+
+/**
+ * **La carte rendue une seule fois** (#605). `CardView` est le morceau lourd de chaque carte
+ * (illustration, gabarit, textes) et son argument ne change pas : la carte est la même du
+ * premier au dernier rendu. Sans ce `memo`, chaque retournement, chaque envol d'éclat et
+ * l'ouverture d'une fiche re-rendaient les cinq cartes — mesuré à 56 ms de script sur un CPU
+ * bridé ×6 pour une carte qu'on retourne.
+ */
+const VueCarte = memo(function VueCarte({ carte }: { carte: Card }) {
+  return <CardView card={carte} calme />;
+});
 
 const COULEURS_ETINCELLES = ['#fff6d8', '#f4d68a', '#e6b64c', '#ffffff'];
 
@@ -290,14 +311,16 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   );
 
   const flash = useCallback((couleur: string, force: number) => {
-    eclair.current?.animate?.(
-      [
-        { opacity: 0, background: `radial-gradient(circle at 50% 45%, #fff 0%, ${couleur} 35%, transparent 75%)` },
-        { opacity: force, offset: 0.18 },
-        { opacity: 0 }
-      ],
-      { duration: 700, easing: 'ease-out' }
-    );
+    const el = eclair.current;
+    if (!el?.animate) return;
+    // **Le dégradé est posé une fois, seule l'opacité s'anime** (#605) : animer `background`
+    // entre deux `radial-gradient` repeignait tout l'écran à chaque image, sous
+    // `mix-blend-mode: screen`. Une opacité se compose, un dégradé non.
+    el.style.background = `radial-gradient(circle at 50% 45%, #fff 0%, ${couleur} 35%, transparent 75%)`;
+    el.animate([{ opacity: 0 }, { opacity: force, offset: 0.18 }, { opacity: 0 }], {
+      duration: 700,
+      easing: 'ease-out'
+    });
   }, []);
 
   const secouer = useCallback((amplitude: number) => {
@@ -522,7 +545,8 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         // texte 6 à 8 px, donc la fiche s'ouvre d'elle-même après le retournement. Sinon la
         // récompense resterait une vignette illisible (critique du 01/11/2026). `f ?? index`
         // : si une autre carte a déjà ouvert sa fiche, on ne la remplace pas.
-        if (cartePetite) plus(560, () => setFiche((f) => f ?? index));
+        // **Après** la rotation, pas pendant : `APRES_RETOURNEMENT` (#605).
+        if (cartePetite) plus(APRES_RETOURNEMENT, () => setFiche((f) => f ?? index));
         return;
       }
       const moi = (jeton.current += 1);
@@ -962,8 +986,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                     {/* **`calme` : la carte n'est pas un bouton dans un bouton** (D-170). Sans lui,
                         `CardView` rend un `<button>` à l'intérieur du `<li role="button">` — deux arrêts
                         de tabulation par carte, dont un nom accessible de 177 caractères. Il impose
-                        aussi la vignette, qui est le bon gabarit pour une carte de 220 px au plus. */}
-                    <CardView card={carte} calme />
+                        aussi la vignette, qui est le bon gabarit pour une carte de 220 px au plus.
+                        `VueCarte` porte le `memo` (#605) : la scène se re-rend, la carte non. */}
+                    <VueCarte carte={carte} />
                     {auMoins(niveau, 'rare') && <span className="ouverture__holo" aria-hidden="true" />}
                     <span className="ouverture__reflet-fiche" aria-hidden="true" />
                   </div>
