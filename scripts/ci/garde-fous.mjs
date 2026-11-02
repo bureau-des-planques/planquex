@@ -39,12 +39,15 @@
  *   `scripts/ci/garde-fous.test.ts` appelle, pour que la table ne pourrisse pas en silence.
  *
  * Le dossier de travail n'est jamais laissé dans un état intermédiaire : chaque fichier est
- * restauré dans un `finally`, et l'égalité est **relue** après restauration.
+ * restauré dans un `finally`, et l'égalité est **relue** après restauration. Un `finally`
+ * ne s'exécute pas sur un signal : `source-protegee.mjs` écrit donc un **journal** avant
+ * chaque mutation, et le relit au démarrage suivant (#622).
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cheminJournal, installerSignaux, proteger, reparerAuDemarrage, terminer } from './source-protegee.mjs';
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const vitest = join(racine, 'node_modules', '.bin', process.platform === 'win32' ? 'vitest.cmd' : 'vitest');
@@ -517,10 +520,19 @@ if (VERIFIE) {
 
 console.log(`Garde-fous — ${MUTATIONS.length} mutations critiques, chacune DOIT faire échouer la suite.\n`);
 
+// Un `finally` ne s'exécute pas quand le processus meurt sur un signal : le journal écrit
+// **avant** chaque mutation est ce qui répare une exécution interrompue (#622).
+const journal = cheminJournal(racine);
+const repare = reparerAuDemarrage(journal);
+if (repare) {
+  console.error(`\n✖ Exécution précédente interrompue : ${relative(racine, repare)} restauré depuis le journal.\n`);
+}
+installerSignaux();
+
 const resultats = [];
 for (const mutation of MUTATIONS) {
   const chemin = join(racine, mutation.fichier);
-  const original = readFileSync(chemin, 'utf8');
+  const original = proteger(chemin, journal);
   let echoue = false;
   let sortie = '';
   try {
@@ -536,6 +548,7 @@ for (const mutation of MUTATIONS) {
     }
   } finally {
     writeFileSync(chemin, original);
+    terminer();
   }
   // La restauration est **relue** : une entrée qui laissrait un fichier muté serait pire
   // que le défaut qu'elle surveille.
