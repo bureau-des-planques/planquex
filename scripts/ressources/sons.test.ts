@@ -45,12 +45,14 @@ describe('les deux sons du jeu (#378)', () => {
 });
 
 /**
- * **Le verdict a un timbre** (#606). Bastien, le 02/11/2026 : « trop courts et trop basiques ».
- * Le son dure désormais 1,6 s au lieu de 0,78 s, avec un transitoire, un corps grave, deux notes à
- * partiels inharmoniques et une queue réverbérée. Ce que ces tests gardent :
+ * **Le verdict a un timbre** (#606). Bastien, le 02/11/2026 : « trop courts et trop basiques »,
+ * puis, sur la première reprise : « ça fait toujours un peu une cloche d'ascenseur ». Le son ne joue
+ * plus d'intervalle : c'est un **objet** — un tampon qui s'abat sur un dossier, puis le tiroir du
+ * classeur qui se ferme (la recherche qui justifie ce choix est dans `sons.mjs`, au-dessus du
+ * générateur). Ce que ces tests gardent :
  *
  *  - **la durée** — un retour à un son d'une demi-seconde redeviendrait « trop court » ;
- *  - **la queue** — il reste du signal tard, donc le son s'éteint au lieu d'être coupé ;
+ *  - **les deux gestes** — du signal à 60 % de la durée (le tiroir), puis une extinction ;
  *  - **la reproductibilité et le fichier** — le `.wav` du dépôt est **exactement** ce que le
  *    générateur produit : un fichier retouché à la main, ou un générateur modifié sans régénérer,
  *    échoue.
@@ -82,13 +84,13 @@ describe('le verdict a un timbre (#606)', () => {
     expect(duree, `verdict dure ${duree.toFixed(2)} s`).toBeLessThanOrEqual(1.8);
   });
 
-  it('s’éteint dans une queue au lieu d’être coupé', () => {
-    // À 60 % de la durée, il reste du signal : le tampon et les notes résonnent encore.
+  it('porte ses deux gestes : du signal à 60 %, puis une extinction', () => {
+    // À 60 % de la durée, le tiroir se ferme : il reste du signal, bien au-dessus du bruit nul.
     const tard = rms(valeurs, duree * 0.6, duree * 0.7, frequence);
     expect(20 * Math.log10(tard), 'plus rien à 60 % de la durée').toBeGreaterThan(-40);
-    // Et la fin est plus faible que le corps : c'est une décroissance, pas une tenue.
-    const corps = rms(valeurs, 0.4, 0.6, frequence);
-    expect(tard).toBeLessThan(corps);
+    // Et la fin s'éteint : les 200 dernières millisecondes sont plus faibles que ce geste.
+    const fin = rms(valeurs, duree - 0.2, duree, frequence);
+    expect(fin).toBeLessThan(tard);
   });
 
   it('est reproductible : deux générations donnent les mêmes octets', () => {

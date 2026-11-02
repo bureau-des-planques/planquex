@@ -197,63 +197,129 @@ function arrivage() {
 }
 
 /**
- * **Verdict** : la fin d'un combat (#606, repris le 02/11/2026). Le tampon qui s'abat, deux notes
- * descendantes — le bureau qui classe le dossier — puis la salle qui les éteint.
+ * **Verdict** : le geste qui classe un dossier — le tampon s'abat, puis le tiroir du classeur se
+ * ferme. Deuxième passe du 02/11/2026 (#606), après l'écoute de la première : « ça fait toujours un
+ * peu une cloche d'ascenseur ».
  *
- * Trois couches explicites, là où la version précédente n'avait qu'un grain et deux sinus :
+ * ### Pourquoi un objet, et pas un carillon — la recherche en cinq lignes
  *
- *  1. **le transitoire** — un claquement large bande, très court : le tampon touche le papier ;
- *  2. **le corps** — une masse grave à 96 Hz qui retombe, avec sa deuxième harmonique ;
- *  3. **les notes** — la quinte puis la tonique, avec les **partiels inharmoniques** d'une barre
- *     frappée (3,93 f, 10 f) : c'est ce qui fait un vibraphone plutôt qu'une sinusoïde ;
- *  4. **la queue** — une réverbération sur impulsion synthétisée, qui laisse le son s'éteindre au
- *     lieu de le couper. Durée totale 1,6 s, contre 0,78 s avant.
+ * Deux hauteurs **définies** et un intervalle (la quinte puis la tonique) s'écoutent comme une
+ * **mélodie** ; un timbre frappé qui joue une mélodie, c'est un carillon. Ce que dit la recherche :
+ *
+ *  - un impact est une somme de modes qui s'éteignent, mais c'est un spectre **non harmonique et
+ *    clairsemé** qui fait reconnaître un objet, et ses modes hauts meurent vite (van den Doel & Pai,
+ *    *The Sounds of Physical Shapes*, Presence 7(4) 1998, https://doi.org/10.1162/105474698565794) ;
+ *  - on entend une **source et un événement**, pas des hauteurs — « écoute quotidienne » contre
+ *    « écoute musicale » (Rocchesso & Fontana, *The Sounding Object*, 2003, http://www.soundobject.org) ;
+ *  - le **papier froissé** est un squelette de micro-flambages très courts, enrichi d'événements
+ *    aléatoires en loi de puissance : des clics, jamais une texture tonale (Zheng & James, *Crumpling
+ *    sound synthesis*, ACM TOG 2016, https://doi.org/10.1145/2980179.2982400) ;
+ *  - le **frottement** est fait de myriades de micro-contacts ; en grains de 2 à 20 ms recouverts, il
+ *    tend vers du bruit coloré (DAFx-15, *Morphing of granular sounds*,
+ *    https://www.dafx.de/paper-archive/2015/DAFx-15_submission_7.pdf) ;
+ *  - donc un son d'objet se fabrique en **filtrant du bruit dans le temps**, pas en empilant des
+ *    oscillateurs (NoiseBandNet, https://arxiv.org/abs/2307.08007 ; Farnell, *Designing Sound*, 2010).
+ *
+ * ### Ce que fait ce générateur
+ *
+ * 1. **le tampon** — un impact mat : bruit large bande de 50 ms et une masse très grave qui retombe
+ *    de 78 à 46 Hz en 35 ms. Aucune hauteur tenue : un « toc », pas une note ;
+ * 2. **le froissement du papier** — des grains de 4 à 18 ms, bande haute, qui se recouvrent et
+ *    s'essoufflent, sans composante tonale ;
+ * 3. **le tiroir** — un glissement de 330 ms (bruit frotté, trois bandes, modulation irrégulière) ;
+ * 4. **la butée** — un claquement sec, un « clonk » grave, et deux résonances **inharmoniques**
+ *    (1 180 et 2 790 Hz) qui meurent en 25 ms : du métal, pas un accord ;
+ * 5. **l'ambiance** — une réverbération courte (0,35 s) et discrète : un objet dans une pièce, pas
+ *    une salle de concert.
  */
 function verdict() {
-  const duree = 1.6;
+  const duree = 1.45;
   const n = Math.round(duree * FREQUENCE);
   const sec = new Float32Array(n);
   const alea = graine(379);
 
-  // 1. le transitoire : 70 ms de bruit filtré haut, très court — l'impact, pas le corps
-  const nTransitoire = Math.round(0.07 * FREQUENCE);
-  const bruit = new Float32Array(nTransitoire);
-  for (let i = 0; i < nTransitoire; i += 1) bruit[i] = alea() * 2 - 1;
-  const claquement = passeBande(bruit, 2300, 0.65);
-  const envTransitoire = declin(nTransitoire, { attaque: 0.0008, tau: 0.012 });
-  for (let i = 0; i < nTransitoire; i += 1) sec[i] += claquement[i] * envTransitoire[i] * 1.2;
+  /** Un grain de bruit filtré, posé à `debut` : la brique du froissement et du frottement. */
+  const poser = (debut, longueur, frequence, largeur, gain, tau) => {
+    const bruit = new Float32Array(longueur);
+    for (let i = 0; i < longueur; i += 1) bruit[i] = alea() * 2 - 1;
+    const filtre = passeBande(bruit, frequence, largeur);
+    const env = declin(longueur, { attaque: 0.0004, tau });
+    for (let i = 0; i < longueur && debut + i < n; i += 1) sec[debut + i] += filtre[i] * env[i] * gain;
+  };
 
-  // 2. le corps : une masse grave qui retombe de 96 à 70 Hz, avec sa deuxième harmonique
-  const nCorps = Math.round(0.7 * FREQUENCE);
-  const fondamental = glissando(nCorps, { de: 96, a: 70, tau: 0.09 });
-  const harmonique = glissando(nCorps, { de: 192, a: 140, tau: 0.09 });
-  const envCorps = declin(nCorps, { attaque: 0.003, tau: 0.17 });
-  for (let i = 0; i < nCorps; i += 1) {
-    sec[i] += (fondamental[i] * 0.75 + harmonique[i] * 0.22) * envCorps[i] * 0.6;
+  // 1. le tampon : impact mat (bruit large) + la masse qui retombe dessous
+  poser(0, Math.round(0.05 * FREQUENCE), 900, 1.8, 1.7, 0.008);
+  const nMasse = Math.round(0.12 * FREQUENCE);
+  const masse = glissando(nMasse, { de: 78, a: 46, tau: 0.018 });
+  const envMasse = declin(nMasse, { attaque: 0.0015, tau: 0.03 });
+  for (let i = 0; i < nMasse; i += 1) sec[i] += masse[i] * envMasse[i] * 0.75;
+
+  // 2. le froissement : des grains serrés qui se recouvrent et s'essoufflent
+  let curseur = 0.035;
+  while (curseur < 0.33) {
+    const grain = 0.004 + alea() * 0.014;
+    const essoufflement = 1 - (curseur - 0.035) / 0.3;
+    poser(
+      Math.round(curseur * FREQUENCE),
+      Math.round(grain * FREQUENCE),
+      2400 + alea() * 4600,
+      0.6 + alea() * 0.9,
+      (0.25 + alea() * 0.9) * essoufflement * 1.5,
+      grain * 0.3
+    );
+    curseur += 0.005 + alea() * 0.011;
   }
 
-  // 3. les deux notes : la quinte descend, puis la tonique — plus longues, plus riches
-  const notes = [
-    { debut: 0.16, duree: 0.62, f: 392, gain: 0.3 },
-    { debut: 0.4, duree: 0.9, f: 293.66, gain: 0.34 }
-  ];
-  for (const note of notes) {
-    const debut = Math.round(note.debut * FREQUENCE);
-    const m = Math.min(Math.round(note.duree * FREQUENCE), n - debut);
-    const envNote = declin(m, { attaque: 0.006, tau: 0.22 });
-    for (let i = 0; i < m; i += 1) {
-      const t = i / FREQUENCE;
-      // les partiels d'une barre frappée : fondamental, 3,93 f et 10 f — inharmoniques à dessein
-      const onde =
-        Math.sin(2 * Math.PI * note.f * t) +
-        0.22 * Math.sin(2 * Math.PI * note.f * 3.93 * t) +
-        0.07 * Math.sin(2 * Math.PI * note.f * 10.0 * t);
-      sec[debut + i] += onde * envNote[i] * note.gain;
+  // 3. le tiroir : le glissement, trois bandes de frottement qui se resserrent en montant
+  const debutGlisse = Math.round(0.55 * FREQUENCE);
+  const nGlisse = Math.min(Math.round(0.33 * FREQUENCE), n - debutGlisse);
+  const bruitGlisse = new Float32Array(nGlisse);
+  for (let i = 0; i < nGlisse; i += 1) bruitGlisse[i] = alea() * 2 - 1;
+  // les bandes sont filtrées **entières** : un filtre à mémoire ne se rappelle pas d'un échantillon
+  const frottement = new Float32Array(nGlisse);
+  for (const { f, largeur, gain } of [
+    { f: 620, largeur: 1.0, gain: 1.0 },
+    { f: 1650, largeur: 0.6, gain: 0.55 },
+    { f: 3400, largeur: 0.45, gain: 0.25 }
+  ]) {
+    const bande = passeBande(bruitGlisse, f, largeur);
+    for (let i = 0; i < nGlisse; i += 1) frottement[i] += bande[i] * gain;
+  }
+  let modulation = 0.8;
+  let prochaine = 0;
+  for (let i = 0; i < nGlisse; i += 1) {
+    const t = i / FREQUENCE;
+    // la poussée : le tiroir prend de la vitesse, puis s'arrête sur la butée
+    const poussee = Math.min(1, t / 0.28) * (1 - Math.max(0, (t - 0.3) / 0.03));
+    // un frottement irrégulier : la force de contact change tous les 6 à 12 ms (du stick-slip)
+    if (i >= prochaine) {
+      modulation = 0.55 + alea() * 0.45;
+      prochaine = i + Math.round((0.006 + alea() * 0.006) * FREQUENCE);
+    }
+    sec[debutGlisse + i] += frottement[i] * poussee * modulation * 0.32;
+  }
+
+  // 4. la butée : le tiroir tombe en fin de course
+  const debutButee = Math.round(0.88 * FREQUENCE);
+  poser(debutButee, Math.round(0.03 * FREQUENCE), 1500, 1.6, 2.2, 0.005);
+  const nClonk = Math.round(0.16 * FREQUENCE);
+  const clonk = glissando(nClonk, { de: 132, a: 68, tau: 0.012 });
+  const envClonk = declin(nClonk, { attaque: 0.001, tau: 0.045 });
+  for (let i = 0; i < nClonk && debutButee + i < n; i += 1) sec[debutButee + i] += clonk[i] * envClonk[i] * 0.8;
+  // deux résonances inharmoniques très courtes : le métal du classeur, pas une note
+  for (const [f, gain] of [
+    [1180, 0.1],
+    [2790, 0.06]
+  ]) {
+    const m = Math.round(0.05 * FREQUENCE);
+    const env = declin(m, { attaque: 0.0005, tau: 0.012 });
+    for (let i = 0; i < m && debutButee + i < n; i += 1) {
+      sec[debutButee + i] += Math.sin(Math.PI * 2 * f * (i / FREQUENCE)) * env[i] * gain;
     }
   }
 
-  // 4. la queue : la salle éteint le tout, sur une impulsion fabriquée ici
-  return reverberer(sec, { melange: 0.4, duree: 0.9, preDelai: 0.016, tau: 0.3 });
+  // 5. l'ambiance : courte et discrète, pour que les deux gestes soient dans la même pièce
+  return reverberer(sec, { melange: 0.16, duree: 0.35, preDelai: 0.008, tau: 0.09 });
 }
 
 /**
