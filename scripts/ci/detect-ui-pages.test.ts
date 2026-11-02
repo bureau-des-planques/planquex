@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
+import { estCalme, sansMouvement, signatureEcran } from './detect-ui-pages.mjs';
 
 /**
  * Le **contrôle visuel en CI** (#205) : `impeccable detect` sur de vraies pages.
@@ -268,5 +269,35 @@ describe('le contrôle visuel en CI (#205, #208, #234)', () => {
       calques: [{ selecteur: 'div.bandeau', rect: { x: 0, y: 0, largeur: 1280, hauteur: 120 }, z: 10 }]
     });
     expect(bandeau.muet).toBe(false);
+  });
+
+  /**
+   * **Le scan ne dépend plus du moment où il tombe** (#551). Le détecteur ouvrait sa propre page
+   * et lisait l'instant de son arrivée : à 390 × 844, `/battle` a été refusé 5 fois sur 8 pour un
+   * `nested-cards` sur la ligne de journal, alors que la même page, une fois son animation
+   * d'entrée finie (opacité 0,88 → 1 en ~300 ms), n'en portait plus. `estCalme` dit maintenant
+   * quand la page a fini de bouger — et son cas fautif est la mesure réelle de cette animation.
+   */
+  it('attend que l’écran soit calme : une ligne de journal en fondu n’est pas un état stable (#551)', () => {
+    const calme = {
+      html: 5120,
+      hauteur: 900,
+      journaux: [{ opacite: 1, y: 751, hauteur: 34 }]
+    };
+    // Deux mesures identiques et rien en fondu : la page est prête.
+    expect(estCalme(calme, calme)).toBe(true);
+    // Le cas fautif **mesuré** le 31/10/2026 : le journal entre en fondu, hauteur 19 → 34 px.
+    const enFondu = { ...calme, journaux: [{ opacite: 0.885, y: 751, hauteur: 34 }] };
+    expect(estCalme(enFondu, enFondu)).toBe(false);
+    expect(sansMouvement(enFondu)).toBe(false);
+    // Le même état mais qui vient de changer (une ligne entrée, un texte arrivé) n'est pas calme.
+    const avant = { ...calme, journaux: [{ opacite: 1, y: 751, hauteur: 19 }] };
+    expect(estCalme(avant, calme)).toBe(false);
+    expect(estCalme(calme, { ...calme, html: 5200 })).toBe(false);
+    // Une seule mesure ne suffit jamais : c'est le défaut d'origine.
+    expect(estCalme(null, calme)).toBe(false);
+    // Et une page sans journal (les onze autres écrans) se calme sur sa seule stabilité.
+    expect(estCalme({ html: 10, hauteur: 10, journaux: [] }, { html: 10, hauteur: 10, journaux: [] })).toBe(true);
+    expect(signatureEcran(calme)).toEqual({ html: 5120, hauteur: 900, journaux: calme.journaux });
   });
 });
