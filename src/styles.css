@@ -3600,8 +3600,20 @@ h2 {
 }
 
 /* La ligne de journal de la barre d'action (#199) : une phrase entière, lisible, qui passe à la ligne
-   plutôt que de se tronquer. */
+   plutôt que de se tronquer.
+   **Une ligne de journal n'est pas une carte** (#551, mesuré le 31/10/2026). Elle portait tout
+   `.banner` — fond en dégradé, filet d'accent sur quatre côtés, rayon — posé dans la barre, qui
+   est elle-même une carte : à 390 × 844, le détecteur d'écrans y lisait un `nested-cards` (une
+   carte dans une carte) qui tombait selon le moment du scan, pendant l'animation d'entrée du
+   journal. Le journal est le **récit**, pas une alerte : il garde le filet d'accent, **à gauche
+   seulement**, sans fond ni rayon — le texte reste sur le fond de la barre (`--text` sur
+   `--bg-sunken`, 15,5:1). Le « craque » garde son signal par la couleur de ce filet, pas en
+   redevenant une carte. */
 .combat-barre .combat-barre__journal {
+  background: none;
+  border: 0;
+  border-left: 3px solid var(--accent);
+  border-radius: 0;
   font-size: 0.8rem;
   line-height: 1.2;
   margin: 0;
@@ -3609,6 +3621,11 @@ h2 {
   /* 1,6 → 0,8 px de respiration verticale (#237) : la phrase reste la même, la ligne reste
      entière, et les 0,8 px gagnés servent la marge de D-094 (3). */
   padding: 0.05rem 0.55rem;
+}
+
+/* Le « craque » : le filet de gauche passe à l'ambre, le fond reste celui de la barre. */
+.combat-barre .combat-barre__journal.banner--ko {
+  border-left-color: var(--warn);
 }
 
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite

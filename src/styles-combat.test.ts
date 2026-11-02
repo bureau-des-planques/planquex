@@ -308,3 +308,71 @@ describe('les trois paliers de hauteur du combat (D-173)', () => {
     ]);
   });
 });
+
+/**
+ * **Une ligne de journal n'est pas une carte** (#551, mesuré le 31/10/2026).
+ *
+ * La ligne de journal portait tout `.banner` — fond en dégradé, filet d'accent sur quatre côtés,
+ * rayon — posé dans la barre d'action, qui est elle-même une carte. À 390 × 844, le détecteur
+ * d'écrans y lisait un `nested-cards` 5 fois sur 8, et le refus tombait selon le moment du scan,
+ * pendant l'animation d'entrée du journal. La règle qui reste : un filet d'accent **à gauche**,
+ * sans fond ni rayon ; le « craque » ne change que la couleur de ce filet.
+ *
+ * Le contrôle mord : le cas fautif est l'ancien aspect, celui de `.banner` recopié sur la ligne.
+ */
+describe('la ligne de journal n’est pas une carte (#551)', () => {
+  function reglesDe(css: string): { selecteur: string; corps: string }[] {
+    const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    return [...sans.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].map((m) => ({
+      selecteur: m[1].trim().replace(/\s+/g, ' '),
+      corps: m[2]
+    }));
+  }
+
+  /** Ce qui manque pour que la ligne ne soit plus une carte : la liste est vide quand tout va bien. */
+  function journalResteUneCarte(css: string): string[] {
+    const regle = reglesDe(css).find((r) => r.selecteur === '.combat-barre .combat-barre__journal');
+    if (!regle) return ['règle .combat-barre .combat-barre__journal absente'];
+    const corps = regle.corps;
+    const manques: string[] = [];
+    if (!/background:\s*none/.test(corps)) manques.push('background (le fond en dégradé de `.banner`)');
+    if (!/(?:^|;\s*)border:\s*0(?:\s|;|$)/.test(corps)) manques.push('border (le filet fermé de `.banner`)');
+    if (!/border-radius:\s*0/.test(corps)) manques.push('border-radius (le rayon de `.banner`)');
+    if (/(?:^|;\s*)box-shadow:/.test(corps)) manques.push('box-shadow');
+    // Un filet **à gauche** est le seul admis : deux côtés ou plus referment une carte.
+    const cotes = [...corps.matchAll(/(?:^|;\s*)border-(top|right|bottom|left)\s*:\s*(?!0(?:\s|;|$))/g)].map(
+      (m) => m[1]
+    );
+    if (cotes.length > 1) manques.push(`filets ${cotes.join(' + ')}`);
+    return manques;
+  }
+
+  const journalKo = (css: string) =>
+    reglesDe(css).find((r) => r.selecteur === '.combat-barre .combat-barre__journal.banner--ko');
+
+  it('la ligne garde un filet d’accent à gauche, sans fond ni rayon', () => {
+    expect(journalResteUneCarte(CSS)).toEqual([]);
+    const journal = reglesDe(CSS).find((r) => r.selecteur === '.combat-barre .combat-barre__journal');
+    expect(journal?.corps).toMatch(/border-left:\s*3px solid var\(--accent\)/);
+  });
+
+  it('le « craque » change la couleur du filet, il ne refait pas une carte', () => {
+    expect(journalKo(CSS)?.corps).toMatch(/border-left-color:\s*var\(--warn\)/);
+    expect(journalKo(CSS)?.corps).not.toMatch(/background|border-radius|box-shadow/);
+  });
+
+  it('le contrôle mord : l’ancien aspect (le `.banner` recopié) est refusé', () => {
+    const ancien = `.combat-barre .combat-barre__journal { background: linear-gradient(90deg, rgb(79 142 247 / 18%), rgb(19 28 46 / 60%)); border: 1px solid var(--accent); border-radius: var(--radius-sm); box-shadow: 0 1px 0 var(--accent); font-size: 0.8rem; }`;
+    expect(journalResteUneCarte(ancien)).toEqual([
+      'background (le fond en dégradé de `.banner`)',
+      'border (le filet fermé de `.banner`)',
+      'border-radius (le rayon de `.banner`)',
+      'box-shadow'
+    ]);
+  });
+
+  it('le texte du journal reste lisible sur le fond de la barre (WCAG 1.4.3)', () => {
+    // Sans fond propre, la ligne se lit sur `--bg-sunken`, le fond que `--text` doit tenir.
+    expect(ratio(jeton('--text'), jeton('--bg-sunken'))).toBeGreaterThanOrEqual(4.5);
+  });
+});
