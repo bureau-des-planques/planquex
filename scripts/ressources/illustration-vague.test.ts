@@ -1487,11 +1487,11 @@ describe('Wizard d’illustration — réessais, mode direct, prompt (#156)', ()
       'clearly visible features, no shadow over the eyes; only a subtle gold (#e6b64c) rim light on the shoulders ' +
       'and hair. Matte surfaces, subtle film grain, subject centered and isolated on a darker background, ' +
       'occupying ~70% of the frame, waist-up, square 1:1. Sheets of paper blank or turned away, no legible ' +
-      'writing, no signage. No text, no logo, no watermark, no brand, no real person. ' +
+      'writing, no signage. ' +
       'a white woman in her sixties, ' +
       'a forklift driver, in a clean-room suit, holding a pallet list, pushing a pallet trolley through an airlock door, ' +
       'cheerful, muted rust bronze accent.';
-    expect([...attendu]).toHaveLength(872);
+    expect([...attendu]).toHaveLength(814);
     const r = wizard(['--prompt', 'atelier-cariste-salle-blanche']);
     expect(r.status, r.stderr).toBe(0);
     expect(r.stdout.replace(/\n$/, '')).toBe(attendu);

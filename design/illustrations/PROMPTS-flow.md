@@ -24,8 +24,20 @@ illuminates the FACE — well-exposed skin, clearly visible features, no shadow 
 only a subtle gold (#e6b64c) rim light on the shoulders and hair. Matte surfaces, subtle
 film grain, subject centered and isolated on a darker background, occupying ~70% of the
 frame, waist-up, square 1:1. Sheets of paper blank or turned away, no legible writing, no
-signage. No text, no logo, no watermark, no brand, no real person.
+signage.
 ```
+
+> **⚠️ La mention « no real person » est retirée du socle Portrait** (02/11/2026, #594). Mesuré :
+> avec un casting **féminin**, la phrase complète fait **refuser la génération** par Flow
+> (`PUBLIC_ERROR_UNSAFE_GENERATION`, exit 5) — **3 refus sur 3** avec « a mixed-race woman in her
+> fifties », **3 acceptations sur 3** avec « man » au même endroit du même prompt. La bissection
+> phrase par phrase désigne la seule dernière : retirée, **3 passes sur 3**. « no text, no logo,
+> no watermark, no brand » **reste dans le socle Objet**, où il ne déclenche rien (aucun sujet
+> humain).
+>
+> **D-065 (3) reste tenu** par la phrase précédente : « Sheets of paper blank or turned away, no
+> legible writing, no signage. » On perd la mention explicite du logo et de la marque ; c'est le
+> prix d'un catalogue où les femmes existent.
 
 Le portrait se compose avec le **casting** de la carte (`CASTING-flow.md`, D-174) : le prompt
 devient `<socle> <casting>, <sujet>, muted <accent> accent.` Un seul socle ne suffit plus —
