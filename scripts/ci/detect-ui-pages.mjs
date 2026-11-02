@@ -32,10 +32,20 @@
  * comme une page propre. D'où la **sonde d'écran** : notre propre Chromium ouvre chaque page
  * avant le scan et exige qu'elle montre du texte, et qu'aucun calque plein écran ne la couvre.
  * Un écran muet est un **échec**, jamais un zéro.
+ *
+ * **Le scan ne tombe plus au hasard (#551)** : le détecteur ouvrait sa **propre** page et lisait
+ * l'instant où il arrivait. `/battle` change après son chargement — la ligne de journal entre en
+ * fondu et se translate ~1 s après `networkidle` (mesuré le 31/10/2026 : opacité 0,88 → 1 sur
+ * ~300 ms, hauteur 19 → 34 px) —, et un `nested-cards` tombait 5 fois sur 8 à 390 × 844, jamais
+ * deux fois de suite au même moment. Le scan porte désormais sur **la page que la sonde a
+ * ouverte** (`--cdp`) : on attend qu'elle soit **calme** (deux mesures identiques, aucune ligne
+ * de journal en cours de fondu), puis le détecteur lit cet état-là. Ce n'est pas la règle qui est
+ * masquée : c'est l'instant de la mesure qui est fixé.
  */
 
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -210,9 +220,65 @@ export function verdictSonde({ texte = 0, calques = [], viewport } = {}) {
 }
 
 /**
- * Ouvre l'écran dans un Chromium neuf et rend sa mesure : la longueur du texte rendu, et les
- * calques susceptibles de le couvrir. C'est notre propre navigateur, pas celui du détecteur :
- * même URL, même fraîcheur — si le contenu est caché ici, il l'est aussi pour lui.
+ * **La signature d'un écran** (#551) : ce qui doit cesser de bouger avant le scan. Le journal de
+ * `/battle` est le cas mesuré — il entre en fondu ~1 s après `networkidle` (opacité 0,88 → 1,
+ * hauteur 19 → 34 px) —, mais la règle vaut pour tout écran qui se modifie après son chargement.
+ * La signature est volontairement pauvre : elle ne dit pas *ce qui* a bougé, seulement que ça a
+ * bougé — un texte qui arrive, une ligne de journal qui fond, une hauteur qui change.
+ */
+export function signatureEcran(mesures) {
+  return { html: mesures.html, hauteur: mesures.hauteur, journaux: mesures.journaux };
+}
+
+/** Une signature **sans mouvement** : aucune ligne de journal n'est encore en fondu. */
+export function sansMouvement(signature) {
+  return (signature?.journaux ?? []).every((journal) => journal.opacite >= 0.999);
+}
+
+/**
+ * **L'écran est calme** (#551) : deux signatures identiques, et rien en fondu. C'est la condition
+ * que le scan attend ; une seule mesure ne suffit pas — c'est exactement le défaut d'origine, un
+ * scan qui tombe au milieu de l'animation d'entrée du journal.
+ */
+export function estCalme(precedente, courante) {
+  if (!precedente || !courante) return false;
+  if (!sansMouvement(courante)) return false;
+  return JSON.stringify(signatureEcran(precedente)) === JSON.stringify(signatureEcran(courante));
+}
+
+/** La mesure de stabilisation, évaluée **dans la page** : ce qui bouge quand un écran s'anime. */
+function mesurerSignature() {
+  const journaux = [...document.querySelectorAll('.combat-barre__journal')].map((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      opacite: Number(getComputedStyle(element).opacity),
+      y: Math.round(rect.y),
+      hauteur: Math.round(rect.height)
+    };
+  });
+  return { html: document.body.innerHTML.length, hauteur: document.documentElement.scrollHeight, journaux };
+}
+
+/**
+ * **Attend que l'écran soit calme** (#551) : deux signatures identiques à 100 ms d'écart. Borné à
+ * 4 s — un écran qui ne se calme jamais (une animation sans fin) se scanne **tel quel**, avec sa
+ * sonde : le contrôle ne doit pas ajouter un blocage là où il corrige un hasard.
+ */
+async function attendreCalme(page, { essais = 40, intervalle = 100 } = {}) {
+  let precedente = null;
+  for (let essai = 0; essai < essais; essai += 1) {
+    const courante = await page.evaluate(mesurerSignature);
+    if (estCalme(precedente, courante)) return true;
+    precedente = courante;
+    await page.waitForTimeout(intervalle);
+  }
+  return false;
+}
+
+/**
+ * Ouvre l'écran dans un Chromium neuf et rend sa mesure — la longueur du texte rendu, et les
+ * calques susceptibles de le couvrir — **avec sa page** : c'est cette page-là, une fois calme,
+ * que le détecteur scanne (`--cdp`, #551), plus une page qu'il ouvrirait lui-même au hasard.
  */
 async function mesurerEcran(navigateur, url) {
   const page = await navigateur.newPage({ viewport: { width: 1280, height: 800 } });
@@ -221,6 +287,7 @@ async function mesurerEcran(navigateur, url) {
     // La police et les animations d'entrée arrivent après `networkidle` : on laisse un souffle,
     // sinon le panneau de la Journée n'a pas encore sa taille et le texte pas sa hauteur.
     await page.waitForTimeout(400);
+    await attendreCalme(page);
     const mesures = await page.evaluate(() => {
       const racine = document.querySelector('#root') ?? document.body;
       const texte = (racine.innerText ?? '').trim().length;
@@ -245,9 +312,10 @@ async function mesurerEcran(navigateur, url) {
       }
       return { texte, calques, viewport: { largeur: innerWidth, hauteur: innerHeight } };
     });
-    return verdictSonde(mesures);
-  } finally {
+    return { sonde: verdictSonde(mesures), page };
+  } catch (erreur) {
     await page.close();
+    throw erreur;
   }
 }
 
@@ -325,14 +393,20 @@ export function messageEchec(ecran, compte, raison = '', regles = []) {
 }
 
 /**
- * Lance `impeccable detect --json <url>` et rend son code de sortie et ses deux flux.
+ * Lance `impeccable detect` et rend son code de sortie et ses deux flux.
+ *
+ * **Sur une page déjà ouverte (#551)** : `--cdp <port> --target <url>` attache le détecteur au
+ * Chromium de la sonde et lui fait lire **la page que `attendreCalme` a stabilisée**, sans la
+ * recharger ni la redimensionner. Sans port, il retombe sur son comportement d'avant — charger
+ * l'URL lui-même —, ce qui reste le repli si le CDP n'est pas disponible.
  *
  * Asynchrone, et borné à 120 s : un détecteur bloqué ne doit pas bloquer la CI sans fin. Le
  * `--json` sépare proprement la mesure (stdout, un tableau) du diagnostic (stderr).
  */
-function lancerDetecteur(url) {
+function lancerDetecteur(url, portCdp = null) {
+  const cible = portCdp ? ['--cdp', String(portCdp), '--target', url] : [url];
   return new Promise((resoudre) => {
-    const enfant = spawn('npx', ['impeccable', 'detect', '--json', url], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const enfant = spawn('npx', ['impeccable', 'detect', '--json', ...cible], { stdio: ['ignore', 'pipe', 'pipe'] });
     let sortie = '';
     let erreur = '';
     enfant.stdout.on('data', (morceau) => (sortie += morceau));
@@ -346,6 +420,19 @@ function lancerDetecteur(url) {
       clearTimeout(minuteur);
       resoudre({ sortie: '', erreur: String(erreur), code: 1 });
     });
+  });
+}
+
+/** Un port libre, demandé au système : le CDP du navigateur de la sonde (#551). */
+function portLibre() {
+  return new Promise((resoudre, rejeter) => {
+    const serveur = createServer();
+    serveur.once('error', rejeter);
+    serveur.once('listening', () => {
+      const { port } = serveur.address();
+      serveur.close(() => resoudre(port));
+    });
+    serveur.listen(0, '127.0.0.1');
   });
 }
 
@@ -469,7 +556,13 @@ async function principal(args) {
     await serveur.close();
     return 1;
   }
-  const navigateur = await chromium.launch({ executablePath: CHROMIUM, args: ['--no-sandbox'] });
+  // Le CDP du navigateur de la sonde (#551) : c'est lui qui permet au détecteur de lire la page
+  // **calme** que la sonde a ouverte, au lieu d'en charger une au moment où il arrive.
+  const portCdp = await portLibre();
+  const navigateur = await chromium.launch({
+    executablePath: CHROMIUM,
+    args: ['--no-sandbox', `--remote-debugging-port=${portCdp}`]
+  });
 
   try {
     if (!(await attendreServeur(`${ORIGINE}/`))) {
@@ -482,34 +575,39 @@ async function principal(args) {
       const url = `${ORIGINE}${ecran}`;
       // **Avant** le détecteur (#547) : une page que nous ne voyons pas ne sera pas vue par lui,
       // et son `[]` se lirait comme une page propre. Le scan muet se dit ici, pas dans le silence.
-      const sonde = await mesurerEcran(navigateur, url);
-      if (sonde.muet) {
-        const message = `${ecran} : scan muet — ${sonde.raison}`;
+      // La page revient avec la mesure : c'est elle que le scan lit, une fois calme (#551).
+      const { sonde, page } = await mesurerEcran(navigateur, url);
+      try {
+        if (sonde.muet) {
+          const message = `${ecran} : scan muet — ${sonde.raison}`;
+          echecs.push(message);
+          console.error(`✖ ${message}`);
+          continue;
+        }
+        // Asynchrone : le serveur tourne dans ce même processus, et un `spawnSync` le figerait
+        // (le navigateur du détecteur ne recevrait plus rien → « Navigation timeout »).
+        const { sortie, erreur, code } = await lancerDetecteur(url, portCdp);
+        const compte = verdict(sortie, code);
+        const permis = BASELINE[ecran];
+        if (compte === null) {
+          // Un écran **sauté** n'est pas un écran propre (#208) : le scan a échoué, et ça se dit.
+          const message = `${messageEchec(ecran, null, erreur)} — plafond ${permis}`;
+          echecs.push(message);
+          console.error(`✖ ${message}`);
+          continue;
+        }
+        if (compte <= permis) {
+          console.log(`✔ ${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''} (plafond ${permis})`);
+          if (compte < permis)
+            console.log(`  ⚠ ${ecran} est sous son plafond (${permis}) : baisse BASELINE dans ce commit.`);
+          continue;
+        }
+        const message = `${messageEchec(ecran, compte, '', reglesRefusees(sortie))}, au-dessus du plafond de ${permis}`;
         echecs.push(message);
         console.error(`✖ ${message}`);
-        continue;
+      } finally {
+        await page.close();
       }
-      // Asynchrone : le serveur tourne dans ce même processus, et un `spawnSync` le figerait
-      // (le navigateur du détecteur ne recevrait plus rien → « Navigation timeout »).
-      const { sortie, erreur, code } = await lancerDetecteur(url);
-      const compte = verdict(sortie, code);
-      const permis = BASELINE[ecran];
-      if (compte === null) {
-        // Un écran **sauté** n'est pas un écran propre (#208) : le scan a échoué, et ça se dit.
-        const message = `${messageEchec(ecran, null, erreur)} — plafond ${permis}`;
-        echecs.push(message);
-        console.error(`✖ ${message}`);
-        continue;
-      }
-      if (compte <= permis) {
-        console.log(`✔ ${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''} (plafond ${permis})`);
-        if (compte < permis)
-          console.log(`  ⚠ ${ecran} est sous son plafond (${permis}) : baisse BASELINE dans ce commit.`);
-        continue;
-      }
-      const message = `${messageEchec(ecran, compte, '', reglesRefusees(sortie))}, au-dessus du plafond de ${permis}`;
-      echecs.push(message);
-      console.error(`✖ ${message}`);
     }
 
     if (echecs.length > 0) {
