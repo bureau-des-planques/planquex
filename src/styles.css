@@ -286,7 +286,11 @@ h2 {
 .page--nue {
   margin: 0 auto;
   max-width: var(--shell-max);
-  padding: 0 max(1rem, env(safe-area-inset-right)) 2.5rem max(1rem, env(safe-area-inset-left));
+  /* **D-171 (#580)** : ces écrans n'ont pas de `.topbar`, et sous
+     `apple-mobile-web-app-status-bar-style: black-translucent` la page passe **sous** la barre
+     d'état iOS : sans ce rembourrage, le panneau commençait au pixel 0, sous l'heure. */
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) 2.5rem
+    max(1rem, env(safe-area-inset-left));
 }
 
 .topbar {

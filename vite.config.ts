@@ -33,6 +33,13 @@ export default defineConfig({
         theme_color: '#0b1220',
         background_color: '#0b1220',
         display: 'standalone',
+        // **PWA d'abord** (D-173, #580) : Chromium (63) livre `fullscreen` quand l'appareil le
+        // permet, et retombe sur `standalone` sinon ; iOS **ignore** la valeur et parse `standalone`.
+        // `element.requestFullscreen()` n'existe pas sur iPhone : le maximum légal y est le
+        // `apple-mobile-web-app-status-bar-style: black-translucent` posé dans `index.html`.
+        // **On ne piège pas le retour** : Chromium saute les `pushState` sans geste utilisateur, et
+        // le « back button hijacking » est un spam explicite pour Google Search (13/04/2026).
+        display_override: ['fullscreen', 'standalone'],
         // Portrait seulement sur téléphone (D-171) : le paysage mobile sort du périmètre ; le PC
         // garde sa mise en page large dans le navigateur.
         orientation: 'portrait',
