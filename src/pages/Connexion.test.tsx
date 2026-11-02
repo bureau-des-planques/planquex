@@ -237,6 +237,42 @@ describe('un compte déjà connecté ne reste pas sur la page', () => {
     expect(await screen.findByText('le bureau')).toBeInTheDocument();
   });
 
+  it('une session réelle sans ligne de compte lisible n’affiche pas le formulaire et peut entrer', async () => {
+    const etat = actions();
+    poser({
+      ...etat,
+      session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+      compte: null,
+      erreur: 'Lecture de ton compte impossible : RLS.'
+    });
+    rendre();
+
+    // Une session active ne doit jamais retomber dans les champs de connexion.
+    expect(screen.queryByLabelText(/Mot de passe/)).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent(/lecture de ton compte impossible/i);
+    etat.rafraichir.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Revérifier mon compte' }));
+    expect(etat.rafraichir).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Entrer dans le bureau' }));
+    expect(await screen.findByText('le bureau')).toBeInTheDocument();
+  });
+
+  it('une session anonyme sans compte ne montre pas le formulaire comme si elle était dehors', async () => {
+    const etat = actions();
+    poser({
+      ...etat,
+      session: { id: 'appareil-anonyme', courriel: '', anonyme: true },
+      compte: null
+    });
+    rendre();
+
+    // Il faut d’abord quitter cette identité anonyme avant de pouvoir choisir un compte.
+    expect(screen.queryByLabelText(/Mot de passe/)).toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent(/session anonyme/i);
+    fireEvent.click(screen.getByRole('button', { name: /Me déconnecter/ }));
+    await waitFor(() => expect(etat.deconnecter).toHaveBeenCalledTimes(1));
+  });
+
   it('un compte connecté sans profil fait le parcours avant d’aller au bureau', async () => {
     poser(
       {
