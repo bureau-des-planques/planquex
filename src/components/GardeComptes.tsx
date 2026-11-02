@@ -21,17 +21,25 @@
  *
  * Sans configuration, elle laisse tout passer : le jeu garde exactement son comportement
  * d'avant D-088, et `npm run capturer` ne se heurte à aucun écran de connexion.
+ *
+ * Une configuration **cassée** (une seule variable, ou une clé de service) n'est **pas**
+ * l'absence de base : la garde affiche le refus (`RefusConfiguration`) au lieu du jeu (#529).
  */
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { RefusConfiguration } from '@/components/RefusConfiguration';
 import { useComptes } from '@/store/comptes';
 
 export function GardeComptes({ children }: { children: ReactNode }) {
   const configure = useComptes((state) => state.configure);
+  const configurationCassee = useComptes((state) => state.configurationCassee);
   const chargement = useComptes((state) => state.chargement);
   const session = useComptes((state) => state.session);
   const compte = useComptes((state) => state.compte);
   const { pathname, search } = useLocation();
+
+  // Déploiement fautif (#529) : ni le jeu, ni la connexion — la raison, à l'écran.
+  if (configurationCassee) return <RefusConfiguration raison={configurationCassee} />;
 
   if (!configure) return <>{children}</>;
 

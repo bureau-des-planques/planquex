@@ -6,10 +6,12 @@
  * l'appellent pas directement : `@/store/comptes` garde l'état, et les pages lisent le
  * store — c'est ce qui les rend testables sans réseau.
  *
- * **Sans configuration, rien ne change.** `configurerMur()` rend `null` quand les deux
- * `VITE_SUPABASE_*` manquent : `comptesEstConfigure()` rend alors `false`, et le jeu se
- * comporte exactement comme avant D-088 (le mur lit le fichier, aucun bouton d'écriture).
- * Aucun écran ne contacte le réseau dans ce cas.
+ * **Sans configuration, rien ne change.** Les deux `VITE_SUPABASE_*` manquent :
+ * `comptesEstConfigure()` rend alors `false`, et le jeu se comporte exactement comme avant
+ * D-088 (le mur lit le fichier, aucun bouton d'écriture). Une configuration **cassée** (une
+ * seule variable, ou une clé de service) n'est **pas** ce cas : `raisonConfigurationCassee()`
+ * la rend, et la garde affiche le refus au lieu d'ouvrir le jeu (#529). Aucun écran ne
+ * contacte le réseau dans ces deux cas.
  *
  * **Deux choix, écrits ici pour ne pas les redécouvrir :**
  *
@@ -27,8 +29,8 @@
  * la 0005 refusent un compte non approuvé ; l'écran ne fait que ne pas proposer ce que la
  * base refuserait.
  */
-import type { RequeteMur } from '@/lib/supabase';
-import { clientMur, configurerMur } from '@/lib/supabase';
+import type { DiagnosticMur, RequeteMur } from '@/lib/supabase';
+import { clientMur, diagnostiquerMur } from '@/lib/supabase';
 
 /** Les trois états d'une demande de compte (0005). */
 export const ETATS_COMPTE = ['en attente', 'approuve', 'refuse'] as const;
@@ -105,15 +107,29 @@ const estObjet = (valeur: unknown): valeur is Record<string, unknown> =>
   typeof valeur === 'object' && valeur !== null && !Array.isArray(valeur);
 
 /**
- * Le backend est-il armé ? Même règle que `murEstConfigure()` : une configuration à moitié
- * posée vaut « pas de base » pour l'écran, jamais une page blanche.
+ * Ce que dit la configuration du mur, pour les comptes aussi (#529). Une configuration
+ * **cassée** n'est pas « pas de base » : elle rend `cassee` avec sa raison, et l'écran la dit.
+ */
+export function diagnosticComptes(env?: Record<string, string | boolean | undefined>): DiagnosticMur {
+  return diagnostiquerMur(env ?? import.meta.env);
+}
+
+/**
+ * Le backend est-il armé ? Vrai **seulement** quand les deux variables publiques sont posées
+ * et que la clé est publique. Une configuration cassée ne vaut pas « pas de base » pour
+ * l'écran : elle est affichée (`raisonConfigurationCassee`, #529), jamais avalée.
  */
 export function comptesEstConfigure(env?: Record<string, string | boolean | undefined>): boolean {
-  try {
-    return configurerMur(env ?? import.meta.env) !== null;
-  } catch {
-    return false;
-  }
+  return diagnosticComptes(env).etat === 'configuree';
+}
+
+/**
+ * La raison d'une configuration **cassée** (une seule variable, ou une clé de service), ou
+ * `null` quand la base est absente ou bien configurée. C'est ce que la garde affiche (#529).
+ */
+export function raisonConfigurationCassee(env?: Record<string, string | boolean | undefined>): string | null {
+  const diagnostic = diagnosticComptes(env);
+  return diagnostic.etat === 'cassee' ? diagnostic.raison : null;
 }
 
 /** Le client réel, réduit à `ClientComptes`. `null` quand rien n'est configuré. */

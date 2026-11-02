@@ -18,7 +18,7 @@
  * **Le choix entre les deux sources réelles vit ici aussi** (`resoudreAdaptateur`) : la base
  * quand elle est configurée, le fichier sinon. Le port, lui, ne sait pas d'où il lit.
  */
-import { clientMur, configurerMur, identiteSession, type ClientMur } from '@/lib/supabase';
+import { clientMur, diagnostiquerMur, identiteSession, type ClientMur } from '@/lib/supabase';
 import {
   DOCUMENT_MUR,
   STATUTS,
@@ -47,18 +47,15 @@ import {
 } from '@/lib/mur';
 
 /**
- * Le backend est-il armé ? Lit `import.meta.env` par `configurerMur` (la seule source de
- * configuration, `src/lib/supabase.ts`). Une configuration à moitié posée est une erreur
- * de déploiement : pour le mur, cela vaut « pas de base » plutôt qu'un écran blanc.
+ * Le backend est-il armé ? Lit `import.meta.env` par `diagnostiquerMur` (la seule source de
+ * configuration, `src/lib/supabase.ts`). Une configuration **cassée** vaut « pas de base »
+ * pour la source du mur (fichier plutôt qu'écran blanc), mais elle n'est plus confondue avec
+ * l'absence : la garde d'entrée la dénonce (`raisonConfigurationCassee`, #529).
  *
  * Sous Vitest, `.env.test` vide les deux variables : aucun test ne contacte le réseau.
  */
 export function murEstConfigure(): boolean {
-  try {
-    return configurerMur() !== null;
-  } catch {
-    return false;
-  }
+  return diagnostiquerMur().etat === 'configuree';
 }
 
 // ---------------------------------------------------------------------------------------------

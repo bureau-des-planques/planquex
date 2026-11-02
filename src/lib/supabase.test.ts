@@ -5,6 +5,7 @@ import {
   cleEstDeService,
   clientMur,
   configurerMur,
+  diagnostiquerMur,
   ecrireLigne,
   identiteSession,
   VARIABLE_CLE,
@@ -23,7 +24,9 @@ import {
  * 2. **la clé du jeu est publique** : une clé de service est refusée (elle contournerait les
  *    règles d'accès de la base depuis le navigateur) ;
  * 3. **le module ne lit que les deux variables publiques** : un scan de sa source nomme les
- *    variables `VITE_SUPABASE_*` qu'il touche — en ajouter une troisième casse le test.
+ *    variables `VITE_SUPABASE_*` qu'il touche — en ajouter une troisième casse le test ;
+ * 4. **« absente » et « cassée » ne sont pas la même chose** (#529) : une seule variable, ou
+ *    une clé de service, rend un diagnostic fautif avec sa raison — jamais « pas de base ».
  */
 
 /** Un JWT faux, mais de la bonne forme : c'est la charge qui décide du rôle. */
@@ -105,6 +108,52 @@ describe('la configuration du mur (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)',
     // passerait à côté du scan ci-dessus : on la refuse aussi.
     expect(source).not.toMatch(/import\.meta\.env\s*\[/);
     expect(source).not.toMatch(/process\.env/);
+  });
+});
+
+describe('le diagnostic distingue « absente » de « cassée » (#529)', () => {
+  it('sans aucune variable, la base est absente — et le jeu reste jouable', () => {
+    expect(diagnostiquerMur({})).toEqual({ etat: 'absente' });
+    expect(diagnostiquerMur({ [VARIABLE_URL]: '  ', [VARIABLE_CLE]: '' })).toEqual({ etat: 'absente' });
+  });
+
+  it('une seule variable posée est **cassée**, pas absente, et la raison nomme la manquante', () => {
+    // Sous le code d'avant #529, ce cas levait puis était avalé : l'écran croyait « pas de base ».
+    const sansCle = diagnostiquerMur({ [VARIABLE_URL]: 'https://exemple.supabase.co' });
+    expect(sansCle.etat).toBe('cassee');
+    if (sansCle.etat !== 'cassee') return;
+    expect(sansCle.raison).toContain(VARIABLE_CLE);
+    expect(sansCle.raison).toMatch(/incomplète/);
+
+    const sansUrl = diagnostiquerMur({ [VARIABLE_CLE]: CLE_PUBLIQUE_FAUSSE });
+    expect(sansUrl.etat).toBe('cassee');
+    if (sansUrl.etat !== 'cassee') return;
+    expect(sansUrl.raison).toContain(VARIABLE_URL);
+  });
+
+  it('une clé de service refusée est **cassée**, avec la raison du refus', () => {
+    const diagnostic = diagnostiquerMur({
+      [VARIABLE_URL]: 'https://exemple.supabase.co',
+      [VARIABLE_CLE]: 'sb_secret_exemple'
+    });
+    expect(diagnostic.etat).toBe('cassee');
+    if (diagnostic.etat !== 'cassee') return;
+    expect(diagnostic.raison).toMatch(/clé de service/i);
+
+    const jwtService = jwt({ role: 'service_role', iss: 'supabase' });
+    const parJwt = diagnostiquerMur({ [VARIABLE_URL]: 'https://exemple.supabase.co', [VARIABLE_CLE]: jwtService });
+    expect(parJwt.etat).toBe('cassee');
+  });
+
+  it('les deux variables publiques rendent la configuration, espaces compris', () => {
+    const diagnostic = diagnostiquerMur({
+      [VARIABLE_URL]: ' https://exemple.supabase.co ',
+      [VARIABLE_CLE]: ` ${CLE_PUBLIQUE_FAUSSE} `
+    });
+    expect(diagnostic).toEqual({
+      etat: 'configuree',
+      configuration: { url: 'https://exemple.supabase.co', clePublique: CLE_PUBLIQUE_FAUSSE }
+    });
   });
 });
 
