@@ -31,7 +31,7 @@
 ### Critères D-048 (beta) — critère 5
 > **« Aucune perte de données possible pour un testeur »** (D-048, ligne 58 du DECISIONS.md)
 - Ce critère **vaut après le reset de beta** (D-130), pas contre lui
-- Le reset beta efface `combats`, `postits`, `votes`, `commentaires`, `annonces_discord` — **pas** les comptes (D-150)
+- Le reset beta efface `combats`, `postits`, `votes`, `commentaires` — **pas** les comptes, ni `annonces_discord` (journal de ce qui a été dit dans `#comite`, D-150 (3) ; `tools/admin/lib/reset.mjs` la met dans `PERIMETRE.intactes`)
 - Collection et Deck **tombent d'eux-mêmes par migration de store** (ils vivent dans le navigateur, D-130 (2))
 
 ### Vocabulaire (D-075, D-026)
@@ -151,7 +151,7 @@ Sans re-validation des règles de jeu, un ajout ou un retrait concurrent peut do
 - **D-075** : « Chariot » → « Deck », « Parc » → « Collection »
 - **D-090** : Application marche hors ligne (note de version embarquée)
 - **D-130** : Reset beta épargne compte, efface traces de combat et mur (Collection/Deck via migration store)
-- **D-150** : Reset beta — effacement exact (`combats`, `postits`, `votes`, `commentaires`, `annonces_discord` ; `comptes` conservés)
+- **D-150** : Reset beta — effacement exact (`combats`, `postits`, `votes`, `commentaires` ; `comptes` et `annonces_discord` conservés, D-150 (3))
 - **D-148** : Profil testeur en colonne Supabase (pas dans store)
 - **PROPOSITION.md §6.3** : Modèle de données cible (`user_cards`, `decks`, `deck_cards`)
 
