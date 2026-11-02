@@ -63,47 +63,78 @@ export const NOTES_VERSIONS: NoteVersion[] = [
     version: '0.1.17',
     date: '2026-11-02',
     titre: 'Version 0.1.17',
-    brouillon: true,
     points: [
       {
-        groupe: 'Les illustrations',
-        texte: 'Les 233 planches sont refaites : les visages ne se ressemblent plus, le Bureau ressemble à la France, et les gens d’atelier portent un bleu de travail au lieu d’un costume.'
+        groupe: 'Le reset de la beta : ce qui part, ce qui reste',
+        texte: 'Ce qui part : les traces de tes combats solo (le déroulé enregistré sur le serveur) et le mur (post-its, pouces, commentaires).'
       },
       {
-        groupe: 'Les illustrations',
-        texte: 'Les cartes sans Planqué montrent enfin un objet — une trousse de secours, un tapis de yoga, un ticket punaisé — au lieu d’un bonhomme.'
+        groupe: 'Le reset de la beta : ce qui part, ce qui reste',
+        texte: 'Ce qui reste : ton compte — adresse de courriel, mot de passe et approbation. Rien à refaire, pas de nouvelle validation.'
       },
       {
-        groupe: 'Les sons',
-        texte: 'Les cinq sons sont des objets du Bureau : un tampon, un tiroir, du papier, une manche. Plus une seule note de musique, donc plus de carillon.'
+        groupe: 'Le reset de la beta : ce qui part, ce qui reste',
+        texte: 'Ta Collection et ton Deck : ils vivent sur ton appareil, et ils repartent aussi avec la mise à jour du format de sauvegarde qui accompagne la beta. Crée ta sauvegarde (Réglages → « Créer ma sauvegarde ») si tu veux les garder.'
       },
       {
-        groupe: 'Sur le téléphone',
-        texte: 'L’accueil et le combat tiennent sans défilement en portrait, et la barre d’action reste à portée du pouce. Le paysage n’est plus promis sur téléphone.'
+        groupe: 'Le reset de la beta : ce qui part, ce qui reste',
+        texte: 'Une médaille : chaque compte approuvé pendant l’alpha reçoit la « Médaille de la période d’essai », posée au moment du reset. Elle ne se perd pas ensuite, et elle s’affiche dans Réglages, sous l’état de ton compte.'
       },
       {
-        groupe: 'Sur le téléphone',
-        texte: 'Installée, l’application passe en plein écran sur Android et dessine sous la barre d’état sur iPhone. Un écran de 700 à 860 pixels de haut — un Pixel 7 — a enfin ses propres tailles.'
+        groupe: 'Ce qui marche',
+        texte: 'Ton compte : l’alpha s’ouvre par une connexion — Google en un clic, ou **courriel et mot de passe — et le compte est validé à la main. En attendant, tu joues et tu lis** tout ; écrire sur le mur, voter et laisser la trace de tes combats s’ouvre une fois le compte approuvé (D-088). Mot de passe oublié : un lien part par courriel et rouvre l’écran du nouveau mot de passe ; la réponse ne dit jamais si l’adresse a un compte.'
       },
       {
-        groupe: 'Collection et Deck',
-        texte: 'Les deux pages n’en font plus qu’une, à deux onglets, et la barre du bas passe à quatre entrées. Tes liens habituels continuent de marcher.'
+        groupe: 'Ce qui marche',
+        texte: 'Journée d’intégration : cinq étapes — l’Arrivage, la Collection et le Deck, le combat, tes données, le comité — au premier lancement. On peut la revoir depuis Réglages.'
       },
       {
-        groupe: 'L’ouverture d’un Arrivage',
-        texte: 'Elle dit où tu en es — « 5 / 5 retournées » — annonce ce qu’elle fait pendant l’envol, et sa croix de fermeture est enfin assez grande pour un doigt.'
+        groupe: 'Ce qui marche',
+        texte: 'Arrivages : 5 cartes à chaque ouverture — 3 communes, 1 peu commune, 1 rare au minimum.'
       },
       {
-        groupe: 'L’ouverture d’un Arrivage',
-        texte: 'La première carte ne saccade plus quand elle se retourne : la fiche attendait la fin de la rotation.'
+        groupe: 'Ce qui marche',
+        texte: 'Collection : toutes tes cartes, avec recherche, filtres par faction et par stade, et la fiche de chaque carte. Les 233 cartes de base ont leur illustration, et chaque variante reprend celle de sa base : tout le set s’affiche illustré.'
       },
       {
-        groupe: 'L’entrée et le mur',
-        texte: 'Une session dont le compte ne se lit pas ne te redemande plus de mot de passe, et changer de compte repart bien du début du parcours.'
+        groupe: 'Ce qui marche',
+        texte: 'Deck : 20 cartes, au moins un Planqué Entrant, 2 exemplaires maximum du même nom. Le bouton « Remplir » en compose un tout seul. Tu choisis aussi jusqu’à 3 types de café.'
       },
       {
-        groupe: 'L’entrée et le mur',
-        texte: 'Un post-it naît toujours « en attente » : le tri reste le geste du comité. Et une configuration de base incomplète se voit, au lieu d’ouvrir le jeu en silence.'
+        groupe: 'Ce qui marche',
+        texte: 'Combat contre la Direction (l’adversaire est joué par l’ordinateur) : Poste, Banc, cafés, Pressions, statuts. Trois Interventions pour gagner. Chaque Pression a sa scène : tampon, avion en papier, avalanche de mails, pointeur laser, pluie de CV… Le coup de grâce a sa saynète, et la grosse Pression d’un COMEX ou d’une carte à étoiles a sa cinématique. Sous « Mouvement réduit », tout cela se tait — le Stress, les badges et le journal disent tout.'
+      },
+      {
+        groupe: 'Ce qui marche',
+        texte: 'La partie à deux par code : dans le menu du combat, « Partie à deux » crée un code, tu le transmets, l’autre le colle, et la partie reprend chacun de son côté (#125).'
+      },
+      {
+        groupe: 'Ce qui marche',
+        texte: 'Le comité : une bulle en bas à droite ouvre le comité — le mur des retours. Les post-its portent un statut (en attente, retenu, en cours, fait, écarté avec sa raison), se votent avec un pouce, et se commentent. Un post-it neuf arrive en attente : c’est le tri qui le fait avancer, pas celui qui l’écrit.'
+      },
+      {
+        groupe: 'Ce qui marche',
+        texte: 'La feuille de route (/feuille-de-route) : ce que chaque version apporte, lisible sans compte — c’est là que la note de version se relit.'
+      },
+      {
+        groupe: 'Ce qui marche',
+        texte: 'Le guide d’installation (/installation) : quoi ouvrir, comment poser l’icône sur l’écran d’accueil (téléphone ou ordinateur), ce qui marche selon le navigateur, et ce qui se perd quand on change d’appareil. Il se lit sans compte lui aussi.'
+      },
+      {
+        groupe: 'Ce qui est gardé, et où',
+        texte: 'Sur ton appareil : ta Collection, ton Deck, ton nom affiché (celui qui signe tes post-its) et ta partie en cours. Rien de cela ne part sur un serveur.'
+      },
+      {
+        groupe: 'Ce qui est gardé, et où',
+        texte: 'Sur le serveur du jeu : ton compte (adresse de courriel et identifiant technique), ton profil (pseudo, service, intitulé — D-148), ce que tu écris sur le mur (post-its, commentaires, pouces), et le déroulé de tes combats solo terminés (graine, Decks, actions jouées — sans ton pseudo ni ton adresse).'
+      },
+      {
+        groupe: 'Ce qui est gardé, et où',
+        texte: 'Bientôt, en plus, sur ton compte : ta Collection et ton Deck, pour les retrouver après un changement d’appareil (D-153). Ça n’est pas encore livré.'
+      },
+      {
+        groupe: 'Ce qui est gardé, et où',
+        texte: 'La page Confidentialité (/confidentialite) dit tout cela en clair, et se lit sans compte.'
       }
     ]
   },
