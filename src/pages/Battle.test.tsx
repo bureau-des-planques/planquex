@@ -22,6 +22,7 @@ import { factionDeck } from '@/game/simulation';
 import { partieSauvegardee } from '@/store/partie';
 import { useStore } from '@/store/useStore';
 import { deckLegal } from '@/game/deck';
+import { choisirReplique } from '@/game/repliques-direction';
 
 /** Une partie **commencée** (vingt coups joués), rendue au tour du joueur : rien ne joue seul. */
 function partieCommencee() {
@@ -1798,5 +1799,210 @@ describe('Battle — le journal remplit la console sur écran large (D-158, #520
     const journal = screen.getByRole('region', { name: 'Journal du combat' });
     expect(within(journal).getAllByRole('listitem').length).toBeGreaterThan(0);
     expect(journal).not.toHaveAttribute('aria-live');
+  });
+});
+
+/**
+ * **Les trois moments, saisis dans une vraie partie solo** (#544) : une victoire, une défaite,
+ * et le craquage d'un Planqué de la Direction. Pas d'état forgé : la partie est **rejouée
+ * depuis sa graine**, comme le fait l'écran (#126) — ce que le test lit est donc ce que le
+ * testeur voit, et le calcul de `evenementQuiParle` est exercé pour de bon.
+ *
+ * Les graines sont **figées** : la recherche qui les a trouvées coûte une quarantaine de
+ * secondes, et elle est déterministe (aucune horloge, aucun `Math.random`). Si le moteur change
+ * au point qu'une graine ne produit plus son scénario, le harnais **jette** et dit de la
+ * réancrer — un échec nommé, pas une assertion muette.
+ */
+const GRAINE_VICTOIRE_SOLO = 133;
+const GRAINE_DEFAITE_SOLO = 2;
+const GRAINE_CRAQUAGE_SOLO = 4;
+
+/** Le Deck des trois scénarios : chaque carte en double, légal des deux côtés. */
+function deckDesRepliques(): string[] {
+  return autoDeck(Object.fromEntries(ALL_CARDS.map((carte) => [carte.id, 2]))).deck;
+}
+
+/** Le coup qui fait avancer une partie : la politique de l'écran pour la Direction, jamais le forfait. */
+function coupDeJeu(s: BattleState): BattleAction | null {
+  const legales = legalActions(s).filter((action) => action.type !== 'forfeit');
+  if (s.pendingPromotion) return legales.find((action) => action.type === 'promoteActive') ?? null;
+  if (s.pendingChoice) return legales.find((action) => action.type === 'choose') ?? null;
+  if (s.current === 'ai') {
+    return nextAiAction(s, 'recherche') ?? legales.find((action) => action.type === 'endTurn') ?? null;
+  }
+  return (
+    legales.find((action) => action.type === 'attack') ??
+    legales.find((action) => action.type === 'attachEnergy') ??
+    legales.find((action) => action.type === 'playBasic') ??
+    legales.find((action) => action.type === 'evolve') ??
+    legales.find((action) => action.type === 'endTurn') ??
+    null
+  );
+}
+
+/** Une Pression du joueur dont le résultat satisfait `accepte`, ou `null`. */
+function pressionQui(avant: BattleState, accepte: (apres: BattleState) => boolean): BattleAction | null {
+  if (avant.current !== 'player' || avant.pendingPromotion || avant.pendingChoice) return null;
+  for (const action of legalActions(avant)) {
+    if (action.type !== 'attack') continue;
+    if (accepte(applyAction(avant, action))) return action;
+  }
+  return null;
+}
+
+interface ScenarioReplique {
+  /** La partie rangée **avant** le geste : ce que l'écran reprend au montage. */
+  partie: PartieSauvegardee;
+  avant: BattleState;
+  /** L'état après le geste : c'est lui qui décide de la réplique. */
+  apres: BattleState;
+  action: BattleAction;
+}
+
+const cacheRepliques: Partial<Record<'victoire' | 'defaite' | 'craquage', ScenarioReplique>> = {};
+
+/** Rejoue une graine et s'arrête au premier état où `declencheur` désigne le geste à jouer. */
+function rejouerLeScenario(graine: number, declencheur: (avant: BattleState) => BattleAction | null): ScenarioReplique {
+  const deck = deckDesRepliques();
+  let avant: BattleState = createBattle(deck, deck, graine);
+  for (let i = 0; i < 400 && avant.phase === 'playing'; i += 1) {
+    const declenche = declencheur(avant);
+    const action = declenche ?? coupDeJeu(avant);
+    if (!action) break;
+    const apres = applyAction(avant, action);
+    if (apres === avant) break;
+    if (declenche) {
+      const partie = partieSauvegardee(avant, null, { playerDeck: deck, aiDeck: deck });
+      if (partie) return { partie, avant, apres, action };
+      break;
+    }
+    avant = apres;
+  }
+  throw new Error(`la graine ${graine} ne produit plus ce scénario : réancrer la graine de ce test`);
+}
+
+/** Un solo que **je** gagne sur ma Pression : la troisième Intervention. */
+function victoireEnSolo(): ScenarioReplique {
+  cacheRepliques.victoire ??= rejouerLeScenario(GRAINE_VICTOIRE_SOLO, (avant) =>
+    pressionQui(avant, (apres) => apres.phase === 'ended' && apres.winner === 'player')
+  );
+  return cacheRepliques.victoire;
+}
+
+/** Un solo que la Direction gagne **sur son coup** : elle marque la troisième Intervention. */
+function defaiteEnSolo(): ScenarioReplique {
+  cacheRepliques.defaite ??= rejouerLeScenario(GRAINE_DEFAITE_SOLO, (avant) => {
+    const sienne = nextAiAction(avant, 'recherche');
+    if (!sienne) return null;
+    const apres = applyAction(avant, sienne);
+    return apres.phase === 'ended' && apres.winner === 'ai' ? sienne : null;
+  });
+  return cacheRepliques.defaite;
+}
+
+/** Un solo où ma Pression fait craquer le Poste de la Direction, la partie continuant. */
+function craquageEnSolo(): ScenarioReplique {
+  cacheRepliques.craquage ??= rejouerLeScenario(GRAINE_CRAQUAGE_SOLO, (avant) =>
+    pressionQui(
+      avant,
+      (apres) =>
+        apres.phase === 'playing' &&
+        (apres.actionLog.at(-1)?.faits ?? []).some((fait) => fait.type === 'craquage' && fait.camp === 'ai')
+    )
+  );
+  return cacheRepliques.craquage;
+}
+
+/** Le nom accessible de la Pression à cliquer, lu sur la carte au Poste (jamais recopié). */
+function nomDeLaPression(etat: BattleState, action: BattleAction): string {
+  if (action.type !== 'attack') throw new Error('le scénario doit se jouer sur une Pression');
+  const definition = ALL_CARDS.find((carte) => carte.id === etat.players.player.active?.cardId);
+  if (!definition || !('attacks' in definition)) throw new Error('le Poste du joueur n’a pas de Pression');
+  const nom = definition.attacks[action.attackIndex]?.name ?? '';
+  expect(nom, 'la Pression du scénario porte un nom').not.toBe('');
+  return nom;
+}
+
+/**
+ * **Les répliques de la Direction hors du tutoriel** (#544) : aux trois moments —
+ * craquage encaissé, fin gagnée, fin perdue. Une seule à l'écran, dans la barre de journal,
+ * annoncée par aria-live polie. En partie à deux, jamais pour un joueur humain.
+ */
+describe('Battle — les répliques de la Direction (#544)', () => {
+  it('une victoire en solo fait parler la Direction, et l’annonce n’est pas vide', async () => {
+    const { partie, avant, apres, action } = victoireEnSolo();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(nomDeLaPression(avant, action)) }));
+
+    // La ligne vit dans la barre de journal, et dit la phrase du tour de la fin gagnée.
+    const ligne = await screen.findByTestId('replique-direction');
+    const attendue = choisirReplique('victoire', apres.turn);
+    expect(ligne).toHaveClass('combat-replique');
+    expect(ligne).toHaveTextContent(/^La Direction · /);
+    expect(ligne).toHaveTextContent(attendue);
+    // Et la zone d'annonce la porte, pour le lecteur d'écran.
+    const annonce = screen.getByTestId('annonce-replique-direction');
+    expect(annonce.textContent).not.toBe('');
+    expect(annonce).toHaveTextContent(attendue);
+  });
+
+  it('une défaite en solo fait parler la Direction, et l’annonce n’est pas vide', async () => {
+    const { partie, apres } = defaiteEnSolo();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+
+    // La Direction joue seule son coup décisif (délai 0 sous mouvement réduit) : rien à cliquer.
+    const ligne = await screen.findByTestId('replique-direction');
+    const attendue = choisirReplique('defaite', apres.turn);
+    expect(ligne).toHaveClass('combat-replique');
+    expect(ligne).toHaveTextContent(/^La Direction · /);
+    expect(ligne).toHaveTextContent(attendue);
+    const annonce = screen.getByTestId('annonce-replique-direction');
+    expect(annonce.textContent).not.toBe('');
+    expect(annonce).toHaveTextContent(attendue);
+  });
+
+  it('le craquage du Poste de la Direction produit une réplique, même si la ligne de relève suit', async () => {
+    const { partie, avant, apres, action } = craquageEnSolo();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+
+    // La ligne du journal, elle, est déjà celle de la relève : le craquage se lit dans les faits.
+    expect(apres.log.at(-1)).toMatch(/relève/);
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(nomDeLaPression(avant, action)) }));
+
+    // **Lu juste après le geste** : la Direction relève dans la foulée (délai 0 sous mouvement
+    // réduit) et sa relève remplace la réplique — c'est la règle du ticket, une seule à l'écran.
+    const ligne = screen.getByTestId('replique-direction');
+    const attendue = choisirReplique('craquage', apres.turn);
+    expect(ligne).toHaveClass('combat-replique');
+    expect(ligne).toHaveTextContent(/^La Direction · /);
+    expect(ligne).toHaveTextContent(attendue);
+    const annonce = screen.getByTestId('annonce-replique-direction');
+    expect(annonce.textContent).not.toBe('');
+    expect(annonce).toHaveTextContent(attendue);
+  });
+
+  it("en partie à deux, un joueur humain n'hérite jamais des répliques de la Direction", () => {
+    const mienne = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    fireEvent.click(within(menuSurLaVue('Partie à deux')).getByRole('button', { name: /Créer une partie à deux/i }));
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Abandonner/ }));
+
+    // En partie à deux, pas de réplique de la Direction — et la garde **mord** : la même
+    // requête trouve la ligne dans un solo (trois tests ci-dessus).
+    expect(screen.queryByTestId('replique-direction')).not.toBeInTheDocument();
+    // L'annonce aria-live est vide
+    const annonce = screen.getByTestId('annonce-replique-direction');
+    expect(annonce.textContent).toBe('');
+    mienne.unmount();
+  });
+
+  it("la zone d'annonce aria-live pour la réplique existe dans le DOM", () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+
+    const annonce = screen.getByTestId('annonce-replique-direction');
+    expect(annonce).toHaveAttribute('aria-live', 'polite');
+    expect(annonce).toHaveClass('sr-only');
   });
 });

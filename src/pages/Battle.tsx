@@ -71,7 +71,7 @@ import { etatFinScriptee } from '@/game/scenario-fin';
 import { marquerGeste } from '@/components/journee-gestes';
 import { avancerJournee, etapeJournee } from '@/components/journee-etape';
 import { SceneFin } from '@/components/SceneFin';
-import { choisirReplique, evenementDuJournal } from '@/game/repliques-direction';
+import { choisirReplique, type EvenementDirection } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
 import { useEffetsDeCombat } from '@/components/effets-combat';
@@ -1081,13 +1081,35 @@ export function Battle() {
   /** Dernière ligne du journal : ce qui vient de se passer, mis en avant. */
   const lastLog = state.log.at(-1) ?? '';
   /**
-   * **La Direction parle** (30/10/2026), dans la fin scriptée seulement : elle réagit à ce
-   * qui vient de se passer (une Pression, un craquage) et à l'issue. Choix déterministe
-   * par le tour, donc une partie rejouée dit les mêmes phrases.
+   * **La Direction parle** (02/11/2026) : aux trois moments — un craquage encaissé,
+   * une fin gagnée, une fin perdue. Pas à chaque Pression : la voix deviendrait du bruit.
+   * En solo seulement : en partie à deux, un joueur humain n'hérite jamais de ses vannes.
+   * Le choix est déterministe par le tour (comme le moteur).
+   *
+   * **Le craquage se lit dans les faits, jamais dans la phrase du journal** (#544) : la ligne
+   * « … craque : 1 Intervention. » n'est jamais la dernière, le moteur y ajoute aussitôt celle
+   * de la relève ou du verdict — `evenementDuJournal` ne pouvait donc pas la voir passer (0
+   * occurrence sur 10 946 états de parties réelles). Les faits (#250) nomment l'événement là où
+   * il est décidé, et disent de qui le Planqué est tombé : la Direction commente **son**
+   * personnel, jamais la chute du nôtre.
    */
-  const evenementDirection =
-    state.phase === 'ended' ? (state.winner === 'player' ? 'victoire' : 'defaite') : evenementDuJournal(lastLog);
-  const repliqueDirection = sceneFin && evenementDirection ? choisirReplique(evenementDirection, state.turn) : null;
+  const craquageDeLaDirection = (state.actionLog.at(-1)?.faits ?? []).some(
+    (fait) => fait.type === 'craquage' && fait.camp === 'ai'
+  );
+  const evenementDirection: EvenementDirection | null =
+    state.phase === 'ended'
+      ? // Une **égalité** (limite de tours, D-031) n'est ni gagnée ni perdue : elle ne parle pas.
+        state.winner === null
+        ? null
+        : state.winner === myCamp
+          ? 'victoire'
+          : 'defaite'
+      : craquageDeLaDirection
+        ? 'craquage'
+        : null;
+  // La Direction ne parle que pour elle-même (camp 'ai' en solo). En partie à deux, pas de Direction.
+  const evenementQuiParle = match === null ? evenementDirection : null;
+  const repliqueDirection = evenementQuiParle ? choisirReplique(evenementQuiParle, state.turn) : null;
   /** La scène de fin est ouverte : c'est elle qui dit le verdict et la phrase de la Direction. */
   const sceneFinOuverte = sceneFin && state.phase === 'ended' && !sceneFinFermee;
   /**
@@ -2219,12 +2241,18 @@ export function Battle() {
                (`journee-cible`), et le panneau s'efface sur le plateau (31/10/2026) —
                c'est le pas-à-pas qui désigne, ici. */
           >
-            {/* **L'annonce du coup** (WCAG, messages d’état) : une zone **persistante** — jamais re-montée, sinon un
+            {/* **L'annonce du coup** (WCAG, messages d'état) : une zone **persistante** — jamais re-montée, sinon un
                 lecteur d'écran ne l'entend pas changer — qui reçoit la dernière ligne du journal. La
                 ligne visible, elle, est re-montée à chaque coup pour son entrée animée : elle ne peut
                 pas porter l'annonce. En fin de partie, c'est le bandeau du haut qui parle (`alert`). */}
             <p className="sr-only" aria-live="polite" data-testid="annonce-du-coup">
               {state.phase === 'ended' ? '' : lastLog}
+            </p>
+            {/* **L'annonce de la réplique de la Direction** (02/11/2026) : même principe que le journal,
+                `aria-live="polite"` pour que le lecteur d'écran l'entende changer. Elle ne parle qu'en solo,
+                aux trois moments (craquage, victoire, défaite). */}
+            <p className="sr-only" aria-live="polite" data-testid="annonce-replique-direction">
+              {repliqueDirection ?? ''}
             </p>
             {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
                 qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
@@ -2267,8 +2295,11 @@ export function Battle() {
                   {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
                       de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
                   {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
-                  {repliqueDirection && !sceneFinOuverte && (
-                    <p className="muted combat-barre__portee combat-replique">
+                  {repliqueDirection && (
+                    /* `data-testid` : le `<strong>` coupe le texte en deux nœuds, donc
+                       `getByText` ne peut pas lire la ligne entière — les tests visent
+                       l'élément, pas sa mise en forme (#544). */
+                    <p className="muted combat-barre__portee combat-replique" data-testid="replique-direction">
                       <strong>La Direction</strong> · {repliqueDirection}
                     </p>
                   )}
