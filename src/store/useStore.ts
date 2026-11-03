@@ -7,6 +7,8 @@ import type { Difficulte } from '@/game/ia';
 import { ouvrirArrivage } from '@/lib/arrivage';
 import { ErreurCollection, lireCollection } from '@/lib/collection';
 import type { RaisonCollection } from '@/lib/collection';
+import { ajouterIntention, cleDeck, envoyerDeck, ErreurDeck, normaliserOutbox, operationDeck } from '@/lib/deck';
+import type { IntentionDeck, RaisonDeck } from '@/lib/deck';
 import type { Card, CafeType, Rarity } from '@/data/types';
 import { lirePartie } from '@/store/partie';
 import type { PartieSauvegardee } from '@/store/partie';
@@ -35,7 +37,15 @@ let cleArrivage: string | null = null;
 let ouvertureArrivage: Promise<Card[]> | null = null;
 
 /**
- * Version de la forme persistée. **16** : la Collection devient un **cache** du serveur
+ * L'envoi de Deck **en vol**, s'il y en a un. Un second appel pendant que le serveur répond
+ * reçoit la **même** promesse : un seul lot part, et la file n'est vidée qu'une fois.
+ */
+let envoiDeck: Promise<RaisonDeck | null> | null = null;
+
+/**
+ * Version de la forme persistée. **17** : le Deck gagne sa **file d'intentions**
+ * (`deckOutbox`, #491, D-153 (3), D-179 (4)) — absente d'un état v16, elle vaut `[]` :
+ * rien n'attendait. **16** : la Collection devient un **cache** du serveur
  * (#493, D-179 (3)) — `collectionSynchroniseeLe` garde la date de la dernière lecture
  * réussie, `null` pour un état v15 (jamais synchronisé). **15** : `rng` quitte la forme
  * persistée — le client ne tire plus l'Arrivage, le serveur le tire (D-179 (2), #651) ;
@@ -71,7 +81,7 @@ let ouvertureArrivage: Promise<Card[]> | null = null;
  * générateur seedé du store (ticket #29) — retiré en v15. Toute nouvelle version exige une
  * branche dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 16;
+export const STORAGE_VERSION = 17;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
@@ -189,6 +199,18 @@ export interface AppState {
    * combat, à un Deck de test (#117).
    */
   cafeTypes: CafeType[];
+  /**
+   * **La file d'intentions du Deck** (#491, D-153 (3), D-179 (4)) : chaque geste du Deck y
+   * laisse son intention, et elle part au serveur quand le réseau revient. Persistée (v17)
+   * : elle **survit au rechargement**, c'est ce qui rend le Deck « local d'abord » sans
+   * perdre un geste hors ligne. Elle se vide **seulement au succès** — un refus garde tout.
+   */
+  deckOutbox: IntentionDeck[];
+  /**
+   * Pourquoi le dernier envoi du Deck n'a pas abouti (#491) : `null` quand la file est vide
+   * ou à jour. Ce n'est **pas** persisté : c'est l'état d'un essai, pas une donnée de jeu.
+   */
+  deckSyncRaison: RaisonDeck | null;
   packsOpened: number;
   reducedMotion: boolean;
   /**
@@ -258,6 +280,12 @@ export interface AppState {
    * la raison est rendue (`null` au succès) pour que l'écran la dise.
    */
   synchroniserCollection: () => Promise<RaisonCollection | null>;
+  /**
+   * **Envoie la file du Deck au serveur** (#491). Vide la file au succès ; sur un refus ou
+   * une panne, la **garde intacte** et rend la raison, que l'écran Deck dit (D-060 (3)).
+   * Ne fait rien quand la file est vide, et n'émet aucun appel hors ligne ou sans session.
+   */
+  synchroniserDeck: () => Promise<RaisonDeck | null>;
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
   removeFromDeck: (cardId: string) => void;
@@ -311,6 +339,7 @@ export type PersistedState = Pick<
   | 'collectionSynchroniseeLe'
   | 'deck'
   | 'cafeTypes'
+  | 'deckOutbox'
   | 'packsOpened'
   | 'reducedMotion'
   | 'sons'
@@ -330,6 +359,7 @@ export function partializeState(state: AppState): PersistedState {
     collectionSynchroniseeLe: state.collectionSynchroniseeLe,
     deck: state.deck,
     cafeTypes: state.cafeTypes,
+    deckOutbox: state.deckOutbox,
     packsOpened: state.packsOpened,
     reducedMotion: state.reducedMotion,
     sons: state.sons,
@@ -357,6 +387,20 @@ export interface SaveFile {
 
 export type ImportResult = { ok: true } | { ok: false; raison: string };
 
+/**
+ * Un changement du Deck, **plus son intention** : c'est le seul chemin d'écriture du Deck
+ * (#491). Les actions ne poussent rien dans la file elles-mêmes — elles décrivent le Deck
+ * d'après, et cette fonction compare avec l'état courant (`operationDeck`) pour en faire
+ * l'intention. Un geste qui ne change rien n'allonge pas la file.
+ */
+function changementDeck(state: AppState, changement: { deck?: string[]; cafeTypes?: CafeType[] }): Partial<AppState> {
+  const deck = changement.deck ?? state.deck;
+  return {
+    ...changement,
+    deckOutbox: ajouterIntention(state.deckOutbox, operationDeck(state.deck, deck))
+  };
+}
+
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
@@ -365,6 +409,8 @@ export const useStore = create<AppState>()(
       collectionSynchroniseeLe: null,
       deck: [],
       cafeTypes: [],
+      deckOutbox: [],
+      deckSyncRaison: null,
       packsOpened: 0,
       reducedMotion: false,
       sons: true,
@@ -425,24 +471,71 @@ export const useStore = create<AppState>()(
           return erreur instanceof ErreurCollection ? erreur.raison : 'reseau';
         }
       },
+      synchroniserDeck: async () => {
+        // Déjà en vol : on rend la **même** promesse — un seul lot part, la file n'est vidée
+        // qu'une fois. Le lot est **figé** au départ : une intention ajoutée pendant l'appel
+        // reste dans la file et partira au lot suivant.
+        if (envoiDeck) return envoiDeck;
+
+        const intentions = get().deckOutbox;
+        if (intentions.length === 0) {
+          if (get().deckSyncRaison !== null) set({ deckSyncRaison: null });
+          return null;
+        }
+
+        const ids = new Set(intentions.map((intention) => intention.id));
+        const operations = [...intentions].sort((a, b) => a.ordre - b.ordre).map((intention) => intention.operation);
+        // La clé du lot : celle de sa première intention. Elle survit au rechargement, donc
+        // un retry rejoue la **même** clé et le serveur n'applique le lot qu'une fois.
+        const cle = cleDeck(intentions);
+
+        const promesse = (async () => {
+          try {
+            await envoyerDeck(operations, cle);
+            set((state) => ({
+              deckOutbox: state.deckOutbox.filter((intention) => !ids.has(intention.id)),
+              deckSyncRaison: null
+            }));
+            return null;
+          } catch (erreur) {
+            // **Rien n'est écrasé** : la file reste telle quelle, et la raison est rendue
+            // pour que l'écran Deck la dise (D-060 (3)).
+            const raison = erreur instanceof ErreurDeck ? erreur.raison : 'reseau';
+            set({ deckSyncRaison: raison });
+            return raison;
+          }
+        })();
+        envoiDeck = promesse;
+        void promesse.then(
+          () => {
+            envoiDeck = null;
+          },
+          () => {
+            envoiDeck = null;
+          }
+        );
+        return promesse;
+      },
       addCard: (cardId, amount = 1) => {
         set((state) => ({
           owned: { ...state.owned, [cardId]: (state.owned[cardId] ?? 0) + amount }
         }));
       },
       addToDeck: (cardId) => {
-        set((state) => (deckCanAdd(state.deck, cardId) ? { deck: [...state.deck, cardId] } : {}));
+        const state = get();
+        if (!deckCanAdd(state.deck, cardId)) return;
+        set((etat) => changementDeck(etat, { deck: [...etat.deck, cardId] }));
       },
       removeFromDeck: (cardId) => {
-        set((state) => {
-          const index = state.deck.findIndex((id) => id === cardId);
+        set((etat) => {
+          const index = etat.deck.findIndex((id) => id === cardId);
           if (index < 0) return {};
-          const deck = [...state.deck];
+          const deck = [...etat.deck];
           deck.splice(index, 1);
           // Vider le Deck à la main laisse le même état que `clearDeck` : le choix
           // tombe avec le contenu qui le portait (#117). Retirer une carte d'un
           // Deck qui en garde d'autres ne touche pas au choix.
-          return deck.length === 0 ? { deck, cafeTypes: [] } : { deck };
+          return changementDeck(etat, deck.length === 0 ? { deck, cafeTypes: [] } : { deck });
         });
       },
       /** Un clic : ajoute si c'est possible, sinon retire **un** exemplaire. */
@@ -457,12 +550,12 @@ export const useStore = create<AppState>()(
        * `[]` repart en proposition automatique du nouveau Deck (#117). C'est le
        * même geste que `clearDeck`, donc le même effet sur le choix.
        */
-      setDeck: (deck) => set({ deck, cafeTypes: [] }),
+      setDeck: (deck) => set((etat) => changementDeck(etat, { deck, cafeTypes: [] })),
       /**
        * Un Deck vide n'a plus de types de café : le choix repart en automatique
        * (#117 — même règle que `setDeck`, vue depuis un contenu vide).
        */
-      clearDeck: () => set({ deck: [], cafeTypes: [] }),
+      clearDeck: () => set((etat) => changementDeck(etat, { deck: [], cafeTypes: [] })),
       setCafeTypes: (types) => set({ cafeTypes: normalizeCafeTypes(types) }),
       toggleCafeType: (type) => {
         const current = get().cafeTypes;
@@ -474,11 +567,17 @@ export const useStore = create<AppState>()(
         // Une progression remise à zéro n'a pas d'ouverture en attente : la clé d'idempotence
         // d'un Arrivage échoué ne survit pas à « Réinitialiser la progression ».
         cleArrivage = null;
+        // Le Deck repart vide localement, et sa file aussi : une intention d'avant ne doit
+        // pas ressusciter l'ancien Deck à la prochaine reconnexion. Le reset local n'écrit
+        // rien au serveur (D-153 (2) le fera avec le reset de beta, #494).
+        envoiDeck = null;
         set({
           owned: starterOwned(),
           collectionSynchroniseeLe: null,
           deck: [],
           cafeTypes: [],
+          deckOutbox: [],
+          deckSyncRaison: null,
           packsOpened: 0,
           name: 'Employé 404',
           // Une progression remise à zéro repart d'un joueur neuf : la Journée
@@ -551,7 +650,16 @@ export const useStore = create<AppState>()(
         if (!('partie' in etat)) migre.partie = get().partie;
         // Idem pour la dernière partie terminée (#366) : une sauvegarde d'avant ne l'a pas.
         if (!('derniere' in etat)) migre.derniere = get().derniere;
-        set(migre);
+        // **Le Deck importé est un geste du Deck** (#491) : il remplace le Deck local, donc
+        // il laisse une intention. La file **en cours** est gardée : importer une progression
+        // ne jette pas les gestes qui attendent le réseau, et une sauvegarde n'apporte pas
+        // ceux d'un autre appareil.
+        const outbox = get().deckOutbox;
+        const deckImporte = Array.isArray(migre.deck) ? migre.deck : get().deck;
+        set({
+          ...migre,
+          deckOutbox: ajouterIntention(outbox, operationDeck(get().deck, deckImporte))
+        });
         return { ok: true };
       }
     }),
@@ -618,6 +726,11 @@ export const useStore = create<AppState>()(
  * **v15 → v16** (#493, D-179 (3)) : le store gagne `collectionSynchroniseeLe`, la date de
  * la dernière lecture réussie de la Collection. Un état v15 n'en a pas : `null`, « jamais
  * synchronisé ». `owned` reste la forme persistée — c'est le **cache** du serveur.
+ *
+ * **v16 → v17** (#491, D-153 (3), D-179 (4)) : le store gagne `deckOutbox`, la **file
+ * d'intentions** du Deck. Un état v16 n'en a pas : `[]`, rien n'attendait. Une file
+ * trafiquée est **filtrée** (`normaliserOutbox`) plutôt que crue : une intention mal formée
+ * ne part pas au serveur.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState> & { rng?: unknown };
@@ -632,6 +745,9 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // nombre) est écartée de même.
     collectionSynchroniseeLe:
       typeof migrated.collectionSynchroniseeLe === 'number' ? migrated.collectionSynchroniseeLe : null,
+    // **v16 → v17** (#491) : la file d'intentions du Deck. Un état v16 n'en a pas — rien
+    // n'attendait — et une entrée mal formée est écartée plutôt qu'envoyée au serveur.
+    deckOutbox: normaliserOutbox(migrated.deckOutbox),
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     partie: lirePartie(migrated.partie),
     // **v12 → v13** (#366) : la dernière partie terminée. Un état v12 n'en a pas : `null`. Une
@@ -669,6 +785,7 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
       owned: starterOwned(),
       deck: [],
       cafeTypes: [],
+      deckOutbox: [],
       packsOpened: 0,
       partie: null
     };

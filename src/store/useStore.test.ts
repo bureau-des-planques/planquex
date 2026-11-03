@@ -321,13 +321,14 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 16', () => {
+  it('déclare la version 17', () => {
     // 11 : le reset de la beta (D-130). 12 : les deux sons et leur réglage (D-137, #378).
     // 13 : la dernière partie terminée, pour la revoir (#366).
     // 14 : la difficulté de la Direction (#251, D-145).
     // 15 : `rng` quitte la forme persistée — le serveur tire l'Arrivage (#651, D-179).
     // 16 : la date de la dernière lecture de la Collection, son cache (#493, D-179 (3)).
-    expect(STORAGE_VERSION).toBe(16);
+    // 17 : la file d'intentions du Deck (#491, D-153 (3), D-179 (4)).
+    expect(STORAGE_VERSION).toBe(17);
   });
 
   it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {

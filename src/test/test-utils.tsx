@@ -7,6 +7,7 @@ import type { Faction } from '@/data/types';
 import type { DernierePartie } from '@/store/derniere';
 import type { PartieSauvegardee } from '@/store/partie';
 import type { Difficulte } from '@/game/ia';
+import type { IntentionDeck, RaisonDeck } from '@/lib/deck';
 import { App } from '@/App';
 
 /**
@@ -34,6 +35,10 @@ export interface TestStoreState {
   derniere?: DernierePartie | null;
   /** Le cran de difficulté de la Direction (#251) ; absent = `normal`. */
   difficulte?: Difficulte;
+  /** La file d'intentions du Deck (#491) ; absente = vide. */
+  deckOutbox?: IntentionDeck[];
+  /** La raison du dernier envoi de Deck raté (#491) ; absente = aucun échec. */
+  deckSyncRaison?: RaisonDeck | null;
 }
 
 /**
@@ -65,7 +70,9 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     pasAPasCombatVu: initialState.pasAPasCombatVu ?? true,
     partie: initialState.partie ?? null,
     derniere: initialState.derniere ?? null,
-    difficulte: initialState.difficulte ?? 'normal'
+    difficulte: initialState.difficulte ?? 'normal',
+    deckOutbox: initialState.deckOutbox ?? [],
+    deckSyncRaison: initialState.deckSyncRaison ?? null
   });
 }
 

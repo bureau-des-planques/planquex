@@ -4,6 +4,8 @@
 >
 > **Périmée sur la fusion depuis D-179 (03/11/2026, #649, #493)** : la Collection ne se fusionne plus par `max` — le serveur la crédite à l'ouverture d'un Arrivage, et le client n'en garde qu'un **cache** relu par `src/lib/collection.ts` (`synchroniserCollection`, store v16). Les paragraphes ci-dessous qui décrivent la fusion, les compteurs et les tombstones gardent leur valeur d'**archive** ; l'état vivant est dans D-179.
 >
+> **Mise à jour du 03/11/2026 (#491)** : le Deck a désormais sa **file d'intentions** persistée (`deckOutbox`, store v17), drainée par `synchroniserDeck` vers la RPC `public.rejouer_deck` (`supabase/migrations/0025_deck_rejeu.sql`, `src/lib/deck.ts`). Les phrases « aucun champ de synchro » ci-dessous décrivent l'état du 02/11, pas le code d'aujourd'hui.
+>
 > **État des sources consultées : 02/11/2026.** Les estimations sont des ordres de grandeur, pas des mesures ni un engagement de délai.
 
 ## 1. État des lieux : ce qui existe
