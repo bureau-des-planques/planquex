@@ -28,8 +28,9 @@ s'appuyer dessus.
 | `supabase/migrations/0022_services.sql` | les cinq services du parcours deviennent ceux de l'**immeuble** (D-159, amende D-148 (1)) : « Red Chaussée » était une coquille pour « Rez-de-chaussée », l'immeuble monte jusqu'au 4e, et les lignes existantes (`red-chaussee` → `rez-de-chaussee`) sont **réécrites avant** que la contrainte `profils_service_check` ne change — la garde qui fige le service est désarmée le temps de la correction, et seulement pour elle. Idempotente |
 | `supabase/migrations/0023_statut_a_l_insertion.sql` | le statut d'un post-it naît **en attente** (#552) : un déclencheur `before insert` réécrit `statut` à `'en attente'`, quel que soit le statut envoyé par le client — le tri (0006) reste le seul geste qui avance un post-it. La fonction de déclencheur est **fermée** (0018) ; aucun droit client nouveau |
 | `supabase/migrations/0024_pack_openings.sql` | l'Arrivage se tire et se crédite **côté serveur** (#651, D-179) : `public.pack_openings` (une ligne par ouverture : compte, **clé d'idempotence**, graine, cartes, date), et `public.crediter_arrivage(cle, cartes, graine)` qui crédite la Collection **et** écrit la ligne **dans la même transaction** — la même clé rejouée rend les mêmes cartes sans recréditer. La fonction est **fermée à `anon` et à `authenticated`** (un navigateur ne se crédite pas les cartes qu'il invente) : l'Edge Function l'appelle par `SUPABASE_DB_URL`, avec `request.jwt.claim.sub` posé depuis le JWT vérifié. Le client **lit** ses ouvertures, il n'écrit rien |
+| `supabase/migrations/0025_deck_rejeu.sql` | le Deck se **rejoue** depuis un journal d'intentions (#491, D-153 (3), D-179 (4)) : `public.deck_rejeux` (un reçu par compte et par **clé d'idempotence**, avec le lot reçu), et `public.rejouer_deck(operations, cle)` qui rejoue `ajouter` / `retirer` / `remplacer` **dans l'ordre**, une seule fois par clé, dans une transaction. La fonction ne juge pas la légalité : la garde différée `0021` refuse au commit, la transaction est annulée (reçu compris) et la clé reste libre — la file du client reste rejouable. `authenticated` **exécute** la fonction (le client l'appelle), personne n'écrit le reçu. Les **types de café** ne sont pas encore synchronisés (aucune colonne dans 0020) |
 | `supabase/statut.test.ts` | la garde du statut à l'insertion (#552) : un compte approuvé qui colle un post-it `fait`, `retenu` ou `écarté` obtient `en attente` en base, le geste sans statut ne change pas, l'administrateur trie toujours par `update`, la migration se rejoue — et le déclencheur neutralisé laisse passer le statut du client |
-| `supabase/fonctions.test.ts` | la garde des droits d'exécution (#341) : `anon` n'exécute aucune fonction de `public`, `authenticated` exécute **exactement** les cinq justifiées, la migration se rejoue — et une fonction fabriquée laissée ouverte de plus est dénoncée |
+| `supabase/fonctions.test.ts` | la garde des droits d'exécution (#341) : `anon` n'exécute aucune fonction de `public`, `authenticated` exécute **exactement** les six justifiées, la migration se rejoue — et une fonction fabriquée laissée ouverte de plus est dénoncée |
 | `supabase/imports/comite-fichier-2026-10-26.sql` | l'import des deux post-its de `docs/comite.json` en base (#136) — données, pas schéma : auteur sentinelle, date de collecte reprise de l'id, écran vide devenu `null` |
 | `supabase/imports.test.ts` | la garde de l'import : le fichier et l'import disent la même chose, les lignes passent `lirePostitsDeLaBase`, rejouer ne duplique rien |
 | `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
@@ -40,6 +41,8 @@ s'appuyer dessus.
 | `supabase/deck-collection.test.ts` | la garde du Deck et de la Collection (#489, D-153) : un autre compte ne lit, ne crée, ne change et ne retire rien ; la forme est tenue (quantité, identifiant, rang, unicité) ; `updated_at` vient du serveur ; `anon` n'a rien — et la politique mutée laisse passer la fuite |
 | `supabase/deck-legal.test.ts` | la garde de la légalité du Deck (#490, D-153) : 21 cartes, trois exemplaires d'un même nom (variante comprise) et un Deck complet sans Entrant sont refusés **par leur message** ; un Deck partiel et un Deck légal passent ; les trois constantes de la 0021 disent la même chose que `src/game/deck.ts` et `Stage` ; la migration se rejoue — et la 0021 neutralisée laisse passer les fautifs |
 | `supabase/pack-openings.test.ts` | la garde de l'Arrivage serveur (#651, D-179, migration 0024) : la même clé deux fois **crédite une fois** et rend les cartes d'origine (même rejouée avec d'autres cartes), le compte rendu est exact, un autre compte ne lit rien, le client n'écrit ni n'exécute la fonction — et l'unicité retirée laisse passer le double crédit |
+| `supabase/deck-rejeu.test.ts` | la garde du rejeu du Deck (#491, D-153 (3), migration 0025) : la même clé deux fois **ne double rien** (même rejouée avec un autre lot), les opérations se rejouent dans l'ordre, `remplacer` remet le Deck entier, un Deck illégal est refusé **sans écriture ni reçu** et sa clé reste libre, le client exécute la fonction sans écrire le reçu — et l'unicité retirée laisse passer le double rejeu |
+| `src/lib/deck.ts` | la **couture** de la synchro du Deck (#491) : les types d'intention, la différence entre deux Decks (`operationDeck`), la file persistée (`normaliserOutbox`), la clé d'idempotence du lot et l'appel de `rejouer_deck` — sources injectables, aucun réseau dans les tests |
 | `supabase/functions/ouvrir-arrivage/index.ts` | l'Edge Function de l'Arrivage (#651, D-179) : vérifie le JWT (`auth.getUser`), tire avec la **copie générée** (`arrivage-genere.ts`, écrite par `npm run arrivage:serveur`) et crédite par `public.crediter_arrivage`, dans une transaction qui porte `request.jwt.claim.sub`. Aucune carte ni graine ne vient du client |
 | `supabase/functions/ouvrir-arrivage/arrivage-genere.ts` | **fichier généré** : le catalogue réduit à `id`/`rarity` et le tirage, copiés de `src/data/index.ts`, `src/game/pack.ts` et `src/game/rng.ts` par `npm run arrivage:serveur` — la garde est `scripts/gardes/arrivage-serveur.test.ts` |
 | `supabase/discord.test.ts` | la garde des annonces (#318, D-120) : la phrase est vérifiée **mot pour mot**, un gueulage n'emporte ni titre ni texte, une écriture qui nomme `statut` sans le changer n'annonce rien, le transport est **une couture** doublée d'un faux, « remis » n'est pas « livré » (non-2xx, cinquième tentative, quart d'heure muet), dix par passe, le secret vient de Vault, le passé est `sans_webhook`, la table est fermée — et la migration **mutée** laisse voir le doublon, la fuite ou la rafale |
@@ -143,7 +146,7 @@ déclencheur ne vérifie pas l'`EXECUTE` de son appelant, donc le droit ne serva
 le leur retire, et c'est la migration **`0018`** qui le fait (#341, fusionnée le 28/10/2026) — elle
 ferme ces deux fonctions, et aussi les six déclencheurs sans `security definer` que la 0011 avait
 laissés sous l'`EXECUTE` de `PUBLIC`. La garde `supabase/fonctions.test.ts` le vérifie : `anon`
-n'exécute aucune fonction de `public`, et `authenticated` exécute exactement les cinq du tableau.
+n'exécute aucune fonction de `public`, et `authenticated` exécute exactement les six du tableau.
 
 Les fonctions d'annonce Discord (0013) ne sont ouvertes à **aucun** client : `revoke ... from public,
 anon, authenticated`.
@@ -583,7 +586,7 @@ appliquée**, l'écran propose quand même les pouces et la base accepterait un 
   suspend la file d'annonces le temps du geste. La procédure et les vérifications sont
   **§10**. Elle est idempotente : rejouée sur une base à jour, elle ne lève rien. Contrôle :
   `npx vitest run --project=node supabase/fonctions.test.ts` (`anon` n'exécute aucune fonction,
-  `authenticated` exactement les cinq).
+  `authenticated` exactement les six).
 
 ---
 
@@ -662,7 +665,7 @@ deux choses : `authenticated` sur les deux **déclencheurs** de `comptes`, et le
 ferme tout cela. L'invariant, tenu par `supabase/fonctions.test.ts` :
 
 - **`anon` n'exécute aucune fonction de `public`** ;
-- **`authenticated` exécute exactement les cinq** ci-dessous.
+- **`authenticated` exécute exactement les six** ci-dessous.
 
 ### Les sept fonctions `SECURITY DEFINER`, triées une par une
 
@@ -673,6 +676,7 @@ ferme tout cela. L'invariant, tenu par `supabase/fonctions.test.ts` :
 | `marquer_comite_vu()` | **ouverte** | **appelée par le client** : le repère de suivi du comité (#209, D-097) |
 | `compte_approuve()` | **ouverte** | **citée par les politiques RLS** de `postits`, `votes`, `commentaires` et `combats` ; une politique s'exécute **avec les droits de l'appelant**, donc `authenticated` garde `EXECUTE` |
 | `est_administrateur()` | **ouverte** | **citée par les politiques RLS** (tri, retrait d'administration) — même raison |
+| `rejouer_deck(jsonb, text)` | **ouverte** | **appelée par le client** : le rejeu du journal d'intentions du Deck (#491, D-153 (3)) — ajoutée par la 0025 ; elle ne vise que `auth.uid()`, et la garde `0021` juge le Deck final au commit |
 | `comptes_creation()` | **fermée** | **déclencheur** sur `auth.users` : jamais appelée par RPC, et un déclencheur ne vérifie pas l'`EXECUTE` |
 | `comptes_decision()` | **fermée** | **déclencheur** sur `public.comptes` — même raison |
 
