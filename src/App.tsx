@@ -6,6 +6,7 @@ import { Home } from '@/pages/Home';
 import { Introuvable } from '@/pages/Introuvable';
 import { REDIRECTIONS, REDIRECTIONS_PUBLIQUES } from '@/redirections';
 import { useComptes } from '@/store/comptes';
+import { useStore } from '@/store/useStore';
 import { useMouvementReduitGlobal } from '@/components/use-mouvement-reduit';
 import { deverrouiller } from '@/audio/sons';
 
@@ -62,8 +63,16 @@ function routesDeRedirection(publiques: boolean) {
 export function App() {
   // La session persistée est relue **une fois** au démarrage (D-088). Sans backend,
   // `rafraichir()` ne contacte rien et laisse `configure` à `false` : le jeu est inchangé.
+  //
+  // **Puis la Collection se relit** (#493, D-179 (3)) : elle vit sur le compte, le client
+  // n'en garde qu'un cache. La lecture n'a lieu **que si une session existe** — sans compte
+  // il n'y a rien à demander. Un échec ne vide rien : `synchroniserCollection` laisse le
+  // cache local et rend sa raison, que la page Collection dit hors ligne (D-060 (3)).
   useEffect(() => {
-    void useComptes.getState().rafraichir();
+    void (async () => {
+      await useComptes.getState().rafraichir();
+      if (useComptes.getState().session) await useStore.getState().synchroniserCollection();
+    })();
   }, []);
 
   // « Mouvement réduit » (store **et** `prefers-reduced-motion`) relié au CSS par un

@@ -5,6 +5,7 @@ import { ALL_CARDS, FACTION_META, RARITY_META, STAGE_META } from '@/data';
 import type { Card, Faction, Rarity, Stage } from '@/data/types';
 import { DECK_SIZE, deckCanAdd, deckCountsByName } from '@/game/deck';
 import { useStore } from '@/store/useStore';
+import { useEnLigne } from '@/components/BandeauHorsLigne';
 import { CardSlot } from '@/components/CardSlot';
 import { CardDetail } from '@/components/CardDetail';
 import { causeDuVide } from '@/components/cause-du-vide';
@@ -27,7 +28,12 @@ const STAGES: Stage[] = ['ENTRANT', 'N+1', 'N+2'];
 const RARETES = Object.keys(RARITY_META) as Rarity[];
 
 export function Collection() {
-  const { owned, deck, addToDeck, addCard } = useStore();
+  const { owned, deck, addToDeck, addCard, collectionSynchroniseeLe } = useStore();
+  // **Hors ligne, le cache peut être en retard** (#493, D-179 (3), D-060 (3)) : la page
+  // affiche le dernier état lu sur le serveur, et le dit au lieu de faire croire à une
+  // Collection à jour. En ligne, la lecture du montage a eu lieu (ou a échoué en silence,
+  // et le prochain geste la relancera) : rien à signaler dans le fil de la page.
+  const enLigne = useEnLigne();
   // Les filtres et le tri vivent dans l'adresse de la page (#365) : revenir de la fiche, ou de
   // n'importe quelle page, les retrouve sans toucher au store.
   const [params, setParams] = useSearchParams();
@@ -66,6 +72,10 @@ export function Collection() {
   // un testeur qui a tout tiré lirait sinon 98 %, jamais 100 % (`plafond-collection.ts`, #196).
   const { possedees, plafond, pourcent } = avancementTirable(owned);
   const nbFiltres = filtresActifs(filtres);
+  /** La date du cache, telle que le bandeau hors ligne la dit (D-060 (3)). */
+  const synchroLe = collectionSynchroniseeLe
+    ? new Date(collectionSynchroniseeLe).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+    : null;
 
   /** Pourquoi la grille est vide : ce que le message accuse (`causeDuVide`). */
   const rechercheActive = filtres.texte.trim() !== '';
@@ -155,6 +165,13 @@ export function Collection() {
           </p>
         </div>
       </section>
+
+      {!enLigne && (
+        <p className="notice notice--warn">
+          <strong>Hors ligne.</strong> La Collection affichée est le dernier état connu
+          {synchroLe ? ` (lu le ${synchroLe})` : ''} : elle peut être en retard. Elle se relira au retour du réseau.
+        </p>
+      )}
 
       <div className="filters">
         <label className="field field--search">

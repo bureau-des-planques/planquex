@@ -16,6 +16,8 @@ import { App } from '@/App';
 export interface TestStoreState {
   name?: string;
   owned?: Record<string, number>;
+  /** La date de la dernière lecture de la Collection (#493) ; absente = jamais synchronisée. */
+  collectionSynchroniseeLe?: number | null;
   deck?: string[];
   cafeTypes?: Faction[];
   packsOpened?: number;
@@ -53,6 +55,7 @@ export function setupTestStore(initialState: TestStoreState = {}) {
 
   useStore.setState({
     owned: initialState.owned ?? defaultOwned,
+    collectionSynchroniseeLe: initialState.collectionSynchroniseeLe ?? null,
     deck: initialState.deck ?? [],
     cafeTypes: initialState.cafeTypes ?? [],
     packsOpened: initialState.packsOpened ?? 0,

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // Lent : chaque cas rend la Collection complète dans jsdom, avec le catalogue entier et le store réinitialisé ; le coût est le rendu de la grille.
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Collection } from './Collection';
 import { renderWithStore } from '@/test/test-utils';
@@ -254,5 +254,40 @@ describe('Collection — cartes possédées lisibles (#179)', () => {
   it('seules les cartes absentes sont atténuées : autant de classes que de cartes à zéro', () => {
     const { container } = renderWithStore(<Collection />, { owned, tutorielVu: true, pasAPasCombatVu: true });
     expect(container.querySelectorAll('.card-slot.is-missing')).toHaveLength(ALL_CARDS.length - 1);
+  });
+});
+
+describe('Collection — le cache et son retard hors ligne (#493, D-179 (3), D-060 (3))', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('hors ligne, la page dit que le cache peut être en retard, et le date', () => {
+    vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(false);
+    renderWithStore(<Collection />, {
+      owned: { 'sse-infirmier-site': 1 },
+      collectionSynchroniseeLe: Date.UTC(2026, 10, 3, 10, 30)
+    });
+
+    const avis = screen.getByText(/peut être en retard/i);
+    expect(avis).toHaveTextContent(/Hors ligne/);
+    expect(avis).toHaveTextContent(/lu le/);
+    expect(avis).toHaveTextContent(/2026/);
+  });
+
+  it('hors ligne sans lecture connue, il le dit sans inventer de date', () => {
+    vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(false);
+    renderWithStore(<Collection />, { owned: {}, collectionSynchroniseeLe: null });
+
+    const avis = screen.getByText(/peut être en retard/i);
+    expect(avis).not.toHaveTextContent(/lu le/);
+  });
+
+  it('en ligne, rien à signaler : la page ne parle pas du cache', () => {
+    vi.spyOn(window.navigator, 'onLine', 'get').mockReturnValue(true);
+    renderWithStore(<Collection />, {
+      owned: { 'sse-infirmier-site': 1 },
+      collectionSynchroniseeLe: Date.UTC(2026, 10, 3)
+    });
+
+    expect(screen.queryByText(/peut être en retard/i)).toBeNull();
   });
 });

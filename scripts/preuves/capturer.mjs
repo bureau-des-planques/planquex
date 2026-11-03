@@ -126,7 +126,11 @@ const PREPARATIONS = [
   // L'ouverture d'un Arrivage (#283) n'existe à aucune arrivée de page : elle s'ouvre au clic
   // sur l'accueil. C'est l'écran où trois défauts de rendu se sont succédé sans qu'aucune
   // capture ne les voie (texte en miroir, pivot, 3D imbriquée, 28/10/2026).
-  { slug: 'arrivage', route: '/', amorce: true, preparation: 'arrivage' }
+  { slug: 'arrivage', route: '/', amorce: true, preparation: 'arrivage' },
+  // **Le cache de la Collection se dit hors ligne** (#493, D-179 (3), D-060 (3)) : la page
+  // affiche le dernier état lu, et l'écrit. C'est l'état que le testeur rencontre dans le
+  // métro — on charge en ligne, puis on coupe le réseau.
+  { slug: 'collection-hors-ligne', route: '/collection', amorce: true, preparation: 'collection-hors-ligne' }
 ];
 
 /** Attend le tour du joueur (« à toi ») — l'IA joue seule — puis le défilement d'arrivée (smooth). */
@@ -1082,6 +1086,15 @@ try {
           );
         }
       }
+    } else if (preparation === 'collection-hors-ligne') {
+      // La page est chargée **en ligne**, puis le réseau tombe : c'est le geste du testeur
+      // (le service worker n'est pas actif sous `vite preview`, donc une navigation
+      // hors ligne ne prouverait rien). L'avis doit apparaître, et la grille rester là.
+      await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
+      await context.setOffline(true);
+      await page.getByText('elle peut être en retard').waitFor({ timeout: 10000 });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(450);
     } else if (route === ROUTE_COMBAT) {
       // Le combat se photographie **à l'arrivée**, au tour du joueur (#170) : la graine de
       // la partie vient de l'horloge, donc on la fige (`page.clock`) pour une capture

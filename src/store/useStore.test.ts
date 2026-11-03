@@ -13,12 +13,14 @@ import { isSecretSuffix, secretSuffix } from '@/data/planque';
 import { ErreurArrivage } from '@/lib/arrivage';
 import {
   CARTES_ARRIVAGE,
+  appelsArrivage,
   cleAppelee,
   reinitialiserArrivage,
   reponseArrivage,
   simulerArrivage
 } from '@/test/arrivageDeTest';
 import { seedRng } from '@/game/rng';
+import { reinitialiserCollection, simulerCollection } from '@/test/collectionDeTest';
 
 beforeEach(() => {
   useStore.getState().reset();
@@ -38,8 +40,8 @@ describe('Arrivage — le serveur tire, le client demande (#651, D-179)', () => 
       expect(useStore.getState().owned[card.id]).toBe(1);
     }
     // **Le contrôle mord** : le client n'a rien tiré, il a demandé — un appel, une fois.
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(appelsArrivage(fetchImpl)).toHaveLength(1);
+    const [url, init] = appelsArrivage(fetchImpl)[0] as [string, RequestInit];
     expect(url).toBe('https://exemple.test/functions/v1/ouvrir-arrivage');
     expect(init.method).toBe('POST');
     const corps = JSON.parse(String(init.body)) as { cle?: string };
@@ -92,7 +94,7 @@ describe('Arrivage — le serveur tire, le client demande (#651, D-179)', () => 
 
     // Le contrôle mord : sans le verrou du store, deux demandes partiraient et `owned`
     // recevrait deux fois les mêmes cartes.
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(appelsArrivage(fetchImpl)).toHaveLength(1);
     expect(premier).toBe(second);
     expect(useStore.getState().packsOpened).toBe(1);
     expect(useStore.getState().owned[CARTES_ARRIVAGE[0].id]).toBe(1);
@@ -118,13 +120,93 @@ describe('Arrivage — le serveur tire, le client demande (#651, D-179)', () => 
 
     await useStore.getState().openPack();
     expect(useStore.getState().packsOpened).toBe(1);
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(appelsArrivage(fetchImpl)).toHaveLength(2);
     expect(cleAppelee(fetchImpl, 1)).toBe(cleAppelee(fetchImpl, 0));
 
     // Après le succès, la clé est consommée : l'ouverture suivante en demande une neuve.
     await useStore.getState().openPack();
     expect(cleAppelee(fetchImpl, 2)).not.toBe(cleAppelee(fetchImpl, 1));
     expect(useStore.getState().packsOpened).toBe(2);
+  });
+});
+
+describe('Collection — le serveur fait foi, le client en garde un cache (#493, D-179 (3))', () => {
+  afterEach(() => {
+    reinitialiserCollection();
+    reinitialiserArrivage();
+  });
+
+  it('remplace `owned` par ce que le serveur dit — aucune fusion, aucun `max`', async () => {
+    useStore.setState({
+      owned: { 'sse-infirmier-site': 5, 'rh-charge-prevention': 2 },
+      collectionSynchroniseeLe: null
+    });
+    simulerCollection({ lignes: [{ carte_id: 'sse-infirmier-site', quantite: 1 }] });
+
+    const raison = await useStore.getState().synchroniserCollection();
+
+    expect(raison).toBeNull();
+    // **Le contrôle mord** : une fusion par `max` aurait gardé 5, et l'addition aurait gardé
+    // `rh-charge-prevention`. Le serveur dit 1 et une seule carte : c'est ce qui s'affiche.
+    expect(useStore.getState().owned).toEqual({ 'sse-infirmier-site': 1 });
+    expect(useStore.getState().collectionSynchroniseeLe).toBeTypeOf('number');
+  });
+
+  it('un échec de lecture ne vide rien : le cache reste affiché et daté', async () => {
+    const cache = { 'sse-infirmier-site': 3 };
+    useStore.setState({ owned: cache, collectionSynchroniseeLe: 111 });
+    simulerCollection({ statut: 500 });
+
+    const raison = await useStore.getState().synchroniserCollection();
+
+    expect(raison).toBe('reseau');
+    expect(useStore.getState().owned).toEqual(cache);
+    expect(useStore.getState().collectionSynchroniseeLe).toBe(111);
+  });
+
+  it('hors ligne, la raison est nommée et le cache reste', async () => {
+    const cache = { 'sse-infirmier-site': 2 };
+    useStore.setState({ owned: cache, collectionSynchroniseeLe: 42 });
+    simulerCollection({ enLigne: false });
+
+    expect(await useStore.getState().synchroniserCollection()).toBe('hors-ligne');
+    expect(useStore.getState().owned).toEqual(cache);
+    expect(useStore.getState().collectionSynchroniseeLe).toBe(42);
+  });
+
+  it('après une ouverture réussie, relit le serveur — le cache dit vrai', async () => {
+    simulerArrivage();
+    const fetchCollection = simulerCollection({ lignes: [{ carte_id: 'sse-infirmier-site', quantite: 4 }] });
+    useStore.setState({ owned: {}, packsOpened: 0 });
+
+    await useStore.getState().openPack();
+
+    // **Le contrôle mord** : la relecture suit le crédit, et c'est le serveur qui fait foi —
+    // même si la réponse d'Arrivage nommait d'autres cartes.
+    expect(fetchCollection).toHaveBeenCalledTimes(1);
+    expect(useStore.getState().owned).toEqual({ 'sse-infirmier-site': 4 });
+    expect(useStore.getState().collectionSynchroniseeLe).toBeTypeOf('number');
+  });
+});
+
+describe('Collection en cache — migration v15 → v16 (#493, D-179 (3))', () => {
+  it('un état v15 n’a pas de date de lecture : `null`, et `owned` est conservé', () => {
+    const migre = migratePersisted(
+      { name: 'Employé 404', owned: { [ALL_CARDS[0].id]: 2 }, deck: [], packsOpened: 1 },
+      15
+    );
+
+    expect(migre.collectionSynchroniseeLe).toBeNull();
+    expect(migre.owned?.[ALL_CARDS[0].id]).toBe(2);
+  });
+
+  it('une date forgée (pas un nombre) est écartée', () => {
+    expect(migratePersisted({ collectionSynchroniseeLe: 'hier' }, 15).collectionSynchroniseeLe).toBeNull();
+  });
+
+  it('la date vit dans la forme persistée — c’est la datation du cache', () => {
+    useStore.setState({ collectionSynchroniseeLe: 123 });
+    expect(partializeState(useStore.getState()).collectionSynchroniseeLe).toBe(123);
   });
 });
 
@@ -239,12 +321,13 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 15', () => {
+  it('déclare la version 16', () => {
     // 11 : le reset de la beta (D-130). 12 : les deux sons et leur réglage (D-137, #378).
     // 13 : la dernière partie terminée, pour la revoir (#366).
     // 14 : la difficulté de la Direction (#251, D-145).
     // 15 : `rng` quitte la forme persistée — le serveur tire l'Arrivage (#651, D-179).
-    expect(STORAGE_VERSION).toBe(15);
+    // 16 : la date de la dernière lecture de la Collection, son cache (#493, D-179 (3)).
+    expect(STORAGE_VERSION).toBe(16);
   });
 
   it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {

@@ -13,6 +13,7 @@ import { openPackCards } from '@/game/pack';
 import { seedRng } from '@/game/rng';
 import type { Card } from '@/data/types';
 import { definirSourcesArrivage, type ReponseArrivage, type SourcesArrivage } from '@/lib/arrivage';
+import { reponseCollection, type LigneCollectionTest } from '@/test/collectionDeTest';
 
 /** Cinq cartes réelles, tirées avec la règle du jeu — de quoi afficher une scène. */
 export const CARTES_ARRIVAGE: Card[] = openPackCards({ rng: seedRng(7) });
@@ -51,7 +52,19 @@ export function simulerArrivage(options: OptionsFauxServeur = {}): Mock {
     cards: cartes.map((carte) => ({ id: carte.id, rarity: carte.rarity })),
     seed: GRAINE_ARRIVAGE
   };
-  const fetchImpl = options.fetchImpl ?? vi.fn(async () => reponseArrivage(corps, options.statut ?? 200));
+  // **Le serveur vient de créditer** : une lecture de la Collection juste après rend ces
+  // cartes. Sans ce routage, la relecture de #493 tomberait sur la réponse d'Arrivage et le
+  // test croirait le cache vidé par une panne.
+  const credit: LigneCollectionTest[] = [];
+  const comptes = new Map<string, number>();
+  for (const carte of cartes) comptes.set(carte.id, (comptes.get(carte.id) ?? 0) + 1);
+  for (const [carte_id, quantite] of comptes) credit.push({ carte_id, quantite });
+  const fetchImpl =
+    options.fetchImpl ??
+    vi.fn(async (url: string) => {
+      if (String(url).includes('/rest/v1/collection')) return reponseCollection(credit);
+      return reponseArrivage(corps, options.statut ?? 200);
+    });
 
   definirSourcesArrivage({
     configuration: { url: 'https://exemple.test', clePublique: 'sb_publishable_test' },
@@ -62,9 +75,17 @@ export function simulerArrivage(options: OptionsFauxServeur = {}): Mock {
   return fetchImpl as unknown as Mock;
 }
 
-/** La clé d'idempotence du `n`-ième appel (0 par défaut). */
+/**
+ * Les appels d'**ouverture** seulement : la relecture de la Collection (#493) passe par le
+ * même `fetch` factice, et compter tous les appels confondrait les deux.
+ */
+export function appelsArrivage(fetchImpl: Mock): unknown[][] {
+  return fetchImpl.mock.calls.filter(([url]) => String(url).includes('/functions/v1/'));
+}
+
+/** La clé d'idempotence du `n`-ième appel d'ouverture (0 par défaut). */
 export function cleAppelee(fetchImpl: Mock, appel = 0): string {
-  const init = fetchImpl.mock.calls[appel]?.[1] as RequestInit | undefined;
+  const init = appelsArrivage(fetchImpl)[appel]?.[1] as RequestInit | undefined;
   const corps = JSON.parse(String(init?.body ?? '{}')) as { cle?: string };
   return corps.cle ?? '';
 }

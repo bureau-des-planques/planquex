@@ -5,6 +5,8 @@ import { deckCanAdd, normalizeCafeTypes } from '@/game/deck';
 import { DIFFICULTE_PAR_DEFAUT, estDifficulte } from '@/game/ia';
 import type { Difficulte } from '@/game/ia';
 import { ouvrirArrivage } from '@/lib/arrivage';
+import { ErreurCollection, lireCollection } from '@/lib/collection';
+import type { RaisonCollection } from '@/lib/collection';
 import type { Card, CafeType, Rarity } from '@/data/types';
 import { lirePartie } from '@/store/partie';
 import type { PartieSauvegardee } from '@/store/partie';
@@ -33,8 +35,11 @@ let cleArrivage: string | null = null;
 let ouvertureArrivage: Promise<Card[]> | null = null;
 
 /**
- * Version de la forme persistée. **15** : `rng` quitte la forme persistée — le client ne
- * tire plus l'Arrivage, le serveur le tire (D-179 (2), #651) ; une sauvegarde v14 qui le
+ * Version de la forme persistée. **16** : la Collection devient un **cache** du serveur
+ * (#493, D-179 (3)) — `collectionSynchroniseeLe` garde la date de la dernière lecture
+ * réussie, `null` pour un état v15 (jamais synchronisé). **15** : `rng` quitte la forme
+ * persistée — le client ne tire plus l'Arrivage, le serveur le tire (D-179 (2), #651) ;
+ * une sauvegarde v14 qui le
  * porte encore se lit sans erreur, et le champ disparaît (`migratePersisted`). **14** : le
  * store gagne `difficulte` (le cran de la
  * Direction, #251 / D-145), absente d'un état v13 : elle vaut `normal`, le défaut qui ne
@@ -66,7 +71,7 @@ let ouvertureArrivage: Promise<Card[]> | null = null;
  * générateur seedé du store (ticket #29) — retiré en v15. Toute nouvelle version exige une
  * branche dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 15;
+export const STORAGE_VERSION = 16;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
@@ -153,6 +158,13 @@ function starterOwned(): Record<string, number> {
 export interface AppState {
   name: string;
   owned: Record<string, number>;
+  /**
+   * **La date de la dernière lecture réussie de la Collection** (#493, D-179 (3)) : un
+   * horodatage en millisecondes, `null` tant que le serveur n'a jamais répondu. `owned`
+   * est le **cache** ; cette date dit à quel point il peut être en retard, et l'écran
+   * l'affiche hors ligne (D-060 (3)).
+   */
+  collectionSynchroniseeLe: number | null;
   deck: string[];
   /**
    * Les **types de café choisis** pour le Deck (1 à 3, D-037 (4), ticket #91) :
@@ -239,6 +251,13 @@ export interface AppState {
    * (`ErreurArrivage`, raison `hors-ligne`) sans aucun appel.
    */
   openPack: () => Promise<Card[]>;
+  /**
+   * **Relit la Collection du serveur et remplace le cache** (#493, D-179 (3)). Ce n'est
+   * pas une fusion : `owned` reçoit exactement ce que le serveur dit, et la date de
+   * lecture est retenue. En cas d'échec, **rien n'est effacé** : le cache reste tel quel,
+   * la raison est rendue (`null` au succès) pour que l'écran la dise.
+   */
+  synchroniserCollection: () => Promise<RaisonCollection | null>;
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
   removeFromDeck: (cardId: string) => void;
@@ -289,6 +308,7 @@ export type PersistedState = Pick<
   AppState,
   | 'name'
   | 'owned'
+  | 'collectionSynchroniseeLe'
   | 'deck'
   | 'cafeTypes'
   | 'packsOpened'
@@ -307,6 +327,7 @@ export function partializeState(state: AppState): PersistedState {
   return {
     name: state.name,
     owned: state.owned,
+    collectionSynchroniseeLe: state.collectionSynchroniseeLe,
     deck: state.deck,
     cafeTypes: state.cafeTypes,
     packsOpened: state.packsOpened,
@@ -341,6 +362,7 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       name: 'Employé 404',
       owned: starterOwned(),
+      collectionSynchroniseeLe: null,
       deck: [],
       cafeTypes: [],
       packsOpened: 0,
@@ -372,6 +394,11 @@ export const useStore = create<AppState>()(
             for (const card of cards) owned[card.id] = (owned[card.id] ?? 0) + 1;
             return { owned, packsOpened: state.packsOpened + 1 };
           });
+          // **Le cache se relit après le crédit** (#493, D-179 (3)) : le serveur vient
+          // d'écrire, relire garantit que le cache dit vrai — y compris si un autre
+          // appareil a ouvert entre-temps. Un échec de lecture ne défait pas l'ouverture :
+          // `synchroniserCollection` ne lève pas et laisse le cache local en place.
+          await get().synchroniserCollection();
           return cards;
         })();
         ouvertureArrivage = promesse;
@@ -385,6 +412,18 @@ export const useStore = create<AppState>()(
           }
         );
         return promesse;
+      },
+      synchroniserCollection: async () => {
+        try {
+          const owned = await lireCollection();
+          // **Remplacement, pas fusion** (D-179 (3)) : `owned` reçoit ce que le serveur dit.
+          // C'est ce qui rend le cache vrai, et ce qui rend inutile tout compteur.
+          set({ owned, collectionSynchroniseeLe: Date.now() });
+          return null;
+        } catch (erreur) {
+          // **Un échec n'efface rien** : `set` n'est pas appelé, le cache reste affiché.
+          return erreur instanceof ErreurCollection ? erreur.raison : 'reseau';
+        }
       },
       addCard: (cardId, amount = 1) => {
         set((state) => ({
@@ -437,6 +476,7 @@ export const useStore = create<AppState>()(
         cleArrivage = null;
         set({
           owned: starterOwned(),
+          collectionSynchroniseeLe: null,
           deck: [],
           cafeTypes: [],
           packsOpened: 0,
@@ -574,6 +614,10 @@ export const useStore = create<AppState>()(
  * plus l'Arrivage, c'est le serveur qui tire et crédite. Une sauvegarde v14 qui le porte
  * encore se lit **sans erreur** : le champ est simplement ignoré et n'est pas réécrit.
  * `packsOpened` reste un compteur local, il n'est pas une autorité.
+ *
+ * **v15 → v16** (#493, D-179 (3)) : le store gagne `collectionSynchroniseeLe`, la date de
+ * la dernière lecture réussie de la Collection. Un état v15 n'en a pas : `null`, « jamais
+ * synchronisé ». `owned` reste la forme persistée — c'est le **cache** du serveur.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState> & { rng?: unknown };
@@ -583,6 +627,11 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
   const migrated = version < STORAGE_VERSION ? withRenamedCardIds(sansGenerateur) : sansGenerateur;
   const normalise: Partial<AppState> = {
     ...migrated,
+    // **v15 → v16** (#493, D-179 (3)) : la date de la dernière lecture de la Collection.
+    // Un état v15 n'en a pas — jamais synchronisé ; une valeur forgée (autre chose qu'un
+    // nombre) est écartée de même.
+    collectionSynchroniseeLe:
+      typeof migrated.collectionSynchroniseeLe === 'number' ? migrated.collectionSynchroniseeLe : null,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     partie: lirePartie(migrated.partie),
     // **v12 → v13** (#366) : la dernière partie terminée. Un état v12 n'en a pas : `null`. Une
