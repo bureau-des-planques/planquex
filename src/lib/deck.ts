@@ -37,6 +37,32 @@ import type { ConfigurationMur } from '@/lib/supabase';
 /** Le nom de la fonction SQL, tel que PostgREST la sert. */
 export const FONCTION_REJEU_DECK = 'rejouer_deck';
 
+/** Le nom de la fonction d'import, tel que PostgREST la sert (#492). */
+export const FONCTION_IMPORT_DECK = 'importer_deck';
+
+/**
+ * Le résultat d'un import de Deck (#492) :
+ *
+ * - `importe` : **cet** appel a importé le Deck local. `false` quand le compte avait déjà un
+ *   Deck (on ne l'écrase pas) ou quand l'import avait déjà été fait (second appareil) ;
+ * - `deck` : la composition du Deck du compte **après** l'appel, dans l'ordre des rangs. Le
+ *   client l'adopte : quand le serveur avait déjà un Deck, c'est lui qui fait autorité.
+ */
+export interface ResultatImportDeck {
+  importe: boolean;
+  deck: string[];
+}
+
+/**
+ * Une ligne de Deck telle que la RPC d'import la rend (0026) : l'identifiant de carte, sa
+ * quantité et son rang. La base ne connaît pas le catalogue, donc la forme est vérifiée ici.
+ */
+interface LigneDeckServeur {
+  carte: string;
+  quantite: number;
+  rang: number;
+}
+
 /** Une carte du Deck, telle que le serveur la rejoue : la base ne connaît pas le catalogue. */
 export interface CarteDeck {
   /** L'identifiant de carte (`src/data`). */
@@ -135,7 +161,17 @@ export function definirSourcesDeck(sources: SourcesDeck | null): void {
 
 /** L'URL de la RPC, construite sur `VITE_SUPABASE_URL` et le chemin REST de PostgREST. */
 export function urlRejeuDeck(configuration: ConfigurationMur): string {
-  return `${configuration.url.replace(/\/+$/, '')}/rest/v1/${FONCTION_REJEU_DECK}`;
+  return urlFonctionDeck(configuration, FONCTION_REJEU_DECK);
+}
+
+/** L'URL de la RPC d'import, même chemin REST que le rejeu (#492). */
+export function urlImportDeck(configuration: ConfigurationMur): string {
+  return urlFonctionDeck(configuration, FONCTION_IMPORT_DECK);
+}
+
+/** Le chemin REST d'une fonction du Deck : une seule construction pour les deux appels. */
+function urlFonctionDeck(configuration: ConfigurationMur, nom: string): string {
+  return `${configuration.url.replace(/\/+$/, '')}/rest/v1/${nom}`;
 }
 
 /** Ce que le catalogue sait de la carte, tel que la base le reçoit (`nom`, `stade`). */
@@ -266,7 +302,82 @@ export function normaliserOutbox(valeur: unknown): IntentionDeck[] {
  */
 export async function envoyerDeck(operations: readonly OperationDeck[], cle: string): Promise<void> {
   if (operations.length === 0) return;
+  await appelerDeck(FONCTION_REJEU_DECK, { p_operations: operations, p_cle: cle });
+}
 
+/**
+ * **Importe le Deck local dans le compte, une seule fois** (#492, D-153 (1), D-179 (1)).
+ *
+ * La RPC `public.importer_deck` (migration `0026_import_deck.sql`) pose d'abord un marqueur
+ * atomique par compte, puis applique les opérations **seulement si le compte n'a pas encore
+ * de Deck**. Quand le compte en a déjà un, elle n'écrase rien et rend le Deck du serveur :
+ * c'est lui qui fait autorité (D-179 (1)), et le client l'adopte.
+ *
+ * `cle` est la clé d'idempotence du lot côté `rejouer_deck`. Le client en crée une **neuve**
+ * à chaque tentative : c'est le marqueur de `0026` qui empêche le double import, pas le reçu
+ * du rejeu — sinon le « contrôle mord » de la migration ne mordrait rien.
+ *
+ * Lève une `ErreurDeck` nommée, jamais une erreur nue. Un échec ne touche pas au Deck local :
+ * c'est `importerDeckLocal` (store) qui garde l'état et laisse réessayer.
+ */
+export async function importerDeck(operations: readonly OperationDeck[], cle: string): Promise<ResultatImportDeck> {
+  const reponse = await appelerDeck(FONCTION_IMPORT_DECK, { p_operations: operations, p_cle: cle });
+
+  // La réponse est un objet `{ importe, deck }`. Une réponse illisible est un échec réseau :
+  // on n'écrit jamais un Deck qu'on ne comprend pas.
+  let corps: unknown;
+  try {
+    corps = await reponse.json();
+  } catch {
+    throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+  }
+  if (typeof corps !== 'object' || corps === null) {
+    throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+  }
+
+  const { importe, deck } = corps as { importe?: unknown; deck?: unknown };
+  if (typeof importe !== 'boolean' || !Array.isArray(deck)) {
+    throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+  }
+
+  const lignes: LigneDeckServeur[] = [];
+  for (const ligne of deck) {
+    if (typeof ligne !== 'object' || ligne === null) {
+      throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+    }
+    const { carte, quantite, rang } = ligne as Record<string, unknown>;
+    if (
+      typeof carte !== 'string' ||
+      carte === '' ||
+      typeof quantite !== 'number' ||
+      !Number.isInteger(quantite) ||
+      quantite < 1 ||
+      typeof rang !== 'number' ||
+      !Number.isInteger(rang) ||
+      rang < 0
+    ) {
+      throw new ErreurDeck('reseau', 'La réponse du serveur est illisible : réessaie.');
+    }
+    lignes.push({ carte, quantite, rang });
+  }
+
+  // L'ordre du Deck est celui des rangs (0020) ; une carte que le catalogue ne connaît plus
+  // est écartée, comme le cache de Collection (`@/lib/collection`) : on ne sait pas l'afficher.
+  lignes.sort((a, b) => a.rang - b.rang);
+  const ids: string[] = [];
+  for (const ligne of lignes) {
+    if (!getCard(ligne.carte)) continue;
+    for (let exemplaire = 0; exemplaire < ligne.quantite; exemplaire += 1) ids.push(ligne.carte);
+  }
+  return { importe, deck: ids };
+}
+
+/**
+ * L'appel commun aux deux RPC du Deck : réseau, configuration, session, statut. Rend la
+ * réponse HTTP ; c'est l'appelant qui décide s'il la lit. Les quatre raisons de `ErreurDeck`
+ * sont posées **ici**, une seule fois, pour que le rejeu et l'import refusent pareil.
+ */
+async function appelerDeck(nom: string, corps: Record<string, unknown>): Promise<Response> {
   const sources = sourcesRemplacees ?? sourcesDeck();
 
   // 1. Le réseau d'abord : hors ligne, aucun appel n'est émis (D-179 (6)).
@@ -287,14 +398,14 @@ export async function envoyerDeck(operations: readonly OperationDeck[], cle: str
   // 3. L'appel. Une panne de transport est `reseau` — la clé reste valable pour réessayer.
   let reponse: Response;
   try {
-    reponse = await sources.fetchImpl(urlRejeuDeck(configuration), {
+    reponse = await sources.fetchImpl(urlFonctionDeck(configuration, nom), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${jeton}`,
         apikey: configuration.clePublique
       },
-      body: JSON.stringify({ p_operations: operations, p_cle: cle })
+      body: JSON.stringify(corps)
     });
   } catch {
     throw new ErreurDeck('reseau', 'Le Deck n’a pas pu être synchronisé : réessaie.');
@@ -312,4 +423,5 @@ export async function envoyerDeck(operations: readonly OperationDeck[], cle: str
   if (!reponse.ok) {
     throw new ErreurDeck('refus', 'Le serveur a refusé ce Deck : il reste sur cet appareil.');
   }
+  return reponse;
 }

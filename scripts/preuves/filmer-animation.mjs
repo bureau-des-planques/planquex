@@ -194,7 +194,7 @@ export function analyserArguments(argv) {
  * qui monte sans que l'amorce suive fait échouer le test, pas la planche.
  */
 export function etatAmorce(supplement = {}) {
-  return { state: { tutorielVu: true, reducedMotion: false, ...supplement }, version: 17 };
+  return { state: { tutorielVu: true, reducedMotion: false, ...supplement }, version: 18 };
 }
 
 /**
