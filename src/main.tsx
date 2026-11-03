@@ -6,7 +6,12 @@ import '@fontsource-variable/outfit';
 import { App } from './App';
 import { ErreurDeRendu } from './components/ErreurDeRendu';
 import { capterInviteInstallation } from './lib/invite-installation';
+import { retenirLienDeRecuperation } from './lib/lien-recuperation';
 import './styles.css';
+
+// Le lien de récupération se lit **avant** le premier client Supabase (#654) : sa création
+// consomme et efface le fragment de l'adresse, et le morceau `Connexion` arrive après.
+retenirLienDeRecuperation();
 
 // L'invite d'installation de Chromium part **une fois**, souvent avant le premier rendu : on
 // l'écoute avant de monter React, pour que `/installation` puisse la rejouer au clic.

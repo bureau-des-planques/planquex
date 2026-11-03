@@ -7,6 +7,7 @@ import { useProfil } from '@/store/profil';
 import { useStore } from '@/store/useStore';
 import type { Compte } from '@/lib/comptes';
 import type { Profil } from '@/lib/profil';
+import { oublierLienDeRecuperation, retenirLienDeRecuperation } from '@/lib/lien-recuperation';
 import { Connexion } from './Connexion';
 
 // Mock de `deconnexion` pour que le vrai `deconnecter` du store puisse être testé
@@ -425,6 +426,7 @@ describe('les secours de l’entrée (D-159)', () => {
 
   afterEach(() => {
     window.history.replaceState(null, '', '/');
+    oublierLienDeRecuperation();
     vi.unstubAllEnvs();
   });
 
@@ -451,6 +453,9 @@ describe('les secours de l’entrée (D-159)', () => {
 
   it('le lien de récupération ouvre le formulaire du nouveau mot de passe, pas le bureau', async () => {
     window.history.replaceState(null, '', '/connexion#access_token=jeton&type=recovery');
+    // Ce que fait `main.tsx` avant `createRoot` : le drapeau est retenu avant que le client
+    // Supabase ne consomme le fragment (#654). Ici, Connexion est rendu seul, sans cet effet.
+    retenirLienDeRecuperation();
     const etat = actions();
     poser({
       ...etat,
