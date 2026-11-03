@@ -36,6 +36,7 @@
     "note:brouillon": "node scripts/generateurs/note-brouillon.mjs",
     "release:verifie": "node scripts/generateurs/verifie-corps.mjs",
     "plan:dev": "node scripts/generateurs/plan-dev.mjs",
+    "arrivage:serveur": "node scripts/generateurs/arrivage-serveur.mjs",
     "statut": "node scripts/generateurs/statut-mur.mjs",
     "problemes": "node scripts/generateurs/problemes-connus.mjs",
     "ouf": "node scripts/generateurs/ouf.mjs",

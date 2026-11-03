@@ -23,6 +23,7 @@ copie prend vite du retard. Pour l'état réel, `ls <dossier>` ; pour les écran
 | **Styles** | `src/styles.css`, feuille unique ; le système visuel est dans `DESIGN.md` | une seule source de style, et le visuel a son document |
 | **Illustrations** | `design/illustrations/` (le registre) et `src/art.ts` | une seule copie du registre (D-045) |
 | **Base du mur** | `supabase/migrations/` (rejouées dans l'ordre par `pglite.ts`), et les gardes `supabase/*.test.ts` | la RLS se joue en PostgreSQL réel, sans Docker |
+| **Edge Functions** | `supabase/functions/` (une fonction par geste serveur ; `ouvrir-arrivage` tire et crédite un Arrivage, D-179) | Supabase déploie **le dossier de la fonction**, pas le dépôt : ce qu'elle lit du moteur y est **généré** (`npm run arrivage:serveur`) et gardé (`scripts/gardes/arrivage-serveur.test.ts`) |
 | **Poste de pilotage** | `tools/admin/` et `tools/serveurs/` | hors de l'application et hors du bundle : aucun secret ni client de base n'entre dans le jeu |
 | **Scripts** | `scripts/`, **cinq dossiers par métier** (voir juste dessous) | la table des commandes est `docs/COMMANDES.md` |
 | **Public et hébergement** | `public/` (icônes), `design/` (logo, vitrine), `vercel.json` (réécriture SPA, D-053) | ce que le navigateur reçoit tel quel |
@@ -34,7 +35,7 @@ copie prend vite du retard. Pour l'état réel, `ls <dossier>` ; pour les écran
 | Dossier | Ce qu'il porte |
 |---|---|
 | `scripts/preuves/` | ce qui **mesure** : captures, films, parties jouées, parcours, pesages, traces, `status` |
-| `scripts/generateurs/` | ce qui **écrit** : `plan-dev`, `notes-versions`, `note-brouillon`, `index-decisions`, `problemes-connus`, `statut-mur`, `ouf` |
+| `scripts/generateurs/` | ce qui **écrit** : `plan-dev`, `notes-versions`, `note-brouillon`, `index-decisions`, `problemes-connus`, `statut-mur`, `ouf`, `arrivage-serveur` |
 | `scripts/ci/` | la **chaîne** : chemins, état de `main`, format, durées, garde-fous, taille des paquets, dispatch, isolation, worktree, détecteur d'UI, lots gflow |
 | `scripts/ressources/` | ce qui **produit ou installe** ce que le jeu sert : icônes, sons, marques, import du mur, wizard d'illustration, installer, et deux wizards d'infra datés |
 | `scripts/gardes/` | les **tests de cohérence** du dépôt, sans exécutable à côté |
