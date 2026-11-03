@@ -68,11 +68,29 @@ export function App() {
   // n'en garde qu'un cache. La lecture n'a lieu **que si une session existe** — sans compte
   // il n'y a rien à demander. Un échec ne vide rien : `synchroniserCollection` laisse le
   // cache local et rend sa raison, que la page Collection dit hors ligne (D-060 (3)).
+  //
+  // **Enfin la file du Deck se vide** (#491, D-153 (3)) : les gestes faits hors ligne
+  // partent au montage si une session existe, et au retour du réseau (l'écouteur ci-dessous).
+  // Hors ligne ou sans session, aucun appel n'est émis — la file reste.
   useEffect(() => {
     void (async () => {
       await useComptes.getState().rafraichir();
-      if (useComptes.getState().session) await useStore.getState().synchroniserCollection();
+      if (useComptes.getState().session) {
+        await useStore.getState().synchroniserCollection();
+        await useStore.getState().synchroniserDeck();
+      }
     })();
+  }, []);
+
+  // **Le retour du réseau draine la file du Deck** (#491) : `online` ne promet pas que le
+  // serveur répond, mais il est le signal qu'un envoi peut être tenté. Un échec garde la
+  // file et rend sa raison ; le prochain `online`, ou le bouton de l'écran Deck, réessaie.
+  useEffect(() => {
+    const drainer = (): void => {
+      void useStore.getState().synchroniserDeck();
+    };
+    window.addEventListener('online', drainer);
+    return () => window.removeEventListener('online', drainer);
   }, []);
 
   // « Mouvement réduit » (store **et** `prefers-reduced-motion`) relié au CSS par un

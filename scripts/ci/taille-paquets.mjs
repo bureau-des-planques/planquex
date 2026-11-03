@@ -173,8 +173,10 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 1 514 octets le 03/11/2026** (272 498 octets) — l'Arrivage passe par le serveur (D-179) : couche réseau, erreurs typées, état hors ligne et migration v14 vers v15 entrent dans le paquet principal (+1,5 kB mesuré)
  *
  * **Relevé de 2 103 octets le 03/11/2026** (274 601 octets) — la Collection devient un cache du serveur (D-179, #493) : lecture PostgREST, synchronisation du store et avis hors ligne daté entrent dans le paquet principal (+2,1 kB mesuré)
+ *
+ * **Relevé de 3 763 octets le 03/11/2026** (278 364 octets) — la synchro du Deck entre dans le paquet principal (D-179, #491) : outbox persistée, traducteur de gestes, envoi et état d'échec (+3,8 kB mesuré) — troisième tranche de synchro du jour
  */
-export const PLAFOND_PRINCIPAL = 274_601;
+export const PLAFOND_PRINCIPAL = 278_364;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de

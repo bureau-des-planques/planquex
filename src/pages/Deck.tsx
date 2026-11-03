@@ -64,7 +64,10 @@ export function Deck() {
     clearDeck,
     addCard,
     setCafeTypes,
-    toggleCafeType
+    toggleCafeType,
+    deckOutbox,
+    deckSyncRaison,
+    synchroniserDeck
   } = useStore();
   /** Le halo du volet, et les cartes du tutoriel, seulement quand la Journée y est. */
   const cibleDecks = useEstCibleJournee('decks-proposes');
@@ -119,6 +122,19 @@ export function Deck() {
   // Le **sigle** (et non le nom) : c'est la liste compacte de la Machine, pas un libellé
   // de café. Il ne porte donc pas le nom `cafeLabel`, qui dit le nom ailleurs (#248).
   const cafeSigles = (types: readonly CafeType[]) => types.map((type) => FACTION_META[type].short).join(', ');
+
+  /**
+   * Ce que l'état de synchro du Deck dit (#491, D-060 (3)) : une raison **nommée**, pas un
+   * message brut. La file garde les gestes, quel que soit le refus — rien n'est perdu.
+   */
+  const messageSynchro =
+    deckSyncRaison === 'configuration'
+      ? 'Le serveur du jeu n’est pas configuré sur cet appareil : le Deck reste local.'
+      : deckSyncRaison === 'refus'
+        ? 'Le serveur a refusé ce Deck. Il reste sur cet appareil, rien n’est perdu.'
+        : deckSyncRaison === 'reseau'
+          ? 'L’envoi n’a pas abouti : il repartira au retour du réseau.'
+          : 'Il repartira au retour du réseau.';
 
   /** Charger un Deck proposé : ses cartes **et** ses types de café, en un geste (#141). */
   const chargerDeck = (deckPropose: DeckPropose) => {
@@ -234,6 +250,21 @@ export function Deck() {
       <p className={`notice ${legality.ok ? 'notice--ok' : 'notice--warn'}`}>
         {legality.ok ? 'Deck valide : il peut partir au combat.' : legality.reasons.join(' ')}
       </p>
+
+      {/* **L'état de la synchro du Deck** (#491, D-060 (3)) : la file garde les gestes faits
+          hors ligne ; l'écran le dit au lieu de laisser croire que le Deck est parti. Le
+          bouton relance l'envoi — un refus ne perd rien, la file reste. */}
+      {deckOutbox.length > 0 && (
+        <div className="notice notice--warn deck-synchro" role="status">
+          <p>
+            <strong>Le Deck n’a pas pu être synchronisé.</strong> {messageSynchro} {deckOutbox.length} geste
+            {deckOutbox.length > 1 ? 's' : ''} en attente sur cet appareil.
+          </p>
+          <button type="button" className="button" onClick={() => void synchroniserDeck()}>
+            Réessayer
+          </button>
+        </div>
+      )}
 
       {absentes > 0 && (
         <p className="notice notice--warn" role="status">
