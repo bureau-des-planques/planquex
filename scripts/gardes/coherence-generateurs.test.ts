@@ -122,7 +122,12 @@ function etiquettesManquantes(
 const FICHIERS_GENERES = [
   { fichier: 'src/data/plan-dev.ts', script: 'plan:dev', fichierScript: 'scripts/generateurs/plan-dev.mjs' },
   { fichier: 'src/data/versions.ts', script: 'notes:versions', fichierScript: 'scripts/generateurs/notes-versions.mjs' },
-  { fichier: 'docs/DECISIONS-INDEX.md', script: 'index:decisions', fichierScript: 'scripts/generateurs/index-decisions.mjs' }
+  { fichier: 'docs/DECISIONS-INDEX.md', script: 'index:decisions', fichierScript: 'scripts/generateurs/index-decisions.mjs' },
+  {
+    fichier: 'supabase/functions/ouvrir-arrivage/arrivage-genere.ts',
+    script: 'arrivage:serveur',
+    fichierScript: 'scripts/generateurs/arrivage-serveur.mjs'
+  }
 ] as const;
 
 // ---------------------------------------------------------------------------------------
