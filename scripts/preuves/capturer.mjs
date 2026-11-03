@@ -809,6 +809,8 @@ const shots = [
 ];
 
 const problems = [];
+/** Les captures qu'on n'a pas pu faire, et pourquoi — un silence serait un mensonge. */
+const ignores = [];
 
 function stop(message) {
   console.error(`✖ ${message}`);
@@ -982,7 +984,28 @@ try {
       // capture d'un écran qui n'a pas fini de s'ouvrir ne prouve rien.
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
       await page.click('.hero__ouvrir');
-      await page.waitForSelector('.ouverture', { timeout: 15000 });
+      try {
+        await page.waitForSelector('.ouverture', { timeout: 15000 });
+      } catch (erreur) {
+        // **Sans backend, l'ouverture est refusée** (D-179 (6)) : c'est l'état prévu, pas une
+        // panne. Le build de la CI ne porte pas `VITE_SUPABASE_URL`, donc l'Arrivage ne
+        // s'ouvre pas — on le dit et on ne capture pas, plutôt que de photographier l'accueil
+        // sous le nom d'un écran qui ne s'est jamais ouvert. La scène garde ses tests
+        // (`SceneOuverture.test.tsx`) et sa planche d'animation.
+        const attente = (
+          await page
+            .locator('.hero__attente')
+            .allInnerTexts()
+            .catch(() => [])
+        ).join(' ');
+        if (/serveur du jeu n’est pas configuré|Connecte-toi pour ouvrir/.test(attente)) {
+          ignores.push(`${slug} (${attente.trim()})`);
+          console.log(`  ${slug} · non capturé : ${attente.trim()}`);
+          await context.close();
+          continue;
+        }
+        throw erreur;
+      }
       // **La croix du dialogue fait 44 px** (#569, D-116) : la même cible de doigt que le combat,
       // lue ici sur le dialogue de l'Arrivage — `size="icon-sm"` la laissait à 26,9 × 26,9 px.
       const croix = await page.evaluate(() => {
@@ -1119,6 +1142,7 @@ if (problems.length) {
 }
 
 console.log(
-  `✔ ${shots.length + PREPARATIONS.length} captures dans captures/ (${base}) — dont la première visite ` +
-    `et ${PREPARATIONS.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-171 et D-173`
+  `✔ ${shots.length + PREPARATIONS.length - ignores.length} captures dans captures/ (${base}) — dont la première visite ` +
+    `et ${PREPARATIONS.length - ignores.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-171 et D-173` +
+    (ignores.length > 0 ? ` — ${ignores.length} ignoré(s) : ${ignores.join(', ')}` : '')
 );
