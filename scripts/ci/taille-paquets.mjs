@@ -175,8 +175,10 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 2 103 octets le 03/11/2026** (274 601 octets) — la Collection devient un cache du serveur (D-179, #493) : lecture PostgREST, synchronisation du store et avis hors ligne daté entrent dans le paquet principal (+2,1 kB mesuré)
  *
  * **Relevé de 3 763 octets le 03/11/2026** (278 364 octets) — la synchro du Deck entre dans le paquet principal (D-179, #491) : outbox persistée, traducteur de gestes, envoi et état d'échec (+3,8 kB mesuré) — troisième tranche de synchro du jour
+ *
+ * **Relevé de 1 793 octets le 03/11/2026** (280 157 octets) — l'import unique du Deck local entre dans le principal (+1,8 kB, #492) — quatrième relève du jour ; #658 doit mesurer et décider du découpage de la synchro
  */
-export const PLAFOND_PRINCIPAL = 278_364;
+export const PLAFOND_PRINCIPAL = 280_157;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de
