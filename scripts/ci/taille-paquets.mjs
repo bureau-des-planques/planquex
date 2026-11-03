@@ -177,8 +177,10 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 3 763 octets le 03/11/2026** (278 364 octets) — la synchro du Deck entre dans le paquet principal (D-179, #491) : outbox persistée, traducteur de gestes, envoi et état d'échec (+3,8 kB mesuré) — troisième tranche de synchro du jour
  *
  * **Relevé de 1 793 octets le 03/11/2026** (280 157 octets) — l'import unique du Deck local entre dans le principal (+1,8 kB, #492) — quatrième relève du jour ; #658 doit mesurer et décider du découpage de la synchro
+ *
+ * **Relevé de 204 octets le 03/11/2026** (280 361 octets) — le drapeau du lien de récupération est lu avant createRoot (#654) : un petit module partagé entre l'entrée et Connexion entre dans le paquet principal
  */
-export const PLAFOND_PRINCIPAL = 280_157;
+export const PLAFOND_PRINCIPAL = 280_361;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de

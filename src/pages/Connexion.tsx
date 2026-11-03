@@ -31,6 +31,7 @@ import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { ParcoursProfil } from '@/components/ParcoursProfil';
 import { RefusConfiguration } from '@/components/RefusConfiguration';
 import { estApprouve } from '@/lib/comptes';
+import { lienDeRecuperation, oublierLienDeRecuperation } from '@/lib/lien-recuperation';
 import { changerMotDePasse, recuperationMotDePasse } from '@/lib/recuperation';
 import { etapeDuProfil } from '@/lib/profil';
 import { fonctionProfil } from '@/game/intitule';
@@ -39,11 +40,6 @@ import { useProfil } from '@/store/profil';
 import { useStore } from '@/store/useStore';
 
 type Mode = 'connexion' | 'inscription' | 'oubli';
-
-/** Le lien de récupération de Supabase pose son jeton dans le fragment de l'adresse. */
-function lienDeRecuperation(): boolean {
-  return typeof window !== 'undefined' && /(^|[#&])type=recovery/.test(window.location.hash);
-}
 
 /** Le nom local d'un joueur neuf : c'est lui qu'on remplace par le pseudo, à l'entrée. */
 const NOM_NEUF = 'Employé 404';
@@ -79,7 +75,9 @@ export function Connexion() {
   // se tient donc ici.
   const [envoi, setEnvoi] = useState(false);
   // Le lien de récupération **connecte** : tant qu'il n'a pas servi, on ne renvoie pas le
-  // testeur vers le bureau — il choisirait son mot de passe dans le vide (D-159).
+  // testeur vers le bureau — il choisirait son mot de passe dans le vide (D-159). Le drapeau
+  // est lu **avant** que le client Supabase ne consomme le fragment (#654,
+  // `@/lib/lien-recuperation`), pas au rendu de cet écran.
   const [recuperation, setRecuperation] = useState(lienDeRecuperation);
   // Le parcours a été montré : sa fin devient un moment (le badge), pas une redirection sèche.
   const [aVuParcours, setAVuParcours] = useState(false);
@@ -171,6 +169,7 @@ export function Connexion() {
     }
     setNouveau('');
     setRecuperation(false);
+    oublierLienDeRecuperation();
     // Le jeton reste dans le fragment : on l'efface pour qu'un rechargement ne rejoue pas
     // le formulaire dans le vide.
     window.history.replaceState(null, '', '/connexion');
@@ -451,6 +450,7 @@ export function Connexion() {
     if (mode === 'connexion') {
       const refus = await connecterCourriel(courriel, motDePasse);
       if (refus) setMessage({ ton: 'ko', texte: refus });
+      else oublierLienDeRecuperation();
       return;
     }
 
@@ -459,6 +459,9 @@ export function Connexion() {
       setMessage({ ton: 'ko', texte: resultat.erreur });
       return;
     }
+    // Une connexion ordinaire n'est pas le lien de récupération : le drapeau ne doit pas
+    // resurgir au prochain rendu de cet écran (une session a été ouverte autrement).
+    oublierLienDeRecuperation();
     if (resultat.courrielEnvoye) {
       setMessage({
         ton: 'ok',
@@ -472,6 +475,7 @@ export function Connexion() {
     setMessage(null);
     const refus = await connecterGoogle();
     if (refus) setMessage({ ton: 'ko', texte: refus });
+    else oublierLienDeRecuperation();
   };
 
   return (
