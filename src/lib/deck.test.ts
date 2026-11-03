@@ -1,14 +1,17 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { ALL_CARDS } from '@/data';
 import {
   cleDeck,
   envoyerDeck,
   ErreurDeck,
+  importerDeck,
   operationDeck,
   normaliserOutbox,
+  urlImportDeck,
   urlRejeuDeck,
   type IntentionDeck
 } from '@/lib/deck';
-import { corpsDeck, reinitialiserDeck, simulerDeck } from '@/test/deckDeTest';
+import { corpsDeck, reinitialiserDeck, reponseDeck, simulerDeck } from '@/test/deckDeTest';
 
 afterEach(reinitialiserDeck);
 
@@ -139,5 +142,61 @@ describe('envoyerDeck — les quatre raisons, aucun appel inutile (#491)', () =>
     const fetchImpl = simulerDeck();
     await envoyerDeck([], 'deck:cle');
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+});
+
+describe('importerDeck — le Deck local monte dans le compte (#492)', () => {
+  const CARTE = ALL_CARDS[0].id;
+  const AUTRE = ALL_CARDS[1].id;
+  const operations = [{ type: 'remplacer' as const, cartes: [{ carte: CARTE, nom: 'A', stade: 'ENTRANT' as const }] }];
+
+  it('vise la RPC `importer_deck` et rend le Deck du serveur, dans l’ordre des rangs', async () => {
+    const fetchImpl = simulerDeck({
+      fetchImpl: vi.fn(async () =>
+        reponseDeck({
+          importe: true,
+          deck: [
+            { carte: AUTRE, quantite: 2, rang: 1 },
+            { carte: CARTE, quantite: 1, rang: 0 }
+          ]
+        })
+      )
+    });
+
+    const resultat = await importerDeck(operations, 'import:cle');
+    expect(resultat).toEqual({ importe: true, deck: [CARTE, AUTRE, AUTRE] });
+    expect(urlImportDeck({ url: 'https://exemple.test/', clePublique: 'x' })).toBe(
+      'https://exemple.test/rest/v1/importer_deck'
+    );
+    expect(corpsDeck(fetchImpl)).toEqual({ p_operations: operations, p_cle: 'import:cle' });
+  });
+
+  it('écarte une carte inconnue du catalogue, comme le cache de Collection', async () => {
+    simulerDeck({
+      fetchImpl: vi.fn(async () =>
+        reponseDeck({
+          importe: false,
+          deck: [
+            { carte: 'carte-inconnue', quantite: 1, rang: 0 },
+            { carte: CARTE, quantite: 1, rang: 1 }
+          ]
+        })
+      )
+    });
+    const resultat = await importerDeck(operations, 'import:cle');
+    expect(resultat).toEqual({ importe: false, deck: [CARTE] });
+  });
+
+  it('une réponse illisible est `reseau`, un refus est `refus`', async () => {
+    simulerDeck({ fetchImpl: vi.fn(async () => reponseDeck({ importe: 'peut-être', deck: [] })) });
+    await expect(importerDeck(operations, 'import:cle')).rejects.toMatchObject({ raison: 'reseau' });
+
+    simulerDeck({
+      fetchImpl: vi.fn(async () => reponseDeck({ importe: true, deck: [{ carte: 'a', quantite: 0, rang: 0 }] }))
+    });
+    await expect(importerDeck(operations, 'import:cle')).rejects.toMatchObject({ raison: 'reseau' });
+
+    simulerDeck({ statut: 400 });
+    await expect(importerDeck(operations, 'import:cle')).rejects.toMatchObject({ raison: 'refus' });
   });
 });

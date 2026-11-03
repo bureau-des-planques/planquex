@@ -9,6 +9,10 @@ const CARTE = ALL_CARDS.find((carte) => carte.rarity === '1D')!.id;
 
 beforeEach(() => {
   useStore.getState().reset();
+  // Les cas de la file supposent l'import du Deck déjà fait (#492) : l'import a ses propres
+  // tests (`import-deck.test.ts`). Sans ce drapeau, `synchroniserDeck` tenterait l'import
+  // avant la file, et le premier `fetch` ne serait plus le rejeu.
+  useStore.setState({ deckImporte: true });
 });
 
 afterEach(reinitialiserDeck);

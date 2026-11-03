@@ -37,6 +37,8 @@ export interface TestStoreState {
   difficulte?: Difficulte;
   /** La file d'intentions du Deck (#491) ; absente = vide. */
   deckOutbox?: IntentionDeck[];
+  /** L'import du Deck local dans le compte est-il fait (#492) ; absent = non. */
+  deckImporte?: boolean;
   /** La raison du dernier envoi de Deck raté (#491) ; absente = aucun échec. */
   deckSyncRaison?: RaisonDeck | null;
 }
@@ -72,6 +74,7 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     derniere: initialState.derniere ?? null,
     difficulte: initialState.difficulte ?? 'normal',
     deckOutbox: initialState.deckOutbox ?? [],
+    deckImporte: initialState.deckImporte ?? false,
     deckSyncRaison: initialState.deckSyncRaison ?? null
   });
 }

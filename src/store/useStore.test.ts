@@ -292,6 +292,79 @@ describe('Générateur retiré — migration v14 → v15 (#651, D-179)', () => {
   });
 });
 
+describe('Une forme v14 complète se lit sans perte (v14 → v18, #492)', () => {
+  /**
+   * Le réel d'un testeur de v14 : **tous** les champs que la forme persistée portait alors
+   * (`rng` compris, il ne part qu'en v15), avec des valeurs qui ne sont pas les défauts —
+   * sans quoi une migration qui écrase par défaut passerait pour une migration qui conserve.
+   *
+   * Les trois champs apparus après v14 restent absents : c'est ce que la migration doit
+   * combler (`collectionSynchroniseeLe`, `deckOutbox`, `deckImporte`).
+   */
+  const CARTE = ALL_CARDS[0].id;
+  const AUTRE = ALL_CARDS[1].id;
+
+  function etatV14() {
+    const partie = {
+      mode: 'solo' as const,
+      camp: 'player' as const,
+      seed: 4242,
+      playerDeck: [CARTE],
+      aiDeck: [AUTRE],
+      playerCafeTypes: ['SSE' as const],
+      aiCafeTypes: ['SSE' as const],
+      actions: []
+    };
+    return {
+      name: 'Testeur v14',
+      owned: { [CARTE]: 3, [AUTRE]: 2 },
+      deck: [CARTE, AUTRE],
+      cafeTypes: ['SSE' as const],
+      packsOpened: 17,
+      reducedMotion: true,
+      sons: false,
+      combatDetaille: true,
+      raccourcisCombat: false,
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      partie,
+      derniere: { ...partie, verdict: { vainqueur: 'player' as const, raison: 'interventions' as const, tours: 9 } },
+      difficulte: 'difficile' as const,
+      rng: seedRng(1234)
+    };
+  }
+
+  it('conserve chaque champ de v14 et comble les trois champs arrivés depuis', () => {
+    const migre = migratePersisted(etatV14(), 14);
+
+    // Ce que v14 portait : rien ne bouge, valeur par valeur.
+    expect(migre.name).toBe('Testeur v14');
+    expect(migre.owned).toEqual({ [CARTE]: 3, [AUTRE]: 2 });
+    expect(migre.deck).toEqual([CARTE, AUTRE]);
+    expect(migre.cafeTypes).toEqual(['SSE']);
+    expect(migre.packsOpened).toBe(17);
+    expect(migre.reducedMotion).toBe(true);
+    expect(migre.sons).toBe(false);
+    expect(migre.combatDetaille).toBe(true);
+    expect(migre.raccourcisCombat).toBe(false);
+    expect(migre.tutorielVu).toBe(true);
+    expect(migre.pasAPasCombatVu).toBe(true);
+    expect(migre.partie).toEqual(etatV14().partie);
+    expect(migre.derniere).toEqual(etatV14().derniere);
+    expect(migre.difficulte).toBe('difficile');
+
+    // Ce qui est arrivé après v14 : les défauts de chaque palier, pas de perte.
+    expect(migre.collectionSynchroniseeLe).toBeNull();
+    expect(migre.deckOutbox).toEqual([]);
+    expect(migre.deckImporte).toBe(false);
+    // Et `rng`, retiré en v15, ne revient pas.
+    expect(migre).not.toHaveProperty('rng');
+
+    // **Le contrôle mord** : une migration qui repartirait des défauts perdrait le nom, la
+    // Collection ou la difficulté — les assertions ci-dessus l'attrapent une par une.
+  });
+});
+
 describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)', () => {
   /**
    * Les anciens ids ne sont écrits **qu'une fois dans le dépôt**, dans
@@ -321,14 +394,15 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 17', () => {
+  it('déclare la version 18', () => {
     // 11 : le reset de la beta (D-130). 12 : les deux sons et leur réglage (D-137, #378).
     // 13 : la dernière partie terminée, pour la revoir (#366).
     // 14 : la difficulté de la Direction (#251, D-145).
     // 15 : `rng` quitte la forme persistée — le serveur tire l'Arrivage (#651, D-179).
     // 16 : la date de la dernière lecture de la Collection, son cache (#493, D-179 (3)).
     // 17 : la file d'intentions du Deck (#491, D-153 (3), D-179 (4)).
-    expect(STORAGE_VERSION).toBe(17);
+    // 18 : le drapeau d'import du Deck local dans le compte (#492, D-153 (1)).
+    expect(STORAGE_VERSION).toBe(18);
   });
 
   it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {
