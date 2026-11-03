@@ -2,6 +2,8 @@
 
 > **Proposition de conception, pas une décision globale de synchro.** Elle décrit l'état observé, chiffre trois options et recommande une piste à soumettre à Bastien. Elle ne modifie ni D-153 ni le schéma. L'arbitrage d'export du 02/11 rapporté pour #495 est noté plus bas, sans modifier `docs/DECISIONS.md`.
 >
+> **Périmée sur la fusion depuis D-179 (03/11/2026, #649, #493)** : la Collection ne se fusionne plus par `max` — le serveur la crédite à l'ouverture d'un Arrivage, et le client n'en garde qu'un **cache** relu par `src/lib/collection.ts` (`synchroniserCollection`, store v16). Les paragraphes ci-dessous qui décrivent la fusion, les compteurs et les tombstones gardent leur valeur d'**archive** ; l'état vivant est dans D-179.
+>
 > **État des sources consultées : 02/11/2026.** Les estimations sont des ordres de grandeur, pas des mesures ni un engagement de délai.
 
 ## 1. État des lieux : ce qui existe
