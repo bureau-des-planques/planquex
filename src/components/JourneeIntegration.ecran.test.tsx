@@ -9,6 +9,7 @@ import { marquerGeste, oublierGestes } from './journee-gestes';
 import { remettreJourneeAuDebut } from './journee-etape';
 import { setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
+import { simulerArrivage } from '@/test/arrivageDeTest';
 
 /**
  * La « Journée d'intégration » **jouée** (30/10/2026) — le rendu, pas la source.
@@ -62,8 +63,10 @@ describe('la Journée d’intégration se joue (D-160)', () => {
 
     // **Le contrôle mord** : sans le geste, on ne traverse pas la Journée en lecture.
     expect(suivant()).toBeDisabled();
-    act(() => {
-      useStore.getState().openPack();
+    // L'Arrivage passe par le serveur (#651) : le faux serveur rend les cartes.
+    simulerArrivage();
+    await act(async () => {
+      await useStore.getState().openPack();
     });
     await waitFor(() => expect(suivant()).toBeEnabled());
 

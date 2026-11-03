@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, afterAll } from 'vitest';
+import { reinitialiserArrivage } from './arrivageDeTest';
 
 // Mock window.matchMedia for prefers-reduced-motion
 Object.defineProperty(window, 'matchMedia', {
@@ -42,6 +43,8 @@ Element.prototype.scrollIntoView = vi.fn();
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  // Un test d'écran ne garde jamais le faux serveur d'Arrivage du précédent (#651).
+  reinitialiserArrivage();
 });
 
 // Suppress React 18 act warnings in tests

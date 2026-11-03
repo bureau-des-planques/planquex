@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Home } from './Home';
@@ -8,11 +8,18 @@ import { ALL_CARDS } from '@/data';
 import { CARTES_TIRABLES, HORS_ARRIVAGE, PLAFOND_TIRABLE } from '@/components/plafond-collection';
 import { PACK_COMPOSITION } from '@/game/pack';
 import { useStore } from '@/store/useStore';
+import { simulerArrivage } from '@/test/arrivageDeTest';
 
 const tout = (cartes: readonly { id: string }[]) => Object.fromEntries(cartes.map((c) => [c.id, 1]));
 
 /** La passe de finition de l'alpha (#131, D-060) : Accueil. */
 describe('Home — finition', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // L'Arrivage s'ouvre par un appel au serveur (#651) : chaque test part d'un faux serveur.
+    simulerArrivage();
+  });
+
   it('le plafond vient de la table de tirage : il ne compte que ce qu’un Arrivage peut donner', () => {
     const tirable = (rarete: string) =>
       PACK_COMPOSITION.some((ligne) => (ligne.rarities as readonly string[]).includes(rarete));

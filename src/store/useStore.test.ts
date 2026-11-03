@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ALL_CARDS, getCard, isPlanque } from '@/data';
 import {
   autoDeck,
@@ -8,37 +8,123 @@ import {
   MAX_DECK_CAFE_TYPES,
   resolveCafeTypes
 } from '@/game/deck';
-import { openPackCards } from '@/game/pack';
-import { seedRng } from '@/game/rng';
 import { migratePersisted, CARD_ID_RENAMES, partializeState, STORAGE_VERSION, useStore } from '@/store/useStore';
 import { isSecretSuffix, secretSuffix } from '@/data/planque';
+import { ErreurArrivage } from '@/lib/arrivage';
+import {
+  CARTES_ARRIVAGE,
+  cleAppelee,
+  reinitialiserArrivage,
+  reponseArrivage,
+  simulerArrivage
+} from '@/test/arrivageDeTest';
+import { seedRng } from '@/game/rng';
 
 beforeEach(() => {
   useStore.getState().reset();
 });
 
-describe('Arrivage', () => {
-  it('distribue 5 cartes, les ajoute à la Collection et incrémente le compteur', () => {
-    const before = useStore.getState().packsOpened;
-    const cards = useStore.getState().openPack();
+describe('Arrivage — le serveur tire, le client demande (#651, D-179)', () => {
+  afterEach(reinitialiserArrivage);
 
-    expect(cards).toHaveLength(5);
-    expect(useStore.getState().packsOpened).toBe(before + 1);
+  it('crédite les cartes rendues par le serveur et incrémente le compteur', async () => {
+    const fetchImpl = simulerArrivage();
+    useStore.setState({ owned: {}, packsOpened: 0 });
+    const cards = await useStore.getState().openPack();
+
+    expect(cards.map((card) => card.id)).toEqual(CARTES_ARRIVAGE.map((card) => card.id));
+    expect(useStore.getState().packsOpened).toBe(1);
     for (const card of cards) {
-      expect(useStore.getState().owned[card.id]).toBeGreaterThan(0);
+      expect(useStore.getState().owned[card.id]).toBe(1);
     }
+    // **Le contrôle mord** : le client n'a rien tiré, il a demandé — un appel, une fois.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://exemple.test/functions/v1/ouvrir-arrivage');
+    expect(init.method).toBe('POST');
+    const corps = JSON.parse(String(init.body)) as { cle?: string };
+    expect(typeof corps.cle).toBe('string');
+    expect(corps.cle?.length).toBeGreaterThan(10);
   });
 
-  it('ne décide plus de la composition : il applique `@/game/pack` (#57)', () => {
-    const expected = openPackCards({ rng: seedRng(7) }).map((card) => card.id);
+  it('ne tire plus localement : les cartes sont celles de la réponse, pas un tirage', async () => {
+    // Un tirage impossible à confondre avec la graine 7 du faux serveur par défaut.
+    const inattendues = ['sse-psychologue', 'rh-charge-prevention', 'direction-directeur-programme'];
+    const cartes = inattendues.map((id) => getCard(id)!);
+    simulerArrivage({ cartes });
 
-    useStore.setState({ rng: seedRng(7), owned: {}, packsOpened: 0 });
-    const cards = useStore
-      .getState()
-      .openPack()
-      .map((card) => card.id);
+    const rendues = await useStore.getState().openPack();
 
-    expect(cards).toEqual(expected);
+    expect(rendues.map((card) => card.id)).toEqual(inattendues);
+    // Et le tirage de référence (graine 7) n'est pas ce que la Collection a reçu.
+    expect(rendues.map((card) => card.id)).not.toEqual(CARTES_ARRIVAGE.map((card) => card.id));
+  });
+
+  it('hors ligne : refuse sans aucun appel (D-179 (6))', async () => {
+    const fetchImpl = simulerArrivage({ enLigne: false });
+    useStore.setState({ owned: {}, packsOpened: 0 });
+
+    const echec = useStore.getState().openPack();
+    await expect(echec).rejects.toBeInstanceOf(ErreurArrivage);
+    await expect(echec).rejects.toMatchObject({ raison: 'hors-ligne' });
+    // Le contrôle mord : un refus qui appellerait quand même ne garderait rien.
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(useStore.getState().packsOpened).toBe(0);
+  });
+
+  it('un 401 du serveur est nommé `refus`, et rien n’est crédité', async () => {
+    simulerArrivage({ statut: 401 });
+    await expect(useStore.getState().openPack()).rejects.toMatchObject({ raison: 'refus' });
+    expect(useStore.getState().packsOpened).toBe(0);
+  });
+
+  it('sans session, il n’y a rien à demander : `refus`, aucun appel', async () => {
+    const fetchImpl = simulerArrivage({ jeton: null });
+    await expect(useStore.getState().openPack()).rejects.toMatchObject({ raison: 'refus' });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('deux appels simultanés partagent la même demande — un seul crédit', async () => {
+    const fetchImpl = simulerArrivage();
+    useStore.setState({ owned: {}, packsOpened: 0 });
+
+    const [premier, second] = await Promise.all([useStore.getState().openPack(), useStore.getState().openPack()]);
+
+    // Le contrôle mord : sans le verrou du store, deux demandes partiraient et `owned`
+    // recevrait deux fois les mêmes cartes.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(premier).toBe(second);
+    expect(useStore.getState().packsOpened).toBe(1);
+    expect(useStore.getState().owned[CARTES_ARRIVAGE[0].id]).toBe(1);
+  });
+
+  it('réutilise la même clé après un échec réseau — le serveur ne crédite qu’une fois', async () => {
+    // Deux scénarios se suivent : une panne de transport, puis un succès, puis une nouvelle
+    // ouverture. Seule la clé d'idempotence empêche le double crédit côté serveur.
+    let appels = 0;
+    const fetchImpl = vi.fn(async () => {
+      appels += 1;
+      if (appels === 1) throw new TypeError('réseau coupé');
+      return reponseArrivage({
+        cards: CARTES_ARRIVAGE.map((carte) => ({ id: carte.id, rarity: carte.rarity })),
+        seed: 7
+      });
+    });
+    simulerArrivage({ fetchImpl });
+    useStore.setState({ owned: {}, packsOpened: 0 });
+
+    await expect(useStore.getState().openPack()).rejects.toMatchObject({ raison: 'reseau' });
+    expect(useStore.getState().packsOpened).toBe(0);
+
+    await useStore.getState().openPack();
+    expect(useStore.getState().packsOpened).toBe(1);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+    expect(cleAppelee(fetchImpl, 1)).toBe(cleAppelee(fetchImpl, 0));
+
+    // Après le succès, la clé est consommée : l'ouverture suivante en demande une neuve.
+    await useStore.getState().openPack();
+    expect(cleAppelee(fetchImpl, 2)).not.toBe(cleAppelee(fetchImpl, 1));
+    expect(useStore.getState().packsOpened).toBe(2);
   });
 });
 
@@ -91,47 +177,36 @@ describe('Deck du store', () => {
   });
 });
 
-describe('Générateur du store (#29)', () => {
-  /** Ouvre un Arrivage depuis une graine connue, en repartant de la même base. */
-  function packFrom(seed: number): string[] {
-    useStore.setState({ rng: seedRng(seed), owned: {}, packsOpened: 0 });
-    return useStore
-      .getState()
-      .openPack()
-      .map((card) => card.id);
-  }
+describe('Générateur retiré — migration v14 → v15 (#651, D-179)', () => {
+  afterEach(reinitialiserArrivage);
 
-  it('même graine → même Arrivage ; graines différentes → Arrivages différents', () => {
-    expect(packFrom(7)).toEqual(packFrom(7));
-    expect(packFrom(7)).not.toEqual(packFrom(99));
+  it('lit un état v14 qui porte encore `rng`, sans rien perdre, et le retire', () => {
+    const migre = migratePersisted(
+      {
+        name: 'Employé 404',
+        owned: { [ALL_CARDS[0].id]: 3 },
+        deck: [ALL_CARDS[0].id],
+        packsOpened: 2,
+        reducedMotion: true,
+        rng: seedRng(1234)
+      },
+      14
+    );
+
+    // **Le contrôle mord** : laissant `...migrated` passer tel quel, ce champ reviendrait.
+    expect(migre).not.toHaveProperty('rng');
+    expect(migre.packsOpened).toBe(2);
+    expect(migre.reducedMotion).toBe(true);
+    expect(migre.owned?.[ALL_CARDS[0].id]).toBe(3);
   });
 
-  it('avance son générateur à chaque Arrivage', () => {
-    useStore.setState({ rng: seedRng(7) });
-    const before = useStore.getState().rng;
-    useStore.getState().openPack();
-    expect(useStore.getState().rng).not.toBe(before);
+  it('retire `rng` d’un état v9 qui le porte encore', () => {
+    expect(migratePersisted({ packsOpened: 0, rng: seedRng(9) }, 9)).not.toHaveProperty('rng');
   });
 
-  it('migre un état v0 sans générateur, sans perdre le reste', () => {
-    expect(STORAGE_VERSION).toBeGreaterThan(0);
-    const migrated = migratePersisted({
-      name: 'Employé 404',
-      owned: { [ALL_CARDS[0].id]: 3 },
-      deck: [ALL_CARDS[0].id],
-      packsOpened: 2,
-      reducedMotion: true
-    });
-
-    expect(typeof migrated.rng).toBe('number');
-    expect(migrated.packsOpened).toBe(2);
-    expect(migrated.reducedMotion).toBe(true);
-    expect(migrated.owned?.[ALL_CARDS[0].id]).toBe(3);
-  });
-
-  it('garde le générateur d’un état déjà migré', () => {
-    const rng = seedRng(1234);
-    expect(migratePersisted({ packsOpened: 0, rng }).rng).toBe(rng);
+  it('ne l’écrit plus dans la forme persistée ni dans la sauvegarde exportée', () => {
+    expect(partializeState(useStore.getState())).not.toHaveProperty('rng');
+    expect(useStore.getState().exporterSauvegarde()).not.toContain('"rng"');
   });
 });
 
@@ -164,11 +239,12 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     };
   }
 
-  it('déclare la version 14', () => {
+  it('déclare la version 15', () => {
     // 11 : le reset de la beta (D-130). 12 : les deux sons et leur réglage (D-137, #378).
     // 13 : la dernière partie terminée, pour la revoir (#366).
     // 14 : la difficulté de la Direction (#251, D-145).
-    expect(STORAGE_VERSION).toBe(14);
+    // 15 : `rng` quitte la forme persistée — le serveur tire l'Arrivage (#651, D-179).
+    expect(STORAGE_VERSION).toBe(15);
   });
 
   it('v10 -> v11 : la progression part, le testeur reste (D-130, #347)', () => {
@@ -228,7 +304,7 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
   });
 
   it('remappe les anciens ids de `owned` et de `deck`, sans rien perdre', () => {
-    const { persisted, rng } = stateV1();
+    const { persisted } = stateV1();
     const migrated = migratePersisted(persisted, 1);
 
     // Deux anciens ids peuvent tomber sur le même id courant (l'Atelier, D-095 : une variante
@@ -244,7 +320,7 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     expect(migrated.name).toBe('Employé 404');
     expect(migrated.packsOpened).toBe(7);
     expect(migrated.reducedMotion).toBe(true);
-    expect(migrated.rng).toBe(rng);
+    expect(migrated).not.toHaveProperty('rng');
   });
 
   it('ne laisse aucun ancien id, et chaque id remappé existe au catalogue', () => {
@@ -286,7 +362,7 @@ describe('Migration — les ids suivent les noms et les raretés (#49, #67, #87)
     expect(migrated.owned).toEqual({ 'rh-drh-crown': 2 });
     expect(migrated.deck).toEqual(['rh-drh-crown']);
     expect(getCard('rh-drh-crown')?.rarity).toBe('COU');
-    expect(migrated.rng).toBe(rng);
+    expect(migrated).not.toHaveProperty('rng');
   });
 
   it('donne aux cinq cartes de Management leur nom de D-029 (#67)', () => {
@@ -420,7 +496,7 @@ describe('Types de café du Deck — store (#91)', () => {
     expect(migrated.cafeTypes).toEqual([]);
     expect(migrated.deck).toEqual(['sse-psychologue']);
     expect(migrated.packsOpened).toBe(3);
-    expect(migrated.rng).toBe(rng);
+    expect(migrated).not.toHaveProperty('rng');
   });
 
   it('nettoie un choix trafiqué : ni Support ni Intérim, 3 au plus', () => {
@@ -791,7 +867,7 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
     expect(migre.owned).toEqual({ 'sse-psychologue': 2 });
     expect(migre.packsOpened).toBe(7);
     expect(migre.reducedMotion).toBe(true);
-    expect(migre.rng).toBe(4242);
+    expect(migre).not.toHaveProperty('rng');
     // Et un réglage explicite est respecté : couper le son ne se réactive pas au rechargement.
     expect(migratePersisted({ ...v11, sons: false }, 11).sons).toBe(false);
   });
@@ -812,7 +888,7 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
     expect(migre.derniere).toBeNull();
     expect(migre.owned).toEqual({ 'sse-psychologue': 2 });
     expect(migre.sons).toBe(false);
-    expect(migre.rng).toBe(4242);
+    expect(migre).not.toHaveProperty('rng');
   });
 
   it('une dernière partie abîmée est écartée à la migration, sans toucher au reste', () => {
@@ -839,7 +915,7 @@ describe('Combat — densité et raccourcis (#189, forme v8)', () => {
     expect(migre.deck).toEqual(['sse-psychologue']);
     expect(migre.packsOpened).toBe(7);
     expect(migre.sons).toBe(false);
-    expect(migre.rng).toBe(4242);
+    expect(migre).not.toHaveProperty('rng');
   });
 
   it('respecte une difficulté déjà écrite, et écarte une valeur forgée', () => {

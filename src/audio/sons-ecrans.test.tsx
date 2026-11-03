@@ -3,6 +3,7 @@ import { screen, fireEvent } from '@testing-library/react';
 import { renderWithStore } from '@/test/test-utils';
 import { Home } from '@/pages/Home';
 import { useStore } from '@/store/useStore';
+import { simulerArrivage } from '@/test/arrivageDeTest';
 
 /**
  * **Aucun son au montage** (#378, D-137). Le ticket l'exige noir sur blanc : « le jeu ne joue rien
@@ -42,12 +43,15 @@ describe('aucun son ne part au chargement d’un écran (#378)', () => {
     expect(EspionContexte.instances).toHaveLength(0);
   });
 
-  it('le réglage coupé ne fait pas jouer l’Arrivage, même au clic', () => {
+  it('le réglage coupé ne fait pas jouer l’Arrivage, même au clic', async () => {
+    // Le clic demande les cartes au serveur (#651) : le faux serveur les rend, sans réseau.
+    simulerArrivage();
     renderWithStore(<Home />, { tutorielVu: true, pasAPasCombatVu: true });
     useStore.setState({ sons: false });
     fireEvent.click(screen.getByRole('button', { name: /Ouvrir un Arrivage/i }));
-    // Le clic ouvre bien l'Arrivage (le comportement du jeu ne dépend pas du son)…
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Le clic ouvre bien l'Arrivage (le comportement du jeu ne dépend pas du son), une fois
+    // la réponse du serveur arrivée (#651)…
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
     // …mais aucune source n'est créée : sans contexte, il n'y a rien à jouer.
     for (const ctx of EspionContexte.instances) {
       expect(ctx.createBufferSource).not.toHaveBeenCalled();

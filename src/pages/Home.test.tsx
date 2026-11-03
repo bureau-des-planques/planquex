@@ -4,10 +4,13 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { Home } from './Home';
 import { useStore } from '@/store/useStore';
 import { renderWithStore } from '@/test/test-utils';
+import { simulerArrivage } from '@/test/arrivageDeTest';
 
 describe("Home — écran d'accueil", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // L'Arrivage s'ouvre par un appel au serveur (#651) : le faux serveur rend cinq cartes.
+    simulerArrivage();
   });
 
   it('affiche le titre et les actions principales', () => {
