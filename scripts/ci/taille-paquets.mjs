@@ -169,8 +169,10 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 1 486 octets le 02/11/2026** (269 847 octets) — le diagnostic de configuration cassée et son panneau de refus (#529)
  *
  * **Relevé de 1 137 octets le 02/11/2026** (270 984 octets) — les 8 planches Intérim et Syndicat entrent dans le paquet (#499)
+ *
+ * **Relevé de 1 514 octets le 03/11/2026** (272 498 octets) — l'Arrivage passe par le serveur (D-179) : couche réseau, erreurs typées, état hors ligne et migration v14 vers v15 entrent dans le paquet principal (+1,5 kB mesuré)
  */
-export const PLAFOND_PRINCIPAL = 270_984;
+export const PLAFOND_PRINCIPAL = 272_498;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de

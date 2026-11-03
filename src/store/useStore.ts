@@ -4,9 +4,7 @@ import { ALL_CARDS } from '@/data';
 import { deckCanAdd, normalizeCafeTypes } from '@/game/deck';
 import { DIFFICULTE_PAR_DEFAUT, estDifficulte } from '@/game/ia';
 import type { Difficulte } from '@/game/ia';
-import { openPackCards } from '@/game/pack';
-import { seedRng } from '@/game/rng';
-import type { RngHolder } from '@/game/rng';
+import { ouvrirArrivage } from '@/lib/arrivage';
 import type { Card, CafeType, Rarity } from '@/data/types';
 import { lirePartie } from '@/store/partie';
 import type { PartieSauvegardee } from '@/store/partie';
@@ -17,7 +15,28 @@ import type { DernierePartie } from '@/store/derniere';
 export const STORAGE_KEY = 'bureau-des-planques-v1';
 
 /**
- * Version de la forme persistée. **14** : le store gagne `difficulte` (le cran de la
+ * La **clé d'idempotence** de l'ouverture d'Arrivage en cours (#651, D-179 (2)).
+ *
+ * Elle vit **hors de la forme persistée** : c'est une intention de réseau, pas un état de
+ * jeu. Elle est créée à la première tentative et **gardée jusqu'au succès** — un échec
+ * réseau suivi d'un retry rejoue la même clé, donc le serveur ne crédite qu'une fois. La
+ * perdre entre deux tentatives serait le seul moyen de doubler la Collection.
+ */
+let cleArrivage: string | null = null;
+
+/**
+ * L'ouverture **en vol**, s'il y en a une. Un second appel pendant qu'elle attend le serveur
+ * reçoit la **même** promesse : une seule demande part, et une seule série de cartes est
+ * créditée. C'est la seconde moitié de la règle du double clic, côté store — l'écran, lui,
+ * désactive son bouton.
+ */
+let ouvertureArrivage: Promise<Card[]> | null = null;
+
+/**
+ * Version de la forme persistée. **15** : `rng` quitte la forme persistée — le client ne
+ * tire plus l'Arrivage, le serveur le tire (D-179 (2), #651) ; une sauvegarde v14 qui le
+ * porte encore se lit sans erreur, et le champ disparaît (`migratePersisted`). **14** : le
+ * store gagne `difficulte` (le cran de la
  * Direction, #251 / D-145), absente d'un état v13 : elle vaut `normal`, le défaut qui ne
  * change pas l'écran (D-084). **13** : `derniere`, la dernière partie terminée (ticket
  * #366), absente d'un état v12 : elle vaut `null`. Voir `migratePersisted` pour l'historique complet
@@ -44,10 +63,10 @@ export const STORAGE_KEY = 'bureau-des-planques-v1';
  * de suffixe d'id en passant aux raretés hautes (ticket #87) — `owned` et `deck`
  * portent des ids, donc ces re-suffixages exigent un remappage. **2** : les ids de
  * carte suivent les noms (ticket #49) — même raison. **1** : ajout de `rng`, le
- * générateur seedé du store (ticket #29). Toute nouvelle version exige une branche
- * dans `migratePersisted` (`AGENTS.md` §6).
+ * générateur seedé du store (ticket #29) — retiré en v15. Toute nouvelle version exige une
+ * branche dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 14;
+export const STORAGE_VERSION = 15;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
@@ -180,12 +199,6 @@ export interface AppState {
    */
   raccourcisCombat: boolean;
   /**
-   * État du générateur seedé des Arrivages (ticket #29). Persisté : la suite de
-   * tirages continue après un rechargement, et deux Arrivages ne rejouent pas la
-   * même séquence. Voir `@/game/rng`.
-   */
-  rng: number;
-  /**
    * La « Journée d'intégration » (le tutoriel) a-t-elle été vue ? Une partie neuve la
    * montre ; un état migré d'avant sa création la considère vue (`migratePersisted`),
    * et « Réinitialiser la progression » la remontre.
@@ -220,7 +233,12 @@ export interface AppState {
    * pas une mécanique de partie, et il survit au rechargement comme le reste du poste.
    */
   difficulte: Difficulte;
-  openPack: () => Card[];
+  /**
+   * **Ouvre un Arrivage en ligne** (#651, D-179 (2)) : demande les cartes au serveur,
+   * puis les crédite. Ne tire plus rien localement — hors ligne, elle **rejette**
+   * (`ErreurArrivage`, raison `hors-ligne`) sans aucun appel.
+   */
+  openPack: () => Promise<Card[]>;
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
   removeFromDeck: (cardId: string) => void;
@@ -278,7 +296,6 @@ export type PersistedState = Pick<
   | 'sons'
   | 'combatDetaille'
   | 'raccourcisCombat'
-  | 'rng'
   | 'tutorielVu'
   | 'pasAPasCombatVu'
   | 'partie'
@@ -297,7 +314,6 @@ export function partializeState(state: AppState): PersistedState {
     sons: state.sons,
     combatDetaille: state.combatDetaille,
     raccourcisCombat: state.raccourcisCombat,
-    rng: state.rng,
     tutorielVu: state.tutorielVu,
     pasAPasCombatVu: state.pasAPasCombatVu,
     partie: state.partie,
@@ -332,25 +348,43 @@ export const useStore = create<AppState>()(
       sons: true,
       combatDetaille: false,
       raccourcisCombat: true,
-      rng: seedRng(Date.now()),
       tutorielVu: false,
       pasAPasCombatVu: false,
       partie: null,
       derniere: null,
       difficulte: DIFFICULTE_PAR_DEFAUT,
       openPack: () => {
-        // La composition de l'Arrivage (3 communes, 1 peu commune, 1 rare) est
-        // une règle de jeu : elle vit dans `@/game/pack` (ticket #57). Ici, on ne
-        // fait qu'avancer un générateur local, puis publier son état : `set`
-        // reste le seul chemin d'écriture, et un Arrivage est reproductible.
-        const holder: RngHolder = { rng: get().rng };
-        const cards = openPackCards(holder);
-        set((state) => {
-          const owned = { ...state.owned };
-          for (const card of cards) owned[card.id] = (owned[card.id] ?? 0) + 1;
-          return { owned, packsOpened: state.packsOpened + 1, rng: holder.rng };
-        });
-        return cards;
+        // Déjà en vol : on rend la **même** promesse, donc une seule demande et un seul crédit.
+        if (ouvertureArrivage) return ouvertureArrivage;
+
+        // **La clé d'idempotence survit à l'échec** (#651, D-179 (2)) : elle est créée une
+        // fois, gardée dans cette référence, et **remise à zéro seulement au succès**. Un
+        // retry (ou un double clic) rejoue donc la **même** clé, et le serveur — qui crédite
+        // par cette clé — ne crédite qu'une fois. Une clé neuve à chaque tentative
+        // doublerait la Collection au premier réseau capricieux.
+        const promesse = (async () => {
+          const cle = cleArrivage ?? crypto.randomUUID();
+          cleArrivage = cle;
+          const cards = await ouvrirArrivage(cle);
+          cleArrivage = null;
+          set((state) => {
+            const owned = { ...state.owned };
+            for (const card of cards) owned[card.id] = (owned[card.id] ?? 0) + 1;
+            return { owned, packsOpened: state.packsOpened + 1 };
+          });
+          return cards;
+        })();
+        ouvertureArrivage = promesse;
+        // Le verrou tombe au succès comme à l'échec ; la **clé**, elle, ne tombe qu'au succès.
+        void promesse.then(
+          () => {
+            ouvertureArrivage = null;
+          },
+          () => {
+            ouvertureArrivage = null;
+          }
+        );
+        return promesse;
       },
       addCard: (cardId, amount = 1) => {
         set((state) => ({
@@ -397,7 +431,10 @@ export const useStore = create<AppState>()(
         // La normalisation écarte `SUPPORT`/`INTERIM` et ignore un 4ᵉ type (#91).
         set({ cafeTypes: normalizeCafeTypes(next) });
       },
-      reset: () =>
+      reset: () => {
+        // Une progression remise à zéro n'a pas d'ouverture en attente : la clé d'idempotence
+        // d'un Arrivage échoué ne survit pas à « Réinitialiser la progression ».
+        cleArrivage = null;
         set({
           owned: starterOwned(),
           deck: [],
@@ -417,11 +454,9 @@ export const useStore = create<AppState>()(
           derniere: null,
           // La difficulté revient au défaut : la remise à zéro part d'un poste neuf
           // (#251, D-145), et `normal` est ce que l'écran jouait avant.
-          difficulte: DIFFICULTE_PAR_DEFAUT,
-          // Un nouveau départ change la suite des Arrivages : sinon le premier
-          // Arrivage d'après remise à zéro rejouerait le précédent.
-          rng: seedRng(Date.now())
-        }),
+          difficulte: DIFFICULTE_PAR_DEFAUT
+        });
+      },
       setName: (name) => set({ name }),
       setReducedMotion: (value) => set({ reducedMotion: value }),
       setSons: (value) => set({ sons: value }),
@@ -492,9 +527,8 @@ export const useStore = create<AppState>()(
 /**
  * Passage d'un état persisté plus ancien à la forme courante.
  *
- * **v0 → v1** (ticket #29) : la version 0 ne contient pas `rng`. Sans cette
- * migration, `openPack` tirerait d'un générateur `undefined`. Le champ est créé
- * à la volée.
+ * **v0 → v1** (ticket #29) : la version 0 ne contenait pas `rng`. Ce générateur a
+ * **disparu en v15** : le client ne tire plus l'Arrivage, le serveur le tire (#651, D-179).
  *
  * **v1 → v2** (ticket #49) : les ids renommés (`CARD_ID_RENAMES`) sont remappés
  * dans `owned` et `deck`, les deux champs qui portent des ids.
@@ -535,14 +569,21 @@ export const useStore = create<AppState>()(
  * **v13 → v14** (#251, D-145) : le store gagne `difficulte`, le cran de la Direction.
  * Un état v13 n'en a pas : `normal`, la recherche à deux coups de D-084 — donc son écran
  * ne change pas. Une valeur d'un autre type (ou un cran inconnu) est écartée de même.
+ *
+ * **v14 → v15** (#651, D-179 (2)) : `rng` **quitte la forme persistée** — le client ne tire
+ * plus l'Arrivage, c'est le serveur qui tire et crédite. Une sauvegarde v14 qui le porte
+ * encore se lit **sans erreur** : le champ est simplement ignoré et n'est pas réécrit.
+ * `packsOpened` reste un compteur local, il n'est pas une autorité.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
-  const state = (persisted ?? {}) as Partial<AppState>;
-  const migrated = version < STORAGE_VERSION ? withRenamedCardIds(state) : state;
+  const state = (persisted ?? {}) as Partial<AppState> & { rng?: unknown };
+  // **v14 → v15** : le générateur du store est retiré, quel que soit l'âge de l'état. Une
+  // sauvegarde qui le porte se lit (on l'ignore), une forme persistée neuve ne l'écrit plus.
+  const { rng: _ancienGenerateur, ...sansGenerateur } = state;
+  const migrated = version < STORAGE_VERSION ? withRenamedCardIds(sansGenerateur) : sansGenerateur;
   const normalise: Partial<AppState> = {
     ...migrated,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
-    rng: typeof migrated.rng === 'number' ? migrated.rng : seedRng(Date.now()),
     partie: lirePartie(migrated.partie),
     // **v12 → v13** (#366) : la dernière partie terminée. Un état v12 n'en a pas : `null`. Une
     // forme mal faite est écartée (`lireDerniere`), comme la partie en cours.

@@ -29,6 +29,11 @@ export function useEnLigne(): boolean {
  * worker précache tout, donc le combat, la Collection et le Deck marchent sans réseau.
  * Le bandeau dit **ce qui continue** et **ce qui attend** — sans quoi un testeur hors
  * ligne croirait la page en panne le jour où le mur ou les pouces ne répondent pas.
+ *
+ * **Depuis D-179 (6)** (#651), la phrase dit la vérité plus étroite : ouvrir un Arrivage
+ * **attend le réseau** — c'est le serveur qui tire et crédite. La version d'avant promettait
+ * que « le combat, la Collection et le Deck marchent sans réseau » sans mentionner
+ * l'Arrivage, et un testeur hors ligne découvrait le refus en cliquant.
  */
 export function BandeauHorsLigne() {
   const enLigne = useEnLigne();
@@ -38,8 +43,8 @@ export function BandeauHorsLigne() {
     <p className="bandeau-hors-ligne" role="status">
       <WifiOff size={16} aria-hidden />
       <span>
-        <strong>Hors ligne.</strong> Le jeu continue : combats, Collection et Deck ne demandent aucun réseau. Le mur du
-        comité et les traces de combat attendent le retour de la connexion.
+        <strong>Hors ligne.</strong> Le jeu continue : combats, Collection et Deck ne demandent aucun réseau. Ouvrir un
+        Arrivage, le mur du comité et les traces de combat attendent le retour de la connexion.
       </span>
     </p>
   );

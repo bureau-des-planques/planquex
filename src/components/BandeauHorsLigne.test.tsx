@@ -23,6 +23,9 @@ describe('BandeauHorsLigne (#131)', () => {
     const bandeau = screen.getByRole('status');
     expect(bandeau).toHaveTextContent('Hors ligne');
     expect(bandeau).toHaveTextContent(/combats, Collection et Deck/);
+    // Depuis D-179 (6), ouvrir un Arrivage attend le réseau : la phrase ne le laisse plus
+    // croire hors ligne (le contrôle mord : la version d'avant ne disait pas « Arrivage »).
+    expect(bandeau).toHaveTextContent(/Ouvrir un\s+Arrivage/);
     expect(bandeau).toHaveTextContent(/attendent le retour de la connexion/);
   });
 

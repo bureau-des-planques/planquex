@@ -91,8 +91,8 @@ export const MUTATIONS = [
     ticket: 49,
     titre: 'la migration du store ne remappe plus les ids',
     fichier: 'src/store/useStore.ts',
-    motif: 'const migrated = version < STORAGE_VERSION ? withRenamedCardIds(state) : state;',
-    remplacement: 'const migrated = state;',
+    motif: 'const migrated = version < STORAGE_VERSION ? withRenamedCardIds(sansGenerateur) : sansGenerateur;',
+    remplacement: 'const migrated = sansGenerateur;',
     tests: ['src/store/useStore.test.ts'],
     garde: 'une carte renommée quitterait la Collection et le Deck du joueur, en silence'
   },
@@ -459,6 +459,15 @@ export const MUTATIONS = [
     tests: ['src/pages/Battle.test.tsx'],
     garde:
       'sans elle, la voix de la Direction se déclenche sur la chute de nos Planqués, et le test du craquage ne trouve plus de réplique à l’écran'
+  },
+  {
+    ticket: 651,
+    titre: 'la migration v15 garde `rng` dans la forme persistée',
+    fichier: 'src/store/useStore.ts',
+    motif: 'const { rng: _ancienGenerateur, ...sansGenerateur } = state;',
+    remplacement: 'const sansGenerateur = state;',
+    tests: ['src/store/useStore.test.ts'],
+    garde: 'le générateur du client reviendrait dans la sauvegarde, et le client croirait encore tirer ses Arrivages'
   }
 ];
 

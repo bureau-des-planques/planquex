@@ -2,7 +2,6 @@ import React, { ReactElement } from 'react';
 import { render, RenderOptions, waitFor } from '@testing-library/react';
 import { MemoryRouter, BrowserRouter } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
-import { seedRng } from '@/game/rng';
 import { ALL_CARDS } from '@/data';
 import type { Faction } from '@/data/types';
 import type { DernierePartie } from '@/store/derniere';
@@ -25,7 +24,6 @@ export interface TestStoreState {
   combatDetaille?: boolean;
   /** Les raccourcis clavier du combat (#189) ; absents = actifs (`true`). */
   raccourcisCombat?: boolean;
-  rng?: number;
   tutorielVu?: boolean;
   pasAPasCombatVu?: boolean;
   /** La partie en cours à reprendre (#126) ; absente = aucune. */
@@ -60,7 +58,6 @@ export function setupTestStore(initialState: TestStoreState = {}) {
     packsOpened: initialState.packsOpened ?? 0,
     combatDetaille: initialState.combatDetaille ?? false,
     raccourcisCombat: initialState.raccourcisCombat ?? true,
-    rng: initialState.rng ?? seedRng(12345),
     tutorielVu: initialState.tutorielVu ?? true,
     pasAPasCombatVu: initialState.pasAPasCombatVu ?? true,
     partie: initialState.partie ?? null,

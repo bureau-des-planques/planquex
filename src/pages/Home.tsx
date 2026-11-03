@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PackageOpen, Swords } from 'lucide-react';
+import { PackageOpen, Swords, WifiOff } from 'lucide-react';
 import { ALL_CARDS } from '@/data';
 import { NOTES_RESUME, type ResumeNote } from '@/data/notes-resume';
 import type { Card } from '@/data/types';
@@ -12,6 +12,8 @@ import { avancementTirable, PLAFOND_TIRABLE } from '@/components/plafond-collect
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { SceneOuverture } from '@/animation/ouverture/SceneOuverture';
 import { jouer } from '@/audio/sons';
+import { useEnLigne } from '@/components/BandeauHorsLigne';
+import { ErreurArrivage, type RaisonArrivage } from '@/lib/arrivage';
 
 /** La date se lit en français (« 21 octobre 2026 ») : `date` est un jour, pas un instant. */
 function dateLongue(jour: string): string {
@@ -32,6 +34,11 @@ function dateLongue(jour: string): string {
  */
 function derniereRelease(notes: readonly ResumeNote[]): ResumeNote | undefined {
   return notes.find((note) => !note.brouillon && note.version === APP_VERSION) ?? notes.find((note) => !note.brouillon);
+}
+
+/** La raison d'un échec d'ouverture, telle que l'écran la dit (D-060 (3)). */
+function raisonDe(erreur: unknown): RaisonArrivage {
+  return erreur instanceof ErreurArrivage ? erreur.raison : 'reseau';
 }
 
 export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] } = {}) {
@@ -59,6 +66,20 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
   const [arrivageOuvert, setArrivageOuvert] = useState(false);
   /** Les cartes de l'Arrivage que le testeur n'avait pas : une carte tirée deux fois n'est neuve qu'une. */
   const [nouvelles, setNouvelles] = useState<ReadonlySet<number>>(() => new Set());
+  /**
+   * **L'ouverture attend le serveur** (#651, D-179 (2)). Le tirage n'est plus local : le
+   * bouton se met en attente, et un second clic ne part pas — la clé d'idempotence du
+   * store rendrait le doublon inoffensif, mais l'écran ne le tente pas non plus.
+   */
+  const [ouvertureEnCours, setOuvertureEnCours] = useState(false);
+  /** L'échec nommé de la dernière tentative, ou `null`. Le bouton reste le geste de reprise. */
+  const [echec, setEchec] = useState<RaisonArrivage | null>(null);
+  /**
+   * **L'Arrivage attend le réseau** (D-179 (6)) : hors ligne, l'écran le dit avant le clic,
+   * et le bouton ne part pas. C'est un **état** (D-060 (3)), pas un message d'erreur, et
+   * aucune file d'attente ne retient le geste.
+   */
+  const enLigne = useEnLigne();
 
   const uniqueOwned = Object.keys(owned).filter((id) => (owned[id] ?? 0) > 0).length;
   const totalOwned = Object.values(owned).reduce((sum, count) => sum + count, 0);
@@ -66,21 +87,36 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
   // n'en sortent jamais, donc diviser par tout le catalogue promettrait un 100 % inatteignable.
   const { pourcent: completion } = avancementTirable(owned);
 
-  const handleOpenPack = () => {
+  const handleOpenPack = async () => {
+    // Un second clic pendant l'attente ne part pas : le geste est déjà en vol.
+    if (ouvertureEnCours) return;
     // **Le son de l'Arrivage part au clic** (D-137) : le geste est ce qui autorise l'audio, et le
-    // son accompagne l'ouverture, pas la révélation.
+    // son accompagne l'ouverture, pas la révélation. Il ne se déplace pas dans la réponse : la
+    // révélation vient plus tard, et un son différé n'accompagnerait plus le geste.
     jouer('arrivage');
     const connues = new Set(Object.keys(owned).filter((id) => (owned[id] ?? 0) > 0));
-    const cartes = openPack();
-    const neuves = new Set<number>();
-    cartes.forEach((card, index) => {
-      if (connues.has(card.id)) return;
-      connues.add(card.id);
-      neuves.add(index);
-    });
-    setNouvelles(neuves);
-    setLastPack(cartes);
-    setArrivageOuvert(true);
+    setOuvertureEnCours(true);
+    setEchec(null);
+    try {
+      // **Les cartes viennent du serveur** (#651, D-179 (2)) : la scène ne s'ouvre que
+      // lorsqu'elles sont là, donc jamais sur un tirage local ni sur une promesse vide.
+      const cartes = await openPack();
+      const neuves = new Set<number>();
+      cartes.forEach((card, index) => {
+        if (connues.has(card.id)) return;
+        connues.add(card.id);
+        neuves.add(index);
+      });
+      setNouvelles(neuves);
+      setLastPack(cartes);
+      setArrivageOuvert(true);
+    } catch (erreur) {
+      // L'échec est un **état** de l'écran (D-060 (3)) : rien n'est acquis, rien n'est
+      // perdu. Un retry reprend avec la même clé, donc sans double crédit.
+      setEchec(raisonDe(erreur));
+    } finally {
+      setOuvertureEnCours(false);
+    }
   };
 
   return (
@@ -105,6 +141,10 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
             className="button button--gold button--big hero__ouvrir"
             data-journee-cible={cibleArrivage ? 'arrivage' : undefined}
             onClick={handleOpenPack}
+            // Hors ligne, le bouton ne part pas (D-179 (6)) ; pendant l'attente, il ne part
+            // pas deux fois. La scène, elle, ne s'ouvre qu'à la réponse du serveur.
+            disabled={!enLigne || ouvertureEnCours}
+            aria-busy={ouvertureEnCours}
           >
             <PackageOpen size={22} /> Ouvrir un Arrivage
           </button>
@@ -112,6 +152,24 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
             <Swords size={20} /> Affronter la Direction
           </Link>
         </div>
+        {/* **L'Arrivage attend le réseau** (D-179 (6), D-060 (3)) : un état, pas une erreur —
+            « connecte-toi pour ouvrir », sans file d'attente et sans tirage local. */}
+        {!enLigne && (
+          <p className="muted hero__attente" role="status">
+            <WifiOff size={16} aria-hidden /> Hors ligne : connecte-toi pour ouvrir un Arrivage. Le combat, la
+            Collection et le Deck continuent sans réseau.
+          </p>
+        )}
+        {/* **L'échec d'une ouverture** (#651) : réseau, refus ou configuration. Réessayer est le
+            même bouton, avec la même clé d'idempotence : le serveur ne crédite qu'une fois. */}
+        {echec && enLigne && (
+          <p className="muted hero__attente" role={echec === 'reseau' ? 'alert' : 'status'}>
+            {echec === 'refus' && 'Connecte-toi pour ouvrir un Arrivage.'}
+            {echec === 'reseau' && 'L’ouverture n’a pas abouti : réessaie. Les cartes ne seront créditées qu’une fois.'}
+            {echec === 'hors-ligne' && 'Hors ligne : connecte-toi pour ouvrir un Arrivage. Le reste du jeu continue.'}
+            {echec === 'configuration' && 'Le serveur du jeu n’est pas configuré : l’Arrivage ne peut pas s’ouvrir.'}
+          </p>
+        )}
         {/* **La partie qui attend** (#553) : la même action mène au combat, mais elle
             reprend une partie au lieu d'en commencer une — et le dire ici évite de le
             découvrir sur l'écran de combat. La copie est une écriture d'écran, à valider

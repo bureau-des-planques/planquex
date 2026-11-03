@@ -103,7 +103,7 @@ export function diagnostiquerMur(env: Environnement = import.meta.env): Diagnost
  */
 export interface SessionPersistee {
   auth: {
-    getSession(): Promise<{ data: { session: { user: { id: string } } | null } }>;
+    getSession(): Promise<{ data: { session: { user: { id: string }; access_token?: string } | null } }>;
   };
 }
 
@@ -298,4 +298,22 @@ export async function identiteSession(
 
   const { data } = await supabase.auth.getSession();
   return data.session?.user?.id ?? null;
+}
+
+/**
+ * Le **jeton** de la session persistée — l'en-tête `Authorization` de l'Edge Function
+ * `ouvrir-arrivage` (#651, D-179). `null` quand le backend n'est pas configuré ou quand
+ * personne n'est connecté : l'appelant refuse alors l'ouverture (pas de tirage local).
+ *
+ * Même couture que `identiteSession` : le client est injectable, donc le jeton se teste
+ * **sans réseau**.
+ */
+export async function jetonSession(
+  chargerClient: () => Promise<SessionPersistee | null> = clientMur
+): Promise<string | null> {
+  const supabase = await chargerClient();
+  if (!supabase) return null;
+
+  const { data } = await supabase.auth.getSession();
+  return data.session?.access_token ?? null;
 }
