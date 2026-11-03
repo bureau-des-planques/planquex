@@ -18,7 +18,7 @@ import type { PartieSauvegardee } from '@/store/partie';
 import { encodeMatch } from '@/game/codec';
 import { autoDeck } from '@/game/deck';
 import { applyAction, createBattle, legalActions } from '@/game/engine';
-import { nextAiAction } from '@/game/ia';
+import { DEFAULT_SEARCH_OPTIONS, nextAiAction, nextSearchAction } from '@/game/ia';
 import { factionDeck } from '@/game/simulation';
 import { partieSauvegardee } from '@/store/partie';
 import { useStore } from '@/store/useStore';
@@ -1824,13 +1824,29 @@ function deckDesRepliques(): string[] {
   return autoDeck(Object.fromEntries(ALL_CARDS.map((carte) => [carte.id, 2]))).deck;
 }
 
+/**
+ * La recherche de l'écran, **sans échéance murale** : rejouer une graine doit être rejouable.
+ * `maxMs` est le seul terme non déterministe de la recherche (D-084, #172) — sous charge, le
+ * budget de 60 ms coupait la recherche plus tôt, la trajectoire divergeait, et le scénario
+ * « victoire depuis la graine 133 » n'existait plus. C'est ce qui faisait échouer ce test au
+ * hasard, sur des branches qui ne touchaient pas au combat (#617).
+ */
+const RECHERCHE_SANS_ECHEANCE = { ...DEFAULT_SEARCH_OPTIONS, maxMs: Number.POSITIVE_INFINITY };
+
+/** Le coup de la Direction pour un rejeu : la recherche de l'écran, privée de son horloge. */
+function coupDeLaDirection(s: BattleState): BattleAction | null {
+  if (s.pendingPromotion) return nextAiAction(s, 'scripte');
+  if (s.current !== 'ai') return null;
+  return nextSearchAction(s, RECHERCHE_SANS_ECHEANCE);
+}
+
 /** Le coup qui fait avancer une partie : la politique de l'écran pour la Direction, jamais le forfait. */
 function coupDeJeu(s: BattleState): BattleAction | null {
   const legales = legalActions(s).filter((action) => action.type !== 'forfeit');
   if (s.pendingPromotion) return legales.find((action) => action.type === 'promoteActive') ?? null;
   if (s.pendingChoice) return legales.find((action) => action.type === 'choose') ?? null;
   if (s.current === 'ai') {
-    return nextAiAction(s, 'recherche') ?? legales.find((action) => action.type === 'endTurn') ?? null;
+    return coupDeLaDirection(s) ?? legales.find((action) => action.type === 'endTurn') ?? null;
   }
   return (
     legales.find((action) => action.type === 'attack') ??
@@ -1894,7 +1910,7 @@ function victoireEnSolo(): ScenarioReplique {
 /** Un solo que la Direction gagne **sur son coup** : elle marque la troisième Intervention. */
 function defaiteEnSolo(): ScenarioReplique {
   cacheRepliques.defaite ??= rejouerLeScenario(GRAINE_DEFAITE_SOLO, (avant) => {
-    const sienne = nextAiAction(avant, 'recherche');
+    const sienne = coupDeLaDirection(avant);
     if (!sienne) return null;
     const apres = applyAction(avant, sienne);
     return apres.phase === 'ended' && apres.winner === 'ai' ? sienne : null;
@@ -1935,7 +1951,11 @@ describe('Battle — les répliques de la Direction (#544)', () => {
     const { partie, avant, apres, action } = victoireEnSolo();
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
 
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(nomDeLaPression(avant, action)) }));
+    // **Attendre le tour jouable, pas le premier rendu** : la reprise monte l'écran, puis livre
+    // l'état `playing`. Un `getByRole` synchrone peut cliquer pendant cette transition et rater
+    // la Pression ; `findByRole` attend qu'elle soit réellement dans la barre (#617).
+    const bouton = await screen.findByRole('button', { name: new RegExp(nomDeLaPression(avant, action)) });
+    fireEvent.click(bouton);
 
     // La ligne vit dans la barre de journal, et dit la phrase du tour de la fin gagnée.
     const ligne = await screen.findByTestId('replique-direction');
@@ -1971,7 +1991,10 @@ describe('Battle — les répliques de la Direction (#544)', () => {
     // La ligne du journal, elle, est déjà celle de la relève : le craquage se lit dans les faits.
     expect(apres.log.at(-1)).toMatch(/relève/);
 
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(nomDeLaPression(avant, action)) }));
+    // **Attendre le tour jouable, pas le premier rendu** : même course que le test de victoire
+    // ci-dessus ; `findByRole` attend que la Pression soit réellement dans la barre (#617).
+    const bouton = await screen.findByRole('button', { name: new RegExp(nomDeLaPression(avant, action)) });
+    fireEvent.click(bouton);
 
     // **Lu juste après le geste** : la Direction relève dans la foulée (délai 0 sous mouvement
     // réduit) et sa relève remplace la réplique — c'est la règle du ticket, une seule à l'écran.
