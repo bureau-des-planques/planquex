@@ -29,8 +29,10 @@ s'appuyer dessus.
 | `supabase/migrations/0023_statut_a_l_insertion.sql` | le statut d'un post-it naît **en attente** (#552) : un déclencheur `before insert` réécrit `statut` à `'en attente'`, quel que soit le statut envoyé par le client — le tri (0006) reste le seul geste qui avance un post-it. La fonction de déclencheur est **fermée** (0018) ; aucun droit client nouveau |
 | `supabase/migrations/0024_pack_openings.sql` | l'Arrivage se tire et se crédite **côté serveur** (#651, D-179) : `public.pack_openings` (une ligne par ouverture : compte, **clé d'idempotence**, graine, cartes, date), et `public.crediter_arrivage(cle, cartes, graine)` qui crédite la Collection **et** écrit la ligne **dans la même transaction** — la même clé rejouée rend les mêmes cartes sans recréditer. La fonction est **fermée à `anon` et à `authenticated`** (un navigateur ne se crédite pas les cartes qu'il invente) : l'Edge Function l'appelle par `SUPABASE_DB_URL`, avec `request.jwt.claim.sub` posé depuis le JWT vérifié. Le client **lit** ses ouvertures, il n'écrit rien |
 | `supabase/migrations/0025_deck_rejeu.sql` | le Deck se **rejoue** depuis un journal d'intentions (#491, D-153 (3), D-179 (4)) : `public.deck_rejeux` (un reçu par compte et par **clé d'idempotence**, avec le lot reçu), et `public.rejouer_deck(operations, cle)` qui rejoue `ajouter` / `retirer` / `remplacer` **dans l'ordre**, une seule fois par clé, dans une transaction. La fonction ne juge pas la légalité : la garde différée `0021` refuse au commit, la transaction est annulée (reçu compris) et la clé reste libre — la file du client reste rejouable. `authenticated` **exécute** la fonction (le client l'appelle), personne n'écrit le reçu. Les **types de café** ne sont pas encore synchronisés (aucune colonne dans 0020) |
+| `supabase/migrations/0026_import_deck.sql` | le Deck local **monte dans le compte, une seule fois** (#492, D-153 (1), D-179 (1)) : `public.deck_imports` (une ligne par compte — sa clé primaire **est** le marqueur atomique) et `public.importer_deck(operations, cle)` qui tente le marqueur, importe par `rejouer_deck` **seulement si le compte n'a pas encore de Deck**, et sinon **n'écrase rien** : le Deck du serveur fait autorité et est rendu au client. Tout se joue dans une transaction : un Deck illégal annule l'import **et** le marqueur. `authenticated` **exécute** la fonction, personne n'écrit le marqueur |
+| `supabase/import-deck.test.ts` | la garde de l'import du Deck (#492, D-153 (1), migration 0026) : un compte vide reçoit le Deck local **une fois** (deux logins, deux clés), le marqueur tient même quand le Deck importé est vide, un compte qui a déjà un Deck **n'est pas écrasé**, un Deck illégal annule l'import **et** le marqueur puis une tentative légale passe, le client exécute la fonction sans écrire le marqueur — et le marqueur retiré laisse passer un second import |
 | `supabase/statut.test.ts` | la garde du statut à l'insertion (#552) : un compte approuvé qui colle un post-it `fait`, `retenu` ou `écarté` obtient `en attente` en base, le geste sans statut ne change pas, l'administrateur trie toujours par `update`, la migration se rejoue — et le déclencheur neutralisé laisse passer le statut du client |
-| `supabase/fonctions.test.ts` | la garde des droits d'exécution (#341) : `anon` n'exécute aucune fonction de `public`, `authenticated` exécute **exactement** les six justifiées, la migration se rejoue — et une fonction fabriquée laissée ouverte de plus est dénoncée |
+| `supabase/fonctions.test.ts` | la garde des droits d'exécution (#341) : `anon` n'exécute aucune fonction de `public`, `authenticated` exécute **exactement** les sept justifiées, la migration se rejoue — et une fonction fabriquée laissée ouverte de plus est dénoncée |
 | `supabase/imports/comite-fichier-2026-10-26.sql` | l'import des deux post-its de `docs/comite.json` en base (#136) — données, pas schéma : auteur sentinelle, date de collecte reprise de l'id, écran vide devenu `null` |
 | `supabase/imports.test.ts` | la garde de l'import : le fichier et l'import disent la même chose, les lignes passent `lirePostitsDeLaBase`, rejouer ne duplique rien |
 | `supabase/anon.test.ts` | la garde du droit `anon` : aucune fonction `security definer` ne lui est ouverte, `authenticated` garde les fonctions d'écriture, et le `revoke ... from anon` neutralisé laisse `anon` exécuter |
@@ -665,9 +667,9 @@ deux choses : `authenticated` sur les deux **déclencheurs** de `comptes`, et le
 ferme tout cela. L'invariant, tenu par `supabase/fonctions.test.ts` :
 
 - **`anon` n'exécute aucune fonction de `public`** ;
-- **`authenticated` exécute exactement les six** ci-dessous.
+- **`authenticated` exécute exactement les sept** ci-dessous.
 
-### Les sept fonctions `SECURITY DEFINER`, triées une par une
+### Les neuf fonctions `SECURITY DEFINER`, triées une par une
 
 | Fonction | État | Raison |
 |---|---|---|
@@ -677,6 +679,7 @@ ferme tout cela. L'invariant, tenu par `supabase/fonctions.test.ts` :
 | `compte_approuve()` | **ouverte** | **citée par les politiques RLS** de `postits`, `votes`, `commentaires` et `combats` ; une politique s'exécute **avec les droits de l'appelant**, donc `authenticated` garde `EXECUTE` |
 | `est_administrateur()` | **ouverte** | **citée par les politiques RLS** (tri, retrait d'administration) — même raison |
 | `rejouer_deck(jsonb, text)` | **ouverte** | **appelée par le client** : le rejeu du journal d'intentions du Deck (#491, D-153 (3)) — ajoutée par la 0025 ; elle ne vise que `auth.uid()`, et la garde `0021` juge le Deck final au commit |
+| `importer_deck(jsonb, text)` | **ouverte** | **appelée par le client** : l'import du Deck local, une seule fois, dans le compte (#492, D-153 (1)) — ajoutée par la 0026 ; elle ne vise que `auth.uid()`, le marqueur `deck_imports` rend l'import unique, et la garde `0021` juge le Deck au commit |
 | `comptes_creation()` | **fermée** | **déclencheur** sur `auth.users` : jamais appelée par RPC, et un déclencheur ne vérifie pas l'`EXECUTE` |
 | `comptes_decision()` | **fermée** | **déclencheur** sur `public.comptes` — même raison |
 

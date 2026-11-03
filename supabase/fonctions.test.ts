@@ -9,10 +9,11 @@
  * invariant lisible d'un coup d'œil :
  *
  *   (a) **`anon` n'exécute aucune fonction de `public`** ;
- *   (b) **`authenticated` exécute exactement les six** que le client appelle ou que la RLS
+ *   (b) **`authenticated` exécute exactement les sept** que le client appelle ou que la RLS
  *       cite : `corriger_postit`, `deplacer_postit`, `marquer_comite_vu`, `compte_approuve`,
- *       `est_administrateur` (D-133 (3)), et `rejouer_deck` (#491, D-153 (3) — c'est le
- *       client qui envoie le lot de Deck) ;
+ *       `est_administrateur` (D-133 (3)), `rejouer_deck` (#491, D-153 (3) — c'est le
+ *       client qui envoie le lot de Deck) et `importer_deck` (#492, D-153 (1) — c'est le
+ *       client qui demande l'import du Deck local) ;
  *   (c) la migration **se rejoue** sur une base déjà à jour ;
  *   (d) **le contrôle mord** : une fonction fabriquée laissée ouverte de plus est dénoncée.
  *
@@ -34,6 +35,7 @@ export const OUVERTS_ATTENDUS = [
   'corriger_postit',
   'deplacer_postit',
   'est_administrateur',
+  'importer_deck',
   'marquer_comite_vu',
   'rejouer_deck'
 ] as const;
@@ -91,7 +93,7 @@ describe('les fonctions de `public` (#341, D-133)', () => {
     await db.close();
   });
 
-  it('(b) `authenticated` exécute exactement les six fonctions justifiées', async () => {
+  it('(b) `authenticated` exécute exactement les sept fonctions justifiées', async () => {
     const db = await baseSupabase();
     const ouverts = await fonctionsOuvertes(db, 'authenticated');
     expect(ouverts).toEqual([...OUVERTS_ATTENDUS].sort());
@@ -142,7 +144,7 @@ describe('les fonctions de `public` (#341, D-133)', () => {
 
     it('une fonction retirée de la liste justifiée est dénoncée', () => {
       expect(defautsExecute({ anon: [], authenticated: ['corriger_postit'] })).toEqual([
-        "authenticated n'exécute plus : compte_approuve, deplacer_postit, est_administrateur, marquer_comite_vu, rejouer_deck"
+        "authenticated n'exécute plus : compte_approuve, deplacer_postit, est_administrateur, importer_deck, marquer_comite_vu, rejouer_deck"
       ]);
     });
 

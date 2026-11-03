@@ -7,8 +7,17 @@ import type { Difficulte } from '@/game/ia';
 import { ouvrirArrivage } from '@/lib/arrivage';
 import { ErreurCollection, lireCollection } from '@/lib/collection';
 import type { RaisonCollection } from '@/lib/collection';
-import { ajouterIntention, cleDeck, envoyerDeck, ErreurDeck, normaliserOutbox, operationDeck } from '@/lib/deck';
-import type { IntentionDeck, RaisonDeck } from '@/lib/deck';
+import {
+  ajouterIntention,
+  carteDuDeck,
+  cleDeck,
+  envoyerDeck,
+  ErreurDeck,
+  importerDeck,
+  normaliserOutbox,
+  operationDeck
+} from '@/lib/deck';
+import type { IntentionDeck, OperationDeck, RaisonDeck } from '@/lib/deck';
 import type { Card, CafeType, Rarity } from '@/data/types';
 import { lirePartie } from '@/store/partie';
 import type { PartieSauvegardee } from '@/store/partie';
@@ -43,7 +52,18 @@ let ouvertureArrivage: Promise<Card[]> | null = null;
 let envoiDeck: Promise<RaisonDeck | null> | null = null;
 
 /**
- * Version de la forme persistée. **17** : le Deck gagne sa **file d'intentions**
+ * L'import du Deck local **en vol**, s'il y en a un (#492). Même raison que `envoiDeck` : un
+ * second montage (React StrictMode, deux onglets) ne doit pas lancer deux imports. Le
+ * marqueur serveur les rendrait inoffensifs, mais un seul appel suffit — et c'est lui que le
+ * test « deux logins, un import » compte.
+ */
+let importDeckEnCours: Promise<RaisonDeck | null> | null = null;
+
+/**
+ * Version de la forme persistée. **18** : le store gagne `deckImporte`, le drapeau qui dit
+ * que le Deck local de cet appareil est monté dans le compte (#492, D-153 (1)) — absent d'un
+ * état v17, il vaut `false` : le Deck local montera au prochain login. **17** : le Deck gagne
+ * sa **file d'intentions**
  * (`deckOutbox`, #491, D-153 (3), D-179 (4)) — absente d'un état v16, elle vaut `[]` :
  * rien n'attendait. **16** : la Collection devient un **cache** du serveur
  * (#493, D-179 (3)) — `collectionSynchroniseeLe` garde la date de la dernière lecture
@@ -81,7 +101,7 @@ let envoiDeck: Promise<RaisonDeck | null> | null = null;
  * générateur seedé du store (ticket #29) — retiré en v15. Toute nouvelle version exige une
  * branche dans `migratePersisted` (`AGENTS.md` §6).
  */
-export const STORAGE_VERSION = 17;
+export const STORAGE_VERSION = 18;
 
 /**
  * Ids de carte renommés ou re-suffixés (tickets #49 et #87). `docs/JEU.md` §5 : **un id
@@ -207,6 +227,14 @@ export interface AppState {
    */
   deckOutbox: IntentionDeck[];
   /**
+   * **L'import du Deck local dans le compte a-t-il été tenté avec succès ?** (#492,
+   * D-153 (1)) : `false` tant que le Deck de cet appareil n'est pas monté dans le compte,
+   * `true` ensuite. Persisté (v18) : un rechargement ne relance pas l'import. Le **marqueur
+   * du serveur** reste l'autorité (`0026`) : ce drapeau n'est qu'un raccourci local, et un
+   * second appareil le repart à `false` sans rien réimporter.
+   */
+  deckImporte: boolean;
+  /**
    * Pourquoi le dernier envoi du Deck n'a pas abouti (#491) : `null` quand la file est vide
    * ou à jour. Ce n'est **pas** persisté : c'est l'état d'un essai, pas une donnée de jeu.
    */
@@ -284,8 +312,20 @@ export interface AppState {
    * **Envoie la file du Deck au serveur** (#491). Vide la file au succès ; sur un refus ou
    * une panne, la **garde intacte** et rend la raison, que l'écran Deck dit (D-060 (3)).
    * Ne fait rien quand la file est vide, et n'émet aucun appel hors ligne ou sans session.
+   *
+   * Depuis #492, elle **importe d'abord** le Deck local si ce n'est pas fait : l'import doit
+   * précéder la file, sinon des intentions déjà comptées dans le Deck local seraient rejouées
+   * par-dessus l'instantané importé — et doubleraient le Deck.
    */
   synchroniserDeck: () => Promise<RaisonDeck | null>;
+  /**
+   * **Monte une seule fois le Deck local dans le compte** (#492, D-153 (1), D-179 (1)).
+   * Ne fait rien si `deckImporte` est déjà vrai. Au succès, le Deck local devient celui que
+   * le serveur rend (quand le compte avait déjà un Deck, c'est lui qui fait autorité), et la
+   * file d'intentions est vidée : l'instantané la remplace. Sur un échec, **rien ne bouge** —
+   * le Deck local et sa file restent, et le prochain montage ou retour du réseau réessaie.
+   */
+  importerDeckLocal: () => Promise<RaisonDeck | null>;
   addCard: (cardId: string, amount?: number) => void;
   addToDeck: (cardId: string) => void;
   removeFromDeck: (cardId: string) => void;
@@ -340,6 +380,7 @@ export type PersistedState = Pick<
   | 'deck'
   | 'cafeTypes'
   | 'deckOutbox'
+  | 'deckImporte'
   | 'packsOpened'
   | 'reducedMotion'
   | 'sons'
@@ -360,6 +401,7 @@ export function partializeState(state: AppState): PersistedState {
     deck: state.deck,
     cafeTypes: state.cafeTypes,
     deckOutbox: state.deckOutbox,
+    deckImporte: state.deckImporte,
     packsOpened: state.packsOpened,
     reducedMotion: state.reducedMotion,
     sons: state.sons,
@@ -410,6 +452,7 @@ export const useStore = create<AppState>()(
       deck: [],
       cafeTypes: [],
       deckOutbox: [],
+      deckImporte: false,
       deckSyncRaison: null,
       packsOpened: 0,
       reducedMotion: false,
@@ -471,25 +514,95 @@ export const useStore = create<AppState>()(
           return erreur instanceof ErreurCollection ? erreur.raison : 'reseau';
         }
       },
-      synchroniserDeck: async () => {
-        // Déjà en vol : on rend la **même** promesse — un seul lot part, la file n'est vidée
-        // qu'une fois. Le lot est **figé** au départ : une intention ajoutée pendant l'appel
-        // reste dans la file et partira au lot suivant.
-        if (envoiDeck) return envoiDeck;
+      importerDeckLocal: async () => {
+        // Déjà monté dans le compte : rien à faire. C'est le raccourci local ; le marqueur
+        // du serveur (`0026`) reste l'autorité pour un autre appareil.
+        if (get().deckImporte) return null;
+        // Déjà en vol : même promesse, un seul import part.
+        if (importDeckEnCours) return importDeckEnCours;
 
-        const intentions = get().deckOutbox;
-        if (intentions.length === 0) {
-          if (get().deckSyncRaison !== null) set({ deckSyncRaison: null });
-          return null;
-        }
-
-        const ids = new Set(intentions.map((intention) => intention.id));
-        const operations = [...intentions].sort((a, b) => a.ordre - b.ordre).map((intention) => intention.operation);
-        // La clé du lot : celle de sa première intention. Elle survit au rechargement, donc
-        // un retry rejoue la **même** clé et le serveur n'applique le lot qu'une fois.
-        const cle = cleDeck(intentions);
+        // L'instantané du Deck local **tel qu'il est** : un seul `remplacer`, qui décrit
+        // exactement la composition que le testeur voit. Les intentions encore en file y
+        // sont déjà comptées — c'est pourquoi le succès vide la file.
+        const instantane = get().deck;
+        const operations: OperationDeck[] = [{ type: 'remplacer', cartes: instantane.map(carteDuDeck) }];
 
         const promesse = (async () => {
+          try {
+            // Une clé **neuve** à chaque tentative : c'est le marqueur de `0026` qui empêche
+            // le double import, pas le reçu de `rejouer_deck` — sinon retirer le marqueur ne
+            // changerait rien, et le « contrôle mord » de la migration ne mordrait pas.
+            const resultat = await importerDeck(operations, `import:${crypto.randomUUID()}`);
+            const actuel = get().deck;
+            const inchange =
+              actuel.length === instantane.length && actuel.every((carte, index) => carte === instantane[index]);
+            if (!inchange) {
+              // Le testeur a bougé le Deck pendant l'appel : ses gestes sont dans la file, et
+              // ils décrivent un Deck plus récent que l'instantané. On ne les écrase pas ; on
+              // les ramène à **un** `remplacer` du Deck courant, que le serveur appliquera au
+              // rejeu suivant (explicite, jamais silencieux — D-153 (3)).
+              set({
+                deckImporte: true,
+                deckSyncRaison: null,
+                deckOutbox: ajouterIntention([], {
+                  type: 'remplacer',
+                  cartes: actuel.map((carte) => carteDuDeck(carte))
+                })
+              });
+              return null;
+            }
+            // Le Deck du serveur fait autorité (D-179 (1)) : quand le compte en avait déjà
+            // un, c'est lui qui remplace la copie locale. La file part avec : l'instantané
+            // la remplace, et la rejouer par-dessus doublerait le Deck.
+            set({ deck: resultat.deck, deckImporte: true, deckOutbox: [], deckSyncRaison: null });
+            return null;
+          } catch (erreur) {
+            // **Rien n'est perdu** : ni le Deck local, ni sa file. Le prochain montage, le
+            // retour du réseau ou le bouton de l'écran Deck réessaie.
+            const raison = erreur instanceof ErreurDeck ? erreur.raison : 'reseau';
+            set({ deckSyncRaison: raison });
+            return raison;
+          }
+        })();
+        importDeckEnCours = promesse;
+        void promesse.then(
+          () => {
+            importDeckEnCours = null;
+          },
+          () => {
+            importDeckEnCours = null;
+          }
+        );
+        return promesse;
+      },
+      synchroniserDeck: async () => {
+        // Déjà en vol : on rend la **même** promesse — un seul lot part, la file n'est vidée
+        // qu'une fois. Le verrou est posé **avant** le premier `await` (l'import), sinon deux
+        // appels simultanés le franchiraient tous les deux.
+        if (envoiDeck) return envoiDeck;
+
+        const promesse = (async () => {
+          // **L'import d'abord** (#492) : il pose l'instantané du Deck local, donc il doit
+          // précéder la file — sinon des intentions déjà comptées dans le Deck local seraient
+          // rejouées par-dessus l'instantané et doubleraient le Deck. Un échec d'import
+          // arrête tout : la file attend, rien n'est perdu.
+          const raisonImport = await get().importerDeckLocal();
+          if (raisonImport !== null) return raisonImport;
+
+          // Le lot est **figé** ici : une intention ajoutée pendant l'appel reste dans la
+          // file et partira au lot suivant.
+          const intentions = get().deckOutbox;
+          if (intentions.length === 0) {
+            if (get().deckSyncRaison !== null) set({ deckSyncRaison: null });
+            return null;
+          }
+
+          const ids = new Set(intentions.map((intention) => intention.id));
+          const operations = [...intentions].sort((a, b) => a.ordre - b.ordre).map((intention) => intention.operation);
+          // La clé du lot : celle de sa première intention. Elle survit au rechargement, donc
+          // un retry rejoue la **même** clé et le serveur n'applique le lot qu'une fois.
+          const cle = cleDeck(intentions);
+
           try {
             await envoyerDeck(operations, cle);
             set((state) => ({
@@ -571,6 +684,7 @@ export const useStore = create<AppState>()(
         // pas ressusciter l'ancien Deck à la prochaine reconnexion. Le reset local n'écrit
         // rien au serveur (D-153 (2) le fera avec le reset de beta, #494).
         envoiDeck = null;
+        importDeckEnCours = null;
         set({
           owned: starterOwned(),
           collectionSynchroniseeLe: null,
@@ -655,10 +769,14 @@ export const useStore = create<AppState>()(
         // ne jette pas les gestes qui attendent le réseau, et une sauvegarde n'apporte pas
         // ceux d'un autre appareil.
         const outbox = get().deckOutbox;
-        const deckImporte = Array.isArray(migre.deck) ? migre.deck : get().deck;
+        const deckFinal = Array.isArray(migre.deck) ? migre.deck : get().deck;
         set({
           ...migre,
-          deckOutbox: ajouterIntention(outbox, operationDeck(get().deck, deckImporte))
+          // **L'import du Deck dans le compte est un fait de l'appareil**, pas de la
+          // sauvegarde (#492) : une sauvegarde d'avant v18 ne doit pas relancer l'import ni
+          // le défaire. On garde le drapeau courant.
+          deckImporte: get().deckImporte,
+          deckOutbox: ajouterIntention(outbox, operationDeck(get().deck, deckFinal))
         });
         return { ok: true };
       }
@@ -731,6 +849,11 @@ export const useStore = create<AppState>()(
  * d'intentions** du Deck. Un état v16 n'en a pas : `[]`, rien n'attendait. Une file
  * trafiquée est **filtrée** (`normaliserOutbox`) plutôt que crue : une intention mal formée
  * ne part pas au serveur.
+ *
+ * **v17 → v18** (#492, D-153 (1)) : le store gagne `deckImporte`, le drapeau qui dit que le
+ * Deck local de cet appareil est monté dans le compte. Un état v17 n'en a pas : `false`, donc
+ * son Deck local montera au prochain login. Le **marqueur du serveur** (`0026`) reste
+ * l'autorité : un second appareil repart à `false` sans rien réimporter.
  */
 export function migratePersisted(persisted: unknown, version = 0): Partial<AppState> {
   const state = (persisted ?? {}) as Partial<AppState> & { rng?: unknown };
@@ -748,6 +871,9 @@ export function migratePersisted(persisted: unknown, version = 0): Partial<AppSt
     // **v16 → v17** (#491) : la file d'intentions du Deck. Un état v16 n'en a pas — rien
     // n'attendait — et une entrée mal formée est écartée plutôt qu'envoyée au serveur.
     deckOutbox: normaliserOutbox(migrated.deckOutbox),
+    // **v17 → v18** (#492) : le Deck local a-t-il été monté dans le compte ? Un état v17
+    // n'en sait rien : `false`, l'import sera tenté. Une valeur forgée est écartée de même.
+    deckImporte: typeof migrated.deckImporte === 'boolean' ? migrated.deckImporte : false,
     cafeTypes: normalizeCafeTypes(migrated.cafeTypes),
     partie: lirePartie(migrated.partie),
     // **v12 → v13** (#366) : la dernière partie terminée. Un état v12 n'en a pas : `null`. Une

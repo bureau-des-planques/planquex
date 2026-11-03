@@ -28,7 +28,7 @@ afterEach(() => {
 describe('App — la file du Deck au retour du réseau (#491)', () => {
   it('une intention gardée part quand le navigateur repasse en ligne', async () => {
     const fetchImpl = simulerDeck();
-    await rendreApplication({ chemin: '/deck', storeState: { deckOutbox: [INTENTION] } });
+    await rendreApplication({ chemin: '/deck', storeState: { deckOutbox: [INTENTION], deckImporte: true } });
 
     window.dispatchEvent(new Event('online'));
 
@@ -39,7 +39,7 @@ describe('App — la file du Deck au retour du réseau (#491)', () => {
 
   it('hors ligne, l’événement ne fait rien partir', async () => {
     const fetchImpl = simulerDeck({ enLigne: false });
-    await rendreApplication({ chemin: '/deck', storeState: { deckOutbox: [INTENTION] } });
+    await rendreApplication({ chemin: '/deck', storeState: { deckOutbox: [INTENTION], deckImporte: true } });
 
     window.dispatchEvent(new Event('online'));
 

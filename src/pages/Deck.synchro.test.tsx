@@ -29,7 +29,7 @@ afterEach(() => {
 
 describe('Deck — l’état de synchro (#491, D-060 (3))', () => {
   it('dit qu’un geste n’est pas parti, et propose de réessayer', () => {
-    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckSyncRaison: 'reseau' });
+    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckImporte: true, deckSyncRaison: 'reseau' });
 
     expect(screen.getByText(/Le Deck n’a pas pu être synchronisé/)).toBeInTheDocument();
     expect(screen.getByText(/il repartira au retour du réseau/)).toBeInTheDocument();
@@ -38,14 +38,14 @@ describe('Deck — l’état de synchro (#491, D-060 (3))', () => {
   });
 
   it('sans échec connu, l’état dit seulement que le geste attend le réseau', () => {
-    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckSyncRaison: null });
+    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckImporte: true, deckSyncRaison: null });
     expect(screen.getByText(/Le Deck n’a pas pu être synchronisé/)).toBeInTheDocument();
     expect(screen.queryByText(/refusé/)).toBeNull();
   });
 
   it('« Réessayer » envoie le lot et fait disparaître l’état', async () => {
     const fetchImpl = simulerDeck();
-    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckSyncRaison: 'reseau' });
+    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckImporte: true, deckSyncRaison: 'reseau' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
 
@@ -56,7 +56,7 @@ describe('Deck — l’état de synchro (#491, D-060 (3))', () => {
 
   it('un refus garde l’état, le geste et le Deck — rien n’est écrasé', async () => {
     simulerDeck({ statut: 400 });
-    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckSyncRaison: 'reseau' });
+    renderWithStore(<Deck />, { deck: [CARTE], deckOutbox: [INTENTION], deckImporte: true, deckSyncRaison: 'reseau' });
 
     await userEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
 

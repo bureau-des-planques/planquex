@@ -6,6 +6,8 @@
 >
 > **Mise à jour du 03/11/2026 (#491)** : le Deck a désormais sa **file d'intentions** persistée (`deckOutbox`, store v17), drainée par `synchroniserDeck` vers la RPC `public.rejouer_deck` (`supabase/migrations/0025_deck_rejeu.sql`, `src/lib/deck.ts`). Les phrases « aucun champ de synchro » ci-dessous décrivent l'état du 02/11, pas le code d'aujourd'hui.
 >
+> **Mise à jour du 03/11/2026 (#492)** : au **premier login**, le Deck local monte dans le compte, **une seule fois**, par la RPC `public.importer_deck` (`supabase/migrations/0026_import_deck.sql`) : un marqueur serveur atomique par compte, et un compte qui a déjà un Deck n'est **pas** écrasé (son Deck fait autorité, D-179 (1)). Le client garde `deckImporte` dans la forme persistée — store **v18** — et `synchroniserDeck` tente l'import avant de drainer la file. La phrase « arbitrage ouvert » du ticket #492 plus bas est donc tranchée.
+>
 > **État des sources consultées : 02/11/2026.** Les estimations sont des ordres de grandeur, pas des mesures ni un engagement de délai.
 
 ## 1. État des lieux : ce qui existe

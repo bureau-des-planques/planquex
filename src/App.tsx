@@ -69,9 +69,11 @@ export function App() {
   // il n'y a rien à demander. Un échec ne vide rien : `synchroniserCollection` laisse le
   // cache local et rend sa raison, que la page Collection dit hors ligne (D-060 (3)).
   //
-  // **Enfin la file du Deck se vide** (#491, D-153 (3)) : les gestes faits hors ligne
-  // partent au montage si une session existe, et au retour du réseau (l'écouteur ci-dessous).
-  // Hors ligne ou sans session, aucun appel n'est émis — la file reste.
+  // **Enfin le Deck rejoint le compte** (#492, #491) : au premier login, le Deck local monte
+  // dans le compte — une seule fois, marquée côté serveur. Puis la file d'intentions se vide
+  // (#491, D-153 (3)) : les gestes faits hors ligne partent au montage si une session existe,
+  // et au retour du réseau (l'écouteur ci-dessous). Hors ligne ou sans session, aucun appel
+  // n'est émis — rien n'est perdu, et le prochain montage réessaie.
   useEffect(() => {
     void (async () => {
       await useComptes.getState().rafraichir();
@@ -82,9 +84,10 @@ export function App() {
     })();
   }, []);
 
-  // **Le retour du réseau draine la file du Deck** (#491) : `online` ne promet pas que le
-  // serveur répond, mais il est le signal qu'un envoi peut être tenté. Un échec garde la
-  // file et rend sa raison ; le prochain `online`, ou le bouton de l'écran Deck, réessaie.
+  // **Le retour du réseau relance l'import et draine la file du Deck** (#492, #491) :
+  // `online` ne promet pas que le serveur répond, mais il est le signal qu'un envoi peut être
+  // tenté. Un échec garde la file et rend sa raison ; le prochain `online`, ou le bouton de
+  // l'écran Deck, réessaie.
   useEffect(() => {
     const drainer = (): void => {
       void useStore.getState().synchroniserDeck();
