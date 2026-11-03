@@ -134,15 +134,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   // 4. Le crédit, une seule fois, dans une transaction : la ligne et la Collection.
   try {
-    const rendu = await connexion().begin(async (tx: ReturnType<typeof connexion>) => {
+    const credit = await connexion().begin(async (tx: ReturnType<typeof connexion>) => {
       await tx`select set_config('request.jwt.claim.sub', ${compteId}, true)`;
       const [ligne] = await tx`
         select public.crediter_arrivage(${cle}, ${tx.json(cartes)}, ${tirage}) as cartes
       `;
-      return ligne.cartes as { id: string; rarity: string }[];
+      // **La graine rendue est celle de la ligne**, pas celle du tirage courant : au rejeu
+      // d'une clé, le crédit rend les cartes d'origine, et une graine neuve mentirait sur
+      // leur origine — un client qui rejouerait le tirage obtiendrait d'autres cartes que
+      // celles créditées (D-179 (8)). Constaté sur une ouverture réelle le 03/11/2026.
+      const [ouverture] = await tx`
+        select seed from public.pack_openings where user_id = ${compteId} and cle = ${cle}
+      `;
+      return {
+        cartes: ligne.cartes as { id: string; rarity: string }[],
+        graine: Number(ouverture.seed)
+      };
     });
 
-    return repondre({ cards: rendu, seed: tirage });
+    return repondre({ cards: credit.cartes, seed: credit.graine });
   } catch (erreur) {
     console.error('arrivage : le crédit a échoué', erreur);
     return refus('arrivage_credit_refuse : l’ouverture n’a pas été créditée', 500);
