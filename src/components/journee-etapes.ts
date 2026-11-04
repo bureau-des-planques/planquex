@@ -51,12 +51,11 @@ export interface EtapeJournee {
 export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   {
     titre: 'L’Arrivage',
-    texte:
-      'Un Arrivage, c’est cinq cartes : trois communes, une peu commune, une rare au minimum. Clique « Ouvrir un Arrivage » : les cartes rejoignent ta Collection.',
+    texte: 'Ouvre un Arrivage.',
     cible: '/',
     action: 'Aller à l’accueil',
     geste: 'arrivage',
-    direction: 'De la part de la Direction, validé.'
+    direction: 'La Direction approuve.'
   },
   {
     titre: 'La Collection et le Deck',
@@ -66,20 +65,19 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
      * et `/collection` reste une adresse valide de l'autre onglet — elle n'est ni obsolète
      * ni redirigée (D-175 (2)).
      */
-    texte:
-      'La page Cartes a deux onglets : la Collection montre ce que tu possèdes, le Deck se compose avec vingt de ces cartes. Choisis un Deck proposé et charge-le : c’est celui que tu joueras.',
+    texte: 'Charge un Deck proposé.',
     cible: '/deck',
     action: 'Aller au Deck',
     geste: 'deck',
     montreCartes: true,
-    direction: 'Vingt cartes. Pas une de plus.'
+    direction: 'Vingt cartes. Comptées.'
   },
   {
     titre: 'Le combat',
-    texte: 'Le combat guidé t’apprend le Poste, le café et la Pression, sur le vrai plateau, jusqu’à la victoire.',
+    texte: 'Joue le combat guidé.',
     cible: '/battle?tutoriel=1&scene=fin',
     action: 'Jouer mon premier combat',
-    direction: 'Trois Interventions. La Direction les compte.',
+    direction: 'Trois Interventions. Comptées.',
     // **Le combat est un geste** (31/10/2026) : sans lui, l'étape qui compte se traversait
     // en lecture. Il se marque à la scène de fin — gagner le combat guidé est la preuve
     // qu'on l'a joué. Sur `/battle`, le panneau s'efface (le pas-à-pas parle seul).
@@ -87,20 +85,18 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   },
   {
     titre: 'Tes données',
-    texte:
-      'Ta Collection et ton Deck vivent dans ce navigateur. Réglages → « Créer ma sauvegarde » avant de vider quoi que ce soit : c’est ta seule copie.',
+    texte: 'Crée ta sauvegarde.',
     cible: '/settings',
     action: 'Aller aux réglages',
     geste: 'sauvegarde',
-    direction: 'La Direction garde ta seule copie.'
+    direction: 'Sauvegarde ou catastrophe.'
   },
   {
     titre: 'Le comité',
-    texte:
-      'Le comité est le mur des retours, dans la barre du bas : un post-it IP pour une idée, un OUF pour un défaut. Il reste ouvert après la Journée, quand tu auras quelque chose à dire.',
+    texte: 'Colle un post-it IP ou OUF.',
     cible: '/comite',
     action: 'Voir le comité',
-    direction: 'La Direction affichera l’idée, promis.'
+    direction: 'Promis, juré, validé.'
   }
 ];
 
@@ -167,6 +163,24 @@ export function libelleSaut(etape: number): string {
 }
 
 /**
+ * **Le locuteur de la réplique** (D-181 (1)) : la Direction parle par son Chef de cabinet.
+ * Il vit ici pour que la mesure de la réplique (nom compris) ne recopie pas la chaîne.
+ */
+export const LOCUTEUR_JOURNEE = 'Chef de cabinet';
+
+/**
+ * **Le budget de texte de la Journée** (D-181 (3), acquis le 03/11/2026) : 12 mots au plus
+ * par réplique, locuteur compris, et ≈ 60 mots **rendus** sur les cinq étapes, tolérance de
+ * 10 % — soit 54 à 66. Le test d'écran mesure le DOM ; ces constantes fixent la cible, et
+ * `motsDeLaReplique` la borne unitaire.
+ */
+export const MOTS_MAX_REPLIQUE = 12;
+export const MOTS_CIBLE_JOURNEE = 60;
+export const MOTS_TOLERANCE_JOURNEE = 0.1;
+export const MOTS_MIN_JOURNEE = Math.round(MOTS_CIBLE_JOURNEE * (1 - MOTS_TOLERANCE_JOURNEE));
+export const MOTS_MAX_JOURNEE = Math.round(MOTS_CIBLE_JOURNEE * (1 + MOTS_TOLERANCE_JOURNEE));
+
+/**
  * Vitesse de lecture retenue pour la mesure : **180 mots par minute**, la lecture d'un
  * écran par un testeur, pas celle d'un correcteur.
  */
@@ -178,6 +192,14 @@ export const MOTS_PAR_MINUTE = 180;
  */
 export function motsDeLEtape(etape: EtapeJournee): number {
   return `${etape.titre} ${etape.texte} ${etape.action} ${etape.direction}`.split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * Les mots d'une réplique **rendue** : le nom du locuteur compte (D-181 (3)). Une réplique
+ * se mesure en mots, pas en phrases — « Vingt cartes. Comptées. » en fait trois.
+ */
+export function motsDeLaReplique(etape: EtapeJournee): number {
+  return `${LOCUTEUR_JOURNEE} ${etape.direction}`.split(/\s+/).filter(Boolean).length;
 }
 
 /** La lecture de l'étape, en secondes, à `MOTS_PAR_MINUTE`. */

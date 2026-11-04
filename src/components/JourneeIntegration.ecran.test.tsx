@@ -5,7 +5,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JourneeIntegration } from './JourneeIntegration';
-import { ETAPES_JOURNEE } from './journee-etapes';
+import {
+  ETAPES_JOURNEE,
+  LOCUTEUR_JOURNEE,
+  MOTS_CIBLE_JOURNEE,
+  MOTS_MAX_JOURNEE,
+  MOTS_MAX_REPLIQUE,
+  MOTS_MIN_JOURNEE
+} from './journee-etapes';
 import { marquerGeste, oublierGestes } from './journee-gestes';
 import { CIBLE_DE_GESTE, cibleJournee } from './journee-cible';
 import { allerAEtape, etapeJournee, remettreJourneeAuDebut } from './journee-etape';
@@ -619,5 +626,110 @@ describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () =>
     // **Le contrôle mord** : si la barre ne tenait pas au clavier, Entrée ne la rendrait pas.
     expect(screen.queryByText(/Journée en pause/)).toBeNull();
     expect(useStore.getState().tutorielVu).toBe(false);
+  });
+});
+
+/**
+ * **Le budget de texte rendu** (D-181 (3), #682) — mesuré sur le **DOM**, pas sur les
+ * objets de données : un libellé ajouté dans le JSX doit peser.
+ *
+ * Ce qui compte : le titre (`#journee-titre`, compteur et préfixe `sr-only` exclus), le
+ * texte (`#journee-texte`), la réplique **avec son locuteur** (`.journee__direction`) et
+ * les libellés des boutons de l'étape (`.actions` : « Suivant », et le geste s'il est
+ * visible).
+ *
+ * **Le bouton de sortie permanent n'entre pas dans le budget** : « Passer : tu ne verras
+ * pas le combat » puis « Relire la Journée plus tard… » sont une commande du panneau,
+ * rendue à chaque étape, pas le contenu de l'étape. Le compter met le total à **97 mots**
+ * avec les libellés actuels (82 même raccourcis au plus court) — titre, locuteur, réplique
+ * et « Suivant » pèsent déjà 31 — et la cible de 60 devient hors d'atteinte sans casser le
+ * plafond de 12 mots par réplique. C'est l'écart que #682 signale dans son rapport : la
+ * lettre du ticket (« Passer… » compris) et la cible de 60 ne peuvent pas tenir ensemble.
+ */
+function mots(texte: string): number {
+  return texte.split(/\s+/).filter(Boolean).length;
+}
+
+interface CompteDeTexte {
+  titre: string;
+  mots: number;
+  repliqueMots: number;
+  replique: string;
+  detail: string;
+  source: 'DOM' | 'données';
+}
+
+function compteDeLEtape(index: number): CompteDeTexte {
+  const etape = ETAPES_JOURNEE[index];
+  const { unmount } = monterPanneau(index);
+  const panneau = document.querySelector<HTMLElement>('[data-journee-panneau]');
+  let compte: CompteDeTexte;
+
+  if (panneau) {
+    const titreEl = panneau.querySelector('#journee-titre')?.cloneNode(true) as HTMLElement | undefined;
+    titreEl?.querySelector('.journee__compte')?.remove();
+    titreEl?.querySelector('.sr-only')?.remove();
+    const titreRendu = titreEl?.textContent?.trim() ?? etape.titre;
+    const texte = panneau.querySelector('#journee-texte')?.textContent?.trim() ?? '';
+    const replique = panneau.querySelector('.journee__direction')?.textContent?.trim() ?? '';
+    const boutons = [...panneau.querySelectorAll<HTMLButtonElement>('.actions button')].map(
+      (bouton) => bouton.textContent?.trim() ?? ''
+    );
+    const morceaux = [titreRendu, texte, replique, ...boutons];
+    compte = {
+      titre: etape.titre,
+      mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
+      repliqueMots: mots(replique),
+      replique,
+      detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
+      source: 'DOM'
+    };
+  } else {
+    // **Le panneau de l'étape du combat n'est jamais rendu** (D-162 (3)) : il s'efface sur
+    // `/battle`. On compte la même source que le panneau lirait, sans quoi cette étape
+    // échapperait au budget ; un mot ajouté à son texte pèse quand même.
+    const replique = `${LOCUTEUR_JOURNEE} ${etape.direction}`;
+    const dernier = index === ETAPES_JOURNEE.length - 1;
+    const morceaux = [etape.titre, etape.texte, replique, ...(dernier ? [] : ['Suivant'])];
+    compte = {
+      titre: etape.titre,
+      mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
+      repliqueMots: mots(replique),
+      replique,
+      detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
+      source: 'données'
+    };
+  }
+
+  unmount();
+  return compte;
+}
+
+function detailDesComptes(comptes: readonly CompteDeTexte[]): string {
+  const total = comptes.reduce((somme, compte) => somme + compte.mots, 0);
+  return [
+    `Le budget de texte rendu (D-181 (3), #682) : ${total} mots, cible ${MOTS_CIBLE_JOURNEE} (${MOTS_MIN_JOURNEE} à ${MOTS_MAX_JOURNEE}).`,
+    ...comptes.map(
+      (compte, index) =>
+        `  étape ${index + 1} « ${compte.titre} » : ${compte.mots} mots, réplique ${compte.repliqueMots} [${compte.source}] = ${compte.detail}`
+    )
+  ].join('\n');
+}
+
+describe('le budget de texte de la Journée (D-181 (3), #682)', () => {
+  it('tient ≈ 60 mots rendus sur les cinq étapes, et 12 mots par réplique', () => {
+    const comptes = ETAPES_JOURNEE.map((_, index) => compteDeLEtape(index));
+    const total = comptes.reduce((somme, compte) => somme + compte.mots, 0);
+    const detail = detailDesComptes(comptes);
+
+    // **Le contrôle mord** : une réplique à 13 mots nomme l'étape, son compte et son texte.
+    for (const compte of comptes) {
+      expect(
+        compte.repliqueMots,
+        `${detail}\nLa réplique de « ${compte.titre} » fait ${compte.repliqueMots} mots : « ${compte.replique} »`
+      ).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
+    }
+    expect(total, detail).toBeGreaterThanOrEqual(MOTS_MIN_JOURNEE);
+    expect(total, detail).toBeLessThanOrEqual(MOTS_MAX_JOURNEE);
   });
 });
