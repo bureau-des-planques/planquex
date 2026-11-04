@@ -394,7 +394,8 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
   it('joue les gardes de hauteur sur chaque gabarit, à sa taille', () => {
     const source = read('scripts/preuves/capturer.mjs');
     // Sans ce lien, un gabarit serait photographié mais jugé à 420 × 900 — ou pas jugé du tout.
-    expect(source).toContain('for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);');
+    expect(source).toContain('for (const gabarit of GABARITS) {');
+    expect(source).toContain('await mesurerGabarit(browser, gabarit);');
     expect(source).toContain('await controlerHauteur(page, etat, ROUTE_COMBAT, viewport);');
   });
 

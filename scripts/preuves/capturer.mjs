@@ -31,9 +31,12 @@
  *     hauteur sur une géométrie fournie, sans navigateur : c'est ce que teste #194)
  *
  * Variables d'environnement :
- *   CHROME_PATH  binaire Chromium (défaut : cache de `ms-playwright`)
- *   BASE_URL     serveur déjà lancé ; le script n'en démarre alors aucun
- *   PORT         port du `vite preview` qu'il démarre lui-même (défaut : 4180)
+ *   CHROME_PATH      binaire Chromium (défaut : cache de `ms-playwright`)
+ *   BASE_URL         serveur déjà lancé ; le script n'en démarre alors aucun
+ *   PORT             port du `vite preview` qu'il démarre lui-même (défaut : 4180)
+ *   CAPTURER_VOIES   scènes indépendantes jouées en parallèle (défaut : 1 ; 2 dans la CI,
+ *                    #707). Chaque voie a son port et son dossier de sortie, et le parent
+ *                    fusionne les fichiers : même inventaire, pas une capture de moins.
  *
  * Le dossier de sortie `captures/` est ignoré par git : ces images sont une preuve
  * de travail, pas un livrable. Les preuves citées vivent dans `docs/preuves/`, datées.
@@ -57,9 +60,11 @@ import {
   erreurConsoleAttendue,
   REFUS_ARRIVAGE
 } from './capturer-socle.mjs';
+import { voieDe } from './capturer-voies.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
-const outDir = join(root, 'captures');
+/** Une voie du pool écrit dans son propre dossier puis le parent le fusionne (#707). */
+const outDir = process.env.CAPTURER_SORTIE ?? join(root, 'captures');
 const distIndex = join(root, 'dist/index.html');
 
 /** Le binaire du cache `ms-playwright`, surchargeable pour une autre machine (comme le legacy). */
@@ -800,7 +805,15 @@ async function preparerCodePvp(page) {
  * commande : la capture d'écran reste « ce que voit un invité ».
  */
 const PLEINE_PAGE = false;
-const PORT = Number(process.env.PORT ?? 4180);
+/**
+ * **Le pool de voies** (#707) : `CAPTURER_VOIES` dit combien de scènes indépendantes sont
+ * jouées en parallèle. 1 par défaut (le poste, un test), 2 dans la CI — jamais plus par
+ * défaut. `--voie N` marque un enfant du pool ; le parent ne le passe pas.
+ */
+const VOIES = Math.max(1, Number.parseInt(process.env.CAPTURER_VOIES ?? '1', 10) || 1);
+const argVoie = process.argv.indexOf('--voie');
+const VOIE = argVoie === -1 ? 0 : Number.parseInt(process.argv[argVoie + 1] ?? '0', 10);
+const PORT = Number(process.env.PORT ?? (VOIES > 1 ? 4180 + VOIE : 4180));
 const base = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 /** L'origine où `storageState` dépose le store : Playwright range le `localStorage` par origine. */
 let origine = '';
@@ -825,6 +838,10 @@ const ignores = [];
 function stop(message) {
   console.error(`✖ ${message}`);
   process.exit(1);
+}
+
+if (!Number.isInteger(VOIE) || VOIE < 0 || VOIE >= VOIES) {
+  stop(`--voie invalide : ${process.argv[argVoie + 1] ?? '(absent)'} pour ${VOIES} voie(s)`);
 }
 
 // **La preuve E2E du projet de test** (#668). Elle vit dans son propre module — elle parle
@@ -927,6 +944,31 @@ if (process.argv.includes('--controle-hauteur')) {
   process.exit(0);
 }
 
+// **Le pool de voies** (#707) : le parent ne capture rien lui-même. Il lance `VOIES` enfants
+// (chacun avec son port et son dossier de sortie), attend **les deux** codes de sortie, ferme
+// l'autre dès qu'un échec est connu, puis fusionne les sorties dans `captures/`. Un échec
+// d'une voie est un échec de la capture : aucun `continue-on-error` ici.
+if (VOIES > 1 && !process.argv.includes('--voie')) {
+  const { preparerSorties, lancerVoies, fusionnerSorties, nettoyerSorties } = await import('./capturer-voies.mjs');
+  const captures = join(root, 'captures');
+  preparerSorties(captures, VOIES);
+  const { code, codes } = await lancerVoies({
+    total: VOIES,
+    captures,
+    baseUrl: process.env.BASE_URL,
+    commande: process.execPath,
+    args: [fileURLToPath(import.meta.url)],
+    env: process.env
+  });
+  if (code !== 0) {
+    nettoyerSorties(captures, VOIES);
+    stop(`au moins une voie de capture a échoué (codes de sortie : ${codes.join(', ')})`);
+  }
+  fusionnerSorties(captures, VOIES);
+  console.log(`✔ ${VOIES} voies terminées — captures dans ${captures}`);
+  process.exit(0);
+}
+
 if (!existsSync(executablePath)) {
   stop(`Chromium introuvable : ${executablePath}\n  Renseigne CHROME_PATH.`);
 }
@@ -947,8 +989,17 @@ mkdirSync(outDir, { recursive: true });
 
 const browser = await chromium.launch({ executablePath, args: ['--no-sandbox'] });
 
+/**
+ * Le compteur de scènes : **la même suite dans chaque voie**, découpée par `voieDe`. Il est
+ * incrémenté même pour les scènes qu'une voie ne joue pas, pour que deux voies ne prennent
+ * jamais la même scène ni n'en oublient une. `VOIES = 1` les joue toutes dans l'ordre.
+ */
+let unite = 0;
+const maVoie = () => voieDe(unite++, VOIES) === VOIE;
+
 try {
   for (const { slug, route, amorce, preparation } of [...shots, ...PREPARATIONS]) {
+    if (!maVoie()) continue;
     const context = await browser.newContext({
       viewport: VIEWPORT,
       isMobile: true,
@@ -1265,6 +1316,7 @@ try {
   // La garde de rendu (#170) ne se fie pas à **une** donne : la graine change avec
   // l'heure, donc la main change de hauteur. On mesure sur chaque instant figé.
   for (const instant of INSTANTS_COMBAT.slice(1)) {
+    if (!maVoie()) continue;
     const { context, page } = await ouvrirCombat(browser, instant);
     await controlerHauteur(page, new Date(instant).toISOString(), ROUTE_COMBAT);
     await context.close();
@@ -1274,6 +1326,7 @@ try {
   // par son panneau. C'est ici que la barre d'action collée est jugée sur le **recouvrement** de
   // la main — pendant le pas-à-pas, elle la recouvre jusqu'au défilement, par construction.
   for (const instant of INSTANTS_COMBAT) {
+    if (!maVoie()) continue;
     const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true });
     await controlerHauteur(page, `${new Date(instant).toISOString()} (pas-à-pas terminé)`, ROUTE_COMBAT);
     await context.close();
@@ -1281,16 +1334,19 @@ try {
 
   // Le combat **avec une Pression jouable** (#320) : la barre y est à sa hauteur maximale, et
   // c'est là que « Fin du tour » passait sous la navigation.
-  await mesurerAvecUnePression(browser);
+  if (maVoie()) await mesurerAvecUnePression(browser);
 
   // Le combat en mode `détaillé` (#292) : à l'arrivée, puis avec une Pression jouable ; et le pire
   // cas de `sobre` (#321), qui n'est joué nulle part ailleurs.
-  await mesurerDensite(browser, true);
-  await mesurerDensite(browser, false);
-  await mesurerAvecUnePression(browser, true);
+  if (maVoie()) await mesurerDensite(browser, true);
+  if (maVoie()) await mesurerDensite(browser, false);
+  if (maVoie()) await mesurerAvecUnePression(browser, true);
 
   // Les gabarits de D-171 : téléphones portrait et PC, sans gabarit de paysage mobile.
-  for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);
+  for (const gabarit of GABARITS) {
+    if (!maVoie()) continue;
+    await mesurerGabarit(browser, gabarit);
+  }
 } finally {
   await browser.close();
   await server?.close();
@@ -1302,8 +1358,13 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log(
-  `✔ ${shots.length + PREPARATIONS.length - ignores.length} captures dans captures/ (${base}) — dont la première visite ` +
-    `et ${PREPARATIONS.length - ignores.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-171 et D-173` +
-    (ignores.length > 0 ? ` — ${ignores.length} ignoré(s) : ${ignores.join(', ')}` : '')
-);
+if (VOIES > 1) {
+  // Le parent fusionne les dossiers : chaque enfant ne compte que **sa** part.
+  console.log(`✔ voie ${VOIE + 1}/${VOIES} terminée — ${outDir}`);
+} else {
+  console.log(
+    `✔ ${shots.length + PREPARATIONS.length - ignores.length} captures dans captures/ (${base}) — dont la première visite ` +
+      `et ${PREPARATIONS.length - ignores.length} état(s) dédié(s), plus ${GABARITS.length} gabarits de D-171 et D-173` +
+      (ignores.length > 0 ? ` — ${ignores.length} ignoré(s) : ${ignores.join(', ')}` : '')
+  );
+}

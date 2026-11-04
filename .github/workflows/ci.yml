@@ -288,6 +288,8 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
           IMPECCABLE_BROWSER: /usr/bin/google-chrome
+          # Deux scènes indépendantes à la fois (#707) : 1 par défaut sur le poste, 2 ici.
+          CAPTURER_VOIES: 2
         run: |
           set -m
           if [ ! -x "$IMPECCABLE_BROWSER" ]; then
