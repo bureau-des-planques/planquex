@@ -1,4 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -31,12 +34,52 @@ const vitestConfig = readFileSync(VITEST_PATH, 'utf8');
  * qui commence un autre job. Pas d'analyseur YAML ajouté pour ça (même choix que pour le
  * fichier entier, #52) — l'indentation de deux espaces est stable et lisible.
  */
-function blocJob(nom: string): string {
-  const entete = new RegExp(`^ {2}${nom}:$`, 'm').exec(workflow);
+function blocJob(nom: string, source = workflow): string {
+  const entete = new RegExp(`^ {2}${nom}:$`, 'm').exec(source);
   if (!entete) return '';
-  const reste = workflow.slice(entete.index + entete[0].length);
+  const reste = source.slice(entete.index + entete[0].length);
   const fin = reste.search(/^ {2}[a-zA-Z][\w-]*:$/m);
   return fin === -1 ? reste : reste.slice(0, fin);
+}
+
+/** Le bloc d'une étape, de `- name:` jusqu'au `- name:` suivant (ou la fin du job). */
+function blocEtape(bloc: string, nom: string): string {
+  const debut = bloc.indexOf(`- name: ${nom}`);
+  if (debut < 0) return '';
+  const suite = bloc.slice(debut + 1);
+  const fin = suite.search(/^ {6}- name:/m);
+  return fin === -1 ? bloc.slice(debut) : bloc.slice(debut, debut + 1 + fin);
+}
+
+/** Le script d'une étape `run: |`, désindenté, pour le jouer dans `bash` depuis un test. */
+function scriptEtape(bloc: string, nom: string): string {
+  const etape = blocEtape(bloc, nom);
+  const debut = etape.indexOf('run: |');
+  if (debut < 0) return '';
+  const lignes = etape.slice(debut + 'run: |'.length).split('\n');
+  const nonVides = lignes.filter((ligne) => ligne.trim() !== '');
+  const indentation = Math.min(...nonVides.map((ligne) => ligne.match(/^ */)![0].length));
+  return nonVides.map((ligne) => ligne.slice(indentation)).join('\n');
+}
+
+/**
+ * **Le build précède les deux navigateurs** (#707). Une fonction pure sur le texte du
+ * workflow, pour que le contrôle puisse **mordre** sur un YAML fabriqué : sans ce cas
+ * fautif, déplacer le build après les captures laisserait le test vert.
+ */
+function ordreDesEcrans(source: string): string[] {
+  const bloc = blocJob('tests-ecrans', source);
+  if (!bloc) return ['job « tests-ecrans » absent'];
+  const build = bloc.indexOf('run: npm run build');
+  const capture = bloc.indexOf('npm run capturer');
+  const detect = bloc.indexOf('npm run detect:ui:page');
+  const problemes: string[] = [];
+  if (build < 0) problemes.push('build absent de tests-ecrans');
+  if (capture < 0) problemes.push('capturer absent de tests-ecrans');
+  if (detect < 0) problemes.push('detect:ui:page absent de tests-ecrans');
+  if (build >= 0 && capture >= 0 && build > capture) problemes.push('le build doit précéder les captures');
+  if (build >= 0 && detect >= 0 && build > detect) problemes.push('le build doit précéder le contrôle visuel');
+  return problemes;
 }
 
 /** Les projets qui existent vraiment, lus dans `vitest.config.ts`. */
@@ -110,56 +153,134 @@ describe('.github/workflows/ci.yml', () => {
     expect(workflow).not.toMatch(/issues: read/);
   });
 
-  it('contrôle les écrans dans un navigateur, après le build et sans saut possible (#234)', () => {
-    // Le contrôle visuel en navigateur (#205) est branché depuis #234. Cette assertion
-    // garde ce qui se casse en silence : **retirer l'étape** rendrait la CI verte alors
-    // qu'aucun écran ne serait mesuré. `detect:ui` (regex sur les sources) la remplacerait
-    // en apparence — il sous-compte, et c'est précisément pour ça que #205 existe.
+  it('contrôle les deux navigateurs après le build, dans une seule étape et sans saut possible (#205, #234, #513)', () => {
+    // Le contrôle visuel en navigateur (#205, #234) et la hauteur du combat (#513) gardent ce
+    // qui se casse en silence : **retirer l'un des deux** rendrait la CI verte alors qu'un
+    // écran ne serait plus mesuré. `detect:ui` (regex sur les sources) ne remplacerait pas
+    // `detect:ui:page` — il sous-compte, et c'est précisément pour ça que #205 existe.
     const bloc = blocJob('tests-ecrans');
-    const debut = bloc.indexOf('Contrôler les écrans dans un navigateur');
-    expect(debut, 'étape « contrôle visuel en navigateur » absente').toBeGreaterThanOrEqual(0);
-    const suite = bloc.slice(debut);
-    const finEtape = suite.slice(1).search(/^ {6}- name:/m);
-    const apres = finEtape === -1 ? suite : suite.slice(0, finEtape + 1);
-    expect(apres).toContain('npm run detect:ui:page');
-    // Il lui faut un navigateur, et l'étape le nomme (Chromium de l'image du runner).
-    expect(apres).toContain('IMPECCABLE_BROWSER');
+    const etape = blocEtape(bloc, 'Contrôler la hauteur du combat et les écrans dans un navigateur (#205, #234, #513)');
+    expect(etape, 'étape « deux navigateurs » absente de tests-ecrans').not.toBe('');
+    expect(etape).toContain('npm run capturer');
+    expect(etape).toContain('npm run detect:ui:page');
+    // Les deux lisent le Chrome de l'image, sous les noms que lisent les scripts.
+    expect(etape).toContain('CHROME_PATH: /usr/bin/google-chrome');
+    expect(etape).toContain('IMPECCABLE_BROWSER: /usr/bin/google-chrome');
     // Pas de saut : sans navigateur, elle échoue explicitement. **Une seule condition est
-    // admise** : le chemin rapide d'une PR de documentation seule (D-143 (1), #422), qui ne peut
-    // changer aucun écran. Toute autre condition rendrait le contrôle sautable.
-    expect(apres.match(/^\s*if:.*$/gm) ?? []).toEqual(["        if: steps.chemins.outputs.doc_seulement != 'true'"]);
-    expect(apres).toMatch(/exit 1/);
-    // Elle lit `dist/` : le build doit avoir tourné avant, **dans le même job**.
-    expect(bloc.indexOf('run: npm run build')).toBeGreaterThanOrEqual(0);
-    expect(bloc.indexOf('run: npm run build')).toBeLessThan(debut);
+    // admise** : le chemin rapide d'une PR de documentation seule (D-143 (1), #422).
+    expect(etape.match(/^\s*if:.*$/gm) ?? []).toEqual(["        if: steps.chemins.outputs.doc_seulement != 'true'"]);
+    expect(etape).toMatch(/exit 1/);
+    // Les deux sont **lancés en parallèle** (#707), **les deux codes sont attendus**, et
+    // l'autre processus est fermé dès qu'un échec est connu.
+    expect(etape).toMatch(/npm run capturer >[^\n]*&\s*\n\s*capture=\$!/);
+    expect(etape).toMatch(/npm run detect:ui:page >[^\n]*&\s*\n\s*detect=\$!/);
+    expect(etape).toContain('wait -n -p fini "$capture" "$detect"');
+    expect(etape).toContain('wait "$capture"');
+    expect(etape).toContain('wait "$detect"');
+    expect(etape).toContain('kill -- -"$capture" -"$detect"');
+    // Une seule occurrence de chaque commande dans le workflow : une seconde (dans
+    // `controles`, par exemple) doublerait le coût sans rien garder de plus.
+    expect(workflow.match(/^\s*npm run capturer >/gm) ?? []).toHaveLength(1);
+    expect(workflow.match(/^\s*npm run detect:ui:page >/gm) ?? []).toHaveLength(1);
+    // Les deux lisent `dist/` : le build doit avoir tourné avant, **dans le même job**.
+    expect(ordreDesEcrans(workflow)).toEqual([]);
   });
 
-  it('garde la hauteur du combat dans la CI, sans saut possible (#513)', () => {
-    // `npm run capturer` est resté rouge une semaine sur `main` sans que personne le voie :
-    // aucun job ne le lançait. Retirer l'étape rendrait la CI verte sans mesurer la hauteur
-    // du combat — exactement le trou que #513 bouche.
-    const bloc = blocJob('tests-ecrans');
-    const build = bloc.indexOf('run: npm run build');
-    const capture = bloc.indexOf('run: npm run capturer');
-    expect(capture, 'étape « capturer » absente de tests-ecrans').toBeGreaterThanOrEqual(0);
-    expect(build, 'build absent de tests-ecrans').toBeGreaterThanOrEqual(0);
-    // Les captures lisent `dist/` : le build doit avoir tourné avant, dans le même job.
-    expect(build, 'le build doit précéder les captures').toBeLessThan(capture);
-    // L'étape #513, **bornée à la suivante** : sans la borne, `slice` va jusqu'à la fin du job
-    // et la condition de l'étape d'après (`detect:ui:page`) satisferait l'assertion — le `if:`
-    // de #513 pourrait disparaître sans que ce test rougisse.
-    const suite = bloc.slice(bloc.lastIndexOf('- name:', capture));
-    const finEtape = suite.slice(1).search(/^ {6}- name:/m);
-    const etape = finEtape === -1 ? suite : suite.slice(0, finEtape + 1);
-    // Le Chrome de l'image, sous le nom que lit le script : pas de second navigateur installé.
-    expect(etape).toContain('CHROME_PATH: /usr/bin/google-chrome');
-    // Même condition que les autres étapes : une PR de documentation seule ne la lance pas.
-    // Une seule condition est admise, comme pour `detect:ui:page` : toute autre rendrait la
-    // garde sautable.
-    expect(etape.match(/^\s*if:.*$/gm) ?? []).toEqual(["        if: steps.chemins.outputs.doc_seulement != 'true'"]);
-    // Une seule fois dans le workflow : une seconde occurrence ailleurs (par exemple dans
-    // `controles`) doublerait le coût sans rien garder de plus.
-    expect(workflow.match(/run: npm run capturer\b/g) ?? []).toHaveLength(1);
+  it('le contrôle mord : un build après les navigateurs est refusé (#707)', () => {
+    // Le cas fautif que `ordreDesEcrans` doit refuser : un YAML où les deux lecteurs de
+    // `dist/` passent avant le build. Sans ce test, inverser l'ordre laisserait la garde
+    // verte — une assertion qui ne peut pas échouer ne garde rien (AGENTS.md §6).
+    const faux = [
+      'jobs:',
+      '  tests-ecrans:',
+      '    steps:',
+      '      - name: Navigateurs',
+      '        run: |',
+      '          npm run capturer',
+      '          npm run detect:ui:page',
+      '      - name: Build',
+      '        run: npm run build',
+      ''
+    ].join('\n');
+    expect(ordreDesEcrans(faux)).toContain('le build doit précéder les captures');
+    expect(ordreDesEcrans(faux)).toContain('le build doit précéder le contrôle visuel');
+  });
+
+  /**
+   * Joue le script **réel** de l'étape des deux navigateurs avec un faux `npm` en tête de
+   * `PATH`. C'est ce qui prouve le comportement du shell (échec propagé, processus fermé),
+   * pas seulement la présence d'une chaîne dans le YAML.
+   */
+  function jouerEtapeDesEcrans(fauxNpm: string): { code: number; dossier: string; duree: number } {
+    const dossier = mkdtempSync(join(tmpdir(), 'planquex-ecrans-'));
+    const npm = join(dossier, 'npm');
+    writeFileSync(npm, fauxNpm);
+    chmodSync(npm, 0o755);
+    const script = scriptEtape(
+      blocJob('tests-ecrans'),
+      'Contrôler la hauteur du combat et les écrans dans un navigateur (#205, #234, #513)'
+    );
+    expect(script, 'script de l’étape des deux navigateurs illisible').toContain('wait -n');
+    let code = 0;
+    const debut = Date.now();
+    try {
+      execFileSync('bash', ['-c', script], {
+        env: {
+          ...process.env,
+          PATH: `${dossier}:${process.env.PATH}`,
+          RUNNER_TEMP: dossier,
+          IMPECCABLE_BROWSER: '/bin/true',
+          CHROME_PATH: '/bin/true'
+        },
+        stdio: 'pipe',
+        timeout: 10_000
+      });
+    } catch (erreur) {
+      code = (erreur as { status?: number }).status ?? 1;
+    }
+    return { code, dossier, duree: Date.now() - debut };
+  }
+
+  it('un échec de l’un des deux navigateurs fait échouer le job (#707)', () => {
+    const fauxNpm = [
+      '#!/bin/sh',
+      'case "$*" in',
+      '  *capturer*) exit 1 ;;',
+      '  *detect:ui:page*) exit 0 ;;',
+      'esac',
+      'exit 0',
+      ''
+    ].join('\n');
+    const { code, dossier } = jouerEtapeDesEcrans(fauxNpm);
+    try {
+      expect(code, 'un « capturer » qui sort 1 doit faire échouer le job').toBe(1);
+    } finally {
+      rmSync(dossier, { recursive: true, force: true });
+    }
+  });
+
+  it('ferme l’autre navigateur dès qu’un des deux échoue (#707)', () => {
+    // La capture est longue ; le détecteur échoue tout de suite. Sans le `kill`, le job
+    // attendrait la capture jusqu'au bout et laisserait son groupe de processus vivant.
+    const fauxNpm = [
+      '#!/bin/sh',
+      'case "$*" in',
+      '  *detect:ui:page*) exit 1 ;;',
+      '  *capturer*) sleep 2; echo oui > "$RUNNER_TEMP/marqueur"; exit 0 ;;',
+      'esac',
+      'exit 0',
+      ''
+    ].join('\n');
+    const { code, dossier, duree } = jouerEtapeDesEcrans(fauxNpm);
+    try {
+      expect(code, 'le détecteur qui sort 1 doit faire échouer le job').toBe(1);
+      // Le marqueur ne doit pas exister : la capture a été interrompue avant sa fin.
+      expect(() => readFileSync(join(dossier, 'marqueur'), 'utf8')).toThrow();
+      // Et le job n'a pas attendu les 2 s de la capture : l'autre processus a été fermé.
+      expect(duree, `l’étape a attendu ${duree} ms au lieu de fermer la capture`).toBeLessThan(1500);
+    } finally {
+      rmSync(dossier, { recursive: true, force: true });
+    }
   });
 
   it('le chemin rapide ne saute rien d’autre que ce que D-143 (1) nomme (#422)', () => {
