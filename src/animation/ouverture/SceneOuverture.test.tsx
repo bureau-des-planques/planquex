@@ -366,7 +366,11 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     fireEvent.click(carte(scene, 1));
     expect(carte(scene, 1).dataset.tension).toBe('oui');
     expect(carte(scene, 1).dataset.face).toBe('verso');
-    expect(scene.querySelector('[data-consigne]')?.textContent).toBe('Symbole de rareté : À l’essai, badge à pince');
+    // #728 : le nom de la rareté n'est plus affiché ; il part vers `aria-live` (sr-only).
+    expect(scene.querySelector('[data-consigne]')?.textContent).not.toContain('À l’essai');
+    expect(scene.querySelector('.sr-only[aria-live="polite"]')?.textContent).toBe(
+      'Symbole de rareté : À l’essai, badge à pince'
+    );
     attendre(SUSPENSE.simple);
     expect(carte(scene, 1).dataset.face).toBe('recto');
     // Les autres restent cachées : c'est le testeur qui choisit l'ordre.
@@ -707,10 +711,16 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
         expect(symbole?.getAttribute('role')).toBe('img');
         expect(symbole?.getAttribute('aria-label')).toBe(`${meta.name}, ${meta.symbol.name}`);
 
-        // Le lecteur d'écran reçoit le nom du palier et de l'objet dès la tension.
-        expect(scene.querySelector('[data-consigne]')?.textContent).toBe(
-          `Symbole de rareté : ${meta.name}, ${meta.symbol.name}`
-        );
+        // #728 : rien de la rareté n'est affiché sous la carte pendant la tension ; la consigne
+        // visible reste neutre, et le lecteur d'écran reçoit le nom du palier et de l'objet par
+        // une région `sr-only` `aria-live` (le contrôle mord : remettre le texte dans `consigne`).
+        const consigneVisible = scene.querySelector('[data-consigne]')?.textContent ?? '';
+        expect(consigneVisible, rarete).not.toContain('Symbole de rareté');
+        expect(consigneVisible, rarete).not.toContain(meta.name);
+        expect(consigneVisible, rarete).not.toContain(meta.symbol.name);
+        const annonce = scene.querySelector<HTMLElement>('.sr-only[aria-live="polite"]');
+        expect(annonce, `${rarete} : une annonce lecteur d'écran pendant la tension`).not.toBeNull();
+        expect(annonce?.textContent).toBe(`Symbole de rareté : ${meta.name}, ${meta.symbol.name}`);
         expect(tiree.getAttribute('aria-label')).toContain(meta.symbol.name);
         expect(tiree.getAttribute('aria-label')).toContain(meta.name);
 

@@ -822,6 +822,12 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const texteAnnonce =
     enCours?.phase === 'tenue' && carteEnCours ? annonce(palier(carteEnCours.rarity), graine + enCours.index) : null;
 
+  /** #728 : la rareté pendant la tension, annoncée aux lecteurs d'écran seulement (jamais affichée). */
+  const annonceRarete =
+    enCours?.phase === 'levee' && carteEnCours
+      ? `Symbole de rareté : ${RARITY_META[carteEnCours.rarity].name}, ${RARITY_META[carteEnCours.rarity].symbol.name}`
+      : '';
+
   const consigne = (() => {
     if (etape === 'ferme') return doigt ? 'Glisse le doigt le long des pointillés' : 'Glisse le long des pointillés';
     if (etape === 'dechirure') return 'Jusqu’au bout…';
@@ -831,10 +837,8 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     if (fiche !== null) return `${geste} la carte pour la reposer`;
     if (etape === 'revelation') {
       if (enCours?.phase === 'tenue') return `${geste} la carte pour la poser`;
-      if (enCours?.phase === 'levee' && carteEnCours) {
-        const rarete = RARITY_META[carteEnCours.rarity];
-        return `Symbole de rareté : ${rarete.name}, ${rarete.symbol.name}`;
-      }
+      // #728 : pendant la tension, la rareté n'est pas écrite sous la carte (le symbole suffit) ;
+      // elle part vers la région `sr-only` ci-dessous. La consigne reste neutre.
       if (enCours) return '…';
       // Sur un écran étroit, le tap ne fait pas que retourner : il ouvre la fiche. La
       // consigne dit donc ce qui arrive, pas l'étape intermédiaire (critique du 01/11/2026).
@@ -1121,6 +1125,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       <div className="ouverture__pied">
         <p className="ouverture__consigne" id="ouverture-consigne" data-consigne aria-live="polite">
           {consigne}
+        </p>
+        <p className="sr-only" aria-live="polite">
+          {annonceRarete}
         </p>
         {etape === 'ouvert' && <p className="ouverture__bilan">{bilan}</p>}
         <div className="ouverture__actions">
