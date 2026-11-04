@@ -4,7 +4,14 @@ import { AppelParticiper } from '@/components/AppelParticiper';
 import { ETAPES_JOURNEE, cheminDeCible, etapePourChemin, libelleSaut } from '@/components/journee-etapes';
 import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
-import { allerAEtape, etapeJournee, remettreJourneeAuDebut, useEtapeJournee } from '@/components/journee-etape';
+import {
+  allerAEtape,
+  etapeJournee,
+  prendreRelecture,
+  relectureDemandee,
+  remettreJourneeAuDebut,
+  useEtapeJournee
+} from '@/components/journee-etape';
 import { useStore } from '@/store/useStore';
 import { artUrl } from '@/art';
 
@@ -117,7 +124,17 @@ export function JourneeIntegration() {
    */
   const repriseFaite = useRef(false);
   useEffect(() => {
-    if (repriseFaite.current || tutorielVu) return;
+    if (tutorielVu) return;
+    // **Une relecture voulue ne reprend pas** (#731, 04/11/2026) : elle repart de l'étape
+    // 1, même si les gestes sont faits et si la route courante est celle d'une autre étape.
+    // Le témoin se **lit** ici (l'effet de route le consomme) et se consomme même après
+    // une première visite dans la session : le panneau reste monté quand il se cache, donc
+    // `repriseFaite` ne doit pas avaler un « Revoir » cliqué plus tard.
+    if (relectureDemandee()) {
+      repriseFaite.current = true;
+      return;
+    }
+    if (repriseFaite.current) return;
     repriseFaite.current = true;
     const faits = [packsOpened > 0, deck.length > 0, combatFait, sauvegardeFaite];
     const premiere = faits.findIndex((fait) => !fait);
@@ -154,8 +171,17 @@ export function JourneeIntegration() {
     const etapeReelle = etapeJournee();
     const precedente = dernierePosition.current;
     dernierePosition.current = { etape: etapeReelle, chemin: pathname };
+    // **La relecture voulue se consomme à l'ouverture du panneau** (#731) : une URL
+    // directe reste, elle, maîtresse de l'étape à montrer.
+    const relecture = prendreRelecture();
 
     if (!precedente) {
+      // **Une relecture voulue ignore la route courante** : elle repart de l'étape 1 et
+      // ouvre son écran — c'est ce qui distingue « Revoir » d'un simple rechargement.
+      if (relecture) {
+        if (cheminDeCible(courante.cible) !== pathname) navigate(courante.cible);
+        return;
+      }
       const parLaRoute = cheminDeCible(courante.cible) === pathname ? etape : etapePourChemin(pathname);
       if (parLaRoute !== -1 && parLaRoute !== etapeReelle) allerAEtape(parLaRoute);
       return;

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardPaste, Copy, History, RotateCcw, ShieldCheck } from 'lucide-react';
 import { Confirmation } from '@/components/Confirmation';
 import { marquerGeste, oublierGestes } from '@/components/journee-gestes';
+import { rejouerJournee } from '@/components/journee-etape';
 import { useEstCibleJournee } from '@/components/journee-cible';
 import { InvitationTesteurs } from '@/components/InvitationTesteurs';
 import { PresentationRegles } from '@/components/PresentationRegles';
@@ -265,8 +266,14 @@ export function Settings() {
              * que par les tests. Les deux gestes du store (Arrivage, Deck) restent faits —
              * on ne « dé-ouvre » pas un paquet, et effacer la progression pour rejouer un
              * tutoriel serait un bug.
+             *
+             * **Et elle repart de l'étape 1** (#731, 04/11/2026) : la reprise et le
+             * réalignement sur la route ne servent qu'au rechargement d'une visite
+             * commencée. Sans `rejouerJournee`, « Revoir » depuis Réglages rouvrait la
+             * Journée sur l'étape des Réglages (4/5), ce que le testeur n'attend pas.
              */
             oublierGestes();
+            rejouerJournee();
             setTutorielVu(false);
           }}
         >

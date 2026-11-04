@@ -15,7 +15,7 @@ import {
 } from './journee-etapes';
 import { marquerGeste, oublierGestes } from './journee-gestes';
 import { CIBLE_DE_GESTE, cibleJournee } from './journee-cible';
-import { allerAEtape, etapeJournee, remettreJourneeAuDebut } from './journee-etape';
+import { allerAEtape, etapeJournee, rejouerJournee, remettreJourneeAuDebut } from './journee-etape';
 import { rendreApplication, setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { simulerArrivage } from '@/test/arrivageDeTest';
@@ -427,6 +427,44 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     await verifierCorrespondance();
   });
 
+  it('« Revoir » repart de l’étape 1, même quand tout est fait (#731)', async () => {
+    // **Le défaut reproduit** : l'Arrivage et le Deck sont faits dans le store, le combat
+    // et la sauvegarde dans la session ; « Revoir » les oublie, la reprise sautait donc à
+    // l'étape 3, puis le réalignement sur `/settings` à l'étape 4. Le testeur relisait la
+    // Journée au milieu, jamais à son début.
+    const etat = {
+      tutorielVu: false,
+      pasAPasCombatVu: true,
+      packsOpened: 1,
+      deck: ['atelier-joueur-de-flute']
+    };
+    marquerGeste('combat');
+    marquerGeste('sauvegarde');
+    await rendreApplication({ chemin: '/settings', storeState: etat, extra: <FilDuChemin /> });
+    // **Une première visite dans la même session** : le panneau se montre (et la reprise
+    // joue), puis se cache comme le ferait « Terminer ». Le composant reste monté : c'est
+    // ce cas que « Revoir » doit encore défaire.
+    expect(document.querySelector('[data-journee-panneau]')).not.toBeNull();
+    act(() => useStore.getState().setTutorielVu(true));
+    await waitFor(() => expect(document.querySelector('[data-journee-panneau]')).toBeNull());
+
+    await userEvent.click(screen.getByRole('button', { name: /Revoir la Journée d’intégration/i }));
+
+    // Le panneau revient sur l'accueil : la section des Réglages porte le même nom de
+    // région, on lit donc le panneau par son attribut.
+    await waitFor(() => expect(screen.getByRole('heading', { name: /L’Arrivage/ })).toBeInTheDocument());
+    const panneau = document.querySelector<HTMLElement>('[data-journee-panneau]')!;
+    // **Le contrôle mord** : avec l'ancienne reprise, on lisait ici « 3/5 » (le combat)
+    // puis « 4/5 » (la route des Réglages) ; sans le réalignement ignoré, l'étape restait
+    // sur `/settings` au lieu d'ouvrir son écran.
+    expect(within(panneau).getByText('1/5')).toBeInTheDocument();
+    expect(within(panneau).getByRole('heading', { name: /L’Arrivage/ })).toBeInTheDocument();
+    await waitFor(() => expect(cheminCourant()).toBe('/'));
+    // **L'Arrivage déjà ouvert reste fait** : on ne « dé-ouvre » pas un paquet, et
+    // « Suivant » est ouvert tout de suite.
+    expect(screen.getByRole('button', { name: /^Suivant$/i })).toBeEnabled();
+  });
+
   it('le saut dit ce qu’il coûte, et mène au même état que la fin', async () => {
     const saut = await monter();
     const bouton = screen.getByRole('button', { name: /passer : tu ne verras pas le combat/i });
@@ -518,6 +556,41 @@ describe('la reprise repart de la première étape non faite (#687)', () => {
     );
     expect(screen.getByRole('heading', { name: /L’Arrivage/ })).toBeInTheDocument();
     toutFait();
+  });
+
+  it('le rechargement reprend, « Revoir » repart de l’étape 1 : le même état, deux issues (#731)', () => {
+    const etat = {
+      tutorielVu: false,
+      pasAPasCombatVu: true,
+      packsOpened: 1,
+      deck: ['atelier-joueur-de-flute']
+    };
+    // **Le rechargement** : l'étape et les gestes de session repartent de zéro, le store
+    // reste. Arrivage et Deck sont faits, le combat ne l'est pas : on reprend à l'étape 3.
+    setupTestStore(etat);
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/attente']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    // **Le contrôle mord** : supprimer la reprise ferait tomber cette ligne (on lirait
+    // « L’Arrivage ») ; c'est le critère 2 de #731, la reprise reste pour le rechargement.
+    expect(screen.getByRole('heading', { name: /Le combat/ })).toBeInTheDocument();
+    unmount();
+
+    // **« Revoir »**, même état : la reprise est ignorée, la Journée repart de l'étape 1.
+    setupTestStore(etat);
+    oublierGestes();
+    rejouerJournee();
+    const { unmount: relecture } = render(
+      <MemoryRouter initialEntries={['/attente']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('heading', { name: /L’Arrivage/ })).toBeInTheDocument();
+    relecture();
   });
 });
 
