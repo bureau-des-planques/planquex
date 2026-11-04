@@ -472,7 +472,9 @@ capture.
 | Aucun geste | tour de la Direction, ou partie terminée | la ligne de repos de la barre d'action, **sans bouton grisé** : l'écran ne rend que `legalActions` | attendre le tour, ou `⋯` |
 | Mouvement réduit | `Réglages` → « Réduire les animations », ou `prefers-reduced-motion` | les mêmes informations, sans mouvement : chiffre de Stress fixe, éventail qui ne se soulève pas, carte craquée désaturée | — |
 
-**Les dialogues** — la fiche d'une carte, l'Arrivage, la Journée d'intégration, les Conditions, la confirmation — passent tous par `components/ui/dialog.tsx` (D-035) : rôle, Échap, focus piégé et fond sont les siens. Il n'y a plus de dialogue maison (`.modal` a disparu). La fiche dit l'état du Deck quand l'écran qui l'ouvre sait y ajouter (`Deck 12/20`) ; quand l'ajout est refusé, elle écrit le motif et mène à `/deck` au lieu de laisser un bouton mort, et après le geste elle confirme (`Ajouté au Deck — 13/20`). Une carte non possédée y est annoncée comme telle : l'ajout reste possible pour l'alpha (30/10/2026, #533).
+**Les dialogues** — la fiche d'une carte, l'Arrivage, les Conditions, la confirmation — passent tous par `components/ui/dialog.tsx` (D-035) : rôle, Échap, focus piégé et fond sont les siens. Il n'y a plus de dialogue maison (`.modal` a disparu). La fiche dit l'état du Deck quand l'écran qui l'ouvre sait y ajouter (`Deck 12/20`) ; quand l'ajout est refusé, elle écrit le motif et mène à `/deck` au lieu de laisser un bouton mort, et après le geste elle confirme (`Ajouté au Deck — 13/20`). Une carte non possédée y est annoncée comme telle : l'ajout reste possible pour l'alpha (30/10/2026, #533).
+
+**La Journée d'intégration n'est pas un dialogue** (D-160 (2), D-162 (1), D-181) — *forme cible, implémentée par #681 ; le code rend encore le portrait du PDG à 36 px* : c'est une **région** non modale, posée en haut, sans voile ni focus piégé. Sa voix est le **Chef de cabinet** (`direction-chef-cabinet`, `src/data/direction.ts:139`), qui parle « de la part de la Direction » : un portrait de **48 px au plus**, une réplique de **12 mots au plus**, une **pointe** vers l'élément désigné, et **aucune fenêtre modale**. Le camp garde le nom « la Direction » (D-108).
 
 ### 2.6 La scène de combat (D-093, 25/10/2026)
 
@@ -599,18 +601,20 @@ qu'aux deux cas nommés (très court, paysage), et seulement d'un cran.
 ## 3. Cadre de rareté, rareté par rareté
 
 La source est `RARITY_META` (`src/data/index.ts`) : le libellé **et** la couleur y vivent,
-le CSS ne fait que les lire par `--rarity`.
+le CSS ne fait que les lire par `--rarity`. Les **noms** et les **symboles** (un objet de bureau
+par palier) sont la nomenclature de D-180 ; le libellé compact du code reste `◆`/`★`/`♛` tant
+qu'un ticket d'implémentation ne l'a pas remplacé.
 
-| Rareté | Libellé | Couleur | Traitement visuel |
-|---|---|---|---|
-| `1D` | ◆ | `#8fa3b8` | filet gris froid |
-| `2D` | ◆◆ | `#9fc4e8` | filet bleu clair |
-| `3D` | ◆◆◆ | `#c9a227` | filet or sourd |
-| `4D` | ◆◆◆◆ | `#f0c75e` | filet or vif ; les 4◆ sont les COMEX (`card--comex`, cadre or) |
-| `1S` | ★ | `#e8b54a` | filet or + voile holographique |
-| `2S` | ★★ | `#f2d27a` | filet or clair + voile holographique |
-| `3S` | ★★★ | `#ffd76e` | filet or + holo ; **4 variantes** depuis #87 |
-| `COU` | ♛ | `#c9a2ff` | filet violet **plat** (atténué : `color-mix` à 62 % sur `--bg-deep`) + holo ; **3 variantes** depuis #87. Plat, parce qu'un dégradé de violet est un tell d'UI générée (`ai-color-palette`, #208) |
+| Rareté | Nom | Symbole | Libellé | Couleur | Traitement visuel |
+|---|---|---|---|---|---|
+| `1D` | À l’essai | badge à pince | ◆ | `#8fa3b8` | filet gris froid |
+| `2D` | Titularisé | clé de vestiaire | ◆◆ | `#9fc4e8` | filet bleu clair |
+| `3D` | Confirmé | perforatrice | ◆◆◆ | `#c9a227` | filet or sourd |
+| `4D` | Promu | fauteuil | ◆◆◆◆ | `#f0c75e` | filet or vif ; les 4◆ sont les COMEX (`card--comex`, cadre or) |
+| `1S` | Distingué | médaille | ★ | `#e8b54a` | filet or + voile holographique |
+| `2S` | Inamovible | plaque | ★★ | `#f2d27a` | filet or clair + voile holographique |
+| `3S` | Émérite | montre | ★★★ | `#ffd76e` | filet or + holo ; **4 variantes** depuis #87 |
+| `COU` | Légataire | passe-partout | ♛ | `#c9a2ff` | filet violet **plat** (atténué : `color-mix` à 62 % sur `--bg-deep`) + holo ; **3 variantes** depuis #87. Plat, parce qu'un dégradé de violet est un tell d'UI générée (`ai-color-palette`, #208) |
 
 Les raretés hautes (`3S`, `COU`) sont portées **uniquement par des variantes
 re-raréfiées** (#87, `npm run status` → `"3S": 4, "COU": 3`). Le traitement
