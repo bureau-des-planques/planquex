@@ -182,10 +182,7 @@ Le catalogue d'OpenCode n'a pas été interrogé ici : chaque ligne dit d'où el
   session ; pas de score chiffré).
 - **Crédit OpenRouter** : une requête peut échouer avec « exceed your available credits given your
   current in-flight requests ». Relancer sur **un autre fournisseur**, pas en boucle sur le même.
-- **`openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`** : présence au catalogue **à vérifier par
-  l'orchestrateur** (cet agent ne peut pas interroger le catalogue d'OpenCode). Si l'identifiant
-  n'y est plus, la session indique `nvidia/nvidia/nemotron-3-ultra-550b-a55b` (fournisseur Nvidia,
-  coût 0 observé le 04/11/2026). Ce remplaçant n'est pas vérifié ici.
+- **`openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`** : **absent du catalogue d'OpenCode le 04/11/2026**. Une recherche de `nemotron-3-ultra` rend quatre entrées : `nvidia/nvidia/nemotron-3-ultra-550b-a55b` (fournisseur Nvidia, coût 0), `ollama-cloud/nemotron-3-ultra` (payant), `openrouter/nvidia/nemotron-3-ultra-550b-a55b` (**payant**, 0,60 / 2,40 $ par million, sans suffixe `:free`) et `vercel/nvidia/nemotron-3-ultra-550b-a55b` (payant). Le gratuit se prend donc chez Nvidia en direct ; la chaîne de repli qui nomme l'entrée `:free` d'OpenRouter est à vérifier avant de s'y fier.
 
 ## Protocole de commande pour un relecteur — à recopier dans le brief
 
