@@ -161,6 +161,29 @@ d'entrée/minute. Trois routes propres, à choisir côté humain :
 Un abonnement **Google AI Pro/Ultra personnel ne débloque donc rien** : ni la route OAuth
 (fermée), ni la route API (le quota gratuit reste le quota gratuit).
 
+## Notes de la session du 04/11/2026 (ticket #697)
+
+Ce que la session du 04/11/2026 a **observé**, daté, sans score ni prix relevé par ce document.
+Le catalogue d'OpenCode n'a pas été interrogé ici : chaque ligne dit d'où elle vient.
+
+- **Haiku** : `anthropic/claude-haiku-5-5`, abonnement Claude Pro. Choisi pour les tâches
+  **courtes et vérifiables** (relire un diff contre son ticket, vérifier chemins et lignes,
+  exécuter une commande et rendre sa sortie, corriger une ligne de doc, un petit garde-fou) —
+  voir `parallelisme.md` §2. Il remplace le gratuit quand l'auteur n'est pas Anthropic et que
+  le gratuit n'a pas répondu.
+- **`opencode/crouton-alpha-free`** : **refusé depuis le pays de Bastien**, avec le message
+  « This model is not available in your country », alors que le catalogue le dit **actif**.
+  Un modèle actif au catalogue n'est donc pas un modèle utilisable : ne pas le retenir en repli.
+- **`openrouter/google/gemini-3.8-flash`** : la critique `impeccable` qu'il rend n'est **pas fiable** ;
+  ne pas s'en servir pour juger une UI.
+- **`openrouter/inclusionai/ling-3.0-flash-vl`** : lit **une image à la fois** ; il échoue sur un
+  lot de **17** images. Pour un lot, le découper ou prendre un autre modèle.
+- **`openrouter/openai/gpt-6.1-sol`** : bon **vérificateur** et bon **diagnostic** (relevé de la
+  session ; pas de score chiffré).
+- **Crédit OpenRouter** : une requête peut échouer avec « exceed your available credits given your
+  current in-flight requests ». Relancer sur **un autre fournisseur**, pas en boucle sur le même.
+- **`openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`** : **absent du catalogue d'OpenCode le 04/11/2026**. Une recherche de `nemotron-3-ultra` rend quatre entrées : `nvidia/nvidia/nemotron-3-ultra-550b-a55b` (fournisseur Nvidia, coût 0), `ollama-cloud/nemotron-3-ultra` (payant), `openrouter/nvidia/nemotron-3-ultra-550b-a55b` (**payant**, 0,60 / 2,40 $ par million, sans suffixe `:free`) et `vercel/nvidia/nemotron-3-ultra-550b-a55b` (payant). Le gratuit se prend donc chez Nvidia en direct ; la chaîne de repli qui nomme l'entrée `:free` d'OpenRouter est à vérifier avant de s'y fier.
+
 ## Protocole de commande pour un relecteur — à recopier dans le brief
 
 Le profil `auditeur` **refuse le shell par défaut** et n'autorise qu'une **liste blanche**,

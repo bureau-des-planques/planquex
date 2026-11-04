@@ -169,9 +169,17 @@ export function urlImportDeck(configuration: ConfigurationMur): string {
   return urlFonctionDeck(configuration, FONCTION_IMPORT_DECK);
 }
 
-/** Le chemin REST d'une fonction du Deck : une seule construction pour les deux appels. */
+/**
+ * Le chemin REST d'une fonction du Deck : une seule construction pour les deux appels.
+ *
+ * **`/rpc/` est obligatoire** (PostgREST) : sans lui, le chemin désigne une **table**.
+ * Le 04/11/2026, la preuve E2E (#668) a montré l'écart que ce détail creusait — deux 404
+ * `PGRST205` (« Could not find the table public.importer_deck ») à chaque chargement de
+ * page connectée. Le rejeu et l'import ne partaient donc jamais, et la preuve échouait sur
+ * une erreur de console qu'aucun test ne reliait à cette URL.
+ */
 function urlFonctionDeck(configuration: ConfigurationMur, nom: string): string {
-  return `${configuration.url.replace(/\/+$/, '')}/rest/v1/${nom}`;
+  return `${configuration.url.replace(/\/+$/, '')}/rest/v1/rpc/${nom}`;
 }
 
 /** Ce que le catalogue sait de la carte, tel que la base le reçoit (`nom`, `stade`). */
