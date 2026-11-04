@@ -193,11 +193,18 @@ if (estLance) {
   }
   try {
     const ticket = lireTicket(options.ticket);
-    const journal = join(dirname(process.argv[1]), '..', 'docs/DECISIONS.md');
-    const decision =
-      options.decision && existsSync(journal)
-        ? prochainNumero(readFileSync(journal, 'utf8'), journalLePlusRecent())
-        : null;
+    // `process.argv[1]` vaut `scripts/ci/dispatch.mjs` : la racine du dépôt est deux
+    // niveaux au-dessus, pas un. Un `..` de trop rendait le journal introuvable et
+    // `decision` valait `null` en silence (#688).
+    const journal = join(dirname(process.argv[1]), '..', '..', 'docs/DECISIONS.md');
+    let decision = null;
+    if (options.decision) {
+      // Sans journal, on refuse : réserver un numéro à l'aveugle le rendrait faux.
+      if (!existsSync(journal)) {
+        throw new Error(`journal introuvable (${journal}) — --decision ne peut pas réserver de numéro`);
+      }
+      decision = prochainNumero(readFileSync(journal, 'utf8'), journalLePlusRecent());
+    }
     const prompt = composer({ ...options, ticket, decision, worktreeExiste: existsSync(options.worktree) });
     if (options.json) {
       console.log(

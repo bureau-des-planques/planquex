@@ -1,5 +1,8 @@
-import { homedir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { analyserArguments, composer, prochainNumero } from './dispatch.mjs';
 
@@ -108,5 +111,60 @@ describe('composer', () => {
     expect(lecture).not.toContain('npm run garde-fous');
     expect(composer({ ...base, agent: 'redacteur' })).toContain('format:check');
     expect(composer(base)).toContain('npm run garde-fous');
+  });
+});
+
+/**
+ * Le script **réel**, lancé dans un faux dépôt : une copie de `dispatch.mjs` sous
+ * `scripts/ci/`, un `docs/DECISIONS.md` à la racine, et un faux `gh` sur le `PATH`.
+ *
+ * Le leurre `scripts/docs/DECISIONS.md` est le contrôle qui mord : avec l'ancien `..`,
+ * le script lit ce journal-là (D-001) et rend D-002 au lieu du D-008 attendu (#688).
+ */
+const SOURCE = fileURLToPath(new URL('./dispatch.mjs', import.meta.url));
+
+function fauxDepot({ avecJournal = true } = {}) {
+  const bac = mkdtempSync(join(tmpdir(), 'dispatch-'));
+  mkdirSync(join(bac, 'scripts', 'ci'), { recursive: true });
+  copyFileSync(SOURCE, join(bac, 'scripts', 'ci', 'dispatch.mjs'));
+  if (avecJournal) {
+    mkdirSync(join(bac, 'docs'), { recursive: true });
+    writeFileSync(join(bac, 'docs', 'DECISIONS.md'), '| D-007 | 04/11/2026 | la vraie |\n');
+    mkdirSync(join(bac, 'scripts', 'docs'), { recursive: true });
+    writeFileSync(join(bac, 'scripts', 'docs', 'DECISIONS.md'), '| D-001 | 01/01/2026 | le leurre |\n');
+  }
+  const bin = join(bac, 'bin');
+  mkdirSync(bin, { recursive: true });
+  const gh = join(bin, 'gh');
+  writeFileSync(gh, `#!/bin/sh\nprintf '%s' '{"number":1,"title":"T","body":"corps","labels":[]}'\n`);
+  chmodSync(gh, 0o755);
+  return bac;
+}
+
+function lancerDispatch(bac: string, args: string[]) {
+  return spawnSync(process.execPath, [join(bac, 'scripts', 'ci', 'dispatch.mjs'), ...args], {
+    cwd: bac,
+    encoding: 'utf8',
+    // `GIT_DIR` bidon : `git fetch origin main` échoue même si le bac temporaire se trouve
+    // sous un dépôt git ; le script retombe alors sur le journal local, comme hors ligne.
+    env: { ...process.env, GIT_DIR: join(bac, 'pas-un-depot'), PATH: `${join(bac, 'bin')}:${process.env.PATH ?? ''}` }
+  });
+}
+
+describe('le script réel et son journal (#688)', () => {
+  it('réserve le prochain numéro lu à la racine du dépôt, pas dans `scripts/docs`', () => {
+    const bac = fauxDepot();
+    const r = lancerDispatch(bac, ['--ticket', '1', '--decision', '--json']);
+    expect(r.status, r.stderr).toBe(0);
+    expect(JSON.parse(r.stdout).decision).toBe('D-008');
+    // Le leurre existe, et il n'a pas été lu : c'est bien la racine qui fait foi.
+    expect(r.stdout).not.toContain('D-002');
+  });
+
+  it('refuse `--decision` quand le journal est introuvable, au lieu de se taire', () => {
+    const bac = fauxDepot({ avecJournal: false });
+    const r = lancerDispatch(bac, ['--ticket', '1', '--decision', '--json']);
+    expect(r.status).toBe(1);
+    expect(r.stderr).toMatch(/journal introuvable/);
   });
 });
