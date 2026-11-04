@@ -633,18 +633,16 @@ describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () =>
  * **Le budget de texte rendu** (D-181 (3), #682) — mesuré sur le **DOM**, pas sur les
  * objets de données : un libellé ajouté dans le JSX doit peser.
  *
- * Ce qui compte : le titre (`#journee-titre`, compteur et préfixe `sr-only` exclus), le
- * texte (`#journee-texte`), la réplique **avec son locuteur** (`.journee__direction`) et
- * les libellés des boutons de l'étape (`.actions` : « Suivant », et le geste s'il est
- * visible).
+ * Ce qui compte (D-181 (3), précisé par D-185 (1) et D-186 (1)) : le titre
+ * (`#journee-titre`, compteur et préfixe `sr-only` exclus), le texte (`#journee-texte`),
+ * la **réplique sans son locuteur** (`.journee__direction`, le `<strong>` retiré) et les
+ * libellés des boutons d'action de l'étape (`.actions` : « Suivant », et le geste s'il est
+ * visible). Fourchette : 54 à 66 mots.
  *
- * **Le bouton de sortie permanent n'entre pas dans le budget** : « Passer : tu ne verras
- * pas le combat » puis « Relire la Journée plus tard… » sont une commande du panneau,
- * rendue à chaque étape, pas le contenu de l'étape. Le compter met le total à **97 mots**
- * avec les libellés actuels (82 même raccourcis au plus court) — titre, locuteur, réplique
- * et « Suivant » pèsent déjà 31 — et la cible de 60 devient hors d'atteinte sans casser le
- * plafond de 12 mots par réplique. C'est l'écart que #682 signale dans son rapport : la
- * lettre du ticket (« Passer… » compris) et la cible de 60 ne peuvent pas tenir ensemble.
+ * **Hors budget** : le **nom du locuteur** « Chef de cabinet » (D-186 (1)), libellé répété
+ * à chaque étape, et le **bouton de sortie permanent** « Passer : tu ne verras pas le
+ * combat » / « Relire la Journée… » (D-185 (1)), un contrôle, le même partout. Le nom reste
+ * dans la **borne par réplique** : « Chef de cabinet » + réplique ≤ 12 mots (D-186 (3)).
  */
 function mots(texte: string): number {
   return texte.split(/\s+/).filter(Boolean).length;
@@ -653,8 +651,12 @@ function mots(texte: string): number {
 interface CompteDeTexte {
   titre: string;
   mots: number;
+  /** La réplique **sans** le nom du locuteur : c'est ce que le budget compte (D-186 (1)). */
   repliqueMots: number;
+  /** La réplique **avec** le nom : c'est elle que la borne de 12 mots lit (D-186 (3)). */
+  repliqueAvecNomMots: number;
   replique: string;
+  repliqueAvecNom: string;
   detail: string;
   source: 'DOM' | 'données';
 }
@@ -671,7 +673,14 @@ function compteDeLEtape(index: number): CompteDeTexte {
     titreEl?.querySelector('.sr-only')?.remove();
     const titreRendu = titreEl?.textContent?.trim() ?? etape.titre;
     const texte = panneau.querySelector('#journee-texte')?.textContent?.trim() ?? '';
-    const replique = panneau.querySelector('.journee__direction')?.textContent?.trim() ?? '';
+    // La réplique rendue, nom compris (`<strong>Chef de cabinet</strong> …`), puis la même
+    // **sans** le nom : on retire le `<strong>` du clone. Le nom est un libellé répété, hors
+    // budget (D-186 (1)) ; il reste dans la borne de 12 mots (D-186 (3)).
+    const repliqueEl = panneau.querySelector('.journee__direction');
+    const repliqueAvecNom = repliqueEl?.textContent?.trim() ?? '';
+    const repliqueClone = repliqueEl?.cloneNode(true) as HTMLElement | undefined;
+    repliqueClone?.querySelector('strong')?.remove();
+    const replique = repliqueClone?.textContent?.trim() ?? '';
     const boutons = [...panneau.querySelectorAll<HTMLButtonElement>('.actions button')].map(
       (bouton) => bouton.textContent?.trim() ?? ''
     );
@@ -680,6 +689,8 @@ function compteDeLEtape(index: number): CompteDeTexte {
       titre: etape.titre,
       mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
       repliqueMots: mots(replique),
+      repliqueAvecNomMots: mots(repliqueAvecNom),
+      repliqueAvecNom,
       replique,
       detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
       source: 'DOM'
@@ -688,13 +699,17 @@ function compteDeLEtape(index: number): CompteDeTexte {
     // **Le panneau de l'étape du combat n'est jamais rendu** (D-162 (3)) : il s'efface sur
     // `/battle`. On compte la même source que le panneau lirait, sans quoi cette étape
     // échapperait au budget ; un mot ajouté à son texte pèse quand même.
-    const replique = `${LOCUTEUR_JOURNEE} ${etape.direction}`;
+    // Sans le nom, comme le DOM ci-dessus (D-186 (1)) ; avec le nom pour la borne (D-186 (3)).
+    const replique = etape.direction;
+    const repliqueAvecNom = `${LOCUTEUR_JOURNEE} ${etape.direction}`;
     const dernier = index === ETAPES_JOURNEE.length - 1;
     const morceaux = [etape.titre, etape.texte, replique, ...(dernier ? [] : ['Suivant'])];
     compte = {
       titre: etape.titre,
       mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
       repliqueMots: mots(replique),
+      repliqueAvecNomMots: mots(repliqueAvecNom),
+      repliqueAvecNom,
       replique,
       detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
       source: 'données'
@@ -711,7 +726,7 @@ function detailDesComptes(comptes: readonly CompteDeTexte[]): string {
     `Le budget de texte rendu (D-181 (3), #682) : ${total} mots, cible ${MOTS_CIBLE_JOURNEE} (${MOTS_MIN_JOURNEE} à ${MOTS_MAX_JOURNEE}).`,
     ...comptes.map(
       (compte, index) =>
-        `  étape ${index + 1} « ${compte.titre} » : ${compte.mots} mots, réplique ${compte.repliqueMots} [${compte.source}] = ${compte.detail}`
+        `  étape ${index + 1} « ${compte.titre} » : ${compte.mots} mots, réplique ${compte.repliqueMots} sans le nom (${compte.repliqueAvecNomMots} avec) [${compte.source}] = ${compte.detail}`
     )
   ].join('\n');
 }
@@ -722,13 +737,17 @@ describe('le budget de texte de la Journée (D-181 (3), #682)', () => {
     const total = comptes.reduce((somme, compte) => somme + compte.mots, 0);
     const detail = detailDesComptes(comptes);
 
-    // **Le contrôle mord** : une réplique à 13 mots nomme l'étape, son compte et son texte.
+    // **Le contrôle mord** : la borne de 12 mots se lit **avec** le nom (D-186 (3)) ; une
+    // réplique à 13 mots, nom compris, nomme l'étape, son compte et son texte.
     for (const compte of comptes) {
       expect(
-        compte.repliqueMots,
-        `${detail}\nLa réplique de « ${compte.titre} » fait ${compte.repliqueMots} mots : « ${compte.replique} »`
+        compte.repliqueAvecNomMots,
+        `${detail}\nLa réplique de « ${compte.titre} » fait ${compte.repliqueAvecNomMots} mots avec le nom : « ${compte.repliqueAvecNom} »`
       ).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
     }
+    // **Le contrôle mord** : le total hors nom et hors sortie doit rester dans la fourchette
+    // (54 à 66) ; un texte qui la dépasse fait échouer cette ligne, et c'est ce que vérifie
+    // le mutant « total > 66 ».
     expect(total, detail).toBeGreaterThanOrEqual(MOTS_MIN_JOURNEE);
     expect(total, detail).toBeLessThanOrEqual(MOTS_MAX_JOURNEE);
   });
