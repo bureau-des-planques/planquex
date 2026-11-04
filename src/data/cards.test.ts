@@ -6,6 +6,7 @@ import {
   FACTION_META,
   ITEM_KIND_META,
   RARITY_META,
+  RARITY_SYMBOL_VIEWBOX,
   STAGE_META,
   getCard,
   isActionCard,
@@ -291,6 +292,75 @@ describe('Raretés hautes — socle de type (CARD-SPEC.md §1, docs/JEU.md §3.2
       expect(RARITY_META[card.rarity], card.id).toBeDefined();
       expect(CARD_BY_ID.has(card.id), card.id).toBe(false);
     }
+  });
+});
+
+/**
+ * Les noms et les symboles des huit raretés (D-180) : la **nomenclature** du jeu, pas une
+ * règle de tirage. Le libellé compact de l'UI ne bouge pas.
+ */
+const NOMS_D180: Record<Rarity, string> = {
+  '1D': 'À l’essai',
+  '2D': 'Titularisé',
+  '3D': 'Confirmé',
+  '4D': 'Promu',
+  '1S': 'Distingué',
+  '2S': 'Inamovible',
+  '3S': 'Émérite',
+  COU: 'Légataire'
+};
+
+const OBJETS_D180: Record<Rarity, string> = {
+  '1D': 'badge à pince',
+  '2D': 'clé de vestiaire',
+  '3D': 'perforatrice',
+  '4D': 'fauteuil',
+  '1S': 'médaille',
+  '2S': 'plaque',
+  '3S': 'montre',
+  COU: 'passe-partout'
+};
+
+describe('Raretés — noms et symboles (D-180)', () => {
+  it('donne à chaque code son nom retenu, sans libellé en attente', () => {
+    for (const rarity of TOUTES_LES_RARETES) {
+      const meta = RARITY_META[rarity];
+      expect(meta.name, rarity).toBe(NOMS_D180[rarity]);
+      expect(meta.name.trim(), rarity).not.toBe('');
+      // Un nom en attente ne doit pas passer pour officiel.
+      expect(meta.name, rarity).not.toMatch(/à confirmer|provisoire|en attente|\?/i);
+    }
+    expect(Object.keys(RARITY_META)).toHaveLength(TOUTES_LES_RARETES.length);
+  });
+
+  it('garde le libellé compact de l’UI (D-180), de forme différente par palier', () => {
+    const labels = TOUTES_LES_RARETES.map((rarity) => RARITY_META[rarity].label);
+    for (const rarity of TOUTES_LES_RARETES) {
+      expect(RARITY_META[rarity].label, rarity).not.toBe('');
+    }
+    expect(new Set(labels).size).toBe(TOUTES_LES_RARETES.length);
+  });
+
+  it('donne à chaque code l’objet de D-180, en tracé vectoriel distinct', () => {
+    const traces = new Set<string>();
+    for (const rarity of TOUTES_LES_RARETES) {
+      const { symbol } = RARITY_META[rarity];
+      expect(symbol.name, rarity).toBe(OBJETS_D180[rarity]);
+      expect(symbol.path.trim().length, rarity).toBeGreaterThan(0);
+      expect(symbol.path, rarity).toMatch(/^M/);
+      traces.add(symbol.path);
+    }
+    // « de forme différente à chaque fois » : huit tracés, pas huit copies.
+    expect(traces.size).toBe(TOUTES_LES_RARETES.length);
+  });
+
+  it('le 3D porte la perforatrice, pas la tasse écartée', () => {
+    expect(RARITY_META['3D'].symbol.name).toBe('perforatrice');
+    expect(RARITY_META['3D'].symbol.name).not.toMatch(/tasse/i);
+  });
+
+  it('le viewBox est commun aux huit symboles', () => {
+    expect(RARITY_SYMBOL_VIEWBOX).toBe('0 0 24 24');
   });
 });
 
