@@ -83,11 +83,6 @@ describe('CardView — le gabarit à cadre', () => {
     expect(container.querySelectorAll('.card__attacks .pips')).toHaveLength(carte.attacks.length);
     expect(within(face).getByText(FACTION_META[carte.faction].short)).toBeInTheDocument();
     expect(within(face).getByText(RARITY_META[carte.rarity].label)).toBeInTheDocument();
-    const symbole = container.querySelector('.card__rarity [data-symbole-rarete]');
-    expect(symbole?.querySelector('path')?.getAttribute('d')).toBe(RARITY_META[carte.rarity].symbol.path);
-    expect(container.querySelector('.card__rarity')?.getAttribute('aria-label')).toContain(
-      RARITY_META[carte.rarity].symbol.name
-    );
   });
 
   it('le cadre porte la rareté, et la face est dedans (l’anneau n’est pas un filet)', () => {

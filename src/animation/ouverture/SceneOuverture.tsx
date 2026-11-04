@@ -26,9 +26,8 @@
  */
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '@/data/types';
-import { RARITY_META } from '@/data';
+import { RARITY_META, RARITY_SYMBOL_VIEWBOX } from '@/data';
 import { CardView } from '@/components/CardView';
-import { RaritySymbol } from '@/components/RaritySymbol';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import { avancer, creer, demarrer, relacher, surLaLigne, type EtatOuverture, type Geometrie, type Sens } from './etats';
 import { FicheCarte } from './FicheCarte';
@@ -77,9 +76,9 @@ const ENVOL = {
 } as const;
 
 /**
- * **La fiche attend que la carte ait fini de se retourner** (#605). Le retournement dure plus
- * longtemps qu'il n'y paraît : le dos part en 430 ms, la face arrive à 950 ms (430 ms d'attente
- * + 520 ms de rotation), et la carte elle-même se redresse en 800 ms. À 560 ms, la fiche
+ * **La fiche attend que la carte ait fini de se retourner** (#605). Le retournement prend 800 ms
+ * (400 ms pour le dos, puis 400 ms pour la face), et la carte elle-même se redresse en 800 ms.
+ * À 560 ms, la fiche
  * s'insérait **au milieu de la rotation** : sur un téléphone, sa mise en page tombait dans la
  * même image que la fin du geste — mesuré à 390 × 664 et ×6, une image de 50 ms perdue, sur un
  * CPU bridé. Une seconde plus tard, la carte est posée, et la fiche apparaît entre deux images.
@@ -767,7 +766,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         return {
           pose: { x: 0, y: -taille.hauteur * 0.05, echelle: grande * 0.95, rotation: 0 },
           opacite: 1,
-          transition: '900ms',
+          transition: '800ms',
           z: 60
         };
       }
@@ -824,7 +823,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     if (etape === 'revelation') {
       if (enCours?.phase === 'tenue') return `${geste} la carte pour la poser`;
       if (enCours?.phase === 'levee' && carteEnCours) {
-        return `Symbole de rareté : ${RARITY_META[carteEnCours.rarity].symbol.name}`;
+        return `Symbole : ${RARITY_META[carteEnCours.rarity].symbol.name}`;
       }
       if (enCours) return '…';
       // Sur un écran étroit, le tap ne fait pas que retourner : il ouvre la fiche. La
@@ -972,7 +971,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                   actif
                     ? face
                       ? `${carte.name}${neuves?.has(i) ? ', nouvelle' : ''} — voir la fiche`
-                      : `Carte ${i + 1}, face cachée — ${rarete.name}, symbole : ${rarete.symbol.name} — la retourner`
+                      : `Carte ${i + 1} — ${rarete.symbol.name} — retourner`
                     : undefined
                 }
                 style={{
@@ -1012,7 +1011,14 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                     <span className="ouverture__dos-sigle">BP</span>
                     {leve && enCours?.phase === 'levee' && (
                       <span className="ouverture__dos-symbole">
-                        <RaritySymbol rarete={carte.rarity} />
+                        <svg
+                          aria-hidden="true"
+                          className="symbole-rarete"
+                          data-symbole-rarete={carte.rarity}
+                          viewBox={RARITY_SYMBOL_VIEWBOX}
+                        >
+                          <path d={rarete.symbol.path} />
+                        </svg>
                         <span className="ouverture__dos-symbole-nom">{rarete.symbol.name}</span>
                       </span>
                     )}

@@ -110,12 +110,12 @@ describe('le retournement d’une carte ne re-rend pas les autres (#605)', () =>
     const scene = monter();
     jusquALaRevelation(scene);
     fireEvent.click(carte(scene, 0));
-    // Le retournement dure jusqu'à 950 ms (le dos part en 430 ms, la face arrive à 950 ms).
-    attendre(SUSPENSE.simple + 900);
+    // La rotation dure 800 ms ; à 750 ms elle n'est pas finie et la fiche ne s'insère pas.
+    attendre(SUSPENSE.simple + 750);
     // Le contrôle mord : à 560 ms, la fiche s'insérait en pleine rotation, et sa mise en page
     // tombait dans la même image que la fin du geste.
     expect(carte(scene, 0).dataset.fiche).toBeUndefined();
-    attendre(150);
+    attendre(250);
     expect(carte(scene, 0).dataset.fiche).toBe('oui');
   });
 

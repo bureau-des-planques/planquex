@@ -6527,8 +6527,8 @@ h2 {
 }
 
 /* Le retournement n'imbrique plus de 3D : le dos part de face (0° → 90°) pendant que la face arrive
-   de profil (−90° → 0°). Chaque élément reste dans ±90°, donc jamais vu à l'envers ni en miroir,
-   et ne dépend ni de `preserve-3d` ni de `backface-visibility`, que certains navigateurs ignorent. */
+   de profil (−90° → 0°). Chaque partie dure 400 ms (800 ms en tout), reste dans ±90° et ne dépend
+   ni de `preserve-3d` ni de `backface-visibility`, que certains navigateurs ignorent. */
 .ouverture__carte[data-face='verso'] .ouverture__face {
   transform: perspective(1200px) rotateY(-90deg);
   visibility: hidden;
@@ -6537,16 +6537,16 @@ h2 {
 .ouverture__carte[data-face='recto'] .ouverture__face {
   transform: perspective(1200px) rotateY(0deg);
   transition:
-    transform 520ms cubic-bezier(0.3, 0.7, 0.6, 1) 430ms,
-    visibility 0s 430ms;
+    transform 400ms cubic-bezier(0.3, 0.7, 0.6, 1) 400ms,
+    visibility 0s 400ms;
   visibility: visible;
 }
 
 .ouverture__carte[data-face='recto'] .ouverture__dos {
   transform: perspective(1200px) rotateY(90deg);
   transition:
-    transform 430ms cubic-bezier(0.4, 0, 0.6, 1),
-    visibility 0s 430ms;
+    transform 400ms cubic-bezier(0.4, 0, 0.6, 1),
+    visibility 0s 400ms;
   visibility: hidden;
 }
 
@@ -6642,20 +6642,12 @@ h2 {
 
 /* ---------- Les symboles de rareté (#674) ---------- */
 
-.card__rarity-symbole,
-.ouverture__fiche-symbole {
-  height: 1.5rem;
-  width: 1.5rem;
-}
-
-.card__rarity-symbole {
-  vertical-align: -0.35em;
-}
-
-.ouverture__fiche-rarete {
-  align-items: center;
-  display: flex;
-  gap: 0.4rem;
+.symbole-rarete {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
 }
 
 .ouverture__dos-symbole {

@@ -9,7 +9,6 @@ import { useEffect, useRef, useState } from 'react';
 import { ACTION_KIND_META, FACTION_META, ITEM_KIND_META, RARITY_META, isPlanque, kindLabel } from '@/data';
 import type { Card } from '@/data/types';
 import { CafePips } from '@/components/CafePips';
-import { RaritySymbol } from '@/components/RaritySymbol';
 import { WEAKNESS_BONUS } from '@/game/rules';
 
 interface Props {
@@ -95,10 +94,7 @@ export function FicheCarte({ carte, neuve, style, disposition, onFermer }: Props
         )}
         <div>
           <span className="stat-label">Rareté</span>
-          <strong className="card__rarity ouverture__fiche-rarete">
-            <RaritySymbol rarete={carte.rarity} className="ouverture__fiche-symbole" />
-            <span>{rarete.symbol.name}</span>
-          </strong>
+          <strong className="card__rarity">{rarete.symbol.name}</strong>
         </div>
       </div>
 
