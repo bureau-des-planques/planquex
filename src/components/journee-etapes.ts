@@ -56,7 +56,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     cible: '/',
     action: 'Aller à l’accueil',
     geste: 'arrivage',
-    direction: 'Ouvre ton Arrivage. La Direction a fait un effort : elle a mis des cartes dedans.'
+    direction: 'De la part de la Direction, Arrivage validé.'
   },
   {
     titre: 'La Collection et le Deck',
@@ -66,14 +66,14 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     action: 'Aller au Deck',
     geste: 'deck',
     montreCartes: true,
-    direction: 'Vingt cartes, et surtout pas une de plus. Tu n’es pas payé à la réflexion.'
+    direction: 'Vingt cartes. Pas une de plus.'
   },
   {
     titre: 'Le combat',
     texte: 'Le combat guidé t’apprend le Poste, le café et la Pression, sur le vrai plateau, jusqu’à la victoire.',
     cible: '/battle?tutoriel=1&scene=fin',
     action: 'Jouer mon premier combat',
-    direction: 'Trois Interventions et tu gagnes. Nous, on a déjà compté les tiennes.',
+    direction: 'Trois Interventions. La Direction les compte.',
     // **Le combat est un geste** (31/10/2026) : sans lui, l'étape qui compte se traversait
     // en lecture. Il se marque à la scène de fin — gagner le combat guidé est la preuve
     // qu'on l'a joué. Sur `/battle`, le panneau s'efface (le pas-à-pas parle seul).
@@ -86,7 +86,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     cible: '/settings',
     action: 'Aller aux réglages',
     geste: 'sauvegarde',
-    direction: 'Fais une sauvegarde. Si tu perds tes cartes, on dira que tu n’avais qu’à pas les perdre.'
+    direction: 'La Direction garde ta seule copie.'
   },
   {
     titre: 'Le comité',
@@ -94,7 +94,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
       'Le comité est le mur des retours, dans la barre du bas : un post-it IP pour une idée, un OUF pour un défaut. Il reste ouvert après la Journée, quand tu auras quelque chose à dire.',
     cible: '/comite',
     action: 'Voir le comité',
-    direction: 'Une idée ? Un défaut ? Le mur est là. On ne lira pas, mais on l’affichera.'
+    direction: 'La Direction affichera l’idée, promis.'
   }
 ];
 

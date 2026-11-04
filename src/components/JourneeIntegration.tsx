@@ -8,8 +8,8 @@ import { allerAEtape, etapeJournee, remettreJourneeAuDebut, useEtapeJournee } fr
 import { useStore } from '@/store/useStore';
 import { artUrl } from '@/art';
 
-/** Le visage de la Direction : l'illustration du PDG, la seule qui la représente. */
-const PORTRAIT_DIRECTION = artUrl('direction-pdg.webp');
+/** La voix de la Direction : son Chef de cabinet, qui transmet ses consignes. */
+const PORTRAIT_CHEF_CABINET = artUrl('direction-chef-cabinet.webp');
 
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
@@ -124,6 +124,7 @@ export function JourneeIntegration() {
     if (premiere > 0) allerAEtape(premiere === -1 ? ETAPES_JOURNEE.length - 1 : premiere);
   }, [tutorielVu, packsOpened, deck.length, combatFait, sauvegardeFaite]);
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
+  const cibleDeLEtape = courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null;
 
   /**
    * **L'étape et la route ne divergent pas** (#677, D-181 (5), D-162 (4)).
@@ -208,7 +209,20 @@ export function JourneeIntegration() {
     const panneau = panneauRef.current;
     if (!panneau) return;
     // **La cible de l'étape, et elle seule** : `combat` n'en a pas (le pas-à-pas désigne).
-    poserCibleJournee(courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null);
+    poserCibleJournee(cibleDeLEtape);
+
+    /** La pointe de la bulle se cale sur le centre horizontal de sa cible. */
+    const positionnerPointe = () => {
+      if (!cibleDeLEtape) return;
+      const pointe = panneau.querySelector<HTMLElement>('.journee__pointe');
+      const cible = document.querySelector<HTMLElement>(`[data-journee-cible="${cibleDeLEtape}"]`);
+      if (!pointe || !cible) return;
+
+      const panneauRect = panneau.getBoundingClientRect();
+      const cibleRect = cible.getBoundingClientRect();
+      const centreCible = cibleRect.left + cibleRect.width / 2;
+      pointe.style.left = `${centreCible - panneauRect.left}px`;
+    };
 
     /**
      * **La hauteur se mesure en continu** (`ResizeObserver`) : elle était lue une fois, au
@@ -216,20 +230,30 @@ export function JourneeIntegration() {
      * mesurée 14 px sous le panneau (critique du 30/10/2026, P0). Elle alimente
      * `--journee-hauteur`, donc le `scroll-margin-top` du halo.
      */
-    const poser = () => document.documentElement.style.setProperty('--journee-hauteur', `${panneau.offsetHeight}px`);
+    const poser = () => {
+      document.documentElement.style.setProperty('--journee-hauteur', `${panneau.offsetHeight}px`);
+      positionnerPointe();
+    };
     poser();
     const observateur = typeof ResizeObserver === 'function' ? new ResizeObserver(poser) : null;
     observateur?.observe(panneau);
+    const cible = cibleDeLEtape ? document.querySelector<HTMLElement>(`[data-journee-cible="${cibleDeLEtape}"]`) : null;
+    if (cible) observateur?.observe(cible);
+    window.addEventListener('resize', positionnerPointe);
 
     amenerLaCible();
     // Les polices arrivent après le premier rendu : on replace la cible une fois posées.
-    void document.fonts?.ready.then(() => amenerLaCible());
+    void document.fonts?.ready.then(() => {
+      amenerLaCible();
+      positionnerPointe();
+    });
 
     return () => {
       observateur?.disconnect();
+      window.removeEventListener('resize', positionnerPointe);
       poserCibleJournee(null);
     };
-  }, [ouvert, etape, pathname]);
+  }, [ouvert, etape, pathname, cibleDeLEtape]);
 
   if (!visible) return null;
 
@@ -317,25 +341,26 @@ export function JourneeIntegration() {
         {courante.texte}
       </p>
 
-      {/* **La Direction sort de sa bulle** (31/10/2026) : son portrait, puis sa phrase.
-          Même voix que la réplique de fin de combat — le produit a une seule Direction. La
-          bulle est compacte et paraît d'un coup, pour que le panneau reste court. */}
+      {/* **Le Chef de cabinet porte la voix de la Direction** (D-181) : sa courte réplique
+          suit son portrait, sans confondre le messager et le camp du plateau. */}
       <div className="journee__bulle">
-        {PORTRAIT_DIRECTION ? (
+        {PORTRAIT_CHEF_CABINET ? (
           <img
             className="journee__portrait"
-            src={PORTRAIT_DIRECTION}
+            src={PORTRAIT_CHEF_CABINET}
             alt=""
             aria-hidden="true"
-            width={36}
-            height={36}
+            width={48}
+            height={48}
             loading="lazy"
           />
         ) : null}
         <p className="journee__direction">
-          <strong>La Direction</strong> · {courante.direction}
+          <strong>Chef de cabinet</strong> {courante.direction}
         </p>
       </div>
+
+      {cibleDeLEtape && <span className="journee__pointe" aria-hidden="true" />}
 
       {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
           apparaît, mais il entend un texte qui change. Elle ne parle que des étapes qui
