@@ -468,6 +468,20 @@ export const MUTATIONS = [
     remplacement: 'const sansGenerateur = state;',
     tests: ['src/store/useStore.test.ts'],
     garde: 'le générateur du client reviendrait dans la sauvegarde, et le client croirait encore tirer ses Arrivages'
+  },
+  {
+    ticket: 667,
+    titre: 'le corps du sachet repasse devant les cartes à la sortie',
+    fichier: 'src/styles.css',
+    // À l'envol, les cartes quittent la pochette et doivent passer **devant** son corps
+    // (`SceneOuverture.test.tsx`, « à la sortie, les cartes passent devant le corps du sachet »).
+    // La mutation remonte la zone du sachet à `z-index: 50` : aucun plan de carte ne peut plus
+    // la dépasser, et l'Arrivage ne montre que la pochette — le défaut mesuré de #667/#672.
+    motif: '  touch-action: none;\n  translate: -50% -50%;\n  z-index: 2;',
+    remplacement: '  touch-action: none;\n  translate: -50% -50%;\n  z-index: 50;',
+    tests: ['src/animation/ouverture/SceneOuverture.test.tsx'],
+    garde:
+      'les cartes sortent derrière le corps du sachet : l’empilement de la scène est de nouveau celui d’avant le correctif v1-a2 (#672), et la garde d’empilement doit tomber'
   }
 ];
 

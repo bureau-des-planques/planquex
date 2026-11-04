@@ -68,7 +68,10 @@ const TICKETS_ATTENDUS = [
   49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 294, 294, 294, 294,
   299, 317, 317, 411, 411, 412, 544, 561, 561,
   // #651 : le client ne tire plus l'Arrivage — `rng` ne revient pas dans la forme persistée v15.
-  651
+  651,
+  // #667 : les cartes passent devant le corps du sachet à la sortie — l'empilement de la scène
+  // se lit dans la feuille **et** dans le `z-index` en ligne de `SceneOuverture`.
+  667
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
