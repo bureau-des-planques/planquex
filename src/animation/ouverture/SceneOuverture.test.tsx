@@ -1,4 +1,6 @@
 import { act, Profiler } from 'react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { ALL_CARDS } from '@/data';
@@ -116,6 +118,72 @@ function jusquALaRevelation(scene: HTMLElement): void {
   expect(scene.dataset.etape).toBe('ouverture');
   attendre(3200);
   expect(scene.dataset.etape).toBe('revelation');
+}
+
+/**
+ * **L'empilement de la scène** (#667). jsdom ne calcule ni `z-index` ni cascade : la feuille
+ * est lue comme un texte, et le `z-index` d'un élément vient de son **style en ligne** d'abord
+ * (`SceneOuverture` écrit `zIndex` sur chaque carte), puis de la **classe** qui l'empile.
+ *
+ * La feuille **sans ses commentaires** : une valeur d'avant le correctif a le droit d'être
+ * nommée dans la prose.
+ */
+const CSS = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+/** Les blocs `sélecteur { … }` de la feuille, dans l'ordre du fichier. */
+function blocs(): Array<{ selecteur: string; corps: string }> {
+  return [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
+    selecteur: (m[1] as string).trim(),
+    corps: m[2] as string
+  }));
+}
+
+/**
+ * Le `z-index` déclaré pour un élément : le style en ligne, sinon la **dernière** règle de
+ * classe de la feuille qui le nomme (deux sélecteurs de classe de même spécificité : l'ordre
+ * du fichier tranche, comme la cascade). `0` = `auto`, c'est-à-dire pas de plan propre.
+ */
+function zIndex(element: HTMLElement): number {
+  const enLigne = Number.parseInt(element.style.zIndex, 10);
+  if (Number.isFinite(enLigne)) return enLigne;
+  let z = 0;
+  for (const { selecteur, corps } of blocs()) {
+    // Seuls les sélecteurs de classes simples sont lus : la scène n'empile ses cartes que par
+    // une classe (`.ouverture__cartes`, `--dedans`, `--scene`, `--fiche`).
+    if (!/^(\.[\w-]+)+$/.test(selecteur)) continue;
+    const classes = (selecteur.match(/\.[\w-]+/g) ?? []).map((c) => c.slice(1));
+    if (!classes.every((c) => element.classList.contains(c))) continue;
+    const declaration = corps.match(/(?:^|;)\s*z-index:\s*(-?\d+)/);
+    if (declaration) z = Number(declaration[1]);
+  }
+  return z;
+}
+
+/**
+ * Le plan d'empilement d'un élément **dans la scène**, du plus lointain au plus proche : dans
+ * cette scène, tout élément qui porte un `z-index` est positionné (`absolute`/`relative`), donc
+ * crée un contexte, et un enfant **ne peut pas en sortir**, quel que soit son `z-index` en
+ * ligne. C'est ce que la garde de #667 doit lire : une assertion limitée au style en ligne des
+ * cartes ne voyait pas le plan de leur liste.
+ */
+function planDe(scene: HTMLElement, element: HTMLElement): number[] {
+  const plan: number[] = [];
+  for (let el: HTMLElement | null = element; el && el !== scene; el = el.parentElement) {
+    const z = zIndex(el);
+    if (z !== 0) plan.unshift(z);
+  }
+  return plan;
+}
+
+/** Le plan `a` est-il **devant** le plan `b` ? Contexte par contexte, du plus lointain au plus proche. */
+function devant(a: number[], b: number[]): boolean {
+  const longueur = Math.max(a.length, b.length);
+  for (let i = 0; i < longueur; i += 1) {
+    const da = a[i] ?? 0;
+    const db = b[i] ?? 0;
+    if (da !== db) return da > db;
+  }
+  return false;
 }
 
 describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
@@ -449,5 +517,85 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(scene.querySelector('[data-zone]')).toBeNull();
     // Les cartes restent lisibles : c'est l'information, pas l'effet.
     expect(scene.querySelectorAll('.ouverture__carte[data-face="recto"]')).toHaveLength(5);
+  });
+
+  /**
+   * **Les cartes passent devant le corps du sachet à la sortie** (#667).
+   *
+   * Le défaut mesuré : à l'envol, `.ouverture__cartes--dedans` pose la liste des cartes en
+   * `z-index: 1`, sous la zone du sachet (`z-index: 2`) — et le `z-index` en ligne de chaque
+   * carte (`30 - i`, écrit par `poseDe`) ne peut pas sortir du plan de sa liste. Les cartes
+   * émergent donc **derrière** la pochette, que l'on voit seule.
+   *
+   * ⚠️ Ce test garde **l'ordre des plans**, il ne prouve pas le rendu : jsdom ne peint rien, et
+   * une valeur de `z-index` ne dit pas ce que l'œil voit. La preuve visuelle est la planche de
+   * frames de la phase de sortie (`scripts/preuves/filmer-animation.mjs`), exigée par #672.
+   *
+   * ⚠️ **Rouge avant le correctif #672**, et c'est voulu : il ne se fusionne pas seul.
+   */
+  it('à la sortie, les cartes passent devant le corps du sachet (#667)', () => {
+    const scene = monter();
+    fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
+    // 700 ms de déchirure jouée seule, puis l'envol : les cartes commencent à sortir.
+    attendre(800);
+    expect(scene.dataset.etape).toBe('ouverture');
+
+    const premiere = carte(scene, 0);
+    const corps = scene.querySelector('.ouverture__corps') as HTMLElement;
+    // Le contrôle mord : le `z-index` en ligne est bien écrit par `poseDe` — s'il manquait, le
+    // plan des cartes se réduirait à celui de leur liste et la garde ne lirait plus rien.
+    expect(Number(premiere.style.zIndex)).toBeGreaterThan(0);
+
+    const planCartes = planDe(scene, premiere);
+    const planCorps = planDe(scene, corps);
+    expect(
+      devant(planCartes, planCorps),
+      `les cartes (${planCartes.join(' → ')}) devraient être devant le corps du sachet (${planCorps.join(' → ')})`
+    ).toBe(true);
+  });
+
+  it('le contrôle mord : l’ancien ordre (`--cartes--dedans`, z-index 1) est refusé (#667)', () => {
+    // L'ordre d'avant le correctif, lu dans la feuille : la liste des cartes est en `z-index: 1`,
+    // la zone du sachet en `z-index: 2`, et la carte porte son `z-index` en ligne (30).
+    // Un contrôle qui ne comparerait que le `z-index` en ligne la dirait devant : il est faux,
+    // la carte ne peut pas sortir du contexte d'empilement de sa liste.
+    expect(devant([1, 30], [2])).toBe(false);
+    // Et il n'est pas toujours faux : sans le contexte de la liste, la carte passe devant.
+    expect(devant([30], [2])).toBe(true);
+    // À plan égal, rien ne prouve qu'une carte est devant : le doute ne vaut pas preuve.
+    expect(devant([2], [2])).toBe(false);
+  });
+
+  it('les cartes restent invisibles avant la fente et chaque bascule tient sous 800 ms', () => {
+    const rendre = ecranTaille(420, 900);
+    try {
+      const scene = monter();
+      fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
+      attendre(800);
+
+      const liste = scene.querySelector('.ouverture__cartes') as HTMLElement;
+      const cartes = [...scene.querySelectorAll<HTMLElement>('.ouverture__carte')];
+      // Le plan passe devant dès le départ, mais aucune carte ne perce avant sa sortie de la fente.
+      expect(liste.classList.contains('ouverture__cartes--dedans')).toBe(false);
+      expect(cartes.every((carte) => carte.style.opacity === '0')).toBe(true);
+
+      attendre(250);
+      expect(cartes.every((carte) => carte.style.opacity === '1')).toBe(true);
+      for (const carte of cartes) {
+        const bascule = /transform (\d+)ms(?: (\d+)ms)?/.exec(carte.style.transition);
+        expect(bascule).not.toBeNull();
+        expect(Number(bascule?.[1]) + Number(bascule?.[2] ?? 0)).toBeLessThanOrEqual(800);
+      }
+
+      // La sortie de la pochette est une seconde bascule ; elle garde la même borne.
+      attendre(1350);
+      for (const carte of cartes) {
+        const bascule = /transform (\d+)ms(?: (\d+)ms)?/.exec(carte.style.transition);
+        expect(bascule).not.toBeNull();
+        expect(Number(bascule?.[1]) + Number(bascule?.[2] ?? 0)).toBeLessThanOrEqual(800);
+      }
+    } finally {
+      rendre();
+    }
   });
 });

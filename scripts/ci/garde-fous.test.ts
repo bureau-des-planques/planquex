@@ -70,7 +70,10 @@ const TICKETS_ATTENDUS = [
   // #651 : le client ne tire plus l'Arrivage — `rng` ne revient pas dans la forme persistée v15.
   651,
   // #666 : la Journée décrit l'écran affiché — la cible d'une étape ne peut pas désigner un autre écran.
-  666
+  666,
+  // #667 : les cartes passent devant le corps du sachet à la sortie — l'empilement de la scène
+  // se lit dans la feuille **et** dans le `z-index` en ligne de `SceneOuverture`.
+  667
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
