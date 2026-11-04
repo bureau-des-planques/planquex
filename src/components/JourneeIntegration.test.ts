@@ -85,10 +85,11 @@ describe('le panneau ne se quitte pas par accident (30/10/2026)', () => {
     expect(composant).not.toMatch(/<Dialog/);
     expect(composant).toMatch(/className="journee"/);
     // Échap **met en pause** : il ne termine plus la visite (abandon définitif au premier
-    // réflexe de fermeture). Le panneau prend le focus, pour que le clavier entre dedans.
+    // réflexe de fermeture). **Le panneau ne prend pas le focus** (D-161, #687) : l'étape
+    // s'annonce par `aria-live`, le focus reste sur le contrôle qui a ouvert la Journée.
     expect(composant).toMatch(/evenement\.key === 'Escape'/);
     expect(composant).toMatch(/setEnPause\(true\)/);
-    expect(composant).toMatch(/panneauRef\.current\?\.focus\(\)/);
+    expect(composant).not.toMatch(/panneauRef\.current\?\.focus\(\)/);
   });
 
   it('le halo ne déplace rien : un contour, jamais une bordure qui prendrait de la place', () => {

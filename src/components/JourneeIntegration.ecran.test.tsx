@@ -466,6 +466,106 @@ describe('la Journée d’intégration se joue (D-160)', () => {
   });
 });
 
+describe('la reprise repart de la première étape non faite (#687)', () => {
+  it('reprend à la première étape dont le geste manque, et reste à la première quand tout est fait', () => {
+    // Arrivage fait, Deck à charger : la reprise s'arrête à l'étape 2. Hors parcours
+    // (`/attente`), aucune route ne réaligne l'étape : c'est bien la reprise qu'on lit.
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 1, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/attente']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
+    unmount();
+
+    // Arrivage et Deck faits, combat non joué : l'étape 3.
+    setupTestStore({
+      tutorielVu: false,
+      pasAPasCombatVu: true,
+      packsOpened: 1,
+      deck: ['atelier-joueur-de-flute']
+    });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const { unmount: apresCombat } = render(
+      <MemoryRouter initialEntries={['/attente']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('heading', { name: /Le combat/ })).toBeInTheDocument();
+    apresCombat();
+
+    // Les quatre gestes faits : `findIndex` rend `-1`, et le panneau reste à l'étape 1.
+    // **Le contrôle mord** : la branche morte `premiere === -1` prétendait glisser à la
+    // dernière étape ; un `findIndex` non gardé ferait tomber cette ligne.
+    setupTestStore({
+      tutorielVu: false,
+      pasAPasCombatVu: true,
+      packsOpened: 1,
+      deck: ['atelier-joueur-de-flute']
+    });
+    oublierGestes();
+    marquerGeste('combat');
+    marquerGeste('sauvegarde');
+    remettreJourneeAuDebut();
+    const { unmount: toutFait } = render(
+      <MemoryRouter initialEntries={['/attente']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('heading', { name: /L’Arrivage/ })).toBeInTheDocument();
+    toutFait();
+  });
+});
+
+describe('le focus reste sur le déclencheur (D-161, #687)', () => {
+  it('ouvrir la Journée ne déplace pas le focus dans le panneau, et l’étape s’annonce', async () => {
+    setupTestStore({
+      tutorielVu: true,
+      pasAPasCombatVu: true,
+      packsOpened: 1,
+      deck: ['atelier-joueur-de-flute']
+    });
+    monterAvecGestesFaits();
+    function Declencheur() {
+      const setTutorielVu = useStore((state) => state.setTutorielVu);
+      return (
+        <button type="button" onClick={() => setTutorielVu(false)}>
+          Ouvrir la Journée
+        </button>
+      );
+    }
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <>
+          <JourneeIntegration />
+          <Declencheur />
+        </>
+      </MemoryRouter>
+    );
+
+    const declencheur = screen.getByRole('button', { name: 'Ouvrir la Journée' });
+    await userEvent.click(declencheur);
+    const panneau = screen.getByRole('region', { name: /Journée d’intégration/ });
+
+    // **Le contrôle mord** : remettre `panneauRef.current?.focus()` à l'ouverture fait
+    // tomber ces deux lignes — le focus partirait dans la région.
+    expect(declencheur).toHaveFocus();
+    expect(document.activeElement).not.toBe(panneau);
+
+    // La région ne devient pas modale pour autant, et son titre annonce l'étape : le focus
+    // reste dehors, `aria-live` fait le travail (D-162 (1)).
+    expect(panneau).toHaveAttribute('role', 'region');
+    expect(panneau.getAttribute('aria-modal')).toBeNull();
+    expect(within(panneau).queryByRole('dialog')).toBeNull();
+    expect(panneau.querySelector('[aria-live="polite"]')).toHaveTextContent('L’Arrivage');
+    unmount();
+  });
+});
+
 describe('la ligne du geste se lit, sans s’afficher (04/11/2026, option A)', () => {
   it('reste dans le DOM en `role="status"`, en `sr-only` : lue par les lecteurs d’écran, pas affichée', () => {
     // L'étape 1 (l'Arrivage) n'a pas son geste : aucun Arrivage ouvert, la ligne d'aide est

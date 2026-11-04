@@ -80,8 +80,9 @@ export function JourneeIntegration() {
     };
     /**
      * **Le blocage parle** (30/10/2026) : `Échap` **met en pause** depuis le 31/10 — il ne
-     * termine plus. Le panneau prend le focus à l'ouverture, pour que le clavier entre dans
-     * la visite plutôt que de traverser les contrôles que le pointeur ne peut pas activer.
+     * termine plus. **Le panneau ne prend pas le focus** (D-161, #687) : l'étape s'annonce
+     * par `aria-live` (D-162 (1)), le focus reste sur le contrôle qui a déclenché la
+     * Journée, et `Tab` en sort librement — ni piège à focus, ni `aria-modal`.
      */
     const mettreEnPause = (evenement: KeyboardEvent) => {
       if (evenement.key === 'Escape') {
@@ -92,7 +93,6 @@ export function JourneeIntegration() {
     document.addEventListener('pointerdown', bloquer, true);
     document.addEventListener('click', bloquer, true);
     document.addEventListener('keydown', mettreEnPause);
-    panneauRef.current?.focus();
     return () => {
       document.removeEventListener('pointerdown', bloquer, true);
       document.removeEventListener('click', bloquer, true);
@@ -121,7 +121,9 @@ export function JourneeIntegration() {
     repriseFaite.current = true;
     const faits = [packsOpened > 0, deck.length > 0, combatFait, sauvegardeFaite];
     const premiere = faits.findIndex((fait) => !fait);
-    if (premiere > 0) allerAEtape(premiere === -1 ? ETAPES_JOURNEE.length - 1 : premiere);
+    // `faits` ne couvre que les quatre gestes : `-1` veut dire « tout est fait », et l'on
+    // reste à l'étape 1. Seul un index strictement positif déplace la reprise.
+    if (premiere > 0) allerAEtape(premiere);
   }, [tutorielVu, packsOpened, deck.length, combatFait, sauvegardeFaite]);
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
   const cibleDeLEtape = courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null;

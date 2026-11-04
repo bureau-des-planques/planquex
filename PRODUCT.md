@@ -60,6 +60,9 @@ jeu, pas d'une explication.
   référence se font en **420 × 900**. Le desktop doit fonctionner, il ne dicte pas les choix.
 - **La pause au travail** : sessions courtes, une main, un pouce, souvent en réseau moyen — d'où le
   bandeau hors ligne et le service worker.
+- **La Journée d'intégration** est un **panneau**, pas un dialogue : une région nommée, non modale,
+  sans voile ni piège à focus (D-160 (2), D-162 (1)). Sa voix est le **Chef de cabinet** (D-181) ;
+  elle se saute d'un clic et se rejoue depuis Réglages.
 - **La Collection et le Deck vivent sur l'appareil** (Zustand persisté). Vider les données du
   navigateur les efface : la sauvegarde est un geste explicite dans Réglages.
 - **Le comité** est le seul canal de retour intégré : un mur de post-its qui exige un compte dans
