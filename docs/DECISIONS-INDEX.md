@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 183 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 184 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -175,7 +175,7 @@
 | D-167 | 31/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la surface… |
 | D-168 | 31/10/2026 | Le contrôle des écrans refuserait un scan muet . impeccable… |
 | D-169 | 01/11/2026 | L'ouverture d'un Arrivage se lit à 420 px . (1)… |
-| D-170 | 01/11/2026 | L'ouverture d'un Arrivage se juge sur la taille rendue de… |
+| D-170 | 01/11/2026 | ⚠ Précisée par D-184 (04/11/2026) : le jugement par la… |
 | D-171 | 01/11/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la bande… |
 | D-172 | 02/11/2026 | La courbe du Deck ne nomme plus un coût qui… |
 | D-173 | 02/11/2026 | PWA d'abord, navigateur en plancher ; plein écran là où… |
@@ -189,3 +189,4 @@
 | D-181 | 04/11/2026 | La voix de la Direction est le Chef de cabinet,… |
 | D-182 | 04/11/2026 | Le plateau de combat : main rognée en bas, journal… |
 | D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |
+| D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |
