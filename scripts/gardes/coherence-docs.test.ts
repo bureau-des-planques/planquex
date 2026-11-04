@@ -15,7 +15,7 @@ import { ALL_CARDS } from '@/data';
  * Le dépôt avait déjà ce patron, et ce fichier s'y range plutôt que d'inventer le sien :
  * `scripts/gardes/compteurs.test.ts` garde les **décomptes de cartes**, `scripts/gardes/decisions.test.ts`
  * la **continuité du journal**, `scripts/generateurs/index-decisions.test.ts` la **synchro de l'index**.
- * Ici, cinq contrôles, tous par **lecture de fichier** (aucun réseau, aucune commande) :
+ * Ici, six contrôles, tous par **lecture de fichier** (aucun réseau, aucune commande) :
  *
  * 1. le **compte de décisions** annoncé dans `AGENTS.md` §1, dans `docs/DECISIONS-INDEX.md`
  *    et dans `.prettierignore` égale le nombre de lignes `| D-` du journal ;
@@ -28,7 +28,9 @@ import { ALL_CARDS } from '@/data';
  * 5. le **compte des cartes de base** cité dans un document vivant (« Les N cartes de base
  *    ont leur illustration ») égale le nombre de cartes d'`ALL_CARDS` sans `variantOf` (#625).
  *    Un document qui parle aux testeurs fait une **promesse** : « 225 cartes » pour 233 était
- *    une promesse fausse, trouvée par hasard.
+ *    une promesse fausse, trouvée par hasard ;
+ * 6. la **nomenclature des raretés** (D-180) — les huit noms et leurs objets de bureau, lus
+ *    dans les tableaux de `docs/JEU.md` §3 et de `DESIGN.md` §3, et dans la ligne D-180.
  *
  * Le point (4) ne refait **pas** le contrôle de `scripts/gardes/compteurs.test.ts` : celui-ci exige
  * déjà `npm run status` dans `README.md` et `docs/COMMANDES.md` (« les deux renvoient à
@@ -403,6 +405,79 @@ describe('Cohérence des documents — le compte des cartes de base (#625)', () 
 });
 
 // ---------------------------------------------------------------------------------------
+// 6. La nomenclature des raretés (D-180)
+// ---------------------------------------------------------------------------------------
+
+/**
+ * Les huit raretés et leur nomenclature — D-180. Le code garde le libellé compact de
+ * `RARITY_META` ; les **noms** et les **objets** sont une décision documentaire, et les deux
+ * documents qui la portent (`docs/JEU.md` §3, `DESIGN.md` §3) doivent dire la même chose.
+ *
+ * Le test lit les **tableaux** des deux fichiers : une ligne par rareté, dont le code ouvre la
+ * première cellule. Il ne se contente pas de vérifier que le nom apparaît quelque part — un
+ * nom déplacé dans un paragraphe ne fait pas une nomenclature.
+ */
+type Rarete = { code: string; nom: string; objet: string };
+
+const RARETES_D180: readonly Rarete[] = [
+  { code: '1D', nom: 'À l’essai', objet: 'badge à pince' },
+  { code: '2D', nom: 'Titularisé', objet: 'clé de vestiaire' },
+  { code: '3D', nom: 'Confirmé', objet: 'perforatrice' },
+  { code: '4D', nom: 'Promu', objet: 'fauteuil' },
+  { code: '1S', nom: 'Distingué', objet: 'médaille' },
+  { code: '2S', nom: 'Inamovible', objet: 'plaque' },
+  { code: '3S', nom: 'Émérite', objet: 'montre' },
+  { code: 'COU', nom: 'Légataire', objet: 'passe-partout' }
+];
+
+/** La ligne de tableau dont la première cellule est le code d'une rareté. */
+function ligneRarete(texte: string, code: string): string | null {
+  const motif = new RegExp('^\\|\\s*`' + code + '`\\s*\\|');
+  return texte.split('\n').find((ligne) => motif.test(ligne.trim())) ?? null;
+}
+
+/** Ce qui manque à un texte pour porter la nomenclature de D-180. */
+function ecartsNomenclature(texte: string): string[] {
+  return RARETES_D180.flatMap(({ code, nom, objet }) => {
+    const ligne = ligneRarete(texte, code);
+    if (!ligne) return [`${code} : ligne absente`];
+    const ecarts: string[] = [];
+    if (!ligne.includes(nom)) ecarts.push(`${code} : nom « ${nom} » absent`);
+    if (!ligne.includes(objet)) ecarts.push(`${code} : objet « ${objet} » absent`);
+    return ecarts;
+  });
+}
+
+/** La ligne de la décision D-180 dans le journal. */
+function ligneDecision(numero: string): string | null {
+  return read('docs/DECISIONS.md')
+    .split('\n')
+    .find((ligne) => ligne.trimStart().startsWith(`| ${numero} |`)) ?? null;
+}
+
+describe('Cohérence des documents — la nomenclature des raretés (D-180)', () => {
+  it('la décision D-180 est datée et porte les huit noms, les objets et la tasse écartée', () => {
+    const ligne = ligneDecision('D-180');
+    expect(ligne, 'D-180 introuvable dans docs/DECISIONS.md').not.toBeNull();
+    expect(ligne).toContain('04/11/2026');
+    expect(ligne).toContain('Bastien, 03/11/2026');
+    expect(ligne).toContain('perforatrice');
+    expect(ligne).toContain('tasse');
+    expect(ligne).toContain('écartée');
+    for (const { code, nom, objet } of RARETES_D180) {
+      expect(ligne, `D-180 ne porte pas ${code}`).toContain(code);
+      expect(ligne, `D-180 ne porte pas « ${nom} »`).toContain(nom);
+      expect(ligne, `D-180 ne porte pas « ${objet} »`).toContain(objet);
+    }
+  });
+
+  it.each(['docs/JEU.md', 'DESIGN.md'])('%s porte les huit noms et leurs objets', (fichier) => {
+    const ecarts = ecartsNomenclature(read(fichier));
+    expect(ecarts, `nomenclature de D-180 incomplète dans ${fichier} :\n  ${ecarts.join('\n  ')}`).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------------------
 // Le contrôle mord — les textes fabriqués
 // ---------------------------------------------------------------------------------------
 
@@ -489,5 +564,24 @@ describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
     expect(
       comptesDeBases(`Les ${reel} cartes de base.\n\nLes 225 cartes de base.`).map(({ ligne }) => ligne)
     ).toEqual([1, 3]);
+  });
+
+  it('le contrôle mord : l’objet du 3D est refusé si la tasse revient (D-180)', () => {
+    const faux = [
+      '| `1D` | **À l’essai** | badge à pince |',
+      '| `2D` | **Titularisé** | clé de vestiaire |',
+      // La tasse écartée par D-180 : la nomenclature doit exiger la perforatrice.
+      '| `3D` | **Confirmé** | tasse à café |',
+      '| `4D` | **Promu** | fauteuil |',
+      '| `1S` | **Distingué** | médaille |',
+      '| `2S` | **Inamovible** | plaque |',
+      '| `3S` | **Émérite** | montre |',
+      '| `COU` | **Légataire** | passe-partout |'
+    ].join('\n');
+    expect(ecartsNomenclature(faux)).toEqual(['3D : objet « perforatrice » absent']);
+  });
+
+  it('le contrôle mord : une rareté absente du tableau est refusée (D-180)', () => {
+    expect(ecartsNomenclature('| `1D` | **À l’essai** | badge à pince |')).toContain('2D : ligne absente');
   });
 });
