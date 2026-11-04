@@ -138,8 +138,8 @@ function jusquALaRevelation(scene: HTMLElement): void {
 const CSS = readFileSync(join(process.cwd(), 'src', 'styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 
 /** Les blocs `sélecteur { … }` de la feuille, dans l'ordre du fichier. */
-function blocs(): Array<{ selecteur: string; corps: string }> {
-  return [...CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
+function blocs(css = CSS): Array<{ selecteur: string; corps: string }> {
+  return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
     selecteur: (m[1] as string).trim(),
     corps: m[2] as string
   }));
@@ -201,6 +201,18 @@ function verifierEntreLesFaces(arriere: number[], cartes: number[], avant: numbe
   expect(devant(avant, cartes), `l’avant (${avant.join(' → ')}) recouvre les cartes (${cartes.join(' → ')})`).toBe(
     true
   );
+}
+
+/**
+ * #676 : le film a isolé ce dégradé rectangulaire, sans masque, sur le `::after` de l'annonce.
+ * jsdom ne peint pas les pseudo-éléments : on garde ici sa suppression dans la feuille réelle,
+ * pas une prétendue preuve de pixels. Les planches avant/après sont la preuve de rendu.
+ */
+function verifierAnnonceSansRectangle(css: string): void {
+  const reflets = blocs(css).filter(({ selecteur }) =>
+    selecteur.split(',').some((s) => s.trim() === '.ouverture__annonce-texte::after')
+  );
+  for (const { corps } of reflets) expect(corps).not.toMatch(/(?:background|background-image)\s*:[^;]*gradient\(/);
 }
 
 describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
@@ -382,6 +394,36 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     fireEvent.click(etoile);
     expect(etoile.dataset.fetee).toBeUndefined();
     expect(within(scene).queryByRole('status')).toBeNull();
+  });
+
+  it('l’annonce garde ses textes et ses particules, sans le rectangle de balayage (#676)', () => {
+    const scene = monter();
+    jusquALaRevelation(scene);
+    fireEvent.click(carte(scene, 3));
+    attendre(SUSPENSE.rare);
+
+    const statut = within(scene).getByRole('status');
+    expect(statut.querySelector('.ouverture__annonce-texte')?.textContent).toBeTruthy();
+    expect(statut.querySelector('.ouverture__annonce-sous')?.textContent).toBe(
+      `${RARITY_META['3D'].label} · ${(CARTES[3] as Card).name}`
+    );
+    expect(scene.querySelector('canvas.ouverture__particules')).not.toBeNull();
+    verifierAnnonceSansRectangle(CSS);
+  });
+
+  it('le contrôle mord : réintroduire le dégradé du pseudo-élément est refusé (#676)', () => {
+    expect(() => verifierAnnonceSansRectangle('')).not.toThrow();
+    // Même surface que celle isolée en navigateur : un fond, pas un reflet limité aux glyphes.
+    const fautif = `.ouverture__annonce-texte::after {
+      animation: ouverture-annonce-eclat 900ms ease-out 450ms both;
+      background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 75%) 50%, transparent 70%);
+      content: '';
+      inset: -10% -20%;
+      mix-blend-mode: overlay;
+      position: absolute;
+      translate: -120% 0;
+    }`;
+    expect(() => verifierAnnonceSansRectangle(fautif)).toThrow();
   });
 
   it('toutes retournées, la révélation se termine et « Ranger » ferme', () => {

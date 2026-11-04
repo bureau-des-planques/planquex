@@ -7073,23 +7073,6 @@ h2 {
   text-transform: uppercase;
 }
 
-/* Un éclat de lumière qui passe sur l'annonce, une fois. */
-.ouverture__annonce-texte::after {
-  animation: ouverture-annonce-eclat 900ms ease-out 450ms both;
-  background: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 75%) 50%, transparent 70%);
-  content: '';
-  inset: -10% -20%;
-  mix-blend-mode: overlay;
-  position: absolute;
-  translate: -120% 0;
-}
-
-@keyframes ouverture-annonce-eclat {
-  to {
-    translate: 120% 0;
-  }
-}
-
 .ouverture__annonce[data-palier='secrete'] .ouverture__annonce-texte {
   font-size: clamp(1.7rem, 7.4vw, 3rem);
 }
@@ -7204,8 +7187,7 @@ h2 {
 [data-mouvement-reduit='true'] :is(.ouverture__rayons, .ouverture__flotte, .ouverture__dos, .ouverture__retourne),
 [data-mouvement-reduit='true'] :is(.ouverture__fiche, .ouverture__annonce-texte, .ouverture__annonce-sous),
 [data-mouvement-reduit='true'] .ouverture__holo::before,
-[data-mouvement-reduit='true'] .ouverture__holo::after,
-[data-mouvement-reduit='true'] .ouverture__annonce-texte::after {
+[data-mouvement-reduit='true'] .ouverture__holo::after {
   animation: none;
 }
 
