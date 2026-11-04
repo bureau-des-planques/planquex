@@ -266,4 +266,11 @@ describe('la Direction accueille le nouveau (31/10/2026)', () => {
     }
     expect(new Set(lignes).size).toBe(lignes.length);
   });
+
+  it('le Chef de cabinet tient chaque réplique en 12 mots avec son nom (#681)', () => {
+    for (const etape of ETAPES_JOURNEE) {
+      const motsRendus = `Chef de cabinet ${etape.direction}`.split(/\s+/).filter(Boolean).length;
+      expect(motsRendus, etape.titre).toBeLessThanOrEqual(12);
+    }
+  });
 });
