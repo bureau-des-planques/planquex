@@ -391,8 +391,10 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
       const portrait = panneau.querySelector<HTMLImageElement>('.journee__portrait');
       const replique = panneau.querySelector('.journee__direction');
 
+      expect(panneau.querySelector('[aria-live="polite"]')).not.toBeNull();
       expect(panneau.getAttribute('aria-modal')).toBeNull();
       expect(within(panneau).queryByRole('dialog')).toBeNull();
+      expect(document.documentElement.style.getPropertyValue('--journee-hauteur')).toBe(`${panneau.offsetHeight}px`);
       expect(portrait).not.toBeNull();
       expect(portrait!.getAttribute('src')).toBe(artUrl('direction-chef-cabinet.webp'));
       expect(portrait!.getAttribute('width')).toBe('40');
