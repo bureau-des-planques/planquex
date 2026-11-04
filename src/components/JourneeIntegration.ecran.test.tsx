@@ -381,3 +381,64 @@ describe('le plateau garde son tutoriel (31/10/2026)', () => {
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
   });
 });
+
+describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () => {
+  it('Échap met en pause sans terminer ; « Reprendre » rend le panneau à la même étape', async () => {
+    await monter();
+    await userEvent.click(action(/^Suivant$/i));
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    // **Le contrôle mord** : si Échap écrivait `tutorielVu` (ancien comportement), le drapeau
+    // serait à `true` ici et le panneau serait retiré.
+    expect(screen.getByText(/Journée en pause/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reprendre' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Passer : tu ne verras pas le combat/ })).toBeInTheDocument();
+    expect(useStore.getState().tutorielVu).toBe(false);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reprendre' }));
+    // **Le contrôle mord** : « Reprendre » qui terminerait la Journée retirerait le panneau.
+    expect(useStore.getState().tutorielVu).toBe(false);
+    expect(screen.queryByText(/Journée en pause/)).toBeNull();
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
+  });
+
+  it('la sortie explicite termine la Journée ; Échap seul ne la termine pas', async () => {
+    await monter();
+    await userEvent.keyboard('{Escape}');
+    // **Le contrôle mord** : un Échap qui terminerait ferait échouer cette ligne.
+    expect(useStore.getState().tutorielVu).toBe(false);
+
+    await userEvent.click(screen.getByRole('button', { name: /Passer : tu ne verras pas le combat/ }));
+    expect(useStore.getState().tutorielVu).toBe(true);
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+  });
+
+  it('en pause, la page n’est plus bloquée et « Reprendre » se tient au clavier', async () => {
+    await monter();
+    // La page d'accueil, hors du panneau : c'est elle que la garde protège.
+    const probe = screen.getByRole('heading', { level: 1 });
+    const clic = () => {
+      const evenement = new MouseEvent('click', { bubbles: true, cancelable: true });
+      probe.dispatchEvent(evenement);
+      return evenement.defaultPrevented;
+    };
+    // **Le contrôle mord** : hors pause, la garde annule le clic sur la page.
+    expect(clic()).toBe(true);
+
+    await userEvent.keyboard('{Escape}');
+    expect(clic()).toBe(false);
+    // Au clavier : « Reprendre » est tabulable (pas de `tabindex="-1"`), et Entrée le
+    // déclenche. Le focus y arrive comme il arriverait par `Tab`.
+    const reprendre = screen.getByRole('button', { name: 'Reprendre' });
+    expect(reprendre.tabIndex).toBeGreaterThanOrEqual(0);
+    act(() => {
+      reprendre.focus();
+    });
+    expect(reprendre).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    // **Le contrôle mord** : si la barre ne tenait pas au clavier, Entrée ne la rendrait pas.
+    expect(screen.queryByText(/Journée en pause/)).toBeNull();
+    expect(useStore.getState().tutorielVu).toBe(false);
+  });
+});
