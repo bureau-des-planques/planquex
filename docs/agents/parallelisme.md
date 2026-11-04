@@ -44,8 +44,15 @@ Jamais le modèle qui a implémenté ne relit. La chaîne vient du **benchmark**
 | **implémenteur** — code, moteur, tests | `openrouter/deepseek/deepseek-v4.1-flash-1017#high` | payant à la carte, **0,30 / 1,20 $** par million ; c'est le choix de Bastien le 02/11/2026 : le gratuit ne se réserve plus au travail principal |
 | **implémenteur** — alternative moins chère | `openrouter/openai/gpt-6-luna#high` | **0,10 / 0,50 $** ; tient un ticket borné de bout en bout (#530, 1 commit, tous les contrôles verts) |
 | **relecteur courant** — un lot de tests, une doc, du contenu | `openrouter/nvidia/nemotron-3-ultra-550b-a55b:free` | gratuit, **autre fournisseur** que l'implémenteur ; convient à une relecture bornée |
-| **relecteur lourd** — migration de store, moteur, spec | `anthropic/claude-sonnet-5-5#high` | abonnement Claude Pro déjà authentifié ; la voie à restrictions faibles |
-| **revue de session** — toute une série de fusions | `anthropic/claude-opus-5-5#high` | c'est elle qui a trouvé ce que les relecteurs par branche ne pouvaient pas voir (le harnais biaisé) |
+| **tâche courte et vérifiable** — relire un diff contre son ticket, vérifier des chemins et des lignes citées, exécuter une commande et rendre sa sortie, corriger une ligne de doc, un petit garde-fou | `anthropic/claude-haiku-5-5` | abonnement Claude Pro (le même que Sonnet et Opus, `opencode-claude-auth`) ; **relevé du 04/11/2026** (ticket #697) : il remplace le gratuit quand l'auteur n'est pas Anthropic et que le gratuit n'a pas répondu. Le relecteur reste d'un **autre fournisseur** que l'auteur |
+| **relecteur lourd** — décisions, migration de store, jugement visuel sur capture | `anthropic/claude-sonnet-5-5#high` | abonnement Claude Pro déjà authentifié ; la voie à restrictions faibles. **Relevé du 04/11/2026** : les décisions font autorité (`docs/DECISIONS.md`), d'où Sonnet pour les écrire ou les relire |
+| **revue de session** — fin de vague, toute une série de fusions | `anthropic/claude-opus-5-5#high` | c'est elle qui a trouvé ce que les relecteurs par branche ne pouvaient pas voir (le harnais biaisé). **Relevé du 04/11/2026** : Opus pour la revue de fin de vague seulement |
+
+> **04/11/2026 — `model` explicite, à chaque appel** (ticket #697, observé pendant la session du jour).
+> Un sous-agent appelé **sans `model`** hérite du modèle de la session : ici Opus. **Trois agents**
+> du début de session ont tourné sur Opus par omission. Règle : passer `model` à chaque appel de
+> `subagent`, le modèle choisi dans la table ci-dessus ; `dispatch` (§2, « Appeler `subagent` »)
+> rend le prompt, pas le paramètre `model`.
 
 > **02/11/2026 — le gratuit change de rôle** (Bastien : « envoie bien les gratuits que sur des
 > sujets bien bornés »). Un gratuit ne prend plus un ticket de bout en bout : il sert aux tâches

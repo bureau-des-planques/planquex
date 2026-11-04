@@ -32,6 +32,12 @@
  * **Ce que le module ne fait pas** : il ne crée pas le compte, ne l'approuve pas, ne change
  * pas son mot de passe. « Préparer le compte » veut dire ici **vérifier** qu'il est celui
  * qu'on croit (non administrateur) et rendre sa session utilisable par le navigateur.
+ *
+ * **Les 404 sont nommés** (#668, correctif du 04/11/2026) : le message de console d'un 404
+ * ne dit pas quelle ressource a manqué. La preuve lit donc les réponses et rend l'URL en
+ * **méthode + origine + chemin** (jamais la query string, un en-tête ou un jeton). Un 404
+ * inconnu fait échouer la preuve ; `REPONSES_404_IGNOREES` n'admet que des URL nommées en
+ * entier, et elle est vide tant qu'aucune particularité locale ne l'exige.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
@@ -241,6 +247,44 @@ export function verifierCapturesSansIdentifiant(dossier, valeurs) {
   return trouvees;
 }
 
+/**
+ * **Les 404 qu'une preuve peut ignorer** — et seulement elles.
+ *
+ * La liste est **vide** au 04/11/2026 : le 404 qui a fait échouer la première exécution
+ * (`/rest/v1/importer_deck`, sans `/rpc/`) était un **défaut du client**, pas une
+ * particularité de l'environnement local — il est corrigé dans `src/lib/deck.ts`, et la
+ * preuve n'a plus rien à excuser. Une entrée se justifie uniquement par une URL **sans
+ * conséquence** propre à un serveur local (par exemple un script Vercel absent de
+ * `vite preview`), et elle se nomme **en entier** (`MÉTHODE origine/chemin`, sans query
+ * string). Jamais un préfixe, jamais un motif : une réponse 404 inconnue fait échouer la
+ * preuve, avec son URL dans le message.
+ */
+export const REPONSES_404_IGNOREES = Object.freeze([]);
+
+/**
+ * La forme sous laquelle un 404 entre dans un message : **méthode, origine et chemin**,
+ * jamais la query string, jamais un en-tête, jamais un jeton. Une UUID dans le chemin est
+ * masquée, pour qu'un identifiant de ressource ne fuie pas par là.
+ */
+export function resumeReponse404(methode, url) {
+  let adresse;
+  try {
+    adresse = new URL(url);
+  } catch {
+    return `${String(methode).toUpperCase()} (URL illisible)`;
+  }
+  const chemin = adresse.pathname.replace(
+    /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?=\/|$)/gi,
+    '/:id'
+  );
+  return `${String(methode).toUpperCase()} ${adresse.origin}${chemin}`;
+}
+
+/** Les 404 qui ne sont couverts par aucune exception nommée (vide = tout est inattendu). */
+export function reponses404Inattendues(lignes, exceptions = REPONSES_404_IGNOREES) {
+  return lignes.filter((ligne) => !exceptions.includes(ligne));
+}
+
 /** La session factice du contrat hors réseau : ce ne sont pas des jetons réels. */
 const SESSION_FACTICE = Object.freeze({
   access_token: 'jeton-de-test',
@@ -318,6 +362,16 @@ export async function lancerPreuveE2E({ env = process.env, root, outDir, executa
     });
     const page = await contexte.newPage();
     const erreurs = [];
+    // Le message de console d'un 404 ne dit **pas** quelle ressource a manqué
+    // (« Failed to load resource: the server responded with a status of 404 »). On lit
+    // donc les réponses elles-mêmes, et on n'en garde que la méthode, l'origine et le
+    // chemin — la query string peut porter un identifiant ou une clé.
+    const introuvables = new Set();
+    page.on('response', (reponse) => {
+      if (reponse.status() === 404) {
+        introuvables.add(resumeReponse404(reponse.request().method(), reponse.url()));
+      }
+    });
     page.on('console', (message) => {
       if (message.type() === 'error') erreurs.push(message.text());
     });
@@ -349,8 +403,12 @@ export async function lancerPreuveE2E({ env = process.env, root, outDir, executa
       captures.push(fichier);
     }
 
-    if (erreurs.length) {
-      throw new Error(`Erreurs de console pendant la preuve E2E : ${erreurs.slice(0, 3).join(' | ')}`);
+    const inattendus = reponses404Inattendues([...introuvables]);
+    if (erreurs.length || inattendus.length) {
+      const details = [];
+      if (erreurs.length) details.push(`erreurs de console : ${erreurs.slice(0, 3).join(' | ')}`);
+      if (inattendus.length) details.push(`ressources introuvables (404) : ${inattendus.join(' | ')}`);
+      throw new Error(`Pendant la preuve E2E, ${details.join(' ; ')}`);
     }
 
     const fuites = verifierCapturesSansIdentifiant(dossier, [
