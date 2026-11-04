@@ -17,6 +17,9 @@ import {
   identifiantsVisibles,
   lireCompteTest,
   refuserProduction,
+  REPONSES_404_IGNOREES,
+  reponses404Inattendues,
+  resumeReponse404,
   verifierCapturesSansIdentifiant,
   verifierEtatPrepare,
   type ClientE2E
@@ -274,6 +277,37 @@ describe('l’état préparé de la preuve E2E', () => {
     } finally {
       rmSync(dossier, { recursive: true, force: true });
     }
+  });
+});
+
+describe('le diagnostic des 404 de la preuve E2E (#668)', () => {
+  it('nomme la méthode, l’origine et le chemin — jamais la query string', () => {
+    const ligne = resumeReponse404(
+      'post',
+      'https://pqypogotxhdnyyfqsyop.supabase.co/rest/v1/importer_deck?apikey=une-cle&compte=un-identifiant#fragment'
+    );
+    expect(ligne).toBe('POST https://pqypogotxhdnyyfqsyop.supabase.co/rest/v1/importer_deck');
+    expect(ligne).not.toContain('une-cle');
+    expect(ligne).not.toContain('un-identifiant');
+    expect(ligne).not.toContain('apikey');
+  });
+
+  it('masque une UUID dans le chemin, pour qu’un identifiant de ressource ne fuie pas', () => {
+    expect(resumeReponse404('GET', 'https://exemple.test/comptes/00000000-0000-4000-8000-000000000000')).toBe(
+      'GET https://exemple.test/comptes/:id'
+    );
+  });
+
+  it('le contrôle mord : une exception ne couvre que l’URL nommée, un 404 inconnu échoue', () => {
+    const connue = 'POST https://exemple.test/rest/v1/importer_deck';
+    // Aucune exception n'est posée aujourd'hui : un 404 est un défaut, pas un bruit.
+    expect(REPONSES_404_IGNOREES).toEqual([]);
+    expect(reponses404Inattendues([connue], [connue])).toEqual([]);
+    // Le cas fautif : le même chemin avec un autre verbe, ou une autre ressource.
+    expect(reponses404Inattendues([connue])).toEqual([connue]);
+    expect(reponses404Inattendues(['GET https://exemple.test/autre'], [connue])).toEqual([
+      'GET https://exemple.test/autre'
+    ]);
   });
 });
 

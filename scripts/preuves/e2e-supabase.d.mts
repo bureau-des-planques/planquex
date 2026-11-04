@@ -74,6 +74,9 @@ export function identifiantsVisibles(
   identifiants: { email?: string; uid?: string; jeton?: string }
 ): string[];
 export function verifierCapturesSansIdentifiant(dossier: string, valeurs: string[]): string[];
+export const REPONSES_404_IGNOREES: readonly string[];
+export function resumeReponse404(methode: string, url: string): string;
+export function reponses404Inattendues(lignes: readonly string[], exceptions?: readonly string[]): string[];
 export function lancerPreuveE2E(options: {
   env?: Record<string, string | undefined>;
   root?: string;
