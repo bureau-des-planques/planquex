@@ -23,6 +23,7 @@
     "capturer": "node scripts/preuves/capturer.mjs",
     "e2e": "node scripts/preuves/capturer.mjs --e2e",
     "parcours": "node scripts/preuves/parcours.mjs",
+    "parcours:journee": "node scripts/preuves/parcours-journee.mjs",
     "jouer-partie": "node scripts/preuves/jouer-partie.mjs",
     "icones": "node scripts/ressources/icones.mjs",
     "garde-fous": "node scripts/ci/garde-fous.mjs",
