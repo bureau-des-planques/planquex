@@ -51,7 +51,10 @@ import {
   GABARITS,
   amorcageStore,
   defilementVertical,
-  controlesAccueil
+  controlesAccueil,
+  contraste,
+  problemesPochette,
+  erreurConsoleAttendue
 } from './capturer-socle.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -955,7 +958,9 @@ try {
 
     const page = await context.newPage();
     page.on('console', (message) => {
-      if (message.type() === 'error') problems.push(`${route} · console : ${message.text()}`);
+      if (message.type() === 'error' && !erreurConsoleAttendue(preparation, message.text())) {
+        problems.push(`${route} · console : ${message.text()}`);
+      }
     });
     page.on('pageerror', (error) => problems.push(`${route} · pageerror : ${error.message}`));
 
@@ -1017,10 +1022,10 @@ try {
         await page.waitForSelector('.ouverture', { timeout: 15000 });
       } catch (erreur) {
         // **Sans backend, l'ouverture est refusée** (D-179 (6)) : c'est l'état prévu, pas une
-        // panne. Le build de la CI ne porte pas `VITE_SUPABASE_URL`, donc l'Arrivage ne
-        // s'ouvre pas — on le dit et on ne capture pas, plutôt que de photographier l'accueil
-        // sous le nom d'un écran qui ne s'est jamais ouvert. La scène garde ses tests
-        // (`SceneOuverture.test.tsx`) et sa planche d'animation.
+        // panne. Pour une BASE_URL explicitement locale, le harnais monte le composant réel sur
+        // un tirage fixe — sans appeler l'API ni créditer la Collection — afin de mesurer et
+        // capturer l'écran indépendamment de ses prérequis réseau. La CI (qui sert `dist/`, sans
+        // BASE_URL) conserve son état « non capturé » et ne prétend pas que l'Arrivage s'est ouvert.
         const attente = (
           await page
             .locator('.hero__attente')
@@ -1028,12 +1033,31 @@ try {
             .catch(() => [])
         ).join(' ');
         if (/serveur du jeu n’est pas configuré|Connecte-toi pour ouvrir/.test(attente)) {
-          ignores.push(`${slug} (${attente.trim()})`);
-          console.log(`  ${slug} · non capturé : ${attente.trim()}`);
-          await context.close();
-          continue;
+          const hote = new URL(base).hostname;
+          const baseLocale = process.env.BASE_URL && ['localhost', '127.0.0.1'].includes(hote);
+          let fixture = false;
+          if (baseLocale) {
+            try {
+              fixture = await page.evaluate(async () => {
+                const module = await import('/scripts/preuves/capturer-arrivage-fixture.tsx');
+                module.afficherArrivagePourPreuve();
+                return true;
+              });
+            } catch (erreurFixture) {
+              console.log(`  ${slug} · scène locale non montée : ${erreurFixture.message}`);
+            }
+          }
+          if (!fixture) {
+            ignores.push(`${slug} (${attente.trim()})`);
+            console.log(`  ${slug} · non capturé : ${attente.trim()}`);
+            await context.close();
+            continue;
+          }
+          console.log(`  ${slug} · scène UI isolée (aucune requête serveur) : ${attente.trim()}`);
+          await page.waitForSelector('.ouverture', { timeout: 15000 });
+        } else {
+          throw erreur;
         }
-        throw erreur;
       }
       // **La croix du dialogue fait 44 px** (#569, D-116) : la même cible de doigt que le combat,
       // lue ici sur le dialogue de l'Arrivage — `size="icon-sm"` la laissait à 26,9 × 26,9 px.
@@ -1054,6 +1078,77 @@ try {
             `la cible de doigt est de 44 px (D-116)`
         );
       }
+      // La pochette est mesurée avant le geste, à la fenêtre de référence : le facteur réel du
+      // `viewBox` entre dans la taille (`font-size` calculée × `getScreenCTM().a`). Le fond vient
+      // de la surface SVG réellement dessinée derrière chaque texte, jamais d'une couleur recopiée.
+      const mesuresBrutes = await page.evaluate(() => {
+        const svg = document.querySelector('.ouverture__zone .pochette');
+        if (!svg) return [];
+        const textes = [...svg.querySelectorAll('text[data-pochette-texte]')];
+        return textes
+          .filter((el) => {
+            for (let parent = el; parent && parent !== svg.parentElement; parent = parent.parentElement) {
+              const style = getComputedStyle(parent);
+              if (style.display === 'none' || style.visibility === 'hidden' || Number(style.opacity) === 0)
+                return false;
+            }
+            return true;
+          })
+          .map((el) => {
+            const style = getComputedStyle(el);
+            const matrice = el.getScreenCTM();
+            const fondId = el.getAttribute('data-fond');
+            const surface = fondId ? svg.querySelector(`[data-pochette-surface="${fondId}"]`) : null;
+            const boiteTexte = el.getBBox();
+            const boiteFond = surface?.getBBox();
+            const x = boiteTexte.x + boiteTexte.width / 2;
+            const y = boiteTexte.y + boiteTexte.height / 2;
+            const precede = surface
+              ? Boolean(surface.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)
+              : false;
+            const couvreLeTexte =
+              boiteFond !== undefined &&
+              x >= boiteFond.x &&
+              x <= boiteFond.x + boiteFond.width &&
+              y >= boiteFond.y &&
+              y <= boiteFond.y + boiteFond.height;
+            return {
+              texte: el.textContent.trim().replace(/\s+/g, ' '),
+              taille: Number.parseFloat(style.fontSize) * (matrice?.a ?? Number.NaN),
+              echelle: matrice?.a ?? Number.NaN,
+              encre: style.fill === 'none' ? style.color : style.fill,
+              fond: surface ? getComputedStyle(surface).fill : null,
+              surfaceValide: Boolean(surface && precede && couvreLeTexte)
+            };
+          });
+      });
+      if (mesuresBrutes.length === 0) problems.push(`${slug} · aucun texte SVG visible à mesurer sur la pochette`);
+      const mesures = mesuresBrutes.map((mesure) => {
+        let ratio = Number.NaN;
+        try {
+          if (mesure.fond) ratio = contraste(mesure.encre, mesure.fond);
+        } catch {
+          // Un fond non résolu est rapporté comme un ratio manquant par la garde ci-dessous.
+        }
+        return { ...mesure, ratio };
+      });
+      for (const mesure of mesures) {
+        if (!mesure.surfaceValide)
+          problems.push(`${slug} · fond réel absent ou non placé derrière « ${mesure.texte} »`);
+      }
+      for (const probleme of problemesPochette(mesures)) problems.push(`${slug} · ${probleme}`);
+      console.log(
+        `${slug} · textes SVG (420 × 900) · ${JSON.stringify(
+          mesures.map(({ texte, taille, echelle, ratio, surfaceValide }) => ({
+            texte,
+            tailleRendue: Number(taille.toFixed(2)),
+            echelle: Number(echelle.toFixed(4)),
+            contraste: Number(ratio.toFixed(2)),
+            surfaceValide
+          }))
+        )}`
+      );
+      await page.screenshot({ path: join(outDir, `${slug}-pochette.png`), fullPage: PLEINE_PAGE });
       // Le sachet s'ouvre au geste : « Ouvrir » joue la déchirure sans glissement (le chemin
       // accessible de la spec §5), puis l'envol porte les cartes à la révélation.
       await page.click('[data-ouvrir]');

@@ -98,6 +98,90 @@ export function controlesAccueil({ documentHeight, viewportHeight, limite, secti
   return problemes;
 }
 
+/** Plancher du texte porteur d'information de la pochette (`DESIGN.md` §1.5). */
+const PLANCHER_POUCHETTE = 11.2;
+/** Seuil AA pour du texte courant (`DESIGN.md` §1.5). */
+const SEUIL_AA = 4.5;
+
+/**
+ * Lit une couleur déjà résolue par le navigateur (`getComputedStyle`). Les surfaces mesurées
+ * sont des aplats opaques ; le texte, lui, peut être composé sur son aplat de fond.
+ */
+function composantesCouleur(valeur) {
+  const hex = valeur.trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i);
+  if (hex) {
+    const brut = hex[1].length === 3 ? [...hex[1]].map((c) => c + c).join('') : hex[1];
+    return { rgb: [0, 2, 4].map((i) => Number.parseInt(brut.slice(i, i + 2), 16)), alpha: 1 };
+  }
+
+  const rgb = valeur.trim().match(/^rgba?\((.*)\)$/i);
+  if (!rgb) throw new TypeError(`Couleur non prise en charge : ${valeur}`);
+  const [canaux, transparence] = rgb[1].split('/').map((part) => part.trim());
+  const morceaux = canaux.split(/[\s,]+/).filter(Boolean);
+  const alphaBrut = transparence ?? morceaux[3] ?? '1';
+  if (morceaux.length < 3) throw new TypeError(`Couleur RGB incomplète : ${valeur}`);
+  const canal = (part) => {
+    const n = Number.parseFloat(part);
+    return part.endsWith('%') ? (n / 100) * 255 : n;
+  };
+  const alpha = alphaBrut.endsWith('%') ? Number.parseFloat(alphaBrut) / 100 : Number.parseFloat(alphaBrut);
+  const resultat = { rgb: morceaux.slice(0, 3).map(canal), alpha };
+  if (!resultat.rgb.every(Number.isFinite) || !Number.isFinite(alpha)) {
+    throw new TypeError(`Couleur RGB invalide : ${valeur}`);
+  }
+  return resultat;
+}
+
+/** Luminance relative WCAG 2.1, sur un canal sRGB 0–255. */
+function luminanceCanal(canal) {
+  const sRGB = canal / 255;
+  return sRGB <= 0.04045 ? sRGB / 12.92 : ((sRGB + 0.055) / 1.055) ** 2.4;
+}
+
+/** Luminance WCAG relative d'une couleur RGB. */
+function luminance(rgb) {
+  const poids = [0.2126, 0.7152, 0.0722];
+  return rgb.reduce((sum, canal, index) => sum + luminanceCanal(canal) * poids[index], 0);
+}
+
+/** Rapport de contraste WCAG 2.1 entre deux couleurs calculées par le navigateur. */
+export function contraste(texte, fond) {
+  const premierPlan = composantesCouleur(texte);
+  const arrierePlan = composantesCouleur(fond);
+  if (arrierePlan.alpha !== 1) throw new TypeError(`Fond non opaque : ${fond}`);
+  const compose = premierPlan.rgb.map(
+    (canal, index) => canal * premierPlan.alpha + arrierePlan.rgb[index] * (1 - premierPlan.alpha)
+  );
+  const lTexte = luminance(compose);
+  const lFond = luminance(arrierePlan.rgb);
+  return (Math.max(lTexte, lFond) + 0.05) / (Math.min(lTexte, lFond) + 0.05);
+}
+
+/** Les constats qu'une capture ajoute au rapport quand une mesure de pochette échoue. */
+export function problemesPochette(mesures) {
+  const problemes = [];
+  for (const { texte, taille, ratio } of mesures) {
+    if (!Number.isFinite(taille) || taille < PLANCHER_POUCHETTE) {
+      problemes.push(
+        `texte « ${texte} » rendu à ${Number.isFinite(taille) ? taille.toFixed(2) : 'une taille inconnue'} px, ` +
+          `${PLANCHER_POUCHETTE} px exigés`
+      );
+    }
+    if (!Number.isFinite(ratio) || ratio < SEUIL_AA) {
+      problemes.push(
+        `contraste de « ${texte} » à ${Number.isFinite(ratio) ? ratio.toFixed(2) : 'un ratio inconnu'}:1, ` +
+          `${SEUIL_AA}:1 exigés`
+      );
+    }
+  }
+  return problemes;
+}
+
+/** Un refus réseau est attendu seulement dans la capture qui coupe volontairement la connexion. */
+export function erreurConsoleAttendue(preparation, message) {
+  return preparation === 'collection-hors-ligne' && message.includes('net::ERR_INTERNET_DISCONNECTED');
+}
+
 /**
  * **Les gabarits de D-171** — les téléphones en portrait et le PC (01/11/2026).
  *

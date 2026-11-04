@@ -127,6 +127,33 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(scene.dataset.etape).toBe('ferme');
   });
 
+  it('la pochette est une navette de courrier avec texte SVG lisible, tampon et scellé', () => {
+    const scene = monter();
+    const pochette = scene.querySelector('.pochette');
+    expect(pochette).not.toBeNull();
+    expect(pochette?.querySelector('image')).toBeNull();
+
+    const textes = [...(pochette?.querySelectorAll('text[data-pochette-texte]') ?? [])];
+    const copie = textes.map((texte) => texte.textContent).join(' ');
+    expect(copie).toContain('COURRIER INTERNE');
+    expect(copie).toContain('REÇU');
+    expect(copie).toContain('DESTINATAIRE');
+    expect(copie).not.toMatch(/tasse|café/i);
+    expect(pochette?.querySelector('[data-pochette-tampon]')).not.toBeNull();
+    expect(pochette?.querySelector('[data-pochette-scellement]')).not.toBeNull();
+    expect(pochette?.querySelector('[data-pochette-dos]')).not.toBeNull();
+    expect(pochette?.querySelector('[data-pochette-tranche]')).not.toBeNull();
+    expect(pochette?.querySelector('[data-pochette-levre]')).not.toBeNull();
+
+    const surfaces = new Set(
+      [...(pochette?.querySelectorAll('[data-pochette-surface]') ?? [])].map((surface) =>
+        surface.getAttribute('data-pochette-surface')
+      )
+    );
+    expect(textes.length).toBeGreaterThan(0);
+    for (const texte of textes) expect(surfaces.has(texte.getAttribute('data-fond'))).toBe(true);
+  });
+
   it('l’inclinaison ne s’hérite pas : le reflet porte --mx/--my, le sachet seulement --rx/--ry', () => {
     const scene = monter();
     const zone = scene.querySelector('[data-zone]') as HTMLElement;
