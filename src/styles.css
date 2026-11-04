@@ -2514,7 +2514,7 @@ h2 {
     0 18px 40px -16px rgb(0 0 0 / 70%);
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   left: 0.6rem;
   max-width: min(34rem, calc(100% - 1.2rem));
   padding: 0.75rem 0.85rem;
@@ -2813,10 +2813,8 @@ h2 {
   height: calc(var(--journee-hauteur, 0px) + 1rem);
 }
 
-/* **La voix de la Direction** (31/10/2026) : son portrait, puis sa phrase, dans une bulle
-   compacte qui **sort** — une apparition courte, la même famille que les autres entrées du
-   produit (sous « Mouvement réduit », la règle globale la ramène à rien). Le portrait est
-   l'illustration du PDG (`src/art`), la seule qui représente la Direction. */
+/* **Le Chef de cabinet porte la voix** (D-181) : son portrait et sa réplique restent compacts,
+   dans la famille des entrées du produit. */
 .journee__bulle {
   align-items: flex-start;
   animation: journee-bulle 220ms ease-out both;
@@ -2841,11 +2839,11 @@ h2 {
   border: 1px solid var(--line-strong);
   border-radius: 50%;
   flex: none;
-  height: 36px;
+  height: 40px;
   object-fit: cover;
   /* Le visage est en haut du carré de l'illustration : on le garde dans le cercle. */
   object-position: center 30%;
-  width: 36px;
+  width: 40px;
 }
 
 .journee__direction {
@@ -2859,6 +2857,37 @@ h2 {
 .journee__direction strong {
   color: var(--text);
   font-style: normal;
+}
+
+.journee__direction strong::after {
+  color: var(--text-muted);
+  content: ' ·';
+  font-weight: 400;
+}
+
+/* La bulle pointe vers la cible de l'étape. Sa position suit le rectangle de la cible,
+   sans intercepter le geste (D-181). */
+.journee__pointe {
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid var(--line-strong);
+  height: 0;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% - 1px);
+  transform: translateX(-50%);
+  width: 0;
+}
+
+.journee__pointe::after {
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid var(--bg-sunken);
+  content: '';
+  left: -6px;
+  position: absolute;
+  top: -8px;
 }
 
 .journee--pause {
