@@ -421,6 +421,28 @@ describe('la Journée d’intégration se joue (D-160)', () => {
   });
 });
 
+describe('la ligne du geste se lit, sans s’afficher (04/11/2026, option A)', () => {
+  it('reste dans le DOM en `role="status"`, en `sr-only` : lue par les lecteurs d’écran, pas affichée', () => {
+    // L'étape 1 (l'Arrivage) n'a pas son geste : aucun Arrivage ouvert, la ligne d'aide est
+    // rendue. (`monterPanneau` poserait `packsOpened: 1`, geste déjà fait : on pose l'état ici.)
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    const aide = screen.getByText(/Fais le geste sur la page/);
+    expect(aide.tagName).toBe('P');
+    expect(aide).toHaveAttribute('role', 'status');
+    // **Le contrôle mord** : sans `sr-only`, la ligne reprend sa place visible dans le panneau
+    // et ce test tombe (mutant : retirer la classe de cette ligne, le texte reste).
+    expect(aide.classList.contains('sr-only')).toBe(true);
+    unmount();
+  });
+});
+
 describe('le plateau garde son tutoriel (31/10/2026)', () => {
   it('sur /battle, le panneau s’efface : le pas-à-pas du combat parle seul', () => {
     // Mesuré le 30/10 : le panneau (y 10 → 258) recouvrait le pas-à-pas (y 50 → 99) et sa
