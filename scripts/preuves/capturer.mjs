@@ -54,7 +54,8 @@ import {
   controlesAccueil,
   contraste,
   problemesPochette,
-  erreurConsoleAttendue
+  erreurConsoleAttendue,
+  REFUS_ARRIVAGE
 } from './capturer-socle.mjs';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -1018,9 +1019,35 @@ try {
       // capture d'un écran qui n'a pas fini de s'ouvrir ne prouve rien.
       await page.goto(`${base}${route}`, { waitUntil: 'networkidle' });
       await page.click('.hero__ouvrir');
-      try {
-        await page.waitForSelector('.ouverture', { timeout: 15000 });
-      } catch (erreur) {
+      // **La scène OU le refus explicite, au premier des deux** (#707) : le serveur répond
+      // parfois « pas configuré » en quelques centaines de millisecondes, et attendre 15 s la
+      // scène coûtait ce délai à chaque passage. La sémantique ne change pas : un refus connu
+      // est un état prévu (D-179 (6)), une scène configurée est toujours attendue, et un
+      // silence reste une erreur.
+      await page.waitForFunction(
+        ([motif]) => {
+          // La scène ne compte qu'**une fois visible** : `waitForSelector` attendait l'état
+          // `visible`, et un `.ouverture` encore en `display: none` ne prouve pas l'ouverture.
+          const scene = document.querySelector('.ouverture');
+          if (scene) {
+            const style = getComputedStyle(scene);
+            const boite = scene.getBoundingClientRect();
+            if (style.display !== 'none' && style.visibility !== 'hidden' && boite.width > 0 && boite.height > 0) {
+              return true;
+            }
+          }
+          const attente = document.querySelector('.hero__attente');
+          return new RegExp(motif).test(attente?.textContent ?? '');
+        },
+        [REFUS_ARRIVAGE.source],
+        { timeout: 15000 }
+      );
+      const sceneVisible = await page
+        .locator('.ouverture')
+        .first()
+        .isVisible()
+        .catch(() => false);
+      if (!sceneVisible) {
         // **Sans backend, l'ouverture est refusée** (D-179 (6)) : c'est l'état prévu, pas une
         // panne. Pour une BASE_URL explicitement locale, le harnais monte le composant réel sur
         // un tirage fixe — sans appeler l'API ni créditer la Collection — afin de mesurer et
@@ -1032,32 +1059,33 @@ try {
             .allInnerTexts()
             .catch(() => [])
         ).join(' ');
-        if (/serveur du jeu n’est pas configuré|Connecte-toi pour ouvrir/.test(attente)) {
-          const hote = new URL(base).hostname;
-          const baseLocale = process.env.BASE_URL && ['localhost', '127.0.0.1'].includes(hote);
-          let fixture = false;
-          if (baseLocale) {
-            try {
-              fixture = await page.evaluate(async () => {
-                const module = await import('/scripts/preuves/capturer-arrivage-fixture.tsx');
-                module.afficherArrivagePourPreuve();
-                return true;
-              });
-            } catch (erreurFixture) {
-              console.log(`  ${slug} · scène locale non montée : ${erreurFixture.message}`);
-            }
-          }
-          if (!fixture) {
-            ignores.push(`${slug} (${attente.trim()})`);
-            console.log(`  ${slug} · non capturé : ${attente.trim()}`);
-            await context.close();
-            continue;
-          }
-          console.log(`  ${slug} · scène UI isolée (aucune requête serveur) : ${attente.trim()}`);
-          await page.waitForSelector('.ouverture', { timeout: 15000 });
-        } else {
-          throw erreur;
+        if (!REFUS_ARRIVAGE.test(attente)) {
+          throw new Error(
+            `${slug} · ni scène ni refus lisible après l’ouverture : « ${attente.trim() || '(silence)'} »`
+          );
         }
+        const hote = new URL(base).hostname;
+        const baseLocale = process.env.BASE_URL && ['localhost', '127.0.0.1'].includes(hote);
+        let fixture = false;
+        if (baseLocale) {
+          try {
+            fixture = await page.evaluate(async () => {
+              const module = await import('/scripts/preuves/capturer-arrivage-fixture.tsx');
+              module.afficherArrivagePourPreuve();
+              return true;
+            });
+          } catch (erreurFixture) {
+            console.log(`  ${slug} · scène locale non montée : ${erreurFixture.message}`);
+          }
+        }
+        if (!fixture) {
+          ignores.push(`${slug} (${attente.trim()})`);
+          console.log(`  ${slug} · non capturé : ${attente.trim()}`);
+          await context.close();
+          continue;
+        }
+        console.log(`  ${slug} · scène UI isolée (aucune requête serveur) : ${attente.trim()}`);
+        await page.waitForSelector('.ouverture', { timeout: 15000 });
       }
       // **La croix du dialogue fait 44 px** (#569, D-116) : la même cible de doigt que le combat,
       // lue ici sur le dialogue de l'Arrivage — `size="icon-sm"` la laissait à 26,9 × 26,9 px.

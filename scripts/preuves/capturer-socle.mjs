@@ -81,6 +81,13 @@ export function etatPrepare({ origine, url, session, supplement = {} }) {
  */
 export const VIEWPORT = { width: 420, height: 900 };
 
+/**
+ * Ce qu'un refus **explicite** d'Arrivage dit à l'écran (D-179 (6)) : sans backend, l'ouverture
+ * est refusée, et c'est un état prévu, pas une panne. `capturer.mjs` attend donc **la scène ou
+ * ce refus**, et lui seul décide qu'une absence de scène est un échec (#707).
+ */
+export const REFUS_ARRIVAGE = /serveur du jeu n’est pas configuré|Connecte-toi pour ouvrir/;
+
 /** Défilement vertical du document, jamais négatif. Partagé avec la garde de l'accueil. */
 export function defilementVertical(documentHeight, viewportHeight) {
   return Math.max(0, documentHeight - viewportHeight);
