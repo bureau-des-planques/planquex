@@ -87,7 +87,7 @@ describe('le retournement d’une carte ne re-rend pas les autres (#605)', () =>
 
     fireEvent.click(carte(scene, 0));
     // Le retournement est acquis, la fiche s'est ouverte (écran étroit) : deux rendus de la scène.
-    attendre(1000);
+    attendre(SUSPENSE.simple + 1000);
     expect(carte(scene, 0).dataset.face).toBe('recto');
     expect(carte(scene, 0).dataset.fiche).toBe('oui');
 
@@ -110,12 +110,12 @@ describe('le retournement d’une carte ne re-rend pas les autres (#605)', () =>
     const scene = monter();
     jusquALaRevelation(scene);
     fireEvent.click(carte(scene, 0));
-    // Le retournement dure jusqu'à 950 ms (le dos part en 430 ms, la face arrive à 950 ms).
-    attendre(900);
+    // La rotation dure 800 ms ; à 750 ms elle n'est pas finie et la fiche ne s'insère pas.
+    attendre(SUSPENSE.simple + 750);
     // Le contrôle mord : à 560 ms, la fiche s'insérait en pleine rotation, et sa mise en page
     // tombait dans la même image que la fin du geste.
     expect(carte(scene, 0).dataset.fiche).toBeUndefined();
-    attendre(150);
+    attendre(250);
     expect(carte(scene, 0).dataset.fiche).toBe('oui');
   });
 
@@ -132,9 +132,9 @@ describe('le retournement d’une carte ne re-rend pas les autres (#605)', () =>
 
     fireEvent.click(carte(scene, 1));
     const apresLeClic = commits;
-    // 30 images d'affichage : si le retournement écrivait l'état à chaque image, le compteur
-    // monterait avec elles. Il ne bouge pas (la fiche s'ouvre à 560 ms, après cette fenêtre).
-    for (let i = 0; i < 30; i += 1) attendre(16);
+    // 20 images d'affichage, avant la tension simple de 360 ms : si la carte écrivait à chaque
+    // image, le compteur monterait avec elles. Seul le geste initial committe.
+    for (let i = 0; i < 20; i += 1) attendre(16);
     expect(commits).toBe(apresLeClic);
     // Le contrôle mord : le clic, lui, a bien commité une fois (le retournement est acquis).
     expect(apresLeClic).toBeGreaterThan(0);

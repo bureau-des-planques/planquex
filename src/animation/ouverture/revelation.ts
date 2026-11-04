@@ -16,7 +16,7 @@ import { RARITY_META } from '@/data';
 /**
  * Les quatre paliers de mise en scène, du plus sobre au plus spectaculaire.
  *
- * - `simple` : ◆ et ◆◆ — la carte se retourne, sans plus ;
+ * - `simple` : ◆ et ◆◆ — le symbole apparaît brièvement avant le retournement ;
  * - `rare` : ◆◆◆ — un halo et une gerbe d'étincelles ;
  * - `brillante` : ◆◆◆◆ — l'attente se tend, la carte tremble, reflet holographique ;
  * - `secrete` : les étoiles et la Couronne — éclair, rayons, pluie d'étoiles.
@@ -42,9 +42,9 @@ export function palier(rarete: Rarity): Palier {
 
 /**
  * L'attente entre le toucher et le retournement, en millisecondes. Elle **croît** avec le palier :
- * une carte banale se retourne aussitôt, une étoile monte au centre, tremble et se fait désirer.
+ * même une carte simple donne le temps de lire son symbole ; une étoile monte au centre, tremble et se fait désirer.
  */
-export const SUSPENSE: Record<Palier, number> = { simple: 0, rare: 900, brillante: 1400, secrete: 1900 };
+export const SUSPENSE: Record<Palier, number> = { simple: 360, rare: 900, brillante: 1400, secrete: 1900 };
 
 /**
  * Le temps qu'une carte rare **reste au centre**, face visible, avec son annonce, avant de

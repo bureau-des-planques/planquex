@@ -72,8 +72,8 @@ describe('la révélation d’un Arrivage — la mise en scène (#283)', () => {
     }
   });
 
-  it('une carte rare reste au centre plus longtemps qu’elle ne s’est fait attendre, une simple pas du tout', () => {
-    expect(SUSPENSE.simple).toBe(0);
+  it('une simple donne le temps de lire son symbole, sans rester au centre', () => {
+    expect(SUSPENSE.simple).toBe(360);
     expect(TENUE.simple).toBe(0);
     for (const niveau of ['rare', 'brillante', 'secrete'] as const) {
       expect(TENUE[niveau], niveau).toBeGreaterThan(SUSPENSE[niveau]);
