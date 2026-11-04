@@ -60,8 +60,14 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   },
   {
     titre: 'La Collection et le Deck',
+    /**
+     * **La page unifiée « Cartes » (D-175, #545)** : Collection et Deck sont deux onglets
+     * d'un même écran. L'étape vise `/deck` parce que le geste est de **charger** un Deck,
+     * et `/collection` reste une adresse valide de l'autre onglet — elle n'est ni obsolète
+     * ni redirigée (D-175 (2)).
+     */
     texte:
-      'La Collection montre ce que tu possèdes, et tu composes ton Deck avec vingt de ces cartes. Choisis un Deck proposé et charge-le : c’est celui que tu joueras.',
+      'La page Cartes a deux onglets : la Collection montre ce que tu possèdes, le Deck se compose avec vingt de ces cartes. Choisis un Deck proposé et charge-le : c’est celui que tu joueras.',
     cible: '/deck',
     action: 'Aller au Deck',
     geste: 'deck',

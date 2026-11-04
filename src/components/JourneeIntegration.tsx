@@ -208,7 +208,8 @@ export function JourneeIntegration() {
     const panneau = panneauRef.current;
     if (!panneau) return;
     // **La cible de l'étape, et elle seule** : `combat` n'en a pas (le pas-à-pas désigne).
-    poserCibleJournee(courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null);
+    const cibleAttendue = courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null;
+    poserCibleJournee(cibleAttendue);
 
     /**
      * **La hauteur se mesure en continu** (`ResizeObserver`) : elle était lue une fois, au
@@ -225,7 +226,26 @@ export function JourneeIntegration() {
     // Les polices arrivent après le premier rendu : on replace la cible une fois posées.
     void document.fonts?.ready.then(() => amenerLaCible());
 
+    /**
+     * **La cible peut arriver après l'effet** (#679) : les écrans sont paresseux (#478).
+     * Sur `/deck`, la Journée se monte avant le morceau du Deck ; `amenerLaCible` ne
+     * trouvait alors rien, et le volet des Decks proposés restait hors de la fenêtre
+     * (diagnostic du 03/11/2026, `y = 1330`). On l'amène dès qu'il paraît, puis on cesse
+     * d'écouter : une cible déjà présente n'a pas besoin de l'observateur.
+     */
+    let veille: MutationObserver | null = null;
+    const selecteurCible = cibleAttendue ? `[data-journee-cible="${cibleAttendue}"]` : null;
+    if (selecteurCible && !document.querySelector(selecteurCible) && typeof MutationObserver === 'function') {
+      veille = new MutationObserver(() => {
+        if (!document.querySelector(selecteurCible)) return;
+        amenerLaCible();
+        veille?.disconnect();
+      });
+      veille.observe(document.body, { childList: true, subtree: true });
+    }
+
     return () => {
+      veille?.disconnect();
       observateur?.disconnect();
       poserCibleJournee(null);
     };
