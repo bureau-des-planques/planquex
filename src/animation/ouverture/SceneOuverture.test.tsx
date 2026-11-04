@@ -368,6 +368,8 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     const etoile = carte(scene, 4);
     fireEvent.click(etoile);
     expect(etoile.dataset.tension).toBe('oui');
+    const montee = /transform (\d+)ms(?: (\d+)ms)?/.exec(etoile.style.transition);
+    expect(Number(montee?.[1]) + Number(montee?.[2] ?? 0)).toBeLessThanOrEqual(800);
     // Le contrôle mord : elle n'est pas retournée avant la fin de son attente.
     attendre(SUSPENSE.secrete - 50);
     expect(etoile.dataset.face).toBe('verso');
@@ -616,6 +618,19 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     }
   });
 
+  it('le dos et le recto se retournent chacun en 800 ms au plus, délai compris', () => {
+    for (const selecteur of [
+      ".ouverture__carte[data-face='recto'] .ouverture__dos",
+      ".ouverture__carte[data-face='recto'] .ouverture__face"
+    ]) {
+      const bloc = blocs().find((regle) => regle.selecteur === selecteur);
+      expect(bloc, selecteur).toBeDefined();
+      const bascule = /transform\s+(\d+)ms\s+cubic-bezier\([^)]*\)(?:\s+(\d+)ms)?/.exec(bloc?.corps ?? '');
+      expect(bascule, selecteur).not.toBeNull();
+      expect(Number(bascule?.[1]) + Number(bascule?.[2] ?? 0), selecteur).toBeLessThanOrEqual(800);
+    }
+  });
+
   it('annonce le symbole géométrique des huit raretés au dos, pendant la tension et avant le retournement', () => {
     const signatures = new Map<string, Rarity>();
 
@@ -626,6 +641,10 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
       try {
         jusquALaRevelation(scene);
         const tiree = carte(scene, 0);
+        expect(tiree.dataset.face, rarete).toBe('verso');
+        const symboleAvantTension = tiree.querySelector<SVGSVGElement>('.ouverture__dos [data-symbole-rarete]');
+        expect(symboleAvantTension, `${rarete} doit être visible avant le geste`).not.toBeNull();
+        expect(symboleAvantTension?.querySelector('path')?.getAttribute('d')).toBe(RARITY_META[rarete].symbol.path);
         fireEvent.click(tiree);
 
         expect(tiree.dataset.tension, rarete).toBe('oui');

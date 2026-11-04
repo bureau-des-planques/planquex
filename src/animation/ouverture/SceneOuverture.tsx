@@ -548,10 +548,8 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       if (niveau === 'simple') {
         // Même une rareté simple montre son symbole au dos avant le retournement ; elle ne monte
         // pas au centre ni n'assombrit les autres cartes.
-        const moi = (jeton.current += 1);
         setEnCours({ index, phase: 'levee' });
-        plus(SUSPENSE[niveau], () => {
-          if (jeton.current !== moi) return;
+        plus(SUSPENSE.simple, () => {
           setRetournees((avant) => avant.map((r, i) => r || i === index));
           setEnCours(null);
           // La fête attend que la carte soit à moitié retournée : c'est là qu'on voit sa face.
@@ -1046,7 +1044,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                   </div>
                   <div className="ouverture__dos" aria-hidden="true">
                     <span className="ouverture__dos-sigle">BP</span>
-                    {leve && enCours?.phase === 'levee' && (
+                    {!face && actif && (
                       <span className="ouverture__dos-symbole">
                         <svg
                           aria-hidden="true"

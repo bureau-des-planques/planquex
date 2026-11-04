@@ -6733,13 +6733,13 @@ h2 {
 
 .ouverture__dos-symbole > .symbole-rarete {
   flex: none;
-  height: calc(2rem * var(--contre, 1));
-  width: calc(2rem * var(--contre, 1));
+  height: 2rem;
+  width: 2rem;
 }
 
 .ouverture__dos-symbole-nom {
   font-family: var(--font-body);
-  font-size: calc(var(--fs-xs) * var(--contre, 1));
+  font-size: 0.95rem;
   font-weight: 700;
   line-height: 1;
 }
