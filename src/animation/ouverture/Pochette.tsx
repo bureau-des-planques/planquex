@@ -36,36 +36,7 @@ export function Pochette({ nombre, face = 'avant' }: { nombre: number; face?: 'a
   const ref = (nom: string) => `url(#${nom}-${id})`;
 
   if (face === 'arriere') {
-    return (
-      <svg
-        className="pochette pochette--arriere"
-        data-pochette-face="arriere"
-        viewBox={`0 0 ${POCHETTE.largeur} ${POCHETTE.hauteur}`}
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <defs>
-          <clipPath id={`forme-${id}`}>
-            <path d={SILHOUETTE} />
-          </clipPath>
-        </defs>
-        <g clipPath={ref('forme')}>
-          <rect width={POCHETTE.largeur} height={POCHETTE.hauteur} fill="var(--pochette-kraft)" />
-          <path d="M7 54 150 151 293 54v30l-143 97L7 84Z" fill="var(--pochette-kraft-fonce)" />
-          <path d="M8 393 150 483l142-90v78l-10 17H18L8 471Z" fill="var(--pochette-kraft-fonce)" />
-          <path d="M18 56 18 474M282 56v418" fill="none" stroke="var(--pochette-tranche)" strokeWidth="2" />
-          <path
-            d="M25 61 150 146 275 61M20 447l130-86 130 86"
-            fill="none"
-            stroke="var(--pochette-papier-clair)"
-            strokeWidth="2"
-            opacity="0.45"
-            data-pochette-dos
-          />
-        </g>
-      </svg>
-    );
+    return <div className="pochette pochette--arriere" data-pochette-face="arriere" aria-hidden="true" />;
   }
 
   return (

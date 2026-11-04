@@ -354,9 +354,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       const amorti = tire.current ? 0.25 : 1;
       inc.x += (cibleX * amorti - inc.x) * 0.085;
       inc.y += (cibleY * amorti - inc.y) * 0.085;
-      const sachets = [sachetAvant.current, sachetArriere.current].filter(
-        (el): el is HTMLDivElement => el !== null
-      );
+      const sachets = [sachetAvant.current, sachetArriere.current].filter((el): el is HTMLDivElement => el !== null);
       if (sachets.length > 0) {
         for (const el of sachets) {
           el.style.setProperty('--ry', `${(inc.x * 16).toFixed(2)}deg`);
@@ -796,10 +794,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     const monte = apres === 'ouverture' && sortie === 1;
     const hautSecurise = -taille.hauteur / 2 + 32;
     // La carte se resserre pour tenir entièrement entre la ligne et le titre avant l'étalage.
-    const echelleSortie = Math.min(
-      echelleSachet,
-      Math.max(0.08, (fente - hautSecurise - 16) / CARTE.hauteur)
-    );
+    const echelleSortie = Math.min(echelleSachet, Math.max(0.08, (fente - hautSecurise - 16) / CARTE.hauteur));
     const echelleCarte = monte ? echelleSortie : echelleSachet;
     const hauteurCarte = CARTE.hauteur * echelleCarte;
     const hautMontee = fente - hauteurCarte - 16;
@@ -826,7 +821,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const consigne = (() => {
     if (etape === 'ferme') return doigt ? 'Glisse le doigt le long des pointillés' : 'Glisse le long des pointillés';
     if (etape === 'dechirure') return 'Jusqu’au bout…';
-    // **La consigne ne se vide plus pendant l'envol** (#569) : les 2,9 s de montée n'annonçaient
+    // **La consigne ne se vide plus pendant l'envol** (#569) : les 3,3 s de montée n'annonçaient
     // rien à `aria-live`, et l'écran semblait avoir perdu son fil. Le texte dit l'attente.
     if (etape === 'ouverture') return 'L’Arrivage s’ouvre…';
     if (fiche !== null) return `${geste} la carte pour la reposer`;

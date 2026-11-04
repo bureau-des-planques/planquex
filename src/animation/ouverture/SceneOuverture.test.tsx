@@ -187,8 +187,13 @@ function devant(a: number[], b: number[]): boolean {
 }
 
 function verifierEntreLesFaces(arriere: number[], cartes: number[], avant: number[]): void {
-  expect(devant(cartes, arriere), `les cartes (${cartes.join(' → ')}) passent devant l’arrière (${arriere.join(' → ')})`).toBe(true);
-  expect(devant(avant, cartes), `l’avant (${avant.join(' → ')}) recouvre les cartes (${cartes.join(' → ')})`).toBe(true);
+  expect(
+    devant(cartes, arriere),
+    `les cartes (${cartes.join(' → ')}) passent devant l’arrière (${arriere.join(' → ')})`
+  ).toBe(true);
+  expect(devant(avant, cartes), `l’avant (${avant.join(' → ')}) recouvre les cartes (${cartes.join(' → ')})`).toBe(
+    true
+  );
 }
 
 describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
@@ -387,7 +392,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     attendre(800);
     expect(scene.dataset.etape).toBe('ouverture');
     // Le contrôle mord : la consigne d'avant était la chaîne vide, et la ligne gardait sa
-    // hauteur — un lecteur d'écran n'annonçait donc rien pendant les 2,9 s de montée.
+    // hauteur — un lecteur d'écran n'annonçait donc rien pendant les 3,3 s de l'envol.
     const consigne = scene.querySelector('[data-consigne]')?.textContent ?? '';
     expect(consigne.length).toBeGreaterThan(0);
     expect(consigne).toContain('ouvre');

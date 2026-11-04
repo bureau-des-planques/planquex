@@ -251,15 +251,8 @@ export function nomFrame(index) {
 export function htmlPlanche(frames, { colonnes, intervalle, ralenti = 1 }) {
   const cases = frames
     .map((frame, i) => {
-      const {
-        src,
-        t,
-        compte,
-        libelle,
-        occultationPx2,
-        visibiliteSousLignePct,
-        visibiliteAuDessusPct
-      } = typeof frame === 'string' ? { src: frame } : frame;
+      const { src, t, compte, libelle, occultationPx2, visibiliteSousLignePct, visibiliteAuDessusPct } =
+        typeof frame === 'string' ? { src: frame } : frame;
       // Une prise **pendant un geste** n'a pas d'instant : sa légende dit le geste, pas le temps
       // (le doigt peut s'arrêter, et c'est justement ce que la planche doit montrer).
       // Un `libelle` (la planche d'un parcours, #429) remplace l'instant : il dit l'écran, pas le temps.
@@ -480,7 +473,8 @@ async function filmer(config) {
           const aireAuDessusTotale = applicable ? aire(rectCarte, { ...zoneFenetre, bottom: ligne }) : 0;
           const visibleAuDessusPx2 =
             planArriereDevant && planAvantDevant && avantDecoupe ? aireAuDessusTotale * opaciteCartes : 0;
-          const titrePx2 = titre && compare(planTitre, planCarte) > 0 ? aire(rectCarte, titre.getBoundingClientRect()) : 0;
+          const titrePx2 =
+            titre && compare(planTitre, planCarte) > 0 ? aire(rectCarte, titre.getBoundingClientRect()) : 0;
           const aireDansFenetre = aire(rectCarte, zoneFenetre);
           const horsFenetrePx2 = Math.max(0, rectCarte.width * rectCarte.height - aireDansFenetre);
           const sousPct = aireSousFenetre > 0 ? (visibleSousLignePx2 / aireSousFenetre) * 100 : null;
