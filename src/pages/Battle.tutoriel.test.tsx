@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
 import { ETAPES_COMBAT } from '@/components/pas-a-pas-combat-etapes';
@@ -80,5 +80,29 @@ describe('le combat guidé (#272)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     expect(panneau()).toBeNull();
     expect(screen.queryByText(/combat guidé/i)).toBeNull();
+  });
+
+  /**
+   * Le bandeau du guidage (#683) : il vit pendant le combat et s'efface à la fin de la partie,
+   * où le verdict prend sa place. Le pas-à-pas, lui, reste pendant le combat (D-162 (3)).
+   */
+  it('le bandeau du guidage vit pendant le combat et s’efface quand la partie est finie', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    const bandeauGuide = () =>
+      screen.queryAllByRole('status').find((el) => /Combat guidé|À toi de jouer/.test(el.textContent ?? '')) ?? null;
+
+    expect(bandeauGuide()).not.toBeNull();
+    expect(panneau()).not.toBeNull();
+
+    // Abandonner est le chemin réel vers `phase: 'ended'` : menu du combat, puis confirmation.
+    fireEvent.click(screen.getByRole('button', { name: 'Menu du combat' }));
+    fireEvent.click(screen.getByRole('button', { name: /Abandonner/ }));
+    const confirmation = screen.getByRole('dialog', { name: 'Déclarer forfait ?' });
+    fireEvent.click(within(confirmation).getByRole('button', { name: 'Abandonner' }));
+
+    // Le verdict est affiché, le bandeau du guidage ne l'accompagne plus.
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(bandeauGuide()).toBeNull();
   });
 });
