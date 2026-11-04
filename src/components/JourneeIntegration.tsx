@@ -406,7 +406,9 @@ export function JourneeIntegration() {
 
       {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
-          qu'elle décrit — sauf la dernière, qui referme la Journée en menant au combat. */}
+          qu'elle décrit — **la dernière comprise** : arriver sur `/comite` ne termine pas la
+          Journée, sinon le mur s'ouvrait sans la réplique finale (D-161, #685). La sortie
+          reste explicite : le bouton permanent, ou le lien de l'appel à participer. */}
       <div className="actions actions--tight">
         {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
             place au geste lui-même. Et sans geste, il n'y a rien à montrer.
@@ -419,7 +421,6 @@ export function JourneeIntegration() {
             className="button button--primary"
             onClick={() => {
               navigate(courante.cible);
-              if (derniere) terminer();
             }}
           >
             {courante.action}
