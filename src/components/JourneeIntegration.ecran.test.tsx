@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 import { useEffect } from 'react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JourneeIntegration } from './JourneeIntegration';
 import { ETAPES_JOURNEE } from './journee-etapes';
@@ -209,6 +209,54 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     // L'étape 3 (le combat) n'a plus de « Suivant » dans le panneau : il s'efface sur
     // `/battle` (D-162 (3)) et c'est la scène de fin qui avance la visite. L'enchaînement
     // complet se joue dans le test suivant ; ici, on garde la garde des deux gestes du store.
+  });
+
+  it('le volet des Decks proposés vient dans la fenêtre, et « Charger » s’y atteint (#679)', async () => {
+    // **L'ordre compte** : ce test passe avant le parcours complet, donc le morceau
+    // `/deck` est encore froid. Réchauffé, il se monterait avant l'effet de la Journée et
+    // le défaut (cible arrivée après l'effet) ne se verrait plus.
+    simulerArrivage();
+    oublierGestes();
+    remettreJourneeAuDebut();
+    await rendreApplication({
+      chemin: '/',
+      storeState: { tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] },
+      extra: <FilDuChemin />
+    });
+    await screen.findByRole('region', { name: /Journée d’intégration/ });
+    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+
+    // Étape 1 faite, puis « Suivant » ouvre `/deck` : la Journée et le Deck sont deux
+    // morceaux paresseux, le volet peut donc apparaître **après** l'effet de la Journée.
+    await userEvent.click(action(/Ouvrir un Arrivage/i));
+    await screen.findByRole('dialog');
+    await userEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
+    const suivant = screen.getByRole('button', { name: /^Suivant$/i });
+    await waitFor(() => expect(suivant).toBeEnabled());
+    scroll.mockClear();
+    await userEvent.click(suivant);
+    await verifierCorrespondance();
+
+    // **Le conteneur, pas le bouton** : la cible est le `<details>` des Decks proposés.
+    const volet = document.querySelector('[data-journee-cible="decks-proposes"]');
+    expect(volet).toBeInstanceOf(HTMLDetailsElement);
+    expect(volet).toHaveAttribute('data-journee-cible', 'decks-proposes');
+    expect(volet).toHaveAttribute('open');
+    // Il a été **amené** sous le panneau (jsdom ne défile pas : on lit la doublure).
+    await waitFor(() => expect(scroll.mock.contexts).toContain(volet));
+    expect(scroll).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
+
+    // Le contrôle d'action est **dans** le volet, et c'est le volet qui porte la cible.
+    const charger = within(volet as HTMLElement).getAllByRole('button', { name: 'Charger' })[0];
+    expect(charger).not.toHaveAttribute('data-journee-cible');
+    // **La garde laisse passer le geste** (D-160 (3)) : sans cette exception, le clic
+    // n'arriverait pas, le Deck resterait vide et « Suivant » resterait fermé.
+    await userEvent.click(charger);
+    await waitFor(() => expect(useStore.getState().deck.length).toBeGreaterThan(0));
+    await waitFor(() => expect(suivant).toBeEnabled());
+
+    // Étape, route et cible n'ont pas divergé pendant le geste.
+    await verifierCorrespondance();
   });
 
   it('chaque étape ouvre l’écran qu’elle décrit, et le geste se fait sur cet écran', async () => {
