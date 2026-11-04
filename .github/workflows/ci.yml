@@ -254,52 +254,77 @@ jobs:
         if: steps.chemins.outputs.doc_seulement != 'true'
         run: npm run build
 
-      # **La hauteur du combat, gardée avant la fusion** (#513). `npm run capturer` a échoué une
-      # semaine sur `main` sans que personne le voie : aucun job ne le lançait, et une PR qui
-      # faisait défiler le combat restait verte (le défaut de D-142, #512). Depuis, la commande
-      # rejoue le combat aux cinq gabarits et **sort 1** si « Fin du tour » sort de la fenêtre,
-      # si un bouton descend sous 44 px ou si la marge passe sous 20 px.
+      # **La hauteur du combat (#513) et le contrôle visuel (#205, #234) lisent le même
+      # `dist/` et ne dépendent pas l'un de l'autre** : ils tournent donc **en parallèle**
+      # dans ce même job (#707). Le temps du job est leur maximum, pas leur somme, et l'échec
+      # de l'un des deux fait échouer le job : les deux codes de sortie sont attendus, et
+      # l'autre processus est fermé dès qu'un échec est connu — aucun orphelin.
       #
-      # Elle lit le `dist/` que ce job vient de construire, et **réutilise le Chrome de
-      # l'image** (`/usr/bin/google-chrome`, celui de `IMPECCABLE_BROWSER`) sous le nom que lit
-      # le script, `CHROME_PATH` : aucun second navigateur à installer.
+      # `npm run capturer` a échoué une semaine sur `main` sans que personne le voie (#513) :
+      # aucun job ne le lançait, et une PR qui faisait défiler le combat restait verte (le
+      # défaut de D-142, #512). Depuis, la commande rejoue le combat aux cinq gabarits et
+      # **sort 1** si « Fin du tour » sort de la fenêtre, si un bouton descend sous 44 px ou
+      # si la marge passe sous 20 px. Le détecteur mesure les douze écrans **servis depuis
+      # `dist/`**, avec le cliquet de `scripts/ci/detect-ui-pages.mjs` (`ECRANS`, `BASELINE`) :
+      # `detect:ui` ne lit que les sources et sous-compte, celui-ci voit le rendu réel.
       #
-      # **Coût : 6 min 14 s mesurées en local le 30/10/2026**, à confirmer sur le premier run
-      # de la PR — le workflow documente lui-même jusqu'à 1,8× d'écart entre deux runs du même
-      # code, et le job plafonne à 15 min. Si la mesure réelle s'en écarte, c'est ce
-      # commentaire qu'on corrige, pas la garde : le budget se gagne sur les répétitions,
-      # jamais sur les preuves. Une PR de documentation seule ne la lance pas (D-143 (1)).
-      - name: Garder la hauteur du combat (#513)
-        if: steps.chemins.outputs.doc_seulement != 'true'
-        env:
-          CHROME_PATH: /usr/bin/google-chrome
-        run: npm run capturer
-
-      # **Le contrôle visuel qui compte** (#205, #234) : `impeccable detect` sur les écrans
-      # **servis depuis `dist/`**, avec le cliquet de `scripts/ci/detect-ui-pages.mjs`
-      # (`ECRANS` = 12 écrans, `BASELINE` = leur compte mesuré). `detect:ui` ne lit que les
-      # sources et sous-compte ; celui-ci voit le rendu réel.
+      # Les deux **réutilisent le Chrome de l'image** (`/usr/bin/google-chrome`), sous les
+      # noms que lisent les scripts, `CHROME_PATH` et `IMPECCABLE_BROWSER` : aucun second
+      # navigateur à installer (le Chromium de l'image coûte ~0 min, là où
+      # `npx playwright install chromium --with-deps` en ajouterait ~2).
       #
-      # **Le Chromium vient de l'image du runner** (« l'image qui fournit », #234) : les
-      # images `ubuntu-latest` livrent Google Chrome stable, donc l'installation coûte
-      # **~0 min**, là où `npx playwright install chromium --with-deps` en ajouterait ~2.
-      # `IMPECCABLE_BROWSER` le nomme au lieu de le laisser deviner, et le scan lui-même
-      # ajoute **~1 à 2 min** au job (mesuré à 45 s en local, douze écrans, 26/10/2026).
+      # **Coût : 6 min 14 s mesurées en local le 30/10/2026** pour `capturer` seul, à
+      # confirmer sur le premier run de la PR — le workflow documente lui-même jusqu'à 1,8×
+      # d'écart entre deux runs du même code, et le job plafonne à 15 min. Si la mesure
+      # réelle s'en écarte, c'est ce commentaire qu'on corrige, pas la garde : le budget se
+      # gagne sur les répétitions, jamais sur les preuves. Une PR de documentation seule ne
+      # la lance pas (D-143 (1)).
       #
       # **Sans Chrome, l'étape ÉCHOUE** au lieu de se sauter : un scan d'URL qui n'a pas
       # tourné n'est pas un contrôle vert (même règle que #231 et que `npm run capturer`).
       # Le message dit quoi installer. Aucun secret : le navigateur est dans l'image.
-      - name: Contrôler les écrans dans un navigateur (#205, #234)
+      - name: Contrôler la hauteur du combat et les écrans dans un navigateur (#205, #234, #513)
         if: steps.chemins.outputs.doc_seulement != 'true'
         env:
+          CHROME_PATH: /usr/bin/google-chrome
           IMPECCABLE_BROWSER: /usr/bin/google-chrome
+          # Deux scènes indépendantes à la fois (#707) : 1 par défaut sur le poste, 2 ici.
+          CAPTURER_VOIES: 2
         run: |
+          set -m
           if [ ! -x "$IMPECCABLE_BROWSER" ]; then
             echo "::error::Chrome absent ($IMPECCABLE_BROWSER) : le scan d'URL d'impeccable n'a pas de navigateur. Installe-le (npx playwright install chromium --with-deps) et pointe IMPECCABLE_BROWSER dessus — ne saute pas le contrôle."
             exit 1
           fi
           "$IMPECCABLE_BROWSER" --version
-          npm run detect:ui:page
+          sortie="${RUNNER_TEMP:-/tmp}"
+          npm run capturer > "$sortie/capturer.log" 2>&1 &
+          capture=$!
+          npm run detect:ui:page > "$sortie/detect-ui.log" 2>&1 &
+          detect=$!
+          # Le **premier** qui finit décide : s'il échoue, l'autre est fermé (son groupe de
+          # processus, pour ne pas laisser un Chrome orphelin), puis les deux codes sont
+          # lus. Aucun masquage d'échec : un échec reste un échec.
+          statut=0
+          wait -n -p fini "$capture" "$detect"; premier=$?
+          if [ "$premier" -ne 0 ]; then
+            statut=$premier
+            kill -- -"$capture" -"$detect" 2>/dev/null || true
+          fi
+          if [ "$fini" = "$capture" ]; then
+            wait "$detect"; code_detect=$?
+            code_capture=$premier
+          else
+            wait "$capture"; code_capture=$?
+            code_detect=$premier
+          fi
+          cat "$sortie/capturer.log"
+          cat "$sortie/detect-ui.log"
+          # Le **premier** échec est celui qu'on rapporte ; un 143 de processus fermé ne
+          # remplace pas le code qui a déclenché la fermeture.
+          if [ "$statut" -eq 0 ] && [ "$code_capture" -ne 0 ]; then statut=$code_capture; fi
+          if [ "$statut" -eq 0 ] && [ "$code_detect" -ne 0 ]; then statut=$code_detect; fi
+          exit "$statut"
 
       - name: Chemin rapide — les tests d'écran qui lisent un document (D-143)
         if: steps.chemins.outputs.doc_seulement == 'true'
