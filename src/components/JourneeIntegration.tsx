@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppelParticiper } from '@/components/AppelParticiper';
-import { ETAPES_JOURNEE, libelleSaut } from '@/components/journee-etapes';
+import { ETAPES_JOURNEE, cheminDeCible, etapePourChemin, libelleSaut } from '@/components/journee-etapes';
 import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
-import { allerAEtape, remettreJourneeAuDebut, useEtapeJournee } from '@/components/journee-etape';
+import { allerAEtape, etapeJournee, remettreJourneeAuDebut, useEtapeJournee } from '@/components/journee-etape';
 import { useStore } from '@/store/useStore';
 import { artUrl } from '@/art';
 
@@ -126,6 +126,56 @@ export function JourneeIntegration() {
   const courante = ETAPES_JOURNEE[Math.min(etape, ETAPES_JOURNEE.length - 1)];
 
   /**
+   * **L'étape et la route ne divergent pas** (#677, D-181 (5), D-162 (4)).
+   *
+   * Le compteur d'étape **commande** l'écran : « Suivant » ouvre la cible de l'étape
+   * suivante, et la fin du combat ouvre celle de l'étape qu'elle avance — avant ce
+   * correctif, le compteur avançait seul et le panneau décrivait un écran qui n'était pas
+   * affiché. La route n'est pourtant **pas** l'identifiant de l'étape : deux étapes
+   * peuvent partager un écran, et c'est alors l'étape courante qui tient.
+   *
+   * Deux temps :
+   * - **à l'ouverture**, une URL qui est l'écran d'une étape la désigne (on ne déplace pas
+   *   un testeur qui a demandé `/settings`) ; sur un écran hors parcours (le mur, l'attente),
+   *   on ne déplace rien : l'étape attend son tour ;
+   * - **ensuite**, un changement d'étape ouvre son écran, et un changement de route sans
+   *   changement d'étape (le retour du navigateur) réaligne l'étape sur l'écran rouvert.
+   */
+  const dernierePosition = useRef<{ etape: number; chemin: string } | null>(null);
+  useEffect(() => {
+    if (!visible) {
+      dernierePosition.current = null;
+      return;
+    }
+    // L'étape **réelle** : la reprise peut l'avoir changée dans le même commit.
+    const etapeReelle = etapeJournee();
+    const precedente = dernierePosition.current;
+    dernierePosition.current = { etape: etapeReelle, chemin: pathname };
+
+    if (!precedente) {
+      const parLaRoute = cheminDeCible(courante.cible) === pathname ? etape : etapePourChemin(pathname);
+      if (parLaRoute !== -1 && parLaRoute !== etapeReelle) allerAEtape(parLaRoute);
+      return;
+    }
+
+    const etapeBouge = etapeReelle !== precedente.etape;
+    const cheminBouge = pathname !== precedente.chemin;
+    if (!etapeBouge && !cheminBouge) return;
+
+    if (cheminBouge && !etapeBouge) {
+      // **Un retour du navigateur** : l'écran rouvert réaligne l'étape, sauf si c'est déjà
+      // le sien — c'est ce qui permet à deux étapes de partager une route. Un écran hors
+      // parcours ne déplace personne : le mur, l'attente ou l'administration ne sont pas
+      // une étape, et la visite n'a pas à les quitter.
+      const alignee = cheminDeCible(courante.cible) === pathname ? etapeReelle : etapePourChemin(pathname);
+      if (alignee !== -1 && alignee !== etapeReelle) allerAEtape(alignee);
+      return;
+    }
+    // **L'étape commande** : un changement d'étape ouvre son écran.
+    if (etapeBouge && cheminDeCible(courante.cible) !== pathname) navigate(courante.cible);
+  }, [visible, etape, pathname, courante, navigate]);
+
+  /**
    * **L'élément désigné vient sous les yeux.** Le panneau occupe le haut de l'écran : sans
    * cela, le bouton qu'il désigne peut être caché derrière lui (constaté sur l'accueil, où
    * « Ouvrir un Arrivage » disparaissait sous le panneau).
@@ -200,7 +250,7 @@ export function JourneeIntegration() {
           : combatFait);
 
   /** Sur l'écran de l'étape : `pathname` n'a pas de requête, la cible peut en avoir une. */
-  const surLaPage = pathname === courante.cible.split('?')[0];
+  const surLaPage = pathname === cheminDeCible(courante.cible);
 
   /** La barre de pause : elle ne bloque rien, et elle dit les deux issues. */
   if (enPause) {

@@ -5,6 +5,8 @@ import {
   CARTES_MONTREES,
   ETAPES_JOURNEE,
   MOTS_PAR_MINUTE,
+  etapePourChemin,
+  indexEtapeGeste,
   libelleSaut,
   nombreDePhrases,
   secondesDeLecture
@@ -141,6 +143,32 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
     expect(texteDe(0)).toMatch(/Collection/);
     expect(texteDe(1)).toMatch(/Deck/);
     expect(texteDe(4)).toMatch(/comité/);
+  });
+});
+
+describe('l’étape d’un geste se lit dans les données, jamais dans un numéro (#677)', () => {
+  it('retrouve le combat après un réordonnancement, sans index écrit en dur', () => {
+    // Le combat passe **en dernier** : un `=== 2` ne le retrouverait plus, et la fin du
+    // combat avancerait la visite au mauvais moment.
+    const reordonnees = [...ETAPES_JOURNEE.slice(0, 2), ...ETAPES_JOURNEE.slice(3), ETAPES_JOURNEE[2]];
+    const index = indexEtapeGeste('combat', reordonnees);
+    expect(reordonnees[index].titre).toBe('Le combat');
+    expect(index).not.toBe(2);
+    // **Le contrôle mord** : un geste absent ne doit pas retomber sur une étape au hasard.
+    expect(
+      indexEtapeGeste(
+        'combat',
+        reordonnees.filter((etape) => etape.geste !== 'combat')
+      )
+    ).toBe(-1);
+  });
+
+  it('relie chaque écran à son étape par le chemin, sans la requête (D-162 (4))', () => {
+    expect(etapePourChemin('/')).toBe(0);
+    expect(etapePourChemin('/deck')).toBe(1);
+    // La cible du combat porte une requête (`?tutoriel=1&scene=fin`) : le chemin la retrouve.
+    expect(etapePourChemin('/battle')).toBe(2);
+    expect(etapePourChemin('/inconnu')).toBe(-1);
   });
 });
 
