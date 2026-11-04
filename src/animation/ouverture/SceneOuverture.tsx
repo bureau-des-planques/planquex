@@ -772,18 +772,21 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       return {
         pose: { ...etalee, rotation: inclinaisonCachee(i) },
         opacite: 1,
-        transition: `1000ms ${i * 140}ms`,
+        // Chaque bascule, décalage compris, tient sous les 800 ms (D-141 (1)).
+        transition: `700ms ${i * 20}ms`,
         z: 30 - i
       };
     }
-    // Avant l'étalage, les cartes sont **dans le sachet**, derrière son corps : elles émergent
-    // par la fente (`sortie` 1), lentement, en léger éventail.
+    // Les cartes commencent leur émergence au ras de la déchirure. Dès l'ouverture, la liste passe
+    // devant le sachet ; elle reste invisible pendant les 300 ms de préparation (`sortie` 0).
     const echelleSachet = (largeurPochette * 0.8) / CARTE.largeur;
     const hauteurCarte = CARTE.hauteur * echelleSachet;
     const fente = -hauteurPochette / 2 + hauteurPochette * LIGNE;
     const ecart = i - (nombre - 1) / 2;
     const monte = apres === 'ouverture' && sortie === 1;
-    const haut = monte ? fente - hauteurCarte * (0.55 - Math.abs(ecart) * 0.05) : fente + 8;
+    const hautMontee = fente - hauteurCarte * (0.55 - Math.abs(ecart) * 0.05);
+    // Le haut reste dans la scène, sous le titre : le débordement était coupé par l'écran à 420 × 900.
+    const haut = monte ? Math.max(hautMontee, -taille.hauteur / 2 + 16) : fente + 8;
     return {
       pose: {
         x: monte ? ecart * largeurPochette * 0.06 : 0,
@@ -791,8 +794,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         echelle: echelleSachet,
         rotation: monte ? ecart * 4 : 0
       },
-      opacite: apres === 'ouverture' ? 1 : 0,
-      transition: monte ? `1300ms ${i * 60}ms` : '300ms',
+      opacite: apres === 'ouverture' && sortie > 0 ? 1 : 0,
+      // Le décalage de 20 ms garde le départ en éventail ; même la dernière carte finit en 780 ms.
+      transition: monte ? `700ms ${i * 20}ms` : '300ms',
       z: 30 - i
     };
   }
@@ -928,7 +932,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         <ol
           className={`ouverture__cartes${fiche !== null ? ' ouverture__cartes--fiche' : ''}${
             enCours ? ' ouverture__cartes--scene' : ''
-          }${apres === 'ouverture' || !apres ? ' ouverture__cartes--dedans' : ''}`}
+          }${!apres ? ' ouverture__cartes--dedans' : ''}`}
           data-cartes
           aria-label="Le tirage"
         >
