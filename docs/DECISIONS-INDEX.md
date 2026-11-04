@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 181 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 182 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -99,7 +99,7 @@
 | D-091 | 25/10/2026 | Le poste de pilotage local de la base . Trois… |
 | D-092 | 25/10/2026 | L'administration du mur range et retire n'importe quel post-it ,… |
 | D-093 | 25/10/2026 | L'écran de combat devient une table (recherche : docs/SPEC-COMBAT-UI.md ;… |
-| D-094 | 25/10/2026 | La composition finale de l'écran de combat, et la garde… |
+| D-094 | 25/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la marge… |
 | D-095 | 25/10/2026 | Les noms de l'Atelier suivent le métier de l'atelier d'optronique,… |
 | D-096 | 25/10/2026 | Dix ids alignés sur leur nom, et deux noms corrigés… |
 | D-097 | 26/10/2026 | Le panneau devient le comité : deux pages du suivi,… |
@@ -108,7 +108,7 @@
 | D-100 | 26/10/2026 | La zone Cloudflare s'ouvre au MCP — D-055 est levé… |
 | D-101 | 26/10/2026 | Le banc de comparaison du prototype est réparé, assumé hors… |
 | D-102 | 26/10/2026 | Un tableau de bord local montre les serveurs et les… |
-| D-103 | 26/10/2026 | L'écran de combat ne défile plus, et la marge de… |
+| D-103 | 26/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : le tap… |
 | D-104 | 26/10/2026 | Le mur accepte l'écriture depuis le jeu, dans la base… |
 | D-105 | 26/10/2026 | La trace des combats couvre le PvP, dans la même… |
 | D-106 | 26/10/2026 | La capture d'un post-it est un lien, jamais un fichier… |
@@ -162,8 +162,8 @@
 | D-154 | 29/10/2026 | Le rangement de scripts/ vit en cinq dossiers, et un… |
 | D-155 | 29/10/2026 | La page /installation est hors du jeu, et le garde-fou… |
 | D-156 | 30/10/2026 | L'entrée du jeu exige un compte, le mur compris ;… |
-| D-157 | 30/10/2026 | À 420 × 900, le combat prend la place que… |
-| D-158 | 30/10/2026 | Sur PC, le combat grandit avec l'écran et sa console… |
+| D-157 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la carte… |
+| D-158 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 2) : la console… |
 | D-159 | 30/10/2026 | Les services du parcours sont ceux d'un immeuble, et l'entrée… |
 | D-160 | 30/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la voix du panneau… |
 | D-161 | 30/10/2026 | Le mur du comité n'est plus exclu de la Journée… |
@@ -172,11 +172,11 @@
 | D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |
 | D-165 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le pas-à-pas du combat… |
 | D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |
-| D-167 | 31/10/2026 | Les tailles du plateau ne bougent pas : à 420… |
+| D-167 | 31/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la surface… |
 | D-168 | 31/10/2026 | Le contrôle des écrans refuserait un scan muet . impeccable… |
 | D-169 | 01/11/2026 | L'ouverture d'un Arrivage se lit à 420 px . (1)… |
 | D-170 | 01/11/2026 | L'ouverture d'un Arrivage se juge sur la taille rendue de… |
-| D-171 | 01/11/2026 | Sur téléphone, accueil et combat tiennent en portrait ; le… |
+| D-171 | 01/11/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la bande… |
 | D-172 | 02/11/2026 | La courbe du Deck ne nomme plus un coût qui… |
 | D-173 | 02/11/2026 | PWA d'abord, navigateur en plancher ; plein écran là où… |
 | D-174 | 02/11/2026 | Un socle par planche, et un casting qui ne ressemble… |
@@ -187,3 +187,4 @@
 | D-179 | 03/11/2026 | Le serveur fait autorité sur ce qui se partage ;… |
 | D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |
 | D-181 | 04/11/2026 | La voix de la Direction est le Chef de cabinet,… |
+| D-182 | 04/11/2026 | Le plateau de combat : main rognée en bas, journal… |
