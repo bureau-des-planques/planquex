@@ -317,6 +317,12 @@ plateau (`.card--plateau`).
 > court, en paysage et sur PC, la disposition change : la barre du haut s'efface en combat (une
 > sortie `←` entre dans l'en-tête), le Banc passe à côté du Poste, la barre d'action vit dans la
 > console. Voir §2.7.
+>
+> **Décidé le 04/11/2026 (D-182)** : la main s'ancre au **bas de la fenêtre** et se **rogne**,
+> le **journal visuel** disparaît (la ligne de la barre d'action, la vue `Journal` du `⋯`, la
+> console d'écran large), les **quatre piles** sont posées et le **Rebut s'ouvre**, et
+> l'ouverture d'un combat neuf met les Entrants **en scène**. Cette section décrit l'écran
+> **tant que le ticket ne l'a pas livré** ; D-182 fait foi sur la cible.
 
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
@@ -352,8 +358,9 @@ Le **secondaire** est derrière le `⋯` : Journal (les 14 dernières lignes), P
 proposé), Nouveau combat. **Une seule vue du menu** est ouverte à la fois ; Échap ferme le menu
 et rend le focus au bouton, et un dialogue ouvert par-dessus garde son propre Échap.
 
-Les **piles** Deck et Rebut sont des objets **posés** et **comptés** : le Rebut **ne s'ouvre pas**
-(écart à `SPEC-COMBAT-UI` R5, pas une règle).
+Les **piles** Deck et Rebut sont des objets **posés** et **comptés**. ⚠️ **Décidé le 04/11/2026
+(D-182)** : le **Rebut s'ouvre** (panneau non modal, D-121 (2)) et le **Deck ne s'ouvre jamais** ;
+l'écran ne le fait pas encore. L'ancien écart à `SPEC-COMBAT-UI` R5 est clos, R5 étant incorporée.
 
 **Le clavier et le doigt** (D-121 ; la recherche est `SPEC-COMBAT-UI` §4 et §6.6, elle ne fait pas règle).
 

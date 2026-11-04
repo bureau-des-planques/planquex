@@ -27,15 +27,14 @@ const LIGNE = /^\|\s*(D-\d+)\s*\|/;
 
 /**
  * Exceptions au contrôle de continuité : un identifiant **volontairement absent** du journal
- * (décision retirée puis renumérotée, par exemple). Vide tant qu'aucun cas ne l'exige —
- * vérifié sur le fichier du 21/10/2026, qui va de D-001 à D-049 sans manque.
+ * (décision retirée puis renumérotée, par exemple).
  *
- * **D-171, D-172 et D-173** : réservés le 02/11/2026 par trois tickets menés en parallèle
- * (session portrait, #555, #580). Leurs branches ne sont pas encore fusionnées, donc ces
- * lignes n'existent pas dans cette copie de travail ; elles disparaissent de cette liste
- * au merge. Ce n'est pas un trou d'édition.
+ * **D-180 et D-181** : réservés le 04/11/2026 par deux tickets menés en parallèle (#661, #662),
+ * dont les branches ne sont pas encore fusionnées ; celle-ci écrit D-182 (#663). Ces deux
+ * lignes n'existent donc pas dans cette copie de travail, ce n'est pas un trou d'édition :
+ * elles quittent cette liste à la fusion de #661 et #662.
  */
-const SANS_TROU_EXCEPTIONS = new Set<string>([]);
+const SANS_TROU_EXCEPTIONS = new Set<string>(['D-180', 'D-181']);
 
 /** Ce qu'une ligne du journal doit porter : `| ID | date | décision | raison |` = 4 colonnes. */
 const COLONNES = 4;
