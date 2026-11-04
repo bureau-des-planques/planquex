@@ -278,6 +278,10 @@ h2 {
   padding: 0 max(1rem, env(safe-area-inset-right)) 5.5rem max(1rem, env(safe-area-inset-left));
 }
 
+.app-shell:has(.journee__parole) {
+  padding-bottom: 12rem;
+}
+
 /* Les écrans **hors du `Layout`** (connexion, confidentialité, feuille de route, installation)
    portent la coquille du jeu sans en porter le composant (`revue du 30/10/2026`) : sans elle, leur
    panneau commençait au pixel 0 et s'étalait sur 1280 px au PC. Une classe et non une route
@@ -2771,8 +2775,7 @@ h2 {
 /* **La pause** (31/10/2026) : `Échap` met la visite de côté au lieu de la terminer. Une
    barre d'une ligne, qui ne bloque rien (la garde est éteinte) et dit où l'on en est. */
 /* **L'espace du panneau** (31/10/2026) : réservé au-dessus du contenu tant que la Journée est
-   ouverte. Il se mesure en continu (`--journee-hauteur`), donc il suit la police et la ligne
-   de la Direction. Sans lui, la cible de l'étape 1 restait sous le panneau. */
+   ouverte. Il se mesure en continu (`--journee-hauteur`), donc il suit le texte et les boutons. */
 /* **L'en-tête** (31/10/2026) : le titre et sa sortie sur la même ligne, pour ne pas payer
    deux rangées. La sortie garde 44 px de haut et se replie à droite. */
 .journee__tete {
@@ -2805,23 +2808,35 @@ h2 {
   height: calc(var(--journee-hauteur, 0px) + 1rem);
 }
 
-/* **Le Chef de cabinet porte la voix** (D-181) : son portrait et sa réplique restent compacts,
-   dans la famille des entrées du produit. */
-.journee__bulle {
-  align-items: flex-start;
-  animation: journee-bulle 220ms ease-out both;
+/* **Le Chef de cabinet sort du bas** (D-187) : la tête et son encadré restent au-dessus de la
+   navigation, hors du panneau qui désigne le geste. */
+.journee__scene {
+  align-items: flex-end;
+  animation: journee-sort 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   display: flex;
-  gap: 8px;
+  gap: 0.6rem;
+  left: 0.6rem;
+  max-width: min(34rem, calc(100% - 1.2rem));
+  pointer-events: none;
+  position: fixed;
+  right: auto;
+  width: fit-content;
+  z-index: 39;
 }
 
-@keyframes journee-bulle {
+@media (max-height: 820px) and (min-width: 601px) {
+  .journee__scene {
+    bottom: calc(6.125rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@keyframes journee-sort {
   from {
-    opacity: 0;
-    transform: translateY(-4px) scale(0.98);
+    transform: translateY(100%);
   }
 
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -2831,23 +2846,63 @@ h2 {
   border: 1px solid var(--line-strong);
   border-radius: 50%;
   flex: none;
-  height: 40px;
+  height: 56px;
   object-fit: cover;
   /* Le visage est en haut du carré de l'illustration : on le garde dans le cercle. */
   object-position: center 30%;
-  width: 40px;
+  pointer-events: none;
+  width: 56px;
+}
+
+.journee__parole {
+  background: linear-gradient(180deg, var(--bg-raised), var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 24px -14px rgb(0 0 0 / 80%);
+  color: var(--text);
+  cursor: pointer;
+  flex: 1;
+  font: inherit;
+  min-width: 0;
+  padding: 0.6rem 0.75rem;
+  /* Seul l'encadré reçoit le tap (tout afficher) ; la tête et la scène laissent passer. */
+  pointer-events: auto;
+  position: relative;
+  text-align: left;
+}
+
+.journee__parole::before,
+.journee__parole::after {
+  bottom: 18px;
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+  content: '';
+  position: absolute;
+}
+
+.journee__parole::before {
+  background: var(--line-strong);
+  height: 14px;
+  left: -8px;
+  width: 8px;
+}
+
+.journee__parole::after {
+  background: var(--bg-sunken);
+  height: 10px;
+  left: -6px;
+  width: 6px;
 }
 
 .journee__direction {
-  color: var(--text-muted);
-  font-size: 0.8rem;
+  color: var(--text);
+  display: block;
+  font-size: 0.82rem;
   font-style: italic;
   line-height: 1.35;
-  margin: 0;
 }
 
 .journee__direction strong {
-  color: var(--text);
+  color: var(--gold);
   font-style: normal;
 }
 
@@ -2857,8 +2912,37 @@ h2 {
   font-weight: 400;
 }
 
-/* La bulle pointe vers la cible de l'étape. Sa position suit le rectangle de la cible,
-   sans intercepter le geste (D-181). */
+.journee__texte-anime {
+  animation: journee-ecrit 800ms steps(36, end) both;
+  clip-path: inset(0 100% 0 0);
+  display: inline-block;
+  max-width: 100%;
+}
+
+@keyframes journee-ecrit {
+  to {
+    clip-path: inset(0);
+  }
+}
+
+:root[data-mouvement-reduit='true'] .journee__texte-anime,
+.journee__parole[data-complet='true'] .journee__texte-anime {
+  animation: none;
+  clip-path: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journee__scene {
+    animation: none;
+  }
+
+  .journee__texte-anime {
+    animation: none;
+    clip-path: none;
+  }
+}
+
+/* La pointe reste portée par le panneau : elle vise la cible sans intercepter le geste (D-187). */
 .journee__pointe {
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
@@ -3194,7 +3278,7 @@ h2 {
   /* Les trois gouttières de l'écran (en-tête → note → table → barre d'action) se resserrent (#218) :
      3,2 px chacune, 9,6 px rendus à la main, et l'écran garde toutes ses lignes. */
   gap: 0.1rem;
-   /* **Pas de bande vide au pied** : le document ne défile pas (D-103, D-171). La place libre grandit
+  /* **Pas de bande vide au pied** : le document ne défile pas (D-103, D-171). La place libre grandit
       dans le feutre par flex ; l'action finit à 20–32 px du bas sur téléphone portrait (D-094 (3),
       D-171), sans agrandir les cartes ni réserver un espace après la barre. L'avertissement « deck de
       test » a quitté sa ligne (30 px) pour la fiche du camp (`.board__test`). */
@@ -6322,8 +6406,10 @@ h2 {
    cartes ; seule la face avant les couvre. */
 .pochette--arriere {
   background:
-    linear-gradient(to bottom right, transparent 49%, var(--pochette-tranche) 49% 51%, transparent 51%) 0 8.8% / 50% 24% no-repeat,
-    linear-gradient(to bottom left, transparent 49%, var(--pochette-tranche) 49% 51%, transparent 51%) 100% 8.8% / 50% 24% no-repeat,
+    linear-gradient(to bottom right, transparent 49%, var(--pochette-tranche) 49% 51%, transparent 51%) 0 8.8% / 50% 24%
+      no-repeat,
+    linear-gradient(to bottom left, transparent 49%, var(--pochette-tranche) 49% 51%, transparent 51%) 100% 8.8% / 50%
+      24% no-repeat,
     var(--pochette-kraft-fonce);
   -webkit-mask-image: var(--masque);
   mask-image: var(--masque);
@@ -6335,12 +6421,7 @@ h2 {
 .ouverture__reflet-sachet {
   background:
     radial-gradient(circle at var(--mx) var(--my), rgb(255 248 226 / 18%) 0%, rgb(255 248 226 / 0%) 34%),
-    linear-gradient(
-      115deg,
-      transparent 20%,
-      rgb(255 248 226 / 8%) 40%,
-      transparent 60%
-    );
+    linear-gradient(115deg, transparent 20%, rgb(255 248 226 / 8%) 40%, transparent 60%);
   background-position:
     0 0,
     calc(var(--mx) * 1.6) 0;
