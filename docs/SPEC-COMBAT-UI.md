@@ -639,7 +639,7 @@ composition et ne prouve aucune règle de jeu (§9.4).
 | **R5** | Deck et Rebut **cachés** dans l'inspecteur et le `⋯` | **quatre piles visibles** en colonne à droite (Deck et Rebut de chaque camp), à la manière d'objets posés : un cartouche, un compteur, et **la pile est ouvrable** (le Rebut est consultable à tout moment, §2) |
 | **R6** | **aucun retour d'action** spécifié | une couche de retour : chiffre de Stress qui **monte** en flottant près de la carte touchée, `Fin du tour` qui **change d'état** (à toi / en attente), pile de Deck qui s'illumine à la pioche. Tout est coupé par `prefers-reduced-motion` **et** par « Mouvement réduit » (§5.5), et rien ne **déplace** la mise en page (SC 1.4.13, SC 2.2.2) |
 
-**R5 est incorporée par D-182 (04/11/2026)** : le Deck et le Rebut deviennent **quatre piles
+**R5 est incorporée par D-182 (04/11/2026), avec une réserve : le Deck ne s'ouvre pas** (la ligne R5 dit « la pile est ouvrable » : elle vaut pour le Rebut) : le Deck et le Rebut deviennent **quatre piles
 visibles** (deux par camp), et le **Rebut s'ouvre** (panneau non modal, D-121 (2)) tandis que le
 Deck ne s'ouvre jamais. Le reste de cette section reste de la **recherche** (D-121) et ne fait
 pas règle.
