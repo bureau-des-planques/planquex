@@ -393,7 +393,11 @@ export function JourneeIntegration() {
             C’est fait : « Suivant » est ouvert.
           </p>
         ) : (
-          <p className="journee__geste" role="status">
+          // **Lue, pas affichée** (04/11/2026, décision de Bastien, option A) : la ligne reste
+          // dans le DOM pour les lecteurs d'écran (`role="status"`), mais « Suivant » éteint et
+          // « Montrer le bouton » disent déjà le geste à l'œil. `sr-only` la retire de la mise
+          // en page, et le budget de texte ne la compte pas (D-181 (3)).
+          <p className="sr-only" role="status">
             {courante.geste === 'combat'
               ? 'Joue le combat guidé : « Suivant » s’ouvrira à sa fin.'
               : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}

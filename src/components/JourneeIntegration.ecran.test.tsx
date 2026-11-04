@@ -5,7 +5,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { JourneeIntegration } from './JourneeIntegration';
-import { ETAPES_JOURNEE } from './journee-etapes';
+import {
+  ETAPES_JOURNEE,
+  LOCUTEUR_JOURNEE,
+  MOTS_CIBLE_JOURNEE,
+  MOTS_MAX_JOURNEE,
+  MOTS_MAX_REPLIQUE,
+  MOTS_MIN_JOURNEE
+} from './journee-etapes';
 import { marquerGeste, oublierGestes } from './journee-gestes';
 import { CIBLE_DE_GESTE, cibleJournee } from './journee-cible';
 import { allerAEtape, etapeJournee, remettreJourneeAuDebut } from './journee-etape';
@@ -414,6 +421,28 @@ describe('la Journée d’intégration se joue (D-160)', () => {
   });
 });
 
+describe('la ligne du geste se lit, sans s’afficher (04/11/2026, option A)', () => {
+  it('reste dans le DOM en `role="status"`, en `sr-only` : lue par les lecteurs d’écran, pas affichée', () => {
+    // L'étape 1 (l'Arrivage) n'a pas son geste : aucun Arrivage ouvert, la ligne d'aide est
+    // rendue. (`monterPanneau` poserait `packsOpened: 1`, geste déjà fait : on pose l'état ici.)
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    const aide = screen.getByText(/Fais le geste sur la page/);
+    expect(aide.tagName).toBe('P');
+    expect(aide).toHaveAttribute('role', 'status');
+    // **Le contrôle mord** : sans `sr-only`, la ligne reprend sa place visible dans le panneau
+    // et ce test tombe (mutant : retirer la classe de cette ligne, le texte reste).
+    expect(aide.classList.contains('sr-only')).toBe(true);
+    unmount();
+  });
+});
+
 describe('le plateau garde son tutoriel (31/10/2026)', () => {
   it('sur /battle, le panneau s’efface : le pas-à-pas du combat parle seul', () => {
     // Mesuré le 30/10 : le panneau (y 10 → 258) recouvrait le pas-à-pas (y 50 → 99) et sa
@@ -619,5 +648,129 @@ describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () =>
     // **Le contrôle mord** : si la barre ne tenait pas au clavier, Entrée ne la rendrait pas.
     expect(screen.queryByText(/Journée en pause/)).toBeNull();
     expect(useStore.getState().tutorielVu).toBe(false);
+  });
+});
+
+/**
+ * **Le budget de texte rendu** (D-181 (3), #682) — mesuré sur le **DOM**, pas sur les
+ * objets de données : un libellé ajouté dans le JSX doit peser.
+ *
+ * Ce qui compte (D-181 (3), précisé par D-185 (1) et D-186 (1)) : le titre
+ * (`#journee-titre`, compteur et préfixe `sr-only` exclus), le texte (`#journee-texte`),
+ * la **réplique sans son locuteur** (`.journee__direction`, le `<strong>` retiré) et les
+ * libellés des boutons d'action de l'étape (`.actions` : « Suivant », et le geste s'il est
+ * visible). Fourchette : 54 à 66 mots.
+ *
+ * **Hors budget** : le **nom du locuteur** « Chef de cabinet » (D-186 (1)), libellé répété
+ * à chaque étape, et le **bouton de sortie permanent** « Passer : tu ne verras pas le
+ * combat » / « Relire la Journée… » (D-185 (1)), un contrôle, le même partout. Le nom reste
+ * dans la **borne par réplique** : « Chef de cabinet » + réplique ≤ 12 mots (D-186 (3)).
+ */
+function mots(texte: string): number {
+  return texte.split(/\s+/).filter(Boolean).length;
+}
+
+interface CompteDeTexte {
+  titre: string;
+  mots: number;
+  /** La réplique **sans** le nom du locuteur : c'est ce que le budget compte (D-186 (1)). */
+  repliqueMots: number;
+  /** La réplique **avec** le nom : c'est elle que la borne de 12 mots lit (D-186 (3)). */
+  repliqueAvecNomMots: number;
+  replique: string;
+  repliqueAvecNom: string;
+  detail: string;
+  source: 'DOM' | 'données';
+}
+
+function compteDeLEtape(index: number): CompteDeTexte {
+  const etape = ETAPES_JOURNEE[index];
+  const { unmount } = monterPanneau(index);
+  const panneau = document.querySelector<HTMLElement>('[data-journee-panneau]');
+  let compte: CompteDeTexte;
+
+  if (panneau) {
+    const titreEl = panneau.querySelector('#journee-titre')?.cloneNode(true) as HTMLElement | undefined;
+    titreEl?.querySelector('.journee__compte')?.remove();
+    titreEl?.querySelector('.sr-only')?.remove();
+    const titreRendu = titreEl?.textContent?.trim() ?? etape.titre;
+    const texte = panneau.querySelector('#journee-texte')?.textContent?.trim() ?? '';
+    // La réplique rendue, nom compris (`<strong>Chef de cabinet</strong> …`), puis la même
+    // **sans** le nom : on retire le `<strong>` du clone. Le nom est un libellé répété, hors
+    // budget (D-186 (1)) ; il reste dans la borne de 12 mots (D-186 (3)).
+    const repliqueEl = panneau.querySelector('.journee__direction');
+    const repliqueAvecNom = repliqueEl?.textContent?.trim() ?? '';
+    const repliqueClone = repliqueEl?.cloneNode(true) as HTMLElement | undefined;
+    repliqueClone?.querySelector('strong')?.remove();
+    const replique = repliqueClone?.textContent?.trim() ?? '';
+    const boutons = [...panneau.querySelectorAll<HTMLButtonElement>('.actions button')].map(
+      (bouton) => bouton.textContent?.trim() ?? ''
+    );
+    const morceaux = [titreRendu, texte, replique, ...boutons];
+    compte = {
+      titre: etape.titre,
+      mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
+      repliqueMots: mots(replique),
+      repliqueAvecNomMots: mots(repliqueAvecNom),
+      repliqueAvecNom,
+      replique,
+      detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
+      source: 'DOM'
+    };
+  } else {
+    // **Le panneau de l'étape du combat n'est jamais rendu** (D-162 (3)) : il s'efface sur
+    // `/battle`. On compte la même source que le panneau lirait, sans quoi cette étape
+    // échapperait au budget ; un mot ajouté à son texte pèse quand même.
+    // Sans le nom, comme le DOM ci-dessus (D-186 (1)) ; avec le nom pour la borne (D-186 (3)).
+    const replique = etape.direction;
+    const repliqueAvecNom = `${LOCUTEUR_JOURNEE} ${etape.direction}`;
+    const dernier = index === ETAPES_JOURNEE.length - 1;
+    const morceaux = [etape.titre, etape.texte, replique, ...(dernier ? [] : ['Suivant'])];
+    compte = {
+      titre: etape.titre,
+      mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),
+      repliqueMots: mots(replique),
+      repliqueAvecNomMots: mots(repliqueAvecNom),
+      repliqueAvecNom,
+      replique,
+      detail: morceaux.map((morceau) => `« ${morceau} »`).join(' + '),
+      source: 'données'
+    };
+  }
+
+  unmount();
+  return compte;
+}
+
+function detailDesComptes(comptes: readonly CompteDeTexte[]): string {
+  const total = comptes.reduce((somme, compte) => somme + compte.mots, 0);
+  return [
+    `Le budget de texte rendu (D-181 (3), #682) : ${total} mots, cible ${MOTS_CIBLE_JOURNEE} (${MOTS_MIN_JOURNEE} à ${MOTS_MAX_JOURNEE}).`,
+    ...comptes.map(
+      (compte, index) =>
+        `  étape ${index + 1} « ${compte.titre} » : ${compte.mots} mots, réplique ${compte.repliqueMots} sans le nom (${compte.repliqueAvecNomMots} avec) [${compte.source}] = ${compte.detail}`
+    )
+  ].join('\n');
+}
+
+describe('le budget de texte de la Journée (D-181 (3), #682)', () => {
+  it('tient ≈ 60 mots rendus sur les cinq étapes, et 12 mots par réplique', () => {
+    const comptes = ETAPES_JOURNEE.map((_, index) => compteDeLEtape(index));
+    const total = comptes.reduce((somme, compte) => somme + compte.mots, 0);
+    const detail = detailDesComptes(comptes);
+
+    // **Le contrôle mord** : la borne de 12 mots se lit **avec** le nom (D-186 (3)) ; une
+    // réplique à 13 mots, nom compris, nomme l'étape, son compte et son texte.
+    for (const compte of comptes) {
+      expect(
+        compte.repliqueAvecNomMots,
+        `${detail}\nLa réplique de « ${compte.titre} » fait ${compte.repliqueAvecNomMots} mots avec le nom : « ${compte.repliqueAvecNom} »`
+      ).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
+    }
+    // **Le contrôle mord** : le total hors nom et hors sortie doit rester dans la fourchette
+    // (54 à 66) ; un texte qui la dépasse fait échouer cette ligne, et c'est ce que vérifie
+    // le mutant « total > 66 ».
+    expect(total, detail).toBeGreaterThanOrEqual(MOTS_MIN_JOURNEE);
+    expect(total, detail).toBeLessThanOrEqual(MOTS_MAX_JOURNEE);
   });
 });

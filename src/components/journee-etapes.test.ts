@@ -4,10 +4,15 @@ import { describe, expect, it } from 'vitest';
 import {
   CARTES_MONTREES,
   ETAPES_JOURNEE,
+  MOTS_CIBLE_JOURNEE,
+  MOTS_MAX_JOURNEE,
+  MOTS_MAX_REPLIQUE,
+  MOTS_MIN_JOURNEE,
   MOTS_PAR_MINUTE,
   etapePourChemin,
   indexEtapeGeste,
   libelleSaut,
+  motsDeLaReplique,
   nombreDePhrases,
   secondesDeLecture
 } from './journee-etapes';
@@ -65,25 +70,24 @@ describe('cinq étapes, et plus de recouvrement avec le combat (30/10/2026)', ()
     expect(texteDe(2)).toMatch(/trois interventions/i);
   });
 
-  it('explique l’Arrivage : cinq cartes, et où elles vont', () => {
+  // **Réécrits le 04/11/2026 (#682, D-181 (3))** : le budget de 60 mots rendus retire la
+  // composition de l'Arrivage et le « vingt de ces cartes » du paragraphe. L'intention du
+  // test reste : l'étape dit le geste et où il mène, pas la courbe du set (que l'écran montre).
+  it('dit d’ouvrir un Arrivage', () => {
     expect(texteDe(0)).toMatch(/Arrivage/);
-    expect(texteDe(0)).toMatch(/cinq cartes/);
-    expect(texteDe(0)).toMatch(/trois communes/);
-    expect(texteDe(0)).toMatch(/rare/);
-    expect(texteDe(0)).toMatch(/Collection/);
+    expect(texteDe(0)).toMatch(/Ouvre/);
   });
 
   it('réunit Collection et Deck, et fait charger un Deck proposé', () => {
     expect(texteDe(1)).toMatch(/Collection/);
     expect(texteDe(1)).toMatch(/Deck/);
-    expect(texteDe(1)).toMatch(/vingt de ces cartes/);
+    expect(texteDe(1)).toMatch(/Charge/);
     expect(texteDe(1)).toMatch(/Deck proposé/);
   });
 
-  it('dit où vivent les données, et comment les sauver', () => {
-    expect(texteDe(3)).toMatch(/navigateur/);
+  it('dit de créer la sauvegarde, seule copie des données', () => {
+    expect(texteDe(3)).toMatch(/Crée/);
     expect(texteDe(3)).toMatch(/sauvegarde/);
-    expect(texteDe(3)).toMatch(/seule copie/);
   });
 
   it('nomme les deux post-its du comité', () => {
@@ -140,7 +144,10 @@ describe('chaque étape ouvre l’écran qu’elle décrit (D-066)', () => {
   });
 
   it('nomme les écrans comme le jeu', () => {
-    expect(texteDe(0)).toMatch(/Collection/);
+    // **Réécrit le 04/11/2026 (#682)** : l'étape de l'Arrivage ne cite plus la Collection
+    // (le budget de 60 mots rendus a coupé la phrase qui l'y menait) ; son écran reste
+    // l'accueil, et c'est l'Arrivage qu'elle nomme.
+    expect(texteDe(0)).toMatch(/Arrivage/);
     expect(texteDe(1)).toMatch(/Deck/);
     expect(texteDe(4)).toMatch(/comité/);
   });
@@ -272,5 +279,38 @@ describe('la Direction accueille le nouveau (31/10/2026)', () => {
       const motsRendus = `Chef de cabinet ${etape.direction}`.split(/\s+/).filter(Boolean).length;
       expect(motsRendus, etape.titre).toBeLessThanOrEqual(12);
     }
+  });
+});
+
+describe('le budget de texte rendu (D-181 (3), #682)', () => {
+  it('fixe la cible à 60 mots, tolérance 10 % : 54 à 66', () => {
+    // **Le contrôle mord** : une cible recopiée dans un autre fichier et qui dérive se voit
+    // ici. Le test d'écran lit ces bornes, il n'écrit pas 54 et 66 à la main.
+    expect(MOTS_CIBLE_JOURNEE).toBe(60);
+    expect(MOTS_MIN_JOURNEE).toBe(54);
+    expect(MOTS_MAX_JOURNEE).toBe(66);
+  });
+
+  it('compte le nom du locuteur dans la réplique, et fait mordre le plafond de 12', () => {
+    for (const etape of ETAPES_JOURNEE) {
+      expect(motsDeLaReplique(etape), `${etape.titre} : « ${etape.direction} »`).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
+    }
+    // Un mutant de 13 mots, locuteur compris (10 + « Chef de cabinet »), dépasse le plafond :
+    // le contrôle peut échouer.
+    const treizeMots = {
+      ...ETAPES_JOURNEE[0],
+      direction: 'un deux trois quatre cinq six sept huit neuf dix'
+    };
+    expect(motsDeLaReplique(treizeMots)).toBeGreaterThan(MOTS_MAX_REPLIQUE);
+  });
+
+  it('les cinq textes et répliques laissent leur place aux libellés de boutons', () => {
+    // Le budget rendu ajoute les libellés (« Suivant ») et le titre : les textes seuls
+    // doivent tenir sous le plafond, sinon le panneau ne peut pas y arriver.
+    const total = ETAPES_JOURNEE.reduce(
+      (somme, etape) => somme + `${etape.titre} ${etape.texte} ${etape.direction}`.split(/\s+/).filter(Boolean).length,
+      0
+    );
+    expect(total, 'titre + texte + réplique, sans le locuteur ni les boutons').toBeLessThanOrEqual(MOTS_MAX_JOURNEE);
   });
 });
