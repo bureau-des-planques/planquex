@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 180 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 181 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -185,4 +185,5 @@
 | D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |
 | D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |
 | D-179 | 03/11/2026 | Le serveur fait autorité sur ce qui se partage ;… |
+| D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |
 | D-181 | 04/11/2026 | La voix de la Direction est le Chef de cabinet,… |
