@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 179 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 180 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -113,7 +113,7 @@
 | D-105 | 26/10/2026 | La trace des combats couvre le PvP, dans la même… |
 | D-106 | 26/10/2026 | La capture d'un post-it est un lien, jamais un fichier… |
 | D-107 | 26/10/2026 | Les post-its importés du fichier portent un auteur sentinelle .… |
-| D-108 | 26/10/2026 | Le camp adverse s’appelle « la Direction », dans le… |
+| D-108 | 26/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le camp garde le… |
 | D-109 | 26/10/2026 | D-084 est amendée : le niveau 2 de l’écran est… |
 | D-110 | 26/10/2026 | O-016 est tranché : les connexions anonymes de Supabase s’activent… |
 | D-111 | 26/10/2026 | Le journal des décisions se tient lui aussi . Trois… |
@@ -141,7 +141,7 @@
 | D-133 | 27/10/2026 | pg_net retourne dans extensions, et les deux fonctions de déclencheur… |
 | D-134 | 27/10/2026 | L'équilibrage se mesure sur une bande fixée d'avance, et la… |
 | D-135 | 27/10/2026 | Le service du profil reste décoratif — et c'est une… |
-| D-136 | 27/10/2026 | La Journée d'intégration reste sautable, et le bouton dit ce… |
+| D-136 | 27/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la réplique de la… |
 | D-137 | 27/10/2026 | Deux sons dans l'alpha, et un réglage qui les coupe… |
 | D-138 | 27/10/2026 | Les migrations à venir suivent le disque : 0017 puis… |
 | D-139 | 28/10/2026 | Une variante a sa propre illustration, et une seule .… |
@@ -165,12 +165,12 @@
 | D-157 | 30/10/2026 | À 420 × 900, le combat prend la place que… |
 | D-158 | 30/10/2026 | Sur PC, le combat grandit avec l'écran et sa console… |
 | D-159 | 30/10/2026 | Les services du parcours sont ceux d'un immeuble, et l'entrée… |
-| D-160 | 30/10/2026 | La Journée d'intégration ne dit plus ce que le combat… |
+| D-160 | 30/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la voix du panneau… |
 | D-161 | 30/10/2026 | Le mur du comité n'est plus exclu de la Journée… |
-| D-162 | 31/10/2026 | La Journée est une région qui se met en pause,… |
-| D-163 | 31/10/2026 | Le panneau réserve sa place, et l'étape vit hors de… |
+| D-162 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : elle reste une région,… |
+| D-163 | 31/10/2026 | ⚠ Amendée par D-181 (04/11/2026) : (3) « Suivant »… |
 | D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |
-| D-165 | 31/10/2026 | Le combat montre la mesure qui décide, et le tutoriel… |
+| D-165 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le pas-à-pas du combat… |
 | D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |
 | D-167 | 31/10/2026 | Les tailles du plateau ne bougent pas : à 420… |
 | D-168 | 31/10/2026 | Le contrôle des écrans refuserait un scan muet . impeccable… |
@@ -185,3 +185,4 @@
 | D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |
 | D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |
 | D-179 | 03/11/2026 | Le serveur fait autorité sur ce qui se partage ;… |
+| D-181 | 04/11/2026 | La voix de la Direction est le Chef de cabinet,… |
