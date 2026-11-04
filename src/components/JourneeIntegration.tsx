@@ -37,6 +37,8 @@ export function JourneeIntegration() {
    * l'on en est et offre les deux issues.
    */
   const [enPause, setEnPause] = useState(false);
+  /** La réplique que le testeur a fait afficher en entier d'un tap (D-187 (4)). */
+  const [repliqueLue, setRepliqueLue] = useState('');
   const navigate = useNavigate();
   const { pathname } = useLocation();
   /** Le panneau, pour mesurer sa hauteur et garder l'élément désigné **sous** lui. */
@@ -78,7 +80,7 @@ export function JourneeIntegration() {
     const autorise = (cible: EventTarget | null) =>
       cible instanceof Element &&
       cible.closest(
-        '[data-journee-panneau], [data-journee-cible], [data-pas-a-pas], .hand, .board, [role="dialog"], .ouverture'
+        '[data-journee-panneau], .journee__parole, [data-journee-cible], [data-pas-a-pas], .hand, .board, [role="dialog"], .ouverture'
       ) !== null;
     const bloquer = (evenement: Event) => {
       if (autorise(evenement.target)) return;
@@ -239,7 +241,7 @@ export function JourneeIntegration() {
     // **La cible de l'étape, et elle seule** : `combat` n'en a pas (le pas-à-pas désigne).
     poserCibleJournee(cibleDeLEtape);
 
-    /** La pointe de la bulle se cale sur le centre horizontal de sa cible. */
+    /** La pointe du panneau se cale sur le centre horizontal de sa cible. */
     const positionnerPointe = () => {
       if (!cibleDeLEtape) return;
       const pointe = panneau.querySelector<HTMLElement>('.journee__pointe');
@@ -302,7 +304,43 @@ export function JourneeIntegration() {
     };
   }, [ouvert, etape, pathname, cibleDeLEtape]);
 
-  if (!visible) return null;
+  if (tutorielVu) return null;
+
+  /**
+   * **La tête reste d'une étape à l'autre** (D-187 (6)(c)) : un seul nœud, à la même place dans
+   * l'arbre, que le panneau soit ouvert, en pause ou effacé sur `/battle`. Seul l'encadré, lui,
+   * suit le panneau. Sa copie animée est `aria-hidden` ; la région `aria-live` lit la réplique
+   * entière d'un coup (D-187 (4)).
+   */
+  const scene = (avecParole: boolean) => (
+    <div className="journee__scene">
+      <img className="journee__portrait" src={PORTRAIT_CHEF_CABINET} alt="" aria-hidden="true" width={56} height={56} />
+      {avecParole && (
+        <div
+          className="journee__parole"
+          data-complet={repliqueLue === courante.direction || undefined}
+          onClick={() => setRepliqueLue(courante.direction)}
+        >
+          <span className="journee__direction" aria-hidden="true">
+            <strong>Chef de cabinet</strong>{' '}
+            <span key={courante.direction} className="journee__texte-anime">
+              {courante.direction}
+            </span>
+          </span>
+        </div>
+      )}
+      <span className="sr-only" data-journee-voix aria-live="polite" aria-atomic="true">
+        {avecParole && `Chef de cabinet : ${courante.direction}`}
+      </span>
+    </div>
+  );
+  if (!visible)
+    return (
+      <>
+        {null}
+        {scene(false)}
+      </>
+    );
 
   const derniere = etape >= ETAPES_JOURNEE.length - 1;
   /**
@@ -326,162 +364,149 @@ export function JourneeIntegration() {
   /** La barre de pause : elle ne bloque rien, et elle dit les deux issues. */
   if (enPause) {
     return (
-      <aside
-        ref={panneauRef}
-        className="journee journee--pause"
-        data-journee-panneau
-        aria-label="Journée d’intégration en pause"
-      >
-        <p>
-          Journée en pause · {Math.min(etape, ETAPES_JOURNEE.length - 1) + 1}/{ETAPES_JOURNEE.length}
-        </p>
-        <button type="button" className="button" onClick={() => setEnPause(false)}>
-          Reprendre
-        </button>
-        {/* **La sortie nomme ce qu'elle coûte** (D-136) : la barre disait « Terminer », sans
+      <>
+        <aside
+          ref={panneauRef}
+          className="journee journee--pause"
+          data-journee-panneau
+          aria-label="Journée d’intégration en pause"
+        >
+          <p>
+            Journée en pause · {Math.min(etape, ETAPES_JOURNEE.length - 1) + 1}/{ETAPES_JOURNEE.length}
+          </p>
+          <button type="button" className="button" onClick={() => setEnPause(false)}>
+            Reprendre
+          </button>
+          {/* **La sortie nomme ce qu'elle coûte** (D-136) : la barre disait « Terminer », sans
             dire qu'on perdait le combat. Elle prend le libellé du panneau. */}
-        <button type="button" className="journee__passer" onClick={terminer}>
-          {libelleSaut(etape)}
-        </button>
-      </aside>
+          <button type="button" className="journee__passer" onClick={terminer}>
+            {libelleSaut(etape)}
+          </button>
+        </aside>
+        {scene(false)}
+      </>
     );
   }
 
   return (
-    <aside
-      ref={panneauRef}
-      className="journee"
-      data-journee-panneau
-      /**
-       * **Une région, pas un dialogue** (31/10/2026). Le couple « dialogue » + « modal »
-       * annonçait une page inerte et un focus piégé : la garde ne bloque que le pointeur,
-       * `Tab` sortait du panneau, et la page restait lisible — le marquage mentait. Une
-       * région nommée dit ce qu'elle est, et `aria-live` annonce le changement d'étape.
-       */
-      role="region"
-      aria-labelledby="journee-titre"
-      aria-describedby="journee-texte"
-      tabIndex={-1}
-    >
-      {/* **Le compteur passe dans le titre** (31/10/2026) : il tenait une ligne à lui seul.
+    <>
+      <aside
+        ref={panneauRef}
+        className="journee"
+        data-journee-panneau
+        /**
+         * **Une région, pas un dialogue** (31/10/2026). Le couple « dialogue » + « modal »
+         * annonçait une page inerte et un focus piégé : la garde ne bloque que le pointeur,
+         * `Tab` sortait du panneau, et la page restait lisible — le marquage mentait. Une
+         * région nommée dit ce qu'elle est, et `aria-live` annonce le changement d'étape.
+         */
+        role="region"
+        aria-labelledby="journee-titre"
+        aria-describedby="journee-texte"
+        tabIndex={-1}
+      >
+        {/* **Le compteur passe dans le titre** (31/10/2026) : il tenait une ligne à lui seul.
           Il reste lu par les lecteurs d'écran dans la même région vive. */}
-      <div className="journee__tete">
-        <div aria-live="polite" aria-atomic="true">
-          <h2 id="journee-titre" className="journee__titre">
-            <span className="journee__compte" aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
-            <span className="sr-only">
-              Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length} :
-            </span>
-            {courante.titre}
-          </h2>
-        </div>
+        <div className="journee__tete">
+          <div aria-live="polite" aria-atomic="true">
+            <h2 id="journee-titre" className="journee__titre">
+              <span className="journee__compte" aria-hidden="true">{`${etape + 1}/${ETAPES_JOURNEE.length}`}</span>
+              <span className="sr-only">
+                Journée d’intégration — étape {etape + 1} sur {ETAPES_JOURNEE.length} :
+              </span>
+              {courante.titre}
+            </h2>
+          </div>
 
-        {/* **La sortie monte dans l'en-tête** : elle tenait une ligne de 44 px en bas, et
+          {/* **La sortie monte dans l'en-tête** : elle tenait une ligne de 44 px en bas, et
             c'est elle qui interceptait le clic destiné à la cible de l'étape 1. Elle garde sa
             hauteur tactile et son libellé qui nomme ce qu'on perd (D-136). */}
-        <button type="button" className="journee__passer" onClick={terminer}>
-          {derniere ? 'Relire la Journée plus tard, depuis Réglages' : libelleSaut(etape)}
-        </button>
-      </div>
+          <button type="button" className="journee__passer" onClick={terminer}>
+            {derniere ? 'Relire la Journée plus tard, depuis Réglages' : libelleSaut(etape)}
+          </button>
+        </div>
 
-      <p id="journee-texte" className="journee__texte">
-        {courante.texte}
-      </p>
-
-      {/* **Le Chef de cabinet porte la voix de la Direction** (D-181) : sa courte réplique
-          suit son portrait, sans confondre le messager et le camp du plateau. */}
-      <div className="journee__bulle">
-        {PORTRAIT_CHEF_CABINET ? (
-          <img
-            className="journee__portrait"
-            src={PORTRAIT_CHEF_CABINET}
-            alt=""
-            aria-hidden="true"
-            width={40}
-            height={40}
-            loading="lazy"
-          />
-        ) : null}
-        <p className="journee__direction">
-          <strong>Chef de cabinet</strong> {courante.direction}
+        <p id="journee-texte" className="journee__texte">
+          {courante.texte}
         </p>
-      </div>
 
-      {cibleDeLEtape && <span className="journee__pointe" aria-hidden="true" />}
+        {cibleDeLEtape && <span className="journee__pointe" aria-hidden="true" />}
 
-      {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
+        {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
           apparaît, mais il entend un texte qui change. Elle ne parle que des étapes qui
           **exigent** un geste : aux autres, « C'est fait » serait faux. */}
-      {courante.geste !== undefined &&
-        (gesteFait ? (
-          // **Fait : la ligne se tait** (31/10/2026). Elle explique un « Suivant » fermé ; une
-          // fois ouvert, « Suivant » et le halo le disent. Elle reste annoncée aux lecteurs
-          // d'écran, et le panneau gagne la hauteur d'une ligne.
-          <p className="sr-only" role="status">
-            C’est fait : « Suivant » est ouvert.
-          </p>
-        ) : (
-          // **Lue, pas affichée** (04/11/2026, décision de Bastien, option A) : la ligne reste
-          // dans le DOM pour les lecteurs d'écran (`role="status"`), mais « Suivant » éteint et
-          // « Montrer le bouton » disent déjà le geste à l'œil. `sr-only` la retire de la mise
-          // en page, et le budget de texte ne la compte pas (D-181 (3)).
-          <p className="sr-only" role="status">
-            {courante.geste === 'combat'
-              ? 'Joue le combat guidé : « Suivant » s’ouvrira à sa fin.'
-              : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}
-          </p>
-        ))}
+        {courante.geste !== undefined &&
+          (gesteFait ? (
+            // **Fait : la ligne se tait** (31/10/2026). Elle explique un « Suivant » fermé ; une
+            // fois ouvert, « Suivant » et le halo le disent. Elle reste annoncée aux lecteurs
+            // d'écran, et le panneau gagne la hauteur d'une ligne.
+            <p className="sr-only" role="status">
+              C’est fait : « Suivant » est ouvert.
+            </p>
+          ) : (
+            // **Lue, pas affichée** (04/11/2026, décision de Bastien, option A) : la ligne reste
+            // dans le DOM pour les lecteurs d'écran (`role="status"`), mais « Suivant » éteint et
+            // « Montrer le bouton » disent déjà le geste à l'œil. `sr-only` la retire de la mise
+            // en page, et le budget de texte ne la compte pas (D-181 (3)).
+            <p className="sr-only" role="status">
+              {courante.geste === 'combat'
+                ? 'Joue le combat guidé : « Suivant » s’ouvrira à sa fin.'
+                : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}
+            </p>
+          ))}
 
-      {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
+        {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
           qu'elle décrit — **la dernière comprise** : arriver sur `/comite` ne termine pas la
           Journée, sinon le mur s'ouvrait sans la réplique finale (D-161, #685). La sortie
           reste explicite : le bouton permanent, ou le lien de l'appel à participer. */}
-      <div className="actions actions--tight">
-        {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
+        <div className="actions actions--tight">
+          {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
             place au geste lui-même. Et sans geste, il n'y a rien à montrer.
             **Une fois le geste fait, il disparaît** (31/10/2026) : laisser un bouton
             principal qui ne sert plus, à côté d'un « Suivant » en contour, inversait la
             hiérarchie au moment précis où l'on attend « Suivant ». */}
-        {!surLaPage ? (
-          <button
-            type="button"
-            className="button button--primary"
-            onClick={() => {
-              navigate(courante.cible);
-            }}
-          >
-            {courante.action}
-          </button>
-        ) : courante.geste !== undefined && !gesteFait ? (
-          /* **Sur l'écran de l'étape**, le panneau garde une action : « Montrer le bouton ».
+          {!surLaPage ? (
+            <button
+              type="button"
+              className="button button--primary"
+              onClick={() => {
+                navigate(courante.cible);
+              }}
+            >
+              {courante.action}
+            </button>
+          ) : courante.geste !== undefined && !gesteFait ? (
+            /* **Sur l'écran de l'étape**, le panneau garde une action : « Montrer le bouton ».
              Il ne fait pas le geste à la place du testeur, il amène la cible sous ses yeux
              et la fait pulser — sans lui, l'écran n'offrait qu'un « Suivant » éteint
              (critique du 30/10/2026). */
-          <button type="button" className="button button--primary" onClick={montrerLaCible}>
-            Montrer le bouton
-          </button>
-        ) : null}
-        {/* **Deux sorties, pas trois** (30/10/2026) : « Plus tard » faisait exactement ce que
+            <button type="button" className="button button--primary" onClick={montrerLaCible}>
+              Montrer le bouton
+            </button>
+          ) : null}
+          {/* **Deux sorties, pas trois** (30/10/2026) : « Plus tard » faisait exactement ce que
             fait le lien du dessous, et promettait un retour qui n'arrive jamais — `terminer`
             écrit le drapeau. À la dernière étape, le geste principal suffit. */}
-        {!derniere && (
-          <button
-            type="button"
-            className={gesteFait ? 'button button--primary' : 'button'}
-            disabled={!gesteFait}
-            onClick={() => {
-              allerAEtape(etape + 1);
-            }}
-          >
-            Suivant
-          </button>
-        )}
-      </div>
+          {!derniere && (
+            <button
+              type="button"
+              className={gesteFait ? 'button button--primary' : 'button'}
+              disabled={!gesteFait}
+              onClick={() => {
+                allerAEtape(etape + 1);
+              }}
+            >
+              Suivant
+            </button>
+          )}
+        </div>
 
-      {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée
+        {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée
           jusqu'à sa dernière étape. */}
-      {derniere && <AppelParticiper surComite={terminer} />}
-    </aside>
+        {derniere && <AppelParticiper surComite={terminer} />}
+      </aside>
+      {scene(true)}
+    </>
   );
 }

@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { useEffect } from 'react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -20,6 +22,8 @@ import { rendreApplication, setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { simulerArrivage } from '@/test/arrivageDeTest';
 import { artUrl } from '@/art';
+
+const STYLES_JOURNEE = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
 
 /**
  * La « Journée d'intégration » **jouée** (30/10/2026) — le rendu, pas la source.
@@ -281,6 +285,8 @@ describe('la Journée d’intégration se joue (D-160)', () => {
 
     // Étape 1 — L'Arrivage, sur l'accueil, avec le bouton d'Arrivage désigné.
     await verifierCorrespondance();
+    const tete = document.querySelector('.journee__portrait');
+    expect(tete).not.toBeNull();
     await userEvent.click(action(/Ouvrir un Arrivage/i));
     await screen.findByRole('dialog');
     await userEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
@@ -289,12 +295,15 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     // Étape 2 — La Collection et le Deck, sur /deck, avec le volet des Decks proposés.
     await userEvent.click(suivant());
     await verifierCorrespondance();
+    expect(document.querySelector('.journee__portrait')).toBe(tete);
     await userEvent.click(screen.getAllByRole('button', { name: 'Charger' })[0]);
     await waitFor(() => expect(suivant()).toBeEnabled());
 
     // Étape 3 — Le combat, sur /battle : le panneau s'efface, le pas-à-pas parle seul.
     await userEvent.click(suivant());
     await verifierCorrespondance();
+    expect(document.querySelector('.journee__portrait')).toBe(tete);
+    expect(document.querySelector('.journee__parole')).toBeNull();
     const passer = screen.queryByRole('button', { name: /Passer le pas-à-pas/i });
     if (passer) await userEvent.click(passer);
     await userEvent.click(screen.getByRole('button', { name: /Redémarrage à froid/i }));
@@ -316,6 +325,7 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     await userEvent.click(screen.getByRole('button', { name: /Relire la Journée plus tard/i }));
     expect(useStore.getState().tutorielVu).toBe(true);
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+    expect(document.querySelector('.journee__portrait')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Le comité de pilotage' })).toBeInTheDocument();
   });
 
@@ -675,31 +685,66 @@ describe('le plateau garde son tutoriel (31/10/2026)', () => {
     );
     // **Le contrôle mord** : le panneau reparaîtrait ici si l'exclusion tombait.
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+    expect(document.querySelector('.journee__portrait')).not.toBeNull();
+    expect(document.querySelector('.journee__parole')).toBeNull();
   });
 });
 
 describe('la réplique de la Journée reste courte et désigne sa cible (D-181, #681)', () => {
-  it('rend la voix du Chef de cabinet, son portrait dans la borne, et une réplique de 12 mots au plus', () => {
+  it('sort du panneau, annonce le texte entier et garde le portrait dans sa borne', () => {
     for (const index of [0, 1, 3, 4]) {
       const { unmount } = monterPanneau(index);
       const panneau = screen.getByRole('region', { name: /Journée d’intégration/ });
-      const portrait = panneau.querySelector<HTMLImageElement>('.journee__portrait');
-      const replique = panneau.querySelector('.journee__direction');
+      const portrait = document.querySelector<HTMLImageElement>('.journee__portrait');
+      const encadre = document.querySelector<HTMLElement>('.journee__parole');
+      const visuel = encadre?.querySelector('.journee__direction');
+      const annonce = document.querySelector('[data-journee-voix]');
 
       expect(panneau.querySelector('[aria-live="polite"]')).not.toBeNull();
       expect(panneau.getAttribute('aria-modal')).toBeNull();
       expect(within(panneau).queryByRole('dialog')).toBeNull();
+      expect(panneau.querySelector('.journee__parole')).toBeNull();
+      expect(panneau.querySelector('.journee__portrait')).toBeNull();
       expect(document.documentElement.style.getPropertyValue('--journee-hauteur')).toBe(`${panneau.offsetHeight}px`);
       expect(portrait).not.toBeNull();
       expect(portrait!.getAttribute('src')).toBe(artUrl('direction-chef-cabinet.webp'));
-      expect(portrait!.getAttribute('width')).toBe('40');
-      expect(portrait!.getAttribute('height')).toBe('40');
-      expect(portrait!.getBoundingClientRect().width).toBeLessThanOrEqual(48);
-      expect(portrait!.getBoundingClientRect().height).toBeLessThanOrEqual(48);
-      expect(replique?.querySelector('strong')?.textContent).toBe('Chef de cabinet');
-      expect((replique?.textContent ?? '').trim().split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(12);
+      expect(portrait!.getAttribute('width')).toBe('56');
+      expect(portrait!.getAttribute('height')).toBe('56');
+      expect(visuel).toHaveAttribute('aria-hidden', 'true');
+      expect(visuel?.querySelector('strong')?.textContent).toBe('Chef de cabinet');
+      expect(annonce).toHaveAttribute('aria-live', 'polite');
+      expect(annonce).toHaveAttribute('aria-atomic', 'true');
+      expect(annonce).toHaveTextContent(`Chef de cabinet : ${ETAPES_JOURNEE[index].direction}`);
+      expect((annonce?.textContent ?? '').trim().split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(12);
       unmount();
     }
+  });
+
+  it('permet d’afficher toute la réplique au clic, y compris en mouvement réduit', async () => {
+    document.documentElement.dataset.mouvementReduit = 'true';
+    const { unmount } = monterPanneau(0);
+    const encadre = document.querySelector<HTMLElement>('.journee__parole')!;
+    expect(encadre.querySelector('.journee__texte-anime')).toHaveTextContent(ETAPES_JOURNEE[0].direction);
+    await userEvent.click(encadre);
+    expect(encadre).toHaveAttribute('data-complet', 'true');
+    expect(document.activeElement).not.toBe(encadre);
+    unmount();
+    delete document.documentElement.dataset.mouvementReduit;
+  });
+
+  it('termine l’écriture en moins de 1,5 s et révèle tout sous mouvement réduit', () => {
+    const duree = /\.journee__texte-anime\s*\{[^}]*animation:\s*journee-ecrit\s+([\d.]+)(ms|s)/.exec(STYLES_JOURNEE);
+    expect(duree).not.toBeNull();
+    expect(Number(duree?.[1]) * (duree?.[2] === 's' ? 1000 : 1)).toBeLessThanOrEqual(1500);
+    expect(STYLES_JOURNEE).toMatch(
+      /:root\[data-mouvement-reduit='true'\]\s+\.journee__texte-anime,[\s\S]*?clip-path:\s*none;/
+    );
+    expect(STYLES_JOURNEE).toMatch(
+      /@media\s*\(prefers-reduced-motion:\s*reduce\)[\s\S]*?\.journee__texte-anime\s*\{[^}]*clip-path:\s*none;/
+    );
+    expect(STYLES_JOURNEE).toMatch(
+      /\.journee__parole\[data-complet='true'\]\s+\.journee__texte-anime\s*\{[^}]*clip-path:\s*none;/
+    );
   });
 
   it('place la pointe dans la cible et le contrôle échoue si elle est décalée', async () => {
@@ -916,7 +961,7 @@ function compteDeLEtape(index: number): CompteDeTexte {
     // La réplique rendue, nom compris (`<strong>Chef de cabinet</strong> …`), puis la même
     // **sans** le nom : on retire le `<strong>` du clone. Le nom est un libellé répété, hors
     // budget (D-186 (1)) ; il reste dans la borne de 12 mots (D-186 (3)).
-    const repliqueEl = panneau.querySelector('.journee__direction');
+    const repliqueEl = document.querySelector('.journee__direction');
     const repliqueAvecNom = repliqueEl?.textContent?.trim() ?? '';
     const repliqueClone = repliqueEl?.cloneNode(true) as HTMLElement | undefined;
     repliqueClone?.querySelector('strong')?.remove();

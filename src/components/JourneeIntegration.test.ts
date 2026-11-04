@@ -61,7 +61,7 @@ describe('elle se montre une fois, et se referme (ticket #130)', () => {
 describe('le panneau ne se quitte pas par accident (30/10/2026)', () => {
   it('laisse passer le panneau et les éléments désignés, et rien d’autre', () => {
     expect(composant).toMatch(/data-journee-panneau/);
-    expect(composant).toMatch(/closest\(\s*'\[data-journee-panneau\], \[data-journee-cible\]/);
+    expect(composant).toMatch(/closest\(\s*'\[data-journee-panneau\], \.journee__parole, \[data-journee-cible\]/);
     // Le pas-à-pas, la main et le plateau passent aussi : ce sont les écrans que la visite
     // traverse, et le panneau s'efface sur `/battle` (31/10/2026).
     expect(composant).toMatch(/\[data-pas-a-pas\], \.hand, \.board/);
