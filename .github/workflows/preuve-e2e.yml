@@ -1,0 +1,90 @@
+name: Preuve E2E
+
+# **La preuve navigateur du projet de test** (#668) : elle vérifie qu'un compte de test non
+# administrateur s'authentifie sur `planquex-test`, que l'application le reconnaît, et elle
+# dépose deux captures — jamais un identifiant.
+#
+# **Ce fichier ne s'exécute que sur demande** (`workflow_dispatch`) : ni sur une PR, ni sur un
+# push. Le dépôt est public ; l'environnement `planquex-test` porte les secrets et les variables,
+# et exige l'approbation de Bastien à chaque exécution. Aucune valeur secrète n'est écrite ici,
+# ni dans un `echo`, ni dans un nom de fichier : les secrets arrivent par `env:` et le script
+# E2E ne les trace jamais.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preuve:
+    name: preuve E2E sur planquex-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: planquex-test
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v7
+
+      - name: Installer Node 24
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      # Le build porte les deux variables **publiques** du projet de test : le client du mur
+      # et la session de compte en ont besoin dans le bundle. Ce ne sont pas des secrets.
+      - name: Construire l'application contre le projet de test
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      # Un environnement protégé dont les secrets manquent est un défaut de câblage, pas un
+      # saut : sans cette étape, la preuve sortirait 0 sans rien avoir fait et l'artefact
+      # serait vide. Les valeurs ne sont jamais affichées.
+      - name: Vérifier que les secrets du compte de test sont présents
+        env:
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          if [ -z "$E2E_TEST_EMAIL" ] || [ -z "$E2E_TEST_PASSWORD" ]; then
+            echo "::error::E2E_TEST_EMAIL et E2E_TEST_PASSWORD manquent dans l'environnement planquex-test."
+            exit 1
+          fi
+
+      # `CHROME_PATH` : le Chrome de l'image `ubuntu-latest`, comme le job des écrans de
+      # `ci.yml` (#513) — aucun navigateur à télécharger. Le script sert `dist/` en local,
+      # sur le runner : pas de déploiement Vercel, pas d'aperçu, pas d'écriture distante.
+      - name: Lancer la preuve E2E
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          CHROME_PATH: /usr/bin/google-chrome
+        run: npm run e2e
+
+      # Le script E2E a déjà refusé toute capture qui contiendrait un identifiant. Cette
+      # seconde barrière est indépendante de lui : elle relit les fichiers et échoue sans
+      # jamais citer la valeur trouvée.
+      - name: Vérifier qu'aucune capture ne porte un identifiant
+        env:
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+        run: |
+          if grep -rqF -- "$E2E_TEST_EMAIL" captures/e2e || grep -rqF -- "$E2E_TEST_PASSWORD" captures/e2e; then
+            echo "::error::Une capture contient un identifiant : artefact refusé."
+            exit 1
+          fi
+          echo "Captures relues : aucun identifiant du compte de test."
+
+      - name: Déposer les captures
+        uses: actions/upload-artifact@v4
+        with:
+          name: preuve-e2e
+          path: captures/e2e/
+          if-no-files-found: error
+          retention-days: 14
