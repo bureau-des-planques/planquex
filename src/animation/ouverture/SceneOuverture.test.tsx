@@ -121,7 +121,7 @@ function jusquALaRevelation(scene: HTMLElement): void {
 }
 
 /**
- * **L'empilement de la scène** (#667). jsdom ne calcule ni `z-index` ni cascade : la feuille
+ * **L'empilement de la scène** (#672, D-184). jsdom ne calcule ni `z-index` ni cascade : la feuille
  * est lue comme un texte, et le `z-index` d'un élément vient de son **style en ligne** d'abord
  * (`SceneOuverture` écrit `zIndex` sur chaque carte), puis de la **classe** qui l'empile.
  *
@@ -163,7 +163,7 @@ function zIndex(element: HTMLElement): number {
  * Le plan d'empilement d'un élément **dans la scène**, du plus lointain au plus proche : dans
  * cette scène, tout élément qui porte un `z-index` est positionné (`absolute`/`relative`), donc
  * crée un contexte, et un enfant **ne peut pas en sortir**, quel que soit son `z-index` en
- * ligne. C'est ce que la garde de #667 doit lire : une assertion limitée au style en ligne des
+ * ligne. C'est ce que la garde de #672 doit lire : une assertion limitée au style en ligne des
  * cartes ne voyait pas le plan de leur liste.
  */
 function planDe(scene: HTMLElement, element: HTMLElement): number[] {
@@ -189,7 +189,7 @@ function devant(a: number[], b: number[]): boolean {
 function verifierEntreLesFaces(arriere: number[], cartes: number[], avant: number[]): void {
   expect(
     devant(cartes, arriere),
-    `les cartes (${cartes.join(' → ')}) passent devant l’arrière (${arriere.join(' → ')})`
+    `les cartes (${cartes.join(' → ')}) sont au-dessus du dos (${arriere.join(' → ')})`
   ).toBe(true);
   expect(devant(avant, cartes), `l’avant (${avant.join(' → ')}) recouvre les cartes (${cartes.join(' → ')})`).toBe(
     true
@@ -533,12 +533,12 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
   });
 
   /**
-   * **Les cartes sont prises entre le dos et le bordereau** (#667, exigence remplacée sur ordre
-   * de Bastien le 04/11/2026 après relecture de la PR #708). Le `z-index` en ligne de chaque carte
+   * **Les cartes sont prises entre le dos et le bordereau** (#672, D-184 : consigne de Bastien du
+   * 04/11/2026, qui remplace l'ancienne garde #667). Le `z-index` en ligne de chaque carte
    * ne peut pas sortir du plan de sa liste : on compare donc les plans effectifs jusqu'aux faces.
    * Le film `filmer-animation.mjs --occlusion` vérifie en navigateur la découpe visible à la ligne.
    */
-  it('les cartes sont entre le dos et le bordereau pendant leur sortie (#667 remplacée)', () => {
+  it('les cartes sont entre le dos et le bordereau pendant leur sortie (#672, D-184)', () => {
     const scene = monter();
     fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
     attendre(1100);
@@ -561,11 +561,11 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(avant.style.clipPath).toMatch(/^inset\(/);
   });
 
-  it('le contrôle mord : les deux ordres fautifs sont refusés (#667 remplacée)', () => {
+  it('le contrôle mord : les deux ordres fautifs sont refusés (#672, D-184)', () => {
     expect(() => verifierEntreLesFaces([2], [3, 30], [4])).not.toThrow();
-    // Cas fautif 1 : cartes au-dessus du bordereau.
+    // Cas fautif 1 : les cartes recouvrent la face avant.
     expect(() => verifierEntreLesFaces([2], [5, 30], [4])).toThrow();
-    // Cas fautif 2 : cartes derrière le dos de la pochette.
+    // Cas fautif 2 : les cartes sont cachées par le dos.
     expect(() => verifierEntreLesFaces([4], [3, 30], [5])).toThrow();
   });
 

@@ -55,7 +55,7 @@
 | Instant | Ce qui se passe |
 |---|---|
 | 0 | la bande s'envole (1 s), **éclair** plein écran, secousse, gerbe d'étincelles à la couleur du tirage |
-| 300 ms | les cartes, **dos tourné**, montent **entre le dos et le bordereau** ; le bordereau masque leur partie sous la ligne, leur partie au-dessus est visible ; leur échelle se réduit pour franchir entièrement l'ouverture, chaque bascule dure 700 ms avec 20 ms d'écart (780 ms au plus, D-141 (1)) |
+| 300 ms | les cartes, **dos tourné**, montent **entre le dos et la face avant** de la pochette : bas masqué par la face avant, haut visible au-dessus de la ligne d’ouverture ; leur échelle se réduit pour franchir entièrement l'ouverture, chaque bascule dure 700 ms avec 20 ms d'écart (780 ms au plus, D-141 (1)) |
 | 1 500 ms | les deux faces de la navette descendent et s'effacent (700 ms) ; les cartes restent au-dessus de la ligne |
 | 2 300 ms | entièrement sorties, les cartes **s'étalent** dans la fenêtre, une à une ; chaque bascule dure 700 ms avec 20 ms d'écart (780 ms au plus), posées un peu de travers |
 | 3 300 ms | la révélation commence ; la première carte a le focus |

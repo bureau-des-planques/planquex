@@ -483,26 +483,26 @@ export const MUTATIONS = [
       'sans elle, le test suivrait la cible déclarée n’importe où et resterait vert : une étape qui décrit un autre écran que celui affiché est la divergence que #666 garde (D-181 (5))'
   },
   {
-    ticket: 667,
-    titre: 'les cartes repassent devant la face avant du sachet',
+    ticket: 672,
+    titre: 'la face avant de la pochette passe sous les cartes',
     fichier: 'src/styles.css',
-    // Exigence remplacée par Bastien après PR #708 : arrière < cartes < avant ; le bordereau
+    // Consigne de Bastien (04/11/2026, D-184, remplace l’ancienne garde #667) : dos < cartes < face avant ; le bordereau
     // doit masquer les cartes sous la ligne. Baisser l'avant à l'arrière fait échouer le test.
     motif: '.ouverture__face-avant {\n  z-index: 4;',
     remplacement: '.ouverture__face-avant {\n  z-index: 2;',
     tests: ['src/animation/ouverture/SceneOuverture.test.tsx'],
-    garde: 'les cartes passent devant le bordereau : la face avant ne peut plus masquer la partie sous la ligne'
+    garde: 'le bordereau n’est plus au-dessus des cartes : leur bas n’est plus masqué par la face avant'
   },
   {
-    ticket: 667,
-    titre: 'les cartes repassent derrière la face arrière du sachet',
+    ticket: 672,
+    titre: 'le dos de la pochette passe sur les cartes',
     fichier: 'src/styles.css',
     // La deuxième moitié du nouvel empilement : remonter l'arrière au-dessus des cartes les cache
     // même si le bordereau reste devant. Le test de plans doit refuser ce cas fautif séparément.
     motif: '.ouverture__face-arriere {\n  z-index: 2;',
     remplacement: '.ouverture__face-arriere {\n  z-index: 5;',
     tests: ['src/animation/ouverture/SceneOuverture.test.tsx'],
-    garde: 'les cartes passent derrière le dos de la pochette : l’arrière ne peut plus rester sous les cartes'
+    garde: 'le dos n’est plus sous les cartes : elles disparaissent derrière lui'
   }
 ];
 

@@ -6297,6 +6297,19 @@ h2 {
   width: 100%;
 }
 
+/* Le dos de la navette : kraft uni, même silhouette crantée, rabat plié en V. Il passe sous les
+   cartes ; seule la face avant les couvre. */
+.pochette--arriere {
+  background:
+    linear-gradient(to bottom right, transparent 49%, var(--pochette-tranche) 49% 51%, transparent 51%) 0 8.8% / 50% 24% no-repeat,
+    linear-gradient(to bottom left, transparent 49%, var(--pochette-tranche) 49% 51%, transparent 51%) 100% 8.8% / 50% 24% no-repeat,
+    var(--pochette-kraft-fonce);
+  -webkit-mask-image: var(--masque);
+  mask-image: var(--masque);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+
 /* Le reflet chaud et diffus suit l'inclinaison du papier kraft, sans irisation plastique. */
 .ouverture__reflet-sachet {
   background:
