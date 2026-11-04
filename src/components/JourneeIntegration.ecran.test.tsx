@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
+import { useEffect } from 'react';
+import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { JourneeIntegration } from './JourneeIntegration';
 import { ETAPES_JOURNEE } from './journee-etapes';
 import { marquerGeste, oublierGestes } from './journee-gestes';
-import { remettreJourneeAuDebut } from './journee-etape';
-import { setupTestStore } from '@/test/test-utils';
+import { CIBLE_DE_GESTE, cibleJournee } from './journee-cible';
+import { allerAEtape, etapeJournee, remettreJourneeAuDebut } from './journee-etape';
+import { rendreApplication, setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { simulerArrivage } from '@/test/arrivageDeTest';
 
@@ -15,32 +17,144 @@ import { simulerArrivage } from '@/test/arrivageDeTest';
  * La « Journée d'intégration » **jouée** (30/10/2026) — le rendu, pas la source.
  *
  * Ce que `journee-etapes.test.ts` ne peut pas prouver : que les étapes **s'enchaînent**
- * dans le panneau, que la dernière referme la Journée en menant à son écran, et que le
- * saut mène au même état que la fin. Les trois se voient ici, dans un panneau réel.
+ * dans le panneau, que la dernière referme la Journée, et que le saut mène au même état
+ * que la fin. Les trois se voient ici, dans un panneau réel.
+ *
+ * **La garde de #666** : le test rend l'application avec ses **vraies routes** — aucun
+ * `path="*"` de test qui absorberait un chemin inconnu — et vérifie, à chaque étape, que
+ * le contenu du panneau, la cible qu'il désigne et l'écran affiché disent la même chose.
+ * Plusieurs étapes peuvent partager une route : le test ne déduit jamais l'étape d'un
+ * chemin, il demande à l'étape quel écran elle décrit (D-162 (4), D-181 (5)).
  */
-function monter() {
-  // Les deux gestes de la Journée sont faits : ce fichier éprouve l'enchaînement, et le
-  // test dédié ci-dessous éprouve la garde du geste.
+
+/** Le chemin d'une cible, sans sa requête (D-162 (4)). */
+function cheminDe(cible: string): string {
+  return cible.split('?')[0];
+}
+
+/**
+ * Le chemin **du routeur**, pas celui de `window` : `MemoryRouter` ne touche pas à la barre
+ * d'adresse du navigateur. Ce composant de test le publie dans un nœud que les assertions
+ * lisent ; il ne crée aucune route.
+ */
+function FilDuChemin() {
+  const { pathname } = useLocation();
+  return (
+    <span data-testid="chemin-courant" hidden>
+      {pathname}
+    </span>
+  );
+}
+
+function cheminCourant(): string {
+  return document.querySelector('[data-testid="chemin-courant"]')?.textContent ?? '';
+}
+
+/**
+ * L'écran attendu pour chaque étape, **par son titre** — pas par son index ni par sa route.
+ *
+ * C'est le contenu qui situe l'écran : une étape qui ouvrirait `/` en s'appelant « La
+ * Collection et le Deck » tombe ici, même si sa `cible` a été changée en même temps. Le
+ * test ne déduit donc jamais l'étape d'une route : il ne déclare qu'une entrée par
+ * **titre**, et chaque titre porte son écran. Deux étapes pourraient partager une route
+ * sans qu'il faille en changer une ligne.
+ */
+const ECRAN_DE_L_ETAPE = new Map<string, { chemin: string; present: () => boolean }>([
+  ['L’Arrivage', { chemin: '/', present: () => document.querySelector('.page.home') !== null }],
+  ['La Collection et le Deck', { chemin: '/deck', present: () => document.querySelector('.page.deck') !== null }],
+  ['Le combat', { chemin: '/battle', present: () => document.querySelector('.page.battle') !== null }],
+  ['Tes données', { chemin: '/settings', present: () => document.querySelector('.page.settings') !== null }],
+  [
+    'Le comité',
+    { chemin: '/comite', present: () => screen.queryByRole('heading', { name: 'Le comité de pilotage' }) !== null }
+  ]
+]);
+
+/**
+ * Le contrôle lui-même : l'étape courante (lue dans son module), son titre dans le panneau
+ * quand il est visible, sa cible déclarée, l'écran réellement affiché et l'élément désigné.
+ *
+ * `waitFor` porte l'attente : un `Suivant` change l'étape et la route en deux temps, et les
+ * écrans sont chargés à la demande (#478). Le message nomme l'étape, pas le numéro de ligne.
+ */
+async function verifierCorrespondance() {
+  await waitFor(
+    () => {
+      const index = Math.min(etapeJournee(), ETAPES_JOURNEE.length - 1);
+      const etape = ETAPES_JOURNEE[index];
+      const attendu = ECRAN_DE_L_ETAPE.get(etape.titre);
+      if (!attendu) throw new Error(`aucun écran déclaré pour « ${etape.titre} »`);
+
+      // Le panneau, quand il est visible (il s'efface sur /battle, D-162 (3)), dit l'étape
+      // courante et son rang. Le contenu et le compteur viennent du même état.
+      const panneau = document.querySelector('[data-journee-panneau]');
+      if (panneau) {
+        expect(panneau).toHaveTextContent(etape.titre);
+        expect(panneau).toHaveTextContent(`Journée d’intégration — étape ${index + 1} sur ${ETAPES_JOURNEE.length}`);
+      }
+
+      // La cible que l'étape déclare et l'écran que l'application rend ne peuvent pas diverger.
+      expect(cheminDe(etape.cible), `la cible de « ${etape.titre} »`).toBe(attendu.chemin);
+      expect(cheminCourant(), `l’écran de « ${etape.titre} »`).toBe(attendu.chemin);
+      expect(attendu.present(), `le contenu de ${attendu.chemin}`).toBe(true);
+
+      // Le halo désigne exactement l'élément du geste de l'étape, et rien d'autre.
+      const cible = etape.geste ? (CIBLE_DE_GESTE[etape.geste] ?? null) : null;
+      if (cible) {
+        expect(cibleJournee(), `la cible posée pour « ${etape.titre} »`).toBe(cible);
+        expect(
+          document.querySelector(`[data-journee-cible="${cible}"]`),
+          `l’élément désigné de « ${etape.titre} »`
+        ).not.toBeNull();
+      } else {
+        expect(cibleJournee(), `aucune cible pour « ${etape.titre} »`).toBeNull();
+        expect(document.querySelector('[data-journee-cible]')).toBeNull();
+      }
+    },
+    { timeout: 5_000 }
+  );
+}
+
+function monterAvecGestesFaits() {
+  oublierGestes();
+  marquerGeste('sauvegarde');
+  marquerGeste('combat');
+  remettreJourneeAuDebut();
+}
+
+async function monter() {
+  monterAvecGestesFaits();
+  const resultat = await rendreApplication({
+    chemin: '/',
+    storeState: {
+      tutorielVu: false,
+      pasAPasCombatVu: true,
+      packsOpened: 1,
+      deck: ['atelier-joueur-de-flute']
+    },
+    extra: <FilDuChemin />
+  });
+  await screen.findByRole('region', { name: /Journée d’intégration/ });
+  return resultat;
+}
+
+/**
+ * Le panneau seul, à une étape et sur l'écran qu'elle décrit. Sert aux propriétés du
+ * panneau (l'appel à participer) qui n'ont pas besoin du parcours complet ; le parcours,
+ * lui, passe par l'application réelle.
+ */
+function monterPanneau(index: number) {
   setupTestStore({
     tutorielVu: false,
     pasAPasCombatVu: true,
     packsOpened: 1,
     deck: ['atelier-joueur-de-flute']
   });
-  // Les deux gestes de session (sauvegarde, combat guidé) vivent hors du store : ils se
-  // marquent à la main. Le combat est le troisième depuis le 31/10/2026 — sans lui, l'étape
-  // qui compte se traversait en lecture.
-  oublierGestes();
-  marquerGeste('sauvegarde');
-  marquerGeste('combat');
-  // L'étape vit hors du panneau (31/10/2026) : elle doit repartir du début entre deux tests.
-  remettreJourneeAuDebut();
+  monterAvecGestesFaits();
+  allerAEtape(index);
   return render(
-    <MemoryRouter initialEntries={['/']}>
+    <MemoryRouter initialEntries={[ETAPES_JOURNEE[index].cible]}>
       <JourneeIntegration />
-      <Routes>
-        <Route path="*" element={<p>l’écran ouvert</p>} />
-      </Routes>
     </MemoryRouter>
   );
 }
@@ -48,6 +162,20 @@ function monter() {
 /** Le bouton qui mène au geste de l'étape courante. */
 function action(nom: RegExp) {
   return screen.getByRole('button', { name: nom });
+}
+
+/**
+ * Le retour arrière du navigateur, hors du DOM : la garde du panneau bloque les clics
+ * (D-160 (3)), mais un vrai retour n'est pas un clic dans la page. L'événement l'imite.
+ */
+function RetourDuNavigateur() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    const retour = (_: Event) => navigate(-1);
+    window.addEventListener('test-retour', retour);
+    return () => window.removeEventListener('test-retour', retour);
+  }, [navigate]);
+  return null;
 }
 
 describe('la Journée d’intégration se joue (D-160)', () => {
@@ -78,78 +206,162 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     });
     await waitFor(() => expect(suivant()).toBeEnabled());
 
-    // L'étape 3 attend le combat guidé, qui ne laisse aucune trace dans le store.
-    await userEvent.click(suivant());
-    expect(screen.getByRole('heading', { name: /Le combat/ })).toBeInTheDocument();
-    expect(suivant()).toBeDisabled();
-    act(() => {
-      marquerGeste('combat');
-    });
-    await waitFor(() => expect(suivant()).toBeEnabled());
-    await userEvent.click(suivant());
-    expect(screen.getByRole('heading', { name: /Tes données/ })).toBeInTheDocument();
-    expect(suivant()).toBeDisabled();
-    act(() => {
-      marquerGeste('sauvegarde');
-    });
-    await waitFor(() => expect(suivant()).toBeEnabled());
+    // L'étape 3 (le combat) n'a plus de « Suivant » dans le panneau : il s'efface sur
+    // `/battle` (D-162 (3)) et c'est la scène de fin qui avance la visite. L'enchaînement
+    // complet se joue dans le test suivant ; ici, on garde la garde des deux gestes du store.
   });
 
-  it('annonce cinq étapes, et les fait défiler jusqu’au comité', async () => {
-    monter();
-    expect(screen.getByText(/Journée d’intégration — étape 1 sur 5/)).toBeInTheDocument();
+  it('chaque étape ouvre l’écran qu’elle décrit, et le geste se fait sur cet écran', async () => {
+    simulerArrivage();
+    oublierGestes();
+    remettreJourneeAuDebut();
+    await rendreApplication({
+      chemin: '/',
+      storeState: { tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] },
+      extra: <FilDuChemin />
+    });
+    await screen.findByRole('region', { name: /Journée d’intégration/ });
+    const suivant = () => screen.getByRole('button', { name: /^Suivant$/i });
 
-    for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
-      await userEvent.click(action(/^Suivant$/i));
-    }
-    expect(screen.getByRole('heading', { name: /Le comité/ })).toBeInTheDocument();
-    expect(screen.getByText(/Journée d’intégration — étape 5 sur 5/)).toBeInTheDocument();
-  });
+    // Étape 1 — L'Arrivage, sur l'accueil, avec le bouton d'Arrivage désigné.
+    await verifierCorrespondance();
+    await userEvent.click(action(/Ouvrir un Arrivage/i));
+    await screen.findByRole('dialog');
+    await userEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
+    await waitFor(() => expect(suivant()).toBeEnabled());
 
-  it('le dernier geste ouvre son écran et referme la Journée', async () => {
-    monter();
-    for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
-      await userEvent.click(action(/^Suivant$/i));
-    }
+    // Étape 2 — La Collection et le Deck, sur /deck, avec le volet des Decks proposés.
+    await userEvent.click(suivant());
+    await verifierCorrespondance();
+    await userEvent.click(screen.getAllByRole('button', { name: 'Charger' })[0]);
+    await waitFor(() => expect(suivant()).toBeEnabled());
 
-    await userEvent.click(action(/Voir le comité/i));
-    // **Le contrôle mord** : sans écriture du drapeau, la Journée se remonterait sur le
-    // comité — c'est l'exclusion `surLeMur` qui le ferait, et le test tomberait ici.
+    // Étape 3 — Le combat, sur /battle : le panneau s'efface, le pas-à-pas parle seul.
+    await userEvent.click(suivant());
+    await verifierCorrespondance();
+    const passer = screen.queryByRole('button', { name: /Passer le pas-à-pas/i });
+    if (passer) await userEvent.click(passer);
+    await userEvent.click(screen.getByRole('button', { name: /Redémarrage à froid/i }));
+    await userEvent.click(await screen.findByRole('button', { name: /Continuer/i }));
+
+    // Étape 4 — Tes données, sur /settings, avec « Créer ma sauvegarde » désigné.
+    await verifierCorrespondance();
+    await userEvent.click(screen.getByRole('button', { name: /Créer ma sauvegarde/i }));
+    await waitFor(() => expect(suivant()).toBeEnabled());
+
+    // Étape 5 — Le comité, sur /comite : la dernière étape ne désigne aucun halo.
+    await userEvent.click(suivant());
+    await verifierCorrespondance();
+
+    // La sortie explicite referme la Journée sur l'écran qu'elle vient d'ouvrir.
+    await userEvent.click(screen.getByRole('button', { name: /Relire la Journée plus tard/i }));
     expect(useStore.getState().tutorielVu).toBe(true);
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
-    expect(screen.getByText('l’écran ouvert')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Le comité de pilotage' })).toBeInTheDocument();
+  });
+
+  it('une URL directe ne laisse pas l’étape décrire un autre écran', async () => {
+    oublierGestes();
+    remettreJourneeAuDebut();
+    await rendreApplication({
+      chemin: '/settings',
+      storeState: {
+        tutorielVu: false,
+        pasAPasCombatVu: true,
+        packsOpened: 1,
+        deck: ['atelier-joueur-de-flute']
+      },
+      extra: <FilDuChemin />
+    });
+    await verifierCorrespondance();
+  });
+
+  it('le retour arrière laisse l’étape sur l’écran qu’elle décrit', async () => {
+    monterAvecGestesFaits();
+    await rendreApplication({
+      chemin: '/',
+      storeState: {
+        tutorielVu: false,
+        pasAPasCombatVu: true,
+        packsOpened: 1,
+        deck: ['atelier-joueur-de-flute']
+      },
+      extra: (
+        <>
+          <FilDuChemin />
+          <RetourDuNavigateur />
+        </>
+      )
+    });
+    await screen.findByRole('region', { name: /Journée d’intégration/ });
+    await verifierCorrespondance();
+
+    await userEvent.click(screen.getByRole('button', { name: /^Suivant$/i }));
+    // Le correctif de #677 mène directement à /deck ; avant lui, c'est le bouton de l'étape
+    // qui fait ce chemin. Le test suit le bouton quand il est là, sans supposer l'un ou l'autre.
+    const allerAuDeck = screen.queryByRole('button', { name: /Aller au Deck/i });
+    if (allerAuDeck) await userEvent.click(allerAuDeck);
+    await verifierCorrespondance();
+
+    act(() => {
+      window.dispatchEvent(new Event('test-retour'));
+    });
+    await verifierCorrespondance();
+  });
+
+  it('rouvrir depuis Réglages laisse l’étape sur l’écran qu’elle décrit', async () => {
+    oublierGestes();
+    remettreJourneeAuDebut();
+    await rendreApplication({
+      chemin: '/settings',
+      storeState: {
+        tutorielVu: true,
+        pasAPasCombatVu: true,
+        packsOpened: 1,
+        deck: ['atelier-joueur-de-flute']
+      },
+      extra: <FilDuChemin />
+    });
+    await userEvent.click(screen.getByRole('button', { name: /Revoir la Journée d’intégration/i }));
+    await verifierCorrespondance();
   });
 
   it('le saut dit ce qu’il coûte, et mène au même état que la fin', async () => {
-    const saut = monter();
+    const saut = await monter();
     const bouton = screen.getByRole('button', { name: /passer : tu ne verras pas le combat/i });
     await userEvent.click(bouton);
     expect(useStore.getState().tutorielVu).toBe(true);
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
     saut.unmount();
 
-    // La fin, par le même panneau : même drapeau, même état de store.
-    monter();
-    for (let index = 1; index < ETAPES_JOURNEE.length; index += 1) {
-      await userEvent.click(action(/^Suivant$/i));
-    }
-    await userEvent.click(action(/Voir le comité/i));
+    // La fin, par le même panneau : même drapeau, même état de store. L'étape du comité
+    // ouvre elle-même son écran ; sa sortie explicite est le lien de l'appel à participer.
+    await monter();
+    act(() => {
+      allerAEtape(ETAPES_JOURNEE.length - 1);
+    });
+    await userEvent.click(screen.getByRole('link', { name: 'le comité' }));
     expect(useStore.getState().tutorielVu).toBe(true);
   });
 
   it('l’appel à participer n’apparaît qu’à la fin, et son lien comité referme la Journée (#271)', async () => {
-    monter();
     const appel = /Envie d’aider/;
     // **Le contrôle mord** : une ligne posée à une étape intermédiaire se verrait ici.
     for (let index = 0; index < ETAPES_JOURNEE.length - 1; index += 1) {
-      expect(screen.queryByText(appel), `étape ${index + 1}`).toBeNull();
-      await userEvent.click(action(/^Suivant$/i));
+      const { unmount } = monterPanneau(index);
+      // Sur /battle le panneau s'efface (D-162 (3)) : l'absence de la ligne n'y prouve rien,
+      // et c'est le test de parcours qui vérifie cette étape-là.
+      if (document.querySelector('[data-journee-panneau]')) {
+        expect(screen.queryByText(appel), `étape ${index + 1}`).toBeNull();
+      }
+      unmount();
     }
+    const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
     expect(screen.getByText(appel)).toBeInTheDocument();
-
     await userEvent.click(screen.getByRole('link', { name: 'le comité' }));
     expect(useStore.getState().tutorielVu).toBe(true);
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+    unmount();
   });
 });
 
