@@ -12,6 +12,7 @@ import { allerAEtape, etapeJournee, remettreJourneeAuDebut } from './journee-eta
 import { rendreApplication, setupTestStore } from '@/test/test-utils';
 import { useStore } from '@/store/useStore';
 import { simulerArrivage } from '@/test/arrivageDeTest';
+import { artUrl } from '@/art';
 
 /**
  * La « Journée d'intégration » **jouée** (30/10/2026) — le rendu, pas la source.
@@ -427,6 +428,136 @@ describe('le plateau garde son tutoriel (31/10/2026)', () => {
     );
     // **Le contrôle mord** : le panneau reparaîtrait ici si l'exclusion tombait.
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+  });
+});
+
+describe('la réplique de la Journée reste courte et désigne sa cible (D-181, #681)', () => {
+  it('rend la voix du Chef de cabinet, son portrait dans la borne, et une réplique de 12 mots au plus', () => {
+    for (const index of [0, 1, 3, 4]) {
+      const { unmount } = monterPanneau(index);
+      const panneau = screen.getByRole('region', { name: /Journée d’intégration/ });
+      const portrait = panneau.querySelector<HTMLImageElement>('.journee__portrait');
+      const replique = panneau.querySelector('.journee__direction');
+
+      expect(panneau.querySelector('[aria-live="polite"]')).not.toBeNull();
+      expect(panneau.getAttribute('aria-modal')).toBeNull();
+      expect(within(panneau).queryByRole('dialog')).toBeNull();
+      expect(document.documentElement.style.getPropertyValue('--journee-hauteur')).toBe(`${panneau.offsetHeight}px`);
+      expect(portrait).not.toBeNull();
+      expect(portrait!.getAttribute('src')).toBe(artUrl('direction-chef-cabinet.webp'));
+      expect(portrait!.getAttribute('width')).toBe('40');
+      expect(portrait!.getAttribute('height')).toBe('40');
+      expect(portrait!.getBoundingClientRect().width).toBeLessThanOrEqual(48);
+      expect(portrait!.getBoundingClientRect().height).toBeLessThanOrEqual(48);
+      expect(replique?.querySelector('strong')?.textContent).toBe('Chef de cabinet');
+      expect((replique?.textContent ?? '').trim().split(/\s+/).filter(Boolean).length).toBeLessThanOrEqual(12);
+      unmount();
+    }
+  });
+
+  it('place la pointe dans la cible et le contrôle échoue si elle est décalée', async () => {
+    const gaucheBulle = 20;
+    const rect = (left: number, top: number, width: number, height: number): DOMRect =>
+      ({
+        x: left,
+        y: top,
+        left,
+        top,
+        right: left + width,
+        bottom: top + height,
+        width,
+        height,
+        toJSON: () => ({})
+      }) as DOMRect;
+
+    const geometrie = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement
+    ) {
+      if (this.matches('[data-journee-cible]')) return rect(132, 460, 190, 44);
+      if (this.matches('.journee')) return rect(gaucheBulle, 10, 380, 280);
+      if (this.matches('.journee__pointe')) {
+        const centre = gaucheBulle + Number.parseFloat(this.style.left || '0');
+        return rect(centre - 8, 268, 16, 8);
+      }
+      return rect(0, 0, 0, 0);
+    });
+
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const onClick = vi.fn();
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <>
+          <JourneeIntegration />
+          <button type="button" data-journee-cible="arrivage" onClick={onClick}>
+            Ouvrir un Arrivage
+          </button>
+        </>
+      </MemoryRouter>
+    );
+
+    const panneau = screen.getByRole('region', { name: /Journée d’intégration/ });
+    const cible = document.querySelector<HTMLElement>('[data-journee-cible="arrivage"]');
+    const pointe = panneau.querySelector<HTMLElement>('.journee__pointe');
+    expect(pointe).not.toBeNull();
+    expect(pointe?.getAttribute('aria-hidden')).toBe('true');
+    const verifierPointeDansLaCible = () => {
+      const pointeRect = pointe!.getBoundingClientRect();
+      const cibleRect = cible!.getBoundingClientRect();
+      const pointeX = pointeRect.left + pointeRect.width / 2;
+      expect(pointeX).toBeGreaterThanOrEqual(cibleRect.left);
+      expect(pointeX).toBeLessThanOrEqual(cibleRect.right);
+    };
+
+    verifierPointeDansLaCible();
+
+    // **Le contrôle mord** : une pointe déplacée hors de l'élément montré invalide l'assertion.
+    const positionInitiale = pointe!.style.left;
+    pointe!.style.left = `${Number.parseFloat(positionInitiale) + 100}px`;
+    expect(verifierPointeDansLaCible).toThrow();
+    pointe!.style.left = positionInitiale;
+    await userEvent.click(cible!);
+    expect(onClick).toHaveBeenCalledOnce();
+
+    unmount();
+    geometrie.mockRestore();
+  });
+
+  it('laisse Tab sortir du panneau et ne rend pas de pointe sans cible', async () => {
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <>
+          <JourneeIntegration />
+          <button type="button" data-journee-cible="arrivage">
+            Cible
+          </button>
+        </>
+      </MemoryRouter>
+    );
+
+    const panneau = screen.getByRole('region', { name: /Journée d’intégration/ });
+    const cible = screen.getByRole('button', { name: 'Cible' });
+    const derniereAction = within(panneau).getByRole('button', { name: 'Montrer le bouton' });
+    derniereAction.focus();
+    await userEvent.tab();
+    expect(document.activeElement).toBe(cible);
+    unmount();
+
+    const { unmount: unmountComite } = monterPanneau(4);
+    expect(screen.getByRole('region', { name: /Journée d’intégration/ }).querySelector('.journee__pointe')).toBeNull();
+    unmountComite();
+
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: false, packsOpened: 1, deck: [] });
+    render(
+      <MemoryRouter initialEntries={['/battle?tutoriel=1&scene=fin']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    expect(document.querySelector('.journee__pointe')).toBeNull();
   });
 });
 
