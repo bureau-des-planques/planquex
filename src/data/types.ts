@@ -27,6 +27,18 @@ export type Stage = 'ENTRANT' | 'N+1' | 'N+2';
  */
 export type Rarity = '1D' | '2D' | '3D' | '4D' | '1S' | '2S' | '3S' | 'COU';
 
+/**
+ * Le **symbole** d'une rareté (D-180) : un objet de bureau, de forme différente à chaque
+ * palier, porté en **tracé vectoriel** dans un `viewBox` commun de 24 × 24. Le nom de
+ * l'objet est la nomenclature du jeu ; il ne crée aucune règle de tirage.
+ */
+export interface RaritySymbol {
+  /** Le nom de l'objet, tel que la décision le nomme. */
+  name: string;
+  /** Le tracé SVG (`d`), en unités du `viewBox` 24 × 24. */
+  path: string;
+}
+
 export type Status = 'SURCHARGE' | 'EPUISEMENT' | 'SIESTE' | 'IMMOBILISATION' | 'DERIVE';
 
 export type AttackEffectKind =

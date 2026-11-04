@@ -155,8 +155,10 @@ describe('la critique du 30/10/2026, corrigée (31/10/2026)', () => {
 
   it('« Montrer le bouton » n’existe que si un geste est attendu, et la cible se compare sans requête', () => {
     // `pathname` n'a pas de requête : l'étape 3 (`/battle?…`) ne pouvait jamais être
-    // « sur la page », donc son bouton re-naviguait sans effet.
-    expect(composant).toMatch(/pathname === courante\.cible\.split\('\?'\)\[0\]/);
+    // « sur la page », donc son bouton re-naviguait sans effet. La coupe vit dans
+    // `cheminDeCible` (#677), une seule fois — la garde suit le fait, pas la ligne.
+    expect(composant).toMatch(/pathname === cheminDeCible\(courante\.cible\)/);
+    expect(etapes).toMatch(/cible\.split\('\?'\)\[0\]/);
     // Le bouton disparaît aussi **une fois le geste fait** (31/10/2026) : laisser un bouton
     // principal qui ne sert plus à côté d'un « Suivant » en contour inversait la hiérarchie.
     expect(composant).toMatch(/courante\.geste !== undefined && !gesteFait/);

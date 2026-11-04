@@ -99,6 +99,37 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
 ];
 
 /**
+ * **Le chemin d'une cible, sans sa requête** (D-162 (4)) : `?scene=fin` est un état d'écran,
+ * pas une route. Un seul endroit coupe la requête, pour que la comparaison ne se réécrive
+ * pas trois fois — `JourneeIntegration` et `Battle` s'y tiennent.
+ */
+export function cheminDeCible(cible: string): string {
+  return cible.split('?')[0];
+}
+
+/**
+ * **La route → l'étape** (#677) : l'étape qui décrit ce chemin, ou `-1`.
+ *
+ * La route n'est **pas** l'identifiant unique de l'étape : deux étapes peuvent partager un
+ * écran, et c'est alors `JourneeIntegration` qui garde l'étape courante. Cette fonction ne
+ * sert qu'à réaligner après un retour du navigateur ou une URL directe.
+ */
+export function etapePourChemin(pathname: string, etapes: readonly EtapeJournee[] = ETAPES_JOURNEE): number {
+  return etapes.findIndex((etape) => cheminDeCible(etape.cible) === pathname);
+}
+
+/**
+ * **L'index de l'étape qui porte ce geste**, ou `-1` — jamais un numéro écrit en dur (#677).
+ * La fin du combat lit cet index : réordonner les étapes déplace le geste, pas la visite.
+ */
+export function indexEtapeGeste(
+  geste: EtapeJournee['geste'],
+  etapes: readonly EtapeJournee[] = ETAPES_JOURNEE
+): number {
+  return etapes.findIndex((etape) => etape.geste === geste);
+}
+
+/**
  * Les cartes montrées à l'étape « La Collection et le Deck » (30/10/2026).
  *
  * Des **identifiants**, pas des textes : la vanne est la `flavor` de la carte, lue dans

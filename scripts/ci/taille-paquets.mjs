@@ -179,8 +179,14 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 1 793 octets le 03/11/2026** (280 157 octets) — l'import unique du Deck local entre dans le principal (+1,8 kB, #492) — quatrième relève du jour ; #658 doit mesurer et décider du découpage de la synchro
  *
  * **Relevé de 204 octets le 03/11/2026** (280 361 octets) — le drapeau du lien de récupération est lu avant createRoot (#654) : un petit module partagé entre l'entrée et Connexion entre dans le paquet principal
+ *
+ * **Relevé de 4 octets le 04/11/2026** (280 365 octets) — le chemin REST des fonctions du Deck gagne « /rpc/ » : PostgREST lit sinon le nom comme une table et répond 404 (#698)
+ *
+ * **Relevé de 1 398 octets le 04/11/2026** (281 763 octets) — RARITY_META porte les huit noms et les huit tracés vectoriels de symboles de rareté (D-180, #673) : des données, lues plus tard par #674
+ *
+ * **Relevé de 3 octets le 04/11/2026** (281 766 octets) — l'étape de la Journée commande la route et la route réaligne l'étape : la logique de réconciliation entre dans le paquet principal (#677)
  */
-export const PLAFOND_PRINCIPAL = 280_361;
+export const PLAFOND_PRINCIPAL = 281_766;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de

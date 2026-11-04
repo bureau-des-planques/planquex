@@ -2539,6 +2539,16 @@ h2 {
   scroll-margin-top: calc(var(--journee-hauteur, 0px) + 1rem);
 }
 
+/* **Le volet des Decks proposés est un conteneur** (#677) : le halo y dessinait un contour
+   que son contenu touchait à gauche, ce que le détecteur d'écran refuse
+   (`cramped-padding`). L'inset est pris **dans** la boîte et la marge négative le rend au
+   flux : la page ne bouge pas, et les autres cibles — des boutons — gardent le contour
+   seul, sans rembourrage. */
+[data-journee-cible].volet {
+  margin: -8px;
+  padding: 8px;
+}
+
 .journee__compte {
   color: var(--text-muted);
   font-size: 0.72rem;

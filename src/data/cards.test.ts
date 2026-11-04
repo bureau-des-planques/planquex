@@ -6,6 +6,7 @@ import {
   FACTION_META,
   ITEM_KIND_META,
   RARITY_META,
+  RARITY_SYMBOL_VIEWBOX,
   STAGE_META,
   getCard,
   isActionCard,
@@ -15,6 +16,7 @@ import type { ActionCard, Card, CafeSymbol, Faction, PlanqueCard, Rarity, Stage 
 import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
 import { secretSuffix } from '@/data/planque';
 import { damageBand, hpBand } from '@/game/curves';
+import { FORBIDDEN_ANY_CASE, FORBIDDEN_UPPER } from '@/test/vocabulaire-interdit';
 
 /**
  * Fichier de contrôle des conventions d'écriture des cartes.
@@ -23,33 +25,9 @@ import { damageBand, hpBand } from '@/game/curves';
  * cartes) ou `docs/CARD-SPEC.md` §1-2. Une carte qui échoue ici est une carte à
  * rectifier — pas un test à assouplir.
  *
- * Les deux mots interdits qui partagent la même racine sont reconstruits par
- * fragments : `AGENTS.md` §8.4 exige **zéro** occurrence de ce mot dans `src/`,
- * y compris dans les tests. Le test doit donc le chercher sans l'écrire.
+ * La liste du vocabulaire interdit vit dans `@/test/vocabulaire-interdit` : c'est la
+ * même source que les annonces de la révélation, et aucune n'importe un `*.test.ts`.
  */
-const FORBIDDEN_ANY_CASE = [
-  'Gal' + 'ère',
-  'Gal' + 'èreMon',
-  'Grèvomon',
-  'Pokémon',
-  // Vocabulaire abandonné (D-024, D-026), cherché **sans tenir compte de la casse**.
-  // Termes non ambigus uniquement : `Cadre`, `Prime`, `Moral`, `Courrier` sont des mots
-  // français courants (un cadre, une prime de rendement, le moral d'une équipe…) et
-  // feraient des faux positifs ; « K.O. » reste un identifiant interne du code.
-  'Open-space',
-  'Classeur',
-  'Galérodex',
-  'Bac à courrier',
-  'Reprise de poste'
-];
-
-/**
- * Anciens codes de statut et de faction, cherchés en **respectant la casse** : les
- * minuscules `manager`, `technicien`, `happiness`… sont des mots légitimes (D-024).
- * Les nouveaux codes : EPUISEMENT, SIESTE, IMMOBILISATION ; MANAGEMENT, QVT, ATELIER,
- * INTERIM.
- */
-const FORBIDDEN_UPPER = ['BURNOUT', 'BLOQUE', 'GELE', 'MANAGER', 'HAPPINESS', 'TECHNICIEN', 'INTERIMAIRE'];
 
 /**
  * Les primitives d'effet et de Talent ne sont **pas** recopiées ici (#56) : leur liste
@@ -314,6 +292,99 @@ describe('Raretés hautes — socle de type (CARD-SPEC.md §1, docs/JEU.md §3.2
       expect(RARITY_META[card.rarity], card.id).toBeDefined();
       expect(CARD_BY_ID.has(card.id), card.id).toBe(false);
     }
+  });
+});
+
+/**
+ * Les noms et les symboles des huit raretés (D-180) : la **nomenclature** du jeu, pas une
+ * règle de tirage. Le libellé compact de l'UI ne bouge pas.
+ */
+const NOMS_D180: Record<Rarity, string> = {
+  '1D': 'À l’essai',
+  '2D': 'Titularisé',
+  '3D': 'Confirmé',
+  '4D': 'Promu',
+  '1S': 'Distingué',
+  '2S': 'Inamovible',
+  '3S': 'Émérite',
+  COU: 'Légataire'
+};
+
+const OBJETS_D180: Record<Rarity, string> = {
+  '1D': 'badge à pince',
+  '2D': 'clé de vestiaire',
+  '3D': 'perforatrice',
+  '4D': 'fauteuil',
+  '1S': 'médaille',
+  '2S': 'plaque',
+  '3S': 'montre',
+  COU: 'passe-partout'
+};
+
+/**
+ * Le **squelette** d'un tracé SVG : la suite de ses commandes (`M`, `a`, `h`, `v`, `z`…),
+ * sans les coordonnées, plus le nombre de segments. Deux tracés de même squelette sont la
+ * même silhouette, décalée ou mise à l'échelle : c'est ce que D-180 interdit.
+ */
+function signatureDuTrace(path: string): string {
+  const commandes = path.match(/[a-zA-Z]/g) ?? [];
+  return `${commandes.length}:${commandes.join('')}`;
+}
+
+describe('Raretés — noms et symboles (D-180)', () => {
+  it('donne à chaque code son nom retenu, sans libellé en attente', () => {
+    for (const rarity of TOUTES_LES_RARETES) {
+      const meta = RARITY_META[rarity];
+      expect(meta.name, rarity).toBe(NOMS_D180[rarity]);
+      expect(meta.name.trim(), rarity).not.toBe('');
+      // Un nom en attente ne doit pas passer pour officiel.
+      expect(meta.name, rarity).not.toMatch(/à confirmer|provisoire|en attente|\?/i);
+    }
+    expect(Object.keys(RARITY_META)).toHaveLength(TOUTES_LES_RARETES.length);
+  });
+
+  it('garde le libellé compact de l’UI (D-180), de forme différente par palier', () => {
+    const labels = TOUTES_LES_RARETES.map((rarity) => RARITY_META[rarity].label);
+    for (const rarity of TOUTES_LES_RARETES) {
+      expect(RARITY_META[rarity].label, rarity).not.toBe('');
+    }
+    expect(new Set(labels).size).toBe(TOUTES_LES_RARETES.length);
+  });
+
+  it('donne à chaque code l’objet de D-180, en tracé vectoriel de silhouette distincte', () => {
+    const signatures = new Map<string, Rarity>();
+    for (const rarity of TOUTES_LES_RARETES) {
+      const { symbol } = RARITY_META[rarity];
+      expect(symbol.name, rarity).toBe(OBJETS_D180[rarity]);
+      expect(symbol.path.trim().length, rarity).toBeGreaterThan(0);
+      expect(symbol.path, rarity).toMatch(/^M/);
+      const signature = signatureDuTrace(symbol.path);
+      // « de forme différente à chaque fois » : pas deux squelettes identiques, même si
+      // les coordonnées diffèrent (une clé décalée reste une clé).
+      expect(signatures.get(signature), `${rarity} a le même squelette que ${signatures.get(signature)}`).toBeUndefined();
+      signatures.set(signature, rarity);
+    }
+    expect(signatures.size).toBe(TOUTES_LES_RARETES.length);
+  });
+
+  it('le contrôle mord : deux tracés d’un même squelette de clé sont refusés', () => {
+    const cle = 'M7 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M10 7h10v4h-2v-2h-2v3h-2v-3h-4';
+    const cleDecalee = 'M4 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0z M12 8h9v4h-2v-2h-2v3h-2v-3h-3';
+    expect(cle).not.toBe(cleDecalee);
+    expect(signatureDuTrace(cleDecalee)).toBe(signatureDuTrace(cle));
+    // Et deux silhouettes réellement différentes ne sont pas confondues.
+    expect(signatureDuTrace(RARITY_META['2D'].symbol.path)).not.toBe(
+      signatureDuTrace(RARITY_META.COU.symbol.path)
+    );
+  });
+
+  it('le 3D porte la perforatrice, pas la tasse écartée', () => {
+    expect(RARITY_META['3D'].symbol.name).toBe('perforatrice');
+    expect(RARITY_META['3D'].symbol.name).not.toMatch(/tasse/i);
+  });
+
+  it('le viewBox est commun aux huit symboles', () => {
+    expect(RARITY_SYMBOL_VIEWBOX).toBe('0 0 24 24');
   });
 });
 

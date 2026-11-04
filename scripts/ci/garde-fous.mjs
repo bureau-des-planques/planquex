@@ -468,6 +468,19 @@ export const MUTATIONS = [
     remplacement: 'const sansGenerateur = state;',
     tests: ['src/store/useStore.test.ts'],
     garde: 'le générateur du client reviendrait dans la sauvegarde, et le client croirait encore tirer ses Arrivages'
+  },
+  {
+    ticket: 666,
+    titre: 'l’étape « La Collection et le Deck » envoie sur l’accueil',
+    fichier: 'src/components/journee-etapes.ts',
+    // D-181 (5) : « Suivant » avance l'étape **et ouvre l'écran de l'étape suivante**.
+    // La mutation décale la cible d'un cran ; le test de rendu doit voir que le contenu du
+    // panneau (le Deck) et l'écran affiché (l'accueil) ne disent plus la même chose.
+    motif: "    cible: '/deck',",
+    remplacement: "    cible: '/',",
+    tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
+    garde:
+      'sans elle, le test suivrait la cible déclarée n’importe où et resterait vert : une étape qui décrit un autre écran que celui affiché est la divergence que #666 garde (D-181 (5))'
   }
 ];
 

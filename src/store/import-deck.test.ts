@@ -45,7 +45,7 @@ describe('Le Deck local monte dans le compte, une seule fois (#492)', () => {
     // **Le contrôle mord** : on voit l'instantané envoyé — un seul `remplacer`, pas un geste
     // par carte, puisque c'est la composition locale qui monte.
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toBe('https://exemple.test/rest/v1/importer_deck');
+    expect(url).toBe('https://exemple.test/rest/v1/rpc/importer_deck');
     const corps = JSON.parse(String(init.body)) as { p_operations: Array<{ type: string }>; p_cle: string };
     expect(corps.p_operations).toHaveLength(1);
     expect(corps.p_operations[0]).toMatchObject({ type: 'remplacer' });
@@ -165,7 +165,7 @@ describe('Le Deck local monte dans le compte, une seule fois (#492)', () => {
     expect(await useStore.getState().synchroniserDeck()).toBeNull();
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const [url] = fetchImpl.mock.calls[0] as unknown as [string];
-    expect(url).toContain('/rest/v1/importer_deck');
+    expect(url).toContain('/rest/v1/rpc/importer_deck');
     expect(useStore.getState().deckImporte).toBe(true);
     expect(useStore.getState().deckOutbox).toEqual([]);
   });

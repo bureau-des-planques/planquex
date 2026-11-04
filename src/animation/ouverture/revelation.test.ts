@@ -18,6 +18,7 @@ import {
   TENUE,
   traceDechirure
 } from './revelation';
+import { refuserVocabulaireInterdit } from '@/test/vocabulaire-interdit';
 
 /**
  * **La mise en scène de la révélation** (#283) : paliers, lueur, tracé, dispositions. Chaque règle
@@ -92,12 +93,21 @@ describe('la révélation d’un Arrivage — la mise en scène (#283)', () => {
     expect(tirees.size).toBeGreaterThan(1);
   });
 
+  // Le même contrôle que les cartes : `@/test/vocabulaire-interdit` est la seule source.
+  const verifierAnnonces = (annonces: readonly string[]) => {
+    for (const texte of annonces) refuserVocabulaireInterdit(texte, 'annonce');
+  };
+
   it('les annonces restent dans le vocabulaire du jeu', () => {
+    expect(() => verifierAnnonces(Object.values(ANNONCES).flat())).not.toThrow();
     for (const texte of Object.values(ANNONCES).flat()) {
-      // Le cas fautif : un mot de l'ancien univers ou du jeu de référence dans un texte du jeu.
-      expect(texte).not.toMatch(/gal[eè]re|pok[eé]mon/i);
       expect(texte.length, texte).toBeLessThanOrEqual(42);
     }
+  });
+
+  it('le contrôle mord : une annonce factice avec un mot interdit échoue', () => {
+    // Le cas fautif : un mot de l'ancien univers dans une annonce du jeu.
+    expect(() => verifierAnnonces([...Object.values(ANNONCES).flat(), 'Classeur au sommet !'])).toThrow(/Classeur/);
   });
 
   it('les cartes face cachée sont posées de travers, chacune à sa façon', () => {

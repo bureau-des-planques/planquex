@@ -34,6 +34,7 @@ import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import { marquerGeste } from '@/components/journee-gestes';
+import { indexEtapeGeste } from '@/components/journee-etapes';
 import { avancerJournee, etapeJournee } from '@/components/journee-etape';
 import { SceneFin } from '@/components/SceneFin';
 import { choisirReplique, type EvenementDirection } from '@/game/repliques-direction';
@@ -1008,9 +1009,10 @@ export function Battle() {
              qu'il restait deux étapes. Hors Journée, « Continuer » ferme seulement. */
           onContinuer={() => {
             if (!sceneFin || tutorielVu) return;
-            // L'étape du combat est la troisième (index 2) : on ne l'avance que depuis elle,
-            // sinon un rejeu du combat plus tard sauterait une étape de la visite.
-            if (etapeJournee() === 2) avancerJournee();
+            // On n'avance que depuis l'étape du **geste** « combat », retrouvée par son geste
+            // et non par un index écrit en dur (#677) : réordonner les étapes déplace le
+            // geste, pas la visite. Sinon un rejeu du combat plus tard sauterait une étape.
+            if (etapeJournee() === indexEtapeGeste('combat')) avancerJournee();
             navigate('/settings');
           }}
         />
