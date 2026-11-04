@@ -5,6 +5,7 @@ import type { Card, Rarity } from '@/data/types';
 import { artFileOf, artUrl } from '@/art';
 import { WEAKNESS_BONUS } from '@/game/rules';
 import { CafePips } from './CafePips';
+import { RaritySymbol } from './RaritySymbol';
 
 interface Props {
   card: Card;
@@ -273,7 +274,13 @@ export function CardView({
         </div>
       )}
       <footer className="card__footer">
-        <span className="card__rarity" title={compact ? undefined : `Rareté ${card.rarity}`}>
+        <span
+          className="card__rarity"
+          title={compact ? undefined : `Rareté ${rarity.name} · symbole : ${rarity.symbol.name}`}
+          role="img"
+          aria-label={`Rareté ${rarity.name} · symbole : ${rarity.symbol.name}`}
+        >
+          <RaritySymbol rarete={card.rarity} className="card__rarity-symbole" />
           {rarity.label}
         </span>
         <span className="card__faction" title={compact ? undefined : faction.name}>

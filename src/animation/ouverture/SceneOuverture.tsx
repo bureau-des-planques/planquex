@@ -28,6 +28,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Card } from '@/data/types';
 import { RARITY_META } from '@/data';
 import { CardView } from '@/components/CardView';
+import { RaritySymbol } from '@/components/RaritySymbol';
 import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import { avancer, creer, demarrer, relacher, surLaLigne, type EtatOuverture, type Geometrie, type Sens } from './etats';
 import { FicheCarte } from './FicheCarte';
@@ -538,15 +539,20 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       if (!carte || retournees[index] || enCours) return;
       const niveau = palier(carte.rarity);
       if (niveau === 'simple') {
-        setRetournees((avant) => avant.map((r, i) => r || i === index));
-        // La fête attend que la carte soit à moitié retournée : c'est là qu'on voit sa face.
-        plus(260, () => feter(index));
-        // **Sur un écran étroit, retourner c'est lire** : la carte étalée fait 118 px et son
-        // texte 6 à 8 px, donc la fiche s'ouvre d'elle-même après le retournement. Sinon la
-        // récompense resterait une vignette illisible (critique du 01/11/2026). `f ?? index`
-        // : si une autre carte a déjà ouvert sa fiche, on ne la remplace pas.
-        // **Après** la rotation, pas pendant : `APRES_RETOURNEMENT` (#605).
-        if (cartePetite) plus(APRES_RETOURNEMENT, () => setFiche((f) => f ?? index));
+        // Même une rareté simple montre son symbole au dos avant le retournement ; elle ne monte
+        // pas au centre ni n'assombrit les autres cartes.
+        const moi = (jeton.current += 1);
+        setEnCours({ index, phase: 'levee' });
+        plus(SUSPENSE[niveau], () => {
+          if (jeton.current !== moi) return;
+          setRetournees((avant) => avant.map((r, i) => r || i === index));
+          setEnCours(null);
+          // La fête attend que la carte soit à moitié retournée : c'est là qu'on voit sa face.
+          plus(260, () => feter(index));
+          // **Sur un écran étroit, retourner c'est lire** : la fiche s'ouvre après le retournement
+          // complet, pas pendant le nouveau temps de lecture du symbole (#605).
+          if (cartePetite) plus(APRES_RETOURNEMENT, () => setFiche((f) => f ?? index));
+        });
         return;
       }
       const moi = (jeton.current += 1);
@@ -757,7 +763,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     const etalee = poseRecap(i, nombre, taille.largeur, taille.hauteur);
     if (apres === 'revelation' || apres === 'ouvert') {
       if (fiche === i) return { pose: disposition.carte, opacite: 1, transition: '760ms', z: 70 };
-      if (enCours?.index === i) {
+      if (enCours?.index === i && palier(cartes[i]?.rarity ?? '1D') !== 'simple') {
         return {
           pose: { x: 0, y: -taille.hauteur * 0.05, echelle: grande * 0.95, rotation: 0 },
           opacite: 1,
@@ -804,6 +810,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
 
   const nombreRetournees = retournees.filter(Boolean).length;
   const carteEnCours = enCours ? cartes[enCours.index] : undefined;
+  const enCoursAuCentre = Boolean(carteEnCours && palier(carteEnCours.rarity) !== 'simple');
   const texteAnnonce =
     enCours?.phase === 'tenue' && carteEnCours ? annonce(palier(carteEnCours.rarity), graine + enCours.index) : null;
 
@@ -816,6 +823,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     if (fiche !== null) return `${geste} la carte pour la reposer`;
     if (etape === 'revelation') {
       if (enCours?.phase === 'tenue') return `${geste} la carte pour la poser`;
+      if (enCours?.phase === 'levee' && carteEnCours) {
+        return `Symbole de rareté : ${RARITY_META[carteEnCours.rarity].symbol.name}`;
+      }
       if (enCours) return '…';
       // Sur un écran étroit, le tap ne fait pas que retourner : il ouvre la fiche. La
       // consigne dit donc ce qui arrive, pas l'étape intermédiaire (critique du 01/11/2026).
@@ -932,7 +942,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
           « Nouvelle » ne dépendent d'aucune animation (D-098). */}
         <ol
           className={`ouverture__cartes${fiche !== null ? ' ouverture__cartes--fiche' : ''}${
-            enCours ? ' ouverture__cartes--scene' : ''
+            enCoursAuCentre ? ' ouverture__cartes--scene' : ''
           }${!apres ? ' ouverture__cartes--dedans' : ''}`}
           data-cartes
           aria-label="Le tirage"
@@ -940,6 +950,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
           {cartes.map((carte, i) => {
             const { pose, opacite, transition, z } = poseDe(i);
             const niveau = palier(carte.rarity);
+            const rarete = RARITY_META[carte.rarity];
             const face = retournees[i] === true;
             const actif = apres === 'revelation' || apres === 'ouvert';
             const leve = enCours?.index === i;
@@ -961,7 +972,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                   actif
                     ? face
                       ? `${carte.name}${neuves?.has(i) ? ', nouvelle' : ''} — voir la fiche`
-                      : `Carte ${i + 1}, face cachée — la retourner`
+                      : `Carte ${i + 1}, face cachée — ${rarete.name}, symbole : ${rarete.symbol.name} — la retourner`
                     : undefined
                 }
                 style={{
@@ -999,6 +1010,12 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                   </div>
                   <div className="ouverture__dos" aria-hidden="true">
                     <span className="ouverture__dos-sigle">BP</span>
+                    {leve && enCours?.phase === 'levee' && (
+                      <span className="ouverture__dos-symbole">
+                        <RaritySymbol rarete={carte.rarity} />
+                        <span className="ouverture__dos-symbole-nom">{rarete.symbol.name}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
                 {neuves?.has(i) && <span className="ouverture__neuve">Nouvelle</span>}

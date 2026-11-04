@@ -3,10 +3,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
-import { ALL_CARDS } from '@/data';
+import { ALL_CARDS, RARITY_META } from '@/data';
 import type { Card, Rarity } from '@/data/types';
 import { SceneOuverture } from './SceneOuverture';
-import { ANNONCES, SUSPENSE, TENUE } from './revelation';
+import { ANNONCES, palier, SUSPENSE, TENUE } from './revelation';
 import { useStore } from '@/store/useStore';
 
 /**
@@ -100,6 +100,13 @@ function attendre(ms: number): void {
 
 function carte(scene: HTMLElement, i: number): HTMLElement {
   return scene.querySelectorAll<HTMLElement>('.ouverture__carte')[i] as HTMLElement;
+}
+
+const TOUTES_LES_RARETES: Rarity[] = ['1D', '2D', '3D', '4D', '1S', '2S', '3S', 'COU'];
+
+/** Même squelette de commandes = même silhouette, même si les coordonnées sont décalées. */
+function signatureDuTrace(path: string): string {
+  return (path.match(/[a-zA-Z]/g) ?? []).join('');
 }
 
 /** Le geste complet : appui sur les pointillés, glissement jusqu'au bout, relâchement. */
@@ -328,10 +335,14 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     expect(faces).toEqual(['verso', 'verso', 'verso', 'verso', 'verso']);
   });
 
-  it('une carte simple se retourne sur place, au toucher, sans annonce', () => {
+  it('une carte simple montre son symbole au verso puis se retourne sur place, sans annonce de rare', () => {
     const scene = monter();
     jusquALaRevelation(scene);
     fireEvent.click(carte(scene, 1));
+    expect(carte(scene, 1).dataset.tension).toBe('oui');
+    expect(carte(scene, 1).dataset.face).toBe('verso');
+    expect(scene.querySelector('[data-consigne]')?.textContent).toContain('badge à pince');
+    attendre(SUSPENSE.simple);
     expect(carte(scene, 1).dataset.face).toBe('recto');
     // Les autres restent cachées : c'est le testeur qui choisit l'ordre.
     expect(carte(scene, 0).dataset.face).toBe('verso');
@@ -426,6 +437,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     jusquALaRevelation(scene);
     expect(document.activeElement).toBe(carte(scene, 0));
     fireEvent.keyDown(carte(scene, 0), { key: 'Enter' });
+    attendre(SUSPENSE.simple);
     expect(carte(scene, 0).dataset.face).toBe('recto');
   });
 
@@ -597,5 +609,62 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     } finally {
       rendre();
     }
+  });
+
+  it('annonce le symbole géométrique des huit raretés au dos, pendant la tension et avant le retournement', () => {
+    const signatures = new Map<string, Rarity>();
+
+    for (const rarete of TOUTES_LES_RARETES) {
+      const rendu = render(<SceneOuverture cartes={[une(rarete)]} neuves={new Set()} onRanger={() => undefined} />);
+      const scene = screen.getByTestId('ouverture');
+
+      try {
+        jusquALaRevelation(scene);
+        const tiree = carte(scene, 0);
+        fireEvent.click(tiree);
+
+        expect(tiree.dataset.tension, rarete).toBe('oui');
+        expect(tiree.dataset.face, rarete).toBe('verso');
+
+        const meta = RARITY_META[rarete];
+        const symbole = tiree.querySelector<SVGSVGElement>('.ouverture__dos [data-symbole-rarete]');
+        expect(symbole, `${rarete} doit porter son symbole sur le dos`).not.toBeNull();
+        expect(symbole?.getAttribute('data-symbole-rarete')).toBe(rarete);
+        const trace = symbole?.querySelector('path')?.getAttribute('d');
+        expect(trace, rarete).toBe(meta.symbol.path);
+        expect(tiree.querySelector('.ouverture__dos-symbole-nom')?.textContent).toBe(meta.symbol.name);
+
+        // Le lecteur d'écran reçoit le nom dès la tension, et non dans l'annonce après retournement.
+        expect(scene.querySelector('[data-consigne]')?.textContent).toBe(`Symbole de rareté : ${meta.symbol.name}`);
+        expect(tiree.getAttribute('aria-label')).toContain(meta.symbol.name);
+
+        const attente = SUSPENSE[palier(rarete)];
+        expect(attente, rarete).toBeGreaterThan(0);
+        attendre(attente - 1);
+        expect(tiree.dataset.face, `${rarete} reste au verso pendant sa tension`).toBe('verso');
+        attendre(1);
+        expect(tiree.dataset.face, `${rarete} ne se retourne qu'après l'annonce`).toBe('recto');
+
+        const signature = signatureDuTrace(trace ?? '');
+        expect(signatures.get(signature), `${rarete} a le même tracé que ${signatures.get(signature)}`).toBeUndefined();
+        signatures.set(signature, rarete);
+      } finally {
+        rendu.unmount();
+      }
+    }
+
+    expect(signatures.size).toBe(TOUTES_LES_RARETES.length);
+  });
+
+  it('la fiche agrandie nomme visiblement le symbole de rareté', () => {
+    const scene = monter();
+    fireEvent.click(within(scene).getByRole('button', { name: /Tout afficher/ }));
+    const carteTiree = carte(scene, 4);
+    const rarete = (CARTES[4] as Card).rarity;
+    fireEvent.click(carteTiree);
+
+    const fiche = within(scene).getByRole('region', { name: `Fiche : ${(CARTES[4] as Card).name}` });
+    expect(within(fiche).getByText(RARITY_META[rarete].symbol.name)).toBeTruthy();
+    expect(fiche.querySelector('[data-symbole-rarete]')?.getAttribute('data-symbole-rarete')).toBe(rarete);
   });
 });

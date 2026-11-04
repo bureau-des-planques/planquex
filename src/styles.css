@@ -6640,6 +6640,57 @@ h2 {
   width: 5.5rem;
 }
 
+/* ---------- Les symboles de rareté (#674) ---------- */
+
+.card__rarity-symbole,
+.ouverture__fiche-symbole {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.card__rarity-symbole {
+  vertical-align: -0.35em;
+}
+
+.ouverture__fiche-rarete {
+  align-items: center;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.ouverture__dos-symbole {
+  align-items: center;
+  background: color-mix(in srgb, var(--bg-deep) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rarete) 75%, var(--gold-deep));
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 50%);
+  color: var(--gold-soft);
+  display: flex;
+  gap: 0.45rem;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  padding: 0.25rem 0.65rem;
+  pointer-events: none;
+  position: absolute;
+  bottom: 16%;
+  translate: -50% 0;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.ouverture__dos-symbole > .symbole-rarete {
+  flex: none;
+  height: calc(2rem * var(--contre, 1));
+  width: calc(2rem * var(--contre, 1));
+}
+
+.ouverture__dos-symbole-nom {
+  font-family: var(--font-body);
+  font-size: calc(var(--fs-xs) * var(--contre, 1));
+  font-weight: 700;
+  line-height: 1;
+}
+
 /* La tension : la carte rare monte au centre, son dos s'allume et tremble de plus en plus, le
    temps de son attente (`SUSPENSE`, posé en `--suspense`). */
 .ouverture__carte[data-tension='oui'] .ouverture__retourne {
