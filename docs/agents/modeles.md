@@ -184,6 +184,19 @@ Le catalogue d'OpenCode n'a pas été interrogé ici : chaque ligne dit d'où el
   current in-flight requests ». Relancer sur **un autre fournisseur**, pas en boucle sur le même.
 - **`openrouter/nvidia/nemotron-3-ultra-550b-a55b:free`** : **absent du catalogue d'OpenCode le 04/11/2026**. Une recherche de `nemotron-3-ultra` rend quatre entrées : `nvidia/nvidia/nemotron-3-ultra-550b-a55b` (fournisseur Nvidia, coût 0), `ollama-cloud/nemotron-3-ultra` (payant), `openrouter/nvidia/nemotron-3-ultra-550b-a55b` (**payant**, 0,60 / 2,40 $ par million, sans suffixe `:free`) et `vercel/nvidia/nemotron-3-ultra-550b-a55b` (payant). Le gratuit se prend donc chez Nvidia en direct ; la chaîne de repli qui nomme l'entrée `:free` d'OpenRouter est à vérifier avant de s'y fier.
 
+## Notes du 04/11/2026 (ticket #718) — Mistral, rédacteur de textes en français
+
+Ce que le ticket #718 rapporte, daté du 04/11/2026, sans score ni latence mesurés ici.
+
+- **`openrouter/mistralai/mistral-large-4-0#medium`** : retenu pour le **rédacteur de textes en
+  français** (ton, humour, flavours) — voir `parallelisme.md` §2. Prix **0,70 / 2,10 $** par million,
+  tel que relevé dans le catalogue d'OpenCode le 04/11/2026 (cité du ticket, non revérifié ici).
+- **`mistral/mistral-large-4-0-8`** (fournisseur Mistral direct) : **refusé par l'API**
+  (« Invalid model: mistral-large-4-0-8 ») alors que le catalogue le liste en `beta`. Passer par
+  OpenRouter (`openrouter/mistralai/mistral-large-4-0`, actif). Le fournisseur Mistral direct n'est
+  pas soumis à la limite de crédit en vol d'OpenRouter, mais son identifiant reste à retrouver
+  avant de s'en servir.
+
 ## Protocole de commande pour un relecteur — à recopier dans le brief
 
 Le profil `auditeur` **refuse le shell par défaut** et n'autorise qu'une **liste blanche**,
