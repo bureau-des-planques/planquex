@@ -185,8 +185,10 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 1 398 octets le 04/11/2026** (281 763 octets) — RARITY_META porte les huit noms et les huit tracés vectoriels de symboles de rareté (D-180, #673) : des données, lues plus tard par #674
  *
  * **Relevé de 3 octets le 04/11/2026** (281 766 octets) — l'étape de la Journée commande la route et la route réaligne l'étape : la logique de réconciliation entre dans le paquet principal (#677)
+ *
+ * **Relevé de 631 octets le 04/11/2026** (282 397 octets) — la pochette à deux faces (dos et face avant) et la montée des cartes entre les deux entrent dans le code d'ouverture de l'Arrivage ; avec la voix du Chef de cabinet de #681 déjà fusionnée (#672, D-184)
  */
-export const PLAFOND_PRINCIPAL = 281_766;
+export const PLAFOND_PRINCIPAL = 282_397;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de

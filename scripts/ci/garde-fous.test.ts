@@ -70,7 +70,10 @@ const TICKETS_ATTENDUS = [
   // #651 : le client ne tire plus l'Arrivage — `rng` ne revient pas dans la forme persistée v15.
   651,
   // #666 : la Journée décrit l'écran affiché — la cible d'une étape ne peut pas désigner un autre écran.
-  666
+  666,
+  // #672 (D-184, remplace #667) : cartes entre le dos et la face avant ; deux mutations
+  // prouvent que le test mord si l’ordre dos < cartes < face avant est rompu d’un côté ou de l’autre.
+  672, 672
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {

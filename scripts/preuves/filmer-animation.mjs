@@ -49,6 +49,9 @@
  *                 tournent à vitesse réelle) et **déclaré en tête de planche** ; les légendes
  *                 portent alors l'âge de l'**animation** (temps réel mesuré × facteur)
  *   --sortie      dossier de sortie (défaut : captures/film)
+ *   --largeur     largeur du navigateur (défaut : 420)
+ *   --hauteur     hauteur du navigateur (défaut : 900)
+ *   --occlusion   mesure, à chaque frame, le masquage sous la ligne et la visibilité au-dessus
  *
  * Le store est amorcé avec `tutorielVu: true` et **`reducedMotion: false`** : sous « Mouvement
  * réduit », une règle globale de `src/styles.css` ramène toute animation à 0,001 ms et la
@@ -93,17 +96,24 @@ const DEFAUTS = {
   stockage: {},
   ralenti: 1,
   declencheur: null,
+  largeur: 420,
+  hauteur: 900,
+  mesurerOcclusion: false,
   sortie: 'captures/film'
 };
 
 /** Lit `--option valeur` ; refuse une option inconnue ou une valeur non numérique. */
 export function analyserArguments(argv) {
   const config = { ...DEFAUTS, clics: [], glissers: [], etapes: [], survols: [], stockage: {} };
-  const entiers = new Set(['images', 'intervalle', 'colonnes']);
+  const entiers = new Set(['images', 'intervalle', 'colonnes', 'largeur', 'hauteur']);
   for (let i = 0; i < argv.length; i += 1) {
     const option = argv[i];
     if (option === '--plan') {
       config.plan = true;
+      continue;
+    }
+    if (option === '--occlusion') {
+      config.mesurerOcclusion = true;
       continue;
     }
     const nom = option.startsWith('--') ? option.slice(2) : null;
@@ -125,7 +135,9 @@ export function analyserArguments(argv) {
       'stockage',
       'ralenti',
       'declencheur',
-      'sortie'
+      'sortie',
+      'largeur',
+      'hauteur'
     ];
     if (!nom || !connues.includes(nom)) {
       throw new Error(`Option inconnue : ${option}`);
@@ -239,13 +251,19 @@ export function nomFrame(index) {
 export function htmlPlanche(frames, { colonnes, intervalle, ralenti = 1 }) {
   const cases = frames
     .map((frame, i) => {
-      const { src, t, compte, libelle } = typeof frame === 'string' ? { src: frame } : frame;
+      const { src, t, compte, libelle, occultationPx2, visibiliteSousLignePct, visibiliteAuDessusPct } =
+        typeof frame === 'string' ? { src: frame } : frame;
       // Une prise **pendant un geste** n'a pas d'instant : sa légende dit le geste, pas le temps
       // (le doigt peut s'arrêter, et c'est justement ce que la planche doit montrer).
       // Un `libelle` (la planche d'un parcours, #429) remplace l'instant : il dit l'écran, pas le temps.
       const legende = libelle ?? (t === null ? `geste ${i + 1}` : `${Math.round(t ?? i * intervalle)} ms`);
       const suite = compte === undefined ? '' : ` · DOM : ${compte}`;
-      return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${legende}${suite}</figcaption></figure>`;
+      const mesure = occultationPx2 === undefined ? '' : ` · occultation : ${Math.round(occultationPx2)} px²`;
+      const ligne =
+        visibiliteSousLignePct === undefined
+          ? ''
+          : ` · sous la ligne visible : ${visibiliteSousLignePct ?? '—'} % · dessus : ${visibiliteAuDessusPct ?? '—'} %`;
+      return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${legende}${suite}${mesure}${ligne}</figcaption></figure>`;
     })
     .join('');
   // Une planche ralentie **le dit** : ses instants sont l'âge de l'animation, pas le temps réel.
@@ -278,7 +296,10 @@ async function filmer(config) {
   const navigateur = await chromium.launch({ executablePath });
   const erreurs = [];
   try {
-    const page = await navigateur.newPage({ viewport: { width: 420, height: 900 }, reducedMotion: 'no-preference' });
+    const page = await navigateur.newPage({
+      viewport: { width: config.largeur, height: config.hauteur },
+      reducedMotion: 'no-preference'
+    });
     page.on('pageerror', (e) => erreurs.push(String(e)));
     page.on('console', (m) => m.type() === 'error' && erreurs.push(m.text()));
     await page.addInitScript(
@@ -355,6 +376,149 @@ async function filmer(config) {
       for (const selecteur of config.survols) await page.locator(selecteur).first().hover();
     }
     const frames = pendant;
+    const mesuresOcclusion = [];
+    const mesurerOcclusion = async () => {
+      if (!config.mesurerOcclusion) return undefined;
+      return page.evaluate(() => {
+        const racine = document.querySelector('.ouverture');
+        const titre = racine?.querySelector('.ouverture__titre');
+        const arriere = racine?.querySelector('.ouverture__face-arriere');
+        const avant = racine?.querySelector('.ouverture__face-avant');
+        const cartes = [...(racine?.querySelectorAll('.ouverture__carte') ?? [])];
+        const etape = racine?.dataset.etape ?? 'absent';
+        const sortie = Number.parseInt(racine?.dataset.sortie ?? '-1', 10);
+        const applicable = etape === 'ouverture' && sortie >= 0 && sortie < 2 && Boolean(arriere && avant);
+        const zEffectif = (element) => {
+          const inline = Number.parseInt(element.style.zIndex, 10);
+          if (Number.isFinite(inline)) return inline;
+          const z = Number.parseInt(getComputedStyle(element).zIndex, 10);
+          return Number.isFinite(z) ? z : 0;
+        };
+        const plan = (element) => {
+          const resultat = [];
+          for (let courant = element; courant && courant !== racine.parentElement; courant = courant.parentElement) {
+            const style = getComputedStyle(courant);
+            const positionneAvecPlan = style.position !== 'static' && style.zIndex !== 'auto';
+            const contexte =
+              courant === racine ||
+              positionneAvecPlan ||
+              Number(style.opacity) < 1 ||
+              style.transform !== 'none' ||
+              style.translate !== 'none' ||
+              style.rotate !== 'none' ||
+              style.scale !== 'none' ||
+              style.perspective !== 'none' ||
+              style.filter !== 'none' ||
+              style.isolation === 'isolate' ||
+              style.mixBlendMode !== 'normal';
+            if (contexte) resultat.unshift(zEffectif(courant));
+            if (courant === racine) break;
+          }
+          return resultat;
+        };
+        const compare = (a, b) => {
+          for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+            const za = a[i] ?? 0;
+            const zb = b[i] ?? 0;
+            if (za !== zb) return za > zb ? 1 : -1;
+          }
+          return 0;
+        };
+        const aire = (a, b) => {
+          if (!a || !b) return 0;
+          const largeur = Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left));
+          const hauteur = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+          return largeur * hauteur;
+        };
+        const opaciteEffective = (element) => {
+          let opacite = 1;
+          for (let courant = element; courant; courant = courant.parentElement) {
+            opacite *= Number(getComputedStyle(courant).opacity);
+            if (courant === racine) break;
+          }
+          return opacite;
+        };
+        const zoneFenetre = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+        const rectArriere = arriere?.getBoundingClientRect();
+        const rectAvant = avant?.getBoundingClientRect();
+        const ligne = rectAvant ? rectAvant.top + rectAvant.height * Number(avant.dataset.ligneOuverture) : 0;
+        const clipAvant = avant ? getComputedStyle(avant).clipPath : 'none';
+        const avantDecoupe = clipAvant.startsWith('inset(');
+        const planArriere = arriere ? plan(arriere) : [];
+        const planAvant = avant ? plan(avant) : [];
+        const planTitre = titre ? plan(titre) : [];
+        const mesures = cartes.map((carte, index) => {
+          const planCarte = plan(carte);
+          const rectCarte = carte.getBoundingClientRect();
+          const planArriereDevant = compare(planCarte, planArriere) > 0;
+          const planAvantDevant = compare(planAvant, planCarte) > 0;
+          const ordreValide = planArriereDevant && planAvantDevant;
+          const aireSousLaLigne =
+            applicable && rectAvant
+              ? aire(rectCarte, {
+                  left: rectAvant.left,
+                  top: ligne,
+                  right: rectAvant.right,
+                  bottom: rectAvant.bottom
+                })
+              : 0;
+          const aireSousFenetre = applicable ? aire(rectCarte, { ...zoneFenetre, top: ligne }) : 0;
+          const aireHorsFace = Math.max(0, aireSousFenetre - aireSousLaLigne);
+          const opaciteCartes = opaciteEffective(carte);
+          const opaciteAvant = avant ? opaciteEffective(avant) : 0;
+          const visibleSousLignePx2 =
+            applicable && avantDecoupe && planAvantDevant
+              ? aireHorsFace + aireSousLaLigne * (1 - opaciteAvant)
+              : aireSousFenetre;
+          const aireAuDessusTotale = applicable ? aire(rectCarte, { ...zoneFenetre, bottom: ligne }) : 0;
+          const visibleAuDessusPx2 =
+            planArriereDevant && planAvantDevant && avantDecoupe ? aireAuDessusTotale * opaciteCartes : 0;
+          const titrePx2 =
+            titre && compare(planTitre, planCarte) > 0 ? aire(rectCarte, titre.getBoundingClientRect()) : 0;
+          const aireDansFenetre = aire(rectCarte, zoneFenetre);
+          const horsFenetrePx2 = Math.max(0, rectCarte.width * rectCarte.height - aireDansFenetre);
+          const sousPct = aireSousFenetre > 0 ? (visibleSousLignePx2 / aireSousFenetre) * 100 : null;
+          const dessusPct = aireAuDessusTotale > 0 ? (visibleAuDessusPx2 / aireAuDessusTotale) * 100 : null;
+          const manquantDessusPx2 = Math.max(0, aireAuDessusTotale - visibleAuDessusPx2);
+          const ordrePx2 = applicable && !ordreValide ? 1 : 0;
+          const deviationPx2 = visibleSousLignePx2 + manquantDessusPx2 + titrePx2 + horsFenetrePx2 + ordrePx2;
+          return {
+            index,
+            planArriere,
+            planCarte,
+            planAvant,
+            ordreValide,
+            aireSousLaLignePx2: aireSousFenetre,
+            visibleSousLignePx2,
+            visibiliteSousLignePct: sousPct,
+            aireAuDessusLignePx2: aireAuDessusTotale,
+            visibleAuDessusPx2,
+            visibiliteAuDessusPct: dessusPct,
+            titrePx2,
+            horsFenetrePx2,
+            deviationPx2
+          };
+        });
+        return {
+          etape,
+          sortie: Number.isFinite(sortie) ? sortie : null,
+          applicable,
+          clipAvant,
+          cartes: mesures,
+          totalPx2: mesures.reduce((total, mesure) => total + mesure.deviationPx2, 0)
+        };
+      });
+    };
+    const resumeVisibilite = (mesure) => {
+      if (!mesure?.applicable) return {};
+      const sous = mesure.cartes.map((carte) => carte.visibiliteSousLignePct).filter((n) => n !== null);
+      const dessus = mesure.cartes.map((carte) => carte.visibiliteAuDessusPct).filter((n) => n !== null);
+      return {
+        // Le pire cas par frame : au plus 0 % visible sous la ligne, au moins 100 % au-dessus.
+        visibiliteSousLignePct: sous.length ? Math.max(...sous) : null,
+        visibiliteAuDessusPct: dessus.length ? Math.min(...dessus) : null
+      };
+    };
     /**
      * **Chauffer le pipeline avant la première prise** (#543, 30/10/2026). La première capture
      * d'une page coûte ~500 ms : sans elle, la première frame payait ce prix et sa légende
@@ -366,7 +530,7 @@ async function filmer(config) {
     await page.screenshot({
       path: join(sortie, 'echauffement.png'),
       animations: 'allow',
-      clip: { x: 0, y: 0, width: 420, height: 900 }
+      clip: { x: 0, y: 0, width: config.largeur, height: config.hauteur }
     });
     rmSync(join(sortie, 'echauffement.png'), { force: true });
     /**
@@ -393,8 +557,11 @@ async function filmer(config) {
        * `boundingBox()` attend la visibilité, et bloquerait sur une zone pas encore née.
        */
       if (libelle) {
+        const mesures = await mesurerOcclusion();
+        const occultationPx2 = mesures?.totalPx2;
         await page.screenshot({ path: join(sortie, nom), animations: 'allow' });
-        frames.push({ src: nom, t: null, compte, libelle });
+        frames.push({ src: nom, t: null, compte, libelle, occultationPx2, ...resumeVisibilite(mesures) });
+        if (mesures) mesuresOcclusion.push({ frame: nom, t: null, ...mesures });
       } else {
         /**
          * **Capture par clip de page, pas par `locator.screenshot`** (30/10/2026). Le locator
@@ -417,18 +584,22 @@ async function filmer(config) {
         // L'instant est le **milieu de la prise** : bornée autour d'elle, puis remise à
         // l'échelle du ralenti — c'est l'âge de l'animation que la légende annonce.
         const avant = (await page.evaluate(() => performance.now())) - t0;
+        const mesures = await mesurerOcclusion();
+        const occultationPx2 = mesures?.totalPx2;
         await page.screenshot({
           path: join(sortie, nom),
           animations: 'allow',
           clip: {
             x,
             y,
-            width: Math.min(420 - x, boite.width + 2 * config.marge),
-            height: Math.min(900 - y, boite.height + 2 * config.marge)
+            width: Math.min(config.largeur - x, boite.width + 2 * config.marge),
+            height: Math.min(config.hauteur - y, boite.height + 2 * config.marge)
           }
         });
         const apres = (await page.evaluate(() => performance.now())) - t0;
-        frames.push({ src: nom, t: ageDeLEchantillon((avant + apres) / 2, config.ralenti), compte });
+        const t = ageDeLEchantillon((avant + apres) / 2, config.ralenti);
+        frames.push({ src: nom, t, compte, occultationPx2, ...resumeVisibilite(mesures) });
+        if (mesures) mesuresOcclusion.push({ frame: nom, t, ...mesures });
       }
       await page.waitForTimeout(config.intervalle);
     };
@@ -457,6 +628,17 @@ async function filmer(config) {
     writeFileSync(join(sortie, 'planche.html'), htmlPlanche(frames, config));
     await page.goto(pathToFileURL(join(sortie, 'planche.html')).href);
     await page.screenshot({ path: join(sortie, 'planche.png'), fullPage: true });
+    if (config.mesurerOcclusion) {
+      writeFileSync(join(sortie, 'occlusion.json'), JSON.stringify(mesuresOcclusion, null, 2));
+      const framesSortie = mesuresOcclusion.filter((mesure) => mesure.applicable);
+      const occlusions = framesSortie.filter((mesure) => mesure.totalPx2 > 0);
+      if (framesSortie.length === 0) erreurs.push('Aucune frame de sortie mesurée entre les deux faces de la pochette');
+      if (occlusions.length > 0) {
+        erreurs.push(
+          `La visibilité des cartes dévie dans ${occlusions.length} frame(s) : ${occlusions.map((m) => `${m.frame}=${m.totalPx2} px²`).join(', ')}`
+        );
+      }
+    }
   } finally {
     await navigateur.close();
   }

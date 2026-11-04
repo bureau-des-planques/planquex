@@ -149,6 +149,32 @@ describe('filmer-animation', () => {
     expect(() => analyserArguments(['--declencheur', 'a', '--declencheur', 'b'])).toThrow(/une fois/);
   });
 
+  it('filme les deux gabarits et légende la mesure d’occultation par frame', () => {
+    const config = analyserArguments(['--largeur', '1280', '--hauteur', '800', '--occlusion']);
+    expect(config).toMatchObject({ largeur: 1280, hauteur: 800, mesurerOcclusion: true });
+    expect(analyserArguments([])).toMatchObject({ largeur: 420, hauteur: 900, mesurerOcclusion: false });
+    expect(() => analyserArguments(['--largeur', '0'])).toThrow(/entier/);
+
+    const planche = htmlPlanche(
+      [
+        {
+          src: 'f00.png',
+          t: 240,
+          occultationPx2: 0,
+          visibiliteSousLignePct: 0,
+          visibiliteAuDessusPct: 100
+        }
+      ],
+      { colonnes: 1, intervalle: 70 }
+    );
+    expect(planche).toContain('240 ms · occultation : 0 px²');
+    expect(planche).toContain('sous la ligne visible : 0 % · dessus : 100 %');
+    // Le contrôle mord : une mesure positive ne peut pas être relue comme un passage sans masquage.
+    expect(
+      htmlPlanche([{ src: 'f00.png', t: 240, occultationPx2: 120 }], { colonnes: 1, intervalle: 70 })
+    ).toContain('occultation : 120 px²');
+  });
+
   it('remet l’instant mesuré à l’échelle du ralenti — le contrôle mord sans ralenti', () => {
     expect(ageDeLEchantillon(120, 1)).toBe(120);
     expect(ageDeLEchantillon(120, 0.2)).toBe(24);

@@ -1082,7 +1082,7 @@ try {
       // `viewBox` entre dans la taille (`font-size` calculée × `getScreenCTM().a`). Le fond vient
       // de la surface SVG réellement dessinée derrière chaque texte, jamais d'une couleur recopiée.
       const mesuresBrutes = await page.evaluate(() => {
-        const svg = document.querySelector('.ouverture__zone .pochette');
+        const svg = document.querySelector('.ouverture__zone .ouverture__face-avant .pochette--avant');
         if (!svg) return [];
         const textes = [...svg.querySelectorAll('text[data-pochette-texte]')];
         return textes
