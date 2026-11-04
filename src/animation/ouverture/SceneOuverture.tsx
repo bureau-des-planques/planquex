@@ -832,7 +832,8 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     if (etape === 'revelation') {
       if (enCours?.phase === 'tenue') return `${geste} la carte pour la poser`;
       if (enCours?.phase === 'levee' && carteEnCours) {
-        return `Symbole : ${RARITY_META[carteEnCours.rarity].symbol.name}`;
+        const rarete = RARITY_META[carteEnCours.rarity];
+        return `Symbole de rareté : ${rarete.name}, ${rarete.symbol.name}`;
       }
       if (enCours) return '…';
       // Sur un écran étroit, le tap ne fait pas que retourner : il ouvre la fiche. La
@@ -1006,7 +1007,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                   actif
                     ? face
                       ? `${carte.name}${neuves?.has(i) ? ', nouvelle' : ''} — voir la fiche`
-                      : `Carte ${i + 1} — ${rarete.symbol.name} — retourner`
+                      : `Carte ${i + 1} — ${rarete.name}, ${rarete.symbol.name} — retourner`
                     : undefined
                 }
                 style={{
@@ -1042,19 +1043,22 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
                     {auMoins(niveau, 'rare') && <span className="ouverture__holo" aria-hidden="true" />}
                     <span className="ouverture__reflet-fiche" aria-hidden="true" />
                   </div>
-                  <div className="ouverture__dos" aria-hidden="true">
-                    <span className="ouverture__dos-sigle">BP</span>
+                  <div className="ouverture__dos">
+                    <span className="ouverture__dos-sigle" aria-hidden="true">
+                      BP
+                    </span>
                     {!face && actif && (
                       <span className="ouverture__dos-symbole">
                         <svg
-                          aria-hidden="true"
                           className="symbole-rarete"
                           data-symbole-rarete={carte.rarity}
+                          focusable="false"
+                          role="img"
+                          aria-label={`${rarete.name}, ${rarete.symbol.name}`}
                           viewBox={RARITY_SYMBOL_VIEWBOX}
                         >
                           <path d={rarete.symbol.path} />
                         </svg>
-                        <span className="ouverture__dos-symbole-nom">{rarete.symbol.name}</span>
                       </span>
                     )}
                   </div>

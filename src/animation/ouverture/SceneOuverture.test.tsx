@@ -354,7 +354,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     fireEvent.click(carte(scene, 1));
     expect(carte(scene, 1).dataset.tension).toBe('oui');
     expect(carte(scene, 1).dataset.face).toBe('verso');
-    expect(scene.querySelector('[data-consigne]')?.textContent).toBe('Symbole : badge à pince');
+    expect(scene.querySelector('[data-consigne]')?.textContent).toBe('Symbole de rareté : À l’essai, badge à pince');
     attendre(SUSPENSE.simple);
     expect(carte(scene, 1).dataset.face).toBe('recto');
     // Les autres restent cachées : c'est le testeur qui choisit l'ordre.
@@ -645,6 +645,11 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
         const symboleAvantTension = tiree.querySelector<SVGSVGElement>('.ouverture__dos [data-symbole-rarete]');
         expect(symboleAvantTension, `${rarete} doit être visible avant le geste`).not.toBeNull();
         expect(symboleAvantTension?.querySelector('path')?.getAttribute('d')).toBe(RARITY_META[rarete].symbol.path);
+        expect(symboleAvantTension?.getAttribute('role')).toBe('img');
+        expect(symboleAvantTension?.getAttribute('aria-label')).toBe(
+          `${RARITY_META[rarete].name}, ${RARITY_META[rarete].symbol.name}`
+        );
+        expect(tiree.querySelector('.ouverture__dos-symbole')?.textContent?.trim()).toBe('');
         fireEvent.click(tiree);
 
         expect(tiree.dataset.tension, rarete).toBe('oui');
@@ -656,11 +661,16 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
         expect(symbole?.getAttribute('data-symbole-rarete')).toBe(rarete);
         const trace = symbole?.querySelector('path')?.getAttribute('d');
         expect(trace, rarete).toBe(meta.symbol.path);
-        expect(tiree.querySelector('.ouverture__dos-symbole-nom')?.textContent).toBe(meta.symbol.name);
+        expect(tiree.querySelector('.ouverture__dos-symbole')?.textContent?.trim()).toBe('');
+        expect(symbole?.getAttribute('role')).toBe('img');
+        expect(symbole?.getAttribute('aria-label')).toBe(`${meta.name}, ${meta.symbol.name}`);
 
-        // Le lecteur d'écran reçoit le nom dès la tension, et non dans l'annonce après retournement.
-        expect(scene.querySelector('[data-consigne]')?.textContent).toBe(`Symbole : ${meta.symbol.name}`);
+        // Le lecteur d'écran reçoit le nom du palier et de l'objet dès la tension.
+        expect(scene.querySelector('[data-consigne]')?.textContent).toBe(
+          `Symbole de rareté : ${meta.name}, ${meta.symbol.name}`
+        );
         expect(tiree.getAttribute('aria-label')).toContain(meta.symbol.name);
+        expect(tiree.getAttribute('aria-label')).toContain(meta.name);
 
         const attente = SUSPENSE[palier(rarete)];
         expect(attente, rarete).toBeGreaterThan(0);
@@ -688,6 +698,6 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     fireEvent.click(carteTiree);
 
     const fiche = within(scene).getByRole('region', { name: `Fiche : ${(CARTES[4] as Card).name}` });
-    expect(within(fiche).getByText(RARITY_META[rarete].symbol.name)).toBeTruthy();
+    expect(within(fiche).getByText(`${RARITY_META[rarete].name} · ${RARITY_META[rarete].symbol.name}`)).toBeTruthy();
   });
 });

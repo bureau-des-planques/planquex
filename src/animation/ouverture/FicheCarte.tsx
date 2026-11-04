@@ -94,7 +94,9 @@ export function FicheCarte({ carte, neuve, style, disposition, onFermer }: Props
         )}
         <div>
           <span className="stat-label">Rareté</span>
-          <strong className="card__rarity">{rarete.symbol.name}</strong>
+          <strong className="card__rarity">
+            {rarete.name} · {rarete.symbol.name}
+          </strong>
         </div>
       </div>
 
