@@ -9,7 +9,9 @@
 src/data/**/*.ts
 
 # Documents : le dépôt est écrit à la main, en français, avec des tableaux alignés et des
-# retours à la ligne qui portent du sens. Prettier reformaterait 183 décisions et 30 docs.
+# retours à la ligne qui portent du sens. Prettier reformaterait le journal et les docs.
+# Le compte de décisions n'est **pas** recopié ici : `AGENTS.md` §1 en est la source, et une
+# copie dans ce fichier sortait du chemin rapide de D-143 à chaque décision (#689–#692, #707).
 docs/**/*.md
 
 AGENTS.md
