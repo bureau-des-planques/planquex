@@ -308,12 +308,57 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     // Étape 5 — Le comité, sur /comite : la dernière étape ne désigne aucun halo.
     await userEvent.click(suivant());
     await verifierCorrespondance();
+    // **L'arrivée ne termine pas la Journée** (#685) : la réplique finale se lit avant
+    // que la sortie explicite ne soit choisie.
+    expect(useStore.getState().tutorielVu).toBe(false);
 
     // La sortie explicite referme la Journée sur l'écran qu'elle vient d'ouvrir.
     await userEvent.click(screen.getByRole('button', { name: /Relire la Journée plus tard/i }));
     expect(useStore.getState().tutorielVu).toBe(true);
     expect(document.querySelector('[data-journee-panneau]')).toBeNull();
     expect(screen.getByRole('heading', { name: 'Le comité de pilotage' })).toBeInTheDocument();
+  });
+
+  it('la dernière étape reste visible au Comité, et seule une clôture explicite la termine (#685)', async () => {
+    // **Le défaut reproduit** : l'étape 5 (le comité) est courante mais le panneau est monté
+    // hors de son écran — une pause suivie d'une navigation, ou une reprise, laisse la
+    // visite sur une route qui n'est pas une étape (ici `/attente`) ; son bouton
+    // « Voir le comité » menait à `/comite` **en terminant** la Journée, si bien que le
+    // testeur arrivait sur le mur sans la réplique finale (D-161, D-162 (2)).
+    simulerArrivage();
+    oublierGestes();
+    remettreJourneeAuDebut();
+    marquerGeste('combat');
+    marquerGeste('sauvegarde');
+    allerAEtape(ETAPES_JOURNEE.length - 1);
+    await rendreApplication({
+      chemin: '/attente',
+      storeState: {
+        tutorielVu: false,
+        pasAPasCombatVu: true,
+        packsOpened: 1,
+        deck: ['atelier-joueur-de-flute']
+      },
+      extra: <FilDuChemin />
+    });
+    const panneau = () => screen.getByRole('region', { name: /Journée d’intégration/ });
+    await screen.findByRole('button', { name: 'Voir le comité' });
+    expect(within(panneau()).getByRole('heading', { name: /Le comité/ })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Voir le comité' }));
+    await screen.findByRole('heading', { name: 'Le comité de pilotage' });
+    expect(cheminCourant()).toBe('/comite');
+
+    // **Les critères 1 et 2 mordent ici** : une arrivée qui écrit `tutorielVu` retire le
+    // panneau et la réplique finale, et cette ligne tombe.
+    expect(useStore.getState().tutorielVu).toBe(false);
+    expect(panneau()).toBeInTheDocument();
+    expect(within(panneau()).getByRole('heading', { name: /Le comité/ })).toBeInTheDocument();
+
+    // **Critère 3** : la sortie est un geste explicite de la Journée, pas l'arrivée.
+    await userEvent.click(screen.getByRole('button', { name: /Relire la Journée plus tard/i }));
+    expect(useStore.getState().tutorielVu).toBe(true);
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
   });
 
   it('une URL directe ne laisse pas l’étape décrire un autre écran', async () => {
