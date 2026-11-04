@@ -186,7 +186,7 @@
 | D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |
 | D-179 | 03/11/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
 | D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |
-| D-181 | 04/11/2026 | ⚠ Amendée par D-185 (04/11/2026, point (3)(c)) : le bouton… |
+| D-181 | 04/11/2026 | ⚠ Amendée par D-185 (04/11/2026, point (8)(c), qui précise le… |
 | D-182 | 04/11/2026 | Le plateau de combat : main rognée en bas, journal… |
 | D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |
 | D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |
