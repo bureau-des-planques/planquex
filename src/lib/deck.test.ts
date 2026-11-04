@@ -85,7 +85,7 @@ describe('envoyerDeck — les quatre raisons, aucun appel inutile (#491)', () =>
     await envoyerDeck(operations, 'deck:cle');
 
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe('https://exemple.test/rest/v1/rejouer_deck');
+    expect(url).toBe('https://exemple.test/rest/v1/rpc/rejouer_deck');
     expect(init.method).toBe('POST');
     const entetes = init.headers as Record<string, string>;
     expect(entetes.Authorization).toBe('Bearer jeton-test');
@@ -95,8 +95,17 @@ describe('envoyerDeck — les quatre raisons, aucun appel inutile (#491)', () =>
 
   it('l’URL vise le chemin REST de la fonction', () => {
     expect(urlRejeuDeck({ url: 'https://exemple.test/', clePublique: 'x' })).toBe(
-      'https://exemple.test/rest/v1/rejouer_deck'
+      'https://exemple.test/rest/v1/rpc/rejouer_deck'
     );
+  });
+
+  it('le contrôle mord : sans `/rpc/`, PostgREST lit une table et répond 404 (#668)', () => {
+    // Constaté le 04/11/2026 dans la preuve E2E : `POST /rest/v1/rejouer_deck` rend
+    // `404 PGRST205 — Could not find the table public.rejouer_deck`. Le chemin correct est
+    // celui de la RPC. Cette assertion tombe si `/rpc/` disparaît de nouveau.
+    const url = urlRejeuDeck({ url: 'https://exemple.test/', clePublique: 'x' });
+    expect(url).toBe('https://exemple.test/rest/v1/rpc/rejouer_deck');
+    expect(url).not.toBe('https://exemple.test/rest/v1/rejouer_deck');
   });
 
   it('hors ligne : `hors-ligne`, aucun appel', async () => {
@@ -166,7 +175,7 @@ describe('importerDeck — le Deck local monte dans le compte (#492)', () => {
     const resultat = await importerDeck(operations, 'import:cle');
     expect(resultat).toEqual({ importe: true, deck: [CARTE, AUTRE, AUTRE] });
     expect(urlImportDeck({ url: 'https://exemple.test/', clePublique: 'x' })).toBe(
-      'https://exemple.test/rest/v1/importer_deck'
+      'https://exemple.test/rest/v1/rpc/importer_deck'
     );
     expect(corpsDeck(fetchImpl)).toEqual({ p_operations: operations, p_cle: 'import:cle' });
   });
