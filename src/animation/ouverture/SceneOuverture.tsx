@@ -785,8 +785,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
     const ecart = i - (nombre - 1) / 2;
     const monte = apres === 'ouverture' && sortie === 1;
     const hautMontee = fente - hauteurCarte * (0.55 - Math.abs(ecart) * 0.05);
-    // Le haut reste dans la scène, sous le titre : le débordement était coupé par l'écran à 420 × 900.
-    const haut = monte ? Math.max(hautMontee, -taille.hauteur / 2 + 16) : fente + 8;
+    // Le haut reste à 48 px du bord de la scène : marge mesurée pour ne passer ni sous le titre ni
+    // hors de la fenêtre au gabarit bureau.
+    const haut = monte ? Math.max(hautMontee, -taille.hauteur / 2 + 48) : fente + 8;
     return {
       pose: {
         x: monte ? ecart * largeurPochette * 0.06 : 0,

@@ -6467,8 +6467,8 @@ h2 {
   width: 220px;
 }
 
-/* Avant la révélation, les cartes sont **dans** le sachet : derrière lui, elles n'apparaissent que
-   par la fente. */
+/* Avant l'ouverture, les cartes sont derrière le sachet. La scène leur retire `--dedans` au
+   déclenchement : invisibles pendant la préparation, elles passent alors devant pour émerger. */
 .ouverture__cartes--dedans {
   z-index: 1;
 }

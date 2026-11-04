@@ -565,4 +565,37 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     // À plan égal, rien ne prouve qu'une carte est devant : le doute ne vaut pas preuve.
     expect(devant([2], [2])).toBe(false);
   });
+
+  it('les cartes restent invisibles avant la fente et chaque bascule tient sous 800 ms', () => {
+    const rendre = ecranTaille(420, 900);
+    try {
+      const scene = monter();
+      fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
+      attendre(800);
+
+      const liste = scene.querySelector('.ouverture__cartes') as HTMLElement;
+      const cartes = [...scene.querySelectorAll<HTMLElement>('.ouverture__carte')];
+      // Le plan passe devant dès le départ, mais aucune carte ne perce avant sa sortie de la fente.
+      expect(liste.classList.contains('ouverture__cartes--dedans')).toBe(false);
+      expect(cartes.every((carte) => carte.style.opacity === '0')).toBe(true);
+
+      attendre(250);
+      expect(cartes.every((carte) => carte.style.opacity === '1')).toBe(true);
+      for (const carte of cartes) {
+        const bascule = /transform (\d+)ms(?: (\d+)ms)?/.exec(carte.style.transition);
+        expect(bascule).not.toBeNull();
+        expect(Number(bascule?.[1]) + Number(bascule?.[2] ?? 0)).toBeLessThanOrEqual(800);
+      }
+
+      // La sortie de la pochette est une seconde bascule ; elle garde la même borne.
+      attendre(1350);
+      for (const carte of cartes) {
+        const bascule = /transform (\d+)ms(?: (\d+)ms)?/.exec(carte.style.transition);
+        expect(bascule).not.toBeNull();
+        expect(Number(bascule?.[1]) + Number(bascule?.[2] ?? 0)).toBeLessThanOrEqual(800);
+      }
+    } finally {
+      rendre();
+    }
+  });
 });

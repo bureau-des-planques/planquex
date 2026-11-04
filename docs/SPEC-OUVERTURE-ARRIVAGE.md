@@ -55,9 +55,9 @@
 | Instant | Ce qui se passe |
 |---|---|
 | 0 | la bande s'envole (1 s), **éclair** plein écran, secousse, gerbe d'étincelles à la couleur du tirage |
-| 300 ms | les cartes, **dos tourné**, montent **lentement par la fente** (1,3 s), en léger éventail : elles sont derrière le corps du sachet, qui les cache sous la ligne |
+| 300 ms | les cartes, **dos tourné**, montent **par la fente, devant le corps du sachet**, en léger éventail ; chaque bascule dure 700 ms, avec 20 ms d'écart (780 ms au plus, D-141 (1)) |
 | 1 500 ms | le sachet tombe et s'efface (1 s) |
-| 1 700 ms | les cartes quittent le sachet et **s'étalent** sur le bureau, une à une (140 ms d'écart), posées un peu de travers |
+| 1 700 ms | les cartes quittent le sachet et **s'étalent** sur le bureau, une à une ; chaque bascule dure 700 ms, avec 20 ms d'écart (780 ms au plus), posées un peu de travers |
 | 2 900 ms | la révélation commence ; la première carte a le focus |
 
 ### 3.4 La révélation, au choix du testeur
