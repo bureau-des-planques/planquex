@@ -15,6 +15,7 @@ import type { ActionCard, Card, CafeSymbol, Faction, PlanqueCard, Rarity, Stage 
 import { ABILITY_KINDS, ATTACK_EFFECT_KINDS } from '@/data/types';
 import { secretSuffix } from '@/data/planque';
 import { damageBand, hpBand } from '@/game/curves';
+import { FORBIDDEN_ANY_CASE, FORBIDDEN_UPPER } from '@/test/vocabulaire-interdit';
 
 /**
  * Fichier de contrôle des conventions d'écriture des cartes.
@@ -23,33 +24,9 @@ import { damageBand, hpBand } from '@/game/curves';
  * cartes) ou `docs/CARD-SPEC.md` §1-2. Une carte qui échoue ici est une carte à
  * rectifier — pas un test à assouplir.
  *
- * Les deux mots interdits qui partagent la même racine sont reconstruits par
- * fragments : `AGENTS.md` §8.4 exige **zéro** occurrence de ce mot dans `src/`,
- * y compris dans les tests. Le test doit donc le chercher sans l'écrire.
+ * La liste du vocabulaire interdit vit dans `@/test/vocabulaire-interdit` : c'est la
+ * même source que les annonces de la révélation, et aucune n'importe un `*.test.ts`.
  */
-const FORBIDDEN_ANY_CASE = [
-  'Gal' + 'ère',
-  'Gal' + 'èreMon',
-  'Grèvomon',
-  'Pokémon',
-  // Vocabulaire abandonné (D-024, D-026), cherché **sans tenir compte de la casse**.
-  // Termes non ambigus uniquement : `Cadre`, `Prime`, `Moral`, `Courrier` sont des mots
-  // français courants (un cadre, une prime de rendement, le moral d'une équipe…) et
-  // feraient des faux positifs ; « K.O. » reste un identifiant interne du code.
-  'Open-space',
-  'Classeur',
-  'Galérodex',
-  'Bac à courrier',
-  'Reprise de poste'
-];
-
-/**
- * Anciens codes de statut et de faction, cherchés en **respectant la casse** : les
- * minuscules `manager`, `technicien`, `happiness`… sont des mots légitimes (D-024).
- * Les nouveaux codes : EPUISEMENT, SIESTE, IMMOBILISATION ; MANAGEMENT, QVT, ATELIER,
- * INTERIM.
- */
-const FORBIDDEN_UPPER = ['BURNOUT', 'BLOQUE', 'GELE', 'MANAGER', 'HAPPINESS', 'TECHNICIEN', 'INTERIMAIRE'];
 
 /**
  * Les primitives d'effet et de Talent ne sont **pas** recopiées ici (#56) : leur liste
