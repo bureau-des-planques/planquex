@@ -56,7 +56,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     cible: '/',
     action: 'Aller à l’accueil',
     geste: 'arrivage',
-    direction: 'De la part de la Direction, Arrivage validé.'
+    direction: 'De la part de la Direction, validé.'
   },
   {
     titre: 'La Collection et le Deck',

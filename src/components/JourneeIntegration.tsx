@@ -350,8 +350,8 @@ export function JourneeIntegration() {
             src={PORTRAIT_CHEF_CABINET}
             alt=""
             aria-hidden="true"
-            width={48}
-            height={48}
+            width={40}
+            height={40}
             loading="lazy"
           />
         ) : null}

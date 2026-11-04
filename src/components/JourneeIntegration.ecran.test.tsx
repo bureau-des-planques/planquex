@@ -395,8 +395,8 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
       expect(within(panneau).queryByRole('dialog')).toBeNull();
       expect(portrait).not.toBeNull();
       expect(portrait!.getAttribute('src')).toBe(artUrl('direction-chef-cabinet.webp'));
-      expect(portrait!.getAttribute('width')).toBe('48');
-      expect(portrait!.getAttribute('height')).toBe('48');
+      expect(portrait!.getAttribute('width')).toBe('40');
+      expect(portrait!.getAttribute('height')).toBe('40');
       expect(portrait!.getBoundingClientRect().width).toBeLessThanOrEqual(48);
       expect(portrait!.getBoundingClientRect().height).toBeLessThanOrEqual(48);
       expect(replique?.querySelector('strong')?.textContent).toBe('Chef de cabinet');
