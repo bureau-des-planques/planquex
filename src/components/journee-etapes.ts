@@ -55,7 +55,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     cible: '/',
     action: 'Aller à l’accueil',
     geste: 'arrivage',
-    direction: 'La Direction approuve.'
+    direction: 'De la part de la Direction.'
   },
   {
     titre: 'La Collection et le Deck',
@@ -65,19 +65,19 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
      * et `/collection` reste une adresse valide de l'autre onglet — elle n'est ni obsolète
      * ni redirigée (D-175 (2)).
      */
-    texte: 'Charge un Deck proposé.',
+    texte: 'Charge un Deck proposé, vingt cartes.',
     cible: '/deck',
     action: 'Aller au Deck',
     geste: 'deck',
     montreCartes: true,
-    direction: 'Vingt cartes. Comptées.'
+    direction: 'Vingt cartes, comptées.'
   },
   {
     titre: 'Le combat',
     texte: 'Joue le combat guidé.',
     cible: '/battle?tutoriel=1&scene=fin',
     action: 'Jouer mon premier combat',
-    direction: 'Trois Interventions. Comptées.',
+    direction: 'Trois Interventions et c’est gagné.',
     // **Le combat est un geste** (31/10/2026) : sans lui, l'étape qui compte se traversait
     // en lecture. Il se marque à la scène de fin — gagner le combat guidé est la preuve
     // qu'on l'a joué. Sur `/battle`, le panneau s'efface (le pas-à-pas parle seul).
@@ -85,18 +85,18 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
   },
   {
     titre: 'Tes données',
-    texte: 'Crée ta sauvegarde.',
+    texte: 'Crée ta sauvegarde dans Réglages, ta seule copie.',
     cible: '/settings',
     action: 'Aller aux réglages',
     geste: 'sauvegarde',
-    direction: 'Sauvegarde ou catastrophe.'
+    direction: 'Sinon, tout s’efface.'
   },
   {
     titre: 'Le comité',
     texte: 'Colle un post-it IP ou OUF.',
     cible: '/comite',
     action: 'Voir le comité',
-    direction: 'Promis, juré, validé.'
+    direction: 'Le mur lit tout, promis.'
   }
 ];
 
@@ -196,7 +196,7 @@ export function motsDeLEtape(etape: EtapeJournee): number {
 
 /**
  * Les mots d'une réplique **rendue** : le nom du locuteur compte (D-181 (3)). Une réplique
- * se mesure en mots, pas en phrases — « Vingt cartes. Comptées. » en fait trois.
+ * se mesure en mots, pas en phrases — « Vingt cartes, comptées. » en fait trois.
  */
 export function motsDeLaReplique(etape: EtapeJournee): number {
   return `${LOCUTEUR_JOURNEE} ${etape.direction}`.split(/\s+/).filter(Boolean).length;
