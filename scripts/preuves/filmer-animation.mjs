@@ -292,8 +292,30 @@ async function filmer(config) {
     let geste = 0;
     /** Une étape : clic d'état, glissement (avec ses prises « pendant »), attente ou pause. */
     const jouerEtape = async (etape) => {
-      if (etape.type === 'clic') await page.locator(etape.selecteur).first().click();
-      else if (etape.type === 'glisser') {
+      if (etape.type === 'clic') {
+        await page.locator(etape.selecteur).first().click();
+        // Sans backend, D-179 refuse correctement l'Arrivage. Sur un serveur de développement
+        // local seulement, le film peut alors monter la scène UI réelle sur un tirage fixe ; la
+        // preuve d'animation reste visible sans RPC ni acquisition de cartes.
+        const hote = new URL(base).hostname;
+        if (etape.selecteur === '.hero__ouvrir' && ['localhost', '127.0.0.1'].includes(hote)) {
+          await page.waitForFunction(
+            () =>
+              Boolean(document.querySelector('.ouverture')) ||
+              /serveur du jeu n’est pas configuré|Connecte-toi pour ouvrir/.test(
+                document.querySelector('.hero__attente')?.textContent ?? ''
+              ),
+            null,
+            { timeout: 15000 }
+          );
+          if ((await page.locator('.ouverture').count()) === 0) {
+            await page.evaluate(async () => {
+              const module = await import('/scripts/preuves/capturer-arrivage-fixture.tsx');
+              module.afficherArrivagePourPreuve();
+            });
+          }
+        }
+      } else if (etape.type === 'glisser') {
         // Un vrai geste : poser, glisser en douze pas (un seul `move` ne produit pas de
         // `pointermove` intermédiaire), puis lever. C'est ce que le doigt fait.
         const boite = await page.locator(etape.selecteur).first().boundingBox();

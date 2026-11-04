@@ -34,7 +34,7 @@
 | | |
 |---|---|
 | Arrivée | il tombe dans le faisceau (760 ms) |
-| Au doigt | il s'**incline** vers le doigt (± 16° en lacet, ± 12° en tangage, ressort), et le **reflet holographique** suit l'inclinaison |
+| Au doigt | il s'**incline** vers le doigt (± 16° en lacet, ± 12° en tangage, ressort), et un **reflet chaud et diffus** suit l'inclinaison du papier kraft |
 | Au repos | il se balance doucement, et le balancement **s'éteint en 4 s** : rien ne bouge sans fin (SPEC-COMBAT-UI §6.8) |
 | Appui hors de la ligne | il se **presse** (97,5 %), et un éclat parcourt les pointillés pour dire où déchirer |
 | Lueur | la lumière de la scène a **la couleur de la meilleure carte du tirage** (`RARITY_META`) : elle filtre par la fente dès la déchirure |
