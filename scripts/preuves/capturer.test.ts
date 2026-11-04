@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 // @ts-expect-error — le socle de capture est un module `.mjs` sans déclaration TypeScript.
-import { contraste, erreurConsoleAttendue, problemesPochette } from './capturer-socle.mjs';
+import { contraste, erreurConsoleAttendue, problemesPochette, REFUS_ARRIVAGE } from './capturer-socle.mjs';
 
 /**
  * Ticket #53 — le **contrat** de `npm run capturer`, sans lancer de navigateur.
@@ -334,7 +334,9 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
       execFileSync(process.execPath, ['scripts/preuves/capturer.mjs', '--plan'], { cwd: root, encoding: 'utf8', env })
     ) as { pagesSansDefilementVertical: string[]; margeMaxCombatPortrait: number };
     expect(plan.pagesSansDefilementVertical).toEqual(['accueil']);
-    const decision = read('docs/DECISIONS.md').split('\n').find((ligne) => ligne.startsWith('| D-171 |'));
+    const decision = read('docs/DECISIONS.md')
+      .split('\n')
+      .find((ligne) => ligne.startsWith('| D-171 |'));
     const margeMax = decision?.match(/20 à (\d+) px/);
     expect(margeMax, 'D-171 ne nomme plus de borne supérieure').not.toBeNull();
     expect(plan.margeMaxCombatPortrait).toBe(Number(margeMax![1]));
@@ -375,10 +377,25 @@ describe('`npm run capturer` — la taille et le cadrage (#153)', () => {
     expect(source).toContain('[data-tout-afficher]');
   });
 
+  it('attend la scène ou le refus explicite d’Arrivage, sans les 15 s du timeout (#707)', () => {
+    const source = read('scripts/preuves/capturer.mjs');
+    // La scène **ou** le refus : une attente qui ne regarderait que `.ouverture` rendrait les
+    // 15 s de timeout au premier refus de configuration (D-179 (6)), à chaque passage.
+    expect(source).toContain('await page.waitForFunction(');
+    expect(source).toContain('REFUS_ARRIVAGE.source');
+    expect(source).toContain("document.querySelector('.ouverture')");
+    // Le contrôle mord : les deux refus connus sont reconnus, et un autre texte ne l'est pas —
+    // sinon une absence de scène passerait pour un refus, ou l'inverse.
+    expect(REFUS_ARRIVAGE.test('Le serveur du jeu n’est pas configuré : l’Arrivage ne peut pas s’ouvrir.')).toBe(true);
+    expect(REFUS_ARRIVAGE.test('Connecte-toi pour ouvrir un Arrivage.')).toBe(true);
+    expect(REFUS_ARRIVAGE.test('Une partie t’attend au tour 3.')).toBe(false);
+  });
+
   it('joue les gardes de hauteur sur chaque gabarit, à sa taille', () => {
     const source = read('scripts/preuves/capturer.mjs');
     // Sans ce lien, un gabarit serait photographié mais jugé à 420 × 900 — ou pas jugé du tout.
-    expect(source).toContain('for (const gabarit of GABARITS) await mesurerGabarit(browser, gabarit);');
+    expect(source).toContain('for (const gabarit of GABARITS) {');
+    expect(source).toContain('await mesurerGabarit(browser, gabarit);');
     expect(source).toContain('await controlerHauteur(page, etat, ROUTE_COMBAT, viewport);');
   });
 

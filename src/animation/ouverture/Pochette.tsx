@@ -31,12 +31,18 @@ export const MASQUE_SILHOUETTE = `url("data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 ${POCHETTE.largeur} ${POCHETTE.hauteur}' preserveAspectRatio='none'><path d='${SILHOUETTE}' fill='black'/></svg>`
 )}")`;
 
-export function Pochette({ nombre }: { nombre: number }) {
+export function Pochette({ nombre, face = 'avant' }: { nombre: number; face?: 'avant' | 'arriere' }) {
   const id = useId().replace(/:/g, '');
   const ref = (nom: string) => `url(#${nom}-${id})`;
+
+  if (face === 'arriere') {
+    return <div className="pochette pochette--arriere" data-pochette-face="arriere" aria-hidden="true" />;
+  }
+
   return (
     <svg
-      className="pochette"
+      className="pochette pochette--avant"
+      data-pochette-face="avant"
       viewBox={`0 0 ${POCHETTE.largeur} ${POCHETTE.hauteur}`}
       preserveAspectRatio="none"
       aria-hidden="true"
