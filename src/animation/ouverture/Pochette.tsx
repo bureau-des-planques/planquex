@@ -211,19 +211,6 @@ export function Pochette({ nombre }: { nombre: number }) {
           </text>
         </g>
 
-        {/* Marque d'annulation et code de tri décoratif, sans faux identifiant. */}
-        <g opacity="0.72">
-          {[0, 4, 7, 12, 16, 21, 25, 29, 35, 39, 44, 48].map((x, i) => (
-            <rect
-              key={x}
-              x={48 + x * 1.6}
-              y="330"
-              width={i % 3 === 0 ? 2 : 1}
-              height="25"
-              fill="var(--pochette-encre)"
-            />
-          ))}
-        </g>
         <text
           x="48"
           y="381"
