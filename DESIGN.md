@@ -318,7 +318,7 @@ plateau (`.card--plateau`).
 > sortie `←` entre dans l'en-tête), le Banc passe à côté du Poste, la barre d'action vit dans la
 > console. Voir §2.7.
 >
-> **Décidé le 04/11/2026 (D-182, hypothèse (a) sur les noms tronqués à confirmer par Bastien)** : la main s'ancre au **bas de la fenêtre** et se **rogne**,
+> **Décidé le 04/11/2026 (D-182, noms tronqués confirmés par Bastien)** : la main s'ancre au **bas de la fenêtre** et se **rogne**,
 > le **journal visuel** disparaît (la ligne de la barre d'action, la vue `Journal` du `⋯`, la
 > console d'écran large), les **quatre piles** sont posées et le **Rebut s'ouvre**, et
 > l'ouverture d'un combat neuf met les Entrants **en scène**. Cette section décrit l'écran
