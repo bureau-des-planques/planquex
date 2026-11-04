@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 184 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 185 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |
@@ -186,7 +186,8 @@
 | D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |
 | D-179 | 03/11/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
 | D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |
-| D-181 | 04/11/2026 | La voix de la Direction est le Chef de cabinet,… |
+| D-181 | 04/11/2026 | ⚠ Amendée par D-185 (04/11/2026, point (3)(c)) : le bouton… |
 | D-182 | 04/11/2026 | Le plateau de combat : main rognée en bas, journal… |
 | D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |
 | D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |
+| D-185 | 04/11/2026 | Le bouton de sortie de la Journée est un contrôle,… |
