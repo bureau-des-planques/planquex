@@ -94,11 +94,27 @@ courant** (`management`, `audit`) sont admis — les **titres à la mode** (« H
 Manager », « Chief Happiness Officer ») restent **sur les cartes**, jamais sur une faction.
 
 Stades : **Entrant → N+1 → N+2**, et **COMEX** pour le statut des ex. Un Planqué porte **une seule**
-faction : le double type du jeu de 2026 est hors périmètre (D-020). Raretés codées : `1D`, `2D`,
-`3D`, `4D`, `1S`, `2S`, `3S`, `COU`.
-Les deux dernières — **3 étoiles** et **Couronne** — sont **codées** depuis le 20/10/2026 (#87) :
-présentes dans le type `Rarity`, dans `RARITY_META` (`src/data/index.ts`) et couvertes par les
-tests. Aucune carte de **base** ne les porte : elles vivent sur des **variantes**.
+faction : le double type du jeu de 2026 est hors périmètre (D-020).
+
+**Raretés (D-180)** : huit paliers, chacun avec son **nom** et son **objet de bureau** — le
+symbole du palier, de forme différente à chaque fois (Bastien, 03/11/2026).
+
+| Code | Nom | Symbole (objet) |
+|---|---|---|
+| `1D` | **À l’essai** | badge à pince |
+| `2D` | **Titularisé** | clé de vestiaire |
+| `3D` | **Confirmé** | perforatrice |
+| `4D` | **Promu** | fauteuil |
+| `1S` | **Distingué** | médaille |
+| `2S` | **Inamovible** | plaque |
+| `3S` | **Émérite** | montre |
+| `COU` | **Légataire** | passe-partout |
+
+Les noms et les objets sont la **nomenclature** du jeu, pas une règle de tirage. Le code garde le
+**libellé compact** `◆`/`★`/`♛` de `RARITY_META` (`src/data/index.ts`) ; les deux dernières
+raretés — **3 étoiles** et **Couronne** — sont **codées** depuis le 20/10/2026 (#87) : présentes
+dans le type `Rarity`, dans `RARITY_META` et couvertes par les tests. Aucune carte de **base** ne
+les porte : elles vivent sur des **variantes**.
 
 ## 4. Règles du jeu
 
