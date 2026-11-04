@@ -34,8 +34,13 @@ const LIGNE = /^\|\s*(D-\d+)\s*\|/;
  * (session portrait, #555, #580). Leurs branches ne sont pas encore fusionnées, donc ces
  * lignes n'existent pas dans cette copie de travail ; elles disparaissent de cette liste
  * au merge. Ce n'est pas un trou d'édition.
+ *
+ * **D-180, D-181 et D-182** : réservés le 03/11/2026 par trois tickets menés en parallèle
+ * (#661, #662, #663), aux côtés de **D-183** (#664), seul écrit sur cette branche. Les trois
+ * autres arrivent par leur propre branche et ces exceptions tombent au merge : ce n'est pas un
+ * trou d'édition.
  */
-const SANS_TROU_EXCEPTIONS = new Set<string>([]);
+const SANS_TROU_EXCEPTIONS = new Set<string>(['D-180', 'D-181', 'D-182']);
 
 /** Ce qu'une ligne du journal doit porter : `| ID | date | décision | raison |` = 4 colonnes. */
 const COLONNES = 4;
