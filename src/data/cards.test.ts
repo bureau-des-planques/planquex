@@ -321,6 +321,16 @@ const OBJETS_D180: Record<Rarity, string> = {
   COU: 'passe-partout'
 };
 
+/**
+ * Le **squelette** d'un tracé SVG : la suite de ses commandes (`M`, `a`, `h`, `v`, `z`…),
+ * sans les coordonnées, plus le nombre de segments. Deux tracés de même squelette sont la
+ * même silhouette, décalée ou mise à l'échelle : c'est ce que D-180 interdit.
+ */
+function signatureDuTrace(path: string): string {
+  const commandes = path.match(/[a-zA-Z]/g) ?? [];
+  return `${commandes.length}:${commandes.join('')}`;
+}
+
 describe('Raretés — noms et symboles (D-180)', () => {
   it('donne à chaque code son nom retenu, sans libellé en attente', () => {
     for (const rarity of TOUTES_LES_RARETES) {
@@ -341,17 +351,31 @@ describe('Raretés — noms et symboles (D-180)', () => {
     expect(new Set(labels).size).toBe(TOUTES_LES_RARETES.length);
   });
 
-  it('donne à chaque code l’objet de D-180, en tracé vectoriel distinct', () => {
-    const traces = new Set<string>();
+  it('donne à chaque code l’objet de D-180, en tracé vectoriel de silhouette distincte', () => {
+    const signatures = new Map<string, Rarity>();
     for (const rarity of TOUTES_LES_RARETES) {
       const { symbol } = RARITY_META[rarity];
       expect(symbol.name, rarity).toBe(OBJETS_D180[rarity]);
       expect(symbol.path.trim().length, rarity).toBeGreaterThan(0);
       expect(symbol.path, rarity).toMatch(/^M/);
-      traces.add(symbol.path);
+      const signature = signatureDuTrace(symbol.path);
+      // « de forme différente à chaque fois » : pas deux squelettes identiques, même si
+      // les coordonnées diffèrent (une clé décalée reste une clé).
+      expect(signatures.get(signature), `${rarity} a le même squelette que ${signatures.get(signature)}`).toBeUndefined();
+      signatures.set(signature, rarity);
     }
-    // « de forme différente à chaque fois » : huit tracés, pas huit copies.
-    expect(traces.size).toBe(TOUTES_LES_RARETES.length);
+    expect(signatures.size).toBe(TOUTES_LES_RARETES.length);
+  });
+
+  it('le contrôle mord : deux tracés d’un même squelette de clé sont refusés', () => {
+    const cle = 'M7 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6z M10 7h10v4h-2v-2h-2v3h-2v-3h-4';
+    const cleDecalee = 'M4 8a4 4 0 1 0 8 0 4 4 0 0 0-8 0z M12 8h9v4h-2v-2h-2v3h-2v-3h-3';
+    expect(cle).not.toBe(cleDecalee);
+    expect(signatureDuTrace(cleDecalee)).toBe(signatureDuTrace(cle));
+    // Et deux silhouettes réellement différentes ne sont pas confondues.
+    expect(signatureDuTrace(RARITY_META['2D'].symbol.path)).not.toBe(
+      signatureDuTrace(RARITY_META.COU.symbol.path)
+    );
   });
 
   it('le 3D porte la perforatrice, pas la tasse écartée', () => {
