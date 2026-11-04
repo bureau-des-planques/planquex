@@ -114,6 +114,22 @@ export const ECRANS = [
  * **Le cliquet** (#205) : les anti-patterns **déjà présents** le 25/10/2026, relevés à la main
  * avant de brancher ce contrôle. Le gate ne demande pas zéro — il demande **pas plus qu'hier**.
  *
+ * **Le compte est par (écran, règle)** (#670). Jusqu'ici la table portait un **total** par
+ * écran : un anti-pattern corrigé en cachait un autre sur le même écran, et un échange
+ * `nested-cards → line-length` — le total ne bouge pas — restait vert. Désormais chaque écran
+ * porte **le plafond de chaque règle** : `{ '/battle': { 'line-length': 1 } }`.
+ *
+ * - une règle **absente** de la table a un plafond de **0** : une règle nouvelle sur un écran
+ *   est un échec, jamais un zéro par défaut (même principe que `ecransSansPlafond`) ;
+ * - une **baisse** (2 → 0) n'est jamais un écart — elle se reconduit dans le commit qui la
+ *   mesure, comme avant ;
+ * - un écran **sans table** est un échec ; un nombre ou un `null` ne décrit pas les règles et
+ *   n'est donc plus un plafond.
+ *
+ * Les douze écrans sont à **zéro** depuis le 26/10/2026 (#208) : chaque table est **vide**,
+ * ce qui veut dire « aucune règle tolérée ». L'historique ci-dessous est celui des anciens
+ * **totaux**, gardé comme récit ; le plafond vivant, lui, est la table.
+ *
  * Abaissé le 25/10/2026 après la lisibilité des cartes (Collection 42 → 32, Deck 12 → 11) : le
  * stade des cartes passe en encre pleine, et le nom ne partage plus sa ligne avec le Seuil.
  *
@@ -151,32 +167,38 @@ export const ECRANS = [
  * plafond est le compte mesuré, pas un acquittement.
  */
 export const BASELINE = {
-  '/': 0,
-  '/collection': 0,
-  '/deck': 0,
-  '/battle': 0,
-  '/settings': 0,
-  '/comite': 0,
-  '/comite/suivi': 0,
-  '/feuille-de-route': 0,
-  '/connexion': 0,
-  '/attente': 0,
-  '/confidentialite': 0,
-  '/administration': 0
+  '/': {},
+  '/collection': {},
+  '/deck': {},
+  '/battle': {},
+  '/settings': {},
+  '/comite': {},
+  '/comite/suivi': {},
+  '/feuille-de-route': {},
+  '/connexion': {},
+  '/attente': {},
+  '/confidentialite': {},
+  '/administration': {}
 };
 
 /**
- * Les écrans **mesurés sans plafond** (#234). La règle vit ici, une fois : un écran ajouté
- * à `ECRANS` sans son compte dans `BASELINE` est un **échec**, pas un zéro par défaut.
+ * Les écrans **mesurés sans table de plafonds** (#234, #670). La règle vit ici, une fois :
+ * un écran ajouté à `ECRANS` sans sa table dans `BASELINE` est un **échec**, pas un zéro par
+ * défaut.
  *
- * Un `null` n'est pas un plafond — il a déjà servi à geler un écran (#208), et une page
- * qu'on ne sait pas compter n'est pas une page propre. Seul un **nombre** compte.
+ * Un `null` n'est pas un plafond — il a déjà servi à geler un écran (#208). Un **nombre**
+ * non plus depuis #670 : il ne dit rien des règles, donc il laisserait passer un échange.
+ * Seule une **table** (un objet, même vide) compte ; une table vide veut dire « aucune règle
+ * tolérée ».
  *
  * Le test la joue sur un plan fourni (`--controle-plan`) : une assertion qui ne peut pas
  * échouer ne garde rien (AGENTS.md §6), donc le cas fautif est confronté à la vraie règle.
  */
 export function ecransSansPlafond(ecrans, baseline) {
-  return ecrans.filter((ecran) => typeof baseline[ecran] !== 'number');
+  return ecrans.filter((ecran) => {
+    const table = baseline?.[ecran];
+    return table === null || typeof table !== 'object' || Array.isArray(table);
+  });
 }
 
 /**
@@ -324,14 +346,15 @@ const PORT = 4179;
 const ORIGINE = `http://127.0.0.1:${PORT}`;
 
 /**
- * Lit la sortie **`--json`** d'`impeccable detect` et rend le nombre d'**anti-patterns**.
+ * Lit la sortie **`--json`** d'`impeccable detect` et rend les anti-patterns **comptés par
+ * règle** (#670) : `{ 'nested-cards': 2, 'line-length': 1 }`.
  *
  * Le binaire rend un tableau : chaque constat porte `antipattern` et, pour un avis,
  * `advisory: true`. Un avis ne compte pas. Un tableau **vide** est un vrai résultat — la page
- * est propre —, d'où `0` et non `null`. Ce qui n'est pas un tableau JSON (sortie de binaire
+ * est propre —, d'où `{}` et non `null`. Ce qui n'est pas un tableau JSON (sortie de binaire
  * illisible, texte d'erreur) rend `null` : on ne laisse pas passer un contrôle qui n'a pas tourné.
  */
-export function compteAntiPatterns(sortie) {
+export function compteParRegle(sortie) {
   let constats;
   try {
     constats = JSON.parse(sortie);
@@ -339,7 +362,22 @@ export function compteAntiPatterns(sortie) {
     return null;
   }
   if (!Array.isArray(constats)) return null;
-  return constats.filter((constat) => constat?.advisory !== true).length;
+  const compte = {};
+  for (const constat of constats) {
+    if (constat?.advisory === true) continue;
+    const regle = constat?.antipattern ?? 'règle inconnue';
+    compte[regle] = (compte[regle] ?? 0) + 1;
+  }
+  return compte;
+}
+
+/**
+ * Le **total** des anti-patterns, dérivé des comptes par règle. Gardé pour la sonde
+ * `--controle` (un message qui dit « N anti-patterns ») et pour la compatibilité des tests.
+ */
+export function compteAntiPatterns(sortie) {
+  const parRegle = compteParRegle(sortie);
+  return parRegle === null ? null : Object.values(parRegle).reduce((somme, compte) => somme + compte, 0);
 }
 
 /**
@@ -381,6 +419,15 @@ export function verdict(sortie, code = 0) {
   return compteAntiPatterns(sortie);
 }
 
+/**
+ * Le verdict **par règle** (#670) : `null` = on n'a pas pu mesurer, `{}` = page propre,
+ * sinon `{ règle: compte }`. Le code de sortie se juge comme dans `verdict`.
+ */
+export function verdictRegles(sortie, code = 0) {
+  if (code !== 0 && code !== 2) return null;
+  return compteParRegle(sortie);
+}
+
 /** Le message d'échec, qui **nomme l'écran** et son compte. */
 export function messageEchec(ecran, compte, raison = '', regles = []) {
   if (compte === null) {
@@ -390,6 +437,78 @@ export function messageEchec(ecran, compte, raison = '', regles = []) {
   // Le nom des règles : un compte nu ne dit pas quoi corriger (31/10/2026).
   const detail = regles.length > 0 ? ` — ${regles.slice(0, 4).join(', ')}${regles.length > 4 ? '…' : ''}` : '';
   return `${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''}${detail}`;
+}
+
+/**
+ * **Ce que le cliquet refuse** (#670) : une règle dont le compte mesuré **dépasse** son
+ * plafond. Une règle **absente** de la table a un plafond de `0` et est marquée `nouvelle` :
+ * c'est le cas d'un échange `nested-cards → line-length` — le total ne bouge pas, la règle si.
+ *
+ * Une baisse (2 → 0) ou un compte égal au plafond ne produit **aucun** écart : `compte >
+ * plafond` est la seule condition, et c'est ce qui permet de descendre la table sans se
+ * contredire.
+ */
+export function ecartCliquet(ecran, mesure, baseline) {
+  const permis = baseline?.[ecran] ?? {};
+  return Object.entries(mesure ?? {})
+    .map(([regle, compte]) => ({
+      regle,
+      compte: Number(compte ?? 0),
+      plafond: Object.prototype.hasOwnProperty.call(permis, regle) ? Number(permis[regle] ?? 0) : 0,
+      nouvelle: !Object.prototype.hasOwnProperty.call(permis, regle)
+    }))
+    .filter(({ compte, plafond }) => compte > plafond)
+    .sort((a, b) => a.regle.localeCompare(b.regle));
+}
+
+/**
+ * **Les règles passées sous leur plafond** : la table est trop haute, il faut la baisser dans
+ * le même commit que la correction (#208). Ce n'est pas un échec — c'est le rappel qui empêche
+ * un plafond de devenir un acquittement.
+ */
+export function reglesEnBaisse(ecran, mesure, baseline) {
+  const permis = baseline?.[ecran] ?? {};
+  return Object.entries(permis)
+    .filter(([regle, plafond]) => Number(mesure?.[regle] ?? 0) < Number(plafond ?? 0))
+    .map(([regle, plafond]) => ({ regle, compte: Number(mesure?.[regle] ?? 0), plafond: Number(plafond ?? 0) }))
+    .sort((a, b) => a.regle.localeCompare(b.regle));
+}
+
+/** Le message d'un écart : **nomme la règle**, son compte et son plafond. */
+export function messageEcart(ecran, ecarts) {
+  const detail = ecarts
+    .map(({ regle, compte, plafond, nouvelle }) =>
+      nouvelle ? `${regle} ×${compte} (absente de la baseline)` : `${regle} ×${compte} > plafond ${plafond}`
+    )
+    .join(', ');
+  return `${ecran} : ${ecarts.length} règle${ecarts.length > 1 ? 's' : ''} au-dessus du plafond — ${detail}`;
+}
+
+/**
+ * **La règle du cliquet, jouée sur un plan fourni** (#234, #670), sans navigateur ni réseau.
+ * `plan = { ecrans, baseline, mesure? }` :
+ *
+ * - `ecrans` et `baseline` sont le plan de mesure (une table par écran, même vide) ;
+ * - `mesure` est le compte **mesuré** par écran et par règle ; absente, le plan est **nominal**
+ *   (le compte mesuré vaut le plafond) et ne peut donc pas échouer par écart.
+ *
+ * Rend `{ sansPlafond, ecarts, echec }` : `sansPlafond` pour un écran sans table, `ecarts` pour
+ * une règle au-dessus de son plafond ou nouvelle.
+ */
+export function controlePlan(plan) {
+  const ecrans = plan?.ecrans ?? [];
+  const baseline = plan?.baseline ?? {};
+  const mesure = plan?.mesure ?? null;
+  const sansPlafond = ecransSansPlafond(ecrans, baseline);
+  const ecarts = [];
+  if (mesure) {
+    for (const ecran of ecrans) {
+      for (const ecart of ecartCliquet(ecran, mesure[ecran] ?? {}, baseline)) {
+        ecarts.push({ ecran, ...ecart });
+      }
+    }
+  }
+  return { sansPlafond, ecarts, echec: sansPlafond.length > 0 || ecarts.length > 0 };
 }
 
 /**
@@ -471,21 +590,23 @@ async function principal(args) {
     return 0;
   }
 
-  // Sonde de `scripts/ci/detect-ui-pages.test.ts` (#234) : joue la règle des plafonds sur un
-  // plan fourni — `{ ecrans, baseline }` — et sort 1 si un écran n'a pas de compte. C'est
-  // ce qui permet au test de confronter la règle à un **cas fautif**, sans navigateur.
+  // Sonde de `scripts/ci/detect-ui-pages.test.ts` (#234, #670) : joue la règle des plafonds et
+  // celle des règles sur un plan fourni — `{ ecrans, baseline, mesure? }` — et sort 1 si un
+  // écran n'a pas de table ou si une règle dépasse son plafond. `mesure` absente = plan
+  // nominal. C'est ce qui permet au test de confronter la règle à un **cas fautif**, sans
+  // navigateur ni réseau.
   const iPlan = args.indexOf('--controle-plan');
   if (iPlan !== -1) {
     let fourni;
     try {
       fourni = JSON.parse(args[iPlan + 1] ?? '');
     } catch {
-      console.error('--controle-plan attend un JSON { ecrans, baseline }.');
+      console.error('--controle-plan attend un JSON { ecrans, baseline, mesure? }.');
       return 1;
     }
-    const sansPlafond = ecransSansPlafond(fourni?.ecrans ?? [], fourni?.baseline ?? {});
-    console.log(JSON.stringify({ sansPlafond, echec: sansPlafond.length > 0 }));
-    return sansPlafond.length > 0 ? 1 : 0;
+    const resultat = controlePlan(fourni);
+    console.log(JSON.stringify(resultat));
+    return resultat.echec ? 1 : 0;
   }
 
   const i = args.indexOf('--controle');
@@ -587,22 +708,28 @@ async function principal(args) {
         // Asynchrone : le serveur tourne dans ce même processus, et un `spawnSync` le figerait
         // (le navigateur du détecteur ne recevrait plus rien → « Navigation timeout »).
         const { sortie, erreur, code } = await lancerDetecteur(url, portCdp);
-        const compte = verdict(sortie, code);
-        const permis = BASELINE[ecran];
-        if (compte === null) {
+        const mesure = verdictRegles(sortie, code);
+        if (mesure === null) {
           // Un écran **sauté** n'est pas un écran propre (#208) : le scan a échoué, et ça se dit.
-          const message = `${messageEchec(ecran, null, erreur)} — plafond ${permis}`;
+          const message = `${messageEchec(ecran, null, erreur)} — plafond ${JSON.stringify(BASELINE[ecran] ?? {})}`;
           echecs.push(message);
           console.error(`✖ ${message}`);
           continue;
         }
-        if (compte <= permis) {
-          console.log(`✔ ${ecran} : ${compte} anti-pattern${compte > 1 ? 's' : ''} (plafond ${permis})`);
-          if (compte < permis)
-            console.log(`  ⚠ ${ecran} est sous son plafond (${permis}) : baisse BASELINE dans ce commit.`);
+        // **Le compte est par règle** (#670) : un échange ne passe plus sous un total constant.
+        const ecarts = ecartCliquet(ecran, mesure, BASELINE);
+        if (ecarts.length === 0) {
+          const total = Object.values(mesure).reduce((somme, compte) => somme + compte, 0);
+          const plafond = Object.values(BASELINE[ecran] ?? {}).reduce((somme, compte) => somme + compte, 0);
+          console.log(`✔ ${ecran} : ${total} anti-pattern${total > 1 ? 's' : ''} (plafond ${plafond})`);
+          const baisses = reglesEnBaisse(ecran, mesure, BASELINE);
+          if (baisses.length > 0) {
+            const detail = baisses.map(({ regle, compte, plafond }) => `${regle} ${compte} < ${plafond}`).join(', ');
+            console.log(`  ⚠ ${ecran} est sous son plafond (${detail}) : baisse BASELINE dans ce commit.`);
+          }
           continue;
         }
-        const message = `${messageEchec(ecran, compte, '', reglesRefusees(sortie))}, au-dessus du plafond de ${permis}`;
+        const message = messageEcart(ecran, ecarts);
         echecs.push(message);
         console.error(`✖ ${message}`);
       } finally {
@@ -615,7 +742,10 @@ async function principal(args) {
       for (const echec of echecs) console.error(`   - ${echec}`);
       return 1;
     }
-    const total = ECRANS.reduce((somme, ecran) => somme + (BASELINE[ecran] ?? 0), 0);
+    const total = ECRANS.reduce(
+      (somme, ecran) => somme + Object.values(BASELINE[ecran] ?? {}).reduce((suite, compte) => suite + compte, 0),
+      0
+    );
     console.log(`\n✔ ${ECRANS.length} écrans mesurés, aucun au-dessus de son plafond (total plafonné : ${total}).`);
     return 0;
   } finally {

@@ -2,7 +2,13 @@
 import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { estCalme, sansMouvement, signatureEcran } from './detect-ui-pages.mjs';
+import {
+  estCalme,
+  messageEcart,
+  reglesEnBaisse,
+  sansMouvement,
+  signatureEcran
+} from './detect-ui-pages.mjs';
 
 /**
  * Le **contrôle visuel en CI** (#205) : `impeccable detect` sur de vraies pages.
@@ -43,13 +49,31 @@ const ECRANS_EXIGES = [
   '/administration'
 ];
 
+type Plafonds = Record<string, number>;
+
 interface Plan {
   ecrans: string[];
   port: number;
   seuil: number;
-  baseline: Record<string, number | null>;
+  // Depuis #670, le cliquet compte **par (écran, règle)** : une table vide veut dire
+  // « aucune règle tolérée sur cet écran », pas « écran non mesuré ».
+  baseline: Record<string, Plafonds>;
   sansPlafond: string[];
   chromium: string | null;
+}
+
+interface Ecart {
+  ecran: string;
+  regle: string;
+  compte: number;
+  plafond: number;
+  nouvelle: boolean;
+}
+
+interface ResultatPlan {
+  sansPlafond: string[];
+  ecarts: Ecart[];
+  echec: boolean;
 }
 
 function plan(env: Record<string, string | undefined> = process.env): Plan {
@@ -62,27 +86,28 @@ function plan(env: Record<string, string | undefined> = process.env): Plan {
 }
 
 /**
- * La sonde du **contrôle des plafonds** (#234) : joue la règle sur un plan fourni, sans
- * navigateur. C'est ce qui permet au test de **mordre** avec un écran fautif, au lieu de
- * relire une chaîne du source.
+ * La sonde du **contrôle des plafonds** (#234, #670) : joue la règle sur un plan fourni,
+ * sans navigateur. `mesure` est le compte **mesuré** par règle ; absente, le plan est
+ * nominal (le compte mesuré est le plafond lui-même). C'est ce qui permet au test de
+ * **mordre** avec un cas fautif, au lieu de relire une chaîne du source.
  */
-function sondePlan(
-  ecrans: string[],
-  baseline: Record<string, number | null>
-): { sansPlafond: string[]; echec: boolean } {
+function sondePlan(planFourni: {
+  ecrans: string[];
+  // Un `number` est l'ancien format (total par écran) et un `null` l'ancien gel : les deux
+  // sont acceptés par la sonde pour être **refusés**, c'est le cas fautif de #208 / #670.
+  baseline: Record<string, Plafonds | number | null>;
+  mesure?: Record<string, Plafonds>;
+}): ResultatPlan {
   try {
     const sortie = execFileSync(
       process.execPath,
-      ['scripts/ci/detect-ui-pages.mjs', '--controle-plan', JSON.stringify({ ecrans, baseline })],
+      ['scripts/ci/detect-ui-pages.mjs', '--controle-plan', JSON.stringify(planFourni)],
       { cwd: root, encoding: 'utf8' }
     );
-    return JSON.parse(sortie) as { sansPlafond: string[]; echec: boolean };
+    return JSON.parse(sortie) as ResultatPlan;
   } catch (erreur) {
     // La sonde sort 1 quand elle refuse : la sortie reste sur `stdout`.
-    return JSON.parse((erreur as { stdout?: string }).stdout ?? '{}') as {
-      sansPlafond: string[];
-      echec: boolean;
-    };
+    return JSON.parse((erreur as { stdout?: string }).stdout ?? '{}') as ResultatPlan;
   }
 }
 
@@ -136,23 +161,110 @@ describe('le contrôle visuel en CI (#205, #208, #234)', () => {
     expect(seuil).toBe(0);
   });
 
-  it('donne un plafond **mesuré** à chaque écran, et jamais `null` (#208)', () => {
+  it('donne un plafond **mesuré par règle** à chaque écran, et jamais `null` (#208, #670)', () => {
     const { ecrans, baseline, sansPlafond } = plan();
     // Un écran mesuré sans plafond est refusé plus bas ; ici, aucun n'est dans ce cas.
     expect(sansPlafond).toEqual([]);
-    for (const ecran of ecrans) expect(typeof baseline[ecran], ecran).toBe('number');
+    for (const ecran of ecrans) {
+      expect(baseline[ecran], ecran).not.toBeNull();
+      expect(typeof baseline[ecran], ecran).toBe('object');
+      for (const [regle, plafond] of Object.entries(baseline[ecran])) {
+        expect(typeof plafond, `${ecran} ${regle}`).toBe('number');
+      }
+    }
   });
 
   it('refuse un écran sans plafond : le contrôle mord (#234)', () => {
     const { ecrans, baseline } = plan();
     // Le cas fautif : un écran ajouté à la mesure sans son compte.
-    const fautif = sondePlan([...ecrans, '/ecran-sans-plafond'], baseline);
+    const fautif = sondePlan({ ecrans: [...ecrans, '/ecran-sans-plafond'], baseline });
     expect(fautif.echec).toBe(true);
     expect(fautif.sansPlafond).toEqual(['/ecran-sans-plafond']);
     // Et un plafond `null` n'est pas un plafond : c'est le défaut corrigé par #208.
-    expect(sondePlan(['/a'], { '/a': null }).echec).toBe(true);
-    // Un plan complet passe : la sonde ne refuse pas tout.
-    expect(sondePlan(['/a'], { '/a': 0 }).echec).toBe(false);
+    expect(sondePlan({ ecrans: ['/a'], baseline: { '/a': null } }).echec).toBe(true);
+    // Depuis #670, un **nombre** ne décrit plus les règles : il est refusé, pas pris
+    // pour un plafond global qui laisserait passer un échange.
+    expect(sondePlan({ ecrans: ['/a'], baseline: { '/a': 0 } }).echec).toBe(true);
+    // Une table vide est un compte valide : aucune règle tolérée sur cet écran.
+    expect(sondePlan({ ecrans: ['/a'], baseline: { '/a': {} } }).echec).toBe(false);
+  });
+
+  /**
+   * **Le cliquet compte par (écran, règle)** (#670). Un compte **total** par écran laissait
+   * passer un échange : un anti-pattern corrigé en cachait un autre sur le même écran, et la
+   * commande restait verte. Ces cas sont fabriqués — le test joue la vraie règle de
+   * `--controle-plan`, il ne relit pas une chaîne du source.
+   */
+  it('mord sur un échange : le total ne bouge pas, la règle si (#670)', () => {
+    // `/battle` reste à 1 anti-pattern au total, mais `nested-cards` a disparu au profit de
+    // `line-length`. Un compte total donnerait 1 ≤ 1 et passerait.
+    const resultat = sondePlan({
+      ecrans: ['/battle'],
+      baseline: { '/battle': { 'nested-cards': 1 } },
+      mesure: { '/battle': { 'line-length': 1 } }
+    });
+    expect(resultat.echec).toBe(true);
+    expect(resultat.sansPlafond).toEqual([]);
+    expect(resultat.ecarts.map((ecart) => ecart.regle)).toEqual(['line-length']);
+    expect(resultat.ecarts[0]).toMatchObject({ regle: 'line-length', compte: 1, plafond: 0, nouvelle: true });
+  });
+
+  it('refuse une règle nouvelle, même si le total de l’écran est inchangé (#670)', () => {
+    const resultat = sondePlan({
+      ecrans: ['/battle'],
+      baseline: { '/battle': {} },
+      mesure: { '/battle': { 'line-length': 1 } }
+    });
+    expect(resultat.echec).toBe(true);
+    expect(resultat.ecarts.map((ecart) => ecart.regle)).toEqual(['line-length']);
+  });
+
+  it('accepte une descente : 2 → 0 est une correction, pas une régression (#670)', () => {
+    const resultat = sondePlan({
+      ecrans: ['/battle'],
+      baseline: { '/battle': { 'nested-cards': 2 } },
+      mesure: { '/battle': { 'nested-cards': 0 } }
+    });
+    expect(resultat.echec).toBe(false);
+    expect(resultat.ecarts).toEqual([]);
+  });
+
+  it('refuse un compte qui monte au-dessus de son plafond (#670)', () => {
+    const resultat = sondePlan({
+      ecrans: ['/battle'],
+      baseline: { '/battle': { 'nested-cards': 1 } },
+      mesure: { '/battle': { 'nested-cards': 2 } }
+    });
+    expect(resultat.echec).toBe(true);
+    expect(resultat.ecarts[0]).toMatchObject({ regle: 'nested-cards', compte: 2, plafond: 1, nouvelle: false });
+  });
+
+  it('nomme la règle dans le message, et rappelle une descente à reconduire (#670)', () => {
+    // Le message de la vraie boucle nomme la règle : un total nu ne dit pas quoi corriger.
+    const message = messageEcart('/battle', [
+      { ecran: '/battle', regle: 'line-length', compte: 1, plafond: 0, nouvelle: true }
+    ]);
+    expect(message).toContain('line-length');
+    expect(message).toContain('absente de la baseline');
+
+    // Une règle passée sous son plafond n'échoue pas : elle réclame une baisse de BASELINE.
+    expect(reglesEnBaisse('/battle', { 'nested-cards': 0 }, { '/battle': { 'nested-cards': 2 } })).toEqual([
+      { regle: 'nested-cards', compte: 0, plafond: 2 }
+    ]);
+    // Un compte égal au plafond n'est pas une baisse.
+    expect(reglesEnBaisse('/battle', { 'nested-cards': 2 }, { '/battle': { 'nested-cards': 2 } })).toEqual([]);
+  });
+
+  it('accepte un plan nominal : le compte mesuré est le plafond (#670)', () => {
+    expect(
+      sondePlan({
+        ecrans: ['/battle'],
+        baseline: { '/battle': { 'nested-cards': 1 } },
+        mesure: { '/battle': { 'nested-cards': 1 } }
+      }).echec
+    ).toBe(false);
+    // Sans `mesure`, le plan est nominal : la sonde ne refuse pas tout.
+    expect(sondePlan({ ecrans: ['/battle'], baseline: { '/battle': {} } }).echec).toBe(false);
   });
 
   it('ouvre le navigateur que la CI nomme, sinon le cache local (#547)', () => {
