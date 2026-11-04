@@ -68,7 +68,9 @@ const TICKETS_ATTENDUS = [
   49, 87, 88, 91, 97, 97, 97, 101, 103, 113, 114, 116, 118, 123, 124, 182, 184, 192, 254, 287, 289, 294, 294, 294, 294,
   299, 317, 317, 411, 411, 412, 544, 561, 561,
   // #651 : le client ne tire plus l'Arrivage — `rng` ne revient pas dans la forme persistée v15.
-  651
+  651,
+  // #666 : la Journée décrit l'écran affiché — la cible d'une étape ne peut pas désigner un autre écran.
+  666
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {
