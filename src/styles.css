@@ -6197,8 +6197,21 @@ h2 {
   position: absolute;
   top: 50%;
   touch-action: none;
-  translate: -50% -50%;
+}
+
+.ouverture__face-arriere,
+.ouverture__face-avant {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.ouverture__face-arriere {
   z-index: 2;
+}
+
+.ouverture__face-avant {
+  z-index: 4;
 }
 
 .ouverture__zone:active {
@@ -6254,6 +6267,10 @@ h2 {
   transform-style: preserve-3d;
   transition: scale 180ms ease;
   width: 100%;
+}
+
+.ouverture__sachet--avant {
+  filter: none;
 }
 
 .ouverture__zone--presse .ouverture__sachet {
@@ -6358,6 +6375,7 @@ h2 {
   opacity: calc(var(--p) * 1.1);
   pointer-events: none;
   position: absolute;
+  z-index: 2;
 }
 
 .ouverture__bande {
@@ -6365,12 +6383,14 @@ h2 {
      ne descendent pas dans sa Pochette ; sans `@property`, la valeur de repos est ici. */
   --p: 0;
   --sens: 1;
+  pointer-events: none;
   transform: translateY(calc(var(--p) * -2.5%)) rotate(calc(var(--sens) * var(--p) * 15deg));
   transform-origin: calc(50% + var(--sens) * 50%) calc(44 / 500 * 100%);
   transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 5;
 }
 
-.ouverture__sachet[data-tire='oui'] .ouverture__bande {
+.ouverture__zone[data-tire='oui'] .ouverture__bande {
   transition: none;
 }
 
@@ -6396,6 +6416,7 @@ h2 {
 .ouverture__bande--envol {
   animation: ouverture-envol 1000ms cubic-bezier(0.25, 0.6, 0.35, 1) forwards;
   transition: none;
+  z-index: 2;
 }
 
 @keyframes ouverture-envol {
@@ -6427,15 +6448,14 @@ h2 {
   }
 }
 
-.ouverture[data-etape='ouverture'] .ouverture__corps {
-  animation: ouverture-descend 1000ms cubic-bezier(0.55, 0, 0.75, 0.4) 1500ms forwards;
+.ouverture[data-etape='ouverture'] .ouverture__face-arriere,
+.ouverture[data-etape='ouverture'] .ouverture__face-avant {
+  animation: ouverture-disparait 700ms ease-in 1500ms forwards;
 }
 
-@keyframes ouverture-descend {
+@keyframes ouverture-disparait {
   to {
-    filter: brightness(0.6);
     opacity: 0;
-    transform: translateY(70%) scale(0.92);
   }
 }
 
@@ -6467,10 +6487,9 @@ h2 {
   width: 220px;
 }
 
-/* Avant l'ouverture, les cartes sont derrière le sachet. La scène leur retire `--dedans` au
-   déclenchement : invisibles pendant la préparation, elles passent alors devant pour émerger. */
-.ouverture__cartes--dedans {
-  z-index: 1;
+/* Les cartes restent entre le dos et le bordereau ; les deux faces gardent leurs plans propres. */
+.ouverture__cartes--entre-faces {
+  z-index: 3;
 }
 
 .ouverture[data-etape='ferme'] .ouverture__carte,

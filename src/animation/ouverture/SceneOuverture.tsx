@@ -69,10 +69,10 @@ export type Etape = 'ferme' | 'dechirure' | Apres;
 const ENVOL = {
   /** Les cartes commencent à monter par la fente. */
   montee: 300,
-  /** Elles quittent le sachet pour s'étaler sur le bureau. */
-  etalage: 1700,
+  /** Le sachet a fini de descendre ; les cartes entièrement sorties s'étalent. */
+  etalage: 2300,
   /** Elles sont posées : la révélation commence. */
-  revelation: 2900
+  revelation: 3300
 } as const;
 
 /**
@@ -203,7 +203,8 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
   const racine = useRef<HTMLDivElement>(null);
   const scene = useRef<HTMLDivElement>(null);
   const zoneRef = useRef<HTMLDivElement>(null);
-  const sachet = useRef<HTMLDivElement>(null);
+  const sachetAvant = useRef<HTMLDivElement>(null);
+  const sachetArriere = useRef<HTMLDivElement>(null);
   /** **Les trois seuls consommateurs de `--p`/`--sens`** : la bande, l'intérieur, la fente.
    * La déchirure s'écrit sur eux, jamais sur le sachet — une propriété personnalisée s'hérite,
    * et ces valeurs changent à chaque image du geste (#566). */
@@ -353,19 +354,28 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       const amorti = tire.current ? 0.25 : 1;
       inc.x += (cibleX * amorti - inc.x) * 0.085;
       inc.y += (cibleY * amorti - inc.y) * 0.085;
-      const el = sachet.current;
-      if (el) {
-        el.style.setProperty('--ry', `${(inc.x * 16).toFixed(2)}deg`);
-        el.style.setProperty('--rx', `${(-inc.y * 12).toFixed(2)}deg`);
-        // **Le reflet est le seul consommateur de `--mx`/`--my`** : la variable se pose sur lui,
-        // pas sur le sachet. Sinon elle s'hérite dans tout le sachet (le SVG compris, deux fois)
-        // et chaque image recalculait le style de dizaines de nœuds pour rien — mesuré le
-        // 01/11/2026 : 0,79 s de recalcul de style sur 2,5 s, ramenés à 0,21 s.
-        const mx = `${(50 + inc.x * 45).toFixed(1)}%`;
-        const my = `${(40 + inc.y * 40).toFixed(1)}%`;
-        for (const reflet of el.getElementsByClassName('ouverture__reflet-sachet') as HTMLCollectionOf<HTMLElement>) {
-          reflet.style.setProperty('--mx', mx);
-          reflet.style.setProperty('--my', my);
+      const sachets = [sachetAvant.current, sachetArriere.current].filter(
+        (el): el is HTMLDivElement => el !== null
+      );
+      if (sachets.length > 0) {
+        for (const el of sachets) {
+          el.style.setProperty('--ry', `${(inc.x * 16).toFixed(2)}deg`);
+          el.style.setProperty('--rx', `${(-inc.y * 12).toFixed(2)}deg`);
+          // **Le reflet est le seul consommateur de `--mx`/`--my`** : la variable se pose sur lui,
+          // pas sur le sachet. Sinon elle s'hérite dans tout le sachet (le SVG compris, deux fois)
+          // et chaque image recalculait le style de dizaines de nœuds pour rien — mesuré le
+          // 01/11/2026 : 0,79 s de recalcul de style sur 2,5 s, ramenés à 0,21 s.
+          const mx = `${(50 + inc.x * 45).toFixed(1)}%`;
+          const my = `${(40 + inc.y * 40).toFixed(1)}%`;
+          for (const reflet of el.getElementsByClassName('ouverture__reflet-sachet') as HTMLCollectionOf<HTMLElement>) {
+            reflet.style.setProperty('--mx', mx);
+            reflet.style.setProperty('--my', my);
+          }
+        }
+        const refletBande = bande.current?.querySelector<HTMLElement>('.ouverture__reflet-sachet');
+        if (refletBande) {
+          refletBande.style.setProperty('--mx', `${(50 + inc.x * 45).toFixed(1)}%`);
+          refletBande.style.setProperty('--my', `${(40 + inc.y * 40).toFixed(1)}%`);
         }
       }
       raf = requestAnimationFrame(pas);
@@ -746,9 +756,10 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
 
   const decoupe = etat.phase !== 'ferme' || apres === 'ouverture';
 
-  // La pochette : la plus grande qui tienne dans la scène, au format 3 × 5.
-  const hauteurPochette = Math.min(taille.hauteur * 0.86, (taille.largeur * 0.8) / 0.6, 640);
+  // La navette garde de l'air pour la sortie par le haut, plutôt que d'occuper toute la fenêtre.
+  const hauteurPochette = Math.min(taille.hauteur * 0.86, (taille.largeur * 0.8) / 0.6, 520);
   const largeurPochette = hauteurPochette * 0.6;
+  const decalagePochette = Math.min(32, Math.max(0, (taille.hauteur - hauteurPochette) / 2 - 16));
 
   const grande = echelleGrande(taille.largeur, taille.hauteur);
   const disposition = poseFiche(taille.largeur, taille.hauteur);
@@ -777,25 +788,30 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         z: 30 - i
       };
     }
-    // Les cartes commencent leur émergence au ras de la déchirure. Dès l'ouverture, la liste passe
-    // devant le sachet ; elle reste invisible pendant les 300 ms de préparation (`sortie` 0).
+    // Les cartes commencent au ras de la déchirure, entre les deux faces. Elles se resserrent en
+    // montant pour tenir entièrement entre la ligne et le titre avant de s'étaler.
     const echelleSachet = (largeurPochette * 0.8) / CARTE.largeur;
-    const hauteurCarte = CARTE.hauteur * echelleSachet;
-    const fente = -hauteurPochette / 2 + hauteurPochette * LIGNE;
+    const fente = -hauteurPochette / 2 + hauteurPochette * LIGNE + decalagePochette;
     const ecart = i - (nombre - 1) / 2;
     const monte = apres === 'ouverture' && sortie === 1;
-    const hautMontee = fente - hauteurCarte * (0.55 - Math.abs(ecart) * 0.05);
-    // Le haut reste à 48 px du bord de la scène : marge mesurée pour ne passer ni sous le titre ni
-    // hors de la fenêtre au gabarit bureau.
-    const haut = monte ? Math.max(hautMontee, -taille.hauteur / 2 + 48) : fente + 8;
+    const hautSecurise = -taille.hauteur / 2 + 32;
+    // La carte se resserre pour tenir entièrement entre la ligne et le titre avant l'étalage.
+    const echelleSortie = Math.min(
+      echelleSachet,
+      Math.max(0.08, (fente - hautSecurise - 16) / CARTE.hauteur)
+    );
+    const echelleCarte = monte ? echelleSortie : echelleSachet;
+    const hauteurCarte = CARTE.hauteur * echelleCarte;
+    const hautMontee = fente - hauteurCarte - 16;
+    const haut = monte ? Math.max(hautMontee, hautSecurise) : fente + 8;
     return {
       pose: {
         x: monte ? ecart * largeurPochette * 0.06 : 0,
         y: haut + hauteurCarte / 2,
-        echelle: echelleSachet,
+        echelle: echelleCarte,
         rotation: monte ? ecart * 4 : 0
       },
-      opacite: apres === 'ouverture' && sortie > 0 ? 1 : 0,
+      opacite: 1,
       // Le décalage de 20 ms garde le départ en éventail ; même la dernière carte finit en 780 ms.
       transition: monte ? `700ms ${i * 20}ms` : '300ms',
       z: 30 - i
@@ -841,6 +857,7 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
       ref={racine}
       className="ouverture"
       data-etape={etape}
+      data-sortie={apres === 'ouverture' ? sortie : undefined}
       data-palier={palierTirage}
       data-eclat={eclat ?? undefined}
       data-testid="ouverture"
@@ -878,9 +895,15 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
             ref={zoneRef}
             className={`ouverture__zone${presse ? ' ouverture__zone--presse' : ''}`}
             data-zone
+            data-tire={tire.current ? 'oui' : 'non'}
             role="group"
             aria-label="Le sachet"
-            style={{ width: `${largeurPochette}px`, height: `${hauteurPochette}px` }}
+            style={{
+              width: `${largeurPochette}px`,
+              height: `${hauteurPochette}px`,
+              marginLeft: `${-largeurPochette / 2}px`,
+              marginTop: `${-hauteurPochette / 2 + decalagePochette}px`
+            }}
             onPointerDown={surAppuiSachet}
             onPointerMove={surMouvementSachet}
             onPointerUp={surRelacheSachet}
@@ -888,41 +911,60 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
             onLostPointerCapture={surRelacheSachet}
             onPointerLeave={surSortieSachet}
           >
-            <div className="ouverture__flotte">
-              <div
-                ref={sachet}
-                className="ouverture__sachet"
-                data-decoupe={decoupe ? 'oui' : 'non'}
-                data-tire={tire.current ? 'oui' : 'non'}
-                style={{ ['--masque' as string]: MASQUE_SILHOUETTE }}
-              >
-                {/* L'intérieur : la lumière qui filtre par la fente, de la couleur du tirage. */}
-                <div ref={interieur} className="ouverture__interieur" />
-                <div className="ouverture__corps" style={decoupe ? { clipPath: clips.corps } : undefined}>
-                  <Pochette nombre={nombre} />
+            <div className="ouverture__face-arriere" data-face-arriere>
+              <div className="ouverture__flotte">
+                <div
+                  ref={sachetArriere}
+                  className="ouverture__sachet ouverture__sachet--arriere"
+                  style={{ ['--masque' as string]: MASQUE_SILHOUETTE }}
+                >
+                  <Pochette nombre={nombre} face="arriere" />
                   <span className="ouverture__reflet-sachet" />
                 </div>
-                {decoupe && (
-                  <div
-                    ref={bande}
-                    className={`ouverture__bande${apres === 'ouverture' ? ' ouverture__bande--envol' : ''}`}
-                    style={{ clipPath: clips.bande }}
-                  >
-                    <Pochette nombre={nombre} />
+              </div>
+            </div>
+
+            {/* Lumière et scellé : sous les cartes, jamais une troisième face devant elles. */}
+            <div ref={interieur} className="ouverture__interieur" />
+            {decoupe && (
+              <div
+                ref={bande}
+                className={`ouverture__bande${apres === 'ouverture' ? ' ouverture__bande--envol' : ''}`}
+                style={{ clipPath: clips.bande, ['--masque' as string]: MASQUE_SILHOUETTE }}
+              >
+                <Pochette nombre={nombre} face="avant" />
+                <span className="ouverture__reflet-sachet" />
+              </div>
+            )}
+
+            <div
+              className="ouverture__face-avant"
+              data-face-avant
+              data-ligne-ouverture={LIGNE}
+              style={apres === 'ouverture' ? { clipPath: `inset(${LIGNE * 100}% 0 0)` } : undefined}
+            >
+              <div className="ouverture__flotte">
+                <div
+                  ref={sachetAvant}
+                  className="ouverture__sachet ouverture__sachet--avant"
+                  data-decoupe={decoupe ? 'oui' : 'non'}
+                  data-tire={tire.current ? 'oui' : 'non'}
+                  style={{ ['--masque' as string]: MASQUE_SILHOUETTE }}
+                >
+                  <div className="ouverture__corps" style={decoupe ? { clipPath: clips.corps } : undefined}>
+                    <Pochette nombre={nombre} face="avant" />
                     <span className="ouverture__reflet-sachet" />
                   </div>
-                )}
-                {/* La fente existe dès la phase de déchirure : sa longueur vient de `--p`, que le
-                    geste écrit sans re-rendre — un `p > 0.01` lu à l'état ne s'ouvrirait qu'au
-                    premier rendu (#566). */}
-                {etat.phase === 'dechirure' && <span ref={fente} className="ouverture__fente" />}
-                {etape === 'ferme' && (
-                  <span
-                    key={rappel}
-                    className="ouverture__guide"
-                    style={rappel > 0 ? { animationDelay: '0ms' } : undefined}
-                  />
-                )}
+                  {/* La fente existe dès la phase de déchirure : sa longueur vient de `--p`. */}
+                  {etat.phase === 'dechirure' && <span ref={fente} className="ouverture__fente" />}
+                  {etape === 'ferme' && (
+                    <span
+                      key={rappel}
+                      className="ouverture__guide"
+                      style={rappel > 0 ? { animationDelay: '0ms' } : undefined}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -931,9 +973,9 @@ export function SceneOuverture({ cartes, neuves, onRanger }: Props) {
         {/* Les cartes sont **toujours** dans le DOM, même avant l'ouverture : le tirage et le badge
           « Nouvelle » ne dépendent d'aucune animation (D-098). */}
         <ol
-          className={`ouverture__cartes${fiche !== null ? ' ouverture__cartes--fiche' : ''}${
+          className={`ouverture__cartes ouverture__cartes--entre-faces${fiche !== null ? ' ouverture__cartes--fiche' : ''}${
             enCours ? ' ouverture__cartes--scene' : ''
-          }${!apres ? ' ouverture__cartes--dedans' : ''}`}
+          }`}
           data-cartes
           aria-label="Le tirage"
         >

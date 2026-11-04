@@ -71,9 +71,9 @@ const TICKETS_ATTENDUS = [
   651,
   // #666 : la Journée décrit l'écran affiché — la cible d'une étape ne peut pas désigner un autre écran.
   666,
-  // #667 : les cartes passent devant le corps du sachet à la sortie — l'empilement de la scène
-  // se lit dans la feuille **et** dans le `z-index` en ligne de `SceneOuverture`.
-  667
+  // #667 : exigence remplacée après PR #708 — cartes entre dos et bordereau ; deux mutations
+  // prouvent que le test mord si elles passent devant la face avant ou derrière la face arrière.
+  667, 667
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {

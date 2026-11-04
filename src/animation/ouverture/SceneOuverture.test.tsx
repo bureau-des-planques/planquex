@@ -116,7 +116,7 @@ function jusquALaRevelation(scene: HTMLElement): void {
   fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
   attendre(800);
   expect(scene.dataset.etape).toBe('ouverture');
-  attendre(3200);
+  attendre(3400);
   expect(scene.dataset.etape).toBe('revelation');
 }
 
@@ -148,8 +148,8 @@ function zIndex(element: HTMLElement): number {
   if (Number.isFinite(enLigne)) return enLigne;
   let z = 0;
   for (const { selecteur, corps } of blocs()) {
-    // Seuls les sélecteurs de classes simples sont lus : la scène n'empile ses cartes que par
-    // une classe (`.ouverture__cartes`, `--dedans`, `--scene`, `--fiche`).
+    // Seuls les sélecteurs de classes simples sont lus : les faces et la pile portent chacune
+    // leur propre contexte (`--face-arriere`, `--entre-faces`, `--face-avant`).
     if (!/^(\.[\w-]+)+$/.test(selecteur)) continue;
     const classes = (selecteur.match(/\.[\w-]+/g) ?? []).map((c) => c.slice(1));
     if (!classes.every((c) => element.classList.contains(c))) continue;
@@ -186,6 +186,11 @@ function devant(a: number[], b: number[]): boolean {
   return false;
 }
 
+function verifierEntreLesFaces(arriere: number[], cartes: number[], avant: number[]): void {
+  expect(devant(cartes, arriere), `les cartes (${cartes.join(' → ')}) passent devant l’arrière (${arriere.join(' → ')})`).toBe(true);
+  expect(devant(avant, cartes), `l’avant (${avant.join(' → ')}) recouvre les cartes (${cartes.join(' → ')})`).toBe(true);
+}
+
 describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
   it('les cinq cartes et le badge « Nouvelle » sont là dès le premier rendu', () => {
     const scene = monter();
@@ -197,8 +202,11 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
 
   it('la pochette est une navette de courrier avec texte SVG lisible, tampon et scellé', () => {
     const scene = monter();
-    const pochette = scene.querySelector('.pochette');
+    const pochette = scene.querySelector('.pochette--avant');
+    const arriere = scene.querySelector('.pochette--arriere');
     expect(pochette).not.toBeNull();
+    expect(arriere).not.toBeNull();
+    expect(arriere?.querySelector('text')).toBeNull();
     expect(pochette?.querySelector('image')).toBeNull();
 
     const textes = [...(pochette?.querySelectorAll('text[data-pochette-texte]') ?? [])];
@@ -322,7 +330,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
     // Le contrôle mord : à 1,5 s, les cartes sortent encore — la révélation n'a pas commencé.
     attendre(1500);
     expect(scene.dataset.etape).toBe('ouverture');
-    attendre(1600);
+    attendre(1900);
     expect(scene.dataset.etape).toBe('revelation');
     const faces = [...scene.querySelectorAll<HTMLElement>('.ouverture__carte')].map((c) => c.dataset.face);
     expect(faces).toEqual(['verso', 'verso', 'verso', 'verso', 'verso']);
@@ -520,53 +528,43 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
   });
 
   /**
-   * **Les cartes passent devant le corps du sachet à la sortie** (#667).
-   *
-   * Le défaut mesuré : à l'envol, `.ouverture__cartes--dedans` pose la liste des cartes en
-   * `z-index: 1`, sous la zone du sachet (`z-index: 2`) — et le `z-index` en ligne de chaque
-   * carte (`30 - i`, écrit par `poseDe`) ne peut pas sortir du plan de sa liste. Les cartes
-   * émergent donc **derrière** la pochette, que l'on voit seule.
-   *
-   * ⚠️ Ce test garde **l'ordre des plans**, il ne prouve pas le rendu : jsdom ne peint rien, et
-   * une valeur de `z-index` ne dit pas ce que l'œil voit. La preuve visuelle est la planche de
-   * frames de la phase de sortie (`scripts/preuves/filmer-animation.mjs`), exigée par #672.
-   *
-   * ⚠️ **Rouge avant le correctif #672**, et c'est voulu : il ne se fusionne pas seul.
+   * **Les cartes sont prises entre le dos et le bordereau** (#667, exigence remplacée sur ordre
+   * de Bastien le 04/11/2026 après relecture de la PR #708). Le `z-index` en ligne de chaque carte
+   * ne peut pas sortir du plan de sa liste : on compare donc les plans effectifs jusqu'aux faces.
+   * Le film `filmer-animation.mjs --occlusion` vérifie en navigateur la découpe visible à la ligne.
    */
-  it('à la sortie, les cartes passent devant le corps du sachet (#667)', () => {
+  it('les cartes sont entre le dos et le bordereau pendant leur sortie (#667 remplacée)', () => {
     const scene = monter();
     fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
-    // 700 ms de déchirure jouée seule, puis l'envol : les cartes commencent à sortir.
-    attendre(800);
+    attendre(1100);
     expect(scene.dataset.etape).toBe('ouverture');
 
     const premiere = carte(scene, 0);
-    const corps = scene.querySelector('.ouverture__corps') as HTMLElement;
-    // Le contrôle mord : le `z-index` en ligne est bien écrit par `poseDe` — s'il manquait, le
-    // plan des cartes se réduirait à celui de leur liste et la garde ne lirait plus rien.
+    const arriere = scene.querySelector('.ouverture__face-arriere') as HTMLElement;
+    const avant = scene.querySelector('.ouverture__face-avant') as HTMLElement;
+    const liste = scene.querySelector('.ouverture__cartes') as HTMLElement;
+    expect(arriere).not.toBeNull();
+    expect(avant).not.toBeNull();
+    expect(liste.classList.contains('ouverture__cartes--entre-faces')).toBe(true);
+
+    // Les classes portent l'ordre des couches ; le style en ligne ne porte que l'ordre des cartes.
+    expect(zIndex(arriere)).toBeLessThan(zIndex(liste));
+    expect(zIndex(liste)).toBeLessThan(zIndex(avant));
     expect(Number(premiere.style.zIndex)).toBeGreaterThan(0);
-
-    const planCartes = planDe(scene, premiere);
-    const planCorps = planDe(scene, corps);
-    expect(
-      devant(planCartes, planCorps),
-      `les cartes (${planCartes.join(' → ')}) devraient être devant le corps du sachet (${planCorps.join(' → ')})`
-    ).toBe(true);
+    verifierEntreLesFaces(planDe(scene, arriere), planDe(scene, premiere), planDe(scene, avant));
+    expect(avant.dataset.ligneOuverture).toBeTruthy();
+    expect(avant.style.clipPath).toMatch(/^inset\(/);
   });
 
-  it('le contrôle mord : l’ancien ordre (`--cartes--dedans`, z-index 1) est refusé (#667)', () => {
-    // L'ordre d'avant le correctif, lu dans la feuille : la liste des cartes est en `z-index: 1`,
-    // la zone du sachet en `z-index: 2`, et la carte porte son `z-index` en ligne (30).
-    // Un contrôle qui ne comparerait que le `z-index` en ligne la dirait devant : il est faux,
-    // la carte ne peut pas sortir du contexte d'empilement de sa liste.
-    expect(devant([1, 30], [2])).toBe(false);
-    // Et il n'est pas toujours faux : sans le contexte de la liste, la carte passe devant.
-    expect(devant([30], [2])).toBe(true);
-    // À plan égal, rien ne prouve qu'une carte est devant : le doute ne vaut pas preuve.
-    expect(devant([2], [2])).toBe(false);
+  it('le contrôle mord : les deux ordres fautifs sont refusés (#667 remplacée)', () => {
+    expect(() => verifierEntreLesFaces([2], [3, 30], [4])).not.toThrow();
+    // Cas fautif 1 : cartes au-dessus du bordereau.
+    expect(() => verifierEntreLesFaces([2], [5, 30], [4])).toThrow();
+    // Cas fautif 2 : cartes derrière le dos de la pochette.
+    expect(() => verifierEntreLesFaces([4], [3, 30], [5])).toThrow();
   });
 
-  it('les cartes restent invisibles avant la fente et chaque bascule tient sous 800 ms', () => {
+  it('le bordereau masque les cartes sous la fente et chaque bascule tient sous 800 ms', () => {
     const rendre = ecranTaille(420, 900);
     try {
       const scene = monter();
@@ -575,9 +573,11 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
 
       const liste = scene.querySelector('.ouverture__cartes') as HTMLElement;
       const cartes = [...scene.querySelectorAll<HTMLElement>('.ouverture__carte')];
-      // Le plan passe devant dès le départ, mais aucune carte ne perce avant sa sortie de la fente.
-      expect(liste.classList.contains('ouverture__cartes--dedans')).toBe(false);
-      expect(cartes.every((carte) => carte.style.opacity === '0')).toBe(true);
+      const avant = scene.querySelector('.ouverture__face-avant') as HTMLElement;
+      // Les cartes sont toujours entre les faces ; c'est le bordereau, découpé à la ligne, qui les cache.
+      expect(liste.classList.contains('ouverture__cartes--entre-faces')).toBe(true);
+      expect(Number(avant.dataset.ligneOuverture)).toBeGreaterThan(0);
+      expect(avant.style.clipPath).toMatch(/^inset\(/);
 
       attendre(250);
       expect(cartes.every((carte) => carte.style.opacity === '1')).toBe(true);
@@ -588,7 +588,7 @@ describe('l’ouverture d’un Arrivage — le composant (#283)', () => {
       }
 
       // La sortie de la pochette est une seconde bascule ; elle garde la même borne.
-      attendre(1350);
+      attendre(2300);
       for (const carte of cartes) {
         const bascule = /transform (\d+)ms(?: (\d+)ms)?/.exec(carte.style.transition);
         expect(bascule).not.toBeNull();

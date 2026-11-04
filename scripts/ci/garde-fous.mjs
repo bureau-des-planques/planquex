@@ -484,17 +484,25 @@ export const MUTATIONS = [
   },
   {
     ticket: 667,
-    titre: 'le corps du sachet repasse devant les cartes à la sortie',
+    titre: 'les cartes repassent devant la face avant du sachet',
     fichier: 'src/styles.css',
-    // À l'envol, les cartes quittent la pochette et doivent passer **devant** son corps
-    // (`SceneOuverture.test.tsx`, « à la sortie, les cartes passent devant le corps du sachet »).
-    // La mutation remonte la zone du sachet à `z-index: 50` : aucun plan de carte ne peut plus
-    // la dépasser, et l'Arrivage ne montre que la pochette — le défaut mesuré de #667/#672.
-    motif: '  touch-action: none;\n  translate: -50% -50%;\n  z-index: 2;',
-    remplacement: '  touch-action: none;\n  translate: -50% -50%;\n  z-index: 50;',
+    // Exigence remplacée par Bastien après PR #708 : arrière < cartes < avant ; le bordereau
+    // doit masquer les cartes sous la ligne. Baisser l'avant à l'arrière fait échouer le test.
+    motif: '.ouverture__face-avant {\n  z-index: 4;',
+    remplacement: '.ouverture__face-avant {\n  z-index: 2;',
     tests: ['src/animation/ouverture/SceneOuverture.test.tsx'],
-    garde:
-      'les cartes sortent derrière le corps du sachet : l’empilement de la scène est de nouveau celui d’avant le correctif v1-a2 (#672), et la garde d’empilement doit tomber'
+    garde: 'les cartes passent devant le bordereau : la face avant ne peut plus masquer la partie sous la ligne'
+  },
+  {
+    ticket: 667,
+    titre: 'les cartes repassent derrière la face arrière du sachet',
+    fichier: 'src/styles.css',
+    // La deuxième moitié du nouvel empilement : remonter l'arrière au-dessus des cartes les cache
+    // même si le bordereau reste devant. Le test de plans doit refuser ce cas fautif séparément.
+    motif: '.ouverture__face-arriere {\n  z-index: 2;',
+    remplacement: '.ouverture__face-arriere {\n  z-index: 5;',
+    tests: ['src/animation/ouverture/SceneOuverture.test.tsx'],
+    garde: 'les cartes passent derrière le dos de la pochette : l’arrière ne peut plus rester sous les cartes'
   }
 ];
 
