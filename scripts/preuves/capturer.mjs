@@ -24,6 +24,8 @@
  *   npm run build && npm run capturer
  *   BASE_URL=http://localhost:5178 npm run capturer
  *   CHROME_PATH=/chemin/vers/chrome npm run capturer
+ *   npm run e2e   (la preuve E2E du projet de test, #668 — alias de `--e2e` ; sans
+ *     E2E_TEST_EMAIL/E2E_TEST_PASSWORD, la partie réseau est sautée et la commande sort 0)
  *   node scripts/preuves/capturer.mjs --plan   (imprime l'état amorcé et le plan, sans navigateur)
  *   node scripts/preuves/capturer.mjs --controle-hauteur '<géométrie JSON>'  (joue le contrôle de
  *     hauteur sur une géométrie fournie, sans navigateur : c'est ce que teste #194)
@@ -819,6 +821,29 @@ const ignores = [];
 function stop(message) {
   console.error(`✖ ${message}`);
   process.exit(1);
+}
+
+// **La preuve E2E du projet de test** (#668). Elle vit dans son propre module — elle parle
+// au réseau, ce que le reste de ce fichier ne fait pas —, et cette entrée ne charge ses
+// dépendances que sur `--e2e` : `npm run capturer` sans ce drapeau garde ses captures
+// locales. Sans secrets, `lancerPreuveE2E` saute la partie réseau, vérifie le contrat de
+// l'état préparé et rend la main : on sort **0**, pas en erreur.
+if (process.argv.includes('--e2e')) {
+  const { lancerPreuveE2E } = await import('./e2e-supabase.mjs');
+  try {
+    await lancerPreuveE2E({
+      env: process.env,
+      root,
+      outDir,
+      executablePath,
+      base,
+      origine,
+      port: PORT
+    });
+  } catch (erreur) {
+    stop(erreur instanceof Error ? erreur.message : String(erreur));
+  }
+  process.exit(0);
 }
 
 // Deux captures qui porteraient le même nom d'image s'écraseraient en silence : les

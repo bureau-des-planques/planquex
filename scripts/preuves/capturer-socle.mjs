@@ -43,6 +43,37 @@ export function amorcageStore(origin, supplement = {}) {
 }
 
 /**
+ * La clé de session de Supabase dans `localStorage` (#668) : `sb-<ref>-auth-token`, où
+ * `<ref>` est le premier label de l'hôte du projet. C'est la formule de
+ * `@supabase/supabase-js` (lue dans `node_modules/@supabase/supabase-js`, pas une
+ * convention maison) ; la recopier ici évite d'ouvrir un navigateur pour la retrouver.
+ */
+export function cleSession(url) {
+  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
+}
+
+/**
+ * L'état préparé d'une preuve E2E (#668) : un `storageState` de Playwright qui porte la
+ * session du compte de test **et** l'amorçage du store. `version` est omise **à dessein**,
+ * comme dans `amorcageStore` : elle vit dans `src/store/useStore.ts`, et un blob qui ne
+ * porte qu'un booléen n'a aucune forme à migrer.
+ */
+export function etatPrepare({ origine, url, session, supplement = {} }) {
+  return {
+    cookies: [],
+    origins: [
+      {
+        origin: origine,
+        localStorage: [
+          { name: cleSession(url), value: JSON.stringify(session) },
+          { name: STORAGE_KEY, value: JSON.stringify({ state: { tutorielVu: true, ...supplement } }) }
+        ]
+      }
+    ]
+  };
+}
+
+/**
  * La **fenêtre d'un téléphone**, telle que le critère (4) de **D-060** la nomme :
  * « on regarde les captures à la taille d'un téléphone (420×900) ». C'est un acte
  * daté, et `AGENTS.md` §2 met les actes au-dessus du code : l'écart
