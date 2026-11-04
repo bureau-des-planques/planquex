@@ -327,7 +327,7 @@ npx impeccable detect --cdp 9222 --target "Bureau" --json
 ### 7.2 Trois décisions de gouvernance
 
 - **`ECRANS`** : douze routes réellement servies à un navigateur — `/`, `/collection`, `/deck`, `/battle`, `/settings`, `/comite`, `/comite/suivi`, `/feuille-de-route`, `/connexion`, `/attente`, `/confidentialite`, `/administration`. `/installation` est exclu volontairement (D-155, #514) : le guide ne suit pas les règles de style du jeu, et sa lisibilité se vérifie à la main sur téléphone. La portée est une décision, pas un oubli.
-- **`BASELINE`** : un plafond par écran, un **cliquet**. Le gate ne demande pas zéro par principe : il demande **pas plus qu'hier**, et chaque baisse se fait dans le commit qui corrige. Depuis le 26/10/2026, le plafond du dépôt est à zéro, donc il exige zéro. Le plafond a été abaissé par vagues — Collection 42 → 32 → 3 → 0, Deck 12 → 11 → 6 → 0 — chaque fois dans le commit qui corrige.
+- **`BASELINE`** : un plafond **par écran et par règle**, un **cliquet** (#670) : un échange de règle à total égal — par exemple `nested-cards` contre `line-length` — fait échouer, parce qu'une règle absente du plafond vaut 0. Le gate ne demande pas zéro par principe : il demande **pas plus qu'hier**, et chaque baisse se fait dans le commit qui corrige. Depuis le 26/10/2026, le plafond du dépôt est à zéro, donc il exige zéro. Le plafond a été abaissé par vagues — Collection 42 → 32 → 3 → 0, Deck 12 → 11 → 6 → 0 — chaque fois dans le commit qui corrige.
 - **Le seuil est écrit une fois**, pas dans la tête du lecteur : un anti-pattern compte, un avis non.
 
 ### 7.3 La leçon technique
