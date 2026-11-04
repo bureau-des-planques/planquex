@@ -3,6 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+// @ts-expect-error — le socle de capture est un module `.mjs` sans déclaration TypeScript.
+import { contraste, erreurConsoleAttendue, problemesPochette } from './capturer-socle.mjs';
 
 /**
  * Ticket #53 — le **contrat** de `npm run capturer`, sans lancer de navigateur.
@@ -159,6 +161,37 @@ describe('`npm run capturer` — l’amorçage du store (#150)', () => {
     expect(nues[0].route).toBe('/');
     // À part : elle ne prend pas le slug d'une page, et son image porte son nom.
     expect(capturedRoutes().slugs).not.toContain(nues[0].slug);
+  });
+});
+
+describe('`npm run capturer` — lisibilité de la pochette (#671)', () => {
+  it('le texte rendu à 10 px déclenche un problème sous le plancher de 11,2 px', () => {
+    const problemes = problemesPochette([{ texte: 'DESTINATAIRE', taille: 10, ratio: 7 }]);
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain('10');
+  });
+
+  it('la paire documentée à 3,79:1 échoue au seuil AA de 4,5:1', () => {
+    const ratio = contraste('#9aa9c2', '#214d69');
+    expect(ratio).toBeCloseTo(3.79, 2);
+
+    const problemes = problemesPochette([{ texte: 'LIBELLÉ', taille: 12, ratio }]);
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0]).toContain('3.79');
+  });
+
+  it('accepte une taille et un contraste au-dessus de leurs seuils', () => {
+    expect(problemesPochette([{ texte: 'ARRIVAGE', taille: 11.2, ratio: 4.5 }])).toEqual([]);
+  });
+});
+
+describe('`npm run capturer` — l’état hors ligne (#493)', () => {
+  it('ne traite pas un refus réseau attendu comme une erreur de console de l’application', () => {
+    expect(
+      erreurConsoleAttendue('collection-hors-ligne', 'Failed to load resource: net::ERR_INTERNET_DISCONNECTED')
+    ).toBe(true);
+    expect(erreurConsoleAttendue('collection-hors-ligne', 'TypeError: Cannot read properties of null')).toBe(false);
+    expect(erreurConsoleAttendue('arrivage', 'Failed to load resource: net::ERR_INTERNET_DISCONNECTED')).toBe(false);
   });
 });
 
