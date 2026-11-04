@@ -212,6 +212,54 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     // complet se joue dans le test suivant ; ici, on garde la garde des deux gestes du store.
   });
 
+  it('le volet des Decks proposés vient dans la fenêtre, et « Charger » s’y atteint (#679)', async () => {
+    // **L'ordre compte** : ce test passe avant le parcours complet, donc le morceau
+    // `/deck` est encore froid. Réchauffé, il se monterait avant l'effet de la Journée et
+    // le défaut (cible arrivée après l'effet) ne se verrait plus.
+    simulerArrivage();
+    oublierGestes();
+    remettreJourneeAuDebut();
+    await rendreApplication({
+      chemin: '/',
+      storeState: { tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] },
+      extra: <FilDuChemin />
+    });
+    await screen.findByRole('region', { name: /Journée d’intégration/ });
+    const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
+
+    // Étape 1 faite, puis « Suivant » ouvre `/deck` : la Journée et le Deck sont deux
+    // morceaux paresseux, le volet peut donc apparaître **après** l'effet de la Journée.
+    await userEvent.click(action(/Ouvrir un Arrivage/i));
+    await screen.findByRole('dialog');
+    await userEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
+    const suivant = screen.getByRole('button', { name: /^Suivant$/i });
+    await waitFor(() => expect(suivant).toBeEnabled());
+    scroll.mockClear();
+    await userEvent.click(suivant);
+    await verifierCorrespondance();
+
+    // **Le conteneur, pas le bouton** : la cible est le `<details>` des Decks proposés.
+    const volet = document.querySelector('[data-journee-cible="decks-proposes"]');
+    expect(volet).toBeInstanceOf(HTMLDetailsElement);
+    expect(volet).toHaveAttribute('data-journee-cible', 'decks-proposes');
+    expect(volet).toHaveAttribute('open');
+    // Il a été **amené** sous le panneau (jsdom ne défile pas : on lit la doublure).
+    await waitFor(() => expect(scroll.mock.contexts).toContain(volet));
+    expect(scroll).toHaveBeenCalledWith({ block: 'start', behavior: 'auto' });
+
+    // Le contrôle d'action est **dans** le volet, et c'est le volet qui porte la cible.
+    const charger = within(volet as HTMLElement).getAllByRole('button', { name: 'Charger' })[0];
+    expect(charger).not.toHaveAttribute('data-journee-cible');
+    // **La garde laisse passer le geste** (D-160 (3)) : sans cette exception, le clic
+    // n'arriverait pas, le Deck resterait vide et « Suivant » resterait fermé.
+    await userEvent.click(charger);
+    await waitFor(() => expect(useStore.getState().deck.length).toBeGreaterThan(0));
+    await waitFor(() => expect(suivant).toBeEnabled());
+
+    // Étape, route et cible n'ont pas divergé pendant le geste.
+    await verifierCorrespondance();
+  });
+
   it('chaque étape ouvre l’écran qu’elle décrit, et le geste se fait sur cet écran', async () => {
     simulerArrivage();
     oublierGestes();
@@ -510,5 +558,66 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
       </MemoryRouter>
     );
     expect(document.querySelector('.journee__pointe')).toBeNull();
+  });
+});
+
+describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () => {
+  it('Échap met en pause sans terminer ; « Reprendre » rend le panneau à la même étape', async () => {
+    await monter();
+    await userEvent.click(action(/^Suivant$/i));
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
+
+    await userEvent.keyboard('{Escape}');
+    // **Le contrôle mord** : si Échap écrivait `tutorielVu` (ancien comportement), le drapeau
+    // serait à `true` ici et le panneau serait retiré.
+    expect(screen.getByText(/Journée en pause/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reprendre' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Passer : tu ne verras pas le combat/ })).toBeInTheDocument();
+    expect(useStore.getState().tutorielVu).toBe(false);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Reprendre' }));
+    // **Le contrôle mord** : « Reprendre » qui terminerait la Journée retirerait le panneau.
+    expect(useStore.getState().tutorielVu).toBe(false);
+    expect(screen.queryByText(/Journée en pause/)).toBeNull();
+    expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
+  });
+
+  it('la sortie explicite termine la Journée ; Échap seul ne la termine pas', async () => {
+    await monter();
+    await userEvent.keyboard('{Escape}');
+    // **Le contrôle mord** : un Échap qui terminerait ferait échouer cette ligne.
+    expect(useStore.getState().tutorielVu).toBe(false);
+
+    await userEvent.click(screen.getByRole('button', { name: /Passer : tu ne verras pas le combat/ }));
+    expect(useStore.getState().tutorielVu).toBe(true);
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+  });
+
+  it('en pause, la page n’est plus bloquée et « Reprendre » se tient au clavier', async () => {
+    await monter();
+    // La page d'accueil, hors du panneau : c'est elle que la garde protège.
+    const probe = screen.getByRole('heading', { level: 1 });
+    const clic = () => {
+      const evenement = new MouseEvent('click', { bubbles: true, cancelable: true });
+      probe.dispatchEvent(evenement);
+      return evenement.defaultPrevented;
+    };
+    // **Le contrôle mord** : hors pause, la garde annule le clic sur la page.
+    expect(clic()).toBe(true);
+
+    await userEvent.keyboard('{Escape}');
+    expect(clic()).toBe(false);
+    // Au clavier : « Reprendre » est tabulable (pas de `tabindex="-1"`), et Entrée le
+    // déclenche. Le focus y arrive comme il arriverait par `Tab`.
+    const reprendre = screen.getByRole('button', { name: 'Reprendre' });
+    expect(reprendre.tabIndex).toBeGreaterThanOrEqual(0);
+    act(() => {
+      reprendre.focus();
+    });
+    expect(reprendre).toHaveFocus();
+    await userEvent.keyboard('{Enter}');
+    // **Le contrôle mord** : si la barre ne tenait pas au clavier, Entrée ne la rendrait pas.
+    expect(screen.queryByText(/Journée en pause/)).toBeNull();
+    expect(useStore.getState().tutorielVu).toBe(false);
   });
 });

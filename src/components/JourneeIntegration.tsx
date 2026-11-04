@@ -248,7 +248,26 @@ export function JourneeIntegration() {
       positionnerPointe();
     });
 
+    /**
+     * **La cible peut arriver après l'effet** (#679) : les écrans sont paresseux (#478).
+     * Sur `/deck`, la Journée se monte avant le morceau du Deck ; `amenerLaCible` ne
+     * trouvait alors rien, et le volet des Decks proposés restait hors de la fenêtre
+     * (diagnostic du 03/11/2026, `y = 1330`). On l'amène dès qu'il paraît, puis on cesse
+     * d'écouter : une cible déjà présente n'a pas besoin de l'observateur.
+     */
+    let veille: MutationObserver | null = null;
+    const selecteurCible = cibleDeLEtape ? `[data-journee-cible="${cibleDeLEtape}"]` : null;
+    if (selecteurCible && !document.querySelector(selecteurCible) && typeof MutationObserver === 'function') {
+      veille = new MutationObserver(() => {
+        if (!document.querySelector(selecteurCible)) return;
+        amenerLaCible();
+        veille?.disconnect();
+      });
+      veille.observe(document.body, { childList: true, subtree: true });
+    }
+
     return () => {
+      veille?.disconnect();
       observateur?.disconnect();
       window.removeEventListener('resize', positionnerPointe);
       poserCibleJournee(null);

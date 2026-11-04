@@ -6296,21 +6296,27 @@ h2 {
 }
 
 .pochette {
+  /* Le kraft reprend le parchemin de DESIGN.md §2.6 dans la scène ; hors combat, ses replis
+     composent des jetons de la palette globale plutôt que de recopier leurs valeurs. */
+  --pochette-kraft: var(--scene-parch, color-mix(in srgb, var(--gold-deep) 65%, var(--gold) 35%));
+  --pochette-kraft-fonce: var(--scene-parch-dark, color-mix(in srgb, var(--gold-deep) 72%, var(--bg-raised) 28%));
+  --pochette-papier-clair: var(--scene-chalk, var(--text));
+  --pochette-encre: var(--scene-ink-parch, var(--bg));
+  --pochette-tranche: var(--scene-parch-dark, color-mix(in srgb, var(--gold-deep) 72%, var(--bg-raised) 28%));
+  --pochette-papier: var(--scene-chalk, var(--text));
   display: block;
   height: 100%;
   width: 100%;
 }
 
-/* Le reflet holographique : il suit l'inclinaison, masqué par la silhouette du sachet. */
+/* Le reflet chaud et diffus suit l'inclinaison du papier kraft, sans irisation plastique. */
 .ouverture__reflet-sachet {
   background:
-    radial-gradient(circle at var(--mx) var(--my), rgb(255 255 255 / 55%) 0%, rgb(255 255 255 / 0%) 34%),
+    radial-gradient(circle at var(--mx) var(--my), rgb(255 248 226 / 18%) 0%, rgb(255 248 226 / 0%) 34%),
     linear-gradient(
       115deg,
       transparent 20%,
-      rgb(255 120 200 / 22%) 32%,
-      rgb(120 220 255 / 26%) 40%,
-      rgb(255 240 140 / 22%) 48%,
+      rgb(255 248 226 / 8%) 40%,
       transparent 60%
     );
   background-position:
@@ -6324,7 +6330,7 @@ h2 {
   mask-image: var(--masque);
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
-  mix-blend-mode: overlay;
+  mix-blend-mode: soft-light;
   pointer-events: none;
   position: absolute;
 }
