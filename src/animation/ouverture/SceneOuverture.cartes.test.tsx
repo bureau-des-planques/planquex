@@ -66,7 +66,7 @@ function jusquALaRevelation(scene: HTMLElement): void {
   fireEvent.click(within(scene).getByRole('button', { name: /^Ouvrir$/ }));
   attendre(800);
   expect(scene.dataset.etape).toBe('ouverture');
-  attendre(3200);
+  attendre(3400);
   expect(scene.dataset.etape).toBe('revelation');
 }
 

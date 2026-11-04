@@ -17,8 +17,9 @@ import { ALL_CARDS } from '@/data';
  * la **continuité du journal**, `scripts/generateurs/index-decisions.test.ts` la **synchro de l'index**.
  * Ici, six contrôles, tous par **lecture de fichier** (aucun réseau, aucune commande) :
  *
- * 1. le **compte de décisions** annoncé dans `AGENTS.md` §1, dans `docs/DECISIONS-INDEX.md`
- *    et dans `.prettierignore` égale le nombre de lignes `| D-` du journal ;
+ * 1. le **compte de décisions** annoncé dans `AGENTS.md` §1 et dans
+ *    `docs/DECISIONS-INDEX.md` égale le nombre de lignes `| D-` du journal ; `.prettierignore`
+ *    ne doit **pas** le recopier (un fait, une source — #707) ;
  * 2. les **commandes**, dans les deux sens : toute `npm run X` citée dans
  *    `docs/COMMANDES.md` existe dans `package.json`, et tout script de `package.json` est cité
  *    dans `docs/COMMANDES.md` ;
@@ -51,16 +52,20 @@ const chemin = (file: string) => fileURLToPath(new URL(`../../${file}`, import.m
 // ---------------------------------------------------------------------------------------
 
 /**
- * Les trois endroits qui annoncent le nombre de décisions du journal. Il n'y a **pas** de
+ * Les **deux** endroits qui annoncent le nombre de décisions du journal. Il n'y a **pas** de
  * source unique : le compte se dérive du journal lui-même (`^| D-`), et c'est ce que fait ce
- * contrôle. Un quatrième endroit qui annoncerait le nombre est à ajouter ici, sinon il dérive
+ * contrôle. Un troisième endroit qui annoncerait le nombre est à ajouter ici, sinon il dérive
  * en silence — c'est exactement l'incident de `AGENTS.md` §1 (113 annoncées, 133 réelles).
+ *
+ * `.prettierignore` n'en fait **plus** partie (#707) : son commentaire recopiait le compte,
+ * chaque décision le périmait, et la PR sortait du chemin rapide de D-143 (#689–#692). Il est
+ * désormais **interdit** d'y recopier un compte : `AGENTS.md` §1 en est la source.
  *
  * Les deux autres mentions du nombre dans le dépôt sont des **citations datées** et ne sont pas
  * gardées : `scripts/generateurs/index-decisions.mjs` et `scripts/generateurs/index-decisions.test.ts` racontent que
  * §1.1 disait « 113 décisions » — c'est l'histoire de la règle, pas son état.
  */
-const SITES_DU_COMPTE = ['AGENTS.md', 'docs/DECISIONS-INDEX.md', '.prettierignore'] as const;
+const SITES_DU_COMPTE = ['AGENTS.md', 'docs/DECISIONS-INDEX.md'] as const;
 
 /** `(133 décisions, 36 000 jetons)` — la phrase de `AGENTS.md` §1. */
 const ANNONCE_COMPTE = /\((\d+)\s+décisions?\b/;
@@ -68,8 +73,11 @@ const ANNONCE_COMPTE = /\((\d+)\s+décisions?\b/;
 /** `> 133 décisions. Le journal fait 36 000 jetons…` — l'en-tête de l'index dérivé. */
 const ENTETE_INDEX = /^>\s*(\d+)\s+décisions?\b/m;
 
-/** `Prettier reformaterait 133 décisions et 30 docs.` — le commentaire de `.prettierignore`. */
-const MENTION_PRETTIER = /(\d+)\s+décisions?\b/;
+/**
+ * Un compte de décisions recopié dans `.prettierignore` (#707). Le fichier n'a **pas** à
+ * l'annoncer : `AGENTS.md` §1 est la source, et une copie se périme à chaque décision.
+ */
+const COMPTE_DANS_PRETTIER = /\b\d+\s+décisions?\b/;
 
 /** Une ligne du journal : `| D-001 | 18/10/2026 | … | … |`. */
 const LIGNE_JOURNAL = /^\|\s*D-\d+\s*\|/gm;
@@ -85,8 +93,7 @@ function compteJournal(journal: string): number {
  * une garde morte), pas se taire.
  */
 function compteAnnonce(texte: string, site: string): number | null {
-  const motif =
-    site === 'docs/DECISIONS-INDEX.md' ? ENTETE_INDEX : site === '.prettierignore' ? MENTION_PRETTIER : ANNONCE_COMPTE;
+  const motif = site === 'docs/DECISIONS-INDEX.md' ? ENTETE_INDEX : ANNONCE_COMPTE;
   const trouve = motif.exec(texte);
   return trouve ? Number(trouve[1]) : null;
 }
@@ -287,9 +294,8 @@ describe('Cohérence des documents — le compte de décisions (27/10/2026)', ()
     expect(
       annonce,
       `${site} n’annonce plus le nombre de décisions — la garde ne garde plus rien : ` +
-        'la phrase porte « (N décisions, …) » (AGENTS.md §1), « > N décisions » (en-tête de ' +
-        'l’index) ou « N décisions » (.prettierignore). `npm run index:decisions` réécrit l’index, ' +
-        'pas les deux autres.'
+        'la phrase porte « (N décisions, …) » (AGENTS.md §1) ou « > N décisions » (en-tête de ' +
+        'l’index). `npm run index:decisions` réécrit l’index, pas AGENTS.md.'
     ).not.toBeNull();
     expect(
       annonce,
@@ -297,6 +303,13 @@ describe('Cohérence des documents — le compte de décisions (27/10/2026)', ()
         `corriger le nombre à la source de lecture : \`grep -c '^| D-' docs/DECISIONS.md\` ` +
         `donne ${reel}.`
     ).toBe(reel);
+  });
+
+  it('.prettierignore ne recopie pas le compte de décisions (AGENTS.md §1 en est la source, #707)', () => {
+    // Une copie se périme à chaque décision : #689–#692 ont ainsi rejoué dix minutes d'écrans
+    // pour rien, et la PR sortait du chemin rapide de D-143. Le contrôle est **inverse** de
+    // celui des deux sites : ici, un nombre est une faute, pas une absence.
+    expect(read('.prettierignore')).not.toMatch(COMPTE_DANS_PRETTIER);
   });
 });
 
@@ -497,12 +510,18 @@ describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
     expect(compteAnnonce(fauxAgents, 'AGENTS.md')).toBe(113);
     expect(compteAnnonce(fauxAgents, 'AGENTS.md')).not.toBe(compteJournal(journal(133)));
 
-    // L'en-tête de l'index dérivé, et sa mention dans `.prettierignore`.
+    // L'en-tête de l'index dérivé.
     expect(compteAnnonce('> 112 décisions. Le journal fait 36 000 jetons :', 'docs/DECISIONS-INDEX.md')).toBe(112);
-    expect(compteAnnonce('Prettier reformaterait 99 décisions et 30 docs.', '.prettierignore')).toBe(99);
 
     // Un site qui n'annonce plus rien est un échec, pas un silence.
     expect(compteAnnonce('Lire le journal avant de coder.', 'AGENTS.md')).toBeNull();
+  });
+
+  it('le contrôle mord : un compte recopié dans .prettierignore est refusé (#707)', () => {
+    // Le commentaire d'avant #707, qui a coûté quatre passages d'écrans (#689–#692).
+    expect('Prettier reformaterait 183 décisions et 30 docs.').toMatch(COMPTE_DANS_PRETTIER);
+    // La formulation retenue ne porte plus de compte : elle passe.
+    expect('Prettier reformaterait le journal et les docs.').not.toMatch(COMPTE_DANS_PRETTIER);
   });
 
   it('le contrôle mord : une commande fantôme et un script non cité sont vus des deux côtés', () => {

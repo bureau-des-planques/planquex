@@ -50,15 +50,15 @@
 | Seuil | **0,9** : lâcher avant referme (la bande retombe, ressort de 240 ms), lâcher après ouvre |
 | Rendu | la bande pivote jusqu'à 15° sur son bout attaché, un trait de lumière court sur la partie ouverte, des étincelles naissent au front ; une vibration par dixième de course, là où l'appareil la permet |
 
-### 3.3 L'envol — 2 900 ms
+### 3.3 L'envol — 3 300 ms
 
 | Instant | Ce qui se passe |
 |---|---|
 | 0 | la bande s'envole (1 s), **éclair** plein écran, secousse, gerbe d'étincelles à la couleur du tirage |
-| 300 ms | les cartes, **dos tourné**, montent **par la fente, devant le corps du sachet**, en léger éventail ; chaque bascule dure 700 ms, avec 20 ms d'écart (780 ms au plus, D-141 (1)) |
-| 1 500 ms | le sachet tombe et s'efface (1 s) |
-| 1 700 ms | les cartes quittent le sachet et **s'étalent** sur le bureau, une à une ; chaque bascule dure 700 ms, avec 20 ms d'écart (780 ms au plus), posées un peu de travers |
-| 2 900 ms | la révélation commence ; la première carte a le focus |
+| 300 ms | les cartes, **dos tourné**, montent **entre le dos et la face avant** de la pochette : bas masqué par la face avant, haut visible au-dessus de la ligne d’ouverture ; leur échelle se réduit pour franchir entièrement l'ouverture, chaque bascule dure 700 ms avec 20 ms d'écart (780 ms au plus, D-141 (1)) |
+| 1 500 ms | les deux faces de la navette descendent et s'effacent (700 ms) ; les cartes restent au-dessus de la ligne |
+| 2 300 ms | entièrement sorties, les cartes **s'étalent** dans la fenêtre, une à une ; chaque bascule dure 700 ms avec 20 ms d'écart (780 ms au plus), posées un peu de travers |
+| 3 300 ms | la révélation commence ; la première carte a le focus |
 
 ### 3.4 La révélation, au choix du testeur
 

@@ -19,7 +19,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-/** Les huit rapports du 03/11/2026 (ticket #669), un fichier par document source. */
+/** Les rapports archivés, un fichier par document source (03/11/2026 pour #669, 04/11/2026 pour #707). */
 const RAPPORTS = [
   'docs/recherches/2026-11-03-diagnostic-journee-integration.md',
   'docs/recherches/2026-11-03-diagnostic-arrivage.md',
@@ -28,7 +28,8 @@ const RAPPORTS = [
   'docs/recherches/2026-11-03-verification-sources-tcg.md',
   'docs/recherches/2026-11-03-references-ui-combat.md',
   'docs/recherches/2026-11-03-chronologie-partie-tcg-pocket.md',
-  'docs/recherches/2026-11-03-animations-combat-tcg-pocket.md'
+  'docs/recherches/2026-11-03-animations-combat-tcg-pocket.md',
+  'docs/recherches/2026-11-04-diagnostic-duree-ci.md'
 ] as const;
 
 /**
@@ -57,21 +58,28 @@ function fuites(texte: string): string[] {
   return trouvees;
 }
 
+/** La date d'un rapport, lue dans son nom (`2026-11-04-…` → `04/11/2026`) ; `null` sinon. */
+function dateDuNom(nom: string): string | null {
+  const trouve = nom.match(/(\d{4})-(\d{2})-(\d{2})-/);
+  return trouve ? `${trouve[3]}/${trouve[2]}/${trouve[1]}` : null;
+}
+
 /** Un texte qui se présente comme une archive datée et non autoritaire. */
-function estUneArchiveDatee(texte: string): boolean {
-  return texte.includes('pas une source de vérité') && texte.includes('03/11/2026');
+function estUneArchiveDatee(texte: string, nom: string): boolean {
+  const date = dateDuNom(nom);
+  return Boolean(date) && texte.includes('pas une source de vérité') && texte.includes(date!);
 }
 
 /** Les textes qui ne se présentent pas comme une archive datée et non autoritaire. */
 function sansMentionDArchive(textes: readonly { nom: string; texte: string }[]): string[] {
-  return textes.filter(({ texte }) => !estUneArchiveDatee(texte)).map(({ nom }) => nom);
+  return textes.filter(({ nom, texte }) => !estUneArchiveDatee(texte, nom)).map(({ nom }) => nom);
 }
 
 describe('Les archives de docs/recherches/ (03/11/2026, #669)', () => {
-  it('les huit rapports du 03/11/2026 sont présents et nommés par leur date', () => {
+  it('les rapports archivés sont présents et nommés par leur date', () => {
     const absents = RAPPORTS.filter((nom) => !existsSync(chemin(nom)));
     expect(absents, `rapport(s) manquant(s) : ${absents.join(', ')}`).toEqual([]);
-    const malNommes = RAPPORTS.filter((nom) => !/\/2026-11-03-[\w-]+\.md$/.test(nom));
+    const malNommes = RAPPORTS.filter((nom) => !/\/\d{4}-\d{2}-\d{2}-[\w-]+\.md$/.test(nom));
     expect(malNommes, `nom(s) sans date : ${malNommes.join(', ')}`).toEqual([]);
   });
 
@@ -89,9 +97,10 @@ describe('Les archives de docs/recherches/ (03/11/2026, #669)', () => {
   it.each([...RAPPORTS])('%s se présente comme une archive datée, pas comme une règle', (nom) => {
     const texte = read(nom);
     expect(
-      estUneArchiveDatee(texte),
-      `${nom} ne dit plus qu’il est daté (« 03/11/2026 ») et qu’il ne fait pas autorité ` +
-        '(« pas une source de vérité ») : une archive promue en règle est ce que #669 refuse.'
+      estUneArchiveDatee(texte, nom),
+      `${nom} ne dit plus qu’il est daté (« ${dateDuNom(nom) ?? 'date du nom'} ») et qu’il ne ` +
+        'fait pas autorité (« pas une source de vérité ») : une archive promue en règle est ce ' +
+        'que #669 refuse.'
     ).toBe(true);
   });
 });
@@ -117,9 +126,11 @@ describe('La garde des archives mord (#669)', () => {
   it('le contrôle mord : un rapport sans mention d’archive est refusé', () => {
     expect(sansMentionDArchive([{ nom: 'faux.md', texte: '# Un rapport\n\nRien.' }])).toEqual(['faux.md']);
     expect(
-      sansMentionDArchive([{ nom: 'vrai.md', texte: '# Un rapport\n\npas une source de vérité, 03/11/2026.' }])
+      sansMentionDArchive([
+        { nom: '2026-11-03-vrai.md', texte: '# Un rapport\n\npas une source de vérité, 03/11/2026.' }
+      ])
     ).toEqual([]);
-    // Et les huit rapports réels portent la mention.
+    // Et les rapports réels portent la mention.
     expect(sansMentionDArchive(RAPPORTS.map((nom) => ({ nom, texte: read(nom) })))).toEqual([]);
   });
 });

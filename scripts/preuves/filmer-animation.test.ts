@@ -156,10 +156,19 @@ describe('filmer-animation', () => {
     expect(() => analyserArguments(['--largeur', '0'])).toThrow(/entier/);
 
     const planche = htmlPlanche(
-      [{ src: 'f00.png', t: 240, occultationPx2: 0 }],
+      [
+        {
+          src: 'f00.png',
+          t: 240,
+          occultationPx2: 0,
+          visibiliteSousLignePct: 0,
+          visibiliteAuDessusPct: 100
+        }
+      ],
       { colonnes: 1, intervalle: 70 }
     );
     expect(planche).toContain('240 ms · occultation : 0 px²');
+    expect(planche).toContain('sous la ligne visible : 0 % · dessus : 100 %');
     // Le contrôle mord : une mesure positive ne peut pas être relue comme un passage sans masquage.
     expect(
       htmlPlanche([{ src: 'f00.png', t: 240, occultationPx2: 120 }], { colonnes: 1, intervalle: 70 })

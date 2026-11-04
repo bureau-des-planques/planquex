@@ -51,7 +51,7 @@
  *   --sortie      dossier de sortie (défaut : captures/film)
  *   --largeur     largeur du navigateur (défaut : 420)
  *   --hauteur     hauteur du navigateur (défaut : 900)
- *   --occlusion   mesure, à chaque frame, l'aire masquée des cartes par la pochette et le titre
+ *   --occlusion   mesure, à chaque frame, le masquage sous la ligne et la visibilité au-dessus
  *
  * Le store est amorcé avec `tutorielVu: true` et **`reducedMotion: false`** : sous « Mouvement
  * réduit », une règle globale de `src/styles.css` ramène toute animation à 0,001 ms et la
@@ -251,14 +251,19 @@ export function nomFrame(index) {
 export function htmlPlanche(frames, { colonnes, intervalle, ralenti = 1 }) {
   const cases = frames
     .map((frame, i) => {
-      const { src, t, compte, libelle, occultationPx2 } = typeof frame === 'string' ? { src: frame } : frame;
+      const { src, t, compte, libelle, occultationPx2, visibiliteSousLignePct, visibiliteAuDessusPct } =
+        typeof frame === 'string' ? { src: frame } : frame;
       // Une prise **pendant un geste** n'a pas d'instant : sa légende dit le geste, pas le temps
       // (le doigt peut s'arrêter, et c'est justement ce que la planche doit montrer).
       // Un `libelle` (la planche d'un parcours, #429) remplace l'instant : il dit l'écran, pas le temps.
       const legende = libelle ?? (t === null ? `geste ${i + 1}` : `${Math.round(t ?? i * intervalle)} ms`);
       const suite = compte === undefined ? '' : ` · DOM : ${compte}`;
       const mesure = occultationPx2 === undefined ? '' : ` · occultation : ${Math.round(occultationPx2)} px²`;
-      return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${legende}${suite}${mesure}</figcaption></figure>`;
+      const ligne =
+        visibiliteSousLignePct === undefined
+          ? ''
+          : ` · sous la ligne visible : ${visibiliteSousLignePct ?? '—'} % · dessus : ${visibiliteAuDessusPct ?? '—'} %`;
+      return `<figure><img src="${src}" alt="frame ${i}"><figcaption>${legende}${suite}${mesure}${ligne}</figcaption></figure>`;
     })
     .join('');
   // Une planche ralentie **le dit** : ses instants sont l'âge de l'animation, pas le temps réel.
@@ -377,8 +382,12 @@ async function filmer(config) {
       return page.evaluate(() => {
         const racine = document.querySelector('.ouverture');
         const titre = racine?.querySelector('.ouverture__titre');
-        const corps = racine?.querySelector('.ouverture__corps');
+        const arriere = racine?.querySelector('.ouverture__face-arriere');
+        const avant = racine?.querySelector('.ouverture__face-avant');
         const cartes = [...(racine?.querySelectorAll('.ouverture__carte') ?? [])];
+        const etape = racine?.dataset.etape ?? 'absent';
+        const sortie = Number.parseInt(racine?.dataset.sortie ?? '-1', 10);
+        const applicable = etape === 'ouverture' && sortie >= 0 && sortie < 2 && Boolean(arriere && avant);
         const zEffectif = (element) => {
           const inline = Number.parseInt(element.style.zIndex, 10);
           if (Number.isFinite(inline)) return inline;
@@ -429,31 +438,86 @@ async function filmer(config) {
           }
           return opacite;
         };
-        const obstacles = [
-          { nom: 'corps', element: corps },
-          { nom: 'titre', element: titre }
-        ];
-        return cartes.map((carte, index) => {
+        const zoneFenetre = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+        const rectArriere = arriere?.getBoundingClientRect();
+        const rectAvant = avant?.getBoundingClientRect();
+        const ligne = rectAvant ? rectAvant.top + rectAvant.height * Number(avant.dataset.ligneOuverture) : 0;
+        const clipAvant = avant ? getComputedStyle(avant).clipPath : 'none';
+        const avantDecoupe = clipAvant.startsWith('inset(');
+        const planArriere = arriere ? plan(arriere) : [];
+        const planAvant = avant ? plan(avant) : [];
+        const planTitre = titre ? plan(titre) : [];
+        const mesures = cartes.map((carte, index) => {
           const planCarte = plan(carte);
-          const visible = opaciteEffective(carte) > 0;
-          const occultations = obstacles.map(({ nom, element }) => {
-            if (!element || !visible || opaciteEffective(element) === 0) {
-              return { nom, px2: 0, planCarte, planObstacle: element ? plan(element) : [] };
-            }
-            const planObstacle = plan(element);
-            const px2 =
-              compare(planObstacle, planCarte) > 0
-                ? aire(carte.getBoundingClientRect(), element.getBoundingClientRect())
-                : 0;
-            return { nom, px2, planCarte, planObstacle };
-          });
+          const rectCarte = carte.getBoundingClientRect();
+          const planArriereDevant = compare(planCarte, planArriere) > 0;
+          const planAvantDevant = compare(planAvant, planCarte) > 0;
+          const ordreValide = planArriereDevant && planAvantDevant;
+          const aireSousLaLigne =
+            applicable && rectAvant
+              ? aire(rectCarte, {
+                  left: rectAvant.left,
+                  top: ligne,
+                  right: rectAvant.right,
+                  bottom: rectAvant.bottom
+                })
+              : 0;
+          const aireSousFenetre = applicable ? aire(rectCarte, { ...zoneFenetre, top: ligne }) : 0;
+          const aireHorsFace = Math.max(0, aireSousFenetre - aireSousLaLigne);
+          const opaciteCartes = opaciteEffective(carte);
+          const opaciteAvant = avant ? opaciteEffective(avant) : 0;
+          const visibleSousLignePx2 =
+            applicable && avantDecoupe && planAvantDevant
+              ? aireHorsFace + aireSousLaLigne * (1 - opaciteAvant)
+              : aireSousFenetre;
+          const aireAuDessusTotale = applicable ? aire(rectCarte, { ...zoneFenetre, bottom: ligne }) : 0;
+          const visibleAuDessusPx2 =
+            planArriereDevant && planAvantDevant && avantDecoupe ? aireAuDessusTotale * opaciteCartes : 0;
+          const titrePx2 =
+            titre && compare(planTitre, planCarte) > 0 ? aire(rectCarte, titre.getBoundingClientRect()) : 0;
+          const aireDansFenetre = aire(rectCarte, zoneFenetre);
+          const horsFenetrePx2 = Math.max(0, rectCarte.width * rectCarte.height - aireDansFenetre);
+          const sousPct = aireSousFenetre > 0 ? (visibleSousLignePx2 / aireSousFenetre) * 100 : null;
+          const dessusPct = aireAuDessusTotale > 0 ? (visibleAuDessusPx2 / aireAuDessusTotale) * 100 : null;
+          const manquantDessusPx2 = Math.max(0, aireAuDessusTotale - visibleAuDessusPx2);
+          const ordrePx2 = applicable && !ordreValide ? 1 : 0;
+          const deviationPx2 = visibleSousLignePx2 + manquantDessusPx2 + titrePx2 + horsFenetrePx2 + ordrePx2;
           return {
             index,
-            occultations,
-            totalPx2: occultations.reduce((total, mesure) => total + mesure.px2, 0)
+            planArriere,
+            planCarte,
+            planAvant,
+            ordreValide,
+            aireSousLaLignePx2: aireSousFenetre,
+            visibleSousLignePx2,
+            visibiliteSousLignePct: sousPct,
+            aireAuDessusLignePx2: aireAuDessusTotale,
+            visibleAuDessusPx2,
+            visibiliteAuDessusPct: dessusPct,
+            titrePx2,
+            horsFenetrePx2,
+            deviationPx2
           };
         });
+        return {
+          etape,
+          sortie: Number.isFinite(sortie) ? sortie : null,
+          applicable,
+          clipAvant,
+          cartes: mesures,
+          totalPx2: mesures.reduce((total, mesure) => total + mesure.deviationPx2, 0)
+        };
       });
+    };
+    const resumeVisibilite = (mesure) => {
+      if (!mesure?.applicable) return {};
+      const sous = mesure.cartes.map((carte) => carte.visibiliteSousLignePct).filter((n) => n !== null);
+      const dessus = mesure.cartes.map((carte) => carte.visibiliteAuDessusPct).filter((n) => n !== null);
+      return {
+        // Le pire cas par frame : au plus 0 % visible sous la ligne, au moins 100 % au-dessus.
+        visibiliteSousLignePct: sous.length ? Math.max(...sous) : null,
+        visibiliteAuDessusPct: dessus.length ? Math.min(...dessus) : null
+      };
     };
     /**
      * **Chauffer le pipeline avant la première prise** (#543, 30/10/2026). La première capture
@@ -494,10 +558,10 @@ async function filmer(config) {
        */
       if (libelle) {
         const mesures = await mesurerOcclusion();
-        const occultationPx2 = mesures?.reduce((total, mesure) => total + mesure.totalPx2, 0);
+        const occultationPx2 = mesures?.totalPx2;
         await page.screenshot({ path: join(sortie, nom), animations: 'allow' });
-        frames.push({ src: nom, t: null, compte, libelle, occultationPx2 });
-        if (mesures) mesuresOcclusion.push({ frame: nom, t: null, cartes: mesures, totalPx2: occultationPx2 });
+        frames.push({ src: nom, t: null, compte, libelle, occultationPx2, ...resumeVisibilite(mesures) });
+        if (mesures) mesuresOcclusion.push({ frame: nom, t: null, ...mesures });
       } else {
         /**
          * **Capture par clip de page, pas par `locator.screenshot`** (30/10/2026). Le locator
@@ -521,7 +585,7 @@ async function filmer(config) {
         // l'échelle du ralenti — c'est l'âge de l'animation que la légende annonce.
         const avant = (await page.evaluate(() => performance.now())) - t0;
         const mesures = await mesurerOcclusion();
-        const occultationPx2 = mesures?.reduce((total, mesure) => total + mesure.totalPx2, 0);
+        const occultationPx2 = mesures?.totalPx2;
         await page.screenshot({
           path: join(sortie, nom),
           animations: 'allow',
@@ -534,8 +598,8 @@ async function filmer(config) {
         });
         const apres = (await page.evaluate(() => performance.now())) - t0;
         const t = ageDeLEchantillon((avant + apres) / 2, config.ralenti);
-        frames.push({ src: nom, t, compte, occultationPx2 });
-        if (mesures) mesuresOcclusion.push({ frame: nom, t, cartes: mesures, totalPx2: occultationPx2 });
+        frames.push({ src: nom, t, compte, occultationPx2, ...resumeVisibilite(mesures) });
+        if (mesures) mesuresOcclusion.push({ frame: nom, t, ...mesures });
       }
       await page.waitForTimeout(config.intervalle);
     };
@@ -566,10 +630,12 @@ async function filmer(config) {
     await page.screenshot({ path: join(sortie, 'planche.png'), fullPage: true });
     if (config.mesurerOcclusion) {
       writeFileSync(join(sortie, 'occlusion.json'), JSON.stringify(mesuresOcclusion, null, 2));
-      const occlusions = mesuresOcclusion.filter((mesure) => mesure.totalPx2 > 0);
+      const framesSortie = mesuresOcclusion.filter((mesure) => mesure.applicable);
+      const occlusions = framesSortie.filter((mesure) => mesure.totalPx2 > 0);
+      if (framesSortie.length === 0) erreurs.push('Aucune frame de sortie mesurée entre les deux faces de la pochette');
       if (occlusions.length > 0) {
         erreurs.push(
-          `Occultation non nulle dans ${occlusions.length} frame(s) : ${occlusions.map((m) => `${m.frame}=${m.totalPx2} px²`).join(', ')}`
+          `La visibilité des cartes dévie dans ${occlusions.length} frame(s) : ${occlusions.map((m) => `${m.frame}=${m.totalPx2} px²`).join(', ')}`
         );
       }
     }
