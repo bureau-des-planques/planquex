@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 187 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 188 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -193,3 +193,4 @@
 | D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |  |
 | D-186 | 04/11/2026 | Le nom du locuteur de la Journée est hors du… |  |
 | D-187 | 04/11/2026 | La réplique de la Direction sort du panneau : la… |  |
+| D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
