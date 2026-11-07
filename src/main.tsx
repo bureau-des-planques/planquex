@@ -1,9 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import '@fontsource-variable/archivo/wdth.css';
-import '@fontsource/courier-prime/400.css';
-import '@fontsource/courier-prime/700.css';
+import '@fontsource-variable/inter';
+import '@fontsource-variable/outfit';
 import { App } from './App';
 import { ErreurDeRendu } from './components/ErreurDeRendu';
 import { capterInviteInstallation } from './lib/invite-installation';

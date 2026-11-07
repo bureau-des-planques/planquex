@@ -60,50 +60,47 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Jetons de design — « Imprimé administratif » (D-189) : papier offset teinté, encre
- * bleue de formulaire, rouge tampon. Les **noms** des jetons datent de l'univers
- * précédent et restent stables (toute la feuille les lit) : `--accent` est l'encre
- * bleue, `--gold` est désormais le **Café** (brun de tache de café), `--danger` le
- * rouge tampon. Une couleur qui change se change ici, une fois.
+ * Jetons de design — « corporate dark premium », bleu nuit + or.
+ * Le bleu (`--accent`) reste le primaire ; l'or (`--gold`) est l'accent
+ * **secondaire** (le motif maison : la tasse de Café). Toute la feuille lit ces
+ * variables : une couleur qui change se change ici, une fois.
  */
 :root {
-  /* Papier — du creux vers la feuille la plus claire */
-  --bg: #eef0e6;
-  --bg-deep: #dfe3d4;
-  --bg-raised: #fbfbf6;
-  /* Le haut du dégradé du dos de carte (#283) : la liasse, un ton sous la feuille. */
-  --bg-haut: #e4e8da;
-  --bg-sunken: #e5e8dc;
-  /* Filets : bleu pâle pour les cases, encre pleine pour les cadres. */
-  --line: #a9b3cc;
-  --line-strong: #1d3f8f;
+  /* Fonds — bleu nuit, de la profondeur vers la surface */
+  --bg: #0b1220;
+  --bg-deep: #070c16;
+  --bg-raised: #131c2e;
+  /* Le haut du dégradé du dos de carte (#283) : le seul bleu plus clair que `--bg`. */
+  --bg-haut: #1d2d4f;
+  --bg-sunken: #0e1626;
+  --line: #243049;
+  --line-strong: #34456a;
 
-  /* Textes — encre noire, puis deux gris tirés du bleu (jamais un gris neutre) */
-  --text: #1c1e24;
-  --text-muted: #3f4556;
-  --text-dim: #555c70;
+  /* Textes */
+  --text: #e8eef8;
+  --text-muted: #9aa9c2;
+  --text-dim: #7e8fb0;
 
-  /* Encre bleue (primaire), Café (secondaire) */
-  --accent: #1d3f8f;
-  --accent-deep: #142d68;
-  --gold: #6b4423;
-  --gold-soft: #8a5a2e;
-  --gold-deep: #4a2e16;
+  /* Accents : bleu primaire, or secondaire */
+  --accent: #4f8ef7;
+  --accent-deep: #356fe0;
+  --gold: #e6b64c;
+  --gold-soft: #f4d68a;
+  --gold-deep: #a67c22;
 
-  /* États — visa vert, mise en garde ocre, rouge tampon */
-  --ok: #1d6e46;
-  --warn: #8a5300;
-  --danger: #b3261e;
+  --ok: #46b98a;
+  --warn: #e0a33e;
+  --danger: #e06a4e;
 
-  /* Échelle typographique — plancher relevé pour le pouce (D-189) */
-  --fs-2xs: 0.72rem;
-  --fs-xs: 0.78rem;
-  --fs-sm: 0.875rem;
-  --fs-md: 0.95rem;
-  --fs-lg: 1.1rem;
-  --fs-xl: 1.35rem;
-  --fs-2xl: 1.8rem;
-  --fs-3xl: 2.2rem;
+  /* Échelle typographique */
+  --fs-2xs: 0.62rem;
+  --fs-xs: 0.7rem;
+  --fs-sm: 0.8rem;
+  --fs-md: 0.9rem;
+  --fs-lg: 1.05rem;
+  --fs-xl: 1.3rem;
+  --fs-2xl: 1.75rem;
+  --fs-3xl: 2.1rem;
 
   /* Échelle d'espacement (base 4 px) */
   --sp-1: 0.25rem;
@@ -113,25 +110,21 @@
   --sp-5: 1.5rem;
   --sp-6: 2rem;
 
-  /* Coins droits d'imprimé ; ombre de feuille posée sur le bureau */
-  --radius: 3px;
-  --radius-sm: 2px;
-  --radius-lg: 4px;
-  --shadow: 0 1px 2px rgb(28 30 36 / 14%), 0 8px 18px -10px rgb(28 30 36 / 30%);
-  --shadow-gold: 0 2px 8px -2px rgb(107 68 35 / 30%);
+  /* Rayons et ombres */
+  --radius: 14px;
+  --radius-sm: 9px;
+  --radius-lg: 20px;
+  --shadow: 0 12px 30px rgb(0 0 0 / 35%);
+  --shadow-gold: 0 10px 26px rgb(230 182 76 / 18%);
 
-  /* Archivo pour tout ce qui est imprimé, Courier Prime pour ce qui est « rempli » */
-  --font-body: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
-  --font-display: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
-  --font-champ: 'Courier Prime', 'Courier New', monospace;
-  /* Les titres et libellés de cadre sont composés serrés (axe `wdth` d'Archivo). */
-  --stretch-titre: 78%;
+  --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
 
   /*
    * D-035 — shadcn/ui. Ses variables sont **mappées sur nos jetons**, pas laissées aux
    * valeurs par défaut « SaaS » : le fond, le texte, les bordures et le primaire viennent
    * de `DESIGN.md` §1. `--primary` est le bleu maison ; `--primary-foreground` est le texte
-   * posé dessus (la feuille claire sur l'encre, contraste AA). Les composants génériques (dialogues, …) héritent
+   * posé dessus (bleu nuit, contraste AA). Les composants génériques (dialogues, …) héritent
    * ainsi de l'identité du jeu.
    */
   --background: var(--bg);
@@ -141,12 +134,12 @@
   --popover: var(--bg-raised);
   --popover-foreground: var(--text);
   --primary: var(--accent);
-  --primary-foreground: var(--bg-raised);
+  --primary-foreground: #06111f;
   --secondary: var(--bg-sunken);
   --secondary-foreground: var(--text);
   --muted: var(--bg-sunken);
   --muted-foreground: var(--text-muted);
-  --accent-foreground: var(--bg-raised);
+  --accent-foreground: #06111f;
   --destructive: var(--danger);
   --border: var(--line);
   --input: var(--line);
@@ -159,7 +152,7 @@
   --sidebar: var(--bg-raised);
   --sidebar-foreground: var(--text);
   --sidebar-primary: var(--accent);
-  --sidebar-primary-foreground: var(--bg-raised);
+  --sidebar-primary-foreground: #06111f;
   --sidebar-accent: var(--bg-sunken);
   --sidebar-accent-foreground: var(--text);
   --sidebar-border: var(--line);
@@ -177,11 +170,13 @@ body {
 }
 
 body {
-  /* La feuille d'imprimé : un papier plat, sans dégradé ni halo (D-189). */
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 18% -12%, #1a2949 0%, transparent 46%),
+    radial-gradient(circle at 100% 0%, rgb(230 182 76 / 7%) 0%, transparent 38%), var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
@@ -191,18 +186,10 @@ h2,
 h3 {
   font-family: var(--font-display);
   /* Le `preflight` de Tailwind remet les titres à `font-weight: inherit` : on rétablit
-   * le gras. Les titres sont composés serrés, comme l'intitulé d'un imprimé (D-189). */
-  font-weight: 800;
-  font-stretch: var(--stretch-titre);
-  letter-spacing: 0;
-  margin: 0 0 0.35rem;
-}
-
-/* Ce qui est « rempli » sur le formulaire : chiffres de jeu, noms saisis (D-189). */
-.champ {
-  font-family: var(--font-champ);
+   * le gras par défaut du navigateur pour ne rien changer au rendu d'avant D-035. */
   font-weight: 700;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.35rem;
 }
 
 h1 {
@@ -312,8 +299,7 @@ h2 {
 
 .topbar {
   align-items: center;
-  /* L'en-tête d'un imprimé : un double filet d'encre sous l'intitulé (D-189). */
-  border-bottom: 3px double var(--line-strong);
+  border-bottom: 1px solid var(--line);
   display: flex;
   gap: 1rem;
   justify-content: space-between;
@@ -333,10 +319,12 @@ h2 {
 }
 
 .brand__mark {
-  /* Le monogramme posé comme le cachet du service, en haut à gauche de la feuille. */
-  background: var(--accent);
-  border: 2px solid var(--accent-deep);
+  background: linear-gradient(150deg, #1a2949, #0d1526);
+  border: 1px solid var(--gold-deep);
   border-radius: var(--radius-sm);
+  box-shadow:
+    inset 0 0 0 1px rgb(230 182 76 / 18%),
+    0 6px 18px rgb(0 0 0 / 42%);
   display: grid;
   flex: none;
   height: 40px;
@@ -358,12 +346,7 @@ h2 {
 }
 
 .brand__text strong {
-  font-size: 0.95rem;
-  font-stretch: var(--stretch-titre);
-  font-weight: 800;
-  letter-spacing: 0.01em;
   overflow: hidden;
-  text-transform: uppercase;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -393,15 +376,11 @@ h2 {
   gap: 0.4rem;
 }
 
-/* Le pseudo est un **champ rempli** : la case du nom, tapée à la machine. */
 .topbar__user {
   background: var(--bg-raised);
   border: 1px solid var(--line);
-  border-bottom: 2px solid var(--line-strong);
-  border-radius: 0;
-  font-family: var(--font-champ);
-  font-size: 0.88rem;
-  font-weight: 700;
+  border-radius: 999px;
+  font-size: 0.82rem;
   /* Une ligne, toujours : un nom de 24 caractères (le maximum de Réglages) se coupe d'une
      ellipse au lieu de se casser en deux. Le nom complet reste au survol (`title`). */
   flex: none;
@@ -417,7 +396,7 @@ h2 {
    cible de doigt fait 44 px (même règle que le menu du combat, SPEC-COMBAT-UI §5.1). */
 .topbar__gear {
   align-items: center;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   color: var(--text-muted);
   display: inline-flex;
   flex: none;
@@ -438,7 +417,7 @@ h2 {
 }
 
 .topbar__gear:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 
@@ -447,10 +426,10 @@ h2 {
   padding-top: 1.25rem;
 }
 
-/* La barre du bas : le talon détachable du formulaire, sur une feuille plus claire. */
 .bottom-nav {
-  background: var(--bg-raised);
-  border-top: 2px dashed var(--line-strong);
+  backdrop-filter: blur(10px);
+  background: rgb(11 18 32 / 92%);
+  border-top: 1px solid var(--line);
   bottom: 0;
   display: flex;
   gap: 0.25rem;
@@ -469,11 +448,7 @@ h2 {
   display: flex;
   flex: 1;
   flex-direction: column;
-  font-size: var(--fs-xs);
-  font-stretch: var(--stretch-titre);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-size: 0.7rem;
   gap: 0.2rem;
   padding: 0.4rem 0.25rem;
   text-decoration: none;
@@ -488,10 +463,10 @@ h2 {
    au-dessus de l'icône. Elle n'est posée que sur l'onglet Comité, et seulement quand il
    y a quelque chose à voir — à zéro, l'élément n'existe pas. */
 .bottom-nav__pastille {
-  background: var(--danger);
+  background: var(--gold);
   border-radius: 999px;
-  color: var(--bg-raised);
-  font-size: var(--fs-2xs);
+  color: var(--bg);
+  font-size: 0.62rem;
   font-weight: 700;
   line-height: 1;
   min-width: 1.05rem;
@@ -502,19 +477,20 @@ h2 {
   top: 0.1rem;
 }
 
-/* L'onglet actif : la case **cochée** du talon — encre pleine, libellé en clair. */
+/* L'onglet actif : un témoin doré au bord, comme un voyant de console. */
 .bottom-nav__item.is-active {
-  background: var(--accent);
-  color: var(--bg-raised);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 14%, transparent), transparent 70%);
+  color: var(--gold);
 }
 
 .bottom-nav__item.is-active::before {
-  background: var(--accent);
+  background: var(--gold);
+  border-radius: 0 0 2px 2px;
   content: '';
-  height: 4px;
-  left: 0;
+  height: 3px;
+  left: 22%;
   position: absolute;
-  right: 0;
+  right: 22%;
   top: -0.5rem;
 }
 
@@ -535,13 +511,13 @@ h2 {
   min-width: 2.75rem;
 }
 
-/* Le témoin de l'onglet actif : l'aplat d'encre **et** le filet du haut, jamais la couleur seule. */
+/* Le témoin de l'onglet actif : un contour doré **et** le voyant du haut, déjà là. */
 .bottom-nav__item.is-active {
-  box-shadow: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gold) 38%, transparent);
 }
 
 .bottom-nav__item:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
 
@@ -607,12 +583,21 @@ h2 {
   padding: 0.5rem;
 }
 
-/* Le cadre de jeu : un **cadre d'imprimé**, filet d'encre de 2 px et coins droits, posé
-   sur la feuille. Pas de biseau, pas de lueur : un formulaire, pas une console (D-189). */
+/* Le cadre de jeu : un panneau usiné, pas une carte de tableau de bord. Biseau doré
+   en haut, ombre de bas de plaque, rayon court — une console, pas une app SaaS. */
 .panel {
-  background: var(--bg-raised);
-  border: 2px solid var(--line-strong);
-  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)),
+    var(--bg-raised) 38%,
+    var(--bg-sunken)
+  );
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
+    inset 0 -2px 0 rgb(0 0 0 / 30%),
+    0 8px 18px -10px rgb(0 0 0 / 70%);
   padding: 1rem 1.15rem;
 }
 
@@ -934,32 +919,36 @@ h2 {
 
 /* Le halo doré d'angle a été retiré (#131) : un voile radial de couleur sur page sombre est un
    tell d'UI générée ; le filet or du haut (`.hero::after`) suffit à dire « apparat ». */
-/* L'accroche de l'accueil : la **page de garde** du dossier. Un bandeau d'encre plein
-   porte l'intitulé, le corps est la feuille (D-189). */
 .hero {
-  background: var(--bg-raised);
-  border: 2px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
+  background: linear-gradient(150deg, #16233f, var(--bg-raised) 60%, var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--gold) 30%, transparent),
+    0 14px 30px -16px rgb(0 0 0 / 80%);
   overflow: hidden;
-  padding: 0 1.25rem 1.25rem;
+  padding: 1.75rem 1.5rem 1.5rem;
   position: relative;
 }
 
 .hero::after {
-  content: none;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  content: '';
+  height: 2px;
+  left: 1.5rem;
+  opacity: 0.65;
+  position: absolute;
+  right: 1.5rem;
+  top: 0;
 }
 
-/* L'intitulé du dossier : capitales serrées, en clair sur le bandeau d'encre. */
+/* Le titre d'écran-titre : capitales lourdes, serrées, comme une affiche de jeu. */
 .hero h1 {
-  background: var(--accent);
-  color: var(--bg-raised);
-  font-size: var(--fs-2xl);
+  font-size: var(--fs-3xl);
   font-weight: 800;
-  letter-spacing: 0;
-  line-height: 1.02;
-  margin: 0 -1.25rem 1rem;
-  padding: 0.85rem 1.25rem 0.8rem;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  margin-bottom: 0.9rem;
   text-transform: uppercase;
 }
 
@@ -998,12 +987,12 @@ h2 {
   }
 }
 
-/* Compteurs : une **case** du formulaire, libellé imprimé en haut, valeur remplie dessous. */
+/* Compteurs de HUD : une plaque sombre encastrée, le chiffre en or. */
 .stat-card {
-  background: var(--bg-raised);
+  background: var(--bg-sunken);
   border: 1px solid var(--line);
-  border-top: 2px solid var(--line-strong);
-  border-radius: 0;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 6px rgb(0 0 0 / 45%);
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -1011,30 +1000,25 @@ h2 {
 }
 
 .stat-card strong {
-  color: var(--accent);
+  color: var(--gold);
 }
 
 .stat-card__label {
   color: var(--text-muted);
-  font-size: var(--fs-xs);
-  font-stretch: var(--stretch-titre);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .stat-card strong {
-  font-family: var(--font-champ);
-  font-size: 1.6rem;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.1;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
 }
 
 /* La jauge d'une plaque : un rail encastré, le remplissage en or (le chiffre au-dessus porte l'information). */
 .stat-card__jauge {
-  background: var(--bg-sunken);
-  border: 1px solid var(--line);
-  border-radius: 0;
+  background: var(--bg-deep);
+  border-radius: 999px;
   display: block;
   height: 0.35rem;
   margin: 0.2rem 0 0.3rem;
@@ -1042,33 +1026,33 @@ h2 {
 }
 
 .stat-card__jauge > span {
-  background: var(--accent);
-  border-radius: 0;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+  border-radius: inherit;
   display: block;
   height: 100%;
 }
 
 /* ---------- Contrôles ---------- */
 
-/* Les boutons : une **case à remplir** cernée d'encre. Au clic, la feuille s'enfonce
-   d'un pixel, comme sous le tampon ; pas de biseau ni de lueur (D-189). */
+/* Les boutons de jeu : une touche physique — biseau clair en haut, ombre portée en
+   bas, et un vrai enfoncement au clic. Plus de pilule de formulaire. */
 .button {
   align-items: center;
-  background: var(--bg-raised);
-  border: 2px solid var(--line-strong);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 2px 0 -1px color-mix(in srgb, var(--line-strong) 40%, transparent);
-  color: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-raised) 80%, var(--line-strong)), var(--bg-raised));
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 3px 6px -2px rgb(0 0 0 / 60%);
+  color: var(--text);
   cursor: pointer;
   display: inline-flex;
   font: inherit;
   font-family: var(--font-display);
-  font-size: var(--fs-md);
-  font-stretch: var(--stretch-titre);
-  font-weight: 750;
+  font-size: 0.9rem;
+  font-weight: 600;
   gap: 0.45rem;
-  justify-content: center;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   /* La cible de doigt de 44 px (D-116 (1)) : le rembourrage seul donnait 42,8 px. */
   min-height: 2.75rem;
   padding: 0.6rem 1.05rem;
@@ -1080,20 +1064,20 @@ h2 {
 }
 
 .button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--gold) 55%, var(--line-strong));
+  transform: translateY(-1px);
 }
 
 .button:active:not(:disabled) {
-  box-shadow: none;
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 45%);
   transform: translateY(1px);
 }
 
 /* Le grand bouton d'action principale d'un écran : celui qu'on presse sans réfléchir. */
 .button--big {
-  font-size: var(--fs-lg);
-  font-weight: 800;
-  letter-spacing: 0.03em;
-  min-height: 3.5rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   padding: 0.85rem 1.35rem;
   text-transform: uppercase;
 }
@@ -1114,35 +1098,36 @@ h2 {
      (le reste en `#04080f`), le bleu primaire donne 4,65:1 (AA) — l'ancien haut, éclairci au
      blanc, en donnait 3,1 (relevé en navigateur, #131). La lueur colorée est remplacée par
      une ombre neutre : un halo de couleur sur fond sombre est un tell d'UI générée. */
-  /* Sur l'imprimé, l'action principale est la case **pleine** : un aplat d'encre, le
-     libellé en clair. `--accent` vaut la couleur de la faction dans une fiche. */
-  background: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 70%, var(--text));
-  color: var(--bg-raised);
-  font-weight: 800;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 80%, #04080f),
+    color-mix(in srgb, var(--accent) 76%, #04080f) 45%,
+    color-mix(in srgb, var(--accent) 52%, #04080f)
+  );
+  border-color: color-mix(in srgb, var(--accent) 50%, #04080f);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 30%),
+    0 4px 10px -3px rgb(0 0 0 / 55%);
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 35%);
 }
 
-.button--primary:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 88%, var(--text));
-}
-
-/* Le bouton « Café » (Arrivage) : l'aplat brun de la tasse, libellé en clair. */
 .button--gold {
-  background: var(--gold);
+  background: linear-gradient(180deg, var(--gold-soft), var(--gold) 45%, var(--gold-deep));
   border-color: var(--gold-deep);
-  color: var(--bg-raised);
-  font-weight: 800;
-}
-
-.button--gold:hover:not(:disabled) {
-  background: var(--gold-deep);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    0 4px 12px -3px rgb(0 0 0 / 50%);
+  color: #1c1304;
+  font-weight: 700;
 }
 
 .button--danger {
-  background: var(--bg-raised);
-  border-color: var(--danger);
-  color: var(--danger);
-  font-weight: 800;
+  background: color-mix(in srgb, var(--danger) 22%, var(--bg-raised));
+  border-color: color-mix(in srgb, var(--danger) 70%, var(--line));
+  color: var(--text);
+  font-weight: 700;
 }
 
 /* Le préarmement en terminal : sobre, vert sur noir, et des lignes de journal satiriques.
@@ -1923,7 +1908,7 @@ h2 {
 }
 
 .card__talent em {
-  background: var(--danger);
+  background: #b3261e;
   border-radius: 0.2em;
   /* Plancher : 11,2 px même sur une carte réduite (`max` garde l'échelle des grandes). */
   font-size: max(0.7em, 0.7rem);
@@ -2377,7 +2362,7 @@ h2 {
 }
 
 .battle .poste__info .pip--typed .pip__glyphe {
-  font-size: var(--fs-2xs);
+  font-size: 11px;
 }
 
 /* La fiche du camp (cafés attachés, Machine) est lue d'un coup d'œil : plus grand. */
@@ -3264,20 +3249,17 @@ h2 {
 
 /* La page de combat est plus serrée que les autres : le plateau, la main et les actions
    doivent tenir dans un téléphone (420 × 900, D-060) sans défiler (#169). */
-/* **La scène de combat** (D-093, #190 ; DESIGN.md §2.6 ; univers refait par D-189). Les jetons
-   `--scene-*` vivent sur l'écran et **par-dessus** `:root` : aucun jeton global n'est réécrit
-   ici. Les **noms** datent de la table de feutre et restent stables (la feuille et les tests les
-   lisent) ; leurs **rôles** passent au dossier : le « feutre » est la feuille du dossier, le
-   « néon » l'encre de sélection, le « parchemin » la chemise kraft, la « craie » l'encre du
-   texte, l'« acier » l'encre des commandes. */
+/* **La scène de combat** (D-093, #190 ; DESIGN.md §2.6). Les jetons `--scene-*` vivent sur
+   l'écran et **par-dessus** `:root` : aucun jeton global n'est réécrit ici. Le bleu nuit du
+   projet reste la famille ; le feutre n'en est qu'une version éclaircie au centre. */
 .battle {
-  --scene-felt: #e6e9de;
-  --scene-felt-deep: #d8dccc;
-  --scene-felt-lit: #f2f3ec;
-  --scene-card: #fbfbf6;
-  --scene-neon: #2450b8;
-  --scene-neon-core: #142d68;
-  --scene-go: #1d6e46;
+  --scene-felt: #16202c;
+  --scene-felt-deep: #0d1420;
+  --scene-felt-lit: #214d69;
+  --scene-card: #1b222c;
+  --scene-neon: #61d5df;
+  --scene-neon-core: #9ef5fb;
+  --scene-go: #46c78c;
   /* Le danger d'état, **relevé le 27/10/2026** (#323) : `#e0563f` tombait à **2,39:1** sur le
      centre éclairé du feutre (`--scene-felt-lit`), et à **2,80:1** mesuré sur la page au bord du
      filet — sous les 3:1 d'une frontière qui doit se voir (WCAG 1.4.11). `#ff7f3f` vaut **3,59:1**
@@ -3285,15 +3267,14 @@ h2 {
      bord du camp de la Direction), et **3,03:1** contre `--scene-steel-deep`, le propre fond du
      bouton « Fin du tour ». Le jeton n'est employé que sur des filets et des dégradés, jamais en
      texte : aucune autre paire ne baisse. */
-  /* Sur la feuille, le danger d'état est le **rouge tampon** : 5,9:1 sur la feuille éclairée. */
-  --scene-danger: #a8231b;
-  --scene-gold-hot: #8a5a2e;
-  --scene-parch: #d2b17c;
-  --scene-parch-dark: #8a6a3c;
-  --scene-ink-parch: #2a1d0c;
-  --scene-chalk: #1c1e24;
-  --scene-steel: #3f4556;
-  --scene-steel-deep: #1d3f8f;
+  --scene-danger: #ff7f3f;
+  --scene-gold-hot: #f7e264;
+  --scene-parch: #b18a60;
+  --scene-parch-dark: #664d38;
+  --scene-ink-parch: #241a0c;
+  --scene-chalk: #f4e6cc;
+  --scene-steel: #8a93a8;
+  --scene-steel-deep: #4a5468;
   /* Les trois gouttières de l'écran (en-tête → note → table → barre d'action) se resserrent (#218) :
      3,2 px chacune, 9,6 px rendus à la main, et l'écran garde toutes ses lignes. */
   gap: 0.1rem;
@@ -3780,10 +3761,13 @@ h2 {
 
 /* La table (plan 1, DESIGN.md §2.6 règle 1) : **une** lumière, entre les deux Postes, et une
    vignette en ombre interne. Les quatre coins sont les plus sombres de l'écran. */
-/* La table est la **feuille du dossier** : un aplat, sans halo ni vignette (D-189). */
 .board {
-  background: var(--scene-felt-lit);
-  border: 2px solid var(--line-strong);
+  background: radial-gradient(
+    120% 90% at 50% 46%,
+    var(--scene-felt-lit) 0%,
+    var(--scene-felt) 52%,
+    var(--scene-felt-deep) 100%
+  );
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -3798,9 +3782,7 @@ h2 {
    pseudo-élément sans fond ni rayon. Sur la table elle-même, un rayon et une ombre faisaient de la
    table une « carte » : chaque Planqué posé dessus était une carte dans une carte (`nested-cards`). */
 .board::before {
-  /* D-189 : la feuille n'a plus de vignettage ; le pseudo-élément reste, vide, pour que les
-     règles de scène qui le visent ne changent pas de cible. */
-  box-shadow: none;
+  box-shadow: inset 0 0 18vmin rgb(0 0 0 / 55%);
   content: '';
   inset: 0;
   pointer-events: none;
@@ -3866,7 +3848,7 @@ h2 {
 .board__test {
   border: 1px solid var(--warn);
   border-radius: var(--radius-sm);
-  font-size: var(--fs-2xs);
+  font-size: 0.68rem;
   line-height: 1.2;
   padding: 0.12rem 0.45rem;
 }
@@ -4518,7 +4500,7 @@ h2 {
 
 .pips {
   color: var(--accent);
-  font-size: var(--fs-2xs);
+  font-size: 0.7rem;
   letter-spacing: -0.05em;
 }
 
@@ -4631,8 +4613,8 @@ h2 {
   align-items: center;
   background: var(--scene-parch);
   border: 1px solid var(--scene-parch-dark);
-  border-radius: var(--radius-sm);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 22%);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 35%);
   color: var(--scene-ink-parch);
   display: inline-flex;
   font-family: var(--font-display);
@@ -4645,14 +4627,11 @@ h2 {
   text-transform: uppercase;
 }
 
-/* Le compte d'une pile : la case remplie de l'étiquette de la chemise. */
 .pile strong {
-  background: var(--scene-card);
-  border: 1px solid var(--scene-parch-dark);
-  border-radius: 0;
-  color: var(--scene-ink-parch);
-  font-family: var(--font-champ);
-  font-size: var(--fs-xs);
+  background: var(--scene-ink-parch);
+  border-radius: 999px;
+  color: var(--scene-chalk);
+  font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: 0;
@@ -7496,15 +7475,13 @@ h2 {
   }
 
   .home .hero {
-    padding: 0 0.85rem 0.6rem;
+    padding: 0.7rem 0.85rem 0.6rem;
   }
 
-  /* Le bandeau d'encre reste collé au filet du haut : il déborde du rembourrage latéral. */
   .home .hero h1 {
     font-size: clamp(1.15rem, 5.2vw, 1.35rem);
     line-height: 0.98;
-    margin: 0 -0.85rem 0.5rem;
-    padding: 0.6rem 0.85rem 0.55rem;
+    margin-bottom: 0.45rem;
   }
 
   .home .hero h1 br {
@@ -7519,7 +7496,7 @@ h2 {
 
   /* La ligne de #553 : une ligne de plus dans le héros, sans lui rendre sa hauteur. */
   .home .hero__attente {
-    font-size: var(--fs-2xs);
+    font-size: 0.72rem;
     line-height: 1.2;
     margin: 0.3rem 0 0;
   }
