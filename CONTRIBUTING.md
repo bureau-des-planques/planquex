@@ -183,7 +183,7 @@ d'un outil à l'autre.
 
 | Source | Où elle vit | Qui la voit |
 |---|---|---|
-| **Les skills du dépôt** — `cloture` et les skills d'interface (`baseline-ui`, `improve-ui`, `fixing-accessibility`, `fixing-motion-performance`, `create-design-md`) | `.agents/skills/` (ceux de `a-revoir/` sont rangés à part, en attente de tri) | OpenCode, qui lit `.agents/skills/`. Claude Code ne lit que `.claude/skills/` |
+| **Les skills du dépôt** — `cloture`, `chief-of-staff` et les skills d'interface (`baseline-ui`, `improve-ui`, `fixing-accessibility`, `fixing-motion-performance`, `create-design-md`) | `.agents/skills/` | OpenCode, qui lit `.agents/skills/`. Claude Code ne lit que `.claude/skills/` |
 | **Impeccable** — le skill de design et son détecteur | `.opencode/skills/impeccable/` et la devDependency `impeccable` | OpenCode tel quel ; les autres outils par `npx impeccable install` |
 | **Les skills de Matt Pocock** — tickets, TDD, revue, PR | **hors du dépôt**, chez chacun | l'outil où on les installe |
 
