@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 187 décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,
+> 187 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) |

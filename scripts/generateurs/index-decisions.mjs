@@ -5,8 +5,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
  * L'index des décisions — la porte d'entrée de `docs/DECISIONS.md`.
  *
  * Constaté le 26/10/2026 : `AGENTS.md` §1.1 demandait de **lire** `docs/DECISIONS.md` avant
- * toute modification. Le journal fait **113 décisions et 36 000 jetons** (une ligne de tableau
- * par décision, jusqu'à 3 900 caractères). Mesure sur trois jours de sessions : 5 sessions
+ * toute modification. Le journal faisait alors **113 décisions** (une ligne de tableau par
+ * décision, jusqu'à 3 900 caractères) ; le 06/11/2026, à 187 décisions, il pèse ~320 000 caractères. Mesure sur trois jours de sessions : 5 sessions
  * l'ont lu puis ont écrit, **68 ont écrit sans le lire**, et 123 greps ciblés ont remplacé la
  * lecture. La règle était un no-op — on ne peut pas l'obéir.
  *
@@ -57,7 +57,7 @@ export function rendre(liste) {
     '# Index des décisions',
     '',
     '> **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.',
-    `> ${liste.length} décisions. Le journal fait 36 000 jetons : cet index est la porte d'entrée,`,
+    `> ${liste.length} décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,`,
     '> puis on ouvre la ligne du tableau.',
     '',
     '| ID | Date | Intitulé (début) |',
