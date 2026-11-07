@@ -238,8 +238,7 @@ function rendreFautes(fichier: string, fautes: Occurrence[]): string {
  * leur illustration » alors que le set en comptait 233, et le chiffre faux est resté jusqu'à ce
  * qu'on tombe dessus par hasard (#625).
  */
-const basesDuSet = (cartes: readonly { variantOf?: string }[]): number =>
-  cartes.filter((card) => !card.variantOf).length;
+const basesDuSet = (cartes: readonly { variantOf?: string }[]): number => cartes.filter((card) => !card.variantOf).length;
 
 /**
  * « Les N cartes de base ont leur illustration » — **une** formulation, gardée ici.
@@ -464,11 +463,9 @@ function ecartsNomenclature(texte: string): string[] {
 
 /** La ligne de la décision D-180 dans le journal. */
 function ligneDecision(numero: string): string | null {
-  return (
-    read('docs/DECISIONS.md')
-      .split('\n')
-      .find((ligne) => ligne.trimStart().startsWith(`| ${numero} |`)) ?? null
-  );
+  return read('docs/DECISIONS.md')
+    .split('\n')
+    .find((ligne) => ligne.trimStart().startsWith(`| ${numero} |`)) ?? null;
 }
 
 describe('Cohérence des documents — la nomenclature des raretés (D-180)', () => {
@@ -572,7 +569,8 @@ describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
   it('le contrôle mord : « 225 cartes de base » est refusé, le compte réel passe (#625)', () => {
     const reel = basesDuSet(ALL_CARDS);
     // La phrase exacte que portait `docs/ALPHA-TESTEURS.md` : 225 annoncées pour 233 réelles.
-    const fautive = 'la fiche de chaque carte. **Les 225 cartes de base ont leur illustration**, et chaque variante';
+    const fautive =
+      'la fiche de chaque carte. **Les 225 cartes de base ont leur illustration**, et chaque variante';
     expect(comptesDeBases(fautive).map(({ ligne, chiffre }) => `${ligne}:${chiffre}`)).toEqual(['1:225']);
     const fautes = comptesFaux(fautive, reel);
     expect(fautes).toHaveLength(1);
@@ -582,9 +580,9 @@ describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
     expect(rapport).toContain(`écrit 225, compté ${reel}`);
     // Le bon chiffre passe, et deux occurrences sur deux lignes sont vues séparément.
     expect(comptesFaux(`**Les ${reel} cartes de base ont leur illustration**`, reel)).toEqual([]);
-    expect(comptesDeBases(`Les ${reel} cartes de base.\n\nLes 225 cartes de base.`).map(({ ligne }) => ligne)).toEqual([
-      1, 3
-    ]);
+    expect(
+      comptesDeBases(`Les ${reel} cartes de base.\n\nLes 225 cartes de base.`).map(({ ligne }) => ligne)
+    ).toEqual([1, 3]);
   });
 
   it('le contrôle mord : l’objet du 3D est refusé si la tasse revient (D-180)', () => {
