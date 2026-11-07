@@ -7,7 +7,7 @@ import { decisions, rendre } from './index-decisions.mjs';
 /**
  * L'index de `docs/DECISIONS.md` (26/10/2026) — la porte d'entrée du journal.
  *
- * Constaté : `AGENTS.md` §1.1 demandait de lire le journal (113 décisions, 36 000 jetons)
+ * Constaté : `AGENTS.md` §1.1 demandait de lire le journal (113 décisions)
  * avant toute modification. 5 sessions l'ont fait, **68 ont écrit sans le lire**, 123 greps
  * ciblés à la place. L'index rend la règle tenable ; ce test empêche qu'il dérive du journal.
  *
@@ -45,5 +45,34 @@ describe("l'index des décisions couvre le journal (26/10/2026)", () => {
     expect(d.id).toBe('D-042');
     expect(d.date).toBe('21/10/2026');
     expect(d.court).toBe('Un titre gras et la suite');
+  });
+
+  it('la colonne « Amendée par » lit le lien dans les deux sens (07/11/2026)', () => {
+    const liste = decisions(
+      [
+        '| D-001 | 18/10/2026 | ⚠️ **Amendée par D-003** : premier choix | parce que |',
+        '| D-002 | 18/10/2026 | ⚠️ **Remplacée le 20/10/2026 — voir D-004** : second | parce que |',
+        '| D-003 | 19/10/2026 | Troisième (Bastien) ; amende D-001 (2) et D-002 | parce que |',
+        '| D-004 | 20/10/2026 | Quatrième | parce que |'
+      ].join('\n')
+    );
+    const par = Object.fromEntries(liste.map((d: { id: string; amendeePar: string[] }) => [d.id, d.amendeePar]));
+    expect(par).toEqual({ 'D-001': ['D-003'], 'D-002': ['D-003', 'D-004'], 'D-003': [], 'D-004': [] });
+  });
+
+  it('le contrôle mord : un passif en texte courant ne compte pas', () => {
+    const liste = decisions(
+      [
+        '| D-001 | 18/10/2026 | Premier | parce que |',
+        '| D-002 | 19/10/2026 | Le backend, remplacé par D-001 ; le point (c), amendé par D-001 | parce que |'
+      ].join('\n')
+    );
+    expect(liste.map((d: { amendeePar: string[] }) => d.amendeePar)).toEqual([[], []]);
+  });
+
+  it('l’index porte la colonne, vide quand rien n’amende la décision', () => {
+    const index = rendre(decisions('| D-001 | 18/10/2026 | Premier | parce que |'));
+    expect(index).toContain('| ID | Date | Intitulé (début) | Amendée par |');
+    expect(index).toContain('| D-001 | 18/10/2026 | Premier |  |');
   });
 });
