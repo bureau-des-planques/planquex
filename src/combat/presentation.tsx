@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
 import { getCard, isPlanque, kindLabel } from '@/data';
 import type { AttackEffect, BattleState, Card, PlayerId } from '@/data/types';
 import { dessusDuDeck } from '@/game/engine';
 import { POINTS_TO_WIN } from '@/game/rules';
 import { campToAct } from '@/store/pvp';
-import { ECRAN_LARGE } from '@/components/InspecteurCombat';
 
 /** Une liste d'effets porte-t-elle le regard `peek` (D-079) ? */
 const porteUnRegard = (effects: readonly AttackEffect[] | undefined) =>
@@ -110,26 +108,4 @@ export function endBanner(state: BattleState, myCamp: PlayerId | null): string {
       return jamais;
     }
   }
-}
-
-/**
- * L'écran est-il assez large pour que la console porte le journal (D-158, #520) ? Vrai seulement
- * si `matchMedia` existe et que `ECRAN_LARGE` correspond. Sans `matchMedia` (jsdom), faux : les
- * tests existants ne doivent pas voir le journal en double, et le journal reste dans `⋯`.
- */
-export function useEcranLarge(): boolean {
-  const [large, setLarge] = useState(
-    () => typeof window.matchMedia === 'function' && window.matchMedia(ECRAN_LARGE).matches
-  );
-  useEffect(() => {
-    if (typeof window.matchMedia !== 'function') return;
-    const liste = window.matchMedia(ECRAN_LARGE);
-    // Le même rappel sert au premier passage et aux changements : une rotation de l'appareil
-    // ou une fenêtre redimensionnée met la console à jour sans recharger la page.
-    const suit = () => setLarge(liste.matches);
-    suit();
-    liste.addEventListener('change', suit);
-    return () => liste.removeEventListener('change', suit);
-  }, []);
-  return large;
 }

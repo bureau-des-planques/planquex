@@ -57,10 +57,10 @@ describe('la palette de src/styles.css (revue du 29/10/2026)', () => {
     const j = jetons(feuille);
     expect(j.has('--bg')).toBe(true);
     expect(j.has('--bg-deep')).toBe(true);
-    // D-191 : le fond passe au bleu nuit plat ; l'ancien (`#0b1220`) ne vit plus que dans
-    // `--combat-bg`, que `.battle` réapplique.
+    // D-191 : le fond passe au bleu nuit plat ; D-193 : le combat l'hérite, l'ancien `#0b1220`
+    // (`--combat-bg`) n'existe plus.
     expect(j.get('--bg')).toBe('#1b1d27');
-    expect(j.get('--combat-bg')).toBe('#0b1220');
+    expect(j.has('--combat-bg')).toBe(false);
   });
 
   it('aucune valeur de jeton n’est recopiée dans une règle', () => {

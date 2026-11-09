@@ -185,9 +185,9 @@ describe('le panneau d’attache dit quel café attend et ce qui est possible (#
 
     const attachements = screen.queryAllByRole('button', { name: /Attacher le café à/ });
     expect(attachements).toHaveLength(0);
-    // La raison vit sur la ligne du journal, là où la ligne de portée dit déjà ce qui manque.
-    const barre = screen.getByRole('region', { name: 'Actions du tour' });
-    expect(within(barre).getByText(/déjà attaché/i)).toBeInTheDocument();
+    // La raison vit dans la bulle du tour, au-dessus de la table (le bas de l'écran ne porte que la main).
+    const bulle = screen.getByRole('region', { name: 'Le tour' });
+    expect(within(bulle).getByText(/déjà attaché/i)).toBeInTheDocument();
   });
 });
 
@@ -240,9 +240,9 @@ describe('le café se touche sur le Planqué (#454, D-145)', () => {
 
   it('la barre n’a plus de cibles de café et garde « Café en Machine »', () => {
     const { container } = rendre();
-    const barre = screen.getByRole('region', { name: 'Actions du tour' });
+    const actions = screen.getByRole('region', { name: 'Actions du tour' });
     expect(container.querySelector('.combat-barre__cafe-cibles')).toBeNull();
-    expect(within(barre).queryAllByRole('button', { name: /Attacher/ })).toHaveLength(0);
+    expect(within(actions).queryAllByRole('button', { name: /Attacher/ })).toHaveLength(0);
     expect(screen.getByRole('region', { name: /Café à attacher/i }).textContent).toMatch(/Café en Machine/);
   });
 });

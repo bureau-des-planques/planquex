@@ -18,7 +18,7 @@ import { ArrowLeft, Ellipsis } from 'lucide-react';
  * vient d'ailleurs (le geste est fait, l'entrée cliquée a disparu) le focus ne reste pas perdu
  * sur `body`.
  */
-export type VueMenu = 'racine' | 'journal' | 'pvp';
+export type VueMenu = 'racine' | 'pvp';
 
 export interface EtatMenu {
   ouvert: boolean;
@@ -34,7 +34,6 @@ export interface MenuApi {
 
 const TITRES: Record<VueMenu, string> = {
   racine: 'Menu du combat',
-  journal: 'Journal',
   pvp: 'Partie à deux'
 };
 

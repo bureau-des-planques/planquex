@@ -21,6 +21,11 @@ import { describe, expect, it } from 'vitest';
 const CSS = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
 /** La feuille **sans ses commentaires** : une valeur d'avant le correctif a le droit d'être nommée dans la prose. */
 const DECLARATIONS = CSS.replace(/\/\*[\s\S]*?\*\//g, '');
+/** Les seules règles de **l'ouverture d'un Arrivage** : le miroir du monogramme ne concerne que ses dos. Les dos du combat (D-193, `.entrant__verso`, `.vol-effet`) sont des à-plats sans monogramme et se retournent par `rotateY(180deg)` : ils ne sont pas dans cette garde. */
+const REGLES_OUVERTURE = [...DECLARATIONS.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  .filter((m) => m[1].includes('.ouverture'))
+  .map((m) => m[0])
+  .join('\n');
 
 /** Le corps d'un bloc `sélecteur { … }`, accolades comprises. */
 function bloc(selecteur: string): string {
@@ -37,7 +42,11 @@ describe('la feuille de l’ouverture d’un Arrivage (D-169)', () => {
     expect(dos).not.toMatch(/rotateY\(180deg\)/);
     // Le contrôle mord : la valeur d'avant le correctif est refusée partout dans la feuille —
     // un `rotateY(180deg)` sur un dos, où qu'il soit, rend le monogramme miroir.
-    expect(DECLARATIONS).not.toMatch(/rotateY\(180deg\)/);
+    expect(REGLES_OUVERTURE).not.toMatch(/rotateY\(180deg\)/);
+    // Le contrôle mord : une règle d'ouverture fautive est bien repérée par ce filtre.
+    expect('.ouverture__dos { transform: rotateY(180deg); }'.match(/([^{}]+)\{([^{}]*)\}/)?.[1]).toContain(
+      '.ouverture'
+    );
   });
 
   it('« Nouvelle » s’ancre à droite, sur l’illustration, jamais dans la zone du nom', () => {

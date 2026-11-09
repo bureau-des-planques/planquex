@@ -130,15 +130,15 @@ describe('Battle — la carte de main soulevée et son repli (T11, #294)', () =>
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('sous « Mouvement réduit » : la carte reste, et l’inspecteur s’ouvre', async () => {
+  it('sous « Mouvement réduit » : la carte reste, et le survol de la main n’ouvre pas l’inspecteur (D-193 (1))', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
 
     const carte = document.querySelector<HTMLElement>('.hand > li');
     if (!carte) throw new Error('la main ne porte aucune carte');
-    const nom = carte.querySelector('.hand__name')?.textContent ?? '';
     fireEvent.pointerEnter(carte, { pointerType: 'mouse' });
 
-    expect(await screen.findByRole('dialog')).toHaveAccessibleName(nom);
+    expect(carte.querySelector('.hand__card')).not.toBeNull();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });
 

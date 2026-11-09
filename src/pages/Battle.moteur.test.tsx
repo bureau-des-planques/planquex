@@ -4,7 +4,6 @@ import { describe, it, expect, afterAll } from 'vitest';
 import { screen, fireEvent, within } from '@testing-library/react';
 import { Battle } from './Battle';
 import { renderWithStore } from '@/test/test-utils';
-import { menuSurLaVue } from '@/test/menu-combat';
 import { ALL_CARDS, CARD_BY_ID, getCard, isBasic, isPlanque } from '@/data';
 import type { ActionCard, Ability, AttackEffect, BattleAction, BattleState, Card, PlanqueCard } from '@/data/types';
 import { applyAction, createBattle, dessusDuDeck, legalActions } from '@/game/engine';
@@ -191,17 +190,11 @@ function ouvrir(state: BattleState, deck: string[]) {
 const encartDeChoix = (): HTMLElement | null => document.querySelector<HTMLElement>('section.choix');
 
 /**
- * Les lignes du journal, comme l'écran les affiche (`.log li`) — **derrière le menu `⋯`** depuis
- * la refonte du combat (#191) : l'helper l'ouvre sur sa vue Journal, comme le testeur. Une liste
- * vide ferait passer à vide les tests qui affirment qu'une ligne **n'est pas** là, donc elle
- * échoue ici : le journal d'une partie commencée n'est jamais vide.
+ * La dernière ligne du journal, comme l'écran la porte : la zone d'annonce (`annonce-du-coup`,
+ * sr-only). Le journal visuel a été retiré (D-182, #742) ; le reste du journal se lit dans
+ * `state.log`, que le moteur écrit et que la reprise rejoue à l'identique.
  */
-const journal = (): string[] => {
-  menuSurLaVue('Journal');
-  const lignes = Array.from(document.querySelectorAll<HTMLElement>('.log li')).map((li) => li.textContent ?? '');
-  if (lignes.length === 0) throw new Error('le Journal du menu est vide : le helper ne lit plus le bon endroit');
-  return lignes;
-};
+const derniereAnnonce = (): string => screen.getByTestId('annonce-du-coup').textContent ?? '';
 
 /** Les boutons « Talent » proposés. */
 const boutonsTalent = () => screen.queryAllByRole('button', { name: /^Talent/ });
@@ -231,7 +224,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       fireEvent.click(boutonsDeChoix()[0] as HTMLElement);
       // L'action `choose` est appliquée : le choix est clos, et la carte part au rebut.
       expect(encartDeChoix()).toBeNull();
-      expect(journal().some((l) => /au rebut/.test(l))).toBe(true);
+      expect(derniereAnnonce()).toMatch(/au rebut/);
     });
 
     it('… et chaque bouton nomme la carte de la main qu’il désigne (#171)', () => {
@@ -263,9 +256,13 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       expect(talent, 'un bouton Talent est proposé').toHaveLength(1);
       expect(talent[0]).toHaveTextContent(/Fixture Pression/);
 
+      // Le moteur écrit la pression du Talent ; l'annonce porte la dernière ligne qu'il a écrite.
+      const apres = applyAction(s, { type: 'ability' });
+      expect(apres.log.some((l) => new RegExp(`${NOM_TALENT_DEGATS} : \\d+ de stress\\.`).test(l))).toBe(true);
       fireEvent.click(talent[0] as HTMLElement);
       // Le Talent a frappé, et le tour n'est pas fini : c'est toujours à toi, « Fin du tour » reste.
-      expect(journal().some((l) => new RegExp(`${NOM_TALENT_DEGATS} : \\d+ de stress\\.`).test(l))).toBe(true);
+      expect(derniereAnnonce()).toBe(apres.log.at(-1));
+      expect(apres.current).toBe('player');
       expect(screen.getByText(/à toi/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Fin du tour/ })).toBeInTheDocument();
     });
@@ -278,7 +275,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       const s = jouerCollegue(nouvellePartie(deck, enMain(COLLEGUE_REVELE)), COLLEGUE_REVELE);
       ouvrir(s, deck);
 
-      expect(journal().some((l) => /^Révélé dans la main de la Direction :/.test(l))).toBe(true);
+      expect(s.log.some((l) => /^Révélé dans la main de la Direction :/.test(l))).toBe(true);
       // Seule ma main est dessinée en cartes : la main révélée n'existe qu'en ligne de journal.
       expect(document.querySelectorAll('.hand-panel button.hand__card')).toHaveLength(s.players.player.hand.length);
     });
@@ -292,7 +289,8 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
     it('le journal ne dit rien du dessus : c’est une information privée (D-079)', () => {
       const s = jouerCollegue(nouvellePartie(deck, scene), COLLEGUE_REGARD);
       ouvrir(s, deck);
-      expect(journal().join(' ')).not.toMatch(/dessus/i);
+      expect(s.log.join(' ')).not.toMatch(/dessus/i);
+      expect(derniereAnnonce()).not.toMatch(/dessus/i);
     });
 
     it('… et le joueur voit la carte du dessus, hors de la main et du journal (#171)', () => {
@@ -303,8 +301,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
 
       // Hors de la main et du journal, un élément doit porter le nom du dessus.
       const affiche = Array.from(document.querySelectorAll<HTMLElement>('body *')).filter(
-        (el) =>
-          el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
+        (el) => el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel')
       );
       expect(affiche.length, 'le dessus est affiché au joueur').toBeGreaterThan(0);
     });
@@ -325,8 +322,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
 
       expect(document.querySelector('section.regard'), 'aucune section privée chez l’adversaire').toBeNull();
       const fuite = Array.from(document.querySelectorAll<HTMLElement>('body *')).filter(
-        (el) =>
-          el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel, .log')
+        (el) => el.childElementCount === 0 && el.textContent?.trim() === dessus?.name && !el.closest('.hand-panel')
       );
       expect(fuite, 'le dessus regardé ne fuit pas chez l’adversaire').toHaveLength(0);
     });
@@ -374,7 +370,7 @@ describe('Battle — mécaniques du moteur à l’écran (#159 à #165)', () => 
       s = jouer(s, (a) => a.type === 'evolve', 'faire évoluer');
       ouvrir(s, deck);
 
-      const lignes = journal().filter((l) => l.includes(NOM_EN_JOUANT));
+      const lignes = s.log.filter((l) => l.includes(NOM_EN_JOUANT));
       expect(lignes).toHaveLength(1);
       expect(lignes[0]).toMatch(/utilise/);
       expect(boutonsTalent()).toHaveLength(0);

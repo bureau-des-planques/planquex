@@ -63,7 +63,52 @@ export const DUREE_CONDITION_MS = 240;
 export const DELAI_IMPACT_MS = 550;
 export const DUREE_CONDITION_APRES_COUP_MS = DELAI_IMPACT_MS + DUREE_CONDITION_MS;
 
-export type NatureEffet = 'stress' | 'craquage' | 'pioche' | 'intervention' | 'attaque' | 'condition';
+/**
+ * **L'ouverture d'un combat neuf** (#746) : la caméra zoome sur la table (`.board--ouverture`),
+ * puis les Planqués posés d'office, Poste et Banc, se retournent du dos vers la face
+ * (`.entrant--ouverture`). Mise en scène, pas règle : le moteur a déjà posé les cartes, seul le
+ * passage dos → face est animé. Les durées sont **lues par la feuille** ; `effets-combat.test.ts`
+ * confronte les deux, et tient la séquence entière sous `BORNE_OUVERTURE_MS` (deux secondes).
+ */
+export const DUREE_ZOOM_OUVERTURE_MS = 700;
+/** Une bascule, par `rotateY` seul (propriété composée) : 500 ms, sous `DUREE_MAX_MS`. */
+export const DUREE_RETOURNEMENT_MS = 500;
+/** L'écart entre deux cartes qui se retournent : une cascade, pas une addition de durées. */
+export const PAS_RETOURNEMENT_MS = 80;
+/** Chaque camp a quatre rangs : le Poste, puis les trois places du Banc. */
+export const RANGS_PAR_CAMP = 4;
+/** Le dernier rang : la Direction, Banc 3 (le joueur occupe les rangs 0 à 3, d'abord). */
+export const RANG_MAX_OUVERTURE = RANGS_PAR_CAMP * 2 - 1;
+/** La borne de la séquence entière (critère 3 de #746). */
+export const BORNE_OUVERTURE_MS = 2000;
+
+/**
+ * Le délai d'une carte d'ouverture, à son rang : les cartes se retournent **après** le zoom,
+ * une par `PAS_RETOURNEMENT_MS`. Le rang suit l'ordre joueur puis Direction, Poste puis Banc.
+ */
+export function delaiDeRetournement(rang: number): number {
+  return DUREE_ZOOM_OUVERTURE_MS + rang * PAS_RETOURNEMENT_MS;
+}
+
+/** La fin de la séquence : le zoom, la cascade jusqu'au dernier rang, et la dernière bascule. */
+export function finDeLOuverture(pasMs: number = PAS_RETOURNEMENT_MS): number {
+  return DUREE_ZOOM_OUVERTURE_MS + RANG_MAX_OUVERTURE * pasMs + DUREE_RETOURNEMENT_MS;
+}
+
+/** La durée de la séquence d'ouverture, telle que le hook la mesure (`useCombat`). */
+export const DUREE_OUVERTURE_MS = finDeLOuverture();
+
+/**
+ * Le vol d'une carte (#748) : la pioche et la pose de la Direction se jouent sur **une** durée
+ * commune, celle du `vol-effet` de la feuille, et l'évolution sur son pouls (`evolution-flash`).
+ * `effets-combat.test.ts` confronte la feuille à ces trois constantes.
+ */
+export const DUREE_TIRAGE_MS = 500;
+export const DUREE_POSE_MS = 500;
+export const DUREE_EVOLUTION_MS = 300;
+
+export type NatureEffet =
+  'stress' | 'craquage' | 'pioche' | 'intervention' | 'attaque' | 'condition' | 'tirage' | 'pose' | 'evolution';
 
 export interface EffetCombat {
   readonly id: number;
@@ -92,6 +137,10 @@ export interface EffetCombat {
   readonly apresCoup?: boolean;
   /** La Pression jouée, son rang dans la carte : la chorégraphie en dépend (D-098). */
   readonly attackIndex?: number;
+  /** Le lieu où une carte est posée (`pose`) : le Poste, ou une place du Banc. */
+  readonly lieu?: 'poste' | 'banc';
+  /** La place du Banc où la carte arrive (`pose`, `lieu` = `banc`), de 0 à 2. */
+  readonly emplacement?: number;
   /**
    * Le Stress **réellement encaissé** par la cible de cette Pression, et si elle a craqué.
    * Ils voyagent **sur l'attaque** et non comme des effets séparés : le plafond de quatre
@@ -116,6 +165,12 @@ export function dureeEffet(nature: NatureEffet): number {
       return DUREE_ATTAQUE_MS;
     case 'condition':
       return DUREE_CONDITION_MS;
+    case 'tirage':
+      return DUREE_TIRAGE_MS;
+    case 'pose':
+      return DUREE_POSE_MS;
+    case 'evolution':
+      return DUREE_EVOLUTION_MS;
   }
 }
 
@@ -266,7 +321,49 @@ export function effetsEntre(avant: BattleState, apres: BattleState, premierId = 
     for (let numero = avant.players[camp].points + 1; numero <= apres.players[camp].points; numero += 1) {
       ajouter({ nature: 'intervention', camp, numero });
     }
+
+    // Le tirage (#748) : une carte qui était au **Deck** et se retrouve dans la **main**. Une
+    // carte qui vient du Rebut ou d'une autre place n'a pas été piochée, elle n'est pas comptée.
+    const dansLeDeck = new Set(avant.players[camp].deck.map((carte) => carte.uid));
+    const dansLaMain = new Set(avant.players[camp].hand.map((carte) => carte.uid));
+    for (const carte of apres.players[camp].hand) {
+      if (dansLeDeck.has(carte.uid) && !dansLaMain.has(carte.uid)) {
+        ajouter({ nature: 'tirage', camp, uid: carte.uid, carte });
+      }
+    }
+
+    // L'évolution (#748) : même `uid`, autre `cardId`. Le moteur garde l'instance (dégâts,
+    // cafés, Conditions) et ne fait que changer sa carte : le diff suffit, aucun journal.
+    for (const carte of enJeu(apres.players[camp])) {
+      const avantCarte = enJeu(avant.players[camp]).find((autre) => autre.uid === carte.uid);
+      if (avantCarte && avantCarte.cardId !== carte.cardId) {
+        ajouter({
+          nature: 'evolution',
+          camp,
+          uid: carte.uid,
+          carte,
+          auPoste: avant.players[camp].active?.uid === carte.uid
+        });
+      }
+    }
   }
+
+  // La pose de la Direction (#748) : une carte de la main de la Direction entre au Poste ou au
+  // Banc. Le **joueur** n'est pas compté ici : sa pose a déjà son vol (`CarteEnVol`, #745), et
+  // un second effet la doublerait. Le camp de la Direction est `ai`.
+  const deLaMainAI = new Set(avant.players.ai.hand.map((carte) => carte.uid));
+  const dejaEnJeuAI = new Set(enJeu(avant.players.ai).map((carte) => carte.uid));
+  const poseAI = (carte: CardInstance | null | undefined): carte is CardInstance =>
+    carte !== null && carte !== undefined && deLaMainAI.has(carte.uid) && !dejaEnJeuAI.has(carte.uid);
+  const activeAI = apres.players.ai.active;
+  if (poseAI(activeAI)) {
+    ajouter({ nature: 'pose', camp: 'ai', uid: activeAI.uid, carte: activeAI, lieu: 'poste' });
+  }
+  apres.players.ai.bench.forEach((carte, emplacement) => {
+    if (poseAI(carte)) {
+      ajouter({ nature: 'pose', camp: 'ai', uid: carte.uid, carte, lieu: 'banc', emplacement });
+    }
+  });
 
   // L'après : une Condition **apparaît** sur une carte en jeu. Le badge existe déjà ; cet
   // effet ne fait que le faire naître (`badge-pop`), et il est refusé au-delà du plafond.

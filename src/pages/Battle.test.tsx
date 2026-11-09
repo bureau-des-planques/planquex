@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { act, screen, fireEvent, waitFor, within, renderHook } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -12,8 +12,11 @@ import { Battle } from './Battle';
 import { renderWithStore, setupTestStore } from '@/test/test-utils';
 import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat';
 import { ETAPES_COMBAT, premierePhrase } from '@/components/pas-a-pas-combat-etapes';
+import { delaiDeRetournement, DUREE_OUVERTURE_MS, useEffetsDeCombat } from '@/components/effets-combat';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
-import type { BattleAction, BattleState } from '@/data/types';
+import type { BattleAction, BattleState, PlayerId } from '@/data/types';
+import { HAND_LIMIT } from '@/game/rules';
+import { cardName } from '@/combat/cartes';
 import type { PartieSauvegardee } from '@/store/partie';
 import { encodeMatch } from '@/game/codec';
 import { autoDeck } from '@/game/deck';
@@ -149,6 +152,51 @@ function partieAvecPlaceAuBanc() {
   throw new Error('aucune partie ne laisse une carte à poser au Banc');
 }
 
+/**
+ * Une partie rangée où la main de `camp` porte exactement `n` cartes (#747). Une seule passe
+ * remplit **tous** les cas (deux camps × 1, HAND_LIMIT) : chaque état vu est noté, la première
+ * fois qu'il porte la taille voulue. Coups déterministes (graine + rang), Direction scriptée.
+ * Mémoïsée, même raison que les autres scénarios.
+ */
+// Pas de main vide : 300 graines, deux politiques de coups, aucun état à 0 carte n'est atteint
+// (la pioche se refait à chaque tour). Le cas 0 reste donc non couvert.
+const TAILLES_DE_MAIN = [1, HAND_LIMIT];
+const cacheMains = new Map<string, { partie: PartieSauvegardee; etat: BattleState }>();
+function partieAvecMain(camp: PlayerId, n: number): { partie: PartieSauvegardee; etat: BattleState } {
+  const cle = `${camp}:${n}`;
+  const dejaVu = cacheMains.get(cle);
+  if (dejaVu) return dejaVu;
+  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+  const deck = autoDeck(owned).deck;
+  for (let seed = 1; seed < 300; seed += 1) {
+    let s: BattleState = createBattle(deck, deck, seed);
+    for (let i = 0; i < 300 && s.phase === 'playing'; i += 1) {
+      if (s.pendingPromotion === null && s.pendingChoice === null) {
+        for (const id of ['player', 'ai'] as const) {
+          for (const taille of TAILLES_DE_MAIN) {
+            const cleNoter = `${id}:${taille}`;
+            if (cacheMains.has(cleNoter) || s.players[id].hand.length !== taille) continue;
+            const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
+            if (partie) cacheMains.set(cleNoter, { partie, etat: s });
+          }
+        }
+        const trouve = cacheMains.get(cle);
+        if (trouve) return trouve;
+      }
+      const legales = legalActions(s).filter((a) => a.type !== 'forfeit');
+      // Une graine sur deux joue tout ce qui se pose (la main peut se vider) ; l'autre passe souvent.
+      const jouables = seed % 2 === 0 ? legales.filter((a) => a.type !== 'endTurn') : legales;
+      const choix = jouables.length > 0 ? jouables : legales;
+      const action =
+        (s.current === 'ai' && !s.pendingPromotion && !s.pendingChoice ? nextAiAction(s, 'scripte') : null) ??
+        choix[(i + seed) % Math.max(choix.length, 1)];
+      if (!action) break;
+      s = applyAction(s, action);
+    }
+  }
+  throw new Error(`aucune partie ne porte une main de ${n} carte(s) pour ${camp}`);
+}
+
 describe('Battle — écran de combat', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -276,33 +324,34 @@ describe('Battle — écran de combat', () => {
     expect(dialogue).toHaveTextContent(/ce qu.un Planqué au Poste peut subir/i);
   });
 
-  it('range Journal, Partie à deux, Règles, Abandonner et Nouveau combat derrière un seul bouton', () => {
+  it('range Partie à deux, Règles, Abandonner et Nouveau combat derrière un seul bouton', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    // Fermé : aucune des cinq entrées n'est sur la table.
-    for (const nom of [/Journal/, /Partie à deux/, /Règles/, /^Abandonner$/, /Nouveau combat/]) {
+    // Fermé : aucune des quatre entrées n'est sur la table.
+    for (const nom of [/Partie à deux/, /Règles/, /^Abandonner$/, /Nouveau combat/]) {
       expect(screen.queryByRole('button', { name: nom }), String(nom)).toBeNull();
     }
-    // Ouvert : les cinq, dans le même panneau.
+    // Ouvert : les quatre, dans le même panneau.
     const menu = menuSurLaListe();
-    for (const nom of [/Journal/, /Partie à deux/, /Règles/, /^Abandonner$/, /Nouveau combat/]) {
+    for (const nom of [/Partie à deux/, /Règles/, /^Abandonner$/, /Nouveau combat/]) {
       expect(within(menu).getByRole('button', { name: nom }), String(nom)).toBeInTheDocument();
     }
   });
 
-  it('le menu est une seule surface : la liste, ou le Journal, ou la Partie à deux', () => {
+  it('le menu est une seule surface : la liste, ou la Partie à deux', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    menuSurLaVue('Journal');
-    let menu = screen.getByRole('region', { name: 'Menu du combat' });
-    expect(within(menu).getByRole('heading', { name: 'Journal' })).toBeInTheDocument();
-    expect(within(menu).queryByRole('button', { name: /Nouveau combat/ })).toBeNull();
-    expect(within(menu).queryByLabelText(/Code reçu/)).toBeNull();
-
     menuSurLaVue('Partie à deux');
-    menu = screen.getByRole('region', { name: 'Menu du combat' });
-    expect(within(menu).queryByRole('heading', { name: 'Journal' })).toBeNull();
+    let menu = screen.getByRole('region', { name: 'Menu du combat' });
+    expect(within(menu).getByRole('heading', { name: 'Partie à deux' })).toBeInTheDocument();
+    expect(within(menu).queryByRole('button', { name: /Nouveau combat/ })).toBeNull();
     expect(within(menu).getByRole('button', { name: /Créer une partie à deux/i })).toBeInTheDocument();
+    expect(screen.getAllByRole('region', { name: 'Menu du combat' })).toHaveLength(1);
+
+    menu = menuSurLaListe();
+    expect(within(menu).queryByRole('heading', { name: 'Partie à deux' })).toBeNull();
+    expect(within(menu).queryByLabelText(/Code reçu/)).toBeNull();
+    expect(within(menu).getByRole('button', { name: /Nouveau combat/ })).toBeInTheDocument();
     expect(screen.getAllByRole('region', { name: 'Menu du combat' })).toHaveLength(1);
   });
 
@@ -310,7 +359,7 @@ describe('Battle — écran de combat', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     const bouton = screen.getByRole('button', { name: 'Menu du combat' });
 
-    menuSurLaVue('Journal');
+    menuSurLaVue('Partie à deux');
     expect(bouton).toHaveAttribute('aria-expanded', 'true');
     // Le focus est dans le panneau (le titre de la vue), pas sur le bouton.
     expect(bouton).not.toHaveFocus();
@@ -342,15 +391,6 @@ describe('Battle — écran de combat', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     expect(within(menuSurLaListe()).getByRole('button', { name: /Abandonner/i })).toBeInTheDocument();
-  });
-
-  it('affiche le Journal dans le menu', () => {
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
-
-    const menu = menuSurLaVue('Journal');
-    expect(within(menu).getByRole('heading', { name: 'Journal' })).toBeInTheDocument();
-    // Le journal n'est pas une coquille vide : la mise en place y a écrit sa première ligne.
-    expect(menu.querySelectorAll('.log li').length).toBeGreaterThan(0);
   });
 
   it('affiche la Partie à deux dans le menu, avec le bouton Créer', () => {
@@ -487,10 +527,12 @@ describe('Battle — écran de combat', () => {
 });
 
 /**
- * **La barre d'action** (D-093, #191) : les Pressions et « Fin du tour » vivent dans une barre
- * collée au-dessus de la navigation, **toujours présente** — c'est la cible « poste-actions » du
- * pas-à-pas et ce que `npm run capturer` mesure. La géométrie (la main dans la fenêtre à
- * 420 × 900) ne se teste qu'en capture : jsdom ne calcule aucune mise en page.
+ * **Les actions du tour** (D-093, #191 ; refonte du combat, retour du propriétaire) : les Pressions,
+ * les gestes et « Fin du tour » vivent dans une pile **posée sur la table**, à droite et au milieu —
+ * jamais sous la main. Le message du tour (portée, café, réplique, attente) est une bulle sous le haut
+ * de la table ; une décision qui attend (relève, carte à désigner) reste dans son panneau borné.
+ * C'est la cible « poste-actions » du pas-à-pas. La géométrie (la main seule en bas à 420 × 900) ne
+ * se teste qu'en capture : jsdom ne calcule aucune mise en page.
  */
 describe('Battle — la barre d’action (#191)', () => {
   beforeEach(() => {
@@ -500,48 +542,57 @@ describe('Battle — la barre d’action (#191)', () => {
     vi.restoreAllMocks();
   });
 
-  it('porte « Fin du tour » au tour du joueur, à côté de la main et hors du plateau', async () => {
+  it('porte « Fin du tour » au tour du joueur, posé sur la table, hors de la main et du plateau', async () => {
     const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
-    const barre = screen.getByRole('region', { name: 'Actions du tour' });
-    expect(barre).toHaveClass('combat-barre');
-    expect(within(barre).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
-    // La barre suit la main dans le document : elle est « en bas », après la table.
-    expect(
-      (container.querySelector('.hand-panel') as Node).compareDocumentPosition(barre) & Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy();
-    expect(container.querySelector('.board')?.contains(barre)).toBe(false);
+    const actions = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(actions).toHaveClass('actions-flottantes');
+    expect(within(actions).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
+    // Les actions sont des enfants de la table, pas de la console : jamais sous la main (téléphone).
+    const table = container.querySelector('.battle__table') as HTMLElement;
+    expect(table.contains(actions)).toBe(true);
+    expect(container.querySelector('.battle__console')?.contains(actions)).toBe(false);
+    expect(container.querySelector('.hand-panel')?.contains(actions)).toBe(false);
+    expect(container.querySelector('.board')?.contains(actions)).toBe(false);
+    // Aucune barre du bas ne subsiste : la classe d'avant (`combat-barre`) n'est plus rendue.
+    expect(container.querySelector('.combat-barre')).toBeNull();
   });
 
-  it('la dernière ligne du journal vit dans la barre d’action, et seule la barre porte le bandeau (#199)', () => {
+  it('le message du tour n’est jamais dans la pile d’actions', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const actions = screen.getByRole('region', { name: 'Actions du tour' });
+    // Le message du tour vit dans sa bulle, jamais dans la pile d'actions.
+    expect(actions.querySelector('.combat-toast')).toBeNull();
+    expect(actions.querySelector('.combat-barre__portee')).toBeNull();
+    expect(actions.querySelector('.combat-barre__repos')).toBeNull();
+  });
+
+  it('la dernière ligne du journal est lue par l’annonce, et seule la barre porte le bandeau (#199)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
 
     const barre = screen.getByRole('region', { name: 'Actions du tour' });
     // « Lancer de tampon : tu ouvres. » — la graine fixe (42) donne au joueur l'ouverture.
-    expect(barre.querySelector('.combat-barre__journal')).toHaveTextContent('Lancer de tampon : tu ouvres.');
+    expect(screen.getByTestId('annonce-du-coup')).toHaveTextContent('Lancer de tampon : tu ouvres.');
     // Aucun bandeau n'est resté au-dessus du plateau.
     for (const bandeau of document.querySelectorAll('.banner')) expect(barre.contains(bandeau)).toBe(true);
   });
 
-  it('« Fin du tour » est sur la ligne de tête, jamais dans la rangée des gestes, Pression jouable ou non (#320)', () => {
-    // Une Pression jouable rallongeait la rangée des gestes ; « Fin du tour », dedans, passait sur une
-    // seconde rangée sous la barre de navigation (420 × 900). La position se mesure en capture
-    // (`npm run capturer`) ; ici, le contrat de structure : l'action principale n'est pas dans la
-    // rangée qui grandit, et cette rangée ne porte aucune Pression en double.
+  it('« Fin du tour » est la première entrée de la pile, la Pression jouable est dessous et seule pleine (#320)', () => {
+    // La pile remplace la barre du bas : « Fin du tour » surgit en tête, les Pressions et les gestes
+    // suivent en colonne. Une Pression jouable est le seul bouton plein ; « Fin du tour » passe en ardoise
+    // (feuille de styles). Le contrôle mord : une Pression qui passe devant « Fin du tour » est refusée.
     const { partie } = partieAvecPression();
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
 
-    const barre = screen.getByRole('region', { name: 'Actions du tour' });
-    const tete = barre.querySelector('.combat-barre__tete') as HTMLElement;
-    const gestes = barre.querySelector('.combat-barre__gestes') as HTMLElement;
-    expect(tete).not.toBeNull();
-    expect(gestes).not.toBeNull();
-    expect(within(tete).getByRole('button', { name: 'Fin du tour' })).toBeInTheDocument();
-    expect(within(gestes).queryByRole('button', { name: 'Fin du tour' })).toBeNull();
-    expect(gestes.querySelector('.button--primary'), 'la Pression est dans la rangée des gestes').not.toBeNull();
-    // La phrase du journal partage la ligne de « Fin du tour » : elle ne lui prend pas une ligne de plus.
-    expect(tete.querySelector('.combat-barre__journal')).not.toBeNull();
-    expect(tete.compareDocumentPosition(gestes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const pile = screen.getByRole('region', { name: 'Actions du tour' });
+    const boutons = within(pile).getAllByRole('button');
+    expect(boutons[0]).toHaveTextContent('Fin du tour');
+    expect(pile).toHaveAttribute('data-pression-jouable', 'true');
+    const pression = pile.querySelector('.button--primary');
+    expect(pression, 'la Pression est dans la pile').not.toBeNull();
+    expect(pression?.textContent).not.toMatch(/Fin du tour/);
+    expect(pile.querySelectorAll('.button--primary')).toHaveLength(1);
+    expect(boutons[0].compareDocumentPosition(pression as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('ne perd rien : une Pression à portée est un bouton de la barre, pas de la main', () => {
@@ -556,7 +607,7 @@ describe('Battle — la barre d’action (#191)', () => {
     expect(nomDeLaPression).not.toBe('');
     const barre = screen.getByRole('region', { name: 'Actions du tour' });
     const boutons = within(barre).getAllByRole('button');
-    // Une Pression : l'icône d'épées, un nom, des dégâts — et « Fin du tour » à côté.
+    // Une Pression : l'icône d'épées, un nom, des dégâts — et « Fin du tour » dans la même pile.
     expect(
       boutons.some((b) => b.className.includes('button--primary') && b.textContent?.includes(nomDeLaPression)),
       `« ${nomDeLaPression} » est un bouton de la barre`
@@ -567,20 +618,24 @@ describe('Battle — la barre d’action (#191)', () => {
     expect(screen.queryByRole('heading', { name: 'Au Poste' })).toBeNull();
   });
 
-  it('une relève à choisir : la barre ne porte que les relèves, nommées', () => {
+  it('une relève à choisir : le panneau borné au-dessus de la table porte les relèves, nommées', () => {
     const { partie, etat } = partieAvecReleve();
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
 
-    const barre = screen.getByRole('region', { name: 'Actions du tour' });
-    expect(barre).toHaveTextContent('Ton Poste a craqué. À toi de choisir ta relève.');
-    const boutons = within(barre).getAllByRole('button');
+    // La décision vit dans la superposition du haut de la table, jamais sous la main.
+    const annonce = screen.getByText('Ton Poste a craqué. À toi de choisir ta relève.');
+    const panneau = annonce.closest('.combat-superpose') as HTMLElement;
+    expect(panneau).not.toBeNull();
+    expect(document.querySelector('.battle__console')?.contains(panneau)).toBe(false);
+    const boutons = within(panneau).getAllByRole('button');
     expect(boutons.length).toBe(legalActions(etat).filter((a) => a.type === 'promoteActive').length);
     for (const bouton of boutons) expect(bouton.textContent).toMatch(/^Relève/);
     // Ni Pression ni « Fin du tour » tant que la relève n'est pas choisie.
-    expect(within(barre).queryByRole('button', { name: /Fin du tour/ })).toBeNull();
+    const pile = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(within(pile).queryByRole('button', { name: /Fin du tour/ })).toBeNull();
 
     fireEvent.click(boutons[0] as HTMLElement);
-    expect(screen.getByRole('region', { name: 'Actions du tour' })).not.toHaveTextContent(/Ton Poste a craqué/);
+    expect(screen.queryByText(/Ton Poste a craqué/)).toBeNull();
   });
 
   it('partie terminée : la barre le dit et n’offre aucun geste, le bandeau de fin reste en haut', async () => {
@@ -606,14 +661,28 @@ describe('Battle — la barre d’action (#191)', () => {
     await waitFor(() => expect(screen.queryByText('Défaite : tu as déclaré forfait.')).toBeNull());
   });
 
+  it('partie terminée : la bulle du tour ne redit pas « Rien à faire », le verdict reste seul porteur (#561)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    fireEvent.click(within(menuSurLaListe()).getByRole('button', { name: /^Abandonner$/ }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /Abandonner/ }));
+    await waitFor(() => expect(screen.getByText('Défaite : tu as déclaré forfait.')).toBeInTheDocument());
+
+    // Cas fautif (#561) : en fin de partie, la phrase d'attente (`idleLine`) rendue dans la bulle
+    // `.combat-toast` — c'est ce que fait la mutation de `Battle.tsx` qui retire
+    // `state.phase !== 'ended'` du garde. La bulle s'affiche en solo grâce à la réplique de la
+    // Direction ; sans ce garde, « Rien à faire : la partie est terminée. » s'y glisse et répète le
+    // bandeau du haut. Le test doit donc échouer sous cette mutation.
+    const bulle = document.querySelector('.combat-toast') as HTMLElement | null;
+    expect(bulle).not.toBeNull();
+    expect(bulle).not.toHaveTextContent('Rien à faire');
+  });
+
   it('un lecteur d’écran entend le coup, le tour et le verdict (4.1.3)', async () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     // La zone d'annonce est **persistante** et porte la dernière ligne du journal.
     const annonce = screen.getByTestId('annonce-du-coup');
     expect(annonce).toHaveAttribute('aria-live', 'polite');
-    const ligneVisible = document.querySelector('.combat-barre__journal');
-    expect(ligneVisible).not.toBeNull();
-    expect(annonce).toHaveTextContent(ligneVisible!.textContent ?? '');
+    expect(annonce).toHaveTextContent('Lancer de tampon : tu ouvres.');
     // La ligne du tour s'annonce aussi : le moteur ne journalise pas les tours.
     expect(screen.getByText(/^Tour \d+ ·/)).toHaveAttribute('aria-live', 'polite');
 
@@ -623,7 +692,27 @@ describe('Battle — la barre d’action (#191)', () => {
     // pour ne pas le doubler.
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Défaite : tu as déclaré forfait.'));
     expect(screen.getByTestId('annonce-du-coup')).toBe(annonce);
-    expect(annonce).toHaveTextContent('');
+    expect(annonce.textContent).toBe('');
+  });
+
+  it('après un coup, l’annonce porte la ligne que le journal vient d’écrire, sans changer de nœud (4.1.3)', async () => {
+    const { partie, etat } = partieAvecPression();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+    const annonce = screen.getByTestId('annonce-du-coup');
+    expect(annonce).toHaveAttribute('aria-live', 'polite');
+
+    const action = legalActions(etat).find((a) => a.type === 'attack');
+    if (action?.type !== 'attack') throw new Error('le scénario doit proposer une Pression');
+    const attendue = applyAction(etat, action).log.at(-1);
+    expect(attendue, 'le coup écrit une ligne au journal').toBeTruthy();
+
+    // Attendre le tour jouable (même course que les répliques, #617), puis jouer la Pression.
+    const bouton = await screen.findByRole('button', { name: new RegExp(nomDeLaPression(etat, action)) });
+    fireEvent.click(bouton);
+
+    // Le nœud est le même : un lecteur d'écran entend son contenu changer.
+    expect(screen.getByTestId('annonce-du-coup')).toBe(annonce);
+    expect(annonce).toHaveTextContent(attendue!);
   });
 
   it('au tour de l’autre, en partie à deux : une ligne, « Coller un code », aucun bouton d’action', () => {
@@ -633,12 +722,14 @@ describe('Battle — la barre d’action (#191)', () => {
     const barre = screen.getByRole('region', { name: 'Actions du tour' });
     fireEvent.click(within(barre).getByRole('button', { name: 'Fin du tour' }));
 
-    const apres = screen.getByRole('region', { name: 'Actions du tour' });
-    expect(apres).toHaveTextContent(/C’est au .* de jouer\./);
+    // Le message du tour (la bulle du haut de la table) dit l'attente ; la pile d'actions se vide.
+    const bulle = screen.getByRole('region', { name: 'Le tour' });
+    expect(bulle).toHaveTextContent(/C’est au .* de jouer\./);
     // Aucun bouton de jeu : seulement le lien qui rouvre le code.
-    const boutons = within(apres).getAllByRole('button');
+    const boutons = within(bulle).getAllByRole('button');
     expect(boutons.map((b) => b.textContent)).toEqual(['Coller un code']);
-    expect(within(apres).queryByRole('button', { name: /Fin du tour|Passer le tour/ })).toBeNull();
+    const pile = screen.getByRole('region', { name: 'Actions du tour' });
+    expect(within(pile).queryByRole('button', { name: /Fin du tour|Passer le tour/ })).toBeNull();
   });
 });
 
@@ -893,14 +984,15 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
 
     const carte = await premiereCarteJouable();
     expect(carte).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.queryByRole('region', { name: /Poser la carte choisie/i })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /Poser la carte choisie/i })).toBeNull();
 
     fireEvent.click(carte);
 
     expect(carte).toHaveAttribute('aria-pressed', 'true');
-    const panneau = screen.getByRole('region', { name: /Poser la carte choisie/i });
+    const panneau = screen.getByRole('dialog', { name: /Poser la carte choisie/i });
     const nom = carte.querySelector('.hand__name')?.textContent ?? '';
-    expect(within(panneau).getByText(nom)).toBeInTheDocument();
+    // Le nom est écrit deux fois dans la feuille : dans son titre, et sur la carte en grand (`aria-hidden`).
+    expect(within(panneau).getAllByText(nom).length).toBeGreaterThan(0);
 
     const gestes = within(panneau)
       .getAllByRole('button')
@@ -924,7 +1016,7 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Reprendre une autre carte/i }));
     expect(carte).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.queryByRole('region', { name: /Poser la carte choisie/i })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /Poser la carte choisie/i })).toBeNull();
   });
 
   it('un geste de pose consomme la sélection', async () => {
@@ -932,25 +1024,28 @@ describe('Battle — poser une carte est un geste nommé (#169)', () => {
 
     const carte = await premiereCarteJouable();
     fireEvent.click(carte);
-    const panneau = screen.getByRole('region', { name: /Poser la carte choisie/i });
+    const panneau = screen.getByRole('dialog', { name: /Poser la carte choisie/i });
     const geste = within(panneau)
       .getAllByRole('button')
       .find((b) => LIBELLES_DE_POSE.test(b.textContent ?? ''));
     expect(geste).toBeDefined();
     fireEvent.click(geste as HTMLElement);
 
-    expect(screen.queryByRole('region', { name: /Poser la carte choisie/i })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: /Poser la carte choisie/i })).toBeNull();
   });
 
-  it('cadre le panneau de pose quand une carte est choisie', async () => {
+  it('la feuille de la carte choisie est fixe : choisir une carte ne fait jamais défiler la page (#745)', async () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     const carte = await premiereCarteJouable();
     (Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>).mockClear();
 
     fireEvent.click(carte);
 
-    const panneau = screen.getByRole('region', { name: /Poser la carte choisie/i });
-    expect((Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>).mock.contexts).toContain(panneau);
+    screen.getByRole('dialog', { name: /Poser la carte choisie/i });
+    // Aucun cadrage de la page : la feuille est `position: fixed` (la garde CSS ci-dessous le lit).
+    expect((Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>).mock.calls).toHaveLength(0);
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(css.match(/\.battle \.carte-grand \{([^}]*)\}/)?.[1] ?? '').toMatch(/position:\s*fixed/);
   });
   it('reprend la partie rangée au rechargement : même tour, même dernière ligne (#126)', () => {
     // Une partie jouée à la main, rangée dans le store : c'est ce que l'écran écrit.
@@ -1462,31 +1557,6 @@ describe('Battle — la main est un éventail de cartes du gabarit (#200, SPEC-C
  * réglage du store arrive au CSS, une carte de la main ne se soulève pas sans mouvement,
  * et une Pression laisse bien un chiffre de Stress sur la table.
  */
-/**
- * **La ligne de journal ne se recouvre pas elle-même** (#551, mesuré le 31/10/2026).
- *
- * Avec `mode="popLayout"`, la ligne qui s'en va passe en `position: absolute` et la nouvelle la
- * recouvre : deux `<p class="banner combat-barre__journal">` occupent le même rectangle pendant
- * **510 ms** (mesuré : 113 → 627 ms, 734 → 1246 ms après le chargement), et le détecteur d'écrans
- * lit là un `text-occlusion` qui a refusé `/battle` sur `main` (run #586). `mode="wait"` garde la
- * sortante dans le flux et laisse entrer la nouvelle après elle : jamais deux lignes superposées.
- *
- * Le contrôle mord : il relit le bloc réel de `Battle.tsx`, pas une chaîne recopiée.
- */
-describe('Battle — la ligne de journal ne se superpose pas (#551)', () => {
-  it('fait passer le changement de ligne par `wait`, jamais par `popLayout`', () => {
-    const source = readFileSync(resolve(process.cwd(), 'src/pages/Battle.tsx'), 'utf8');
-    const debut = source.indexOf('{lastLog && (');
-    expect(debut).toBeGreaterThan(-1);
-    const bloc = source.slice(debut, source.indexOf('</AnimatePresence>', debut));
-    expect(bloc).toContain('combat-barre__journal');
-    expect(bloc).toContain('mode="wait"');
-    // `popLayout` sort la ligne en `absolute` : c'est exactement le recouvrement mesuré. On
-    // regarde la **prop**, pas le mot du commentaire qui explique pourquoi elle est partie.
-    expect(bloc).not.toContain('mode="popLayout"');
-  });
-});
-
 describe('Battle — les effets de la scène et leur repli (#192)', () => {
   it('« Mouvement réduit » du store porte une classe et un attribut que le CSS lit', () => {
     const { container, unmount } = renderWithStore(<Battle />, {
@@ -1508,18 +1578,16 @@ describe('Battle — les effets de la scène et leur repli (#192)', () => {
     expect(autre.container.querySelector('.battle')).toHaveAttribute('data-mouvement-reduit', 'false');
   });
 
-  it('sous mouvement réduit, le survol d’une carte de la main ouvre l’inspecteur au lieu de la soulever', async () => {
+  it('sous mouvement réduit, le survol d’une carte de la main n’ouvre pas l’inspecteur (D-193 (1), #750)', () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
 
     const carte = document.querySelector<HTMLElement>('.hand > li');
     if (!carte) throw new Error('la main ne porte aucune carte');
-    const nom = carte.querySelector('.hand__name')?.textContent ?? '';
-    expect(nom).not.toBe('');
+    expect(carte.querySelector('.hand__name')?.textContent ?? '').not.toBe('');
 
     fireEvent.pointerEnter(carte, { pointerType: 'mouse' });
 
-    const panneau = await screen.findByRole('dialog');
-    expect(panneau).toHaveAccessibleName(nom);
+    expect(document.querySelector('.inspecteur')).toBeNull();
   });
 
   it('une Pression affiche le chiffre de Stress près de la carte touchée', () => {
@@ -1744,7 +1812,7 @@ describe('Battle — la carte du plateau se décrit au focus (#525)', () => {
   });
 });
 
-describe('Battle — le panneau de pose prend le focus au clavier (#525)', () => {
+describe('Battle — la feuille de la carte choisie prend le focus au clavier (#525, #745)', () => {
   it('choisir une carte de la main amène le focus sur « Poser la carte choisie »', async () => {
     renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
     // Le camp qui ouvre dépend de la graine : on attend le tour du joueur, avec sa main.
@@ -1754,8 +1822,121 @@ describe('Battle — le panneau de pose prend le focus au clavier (#525)', () =>
     carte!.focus();
     fireEvent.click(carte!);
     await waitFor(() => {
-      expect(document.activeElement).toBe(screen.getByRole('region', { name: 'Poser la carte choisie' }));
+      const feuille = screen.getByRole('dialog', { name: 'Poser la carte choisie' });
+      expect(feuille.contains(document.activeElement)).toBe(true);
+      expect(document.activeElement).toHaveClass('carte-grand__titre');
     });
+  });
+});
+
+/**
+ * **La carte choisie, en grand, et son vol** (#745, retour du propriétaire). Toucher une carte de la
+ * main l'agrandit en feuille non modale ; le geste part au toucher, la carte vole vers sa place.
+ */
+describe('Battle — la carte choisie, en grand, et son vol (#745)', () => {
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(42);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    delete (Element.prototype as { animate?: unknown }).animate;
+  });
+
+  async function premiereCarteJouable(): Promise<HTMLElement> {
+    return waitFor(() => {
+      const carte = document.querySelector<HTMLElement>('button.hand__card.is-playable');
+      if (!carte) throw new Error('aucune carte jouable : la graine fixée ne fait plus ouvrir le joueur');
+      return carte;
+    });
+  }
+
+  it('le panneau `.pose` n’existe plus, et la pastille de la main ne dit que « N / 10 » (#745)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const carte = await premiereCarteJouable();
+    fireEvent.click(carte);
+
+    expect(document.querySelector('.pose')).toBeNull();
+    screen.getByRole('dialog', { name: /Poser la carte choisie/i });
+    const n = document.querySelectorAll('.hand .hand__carte').length;
+    const pastille = document.querySelector('.hand-panel .section__head .muted');
+    // **Le contrôle mord** : l'ancienne aide « touche une carte pour la jouer » ferait échouer cette égalité.
+    expect(pastille?.textContent?.replace(/\s+/g, ' ').trim()).toBe(`${n} / ${HAND_LIMIT}`);
+  });
+
+  it('Échap ferme la feuille et rend le focus à la carte de la main (#745)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const carte = await premiereCarteJouable();
+    fireEvent.click(carte);
+    const feuille = screen.getByRole('dialog', { name: /Poser la carte choisie/i });
+
+    fireEvent.keyDown(feuille, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: /Poser la carte choisie/i })).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(carte));
+    expect(carte).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('la feuille est non modale : aucun voile, aucun `aria-modal` (le Banc reste touchable, #745)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+    const carte = await premiereCarteJouable();
+    fireEvent.click(carte);
+
+    screen.getByRole('dialog', { name: /Poser la carte choisie/i });
+    expect(document.querySelector('[data-slot="dialog-overlay"]')).toBeNull();
+    expect(document.querySelector('[aria-modal="true"]')).toBeNull();
+  });
+
+  it('le geste part une seule fois, et la carte vole en moins de 800 ms par transform et opacité seuls', async () => {
+    const animer = vi.fn(() => ({ onfinish: null as null | (() => void), cancel: vi.fn() }));
+    Object.defineProperty(Element.prototype, 'animate', { configurable: true, value: animer });
+    const { partie } = partieAvecPlaceAuBanc();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: false, partie });
+
+    // La place est déjà dessinée : on cherche la carte dont la pose l'ouvre, puis on touche la place.
+    let place: HTMLElement | null = null;
+    for (const carte of Array.from(document.querySelectorAll<HTMLElement>('button.hand__card'))) {
+      fireEvent.click(carte);
+      place = document.querySelector<HTMLElement>('button.bench__place');
+      if (place) break;
+      fireEvent.click(carte);
+    }
+    if (!place) throw new Error('aucune place du Banc n’est devenue une cible : le geste a disparu');
+
+    const avant = document.querySelectorAll('.bench__carte').length;
+    fireEvent.click(place);
+    await waitFor(() => expect(document.querySelectorAll('.bench__carte').length).toBe(avant + 1));
+
+    // Le vol part **une fois**, et sa durée tient sous les 800 ms de D-141.
+    expect(animer).toHaveBeenCalledTimes(1);
+    const [images, options] = animer.mock.calls[0] as unknown as [Record<string, unknown>[], { duration: number }];
+    expect(options.duration).toBeLessThanOrEqual(800);
+    for (const image of images) {
+      for (const propriete of Object.keys(image)) {
+        expect(['transform', 'opacity', 'offset', 'easing']).toContain(propriete);
+      }
+    }
+  });
+
+  it('sous « Mouvement réduit », aucun vol : la carte change de place d’un coup, le geste part une fois', async () => {
+    const animer = vi.fn(() => ({ onfinish: null as null | (() => void), cancel: vi.fn() }));
+    Object.defineProperty(Element.prototype, 'animate', { configurable: true, value: animer });
+    const { partie } = partieAvecPlaceAuBanc();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true, partie });
+
+    let place: HTMLElement | null = null;
+    for (const carte of Array.from(document.querySelectorAll<HTMLElement>('button.hand__card'))) {
+      fireEvent.click(carte);
+      place = document.querySelector<HTMLElement>('button.bench__place');
+      if (place) break;
+      fireEvent.click(carte);
+    }
+    if (!place) throw new Error('aucune place du Banc n’est devenue une cible : le geste a disparu');
+
+    const avant = document.querySelectorAll('.bench__carte').length;
+    fireEvent.click(place);
+    await waitFor(() => expect(document.querySelectorAll('.bench__carte').length).toBe(avant + 1));
+    expect(animer).not.toHaveBeenCalled();
+    expect(document.querySelector('.carte-vol')).toBeNull();
   });
 });
 
@@ -1769,38 +1950,6 @@ describe('Battle — le bouton Infos montre sa touche (#525)', () => {
     expect(touche).toHaveAttribute('aria-hidden', 'true');
     expect(bouton).toHaveAccessibleName('Plus de détail sur les cartes');
     expect(within(bouton).queryByText('I')).toBe(touche);
-  });
-});
-
-describe('Battle — le journal remplit la console sur écran large (D-158, #520)', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it('sans matchMedia, la console ne porte pas le journal', async () => {
-    // Le cas « sans matchMedia » : on retire la simulation de setup-jsdom.ts pour ce test.
-    vi.stubGlobal('matchMedia', undefined);
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
-    await screen.findByRole('button', { name: 'Plus de détail sur les cartes' });
-    expect(screen.queryByRole('region', { name: 'Journal du combat' })).toBeNull();
-  });
-
-  it('sur écran large, la console porte le journal, sans aria-live', async () => {
-    vi.stubGlobal('matchMedia', (q: string) => ({
-      matches: true,
-      media: q,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      dispatchEvent: () => false
-    }));
-    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
-    await screen.findByRole('button', { name: 'Plus de détail sur les cartes' });
-    const journal = screen.getByRole('region', { name: 'Journal du combat' });
-    expect(within(journal).getAllByRole('listitem').length).toBeGreaterThan(0);
-    expect(journal).not.toHaveAttribute('aria-live');
   });
 });
 
@@ -1943,7 +2092,7 @@ function nomDeLaPression(etat: BattleState, action: BattleAction): string {
 
 /**
  * **Les répliques de la Direction hors du tutoriel** (#544) : aux trois moments —
- * craquage encaissé, fin gagnée, fin perdue. Une seule à l'écran, dans la barre de journal,
+ * craquage encaissé, fin gagnée, fin perdue. Une seule à l'écran, dans la bulle du tour,
  * annoncée par aria-live polie. En partie à deux, jamais pour un joueur humain.
  */
 describe('Battle — les répliques de la Direction (#544)', () => {
@@ -1957,7 +2106,7 @@ describe('Battle — les répliques de la Direction (#544)', () => {
     const bouton = await screen.findByRole('button', { name: new RegExp(nomDeLaPression(avant, action)) });
     fireEvent.click(bouton);
 
-    // La ligne vit dans la barre de journal, et dit la phrase du tour de la fin gagnée.
+    // La ligne vit dans la bulle du tour, et dit la phrase du tour de la fin gagnée.
     const ligne = await screen.findByTestId('replique-direction');
     const attendue = choisirReplique('victoire', apres.turn);
     expect(ligne).toHaveClass('combat-replique');
@@ -2029,5 +2178,606 @@ describe('Battle — les répliques de la Direction (#544)', () => {
     const annonce = screen.getByTestId('annonce-replique-direction');
     expect(annonce).toHaveAttribute('aria-live', 'polite');
     expect(annonce).toHaveClass('sr-only');
+  });
+});
+
+/**
+ * Une partie où **mon** Rebut a au moins deux cartes **de noms distincts**, et où c'est mon tour
+ * (#739). Le dernier nom et le premier servent à prouver que le Rebut montre **la dernière**.
+ * Mémoïsée comme `partieAvecMain` : la recherche est déterministe.
+ */
+let cacheDefausse: { partie: PartieSauvegardee; etat: BattleState } | null = null;
+function partieAvecDefausse(): { partie: PartieSauvegardee; etat: BattleState } {
+  if (cacheDefausse) return cacheDefausse;
+  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+  const deck = autoDeck(owned).deck;
+  for (let seed = 1; seed < 300; seed += 1) {
+    let s: BattleState = createBattle(deck, deck, seed);
+    for (let i = 0; i < 1200 && s.phase === 'playing'; i += 1) {
+      const defausse = s.players.player.discard;
+      const pret =
+        s.current === 'player' &&
+        s.pendingPromotion === null &&
+        s.pendingChoice === null &&
+        defausse.length >= 2 &&
+        cardName(defausse[0]!.cardId) !== cardName(defausse.at(-1)!.cardId);
+      if (pret) {
+        const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
+        if (partie) {
+          cacheDefausse = { partie, etat: s };
+          return cacheDefausse;
+        }
+      }
+      // Les attaques et les Actions d'abord : ce sont elles qui envoient une carte au rebut.
+      const rang = (a: BattleAction) =>
+        a.type === 'attack' ? 0 : a.type === 'playAction' ? 1 : a.type === 'endTurn' ? 3 : 2;
+      const legales = legalActions(s)
+        .filter((a) => a.type !== 'forfeit')
+        .sort((a, b) => rang(a) - rang(b));
+      const action = legales[0];
+      if (!action) break;
+      s = applyAction(s, action);
+    }
+  }
+  throw new Error('aucune partie avec deux défausses de noms distincts dans les 300 graines');
+}
+
+describe('Battle — les piles et l’éventail de dos (#749, #747)', () => {
+  /** Le libellé affiché de chaque camp en solo (`campLabel` de Battle.tsx). */
+  const LIBELLE: Record<PlayerId, string> = { player: 'Toi', ai: 'La Direction' };
+  const cote = (container: HTMLElement, camp: PlayerId) =>
+    Array.from(container.querySelectorAll<HTMLElement>('.board__side')).find(
+      (side) => side.querySelector('h2')?.textContent === LIBELLE[camp]
+    );
+  const CROISEMENTS = (['player', 'ai'] as const).flatMap((camp) => TAILLES_DE_MAIN.map((n) => [camp, n] as const));
+
+  it('les piles sortent de la fiche : aucune dans `.board__fiche`, un Deck et un Rebut par camp dans `.piles`', () => {
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    expect(container.querySelectorAll('.board__fiche .pile')).toHaveLength(0);
+    expect(container.querySelectorAll('.board__zone > .piles')).toHaveLength(2);
+    expect(container.querySelectorAll('.piles .pile--deck')).toHaveLength(2);
+    expect(container.querySelectorAll('.piles .pile--rebut')).toHaveLength(2);
+
+    // Le Deck reste un affichage (`role="group"`) ; le Rebut est un bouton qui se consulte (#740).
+    const libelles = [
+      ...Array.from(container.querySelectorAll('.piles .pile[role="group"]'), (pile) =>
+        pile.getAttribute('aria-label')
+      ),
+      ...Array.from(container.querySelectorAll('.piles button.pile--rebut'), (pile) => pile.getAttribute('aria-label'))
+    ];
+    expect(libelles.sort()).toEqual(
+      [
+        `Deck : ${LIBELLE.player}`,
+        `Deck : ${LIBELLE.ai}`,
+        `Consulter le Rebut : ${LIBELLE.player}`,
+        `Consulter le Rebut : ${LIBELLE.ai}`
+      ].sort()
+    );
+  });
+
+  it('l’éventail porte autant de dos que la main de chaque camp, à l’état initial', () => {
+    const { partie, etat } = partieCommencee();
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    for (const camp of ['player', 'ai'] as const) {
+      const main = etat.players[camp].hand.length;
+      expect(main, `main de ${camp}`).toBeGreaterThan(0);
+      expect(cote(container, camp)?.querySelectorAll('.eventail__dos')).toHaveLength(main);
+    }
+  });
+
+  it.each(CROISEMENTS)('camp %s, main de %i : autant de dos, et le compte lu reste juste', (camp, n) => {
+    const { partie, etat } = partieAvecMain(camp, n);
+    expect(etat.players[camp].hand).toHaveLength(n);
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    expect(cote(container, camp)?.querySelectorAll('.eventail__dos')).toHaveLength(n);
+    expect(cote(container, camp)?.querySelector('.board__counts .sr-only')?.textContent).toBe(`main ${n}`);
+  });
+
+  it('la main adverse ne montre aucun nom : le dos seul, `.eventail` sans texte', () => {
+    const { partie, etat } = partieCommencee();
+    const nomsMoi = etat.players.player.hand.map((c) => cardName(c.cardId));
+    // Une carte adverse dont le nom ne figure pas dans ma main : le contrôle ci-dessous ne peut pas être confondu.
+    const carte = etat.players.ai.hand.find((c) => !nomsMoi.includes(cardName(c.cardId)));
+    if (!carte) throw new Error('aucune carte adverse au nom distinct de ma main');
+    const nom = cardName(carte.cardId);
+    const monNom = nomsMoi[0];
+    if (!monNom) throw new Error('ma main est vide : le contrôle n’a pas de nom à lire');
+
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    // Contrôle : la recherche de nom trouve bien une carte **rendue** (celle de ma main). Sans ce
+    // contrôle, un `innerHTML` sans nom pourrait être un faux négatif.
+    expect(container.innerHTML).toContain(monNom);
+    // Ce test échouerait si le plateau rendait `CardView` (la carte entière) au lieu d'un dos : le
+    // nom de la carte adverse se lirait dans `innerHTML`. Le dos ne porte ni nom ni identifiant.
+    expect(container.innerHTML).not.toContain(nom);
+    expect(container.querySelector('.eventail')?.textContent).toBe('');
+  });
+
+  it('quatre emplacements, et chaque compte égale le Deck ou le Rebut de son camp (#739, critère 1)', () => {
+    const { partie, etat } = partieAvecDefausse();
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    expect(container.querySelectorAll('.pile--deck')).toHaveLength(2);
+    expect(container.querySelectorAll('.pile--rebut')).toHaveLength(2);
+    for (const camp of ['player', 'ai'] as const) {
+      expect(cote(container, camp)?.querySelector('.pile--deck strong')?.textContent, `Deck ${camp}`).toBe(
+        String(etat.players[camp].deck.length)
+      );
+      expect(cote(container, camp)?.querySelector('.pile--rebut strong')?.textContent, `Rebut ${camp}`).toBe(
+        String(etat.players[camp].discard.length)
+      );
+    }
+  });
+
+  it('le Rebut montre la **dernière** carte défaussée, nom lisible ; le Deck n’affiche aucun nom (#739, critère 2)', () => {
+    const { partie, etat } = partieAvecDefausse();
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const defausse = etat.players.player.discard;
+    const derniere = cardName(defausse.at(-1)!.cardId);
+    const premiere = cardName(defausse[0]!.cardId);
+    const rebut = cote(container, 'player')?.querySelector<HTMLElement>('.pile--rebut');
+    const deck = cote(container, 'player')?.querySelector<HTMLElement>('.pile--deck');
+    if (!rebut || !deck) throw new Error('piles de Toi introuvables');
+
+    // Contrôle positif : le nom de la dernière défausse est **rendu** dans le Rebut.
+    expect(rebut.textContent).toContain(derniere);
+    // La première défausse, de nom distinct, n'y figure pas : le Rebut montre bien la dernière.
+    expect(rebut.textContent).not.toContain(premiere);
+    expect(rebut.querySelector('.card')).not.toBeNull();
+
+    // Le Deck : aucun nom de carte, ni dans le texte ni dans le HTML (dos seul, sans `CardView`).
+    // Contrôle : le Deck est bien rendu (son compte est lu), et il contient des cartes.
+    expect(deck.querySelector('strong')?.textContent).toBe(String(etat.players.player.deck.length));
+    expect(etat.players.player.deck.length).toBeGreaterThan(0);
+    for (const nom of new Set(etat.players.player.deck.map((carte) => cardName(carte.cardId)))) {
+      expect(deck.textContent, `texte du Deck, nom « ${nom} »`).not.toContain(nom);
+      expect(deck.innerHTML, `HTML du Deck, nom « ${nom} »`).not.toContain(nom);
+    }
+    expect(deck.querySelector('.card')).toBeNull();
+  });
+
+  it('Rebut vide : aucune carte dans l’emplacement, et le compte dit 0', () => {
+    // La partie d'avant le premier coup : rien n'a encore été défaussé.
+    const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+    const deck = autoDeck(owned).deck;
+    const initiale = createBattle(deck, deck, 31337);
+    expect(initiale.players.player.discard).toHaveLength(0);
+    const partie = partieSauvegardee(initiale, null, { playerDeck: deck, aiDeck: deck });
+    if (!partie) throw new Error('partie initiale refusée');
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const rebut = cote(container, 'player')?.querySelector('.pile--rebut');
+    expect(rebut?.querySelector('.card')).toBeNull();
+    expect(rebut?.querySelector('strong')?.textContent).toBe('0');
+  });
+});
+
+/**
+ * Une partie où **les deux** camps ont au moins une défausse, et où c'est le tour de Toi (#740).
+ * Le moteur rejoue le journal : on ne peut pas poser un Rebut à la main, on joue jusqu'à lui.
+ */
+let cacheDeuxDefausses: { partie: PartieSauvegardee; etat: BattleState } | null = null;
+function partieAvecDefausseDesDeuxCamps(): { partie: PartieSauvegardee; etat: BattleState } {
+  if (cacheDeuxDefausses) return cacheDeuxDefausses;
+  const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+  const deck = autoDeck(owned).deck;
+  for (let seed = 1; seed < 300; seed += 1) {
+    let s: BattleState = createBattle(deck, deck, seed);
+    for (let i = 0; i < 1200 && s.phase === 'playing'; i += 1) {
+      const pret =
+        s.current === 'player' &&
+        s.pendingPromotion === null &&
+        s.pendingChoice === null &&
+        s.players.player.discard.length >= 1 &&
+        s.players.ai.discard.length >= 1;
+      if (pret) {
+        const partie = partieSauvegardee(s, null, { playerDeck: deck, aiDeck: deck });
+        if (partie) {
+          cacheDeuxDefausses = { partie, etat: s };
+          return cacheDeuxDefausses;
+        }
+      }
+      const rang = (a: BattleAction) =>
+        a.type === 'attack' ? 0 : a.type === 'playAction' ? 1 : a.type === 'endTurn' ? 3 : 2;
+      const legales = legalActions(s)
+        .filter((a) => a.type !== 'forfeit')
+        .sort((a, b) => rang(a) - rang(b));
+      const action = legales[0];
+      if (!action) break;
+      s = applyAction(s, action);
+    }
+  }
+  throw new Error('aucune partie avec une défausse de chaque camp dans les 300 graines');
+}
+
+describe('Battle — le Rebut se consulte en panneau non modal, pour les deux camps (#740)', () => {
+  const LIBELLE: Record<PlayerId, string> = { player: 'Toi', ai: 'La Direction' };
+  const bouton = (camp: PlayerId) => screen.getByRole('button', { name: `Consulter le Rebut : ${LIBELLE[camp]}` });
+  const panneau = (camp: PlayerId) => screen.queryByRole('region', { name: `Rebut : ${LIBELLE[camp]}` });
+
+  it('critère 1 : chaque Rebut ouvre un panneau qui liste toutes ses cartes, face visible, camp par camp', async () => {
+    const { partie, etat } = partieAvecDefausseDesDeuxCamps();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    for (const camp of ['player', 'ai'] as const) {
+      const defausse = etat.players[camp].discard;
+      // Contrôle : le camp a bien des défausses à lister.
+      expect(defausse.length, `défausse de ${camp}`).toBeGreaterThan(0);
+      expect(panneau(camp), `panneau de ${camp} fermé au départ`).toBeNull();
+
+      await userEvent.click(bouton(camp));
+
+      const region = panneau(camp);
+      if (!region) throw new Error(`panneau du Rebut de ${camp} introuvable après ouverture`);
+      expect(within(region).getAllByRole('listitem'), `cartes de ${camp}`).toHaveLength(defausse.length);
+      for (const carte of defausse) {
+        expect(region.textContent, `nom d’une défausse de ${camp}`).toContain(cardName(carte.cardId));
+      }
+      // Le panneau d'un camp ne liste pas l'autre : un seul panneau ouvert à la fois ici.
+      expect(screen.getAllByRole('region', { name: /^Rebut : / })).toHaveLength(1);
+
+      await userEvent.click(bouton(camp));
+      expect(panneau(camp)).toBeNull();
+    }
+  });
+
+  it('critère 5 : le Deck n’a aucun bouton ni élément focusable, et ne s’ouvre pas', () => {
+    const { partie } = partieAvecDefausseDesDeuxCamps();
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    expect(screen.queryByRole('button', { name: /Deck/i })).toBeNull();
+    // Contrôle : les deux Rebut, eux, sont bien des boutons.
+    expect(screen.getAllByRole('button', { name: /^Consulter le Rebut : / })).toHaveLength(2);
+    expect(container.querySelectorAll('.pile--deck button, .pile--deck [tabindex], .pile--deck a')).toHaveLength(0);
+  });
+
+  it('critère 3 : Entrée ouvre, Tab parcourt les cartes, Échap ferme et rend le focus au bouton', async () => {
+    const { partie, etat } = partieAvecDefausseDesDeuxCamps();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+    const ouvrant = bouton('player');
+    const nombre = etat.players.player.discard.length;
+
+    ouvrant.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(ouvrant.getAttribute('aria-expanded')).toBe('true');
+    expect(panneau('player')).not.toBeNull();
+
+    // Tab : le premier élément suivant le bouton est la première carte du panneau.
+    await userEvent.tab();
+    expect(document.activeElement?.tagName).toBe('LI');
+    expect(within(panneau('player')!).getAllByRole('listitem')[0]).toBe(document.activeElement);
+    if (nombre >= 2) {
+      await userEvent.tab();
+      expect(within(panneau('player')!).getAllByRole('listitem')[1]).toBe(document.activeElement);
+    }
+
+    await userEvent.keyboard('{Escape}');
+    expect(panneau('player')).toBeNull();
+    // Le focus revient au bouton d'ouverture, et non au corps de la page.
+    expect(document.activeElement).toBe(ouvrant);
+    expect(ouvrant.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('critère 3 bis : Espace ouvre aussi, et Échap depuis une carte du panneau rend le focus au bouton', async () => {
+    const { partie } = partieAvecDefausseDesDeuxCamps();
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+    const ouvrant = bouton('ai');
+
+    ouvrant.focus();
+    await userEvent.keyboard(' ');
+    expect(panneau('ai')).not.toBeNull();
+
+    await userEvent.tab();
+    expect(document.activeElement?.tagName).toBe('LI');
+    await userEvent.keyboard('{Escape}');
+    expect(panneau('ai')).toBeNull();
+    expect(document.activeElement).toBe(ouvrant);
+  });
+
+  it('critère 4 : aucun role=grid ni aucune cellule ARIA, panneau ouvert ; le panneau est une liste', async () => {
+    const { partie } = partieAvecDefausseDesDeuxCamps();
+    const { container } = renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    await userEvent.click(bouton('player'));
+    // Contrôle : le panneau est bien ouvert et c'est une liste.
+    expect(within(panneau('player')!).getByRole('list')).toBeInTheDocument();
+    expect(container.querySelector('[role="grid"], [role="treegrid"], [role="row"], [role="gridcell"]')).toBeNull();
+    expect(screen.queryByRole('grid')).toBeNull();
+  });
+
+  it('critère 6 : le panneau lit le Rebut, jamais le Deck (une carte du Deck seule n’y figure pas)', async () => {
+    const { partie, etat } = partieAvecDefausseDesDeuxCamps();
+    const defausse = new Set(etat.players.player.discard.map((c) => cardName(c.cardId)));
+    const nomDuDeck = etat.players.player.deck.map((c) => cardName(c.cardId)).find((nom) => !defausse.has(nom));
+    if (!nomDuDeck) throw new Error('aucune carte du Deck au nom absent du Rebut : le contrôle n’a pas de nom à lire');
+
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+    await userEvent.click(bouton('player'));
+
+    const region = panneau('player');
+    if (!region) throw new Error('panneau du Rebut de Toi introuvable');
+    // Contrôle positif : une défausse est bien listée.
+    expect(region.textContent).toContain(cardName(etat.players.player.discard.at(-1)!.cardId));
+    // Le contrôle mord : un panneau qui lirait `side.deck` afficherait ce nom ; il échoue alors ici.
+    expect(region.textContent, `nom du Deck « ${nomDuDeck} »`).not.toContain(nomDuDeck);
+  });
+
+  it('Rebut vide : le bouton reste actif, et le panneau dit qu’il est vide', async () => {
+    const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+    const deck = autoDeck(owned).deck;
+    const initiale = createBattle(deck, deck, 31337);
+    const partie = partieSauvegardee(initiale, null, { playerDeck: deck, aiDeck: deck });
+    if (!partie) throw new Error('partie initiale refusée');
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, partie });
+
+    const ouvrant = bouton('player');
+    expect(ouvrant).toBeEnabled();
+    await userEvent.click(ouvrant);
+    expect(within(panneau('player')!).getByText('Rebut vide.')).toBeInTheDocument();
+    expect(within(panneau('player')!).queryAllByRole('listitem')).toHaveLength(0);
+  });
+});
+
+/**
+ * **L'ouverture d'un combat neuf** (#746) à l'écran : le zoom et la cascade ne jouent qu'à un
+ * combat neuf, sans « Mouvement réduit », et une partie reprise n'en rejoue aucun. Tap et `Espace`
+ * passent la séquence ; la fin la retire d'elle-même.
+ */
+describe('Battle — l’ouverture d’un combat neuf (#746)', () => {
+  const neuf = { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: false };
+
+  it('un combat neuf zoome la table, et ses Planqués se retournent, joueur d’abord', () => {
+    const { container } = renderWithStore(<Battle />, neuf);
+
+    expect(container.querySelector('.board--ouverture')).not.toBeNull();
+    const retournes = [...container.querySelectorAll<HTMLElement>('.entrant--ouverture')];
+    expect(retournes.length).toBeGreaterThanOrEqual(2);
+    // Chaque carte retournée porte son dos ; le délai de la première est le rang 0, le Poste du joueur.
+    expect(container.querySelectorAll('.entrant__verso')).toHaveLength(retournes.length);
+    const delais = retournes.map((carte) => Number.parseInt(carte.style.getPropertyValue('--delai'), 10));
+    expect(Math.min(...delais)).toBe(delaiDeRetournement(0));
+    expect(Math.max(...delais)).toBeLessThanOrEqual(DUREE_OUVERTURE_MS);
+  });
+
+  it('le contrôle mord : sous « Mouvement réduit », aucune classe d’ouverture ne se pose', () => {
+    const { container } = renderWithStore(<Battle />, { ...neuf, reducedMotion: true });
+
+    expect(container.querySelector('.board--ouverture')).toBeNull();
+    expect(container.querySelector('.entrant--ouverture')).toBeNull();
+    expect(container.querySelector('.entrant')).toBeNull();
+  });
+
+  it('une partie reprise au montage n’a ni zoom ni retournement', () => {
+    const { partie } = partieCommencee();
+    const { container } = renderWithStore(<Battle />, { ...neuf, partie });
+
+    expect(container.querySelector('.board--ouverture')).toBeNull();
+    expect(container.querySelector('.entrant--ouverture')).toBeNull();
+  });
+
+  it('la touche Espace passe la séquence : le zoom et les dos s’arrêtent', () => {
+    const { container } = renderWithStore(<Battle />, neuf);
+    expect(container.querySelector('.board--ouverture')).not.toBeNull();
+
+    fireEvent.keyDown(document.body, { key: ' ' });
+
+    expect(container.querySelector('.board--ouverture')).toBeNull();
+    expect(container.querySelector('.entrant--ouverture')).toBeNull();
+  });
+
+  it('un tap sur la table passe la séquence', () => {
+    const { container } = renderWithStore(<Battle />, neuf);
+    const table = container.querySelector('.battle__table');
+    if (!table) throw new Error('la table du combat est introuvable');
+
+    fireEvent.pointerDown(table);
+
+    expect(container.querySelector('.board--ouverture')).toBeNull();
+  });
+
+  it('la séquence finit d’elle-même, sans geste, dans la borne de deux secondes', async () => {
+    const { container } = renderWithStore(<Battle />, neuf);
+
+    await waitFor(() => expect(container.querySelector('.board--ouverture')).toBeNull(), { timeout: 2500 });
+  });
+});
+
+/**
+ * **Le hook des effets sous « Mouvement réduit » (#748)** : le tirage naît dans l'état, mais sans
+ * animation ; hors réglage, il vole. Ce fichier tourne sous jsdom, `effets-combat.test.ts` non.
+ */
+describe('useEffetsDeCombat — le tirage sous « Mouvement réduit » (#748)', () => {
+  const partieDeTest = () => {
+    const entrants = ALL_CARDS.filter((card) => isPlanque(card) && isBasic(card) && !card.variantOf).slice(0, 10);
+    const deck = entrants.flatMap((card) => [card.id, card.id]);
+    return createBattle(deck, deck, 42);
+  };
+
+  it('« Mouvement réduit » : la pioche du joueur naît sans animation', () => {
+    const avant = partieDeTest();
+    const apres = structuredClone(avant);
+    apres.players.player.hand.push(apres.players.player.deck.shift()!);
+
+    const { result, rerender } = renderHook(({ state, sans }) => useEffetsDeCombat(state, sans), {
+      initialProps: { state: avant, sans: true }
+    });
+    act(() => rerender({ state: apres, sans: true }));
+
+    const tirage = result.current.find((effet) => effet.nature === 'tirage');
+    expect(tirage).toBeDefined();
+    expect(tirage?.anime).toBe(false);
+  });
+
+  it('hors réglage, la pioche de la Direction vole (anime à vrai)', () => {
+    const avant = partieDeTest();
+    const apres = structuredClone(avant);
+    apres.players.ai.hand.push(apres.players.ai.deck.shift()!);
+
+    const { result, rerender } = renderHook(({ state, sans }) => useEffetsDeCombat(state, sans), {
+      initialProps: { state: avant, sans: false }
+    });
+    act(() => rerender({ state: apres, sans: false }));
+
+    expect(result.current.find((effet) => effet.nature === 'tirage')?.anime).toBe(true);
+  });
+});
+
+/**
+ * **L'inspecteur ne s'ouvre que sur une carte du plateau** (D-193 (1), #750). Une carte de la main se
+ * choisit (la carte en grand) et ne l'ouvre pas, même sous « Mouvement réduit » ; une partie qui agit
+ * (un coup part) referme le panneau qu'on avait ouvert sur le plateau.
+ *
+ * Les cas fautifs : le survol ou le focus d'une carte de la main ouvrait l'inspecteur ; sans la
+ * fermeture sur coup, il restait ouvert sur le Banc après qu'une carte de la main était posée.
+ */
+describe('Battle — l’inspecteur ne s’ouvre que sur une carte du plateau (D-193 (1), #750)', () => {
+  /** La graine est fixée (comme « poser une carte est un geste nommé ») : le joueur ouvre, ses cartes sont jouables. */
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(42);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const LIBELLES_DE_POSE =
+    /^(Poser au Poste|Mettre au Banc \d|Jouer cet Objet|Jouer ce Collègue|Faire évoluer|Changement de priorité)/;
+
+  async function carteJouableDeLaMain(): Promise<HTMLElement> {
+    return waitFor(() => {
+      const carte = document.querySelector<HTMLElement>('button.hand__card.is-playable');
+      if (!carte) throw new Error('aucune carte jouable : la graine fixée ne fait plus ouvrir le joueur');
+      return carte;
+    });
+  }
+
+  /** Une carte du plateau à moi, qui s'ouvre au toucher (`CarteSurvolable`, `role="button"`). */
+  function carteDuPlateau(): HTMLElement {
+    const carte = document.querySelector<HTMLElement>('.board [role="button"][data-uid]');
+    if (!carte) throw new Error('aucune carte du plateau ne porte un uid : rien à désigner');
+    return carte;
+  }
+
+  const inspecteurOuvert = () => document.querySelector('.inspecteur') !== null;
+
+  it('sous « Mouvement réduit », le survol d’une carte de la main n’ouvre pas l’inspecteur', () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+    const carte = document.querySelector<HTMLElement>('.hand > li');
+    if (!carte) throw new Error('la main ne porte aucune carte');
+
+    fireEvent.pointerEnter(carte, { pointerType: 'mouse' });
+
+    expect(inspecteurOuvert()).toBe(false);
+  });
+
+  it('sous « Mouvement réduit », jouer une carte de la main n’ouvre pas l’inspecteur (le focus rendu à la main ne l’ouvre pas)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+
+    fireEvent.click(await carteJouableDeLaMain());
+    const geste = within(document.querySelector<HTMLElement>('.carte-grand') as HTMLElement)
+      .getAllByRole('button')
+      .find((b) => LIBELLES_DE_POSE.test(b.textContent ?? ''));
+    if (!geste) throw new Error('la carte en grand n’offre aucun geste de pose');
+    fireEvent.click(geste);
+
+    await waitFor(() => expect(document.querySelector('.carte-grand')).toBeNull());
+    expect(inspecteurOuvert()).toBe(false);
+  });
+
+  it('touchée sur le plateau, la carte ouvre l’inspecteur ; une carte de la main jouée le referme', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    fireEvent.click(carteDuPlateau());
+    expect(inspecteurOuvert()).toBe(true);
+
+    fireEvent.click(await carteJouableDeLaMain());
+    const geste = within(document.querySelector<HTMLElement>('.carte-grand') as HTMLElement)
+      .getAllByRole('button')
+      .find((b) => LIBELLES_DE_POSE.test(b.textContent ?? ''));
+    if (!geste) throw new Error('la carte en grand n’offre aucun geste de pose');
+    fireEvent.click(geste);
+
+    // Le coup est parti : l'inspecteur ne reste pas ouvert sur le Banc (contre-cas : il s'était ouvert).
+    await waitFor(() => expect(inspecteurOuvert()).toBe(false));
+  });
+
+  it('une partie qui agit referme l’inspecteur ouvert sur le plateau : « Fin du tour » le ferme (le tour passe)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    fireEvent.click(carteDuPlateau());
+    expect(inspecteurOuvert()).toBe(true);
+
+    // Rien ne bouge le focus ici : c'est la fermeture par la partie qui est mise à l'épreuve.
+    fireEvent.click(
+      within(document.querySelector<HTMLElement>('.actions-flottantes') as HTMLElement).getByRole('button', {
+        name: /^Fin du tour/
+      })
+    );
+
+    await waitFor(() => expect(inspecteurOuvert()).toBe(false));
+  });
+
+  it('choisir une carte de la main ne l’ouvre pas non plus (contre-cas : la carte en grand s’affiche)', async () => {
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true });
+
+    fireEvent.click(await carteJouableDeLaMain());
+
+    expect(document.querySelector('.carte-grand')).not.toBeNull();
+    expect(inspecteurOuvert()).toBe(false);
+  });
+});
+
+/**
+ * **La bulle du tour s'efface** (D-193 (2), #750). Une information (ici la phrase d'attente, ou la réplique)
+ * ne reste pas sur le Banc de la Direction : après 4 s, la bulle reçoit `combat-toast--sorti`. Les
+ * décisions qui attendent (relève, carte à désigner) restent — elles ne sont pas dans la bulle.
+ */
+describe('Battle — la bulle du tour s’efface après 4 s (D-193 (2), #750)', () => {
+  /** La graine est fixée : sans elle, la bulle (portée, café) dépend de la main tirée à l'horloge. */
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(42);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it('la bulle reste 4 s, puis reçoit la classe de fondu ; elle ne sort pas du DOM (aucun décalage)', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: false });
+    const bulle = document.querySelector<HTMLElement>('.combat-toast');
+    if (!bulle) throw new Error('la bulle du tour n’est pas rendue : le cas ne prouve rien');
+    expect(bulle).not.toHaveClass('combat-toast--sorti');
+
+    act(() => {
+      vi.advanceTimersByTime(3900);
+    });
+    expect(bulle).not.toHaveClass('combat-toast--sorti');
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(bulle).toHaveClass('combat-toast--sorti');
+    expect(bulle.isConnected).toBe(true);
+  });
+
+  it('sous « Mouvement réduit », la bulle se cache à la même échéance (le CSS coupe seulement le fondu)', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    renderWithStore(<Battle />, { tutorielVu: true, pasAPasCombatVu: true, reducedMotion: true });
+    const bulle = document.querySelector<HTMLElement>('.combat-toast');
+    if (!bulle) throw new Error('la bulle du tour n’est pas rendue : le cas ne prouve rien');
+
+    act(() => {
+      vi.advanceTimersByTime(3900);
+    });
+    expect(bulle).not.toHaveClass('combat-toast--sorti');
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(bulle).toHaveClass('combat-toast--sorti');
   });
 });

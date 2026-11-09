@@ -55,8 +55,8 @@ const ROUTE = '/battle';
 /** Les gabarits joués : la référence de D-060 (420 × 900) d'abord, puis ceux de D-171. */
 const GABARITS_JOUES = [{ nom: 'reference', viewport: VIEWPORT, mobile: true }, ...GABARITS];
 
-/** Les boutons d'action : barre du tour, pose de la carte choisie, promotion, choix. Un seul sélecteur. */
-const BOUTONS = '.combat-barre button, .pose button, .promotion button, .choix button';
+/** Les boutons d'action : la pile des actions du tour (D-193, `.actions-flottantes`), pose de la carte choisie, promotion, choix. Un seul sélecteur. */
+const BOUTONS = '.actions-flottantes button, .pose button, .promotion button, .choix button';
 
 const USAGE = `Usage : npm run jouer-partie -- [options]
   --graines <a,b,…>   instants figés = graines (défaut : ${INSTANTS_COMBAT.join(',')})
@@ -97,7 +97,7 @@ async function lireBoutons(page) {
             texte: (b.textContent ?? '').trim().replace(/\s+/g, ' '),
             visible: rect.width > 0 && rect.height > 0,
             actif: !b.disabled,
-            zone: b.closest('.pose') ? 'pose' : 'barre'
+            zone: b.closest('.pose') ? 'pose' : 'actions'
           };
         }),
     BOUTONS
@@ -354,9 +354,9 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
 
       // L'oracle, côté barre : chaque geste de la barre légal a son bouton, et inversement.
       const barre = boutons
-        .filter((b) => b.zone === 'barre')
+        .filter((b) => b.zone === 'actions')
         .map((b) => ({ type: classerBouton(b.texte), actif: b.actif && b.visible }));
-      const sansType = boutons.filter((b) => b.zone === 'barre' && classerBouton(b.texte) === null);
+      const sansType = boutons.filter((b) => b.zone === 'actions' && classerBouton(b.texte) === null);
       for (const b of sansType) await echec('bouton-sans-type', `« ${b.texte} » ne correspond à aucune action`);
       // La Rotation n'a qu'une entrée dans la barre (#455, D-147) : ses cibles sont jugées au panneau.
       const boutonsDeBarre = affordancesDeBarre(
@@ -456,10 +456,13 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
       } else if (choix.type === 'retreat') {
         // La Rotation (#455, D-147) : l'entrée de la barre ouvre le panneau du Poste ; la cible du
         // Planqué du Banc se joue **dans ce panneau**. Rien n'est défilé avant la mesure.
-        const entree = boutons.findIndex((b) => b.zone === 'barre' && classerBouton(b.texte) === 'retreat');
+        const entree = boutons.findIndex((b) => b.zone === 'actions' && classerBouton(b.texte) === 'retreat');
         const mesureEntree = entree < 0 ? null : await viserSansDefilement(page, BOUTONS, entree);
         if (!mesureEntree || jugerCible(mesureEntree).length) {
-          await echec('sans-bouton', `Rotation légale, entrée de barre ${mesureEntree ? 'non cliquable' : 'absente'}`);
+          await echec(
+            'sans-bouton',
+            `Rotation légale, entrée des actions du tour ${mesureEntree ? 'non cliquable' : 'absente'}`
+          );
           muettes.add(cle(choix));
           continue;
         }
@@ -494,7 +497,7 @@ async function jouerUnePartie({ browser, moteur, graine, gabarit, maxClics, base
         const rang = rangDansLeType(legales, choix);
         const candidats = boutons
           .map((b, i) => ({ b, i }))
-          .filter(({ b }) => b.zone === 'barre' && classerBouton(b.texte) === choix.type);
+          .filter(({ b }) => b.zone === 'actions' && classerBouton(b.texte) === choix.type);
         const voulu = candidats[rang];
         if (!voulu) {
           await echec('sans-bouton', `${choix.type} légal, aucun bouton (rang ${rang})`);

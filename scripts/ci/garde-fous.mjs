@@ -503,6 +503,18 @@ export const MUTATIONS = [
     remplacement: '.ouverture__face-arriere {\n  z-index: 5;',
     tests: ['src/animation/ouverture/SceneOuverture.test.tsx'],
     garde: 'le dos n’est plus sous les cartes : elles disparaissent derrière lui'
+  },
+  {
+    ticket: 742,
+    titre: 'l’annonce du coup cesse de se lire à un lecteur d’écran',
+    fichier: 'src/pages/Battle.tsx',
+    // #742 : le journal visuel est retiré ; l'annonce sr-only est le seul porteur du dernier coup.
+    // Passer son `aria-live` à `off` la rend muette, et le test de l'annonce doit le voir.
+    motif: 'aria-live="polite" data-testid="annonce-du-coup"',
+    remplacement: 'aria-live="off" data-testid="annonce-du-coup"',
+    tests: ['src/pages/Battle.test.tsx'],
+    garde:
+      'sans `aria-live`, le dernier coup ne s’annonce plus : le journal visuel n’existe plus, c’est la seule voix de la partie pour un lecteur d’écran (WCAG 4.1.3)'
   }
 ];
 
