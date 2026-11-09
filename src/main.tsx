@@ -1,10 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-// Inter et Outfit restent les polices du **combat**, que la refonte D-189 ne touche pas.
+// Inter et Outfit restent les polices du **combat**, que la refonte D-191 ne touche pas.
 import '@fontsource-variable/inter';
 import '@fontsource-variable/outfit';
-// D-189 : Barlow partout ailleurs (graisses fines pour les titres, 600 pour les capitales
+// D-191 : Barlow partout ailleurs (graisses fines pour les titres, 600 pour les capitales
 // espacées), Barlow Condensed pour le nom de la marque. Sous-ensemble latin seulement.
 import '@fontsource/barlow/latin-200.css';
 import '@fontsource/barlow/latin-300.css';

@@ -1,198 +1,200 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 190 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 192 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
-| ID | Date | Intitulé (début) |
-|---|---|---|
-| D-001 | 18/10/2026 | Nouveau dossier, indépendant des versions abandonnées (§9) |
-| D-002 | 18/10/2026 | Stack React 19 + Vite 8 + TypeScript + PWA |
-| D-003 | 18/10/2026 | Règles standard = miroir exact de TCG Pocket (20/5/3, zone… |
-| D-004 | 18/10/2026 | Un mot-clé maison déactivable (« Changement de priorité », looter… |
-| D-005 | 18/10/2026 | ⚠ Remplacée le 22/10/2026 — voir D-063 : 225 bases… |
-| D-006 | 18/10/2026 | 10 factions : SSE, Manager, Happiness Manager, Amélioration continue, RH,… |
-| D-007 | 18/10/2026 | Art : IA + curation humaine, style « corporate dark… |
-| D-008 | 18/10/2026 | PvP temps réel + reprise asynchrone, serveur autoritaire, timer 90… |
-| D-009 | 18/10/2026 | Backend Supabase Free pour le développement et la bêta ;… |
-| D-010 | 18/10/2026 | Cible initiale 100 joueurs simultanés ; dimensionnement large échelle étudié… |
-| D-011 | 18/10/2026 | Périmètre = toutes les features de l’APK, livrées par phases |
-| D-012 | 18/10/2026 | Infrastructure : Vercel (web), Supabase (backend), Cloudflare (DNS/R2), Brevo (emails),… |
-| D-013 | 18/10/2026 | Homelab Proxmox + Cloudflare Tunnel = staging, backups, CI, admin… |
-| D-014 | 18/10/2026 | ⚠ Remplacée par D-020 et D-026 : trois stades Entrant… |
-| D-015 | 18/10/2026 | Nom du jeu : Bureau des Planqués |
-| D-016 | 18/10/2026 | Infrastructure du TCG : nouveaux projets Vercel et Supabase (schéma… |
-| D-017 | 19/10/2026 | Amendement D-016 : le TCG est déployé sur le projet… |
-| D-018 | 19/10/2026 | Miroir de référence daté : le mode standard est le… |
-| D-019 | 19/10/2026 | Les règles maison RULES-4b sont rangées hors du standard, dans… |
-| D-020 | 19/10/2026 | Périmètre du lancement figé (O-008) : les 4 ajouts du… |
-| D-021 | 19/10/2026 | Les dégâts se lisent par coût en café, pas par… |
-| D-022 | 19/10/2026 | O-009 tranché, faute de source primaire : (1) pas de… |
-| D-023 | 19/10/2026 | Le Moral suit le jeu réel (O-011) : Basique 50–80,… |
-| D-024 | 19/10/2026 | Nommage des factions et des types (amende D-006) : les… |
-| D-025 | 19/10/2026 | Référentiel du contenu : le site devient un atelier MRO… |
-| D-026 | 19/10/2026 | Vocabulaire arrêté (fin de la session de nommage). Le tableau… |
-| D-027 | 19/10/2026 | Conventions de noms de cartes : (1) un Planqué =… |
-| D-028 | 19/10/2026 | Points ouverts du contenu tranchés : O-004 degré de satire… |
-| D-029 | 20/10/2026 | Nommage de Management : la carte signature de MANAGEMENT passe… |
-| D-030 | 20/10/2026 | O-013 — AGENTS.md §4 aligné sur les Astuces capturées. Deux… |
-| D-031 | 20/10/2026 | Six règles entrent dans AGENTS.md §4 (ajouts, aucune n'était écrite)… |
-| D-032 | 20/10/2026 | O-012 avance, sans se clore : la revue de sources… |
-| D-033 | 20/10/2026 | Six règles observées entrent dans AGENTS.md §4 (application de D-018… |
-| D-034 | 20/10/2026 | Ce qui fait foi pour les règles de jeu :… |
-| D-035 | 20/10/2026 | Socle d'UI : Tailwind (moteur de style) + shadcn/ui (composants… |
-| D-036 | 20/10/2026 | Le nom technique du projet est planquex . Il remplace… |
-| D-037 | 20/10/2026 | Le café typé — forme et attribution . (1) Forme… |
-| D-038 | 20/10/2026 | Publication : licence MIT, dépôt privé jusqu'à la bêta, retrait… |
-| D-039 | 21/10/2026 | #102 (c) — coût de Pression 0 autorisé par le… |
-| D-040 | 21/10/2026 | #110 (a) — le café attaché par le Talent attachEnergy… |
-| D-041 | 21/10/2026 | #115 (c) — la Rotation (et discardEnergy) retire les cafés… |
-| D-042 | 21/10/2026 | #119 (a) — CARD-SPEC.md décrit Polyvalence comme « peut utiliser… |
-| D-043 | 21/10/2026 | ⚠ État au 21/10/2026 — périmé : le set comptait… |
-| D-044 | 21/10/2026 | ⚠ État au 21/10/2026 — périmé sur le point (2)… |
-| D-045 | 21/10/2026 | #121 (Q2) — les illustrations passent à une source unique… |
-| D-046 | 21/10/2026 | #121 (Q3, Q15) — FACTION_META.color (src/data/factions.ts) est la source canonique… |
-| D-047 | 21/10/2026 | Rangement local — le dossier de travail devient planquex/, et… |
-| D-048 | 21/10/2026 | Trois étapes nommées : alpha, beta, release — et rien… |
-| D-049 | 21/10/2026 | Le PvP de la beta passe par un lien ou… |
-| D-050 | 21/10/2026 | Le nom des versions : l'étape est un mot, le… |
-| D-051 | 21/10/2026 | Une ligne de version par étape — et la règle… |
-| D-052 | 21/10/2026 | Un lieu de session ne vit pas dans un .opencode/… |
-| D-053 | 21/10/2026 | L'infra de l'alpha est montée ; ce qui reste est… |
-| D-054 | 21/10/2026 | L'application installée s'appelle « Planquex » et porte son icône… |
-| D-055 | 21/10/2026 | La bascule vers planquex.4k7.org est bloquée par les droits Cloudflare,… |
-| D-056 | 21/10/2026 | ⚠ Amendée le 27/10/2026 — voir D-117 : le critère… |
-| D-057 | 21/10/2026 | Illustrations : un pilote d'une trentaine d'images sur l'ATELIER, puis… |
-| D-058 | 21/10/2026 | La Boîte à idées — les retours des invités entrent… |
-| D-059 | 21/10/2026 | Le tri des retours, et l'ordre face au backend .… |
-| D-060 | 21/10/2026 | L'UI est un chantier léger, avec une passe de finition… |
-| D-061 | 21/10/2026 | Le contenu de la phase 2 renvoyé à la release… |
-| D-062 | 21/10/2026 | Le vocabulaire du triage s'arrête à deux catégories et cinq… |
-| D-063 | 22/10/2026 | La cible de contenu n'est plus un chiffre, c'est ce… |
-| D-064 | 22/10/2026 | La bascule vers planquex.4k7.org doit être faite pour la beta… |
-| D-065 | 22/10/2026 | Les critères du pilote d'illustration , pour que 300 images… |
-| D-066 | 22/10/2026 | La Journée d'intégration en deux temps : pour l'alpha, la… |
-| D-067 | 22/10/2026 | Le périmètre de la couverture d'illustrations : les 7 cartes… |
-| D-068 | 22/10/2026 | Le mur a une page, trois apparences, et une disposition… |
-| D-069 | 22/10/2026 | ⚠ Complétée le 28/10/2026 — voir D-149 : le joueur… |
-| D-070 | 22/10/2026 | Le nom de l'ancien projet quitte la documentation, et la… |
-| D-071 | 22/10/2026 | La bascule vers planquex.4k7.org est faite (session planquex-infra) — l'exécution… |
-| D-072 | 22/10/2026 | planquex.vercel.app redirige en 308 vers planquex.4k7.org : l'ancienne adresse n'est… |
-| D-073 | 22/10/2026 | #142 — le formulaire de l'alpha s'arrête à ce qu'il… |
-| D-074 | 22/10/2026 | Une carte vend ce qu'elle dit faire ; le moteur… |
-| D-075 | 22/10/2026 | « Chariot » devient « Deck », « Parc »… |
-| D-076 | 22/10/2026 | #159 — défausser une carte de la main . Primitive… |
-| D-077 | 22/10/2026 | #164 — un Talent peut infliger des dégâts (décision de… |
-| D-078 | 22/10/2026 | #160 — révéler une carte ou la main (décision de… |
-| D-079 | 22/10/2026 | ⚠ Dette UI payée : RegardDuDessus (src/pages/Battle.tsx) affiche le dessus… |
-| D-080 | 22/10/2026 | #161 — chercher une carte dans le Deck (décision de… |
-| D-081 | 22/10/2026 | #163 — les Talents « en jouant » (décision de… |
-| D-082 | 22/10/2026 | #165 — attacher un café à un Planqué du Rack… |
-| D-083 | 23/10/2026 | « Rack » devient « Banc » . « Rack… |
-| D-084 | 23/10/2026 | ⚠ Amendée le 26/10/2026 — voir D-109 : l’écran joue… |
-| D-085 | 23/10/2026 | Le gueulage n'est ni une IP ni un OUF :… |
-| D-086 | 23/10/2026 | ⚠ Annulée le 04/11/2026 — voir D-183 : la collecte… |
-| D-087 | 23/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-088 | 23/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-089 | 23/10/2026 | Trois règles du mur complet, à l'ouverture de la base… |
-| D-090 | 24/10/2026 | La note de version vit aussi dans l'application, et elle… |
-| D-091 | 25/10/2026 | Le poste de pilotage local de la base . Trois… |
-| D-092 | 25/10/2026 | L'administration du mur range et retire n'importe quel post-it ,… |
-| D-093 | 25/10/2026 | L'écran de combat devient une table (recherche : docs/SPEC-COMBAT-UI.md ;… |
-| D-094 | 25/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la marge… |
-| D-095 | 25/10/2026 | Les noms de l'Atelier suivent le métier de l'atelier d'optronique,… |
-| D-096 | 25/10/2026 | Dix ids alignés sur leur nom, et deux noms corrigés… |
-| D-097 | 26/10/2026 | Le panneau devient le comité : deux pages du suivi,… |
-| D-098 | 26/10/2026 | Les Pressions ont une chorégraphie chacune, le coup de grâce… |
-| D-099 | 26/10/2026 | Le routeur de modèles : une liste noire apprise, et… |
-| D-100 | 26/10/2026 | La zone Cloudflare s'ouvre au MCP — D-055 est levé… |
-| D-101 | 26/10/2026 | Le banc de comparaison du prototype est réparé, assumé hors… |
-| D-102 | 26/10/2026 | Un tableau de bord local montre les serveurs et les… |
-| D-103 | 26/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : le tap… |
-| D-104 | 26/10/2026 | Le mur accepte l'écriture depuis le jeu, dans la base… |
-| D-105 | 26/10/2026 | ⚠ Annulée le 04/11/2026 — voir D-183 : la collecte… |
-| D-106 | 26/10/2026 | La capture d'un post-it est un lien, jamais un fichier… |
-| D-107 | 26/10/2026 | Les post-its importés du fichier portent un auteur sentinelle .… |
-| D-108 | 26/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le camp garde le… |
-| D-109 | 26/10/2026 | D-084 est amendée : le niveau 2 de l’écran est… |
-| D-110 | 26/10/2026 | O-016 est tranché : les connexions anonymes de Supabase s’activent… |
-| D-111 | 26/10/2026 | Le journal des décisions se tient lui aussi . Trois… |
-| D-112 | 26/10/2026 | L'ordre d'autorité pointe sur ce qui vit . AGENTS.md §2… |
-| D-113 | 26/10/2026 | Un seul tronc, main ; fusion par merge commit ;… |
-| D-114 | 26/10/2026 | Le dépôt a un formateur, et la doc de commande… |
-| D-115 | 26/10/2026 | La CI se découpe en trois jobs, et main a… |
-| D-116 | 27/10/2026 | L'UI se refait en deux temps, light puis système v2… |
-| D-117 | 27/10/2026 | Revoir les jalons de l'alpha . Amende D-048 et D-056.… |
-| D-118 | 27/10/2026 | Le dépôt passe en organisation : le jeu est public,… |
-| D-119 | 27/10/2026 | Les problèmes connus d'une release viennent du mur, pas d'une… |
-| D-120 | 27/10/2026 | Un serveur Discord pour les testeurs, et le mur qui… |
-| D-121 | 27/10/2026 | L'inspecteur du combat : trois règles d'usage, et deux notes… |
-| D-122 | 27/10/2026 | Le contrôle des notes sur un tag accepte le brouillon… |
-| D-123 | 27/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-124 | 27/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-125 | 27/10/2026 | La difficulté est un couple : la politique de l'IA… |
-| D-126 | 27/10/2026 | Les illustrations couvrent les bases, puis les variantes . Ordre… |
-| D-127 | 27/10/2026 | Pendant l'alpha, les Arrivées sont illimitées et gratuites : il… |
-| D-128 | 27/10/2026 | Une release par lot cohérent, jamais plus d'une par jour… |
-| D-129 | 27/10/2026 | Les états d'un ticket disent qui agit, pas où il… |
-| D-130 | 27/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-131 | 27/10/2026 | Une pull request venue d'ailleurs exige une relecture d'agent et… |
-| D-132 | 27/10/2026 | La feuille de route ouvre les liens du dépôt qui… |
-| D-133 | 27/10/2026 | pg_net retourne dans extensions, et les deux fonctions de déclencheur… |
-| D-134 | 27/10/2026 | L'équilibrage se mesure sur une bande fixée d'avance, et la… |
-| D-135 | 27/10/2026 | Le service du profil reste décoratif — et c'est une… |
-| D-136 | 27/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la réplique de la… |
-| D-137 | 27/10/2026 | Deux sons dans l'alpha, et un réglage qui les coupe… |
-| D-138 | 27/10/2026 | Les migrations à venir suivent le disque : 0017 puis… |
-| D-139 | 28/10/2026 | Une variante a sa propre illustration, et une seule .… |
-| D-140 | 28/10/2026 | La production se déploie sur un tag, et une PR… |
-| D-141 | 28/10/2026 | Les bornes d'animation du combat ne s'appliquent pas à l'ouverture… |
-| D-142 | 28/10/2026 | Le jeu se joue sur un vrai téléphone, en portrait… |
-| D-143 | 28/10/2026 | La CI rejoue ce que le changement peut casser, et… |
-| D-144 | 28/10/2026 | Le jeu sort d'AGENTS.md : vocabulaire, règles et écriture des… |
-| D-145 | 28/10/2026 | Le café se touche sur le Planqué : la barre… |
-| D-146 | 28/10/2026 | Les niveaux numériques portent leur politique, et la difficulté se… |
-| D-147 | 28/10/2026 | La Rotation tient en une entrée dans la barre :… |
-| D-148 | 28/10/2026 | Le profil du testeur (pseudo, service, intitulé) vit sur le… |
-| D-149 | 28/10/2026 | La Direction joue trois Decks, un par archétype, et la… |
-| D-150 | 28/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-151 | 28/10/2026 | La difficulté a trois crans nommés, et chacun change la… |
-| D-152 | 29/10/2026 | La version s'écrit v<numéro>-<étape>, partout . (1) Le tag, le… |
-| D-153 | 29/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-154 | 29/10/2026 | Le rangement de scripts/ vit en cinq dossiers, et un… |
-| D-155 | 29/10/2026 | La page /installation est hors du jeu, et le garde-fou… |
-| D-156 | 30/10/2026 | L'entrée du jeu exige un compte, le mur compris ;… |
-| D-157 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la carte… |
-| D-158 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 2) : la console… |
-| D-159 | 30/10/2026 | Les services du parcours sont ceux d'un immeuble, et l'entrée… |
-| D-160 | 30/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la voix du panneau… |
-| D-161 | 30/10/2026 | Le mur du comité n'est plus exclu de la Journée… |
-| D-162 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : elle reste une région,… |
-| D-163 | 31/10/2026 | ⚠ Amendée par D-181 (04/11/2026) : (3) « Suivant »… |
-| D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |
-| D-165 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le pas-à-pas du combat… |
-| D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |
-| D-167 | 31/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la surface… |
-| D-168 | 31/10/2026 | Le contrôle des écrans refuserait un scan muet . impeccable… |
-| D-169 | 01/11/2026 | L'ouverture d'un Arrivage se lit à 420 px . (1)… |
-| D-170 | 01/11/2026 | ⚠ Précisée par D-184 (04/11/2026) : le jugement par la… |
-| D-171 | 01/11/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la bande… |
-| D-172 | 02/11/2026 | La courbe du Deck ne nomme plus un coût qui… |
-| D-173 | 02/11/2026 | PWA d'abord, navigateur en plancher ; plein écran là où… |
-| D-174 | 02/11/2026 | Un socle par planche, et un casting qui ne ressemble… |
-| D-175 | 02/11/2026 | ⚠ Amendée par D-190 (09/11/2026) : la barre passe à… |
-| D-176 | 02/11/2026 | PRODUCT.md entre au dépôt comme contexte dérivé pour impeccable, pas… |
-| D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |
-| D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |
-| D-179 | 03/11/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |
-| D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |
-| D-181 | 04/11/2026 | ⚠ Amendée par D-187 (04/11/2026, point (2)) : la réplique… |
-| D-182 | 04/11/2026 | Le plateau de combat : main rognée en bas, journal… |
-| D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |
-| D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |
-| D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |
-| D-186 | 04/11/2026 | Le nom du locuteur de la Journée est hors du… |
-| D-187 | 04/11/2026 | La réplique de la Direction sort du panneau : la… |
-| D-188 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |
-| D-189 | 09/11/2026 | L'interface hors combat passe à la direction « aéro-institutionnelle »… |
-| D-190 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |
+| ID | Date | Intitulé (début) | Amendée par |
+|---|---|---|---|
+| D-001 | 18/10/2026 | Nouveau dossier, indépendant des versions abandonnées (§9) |  |
+| D-002 | 18/10/2026 | Stack React 19 + Vite 8 + TypeScript + PWA |  |
+| D-003 | 18/10/2026 | Règles standard = miroir exact de TCG Pocket (20/5/3, zone… |  |
+| D-004 | 18/10/2026 | Un mot-clé maison déactivable (« Changement de priorité », looter… |  |
+| D-005 | 18/10/2026 | ⚠ Remplacée le 22/10/2026 — voir D-063 : 225 bases… | D-063 |
+| D-006 | 18/10/2026 | 10 factions : SSE, Manager, Happiness Manager, Amélioration continue, RH,… | D-024 |
+| D-007 | 18/10/2026 | Art : IA + curation humaine, style « corporate dark… |  |
+| D-008 | 18/10/2026 | PvP temps réel + reprise asynchrone, serveur autoritaire, timer 90… |  |
+| D-009 | 18/10/2026 | Backend Supabase Free pour le développement et la bêta ;… |  |
+| D-010 | 18/10/2026 | Cible initiale 100 joueurs simultanés ; dimensionnement large échelle étudié… |  |
+| D-011 | 18/10/2026 | Périmètre = toutes les features de l’APK, livrées par phases |  |
+| D-012 | 18/10/2026 | Infrastructure : Vercel (web), Supabase (backend), Cloudflare (DNS/R2), Brevo (emails),… |  |
+| D-013 | 18/10/2026 | Homelab Proxmox + Cloudflare Tunnel = staging, backups, CI, admin… |  |
+| D-014 | 18/10/2026 | ⚠ Remplacée par D-020 et D-026 : trois stades Entrant… | D-020, D-026 |
+| D-015 | 18/10/2026 | Nom du jeu : Bureau des Planqués |  |
+| D-016 | 18/10/2026 | Infrastructure du TCG : nouveaux projets Vercel et Supabase (schéma… | D-017 |
+| D-017 | 19/10/2026 | Amendement D-016 : le TCG est déployé sur le projet… |  |
+| D-018 | 19/10/2026 | Miroir de référence daté : le mode standard est le… |  |
+| D-019 | 19/10/2026 | Les règles maison RULES-4b sont rangées hors du standard, dans… |  |
+| D-020 | 19/10/2026 | Périmètre du lancement figé (O-008) : les 4 ajouts du… |  |
+| D-021 | 19/10/2026 | Les dégâts se lisent par coût en café, pas par… |  |
+| D-022 | 19/10/2026 | O-009 tranché, faute de source primaire : (1) pas de… |  |
+| D-023 | 19/10/2026 | Le Moral suit le jeu réel (O-011) : Basique 50–80,… |  |
+| D-024 | 19/10/2026 | Nommage des factions et des types (amende D-006) : les… |  |
+| D-025 | 19/10/2026 | Référentiel du contenu : le site devient un atelier MRO… |  |
+| D-026 | 19/10/2026 | Vocabulaire arrêté (fin de la session de nommage). Le tableau… |  |
+| D-027 | 19/10/2026 | Conventions de noms de cartes : (1) un Planqué =… |  |
+| D-028 | 19/10/2026 | Points ouverts du contenu tranchés : O-004 degré de satire… |  |
+| D-029 | 20/10/2026 | Nommage de Management : la carte signature de MANAGEMENT passe… |  |
+| D-030 | 20/10/2026 | O-013 — AGENTS.md §4 aligné sur les Astuces capturées. Deux… |  |
+| D-031 | 20/10/2026 | Six règles entrent dans AGENTS.md §4 (ajouts, aucune n'était écrite)… |  |
+| D-032 | 20/10/2026 | O-012 avance, sans se clore : la revue de sources… |  |
+| D-033 | 20/10/2026 | Six règles observées entrent dans AGENTS.md §4 (application de D-018… |  |
+| D-034 | 20/10/2026 | Ce qui fait foi pour les règles de jeu :… |  |
+| D-035 | 20/10/2026 | Socle d'UI : Tailwind (moteur de style) + shadcn/ui (composants… |  |
+| D-036 | 20/10/2026 | Le nom technique du projet est planquex . Il remplace… |  |
+| D-037 | 20/10/2026 | Le café typé — forme et attribution . (1) Forme… |  |
+| D-038 | 20/10/2026 | Publication : licence MIT, dépôt privé jusqu'à la bêta, retrait… |  |
+| D-039 | 21/10/2026 | #102 (c) — coût de Pression 0 autorisé par le… |  |
+| D-040 | 21/10/2026 | #110 (a) — le café attaché par le Talent attachEnergy… |  |
+| D-041 | 21/10/2026 | #115 (c) — la Rotation (et discardEnergy) retire les cafés… |  |
+| D-042 | 21/10/2026 | #119 (a) — CARD-SPEC.md décrit Polyvalence comme « peut utiliser… |  |
+| D-043 | 21/10/2026 | ⚠ État au 21/10/2026 — périmé : le set comptait… |  |
+| D-044 | 21/10/2026 | ⚠ État au 21/10/2026 — périmé sur le point (2)… |  |
+| D-045 | 21/10/2026 | #121 (Q2) — les illustrations passent à une source unique… |  |
+| D-046 | 21/10/2026 | #121 (Q3, Q15) — FACTION_META.color (src/data/factions.ts) est la source canonique… |  |
+| D-047 | 21/10/2026 | Rangement local — le dossier de travail devient planquex/, et… |  |
+| D-048 | 21/10/2026 | Trois étapes nommées : alpha, beta, release — et rien… | D-063, D-117 |
+| D-049 | 21/10/2026 | Le PvP de la beta passe par un lien ou… |  |
+| D-050 | 21/10/2026 | Le nom des versions : l'étape est un mot, le… |  |
+| D-051 | 21/10/2026 | Une ligne de version par étape — et la règle… |  |
+| D-052 | 21/10/2026 | Un lieu de session ne vit pas dans un .opencode/… |  |
+| D-053 | 21/10/2026 | L'infra de l'alpha est montée ; ce qui reste est… |  |
+| D-054 | 21/10/2026 | L'application installée s'appelle « Planquex » et porte son icône… |  |
+| D-055 | 21/10/2026 | La bascule vers planquex.4k7.org est bloquée par les droits Cloudflare,… |  |
+| D-056 | 21/10/2026 | ⚠ Amendée le 27/10/2026 — voir D-117 : le critère… | D-117, D-123, D-183 |
+| D-057 | 21/10/2026 | Illustrations : un pilote d'une trentaine d'images sur l'ATELIER, puis… |  |
+| D-058 | 21/10/2026 | La Boîte à idées — les retours des invités entrent… | D-068, D-161 |
+| D-059 | 21/10/2026 | Le tri des retours, et l'ordre face au backend .… | D-088 |
+| D-060 | 21/10/2026 | L'UI est un chantier léger, avec une passe de finition… |  |
+| D-061 | 21/10/2026 | Le contenu de la phase 2 renvoyé à la release… |  |
+| D-062 | 21/10/2026 | Le vocabulaire du triage s'arrête à deux catégories et cinq… |  |
+| D-063 | 22/10/2026 | La cible de contenu n'est plus un chiffre, c'est ce… |  |
+| D-064 | 22/10/2026 | La bascule vers planquex.4k7.org doit être faite pour la beta… |  |
+| D-065 | 22/10/2026 | Les critères du pilote d'illustration , pour que 300 images… |  |
+| D-066 | 22/10/2026 | La Journée d'intégration en deux temps : pour l'alpha, la… | D-160, D-161 |
+| D-067 | 22/10/2026 | Le périmètre de la couverture d'illustrations : les 7 cartes… |  |
+| D-068 | 22/10/2026 | Le mur a une page, trois apparences, et une disposition… | D-085 |
+| D-069 | 22/10/2026 | ⚠ Complétée le 28/10/2026 — voir D-149 : le joueur… |  |
+| D-070 | 22/10/2026 | Le nom de l'ancien projet quitte la documentation, et la… |  |
+| D-071 | 22/10/2026 | La bascule vers planquex.4k7.org est faite (session planquex-infra) — l'exécution… |  |
+| D-072 | 22/10/2026 | planquex.vercel.app redirige en 308 vers planquex.4k7.org : l'ancienne adresse n'est… |  |
+| D-073 | 22/10/2026 | #142 — le formulaire de l'alpha s'arrête à ce qu'il… |  |
+| D-074 | 22/10/2026 | Une carte vend ce qu'elle dit faire ; le moteur… |  |
+| D-075 | 22/10/2026 | « Chariot » devient « Deck », « Parc »… |  |
+| D-076 | 22/10/2026 | #159 — défausser une carte de la main . Primitive… |  |
+| D-077 | 22/10/2026 | #164 — un Talent peut infliger des dégâts (décision de… |  |
+| D-078 | 22/10/2026 | #160 — révéler une carte ou la main (décision de… |  |
+| D-079 | 22/10/2026 | ⚠ Dette UI payée : RegardDuDessus (src/pages/Battle.tsx) affiche le dessus… |  |
+| D-080 | 22/10/2026 | #161 — chercher une carte dans le Deck (décision de… |  |
+| D-081 | 22/10/2026 | #163 — les Talents « en jouant » (décision de… |  |
+| D-082 | 22/10/2026 | #165 — attacher un café à un Planqué du Rack… |  |
+| D-083 | 23/10/2026 | « Rack » devient « Banc » . « Rack… |  |
+| D-084 | 23/10/2026 | ⚠ Amendée le 26/10/2026 — voir D-109 : l’écran joue… | D-109 |
+| D-085 | 23/10/2026 | Le gueulage n'est ni une IP ni un OUF :… |  |
+| D-086 | 23/10/2026 | ⚠ Annulée le 04/11/2026 — voir D-183 : la collecte… |  |
+| D-087 | 23/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… | D-088 |
+| D-088 | 23/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
+| D-089 | 23/10/2026 | Trois règles du mur complet, à l'ouverture de la base… |  |
+| D-090 | 24/10/2026 | La note de version vit aussi dans l'application, et elle… |  |
+| D-091 | 25/10/2026 | Le poste de pilotage local de la base . Trois… |  |
+| D-092 | 25/10/2026 | L'administration du mur range et retire n'importe quel post-it ,… |  |
+| D-093 | 25/10/2026 | L'écran de combat devient une table (recherche : docs/SPEC-COMBAT-UI.md ;… |  |
+| D-094 | 25/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la marge… | D-157, D-182 |
+| D-095 | 25/10/2026 | Les noms de l'Atelier suivent le métier de l'atelier d'optronique,… |  |
+| D-096 | 25/10/2026 | Dix ids alignés sur leur nom, et deux noms corrigés… |  |
+| D-097 | 26/10/2026 | Le panneau devient le comité : deux pages du suivi,… | D-175 |
+| D-098 | 26/10/2026 | Les Pressions ont une chorégraphie chacune, le coup de grâce… |  |
+| D-099 | 26/10/2026 | Le routeur de modèles : une liste noire apprise, et… |  |
+| D-100 | 26/10/2026 | La zone Cloudflare s'ouvre au MCP — D-055 est levé… |  |
+| D-101 | 26/10/2026 | Le banc de comparaison du prototype est réparé, assumé hors… |  |
+| D-102 | 26/10/2026 | Un tableau de bord local montre les serveurs et les… |  |
+| D-103 | 26/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : le tap… | D-182 |
+| D-104 | 26/10/2026 | Le mur accepte l'écriture depuis le jeu, dans la base… | D-106 |
+| D-105 | 26/10/2026 | ⚠ Annulée le 04/11/2026 — voir D-183 : la collecte… |  |
+| D-106 | 26/10/2026 | La capture d'un post-it est un lien, jamais un fichier… |  |
+| D-107 | 26/10/2026 | Les post-its importés du fichier portent un auteur sentinelle .… |  |
+| D-108 | 26/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le camp garde le… |  |
+| D-109 | 26/10/2026 | D-084 est amendée : le niveau 2 de l’écran est… |  |
+| D-110 | 26/10/2026 | O-016 est tranché : les connexions anonymes de Supabase s’activent… | D-156 |
+| D-111 | 26/10/2026 | Le journal des décisions se tient lui aussi . Trois… |  |
+| D-112 | 26/10/2026 | L'ordre d'autorité pointe sur ce qui vit . AGENTS.md §2… |  |
+| D-113 | 26/10/2026 | Un seul tronc, main ; fusion par merge commit ;… |  |
+| D-114 | 26/10/2026 | Le dépôt a un formateur, et la doc de commande… |  |
+| D-115 | 26/10/2026 | La CI se découpe en trois jobs, et main a… |  |
+| D-116 | 27/10/2026 | L'UI se refait en deux temps, light puis système v2… |  |
+| D-117 | 27/10/2026 | Revoir les jalons de l'alpha . Amende D-048 et D-056.… | D-123, D-183 |
+| D-118 | 27/10/2026 | Le dépôt passe en organisation : le jeu est public,… |  |
+| D-119 | 27/10/2026 | Les problèmes connus d'une release viennent du mur, pas d'une… |  |
+| D-120 | 27/10/2026 | Un serveur Discord pour les testeurs, et le mur qui… | D-159, D-177 |
+| D-121 | 27/10/2026 | L'inspecteur du combat : trois règles d'usage, et deux notes… |  |
+| D-122 | 27/10/2026 | Le contrôle des notes sur un tag accepte le brouillon… |  |
+| D-123 | 27/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
+| D-124 | 27/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… | D-130 |
+| D-125 | 27/10/2026 | La difficulté est un couple : la politique de l'IA… |  |
+| D-126 | 27/10/2026 | Les illustrations couvrent les bases, puis les variantes . Ordre… |  |
+| D-127 | 27/10/2026 | Pendant l'alpha, les Arrivées sont illimitées et gratuites : il… |  |
+| D-128 | 27/10/2026 | Une release par lot cohérent, jamais plus d'une par jour… |  |
+| D-129 | 27/10/2026 | Les états d'un ticket disent qui agit, pas où il… |  |
+| D-130 | 27/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… | D-160 |
+| D-131 | 27/10/2026 | Une pull request venue d'ailleurs exige une relecture d'agent et… |  |
+| D-132 | 27/10/2026 | La feuille de route ouvre les liens du dépôt qui… |  |
+| D-133 | 27/10/2026 | pg_net retourne dans extensions, et les deux fonctions de déclencheur… |  |
+| D-134 | 27/10/2026 | L'équilibrage se mesure sur une bande fixée d'avance, et la… |  |
+| D-135 | 27/10/2026 | Le service du profil reste décoratif — et c'est une… |  |
+| D-136 | 27/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la réplique de la… | D-160 |
+| D-137 | 27/10/2026 | Deux sons dans l'alpha, et un réglage qui les coupe… | D-166 |
+| D-138 | 27/10/2026 | Les migrations à venir suivent le disque : 0017 puis… |  |
+| D-139 | 28/10/2026 | Une variante a sa propre illustration, et une seule .… |  |
+| D-140 | 28/10/2026 | La production se déploie sur un tag, et une PR… |  |
+| D-141 | 28/10/2026 | Les bornes d'animation du combat ne s'appliquent pas à l'ouverture… |  |
+| D-142 | 28/10/2026 | Le jeu se joue sur un vrai téléphone, en portrait… |  |
+| D-143 | 28/10/2026 | La CI rejoue ce que le changement peut casser, et… |  |
+| D-144 | 28/10/2026 | Le jeu sort d'AGENTS.md : vocabulaire, règles et écriture des… |  |
+| D-145 | 28/10/2026 | Le café se touche sur le Planqué : la barre… |  |
+| D-146 | 28/10/2026 | Les niveaux numériques portent leur politique, et la difficulté se… | D-151 |
+| D-147 | 28/10/2026 | La Rotation tient en une entrée dans la barre :… |  |
+| D-148 | 28/10/2026 | Le profil du testeur (pseudo, service, intitulé) vit sur le… | D-159 |
+| D-149 | 28/10/2026 | La Direction joue trois Decks, un par archétype, et la… |  |
+| D-150 | 28/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
+| D-151 | 28/10/2026 | La difficulté a trois crans nommés, et chacun change la… |  |
+| D-152 | 29/10/2026 | La version s'écrit v<numéro>-<étape>, partout . (1) Le tag, le… |  |
+| D-153 | 29/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… | D-178, D-179 |
+| D-154 | 29/10/2026 | Le rangement de scripts/ vit en cinq dossiers, et un… |  |
+| D-155 | 29/10/2026 | La page /installation est hors du jeu, et le garde-fou… |  |
+| D-156 | 30/10/2026 | L'entrée du jeu exige un compte, le mur compris ;… |  |
+| D-157 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la carte… | D-182 |
+| D-158 | 30/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 2) : la console… | D-182 |
+| D-159 | 30/10/2026 | Les services du parcours sont ceux d'un immeuble, et l'entrée… |  |
+| D-160 | 30/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : la voix du panneau… | D-162, D-163 |
+| D-161 | 30/10/2026 | Le mur du comité n'est plus exclu de la Journée… | D-162 |
+| D-162 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : elle reste une région,… | D-163 |
+| D-163 | 31/10/2026 | ⚠ Amendée par D-181 (04/11/2026) : (3) « Suivant »… | D-181 |
+| D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |  |
+| D-165 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le pas-à-pas du combat… |  |
+| D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |  |
+| D-167 | 31/10/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la surface… | D-182 |
+| D-168 | 31/10/2026 | Le contrôle des écrans refuserait un scan muet . impeccable… |  |
+| D-169 | 01/11/2026 | L'ouverture d'un Arrivage se lit à 420 px . (1)… |  |
+| D-170 | 01/11/2026 | ⚠ Précisée par D-184 (04/11/2026) : le jugement par la… |  |
+| D-171 | 01/11/2026 | ⚠ Amendée par D-182 (04/11/2026, point 1) : la bande… | D-182 |
+| D-172 | 02/11/2026 | La courbe du Deck ne nomme plus un coût qui… |  |
+| D-173 | 02/11/2026 | PWA d'abord, navigateur en plancher ; plein écran là où… |  |
+| D-174 | 02/11/2026 | Un socle par planche, et un casting qui ne ressemble… |  |
+| D-175 | 02/11/2026 | ⚠ Amendée par D-192 (09/11/2026) : la barre passe à… | D-192 |
+| D-176 | 02/11/2026 | PRODUCT.md entre au dépôt comme contexte dérivé pour impeccable, pas… |  |
+| D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |  |
+| D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |  |
+| D-179 | 03/11/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
+| D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |  |
+| D-181 | 04/11/2026 | ⚠ Amendée par D-187 (04/11/2026, point (2)) : la réplique… | D-185, D-186, D-187 |
+| D-182 | 04/11/2026 | Le plateau de combat : main rognée en bas, journal… |  |
+| D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |  |
+| D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |  |
+| D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |  |
+| D-186 | 04/11/2026 | Le nom du locuteur de la Journée est hors du… |  |
+| D-187 | 04/11/2026 | La réplique de la Direction sort du panneau : la… |  |
+| D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
+| D-189 | 07/11/2026 | Un PNG de docs/preuves/ tient sous 1 Mo ; l'historique… |  |
+| D-190 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |  |
+| D-191 | 09/11/2026 | L'interface hors combat passe à la direction « aéro-institutionnelle »… |  |
+| D-192 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |  |

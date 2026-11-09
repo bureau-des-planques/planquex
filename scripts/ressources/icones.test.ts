@@ -88,7 +88,7 @@ const lirePublic = (href: string) => {
   }
 };
 
-describe('icônes de la page : favicon et écran d’accueil iPhone (D-188)', () => {
+describe('icônes de la page : favicon et écran d’accueil iPhone (D-190)', () => {
   it('chaque icône déclarée par index.html existe et a la taille qu’elle annonce', () => {
     expect(fautesDeLaPage(iconesDeLaPage(read('index.html').toString('utf8')), lirePublic)).toEqual([]);
   });

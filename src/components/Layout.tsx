@@ -40,11 +40,11 @@ export function couvreAdresse(chemin: string, cible: string): boolean {
 }
 
 /**
- * La barre du bas, **cinq onglets** (#545, D-190 : la Pause café entre Combat et Comité) : la Collection et le Deck sont un seul écran,
+ * La barre du bas, **cinq onglets** (#545, D-192 : la Pause café entre Combat et Comité) : la Collection et le Deck sont un seul écran,
  * deux onglets — ils ne prennent donc qu'une entrée, « Cartes ». Les trois autres ne bougent
  * pas : l'**Accueil**, le **Combat**, et le **comité** (D-097 (4), #213), qui a pris la place
  * des **Réglages**, passés à l'engrenage de l'en-tête. Les icônes sont celles de la marque
- * (D-189, `IconesMarque.tsx`) : trait fin, angles vifs.
+ * (D-191, `IconesMarque.tsx`) : trait fin, angles vifs.
  *
  * « Cartes » plutôt que « Collection » : l'entrée mène aux **deux** métiers, et l'onglet
  * Collection est celui qui s'ouvre par défaut. `aussi` dit les adresses que l'entrée couvre
@@ -53,7 +53,7 @@ export function couvreAdresse(chemin: string, cible: string): boolean {
 const tabs = [
   { to: '/', label: 'Accueil', icon: IconeAccueil, aussi: [] as readonly string[], vedette: false },
   { to: '/collection', label: 'Cartes', icon: IconeCartes, aussi: ['/deck'], vedette: false },
-  // D-190 : Combat est **au centre** des cinq, et mis en avant (bloc bleu ciel plein).
+  // D-192 : Combat est **au centre** des cinq, et mis en avant (bloc bleu ciel plein).
   { to: '/battle', label: 'Combat', icon: IconeCombat, aussi: [] as readonly string[], vedette: true },
   { to: '/pause-cafe', label: 'Pause café', icon: IconeCafe, aussi: [] as readonly string[], vedette: false },
   { to: '/comite', label: 'Comité', icon: IconeComite, aussi: [] as readonly string[], vedette: false }
@@ -130,7 +130,7 @@ export function Layout() {
       <header className="topbar">
         <div className="brand">
           <span className="brand__mark" aria-hidden="true">
-            {/* Le sceau à la tasse (D-188), emblème détouré : `design/logo/sceau/`. */}
+            {/* Le sceau à la tasse (D-190), emblème détouré : `design/logo/sceau/`. */}
             <img src="/marque/sceau-embleme.webp" width={40} height={40} alt="" decoding="async" />
           </span>
           <div className="brand__text">
@@ -201,7 +201,7 @@ export function Layout() {
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
       {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
 
-      {/* La barre du bas : **cinq onglets** (#545, D-190), et **rien du tout en combat** (#275).
+      {/* La barre du bas : **cinq onglets** (#545, D-192), et **rien du tout en combat** (#275).
           Le shell seul la rend — aucun écran ne la redessine. */}
       {!enCombat && (
         <nav className="bottom-nav" aria-label="Navigation principale">

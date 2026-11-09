@@ -60,11 +60,11 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Jetons de design — **« aéro-institutionnel »** (D-189) : bleu nuit plat, bleu ciel, blanc,
+ * Jetons de design — **« aéro-institutionnel »** (D-191) : bleu nuit plat, bleu ciel, blanc,
  * titres très fins, libellés en capitales espacées, angles droits. Inspiré de la sobriété d'un
  * site de groupe industriel, sans en reprendre ni le nom ni le logo.
  * Les noms `--gold*` datent du thème bleu nuit et or : ils restent (toute la feuille les lit) et
- * portent désormais le **bleu ciel**, l'accent de la marque (la tasse du sceau, D-188).
+ * portent désormais le **bleu ciel**, l'accent de la marque (la tasse du sceau, D-190).
  * Toute la feuille lit ces variables : une couleur qui change se change ici, une fois.
  */
 :root {
@@ -93,7 +93,7 @@
   --gold-deep: #2f6aa0;
 
   /*
-   * **La palette du combat** (D-189 (4)) : le combat n'est pas refait avec le reste — une série
+   * **La palette du combat** (D-191 (4)) : le combat n'est pas refait avec le reste — une série
    * de tickets le reprendra. `.battle` réapplique ces valeurs à ses jetons, pour que la scène
    * reste exactement celle d'avant la refonte.
    */
@@ -135,7 +135,7 @@
   --sp-5: 1.5rem;
   --sp-6: 2rem;
 
-  /* Rayons et ombres — angles droits (D-189) ; l'ombre portée reste pour ce qui flotte
+  /* Rayons et ombres — angles droits (D-191) ; l'ombre portée reste pour ce qui flotte
      (fenêtres, menus), la lueur dorée disparaît. */
   --radius: 0px;
   --radius-sm: 0px;
@@ -143,11 +143,11 @@
   --shadow: 0 12px 30px rgb(0 0 0 / 35%);
   --shadow-gold: none;
 
-  /* D-189 : Barlow (texte et titres), Barlow Condensed (le nom de la marque). */
+  /* D-191 : Barlow (texte et titres), Barlow Condensed (le nom de la marque). */
   --font-body: 'Barlow', Arial, system-ui, sans-serif;
   --font-display: 'Barlow', Arial, system-ui, sans-serif;
   --font-marque: 'Barlow Condensed', 'Barlow', Arial, sans-serif;
-  /* Le combat garde ses polices d'avant la refonte (D-189 (4)). */
+  /* Le combat garde ses polices d'avant la refonte (D-191 (4)). */
   --combat-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
   --combat-font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
 
@@ -201,7 +201,7 @@ body {
 }
 
 body {
-  /* D-189 : un aplat, sans halo ; la profondeur vient du bandeau d'accueil, pas du fond. */
+  /* D-191 : un aplat, sans halo ; la profondeur vient du bandeau d'accueil, pas du fond. */
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
@@ -347,7 +347,7 @@ h2 {
   min-width: 0;
 }
 
-/* Le sceau (D-188), sans cadre : l'emblème détouré se pose tel quel sur la barre (D-189).
+/* Le sceau (D-190), sans cadre : l'emblème détouré se pose tel quel sur la barre (D-191).
    40 px, comme avant — la hauteur de l'en-tête est mesurée par la garde du combat (D-094). */
 .brand__mark {
   display: grid;
@@ -452,7 +452,7 @@ h2 {
 }
 
 .bottom-nav {
-  /* D-189 : une barre plate, opaque, filet fin au-dessus — plus de verre dépoli. */
+  /* D-191 : une barre plate, opaque, filet fin au-dessus — plus de verre dépoli. */
   background: var(--bg);
   border-top: 1px solid var(--line);
   bottom: 0;
@@ -3278,7 +3278,7 @@ h2 {
    l'écran et **par-dessus** `:root` : aucun jeton global n'est réécrit ici. Le bleu nuit du
    projet reste la famille ; le feutre n'en est qu'une version éclaircie au centre. */
 .battle {
-  /* D-189 (4) : le combat n'est pas refait avec le reste. Il reprend ici, sur sa propre boîte,
+  /* D-191 (4) : le combat n'est pas refait avec le reste. Il reprend ici, sur sa propre boîte,
      la palette, les rayons et les polices d'avant la refonte, gardés en `--combat-*` dans `:root`. */
   --bg: var(--combat-bg);
   --bg-deep: var(--combat-bg-deep);
@@ -8175,10 +8175,10 @@ h2 {
 }
 
 /* ==========================================================================================
-   **La refonte « aéro-institutionnelle »** (D-189) — hors combat.
+   **La refonte « aéro-institutionnelle »** (D-191) — hors combat.
    Bleu nuit plat, bleu ciel, blanc ; titres très fins et grands ; libellés et boutons en
    capitales espacées ; angles droits ; bandeaux pleine largeur. Les jetons sont dans `:root`.
-   Le combat garde son allure d'avant (`.battle`, D-189 (4)) : chaque règle d'ici qui pourrait
+   Le combat garde son allure d'avant (`.battle`, D-191 (4)) : chaque règle d'ici qui pourrait
    l'atteindre l'exclut par `:not(.battle *)`.
    ========================================================================================== */
 
@@ -8360,7 +8360,7 @@ h2 {
   }
 }
 
-/* **Combat, mis en avant** (D-190) : l'onglet du centre est un bloc bleu ciel plein, texte
+/* **Combat, mis en avant** (D-192) : l'onglet du centre est un bloc bleu ciel plein, texte
    bleu nuit (7,9:1), qui dépasse un peu au-dessus de la barre — c'est le geste du jeu. */
 .bottom-nav .bottom-nav__item--vedette {
   background: var(--accent);
@@ -8380,7 +8380,7 @@ h2 {
   display: none;
 }
 
-/* ---------- La pause café (D-190) ---------- */
+/* ---------- La pause café (D-192) ---------- */
 
 .pause-cafe__chapo {
   color: var(--text-muted);
@@ -8604,7 +8604,7 @@ h2 {
   color: var(--surface-claire);
 }
 
-/* **Accueil portrait sans défilement** (D-173, tenu par D-189) : sur téléphone, les deux gestes
+/* **Accueil portrait sans défilement** (D-173, tenu par D-191) : sur téléphone, les deux gestes
    et les trois compteurs restent visibles d'un seul écran. Le bandeau garde son dégradé et son
    alignement centré, mais rend sa hauteur : pas de 72 vh, pas de trait vertical. */
 @media (max-width: 639px) and (orientation: portrait) {

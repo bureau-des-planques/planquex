@@ -11,7 +11,7 @@
 > `docs/DECISIONS.md`. Il décrit l'apparence, pas la mécanique.
 >
 > Il suivait `docs/PROPOSITION.md` §4.6 : direction « corporate dark premium », palette bleu
-> nuit / or. **Depuis D-189 (09/11/2026)**, l'interface hors combat est
+> nuit / or. **Depuis D-191 (09/11/2026)**, l'interface hors combat est
 > **« aéro-institutionnelle »** : bleu nuit plat, bleu ciel, blanc, titres très fins en
 > **Barlow**, libellés et boutons en capitales espacées, angles droits, bandeaux pleine largeur.
 > Le **combat** garde l'ancienne palette (`--combat-*`, §1.0) jusqu'à sa propre refonte.
@@ -23,9 +23,9 @@
 
 Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se change
 **là**, une seule fois. Les noms restent clairs et stables : les `--gold*` gardent leur nom
-mais portent le **bleu ciel** depuis D-189.
+mais portent le **bleu ciel** depuis D-191.
 
-### 1.0 La refonte D-189 en une table
+### 1.0 La refonte D-191 en une table
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -61,7 +61,7 @@ secondaire en contour), barre du bas (trait bleu ciel sous l'onglet courant, ic�
 à filets, bande blanche « la dernière version »). Sur téléphone portrait, l'accueil tient
 toujours en un écran (D-173).
 
-### 1.1 Fonds et lignes — le bleu nuit (palette du combat depuis D-189)
+### 1.1 Fonds et lignes — le bleu nuit (palette du combat depuis D-191)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -72,7 +72,7 @@ toujours en un écran (D-173).
 | `--line` | `#243049` | filets et bordures |
 | `--line-strong` | `#34456a` | bordures d'un élément actif ou mis en avant |
 
-### 1.2 Textes (palette du combat depuis D-189)
+### 1.2 Textes (palette du combat depuis D-191)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -80,7 +80,7 @@ toujours en un écran (D-173).
 | `--text-muted` | `#9aa9c2` | texte secondaire (libellés, légendes) |
 | `--text-dim` | `#7e8fb0` | texte tertiaire (identifiants, notes) |
 
-### 1.3 Accents — bleu primaire, or secondaire (palette du combat depuis D-189)
+### 1.3 Accents — bleu primaire, or secondaire (palette du combat depuis D-191)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -689,7 +689,7 @@ du haut et dans les pips de coût.
 
 | Fichier | Contenu | Usage |
 |---|---|---|
-| `design/logo/sceau/sceau-vertical.jpg`, `sceau-horizontal.jpg`, `sceau-embleme.png` | **le sceau** (D-188) : engrenage d'acier, couronne de turbine, anneau d'émail bleu nuit cerclé d'argent portant « BUREAU DES PLANQUÉS • SERVICE DU CAFÉ • », **tasse bleu ciel** fumante au centre ; vertical (sceau + « PLANQUÉS »), horizontal (sceau, filet, « BUREAU DES / PLANQUÉS »), emblème seul détouré | **le logo** du jeu ; illustrations générées (Nano Banana Pro, outil image `gflow`), pas des vecteurs |
+| `design/logo/sceau/sceau-vertical.jpg`, `sceau-horizontal.jpg`, `sceau-embleme.png` | **le sceau** (D-190) : engrenage d'acier, couronne de turbine, anneau d'émail bleu nuit cerclé d'argent portant « BUREAU DES PLANQUÉS • SERVICE DU CAFÉ • », **tasse bleu ciel** fumante au centre ; vertical (sceau + « PLANQUÉS »), horizontal (sceau, filet, « BUREAU DES / PLANQUÉS »), emblème seul détouré | **le logo** du jeu ; illustrations générées (Nano Banana Pro, outil image `gflow`), pas des vecteurs |
 | `design/logo/app/icone-acier.jpg` | le sceau **simplifié** : engrenage d'acier à 12 dents, disque bleu nuit, tasse bleu ciel ; **sans texte ni turbine**, lisible à 40 px | maître de l'**icône d'application** |
 | `design/logo/app/icone-plat.jpg` | la même icône **en deux tons** : engrenage blanc, tasse bleu ciel `#7fb8e7`, fond `#1b1d27` ; aucun relief | maître des **petites tailles** (favicon) |
 | `public/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` | rendus de `icone-acier.jpg` par `npm run icones` (motif à 74 %, 64 % pour la *maskable*) | icône PWA, écran d'accueil (Android, iPhone) |
@@ -697,15 +697,15 @@ du haut et dans les pips de coût.
 | `design/logo/rangs/ecusson-{1-bronze,2-argent,3-or,4-platine,5-diamant}.jpg` | écusson ailé en cinq métaux, monogramme tasse-B | **réservés** à un futur mode classé (souhait de Bastien, 09/11/2026 ; pas encore parqué dans `docs/MODES-FUTURS.md`), aucun usage aujourd'hui |
 | `design/logo/cafe-clair.svg`, `cafe-sombre.svg` | **la tasse seule, en trait** : godet, anse, trois vapeurs, arc d'ombre ; aucun remplissage, trait de 5 sur un `viewBox` 64. Encre `--bg` pour le thème clair, or `--gold-soft` pour le sombre | **la marque du README** (#328), choisie par `<picture>` + `prefers-color-scheme` — l'or sur fond clair tombe à 1,9:1. Ce n'est **ni** le favicon **ni** l'icône PWA |
 
-Jusqu'à D-188, l'icône d'application était une scène vectorielle (le Planqué avachi à son
+Jusqu'à D-190, l'icône d'application était une scène vectorielle (le Planqué avachi à son
 bureau, tasse or) et le favicon un monogramme « BP » or : les deux ont quitté `public/`
 (l'historique git les garde). La **tasse** reste le motif : elle passe au centre du sceau.
 `vite.config.ts` reste la référence : `name: 'Bureau des Planqués'`,
-`short_name: 'Planquex'` (D-054), `theme_color`/`background_color` `#1b1d27` (D-189).
+`short_name: 'Planquex'` (D-054), `theme_color`/`background_color` `#1b1d27` (D-191).
 
 ### 5.2 Comment la redessiner
 
-- **Le sceau et l'icône (D-188)** : on retouche un maître de `design/logo/` en le donnant en
+- **Le sceau et l'icône (D-190)** : on retouche un maître de `design/logo/` en le donnant en
   image de référence au modèle d'image, avec la consigne « recrée exactement… change seulement… »
   — c'est ainsi que l'icône est née du sceau, et les rangs d'un même écusson. Puis
   `npm run icones`. Si le motif d'un maître bouge, remesurer sa boîte (centre, côté) dans

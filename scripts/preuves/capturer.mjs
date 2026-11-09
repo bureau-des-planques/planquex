@@ -95,7 +95,7 @@ const PAGES = [
   ['connexion', '/connexion'],
   ['attente', '/attente'],
   ['administration', '/administration'],
-  // La pause café (D-190) : l'espace social annoncé, cinquième onglet de la barre.
+  // La pause café (D-192) : l'espace social annoncé, cinquième onglet de la barre.
   ['pause-cafe', '/pause-cafe'],
   // Le mur du comité (#129, D-097) : une page du jeu, cinquième onglet depuis #213 ;
   // capturée après les écrans de compte.

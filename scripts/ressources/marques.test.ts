@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
  *
  * Portée : la marque du README (`design/logo/`) et tout SVG servi par l'application
  * (`public/`), chargé lui aussi comme image. Les icônes de l'application sont des PNG
- * depuis D-188.
+ * depuis D-190.
  */
 const RACINE = process.cwd();
 const DOSSIERS = ['design/logo', 'public'] as const;
@@ -39,7 +39,7 @@ describe('Les SVG de la marque se chargent comme image (#328)', () => {
     // Un dossier renommé laisserait la garde passer sur rien.
     expect(fichiers).toContain('design/logo/cafe-clair.svg');
     expect(fichiers).toContain('design/logo/cafe-sombre.svg');
-    // `public/` n'a plus de SVG de marque depuis D-188 (icônes en PNG) ; il reste scanné pour
+    // `public/` n'a plus de SVG de marque depuis D-190 (icônes en PNG) ; il reste scanné pour
     // qu'un SVG qui y reviendrait soit gardé.
   });
 

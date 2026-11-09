@@ -144,7 +144,7 @@ export function App() {
           <Route path="collection" element={<CollectionDeck onglet="collection" />} />
           <Route path="deck" element={<CollectionDeck onglet="deck" />} />
           <Route path="battle" element={<Battle />} />
-          {/* La pause café (D-190) : l'espace social, annoncé, pas encore jouable. */}
+          {/* La pause café (D-192) : l'espace social, annoncé, pas encore jouable. */}
           <Route path="pause-cafe" element={<PauseCafe />} />
           {/* Le comité a **deux pages** (D-097 (2)) : le mur (`/comite`) et le suivi
             (`/comite/suivi`), sous la même barre de sous-onglets. */}

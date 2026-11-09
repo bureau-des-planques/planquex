@@ -108,7 +108,7 @@ describe('Layout — les états transverses (#131)', () => {
   });
 });
 
-describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-190)', () => {
+describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-192)', () => {
   function barre() {
     return screen.getByRole('navigation', { name: 'Navigation principale' });
   }
@@ -128,7 +128,7 @@ describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-190)', () => {
     expect(within(barre()).queryByRole('link', { name: 'Deck' })).toBeNull();
   });
 
-  it('Combat est l’onglet du centre, et le seul mis en avant (D-190)', () => {
+  it('Combat est l’onglet du centre, et le seul mis en avant (D-192)', () => {
     monter('/sain');
     const liens = within(barre()).getAllByRole('link');
     const vedettes = liens.filter((lien) => lien.classList.contains('bottom-nav__item--vedette'));

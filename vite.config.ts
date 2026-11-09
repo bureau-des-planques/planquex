@@ -54,7 +54,7 @@ export default defineConfig({
         start_url: '/',
         // Des PNG : sans icône raster, Chromium/Brave n'installe qu'un raccourci avec son propre
         // badge (constaté le 21/10/2026, D-054). L'icône est l'engrenage d'acier et la tasse
-        // (D-188), rendue depuis `design/logo/app/` par `npm run icones`.
+        // (D-190), rendue depuis `design/logo/app/` par `npm run icones`.
         // Garde : `scripts/ressources/icones.test.ts`.
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },

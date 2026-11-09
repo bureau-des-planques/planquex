@@ -1,7 +1,7 @@
 import type { ReactNode, SVGProps } from 'react';
 
 /**
- * **Les icônes de la marque** (D-189) : trait fin (1,25), extrémités carrées, angles vifs —
+ * **Les icônes de la marque** (D-191) : trait fin (1,25), extrémités carrées, angles vifs —
  * la géométrie stricte de la refonte « aéro-institutionnelle ». Elles remplacent, dans la barre
  * du haut et la barre du bas, les icônes `lucide-react` au trait rond.
  *

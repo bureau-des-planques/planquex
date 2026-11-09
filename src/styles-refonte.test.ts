@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 /**
- * **La refonte ne touche pas le combat** (D-189 (4)).
+ * **La refonte ne touche pas le combat** (D-191 (4)).
  *
  * La refonte « aéro-institutionnelle » réécrit les jetons globaux de `:root` (fonds, textes,
  * accents, rayons, polices). Le combat, lui, sera repris par une série de tickets à part : il
@@ -51,7 +51,7 @@ function oublis(corpsBattle: string): string[] {
   return JETONS_DU_COMBAT.filter((jeton) => !new RegExp(`--${jeton}:\\s*var\\(--combat-${jeton}\\)`).test(corpsBattle));
 }
 
-describe('le combat garde son allure d’avant la refonte (D-189 (4))', () => {
+describe('le combat garde son allure d’avant la refonte (D-191 (4))', () => {
   it('`.battle` réapplique chaque jeton global depuis son `--combat-*`', () => {
     expect(oublis(corps(feuille, '.battle'))).toEqual([]);
   });

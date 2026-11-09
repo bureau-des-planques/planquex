@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Génère les icônes de l'application à partir des deux maîtres de la marque (D-188) :
+ * Génère les icônes de l'application à partir des deux maîtres de la marque (D-190) :
  *
  * - `design/logo/app/icone-acier.jpg` — engrenage d'acier et tasse : **l'application
  *   installée** (PNG 192, 512, 512 *maskable*, et l'icône d'écran d'accueil iPhone 180) ;

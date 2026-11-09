@@ -1,5 +1,5 @@
 /**
- * **La pause café** (D-190) : l'espace social du bureau, cinquième onglet de la barre du bas.
+ * **La pause café** (D-192) : l'espace social du bureau, cinquième onglet de la barre du bas.
  *
  * Rien n'y est encore jouable : la page dit ce qui s'y préparera. Elle annonce l'espace des
  * collègues et **le tiroir du voisin** — le nom satirique de la pioche dans l'Arrivage d'un

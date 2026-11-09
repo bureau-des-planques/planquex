@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { PauseCafe } from './PauseCafe';
 
 /**
- * **La pause café** (D-190) : l'espace social, annoncé et pas encore jouable. La page doit dire
+ * **La pause café** (D-192) : l'espace social, annoncé et pas encore jouable. La page doit dire
  * qu'elle arrive (« Bientôt ») et annoncer le **tiroir du voisin** sous son nom satirique —
  * jamais sous le nom du jeu de référence.
  */
@@ -16,7 +16,7 @@ function monter() {
   );
 }
 
-describe('La pause café (D-190)', () => {
+describe('La pause café (D-192)', () => {
   it('porte son titre et dit qu’elle arrive', () => {
     monter();
     expect(screen.getByRole('heading', { level: 1, name: 'La pause café' })).toBeInTheDocument();
