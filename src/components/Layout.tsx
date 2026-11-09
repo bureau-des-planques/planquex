@@ -1,6 +1,13 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { IconeAccueil, IconeCartes, IconeCombat, IconeComite, IconeReglages } from '@/components/IconesMarque';
+import {
+  IconeAccueil,
+  IconeCafe,
+  IconeCartes,
+  IconeCombat,
+  IconeComite,
+  IconeReglages
+} from '@/components/IconesMarque';
 import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
 import { useStore } from '@/store/useStore';
 /**
@@ -33,7 +40,7 @@ export function couvreAdresse(chemin: string, cible: string): boolean {
 }
 
 /**
- * La barre du bas, **quatre onglets** (#545) : la Collection et le Deck sont un seul écran,
+ * La barre du bas, **cinq onglets** (#545, D-190 : la Pause café entre Combat et Comité) : la Collection et le Deck sont un seul écran,
  * deux onglets — ils ne prennent donc qu'une entrée, « Cartes ». Les trois autres ne bougent
  * pas : l'**Accueil**, le **Combat**, et le **comité** (D-097 (4), #213), qui a pris la place
  * des **Réglages**, passés à l'engrenage de l'en-tête. Les icônes sont celles de la marque
@@ -44,10 +51,12 @@ export function couvreAdresse(chemin: string, cible: string): boolean {
  * sans être la sienne : sur `/deck`, aucune autre entrée ne s'allumerait.
  */
 const tabs = [
-  { to: '/', label: 'Accueil', icon: IconeAccueil, aussi: [] as readonly string[] },
-  { to: '/collection', label: 'Cartes', icon: IconeCartes, aussi: ['/deck'] },
-  { to: '/battle', label: 'Combat', icon: IconeCombat, aussi: [] as readonly string[] },
-  { to: '/comite', label: 'Comité', icon: IconeComite, aussi: [] as readonly string[] }
+  { to: '/', label: 'Accueil', icon: IconeAccueil, aussi: [] as readonly string[], vedette: false },
+  { to: '/collection', label: 'Cartes', icon: IconeCartes, aussi: ['/deck'], vedette: false },
+  // D-190 : Combat est **au centre** des cinq, et mis en avant (bloc bleu ciel plein).
+  { to: '/battle', label: 'Combat', icon: IconeCombat, aussi: [] as readonly string[], vedette: true },
+  { to: '/pause-cafe', label: 'Pause café', icon: IconeCafe, aussi: [] as readonly string[], vedette: false },
+  { to: '/comite', label: 'Comité', icon: IconeComite, aussi: [] as readonly string[], vedette: false }
 ];
 
 export function Layout() {
@@ -192,7 +201,7 @@ export function Layout() {
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
       {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
 
-      {/* La barre du bas : **quatre onglets** (#545), et **rien du tout en combat** (#275).
+      {/* La barre du bas : **cinq onglets** (#545, D-190), et **rien du tout en combat** (#275).
           Le shell seul la rend — aucun écran ne la redessine. */}
       {!enCombat && (
         <nav className="bottom-nav" aria-label="Navigation principale">
@@ -214,7 +223,7 @@ export function Layout() {
                   pastille > 0 ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir` : undefined
                 }
                 aria-current={courant ? 'page' : undefined}
-                className={`bottom-nav__item ${courant ? 'is-active' : ''}`}
+                className={`bottom-nav__item${tab.vedette ? ' bottom-nav__item--vedette' : ''}${courant ? ' is-active' : ''}`}
               >
                 <Icon size={20} />
                 <span>{tab.label}</span>

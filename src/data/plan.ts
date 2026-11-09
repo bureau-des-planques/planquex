@@ -145,7 +145,7 @@ export const JALONS: Jalon[] = [
  */
 export const DECIDE_PLUS_TARD: ElementPlan[] = [
   {
-    texte: 'La Pause café (le Wonder Pick)',
+    texte: 'Le tiroir du voisin (le Wonder Pick, annoncé à la Pause café)',
     decision: 'D-061',
     note:
       'Le seul des quatre qui donne des cartes : premier candidat à remonter en beta si les testeurs réclament de quoi compléter leur Parc.'

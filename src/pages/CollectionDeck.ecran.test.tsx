@@ -13,7 +13,7 @@ import { DECKS_PROPOSES } from '@/data/decks-proposes';
  * une seule page. Ce que ce fichier garde, c'est ce que la fusion pourrait casser :
  *
  * - chaque route ouvre **son** onglet (`/collection` ne montre pas le Deck, et l'inverse) ;
- * - la barre du bas passe à **quatre** entrées, celle des Cartes restant l'onglet courant sur
+ * - la barre du bas passe à **quatre** entrées (cinq depuis D-190), celle des Cartes restant l'onglet courant sur
  *   les deux adresses ;
  * - l'écran **Deck vide** propose toujours les Decks proposés, ouverts d'emblée — c'est là
  *   qu'un nouveau venu arrive.
@@ -51,13 +51,13 @@ describe('Collection et Deck — un seul écran, deux onglets (#545)', () => {
     expect(screen.queryByRole('heading', { name: /cartes tirables/ })).toBeNull();
   });
 
-  it('la barre du bas a quatre entrées, et garde les Cartes allumées sur les deux routes', async () => {
+  it('la barre du bas a cinq entrées (D-190), et garde les Cartes allumées sur les deux routes', async () => {
     const collection = await rendreApplication({ chemin: '/collection' });
     expect(
       within(barre())
         .getAllByRole('link')
         .map((lien) => lien.textContent)
-    ).toEqual(['Accueil', 'Cartes', 'Combat', 'Comité']);
+    ).toEqual(['Accueil', 'Cartes', 'Combat', 'Pause café', 'Comité']);
     expect(within(barre()).getByRole('link', { name: 'Cartes' })).toHaveAttribute('aria-current', 'page');
     collection.unmount();
     cleanup();
@@ -67,7 +67,7 @@ describe('Collection et Deck — un seul écran, deux onglets (#545)', () => {
       within(barre())
         .getAllByRole('link')
         .map((lien) => lien.textContent)
-    ).toEqual(['Accueil', 'Cartes', 'Combat', 'Comité']);
+    ).toEqual(['Accueil', 'Cartes', 'Combat', 'Pause café', 'Comité']);
     expect(within(barre()).getByRole('link', { name: 'Cartes' })).toHaveAttribute('aria-current', 'page');
   });
 

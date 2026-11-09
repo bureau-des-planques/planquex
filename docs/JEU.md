@@ -51,7 +51,8 @@ Le jeu est en **français**. Le code peut garder des identifiants anglais, mais 
 | Pack | **Arrivage** | 5 cartes |
 | Extension / set | **Marché** | il contient ses **Viviers** |
 | Zones de cartes | **Viviers** : Atelier, Étage, Bureaux | un futur vivier sera un lieu (D-026) |
-| Wonder Pick | **Pause café** | 5 cartes, 1 rare minimum |
+| Wonder Pick | **Le tiroir du voisin** | 5 cartes, 1 rare minimum ; s'appelait « Pause café » jusqu'à D-190 |
+| (espace social) | **Pause café** | le cinquième onglet de la barre du bas : les collègues et le tiroir du voisin, annoncés (D-190) |
 | Collection | **Collection** | « Parc » depuis D-026 jusqu'à D-075 ; les routes sont `/collection` et `/deck`, `/parc` et `/chariot` redirigent (D-075) |
 | Mission | **Note de service** | |
 | Shop | **Économat / Boutique du CSE** | |
@@ -159,7 +160,7 @@ Le mode standard est un **miroir de TCG Pocket**. Aucune valeur mathématique ne
 - Le texte d'une carte décrit la carte vendue, pas l'état du moteur : voir **D-074**.
 - Pas de compteur de stress, pas de ressource maison, pas de règle de deck alternative.
 - **« Changement de priorité »** (D-004) : une fois par tour, au Poste, défausser 1 carte puis piocher 1. Mot-clé porté par les cartes, déactivable par un drapeau global, testé en simulation avant validation. C'est la seule exception actée.
-- **« Pause café »** désigne le Wonder Pick. Ne pas réutiliser ce terme pour une action de combat.
+- **« Pause café »** désigne l'**espace social** (D-190) ; le Wonder Pick s'appelle **« le tiroir du voisin »**. Ni l'un ni l'autre ne se réutilise pour une action de combat.
 
 ### 4.2 Viviers et contenu
 

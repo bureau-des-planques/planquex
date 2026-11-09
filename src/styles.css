@@ -8351,6 +8351,90 @@ h2 {
   height: 2px;
 }
 
+/* Cinq onglets sur 360 px : les capitales se resserrent pour que « Pause café » tienne. */
+@media (max-width: 480px) {
+  .bottom-nav .bottom-nav__item {
+    font-size: var(--fs-2xs);
+    letter-spacing: 0.04em;
+    text-align: center;
+  }
+}
+
+/* **Combat, mis en avant** (D-190) : l'onglet du centre est un bloc bleu ciel plein, texte
+   bleu nuit (7,9:1), qui dépasse un peu au-dessus de la barre — c'est le geste du jeu. */
+.bottom-nav .bottom-nav__item--vedette {
+  background: var(--accent);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 40%);
+  color: var(--bg);
+  margin-top: -0.85rem;
+}
+
+.bottom-nav .bottom-nav__item--vedette:hover,
+.bottom-nav .bottom-nav__item--vedette.is-active {
+  background: var(--gold-soft);
+  color: var(--bg);
+}
+
+/* Le bloc se voit seul : pas de trait d'onglet courant au-dessus de lui. */
+.bottom-nav .bottom-nav__item--vedette.is-active::before {
+  display: none;
+}
+
+/* ---------- La pause café (D-190) ---------- */
+
+.pause-cafe__chapo {
+  color: var(--text-muted);
+  font-size: var(--fs-lg);
+  font-weight: 300;
+  max-width: 52ch;
+}
+
+.pause-cafe__etat {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  margin: 0.5rem 0 0;
+  padding: 0.35rem 0.8rem;
+  text-transform: uppercase;
+  /* Une étiquette, pas une bande : elle ne s'étire pas dans la colonne de la section. */
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.pause-cafe__annonces {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.pause-cafe__annonce {
+  border-bottom: 1px solid var(--line);
+  padding: 1.5rem 0;
+}
+
+.pause-cafe__annonce h2 {
+  font-size: var(--fs-xl);
+  margin: 0 0 0.5rem;
+}
+
+.pause-cafe__annonce p:not(.pause-cafe__quand) {
+  margin: 0;
+  max-width: 48ch;
+}
+
+.pause-cafe__quand {
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+}
+
 /* ---------- L'accueil : bandeaux pleine largeur ---------- */
 
 .app-shell:has(.home) .main {

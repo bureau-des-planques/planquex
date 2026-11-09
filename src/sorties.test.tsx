@@ -35,6 +35,7 @@ const ROUTES_ECRAN = [
   '/collection',
   '/deck',
   '/battle',
+  '/pause-cafe',
   '/comite',
   '/comite/suivi',
   '/settings',

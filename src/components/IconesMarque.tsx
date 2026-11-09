@@ -65,6 +65,17 @@ export function IconeCombat(props: Props) {
   );
 }
 
+/** Pause café : une tasse droite, son anse, un filet de vapeur. */
+export function IconeCafe(props: Props) {
+  return (
+    <Icone {...props}>
+      <path d="M4 10h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z" />
+      <path d="M17 12h1.5a2.5 2.5 0 0 1 0 5H17" />
+      <path d="M10 3c-1.2 1.4 1.2 2.6 0 4" />
+    </Icone>
+  );
+}
+
 /** Comité : une table de réunion et deux têtes. */
 export function IconeComite(props: Props) {
   return (
