@@ -10,17 +10,58 @@
 > Ce document ne crée **aucune règle de jeu** : les règles vivent dans `docs/JEU.md` §4 et
 > `docs/DECISIONS.md`. Il décrit l'apparence, pas la mécanique.
 >
-> Il suit `docs/PROPOSITION.md` §4.6 : direction « **corporate dark premium** »,
-> palette **bleu nuit / or**, rendu **semi-réaliste**, option **A (IA + curation)**.
+> Il suivait `docs/PROPOSITION.md` §4.6 : direction « corporate dark premium », palette bleu
+> nuit / or. **Depuis D-189 (09/11/2026)**, l'interface hors combat est
+> **« aéro-institutionnelle »** : bleu nuit plat, bleu ciel, blanc, titres très fins en
+> **Barlow**, libellés et boutons en capitales espacées, angles droits, bandeaux pleine largeur.
+> Le **combat** garde l'ancienne palette (`--combat-*`, §1.0) jusqu'à sa propre refonte.
+> Rendu des illustrations : **semi-réaliste**, option **A (IA + curation)** — inchangé.
 
 ---
 
 ## 1. Palette et rôles
 
 Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se change
-**là**, une seule fois. Les noms restent clairs et stables.
+**là**, une seule fois. Les noms restent clairs et stables : les `--gold*` gardent leur nom
+mais portent le **bleu ciel** depuis D-189.
 
-### 1.1 Fonds et lignes — le bleu nuit
+### 1.0 La refonte D-189 en une table
+
+| Jeton | Hex | Rôle |
+|---|---|---|
+| `--bg` | `#1b1d27` | fond plat de l'application, sans halo |
+| `--bg-deep` | `#13141c` | creux |
+| `--bg-sunken` | `#171922` | surfaces en retrait (champs, barres) |
+| `--bg-raised` | `#232633` | surfaces en avant (panneaux) |
+| `--bg-haut` | `#255b8e` | **bleu acier** : haut du dégradé du bandeau d'accueil et du dos de carte |
+| `--surface-claire` | `#ffffff` | bandes claires (« la dernière version »), bouton principal |
+| `--line` / `--line-strong` | `#3b3e4d` / `#525668` | filets, bordures ; `--line-strong` sert aussi de texte discret sur blanc |
+| `--text` / `--text-muted` / `--text-dim` | `#f4f6fa` / `#bcbfcf` / `#a1a5b9` | textes |
+| `--accent` = `--gold` | `#7fb8e7` | **bleu ciel** : la marque (la tasse du sceau), onglet courant, libellés des compteurs |
+| `--accent-deep` / `--gold-deep` | `#3f78ad` / `#2f6aa0` | bleu acier profond |
+| `--gold-soft` | `#b5d6f2` | bleu ciel pâle |
+| `--radius*` | `0px` | angles droits (le combat garde 14 / 9 / 20 px) |
+| `--font-body` = `--font-display` | Barlow | texte et titres ; titres en **200**, capitales en **600** |
+| `--font-marque` | Barlow Condensed | le nom du jeu dans l'en-tête |
+
+**Contrastes** (calculés le 09/11/2026, formule WCAG) : `--text` sur `--bg` **15,5:1** ;
+`--text-muted` **9,2:1** ; `--text-dim` **6,9:1** (6,2:1 sur `--bg-raised`) ; `--accent` sur
+`--bg` **7,9:1** ; `--bg` sur `--surface-claire` **16,8:1** ; `--line-strong` sur blanc
+**7,3:1** ; `--text` sur `--bg-haut` **6,5:1**. Tout texte passe 4,5:1.
+
+**Le combat** (`.battle`) réapplique l'ancienne palette, gardée dans `:root` sous `--combat-*`
+(les valeurs des tables 1.1 à 1.3 ci-dessous), ses rayons et ses polices (Inter, Outfit).
+Garde : `src/styles-refonte.test.ts`.
+
+**Hors combat, les règles de la refonte** sont regroupées en fin de `src/styles.css`
+(section « La refonte aéro-institutionnelle ») : en-tête (sceau, mot-symbole en capitales
+condensées, filet pleine largeur), boutons (rectangles, capitales espacées ; principal blanc,
+secondaire en contour), barre du bas (trait bleu ciel sous l'onglet courant, icônes de
+`src/components/IconesMarque.tsx`), accueil (bandeau dégradé plein cadre, compteurs en bandeau
+à filets, bande blanche « la dernière version »). Sur téléphone portrait, l'accueil tient
+toujours en un écran (D-173).
+
+### 1.1 Fonds et lignes — le bleu nuit (palette du combat depuis D-189)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -31,7 +72,7 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--line` | `#243049` | filets et bordures |
 | `--line-strong` | `#34456a` | bordures d'un élément actif ou mis en avant |
 
-### 1.2 Textes
+### 1.2 Textes (palette du combat depuis D-189)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -39,7 +80,7 @@ Les jetons vivent dans `src/styles.css`, bloc `:root`. Une couleur qui change se
 | `--text-muted` | `#9aa9c2` | texte secondaire (libellés, légendes) |
 | `--text-dim` | `#7e8fb0` | texte tertiaire (identifiants, notes) |
 
-### 1.3 Accents — bleu primaire, or secondaire
+### 1.3 Accents — bleu primaire, or secondaire (palette du combat depuis D-189)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -660,7 +701,7 @@ Jusqu'à D-188, l'icône d'application était une scène vectorielle (le Planqu�
 bureau, tasse or) et le favicon un monogramme « BP » or : les deux ont quitté `public/`
 (l'historique git les garde). La **tasse** reste le motif : elle passe au centre du sceau.
 `vite.config.ts` reste la référence : `name: 'Bureau des Planqués'`,
-`short_name: 'Planquex'` (D-054), `theme_color`/`background_color` `#0b1220`.
+`short_name: 'Planquex'` (D-054), `theme_color`/`background_color` `#1b1d27` (D-189).
 
 ### 5.2 Comment la redessiner
 

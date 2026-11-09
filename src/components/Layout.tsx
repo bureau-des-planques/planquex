@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Home, Library, Settings, StickyNote, Swords } from 'lucide-react';
+import { IconeAccueil, IconeCartes, IconeCombat, IconeComite, IconeReglages } from '@/components/IconesMarque';
 import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
 import { useStore } from '@/store/useStore';
 /**
@@ -36,18 +36,18 @@ export function couvreAdresse(chemin: string, cible: string): boolean {
  * La barre du bas, **quatre onglets** (#545) : la Collection et le Deck sont un seul écran,
  * deux onglets — ils ne prennent donc qu'une entrée, « Cartes ». Les trois autres ne bougent
  * pas : l'**Accueil**, le **Combat**, et le **comité** (D-097 (4), #213), qui a pris la place
- * des **Réglages**, passés à l'engrenage de l'en-tête. Le post-it est l'objet du comité —
- * une note qu'on laisse sur le mur —, pas un dessin maison.
+ * des **Réglages**, passés à l'engrenage de l'en-tête. Les icônes sont celles de la marque
+ * (D-189, `IconesMarque.tsx`) : trait fin, angles vifs.
  *
  * « Cartes » plutôt que « Collection » : l'entrée mène aux **deux** métiers, et l'onglet
  * Collection est celui qui s'ouvre par défaut. `aussi` dit les adresses que l'entrée couvre
  * sans être la sienne : sur `/deck`, aucune autre entrée ne s'allumerait.
  */
 const tabs = [
-  { to: '/', label: 'Accueil', icon: Home, aussi: [] as readonly string[] },
-  { to: '/collection', label: 'Cartes', icon: Library, aussi: ['/deck'] },
-  { to: '/battle', label: 'Combat', icon: Swords, aussi: [] as readonly string[] },
-  { to: '/comite', label: 'Comité', icon: StickyNote, aussi: [] as readonly string[] }
+  { to: '/', label: 'Accueil', icon: IconeAccueil, aussi: [] as readonly string[] },
+  { to: '/collection', label: 'Cartes', icon: IconeCartes, aussi: ['/deck'] },
+  { to: '/battle', label: 'Combat', icon: IconeCombat, aussi: [] as readonly string[] },
+  { to: '/comite', label: 'Comité', icon: IconeComite, aussi: [] as readonly string[] }
 ];
 
 export function Layout() {
@@ -121,40 +121,8 @@ export function Layout() {
       <header className="topbar">
         <div className="brand">
           <span className="brand__mark" aria-hidden="true">
-            {/* La tasse de Café, motif maison : même dessin que l'icône PWA. */}
-            <svg viewBox="0 0 32 32" role="img">
-              <defs>
-                <linearGradient id="bp-brand-mug" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stopColor="#f4d68a" />
-                  <stop offset="1" stopColor="#a67c22" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M11 5c-1.6 2 .8 3.2-.6 5"
-                fill="none"
-                stroke="#f4d68a"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                opacity="0.8"
-              />
-              <path
-                d="M16 4c-1.6 2 .8 3.2-.6 5"
-                fill="none"
-                stroke="#f4d68a"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                opacity="0.55"
-              />
-              <path
-                d="M21 15h2.4a3.2 3.2 0 0 1 0 6.4H21"
-                fill="none"
-                stroke="url(#bp-brand-mug)"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-              />
-              <path d="M7 13h14v6.5A4.5 4.5 0 0 1 16.5 24h-5A4.5 4.5 0 0 1 7 19.5Z" fill="url(#bp-brand-mug)" />
-              <rect x="7" y="13" width="14" height="2.4" rx="1.2" fill="#0b1220" opacity="0.35" />
-            </svg>
+            {/* Le sceau à la tasse (D-188), emblème détouré : `design/logo/sceau/`. */}
+            <img src="/marque/sceau-embleme.webp" width={40} height={40} alt="" decoding="async" />
           </span>
           <div className="brand__text">
             <strong>Bureau des Planqués</strong>
@@ -168,7 +136,7 @@ export function Layout() {
             {name}
           </div>
           <Link to="/settings" className="topbar__gear" aria-label="Réglages">
-            <Settings size={20} strokeWidth={1.8} aria-hidden="true" />
+            <IconeReglages size={20} />
           </Link>
         </div>
       </header>
@@ -248,7 +216,7 @@ export function Layout() {
                 aria-current={courant ? 'page' : undefined}
                 className={`bottom-nav__item ${courant ? 'is-active' : ''}`}
               >
-                <Icon size={20} strokeWidth={1.8} aria-hidden="true" />
+                <Icon size={20} />
                 <span>{tab.label}</span>
                 {pastille > 0 && (
                   <span className="bottom-nav__pastille" aria-hidden="true">

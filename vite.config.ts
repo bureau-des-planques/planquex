@@ -37,8 +37,8 @@ export default defineConfig({
         // Le libellé sous l'icône installée : le nom technique (D-036), choisi par Bastien (D-054).
         short_name: 'Planquex',
         description: 'Collectionne les Planqués, ouvre des Arrivages, affronte la Direction.',
-        theme_color: '#0b1220',
-        background_color: '#0b1220',
+        theme_color: '#1b1d27',
+        background_color: '#1b1d27',
         display: 'standalone',
         // **PWA d'abord** (D-173, #580) : Chromium (63) livre `fullscreen` quand l'appareil le
         // permet, et retombe sur `standalone` sinon ; iOS **ignore** la valeur et parse `standalone`.
