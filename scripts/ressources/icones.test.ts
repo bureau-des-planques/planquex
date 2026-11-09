@@ -59,3 +59,45 @@ describe('icône de l’application installée (D-054)', () => {
     expect(manques(iconesDuManifeste(fautif))).toEqual(['PNG 192x192 « any »', 'PNG 512x512 « any »']);
   });
 });
+
+/** Les icônes déclarées par `index.html` (favicon, écran d'accueil iPhone), avec leur taille annoncée. */
+function iconesDeLaPage(html: string): { href: string; sizes: string }[] {
+  return [...html.matchAll(/<link\s+rel="(?:icon|apple-touch-icon)"[^>]*>/g)].map(([balise]) => ({
+    href: /href="([^"]+)"/.exec(balise)?.[1] ?? '',
+    sizes: /sizes="([^"]+)"/.exec(balise)?.[1] ?? ''
+  }));
+}
+
+/** Ce qui ne va pas dans ces déclarations : vide = conforme. */
+function fautesDeLaPage(icones: { href: string; sizes: string }[], lire: (href: string) => Buffer | null): string[] {
+  if (icones.length === 0) return ['aucune icône déclarée'];
+  return icones.flatMap(({ href, sizes }) => {
+    const octets = lire(href);
+    if (!octets) return [`${href} absent de public/`];
+    if (!sizes) return [`${href} sans taille annoncée`];
+    const reelle = `${octets.readUInt32BE(16)}x${octets.readUInt32BE(20)}`;
+    return reelle === sizes ? [] : [`${href} fait ${reelle}, annonce ${sizes}`];
+  });
+}
+
+const lirePublic = (href: string) => {
+  try {
+    return read(`public${href}`);
+  } catch {
+    return null;
+  }
+};
+
+describe('icônes de la page : favicon et écran d’accueil iPhone (D-188)', () => {
+  it('chaque icône déclarée par index.html existe et a la taille qu’elle annonce', () => {
+    expect(fautesDeLaPage(iconesDeLaPage(read('index.html').toString('utf8')), lirePublic)).toEqual([]);
+  });
+
+  it('le contrôle mord : un favicon absent ou mal dimensionné est refusé', () => {
+    const fautif = '<link rel="icon" type="image/png" sizes="64x64" href="/favicon-32.png" /><link rel="icon" href="/absent.png" />';
+    expect(fautesDeLaPage(iconesDeLaPage(fautif), lirePublic)).toEqual([
+      '/favicon-32.png fait 32x32, annonce 64x64',
+      '/absent.png absent de public/'
+    ]);
+  });
+});
