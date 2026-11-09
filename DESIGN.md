@@ -14,7 +14,8 @@
 > nuit / or. **Depuis D-191 (09/11/2026)**, l'interface hors combat est
 > **« aéro-institutionnelle »** : bleu nuit plat, bleu ciel, blanc, titres très fins en
 > **Barlow**, libellés et boutons en capitales espacées, angles droits, bandeaux pleine largeur.
-> Le **combat** garde l'ancienne palette (`--combat-*`, §1.0) jusqu'à sa propre refonte.
+> **Depuis D-193 (09/11/2026)**, le **combat** hérite lui aussi de cette direction : table ronde
+> zoomée, bas de l'écran réservé à la main (§2.4, §2.6).
 > Rendu des illustrations : **semi-réaliste**, option **A (IA + curation)** — inchangé.
 
 ---
@@ -49,9 +50,11 @@ mais portent le **bleu ciel** depuis D-191.
 `--bg` **7,9:1** ; `--bg` sur `--surface-claire` **16,8:1** ; `--line-strong` sur blanc
 **7,3:1** ; `--text` sur `--bg-haut` **6,5:1**. Tout texte passe 4,5:1.
 
-**Le combat** (`.battle`) réapplique l'ancienne palette, gardée dans `:root` sous `--combat-*`
-(les valeurs des tables 1.1 à 1.3 ci-dessous), ses rayons et ses polices (Inter, Outfit).
-Garde : `src/styles-refonte.test.ts`.
+**Le combat** (`.battle`) **hérite** de ces jetons depuis D-193 : il ne réaffecte plus aucun jeton
+global (palette, rayons, polices) et n'ajoute que ses jetons de scène `--scene-*` (§2.6). Les
+jetons `--combat-*` n'existent plus. Les tables 1.1 à 1.3 ci-dessous décrivent **l'ancienne
+palette bleu nuit et or**, gardée comme historique et lue par le calcul des contrastes de §1.5.
+Garde : `src/styles-refonte.test.ts` (« le combat hérite de la refonte »).
 
 **Hors combat, les règles de la refonte** sont regroupées en fin de `src/styles.css`
 (section « La refonte aéro-institutionnelle ») : en-tête (sceau, mot-symbole en capitales
@@ -61,7 +64,7 @@ secondaire en contour), barre du bas (trait bleu ciel sous l'onglet courant, ic�
 à filets, bande blanche « la dernière version »). Sur téléphone portrait, l'accueil tient
 toujours en un écran (D-173).
 
-### 1.1 Fonds et lignes — le bleu nuit (palette du combat depuis D-191)
+### 1.1 Fonds et lignes — le bleu nuit (ancienne palette, historique depuis D-191 et D-193)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -72,7 +75,7 @@ toujours en un écran (D-173).
 | `--line` | `#243049` | filets et bordures |
 | `--line-strong` | `#34456a` | bordures d'un élément actif ou mis en avant |
 
-### 1.2 Textes (palette du combat depuis D-191)
+### 1.2 Textes (ancienne palette, historique depuis D-191 et D-193)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -80,7 +83,7 @@ toujours en un écran (D-173).
 | `--text-muted` | `#9aa9c2` | texte secondaire (libellés, légendes) |
 | `--text-dim` | `#7e8fb0` | texte tertiaire (identifiants, notes) |
 
-### 1.3 Accents — bleu primaire, or secondaire (palette du combat depuis D-191)
+### 1.3 Accents — bleu primaire, or secondaire (ancienne palette, historique depuis D-191 et D-193)
 
 | Jeton | Hex | Rôle |
 |---|---|---|
@@ -364,6 +367,20 @@ plateau (`.card--plateau`).
 > console d'écran large), les **quatre piles** sont posées et le **Rebut s'ouvre**, et
 > l'ouverture d'un combat neuf met les Entrants **en scène**. Cette section décrit l'écran
 > **tant que le code ne l'a pas livré (ticket à créer)** ; D-182 fait foi sur la cible.
+>
+> **Amendé le 09/11/2026 (D-193), téléphone seulement** : il n'y a **plus de barre d'action** au bas de
+> l'écran — la main (rognée, ~56 px visibles, nom en tête de carte) est **seule** en bas, `N / 10` en
+> pastille sur son bord. **« Fin du tour »** est un **pop-up flottant au milieu à droite**
+> (`.actions-flottantes`), visible seulement quand finir le tour est possible, avec les gestes et
+> les Pressions en pile dessous ; les textes (portée, raison du café, réplique) sont une bulle en
+> haut de la table (`.combat-toast`), les choix qui attendent un panneau borné
+> (`.combat-superpose`). Toucher une carte la met **en grand** au centre (`.carte-grand`, non
+> modale), puis elle se pose en animation. Les piles sont **sur les côtés** de la table ; la main
+> de la Direction est un **éventail de dos** (`.eventail`). Les mesures ci-dessous (marge de 20 px
+> sous la barre, hauteur de la barre) datent d'avant cette composition : `npm run capturer`
+> **a été rejoué le 09/11/2026** sur elle (exit 0, 0 échec, 19 captures) : main visible **56 px** à 420 × 900,
+> 360 × 640, 390 × 664 et 412 × 810 ; plateau de 425 à 676 px selon le gabarit ; défilement **0**
+> partout, PC et grand écran compris (main non rognée : 149–198 px). Voir `docs/preuves/combat-d193-2026-11-09/`.
 
 L'écran est une **table** (D-093, §2.6) et se lit à **420 × 900** (D-060). Il ne promet plus que
 tout tient « sans défiler » : `npm run capturer` **mesure** le défilement et les deux surfaces qui
@@ -614,6 +631,23 @@ trombones, feuilles) — ce sont des assets, et l'univers est l'atelier MRO (D-0
 > `docs/DIRECTION-SCENE-COMBAT.md` ; la recherche et les tâches dans `docs/SPEC-COMBAT-UI.md`.
 
 ---
+
+### 2.6 bis La table haute ronde (D-193, 09/11/2026 — téléphone)
+
+Le plateau est une **table haute ronde de pause café**, vue de trois quarts, **caméra zoomée dessus**
+(référence : l'écran de combat d'un TCG mobile). Règles dans `src/styles.css`, fin de feuille :
+
+| Élément | Règle |
+|---|---|
+| Table | `.battle .board::after` : ellipse bleu acier (`--bg-haut`) plus large que l'écran (`inset: 2% -42%`) ; jonc d'acier (`--scene-steel`, `--scene-steel-deep`) et ombre au sol ; moitié de la Direction assombrie |
+| Caméra | `.battle .board` : `perspective(1500px) rotateX(4deg) scale(0.97)` ; un zoom plus fort coupe le Banc sous la main |
+| Bague centrale | `.battle .board::before` : cercle de 12 rem, filet blanc à 22 % |
+| Piles | `.battle .piles` : sur les côtés, à moitié hors de l'écran (Direction à gauche, joueur à droite) ; dossier blanc, filet bleu ciel, angles droits |
+| Ouverture | `.board--ouverture` : zoom de 700 ms sur la table, uniquement pour un combat neuf (#746) ; les Entrants arrivent dos visible (`.entrant__verso`) puis se retournent (`rotateY`) |
+| Animations | pioche, pose adverse, évolution (`.vol-effet`, `.evolution-flash`) : 800 ms au plus, `transform`/`opacity` seulement, coupées sous « Mouvement réduit » (#748) |
+
+**Non prouvé** : le défilement à 0 sur les six gabarits (`npm run capturer`) et le rendu de
+l'évolution en navigateur ; l'écran de bureau (≥ 900 px) n'est pas refait (#750).
 
 ### 2.7 Téléphone, portrait, paysage et PC (D-142, 28/10/2026)
 

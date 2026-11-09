@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 192 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 193 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -187,7 +187,7 @@
 | D-179 | 03/11/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
 | D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |  |
 | D-181 | 04/11/2026 | ⚠ Amendée par D-187 (04/11/2026, point (2)) : la réplique… | D-185, D-186, D-187 |
-| D-182 | 04/11/2026 | Le plateau de combat : main rognée en bas, journal… |  |
+| D-182 | 04/11/2026 | ⚠ Amendée par D-193 (09/11/2026, points 3 et 4) :… | D-193 |
 | D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |  |
 | D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |  |
 | D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |  |
@@ -196,5 +196,6 @@
 | D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
 | D-189 | 07/11/2026 | Un PNG de docs/preuves/ tient sous 1 Mo ; l'historique… |  |
 | D-190 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |  |
-| D-191 | 09/11/2026 | L'interface hors combat passe à la direction « aéro-institutionnelle »… |  |
+| D-191 | 09/11/2026 | ⚠ Amendée par D-193 (09/11/2026, point 1) : le combat… | D-193 |
 | D-192 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |  |
+| D-193 | 09/11/2026 | Le combat suit la direction de D-191 ; son plateau… |  |

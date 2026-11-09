@@ -211,28 +211,56 @@ async function ouvrirCombat(browser, instant, supplement = {}, gabarit = { viewp
 
 /**
  * Les **surfaces du combat** qui doivent tenir dans la fenêtre, au-dessus de la barre de
- * navigation fixe (qui masque le bas de l'écran) : la main (#170), puis la **barre
- * d'action du combat** et la **piste d'Interventions** (#194).
+ * navigation fixe (qui masque le bas de l'écran) : la main (#170), puis la **pile d'actions du
+ * tour**, le **bandeau du tour** et la **piste d'Interventions** (#194).
  *
- * La barre d'action existe depuis #191 (`.combat-barre`, `docs/SPEC-COMBAT-UI.md` T9) ; la
- * piste d'Interventions depuis #190. Elle est suivie par sa **classe**, pas par
- * `data-pas-a-pas="interventions"` : cet attribut n'est posé que **lorsque le pas-à-pas
- * désigne la piste**, donc dans l'état de référence il est absent et la garde ne mesurait
- * rien (#202). Un **élément absent** ne fait rien échouer ; un élément présent qui sort de
- * la fenêtre, si — la garde **mord**.
+ * **D-193 remplace la barre d'action** (la barre d'action de #191) : il n'y a plus de barre en bas
+ * de l'écran. Le bas ne porte que la main ; « Fin du tour », les gestes et les Pressions sont la
+ * pile flottante `.actions-flottantes` au milieu à droite de la table ; les textes du tour sont le
+ * bandeau `.combat-toast` en haut de la table. La piste d'Interventions est suivie par sa
+ * **classe**, pas par `data-pas-a-pas="interventions"` : cet attribut n'est posé que **lorsque le
+ * pas-à-pas désigne la piste** (#202). Un **élément absent** ne fait rien échouer ; un élément
+ * présent qui sort de la fenêtre, si — la garde **mord**.
  */
 const CIBLES_HAUTEUR = [
   { nom: 'la main', selecteur: '.hand' },
-  { nom: "la barre d'action du combat", selecteur: '.combat-barre' },
+  { nom: "la pile d'actions du tour", selecteur: '.actions-flottantes' },
+  { nom: 'le bandeau du tour', selecteur: '.combat-toast' },
   { nom: "la piste d'Interventions", selecteur: '.piste' },
-  // L'action principale, mesurée **seule** (#320) : la barre pouvait déborder de la fenêtre
-  // sans qu'on sache si « Fin du tour » en était, et c'est elle qui sortait sous la navigation
-  // quand une Pression rallongeait la barre d'une rangée. Un bouton absent ne fait rien échouer.
-  { nom: '« Fin du tour »', selecteur: '.combat-barre__fin .button' }
+  // L'action principale, mesurée **seule** (#320, D-193) : « Fin du tour » n'apparaît que quand
+  // finir le tour est possible. Un bouton absent ne fait rien échouer.
+  { nom: '« Fin du tour »', selecteur: '.actions-flottantes .button--fin.is-a-toi' },
+  // Le plateau (#741, #743) : mesuré pour que son rapport dise sa hauteur, et pour que la pile
+  // d'actions soit jugée contre ses bords (D-193) — jamais jugé lui-même (`SELECTEUR_PLATEAU`).
+  { nom: 'le plateau', selecteur: '.board' }
 ];
 
-/** D-171 : D-094 garde son plancher de 20 px ; la borne haute supprime le vide du combat. */
-const MARGE_MAX_COMBAT_PORTRAIT = 32;
+/** La cible mesurée et imprimée mais non jugée par `controlesHauteur` (#741, #743). */
+const SELECTEUR_PLATEAU = '.board';
+
+/** La pile flottante des actions du tour (D-193) : « Fin du tour », gestes, Pressions. */
+const SELECTEUR_ACTIONS = '.actions-flottantes';
+
+/**
+ * #741 — la **main rognée** (`.hand`, D-094 (2)). Sa hauteur **visible** (la partie qui reste dans la
+ * fenêtre et hors des ancêtres qui la rognent) doit valoir au moins 44 px (le plancher de #741) ; le
+ * plancher de la composition cible est l'intervalle 52–60 px de #743 (cible 56).
+ *
+ * D-193 rend la main rognée **en permanence** (~56 px visibles, le bas de l'écran ne porte plus
+ * qu'elle) : ces deux bornes se jugent donc à chaque passage où la main est mesurée, et ne sont plus
+ * une branche dormante qui attendait une main rognée.
+ */
+const PLANCHER_MAIN_VISIBLE = 44;
+const MAIN_VISIBLE_MIN = 52;
+const MAIN_VISIBLE_MAX = 60;
+
+/**
+ * Les règles **de téléphone portrait** (D-193 : la main rognée au bas de l'écran, la pile flottante
+ * au-dessus de la table) ne se jugent que sous cette largeur **et** en portrait. Sur PC et grand
+ * écran la main n'est pas rognée : seules les règles génériques s'y appliquent.
+ */
+const LARGEUR_TELEPHONE_MAX = 639;
+const estTelephonePortrait = (viewport) => viewport.width <= LARGEUR_TELEPHONE_MAX && viewport.height > viewport.width;
 
 /**
  * Mesure, **dans le navigateur**, le haut et le bas de chaque cible, et la limite à ne pas
@@ -243,34 +271,102 @@ const MARGE_MAX_COMBAT_PORTRAIT = 32;
  */
 function mesureHauteur(cibles) {
   const nav = document.querySelector('.bottom-nav')?.getBoundingClientRect();
-  // La cible de doigt (#320, `docs/SPEC-COMBAT-UI.md` §5.1) : les boutons de la barre d'action et de
-  // la ligne du pas-à-pas, mesurés tels que rendus — pas lus dans la feuille de style. Un bouton
-  // masqué (`display: none`, hauteur nulle) n'en est pas un. 43,5 : l'arrondi du navigateur.
-  const boutonsPetits = [...document.querySelectorAll('.combat-barre .button, .pas-a-pas__ligne button')]
+  const limite = Math.round(nav ? nav.top : window.innerHeight);
+  // La cible de doigt (#320, `docs/SPEC-COMBAT-UI.md` §5.1) : les boutons de la pile des actions du
+  // tour (D-193) et de la ligne du pas-à-pas, mesurés tels que rendus — pas lus dans la feuille de
+  // style. Un bouton masqué (`display: none`, hauteur nulle) n'en est pas un. 43,5 : l'arrondi du
+  // navigateur.
+  const boutons = [...document.querySelectorAll('.actions-flottantes .button, .pas-a-pas__ligne button')];
+  const nomDe = (bouton) => (bouton.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40);
+  const boutonsPetits = boutons
     .map((bouton) => ({
-      nom: (bouton.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 40),
+      nom: nomDe(bouton),
       hauteur: Math.round(bouton.getBoundingClientRect().height * 10) / 10
     }))
     .filter(({ hauteur }) => hauteur > 0 && hauteur < 43.5);
+  // Un bouton de la pile rogné par le défilement **interne** de la pile (`overflow-y: auto`) n'est
+  // pas atteignable sans défiler la pile : la cible est là, mais elle n'est pas visible.
+  const boutonsCaches = boutons
+    .filter((bouton) => {
+      const pile = bouton.closest('.actions-flottantes');
+      if (!pile) return false;
+      const r = bouton.getBoundingClientRect();
+      const p = pile.getBoundingClientRect();
+      return r.height > 0 && (r.top < p.top - 0.5 || r.bottom > p.bottom + 0.5);
+    })
+    .map(nomDe);
+  // **Rien ne se pose sous la main** (D-193 (3)) : le bas de l'écran ne porte que la main. Sont relevés
+  // les éléments du combat, hors de la main et de la navigation, qui **commencent** sous le haut de la
+  // main. Le jugement (« sous le **bas** visible de la main ») se fait dans `controlesHauteur`, qui a
+  // le bas de la main et la limite. Ne sont pas relevés : le contenant de la main (`.hand-panel`, dont
+  // la pastille « N / 10 » est un calque posé **dans** le rectangle de la main, par D-193 (3)), les
+  // éléments sr-only ou clipés à 1 px, et les ancêtres de la main.
+  const main = document.querySelector('.hand');
+  const sousLaMain = [];
+  if (main) {
+    const hautMain = main.getBoundingClientRect().top;
+    for (const el of document.querySelectorAll('.battle *')) {
+      if (el.contains(main) || main.contains(el) || el.closest('.bottom-nav, .sr-only, .hand-panel')) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width <= 1 || r.height <= 1) continue;
+      if (r.top >= hautMain + 1) {
+        const classe = typeof el.className === 'string' ? el.className.trim().split(/\s+/)[0] : '';
+        sousLaMain.push({
+          nom: `${el.tagName.toLowerCase()}${classe ? `.${classe}` : ''}`,
+          haut: Math.round(r.top),
+          bas: Math.round(r.bottom)
+        });
+      }
+    }
+  }
   return {
     boutonsPetits,
+    boutonsCaches,
+    sousLaMain,
     fenetre: window.innerHeight,
-    // Le pas-à-pas du premier combat (#143) ajoute une centaine de pixels collés en haut : tant
-    // qu'il est ouvert, la page déborde **par construction** et la barre d'action collée peut
-    // passer sur le bas de la main jusqu'au défilement (voir `controlesHauteur`).
+    largeur: window.innerWidth,
+    // Le pas-à-pas du premier combat (#143) ajoute une centaine de pixels collés en haut : tant qu'il est
+    // ouvert, la page défile, et c'est D-103 qui le juge (voir `controlesHauteur`).
     pasAPasOuvert: !!document.querySelector('.pas-a-pas'),
-    limite: Math.round(nav ? nav.top : window.innerHeight),
+    limite,
     // De combien le document dépasse la fenêtre : l'écran de combat ne défile plus (D-103, #243).
     defilement: Math.max(0, document.documentElement.scrollHeight - window.innerHeight),
     mesures: cibles.map(({ nom, selecteur }) => {
-      const rect = document.querySelector(selecteur)?.getBoundingClientRect();
-      return {
-        nom,
-        selecteur,
-        present: !!rect,
-        haut: rect ? Math.round(rect.top) : null,
-        bas: rect ? Math.round(rect.bottom) : null
-      };
+      const el = document.querySelector(selecteur);
+      const rect = el?.getBoundingClientRect();
+      // Un élément `display: none` (la pile vide, par exemple) a un rectangle nul : il est absent.
+      const present = !!rect && rect.width > 0 && rect.height > 0;
+      const haut = present ? Math.round(rect.top) : null;
+      const bas = present ? Math.round(rect.bottom) : null;
+      const gauche = present ? Math.round(rect.left) : null;
+      const droite = present ? Math.round(rect.right) : null;
+      // #741 — la hauteur **visible** : `min(bas, limite, ancêtres clipsants) - max(haut, 0)`. Un
+      // ancêtre clipse quand son `overflow` calculé n'est pas `visible` ; les ancêtres clipsants
+      // forment une intersection (haut et bas). Un rectangle brut ne dit pas ce qui se voit.
+      // `coupe` (D-193) : l'élément dépasse un ancêtre clipsant, sur un axe ou l'autre — la pile
+      // d'actions doit tenir **entière** dans la table, pas être rognée par elle.
+      let visible = null;
+      let coupe = false;
+      if (present) {
+        let clipHaut = -Infinity;
+        let clipBas = Infinity;
+        for (let anc = el.parentElement; anc; anc = anc.parentElement) {
+          if (getComputedStyle(anc).overflow === 'visible') continue;
+          const r = anc.getBoundingClientRect();
+          clipHaut = Math.max(clipHaut, Math.round(r.top));
+          clipBas = Math.min(clipBas, Math.round(r.bottom));
+          if (
+            r.left > rect.left + 0.5 ||
+            r.right < rect.right - 0.5 ||
+            r.top > rect.top + 0.5 ||
+            r.bottom < rect.bottom - 0.5
+          ) {
+            coupe = true;
+          }
+        }
+        visible = Math.min(bas, limite, clipBas) - Math.max(haut, 0, clipHaut);
+      }
+      return { nom, selecteur, present, haut, bas, gauche, droite, visible, coupe };
     })
   };
 }
@@ -282,6 +378,11 @@ function mesureHauteur(cibles) {
  * **avec de la place** — « pour qu'une ligne de plus ne rougisse pas la capture ». Elle
  * s'applique à **tous** les états mesurés, pas-à-pas ouvert compris : D-094 (3) ne prévoit
  * aucune exception, et une exception se décide, elle ne se glisse pas dans le code (#237).
+ *
+ * **D-193 (3) amende ce qui en est tiré** : la marge **entre la barre et la main** n'existe plus,
+ * parce que la barre a disparu. Il reste la marge de chaque surface **sous soi, jusqu'à la
+ * fenêtre** — la main, en bas — ; la pile d'actions, au milieu de la table, n'a rien sous elle à
+ * garder et n'est pas soumise à cette marge (`controlesHauteur`).
  */
 const MARGE_MIN = 20;
 
@@ -290,35 +391,56 @@ const MARGE_MIN = 20;
  * `--controle-hauteur` et son test le lisent directement, donc il mord même quand aucun
  * Chromium ne tourne.
  *
- * Un élément **absent** ne produit **rien** — c'est ce qui laisse la garde dormante tant
- * que #190 et #191 n'ont pas livré ; un élément présent qui sort de la fenêtre produit un
- * message qui **le nomme**, et pas seulement « la main ».
+ * Un élément **absent** ne produit **rien** — c'est ce qui laisse la garde dormante quand une
+ * surface n'est pas rendue ; un élément présent qui sort de la fenêtre produit un message qui
+ * **le nomme**, et pas seulement « la main ».
  *
- * Depuis #237 deux défauts sont mesurés, et **chacun mord** : l'élément qui **sort** de la
- * fenêtre (bas au-delà de la barre de navigation) et celui qui n'a **pas la marge** de
- * D-094 (3). Un élément déjà hors de la fenêtre n'est nommé qu'une fois (le second message
- * serait du bruit), et `etat` — le libellé du passage mesuré, par exemple « pas-à-pas
- * terminé » — entre dans le message pour qu'on sache **lequel** des états mesurés fauter.
+ * Les défauts mesurés, et **chacun mord** :
+ * - l'élément qui **sort** de la fenêtre (bas au-delà de la barre de navigation, ou côtés) ;
+ * - celui qui n'a **pas la marge** de D-094 (3), sous soi, jusqu'à la fenêtre ;
+ * - la main rognée sous son plancher de 44 px (#741) ; sur téléphone portrait seulement, sa hauteur
+ *   visible hors de 52–60 px (#743) ;
+ * - sur téléphone portrait seulement (`estTelephonePortrait`) : **rien ne se pose sous la main** (D-193 (3))
+ *   — sous le bas visible de la main, pas sous son haut ;
+ * - la **pile d'actions du tour** (D-193) : dans la fenêtre, pas sur la main, pas rognée par la
+ *   table, ses boutons atteignables, les cibles de 44 px ; sur téléphone, dans les bords du plateau ;
+ * - le **bandeau du tour** ne recouvre pas la pile.
+ *
+ * Un élément déjà hors de la fenêtre n'est nommé qu'une fois (le second message serait du bruit),
+ * et `etat` — le libellé du passage mesuré, par exemple « pas-à-pas terminé » — entre dans le
+ * message pour qu'on sache **lequel** des états mesurés fauter.
+ *
+ * Retiré par D-193 : la marge **entre la barre et la main** (D-094 (3)) et le vide maximal sous la
+ * barre (D-171) ; la barre d'action n'existe plus, et la pile flottante n'est pas collée au bas.
  */
 function controlesHauteur({
   limite,
   mesures,
   viewport,
-  margeMax,
-  pasAPasOuvert = false,
   defilement = 0,
   etat = '',
-  boutonsPetits = []
+  boutonsPetits = [],
+  boutonsCaches = [],
+  sousLaMain = []
 }) {
   const problemes = [];
+  const lieu = `${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}`;
 
-  // **La cible de doigt de 44 px** (#320) : un bouton de la barre d'action ou du pas-à-pas plus bas
+  // **La cible de doigt de 44 px** (#320) : un bouton de la pile des actions ou du pas-à-pas plus bas
   // est nommé, avec sa hauteur. Gagner de la marge en rognant la cible est exactement ce que ce
   // ticket refuse : la hauteur se gagne ailleurs.
   for (const { nom, hauteur } of boutonsPetits) {
     problemes.push(
-      `le bouton « ${nom} » ne fait que ${hauteur} px de haut (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+      `le bouton « ${nom} » ne fait que ${hauteur} px de haut (${lieu}) : ` +
         `la cible de doigt est de 44 px (SPEC-COMBAT-UI §5.1)`
+    );
+  }
+
+  // Un bouton de la pile rogné par son défilement interne n'est pas atteignable sans la faire défiler.
+  for (const nom of boutonsCaches) {
+    problemes.push(
+      `le bouton « ${nom} » est caché dans la pile d'actions du tour (${lieu}) : ` +
+        `la pile doit le montrer sans défilement interne (D-193)`
     );
   }
 
@@ -328,70 +450,138 @@ function controlesHauteur({
   // ci-dessous ne vaut donc que sur un écran qui tient.
   if (defilement > 0) {
     problemes.push(
-      `l'écran de combat défile de ${defilement} px (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
-        `il doit tenir dans la fenêtre (D-103)`
+      `l'écran de combat défile de ${defilement} px (${lieu}) : ` + `il doit tenir dans la fenêtre (D-103)`
     );
   }
 
-  const hors = mesures.filter(({ present, haut, bas }) => present && (haut < 0 || bas > limite));
+  // Le plateau est mesuré, jamais jugé (`SELECTEUR_PLATEAU`) ; il sert de bord à la pile d'actions.
+  const plateau = mesures.find(({ selecteur }) => selecteur === SELECTEUR_PLATEAU);
+  const jugees = mesures.filter(({ selecteur }) => selecteur !== SELECTEUR_PLATEAU);
+  const main = jugees.find(({ selecteur }) => selecteur === '.hand');
+  const actions = jugees.find(({ selecteur }) => selecteur === SELECTEUR_ACTIONS);
+  const bandeau = jugees.find(({ selecteur }) => selecteur === '.combat-toast');
+  // #741 — la main **rognée par le bas** : son bas passe sous la limite, son haut tient dans la
+  // fenêtre, et sa hauteur visible est mesurée. Elle n'est pas « hors » : seule la partie visible
+  // se juge (plus bas). Sans hauteur visible mesurée, elle reste « hors » comme avant. Depuis D-193
+  // la main est rognée en permanence : `rognee` est vrai dès qu'elle est mesurée avec sa hauteur.
+  const rognee = !!main?.present && main.haut >= 0 && typeof main.visible === 'number';
+  const hors = jugees.filter(
+    ({ selecteur, present, haut, bas }) => present && (haut < 0 || (bas > limite && !(rognee && selecteur === '.hand')))
+  );
   for (const { nom, bas } of hors) {
     problemes.push(
-      `${nom} n'est pas visible sans défiler (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+      `${nom} n'est pas visible sans défiler (${lieu}) : ` +
         `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px`
     );
   }
 
-  // **La marge** (#237) : tenir dans la fenêtre ne suffit pas, il faut y tenir avec 20 px de
-  // place sous soi (D-094 (3)). Seuls les éléments **dans** la fenêtre sont jugés ici — un
-  // élément qui en sort est déjà nommé au-dessus.
-  const justes = mesures.filter(
-    ({ present, haut, bas }) => present && haut >= 0 && bas <= limite && limite - bas < MARGE_MIN
+  // **La marge** (#237, D-094 (3)) : tenir dans la fenêtre ne suffit pas, il faut y tenir avec 20 px de
+  // place sous soi. Seuls les éléments **dans** la fenêtre sont jugés ici — un élément qui en sort est
+  // déjà nommé au-dessus. La pile d'actions est exclue : elle est au milieu de la table, elle n'a rien
+  // sous elle à garder (D-193 (3)).
+  const justes = jugees.filter(
+    ({ present, haut, bas, selecteur }) =>
+      present && haut >= 0 && bas <= limite && limite - bas < MARGE_MIN && selecteur !== SELECTEUR_ACTIONS
   );
   for (const { nom, bas } of justes) {
     const marge = limite - bas;
     problemes.push(
-      `${nom} n'a que ${marge} px de marge (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
+      `${nom} n'a que ${marge} px de marge (${lieu}) : ` +
         `bas de ${nom} à ${bas} px, barre de navigation à ${limite} px, ${MARGE_MIN} px exigés (D-094 (3))`
     );
   }
 
-  // Le plancher de D-094 protège la cible ; D-171 borne aussi le grand vide observé sur téléphone.
-  const barreAction = mesures.find(({ selecteur }) => selecteur === '.combat-barre');
-  if (
-    typeof margeMax === 'number' &&
-    barreAction?.present &&
-    !hors.includes(barreAction) &&
-    limite - barreAction.bas > margeMax
-  ) {
-    problemes.push(
-      `la barre d'action du combat laisse ${limite - barreAction.bas} px de vide (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
-        `${margeMax} px maximum (D-171)`
-    );
+  // Une surface qui sort de la **largeur** de l'écran n'est pas visible non plus (D-193 : la pile est
+  // à droite de la table, la table est plus large que l'écran).
+  for (const { nom, present, gauche, droite } of jugees) {
+    if (!present || typeof gauche !== 'number' || typeof droite !== 'number') continue;
+    if (gauche < 0 || droite > viewport.width) {
+      problemes.push(
+        `${nom} sort de la largeur de l'écran (${lieu}) : gauche à ${gauche} px, droite à ${droite} px, ` +
+          `écran de ${viewport.width} px`
+      );
+    }
   }
 
-  // **La barre ne recouvre pas la main** (#191). Être dans la fenêtre ne suffit pas : une barre
-  // collée en bas peut tenir à l'écran **et** cacher le bas des cartes. On ne le dit que quand
-  // les deux sont dans la fenêtre — un élément déjà hors de la fenêtre est nommé plus haut, et
-  // un second message sur le même défaut serait du bruit — et **pas pendant le pas-à-pas** :
-  // ouvert, il rend la page plus haute que la fenêtre, et une barre collée recouvre alors le bas
-  // de la main jusqu'au défilement, ce qui est le comportement d'une barre collée, pas un défaut.
-  // Le passage « pas-à-pas terminé » (voir `INSTANTS_COMBAT`) est celui qui mord.
-  const main = mesures.find(({ selecteur }) => selecteur === '.hand');
-  const barre = mesures.find(({ selecteur }) => selecteur === '.combat-barre');
-  if (
-    !pasAPasOuvert &&
-    main?.present &&
-    barre?.present &&
-    !hors.includes(main) &&
-    !hors.includes(barre) &&
-    barre.haut < main.bas &&
-    main.haut < barre.bas
-  ) {
-    problemes.push(
-      `${barre.nom} recouvre ${main.nom} (${viewport.width} × ${viewport.height}${etat ? `, ${etat}` : ''}) : ` +
-        `haut de la barre à ${barre.haut} px, bas de la main à ${main.bas} px`
-    );
+  // Deux rectangles se recouvrent-ils ? Sans largeur mesurée, on ne sait que la verticale : elle suffit.
+  const chevauche = (a, b) =>
+    a.haut < b.bas &&
+    b.haut < a.bas &&
+    (typeof a.gauche !== 'number' || typeof b.gauche !== 'number' || (a.gauche < b.droite && b.gauche < a.droite));
+
+  // #741/#743 — la hauteur visible de la main. Elle se juge à chaque passage, D-193 la rendant rognée
+  // en permanence.
+  // Les règles de téléphone portrait (D-193) : la hauteur visible de 52–60 px, « rien sous la main »,
+  // et les bords du plateau. Sur PC et grand écran la main n'est pas rognée : elles ne s'y jugent pas.
+  const telephone = estTelephonePortrait(viewport);
+
+  if (rognee) {
+    const visible = main.visible;
+    // #741 — le plancher : une main rognée qui ne montre pas 44 px de ses cartes n'est pas lisible.
+    if (visible < PLANCHER_MAIN_VISIBLE) {
+      problemes.push(
+        `${main.nom} rognée n'a que ${visible} px de hauteur visible (${lieu}) : ` +
+          `${PLANCHER_MAIN_VISIBLE} px au moins (#741)`
+      );
+    } else if (telephone && (visible < MAIN_VISIBLE_MIN || visible > MAIN_VISIBLE_MAX)) {
+      // #743 — la composition cible montre la tête des cartes sur 52–60 px (cible 56), sur téléphone.
+      problemes.push(
+        `${main.nom} rognée a une hauteur visible de ${visible} px (${lieu}) : ` +
+          `${MAIN_VISIBLE_MIN}–${MAIN_VISIBLE_MAX} px attendus (#743)`
+      );
+    }
   }
+
+  // **Rien ne se pose sous la main** (D-193 (3)), sur téléphone : le bas de l'écran ne porte que la main.
+  // « Sous la main » = commence au-dessus du **bas visible** de la main (le bas, borné par la limite),
+  // pas au haut : le haut de la main est occupé par ses propres contenus (pastille, titre sr-only).
+  // Un élément rendu sous ce bas est nommé, avec sa position ; c'est ce qui aurait rétabli la barre d'action.
+  if (telephone && main?.present && typeof main.bas === 'number') {
+    const basVisibleMain = Math.min(main.bas, limite);
+    for (const { nom, haut } of sousLaMain) {
+      if (haut < basVisibleMain - 0.5) continue;
+      problemes.push(
+        `élément « ${nom} » rendu sous la main (${lieu}) : haut à ${haut} px, bas visible de la main à ${basVisibleMain} px : ` +
+          `le bas de l'écran ne porte que la main (D-193 (3))`
+      );
+    }
+  }
+
+  // **La pile d'actions du tour** (D-193) : elle ne recouvre pas la main, elle n'est pas rognée par la
+  // table, et, sur téléphone, elle tient dans les bords du plateau. Dans la fenêtre seulement : un élément
+  // hors de la fenêtre est déjà nommé au-dessus.
+  if (actions?.present && !hors.includes(actions)) {
+    if (main?.present && !hors.includes(main) && chevauche(actions, main)) {
+      problemes.push(
+        `${actions.nom} recouvre ${main.nom} (${lieu}) : haut de la pile à ${actions.haut} px, bas de la main à ${main.bas} px`
+      );
+    }
+    if (actions.coupe) {
+      problemes.push(`${actions.nom} est rognée par le plateau (${lieu}) : la pile doit tenir dans la table (D-193)`);
+    }
+    if (
+      telephone &&
+      plateau?.present &&
+      typeof plateau.gauche === 'number' &&
+      typeof actions.gauche === 'number' &&
+      (actions.gauche < plateau.gauche || actions.droite > plateau.droite)
+    ) {
+      problemes.push(
+        `${actions.nom} déborde le bord du plateau (${lieu}) : gauche à ${actions.gauche} px, droite à ${actions.droite} px, ` +
+          `plateau de ${plateau.gauche} à ${plateau.droite} px (D-193)`
+      );
+    }
+  }
+
+  // Le bandeau du tour (en haut de la table) ne recouvre pas la pile.
+  if (bandeau?.present && actions?.present && !hors.includes(bandeau) && !hors.includes(actions)) {
+    if (chevauche(bandeau, actions)) {
+      problemes.push(
+        `${bandeau.nom} recouvre ${actions.nom} (${lieu}) : bas du bandeau à ${bandeau.bas} px, haut des actions à ${actions.haut} px`
+      );
+    }
+  }
+
   return problemes;
 }
 
@@ -403,8 +593,14 @@ function controlesHauteur({
 async function controlerHauteur(page, contexte, route, viewport = VIEWPORT) {
   const hauteur = await page.evaluate(mesureHauteur, CIBLES_HAUTEUR);
   console.log(`combat · ${contexte} · ${JSON.stringify(hauteur)}`);
-  const margeMax = viewport.width < 900 && viewport.height > viewport.width ? MARGE_MAX_COMBAT_PORTRAIT : undefined;
-  for (const probleme of controlesHauteur({ ...hauteur, viewport, margeMax, etat: contexte })) {
+  // #741, #743 — la hauteur visible de la main et celle du plateau, lisibles sans lire le JSON.
+  const visibleMain = hauteur.mesures.find(({ selecteur }) => selecteur === '.hand')?.visible;
+  const plateau = hauteur.mesures.find(({ selecteur }) => selecteur === SELECTEUR_PLATEAU);
+  console.log(
+    `combat · ${contexte} · hauteur visible de la main : ${visibleMain ?? 'absente'} px, ` +
+      `plateau : ${plateau?.present ? plateau.bas - plateau.haut : 'absent'} px`
+  );
+  for (const probleme of controlesHauteur({ ...hauteur, viewport, etat: contexte })) {
     problems.push(`${route} · ${probleme}`);
   }
 }
@@ -478,11 +674,11 @@ const TOURS_MAX_POUR_UNE_PRESSION = 8;
  * gestes d'un testeur — toucher le Planqué qui reçoit le café (#454, D-145), puis « Fin du tour », tant qu'aucune Pression n'est
  * proposée — et rend le **tour** atteint, ou `null` quand le Poste n'en offre aucune dans la borne.
  *
- * Une Pression jouable est un bouton `button--primary` de la barre (`ActionButton`, `attack`).
+ * Une Pression jouable est un bouton `button--primary` de la pile des actions (`ActionButton`, `attack`).
  */
 async function jusquAUnePression(page) {
-  const barre = page.locator('.combat-barre');
-  const pression = barre.locator('.button--primary');
+  const actions = page.locator(SELECTEUR_ACTIONS);
+  const pression = actions.locator('.button--primary');
   for (let essai = 0; essai < TOURS_MAX_POUR_UNE_PRESSION; essai += 1) {
     const attacher = page.getByRole('button', { name: /Attacher le café à/ });
     if ((await attacher.count()) > 0) {
@@ -494,7 +690,7 @@ async function jusquAUnePression(page) {
       return Number(tete?.match(/Tour (\d+)/)?.[1] ?? 0);
     }
     const avant = await page.locator('.battle__head').textContent();
-    await barre.getByRole('button', { name: 'Fin du tour', exact: true }).click();
+    await actions.getByRole('button', { name: 'Fin du tour', exact: true }).click();
     // Le tour de l'IA se joue seul : on attend que la main revienne **et** que le tour ait changé.
     await page.waitForFunction(
       (ancien) => {
@@ -625,7 +821,7 @@ async function mesurerAvecUnePression(browser, detaille = false) {
   }
   if (atteints === 0) {
     problems.push(
-      `${ROUTE_COMBAT} · aucun état « ${densite}Pression jouable » atteint : la barre n'est mesurée que sans Pression`
+      `${ROUTE_COMBAT} · aucun état « ${densite}Pression jouable » atteint : les actions du tour ne sont mesurées que sans Pression`
     );
   }
   return atteints;
@@ -688,7 +884,7 @@ async function mesurerGabarit(browser, gabarit) {
   const tour = await jusquAUnePression(page);
   if (tour === null) {
     problems.push(
-      `${ROUTE_COMBAT} · ${nom} : aucune Pression jouable atteinte, la barre n'est mesurée que sans Pression`
+      `${ROUTE_COMBAT} · ${nom} : aucune Pression jouable atteinte, les actions du tour ne sont mesurées que sans Pression`
     );
   } else {
     await controlerHauteur(page, `${etat}, Pression jouable, tour ${tour}`, ROUTE_COMBAT, viewport);
@@ -896,7 +1092,6 @@ if (process.argv.includes('--plan')) {
       preparations: PREPARATIONS,
       hauteur: CIBLES_HAUTEUR,
       pagesSansDefilementVertical: PAGES_SANS_DEFILEMENT_VERTICAL,
-      margeMaxCombatPortrait: MARGE_MAX_COMBAT_PORTRAIT,
       badge: MODELE_BADGE
     })
   );
@@ -942,7 +1137,7 @@ if (process.argv.includes('--controle-hauteur')) {
   } catch {
     stop(`--controle-hauteur attend une géométrie JSON, reçu : « ${arg} »`);
   }
-  console.log(JSON.stringify(controlesHauteur({ ...geometrie, viewport: VIEWPORT })));
+  console.log(JSON.stringify(controlesHauteur({ ...geometrie, viewport: geometrie.viewport ?? VIEWPORT })));
   process.exit(0);
 }
 
@@ -1325,8 +1520,8 @@ try {
   }
 
   // Le combat **tel qu'on le joue** (#191) : pas-à-pas terminé, donc la page n'est plus rallongée
-  // par son panneau. C'est ici que la barre d'action collée est jugée sur le **recouvrement** de
-  // la main — pendant le pas-à-pas, elle la recouvre jusqu'au défilement, par construction.
+  // par son panneau. C'est ici que la pile des actions et le bandeau sont jugés contre la main et
+  // le plateau (D-193) : le pas-à-pas rallonge la page, et D-103 le juge par ailleurs.
   for (const instant of INSTANTS_COMBAT) {
     if (!maVoie()) continue;
     const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true });

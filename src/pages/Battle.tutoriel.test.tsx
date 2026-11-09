@@ -64,7 +64,7 @@ describe('le combat guidé (#272)', () => {
     const carte = document.querySelector('.hand-panel .hand__card') as HTMLButtonElement | null;
     if (!carte) throw new Error('la main du testeur est vide : le test ne prouverait rien');
     fireEvent.click(carte);
-    expect(screen.getByRole('region', { name: 'Poser la carte choisie' })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Poser la carte choisie' })).toBeInTheDocument();
   });
 
   it('n’écrase pas la partie en cours : un tutoriel ne s’enregistre pas', () => {

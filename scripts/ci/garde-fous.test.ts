@@ -73,7 +73,9 @@ const TICKETS_ATTENDUS = [
   666,
   // #672 (D-184, remplace #667) : cartes entre le dos et la face avant ; deux mutations
   // prouvent que le test mord si l’ordre dos < cartes < face avant est rompu d’un côté ou de l’autre.
-  672, 672
+  672, 672,
+  // #742 : le journal visuel est retiré ; l'annonce sr-only (`aria-live`) reste la seule voix du dernier coup.
+  742
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {

@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, renderHook } from '@testing-library/react';
-import { legalActions } from '@/game/engine';
+import { createBattle, legalActions } from '@/game/engine';
+import { autoDeck } from '@/game/deck';
+import { ALL_CARDS } from '@/data';
+import { DUREE_OUVERTURE_MS } from '@/components/effets-combat';
+import { partieSauvegardee } from '@/store/partie';
+import { useStore } from '@/store/useStore';
 import { setupTestStore } from '@/test/test-utils';
 import { useCombat } from './useCombat';
 
@@ -136,5 +141,84 @@ describe('useCombat — le Deck joué (#251)', () => {
     expect(result.current.raisonsDeckDeTest.length).toBeGreaterThan(0);
     // La partie démarre quand même : un Deck de test est servi, pas un plateau vide.
     expect(result.current.state.players.player.deck.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * **L'ouverture d'un combat neuf** (#746). Le drapeau est un lifecycle du hook : il ne se lit ni
+ * dans le journal, ni dans `BattleState`, et une partie reprise ne le rejoue pas.
+ *
+ * Le contrôle mord sur les trois cas exigés : (a) un combat neuf porte déjà une ligne de journal,
+ * et il reste `neuve` ; (b) une partie rangée, reprise au montage, ne joue pas ; (c) un
+ * rechargement (démontage puis remontage) ne rejoue pas, alors qu'un « Nouveau combat » rejoue.
+ */
+describe('useCombat — l’ouverture d’un combat neuf (#746)', () => {
+  /** Un montage **sans** remise à zéro du store : le rechargement garde la partie rangée. */
+  function remonter(sansMouvement = false) {
+    return renderHook(() => useCombat({ tutoriel: false, sceneFin: false, sansMouvement }));
+  }
+
+  /** Une partie rangée dans le store, comme l'enregistre le hook à chaque état. */
+  function rangerUnePartie() {
+    const owned = Object.fromEntries(ALL_CARDS.map((card) => [card.id, 2]));
+    const deck = autoDeck(owned).deck;
+    const etat = createBattle(deck, deck, 4242);
+    const partie = partieSauvegardee(etat, null, { playerDeck: deck, aiDeck: deck });
+    if (!partie) throw new Error('partie terminée : rien à ranger');
+    useStore.getState().enregistrerPartie(partie);
+    return deck;
+  }
+
+  it('(a) un combat neuf est `neuve`, même si son journal n’est pas vide', () => {
+    const { result } = monter({ sansMouvement: false });
+
+    // Le contrôle mord : `state.log.length === 0` serait faux ici, un combat neuf a déjà son lancer.
+    expect(result.current.state.log.length).toBeGreaterThan(0);
+    expect(result.current.ouverture).toBe('neuve');
+  });
+
+  it('(b) une partie rangée, reprise au montage, n’a pas d’ouverture', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-02T10:00:00Z'));
+    setupTestStore();
+    rangerUnePartie();
+
+    const { result } = remonter();
+
+    expect(result.current.partieReprise).toBe(true);
+    expect(result.current.ouverture).toBe('aucune');
+  });
+
+  it('(c) un rechargement ne rejoue pas l’ouverture, « Nouveau combat » la rejoue', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-02T10:00:00Z'));
+    setupTestStore();
+    const premier = remonter();
+    expect(premier.result.current.ouverture).toBe('neuve');
+    // La partie est rangée à chaque état : le rechargement la trouve dans le store.
+    premier.unmount();
+    expect(useStore.getState().partie).not.toBeNull();
+
+    const rechargement = remonter();
+    expect(rechargement.result.current.partieReprise).toBe(true);
+    expect(rechargement.result.current.ouverture).toBe('aucune');
+
+    act(() => rechargement.result.current.recommencer());
+    expect(rechargement.result.current.ouverture).toBe('neuve');
+  });
+
+  it('la séquence finit d’elle-même, et `passerOuverture` la passe', () => {
+    const { result } = monter({ sansMouvement: false });
+    expect(result.current.ouverture).toBe('neuve');
+
+    act(() => void vi.advanceTimersByTime(DUREE_OUVERTURE_MS - 1));
+    expect(result.current.ouverture).toBe('neuve');
+    act(() => void vi.advanceTimersByTime(1));
+    expect(result.current.ouverture).toBe('aucune');
+
+    act(() => result.current.recommencer());
+    expect(result.current.ouverture).toBe('neuve');
+    act(() => result.current.passerOuverture());
+    expect(result.current.ouverture).toBe('aucune');
   });
 });

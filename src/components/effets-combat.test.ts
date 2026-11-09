@@ -2,23 +2,35 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
-import type { BattleState } from '@/data/types';
+import type { BattleState, PlayerId } from '@/data/types';
 import { createBattle } from '@/game/engine';
 import {
   ajouterEffet,
+  BORNE_OUVERTURE_MS,
   DELAI_IMPACT_MS,
+  delaiDeRetournement,
   dureeDeLEffet,
+  dureeEffet,
   DUREE_CONDITION_APRES_COUP_MS,
   DUREE_CONDITION_MS,
+  DUREE_EVOLUTION_MS,
   DUREE_MAX_MS,
+  DUREE_OUVERTURE_MS,
   DUREE_PIOCHE_MS,
+  DUREE_POSE_MS,
+  DUREE_RETOURNEMENT_MS,
   DUREE_STRESS_MS,
+  DUREE_TIRAGE_MS,
+  DUREE_ZOOM_OUVERTURE_MS,
   effetsEntre,
+  finDeLOuverture,
   fusionnerEffets,
   MAX_EFFETS_SIMULTANES,
-  MAX_TOURS_BOUCLE
+  MAX_TOURS_BOUCLE,
+  PAS_RETOURNEMENT_MS,
+  RANG_MAX_OUVERTURE
 } from './effets-combat';
-import type { EffetCombat } from './effets-combat';
+import type { EffetCombat, NatureEffet } from './effets-combat';
 
 /** Un deck légal : deux exemplaires de dix Entrants, commençant par un Entrant. */
 function deckDeTest(): string[] {
@@ -206,6 +218,167 @@ describe('effets-combat — ce qui vient de changer (#192)', () => {
     const refuse = ajouterEffet(courants, effet(99));
     expect(refuse).toBe(courants);
     expect(refuse).toHaveLength(MAX_EFFETS_SIMULTANES);
+  });
+});
+
+/** Une place libre du Banc (ou du Poste) dans l'état d'avant : le moteur la laisse à une pose. */
+function partieAvecPlaceLibre(camp: PlayerId, lieu: 'active' | number): BattleState {
+  const avant = partie();
+  if (lieu === 'active') avant.players[camp].active = null;
+  else avant.players[camp].bench[lieu] = null;
+  return avant;
+}
+
+/** La carte de tête de la main passe au Poste ou au Banc : ce que fait `playBasic`, dans l'état. */
+function poserDeLaMain(avant: BattleState, camp: PlayerId, lieu: 'active' | number): BattleState {
+  const apres = structuredClone(avant);
+  const cote = apres.players[camp];
+  const carte = cote.hand[0]!;
+  cote.hand = cote.hand.slice(1);
+  if (lieu === 'active') cote.active = carte;
+  else cote.bench[lieu] = carte;
+  return apres;
+}
+
+describe('effets-combat — le vol des cartes (#748)', () => {
+  it('une carte piochée part du Deck et arrive dans la main du joueur', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    const piochee = apres.players.player.deck.shift()!;
+    apres.players.player.hand.push(piochee);
+
+    const tirage = effetsEntre(avant, apres).find((e) => e.nature === 'tirage');
+    expect(tirage?.camp).toBe('player');
+    expect(tirage?.uid).toBe(piochee.uid);
+    expect(tirage?.carte?.cardId).toBe(piochee.cardId);
+    expect(apres.players.player.hand.some((carte) => carte.uid === tirage?.uid)).toBe(true);
+    expect(dureeDeLEffet(tirage!)).toBe(DUREE_TIRAGE_MS);
+  });
+
+  it('la pioche de la Direction a son vol aussi, vers son éventail (la main reste cachée)', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    const piochee = apres.players.ai.deck.shift()!;
+    apres.players.ai.hand.push(piochee);
+
+    const tirage = effetsEntre(avant, apres).find((e) => e.nature === 'tirage');
+    expect(tirage?.camp).toBe('ai');
+    expect(tirage?.uid).toBe(piochee.uid);
+  });
+
+  it('une carte qui revient du Rebut dans la main n’est pas une pioche', () => {
+    const avant = partie();
+    const dessus = avant.players.player.deck.shift()!;
+    avant.players.player.discard.push(dessus);
+    const apres = structuredClone(avant);
+    apres.players.player.discard.pop();
+    apres.players.player.hand.push(dessus);
+
+    expect(effetsEntre(avant, apres).some((e) => e.nature === 'tirage')).toBe(false);
+  });
+
+  it('une carte de la Direction posée au Banc part de son éventail et atterrit à sa place', () => {
+    const avant = partieAvecPlaceLibre('ai', 1);
+    const apres = poserDeLaMain(avant, 'ai', 1);
+    const carte = apres.players.ai.bench[1]!;
+
+    const pose = effetsEntre(avant, apres).find((e) => e.nature === 'pose');
+    expect(pose?.camp).toBe('ai');
+    expect(pose?.lieu).toBe('banc');
+    expect(pose?.emplacement).toBe(1);
+    expect(pose?.uid).toBe(carte.uid);
+    expect(pose?.carte?.cardId).toBe(carte.cardId);
+    expect(dureeDeLEffet(pose!)).toBe(DUREE_POSE_MS);
+  });
+
+  it('une carte de la Direction posée au Poste atterrit au Poste', () => {
+    const avant = partieAvecPlaceLibre('ai', 'active');
+    const apres = poserDeLaMain(avant, 'ai', 'active');
+
+    const pose = effetsEntre(avant, apres).find((e) => e.nature === 'pose');
+    expect(pose?.camp).toBe('ai');
+    expect(pose?.lieu).toBe('poste');
+    expect(pose?.uid).toBe(apres.players.ai.active?.uid);
+  });
+
+  it('la pose du joueur n’a pas de vol de plus : `CarteEnVol` la joue déjà (#745)', () => {
+    const avant = partieAvecPlaceLibre('player', 1);
+    const apres = poserDeLaMain(avant, 'player', 1);
+
+    expect(effetsEntre(avant, apres).some((e) => e.nature === 'pose')).toBe(false);
+  });
+
+  it('une évolution garde l’instance et change sa carte : un pouls, sur le camp qui évolue', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    const cible = apres.players.ai.active!;
+    const nouvelle = ALL_CARDS.find((card) => card.id !== cible.cardId)!;
+    cible.cardId = nouvelle.id;
+
+    const evolution = effetsEntre(avant, apres).find((e) => e.nature === 'evolution');
+    expect(evolution?.camp).toBe('ai');
+    expect(evolution?.uid).toBe(cible.uid);
+    expect(evolution?.carte?.cardId).toBe(nouvelle.id);
+    expect(dureeDeLEffet(evolution!)).toBe(DUREE_EVOLUTION_MS);
+    // Le même Planqué n'a ni craqué ni pris de Stress : l'évolution n'emprunte rien à ces natures.
+    expect(effetsEntre(avant, apres).some((e) => e.nature === 'craquage')).toBe(false);
+  });
+
+  it('une évolution du joueur pulse aussi, sur sa carte', () => {
+    const avant = partie();
+    const apres = structuredClone(avant);
+    const cible = apres.players.player.active!;
+    cible.cardId = ALL_CARDS.find((card) => card.id !== cible.cardId)!.id;
+
+    const evolution = effetsEntre(avant, apres).find((e) => e.nature === 'evolution');
+    expect(evolution?.camp).toBe('player');
+    expect(evolution?.uid).toBe(cible.uid);
+  });
+
+  it('aucune nature du vol ne dépasse 800 ms, et le tirage et la pose partagent la feuille', () => {
+    const natures: NatureEffet[] = ['tirage', 'pose', 'evolution'];
+    for (const nature of natures) {
+      expect(dureeEffet(nature), nature).toBeLessThanOrEqual(DUREE_MAX_MS);
+    }
+    expect(dureeEffet('tirage')).toBe(dureeEffet('pose'));
+  });
+
+  it('le cinquième vol est refusé : quatre effets au plus, même tous nouveaux', () => {
+    const nouveaux: EffetCombat[] = [
+      { id: 1, nature: 'tirage', anime: true, camp: 'player', uid: 'a' },
+      { id: 2, nature: 'tirage', anime: true, camp: 'ai', uid: 'b' },
+      { id: 3, nature: 'pose', anime: true, camp: 'ai', uid: 'c', lieu: 'banc', emplacement: 0 },
+      { id: 4, nature: 'evolution', anime: true, camp: 'ai', uid: 'd' },
+      { id: 5, nature: 'pose', anime: true, camp: 'ai', uid: 'e', lieu: 'poste' }
+    ];
+
+    const suivants = fusionnerEffets([], nouveaux);
+    expect(suivants).toHaveLength(MAX_EFFETS_SIMULTANES);
+    expect(suivants.map((effet) => effet.id)).toEqual([1, 2, 3, 4]);
+  });
+});
+
+describe('styles.css — le vol et le pouls (#748)', () => {
+  it('le vol dure la constante du tirage et de la pose, le pouls celle de l’évolution', () => {
+    const feuille = css();
+    expect(feuille).toMatch(new RegExp(`\\.vol-effet\\s*\\{[^}]*animation:\\s*vol-effet\\s+${DUREE_TIRAGE_MS}ms`));
+    expect(feuille).toMatch(
+      new RegExp(`\\.evolution-flash\\s*\\{[^}]*animation:\\s*evolution-pulse\\s+${DUREE_EVOLUTION_MS}ms`)
+    );
+  });
+
+  it('le vol ne touche que `transform` : aucune position ni taille n’est animée', () => {
+    const bloc = css().match(/@keyframes vol-effet\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+    expect(bloc).toMatch(/transform/);
+    expect(bloc).not.toMatch(/\b(left|top|width|height|margin|opacity)\s*:/);
+  });
+
+  it('« Mouvement réduit » coupe le vol et le pouls, store comme système', () => {
+    const feuille = css();
+    expect(feuille).toMatch(/:root\[data-mouvement-reduit='true'\] \.vol-effet,[\s\S]*?animation:\s*none !important/);
+    expect(feuille).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.vol-effet,\s*\.evolution-flash\s*\{\s*animation:\s*none !important/
+    );
   });
 });
 
@@ -462,6 +635,100 @@ describe('styles.css — durée, tours et durée totale des animations (#294)', 
     );
     expect(feuille).toMatch(
       /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.condition__arc\s*\{[^}]*animation:\s*none !important;[^}]*display:\s*none;/
+    );
+  });
+});
+
+/**
+ * **L'ouverture d'un combat neuf** (#746, critères 2, 3, 4 et 7). Les durées du TS et celles de la
+ * feuille sont confrontées ; la séquence entière tient sous deux secondes ; une bascule ne touche
+ * que `transform` ; « Mouvement réduit » rend la face d'entrée. Chaque garde a son cas fautif.
+ */
+describe('l’ouverture d’un combat neuf — la séquence et ses bornes (#746)', () => {
+  /** Les bornes d'une feuille d'ouverture : la séquence entière, le dos de la bascule, la propriété touchée. */
+  function fautesDeLOuverture(feuille: string): string[] {
+    const sans = feuille.replace(/\/\*[\s\S]*?\*\//g, '');
+    const fautes: string[] = [];
+    const zoom = sans.match(/\.battle \.board--ouverture\s*\{[^}]*animation:\s*table-zoom (\d+)ms/)?.[1];
+    const bascule = sans.match(/\.battle \.entrant--ouverture\s*\{[^}]*animation:\s*entrant-retourne (\d+)ms/)?.[1];
+    if (zoom === undefined || bascule === undefined) return ['animation d’ouverture introuvable'];
+    if (Number(bascule) > DUREE_MAX_MS) fautes.push(`bascule de ${bascule} ms : plus de ${DUREE_MAX_MS} ms`);
+    if (Number(zoom) + Number(bascule) > BORNE_OUVERTURE_MS) fautes.push('zoom et bascule dépassent deux secondes');
+    const images = sans.match(/@keyframes entrant-retourne\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+    if (/width|height|top|left|right|bottom|inset|margin|padding|position/.test(images)) {
+      fautes.push('la bascule anime une propriété de mise en page');
+    }
+    return fautes;
+  }
+
+  it('la cascade part après le zoom, avance par pas, et tient deux secondes', () => {
+    expect(delaiDeRetournement(0)).toBeGreaterThanOrEqual(DUREE_ZOOM_OUVERTURE_MS);
+    for (let rang = 1; rang <= RANG_MAX_OUVERTURE; rang += 1) {
+      expect(delaiDeRetournement(rang) - delaiDeRetournement(rang - 1)).toBe(PAS_RETOURNEMENT_MS);
+    }
+    // Critère 3 : la séquence entière, dernière bascule comprise, reste sous deux secondes.
+    expect(DUREE_OUVERTURE_MS).toBeLessThanOrEqual(BORNE_OUVERTURE_MS);
+    expect(DUREE_OUVERTURE_MS).toBe(delaiDeRetournement(RANG_MAX_OUVERTURE) + DUREE_RETOURNEMENT_MS);
+  });
+
+  it('chaque bascule dure 800 ms au plus (SPEC-COMBAT-UI §6.8.3)', () => {
+    expect(DUREE_RETOURNEMENT_MS).toBeLessThanOrEqual(DUREE_MAX_MS);
+  });
+
+  it('la feuille porte les mêmes durées que le TS : zoom et bascule', () => {
+    const feuille = css().replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(feuille).toMatch(
+      new RegExp(`\\.battle \\.board--ouverture\\s*\\{[^}]*table-zoom ${DUREE_ZOOM_OUVERTURE_MS}ms`)
+    );
+    expect(feuille).toMatch(
+      new RegExp(`\\.battle \\.entrant--ouverture\\s*\\{[^}]*entrant-retourne ${DUREE_RETOURNEMENT_MS}ms`)
+    );
+    // Le retard vient de l'inline (`--delai`), pas d'une valeur figée dans la feuille.
+    expect(feuille).toMatch(/entrant-retourne \d+ms cubic-bezier\([^)]*\) var\(--delai\) both/);
+    expect(fautesDeLOuverture(feuille)).toEqual([]);
+  });
+
+  it('la bascule ne touche que `transform`, et le dos est posé avant elle (première frame)', () => {
+    const images = css().match(/@keyframes entrant-retourne\s*\{([\s\S]*?)\n\}/)?.[1] ?? '';
+    expect(images).toMatch(/transform:\s*rotateY\(180deg\)/);
+    expect(images).toMatch(/transform:\s*rotateY\(0deg\)/);
+    expect(images).not.toMatch(/width|height|top|left|position/);
+    // `both` : le `from` (le dos) vaut pendant le délai, avant la première bascule.
+    expect(css()).toMatch(/\.battle \.entrant--ouverture\s*\{[^}]*both;/);
+  });
+
+  it('« Mouvement réduit » rend la face dès la première frame : aucune bascule, aucun zoom', () => {
+    const feuille = css();
+    expect(feuille).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{[\s\S]*?\.battle \.entrant--ouverture[\s\S]*?animation:\s*none;/
+    );
+    expect(feuille).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.battle \.entrant--ouverture,?[\s\S]*?animation:\s*none;/
+    );
+    expect(feuille).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.battle \.board--ouverture[\s\S]*?animation:\s*none;/
+    );
+  });
+
+  it('le zoom ne joue plus que sur la classe de l’ouverture, jamais sur `.battle .board`', () => {
+    const regles = reglesDe(css()).filter((r) => r.selecteur === '.battle .board');
+    expect(regles.length).toBeGreaterThan(0);
+    for (const regle of regles) expect(regle.corps).not.toMatch(/animation:/);
+  });
+
+  it('le contrôle mord : une cascade trop lente, ou une bascule qui déplace la carte, est vue', () => {
+    // Une cascade à 300 ms par rang tient plus de deux secondes : la borne la refuse.
+    expect(finDeLOuverture(300)).toBeGreaterThan(BORNE_OUVERTURE_MS);
+    expect(finDeLOuverture(PAS_RETOURNEMENT_MS)).toBeLessThanOrEqual(BORNE_OUVERTURE_MS);
+    // Une bascule qui anime la largeur, ou une bascule de 1 600 ms, sont vues sur la feuille fautive.
+    const fautive = css()
+      .replace(
+        /@keyframes entrant-retourne\s*\{[\s\S]*?\n\}/,
+        '@keyframes entrant-retourne { from { width: 0; } to { width: 10px; } }'
+      )
+      .replace(/(\.battle \.entrant--ouverture\s*\{[^}]*animation:\s*entrant-retourne )500ms/, '$11600ms');
+    expect(fautesDeLOuverture(fautive)).toEqual(
+      expect.arrayContaining(['bascule de 1600 ms : plus de 800 ms', 'la bascule anime une propriété de mise en page'])
     );
   });
 });

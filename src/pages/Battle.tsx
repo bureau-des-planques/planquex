@@ -1,6 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Activity,
@@ -12,7 +11,6 @@ import {
   Flag,
   Info,
   RotateCcw,
-  ScrollText,
   Users
 } from 'lucide-react';
 import { getCard, isPlanque, kindLabel } from '@/data';
@@ -24,15 +22,17 @@ import { jouer } from '@/audio/sons';
 import { CAMP_NAME, campLine, campToAct, handover, matchCode, otherCamp } from '@/store/pvp';
 import { useCombat } from '@/combat/useCombat';
 import { cardName } from '@/combat/cartes';
+import { useMessageFugace } from '@/combat/message-fugace';
 import { ActionButton } from '@/combat/actions';
 import { Camp, texteMachine } from '@/combat/plateau';
-import { endBanner, libelleDuTour, regardDuDernierGeste, RegardDuDessus, useEcranLarge } from '@/combat/presentation';
+import { endBanner, libelleDuTour, regardDuDernierGeste, RegardDuDessus } from '@/combat/presentation';
 import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CardView } from '@/components/CardView';
+import { CarteEnGrand, CarteEnVol, type EnvolDeCarte } from '@/components/CarteEnGrand';
 import { FicheCarte, InspecteurCombat } from '@/components/InspecteurCombat';
 import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
-import { comportementDeDefilement, usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
+import { usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import { marquerGeste } from '@/components/journee-gestes';
 import { indexEtapeGeste } from '@/components/journee-etapes';
 import { avancerJournee, etapeJournee } from '@/components/journee-etape';
@@ -40,7 +40,7 @@ import { SceneFin } from '@/components/SceneFin';
 import { choisirReplique, type EvenementDirection } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
 import { PisteInterventions } from '@/components/PisteInterventions';
-import { useEffetsDeCombat } from '@/components/effets-combat';
+import { RANGS_PAR_CAMP, useEffetsDeCombat } from '@/components/effets-combat';
 import { phraseDePortee } from './portee';
 import { phraseCafeAuPoste } from '@/components/cafe-au-poste';
 import { PanneauAttacheCafe } from '@/components/PanneauAttacheCafe';
@@ -132,7 +132,6 @@ const ECRANS_DU_MENU = [
 ] as const;
 
 export function Battle() {
-  const ecranLarge = useEcranLarge();
   /** La Journée est-elle encore ouverte ? Seule la visite enchaîne après la scène de fin. */
   const tutorielVu = useStore((state) => state.tutorielVu);
   /**
@@ -192,7 +191,9 @@ export function Battle() {
     partieReprise,
     usedTestDeck,
     raisonsDeckDeTest,
-    directionReflechit
+    directionReflechit,
+    ouverture,
+    passerOuverture
   } = useCombat({
     tutoriel,
     sceneFin,
@@ -363,32 +364,11 @@ export function Battle() {
   const regard = useMemo(() => regardDuDernierGeste(state, myCamp), [state, myCamp]);
 
   /**
-   * Le panneau de pose vient sous la main : choisir une carte le **cadre** (`nearest` —
-   * rien ne bouge s'il est déjà tout entier à l'écran), pour que le geste suivant soit
-   * sous le doigt. La marge basse de `.pose` laisse la barre de navigation à sa place.
+   * Le focus ne tombe pas sur `body` après un coup (WCAG, ordre du focus) : voir `actionsRef` plus bas.
+   * La feuille de la carte choisie (`CarteEnGrand`) prend le focus à son ouverture et le rend à la main.
    */
-  const poseRef = useRef<HTMLElement | null>(null);
-  /**
-   * **Le focus ne tombe pas sur `body` après un coup** (WCAG, ordre du focus). Le geste joué fait disparaître le
-   * bouton qui avait le focus (la Pression, un geste de la pose, la sélection vidée) : le clavier
-   * repartait du haut de la page. Quand le focus était dans le combat et qu'il n'a plus de place,
-   * il revient sur la barre d'action — le point stable de l'écran. Un focus parti ailleurs (un
-   * autre onglet de l'application, un champ) n'est jamais repris.
-   */
-  const barreRef = useRef<HTMLElement | null>(null);
+  const actionsRef = useRef<HTMLElement | null>(null);
   const focusDansLeCombat = useRef(false);
-  useEffect(() => {
-    if (!selectedUid) return;
-    poseRef.current?.scrollIntoView({ behavior: comportementDeDefilement(), block: 'nearest' });
-    // Le focus reste dans la main après un choix : le panneau de pose apparaît sans être annoncé,
-    // et le clavier doit refaire jusqu'à 10 cartes pour atteindre les gestes. Le critère WCAG sur
-    // l'ordre du focus veut que le focus suive le contenu qui vient d'apparaître (#525). Un clic
-    // à la souris a le même effet (le bouton cliqué a le focus) : c'est voulu. Un focus parti
-    // ailleurs n'est jamais déplacé.
-    if (document.activeElement?.closest('.hand')) {
-      poseRef.current?.focus({ preventScroll: true });
-    }
-  }, [selectedUid]);
 
   /**
    * **Les effets de la scène** (#192) : le chiffre de Stress, la traînée de craquage, la pile
@@ -396,6 +376,26 @@ export function Battle() {
    * (800 ms au plus) vivent dans `effets-combat.ts`, pas dans le CSS.
    */
   const effets = useEffetsDeCombat(state, sansMouvement);
+
+  /**
+   * **L'ouverture d'un combat neuf** (#746) : la caméra zoome sur la table et les Planqués posés
+   * d'office se retournent. Elle ne joue que si le hook la tient (`neuve`) **et** que le mouvement
+   * n'est pas réduit : sous « Mouvement réduit », la table est face visible dès la première frame.
+   * Elle passe par un tap sur la table, ou par `Espace` (hors champ de saisie).
+   */
+  const ouvertureAnimee = ouverture === 'neuve' && !sansMouvement;
+  useEffect(() => {
+    if (!ouvertureAnimee) return;
+    const surTouche = (event: KeyboardEvent) => {
+      if (event.key !== ' ' && event.code !== 'Space') return;
+      if (event.defaultPrevented || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.isComposing || dansUnChampDeSaisie(event.target)) return;
+      event.preventDefault();
+      passerOuverture();
+    };
+    document.addEventListener('keydown', surTouche);
+    return () => document.removeEventListener('keydown', surTouche);
+  }, [ouvertureAnimee, passerOuverture]);
 
   /**
    * **Les trois gestes du combat ont un son** (D-166, critique du 31/10/2026, P2) : le coup, la
@@ -603,9 +603,17 @@ export function Battle() {
    */
   const [inspecte, setInspecte] = useState<string | null>(null);
   /**
-   * L'inspecteur lit **le plateau et la main** (#192) : sous mouvement réduit, une carte de la
-   * main ne se soulève pas — c'est le panneau qui s'ouvre au survol et au focus. Une carte de
-   * main n'a ni Poste ni rang ; ses gestes sont ceux que la main porte déjà (`playable`).
+   * **L'inspecteur ne s'ouvre que sur une carte du plateau** (D-193 (1), #750) : une carte de la main
+   * se choisit (`selectedUid`, la carte en grand) et ne l'ouvre jamais. Et il se ferme dès que la
+   * partie agit (un coup part, la Direction joue, le tour passe) : il ne reste pas ouvert sur le Banc
+   * d'un coup qui l'a déjà fait changer de place.
+   */
+  useEffect(() => {
+    setInspecte(null);
+  }, [state]);
+  /**
+   * L'inspecteur lit **le plateau** (#192). `carteEnMain` ne se déclenche plus depuis D-193 (1) :
+   * aucune carte de la main ne devient `inspecte`.
    */
   const inspecteurPlateau = inspecte ? localiser(state, inspecte) : null;
   const carteEnMain = inspecte ? (mySide.hand.find((carte) => carte.uid === inspecte) ?? null) : null;
@@ -667,9 +675,35 @@ export function Battle() {
       action.type === 'playBasic' && typeof action.slot === 'number' ? [action.slot] : []
     )
   );
+  /**
+   * **Le vol de la carte choisie** (#745). Le geste du moteur part **tout de suite** (`play`, une seule
+   * fois) ; la carte, elle, se réduit et glisse vers sa place (`CarteEnVol`). Sous « Mouvement réduit »,
+   * pas de vol : la carte change de place d'un coup. La mise en scène ne retarde ni ne rejoue le geste.
+   */
+  const [envol, setEnvol] = useState<EnvolDeCarte | null>(null);
+  const idDuVol = useRef(0);
+  const jouerAvecVol = (action: BattleAction) => {
+    if (!sansMouvement && selected && selectedDefinition) {
+      const source =
+        document.querySelector<HTMLElement>('.carte-grand__visuel') ??
+        [...document.querySelectorAll<HTMLElement>('.hand [data-uid]')].find((el) => el.dataset.uid === selected.uid) ??
+        null;
+      if (source) {
+        const r = source.getBoundingClientRect();
+        idDuVol.current += 1;
+        setEnvol({
+          id: idDuVol.current,
+          depart: { left: r.left, top: r.top, width: r.width, height: r.height },
+          carte: selectedDefinition,
+          action
+        });
+      }
+    }
+    play(action);
+  };
   const poserAuBanc = (slot: number) => {
     const action = selectedActions.find((candidat) => candidat.type === 'playBasic' && candidat.slot === slot);
-    if (action) play(action);
+    if (action) jouerAvecVol(action);
   };
 
   /**
@@ -798,10 +832,33 @@ export function Battle() {
     </div>
   );
 
+  /** Le message du tour (la bulle du haut de la table) a-t-il quelque chose à dire ? */
+  const avisDuTour =
+    porteeLine !== undefined ||
+    raisonCafe !== undefined ||
+    repliqueDirection !== null ||
+    attachements.length > 0 ||
+    (playable.length === 0 && state.phase !== 'ended');
+
+  /**
+   * **La bulle du tour s'efface** (D-193 (2), #750) : elle cache le Banc de la Direction. Son texte
+   * (`cleDuToast`) la rallume quand il change ; `useMessageFugace` la cache après 4 s. Les décisions
+   * qui attendent (relève, carte à désigner) ne sont pas dans la bulle : elles restent.
+   */
+  const cleDuToast = [
+    porteeLine ?? '',
+    raisonCafe ?? '',
+    repliqueDirection ?? '',
+    attachements.length,
+    playable.length === 0 && state.phase !== 'ended' ? idleLine : '',
+    attendLAutre ? 'attente' : ''
+  ].join('|');
+  const bulleVisible = useMessageFugace(cleDuToast);
+
   useEffect(() => {
     const actif = document.activeElement;
     if (focusDansLeCombat.current && (actif === null || actif === document.body)) {
-      barreRef.current?.focus({ preventScroll: true });
+      actionsRef.current?.focus({ preventScroll: true });
     }
   }, [state]);
 
@@ -912,15 +969,6 @@ export function Battle() {
         </button>
         <MenuCombat etat={menu} onChange={setMenu}>
           {(menuApi) => {
-            if (menu.vue === 'journal') {
-              return (
-                <ol className="log combat-menu__corps">
-                  {state.log.slice(-14).map((line, index) => (
-                    <li key={`${index}-${line}`}>{line}</li>
-                  ))}
-                </ol>
-              );
-            }
             if (menu.vue === 'pvp') return partieADeux;
             return (
               <ul className="combat-menu__liste">
@@ -936,11 +984,6 @@ export function Battle() {
                       </Link>
                     ))}
                   </nav>
-                </li>
-                <li>
-                  <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('journal')}>
-                    <ScrollText size={16} aria-hidden="true" /> Journal
-                  </button>
                 </li>
                 <li>
                   <button type="button" className="combat-menu__entree" onClick={() => menuApi.aller('pvp')}>
@@ -1050,8 +1093,12 @@ export function Battle() {
         passe à côté du plateau. Les actions sont dans la barre collée plus bas, et tout ce qui est
         secondaire (Journal, Partie à deux, Règles, Abandonner, Nouveau combat) dans le menu `⋯`.
       */}
-      <div className="battle__table">
-        <section className="board" aria-label="Plateau" data-pas-a-pas={pasAPas.designe('plateau')}>
+      <div className="battle__table" onPointerDown={ouvertureAnimee ? passerOuverture : undefined}>
+        <section
+          className={`board${ouvertureAnimee ? ' board--ouverture' : ''}`}
+          aria-label="Plateau"
+          data-pas-a-pas={pasAPas.designe('plateau')}
+        >
           {/* La scène de la Pression (D-098) : deux `canvas` et les cartes animées par l'API
               Web Animations. Rien ne se monte sous « Mouvement réduit ». */}
           <SceneAttaque
@@ -1096,6 +1143,7 @@ export function Battle() {
                 detaille={combatDetaille}
                 effets={effets.filter((effet) => effet.camp === id)}
                 cibleScene={sansMouvement ? undefined : effetAttaque?.uidCible}
+                ouverture={ouvertureAnimee ? { rangDeBase: id === myCamp ? 0 : RANGS_PAR_CAMP } : undefined}
                 raisonsDeckDeTest={usedTestDeck && id === myCamp ? raisonsDeckDeTest : undefined}
                 cafeAttachable={id === myCamp ? cafeAttachable : undefined}
                 onAttacherCafe={attacherCafe}
@@ -1157,7 +1205,6 @@ export function Battle() {
               <h2>{match === null ? 'Ta main' : `Ta main · ${CAMP_NAME[myCamp]}`}</h2>
               <span className="muted">
                 {mySide.hand.length} / {HAND_LIMIT}
-                {myMove && handActions.length > 0 && !selected ? ' · touche une carte pour la jouer' : ''}
               </span>
             </div>
             {mySide.hand.length === 0 ? (
@@ -1185,15 +1232,6 @@ export function Battle() {
                           '--dec': `${decalage * decalage * 0.8}px`
                         } as CSSProperties
                       }
-                      /* Sous « Mouvement réduit », la carte ne se soulève pas : c'est
-                         l'inspecteur qui s'ouvre au survol et au focus (#192, #188). */
-                      onPointerEnter={(evenement) => {
-                        if (!sansMouvement || evenement.pointerType !== 'mouse') return;
-                        setInspecte(card.uid);
-                      }}
-                      onFocus={() => {
-                        if (sansMouvement) setInspecte(card.uid);
-                      }}
                     >
                       {definition && (
                         <div className="hand__visuel" aria-hidden>
@@ -1221,150 +1259,116 @@ export function Battle() {
           </section>
 
           {/*
-            **La pose** (#169) : la carte choisie reste sous les yeux — nommée, avec son texte —
-            tant qu'on ne l'a pas posée, et chaque geste dit **où** : « Poser au Poste »,
-            « Mettre au Banc 2 », « Jouer cet Objet ». Il vient **sous la main** et la page le
-            cadre dès qu'une carte est choisie (`poseRef`) : sur téléphone il ne reste jamais
-            sous la barre de navigation.
+            **La carte choisie, en grand** (#745) : toucher une carte de la main l'agrandit au centre de la
+            table, avec son texte et ses gestes (« Poser au Poste », « Mettre au Banc 2 »…). Non modale :
+            le Banc reste touchable. Le geste part au toucher ; la carte vole vers sa place (`CarteEnVol`).
           */}
-          {selected && (
-            <section className="pose panel" aria-label="Poser la carte choisie" tabIndex={-1} ref={poseRef}>
-              <p className="pose__titre">
-                <span className="muted">Carte choisie</span> <strong>{cardName(selected.cardId)}</strong>{' '}
-                <span className="hand__kind">{selectedDefinition && kindLabel(selectedDefinition)}</span>
-              </p>
-              {selectedDefinition && !isPlanque(selectedDefinition) && (
-                <p className="hand__text muted">{selectedDefinition.text}</p>
-              )}
-              {/* Un Planqué de la main se lit comme au plateau : son Seuil, ses Pressions et leur coût,
-                  son Talent. Au toucher, l'inspecteur au survol n'existe pas : la fiche est ici. */}
-              {selectedDefinition && isPlanque(selectedDefinition) && (
-                <FicheCarte instance={selected} card={selectedDefinition} />
-              )}
-              {selectedActions.length > 0 ? (
-                <>
-                  <p className="muted pose__aide">Touche un geste pour la jouer :</p>
-                  <div className="actions actions--tight">
-                    {selectedActions.map((action) => (
-                      <ActionButton
-                        key={JSON.stringify(action)}
-                        state={state}
-                        action={action}
-                        myCamp={myCamp}
-                        onAction={play}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="muted">
-                  {myMove ? 'Cette carte ne peut pas être jouée maintenant.' : 'Ce n’est pas ton tour de jouer.'}
-                </p>
-              )}
-              <button type="button" className="link-button" onClick={() => setSelectedUid(null)}>
-                Reprendre une autre carte
-              </button>
-            </section>
+          {selected && selectedDefinition && (
+            <CarteEnGrand
+              carte={selectedDefinition}
+              nom={cardName(selected.cardId)}
+              genre={kindLabel(selectedDefinition)}
+              fiche={
+                isPlanque(selectedDefinition) ? (
+                  <FicheCarte instance={selected} card={selectedDefinition} />
+                ) : (
+                  <p className="carte-grand__texte muted">{selectedDefinition.text}</p>
+                )
+              }
+              gestes={
+                selectedActions.length > 0 ? (
+                  <>
+                    <p className="muted carte-grand__aide">Touche un geste pour la jouer :</p>
+                    <div className="actions actions--tight">
+                      {selectedActions.map((action) => (
+                        <ActionButton
+                          key={JSON.stringify(action)}
+                          state={state}
+                          action={action}
+                          myCamp={myCamp}
+                          onAction={jouerAvecVol}
+                        />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <p className="muted">
+                    {myMove ? 'Cette carte ne peut pas être jouée maintenant.' : 'Ce n’est pas ton tour de jouer.'}
+                  </p>
+                )
+              }
+              finalFocus={() =>
+                [...document.querySelectorAll<HTMLElement>('.hand [data-uid]')]
+                  .find((el) => el.dataset.uid === selected.uid)
+                  ?.querySelector<HTMLElement>('button') ?? null
+              }
+              onFermer={() => setSelectedUid(null)}
+            />
           )}
-          {/* La barre vit **dans la console** : en colonne (téléphone en portrait) elle suit la main
-              comme avant ; sur un écran large (paysage, PC) elle reste sous la main, dans la colonne
-              de droite, au lieu de flotter sous le plateau. */}
-          {/*
-            **La barre d'action** (D-093, #191) : collée au-dessus de la navigation, elle porte ce qui
-            se joue au Poste — café, Rotation, Talent, les Pressions, « Fin du tour » — et, quand le
-            moteur l'ouvre, la relève ou le choix en attente. Elle est **toujours là** (`.combat-barre`,
-            mesurée par `npm run capturer`) : c'est la cible « poste-actions » du pas-à-pas, et c'est
-            elle qui libère la hauteur dont la main a besoin. Elle ne rend que ce que dit la liste du
-            moteur : en partie à deux, le tour de l'autre ne lui prête aucun bouton (#125).
+          {envol && (
+            <CarteEnVol key={envol.id} vol={envol} onFini={() => setEnvol(null)}>
+              <CardView card={envol.carte} />
+            </CarteEnVol>
+          )}
+        </div>
+        {/* **L'annonce du coup** (WCAG, messages d'état) : une zone **persistante** — jamais re-montée, sinon un
+              lecteur d'écran ne l'entend pas changer — qui reçoit la dernière ligne du journal. La
+              ligne visible, elle, est re-montée à chaque coup pour son entrée animée : elle ne peut
+              pas porter l'annonce. En fin de partie, c'est le bandeau du haut qui parle (`alert`). */}
+        <p className="sr-only" aria-live="polite" data-testid="annonce-du-coup">
+          {state.phase === 'ended' ? '' : lastLog}
+        </p>
+        {/* **L'annonce de la réplique de la Direction** (02/11/2026) : même principe que le journal,
+              `aria-live="polite"` pour que le lecteur d'écran l'entende changer. Elle ne parle qu'en solo,
+              aux trois moments (craquage, victoire, défaite). */}
+        <p className="sr-only" aria-live="polite" data-testid="annonce-replique-direction">
+          {repliqueDirection ?? ''}
+        </p>
+
+        {/*
+            **Le message du tour** (téléphone, retour du propriétaire) : une seule bulle transitoire sous le
+            haut de la table — portée, café, réplique de la Direction, attente de l'autre joueur — et, tant
+            qu'une décision attend (relève, carte à désigner), son panneau borné, qui défile en lui-même et
+            ne fait jamais défiler la page. Rien ne se pose sur le bas de l'écran, qui ne porte que la main.
           */}
-          {/* `cramped-padding` est désactivé **ici et pour une raison écrite** (#205, AGENTS.md §6) :
-                la règle demande 8 px entre les lignes de la barre et son cadre ; D-094 (3) exige, elle,
-                20 px entre le bas de la barre et le bas de l'écran, et `npm run capturer` le mesure à
-                420 × 900. Les deux ne tiennent pas ensemble : les 16 px d'inset font tomber la marge à
-                14 px (mesuré le 28/10/2026). La marge protège le pouce, l'inset est cosmétique —
-                c'est la marge qui gagne, et la règle se tait ici plutôt que de rougir une fois sur deux. */}
-          <section
-            ref={barreRef}
-            tabIndex={-1}
-            /* Une Pression jouable : « Fin du tour » cède le plein à la Pression (feuille de styles). */
-            data-pression-jouable={myMove && pressions.length > 0 ? 'true' : undefined}
-            className="combat-barre"
-            aria-label="Actions du tour"
-            data-impeccable-ignore="cramped-padding"
-            data-pas-a-pas={pasAPas.designe('poste-actions')}
-            /* Plus de halo local : la cible de la Journée vient d'un seul module
-               (`journee-cible`), et le panneau s'efface sur le plateau (31/10/2026) —
-               c'est le pas-à-pas qui désigne, ici. */
-          >
-            {/* **L'annonce du coup** (WCAG, messages d'état) : une zone **persistante** — jamais re-montée, sinon un
-                lecteur d'écran ne l'entend pas changer — qui reçoit la dernière ligne du journal. La
-                ligne visible, elle, est re-montée à chaque coup pour son entrée animée : elle ne peut
-                pas porter l'annonce. En fin de partie, c'est le bandeau du haut qui parle (`alert`). */}
-            <p className="sr-only" aria-live="polite" data-testid="annonce-du-coup">
-              {state.phase === 'ended' ? '' : lastLog}
-            </p>
-            {/* **L'annonce de la réplique de la Direction** (02/11/2026) : même principe que le journal,
-                `aria-live="polite"` pour que le lecteur d'écran l'entende changer. Elle ne parle qu'en solo,
-                aux trois moments (craquage, victoire, défaite). */}
-            <p className="sr-only" aria-live="polite" data-testid="annonce-replique-direction">
-              {repliqueDirection ?? ''}
-            </p>
-            {/* La dernière ligne du journal (#199) : « Lancer de tampon : tu ouvres. » et le reste de ce
-                qui vient de se passer. Elle vit dans la barre d'action, là où l'œil est déjà : une
-                information temporaire n'a pas à occuper une bande de plus. */}
-            {/* **« Fin du tour » vit sur cette ligne** (#320), à droite de la phrase du journal : c'est
-                l'action principale, et elle garde la même place à chaque état du tour. Quand une
-                Pression est jouable, la rangée des gestes dessous porte le café, la Rotation, le Talent
-                et la Pression — « Fin du tour » ne descend donc plus jamais sur une ligne de plus, sous
-                la barre de navigation (420 × 900, `npm run capturer` le mesure). */}
-            {(lastLog || porteeLine || raisonCafe || turnActions.length > 0) && (
-              <div className="combat-barre__tete">
-                <div className="combat-barre__texte">
-                  {lastLog && (
-                    /* **`wait`, pas `popLayout`** (#551, mesuré le 31/10/2026) : `popLayout` sort
-                       la ligne qui s'en va en `position: absolute`, et la nouvelle ligne la
-                       recouvre pendant la sortie. La ligne sortante reste alors **510 ms** en
-                       place à l'opacité 0 (mesuré : 113 → 627 ms, 734 → 1246 ms après le
-                       chargement) — deux paragraphes superposés, que le détecteur lit comme
-                       `text-occlusion`, et qui se marcheraient dessus à l'œil pendant la sortie.
-                       `wait` garde la ligne sortante dans le flux (pas de saut de hauteur) et
-                       laisse la nouvelle entrer quand elle a fini. */
-                    <AnimatePresence mode="wait" initial={false}>
-                      {/* Sous « Mouvement réduit », la ligne change sans glisser ni rebondir : le
-                          réglage ne coupait que le CSS, framer-motion ne le lisait pas. */}
-                      <motion.p
-                        key={state.log.length}
-                        className={`banner combat-barre__journal ${/craque/.test(lastLog) ? 'banner--ko' : ''}`}
-                        initial={sansMouvement ? false : { opacity: 0, y: -10, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        /* Une sortie **courte** : c'est elle qui borne l'attente de `wait`, et
-                           120 ms suffisent à ne pas voir la ligne tomber. */
-                        exit={sansMouvement ? undefined : { opacity: 0, y: 6, transition: { duration: 0.12 } }}
-                        transition={sansMouvement ? { duration: 0 } : { type: 'spring', stiffness: 320, damping: 26 }}
-                      >
-                        {lastLog}
-                      </motion.p>
-                    </AnimatePresence>
-                  )}
-                  {porteeLine && <p className="muted combat-barre__portee">{porteeLine}</p>}
-                  {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
-                      de portée, sous le journal, là où l'œil cherche déjà ce qui manque au tour. */}
-                  {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
-                  {repliqueDirection && (
-                    /* `data-testid` : le `<strong>` coupe le texte en deux nœuds, donc
+        {(avisDuTour || state.pendingPromotion || choices.length > 0) && (
+          <div className="combat-superpose">
+            {avisDuTour && (
+              <section className={`combat-toast${bulleVisible ? '' : ' combat-toast--sorti'}`} aria-label="Le tour">
+                {porteeLine && <p className="muted combat-barre__portee">{porteeLine}</p>}
+                {/* **Pourquoi le café n'est pas attachable** (#399) : la même place que la ligne
+                      de portée, là où l'œil cherche déjà ce qui manque au tour. */}
+                {raisonCafe && <p className="muted combat-barre__portee combat-barre__cafe-raison">{raisonCafe}</p>}
+                {repliqueDirection && (
+                  /* `data-testid` : le `<strong>` coupe le texte en deux nœuds, donc
                        `getByText` ne peut pas lire la ligne entière — les tests visent
                        l'élément, pas sa mise en forme (#544). */
-                    <p className="muted combat-barre__portee combat-replique" data-testid="replique-direction">
-                      <strong>La Direction</strong> · {repliqueDirection}
-                    </p>
-                  )}
-                </div>
-                {turnActions.map((action) => (
-                  <span className="combat-barre__fin" key={JSON.stringify(action)}>
-                    <ActionButton state={state} action={action} myCamp={myCamp} onAction={play} />
-                  </span>
-                ))}
-              </div>
+                  <p className="muted combat-barre__portee combat-replique" data-testid="replique-direction">
+                    <strong>La Direction</strong> · {repliqueDirection}
+                  </p>
+                )}
+                {/* Le panneau du café (#399) : quel café attend en Machine. Il explique, il ne pose rien. */}
+                {attachements.length > 0 && (
+                  <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe} />
+                )}
+                {playable.length === 0 && state.phase !== 'ended' && (
+                  <p className="muted combat-barre__repos">
+                    {idleLine}
+                    {attendLAutre && (
+                      <>
+                        {' '}
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => setMenu({ ouvert: true, vue: 'pvp' })}
+                        >
+                          Coller un code
+                        </button>
+                      </>
+                    )}
+                  </p>
+                )}
+              </section>
             )}
 
             {state.pendingPromotion && (
@@ -1406,99 +1410,61 @@ export function Battle() {
                 </div>
               </section>
             )}
+          </div>
+        )}
 
-            {/* Les gestes du Poste sur **une seule ligne** quand ils tiennent : la rangée de café,
-                Rotation et Talent défile au lieu de passer à la ligne (quatre Planqués à nourrir ne
-                font pas quatre lignes), et les Pressions viennent à côté. « Fin du tour » est sur la
-                ligne du journal, au-dessus (#320). La barre ne doit jamais recouvrir la main ni passer
-                sous la navigation (`npm run capturer` le mesure). */}
-            {(gestesDuPoste.length > 0 || cibles.length > 0 || pressions.length > 0 || attachements.length > 0) && (
-              <div className="combat-barre__gestes">
-                {attachements.length > 0 && (
-                  <PanneauAttacheCafe cafe={mySide.energyZone ?? undefined} raison={raisonCafe} />
-                )}
-                {(gestesDuPoste.length > 0 || cibles.length > 0) && (
-                  <div className="actions actions--tight combat-barre__rang">
-                    {mySide.active && cibles.length > 0 && (
-                      <button type="button" className="button" onClick={() => setInspecte(mySide.active?.uid ?? null)}>
-                        <Coffee size={16} />
-                        <span>Rotation</span>{' '}
-                        <span className="button__detail">
-                          {cibles.length} cible{cibles.length > 1 ? 's' : ''}
-                        </span>
-                      </button>
-                    )}
-                    {gestesDuPoste.map((action) => (
-                      <ActionButton
-                        key={JSON.stringify(action)}
-                        state={state}
-                        action={action}
-                        myCamp={myCamp}
-                        onAction={play}
-                      />
-                    ))}
-                  </div>
-                )}
-                {pressions.map((action) => (
-                  <ActionButton
-                    key={JSON.stringify(action)}
-                    state={state}
-                    action={action}
-                    myCamp={myCamp}
-                    onAction={play}
-                  />
-                ))}
-              </div>
-            )}
-
-            {playable.length === 0 && state.phase !== 'ended' && (
-              <p className="muted combat-barre__repos">
-                {idleLine}
-                {attendLAutre && (
-                  <>
-                    {' '}
-                    <button type="button" className="link-button" onClick={() => setMenu({ ouvert: true, vue: 'pvp' })}>
-                      Coller un code
-                    </button>
-                  </>
-                )}
-              </p>
-            )}
-            {/* **Rejouer, là où l'œil cherche l'action** (relecture du combat, 30/10/2026) : en fin de
-                partie, la barre n'offrait qu'une phrase, et « Nouveau combat » vivait dans `⋯`. Le
-                bandeau du haut garde le verdict ; D-030 n'écarte que l'écran plein de victoire, pas un
-                bouton. Une partie finie n'a rien à perdre : le geste est direct. */}
-            {state.phase === 'ended' && (
-              <div className="combat-barre__gestes">
-                {/* **La fin du tutoriel propose la suite** (30/10/2026) : une partie complète
-                    avec le Deck chargé à l'étape 2, ou la reprise de la Journée par son propre
-                    panneau (« Suivant », resté ouvert au-dessus). Ici, seul le premier choix
-                    a besoin d'un bouton. */}
-                {sceneFin && state.winner === 'player' && (
-                  <Link className="button" to="/battle">
-                    Une partie complète
-                  </Link>
-                )}
-                <button type="button" className="button button--primary" onClick={demanderNouveauCombat}>
-                  <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
-                </button>
-              </div>
-            )}
-          </section>
-          {/* Le journal dans la console (D-158, #520) : la console était vide sous la barre d'action
-              sur écran large. Le journal reste aussi dans `⋯`. Pas d'`aria-live` : l'annonce du
-              coup a déjà sa zone. */}
-          {ecranLarge && (
-            <section className="journal-console" aria-label="Journal du combat">
-              <h2 className="journal-console__titre">Journal</h2>
-              <ol className="log journal-console__liste">
-                {state.log.slice(-12).map((line, index) => (
-                  <li key={`${index}-${line}`}>{line}</li>
-                ))}
-              </ol>
-            </section>
+        {/*
+            **Les actions du tour** (refonte du combat, retour du propriétaire) : une pile verticale à droite
+            de la table, au milieu. « Fin du tour » apparaît seul quand il est jouable, puis les gestes du
+            Poste (Rotation, Talent) et les Pressions, en boutons de 44 px. Vide, le conteneur ne s'affiche pas.
+            C'est la cible « poste-actions » du pas-à-pas.
+          */}
+        <section
+          ref={actionsRef}
+          tabIndex={-1}
+          /* Une Pression jouable : « Fin du tour » cède le plein à la Pression (feuille de styles). */
+          data-pression-jouable={myMove && pressions.length > 0 ? 'true' : undefined}
+          className="actions-flottantes"
+          aria-label="Actions du tour"
+          data-impeccable-ignore="cramped-padding"
+          data-pas-a-pas={pasAPas.designe('poste-actions')}
+        >
+          {turnActions.map((action) => (
+            <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+          ))}
+          {mySide.active && cibles.length > 0 && (
+            <button type="button" className="button" onClick={() => setInspecte(mySide.active?.uid ?? null)}>
+              <Coffee size={16} />
+              <span>Rotation</span>{' '}
+              <span className="button__detail">
+                {cibles.length} cible{cibles.length > 1 ? 's' : ''}
+              </span>
+            </button>
           )}
-        </div>
+          {gestesDuPoste.map((action) => (
+            <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+          ))}
+          {pressions.map((action) => (
+            <ActionButton key={JSON.stringify(action)} state={state} action={action} myCamp={myCamp} onAction={play} />
+          ))}
+          {/* **Rejouer, là où l'œil cherche l'action** (relecture du combat, 30/10/2026) : en fin de
+                partie, « Nouveau combat » reste à portée. Le bandeau du haut garde le verdict. */}
+          {state.phase === 'ended' && (
+            <>
+              {/* **La fin du tutoriel propose la suite** (30/10/2026) : une partie complète
+                    avec le Deck chargé à l'étape 2, ou la reprise de la Journée par son propre
+                    panneau (« Suivant », resté ouvert au-dessus). */}
+              {sceneFin && state.winner === 'player' && (
+                <Link className="button" to="/battle">
+                  Une partie complète
+                </Link>
+              )}
+              <button type="button" className="button button--primary" onClick={demanderNouveauCombat}>
+                <RotateCcw size={16} aria-hidden="true" /> Nouveau combat
+              </button>
+            </>
+          )}
+        </section>
       </div>
 
       <Confirmation

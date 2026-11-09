@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react';
 
 /**
  * Les gestes d'un testeur sur le **menu `⋯` du combat** (D-093, #191), pour les tests d'écran :
- * Journal, Partie à deux, Règles, Abandonner et Nouveau combat n'ont plus de place sur la table,
+ * Partie à deux, Règles, Abandonner et Nouveau combat n'ont plus de place sur la table,
  * ils sont derrière un seul bouton. Chaque test qui les cherche passe par ici — c'est le même
  * chemin que le testeur, donc un menu qui ne s'ouvre plus fait échouer **tous** ces tests.
  */
@@ -22,8 +22,8 @@ export function menuSurLaListe(): HTMLElement {
   return menu;
 }
 
-/** Ouvre le menu sur l'une de ses deux vues (le Journal, la Partie à deux). */
-export function menuSurLaVue(vue: 'Journal' | 'Partie à deux'): HTMLElement {
+/** Ouvre le menu sur sa vue « Partie à deux ». */
+export function menuSurLaVue(vue: 'Partie à deux'): HTMLElement {
   const menu = menuDuCombat();
   if (within(menu).queryByRole('heading', { name: vue })) return menu;
   menuSurLaListe();

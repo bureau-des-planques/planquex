@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { Coffee } from 'lucide-react';
 import { FACTION_META, getCard } from '@/data';
 import type { CafeSymbol, CardInstance, PlayerState } from '@/data/types';
@@ -6,9 +8,13 @@ import { STATUS_META, StatusBadge } from '@/components/StatusBadge';
 import { CafeDot, cafeLabel, CafePips } from '@/components/CafePips';
 import { CardView } from '@/components/CardView';
 import { CarteSurvolable, FicheCarte } from '@/components/InspecteurCombat';
-import type { EffetCombat } from '@/components/effets-combat';
+import { delaiDeRetournement, type EffetCombat } from '@/components/effets-combat';
 import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { cardName } from '@/combat/cartes';
+import { PileRebut } from '@/combat/pile-rebut';
+
+/** Le nombre de dos empilés sous le Deck : trois suffisent à dire « un paquet » (#739). */
+const DOS_EMPILES = 3;
 
 /**
  * Un Planqué **sur le plateau** (D-093, #187) : la carte du gabarit, figée, avec son Stress
@@ -35,6 +41,8 @@ export function CartePlateau({
   annotations = false,
   effets = [],
   dansScene = false,
+  retournement,
+  evolution,
   onInspecter,
   onAttacher
 }: {
@@ -54,6 +62,14 @@ export function CartePlateau({
    * Surcharge et Épuisement au Contrôle, dégâts sur soi — restent visibles.
    */
   dansScene?: boolean;
+  /**
+   * **L'ouverture d'un combat neuf** (#746) : le délai, en ms, de la bascule dos → face de ce
+   * Planqué. Absent, la carte est face visible (le cas de toute partie reprise, et de « Mouvement
+   * réduit »), et son rendu ne change pas d'un octet.
+   */
+  retournement?: number;
+  /** L'évolution de ce Planqué (#748) : son pouls, sur la carte nouvelle. Absent, rien ne pulse. */
+  evolution?: EffetCombat;
   onInspecter: () => void;
   /** Le café en Machine attache à ce Planqué (#454, D-145) : le toucher l'attache. */
   onAttacher?: () => void;
@@ -61,6 +77,16 @@ export function CartePlateau({
   const nom = cardName(instance.cardId);
   const definition = getCard(instance.cardId);
   if (!definition) return <span className="muted">{nom}</span>;
+  const carte = (
+    <CardView
+      card={definition}
+      calme
+      plateau
+      annotations={annotations}
+      stress={instance.maxHp - instance.hp}
+      seuil={instance.maxHp}
+    />
+  );
   return (
     <CarteSurvolable
       uid={instance.uid}
@@ -72,14 +98,16 @@ export function CartePlateau({
       resume={resumeDeCarte(instance)}
       fiche={<FicheCarte instance={instance} card={definition} machine={machine} />}
     >
-      <CardView
-        card={definition}
-        calme
-        plateau
-        annotations={annotations}
-        stress={instance.maxHp - instance.hp}
-        seuil={instance.maxHp}
-      />
+      {/* Le dos se retourne (#746) : le recto et le verso se partagent le même retournement, le
+          verso est un dos de carte (`.entrant__verso`), jamais la carte elle-même. */}
+      {retournement === undefined ? (
+        carte
+      ) : (
+        <span className="entrant entrant--ouverture" style={{ '--delai': `${retournement}ms` } as CSSProperties}>
+          <span className="entrant__recto">{carte}</span>
+          <span className="entrant__verso" aria-hidden="true" />
+        </span>
+      )}
       {/* Le chiffre de Stress (#192) : il naît avec l'instance touchée, vit 700 ms et quitte le
           DOM. `aria-hidden` : l'information est déjà dans la barre de Stress et au journal. */}
       {effets.map((effet) => (
@@ -91,6 +119,9 @@ export function CartePlateau({
           +{effet.valeur}
         </span>
       ))}
+      {/* Le pouls d'une évolution (#748) : un liseré qui se referme sur la carte nouvelle, 300 ms. Il
+          naît avec l'effet et quitte le DOM avec lui. `aria-hidden` : l'évolution est lue au journal. */}
+      {evolution?.anime && <span key={evolution.id} className="evolution-flash" aria-hidden="true" />}
     </CarteSurvolable>
   );
 }
@@ -160,6 +191,115 @@ export function texteMachine(side: PlayerState): string {
   return `Machine à café : ${side.energyZone ? cafeLabel(side.energyZone) : 'vide'} (types du Deck : ${types || 'aucun'})`;
 }
 
+/** La taille d'un dos de carte, comme la feuille le fixe (`.eventail__dos`, 1,1 × 1,6 rem). */
+function tailleDUnDos(): { w: number; h: number } {
+  const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  return { w: 1.1 * rem, h: 1.6 * rem };
+}
+
+/** Une boîte à l'écran : son centre et sa taille, en pixels de fenêtre. */
+interface Boite {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function boiteDe(el: Element): Boite {
+  const rect = el.getBoundingClientRect();
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, w: rect.width, h: rect.height };
+}
+
+/**
+ * **Où part et où arrive le vol** (#748), lu dans le DOM **après** le geste. Le départ est le Deck
+ * du camp (tirage) ou l'éventail de dos adverse (pose) ; l'arrivée est la carte de la main (tirage du
+ * joueur), l'éventail (tirage adverse) ou la place du Poste ou du Banc (pose). `null` : une cible
+ * absente ou sans taille ; le vol ne se joue pas, et ne bloque rien.
+ */
+function planDuVol(
+  effet: Pick<EffetCombat, 'nature' | 'uid' | 'lieu' | 'emplacement'>,
+  mine: boolean
+): { boite: Boite; dx: number; dy: number; k: number } | null {
+  const camp = mine ? 'mien' : 'direction';
+  const eventail = document.querySelector<HTMLElement>('[data-camp="direction"] .eventail');
+  const dos = tailleDUnDos();
+  let depart: Boite | null;
+  let arrivee: Boite | null;
+  if (effet.nature === 'pose') {
+    const repere = effet.lieu === 'poste' ? 'poste' : `banc-${effet.emplacement ?? 0}`;
+    const cible = document.querySelector<HTMLElement>(`[data-camp="direction"] [data-arrivee="${repere}"]`);
+    if (!eventail || !cible) return null;
+    depart = { ...boiteDe(eventail), w: dos.w, h: dos.h };
+    arrivee = boiteDe(cible);
+  } else {
+    const deck = document.querySelector<HTMLElement>(`[data-camp="${camp}"] .pile--deck .pile__visuel`);
+    if (!deck) return null;
+    depart = boiteDe(deck);
+    if (mine) {
+      const main = [...document.querySelectorAll<HTMLElement>('.hand [data-uid]')].find(
+        (el) => el.dataset.uid === effet.uid
+      );
+      arrivee = main ? boiteDe(main) : null;
+    } else {
+      arrivee = eventail ? { ...boiteDe(eventail), w: dos.w, h: dos.h } : null;
+    }
+  }
+  if (!depart || !arrivee || arrivee.w <= 0 || arrivee.h <= 0) return null;
+  return {
+    boite: arrivee,
+    dx: depart.x - arrivee.x,
+    dy: depart.y - arrivee.y,
+    k: depart.w / arrivee.w
+  };
+}
+
+/**
+ * **Le vol d'une carte** (#748, retour du propriétaire, Pokémon TCG Pocket) : une carte part du
+ * Deck (tirage) ou de l'éventail de dos adverse (pose), et arrive à sa place. Elle se retourne en
+ * vol **si** on voit sa face (le joueur qui pioche, la Direction qui pose) ; la pioche adverse reste
+ * un dos, sa main est cachée. Le mouvement est dans la feuille (`.vol-effet`, `transform` et
+ * `rotateY` seuls), et sa durée est celle de l'effet : le nœud quitte le DOM avec lui.
+ */
+function VolDeCarte({ effet, mine }: { effet: EffetCombat; mine: boolean }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const retourne = effet.nature === 'pose' || (effet.nature === 'tirage' && mine);
+  const definition = retourne && effet.carte ? getCard(effet.carte.cardId) : undefined;
+
+  // Mesuré **après** le geste : le plateau a déjà sa carte à la place d'arrivée. Avant la peinture,
+  // pour que le vol ne se montre jamais à la mauvaise place.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const plan = planDuVol(effet, mine);
+    el.hidden = plan === null;
+    if (!plan) return;
+    const { x, y, w, h } = plan.boite;
+    el.style.left = `${x - w / 2}px`;
+    el.style.top = `${y - h / 2}px`;
+    el.style.width = `${w}px`;
+    el.style.height = `${h}px`;
+    el.style.setProperty('--dx', `${plan.dx}px`);
+    el.style.setProperty('--dy', `${plan.dy}px`);
+    el.style.setProperty('--k', String(plan.k));
+  }, [effet, mine]);
+
+  return createPortal(
+    <div
+      ref={ref}
+      className={`vol-effet vol-effet--${effet.nature}${retourne ? ' vol-effet--retourne' : ''}`}
+      aria-hidden="true"
+    >
+      <span className="vol-effet__face vol-effet__dos" />
+      {definition && (
+        <span className="vol-effet__face vol-effet__recto">
+          <CardView card={definition} calme plateau />
+        </span>
+      )}
+    </div>,
+    document.body
+  );
+}
+
 /**
  * **Un camp du plateau** (#169, #187) : le Poste (une carte) et le Banc (trois cartes) se
  * côtoient sur une ligne, le Poste à gauche, pour les deux camps : les deux Postes sont sur
@@ -180,6 +320,7 @@ export function Camp({
   detaille,
   effets = [],
   cibleScene,
+  ouverture,
   raisonsDeckDeTest = [],
   cafeAttachable,
   onInspecter,
@@ -204,6 +345,12 @@ export function Camp({
   effets?: readonly EffetCombat[];
   /** Le `uid` de la cible de la Pression en cours : c'est elle que la scène anime (D-098). */
   cibleScene?: string;
+  /**
+   * **L'ouverture d'un combat neuf** (#746) : les Planqués du camp se retournent, en cascade. Le
+   * `rangDeBase` est le rang du Poste de ce camp (0 pour le joueur, 4 pour la Direction).
+   * Absent : rien ne se retourne (partie reprise, « Mouvement réduit »).
+   */
+  ouverture?: { rangDeBase: number };
   /**
    * Ce camp joue le **deck de test**, parce que le Deck du joueur n'est pas valide (D-103, #243).
    * L'avertissement tenait sur sa propre ligne (30 px) ; il est désormais une étiquette de la
@@ -246,8 +393,18 @@ export function Camp({
   // **La Pression** est jouée par la scène (D-098) : le cabrage, le trait et l'anneau d'impact
   // du CSS de #207 ont disparu, sinon deux animations se superposeraient. Ce qui reste ici, et
   // qui ne dépend d'aucun mouvement, c'est le **chiffre de Stress** (`effetsStress`).
+  // La pose de la Direction (#748) : la place d'arrivée se cache le temps du vol, puis la carte
+  // se montre. Le vol part de l'éventail de dos et atterrit sur `data-arrivee`.
+  const poseAuPoste = effets.some((effet) => effet.nature === 'pose' && effet.anime && effet.lieu === 'poste');
   const poste = (
-    <div className="board__poste" data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}>
+    <div
+      className={`board__poste${poseAuPoste ? ' is-arrivee' : ''}`}
+      data-pas-a-pas={mine ? pasAPas.designe('poste') : undefined}
+      /* La cible du vol d'une carte posée au Poste (`CarteEnVol`), côté mien seulement. */
+      data-envol={mine ? 'poste' : undefined}
+      /* La cible du vol de la Direction (`VolDeCarte`, #748), côté adverse seulement. */
+      data-arrivee={mine ? undefined : 'poste'}
+    >
       <span className="sr-only">Poste</span>
       {posteActif ? (
         <CartePlateau
@@ -258,6 +415,8 @@ export function Camp({
           annotations={detaille}
           effets={effetsStress.filter((effet) => effet.uid === posteActif.uid)}
           dansScene={cibleScene === posteActif.uid}
+          retournement={ouverture ? delaiDeRetournement(ouverture.rangDeBase) : undefined}
+          evolution={effets.find((effet) => effet.nature === 'evolution' && effet.uid === posteActif.uid)}
           onInspecter={() => onInspecter(posteActif.uid)}
           onAttacher={attacher(posteActif.uid)}
         />
@@ -294,6 +453,30 @@ export function Camp({
     </div>
   );
 
+  // Les piles de Deck et de Rebut (D-093, #190 ; D-182, #749), visibles des deux camps, avec leur
+  // compte. Elles sortent de la fiche : posées en **colonne** à droite de la table, comme des objets
+  // sur le plateau — les deux de la Direction en haut, les deux du joueur en bas.
+  // Le Deck n'est qu'un **dos** empilé : aucun nom, aucun identifiant, aucun ordre n'en sort (#739).
+  // Le Rebut montre la **dernière** carte défaussée (`discard.push`, D-093), face visible, et s'ouvre
+  // en panneau non modal qui liste toutes les défausses (#740, `PileRebut`).
+  const dosDuDeck = Array.from({ length: Math.min(DOS_EMPILES, side.deck.length) }, (_, index) => index);
+  const piles = (
+    <div className="piles">
+      <div className={`pile pile--deck${pioche ? ' is-piochante' : ''}`} role="group" aria-label={`Deck : ${label}`}>
+        <div className="pile__visuel" aria-hidden="true">
+          {dosDuDeck.map((index) => (
+            <span key={index} className="pile__dos" style={{ '--i': index } as CSSProperties} />
+          ))}
+        </div>
+        <div className="pile__compte">
+          <span>Deck</span>
+          <strong>{side.deck.length}</strong>
+        </div>
+      </div>
+      <PileRebut label={label} discard={side.discard} />
+    </div>
+  );
+
   // La fiche du camp, **à côté** de la carte du Poste et non au-dessus (#199) : le nom du camp, ses
   // piles, puis ce qui se passe au Poste (Stress écrit, cafés, Machine, Conditions). Le camp tient
   // ainsi en deux rangées, et non en trois : c'est ce qui rend la hauteur au plateau.
@@ -301,7 +484,17 @@ export function Camp({
     <div className="board__fiche">
       <header className="board__head">
         <h2>{label}</h2>
-        <span className="board__counts muted">main {side.hand.length}</span>
+        {/* **La main en éventail de dos** (D-182, #747) : autant de dos que de cartes, jamais la carte
+            elle-même — aucun nom, aucun identifiant ne passe ici. Le compte reste lu par les
+            lecteurs d'écran. */}
+        <span className="board__counts muted">
+          <span className="sr-only">main {side.hand.length}</span>
+          <span className="eventail" aria-hidden="true" style={{ '--n': side.hand.length } as CSSProperties}>
+            {side.hand.map((_, index) => (
+              <span key={index} className="eventail__dos" style={{ '--i': index } as CSSProperties} />
+            ))}
+          </span>
+        </span>
         {raisonsDeckDeTest.length > 0 && (
           <span
             className="board__test"
@@ -314,16 +507,6 @@ export function Camp({
             </span>
           </span>
         )}
-        {/* Les piles de Deck et de Rebut (D-093, #190), visibles des deux camps, avec leur compte. Le
-            Rebut ne s'ouvre pas encore : son panneau arrive avec #188, et d'ici là ce n'est pas un bouton. */}
-        <span className="piles">
-          <span className={`pile pile--deck${pioche ? ' is-piochante' : ''}`}>
-            Deck <strong>{side.deck.length}</strong>
-          </span>
-          <span className="pile pile--rebut">
-            Rebut <strong>{side.discard.length}</strong>
-          </span>
-        </span>
       </header>
       {side.active && (
         <div className="poste__info">
@@ -348,8 +531,12 @@ export function Camp({
           <li
             className={`bench__slot ${slot ? '' : 'is-free'}${
               !slot && onPoserPlace && placesPosables?.has(index) ? ' is-cible' : ''
-            }`}
+            }${effets.some((effet) => effet.nature === 'pose' && effet.anime && effet.emplacement === index) ? ' is-arrivee' : ''}`}
             key={index}
+            /* La cible du vol d'une carte posée au Banc (`CarteEnVol`), côté mien seulement. */
+            data-envol={mine ? `banc-${index}` : undefined}
+            /* La cible du vol de la Direction (`VolDeCarte`, #748), côté adverse seulement. */
+            data-arrivee={mine ? undefined : `banc-${index}`}
           >
             {slot ? (
               <CartePlateau
@@ -358,6 +545,8 @@ export function Camp({
                 inspectee={inspecte === slot.uid}
                 effets={effetsStress.filter((effet) => effet.uid === slot.uid)}
                 dansScene={cibleScene === slot.uid}
+                retournement={ouverture ? delaiDeRetournement(ouverture.rangDeBase + 1 + index) : undefined}
+                evolution={effets.find((effet) => effet.nature === 'evolution' && effet.uid === slot.uid)}
                 onInspecter={() => onInspecter(slot.uid)}
                 onAttacher={attacher(slot.uid)}
               />
@@ -390,9 +579,16 @@ export function Camp({
 
   // Empilés (#199) : le Poste et le Banc du camp, dans l'ordre qui met les deux Postes face à face.
   // Le camp qui a la main est porté par le cadre du camp.
+  // Les vols (#748) : le tirage et la pose de la Direction. Le vol est rendu à part, dans `body`,
+  // et ne prend aucune place dans le plateau. La pose du joueur n'a pas de vol ici (`CarteEnVol`).
+  const vols = effets.filter((effet) => (effet.nature === 'tirage' || effet.nature === 'pose') && effet.anime);
   return (
-    <article className={`board__side ${current ? 'is-current' : ''} ${mine ? '' : 'is-direction'}`}>
+    <article
+      className={`board__side ${current ? 'is-current' : ''} ${mine ? '' : 'is-direction'}`}
+      data-camp={mine ? 'mien' : 'direction'}
+    >
       <div className="board__zone">
+        {piles}
         {mine ? (
           <>
             {ligneDuPoste}
@@ -405,6 +601,9 @@ export function Camp({
           </>
         )}
       </div>
+      {vols.map((effet) => (
+        <VolDeCarte key={effet.id} effet={effet} mine={mine} />
+      ))}
     </article>
   );
 }

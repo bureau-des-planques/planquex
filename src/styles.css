@@ -92,27 +92,6 @@
   --gold-soft: #b5d6f2;
   --gold-deep: #2f6aa0;
 
-  /*
-   * **La palette du combat** (D-191 (4)) : le combat n'est pas refait avec le reste — une série
-   * de tickets le reprendra. `.battle` réapplique ces valeurs à ses jetons, pour que la scène
-   * reste exactement celle d'avant la refonte.
-   */
-  --combat-bg: #0b1220;
-  --combat-bg-deep: #070c16;
-  --combat-bg-raised: #131c2e;
-  --combat-bg-haut: #1d2d4f;
-  --combat-bg-sunken: #0e1626;
-  --combat-line: #243049;
-  --combat-line-strong: #34456a;
-  --combat-text: #e8eef8;
-  --combat-text-muted: #9aa9c2;
-  --combat-text-dim: #7e8fb0;
-  --combat-accent: #4f8ef7;
-  --combat-accent-deep: #356fe0;
-  --combat-gold: #e6b64c;
-  --combat-gold-soft: #f4d68a;
-  --combat-gold-deep: #a67c22;
-
   --ok: #46b98a;
   --warn: #e0a33e;
   --danger: #e06a4e;
@@ -147,9 +126,6 @@
   --font-body: 'Barlow', Arial, system-ui, sans-serif;
   --font-display: 'Barlow', Arial, system-ui, sans-serif;
   --font-marque: 'Barlow Condensed', 'Barlow', Arial, sans-serif;
-  /* Le combat garde ses polices d'avant la refonte (D-191 (4)). */
-  --combat-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --combat-font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
 
   /*
    * D-035 — shadcn/ui. Ses variables sont **mappées sur nos jetons**, pas laissées aux
@@ -2315,7 +2291,7 @@ h2 {
 
 /* Sur la barre d'action, `--text-muted` tombe sous AA sur la barre teintée : le bouton est un
    aplat, on reprend l'encre courante, atténuée par le poids et non par le contraste. */
-.combat-barre .attack__note {
+.actions-flottantes .attack__note {
   color: var(--text);
   font-weight: 600;
   opacity: 0.85;
@@ -3262,12 +3238,66 @@ h2 {
   padding-block: 0.72rem;
 }
 
-.pose .link-button {
-  align-items: center;
-  display: inline-flex;
-  margin-block: 0 -0.72rem;
-  min-height: 2.75rem;
-  padding-block: 0.72rem 0;
+/* ---------- La carte choisie, en grand (#745) ----------
+   Toucher une carte de la main l'agrandit au centre de la table. Feuille **non modale** (aucun voile,
+   le Banc reste touchable) et **fixe** : elle ne fait jamais défiler la page. Angles droits, bleu nuit
+   plat, filet ciel (D-191). */
+.battle .carte-grand {
+  align-items: stretch;
+  background: var(--scene-card);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  box-shadow: 0 16px 36px -14px rgb(0 0 0 / 80%);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  left: 50%;
+  max-height: calc(100dvh - 1.5rem);
+  max-width: calc(100vw - 1.5rem);
+  overflow-y: auto;
+  padding: 0.7rem 0.8rem;
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 19rem;
+  z-index: 30;
+}
+
+.battle .carte-grand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.battle .carte-grand__titre {
+  margin: 0;
+  outline: none;
+}
+
+.battle .carte-grand__visuel {
+  align-self: center;
+  width: min(13.5rem, 58vw);
+}
+
+.battle .carte-grand__texte,
+.battle .carte-grand__aide {
+  margin: 0;
+}
+
+.battle .carte-grand__gestes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* La carte qui vole (#745) : une copie de la carte choisie, réduite et glissée vers sa place. Transform
+   et opacité seuls, pour rester composés. Elle ne reçoit aucun clic. */
+.battle .carte-vol {
+  pointer-events: none;
+  position: fixed;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  z-index: 40;
 }
 
 /* ---------- Combat ---------- */
@@ -3278,29 +3308,8 @@ h2 {
    l'écran et **par-dessus** `:root` : aucun jeton global n'est réécrit ici. Le bleu nuit du
    projet reste la famille ; le feutre n'en est qu'une version éclaircie au centre. */
 .battle {
-  /* D-191 (4) : le combat n'est pas refait avec le reste. Il reprend ici, sur sa propre boîte,
-     la palette, les rayons et les polices d'avant la refonte, gardés en `--combat-*` dans `:root`. */
-  --bg: var(--combat-bg);
-  --bg-deep: var(--combat-bg-deep);
-  --bg-raised: var(--combat-bg-raised);
-  --bg-haut: var(--combat-bg-haut);
-  --bg-sunken: var(--combat-bg-sunken);
-  --line: var(--combat-line);
-  --line-strong: var(--combat-line-strong);
-  --text: var(--combat-text);
-  --text-muted: var(--combat-text-muted);
-  --text-dim: var(--combat-text-dim);
-  --accent: var(--combat-accent);
-  --accent-deep: var(--combat-accent-deep);
-  --gold: var(--combat-gold);
-  --gold-soft: var(--combat-gold-soft);
-  --gold-deep: var(--combat-gold-deep);
-  --radius: 14px;
-  --radius-sm: 9px;
-  --radius-lg: 20px;
-  --shadow-gold: 0 10px 26px rgb(230 182 76 / 18%);
-  --font-body: var(--combat-font-body);
-  --font-display: var(--combat-font-display);
+  /* D-193 : le combat suit la refonte (D-191) — il ne réaffecte plus aucun jeton global : palette
+     bleu nuit plat, bleu ciel, Barlow et angles droits viennent de `:root`. */
   font-family: var(--font-body);
   --scene-felt: #16202c;
   --scene-felt-deep: #0d1420;
@@ -3523,13 +3532,29 @@ h2 {
   max-height: none;
 }
 
-/* ---------- La barre d'action (D-093, #191) ---------- */
+/* ---------- Les actions du tour (refonte du combat, retour du propriétaire) ---------- */
 
-/* Collée **au-dessus** de la navigation fixe : `bottom` est la hauteur de la barre de navigation
-   (padding 0.5rem + icône et libellé) et un peu d'air. Plus bas que la navigation (20) pour ne
-   jamais passer devant elle ; plus haut que la table. `sticky` (et non `fixed`) garde la barre
-   dans le flux : quand tout tient dans la fenêtre, elle est simplement sous la main. */
-.combat-barre {
+/* Le message du tour : une bulle transitoire sous le haut de la table. Les décisions qui attendent
+   (relève, carte à désigner) s'y posent dans leur panneau, borné et défilant en lui-même : la page
+   ne défile jamais à cause d'elles. Rien ne se pose sur le bas de l'écran, qui ne porte que la main. */
+.combat-superpose {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  left: 0.5rem;
+  max-height: 60%;
+  overflow-y: auto;
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  z-index: 5;
+}
+
+.combat-toast {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.4rem 0.6rem;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)),
@@ -3538,142 +3563,88 @@ h2 {
   );
   border: 1px solid var(--line-strong);
   border-radius: 6px;
-  bottom: 4.7rem;
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent),
-    0 -8px 18px -10px rgb(0 0 0 / 60%);
+  box-shadow: 0 -8px 18px -10px rgb(0 0 0 / 60%);
+}
+
+/* La pile des actions du tour : à droite de la table, au milieu. Vide, elle ne s'affiche pas. */
+.actions-flottantes {
+  align-items: flex-end;
   display: flex;
   flex-direction: column;
-  /* #218 : la barre resserre ses trois lignes (journal, portée, gestes) — 1,6 px entre elles et
-     2,4 px de cadre — pour ne pas dépasser la garde de hauteur. Rien n'y est retiré.
-     #237 : 0,8 px entre les lignes et 1,6 px de cadre, pour que la **marge** de 20 px de
-     D-094 (3) tienne aussi quand le pas-à-pas est ouvert (mesuré : 15 px). Aucune information
-     retirée : les trois lignes, leurs boutons (36 px à l'époque de #237, **44 px depuis #320**)
-     et la ligne de journal sont intacts. */
-  gap: 0;
-  /* Un choix dans le Deck peut offrir vingt boutons : la barre défile alors en elle-même au
-     lieu de recouvrir le plateau. */
-  max-height: 42dvh;
+  gap: 0.4rem;
+  max-height: 62%;
   overflow-y: auto;
-  /* 2,4 → 1,6 px de cadre vertical (#237) : même raison que la gouttière ci-dessus.
-     **8 px en haut et en bas depuis le 28/10/2026** (#205, « cramped padding ») : sans inset,
-     les trois lignes touchaient le bord du cadre, et le détecteur le voyait — une fois sur
-     deux seulement, ce qui en faisait un faux rouge. La hauteur se reprend sur les lignes,
-     pas sur l'inset : `npm run capturer` garde les 20 px de marge (D-094 (3)). */
-  padding: 0.5rem 0.6rem;
-  position: sticky;
-  z-index: 16;
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 6;
 }
 
-/* Sur un téléphone, la barre ne se colle plus : collée, elle remontait par-dessus le bas de la main
-   (la main est dans la fenêtre avec un deck valide). Elle se range sous la main, et son geste se fait
-   en défilant. */
-@media (max-width: 639px) {
-  .combat-barre {
-    position: static;
-  }
+.actions-flottantes:empty {
+  display: none;
 }
 
-.combat-barre .actions {
-  margin-top: 0;
-}
-
-.combat-barre .button {
+/* Chaque geste : une cible de doigt de 44 px (SPEC-COMBAT-UI §5.1, SC 2.5.5). */
+.actions-flottantes .button {
   font-size: 0.8rem;
-  /* #320 : la cible de doigt de 44 px (SPEC-COMBAT-UI §5.1, SC 2.5.5). #203 l'avait ramenée à 36 px
-     pour la marge de hauteur ; la hauteur se gagne ailleurs, pas sur la cible. */
+  max-width: 11.5rem;
   min-height: 2.75rem;
+  min-width: 0;
   padding: 0.3rem 0.7rem;
 }
 
-/* La ligne de tête (#320) : la phrase du journal à gauche, « Fin du tour » à droite. L'action
-   principale ne change donc jamais de ligne — c'est elle qui sortait sous la navigation quand une
-   Pression rallongeait la barre d'une rangée (420 × 900). */
-.combat-barre__tete {
-  align-items: center;
-  display: flex;
-  gap: 0.35rem;
-}
-
-/* La phrase du journal et la ligne de portée, l'une sous l'autre, à gauche du bouton : elles
-   partagent la hauteur du bouton (36 px) au lieu d'ajouter une ligne chacune. */
-.combat-barre__texte {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 0.05rem;
-  min-width: 0;
-}
-
-/* Les gestes du Poste : **une seule rangée**, jamais deux (#320). Ce qui ne tient pas défile ou
-   se raccourcit ; rien ne passe à la ligne, donc la hauteur de la barre ne dépend plus du
-   nombre de boutons. */
-.combat-barre__gestes {
-  align-items: center;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.35rem;
-}
-
-/* La rangée Rotation / Talent ne passe pas à la ligne : la barre garde sa hauteur. Elle prend la
-   place que les Pressions lui laissent (au moins 6 rem : de quoi lire et toucher un bouton). Ce
-   qui ne tient pas se raccourcit ; elle ne défile pas, cachée ou non (#455, D-147). */
-.combat-barre .combat-barre__rang {
-  flex: 1 1 6rem;
-  flex-wrap: nowrap;
-  min-width: 0;
-  overflow: hidden;
-}
-
-/* Une entrée de la rangée se raccourcit (son détail prend une ellipse) au lieu de défiler (#455,
-   D-147) : aucune rangée de la barre ne défile cachée, et un contrôle n'y vit jamais hors du cadre. */
-.combat-barre__rang > .button {
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.combat-barre__rang > .button > span:not(.attack__dmg) {
+/* Un libellé trop long se raccourcit (ellipse), son nom entier reste dans l'arbre d'accessibilité. */
+.actions-flottantes .button > span:not(.attack__dmg) {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Une Pression se raccourcit (le nom prend une ellipse) plutôt que de pousser la rangée hors de
-   la barre ; son nom entier reste dans le texte du bouton, donc dans l'arbre d'accessibilité. */
-.combat-barre__gestes > .button {
-  flex: 0 1 auto;
-  min-width: 0;
+/* « Fin du tour » apparaît seul quand il est jouable : il surgit (opacité et échelle seulement). */
+.actions-flottantes > .button--fin {
+  animation: actions-pop 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
-.combat-barre__gestes > .button > span:not(.attack__dmg) {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+@keyframes actions-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-/* « Fin du tour » reste à droite de sa ligne, entière. */
-.combat-barre__fin {
-  flex: none;
-  margin-left: auto;
+@media (prefers-reduced-motion: reduce) {
+  .actions-flottantes > .button--fin {
+    animation: none;
+  }
 }
 
-.combat-barre .notice {
-  font-size: 0.8rem;
-  padding: 0.4rem 0.6rem;
+.battle--mouvement-reduit .actions-flottantes > .button--fin {
+  animation: none;
 }
 
-.combat-barre .notice p {
-  margin: 0 0 0.3rem;
-}
-
+/* La phrase de la bulle : la ligne de portée et le repos partagent le même interligne. */
 .combat-barre__portee,
 .combat-barre__repos {
   font-size: 0.76rem;
   /* Le même interligne que la ligne de journal (#218) : la ligne de portée perd 3 px, reste lisible. */
   line-height: 1.2;
   margin: 0;
+}
+
+.combat-superpose .notice {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.combat-superpose .notice p {
+  margin: 0 0 0.3rem;
 }
 
 /* « Conditions » (#199) : un lien de la barre d'état, qui ouvre la légende des cinq. Il tient dans la
@@ -3763,41 +3734,14 @@ h2 {
   color: var(--gold-soft);
 }
 
-/* La ligne de journal de la barre d'action (#199) : une phrase entière, lisible, qui passe à la ligne
-   plutôt que de se tronquer.
-   **Une ligne de journal n'est pas une carte** (#551, mesuré le 31/10/2026). Elle portait tout
-   `.banner` — fond en dégradé, filet d'accent sur quatre côtés, rayon — posé dans la barre, qui
-   est elle-même une carte : à 390 × 844, le détecteur d'écrans y lisait un `nested-cards` (une
-   carte dans une carte) qui tombait selon le moment du scan, pendant l'animation d'entrée du
-   journal. Le journal est le **récit**, pas une alerte : il garde le filet d'accent, **à gauche
-   seulement**, sans fond ni rayon — le texte reste sur le fond de la barre (`--text` sur
-   `--bg-sunken`, 15,5:1). Le « craque » garde son signal par la couleur de ce filet, pas en
-   redevenant une carte. */
-.combat-barre .combat-barre__journal {
-  background: none;
-  border: 0;
-  border-left: 3px solid var(--accent);
-  border-radius: 0;
-  font-size: 0.8rem;
-  line-height: 1.2;
-  margin: 0;
-  overflow-wrap: anywhere;
-  /* 1,6 → 0,8 px de respiration verticale (#237) : la phrase reste la même, la ligne reste
-     entière, et les 0,8 px gagnés servent la marge de D-094 (3). */
-  padding: 0.05rem 0.55rem;
-}
-
-/* Le « craque » : le filet de gauche passe à l'ambre, le fond reste celui de la barre. */
-.combat-barre .combat-barre__journal.banner--ko {
-  border-left-color: var(--warn);
-}
-
 /* La table : une colonne sur téléphone ; plateau à gauche et console du joueur à droite
    dès que l'écran est assez large — l'écran de bureau a de la largeur, pas de hauteur. */
 .battle__table {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  /* Les actions du tour et le message du tour se posent sur la table (position absolue). */
+  position: relative;
 }
 
 .battle__console {
@@ -5078,6 +5022,114 @@ h2 {
   display: none;
 }
 
+/* ---------- Le vol d'une carte (#748, D-191) ----------
+   Une carte part du Deck (pioche) ou de l'éventail de dos de la Direction (pose), et arrive à sa place.
+   `VolDeCarte` la rend dans `body` : sa place est mesurée, et seuls `transform` (translate, scale,
+   rotateY) bougent — des propriétés composées. Le dos est celui de l'éventail et du Deck (D-191) :
+   bleu acier, angles droits. La durée est `DUREE_TIRAGE_MS` = `DUREE_POSE_MS` (500 ms, sous 800). */
+.vol-effet {
+  animation: vol-effet 500ms cubic-bezier(0.2, 0.7, 0.2, 1) 1 both;
+  --tour: 0deg;
+  perspective: 900px;
+  pointer-events: none;
+  position: fixed;
+  transform-style: preserve-3d;
+  z-index: 60;
+}
+
+/* La carte dont on voit la face se retourne pendant le vol ; la pioche adverse reste un dos. */
+.vol-effet--retourne {
+  --tour: 180deg;
+}
+
+@keyframes vol-effet {
+  from {
+    transform: translate(var(--dx), var(--dy)) scale(var(--k)) rotateY(0deg);
+  }
+
+  to {
+    transform: translate(0px, 0px) scale(1) rotateY(var(--tour));
+  }
+}
+
+.vol-effet__face {
+  backface-visibility: hidden;
+  inset: 0;
+  position: absolute;
+}
+
+.vol-effet__dos {
+  background: linear-gradient(135deg, transparent 46%, rgb(127 184 231 / 45%) 47% 53%, transparent 54%), var(--bg-haut);
+  border: 1px solid var(--accent);
+  box-sizing: border-box;
+}
+
+.vol-effet__recto {
+  transform: rotateY(180deg);
+}
+
+.vol-effet__recto > * {
+  height: 100%;
+  width: 100%;
+}
+
+/* La pose de la Direction (#748) : la place d'arrivée est vide le temps du vol — la carte n'y
+   apparaît qu'à l'arrivée. `.is-arrivee` n'existe que pendant l'effet `pose`. */
+.is-arrivee .poste__carte,
+.is-arrivee .bench__carte {
+  visibility: hidden;
+}
+
+/* Le pouls d'une évolution (#748) : un liseré bleu ciel qui se referme sur la carte nouvelle, 300 ms.
+   Il est dans la carte (`position: relative`), hors du flux, et ne capte aucun clic. */
+.evolution-flash {
+  animation: evolution-pulse 300ms ease-out 1 both;
+  border: 2px solid var(--accent);
+  box-sizing: border-box;
+  inset: -3px;
+  pointer-events: none;
+  position: absolute;
+}
+
+@keyframes evolution-pulse {
+  from {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* « Mouvement réduit » (le store **et** le système) : ni vol, ni pouls. Le vol n'est pas créé, et la
+   carte se montre à sa place ; la pioche garde son compte, la pose son état final. */
+@media (prefers-reduced-motion: reduce) {
+  .vol-effet,
+  .evolution-flash {
+    animation: none !important;
+    display: none !important;
+  }
+
+  .is-arrivee .poste__carte,
+  .is-arrivee .bench__carte {
+    visibility: visible;
+  }
+}
+
+:root[data-mouvement-reduit='true'] .vol-effet,
+:root[data-mouvement-reduit='true'] .evolution-flash,
+.battle--mouvement-reduit .evolution-flash {
+  animation: none !important;
+  display: none !important;
+}
+
+:root[data-mouvement-reduit='true'] .is-arrivee .poste__carte,
+:root[data-mouvement-reduit='true'] .is-arrivee .bench__carte {
+  visibility: visible;
+}
+
 /* La barre de Stress est **dorée** (DESIGN.md §2.6) : le rouge reste le danger d'état, quand le
    Planqué va craquer. */
 .battle .stress__fill {
@@ -5108,8 +5160,9 @@ h2 {
     color 150ms ease-out;
 }
 
+/* D-191 : « Fin du tour » est le bouton principal, blanc ; le filet émeraude dit « c'est à toi ». */
 .battle .button--fin.is-a-toi {
-  background: var(--scene-go);
+  background: var(--surface-claire);
   border-color: var(--scene-go);
   color: var(--bg);
 }
@@ -5123,23 +5176,17 @@ h2 {
 /* **Un seul bouton plein quand une Pression est jouable** (relecture du combat, 30/10/2026). La
    Pression et « Fin du tour » terminent toutes deux le tour, et leurs deux pleins (bleu, émeraude)
    se touchaient presque : un tap trop haut abandonnait la Pression. « Fin du tour » passe alors en
-   ardoise à filet émeraude — même place (#320), même taille, même libellé —, et la rangée des
-   gestes s'écarte de 8 px. Texte `--text` sur `--scene-steel-deep` : 7,6:1 (DESIGN.md §1.5). */
-.combat-barre[data-pression-jouable='true'] .button--fin.is-a-toi {
+   ardoise à filet émeraude — même place, même taille, même libellé. Texte `--text` sur
+   `--scene-steel-deep` : 7,6:1 (DESIGN.md §1.5). */
+.actions-flottantes[data-pression-jouable='true'] .button--fin.is-a-toi {
   background: var(--scene-steel-deep);
   border-color: var(--scene-go);
   color: var(--text);
 }
 
-.combat-barre[data-pression-jouable='true'] .combat-barre__gestes {
-  margin-top: 0.5rem;
-}
-
 /* Le libellé d'attente est plus long que « Fin du tour » : il se range sur **deux lignes** dans une
-   largeur bornée, pour que la barre ne grandisse pas quand la main change (le journal, à sa
-   gauche, ne perd que quelques pixels et ne passe pas à la ligne de plus). La hauteur de 44 px
-   est celle de la cible de doigt, qui contient les deux lignes. */
-.combat-barre__fin .button--fin.is-direction {
+   largeur bornée. La hauteur de 44 px est celle de la cible de doigt, qui contient les deux lignes. */
+.actions-flottantes .button--fin.is-direction {
   font-size: var(--fs-sm);
   line-height: 1.1;
   max-width: 7.5rem;
@@ -5329,23 +5376,6 @@ h2 {
 
 .hand__text {
   font-size: 0.78rem;
-  margin: 0;
-}
-
-/* Le panneau de pose : sous la main, il nomme la carte choisie et offre ses gestes. */
-.pose {
-  border-color: var(--accent);
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.6rem 0.8rem;
-  /* La page cadre ce panneau (`scrollIntoView`) : la marge basse laisse à leur place la barre
-     de navigation fixe et la barre d'action collée au-dessus d'elle (#191). */
-  scroll-margin-bottom: 11rem;
-}
-
-.pose__titre,
-.pose__aide {
   margin: 0;
 }
 
@@ -5683,41 +5713,6 @@ h2 {
     gap: 0.85rem;
     grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   }
-
-  /* Dans sa colonne, la barre n'a plus à se coller au-dessus de quoi que ce soit. */
-  .battle .combat-barre {
-    max-height: none;
-    position: static;
-  }
-}
-
-/* Le journal dans la console (D-158, #520) : sur écran large, il occupe la place laissée sous la
-   barre d'action et défile en lui-même. Il n'est rendu qu'à partir de 900 px (`useEcranLarge`). */
-/* Le conteneur n'a **pas de cadre** : la liste `.log` porte déjà le sien, et deux cadres l'un dans
-   l'autre sont une carte dans une carte (le détecteur d'UI le refuse, `nested-cards`). */
-.journal-console {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 0.35rem;
-  min-height: 0;
-}
-
-.journal-console__titre {
-  color: var(--text-muted);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  margin: 0;
-}
-
-.journal-console__liste {
-  display: flex;
-  flex-direction: column-reverse;
-  font-size: var(--fs-sm);
-  gap: 0.2rem;
-  margin: 0;
-  overflow-y: auto;
-  padding-left: 1.1rem;
 }
 
 /* PC : la scène prend la largeur, et les cartes suivent la hauteur de la fenêtre — 88 px à
@@ -8698,5 +8693,535 @@ h2 {
     letter-spacing: 0.06em;
     min-height: 2.75rem;
     padding: 0.35rem 0.6rem;
+  }
+}
+
+/* La table haute ronde de la pause café, vue de trois quarts (essai du 09/11/2026, D-182 + D-191) :
+   le plateau est un plan incliné — la Direction au fond, plus petite, toi au premier plan — posé
+   sur un plateau rond de stratifié bleu acier, cerclé d'un jonc d'acier. Le sol de la salle reste
+   la palette sombre du combat. Le tout est un décor : aucune information ne passe par lui. */
+.battle .board {
+  background: none;
+  overflow: visible;
+  transform: perspective(1400px) rotateX(9deg) scale(0.96);
+  transform-origin: 50% 55%;
+}
+
+.battle .board::after {
+  background:
+    radial-gradient(ellipse 70% 46% at 50% 34%, rgb(255 255 255 / 16%), transparent 70%),
+    radial-gradient(ellipse at 50% 46%, #2f6ea3 0%, var(--bg-haut) 48%, #1b3f63 100%);
+  border-radius: 50%;
+  /* Jonc d'acier, puis ombre portée au sol. */
+  box-shadow:
+    0 0 0 0.28rem var(--scene-steel),
+    0 0 0 0.48rem var(--scene-steel-deep),
+    0 1.4rem 1.6rem rgb(0 0 0 / 55%);
+  content: '';
+  inset: 13% 0.9rem 9% 0.9rem;
+  pointer-events: none;
+  position: absolute;
+  z-index: -1;
+}
+
+/* Pas de vignette rectangulaire : le bord du plateau est le jonc de la table, pas un cadre. */
+.battle .board::before {
+  box-shadow: none;
+}
+
+/* La main ancrée au bas de la fenêtre, rognée (D-182 (1), #743) — téléphone seulement.
+   Les actions du tour ne sont plus sous la main : elles se posent sur la table (`.actions-flottantes`). La main est un éventail dont seule la
+   tête dépasse (~56 px), et le titre « Ta main » devient une pastille de décompte sur son bord. */
+@media (max-width: 639px) {
+  .battle__console {
+    gap: 0;
+  }
+
+  .battle__console .hand-panel {
+    order: 2;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    position: relative;
+  }
+
+  .hand-panel .section__head {
+    inset: 0.15rem 0.5rem auto auto;
+    position: absolute;
+    z-index: 3;
+  }
+
+  .hand-panel .section__head h2 {
+    border: 0;
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  /* Le décompte N / 10 : une pastille compacte, aux angles droits de la refonte. */
+  .hand-panel .section__head .muted {
+    background: var(--bg-sunken);
+    border: 1px solid var(--line-strong);
+    color: var(--text);
+    font-size: var(--fs-xs);
+    line-height: 1;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .battle .hand {
+    height: 3.5rem;
+    padding-top: 0.3rem;
+  }
+}
+
+/* Les quatre piles en colonne, posées sur la table (D-182 (3), #749). Chaque camp porte les deux
+   siennes : celles de la Direction en haut à droite, les tiennes en bas à droite, alignées sur le
+   même bord. Aux couleurs de la refonte (D-191) : dossier blanc, encre bleu nuit, angles droits ;
+   le parchemin brun de D-093 s'en va. */
+.battle .board__side {
+  position: relative;
+}
+
+.battle .piles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  position: absolute;
+  right: 1.4rem;
+  width: 5rem;
+  z-index: 2;
+}
+
+.battle .board__side.is-direction .piles {
+  top: 0.4rem;
+}
+
+.battle .board__side:not(.is-direction) .piles {
+  bottom: 0.4rem;
+}
+
+/* Une pile tient dans 5 × 3,6 rem : à gauche le paquet (dos ou carte), à droite le libellé et le compte. */
+.battle .pile {
+  align-items: center;
+  background: var(--surface-claire);
+  border: 0;
+  border-bottom: 2px solid var(--accent);
+  border-radius: 0;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 35%);
+  box-sizing: border-box;
+  color: var(--bg);
+  display: flex;
+  gap: 0.3rem;
+  height: 3.6rem;
+  letter-spacing: 0;
+  padding: 0.2rem 0.3rem 0.2rem 0.2rem;
+  text-transform: none;
+  width: 100%;
+}
+
+.battle .pile__visuel {
+  flex: none;
+  height: 3.2rem;
+  position: relative;
+  width: 2.3rem;
+}
+
+/* Le Deck : des dos empilés, décalés d'un cran (le même dos que l'éventail, D-191). Aucun contenu de carte. */
+.battle .pile__dos {
+  background: linear-gradient(135deg, transparent 46%, rgb(127 184 231 / 45%) 47% 53%, transparent 54%), var(--bg-haut);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  inset: 0;
+  position: absolute;
+  transform: translate(calc(var(--i) * -0.12rem), calc(var(--i) * -0.12rem));
+}
+
+/* La carte du Rebut : la carte du plateau, à la hauteur du paquet (son format 63 × 88 la fixe en largeur). */
+.battle .pile--rebut .pile__visuel .card {
+  height: 100%;
+  width: auto;
+}
+
+/* Le Rebut est un bouton (#740) : au moins 44 px de haut (D-116 (1)), angles droits, anneau de focus. */
+.battle .pile--rebut {
+  cursor: pointer;
+  min-height: 2.75rem;
+}
+
+.battle .pile--rebut:focus-visible,
+.battle .panneau-rebut__liste li:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Le panneau du Rebut (#740, D-121 (2)) : non modal, posé à gauche de la pile, sans voile. Sa hauteur
+   est bornée, il défile seul : la page ne bouge pas. Fond et bordure de la refonte (D-191). */
+.battle .pile-rebut {
+  position: relative;
+}
+
+.battle .panneau-rebut {
+  background: var(--bg-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: 0;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 45%);
+  box-sizing: border-box;
+  max-height: min(50vh, 20rem);
+  overflow-y: auto;
+  padding: 0.5rem;
+  position: absolute;
+  right: calc(100% + 0.4rem);
+  width: min(15rem, 60vw);
+  z-index: 3;
+}
+
+.battle .board__side.is-direction .panneau-rebut {
+  top: 0;
+}
+
+.battle .board__side:not(.is-direction) .panneau-rebut {
+  bottom: 0;
+}
+
+.battle .panneau-rebut__liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.battle .panneau-rebut__liste li {
+  border-radius: 0;
+}
+
+.battle .panneau-rebut__liste .card {
+  border-radius: 0;
+  height: 5.5rem;
+  width: auto;
+}
+
+.battle .panneau-rebut__vide {
+  color: var(--text);
+  font-size: var(--fs-xs);
+  margin: 0;
+}
+
+.battle .pile__compte {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.battle .pile__compte span {
+  color: var(--bg);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.battle .pile strong {
+  background: var(--bg);
+  border-radius: 0;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.2;
+  min-width: 1.6rem;
+  padding: 0 0.3rem;
+  text-align: center;
+  align-self: flex-start;
+}
+
+.battle .pile--deck.is-piochante::after {
+  border-radius: 0;
+}
+
+/* La main en éventail de dos (D-182, #747) : de 1 à 10 dos de cartes, chevauchés et inclinés autour
+   du centre, sur 32 px de haut au plus. Le dos reprend le bleu acier du dos de carte (D-191). */
+.eventail {
+  --dos-w: 1.1rem;
+  align-items: flex-end;
+  display: inline-flex;
+  height: 2rem;
+  /* Le pas se resserre quand la main grandit : dix dos tiennent dans la même largeur que quatre. */
+  padding-inline: 0.2rem;
+  vertical-align: middle;
+}
+
+.eventail__dos {
+  background: linear-gradient(135deg, transparent 46%, rgb(127 184 231 / 45%) 47% 53%, transparent 54%), var(--bg-haut);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  flex: 0 0 var(--dos-w);
+  height: 1.6rem;
+  margin-left: calc(var(--dos-w) * -0.55);
+  transform: translateY(calc(abs(var(--i) - (var(--n) - 1) / 2) * 0.05rem))
+    rotate(calc((var(--i) - (var(--n) - 1) / 2) * 6deg));
+  transform-origin: 50% 160%;
+}
+
+.eventail__dos:first-child {
+  margin-left: 0;
+}
+
+/* Les actions du tour et le message du tour à la refonte (D-191 (3), D-193) : fond plat, filet de tête
+   bleu ciel, angles droits ; boutons rectangulaires en capitales espacées, le principal en blanc.
+   « Fin du tour » reste le seul bouton plein : blanc, avec le filet émeraude qui dit « c'est à toi ». */
+.battle .combat-toast {
+  background: var(--bg-sunken);
+  border: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--accent);
+  box-shadow: none;
+}
+
+/* **La bulle du tour s'efface** (D-193 (2), #750) : après 4 s, l'information (portée, café, réplique)
+   fond sans bouger de place — `opacity` et `visibility`, jamais `display`, qui referait la mise en page.
+   La classe est posée par `Battle.tsx` (`useMessageFugace`) ; les décisions qui attendent n'y sont pas.
+   Sous « Mouvement réduit », pas de fondu : la bulle disparaît d'un coup, à la même échéance. */
+.battle .combat-toast {
+  transition:
+    opacity 400ms ease,
+    visibility 0s linear 0s;
+}
+
+.battle .combat-toast--sorti {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 400ms ease,
+    visibility 0s linear 400ms;
+  visibility: hidden;
+}
+
+:root[data-mouvement-reduit='true'] .battle .combat-toast {
+  transition: none;
+}
+
+:root[data-mouvement-reduit='true'] .battle .combat-toast--sorti {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle .combat-toast,
+  .battle .combat-toast--sorti {
+    transition: none;
+  }
+}
+
+.battle .actions-flottantes .button {
+  border-radius: 0;
+  font-weight: 600;
+  letter-spacing: 0.08rem;
+  text-transform: uppercase;
+}
+
+/* Lisibilité de la main au repos, à 56 px visibles (D-182, #744) : le nom passe **en tête** de la
+   carte — le pied, rogné par le bas de la fenêtre, n'est plus lu — sous la pastille de coût, avec
+   un voile sombre qui tient la lecture sur l'illustration. Le plancher est `--fs-xs` (D-164 (1)). */
+@media (max-width: 639px) {
+  .battle .hand .card__voile {
+    background: linear-gradient(180deg, rgb(0 0 0 / 82%) 0%, rgb(0 0 0 / 55%) 70%, transparent 100%);
+    bottom: auto;
+    inset-inline: 0;
+    padding: 0.2rem 0.2rem 0.5rem 1.55rem;
+    top: 0;
+  }
+
+  .battle .hand .card__name {
+    font-size: var(--fs-xs);
+    line-height: 1.1;
+  }
+}
+
+/* Composition « zoomée sur la table », comme l'écran de combat d'un TCG mobile (essai du 09/11/2026,
+   retour de Bastien) : la caméra est **sur** la table — on n'en voit que le centre, le rond de la
+   table dépasse de l'écran et son jonc ne se devine qu'aux bords ; la bague centrale sépare les
+   deux camps ; les piles sont posées **sur les côtés**, à moitié sorties de l'écran (celles de la
+   Direction à gauche, les tiennes à droite) ; au premier affichage, la caméra **zoome** sur la table. */
+@media (max-width: 639px) {
+  .battle__table {
+    overflow: hidden;
+    position: relative;
+  }
+
+  .battle .board {
+    transform: perspective(1500px) rotateX(4deg) scale(0.97);
+    transform-origin: 50% 52%;
+  }
+
+  /* Le zoom ne joue qu'à l'ouverture d'un combat neuf (#746, classe posée par `Battle.tsx`) : une
+     partie reprise ou rechargée s'affiche sans lui. 700 ms, la durée `DUREE_ZOOM_OUVERTURE_MS`. */
+  .battle .board--ouverture {
+    animation: table-zoom 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .battle .board::after {
+    background:
+      linear-gradient(180deg, rgb(8 20 40 / 30%) 0 49.5%, transparent 50.5%),
+      radial-gradient(ellipse at 50% 46%, #3a7db5 0%, var(--bg-haut) 52%, #1b3f63 100%);
+    inset: 2% -42% 2% -42%;
+  }
+
+  /* La bague centrale : le rond qui sépare les deux Postes, comme sur la table d'une salle de pause. */
+  .battle .board::before {
+    border: 2px solid rgb(255 255 255 / 22%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0.6rem rgb(255 255 255 / 5%);
+    content: '';
+    height: 12rem;
+    inset: auto;
+    left: 50%;
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12rem;
+  }
+
+  .battle .piles {
+    right: auto;
+  }
+
+  .battle .board__side.is-direction .piles {
+    left: -1.7rem;
+    top: 4.2rem;
+  }
+
+  .battle .board__side:not(.is-direction) .piles {
+    bottom: 4.2rem;
+    right: -1.7rem;
+  }
+}
+
+@keyframes table-zoom {
+  from {
+    opacity: 0.25;
+    transform: perspective(1500px) rotateX(26deg) scale(0.68);
+  }
+}
+
+/* Les Planqués d'une ouverture (#746) : le dos est posé **avant** la bascule (`fill-mode: both`), donc
+   visible dès la première frame ; le retournement ne fait que `rotateY`, sur une propriété composée.
+   `--delai` vient de `plateau.tsx` (le rang de la carte, un pas de 80 ms, après le zoom). Le dos est
+   le même que celui de l'éventail et du Deck (D-191), pas `.ouverture__dos` (D-141 (4)). */
+.battle .entrant {
+  display: block;
+  perspective: 900px;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.battle .entrant__recto,
+.battle .entrant__verso {
+  backface-visibility: hidden;
+}
+
+.battle .entrant__recto {
+  display: block;
+}
+
+.battle .entrant__verso {
+  background: linear-gradient(135deg, transparent 46%, rgb(127 184 231 / 45%) 47% 53%, transparent 54%), var(--bg-haut);
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: rotateY(180deg);
+}
+
+.battle .entrant--ouverture {
+  animation: entrant-retourne 500ms cubic-bezier(0.2, 0.7, 0.2, 1) var(--delai) both;
+}
+
+/* Le retournement : du dos (180°) à la face (0°). Aucune largeur, aucune position n'y bouge. */
+@keyframes entrant-retourne {
+  from {
+    transform: rotateY(180deg);
+  }
+
+  to {
+    transform: rotateY(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .battle .board--ouverture,
+  .battle .entrant--ouverture {
+    animation: none;
+  }
+}
+
+:root[data-mouvement-reduit='true'] .battle .board--ouverture,
+:root[data-mouvement-reduit='true'] .battle .entrant--ouverture {
+  animation: none;
+}
+
+/* Le message du tour reste une **petite bulle** (retour du propriétaire) : une ligne ou deux, jamais
+   un bloc qui couvre la Direction. Le panneau du café n'étire plus la bulle, et sa raison — déjà
+   dite par la ligne de portée juste au-dessus — ne se répète pas. */
+@media (max-width: 639px) {
+  .battle .combat-superpose {
+    max-height: 34%;
+  }
+
+  .battle .combat-toast {
+    gap: 0.1rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .battle .combat-toast .combat-barre__cafe {
+    flex: 0 0 auto;
+    padding-inline: 0;
+  }
+
+  .battle .combat-toast .combat-barre__cafe-raison {
+    display: none;
+  }
+
+  .battle .combat-toast p {
+    font-size: var(--fs-sm);
+    line-height: 1.25;
+    margin: 0;
+  }
+}
+
+/* ---------- Écran large (≥ 900 px) : plateau à gauche, main à droite (D-142 (4), D-193 (5), #750) ----------
+
+   Le plateau tient la colonne de gauche (`.battle__table`, deux colonnes). La colonne de droite porte
+   la **main entière**, en haut, et la pile d'actions se pose **en bas** de cette colonne, sous la main.
+   La bulle du tour reste au-dessus du plateau seulement : elle ne couvre jamais la main. Les quatre
+   piles restent posées sur les côtés de la table, entières. Le téléphone (≤ 639 px) n’est pas touché. */
+@media (min-width: 900px) {
+  /* La bulle du tour occupe la colonne du plateau, pas la largeur de l'écran : sinon elle recouvrait
+     la main, posée à droite (mesuré à 1280 × 800 : la bulle allait jusqu'au bord, `left` et `right` à
+     0,5 rem). La largeur suit la colonne `minmax(0, 1.15fr)` de `.battle__table`, moins son filet. */
+  .battle .combat-superpose {
+    right: auto;
+    width: calc((100% - 0.85rem) * 1.15 / 2.15 - 0.5rem);
+  }
+
+  /* La pile d'actions descend au bas de la colonne de droite, sous la main, et ne recouvre jamais la
+     main : elle tient dans la moitié basse de `.battle`, la main restant dans la haute. */
+  .battle .actions-flottantes {
+    bottom: 1rem;
+    max-height: 50%;
+    top: auto;
+    transform: none;
+  }
+
+  /* La main entière : la hauteur de la carte et de son inclinaison, plus une marge sous les cartes du
+     bord, que le recadrage du conteneur (`overflow: hidden`) rognait. */
+  .battle .hand {
+    height: calc(var(--carte-w) * 88 / 63 + 1.2rem);
+    padding-bottom: 0.4rem;
   }
 }

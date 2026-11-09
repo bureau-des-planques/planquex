@@ -32,6 +32,7 @@ import { derniereDe } from '@/store/derniere';
 import { aiTurnAction, createMatch, joinMatch } from '@/store/pvp';
 import type { Match } from '@/store/pvp';
 import { useStore } from '@/store/useStore';
+import { DUREE_OUVERTURE_MS } from '@/components/effets-combat';
 
 /**
  * Deck de test, quand le deck du joueur n'est pas encore valide : 8 cartes
@@ -72,6 +73,13 @@ export interface OptionsCombat {
   onCoup?: () => void;
 }
 
+/**
+ * L'ouverture d'une table (#746) : `neuve` au départ d'un combat neuf, `aucune` ensuite. Un
+ * lifecycle du hook, pas un champ de `BattleState` : une partie reprise (ou rechargée) n'en a
+ * jamais, et le journal ne le dit pas (un combat neuf a déjà son lancer de tampon journalisé).
+ */
+export type Ouverture = 'neuve' | 'aucune';
+
 /** Reprendre un code : la table est remplacée, ou le refus dit **pourquoi** (phrase du codec). */
 export type RepriseParCode = { ok: true; camp: PlayerId } | { ok: false; raison: string };
 
@@ -99,6 +107,10 @@ export interface Combat {
    * écran figé. L'action elle-même ne sort pas : l'écran ne la joue pas, c'est le hook.
    */
   directionReflechit: boolean;
+  /** La mise en scène d'ouverture de cette table (#746) : `neuve` jusqu'à sa fin ou son passage. */
+  ouverture: Ouverture;
+  /** Passer l'ouverture (tap, `Espace`) : la table reste, sa mise en scène s'arrête. */
+  passerOuverture: () => void;
 }
 
 /**
@@ -172,6 +184,18 @@ export function useCombat({ tutoriel, sceneFin, sansMouvement, onCoup }: Options
     };
   });
   const [state, setState] = useState<BattleState>(depart.state);
+  /**
+   * **L'ouverture** (#746) : un combat neuf commence `neuve`, une partie reprise (au montage ou
+   * après un rechargement) et la fin scriptée commencent `aucune`. Ce n'est pas rangé : le store
+   * ne le sait pas, et un rechargement repasse par `reprendrePartie`.
+   */
+  const [ouverture, setOuverture] = useState<Ouverture>(depart.reprise || sceneFin ? 'aucune' : 'neuve');
+  useEffect(() => {
+    if (ouverture !== 'neuve') return;
+    const minuterie = window.setTimeout(() => setOuverture('aucune'), DUREE_OUVERTURE_MS);
+    return () => window.clearTimeout(minuterie);
+  }, [ouverture]);
+  const passerOuverture = useCallback(() => setOuverture('aucune'), []);
   /**
    * **Ce que le testeur sait de sa partie quittée** (#427) : une partie rangée est reprise
    * seule au retour, et l'écran le **dit** jusqu'au premier coup. Sans ce mot, la sortie
@@ -277,6 +301,7 @@ export function useCombat({ tutoriel, sceneFin, sansMouvement, onCoup }: Options
     setMatch(null);
     setDecksSolo({ playerDeck, aiDeck });
     setState(createBattle(playerDeck, aiDeck, undefined, { playerCafeTypes: chosenCafeTypes }));
+    setOuverture('neuve');
   }, [playerDeck, chosenCafeTypes]);
 
   /**
@@ -291,6 +316,7 @@ export function useCombat({ tutoriel, sceneFin, sansMouvement, onCoup }: Options
     const created = createMatch(playerDeck, testDeck(), Date.now(), { playerCafeTypes: chosenCafeTypes });
     setMatch(created.match);
     setState(created.state);
+    setOuverture('neuve');
   }, [playerDeck, chosenCafeTypes]);
 
   /**
@@ -316,6 +342,8 @@ export function useCombat({ tutoriel, sceneFin, sansMouvement, onCoup }: Options
     partieReprise,
     usedTestDeck,
     raisonsDeckDeTest,
-    directionReflechit: aiAction !== null
+    directionReflechit: aiAction !== null,
+    ouverture,
+    passerOuverture
   };
 }

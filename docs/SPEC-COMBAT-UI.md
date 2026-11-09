@@ -644,6 +644,8 @@ visibles** (deux par camp), et le **Rebut s'ouvre** (panneau non modal, D-121 (2
 Deck ne s'ouvre jamais. Le reste de cette section reste de la **recherche** (D-121) et ne fait
 pas règle.
 
+**D-193 (09/11/2026) amende R1 et R5 sur téléphone** : il n'y a plus de barre d'action au bas de l'écran, la main rognée (~56 px visibles, mesurés par `npm run capturer`) y est **seule** (R1 tient, la barre qui la surmontait disparaît) ; les quatre piles ne sont plus « en colonne à droite » mais **sur les côtés de la table, à moitié hors de l'écran** (Direction à gauche, joueur à droite) — R5 reste vraie pour la visibilité des quatre piles et l'ouverture du Rebut, pas pour la disposition. « Fin du tour » est un pop-up flottant au milieu à droite. Voir `DESIGN.md` §2.6 bis et `docs/preuves/combat-d193-2026-11-09/`.
+
 **Ce que la révision ne change pas** : l'inspecteur unique (survol = lecture, clic = action,
 §3.3), la barre d'état d'une ligne, aucun bouton grisé, les 7 cibles du pas-à-pas, le clavier
 (§6.6), la bascule `sobre` / `détaillé` (§4.3). La densité de la référence vidéo **est** le mode

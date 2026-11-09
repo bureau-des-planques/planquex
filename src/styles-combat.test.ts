@@ -195,7 +195,8 @@ describe('le retour d’action sans mouvement (T10, #293)', () => {
       '.battle .button--fin.is-direction'
     ]);
     expect(reglesFin[0].corps).toMatch(/border:\s*2px solid transparent/);
-    expect(reglesFin[1].corps).toMatch(/background:\s*var\(--scene-go\)/);
+    expect(reglesFin[1].corps).toMatch(/background:\s*var\(--surface-claire\)/);
+    expect(reglesFin[1].corps).toMatch(/border-color:\s*var\(--scene-go\)/);
     expect(reglesFin[2].corps).toMatch(/background:\s*var\(--scene-steel-deep\)/);
   });
 });
@@ -310,69 +311,245 @@ describe('les trois paliers de hauteur du combat (D-173)', () => {
 });
 
 /**
- * **Une ligne de journal n'est pas une carte** (#551, mesuré le 31/10/2026).
+ * **La ligne de journal visuelle est retirée** (#742). Le journal ne vit plus que dans l'annonce
+ * sr-only (`annonce-du-coup`, `aria-live`), et la console de bureau (`.journal-console`) n'existe
+ * plus : le CSS n'a donc plus ni la règle `.combat-barre__journal`, ni la console.
  *
- * La ligne de journal portait tout `.banner` — fond en dégradé, filet d'accent sur quatre côtés,
- * rayon — posé dans la barre d'action, qui est elle-même une carte. À 390 × 844, le détecteur
- * d'écrans y lisait un `nested-cards` 5 fois sur 8, et le refus tombait selon le moment du scan,
- * pendant l'animation d'entrée du journal. La règle qui reste : un filet d'accent **à gauche**,
- * sans fond ni rayon ; le « craque » ne change que la couleur de ce filet.
- *
- * Le contrôle mord : le cas fautif est l'ancien aspect, celui de `.banner` recopié sur la ligne.
+ * Le contrôle mord : si l'une des deux règles revient dans `src/styles.css`, la liste n'est plus vide.
  */
-describe('la ligne de journal n’est pas une carte (#551)', () => {
-  function reglesDe(css: string): { selecteur: string; corps: string }[] {
-    const sans = css.replace(/\/\*[\s\S]*?\*\//g, '');
-    return [...sans.matchAll(/([^{}@]+)\{([^{}]*)\}/g)].map((m) => ({
-      selecteur: m[1].trim().replace(/\s+/g, ' '),
-      corps: m[2]
-    }));
+describe('le journal visuel n’existe plus dans le CSS (#742)', () => {
+  /** Les sélecteurs qui portent encore la ligne de journal ou la console : la liste doit rester vide. */
+  function journalDansLeCss(css: string): string[] {
+    const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const selecteurs = [...sansCommentaires.matchAll(/([^{}]+)\{/g)].map((m) => m[1].trim().replace(/\s+/g, ' '));
+    return selecteurs.filter((s) => /combat-barre__journal|journal-console/.test(s));
   }
 
-  /** Ce qui manque pour que la ligne ne soit plus une carte : la liste est vide quand tout va bien. */
-  function journalResteUneCarte(css: string): string[] {
-    const regle = reglesDe(css).find((r) => r.selecteur === '.combat-barre .combat-barre__journal');
-    if (!regle) return ['règle .combat-barre .combat-barre__journal absente'];
-    const corps = regle.corps;
-    const manques: string[] = [];
-    if (!/background:\s*none/.test(corps)) manques.push('background (le fond en dégradé de `.banner`)');
-    if (!/(?:^|;\s*)border:\s*0(?:\s|;|$)/.test(corps)) manques.push('border (le filet fermé de `.banner`)');
-    if (!/border-radius:\s*0/.test(corps)) manques.push('border-radius (le rayon de `.banner`)');
-    if (/(?:^|;\s*)box-shadow:/.test(corps)) manques.push('box-shadow');
-    // Un filet **à gauche** est le seul admis : deux côtés ou plus referment une carte.
-    const cotes = [...corps.matchAll(/(?:^|;\s*)border-(top|right|bottom|left)\s*:\s*(?!0(?:\s|;|$))/g)].map(
-      (m) => m[1]
-    );
-    if (cotes.length > 1) manques.push(`filets ${cotes.join(' + ')}`);
-    return manques;
+  it('ni `.combat-barre__journal` ni `.journal-console` ne sont des sélecteurs de src/styles.css', () => {
+    expect(journalDansLeCss(CSS)).toEqual([]);
+  });
+
+  it('le contrôle mord : une règle `.combat-barre__journal` qui revient est refusée', () => {
+    const fautif = '.combat-barre .combat-barre__journal { font-size: 0.8rem; }\n.journal-console { display: grid; }';
+    expect(journalDansLeCss(fautif)).toEqual(['.combat-barre .combat-barre__journal', '.journal-console']);
+  });
+});
+
+/**
+ * **Les actions du tour quittent le bas de l'écran** (retour du propriétaire, téléphone). La barre
+ * `.combat-barre` n'existe plus : la pile `.actions-flottantes` et la bulle `.combat-superpose` se
+ * posent sur la table, en position absolue — jamais en `sticky` ni `static` sous la main.
+ *
+ * Le contrôle mord : une règle `.combat-barre` qui revient, ou une pile `static`, est refusée.
+ */
+describe('les actions du tour se posent sur la table, pas sous la main', () => {
+  /** Les sélecteurs qui visent encore la barre du bas (`.combat-barre`, pas ses `__enfants` gardés). */
+  function barreDuBasDans(css: string): string[] {
+    const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const selecteurs = [...sansCommentaires.matchAll(/([^{}]+)\{/g)].map((m) => m[1].trim().replace(/\s+/g, ' '));
+    return selecteurs.filter((s) => /\.combat-barre(?![\w-])/.test(s));
   }
 
-  const journalKo = (css: string) =>
-    reglesDe(css).find((r) => r.selecteur === '.combat-barre .combat-barre__journal.banner--ko');
+  /** La `position` de la règle `.actions-flottantes` (la première qui la porte), `null` si absente. */
+  function positionDeLaPile(css: string): string | null {
+    const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const bloc = sansCommentaires.match(/(?:^|\})\s*\.actions-flottantes\s*\{([^}]*)\}/);
+    return bloc ? (bloc[1].match(/position:\s*([a-z]+)/)?.[1] ?? null) : null;
+  }
 
-  it('la ligne garde un filet d’accent à gauche, sans fond ni rayon', () => {
-    expect(journalResteUneCarte(CSS)).toEqual([]);
-    const journal = reglesDe(CSS).find((r) => r.selecteur === '.combat-barre .combat-barre__journal');
-    expect(journal?.corps).toMatch(/border-left:\s*3px solid var\(--accent\)/);
+  it('aucune règle `.combat-barre` ne reste dans src/styles.css', () => {
+    expect(barreDuBasDans(CSS)).toEqual([]);
   });
 
-  it('le « craque » change la couleur du filet, il ne refait pas une carte', () => {
-    expect(journalKo(CSS)?.corps).toMatch(/border-left-color:\s*var\(--warn\)/);
-    expect(journalKo(CSS)?.corps).not.toMatch(/background|border-radius|box-shadow/);
+  it('la pile d’actions est en position absolue, dans la table', () => {
+    expect(positionDeLaPile(CSS)).toBe('absolute');
   });
 
-  it('le contrôle mord : l’ancien aspect (le `.banner` recopié) est refusé', () => {
-    const ancien = `.combat-barre .combat-barre__journal { background: linear-gradient(90deg, rgb(79 142 247 / 18%), rgb(19 28 46 / 60%)); border: 1px solid var(--accent); border-radius: var(--radius-sm); box-shadow: 0 1px 0 var(--accent); font-size: 0.8rem; }`;
-    expect(journalResteUneCarte(ancien)).toEqual([
-      'background (le fond en dégradé de `.banner`)',
-      'border (le filet fermé de `.banner`)',
-      'border-radius (le rayon de `.banner`)',
-      'box-shadow'
-    ]);
+  it('le contrôle mord : une barre du bas rétablie sous la console, ou une pile `static`, est refusée', () => {
+    const fautif = '.battle__console .combat-barre { order: 1; }\n.actions-flottantes { position: static; }';
+    expect(barreDuBasDans(fautif)).toEqual(['.battle__console .combat-barre']);
+    expect(positionDeLaPile(fautif)).toBe('static');
+  });
+});
+
+/**
+ * La `min-height` (en px) de la **dernière** règle de `selecteur` qui la porte : c'est elle qui
+ * l'emporte en cascade. `null` si aucune règle ne la déclare. Lu dans la feuille, pas dans le DOM :
+ * jsdom ne calcule pas de mise en page (`getBoundingClientRect` y vaut 0).
+ */
+function minHeightPx(css: string, selecteur: string): number | null {
+  const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+  let trouve: number | null = null;
+  for (const regle of sansCommentaires.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (regle[1].trim().replace(/\s+/g, ' ') !== selecteur) continue;
+    const mesure = regle[2].match(/min-height:\s*([\d.]+)(rem|px)\s*;/);
+    if (mesure) trouve = Number(mesure[1]) * (mesure[2] === 'rem' ? 16 : 1);
+  }
+  return trouve;
+}
+
+describe('le bouton du Rebut tient 44 px de haut (#740, D-116 (1))', () => {
+  it('la règle `.battle .pile--rebut` déclare au moins 44 px de `min-height`', () => {
+    expect(minHeightPx(CSS, '.battle .pile--rebut')).toBeGreaterThanOrEqual(44);
   });
 
-  it('le texte du journal reste lisible sur le fond de la barre (WCAG 1.4.3)', () => {
-    // Sans fond propre, la ligne se lit sur `--bg-sunken`, le fond que `--text` doit tenir.
-    expect(ratio(jeton('--text'), jeton('--bg-sunken'))).toBeGreaterThanOrEqual(4.5);
+  it('le contrôle mord : un Rebut de 2 rem (32 px) est refusé, en `rem` comme en `px`', () => {
+    expect(minHeightPx('.battle .pile--rebut { min-height: 2rem; }', '.battle .pile--rebut')).toBeLessThan(44);
+    expect(minHeightPx('.battle .pile--rebut { min-height: 32px; }', '.battle .pile--rebut')).toBeLessThan(44);
+  });
+
+  it('le contrôle mord : sans `min-height`, la mesure ne trouve rien', () => {
+    expect(minHeightPx('.battle .pile--rebut { cursor: pointer; }', '.battle .pile--rebut')).toBeNull();
+  });
+});
+
+/**
+ * Le corps de chaque `@media <requete> { … }` de la feuille (accolades appariées, commentaires
+ * blanchis). Lu dans la feuille : jsdom ne sait pas évaluer une requête de média.
+ */
+function corpsDesMedias(css: string, requete: string): string[] {
+  const sansCommentaires = css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' '));
+  const debut = `@media ${requete} {`;
+  const corps: string[] = [];
+  let i = sansCommentaires.indexOf(debut);
+  while (i !== -1) {
+    const premier = i + debut.length;
+    let niveau = 1;
+    let k = premier;
+    while (k < sansCommentaires.length && niveau > 0) {
+      if (sansCommentaires[k] === '{') niveau += 1;
+      else if (sansCommentaires[k] === '}') niveau -= 1;
+      k += 1;
+    }
+    corps.push(sansCommentaires.slice(premier, k - 1));
+    i = sansCommentaires.indexOf(debut, k);
+  }
+  return corps;
+}
+
+/** Les déclarations de `selecteur` dans un corps de règles ; la dernière règle qui la porte l'emporte. */
+function declarationsDe(corps: string, selecteur: string): Map<string, string> {
+  const sortie = new Map<string, string>();
+  for (const regle of corps.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (regle[1].trim().replace(/\s+/g, ' ') !== selecteur) continue;
+    for (const [, propriete, valeur] of regle[2].matchAll(/([a-z-]+)\s*:\s*([^;]+);/g)) {
+      sortie.set(propriete, valeur.trim());
+    }
+  }
+  return sortie;
+}
+
+/** Les déclarations de `selecteur` dans **tous** les médias `requete` de `css`, fusionnées. */
+function declarationsDansMedia(css: string, requete: string, selecteur: string): Map<string, string> {
+  const fusion = new Map<string, string>();
+  for (const corps of corpsDesMedias(css, requete)) {
+    for (const [propriete, valeur] of declarationsDe(corps, selecteur)) fusion.set(propriete, valeur);
+  }
+  return fusion;
+}
+
+/** Les déclarations de `selecteur` hors de tout média (règles de base). */
+function declarationsDeBase(css: string, selecteur: string): Map<string, string> {
+  return declarationsDe(
+    css.replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, ' ')),
+    selecteur
+  );
+}
+
+/**
+ * **L'écran large (≥ 900 px) : plateau à gauche, main entière à droite, pile d'actions sous la main**
+ * (D-142 (4), D-193 (5), #750). Lu dans la feuille, média `(min-width: 900px)`.
+ * Le contrôle mord : chaque règle est refusée dans sa forme fautive.
+ */
+describe('l’écran large : la main entière, la pile d’actions sous elle, la bulle sur la table (#750)', () => {
+  const LARGE = '(min-width: 900px)';
+
+  /** Une pile d'actions posée **sous la main** (bas de la colonne), jamais au milieu de la main. */
+  function pileSousLaMain(css: string): boolean {
+    const decl = declarationsDansMedia(css, LARGE, '.battle .actions-flottantes');
+    return decl.get('top') === 'auto' && decl.get('bottom') !== undefined && decl.get('bottom') !== 'auto';
+  }
+
+  /** La bulle ne dépasse pas la colonne du plateau : sa largeur suit `minmax(0, 1.15fr)`, sans `right: 0`. */
+  function bulleSurLaTable(css: string): boolean {
+    const decl = declarationsDansMedia(css, LARGE, '.battle .combat-superpose');
+    const largeur = decl.get('width') ?? '';
+    return largeur.includes('calc') && largeur.includes('1.15') && decl.get('right') === 'auto';
+  }
+
+  /** La main garde la hauteur de la carte **et** son inclinaison : une marge de 1.2 rem, plus le bas. */
+  function mainEntiere(css: string): boolean {
+    const decl = declarationsDansMedia(css, LARGE, '.battle .hand');
+    const hauteur = decl.get('height') ?? '';
+    return hauteur.includes('88 / 63') && hauteur.includes('1.2rem');
+  }
+
+  it('la pile d’actions est posée sous la main en écran large (top auto, bottom 1 rem)', () => {
+    expect(pileSousLaMain(CSS)).toBe(true);
+  });
+
+  it('la bulle du tour tient la colonne du plateau, pas la largeur de l’écran', () => {
+    expect(bulleSurLaTable(CSS)).toBe(true);
+  });
+
+  it('la main a sa hauteur entière : la carte, son inclinaison et une marge sous les cartes du bord', () => {
+    expect(mainEntiere(CSS)).toBe(true);
+  });
+
+  it('le contrôle mord : une pile d’actions au milieu de la colonne (top 50 %) est refusée', () => {
+    const fautif = '@media (min-width: 900px) { .battle .actions-flottantes { top: 50%; bottom: auto; } }';
+    expect(pileSousLaMain(fautif)).toBe(false);
+  });
+
+  it('le contrôle mord : une bulle pleine largeur, qui recouvre la main, est refusée', () => {
+    const fautif = '@media (min-width: 900px) { .battle .combat-superpose { left: 0.5rem; right: 0.5rem; } }';
+    expect(bulleSurLaTable(fautif)).toBe(false);
+  });
+
+  it('le contrôle mord : une main sans marge du bas (la hauteur de la carte seule) est refusée', () => {
+    const fautif = '@media (min-width: 900px) { .battle .hand { height: calc(var(--carte-w) * 88 / 63 + 0.4rem); } }';
+    expect(mainEntiere(fautif)).toBe(false);
+  });
+
+  it('les piles restent entières sur les côtés de la table : aucun décalage négatif en écran large', () => {
+    const decl = declarationsDansMedia(CSS, LARGE, '.battle .piles');
+    for (const valeur of [decl.get('left'), decl.get('right')]) {
+      expect(valeur ?? '').not.toMatch(/^-/);
+    }
+  });
+
+  it('le téléphone ne bouge pas : la main reste à 3,5 rem dans le média `(max-width: 639px)`', () => {
+    expect(declarationsDansMedia(CSS, '(max-width: 639px)', '.battle .hand').get('height')).toBe('3.5rem');
+  });
+});
+
+/**
+ * **La bulle du tour s'efface** (D-193 (2), #750) : `.combat-toast--sorti` fond par `opacity` et
+ * `visibility`, sans `display` (qui referait la mise en page). Sous « Mouvement réduit », aucune
+ * transition : la bulle disparaît à la même échéance.
+ */
+describe('la bulle du tour s’efface sans changer la mise en page (#750)', () => {
+  const FONDU = '.battle .combat-toast--sorti';
+  const REDUIT = ":root[data-mouvement-reduit='true'] .battle .combat-toast--sorti";
+
+  it('la classe cachée rend la bulle transparente et invisible, sans `display: none`', () => {
+    const decl = declarationsDeBase(CSS, FONDU);
+    expect(decl.get('opacity')).toBe('0');
+    expect(decl.get('visibility')).toBe('hidden');
+    expect(decl.get('display')).toBeUndefined();
+  });
+
+  it('sous « Mouvement réduit », la transition est coupée', () => {
+    expect(declarationsDeBase(CSS, REDUIT).get('transition')).toBe('none');
+  });
+
+  it('le contrôle mord : une bulle cachée par `display: none` saute la mise en page et est refusée', () => {
+    const fautif = '.battle .combat-toast--sorti { display: none; }';
+    expect(declarationsDeBase(fautif, FONDU).get('display')).toBe('none');
+  });
+
+  it('le contrôle mord : sans `opacity: 0`, la bulle ne fond pas et est refusée', () => {
+    const fautif = '.battle .combat-toast--sorti { visibility: hidden; }';
+    expect(declarationsDeBase(fautif, FONDU).get('opacity')).not.toBe('0');
   });
 });
