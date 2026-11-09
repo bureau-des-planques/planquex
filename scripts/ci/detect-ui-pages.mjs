@@ -101,6 +101,7 @@ export const ECRANS = [
   '/deck',
   '/battle',
   '/settings',
+  '/pause-cafe',
   '/comite',
   '/comite/suivi',
   '/feuille-de-route',
@@ -172,6 +173,8 @@ export const BASELINE = {
   '/deck': {},
   '/battle': {},
   '/settings': {},
+  // La pause café (D-192) : page d'annonce, mesurée à 0 dès son arrivée.
+  '/pause-cafe': {},
   '/comite': {},
   '/comite/suivi': {},
   '/feuille-de-route': {},

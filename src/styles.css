@@ -8226,7 +8226,7 @@ h2 {
 
 .brand__text span {
   color: var(--text-dim);
-  font-size: var(--fs-2xs);
+  font-size: var(--fs-xs); /* 11,2 px : le plancher du texte fonctionnel est 11 px (detect:ui:page). */
   letter-spacing: 0.16em;
   margin-top: 0.3rem;
   text-transform: uppercase;
@@ -8354,8 +8354,8 @@ h2 {
 /* Cinq onglets sur 360 px : les capitales se resserrent pour que « Pause café » tienne. */
 @media (max-width: 480px) {
   .bottom-nav .bottom-nav__item {
-    font-size: var(--fs-2xs);
-    letter-spacing: 0.04em;
+    font-size: var(--fs-xs);
+    letter-spacing: 0.02em;
     text-align: center;
   }
 }
@@ -8468,7 +8468,7 @@ h2 {
 }
 
 .home .hero h1 {
-  font-size: clamp(2.4rem, 7.5vw, 5rem);
+  font-size: clamp(2.2rem, 5.5vw, 3.6rem);
   line-height: 1.04;
   margin: 0 auto 1.5rem;
   max-width: 14ch;
@@ -8604,13 +8604,14 @@ h2 {
   color: var(--surface-claire);
 }
 
-/* **Accueil portrait sans défilement** (D-173, tenu par D-191) : sur téléphone, les deux gestes
-   et les trois compteurs restent visibles d'un seul écran. Le bandeau garde son dégradé et son
-   alignement centré, mais rend sa hauteur : pas de 72 vh, pas de trait vertical. */
+/* **Accueil portrait sans défilement** (D-171, D-173, tenus par D-191) : sur téléphone, toute
+   la page tient d'un écran, la bande « la dernière version » comprise — mesuré par
+   `npm run capturer` à 360 × 640 et 390 × 664. Le bandeau garde son dégradé et son alignement
+   centré, mais rend sa hauteur : pas de 72 vh, pas de trait vertical, titre sur deux lignes. */
 @media (max-width: 639px) and (orientation: portrait) {
   .home .hero {
     min-height: 0;
-    padding: 1.4rem 1rem 1rem;
+    padding: 0.9rem 1rem 0.75rem;
   }
 
   .home .hero::after {
@@ -8618,15 +8619,20 @@ h2 {
   }
 
   .home .hero h1 {
-    font-size: clamp(1.6rem, 8vw, 2.1rem);
-    line-height: 1.02;
-    margin-bottom: 0.6rem;
+    font-size: clamp(1.3rem, 6.2vw, 1.6rem);
+    line-height: 1.05;
+    margin-bottom: 0.45rem;
+    max-width: none;
+  }
+
+  .home .hero h1 br {
+    display: none;
   }
 
   .home .hero__lead {
-    font-size: 0.85rem;
-    line-height: 1.3;
-    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.28;
+    margin-bottom: 0.6rem;
   }
 
   .home .hero__actions {
@@ -8642,26 +8648,55 @@ h2 {
     padding: 0.35rem 0.4rem;
   }
 
+  /* La Collection, plus bavarde, prend la colonne large (comme avant D-191). */
+  .home .stats-grid {
+    grid-template-columns: minmax(0, 1.7fr) repeat(2, minmax(0, 1fr));
+  }
+
   .home .stats-grid > .stat-card,
   .home .stats-grid > .stat-card:first-child {
-    padding: 0.6rem 0.35rem;
+    gap: 0.1rem;
+    padding: 0.5rem 0.35rem;
   }
 
   .home .stat-card strong {
-    font-size: 1.6rem;
+    font-size: 1.45rem;
+    line-height: 1.1;
   }
 
+  /* Une ligne de texte à gauche, la porte à droite : la bande tient en ~3 lignes. */
   .home .home__version {
     flex-direction: row;
+    flex-wrap: nowrap;
     gap: 0.5rem;
-    padding: 0.6rem 1rem;
+    padding: 0.5rem 1rem;
     text-align: left;
+  }
+
+  .home .home__version-texte {
+    flex: 1 1 auto;
+    gap: 0;
+    min-width: 0;
   }
 
   .home .home__version-titre {
     font-size: var(--fs-xs);
     font-weight: 600;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .home .home__version-libelle,
+  .home .home__version-date {
+    font-size: var(--fs-xs);
+    line-height: 1.3;
+  }
+
+  .home .home__version .button {
+    flex: none;
+    letter-spacing: 0.06em;
+    min-height: 2.75rem;
+    padding: 0.35rem 0.6rem;
   }
 }
