@@ -108,23 +108,33 @@ describe('Layout — les états transverses (#131)', () => {
   });
 });
 
-describe('Layout — la barre à quatre onglets (#545, D-097 (4))', () => {
+describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-192)', () => {
   function barre() {
     return screen.getByRole('navigation', { name: 'Navigation principale' });
   }
 
-  it('les quatre onglets, dans l’ordre — Collection et Deck n’en font plus qu’un', () => {
+  it('les cinq onglets, dans l’ordre — Collection et Deck n’en font qu’un, la Pause café avant le Comité', () => {
     monter('/sain');
     const liens = within(barre()).getAllByRole('link');
-    // La liste entière, pas seulement la présence : remettre Réglages dans la barre (cinq
-    // entrées), rendre au Deck son entrée propre (six) ou déplacer Comité ailleurs fait
+    // La liste entière, pas seulement la présence : remettre Réglages dans la barre (six
+    // entrées), rendre au Deck son entrée propre, déplacer Comité ou la Pause café fait
     // échouer ce test.
-    expect(liens.map((lien) => lien.textContent)).toEqual(['Accueil', 'Cartes', 'Combat', 'Comité']);
+    expect(liens.map((lien) => lien.textContent)).toEqual(['Accueil', 'Cartes', 'Combat', 'Pause café', 'Comité']);
     expect(within(barre()).getByRole('link', { name: 'Comité' })).toHaveAttribute('href', '/comite');
+    expect(within(barre()).getByRole('link', { name: 'Pause café' })).toHaveAttribute('href', '/pause-cafe');
     expect(within(barre()).getByRole('link', { name: 'Cartes' })).toHaveAttribute('href', '/collection');
     expect(within(barre()).queryByRole('link', { name: 'Réglages' })).toBeNull();
     // Le Deck n'a plus d'entrée à lui : sa route reste servie par la page des Cartes (#545).
     expect(within(barre()).queryByRole('link', { name: 'Deck' })).toBeNull();
+  });
+
+  it('Combat est l’onglet du centre, et le seul mis en avant (D-192)', () => {
+    monter('/sain');
+    const liens = within(barre()).getAllByRole('link');
+    const vedettes = liens.filter((lien) => lien.classList.contains('bottom-nav__item--vedette'));
+    expect(vedettes.map((lien) => lien.textContent)).toEqual(['Combat']);
+    // Au centre : autant d'onglets de chaque côté.
+    expect(liens.indexOf(vedettes[0])).toBe((liens.length - 1) / 2);
   });
 
   it('« Cartes » reste l’onglet courant sur les deux adresses qu’elle couvre (#545)', () => {

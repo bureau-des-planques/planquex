@@ -12,8 +12,9 @@ import { describe, expect, it } from 'vitest';
  * tasse du README : un commentaire qui citait `--bg` — or `--` est interdit dans un
  * commentaire XML. Aucun test ne l'a vu ; seule la capture de la page GitHub l'a montré.
  *
- * Portée : la marque du README (`design/logo/`) et les icônes servies par l'application
- * (`public/`), chargées elles aussi comme images (favicon, manifeste).
+ * Portée : la marque du README (`design/logo/`) et tout SVG servi par l'application
+ * (`public/`), chargé lui aussi comme image. Les icônes de l'application sont des PNG
+ * depuis D-190.
  */
 const RACINE = process.cwd();
 const DOSSIERS = ['design/logo', 'public'] as const;
@@ -38,7 +39,8 @@ describe('Les SVG de la marque se chargent comme image (#328)', () => {
     // Un dossier renommé laisserait la garde passer sur rien.
     expect(fichiers).toContain('design/logo/cafe-clair.svg');
     expect(fichiers).toContain('design/logo/cafe-sombre.svg');
-    expect(fichiers).toContain('public/favicon.svg');
+    // `public/` n'a plus de SVG de marque depuis D-190 (icônes en PNG) ; il reste scanné pour
+    // qu'un SVG qui y reviendrait soit gardé.
   });
 
   it.each(fichiers)('%s est du XML bien formé', (fichier) => {

@@ -189,8 +189,10 @@ export const SEUIL_PAQUET = 500_000;
  * **Relevé de 631 octets le 04/11/2026** (282 397 octets) — la pochette à deux faces (dos et face avant) et la montée des cartes entre les deux entrent dans le code d'ouverture de l'Arrivage ; avec la voix du Chef de cabinet de #681 déjà fusionnée (#672, D-184)
  *
  * **Relevé de 647 octets le 04/11/2026** (283 044 octets) — #674 : symbole de rareté sur les huit dos, nom accessible et rareté dans la fiche (+647 octets, 04/11/2026)
+ *
+ * **Relevé de 926 octets le 09/11/2026** (283 970 octets) — #772 : refonte D-191/D-192, icônes de la marque (IconesMarque) dans la barre, route et onglet de la Pause café
  */
-export const PLAFOND_PRINCIPAL = 283_044;
+export const PLAFOND_PRINCIPAL = 283_970;
 
 /**
  * **Le delta qu'un relevé accepte sans `--assume`** : 5 000 octets (5 kB décimaux, l'unité de

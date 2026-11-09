@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 189 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 192 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -180,7 +180,7 @@
 | D-172 | 02/11/2026 | La courbe du Deck ne nomme plus un coût qui… |  |
 | D-173 | 02/11/2026 | PWA d'abord, navigateur en plancher ; plein écran là où… |  |
 | D-174 | 02/11/2026 | Un socle par planche, et un casting qui ne ressemble… |  |
-| D-175 | 02/11/2026 | La barre du bas passe à quatre entrées : Accueil,… |  |
+| D-175 | 02/11/2026 | ⚠ Amendée par D-192 (09/11/2026) : la barre passe à… | D-192 |
 | D-176 | 02/11/2026 | PRODUCT.md entre au dépôt comme contexte dérivé pour impeccable, pas… |  |
 | D-177 | 02/11/2026 | La frontière du dépôt : le jeu ici, l’exploitation dans… |  |
 | D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |  |
@@ -195,3 +195,6 @@
 | D-187 | 04/11/2026 | La réplique de la Direction sort du panneau : la… |  |
 | D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
 | D-189 | 07/11/2026 | Un PNG de docs/preuves/ tient sous 1 Mo ; l'historique… |  |
+| D-190 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |  |
+| D-191 | 09/11/2026 | L'interface hors combat passe à la direction « aéro-institutionnelle »… |  |
+| D-192 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |  |

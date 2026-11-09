@@ -1,15 +1,20 @@
 #!/usr/bin/env node
 /**
- * Génère les PNG du manifeste à partir de `public/icon-512.svg`.
+ * Génère les icônes de l'application à partir des deux maîtres de la marque (D-190) :
  *
- * Chromium n'utilise pas un SVG comme icône d'application installée (les
- * plateformes veulent un raster) : sans PNG, l'appareil fabrique une vignette
- * générique — constaté le 21/10/2026 sur l'app installée.
+ * - `design/logo/app/icone-acier.jpg` — engrenage d'acier et tasse : **l'application
+ *   installée** (PNG 192, 512, 512 *maskable*, et l'icône d'écran d'accueil iPhone 180) ;
+ * - `design/logo/app/icone-plat.jpg` — la même idée en deux tons, sans relief : **les
+ *   petites tailles** (favicon 32 et 16), où l'acier devient flou.
  *
- * Rendu par le Chromium de `ms-playwright`, déjà présent pour `npm run capturer` :
- * aucune dépendance n'est ajoutée pour trois images.
+ * Chromium n'utilise pas un SVG comme icône d'application installée (les plateformes
+ * veulent un raster) : sans PNG, l'appareil fabrique une vignette générique — constaté le
+ * 21/10/2026 sur l'app installée (D-054).
  *
- * Usage : `npm run icones` après toute retouche de `public/icon-512.svg`.
+ * Rendu par le Chromium de `ms-playwright`, déjà présent pour `npm run capturer` : aucune
+ * dépendance n'est ajoutée pour quelques images.
+ *
+ * Usage : `npm run icones` après tout changement d'un maître.
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -18,39 +23,52 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
-const svg = readFileSync(join(root, 'public/icon-512.svg'), 'utf8');
-const dataUrl = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 
 const executablePath =
   process.env.CHROME_PATH ?? join(homedir(), '.cache/ms-playwright/chromium-1248/chrome-linux64/chrome');
 
-const BACKGROUND = '#0b1220';
+/**
+ * Un maître : l'image, sa taille, la couleur de son fond uni, et la boîte du motif
+ * (centre et côté, en pixels du maître) — mesurée une fois sur le fond, pour que le
+ * cadrage ne dépende pas de la marge que le générateur d'images a laissée.
+ */
+const MAITRES = {
+  acier: { fichier: 'design/logo/app/icone-acier.jpg', cote: 1024, fond: '#141823', cx: 512, cy: 517, motif: 756 },
+  plat: { fichier: 'design/logo/app/icone-plat.jpg', cote: 1024, fond: '#1a1e29', cx: 512, cy: 512, motif: 812 }
+};
 
-/** Une cible : fichier, taille, et part du carré occupée par l'illustration. */
-const TARGETS = [
-  ['icon-192.png', 192, 1],
-  ['icon-512.png', 512, 1],
-  // Maskable : le système découpe un cercle de 80 % de la largeur, donc
-  // l'illustration doit tenir dedans, sinon elle est rognée.
-  ['icon-maskable-512.png', 512, 0.78]
+/**
+ * Une cible : fichier de `public/`, maître, taille, et part du carré occupée par le motif.
+ * Maskable : le système découpe un cercle de 80 % de la largeur, le motif doit tenir dedans.
+ */
+const CIBLES = [
+  ['icon-192.png', 'acier', 192, 0.74],
+  ['icon-512.png', 'acier', 512, 0.74],
+  ['icon-maskable-512.png', 'acier', 512, 0.64],
+  ['apple-touch-icon.png', 'acier', 180, 0.74],
+  ['favicon-32.png', 'plat', 32, 0.92],
+  ['favicon-16.png', 'plat', 16, 0.92]
 ];
 
 const browser = await chromium.launch({ executablePath, args: ['--no-sandbox'] });
 
 try {
-  for (const [name, size, scale] of TARGETS) {
-    const page = await browser.newPage({ viewport: { width: size, height: size } });
-    const inner = Math.round(size * scale);
-    const margin = Math.round((size - inner) / 2);
+  for (const [nom, cle, taille, part] of CIBLES) {
+    const m = MAITRES[cle];
+    const dataUrl = `data:image/jpeg;base64,${readFileSync(join(root, m.fichier)).toString('base64')}`;
+    // Échelle qui donne au motif `part` du carré, puis décalage qui le centre.
+    const k = (taille * part) / m.motif;
+    const fond = `${m.cote * k}px`;
+    const x = taille / 2 - m.cx * k;
+    const y = taille / 2 - m.cy * k;
+    const page = await browser.newPage({ viewport: { width: taille, height: taille } });
     await page.setContent(
-      `<!doctype html><html><body style="margin:0;width:${size}px;height:${size}px;background:${BACKGROUND};overflow:hidden">` +
-        `<img src="${dataUrl}" width="${inner}" height="${inner}" style="display:block;margin:${margin}px" />` +
-        '</body></html>'
+      `<!doctype html><html><body style="margin:0;width:${taille}px;height:${taille}px;overflow:hidden;` +
+        `background:${m.fond} url(${dataUrl}) no-repeat ${x}px ${y}px / ${fond} ${fond}"></body></html>`
     );
-    const bytes = await page.screenshot({ omitBackground: false });
-    writeFileSync(join(root, 'public', name), bytes);
+    writeFileSync(join(root, 'public', nom), await page.screenshot({ omitBackground: false }));
     await page.close();
-    console.log(`✔ public/${name} — ${size}×${size}, illustration à ${Math.round(scale * 100)} %`);
+    console.log(`✔ public/${nom} — ${taille}×${taille}, ${cle}, motif à ${Math.round(part * 100)} %`);
   }
 } finally {
   await browser.close();

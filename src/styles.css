@@ -60,33 +60,58 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Jetons de design — « corporate dark premium », bleu nuit + or.
- * Le bleu (`--accent`) reste le primaire ; l'or (`--gold`) est l'accent
- * **secondaire** (le motif maison : la tasse de Café). Toute la feuille lit ces
- * variables : une couleur qui change se change ici, une fois.
+ * Jetons de design — **« aéro-institutionnel »** (D-191) : bleu nuit plat, bleu ciel, blanc,
+ * titres très fins, libellés en capitales espacées, angles droits. Inspiré de la sobriété d'un
+ * site de groupe industriel, sans en reprendre ni le nom ni le logo.
+ * Les noms `--gold*` datent du thème bleu nuit et or : ils restent (toute la feuille les lit) et
+ * portent désormais le **bleu ciel**, l'accent de la marque (la tasse du sceau, D-190).
+ * Toute la feuille lit ces variables : une couleur qui change se change ici, une fois.
  */
 :root {
-  /* Fonds — bleu nuit, de la profondeur vers la surface */
-  --bg: #0b1220;
-  --bg-deep: #070c16;
-  --bg-raised: #131c2e;
-  /* Le haut du dégradé du dos de carte (#283) : le seul bleu plus clair que `--bg`. */
-  --bg-haut: #1d2d4f;
-  --bg-sunken: #0e1626;
-  --line: #243049;
-  --line-strong: #34456a;
+  /* Fonds — bleu nuit plat, de la profondeur vers la surface */
+  --bg: #1b1d27;
+  --bg-deep: #13141c;
+  --bg-raised: #232633;
+  /* Le bleu acier : haut du dégradé du bandeau d'accueil et du dos de carte (#283). */
+  --bg-haut: #255b8e;
+  --bg-sunken: #171922;
+  --line: #3b3e4d;
+  --line-strong: #525668;
+  /* Le blanc des sections claires (bande « dernière version ») et du bouton principal. */
+  --surface-claire: #ffffff;
 
   /* Textes */
-  --text: #e8eef8;
-  --text-muted: #9aa9c2;
-  --text-dim: #7e8fb0;
+  --text: #f4f6fa;
+  --text-muted: #bcbfcf;
+  --text-dim: #a1a5b9;
 
-  /* Accents : bleu primaire, or secondaire */
-  --accent: #4f8ef7;
-  --accent-deep: #356fe0;
-  --gold: #e6b64c;
-  --gold-soft: #f4d68a;
-  --gold-deep: #a67c22;
+  /* Accents : bleu ciel (la marque), bleu acier en profondeur */
+  --accent: #7fb8e7;
+  --accent-deep: #3f78ad;
+  --gold: #7fb8e7;
+  --gold-soft: #b5d6f2;
+  --gold-deep: #2f6aa0;
+
+  /*
+   * **La palette du combat** (D-191 (4)) : le combat n'est pas refait avec le reste — une série
+   * de tickets le reprendra. `.battle` réapplique ces valeurs à ses jetons, pour que la scène
+   * reste exactement celle d'avant la refonte.
+   */
+  --combat-bg: #0b1220;
+  --combat-bg-deep: #070c16;
+  --combat-bg-raised: #131c2e;
+  --combat-bg-haut: #1d2d4f;
+  --combat-bg-sunken: #0e1626;
+  --combat-line: #243049;
+  --combat-line-strong: #34456a;
+  --combat-text: #e8eef8;
+  --combat-text-muted: #9aa9c2;
+  --combat-text-dim: #7e8fb0;
+  --combat-accent: #4f8ef7;
+  --combat-accent-deep: #356fe0;
+  --combat-gold: #e6b64c;
+  --combat-gold-soft: #f4d68a;
+  --combat-gold-deep: #a67c22;
 
   --ok: #46b98a;
   --warn: #e0a33e;
@@ -110,15 +135,21 @@
   --sp-5: 1.5rem;
   --sp-6: 2rem;
 
-  /* Rayons et ombres */
-  --radius: 14px;
-  --radius-sm: 9px;
-  --radius-lg: 20px;
+  /* Rayons et ombres — angles droits (D-191) ; l'ombre portée reste pour ce qui flotte
+     (fenêtres, menus), la lueur dorée disparaît. */
+  --radius: 0px;
+  --radius-sm: 0px;
+  --radius-lg: 0px;
   --shadow: 0 12px 30px rgb(0 0 0 / 35%);
-  --shadow-gold: 0 10px 26px rgb(230 182 76 / 18%);
+  --shadow-gold: none;
 
-  --font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
+  /* D-191 : Barlow (texte et titres), Barlow Condensed (le nom de la marque). */
+  --font-body: 'Barlow', Arial, system-ui, sans-serif;
+  --font-display: 'Barlow', Arial, system-ui, sans-serif;
+  --font-marque: 'Barlow Condensed', 'Barlow', Arial, sans-serif;
+  /* Le combat garde ses polices d'avant la refonte (D-191 (4)). */
+  --combat-font-body: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --combat-font-display: 'Outfit Variable', 'Outfit', system-ui, sans-serif;
 
   /*
    * D-035 — shadcn/ui. Ses variables sont **mappées sur nos jetons**, pas laissées aux
@@ -170,10 +201,8 @@ body {
 }
 
 body {
-  background:
-    radial-gradient(circle at 18% -12%, #1a2949 0%, transparent 46%),
-    radial-gradient(circle at 100% 0%, rgb(230 182 76 / 7%) 0%, transparent 38%), var(--bg);
-  background-attachment: fixed;
+  /* D-191 : un aplat, sans halo ; la profondeur vient du bandeau d'accueil, pas du fond. */
+  background: var(--bg);
   color: var(--text);
   font-family: var(--font-body);
   font-size: 15px;
@@ -318,13 +347,9 @@ h2 {
   min-width: 0;
 }
 
+/* Le sceau (D-190), sans cadre : l'emblème détouré se pose tel quel sur la barre (D-191).
+   40 px, comme avant — la hauteur de l'en-tête est mesurée par la garde du combat (D-094). */
 .brand__mark {
-  background: linear-gradient(150deg, #1a2949, #0d1526);
-  border: 1px solid var(--gold-deep);
-  border-radius: var(--radius-sm);
-  box-shadow:
-    inset 0 0 0 1px rgb(230 182 76 / 18%),
-    0 6px 18px rgb(0 0 0 / 42%);
   display: grid;
   flex: none;
   height: 40px;
@@ -332,10 +357,10 @@ h2 {
   width: 40px;
 }
 
-.brand__mark svg {
+.brand__mark img {
   display: block;
-  height: 30px;
-  width: 30px;
+  height: 40px;
+  width: 40px;
 }
 
 .brand__text {
@@ -427,8 +452,8 @@ h2 {
 }
 
 .bottom-nav {
-  backdrop-filter: blur(10px);
-  background: rgb(11 18 32 / 92%);
+  /* D-191 : une barre plate, opaque, filet fin au-dessus — plus de verre dépoli. */
+  background: var(--bg);
   border-top: 1px solid var(--line);
   bottom: 0;
   display: flex;
@@ -3253,6 +3278,30 @@ h2 {
    l'écran et **par-dessus** `:root` : aucun jeton global n'est réécrit ici. Le bleu nuit du
    projet reste la famille ; le feutre n'en est qu'une version éclaircie au centre. */
 .battle {
+  /* D-191 (4) : le combat n'est pas refait avec le reste. Il reprend ici, sur sa propre boîte,
+     la palette, les rayons et les polices d'avant la refonte, gardés en `--combat-*` dans `:root`. */
+  --bg: var(--combat-bg);
+  --bg-deep: var(--combat-bg-deep);
+  --bg-raised: var(--combat-bg-raised);
+  --bg-haut: var(--combat-bg-haut);
+  --bg-sunken: var(--combat-bg-sunken);
+  --line: var(--combat-line);
+  --line-strong: var(--combat-line-strong);
+  --text: var(--combat-text);
+  --text-muted: var(--combat-text-muted);
+  --text-dim: var(--combat-text-dim);
+  --accent: var(--combat-accent);
+  --accent-deep: var(--combat-accent-deep);
+  --gold: var(--combat-gold);
+  --gold-soft: var(--combat-gold-soft);
+  --gold-deep: var(--combat-gold-deep);
+  --radius: 14px;
+  --radius-sm: 9px;
+  --radius-lg: 20px;
+  --shadow-gold: 0 10px 26px rgb(230 182 76 / 18%);
+  --font-body: var(--combat-font-body);
+  --font-display: var(--combat-font-display);
+  font-family: var(--font-body);
   --scene-felt: #16202c;
   --scene-felt-deep: #0d1420;
   --scene-felt-lit: #214d69;
@@ -4210,7 +4259,7 @@ h2 {
 
 .card-slot__quick {
   align-items: center;
-  background: rgb(11 18 32 / 88%);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
   border: 1px solid var(--line);
   border-radius: 999px;
   color: var(--text);
@@ -8123,4 +8172,531 @@ h2 {
    lit cette hauteur et échoue si elle repasse sous 44 px. */
 .retour-ecran {
   margin-bottom: 0.75rem;
+}
+
+/* ==========================================================================================
+   **La refonte « aéro-institutionnelle »** (D-191) — hors combat.
+   Bleu nuit plat, bleu ciel, blanc ; titres très fins et grands ; libellés et boutons en
+   capitales espacées ; angles droits ; bandeaux pleine largeur. Les jetons sont dans `:root`.
+   Le combat garde son allure d'avant (`.battle`, D-191 (4)) : chaque règle d'ici qui pourrait
+   l'atteindre l'exclut par `:not(.battle *)`.
+   ========================================================================================== */
+
+/* Un bandeau « pleine largeur » sort du conteneur centré : `calc(50% - 50vw)` de chaque côté.
+   `100vw` compte la barre de défilement : l'écran rogne l'excédent au lieu de défiler. */
+.app-shell {
+  overflow-x: clip;
+}
+
+/* ---------- L'en-tête ---------- */
+
+.topbar {
+  position: relative;
+}
+
+/* Le filet sous l'en-tête court sur toute la largeur de la fenêtre. */
+.topbar::after {
+  background: var(--line);
+  bottom: 0;
+  content: '';
+  height: 1px;
+  left: calc(50% - 50vw);
+  position: absolute;
+  width: 100vw;
+}
+
+.brand {
+  gap: 0.85rem;
+}
+
+/* Le mot-symbole : capitales condensées, séparé du sceau par un filet vertical. */
+.brand__text {
+  border-left: 1px solid var(--line-strong);
+  padding-left: 0.85rem;
+}
+
+.brand__text strong {
+  font-family: var(--font-marque);
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.brand__text span {
+  color: var(--text-dim);
+  font-size: var(--fs-xs); /* 11,2 px : le plancher du texte fonctionnel est 11 px (detect:ui:page). */
+  letter-spacing: 0.16em;
+  margin-top: 0.3rem;
+  text-transform: uppercase;
+}
+
+.topbar__user {
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line-strong);
+  border-radius: 0;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  padding: 0.35rem 0.9rem;
+  text-transform: uppercase;
+}
+
+.topbar__gear {
+  border-radius: 0;
+}
+
+.topbar__gear:focus-visible {
+  outline-color: var(--accent);
+}
+
+/* Sous 420 px, le nom du jeu doit tenir entier à côté du pseudo : capitales moins espacées,
+   filets et rembourrages resserrés (mesuré à 360 px : « BUREAU … » sinon). */
+@media (max-width: 420px) {
+  .brand {
+    gap: 0.5rem;
+  }
+
+  .brand__text {
+    padding-left: 0.5rem;
+  }
+
+  .brand__text strong {
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+  }
+
+  .topbar__user {
+    letter-spacing: 0.04em;
+    padding-inline: 0.5rem;
+  }
+}
+
+/* ---------- Titres et boutons ---------- */
+
+:is(h1, h2):not(.battle *) {
+  font-weight: 200;
+  letter-spacing: -0.01em;
+}
+
+.main > .page:not(.home, .battle) h1 {
+  font-size: clamp(1.9rem, 5vw, 2.8rem);
+  line-height: 1.08;
+}
+
+/* Rectangles nets, capitales espacées, aucune ombre ni lueur. */
+.button:not(.battle *) {
+  border-radius: 0;
+  box-shadow: none;
+  font-family: var(--font-body);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-shadow: none;
+  text-transform: uppercase;
+}
+
+.button:not(.battle *):hover {
+  box-shadow: none;
+  transform: none;
+}
+
+/* Le geste principal : un aplat blanc, texte bleu nuit ; il passe au bleu ciel au survol. */
+.button--gold:not(.battle *) {
+  background: var(--surface-claire);
+  border-color: var(--surface-claire);
+  color: var(--bg);
+}
+
+.button--gold:not(.battle *):hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Le geste secondaire : un contour blanc sur le fond. */
+.button--primary:not(.battle *) {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--surface-claire) 70%, transparent);
+  color: var(--text);
+}
+
+.button--primary:not(.battle *):hover {
+  background: color-mix(in srgb, var(--surface-claire) 10%, transparent);
+}
+
+/* ---------- La barre du bas ---------- */
+
+/* `.bottom-nav .bottom-nav__item`, pas `.bottom-nav__item` seul : la règle de base (cible de
+   44 px, D-120) reste la dernière de ce nom, celle que `barre-du-bas.test.ts` lit. */
+.bottom-nav .bottom-nav__item {
+  border-radius: 0;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bottom-nav .bottom-nav__item.is-active {
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+}
+
+/* L'onglet courant : un trait bleu ciel, net. */
+.bottom-nav .bottom-nav__item.is-active::before {
+  background: var(--accent);
+  border-radius: 0;
+  box-shadow: none;
+  height: 2px;
+}
+
+/* Cinq onglets sur 360 px : les capitales se resserrent pour que « Pause café » tienne. */
+@media (max-width: 480px) {
+  .bottom-nav .bottom-nav__item {
+    font-size: var(--fs-xs);
+    letter-spacing: 0.02em;
+    text-align: center;
+  }
+}
+
+/* **Combat, mis en avant** (D-192) : l'onglet du centre est un bloc bleu ciel plein, texte
+   bleu nuit (7,9:1), qui dépasse un peu au-dessus de la barre — c'est le geste du jeu. */
+.bottom-nav .bottom-nav__item--vedette {
+  background: var(--accent);
+  box-shadow: 0 6px 16px rgb(0 0 0 / 40%);
+  color: var(--bg);
+  margin-top: -0.85rem;
+}
+
+.bottom-nav .bottom-nav__item--vedette:hover,
+.bottom-nav .bottom-nav__item--vedette.is-active {
+  background: var(--gold-soft);
+  color: var(--bg);
+}
+
+/* Le bloc se voit seul : pas de trait d'onglet courant au-dessus de lui. */
+.bottom-nav .bottom-nav__item--vedette.is-active::before {
+  display: none;
+}
+
+/* ---------- La pause café (D-192) ---------- */
+
+.pause-cafe__chapo {
+  color: var(--text-muted);
+  font-size: var(--fs-lg);
+  font-weight: 300;
+  max-width: 52ch;
+}
+
+.pause-cafe__etat {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  display: inline-block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  margin: 0.5rem 0 0;
+  padding: 0.35rem 0.8rem;
+  text-transform: uppercase;
+  /* Une étiquette, pas une bande : elle ne s'étire pas dans la colonne de la section. */
+  align-self: flex-start;
+  width: fit-content;
+}
+
+.pause-cafe__annonces {
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 0;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.pause-cafe__annonce {
+  border-bottom: 1px solid var(--line);
+  padding: 1.5rem 0;
+}
+
+.pause-cafe__annonce h2 {
+  font-size: var(--fs-xl);
+  margin: 0 0 0.5rem;
+}
+
+.pause-cafe__annonce p:not(.pause-cafe__quand) {
+  margin: 0;
+  max-width: 48ch;
+}
+
+.pause-cafe__quand {
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  margin-top: 0.75rem;
+  text-transform: uppercase;
+}
+
+/* ---------- L'accueil : bandeaux pleine largeur ---------- */
+
+.app-shell:has(.home) .main {
+  padding-top: 0;
+}
+
+.home {
+  gap: 0;
+}
+
+/* Le bandeau d'accueil : plein cadre, centré, titre fin et immense, un dégradé du bleu acier
+   vers le bleu nuit qui donne la profondeur que le fond n'a plus. */
+.home .hero {
+  align-items: center;
+  background: linear-gradient(
+    180deg,
+    var(--bg-haut) 0%,
+    color-mix(in srgb, var(--bg-haut) 45%, var(--bg)) 45%,
+    var(--bg) 100%
+  );
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-inline: calc(50% - 50vw);
+  min-height: 72vh;
+  padding: 12vh max(1.5rem, calc((100vw - var(--shell-max)) / 2)) 4rem;
+  text-align: center;
+}
+
+.home .hero h1 {
+  font-size: clamp(2.2rem, 5.5vw, 3.6rem);
+  line-height: 1.04;
+  margin: 0 auto 1.5rem;
+  max-width: 14ch;
+  text-transform: none;
+}
+
+.home .hero__lead {
+  color: color-mix(in srgb, var(--text) 82%, transparent);
+  font-size: var(--fs-lg);
+  font-weight: 300;
+  margin: 0 auto 2rem;
+  max-width: 46ch;
+}
+
+.home .hero__actions {
+  flex-wrap: wrap;
+  gap: 0;
+  justify-content: center;
+}
+
+.home .hero__actions > .button {
+  min-height: 3.25rem;
+  padding: 1rem 1.75rem;
+}
+
+.home .hero__attente,
+.home .hero__packs {
+  justify-content: center;
+  text-align: center;
+}
+
+/* Le trait vertical sous le bandeau, qui invite à descendre. */
+.home .hero::after {
+  background: color-mix(in srgb, var(--surface-claire) 70%, transparent);
+  display: block;
+  height: 4rem;
+  left: auto;
+  margin: 2.5rem auto 0;
+  opacity: 1;
+  position: static;
+  right: auto;
+  width: 1px;
+}
+
+/* Les chiffres : un bandeau de trois colonnes, gros chiffres fins, filets verticaux. */
+.home .stats-grid {
+  border-block: 1px solid var(--line);
+  gap: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(0rem, calc((100vw - var(--shell-max)) / 2));
+}
+
+.home .stats-grid > .stat-card,
+.home .stats-grid > .stat-card:first-child {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  grid-column: auto;
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.home .stats-grid > .stat-card:first-child {
+  border-left: 0;
+}
+
+.home .stat-card strong {
+  color: var(--text);
+  font-size: clamp(2rem, 6vw, 3.4rem);
+  font-weight: 200;
+}
+
+.home .stat-card__label {
+  color: var(--accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.home .stat-card__jauge {
+  border-radius: 0;
+  height: 2px;
+  margin-inline: auto;
+  width: 60%;
+}
+
+.home .stat-card__jauge > span {
+  background: var(--accent);
+  border-radius: 0;
+}
+
+/* La dernière version : une bande blanche, texte bleu nuit — la section claire des sites
+   institutionnels. */
+.home .home__version {
+  align-items: center;
+  background: var(--surface-claire);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--bg);
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-inline: calc(50% - 50vw);
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+
+.home .home__version * {
+  color: var(--bg);
+}
+
+.home .home__version .muted {
+  color: var(--line-strong);
+}
+
+.home .home__version-titre {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 200;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.home .home__version .button {
+  background: transparent;
+  border-color: var(--bg);
+}
+
+.home .home__version .button:hover {
+  background: var(--bg);
+  color: var(--surface-claire);
+}
+
+/* **Accueil portrait sans défilement** (D-171, D-173, tenus par D-191) : sur téléphone, toute
+   la page tient d'un écran, la bande « la dernière version » comprise — mesuré par
+   `npm run capturer` à 360 × 640 et 390 × 664. Le bandeau garde son dégradé et son alignement
+   centré, mais rend sa hauteur : pas de 72 vh, pas de trait vertical, titre sur deux lignes. */
+@media (max-width: 639px) and (orientation: portrait) {
+  .home .hero {
+    min-height: 0;
+    padding: 0.9rem 1rem 0.75rem;
+  }
+
+  .home .hero::after {
+    display: none;
+  }
+
+  .home .hero h1 {
+    font-size: clamp(1.3rem, 6.2vw, 1.6rem);
+    line-height: 1.05;
+    margin-bottom: 0.45rem;
+    max-width: none;
+  }
+
+  .home .hero h1 br {
+    display: none;
+  }
+
+  .home .hero__lead {
+    font-size: 0.82rem;
+    line-height: 1.28;
+    margin-bottom: 0.6rem;
+  }
+
+  .home .hero__actions {
+    display: grid;
+    gap: 0.4rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .home .hero__actions > .button {
+    letter-spacing: 0.08em;
+    min-height: 3.25rem;
+    padding: 0.35rem 0.4rem;
+  }
+
+  /* La Collection, plus bavarde, prend la colonne large (comme avant D-191). */
+  .home .stats-grid {
+    grid-template-columns: minmax(0, 1.7fr) repeat(2, minmax(0, 1fr));
+  }
+
+  .home .stats-grid > .stat-card,
+  .home .stats-grid > .stat-card:first-child {
+    gap: 0.1rem;
+    padding: 0.5rem 0.35rem;
+  }
+
+  .home .stat-card strong {
+    font-size: 1.45rem;
+    line-height: 1.1;
+  }
+
+  /* Une ligne de texte à gauche, la porte à droite : la bande tient en ~3 lignes. */
+  .home .home__version {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    text-align: left;
+  }
+
+  .home .home__version-texte {
+    flex: 1 1 auto;
+    gap: 0;
+    min-width: 0;
+  }
+
+  .home .home__version-titre {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .home .home__version-libelle,
+  .home .home__version-date {
+    font-size: var(--fs-xs);
+    line-height: 1.3;
+  }
+
+  .home .home__version .button {
+    flex: none;
+    letter-spacing: 0.06em;
+    min-height: 2.75rem;
+    padding: 0.35rem 0.6rem;
+  }
 }

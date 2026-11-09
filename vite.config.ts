@@ -24,14 +24,21 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'],
+      includeAssets: [
+        'favicon-16.png',
+        'favicon-32.png',
+        'apple-touch-icon.png',
+        'icon-192.png',
+        'icon-512.png',
+        'icon-maskable-512.png'
+      ],
       manifest: {
         name: 'Bureau des Planqués',
         // Le libellé sous l'icône installée : le nom technique (D-036), choisi par Bastien (D-054).
         short_name: 'Planquex',
         description: 'Collectionne les Planqués, ouvre des Arrivages, affronte la Direction.',
-        theme_color: '#0b1220',
-        background_color: '#0b1220',
+        theme_color: '#1b1d27',
+        background_color: '#1b1d27',
         display: 'standalone',
         // **PWA d'abord** (D-173, #580) : Chromium (63) livre `fullscreen` quand l'appareil le
         // permet, et retombe sur `standalone` sinon ; iOS **ignore** la valeur et parse `standalone`.
@@ -45,14 +52,14 @@ export default defineConfig({
         orientation: 'portrait',
         lang: 'fr',
         start_url: '/',
-        // Des PNG d'abord : sans icône raster, Chromium/Brave n'installe qu'un raccourci
-        // avec son propre badge (constaté le 21/10/2026). Le SVG reste en repli vectoriel.
-        // Les PNG se régénèrent par `npm run icones`. Garde : `scripts/ressources/icones.test.ts`.
+        // Des PNG : sans icône raster, Chromium/Brave n'installe qu'un raccourci avec son propre
+        // badge (constaté le 21/10/2026, D-054). L'icône est l'engrenage d'acier et la tasse
+        // (D-190), rendue depuis `design/logo/app/` par `npm run icones`.
+        // Garde : `scripts/ressources/icones.test.ts`.
         icons: [
           { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          { src: '/icon-512.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }
+          { src: '/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {

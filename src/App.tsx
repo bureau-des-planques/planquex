@@ -37,6 +37,7 @@ const Battle = lazy(() => import('@/pages/Battle').then((m) => ({ default: m.Bat
 const Rejeu = lazy(() => import('@/pages/Rejeu').then((m) => ({ default: m.Rejeu })));
 const Settings = lazy(() => import('@/pages/Settings').then((m) => ({ default: m.Settings })));
 const Comite = lazy(() => import('@/pages/Comite').then((m) => ({ default: m.Comite })));
+const PauseCafe = lazy(() => import('@/pages/PauseCafe').then((m) => ({ default: m.PauseCafe })));
 const Suivi = lazy(() => import('@/pages/Suivi').then((m) => ({ default: m.Suivi })));
 const Confidentialite = lazy(() => import('@/pages/Confidentialite').then((m) => ({ default: m.Confidentialite })));
 const FeuilleDeRoute = lazy(() => import('@/pages/FeuilleDeRoute').then((m) => ({ default: m.FeuilleDeRoute })));
@@ -143,6 +144,8 @@ export function App() {
           <Route path="collection" element={<CollectionDeck onglet="collection" />} />
           <Route path="deck" element={<CollectionDeck onglet="deck" />} />
           <Route path="battle" element={<Battle />} />
+          {/* La pause café (D-192) : l'espace social, annoncé, pas encore jouable. */}
+          <Route path="pause-cafe" element={<PauseCafe />} />
           {/* Le comité a **deux pages** (D-097 (2)) : le mur (`/comite`) et le suivi
             (`/comite/suivi`), sous la même barre de sous-onglets. */}
           <Route path="comite" element={<Comite />} />
