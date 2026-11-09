@@ -6,7 +6,7 @@
 
 ## 1. Règles d'or
 
-1. Lire ce fichier. Pour `docs/DECISIONS.md` (187 décisions, ~320 000 caractères), ouvrir son **index** (`docs/DECISIONS-INDEX.md`) et lire les seules décisions qui touchent ta zone. Un point de règle non tranché se signale, il ne s'invente pas.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (188 décisions, ~320 000 caractères), ouvrir son **index** (`docs/DECISIONS-INDEX.md`) et lire les seules décisions qui touchent ta zone. Un point de règle non tranché se signale, il ne s'invente pas.
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier les versions abandonnées (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.
@@ -24,7 +24,7 @@ En cas de conflit, cet ordre tranche :
 3. **`docs/CARD-SPEC.md` et `docs/FACTIONS.md`** — structure du set, courbes, factions, nommage.
 4. **`docs/MIROIR-2026-DELTAS.md`** — écarts connus avec le jeu de référence et leurs verdicts. Aucun écart ouvert : il ne sert pas à changer une règle sans décision.
 5. **Le code et les commandes** — un écart avec les docs est un bug ou une tâche, pas une règle.
-6. **`docs/STATUS.md` et `docs/AUDIT-*.md`** — instantanés datés : relancer les commandes.
+6. **`docs/STATUS.md` et `docs/archives/AUDIT-*.md`** — instantanés datés : relancer les commandes.
 
 Hors de l'ordre : `PRODUCT.md` (contexte de `impeccable`, D-176), `docs/MODES-FUTURS.md` (modes parkés, D-019), et les documents **gelés** `docs/PROPOSITION.md` §3–5, `docs/CORRESPONDANCES.md`, `docs/NOMMAGE.md` (D-112) : ils ne tranchent rien et ne se remettent pas à jour. Deux documents qui se contredisent : citer les passages et proposer une correction, ne pas choisir en silence.
 

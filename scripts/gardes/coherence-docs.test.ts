@@ -156,7 +156,7 @@ function commandesNonCitees(table: string, scripts: string[]): string[] {
  * - `docs/CAPTURES-UI.md` — protocole daté du 19/10 : il nomme des **fichiers de capture** qui
  *   existent (`B05-chariot.png`), et un nom de fichier est un fait, pas un usage ;
  * - `docs/arbitrages/` — dossiers d'arbitrage **datés** (21/10) qui citent le brief mot pour mot ;
- * - `docs/STATUS.md`, `docs/AUDIT-*.md`, `docs/preuves/**` — **instantanés et transcriptions
+ * - `docs/STATUS.md`, `docs/archives/AUDIT-*.md`, `docs/preuves/**` — **instantanés et transcriptions
  *   datés** (§2.6, D-083) ;
  * - `src/data/cards.test.ts` — il **nomme** ce qu'il interdit (`FORBIDDEN_ANY_CASE`), c'est sa fonction.
  */
