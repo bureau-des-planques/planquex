@@ -161,7 +161,7 @@ export function ParcoursProfil({ uid }: { uid: string }) {
           </fieldset>
           <p className="parcours__aide m-0" role="status">
             {icone
-              ? (ICONES_PROFIL.find((i) => i.slug === icone)?.libelle ?? '')
+              ? `${ICONES_PROFIL.find((i) => i.slug === icone)?.libelle ?? ''}.`
               : 'Touche un portrait pour le choisir.'}{' '}
             Il n’a aucun effet en jeu : il te donne seulement un visage.
           </p>
