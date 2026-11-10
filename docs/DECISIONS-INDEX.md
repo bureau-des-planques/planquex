@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 194 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 197 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -153,7 +153,7 @@
 | D-145 | 28/10/2026 | Le café se touche sur le Planqué : la barre… |  |
 | D-146 | 28/10/2026 | Les niveaux numériques portent leur politique, et la difficulté se… | D-151 |
 | D-147 | 28/10/2026 | La Rotation tient en une entrée dans la barre :… |  |
-| D-148 | 28/10/2026 | Le profil du testeur (pseudo, service, intitulé) vit sur le… | D-159 |
+| D-148 | 28/10/2026 | ⚠ Précisée par D-197 (10/11/2026) : le pseudo du compte… | D-159 |
 | D-149 | 28/10/2026 | La Direction joue trois Decks, un par archétype, et la… |  |
 | D-150 | 28/10/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
 | D-151 | 28/10/2026 | La difficulté a trois crans nommés, et chacun change la… |  |
@@ -168,7 +168,7 @@
 | D-160 | 30/10/2026 | ⚠ Amendée par D-194 (10/11/2026, point 1) : le «… | D-162, D-163, D-194 |
 | D-161 | 30/10/2026 | Le mur du comité n'est plus exclu de la Journée… | D-162 |
 | D-162 | 31/10/2026 | ⚠ Amendée par D-194 (10/11/2026, point 1) : le «… | D-163, D-194 |
-| D-163 | 31/10/2026 | ⚠ Amendée par D-181 (04/11/2026) : (3) « Suivant »… | D-181 |
+| D-163 | 31/10/2026 | ⚠ Amendée par D-196 (10/11/2026) : (3) « Suivant »… | D-181, D-196 |
 | D-164 | 31/10/2026 | Les libellés d'une vignette de carte se lisent . Une… |  |
 | D-165 | 31/10/2026 | ⚠ Précisée par D-181 (04/11/2026) : le pas-à-pas du combat… |  |
 | D-166 | 31/10/2026 | Le combat a un son par geste, et la fiche… |  |
@@ -186,13 +186,13 @@
 | D-178 | 02/11/2026 | Le reset de la bêta garde les comptes, et la… |  |
 | D-179 | 03/11/2026 | ⚠ Note de lecture du 04/11/2026 — voir D-183 :… |  |
 | D-180 | 04/11/2026 | Noms et symboles des huit raretés : les huit codes… |  |
-| D-181 | 04/11/2026 | ⚠ Amendée par D-187 (04/11/2026, point (2)) : la réplique… | D-185, D-186, D-187 |
+| D-181 | 04/11/2026 | ⚠ Amendée par D-195 (10/11/2026, point 2) : la réplique… | D-185, D-186, D-187, D-195, D-197 |
 | D-182 | 04/11/2026 | ⚠ Amendée par D-193 (09/11/2026, points 3 et 4) :… | D-193 |
 | D-183 | 04/11/2026 | Les traces de combat quittent le jeu : le client… |  |
 | D-184 | 04/11/2026 | Les cartes de l’Arrivage sortent de l’intérieur de la pochette… |  |
 | D-185 | 04/11/2026 | ⚠ Précisée par D-186 (04/11/2026, point (1)) : le nom… |  |
 | D-186 | 04/11/2026 | Le nom du locuteur de la Journée est hors du… |  |
-| D-187 | 04/11/2026 | ⚠ Précisée par D-194 (10/11/2026, point 2) : la tête… |  |
+| D-187 | 04/11/2026 | ⚠ Amendée par D-195 (10/11/2026, point 1) : la tête… | D-195 |
 | D-188 | 07/11/2026 | Les trois audits datés d'octobre quittent docs/ pour docs/archives/ .… |  |
 | D-189 | 07/11/2026 | Un PNG de docs/preuves/ tient sous 1 Mo ; l'historique… |  |
 | D-190 | 09/11/2026 | La marque du jeu devient le sceau à la tasse… |  |
@@ -200,3 +200,6 @@
 | D-192 | 09/11/2026 | Un cinquième onglet, la Pause café, devient l'espace social ;… |  |
 | D-193 | 09/11/2026 | Le combat suit la direction de D-191 ; son plateau… |  |
 | D-194 | 10/11/2026 | Pendant la Journée d'intégration, un fond flou, voilé ou inerte… |  |
+| D-195 | 10/11/2026 | Le Chef de cabinet de la Journée : tête d'environ… |  |
+| D-196 | 10/11/2026 | La Journée n'a plus de bouton « Suivant » :… |  |
+| D-197 | 10/11/2026 | Le parcours de départ avec le Chef de cabinet :… |  |
