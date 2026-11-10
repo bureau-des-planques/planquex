@@ -737,6 +737,43 @@ async function jusquAUnePression(page) {
 }
 
 /**
+ * **L'instant « Rebut ouvert »** (#740, critère 7) : le panneau de Rebut est non modal et ne doit pas faire
+ * défiler la page. On ouvre le Rebut de **chaque** camp (l'adversaire puis le joueur, un à la fois) au
+ * premier tour, puis une seconde fois après quelques tours (jusqu'à une Pression jouable) où le Rebut a plus
+ * de chances de porter des cartes ; à chaque ouverture, `scrollY` est écrit dans la sortie et le contrôle de hauteur
+ * habituel juge le reste (défilement, cibles de 44 px). Le nombre de cartes du panneau est écrit dans la sortie :
+ * un Rebut vide ne prouve la hauteur que d'un panneau vide, et c'est dit, pas masqué.
+ */
+async function mesurerRebutOuvert(browser) {
+  const instant = INSTANTS_COMBAT[0];
+  const { context, page } = await ouvrirCombat(browser, instant, { pasAPasCombatVu: true });
+  const ouvrirLesDeux = async (etape) => {
+    const boutons = page.getByRole('button', { name: /^Consulter le Rebut/ });
+    const n = await boutons.count();
+    if (n < 2) problems.push(`${ROUTE_COMBAT} · « Rebut ouvert » : ${n} bouton(s) de Rebut au lieu de 2 (#740)`);
+    for (let i = 0; i < n; i += 1) {
+      const bouton = boutons.nth(i);
+      await bouton.scrollIntoViewIfNeeded();
+      await bouton.click();
+      await page.waitForTimeout(250);
+      const cartes = await page.locator('.panneau-rebut__liste li').count();
+      const scrollY = await page.evaluate(() => window.scrollY);
+      const nom = `${new Date(instant).toISOString()} (Rebut ouvert, ${etape}, pile ${i + 1}/${n}, ${cartes} carte(s))`;
+      console.log(`combat · ${nom} · scrollY ${scrollY}`);
+      await controlerHauteur(page, nom, ROUTE_COMBAT);
+      if (i === 0)
+        await page.screenshot({ path: join(outDir, `combat-rebut-ouvert-${etape}.png`), fullPage: PLEINE_PAGE });
+      await bouton.click();
+      await page.waitForTimeout(150);
+    }
+  };
+  await ouvrirLesDeux('tour-1');
+  const tour = await jusquAUnePression(page);
+  if (tour !== null) await ouvrirLesDeux(`tour-${tour}`);
+  await context.close();
+}
+
+/**
  * Le combat dans **une densité** (`sobre` ou `détaillé`), à l'arrivée, **avec le pire cas** (#292, #321).
  *
  * `détaillé` (#292, `docs/SPEC-COMBAT-UI.md` T9) remet des annotations sur le plateau : c'est la
@@ -1563,6 +1600,9 @@ try {
   // Le combat **avec une Pression jouable** (#320) : la barre y est à sa hauteur maximale, et
   // c'est là que « Fin du tour » passait sous la navigation.
   if (maVoie()) await mesurerAvecUnePression(browser);
+
+  // Le panneau de Rebut ouvert ne fait pas défiler la page (#740, critère 7).
+  if (maVoie()) await mesurerRebutOuvert(browser);
 
   // Le combat en mode `détaillé` (#292) : à l'arrivée, puis avec une Pression jouable ; et le pire
   // cas de `sobre` (#321), qui n'est joué nulle part ailleurs.
