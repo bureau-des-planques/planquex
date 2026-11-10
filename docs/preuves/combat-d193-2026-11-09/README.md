@@ -26,5 +26,13 @@ Preuves de #774 et des tickets de la vague 2 (#739 à #751). Branche `agent/comb
 
 - **L'animation de pioche et de pose adverse** : la planche (> 1 Mo, refusée par la garde D-189) n'est pas conservée ; seul le DOM la prouve. **L'évolution n'est pas filmée.**
 - **La durée totale de l'ouverture (≤ 2 s)** : la planche ne couvre que ~0,8 s sur 1,76 s ; la version « Mouvement réduit » n'est pas filmée.
-- **Le rendu de la main rognée à 56 px** : sur les captures de dev, la barre de l'outil live en masque le bas ; la capture de `npm run capturer` en fait foi.
+- **Captures de dev avec la barre de l'outil `impeccable live`** : `combat-1280x800.png`, `planche-ouverture.png`,
+  `planche-tap-agrandir-voler.png` et `table-zoomee-essai.png` ont été prises pendant que le script du live
+  était injecté dans `index.html` : sa barre noire occupe le bas de l'écran et masque la main. Elles ne prouvent
+  pas le bas de l'écran.
+- **Corrigé le 10/11/2026** : `combat-420x900.png`, `combat-pression-420x900.png` et `combat-1920x1080.png`
+  étaient eux aussi pollués par cette barre ; ils sont remplacés par la sortie de `npm run capturer` sur `main`
+  propre (exit 0, `index.html` sans injection).
+- **Les noms des cartes de la main ne sont pas lisibles à 56 px** : sur `combat-420x900.png`, la bande visible ne
+  montre que la pastille de coût et l'illustration. #744 (nom en tête de carte) n'est pas atteint.
 - **L'écran de bureau** : composition cohérente (table à gauche, main et actions à droite) mais pas finale ; la main est en haut de sa colonne.
