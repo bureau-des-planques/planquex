@@ -14,7 +14,7 @@ import { menuEstOuvert, menuSurLaListe, menuSurLaVue } from '@/test/menu-combat'
 import { ETAPES_COMBAT, premierePhrase } from '@/components/pas-a-pas-combat-etapes';
 import { delaiDeRetournement, DUREE_OUVERTURE_MS, useEffetsDeCombat } from '@/components/effets-combat';
 import { ALL_CARDS, isBasic, isPlanque } from '@/data';
-import type { BattleAction, BattleState, PlayerId } from '@/data/types';
+import type { BattleAction, BattleState, PlayerId, PlayerState } from '@/data/types';
 import { HAND_LIMIT } from '@/game/rules';
 import { cardName } from '@/combat/cartes';
 import type { PartieSauvegardee } from '@/store/partie';
@@ -24,6 +24,8 @@ import { applyAction, createBattle, legalActions } from '@/game/engine';
 import { DEFAULT_SEARCH_OPTIONS, nextAiAction, nextSearchAction } from '@/game/ia';
 import { factionDeck } from '@/game/simulation';
 import { partieSauvegardee } from '@/store/partie';
+import { Camp } from '@/combat/plateau';
+import type { PasAPasCombatEtat } from '@/components/use-pas-a-pas-combat';
 import { useStore } from '@/store/useStore';
 import { deckLegal } from '@/game/deck';
 import { choisirReplique } from '@/game/repliques-direction';
@@ -158,8 +160,9 @@ function partieAvecPlaceAuBanc() {
  * fois qu'il porte la taille voulue. Coups déterministes (graine + rang), Direction scriptée.
  * Mémoïsée, même raison que les autres scénarios.
  */
-// Pas de main vide : 300 graines, deux politiques de coups, aucun état à 0 carte n'est atteint
-// (la pioche se refait à chaque tour). Le cas 0 reste donc non couvert.
+// Pas de main vide par le jeu : 300 graines, deux politiques de coups, aucun état à 0 carte n'est atteint
+// (la pioche se refait à chaque tour). Le cas 0 se pose donc **à la main** sur un état valide (voir
+// `rendreCamp`) : on vide `hand` d'un état réel, sans rien changer au moteur.
 const TAILLES_DE_MAIN = [1, HAND_LIMIT];
 const cacheMains = new Map<string, { partie: PartieSauvegardee; etat: BattleState }>();
 function partieAvecMain(camp: PlayerId, n: number): { partie: PartieSauvegardee; etat: BattleState } {
@@ -2274,6 +2277,53 @@ describe('Battle — les piles et l’éventail de dos (#749, #747)', () => {
 
     expect(cote(container, camp)?.querySelectorAll('.eventail__dos')).toHaveLength(n);
     expect(cote(container, camp)?.querySelector('.board__counts .sr-only')?.textContent).toBe(`main ${n}`);
+  });
+
+  /**
+   * Le cas **0 carte** (#747) : le jeu n'atteint jamais une main vide (la pioche se refait à chaque tour, 300
+   * graines essayées), et une partie rangée se **rejoue** : on ne peut pas l'y poser. On rend donc `Camp`
+   * directement sur un état valide dont on vide `hand`, sans rien changer au moteur.
+   */
+  function rendreCamp(main: PlayerState['hand']) {
+    const { etat } = partieCommencee();
+    const side: PlayerState = { ...etat.players.ai, hand: main };
+    const pasAPas = {
+      ouvert: false,
+      etape: 0,
+      courante: ETAPES_COMBAT[0],
+      derniere: false,
+      cibles: ''
+    } as unknown as PasAPasCombatEtat;
+    return {
+      etat,
+      ...render(
+        <Camp
+          label="Direction"
+          side={side}
+          current={false}
+          mine={false}
+          pendingPromotion={false}
+          pasAPas={pasAPas}
+          inspecte={null}
+          detaille={false}
+          onInspecter={() => {}}
+        />
+      )
+    };
+  }
+
+  it('main vide (0 carte) : aucun dos, et le compte lu dit « main 0 » (#747)', () => {
+    const { container } = rendreCamp([]);
+    expect(container.querySelectorAll('.eventail__dos')).toHaveLength(0);
+    expect(container.querySelector('.board__counts .sr-only')?.textContent).toBe('main 0');
+  });
+
+  it('le contrôle mord : une main de 3 cartes donne 3 dos, jamais le nom d’une carte (#747)', () => {
+    const { etat } = partieCommencee();
+    const main = etat.players.ai.hand.slice(0, 3);
+    const { container } = rendreCamp(main);
+    expect(container.querySelectorAll('.eventail__dos')).toHaveLength(3);
+    for (const carte of main) expect(container.innerHTML).not.toContain(cardName(carte.cardId));
   });
 
   it('la main adverse ne montre aucun nom : le dos seul, `.eventail` sans texte', () => {
