@@ -59,6 +59,15 @@ function tirageCopie(graine: number) {
   return copie.openPackCards({ rng: copie.seedRng(graine) }).map((carte) => ({ id: carte.id, rarity: carte.rarity }));
 }
 
+/**
+ * Le refus d'un compte non approuvé (0028, D-199 (4)) est rendu en **403** : la base lève
+ * `insufficient_privilege` (42501), l'Edge Function le traduit. Sans cette traduction, le refus
+ * deviendrait un 500 que le client lit comme une panne — et le bouton proposerait de réessayer.
+ */
+function refusNonApprouveEn403(index: string): boolean {
+  return /code\s*===\s*'42501'[\s\S]{0,400}arrivage_compte_non_approuve[\s\S]{0,200},\s*403\s*\)/.test(index);
+}
+
 describe('arrivage serveur — la copie du tirage ne diverge pas (#651, D-179)', () => {
   it('le catalogue, la composition et la taille de la copie sont ceux de la source', () => {
     // Le message dit quoi faire plutôt que de laisser chercher : c'est la sortie de `-- --verifie`.
@@ -104,7 +113,25 @@ describe('arrivage serveur — la copie du tirage ne diverge pas (#651, D-179)',
     expect(genere).not.toMatch(/^\s*import\s/m);
   });
 
+  it('le refus d’un compte non approuvé (42501) est rendu en 403, pas en 500 (D-199)', () => {
+    const index = readFileSync(
+      fileURLToPath(new URL('../../supabase/functions/ouvrir-arrivage/index.ts', import.meta.url)),
+      'utf8'
+    );
+    expect(refusNonApprouveEn403(index)).toBe(true);
+  });
+
   describe('le contrôle mord (#112)', () => {
+    it('une traduction retirée ou rendue en 500 est dénoncée', () => {
+      const index = readFileSync(
+        fileURLToPath(new URL('../../supabase/functions/ouvrir-arrivage/index.ts', import.meta.url)),
+        'utf8'
+      );
+      expect(refusNonApprouveEn403(index.replace("=== '42501'", "=== '00000'"))).toBe(false);
+      expect(refusNonApprouveEn403(index.replace(/, 403\)/, ', 500)'))).toBe(false);
+      expect(refusNonApprouveEn403(index.replace(/if \(\(erreur[\s\S]*?\n    }\n/, ''))).toBe(false);
+    });
+
     it('une composition changée dans la source est dénoncée', () => {
       const composition = SOURCE.composition.map((slot, index) =>
         index === 0 ? { ...slot, count: slot.count - 1 } : slot

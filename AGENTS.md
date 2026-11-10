@@ -6,7 +6,7 @@
 
 ## 1. Règles d'or
 
-1. Lire ce fichier. Pour `docs/DECISIONS.md` (200 décisions, ~320 000 caractères), ouvrir son **index** (`docs/DECISIONS-INDEX.md`) et lire les seules décisions qui touchent ta zone. Un point de règle non tranché se signale, il ne s'invente pas.
+1. Lire ce fichier. Pour `docs/DECISIONS.md` (201 décisions, ~320 000 caractères), ouvrir son **index** (`docs/DECISIONS-INDEX.md`) et lire les seules décisions qui touchent ta zone. Un point de règle non tranché se signale, il ne s'invente pas.
 2. Travailler dans `planquex/` sauf demande explicite. Ne pas modifier les versions abandonnées (§9).
 3. Une affirmation sans commande, test ou fichier cité est une **hypothèse**, pas un fait.
 4. Ne pas changer les règles de base, le vocabulaire ou le périmètre sans une décision datée dans `docs/DECISIONS.md`.

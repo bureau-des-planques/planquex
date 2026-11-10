@@ -1,7 +1,7 @@
 # Index des décisions
 
 > **Dérivé** de `docs/DECISIONS.md` par `npm run index:decisions` — ne pas éditer à la main.
-> 200 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
+> 201 décisions. Le journal est trop long pour se lire d'un bloc : cet index est la porte d'entrée,
 > puis on ouvre la ligne du tableau.
 
 | ID | Date | Intitulé (début) | Amendée par |
@@ -204,5 +204,6 @@
 | D-196 | 10/11/2026 | La Journée n'a plus de bouton « Suivant » :… |  |
 | D-197 | 10/11/2026 | ⚠ Point (5) tranché par D-199 (10/11/2026) : le compte… |  |
 | D-198 | 10/11/2026 | La Journée : budget, nom du locuteur, issue du combat,… |  |
-| D-199 | 10/11/2026 | Le compte en attente d'approbation fait la Journée et le… |  |
+| D-199 | 10/11/2026 | ⚠ Amendée par D-201 (10/11/2026) : un compte en attente… | D-201 |
 | D-200 | 10/11/2026 | Le combat sur écran de bureau suit la composition du… |  |
+| D-201 | 10/11/2026 | Un compte en attente d'approbation ne joue pas : il… |  |

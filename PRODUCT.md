@@ -69,9 +69,9 @@ jeu, pas d'une explication.
   l'alpha en ligne (D-156), modéré côté serveur. Un serveur Discord **facultatif** double le canal
   (D-120) ; le client n'en porte qu'un lien, jamais un widget.
 - **La porte de l'alpha en ligne exige un compte** (D-156) : une session anonyme repart vers
-  `/connexion` ; un compte `refuse` ne joue pas et repart vers `/attente` ; un compte en attente
-  fait la Journée et le combat solo, sans Arrivage serveur, sans mur du comité ni Pause café
-  (D-199).
+  `/connexion` ; un compte non approuvé (en attente ou `refuse`) ne joue pas et repart vers
+  `/attente`, qui ne montre que son état (D-201, qui amende D-199) ; le serveur refuse aussi
+  l'Arrivage à un compte non approuvé.
 - **Le mode local fonctionne sans configuration.** Sans `.env`, la garde de compte laisse passer et
   le mur lit `docs/comite.json` : un clone frais reste jouable, et rien n'est envoyé nulle part.
   Ce repli local ne décrit pas l'entrée en alpha en ligne, qui exige un compte (D-156).

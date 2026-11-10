@@ -9,6 +9,7 @@ import {
   IconeReglages
 } from '@/components/IconesMarque';
 import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
+import { useJourneeOuverte } from '@/components/journee-etape';
 import { useStore } from '@/store/useStore';
 /**
  * **La Journée d'intégration arrive à la demande** (31/10/2026) : elle ne sert qu'aux
@@ -85,6 +86,17 @@ export function Layout() {
   const enCombat = pathname.startsWith('/battle');
 
   /**
+   * **La barre du bas s'efface aussi pendant la Journée** (D-194 (2), D-195 (1), #778) : la tête
+   * du Chef de cabinet prend le tiers bas de l'écran, et les étapes s'enchaînent par le geste
+   * (D-196) — il n'y a rien à cliquer dans la barre. Même principe qu'en combat : elle n'est
+   * **pas rendue**, donc ni place, ni focus, ni rôle. Elle revient à la pause (Échap), à
+   * « Passer » et à la fin : le testeur n'est jamais enfermé (D-162 (2)).
+   */
+  const journeeOuverte = useJourneeOuverte();
+  // Un compte non approuvé n'a rien à jouer (D-201) : pas de barre, pas de Journée, pas d'alerte.
+  const sansBarre = enCombat || journeeOuverte || enAttente;
+
+  /**
    * Le compteur « choses à voir » du comité (#212, D-097 (5)) : **mes** post-its dont le
    * statut a bougé, et les commentaires des autres sur eux, depuis le repère `vu_le`.
    *
@@ -155,11 +167,10 @@ export function Layout() {
           bandeau ne s'affiche pas en combat. */}
       <BandeauNouvelleVersion />
 
-      {enAttente && (
+      {enAttente && pathname !== '/attente' && (
         <div className="notice notice--warn" role="status">
           <p className="m-0 max-w-[70ch]">
-            <Link to="/attente">Ton compte attend d’être validé</Link> — tu peux jouer et lire ; poster un post-it,
-            voter et envoyer une trace de combat s’ouvriront à l’approbation.
+            <Link to="/attente">Ton compte attend d’être validé</Link> — le jeu s’ouvrira à l’approbation.
           </p>
         </div>
       )}
@@ -169,7 +180,7 @@ export function Layout() {
           pouvait pas défiler assez pour le dégager — `scrollIntoView` n'a rien à faire d'un
           élément déjà en haut du document. Un espace de la hauteur du panneau pousse le
           contenu dessous, donc la cible reste visible et cliquable. */}
-      {!tutorielVu && !enCombat && <div className="journee-espace" aria-hidden="true" />}
+      {!tutorielVu && !enCombat && !enAttente && <div className="journee-espace" aria-hidden="true" />}
       <main className="main">
         {/* Un écran qui plante ne prend pas la barre de navigation avec lui, et changer
             d'écran referme l'erreur (`reinitialiseSur`). */}
@@ -191,7 +202,7 @@ export function Layout() {
 
       {/* La « Journée d'intégration » : une fois, au premier lancement (forme v5). Montée
           seulement tant qu'elle est à faire — un testeur qui l'a vue ne télécharge rien. */}
-      {!tutorielVu && (
+      {!tutorielVu && !enAttente && (
         <Suspense fallback={null}>
           <JourneeIntegration />
         </Suspense>
@@ -199,11 +210,11 @@ export function Layout() {
 
       {/* L'alerte du comité (D-058, #212) : partout sauf en combat et sur Le suivi, et
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
-      {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
+      {!enCombat && !surLeSuivi && !enAttente && <AlerteComite nombre={aVoir} />}
 
-      {/* La barre du bas : **cinq onglets** (#545, D-192), et **rien du tout en combat** (#275).
-          Le shell seul la rend — aucun écran ne la redessine. */}
-      {!enCombat && (
+      {/* La barre du bas : **cinq onglets** (#545, D-192), et **rien du tout en combat** (#275)
+          ni pendant la Journée ouverte (#778). Le shell seul la rend — aucun écran ne la redessine. */}
+      {!sansBarre && (
         <nav className="bottom-nav" aria-label="Navigation principale">
           {tabs.map((tab) => {
             const Icon = tab.icon;

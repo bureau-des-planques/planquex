@@ -7,6 +7,7 @@ import {
   dureeEcriture,
   etapePourChemin,
   libelleSaut,
+  ligneAideGeste,
   pasEcriture,
   passeAuGeste,
   tapeAvance,
@@ -15,9 +16,11 @@ import {
 } from '@/components/journee-etapes';
 import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
+import { Inertie } from '@/components/journee-inerte';
 import {
   allerAEtape,
   etapeJournee,
+  poserJourneeOuverte,
   prendreRelecture,
   relectureDemandee,
   remettreJourneeAuDebut,
@@ -35,6 +38,21 @@ const PORTRAIT_CHEF_CABINET = artUrl('direction-chef-cabinet.webp');
  * Journée qu'une fois cette scène rangée (D-196 (1)) : sinon l'écran suivant la couperait.
  */
 const SCENE_ARRIVAGE = '.ouverture';
+
+/**
+ * **L'éclairage de la cible** (D-195 (3), D-194 (1)) : le voile est **un seul élément**, posé sur
+ * la cible, dont l'ombre étalée (`box-shadow`, `src/styles.css`) assombrit tout le reste de la
+ * page. La cible reste à sa clarté, sans qu'il faille la remonter d'un plan — un `z-index` sur
+ * la cible se perdrait dans le premier ancêtre qui forme un contexte d'empilement. La marge
+ * laisse respirer le halo doré (`outline-offset: 3px`, plus le contour).
+ */
+const MARGE_ECLAIRAGE_PX = 8;
+
+/**
+ * Ce que la Journée garde vivant quand le fond est inerte : son panneau, la scène du Chef de
+ * cabinet et son voile. La cible désignée s'y ajoute, étape par étape.
+ */
+const SELECTEUR_JOURNEE = '[data-journee-panneau], .journee__scene, .journee__voile';
 
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
@@ -86,10 +104,22 @@ export function JourneeIntegration() {
   const ouvert = visible && !enPause;
 
   /**
+   * **La barre de navigation s'efface** (D-194 (2), D-195 (1), #778) : le `Layout` lit ce fait et
+   * ne rend pas la barre tant que la Journée est ouverte. La pause, « Passer » et la fin la
+   * rendent (D-162 (2)) ; le démontage aussi.
+   */
+  useEffect(() => {
+    poserJourneeOuverte(ouvert);
+    return () => poserJourneeOuverte(false);
+  }, [ouvert]);
+
+  /**
    * **La garde** : hors du panneau et hors des éléments désignés, le clic n'arrive pas.
    * L'écouteur est posé en **capture** sur `document`, donc avant les gestionnaires de
    * React comme ceux du navigateur (un lien, un bouton natif). On ne fige pas la page :
-   * elle défile, elle se lit, et un élément désigné reste cliquable.
+   * elle défile, elle se lit, et un élément désigné reste cliquable. Depuis #778, c'est la
+   * **seconde ligne** : le fond porte `inert` (effet plus bas), l'écouteur rattrape ce qui
+   * apparaît entre deux passes.
    */
   useEffect(() => {
     if (!ouvert) return;
@@ -306,18 +336,61 @@ export function JourneeIntegration() {
     if (!panneau) return;
     // **La cible de l'étape, et elle seule** : `combat` n'en a pas (le pas-à-pas désigne).
     poserCibleJournee(cibleDeLEtape);
+    const selecteurCible = cibleDeLEtape ? `[data-journee-cible="${cibleDeLEtape}"]` : null;
+    const trouverLaCible = () => (selecteurCible ? document.querySelector<HTMLElement>(selecteurCible) : null);
 
     /** La pointe du panneau se cale sur le centre horizontal de sa cible. */
     const positionnerPointe = () => {
       if (!cibleDeLEtape) return;
       const pointe = panneau.querySelector<HTMLElement>('.journee__pointe');
-      const cible = document.querySelector<HTMLElement>(`[data-journee-cible="${cibleDeLEtape}"]`);
+      const cible = trouverLaCible();
       if (!pointe || !cible) return;
 
       const panneauRect = panneau.getBoundingClientRect();
       const cibleRect = cible.getBoundingClientRect();
       const centreCible = cibleRect.left + cibleRect.width / 2;
       pointe.style.left = `${centreCible - panneauRect.left}px`;
+    };
+
+    /**
+     * **Le voile éclaire la cible** (D-195 (3)) : l'élément `.journee__voile` se pose sur le
+     * rectangle de la cible, et son ombre étalée assombrit le reste. Sans cible (le comité, ou
+     * une cible pas encore montée), `data-cible="false"` : il couvre toute la page.
+     */
+    const positionnerEclairage = () => {
+      const voile = document.querySelector<HTMLElement>('.journee__voile');
+      if (!voile) return;
+      const cible = trouverLaCible();
+      if (!cible) {
+        voile.dataset.cible = 'false';
+        voile.style.removeProperty('top');
+        voile.style.removeProperty('left');
+        voile.style.removeProperty('width');
+        voile.style.removeProperty('height');
+        return;
+      }
+      const rect = cible.getBoundingClientRect();
+      voile.dataset.cible = 'true';
+      voile.style.top = `${rect.top - MARGE_ECLAIRAGE_PX}px`;
+      voile.style.left = `${rect.left - MARGE_ECLAIRAGE_PX}px`;
+      voile.style.width = `${rect.width + 2 * MARGE_ECLAIRAGE_PX}px`;
+      voile.style.height = `${rect.height + 2 * MARGE_ECLAIRAGE_PX}px`;
+    };
+
+    /**
+     * **Le fond est inerte** (D-194 (1), D-195 (3)) : tout ce qui n'est ni la Journée ni la cible
+     * porte `inert`, par les frères du chemin (`journee-inerte`). La passe se rejoue quand la
+     * coquille change d'enfants : un écran paresseux qui arrive, une cible qui se monte.
+     * **Aucun `aria-modal`** pour autant : le panneau est une `region` (D-162 (1)), et la cible
+     * désignée vit **hors** du panneau — `aria-modal` sur le panneau la cacherait au lecteur
+     * d'écran qui doit justement l'atteindre, et l'attribut n'est pas permis sur une `region`.
+     * `inert` fait ce que `aria-modal` promettrait : le fond sort de l'arbre d'accessibilité.
+     */
+    const racine = panneau.parentElement;
+    const inertie = new Inertie();
+    const rendreInerte = () => {
+      if (!racine) return;
+      inertie.appliquer(racine, [...racine.querySelectorAll(SELECTEUR_JOURNEE), trouverLaCible()]);
     };
 
     /**
@@ -329,20 +402,43 @@ export function JourneeIntegration() {
     const poser = () => {
       document.documentElement.style.setProperty('--journee-hauteur', `${panneau.offsetHeight}px`);
       positionnerPointe();
+      positionnerEclairage();
     };
+    rendreInerte();
     poser();
     const observateur = typeof ResizeObserver === 'function' ? new ResizeObserver(poser) : null;
     observateur?.observe(panneau);
-    const cible = cibleDeLEtape ? document.querySelector<HTMLElement>(`[data-journee-cible="${cibleDeLEtape}"]`) : null;
+    const cible = trouverLaCible();
     if (cible) observateur?.observe(cible);
-    window.addEventListener('resize', positionnerPointe);
+    window.addEventListener('resize', poser);
+    // La cible bouge avec la page : l'éclairage la suit. Passif : on ne retient pas le défilement.
+    document.addEventListener('scroll', positionnerEclairage, { capture: true, passive: true });
 
     amenerLaCible();
     // Les polices arrivent après le premier rendu : on replace la cible une fois posées.
     void document.fonts?.ready.then(() => {
       amenerLaCible();
-      positionnerPointe();
+      poser();
     });
+
+    // La coquille change d'enfants (écran paresseux, re-rendu) ou une page pose son halo
+    // (`data-journee-cible` arrive **par attribut**, après le montage, quand `useEstCibleJournee`
+    // répond — mesuré le 10/11/2026 sur `/settings` : sans ce filtre, `main` restait inerte avec la
+    // cible dedans) : le fond se remet inerte, et l'éclairage se repose sur la cible. Les `inert`
+    // posés ici ne sont pas dans le filtre : aucune boucle.
+    let coquille: MutationObserver | null = null;
+    if (racine && typeof MutationObserver === 'function') {
+      coquille = new MutationObserver(() => {
+        rendreInerte();
+        positionnerEclairage();
+      });
+      coquille.observe(racine, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-journee-cible']
+      });
+    }
 
     /**
      * **La cible peut arriver après l'effet** (#679) : les écrans sont paresseux (#478).
@@ -352,20 +448,28 @@ export function JourneeIntegration() {
      * d'écouter : une cible déjà présente n'a pas besoin de l'observateur.
      */
     let veille: MutationObserver | null = null;
-    const selecteurCible = cibleDeLEtape ? `[data-journee-cible="${cibleDeLEtape}"]` : null;
     if (selecteurCible && !document.querySelector(selecteurCible) && typeof MutationObserver === 'function') {
       veille = new MutationObserver(() => {
         if (!document.querySelector(selecteurCible)) return;
         amenerLaCible();
+        poser();
         veille?.disconnect();
       });
-      veille.observe(document.body, { childList: true, subtree: true });
+      veille.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-journee-cible']
+      });
     }
 
     return () => {
       veille?.disconnect();
+      coquille?.disconnect();
       observateur?.disconnect();
-      window.removeEventListener('resize', positionnerPointe);
+      window.removeEventListener('resize', poser);
+      document.removeEventListener('scroll', positionnerEclairage, { capture: true });
+      inertie.lever();
       poserCibleJournee(null);
     };
   }, [ouvert, etape, pathname, cibleDeLEtape]);
@@ -377,50 +481,78 @@ export function JourneeIntegration() {
    * l'arbre, que le panneau soit ouvert, en pause ou effacé sur `/battle`. Seul l'encadré, lui,
    * suit le panneau. Sa copie animée est `aria-hidden` ; la région `aria-live` lit la réplique
    * entière d'un coup (D-187 (4)).
+   *
+   * **Deux tailles** (D-195 (1) et (5), décision du propriétaire du 10/11/2026). Quand le Chef de
+   * cabinet parle, la tête fait **un tiers de l'écran** (`--journee-tete`, `journee-tete.ts`), en
+   * bas, à la place de la barre de navigation, et le **voile** assombrit la page autour de la
+   * cible. En pause et sur `/battle`, elle est **discrète** : 56 px dans le coin bas gauche, sans
+   * voile — sur le plateau, la table ronde de D-193 reste entière, et la réplique tient sur une
+   * ligne (`journee__ligne`, pas un bouton : rien à y faire, le pas-à-pas du combat guide).
    */
-  const scene = (avecParole: boolean) => (
-    <div className="journee__scene">
-      <img className="journee__portrait" src={PORTRAIT_CHEF_CABINET} alt="" aria-hidden="true" width={56} height={56} />
+  const aide = !gesteFait ? ligneAideGeste(courante) : null;
+  const scene = (avecParole: boolean, uneLigne = false) => (
+    <div className={`journee__scene${avecParole ? '' : ' journee__scene--discrete'}`}>
+      <img className="journee__portrait" src={PORTRAIT_CHEF_CABINET} alt="" aria-hidden="true" />
+      {uneLigne && (
+        <p className="journee__ligne" aria-hidden="true" title={courante.direction}>
+          <strong>Chef de cabinet</strong> {courante.direction}
+        </p>
+      )}
       {avecParole && (
-        // **Un vrai bouton** (779, D-196) : Entrée et Espace le déclenchent, et son nom dit le
-        // tap. Le texte visible est `aria-hidden` : la région `aria-live` le lit une fois.
-        <button
-          type="button"
-          className="journee__parole"
-          data-complet={repliqueComplete || undefined}
-          aria-label={`Chef de cabinet : ${courante.direction}${indicationTap}`}
-          onClick={toucherLaReplique}
-        >
-          <span className="journee__direction" aria-hidden="true">
-            <strong>Chef de cabinet</strong>{' '}
-            <span
-              key={courante.direction}
-              className="journee__texte-anime"
-              // La durée suit les mots (60 ms par mot, 3 s au plus) et les pas suivent les
-              // caractères : `src/styles.css` lit ces deux variables (décision du 10/11/2026).
-              style={
-                {
-                  '--duree-ecriture': `${dureeEcriture(courante.direction)}ms`,
-                  '--pas-ecriture': pasEcriture(courante.direction)
-                } as CSSProperties
-              }
-              onAnimationEnd={() => setRepliqueLue(courante.direction)}
-            >
-              {courante.direction}
+        // **L'encadré** : le bouton de la réplique et, dessous, la ligne d'aide du geste. Le
+        // bouton garde le tap ; la ligne n'est pas dedans (un bouton n'a pas de région `status`).
+        <div className="journee__encadre">
+          {/* **Un vrai bouton** (779, D-196) : Entrée et Espace le déclenchent, et son nom dit le
+          tap. Le texte visible est `aria-hidden` : la région `aria-live` le lit une fois. */}
+          <button
+            type="button"
+            className="journee__parole"
+            data-complet={repliqueComplete || undefined}
+            aria-label={`Chef de cabinet : ${courante.direction}${indicationTap}`}
+            onClick={toucherLaReplique}
+          >
+            <span className="journee__direction" aria-hidden="true">
+              <strong>Chef de cabinet</strong>{' '}
+              <span
+                key={courante.direction}
+                className="journee__texte-anime"
+                // La durée suit les mots (60 ms par mot, 3 s au plus) et les pas suivent les
+                // caractères : `src/styles.css` lit ces deux variables (décision du 10/11/2026).
+                style={
+                  {
+                    '--duree-ecriture': `${dureeEcriture(courante.direction)}ms`,
+                    '--pas-ecriture': pasEcriture(courante.direction)
+                  } as CSSProperties
+                }
+                onAnimationEnd={() => setRepliqueLue(courante.direction)}
+              >
+                {courante.direction}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+          {aide !== null && (
+            // **Visible, une seule ligne** (D-198 (6), #788) : la forme la plus sobre — une ligne
+            // en petit, collée sous la réplique, dans le même cadre. `role="status"` : annoncée une
+            // fois, par elle-même (la région `data-journee-voix` ne lit que la réplique).
+            <p className="journee__aide" role="status">
+              {aide}
+            </p>
+          )}
+        </div>
       )}
       <span className="sr-only" data-journee-voix aria-live="polite" aria-atomic="true">
-        {avecParole && `Chef de cabinet : ${courante.direction}`}
+        {(avecParole || uneLigne) && `Chef de cabinet : ${courante.direction}`}
       </span>
     </div>
   );
+  // Sur `/battle` (la seule raison d'être ici) : la tête discrète et la réplique sur une ligne.
+  // La scène garde son **rang** dans le fragment (le second enfant) : c'est ce qui fait que la
+  // tête est le même nœud d'un état à l'autre (D-187 (6)(c)).
   if (!visible)
     return (
       <>
         {null}
-        {scene(false)}
+        {scene(false, surLeCombat)}
       </>
     );
 
@@ -533,24 +665,14 @@ export function JourneeIntegration() {
         {/* La région reste **montée** : un lecteur d'écran n'entend pas un nœud qui
           apparaît, mais il entend un texte qui change. Elle ne parle que des étapes qui
           **exigent** un geste : aux autres, « C'est fait » serait faux. */}
-        {courante.geste !== undefined &&
-          (gesteFait ? (
-            // **Fait : l'étape suivante s'annonce** (779, D-196). La ligne reste dans le DOM pour
-            // les lecteurs d'écran ; à l'écran, la Journée a déjà avancé.
-            <p className="sr-only" role="status">
-              C’est fait : l’étape suivante s’ouvre.
-            </p>
-          ) : (
-            // **Lue, pas affichée** (04/11/2026, décision de Bastien, option A) : la ligne reste
-            // dans le DOM pour les lecteurs d'écran (`role="status"`), et « Montrer le bouton »
-            // dit déjà le geste à l'œil. `sr-only` la retire de la mise en page, et le budget de
-            // texte ne la compte pas (D-181 (3)).
-            <p className="sr-only" role="status">
-              {courante.geste === 'combat'
-                ? 'Joue le combat guidé : l’étape suivante s’ouvrira à sa fin.'
-                : 'Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.'}
-            </p>
-          ))}
+        {courante.geste !== undefined && gesteFait && (
+          // **Fait : l'étape suivante s'annonce** (779, D-196). La ligne reste dans le DOM pour
+          // les lecteurs d'écran ; à l'écran, la Journée a déjà avancé. La ligne d'aide d'avant le
+          // geste est **visible**, dans l'encadré de parole (D-198 (6), #788).
+          <p className="sr-only" role="status">
+            C’est fait : l’étape suivante s’ouvre.
+          </p>
+        )}
 
         {/* Le geste de l'étape : on ne renvoie pas à une documentation, on ouvre l'écran.
           Le panneau reste posé par-dessus, pour qu'on lise l'étape en regardant l'écran
@@ -587,6 +709,11 @@ export function JourneeIntegration() {
         {derniere && <AppelParticiper surComite={terminer} />}
       </aside>
       {scene(true)}
+      {/* **Le voile** (D-195 (3)) : hors de la scène, dont l'animation de `transform` ferait le bloc
+        conteneur d'un élément fixe, et **après** elle, pour que la scène garde son rang. Posé sur
+        la cible par `positionnerEclairage`, il assombrit le reste de la page par son ombre ;
+        `data-cible="false"` tant qu'aucune cible n'est montée. */}
+      <div className="journee__voile" data-journee-voile data-cible="false" aria-hidden="true" />
     </>
   );
 }

@@ -21,6 +21,7 @@ const etapes = lire('./journee-etapes.ts');
 const styles = lire('../styles.css');
 const settings = lire('../pages/Settings.tsx');
 const battle = lire('../pages/Battle.tsx');
+const layout = lire('./Layout.tsx');
 
 describe('elle se montre une fois, et se referme (ticket #130)', () => {
   it('tient son ouverture du drapeau `tutorielVu`, pas d’un état local', () => {
@@ -80,7 +81,18 @@ describe('le panneau ne se quitte pas par accident (30/10/2026)', () => {
     // panneau. Le marquage mentait ; une région le dit sans mentir, et `aria-live` annonce
     // le changement d'étape — que rien n'annonçait.
     expect(composant).toMatch(/role="region"/);
+    // D-194 (1), #778 : `aria-modal` ne se déclare **que** sur un fond inerte dont le focus ne sort
+    // pas. Ici le focus va à la cible, hors du panneau : jamais d'`aria-modal`, et c'est `inert`
+    // qui fait le travail (`journee-inerte`). **Le contrôle mord** : un `aria-modal="true"` ajouté
+    // au panneau rend ce motif.
     expect(composant).not.toMatch(/aria-modal=/);
+    expect(composant).toMatch(/from '@\/components\/journee-inerte'/);
+    expect(composant).toMatch(/inertie\.appliquer\(racine, /);
+    expect(composant).toMatch(/inertie\.lever\(\)/);
+    // La barre du bas : le `Layout` ne la rend pas tant que la Journée est ouverte (D-194 (2)).
+    expect(composant).toMatch(/poserJourneeOuverte\(ouvert\)/);
+    expect(layout).toMatch(/useJourneeOuverte\(\)/);
+    expect(layout).toMatch(/\{!sansBarre && \(/);
     expect(composant).toMatch(/aria-live="polite"/);
     expect(composant).not.toMatch(/<Dialog/);
     expect(composant).toMatch(/className="journee"/);

@@ -3,9 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act } from 'react';
 import { Layout, couvreAdresse } from './Layout';
+import { poserJourneeOuverte } from './journee-etape';
 import { setupTestStore } from '@/test/test-utils';
 import { useComptes } from '@/store/comptes';
+import type { Compte } from '@/lib/comptes';
 
 /**
  * Le compteur « choses à voir » du comité (#212). La **couture réseau** est mockée — comme
@@ -181,6 +184,21 @@ describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-192)', () => {
     expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
   });
 
+  it('pendant la Journée ouverte, la barre n’est pas rendue ; elle revient dès qu’elle se ferme (#778, D-194 (2))', () => {
+    monter('/sain');
+    expect(barre()).toBeInTheDocument();
+    try {
+      act(() => poserJourneeOuverte(true));
+      // **Le contrôle mord** : un `Layout` qui ne lirait plus `useJourneeOuverte` garderait la barre
+      // sous la tête du Chef de cabinet.
+      expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
+      act(() => poserJourneeOuverte(false));
+      expect(barre()).toBeInTheDocument();
+    } finally {
+      poserJourneeOuverte(false);
+    }
+  });
+
   it('hors combat, l’onglet courant porte `aria-current` (#275)', () => {
     monter('/comite');
     const onglet = within(barre()).getByRole('link', { name: 'Comité' });
@@ -202,6 +220,80 @@ describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-192)', () => {
  * une partie en cours pour un post-it (D-058). Sur **Le suivi**, l'alerte s'efface aussi :
  * c'est la page qui vient de les voir.
  */
+describe('Layout — un compte non approuvé ne voit aucun écran du jeu (D-201)', () => {
+  const COMPTE: Compte = {
+    id: 'compte-a',
+    courriel: 'a@exemple.test',
+    etat: 'en attente',
+    raison: '',
+    administrateur: false,
+    medaille_periode_essai: false,
+    medaille_periode_essai_le: null,
+    created_at: '2026-11-10T10:00:00.000Z'
+  };
+
+  function poser(compte: Compte | null) {
+    useComptes.setState({
+      configure: true,
+      session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+      compte,
+      chargement: false,
+      erreur: null
+    });
+  }
+
+  /** Le shell avec la Journée **à faire** (`tutorielVu: false`) : c'est elle qui devait s'ouvrir. */
+  function monterJourneeAFaire() {
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true });
+    return render(
+      <MemoryRouter initialEntries={['/attente']}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<p>écran d’accueil</p>} />
+            <Route path="attente" element={<p>écran d’attente</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+  }
+
+  afterEach(() => {
+    useComptes.setState({ configure: false, session: null, compte: null });
+  });
+
+  it.each([
+    ['en attente', COMPTE],
+    ['refusé', { ...COMPTE, etat: 'refuse' as const, raison: 'non' }]
+  ])('compte %s : ni barre, ni Journée, ni alerte, ni bandeau redondant sur l’attente', async (_nom, compte) => {
+    mocks.murEstConfigure.mockReturnValue(true);
+    mocks.compter.mockResolvedValue(3);
+    poser(compte);
+    const { container } = monterJourneeAFaire();
+    await act(async () => {});
+
+    expect(screen.getByText('écran d’attente')).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
+    expect(screen.queryByText(/Journée d’intégration/)).toBeNull();
+    // La place réservée au panneau de la Journée n'est pas prise non plus.
+    expect(container.querySelector('.journee-espace')).toBeNull();
+    expect(screen.queryByRole('link', { name: /Ouvrir le suivi du comité/ })).toBeNull();
+    expect(screen.queryByText(/le jeu s’ouvrira à l’approbation/)).toBeNull();
+  });
+
+  it.each([
+    ['approuvé', { ...COMPTE, etat: 'approuve' as const }],
+    ['administrateur encore en attente', { ...COMPTE, administrateur: true }],
+    ['ligne illisible', null]
+  ])('compte %s : la barre à cinq onglets reste', (_nom, compte) => {
+    poser(compte);
+    monter('/sain');
+    expect(screen.getByRole('navigation', { name: 'Navigation principale' })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Navigation principale' })).getAllByRole('link')).toHaveLength(
+      5
+    );
+  });
+});
+
 describe('Layout — le compteur du comité (#212, D-097 (5))', () => {
   /**
    * Depuis D-156 (#527), le compteur ne lit que pour un **compte** : un visiteur sans compte

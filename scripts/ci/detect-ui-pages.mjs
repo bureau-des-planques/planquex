@@ -52,6 +52,7 @@ import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import { chromium } from 'playwright-core';
 import { preview } from 'vite';
+import { amorcageStore } from '../preuves/capturer-socle.mjs';
 
 /** La racine du dépôt : `dist/` y est servi. */
 const RACINE = fileURLToPath(new URL('../..', import.meta.url));
@@ -306,11 +307,20 @@ async function attendreCalme(page, { essais = 40, intervalle = 100 } = {}) {
  * que le détecteur scanne (`--cdp`, #551), plus une page qu'il ouvrirait lui-même au hasard.
  */
 async function mesurerEcran(navigateur, url) {
-  const page = await navigateur.newPage({ viewport: { width: 1280, height: 800 } });
+  // **Les pages sont amorcées, comme pour `npm run capturer`** (#778, D-194 (1), D-195 (3)) :
+  // depuis que le Chef de cabinet voile la page pendant qu'il parle, un contexte neuf (première
+  // visite) montre chaque écran **assombri à 45 %** et inerte — le détecteur y lisait un
+  // `low-contrast` sur `p.hero__lead` (3,6:1 mesuré au pixel, le 10/11/2026), c'est-à-dire un texte
+  // que le voile dit justement de ne pas lire. L'écran se scanne tel qu'un testeur le lit après la
+  // Journée ; la Journée elle-même se prouve à part (captures et mesures de #778).
+  const page = await navigateur.newPage({
+    viewport: { width: 1280, height: 800 },
+    storageState: amorcageStore(new URL(url).origin)
+  });
   try {
     await page.goto(url, { waitUntil: 'networkidle', timeout: 30_000 });
     // La police et les animations d'entrée arrivent après `networkidle` : on laisse un souffle,
-    // sinon le panneau de la Journée n'a pas encore sa taille et le texte pas sa hauteur.
+    // sinon un panneau (la Journée rejouée, un dialogue) n'a pas encore sa taille et le texte pas sa hauteur.
     await page.waitForTimeout(400);
     await attendreCalme(page);
     const mesures = await page.evaluate(() => {
