@@ -553,3 +553,57 @@ describe('la bulle du tour s’efface sans changer la mise en page (#750)', () =
     expect(declarationsDeBase(fautif, FONDU).get('opacity')).not.toBe('0');
   });
 });
+
+/**
+ * **La bulle du tour respire** (#784) : `cramped-padding` (#205) exige 8 px entre le texte et le bord.
+ * La bulle n'est affichée que quand un avis existe : à 4,8 px de rembourrage, `npm run detect:ui:page`
+ * rougissait `/battle` de façon intermittente (run #844 de `main`).
+ */
+describe('la bulle du tour garde 8 px de rembourrage vertical (#784)', () => {
+  const rem = (v: string) => (v.endsWith('px') ? parseFloat(v) / 16 : parseFloat(v));
+  function rembourrageVertical(feuille: string): number[] {
+    const sans = feuille.replace(/\/\*[\s\S]*?\*\//g, '');
+    return [...sans.matchAll(/([^{}@]+)\{([^{}]*)\}/g)]
+      .filter((m) => /\.combat-toast$/.test(m[1].trim().replace(/\s+/g, ' ')))
+      .map((m) => m[2].match(/(?:^|[;\s])padding:\s*([^;\s]+)/)?.[1])
+      .filter((v): v is string => v !== undefined)
+      .map(rem);
+  }
+
+  it('toutes les règles de la bulle donnent au moins 0,5 rem en haut et en bas', () => {
+    const valeurs = rembourrageVertical(CSS);
+    expect(valeurs.length).toBeGreaterThanOrEqual(2);
+    expect(valeurs.filter((v) => v < 0.5)).toEqual([]);
+  });
+
+  // Sans ce cas, l'assertion ne garderait rien.
+  it('le contrôle mord : un rembourrage de 0,3 rem est refusé', () => {
+    expect(rembourrageVertical('.battle .combat-toast { padding: 0.3rem 0.6rem; }')).toEqual([0.3]);
+    expect(rembourrageVertical('.combat-toast { padding: 8px 10px; }')).toEqual([0.5]);
+  });
+});
+
+/**
+ * **La bulle ne recouvre pas les piles sur bureau** (#784) : à 1280 × 800 elle allait de 24 à 676 px
+ * alors que le Deck de la Direction est à 554–632 px : `text-occlusion` (« Deck » couvert à 100 %),
+ * le constat du run #844 de `main`. Sa largeur retire donc la place des piles (10,5 rem).
+ */
+describe('sur bureau, la bulle du tour laisse la place des piles (#784)', () => {
+  function largeurBureau(feuille: string): string | undefined {
+    const sans = feuille.replace(/\/\*[\s\S]*?\*\//g, '');
+    const debut = sans.lastIndexOf('@media (min-width: 900px)');
+    const bloc = sans.slice(debut);
+    return bloc.match(/\.battle \.combat-superpose \{[^}]*?width:\s*([^;]+);/)?.[1].trim();
+  }
+
+  it('la largeur retire 10,5 rem à la colonne du plateau', () => {
+    expect(largeurBureau(CSS)).toMatch(/- 10\.5rem\)$/);
+  });
+
+  // Sans ce cas, l'assertion ne garderait rien.
+  it("le contrôle mord : la largeur d'avant (colonne entière) est refusée", () => {
+    const fautif =
+      '@media (min-width: 900px) { .battle .combat-superpose { right: auto; width: calc((100% - 0.85rem) * 1.15 / 2.15 - 0.5rem); } }';
+    expect(largeurBureau(fautif)).not.toMatch(/- 10\.5rem\)$/);
+  });
+});
