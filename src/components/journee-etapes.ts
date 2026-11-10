@@ -1,3 +1,5 @@
+import { REPLIQUES_JOURNEE } from '@/data/repliques-direction';
+
 /**
  * Les étapes de la « Journée d'intégration » (#130, D-066 ; refonte du 30/10/2026).
  *
@@ -38,7 +40,9 @@ export interface EtapeJournee {
    * **La Direction accueille le nouveau** (31/10/2026, copie validée par Bastien). Une
    * ligne, provocante, dans la voix du produit : les cinq textes d'étape sont justes mais
    * neutres, et la satire ne vivait que sur les cartes et la scène de fin. Elle se dit
-   * dans le panneau, au-dessus du geste, comme la réplique de fin de combat.
+   * dans le panneau, au-dessus du geste, comme la réplique de fin de combat. Le texte vit
+   * dans `src/data/repliques-direction.ts` (`REPLIQUES_JOURNEE`, #782) : aucun texte de
+   * réplique hors de `src/data` (`AGENTS.md` §6).
    */
   readonly direction: string;
   /**
@@ -55,7 +59,7 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     cible: '/',
     action: 'Aller à l’accueil',
     geste: 'arrivage',
-    direction: 'De la part de la Direction.'
+    direction: REPLIQUES_JOURNEE.arrivage
   },
   {
     titre: 'La Collection et le Deck',
@@ -70,14 +74,14 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     action: 'Aller au Deck',
     geste: 'deck',
     montreCartes: true,
-    direction: 'Vingt cartes, comptées.'
+    direction: REPLIQUES_JOURNEE.collectionDeck
   },
   {
     titre: 'Le combat',
     texte: 'Joue le combat guidé.',
     cible: '/battle?tutoriel=1&scene=fin',
     action: 'Jouer mon premier combat',
-    direction: 'Trois Interventions et c’est gagné.',
+    direction: REPLIQUES_JOURNEE.combat,
     // **Le combat est un geste** (31/10/2026) : sans lui, l'étape qui compte se traversait
     // en lecture. Il se marque à la scène de fin — gagner le combat guidé est la preuve
     // qu'on l'a joué. Sur `/battle`, le panneau s'efface (le pas-à-pas parle seul).
@@ -89,14 +93,14 @@ export const ETAPES_JOURNEE: readonly EtapeJournee[] = [
     cible: '/settings',
     action: 'Aller aux réglages',
     geste: 'sauvegarde',
-    direction: 'Sinon, tout s’efface.'
+    direction: REPLIQUES_JOURNEE.donnees
   },
   {
     titre: 'Le comité',
     texte: 'Colle un post-it IP ou OUF.',
     cible: '/comite',
     action: 'Voir le comité',
-    direction: 'Le mur lit tout, promis.'
+    direction: REPLIQUES_JOURNEE.comite
   }
 ];
 

@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  choisirReplique,
-  evenementDuJournal,
-  REPLIQUES_DIRECTION,
-  type EvenementDirection
-} from './repliques-direction';
+import { REPLIQUES_DIRECTION, type EvenementDirection } from '@/data/repliques-direction';
+import { choisirReplique, evenementDuJournal } from './repliques-direction';
 
 /**
  * **Les répliques de la Direction** (30/10/2026) : le ton, la brièveté, le déterminisme.
