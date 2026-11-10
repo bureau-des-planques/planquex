@@ -356,14 +356,6 @@ export interface AppState {
   enregistrerPartie: (partie: PartieSauvegardee | null) => void;
   /** Range la dernière partie terminée (`null` pour l'effacer). */
   enregistrerDerniere: (derniere: DernierePartie | null) => void;
-  /** La sauvegarde locale, telle qu'un joueur peut la copier et la coller ailleurs. */
-  exporterSauvegarde: () => string;
-  /**
-   * Remplace l'état par une sauvegarde collée. Ne lève jamais : un texte invalide, un
-   * fichier d'un autre jeu ou une sauvegarde d'une version plus récente laisse l'état
-   * **intact** et rend la raison, que l'écran affiche.
-   */
-  importerSauvegarde: (texte: string) => ImportResult;
 }
 
 /**
@@ -414,20 +406,6 @@ export function partializeState(state: AppState): PersistedState {
     difficulte: state.difficulte
   };
 }
-
-/**
- * Le format du texte exporté. Il se **nomme**, pour qu'une sauvegarde d'un autre jeu
- * collée par erreur soit refusée avec un message clair au lieu d'être chargée à moitié.
- */
-export const SAVE_FORMAT = 'bureau-des-planques';
-
-export interface SaveFile {
-  jeu: string;
-  version: number;
-  etat: PersistedState;
-}
-
-export type ImportResult = { ok: true } | { ok: false; raison: string };
 
 /**
  * Un changement du Deck, **plus son intention** : c'est le seul chemin d'écriture du Deck
@@ -720,66 +698,7 @@ export const useStore = create<AppState>()(
       setTutorielVu: (value) => set({ tutorielVu: value }),
       setPasAPasCombatVu: (value) => set({ pasAPasCombatVu: value }),
       enregistrerPartie: (partie) => set({ partie }),
-      enregistrerDerniere: (derniere) => set({ derniere }),
-      exporterSauvegarde: () =>
-        JSON.stringify({ jeu: SAVE_FORMAT, version: STORAGE_VERSION, etat: partializeState(get()) }, null, 2),
-      importerSauvegarde: (texte) => {
-        let brut: unknown;
-        try {
-          brut = JSON.parse(texte);
-        } catch {
-          return { ok: false, raison: 'Ce texte n’est pas lisible : vérifie que tu as tout copié.' };
-        }
-        if (typeof brut !== 'object' || brut === null) {
-          return { ok: false, raison: 'Ce texte n’est pas une sauvegarde.' };
-        }
-        const fichier = brut as Partial<SaveFile>;
-        if (fichier.jeu !== SAVE_FORMAT) {
-          return { ok: false, raison: 'Ce texte ne vient pas de Bureau des Planqués.' };
-        }
-        if (typeof fichier.version !== 'number') {
-          return { ok: false, raison: 'Cette sauvegarde n’indique pas sa version.' };
-        }
-        if (fichier.version > STORAGE_VERSION) {
-          return {
-            ok: false,
-            raison: 'Cette sauvegarde vient d’une version plus récente du jeu : recharge la page, puis réessaie.'
-          };
-        }
-        const etat = fichier.etat as Partial<AppState> | undefined;
-        if (!etat || typeof etat !== 'object') {
-          return { ok: false, raison: 'Cette sauvegarde est vide.' };
-        }
-        if (typeof etat.owned !== 'object' || etat.owned === null || !Array.isArray(etat.deck)) {
-          return {
-            ok: false,
-            raison: 'Cette sauvegarde est incomplète : la Collection ou le Deck manque.'
-          };
-        }
-        // Les migrations font le reste : ids renommés, types de café normalisés,
-        // générateur recréé s'il manque. On ne charge jamais un état brut.
-        const migre = migratePersisted(etat, fichier.version);
-        // Une sauvegarde sans `partie` (d'avant #126) n'efface pas la partie en cours :
-        // importer une progression ne touche pas au combat qu'on est en train de jouer.
-        if (!('partie' in etat)) migre.partie = get().partie;
-        // Idem pour la dernière partie terminée (#366) : une sauvegarde d'avant ne l'a pas.
-        if (!('derniere' in etat)) migre.derniere = get().derniere;
-        // **Le Deck importé est un geste du Deck** (#491) : il remplace le Deck local, donc
-        // il laisse une intention. La file **en cours** est gardée : importer une progression
-        // ne jette pas les gestes qui attendent le réseau, et une sauvegarde n'apporte pas
-        // ceux d'un autre appareil.
-        const outbox = get().deckOutbox;
-        const deckFinal = Array.isArray(migre.deck) ? migre.deck : get().deck;
-        set({
-          ...migre,
-          // **L'import du Deck dans le compte est un fait de l'appareil**, pas de la
-          // sauvegarde (#492) : une sauvegarde d'avant v18 ne doit pas relancer l'import ni
-          // le défaire. On garde le drapeau courant.
-          deckImporte: get().deckImporte,
-          deckOutbox: ajouterIntention(outbox, operationDeck(get().deck, deckFinal))
-        });
-        return { ok: true };
-      }
+      enregistrerDerniere: (derniere) => set({ derniere })
     }),
     {
       name: STORAGE_KEY,

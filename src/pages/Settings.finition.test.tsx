@@ -11,8 +11,8 @@ describe('Settings — finition', () => {
   it('le gras de la sauvegarde est du gras : aucun astérisque de Markdown à l’écran', () => {
     const { container } = renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
     expect(container.textContent).not.toContain('**');
-    const gras = within(screen.getByText(/Ton Deck et ta Collection sont encore dans ce navigateur/)).getByText(
-      /vider les données du navigateur efface tout/i
+    const gras = within(screen.getByText(/Ton Deck et ta Collection sont sur ton compte/)).getByText(
+      /restaure tes réglages et ton Deck, jamais ta Collection/i
     );
     expect(gras.tagName).toBe('STRONG');
   });
@@ -64,12 +64,12 @@ describe('Settings — finition', () => {
     });
   });
 
-  it('un refus d’import est annoncé (role=alert), un succès est un statut (role=status)', () => {
+  it('un refus d’import est annoncé (role=alert), un succès est un statut (role=status)', async () => {
     renderWithStore(<Settings />, { tutorielVu: true, pasAPasCombatVu: true });
     const zone = screen.getByPlaceholderText(/Ta sauvegarde apparaîtra ici/);
 
     fireEvent.change(zone, { target: { value: 'pas une sauvegarde' } });
     fireEvent.click(screen.getByRole('button', { name: /Restaurer ce texte/ }));
-    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 });
