@@ -113,10 +113,11 @@ d'`APP_LABEL`, et `src/data/versions.test.ts` vérifie qu'elle a bien sa note.
    annonces du mur dans `#comite` (#318, D-120), qui est ce que `/confidentialite` décrit au
    présent : appliquer `supabase/migrations/0013_discord_comite.sql`, puis poser le webhook dans
    Vault — `select vault.create_secret('<url du webhook>', 'discord_webhook_comite');`. La
-   procédure complète, avec sa vérification, est `docs/INTEGRATIONS-DISCORD.md` §10. Tant que ces
+   procédure complète, avec sa vérification, est le runbook du dépôt d'exploitation `planquex-infra`
+   (le contrat produit reste `docs/INTEGRATIONS-DISCORD.md`). Tant que ces
    deux gestes ne sont pas faits, la page Confidentialité **décrit un envoi qui n'a pas lieu** :
    c'est le premier pas à cocher, et la preuve qu'il est fait est **une annonce réelle** arrivée
-   dans le salon (un post-it collé, une minute d'attente, `§10.4`), pas une migration « appliquée ».
+   dans le salon (un post-it collé, une minute d'attente), pas une migration « appliquée ».
 5. **Commiter**, puis **poser le tag** `v<version>-<stage>` (`v0.1.2-alpha`, ou `v1.0.0` en release) et le pousser. **Ce push déploie la production** (`.github/workflows/deploiement.yml`, D-140) : le workflow refuse un tag qui ne porte pas le numéro **et l'étape** de `package.json`, refuse un commit déjà déployé (il sort proprement et le dit), construit l'application (`npm run build`), puis publie avec le CLI Vercel. Un secret manquant fait échouer le job au lieu de se taire. Ce déploiement se vérifie dans l'onglet Actions, puis en ouvrant `https://planquex.4k7.org` et en lisant la version dans Réglages.
 6. **Créer la release GitHub** avec `--prerelease` tant qu'on n'est pas en release, et le
    **corps de la release** en notes : des **sections thématiques** (`## Le combat`, `## Les
