@@ -71,7 +71,9 @@ const PROFIL_FAIT: Profil = {
   pseudo: 'Anaïs',
   service: '2e',
   intitule: 'sculpteur de fumée',
-  intitule_relances: 0
+  intitule_relances: 0,
+  icone: null,
+  journee_faite_le: null
 };
 
 function poser(
@@ -496,7 +498,9 @@ describe('changement de compte : le profil du précédent est effacé (#528)', (
     pseudo: 'Anaïs',
     service: '2e',
     intitule: 'sculpteur de fumée',
-    intitule_relances: 0
+    intitule_relances: 0,
+    icone: null,
+    journee_faite_le: null
   };
 
   const COMPTE_A: Compte = {

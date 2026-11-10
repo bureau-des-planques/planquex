@@ -305,6 +305,9 @@ jobs:
           # Le **premier** qui finit décide : s'il échoue, l'autre est fermé (son groupe de
           # processus, pour ne pas laisser un Chrome orphelin), puis les deux codes sont
           # lus. Aucun masquage d'échec : un échec reste un échec.
+          # `bash -e` quittait ici dès qu'un `wait` rendait un code non nul, **avant** les `cat` des
+          # journaux : un échec de `capturer` ou de `detect:ui:page` ne disait rien (run #844, #784).
+          set +e
           statut=0
           wait -n -p fini "$capture" "$detect"; premier=$?
           if [ "$premier" -ne 0 ]; then
