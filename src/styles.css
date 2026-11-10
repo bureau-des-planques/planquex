@@ -3554,7 +3554,9 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  padding: 0.4rem 0.6rem;
+  /* 8 px au moins en haut et en bas : en dessous, `cramped-padding` (#205) fait rougir `detect:ui:page`
+     quand la bulle est affichée (#784). */
+  padding: 0.5rem 0.6rem;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--bg-raised) 88%, var(--line-strong)),
@@ -9175,7 +9177,7 @@ h2 {
 
   .battle .combat-toast {
     gap: 0.1rem;
-    padding: 0.3rem 0.6rem;
+    padding: 0.5rem 0.6rem;
   }
 
   .battle .combat-toast .combat-barre__cafe {
@@ -9206,7 +9208,9 @@ h2 {
      0,5 rem). La largeur suit la colonne `minmax(0, 1.15fr)` de `.battle__table`, moins son filet. */
   .battle .combat-superpose {
     right: auto;
-    width: calc((100% - 0.85rem) * 1.15 / 2.15 - 0.5rem);
+    /* La colonne du plateau, moins la place des piles qui bordent la table (10,5 rem) : la bulle ne
+       recouvre jamais un Deck ou un Rebut (`text-occlusion`, run #844, #784). */
+    width: calc((100% - 0.85rem) * 1.15 / 2.15 - 10.5rem);
   }
 
   /* La pile d'actions descend au bas de la colonne de droite, sous la main, et ne recouvre jamais la

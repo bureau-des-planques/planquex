@@ -40,7 +40,8 @@ export function PileRebut({ label, discard }: { label: string; discard: readonly
         aria-controls={ouvert ? idPanneau : undefined}
         onClick={() => setOuvert((etait) => !etait)}
       >
-        <span className="pile__visuel" aria-hidden="true">
+        {/* Une vignette de carte : l'illustration va jusqu'au bord, il n'y a pas de rembourrage à tenir (`cramped-padding`, #784). */}
+        <span className="pile__visuel" aria-hidden="true" data-impeccable-ignore="cramped-padding">
           {definitionDerniere && <CardView card={definitionDerniere} calme plateau />}
         </span>
         <span className="pile__compte">
