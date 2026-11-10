@@ -78,3 +78,40 @@ export function useEtapeJournee(): number {
     () => 0
   );
 }
+
+/**
+ * **La Journée est ouverte** (D-194 (2), D-195 (1), #778) : le panneau est affiché, hors pause et
+ * hors de `/battle`. Le `Layout` le lit pour **ne pas rendre** la barre de navigation — la tête
+ * du Chef de cabinet prend le bas de l'écran, et les étapes s'enchaînent sans clic (D-196) : il
+ * n'y a rien à cliquer dans cette barre. Elle revient à la pause, à « Passer » et à la fin
+ * (D-162 (2) : cacher la barre n'enferme jamais le testeur). Posé par `JourneeIntegration`,
+ * jamais persisté : c'est un fait de rendu.
+ */
+let ouverte = false;
+const abonnesOuverture = new Set<() => void>();
+
+/** Posé par la Journée à chaque rendu de son état ; `false` quand elle se démonte. */
+export function poserJourneeOuverte(nouvelle: boolean) {
+  if (ouverte === nouvelle) return;
+  ouverte = nouvelle;
+  for (const abonne of abonnesOuverture) abonne();
+}
+
+/** La Journée est-elle ouverte, hors React (tests, gardes). */
+export function journeeOuverte(): boolean {
+  return ouverte;
+}
+
+function abonnerOuverture(rappel: () => void) {
+  abonnesOuverture.add(rappel);
+  return () => abonnesOuverture.delete(rappel);
+}
+
+/** La Journée est-elle ouverte, en React : la coquille se redessine quand ça change. */
+export function useJourneeOuverte(): boolean {
+  return useSyncExternalStore(
+    abonnerOuverture,
+    () => ouverte,
+    () => false
+  );
+}

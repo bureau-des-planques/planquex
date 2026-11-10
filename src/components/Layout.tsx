@@ -9,6 +9,7 @@ import {
   IconeReglages
 } from '@/components/IconesMarque';
 import { compterChosesAVoir, murEstConfigure } from '@/lib/murBase';
+import { useJourneeOuverte } from '@/components/journee-etape';
 import { useStore } from '@/store/useStore';
 /**
  * **La Journée d'intégration arrive à la demande** (31/10/2026) : elle ne sert qu'aux
@@ -83,6 +84,16 @@ export function Layout() {
    * cours — on ne la quitte pas pour aller lire des post-its (D-058, D-097).
    */
   const enCombat = pathname.startsWith('/battle');
+
+  /**
+   * **La barre du bas s'efface aussi pendant la Journée** (D-194 (2), D-195 (1), #778) : la tête
+   * du Chef de cabinet prend le tiers bas de l'écran, et les étapes s'enchaînent par le geste
+   * (D-196) — il n'y a rien à cliquer dans la barre. Même principe qu'en combat : elle n'est
+   * **pas rendue**, donc ni place, ni focus, ni rôle. Elle revient à la pause (Échap), à
+   * « Passer » et à la fin : le testeur n'est jamais enfermé (D-162 (2)).
+   */
+  const journeeOuverte = useJourneeOuverte();
+  const sansBarre = enCombat || journeeOuverte;
 
   /**
    * Le compteur « choses à voir » du comité (#212, D-097 (5)) : **mes** post-its dont le
@@ -201,9 +212,9 @@ export function Layout() {
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
       {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
 
-      {/* La barre du bas : **cinq onglets** (#545, D-192), et **rien du tout en combat** (#275).
-          Le shell seul la rend — aucun écran ne la redessine. */}
-      {!enCombat && (
+      {/* La barre du bas : **cinq onglets** (#545, D-192), et **rien du tout en combat** (#275)
+          ni pendant la Journée ouverte (#778). Le shell seul la rend — aucun écran ne la redessine. */}
+      {!sansBarre && (
         <nav className="bottom-nav" aria-label="Navigation principale">
           {tabs.map((tab) => {
             const Icon = tab.icon;
