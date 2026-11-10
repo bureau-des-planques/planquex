@@ -740,6 +740,209 @@ describe('le plateau garde son tutoriel (31/10/2026)', () => {
     expect(document.querySelector('.journee__portrait')).not.toBeNull();
     expect(document.querySelector('.journee__parole')).toBeNull();
   });
+
+  it('sur /battle, la tête est discrète (56 px), la réplique tient sur une ligne, ni voile ni fond inerte (#778)', () => {
+    // Décision du propriétaire du 10/11/2026 (D-195 (5)) : un tiers d'écran cacherait la table
+    // ronde de D-193 ; sur le plateau, la tête se range dans le coin bas gauche.
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: false, packsOpened: 1, deck: ['atelier-joueur-de-flute'] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    allerAEtape(2);
+    render(
+      <MemoryRouter initialEntries={['/battle?tutoriel=1&scene=fin']}>
+        <>
+          <JourneeIntegration />
+          <button type="button">Fin du tour</button>
+        </>
+      </MemoryRouter>
+    );
+    const scene = document.querySelector('.journee__scene');
+    // **Le contrôle mord** : sans le modificateur, la tête ferait un tiers de l'écran sur la table.
+    expect(scene).toHaveClass('journee__scene--discrete');
+    const ligne = document.querySelector('.journee__ligne');
+    expect(ligne).toHaveTextContent(ETAPES_JOURNEE[2].direction);
+    expect(ligne).toHaveAttribute('aria-hidden', 'true');
+    expect(ligne).toHaveAttribute('title', ETAPES_JOURNEE[2].direction);
+    expect(ligne?.tagName).toBe('P');
+    // La ligne n'est pas un bouton : rien à y faire, le pas-à-pas guide.
+    expect(screen.queryByRole('button', { name: /Chef de cabinet/ })).toBeNull();
+    // La région vive la lit entière, une fois.
+    expect(document.querySelector('[data-journee-voix]')).toHaveTextContent(
+      `${LOCUTEUR_JOURNEE} : ${ETAPES_JOURNEE[2].direction}`
+    );
+    // Aucun voile sur la table, aucun `inert` : la main, les piles et « Fin du tour » restent à eux.
+    expect(document.querySelector('.journee__voile')).toBeNull();
+    expect(document.querySelector('[inert]')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Fin du tour' }).closest('[inert]')).toBeNull();
+    // La feuille : 56 px pour la tête discrète, un tiers pour la tête qui parle.
+    expect(STYLES_JOURNEE).toMatch(/\.journee__scene--discrete \.journee__portrait \{[^}]*height: 56px;/);
+    expect(STYLES_JOURNEE).toMatch(/\n\.journee__portrait \{[^}]*height: var\(--journee-tete\);/);
+  });
+});
+
+/**
+ * **Le fond est inerte, la barre s'efface, le voile éclaire la cible** (D-194, D-195 (1) et (3),
+ * #778). Le panneau reste une `region` sans `aria-modal` : la cible désignée vit **hors** du
+ * panneau, et `aria-modal` la cacherait au lecteur d'écran qui doit l'atteindre ; c'est `inert`
+ * qui sort le fond de l'arbre d'accessibilité.
+ */
+describe('pendant une réplique, le fond est inerte et la barre de navigation n’est pas rendue (#778)', () => {
+  const barre = () => screen.queryByRole('navigation', { name: 'Navigation principale' });
+
+  it('le fond porte `inert`, pas la cible ni la Journée ; la barre revient à la pause et à « Passer »', async () => {
+    simulerArrivage();
+    oublierGestes();
+    remettreJourneeAuDebut();
+    await rendreApplication({
+      chemin: '/',
+      storeState: { tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] },
+      extra: <FilDuChemin />
+    });
+    const panneau = await screen.findByRole('region', { name: /Journée d’intégration/ });
+    const cible = await waitFor(() => {
+      const element = document.querySelector<HTMLElement>('[data-journee-cible="arrivage"]');
+      expect(element).not.toBeNull();
+      return element!;
+    });
+
+    // **Critère 2** : l'en-tête (son engrenage vers les Réglages) est inerte ; la cible, son
+    // chemin, le panneau et la scène ne le sont pas. **Le contrôle mord** : un `inert` posé sur
+    // `main` tout entier rendrait la cible inerte, et `closest` la trouverait.
+    await waitFor(() => expect(screen.getByRole('banner')).toHaveAttribute('inert'));
+    expect(screen.getByRole('link', { name: 'Réglages' }).closest('[inert]')).not.toBeNull();
+    expect(cible.closest('[inert]')).toBeNull();
+    expect(panneau.closest('[inert]')).toBeNull();
+    expect(document.querySelector('.journee__scene')!.closest('[inert]')).toBeNull();
+    expect(document.querySelector('.journee__voile')!.closest('[inert]')).toBeNull();
+    // Et jamais `aria-modal` : la région le dirait à tort (son focus va à la cible).
+    expect(panneau.getAttribute('aria-modal')).toBeNull();
+    expect(document.querySelector('[aria-modal]')).toBeNull();
+
+    // **Critère 3** : la barre du bas n'est pas rendue tant que la Journée est ouverte.
+    expect(barre()).toBeNull();
+
+    // Échap met en pause (D-162 (2)) : la barre revient, le fond redevient vivant, la tête est discrète.
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByText(/Journée en pause/)).toBeInTheDocument();
+    await waitFor(() => expect(barre()).not.toBeNull());
+    expect(document.querySelector('[inert]')).toBeNull();
+    expect(document.querySelector('.journee__voile')).toBeNull();
+    expect(document.querySelector('.journee__scene')).toHaveClass('journee__scene--discrete');
+
+    // « Reprendre » : la barre s'efface de nouveau, le fond se remet inerte.
+    await userEvent.click(screen.getByRole('button', { name: 'Reprendre' }));
+    await waitFor(() => expect(barre()).toBeNull());
+    await waitFor(() => expect(screen.getByRole('banner')).toHaveAttribute('inert'));
+    expect(document.querySelector('[data-journee-cible="arrivage"]')!.closest('[inert]')).toBeNull();
+
+    // « Passer » : la sortie définitive rend la barre et lève tout `inert` — personne n'est enfermé.
+    await userEvent.click(screen.getByRole('button', { name: /Passer : tu ne verras pas le combat/ }));
+    expect(useStore.getState().tutorielVu).toBe(true);
+    await waitFor(() => expect(barre()).not.toBeNull());
+    expect(document.querySelector('[inert]')).toBeNull();
+    expect(document.querySelector('.journee__voile')).toBeNull();
+  });
+
+  it('le voile se pose sur la cible et laisse passer le pointeur ; sans cible, il couvre la page', async () => {
+    const rect = (left: number, top: number, width: number, height: number): DOMRect =>
+      ({
+        x: left,
+        y: top,
+        left,
+        top,
+        right: left + width,
+        bottom: top + height,
+        width,
+        height,
+        toJSON: () => ({})
+      }) as DOMRect;
+    let cibleRect = rect(132, 460, 190, 44);
+    const geometrie = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement
+    ) {
+      if (this.matches('[data-journee-cible]')) return cibleRect;
+      return rect(0, 0, 0, 0);
+    });
+
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    const onClick = vi.fn();
+    const { unmount } = render(
+      <MemoryRouter initialEntries={['/']}>
+        <>
+          <JourneeIntegration />
+          <button type="button" data-journee-cible="arrivage" onClick={onClick}>
+            Ouvrir un Arrivage
+          </button>
+        </>
+      </MemoryRouter>
+    );
+
+    const voile = document.querySelector<HTMLElement>('.journee__voile')!;
+    expect(voile).toHaveAttribute('aria-hidden', 'true');
+    // **Critère 4, le contrôle mord** : un voile resté plein (`data-cible="false"`) couvrirait la
+    // cible ; posé sur elle avec sa marge, il la laisse à sa clarté.
+    expect(voile.dataset.cible).toBe('true');
+    expect(voile.style.top).toBe('452px');
+    expect(voile.style.left).toBe('124px');
+    expect(voile.style.width).toBe('206px');
+    expect(voile.style.height).toBe('60px');
+    // Le rectangle du voile contient celui de la cible : rien de la cible n'est sous l'ombre.
+    const haut = Number.parseFloat(voile.style.top);
+    const gauche = Number.parseFloat(voile.style.left);
+    expect(haut).toBeLessThanOrEqual(cibleRect.top);
+    expect(gauche).toBeLessThanOrEqual(cibleRect.left);
+    expect(haut + Number.parseFloat(voile.style.height)).toBeGreaterThanOrEqual(cibleRect.bottom);
+    expect(gauche + Number.parseFloat(voile.style.width)).toBeGreaterThanOrEqual(cibleRect.right);
+
+    // La cible bouge avec la page : le voile la suit au défilement.
+    cibleRect = rect(132, 160, 190, 44);
+    act(() => {
+      document.dispatchEvent(new Event('scroll'));
+    });
+    expect(voile.style.top).toBe('152px');
+
+    // La cible reste **cliquable** : le voile ne prend aucun pointeur (feuille), et le clic arrive.
+    const regleVoile = STYLES_JOURNEE.match(/\n\.journee__voile \{([^}]*)\}/)?.[1] ?? '';
+    expect(regleVoile).toMatch(/pointer-events: none;/);
+    expect(regleVoile).toMatch(/position: fixed;/);
+    // L'ombre étalée fait le voile ; l'élément lui-même n'a pas de fond : la cible reste éclairée.
+    expect(regleVoile).toMatch(/box-shadow: 0 0 0 200vmax rgb\(4 8 16 \/ 45%\);/);
+    expect(regleVoile).not.toMatch(/(^|\s)background:/);
+    // Sous le panneau (40) et la scène (39), au-dessus de la page.
+    const zVoile = Number.parseInt(regleVoile.match(/z-index: (\d+);/)?.[1] ?? '0', 10);
+    const zPanneau = Number.parseInt(
+      (STYLES_JOURNEE.match(/\n\.journee \{([^}]*)\}/)?.[1] ?? '').match(/z-index: (\d+);/)?.[1] ?? '0',
+      10
+    );
+    const zScene = Number.parseInt(
+      (STYLES_JOURNEE.match(/\n\.journee__scene \{([^}]*)\}/)?.[1] ?? '').match(/z-index: (\d+);/)?.[1] ?? '0',
+      10
+    );
+    expect(zVoile).toBeGreaterThan(0);
+    expect(zVoile).toBeLessThan(zScene);
+    expect(zScene).toBeLessThan(zPanneau);
+    // Sans cible, le voile couvre la page entière.
+    expect(STYLES_JOURNEE).toMatch(/\.journee__voile\[data-cible='false'\] \{[^}]*inset: 0;/);
+    // Mouvement réduit : ni la tête ni le voile ne s'animent (D-195 (4)).
+    expect(STYLES_JOURNEE).toMatch(
+      /:root\[data-mouvement-reduit='true'\] \.journee__scene,\s*:root\[data-mouvement-reduit='true'\] \.journee__voile \{\s*animation: none;/
+    );
+    expect(STYLES_JOURNEE).toMatch(
+      /@media \(prefers-reduced-motion: reduce\) \{\s*\.journee__scene,\s*\.journee__voile \{\s*animation: none;/
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ouvrir un Arrivage' }));
+    expect(onClick).toHaveBeenCalledOnce();
+    unmount();
+    geometrie.mockRestore();
+
+    // Le comité ne désigne rien : le voile couvre toute la page.
+    const { unmount: comite } = monterPanneau(ETAPES_JOURNEE.length - 1);
+    expect(document.querySelector<HTMLElement>('.journee__voile')!.dataset.cible).toBe('false');
+    comite();
+  });
 });
 
 describe('la réplique de la Journée reste courte et désigne sa cible (D-181, #681)', () => {
@@ -760,8 +963,12 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
       expect(document.documentElement.style.getPropertyValue('--journee-hauteur')).toBe(`${panneau.offsetHeight}px`);
       expect(portrait).not.toBeNull();
       expect(portrait!.getAttribute('src')).toBe(artUrl('direction-chef-cabinet.webp'));
-      expect(portrait!.getAttribute('width')).toBe('56');
-      expect(portrait!.getAttribute('height')).toBe('56');
+      // **La tête fait un tiers de l'écran** (D-195 (1), #778) : plus d'attributs de 56 px, la
+      // feuille mesure (`--journee-tete`, `journee-tete.test.ts`) ; la scène n'est pas discrète
+      // quand le Chef de cabinet parle, et le voile est posé.
+      expect(portrait!.hasAttribute('width')).toBe(false);
+      expect(portrait!.closest('.journee__scene')).not.toHaveClass('journee__scene--discrete');
+      expect(document.querySelector('.journee__voile')).not.toBeNull();
       expect(visuel).toHaveAttribute('aria-hidden', 'true');
       expect(visuel?.querySelector('strong')?.textContent).toBe('Chef de cabinet');
       expect(annonce).toHaveAttribute('aria-live', 'polite');

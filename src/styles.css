@@ -283,8 +283,11 @@ h2 {
   padding: 0 max(1rem, env(safe-area-inset-right)) 5.5rem max(1rem, env(safe-area-inset-left));
 }
 
+/* Pendant que le Chef de cabinet parle, la tête prend le tiers bas de l'écran (#778, D-195 (1)) :
+   la page garde de quoi défiler pour qu'une cible placée sous la tête remonte au-dessus d'elle
+   (D-187 (3), l'espace réservé du bas). */
 .app-shell:has(.journee__parole) {
-  padding-bottom: 12rem;
+  padding-bottom: calc(var(--journee-tete) + 1rem);
 }
 
 /* Les écrans **hors du `Layout`** (connexion, confidentialité, feuille de route, installation)
@@ -2809,25 +2812,52 @@ h2 {
   height: calc(var(--journee-hauteur, 0px) + 1rem);
 }
 
-/* **Le Chef de cabinet sort du bas** (D-187) : la tête et son encadré restent au-dessus de la
-   navigation, hors du panneau qui désigne le geste. */
+/* **La tête du Chef de cabinet fait un tiers de l'écran** (#778, D-195 (1), D-194 (2)). La mesure
+   vit dans `src/components/journee-tete.ts` (`TETE_PART`, `TETE_MIN_PX`, `TETE_MAX_PX`) ; cette
+   déclaration en est le miroir, et `journee-tete.test.ts` compare les deux. `dvh` mesure la
+   fenêtre **visible** sur téléphone ; `vh` est le repli des navigateurs qui l'ignorent. Mesuré :
+   297 px à 420 × 900 (33 %), 264 px à 1280 × 800 (33 %). */
+:root {
+  --journee-tete: clamp(120px, 33vh, 320px);
+  --journee-tete: clamp(120px, 33dvh, 320px);
+}
+
+/* **Le Chef de cabinet sort du bas** (D-187) et **prend la place de la barre de navigation**
+   (D-194 (2)) : la scène est une bande fixe au bas de l'écran, de la hauteur de la tête ; la barre
+   n'est pas rendue tant que la Journée est ouverte (`Layout`). La tête à gauche, l'encadré à sa
+   droite ; sur un grand écran, la bande suit la largeur de la coquille (`--shell-max`), comme la
+   barre qu'elle remplace. */
 .journee__scene {
   align-items: flex-end;
   animation: journee-sort 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  bottom: 0;
   display: flex;
   gap: 0.6rem;
-  left: 0.6rem;
-  max-width: min(34rem, calc(100% - 1.2rem));
+  height: calc(var(--journee-tete) + env(safe-area-inset-bottom, 0px));
+  left: max(0.6rem, calc((100% - var(--shell-max)) / 2));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   pointer-events: none;
   position: fixed;
-  right: auto;
-  width: fit-content;
+  right: max(0.6rem, calc((100% - var(--shell-max)) / 2));
   z-index: 39;
 }
 
+/* **La tête discrète** (D-195 (5), décision du propriétaire du 10/11/2026) : en pause, la barre de
+   navigation revient et la tête se range au-dessus d'elle ; sur `/battle`, le plateau est la table
+   ronde de D-193 et la tête ne doit cacher ni la main, ni les piles, ni « Fin du tour » — 56 px
+   dans le coin bas gauche (`TETE_DISCRETE_PX`), sans voile. */
+.journee__scene--discrete {
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  height: auto;
+  left: 0.6rem;
+  max-width: min(34rem, calc(100% - 1.2rem));
+  padding-bottom: 0;
+  right: auto;
+  width: fit-content;
+}
+
 @media (max-height: 820px) and (min-width: 601px) {
-  .journee__scene {
+  .journee__scene--discrete {
     bottom: calc(6.125rem + env(safe-area-inset-bottom, 0px));
   }
 }
@@ -2842,20 +2872,65 @@ h2 {
   }
 }
 
+/* **Le voile sombre léger** (D-195 (3), D-194 (1)) : **un seul élément**, posé par le composant sur
+   le rectangle de la cible désignée ; son ombre étalée assombrit tout le reste de la page, et la
+   cible reste à sa clarté — rien à remonter d'un plan, aucun contexte d'empilement à traverser.
+   Il ne reçoit aucun pointeur : la cible dessous reste cliquable, le fond est inerte par
+   l'attribut `inert` (`journee-inerte.ts`), pas par ce voile. Sous le panneau (40) et la scène
+   (39), au-dessus de la page. « Léger » : 45 %, la page se devine encore, elle ne se lit plus. */
+.journee__voile {
+  animation: journee-voile 220ms ease-out both;
+  border-radius: 10px;
+  box-shadow: 0 0 0 200vmax rgb(4 8 16 / 45%);
+  pointer-events: none;
+  position: fixed;
+  z-index: 38;
+}
+
+/* Sans cible (le comité, ou une cible pas encore montée) : le voile couvre toute la page. */
+.journee__voile[data-cible='false'] {
+  background: rgb(4 8 16 / 45%);
+  border-radius: 0;
+  box-shadow: none;
+  inset: 0;
+}
+
+@keyframes journee-voile {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* La tête : un portrait (plus haut que large) qui sort du bord bas de l'écran — pas de bord ni
+   d'arrondi en bas, le visage dans le haut du cadre. Sa hauteur est celle de la bande. */
 .journee__portrait {
   background: var(--bg-sunken);
   border: 1px solid var(--line-strong);
-  border-radius: 50%;
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
   flex: none;
-  height: 56px;
+  height: var(--journee-tete);
   object-fit: cover;
-  /* Le visage est en haut du carré de l'illustration : on le garde dans le cercle. */
-  object-position: center 30%;
+  /* Le visage est en haut du carré de l'illustration : on le garde dans le cadre. */
+  object-position: center 18%;
   pointer-events: none;
+  width: calc(var(--journee-tete) * 0.62);
+}
+
+.journee__scene--discrete .journee__portrait {
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 50%;
+  height: 56px;
+  object-position: center 30%;
   width: 56px;
 }
 
 .journee__parole {
+  align-self: flex-end;
   background: linear-gradient(180deg, var(--bg-raised), var(--bg-sunken));
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-sm);
@@ -2864,12 +2939,40 @@ h2 {
   cursor: pointer;
   flex: 1;
   font: inherit;
+  /* L'encadré reste dans la bande : une réplique plus longue que la tête défile dans l'encadré. */
+  margin-bottom: 0.75rem;
+  max-height: calc(var(--journee-tete) - 0.75rem);
+  max-width: 34rem;
   min-width: 0;
+  overflow-y: auto;
   padding: 0.6rem 0.75rem;
   /* Seul l'encadré reçoit le tap (tout afficher) ; la tête et la scène laissent passer. */
   pointer-events: auto;
   position: relative;
   text-align: left;
+}
+
+/* **La réplique sur une ligne** (`/battle`, décision du propriétaire du 10/11/2026) : à côté de la
+   tête discrète, rognée par des points de suspension ; `title` la redonne entière au survol, et la
+   région `aria-live` la lit entière. Pas un bouton : sur le plateau, le pas-à-pas guide. */
+.journee__ligne {
+  background: linear-gradient(180deg, var(--bg-raised), var(--bg-sunken));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-style: italic;
+  margin: 0 0 0.6rem;
+  max-width: min(60vw, 22rem);
+  overflow: hidden;
+  padding: 0.4rem 0.6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journee__ligne strong {
+  color: var(--gold);
+  font-style: normal;
 }
 
 .journee__parole::before,
@@ -2897,9 +3000,10 @@ h2 {
 .journee__direction {
   color: var(--text);
   display: block;
-  font-size: 0.82rem;
+  /* Un tiers d'écran laisse de la place : la réplique se lit à 0,9 rem (14,4 px), pas en notice. */
+  font-size: 0.9rem;
   font-style: italic;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .journee__direction strong {
@@ -2936,8 +3040,17 @@ h2 {
   clip-path: none;
 }
 
+/* **Mouvement réduit** (D-195 (4), D-162 (1)) : la tête et le voile sont **déjà posés**, rien ne
+   monte ni ne fond — par le réglage du store comme par le média. Le texte entier reste annoncé
+   d'un coup par la région `aria-live`, qui ne dépend pas de l'animation. */
+:root[data-mouvement-reduit='true'] .journee__scene,
+:root[data-mouvement-reduit='true'] .journee__voile {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .journee__scene {
+  .journee__scene,
+  .journee__voile {
     animation: none;
   }
 

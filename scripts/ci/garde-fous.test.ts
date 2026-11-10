@@ -76,6 +76,9 @@ const TICKETS_ATTENDUS = [
   672, 672,
   // #742 : le journal visuel est retiré ; l'annonce sr-only (`aria-live`) reste la seule voix du dernier coup.
   742,
+  // #778 (D-194, D-195) : la tête d'un tiers d'écran, le fond inerte, jamais d'`aria-modal`, la
+  // barre non rendue, le voile posé sur la cible, la tête discrète sur `/battle` (six entrées).
+  778, 778, 778, 778, 778, 778,
   // #779 (D-196) : la Journée n'a plus de « Suivant » — le geste validé fait avancer (quatre entrées :
   // le « Suivant » remis, la transition, le tap qui passe avant son affichage, la scène d'Arrivage).
   779, 779, 779, 779

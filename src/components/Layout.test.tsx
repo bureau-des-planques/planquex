@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act } from 'react';
 import { Layout, couvreAdresse } from './Layout';
+import { poserJourneeOuverte } from './journee-etape';
 import { setupTestStore } from '@/test/test-utils';
 import { useComptes } from '@/store/comptes';
 
@@ -179,6 +181,21 @@ describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-192)', () => {
     // onglets, comme avant #275), cette assertion tombe. On ne la cache pas : elle est
     // absente du DOM, donc absente du focus et de l'arbre d'accessibilité.
     expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
+  });
+
+  it('pendant la Journée ouverte, la barre n’est pas rendue ; elle revient dès qu’elle se ferme (#778, D-194 (2))', () => {
+    monter('/sain');
+    expect(barre()).toBeInTheDocument();
+    try {
+      act(() => poserJourneeOuverte(true));
+      // **Le contrôle mord** : un `Layout` qui ne lirait plus `useJourneeOuverte` garderait la barre
+      // sous la tête du Chef de cabinet.
+      expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
+      act(() => poserJourneeOuverte(false));
+      expect(barre()).toBeInTheDocument();
+    } finally {
+      poserJourneeOuverte(false);
+    }
   });
 
   it('hors combat, l’onglet courant porte `aria-current` (#275)', () => {
