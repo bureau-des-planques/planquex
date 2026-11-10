@@ -28,12 +28,14 @@ describe('SceneFin — le verdict posé', () => {
     unmount();
   });
 
-  it('le bouton « Continuer » aussi, et une seule fois', () => {
+  it('le bouton « Fermer » aussi, et une seule fois (il ne fait pas avancer la Journée, D-196)', () => {
     const fermer = vi.fn();
     render(<SceneFin gagne replique={null} onFermer={fermer} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Continuer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Fermer' }));
     expect(fermer).toHaveBeenCalledTimes(1);
+    // **Le contrôle mord** : plus de « Continuer », donc plus de bouton qui enchaîne.
+    expect(screen.queryByRole('button', { name: 'Continuer' })).toBeNull();
   });
 
   it('sous mouvement réduit, la scène est déjà posée', () => {

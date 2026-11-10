@@ -33,11 +33,6 @@ export function allerAEtape(nouvelle: number) {
   prevenir();
 }
 
-/** L'étape suivante — utilisée par « Suivant » et par la fin du combat. */
-export function avancerJournee() {
-  allerAEtape(etape + 1);
-}
-
 /** Retour au début : la Journée terminée se remontre par sa première étape. */
 export function remettreJourneeAuDebut() {
   allerAEtape(0);

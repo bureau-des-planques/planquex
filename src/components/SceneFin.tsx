@@ -7,11 +7,15 @@ import { POINTS_TO_WIN } from '@/game/rules';
  * À la fin du combat scripté du tutoriel, le bandeau du haut disait « Tu gagnes : 3
  * Interventions » et rien ne se passait. Cette scène pose le verdict comme un **tampon** :
  * le plateau recule sous un voile, le tampon tombe de biais, la phrase de la Direction
- * arrive dessous, et « Continuer » rend la main.
+ * arrive dessous, et « Fermer » rend la main.
  *
  * **Elle ne bloque pas longtemps et elle ne piège pas** : n'importe où dans la scène, sauf
  * sur le bouton, un clic la referme (`onFermer`) — le même réflexe que la croix d'un
  * dialogue. Sous **mouvement réduit**, elle paraît d'un coup, sans tampon qui tombe.
+ *
+ * Elle ne fait **pas avancer** la Journée (779, D-196) : le geste « combat » est validé à son
+ * ouverture, et l'écran suivant s'ouvre à sa fermeture (`Battle`). « Fermer » n'est que la
+ * sortie au clavier du même geste.
  *
  * Ce qu'elle n'est pas : une animation de combat. Celle-là vit dans `src/animation/` et
  * joue les Pressions ; ici, il ne reste qu'un verdict à poser.
@@ -20,8 +24,7 @@ export function SceneFin({
   gagne,
   replique,
   calme = false,
-  onFermer,
-  onContinuer
+  onFermer
 }: {
   /** Vrai quand le joueur a gagné : le tampon change de mot, jamais de place. */
   readonly gagne: boolean;
@@ -30,11 +33,6 @@ export function SceneFin({
   /** Mouvement réduit : la scène paraît déjà posée. */
   readonly calme?: boolean;
   readonly onFermer: () => void;
-  /**
-   * « Continuer » : ce que la suite du parcours attend (31/10/2026). Le clic sur le fond
-   * ferme seulement — il ne fait pas avancer la visite à la place du testeur.
-   */
-  readonly onContinuer?: () => void;
 }) {
   const [ferme, setFerme] = useState(false);
   if (ferme) return null;
@@ -71,10 +69,9 @@ export function SceneFin({
             // Le clic sur la scène ferme déjà : le bouton ne doit pas le doubler.
             evenement.stopPropagation();
             fermer();
-            onContinuer?.();
           }}
         >
-          Continuer
+          Fermer
         </button>
       </div>
     </div>

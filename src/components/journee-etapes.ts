@@ -148,6 +148,42 @@ export const CARTES_MONTREES = [
 ] as const;
 
 /**
+ * **La position de la Journée au rendu précédent** (779, D-196) : l'étape, et si son geste était
+ * déjà fait. Sert à lire une **transition**, pas un état.
+ */
+export interface PositionDeGeste {
+  readonly etape: number;
+  readonly fait: boolean;
+}
+
+/**
+ * **Le geste vient de se faire, à cette étape** (D-196 (1)) : l'étape suivante s'ouvre.
+ *
+ * Il faut une **transition** : un geste déjà fait à l'arrivée (« Revoir », #731, une reprise)
+ * n'enchaîne rien, sinon « Revoir » traverserait toute la Journée sans la lire.
+ */
+export function passeAuGeste(precedent: PositionDeGeste | null, etape: number, fait: boolean): boolean {
+  return precedent !== null && precedent.etape === etape && !precedent.fait && fait;
+}
+
+/**
+ * **Le tap sur l'encadré fait-il avancer ?** (D-196 (1)) Seulement une étape **sans geste**, et
+ * pas la dernière : une étape avec geste avance par son geste.
+ */
+export function tapeAvance(etape: EtapeJournee, index: number, dernier: number): boolean {
+  return etape.geste === undefined && index < dernier;
+}
+
+/**
+ * **Le tap sur la dernière réplique termine la Journée** (779, décision du propriétaire du
+ * 10/11/2026). Seule la dernière étape sans geste le fait : le même effet que « Relire la
+ * Journée plus tard », qui reste à l'écran.
+ */
+export function tapeTermine(etape: EtapeJournee, index: number, dernier: number): boolean {
+  return etape.geste === undefined && index >= dernier;
+}
+
+/**
  * Ce que le saut coûte, écrit sur le bouton (D-136, reformulé le 30/10/2026).
  *
  * Un testeur pressé saute d'un clic, mais il **sait** ce qu'il perd. Tant que le combat

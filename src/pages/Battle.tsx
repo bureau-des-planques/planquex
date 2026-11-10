@@ -34,8 +34,8 @@ import { Confirmation } from '@/components/Confirmation';
 import { PasAPasCombat } from '@/components/PasAPasCombat';
 import { usePasAPasCombat } from '@/components/use-pas-a-pas-combat';
 import { marquerGeste } from '@/components/journee-gestes';
-import { indexEtapeGeste } from '@/components/journee-etapes';
-import { avancerJournee, etapeJournee } from '@/components/journee-etape';
+import { ETAPES_JOURNEE, indexEtapeGeste } from '@/components/journee-etapes';
+import { etapeJournee } from '@/components/journee-etape';
 import { SceneFin } from '@/components/SceneFin';
 import { choisirReplique, type EvenementDirection } from '@/game/repliques-direction';
 import { MenuCombat } from '@/components/MenuCombat';
@@ -269,11 +269,25 @@ export function Battle() {
   /**
    * **Le combat guidé est un geste de la Journée** (31/10/2026) : elle s'efface sur
    * `/battle`, donc elle ne peut pas voir le plateau. La fin du combat — joué jusqu'au
-   * verdict, gagné ou perdu — est la preuve qu'on l'a joué ; `Suivant` s'ouvre alors.
+   * verdict, gagné ou perdu — est la preuve qu'on l'a joué : la Journée avance d'elle-même
+   * (D-196), et l'écran suivant s'ouvre à la fermeture de la scène (`fermerSceneFin`).
    */
   useEffect(() => {
     if (sceneFinOuverte) marquerGeste('combat');
   }, [sceneFinOuverte]);
+
+  /**
+   * **Fermer la scène de fin** (779, D-196). Le geste « combat » a déjà fait avancer la Journée ;
+   * sa fermeture ouvre l'écran de l'étape suivante, et pas avant : le verdict reste à l'écran.
+   * Hors Journée (`tutorielVu`), ou si la Journée n'a pas avancé sur ce geste, on ne fait que
+   * fermer.
+   */
+  const fermerSceneFin = () => {
+    setSceneFinFermee(true);
+    const suivante = indexEtapeGeste('combat') + 1;
+    if (tutorielVu || etapeJournee() !== suivante) return;
+    navigate(ETAPES_JOURNEE[suivante].cible);
+  };
 
   /** Le moteur dit ce qui est possible ; l'écran ne fait que le rendre. */
   const legal = useMemo(() => legalActions(state), [state]);
@@ -1039,25 +1053,14 @@ export function Battle() {
       {state.phase !== 'ended' && <PasAPasCombat pasAPas={pasAPas} />}
 
       {/* **La scène de fin** (30/10/2026) : dans la fin scriptée seulement, le verdict se
-          pose comme un tampon, avec la phrase de la Direction. Un clic la referme ; la
-          barre d'action garde ensuite le bandeau et les deux boutons. */}
+          pose comme un tampon, avec la phrase de la Direction. Un clic, ou « Fermer », la
+          referme ; c'est la fermeture qui ouvre l'écran suivant de la Journée (D-196). */}
       {sceneFinOuverte && (
         <SceneFin
           gagne={state.winner === myCamp}
           replique={repliqueDirection}
           calme={sansMouvement}
-          onFermer={() => setSceneFinFermee(true)}
-          /* **Continuer continue la visite** (31/10/2026) : le panneau est caché sur le
-             plateau, donc sans cet enchaînement le testeur restait au combat sans savoir
-             qu'il restait deux étapes. Hors Journée, « Continuer » ferme seulement. */
-          onContinuer={() => {
-            if (!sceneFin || tutorielVu) return;
-            // On n'avance que depuis l'étape du **geste** « combat », retrouvée par son geste
-            // et non par un index écrit en dur (#677) : réordonner les étapes déplace le
-            // geste, pas la visite. Sinon un rejeu du combat plus tard sauterait une étape.
-            if (etapeJournee() === indexEtapeGeste('combat')) avancerJournee();
-            navigate('/settings');
-          }}
+          onFermer={fermerSceneFin}
         />
       )}
 
@@ -1453,7 +1456,7 @@ export function Battle() {
             <>
               {/* **La fin du tutoriel propose la suite** (30/10/2026) : une partie complète
                     avec le Deck chargé à l'étape 2, ou la reprise de la Journée par son propre
-                    panneau (« Suivant », resté ouvert au-dessus). */}
+                    panneau (la suite s'ouvre seule, D-196). */}
               {sceneFin && state.winner === 'player' && (
                 <Link className="button" to="/battle">
                   Une partie complète

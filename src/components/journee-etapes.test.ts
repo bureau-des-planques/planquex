@@ -14,7 +14,10 @@ import {
   libelleSaut,
   motsDeLaReplique,
   nombreDePhrases,
-  secondesDeLecture
+  passeAuGeste,
+  secondesDeLecture,
+  tapeAvance,
+  tapeTermine
 } from './journee-etapes';
 import { CARD_BY_ID } from '@/data';
 
@@ -312,5 +315,42 @@ describe('le budget de texte rendu (D-181 (3), #682)', () => {
       0
     );
     expect(total, 'titre + texte + réplique, sans le locuteur ni les boutons').toBeLessThanOrEqual(MOTS_MAX_JOURNEE);
+  });
+});
+
+describe('le geste fait avancer, et le tap ne passe que les étapes sans geste (D-196)', () => {
+  it('passeAuGeste : seulement une transition vers « fait », à la même étape', () => {
+    expect(passeAuGeste({ etape: 0, fait: false }, 0, true)).toBe(true);
+    // **Le contrôle mord** : un geste pas fait ne fait pas avancer.
+    expect(passeAuGeste({ etape: 0, fait: false }, 0, false)).toBe(false);
+    // **Le contrôle mord** : un geste déjà fait à l'arrivée n'enchaîne rien (« Revoir », #731).
+    expect(passeAuGeste({ etape: 0, fait: true }, 0, true)).toBe(false);
+    expect(passeAuGeste({ etape: 0, fait: false }, 1, true)).toBe(false);
+    expect(passeAuGeste(null, 0, true)).toBe(false);
+  });
+
+  it('tapeAvance : une étape sans geste, et pas la dernière', () => {
+    const sansGeste = { titre: 'x', texte: 'x', cible: '/', action: 'x', direction: 'x' };
+    const avecGeste = { ...sansGeste, geste: 'arrivage' as const };
+    expect(tapeAvance(sansGeste, 0, 4)).toBe(true);
+    // **Le contrôle mord** : une étape avec geste n'avance jamais au tap.
+    expect(tapeAvance(avecGeste, 0, 4)).toBe(false);
+    // La dernière étape n'a pas d'étape après elle.
+    expect(tapeAvance(sansGeste, 4, 4)).toBe(false);
+  });
+
+  it('tapeTermine : seulement la dernière étape sans geste termine la Journée', () => {
+    const sansGeste = { titre: 'x', texte: 'x', cible: '/', action: 'x', direction: 'x' };
+    const avecGeste = { ...sansGeste, geste: 'deck' as const };
+    expect(tapeTermine(sansGeste, 4, 4)).toBe(true);
+    // **Le contrôle mord** : une étape avec geste ne termine jamais au tap.
+    expect(tapeTermine(avecGeste, 4, 4)).toBe(false);
+    // **Le contrôle mord** : une étape sans geste qui n'est pas la dernière ne termine pas.
+    expect(tapeTermine(sansGeste, 3, 4)).toBe(false);
+  });
+
+  it('chaque étape du parcours a un geste, sauf la dernière (le comité)', () => {
+    const sansGeste = ETAPES_JOURNEE.filter((etape) => etape.geste === undefined);
+    expect(sansGeste.map((etape) => etape.titre)).toEqual(['Le comité']);
   });
 });

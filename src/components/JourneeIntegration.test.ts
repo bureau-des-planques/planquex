@@ -44,7 +44,7 @@ describe('elle se montre une fois, et se referme (ticket #130)', () => {
     // remontrerait aussitôt.
     expect(composant).not.toMatch(/DialogClose|onOpenChange/);
     expect(composant.match(/setTutorielVu\(true\)/g)).toHaveLength(1);
-    // « Suivant » avance ; **deux** sorties passent par `terminer` : le lien de sortie, et
+    // Le geste fait avancer, sans bouton ; **deux** sorties passent par `terminer` : le lien de sortie, et
     // « Terminer » de la barre de pause (31/10/2026 — `Échap` ne termine plus).
     expect(composant.match(/onClick=\{terminer\}/g)).toHaveLength(2);
   });
@@ -149,9 +149,11 @@ describe('la critique du 30/10/2026, corrigée (31/10/2026)', () => {
     expect(composant).toMatch(/surLeCombat = pathname === '\/battle'/);
     // Le geste est marqué par la fin du combat, jamais par le panneau.
     expect(battle).toMatch(/marquerGeste\('combat'\)/);
-    // Et « Continuer » enchaîne sur l'étape suivante, sinon le testeur reste au plateau
-    // sans savoir qu'il en reste deux.
-    expect(battle).toMatch(/onContinuer=/);
+    // Et la fermeture de la scène ouvre l'écran de l'étape suivante (D-196) : sans cela, le
+    // testeur reste au plateau sans savoir qu'il reste deux étapes. Plus de bouton « Continuer ».
+    expect(battle).not.toMatch(/onContinuer/);
+    expect(battle).toMatch(/const fermerSceneFin = \(\) => \{/);
+    expect(battle).toMatch(/navigate\(ETAPES_JOURNEE\[suivante\]\.cible\)/);
   });
 
   it('« Montrer le bouton » n’existe que si un geste est attendu, et la cible se compare sans requête', () => {
@@ -169,5 +171,22 @@ describe('la critique du 30/10/2026, corrigée (31/10/2026)', () => {
 
   it('le saut nomme le combat le jour où on le saute', () => {
     expect(etapes).toMatch(/etape <= ETAPES_JOURNEE\.findIndex/);
+  });
+});
+
+describe('plus de « Suivant » : le geste validé fait avancer (D-196)', () => {
+  it('aucun bouton « Suivant » n’est rendu par la Journée', () => {
+    // **Le contrôle mord** : un bouton « Suivant » remis dans le JSX rend ce motif.
+    expect(composant).not.toMatch(/>\s*Suivant\s*</);
+    expect(composant).not.toMatch(/name: \/\^Suivant/);
+  });
+
+  it('le geste validé avance par l’effet de transition, et le tap ne passe que les étapes sans geste', () => {
+    expect(composant).toMatch(/passeAuGeste\(precedent, etape, gesteCourantFait\)/);
+    expect(composant).toMatch(/onClick=\{toucherLaReplique\}/);
+    // Aucune minuterie ne fait avancer (WCAG 2.2.1, D-196 (2)) : le seul `setTimeout` est la
+    // pulsation de « Montrer le bouton », qui ne change pas d'étape.
+    expect(composant.match(/setTimeout/g)).toHaveLength(1);
+    expect(composant).not.toMatch(/setInterval/);
   });
 });
