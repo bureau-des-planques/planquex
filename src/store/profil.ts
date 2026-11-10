@@ -8,7 +8,16 @@
  */
 import { create } from 'zustand';
 import { comptesEstConfigure } from '@/lib/comptes';
-import { creerProfil, lireMonProfil, poserIntitule, poserService, relancerIntitule, type Profil } from '@/lib/profil';
+import {
+  creerProfil,
+  lireMonProfil,
+  poserIcone,
+  poserIntitule,
+  poserService,
+  relancerIntitule,
+  type Profil,
+  type SlugIcone
+} from '@/lib/profil';
 import type { CodeService } from '@/game/intitule';
 
 export interface ProfilState {
@@ -27,6 +36,7 @@ export interface ProfilState {
 
   charger: (uid: string) => Promise<void>;
   creerPseudo: (uid: string, pseudo: string) => Promise<string | null>;
+  choisirIcone: (uid: string, icone: SlugIcone) => Promise<string | null>;
   choisirService: (uid: string, service: CodeService) => Promise<string | null>;
   relancer: (uid: string) => Promise<string | null>;
   valider: (uid: string, intitule: string) => Promise<string | null>;
@@ -82,6 +92,8 @@ export const useProfil = create<ProfilState>((set, get) => ({
   },
 
   creerPseudo: (uid, pseudo) => geste(set, () => creerProfil(uid, pseudo)),
+
+  choisirIcone: (uid, icone) => geste(set, () => poserIcone(uid, icone)),
 
   choisirService: (uid, service) => geste(set, () => poserService(uid, service)),
 

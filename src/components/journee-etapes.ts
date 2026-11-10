@@ -228,11 +228,25 @@ export const SECONDES_MAX_JOURNEE = 90;
 export const MOTS_PAR_MINUTE = 180;
 
 /**
- * Les mots que l'étape demande de lire : son titre, son texte, le libellé du geste et la
- * ligne de la Direction (31/10/2026 — elle se lit aussi).
+ * **La ligne d'aide du geste** (D-198 (6), #788) : une ligne visible dans l'encadré de parole,
+ * `null` pour une étape sans geste. Elle se lit, donc elle compte dans le plafond de 90 s.
+ * Forme retenue : une phrase, sous la réplique, en petit — pas une seconde réplique.
+ */
+export function ligneAideGeste(etape: EtapeJournee): string | null {
+  if (etape.geste === undefined) return null;
+  return etape.geste === 'combat'
+    ? 'Joue le combat guidé : l’étape suivante s’ouvrira à sa fin.'
+    : 'Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.';
+}
+
+/**
+ * Les mots que l'étape demande de lire : son titre, son texte, le libellé du geste, la
+ * ligne de la Direction (31/10/2026 — elle se lit aussi) et la ligne d'aide du geste (D-198 (6)).
  */
 export function motsDeLEtape(etape: EtapeJournee): number {
-  return `${etape.titre} ${etape.texte} ${etape.action} ${etape.direction}`.split(/\s+/).filter(Boolean).length;
+  return `${etape.titre} ${etape.texte} ${etape.action} ${etape.direction} ${ligneAideGeste(etape) ?? ''}`
+    .split(/\s+/)
+    .filter(Boolean).length;
 }
 
 /**

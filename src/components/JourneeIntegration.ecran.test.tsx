@@ -701,24 +701,53 @@ describe('le focus reste sur le déclencheur (D-161, #687)', () => {
   });
 });
 
-describe('la ligne du geste se lit, sans s’afficher (04/11/2026, option A)', () => {
-  it('reste dans le DOM en `role="status"`, en `sr-only` : lue par les lecteurs d’écran, pas affichée', () => {
-    // L'étape 1 (l'Arrivage) n'a pas son geste : aucun Arrivage ouvert, la ligne d'aide est
-    // rendue. (`monterPanneau` poserait `packsOpened: 1`, geste déjà fait : on pose l'état ici.)
+describe('la ligne d’aide du geste est visible dans l’encadré de parole (D-198 (6), #788)', () => {
+  function monterSansGeste() {
+    // L'étape 1 (l'Arrivage) n'a pas son geste : aucun Arrivage ouvert, la ligne d'aide est rendue.
     setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
     oublierGestes();
     remettreJourneeAuDebut();
-    const { unmount } = render(
+    return render(
       <MemoryRouter initialEntries={['/']}>
         <JourneeIntegration />
       </MemoryRouter>
     );
-    const aide = screen.getByText(/Fais le geste sur la page/);
+  }
+
+  it('une étape avec geste rend une seule ligne d’aide, visible, dans l’encadré, annoncée en `status`', () => {
+    const { unmount } = monterSansGeste();
+    const aides = screen.getAllByText(/Fais le geste sur la page/);
+    // **Une seule fois** : ni copie `aria-hidden`, ni seconde région.
+    expect(aides).toHaveLength(1);
+    const aide = aides[0];
     expect(aide.tagName).toBe('P');
     expect(aide).toHaveAttribute('role', 'status');
-    // **Le contrôle mord** : sans `sr-only`, la ligne reprend sa place visible dans le panneau
-    // et ce test tombe (mutant : retirer la classe de cette ligne, le texte reste).
-    expect(aide.classList.contains('sr-only')).toBe(true);
+    // **Le contrôle mord** : la ligne `sr-only` d'avant (04/11/2026) est le cas fautif refusé.
+    expect(aide.classList.contains('sr-only')).toBe(false);
+    expect(aide.closest('.journee__encadre')).not.toBeNull();
+    expect(aide.closest('.journee__encadre')?.querySelector('.journee__parole')).not.toBeNull();
+    // Dans l'encadré, pas dans le panneau d'étape.
+    expect(aide.closest('[data-journee-panneau]')).toBeNull();
+    // Le bouton de la réplique ne la contient pas : elle n'entre pas dans son nom accessible.
+    expect(aide.closest('button')).toBeNull();
+    unmount();
+  });
+
+  it('le cas fautif est refusé : une ligne `sr-only` n’est pas visible', () => {
+    const { unmount } = monterSansGeste();
+    const aide = screen.getByText(/Fais le geste sur la page/);
+    const fautive = aide.cloneNode(true) as HTMLElement;
+    fautive.className = 'sr-only';
+    expect(aide.classList.contains('sr-only')).toBe(false);
+    expect(fautive.classList.contains('sr-only')).toBe(true);
+    unmount();
+  });
+
+  it('une étape sans geste (le comité) ne rend aucune ligne d’aide', () => {
+    const { unmount } = monterPanneau(4);
+    expect(document.querySelector('.journee__parole')).not.toBeNull();
+    expect(document.querySelector('.journee__aide')).toBeNull();
+    expect(screen.queryByText(/Fais le geste sur la page/)).toBeNull();
     unmount();
   });
 });

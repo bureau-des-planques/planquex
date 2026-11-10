@@ -4,8 +4,11 @@ import type { ClientProfil } from './profil';
 import {
   creerProfil,
   etapeDuProfil,
+  ICONES_PROFIL,
   iconeBienFormee,
+  iconeDeLaListe,
   journeeFaite,
+  lireMonProfil,
   lireProfil,
   marquerJourneeFaite,
   messageDeProfil,
@@ -47,11 +50,16 @@ const LIGNE = {
 };
 
 describe('ordre du parcours', () => {
-  it('sans profil, l’étape est le pseudo ; avec pseudo seul, le service ; avec service, l’intitulé ; avec intitulé, c’est fait', () => {
+  it('sans profil, l’étape est le pseudo ; puis l’icône ; puis le service ; puis l’intitulé ; puis c’est fait', () => {
     expect(etapeDuProfil(null)).toBe('pseudo');
-    expect(etapeDuProfil({ ...LIGNE, service: null } as Profil)).toBe('service');
-    expect(etapeDuProfil({ ...LIGNE, service: '2e' } as Profil)).toBe('intitule');
-    expect(etapeDuProfil({ ...LIGNE, service: '2e', intitule: 'sculpteur de fumée' } as Profil)).toBe('fait');
+    expect(etapeDuProfil({ ...LIGNE } as Profil)).toBe('icone');
+    expect(etapeDuProfil({ ...LIGNE, icone: 'comptable' } as Profil)).toBe('service');
+    expect(etapeDuProfil({ ...LIGNE, icone: 'comptable', service: '2e' } as Profil)).toBe('intitule');
+    expect(
+      etapeDuProfil({ ...LIGNE, icone: 'comptable', service: '2e', intitule: 'sculpteur de fumée' } as Profil)
+    ).toBe('fait');
+    // Un compte d'avant l'icône (tout posé sauf elle) la redemande.
+    expect(etapeDuProfil({ ...LIGNE, service: '2e', intitule: 'sculpteur de fumée' } as Profil)).toBe('icone');
   });
 
   it('lit un service inconnu comme absent, et une ligne illisible comme rien', () => {
@@ -60,8 +68,8 @@ describe('ordre du parcours', () => {
   });
 
   it('lit l icône et la Journée faite ; une ligne d avant 0027 les lit nulles', () => {
-    const lu = lireProfil({ ...LIGNE, icone: 'tasse-3', journee_faite_le: '2026-11-10T10:00:00+00:00' });
-    expect(lu?.icone).toBe('tasse-3');
+    const lu = lireProfil({ ...LIGNE, icone: 'juriste', journee_faite_le: '2026-11-10T10:00:00+00:00' });
+    expect(lu?.icone).toBe('juriste');
     expect(lu?.journee_faite_le).toBe('2026-11-10T10:00:00+00:00');
     const { icone: _i, journee_faite_le: _j, ...ancienne } = LIGNE;
     expect(lireProfil(ancienne)).toMatchObject({ icone: null, journee_faite_le: null });
@@ -69,6 +77,22 @@ describe('ordre du parcours', () => {
 });
 
 describe('icône (D-197 (2))', () => {
+  it('la liste fermée : douze slugs, bien formés, sans doublon ; un slug hors liste se lit comme absent', () => {
+    expect(ICONES_PROFIL).toHaveLength(12);
+    expect(new Set(ICONES_PROFIL.map((i) => i.slug)).size).toBe(12);
+    for (const { slug } of ICONES_PROFIL) expect(iconeBienFormee(slug), slug).toBe(true);
+    // Le contrôle mord : bien formé, mais hors liste, donc refusé.
+    expect(iconeDeLaListe('tasse-3')).toBe(false);
+    expect(iconeDeLaListe('juriste')).toBe(true);
+    expect(iconeDeLaListe(null)).toBe(false);
+    expect(lireProfil({ ...LIGNE, icone: 'tasse-3' })?.icone).toBeNull();
+  });
+
+  it('l’icône choisie est relue à la reconnexion', async () => {
+    const { client } = faux({ ...LIGNE, icone: 'juriste' });
+    expect((await lireMonProfil('u-1', client))?.icone).toBe('juriste');
+  });
+
   it('la forme est celle de la base : slug en minuscules, 1 à 40 caractères', () => {
     for (const bonne of ['chef-de-cabinet', 'tasse-3', 'a', 'x'.repeat(40)]) expect(iconeBienFormee(bonne)).toBe(true);
     for (const fautive of ['Chef', 'chef_de', 'chef de', '-chef', 'chef-', 'chef--2', '', 'é', 'x'.repeat(41)]) {
@@ -76,12 +100,14 @@ describe('icône (D-197 (2))', () => {
     }
   });
 
-  it('une icône mal formée est refusée sans appeler la base ; une bonne est écrite', async () => {
+  it('une icône hors liste est refusée sans appeler la base ; une bonne est écrite', async () => {
     const { client, appels } = faux(LIGNE);
-    await expect(poserIcone('u-1', 'Chef De Cabinet', client)).rejects.toThrow(/forme attendue/);
+    await expect(poserIcone('u-1', 'Chef De Cabinet', client)).rejects.toThrow(/liste/);
+    // Bien formée mais hors liste : refusée côté client aussi.
+    await expect(poserIcone('u-1', 'tasse-3', client)).rejects.toThrow(/liste/);
     expect(appels).toHaveLength(0);
-    await poserIcone('u-1', 'tasse-3', client);
-    expect(appels).toEqual([{ methode: 'update', valeurs: { icone: 'tasse-3' } }]);
+    await poserIcone('u-1', 'juriste', client);
+    expect(appels).toEqual([{ methode: 'update', valeurs: { icone: 'juriste' } }]);
   });
 });
 

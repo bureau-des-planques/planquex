@@ -13,6 +13,8 @@ import {
   etapePourChemin,
   indexEtapeGeste,
   libelleSaut,
+  ligneAideGeste,
+  motsDeLEtape,
   motsDeLaReplique,
   nombreDePhrases,
   pasEcriture,
@@ -332,6 +334,25 @@ describe('l’écriture de la réplique suit les mots : 60 ms par mot, 3 s au pl
     for (const etape of ETAPES_JOURNEE) {
       expect(pasEcriture(etape.direction), etape.titre).toBe(etape.direction.length);
     }
+  });
+});
+
+describe('la ligne d’aide du geste compte dans la lecture (D-198 (6), #788)', () => {
+  it('une étape avec geste a une ligne d’aide, une étape sans geste n’en a aucune', () => {
+    for (const etape of ETAPES_JOURNEE) {
+      if (etape.geste === undefined) expect(ligneAideGeste(etape), etape.titre).toBeNull();
+      else expect(ligneAideGeste(etape), etape.titre).toMatch(/l’étape suivante s’ouvrira/);
+    }
+  });
+
+  it('les mots de la ligne entrent dans l’étape, et le plafond de 90 s tient avec elle', () => {
+    const etape = ETAPES_JOURNEE.find((e) => e.geste !== undefined)!;
+    const sans = { ...etape, geste: undefined };
+    const mots = (ligneAideGeste(etape) ?? '').split(/\s+/).filter(Boolean).length;
+    expect(mots).toBeGreaterThan(0);
+    // **Le contrôle mord** : une ligne affichée mais pas comptée ferait tomber cette égalité.
+    expect(motsDeLEtape(etape) - motsDeLEtape(sans)).toBe(mots);
+    expect(secondesDeLaJournee(ETAPES_JOURNEE, MOTS_PAR_MINUTE)).toBeLessThanOrEqual(SECONDES_MAX_JOURNEE);
   });
 });
 
