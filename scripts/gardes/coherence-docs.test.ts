@@ -377,6 +377,70 @@ describe('Cohérence des documents — le renvoi, pas la copie (27/10/2026)', ()
   });
 });
 
+/**
+ * Le couple « N bases + M variantes » — la formulation de `docs/JEU.md` §4.2 (#798).
+ *
+ * Même principe que « N cartes de base » (#625) : le chiffre écrit se vérifie contre
+ * `ALL_CARDS`, il ne se recopie pas. D-063 a retiré la cible chiffrée ; le compte **mesuré**
+ * reste dicible à condition d'être juste. Le motif accepte le gras (`**225 bases + 75
+ * variantes**`, `**225** bases`) et un saut de ligne entre les deux comptes : il se lit sur le
+ * texte entier, et le numéro de ligne est celui où commence le couple.
+ */
+const COUPLE_BASES_VARIANTES = /(\d+)\*{0,2}\s+bases?\s*\*{0,2}\s*\+\s*\*{0,2}(\d+)\*{0,2}\s+variantes?\b/gi;
+
+/** Un couple cité : ses deux chiffres, sa ligne, la ligne qui le porte. */
+type CoupleCite = { ligne: number; bases: number; variantes: number; extrait: string };
+
+/** Les couples « N bases + M variantes » d'un texte, une entrée par occurrence. */
+function couplesCites(texte: string): CoupleCite[] {
+  const lignes = texte.split('\n');
+  return [...texte.matchAll(COUPLE_BASES_VARIANTES)].map((trouve) => {
+    const ligne = texte.slice(0, trouve.index ?? 0).split('\n').length;
+    return {
+      ligne,
+      bases: Number(trouve[1]),
+      variantes: Number(trouve[2]),
+      extrait: (lignes[ligne - 1] ?? '').trim().slice(0, 160)
+    };
+  });
+}
+
+/** Les couples cités qui ne sont pas le compte réel (bases **ou** variantes). */
+function couplesFaux(texte: string, bases: number, variantes: number): CoupleCite[] {
+  return couplesCites(texte).filter((c) => c.bases !== bases || c.variantes !== variantes);
+}
+
+describe('Cohérence des documents — le couple bases + variantes (#798)', () => {
+  const basesReelles = basesDuSet(ALL_CARDS);
+  const variantesReelles = ALL_CARDS.filter((card) => card.variantOf).length;
+
+  it('le couple se lit dans ALL_CARDS, bases et variantes toutes deux non nulles', () => {
+    expect(basesReelles, 'aucune base dans ALL_CARDS').toBeGreaterThan(0);
+    expect(variantesReelles, 'aucune variante dans ALL_CARDS').toBeGreaterThan(0);
+  });
+
+  it('docs/JEU.md porte le couple (sinon la garde n’a plus de sujet)', () => {
+    expect(
+      couplesCites(read('docs/JEU.md')).length,
+      'docs/JEU.md ne cite plus « N bases + M variantes » : la garde ne garde plus rien. Si la ' +
+        'formulation a changé, couvrir la nouvelle dans `COUPLE_BASES_VARIANTES`.'
+    ).toBeGreaterThan(0);
+  });
+
+  it.each([...DOCUMENTS_VIVANTS])('%s ne cite que le couple réel', (fichier) => {
+    expect(existsSync(chemin(fichier)), `${fichier} a disparu : la garde du couple ne le lit plus`).toBe(true);
+    const fautes = couplesFaux(read(fichier), basesReelles, variantesReelles);
+    expect(
+      fautes.map(
+        ({ ligne, bases, variantes, extrait }) =>
+          `${fichier}:${ligne} — écrit ${bases} + ${variantes}, compté ${basesReelles} + ${variantesReelles} — ${extrait}`
+      ),
+      `couple « bases + variantes » faux dans ${fichier}. Le compte se lit dans \`npm run status\` ` +
+        '(`cards.base`, `cards.variants`) : corriger le chiffre écrit, jamais le compte.'
+    ).toEqual([]);
+  });
+});
+
 describe('Cohérence des documents — le compte des cartes de base (#625)', () => {
   const reel = basesDuSet(ALL_CARDS);
 
@@ -583,6 +647,27 @@ describe('La garde de la cohérence documentaire mord (27/10/2026)', () => {
     expect(
       comptesDeBases(`Les ${reel} cartes de base.\n\nLes 225 cartes de base.`).map(({ ligne }) => ligne)
     ).toEqual([1, 3]);
+  });
+
+  it('le contrôle mord : le couple périmé « 225 bases + 75 variantes » est refusé (#798)', () => {
+    const basesReelles = basesDuSet(ALL_CARDS);
+    const variantesReelles = ALL_CARDS.filter((card) => card.variantOf).length;
+    // L'ancien compte de `docs/JEU.md` §4.2 : 225 bases annoncées, le relevé en compte davantage.
+    const perime = 'le set compte **225 bases + 75 variantes**, et le chiffre';
+    expect(couplesCites(perime).map(({ ligne, bases, variantes }) => `${ligne}:${bases}+${variantes}`)).toEqual([
+      '1:225+75'
+    ]);
+    const fautes = couplesFaux(perime, basesReelles, variantesReelles);
+    expect(fautes).toHaveLength(1);
+    // Le couple exact passe, en gras comme en clair, et sur deux lignes.
+    expect(
+      couplesFaux(`le set compte **${basesReelles} bases + ${variantesReelles} variantes**`, basesReelles, variantesReelles)
+    ).toEqual([]);
+    expect(
+      couplesFaux(`le set compte ${basesReelles}\nbases + ${variantesReelles} variantes`, basesReelles, variantesReelles)
+    ).toEqual([]);
+    // Un seul des deux chiffres faux suffit à refuser le couple.
+    expect(couplesFaux(`${basesReelles} bases + 74 variantes`, basesReelles, variantesReelles)).toHaveLength(1);
   });
 
   it('le contrôle mord : l’objet du 3D est refusé si la tasse revient (D-180)', () => {
