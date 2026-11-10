@@ -17,6 +17,35 @@ export interface Profil {
   service: CodeService | null;
   intitule: string | null;
   intitule_relances: number;
+  /**
+   * L'icône de profil (D-197 (2), `0027_profil_icone_journee.sql`) : un slug court, `null` tant
+   * que le parcours ne l'a pas posée. La **liste** des icônes n'est pas encore décidée (à
+   * dessiner) : la base ne contraint que la forme, et ce module non plus.
+   */
+  icone: string | null;
+  /**
+   * Quand le compte a fait la Journée (D-197 (3)) ; `null` = pas faite. Posée **une fois**, datée
+   * par le serveur, jamais défaite : rejouer la Journée depuis Réglages ne touche pas à ce fait.
+   */
+  journee_faite_le: string | null;
+}
+
+/**
+ * La forme d'une icône, telle que la base la tient (`profils_icone_check`) : minuscules,
+ * chiffres, tirets simples, 1 à 40 caractères. Pas de liste fermée tant que les icônes ne sont
+ * pas dessinées (D-197 (5)) : ce qui est accepté ici peut encore être refusé par la base plus
+ * tard, jamais l'inverse.
+ */
+export const FORME_ICONE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/** Vrai si l'icône a la forme que la base accepte : évite un aller-retour pour rien. */
+export function iconeBienFormee(icone: string): boolean {
+  return icone.length >= 1 && icone.length <= 40 && FORME_ICONE.test(icone);
+}
+
+/** Vrai si le compte a fait la Journée (D-197 (3)) : le fait est sur le profil, pas sur l'appareil. */
+export function journeeFaite(profil: Profil | null): boolean {
+  return profil?.journee_faite_le !== null && profil?.journee_faite_le !== undefined;
 }
 
 /** Les étapes du parcours, dans l'ordre. `fait` : le profil est complet. */
@@ -39,7 +68,9 @@ export function lireProfil(ligne: unknown): Profil | null {
     pseudo: ligne.pseudo,
     service,
     intitule: typeof ligne.intitule === 'string' ? ligne.intitule : null,
-    intitule_relances: typeof ligne.intitule_relances === 'number' ? ligne.intitule_relances : 0
+    intitule_relances: typeof ligne.intitule_relances === 'number' ? ligne.intitule_relances : 0,
+    icone: typeof ligne.icone === 'string' ? ligne.icone : null,
+    journee_faite_le: typeof ligne.journee_faite_le === 'string' ? ligne.journee_faite_le : null
   };
 }
 
@@ -57,6 +88,8 @@ export function messageDeProfil(message: string): string {
   if (/profils_intitule_fige/.test(message)) return 'Ton intitulé est enregistré : il ne se change plus.';
   if (/profils_relance_figee/.test(message)) return 'Tu as déjà validé ton intitulé : plus de relance.';
   if (/profils_intitule_apres_service/.test(message)) return 'Choisis d’abord ton service.';
+  if (/profils_journee_figee/.test(message)) return 'Ta Journée est faite : ce fait ne se défait pas.';
+  if (/profils_icone_check/.test(message)) return 'Cette icône n’a pas la forme attendue.';
   if (/profils_pseudo_check/.test(message)) {
     return 'Ton pseudo doit faire entre 1 et 24 caractères, sans blanc aux bords.';
   }
@@ -124,6 +157,36 @@ export async function relancerIntitule(
   if (relancesActuelles >= 1) throw new Error('Tu as déjà relancé ton intitulé : une seule relance est permise.');
   const c = await client(chargerClient);
   const { error } = await c.from('profils').update({ intitule_relances: 1 }).eq('id', uid);
+  if (error) throw new Error(messageDeProfil(error.message));
+  return relire(c, uid);
+}
+
+/**
+ * L'icône de profil (D-197 (2)). Refusée d'avance si sa forme est mauvaise ; la base la refuse
+ * de toute façon (`profils_icone_check`). Elle se change librement, comme le pseudo.
+ */
+export async function poserIcone(uid: string, icone: string, chargerClient = clientParDefaut): Promise<Profil | null> {
+  if (!iconeBienFormee(icone)) throw new Error(messageDeProfil('profils_icone_check'));
+  const c = await client(chargerClient);
+  const { error } = await c.from('profils').update({ icone }).eq('id', uid);
+  if (error) throw new Error(messageDeProfil(error.message));
+  return relire(c, uid);
+}
+
+/**
+ * Marque la Journée faite sur le compte (D-197 (3)). La valeur envoyée ne compte pas : le
+ * serveur la redate à `now()`. Un second appel est refusé par la base (`profils_journee_figee`)
+ * **sauf** si la date renvoyée est identique ; ce module n'appelle donc la base que si le fait
+ * n'est pas déjà posé, et rend le profil tel quel sinon.
+ */
+export async function marquerJourneeFaite(
+  uid: string,
+  profilActuel: Profil | null,
+  chargerClient = clientParDefaut
+): Promise<Profil | null> {
+  if (journeeFaite(profilActuel)) return profilActuel;
+  const c = await client(chargerClient);
+  const { error } = await c.from('profils').update({ journee_faite_le: new Date().toISOString() }).eq('id', uid);
   if (error) throw new Error(messageDeProfil(error.message));
   return relire(c, uid);
 }
