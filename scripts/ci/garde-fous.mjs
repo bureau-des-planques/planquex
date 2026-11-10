@@ -563,6 +563,74 @@ export const MUTATIONS = [
     tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
     garde:
       'sans l’attente, « Ranger » n’est jamais atteint : l’écran suivant remplace l’Arrivage pendant son ouverture, et le geste se perd'
+  },
+  {
+    ticket: 778,
+    titre: 'la tête du Chef de cabinet redevient la notice de 72 px (D-187)',
+    fichier: 'src/styles.css',
+    // D-195 (1) : un tiers de la fenêtre, miroir de `journee-tete.ts`. La mutation remet la mesure
+    // de D-187 (2) ; le test de miroir ne retrouve plus la déclaration.
+    motif: '--journee-tete: clamp(120px, 33dvh, 320px);',
+    remplacement: '--journee-tete: 72px;',
+    tests: ['src/components/journee-tete.test.ts'],
+    garde: 'une tête de 72 px à 900 px de haut fait 8 % de l’écran : la notice que D-195 (1) remplace par un personnage'
+  },
+  {
+    ticket: 778,
+    titre: 'le fond n’est plus inerte pendant la réplique (seul l’écouteur de pointeur reste)',
+    fichier: 'src/components/JourneeIntegration.tsx',
+    // D-194 (1), D-195 (3) : le fond porte `inert`, par les frères du chemin. La mutation vide la
+    // passe : l'écouteur de pointeur bloque encore le clic, mais `Tab` et le lecteur d'écran passent.
+    motif: 'inertie.appliquer(racine, [...racine.querySelectorAll(SELECTEUR_JOURNEE), trouverLaCible()]);',
+    remplacement: 'inertie.lever();',
+    tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
+    garde:
+      'sans `inert`, la page voilée reste focusable et lisible : c’est le mensonge de D-162 (1), un fond qui semble inerte et ne l’est pas'
+  },
+  {
+    ticket: 778,
+    titre: 'le panneau se déclare `aria-modal` alors que son focus sort vers la cible',
+    fichier: 'src/components/JourneeIntegration.tsx',
+    // D-194 (1) : `aria-modal` ne se déclare jamais sur un panneau dont le focus sort. La cible
+    // désignée vit hors du panneau ; `aria-modal` la cacherait au lecteur d'écran.
+    motif: '        role="region"\n        aria-labelledby="journee-titre"',
+    remplacement: '        role="region"\n        aria-modal="true"\n        aria-labelledby="journee-titre"',
+    tests: ['src/components/JourneeIntegration.test.ts', 'src/components/JourneeIntegration.ecran.test.tsx'],
+    garde:
+      'un `aria-modal` sur la région ferait disparaître la cible de l’arbre lu : le testeur au lecteur d’écran ne peut plus faire le geste'
+  },
+  {
+    ticket: 778,
+    titre: 'la barre de navigation reste rendue sous la tête du Chef de cabinet',
+    fichier: 'src/components/Layout.tsx',
+    // D-194 (2) : la barre n'est pas rendue tant que la Journée est ouverte. La mutation ne garde
+    // que l'exclusion du combat.
+    motif: 'const sansBarre = enCombat || journeeOuverte;',
+    remplacement: 'const sansBarre = enCombat;',
+    tests: ['src/components/Layout.test.tsx', 'src/components/JourneeIntegration.ecran.test.tsx'],
+    garde: 'la barre resterait sous une tête d’un tiers d’écran : cinq onglets cachés, dont un reçoit encore le focus'
+  },
+  {
+    ticket: 778,
+    titre: 'le voile reste plein et couvre la cible désignée',
+    fichier: 'src/components/JourneeIntegration.tsx',
+    // D-195 (3) : la cible reste éclairée — le voile se pose sur son rectangle. La mutation le
+    // laisse en plein (`data-cible="false"`), donc sur la cible.
+    motif: "      voile.dataset.cible = 'true';",
+    remplacement: "      voile.dataset.cible = 'false';",
+    tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
+    garde: 'la cible désignée passe sous l’ombre : le testeur ne voit plus où cliquer (D-160 (3), D-195 (3))'
+  },
+  {
+    ticket: 778,
+    titre: 'la tête fait un tiers d’écran sur le plateau et cache la table ronde',
+    fichier: 'src/components/JourneeIntegration.tsx',
+    // D-195 (5), décision du 10/11/2026 : sur `/battle` et en pause, la tête est discrète (56 px).
+    // La mutation retire le modificateur : la bande d'un tiers d'écran couvre la main de D-193.
+    motif: "<div className={`journee__scene${avecParole ? '' : ' journee__scene--discrete'}`}>",
+    remplacement: '<div className="journee__scene">',
+    tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
+    garde: 'un tiers d’écran sur `/battle` cache la main et les piles de D-193 : le combat guidé devient injouable'
   }
 ];
 
