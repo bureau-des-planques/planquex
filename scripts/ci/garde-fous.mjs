@@ -605,7 +605,7 @@ export const MUTATIONS = [
     fichier: 'src/components/Layout.tsx',
     // D-194 (2) : la barre n'est pas rendue tant que la Journée est ouverte. La mutation ne garde
     // que l'exclusion du combat.
-    motif: 'const sansBarre = enCombat || journeeOuverte;',
+    motif: 'const sansBarre = enCombat || journeeOuverte || enAttente;',
     remplacement: 'const sansBarre = enCombat;',
     tests: ['src/components/Layout.test.tsx', 'src/components/JourneeIntegration.ecran.test.tsx'],
     garde: 'la barre resterait sous une tête d’un tiers d’écran : cinq onglets cachés, dont un reçoit encore le focus'

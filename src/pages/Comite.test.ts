@@ -101,8 +101,7 @@ describe('la bulle (D-058)', () => {
   it('s’efface pendant un combat', () => {
     expect(layout).toMatch(/pathname\.startsWith\('\/battle'\)/);
     // Depuis #212 l'alerte porte le compte et s'efface aussi sur Le suivi : c'est la page
-    // qui vient de voir les choses, et elle les a comptées. Un compte en attente ne voit pas le
-    // mur du tout (D-199) : `sansMur` l'éteint aussi.
-    expect(layout).toMatch(/\{!enCombat && !surLeSuivi && !sansMur && <AlerteComite nombre=\{aVoir\} \/>\}/);
+    // qui vient de voir les choses, et elle les a comptées.
+    expect(layout).toMatch(/\{!enCombat && !surLeSuivi && !enAttente && <AlerteComite nombre=\{aVoir\} \/>\}/);
   });
 });

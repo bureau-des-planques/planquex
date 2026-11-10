@@ -62,12 +62,13 @@ beforeEach(() => poser());
 afterEach(cleanup);
 
 describe('un compte en attente voit son état, et ce qu’il peut faire', () => {
-  it('le titre dit l’attente, la phrase dit pourquoi, et ce qui reste ouvert est listé', () => {
+  it('le titre dit l’attente, la phrase dit pourquoi, et rien du jeu n’est proposé (D-201)', () => {
     rendre();
     expect(screen.getByRole('heading', { level: 1, name: /Ton compte attend d’être validé/ })).toBeInTheDocument();
     expect(screen.getByText(/Bastien valide les comptes à la main/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Jouer une partie/ })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: /Lire le mur/ })).toHaveAttribute('href', '/comite');
+    expect(screen.getByText(/le jeu reste fermé/)).toBeInTheDocument();
+    // Les liens vers le jeu renverraient ici : ils ne sont pas proposés.
+    expect(screen.queryByRole('link', { name: /Jouer une partie|Lire le mur|Retour au bureau/ })).toBeNull();
     // L'état et le courriel sont lisibles, pas devinés.
     expect(screen.getByText(/a@exemple.test/)).toBeInTheDocument();
     expect(screen.getByText(/en attente de validation/)).toBeInTheDocument();

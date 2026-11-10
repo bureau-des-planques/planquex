@@ -220,7 +220,7 @@ describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-192)', () => {
  * une partie en cours pour un post-it (D-058). Sur **Le suivi**, l'alerte s'efface aussi :
  * c'est la page qui vient de les voir.
  */
-describe('Layout — le compte en attente ne voit ni le comité ni la Pause café (D-199)', () => {
+describe('Layout — un compte non approuvé ne voit aucun écran du jeu (D-201)', () => {
   const COMPTE: Compte = {
     id: 'compte-a',
     courriel: 'a@exemple.test',
@@ -242,51 +242,55 @@ describe('Layout — le compte en attente ne voit ni le comité ni la Pause caf�
     });
   }
 
+  /** Le shell avec la Journée **à faire** (`tutorielVu: false`) : c'est elle qui devait s'ouvrir. */
+  function monterJourneeAFaire() {
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true });
+    return render(
+      <MemoryRouter initialEntries={['/attente']}>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<p>écran d’accueil</p>} />
+            <Route path="attente" element={<p>écran d’attente</p>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+  }
+
   afterEach(() => {
     useComptes.setState({ configure: false, session: null, compte: null });
   });
 
-  function barre() {
-    return screen.getByRole('navigation', { name: 'Navigation principale' });
-  }
-
-  it('en attente : trois onglets (Accueil, Cartes, Combat), ni Pause café ni Comité', () => {
-    poser(COMPTE);
-    monter('/sain');
-    expect(
-      within(barre())
-        .getAllByRole('link')
-        .map((lien) => lien.textContent)
-    ).toEqual(['Accueil', 'Cartes', 'Combat']);
-  });
-
-  it('en attente : le mur n’est pas compté et son alerte ne s’affiche pas', async () => {
+  it.each([
+    ['en attente', COMPTE],
+    ['refusé', { ...COMPTE, etat: 'refuse' as const, raison: 'non' }]
+  ])('compte %s : ni barre, ni Journée, ni alerte, ni bandeau redondant sur l’attente', async (_nom, compte) => {
     mocks.murEstConfigure.mockReturnValue(true);
     mocks.compter.mockResolvedValue(3);
-    poser(COMPTE);
-    monter('/sain');
+    poser(compte);
+    const { container } = monterJourneeAFaire();
     await act(async () => {});
-    expect(mocks.compter).not.toHaveBeenCalled();
+
+    expect(screen.getByText('écran d’attente')).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Navigation principale' })).toBeNull();
+    expect(screen.queryByText(/Journée d’intégration/)).toBeNull();
+    // La place réservée au panneau de la Journée n'est pas prise non plus.
+    expect(container.querySelector('.journee-espace')).toBeNull();
     expect(screen.queryByRole('link', { name: /Ouvrir le suivi du comité/ })).toBeNull();
+    expect(screen.queryByText(/le jeu s’ouvrira à l’approbation/)).toBeNull();
   });
 
   it.each([
     ['approuvé', { ...COMPTE, etat: 'approuve' as const }],
-    ['administrateur encore en attente', { ...COMPTE, administrateur: true }]
-  ])('compte %s : les cinq onglets', (_nom, compte) => {
+    ['administrateur encore en attente', { ...COMPTE, administrateur: true }],
+    ['ligne illisible', null]
+  ])('compte %s : la barre à cinq onglets reste', (_nom, compte) => {
     poser(compte);
     monter('/sain');
-    expect(
-      within(barre())
-        .getAllByRole('link')
-        .map((lien) => lien.textContent)
-    ).toEqual(['Accueil', 'Cartes', 'Combat', 'Pause café', 'Comité']);
-  });
-
-  it('ligne illisible : la barre garde ses cinq onglets (D-088)', () => {
-    poser(null);
-    monter('/sain');
-    expect(within(barre()).getAllByRole('link')).toHaveLength(5);
+    expect(screen.getByRole('navigation', { name: 'Navigation principale' })).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: 'Navigation principale' })).getAllByRole('link')).toHaveLength(
+      5
+    );
   });
 });
 

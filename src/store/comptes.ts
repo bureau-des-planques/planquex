@@ -18,7 +18,6 @@ import {
   connexionGoogle,
   deconnexion,
   inscriptionCourriel,
-  estEnAttente,
   lireMonCompte,
   raisonConfigurationCassee,
   type Compte,
@@ -152,16 +151,3 @@ export const useComptes = create<ComptesState>((set, get) => ({
     }
   }
 }));
-
-/**
- * **Ce compte est-il en attente d'approbation ?** (D-199) Faux sans configuration (le mode local
- * reste jouable, PRODUCT.md), faux sans session ou en session anonyme (la garde les renvoie à
- * `/connexion`), faux pour un compte `refuse` (il repart vers `/attente`) et pour une ligne
- * illisible. C'est la **seule** lecture que la garde, la barre du bas et l'Arrivage partagent.
- */
-export function useCompteEnAttente(): boolean {
-  const configure = useComptes((state) => state.configure);
-  const session = useComptes((state) => state.session);
-  const compte = useComptes((state) => state.compte);
-  return configure && session !== null && !session.anonyme && estEnAttente(compte);
-}

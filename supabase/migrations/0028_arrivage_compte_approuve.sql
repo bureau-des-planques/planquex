@@ -8,7 +8,8 @@
 -- redéfinie à l'identique, plus **une garde** — `public.compte_approuve()` (0005), la même
 -- condition que l'écriture du mur. Un compte `en attente` ou `refuse` reçoit une erreur
 -- `insufficient_privilege` (`arrivage_compte_non_approuve`) ; l'Edge Function la rend en 403, et
--- le client, qui traite déjà 401/403 comme « refus », affiche « disponible après approbation ».
+-- le client traite déjà 401/403 comme « refus ». Depuis D-201 un compte non approuvé ne voit
+-- d'ailleurs aucun écran du jeu : ce refus ne sert que contre un client bricolé.
 -- La garde est **dans la fonction** et non dans l'Edge Function seule : c'est la fonction que
 -- la Collection ne peut pas contourner, et c'est elle que `pack-openings.test.ts` rejoue.
 --
