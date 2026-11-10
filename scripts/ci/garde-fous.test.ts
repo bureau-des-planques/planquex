@@ -75,7 +75,10 @@ const TICKETS_ATTENDUS = [
   // prouvent que le test mord si l’ordre dos < cartes < face avant est rompu d’un côté ou de l’autre.
   672, 672,
   // #742 : le journal visuel est retiré ; l'annonce sr-only (`aria-live`) reste la seule voix du dernier coup.
-  742
+  742,
+  // #779 (D-196) : la Journée n'a plus de « Suivant » — le geste validé fait avancer (quatre entrées :
+  // le « Suivant » remis, la transition, le tap qui passe avant son affichage, la scène d'Arrivage).
+  779, 779, 779, 779
 ];
 
 function verifier(args: string[]): { ok: boolean; sortie: string } {

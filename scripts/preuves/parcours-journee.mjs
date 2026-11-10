@@ -6,7 +6,7 @@
  * (`dist/`), par leurs **routes** et leurs **gestes** réels : il ne lit aucun état de
  * l'application pour agir, il clique. Pour chaque étape il vérifie que l'écran affiché est
  * celui qu'elle décrit (titre du panneau, route, cible présente), joue le geste, prend une
- * capture, puis suit le bouton « Suivant » — qui ouvre l'écran de l'étape suivante (#677).
+ * capture ; le geste validé fait avancer la Journée seule (D-196), et l'écran suit (#677).
  *
  * **Ce que le banc ne fait pas, et pourquoi**
  * - **Il ne simule aucun serveur.** L'Arrivage s'ouvre en ligne (D-179) : sans serveur
@@ -249,9 +249,15 @@ async function cibleAttendue(page, etape) {
     );
 }
 
-/** Le geste est fait : la région de la Journée l'annonce (« C’est fait »). */
-async function attendreGesteFait(page) {
-  await page.getByText('C’est fait', { exact: false }).first().waitFor({ state: 'attached', timeout: 15000 });
+/**
+ * Le geste est validé : la Journée avance seule (D-196), et son compteur passe à l'étape
+ * suivante (« 2/5 » après l'étape 1). On attend ce compteur, pas un bouton qui n'existe plus.
+ */
+async function attendreGesteFait(page, etape) {
+  await page
+    .locator('[data-journee-panneau] .journee__compte', { hasText: new RegExp(`^${etape.numero + 1}/`) })
+    .first()
+    .waitFor({ state: 'attached', timeout: 15000 });
 }
 
 /**
@@ -259,36 +265,39 @@ async function attendreGesteFait(page) {
  * jamais au store : c'est le testeur (ici le banc) qui fait le geste.
  */
 const GESTES = {
-  async arrivage(page) {
+  async arrivage(page, etape) {
     await page.getByRole('button', { name: 'Ouvrir un Arrivage', exact: true }).click();
-    await attendreGesteFait(page);
+    // La scène se range : c'est la fermeture de la scène qui valide le geste (D-196).
+    await page.getByRole('button', { name: 'Ranger dans la Collection', exact: true }).click({ timeout: 15000 });
+    await attendreGesteFait(page, etape);
   },
-  async deck(page) {
+  async deck(page, etape) {
     await page
       .locator('[data-journee-cible="decks-proposes"] button', { hasText: /^Charger$/ })
       .first()
       .click();
-    await attendreGesteFait(page);
+    await attendreGesteFait(page, etape);
   },
-  async sauvegarde(page) {
+  async sauvegarde(page, etape) {
     await page.getByRole('button', { name: 'Créer ma sauvegarde', exact: true }).click();
-    await attendreGesteFait(page);
+    await attendreGesteFait(page, etape);
   },
   /** La fin scriptée (`?scene=fin`) : une Pression suffit, la Journée se valide à la scène de fin. */
   async combat(page) {
     const barre = page.locator('[data-pression-jouable="true"]');
     await barre.waitFor({ state: 'attached', timeout: 10000 });
     await barre.locator('button.button--primary').first().click();
-    await page.getByRole('button', { name: 'Continuer', exact: true }).waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByRole('button', { name: 'Fermer', exact: true }).waitFor({ state: 'visible', timeout: 10000 });
   }
 };
 
-/** Le geste de l'étape, avec le bouton qui fait suivre l'écran. Sans geste : rien. */
+/**
+ * La scène de fin se ferme : c'est elle qui ouvre l'écran suivant (D-196). Les autres gestes
+ * font avancer la Journée seuls ; le parcours attend ensuite la route de l'étape suivante.
+ */
 async function avancer(page, etape) {
   if (etape.geste === 'combat') {
-    await page.getByRole('button', { name: 'Continuer', exact: true }).click();
-  } else {
-    await page.getByRole('button', { name: 'Suivant', exact: true }).click({ timeout: 8000 });
+    await page.getByRole('button', { name: 'Fermer', exact: true }).click();
   }
 }
 
@@ -314,7 +323,7 @@ export async function parcourir({ page, plan, base, dossier, serveur }) {
     problemes = [];
     const entree = { numero: etape.numero, titre: etape.titre, statut: 'joue', capture: null, raison: null };
     try {
-      // L'arrivée : l'étape 1 s'ouvre sur `/`, les autres sur la route que « Suivant » ouvre.
+      // L'arrivée : l'étape 1 s'ouvre sur `/`, les autres sur la route que le geste validé ouvre.
       if (etape.numero === 1 || saute) {
         await page.goto(`${base}${etape.chemin}`, { waitUntil: 'domcontentloaded' });
         saute = false;

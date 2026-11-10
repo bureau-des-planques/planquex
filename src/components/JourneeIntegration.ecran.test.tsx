@@ -86,7 +86,7 @@ const ECRAN_DE_L_ETAPE = new Map<string, { chemin: string; present: () => boolea
  * Le contrôle lui-même : l'étape courante (lue dans son module), son titre dans le panneau
  * quand il est visible, sa cible déclarée, l'écran réellement affiché et l'élément désigné.
  *
- * `waitFor` porte l'attente : un `Suivant` change l'étape et la route en deux temps, et les
+ * `waitFor` porte l'attente : un geste validé change l'étape et la route en deux temps, et les
  * écrans sont chargés à la demande (#478). Le message nomme l'étape, pas le numéro de ligne.
  */
 async function verifierCorrespondance() {
@@ -127,6 +127,11 @@ async function verifierCorrespondance() {
   );
 }
 
+/** Attend que la Journée soit à l'étape `n` (0 = la première) : le geste validé la fait avancer. */
+async function attendreEtape(n: number) {
+  await waitFor(() => expect(etapeJournee()).toBe(n), { timeout: 5_000 });
+}
+
 function monterAvecGestesFaits() {
   oublierGestes();
   marquerGeste('sauvegarde');
@@ -156,11 +161,13 @@ async function monter() {
  * lui, passe par l'application réelle.
  */
 function monterPanneau(index: number) {
+  // Le mouvement n'est pas réduit : la réplique s'écrit, et le tap a quelque chose à faire.
   setupTestStore({
     tutorielVu: false,
     pasAPasCombatVu: true,
     packsOpened: 1,
-    deck: ['atelier-joueur-de-flute']
+    deck: ['atelier-joueur-de-flute'],
+    reducedMotion: false
   });
   monterAvecGestesFaits();
   allerAEtape(index);
@@ -191,7 +198,7 @@ function RetourDuNavigateur() {
 }
 
 describe('la Journée d’intégration se joue (D-160)', () => {
-  it('« Suivant » attend les gestes : un Arrivage ouvert, un Deck chargé', async () => {
+  it('pas de bouton « Suivant » : le geste validé fait avancer l’étape (D-196)', async () => {
     setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
     remettreJourneeAuDebut();
     render(
@@ -199,28 +206,74 @@ describe('la Journée d’intégration se joue (D-160)', () => {
         <JourneeIntegration />
       </MemoryRouter>
     );
-    const suivant = () => screen.getByRole('button', { name: /^Suivant$/i });
 
-    // **Le contrôle mord** : sans le geste, on ne traverse pas la Journée en lecture.
-    expect(suivant()).toBeDisabled();
+    // **Le contrôle mord** : aucun bouton « Suivant » n'est rendu, à aucune étape.
+    expect(screen.queryByRole('button', { name: /^Suivant$/i })).toBeNull();
+    // **Le geste pas fait ne fait pas avancer** : l'étape reste l'Arrivage.
+    expect(etapeJournee()).toBe(0);
+
     // L'Arrivage passe par le serveur (#651) : le faux serveur rend les cartes.
     simulerArrivage();
     await act(async () => {
       await useStore.getState().openPack();
     });
-    await waitFor(() => expect(suivant()).toBeEnabled());
-
-    await userEvent.click(suivant());
+    await waitFor(() => expect(etapeJournee()).toBe(1));
     expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
-    expect(suivant()).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /^Suivant$/i })).toBeNull();
+
     act(() => {
       useStore.getState().setDeck(['atelier-joueur-de-flute']);
     });
-    await waitFor(() => expect(suivant()).toBeEnabled());
+    await waitFor(() => expect(etapeJournee()).toBe(2));
+    // Le combat s'efface sur `/battle` (D-162 (3)) : c'est la fin de la partie qui le valide.
+  });
 
-    // L'étape 3 (le combat) n'a plus de « Suivant » dans le panneau : il s'efface sur
-    // `/battle` (D-162 (3)) et c'est la scène de fin qui avance la visite. L'enchaînement
-    // complet se joue dans le test suivant ; ici, on garde la garde des deux gestes du store.
+  it('un geste déjà fait à l’arrivée n’enchaîne rien (« Revoir » ne traverse pas la Journée)', async () => {
+    // Tous les gestes sont faits à l'arrivée : la reprise reste à l'étape 1, et aucune
+    // transition ne se produit. **Le contrôle mord** : sans `passeAuGeste`, l'étape enchaînerait.
+    setupTestStore({
+      tutorielVu: false,
+      pasAPasCombatVu: true,
+      packsOpened: 1,
+      deck: ['atelier-joueur-de-flute']
+    });
+    oublierGestes();
+    marquerGeste('combat');
+    marquerGeste('sauvegarde');
+    remettreJourneeAuDebut();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(etapeJournee()).toBe(0);
+  });
+
+  it('un geste validé pendant la scène d’Arrivage attend qu’elle se range (D-196)', async () => {
+    setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+    oublierGestes();
+    remettreJourneeAuDebut();
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <JourneeIntegration />
+      </MemoryRouter>
+    );
+    const scene = document.createElement('div');
+    scene.className = 'ouverture';
+    document.body.appendChild(scene);
+    try {
+      // **Le contrôle mord** : sans l'attente, l'écran suivant couperait la scène en cours.
+      act(() => {
+        useStore.setState({ packsOpened: 1 });
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(etapeJournee()).toBe(0);
+      act(() => scene.remove());
+      await waitFor(() => expect(etapeJournee()).toBe(1));
+    } finally {
+      scene.remove();
+    }
   });
 
   it('le volet des Decks proposés vient dans la fenêtre, et « Charger » s’y atteint (#679)', async () => {
@@ -238,15 +291,13 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     await screen.findByRole('region', { name: /Journée d’intégration/ });
     const scroll = Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
 
-    // Étape 1 faite, puis « Suivant » ouvre `/deck` : la Journée et le Deck sont deux
+    // Étape 1 faite : le geste fait ouvrir `/deck` seul. La Journée et le Deck sont deux
     // morceaux paresseux, le volet peut donc apparaître **après** l'effet de la Journée.
     await userEvent.click(action(/Ouvrir un Arrivage/i));
     await screen.findByRole('dialog');
-    await userEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
-    const suivant = screen.getByRole('button', { name: /^Suivant$/i });
-    await waitFor(() => expect(suivant).toBeEnabled());
     scroll.mockClear();
-    await userEvent.click(suivant);
+    await userEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
+    await attendreEtape(1);
     await verifierCorrespondance();
 
     // **Le conteneur, pas le bouton** : la cible est le `<details>` des Decks proposés.
@@ -262,10 +313,10 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     const charger = within(volet as HTMLElement).getAllByRole('button', { name: 'Charger' })[0];
     expect(charger).not.toHaveAttribute('data-journee-cible');
     // **La garde laisse passer le geste** (D-160 (3)) : sans cette exception, le clic
-    // n'arriverait pas, le Deck resterait vide et « Suivant » resterait fermé.
+    // n'arriverait pas, le Deck resterait vide et l'étape ne suivrait pas.
     await userEvent.click(charger);
     await waitFor(() => expect(useStore.getState().deck.length).toBeGreaterThan(0));
-    await waitFor(() => expect(suivant).toBeEnabled());
+    await attendreEtape(2);
 
     // Étape, route et cible n'ont pas divergé pendant le geste.
     await verifierCorrespondance();
@@ -281,7 +332,6 @@ describe('la Journée d’intégration se joue (D-160)', () => {
       extra: <FilDuChemin />
     });
     await screen.findByRole('region', { name: /Journée d’intégration/ });
-    const suivant = () => screen.getByRole('button', { name: /^Suivant$/i });
 
     // Étape 1 — L'Arrivage, sur l'accueil, avec le bouton d'Arrivage désigné.
     await verifierCorrespondance();
@@ -289,33 +339,33 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     expect(tete).not.toBeNull();
     await userEvent.click(action(/Ouvrir un Arrivage/i));
     await screen.findByRole('dialog');
+    // Le geste se range dans la scène : l'étape 2 s'ouvre seule, une fois la scène fermée.
     await userEvent.click(screen.getByRole('button', { name: /Ranger dans la Collection/i }));
-    await waitFor(() => expect(suivant()).toBeEnabled());
+    await attendreEtape(1);
 
     // Étape 2 — La Collection et le Deck, sur /deck, avec le volet des Decks proposés.
-    await userEvent.click(suivant());
     await verifierCorrespondance();
     expect(document.querySelector('.journee__portrait')).toBe(tete);
     await userEvent.click(screen.getAllByRole('button', { name: 'Charger' })[0]);
-    await waitFor(() => expect(suivant()).toBeEnabled());
+    await attendreEtape(2);
 
     // Étape 3 — Le combat, sur /battle : le panneau s'efface, le pas-à-pas parle seul.
-    await userEvent.click(suivant());
     await verifierCorrespondance();
     expect(document.querySelector('.journee__portrait')).toBe(tete);
     expect(document.querySelector('.journee__parole')).toBeNull();
     const passer = screen.queryByRole('button', { name: /Passer le pas-à-pas/i });
     if (passer) await userEvent.click(passer);
     await userEvent.click(screen.getByRole('button', { name: /Redémarrage à froid/i }));
-    await userEvent.click(await screen.findByRole('button', { name: /Continuer/i }));
+    // La scène de fin valide le geste ; sa fermeture ouvre l'étape 4 (Réglages).
+    await userEvent.click(await screen.findByRole('button', { name: /^Fermer$/ }));
+    await attendreEtape(3);
 
     // Étape 4 — Tes données, sur /settings, avec « Créer ma sauvegarde » désigné.
     await verifierCorrespondance();
     await userEvent.click(screen.getByRole('button', { name: /Créer ma sauvegarde/i }));
-    await waitFor(() => expect(suivant()).toBeEnabled());
+    await attendreEtape(4);
 
     // Étape 5 — Le comité, sur /comite : la dernière étape ne désigne aucun halo.
-    await userEvent.click(suivant());
     await verifierCorrespondance();
     // **L'arrivée ne termine pas la Journée** (#685) : la réplique finale se lit avant
     // que la sortie explicite ne soit choisie.
@@ -407,11 +457,9 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     await screen.findByRole('region', { name: /Journée d’intégration/ });
     await verifierCorrespondance();
 
-    await userEvent.click(screen.getByRole('button', { name: /^Suivant$/i }));
-    // Le correctif de #677 mène directement à /deck ; avant lui, c'est le bouton de l'étape
-    // qui fait ce chemin. Le test suit le bouton quand il est là, sans supposer l'un ou l'autre.
-    const allerAuDeck = screen.queryByRole('button', { name: /Aller au Deck/i });
-    if (allerAuDeck) await userEvent.click(allerAuDeck);
+    // Le geste déjà fait ne passe pas l'étape seul : on la fait avancer comme le ferait un
+    // geste validé, et l'écran doit suivre (#677).
+    act(() => allerAEtape(1));
     await verifierCorrespondance();
 
     act(() => {
@@ -470,9 +518,11 @@ describe('la Journée d’intégration se joue (D-160)', () => {
     expect(within(panneau).getByText('1/5')).toBeInTheDocument();
     expect(within(panneau).getByRole('heading', { name: /L’Arrivage/ })).toBeInTheDocument();
     await waitFor(() => expect(cheminCourant()).toBe('/'));
-    // **L'Arrivage déjà ouvert reste fait** : on ne « dé-ouvre » pas un paquet, et
-    // « Suivant » est ouvert tout de suite.
-    expect(screen.getByRole('button', { name: /^Suivant$/i })).toBeEnabled();
+    // **L'Arrivage déjà ouvert reste fait** : on ne « dé-ouvre » pas un paquet, et « Revoir »
+    // ne traverse pas la Journée : tous les gestes étaient faits, l'étape reste la première.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(etapeJournee()).toBe(0);
+    expect(screen.queryByRole('button', { name: /^Suivant$/i })).toBeNull();
   });
 
   it('le saut dit ce qu’il coûte, et mène au même état que la fin', async () => {
@@ -720,16 +770,90 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
     }
   });
 
-  it('permet d’afficher toute la réplique au clic, y compris en mouvement réduit', async () => {
-    document.documentElement.dataset.mouvementReduit = 'true';
+  it('un tap affiche toute la réplique, et ne fait pas avancer une étape avec geste (D-187 (4), D-196)', async () => {
     const { unmount } = monterPanneau(0);
-    const encadre = document.querySelector<HTMLElement>('.journee__parole')!;
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : De la part de la Direction/ });
     expect(encadre.querySelector('.journee__texte-anime')).toHaveTextContent(ETAPES_JOURNEE[0].direction);
+    expect(encadre).not.toHaveAttribute('data-complet');
     await userEvent.click(encadre);
     expect(encadre).toHaveAttribute('data-complet', 'true');
-    expect(document.activeElement).not.toBe(encadre);
+    // **Le contrôle mord** : un tap qui ferait avancer une étape avec geste la ferait passer ici.
+    await userEvent.click(encadre);
+    expect(etapeJournee()).toBe(0);
     unmount();
-    delete document.documentElement.dataset.mouvementReduit;
+  });
+
+  it('la réplique est un vrai bouton : Entrée et Espace l’affichent, et son nom dit l’action', async () => {
+    const { unmount } = monterPanneau(1);
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Vingt cartes, comptées\..*tout le texte/ });
+    act(() => encadre.focus());
+    await userEvent.keyboard('{Enter}');
+    expect(encadre).toHaveAttribute('data-complet', 'true');
+    unmount();
+
+    const { unmount: autre } = monterPanneau(3);
+    const espace = screen.getByRole('button', { name: /Chef de cabinet : Sinon, tout s’efface/ });
+    act(() => espace.focus());
+    await userEvent.keyboard(' ');
+    expect(espace).toHaveAttribute('data-complet', 'true');
+    autre();
+  });
+
+  it('sous mouvement réduit, la réplique est entière d’emblée : le nom ne demande plus de tap d’affichage', () => {
+    const { unmount } = monterPanneau(0);
+    act(() => useStore.setState({ reducedMotion: true }));
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : De la part de la Direction/ });
+    // **Le contrôle mord** : sous mouvement réduit, la phrase « tout le texte » ne se lit plus.
+    expect(encadre).toHaveAttribute('data-complet', 'true');
+    expect(encadre.getAttribute('aria-label')).not.toMatch(/tout le texte/);
+    unmount();
+    act(() => useStore.setState({ reducedMotion: false }));
+  });
+
+  it('aucune minuterie : 60 s écoulées, l’étape sans geste ne s’avance pas seule (D-196 (2))', () => {
+    vi.useFakeTimers();
+    try {
+      const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+      expect(etapeJournee()).toBe(ETAPES_JOURNEE.length - 1);
+      unmount();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('aucune minuterie : 60 s écoulées, l’étape avec geste attend son geste', () => {
+    vi.useFakeTimers();
+    try {
+      setupTestStore({ tutorielVu: false, pasAPasCombatVu: true, packsOpened: 0, deck: [] });
+      oublierGestes();
+      remettreJourneeAuDebut();
+      const { unmount } = render(
+        <MemoryRouter initialEntries={['/']}>
+          <JourneeIntegration />
+        </MemoryRouter>
+      );
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+      // **Le contrôle mord** : un geste non fait ne fait pas avancer, même après un long délai.
+      expect(etapeJournee()).toBe(0);
+      unmount();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('le dernier tap de la Journée ne la termine pas : la sortie reste « Relire la Journée »', async () => {
+    const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Le mur lit tout/ });
+    await userEvent.click(encadre);
+    await userEvent.click(encadre);
+    expect(useStore.getState().tutorielVu).toBe(false);
+    expect(etapeJournee()).toBe(ETAPES_JOURNEE.length - 1);
+    unmount();
   });
 
   it('termine l’écriture en moins de 1,5 s et révèle tout sous mouvement réduit', () => {
@@ -835,6 +959,9 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
     const cible = screen.getByRole('button', { name: 'Cible' });
     const derniereAction = within(panneau).getByRole('button', { name: 'Montrer le bouton' });
     derniereAction.focus();
+    // La réplique est un vrai bouton (D-196) : Tab s'y arrête avant la cible suivante.
+    await userEvent.tab();
+    expect(document.activeElement).toBe(document.querySelector('.journee__parole'));
     await userEvent.tab();
     expect(document.activeElement).toBe(cible);
     unmount();
@@ -856,7 +983,9 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
 describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () => {
   it('Échap met en pause sans terminer ; « Reprendre » rend le panneau à la même étape', async () => {
     await monter();
-    await userEvent.click(action(/^Suivant$/i));
+    // L'étape 2 s'ouvre par son geste ; ici le geste de l'Arrivage est déjà fait, on la fait avancer.
+    act(() => allerAEtape(1));
+    await verifierCorrespondance();
     expect(screen.getByRole('heading', { name: /La Collection et le Deck/ })).toBeInTheDocument();
 
     await userEvent.keyboard('{Escape}');
@@ -921,7 +1050,7 @@ describe('la pause se joue au clavier et à l’écran (D-162 (2), #678)', () =>
  * Ce qui compte (D-181 (3), précisé par D-185 (1) et D-186 (1)) : le titre
  * (`#journee-titre`, compteur et préfixe `sr-only` exclus), le texte (`#journee-texte`),
  * la **réplique sans son locuteur** (`.journee__direction`, le `<strong>` retiré) et les
- * libellés des boutons d'action de l'étape (`.actions` : « Suivant », et le geste s'il est
+ * libellés des boutons d'action de l'étape (`.actions` : le geste, s'il est
  * visible). Fourchette : 54 à 66 mots.
  *
  * **Hors budget** : le **nom du locuteur** « Chef de cabinet » (D-186 (1)), libellé répété
@@ -987,8 +1116,7 @@ function compteDeLEtape(index: number): CompteDeTexte {
     // Sans le nom, comme le DOM ci-dessus (D-186 (1)) ; avec le nom pour la borne (D-186 (3)).
     const replique = etape.direction;
     const repliqueAvecNom = `${LOCUTEUR_JOURNEE} ${etape.direction}`;
-    const dernier = index === ETAPES_JOURNEE.length - 1;
-    const morceaux = [etape.titre, etape.texte, replique, ...(dernier ? [] : ['Suivant'])];
+    const morceaux = [etape.titre, etape.texte, replique];
     compte = {
       titre: etape.titre,
       mots: morceaux.reduce((somme, morceau) => somme + mots(morceau), 0),

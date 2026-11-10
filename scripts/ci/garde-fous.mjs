@@ -473,7 +473,7 @@ export const MUTATIONS = [
     ticket: 666,
     titre: 'l’étape « La Collection et le Deck » envoie sur l’accueil',
     fichier: 'src/components/journee-etapes.ts',
-    // D-181 (5) : « Suivant » avance l'étape **et ouvre l'écran de l'étape suivante**.
+    // D-181 (5), D-196 : le geste validé avance l'étape **et ouvre l'écran de l'étape suivante**.
     // La mutation décale la cible d'un cran ; le test de rendu doit voir que le contenu du
     // panneau (le Deck) et l'écran affiché (l'accueil) ne disent plus la même chose.
     motif: "    cible: '/deck',",
@@ -515,6 +515,54 @@ export const MUTATIONS = [
     tests: ['src/pages/Battle.test.tsx'],
     garde:
       'sans `aria-live`, le dernier coup ne s’annonce plus : le journal visuel n’existe plus, c’est la seule voix de la partie pour un lecteur d’écran (WCAG 4.1.3)'
+  },
+  {
+    ticket: 779,
+    titre: 'un geste déjà fait enchaîne les étapes (« Revoir » traverse la Journée)',
+    fichier: 'src/components/journee-etapes.ts',
+    // D-196 (1) : l'étape ne s'avance que sur une **transition** vers « fait ». Sans cette
+    // condition, un geste déjà fait à l'arrivée (« Revoir », #731) enchaînerait toute la Journée.
+    motif: 'return precedent !== null && precedent.etape === etape && !precedent.fait && fait;',
+    remplacement: 'return precedent !== null && precedent.etape === etape && fait;',
+    tests: ['src/components/journee-etapes.test.ts'],
+    garde:
+      'sans la transition, « Revoir » ou une reprise traverse la Journée sans la lire : une étape s’ouvre sur un geste ancien (D-196 (1), D-181 (5))'
+  },
+  {
+    ticket: 779,
+    titre: 'la Journée remet un bouton « Suivant »',
+    fichier: 'src/components/JourneeIntegration.tsx',
+    // D-196 : plus de bouton « Suivant ». La mutation le réinjecte dans la barre d'actions ; la suite
+    // doit voir un bouton « Suivant » rendu, et le refuser.
+    motif: '<div className="actions actions--tight">',
+    remplacement: '<div className="actions actions--tight"><button type="button" className="button">Suivant</button>',
+    tests: ['src/components/JourneeIntegration.ecran.test.tsx', 'src/components/JourneeIntegration.test.ts'],
+    garde:
+      'un « Suivant » remis fait cliquer à chaque étape : le geste validé ne suffit plus, et la Journée se retraverse en lecture (D-196, D-163 (3) amendée)'
+  },
+  {
+    ticket: 779,
+    titre: 'le tap sur la réplique avance sans afficher le texte entier',
+    fichier: 'src/components/JourneeIntegration.tsx',
+    // D-187 (4), D-196 (1) : le premier tap affiche la réplique en entier, le second passe l'étape
+    // (étape sans geste). La mutation fait passer le premier tap à l'étape suivante, ou le fait échouer.
+    motif: 'if (!repliqueComplete) {',
+    remplacement: 'if (false) {',
+    tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
+    garde:
+      'sans le premier tap, un lecteur qui n’a pas fini la réplique la perd au premier appui : la Journée ne laisse plus le temps de lire (D-187 (4))'
+  },
+  {
+    ticket: 779,
+    titre: 'un geste validé pendant la scène d’Arrivage coupe la scène',
+    fichier: 'src/components/JourneeIntegration.tsx',
+    // D-196 (1) : le geste de l'Arrivage ne fait avancer qu'une fois la scène `.ouverture` rangée.
+    // La mutation supprime l'attente : l'écran suivant couperait la scène en cours.
+    motif: 'if (!document.querySelector(SCENE_ARRIVAGE)) {',
+    remplacement: 'if (true) {',
+    tests: ['src/components/JourneeIntegration.ecran.test.tsx'],
+    garde:
+      'sans l’attente, « Ranger » n’est jamais atteint : l’écran suivant remplace l’Arrivage pendant son ouverture, et le geste se perd'
   }
 ];
 

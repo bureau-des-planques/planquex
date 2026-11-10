@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppelParticiper } from '@/components/AppelParticiper';
-import { ETAPES_JOURNEE, cheminDeCible, etapePourChemin, libelleSaut } from '@/components/journee-etapes';
+import {
+  ETAPES_JOURNEE,
+  cheminDeCible,
+  etapePourChemin,
+  libelleSaut,
+  passeAuGeste,
+  tapeAvance,
+  type PositionDeGeste
+} from '@/components/journee-etapes';
 import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
 import { useGesteFait } from '@/components/journee-gestes';
 import {
@@ -12,11 +20,18 @@ import {
   remettreJourneeAuDebut,
   useEtapeJournee
 } from '@/components/journee-etape';
+import { useMouvementReduit } from '@/components/use-mouvement-reduit';
 import { useStore } from '@/store/useStore';
 import { artUrl } from '@/art';
 
 /** La voix de la Direction : son Chef de cabinet, qui transmet ses consignes. */
 const PORTRAIT_CHEF_CABINET = artUrl('direction-chef-cabinet.webp');
+
+/**
+ * La scène plein écran d'un Arrivage (`SceneOuverture`). Le geste « Arrivage » ne fait avancer la
+ * Journée qu'une fois cette scène rangée (D-196 (1)) : sinon l'écran suivant la couperait.
+ */
+const SCENE_ARRIVAGE = '.ouverture';
 
 export function JourneeIntegration() {
   const tutorielVu = useStore((state) => state.tutorielVu);
@@ -37,8 +52,12 @@ export function JourneeIntegration() {
    * l'on en est et offre les deux issues.
    */
   const [enPause, setEnPause] = useState(false);
-  /** La réplique que le testeur a fait afficher en entier d'un tap (D-187 (4)). */
+  /**
+   * La réplique affichée en entier : par un tap (D-187 (4)), ou par la fin de l'écriture
+   * (`onAnimationEnd`). Sous mouvement réduit, elle est entière dès le départ.
+   */
   const [repliqueLue, setRepliqueLue] = useState('');
+  const reduit = useMouvementReduit();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   /** Le panneau, pour mesurer sa hauteur et garder l'élément désigné **sous** lui. */
@@ -122,7 +141,7 @@ export function JourneeIntegration() {
    * **On reprend à la première étape non faite** (31/10/2026). Au rechargement, l'étape
    * vivait en mémoire et l'on repartait à « 1/5 » avec le combat à rejouer. Les gestes du
    * store (Arrivage, Deck) disent ce qui est déjà fait ; ceux de session disent le reste.
-   * Une seule fois par montage : ensuite, c'est « Suivant » qui commande.
+   * Une seule fois par montage : ensuite, c'est le geste validé qui fait avancer (D-196).
    */
   const repriseFaite = useRef(false);
   useEffect(() => {
@@ -148,13 +167,57 @@ export function JourneeIntegration() {
   const cibleDeLEtape = courante.geste ? (CIBLE_DE_GESTE[courante.geste] ?? null) : null;
 
   /**
+   * **Le geste réel** (D-196) : l'étape suivante s'ouvre dès qu'il est validé. Sans geste
+   * (l'étape du comité), il n'y a rien à valider : le tap de l'encadré fait le même chemin.
+   */
+  const gesteFait =
+    courante.geste === undefined ||
+    (courante.geste === 'arrivage'
+      ? packsOpened > 0
+      : courante.geste === 'deck'
+        ? deck.length > 0
+        : courante.geste === 'sauvegarde'
+          ? sauvegardeFaite
+          : combatFait);
+
+  /**
+   * **Le geste fait avancer** (779, D-196 (1)). Une **transition** seulement (`passeAuGeste`) :
+   * un geste déjà fait à l'arrivée n'enchaîne rien (« Revoir », #731). Aucune minuterie
+   * (D-196 (2), WCAG « minutage réglable ») : seul le geste fait avancer. Le geste du combat se valide sur
+   * `/battle`, où le panneau est effacé : l'effet n'est donc **pas** gardé par `visible`.
+   * L'écran suit par l'effet de route plus bas, et `Battle` ouvre l'écran à la fermeture de
+   * la scène de fin, pour ne pas couper le verdict.
+   */
+  const dernierGeste = useRef<PositionDeGeste | null>(null);
+  const gesteCourantFait = courante.geste !== undefined && gesteFait;
+  useEffect(() => {
+    const precedent = dernierGeste.current;
+    dernierGeste.current = { etape, fait: gesteCourantFait };
+    if (tutorielVu || !passeAuGeste(precedent, etape, gesteCourantFait)) return undefined;
+    if (etape >= ETAPES_JOURNEE.length - 1) return undefined;
+    const suivante = () => allerAEtape(etape + 1);
+    if (!document.querySelector(SCENE_ARRIVAGE)) {
+      suivante();
+      return undefined;
+    }
+    // L'Arrivage se range dans sa scène : on attend qu'elle se ferme, puis on avance.
+    const observateur = new MutationObserver(() => {
+      if (document.querySelector(SCENE_ARRIVAGE)) return;
+      observateur.disconnect();
+      suivante();
+    });
+    observateur.observe(document.body, { childList: true, subtree: true });
+    return () => observateur.disconnect();
+  }, [etape, gesteCourantFait, tutorielVu]);
+
+  /**
    * **L'étape et la route ne divergent pas** (#677, D-181 (5), D-162 (4)).
    *
-   * Le compteur d'étape **commande** l'écran : « Suivant » ouvre la cible de l'étape
-   * suivante, et la fin du combat ouvre celle de l'étape qu'elle avance — avant ce
-   * correctif, le compteur avançait seul et le panneau décrivait un écran qui n'était pas
-   * affiché. La route n'est pourtant **pas** l'identifiant de l'étape : deux étapes
-   * peuvent partager un écran, et c'est alors l'étape courante qui tient.
+   * Le compteur d'étape **commande** l'écran : le geste validé avance le compteur, et le
+   * compteur ouvre la cible de l'étape. Avant ce correctif, le compteur avançait seul et le
+   * panneau décrivait un écran qui n'était pas affiché. La route n'est pourtant **pas**
+   * l'identifiant de l'étape : deux étapes peuvent partager un écran, et c'est alors
+   * l'étape courante qui tient.
    *
    * Deux temps :
    * - **à l'ouverture**, une URL qui est l'écran d'une étape la désigne (on ne déplace pas
@@ -316,18 +379,26 @@ export function JourneeIntegration() {
     <div className="journee__scene">
       <img className="journee__portrait" src={PORTRAIT_CHEF_CABINET} alt="" aria-hidden="true" width={56} height={56} />
       {avecParole && (
-        <div
+        // **Un vrai bouton** (779, D-196) : Entrée et Espace le déclenchent, et son nom dit le
+        // tap. Le texte visible est `aria-hidden` : la région `aria-live` le lit une fois.
+        <button
+          type="button"
           className="journee__parole"
-          data-complet={repliqueLue === courante.direction || undefined}
-          onClick={() => setRepliqueLue(courante.direction)}
+          data-complet={repliqueComplete || undefined}
+          aria-label={`Chef de cabinet : ${courante.direction}${indicationTap}`}
+          onClick={toucherLaReplique}
         >
           <span className="journee__direction" aria-hidden="true">
             <strong>Chef de cabinet</strong>{' '}
-            <span key={courante.direction} className="journee__texte-anime">
+            <span
+              key={courante.direction}
+              className="journee__texte-anime"
+              onAnimationEnd={() => setRepliqueLue(courante.direction)}
+            >
               {courante.direction}
             </span>
           </span>
-        </div>
+        </button>
       )}
       <span className="sr-only" data-journee-voix aria-live="polite" aria-atomic="true">
         {avecParole && `Chef de cabinet : ${courante.direction}`}
@@ -343,20 +414,27 @@ export function JourneeIntegration() {
     );
 
   const derniere = etape >= ETAPES_JOURNEE.length - 1;
+
   /**
-   * **Le geste réel** : « Suivant » ne s'ouvre qu'une fois fait. C'est ce qui empêche de
-   * traverser la Journée en lecture — et c'est pour ça qu'elle a cessé d'être un dialogue
-   * modal : le geste se fait sur la page, pas dans le panneau.
+   * **Le tap sur l'encadré** (779, D-196 (1), D-187 (4)). Premier tap : la réplique s'écrit
+   * d'un coup. Second tap, à une étape **sans geste** : l'étape suivante s'ouvre. Une étape
+   * avec geste n'avance jamais au tap — son geste la fait avancer. Sous mouvement réduit, la
+   * réplique est entière dès le départ : un seul tap avance.
    */
-  const gesteFait =
-    courante.geste === undefined ||
-    (courante.geste === 'arrivage'
-      ? packsOpened > 0
-      : courante.geste === 'deck'
-        ? deck.length > 0
-        : courante.geste === 'sauvegarde'
-          ? sauvegardeFaite
-          : combatFait);
+  const repliqueComplete = repliqueLue === courante.direction || reduit;
+  const toucherLaReplique = () => {
+    if (!repliqueComplete) {
+      setRepliqueLue(courante.direction);
+      return;
+    }
+    if (tapeAvance(courante, etape, ETAPES_JOURNEE.length - 1)) allerAEtape(etape + 1);
+  };
+  /** Ce que fait le tap, dit à la lecture d'écran (le nom accessible porte l'action). */
+  const indicationTap = !repliqueComplete
+    ? ', appuyer pour afficher tout le texte'
+    : tapeAvance(courante, etape, ETAPES_JOURNEE.length - 1)
+      ? ', appuyer pour passer à l’étape suivante'
+      : '';
 
   /** Sur l'écran de l'étape : `pathname` n'a pas de requête, la cible peut en avoir une. */
   const surLaPage = pathname === cheminDeCible(courante.cible);
@@ -437,21 +515,20 @@ export function JourneeIntegration() {
           **exigent** un geste : aux autres, « C'est fait » serait faux. */}
         {courante.geste !== undefined &&
           (gesteFait ? (
-            // **Fait : la ligne se tait** (31/10/2026). Elle explique un « Suivant » fermé ; une
-            // fois ouvert, « Suivant » et le halo le disent. Elle reste annoncée aux lecteurs
-            // d'écran, et le panneau gagne la hauteur d'une ligne.
+            // **Fait : l'étape suivante s'annonce** (779, D-196). La ligne reste dans le DOM pour
+            // les lecteurs d'écran ; à l'écran, la Journée a déjà avancé.
             <p className="sr-only" role="status">
-              C’est fait : « Suivant » est ouvert.
+              C’est fait : l’étape suivante s’ouvre.
             </p>
           ) : (
             // **Lue, pas affichée** (04/11/2026, décision de Bastien, option A) : la ligne reste
-            // dans le DOM pour les lecteurs d'écran (`role="status"`), mais « Suivant » éteint et
-            // « Montrer le bouton » disent déjà le geste à l'œil. `sr-only` la retire de la mise
-            // en page, et le budget de texte ne la compte pas (D-181 (3)).
+            // dans le DOM pour les lecteurs d'écran (`role="status"`), et « Montrer le bouton »
+            // dit déjà le geste à l'œil. `sr-only` la retire de la mise en page, et le budget de
+            // texte ne la compte pas (D-181 (3)).
             <p className="sr-only" role="status">
               {courante.geste === 'combat'
-                ? 'Joue le combat guidé : « Suivant » s’ouvrira à sa fin.'
-                : 'Fais le geste sur la page : « Suivant » s’ouvrira ensuite.'}
+                ? 'Joue le combat guidé : l’étape suivante s’ouvrira à sa fin.'
+                : 'Fais le geste sur la page : l’étape suivante s’ouvrira ensuite.'}
             </p>
           ))}
 
@@ -462,10 +539,8 @@ export function JourneeIntegration() {
           reste explicite : le bouton permanent, ou le lien de l'appel à participer. */}
         <div className="actions actions--tight">
           {/* Sur l'écran de l'étape, le bouton qui y mène n'a plus rien à faire : il laisse la
-            place au geste lui-même. Et sans geste, il n'y a rien à montrer.
-            **Une fois le geste fait, il disparaît** (31/10/2026) : laisser un bouton
-            principal qui ne sert plus, à côté d'un « Suivant » en contour, inversait la
-            hiérarchie au moment précis où l'on attend « Suivant ». */}
+            place au geste lui-même. Et sans geste, il n'y a rien à montrer. Il n'y a pas de
+            bouton « Suivant » (D-196) : le geste validé fait avancer, le tap fait le reste. */}
           {!surLaPage ? (
             <button
               type="button"
@@ -479,27 +554,12 @@ export function JourneeIntegration() {
           ) : courante.geste !== undefined && !gesteFait ? (
             /* **Sur l'écran de l'étape**, le panneau garde une action : « Montrer le bouton ».
              Il ne fait pas le geste à la place du testeur, il amène la cible sous ses yeux
-             et la fait pulser — sans lui, l'écran n'offrait qu'un « Suivant » éteint
-             (critique du 30/10/2026). */
+             et la fait pulser — sans lui, l'écran n'offrait aucune action (critique du
+             30/10/2026). */
             <button type="button" className="button button--primary" onClick={montrerLaCible}>
               Montrer le bouton
             </button>
           ) : null}
-          {/* **Deux sorties, pas trois** (30/10/2026) : « Plus tard » faisait exactement ce que
-            fait le lien du dessous, et promettait un retour qui n'arrive jamais — `terminer`
-            écrit le drapeau. À la dernière étape, le geste principal suffit. */}
-          {!derniere && (
-            <button
-              type="button"
-              className={gesteFait ? 'button button--primary' : 'button'}
-              disabled={!gesteFait}
-              onClick={() => {
-                allerAEtape(etape + 1);
-              }}
-            >
-              Suivant
-            </button>
-          )}
         </div>
 
         {/* L'appel à participer (#271) : une ligne, à la fin seulement, à chaque Journée menée
