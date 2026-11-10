@@ -26,8 +26,9 @@ function corpsDeRegle(source: string, selecteur: string): string | null {
 }
 
 describe('la barre du bas ne tient aucune place en combat (#275)', () => {
-  it('la barre est rendue sous `!enCombat` — pas cachée, pas rendue', () => {
-    expect(layout).toMatch(/\{!enCombat && \(\s*<nav/);
+  it('la barre est rendue sous `!sansBarre` (combat ou Journée ouverte, #778) — pas cachée, pas rendue', () => {
+    expect(layout).toMatch(/const sansBarre = enCombat \|\| journeeOuverte;/);
+    expect(layout).toMatch(/\{!sansBarre && \(\s*<nav/);
     // Aucun `hidden` ni `display: none` sur la barre : une barre masquée resterait dans le
     // focus et dans l'arbre d'accessibilité, ce que le ticket refuse.
     expect(layout).not.toMatch(/className="bottom-nav"[^>]*hidden/);
