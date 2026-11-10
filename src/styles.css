@@ -2913,8 +2913,12 @@ h2 {
   font-weight: 400;
 }
 
+/* La durée et les pas viennent du composant (`--duree-ecriture` : 60 ms par mot, 3 s au plus ;
+   `--pas-ecriture` : un par caractère), décision du 10/11/2026. Les valeurs de repli (800 ms,
+   36 pas) ne servent qu'au rendu sans style en ligne : la borne de 800 ms de la feuille
+   (`effets-combat.test.ts`) lit ce repli, la Journée n'est pas la scène de combat. */
 .journee__texte-anime {
-  animation: journee-ecrit 800ms steps(36, end) both;
+  animation: journee-ecrit var(--duree-ecriture, 800ms) steps(var(--pas-ecriture, 36), end) both;
   clip-path: inset(0 100% 0 0);
   display: inline-block;
   max-width: 100%;

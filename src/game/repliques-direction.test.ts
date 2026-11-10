@@ -1,30 +1,37 @@
 import { describe, expect, it } from 'vitest';
 import {
-  choisirReplique,
-  evenementDuJournal,
+  MOTS_MAX_REPLIQUE,
+  MOTS_MIN_REPLIQUE,
+  PHRASES_MAX_REPLIQUE,
   REPLIQUES_DIRECTION,
   type EvenementDirection
-} from './repliques-direction';
+} from '@/data/repliques-direction';
+import { choisirReplique, evenementDuJournal } from './repliques-direction';
 
 /**
- * **Les répliques de la Direction** (30/10/2026) : le ton, la brièveté, le déterminisme.
- * Une vanne qui insulte, qui dépasse une ligne ou qui change à chaque rejeu casse ce test.
+ * **Les répliques de la Direction** (30/10/2026 ; budget de D-195 (2) depuis le 10/11/2026) :
+ * le ton, le budget, le déterminisme. Une vanne qui insulte, qui sort des 25 à 35 mots ou
+ * qui change à chaque rejeu casse ce test. Le budget complet (mots, phrases, vocabulaire)
+ * est celui de `src/data/direction-repliques.test.ts` ; ici, on garde la borne en vue du choix.
  */
 const EVENEMENTS: EvenementDirection[] = ['ouverture', 'pression', 'craquage', 'victoire', 'defaite'];
 
-describe('la Direction parle, mais court', () => {
+describe('la Direction parle, dans le budget de D-195 (2)', () => {
   it('a au moins deux répliques par événement', () => {
     for (const evenement of EVENEMENTS) {
       expect(REPLIQUES_DIRECTION[evenement].length, evenement).toBeGreaterThanOrEqual(2);
     }
   });
 
-  it('tient en une phrase courte', () => {
+  it('tient en 25 à 35 mots et 1 à 3 phrases : une idée et une chute, jamais un paragraphe', () => {
     for (const evenement of EVENEMENTS) {
       for (const ligne of REPLIQUES_DIRECTION[evenement]) {
-        expect(ligne.length, ligne).toBeLessThanOrEqual(60);
-        // Une phrase, ou une phrase et son entame (« Bon. ») : jamais un paragraphe.
-        expect(ligne.split(/[.!?]/).filter((phrase) => phrase.trim()).length, ligne).toBeLessThanOrEqual(2);
+        const mots = ligne.split(/\s+/).filter(Boolean).length;
+        expect(mots, ligne).toBeGreaterThanOrEqual(MOTS_MIN_REPLIQUE);
+        expect(mots, ligne).toBeLessThanOrEqual(MOTS_MAX_REPLIQUE);
+        expect(ligne.split(/[.!?]/).filter((phrase) => phrase.trim()).length, ligne).toBeLessThanOrEqual(
+          PHRASES_MAX_REPLIQUE
+        );
       }
     }
   });

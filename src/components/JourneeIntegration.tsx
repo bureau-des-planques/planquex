@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AppelParticiper } from '@/components/AppelParticiper';
 import {
   ETAPES_JOURNEE,
   cheminDeCible,
+  dureeEcriture,
   etapePourChemin,
   libelleSaut,
+  pasEcriture,
   passeAuGeste,
   tapeAvance,
   tapeTermine,
@@ -394,6 +396,14 @@ export function JourneeIntegration() {
             <span
               key={courante.direction}
               className="journee__texte-anime"
+              // La durée suit les mots (60 ms par mot, 3 s au plus) et les pas suivent les
+              // caractères : `src/styles.css` lit ces deux variables (décision du 10/11/2026).
+              style={
+                {
+                  '--duree-ecriture': `${dureeEcriture(courante.direction)}ms`,
+                  '--pas-ecriture': pasEcriture(courante.direction)
+                } as CSSProperties
+              }
               onAnimationEnd={() => setRepliqueLue(courante.direction)}
             >
               {courante.direction}
