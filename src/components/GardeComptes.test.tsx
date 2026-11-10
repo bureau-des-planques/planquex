@@ -14,7 +14,7 @@ import type { Compte } from '@/lib/comptes';
  *
  * 1. personne → la connexion, avec la destination mémorisée ;
  * 2. une session **anonyme** → la connexion (c'est le bug #527 : elle passait) ;
- * 3. un compte **en attente** → le jeu (D-088 : il joue et lit) ;
+ * 3. un compte **en attente** → l'attente, comme un refusé (D-201 : il ne joue plus) ;
  * 4. un compte **approuvé** → le jeu ;
  * 5. un compte **refusé** → l'attente, sa raison, et lui seul.
  *
@@ -102,10 +102,26 @@ describe('la garde d’entrée (D-088, D-156)', () => {
     expect(screen.queryByText('le bureau')).toBeNull();
   });
 
-  it('un compte en attente entre et joue (D-088)', () => {
-    poser({ session: SESSION, compte: EN_ATTENTE });
-    rendre('/');
+  it.each(['/', '/battle', '/collection', '/deck', '/settings', '/comite', '/pause-cafe'])(
+    'un compte en attente ne joue pas : %s le renvoie à l’attente (D-201)',
+    (adresse) => {
+      poser({ session: SESSION, compte: EN_ATTENTE });
+      rendre(adresse);
+      expect(screen.getByText('l’attente')).toBeInTheDocument();
+      expect(screen.queryByText('le bureau')).toBeNull();
+    }
+  );
+
+  it('un administrateur encore marqué en attente joue (il est toujours approuvé)', () => {
+    poser({ session: SESSION, compte: { ...EN_ATTENTE, administrateur: true } });
+    rendre('/comite');
     expect(screen.getByText('le bureau')).toBeInTheDocument();
+  });
+
+  it('un compte en attente lit l’attente', () => {
+    poser({ session: SESSION, compte: EN_ATTENTE });
+    rendre('/attente');
+    expect(screen.getByText('l’attente')).toBeInTheDocument();
   });
 
   it('un compte approuvé entre', () => {

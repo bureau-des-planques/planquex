@@ -12,9 +12,9 @@
  * (`anonyme`), jamais de l'absence de ligne — une base en retard rend `compte: null` sans
  * être anonyme.
  *
- * Un compte **en attente** passe : il peut jouer et lire (D-088). Un compte **refusé**, lui,
- * ne joue pas : c'est la **seule** exception à « la garde ne juge que la session » — il ne
- * lui reste que `/attente`, sa raison et la déconnexion (D-156 (3)).
+ * Un compte **non approuvé** — en attente **ou** refusé — ne joue pas : c'est la **seule**
+ * exception à « la garde ne juge que la session » — il ne lui reste que `/attente`, son état et
+ * la déconnexion (D-156 (3), amendée par D-201 : l'attente ne joue plus, ni Journée ni combat).
  *
  * Un compte dont la ligne est **illisible** (erreur de lecture, `compte: null`) traverse :
  * D-088 veut qu'une erreur de lecture ne ferme pas l'entrée.
@@ -28,6 +28,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { RefusConfiguration } from '@/components/RefusConfiguration';
+import { estApprouve } from '@/lib/comptes';
 import { useComptes } from '@/store/comptes';
 
 export function GardeComptes({ children }: { children: ReactNode }) {
@@ -62,8 +63,10 @@ export function GardeComptes({ children }: { children: ReactNode }) {
     return <Navigate to="/connexion" replace state={{ depuis: `${pathname}${search}` }} />;
   }
 
-  // Un compte **refusé** ne joue pas : l'attente est la seule page qui lui reste (D-156 (3)).
-  if (compte?.etat === 'refuse' && pathname !== '/attente') {
+  // Un compte **non approuvé** (en attente ou refusé) ne joue pas : l'attente est la seule page
+  // qui lui reste (D-156 (3), amendée par D-201). Une ligne illisible (`compte: null`) n'est pas
+  // fermée (D-088) ; un administrateur est toujours approuvé.
+  if (compte !== null && !estApprouve(compte) && pathname !== '/attente') {
     return <Navigate to="/attente" replace />;
   }
 

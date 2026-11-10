@@ -22,10 +22,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  ADMIN,
   APPAREIL_A,
   APPAREIL_B,
   avecAppareil,
   baseAvecAppareils,
+  creerCompte,
   fichiersMigrations,
   migrations,
   type Base
@@ -176,7 +178,60 @@ describe('l’Arrivage se crédite une seule fois (#651, D-179)', () => {
     await db.close();
   });
 
+  describe('le serveur refuse un compte non approuvé (#789, D-199 (4), migration 0028)', () => {
+    it('un compte en attente ou refusé n’ouvre rien : ni ligne, ni carte', async () => {
+      const db = await baseAvecAppareils();
+      await creerCompte(db, APPAREIL_A, { etat: 'en attente' });
+      await creerCompte(db, APPAREIL_B, { etat: 'refuse' });
+
+      await expect(crediter(db, APPAREIL_A, 'attente-1', CARTES)).rejects.toThrow(/arrivage_compte_non_approuve/);
+      await expect(crediter(db, APPAREIL_B, 'refus-1', CARTES)).rejects.toThrow(/arrivage_compte_non_approuve/);
+
+      expect(await ouvertures(db, APPAREIL_A)).toBe(0);
+      expect(await ouvertures(db, APPAREIL_B)).toBe(0);
+      expect(await quantite(db, APPAREIL_A, 'sse-infirmier-site')).toBe(0);
+      await db.close();
+    });
+
+    it('le même compte ouvre dès qu’il est approuvé, et un administrateur passe', async () => {
+      const db = await baseAvecAppareils();
+      await creerCompte(db, APPAREIL_A, { etat: 'en attente' });
+      await expect(crediter(db, APPAREIL_A, 'avant', CARTES)).rejects.toThrow(/arrivage_compte_non_approuve/);
+
+      await creerCompte(db, APPAREIL_A, { etat: 'approuve' });
+      expect(await crediter(db, APPAREIL_A, 'apres', CARTES)).toEqual(CARTES);
+      expect(await ouvertures(db, APPAREIL_A)).toBe(1);
+
+      await creerCompte(db, ADMIN, { etat: 'en attente', administrateur: true });
+      expect(await crediter(db, ADMIN, 'admin', CARTES)).toEqual(CARTES);
+      await db.close();
+    });
+
+    it('le refus est un défaut de privilège (403 côté Edge Function), pas une erreur de saisie', async () => {
+      const db = await baseAvecAppareils();
+      await creerCompte(db, APPAREIL_A, { etat: 'en attente' });
+      await expect(crediter(db, APPAREIL_A, 'attente-2', CARTES)).rejects.toMatchObject({ code: '42501' });
+      await db.close();
+    });
+  });
+
   describe('le contrôle mord (#112)', () => {
+    it('la garde d’approbation retirée, un compte en attente ouvre un Arrivage', async () => {
+      // Le cas fautif : sans `compte_approuve()` dans la fonction, le bouton grisé du client
+      // serait la seule barrière — et un client bricolé s'ouvrirait des Arrivages.
+      // L'ancre est le **message** de la garde : `if not public.compte_approuve()` existe aussi
+      // dans 0006 et 0007, et l'on mordrait la mauvaise fonction.
+      const garde = /if not public\.compte_approuve\(\) then(\s+raise exception 'arrivage_compte_non_approuve)/;
+      const mutee = migrations().replace(garde, 'if false then$1');
+      expect(mutee).not.toBe(migrations());
+      const db = await baseAvecAppareils(mutee);
+      await creerCompte(db, APPAREIL_A, { etat: 'en attente' });
+
+      expect(await crediter(db, APPAREIL_A, 'fautif', CARTES)).toEqual(CARTES);
+      expect(await ouvertures(db, APPAREIL_A)).toBe(1);
+      await db.close();
+    });
+
     it('l’unicité de la clé retirée, la même clé crédite deux fois', async () => {
       // Le cas fautif : sans la contrainte, le `on conflict` ne s'applique plus et la même
       // clé repasse par le crédit. C'est exactement ce que la 0024 empêche.

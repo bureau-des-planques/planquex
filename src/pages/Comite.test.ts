@@ -102,6 +102,6 @@ describe('la bulle (D-058)', () => {
     expect(layout).toMatch(/pathname\.startsWith\('\/battle'\)/);
     // Depuis #212 l'alerte porte le compte et s'efface aussi sur Le suivi : c'est la page
     // qui vient de voir les choses, et elle les a comptées.
-    expect(layout).toMatch(/\{!enCombat && !surLeSuivi && <AlerteComite nombre=\{aVoir\} \/>\}/);
+    expect(layout).toMatch(/\{!enCombat && !surLeSuivi && !enAttente && <AlerteComite nombre=\{aVoir\} \/>\}/);
   });
 });

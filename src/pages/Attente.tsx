@@ -1,8 +1,8 @@
 /**
  * « Ton compte attend d'être validé » (D-088, #181).
  *
- * C'est l'écran qui rend l'attente **visible** : un compte en attente peut jouer et lire, il
- * ne peut pas encore écrire. On y dit aussi **ce qui s'ouvrira** après l'approbation, pour
+ * C'est l'écran qui rend l'attente **visible** : un compte en attente ne joue pas, il ne voit que
+ * cette page (D-201, qui amende D-199). On y dit **ce qui s'ouvrira** après l'approbation, pour
  * que l'attente ne ressemble pas à une panne.
  *
  * Un compte **refusé** lit sa raison ici (la base exige qu'un refus en ait une) ; un compte
@@ -62,7 +62,7 @@ export function Attente() {
         <p className="muted max-w-[64ch]">
           {approuve
             ? 'Tu peux écrire : post-it, pouce, trace de combat. Merci d’être là.'
-            : 'Bastien valide les comptes à la main. En attendant, tu peux déjà jouer et lire le mur ; l’écriture s’ouvrira à son approbation.'}
+            : 'Bastien valide les comptes à la main. Tant que ton compte n’est pas validé, le jeu reste fermé : il s’ouvrira à son approbation.'}
         </p>
       </section>
 
@@ -112,21 +112,14 @@ export function Attente() {
         )}
       </section>
 
-      <section className="section panel">
-        <h2>En attendant</h2>
-        <ul className="m-0 flex list-none flex-col gap-2 p-0 text-[0.9rem]">
-          <li>
-            <Link to="/">Jouer une partie</Link> — le solo ne demande rien à la base.
-          </li>
-          <li>
-            <Link to="/comite">Lire le mur</Link> — les post-its et les compteurs de pouces sont ouverts à tout compte.
-          </li>
-          <li>
-            <Link to="/settings">Tes réglages</Link> — ta Collection et ton Deck sont encore dans ce navigateur tant que
-            la synchro n’est pas livrée.
-          </li>
-        </ul>
-      </section>
+      {approuve && (
+        <section className="section panel">
+          <h2>Et maintenant</h2>
+          <p className="m-0 text-[0.9rem]">
+            <Link to="/">Retour au bureau</Link> — le jeu t’est ouvert.
+          </p>
+        </section>
+      )}
     </div>
   );
 }
