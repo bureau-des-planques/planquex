@@ -25,9 +25,9 @@ import { BandeauHorsLigne } from '@/components/BandeauHorsLigne';
 import { BandeauNouvelleVersion } from '@/components/BandeauNouvelleVersion';
 import { ErreurDeRendu } from '@/components/ErreurDeRendu';
 import { RepliChargement } from '@/components/RepliChargement';
-import { GardeComptes } from '@/components/GardeComptes';
+import { GardeComptes, PAGES_APRES_APPROBATION } from '@/components/GardeComptes';
 import { estApprouve } from '@/lib/comptes';
-import { useComptes } from '@/store/comptes';
+import { useComptes, useCompteEnAttente } from '@/store/comptes';
 
 /**
  * Vrai quand `chemin` est l'adresse `cible` ou l'une de ses sous-pages. C'est la règle de
@@ -73,6 +73,12 @@ export function Layout() {
   const session = useComptes((state) => state.session);
   const compte = useComptes((state) => state.compte);
   const enAttente = configure && session !== null && compte !== null && !estApprouve(compte);
+  /**
+   * **Le compte en attente ne voit ni le mur du comité ni la Pause café** (D-199 (2)) : ces deux
+   * onglets sortent de la barre (la garde renvoie l'adresse tapée vers `/attente`), et la bulle
+   * et l'alerte du mur ne s'affichent pas non plus.
+   */
+  const sansMur = useCompteEnAttente();
 
   /**
    * **La barre du bas s'efface en combat** (#275, D-116) : le plateau est l'écran qui a le
@@ -112,7 +118,7 @@ export function Layout() {
     // Sans **compte** connecté, il n'y a rien à compter — et depuis D-156 (#527) la lecture
     // ne signe plus personne : un visiteur sans compte n'obtient pas d'identité anonyme pour
     // une pastille (c'était la porte par laquelle on entrait dans le jeu).
-    if (!base || enCombat || surLeSuivi || !session || session.anonyme) {
+    if (!base || enCombat || surLeSuivi || sansMur || !session || session.anonyme) {
       setAVoir(0);
       return;
     }
@@ -129,7 +135,7 @@ export function Layout() {
     return () => {
       vivant = false;
     };
-  }, [pathname, base, enCombat, surLeSuivi, session]);
+  }, [pathname, base, enCombat, surLeSuivi, sansMur, session]);
 
   /**
    * Les **cinq** onglets (D-097) ne se réduisent pas en combat : la barre n'y est plus du
@@ -210,42 +216,44 @@ export function Layout() {
 
       {/* L'alerte du comité (D-058, #212) : partout sauf en combat et sur Le suivi, et
           seulement quand il y a quelque chose à voir — à zéro elle n'a rien à dire. */}
-      {!enCombat && !surLeSuivi && <AlerteComite nombre={aVoir} />}
+      {!enCombat && !surLeSuivi && !sansMur && <AlerteComite nombre={aVoir} />}
 
       {/* La barre du bas : **cinq onglets** (#545, D-192), et **rien du tout en combat** (#275)
           ni pendant la Journée ouverte (#778). Le shell seul la rend — aucun écran ne la redessine. */}
       {!sansBarre && (
         <nav className="bottom-nav" aria-label="Navigation principale">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            // La pastille ne vit que sur l'onglet **Comité** : elle dit « choses à voir »,
-            // et le nom accessible du lien la porte pour le lecteur d'écran (#212).
-            const pastille = tab.to === '/comite' ? aVoir : 0;
-            // L'entrée « Cartes » couvre **deux** adresses (#545) : sur `/deck`, elle reste
-            // l'onglet courant, sans quoi la barre n'en montrerait aucun. `NavLink` ne sait
-            // juger que sa propre adresse — et il écrase un `aria-current` passé de
-            // l'extérieur —, d'où le `Link` et l'état calculé ici.
-            const courant = [tab.to, ...tab.aussi].some((cible) => couvreAdresse(pathname, cible));
-            return (
-              <Link
-                key={tab.to}
-                to={tab.to}
-                aria-label={
-                  pastille > 0 ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir` : undefined
-                }
-                aria-current={courant ? 'page' : undefined}
-                className={`bottom-nav__item${tab.vedette ? ' bottom-nav__item--vedette' : ''}${courant ? ' is-active' : ''}`}
-              >
-                <Icon size={20} />
-                <span>{tab.label}</span>
-                {pastille > 0 && (
-                  <span className="bottom-nav__pastille" aria-hidden="true">
-                    {pastille}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+          {tabs
+            .filter((tab) => !(sansMur && PAGES_APRES_APPROBATION.includes(tab.to)))
+            .map((tab) => {
+              const Icon = tab.icon;
+              // La pastille ne vit que sur l'onglet **Comité** : elle dit « choses à voir »,
+              // et le nom accessible du lien la porte pour le lecteur d'écran (#212).
+              const pastille = tab.to === '/comite' ? aVoir : 0;
+              // L'entrée « Cartes » couvre **deux** adresses (#545) : sur `/deck`, elle reste
+              // l'onglet courant, sans quoi la barre n'en montrerait aucun. `NavLink` ne sait
+              // juger que sa propre adresse — et il écrase un `aria-current` passé de
+              // l'extérieur —, d'où le `Link` et l'état calculé ici.
+              const courant = [tab.to, ...tab.aussi].some((cible) => couvreAdresse(pathname, cible));
+              return (
+                <Link
+                  key={tab.to}
+                  to={tab.to}
+                  aria-label={
+                    pastille > 0 ? `${tab.label} — ${pastille} ${pastille > 1 ? 'choses' : 'chose'} à voir` : undefined
+                  }
+                  aria-current={courant ? 'page' : undefined}
+                  className={`bottom-nav__item${tab.vedette ? ' bottom-nav__item--vedette' : ''}${courant ? ' is-active' : ''}`}
+                >
+                  <Icon size={20} />
+                  <span>{tab.label}</span>
+                  {pastille > 0 && (
+                    <span className="bottom-nav__pastille" aria-hidden="true">
+                      {pastille}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
         </nav>
       )}
     </div>

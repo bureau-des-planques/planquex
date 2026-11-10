@@ -154,6 +154,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     return repondre({ cards: credit.cartes, seed: credit.graine });
   } catch (erreur) {
+    // **Un compte non approuvé est refusé par la base** (0028, D-199 (4)) : `crediter_arrivage`
+    // lève `insufficient_privilege` (42501). On le rend en 403 — le client le lit comme un
+    // refus (« disponible après approbation »), pas comme une panne à réessayer.
+    if ((erreur as { code?: unknown } | null)?.code === '42501') {
+      return refus('arrivage_compte_non_approuve : l’Arrivage s’ouvre après l’approbation du compte', 403);
+    }
     console.error('arrivage : le crédit a échoué', erreur);
     return refus('arrivage_credit_refuse : l’ouverture n’a pas été créditée', 500);
   }

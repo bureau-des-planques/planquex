@@ -8,6 +8,7 @@ import { Layout, couvreAdresse } from './Layout';
 import { poserJourneeOuverte } from './journee-etape';
 import { setupTestStore } from '@/test/test-utils';
 import { useComptes } from '@/store/comptes';
+import type { Compte } from '@/lib/comptes';
 
 /**
  * Le compteur « choses à voir » du comité (#212). La **couture réseau** est mockée — comme
@@ -219,6 +220,76 @@ describe('Layout — la barre à cinq onglets (#545, D-097 (4), D-192)', () => {
  * une partie en cours pour un post-it (D-058). Sur **Le suivi**, l'alerte s'efface aussi :
  * c'est la page qui vient de les voir.
  */
+describe('Layout — le compte en attente ne voit ni le comité ni la Pause café (D-199)', () => {
+  const COMPTE: Compte = {
+    id: 'compte-a',
+    courriel: 'a@exemple.test',
+    etat: 'en attente',
+    raison: '',
+    administrateur: false,
+    medaille_periode_essai: false,
+    medaille_periode_essai_le: null,
+    created_at: '2026-11-10T10:00:00.000Z'
+  };
+
+  function poser(compte: Compte | null) {
+    useComptes.setState({
+      configure: true,
+      session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+      compte,
+      chargement: false,
+      erreur: null
+    });
+  }
+
+  afterEach(() => {
+    useComptes.setState({ configure: false, session: null, compte: null });
+  });
+
+  function barre() {
+    return screen.getByRole('navigation', { name: 'Navigation principale' });
+  }
+
+  it('en attente : trois onglets (Accueil, Cartes, Combat), ni Pause café ni Comité', () => {
+    poser(COMPTE);
+    monter('/sain');
+    expect(
+      within(barre())
+        .getAllByRole('link')
+        .map((lien) => lien.textContent)
+    ).toEqual(['Accueil', 'Cartes', 'Combat']);
+  });
+
+  it('en attente : le mur n’est pas compté et son alerte ne s’affiche pas', async () => {
+    mocks.murEstConfigure.mockReturnValue(true);
+    mocks.compter.mockResolvedValue(3);
+    poser(COMPTE);
+    monter('/sain');
+    await act(async () => {});
+    expect(mocks.compter).not.toHaveBeenCalled();
+    expect(screen.queryByRole('link', { name: /Ouvrir le suivi du comité/ })).toBeNull();
+  });
+
+  it.each([
+    ['approuvé', { ...COMPTE, etat: 'approuve' as const }],
+    ['administrateur encore en attente', { ...COMPTE, administrateur: true }]
+  ])('compte %s : les cinq onglets', (_nom, compte) => {
+    poser(compte);
+    monter('/sain');
+    expect(
+      within(barre())
+        .getAllByRole('link')
+        .map((lien) => lien.textContent)
+    ).toEqual(['Accueil', 'Cartes', 'Combat', 'Pause café', 'Comité']);
+  });
+
+  it('ligne illisible : la barre garde ses cinq onglets (D-088)', () => {
+    poser(null);
+    monter('/sain');
+    expect(within(barre()).getAllByRole('link')).toHaveLength(5);
+  });
+});
+
 describe('Layout — le compteur du comité (#212, D-097 (5))', () => {
   /**
    * Depuis D-156 (#527), le compteur ne lit que pour un **compte** : un visiteur sans compte

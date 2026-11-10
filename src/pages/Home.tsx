@@ -5,6 +5,7 @@ import { ALL_CARDS } from '@/data';
 import { NOTES_RESUME, type ResumeNote } from '@/data/notes-resume';
 import type { Card } from '@/data/types';
 import { reprendrePartie } from '@/store/partie';
+import { useCompteEnAttente } from '@/store/comptes';
 import { useStore } from '@/store/useStore';
 import { useEstCibleJournee } from '@/components/journee-cible';
 import { APP_LABEL, APP_VERSION } from '@/version';
@@ -80,6 +81,11 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
    * aucune file d'attente ne retient le geste.
    */
   const enLigne = useEnLigne();
+  /**
+   * **Le compte en attente n'ouvre pas d'Arrivage** (D-199 (2)) : le bouton le dit au lieu de
+   * partir. Ce n'est qu'un **confort** — le serveur fait foi (0028) et refuserait quand même.
+   */
+  const enAttente = useCompteEnAttente();
 
   const uniqueOwned = Object.keys(owned).filter((id) => (owned[id] ?? 0) > 0).length;
   const totalOwned = Object.values(owned).reduce((sum, count) => sum + count, 0);
@@ -143,7 +149,7 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
             onClick={handleOpenPack}
             // Hors ligne, le bouton ne part pas (D-179 (6)) ; pendant l'attente, il ne part
             // pas deux fois. La scène, elle, ne s'ouvre qu'à la réponse du serveur.
-            disabled={!enLigne || ouvertureEnCours}
+            disabled={!enLigne || enAttente || ouvertureEnCours}
             aria-busy={ouvertureEnCours}
           >
             <PackageOpen size={22} /> Ouvrir un Arrivage
@@ -154,7 +160,12 @@ export function Home({ notes = NOTES_RESUME }: { notes?: readonly ResumeNote[] }
         </div>
         {/* **L'Arrivage attend le réseau** (D-179 (6), D-060 (3)) : un état, pas une erreur —
             « connecte-toi pour ouvrir », sans file d'attente et sans tirage local. */}
-        {!enLigne && (
+        {enAttente && (
+          <p className="muted hero__attente" role="status">
+            L’Arrivage est disponible après l’approbation de ton compte. Le combat contre la Direction, lui, est ouvert.
+          </p>
+        )}
+        {!enLigne && !enAttente && (
           <p className="muted hero__attente" role="status">
             <WifiOff size={16} aria-hidden /> Hors ligne : connecte-toi pour ouvrir un Arrivage. Le combat, la
             Collection et le Deck continuent sans réseau.

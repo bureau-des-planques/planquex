@@ -8,6 +8,7 @@ import {
   deconnexion,
   diagnosticComptes,
   estApprouve,
+  estEnAttente,
   inscriptionCourriel,
   libelleEtat,
   lireCompte,
@@ -169,6 +170,12 @@ describe('la lecture d’un compte', () => {
   it('un administrateur est toujours approuvé (la 0005 le dit aussi)', () => {
     expect(estApprouve({ ...COMPTE, etat: 'en attente', administrateur: true })).toBe(true);
     expect(estApprouve({ ...COMPTE, etat: 'en attente' })).toBe(false);
+    // « En attente » (D-199) : ni approuvé, ni refusé, ni administrateur, ni ligne illisible.
+    expect(estEnAttente({ ...COMPTE, etat: 'en attente' })).toBe(true);
+    expect(estEnAttente({ ...COMPTE, etat: 'en attente', administrateur: true })).toBe(false);
+    expect(estEnAttente({ ...COMPTE, etat: 'approuve' })).toBe(false);
+    expect(estEnAttente({ ...COMPTE, etat: 'refuse', raison: 'non' })).toBe(false);
+    expect(estEnAttente(null)).toBe(false);
     expect(estApprouve(null)).toBe(false);
   });
 

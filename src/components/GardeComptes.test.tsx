@@ -14,7 +14,8 @@ import type { Compte } from '@/lib/comptes';
  *
  * 1. personne → la connexion, avec la destination mémorisée ;
  * 2. une session **anonyme** → la connexion (c'est le bug #527 : elle passait) ;
- * 3. un compte **en attente** → le jeu (D-088 : il joue et lit) ;
+ * 3. un compte **en attente** → le jeu, sauf le mur du comité et la Pause café (D-199, qui amende
+ *    D-156 (3)) : il fait la Journée et le combat solo, et ces deux adresses l'envoient à `/attente` ;
  * 4. un compte **approuvé** → le jeu ;
  * 5. un compte **refusé** → l'attente, sa raison, et lui seul.
  *
@@ -106,6 +107,59 @@ describe('la garde d’entrée (D-088, D-156)', () => {
     poser({ session: SESSION, compte: EN_ATTENTE });
     rendre('/');
     expect(screen.getByText('le bureau')).toBeInTheDocument();
+  });
+
+  describe('le compte en attente ne voit ni le comité ni la Pause café (D-199)', () => {
+    it.each(['/', '/battle', '/collection', '/deck', '/settings', '/attente'])('il joue sur %s', (adresse) => {
+      poser({ session: SESSION, compte: EN_ATTENTE });
+      rendre(adresse);
+      expect(screen.getByText(adresse === '/attente' ? 'l’attente' : 'le bureau')).toBeInTheDocument();
+    });
+
+    it.each(['/comite', '/comite/suivi', '/pause-cafe'])('%s le renvoie à l’attente', (adresse) => {
+      poser({ session: SESSION, compte: EN_ATTENTE });
+      rendre(adresse);
+      expect(screen.getByText('l’attente')).toBeInTheDocument();
+      expect(screen.queryByText('le bureau')).toBeNull();
+    });
+
+    it('une adresse qui ne fait que commencer comme le mur n’est pas le mur', () => {
+      poser({ session: SESSION, compte: EN_ATTENTE });
+      rendre('/comite-du-futur');
+      expect(screen.getByText('le bureau')).toBeInTheDocument();
+    });
+
+    it.each(['/comite', '/comite/suivi', '/pause-cafe'])(
+      '%s reste ouvert à un compte approuvé, et à un administrateur encore en attente',
+      (adresse) => {
+        poser({ session: SESSION, compte: APPROUVE });
+        rendre(adresse);
+        expect(screen.getByText('le bureau')).toBeInTheDocument();
+        cleanup();
+
+        poser({ session: SESSION, compte: { ...EN_ATTENTE, administrateur: true } });
+        rendre(adresse);
+        expect(screen.getByText('le bureau')).toBeInTheDocument();
+      }
+    );
+
+    it('une ligne illisible n’est pas fermée (D-088) : le mur reste atteignable', () => {
+      poser({ session: SESSION, compte: null, erreur: 'lecture impossible' });
+      rendre('/comite');
+      expect(screen.getByText('le bureau')).toBeInTheDocument();
+    });
+
+    it('sans base configurée, le mur n’est pas fermé (mode local, PRODUCT.md)', () => {
+      poser({ configure: false, session: null, compte: null });
+      rendre('/comite');
+      expect(screen.getByText('le bureau')).toBeInTheDocument();
+    });
+
+    it('un compte refusé repart toujours vers l’attente, mur compris (D-156 (3))', () => {
+      poser({ session: SESSION, compte: REFUSE });
+      rendre('/comite');
+      expect(screen.getByText('l’attente')).toBeInTheDocument();
+    });
   });
 
   it('un compte approuvé entre', () => {

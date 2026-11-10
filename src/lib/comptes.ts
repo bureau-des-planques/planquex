@@ -167,6 +167,16 @@ export function estApprouve(compte: Compte | null): boolean {
 }
 
 /**
+ * Un compte **en attente d'approbation** (D-199) : ni `approuve`, ni `refuse`, ni administrateur.
+ * Il fait la Journée et le combat solo ; il ne voit ni le mur du comité, ni la Pause café, et
+ * n'ouvre pas d'Arrivage serveur. Un compte `refuse` n'est **pas** « en attente » : la garde
+ * le renvoie à `/attente` (D-156 (3)). `null` (ligne illisible) n'est pas fermé (D-088).
+ */
+export function estEnAttente(compte: Compte | null): boolean {
+  return compte !== null && compte.etat === 'en attente' && !compte.administrateur;
+}
+
+/**
  * L'administration du mur (#186) : elle trie, range et retire **n'importe quel** post-it.
  * Le drapeau vient de la base (`comptes.administrateur`, 0005) et ne s'écrit qu'au SQL
  * Editor ; l'écran ne fait que ne pas proposer à un compte ce que la base lui refuserait.

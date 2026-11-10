@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { Home } from './Home';
 import { renderWithStore } from '@/test/test-utils';
+import { useComptes } from '@/store/comptes';
+import type { Compte } from '@/lib/comptes';
 import { CARTES_ARRIVAGE, cleAppelee, reponseArrivage, simulerArrivage } from '@/test/arrivageDeTest';
 
 /**
@@ -60,6 +62,56 @@ describe('Home — le gros bouton et le compteur d’Arrivages (#273)', () => {
     fireEvent.click(bouton);
     // Le contrôle mord : un écran qui laisserait partir la demande émettrait un appel.
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  describe('un compte en attente n’ouvre pas d’Arrivage (D-199)', () => {
+    const COMPTE: Compte = {
+      id: 'compte-a',
+      courriel: 'a@exemple.test',
+      etat: 'en attente',
+      raison: '',
+      administrateur: false,
+      medaille_periode_essai: false,
+      medaille_periode_essai_le: null,
+      created_at: '2026-11-10T10:00:00.000Z'
+    };
+
+    function poser(compte: Compte | null) {
+      useComptes.setState({
+        configure: true,
+        session: { id: 'compte-a', courriel: 'a@exemple.test', anonyme: false },
+        compte,
+        chargement: false,
+        erreur: null
+      });
+    }
+
+    afterEach(() => useComptes.setState({ configure: false, session: null, compte: null }));
+
+    it('le bouton dit « disponible après approbation » et ne part pas ; le combat reste ouvert', () => {
+      const fetchImpl = simulerArrivage();
+      poser(COMPTE);
+      renderWithStore(<Home />, { packsOpened: 0, tutorielVu: true, pasAPasCombatVu: true });
+
+      expect(screen.getByRole('status')).toHaveTextContent(/disponible après l’approbation de ton compte/i);
+      const bouton = screen.getByRole('button', { name: /Ouvrir un Arrivage/i });
+      expect(bouton).toBeDisabled();
+      fireEvent.click(bouton);
+      // Le contrôle mord : un bouton qui laisserait partir la demande émettrait un appel.
+      expect(fetchImpl).not.toHaveBeenCalled();
+      expect(screen.getByRole('link', { name: /Affronter la Direction/i })).toHaveAttribute('href', '/battle');
+    });
+
+    it.each([
+      ['approuvé', { ...COMPTE, etat: 'approuve' as const }],
+      ['administrateur encore en attente', { ...COMPTE, administrateur: true }],
+      ['ligne illisible', null]
+    ])('compte %s : le bouton est actif et rien n’est dit', (_nom, compte) => {
+      poser(compte);
+      renderWithStore(<Home />, { packsOpened: 0, tutorielVu: true, pasAPasCombatVu: true });
+      expect(screen.getByRole('button', { name: /Ouvrir un Arrivage/i })).toBeEnabled();
+      expect(screen.queryByText(/après l’approbation/i)).toBeNull();
+    });
   });
 
   it('échec réseau : il propose de réessayer, et le second clic réutilise la même clé', async () => {
