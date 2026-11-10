@@ -753,17 +753,18 @@ async function mesurerRebutOuvert(browser) {
     if (n < 2) problems.push(`${ROUTE_COMBAT} · « Rebut ouvert » : ${n} bouton(s) de Rebut au lieu de 2 (#740)`);
     for (let i = 0; i < n; i += 1) {
       const bouton = boutons.nth(i);
-      await bouton.scrollIntoViewIfNeeded();
-      await bouton.click();
+      // Un tap, pas un `click()` de Playwright : celui-ci fait défiler vers l'élément, et la pile du joueur est à
+      // moitié sortie de l'écran à dessein (D-193) — le défilement programmatique décalait la page de 7 px.
+      await bouton.evaluate((el) => el.click());
       await page.waitForTimeout(250);
       const cartes = await page.locator('.panneau-rebut__liste li').count();
-      const scrollY = await page.evaluate(() => window.scrollY);
+      const [scrollX, scrollY] = await page.evaluate(() => [window.scrollX, window.scrollY]);
       const nom = `${new Date(instant).toISOString()} (Rebut ouvert, ${etape}, pile ${i + 1}/${n}, ${cartes} carte(s))`;
-      console.log(`combat · ${nom} · scrollY ${scrollY}`);
+      console.log(`combat · ${nom} · scrollX ${scrollX}, scrollY ${scrollY}`);
       await controlerHauteur(page, nom, ROUTE_COMBAT);
       if (i === 0)
         await page.screenshot({ path: join(outDir, `combat-rebut-ouvert-${etape}.png`), fullPage: PLEINE_PAGE });
-      await bouton.click();
+      await bouton.evaluate((el) => el.click());
       await page.waitForTimeout(150);
     }
   };
