@@ -16,7 +16,8 @@ import {
   nombreDePhrases,
   passeAuGeste,
   secondesDeLecture,
-  tapeAvance
+  tapeAvance,
+  tapeTermine
 } from './journee-etapes';
 import { CARD_BY_ID } from '@/data';
 
@@ -336,6 +337,16 @@ describe('le geste fait avancer, et le tap ne passe que les étapes sans geste (
     expect(tapeAvance(avecGeste, 0, 4)).toBe(false);
     // La dernière étape n'a pas d'étape après elle.
     expect(tapeAvance(sansGeste, 4, 4)).toBe(false);
+  });
+
+  it('tapeTermine : seulement la dernière étape sans geste termine la Journée', () => {
+    const sansGeste = { titre: 'x', texte: 'x', cible: '/', action: 'x', direction: 'x' };
+    const avecGeste = { ...sansGeste, geste: 'deck' as const };
+    expect(tapeTermine(sansGeste, 4, 4)).toBe(true);
+    // **Le contrôle mord** : une étape avec geste ne termine jamais au tap.
+    expect(tapeTermine(avecGeste, 4, 4)).toBe(false);
+    // **Le contrôle mord** : une étape sans geste qui n'est pas la dernière ne termine pas.
+    expect(tapeTermine(sansGeste, 3, 4)).toBe(false);
   });
 
   it('chaque étape du parcours a un geste, sauf la dernière (le comité)', () => {

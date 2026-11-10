@@ -168,10 +168,19 @@ export function passeAuGeste(precedent: PositionDeGeste | null, etape: number, f
 
 /**
  * **Le tap sur l'encadré fait-il avancer ?** (D-196 (1)) Seulement une étape **sans geste**, et
- * pas la dernière : une étape avec geste avance par son geste, et la dernière n'a pas d'étape après.
+ * pas la dernière : une étape avec geste avance par son geste.
  */
 export function tapeAvance(etape: EtapeJournee, index: number, dernier: number): boolean {
   return etape.geste === undefined && index < dernier;
+}
+
+/**
+ * **Le tap sur la dernière réplique termine la Journée** (779, décision du propriétaire du
+ * 10/11/2026). Seule la dernière étape sans geste le fait : le même effet que « Relire la
+ * Journée plus tard », qui reste à l'écran.
+ */
+export function tapeTermine(etape: EtapeJournee, index: number, dernier: number): boolean {
+  return etape.geste === undefined && index >= dernier;
 }
 
 /**

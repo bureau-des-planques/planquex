@@ -8,6 +8,7 @@ import {
   libelleSaut,
   passeAuGeste,
   tapeAvance,
+  tapeTermine,
   type PositionDeGeste
 } from '@/components/journee-etapes';
 import { CIBLE_DE_GESTE, poserCibleJournee } from '@/components/journee-cible';
@@ -417,24 +418,33 @@ export function JourneeIntegration() {
 
   /**
    * **Le tap sur l'encadré** (779, D-196 (1), D-187 (4)). Premier tap : la réplique s'écrit
-   * d'un coup. Second tap, à une étape **sans geste** : l'étape suivante s'ouvre. Une étape
-   * avec geste n'avance jamais au tap — son geste la fait avancer. Sous mouvement réduit, la
-   * réplique est entière dès le départ : un seul tap avance.
+   * d'un coup. Second tap, à une étape **sans geste** : l'étape suivante s'ouvre, et à la
+   * **dernière** (le comité) la Journée se termine, comme « Relire la Journée plus tard »
+   * (décision du propriétaire, 10/11/2026). Une étape avec geste n'avance jamais au tap — son
+   * geste la fait avancer. Sous mouvement réduit, la réplique est entière dès le départ : un
+   * seul tap suffit.
    */
   const repliqueComplete = repliqueLue === courante.direction || reduit;
+  const dernier = ETAPES_JOURNEE.length - 1;
   const toucherLaReplique = () => {
     if (!repliqueComplete) {
       setRepliqueLue(courante.direction);
       return;
     }
-    if (tapeAvance(courante, etape, ETAPES_JOURNEE.length - 1)) allerAEtape(etape + 1);
+    if (tapeTermine(courante, etape, dernier)) {
+      terminer();
+      return;
+    }
+    if (tapeAvance(courante, etape, dernier)) allerAEtape(etape + 1);
   };
   /** Ce que fait le tap, dit à la lecture d'écran (le nom accessible porte l'action). */
   const indicationTap = !repliqueComplete
     ? ', appuyer pour afficher tout le texte'
-    : tapeAvance(courante, etape, ETAPES_JOURNEE.length - 1)
-      ? ', appuyer pour passer à l’étape suivante'
-      : '';
+    : tapeTermine(courante, etape, dernier)
+      ? ', appuyer pour terminer la Journée'
+      : tapeAvance(courante, etape, dernier)
+        ? ', appuyer pour passer à l’étape suivante'
+        : '';
 
   /** Sur l'écran de l'étape : `pathname` n'a pas de requête, la cible peut en avoir une. */
   const surLaPage = pathname === cheminDeCible(courante.cible);

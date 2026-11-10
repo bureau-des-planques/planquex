@@ -846,13 +846,38 @@ describe('la réplique de la Journée reste courte et désigne sa cible (D-181, 
     }
   });
 
-  it('le dernier tap de la Journée ne la termine pas : la sortie reste « Relire la Journée »', async () => {
+  it('le premier tap du comité finit l’écriture ; le second termine la Journée (10/11/2026)', async () => {
     const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
     const encadre = screen.getByRole('button', { name: /Chef de cabinet : Le mur lit tout/ });
     await userEvent.click(encadre);
-    await userEvent.click(encadre);
+    // **Le contrôle mord** : un premier tap qui terminerait ferait passer ce test.
+    expect(encadre).toHaveAttribute('data-complet', 'true');
     expect(useStore.getState().tutorielVu).toBe(false);
-    expect(etapeJournee()).toBe(ETAPES_JOURNEE.length - 1);
+    await userEvent.click(encadre);
+    // **Le contrôle mord** : sans le second tap terminal, le drapeau reste à `false`.
+    expect(useStore.getState().tutorielVu).toBe(true);
+    expect(document.querySelector('[data-journee-panneau]')).toBeNull();
+    unmount();
+  });
+
+  it('sous mouvement réduit, un seul tap sur le comité termine la Journée', async () => {
+    const { unmount } = monterPanneau(ETAPES_JOURNEE.length - 1);
+    act(() => useStore.setState({ reducedMotion: true }));
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Le mur lit tout.*terminer la Journée/ });
+    await userEvent.click(encadre);
+    expect(useStore.getState().tutorielVu).toBe(true);
+    unmount();
+    act(() => useStore.setState({ reducedMotion: false }));
+  });
+
+  it('un tap sur une étape avec geste ne termine jamais la Journée', async () => {
+    const { unmount } = monterPanneau(1);
+    const encadre = screen.getByRole('button', { name: /Chef de cabinet : Vingt cartes, comptées\./ });
+    await userEvent.click(encadre);
+    await userEvent.click(encadre);
+    // **Le contrôle mord** : un tap qui terminerait sur une étape avec geste écrirait `tutorielVu`.
+    expect(useStore.getState().tutorielVu).toBe(false);
+    expect(etapeJournee()).toBe(1);
     unmount();
   });
 
